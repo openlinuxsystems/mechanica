@@ -24,7 +24,7 @@ jobs:
           global-json-file: global.json
 
       - name: Read pinned versions
-        run: cat tools/versions.env >> "$GITHUB_ENV"
+        run: grep -E '^[A-Z_]+=' tools/versions.env >> "$GITHUB_ENV"
 
       - uses: actions/cache@v4
         with:
