@@ -1,3 +1,4 @@
+using System.Numerics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Mechanica.Core.Data;
@@ -6,16 +7,23 @@ namespace Mechanica.Core.Creations;
 
 /// <summary>
 /// Reads and writes a <see cref="Creation"/> as JSON (D8): saves, blueprints and late-join sync all use it.
-/// The graph is stored (parts and edges); Bodies are derived on load. Written in canonical form (parts
-/// by id, edges in <see cref="Creation.Connections"/> order), so a round-trip is byte for byte.
+/// The graph is stored (parts and edges); Bodies are derived on load. Each Body with a known world pose
+/// gets a <c>bodies</c> entry naming its lowest part. Written in canonical form (parts by id, edges in
+/// <see cref="Creation.Connections"/> order, bodies in <see cref="Creation.Bodies"/> order), so a
+/// round-trip is byte for byte.
 /// <code>
 /// {
 ///   "format_version": 1,
 ///   "id": 7,
 ///   "authority_peer": 1,
 ///   "parts": [ { "id": 1, "part": "vanilla:wood_block", "cell": [0, 0, 0], "rotation": "+x+y" } ],
-///   "connections": [ { "type": "rotational", "a": 2, "a_socket": "rotor", "b": 3 } ]
+///   "connections": [ { "type": "rotational", "a": 2, "a_socket": "rotor", "b": 3 } ],
+///   "bodies": [ { "part": 1, "position": [0, 2.5, 0], "rotation": [0, 0, 0, 1] } ]
 /// }
+/// </code>
+/// A body's <c>position</c> (metres) and <c>rotation</c> (unit quaternion <c>[x, y, z, w]</c>) place its
+/// grid frame in the world (<see cref="Pose"/>). Linear and angular velocity are not stored yet.
+/// <code>
 /// </code>
 /// </summary>
 public static class CreationJson
@@ -47,6 +55,7 @@ public static class CreationJson
                 B = c.B,
                 BSocket = c.BSocket,
             })],
+            Bodies = BodyPoses(creation),
             Extra = Sorted(creation.Extra),
         };
         return JsonSerializer.Serialize(data, DataJson.WriteOptions) + "\n";
@@ -137,7 +146,61 @@ public static class CreationJson
                 $"the parts form {pieces.Count} separate pieces (lowest ids {string.Join(", ", pieces.Select(p => p[0]))}); a creation must be connected.");
             return null;
         }
-        return creation;
+        ReadBodies(data.Bodies, creation, sink);
+        return sink.ErrorCount > 0 ? null : creation;
+    }
+
+    private static List<BodyPoseData>? BodyPoses(Creation creation)
+    {
+        var poses = new List<BodyPoseData>();
+        foreach (var body in creation.Bodies.Where(b => creation.HasBodyPose(b.Index)))
+        {
+            var pose = creation.BodyPose(body.Index);
+            poses.Add(new BodyPoseData { Part = body.PartIds[0], Position = pose.Position.ToVec3(), Rotation = pose.Rotation });
+        }
+        return poses.Count > 0 ? poses : null;
+    }
+
+    private static void ReadBodies(List<BodyPoseData>? bodies, Creation creation, DiagnosticSink sink)
+    {
+        const string invalid = DiagnosticCodes.CreationInvalid;
+        var claimed = new Dictionary<int, int>();
+        for (var i = 0; i < (bodies?.Count ?? 0); i++)
+        {
+            var path = $"$.bodies[{i}]";
+            var b = bodies![i];
+            foreach (var key in b.Extra?.Keys ?? Enumerable.Empty<string>())
+                sink.Warning(DiagnosticCodes.UnknownKey, $"{path}.{key}", $"unknown key '{key}' on a body is ignored and not saved.");
+            if (b.Part is not { } part || b.Position is not { } position || b.Rotation is not { } rotation)
+            {
+                sink.Error(invalid, path, "a body needs part, position and rotation.");
+                continue;
+            }
+            if (creation.FindPart(part) is null)
+            {
+                sink.Error(invalid, $"{path}.part", $"body names part {part}, which is not in the creation.");
+                continue;
+            }
+            var length = rotation.Length();
+            if (!float.IsFinite(length) || MathF.Abs(length - 1) > 1e-3f)
+            {
+                sink.Error(invalid, $"{path}.rotation", $"rotation must be a unit quaternion [x, y, z, w]; its length is {length}.");
+                continue;
+            }
+            if (!float.IsFinite(position.X) || !float.IsFinite(position.Y) || !float.IsFinite(position.Z))
+            {
+                sink.Error(invalid, $"{path}.position", "position must be finite.");
+                continue;
+            }
+            var body = creation.BodyIndexOf(part);
+            if (claimed.TryGetValue(body, out var first))
+            {
+                sink.Error(invalid, $"{path}.part", $"parts {first} and {part} are in the same body, so only one may carry its pose.");
+                continue;
+            }
+            claimed[body] = part;
+            creation.SetBodyPose(body, new Pose(position.ToNumerics(), Quaternion.Normalize(rotation)));
+        }
     }
 
     private static (PartInstance, PartDefinition)? ReadPart(PartInstanceData data, string path, IPartCatalog catalog, DiagnosticSink sink)
@@ -180,6 +243,8 @@ public static class CreationJson
 
         public List<ConnectionData>? Connections { get; init; }
 
+        public List<BodyPoseData>? Bodies { get; init; }
+
         [JsonExtensionData]
         public Dictionary<string, JsonElement>? Extra { get; init; }
     }
@@ -209,6 +274,19 @@ public static class CreationJson
         public int? B { get; init; }
 
         public string? BSocket { get; init; }
+
+        [JsonExtensionData]
+        public Dictionary<string, JsonElement>? Extra { get; init; }
+    }
+
+    internal sealed record BodyPoseData
+    {
+        public int? Part { get; init; }
+
+        public Vec3? Position { get; init; }
+
+        [JsonConverter(typeof(QuaternionJsonConverter))]
+        public Quaternion? Rotation { get; init; }
 
         [JsonExtensionData]
         public Dictionary<string, JsonElement>? Extra { get; init; }
