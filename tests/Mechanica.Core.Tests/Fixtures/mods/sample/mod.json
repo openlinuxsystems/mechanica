@@ -1,0 +1,11 @@
+{
+  "format_version": 1,
+  "id": "sample",
+  "name": "Sample Parts",
+  "version": "0.1.0",
+  "description": "Test fixture mod for the data loader.",
+  "authors": [
+    "Mechanica"
+  ],
+  "dependencies": []
+}
