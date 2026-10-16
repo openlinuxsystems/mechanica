@@ -1,0 +1,28 @@
+{
+  "id": "big_bearing",
+  "name": "Big Bearing",
+  "category": "interactive",
+  "mass": 9,
+  "durability": 6,
+  "friction": 0.4,
+  "buoyancy": 0,
+  "flammable": false,
+  "size": [2, 1, 2],
+  "mesh": "sample:meshes/bearing.gltf",
+  "collision": {
+    "shape": "box",
+    "size": [0.5, 0.25, 0.5]
+  },
+  "sockets": [
+    {
+      "id": "rotor",
+      "type": "rotational",
+      "position": [0, 0.125, 0],
+      "normal": [0, 1, 0]
+    }
+  ],
+  "script": "sample:scripts/bearing.lua",
+  "properties": {
+    "max_torque": 4000
+  }
+}

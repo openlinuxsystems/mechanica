@@ -1,0 +1,86 @@
+namespace Mechanica.Core.Data;
+
+/// <summary>How serious a <see cref="DataDiagnostic"/> is.</summary>
+public enum DiagnosticSeverity
+{
+    /// <summary>Suspicious but loadable, for example an unknown key that may be a typo.</summary>
+    Warning,
+
+    /// <summary>The file or mod cannot be used.</summary>
+    Error,
+}
+
+/// <summary>
+/// One problem found while loading or validating mod data. <see cref="ToString"/> gives a
+/// single readable line such as <c>error MD0201: mods/x/parts/a.json(4) $.mass: mass must be greater than 0.</c>
+/// </summary>
+/// <param name="Severity">Warning or error.</param>
+/// <param name="Code">Stable diagnostic code (see <see cref="DiagnosticCodes"/>).</param>
+/// <param name="File">File the problem is in, relative to the mods root where possible.</param>
+/// <param name="JsonPath">JSON path inside the file (<c>$.sockets[1].id</c>), or null.</param>
+/// <param name="Line">1-based line number, when the JSON parser reported one.</param>
+/// <param name="Message">Human-readable description.</param>
+public sealed record DataDiagnostic(
+    DiagnosticSeverity Severity,
+    string Code,
+    string File,
+    string? JsonPath,
+    int? Line,
+    string Message)
+{
+    /// <inheritdoc />
+    public override string ToString()
+    {
+        var severity = Severity == DiagnosticSeverity.Error ? "error" : "warning";
+        var location = Line is { } line ? $"{File}({line})" : File;
+        var path = JsonPath is null ? "" : $" {JsonPath}";
+        return $"{severity} {Code}: {location}{path}: {Message}";
+    }
+}
+
+/// <summary>Stable codes for <see cref="DataDiagnostic"/>, grouped by area.</summary>
+public static class DiagnosticCodes
+{
+    // 00xx: files and JSON syntax
+    public const string FileUnreadable = "MD0001";
+    public const string InvalidJson = "MD0002";
+    public const string UnknownKey = "MD0003";
+
+    // 01xx: mod manifests, discovery and dependencies
+    public const string ManifestMissing = "MD0101";
+    public const string ManifestInvalid = "MD0102";
+    public const string ModFolderMismatch = "MD0103";
+    public const string DuplicateMod = "MD0104";
+    public const string MissingDependency = "MD0105";
+    public const string DependencyVersion = "MD0106";
+    public const string DependencyCycle = "MD0107";
+    public const string DependencyFailed = "MD0108";
+    public const string UnsupportedFormat = "MD0109";
+    public const string ModNotLoaded = "MD0110";
+
+    // 02xx: part definitions
+    public const string PartInvalid = "MD0201";
+    public const string DuplicatePart = "MD0202";
+
+    // 03xx: asset paths
+    public const string AssetPathInvalid = "MD0301";
+    public const string AssetMissing = "MD0302";
+    public const string AssetUndeclaredMod = "MD0303";
+}
+
+/// <summary>Collects diagnostics for one file, filling in the file name.</summary>
+internal sealed class DiagnosticSink(string file, List<DataDiagnostic> into)
+{
+    public string File { get; } = file;
+
+    public int ErrorCount { get; private set; }
+
+    public void Error(string code, string? path, string message, int? line = null)
+    {
+        ErrorCount++;
+        into.Add(new DataDiagnostic(DiagnosticSeverity.Error, code, File, path, line, message));
+    }
+
+    public void Warning(string code, string? path, string message, int? line = null) =>
+        into.Add(new DataDiagnostic(DiagnosticSeverity.Warning, code, File, path, line, message));
+}
