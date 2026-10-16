@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://tests/player/PlayerTest.cs" id="1_player"]
+
+[node name="PlayerTest" type="Node3D"]
+script = ExtResource("1_player")

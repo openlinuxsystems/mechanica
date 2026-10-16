@@ -1,0 +1,180 @@
+using Godot;
+using Mechanica.Core.Player;
+using Mechanica.Game.Player;
+
+namespace Mechanica.Game.Tests;
+
+/// <summary>
+/// Headless player controller test: drives a <see cref="PlayerController"/> with scripted
+/// <see cref="PlayerInput"/> on a flat floor and checks walk, turn, jump, look and push.
+/// Also checks the main test world spawns a grounded local player. Exits 0 on success, 1 on failure.
+/// </summary>
+public partial class PlayerTest : Node3D
+{
+    private const int StageTimeoutFrames = 600;
+
+    private readonly Queue<Stage> _stages = new();
+    private Stage? _stage;
+    private int _stageFrames;
+    private bool _done;
+
+    private Main _main = null!;
+    private PlayerController _player = null!;
+    private RigidBody3D _crate = null!;
+    private Vector3 _mark;
+    private float _peak;
+    private bool _leftFloor;
+
+    private sealed record Stage(string Name, Func<int, bool> Tick);
+
+    public override void _Ready()
+    {
+        PlayerInputActions.EnsureRegistered();
+        Check(InputMap.HasAction(PlayerInputActions.MoveForward) && InputMap.HasAction(PlayerInputActions.Jump),
+            "player input actions are registered");
+
+        _main = ResourceLoader.Load<PackedScene>("res://scenes/Main.tscn").Instantiate<Main>();
+        AddChild(_main);
+        Check(_main.LocalPlayer is not null, "main scene spawns a local player");
+
+        Add("main scene player lands on the ground", frame =>
+        {
+            if (frame < 30 || !_main.LocalPlayer!.IsOnFloor())
+                return false;
+            var y = _main.LocalPlayer.GlobalPosition.Y;
+            Check(Mathf.Abs(y) < 0.05f, $"local player stands at ground level (y={y:F3})");
+            _main.QueueFree();
+            BuildArena();
+            return true;
+        });
+        Add("player settles on the floor", frame => frame > 10 && _player.IsOnFloor() && Mark());
+        Add("walk forward one second", frame =>
+        {
+            _player.CurrentInput = new PlayerInput(0, 1, 0, 0, false, false);
+            if (frame < 60)
+                return false;
+            var moved = _player.GlobalPosition - _mark;
+            Check(moved.Z is < -3f and > -4.1f && Mathf.Abs(moved.X) < 0.05f,
+                $"walking forward at yaw 0 moves along -Z (moved {moved})");
+            return Mark();
+        });
+        Add("turn left and walk", frame =>
+        {
+            _player.CurrentInput = new PlayerInput(0, 1, Mathf.Pi / 2, 0, false, false);
+            if (frame < 60)
+                return false;
+            var moved = _player.GlobalPosition - _mark;
+            Check(moved.X < -2.5f, $"walking at yaw 90° moves along -X (moved {moved})");
+            Check(Mathf.IsEqualApprox(_player.Rotation.Y, Mathf.Pi / 2, 1e-3f), "body yaw follows input");
+            return true;
+        });
+        Add("stop", frame =>
+        {
+            _player.CurrentInput = PlayerInput.None with { Yaw = Mathf.Pi / 2 };
+            if (frame < 30)
+                return false;
+            Check(_player.Velocity.Length() < 0.01f, $"player stops without input (v={_player.Velocity})");
+            return Mark();
+        });
+        Add("jump", frame =>
+        {
+            _player.CurrentInput = PlayerInput.None with { Jump = frame == 0 };
+            _peak = Mathf.Max(_peak, _player.GlobalPosition.Y - _mark.Y);
+            _leftFloor |= !_player.IsOnFloor();
+            if (!_leftFloor || !_player.IsOnFloor())
+                return false;
+            Check(_peak is > 0.9f and < 1.2f, $"jump peaks about 1 m up (peak={_peak:F3})");
+            return true;
+        });
+        Add("look", frame =>
+        {
+            _player.CurrentInput = PlayerInput.None with { Pitch = 10f };
+            if (frame < 1)
+                return false;
+            var pitch = _player.Head.Rotation.X;
+            Check(Mathf.IsEqualApprox(pitch, Mathf.DegToRad(_player.Settings.MaxPitchDegrees), 1e-3f),
+                $"look pitch is clamped (pitch={Mathf.RadToDeg(pitch):F1}°)");
+            Check(_player.Camera.GlobalPosition.Y > _player.GlobalPosition.Y + 1.5f, "camera sits at eye height");
+            return true;
+        });
+        Add("push a crate", frame =>
+        {
+            if (frame == 0)
+            {
+                _crate.GlobalPosition = _player.GlobalPosition + new Vector3(0, 0.25f, -1.5f);
+                _crate.LinearVelocity = Vector3.Zero;
+                _mark = _crate.GlobalPosition;
+            }
+            _player.CurrentInput = new PlayerInput(0, 1, 0, 0, false, false);
+            if (frame < 90)
+                return false;
+            var moved = _crate.GlobalPosition - _mark;
+            Check(moved.Z < -0.5f, $"walking into a crate pushes it (moved {moved})");
+            return true;
+        });
+    }
+
+    public override void _PhysicsProcess(double delta)
+    {
+        if (_done)
+            return;
+        if (_stage is null)
+        {
+            if (!_stages.TryDequeue(out _stage))
+            {
+                Finish(0);
+                return;
+            }
+            _stageFrames = 0;
+        }
+
+        if (_stage.Tick(_stageFrames))
+        {
+            GD.Print($"[player] done: {_stage.Name} ({_stageFrames} frames)");
+            _stage = null;
+        }
+        else if (++_stageFrames > StageTimeoutFrames)
+        {
+            Check(false, $"stage '{_stage.Name}' timed out");
+        }
+    }
+
+    private void BuildArena()
+    {
+        var floor = new StaticBody3D { Name = "Floor", Position = new Vector3(0, -0.5f, 0) };
+        floor.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = new Vector3(100, 1, 100) } });
+        AddChild(floor);
+
+        _crate = new RigidBody3D { Name = "Crate", Mass = 20, Position = new Vector3(20, 0.25f, 20) };
+        _crate.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = Vector3.One * 0.5f } });
+        AddChild(_crate);
+
+        _player = new PlayerController { Name = "Player" };
+        AddChild(_player);
+        _player.GlobalPosition = new Vector3(0, 0.5f, 0);
+    }
+
+    private bool Mark()
+    {
+        _mark = _player.GlobalPosition;
+        return true;
+    }
+
+    private void Add(string name, Func<int, bool> tick) => _stages.Enqueue(new Stage(name, tick));
+
+    private void Check(bool ok, string what)
+    {
+        GD.Print($"[player] {(ok ? "PASS" : "FAIL")}: {what}");
+        if (!ok)
+            Finish(1);
+    }
+
+    private void Finish(int code)
+    {
+        if (_done)
+            return;
+        _done = true;
+        GD.Print($"[player] {(code == 0 ? "OK" : "FAILED")}");
+        GetTree().Quit(code);
+    }
+}

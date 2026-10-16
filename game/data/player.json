@@ -1,0 +1,15 @@
+{
+  // On-foot player tuning (SI units). Loaded by game/scripts/Player/PlayerController.cs.
+  "walk_speed": 4.0,
+  "sprint_speed": 7.0,
+  "ground_acceleration": 40.0,
+  "air_acceleration": 8.0,
+  "jump_speed": 4.5,
+  "gravity": 9.81,
+  "max_fall_speed": 50.0,
+  "max_pitch_degrees": 89.0,
+  "height": 1.8,
+  "radius": 0.35,
+  "eye_height": 1.6,
+  "push_force": 600.0
+}
