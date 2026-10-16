@@ -12,6 +12,7 @@ internal static class TestParts
     public const string Capped = "test:capped";
     public const string Piston = "test:piston";
     public const string Ore = "test:ore";
+    public const string SocketedBlock = "test:socketed_block";
 
     public static PartCatalog Catalog() => new PartCatalog()
         // No sockets: attaches on every face.
@@ -21,13 +22,16 @@ internal static class TestParts
         .Add(Bearing, Part(PartCategory.Interactive, mass: 3, size: GridSize.One,
             Socket("base", SocketType.Structural, new Vec3(0, -0.125f, 0), new Vec3(0, -1, 0)),
             Socket("rotor", SocketType.Rotational, new Vec3(0, 0.125f, 0), new Vec3(0, 1, 0))))
-        // Only top and bottom attach.
-        .Add(Capped, Part(PartCategory.Block, mass: 4, size: GridSize.One,
+        // Not a block, so only top and bottom attach.
+        .Add(Capped, Part(PartCategory.Interactive, mass: 4, size: GridSize.One,
             Socket("top", SocketType.Structural, new Vec3(0, 0.125f, 0), new Vec3(0, 1, 0)),
             Socket("bottom", SocketType.Structural, new Vec3(0, -0.125f, 0), new Vec3(0, -1, 0))))
         .Add(Piston, Part(PartCategory.Interactive, mass: 5, size: GridSize.One,
             Socket("base", SocketType.Structural, new Vec3(0, -0.125f, 0), new Vec3(0, -1, 0)),
             Socket("head", SocketType.Linear, new Vec3(0, 0.125f, 0), new Vec3(0, 1, 0))))
+        // A block attaches on every face even when it lists sockets.
+        .Add(SocketedBlock, Part(PartCategory.Block, mass: 4, size: GridSize.One,
+            Socket("top", SocketType.Structural, new Vec3(0, 0.125f, 0), new Vec3(0, 1, 0))))
         .Add(Ore, new PartDefinition { Id = "ore", Name = "Ore", Category = PartCategory.Resource });
 
     /// <summary>Places a part or fails the test.</summary>

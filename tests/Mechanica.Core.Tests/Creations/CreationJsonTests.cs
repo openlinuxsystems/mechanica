@@ -30,6 +30,15 @@ public class CreationJsonTests
     }
 
     [Fact]
+    public void SampleWoodBlocksAttachSideBySide()
+    {
+        var creation = new Creation(1, SampleMods);
+        creation.Place("sample:wood_block", GridCell.Zero);
+        creation.Place("sample:wood_block", new GridCell(1, 0, 0));
+        Assert.Equal([Connection.Rigid(1, 2)], creation.Connections);
+    }
+
+    [Fact]
     public void BuiltGraphRoundTrips()
     {
         var creation = new Creation(12, Catalog(), authorityPeer: 2);

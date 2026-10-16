@@ -128,8 +128,8 @@ public sealed class Creation
     /// <summary>
     /// The edges <paramref name="partId"/> would form with the parts touching it, by face contact:
     /// <list type="bullet">
-    /// <item>A part with no sockets attaches structurally on every face. A part with sockets attaches
-    /// only where a socket sits on the touching face.</item>
+    /// <item>Blocks, and parts with no sockets, attach structurally on every face, as in Scrap Mechanic (D7).
+    /// Any other part attaches only where a socket sits on the touching face.</item>
     /// <item>Structural meets structural gives a rigid edge; a joint socket meets a structural face gives a
     /// joint edge of that socket's type; two joint sockets never connect.</item>
     /// <item>With <paramref name="weld"/>, every face contact is rigid regardless of sockets (Weld Tool, D7).</item>
@@ -372,7 +372,7 @@ public sealed class Creation
     {
         var part = _parts[partId];
         var definition = _definitions[partId];
-        if (definition.Sockets is not { Count: > 0 })
+        if (definition.Category == PartCategory.Block || definition.Sockets is not { Count: > 0 })
             return (SocketType.Structural, null);
         var socket = PartGeometry.SocketOnFace(definition, part.Cell, part.Rotation, cell, direction);
         return (socket?.Type, socket?.Id);

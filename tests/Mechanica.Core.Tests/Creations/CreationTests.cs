@@ -99,6 +99,15 @@ public class CreationTests
     }
 
     [Fact]
+    public void BlocksAttachOnEveryFaceWhateverTheirSockets()
+    {
+        _creation.Place(SocketedBlock, GridCell.Zero);
+        _creation.Place(SocketedBlock, new GridCell(1, 0, 0));
+        _creation.Place(Block, new GridCell(0, 0, 1));
+        Assert.Equal([Connection.Rigid(1, 2), Connection.Rigid(1, 3)], _creation.Connections);
+    }
+
+    [Fact]
     public void RotatedBearingFacesSideways()
     {
         // Rotor (local +Y) points to +X.
