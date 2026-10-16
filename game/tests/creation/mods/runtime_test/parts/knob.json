@@ -1,0 +1,16 @@
+{
+  "id": "knob",
+  "name": "Test Knob",
+  "category": "decor",
+  "mass": 2,
+  "durability": 2,
+  "friction": 0.5,
+  "buoyancy": 0,
+  "flammable": false,
+  "size": [1, 1, 1],
+  "mesh": "meshes/cube.gltf",
+  "collision": {
+    "shape": "convex",
+    "mesh": "meshes/cube.gltf"
+  }
+}

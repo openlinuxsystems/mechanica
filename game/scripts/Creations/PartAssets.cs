@@ -1,0 +1,134 @@
+using Godot;
+using Mechanica.Core.Data;
+
+namespace Mechanica.Game.Creations;
+
+/// <summary>One mesh of a part's model, placed relative to the part centre.</summary>
+public sealed record PartMesh(Mesh Mesh, Transform3D Transform);
+
+/// <summary>
+/// What the runtime needs to show and collide one part definition, in part-local metres with the
+/// origin at the footprint centre. <see cref="IsPlaceholder"/> is true when the mod gave no mesh or the
+/// mesh failed to load, so a primitive matching the collision shape stands in.
+/// </summary>
+public sealed record PartModel(IReadOnlyList<PartMesh> Meshes, Shape3D Shape, Transform3D ShapeTransform, bool IsPlaceholder);
+
+/// <summary>
+/// Loads part meshes at runtime from mod folders with <see cref="GltfDocument"/> (D6) and builds
+/// collision shapes from part data. Results are cached per file and per part, so every placed copy of
+/// a part shares the same <see cref="Mesh"/> and <see cref="Shape3D"/> resources.
+/// </summary>
+public sealed class PartAssets
+{
+    private static readonly StandardMaterial3D PlaceholderMaterial = new() { AlbedoColor = new Color(0.62f, 0.62f, 0.66f) };
+
+    private readonly ModLoadResult? _content;
+    private readonly Dictionary<string, IReadOnlyList<PartMesh>?> _files = [];
+    private readonly Dictionary<string, PartModel> _models = [];
+
+    /// <summary>Uses <paramref name="content"/> to find mod folders; without it every part is a placeholder.</summary>
+    public PartAssets(ModLoadResult? content) => _content = content;
+
+    /// <summary>The model for a placed part, by qualified id.</summary>
+    public PartModel ModelFor(string qualifiedId, PartDefinition definition)
+    {
+        if (_models.TryGetValue(qualifiedId, out var cached))
+            return cached;
+        var modId = _content?.FindPart(qualifiedId)?.ModId;
+        var (shape, shapeTransform) = BuildShape(definition, modId);
+        var meshes = definition.Mesh is { } mesh && modId is not null ? LoadMeshes(mesh, modId) : null;
+        var model = meshes is { Count: > 0 }
+            ? new PartModel(meshes, shape, shapeTransform, IsPlaceholder: false)
+            : new PartModel([new PartMesh(PlaceholderMesh(definition, shape), shapeTransform)], shape, shapeTransform, IsPlaceholder: true);
+        return _models[qualifiedId] = model;
+    }
+
+    /// <summary>
+    /// Every mesh in a glTF file of <paramref name="modId"/> (or the mod the path names), with its
+    /// transform relative to the file's root. Null when the path is invalid, outside loaded mods, or fails to load.
+    /// </summary>
+    public IReadOnlyList<PartMesh>? LoadMeshes(string path, string modId)
+    {
+        if (!AssetPath.TryParse(path, modId, AssetKind.Mesh, out var asset, out var error))
+        {
+            GD.PushWarning($"[creations] {error}");
+            return null;
+        }
+        var key = asset.ToString();
+        if (_files.TryGetValue(key, out var cached))
+            return cached;
+        var mod = _content?.Mods.FirstOrDefault(m => m.Id == asset.ModId);
+        return _files[key] = mod is null ? Warn($"mod '{asset.ModId}' is not loaded, so '{key}' cannot load.") : ReadGltf(asset.Resolve(mod.Directory), key);
+    }
+
+    private static IReadOnlyList<PartMesh>? ReadGltf(string file, string key)
+    {
+        var document = new GltfDocument();
+        var state = new GltfState();
+        var result = document.AppendFromFile(file, state);
+        if (result != Error.Ok)
+            return Warn($"'{key}' did not load as glTF ({result}).");
+        var root = document.GenerateScene(state);
+        if (root is null)
+            return Warn($"'{key}' has no scene.");
+        var meshes = new List<PartMesh>();
+        Collect(root, Transform3D.Identity, meshes);
+        root.Free();
+        return meshes.Count > 0 ? meshes : Warn($"'{key}' contains no meshes.");
+    }
+
+    private static void Collect(Node node, Transform3D parent, List<PartMesh> meshes)
+    {
+        // The root's own transform is the file's placement, not part of the model.
+        var transform = node is Node3D n3 && node.GetParent() is not null ? parent * n3.Transform : parent;
+        if (node is MeshInstance3D { Mesh: { } mesh })
+            meshes.Add(new PartMesh(mesh, transform));
+        foreach (var child in node.GetChildren())
+            Collect(child, transform, meshes);
+    }
+
+    private (Shape3D, Transform3D) BuildShape(PartDefinition definition, string? modId)
+    {
+        var collision = definition.Collision;
+        var offset = new Transform3D(Basis.Identity, (collision?.Offset ?? Vec3.Zero).ToGodot());
+        var footprint = (definition.Size ?? GridSize.One).Metres.ToGodot();
+        Shape3D shape = collision?.Shape switch
+        {
+            CollisionShape.Box => new BoxShape3D { Size = collision.Size?.ToGodot() ?? footprint },
+            CollisionShape.Sphere => new SphereShape3D { Radius = collision.Radius!.Value },
+            CollisionShape.Cylinder => new CylinderShape3D { Radius = collision.Radius!.Value, Height = collision.Height!.Value },
+            CollisionShape.Capsule => new CapsuleShape3D { Radius = collision.Radius!.Value, Height = collision.Height!.Value },
+            CollisionShape.Convex => (Shape3D?)ConvexShape(collision.Mesh!, modId) ?? new BoxShape3D { Size = footprint },
+            _ => new BoxShape3D { Size = footprint },
+        };
+        return (shape, offset);
+    }
+
+    private ConvexPolygonShape3D? ConvexShape(string path, string? modId)
+    {
+        if (modId is null || LoadMeshes(path, modId) is not { } meshes)
+            return null;
+        var points = meshes.SelectMany(m => m.Mesh.GetFaces().Select(v => m.Transform * v)).Distinct().ToArray();
+        return points.Length >= 4 ? new ConvexPolygonShape3D { Points = points } : null;
+    }
+
+    private static Mesh PlaceholderMesh(PartDefinition definition, Shape3D shape)
+    {
+        PrimitiveMesh mesh = shape switch
+        {
+            BoxShape3D box => new BoxMesh { Size = box.Size },
+            SphereShape3D sphere => new SphereMesh { Radius = sphere.Radius, Height = sphere.Radius * 2 },
+            CylinderShape3D cylinder => new CylinderMesh { TopRadius = cylinder.Radius, BottomRadius = cylinder.Radius, Height = cylinder.Height },
+            CapsuleShape3D capsule => new CapsuleMesh { Radius = capsule.Radius, Height = capsule.Height },
+            _ => new BoxMesh { Size = (definition.Size ?? GridSize.One).Metres.ToGodot() },
+        };
+        mesh.Material = PlaceholderMaterial;
+        return mesh;
+    }
+
+    private static IReadOnlyList<PartMesh>? Warn(string message)
+    {
+        GD.PushWarning($"[creations] {message}");
+        return null;
+    }
+}
