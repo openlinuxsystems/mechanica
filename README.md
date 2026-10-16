@@ -23,8 +23,14 @@ Requirements: .NET SDK 10 (pinned in `global.json`) and Godot 4.7.2 .NET (pinned
 ```sh
 dotnet build Mechanica.sln
 dotnet test Mechanica.sln
-tools/smoke.sh            # builds, then runs the headless Godot smoke scene
+tools/smoke.sh            # builds, then runs every headless Godot test scene in game/tests/
 ```
 
 `tools/smoke.sh` downloads the pinned Godot build into `.tools/` unless `GODOT` points
 at an existing binary. Open `game/project.godot` in Godot 4.7.2 .NET to edit scenes.
+
+## Playing the test world
+
+The main scene is a flat test world. Click to capture the mouse, then: WASD to move, mouse to
+look, Space to jump, Shift to sprint, V to toggle the third-person camera, Esc to free the mouse.
+Movement tuning (speeds, jump, capsule size) is data in `game/data/player.json`.
