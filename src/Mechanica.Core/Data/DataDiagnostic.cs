@@ -66,6 +66,13 @@ public static class DiagnosticCodes
     public const string AssetPathInvalid = "MD0301";
     public const string AssetMissing = "MD0302";
     public const string AssetUndeclaredMod = "MD0303";
+
+    // 04xx: saved Creations
+    public const string CreationInvalid = "MD0401";
+    public const string CreationUnknownPart = "MD0402";
+    public const string CreationOverlap = "MD0403";
+    public const string CreationConnection = "MD0404";
+    public const string CreationDisconnected = "MD0405";
 }
 
 /// <summary>Collects diagnostics for one file, filling in the file name.</summary>
