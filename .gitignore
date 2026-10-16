@@ -1,0 +1,19 @@
+# .NET
+bin/
+obj/
+*.user
+TestResults/
+
+# Godot
+.godot/
+*.old
+/game/export_presets.cfg
+/build/
+
+# Local toolchain downloads (tools/install-godot.sh)
+/.tools/
+
+# IDE
+.vs/
+.idea/
+.vscode/

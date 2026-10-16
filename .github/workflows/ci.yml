@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    name: Build, test and Godot smoke
+    runs-on: ubuntu-latest
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      DOTNET_NOLOGO: "1"
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - name: Read pinned versions
+        run: grep -E '^[A-Z_]+=' tools/versions.env >> "$GITHUB_ENV"
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ hashFiles('Directory.Packages.props', '**/*.csproj', 'global.json') }}
+
+      - uses: actions/cache@v4
+        with:
+          path: .tools
+          key: godot-${{ env.GODOT_VERSION }}-mono-linux-x86_64
+
+      - name: Restore
+        run: dotnet restore Mechanica.sln
+
+      - name: Build
+        run: dotnet build Mechanica.sln --no-restore -c Debug
+
+      - name: Unit tests
+        run: dotnet test Mechanica.sln --no-build -c Debug --logger "console;verbosity=normal"
+
+      - name: Godot headless smoke test
+        run: tools/smoke.sh

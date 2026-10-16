@@ -1,0 +1,12 @@
+<Project Sdk="Godot.NET.Sdk/4.7.2">
+  <!-- Godot .NET project: rendering, Jolt bodies, input, tools, UI, networking. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Mechanica.Game</RootNamespace>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../src/Mechanica.Core/Mechanica.Core.csproj" />
+    <ProjectReference Include="../src/Mechanica.Scripting/Mechanica.Scripting.csproj" />
+  </ItemGroup>
+</Project>

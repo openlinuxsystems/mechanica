@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- MoonSharp Lua host. Testable headless; must never reference Godot. -->
+  <PropertyGroup>
+    <RootNamespace>Mechanica.Scripting</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="MoonSharp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Mechanica.Core/Mechanica.Core.csproj" />
+  </ItemGroup>
+</Project>
