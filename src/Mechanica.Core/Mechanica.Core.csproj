@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Pure C# game logic. Must never reference Godot. -->
+  <PropertyGroup>
+    <RootNamespace>Mechanica.Core</RootNamespace>
+  </PropertyGroup>
+</Project>
