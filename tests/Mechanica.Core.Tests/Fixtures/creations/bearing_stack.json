@@ -1,0 +1,40 @@
+{
+  "format_version": 1,
+  "id": 7,
+  "authority_peer": 1,
+  "parts": [
+    {
+      "id": 1,
+      "part": "sample:wood_block",
+      "cell": [0, 0, 0],
+      "rotation": "+x+y"
+    },
+    {
+      "id": 2,
+      "part": "sample:bearing",
+      "cell": [0, 1, 0],
+      "rotation": "+x+y"
+    },
+    {
+      "id": 3,
+      "part": "sample:wood_block",
+      "cell": [0, 2, 0],
+      "rotation": "-z+y",
+      "paint": "#ff8800"
+    }
+  ],
+  "connections": [
+    {
+      "type": "structural",
+      "a": 1,
+      "b": 2
+    },
+    {
+      "type": "rotational",
+      "a": 2,
+      "a_socket": "rotor",
+      "b": 3,
+      "b_socket": "bottom"
+    }
+  ]
+}

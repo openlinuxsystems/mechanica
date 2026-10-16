@@ -29,7 +29,7 @@ public sealed record LoadedMod(ModManifest Manifest, string Directory, IReadOnly
 /// parts by qualified id, and every warning and error. A mod with any error is left out, along
 /// with every mod that depends on it, so the rest of the game can still start.
 /// </summary>
-public sealed class ModLoadResult
+public sealed class ModLoadResult : IPartCatalog
 {
     internal ModLoadResult(IReadOnlyList<LoadedMod> mods, IReadOnlyList<DataDiagnostic> diagnostics)
     {
@@ -59,6 +59,9 @@ public sealed class ModLoadResult
 
     /// <summary>Looks up a part; a bare id means vanilla.</summary>
     public LoadedPart? FindPart(string id) => Parts.GetValueOrDefault(Identifiers.Qualify(id));
+
+    /// <inheritdoc />
+    public PartDefinition? FindDefinition(string id) => FindPart(id)?.Definition;
 
     private static string ComputeFingerprint(IReadOnlyList<LoadedMod> mods)
     {
@@ -280,7 +283,7 @@ public static class ModLoader
         return ParseJson<T>(json, sink);
     }
 
-    private static T? ParseJson<T>(string json, DiagnosticSink sink) where T : class
+    internal static T? ParseJson<T>(string json, DiagnosticSink sink) where T : class
     {
         try
         {

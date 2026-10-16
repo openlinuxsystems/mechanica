@@ -13,6 +13,12 @@ public readonly record struct Vec3(float X, float Y, float Z)
     /// <summary>Euclidean length.</summary>
     public float Length => MathF.Sqrt(X * X + Y * Y + Z * Z);
 
+    public static Vec3 operator +(Vec3 a, Vec3 b) => new(a.X + b.X, a.Y + b.Y, a.Z + b.Z);
+
+    public static Vec3 operator -(Vec3 a, Vec3 b) => new(a.X - b.X, a.Y - b.Y, a.Z - b.Z);
+
+    public static Vec3 operator *(Vec3 v, float s) => new(v.X * s, v.Y * s, v.Z * s);
+
     /// <inheritdoc />
     public override string ToString() => JsonNumbers.Array(X, Y, Z);
 }
