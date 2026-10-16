@@ -33,6 +33,12 @@ public sealed record ModManifest
     /// <summary>Mods that must load before this one.</summary>
     public List<ModDependency>? Dependencies { get; init; }
 
+    /// <summary>
+    /// Mods that cannot be enabled together with this one (optionally only some versions). When one is
+    /// enabled, this mod is not loaded and the Mod Manager reports the conflict.
+    /// </summary>
+    public List<ModDependency>? Conflicts { get; init; }
+
     /// <summary>Keys this build does not know. Kept so a round-trip never loses data.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
@@ -42,13 +48,13 @@ public sealed record ModManifest
     public SemVersion? ParsedVersion => SemVersion.TryParse(Version, out var v) ? v : null;
 }
 
-/// <summary>A dependency entry in <see cref="ModManifest.Dependencies"/>.</summary>
+/// <summary>A mod reference in <see cref="ModManifest.Dependencies"/> or <see cref="ModManifest.Conflicts"/>.</summary>
 public sealed record ModDependency
 {
-    /// <summary>Id of the required mod.</summary>
+    /// <summary>Id of the referenced mod.</summary>
     public string? Id { get; init; }
 
-    /// <summary>Accepted versions, as a <see cref="VersionRange"/> expression. Omitted means any version.</summary>
+    /// <summary>Versions it applies to, as a <see cref="VersionRange"/> expression. Omitted means any version.</summary>
     public string? Version { get; init; }
 
     /// <summary>Keys this build does not know.</summary>

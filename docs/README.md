@@ -12,6 +12,6 @@ written by the chunk that builds the feature it covers.
 | Logic and Power Tutorial | Signal/logic bus |
 | Aero Tutorial | Aero/propulsion |
 | Example mods (bearing, thruster) | Aero/propulsion |
-| Packaging Guide | Mod Package Manager |
+| [Packaging Guide](packaging-guide.md) | Mod Package Manager |
 | Bot Tutorial | Bot behaviour runtime |
 | Example bot mod | Bot behaviour runtime |

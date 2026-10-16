@@ -1,0 +1,1 @@
+{ "id": "lib", "name": "Vehicle Library", "version": "2.0.0", "dependencies": [{ "id": "vanilla" }] }

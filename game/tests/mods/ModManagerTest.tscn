@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://tests/mods/ModManagerTest.cs" id="1_mods"]
+
+[node name="ModManagerTest" type="Node"]
+script = ExtResource("1_mods")

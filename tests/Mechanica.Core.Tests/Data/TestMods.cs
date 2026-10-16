@@ -24,9 +24,10 @@ internal sealed class TestMods : IDisposable
         }
     }
 
-    public TestMods Mod(string id, string version = "1.0.0", string dependencies = "[]")
+    public TestMods Mod(string id, string version = "1.0.0", string dependencies = "[]", string conflicts = "[]")
     {
-        File(id, "mod.json", $$"""{ "id": "{{id}}", "name": "{{id}}", "version": "{{version}}", "dependencies": {{dependencies}} }""");
+        File(id, "mod.json",
+            $$"""{ "id": "{{id}}", "name": "{{id}}", "version": "{{version}}", "dependencies": {{dependencies}}, "conflicts": {{conflicts}} }""");
         return this;
     }
 
@@ -41,6 +42,16 @@ internal sealed class TestMods : IDisposable
     public TestMods Part(string mod, string fileName, string json) => File(mod, Path.Combine("parts", fileName), json);
 
     public ModLoadResult Load() => ModLoader.LoadAll(Root);
+
+    public ModLoadResult Load(ModProfile profile) => ModLoader.Load(Root, profile);
+
+    public ModPackageManager Manager(ModProfile? profile = null) => ModPackageManager.Open(Root, profile);
+
+    /// <summary>A profile listing <paramref name="ids"/> in order; a leading '-' disables the mod.</summary>
+    public static ModProfile Profile(params string[] ids) => new()
+    {
+        Mods = [.. ids.Select(id => new ModProfileEntry { Id = id.TrimStart('-'), Enabled = !id.StartsWith('-') })],
+    };
 
     /// <summary>A valid 1-cell block; <paramref name="overrides"/> is a JSON object whose members replace or add keys.</summary>
     public static string Block(string id = "test_block", string overrides = "{}")

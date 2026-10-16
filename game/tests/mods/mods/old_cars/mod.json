@@ -1,0 +1,1 @@
+{ "id": "old_cars", "name": "Old Cars", "version": "0.9.0", "dependencies": [{ "id": "vanilla" }], "conflicts": [{ "id": "cars" }] }

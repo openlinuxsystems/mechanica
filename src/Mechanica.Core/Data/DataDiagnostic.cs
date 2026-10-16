@@ -57,10 +57,16 @@ public static class DiagnosticCodes
     public const string DependencyFailed = "MD0108";
     public const string UnsupportedFormat = "MD0109";
     public const string ModNotLoaded = "MD0110";
+    public const string DependencyDisabled = "MD0111";
+    public const string ModIncompatible = "MD0112";
+    public const string ProfileInvalid = "MD0113";
 
     // 02xx: part definitions
     public const string PartInvalid = "MD0201";
     public const string DuplicatePart = "MD0202";
+    public const string OverrideUndeclaredMod = "MD0203";
+    public const string OverrideUnknownPart = "MD0204";
+    public const string OverrideConflict = "MD0205";
 
     // 03xx: asset paths
     public const string AssetPathInvalid = "MD0301";

@@ -49,6 +49,14 @@ public static class DataJson
     {
         Extra = Sorted(manifest.Extra),
         Dependencies = manifest.Dependencies?.Select(d => d with { Extra = Sorted(d.Extra) }).ToList(),
+        Conflicts = manifest.Conflicts?.Select(d => d with { Extra = Sorted(d.Extra) }).ToList(),
+    });
+
+    /// <summary>Serializes a mod profile in canonical form.</summary>
+    public static string Write(ModProfile profile) => Serialize(profile with
+    {
+        Extra = Sorted(profile.Extra),
+        Mods = profile.Mods?.Select(m => m with { Extra = Sorted(m.Extra) }).ToList(),
     });
 
     /// <summary>Serializes a part definition in canonical form.</summary>

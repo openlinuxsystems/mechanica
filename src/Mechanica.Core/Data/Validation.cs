@@ -23,22 +23,31 @@ internal static class ManifestValidator
             sink.Error(code, "$.version", $"version '{manifest.Version}' is not a semantic version (major.minor.patch).");
 
         var seen = new HashSet<string>();
-        for (var i = 0; i < (manifest.Dependencies?.Count ?? 0); i++)
+        ValidateReferences(manifest, manifest.Dependencies, "dependencies", "dependency", seen, sink);
+        ValidateReferences(manifest, manifest.Conflicts, "conflicts", "conflict", seen, sink);
+        KnownKeys.WarnUnknown(manifest.Extra, "$", sink, typeof(ModManifest));
+    }
+
+    // A mod id may appear once across dependencies and conflicts together: needing and refusing a mod is a contradiction.
+    private static void ValidateReferences(ModManifest manifest, List<ModDependency>? list, string key, string what,
+        HashSet<string> seen, DiagnosticSink sink)
+    {
+        const string code = DiagnosticCodes.ManifestInvalid;
+        for (var i = 0; i < (list?.Count ?? 0); i++)
         {
-            var dep = manifest.Dependencies![i];
-            var path = $"$.dependencies[{i}]";
+            var dep = list![i];
+            var path = $"$.{key}[{i}]";
             if (!Identifiers.IsValid(dep.Id))
-                sink.Error(code, $"{path}.id", dep.Id is null ? "dependency id is required." : $"dependency id '{dep.Id}' is not a valid mod id.");
+                sink.Error(code, $"{path}.id", dep.Id is null ? $"{what} id is required." : $"{what} id '{dep.Id}' is not a valid mod id.");
             else if (dep.Id == manifest.Id)
-                sink.Error(code, $"{path}.id", "a mod cannot depend on itself.");
+                sink.Error(code, $"{path}.id", what == "dependency" ? "a mod cannot depend on itself." : "a mod cannot conflict with itself.");
             else if (!seen.Add(dep.Id))
-                sink.Error(code, $"{path}.id", $"dependency '{dep.Id}' is listed twice.");
+                sink.Error(code, $"{path}.id", $"mod '{dep.Id}' is listed twice in dependencies and conflicts.");
             if (dep.ParsedVersion is null)
                 sink.Error(code, $"{path}.version",
                     $"version range '{dep.Version}' is invalid; use forms like \"1.2.0\", \">=1.2.0 <2.0.0\", \"^1.2.0\" or \"*\".");
             KnownKeys.WarnUnknown(dep.Extra, path, sink, typeof(ModDependency));
         }
-        KnownKeys.WarnUnknown(manifest.Extra, "$", sink, typeof(ModManifest));
     }
 }
 
