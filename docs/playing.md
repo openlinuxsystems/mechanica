@@ -76,8 +76,11 @@ switches it to the next mode and shows it for a moment; R with the Connect Tool 
 ## Lift, Weld Tool, Paint Tool and Sledgehammer
 
 - **Lift.** Left click on the ground puts your Lift down (you have one; putting it somewhere else moves it).
+  It is a hydraulic lift with a 4 x 4 unit (1 m) grated platform: set down, its four outriggers swing out and
+  lock and the column rises to its resting height of 2 units (0.5 m).
   Left click a Creation to slide the Lift under it and pick it up; it stands still on the platform until you
-  take the Lift away. The arrow keys raise and lower it and Q turns what it holds. Hold right click until the
+  take the Lift away. The arrow keys raise and lower it one unit (0.25 m) at a time, up to 22 units (5.5 m),
+  and Q turns what it holds. Hold right click until the
   ring fills to take the Lift away; what it held drops. A Creation whose chests or tanks hold items cannot be
   lifted ("Cannot lift with attached resources."): empty it first.
 - **Blueprints.** With the Lift in hand, aim at your Lift and press **E**. The menu lists your newest 50
@@ -188,6 +191,10 @@ Press **Enter** (Chat) to talk: type a line and press Enter to send it, or Esc t
 bottom left with the speaker's name in cyan and fade after a few seconds; open chat to scroll back. A line
 is at most 200 characters and each player may send 5 every 10 seconds. Chat is the `SendChat` action, so
 agents on the AI endpoint can talk too.
+
+When another player has a Fabricator, chest or other station open, sits in a seat, or has their Lift out, a
+small blue **in use** icon with their name floats over it. You can still open a station someone else is using;
+the icon just says you're sharing it. The icons fade with distance and hide with the HUD (Alt + Z).
 
 To keep strangers out, set a **Server password** in Options, Gameplay (or start with `--password text`).
 Players then type it in the password box on **Join game**; the list marks worlds that need one. A changed

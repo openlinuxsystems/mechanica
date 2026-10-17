@@ -39,6 +39,7 @@ public sealed class PartAssets
     private Func<string, string?> _modDirectory;
     private readonly Dictionary<string, IReadOnlyList<PartMesh>?> _files = [];
     private readonly Dictionary<string, PartModel> _models = [];
+    private readonly Dictionary<string, Node3D?> _scenes = [];
 
     /// <summary>Uses <paramref name="content"/> to find mod folders; without it every part is a placeholder.</summary>
     public PartAssets(ModLoadResult? content)
@@ -99,6 +100,38 @@ public sealed class PartAssets
         return _files[key] = directory is null ? Warn($"mod '{asset.ModId}' is not loaded, so '{key}' cannot load.") : ReadGltf(asset.Resolve(directory), key);
     }
 
+    /// <summary>
+    /// A new copy of the whole scene in a glTF file (nodes, meshes and its <see cref="AnimationPlayer"/>), for models that
+    /// move, such as the Lift. <paramref name="path"/> is <c>mod:path</c>, or a path in <paramref name="modId"/>. The file
+    /// loads once; null when the path is invalid, its mod is not loaded, or it fails to load.
+    /// </summary>
+    public Node3D? InstantiateScene(string path, string modId)
+    {
+        if (!AssetPath.TryParse(path, modId, AssetKind.Mesh, out var asset, out var error))
+        {
+            GD.PushWarning($"[creations] {error}");
+            return null;
+        }
+        var key = asset.ToString();
+        if (!_scenes.TryGetValue(key, out var template))
+        {
+            template = null;
+            if (_modDirectory(asset.ModId) is not { } directory)
+                Warn($"mod '{asset.ModId}' is not loaded, so '{key}' cannot load.");
+            else
+            {
+                var document = new GltfDocument();
+                var state = new GltfState();
+                if (document.AppendFromFile(asset.Resolve(directory), state) == Error.Ok)
+                    template = document.GenerateScene(state) as Node3D;
+                if (template is null)
+                    Warn($"'{key}' did not load as glTF.");
+            }
+            _scenes[key] = template;
+        }
+        return template?.Duplicate() as Node3D;
+    }
+
     /// <summary>Uses newly loaded <paramref name="content"/> from now on and forgets everything cached.</summary>
     public void SetContent(ModLoadResult content)
     {
@@ -112,6 +145,9 @@ public sealed class PartAssets
     {
         _files.Clear();
         _models.Clear();
+        foreach (var scene in _scenes.Values)
+            scene?.Free();
+        _scenes.Clear();
     }
 
     /// <summary>Every mesh in a glTF file on disk with its transform relative to the file's root, or null when it fails to load.</summary>

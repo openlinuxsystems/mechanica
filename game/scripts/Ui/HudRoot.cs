@@ -13,13 +13,19 @@ public interface IHudLayer
 {
     /// <summary>True while this layer stays visible with the HUD hidden.</summary>
     bool KeepWhenHidden { get; }
+
+    /// <summary>True while this layer stays visible under an open window (see <see cref="HudRoot.Covered"/>).</summary>
+    bool KeepWhenCovered => KeepWhenHidden;
 }
 
 /// <summary>
 /// The root of the in-world HUD (UI spec §1, §6, §11). Hide GUI (Alt+Z) hides every layer in the <see cref="Group"/>
 /// group (crosshair, tool bar, compass, tips, chat, quest log, names) and shows them again; menus and windows are
 /// not HUD and stay. Edge-anchored HUD elements keep <see cref="Margin"/> clear of the screen edges (2% from
-/// <c>game/data/hud.json</c>). When the window loses focus, <see cref="FocusLost"/> tells hold actions to cancel.
+/// <c>game/data/hud.json</c>). While a window is open over the world (<see cref="Covered"/>), the same layers step
+/// aside so nothing of the HUD shows through or over the window; a layer tagged <see cref="KeepWhenCoveredMeta"/>
+/// (the tool bar, which takes drops from the inventory) or an <see cref="IHudLayer"/> that asks stays. When the
+/// window loses focus, <see cref="FocusLost"/> tells hold actions to cancel.
 /// </summary>
 public partial class HudRoot : Node
 {
@@ -31,8 +37,17 @@ public partial class HudRoot : Node
 
     private static HudSettings? _settings;
 
+    /// <summary>Meta that keeps a plain HUD layer up under an open window.</summary>
+    public const string KeepWhenCoveredMeta = "hud_keep_when_covered";
+
     /// <summary>True while Hide GUI has the HUD hidden.</summary>
     public static bool Hidden { get; set; }
+
+    /// <summary>True while a window is open over the world (as of this frame's <see cref="Covered"/>).</summary>
+    public static bool IsCovered { get; private set; }
+
+    /// <summary>True while a window is open over the world: the inventory, the menu, the logbook or any tool window.</summary>
+    public Func<bool> Covered { get; set; } = () => ToolWindow.Topmost is not null;
 
     /// <summary>Raised when the game window loses focus, so held actions cancel (§11).</summary>
     public static event Action? FocusLost;
@@ -52,9 +67,9 @@ public partial class HudRoot : Node
     /// <summary>False in automated tests: Alt+Z does nothing.</summary>
     public bool ReadDeviceInput { get; init; } = true;
 
-    public override void _EnterTree() => Hidden = false;
+    public override void _EnterTree() => Hidden = IsCovered = false;
 
-    public override void _ExitTree() => Hidden = false;
+    public override void _ExitTree() => Hidden = IsCovered = false;
 
     public override void _UnhandledInput(InputEvent @event)
     {
@@ -84,9 +99,11 @@ public partial class HudRoot : Node
 
     private void Apply()
     {
+        IsCovered = Covered();
         foreach (var node in GetTree().GetNodesInGroup(Group))
         {
-            var show = !Hidden || node is IHudLayer { KeepWhenHidden: true };
+            var show = (!Hidden || node is IHudLayer { KeepWhenHidden: true })
+                && (!IsCovered || (node is IHudLayer hud ? hud.KeepWhenCovered : node.HasMeta(KeepWhenCoveredMeta)));
             switch (node)
             {
                 case CanvasLayer layer when layer.Visible != show:

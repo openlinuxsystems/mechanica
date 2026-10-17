@@ -131,7 +131,7 @@ public partial class CreationHotbar : CanvasLayer
         var belt = Belt?.Invoke();
         if (belt is not null)
             belt.CreationBarShown = Showing;
-        _bar.Visible = Showing && !HudRoot.Hidden && Settings.GameSettings.Current.Interface.ShowHotbar;
+        _bar.Visible = Showing && !HudRoot.Hidden && !HudRoot.IsCovered && Settings.GameSettings.Current.Interface.ShowHotbar;
         _status.Visible = _bar.Visible;
         if (!Showing)
         {

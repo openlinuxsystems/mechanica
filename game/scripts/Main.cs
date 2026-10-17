@@ -526,7 +526,8 @@ public partial class Main : Node3D
             {
                 Name = "PartSettings", Actions = Actions, Creations = Creations, Readouts = () => Display.Readouts, Signals = LogicOverlay, Assets = Assets,
             };
-            AddChild(new Ui.HudRoot { Name = "HudRoot" });
+            var hudRoot = new Ui.HudRoot { Name = "HudRoot" };
+            AddChild(hudRoot);
             Ui.WorldHud? worldHud = null;
             var survivalHud = new SurvivalHud
             {
@@ -558,6 +559,7 @@ public partial class Main : Node3D
                 World = () => Survival.Own is { } own ? (own.Mode, own.Difficulty) : null,
             };
             AddChild(pause);
+            hudRoot.Covered = () => inventory.IsOpen || pause.IsOpen || questLog.IsOpen || Ui.ToolWindow.Topmost is not null || Characters.Window is not null;
             AddChild(PartSettings);
             SeatCamera = new SeatCamera { Logic = Logic, Players = PlayerSync, Turn = yaw => _input?.Turn(yaw) };
             AddChild(SeatCamera);
@@ -576,12 +578,13 @@ public partial class Main : Node3D
             AddChild(Blueprints);
             AddChild(new RaidBanner { Name = "RaidBanner", Bots = Bots });
             AddChild(new Ui.Nameplates { Name = "Nameplates", Players = PlayerSync });
+            AddChild(new Ui.InUseIndicators { Name = "InUse", Session = Session, Players = PlayerSync, Inventory = Inventory, Logic = Logic, Build = Build, Creations = Creations });
             AddChild(new Mechanica.Game.Chat.ChatPanel { Name = "ChatPanel", Chat = Chat, Actions = Actions });
             AddChild(new Ui.CompassHud
             {
                 Name = "Compass", Players = PlayerSync,
                 Waypoints = () => LocalPlayer is { } me ? Quests.Waypoints(me.GlobalPosition.ToNumerics()) : [],
-                Covered = () => inventory.IsOpen || pause.IsOpen,
+                Covered = () => Ui.HudRoot.IsCovered,
             });
         }
 

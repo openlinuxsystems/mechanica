@@ -669,8 +669,12 @@ public partial class PartEditorScreen : Control
         var c = d.Collision;
         _collisionGrid.AddEnum<CollisionShape>("Shape", c?.Shape, v => Set("Set collision shape",
             x => x with { Collision = v is null ? null : DefaultCollision(v.Value, x) }), optional: true);
-        _collisionGrid.AddChild(new Label { Text = c is null ? "Not set: a box filling the footprint." : "", AutowrapMode = TextServer.AutowrapMode.WordSmart });
+        // Under the shape, in the wide column, so it wraps at a readable width.
         _collisionGrid.AddChild(new Control());
+        _collisionGrid.AddChild(new Label
+        {
+            Text = c is null ? "Not set: a box filling the footprint." : "", AutowrapMode = TextServer.AutowrapMode.WordSmart, SizeFlagsHorizontal = SizeFlags.ExpandFill,
+        });
         if (c is not null)
         {
             void SetCollision(string label, Func<CollisionDefinition, CollisionDefinition> change) =>
