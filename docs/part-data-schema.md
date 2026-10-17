@@ -74,7 +74,7 @@ you; this page is the reference for what each key means, so you can read, review
 | `durability` | integer ≥ 1 | placeable | Toughness rating; the part's HP derives from it. |
 | `friction` | number ≥ 0 | placeable | Surface friction coefficient. A Body uses its parts' mass-weighted mean. |
 | `buoyancy` | number ≥ 0 | placeable | Buoyant force factor: force = buoyancy × displaced volume. |
-| `flammable` | bool | placeable | Whether fire can ignite and spread through it. |
+| `flammable` | bool | placeable | Whether fire can ignite and spread through it ([Fire](survival.md#fire)). |
 | `stack_size` | integer ≥ 1 | no | Most items per inventory slot. Omitted means 1. |
 | `sound_material` | string | no | Material for place, break and impact sounds (`wood`, `metal`, `concrete`, `glass`, ...): an unbound `place` plays `place_<material>`. See [Sound Events](sound-events.md#part-sounds). |
 | `size` | `[x, y, z]` cells | placeable | Footprint in 0.25 m grid cells, at least 1 on every axis. |

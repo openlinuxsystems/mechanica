@@ -1,17 +1,19 @@
 using Godot;
 using Mechanica.Core.Actions;
 using Mechanica.Core.Data;
+using Mechanica.Core.Player;
 using Mechanica.Core.Quests;
 using Mechanica.Core.Saves;
 using Mechanica.Game.Quests;
+using Mechanica.Scripting;
 using Instance = Mechanica.Game.Tests.NetTestHarness.Instance;
 
 namespace Mechanica.Game.Tests;
 
 /// <summary>
 /// Quests with a host plus a client (chunk 24, D10), on the vanilla story. The client gets the story's state
-/// on join, sees the fire markers at the crash site as something F can use, and puts out the three fires and
-/// restores power through <c>QuestInteract</c>; the host counts each one, both players get the rewards and the
+/// on join, puts out the crash site's three fires with buckets of water and restores power through
+/// <c>QuestInteract</c>; the host counts each one, both players get the rewards and the
 /// client hears the outro. With the story moved on to the faction envoy, the client talks to the envoy and
 /// picks a side in the quest log, which sets the flag on every peer. A save keeps the story's state.
 /// </summary>
@@ -57,30 +59,34 @@ public partial class QuestTest : StagedTest
         for (var i = 0; i < 3; i++)
         {
             var fire = i;
-            Add($"the client puts out fire {fire + 1}", frame =>
+            Add($"the client puts out fire {fire + 1} with a bucket of water", frame =>
             {
-                var at = _targets[fire].Position;
-                var near = new Vector3(at.X + 1f, at.Y, at.Z);
+                var at = _targets[fire].Position.ToGodot() + new Vector3(0, 0.3f, 0);
                 if (frame == 0)
                 {
                     _asked = false;
-                    _host.Main.PlayerSync.HostTeleport(_client.Peer, near);
+                    _host.Main.Inventory.Items!.PlayerInventory(_client.Peer).Add("vanilla:water_bucket", 1);
+                    _host.Main.PlayerSync.HostTeleport(_client.Peer, new Vector3(at.X + 2.5f, at.Y, at.Z));
                 }
-                if (!_asked && (_client.Main.LocalPlayer!.GlobalPosition.DistanceTo(near) > 0.6f || ClientQuests.Prompt() is not { Marker: "fire" }))
+                // Keep looking at it while the teleport settles, so the aim the host checks matches.
+                if (frame is >= 10 and <= 40)
+                    LookAt(at);
+                if (frame < 40)
                     return false;
-                AskOnce(QuestTracker.QuestInteract, new NoArgs());
+                if (frame == 40)
+                {
+                    Check(ClientQuests.Prompt() is not { Marker: "fire" }, "E does nothing to a fire");
+                    var aim = (at - _client.Main.LocalPlayer!.Head.GlobalPosition).Normalized();
+                    var slot = _client.Main.Inventory.Own!.Items.First(s => s.Item == "vanilla:water_bucket").Slot;
+                    AskOnce(ScriptRuntime.UseItem, new UseItemArgs(slot, new Vec3(aim.X, aim.Y, aim.Z)));
+                }
                 if (_results.Count <= fire)
                     return false;
                 if (!_results[fire].Ok)
-                    Check(false, $"QuestInteract failed ({_results[fire]})");
+                    Check(false, $"the bucket failed ({_results[fire]})");
                 return ClientQuests.State.Of(GettingStarted) is { } p && (fire < 2 ? p.Count == fire + 1 : p.Step == 1);
             });
         }
-        Add("a used fire counts once", _ =>
-        {
-            Check(ClientQuests.Prompt() is not { Marker: "fire" }, "no fire is left to use");
-            return true;
-        });
         Add("the client restores power and both players are rewarded", frame =>
         {
             var battery = HostQuests.SitesOf("vanilla:crash_site")[0].Markers.First(m => m.Ref == "master_battery").Position;
@@ -163,4 +169,10 @@ public partial class QuestTest : StagedTest
     }
 
     private void Request<TArgs>(Instance who, string action, TArgs args) => who.Main.Actions.Request(action, args, _results.Add);
+
+    private void LookAt(Vector3 target)
+    {
+        var d = (target - _client.Main.LocalPlayer!.Head.GlobalPosition).Normalized();
+        _client.Main.LocalPlayer!.CurrentInput = PlayerInput.None with { Yaw = Mathf.Atan2(-d.X, -d.Z), Pitch = Mathf.Asin(d.Y) };
+    }
 }

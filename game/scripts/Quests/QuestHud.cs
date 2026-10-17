@@ -237,7 +237,8 @@ public partial class QuestHud : CanvasLayer, IHudLayer
 
     private static string Progress(QuestStepInfo step, QuestProgress progress) => step.Kind switch
     {
-        QuestObjectiveKind.Interact or QuestObjectiveKind.Place or QuestObjectiveKind.Craft or QuestObjectiveKind.Crops or QuestObjectiveKind.Raid
+        QuestObjectiveKind.Interact or QuestObjectiveKind.Extinguish or QuestObjectiveKind.Place or QuestObjectiveKind.Craft or QuestObjectiveKind.Crops
+            or QuestObjectiveKind.Raid
             when step.Count > 1 => $" ({progress.Count}/{step.Count})",
         QuestObjectiveKind.Drive => " " + Loc.T("({0}/{1} m)", (int)progress.Distance, (int)step.Distance),
         _ => "",

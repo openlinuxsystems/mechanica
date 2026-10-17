@@ -30,6 +30,7 @@ public sealed class ContentScriptTests : IDisposable
         new MotionActions(new MotionSettings(), motion).Register(_f.Dispatcher);
         _runtime = new ScriptRuntime(new ScriptSettings(), _f.Dispatcher, motion, new NoPhysics(), new Source()) { Sound = _sound };
         _runtime.EnableItems(_f.Catalog, _f.Survival, _f.Inventories);
+        _runtime.Fire = _f.Fire;
         _runtime.Message += _messages.Add;
     }
 
@@ -263,6 +264,24 @@ public sealed class ContentScriptTests : IDisposable
         var push = Assert.Single(_f.World.Pushes);
         Assert.Equal(60f, push.Length(), 2);
         Assert.Equal(0f, block.PartDamage(block.Parts.First().Id));
+        NoErrors();
+    }
+
+    [Fact]
+    public void AWaterCannonPutsOutFiresAlongItsJet()
+    {
+        _f.Fire.LightSites([new Mechanica.Core.Quests.QuestSite(0, "test:camp", Vector3.Zero, 10,
+            [new Mechanica.Core.Quests.QuestMarker(0, "fire", null, new Vector3(0, 0, -6)), new Mechanica.Core.Quests.QuestMarker(1, "fire", null, new Vector3(4, 0, -6))])]);
+        var creation = Board();
+        var cannon = Place(creation, "vanilla:water_cannon", new GridCell(0, 1, 0));
+        Steps(1);
+        for (var shot = 0; shot < 3; shot++)
+        {
+            Activate(creation, cannon);
+            Steps(40);
+        }
+        // 0.35 a shot: three put the fire in front out; the one off to the side is untouched.
+        Assert.Equal([0f, 1f], _f.Fire.Fires().Select(f => f.Strength));
         NoErrors();
     }
 

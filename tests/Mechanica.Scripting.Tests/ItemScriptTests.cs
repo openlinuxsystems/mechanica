@@ -346,7 +346,7 @@ public sealed class ItemScriptTests : IDisposable
         var bucket = F.SlotOf(Me, Bucket);
 
         Assert.Equal("Aim at soil to plant the Seed.", _rig.Refused(Me, seed));
-        Assert.Equal("Aim at soil to water it.", _rig.Refused(Me, bucket));
+        Assert.Equal("Aim at soil or a fire to use it.", _rig.Refused(Me, bucket));
         Assert.Equal("creation and part go together.", F.Dispatch(Me, ScriptRuntime.UseItem, new { slot = seed, creation = soil }).Message);
         Assert.Equal("There is no part 7 in creation " + soil + ".", _rig.Refused(Me, seed, on: (soil, 7)));
 
@@ -367,6 +367,57 @@ public sealed class ItemScriptTests : IDisposable
         Assert.True(view.Ripe);
         Assert.Equal(40f, view.Water); // a second of water per second of growing
         Assert.DoesNotContain(_rig.Messages, m => m.Kind == ScriptMessageKind.Error);
+    }
+
+    [Fact]
+    public void AWaterBucketPutsOutTheFireItIsAimedAt()
+    {
+        F.Fire.LightSites([new Mechanica.Core.Quests.QuestSite(0, "test:camp", Vector3.Zero, 10,
+            [new Mechanica.Core.Quests.QuestMarker(0, "fire", null, new Vector3(0, 0, -1)), new Mechanica.Core.Quests.QuestMarker(1, "fire", null, new Vector3(0, 0, -12))])]);
+        F.Pockets(Me).Add(Bucket, 2);
+        var bucket = F.SlotOf(Me, Bucket);
+        // Me stands at (0, 0, 3) with eyes 1.6 m up: aim down at the near fire.
+        var down = new Vec3(0, -1.6f, -4);
+
+        Assert.Equal("Aim at soil or a fire to use it.", _rig.Refused(Me, bucket, Ahead)); // over the near fire, short of the far one
+        var used = _rig.Used(Me, bucket, down);
+        Assert.Equal(0.0, used["fires"]![0]!["strength"]!.GetValue<double>());
+        Assert.Equal([0f, 1f], F.Fire.Fires().Select(f => f.Strength));
+        Assert.Equal(1, F.Pockets(Me).Count(Bucket));
+        Assert.Equal(1, F.Fire.SitesOut("test:camp", "fire"));
+        Assert.Equal("Aim at soil or a fire to use it.", _rig.Refused(Me, bucket, down)); // it is out
+        Assert.DoesNotContain(_rig.Messages, m => m.Kind == ScriptMessageKind.Error);
+    }
+
+    [Fact]
+    public void FireFunctionsChangeTheWorldOnlyInOnUse()
+    {
+        var plank = F.Add(Plank, new Vector3(0, 0, 1));
+        _rig.Write("scripts/torch.lua", """
+            function can_use(target)
+              if target.part then fire.ignite(target.creation, target.part) end
+            end
+            function on_use(target)
+              local ok, why = fire.ignite(target.creation, target.part)
+              return { ok = ok, why = why, strength = fire.strength(target.creation, target.part) }
+            end
+            """);
+        F.Pockets(Me).Add(_rig.AddItem("torch", "scripts/torch.lua"), 1);
+        var torch = F.SlotOf(Me, "test:torch");
+
+        Assert.Contains("changes the world", _rig.Refused(Me, torch, on: (plank, 1)));
+        _rig.Write("scripts/torch.lua", """
+            function on_use(target)
+              local ok, why = fire.ignite(target.creation, target.part)
+              return { ok = ok, why = why, strength = fire.strength(target.creation, target.part) }
+            end
+            """);
+        _rig.Runtime.CheckForChanges();
+        var lit = _rig.Used(Me, torch, on: (plank, 1));
+        Assert.True(lit["ok"]!.GetValue<bool>());
+        Assert.Equal(0.2, lit["strength"]!.GetValue<double>(), 3);
+        var block = F.Add(Block, new Vector3(0, 0, 2));
+        Assert.Equal("The Block does not burn.", _rig.Used(Me, torch, on: (block, 1))["why"]!.GetValue<string>());
     }
 
     [Fact]

@@ -260,7 +260,7 @@ ones are `food.lua`, `potato_gun.lua`, `seed.lua` and `watering.lua` in `mods/va
   `{from, direction, creation?, part?}`, where `creation` and `part` are what the Item tool's crosshair
   points at within reach. `EquipItem {slot?}` says what is in hand. A dead player's uses are refused.
 - **`can_use` and the script's setup only read.** Functions that change the world (`item.consume`,
-  `holder.heal`, `inventory.take`, `farm.plant`, `farm.water` and the `combat` ones that deal damage
+  `holder.heal`, `inventory.take`, `farm.plant`, `farm.water`, `fire.douse`, `fire.ignite` and the `combat` ones that deal damage
   or launch) raise an error there.
 - **Damage follows the world's rules.** In Creative nothing hurts players; with `pvp` off a shot
   can't hurt another player, but a player's own splash still hurts them.
@@ -313,7 +313,7 @@ The holder's inventory. Item ids may be bare (`potato`, in the item's own mod) o
 | `inventory.take(item, count?)` | Takes `count` (default 1). `true`, or `false` (and nothing taken) when they carry fewer. |
 
 Part scripts can use `combat.cast`, `combat.hit`, `combat.hitscan`, `farm.soil` and `farm.water` too (a
-saw, a drill, a water cannon or a mounted gun). They act for the host, skip nothing (aim rays out of the
+saw, a drill, a water cannon or a mounted gun), and both kinds use [`fire`](#fire). They act for the host, skip nothing (aim rays out of the
 part) and have no reach limit beyond the ray's range.
 
 ### `combat`
@@ -344,6 +344,34 @@ soil part's own script ([`soil`](#soil)); the seed's `seed` section sets what gr
 | `farm.soil(creation, part)` | The soil table. |
 | `farm.plant(creation, part, seed?)` | Plants `seed` (an item with a `seed` section; default this item) in empty soil and returns the soil table. It takes nothing from the inventory: use `item.consume`. |
 | `farm.water(creation, part, seconds)` | Adds `seconds` of water, up to `capacity`, and returns the soil table. Takes nothing from the inventory either. |
+
+## `fire`
+
+Fire (D13) burns on the host: at POI `fire` markers (the crash site's three) and on flammable parts, which
+catch from a fire next to them, grow, take damage until they break off and set their flammable neighbours
+alight; how fast is `game/data/fire.json` (see [Survival](survival.md#fire)). Scripts decide what puts fires
+out or starts them. A fire table is `{id, position, strength, creation?, part?}`: `strength` runs from 0
+(out) to 1, and burning parts have `creation` and `part`. Part and item scripts can both use the library; in
+an item script `douse` and `ignite` only reach as far as the holder's `reach` (plus `radius`), and like
+every function that changes the world they raise an error in `can_use`.
+
+| Function | Returns |
+|----------|---------|
+| `fire.near(position, radius)` | Fires burning within `radius` m of `position`, nearest first. `radius` is at most `max_overlap_radius`. |
+| `fire.douse(position, radius, amount)` | Water: every fire within `radius` m loses `amount` strength and goes out at 0. The fires it reached, with their strength after; or `nil` and why. |
+| `fire.ignite(creation, part, strength?)` | Sets a flammable part alight (`strength` defaults to `ignite` in `fire.json`). `true`, or `false` and why. |
+| `fire.strength(creation, part)` | How strongly a part burns, 0 when it does not. |
+
+```lua
+-- A water bucket aimed at a fire: put out what is there.
+function on_use(target)
+  local fires = fire.near(target.from + target.direction * 3, 1.5)
+  if #fires > 0 then
+    item.consume(1)
+    return { fires = fire.douse(fires[1].position, 1.5, 1) }
+  end
+end
+```
 
 ## `vec3`
 

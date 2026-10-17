@@ -20,7 +20,7 @@ keeps it in its save. Easy changes these, as multipliers in `game/data/survival.
 | Key | What it does |
 |-----|--------------|
 | 6 | Take the item in hand (the sixth tool). Q and E choose among the usable items you carry. |
-| Left click (item in hand) | Use it (all Lua item scripts): eat food, fire a weapon, plant a seed in the soil you aim at or water it. With a bucket or nothing usable in hand, aiming at the sea fills a bucket. |
+| Left click (item in hand) | Use it (all Lua item scripts): eat food, fire a weapon, plant a seed in the soil you aim at or water it, or throw a bucket of water on the fire you aim at. With a bucket or nothing usable in hand, aiming at the sea fills a bucket. |
 | G (item in hand) | Drop one of the item on the ground. |
 | E | Harvest the ripe crop you aim at, sleep in the bed you aim at (you respawn there), or pick up the nearest pile of items. |
 | E (dead) | Respawn, once the respawn delay is over. |
@@ -38,8 +38,35 @@ keeps it in its save. Easy changes these, as multipliers in `game/data/survival.
   Trees, rocks and bushes with `health` break into resources (`drops` in `world/worldgen.json`).
   A Body that stops suddenly (a crash) damages the parts on the side that hit, more for weaker parts.
 - **Piles** of items on the ground last `drop_lifetime` seconds.
+- **Fire:** see [Fire](#fire).
 
 Creative turns damage off, makes building free and lets `GiveItems` make items from nothing.
+
+## Fire
+
+Fire (D13) burns in Survival and Creative alike, on the host, and every player sees and hears it.
+
+- **Where it starts.** A new world lights a fire at every POI marker of type `fire`: the crash site's
+  three, which the first quest asks you to put out. They burn until water puts them out. A part with
+  `"flammable": true` (wood, cardboard, carpet, chests, beds...) catches when it sits within `site_radius`
+  of such a fire or touches a burning flammable part. Scripts can start fires too (`fire.ignite`).
+- **How it burns.** A fire's strength runs from 0 to 1. It grows by `grow` a second; a burning part takes
+  up to `part_damage` health a second (less while the fire is weak) until it breaks off, and once it burns
+  at `spread_at` it sets every flammable part attached to it alight. Players standing within `player_radius`
+  of a fire take up to `player_damage` a second (nothing in Creative). A part under water goes out.
+- **Putting it out.** Aim a water bucket at a fire and use it: every fire within its `splash` of the first
+  fire along your aim loses its `douse` strength (vanilla's bucket puts a fire out in one go) and the bucket
+  is used up. A water cannon's jet takes its own `douse` off every fire along it, so a few shots put one
+  out. Fill buckets at any water, such as the pond by the crash site.
+- **Saved** with the world: fires at POI markers by marker (an out one stays out), and a burning part's
+  strength on the part.
+
+`game/data/fire.json` holds the numbers (`tick`, `grow`, `ignite`, `spread_at`, `part_damage`,
+`player_damage`, `player_radius`, `site_radius`, `site_marker`, `sound`, `max_fires`); like the other files
+in `game/data` it ships with the build and is not moddable. Each fire plays the `sound` loop (vanilla's
+`burn_wood`), its `intensity` following the fire's strength. What puts fires out is Lua
+([`fire`](lua-api.md#fire)): `watering.lua` and `water_cannon.lua` read `douse`, `splash` and `range` from
+their item's properties.
 
 ## Data
 
@@ -69,6 +96,7 @@ Creative turns damage off, makes building free and lets `GiveItems` make items f
 | `DropItems` | `slot`, `count` | `count` omitted drops the stack. |
 | `PickUp` | `drop` | A pile within `pickup_reach`. |
 | `Respawn` | none | A dead player after the delay; a living one goes back to their spawn. |
+| `GetFires` | none | Every fire: `[{id, position, strength, creation?, part?, poi?, site?, marker?}]`. Fires at POI markers are listed out ones too (strength 0). |
 | `GetVitals`, `GetSoil` | none; `creation`, `part` | Queries. `GetSoil` shows what the soil's script last stored; a parked farm's growth is worked out when it next runs (or is harvested). |
 
 A dead player's other actions are refused. Item scripts hurt and heal through the same host-side

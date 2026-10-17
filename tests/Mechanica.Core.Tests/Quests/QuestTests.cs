@@ -93,18 +93,18 @@ public class QuestTests
         Assert.Contains(said, d => d.Lines[0].Speaker == "Logbook");
         Assert.Null(tracker.State.Of("vanilla:workshop_outpost"));
 
-        // Fires one by one; the same fire twice counts once; out of reach does nothing.
+        // The fires count as they go out (water puts them out; FireActions tells the world how many are out).
         _world.Feet[2] = new Vector3(3, 0, 10);
-        Assert.True(Interact(dispatcher, 2).Ok);
-        Assert.False(Interact(dispatcher, 2).Ok);
-        _world.Feet[2] = new Vector3(100, 0, 100);
-        Assert.Equal(ActionErrors.Rejected, Interact(dispatcher, 2).Code);
-        foreach (var fire in new Vector3[] { new(-6, 0, 28), new(7, 0, 26) })
-        {
-            _world.Feet[2] = fire;
-            Assert.True(Interact(dispatcher, 2).Ok);
-        }
+        Assert.Equal(ActionErrors.Rejected, Interact(dispatcher, 2).Code); // E does nothing to a fire
+        _world.Out["vanilla:crash_site"] = 1;
+        tracker.Tick(0.1f);
+        Assert.Equal(1, tracker.State.Of("vanilla:getting_started")!.Count);
+        Assert.Equal(0, tracker.State.Of("vanilla:getting_started")!.Step);
+        _world.Out["vanilla:crash_site"] = 3;
+        tracker.Tick(0.1f);
         Assert.Equal(1, tracker.State.Of("vanilla:getting_started")!.Step);
+        _world.Feet[2] = new Vector3(100, 0, 100);
+        Assert.Equal(ActionErrors.Rejected, Interact(dispatcher, 2).Code); // out of reach does nothing
         _world.Feet[2] = new Vector3(1, 0, 12); // nearer the logbook, but only the battery counts
         Assert.True(Interact(dispatcher, 2).Ok);
         Assert.True(tracker.State.IsDone("vanilla:getting_started"));
@@ -190,6 +190,8 @@ public class QuestTests
     [InlineData("""{ "name": "Q", "steps": [{ "id": "a", "text": "t", "objective": { "type": "fly" } }] }""", "must be one of")]
     [InlineData("""{ "name": "Q", "steps": [{ "id": "a", "text": "t", "objective": { "type": "reach", "poi": "moon" } }] }""", "not in the world data")]
     [InlineData("""{ "name": "Q", "steps": [{ "id": "a", "text": "t", "objective": { "type": "interact", "poi": "crash_site", "marker": "fire", "count": 9 } }] }""", "fewer than count")]
+    [InlineData("""{ "name": "Q", "steps": [{ "id": "a", "text": "t", "objective": { "type": "extinguish", "poi": "crash_site", "count": 4 } }] }""", "fewer than count")]
+    [InlineData("""{ "name": "Q", "steps": [{ "id": "a", "text": "t", "objective": { "type": "extinguish", "poi": "moon" } }] }""", "not in the world data")]
     [InlineData("""{ "name": "Q", "steps": [{ "id": "a", "text": "t", "objective": { "type": "choose" }, "choices": [{ "id": "x", "text": "x" }] }] }""", "at least two choices")]
     [InlineData("""{ "name": "Q", "steps": [{ "id": "a", "text": "t", "objective": { "type": "raid" }, "choices": [{ "id": "x", "text": "x" }] }] }""", "only a choose step")]
     [InlineData("""{ "name": "Q", "steps": [{ "id": "a", "text": "t", "objective": { "type": "have_item", "item": "nothing" } }] }""", "not in the loaded mods")]
@@ -252,6 +254,7 @@ public class QuestTests
         public Dictionary<(int, string), int> Given { get; } = [];
         public Dictionary<int, float> Speed { get; } = [];
         public int Crops { get; set; }
+        public Dictionary<string, int> Out { get; } = [];
 
         public IEnumerable<int> Peers => Feet.Keys.Order();
 
@@ -278,5 +281,7 @@ public class QuestTests
         public int PlantedCrops() => Crops;
 
         public float? SeatedSpeed(int peer) => Speed.TryGetValue(peer, out var s) ? s : null;
+
+        public int FiresOut(string poi, string marker) => marker == "fire" ? Out.GetValueOrDefault(poi) : 0;
     }
 }

@@ -231,6 +231,7 @@ public sealed partial class ScriptRuntime
         AddLogicLibrary(script, part, creation, world, Vec);
         AddItemLibraries(context);
         AddSoilLibraries(script, world);
+        AddFireLibrary(context);
 
         globals.Set("log", DynValue.NewCallback((_, args) =>
         {

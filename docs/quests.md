@@ -56,6 +56,7 @@ every player, one after another.
 | `crops` | `count` crops are planted in the world at once | `count` |
 | `raid` | `count` raids end | `count` |
 | `choose` | A player picks one of the step's `choices` in the logbook (L) | `choices` on the step |
+| `extinguish` | Players put out `count` of the fires burning at the `poi`'s `marker` markers (default `fire`) with water ([Fire](survival.md#fire)) | `poi`, `marker`, `count` |
 
 A choice has an `id`, the button `text`, `flags` to set and optional `dialogue`. Whatever objective a step
 has, players near an `npc` marker of the quest's POI can press E to hear the step's dialogue again.
@@ -63,9 +64,9 @@ has, players near an `npc` marker of the quest's POI can press E to hear the ste
 ## Markers quests use
 
 POI markers are points with a `type` and an optional `ref`. Quests read any type; vanilla uses
-`fire`, `item` (with the part's id as `ref`), `npc` (with a character id as `ref`, such as
+`fire` (a fire burns at each one from the start, for `extinguish`), `item` (with the part's id as `ref`), `npc` (with a character id as `ref`, such as
 `faction_envoy`) and `core` (the AI core at the AI Core Facility). The prompt on screen says "talk" for an
-`npc` marker and "use the ..." with the `ref`'s name for the rest.
+`npc` marker and "use the ..." with the `ref`'s name for the rest of the `interact` markers.
 
 ## Actions
 

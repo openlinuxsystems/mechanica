@@ -5,6 +5,7 @@ using Mechanica.Core.Actions;
 using Mechanica.Core.Building;
 using Mechanica.Core.Creations;
 using Mechanica.Core.Data;
+using Mechanica.Core.Fire;
 using Mechanica.Core.Items;
 using Mechanica.Core.Survival;
 using Mechanica.Core.World;
@@ -23,6 +24,7 @@ internal sealed class SurvivalFixture
     public const string Scattergun = "test:scatter";
     public const string Bomb = "test:bomb";
     public const string Block = "test:block";
+    public const string Plank = "test:plank";
     public const string Chest = "test:chest";
     public const string Scrap = "test:scrap";
     public const string Gun = "scripts/potato_gun.lua";
@@ -38,7 +40,7 @@ internal sealed class SurvivalFixture
             .Add(Crop, new PartDefinition { Id = "crop", Name = "Crop", Category = PartCategory.Consumable, StackSize = 20,
                 Script = "scripts/food.lua", Properties = new JsonObject { ["health"] = 30 } })
             .Add(Bucket, new PartDefinition { Id = "bucket", Name = "Bucket", Category = PartCategory.Consumable, StackSize = 5,
-                Script = "scripts/watering.lua", Properties = new JsonObject { ["seconds"] = 30 } })
+                Script = "scripts/watering.lua", Properties = new JsonObject { ["seconds"] = 30, ["douse"] = 1, ["range"] = 6, ["splash"] = 1.2 } })
             .Add(Scrap, new PartDefinition { Id = "scrap", Name = "Scrap", Category = PartCategory.Resource, StackSize = 50 })
             // Seeds, the bucket, food and weapons run vanilla item scripts (chunk 20b); the Scripting tests use them.
             .Add(Blaster, new PartDefinition { Id = "blaster", Name = "Blaster", Category = PartCategory.Weapon, Script = Gun,
@@ -48,6 +50,7 @@ internal sealed class SurvivalFixture
             .Add(Bomb, new PartDefinition { Id = "bomb", Name = "Bomb", Category = PartCategory.Weapon, StackSize = 10, Script = Gun,
                 Properties = new JsonObject { ["damage"] = 40, ["interval"] = 1, ["range"] = 10, ["ammo"] = "bomb", ["radius"] = 4 } })
             .Add(Block, Placeable("block", PartCategory.Block) with { Durability = 2 })
+            .Add(Plank, Placeable("plank", PartCategory.Block) with { Flammable = true })
             .Add(Chest, Placeable("chest", PartCategory.Container) with { Inventory = new InventoryDefinition { Slots = 4 } })
             // Soil runs the vanilla soil script (crops grow and are harvested in Lua); the Core tests run no scripts.
             .Add(Soil, Placeable("soil", PartCategory.Decor) with { Soil = new SoilDefinition { Capacity = 60, Growth = 2 },
@@ -72,6 +75,7 @@ internal sealed class SurvivalFixture
         Tools.Costs = Survival;
         Survival.DamageScale = Tools.DamageScale;
         World.Survival = Survival;
+        Fire = new FireActions(new FireSettings(), Survival, World);
         Inventories.Register(Dispatcher);
         Tools.Register(Dispatcher);
         new BuildActions(Catalog, new BuildSettings(), World) { Costs = Survival }.Register(Dispatcher);
@@ -91,6 +95,7 @@ internal sealed class SurvivalFixture
     public InventoryActions Inventories { get; }
     public ToolActions Tools { get; }
     public SurvivalActions Survival { get; }
+    public FireActions Fire { get; }
 
     public Inventory Pockets(ActionCaller caller) => Inventories.PlayerInventory(caller.Peer);
 
@@ -143,7 +148,7 @@ internal sealed class SurvivalFixture
         StackSize = 10,
     };
 
-    internal sealed class FakeWorld : ISurvivalWorld, IToolWorld, IInventoryWorld
+    internal sealed class FakeWorld : ISurvivalWorld, IToolWorld, IInventoryWorld, IFireWorld
     {
         private int _nextId = 1;
 
@@ -205,6 +210,19 @@ internal sealed class SurvivalFixture
         public SledgeResult DamagePart(Creation creation, int partId, float damage) => Tools.DamagePart(creation, partId, damage);
 
         public void Push(Creation creation, int bodyIndex, Vector3 point, Vector3 impulse) => Pushes.Add(impulse);
+
+        // A part's shape reaches the sphere when its centre is within the radius plus half a block.
+        public IEnumerable<(int Creation, int Part)> PartsNear(Vector3 point, float radius) =>
+            [.. Creations.Values.SelectMany(c => c.Parts.Select(p => (Creation: c, Part: p)))
+                .Where(x => Vector3.Distance(Centre(x.Creation, x.Part.Id), point) <= radius + MechanicaInfo.GridSize / 2)
+                .Select(x => (x.Creation.Id, x.Part.Id))];
+
+        public static Vector3 Centre(Creation creation, int partId)
+        {
+            var part = creation.FindPart(partId)!;
+            return creation.BodyPose(creation.BodyIndexOf(partId))
+                .Apply(PartGeometry.CentreMetres(creation.DefinitionOf(partId), part.Cell, part.Rotation).ToNumerics());
+        }
 
         public void Breaking(Creation creation, int partId) => Survival.Spill(creation, partId);
 

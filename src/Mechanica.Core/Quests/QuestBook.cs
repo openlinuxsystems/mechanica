@@ -35,14 +35,17 @@ public enum QuestObjectiveKind
 
     /// <summary>A player picks a choice.</summary>
     Choose,
+
+    /// <summary>Players put out fires at a POI's markers.</summary>
+    Extinguish,
 }
 
 /// <summary>A quest step with every id qualified and every default filled in.</summary>
 /// <param name="Id">Step id.</param>
 /// <param name="Text">Quest log text.</param>
 /// <param name="Kind">The objective rule.</param>
-/// <param name="Poi">Qualified POI id, for reach and interact.</param>
-/// <param name="Marker">Marker type, for interact.</param>
+/// <param name="Poi">Qualified POI id, for reach, interact and extinguish.</param>
+/// <param name="Marker">Marker type, for interact and extinguish.</param>
 /// <param name="Ref">Marker ref, for interact, or null for any.</param>
 /// <param name="Target">Qualified item, part or recipe id, or null for any.</param>
 /// <param name="Count">How many.</param>
@@ -92,7 +95,11 @@ public sealed class QuestBook
         ["crops"] = QuestObjectiveKind.Crops,
         ["raid"] = QuestObjectiveKind.Raid,
         ["choose"] = QuestObjectiveKind.Choose,
+        ["extinguish"] = QuestObjectiveKind.Extinguish,
     };
+
+    /// <summary>The marker type an <c>extinguish</c> objective counts when it names none.</summary>
+    public const string FireMarker = "fire";
 
     private readonly Dictionary<string, Quest> _quests;
 
@@ -290,18 +297,19 @@ public sealed class QuestBook
         string? target = null;
         switch (kind)
         {
-            case QuestObjectiveKind.Reach or QuestObjectiveKind.Interact:
+            case QuestObjectiveKind.Reach or QuestObjectiveKind.Interact or QuestObjectiveKind.Extinguish:
                 poi = FindPoi(world, o.Poi, modId);
                 if (poi is null)
                     sink.Error(code, $"{at}.poi", $"POI '{o.Poi}' is not in the world data.");
                 if (o.Radius is { } radius && !(radius > 0 && radius <= 2000))
                     sink.Error(code, $"{at}.radius", "radius must be more than 0 and at most 2000 m.");
-                if (kind == QuestObjectiveKind.Interact)
+                if (kind is QuestObjectiveKind.Interact or QuestObjectiveKind.Extinguish)
                 {
-                    if (!Identifiers.IsValid(o.Marker))
-                        sink.Error(code, $"{at}.marker", "an interact objective needs a marker type.");
-                    else if (poi is not null && world.Pois.First(p => p.QualifiedId == poi).Prefab.Markers?.Count(m => m.Type == o.Marker && (o.Ref is null || m.Ref == o.Ref)) is var n && n < (o.Count ?? 1))
-                        sink.Error(code, $"{at}.count", $"the POI has {n} '{o.Marker}' markers{(o.Ref is null ? "" : $" with ref '{o.Ref}'")}, fewer than count.");
+                    var marker = kind == QuestObjectiveKind.Extinguish ? o.Marker ?? FireMarker : o.Marker;
+                    if (!Identifiers.IsValid(marker))
+                        sink.Error(code, $"{at}.marker", $"an {o.Type} objective needs a marker type.");
+                    else if (poi is not null && world.Pois.First(p => p.QualifiedId == poi).Prefab.Markers?.Count(m => m.Type == marker && (o.Ref is null || m.Ref == o.Ref)) is var n && n < (o.Count ?? 1))
+                        sink.Error(code, $"{at}.count", $"the POI has {n} '{marker}' markers{(o.Ref is null ? "" : $" with ref '{o.Ref}'")}, fewer than count.");
                 }
                 break;
             case QuestObjectiveKind.HaveItem:
@@ -353,7 +361,8 @@ public sealed class QuestBook
         }
         if (sink.ErrorCount > errors)
             return null;
-        return new QuestStepInfo(s.Id!, s.Text!.Trim(), kind, poi, o.Marker, o.Ref, target, o.Count ?? 1, o.Radius, o.Distance ?? 0, dialogue, choices);
+        var stepMarker = kind == QuestObjectiveKind.Extinguish ? o.Marker ?? FireMarker : o.Marker;
+        return new QuestStepInfo(s.Id!, s.Text!.Trim(), kind, poi, stepMarker, o.Ref, target, o.Count ?? 1, o.Radius, o.Distance ?? 0, dialogue, choices);
     }
 
     private static List<DialogueLine> CheckLines(List<DialogueLine>? lines, string path, DiagnosticSink sink)
