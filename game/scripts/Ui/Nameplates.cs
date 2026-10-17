@@ -5,14 +5,17 @@ using Mechanica.Game.Settings;
 namespace Mechanica.Game.Ui;
 
 /// <summary>
-/// Other players' names over their heads (UI spec §16 Interface, "Show player names"). Each player but
-/// this peer's own gets a billboard label that stays readable through walls and faces the camera; the
-/// Interface setting hides them all.
+/// Other players' names over their heads (UI spec §11 and §16 Interface, "Show player names"). Each player
+/// but this peer's own gets a blue billboard label that faces the camera and stays readable through walls,
+/// fading out between <see cref="FadeStart"/> and <see cref="FadeEnd"/>; the Interface setting hides them all.
 /// </summary>
 public partial class Nameplates : Node
 {
     /// <summary>Metres above a player's feet the name sits.</summary>
     public const float Height = 2.15f;
+
+    /// <summary>Metres from the camera where a name starts to fade, and where it is gone.</summary>
+    public const float FadeStart = 40f, FadeEnd = 80f;
 
     private readonly Dictionary<int, Label3D> _plates = [];
 
@@ -41,14 +44,18 @@ public partial class Nameplates : Node
                     PixelSize = 0.0015f,
                     FontSize = 28,
                     OutlineSize = 8,
-                    Modulate = UiTokens.Text,
+                    Modulate = UiTokens.Blue,
                     OutlineModulate = UiTokens.DeepNavy,
                 };
                 player.AddChild(plate);
                 _plates[peer] = plate;
             }
             plate.Text = player.DisplayName;
-            plate.Visible = show;
+            var distance = GetViewport().GetCamera3D() is { } camera ? camera.GlobalPosition.DistanceTo(plate.GlobalPosition) : 0f;
+            var alpha = 1f - Mathf.Clamp((distance - FadeStart) / (FadeEnd - FadeStart), 0f, 1f);
+            plate.Modulate = UiTokens.Blue with { A = alpha };
+            plate.OutlineModulate = UiTokens.DeepNavy with { A = alpha };
+            plate.Visible = show && alpha > 0f;
         }
         foreach (var peer in _plates.Keys.Where(p => !Players.Players.ContainsKey(p)).ToList())
             _plates.Remove(peer);
