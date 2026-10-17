@@ -60,7 +60,7 @@ Built-in methods (protocol version 2):
 |--------|-------|--------|--------|
 | `mechanica.auth` | | `{"token": "..."}` | `true`; needed first when the host set a token, grants its scopes |
 | `mechanica.info` | observe | none | game name, `protocol_version`, `tick_rate`, `tick` (current physics tick), this connection's `scopes`, `peer` and `source`, and the names of every `actions`, `queries`, `methods` and event `topics` |
-| `mechanica.describe` | observe | optional `{"names": [...]}` | every method with its `kind` (action, query or method), `scope`, `description` and a JSON Schema of its `params`, plus the event `topics` and error codes |
+| `mechanica.describe` | observe | optional `{"names": [...]}` | every method with its `kind` (action, query or method), `group` (the game area, like `survival`, or the method prefix), `scope`, `description` and a JSON Schema of its `params`, plus the event `topics` and error codes |
 | `mechanica.subscribe` | observe | `{"topics": [...]}` | the topics now subscribed; see [Events](#events) |
 | `mechanica.unsubscribe` | observe | optional `{"topics": [...]}` | the topics still subscribed (none given stops all) |
 | `mechanica.join` | play | `{"name": "..."}` | `peer`, `profile_id`, `name`; spawns a player of your own (see [Playing as a player](#playing-as-a-player)) |
@@ -150,7 +150,8 @@ Game systems add endpoint methods outside the Action API as an `IRpcModule`
 (`src/Mechanica.Core/Remote/RpcModules.cs`): each `RpcMethod.Create<TParams>(name, scope, description,
 handler)` gets a lowercase dotted name (`mods.validate`), a scope, and a snake_case params record that
 `mechanica.describe` turns into a schema. Handlers throw `RpcException` with an `RpcErrors` code to fail. `RpcMethod.CreateAsync` takes a handler that returns a `Task` (for work that waits for Godot frames, such as baking a mesh); the endpoint answers when it completes, and inside a batch such a call is answered on its own afterwards. Module params are limited only by the 4 MiB message size, not the Action API's 16 KiB.
-Add the module to `Main.Ai.Modules` before the endpoint starts listening. Host code publishes events
+Add the module to `Main.Ai.Modules` before the endpoint starts listening, then run `tools/ai/gen-docs.sh` so the
+AI docs in [docs/ai](ai/README.md) list it (the headless test `game/tests/aidocs` fails until they do). Host code publishes events
 with `Main.Ai.Events.Publish(topic, data)`; new topics go in `RemoteEvents.Topics`.
 
 ## Actions for driving

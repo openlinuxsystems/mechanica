@@ -1,0 +1,3163 @@
+{
+  "protocol_version": 2,
+  "methods": [
+    {
+      "name": "ActivatePart",
+      "kind": "action",
+      "group": "logic",
+      "scope": "play",
+      "description": "Use a part. Arguments of ActivatePart and EnterSeat: one part of a Creation.",
+      "params": {
+        "description": "Arguments of ActivatePart and EnterSeat: one part of a Creation.",
+        "type": "object",
+        "properties": {
+          "creation": {
+            "description": "The Creation holding the part.",
+            "type": "integer"
+          },
+          "part": {
+            "description": "The part.",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "creation",
+          "part"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "AddMapMarker",
+      "kind": "action",
+      "group": "ui",
+      "scope": "play",
+      "description": "Marks a place on the caller's map. Arguments of AddMapMarker: where, and an optional name (a numbered \"Marker N\" without one).",
+      "params": {
+        "description": "Arguments of AddMapMarker: where, and an optional name (a numbered \"Marker N\" without one).",
+        "type": "object",
+        "properties": {
+          "x": {
+            "type": "number"
+          },
+          "y": {
+            "type": "number"
+          },
+          "z": {
+            "type": "number"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "x",
+          "y",
+          "z"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "AimItem",
+      "kind": "action",
+      "group": "scripting",
+      "scope": "play",
+      "description": "Starting or stopping aiming the item in hand (AimItemArgs). Arguments of AimItem: the caller starts or stops aiming the item in hand (holding right click; UI spec §10).",
+      "params": {
+        "description": "Arguments of AimItem: the caller starts or stops aiming the item in hand (holding right click; UI spec §10).",
+        "type": "object",
+        "properties": {
+          "on": {
+            "description": "True while right click is held.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "on"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "ApplyForce",
+      "kind": "action",
+      "group": "motion",
+      "scope": "play",
+      "description": "Pushing a Body. Arguments of ApplyForce.",
+      "params": {
+        "description": "Arguments of ApplyForce.",
+        "type": "object",
+        "properties": {
+          "creation": {
+            "description": "Creation to push.",
+            "type": "integer"
+          },
+          "force": {
+            "description": "World-space force in N, through the Body's centre of mass. Format: [x, y, z]",
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 3,
+            "maxItems": 3
+          },
+          "body": {
+            "description": "Index of the Body in Bodies.",
+            "type": "integer",
+            "default": 0
+          },
+          "torque": {
+            "description": "World-space torque in N·m.",
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 3,
+                "maxItems": 3,
+                "description": "[x, y, z]"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "duration": {
+            "description": "How long to keep pushing, in s. Null means one physics step. A later call on the same Body replaces it.",
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "at": {
+            "description": "World point the force acts at, in m. Null pushes through the centre of mass; any other point also twists the Body.",
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 3,
+                "maxItems": 3,
+                "description": "[x, y, z]"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "part": {
+            "description": "The part doing the pushing (a thruster, a wing). Pushes from different parts of one Body add up, and a later call from the same part replaces only that part's push. The part must be in Body. Null is one shared push per Body, as above.",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "creation",
+          "force"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "Block",
+      "kind": "action",
+      "group": "building",
+      "scope": "play",
+      "description": "Starting or stopping a block. Arguments of Block: the caller starts or stops blocking with the Sledgehammer.",
+      "params": {
+        "description": "Arguments of Block: the caller starts or stops blocking with the Sledgehammer.",
+        "type": "object",
+        "properties": {
+          "on": {
+            "description": "True while right click is held.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "on"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "BotAttack",
+      "kind": "action",
+      "group": "bots",
+      "scope": "admin",
+      "description": "A bot's attack. Arguments of BotAttack. Melee and ranged attacks name exactly one target: a player, a part (a crop's soil counts), another bot or, for an attack with object_damage, a world object. Area attacks need none.",
+      "params": {
+        "description": "Arguments of BotAttack. Melee and ranged attacks name exactly one target: a player, a part (a crop's soil counts), another bot or, for an attack with object_damage, a world object. Area attacks need none.",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "The attacking bot.",
+            "type": "integer"
+          },
+          "attack": {
+            "description": "Id of one of its attacks.",
+            "type": "string"
+          },
+          "player": {
+            "description": "Peer of the player to hit.",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "creation": {
+            "description": "Creation holding the part to hit.",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "part": {
+            "description": "The part to hit.",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "target": {
+            "description": "The bot to hit.",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "object": {
+            "description": "The world object to hit (a tree, rock or bush), by its id.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "bot",
+          "attack"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "CancelCraft",
+      "kind": "action",
+      "group": "items",
+      "scope": "play",
+      "description": "Cancelling an order. Arguments of CancelCraft: drop an order and get its unfinished crafts' inputs back.",
+      "params": {
+        "description": "Arguments of CancelCraft: drop an order and get its unfinished crafts' inputs back.",
+        "type": "object",
+        "properties": {
+          "creation": {
+            "description": "Creation holding the station.",
+            "type": "integer"
+          },
+          "part": {
+            "description": "The station part.",
+            "type": "integer"
+          },
+          "job": {
+            "description": "Index of the order in the station's queue (0 is the one being worked).",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "creation",
+          "part",
+          "job"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "CancelRefine",
+      "kind": "action",
+      "group": "survival",
+      "scope": "play",
+      "description": "Letting go of Use (or moving off) before a refine finished.",
+      "params": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "ChooseCharacter",
+      "kind": "action",
+      "group": "characters",
+      "scope": "play",
+      "description": "Picks the caller's character for this world. Only once per player per world. Arguments of ChooseCharacter.",
+      "params": {
+        "description": "Arguments of ChooseCharacter.",
+        "type": "object",
+        "properties": {
+          "character": {
+            "description": "Character id (a bare id means vanilla).",
+            "type": "string"
+          }
+        },
+        "required": [
+          "character"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "ChooseQuestOption",
+      "kind": "action",
+      "group": "quests",
+      "scope": "play",
+      "description": "Picks a choice of a choose step. Arguments of ChooseQuestOption.",
+      "params": {
+        "description": "Arguments of ChooseQuestOption.",
+        "type": "object",
+        "properties": {
+          "quest": {
+            "description": "Quest id.",
+            "type": "string"
+          },
+          "choice": {
+            "description": "Choice id of its current step.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "quest",
+          "choice"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "ClearCreations",
+      "kind": "action",
+      "group": "general",
+      "scope": "admin",
+      "description": "Remove every Creation.",
+      "params": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "CollectWater",
+      "kind": "action",
+      "group": "survival",
+      "scope": "play",
+      "description": "Filling a bucket at water. Arguments of CollectWater: fill a bucket where the caller aims at water.",
+      "params": {
+        "description": "Arguments of CollectWater: fill a bucket where the caller aims at water.",
+        "type": "object",
+        "properties": {
+          "point": {
+            "description": "The water point aimed at, in world metres. Format: [x, y, z]",
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 3,
+            "maxItems": 3
+          }
+        },
+        "required": [
+          "point"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "CommandPart",
+      "kind": "action",
+      "group": "logic",
+      "scope": "play",
+      "description": "Send a part's script a command from its menu. Arguments of CommandPart: a command from a part's menu to its script's on_command.",
+      "params": {
+        "description": "Arguments of CommandPart: a command from a part's menu to its script's on_command.",
+        "type": "object",
+        "properties": {
+          "creation": {
+            "description": "The Creation holding the part.",
+            "type": "integer"
+          },
+          "part": {
+            "description": "The part.",
+            "type": "integer"
+          },
+          "command": {
+            "description": "The command, one the part's data offers (a sequence setting's Preview).",
+            "type": "string"
+          },
+          "args": {
+            "description": "Plain data for the script.",
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "creation",
+          "part",
+          "command"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "ConfigurePart",
+      "kind": "action",
+      "group": "logic",
+      "scope": "play",
+      "description": "Change a part's settings. Arguments of ConfigurePart: settings to change on one placed part.",
+      "params": {
+        "description": "Arguments of ConfigurePart: settings to change on one placed part.",
+        "type": "object",
+        "properties": {
+          "creation": {
+            "description": "The Creation holding the part.",
+            "type": "integer"
+          },
+          "part": {
+            "description": "The part.",
+            "type": "integer"
+          },
+          "settings": {
+            "description": "New values by setting id; null puts a setting back to its default. Settings not named keep their value.",
+            "type": "object",
+            "additionalProperties": {
+              "anyOf": [
+                {},
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "creation",
+          "part",
+          "settings"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "ConnectParts",
+      "kind": "action",
+      "group": "logic",
+      "scope": "play",
+      "description": "Add a logic link. Arguments of ConnectParts and DisconnectParts: a logic link inside one Creation.",
+      "params": {
+        "description": "Arguments of ConnectParts and DisconnectParts: a logic link inside one Creation.",
+        "type": "object",
+        "properties": {
+          "creation": {
+            "description": "The Creation holding both parts.",
+            "type": "integer"
+          },
+          "from": {
+            "description": "The part whose output the link carries.",
+            "type": "integer"
+          },
+          "to": {
+            "description": "The part it feeds.",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "creation",
+          "from",
+          "to"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "Craft",
+      "kind": "action",
+      "group": "items",
+      "scope": "play",
+      "description": "Queueing a craft. Arguments of Craft: queue Count crafts of a recipe at a station part.",
+      "params": {
+        "description": "Arguments of Craft: queue Count crafts of a recipe at a station part.",
+        "type": "object",
+        "properties": {
+          "creation": {
+            "description": "Creation holding the station.",
+            "type": "integer"
+          },
+          "part": {
+            "description": "The station part.",
+            "type": "integer"
+          },
+          "recipe": {
+            "description": "Recipe id (id means vanilla, or mod_id:id).",
+            "type": "string"
+          },
+          "count": {
+            "description": "How many crafts (1 or more).",
+            "type": "integer",
+            "default": 1
+          }
+        },
+        "required": [
+          "creation",
+          "part",
+          "recipe"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "DespawnBot",
+      "kind": "action",
+      "group": "bots",
+      "scope": "admin",
+      "description": "Taking a bot out of the world. Arguments of the actions that name one bot (DespawnBot, GetBot).",
+      "params": {
+        "description": "Arguments of the actions that name one bot (DespawnBot, GetBot).",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "The bot's id.",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "bot"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "DisconnectParts",
+      "kind": "action",
+      "group": "logic",
+      "scope": "play",
+      "description": "Remove a logic link. Arguments of ConnectParts and DisconnectParts: a logic link inside one Creation.",
+      "params": {
+        "description": "Arguments of ConnectParts and DisconnectParts: a logic link inside one Creation.",
+        "type": "object",
+        "properties": {
+          "creation": {
+            "description": "The Creation holding both parts.",
+            "type": "integer"
+          },
+          "from": {
+            "description": "The part whose output the link carries.",
+            "type": "integer"
+          },
+          "to": {
+            "description": "The part it feeds.",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "creation",
+          "from",
+          "to"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "DropItems",
+      "kind": "action",
+      "group": "survival",
+      "scope": "play",
+      "description": "Putting items on the ground. Arguments of DropItems: put items from a slot on the ground in front of the caller.",
+      "params": {
+        "description": "Arguments of DropItems: put items from a slot on the ground in front of the caller.",
+        "type": "object",
+        "properties": {
+          "slot": {
+            "description": "The slot.",
+            "type": "integer"
+          },
+          "count": {
+            "description": "How many; null drops the whole stack.",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "at": {
+            "description": "Force Build (UI spec §1, §9): the world point the caller aims at, within reach, where the items are placed and stay (they never expire). Null drops them in front of the caller.",
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 3,
+                "maxItems": 3,
+                "description": "[x, y, z]"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "slot"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "EnterSeat",
+      "kind": "action",
+      "group": "logic",
+      "scope": "play",
+      "description": "Sit in a seat. Arguments of ActivatePart and EnterSeat: one part of a Creation.",
+      "params": {
+        "description": "Arguments of ActivatePart and EnterSeat: one part of a Creation.",
+        "type": "object",
+        "properties": {
+          "creation": {
+            "description": "The Creation holding the part.",
+            "type": "integer"
+          },
+          "part": {
+            "description": "The part.",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "creation",
+          "part"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "EquipItem",
+      "kind": "action",
+      "group": "scripting",
+      "scope": "play",
+      "description": "Taking an item in hand, or emptying the hand (EquipItemArgs). Arguments of EquipItem: take the item in a slot in hand, or empty the hand.",
+      "params": {
+        "description": "Arguments of EquipItem: take the item in a slot in hand, or empty the hand.",
+        "type": "object",
+        "properties": {
+          "slot": {
+            "description": "The slot holding the item; omitted (null) empties the hand.",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "FinishRefine",
+      "kind": "action",
+      "group": "survival",
+      "scope": "play",
+      "description": "Finishing a refine once Use has been held long enough. Arguments of StartRefine and FinishRefine: the resource node held Use on.",
+      "params": {
+        "description": "Arguments of StartRefine and FinishRefine: the resource node held Use on.",
+        "type": "object",
+        "properties": {
+          "object": {
+            "description": "Id of the world object (\"3.10.-4\").",
+            "type": "string"
+          }
+        },
+        "required": [
+          "object"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "GetBot",
+      "kind": "query",
+      "group": "bots",
+      "scope": "observe",
+      "description": "Reading one bot. Arguments of the actions that name one bot (DespawnBot, GetBot).",
+      "params": {
+        "description": "Arguments of the actions that name one bot (DespawnBot, GetBot).",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "The bot's id.",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "bot"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "GetBots",
+      "kind": "query",
+      "group": "bots",
+      "scope": "observe",
+      "description": "Listing every bot.",
+      "params": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "GetCreation",
+      "kind": "query",
+      "group": "motion",
+      "scope": "observe",
+      "description": "Reading one Creation. Arguments of GetCreation.",
+      "params": {
+        "description": "Arguments of GetCreation.",
+        "type": "object",
+        "properties": {
+          "creation": {
+            "description": "Creation to describe.",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "creation"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "GetDrops",
+      "kind": "query",
+      "group": "perception",
+      "scope": "observe",
+      "description": "Item piles on the ground. Arguments of GetDrops.",
+      "params": {
+        "description": "Arguments of GetDrops.",
+        "type": "object",
+        "properties": {
+          "center": {
+            "description": "World point to search around; null is the caller's feet (or every pile with no radius).",
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 3,
+                "maxItems": 3,
+                "description": "[x, y, z]"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "radius": {
+            "description": "Search radius in m; null is every pile.",
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "GetFires",
+      "kind": "query",
+      "group": "fire",
+      "scope": "observe",
+      "description": "Reading every fire.",
+      "params": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "GetForces",
+      "kind": "query",
+      "group": "motion",
+      "scope": "observe",
+      "description": "Reading the pushes on a Creation (the aero force overlay's query). Arguments of GetForces.",
+      "params": {
+        "description": "Arguments of GetForces.",
+        "type": "object",
+        "properties": {
+          "creation": {
+            "description": "Creation whose pushes to read.",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "creation"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "GetHotbar",
+      "kind": "query",
+      "group": "items",
+      "scope": "observe",
+      "description": "Reads the caller's hotbar (HotbarSlots).",
+      "params": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "GetInventory",
+      "kind": "query",
+      "group": "items",
+      "scope": "observe",
+      "description": "Reading an inventory. Arguments of GetInventory.",
+      "params": {
+        "description": "Arguments of GetInventory.",
+        "type": "object",
+        "properties": {
+          "inventory": {
+            "description": "The inventory to read.",
+            "type": "object",
+            "properties": {
+              "player": {
+                "description": "Peer id of the player whose inventory it is.",
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "creation": {
+                "description": "Creation holding the part.",
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "part": {
+                "description": "Part id inside that Creation.",
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "inventory"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "GetMapMarkers",
+      "kind": "query",
+      "group": "ui",
+      "scope": "observe",
+      "description": "Reads the caller's markers.",
+      "params": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "GetObjects",
+      "kind": "query",
+      "group": "perception",
+      "scope": "observe",
+      "description": "World objects near a point. Arguments of GetObjects.",
+      "params": {
+        "description": "Arguments of GetObjects.",
+        "type": "object",
+        "properties": {
+          "center": {
+            "description": "World point to search around; null is the caller's feet.",
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 3,
+                "maxItems": 3,
+                "description": "[x, y, z]"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "radius": {
+            "description": "Search radius in m, up to MaxObjectRadius.",
+            "type": "number",
+            "default": 32
+          },
+          "type": {
+            "description": "Only objects of this type (tree, rock_node, ...).",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "limit": {
+            "description": "Most objects returned, nearest first.",
+            "type": "integer",
+            "default": 100
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "GetPart",
+      "kind": "query",
+      "group": "perception",
+      "scope": "observe",
+      "description": "One part or item. Arguments of GetPart.",
+      "params": {
+        "description": "Arguments of GetPart.",
+        "type": "object",
+        "properties": {
+          "part": {
+            "description": "Qualified id (a bare id means vanilla).",
+            "type": "string"
+          }
+        },
+        "required": [
+          "part"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "GetPlayer",
+      "kind": "query",
+      "group": "perception",
+      "scope": "observe",
+      "description": "One player. Arguments of GetPlayer.",
+      "params": {
+        "description": "Arguments of GetPlayer.",
+        "type": "object",
+        "properties": {
+          "peer": {
+            "description": "The player's peer; null is the caller's own player.",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "GetPlayers",
+      "kind": "query",
+      "group": "perception",
+      "scope": "observe",
+      "description": "Every player.",
+      "params": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "GetPois",
+      "kind": "query",
+      "group": "perception",
+      "scope": "observe",
+      "description": "POIs. Arguments of GetPois.",
+      "params": {
+        "description": "Arguments of GetPois.",
+        "type": "object",
+        "properties": {
+          "all": {
+            "description": "Also list POIs the story has not revealed. Players can't; scripts and agents can.",
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "GetQuestBook",
+      "kind": "query",
+      "group": "perception",
+      "scope": "observe",
+      "description": "Quests.",
+      "params": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "GetQuests",
+      "kind": "query",
+      "group": "quests",
+      "scope": "observe",
+      "description": "Reads the quest state.",
+      "params": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "GetRaid",
+      "kind": "query",
+      "group": "bots",
+      "scope": "observe",
+      "description": "Reading the raid in progress.",
+      "params": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "GetSoil",
+      "kind": "query",
+      "group": "survival",
+      "scope": "observe",
+      "description": "Reading what grows on a soil part. Arguments of GetSoil.",
+      "params": {
+        "description": "Arguments of GetSoil.",
+        "type": "object",
+        "properties": {
+          "creation": {
+            "description": "Creation holding the soil part.",
+            "type": "integer"
+          },
+          "part": {
+            "description": "The soil part.",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "creation",
+          "part"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "GetVitals",
+      "kind": "query",
+      "group": "survival",
+      "scope": "observe",
+      "description": "Reading the caller's health.",
+      "params": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "GetWorld",
+      "kind": "query",
+      "group": "perception",
+      "scope": "observe",
+      "description": "The world's settings and clock.",
+      "params": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "GiveItems",
+      "kind": "action",
+      "group": "items",
+      "scope": "admin",
+      "description": "Making items (Creative). Arguments of GiveItems (Creative only).",
+      "params": {
+        "description": "Arguments of GiveItems (Creative only).",
+        "type": "object",
+        "properties": {
+          "item": {
+            "description": "Item id.",
+            "type": "string"
+          },
+          "count": {
+            "description": "How many (1 or more).",
+            "type": "integer"
+          },
+          "to": {
+            "description": "Where they go; null means the caller's own inventory.",
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "player": {
+                    "description": "Peer id of the player whose inventory it is.",
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "creation": {
+                    "description": "Creation holding the part.",
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "part": {
+                    "description": "Part id inside that Creation.",
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "item",
+          "count"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "InspectCreation",
+      "kind": "query",
+      "group": "logic",
+      "scope": "observe",
+      "description": "Describe a Creation (read-only). Arguments of InspectCreation.",
+      "params": {
+        "description": "Arguments of InspectCreation.",
+        "type": "object",
+        "properties": {
+          "creation": {
+            "description": "The Creation to describe.",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "creation"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "LeaveSeat",
+      "kind": "action",
+      "group": "logic",
+      "scope": "play",
+      "description": "Stand up from the caller's seat.",
+      "params": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "ListBotTypes",
+      "kind": "query",
+      "group": "perception",
+      "scope": "observe",
+      "description": "Bot types.",
+      "params": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "ListCharacters",
+      "kind": "query",
+      "group": "perception",
+      "scope": "observe",
+      "description": "Player characters.",
+      "params": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "ListCreations",
+      "kind": "query",
+      "group": "motion",
+      "scope": "observe",
+      "description": "Listing Creations.",
+      "params": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "ListItems",
+      "kind": "query",
+      "group": "perception",
+      "scope": "observe",
+      "description": "Every item. Arguments of ListParts and ListItems. Every filter is optional.",
+      "params": {
+        "description": "Arguments of ListParts and ListItems. Every filter is optional.",
+        "type": "object",
+        "properties": {
+          "category": {
+            "description": "Only this category.",
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "block",
+                  "interactive",
+                  "container",
+                  "station",
+                  "light",
+                  "decor",
+                  "resource",
+                  "consumable",
+                  "tool",
+                  "weapon"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "mod": {
+            "description": "Only parts whose qualified id is in this mod.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "search": {
+            "description": "Only ids or names that contain this text (any case).",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "ListParts",
+      "kind": "query",
+      "group": "perception",
+      "scope": "observe",
+      "description": "Buildable parts. Arguments of ListParts and ListItems. Every filter is optional.",
+      "params": {
+        "description": "Arguments of ListParts and ListItems. Every filter is optional.",
+        "type": "object",
+        "properties": {
+          "category": {
+            "description": "Only this category.",
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "block",
+                  "interactive",
+                  "container",
+                  "station",
+                  "light",
+                  "decor",
+                  "resource",
+                  "consumable",
+                  "tool",
+                  "weapon"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "mod": {
+            "description": "Only parts whose qualified id is in this mod.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "search": {
+            "description": "Only ids or names that contain this text (any case).",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "ListRecipes",
+      "kind": "query",
+      "group": "perception",
+      "scope": "observe",
+      "description": "Recipes. Arguments of ListRecipes. Every filter is optional.",
+      "params": {
+        "description": "Arguments of ListRecipes. Every filter is optional.",
+        "type": "object",
+        "properties": {
+          "station": {
+            "description": "Only recipes this station part runs.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "makes": {
+            "description": "Only recipes that make this item.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "uses": {
+            "description": "Only recipes that use up this item.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "LoadBlueprint",
+      "kind": "action",
+      "group": "building",
+      "scope": "play",
+      "description": "Loading a blueprint onto the caller's Lift. Arguments of LoadBlueprint: a blueprint file's JSON (Blueprint), loaded onto the caller's empty Lift.",
+      "params": {
+        "description": "Arguments of LoadBlueprint: a blueprint file's JSON (Blueprint), loaded onto the caller's empty Lift.",
+        "type": "object",
+        "properties": {
+          "blueprint": {
+            "description": "The blueprint."
+          }
+        },
+        "required": [
+          "blueprint"
+        ],
+        "additionalProperties": false
+      },
+      "max_params_length": 1048576
+    },
+    {
+      "name": "MoveBot",
+      "kind": "action",
+      "group": "bots",
+      "scope": "admin",
+      "description": "Setting where a bot walks. Arguments of MoveBot: which way a bot walks, until told otherwise.",
+      "params": {
+        "description": "Arguments of MoveBot: which way a bot walks, until told otherwise.",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "The bot.",
+            "type": "integer"
+          },
+          "direction": {
+            "description": "Direction to walk in; only its horizontal part counts. Null stops it.",
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 3,
+                "maxItems": 3,
+                "description": "[x, y, z]"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "speed": {
+            "description": "Speed in m/s, at most its top speed. Null means top speed.",
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "bot"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "MoveItems",
+      "kind": "action",
+      "group": "items",
+      "scope": "play",
+      "description": "Moving items. Arguments of MoveItems.",
+      "params": {
+        "description": "Arguments of MoveItems.",
+        "type": "object",
+        "properties": {
+          "from": {
+            "description": "Where the items are.",
+            "type": "object",
+            "properties": {
+              "player": {
+                "description": "Peer id of the player whose inventory it is.",
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "creation": {
+                "description": "Creation holding the part.",
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "part": {
+                "description": "Part id inside that Creation.",
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "additionalProperties": false
+          },
+          "from_slot": {
+            "description": "The slot they are in.",
+            "type": "integer"
+          },
+          "to": {
+            "description": "Where they go (may be the same inventory).",
+            "type": "object",
+            "properties": {
+              "player": {
+                "description": "Peer id of the player whose inventory it is.",
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "creation": {
+                "description": "Creation holding the part.",
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "part": {
+                "description": "Part id inside that Creation.",
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "additionalProperties": false
+          },
+          "to_slot": {
+            "description": "The slot they go to; null puts them wherever they fit.",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "count": {
+            "description": "How many; null moves the whole stack.",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "from",
+          "from_slot",
+          "to"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "Paint",
+      "kind": "action",
+      "group": "building",
+      "scope": "play",
+      "description": "Painting parts. Arguments of Paint.",
+      "params": {
+        "description": "Arguments of Paint.",
+        "type": "object",
+        "properties": {
+          "creation": {
+            "description": "The Creation holding the parts.",
+            "type": "integer"
+          },
+          "parts": {
+            "description": "Part ids to paint, without repeats.",
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "color": {
+            "description": "\"#rrggbb\", or null to take the paint off.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "creation",
+          "parts"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "PickUp",
+      "kind": "action",
+      "group": "survival",
+      "scope": "play",
+      "description": "Picking items up. Arguments of PickUp: take a pile of items off the ground.",
+      "params": {
+        "description": "Arguments of PickUp: take a pile of items off the ground.",
+        "type": "object",
+        "properties": {
+          "drop": {
+            "description": "The pile's id.",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "drop"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "PlaceLift",
+      "kind": "action",
+      "group": "building",
+      "scope": "play",
+      "description": "Placing, moving or loading the caller's Lift. Arguments of PlaceLift.",
+      "params": {
+        "description": "Arguments of PlaceLift.",
+        "type": "object",
+        "properties": {
+          "position": {
+            "description": "Where the middle of the platform's base goes, in world metres; x and z snap to the grid. Format: [x, y, z]",
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 3,
+            "maxItems": 3
+          },
+          "creation": {
+            "description": "A Creation to pick up onto the Lift. Without it, a Lift that already holds one carries it along.",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "position"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "PlacePart",
+      "kind": "action",
+      "group": "building",
+      "scope": "play",
+      "description": "Placing. Arguments of PlacePart. Give Creation to attach to an existing Creation, with Cell in its grid frame; or give Position to start a new Creation whose grid frame sits at that world position, aligned with the world axes.",
+      "params": {
+        "description": "Arguments of PlacePart. Give Creation to attach to an existing Creation, with Cell in its grid frame; or give Position to start a new Creation whose grid frame sits at that world position, aligned with the world axes.",
+        "type": "object",
+        "properties": {
+          "part": {
+            "description": "Part id, mod_id:part_id (a bare id means vanilla).",
+            "type": "string"
+          },
+          "cell": {
+            "description": "Grid cell of the part's local origin cell. Format: Grid cell [x, y, z] (0.25 m cells).",
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "minItems": 3,
+            "maxItems": 3
+          },
+          "rotation": {
+            "description": "Orientation on the grid, like \"+x+y\". Format: Grid orientation: the directions the part's local +x and +y point, like \"+x+y\".",
+            "type": "string",
+            "pattern": "^[+-][xyz][+-][xyz]$"
+          },
+          "creation": {
+            "description": "Creation to attach to.",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "position": {
+            "description": "World position in metres of a new Creation's grid origin.",
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 3,
+                "maxItems": 3,
+                "description": "[x, y, z]"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "part",
+          "cell"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "PlaceParts",
+      "kind": "action",
+      "group": "building",
+      "scope": "play",
+      "description": "Placing a drag's worth of parts. Arguments of PlaceParts: one part at each of Cells, all in one grid frame (a Hammer drag, UI spec §2). With Position the first cell starts a new Creation there and the rest attach to it.",
+      "params": {
+        "description": "Arguments of PlaceParts: one part at each of Cells, all in one grid frame (a Hammer drag, UI spec §2). With Position the first cell starts a new Creation there and the rest attach to it.",
+        "type": "object",
+        "properties": {
+          "part": {
+            "description": "Part id, mod_id:part_id.",
+            "type": "string"
+          },
+          "cells": {
+            "description": "Origin cells, each touching one before it.",
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              },
+              "minItems": 3,
+              "maxItems": 3,
+              "description": "Grid cell [x, y, z] (0.25 m cells)."
+            }
+          },
+          "rotation": {
+            "description": "Orientation of every part. Format: Grid orientation: the directions the part's local +x and +y point, like \"+x+y\".",
+            "type": "string",
+            "pattern": "^[+-][xyz][+-][xyz]$"
+          },
+          "creation": {
+            "description": "Creation to attach to.",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "position": {
+            "description": "World position in metres of a new Creation's grid origin.",
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 3,
+                "maxItems": 3,
+                "description": "[x, y, z]"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "part",
+          "cells"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "QuestInteract",
+      "kind": "action",
+      "group": "quests",
+      "scope": "play",
+      "description": "Uses the nearest quest marker in reach.",
+      "params": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "Raycast",
+      "kind": "query",
+      "group": "perception",
+      "scope": "observe",
+      "description": "Cast a ray. Arguments of Raycast. With no arguments it is \"what am I looking at\".",
+      "params": {
+        "description": "Arguments of Raycast. With no arguments it is \"what am I looking at\".",
+        "type": "object",
+        "properties": {
+          "from": {
+            "description": "World start point, in m; null is the caller's eyes.",
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 3,
+                "maxItems": 3,
+                "description": "[x, y, z]"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "direction": {
+            "description": "Direction (any length but 0); null is where the caller looks.",
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 3,
+                "maxItems": 3,
+                "description": "[x, y, z]"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "range": {
+            "description": "How far to look, in m, up to MaxRayRange.",
+            "type": "number",
+            "default": 100
+          },
+          "ignore_player": {
+            "description": "A player whose body the ray passes through; null is the caller's own when the ray starts at their eyes, else none.",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "ReloadItem",
+      "kind": "action",
+      "group": "scripting",
+      "scope": "play",
+      "description": "Reloading the item in a slot (ReloadItemArgs). Arguments of ReloadItem: reload the item in a slot (its script's on_reload_item; UI spec §1, §10).",
+      "params": {
+        "description": "Arguments of ReloadItem: reload the item in a slot (its script's on_reload_item; UI spec §1, §10).",
+        "type": "object",
+        "properties": {
+          "slot": {
+            "description": "The slot holding the item.",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "slot"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "RemoveLift",
+      "kind": "action",
+      "group": "building",
+      "scope": "play",
+      "description": "Taking the caller's Lift away (its Creation drops).",
+      "params": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "RemoveMapMarker",
+      "kind": "action",
+      "group": "ui",
+      "scope": "play",
+      "description": "Removes one of the caller's markers. Arguments of RemoveMapMarker.",
+      "params": {
+        "description": "Arguments of RemoveMapMarker.",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "RemovePart",
+      "kind": "action",
+      "group": "building",
+      "scope": "play",
+      "description": "Removing. Arguments of RemovePart.",
+      "params": {
+        "description": "Arguments of RemovePart.",
+        "type": "object",
+        "properties": {
+          "creation": {
+            "description": "Creation holding the part.",
+            "type": "integer"
+          },
+          "part": {
+            "description": "Part id within that Creation.",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "creation",
+          "part"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "RemoveParts",
+      "kind": "action",
+      "group": "building",
+      "scope": "play",
+      "description": "Removing a drag's worth of parts. Arguments of RemoveParts: parts of one Body of a Creation (a Hammer drag, UI spec §8).",
+      "params": {
+        "description": "Arguments of RemoveParts: parts of one Body of a Creation (a Hammer drag, UI spec §8).",
+        "type": "object",
+        "properties": {
+          "creation": {
+            "description": "Creation holding the parts.",
+            "type": "integer"
+          },
+          "parts": {
+            "description": "Part ids, all on the same Body.",
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          }
+        },
+        "required": [
+          "creation",
+          "parts"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "Respawn",
+      "kind": "action",
+      "group": "survival",
+      "scope": "play",
+      "description": "Respawning (dead players), or going back to the spawn spot (living ones).",
+      "params": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "SampleTerrain",
+      "kind": "query",
+      "group": "perception",
+      "scope": "observe",
+      "description": "Sample the ground. Arguments of SampleTerrain: either Points, or a grid from Min to Max every Step metres. At most MaxSamples samples.",
+      "params": {
+        "description": "Arguments of SampleTerrain: either Points, or a grid from Min to Max every Step metres. At most MaxSamples samples.",
+        "type": "object",
+        "properties": {
+          "points": {
+            "description": "World [x, z] points.",
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "min": {
+            "description": "Grid corner [x, z].",
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "max": {
+            "description": "Opposite grid corner [x, z].",
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "step": {
+            "description": "Grid spacing in m.",
+            "type": "number",
+            "default": 1
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "SendChat",
+      "kind": "action",
+      "group": "chat",
+      "scope": "play",
+      "description": "Say a line. Arguments of SendChat.",
+      "params": {
+        "description": "Arguments of SendChat.",
+        "type": "object",
+        "properties": {
+          "text": {
+            "description": "What to say, 1 to MaxLength characters.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "SetBearingTarget",
+      "kind": "action",
+      "group": "motion",
+      "scope": "play",
+      "description": "Driving a bearing. Arguments of SetBearingTarget.",
+      "params": {
+        "description": "Arguments of SetBearingTarget.",
+        "type": "object",
+        "properties": {
+          "creation": {
+            "description": "Creation holding the bearing.",
+            "type": "integer"
+          },
+          "part": {
+            "description": "The bearing's part id (the part that owns the rotational joint).",
+            "type": "integer"
+          },
+          "velocity": {
+            "description": "Target speed in rad/s about the bearing's axis. Without Angle, null turns the motor off so the bearing spins freely. With an angle it is the most speed the bearing turns there at (either sign); null uses the default from data.",
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "max_torque": {
+            "description": "Motor torque limit in N·m; null uses the default from data.",
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "angle": {
+            "description": "Angle in rad to turn to and hold, measured from the pose the bearing was built in (steering, doors). Within ±π, and within the joint's limits when it has them. Null drives at Velocity.",
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "creation",
+          "part"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "SetHotbarSlot",
+      "kind": "action",
+      "group": "items",
+      "scope": "play",
+      "description": "Puts a tool or an item in one of the caller's slots, or empties it. Arguments of SetHotbarSlot: what a slot holds.",
+      "params": {
+        "description": "Arguments of SetHotbarSlot: what a slot holds.",
+        "type": "object",
+        "properties": {
+          "slot": {
+            "description": "Slot, 0 to 9 (keys 1 to 9 and 0).",
+            "type": "integer"
+          },
+          "entry": {
+            "description": "A tool (HotbarTools), an item id, or null to empty the slot.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "slot"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "SetLiftLevel",
+      "kind": "action",
+      "group": "building",
+      "scope": "play",
+      "description": "Raising or lowering the caller's Lift. Arguments of SetLiftLevel.",
+      "params": {
+        "description": "Arguments of SetLiftLevel.",
+        "type": "object",
+        "properties": {
+          "level": {
+            "description": "The new level, 0 to MaxLevel.",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "level"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "SetPistonTarget",
+      "kind": "action",
+      "group": "motion",
+      "scope": "play",
+      "description": "Driving a piston. Arguments of SetPistonTarget.",
+      "params": {
+        "description": "Arguments of SetPistonTarget.",
+        "type": "object",
+        "properties": {
+          "creation": {
+            "description": "Creation holding the piston.",
+            "type": "integer"
+          },
+          "part": {
+            "description": "The piston's part id (the part that owns the linear joint).",
+            "type": "integer"
+          },
+          "length": {
+            "description": "Extension in m to move to and hold, within the joint's min and max. Null turns the motor off so the piston slides freely.",
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "speed": {
+            "description": "Most speed in m/s; null uses the default from data.",
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "max_force": {
+            "description": "Motor force limit in N; null uses the default from data.",
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "creation",
+          "part",
+          "length"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "SetPlayerInput",
+      "kind": "action",
+      "group": "remote",
+      "scope": "play",
+      "description": "Moves an agent's own player and turns its view. Arguments of SetPlayerInput: what an agent's player does for the next Ticks physics ticks, as if its keys were held that long. A new call replaces the one still running.",
+      "params": {
+        "description": "Arguments of SetPlayerInput: what an agent's player does for the next Ticks physics ticks, as if its keys were held that long. A new call replaces the one still running.",
+        "type": "object",
+        "properties": {
+          "move_x": {
+            "description": "Strafe, -1 (left) to 1 (right).",
+            "type": "number",
+            "default": 0
+          },
+          "move_z": {
+            "description": "Forward, -1 (back) to 1 (forward), relative to where the player looks.",
+            "type": "number",
+            "default": 0
+          },
+          "yaw": {
+            "description": "Look yaw in radians (0 looks down -Z, positive turns left); left out keeps the current one.",
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "pitch": {
+            "description": "Look pitch in radians (positive looks up); left out keeps the current one.",
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "jump": {
+            "description": "Hold jump.",
+            "type": "boolean",
+            "default": false
+          },
+          "sprint": {
+            "description": "Hold sprint.",
+            "type": "boolean",
+            "default": false
+          },
+          "crawl": {
+            "description": "Hold crouch (dives in deep water).",
+            "type": "boolean",
+            "default": false
+          },
+          "ticks": {
+            "description": "How many physics ticks to hold this for, 1 to the host's max_input_ticks; then the player stands still.",
+            "type": "integer",
+            "default": 1
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "SetSpawn",
+      "kind": "action",
+      "group": "survival",
+      "scope": "play",
+      "description": "Setting the bed to respawn at. Arguments of SetSpawn: one part of a Creation.",
+      "params": {
+        "description": "Arguments of SetSpawn: one part of a Creation.",
+        "type": "object",
+        "properties": {
+          "creation": {
+            "description": "Creation holding the part.",
+            "type": "integer"
+          },
+          "part": {
+            "description": "The bed part.",
+            "type": "integer"
+          },
+          "slot": {
+            "description": "Unused; kept so older callers that send it still parse.",
+            "type": "integer",
+            "default": 0
+          }
+        },
+        "required": [
+          "creation",
+          "part"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "Sledge",
+      "kind": "action",
+      "group": "building",
+      "scope": "play",
+      "description": "A Sledgehammer hit. Arguments of Sledge: one Sledgehammer hit on a part (Creation and Part), a player (Player) or a world object such as a tree (Object).",
+      "params": {
+        "description": "Arguments of Sledge: one Sledgehammer hit on a part (Creation and Part), a player (Player) or a world object such as a tree (Object).",
+        "type": "object",
+        "properties": {
+          "creation": {
+            "description": "The Creation hit.",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "part": {
+            "description": "The part hit.",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "player": {
+            "description": "Peer of the player hit.",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "object": {
+            "description": "Id of the world object hit (\"3.10.-4\").",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "bot": {
+            "description": "Id of the bot hit.",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "SpawnBot",
+      "kind": "action",
+      "group": "bots",
+      "scope": "admin",
+      "description": "Putting a bot in the world. Arguments of SpawnBot: put a bot in the world.",
+      "params": {
+        "description": "Arguments of SpawnBot: put a bot in the world.",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "Bot type id (mod_id:bot_id; a bare id means vanilla).",
+            "type": "string"
+          },
+          "position": {
+            "description": "Where its feet go, [x, y, z] metres.",
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "yaw": {
+            "description": "Which way it faces, in degrees about the vertical.",
+            "type": "number",
+            "default": 0
+          }
+        },
+        "required": [
+          "bot",
+          "position"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "SpawnPart",
+      "kind": "action",
+      "group": "general",
+      "scope": "admin",
+      "description": "Spawn a part as a new Creation. Arguments of SpawnPart: a part to drop into the world as a new one-part Creation.",
+      "params": {
+        "description": "Arguments of SpawnPart: a part to drop into the world as a new one-part Creation.",
+        "type": "object",
+        "properties": {
+          "part": {
+            "description": "Qualified part id (mod_id:part_id; a bare id means vanilla).",
+            "type": "string"
+          },
+          "position": {
+            "description": "World position of the part's footprint centre, [x, y, z] metres.",
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "yaw": {
+            "description": "Turn about the vertical axis in degrees.",
+            "type": "number",
+            "default": 0
+          }
+        },
+        "required": [
+          "part",
+          "position"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "StartRaid",
+      "kind": "action",
+      "group": "bots",
+      "scope": "admin",
+      "description": "Starting a raid now. Arguments of StartRaid.",
+      "params": {
+        "description": "Arguments of StartRaid.",
+        "type": "object",
+        "properties": {
+          "level": {
+            "description": "Raid level to send; null picks it from the crops, as a raid check would.",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "StartRefine",
+      "kind": "action",
+      "group": "survival",
+      "scope": "play",
+      "description": "Starting to hold Use on a resource node to refine it. Arguments of StartRefine and FinishRefine: the resource node held Use on.",
+      "params": {
+        "description": "Arguments of StartRefine and FinishRefine: the resource node held Use on.",
+        "type": "object",
+        "properties": {
+          "object": {
+            "description": "Id of the world object (\"3.10.-4\").",
+            "type": "string"
+          }
+        },
+        "required": [
+          "object"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "TurnLift",
+      "kind": "action",
+      "group": "building",
+      "scope": "play",
+      "description": "Turning the Creation on the caller's Lift. Arguments of TurnLift.",
+      "params": {
+        "description": "Arguments of TurnLift.",
+        "type": "object",
+        "properties": {
+          "turns": {
+            "description": "Quarter turns about the vertical, counter-clockwise seen from above (negative turns the other way).",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "turns"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "UpgradePart",
+      "kind": "action",
+      "group": "items",
+      "scope": "play",
+      "description": "Upgrading a part. Arguments of UpgradePart: raise a placed part one upgrade level.",
+      "params": {
+        "description": "Arguments of UpgradePart: raise a placed part one upgrade level.",
+        "type": "object",
+        "properties": {
+          "creation": {
+            "description": "Creation holding the part.",
+            "type": "integer"
+          },
+          "part": {
+            "description": "The part.",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "creation",
+          "part"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "UseItem",
+      "kind": "action",
+      "group": "scripting",
+      "scope": "play",
+      "description": "Using the item in a slot (UseItemArgs). Arguments of UseItem: use the item in a slot of the caller's inventory (its script's on_use).",
+      "params": {
+        "description": "Arguments of UseItem: use the item in a slot of the caller's inventory (its script's on_use).",
+        "type": "object",
+        "properties": {
+          "slot": {
+            "description": "The slot holding the item.",
+            "type": "integer"
+          },
+          "direction": {
+            "description": "Where the caller aims from their eyes; the host checks it against where they look. Omitted means where they look.",
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 3,
+                "maxItems": 3,
+                "description": "[x, y, z]"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "creation": {
+            "description": "The Creation of the part the item is used on (soil for a seed), if any. Give it with Part.",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "part": {
+            "description": "The part the item is used on, if any. The script checks reach (farm.soil does).",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "slot"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "Weld",
+      "kind": "action",
+      "group": "building",
+      "scope": "play",
+      "description": "Welding one Creation onto another. Arguments of Weld: move the whole Source Creation onto Target, mapping its grid by Rotation then Offset into the target's grid, and merge the two with every touching face rigid.",
+      "params": {
+        "description": "Arguments of Weld: move the whole Source Creation onto Target, mapping its grid by Rotation then Offset into the target's grid, and merge the two with every touching face rigid.",
+        "type": "object",
+        "properties": {
+          "source": {
+            "description": "The Creation that moves.",
+            "type": "integer"
+          },
+          "target": {
+            "description": "The Creation it is welded to.",
+            "type": "integer"
+          },
+          "offset": {
+            "description": "Where the source's grid origin lands in the target's grid. Format: Grid cell [x, y, z] (0.25 m cells).",
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "minItems": 3,
+            "maxItems": 3
+          },
+          "rotation": {
+            "description": "How the source's grid turns into the target's. Format: Grid orientation: the directions the part's local +x and +y point, like \"+x+y\".",
+            "type": "string",
+            "pattern": "^[+-][xyz][+-][xyz]$"
+          }
+        },
+        "required": [
+          "source",
+          "target",
+          "offset"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "WeldParts",
+      "kind": "action",
+      "group": "building",
+      "scope": "play",
+      "description": "Welding two Bodies of one Creation. Arguments of WeldParts: two touching parts of one Creation, in different Bodies.",
+      "params": {
+        "description": "Arguments of WeldParts: two touching parts of one Creation, in different Bodies.",
+        "type": "object",
+        "properties": {
+          "creation": {
+            "description": "The Creation holding both.",
+            "type": "integer"
+          },
+          "a": {
+            "description": "The part selected first.",
+            "type": "integer"
+          },
+          "b": {
+            "description": "The part it is welded to.",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "creation",
+          "a",
+          "b"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "mechanica.auth",
+      "kind": "method",
+      "group": "mechanica",
+      "scope": "observe",
+      "description": "Gives the endpoint's token. Needed first when the host set one; grants that token's scopes.",
+      "params": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "token"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "mechanica.describe",
+      "kind": "method",
+      "group": "mechanica",
+      "scope": "observe",
+      "description": "Every method (Action API actions and queries, built-ins and module methods) with its scope, description and a JSON Schema of its params, plus the event topics. Pass names to describe only those.",
+      "params": {
+        "type": "object",
+        "properties": {
+          "names": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "mechanica.info",
+      "kind": "method",
+      "group": "mechanica",
+      "scope": "observe",
+      "description": "Game name, protocol version, tick rate, the current tick, this connection's scopes and caller, and the names of every action and query.",
+      "params": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "mechanica.join",
+      "kind": "method",
+      "group": "mechanica",
+      "scope": "play",
+      "description": "Joins the world as a player of your own, marked as an AI. From then on this connection's actions act as that player (its inventory, reach and quests), and SetPlayerInput moves it. Returns its peer, profile id and shown name.",
+      "params": {
+        "description": "Params of mechanica.join.",
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "The agent's name. Its saved player (inventory, health, position) follows the name, so use the same one to come back.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "mechanica.leave",
+      "kind": "method",
+      "group": "mechanica",
+      "scope": "play",
+      "description": "Removes the player this connection joined as (it is saved) and goes back to acting as an external agent on the host.",
+      "params": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "mechanica.record.start",
+      "kind": "method",
+      "group": "mechanica",
+      "scope": "observe",
+      "description": "Starts recording every state-changing Action API call on the host.",
+      "params": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "mechanica.record.stop",
+      "kind": "method",
+      "group": "mechanica",
+      "scope": "observe",
+      "description": "Stops recording and returns the recording.",
+      "params": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "mechanica.replay.start",
+      "kind": "method",
+      "group": "mechanica",
+      "scope": "admin",
+      "description": "Replays a recording through the validator as this connection, with the recorded tick spacing unless timed is false. Returns the number of calls it will replay.",
+      "params": {
+        "type": "object",
+        "properties": {
+          "recording": {},
+          "timed": {
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "required": [
+          "recording"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "mechanica.replay.status",
+      "kind": "method",
+      "group": "mechanica",
+      "scope": "observe",
+      "description": "Progress of the current or last replay: running, dispatched, total and mismatches.",
+      "params": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "mechanica.replay.stop",
+      "kind": "method",
+      "group": "mechanica",
+      "scope": "admin",
+      "description": "Stops a replay in progress.",
+      "params": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "mechanica.subscribe",
+      "kind": "method",
+      "group": "mechanica",
+      "scope": "observe",
+      "description": "Starts pushing mechanica.event notifications for the given topics (see mechanica.describe's topics). Returns the topics now subscribed.",
+      "params": {
+        "type": "object",
+        "properties": {
+          "topics": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "mechanica.unsubscribe",
+      "kind": "method",
+      "group": "mechanica",
+      "scope": "observe",
+      "description": "Stops the given topics, or every topic when none are given. Returns the topics still subscribed.",
+      "params": {
+        "type": "object",
+        "properties": {
+          "topics": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "package.export",
+      "kind": "method",
+      "group": "package",
+      "scope": "admin",
+      "description": "Validates an installed mod and exports it to <id>-<version>.zip in the packages folder. A mod with errors is not exported; ok is false and problems say why.",
+      "params": {
+        "description": "Params naming an installed mod.",
+        "type": "object",
+        "properties": {
+          "id": {
+            "description": "Mod id.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "package.inspect",
+      "kind": "method",
+      "group": "package",
+      "scope": "admin",
+      "description": "Checks a package in the packages folder without installing it: its manifest, every problem (unsafe paths, hashes, size limits, game version), and what installing it would do (new, upgrade, reinstall, downgrade, replace_broken; dependencies and conflicts).",
+      "params": {
+        "description": "Params naming a package file in the packages folder.",
+        "type": "object",
+        "properties": {
+          "file": {
+            "description": "File name in the packages folder, like better_wheels-1.2.0.zip.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "package.install",
+      "kind": "method",
+      "group": "package",
+      "scope": "admin",
+      "description": "Installs a package from the packages folder into the mods folder after checking it. Replacing an installed copy needs replace: true. Takes effect with the next world.",
+      "params": {
+        "description": "Params for package.install.",
+        "type": "object",
+        "properties": {
+          "file": {
+            "description": "File name in the packages folder.",
+            "type": "string"
+          },
+          "replace": {
+            "description": "Must be true to replace an installed copy (upgrade, reinstall, downgrade or a broken folder).",
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "package.list",
+      "kind": "method",
+      "group": "package",
+      "scope": "admin",
+      "description": "Lists the mod packages (.zip) in the packages folder, by file name and size.",
+      "params": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "package.uninstall",
+      "kind": "method",
+      "group": "package",
+      "scope": "admin",
+      "description": "Deletes an installed mod (not vanilla). dependents lists the installed mods that need it and stop loading. Takes effect with the next world.",
+      "params": {
+        "description": "Params naming an installed mod.",
+        "type": "object",
+        "properties": {
+          "id": {
+            "description": "Mod id.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "package.verify",
+      "kind": "method",
+      "group": "package",
+      "scope": "admin",
+      "description": "Compares an installed mod with the package.json it was installed with: files changed, missing or added since (MD1310).",
+      "params": {
+        "description": "Params naming an installed mod.",
+        "type": "object",
+        "properties": {
+          "id": {
+            "description": "Mod id.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    }
+  ],
+  "topics": {
+    "actions": "Every state-changing Action API call by players, bots and agents (not Lua scripts): peer, source, action, args, ok, code, message, value.",
+    "bots": "A bot spawned, was removed or attacked: kind, bot, plus the attack or bot view.",
+    "chat": "A chat line: the chat message.",
+    "dialogue": "A quest character spoke: quest, speaker, text, choices.",
+    "drop": "An item drop appeared, changed or was picked up: kind, drop.",
+    "events_dropped": "Sent automatically when a subscriber fell behind and notifications were dropped: count.",
+    "fire": "A fire went out: the fire view.",
+    "hurt": "A player took damage: peer, amount, cause.",
+    "messages": "Lua prints, warnings and errors from part, item and bot scripts, and host errors from agent calls: kind, source, script, creation, part, text.",
+    "mods": "Mod content was validated or reloaded.",
+    "projectiles": "A projectile was launched or landed.",
+    "quest": "Quest progress changed: the GetQuests state.",
+    "raid": "A raid started, advanced or ended: the GetRaid view.",
+    "reports": "An agent filed a note, recommendation or bug report.",
+    "seats": "Someone sat down or stood up: seat, seated.",
+    "vitals": "A player's vitals changed (health, death, respawn): the GetVitals view."
+  },
+  "errors": {
+    "-32700": "not valid JSON",
+    "-32600": "not a JSON-RPC request, or an empty or oversized batch",
+    "-32601": "no such method (data.code unknown_action)",
+    "-32602": "params don't fit the method (data.code bad_args)",
+    "-32603": "the host failed while handling the call (data.code internal_error)",
+    "-32001": "the host's validation refused it; message says why (data.code rejected)",
+    "-32002": "too many calls (data.code rate_limited)",
+    "-32003": "call mechanica.auth first, or the token was wrong",
+    "-32004": "can't be done now (nothing recording, no replay, busy)",
+    "-32005": "this connection lacks the method's scope (data.code forbidden)"
+  }
+}
