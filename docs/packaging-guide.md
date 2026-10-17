@@ -163,6 +163,7 @@ every installed mod in load order and shows, for the setup on screen:
   Mods with no dependency between them load in the order shown, which decides which override wins.
 - each mod's status (loaded, disabled, not loaded and why, overrides won or lost) and details.
 - every error, warning and conflict the setup would load with, before anything is saved.
+- **Export…**, **Install…** and **Uninstall** for mod packages (§9).
 
 **Apply** saves the setup to `mods.json` in the user data folder (`user://mods.json`; on Linux
 `~/.local/share/godot/app_userdata/Mechanica/`). The game reads it the next time it starts or hosts.
@@ -192,15 +193,89 @@ version for every release so players can tell which copy they have.
 
 ## 9. Packaging and sharing
 
-1. Load your mod in the game and open the Mod Manager. Fix every error and warning it lists.
-2. Remove editor leftovers: `.import` files, backups, `.godot/` folders.
-3. Zip the mod **folder itself** so the archive contains `better_wheels/mod.json`, not a bare `mod.json`
-   or an extra parent folder.
-4. Name the archive `<id>-<version>.zip`, for example `better_wheels-1.2.0.zip`.
-5. In the release notes, list the dependencies with versions, any conflicts, and every part you override.
+Share a mod as a **mod package**: a zip named `<id>-<version>.zip`, made and installed by the Mod Manager.
+The format is built for a future mod store, so the store, the game and the AI endpoint all check packages
+with the same code (`Mechanica.Core.Packages.ModPackages`).
 
-Players install by unzipping into `mods/` next to the game executable, so `mods/better_wheels/mod.json`
-exists, then enabling the mod in the Mod Manager.
+### Exporting
+
+1. Open the Mod Manager, select your mod and press **Export…**, then pick a folder (it starts in
+   `user://mod_packages`).
+2. The game checks the mod the way it loads it, with its dependencies and every kind of content (parts,
+   recipes, sounds, bots, raids, world generation, quests, characters). **Any error refuses the export**
+   and the Packages panel lists the problems. Problems in other mods do not count.
+3. Editor leftovers are left out and listed: hidden files and folders (`.git/`, `.godot/`), `*.import`,
+   `*.uid`, `*.bak`, `*.tmp`, `*.orig`, `*~`, `Thumbs.db`, `desktop.ini`. A symbolic link refuses the export.
+4. The archive holds the mod folder itself (`better_wheels/mod.json`, …) plus `better_wheels/package.json`.
+   Exporting the same files twice gives the same bytes.
+
+In the release notes, list the dependencies with versions, any conflicts, and every part you override.
+
+### package.json
+
+```json
+{
+  "package_format": 1,
+  "id": "better_wheels",
+  "name": "Better Wheels",
+  "version": "1.2.0",
+  "description": "Sport and off-road wheels.",
+  "authors": ["Ada"],
+  "dependencies": [{ "id": "vanilla", "version": "^0.1.0" }],
+  "conflicts": [{ "id": "old_wheel_pack" }],
+  "min_game_version": "0.1.0",
+  "min_protocol_version": 1,
+  "files": [
+    { "path": "mod.json", "size": 212, "sha256": "9f2c…" },
+    { "path": "parts/wheels/sport_wheel.json", "size": 1830, "sha256": "41aa…" }
+  ],
+  "sha256": "c07e…",
+  "signature": ""
+}
+```
+
+| Key | Meaning |
+|-----|---------|
+| `package_format` | Package format, `1`. A newer format is refused (`MD1306`). |
+| `id`, `name`, `version`, `description`, `authors`, `dependencies`, `conflicts` | Copied from `mod.json`. `id` and `version` must match it and the archive's folder. |
+| `min_game_version` | Game version that exported the package; older games refuse it (`MD1306`). |
+| `min_protocol_version` | AI endpoint protocol version at export; older games refuse it (`MD1306`). |
+| `files` | Every file except `package.json`, sorted by path: path relative to the mod folder, size in bytes, SHA-256 (lowercase hex). |
+| `sha256` | The package hash: SHA-256 of the text `"<sha256>  <path>\n"` for each file, sorted by path. That is exactly what `sha256sum` prints, so `find . -type f ! -name package.json -printf '%P\n' \| LC_ALL=C sort \| xargs sha256sum \| sha256sum` inside the mod folder reproduces it. |
+| `signature` | Empty. Reserved for a mod store to sign `sha256`; the game does not check it yet. |
+
+### Installing
+
+Press **Install…** in the Mod Manager and pick a `.zip`. The game checks the archive before it changes
+anything:
+
+- **Safe paths only**: one top folder named after the mod; no absolute paths, drive letters, `:`,
+  backslashes, `..`, `.` or empty segments, names ending in `.` or a space, two paths that differ only in
+  letter case, or symbolic links (`MD1302`).
+- **Size limits** against zip bombs: 512 MiB archive, 20 000 entries, 256 MiB per file, 1 GiB in total, and
+  no file over 1 MiB that compresses more than 200 to 1 (`MD1303`).
+- **Integrity**: the files in the archive and in `files` must be the same set (`MD1305`), every file's size
+  and SHA-256 must match, and the package hash must match the file list (`MD1304`). Extraction never reads
+  more than the listed size, whatever the zip header claims.
+- **Compatibility**: `mod.json` must agree with `package.json`, and the game must be new enough (`MD1306`).
+- **Dependencies**: each must be installed in a version in range, or the install is refused (`MD1307`);
+  install them first. Conflicts with installed mods, and installed mods that need a different version of
+  this one, are warnings shown in the question (`MD1308`, `MD1307`).
+
+When everything checks out the game asks **Install** (new mod) or **Replace** (an upgrade, the same
+version again, an older version, or a broken folder with the mod's id). Files are extracted into a hidden
+staging folder and hashed again as they are written; the old folder is swapped out only at the end and put
+back if the swap fails, so a failed install changes nothing. The installed mod keeps its `package.json`.
+A new mod is enabled and loads after the others with the next world; Apply is not needed. Vanilla ships
+with the game and cannot be installed or uninstalled.
+
+You can still install by hand: unzip into `mods/` so that `mods/better_wheels/mod.json` exists.
+
+### Uninstalling
+
+Select a mod and press **Uninstall**. The question names the installed mods that need it, which stop
+loading. Confirming deletes the mod's folder. Its entry in `mods.json` is kept, so a reinstall gets its
+place in the load order back.
 
 ## 10. Packaging diagnostics
 
@@ -222,3 +297,13 @@ exists, then enabling the mod in the Mod Manager.
 | `MD0203` | Overrides target a mod that is not a dependency. |
 | `MD0204` | Override for a part the target mod does not have. |
 | `MD0205` | Two mods override the same part; the later one wins (warning). |
+| `MD1301` | Not a mod package: unreadable zip, no `package.json`, invalid manifest, or vanilla. |
+| `MD1302` | Unsafe path or symbolic link in the archive (or the mod, on export). |
+| `MD1303` | Archive or a file is over the size limits, or looks like a zip bomb. |
+| `MD1304` | A file's SHA-256 or size, or the package hash, does not match `package.json`. |
+| `MD1305` | The archive's files and `package.json`'s `files` list differ. |
+| `MD1306` | Needs a newer game, package format or AI protocol. |
+| `MD1307` | A dependency is missing or the wrong version (error), or an installed mod needs another version (warning). |
+| `MD1308` | Conflicts with an installed mod (warning). |
+| `MD1309` | Export refused: the mod has errors. |
+| `MD1310` | An installed mod's file was changed, removed or added since it was installed (warning). |

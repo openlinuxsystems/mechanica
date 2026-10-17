@@ -204,7 +204,9 @@ public static class ModLoader
                 modsRoot, null, null, "mods folder does not exist."));
             return new ModScanResult([], new HashSet<string>(), diagnostics);
         }
-        return Scan(Directory.GetDirectories(modsRoot).Order(StringComparer.Ordinal), diagnostics);
+        // Hidden folders (.git, and the package installer's staging and trash folders) are never mods.
+        return Scan(Directory.GetDirectories(modsRoot).Where(d => !Path.GetFileName(d).StartsWith('.'))
+            .Order(StringComparer.Ordinal), diagnostics);
     }
 
     /// <summary>

@@ -165,6 +165,14 @@ public static class DataJson
         Outro = quest.Outro?.Select(l => l with { Extra = Sorted(l.Extra) }).ToList(),
     });
 
+    /// <summary>Serializes a mod package manifest in canonical form.</summary>
+    public static string Write(Packages.PackageManifest manifest) => Serialize(manifest with
+    {
+        Extra = Sorted(manifest.Extra),
+        Dependencies = manifest.Dependencies?.Select(d => d with { Extra = Sorted(d.Extra) }).ToList(),
+        Conflicts = manifest.Conflicts?.Select(d => d with { Extra = Sorted(d.Extra) }).ToList(),
+    });
+
     private static string Serialize<T>(T value) => JsonSerializer.Serialize(value, WriteOptions) + "\n";
 
     private static Dictionary<string, JsonElement>? Sorted(Dictionary<string, JsonElement>? extra) =>

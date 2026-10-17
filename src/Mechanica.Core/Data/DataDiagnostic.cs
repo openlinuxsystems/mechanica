@@ -117,6 +117,18 @@ public static class DiagnosticCodes
     // 12xx: player characters
     public const string CharacterInvalid = "MD1201";
     public const string DuplicateCharacter = "MD1202";
+
+    // 13xx: mod packages (export, install, verify)
+    public const string PackageInvalid = "MD1301";
+    public const string PackageUnsafePath = "MD1302";
+    public const string PackageTooLarge = "MD1303";
+    public const string PackageHashMismatch = "MD1304";
+    public const string PackageFileList = "MD1305";
+    public const string PackageGameVersion = "MD1306";
+    public const string PackageDependency = "MD1307";
+    public const string PackageConflict = "MD1308";
+    public const string PackageExportRefused = "MD1309";
+    public const string PackageModified = "MD1310";
 }
 
 /// <summary>Collects diagnostics for one file, filling in the file name.</summary>
