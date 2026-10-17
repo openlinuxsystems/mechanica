@@ -1,0 +1,20 @@
+{
+  "id": "fallen_log",
+  "name": "Fallen Log",
+  "description": "A log lying on its side.",
+  "category": "decor",
+  "mass": 160,
+  "durability": 10,
+  "friction": 0.5,
+  "buoyancy": 0.7,
+  "flammable": true,
+  "stack_size": 20,
+  "sound_material": "wood",
+  "size": [3, 3, 8],
+  "mesh": "meshes/decor/fallen_log.glb",
+  "visual": {
+    "color": "#6a4a2a",
+    "roughness": 0.9,
+    "metallic": 0
+  }
+}

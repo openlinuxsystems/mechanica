@@ -1,6 +1,7 @@
 {
   "id": "locker",
   "name": "Locker",
+  "description": "A tall steel locker with 20 slots.",
   "category": "container",
   "mass": 25,
   "durability": 10,

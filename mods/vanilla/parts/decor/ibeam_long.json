@@ -1,0 +1,20 @@
+{
+  "id": "ibeam_long",
+  "name": "I-Beam (Long)",
+  "description": "A steel I-beam, 2 m long.",
+  "category": "decor",
+  "mass": 40,
+  "durability": 8,
+  "friction": 0.5,
+  "buoyancy": 0.3,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [1, 1, 8],
+  "mesh": "meshes/decor/ibeam_long.glb",
+  "visual": {
+    "color": "#8a5a3a",
+    "roughness": 0.5,
+    "metallic": 0.8
+  }
+}

@@ -1,6 +1,7 @@
 {
   "id": "fridge",
   "name": "Fridge",
+  "description": "Keeps produce and seeds: 30 slots.",
   "category": "container",
   "mass": 40,
   "durability": 10,

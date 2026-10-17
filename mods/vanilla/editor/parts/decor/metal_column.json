@@ -1,0 +1,22 @@
+{
+  "format_version": 1,
+  "model": [
+    {
+      "kind": "cylinder",
+      "radius": 0.1,
+      "height": 2
+    },
+    {
+      "kind": "cylinder",
+      "radius": 0.12,
+      "height": 0.04,
+      "position": [0, 0.98, 0]
+    },
+    {
+      "kind": "cylinder",
+      "radius": 0.12,
+      "height": 0.04,
+      "position": [0, -0.98, 0]
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "id": "support_pillar",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal",
+      "count": 4
+    },
+    {
+      "item": "scrap_wood",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "support_pillar",
+      "count": 1
+    }
+  ],
+  "time": 4
+}

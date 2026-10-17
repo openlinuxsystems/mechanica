@@ -1,0 +1,24 @@
+{
+  "id": "chemical_container",
+  "stations": [
+    "fabricator",
+    "mini_fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal",
+      "count": 2
+    },
+    {
+      "item": "component_kit",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "chemical_container",
+      "count": 1
+    }
+  ],
+  "time": 4
+}

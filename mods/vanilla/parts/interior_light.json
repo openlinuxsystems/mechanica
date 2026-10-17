@@ -1,0 +1,45 @@
+{
+  "id": "interior_light",
+  "name": "Interior Light",
+  "description": "A ceiling lamp for cabins and bases. Build it under a roof; it lights the room around it. Press F to switch it off and on; a linked switch also works.",
+  "category": "light",
+  "mass": 1.5,
+  "durability": 2,
+  "friction": 0.5,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [2, 1, 2],
+  "mesh": "meshes/interior_light.glb",
+  "visual": {
+    "color": "#e8e4d8",
+    "roughness": 0.4,
+    "metallic": 0.5,
+    "emission": "#fff0c8"
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, 0.125, 0],
+      "normal": [0, 1, 0]
+    }
+  ],
+  "script": "scripts/light.lua",
+  "sounds": {
+    "on": "light_on",
+    "off": "light_off"
+  },
+  "logic": {
+    "inputs": 1,
+    "use": "toggle"
+  },
+  "light": {
+    "kind": "omni",
+    "color": "#fff0c8",
+    "energy": 1.5,
+    "range": 8,
+    "offset": [0, -0.06, 0]
+  }
+}

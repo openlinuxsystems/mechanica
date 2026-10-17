@@ -1,0 +1,20 @@
+{
+  "id": "small_pipe_tee",
+  "name": "Small Pipe (Tee)",
+  "description": "A narrow pipe with a branch off one side.",
+  "category": "decor",
+  "mass": 2,
+  "durability": 4,
+  "friction": 0.5,
+  "buoyancy": 0.3,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/decor/small_pipe_tee.glb",
+  "visual": {
+    "color": "#6a7078",
+    "roughness": 0.4,
+    "metallic": 0.8
+  }
+}

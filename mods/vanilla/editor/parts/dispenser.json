@@ -1,0 +1,20 @@
+{
+  "format_version": 1,
+  "model": [
+    {
+      "kind": "box",
+      "size": [0.75, 1.5, 0.5]
+    },
+    {
+      "kind": "box",
+      "operation": "subtract",
+      "size": [0.5, 0.3, 0.06],
+      "position": [0, 0.25, -0.25]
+    },
+    {
+      "kind": "box",
+      "size": [0.3, 0.16, 0.04],
+      "position": [0, -0.4, -0.25]
+    }
+  ]
+}

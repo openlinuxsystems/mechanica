@@ -1,0 +1,20 @@
+{
+  "id": "hay_bale",
+  "name": "Hay Bale",
+  "description": "A tightly bound bale of hay. It burns well.",
+  "category": "decor",
+  "mass": 25,
+  "durability": 2,
+  "friction": 0.5,
+  "buoyancy": 0.6,
+  "flammable": true,
+  "stack_size": 20,
+  "sound_material": "fabric",
+  "size": [4, 2, 2],
+  "mesh": "meshes/decor/hay_bale.glb",
+  "visual": {
+    "color": "#d8c060",
+    "roughness": 1,
+    "metallic": 0
+  }
+}

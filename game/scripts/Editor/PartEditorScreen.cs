@@ -555,7 +555,10 @@ public partial class PartEditorScreen : Control
             AddStorageFields(d);
         AddSurvivalFields(d);
         if (d.IsPlaceable)
+        {
             AddLogicFields(d);
+            AddLightFields(d);
+        }
 
         // Model: the selected piece.
         if (_selectedPiece >= 0)
@@ -784,6 +787,26 @@ public partial class PartEditorScreen : Control
                 return e.Message;
             }
         });
+    }
+
+    // Light fields (chunk 23): what the part's light looks like at full level. Its script turns it on.
+    private void AddLightFields(PartDefinition d)
+    {
+        _partGrid.AddHeading("Light");
+        _partGrid.AddBool("Gives light", d.Light is not null, v => Document?.Apply(v == true ? "Add light" : "Remove light",
+            x => x with { Light = v == true ? x.Light ?? new LightDefinition { Range = 6 } : null }));
+        if (d.Light is not { } light)
+            return;
+        void SetLight(string label, Func<LightDefinition, LightDefinition> change) => Set(label, x => x with { Light = change(x.Light!) });
+        _partGrid.AddEnum("Kind", light.Kind, v => SetLight("Set light kind", l => l with { Kind = v }), optional: true);
+        _partGrid.AddColor("Colour", light.Color, v => SetLight("Set light colour", l => l with { Color = v }));
+        _partGrid.AddNumber("Energy", light.Energy, 0, 100, 0.1, v => SetLight("Set light energy", l => l with { Energy = (float?)v }), optional: true, fallback: 1);
+        _partGrid.AddNumber("Range", light.Range, 0.1, 500, 0.5, v => SetLight("Set light range", l => l with { Range = (float?)v }), suffix: "m");
+        if (light.Kind == LightKind.Spot)
+            _partGrid.AddNumber("Spot angle", light.Angle, 1, 89, 1, v => SetLight("Set spot angle", l => l with { Angle = (float?)v }), optional: true, fallback: 30, suffix: "°");
+        _partGrid.AddVector("Offset", light.Offset ?? Vec3.Zero, 0.05, v => SetLight("Move light", l => l with { Offset = v == Vec3.Zero ? null : v }), -2, 2);
+        if (light.Kind == LightKind.Spot)
+            _partGrid.AddVector("Direction", light.Direction ?? new Vec3(0, 0, -1), 0.1, v => SetLight("Aim light", l => l with { Direction = v }), -1, 1);
     }
 
     private static List<string>? SplitIds(string? text) =>

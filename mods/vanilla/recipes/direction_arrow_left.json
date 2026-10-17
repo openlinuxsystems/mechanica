@@ -1,0 +1,20 @@
+{
+  "id": "direction_arrow_left",
+  "stations": [
+    "fabricator",
+    "mini_fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "direction_arrow_left",
+      "count": 1
+    }
+  ],
+  "time": 2
+}

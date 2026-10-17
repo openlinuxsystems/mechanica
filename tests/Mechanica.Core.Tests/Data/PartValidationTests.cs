@@ -65,6 +65,13 @@ public class PartValidationTests
     [InlineData("""{ "visual": { "texture": "textures/a.jpg" } }""", "$.visual.texture", ".png")]
     [InlineData("""{ "visual": { "variants": [{ "id": "red", "name": "Red", "color": "#ff00zz" }] } }""", "$.visual.variants[0].color", "hex text")]
     [InlineData("""{ "visual": { "variants": [{ "id": "red", "color": "#ff0000" }] } }""", "$.visual.variants[0].name", "name is required")]
+    [InlineData("""{ "light": { "energy": 1 } }""", "$.light.range", "range (m) is required")]
+    [InlineData("""{ "light": { "range": 0 } }""", "$.light.range", "greater than 0")]
+    [InlineData("""{ "light": { "range": 5, "energy": -1 } }""", "$.light.energy", "0 or more")]
+    [InlineData("""{ "light": { "range": 5, "color": "white" } }""", "$.light.color", "hex text")]
+    [InlineData("""{ "light": { "range": 5, "kind": "spot", "angle": 90 } }""", "$.light.angle", "under 90 degrees")]
+    [InlineData("""{ "light": { "range": 5, "offset": [0, 0.2, 0] } }""", "$.light.offset", "outside the part's [1, 1, 1] footprint")]
+    [InlineData("""{ "light": { "range": 5, "direction": [0, 0, 0] } }""", "$.light.direction", "non-zero")]
     public void BadValuesGiveClearErrors(string overrides, string path, string messagePart)
     {
         var error = Single(TestMods.Block(overrides: overrides), path);
@@ -100,6 +107,17 @@ public class PartValidationTests
             """));
 
         Assert.Equal(["$.visual.variants[1].id", "$.visual.variants[1].color"], diagnostics.Select(d => d.JsonPath));
+    }
+
+    [Fact]
+    public void ALightIsValidOnAPlaceablePartOnly()
+    {
+        Assert.Empty(Check(TestMods.Block(overrides: """
+            { "light": { "kind": "spot", "color": "#fff0c0", "energy": 2, "range": 20, "angle": 30, "offset": [0, 0, -0.1], "direction": [0, -1, -1] } }
+            """)));
+        var error = Single("""{ "id": "a", "name": "A", "category": "resource", "light": { "range": 4 } }""", "$.light");
+
+        Assert.Contains("only placeable parts", error.Message);
     }
 
     [Fact]

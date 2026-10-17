@@ -1,0 +1,20 @@
+{
+  "id": "fallen_log",
+  "stations": [
+    "fabricator",
+    "mini_fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_wood",
+      "count": 8
+    }
+  ],
+  "outputs": [
+    {
+      "item": "fallen_log",
+      "count": 1
+    }
+  ],
+  "time": 2
+}

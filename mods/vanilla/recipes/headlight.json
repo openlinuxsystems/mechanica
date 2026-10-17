@@ -1,0 +1,23 @@
+{
+  "id": "headlight",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal",
+      "count": 1
+    },
+    {
+      "item": "component_kit",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "headlight",
+      "count": 1
+    }
+  ],
+  "time": 3
+}

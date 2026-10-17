@@ -1,6 +1,7 @@
 {
   "id": "file_cabinet",
   "name": "File Cabinet",
+  "description": "A steel cabinet with 10 slots.",
   "category": "container",
   "mass": 20,
   "durability": 8,

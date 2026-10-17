@@ -1,6 +1,7 @@
 {
   "id": "tool_cabinet",
   "name": "Tool Cabinet",
+  "description": "A red tool chest with 15 slots.",
   "category": "container",
   "mass": 20,
   "durability": 8,

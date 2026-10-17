@@ -1,0 +1,20 @@
+{
+  "id": "roof_rack",
+  "stations": [
+    "fabricator",
+    "mini_fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "roof_rack",
+      "count": 1
+    }
+  ],
+  "time": 2
+}

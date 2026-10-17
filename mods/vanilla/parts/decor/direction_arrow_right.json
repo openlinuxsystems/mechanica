@@ -1,0 +1,20 @@
+{
+  "id": "direction_arrow_right",
+  "name": "Direction Arrow (Right)",
+  "description": "A sign pointing right.",
+  "category": "decor",
+  "mass": 3,
+  "durability": 2,
+  "friction": 0.5,
+  "buoyancy": 0.3,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [3, 6, 1],
+  "mesh": "meshes/decor/direction_arrow_right.glb",
+  "visual": {
+    "color": "#2a7a3a",
+    "roughness": 0.5,
+    "metallic": 0.5
+  }
+}

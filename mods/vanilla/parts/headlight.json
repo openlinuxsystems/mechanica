@@ -1,0 +1,45 @@
+{
+  "id": "headlight",
+  "name": "Headlight",
+  "description": "A small lamp for the front of a vehicle. It shines out of its face while its input is on, or all the time with nothing linked.",
+  "category": "light",
+  "mass": 1,
+  "durability": 2,
+  "friction": 0.5,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/headlight.glb",
+  "visual": {
+    "color": "#d8d8d0",
+    "roughness": 0.4,
+    "metallic": 0.5,
+    "emission": "#fff4dd"
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, 0, 0.125],
+      "normal": [0, 0, 1]
+    }
+  ],
+  "script": "scripts/light.lua",
+  "sounds": {
+    "on": "light_on",
+    "off": "light_off"
+  },
+  "logic": {
+    "inputs": 1
+  },
+  "light": {
+    "kind": "spot",
+    "color": "#fff4dd",
+    "energy": 4,
+    "range": 30,
+    "angle": 25,
+    "offset": [0, 0, -0.1]
+  }
+}

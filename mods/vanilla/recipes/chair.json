@@ -1,0 +1,20 @@
+{
+  "id": "chair",
+  "stations": [
+    "fabricator",
+    "mini_fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_wood",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "chair",
+      "count": 1
+    }
+  ],
+  "time": 2
+}

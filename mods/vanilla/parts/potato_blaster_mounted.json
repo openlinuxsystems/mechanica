@@ -1,0 +1,44 @@
+{
+  "id": "potato_blaster_mounted",
+  "name": "Mounted Potato Blaster",
+  "description": "A Potato Blaster built into a creation. It fires out of its front when its input turns on or when you press F on it, using potatoes from the creation's chests.",
+  "category": "interactive",
+  "mass": 8,
+  "durability": 6,
+  "friction": 0.5,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "stack_size": 5,
+  "sound_material": "metal",
+  "size": [2, 2, 3],
+  "mesh": "meshes/potato_blaster_mounted.glb",
+  "visual": {
+    "color": "#5a6a3a",
+    "roughness": 0.6,
+    "metallic": 0.5
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.25, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "script": "scripts/mounted_gun.lua",
+  "sounds": {
+    "fire": "blaster_fire"
+  },
+  "logic": {
+    "inputs": 1,
+    "use": "fire"
+  },
+  "properties": {
+    "ammo": "potato",
+    "damage": 40,
+    "interval": 0.4,
+    "range": 80,
+    "impulse": 30,
+    "muzzle": -0.4
+  }
+}

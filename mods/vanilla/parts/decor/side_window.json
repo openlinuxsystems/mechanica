@@ -1,0 +1,21 @@
+{
+  "id": "side_window",
+  "name": "Side Window",
+  "description": "A small glass pane in a frame.",
+  "category": "decor",
+  "mass": 4,
+  "durability": 2,
+  "friction": 0.5,
+  "buoyancy": 0.3,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "glass",
+  "size": [4, 3, 1],
+  "mesh": "meshes/decor/side_window.glb",
+  "visual": {
+    "color": "#a8d0e0",
+    "roughness": 0.05,
+    "metallic": 0,
+    "opacity": 0.35
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "beacon",
+  "name": "Beacon",
+  "description": "Press F to switch it on: it flashes and pings so a base or a wreck can be found again, by day or night.",
+  "category": "light",
+  "mass": 2,
+  "durability": 4,
+  "friction": 0.5,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "stack_size": 10,
+  "sound_material": "metal",
+  "size": [1, 2, 1],
+  "mesh": "meshes/beacon.glb",
+  "visual": {
+    "color": "#c03030",
+    "roughness": 0.4,
+    "metallic": 0.4,
+    "emission": "#ff3030"
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.25, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "script": "scripts/beacon.lua",
+  "sounds": {
+    "activate": "beacon_activate",
+    "ping": "beacon_ping"
+  },
+  "logic": {
+    "use": "toggle"
+  },
+  "light": {
+    "kind": "omni",
+    "color": "#ff4040",
+    "energy": 3,
+    "range": 12,
+    "offset": [0, 0.15, 0]
+  },
+  "properties": {
+    "ping": 3,
+    "flash": 0.4
+  }
+}

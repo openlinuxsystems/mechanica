@@ -1,0 +1,23 @@
+{
+  "id": "water_cannon",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal",
+      "count": 4
+    },
+    {
+      "item": "component_kit",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "water_cannon",
+      "count": 1
+    }
+  ],
+  "time": 6
+}

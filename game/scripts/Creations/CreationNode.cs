@@ -23,6 +23,7 @@ public partial class CreationNode : Node3D
     private readonly List<Joint3D> _joints = [];
     private readonly Dictionary<Joint3D, JointFrame> _frames = [];
     private readonly List<(MeshInstance3D Mesh, JointLink Link, JointFrame Frame)> _shafts = [];
+    private readonly List<(int Part, Light3D Light, float Energy)> _lights = [];
 
     /// <summary>The graph this node shows. Set before adding the node to the tree.</summary>
     public Creation Creation { get; init; } = null!;
@@ -82,6 +83,20 @@ public partial class CreationNode : Node3D
             // Cylinders stand along +Y; Godot's arc quaternion can't turn +Y onto -Y, so that case is a half turn about X.
             var turn = axis.Y < -0.99f ? new Basis(Vector3.Right, Mathf.Pi) : new Basis(new Quaternion(Vector3.Up, axis));
             mesh.Transform = new Transform3D(turn * Basis.FromScale(new Vector3(1, length, 1)), frame.Anchor.ToGodot() + axis * (length / 2));
+        }
+    }
+
+    /// <summary>The light of each part with a <c>light</c> section, by part id (chunk 23).</summary>
+    public IEnumerable<(int Part, Light3D Light)> Lights => _lights.Select(l => (l.Part, l.Light));
+
+    /// <summary>Shows every part light at its level: dark at 0, its full energy at 1.</summary>
+    public void ApplyLights(Core.Logic.LightLevels levels)
+    {
+        foreach (var (part, light, energy) in _lights)
+        {
+            var level = levels.Level(Creation.Id, part);
+            light.Visible = level > 0f;
+            light.LightEnergy = energy * level;
         }
     }
 
@@ -167,6 +182,7 @@ public partial class CreationNode : Node3D
         _joints.Clear();
         _frames.Clear();
         _shafts.Clear();
+        _lights.Clear();
         _bodies.Clear();
     }
 
@@ -199,6 +215,12 @@ public partial class CreationNode : Node3D
             var visual = new Node3D { Name = $"Part{id}", Transform = placed };
             foreach (var mesh in model.Meshes)
                 visual.AddChild(mesh.Instantiate());
+            if (definition.Light is { } light)
+            {
+                var lamp = BuildLight(light);
+                visual.AddChild(lamp);
+                _lights.Add((id, lamp, light.Energy ?? 1f));
+            }
             node.AddChild(visual);
             if (definition.Friction is { } f)
             {
@@ -212,6 +234,27 @@ public partial class CreationNode : Node3D
             node.PhysicsMaterialOverride = new PhysicsMaterial { Friction = friction / frictionMass };
         AddChild(node);
         return node;
+    }
+
+    // A part's light, dark until its script turns it up. Spots shine along local -Z, so they are turned to the light's direction.
+    private static Light3D BuildLight(LightDefinition light)
+    {
+        Light3D lamp;
+        var range = light.Range ?? 1f;
+        if (light.Kind == LightKind.Spot)
+            lamp = new SpotLight3D { SpotRange = range, SpotAngle = light.Angle ?? 30f };
+        else
+            lamp = new OmniLight3D { OmniRange = range };
+        lamp.Name = "Light";
+        lamp.Visible = false;
+        lamp.LightEnergy = 0f;
+        if (HexColor.TryParse(light.Color, out var color))
+            lamp.LightColor = new Color(color.R, color.G, color.B);
+        var at = (light.Offset ?? Vec3.Zero).ToGodot();
+        var forward = (light.Direction ?? new Vec3(0, 0, -1)).ToGodot().Normalized();
+        var up = MathF.Abs(forward.Dot(Vector3.Up)) > 0.99f ? Vector3.Back : Vector3.Up;
+        lamp.Transform = new Transform3D(Basis.LookingAt(forward, up), at);
+        return lamp;
     }
 
     private static string JointName(Connection c) => $"Joint{c.A}_{c.B}";

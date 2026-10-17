@@ -14,6 +14,9 @@ public sealed partial class ScriptRuntime : ILogicHost
     /// <summary>The logic and power bus: every part's output, and the inputs <see cref="Update"/> delivers as <c>on_power</c>.</summary>
     public SignalBus Signals { get; } = new();
 
+    /// <summary>How bright each part's light is (chunk 23), set by <c>part.set_light</c>; the game sends it to clients.</summary>
+    public LightLevels Lights { get; } = new();
+
     /// <summary>Who sits where, for <c>part.occupant()</c>. Null means no seats.</summary>
     public SeatRegistry? Seats { get; set; }
 
@@ -128,6 +131,16 @@ public sealed partial class ScriptRuntime : ILogicHost
                 ? DynValue.NewString(id)
                 : DynValue.Nil;
         });
+        Fn(part, "set_light", args =>
+        {
+            var instance = PartInstance();
+            var level = SignalOf(args[0], "part.set_light");
+            if (Here() is not { } h || h.Creation.DefinitionOf(instance.Part).Light is null)
+                return Refused(instance, "the part has no light");
+            Lights.Set(instance.Creation, instance.Part, level);
+            return DynValue.True;
+        });
+        Fn(part, "light", _ => DynValue.NewNumber(Lights.Level(PartInstance().Creation, PartInstance().Part)));
         Fn(part, "occupant", _ =>
         {
             var instance = PartInstance();

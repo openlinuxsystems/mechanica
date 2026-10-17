@@ -337,27 +337,31 @@ public sealed partial class ScriptRuntime
         globals.Set("inventory", DynValue.NewTable(inventory));
 
         var combat = new Table(script);
+        // cast, hit and hitscan also work in part scripts (a saw blade, a drill, a mounted gun): they act as
+        // the host's scripts and skip no player.
         Fn(combat, "cast", args =>
         {
-            var instance = ItemNow();
+            var (_, _, ignore) = Combatant("combat.cast", acting: false);
             var (from, direction, range) = Ray(args, "combat.cast");
-            return _survival!.Cast(from, direction, range, instance.Holder!.Value) is { } hit ? HitTable(context, hit, from) : DynValue.Nil;
+            return _survival!.Cast(from, direction, range, ignore) is { } hit ? HitTable(context, hit, from) : DynValue.Nil;
         });
         Fn(combat, "hit", args =>
         {
-            var instance = Acting("combat.hit");
+            var (_, caller, _) = Combatant("combat.hit", acting: true);
             var hit = ToRayHit(args.AsType(0, "combat.hit", DataType.Table).Table, "combat.hit");
             var damage = LuaValues.Number(args[1], "combat.hit", 2);
             var push = args.Count > 2 && !args[2].IsNil() ? LuaValues.ToVector(args[2], "combat.hit", 3) : Vector3.Zero;
-            return ViewTable(context, _survival!.Hit(instance.Caller, hit, damage, push));
+            return ViewTable(context, _survival!.Hit(caller, hit, damage, push));
         });
         Fn(combat, "hitscan", args =>
         {
-            var instance = Acting("combat.hitscan");
+            var (_, caller, ignore) = Combatant("combat.hitscan", acting: true);
             var (from, direction, range) = Ray(args, "combat.hitscan");
             var damage = LuaValues.Number(args[3], "combat.hitscan", 4);
             var impulse = LuaValues.OptionalNumber(args[4], "combat.hitscan", 5) ?? 0f;
-            return _survival!.Hitscan(instance.Caller, from, direction, range, damage, impulse) is { } view ? ViewTable(context, view) : DynValue.Nil;
+            if (_survival!.Cast(from, direction, range, ignore) is not { } hit)
+                return DynValue.Nil;
+            return ViewTable(context, _survival.Hit(caller, hit, damage, Vector3.Normalize(direction) * impulse));
         });
         Fn(combat, "splash", args =>
         {
@@ -413,9 +417,9 @@ public sealed partial class ScriptRuntime
         var farm = new Table(script);
         Fn(farm, "soil", args =>
         {
-            var instance = ItemNow();
+            var (_, caller, _) = Combatant("farm.soil", acting: false);
             var (creation, part) = SoilArgs(args, "farm.soil");
-            return _survival!.CheckSoil(instance.Caller, creation, part) is { } bad ? NilBecause(bad)
+            return _survival!.CheckSoil(caller, creation, part) is { } bad ? NilBecause(bad)
                 : SoilTable(script, _survival.SoilViewOf(_survival.World.FindCreation(creation)!, part));
         });
         Fn(farm, "plant", args =>
@@ -428,13 +432,13 @@ public sealed partial class ScriptRuntime
         });
         Fn(farm, "water", args =>
         {
-            var instance = Acting("farm.water");
+            var (_, caller, _) = Combatant("farm.water", acting: true);
             var (creation, part) = SoilArgs(args, "farm.water");
             var seconds = LuaValues.Number(args[2], "farm.water", 3);
             if (!(seconds > 0f) || !float.IsFinite(seconds))
                 throw new ScriptRuntimeException("farm.water: seconds must be more than 0");
-            return _survival!.CheckWater(instance.Caller, creation, part) is { } bad ? NilBecause(bad)
-                : SoilTable(script, _survival.WaterSoil(instance.Caller, creation, part, seconds));
+            return _survival!.CheckWater(caller, creation, part) is { } bad ? NilBecause(bad)
+                : SoilTable(script, _survival.WaterSoil(caller, creation, part, seconds));
         });
         globals.Set("farm", DynValue.NewTable(farm));
     }
@@ -458,6 +462,20 @@ public sealed partial class ScriptRuntime
         table.Set("water", DynValue.NewNumber(view.Water));
         table.Set("capacity", DynValue.NewNumber(view.Capacity));
         return DynValue.NewTable(table);
+    }
+
+    // Who acts for a combat or farm function that part scripts may call too: an item acts for its holder
+    // (and its rays skip them), a part as the host's scripts (skipping no player; 0 is never a peer).
+    private (Instance Instance, ActionCaller Caller, int Ignore) Combatant(string function, bool acting)
+    {
+        if (_current is { IsItem: false } part)
+        {
+            if (_survival is null)
+                throw new ScriptRuntimeException($"{function}: combat and farming are not enabled on this host");
+            return (part, Caller, 0);
+        }
+        var instance = acting ? Acting(function) : ItemNow();
+        return (instance, instance.Caller, instance.Holder!.Value);
     }
 
     private Instance ItemNow()

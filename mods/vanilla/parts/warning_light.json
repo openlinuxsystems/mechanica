@@ -1,0 +1,44 @@
+{
+  "id": "warning_light",
+  "name": "Warning Light",
+  "description": "An orange flashing lamp. It blinks while its input is on, or all the time with nothing linked.",
+  "category": "light",
+  "mass": 1,
+  "durability": 2,
+  "friction": 0.5,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [1, 2, 1],
+  "mesh": "meshes/warning_light.glb",
+  "visual": {
+    "color": "#e06a10",
+    "roughness": 0.4,
+    "metallic": 0.5,
+    "emission": "#ff8a20"
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.25, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "script": "scripts/light.lua",
+  "logic": {
+    "inputs": 1
+  },
+  "light": {
+    "kind": "omni",
+    "color": "#ff8a20",
+    "energy": 2,
+    "range": 6,
+    "offset": [0, 0.08, 0]
+  },
+  "properties": {
+    "blink": 1.0,
+    "duty": 0.5
+  }
+}

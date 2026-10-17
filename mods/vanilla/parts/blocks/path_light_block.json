@@ -1,7 +1,7 @@
 {
   "id": "path_light_block",
   "name": "Path Light Block",
-  "description": "Glowing glass block for marking paths.",
+  "description": "Glowing glass block for marking paths. It lights the ground around it.",
   "category": "block",
   "mass": 3,
   "durability": 1,
@@ -17,5 +17,12 @@
     "roughness": 0.2,
     "metallic": 0,
     "emission": "#ffd870"
+  },
+  "script": "scripts/light.lua",
+  "light": {
+    "kind": "omni",
+    "color": "#ffd870",
+    "energy": 0.8,
+    "range": 4
   }
 }

@@ -1,0 +1,15 @@
+{
+  "format_version": 1,
+  "model": [
+    {
+      "kind": "box",
+      "size": [0.46, 0.18, 0.01],
+      "position": [0, 0, 0.115]
+    },
+    {
+      "kind": "box",
+      "size": [0.36, 0.06, 0.01],
+      "position": [0, 0, 0.11]
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "id": "bush",
+  "name": "Bush",
+  "description": "A leafy shrub.",
+  "category": "decor",
+  "mass": 4,
+  "durability": 1,
+  "friction": 0.5,
+  "buoyancy": 0.6,
+  "flammable": true,
+  "stack_size": 20,
+  "sound_material": "wood",
+  "size": [3, 3, 3],
+  "mesh": "meshes/decor/bush.glb",
+  "visual": {
+    "color": "#3a7a30",
+    "roughness": 0.9,
+    "metallic": 0
+  }
+}

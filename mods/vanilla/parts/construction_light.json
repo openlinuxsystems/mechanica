@@ -1,0 +1,46 @@
+{
+  "id": "construction_light",
+  "name": "Construction Light",
+  "description": "A work lamp on a tripod stand, tilted down to light the ground in front of it. Shines while its input is on, or all the time with nothing linked.",
+  "category": "light",
+  "mass": 6,
+  "durability": 3,
+  "friction": 0.5,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [2, 4, 2],
+  "mesh": "meshes/construction_light.glb",
+  "visual": {
+    "color": "#d9a520",
+    "roughness": 0.4,
+    "metallic": 0.5,
+    "emission": "#fff2d0"
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.5, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "script": "scripts/light.lua",
+  "sounds": {
+    "on": "light_on",
+    "off": "light_off"
+  },
+  "logic": {
+    "inputs": 1
+  },
+  "light": {
+    "kind": "spot",
+    "color": "#fff2d0",
+    "energy": 5,
+    "range": 25,
+    "angle": 45,
+    "offset": [0, 0.38, -0.12],
+    "direction": [0, -0.4, -1]
+  }
+}

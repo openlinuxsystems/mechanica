@@ -1,0 +1,36 @@
+{
+  "id": "dispenser",
+  "name": "Dispenser",
+  "description": "A supply locker found at Workshop Outposts. Take what it holds; it can be refilled like a chest.",
+  "category": "container",
+  "mass": 40,
+  "durability": 10,
+  "friction": 0.5,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "stack_size": 1,
+  "sound_material": "metal",
+  "size": [3, 6, 2],
+  "mesh": "meshes/dispenser.glb",
+  "visual": {
+    "color": "#4a6a8a",
+    "roughness": 0.5,
+    "metallic": 0.6,
+    "paintable": true
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.75, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "sounds": {
+    "open": "container_open",
+    "place": "place_metal"
+  },
+  "inventory": {
+    "slots": 12
+  }
+}

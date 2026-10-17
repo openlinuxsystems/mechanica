@@ -1,0 +1,28 @@
+{
+  "format_version": 1,
+  "model": [
+    {
+      "kind": "box",
+      "size": [0.48, 0.34, 0.2],
+      "position": [0, -0.06, 0]
+    },
+    {
+      "kind": "cylinder",
+      "radius": 0.07,
+      "height": 0.02,
+      "position": [-0.1, -0.06, -0.1],
+      "rotation": [90, 0, 0]
+    },
+    {
+      "kind": "box",
+      "size": [0.14, 0.1, 0.02],
+      "position": [0.12, -0.04, -0.1]
+    },
+    {
+      "kind": "cylinder",
+      "radius": 0.008,
+      "height": 0.24,
+      "position": [0.18, 0.2, 0.05]
+    }
+  ]
+}

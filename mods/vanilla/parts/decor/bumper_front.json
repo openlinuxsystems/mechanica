@@ -1,0 +1,20 @@
+{
+  "id": "bumper_front",
+  "name": "Front Bumper",
+  "description": "A steel bar for the front of a vehicle.",
+  "category": "decor",
+  "mass": 12,
+  "durability": 8,
+  "friction": 0.5,
+  "buoyancy": 0.3,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [8, 1, 1],
+  "mesh": "meshes/decor/bumper_front.glb",
+  "visual": {
+    "color": "#4a4a4a",
+    "roughness": 0.4,
+    "metallic": 0.7
+  }
+}

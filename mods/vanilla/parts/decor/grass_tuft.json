@@ -1,0 +1,20 @@
+{
+  "id": "grass_tuft",
+  "name": "Grass Tuft",
+  "description": "A clump of tall grass.",
+  "category": "decor",
+  "mass": 0.2,
+  "durability": 1,
+  "friction": 0.5,
+  "buoyancy": 0.6,
+  "flammable": true,
+  "stack_size": 20,
+  "sound_material": "fabric",
+  "size": [1, 1, 1],
+  "mesh": "meshes/decor/grass_tuft.glb",
+  "visual": {
+    "color": "#5a9a3a",
+    "roughness": 1,
+    "metallic": 0
+  }
+}

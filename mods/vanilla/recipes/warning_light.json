@@ -1,0 +1,23 @@
+{
+  "id": "warning_light",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal",
+      "count": 1
+    },
+    {
+      "item": "component_kit",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "warning_light",
+      "count": 1
+    }
+  ],
+  "time": 3
+}

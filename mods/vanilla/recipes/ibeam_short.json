@@ -1,0 +1,20 @@
+{
+  "id": "ibeam_short",
+  "stations": [
+    "fabricator",
+    "mini_fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal",
+      "count": 4
+    }
+  ],
+  "outputs": [
+    {
+      "item": "ibeam_short",
+      "count": 1
+    }
+  ],
+  "time": 2
+}

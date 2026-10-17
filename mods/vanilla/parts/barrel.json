@@ -1,6 +1,7 @@
 {
   "id": "barrel",
   "name": "Barrel",
+  "description": "A steel drum with 8 slots.",
   "category": "container",
   "mass": 12,
   "durability": 6,

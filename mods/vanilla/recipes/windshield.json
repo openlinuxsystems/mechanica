@@ -1,0 +1,24 @@
+{
+  "id": "windshield",
+  "stations": [
+    "fabricator",
+    "mini_fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal",
+      "count": 1
+    },
+    {
+      "item": "component_kit",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "windshield",
+      "count": 1
+    }
+  ],
+  "time": 2
+}

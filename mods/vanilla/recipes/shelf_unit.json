@@ -1,0 +1,20 @@
+{
+  "id": "shelf_unit",
+  "stations": [
+    "fabricator",
+    "mini_fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal",
+      "count": 4
+    }
+  ],
+  "outputs": [
+    {
+      "item": "shelf_unit",
+      "count": 1
+    }
+  ],
+  "time": 2
+}
