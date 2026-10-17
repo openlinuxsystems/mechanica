@@ -1,0 +1,75 @@
+{
+  "events": [
+    {
+      "id": "raid_horn",
+      "clips": [
+        "sounds/ambient/raid_horn.ogg"
+      ],
+      "min_distance": 10,
+      "max_distance": 400,
+      "rolloff": "linear"
+    },
+    {
+      "id": "wind_light",
+      "clips": [
+        "sounds/ambient/wind_light.ogg"
+      ],
+      "bus": "ambient",
+      "loop": true,
+      "volume_db": -8,
+      "spatial": false
+    },
+    {
+      "id": "wind_strong",
+      "clips": [
+        "sounds/ambient/wind_strong.ogg"
+      ],
+      "bus": "ambient",
+      "loop": true,
+      "volume_db": -4,
+      "spatial": false
+    },
+    {
+      "id": "birds_day",
+      "clips": [
+        "sounds/ambient/birds_day.ogg"
+      ],
+      "bus": "ambient",
+      "loop": true,
+      "volume_db": -10,
+      "spatial": false
+    },
+    {
+      "id": "night_insects",
+      "clips": [
+        "sounds/ambient/night_insects.ogg"
+      ],
+      "bus": "ambient",
+      "loop": true,
+      "volume_db": -14,
+      "spatial": false
+    },
+    {
+      "id": "water_lap",
+      "clips": [
+        "sounds/ambient/water_lap.ogg"
+      ],
+      "bus": "ambient",
+      "loop": true,
+      "min_distance": 3,
+      "max_distance": 30,
+      "rolloff": "linear"
+    },
+    {
+      "id": "machinery_hum",
+      "clips": [
+        "sounds/ambient/machinery_hum.ogg"
+      ],
+      "bus": "ambient",
+      "loop": true,
+      "min_distance": 3,
+      "max_distance": 30,
+      "rolloff": "linear"
+    }
+  ]
+}

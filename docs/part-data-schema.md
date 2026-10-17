@@ -75,7 +75,7 @@ you; this page is the reference for what each key means, so you can read, review
 | `buoyancy` | number ≥ 0 | placeable | Buoyant force factor: force = buoyancy × displaced volume. |
 | `flammable` | bool | placeable | Whether fire can ignite and spread through it. |
 | `stack_size` | integer ≥ 1 | no | Most items per inventory slot. Omitted means 1. |
-| `sound_material` | string | no | Material for place, break and impact sounds (`wood`, `metal`, `concrete`, `glass`, ...). |
+| `sound_material` | string | no | Material for place, break and impact sounds (`wood`, `metal`, `concrete`, `glass`, ...): an unbound `place` plays `place_<material>`. See [Sound Events](sound-events.md#part-sounds). |
 | `size` | `[x, y, z]` cells | placeable | Footprint in 0.25 m grid cells, at least 1 on every axis. |
 | `mesh` | path | no | `.glb` or `.gltf` model, centred on the footprint centre, +Y up, in metres. Without one, a grey shape matching the collision stands in. |
 | `icon` | path | no | `.png` inventory icon. |
@@ -83,7 +83,7 @@ you; this page is the reference for what each key means, so you can read, review
 | `collision` | object | no | Collision shape. Omitted means a box filling `size`. See [collision](#collision). |
 | `sockets` | list | no | Attachment points. Placeable parts only. See [sockets](#sockets). |
 | `script` | path | no | `.lua` behaviour script. |
-| `sounds` | object | no | Sound events: local event name → sound id (`"start": "engine_start"`). Ids are snake_case, or `mod_id:sound_id` for another mod's sound. |
+| `sounds` | object | no | Sound events: local sound name → sound id (`"start": "engine_start"`). The game plays `place`, `remove`, `break` and `impact`; other names are for the script. A bare id is the part's own mod's event, else vanilla's; `mod_id:sound_id` names another mod's. See [Sound Events](sound-events.md#part-sounds). |
 | `inventory` | object | no | Item storage. Placeable parts only. See [inventory and crafting](#inventory-and-crafting). |
 | `crafting` | object | no | Makes the part a crafting station. Needs `inventory`. See [inventory and crafting](#inventory-and-crafting). |
 | `soil`, `respawn_point` | object, bool | no | Farming soil and respawn beds. Placeable parts only. See [survival](#survival). |
@@ -306,6 +306,7 @@ example `error MD0201: mods/my_mod/parts/a.json(4) $.mass: mass must be greater 
 | MD04xx | Saved Creation problems. |
 | MD0501 | Editor source problem (a model piece). |
 | MD0502 | Export could not write to the mod folder. |
-| MD0503 | A Part Editor batch file problem. See [Getting Started](getting-started.md#10-many-similar-parts-batches). |
+| MD06xx | World generation and POI prefabs. See [World Generation](world-generation.md). |
 | MD0701 | A recipe value is missing or invalid. |
 | MD0702 | Two recipe files in a mod use the same id. |
+| MD08xx | Sound events. See [Sound Events](sound-events.md#error-codes). |

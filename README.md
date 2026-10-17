@@ -78,3 +78,10 @@ outside programs can call the Action API like a player, and `--record file` / `-
 record and replay the host's Action API calls. See [docs/ai-endpoint.md](docs/ai-endpoint.md) and the
 example agent `tools/ai/drive_car.mjs`.
 
+## Sound
+
+Every sound is a sound event in a mod's `sounds/*.json`: clips, bus, loop, random pitch and volume,
+distance fade and loop parameters. Parts bind their sound names to events, and the Part Editor's
+Sounds tab edits both. The host decides world sounds and sends them to players in earshot; loops
+follow their part. Vanilla's audio is original placeholder synthesis from
+`tools/sounds/make_placeholders.py`. See [docs/sound-events.md](docs/sound-events.md).

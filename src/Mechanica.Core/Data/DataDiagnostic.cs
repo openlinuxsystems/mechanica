@@ -93,6 +93,12 @@ public static class DiagnosticCodes
     // 07xx: recipes and inventories
     public const string RecipeInvalid = "MD0701";
     public const string DuplicateRecipe = "MD0702";
+
+    // 08xx: sound events
+    public const string SoundInvalid = "MD0801";
+    public const string SoundDuplicate = "MD0802";
+    public const string SoundOverrideConflict = "MD0803";
+    public const string SoundUnknown = "MD0804";
 }
 
 /// <summary>Collects diagnostics for one file, filling in the file name.</summary>

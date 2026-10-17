@@ -1,0 +1,122 @@
+{
+  "events": [
+    {
+      "id": "seat_enter",
+      "clips": [
+        "sounds/logic/seat_enter.ogg"
+      ],
+      "max_distance": 20
+    },
+    {
+      "id": "seat_exit",
+      "clips": [
+        "sounds/logic/seat_exit.ogg"
+      ],
+      "max_distance": 20
+    },
+    {
+      "id": "seat_click",
+      "clips": [
+        "sounds/logic/seat_click.ogg"
+      ],
+      "max_distance": 20
+    },
+    {
+      "id": "controller_start",
+      "clips": [
+        "sounds/logic/controller_start.ogg"
+      ],
+      "max_distance": 20
+    },
+    {
+      "id": "controller_tick",
+      "clips": [
+        "sounds/logic/controller_tick.ogg"
+      ],
+      "max_distance": 20,
+      "max_instances": 4
+    },
+    {
+      "id": "controller_stop",
+      "clips": [
+        "sounds/logic/controller_stop.ogg"
+      ],
+      "max_distance": 20
+    },
+    {
+      "id": "logic_click",
+      "clips": [
+        "sounds/logic/logic_click.ogg"
+      ],
+      "max_distance": 20,
+      "max_instances": 4
+    },
+    {
+      "id": "logic_activate",
+      "clips": [
+        "sounds/logic/logic_activate.ogg"
+      ],
+      "max_distance": 20,
+      "max_instances": 4
+    },
+    {
+      "id": "timer_tick",
+      "clips": [
+        "sounds/logic/timer_tick.ogg"
+      ],
+      "max_distance": 20,
+      "max_instances": 4
+    },
+    {
+      "id": "timer_complete",
+      "clips": [
+        "sounds/logic/timer_complete.ogg"
+      ],
+      "max_distance": 20
+    },
+    {
+      "id": "sensor_detect",
+      "clips": [
+        "sounds/logic/sensor_detect.ogg"
+      ],
+      "max_distance": 20
+    },
+    {
+      "id": "sensor_lose",
+      "clips": [
+        "sounds/logic/sensor_lose.ogg"
+      ],
+      "max_distance": 20
+    },
+    {
+      "id": "sensor_ping",
+      "clips": [
+        "sounds/logic/sensor_ping.ogg"
+      ],
+      "max_distance": 20,
+      "max_instances": 4
+    },
+    {
+      "id": "switch_toggle",
+      "clips": [
+        "sounds/logic/switch_toggle.ogg"
+      ],
+      "max_distance": 20
+    },
+    {
+      "id": "button_press",
+      "clips": [
+        "sounds/logic/button_press.ogg"
+      ],
+      "max_distance": 20
+    },
+    {
+      "id": "horn_honk",
+      "clips": [
+        "sounds/logic/horn_honk.ogg"
+      ],
+      "loop": true,
+      "max_distance": 80
+    }
+  ]
+}

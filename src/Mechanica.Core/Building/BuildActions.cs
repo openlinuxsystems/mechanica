@@ -3,6 +3,7 @@ using System.Text.Json;
 using Mechanica.Core.Actions;
 using Mechanica.Core.Creations;
 using Mechanica.Core.Data;
+using Mechanica.Core.Sound;
 
 namespace Mechanica.Core.Building;
 
@@ -61,6 +62,15 @@ public interface IBuildWorld
 
     /// <summary>A Creation lost its last part and is gone.</summary>
     void Removed(int creationId);
+
+    /// <summary>
+    /// Plays a sound event at a world point for everyone in earshot (chunk 16). <paramref name="sound"/> is an
+    /// id as data writes it; a bare one means <paramref name="ownerModId"/>'s event, else vanilla's
+    /// (<see cref="SoundRegistry.Find"/>). Worlds without sound ignore it.
+    /// </summary>
+    void PlaySound(string sound, string ownerModId, Vector3 position)
+    {
+    }
 }
 
 /// <summary>
@@ -89,7 +99,10 @@ public interface IBuildCosts
 /// Creation with no parts left is destroyed.</item>
 /// </list>
 /// Player callers must be within <see cref="BuildSettings.Reach"/> of the part. With <see cref="Costs"/>
-/// (Survival), placing a part uses one from the caller's inventory and removing it gives it back.
+/// (Survival), placing a part uses one from the caller's inventory and removing it gives it back. Each
+/// change plays the part's sound where it happened (<see cref="PartSounds"/>): its place sound, or
+/// <c>part_attach</c> for a part without one; its remove sound, or <c>remove_block</c> (blocks) or
+/// <c>part_detach</c> (other parts).
 /// </summary>
 public sealed class BuildActions(IPartCatalog catalog, BuildSettings settings, IBuildWorld world)
 {
@@ -156,6 +169,7 @@ public sealed class BuildActions(IPartCatalog catalog, BuildSettings settings, I
             if (!target.TryPlacePart(args.Part, args.Cell, args.Rotation, out placed, out error))
                 throw new InvalidOperationException(error);
             world.Changed(target);
+            PlayPlaced(world, target, placed.Id);
             Costs?.Placed(caller, placed.Part);
             return Value(new PlacePartResult(target.Id, placed.Id));
         }
@@ -165,6 +179,7 @@ public sealed class BuildActions(IPartCatalog catalog, BuildSettings settings, I
             throw new InvalidOperationException(error);
         creation.SetAllBodyPoses(new Pose(args.Position!.Value.ToNumerics(), Quaternion.Identity));
         world.Added(creation);
+        PlayPlaced(world, creation, placed.Id);
         Costs?.Placed(caller, placed.Part);
         return Value(new PlacePartResult(creation.Id, placed.Id));
     }
@@ -185,12 +200,50 @@ public sealed class BuildActions(IPartCatalog catalog, BuildSettings settings, I
     private JsonElement? ApplyRemove(ActionCaller caller, RemovePartArgs args)
     {
         var creation = world.FindCreation(args.Creation)!;
+        var definition = creation.DefinitionOf(args.Part);
+        var fallback = definition.Category == PartCategory.Block ? "remove_block" : "part_detach";
+        PlayPartSound(world, creation, args.Part, PartSounds.Remove, fallback);
         var part = creation.FindPart(args.Part)!;
-        var centre = creation.BodyPose(creation.BodyIndexOf(part.Id))
-            .Apply(PartGeometry.CentreMetres(creation.DefinitionOf(part.Id), part.Cell, part.Rotation).ToNumerics());
+        var centre = PartCentre(creation, part.Id);
         var result = Remove(world, creation, args.Part);
         Costs?.Removed(caller, part.Part, centre);
         return Value(result);
+    }
+
+    /// <summary>
+    /// Plays the sound part <paramref name="partId"/> binds to <paramref name="key"/>, or its material's
+    /// event, at its centre; both are looked up in the part's own mod first, so a mod can bring a new
+    /// material. Without either, <paramref name="fallback"/> (a vanilla event) plays. Call it while the part
+    /// is still in the Creation.
+    /// </summary>
+    internal static void PlayPartSound(IBuildWorld world, Creation creation, int partId, string key, string? fallback)
+    {
+        var part = creation.FindPart(partId)!;
+        var definition = creation.DefinitionOf(partId);
+        var bound = PartSounds.For(definition, key);
+        var sound = bound ?? fallback;
+        if (sound is null)
+            return;
+        var owner = bound is null ? Identifiers.VanillaModId : OwnerOf(part.Part);
+        world.PlaySound(sound, owner, PartCentre(creation, partId));
+    }
+
+    /// <summary>World position of a part's centre.</summary>
+    internal static Vector3 PartCentre(Creation creation, int partId)
+    {
+        var part = creation.FindPart(partId)!;
+        var pose = creation.BodyPose(creation.BodyIndexOf(partId));
+        return pose.Apply(PartGeometry.CentreMetres(creation.DefinitionOf(partId), part.Cell, part.Rotation).ToNumerics());
+    }
+
+    private static void PlayPlaced(IBuildWorld world, Creation creation, int partId) =>
+        PlayPartSound(world, creation, partId, PartSounds.Place, "part_attach");
+
+    // Mod a part id belongs to: its prefix, vanilla for a bare id.
+    private static string OwnerOf(string partId)
+    {
+        var qualified = Identifiers.Qualify(partId);
+        return qualified[..qualified.IndexOf(':')];
     }
 
     /// <summary>

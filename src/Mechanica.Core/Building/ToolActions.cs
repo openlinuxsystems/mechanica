@@ -3,6 +3,7 @@ using System.Text.Json;
 using Mechanica.Core.Actions;
 using Mechanica.Core.Creations;
 using Mechanica.Core.Data;
+using Mechanica.Core.Sound;
 using Mechanica.Core.World;
 
 namespace Mechanica.Core.Building;
@@ -155,7 +156,10 @@ public interface IToolWorld : IBuildWorld
 /// <item><c>Sledge</c>: a Sledgehammer hit, which pushes the Body and damages the part until it breaks off;
 /// with <see cref="Targets"/> it can also hit players and world objects.</item>
 /// </list>
-/// Player callers must be within <see cref="BuildSettings.Reach"/> of what they act on.
+/// Player callers must be within <see cref="BuildSettings.Reach"/> of what they act on. Each action plays its
+/// tool's sound where it happened (chunk 16): <c>lift_place</c>, <c>lift_raise</c>/<c>lift_lower</c> at the
+/// Lift; <c>weld_complete</c> where the weld joins; <c>paint_spray</c>/<c>paint_erase</c> on the first part;
+/// <c>smash_hit</c> plus the part's impact sound, or <c>smash_break</c> plus its break sound.
 /// </summary>
 public sealed class ToolActions(BuildSettings settings, IToolWorld world)
 {
@@ -276,6 +280,7 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world)
         var lift = PlannedLift(caller.Peer, args, out var carried);
         if (Held(LiftOf(caller.Peer)) is { } old && old != carried)
             Release(old);
+        world.PlaySound("lift_place", Identifiers.VanillaModId, lift.Position.ToNumerics());
         return Commit(lift, carried, 0);
     }
 
@@ -292,6 +297,8 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world)
     private JsonElement? ApplyLevel(ActionCaller caller, SetLiftLevelArgs args)
     {
         var lift = LiftOf(caller.Peer)!;
+        if (args.Level != lift.Level)
+            world.PlaySound(args.Level > lift.Level ? "lift_raise" : "lift_lower", Identifiers.VanillaModId, PlatformTop(lift));
         return Commit(lift with { Level = args.Level }, Held(lift), 0);
     }
 
@@ -307,6 +314,7 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world)
     private JsonElement? ApplyTurn(ActionCaller caller, TurnLiftArgs args)
     {
         var lift = LiftOf(caller.Peer)!;
+        world.PlaySound("lift_place", Identifiers.VanillaModId, PlatformTop(lift));
         return Commit(lift, Held(lift), args.Turns);
     }
 
@@ -317,6 +325,7 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world)
     {
         if (Held(LiftOf(caller.Peer)) is { } carried)
             Release(carried);
+        world.PlaySound("lift_lower", Identifiers.VanillaModId, LiftOf(caller.Peer)!.Position.ToNumerics());
         _lifts.Remove(caller.Peer);
         world.LiftChanged(caller.Peer, null);
         return null;
@@ -416,6 +425,7 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world)
             target.SetPartPose(id, pose);
         world.Removed(source.Id);
         world.Changed(target);
+        world.PlaySound("weld_complete", Identifiers.VanillaModId, PartCentre(target, attachedTo[0]));
         return Value(new WeldResult(target.Id, target.Bodies.Count));
     }
 
@@ -434,6 +444,7 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world)
         if (!creation.TryWeldParts(args.A, args.B, out var error))
             throw new InvalidOperationException(error);
         world.Changed(creation);
+        world.PlaySound("weld_complete", Identifiers.VanillaModId, PartCentre(creation, args.B));
         return Value(new WeldResult(creation.Id, creation.Bodies.Count));
     }
 
@@ -468,6 +479,7 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world)
         var painted = args.Parts.Count(id => creation.SetPartColor(id, args.Color));
         if (painted > 0)
             world.Changed(creation);
+        world.PlaySound(args.Color is null ? "paint_erase" : "paint_spray", Identifiers.VanillaModId, PartCentre(creation, args.Parts[0]));
         return Value(new PaintResult(painted));
     }
 
@@ -511,15 +523,21 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world)
     {
         _lastSwing[caller.Peer] = world.Now;
         if (args.Player is { } peer)
-            return Value(new SledgeResult(false, Targets!.StrikePlayer(caller, peer, settings.Sledge.PlayerDamage), false, []));
+        {
+            world.PlaySound("smash_hit", Identifiers.VanillaModId, Targets!.PlayerCentre(peer)!.Value);
+            return Value(new SledgeResult(false, Targets.StrikePlayer(caller, peer, settings.Sledge.PlayerDamage), false, []));
+        }
         if (args.Object is { } id)
         {
-            var left = Targets!.StrikeObject(id, settings.Sledge.ObjectDamage);
+            var at = Targets!.ObjectCentre(id)!.Value;
+            var left = Targets.StrikeObject(id, settings.Sledge.ObjectDamage);
+            world.PlaySound(left <= 0 ? "smash_break" : "smash_hit", Identifiers.VanillaModId, at);
             return Value(new SledgeResult(left <= 0, left, left <= 0, []));
         }
         var creation = world.FindCreation(args.Creation!.Value)!;
         var centre = PartCentre(creation, args.Part!.Value);
         var result = DamagePart(creation, args.Part.Value, settings.Sledge.Damage);
+        world.PlaySound(result.Broken ? "smash_break" : "smash_hit", Identifiers.VanillaModId, centre);
         if (!result.Broken && caller.Source == ActionSource.Player && world.EyeOf(caller.Peer) is { } eye && centre != eye)
             world.Push(creation, creation.BodyIndexOf(args.Part.Value), centre, Vector3.Normalize(centre - eye) * settings.Sledge.Impulse);
         return Value(result);
@@ -529,31 +547,32 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world)
     /// Takes <paramref name="damage"/> health off a part (its full health is durability ×
     /// <see cref="SledgeSettings.HealthPerDurability"/>). At 0 it breaks off: what it holds spills out
     /// (<see cref="IToolWorld.Breaking"/>) and the pieces it held together split. Weapons and impacts use
-    /// it as well as the Sledgehammer. A part without a durability takes no damage.
+    /// it as well as the Sledgehammer. A part without a durability takes no damage. The part plays its
+    /// <c>impact</c> sound, or its <c>break</c> sound as it breaks (<see cref="PartSounds"/>).
     /// </summary>
     public SledgeResult DamagePart(Creation creation, int partId, float damage)
     {
         if (settings.Sledge.HealthOf(creation.DefinitionOf(partId).Durability) is not { } full)
+        {
+            BuildActions.PlayPartSound(world, creation, partId, PartSounds.Impact, null);
             return new SledgeResult(false, null, false, []);
+        }
         var total = creation.PartDamage(partId) + Math.Max(0, damage);
         if (total >= full)
         {
+            BuildActions.PlayPartSound(world, creation, partId, PartSounds.Break, null);
             world.Breaking(creation, partId);
             var removal = BuildActions.Remove(world, creation, partId);
             return new SledgeResult(true, 0f, removal.Destroyed, removal.SplitOff);
         }
+        BuildActions.PlayPartSound(world, creation, partId, PartSounds.Impact, null);
         creation.SetPartDamage(partId, total);
         return new SledgeResult(false, full - total, false, []);
     }
 
     // ---- Shared ----
 
-    private static Vector3 PartCentre(Creation creation, int partId)
-    {
-        var part = creation.FindPart(partId)!;
-        var pose = creation.BodyPose(creation.BodyIndexOf(partId));
-        return pose.Apply(PartGeometry.CentreMetres(creation.DefinitionOf(partId), part.Cell, part.Rotation).ToNumerics());
-    }
+    private static Vector3 PartCentre(Creation creation, int partId) => BuildActions.PartCentre(creation, partId);
 
     private string? CheckReach(ActionCaller caller, Vector3 point) => CheckReach(caller, new WorldBounds(point, point));
 

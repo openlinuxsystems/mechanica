@@ -1,0 +1,103 @@
+{
+  "events": [
+    {
+      "id": "music_explore",
+      "clips": [
+        "sounds/music/music_explore.ogg"
+      ],
+      "bus": "music",
+      "loop": true,
+      "volume_db": -6
+    },
+    {
+      "id": "music_raid",
+      "clips": [
+        "sounds/music/music_raid.ogg"
+      ],
+      "bus": "music",
+      "loop": true,
+      "volume_db": -6
+    },
+    {
+      "id": "music_menu",
+      "clips": [
+        "sounds/music/music_menu.ogg"
+      ],
+      "bus": "music",
+      "loop": true,
+      "volume_db": -6
+    },
+    {
+      "id": "radio_loop_01",
+      "clips": [
+        "sounds/music/radio_loop_01.ogg"
+      ],
+      "bus": "music",
+      "loop": true,
+      "volume_db": -4,
+      "spatial": true,
+      "min_distance": 2,
+      "max_distance": 25
+    },
+    {
+      "id": "radio_loop_02",
+      "clips": [
+        "sounds/music/radio_loop_02.ogg"
+      ],
+      "bus": "music",
+      "loop": true,
+      "volume_db": -4,
+      "spatial": true,
+      "min_distance": 2,
+      "max_distance": 25
+    },
+    {
+      "id": "radio_loop_03",
+      "clips": [
+        "sounds/music/radio_loop_03.ogg"
+      ],
+      "bus": "music",
+      "loop": true,
+      "volume_db": -4,
+      "spatial": true,
+      "min_distance": 2,
+      "max_distance": 25
+    },
+    {
+      "id": "radio_loop_04",
+      "clips": [
+        "sounds/music/radio_loop_04.ogg"
+      ],
+      "bus": "music",
+      "loop": true,
+      "volume_db": -4,
+      "spatial": true,
+      "min_distance": 2,
+      "max_distance": 25
+    },
+    {
+      "id": "radio_loop_05",
+      "clips": [
+        "sounds/music/radio_loop_05.ogg"
+      ],
+      "bus": "music",
+      "loop": true,
+      "volume_db": -4,
+      "spatial": true,
+      "min_distance": 2,
+      "max_distance": 25
+    },
+    {
+      "id": "radio_loop_06",
+      "clips": [
+        "sounds/music/radio_loop_06.ogg"
+      ],
+      "bus": "music",
+      "loop": true,
+      "volume_db": -4,
+      "spatial": true,
+      "min_distance": 2,
+      "max_distance": 25
+    }
+  ]
+}

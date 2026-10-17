@@ -1,0 +1,112 @@
+{
+  "events": [
+    {
+      "id": "engine_start",
+      "clips": [
+        "sounds/engines/engine_start.ogg"
+      ],
+      "max_distance": 60
+    },
+    {
+      "id": "engine_idle",
+      "clips": [
+        "sounds/engines/engine_idle.ogg"
+      ],
+      "loop": true,
+      "volume_db": -3,
+      "max_distance": 60,
+      "parameters": [
+        {
+          "name": "load",
+          "pitch": [
+            1,
+            1.3
+          ],
+          "volume_db": [
+            -2,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": "engine_rev",
+      "clips": [
+        "sounds/engines/engine_rev.ogg"
+      ],
+      "loop": true,
+      "max_distance": 60,
+      "parameters": [
+        {
+          "name": "rpm",
+          "pitch": [
+            0.8,
+            2
+          ],
+          "volume_db": [
+            -6,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": "engine_sputter",
+      "clips": [
+        "sounds/engines/engine_sputter.ogg"
+      ],
+      "pitch_variation": 0.06,
+      "max_distance": 60
+    },
+    {
+      "id": "electric_start",
+      "clips": [
+        "sounds/engines/electric_start.ogg"
+      ],
+      "max_distance": 60
+    },
+    {
+      "id": "electric_whirr",
+      "clips": [
+        "sounds/engines/electric_whirr.ogg"
+      ],
+      "loop": true,
+      "volume_db": -4,
+      "max_distance": 40,
+      "parameters": [
+        {
+          "name": "speed",
+          "pitch": [
+            0.5,
+            2
+          ],
+          "volume_db": [
+            -12,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": "battery_insert",
+      "clips": [
+        "sounds/engines/battery_insert.ogg"
+      ],
+      "max_distance": 20
+    },
+    {
+      "id": "battery_drain",
+      "clips": [
+        "sounds/engines/battery_drain.ogg"
+      ],
+      "max_distance": 20
+    },
+    {
+      "id": "fuel_pour",
+      "clips": [
+        "sounds/engines/fuel_pour.ogg"
+      ],
+      "max_distance": 20
+    }
+  ]
+}

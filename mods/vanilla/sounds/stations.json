@@ -1,0 +1,141 @@
+{
+  "events": [
+    {
+      "id": "chest_place",
+      "clips": [
+        "sounds/stations/chest_place.ogg"
+      ],
+      "max_distance": 30
+    },
+    {
+      "id": "chest_open",
+      "clips": [
+        "sounds/stations/chest_open.ogg"
+      ],
+      "max_distance": 20
+    },
+    {
+      "id": "chest_close",
+      "clips": [
+        "sounds/stations/chest_close.ogg"
+      ],
+      "max_distance": 20
+    },
+    {
+      "id": "container_open",
+      "clips": [
+        "sounds/stations/container_open.ogg"
+      ],
+      "max_distance": 20
+    },
+    {
+      "id": "fabricator_start",
+      "clips": [
+        "sounds/stations/fabricator_start.ogg"
+      ],
+      "max_distance": 30
+    },
+    {
+      "id": "fabricator_work",
+      "clips": [
+        "sounds/stations/fabricator_work.ogg"
+      ],
+      "loop": true,
+      "volume_db": -3,
+      "max_distance": 30
+    },
+    {
+      "id": "fabricator_complete",
+      "clips": [
+        "sounds/stations/fabricator_complete.ogg"
+      ],
+      "max_distance": 30
+    },
+    {
+      "id": "refiner_start",
+      "clips": [
+        "sounds/stations/refiner_start.ogg"
+      ],
+      "max_distance": 30
+    },
+    {
+      "id": "refiner_work",
+      "clips": [
+        "sounds/stations/refiner_work.ogg"
+      ],
+      "loop": true,
+      "volume_db": -3,
+      "max_distance": 30
+    },
+    {
+      "id": "refiner_complete",
+      "clips": [
+        "sounds/stations/refiner_complete.ogg"
+      ],
+      "max_distance": 30
+    },
+    {
+      "id": "bed_use",
+      "clips": [
+        "sounds/stations/bed_use.ogg"
+      ],
+      "max_distance": 20
+    },
+    {
+      "id": "bed_set",
+      "clips": [
+        "sounds/stations/bed_set.ogg"
+      ],
+      "max_distance": 20
+    },
+    {
+      "id": "radio_on",
+      "clips": [
+        "sounds/stations/radio_on.ogg"
+      ],
+      "max_distance": 20
+    },
+    {
+      "id": "radio_tune",
+      "clips": [
+        "sounds/stations/radio_tune.ogg"
+      ],
+      "max_distance": 20
+    },
+    {
+      "id": "radio_off",
+      "clips": [
+        "sounds/stations/radio_off.ogg"
+      ],
+      "max_distance": 20
+    },
+    {
+      "id": "light_on",
+      "clips": [
+        "sounds/stations/light_on.ogg"
+      ],
+      "max_distance": 20
+    },
+    {
+      "id": "light_off",
+      "clips": [
+        "sounds/stations/light_off.ogg"
+      ],
+      "max_distance": 20
+    },
+    {
+      "id": "beacon_activate",
+      "clips": [
+        "sounds/stations/beacon_activate.ogg"
+      ],
+      "max_distance": 60
+    },
+    {
+      "id": "beacon_ping",
+      "clips": [
+        "sounds/stations/beacon_ping.ogg"
+      ],
+      "max_distance": 100
+    }
+  ]
+}
