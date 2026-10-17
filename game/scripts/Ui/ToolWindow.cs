@@ -7,15 +7,13 @@ namespace Mechanica.Game.Ui;
 /// <summary>
 /// The frame every menu and mod tool panel uses (UI spec §13 "Required Elements"): a blue title bar with
 /// the title and an X close button top-right, a body, and an action bar at the bottom right for the
-/// primary buttons. Esc closes the topmost open window. Closing raises <see cref="CloseRequested"/>; the
+/// primary buttons. Esc closes the topmost open window (see <see cref="EscapeStack"/>). Closing raises <see cref="CloseRequested"/>; the
 /// owner decides whether to hide or free the window, and <see cref="CloseGuard"/> can ask first (for
 /// unsaved changes) by calling its argument only when closing is fine. A window never grows past the screen (UI spec
 /// §11): when its body needs more room than the screen has, the body scrolls, and a window pushed off an edge moves back.
 /// </summary>
 public partial class ToolWindow : PanelContainer
 {
-    private static readonly List<ToolWindow> Open = [];
-
     /// <summary>The gap kept between a window and the edge of the screen.</summary>
     public const float ScreenMargin = 16;
 
@@ -59,8 +57,8 @@ public partial class ToolWindow : PanelContainer
     /// <summary>Raised when the window should close (X, Esc or <see cref="RequestClose"/>).</summary>
     public event Action? CloseRequested;
 
-    /// <summary>The topmost visible window, which Esc closes.</summary>
-    public static ToolWindow? Topmost => Open.LastOrDefault(w => w.IsVisibleInTree());
+    /// <summary>The visible window shown last.</summary>
+    public static ToolWindow? Topmost => EscapeStack.TopmostOf<ToolWindow>();
 
     public ToolWindow()
     {
@@ -94,14 +92,14 @@ public partial class ToolWindow : PanelContainer
 
     public override void _EnterTree()
     {
-        Open.Add(this);
+        EscapeStack.Add(this, IsVisibleInTree, RequestClose);
         GetViewport().SizeChanged += QueueFit;
         QueueFit();
     }
 
     public override void _ExitTree()
     {
-        Open.Remove(this);
+        EscapeStack.Remove(this);
         GetViewport().SizeChanged -= QueueFit;
     }
 
@@ -109,6 +107,9 @@ public partial class ToolWindow : PanelContainer
     {
         if (what is (int)NotificationResized or (int)NotificationVisibilityChanged)
             QueueFit();
+        // A window shown again (the Logbook, a part's menu) goes on top of what is already open.
+        if (what == (int)NotificationVisibilityChanged && Visible)
+            EscapeStack.Raise(this);
     }
 
     private bool _fitQueued;
@@ -182,7 +183,7 @@ public partial class ToolWindow : PanelContainer
 
     public override void _Input(InputEvent @event)
     {
-        if (CloseOnEscape && GameInput.Pressed(@event, InputActions.Pause) && Topmost == this && !Completing())
+        if (CloseOnEscape && GameInput.Pressed(@event, InputActions.Pause) && EscapeStack.Topmost == this && !Completing())
         {
             GetViewport().SetInputAsHandled();
             RequestClose();

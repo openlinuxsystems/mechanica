@@ -14,7 +14,8 @@ namespace Mechanica.Game.Creations;
 /// call <see cref="SyncToCreation"/> so the simulated poses and velocities reach the save. Only the
 /// Creation's authority peer simulates (D5): on other peers the bodies are frozen kinematic and
 /// <see cref="Net.CreationSync"/> poses them from snapshots. A Creation on a
-/// Lift (<see cref="Creation.OnLift"/>) is frozen everywhere.
+/// Lift (<see cref="Creation.OnLift"/>) is frozen everywhere, and so is each Body holding a part anchored to the
+/// ground (<see cref="Creation.IsBodyAnchored"/>), so players can't kick a build about.
 /// </para>
 /// </summary>
 public partial class CreationNode : Node3D
@@ -82,6 +83,9 @@ public partial class CreationNode : Node3D
 
     /// <summary>True when the bodies are held still: another peer simulates them, or a Lift holds them.</summary>
     public bool IsFrozen => !IsSimulated || Creation.OnLift;
+
+    /// <summary>True when the Body at <paramref name="bodyIndex"/> is held still: the whole Creation is, or it is anchored to the ground.</summary>
+    public bool IsBodyFrozen(int bodyIndex) => IsFrozen || Creation.IsBodyAnchored(bodyIndex);
 
     public override void _Ready()
     {
@@ -229,7 +233,7 @@ public partial class CreationNode : Node3D
         var frozen = IsFrozen;
         foreach (var body in Creation.Bodies)
         {
-            var node = BuildBody(body, frozen);
+            var node = BuildBody(body, frozen || Creation.IsBodyAnchored(body.Index));
             // A saved or synced Creation carries on moving as it was.
             var velocity = Creation.GetBodyVelocity(body.Index);
             (node.LinearVelocity, node.AngularVelocity) = (velocity.Linear.ToGodot(), velocity.Angular.ToGodot());

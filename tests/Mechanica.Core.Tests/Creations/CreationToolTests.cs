@@ -109,6 +109,7 @@ public class CreationToolTests
         _creation.Place(Block, Up);
         _creation.SetPartColor(2, "#3070d0");
         _creation.SetPartDamage(1, 7.5f);
+        _creation.SetAnchored(1, true);
         _creation.OnLift = true;
         _creation.SetAllBodyPoses(new Pose(new Vector3(1, 2, 3), Quaternion.Identity));
 
@@ -123,6 +124,7 @@ public class CreationToolTests
         Assert.True(loaded.OnLift);
         Assert.Equal(_creation.Parts, loaded.Parts);
         Assert.Equal(7.5f, loaded.PartDamage(1));
+        Assert.Equal([1], loaded.AnchoredParts);
         Assert.Equal(json, CreationJson.Write(loaded));
     }
 
@@ -134,6 +136,7 @@ public class CreationToolTests
         Assert.DoesNotContain("color", json);
         Assert.DoesNotContain("damage", json);
         Assert.DoesNotContain("on_lift", json);
+        Assert.DoesNotContain("anchored", json);
     }
 
     [Theory]

@@ -100,6 +100,19 @@ public class ToolActionsTests
     }
 
     [Fact]
+    public void LiftingAGroundedCreationFreesItSoItDropsWhenLetGo()
+    {
+        var id = Add(Car());
+        _world.Creations[id].SetAnchored(_world.Creations[id].Parts.First().Id, true);
+
+        Assert.True(Dispatch(ToolActions.PlaceLift, new { position = new[] { 0f, 0f, 0f }, creation = id }).Ok);
+        Assert.True(Dispatch(ToolActions.RemoveLift, new { }).Ok);
+
+        Assert.False(_world.Creations[id].IsGrounded);
+        Assert.False(_world.Creations[id].OnLift);
+    }
+
+    [Fact]
     public void RemovingTheLiftDropsItsCreation()
     {
         var id = Add(Car());

@@ -150,7 +150,7 @@ public partial class PartSettingsPanel : CanvasLayer
 
     public override void _UnhandledInput(InputEvent @event)
     {
-        if (IsOpen && (GameInput.Pressed(@event, InputActions.Pause) || GameInput.Pressed(@event, InputActions.Interact)) && !GameInput.Typing(GetViewport()))
+        if (IsOpen && GameInput.Pressed(@event, InputActions.Interact) && !GameInput.Typing(GetViewport()))
         {
             Close();
             GetViewport().SetInputAsHandled();
