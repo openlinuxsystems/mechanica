@@ -671,6 +671,12 @@ PALETTE = {
     "tool_orange": ("#d8762a", 0.45, 0.0),
     "tool_blue": ("#3a78b8", 0.45, 0.0),
     "lining": ("#3a3f2c", 0.95, 0.0),
+    # sledgehammer
+    "gunmetal": ("#36383c", 0.52, 1.0),
+    "steel_shaft": ("#4a4c50", 0.42, 1.0),
+    "bolt_steel": ("#5c5e62", 0.38, 1.0),
+    "paint_yellow": ("#e6b52a", 0.5, 0.05),
+    "grip_rubber": ("#1d1d1e", 0.82, 0.0),
     "void": ("#060505", 1.0, 1.0),          # the inside of a cut sleeve: no light comes back from it
     "default": ("#808080", 0.5, 0.0),
 }
@@ -729,6 +735,78 @@ def build_armature(name="Armature"):
     for pb in ob.pose.bones:
         pb.rotation_mode = "QUATERNION"
     return ob
+
+
+def bevel_box(center, half, bevel, axes=None, mat="default"):
+    """A hard box with chamfered edges and corners (flat shaded): 6 faces, 12 edge strips, 8 corner triangles."""
+    ax = np.eye(3) if axes is None else np.array([norm(a) for a in axes])
+    c = np.asarray(center, float)
+    h = np.asarray(half, float)
+    inner = h - bevel
+    idx = {}
+    vs = []
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            for sz in (-1, 1):
+                s = np.array([sx, sy, sz], float)
+                for k in range(3):
+                    loc = s * inner
+                    loc[k] = s[k] * h[k]
+                    idx[(sx, sy, sz, k)] = len(vs)
+                    vs.append(c + ax.T @ loc)
+    vs = np.array(vs)
+    faces = []
+    signs = (-1, 1)
+    for k in range(3):                       # main faces
+        for s in signs:
+            faces.append([idx[key] for key in idx if key[3] == k and key[k] == s])
+    for a in range(3):                       # edge strips between the faces of axes a and b
+        for b in range(a + 1, 3):
+            for sa in signs:
+                for sb in signs:
+                    faces.append([idx[key] for key in idx if key[3] in (a, b) and key[a] == sa and key[b] == sb])
+    for sx in signs:                         # corners
+        for sy in signs:
+            for sz in signs:
+                faces.append([idx[(sx, sy, sz, k)] for k in range(3)])
+    out = []
+    for f in faces:
+        pts = vs[f]
+        fc = pts.mean(axis=0)
+        nrm = fc - c
+        nrm = norm(nrm)
+        u = norm(pts[0] - fc)
+        v = np.cross(nrm, u)
+        ang = [math.atan2(np.dot(p - fc, v), np.dot(p - fc, u)) for p in pts]
+        out.append(tuple(np.array(f)[np.argsort(ang)]))
+    p = Part(vs, out, mat, smooth=False)
+    loc = (p.v - c) @ ax.T
+    p.a["box"] = np.hstack([loc / h, np.tile(np.append(h, 20.0), (len(p.v), 1))])
+    return p
+
+
+def hex_bolt(base, normal, ref, r=0.0105, height=0.0065, washer=True, mat="bolt_steel"):
+    """A hex bolt head standing on a surface: base point, outward normal, ref fixes the hex rotation."""
+    base, normal = np.asarray(base, float), norm(np.asarray(normal, float))
+    ref = norm(np.asarray(ref, float) - np.dot(ref, normal) * normal)
+    parts = []
+    if washer:
+        parts.append(cylinder(base - normal * 0.001, base + normal * 0.0022, r * 1.3, 16, mat, ref=ref, smooth=True))
+        base = base + normal * 0.0022
+    parts.append(cylinder(base, base + normal * height, r, 6, mat, smooth=False, ref=ref, bevel=0.0015))
+    return parts
+
+
+def rivet(base, normal, r=0.0065, mat="bolt_steel"):
+    """A domed rivet head on a surface."""
+    base, normal = np.asarray(base, float), norm(np.asarray(normal, float))
+    a = norm(np.cross(normal, (1.0, 0.3, 0.2)))
+    b = np.cross(normal, a)
+    rings = [dict(c=base - normal * 0.001, a=a, b=b, rx=r, ry=r)]
+    for k in (0.35, 0.7, 0.92):
+        rr = r * math.cos(k * math.pi / 2)
+        rings.append(dict(c=base + normal * r * 0.55 * math.sin(k * math.pi / 2), a=a, b=b, rx=rr, ry=rr))
+    return loft(rings, 12, True, True, mat, True)
 
 
 def build_mesh_object(name, part, armature=None):
@@ -3037,38 +3115,159 @@ def clip_paint_spray(t):
     return oneshot([(0.0, h), (0.08, aim(-0.08)), (0.3, aim(0.1)), (0.4, h)], t)
 
 
-HEAVY_R = np.array([-0.1, -0.2, 1.3])         # right fist on the sledge handle (rest coords)
-HEAVY_AXIS = norm(np.array([-0.2, 0.55, 0.6]))  # handle direction toward the head (over the right shoulder)
+# The Sledgehammer, built to its reference sheet: 1.3 m long, a 38 mm steel shaft with a 280 mm knurled rubber grip
+# and one yellow safety band, and a 280 x 140 x 110 mm head of stacked, bolted steel plates. The right fist sits on
+# the bare shaft just above the band (the origin) and the left fist on the grip SLEDGE_SPACING below it.
+SLEDGE_BUTT = -0.38            # bottom of the end cap (grip frame y)
+SLEDGE_HEAD_Y = 0.85           # centre of the head
+SLEDGE_HEAD = (0.14, 0.07, 0.055)   # head half sizes: strike axis (x), along the handle (y), across (z)
+SLEDGE_SPACING = 0.26          # left fist below the right one, along the handle
+SHAFT_R = 0.019
 
 
-def heavy_arms(grip_r, axis, d_hint=(0.0, -1.0, 0.0), spacing=0.24):
-    axis = norm(axis)
-    d = norm(np.asarray(d_hint) - np.dot(d_hint, axis) * axis)
-    grip_l = np.asarray(grip_r) - axis * spacing
-    return {"arm_r": arm_ik_from_grip("r", grip_r, d, axis, pole=(-0.7, 0.4, -1.0)),
-            "arm_l": arm_ik_from_grip("l", grip_l, d, axis, pole=(0.6, 0.3, -1.0))}
+# Sledgehammer: the right fist sits on the shaft (the prop's origin), the left one lower on the grip, `spacing`
+# below it along the handle (it slides between 0.1 and 0.33 m, all on the rubber). The head's strike faces point
+# along the fingers (d), so d is kept on the tangent of the swing arc in the body's side plane: the face leads.
+
+def heavy_arms(grip_r, axis, d_hint=None, spacing=SLEDGE_SPACING, space="chest", poles=((-0.7, 0.4, -1.0), (0.6, 0.3, -1.0))):
+    axis = norm(np.asarray(axis, float))
+    if d_hint is None:
+        d_hint = (0.0, -axis[2], axis[1])      # face forward along an overhead arc
+    d_hint = np.asarray(d_hint, float)
+    d = norm(d_hint - np.dot(d_hint, axis) * axis)
+    grip_l = np.asarray(grip_r, float) - axis * spacing
+    return {"arm_r": arm_ik_from_grip("r", grip_r, d, axis, pole=poles[0], space=space),
+            "arm_l": arm_ik_from_grip("l", grip_l, d, axis, pole=poles[1], space=space)}
+
+
+def heavy_key(grip_r, axis, spacing=SLEDGE_SPACING, d_hint=None, space="chest", **body):
+    """One key of a two-handed Sledgehammer clip: both arms on the handle plus the torso angles given."""
+    s = upper_base(0.0)
+    poles = FP_POLES if space == "world" else ((-0.7, 0.4, -1.0), (0.6, 0.3, -1.0))
+    s.update(heavy_arms(np.asarray(grip_r, float), axis, d_hint, spacing, space, poles))
+    for side in ("l", "r"):
+        s[f"fingers_{side}"] = 95.0
+        s[f"thumb_{side}"] = 45.0
+    s.update(body)
+    return s
+
+
+# Ready pose: the handle rests on the right shoulder, the head hanging behind it, both fists in front of the chest.
+HEAVY_R = np.array([-0.12, -0.27, 1.29])
+HEAVY_AXIS = norm(np.array([-0.17, 0.8, 0.58]))
+HEAVY_BODY = dict(spine=(0.0, 0, -3.0), chest=(-1.0, 0, -7.0), neck=(0.0, 0, 4.0), head=(0.0, 0, 3.0))
 
 
 def clip_hold_heavy(t, T=2.0):
     ph = 2 * math.pi * t / T
-    s = upper_base(t, T)
-    s.update(heavy_arms(HEAVY_R + np.array([0, 0, 0.004 * math.sin(ph)]), HEAVY_AXIS))
-    for side in ("l", "r"):
-        s[f"fingers_{side}"] = 95.0
-        s[f"thumb_{side}"] = 45.0
-    s["chest"] = (s["chest"][0], 0, -5.0)
+    br = math.sin(ph)
+    s = heavy_key(HEAVY_R + np.array([0.0, 0.0, 0.005 * br]), HEAVY_AXIS + np.array([0.0, 0.0, 0.006 * br]),
+                  spacing=0.22, **HEAVY_BODY)
+    base = upper_base(t, T)
+    for b in ("spine", "chest", "neck", "head"):
+        s[b] = tuple(x + y for x, y in zip(HEAVY_BODY[b], base[b]))
+    s["shoulder_l"], s["shoulder_r"] = base["shoulder_l"], base["shoulder_r"]
     return s
 
 
+def heavy_ready():
+    return clip_hold_heavy(0.0)
+
+
+# Overhead swing, 1 s (sledge.swing_seconds): wind-up to 0.35 s, strike to the hit at 0.6 s (sledge.strike_seconds),
+# recovery back to the ready pose by 1 s. The right fist slides down to the left one as the head comes over.
+SLEDGE_SWING_KEYS = [
+    (0.0, None),
+    (0.17, ((-0.11, -0.14, 1.6), (-0.12, 0.5, 0.86), 0.22,
+            dict(spine=(-3.0, 0, -5.0), chest=(-5.0, 0, -9.0), neck=(0.0, 0, 5.0), head=(-3.0, 0, 3.0)))),
+    (0.35, ((-0.08, 0.0, 1.86), (-0.04, 0.9, -0.43), 0.2,
+            dict(spine=(-7.0, 2.0, -6.0), chest=(-10.0, 1.0, -10.0), neck=(-2.0, 0, 6.0), head=(-6.0, 0, 4.0)))),
+    (0.46, ((-0.07, -0.2, 1.86), (-0.02, 0.05, 1.0), 0.18,
+            dict(spine=(-2.0, 1.0, -2.0), chest=(-4.0, 0, -3.0), neck=(-2.0, 0, 2.0), head=(-4.0, 0, 1.0)))),
+    (0.53, ((-0.05, -0.44, 1.56), (0.0, -0.74, 0.67), 0.15,
+            dict(spine=(8.0, 0, 2.0), chest=(6.0, 0, 3.0), neck=(-6.0, 0, -1.0), head=(-3.0, 0, 0)))),
+    (0.6, ((-0.04, -0.52, 1.2), (0.0, -0.94, -0.34), 0.12,
+           dict(spine=(13.0, 0, 3.0), chest=(9.0, 0, 4.0), neck=(-10.0, 0, -2.0), head=(-6.0, 0, 0)))),
+    (0.67, ((-0.04, -0.51, 1.24), (0.0, -0.95, -0.27), 0.12,
+            dict(spine=(12.0, 0, 3.0), chest=(8.0, 0, 3.0), neck=(-9.0, 0, -2.0), head=(-5.0, 0, 0)))),
+    (0.82, ((-0.1, -0.38, 1.3), (-0.1, -0.15, 0.98), 0.18,
+            dict(spine=(6.0, 0, -1.0), chest=(3.0, 0, -4.0), neck=(-3.0, 0, 2.0), head=(-2.0, 0, 1.0)))),
+    (1.0, None),
+]
+
+
+def heavy_clip(keys, ready, t):
+    return oneshot([(kt, ready if k is None else heavy_key(k[0], k[1], k[2], **k[3])) for kt, k in keys], t,
+                   template=ready)
+
+
 def clip_sledge_swing(t):
-    h = clip_hold_heavy(0.0)
-    up = with_right_arm(h, **heavy_arms(np.array([-0.06, 0.0, 1.78]), (0.0, 0.75, 0.2), d_hint=(0, 0, 1)),
-                        spine=(-6.0, 0, -4.0), chest=(-8.0, 0, -6.0), head=(-4.0, 0, 0))
-    fwd = with_right_arm(h, **heavy_arms(np.array([-0.05, -0.42, 1.55]), (0.0, -0.6, 0.8), d_hint=(0, -0.3, -1)),
-                         spine=(6.0, 0, 0.0), chest=(6.0, 0, 0.0))
-    hit = with_right_arm(h, **heavy_arms(np.array([-0.04, -0.5, 1.02]), (0.0, -0.95, -0.25), d_hint=(0, 0, -1)),
-                         spine=(18.0, 0, 2.0), chest=(12.0, 0, 2.0), neck=(-12.0, 0, 0), head=(-6.0, 0, 0))
-    return oneshot([(0.0, h), (0.15, up), (0.23, fwd), (0.29, hit), (0.36, hit), (0.45, h)], t)
+    return heavy_clip(SLEDGE_SWING_KEYS, heavy_ready(), t)
+
+
+# Block (hold right click): the hammer raised diagonally across the chest, head up and to the right.
+BLOCK_R = np.array([0.06, -0.4, 1.3])
+BLOCK_AXIS = norm(np.array([-0.8, -0.12, 0.6]))
+BLOCK_BODY = dict(spine=(6.0, 0, 2.0), chest=(4.0, 0, 6.0), neck=(6.0, 0, -4.0), head=(4.0, 0, -2.0))
+
+
+def clip_hold_heavy_block(t, T=2.0):
+    ph = 2 * math.pi * t / T
+    br = math.sin(ph)
+    s = heavy_key(BLOCK_R + np.array([0.0, 0.0, 0.004 * br]), BLOCK_AXIS, 0.26, d_hint=(0.0, -1.0, 0.0), **BLOCK_BODY)
+    base = upper_base(t, T, 0.7)
+    for b in ("spine", "chest", "neck", "head"):
+        s[b] = tuple(x + y for x, y in zip(BLOCK_BODY[b], base[b]))
+    return s
+
+
+# First person: the same three, posed for the camera of the arms-only model (game/data/character.json:
+# first_person_offset and first_person_pitch_degrees put the eye at FP_EYE looking along FP_LOOK in rest coords).
+# The ready pose stands the hammer up at the lower right of the view; the swing throws it back over the right
+# shoulder and down through the middle of the view, closer and wider than the body's. Only the forearms are drawn
+# in first person, so the fists stay low in the view and the elbows (the open sleeve ends) stay out of it.
+FP_EYE = np.array([0.0, 0.164, 1.237])
+FP_LOOK = norm(np.array([0.0, -0.97, 0.242]))
+# The body is not drawn in first person, so the torso stoops to bring the shoulders forward and below the eye:
+# the elbows then hang under the bottom of the view, whatever the fists do. Fists are placed in model space.
+FP_BODY = dict(spine=(55.0, 0, 0.0), chest=(35.0, 0, 0.0), neck=(-45.0, 0, 0.0), head=(-45.0, 0, 0.0), space="world")
+FP_POLES = ((-0.4, 0.3, -1.0), (0.4, 0.3, -1.0))
+FP_READY = ((-0.17, -0.4, 1.03), (-0.25, -0.35, 0.9), 0.16)
+
+
+def clip_hold_heavy_fp(t, T=2.0):
+    ph = 2 * math.pi * t / T
+    br = math.sin(ph)
+    grip, axis, spacing = FP_READY
+    s = heavy_key(np.array(grip) + np.array([0.0, 0.0, 0.006 * br]), axis, spacing, **FP_BODY)
+    base = upper_base(t, T, 0.5)
+    s["shoulder_l"], s["shoulder_r"] = base["shoulder_l"], base["shoulder_r"]
+    return s
+
+
+SLEDGE_SWING_FP_KEYS = [
+    (0.0, None),
+    (0.17, ((-0.2, -0.36, 1.12), (-0.2, 0.0, 1.0), 0.16, FP_BODY)),
+    (0.35, ((-0.22, -0.3, 1.2), (-0.12, 0.75, 0.65), 0.16, FP_BODY)),
+    (0.46, ((-0.12, -0.42, 1.15), (-0.03, -0.1, 1.0), 0.15, FP_BODY)),
+    (0.53, ((-0.18, -0.38, 1.12), (0.2, -0.25, 0.95), 0.13, FP_BODY)),
+    (0.6, ((-0.2, -0.4, 0.98), (0.37, -0.8, 0.48), 0.12, FP_BODY)),
+    (0.67, ((-0.2, -0.41, 0.95), (0.37, -0.83, 0.42), 0.12, FP_BODY)),
+    (0.82, ((-0.14, -0.45, 1.05), (-0.15, -0.55, 0.82), 0.15, FP_BODY)),
+    (1.0, None),
+]
+
+
+def clip_sledge_swing_fp(t):
+    return heavy_clip(SLEDGE_SWING_FP_KEYS, clip_hold_heavy_fp(0.0), t)
+
+
+def clip_hold_heavy_block_fp(t, T=2.0):
+    ph = 2 * math.pi * t / T
+    br = math.sin(ph)
+    s = heavy_key(np.array([0.0, -0.45, 1.08 + 0.004 * br]), norm(np.array([-0.75, -0.35, 0.56])), 0.22,
+                  d_hint=(0.0, -1.0, 0.0), **FP_BODY)
+    return s
 
 
 GUN_R = np.array([-0.12, -0.31, 1.3])
@@ -3230,10 +3429,14 @@ CLIPS = {
     "sit": (clip_sit, 2.0, True, False),
     "hold_tool": (clip_hold_tool, 2.0, True, True),
     "hold_heavy": (clip_hold_heavy, 2.0, True, True),
+    "hold_heavy_block": (clip_hold_heavy_block, 2.0, True, True),
+    "hold_heavy_fp": (clip_hold_heavy_fp, 2.0, True, True),
+    "hold_heavy_block_fp": (clip_hold_heavy_block_fp, 2.0, True, True),
     "hold_gun": (clip_hold_gun, 2.0, True, True),
     "hold_item": (clip_hold_item, 2.0, True, True),
     "hammer_swing": (clip_hammer_swing, 0.35, False, True),
-    "sledge_swing": (clip_sledge_swing, 0.45, False, True),
+    "sledge_swing": (clip_sledge_swing, 1.0, False, True),
+    "sledge_swing_fp": (clip_sledge_swing_fp, 1.0, False, True),
     "tool_use": (clip_tool_use, 0.3, False, True),
     "weld": (clip_weld, 0.5, False, True),
     "paint_spray": (clip_paint_spray, 0.4, False, True),
@@ -3249,6 +3452,8 @@ CLIPS = {
 # the prop each clip shows in the right hand (verification renders and the game's defaults)
 CLIP_PROP = {"hold_tool": "hammer", "hammer_swing": "hammer", "tool_use": "lift_remote", "weld": "weld_tool",
              "paint_spray": "paint_tool", "hold_heavy": "sledgehammer", "sledge_swing": "sledgehammer",
+             "hold_heavy_block": "sledgehammer", "hold_heavy_fp": "sledgehammer", "hold_heavy_block_fp": "sledgehammer",
+             "sledge_swing_fp": "sledgehammer",
              "hold_gun": "potato_blaster", "fire_gun": "potato_blaster", "pour": "water_bucket"}
 
 
@@ -3388,12 +3593,57 @@ def prop_paint_tool():
 
 
 def prop_sledgehammer():
-    p = [cylinder((0, -0.38, 0), (0, 0.43, 0), 0.016, 12, "handle_wood", ref=X, bevel=0.004),
-         cylinder((0, -0.39, 0), (0, -0.25, 0), 0.019, 12, "rubber", ref=X, bevel=0.005),
-         soft_box((0, 0.46, 0), (0.1, 0.042, 0.042), axes=(X, Y, Z), e=7, e2=7, segs=14, rings=8, mat="metal_dark"),
-         cylinder((0.1, 0.46, 0), (0.115, 0.46, 0), 0.04, 14, "metal", ref=Y, bevel=0.004),
-         cylinder((-0.1, 0.46, 0), (-0.115, 0.46, 0), 0.04, 14, "metal", ref=Y, bevel=0.004),
-         box((0, 0.36, 0.0), (0.02, 0.012, 0.02), mat="orange")]
+    hx, hy, hz = SLEDGE_HEAD
+    yc = SLEDGE_HEAD_Y
+    p = [
+        # shaft, end cap with its cross pin, knurled rubber grip and the yellow band above it
+        cylinder((0, SLEDGE_BUTT + 0.01, 0), (0, yc - hy + 0.004, 0), SHAFT_R, 16, "steel_shaft", ref=X),
+        cylinder((0, SLEDGE_BUTT, 0), (0, SLEDGE_BUTT + 0.032, 0), 0.0245, 18, "gunmetal", ref=X, bevel=0.004),
+        cylinder((-0.0255, SLEDGE_BUTT + 0.016, 0), (0.0255, SLEDGE_BUTT + 0.016, 0), 0.0055, 10, "bolt_steel",
+                 ref=Z, bevel=0.0012),
+        cylinder((0, SLEDGE_BUTT + 0.03, 0), (0, -0.078, 0), 0.0218, 18, "grip_rubber", ref=X, bevel=0.003),
+        cylinder((0, SLEDGE_BUTT + 0.03, 0), (0, SLEDGE_BUTT + 0.042, 0), 0.0232, 18, "grip_rubber", ref=X,
+                 bevel=0.003),
+        cylinder((0, -0.09, 0), (0, -0.078, 0), 0.0228, 18, "grip_rubber", ref=X, bevel=0.003),
+        cylinder((0, -0.076, 0), (0, -0.044, 0), 0.0196, 18, "paint_yellow", ref=X, bevel=0.0008),
+        # stepped collar where the shaft meets the head
+        cylinder((0, yc - hy - 0.075, 0), (0, yc - hy - 0.062, 0), 0.0222, 18, "gunmetal", ref=X, bevel=0.002),
+        cylinder((0, yc - hy - 0.045, 0), (0, yc - hy + 0.002, 0), 0.0265, 18, "gunmetal", ref=X, bevel=0.004),
+        bevel_box((0, yc - hy - 0.004, 0), (0.042, 0.007, 0.036), 0.003, mat="gunmetal"),
+    ]
+    # head core: a yellow-painted block, seen between the straps and around the cheek plates
+    p.append(bevel_box((0, yc, 0), (0.075, hy - 0.006, hz - 0.007), 0.004, mat="paint_yellow"))
+    # striking ends: three stacked plates each, then a face plate
+    for sx in (-1, 1):
+        x0, x1 = 0.068, hx - 0.011
+        xm = sx * (x0 + x1) / 2
+        for k, (ya, yb) in enumerate(((-hy, -0.0235), (-0.0215, 0.0215), (0.0235, hy))):
+            p.append(bevel_box((xm, yc + (ya + yb) / 2, 0), ((x1 - x0) / 2, (yb - ya) / 2, hz), 0.006, mat="gunmetal"))
+        p.append(bevel_box((sx * (hx - 0.0055), yc, 0), (0.0055, hy - 0.009, hz - 0.009), 0.0035, mat="gunmetal"))
+        # rivets on the cheeks of the end plates
+        for sz in (-1, 1):
+            for yy in (-0.046, 0.046):
+                p.append(rivet((sx * 0.112, yc + yy, sz * hz), (0, 0, sz)))
+    # cheek plates over the core, front and back: two layers with a groove between, yellow showing round them
+    for sz in (-1, 1):
+        for ya, yb in ((-hy + 0.014, -0.002), (0.002, hy - 0.014)):
+            p.append(bevel_box((0, yc + (ya + yb) / 2, sz * (hz - 0.004)), (0.04, (yb - ya) / 2, 0.006), 0.0025,
+                               mat="gunmetal"))
+    # a top plate leaves a strip of yellow showing on each side
+    p.append(bevel_box((0, yc + hy - 0.002, 0), (0.04, 0.005, hz - 0.034), 0.0025, mat="gunmetal"))
+    # straps wrapping the head where the ends meet the core, each with four hex bolts
+    t = 0.0075
+    for sx in (-1, 1):
+        xs = sx * 0.068
+        w = 0.0125
+        for sy in (-1, 1):
+            p.append(bevel_box((xs, yc + sy * (hy + t / 2), 0), (w, t / 2, hz + t), 0.0025, mat="gunmetal"))
+        for sz in (-1, 1):
+            p.append(bevel_box((xs, yc, sz * (hz + t / 2)), (w, hy, t / 2), 0.0025, mat="gunmetal"))
+            for yy in (-0.042, 0.042):
+                p.extend(hex_bolt((xs, yc + yy, sz * (hz + t)), (0, 0, sz), (0, 1, 0)))
+        for sy in (-1, 1):
+            p.extend(hex_bolt((xs, yc + sy * (hy + t), 0), (0, sy, 0), (1, 0, 0), r=0.009))
     return p
 
 
@@ -3490,9 +3740,16 @@ def export_props():
         ob, part = build_prop(name)
         objs.append(ob)
         parts.append(part)
-    stats = ct.texture_props(objs, parts, [mesh_material_names(p) for p in parts], PALETTE, PROP_ATLAS, seed=5)
+    # The Sledgehammer is 1.3 m long, so it has an atlas of its own rather than starving the small tools of texels.
+    own = [i for i, name in enumerate(PROPS) if name == "sledgehammer"]
+    shared = [i for i in range(len(objs)) if i not in own]
+    stats = {}
+    for idx, group, material in ((shared, "props", "M_hand_tools"), (own, "sledgehammer", "M_sledgehammer")):
+        stats.update(ct.texture_props([objs[i] for i in idx], [parts[i] for i in idx],
+                                      [mesh_material_names(parts[i]) for i in idx], PALETTE, PROP_ATLAS, seed=5,
+                                      group=group, material=material))
     for g, (size, texel_mm, cov) in stats.items():
-        print(f"  hand_tools atlas: {size}px, {texel_mm:.2f} mm/texel, {cov * 100:.0f}% covered")
+        print(f"  {g} atlas: {size}px, {texel_mm:.2f} mm/texel, {cov * 100:.0f}% covered")
     path = OUT_DIR / "hand_tools.glb"
     export_glb(path, objs, animations=False)
     print(f"{path.name}: {len(objs)} props")

@@ -12,7 +12,16 @@ public class InputPacketTests
         new(7, new PlayerInput(0.5f, -1f, 3f, -0.2f, true, false)),
         new(8, new PlayerInput(0f, 1f, -3f, 0.4f, false, true)),
         new(9, new PlayerInput(0f, 0f, 0f, 0f, false, false, Crawl: true, CharacterProp.Sledgehammer, CharacterGesture.SledgeSwing, 200)),
+        new(10, new PlayerInput(0f, 0f, 0f, 0f, false, false, Prop: CharacterProp.Sledgehammer, Guard: true)),
     ];
+
+    [Fact]
+    public void OnlyTheSledgehammerCanGuard()
+    {
+        var settings = new PlayerMovementSettings();
+        Assert.True(new PlayerInput(0, 0, 0, 0, false, false, Prop: CharacterProp.Sledgehammer, Guard: true).Sanitized(settings).Guard);
+        Assert.False(new PlayerInput(0, 0, 0, 0, false, false, Prop: CharacterProp.Hammer, Guard: true).Sanitized(settings).Guard);
+    }
 
     [Fact]
     public void RoundTrips() => Assert.Equal(Sample, InputPacket.Decode(InputPacket.Encode(Sample)));
@@ -62,6 +71,7 @@ public class WorldSnapshotTests
         new PlayerState(1, 0, new Vector3(1, 2, 3), new Vector3(-1, 0, 0.5f), 1.5f, -0.25f),
         new PlayerState(987654, 42, new Vector3(-4, 0, 9), Vector3.Zero, -3f, 1f),
         new PlayerState(5, 7, Vector3.One, Vector3.UnitY, 0f, 0f, BodyFlags.Swimming | BodyFlags.Crawl, CharacterProp.WaterBucket, CharacterGesture.Pour, 255),
+        new PlayerState(6, 8, Vector3.One, Vector3.Zero, 0f, 0f, BodyFlags.OnFloor | BodyFlags.Guard, CharacterProp.Sledgehammer),
     ]);
 
     [Fact]

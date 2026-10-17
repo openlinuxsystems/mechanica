@@ -109,6 +109,16 @@
       "max_distance": 20
     },
     {
+      "id": "sledgehammer_swing",
+      "clips": [
+        "sounds/building/sledgehammer_swing.ogg",
+        "sounds/building/sledgehammer_swing_2.ogg"
+      ],
+      "volume_variation_db": 1.5,
+      "pitch_variation": 0.06,
+      "max_distance": 15
+    },
+    {
       "id": "smash_hit",
       "clips": [
         "sounds/building/smash_hit.ogg",

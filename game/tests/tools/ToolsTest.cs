@@ -29,6 +29,8 @@ public partial class ToolsTest : StagedTest
     private readonly List<ActionResult> _results = [];
     private NetTestHarness _harness = null!;
     private ModLoadResult _mods = null!;
+    private int _struck;
+    private Vector3 _standing;
     private Instance _host = null!;
     private Instance _client = null!;
     private Instance _late = null!;
@@ -454,10 +456,21 @@ public partial class ToolsTest : StagedTest
 
     private void AddSledge()
     {
+        // The Sledgehammer reaches 3 m (sledge.reach), less than the building tools: step up to the bar first.
+        Add("step up to the bar", frame =>
+        {
+            var at = _client.Main.LocalPlayer!.GlobalPosition;
+            if (frame == 0)
+            {
+                _standing = at;
+                _host.Main.PlayerSync.HostTeleport(_client.Peer, new Vector3(at.X, at.Y, 2.4f));
+            }
+            return frame >= 20 && Mathf.Abs(at.Z - 2.4f) < 0.1f;
+        });
         Add("aim at the welded block", frame =>
         {
-            var bar = _client.Main.Creations.Find(_bar)!;
-            return LookAt(_client, PartCentre(_client, _bar, bar.Parts.Last().Id) + new Vector3(0, 0.1f, 0), frame);
+            _struck = _client.Main.Creations.Find(_bar)!.Parts.Last().Id;
+            return LookAt(_client, PartCentre(_client, _bar, _struck) + new Vector3(0, 0.1f, 0), frame);
         });
         Add("three Sledgehammer hits break it off", frame =>
         {
@@ -467,7 +480,10 @@ public partial class ToolsTest : StagedTest
                 _sent = 0;
                 Tools.Use(Tools.Sledge);
             }
-            // Block durability 3 at 10 health each, 10 per hit; the tool waits out each swing.
+            // Block durability 3 at 10 health each, 10 per hit; the tool waits out each swing. Each hit shoves the bar, so
+            // keep looking at the block until the strike lands on it.
+            if (_results.Count < 3 && _client.Main.Creations.Find(_bar)?.FindPart(_struck) is not null)
+                LookAt(_client, PartCentre(_client, _bar, _struck) + new Vector3(0, 0.1f, 0), frame);
             if (_results.Count < 3 && _results.Count == _sent)
             {
                 if (Tools.Sledge.Swing(_results.Add))
@@ -482,6 +498,23 @@ public partial class ToolsTest : StagedTest
             Check(_host.Main.Creations.Find(_bar)!.Parts.Count == 3, "the bar is back to three blocks");
             return true;
         });
+        Add("look up at the sky", frame => Look(_client, 0f, 1.3f, frame) && !Tools.Sledge.Swinging);
+        Add("a swing is one a second and lands after the wind-up", frame =>
+        {
+            if (frame == 0)
+            {
+                _results.Clear();
+                Check(Tools.Sledge.Swing(_results.Add), "a fresh swing starts");
+                Check(!Tools.Sledge.Swing(), "a second click during the swing does nothing");
+                Check(_results.Count == 0, "nothing is hit at the click");
+                return false;
+            }
+            // Aimed at the sky, nothing is in reach: the swing lands on air.
+            if (_results.Count == 0 || Tools.Sledge.Swinging)
+                return false;
+            Check(!_results[0].Ok && _results[0].Code == "miss", $"a swing at nothing misses ({_results[0]})");
+            return true;
+        });
         Add("holding right click blocks on the host", frame =>
         {
             if (frame == 0)
@@ -490,9 +523,11 @@ public partial class ToolsTest : StagedTest
                 Tools.Sledge.Block(true, _results.Add);
                 return false;
             }
-            if (_results.Count == 0)
+            // The raised hammer reaches the host with the next input packet, which can trail the action's answer.
+            if (_results.Count == 0 || (!_host.Main.PlayerSync.Players[_client.Peer].Body.HasFlag(Core.Net.BodyFlags.Guard) && frame < 60))
                 return false;
             Check(_results[0].Ok && _host.Main.Build.Tools!.Blocking.Contains(_client.Peer), "the host knows the player blocks");
+            Check(_host.Main.PlayerSync.Players[_client.Peer].Body.HasFlag(Core.Net.BodyFlags.Guard), "the host sees the hammer raised to block");
             Check(_host.Main.Build.Tools!.DamageScale(_client.Peer, "sledge") < 1f, "a hit would do less");
             _results.Clear();
             Tools.Use(Tools.Hammer);
@@ -500,6 +535,12 @@ public partial class ToolsTest : StagedTest
             return true;
         });
         Add("and the host hears the block end", _ => !_host.Main.Build.Tools!.Blocking.Contains(_client.Peer));
+        Add("step back", frame =>
+        {
+            if (frame == 0)
+                _host.Main.PlayerSync.HostTeleport(_client.Peer, _standing);
+            return frame >= 20 && _client.Main.LocalPlayer!.GlobalPosition.DistanceTo(_standing) < 0.1f;
+        });
     }
 
     private void AddLateJoinAndLeave()

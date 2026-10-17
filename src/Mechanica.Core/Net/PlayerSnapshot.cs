@@ -37,8 +37,11 @@ public enum BodyFlags : byte
     /// <summary>In a seat.</summary>
     Seated = 8,
 
+    /// <summary>Holding the Sledgehammer up to block.</summary>
+    Guard = 16,
+
     /// <summary>Every flag.</summary>
-    All = OnFloor | Swimming | Crawl | Seated,
+    All = OnFloor | Swimming | Crawl | Seated | Guard,
 }
 
 /// <summary>All players at one host physics tick.</summary>

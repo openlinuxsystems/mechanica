@@ -85,9 +85,13 @@ stops getting your input.
 - **Paint Tool.** Left click paints a part; hold and drag to paint every part you pass over (up to 256 at a
   time). Right click (or drag) takes the paint off. **Q** opens the colour picker round the cursor: move the
   mouse towards a colour and click, or press 1 to 0 for the first ten. Esc or Q again closes it.
-- **Sledgehammer.** Left click swings (0.4 s a swing). Hold right click to block: hits from other players'
-  Sledgehammers and from bots do a quarter of their damage while you block. In Creative nothing takes damage,
-  so blocking matters where players can be hurt.
+- **Sledgehammer.** Left click swings it overhead: one swing a second, and the blow lands at the bottom of the
+  arc (0.6 s after the click) on whatever is under the crosshair within 3 m. The hit knocks a part's body back
+  (about 5000 N·s, but never faster than 4 m/s, so light parts don't fly off), throws dust, chips and sparks and
+  gives the camera a small jolt. Hold right click to raise the hammer across your chest and block: hits from other
+  players' Sledgehammers and from bots do a quarter of their damage while you block. In Creative nothing takes
+  damage, so there the block is only the pose. Timing, reach and knockback are the `sledge` section of
+  `game/data/building.json`.
 
 ## Hotbar and inventory
 

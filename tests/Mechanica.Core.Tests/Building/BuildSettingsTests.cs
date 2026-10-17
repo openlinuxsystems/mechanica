@@ -44,8 +44,12 @@ public class BuildSettingsTests
         var settings = BuildSettings.FromJson(File.ReadAllText(path));
         Assert.Equal(16, settings.Paint.Palette.Count);
         Assert.Equal(new ConnectSettings(), settings.Connect);
-        // UI spec §9, §10.
-        Assert.Equal(0.4f, settings.Sledge.SwingSeconds);
+        // The Sledgehammer: one swing a second, the hit 0.6 s in, 3 m reach (Chase's sledgehammer brief); the shipped
+        // file and the defaults agree.
+        Assert.Equal(new SledgeSettings(), settings.Sledge with { BlockCauses = new SledgeSettings().BlockCauses });
+        Assert.Equal(1.0f, settings.Sledge.SwingSeconds);
+        Assert.Equal(0.6f, settings.Sledge.StrikeSeconds);
+        Assert.Equal(3.0f, settings.Sledge.Reach);
         Assert.Equal(50, settings.Lift.MaxBlueprints);
         Assert.True(settings.Lift.RefuseStoredItems);
         // The hydraulic lift: 4 x 4 units, resting at 2 units, 1-unit steps up to 22 units (1 unit = 0.25 m).
@@ -64,6 +68,10 @@ public class BuildSettingsTests
     [InlineData("""{"paint": {"palette": ["red"]}}""", "red")]
     [InlineData("""{"sledge": {"damage": 0}}""", "sledge.damage")]
     [InlineData("""{"sledge": {"impulse": -1}}""", "sledge.impulse")]
+    [InlineData("""{"sledge": {"strike_seconds": 2}}""", "sledge.strike_seconds")]
+    [InlineData("""{"sledge": {"reach": 0}}""", "sledge.reach")]
+    [InlineData("""{"sledge": {"max_knockback_speed": -1}}""", "sledge.max_knockback_speed")]
+    [InlineData("""{"sledge": {"shake_metres": 1}}""", "sledge.shake_metres")]
     [InlineData("""{"lift": {"height": 1}}""", "height")]
     [InlineData("""{"hammer": {"drag_max_per_axis": 0}}""", "hammer.drag_max_per_axis")]
     [InlineData("""{"hammer": {"remove_seconds_by_material": {"wood": -1}}}""", "remove_seconds_by_material.wood")]

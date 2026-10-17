@@ -53,7 +53,7 @@ public sealed record CharacterSettings
 
     /// <summary>
     /// How long a gesture clip plays, in seconds, by clip name, when that is not its authored length (the
-    /// Sledgehammer swing takes 0.4 s, UI spec §10). The clip is sped up or slowed to fit.
+    /// Sledgehammer swing takes sledge.swing_seconds). The clip is sped up or slowed to fit.
     /// </summary>
     public Dictionary<string, float> GestureSeconds { get; init; } = [];
 

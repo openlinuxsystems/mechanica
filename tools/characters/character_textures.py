@@ -118,7 +118,9 @@ KINDS = {
     "shirt": "knit",
     "denim": "denim", "denim_light": "denim", "denim_dark": "denim",
     "paint_olive": "painted", "paint_grey": "painted", "tool_orange": "plastic", "tool_blue": "plastic",
-    "blue": "painted", "handle_wood": "wood", "potato": "plain", "default": "plain",
+    "blue": "painted", "handle_wood": "wood",
+    "gunmetal": "metal", "steel_shaft": "metal", "bolt_steel": "metal", "paint_yellow": "painted",
+    "grip_rubber": "knurl", "potato": "plain", "default": "plain",
 }
 
 THREAD = {
@@ -233,6 +235,19 @@ def pattern(c, kind, nz):
             h = np.where(down, h - 0.0012 * (~lug), h)
             g = np.where(down, g - 0.6 * (~lug), g)
         return 0.95 + 0.06 * g, h, 0.03 * g, None
+    if kind == "knurl":
+        # diamond knurling on a round grip: lofts know their angle and the distance along them
+        g = nz[0].fbm(P * 500.0, 2)
+        if c.loft is None:
+            return 0.95 + 0.06 * g, 0.00005 * g, 0.03 * g, None
+        ok = ~np.isnan(c.loft[:, 0])
+        along = np.nan_to_num(c.loft[:, 0])
+        arc = np.arctan2(np.nan_to_num(c.loft[:, 2]), np.nan_to_num(c.loft[:, 1])) * 0.0218
+        period = max(0.0032, 3.0 * TEXEL[0])
+        a = np.abs(np.sin(math.pi * (arc + along) / period))
+        b = np.abs(np.sin(math.pi * (arc - along) / period))
+        ridge = np.where(ok, sstep(0.25, 0.7, np.minimum(a, b)), 0.5)
+        return 0.82 + 0.22 * ridge + 0.05 * g, 0.00028 * ridge, 0.06 * (1 - ridge), None
     if kind == "cord":
         tw = tri_pattern(c, lambda u, v: np.sin(math.pi * (u + v) / max(0.0022, 3.0 * TEXEL[0])) ** 2)
         return 0.9 + 0.15 * tw, 0.00015 * tw, zero, None
@@ -1123,8 +1138,8 @@ def _read_uv(ob):
     return uv.reshape(-1, 2)
 
 
-def texture_props(objs, parts, names_list, palette, size, seed):
-    """One shared atlas for all hand-tool props."""
+def texture_props(objs, parts, names_list, palette, size, seed, group="props", material="M_hand_tools"):
+    """One shared atlas for the given hand-tool props."""
     mds = []
     for ob, part in zip(objs, parts):
         me = ob.data
@@ -1141,8 +1156,8 @@ def texture_props(objs, parts, names_list, palette, size, seed):
         md = MeshData(ob, part.v, part.a, part.pid, part.tag, ao, cvx)
         md_list.append(md)
         polys_list.append(np.arange(len(ob.data.polygons)))
-    A, Nm, R, texel_m, cov = bake_group(md_list, polys_list, size, names_list, palette, "props", seed, "props", {})
-    mat = textured_material("M_hand_tools", A, Nm, R, double_sided=False)
+    A, Nm, R, texel_m, cov = bake_group(md_list, polys_list, size, names_list, palette, "props", seed, group, {})
+    mat = textured_material(material, A, Nm, R, double_sided=False)
     for ob in objs:
-        apply_group_materials(ob, ["props"] * len(ob.data.polygons), {"props": mat})
-    return {"props": (size, texel_m * 1000.0, cov)}
+        apply_group_materials(ob, [group] * len(ob.data.polygons), {group: mat})
+    return {group: (size, texel_m * 1000.0, cov)}
