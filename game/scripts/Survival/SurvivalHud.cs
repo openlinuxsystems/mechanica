@@ -2,7 +2,9 @@ using Godot;
 using Mechanica.Core.Actions;
 using Mechanica.Core.Data;
 using Mechanica.Core.Survival;
+using Mechanica.Core.Logic;
 using Mechanica.Game.Building;
+using Mechanica.Game.Logic;
 using Mechanica.Game.Net;
 
 namespace Mechanica.Game.Survival;
@@ -32,6 +34,9 @@ public partial class SurvivalHud : CanvasLayer
 
     /// <summary>Item names. Set before adding to the tree.</summary>
     public IPartCatalog Catalog { get; init; } = null!;
+
+    /// <summary>Seats and usable parts (chunk 10); optional.</summary>
+    public LogicSync? Logic { get; init; }
 
     public override void _Ready()
     {
@@ -110,16 +115,24 @@ public partial class SurvivalHud : CanvasLayer
 
     /// <summary>
     /// What F would do now: harvest the ripe crop or sleep in the bed under the crosshair, or else pick up
-    /// the nearest pile in reach. Null when there is nothing.
+    /// the nearest pile in reach. With logic parts (chunk 10) it also stands a seated player up, sits in the
+    /// seat under the crosshair, or uses a part that says how (<see cref="LogicDefinition.Use"/>). Null when
+    /// there is nothing.
     /// </summary>
     public (string Label, Action Run)? Interaction()
     {
         if (Players.LocalPlayer is not { } player || Survival.Settings is not { } settings)
             return null;
+        if (Logic is not null && player.Seated)
+            return ("stand up", () => Request(LogicActions.LeaveSeat, new NoArgs()));
         if (HandTool.PartHit(HandTool.Cast(player, settings.Reach)) is { } aimed)
         {
             var creation = aimed.Node.Creation;
             var definition = creation.DefinitionOf(aimed.Part);
+            if (Logic is not null && definition.Seat is not null && Logic.Seats.Occupant(creation.Id, aimed.Part) is null)
+                return ($"sit in the {definition.Name ?? "seat"}", () => Request(LogicActions.EnterSeat, new LogicPartArgs(creation.Id, aimed.Part)));
+            if (Logic is not null && definition.Logic?.Use is { } use)
+                return ($"{use} the {definition.Name ?? "part"}", () => Request(LogicActions.ActivatePart, new LogicPartArgs(creation.Id, aimed.Part)));
             if (definition.Soil is not null && Survival.Soil.GetValueOrDefault((creation.Id, aimed.Part)) is { Ripe: true } soil)
                 return ($"harvest {Catalog.FindDefinition(soil.Crop!)?.Name ?? soil.Crop}", () => Request(SurvivalActions.Harvest, new PartUseArgs(creation.Id, aimed.Part)));
             if (definition.RespawnPoint == true)

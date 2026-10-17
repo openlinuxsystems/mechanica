@@ -25,6 +25,7 @@ public sealed class Creation
     private readonly Dictionary<int, PartDefinition> _definitions = [];
     private readonly Dictionary<GridCell, int> _occupancy = [];
     private readonly HashSet<Connection> _connections = [];
+    private readonly HashSet<LogicLink> _links = [];
     // World pose of each part's Body, stored on every member so poses survive splits and removals.
     private readonly Dictionary<int, Pose> _poses = [];
     // Health each part has lost (Sledgehammer hits); parts at full health have no entry.
@@ -93,6 +94,15 @@ public sealed class Creation
 
     /// <summary>Edges in a stable order (by A, B, type, sockets).</summary>
     public IReadOnlyList<Connection> Connections => [.. _connections.Order(Connection.Order)];
+
+    /// <summary>Logic links (Connect Tool, chunk 10), by source then target.</summary>
+    public IReadOnlyList<LogicLink> Links => [.. _links.Order(LogicLink.Order)];
+
+    /// <summary>The parts <paramref name="partId"/>'s output feeds, ascending.</summary>
+    public IReadOnlyList<int> LinksFrom(int partId) => [.. _links.Where(l => l.From == partId).Select(l => l.To).Order()];
+
+    /// <summary>The parts feeding <paramref name="partId"/>'s inputs, ascending.</summary>
+    public IReadOnlyList<int> LinksTo(int partId) => [.. _links.Where(l => l.To == partId).Select(l => l.From).Order()];
 
     /// <summary>True when no parts are left.</summary>
     public bool IsEmpty => _parts.Count == 0;
@@ -242,6 +252,80 @@ public sealed class Creation
         _parts[partId] = part with { Color = color };
         Revision++;
         return true;
+    }
+
+    /// <summary>
+    /// Null when a link from <paramref name="from"/> to <paramref name="to"/> could be added, or why not: both
+    /// parts exist and differ, <paramref name="from"/> has a free output and <paramref name="to"/> a free input
+    /// (<see cref="PartDefinition.Logic"/>), and the link is not there yet.
+    /// </summary>
+    public string? CheckLink(int from, int to)
+    {
+        if (!_parts.ContainsKey(from))
+            return $"creation {Id} has no part {from}.";
+        if (!_parts.ContainsKey(to))
+            return $"creation {Id} has no part {to}.";
+        if (from == to)
+            return "a part cannot be linked to itself.";
+        if (_links.Contains(new LogicLink(from, to)))
+            return $"part {from} already feeds part {to}.";
+        var source = _definitions[from];
+        var target = _definitions[to];
+        var outputs = source.Logic?.Outputs ?? 0;
+        var inputs = target.Logic?.Inputs ?? 0;
+        if (outputs == 0)
+            return $"{source.Name ?? source.Id} has no output to link from.";
+        if (inputs == 0)
+            return $"{target.Name ?? target.Id} takes no input.";
+        if (_links.Count(l => l.From == from) >= outputs)
+            return $"{source.Name ?? source.Id} already has all {outputs} of its output links.";
+        if (_links.Count(l => l.To == to) >= inputs)
+            return $"{target.Name ?? target.Id} already has all {inputs} of its input links.";
+        return null;
+    }
+
+    /// <summary>Adds a logic link after <see cref="CheckLink"/>. Bumps <see cref="Revision"/>.</summary>
+    public bool TryLink(int from, int to, [NotNullWhen(false)] out string? error)
+    {
+        error = CheckLink(from, to);
+        if (error is not null)
+            return false;
+        _links.Add(new LogicLink(from, to));
+        Revision++;
+        return true;
+    }
+
+    /// <summary>Removes a logic link. False when there was none.</summary>
+    public bool Unlink(int from, int to)
+    {
+        if (!_links.Remove(new LogicLink(from, to)))
+            return false;
+        Revision++;
+        return true;
+    }
+
+    /// <summary>
+    /// Replaces a part's changed settings (<see cref="PartInstance.Settings"/>; null means all defaults). The
+    /// caller checks them against the definition (<see cref="Logic.PartSettings"/>). Bumps <see cref="Revision"/>.
+    /// </summary>
+    /// <returns>True when they changed.</returns>
+    public bool SetPartSettings(int partId, IReadOnlyDictionary<string, JsonElement>? settings)
+    {
+        var part = _parts.TryGetValue(partId, out var p) ? p : throw new ArgumentException($"Creation {Id} has no part {partId}.", nameof(partId));
+        if (settings is { Count: 0 })
+            settings = null;
+        if (SameSettings(part.Settings, settings))
+            return false;
+        _parts[partId] = part with { Settings = settings };
+        Revision++;
+        return true;
+    }
+
+    private static bool SameSettings(IReadOnlyDictionary<string, JsonElement>? a, IReadOnlyDictionary<string, JsonElement>? b)
+    {
+        if (a is null || b is null)
+            return a is null && b is null;
+        return a.Count == b.Count && a.All(kv => b.TryGetValue(kv.Key, out var other) && JsonElement.DeepEquals(kv.Value, other));
     }
 
     /// <summary>
@@ -435,6 +519,13 @@ public sealed class Creation
                 creation._connections.Add(connection);
                 _connections.Remove(connection);
             }
+            // A link between two pieces is dropped: links stay inside one Creation.
+            foreach (var link in _links.Where(l => members.Contains(l.From)).ToList())
+            {
+                if (members.Contains(link.To))
+                    creation._links.Add(link);
+                _links.Remove(link);
+            }
             foreach (var id in piece)
                 Delete(id);
             split.Add(creation);
@@ -573,6 +664,8 @@ public sealed class Creation
                 ? Connection.Rigid(map[c.A], map[c.B])
                 : c with { A = map[c.A], B = map[c.B] });
         _connections.UnionWith(attachments);
+        foreach (var link in other._links)
+            _links.Add(new LogicLink(map[link.From], map[link.To]));
         Changed();
         error = null;
         return true;
@@ -692,6 +785,7 @@ public sealed class Creation
         _crafting.Remove(partId);
         _soil.Remove(partId);
         _connections.RemoveWhere(c => c.Involves(partId));
+        _links.RemoveWhere(l => l.From == partId || l.To == partId);
     }
 
     // How a part offers the face of `cell` that faces `direction`: null type means it does not attach there.

@@ -9,6 +9,7 @@ using Mechanica.Core.World;
 using Mechanica.Game.Building;
 using Mechanica.Game.Creations;
 using Mechanica.Game.Items;
+using Mechanica.Game.Logic;
 using Mechanica.Game.Mods;
 using Mechanica.Game.Motion;
 using Mechanica.Game.Net;
@@ -25,7 +26,7 @@ namespace Mechanica.Game;
 /// Game world and session root. It builds the networking nodes (<see cref="Session"/>,
 /// <see cref="PlayerSync"/>, <see cref="CreationSync"/>, <see cref="Actions"/>), the streamed world (<see cref="Streamer"/>,
 /// <see cref="Creations"/>), building (<see cref="Build"/>, the local player's <see cref="Tools"/>), the
-/// motion primitives (<see cref="Motion"/>), part scripts (<see cref="Scripts"/>), sound (<see cref="Sounds"/>) and the host's external
+/// motion primitives (<see cref="Motion"/>), part scripts (<see cref="Scripts"/>), the logic bus and seats (<see cref="Logic"/>), sound (<see cref="Sounds"/>) and the host's external
 /// AI endpoint and record/replay (<see cref="Ai"/>, <see cref="Recorder"/>). It starts offline, hosting or joining from
 /// <see cref="Options"/>, and drives whichever player belongs to this peer from the keyboard and mouse.
 /// Every peer runs the same scene, so node paths (and with them RPC routes) match everywhere.
@@ -113,6 +114,18 @@ public partial class Main : Node3D
 
     /// <summary>The host's Lua part scripts.</summary>
     public ScriptSync Scripts { get; private set; } = null!;
+
+    /// <summary>The logic and power bus, links, part settings and seats (chunk 10).</summary>
+    public LogicSync Logic { get; private set; } = null!;
+
+    /// <summary>The Logic Visualizer (F7, and while the Connect Tool is in hand).</summary>
+    public LogicOverlay LogicOverlay { get; private set; } = null!;
+
+    /// <summary>The Creation Inspector (F8).</summary>
+    public CreationInspector Inspector { get; private set; } = null!;
+
+    /// <summary>The part settings panel the Connect Tool opens; null without device input.</summary>
+    public PartSettingsPanel? PartSettings { get; private set; }
 
     /// <summary>Record/replay of the host's Action API calls.</summary>
     public RecordReplay Recorder { get; private set; } = null!;
@@ -233,6 +246,17 @@ public partial class Main : Node3D
         Motion.RegisterActions(Actions.Dispatcher);
         Scripts = new ScriptSync { Name = "Scripts", Session = Session, Creations = Creations, Motion = Motion, Actions = Actions, Mods = mods, Survival = Survival };
         AddChild(Scripts);
+        Logic = new LogicSync
+        {
+            Name = "Logic", Session = Session, Players = PlayerSync, Creations = Creations, Build = Build, Scripts = Scripts,
+            Creative = Options.GameMode == GameMode.Creative,
+        };
+        AddChild(Logic);
+        Logic.RegisterActions(Actions.Dispatcher);
+        LogicOverlay = new LogicOverlay { Creations = Creations, Players = PlayerSync, Actions = Actions, ReadDeviceInput = ReadDeviceInput, Linking = () => Tools?.Connector.Active == true };
+        AddChild(LogicOverlay);
+        Inspector = new CreationInspector { Name = "Inspector", Players = PlayerSync, Actions = Actions, ReadDeviceInput = ReadDeviceInput };
+        AddChild(Inspector);
         Recorder = new RecordReplay { Name = "Recorder", Session = Session, Actions = Actions };
         AddChild(Recorder);
         Ai = new AiEndpoint { Name = "Ai", Session = Session, Actions = Actions, Log = Recorder };
@@ -245,7 +269,9 @@ public partial class Main : Node3D
         {
             AddChild(new ConnectPanel { Name = "ConnectPanel", Session = Session });
             AddChild(new InventoryScreen { Name = "InventoryScreen", Inventory = Inventory, Actions = Actions, Players = PlayerSync, Catalog = mods });
-            AddChild(new SurvivalHud { Name = "SurvivalHud", Survival = Survival, Actions = Actions, Players = PlayerSync, Catalog = mods });
+            AddChild(new SurvivalHud { Name = "SurvivalHud", Survival = Survival, Actions = Actions, Players = PlayerSync, Catalog = mods, Logic = Logic });
+            PartSettings = new PartSettingsPanel { Name = "PartSettings", Actions = Actions, Creations = Creations };
+            AddChild(PartSettings);
         }
 
         Start(Options);
@@ -380,6 +406,7 @@ public partial class Main : Node3D
             ReadDeviceInput = ReadDeviceInput,
         };
         AddChild(Tools);
+        Tools.Connector.SettingsRequested += (creation, part) => PartSettings?.Open(creation, part);
     }
 
     private void OnPlayerDespawning(PlayerController player)

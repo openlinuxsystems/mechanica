@@ -25,6 +25,7 @@ public partial class PlayerController : CharacterBody3D
     private MeshInstance3D _bodyMesh = null!;
     private CollisionShape3D _shape = null!;
     private bool _dead;
+    private Func<(Vector3 Feet, Vector3 Velocity)?>? _seat;
 
     /// <summary>Peer that controls this player (1 is the host).</summary>
     public int PeerId { get; init; } = 1;
@@ -51,10 +52,37 @@ public partial class PlayerController : CharacterBody3D
         {
             _dead = value;
             Velocity = Vector3.Zero;
-            _shape.SetDeferred(CollisionShape3D.PropertyName.Disabled, value);
+            _shape.SetDeferred(CollisionShape3D.PropertyName.Disabled, value || _seat is not null);
             _bodyMesh.Visible = !value && (ThirdPerson || !Camera.Current);
         }
     }
+
+    /// <summary>
+    /// While the player sits in a seat (chunk 10): where its feet go this tick and how fast the seat moves,
+    /// or null once the seat is gone. A seated player does not walk or collide; its input still flows to
+    /// the host, which hands it to the seat's script. Null on foot.
+    /// </summary>
+    public Func<(Vector3 Feet, Vector3 Velocity)?>? Seat
+    {
+        get => _seat;
+        set
+        {
+            if (_seat is null == value is null)
+            {
+                _seat = value;
+                return;
+            }
+            _seat = value;
+            Velocity = Vector3.Zero;
+            _shape.SetDeferred(CollisionShape3D.PropertyName.Disabled, value is not null || _dead);
+        }
+    }
+
+    /// <summary>True while the player sits in a seat.</summary>
+    public bool Seated => _seat is not null;
+
+    /// <summary>The sanitized input of the last tick the player stepped (the host reads a seated player's steering here).</summary>
+    public PlayerInput LastInput { get; private set; }
 
     /// <summary>Movement tuning. Set before the node enters the tree to override the default file.</summary>
     public PlayerMovementSettings Settings { get; set; } = null!;
@@ -140,9 +168,15 @@ public partial class PlayerController : CharacterBody3D
     public PlayerInput Step(PlayerInput input, float delta)
     {
         input = input.Sanitized(Settings);
+        LastInput = input;
         ApplyLook(input.Yaw, input.Pitch);
         if (_dead)
             return input;
+        if (_seat is not null)
+        {
+            SitStill();
+            return input;
+        }
 
         var wasOnFloor = IsOnFloor();
         var velocity = PlayerMotor.Step(Velocity.ToNumerics(), wasOnFloor, input, Settings, delta);
@@ -153,6 +187,16 @@ public partial class PlayerController : CharacterBody3D
         if (PushesBodies)
             PushRigidBodies(delta);
         return input;
+    }
+
+    /// <summary>Puts a seated player's feet on its seat. False when it sits nowhere (or the seat is gone).</summary>
+    public bool SitStill()
+    {
+        if (_seat?.Invoke() is not { } at)
+            return false;
+        GlobalPosition = at.Feet;
+        Velocity = at.Velocity;
+        return true;
     }
 
     /// <summary>Poses the player from a host snapshot (remote players on clients).</summary>

@@ -1,0 +1,522 @@
+{
+  // Logic and power parts (chunk 10): seats, engines, wheels and logic parts. Re-run with tools/author-vanilla.sh.
+  "format_version": 1,
+  "parts": [
+    {
+      "file": "parts/drivers_seat.json",
+      "template": "seat",
+      "set": {
+        "name": "Driver's Seat",
+        "description": "Sit in it with F and drive: W and S are its output (link it to engines), A and D steer the upright bearings it is linked to.",
+        "mass": 6,
+        "durability": 5,
+        "stack_size": 10,
+        "script": "scripts/seat.lua",
+        "visual": { "color": "#3d4f66", "roughness": 0.6, "metallic": 0.3 },
+        "sounds": { "enter": "seat_enter", "exit": "seat_exit" },
+        "seat": { "offset": [0, -0.1, 0] },
+        "properties": { "steer_angle": 30, "steer_speed": 2.5, "steer_torque": 1500 }
+      },
+      "model": [
+        { "kind": "box", "size": [0.5, 0.14, 0.48], "position": [0, -0.18, 0] },
+        { "kind": "box", "size": [0.44, 0.08, 0.4], "position": [0, -0.07, -0.02] },
+        { "kind": "box", "size": [0.44, 0.4, 0.08], "position": [0, 0.05, 0.2] }
+      ],
+      "recipes": [
+        {
+          "id": "drivers_seat",
+          "stations": ["fabricator"],
+          "inputs": [
+            { "item": "scrap_metal", "count": 3 },
+            { "item": "component_kit", "count": 2 },
+            { "item": "circuit_board", "count": 1 }
+          ],
+          "outputs": [{ "item": "drivers_seat", "count": 1 }],
+          "time": 8
+        }
+      ]
+    },
+    {
+      "file": "parts/scrap_drivers_seat.json",
+      "base": "drivers_seat",
+      "set": {
+        "name": "Scrap Driver's Seat",
+        "description": "A driver's seat from scrap. It steers less far and more slowly.",
+        "mass": 5,
+        "durability": 3,
+        "sound_material": "scrap",
+        "visual": { "color": "#7a5a3a", "roughness": 0.85, "metallic": 0.2 },
+        "properties": { "steer_angle": 22, "steer_speed": 1.5, "steer_torque": 800 }
+      },
+      "model": [
+        { "kind": "box", "size": [0.5, 0.14, 0.48], "position": [0, -0.18, 0] },
+        { "kind": "box", "size": [0.44, 0.08, 0.4], "position": [0, -0.07, -0.02] },
+        { "kind": "box", "size": [0.44, 0.4, 0.08], "position": [0, 0.05, 0.2] }
+      ],
+      "recipes": [
+        {
+          "id": "scrap_drivers_seat",
+          "stations": ["fabricator", "mini_fabricator"],
+          "inputs": [
+            { "item": "scrap_metal", "count": 3 },
+            { "item": "scrap_wood", "count": 2 },
+            { "item": "component_kit", "count": 1 }
+          ],
+          "outputs": [{ "item": "scrap_drivers_seat", "count": 1 }],
+          "time": 5
+        }
+      ]
+    },
+    {
+      "file": "parts/passenger_seat.json",
+      "template": "seat",
+      "set": {
+        "name": "Passenger Seat",
+        "description": "A seat to ride along in. It drives nothing.",
+        "mass": 5,
+        "durability": 5,
+        "stack_size": 10,
+        "logic": null,
+        "visual": { "color": "#56657a", "roughness": 0.6, "metallic": 0.3 },
+        "seat": { "offset": [0, -0.1, 0] }
+      },
+      "model": [
+        { "kind": "box", "size": [0.5, 0.14, 0.48], "position": [0, -0.18, 0] },
+        { "kind": "box", "size": [0.44, 0.08, 0.4], "position": [0, -0.07, -0.02] },
+        { "kind": "box", "size": [0.44, 0.4, 0.08], "position": [0, 0.05, 0.2] }
+      ],
+      "recipes": [
+        {
+          "id": "passenger_seat",
+          "stations": ["fabricator", "mini_fabricator"],
+          "inputs": [{ "item": "scrap_metal", "count": 3 }, { "item": "component_kit", "count": 1 }],
+          "outputs": [{ "item": "passenger_seat", "count": 1 }],
+          "time": 5
+        }
+      ]
+    },
+    {
+      "file": "parts/scrap_seat.json",
+      "base": "passenger_seat",
+      "set": {
+        "name": "Scrap Seat",
+        "description": "A scrap seat to ride along in.",
+        "mass": 4,
+        "durability": 3,
+        "sound_material": "scrap",
+        "visual": { "color": "#8a6a48", "roughness": 0.85, "metallic": 0.2 }
+      },
+      "model": [
+        { "kind": "box", "size": [0.5, 0.14, 0.48], "position": [0, -0.18, 0] },
+        { "kind": "box", "size": [0.44, 0.08, 0.4], "position": [0, -0.07, -0.02] },
+        { "kind": "box", "size": [0.44, 0.4, 0.08], "position": [0, 0.05, 0.2] }
+      ],
+      "recipes": [
+        {
+          "id": "scrap_seat",
+          "stations": ["fabricator", "mini_fabricator"],
+          "inputs": [{ "item": "scrap_wood", "count": 3 }, { "item": "scrap_metal", "count": 1 }],
+          "outputs": [{ "item": "scrap_seat", "count": 1 }],
+          "time": 4
+        }
+      ]
+    },
+    {
+      "file": "parts/gas_engine.json",
+      "template": "engine",
+      "set": {
+        "name": "Gas Engine",
+        "description": "Turns the wheel bearings it is linked to toward its front, with a seat's throttle as its input. Burns gasoline from the creation's gas containers.",
+        "mass": 12,
+        "durability": 6,
+        "stack_size": 10,
+        "script": "scripts/engine.lua",
+        "visual": { "color": "#b8452f", "roughness": 0.5, "metallic": 0.6 },
+        "sounds": { "start": "engine_start", "loop": "engine_idle", "rev": "engine_rev", "stop": "engine_sputter" },
+        "settings": [{ "id": "gear", "name": "Gear", "type": "number", "min": 1, "max": 5, "step": 1, "default": 3 }],
+        "properties": { "speed": 25, "torque": 600, "brake": 300, "fuel": "gasoline", "fuel_time": 40 }
+      },
+      "model": [
+        { "kind": "box", "size": [0.46, 0.08, 0.46], "position": [0, -0.21, 0] },
+        { "kind": "box", "size": [0.4, 0.28, 0.36], "position": [0, -0.03, 0.03] },
+        { "kind": "cylinder", "radius": 0.06, "height": 0.16, "position": [0, 0.17, 0.06] },
+        { "kind": "box", "size": [0.12, 0.12, 0.08], "position": [0, -0.03, -0.19] }
+      ],
+      "recipes": [
+        {
+          "id": "gas_engine",
+          "stations": ["fabricator"],
+          "inputs": [
+            { "item": "scrap_metal", "count": 6 },
+            { "item": "component_kit", "count": 3 },
+            { "item": "circuit_board", "count": 1 }
+          ],
+          "outputs": [{ "item": "gas_engine", "count": 1 }],
+          "time": 12
+        }
+      ]
+    },
+    {
+      "file": "parts/scrap_gas_engine.json",
+      "base": "gas_engine",
+      "set": {
+        "name": "Scrap Gas Engine",
+        "description": "A weaker gas engine from scrap. It burns gasoline faster.",
+        "mass": 10,
+        "durability": 4,
+        "sound_material": "scrap",
+        "visual": { "color": "#8c5a3c", "roughness": 0.85, "metallic": 0.3 },
+        "properties": { "speed": 15, "torque": 350, "brake": 200, "fuel": "gasoline", "fuel_time": 25 }
+      },
+      "model": [
+        { "kind": "box", "size": [0.46, 0.08, 0.46], "position": [0, -0.21, 0] },
+        { "kind": "box", "size": [0.4, 0.28, 0.36], "position": [0, -0.03, 0.03] },
+        { "kind": "cylinder", "radius": 0.06, "height": 0.16, "position": [0, 0.17, 0.06] },
+        { "kind": "box", "size": [0.12, 0.12, 0.08], "position": [0, -0.03, -0.19] }
+      ],
+      "recipes": [
+        {
+          "id": "scrap_gas_engine",
+          "stations": ["fabricator", "mini_fabricator"],
+          "inputs": [{ "item": "scrap_metal", "count": 5 }, { "item": "component_kit", "count": 1 }],
+          "outputs": [{ "item": "scrap_gas_engine", "count": 1 }],
+          "time": 8
+        }
+      ]
+    },
+    {
+      "file": "parts/electric_engine.json",
+      "base": "gas_engine",
+      "set": {
+        "name": "Electric Engine",
+        "description": "Turns the wheel bearings it is linked to like a gas engine, with more pull and less speed. Draws battery packs from the creation's batteries.",
+        "mass": 9,
+        "visual": { "color": "#2f7fb8", "roughness": 0.4, "metallic": 0.6 },
+        "sounds": {
+          "start": "electric_start",
+          "loop": "electric_whirr",
+          "rev": "electric_whirr",
+          "stop": "battery_drain"
+        },
+        "properties": { "speed": 20, "torque": 800, "brake": 400, "fuel": "battery_pack", "fuel_time": 90 }
+      },
+      "model": [
+        { "kind": "box", "size": [0.46, 0.08, 0.46], "position": [0, -0.21, 0] },
+        { "kind": "box", "size": [0.4, 0.28, 0.36], "position": [0, -0.03, 0.03] },
+        { "kind": "cylinder", "radius": 0.06, "height": 0.16, "position": [0, 0.17, 0.06] },
+        { "kind": "box", "size": [0.12, 0.12, 0.08], "position": [0, -0.03, -0.19] }
+      ],
+      "recipes": [
+        {
+          "id": "electric_engine",
+          "stations": ["fabricator"],
+          "inputs": [
+            { "item": "scrap_metal", "count": 4 },
+            { "item": "component_kit", "count": 2 },
+            { "item": "circuit_board", "count": 3 }
+          ],
+          "outputs": [{ "item": "electric_engine", "count": 1 }],
+          "time": 12
+        }
+      ]
+    },
+    {
+      "file": "parts/scrap_wheel.json",
+      "set": {
+        "name": "Scrap Wheel",
+        "description": "A wheel from scrap. Put its hub on a bearing's rotor; an engine linked to the bearing turns it.",
+        "mass": 6,
+        "durability": 5,
+        "stack_size": 20,
+        "friction": 0.8,
+        "sound_material": "scrap",
+        "size": [3, 1, 3],
+        "sockets": [{ "id": "hub", "type": "structural", "position": [0, -0.125, 0], "normal": [0, -1, 0] }],
+        "collision": { "shape": "cylinder", "radius": 0.36, "height": 0.25 },
+        "visual": { "color": "#4a3f36", "roughness": 0.9, "metallic": 0.0 }
+      },
+      "model": [
+        { "kind": "cylinder", "radius": 0.36, "height": 0.225, "position": [0, 0, 0] },
+        { "kind": "cylinder", "radius": 0.162, "height": 0.25, "position": [0, 0, 0] }
+      ],
+      "recipes": [
+        {
+          "id": "scrap_wheel",
+          "stations": ["fabricator", "mini_fabricator"],
+          "inputs": [{ "item": "scrap_metal", "count": 2 }, { "item": "scrap_wood", "count": 2 }],
+          "outputs": [{ "item": "scrap_wheel", "count": 1 }],
+          "time": 4
+        }
+      ],
+      "template": "wheel"
+    },
+    {
+      "file": "parts/wheel.json",
+      "set": {
+        "name": "Wheel",
+        "description": "A rubber wheel with good grip. Put its hub on a bearing's rotor.",
+        "mass": 8,
+        "durability": 5,
+        "stack_size": 20,
+        "friction": 1.0,
+        "sound_material": "plastic",
+        "size": [3, 1, 3],
+        "sockets": [{ "id": "hub", "type": "structural", "position": [0, -0.125, 0], "normal": [0, -1, 0] }],
+        "collision": { "shape": "cylinder", "radius": 0.375, "height": 0.25 },
+        "visual": { "color": "#22252a", "roughness": 0.9, "metallic": 0.0 }
+      },
+      "model": [
+        { "kind": "cylinder", "radius": 0.375, "height": 0.225, "position": [0, 0, 0] },
+        { "kind": "cylinder", "radius": 0.16875, "height": 0.25, "position": [0, 0, 0] }
+      ],
+      "recipes": [
+        {
+          "id": "wheel",
+          "stations": ["fabricator", "mini_fabricator"],
+          "inputs": [{ "item": "scrap_metal", "count": 3 }, { "item": "component_kit", "count": 1 }],
+          "outputs": [{ "item": "wheel", "count": 1 }],
+          "time": 5
+        }
+      ],
+      "template": "wheel"
+    },
+    {
+      "file": "parts/big_wheel.json",
+      "set": {
+        "name": "Big Wheel",
+        "description": "A large wheel for rough ground. Put its hub on a bearing's rotor.",
+        "mass": 20,
+        "durability": 5,
+        "stack_size": 20,
+        "friction": 1.0,
+        "sound_material": "plastic",
+        "size": [5, 2, 5],
+        "sockets": [{ "id": "hub", "type": "structural", "position": [0, -0.25, 0], "normal": [0, -1, 0] }],
+        "collision": { "shape": "cylinder", "radius": 0.625, "height": 0.5 },
+        "visual": { "color": "#22252a", "roughness": 0.9, "metallic": 0.0 }
+      },
+      "model": [
+        { "kind": "cylinder", "radius": 0.625, "height": 0.45, "position": [0, 0, 0] },
+        { "kind": "cylinder", "radius": 0.28125, "height": 0.5, "position": [0, 0, 0] }
+      ],
+      "recipes": [
+        {
+          "id": "big_wheel",
+          "stations": ["fabricator", "mini_fabricator"],
+          "inputs": [{ "item": "scrap_metal", "count": 6 }, { "item": "component_kit", "count": 2 }],
+          "outputs": [{ "item": "big_wheel", "count": 1 }],
+          "time": 8
+        }
+      ],
+      "template": "wheel"
+    },
+    {
+      "file": "parts/logic_gate.json",
+      "template": "logic",
+      "set": {
+        "name": "Logic Gate",
+        "description": "Turns its inputs into one on or off output: and, or, xor, nand, nor or xnor (R with the Connect Tool).",
+        "stack_size": 20,
+        "script": "scripts/logic_gate.lua",
+        "visual": { "color": "#d9d2c3", "roughness": 0.5, "metallic": 0.2 },
+        "sounds": { "use": "logic_activate" },
+        "settings": [
+          {
+            "id": "mode",
+            "name": "Mode",
+            "type": "choice",
+            "options": ["and", "or", "xor", "nand", "nor", "xnor"],
+            "default": "and"
+          }
+        ]
+      },
+      "model": [
+        { "kind": "box", "size": [0.25, 0.08, 0.25], "position": [0, -0.085, 0] },
+        { "kind": "box", "size": [0.18, 0.08, 0.18], "position": [0, -0.005, 0] }
+      ],
+      "recipes": [
+        {
+          "id": "logic_gate",
+          "stations": ["fabricator", "mini_fabricator"],
+          "inputs": [{ "item": "component_kit", "count": 1 }, { "item": "circuit_board", "count": 1 }],
+          "outputs": [{ "item": "logic_gate", "count": 1 }],
+          "time": 3
+        }
+      ]
+    },
+    {
+      "file": "parts/timer.json",
+      "template": "logic",
+      "set": {
+        "name": "Timer",
+        "description": "Passes its input on after a delay you set (R with the Connect Tool).",
+        "stack_size": 20,
+        "script": "scripts/timer.lua",
+        "visual": { "color": "#c9b25a", "roughness": 0.5, "metallic": 0.2 },
+        "settings": [
+          {
+            "id": "delay",
+            "name": "Delay",
+            "type": "number",
+            "min": 0,
+            "max": 60,
+            "step": 0.05,
+            "default": 1
+          }
+        ]
+      },
+      "model": [
+        { "kind": "box", "size": [0.25, 0.08, 0.25], "position": [0, -0.085, 0] },
+        { "kind": "cylinder", "radius": 0.08, "height": 0.08, "position": [0, -0.005, 0] }
+      ],
+      "recipes": [
+        {
+          "id": "timer",
+          "stations": ["fabricator", "mini_fabricator"],
+          "inputs": [{ "item": "component_kit", "count": 1 }, { "item": "circuit_board", "count": 1 }],
+          "outputs": [{ "item": "timer", "count": 1 }],
+          "time": 3
+        }
+      ]
+    },
+    {
+      "file": "parts/sensor.json",
+      "template": "logic",
+      "set": {
+        "name": "Sensor",
+        "description": "On while something is in front of its face, up to the range you set.",
+        "stack_size": 20,
+        "script": "scripts/sensor.lua",
+        "visual": { "color": "#5aa0c9", "roughness": 0.5, "metallic": 0.2 },
+        "logic": { "inputs": null, "outputs": 10 },
+        "properties": { "interval": 2 },
+        "settings": [
+          {
+            "id": "range",
+            "name": "Range (m)",
+            "type": "number",
+            "min": 0.25,
+            "max": 20,
+            "step": 0.25,
+            "default": 4
+          }
+        ]
+      },
+      "model": [
+        { "kind": "box", "size": [0.25, 0.08, 0.25], "position": [0, -0.085, 0] },
+        { "kind": "cylinder", "radius": 0.06, "height": 0.06, "position": [0, -0.015, 0] }
+      ],
+      "recipes": [
+        {
+          "id": "sensor",
+          "stations": ["fabricator", "mini_fabricator"],
+          "inputs": [{ "item": "component_kit", "count": 1 }, { "item": "circuit_board", "count": 2 }],
+          "outputs": [{ "item": "sensor", "count": 1 }],
+          "time": 4
+        }
+      ]
+    },
+    {
+      "file": "parts/switch.json",
+      "template": "logic",
+      "set": {
+        "name": "Switch",
+        "description": "Press F to turn it on, and again to turn it off.",
+        "stack_size": 20,
+        "script": "scripts/switch.lua",
+        "visual": { "color": "#b0473a", "roughness": 0.5, "metallic": 0.2 },
+        "logic": { "inputs": null, "outputs": 10, "use": "toggle" },
+        "sounds": { "use": "switch_toggle" }
+      },
+      "model": [
+        { "kind": "box", "size": [0.25, 0.08, 0.25], "position": [0, -0.085, 0] },
+        { "kind": "box", "size": [0.06, 0.1, 0.12], "position": [0, -0.0, 0], "rotation": [20, 0, 0] }
+      ],
+      "recipes": [
+        {
+          "id": "switch",
+          "stations": ["fabricator", "mini_fabricator"],
+          "inputs": [{ "item": "scrap_metal", "count": 1 }, { "item": "component_kit", "count": 1 }],
+          "outputs": [{ "item": "switch", "count": 1 }],
+          "time": 2
+        }
+      ]
+    },
+    {
+      "file": "parts/button.json",
+      "template": "logic",
+      "set": {
+        "name": "Button",
+        "description": "Press F and it is on for a moment.",
+        "stack_size": 20,
+        "script": "scripts/button.lua",
+        "visual": { "color": "#d9a032", "roughness": 0.5, "metallic": 0.2 },
+        "logic": { "inputs": null, "outputs": 10, "use": "press" },
+        "sounds": { "use": "button_press" },
+        "properties": { "pulse": 0.5 }
+      },
+      "model": [
+        { "kind": "box", "size": [0.25, 0.08, 0.25], "position": [0, -0.085, 0] },
+        { "kind": "cylinder", "radius": 0.07, "height": 0.05, "position": [0, -0.02, 0] }
+      ],
+      "recipes": [
+        {
+          "id": "button",
+          "stations": ["fabricator", "mini_fabricator"],
+          "inputs": [{ "item": "scrap_metal", "count": 1 }, { "item": "component_kit", "count": 1 }],
+          "outputs": [{ "item": "button", "count": 1 }],
+          "time": 2
+        }
+      ]
+    },
+    {
+      "file": "parts/controller.json",
+      "template": "logic",
+      "set": {
+        "name": "Controller",
+        "description": "While its input is on, turns the bearings it is linked to through a list of angles (R with the Connect Tool).",
+        "stack_size": 20,
+        "script": "scripts/controller.lua",
+        "visual": { "color": "#6a5ab8", "roughness": 0.5, "metallic": 0.2 },
+        "sounds": { "start": "controller_start", "tick": "controller_tick", "stop": "controller_stop" },
+        "properties": { "speed": 2, "torque": 1000 },
+        "settings": [
+          {
+            "id": "frames",
+            "name": "Angles (°)",
+            "type": "number_list",
+            "min": -180,
+            "max": 180,
+            "step": 1,
+            "max_count": 10,
+            "default": [0, 90]
+          },
+          {
+            "id": "frame_time",
+            "name": "Seconds per angle",
+            "type": "number",
+            "min": 0.1,
+            "max": 10,
+            "step": 0.1,
+            "default": 1
+          },
+          { "id": "loop", "name": "Loop", "type": "toggle", "default": false }
+        ]
+      },
+      "model": [
+        { "kind": "box", "size": [0.25, 0.08, 0.25], "position": [0, -0.085, 0] },
+        { "kind": "box", "size": [0.2, 0.06, 0.14], "position": [0, -0.015, 0] },
+        { "kind": "cylinder", "radius": 0.03, "height": 0.05, "position": [0.06, 0.03, 0] }
+      ],
+      "recipes": [
+        {
+          "id": "controller",
+          "stations": ["fabricator", "mini_fabricator"],
+          "inputs": [{ "item": "component_kit", "count": 2 }, { "item": "circuit_board", "count": 2 }],
+          "outputs": [{ "item": "controller", "count": 1 }],
+          "time": 6
+        }
+      ]
+    }
+  ]
+}

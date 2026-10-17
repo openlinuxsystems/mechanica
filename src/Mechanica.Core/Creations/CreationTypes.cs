@@ -16,6 +16,12 @@ public sealed record PartInstance(int Id, string Part, GridCell Cell, GridRotati
     /// <summary>Paint Tool colour, lowercase <c>"#rrggbb"</c>; null shows the part's own colour.</summary>
     public string? Color { get; init; }
 
+    /// <summary>
+    /// Settings changed from the part's defaults (<see cref="PartDefinition.Settings"/>), keyed by setting id in
+    /// ordinal order; null when every setting has its default. See <see cref="Logic.PartSettings"/>.
+    /// </summary>
+    public IReadOnlyDictionary<string, JsonElement>? Settings { get; init; }
+
     /// <summary>Keys this build does not know, kept so a save round-trips without losing data.</summary>
     public IReadOnlyDictionary<string, JsonElement>? Extra { get; init; }
 }
@@ -66,6 +72,18 @@ public sealed record Connection(ConnectionType Type, int A, int B, string? ASock
         if (c == 0) c = string.CompareOrdinal(x.BSocket, y.BSocket);
         return c;
     });
+}
+
+/// <summary>
+/// A Connect Tool link of the logic and power bus (chunk 10): the output of part <see cref="From"/> feeds an
+/// input of part <see cref="To"/>, in the same Creation. Links are not physical; they never join Bodies.
+/// </summary>
+/// <param name="From">The part whose output it carries (a seat, a switch, an engine).</param>
+/// <param name="To">The part it feeds (an engine, a bearing, a piston, a logic gate).</param>
+public sealed record LogicLink(int From, int To)
+{
+    internal static readonly IComparer<LogicLink> Order = Comparer<LogicLink>.Create((x, y) =>
+        x.From != y.From ? x.From.CompareTo(y.From) : x.To.CompareTo(y.To));
 }
 
 /// <summary>

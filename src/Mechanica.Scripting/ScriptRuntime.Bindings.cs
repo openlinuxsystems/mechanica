@@ -81,7 +81,7 @@ public sealed partial class ScriptRuntime
             var instance = Current();
             return Piston(instance, instance.Part, args, "part.set_piston", 0);
         });
-        Fn(part, "joint", _ => Joint(script, Current(), Current().Part));
+        Fn(part, "joint", _ => Joint(script, Vec, Current(), Current().Part));
         globals.Set("part", DynValue.NewTable(part));
 
         var creation = new Table(script);
@@ -113,7 +113,7 @@ public sealed partial class ScriptRuntime
             (int)LuaValues.Number(args[0], "creation.set_bearing_angle", 1), args, "creation.set_bearing_angle", 1));
         Fn(creation, "set_piston", args => Piston(Current(),
             (int)LuaValues.Number(args[0], "creation.set_piston", 1), args, "creation.set_piston", 1));
-        Fn(creation, "joint", args => Joint(script, Current(), (int)LuaValues.Number(args[0], "creation.joint", 1)));
+        Fn(creation, "joint", args => Joint(script, Vec, Current(), (int)LuaValues.Number(args[0], "creation.joint", 1)));
         globals.Set("creation", DynValue.NewTable(creation));
 
         var world = new Table(script);
@@ -159,6 +159,7 @@ public sealed partial class ScriptRuntime
         });
         globals.Set("world", DynValue.NewTable(world));
 
+        AddLogicLibrary(script, part, creation, world, Vec);
         AddItemLibraries(context);
 
         globals.Set("log", DynValue.NewCallback((_, args) =>
@@ -256,8 +257,8 @@ public sealed partial class ScriptRuntime
         return result.Ok ? DynValue.True : Refused(instance, result.Message ?? result.Code ?? "refused");
     }
 
-    // The joint a part owns (its bearing, piston or suspension side) as {type, other, position, min, max, locked}, or nil.
-    private DynValue Joint(Script script, Instance instance, int part)
+    // The joint a part owns (its bearing, piston or suspension side) as {type, other, position, min, max, locked, axis}, or nil.
+    private DynValue Joint(Script script, Func<Vector3, DynValue> vec, Instance instance, int part)
     {
         if (_motion.FindCreation(instance.Creation) is not { } creation
             || creation.Joints.FirstOrDefault(j => j.Connection.A == part) is not { } link
@@ -267,6 +268,7 @@ public sealed partial class ScriptRuntime
         table.Set("type", DynValue.NewString(link.Connection.Type.ToString().ToLowerInvariant()));
         table.Set("other", DynValue.NewNumber(link.Connection.B));
         table.Set("locked", DynValue.NewBoolean(link.IsLocked));
+        table.Set("axis", vec(JointAxis(creation, link, frame)));
         if ((link.IsLocked ? 0f : _motion.JointPosition(creation, link)) is { } position)
             table.Set("position", DynValue.NewNumber(position));
         if (frame.Min is { } min)

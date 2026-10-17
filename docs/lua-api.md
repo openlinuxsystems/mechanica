@@ -87,10 +87,12 @@ template becomes the part's name.
 | `on_update(dt)` | Every physics step (`dt` seconds, 1/60 by default) while the Creation is simulated. A parked Creation (no player near) is not updated. |
 | `on_reload()` | After a hot reload, instead of `on_create`. `state` is kept. |
 | `on_destroy()` | When the part is removed or its Creation goes away. Part functions return `nil` here once the part is gone. |
-| `on_activate(peer)` | A player used the part. Seats and buttons wire this up in chunk 10. |
-| `on_power(amount)` | The part's power or logic input changed. The signal bus wires this up in chunk 10. |
+| `on_activate(peer)` | A player used the part: they pressed F on it (the `ActivatePart` action). Buttons and switches use it. |
+| `on_power(amount)` | The sum of the part's logic inputs changed; `amount` is the new sum. It also runs when the script (re)starts with a non-zero input. See the [Logic and Power Tutorial](logic-power-tutorial.md). |
 | `on_collision(other, impulse)` | The part's Body began touching something. `other` is a table with `creation` and `part` when it is a Creation, empty for the ground; `impulse` is in N·s. |
-| `get_outputs()` | Returns the part's signal outputs, for the signal bus (chunk 10). |
+| `get_outputs()` | Called once per step after `on_update`; what it returns (a number, or a boolean as 1 or 0) is the part's logic output, as if it called `part.set_output`. |
+| `on_enter(peer)` | A player sat down in the part (a part with `seat`). |
+| `on_leave(peer)` | The player sitting in the part stood up (or the seat is going away). |
 
 Held items have their own hooks (see [Item scripts](#item-scripts)):
 
@@ -136,7 +138,15 @@ placed.
 | `part.set_bearing(velocity, max_torque?)` | For a bearing: drives its motor at `velocity` rad/s about the rotor normal, with at most `max_torque` N·m (default from `motion.json`). `nil` frees the bearing. The target stays until changed. Returns `true`, or `false` and the reason. |
 | `part.set_bearing_angle(angle, speed?, max_torque?)` | For a bearing: turns it to `angle` rad and holds it there (steering, doors, arms). The angle is measured from where the bearing was built, right-handed about its axis, within ±π (and within the joint's `min`/`max` when it has limits). It moves at up to `speed` rad/s (default `default_bearing_speed`) and slows down as it arrives; a free bearing takes the short way round. Returns `true`, or `false` and the reason. |
 | `part.set_piston(length, speed?, max_force?)` | For a piston: moves it to `length` m of extension (between its joint's `min` and `max`) at up to `speed` m/s with at most `max_force` N (defaults from `motion.json`), and holds it there against loads. `nil` frees the piston so it slides between its stops. Returns `true`, or `false` and the reason. |
-| `part.joint()` | The joint this part owns (a bearing's rotor, a piston's head, a suspension's mount) as `{type, other, position, min, max, locked}`, or `nil`. `type` is `rotational`, `linear` or `spring`; `other` is the part on the far side; `position` is where it is now (rad or m from where it was built); `min` and `max` are missing on a free-spinning bearing. |
+| `part.joint()` | The joint this part owns (a bearing's rotor, a piston's head, a suspension's mount) as `{type, other, position, min, max, locked}`, or `nil`. `type` is `rotational`, `linear` or `spring`; `other` is the part on the far side; `position` is where it is now (rad or m from where it was built); `min` and `max` are missing on a free-spinning bearing; `axis` is the world direction (a `vec3`) it turns about or slides along. |
+| `part.set_output(value)` | Sets the part's output on the logic bus: a number, or a boolean (1 or 0). It stays until changed, and parts linked to this one see it next step. |
+| `part.output()` | The part's own output on the logic bus (0 until set). |
+| `part.input()` | The sum of the outputs of every part linked to this one. |
+| `part.inputs()` | Each part linked to this one as `{part, value}`, by part id (a logic gate reads them one by one). |
+| `part.links()` | The ids of the parts this part's output is linked to (an engine finds its bearings here). |
+| `part.setting(id)` | The value of one of the part's settings: a number, a choice (string), a toggle (boolean) or a number list (table); the default until a player changes it. `nil` for an unknown id. |
+| `part.occupant()` | For a seat: the peer of the player sitting in it, or `nil`. |
+| `part.occupant_input()` | For a seat: the sitting player's input as `{x, z, jump, sprint, yaw, pitch}`. `x` is steering (-1 left to 1 right) and `z` throttle (-1 back to 1 forward). `nil` when the seat is empty. |
 
 Pushes last one physics step, so a script that keeps pushing calls `apply_force` every
 `on_update`. They go through the `ApplyForce` action with the part's id, so pushes from different
@@ -157,6 +167,8 @@ The Creation the part belongs to.
 | `creation.set_bearing_angle(part_id, angle, speed?, max_torque?)` | Like `part.set_bearing_angle`, for another bearing of the same Creation (a seat steering the front wheels). |
 | `creation.set_piston(part_id, length, speed?, max_force?)` | Like `part.set_piston`, for another piston of the same Creation (a controller moving several). |
 | `creation.joint(part_id)` | Like `part.joint()`, for another part of the same Creation. |
+| `creation.count(item)` | How many of an item the Creation's containers hold (gasoline in gas containers, battery packs in batteries). Bare ids are in the part's mod. |
+| `creation.take(item, count?)` | Takes up to `count` (default 1) of an item from the Creation's containers, in part order, and returns how many it took. Engines burn fuel this way. |
 
 ## `world`
 
@@ -165,6 +177,7 @@ The Creation the part belongs to.
 | `world.gravity()` | Gravity acceleration, in m/s² (a `vec3`). |
 | `world.time()` | Seconds simulated since the scripts started. |
 | `world.tick()` | Physics steps since the scripts started. |
+| `world.creative()` | `true` in Creative, where engines run without fuel. |
 | `world.raycast(from, to)` | The first thing on the segment from `from` to `to`, skipping the script's own Creation: `{position, normal, distance, creation?, part?}`, or `nil`. A ray may be at most `max_ray_length` m long. |
 | `world.overlap_sphere(centre, radius)` | Everything a sphere touches, skipping the script's own Creation: a list of `{creation?, part?}` (both missing for the ground). `radius` is at most `max_overlap_radius` m. |
 

@@ -113,6 +113,7 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
         ValidateSockets(part, placeable, sink);
         ValidateStorage(part, placeable, sink);
         ValidateSurvival(part, placeable, sink);
+        ValidateLogic(part, placeable, sink);
 
         foreach (var (key, sound) in part.Sounds ?? [])
         {
@@ -391,6 +392,69 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
             RequirePositive(soil.Capacity, "$.soil.capacity", "capacity (s)", true, "soil", sink);
             RequirePositive(soil.Growth, "$.soil.growth", "growth", false, "soil", sink);
             KnownKeys.WarnUnknown(soil.Extra, "$.soil", sink, typeof(SoilDefinition));
+        }
+    }
+
+    private static void ValidateLogic(PartDefinition part, bool placeable, DiagnosticSink sink)
+    {
+        foreach (var (section, key) in new (object? Section, string Key)[] { (part.Logic, "logic"), (part.Settings, "settings"), (part.Seat, "seat") })
+        {
+            if (section is not null && !placeable)
+                sink.Error(Code, $"$.{key}", $"only placeable parts can have {key}.");
+        }
+        if (part.Logic is { } logic)
+        {
+            if (logic.Inputs is < 0 or > LogicDefinition.MaxLinks)
+                sink.Error(Code, "$.logic.inputs", $"inputs must be 0 to {LogicDefinition.MaxLinks}.");
+            if (logic.Outputs is < 0 or > LogicDefinition.MaxLinks)
+                sink.Error(Code, "$.logic.outputs", $"outputs must be 0 to {LogicDefinition.MaxLinks}.");
+            if (logic.Use is { } use && (string.IsNullOrWhiteSpace(use) || use.Length > 40))
+                sink.Error(Code, "$.logic.use", "use must be a short label (1 to 40 characters).");
+            if (logic.Use is not null && part.Script is null)
+                sink.Error(Code, "$.logic.use", "a part players can use needs a script with on_activate.");
+            KnownKeys.WarnUnknown(logic.Extra, "$.logic", sink, typeof(LogicDefinition));
+        }
+        if (part.Seat is { } seat)
+        {
+            var extent = (part.Size ?? GridSize.One).Metres;
+            if (seat.Offset is { } o && (MathF.Abs(o.X) > extent.X / 2 + Epsilon || MathF.Abs(o.Y) > extent.Y / 2 + Epsilon || MathF.Abs(o.Z) > extent.Z / 2 + Epsilon))
+                sink.Error(Code, "$.seat.offset", $"seat offset {o} is outside the part's {part.Size ?? GridSize.One} footprint.");
+            KnownKeys.WarnUnknown(seat.Extra, "$.seat", sink, typeof(SeatDefinition));
+        }
+        var ids = new HashSet<string>();
+        for (var i = 0; i < (part.Settings?.Count ?? 0); i++)
+        {
+            var setting = part.Settings![i];
+            var path = $"$.settings[{i}]";
+            var errors = sink.ErrorCount;
+            if (!Identifiers.IsValid(setting.Id))
+                sink.Error(Code, $"{path}.id", setting.Id is null ? "setting id is required." : $"setting id '{setting.Id}' must be lowercase snake_case.");
+            else if (!ids.Add(setting.Id))
+                sink.Error(Code, $"{path}.id", $"setting id '{setting.Id}' is used twice in this part.");
+            switch (setting.Type)
+            {
+                case null:
+                    sink.Error(Code, $"{path}.type", $"type is required: one of {EnumList<SettingType>()}.");
+                    break;
+                case SettingType.Number or SettingType.NumberList:
+                    if (setting.Min is not { } min || setting.Max is not { } max || !float.IsFinite(min) || !float.IsFinite(max) || min > max)
+                        sink.Error(Code, $"{path}.min", "a number setting needs finite min and max, with min at most max.");
+                    if (setting.Step is { } step && !(step > 0 && float.IsFinite(step)))
+                        sink.Error(Code, $"{path}.step", "step must be greater than 0.");
+                    if (setting.Type == SettingType.NumberList && setting.MaxCount is not (>= 1 and <= LogicDefinition.MaxLinks))
+                        sink.Error(Code, $"{path}.max_count", $"max_count (1 to {LogicDefinition.MaxLinks}) is required for a number list.");
+                    break;
+                case SettingType.Choice:
+                    if (setting.Options is not { Count: > 0 } options)
+                        sink.Error(Code, $"{path}.options", "a choice setting needs at least one option.");
+                    else if (options.Any(o => !Identifiers.IsValid(o)) || options.Distinct().Count() != options.Count)
+                        sink.Error(Code, $"{path}.options", "options must be distinct lowercase snake_case ids.");
+                    break;
+            }
+            if (setting.Default is { } value && setting.Type is not null && sink.ErrorCount == errors
+                && Logic.PartSettings.Check(setting, value) is { } bad)
+                sink.Error(Code, $"{path}.default", $"default: {bad}");
+            KnownKeys.WarnUnknown(setting.Extra, path, sink, typeof(SettingDefinition));
         }
     }
 

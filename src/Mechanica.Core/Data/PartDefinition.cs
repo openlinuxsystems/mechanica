@@ -163,6 +163,21 @@ public sealed record PartDefinition
     /// <summary>Makes a placeable part a respawn point a player can set (a bed, chunk 20).</summary>
     public bool? RespawnPoint { get; init; }
 
+    /// <summary>
+    /// Makes the part a node of the logic and power bus (chunk 10): how many Connect Tool links may come in
+    /// and go out. Placeable parts only.
+    /// </summary>
+    public LogicDefinition? Logic { get; init; }
+
+    /// <summary>
+    /// Settings a player can change on each placed part (a logic gate's mode, a timer's delay), in display
+    /// order. The part's script reads them with <c>part.setting(id)</c>. Placeable parts only.
+    /// </summary>
+    public List<SettingDefinition>? Settings { get; init; }
+
+    /// <summary>Makes the part a seat a player can sit in (chunk 10). Placeable parts only.</summary>
+    public SeatDefinition? Seat { get; init; }
+
     /// <summary>Free-form, part-specific data for the Lua script. Key order is kept as written.</summary>
     public JsonObject? Properties { get; init; }
 
@@ -249,6 +264,97 @@ public sealed record SoilDefinition
 
     /// <summary>Speed multiplier on growth (1 grows a crop in its <c>grow_time</c>). Omitted means 1.</summary>
     public float? Growth { get; init; }
+
+    /// <summary>Keys this build does not know.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>
+/// A part's place on the logic and power bus. Links go from a part with outputs to a part with inputs, inside
+/// one Creation; what flows along them is each source's output value (D2: the scripts decide what it means).
+/// </summary>
+public sealed record LogicDefinition
+{
+    /// <summary>Most links that may end at the part (0 to <see cref="MaxLinks"/>). Omitted means 0, so it takes none.</summary>
+    public int? Inputs { get; init; }
+
+    /// <summary>Most links that may start at the part (0 to <see cref="MaxLinks"/>). Omitted means 0, so it sends none.</summary>
+    public int? Outputs { get; init; }
+
+    /// <summary>
+    /// What the interact key (F) says on a placed part, such as "toggle" or "press"; it calls the script's
+    /// <c>on_activate</c>. Omitted means players cannot use the part by hand.
+    /// </summary>
+    public string? Use { get; init; }
+
+    /// <summary>Most links one side of a part may have.</summary>
+    public const int MaxLinks = 64;
+
+    /// <summary>Keys this build does not know.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>What kind of value a <see cref="SettingDefinition"/> holds.</summary>
+public enum SettingType
+{
+    /// <summary>A number between <see cref="SettingDefinition.Min"/> and <see cref="SettingDefinition.Max"/>.</summary>
+    Number,
+
+    /// <summary>One of <see cref="SettingDefinition.Options"/> (snake_case ids).</summary>
+    Choice,
+
+    /// <summary>True or false.</summary>
+    Toggle,
+
+    /// <summary>Up to <see cref="SettingDefinition.MaxCount"/> numbers, each between min and max (a controller's frames).</summary>
+    NumberList,
+}
+
+/// <summary>One setting a player can change on a placed part, with the Connect Tool's settings panel.</summary>
+public sealed record SettingDefinition
+{
+    /// <summary>Id, unique within the part (lowercase snake_case); the script reads the setting by it.</summary>
+    public string? Id { get; init; }
+
+    /// <summary>Display name. Omitted shows the id.</summary>
+    public string? Name { get; init; }
+
+    /// <summary>What kind of value it holds.</summary>
+    public SettingType? Type { get; init; }
+
+    /// <summary>Lowest value of a number or of each list entry (required for those).</summary>
+    public float? Min { get; init; }
+
+    /// <summary>Highest value of a number or of each list entry (required for those).</summary>
+    public float? Max { get; init; }
+
+    /// <summary>Step the settings panel moves a number by. Omitted means any value.</summary>
+    public float? Step { get; init; }
+
+    /// <summary>The choices of a choice setting, as snake_case ids, in display order.</summary>
+    public List<string>? Options { get; init; }
+
+    /// <summary>Most entries of a number list (1 to 64; required for number lists).</summary>
+    public int? MaxCount { get; init; }
+
+    /// <summary>
+    /// Value a newly placed part starts with. Omitted means min (number), the first option (choice), false
+    /// (toggle) or an empty list.
+    /// </summary>
+    public JsonElement? Default { get; init; }
+
+    /// <summary>Keys this build does not know.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>A seat: a player sits on the part, and its script reads their steering (<c>part.occupant_input()</c>).</summary>
+public sealed record SeatDefinition
+{
+    /// <summary>Where the sitting player's feet go, relative to the part centre in metres in the part's frame. Omitted means the centre.</summary>
+    public Vec3? Offset { get; init; }
 
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]

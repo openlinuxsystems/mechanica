@@ -20,6 +20,7 @@ namespace Mechanica.Core.Creations;
 ///   "on_lift": true,
 ///   "parts": [ { "id": 1, "part": "vanilla:wood_block", "cell": [0, 0, 0], "rotation": "+x+y", "color": "#d02020", "damage": 10 } ],
 ///   "connections": [ { "type": "rotational", "a": 2, "a_socket": "rotor", "b": 3 } ],
+///   "links": [ { "from": 4, "to": 2 } ],
 ///   "bodies": [ { "part": 1, "position": [0, 2.5, 0], "rotation": [0, 0, 0, 1] } ]
 /// }
 /// </code>
@@ -28,7 +29,9 @@ namespace Mechanica.Core.Creations;
 /// and <c>angular_velocity</c> (rad/s), both in world space and both optional (missing means at rest),
 /// so a late joiner or a reloaded save picks it up mid-motion (<see cref="BodyVelocity"/>).
 /// <c>on_lift</c> (written only when true) marks a Creation a Lift holds; a part's <c>color</c> is its
-/// Paint Tool colour and <c>damage</c> the health it has lost, each written only when set. A container
+/// Paint Tool colour, <c>settings</c> the settings changed from its defaults (<c>{ "mode": "xor" }</c>) and
+/// <c>damage</c> the health it has lost, each written only when set. <c>links</c> are the Connect Tool's logic
+/// links (chunk 10), written only when there are some. A container
 /// or station part also stores its <c>inventory</c> (filled slots: <c>{ "slot": 0, "item": "vanilla:scrap_metal",
 /// "count": 12 }</c>) and its <c>crafting</c> orders (<c>{ "recipe": "vanilla:chest", "count": 2, "progress": 1.5 }</c>),
 /// each written only when not empty. A soil part stores what grows on it (<c>"soil": { "seed": "vanilla:carrot_seed",
@@ -55,6 +58,7 @@ public static class CreationJson
                 Cell = p.Cell,
                 Rotation = p.Rotation,
                 Color = p.Color,
+                Settings = p.Settings is null ? null : new SortedDictionary<string, JsonElement>(p.Settings.ToDictionary(), StringComparer.Ordinal),
                 Damage = creation.PartDamage(p.Id) is var damage and > 0 ? damage : null,
                 Inventory = InventorySlots(creation.HoldsItems(p.Id) ? creation.InventoryOf(p.Id) : null),
                 Crafting = creation.HoldsItems(p.Id) && creation.CraftingOf(p.Id) is { IsEmpty: false } queue
@@ -73,6 +77,7 @@ public static class CreationJson
                 B = c.B,
                 BSocket = c.BSocket,
             })],
+            Links = creation.Links.Count == 0 ? null : [.. creation.Links.Select(l => new LinkData { From = l.From, To = l.To })],
             Bodies = BodyPoses(creation),
             Extra = Sorted(creation.Extra),
         };
@@ -167,6 +172,17 @@ public static class CreationJson
             sink.Error(DiagnosticCodes.CreationDisconnected, "$.connections",
                 $"the parts form {pieces.Count} separate pieces (lowest ids {string.Join(", ", pieces.Select(p => p[0]))}); a creation must be connected.");
             return null;
+        }
+        for (var i = 0; i < (data.Links?.Count ?? 0); i++)
+        {
+            var path = $"$.links[{i}]";
+            var l = data.Links![i];
+            foreach (var key in l.Extra?.Keys ?? Enumerable.Empty<string>())
+                sink.Warning(DiagnosticCodes.UnknownKey, $"{path}.{key}", $"unknown key '{key}' on a link is ignored and not saved.");
+            if (l.From is not { } from || l.To is not { } to)
+                sink.Error(invalid, path, "a link needs from and to.");
+            else if (!creation.TryLink(from, to, out var error))
+                sink.Error(DiagnosticCodes.CreationConnection, path, error);
         }
         ReadBodies(data.Bodies, creation, sink);
         return sink.ErrorCount > 0 ? null : creation;
@@ -345,12 +361,15 @@ public static class CreationJson
             sink.Error(invalid, $"{path}.color", $"color must be \"#rrggbb\" (got \"{data.Color}\").");
         if (data.Damage is { } damage && !(float.IsFinite(damage) && damage >= 0))
             sink.Error(invalid, $"{path}.damage", $"damage must be a number of 0 or more (got {damage}).");
+        if (definition is not null && data.Settings is { } settings && Logic.PartSettings.Check(definition, settings) is { } bad)
+            sink.Error(invalid, $"{path}.settings", bad);
         if (sink.ErrorCount > errors)
             return null;
         KnownKeys.WarnUnknown(data.Extra, path, sink, typeof(PartInstanceData));
         var part = new PartInstance(data.Id!.Value, Identifiers.Qualify(data.Part!), data.Cell!.Value, data.Rotation ?? GridRotation.Identity)
         {
             Color = data.Color?.ToLowerInvariant(),
+            Settings = data.Settings is { Count: > 0 } s ? new SortedDictionary<string, JsonElement>(s, StringComparer.Ordinal) : null,
             Extra = data.Extra,
         };
         return (part, definition!);
@@ -373,6 +392,8 @@ public static class CreationJson
 
         public List<ConnectionData>? Connections { get; init; }
 
+        public List<LinkData>? Links { get; init; }
+
         public List<BodyPoseData>? Bodies { get; init; }
 
         [JsonExtensionData]
@@ -390,6 +411,8 @@ public static class CreationJson
         public GridRotation? Rotation { get; init; }
 
         public string? Color { get; init; }
+
+        public SortedDictionary<string, JsonElement>? Settings { get; init; }
 
         public float? Damage { get; init; }
 
@@ -441,6 +464,16 @@ public static class CreationJson
         public int? B { get; init; }
 
         public string? BSocket { get; init; }
+
+        [JsonExtensionData]
+        public Dictionary<string, JsonElement>? Extra { get; init; }
+    }
+
+    internal sealed record LinkData
+    {
+        public int? From { get; init; }
+
+        public int? To { get; init; }
 
         [JsonExtensionData]
         public Dictionary<string, JsonElement>? Extra { get; init; }

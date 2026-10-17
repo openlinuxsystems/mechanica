@@ -1,0 +1,22 @@
+{
+  "id": "new_engine",
+  "name": "New Engine",
+  "description": "Turns the wheel bearings it is linked to. Link a driver's seat to it for the throttle.",
+  "category": "interactive",
+  "mass": 10,
+  "durability": 5,
+  "friction": 0.5,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "sound_material": "metal",
+  "size": [2, 2, 2],
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.25, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "logic": { "inputs": 4, "outputs": 10 }
+}

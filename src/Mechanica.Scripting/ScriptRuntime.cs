@@ -102,8 +102,14 @@ public sealed partial class ScriptRuntime
         /// <summary><c>on_collision(other, impulse)</c>: the part's Body hit something.</summary>
         public const string OnCollision = "on_collision";
 
-        /// <summary><c>get_outputs()</c>: the part's signal outputs.</summary>
+        /// <summary><c>get_outputs()</c>: the part's output on the logic bus, once per step (instead of <c>part.set_output</c>).</summary>
         public const string GetOutputs = "get_outputs";
+
+        /// <summary><c>on_enter(peer)</c>: a player sat down in the part (a seat).</summary>
+        public const string OnEnter = "on_enter";
+
+        /// <summary><c>on_leave(peer)</c>: the player sitting in the part stood up.</summary>
+        public const string OnLeave = "on_leave";
 
         /// <summary><c>on_equip()</c>: a player took the item in hand.</summary>
         public const string OnEquip = "on_equip";
@@ -180,8 +186,10 @@ public sealed partial class ScriptRuntime
 
     /// <summary>
     /// One physics step: brings the instances in line with the Creations (creating and destroying as
-    /// parts come and go), then calls <c>on_update(dt)</c> on every running part of a live Creation, in
-    /// creation and part order.
+    /// parts come and go), hands every part whose logic input changed its <c>on_power(amount)</c>, then
+    /// calls <c>on_update(dt)</c> on every running part of a live Creation, in creation and part order, and
+    /// last collects the outputs of parts that define <c>get_outputs()</c>. An output set this step reaches the
+    /// parts it is linked to next step (<see cref="SignalBus"/>).
     /// </summary>
     public void Update(float dt)
     {
@@ -189,12 +197,14 @@ public sealed partial class ScriptRuntime
         Time += dt;
         Reconcile();
         ReconcileItems();
+        DeliverSignals();
         var arg = DynValue.NewNumber(dt);
         foreach (var instance in _instances.Values.ToList())
         {
             if (instance.Fault is null && _motion.IsLive(instance.Creation))
                 CallHook(instance, Hooks.OnUpdate, arg);
         }
+        CollectOutputs();
     }
 
     /// <summary>
@@ -282,6 +292,7 @@ public sealed partial class ScriptRuntime
         foreach (var instance in _instances.Values.ToList())
             Destroy(instance);
         ClearItems();
+        Signals.Clear();
         _revisions.Clear();
         _files.Clear();
         _contexts.Clear();
@@ -402,6 +413,9 @@ public sealed partial class ScriptRuntime
         env.Set("properties", properties is null ? DynValue.NewTable(new Table(context.Script)) : LuaValues.FromJson(context.Script, properties));
         instance.Env = env;
         instance.Fault = null;
+        // A fresh start hears its input again as on_power, even if it has not changed.
+        if (!instance.IsItem)
+            Signals.ResetInput(instance.Creation, instance.Part);
         instance.Warned.Clear();
         instance.Version = entry.Version;
         if (Run(instance, entry.Factory, "loading", DynValue.NewTable(env)) is null)
@@ -426,6 +440,7 @@ public sealed partial class ScriptRuntime
         if (instance.Fault is null && instance.Created)
             CallHook(instance, Hooks.OnDestroy);
         _instances.Remove((instance.Creation, instance.Part));
+        Signals.Forget(instance.Creation, instance.Part);
     }
 
     // Calls a hook if the script defines it. Null when the call failed (the instance is then stopped).
@@ -466,6 +481,8 @@ public sealed partial class ScriptRuntime
     private void Stop(Instance instance, string fault)
     {
         instance.Fault = fault;
+        if (!instance.IsItem)
+            Signals.SetOutput(instance.Creation, instance.Part, 0f);
         if (instance.IsItem)
             Post(ScriptMessageKind.Error, instance.File.File.Key, null, null, $"{fault}; the {instance.PartType} script of player {instance.Holder} is stopped until it is reloaded");
         else

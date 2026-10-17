@@ -554,6 +554,8 @@ public partial class PartEditorScreen : Control
         if (d.IsPlaceable)
             AddStorageFields(d);
         AddSurvivalFields(d);
+        if (d.IsPlaceable)
+            AddLogicFields(d);
 
         // Model: the selected piece.
         if (_selectedPiece >= 0)
@@ -752,6 +754,43 @@ public partial class PartEditorScreen : Control
             _partGrid.AddNumber("Seeds back", seed.Seeds, 0, 1000, 1, v => SetSeed("Set seeds back", x => x with { Seeds = (int?)v }), optional: true);
             _partGrid.AddNumber("Raid value", seed.Value, 0, 1000, 0.5, v => SetSeed("Set raid value", x => x with { Value = (float?)v }), optional: true, fallback: 1);
         }
+    }
+
+    // Logic and power fields (chunk 10): Connect Tool links in and out, a seat, and the settings players
+    // change on each placed part (edited as JSON, like Properties).
+    private void AddLogicFields(PartDefinition d)
+    {
+        _partGrid.AddHeading("Logic and seats");
+        void SetLogic(string label, Func<LogicDefinition, LogicDefinition> change) => Set(label, x =>
+        {
+            var logic = change(x.Logic ?? new LogicDefinition());
+            return x with { Logic = logic.Inputs is null && logic.Outputs is null && logic.Use is null ? null : logic };
+        });
+        _partGrid.AddNumber("Input links", d.Logic?.Inputs, 0, LogicDefinition.MaxLinks, 1,
+            v => SetLogic("Set input links", l => l with { Inputs = (int?)v }), optional: true, fallback: 1);
+        _partGrid.AddNumber("Output links", d.Logic?.Outputs, 0, LogicDefinition.MaxLinks, 1,
+            v => SetLogic("Set output links", l => l with { Outputs = (int?)v }), optional: true, fallback: 10);
+        _partGrid.AddText("Use (F)", d.Logic?.Use, v => SetLogic("Set use", l => l with { Use = string.IsNullOrWhiteSpace(v) ? null : v }), "toggle, press…");
+        _partGrid.AddBool("Seat", d.Seat is not null, v => Document?.Apply(v == true ? "Make seat" : "Remove seat",
+            x => x with { Seat = v == true ? x.Seat ?? new SeatDefinition() : null }));
+        if (d.Seat is { } seat)
+        {
+            _partGrid.AddNumber("Seat height", seat.Offset?.Y, -2, 2, 0.05,
+                v => Set("Set seat height", x => x with { Seat = x.Seat! with { Offset = v is null ? null : new Vec3(0, (float)v, 0) } }), optional: true, suffix: "m");
+        }
+        _partGrid.AddJson("Settings", d.Settings is null ? "[]" : JsonSerializer.Serialize(d.Settings, DataJson.WriteOptions), text =>
+        {
+            try
+            {
+                var settings = JsonSerializer.Deserialize<List<SettingDefinition>>(text, DataJson.ReadOptions);
+                Set("Set settings", x => x with { Settings = settings is { Count: > 0 } ? settings : null });
+                return null;
+            }
+            catch (JsonException e)
+            {
+                return e.Message;
+            }
+        });
     }
 
     private static List<string>? SplitIds(string? text) =>
