@@ -583,6 +583,7 @@ public partial class Main : Node3D
             new ModToolsHost(this, modsRoot, profilePath), Scripts.Settings!);
         Ai.Modules.Add(new Mechanica.Scripting.Editor.ModToolsModule(modTools, Ai.Events));
         Ai.Modules.Add(new Core.Packages.PackageRpcModule(ModPaths.ModsRoot, ModPaths.PackagesRoot, Ai.Events));
+        Ai.Modules.Add(new Core.ModTools.EditorModule(new Core.ModTools.EditorService(modTools.Workspace, new EditorHost(this))));
         Ai.Modules.Add(new Core.Reports.ReportsModule(Reports.Reporter, Ai.Events));
         Ai.Modules.Add(new WorldModule(new WorldControl(WorldSession)));
         // The offline player spawned with PlayerSync, before building existed.
