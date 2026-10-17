@@ -17,6 +17,12 @@ public sealed partial class ActionDispatcher
     /// <summary>Raised after every dispatch, successful or not.</summary>
     public event Action<ActionRecord>? Dispatched;
 
+    /// <summary>
+    /// Checked before every action that changes state (queries skip it): null lets the call through, a
+    /// reason rejects it. Survival uses it so a dead player can do nothing but respawn.
+    /// </summary>
+    public Func<ActionCaller, string, string?>? Gate { get; set; }
+
     /// <summary>Registered action names, sorted.</summary>
     public IReadOnlyList<string> Names => [.. _actions.Keys.Order(StringComparer.Ordinal)];
 
@@ -55,6 +61,8 @@ public sealed partial class ActionDispatcher
             result = ActionResult.Failure(ActionErrors.UnknownAction, $"No action named '{Shorten(name)}'.");
         else if (argsJson is null || argsJson.Length > ActionJson.MaxArgsLength)
             result = ActionResult.Failure(ActionErrors.BadArgs, $"Arguments must be a JSON object of at most {ActionJson.MaxArgsLength} characters.");
+        else if (!_readOnly.Contains(name!) && Gate?.Invoke(caller, name!) is { } closed)
+            result = ActionResult.Failure(ActionErrors.Rejected, closed);
         else
             result = run(caller, argsJson);
         Dispatched?.Invoke(new ActionRecord(caller, name ?? "", argsJson ?? "", result));

@@ -31,7 +31,8 @@ namespace Mechanica.Core.Creations;
 /// Paint Tool colour and <c>damage</c> the health it has lost, each written only when set. A container
 /// or station part also stores its <c>inventory</c> (filled slots: <c>{ "slot": 0, "item": "vanilla:scrap_metal",
 /// "count": 12 }</c>) and its <c>crafting</c> orders (<c>{ "recipe": "vanilla:chest", "count": 2, "progress": 1.5 }</c>),
-/// each written only when not empty.
+/// each written only when not empty. A soil part stores what grows on it (<c>"soil": { "seed": "vanilla:carrot_seed",
+/// "grown": 30, "water": 120 }</c>, seconds), written only when something is planted or it holds water.
 /// </summary>
 public static class CreationJson
 {
@@ -58,6 +59,9 @@ public static class CreationJson
                 Inventory = InventorySlots(creation.HoldsItems(p.Id) ? creation.InventoryOf(p.Id) : null),
                 Crafting = creation.HoldsItems(p.Id) && creation.CraftingOf(p.Id) is { IsEmpty: false } queue
                     ? [.. queue.Jobs.Select(j => new CraftJobData { Recipe = j.Recipe, Count = j.Count, Progress = j.Progress > 0 ? j.Progress : null })]
+                    : null,
+                Soil = creation.SoilOf(p.Id) is { IsEmpty: false } soil
+                    ? new SoilData { Seed = soil.Seed, Grown = soil.Seed is null ? null : soil.Grown, Water = soil.Water > 0 ? soil.Water : null }
                     : null,
                 Extra = Sorted(p.Extra),
             })],
@@ -131,6 +135,7 @@ public static class CreationJson
             if (data.Parts[i].Damage is { } damage)
                 creation.SetPartDamage(part.Id, damage);
             ReadStorage(data.Parts[i], path, creation, part.Id, sink);
+            ReadSoil(data.Parts[i], path, creation, part.Id, sink);
         }
         if (sink.ErrorCount > 0)
             return null;
@@ -302,6 +307,23 @@ public static class CreationJson
         }
     }
 
+    private static void ReadSoil(PartInstanceData data, string path, Creation creation, int partId, DiagnosticSink sink)
+    {
+        const string invalid = DiagnosticCodes.CreationInvalid;
+        if (data.Soil is not { } soil)
+            return;
+        if (creation.SoilOf(partId) is not { } state)
+            sink.Error(invalid, $"{path}.soil", $"part '{data.Part}' is not soil.");
+        else if (soil.Seed is not null && !PartValidator.IsItemRef(soil.Seed))
+            sink.Error(invalid, $"{path}.soil.seed", "seed must be an item id or 'mod_id:item_id'.");
+        else if (soil.Grown is { } grown && !(float.IsFinite(grown) && grown >= 0))
+            sink.Error(invalid, $"{path}.soil.grown", "grown must be 0 or more seconds.");
+        else if (soil.Water is { } water && !(float.IsFinite(water) && water >= 0))
+            sink.Error(invalid, $"{path}.soil.water", "water must be 0 or more seconds.");
+        else
+            state.Load(soil.Seed is null ? null : Identifiers.Qualify(soil.Seed), soil.Grown ?? 0, soil.Water ?? 0);
+    }
+
     private static bool IsFinite(Vec3 v) => float.IsFinite(v.X) && float.IsFinite(v.Y) && float.IsFinite(v.Z);
 
     private static (PartInstance, PartDefinition)? ReadPart(PartInstanceData data, string path, IPartCatalog catalog, DiagnosticSink sink)
@@ -375,6 +397,8 @@ public static class CreationJson
 
         public List<CraftJobData>? Crafting { get; init; }
 
+        public SoilData? Soil { get; init; }
+
         [JsonExtensionData]
         public Dictionary<string, JsonElement>? Extra { get; init; }
     }
@@ -395,6 +419,15 @@ public static class CreationJson
         public int? Count { get; init; }
 
         public float? Progress { get; init; }
+    }
+
+    internal sealed record SoilData
+    {
+        public string? Seed { get; init; }
+
+        public float? Grown { get; init; }
+
+        public float? Water { get; init; }
     }
 
     internal sealed record ConnectionData

@@ -11,6 +11,7 @@ namespace Mechanica.Core.World;
 public sealed class WorldState
 {
     private readonly HashSet<WorldObjectId> _destroyed = [];
+    private readonly Dictionary<WorldObjectId, float> _damage = [];
 
     /// <summary>A fresh world.</summary>
     public WorldState(long seed) => Seed = seed;
@@ -25,7 +26,17 @@ public sealed class WorldState
     public bool IsDestroyed(WorldObjectId id) => _destroyed.Contains(id);
 
     /// <summary>Marks an object destroyed. Returns false if it already was.</summary>
-    public bool Destroy(WorldObjectId id) => _destroyed.Add(id);
+    public bool Destroy(WorldObjectId id)
+    {
+        _damage.Remove(id);
+        return _destroyed.Add(id);
+    }
+
+    /// <summary>Health an object has lost to hits (chunk 20). Not saved: a damaged tree heals on reload.</summary>
+    public float DamageOf(WorldObjectId id) => _damage.GetValueOrDefault(id);
+
+    /// <summary>Adds <paramref name="damage"/> to what an object has lost and returns the new total.</summary>
+    public float AddDamage(WorldObjectId id, float damage) => _damage[id] = DamageOf(id) + Math.Max(0, damage);
 
     /// <summary>Writes the state as JSON.</summary>
     public string ToJson() => JsonSerializer.Serialize(new Dto { Seed = Seed, Destroyed = [.. _destroyed.Select(i => i.ToString()).Order(StringComparer.Ordinal)] }, DataJson.WriteOptions) + "\n";

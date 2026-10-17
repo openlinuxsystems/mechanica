@@ -138,7 +138,8 @@ public sealed record PaintSettings
 /// <summary>
 /// The Sledgehammer. A part's health is its <c>durability</c> times <see cref="HealthPerDurability"/>
 /// (D13); each hit takes <see cref="Damage"/> and pushes the Body, and a part at 0 health breaks off.
-/// Parts without a durability cannot be broken.
+/// Parts without a durability cannot be broken. Hits on players and world objects take
+/// <see cref="PlayerDamage"/> and <see cref="ObjectDamage"/> instead.
 /// </summary>
 public sealed record SledgeSettings
 {
@@ -154,6 +155,12 @@ public sealed record SledgeSettings
     /// <summary>Impulse a hit gives the Body it lands on, in N·s, along the swing.</summary>
     public float Impulse { get; init; } = 20f;
 
+    /// <summary>Health one hit takes from a player (Survival, chunk 20).</summary>
+    public float PlayerDamage { get; init; } = 15f;
+
+    /// <summary>Health one hit takes from a tree, rock or other world object that can break (chunk 20).</summary>
+    public float ObjectDamage { get; init; } = 10f;
+
     /// <summary>Full health of a part with <paramref name="durability"/>, or null when it cannot break.</summary>
     public float? HealthOf(int? durability) => durability is > 0 ? durability.Value * HealthPerDurability : null;
 
@@ -166,5 +173,7 @@ public sealed record SledgeSettings
             throw new FormatException($"sledge.swing_seconds must be 0 or more (got {SwingSeconds}).");
         if (!float.IsFinite(Impulse) || Impulse < 0f)
             throw new FormatException($"sledge.impulse must be 0 or more (got {Impulse}).");
+        BuildSettings.Positive(PlayerDamage, "sledge.player_damage");
+        BuildSettings.Positive(ObjectDamage, "sledge.object_damage");
     }
 }

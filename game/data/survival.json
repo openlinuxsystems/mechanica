@@ -1,0 +1,34 @@
+{
+  // The survival loop (chunk 20), SI units. Loaded by game/scripts/Survival/SurvivalSync.cs;
+  // see src/Mechanica.Core/Survival/SurvivalSettings.cs. Item numbers (food, seeds, weapons) are in each item's part data.
+  "max_health": 100,
+  "respawn_delay": 5,
+  "low_health": 0.25,
+  "pvp": true,
+  "reach": 7.5,
+  "pickup_reach": 3,
+  "drop_lifetime": 900,
+  "max_drops": 256,
+  "drop_inventory_on_death": true,
+  "aim_tolerance": 25,
+  "water_item": "water_bucket",
+  "water_seconds": 1,
+  // What each player starts a Survival world with, until quests and loot hand out the rest.
+  "starting_items": [
+    { "item": "carrot_seed", "count": 4 },
+    { "item": "potato_seed", "count": 4 },
+    { "item": "soil", "count": 8 },
+    { "item": "water_bucket", "count": 2 },
+    { "item": "carrot", "count": 3 }
+  ],
+  "fall": {
+    "min_speed": 11,
+    "damage_per_speed": 8
+  },
+  "impact": {
+    "min_speed": 8,
+    "speed_per_durability": 1,
+    "damage_per_speed": 5,
+    "depth": 0.2
+  }
+}
