@@ -23,7 +23,7 @@ public class WorldGenTests
         Assert.Empty(data.Diagnostics);
         Assert.Equal(["meadow", "forest", "ruin_field", "warehouse_district", "coastal"], data.Biomes.Select(b => b.Id));
         Assert.Equal("coastal", data.CoastBiome?.Id);
-        Assert.Equal(["vanilla:crash_site", "vanilla:outpost", "vanilla:ruin_cluster", "vanilla:warehouse"], data.Pois.Select(p => p.QualifiedId));
+        Assert.Equal(["vanilla:ai_core_facility", "vanilla:crash_site", "vanilla:faction_outpost", "vanilla:outpost", "vanilla:ruin_cluster", "vanilla:warehouse"], data.Pois.Select(p => p.QualifiedId));
         Assert.Contains("tree", data.Objects.Keys);
         Assert.Contains("rock_node", data.Objects.Keys);
         Assert.Equal(64, data.Fingerprint.Length);

@@ -1,0 +1,46 @@
+{
+  "name": "First Farm",
+  "summary": "Plant a small crop and defend it from a raid.",
+  "requires": [
+    "first_vehicle"
+  ],
+  "steps": [
+    {
+      "id": "plant",
+      "text": "Plant four crops.",
+      "objective": {
+        "type": "crops",
+        "count": 4
+      },
+      "dialogue": [
+        {
+          "speaker": "Logbook",
+          "text": "Food stores at zero. Soil and seeds will do. Expect company: bots raid growing crops."
+        }
+      ]
+    },
+    {
+      "id": "defend",
+      "text": "Hold off a raid.",
+      "objective": {
+        "type": "raid"
+      }
+    }
+  ],
+  "rewards": {
+    "items": [
+      {
+        "item": "carrot_seed",
+        "count": 4
+      },
+      {
+        "item": "potato_seed",
+        "count": 4
+      },
+      {
+        "item": "popper",
+        "count": 1
+      }
+    ]
+  }
+}

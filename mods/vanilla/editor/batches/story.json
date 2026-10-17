@@ -1,0 +1,239 @@
+{
+  // Vanilla story (chunk 24, spec §19 and §21.3-21.4): the faction outpost and AI core facility POIs and
+  // the quest chain. Edit here and re-run tools/author-vanilla.sh; never edit the written files.
+  "format_version": 1,
+  "pois": [
+    {
+      "file": "pois/faction_outpost.json",
+      "poi": {
+        "name": "Faction Outpost",
+        "radius": 36.0,
+        "placement": { "spacing": [1100.0, 1500.0], "biomes": ["meadow", "forest", "ruin_field"], "priority": 45 },
+        "terrain": [{ "op": "flatten", "radius": 18.0, "blend": 16.0 }],
+        "pieces": [
+          { "shape": "box", "size": [14.0, 0.3, 14.0], "at": [0.0, 0.15, 0.0], "color": "#6f6a5e" },
+          { "shape": "box", "size": [0.4, 3.0, 14.0], "at": [-6.8, 1.5, 0.0], "color": "#5b4a3a" },
+          { "shape": "box", "size": [0.4, 3.0, 14.0], "at": [6.8, 1.5, 0.0], "color": "#5b4a3a" },
+          { "shape": "box", "size": [14.0, 3.0, 0.4], "at": [0.0, 1.5, -6.8], "color": "#5b4a3a" },
+          { "shape": "cylinder", "radius": 0.2, "height": 8.0, "at": [5.0, 4.0, 5.0], "color": "#4a4f55" },
+          { "shape": "box", "size": [2.0, 1.2, 0.1], "at": [5.0, 7.2, 5.6], "color": "#b5452f" }
+        ],
+        "markers": [
+          { "type": "npc", "ref": "faction_envoy", "at": [0.0, 0.3, -3.0] },
+          { "type": "bot", "ref": "scuttler_green", "at": [-4.0, 0.3, 3.0] },
+          { "type": "bot", "ref": "scuttler_green", "at": [4.0, 0.3, 3.0] },
+          { "type": "item", "ref": "chest", "at": [-5.0, 0.3, -5.0] }
+        ]
+      }
+    },
+    {
+      "file": "pois/ai_core_facility.json",
+      "poi": {
+        "name": "AI Core Facility",
+        "radius": 70.0,
+        "placement": { "fixed": [-900.0, 1100.0] },
+        "terrain": [{ "op": "flatten", "radius": 36.0, "blend": 30.0 }],
+        "pieces": [
+          { "shape": "box", "size": [30.0, 0.4, 30.0], "at": [0.0, 0.2, 0.0], "color": "#8d949a" },
+          { "shape": "box", "size": [20.0, 10.0, 0.6], "at": [0.0, 5.0, -10.0], "color": "#5d646b" },
+          { "shape": "box", "size": [0.6, 10.0, 20.0], "at": [-10.0, 5.0, 0.0], "color": "#5d646b" },
+          { "shape": "box", "size": [0.6, 10.0, 20.0], "at": [10.0, 5.0, 0.0], "color": "#5d646b" },
+          { "shape": "box", "size": [20.6, 0.4, 20.6], "at": [0.0, 10.2, 0.0], "color": "#3e4449" },
+          { "shape": "cylinder", "radius": 1.5, "height": 3.0, "at": [0.0, 1.9, -4.0], "color": "#3fa7d6" }
+        ],
+        "markers": [
+          { "type": "core", "at": [0.0, 0.4, -2.0] },
+          { "type": "bot", "ref": "spooler_blue", "at": [-6.0, 0.4, 6.0] },
+          { "type": "bot", "ref": "spooler_blue", "at": [6.0, 0.4, 6.0] },
+          { "type": "bot", "ref": "rakehand", "at": [0.0, 0.4, 12.0] }
+        ]
+      }
+    }
+  ],
+  "quests": [
+    {
+      "file": "quests/getting_started.json",
+      "quest": {
+        "name": "Getting Started",
+        "summary": "Get the crashed ship's systems running again.",
+        "steps": [
+          {
+            "id": "extinguish_fires",
+            "text": "Put out the three fires at the crash site.",
+            "objective": { "type": "interact", "poi": "crash_site", "marker": "fire", "count": 3 },
+            "dialogue": [{ "speaker": "Logbook", "text": "Hull breach. Fires spreading. Suppress them before the core cells go." }]
+          },
+          {
+            "id": "restore_power",
+            "text": "Restore power at the ship's Master Battery.",
+            "objective": { "type": "interact", "poi": "crash_site", "marker": "item", "ref": "master_battery" }
+          }
+        ],
+        "rewards": { "items": [{ "item": "component_kit", "count": 2 }, { "item": "battery_pack", "count": 1 }] },
+        "outro": [{ "speaker": "Logbook", "text": "Power restored. Logbook online. Proceed to Mechanic Station." }]
+      }
+    },
+    {
+      "file": "quests/workshop_outpost.json",
+      "quest": {
+        "name": "Workshop Outpost",
+        "summary": "Find a Workshop Outpost and get its Fabricator working.",
+        "requires": ["getting_started"],
+        "steps": [
+          {
+            "id": "reach",
+            "text": "Reach a Workshop Outpost.",
+            "objective": { "type": "reach", "poi": "outpost", "radius": 20.0 },
+            "dialogue": [{ "speaker": "Logbook", "text": "Workshop beacon on the long-range band. Follow it." }]
+          },
+          {
+            "id": "craft",
+            "text": "Order something at the outpost's Fabricator.",
+            "objective": { "type": "craft" }
+          }
+        ],
+        "rewards": { "flags": { "fabricator_unlocked": "yes" } },
+        "outro": [{ "speaker": "Logbook", "text": "Fabricator linked. Build something that moves." }]
+      }
+    },
+    {
+      "file": "quests/first_vehicle.json",
+      "quest": {
+        "name": "First Vehicle",
+        "summary": "Build a working vehicle and drive it.",
+        "requires": ["workshop_outpost"],
+        "steps": [
+          {
+            "id": "drive",
+            "text": "Build a vehicle with a seat and drive it 100 m.",
+            "objective": { "type": "drive", "distance": 100.0 }
+          }
+        ],
+        "rewards": { "items": [{ "item": "component_kit", "count": 4 }] },
+        "outro": [{ "speaker": "Logbook", "text": "Vehicle functional. Connection stable. Proceed to farm zone." }]
+      }
+    },
+    {
+      "file": "quests/first_farm.json",
+      "quest": {
+        "name": "First Farm",
+        "summary": "Plant a small crop and defend it from a raid.",
+        "requires": ["first_vehicle"],
+        "steps": [
+          {
+            "id": "plant",
+            "text": "Plant four crops.",
+            "objective": { "type": "crops", "count": 4 },
+            "dialogue": [{ "speaker": "Logbook", "text": "Food stores at zero. Soil and seeds will do. Expect company: bots raid growing crops." }]
+          },
+          {
+            "id": "defend",
+            "text": "Hold off a raid.",
+            "objective": { "type": "raid" }
+          }
+        ],
+        "rewards": { "items": [{ "item": "carrot_seed", "count": 4 }, { "item": "potato_seed", "count": 4 }, { "item": "popper", "count": 1 }] }
+      }
+    },
+    {
+      "file": "quests/faction_contact.json",
+      "quest": {
+        "name": "Faction Contact",
+        "summary": "Meet a representative of a bot faction.",
+        "requires": ["first_farm"],
+        "steps": [
+          {
+            "id": "find",
+            "text": "Find a Faction Outpost.",
+            "objective": { "type": "reach", "poi": "faction_outpost" },
+            "dialogue": [{ "speaker": "Logbook", "text": "Faction signal detected. Approach or engage." }]
+          },
+          {
+            "id": "talk",
+            "text": "Talk to the faction envoy.",
+            "objective": { "type": "interact", "poi": "faction_outpost", "marker": "npc", "ref": "faction_envoy" },
+            "dialogue": [{ "speaker": "Faction Envoy", "text": "You are the salvager. The old mind is gone, and we answer to no one now." }]
+          },
+          {
+            "id": "decide",
+            "text": "Choose: ally with the faction, or stand against it.",
+            "objective": { "type": "choose" },
+            "dialogue": [{ "speaker": "Faction Envoy", "text": "Work with us, or keep your distance. Decide." }],
+            "choices": [
+              {
+                "id": "ally",
+                "text": "Offer an alliance.",
+                "flags": { "faction_stance": "ally" },
+                "dialogue": [{ "speaker": "Faction Envoy", "text": "Then our scouts will not trouble your fields." }]
+              },
+              {
+                "id": "hostile",
+                "text": "Refuse and leave.",
+                "flags": { "faction_stance": "hostile" },
+                "dialogue": [{ "speaker": "Faction Envoy", "text": "Then we will meet again, salvager." }]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "file": "quests/data_core_location.json",
+      "quest": {
+        "name": "Data Core Location",
+        "summary": "Locate the site of the colony's AI core.",
+        "requires": ["faction_contact"],
+        "steps": [
+          {
+            "id": "scrap",
+            "text": "Gather 10 Component Kits to rebuild the long-range scanner.",
+            "objective": { "type": "have_item", "item": "component_kit", "count": 10 },
+            "dialogue": [{ "speaker": "Logbook", "text": "Core telemetry is faint. A rebuilt scanner could triangulate it." }]
+          }
+        ],
+        "rewards": { "reveal": ["ai_core_facility"] },
+        "outro": [{ "speaker": "Logbook", "text": "Core coordinates locked. Multiple factions contesting site." }]
+      }
+    },
+    {
+      "file": "quests/final_decision.json",
+      "quest": {
+        "name": "Final Decision",
+        "summary": "Reach the AI core and decide its fate.",
+        "requires": ["data_core_location"],
+        "steps": [
+          {
+            "id": "reach",
+            "text": "Reach the AI Core Facility.",
+            "objective": { "type": "reach", "poi": "ai_core_facility", "radius": 30.0 }
+          },
+          {
+            "id": "core",
+            "text": "Access the AI core.",
+            "objective": { "type": "interact", "poi": "ai_core_facility", "marker": "core" }
+          },
+          {
+            "id": "choose",
+            "text": "Restore the original AI, or let the factions evolve.",
+            "objective": { "type": "choose" },
+            "dialogue": [{ "speaker": "AI Core", "text": "Restore original AI or allow faction evolution. Choose." }],
+            "choices": [
+              {
+                "id": "restore",
+                "text": "Restore the original AI.",
+                "flags": { "ending": "restored" },
+                "dialogue": [{ "speaker": "AI Core", "text": "Colony directives reloading. The factions will be brought back into line." }]
+              },
+              {
+                "id": "evolve",
+                "text": "Let the factions evolve.",
+                "flags": { "ending": "evolved" },
+                "dialogue": [{ "speaker": "AI Core", "text": "Shutting down. The colony belongs to whoever builds it now." }]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

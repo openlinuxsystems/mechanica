@@ -3,6 +3,7 @@ using System.Text.Json.Nodes;
 using Mechanica.Core.Creations;
 using Mechanica.Core.Data;
 using Mechanica.Core.Net;
+using Mechanica.Core.Quests;
 using Mechanica.Core.Survival;
 using Mechanica.Core.World;
 
@@ -80,6 +81,9 @@ public sealed record SaveGame
     /// <summary>Players by profile id, sorted by id.</summary>
     public IReadOnlyList<SavedPlayer> Players { get; init; } = [];
 
+    /// <summary>The story: quest progress, flags and revealed POIs. Null in a save from before quests.</summary>
+    public QuestState? Quests { get; init; }
+
     /// <summary>Keys this build does not know, kept as they are.</summary>
     public Dictionary<string, JsonElement>? Extra { get; init; }
 
@@ -131,6 +135,7 @@ public sealed record SaveGame
                 Bed = p.Bed is { } bed ? new PartData { Creation = bed.Creation, Part = bed.Part } : null,
                 Inventory = p.Inventory.Count == 0 ? null : [.. p.Inventory.OrderBy(s => s.Slot).Select(s => new SlotData { Slot = s.Slot, Item = s.Item, Count = s.Count })],
             })],
+            Quests = Quests?.ToElement(),
             Extra = Extra?.OrderBy(kv => kv.Key, StringComparer.Ordinal).ToDictionary(kv => kv.Key, kv => kv.Value),
         };
         return JsonSerializer.Serialize(data, DataJson.WriteOptions) + "\n";
@@ -228,6 +233,14 @@ public sealed record SaveGame
             players.Add(new SavedPlayer(p.Id!, PlayerProfile.CleanName(p.Name), slots, p.Health, p.Position, p.Yaw ?? 0, bed));
         }
 
+        QuestState? quests = null;
+        if (data.Quests is { ValueKind: not JsonValueKind.Null } questElement)
+        {
+            quests = questElement.ValueKind == JsonValueKind.Object ? QuestState.FromElement(questElement) : null;
+            if (quests is null)
+                sink.Error(invalid, "$.quests", "quests must be an object with quests, flags and revealed.");
+        }
+
         if (sink.ErrorCount > 0)
             return null;
         return new SaveGame
@@ -242,6 +255,7 @@ public sealed record SaveGame
             Creations = creations,
             Scripts = scripts,
             Players = players,
+            Quests = quests,
             Extra = data.Extra,
         };
     }
@@ -259,6 +273,7 @@ public sealed record SaveGame
         public List<JsonElement>? Creations { get; init; }
         public List<ScriptData>? Scripts { get; init; }
         public List<PlayerData>? Players { get; init; }
+        public JsonElement? Quests { get; init; }
 
         [System.Text.Json.Serialization.JsonExtensionData]
         public Dictionary<string, JsonElement>? Extra { get; init; }

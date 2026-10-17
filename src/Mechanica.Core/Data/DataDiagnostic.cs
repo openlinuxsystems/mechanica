@@ -108,6 +108,9 @@ public static class DiagnosticCodes
 
     // 10xx: saves
     public const string SaveInvalid = "MD1001";
+
+    // 11xx: quests
+    public const string QuestInvalid = "MD1101";
 }
 
 /// <summary>Collects diagnostics for one file, filling in the file name.</summary>

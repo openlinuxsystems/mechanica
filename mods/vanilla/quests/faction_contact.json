@@ -1,0 +1,80 @@
+{
+  "name": "Faction Contact",
+  "summary": "Meet a representative of a bot faction.",
+  "requires": [
+    "first_farm"
+  ],
+  "steps": [
+    {
+      "id": "find",
+      "text": "Find a Faction Outpost.",
+      "objective": {
+        "type": "reach",
+        "poi": "faction_outpost"
+      },
+      "dialogue": [
+        {
+          "speaker": "Logbook",
+          "text": "Faction signal detected. Approach or engage."
+        }
+      ]
+    },
+    {
+      "id": "talk",
+      "text": "Talk to the faction envoy.",
+      "objective": {
+        "type": "interact",
+        "poi": "faction_outpost",
+        "marker": "npc",
+        "ref": "faction_envoy"
+      },
+      "dialogue": [
+        {
+          "speaker": "Faction Envoy",
+          "text": "You are the salvager. The old mind is gone, and we answer to no one now."
+        }
+      ]
+    },
+    {
+      "id": "decide",
+      "text": "Choose: ally with the faction, or stand against it.",
+      "objective": {
+        "type": "choose"
+      },
+      "dialogue": [
+        {
+          "speaker": "Faction Envoy",
+          "text": "Work with us, or keep your distance. Decide."
+        }
+      ],
+      "choices": [
+        {
+          "id": "ally",
+          "text": "Offer an alliance.",
+          "flags": {
+            "faction_stance": "ally"
+          },
+          "dialogue": [
+            {
+              "speaker": "Faction Envoy",
+              "text": "Then our scouts will not trouble your fields."
+            }
+          ]
+        },
+        {
+          "id": "hostile",
+          "text": "Refuse and leave.",
+          "flags": {
+            "faction_stance": "hostile"
+          },
+          "dialogue": [
+            {
+              "speaker": "Faction Envoy",
+              "text": "Then we will meet again, salvager."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

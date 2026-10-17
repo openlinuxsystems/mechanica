@@ -4,6 +4,7 @@ using Mechanica.Core.Bots;
 using Mechanica.Core.Data;
 using Mechanica.Core.Items;
 using Mechanica.Core.Net;
+using Mechanica.Core.Quests;
 using Mechanica.Core.Saves;
 using Mechanica.Core.Sound;
 using Mechanica.Core.Survival;
@@ -17,6 +18,7 @@ using Mechanica.Game.Mods;
 using Mechanica.Game.Motion;
 using Mechanica.Game.Net;
 using Mechanica.Game.Player;
+using Mechanica.Game.Quests;
 using Mechanica.Game.Remote;
 using Mechanica.Game.Saves;
 using Mechanica.Game.Scripting;
@@ -97,6 +99,12 @@ public partial class Main : Node3D
 
     /// <summary>The raid table. Null loads it from <see cref="Mods"/> when the scene starts; tests may set it.</summary>
     public RaidTable? RaidTable { get; set; }
+
+    /// <summary>Quests from the enabled mods. Null loads them on ready.</summary>
+    public QuestBook? QuestBook { get; set; }
+
+    /// <summary>Quests and their sync to clients (chunk 24).</summary>
+    public QuestSync Quests { get; private set; } = null!;
 
     /// <summary>Bots, raids and their sync to clients (chunk 21).</summary>
     public BotSync Bots { get; private set; } = null!;
@@ -190,11 +198,12 @@ public partial class Main : Node3D
         var recipes = Recipes ??= LoadRecipes(mods);
         var bots = BotTypes ??= LoadBots(mods);
         var raids = RaidTable ??= LoadRaids(mods, bots);
-        // World data, recipes, bots and raids are part of the content check on join: every peer regenerates
+        var quests = QuestBook ??= LoadQuests(mods, recipes, world);
+        // World data, recipes, bots, raids and quests are part of the content check on join: every peer regenerates
         // the world from the first, shows the recipes in its station screens and the bots the host sends.
         var content = Content ??= ContentManifest.From(mods) with
         {
-            Fingerprint = $"{mods.Fingerprint}+{world.Fingerprint}+{recipes.Fingerprint}+{bots.Fingerprint}+{raids.Fingerprint}",
+            Fingerprint = $"{mods.Fingerprint}+{world.Fingerprint}+{recipes.Fingerprint}+{bots.Fingerprint}+{raids.Fingerprint}+{quests.Fingerprint}",
         };
         Assets = new PartAssets(mods);
 
@@ -318,8 +327,23 @@ public partial class Main : Node3D
         AddChild(LogicOverlay);
         Inspector = new CreationInspector { Name = "Inspector", Players = PlayerSync, Actions = Actions, ReadDeviceInput = ReadDeviceInput };
         AddChild(Inspector);
+        Quests = new QuestSync
+        {
+            Name = "Quests",
+            Session = Session,
+            Players = PlayerSync,
+            Creations = Creations,
+            World = Streamer,
+            Inventory = Inventory,
+            Logic = Logic,
+            Bots = Bots,
+            Book = quests,
+        };
+        Quests.RegisterActions(Actions.Dispatcher);
+        AddChild(Quests);
         Saves = new SaveSync
         {
+            Quests = Quests,
             Name = "Saves",
             Session = Session,
             Players = PlayerSync,
@@ -353,7 +377,8 @@ public partial class Main : Node3D
         {
             AddChild(new ConnectPanel { Name = "ConnectPanel", Session = Session, Saves = Saves });
             AddChild(new InventoryScreen { Name = "InventoryScreen", Inventory = Inventory, Actions = Actions, Players = PlayerSync, Catalog = mods });
-            AddChild(new SurvivalHud { Name = "SurvivalHud", Survival = Survival, Actions = Actions, Players = PlayerSync, Catalog = mods, Logic = Logic });
+            AddChild(new SurvivalHud { Name = "SurvivalHud", Survival = Survival, Actions = Actions, Players = PlayerSync, Catalog = mods, Logic = Logic, Quests = Quests });
+            AddChild(new QuestHud { Name = "QuestHud", Quests = Quests, Actions = Actions, Players = PlayerSync });
             PartSettings = new PartSettingsPanel { Name = "PartSettings", Actions = Actions, Creations = Creations };
             AddChild(PartSettings);
             AddChild(new RaidBanner { Name = "RaidBanner", Bots = Bots });
@@ -443,6 +468,14 @@ public partial class Main : Node3D
         foreach (var diagnostic in raids.Diagnostics)
             GD.PushWarning($"[raids] {diagnostic}");
         return raids;
+    }
+
+    private static QuestBook LoadQuests(ModLoadResult mods, RecipeBook recipes, WorldGenData world)
+    {
+        var quests = QuestBook.Load(mods, recipes, world);
+        foreach (var diagnostic in quests.Diagnostics)
+            GD.PushWarning($"[quests] {diagnostic}");
+        return quests;
     }
 
     private static RecipeBook LoadRecipes(ModLoadResult mods)
