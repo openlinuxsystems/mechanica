@@ -85,6 +85,9 @@ public partial class Main : Node3D
     /// <summary>The Lift's blueprint menu, when reading device input.</summary>
     public BlueprintMenu? Blueprints { get; private set; }
 
+    /// <summary>The upgrade dialog (U), or null without device input.</summary>
+    public Items.UpgradeDialog? Upgrades { get; private set; }
+
     /// <summary>False in automated tests: nothing reads devices, the test sets the player's input itself.</summary>
     public bool ReadDeviceInput { get; set; } = true;
 
@@ -353,7 +356,7 @@ public partial class Main : Node3D
             Catalog = mods,
             Recipes = recipes,
             // Making items from nothing is Creative's (D13).
-            Settings = InventorySync.LoadSettings() with { AllowGive = Options.GameMode == GameMode.Creative },
+            Settings = InventorySync.LoadSettings() with { AllowGive = Options.GameMode == GameMode.Creative, FreeUpgrades = Options.GameMode == GameMode.Creative },
         };
         Inventory.RegisterActions(Actions.Dispatcher);
         Survival = new SurvivalSync
@@ -499,20 +502,27 @@ public partial class Main : Node3D
         Session.StateChanged += state => SetPropsSimulated(state is NetSession.SessionState.Offline or NetSession.SessionState.Hosting);
         if (ReadDeviceInput)
         {
-            var inventory = new InventoryScreen
+            InventoryScreen? inventory = null;
+            Upgrades = new UpgradeDialog
+            {
+                Name = "UpgradeDialog", Inventory = Inventory, Actions = Actions, Creations = Creations, Catalog = mods, Icons = Icons,
+                Aimed = () => inventory?.AimedPart(), OtherScreenOpen = () => inventory?.IsOpen == true,
+            };
+            inventory = new InventoryScreen
             {
                 Name = "InventoryScreen", Inventory = Inventory, Actions = Actions, Players = PlayerSync, Catalog = mods, Hotbar = Hotbar, Icons = Icons, Sounds = Sounds,
-                Mode = () => Survival.Own?.Mode,
+                Mode = () => Survival.Own?.Mode, Creations = Creations, Upgrades = Upgrades,
                 AllItems = () => HotbarTools.All.Concat(Build.Catalog.Parts.Where(p => p.Value.Definition.Category is not null).Select(p => p.Key)),
             };
             AddChild(inventory);
+            AddChild(Upgrades);
             PartSettings = new PartSettingsPanel { Name = "PartSettings", Actions = Actions, Creations = Creations };
             AddChild(new Ui.HudRoot { Name = "HudRoot" });
             Ui.WorldHud? worldHud = null;
             var survivalHud = new SurvivalHud
             {
                 Name = "SurvivalHud", Survival = Survival, Actions = Actions, Players = PlayerSync, Catalog = mods, Logic = Logic, Quests = Quests,
-                Containers = inventory, PartSettings = PartSettings, TooltipShowing = () => worldHud?.TooltipShowing == true,
+                Containers = inventory, Upgrades = Upgrades, PartSettings = PartSettings, TooltipShowing = () => worldHud?.TooltipShowing == true,
                 ToolInteraction = () => Tools?.Current.Interaction,
             };
             AddChild(survivalHud);

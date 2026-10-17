@@ -50,6 +50,9 @@ public partial class SurvivalHud : CanvasLayer
     /// <summary>The inventory screen, which Use on a container or station opens. Optional.</summary>
     public InventoryScreen? Containers { get; init; }
 
+    /// <summary>The upgrade dialog, for the Upgrade (U) hint on an upgradable part; null shows none.</summary>
+    public UpgradeDialog? Upgrades { get; init; }
+
     /// <summary>The part settings panel, which Use on a part with settings opens. Optional.</summary>
     public PartSettingsPanel? PartSettings { get; init; }
 
@@ -122,7 +125,12 @@ public partial class SurvivalHud : CanvasLayer
             var where = own.HasBed ? "your bed" : "the spawn";
             _deathText.Text = wait > 0 ? Loc.T("You died.\nRespawn in {0} s", $"{Math.Ceiling(wait):0}") : Loc.T("You died.\n[{0}] respawn at {1}", GameInput.Label(InputActions.Interact), where);
         }
-        _hint.Text = own is { Dead: true } ? "" : Interaction() is { } what ? $"[{GameInput.Label(InputActions.Interact)}] {what.Label}" : "";
+        var hints = new List<string>();
+        if (own is not { Dead: true } && Interaction() is { } what)
+            hints.Add($"[{GameInput.Label(InputActions.Interact)}] {what.Label}");
+        if (own is not { Dead: true } && Upgrades is { IsOpen: false } upgrades && upgrades.Aimed() is { } part && upgrades.CanUpgrade(part))
+            hints.Add($"[{GameInput.Label(InputActions.Upgrade)}] {Loc.T("upgrade")}");
+        _hint.Text = string.Join("   ", hints);
         _hint.Visible = hud && !TooltipShowing();
     }
 

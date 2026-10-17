@@ -63,7 +63,13 @@ public sealed class CraftingQueue
     /// allows into <paramref name="output"/>. An order whose recipe no longer exists is dropped. Returns the
     /// number of crafts finished.
     /// </summary>
-    public int Tick(float seconds, float speed, RecipeBook recipes, Inventory output)
+    public int Tick(float seconds, float speed, RecipeBook recipes, Inventory output) => Tick(seconds, speed, recipes, [output]);
+
+    /// <summary>
+    /// As <see cref="Tick(float, float, RecipeBook, Inventory)"/>, putting each craft's outputs in the first of
+    /// <paramref name="outputs"/> with room, then the next (<see cref="ItemPool"/>): a station's linked storage, then its own slots.
+    /// </summary>
+    public int Tick(float seconds, float speed, RecipeBook recipes, IReadOnlyList<Inventory> outputs)
     {
         if (_jobs.Count == 0 || !(seconds > 0))
             return 0;
@@ -84,7 +90,7 @@ public sealed class CraftingQueue
                 Revision++;
                 break;
             }
-            if (!output.TryAddAll([.. recipe.Outputs]))
+            if (!ItemPool.TryAddAll(outputs, [.. recipe.Outputs]))
             {
                 if (!IsBlocked || job.Progress != recipe.Time)
                 {

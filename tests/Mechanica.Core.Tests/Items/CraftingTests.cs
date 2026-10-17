@@ -312,7 +312,188 @@ public class CraftingTests
         Assert.Null(_items.Version(InventoryRef.OfPart(99, 1)));
     }
 
+    // ---- Linked storage ----
+
+    [Fact]
+    public void ContainersWithinTheLinkRangeAreLinked()
+    {
+        var (creation, forge, near, mid, far) = Workshop();
+        var built = _world.Creations[creation];
+
+        Assert.Equal([near, mid], StorageLinks.Of(built, forge));
+        Assert.Equal([forge], StorageLinks.StationsOf(built, mid));
+        Assert.Empty(StorageLinks.StationsOf(built, far));
+        Assert.Empty(StorageLinks.Of(built, near)); // a chest links nothing
+        var view = View(Player, InventoryRef.OfPart(creation, forge));
+        Assert.Equal([InventoryRef.OfPart(creation, near), InventoryRef.OfPart(creation, mid)], view.Linked);
+        Assert.Equal(2, view.QueueSize);
+    }
+
+    [Fact]
+    public void CraftingTakesFromLinkedStorageFirstAndPutsTheOutputThere()
+    {
+        var (creation, forge, near, _, _) = Workshop();
+        var chest = _world.Creations[creation].InventoryOf(near)!;
+        chest.Add(Scrap, 1);
+        Give(Player, Scrap, 5);
+        Give(Player, Wood, 1);
+
+        Assert.True(Dispatch(Player, InventoryActions.Craft, new { creation, part = forge, recipe = "test:chest" }).Ok);
+
+        Assert.Equal(0, chest.Count(Scrap));
+        Assert.Equal(4, _items.PlayerInventory(2).Count(Scrap));
+        _items.Tick(4f);
+        Assert.Equal(1, chest.Count(Chest));
+        Assert.Equal(0, View(Player, InventoryRef.OfPart(creation, forge)).Count(Chest));
+    }
+
+    [Fact]
+    public void LinkedStorageCountsTowardsARecipe()
+    {
+        var (creation, forge, near, mid, _) = Workshop();
+        _world.Creations[creation].InventoryOf(near)!.Add(Scrap, 1);
+        _world.Creations[creation].InventoryOf(mid)!.Add(Scrap, 1);
+
+        var refused = Dispatch(Player, InventoryActions.Craft, new { creation, part = forge, recipe = "test:chest" });
+        Assert.Equal("You need 1 Wood and have 0.", refused.Message);
+        _world.Creations[creation].InventoryOf(mid)!.Add(Wood, 1);
+        Assert.True(Dispatch(Player, InventoryActions.Craft, new { creation, part = forge, recipe = "test:chest" }).Ok);
+        Assert.Empty(_items.PlayerInventory(2).Slots.OfType<ItemStack>());
+    }
+
+    [Fact]
+    public void ACancelledOrderReturnsToThePlayerThenTheLinkedStorage()
+    {
+        var (creation, forge, near, _, _) = Workshop();
+        Give(Player, Scrap, 4);
+        Give(Player, Wood, 2);
+        Assert.True(Dispatch(Player, InventoryActions.Craft, new { creation, part = forge, recipe = "test:chest", count = 2 }).Ok);
+        // Fill three of the four pockets so only part of the refund fits there.
+        Give(Player, Key, 1);
+        Give(Player, Key, 1);
+        Give(Player, Key, 1);
+
+        Assert.True(Dispatch(Player, InventoryActions.CancelCraft, new { creation, part = forge, job = 0 }).Ok);
+
+        Assert.Equal(4, _items.PlayerInventory(2).Count(Scrap));
+        Assert.Equal(2, _world.Creations[creation].InventoryOf(near)!.Count(Wood));
+    }
+
+    [Fact]
+    public void AContainerLinkedToAStationInReachCanBeUsedFromFurther()
+    {
+        var (creation, forge, _, mid, far) = Workshop();
+        _world.Eyes[2] = new Vector3(-4.6f, 0.125f, 0.125f);
+
+        Assert.True(Dispatch(Player, InventoryActions.GetInventory, new { inventory = new { creation, part = forge } }).Ok);
+        Assert.True(Dispatch(Player, InventoryActions.GetInventory, new { inventory = new { creation, part = mid } }).Ok);
+        Assert.StartsWith("That is ", Dispatch(Player, InventoryActions.GetInventory, new { inventory = new { creation, part = far } }).Message);
+    }
+
+    // ---- Upgrades ----
+
+    [Fact]
+    public void UpgradingInSurvivalTakesTheCostAndRaisesTheLevel()
+    {
+        var items = Survival(out var dispatcher);
+        var (creation, forge) = (Add(Forge), 1);
+        _world.Creations[creation].InventoryOf(forge)!.Add(Scrap, 1);
+        var upgrade = new UpgradePartArgs(creation, forge);
+
+        Assert.Equal("You need 2 Kit and have 0.", dispatcher.Dispatch(Player, InventoryActions.UpgradePart, upgrade).Message);
+        items.PlayerInventory(2).Add(Kit, 5);
+        Assert.Equal([new ItemAmount(Kit, 2)], items.UpgradeCost(_world.Creations[creation], forge));
+        Assert.True(dispatcher.Dispatch(Player, InventoryActions.UpgradePart, upgrade).Ok);
+
+        var view = items.View(InventoryRef.OfPart(creation, forge))!;
+        Assert.Equal((1, 2, 3, 4f), (view.Level, view.MaxLevel, view.SlotCount, view.Speed!.Value));
+        Assert.Equal(1, view.Count(Scrap)); // the slots grew; what they held stayed
+        Assert.Equal(3, items.PlayerInventory(2).Count(Kit));
+        Assert.True(dispatcher.Dispatch(Player, InventoryActions.UpgradePart, upgrade).Ok);
+        Assert.Equal(3, items.View(InventoryRef.OfPart(creation, forge))!.QueueSize);
+        Assert.Equal(4f, items.View(InventoryRef.OfPart(creation, forge))!.Speed); // levels add up
+        Assert.Equal("The Forge is already at its top level (2).", dispatcher.Dispatch(Player, InventoryActions.UpgradePart, upgrade).Message);
+        Assert.Empty(items.UpgradeCost(_world.Creations[creation], forge));
+    }
+
+    [Fact]
+    public void UpgradesAreFreeInCreativeAndNeedAnUpgradablePartInReach()
+    {
+        var (creation, forge) = (Add(Forge), 1);
+        var (benchCreation, bench) = Station();
+
+        Assert.Empty(_items.UpgradeCost(_world.Creations[creation], forge));
+        Assert.True(Dispatch(Player, InventoryActions.UpgradePart, new { creation, part = forge }).Ok);
+        Assert.Equal("The Bench can't be upgraded.", Dispatch(Player, InventoryActions.UpgradePart, new { creation = benchCreation, part = bench }).Message);
+        _world.Eyes[2] = new Vector3(0, 1.6f, 30);
+        Assert.StartsWith("That is ", Dispatch(Player, InventoryActions.UpgradePart, new { creation, part = forge }).Message);
+    }
+
+    [Fact]
+    public void ALevelIsSavedAndLoadedButNotKeptInABlueprint()
+    {
+        var (creation, forge) = (Add(Forge), 1);
+        var built = _world.Creations[creation];
+        Assert.True(built.SetLevel(forge, 2));
+
+        var loaded = CreationJson.Read(CreationJson.Write(built), _catalog, "save.json", []);
+
+        Assert.Equal(2, loaded!.LevelOf(forge));
+        Assert.Equal(3, loaded.DefinitionOf(forge).Crafting!.QueueSize);
+        Assert.Equal(3, loaded.InventoryOf(forge)!.SlotCount);
+        var blueprint = Blueprint.Read(Blueprint.Write(built, "forge", DateTimeOffset.UnixEpoch), _catalog, 9, "forge.json", []);
+        Assert.Equal(0, blueprint!.LevelOf(forge));
+        Assert.Equal(2, blueprint.InventoryOf(forge)!.SlotCount);
+    }
+
+    [Fact]
+    public void LevelsMergeInOrderOnTopOfThePart()
+    {
+        var forge = _catalog.FindDefinition(Forge)!;
+
+        Assert.Same(forge, PartUpgrades.At(forge, 0));
+        Assert.Equal((4f, 2, 3), (PartUpgrades.At(forge, 1).Crafting!.Speed!.Value, PartUpgrades.At(forge, 1).Crafting!.QueueSize!.Value, PartUpgrades.At(forge, 1).Inventory!.Slots!.Value));
+        Assert.Equal((4f, 3, 0.5f), (PartUpgrades.At(forge, 2).Crafting!.Speed!.Value, PartUpgrades.At(forge, 2).Crafting!.QueueSize!.Value, PartUpgrades.At(forge, 2).Crafting!.LinkRange!.Value));
+        Assert.Same(PartUpgrades.At(forge, 2), PartUpgrades.At(forge, 9));
+        var bad = forge with { Upgrades = [new UpgradeDefinition { Set = (System.Text.Json.Nodes.JsonObject)System.Text.Json.Nodes.JsonNode.Parse("""{ "size": [2, 2, 2] }""")! }] };
+        Assert.Null(PartUpgrades.Apply(bad, 1, out var error));
+        Assert.Equal("an upgrade can change only crafting, inventory, logic, properties, not 'size'.", error);
+    }
+
+    [Fact]
+    public void AnUpgradeSaysWhatItChanges()
+    {
+        var forge = _catalog.FindDefinition(Forge)!;
+        var powered = forge with { Properties = new System.Text.Json.Nodes.JsonObject { ["max_power"] = 100 } };
+        var stronger = powered with { Properties = new System.Text.Json.Nodes.JsonObject { ["max_power"] = 150, ["fuel_use"] = 0.5 } };
+
+        Assert.Equal([new UpgradeChange("Speed", "1×", "4×"), new UpgradeChange("Slots", "2", "3")], PartUpgrades.Changes(forge, PartUpgrades.At(forge, 1)));
+        Assert.Equal([new UpgradeChange("Queue", "2", "3")], PartUpgrades.Changes(PartUpgrades.At(forge, 1), PartUpgrades.At(forge, 2)));
+        Assert.Equal([new UpgradeChange("max power", "100", "150"), new UpgradeChange("fuel use", "-", "0.5")], PartUpgrades.Changes(powered, stronger));
+    }
+
     // ---- Helpers ----
+
+    // A Forge with a chest touching it, a chest 0.5 m away (linked) and one 1.25 m away (not linked), joined by blocks.
+    private (int Creation, int Forge, int Near, int Mid, int Far) Workshop()
+    {
+        var creation = new Creation(_world.NextCreationId(), _catalog);
+        var parts = new[] { Forge, Chest, Block, Chest, Block, Block, Chest };
+        for (var x = 0; x < parts.Length; x++)
+            Assert.True(creation.TryPlacePart(parts[x], new GridCell(x, 0, 0), default, out _, out var error), error);
+        creation.SetAllBodyPoses(Pose.Identity);
+        _world.Added(creation);
+        return (creation.Id, 1, 2, 4, 7);
+    }
+
+    // Survival rules (upgrades cost items) over the same world.
+    private InventoryActions Survival(out ActionDispatcher dispatcher)
+    {
+        var items = new InventoryActions(_catalog, _recipes, new InventorySettings { Reach = 5, PlayerSlots = 4, AllowGive = false, FreeUpgrades = false }, _world);
+        dispatcher = new ActionDispatcher();
+        items.Register(dispatcher);
+        return items;
+    }
 
     private (int Creation, int Part) Station() => (Add(Bench), 1);
 

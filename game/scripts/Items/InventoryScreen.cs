@@ -23,9 +23,9 @@ namespace Mechanica.Game.Items;
 /// there; right-click picks up half, Shift+right-click one, and Shift+click sends a stack straight to the other
 /// side. In Creative every part and tool is listed under the grid to drag onto the hotbar or into the inventory,
 /// and a give box makes items (<c>scrap_metal 50</c>). In Survival a warning shows when few slots are free. Hovering
-/// a stack shows its name, description, stack and durability. A station lists the recipes it runs, with Craft
-/// buttons, and its queue with progress and Cancel buttons. The window fades in and out (0.15 s). Every change goes
-/// through the Action API.
+/// a stack shows its name, description, stack and durability. A crafting station opens the Fabricator layout instead
+/// (InventoryScreen.Station.cs): recipes, preview and queue, and storage side by side. The window fades in and out
+/// (0.15 s). Every change goes through the Action API.
 /// </summary>
 public partial class InventoryScreen : CanvasLayer
 {
@@ -34,6 +34,7 @@ public partial class InventoryScreen : CanvasLayer
     private static readonly InventoryTab[] TabOrder = Enum.GetValues<InventoryTab>();
 
     private Control _root = null!;
+    private Control _classic = null!;
     private readonly SlotGrid _ownGrid = new();
     private readonly SlotGrid _otherGrid = new();
     private readonly SlotGrid _catalogGrid = new();
@@ -79,6 +80,12 @@ public partial class InventoryScreen : CanvasLayer
     /// <summary>Where the window's open and close sounds play; null plays none.</summary>
     public SoundSync? Sounds { get; init; }
 
+    /// <summary>The Creations this peer shows, to tell a station from a container before its view arrives; null waits for the view.</summary>
+    public CreationWorld? Creations { get; init; }
+
+    /// <summary>The upgrade dialog the Fabricator screen opens; null hides its Upgrade button.</summary>
+    public UpgradeDialog? Upgrades { get; init; }
+
     /// <summary>True while the screen is up (from the moment it starts fading in until it starts fading out).</summary>
     public bool IsOpen => _shown;
 
@@ -106,9 +113,10 @@ public partial class InventoryScreen : CanvasLayer
         AddChild(_root);
         // A hotbar slot dropped anywhere on the window empties; a stack dropped on the window's background stays put.
         _root.SetDragForwarding(new Callable(), Callable.From((Vector2 _, Variant data) => data.Obj is ItemDrag { HotbarSlot: not null }), Callable.From((Vector2 _, Variant data) => DropOnWindow(data)));
-        var columns = new HBoxContainer();
+        var columns = new HBoxContainer { Name = "Columns" };
         columns.AddThemeConstantOverride("separation", 24);
         _root.AddChild(columns);
+        _classic = columns;
 
         var own = new VBoxContainer();
         var header = new HBoxContainer();
@@ -152,6 +160,7 @@ public partial class InventoryScreen : CanvasLayer
         _recipes.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         other.AddChild(scroll);
         columns.AddChild(other);
+        BuildStation();
 
         Inventory.ViewChanged += _ => Refresh();
         Inventory.ViewClosed += OnViewClosed;
@@ -171,6 +180,8 @@ public partial class InventoryScreen : CanvasLayer
         var screen = GetViewport().GetVisibleRect().Size;
         var margin = HudRoot.Margin(GetViewport());
         var bar = HotbarView.SlotSizeFor(screen) + 8;
+        if (StationMode)
+            SizeStation(screen, margin, bar);
         _root.Size = _root.GetCombinedMinimumSize();
         var room = screen.Y - margin.Y - bar;
         _root.Position = new Vector2(Mathf.Round((screen.X - _root.Size.X) / 2), Mathf.Round(Mathf.Max(margin.Y, (room - _root.Size.Y) / 2)));
@@ -179,6 +190,14 @@ public partial class InventoryScreen : CanvasLayer
     public override void _UnhandledInput(InputEvent @event)
     {
         var toggle = GameInput.Pressed(@event, InputActions.Inventory) && (IsOpen || Input.MouseMode == Input.MouseModeEnum.Captured);
+        if (IsOpen && StationMode && GameInput.Pressed(@event, InputActions.Upgrade) && !GameInput.Typing(GetViewport()))
+        {
+            OpenUpgrade();
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+        if (GameInput.Typing(GetViewport()) && !GameInput.Pressed(@event, InputActions.Pause))
+            return;
         if (toggle || (IsOpen && (GameInput.Pressed(@event, InputActions.Interact) || GameInput.Pressed(@event, InputActions.Pause))))
         {
             if (IsOpen)
@@ -193,10 +212,14 @@ public partial class InventoryScreen : CanvasLayer
     public void Show(InventoryRef? where)
     {
         if (_open is { } previous && previous != where)
+        {
             Inventory.Close(previous);
+            CloseLinks();
+        }
         _open = where;
         if (where is not null)
             Inventory.Open(where);
+        StartStation(where);
         _held = null;
         _status.Text = "";
         if (!_shown)
@@ -214,6 +237,7 @@ public partial class InventoryScreen : CanvasLayer
     {
         if (_open is { } where)
             Inventory.Close(where);
+        CloseLinks();
         _open = null;
         _held = null;
         if (_shown)
@@ -257,7 +281,13 @@ public partial class InventoryScreen : CanvasLayer
     }
 
     /// <summary>The container or station part under the crosshair, within reach; Use (E) on it opens it.</summary>
-    public InventoryRef? AimedInventory()
+    public InventoryRef? AimedInventory() =>
+        Aimed() is var (node, part) && node.Creation.DefinitionOf(part).Inventory is not null ? InventoryRef.OfPart(node.Creation.Id, part) : null;
+
+    /// <summary>Any part under the crosshair, within reach (Upgrade, U, works on it), or null.</summary>
+    public (int Creation, int Part)? AimedPart() => Aimed() is var (node, part) ? (node.Creation.Id, part) : null;
+
+    private (CreationNode Node, int Part)? Aimed()
     {
         if (Players.LocalPlayer is not { } player)
             return null;
@@ -269,15 +299,20 @@ public partial class InventoryScreen : CanvasLayer
             return null;
         var toGrid = body.GlobalTransform.AffineInverse();
         var (cell, _) = BuildAim.FromHit((toGrid * hit["position"].AsVector3()).ToNumerics(), (toGrid.Basis * hit["normal"].AsVector3()).ToNumerics());
-        if (node.Creation.PartAt(cell) is not { } part || node.Creation.DefinitionOf(part.Id).Inventory is null)
-            return null;
-        return InventoryRef.OfPart(node.Creation.Id, part.Id);
+        return node.Creation.PartAt(cell) is { } part ? (node, part.Id) : null;
     }
 
     private void Refresh()
     {
         if (!IsOpen)
             return;
+        _classic.Visible = !StationMode;
+        _station.Visible = StationMode;
+        if (StationMode)
+        {
+            RefreshStation();
+            return;
+        }
         var own = Inventory.Own;
         var me = InventoryRef.OfPlayer(Inventory.Session.LocalPeer);
         var slots = own?.SlotCount ?? Inventory.Settings!.PlayerSlots;
@@ -362,7 +397,7 @@ public partial class InventoryScreen : CanvasLayer
             return;
         if (click.ShiftPressed && click.ButtonIndex == MouseButton.Left && stack is not null)
         {
-            var other = where.IsPlayer ? _open : InventoryRef.OfPlayer(Inventory.Session.LocalPeer);
+            var other = where.IsPlayer ? ShiftTarget() : InventoryRef.OfPlayer(Inventory.Session.LocalPeer);
             if (other is not null)
                 Send(InventoryActions.MoveItems, new MoveItemsArgs(where, slot, other));
             return;
@@ -436,7 +471,10 @@ public partial class InventoryScreen : CanvasLayer
     private void OnViewClosed(InventoryRef where, string reason)
     {
         if (where != _open)
+        {
+            LinkClosed(where);
             return;
+        }
         _open = null;
         _status.Text = reason;
         Refresh();
@@ -450,7 +488,7 @@ public partial class InventoryScreen : CanvasLayer
     private string RecipeName(string id) => Inventory.Recipes.Find(id)?.Name ?? id;
 
     // One grid of slots, kept between refreshes so a drag in progress keeps its source and the scroll stays put.
-    private sealed class SlotGrid
+    private sealed class SlotGrid(int columns = Columns, int size = 60)
     {
         private readonly List<ItemSlot> _slots = [];
         private readonly List<(int Slot, SlotView? Stack, string? Item)> _shown = [];
@@ -463,10 +501,10 @@ public partial class InventoryScreen : CanvasLayer
         public Control Build(string name, int rows, InventoryScreen screen)
         {
             _screen = screen;
-            _grid = new GridContainer { Name = name, Columns = Columns };
+            _grid = new GridContainer { Name = name, Columns = columns };
             _grid.AddThemeConstantOverride("h_separation", 4);
             _grid.AddThemeConstantOverride("v_separation", 4);
-            var scroll = new ScrollContainer { Name = name + "Scroll", HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled, CustomMinimumSize = new Vector2(Columns * 60 + 5 * 4 + 12, rows * 60 + (rows - 1) * 4) };
+            var scroll = new ScrollContainer { Name = name + "Scroll", HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled, CustomMinimumSize = new Vector2(columns * size + (columns - 1) * 4 + 12, rows * size + (rows - 1) * 4) };
             scroll.AddChild(_grid);
             return scroll;
         }
@@ -504,7 +542,7 @@ public partial class InventoryScreen : CanvasLayer
 
         private ItemSlot Make(int index)
         {
-            var view = new ItemSlot { Name = $"Slot{index}", CustomMinimumSize = new Vector2(60, 60) };
+            var view = new ItemSlot { Name = $"Slot{index}", CustomMinimumSize = new Vector2(size, size) };
             view.DragSource = () => index < _shown.Count && _shown[index].Item is { } item
                 ? new ItemDrag { Entry = item, From = _where, FromSlot = _shown[index].Slot, Count = _where is null ? null : HeldCount(index) }
                 : null;

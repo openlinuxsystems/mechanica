@@ -179,6 +179,12 @@ public sealed record PartDefinition
     public SeatDefinition? Seat { get; init; }
 
     /// <summary>
+    /// Levels a placed part can be upgraded through with Upgrade (U), first to last (UI spec §4, §8). Each level
+    /// costs items and changes some of the part's data; see <see cref="UpgradeDefinition"/>. Placeable parts only.
+    /// </summary>
+    public List<UpgradeDefinition>? Upgrades { get; init; }
+
+    /// <summary>
     /// Makes the part give off light (chunk 23). It starts dark; the part's script turns it up with
     /// <c>part.set_light(level)</c>. Placeable parts only.
     /// </summary>
@@ -229,6 +235,38 @@ public sealed record CraftingDefinition
 
     /// <summary>Most jobs waiting at once. Omitted means 1.</summary>
     public int? QueueSize { get; init; }
+
+    /// <summary>
+    /// Containers on the same Creation within this many metres of the station (surface to surface) are linked to it:
+    /// crafting takes inputs from them and puts outputs in them. Omitted or 0 links nothing.
+    /// </summary>
+    public float? LinkRange { get; init; }
+
+    /// <summary>Keys this build does not know.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>
+/// One upgrade level of a placed part. <see cref="Set"/> holds part keys to change, merged like a Part Editor batch's
+/// <c>set</c> (objects key by key, other values replace) on top of the part and every level before it. Only
+/// <c>crafting</c>, <c>inventory</c>, <c>logic</c> and <c>properties</c> may change, and an inventory never shrinks.
+/// <code>
+/// "upgrades": [
+///   { "cost": [ { "item": "component_kit", "count": 2 } ], "set": { "crafting": { "speed": 1.25 }, "inventory": { "slots": 12 } } }
+/// ]
+/// </code>
+/// </summary>
+public sealed record UpgradeDefinition
+{
+    /// <summary>Part keys a level may change.</summary>
+    public static readonly IReadOnlyList<string> Changeable = ["crafting", "inventory", "logic", "properties"];
+
+    /// <summary>Items the level takes from the player's inventory in Survival. Omitted means free.</summary>
+    public List<Items.RecipeItem>? Cost { get; init; }
+
+    /// <summary>Part keys the level changes.</summary>
+    public JsonObject? Set { get; init; }
 
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]

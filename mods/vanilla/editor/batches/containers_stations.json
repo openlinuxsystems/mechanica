@@ -228,7 +228,7 @@
           "place": "place_metal"
         },
         "inventory": { "slots": 6 },
-        "crafting": { "speed": 1, "queue_size": 8 }
+        "crafting": { "speed": 1, "queue_size": 8, "link_range": 1 }
       },
       "model": [
         { "kind": "box", "size": [1, 1.5, 1] },
@@ -247,6 +247,86 @@
           "time": 15
         }
       ]
+    },
+    // The Fabricators (UI spec §4): chests within link_range feed and take what they make, and Upgrade (U) raises
+    // their speed, queue and slots for Component Kits. The Mini Fabricator works one order at a time.
+    {
+      "file": "parts/fabricator.json",
+      "template": "interactive",
+      "set": {
+        "name": "Fabricator",
+        "description": "Crafts parts and items from resources.",
+        "category": "station",
+        "mass": 25,
+        "durability": 12,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "sound_material": "metal",
+        "size": [6, 6, 4],
+        "visual": { "color": "#d08a2c", "paintable": true },
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.75, 0], "normal": [0, -1, 0] }],
+        "sounds": {
+          "start": "fabricator_start",
+          "work": "fabricator_work",
+          "complete": "fabricator_complete",
+          "place": "place_metal"
+        },
+        "inventory": { "slots": 10 },
+        "crafting": { "speed": 1, "queue_size": 8, "link_range": 1 },
+        "upgrades": [
+          {
+            "cost": [{ "item": "component_kit", "count": 2 }],
+            "set": { "crafting": { "speed": 1.25, "queue_size": 10 }, "inventory": { "slots": 12 } }
+          },
+          {
+            "cost": [{ "item": "component_kit", "count": 4 }],
+            "set": { "crafting": { "speed": 1.5, "queue_size": 12 }, "inventory": { "slots": 15 } }
+          },
+          {
+            "cost": [{ "item": "component_kit", "count": 6 }],
+            "set": { "crafting": { "speed": 2, "queue_size": 16 }, "inventory": { "slots": 20 } }
+          }
+        ]
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/fabricator.glb" }]
+    },
+    {
+      "file": "parts/mini_fabricator.json",
+      "template": "interactive",
+      "set": {
+        "name": "Mini Fabricator",
+        "description": "A small, slow Fabricator that works one order at a time.",
+        "category": "station",
+        "mass": 10,
+        "durability": 8,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "sound_material": "metal",
+        "size": [3, 3, 3],
+        "visual": { "color": "#c8a040", "paintable": true },
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
+        "sounds": {
+          "start": "fabricator_start",
+          "work": "fabricator_work",
+          "complete": "fabricator_complete",
+          "place": "place_metal"
+        },
+        "inventory": { "slots": 4 },
+        "crafting": { "speed": 0.5, "queue_size": 1, "link_range": 0.5 },
+        "upgrades": [
+          {
+            "cost": [{ "item": "component_kit", "count": 2 }],
+            "set": { "crafting": { "speed": 0.75 }, "inventory": { "slots": 6 } }
+          },
+          {
+            "cost": [{ "item": "component_kit", "count": 4 }],
+            "set": { "crafting": { "speed": 1 }, "inventory": { "slots": 8 } }
+          }
+        ]
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/mini_fabricator.glb" }]
     }
   ]
 }
