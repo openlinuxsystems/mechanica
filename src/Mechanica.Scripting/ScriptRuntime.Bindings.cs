@@ -20,9 +20,9 @@ public sealed partial class ScriptRuntime
         DynValue Vec(Vector3 v) => LuaValues.Vector(script, meta, v);
 
         var part = new Table(script);
-        Fn(part, "id", _ => DynValue.NewNumber(Current().Part));
-        Fn(part, "type", _ => DynValue.NewString(Current().PartType));
-        Fn(part, "creation", _ => DynValue.NewNumber(Current().Creation));
+        Fn(part, "id", _ => DynValue.NewNumber(PartInstance().Part));
+        Fn(part, "type", _ => DynValue.NewString(PartInstance().PartType));
+        Fn(part, "creation", _ => DynValue.NewNumber(PartInstance().Creation));
         Fn(part, "position", _ => Here() is { } h ? Vec(h.State.Position) : DynValue.Nil);
         Fn(part, "rotation", _ =>
         {
@@ -67,21 +67,21 @@ public sealed partial class ScriptRuntime
         Fn(part, "apply_torque", args => Push(Vector3.Zero, null, LuaValues.ToVector(args[0], "part.apply_torque", 1)));
         Fn(part, "set_bearing", args =>
         {
-            var instance = Current();
+            var instance = PartInstance();
             return Bearing(instance, instance.Part, LuaValues.OptionalNumber(args[0], "part.set_bearing", 1),
                 LuaValues.OptionalNumber(args[1], "part.set_bearing", 2));
         });
         globals.Set("part", DynValue.NewTable(part));
 
         var creation = new Table(script);
-        Fn(creation, "id", _ => DynValue.NewNumber(Current().Creation));
-        Fn(creation, "mass", _ => _motion.FindCreation(Current().Creation) is { } c
+        Fn(creation, "id", _ => DynValue.NewNumber(PartInstance().Creation));
+        Fn(creation, "mass", _ => _motion.FindCreation(PartInstance().Creation) is { } c
             ? DynValue.NewNumber(c.Bodies.Sum(b => b.Mass))
             : DynValue.Nil);
         Fn(creation, "parts", _ =>
         {
             var list = new Table(script);
-            if (_motion.FindCreation(Current().Creation) is { } c)
+            if (_motion.FindCreation(PartInstance().Creation) is { } c)
             {
                 var index = 1;
                 foreach (var p in c.Parts.OrderBy(p => p.Id))
@@ -94,7 +94,7 @@ public sealed partial class ScriptRuntime
             }
             return DynValue.NewTable(list);
         });
-        Fn(creation, "set_bearing", args => Bearing(Current(),
+        Fn(creation, "set_bearing", args => Bearing(PartInstance(),
             (int)LuaValues.Number(args[0], "creation.set_bearing", 1),
             LuaValues.OptionalNumber(args[1], "creation.set_bearing", 2),
             LuaValues.OptionalNumber(args[2], "creation.set_bearing", 3)));
@@ -110,7 +110,7 @@ public sealed partial class ScriptRuntime
             var to = LuaValues.ToVector(args[1], "world.raycast", 2);
             if ((to - from).Length() > _settings.MaxRayLength)
                 throw new ScriptRuntimeException($"world.raycast: the ray is longer than {_settings.MaxRayLength:0.#} m");
-            if (_physics.Raycast(from, to, Current().Creation) is not { } hit)
+            if (_physics.Raycast(from, to, Current().IsItem ? null : Current().Creation) is not { } hit)
                 return DynValue.Nil;
             var result = new Table(script);
             result.Set("position", Vec(hit.Position));
@@ -130,7 +130,7 @@ public sealed partial class ScriptRuntime
                 throw new ScriptRuntimeException($"world.overlap_sphere: radius must be more than 0 and at most {_settings.MaxOverlapRadius:0.#} m");
             var list = new Table(script);
             var index = 1;
-            foreach (var hit in _physics.OverlapSphere(centre, radius, Current().Creation))
+            foreach (var hit in _physics.OverlapSphere(centre, radius, Current().IsItem ? null : Current().Creation))
             {
                 var entry = new Table(script);
                 if (hit.Creation is { } c)
@@ -142,6 +142,8 @@ public sealed partial class ScriptRuntime
             return DynValue.NewTable(list);
         });
         globals.Set("world", DynValue.NewTable(world));
+
+        AddItemLibraries(context);
 
         globals.Set("log", DynValue.NewCallback((_, args) =>
         {
@@ -155,12 +157,15 @@ public sealed partial class ScriptRuntime
         table.Set(name, DynValue.NewCallback((_, args) => body(args), name));
 
     private Instance Current() =>
-        _current ?? throw new ScriptRuntimeException("this function only works inside a part's hook");
+        _current ?? throw new ScriptRuntimeException("this function only works inside a hook");
+
+    private Instance PartInstance() =>
+        _current is { IsItem: false } instance ? instance : throw new ScriptRuntimeException("this function only works inside a part's hook");
 
     // The running part, its Creation and where it is; null once the part is gone (in on_destroy).
     private (Instance Instance, Creation Creation, PartKinematics State)? Here()
     {
-        var instance = Current();
+        var instance = PartInstance();
         if (_motion.FindCreation(instance.Creation) is not { } creation || creation.FindPart(instance.Part) is null)
             return null;
         if (instance.Kinematics is not { } cached || cached.Tick != Tick || cached.Revision != creation.Revision)
@@ -218,7 +223,7 @@ public sealed partial class ScriptRuntime
     private DynValue Refused(Instance instance, string reason)
     {
         if (instance.Warned.Add(reason))
-            Post(ScriptMessageKind.Warning, instance.File.File.Key, instance.Creation, instance.Part, reason);
+            Post(ScriptMessageKind.Warning, instance.File.File.Key, instance.IsItem ? null : instance.Creation, instance.IsItem ? null : instance.Part, reason);
         return DynValue.NewTuple(DynValue.False, DynValue.NewString(reason));
     }
 

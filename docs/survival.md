@@ -9,7 +9,7 @@ so it works the same for every player in a multiplayer game.
 | Key | What it does |
 |-----|--------------|
 | 6 | Take the item in hand (the sixth tool). Q and E choose among the usable items you carry. |
-| Left click (item in hand) | Eat food, fire a weapon, plant a seed in the soil you aim at, water it, or fill a bucket at the sea. |
+| Left click (item in hand) | Use it: eat food or fire a weapon (both Lua item scripts), plant a seed in the soil you aim at, water it, or fill a bucket at the sea. |
 | G (item in hand) | Drop one of the item on the ground. |
 | F | Harvest the ripe crop you aim at, sleep in the bed you aim at (you respawn there), or pick up the nearest pile of items. |
 | R (dead) | Respawn, once the respawn delay is over. |
@@ -33,17 +33,19 @@ Creative turns damage off, makes building free and lets `GiveItems` make items f
 
 - `game/data/survival.json`: health, respawn delay, PvP, reach, starting items, fall and impact
   damage, piles. Unknown keys are refused.
-- Items and parts: `food`, `seed`, `watering`, `weapon`, `soil` and `respawn_point` in part data
-  ([Part Data Schema](part-data-schema.md#survival)). Vanilla's are authored by the Part Editor batch
-  `mods/vanilla/editor/batches/survival.json`.
+- Items and parts: `seed`, `watering`, `soil` and `respawn_point` in part data
+  ([Part Data Schema](part-data-schema.md#survival)). Food and weapons are item scripts
+  (`mods/vanilla/scripts/food.lua`, `mods/vanilla/scripts/potato_gun.lua`) with their numbers in
+  `properties`; see [Item scripts](lua-api.md#item-scripts). Vanilla's items are authored by the Part
+  Editor batch `mods/vanilla/editor/batches/survival.json`.
 - `game/data/building.json`: `sledge.player_damage` and `sledge.object_damage`.
 
 ## Action API
 
 | Action | Arguments | Notes |
 |--------|-----------|-------|
-| `Eat` | `slot` | Refused at full health. |
-| `Fire` | `slot`, `direction` | From the caller's eyes; must be within `aim_tolerance` degrees of where they look. Returns what was hit. |
+| `UseItem` | `slot`, `direction?` | Runs the item's script: eat, fire. `direction` (from the caller's eyes) must be within `aim_tolerance` degrees of where they look; omitted means where they look. The script's `can_use` may refuse it; what `on_use` returns is the result (the potato guns return `{hits}`, food `{health}`). |
+| `EquipItem` | `slot?` | Says which scripted item is in hand (its `on_equip` and `on_unequip`); no slot empties the hand. |
 | `Plant`, `Water`, `Harvest` | `creation`, `part`, `slot` | On a soil part in reach. |
 | `CollectWater` | `point` | A point on the sea in reach; adds one `water_item`. |
 | `SetSpawn` | `creation`, `part` | A `respawn_point` part in reach. |
@@ -52,5 +54,7 @@ Creative turns damage off, makes building free and lets `GiveItems` make items f
 | `Respawn` | none | A dead player after the delay; a living one goes back to their spawn. |
 | `GetVitals`, `GetSoil` | none; `creation`, `part` | Queries. |
 
-A dead player's other actions are refused. Weapons are generic and data-driven for now; Lua item
-behaviour can take them over once the MoonSharp host exists.
+A dead player's other actions are refused. Item scripts hurt and heal through the same host-side
+primitives bots use (`SurvivalActions.Hit`, `Hitscan`, `Splash`, `Launch` for projectiles, `Heal`,
+`Damage`), so the PvP and Creative rules apply to them the same way. Projectiles fly on the host;
+every client is sent each launch and draws it along its arc until the host says it landed.

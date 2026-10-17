@@ -225,7 +225,7 @@ public partial class Main : Node3D
         Motion = new MotionSync { Name = "Motion", Session = Session, Creations = Creations };
         AddChild(Motion);
         Motion.RegisterActions(Actions.Dispatcher);
-        Scripts = new ScriptSync { Name = "Scripts", Session = Session, Creations = Creations, Motion = Motion, Actions = Actions, Mods = mods };
+        Scripts = new ScriptSync { Name = "Scripts", Session = Session, Creations = Creations, Motion = Motion, Actions = Actions, Mods = mods, Survival = Survival };
         AddChild(Scripts);
         Recorder = new RecordReplay { Name = "Recorder", Session = Session, Actions = Actions };
         AddChild(Recorder);

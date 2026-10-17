@@ -54,3 +54,20 @@ public sealed record ScriptCallResult(bool Ok, IReadOnlyList<JsonNode?> Values, 
     /// <summary>A failure.</summary>
     public static ScriptCallResult Fail(string error) => new(false, [], error);
 }
+
+/// <summary>Arguments of <c>UseItem</c>: use the item in a slot of the caller's inventory (its script's <c>on_use</c>).</summary>
+/// <param name="Slot">The slot holding the item.</param>
+/// <param name="Direction">Where the caller aims from their eyes; the host checks it against where they look. Omitted means where they look.</param>
+public sealed record UseItemArgs(int Slot, Mechanica.Core.Data.Vec3? Direction = null);
+
+/// <summary>Arguments of <c>EquipItem</c>: take the item in a slot in hand, or empty the hand.</summary>
+/// <param name="Slot">The slot holding the item; omitted (null) empties the hand.</param>
+public sealed record EquipItemArgs(int? Slot = null);
+
+/// <summary>One player's script of one held item type, as the editor and tests see it.</summary>
+/// <param name="Peer">The player.</param>
+/// <param name="Item">Qualified item id.</param>
+/// <param name="Script">Qualified script path.</param>
+/// <param name="Fault">Why the script is stopped, or null while it runs.</param>
+/// <param name="Version">How many times the script has been loaded.</param>
+public sealed record ItemScriptInfo(int Peer, string Item, string Script, string? Fault, int Version);
