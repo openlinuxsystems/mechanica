@@ -71,6 +71,17 @@ public sealed partial class ScriptRuntime
             return Bearing(instance, instance.Part, LuaValues.OptionalNumber(args[0], "part.set_bearing", 1),
                 LuaValues.OptionalNumber(args[1], "part.set_bearing", 2));
         });
+        Fn(part, "set_bearing_angle", args =>
+        {
+            var instance = Current();
+            return BearingAngle(instance, instance.Part, args, "part.set_bearing_angle", 0);
+        });
+        Fn(part, "set_piston", args =>
+        {
+            var instance = Current();
+            return Piston(instance, instance.Part, args, "part.set_piston", 0);
+        });
+        Fn(part, "joint", _ => Joint(script, Current(), Current().Part));
         globals.Set("part", DynValue.NewTable(part));
 
         var creation = new Table(script);
@@ -98,6 +109,11 @@ public sealed partial class ScriptRuntime
             (int)LuaValues.Number(args[0], "creation.set_bearing", 1),
             LuaValues.OptionalNumber(args[1], "creation.set_bearing", 2),
             LuaValues.OptionalNumber(args[2], "creation.set_bearing", 3)));
+        Fn(creation, "set_bearing_angle", args => BearingAngle(Current(),
+            (int)LuaValues.Number(args[0], "creation.set_bearing_angle", 1), args, "creation.set_bearing_angle", 1));
+        Fn(creation, "set_piston", args => Piston(Current(),
+            (int)LuaValues.Number(args[0], "creation.set_piston", 1), args, "creation.set_piston", 1));
+        Fn(creation, "joint", args => Joint(script, Current(), (int)LuaValues.Number(args[0], "creation.joint", 1)));
         globals.Set("creation", DynValue.NewTable(creation));
 
         var world = new Table(script);
@@ -142,6 +158,75 @@ public sealed partial class ScriptRuntime
             return DynValue.NewTable(list);
         });
         globals.Set("world", DynValue.NewTable(world));
+
+        var sound = new Table(script);
+        Fn(sound, "play", args =>
+        {
+            var id = args.AsType(0, "sound.play", DataType.String).String;
+            var instance = Current();
+            Vector3 at;
+            if (args.Count > 1 && !args[1].IsNil())
+                at = LuaValues.ToVector(args[1], "sound.play", 2);
+            else if (instance.IsItem)
+            {
+                // An item sounds at its holder's head.
+                if (_survival?.World.EyeOf(instance.Holder!.Value) is not { } eye)
+                    return Refused(instance, "the holder is gone");
+                at = eye;
+            }
+            else if (Here() is { } h)
+                at = h.State.Position;
+            else
+                return Refused(instance, "the part is gone");
+            return Sound.Play(id, ModOf(instance), at) is { } error ? Refused(instance, error) : DynValue.True;
+        });
+        Fn(sound, "start", args =>
+        {
+            var id = args.AsType(0, "sound.start", DataType.String).String;
+            var instance = Current();
+            if (instance.IsItem)
+                return NoHandle(instance, "sound loops only work in part scripts; an item plays one-shots");
+            if (Here() is null)
+                return NoHandle(instance, "the part is gone");
+            if (instance.Loops.Count >= _settings.MaxLoopsPerPart)
+                return NoHandle(instance, $"a part may run at most {_settings.MaxLoopsPerPart} sound loops");
+            Dictionary<string, float>? parameters = null;
+            if (args.Count > 1 && !args[1].IsNil())
+            {
+                parameters = [];
+                foreach (var pair in args.AsType(1, "sound.start", DataType.Table).Table.Pairs)
+                {
+                    if (pair.Key.Type != DataType.String)
+                        throw new ScriptRuntimeException("sound.start: parameter names must be strings");
+                    parameters[pair.Key.String] = LuaValues.Number(pair.Value, "sound.start", 2);
+                }
+            }
+            var handle = Sound.StartLoop(id, ModOf(instance), instance.Creation, instance.Part, parameters, out var error);
+            if (handle == 0)
+                return NoHandle(instance, error ?? "refused");
+            instance.Loops.Add(handle);
+            return DynValue.NewNumber(handle);
+        });
+        Fn(sound, "set_parameter", args =>
+        {
+            var instance = Current();
+            var handle = (int)LuaValues.Number(args[0], "sound.set_parameter", 1);
+            var name = args.AsType(1, "sound.set_parameter", DataType.String).String;
+            var value = LuaValues.Number(args[2], "sound.set_parameter", 3);
+            if (!instance.Loops.Contains(handle))
+                return Refused(instance, $"the part runs no sound loop {handle}");
+            return Sound.SetLoopParameter(handle, name, value) is { } error ? Refused(instance, error) : DynValue.True;
+        });
+        Fn(sound, "stop", args =>
+        {
+            var instance = Current();
+            var handle = (int)LuaValues.Number(args[0], "sound.stop", 1);
+            if (!instance.Loops.Remove(handle))
+                return Refused(instance, $"the part runs no sound loop {handle}");
+            Sound.StopLoop(handle);
+            return DynValue.True;
+        });
+        globals.Set("sound", DynValue.NewTable(sound));
 
         AddItemLibraries(context);
 
@@ -219,6 +304,47 @@ public sealed partial class ScriptRuntime
         return result.Ok ? DynValue.True : Refused(instance, result.Message ?? result.Code ?? "refused");
     }
 
+    // set_bearing_angle(angle, speed?, max_torque?), with the angle at args[first].
+    private DynValue BearingAngle(Instance instance, int part, CallbackArguments args, string function, int first)
+    {
+        var angle = LuaValues.Number(args[first], function, first + 1);
+        var speed = LuaValues.OptionalNumber(args[first + 1], function, first + 2);
+        var torque = LuaValues.OptionalNumber(args[first + 2], function, first + 3);
+        var result = _dispatcher.Dispatch(Caller, MotionActions.SetBearingTarget,
+            new SetBearingTargetArgs(instance.Creation, part, speed, torque, angle));
+        return result.Ok ? DynValue.True : Refused(instance, result.Message ?? result.Code ?? "refused");
+    }
+
+    // set_piston(length?, speed?, max_force?), with the length at args[first]; a nil length frees it.
+    private DynValue Piston(Instance instance, int part, CallbackArguments args, string function, int first)
+    {
+        var result = _dispatcher.Dispatch(Caller, MotionActions.SetPistonTarget, new SetPistonTargetArgs(instance.Creation, part,
+            LuaValues.OptionalNumber(args[first], function, first + 1),
+            LuaValues.OptionalNumber(args[first + 1], function, first + 2),
+            LuaValues.OptionalNumber(args[first + 2], function, first + 3)));
+        return result.Ok ? DynValue.True : Refused(instance, result.Message ?? result.Code ?? "refused");
+    }
+
+    // The joint a part owns (its bearing, piston or suspension side) as {type, other, position, min, max, locked}, or nil.
+    private DynValue Joint(Script script, Instance instance, int part)
+    {
+        if (_motion.FindCreation(instance.Creation) is not { } creation
+            || creation.Joints.FirstOrDefault(j => j.Connection.A == part) is not { } link
+            || !creation.TryGetJointFrame(link.Connection, out var frame))
+            return DynValue.Nil;
+        var table = new Table(script);
+        table.Set("type", DynValue.NewString(link.Connection.Type.ToString().ToLowerInvariant()));
+        table.Set("other", DynValue.NewNumber(link.Connection.B));
+        table.Set("locked", DynValue.NewBoolean(link.IsLocked));
+        if ((link.IsLocked ? 0f : _motion.JointPosition(creation, link)) is { } position)
+            table.Set("position", DynValue.NewNumber(position));
+        if (frame.Min is { } min)
+            table.Set("min", DynValue.NewNumber(min));
+        if (frame.Max is { } max)
+            table.Set("max", DynValue.NewNumber(max));
+        return DynValue.NewTable(table);
+    }
+
     // A refused action: (false, reason) to the script, and a warning the first time each reason appears.
     private DynValue Refused(Instance instance, string reason)
     {
@@ -226,6 +352,14 @@ public sealed partial class ScriptRuntime
             Post(ScriptMessageKind.Warning, instance.File.File.Key, instance.IsItem ? null : instance.Creation, instance.IsItem ? null : instance.Part, reason);
         return DynValue.NewTuple(DynValue.False, DynValue.NewString(reason));
     }
+
+    // nil and the reason, for calls that return a value when they work.
+    private DynValue NoHandle(Instance instance, string reason) =>
+        DynValue.NewTuple(DynValue.Nil, Refused(instance, reason).Tuple[1]);
+
+    // Unqualified sound ids belong to the part's own mod.
+    private static string ModOf(Instance instance) =>
+        instance.PartType.IndexOf(':') is var colon and > 0 ? instance.PartType[..colon] : Identifiers.VanillaModId;
 
     private static Vec3 ToVec(Vector3 v) => new(v.X, v.Y, v.Z);
 }

@@ -8,7 +8,7 @@ written by the chunk that builds the feature it covers.
 | [Getting Started](getting-started.md) | Part Editor v1 |
 | [Part Data Schema Reference](part-data-schema.md) | Part Editor v1 |
 | [Lua API Reference](lua-api.md) | MoonSharp host |
-| Socket and Joint Guide | Joint primitives |
+| [Socket and Joint Guide](socket-joint-guide.md) | Joint primitives |
 | Logic and Power Tutorial | Signal/logic bus |
 | Aero Tutorial | Aero/propulsion |
 | Example mods (bearing, thruster) | Aero/propulsion |

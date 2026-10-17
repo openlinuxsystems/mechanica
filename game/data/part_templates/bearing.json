@@ -1,0 +1,27 @@
+{
+  "id": "new_bearing",
+  "name": "New Bearing",
+  "description": "Turns freely about its rotor face. Whatever touches the rotor becomes a separate body on a hinge.",
+  "category": "interactive",
+  "mass": 3,
+  "durability": 4,
+  "friction": 0.4,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.125, 0],
+      "normal": [0, -1, 0]
+    },
+    {
+      "id": "rotor",
+      "type": "rotational",
+      "position": [0, 0.125, 0],
+      "normal": [0, 1, 0]
+    }
+  ]
+}

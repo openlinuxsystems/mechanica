@@ -1,5 +1,6 @@
 using Godot;
 using Mechanica.Core.Creations;
+using Mechanica.Core.Data;
 using Mechanica.Core.World;
 
 namespace Mechanica.Game.Creations;
@@ -20,6 +21,8 @@ public partial class CreationNode : Node3D
 {
     private readonly List<CreationBody> _bodies = [];
     private readonly List<Joint3D> _joints = [];
+    private readonly Dictionary<Joint3D, JointFrame> _frames = [];
+    private readonly List<(MeshInstance3D Mesh, JointLink Link, JointFrame Frame)> _shafts = [];
 
     /// <summary>The graph this node shows. Set before adding the node to the tree.</summary>
     public Creation Creation { get; init; } = null!;
@@ -37,6 +40,20 @@ public partial class CreationNode : Node3D
     public Joint3D? JointOf(Connection connection) =>
         _joints.FirstOrDefault(j => j.Name == JointName(connection));
 
+    /// <summary>The joint data a built joint was made from (anchor, axis, limits, spring).</summary>
+    public JointFrame FrameOf(Joint3D joint) => _frames[joint];
+
+    /// <summary>
+    /// Where a joint is now, from its two live bodies: rad or m from its built pose (<see cref="JointMath"/>).
+    /// Null when the link is locked or has no joint.
+    /// </summary>
+    public float? JointPosition(JointLink link)
+    {
+        if (link.IsLocked || JointOf(link.Connection) is not { } joint || link.BodyA >= _bodies.Count || link.BodyB >= _bodies.Count)
+            return null;
+        return JointMath.Position(_frames[joint], _bodies[link.BodyA].GlobalTransform.ToPose(), _bodies[link.BodyB].GlobalTransform.ToPose());
+    }
+
     /// <summary>Grid-frame box of each body, in <see cref="Bodies"/> order (<see cref="CreationBounds"/>).</summary>
     public IReadOnlyList<WorldBounds> LocalBounds { get; private set; } = [];
 
@@ -50,6 +67,22 @@ public partial class CreationNode : Node3D
     {
         Name = $"Creation{Creation.Id}";
         Build();
+    }
+
+    public override void _Process(double delta)
+    {
+        foreach (var (mesh, link, frame) in _shafts)
+        {
+            // The rod runs from the anchor to where the far side is now, along the axis.
+            var length = JointPosition(link) ?? 0f;
+            mesh.Visible = length > 0.002f;
+            if (!mesh.Visible)
+                continue;
+            var axis = frame.Axis.ToGodot();
+            // Cylinders stand along +Y; Godot's arc quaternion can't turn +Y onto -Y, so that case is a half turn about X.
+            var turn = axis.Y < -0.99f ? new Basis(Vector3.Right, Mathf.Pi) : new Basis(new Quaternion(Vector3.Up, axis));
+            mesh.Transform = new Transform3D(turn * Basis.FromScale(new Vector3(1, length, 1)), frame.Anchor.ToGodot() + axis * (length / 2));
+        }
     }
 
     /// <summary>Writes every body's current world pose and velocity back to <see cref="Creation"/>.</summary>
@@ -132,6 +165,8 @@ public partial class CreationNode : Node3D
             node.QueueFree();
         }
         _joints.Clear();
+        _frames.Clear();
+        _shafts.Clear();
         _bodies.Clear();
     }
 
@@ -181,23 +216,90 @@ public partial class CreationNode : Node3D
 
     private static string JointName(Connection c) => $"Joint{c.A}_{c.B}";
 
+    // Builds the Jolt joint of one link: a hinge for a bearing, a 6DOF joint free along one axis for a
+    // piston (with a motor) or a suspension (with a spring). Godot takes each body's joint frame from
+    // where the bodies are when the joint enters the tree, so body B is put back in A's grid frame (the
+    // joint's zero, where both sides were built) for that moment. A joint rebuilt while extended or
+    // turned keeps its zero, its limits and its spring's rest length.
     private Joint3D? BuildJoint(JointLink link)
     {
         var c = link.Connection;
-        if (!Creation.TryGetSocketFrame(c.A, c.ASocket!, out var position, out var normal))
+        if (!Creation.TryGetJointFrame(c, out var frame))
             return null;
-        // Godot hinges turn about local Z and sliders move along local X.
-        Joint3D joint = c.Type == ConnectionType.Rotational ? new HingeJoint3D() : new SliderJoint3D();
-        var axis = new GridCell((int)MathF.Round(normal.X), (int)MathF.Round(normal.Y), (int)MathF.Round(normal.Z));
-        var frame = GridRotation.All.First(r => (c.Type == ConnectionType.Rotational ? r.ZAxis : r.XAxis) == axis);
-        var poseA = Creation.BodyPose(link.BodyA).ToTransform();
+        var rotational = c.Type == ConnectionType.Rotational;
+        var a = _bodies[link.BodyA];
+        var b = _bodies[link.BodyB];
+        Joint3D joint = rotational ? Hinge(frame) : Slider(frame);
         joint.Name = JointName(c);
         joint.TopLevel = true;
-        joint.Transform = poseA * new Transform3D(frame.ToBasis(), position.ToGodot());
-        // Spring links get a free slider until chunk 9 adds the spring primitive.
-        joint.NodeA = $"../{_bodies[link.BodyA].Name}";
-        joint.NodeB = $"../{_bodies[link.BodyB].Name}";
+        joint.Transform = a.Transform * LocalJointTransform(frame);
+        joint.NodeA = $"../{a.Name}";
+        joint.NodeB = $"../{b.Name}";
+        var actual = b.Transform;
+        b.Transform = a.Transform;
         AddChild(joint);
+        b.Transform = actual;
+        _frames[joint] = frame;
+        if (!rotational && frame.ShaftRadius is { } radius)
+            AddShaft(link, frame, radius, a);
+        return joint;
+    }
+
+    /// <summary>
+    /// The joint's frame in the grid frame: at the socket's anchor, with the joint axis on local Z for a
+    /// hinge (Godot hinges turn about Z) and on local X for a slider or spring (the 6DOF axis left free).
+    /// </summary>
+    public static Transform3D LocalJointTransform(JointFrame frame)
+    {
+        var axis = new GridCell((int)MathF.Round(frame.Axis.X), (int)MathF.Round(frame.Axis.Y), (int)MathF.Round(frame.Axis.Z));
+        var rotational = frame.Type == ConnectionType.Rotational;
+        var turn = GridRotation.All.First(r => (rotational ? r.ZAxis : r.XAxis) == axis);
+        return new Transform3D(turn.ToBasis(), frame.Anchor.ToGodot());
+    }
+
+    // A rod hanging off the joint part's body, stretched each frame by _Process.
+    private void AddShaft(JointLink link, JointFrame frame, float radius, CreationBody body)
+    {
+        var part = Creation.FindPart(link.Connection.A)!;
+        var definition = Creation.DefinitionOf(part.Id);
+        var visual = (definition.Visual ?? new VisualDefinition()) with { Color = part.Color ?? definition.Visual?.Color };
+        var mesh = new MeshInstance3D
+        {
+            Name = $"Shaft{link.Connection.A}_{link.Connection.B}",
+            Mesh = new CylinderMesh { TopRadius = radius, BottomRadius = radius, Height = 1f, RadialSegments = 12 },
+            MaterialOverride = Assets.VisualMaterial(visual, part.Part.Split(':')[0]),
+            Visible = false,
+        };
+        body.AddChild(mesh);
+        _shafts.Add((mesh, link, frame));
+    }
+
+    private static HingeJoint3D Hinge(JointFrame frame)
+    {
+        var hinge = new HingeJoint3D();
+        if (!frame.SpinsFreely)
+        {
+            hinge.SetFlag(HingeJoint3D.Flag.UseLimit, true);
+            hinge.SetParam(HingeJoint3D.Param.LimitLower, frame.Min!.Value);
+            hinge.SetParam(HingeJoint3D.Param.LimitUpper, frame.Max!.Value);
+        }
+        return hinge;
+    }
+
+    private static Generic6DofJoint3D Slider(JointFrame frame)
+    {
+        // Every axis but linear X is locked by its default 0..0 limit.
+        var joint = new Generic6DofJoint3D();
+        joint.SetFlagX(Generic6DofJoint3D.Flag.EnableLinearLimit, true);
+        joint.SetParamX(Generic6DofJoint3D.Param.LinearLowerLimit, frame.Min ?? 0f);
+        joint.SetParamX(Generic6DofJoint3D.Param.LinearUpperLimit, frame.Max ?? 0f);
+        if (frame.Type == ConnectionType.Spring)
+        {
+            joint.SetFlagX(Generic6DofJoint3D.Flag.EnableLinearSpring, true);
+            joint.SetParamX(Generic6DofJoint3D.Param.LinearSpringStiffness, frame.Stiffness ?? 0f);
+            joint.SetParamX(Generic6DofJoint3D.Param.LinearSpringDamping, frame.Damping ?? 0f);
+            joint.SetParamX(Generic6DofJoint3D.Param.LinearSpringEquilibriumPoint, 0f);
+        }
         return joint;
     }
 }
