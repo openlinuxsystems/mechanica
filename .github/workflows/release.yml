@@ -51,11 +51,12 @@ jobs:
       - name: Read pinned versions
         run: grep -E '^[A-Z_]+=' tools/versions.env >> "$GITHUB_ENV"
 
+      # Not VERSION: MSBuild reads environment variables as properties, and an invalid $(Version) breaks restore.
       - name: Pick the version
         run: |
           tag="${{ github.event_name == 'push' && github.ref_name || inputs.tag }}"
           if [[ -n "$tag" ]]; then version="${tag#v}"; else version="dev-${GITHUB_SHA::7}"; fi
-          echo "VERSION=$version" >> "$GITHUB_ENV"
+          echo "RELEASE_VERSION=$version" >> "$GITHUB_ENV"
 
       - uses: actions/cache@v4
         with:
@@ -73,18 +74,18 @@ jobs:
           key: godot-templates-${{ env.GODOT_VERSION }}-mono-linux-windows-macos
 
       - name: Export and zip
-        run: tools/package.sh ${{ matrix.platform }} "$VERSION"
+        run: tools/package.sh ${{ matrix.platform }} "$RELEASE_VERSION"
 
       - name: Self-test the exported build
         if: matrix.platform == 'linux'
         run: |
           cd "$RUNNER_TEMP"
-          timeout 600 "$GITHUB_WORKSPACE/build/Mechanica-$VERSION-linux/Mechanica.x86_64" --headless -- --self-test --seed 1234
+          timeout 600 "$GITHUB_WORKSPACE/build/Mechanica-$RELEASE_VERSION-linux/Mechanica.x86_64" --headless -- --self-test --seed 1234
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Mechanica-${{ env.VERSION }}-${{ matrix.platform }}
-          path: build/Mechanica-${{ env.VERSION }}-${{ matrix.platform }}.zip
+          name: Mechanica-${{ env.RELEASE_VERSION }}-${{ matrix.platform }}
+          path: build/Mechanica-${{ env.RELEASE_VERSION }}-${{ matrix.platform }}.zip
           if-no-files-found: error
 
   verify-windows:
