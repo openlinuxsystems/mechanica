@@ -2,7 +2,7 @@
 
 <!-- Generated from mechanica.describe by tools/ai/gen-docs.sh. Do not edit by hand. -->
 
-Protocol version 2. 103 methods: 56 actions (change the world), 29 queries (only read it) and 18 endpoint methods. Every one is a JSON-RPC method of the same name whose `params` are the named arguments below (snake_case). `describe.json` beside this file is the same data as JSON Schemas, ready to become an AI's tool list. Scopes: `observe` reads, `play` acts as a player, `admin` is for debug powers ([ai-endpoint.md](../ai-endpoint.md#scopes)).
+Protocol version 2. 118 methods: 56 actions (change the world), 29 queries (only read it) and 33 endpoint methods. Every one is a JSON-RPC method of the same name whose `params` are the named arguments below (snake_case). `describe.json` beside this file is the same data as JSON Schemas, ready to become an AI's tool list. Scopes: `observe` reads, `play` acts as a player, `admin` is for debug powers ([ai-endpoint.md](../ai-endpoint.md#scopes)).
 
 ## Contents
 
@@ -22,7 +22,9 @@ Protocol version 2. 103 methods: 56 actions (change the world), 29 queries (only
 - [Quests](#quests) (3)
 - [Survival](#survival) (10)
 - [Using held items](#using-held-items) (4)
+- [Lua tools (lua.*)](#lua-tools-lua) (3)
 - [Mod packages (package.*)](#mod-packages-package) (6)
+- [Mod tools (mods.*)](#mod-tools-mods) (12)
 - [Event topics](#event-topics)
 - [Error codes](#error-codes)
 
@@ -1099,6 +1101,43 @@ Using the item in a slot (UseItemArgs). Arguments of UseItem: use the item in a 
 | `creation` | integer or null |  |  | The Creation of the part the item is used on (soil for a seed), if any. Give it with Part. |
 | `part` | integer or null |  |  | The part the item is used on, if any. The script checks reach (farm.soil does). |
 
+## Lua tools (lua.*)
+
+### `lua.check`
+
+*method, observe scope*
+
+Compiles a script (source text, or mod and path of a file) the way the host does, without running it. Returns ok, or the line, column and message of the first error.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `source` | string or null |  |  | Script text to compile. |
+| `mod` | string or null |  |  | Or: the mod of a script file. |
+| `path` | string or null |  |  | And the file's path inside it. |
+
+### `lua.eval`
+
+*method, admin scope*
+
+Runs Lua once in a throwaway sandbox with what part scripts start with (safe core libraries and vec3, no io, files or world) under the host's instruction budget. A single expression returns its value. Returns ok, values, printed output and error.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `source` | string | yes |  | Lua to run; a single expression returns its value. |
+
+### `lua.messages`
+
+*method, observe scope*
+
+The newest lines of the part and bot script consoles, oldest first: source (parts or bots), kind (print, warning, error), script, creation, part, text, tick. Subscribe to the messages topic to have them pushed instead.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `since_tick` | integer or null |  |  | Only lines written after this tick. |
+| `kinds` | string[] or null |  |  | Only these kinds: print, warning, error. |
+| `script` | string or null |  |  | Only this script (mod:scripts/x.lua). |
+| `limit` | integer or null |  |  | Newest lines to return, 1 to 500; default 100. |
+
 ## Mod packages (package.*)
 
 ### `package.export`
@@ -1159,6 +1198,139 @@ Compares an installed mod with the package.json it was installed with: files cha
 | Param | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|
 | `id` | string | yes |  | Mod id. |
+
+## Mod tools (mods.*)
+
+### `mods.conflicts`
+
+*method, admin scope*
+
+Conflicts between the enabled mods: incompatible (not loaded) and override_clash (two mods override one part; the later wins).
+
+No params.
+
+### `mods.create`
+
+*method, admin scope*
+
+Creates a new mod folder with mod.json and empty parts/ and scripts/. It depends on vanilla unless dependencies says otherwise.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `mod` | string | yes |  | New mod id, lowercase snake_case; also its folder name. |
+| `name` | string or null |  |  | Display name; defaults to the id. |
+| `version` | string or null |  |  | Semantic version; defaults to 0.1.0. |
+| `description` | string or null |  |  | One paragraph about the mod. |
+| `authors` | string[] or null |  |  | Author names. |
+| `dependencies` | string[] or null |  |  | Mod ids it needs; defaults to vanilla. |
+
+### `mods.delete`
+
+*method, admin scope*
+
+Deletes a file of a mod, and folders it leaves empty. mod.json can't be deleted.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `mod` | string | yes |  | Mod id. |
+| `path` | string | yes |  | Forward-slash path inside the mod, like parts/wheel.json. |
+
+### `mods.enable`
+
+*method, admin scope*
+
+Enables or disables a mod like the Mod Manager (enabling pulls in its dependencies, disabling its dependents) and saves the profile. Takes effect on mods.reload. Returns the mods that changed.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `mod` | string | yes |  | Mod id. |
+| `enabled` | boolean |  | `true` | False disables it (and the mods that depend on it). |
+
+### `mods.files`
+
+*method, admin scope*
+
+Lists the files of a mod (or one folder of it): path, size and modified time.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `mod` | string | yes |  | Mod id. |
+| `folder` | string or null |  |  | Folder inside the mod; null lists the whole mod. |
+
+### `mods.import`
+
+*method, admin scope*
+
+Imports an asset like the Part Editor: into meshes/, scripts/, textures/ or sounds/ under a clean snake_case name, reusing an identical file. A .gltf brings its buffers and images in companions. Returns the path to write in data.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `mod` | string | yes |  | Mod id. |
+| `kind` | string | yes |  | mesh, script, texture or sound. |
+| `file_name` | string | yes |  | The file's name, like Big Wheel.glb; it is cleaned to snake_case. |
+| `base64` | string | yes |  | The file, base64. |
+| `companions` | map of string or null |  |  | A .gltf's buffers and images by relative path, base64. |
+
+### `mods.list`
+
+*method, admin scope*
+
+Installed mods in load order: id, name, version, enabled, can_disable, loaded, dependencies; plus profile entries that are not installed (missing) and folders whose mod.json is broken.
+
+No params.
+
+### `mods.move`
+
+*method, admin scope*
+
+Moves a mod in the load order (it stops at its dependencies and dependents) and saves the profile. Returns the index it ended up at.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `mod` | string | yes |  | Mod id. |
+| `index` | integer | yes |  | Where in the load order it should go (0 is first); it stops at its dependencies. |
+
+### `mods.read`
+
+*method, admin scope*
+
+Reads a file of a mod: text for .json, .lua, .gltf, .md and .txt, base64 for the rest. Up to 2 MiB.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `mod` | string | yes |  | Mod id. |
+| `path` | string | yes |  | Forward-slash path inside the mod, like parts/wheel.json. |
+
+### `mods.reload`
+
+*method, admin scope*
+
+Reloads the enabled mods into the running world: parts, sounds, part scripts and bot types. World generation, recipes, raids, quests and characters change only in a new world (listed in next_world). Refused while clients are joined unless the host runs with --ai-allow-reload-with-clients, which drops clients whose mods no longer match (dropped_peers).
+
+No params.
+
+### `mods.validate`
+
+*method, admin scope*
+
+Loads all content as a world would (parts, sounds, world generation, recipes, bots, raids, quests, characters) and compiles every Lua script. Returns ok, error and warning counts, the mods that would load, the content fingerprint and every diagnostic (domain, severity, code, mod, file, json_path, line, message). A mod with part errors is left out, so its recipes and bots are checked once its parts load.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `mod` | string or null |  |  | Only this mod's problems (it is enabled for the check); null checks everything enabled. |
+
+### `mods.write`
+
+*method, admin scope*
+
+Writes a file of a mod (text or base64, up to 2 MiB), creating folders. Paths stay inside the mod; vanilla only changes under editor/. Returns the bytes written and a quick check: JSON syntax for .json, a compile for .lua. Run mods.validate for the full check.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `mod` | string | yes |  | Mod id. |
+| `path` | string | yes |  | Forward-slash path inside the mod. |
+| `text` | string or null |  |  | Content of a text file (.json, .lua, .gltf, .md, .txt). |
+| `base64` | string or null |  |  | Content of a binary file (.glb, .bin, .png, .ogg, .wav), base64. |
 
 ## Event topics
 

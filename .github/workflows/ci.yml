@@ -23,6 +23,10 @@ jobs:
         with:
           global-json-file: global.json
 
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
       - name: Read pinned versions
         run: grep -E '^[A-Z_]+=' tools/versions.env >> "$GITHUB_ENV"
 
@@ -44,6 +48,9 @@ jobs:
 
       - name: Unit tests
         run: dotnet test Mechanica.sln --no-build -c Debug --logger "console;verbosity=normal"
+
+      - name: AI bridge tests
+        run: node --test tools/ai/bridge/test/*.test.mjs
 
       - name: Godot headless smoke test
         run: tools/smoke.sh

@@ -2814,6 +2814,135 @@
       }
     },
     {
+      "name": "lua.check",
+      "kind": "method",
+      "group": "lua",
+      "scope": "observe",
+      "description": "Compiles a script (source text, or mod and path of a file) the way the host does, without running it. Returns ok, or the line, column and message of the first error.",
+      "params": {
+        "description": "Params of lua.check.",
+        "type": "object",
+        "properties": {
+          "source": {
+            "description": "Script text to compile.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "mod": {
+            "description": "Or: the mod of a script file.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "path": {
+            "description": "And the file's path inside it.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "lua.eval",
+      "kind": "method",
+      "group": "lua",
+      "scope": "admin",
+      "description": "Runs Lua once in a throwaway sandbox with what part scripts start with (safe core libraries and vec3, no io, files or world) under the host's instruction budget. A single expression returns its value. Returns ok, values, printed output and error.",
+      "params": {
+        "description": "Params of lua.eval.",
+        "type": "object",
+        "properties": {
+          "source": {
+            "description": "Lua to run; a single expression returns its value.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "lua.messages",
+      "kind": "method",
+      "group": "lua",
+      "scope": "observe",
+      "description": "The newest lines of the part and bot script consoles, oldest first: source (parts or bots), kind (print, warning, error), script, creation, part, text, tick. Subscribe to the messages topic to have them pushed instead.",
+      "params": {
+        "description": "Params of lua.messages.",
+        "type": "object",
+        "properties": {
+          "since_tick": {
+            "description": "Only lines written after this tick.",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "kinds": {
+            "description": "Only these kinds: print, warning, error.",
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "script": {
+            "description": "Only this script (mod:scripts/x.lua).",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "limit": {
+            "description": "Newest lines to return, 1 to 500; default 100.",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
       "name": "mechanica.auth",
       "kind": "method",
       "group": "mechanica",
@@ -3021,6 +3150,383 @@
             ]
           }
         },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "mods.conflicts",
+      "kind": "method",
+      "group": "mods",
+      "scope": "admin",
+      "description": "Conflicts between the enabled mods: incompatible (not loaded) and override_clash (two mods override one part; the later wins).",
+      "params": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "mods.create",
+      "kind": "method",
+      "group": "mods",
+      "scope": "admin",
+      "description": "Creates a new mod folder with mod.json and empty parts/ and scripts/. It depends on vanilla unless dependencies says otherwise.",
+      "params": {
+        "description": "Params of mods.create.",
+        "type": "object",
+        "properties": {
+          "mod": {
+            "description": "New mod id, lowercase snake_case; also its folder name.",
+            "type": "string"
+          },
+          "name": {
+            "description": "Display name; defaults to the id.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "version": {
+            "description": "Semantic version; defaults to 0.1.0.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "description": {
+            "description": "One paragraph about the mod.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "authors": {
+            "description": "Author names.",
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "dependencies": {
+            "description": "Mod ids it needs; defaults to vanilla.",
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "mod"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "mods.delete",
+      "kind": "method",
+      "group": "mods",
+      "scope": "admin",
+      "description": "Deletes a file of a mod, and folders it leaves empty. mod.json can't be deleted.",
+      "params": {
+        "description": "Params of mods.read and mods.delete.",
+        "type": "object",
+        "properties": {
+          "mod": {
+            "description": "Mod id.",
+            "type": "string"
+          },
+          "path": {
+            "description": "Forward-slash path inside the mod, like parts/wheel.json.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mod",
+          "path"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "mods.enable",
+      "kind": "method",
+      "group": "mods",
+      "scope": "admin",
+      "description": "Enables or disables a mod like the Mod Manager (enabling pulls in its dependencies, disabling its dependents) and saves the profile. Takes effect on mods.reload. Returns the mods that changed.",
+      "params": {
+        "description": "Params of mods.enable.",
+        "type": "object",
+        "properties": {
+          "mod": {
+            "description": "Mod id.",
+            "type": "string"
+          },
+          "enabled": {
+            "description": "False disables it (and the mods that depend on it).",
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "required": [
+          "mod"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "mods.files",
+      "kind": "method",
+      "group": "mods",
+      "scope": "admin",
+      "description": "Lists the files of a mod (or one folder of it): path, size and modified time.",
+      "params": {
+        "description": "Params of mods.files.",
+        "type": "object",
+        "properties": {
+          "mod": {
+            "description": "Mod id.",
+            "type": "string"
+          },
+          "folder": {
+            "description": "Folder inside the mod; null lists the whole mod.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "mod"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "mods.import",
+      "kind": "method",
+      "group": "mods",
+      "scope": "admin",
+      "description": "Imports an asset like the Part Editor: into meshes/, scripts/, textures/ or sounds/ under a clean snake_case name, reusing an identical file. A .gltf brings its buffers and images in companions. Returns the path to write in data.",
+      "params": {
+        "description": "Params of mods.import.",
+        "type": "object",
+        "properties": {
+          "mod": {
+            "description": "Mod id.",
+            "type": "string"
+          },
+          "kind": {
+            "description": "mesh, script, texture or sound.",
+            "type": "string"
+          },
+          "file_name": {
+            "description": "The file's name, like Big Wheel.glb; it is cleaned to snake_case.",
+            "type": "string"
+          },
+          "base64": {
+            "description": "The file, base64.",
+            "type": "string"
+          },
+          "companions": {
+            "description": "A .gltf's buffers and images by relative path, base64.",
+            "anyOf": [
+              {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "mod",
+          "kind",
+          "file_name",
+          "base64"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "mods.list",
+      "kind": "method",
+      "group": "mods",
+      "scope": "admin",
+      "description": "Installed mods in load order: id, name, version, enabled, can_disable, loaded, dependencies; plus profile entries that are not installed (missing) and folders whose mod.json is broken.",
+      "params": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "mods.move",
+      "kind": "method",
+      "group": "mods",
+      "scope": "admin",
+      "description": "Moves a mod in the load order (it stops at its dependencies and dependents) and saves the profile. Returns the index it ended up at.",
+      "params": {
+        "description": "Params of mods.move.",
+        "type": "object",
+        "properties": {
+          "mod": {
+            "description": "Mod id.",
+            "type": "string"
+          },
+          "index": {
+            "description": "Where in the load order it should go (0 is first); it stops at its dependencies.",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "mod",
+          "index"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "mods.read",
+      "kind": "method",
+      "group": "mods",
+      "scope": "admin",
+      "description": "Reads a file of a mod: text for .json, .lua, .gltf, .md and .txt, base64 for the rest. Up to 2 MiB.",
+      "params": {
+        "description": "Params of mods.read and mods.delete.",
+        "type": "object",
+        "properties": {
+          "mod": {
+            "description": "Mod id.",
+            "type": "string"
+          },
+          "path": {
+            "description": "Forward-slash path inside the mod, like parts/wheel.json.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mod",
+          "path"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "mods.reload",
+      "kind": "method",
+      "group": "mods",
+      "scope": "admin",
+      "description": "Reloads the enabled mods into the running world: parts, sounds, part scripts and bot types. World generation, recipes, raids, quests and characters change only in a new world (listed in next_world). Refused while clients are joined unless the host runs with --ai-allow-reload-with-clients, which drops clients whose mods no longer match (dropped_peers).",
+      "params": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "mods.validate",
+      "kind": "method",
+      "group": "mods",
+      "scope": "admin",
+      "description": "Loads all content as a world would (parts, sounds, world generation, recipes, bots, raids, quests, characters) and compiles every Lua script. Returns ok, error and warning counts, the mods that would load, the content fingerprint and every diagnostic (domain, severity, code, mod, file, json_path, line, message). A mod with part errors is left out, so its recipes and bots are checked once its parts load.",
+      "params": {
+        "description": "Params of mods.validate.",
+        "type": "object",
+        "properties": {
+          "mod": {
+            "description": "Only this mod's problems (it is enabled for the check); null checks everything enabled.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "mods.write",
+      "kind": "method",
+      "group": "mods",
+      "scope": "admin",
+      "description": "Writes a file of a mod (text or base64, up to 2 MiB), creating folders. Paths stay inside the mod; vanilla only changes under editor/. Returns the bytes written and a quick check: JSON syntax for .json, a compile for .lua. Run mods.validate for the full check.",
+      "params": {
+        "description": "Params of mods.write.",
+        "type": "object",
+        "properties": {
+          "mod": {
+            "description": "Mod id.",
+            "type": "string"
+          },
+          "path": {
+            "description": "Forward-slash path inside the mod.",
+            "type": "string"
+          },
+          "text": {
+            "description": "Content of a text file (.json, .lua, .gltf, .md, .txt).",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "base64": {
+            "description": "Content of a binary file (.glb, .bin, .png, .ogg, .wav), base64.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "mod",
+          "path"
+        ],
         "additionalProperties": false
       }
     },

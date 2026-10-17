@@ -17,6 +17,8 @@
 ## For people connecting an AI
 
 - [Overview](docs/ai/README.md)
+- [Connect Grok running locally](docs/ai/connect-grok-local.md): SGLang plus the OpenAI-compatible bridge
+- [Connect Claude](docs/ai/connect-claude.md): Claude Code or Desktop through the MCP server
 - [AI endpoint](docs/ai-endpoint.md): starting it, tokens and scopes, protocol, events
 
 ## Optional
