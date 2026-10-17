@@ -13,7 +13,9 @@ namespace Mechanica.Game.Tests;
 /// host's mods folder, writes a part with a mistake, finds it with <c>mods.validate</c>, fixes it and enables
 /// the mod. <c>mods.reload</c> is refused while the client is joined; with reloads allowed it loads the new part
 /// into the running world and drops the client, whose mods no longer match. The agent then places the new
-/// part, and the Lua tools answer. Uses a copy of the fixture mod in <c>tests/remote/mods</c>.
+/// part, and the Lua tools answer. Last the agent uses the editors (AI support PR 7): it makes a part with model
+/// pieces that the editor's model builder bakes into a mesh, runs a Part Editor batch, reloads and places both.
+/// Uses a copy of the fixture mod in <c>tests/remote/mods</c>.
 /// </summary>
 public partial class ModToolsTest : StagedTest
 {
@@ -158,6 +160,78 @@ public partial class ModToolsTest : StagedTest
             var check = RpcTestClient.Result(Answer("check")!.Value);
             Check(!check.GetProperty("ok").GetBoolean() && check.GetProperty("line").GetInt32() == 1 && check.GetProperty("column").GetInt32() == 3, $"lua.check finds the error ({check})");
             Check(RpcTestClient.Result(messages).ValueKind == JsonValueKind.Array, "lua.messages answers");
+            return true;
+        });
+        Add("the agent makes a part with model pieces in the Part Editor", frame =>
+        {
+            if (frame == 0)
+            {
+                _ids["templates"] = _agent.Call("editor.templates");
+                _ids["new"] = _agent.Call("editor.part.new", new { mod = Mod, template = "block", id = "lamp", name = "Lamp" });
+            }
+            if (Answer("new") is not { } made)
+                return false;
+            var templates = RpcTestClient.Result(Answer("templates")!.Value);
+            Check(templates.GetProperty("parts").GetArrayLength() > 0 && templates.GetProperty("bots").GetArrayLength() > 0,
+                $"the editors' templates are listed ({templates})");
+            var doc = RpcTestClient.Result(made).GetProperty("document").GetProperty("doc").GetString()!;
+            _ids["edit"] = _agent.Call("editor.part.edit", new
+            {
+                doc,
+                label = "Shape",
+                source = JsonDocument.Parse("""{ "model": [{ "kind": "box", "size": [0.25, 0.1, 0.25], "position": [0, -0.075, 0] }, { "kind": "sphere", "radius": 0.08, "position": [0, 0.04, 0] }] }""").RootElement,
+            });
+            _ids["export"] = _agent.Call("editor.part.export", new { doc });
+            return true;
+        });
+        Add("the export bakes the mesh and writes the part", _ =>
+        {
+            if (Answer("export") is not { } export)
+                return false;
+            var edit = RpcTestClient.Result(Answer("edit")!.Value);
+            Check(edit.GetProperty("document").GetProperty("needs_bake").GetBoolean(), "the model pieces need a bake");
+            Check(edit.GetProperty("diagnostics").EnumerateArray().All(d => d.GetProperty("severity").GetString() != "error"), $"and are valid ({edit})");
+            var result = RpcTestClient.Result(export);
+            Check(result.GetProperty("ok").GetBoolean() && result.GetProperty("file").GetString() == "parts/lamp.json", $"editor.part.export ({result})");
+            var dir = Path.Combine(_root, "mods", Mod);
+            Check(File.Exists(Path.Combine(dir, "meshes", "lamp.glb")) && new FileInfo(Path.Combine(dir, "meshes", "lamp.glb")).Length > 100,
+                "the baked mesh is in the mod");
+            Check(File.Exists(Path.Combine(dir, "editor", "parts", "lamp.json")), "so are the model pieces");
+            return true;
+        });
+        Add("the agent runs a Part Editor batch", frame =>
+        {
+            if (frame == 0)
+            {
+                _ids["batch-write"] = _agent.Call("mods.write", new { mod = Mod, path = "editor/batches/planks.json", text = """{ "format_version": 1, "parts": [{ "file": "parts/plank.json", "template": "block", "set": { "name": "Plank", "size": [2, 1, 1] } }] }""" });
+                _ids["batch"] = _agent.Call("editor.batch.run", new { mod = Mod, path = "editor/batches/planks.json" });
+            }
+            if (Answer("batch") is not { } batch)
+                return false;
+            var report = RpcTestClient.Result(batch);
+            Check(report.GetProperty("kind").GetString() == "parts" && report.GetProperty("ok").GetBoolean(), $"editor.batch.run ({report})");
+            Check(File.Exists(Path.Combine(_root, "mods", Mod, "parts", "plank.json")), "the batch wrote its part");
+            _ids["reload-2"] = _agent.Call("mods.reload");
+            return true;
+        });
+        Add("the agent reloads", _ =>
+        {
+            if (Answer("reload-2") is not { } reload)
+                return false;
+            Check(RpcTestClient.ErrorCode(reload) is null, $"mods.reload with nobody joined ({reload})");
+            return true;
+        });
+        Add("the agent places both new parts", frame =>
+        {
+            if (frame == 0)
+            {
+                _ids["place-lamp"] = _agent.Call(BuildActions.PlacePart, new PlacePartArgs($"{Mod}:lamp", new GridCell(0, 0, 0), Position: new(-4f, 1f, 12f)));
+                _ids["place-plank"] = _agent.Call(BuildActions.PlacePart, new PlacePartArgs($"{Mod}:plank", new GridCell(0, 0, 0), Position: new(6f, 1f, 12f)));
+            }
+            if (Answer("place-plank") is not { } plank)
+                return false;
+            Check(RpcTestClient.ErrorCode(Answer("place-lamp")!.Value) is null, $"the baked part is placed ({Answer("place-lamp")})");
+            Check(RpcTestClient.ErrorCode(plank) is null, $"the batch part is placed ({plank})");
             return true;
         });
     }

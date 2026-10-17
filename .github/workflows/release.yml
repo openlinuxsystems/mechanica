@@ -3,23 +3,12 @@ name: Release
 # Builds playable Windows, macOS and Linux packages (game, bundled .NET runtime, mods/ and docs/), checks each one
 # launches and loads a world (--self-test), and attaches them to a GitHub Release.
 # Push a tag such as v0.2.0 to publish a release; "Run workflow" builds the packages as run artifacts,
-# and publishes a release too when given a tag. Pull requests that change packaging build and self-test without publishing.
+# and publishes a release too when given a tag. It never runs on pull requests (the macOS and Windows runners bill
+# at 10x and 2x): to check a packaging change, start "Run workflow" on its branch with no tag.
 
 on:
   push:
     tags: ["v*"]
-  pull_request:
-    paths:
-      - .github/workflows/release.yml
-      - game/project.godot
-      - game/scripts/Mods/ModPaths.cs
-      - game/scripts/SelfTest.cs
-      - tools/versions.env
-      - tools/install-rcodesign.sh
-      - game/export_presets.cfg
-      - tools/package.sh
-      - tools/install-godot-templates.sh
-      - tools/release/**
   workflow_dispatch:
     inputs:
       tag:
@@ -34,6 +23,7 @@ jobs:
   package:
     name: Package ${{ matrix.platform }}
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -92,6 +82,7 @@ jobs:
     name: Self-test on Windows
     needs: package
     runs-on: windows-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -114,6 +105,7 @@ jobs:
     name: Self-test on macOS
     needs: package
     runs-on: macos-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/download-artifact@v4
         with:

@@ -41,6 +41,10 @@ public sealed record ModList(IReadOnlyList<ModSummary> Mods, IReadOnlyList<strin
 /// <param name="Message">What is wrong.</param>
 public sealed record DiagnosticInfo(string Domain, string Severity, string Code, string? Mod, string File, string? JsonPath, int? Line, string Message)
 {
+    /// <summary>The endpoint shape of a diagnostic about a file of <paramref name="modId"/> (named relative to the mod).</summary>
+    public static DiagnosticInfo ForMod(string domain, string modId, DataDiagnostic d) =>
+        new(domain, d.Severity == DiagnosticSeverity.Error ? "error" : "warning", d.Code, modId, d.File, d.JsonPath, d.Line, d.Message);
+
     /// <summary>
     /// The endpoint shape of a diagnostic. Loaders name files either from the mods folder
     /// (<c>mods/x/parts/a.json</c>) or from the mod (<c>x/recipes/a.json</c>); <paramref name="modIds"/> tells

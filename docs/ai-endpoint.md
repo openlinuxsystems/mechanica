@@ -116,6 +116,7 @@ After `mechanica.subscribe`, the host pushes JSON-RPC notifications (no `id`) on
 | `projectiles` | `kind` `launched` or `landed` |
 | `mods` | from the mod tools, `kind` `validated` or `reloaded` with the `mods.validate` or `mods.reload` result as `result`; from packages, `action` `installed` (`id`, `version`, `change`) or `uninstalled` (`id`) |
 | `reports` | an agent filed a note, recommendation or bug report: its summary (see [AI reports](ai-reports.md)) |
+| `world` | `kind` `saved` (with `path`) or `loaded` (a load, new world or reset is ready), with the `world.info` status |
 
 A connection that falls more than 4096 notifications behind loses the oldest and then receives one
 `events_dropped` notification with the `count` it missed.
@@ -152,6 +153,38 @@ so a full world refuses them.
 `reports.screenshot` let an agent write down what it finds, with the game's context, a replay of the calls
 that led up to a bug and a screenshot filled in by the host. See
 [AI Notes, Recommendations and Bug Reports](ai-reports.md).
+
+## Saving, loading and test worlds
+
+All `world.*` methods need the `admin` scope.
+
+| Method | Params | Result |
+|--------|--------|--------|
+| `world.info` | none | `name`, `seed`, `mode`, `difficulty`, `loaded_from` (the save file, or absent), `world_time`, `tick`, `time_scale`, `paused`, `clients` (other players joined), `changing` |
+| `world.save` | `name` (optional; the world's own name) | `name`, `file`, `path` |
+| `world.list` | none | saved worlds, newest first: `name`, `file`, `saved_at`, `mode`, `play_seconds`, and `error` for a save that doesn't load |
+| `world.load` | `name` (the save's name or file name), `disconnect_clients` | the save's listing |
+| `world.new` | `name` (`World`), `seed` (random), `mode` (`survival`), `difficulty` (`normal`), `character`, `disconnect_clients` | what the world will be: `name`, `seed`, `mode`, `difficulty` |
+| `world.reset` | `disconnect_clients` | the same; the running world started again with the same name, seed, mode and difficulty and nothing built |
+| `world.time_scale` | `scale` (0.05 to 10; 1 is real time) | the status |
+| `world.pause` | `paused` | the status |
+
+`world.load`, `world.new` and `world.reset` answer at once and the world changes after. Your connection,
+its token and its subscriptions carry over to the new world, on the same address. Subscribe to `world`
+and wait for the `loaded` event before you call anything else; until then `world.info` shows
+`changing: true` and another load is refused with `-32004`. Changing worlds disconnects every other
+player, so while any are joined these calls are refused with `-32001` unless you pass
+`disconnect_clients: true`. Players can join the new world on the same port. An agent that joined as a player
+(`mechanica.join`) is back to acting as an external agent in the new world; call `mechanica.join` again.
+
+A world change sets the time scale back to 1 and unpauses. While the world is paused the endpoint
+still answers, so an agent can inspect a frozen world and resume it.
+
+```json
+→ {"jsonrpc": "2.0", "id": 7, "method": "world.reset", "params": {"disconnect_clients": true}}
+← {"jsonrpc": "2.0", "id": 7, "result": {"name": "AI test", "seed": 99, "mode": "creative", "difficulty": "normal"}}
+← {"jsonrpc": "2.0", "method": "mechanica.event", "params": {"topic": "world", "tick": 0, "data": {"kind": "loaded", "status": {"name": "AI test", "seed": 99, "changing": false, …}}}}
+```
 
 ## Adding methods (for game code)
 
@@ -276,6 +309,49 @@ next world and are published on the `mods` topic (`action` `installed` or `unins
 | `package.uninstall` | `id` | `ok`, `id`, `dependents` (installed mods that need it and stop loading), `problems`; vanilla can't be uninstalled |
 | `package.verify` | `id` | `from_package`, `unchanged`, `problems` (files changed, missing or added since install) |
 
+## Editors
+
+The in-game editors as methods, for an admin connection. They run the editors' own code, so what an agent
+makes is what a person makes in the Part Editor or the Bot Behavior Editor. Part and bot work happens in
+documents: `editor.part.new` or `editor.part.open` (and the `editor.bot.*` pair) return a `doc` handle the
+other calls take; nothing is written until the export. Every call that changes something answers with
+`diagnostics` in the `mods.validate` shape, so an agent sees a mistake as it makes it. Vanilla is changed only
+through its batches (`editor.batch.run` on `vanilla/editor/batches/*.json`); other writes to it are refused.
+After an export, `mods.reload` loads the result.
+
+| Method | Params | Result |
+|--------|--------|--------|
+| `editor.templates` | none | `parts`, `bots`: template names |
+| `editor.part.new` | `mod`, `template`, `id`, optional `name` | `document` and `diagnostics`. A document is `doc`, `mod`, `file`, `definition` (the part file), `source` (model pieces, the `editor/parts/*.json` schema), `dirty`, `undo`, `redo`, `needs_bake` |
+| `editor.part.open` | `mod`, `path` (`parts/…` or `overrides/…`) | `document`, `diagnostics` |
+| `editor.part.get` | `doc` | the document |
+| `editor.part.edit` | `doc`, optional `label` (undo name), `definition` (replaces it) or `set` (merged: null removes a key, objects merge), `source` (replaces the model pieces) | `document`, `diagnostics`; one undo step |
+| `editor.part.sound` | `doc`, `key` (`place`, `impact`, …), `sound` (an event id, or null to unbind) | `document`, `diagnostics` |
+| `editor.part.undo` | `doc`, optional `redo` | `document`, `diagnostics` |
+| `editor.part.validate` | `doc` | `diagnostics` as export would report them |
+| `editor.part.contacts` | `doc` | the socket preview: `[{cell, direction, connection, socket}]` |
+| `editor.part.export` | `doc` | `ok`, `id`, `file`, `diagnostics`. Writes the part file and its model pieces, and bakes the pieces into `meshes/<id>.glb` with the editor's model builder when they need it (answered when the bake finishes) |
+| `editor.batch.run` | `mod`, `path` (a batch under `editor/batches/`) | `kind` (`parts`, `bots`, `story`), `ok`, `exports` `[{ok, id, file, diagnostics}]`, `diagnostics`; as `tools/author-vanilla.sh` runs it |
+| `editor.bot.new` | `mod`, `template`, `id`, optional `name` | `document` (`doc`, `mod`, `file`, `bot` with its behaviour tree, `dirty`, `undo`) and `diagnostics` |
+| `editor.bot.open` | `mod`, `path` (`bots/…`) | `document`, `diagnostics` |
+| `editor.bot.get` | `doc` | the document |
+| `editor.bot.edit` | `doc`, `set` (merged into the bot), optional `label` | `document`, `diagnostics` |
+| `editor.bot.tree` | `doc`, `op` (`add`, `remove`, `move`, `set`), `path` (child indexes from the root; `[]` is the root), `type` (add), `delta` (move), `name` and `value` (set; null removes) | `path` of the affected node, `document`, `diagnostics` |
+| `editor.bot.undo` | `doc`, optional `redo` | `document`, `diagnostics` |
+| `editor.bot.validate` | `doc` | `diagnostics`, checked against the parts on disk |
+| `editor.bot.export` | `doc` | `ok`, `id`, `file`, `diagnostics` |
+| `editor.bot.script` | `doc` | the bot's own Lua, or null |
+| `editor.bot.script_save` | `doc`, `code` | `script` (its path) and the bot's `diagnostics`; refused when it doesn't compile |
+| `editor.raids.get` | `mod` | the mod's raid table, or null |
+| `editor.raids.save` | `mod`, `raids` | `ok`, `file`, `diagnostics`; checked against the bots on disk |
+| `editor.recipes.list` | `mod` | `[{file, recipe}]` |
+| `editor.recipes.save` | `mod`, `recipe`, optional `previous_file` (removed when the id changed) | `ok`, `id`, `file`, `diagnostics` |
+| `editor.recipes.delete` | `mod`, `path` | null |
+| `editor.sounds.list` | `mod` | the mod's sound bank files |
+| `editor.sounds.get` | `mod`, optional `path` (default the mod's own bank) | `events` |
+| `editor.sounds.save` | `mod`, `events` (all of them), optional `path` | `ok`, `id`, `file`, `diagnostics` |
+| `editor.close` | `doc` | null; unsaved changes are dropped. At most 64 documents are open |
+
 ## Recording and replay
 
 The host records every state-changing call from every player, bot, script and agent (queries are
@@ -320,3 +396,11 @@ node tools/ai/drive_car.mjs --mod drive_test
 
 The headless test `game/tests/remote/RemoteTest.tscn` does the same with a host and a client, and
 also checks errors, authentication, recording and a replay on a second host.
+
+## Connecting a model
+
+To let a language model play rather than a script, use the bridges in `tools/ai/bridge`:
+`openai-bridge.mjs` for any OpenAI-compatible chat API (Grok running locally, vLLM, llama.cpp, Ollama,
+xAI's API) and `mcp-server.mjs` for Claude and other MCP clients. The guides are
+[connect-grok-local.md](ai/connect-grok-local.md) and [connect-claude.md](ai/connect-claude.md); the
+headless test `game/tests/aibridge` runs both against a host and a client.
