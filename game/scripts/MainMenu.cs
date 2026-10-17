@@ -3,28 +3,42 @@ using Mechanica.Core;
 using Mechanica.Core.Net;
 using Mechanica.Game.Editor;
 using Mechanica.Game.Mods;
+using Mechanica.Game.Menus;
 
 namespace Mechanica.Game;
 
 /// <summary>
-/// Start screen: play the test world, or open the mod tools that ship in the game (D9): the Part
-/// Editor, the Bot Behavior Editor, the Test Sandbox and the Mod Manager. Launching with <c>--host</c> or <c>--join</c> skips
-/// straight to the world. <c>--part-batch file</c> runs a Part Editor batch, prints its problems and
-/// quits (0 when everything exported); a Bot Behavior Editor batch (one with <c>bots</c>) and a story batch (one with <c>quests</c> or <c>pois</c>) run the same way, which is how vanilla's blocks are re-made headless. Menus proper
-/// come in chunk 24.
+/// The start screen (chunk 24): start a new world (named, Survival or Creative, an optional seed, and
+/// optionally open to the LAN), load a saved one, join a game found on the LAN or by address, set the
+/// player's name, read the help (F1), or open the mod tools that ship in the game (D9): the Part Editor,
+/// the Bot Behavior Editor, the Test Sandbox and the Mod Manager. Launching with <c>--host</c> or
+/// <c>--join</c> skips straight to the world. <c>--part-batch file</c> runs a Part Editor batch, prints its
+/// problems and quits (0 when everything exported); a Bot Behavior Editor batch (one with <c>bots</c>) and
+/// a story batch (one with <c>quests</c> or <c>pois</c>) run the same way, which is how vanilla's content
+/// is re-made headless.
 /// </summary>
 public partial class MainMenu : Control
 {
+    /// <summary>The main menu scene.</summary>
+    public const string MenuScene = "res://scenes/MainMenu.tscn";
+
     /// <summary>The game world scene.</summary>
     public const string WorldScene = "res://scenes/Main.tscn";
 
     /// <summary>The Part Editor scene.</summary>
     public const string PartEditorScene = "res://scenes/PartEditor.tscn";
 
-    private Control _menu = null!;
-
     /// <summary>Command-line flag that runs a Part Editor batch file and quits.</summary>
     public const string PartBatchFlag = "--part-batch";
+
+    private Control _menu = null!;
+    private HelpWindow _help = null!;
+
+    /// <summary>The help window.</summary>
+    public HelpWindow Help => _help;
+
+    /// <summary>Raised instead of changing scene when a world would start, for tests; null changes scene.</summary>
+    public Action? StartWorld { get; set; }
 
     public override void _Ready()
     {
@@ -39,6 +53,7 @@ public partial class MainMenu : Control
             Callable.From(() => GetTree().ChangeSceneToFile(WorldScene)).CallDeferred();
             return;
         }
+        Input.MouseMode = Input.MouseModeEnum.Visible;
         SetAnchorsPreset(LayoutPreset.FullRect);
         AddChild(new Panel { AnchorRight = 1, AnchorBottom = 1 });
         var center = new CenterContainer();
@@ -48,9 +63,11 @@ public partial class MainMenu : Control
         center.AddChild(column);
         _menu = column;
         column.AddChild(new Label { Text = MechanicaInfo.GameName, ThemeTypeVariation = "HeaderLarge", HorizontalAlignment = HorizontalAlignment.Center });
-        AddButton(column, "Play survival", () => Play(Core.Survival.GameMode.Survival));
-        AddButton(column, "Play creative", () => Play(Core.Survival.GameMode.Creative));
+        AddButton(column, "New game", () => OpenNewGame());
         AddButton(column, "Load game", OpenLoad);
+        AddButton(column, "Join game", () => OpenJoin());
+        AddButton(column, "Settings", () => OpenSettings());
+        AddButton(column, "Help (F1)", () => _help.Open("playing.md"));
         column.AddChild(new HSeparator());
         column.AddChild(new Label { Text = "Mod tools", HorizontalAlignment = HorizontalAlignment.Center });
         AddButton(column, "Part Editor", () => GetTree().ChangeSceneToFile(PartEditorScene));
@@ -59,6 +76,63 @@ public partial class MainMenu : Control
         AddButton(column, "Mod Manager", OpenModManager);
         column.AddChild(new HSeparator());
         AddButton(column, "Quit", () => GetTree().Quit());
+        _help = new HelpWindow { Name = "Help", Visible = false };
+        AddChild(_help);
+    }
+
+    public override void _UnhandledInput(InputEvent @event)
+    {
+        if (_help is not null && @event is InputEventKey { Pressed: true, Echo: false, PhysicalKeycode: Key.F1 })
+        {
+            _help.Open("playing.md");
+            GetViewport().SetInputAsHandled();
+        }
+    }
+
+    /// <summary>Opens the New game screen.</summary>
+    public NewGameScreen OpenNewGame()
+    {
+        var screen = new NewGameScreen { Name = "NewGame" };
+        screen.CloseRequested += () => Close(screen);
+        screen.StartRequested += (options, name) =>
+        {
+            Main.MenuOptions = options;
+            Main.MenuWorldName = name;
+            Go();
+        };
+        Open(Centered(screen));
+        return screen;
+    }
+
+    /// <summary>Opens the Join game screen.</summary>
+    public JoinScreen OpenJoin()
+    {
+        var screen = new JoinScreen { Name = "Join" };
+        screen.CloseRequested += () => Close(screen);
+        screen.JoinRequested += endpoint =>
+        {
+            Main.MenuOptions = LaunchOptions.ForJoin(endpoint);
+            Go();
+        };
+        Open(Centered(screen));
+        return screen;
+    }
+
+    /// <summary>Opens Settings.</summary>
+    public SettingsScreen OpenSettings()
+    {
+        var screen = new SettingsScreen { Name = "Settings" };
+        screen.CloseRequested += () => Close(screen);
+        Open(Centered(screen));
+        return screen;
+    }
+
+    private void Go()
+    {
+        if (StartWorld is { } start)
+            start();
+        else
+            GetTree().ChangeSceneToFile(WorldScene);
     }
 
     private async Task RunBatch(string? file)
@@ -97,24 +171,16 @@ public partial class MainMenu : Control
         GetTree().Quit(result.Succeeded ? 0 : 1);
     }
 
-    private void Play(Core.Survival.GameMode mode)
-    {
-        Main.MenuGameMode = mode;
-        GetTree().ChangeSceneToFile(WorldScene);
-    }
-
     private void OpenLoad()
     {
-        var holder = new CenterContainer { Name = "Load" };
-        holder.SetAnchorsPreset(LayoutPreset.FullRect);
-        var screen = new Saves.SaveScreen();
+        var holder = Centered(new Saves.SaveScreen());
+        var screen = (Saves.SaveScreen)holder.GetChild(0);
         screen.CloseRequested += () => Close(holder);
         screen.LoadRequested += save =>
         {
             Main.MenuSave = save;
-            GetTree().ChangeSceneToFile(WorldScene);
+            Go();
         };
-        holder.AddChild(screen);
         Open(holder);
     }
 
@@ -146,16 +212,25 @@ public partial class MainMenu : Control
         Open(holder);
     }
 
+    private static CenterContainer Centered(Control screen)
+    {
+        var holder = new CenterContainer { Name = $"{screen.Name}Holder" };
+        holder.SetAnchorsPreset(LayoutPreset.FullRect);
+        holder.AddChild(screen);
+        return holder;
+    }
+
     private void Open(Control screen)
     {
         _menu.GetParent<Control>().Visible = false;
         AddChild(screen);
     }
 
+    // Closes a screen, or the centring holder around it.
     private void Close(Control screen)
     {
         Input.MouseMode = Input.MouseModeEnum.Visible;
-        screen.QueueFree();
+        (screen.GetParent() is CenterContainer holder && holder.GetParent() == this ? holder : screen).QueueFree();
         _menu.GetParent<Control>().Visible = true;
     }
 

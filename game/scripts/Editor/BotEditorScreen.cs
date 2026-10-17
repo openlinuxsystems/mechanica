@@ -261,6 +261,16 @@ public partial class BotEditorScreen : Control
     /// <summary>Shows the Bot Tutorial.</summary>
     public void OpenHelp(string fileName = HelpFile) => _help.Open(fileName);
 
+    // F1 opens the help, as everywhere in the game.
+    public override void _UnhandledInput(InputEvent @event)
+    {
+        if (@event is InputEventKey { Pressed: true, Echo: false, PhysicalKeycode: Key.F1 })
+        {
+            OpenHelp(HelpFile);
+            GetViewport().SetInputAsHandled();
+        }
+    }
+
     // ---- Building the UI ----
 
     private Control BuildToolbar()

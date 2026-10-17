@@ -64,6 +64,8 @@ CI (`.github/workflows/ci.yml`) runs the same three steps. Keep it green.
 - Item and sound IDs come from the canonical catalog (CATALOG_IDS.md in the project files). Use the
   original names (Scuttler, Fabricator, …), never Scrap Mechanic's.
 - Balance numbers live in data, never in code.
+- Engine settings (`game/data/*.json`: movement, streaming, build reach, sync) ship with the build and
+  are not moddable. Content goes in mods (decided in chunk 24).
 
 ## Code style
 

@@ -1,6 +1,6 @@
 # Survival
 
-A Survival world (the default; `--creative` or the main menu's "Play creative" starts Creative) has
+A Survival world (the default; `--creative` or Creative in the main menu's New game starts Creative) has
 one meter, health (D12: no stamina, no hunger). The host decides everything through the Action API,
 so it works the same for every player in a multiplayer game.
 
