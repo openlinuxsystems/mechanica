@@ -1,6 +1,7 @@
 using Godot;
 using Mechanica.Core.Net;
 using Mechanica.Game.Net;
+using Mechanica.Game.Ui;
 
 namespace Mechanica.Game.Menus;
 
@@ -48,7 +49,7 @@ public partial class JoinScreen : PanelContainer
         _address = new LineEdit { PlaceholderText = $"address:port (port {NetProtocol.DefaultPort} if left out)", SizeFlagsHorizontal = SizeFlags.ExpandFill };
         _address.TextSubmitted += _ => JoinAddress();
         row.AddChild(_address);
-        _status = new Label { Modulate = new Color(1f, 0.6f, 0.5f), AutowrapMode = TextServer.AutowrapMode.WordSmart };
+        _status = new Label { ThemeTypeVariation = "ErrorLabel", AutowrapMode = TextServer.AutowrapMode.WordSmart };
         column.AddChild(_status);
         var buttons = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.End };
         column.AddChild(buttons);
@@ -110,7 +111,7 @@ public partial class JoinScreen : PanelContainer
             var index = _list.AddItem(s.Compatible ? text : $"{text}  (other version)");
             _list.SetItemTooltip(index, s.Mods.Count == 0 ? "No mods" : "Mods: " + string.Join(", ", s.Mods));
             if (!s.Compatible || !s.HasRoom)
-                _list.SetItemCustomFgColor(index, new Color(0.6f, 0.6f, 0.6f));
+                _list.SetItemCustomFgColor(index, UiTokens.Disabled);
         }
         if (_shown.Count == 0)
             _list.AddItem("Looking for games…", selectable: false);

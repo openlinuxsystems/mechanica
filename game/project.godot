@@ -9,6 +9,19 @@ config/name="Mechanica"
 run/main_scene="res://scenes/MainMenu.tscn"
 config/features=PackedStringArray("4.7", "C#", "Forward Plus")
 
+[autoload]
+
+UiRoot="*res://scripts/Ui/UiRoot.cs"
+
+[display]
+
+; UI spec §11: the UI is laid out for 1280×720 and scales with the window (canvas_items) up to 4K.
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/dpi/allow_hidpi=true
+
 [dotnet]
 
 project/assembly_name="Mechanica.Game"
@@ -21,3 +34,8 @@ common/physics_ticks_per_second=60
 
 ; Jolt's default (15π rad/s) caps a 0.36 m wheel at 17 m/s, below a plane's takeoff speed.
 jolt_physics_3d/limits/max_angular_velocity=150.0
+
+[gui]
+
+; UI spec §9 and §13: tooltips after 0.25 s of hover.
+timers/tooltip_delay_sec=0.25

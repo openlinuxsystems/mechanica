@@ -8,6 +8,7 @@ using Mechanica.Game.Building;
 using Mechanica.Game.Logic;
 using Mechanica.Game.Net;
 using Mechanica.Game.Quests;
+using Mechanica.Game.Ui;
 
 namespace Mechanica.Game.Survival;
 
@@ -76,7 +77,7 @@ public partial class SurvivalHud : CanvasLayer
         {
             _health.MaxValue = own.MaxHealth;
             _health.Value = own.Health;
-            _health.Modulate = own.Health <= own.MaxHealth * (Survival.Settings?.LowHealth ?? 0) ? new Color(1, 0.4f, 0.4f) : Colors.White;
+            _health.Modulate = own.Health <= own.MaxHealth * (Survival.Settings?.LowHealth ?? 0) ? UiTokens.Error : Colors.White;
             _healthText.Text = $"{own.Health:0} / {own.MaxHealth:0}";
         }
         _deathScreen.Visible = own?.Dead == true;

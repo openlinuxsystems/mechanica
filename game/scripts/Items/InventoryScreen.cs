@@ -5,6 +5,7 @@ using Mechanica.Core.Data;
 using Mechanica.Core.Items;
 using Mechanica.Game.Creations;
 using Mechanica.Game.Net;
+using Mechanica.Game.Ui;
 
 namespace Mechanica.Game.Items;
 
@@ -178,8 +179,9 @@ public partial class InventoryScreen : CanvasLayer
                 Text = stack is null ? "" : $"{Short(ItemName(stack.Item))}\n{stack.Count}",
                 TooltipText = stack is null ? "" : $"{ItemName(stack.Item)} × {stack.Count}",
                 CustomMinimumSize = new Vector2(64, 52),
-                Modulate = held ? new Color(1f, 0.85f, 0.4f) : Colors.White,
             };
+            if (held)
+                button.AddThemeStyleboxOverride("normal", MechanicaTheme.SelectedSlot());
             button.GuiInput += e => OnSlotInput(e, where, slot, stack);
             grid.AddChild(button);
         }

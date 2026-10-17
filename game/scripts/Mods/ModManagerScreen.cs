@@ -1,5 +1,7 @@
 using Godot;
 using Mechanica.Core.Data;
+using Mechanica.Core.Ui;
+using Mechanica.Game.Ui;
 
 namespace Mechanica.Game.Mods;
 
@@ -187,15 +189,15 @@ public partial class ModManagerScreen : Control
     private (string Text, Color Color) Status(InstalledMod mod, LoadedMod? loaded)
     {
         if (!Manager.IsEnabled(mod.Id))
-            return ("Disabled", Colors.Gray);
+            return ("Disabled", UiTokens.Disabled);
         if (loaded is null)
         {
             var reason = DiagnosticsFor(mod.Id).FirstOrDefault(d => d.Severity == DiagnosticSeverity.Error)?.Message;
-            return ($"Not loaded{(reason is null ? "" : $": {reason}")}", Colors.IndianRed);
+            return ($"Not loaded{(reason is null ? "" : $": {reason}")}", UiTokens.Error);
         }
         var lost = Preview.Conflicts.Count(c => c.ModId == mod.Id);
         var status = loaded.Overrides.Count > 0 ? $"Loaded, overrides {loaded.Overrides.Count} part(s)" : "Loaded";
-        return lost > 0 ? ($"{status}; {lost} override(s) replaced by later mods", Colors.Goldenrod) : (status, Colors.LightGreen);
+        return lost > 0 ? ($"{status}; {lost} override(s) replaced by later mods", UiTokens.Warning) : (status, UiTokens.Success);
     }
 
     private IEnumerable<DataDiagnostic> DiagnosticsFor(string id)
@@ -209,11 +211,11 @@ public partial class ModManagerScreen : Control
         var lines = new List<string>();
         foreach (var d in _profileDiagnostics.Concat(Preview.Diagnostics))
         {
-            var color = d.Severity == DiagnosticSeverity.Error ? "indian_red" : "goldenrod";
+            var color = d.Severity == DiagnosticSeverity.Error ? UiPalette.Error : UiPalette.Warning;
             lines.Add($"[color={color}]{Escape(d.ToString())}[/color]");
         }
         foreach (var id in Manager.MissingMods)
-            lines.Add($"[color=gray]{Escape($"'{id}' is in your mod list but not installed; it keeps its place if you reinstall it.")}[/color]");
+            lines.Add($"[color={UiPalette.TextSecondary}]{Escape($"'{id}' is in your mod list but not installed; it keeps its place if you reinstall it.")}[/color]");
         return lines.Count == 0 ? "No problems." : string.Join("\n", lines);
     }
 
@@ -228,7 +230,7 @@ public partial class ModManagerScreen : Control
             return;
         }
         var m = mod.Manifest;
-        var text = $"[b]{Escape(m.Name ?? mod.Id)}[/b] {mod.Version}  [color=gray]{mod.Id}[/color]\n";
+        var text = $"[b]{Escape(m.Name ?? mod.Id)}[/b] {mod.Version}  [color={UiPalette.TextSecondary}]{mod.Id}[/color]\n";
         if (m.Authors is { Count: > 0 })
             text += $"By {Escape(string.Join(", ", m.Authors))}\n";
         if (m.Description is not null)
@@ -236,7 +238,7 @@ public partial class ModManagerScreen : Control
         text += $"Needs: {References(m.Dependencies)}\nConflicts with: {References(m.Conflicts)}\n";
         if (Preview.Mods.FirstOrDefault(l => l.Id == mod.Id) is { } loaded)
             text += $"{loaded.Parts.Count} part(s), {loaded.Overrides.Count} override(s)\n";
-        text += $"[color=gray]{Escape(mod.Directory)}[/color]";
+        text += $"[color={UiPalette.TextSecondary}]{Escape(mod.Directory)}[/color]";
         _details.Text = text;
     }
 

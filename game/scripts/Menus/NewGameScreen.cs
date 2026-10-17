@@ -49,7 +49,7 @@ public partial class NewGameScreen : PanelContainer
         _seed = Row(grid, "Seed", new LineEdit { PlaceholderText = "random" });
         _lan = Row(grid, "Open to LAN", new CheckBox());
         _port = Row(grid, "Port", new LineEdit { Text = NetProtocol.DefaultPort.ToString() });
-        _status = new Label { Modulate = new Color(1f, 0.6f, 0.5f), AutowrapMode = TextServer.AutowrapMode.WordSmart };
+        _status = new Label { ThemeTypeVariation = "ErrorLabel", AutowrapMode = TextServer.AutowrapMode.WordSmart };
         column.AddChild(_status);
         var buttons = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.End };
         column.AddChild(buttons);

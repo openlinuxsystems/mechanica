@@ -52,7 +52,9 @@ CI (`.github/workflows/ci.yml`) runs the same three steps. Keep it green.
   generation rules; the last mod in load order wins) and `pois/*.json` (POI prefabs; see
   `docs/world-generation.md`) and `recipes/*.json` (crafting recipes; see `docs/part-data-schema.md`), `bots/*.json` (bot types:
   stats, attacks, drops, behaviour tree, optional Lua script) and `raids/raids.json` (the raid table; the
-  last mod in load order wins) and `quests/*.json` (quests and dialogue; see `docs/quests.md`). Paths in data are relative to the mod
+  last mod in load order wins) and `quests/*.json` (quests and dialogue; see `docs/quests.md`), plus `overrides/<other_mod>/` (full part files that
+  replace another mod's part, and `overrides/<other_mod>/recipes/**/*.json` for its recipes; the mod later in
+  load order wins). Paths in data are relative to the mod
   root (`other_mod:path` for another mod). No `res://` paths or Godot-imported formats in mod data.
   Reject `..` and absolute paths.
 - Mod tools are in-game modes and ship in exported builds; no Godot editor plugins.
@@ -64,6 +66,10 @@ CI (`.github/workflows/ci.yml`) runs the same three steps. Keep it green.
 - Item and sound IDs come from the canonical catalog (CATALOG_IDS.md in the project files). Use the
   original names (Scuttler, Fabricator, …), never Scrap Mechanic's.
 - Balance numbers live in data, never in code.
+- UI follows the UI spec (`UI_SPEC.md` in the project files; it wins over SPEC_SUMMARY on controls, UI and
+  menus). Every screen inherits the code-built theme in `game/scripts/Ui/MechanicaTheme.cs`: no per-screen
+  colours, and never orange. Use `UiTokens` for hand-drawn colours, `ToolWindow` for a titled panel with an X
+  and Esc to close, and `ConfirmDialog` before anything destructive.
 - Engine settings (`game/data/*.json`: movement, streaming, build reach, sync) ship with the build and
   are not moddable. Content goes in mods (decided in chunk 24).
 

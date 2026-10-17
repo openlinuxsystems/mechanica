@@ -57,7 +57,7 @@ public partial class QuestHud : CanvasLayer
         box.AddChild(_logText);
         _choices = new VBoxContainer { Name = "Choices", Visible = false };
         box.AddChild(_choices);
-        _status = new Label { Name = "Status", Modulate = new Color(1f, 0.6f, 0.5f) };
+        _status = new Label { Name = "Status", ThemeTypeVariation = "ErrorLabel" };
         box.AddChild(_status);
 
         _dialogue = new PanelContainer { Name = "Dialogue", Visible = false, MouseFilter = Control.MouseFilterEnum.Ignore };
