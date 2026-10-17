@@ -506,7 +506,8 @@ public partial class Main : Node3D
         AddChild(MapMarkers);
         if (ReadDeviceInput)
         {
-            Icons = new Ui.ItemIcons { Name = "ItemIcons", Catalog = mods, Assets = Assets };
+            var toolModels = new Ui.ToolIconModels(Characters.Assets, Assets, Build.Settings!.Lift);
+            Icons = new Ui.ItemIcons { Name = "ItemIcons", Catalog = mods, Assets = Assets, ToolModel = toolModels.For };
             AddChild(Icons);
         }
         Chat = new Mechanica.Game.Chat.ChatSync { Name = "Chat", Session = Session };
