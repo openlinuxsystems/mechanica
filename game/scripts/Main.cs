@@ -2,15 +2,18 @@ using Godot;
 using Mechanica.Core;
 using Mechanica.Core.Data;
 using Mechanica.Core.Net;
+using Mechanica.Game.Creations;
 using Mechanica.Game.Mods;
 using Mechanica.Game.Net;
 using Mechanica.Game.Player;
+using Mechanica.Game.World;
 
 namespace Mechanica.Game;
 
 /// <summary>
 /// Flat test world and session root. It builds the networking nodes (<see cref="Session"/>,
-/// <see cref="PlayerSync"/>, <see cref="Actions"/>), starts offline, hosting or joining from
+/// <see cref="PlayerSync"/>, <see cref="Actions"/>) and the streamed world (<see cref="Streamer"/>,
+/// <see cref="Creations"/>), starts offline, hosting or joining from
 /// <see cref="Options"/>, and drives whichever player belongs to this peer from the keyboard and mouse.
 /// Every peer runs the same scene, so node paths (and with them RPC routes) match everywhere.
 /// </summary>
@@ -39,6 +42,12 @@ public partial class Main : Node3D
     /// <summary>Action API entry point for every peer.</summary>
     public ActionGateway Actions { get; private set; } = null!;
 
+    /// <summary>Every Creation in the world, live or parked.</summary>
+    public CreationWorld Creations { get; private set; } = null!;
+
+    /// <summary>Chunk streaming: the ground, and which Creations are simulated.</summary>
+    public WorldStreamer Streamer { get; private set; } = null!;
+
     /// <summary>This peer's own player, once spawned.</summary>
     public PlayerController? LocalPlayer => PlayerSync.LocalPlayer;
 
@@ -59,6 +68,18 @@ public partial class Main : Node3D
             PlayersRoot = players,
             SpawnPoint = () => GetNodeOrNull<Node3D>("SpawnPoint")?.GlobalTransform ?? Transform3D.Identity,
         };
+        Creations = new CreationWorld { Name = "Creations" };
+        AddChild(Creations);
+        // Before the players, so the spawn has ground on the first frame.
+        Streamer = new WorldStreamer
+        {
+            Name = "World",
+            Session = Session,
+            PlayerSync = PlayerSync,
+            Creations = Creations,
+            SpawnPoint = () => GetNodeOrNull<Node3D>("SpawnPoint")?.GlobalPosition ?? Vector3.Zero,
+        };
+        AddChild(Streamer);
         PlayerSync.PlayerSpawned += OnPlayerSpawned;
         PlayerSync.PlayerDespawning += OnPlayerDespawning;
         AddChild(PlayerSync);

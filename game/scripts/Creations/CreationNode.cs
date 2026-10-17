@@ -1,5 +1,6 @@
 using Godot;
 using Mechanica.Core.Creations;
+using Mechanica.Core.World;
 
 namespace Mechanica.Game.Creations;
 
@@ -30,6 +31,9 @@ public partial class CreationNode : Node3D
 
     /// <summary>Jolt joints, in <see cref="Creation.Joints"/> order with locked links skipped.</summary>
     public IReadOnlyList<Joint3D> Joints => _joints;
+
+    /// <summary>Grid-frame box of each body, in <see cref="Bodies"/> order (<see cref="CreationBounds"/>).</summary>
+    public IReadOnlyList<WorldBounds> LocalBounds { get; private set; } = [];
 
     /// <summary>True when this peer runs the physics for the Creation.</summary>
     public bool IsSimulated => Multiplayer.GetUniqueId() == Creation.AuthorityPeer;
@@ -84,6 +88,7 @@ public partial class CreationNode : Node3D
         var simulated = IsSimulated;
         foreach (var body in Creation.Bodies)
             _bodies.Add(BuildBody(body, simulated));
+        LocalBounds = CreationBounds.LocalBodyBounds(Creation);
         foreach (var link in Creation.Joints)
         {
             if (!link.IsLocked && BuildJoint(link) is { } joint)
