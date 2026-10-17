@@ -217,7 +217,7 @@ node tools/ai/bridge/openai-bridge.mjs --base-url https://api.x.ai/v1 --model <m
 - **A token error**: pass the same token the game was started with (`--token` or `MECHANICA_AI_TOKEN`).
 - **The AI's player appears but does nothing**: the model is still reading its first prompt. The bridge
   says so and prints how long the reply took. Offer fewer tools with `--groups` (for playing,
-  `--groups perception,remote,items,survival,quests,chat` is about a quarter of the list), and on Ollama
+  `--groups perception,remote,items,survival,quests,chat,reports` is about a quarter of the list), and on Ollama
   check with `ollama ps` that the context is as large as you set it; a context that is too small cuts
   the prompt short.
 - **"model server answered 4xx/5xx"**: check `--base-url` (it ends in `/v1`) and `--model` against

@@ -34,7 +34,7 @@ The game's log is in build/ai-play/game.log; the AI's notes in build/ai-play/<na
 EOF
 }
 
-MODEL_URL="" MODEL="" API_KEY="" NAME="Scout" TOOL_GROUPS="perception,remote,items,survival,quests,chat" TOKEN=""
+MODEL_URL="" MODEL="" API_KEY="" NAME="Scout" TOOL_GROUPS="perception,remote,items,survival,quests,chat,reports" TOKEN=""
 # shellcheck disable=SC1090
 [[ -f "$config" ]] && source "$config"
 job="" no_ai=0 build=1 game_args=() save=0
