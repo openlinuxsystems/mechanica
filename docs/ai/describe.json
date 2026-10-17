@@ -4518,6 +4518,372 @@
         ],
         "additionalProperties": false
       }
+    },
+    {
+      "name": "reports.bug",
+      "kind": "method",
+      "group": "reports",
+      "scope": "observe",
+      "description": "Save a bug report with steps, expected and actual. The host adds the game's context, the calls since the world started as a replay, recent log lines and a screenshot.",
+      "params": {
+        "description": "Arguments of reports.bug.",
+        "type": "object",
+        "properties": {
+          "title": {
+            "description": "One line, at most 200 characters.",
+            "type": "string"
+          },
+          "steps": {
+            "description": "Steps to reproduce, in order.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "expected": {
+            "description": "What should have happened.",
+            "type": "string"
+          },
+          "actual": {
+            "description": "What happened instead.",
+            "type": "string"
+          },
+          "severity": {
+            "description": "How bad it is.",
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              "critical"
+            ],
+            "default": "medium"
+          },
+          "text": {
+            "description": "More detail (Markdown).",
+            "type": "string",
+            "default": ""
+          },
+          "area": {
+            "description": "The feature, tool, part or mod it is about.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tags": {
+            "description": "Tags for filtering.",
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "screenshot": {
+            "description": "True (the default) to attach what the host's screen shows; a headless host notes why it has none.",
+            "type": "boolean",
+            "default": true
+          },
+          "replay_actions": {
+            "description": "Most state-changing calls to keep in the replay file, newest last; null keeps every call since the world started.",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "messages": {
+            "description": "Most recent log lines to keep (0 to 200).",
+            "type": "integer",
+            "default": 50
+          },
+          "author": {
+            "description": "Who is writing (a model or agent name); the connection's name when left out.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "title",
+          "steps",
+          "expected",
+          "actual"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "reports.delete",
+      "kind": "method",
+      "group": "reports",
+      "scope": "admin",
+      "description": "Delete a report and its files.",
+      "params": {
+        "description": "Arguments of reports.delete.",
+        "type": "object",
+        "properties": {
+          "id": {
+            "description": "The report's id.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "reports.get",
+      "kind": "method",
+      "group": "reports",
+      "scope": "observe",
+      "description": "Read one report, optionally with its replay recording and screenshot (base64 PNG).",
+      "params": {
+        "description": "Arguments of reports.get.",
+        "type": "object",
+        "properties": {
+          "id": {
+            "description": "The report's id.",
+            "type": "string"
+          },
+          "replay": {
+            "description": "True to include a bug's replay slice.",
+            "type": "boolean",
+            "default": false
+          },
+          "screenshot": {
+            "description": "True to include the screenshot as base64 PNG.",
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "reports.list",
+      "kind": "method",
+      "group": "reports",
+      "scope": "observe",
+      "description": "List saved reports, newest first, filtered by kind, session and tag.",
+      "params": {
+        "description": "Arguments of reports.list.",
+        "type": "object",
+        "properties": {
+          "kind": {
+            "description": "Only this kind.",
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "note",
+                  "recommendation",
+                  "bug"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "session": {
+            "description": "Only this session (a folder name, or current); every session when left out.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tag": {
+            "description": "Only reports with this tag.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "limit": {
+            "description": "Most reports returned, newest first (1 to 500).",
+            "type": "integer",
+            "default": 50
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "reports.note",
+      "kind": "method",
+      "group": "reports",
+      "scope": "observe",
+      "description": "Save a note: something noticed or worth remembering. Returns the saved report.",
+      "params": {
+        "description": "Arguments of reports.note.",
+        "type": "object",
+        "properties": {
+          "title": {
+            "description": "One line, at most 200 characters.",
+            "type": "string"
+          },
+          "text": {
+            "description": "The note (Markdown).",
+            "type": "string",
+            "default": ""
+          },
+          "tags": {
+            "description": "Tags for filtering: lower case letters, digits, - and _.",
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "screenshot": {
+            "description": "True to attach what the host's screen shows.",
+            "type": "boolean",
+            "default": false
+          },
+          "author": {
+            "description": "Who is writing (a model or agent name); the connection's name when left out.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "reports.recommend",
+      "kind": "method",
+      "group": "reports",
+      "scope": "observe",
+      "description": "Save a recommendation: a change to the game or a mod, and why. Returns the saved report.",
+      "params": {
+        "description": "Arguments of reports.recommend.",
+        "type": "object",
+        "properties": {
+          "title": {
+            "description": "One line, at most 200 characters.",
+            "type": "string"
+          },
+          "text": {
+            "description": "What to change and why (Markdown).",
+            "type": "string"
+          },
+          "area": {
+            "description": "The feature, tool, part or mod it is about.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "priority": {
+            "description": "How much it matters.",
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ],
+            "default": "medium"
+          },
+          "tags": {
+            "description": "Tags for filtering.",
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "screenshot": {
+            "description": "True to attach what the host's screen shows.",
+            "type": "boolean",
+            "default": false
+          },
+          "author": {
+            "description": "Who is writing (a model or agent name); the connection's name when left out.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "title",
+          "text"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "reports.screenshot",
+      "kind": "method",
+      "group": "reports",
+      "scope": "observe",
+      "description": "What the host's screen shows now, as base64 PNG with its width and height.",
+      "params": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
     }
   ],
   "topics": {

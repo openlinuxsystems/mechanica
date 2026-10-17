@@ -2,7 +2,7 @@
 
 <!-- Generated from mechanica.describe by tools/ai/gen-docs.sh. Do not edit by hand. -->
 
-Protocol version 2. 148 methods: 56 actions (change the world), 29 queries (only read it) and 63 endpoint methods. Every one is a JSON-RPC method of the same name whose `params` are the named arguments below (snake_case). `describe.json` beside this file is the same data as JSON Schemas, ready to become an AI's tool list. Scopes: `observe` reads, `play` acts as a player, `admin` is for debug powers ([ai-endpoint.md](../ai-endpoint.md#scopes)).
+Protocol version 2. 155 methods: 56 actions (change the world), 29 queries (only read it) and 70 endpoint methods. Every one is a JSON-RPC method of the same name whose `params` are the named arguments below (snake_case). `describe.json` beside this file is the same data as JSON Schemas, ready to become an AI's tool list. Scopes: `observe` reads, `play` acts as a player, `admin` is for debug powers ([ai-endpoint.md](../ai-endpoint.md#scopes)).
 
 ## Contents
 
@@ -26,6 +26,7 @@ Protocol version 2. 148 methods: 56 actions (change the world), 29 queries (only
 - [Lua tools (lua.*)](#lua-tools-lua) (3)
 - [Mod packages (package.*)](#mod-packages-package) (6)
 - [Mod tools (mods.*)](#mod-tools-mods) (12)
+- [Notes, recommendations and bug reports (reports.*)](#notes-recommendations-and-bug-reports-reports) (7)
 - [Event topics](#event-topics)
 - [Error codes](#error-codes)
 
@@ -1665,6 +1666,102 @@ Writes a file of a mod (text or base64, up to 2 MiB), creating folders. Paths st
 | `path` | string | yes |  | Forward-slash path inside the mod. |
 | `text` | string or null |  |  | Content of a text file (.json, .lua, .gltf, .md, .txt). |
 | `base64` | string or null |  |  | Content of a binary file (.glb, .bin, .png, .ogg, .wav), base64. |
+
+## Notes, recommendations and bug reports (reports.*)
+
+### `reports.bug`
+
+*method, observe scope*
+
+Save a bug report with steps, expected and actual. The host adds the game's context, the calls since the world started as a replay, recent log lines and a screenshot.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `title` | string | yes |  | One line, at most 200 characters. |
+| `steps` | string[] | yes |  | Steps to reproduce, in order. |
+| `expected` | string | yes |  | What should have happened. |
+| `actual` | string | yes |  | What happened instead. |
+| `severity` | one of "low", "medium", "high", "critical" |  | `"medium"` | How bad it is. |
+| `text` | string |  | `""` | More detail (Markdown). |
+| `area` | string or null |  |  | The feature, tool, part or mod it is about. |
+| `tags` | string[] or null |  |  | Tags for filtering. |
+| `screenshot` | boolean |  | `true` | True (the default) to attach what the host's screen shows; a headless host notes why it has none. |
+| `replay_actions` | integer or null |  |  | Most state-changing calls to keep in the replay file, newest last; null keeps every call since the world started. |
+| `messages` | integer |  | `50` | Most recent log lines to keep (0 to 200). |
+| `author` | string or null |  |  | Who is writing (a model or agent name); the connection's name when left out. |
+
+### `reports.delete`
+
+*method, admin scope*
+
+Delete a report and its files.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `id` | string | yes |  | The report's id. |
+
+### `reports.get`
+
+*method, observe scope*
+
+Read one report, optionally with its replay recording and screenshot (base64 PNG).
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `id` | string | yes |  | The report's id. |
+| `replay` | boolean |  | `false` | True to include a bug's replay slice. |
+| `screenshot` | boolean |  | `false` | True to include the screenshot as base64 PNG. |
+
+### `reports.list`
+
+*method, observe scope*
+
+List saved reports, newest first, filtered by kind, session and tag.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `kind` | one of "note", "recommendation", "bug" or null |  |  | Only this kind. |
+| `session` | string or null |  |  | Only this session (a folder name, or current); every session when left out. |
+| `tag` | string or null |  |  | Only reports with this tag. |
+| `limit` | integer |  | `50` | Most reports returned, newest first (1 to 500). |
+
+### `reports.note`
+
+*method, observe scope*
+
+Save a note: something noticed or worth remembering. Returns the saved report.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `title` | string | yes |  | One line, at most 200 characters. |
+| `text` | string |  | `""` | The note (Markdown). |
+| `tags` | string[] or null |  |  | Tags for filtering: lower case letters, digits, - and _. |
+| `screenshot` | boolean |  | `false` | True to attach what the host's screen shows. |
+| `author` | string or null |  |  | Who is writing (a model or agent name); the connection's name when left out. |
+
+### `reports.recommend`
+
+*method, observe scope*
+
+Save a recommendation: a change to the game or a mod, and why. Returns the saved report.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `title` | string | yes |  | One line, at most 200 characters. |
+| `text` | string | yes |  | What to change and why (Markdown). |
+| `area` | string or null |  |  | The feature, tool, part or mod it is about. |
+| `priority` | one of "low", "medium", "high" |  | `"medium"` | How much it matters. |
+| `tags` | string[] or null |  |  | Tags for filtering. |
+| `screenshot` | boolean |  | `false` | True to attach what the host's screen shows. |
+| `author` | string or null |  |  | Who is writing (a model or agent name); the connection's name when left out. |
+
+### `reports.screenshot`
+
+*method, observe scope*
+
+What the host's screen shows now, as base64 PNG with its width and height.
+
+No params.
 
 ## Event topics
 
