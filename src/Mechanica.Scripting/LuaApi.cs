@@ -4,7 +4,7 @@ namespace Mechanica.Scripting;
 /// <param name="Name">What a script writes: <c>part.apply_force</c>, <c>on_update</c>, <c>state</c>.</param>
 /// <param name="Signature">How it is called, e.g. <c>part.apply_force(force, at?)</c>.</param>
 /// <param name="Summary">One line on what it does.</param>
-/// <param name="Group">Section: Hooks, Globals, part, creation, world, item, holder, inventory, combat, farm or vec3.</param>
+/// <param name="Group">Section: Hooks, Globals, part, creation, world, sound, item, holder, inventory, combat, farm or vec3.</param>
 public sealed record LuaApiEntry(string Name, string Signature, string Summary, string Group);
 
 /// <summary>
@@ -67,6 +67,11 @@ public static class LuaApi
         new("world.tick", "world.tick()", "Physics steps since the scripts started.", "world"),
         new("world.raycast", "world.raycast(from, to)", "First thing on the segment, skipping the script's own Creation: {position, normal, distance, creation?, part?} or nil.", "world"),
         new("world.overlap_sphere", "world.overlap_sphere(centre, radius)", "Everything a sphere touches, skipping the script's own Creation: a list of {creation?, part?}.", "world"),
+
+        new("sound.play", "sound.play(id, at?)", "Plays a one-shot sound event at the part (or a world point) for everyone in earshot; returns true or false, reason.", "sound"),
+        new("sound.start", "sound.start(id, parameters?)", "Starts a looping sound event that follows the part; returns its handle, or nil, reason.", "sound"),
+        new("sound.set_parameter", "sound.set_parameter(handle, name, value)", "Bends one of the part's loops (pitch, volume or the event's own parameters); returns true or false, reason.", "sound"),
+        new("sound.stop", "sound.stop(handle)", "Stops one of the part's loops; returns true or false, reason.", "sound"),
 
         new("item.id", "item.id()", "The held item's qualified id, e.g. vanilla:potato_blaster.", "item"),
         new("item.name", "item.name(id?)", "The held item's display name, or another item's.", "item"),
