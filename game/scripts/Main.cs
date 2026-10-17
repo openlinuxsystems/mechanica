@@ -12,8 +12,8 @@ namespace Mechanica.Game;
 
 /// <summary>
 /// Flat test world and session root. It builds the networking nodes (<see cref="Session"/>,
-/// <see cref="PlayerSync"/>, <see cref="Actions"/>) and the streamed world (<see cref="Streamer"/>,
-/// <see cref="Creations"/>), starts offline, hosting or joining from
+/// <see cref="PlayerSync"/>, <see cref="CreationSync"/>, <see cref="Actions"/>) and the streamed world
+/// (<see cref="Streamer"/>, <see cref="Creations"/>), starts offline, hosting or joining from
 /// <see cref="Options"/>, and drives whichever player belongs to this peer from the keyboard and mouse.
 /// Every peer runs the same scene, so node paths (and with them RPC routes) match everywhere.
 /// </summary>
@@ -33,6 +33,15 @@ public partial class Main : Node3D
     /// </summary>
     public ContentManifest? Content { get; set; }
 
+    /// <summary>
+    /// Part definitions Creations are built from. Null loads the enabled mods when the scene starts (and
+    /// <see cref="Content"/> then describes them); tests may set it to a fixture mod.
+    /// </summary>
+    public ModLoadResult? Parts { get; set; }
+
+    /// <summary>Meshes and shapes for <see cref="Parts"/>.</summary>
+    public PartAssets Assets { get; private set; } = null!;
+
     /// <summary>Connection state and handshake.</summary>
     public NetSession Session { get; private set; } = null!;
 
@@ -45,6 +54,9 @@ public partial class Main : Node3D
     /// <summary>Every Creation in the world, live or parked.</summary>
     public CreationWorld Creations { get; private set; } = null!;
 
+    /// <summary>Creation state sync: interest, full syncs and body snapshots.</summary>
+    public CreationSync CreationSync { get; private set; } = null!;
+
     /// <summary>Chunk streaming: the ground, and which Creations are simulated.</summary>
     public WorldStreamer Streamer { get; private set; } = null!;
 
@@ -55,7 +67,9 @@ public partial class Main : Node3D
     {
         GD.Print($"{MechanicaInfo.GameName} started (physics: {ProjectSettings.GetSetting("physics/3d/physics_engine")})");
         Options ??= ReadCommandLine();
-        var content = Content ??= LoadContentManifest();
+        Parts ??= LoadParts();
+        Assets = new PartAssets(Parts);
+        var content = Content ??= ContentManifest.From(Parts);
 
         Session = new NetSession { Name = "Session", Content = content };
         AddChild(Session);
@@ -83,6 +97,16 @@ public partial class Main : Node3D
         PlayerSync.PlayerSpawned += OnPlayerSpawned;
         PlayerSync.PlayerDespawning += OnPlayerDespawning;
         AddChild(PlayerSync);
+        CreationSync = new CreationSync
+        {
+            Name = "CreationSync",
+            Session = Session,
+            PlayerSync = PlayerSync,
+            Creations = Creations,
+            Catalog = Parts,
+            Assets = Assets,
+        };
+        AddChild(CreationSync);
         Actions = new ActionGateway { Name = "Actions", Session = Session };
         AddChild(Actions);
         PlayerSync.RegisterActions(Actions.Dispatcher);
@@ -106,12 +130,12 @@ public partial class Main : Node3D
             GD.PushError($"[net] {Session.LastMessage}");
     }
 
-    private static ContentManifest LoadContentManifest()
+    private static ModLoadResult LoadParts()
     {
         var content = ModPaths.LoadContent();
         foreach (var diagnostic in content.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error))
             GD.PushWarning($"[mods] {diagnostic}");
-        return ContentManifest.From(content);
+        return content;
     }
 
     private static LaunchOptions ReadCommandLine()
@@ -143,8 +167,8 @@ public partial class Main : Node3D
     }
 
     /// <summary>
-    /// Loose rigid props only simulate where the world is simulated (the host). On clients they are
-    /// frozen until state sync (chunk 4b) drives them.
+    /// Loose rigid props only simulate where the world is simulated (the host). They are test-world
+    /// fixtures, not Creations, so state sync does not cover them and they stay frozen on clients.
     /// </summary>
     private void SetPropsSimulated(bool simulated)
     {

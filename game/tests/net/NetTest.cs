@@ -106,6 +106,10 @@ public partial class NetTest : StagedTest
         {
             ExpectSame(_a, "A's own prediction");
             Check(_a.Main.PlayerSync.Corrections < 10, $"A needed few corrections ({_a.Main.PlayerSync.Corrections})");
+            // Godot's create_server sets the host's incoming bandwidth to its channel count; NetSession resets it.
+            var link = ((ENetMultiplayerPeer)_a.Main.Multiplayer.MultiplayerPeer).GetPeer(NetProtocol.HostPeer);
+            var limit = link.GetStatistic(ENetPacketPeer.PeerStatistic.PacketThrottleLimit);
+            Check(limit == 32, $"A's packet throttle stays fully open (limit {limit}/32)");
             return true;
         });
 
@@ -162,7 +166,7 @@ public partial class NetTest : StagedTest
         {
             if (frame == 0)
             {
-                GD.Print("[net] sending forged packets; the engine logs two RPC errors for them");
+                GD.Print("[net] sending forged packets; the engine logs an RPC error for each of three of them");
                 var sync = _b.Main.PlayerSync;
                 sync.RpcId(1, "SubmitInputs", new byte[] { 1, 2, 3 });
                 sync.RpcId(1, "SubmitInputs", Array.Empty<byte>());

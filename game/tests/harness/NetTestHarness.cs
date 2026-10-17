@@ -34,6 +34,9 @@ public partial class NetTestHarness : Node
         public override string ToString() => Name;
     }
 
+    /// <summary>Part definitions every instance started from now on builds Creations from; null loads the real mods.</summary>
+    public Mechanica.Core.Data.ModLoadResult? Parts { get; set; }
+
     /// <summary>The port the host listens on, once started.</summary>
     public int Port { get; private set; }
 
@@ -88,6 +91,7 @@ public partial class NetTestHarness : Node
         main.Options = options;
         main.ReadDeviceInput = false;
         main.Content = content; // null: load the real enabled mods, like the game does
+        main.Parts = Parts;
         viewport.AddChild(main);
         var instance = new Instance(name, viewport, main);
         _instances.Add(instance);

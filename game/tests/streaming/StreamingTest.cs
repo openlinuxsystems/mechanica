@@ -50,7 +50,7 @@ public partial class StreamingTest : StagedTest
     {
         _content = ModLoader.LoadAll(ProjectSettings.GlobalizePath("res://tests/creation/mods"));
         _assets = new PartAssets(_content);
-        _harness = new NetTestHarness { Name = "Harness" };
+        _harness = new NetTestHarness { Name = "Harness", Parts = _content };
         AddChild(_harness);
         _host = _harness.StartHost();
         _client = _harness.StartClient("Client");
