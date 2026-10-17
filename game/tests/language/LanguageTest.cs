@@ -167,6 +167,15 @@ public partial class LanguageTest : StagedTest
         World("the in-game menu", () => _main.GetNode<PauseMenu>("PauseMenu").Open());
         World("Options in a world", () => _main.GetNode<PauseMenu>("PauseMenu").OpenOptions(), tabs: true);
         World("saves in a world", () => _main.GetNode<PauseMenu>("PauseMenu").OpenSaves());
+        World("AI reports in a world", () =>
+        {
+            _main.Actions.Dispatcher.Dispatch(new Core.Actions.ActionCaller(1, Core.Actions.ActionSource.External), "ListCreations", "{}");
+            var bug = _main.Reports.Reporter.Bug("Test agent", new Core.Reports.BugParams("A bug", ["Step"], "Expected", "Actual", Area: "vanilla:block",
+                Tags: ["test"], Screenshot: true));
+            var reports = _main.GetNode<PauseMenu>("PauseMenu").OpenReports();
+            reports.Show(reports.Listed.ToList().FindIndex(r => r.Id == bug.Id));
+            reports.CopySelected();
+        });
         World("the inventory", () =>
         {
             _main.GetNode<PauseMenu>("PauseMenu").Close();

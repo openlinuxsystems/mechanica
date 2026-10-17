@@ -543,6 +543,7 @@ public partial class Main : Node3D
         Ai = new AiEndpoint { Name = "Ai", Session = Session, Actions = Actions, Log = Recorder };
         AddChild(Ai);
         RemoteEventSources.Connect(this, Ai.Events);
+        Ai.Modules.Add(new Core.Reports.ReportsModule(Reports.Reporter, Ai.Events));
         // The offline player spawned with PlayerSync, before building existed.
         if (LocalPlayer is { } local)
             AddTools(local);

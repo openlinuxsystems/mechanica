@@ -111,10 +111,18 @@ After `mechanica.subscribe`, the host pushes JSON-RPC notifications (no `id`) on
 | `fire` | a fire went out |
 | `seats` | someone sat down or stood up: `seat`, `seated` |
 | `projectiles` | `kind` `launched` or `landed` |
-| `mods`, `reports` | reserved for the mod tools and AI reports |
+| `reports` | an agent filed a note, recommendation or bug report: its summary (see [AI reports](ai-reports.md)) |
+| `mods` | reserved for the mod tools |
 
 A connection that falls more than 4096 notifications behind loses the oldest and then receives one
 `events_dropped` notification with the `count` it missed.
+
+## Notes, recommendations and bug reports
+
+`reports.note`, `reports.recommend`, `reports.bug`, `reports.list`, `reports.get`, `reports.delete` and
+`reports.screenshot` let an agent write down what it finds, with the game's context, a replay of the calls
+that led up to a bug and a screenshot filled in by the host. See
+[AI Notes, Recommendations and Bug Reports](ai-reports.md).
 
 ## Adding methods (for game code)
 
