@@ -8,8 +8,9 @@
   "visual": {
     "color": "#3a7ad0"
   },
+  "script": "scripts/watering.lua",
   "sounds": {},
-  "watering": {
+  "properties": {
     "seconds": 150
   }
 }

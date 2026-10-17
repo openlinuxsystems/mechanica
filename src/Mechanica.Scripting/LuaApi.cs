@@ -4,7 +4,7 @@ namespace Mechanica.Scripting;
 /// <param name="Name">What a script writes: <c>part.apply_force</c>, <c>on_update</c>, <c>state</c>.</param>
 /// <param name="Signature">How it is called, e.g. <c>part.apply_force(force, at?)</c>.</param>
 /// <param name="Summary">One line on what it does.</param>
-/// <param name="Group">Section: Hooks, Globals, part, creation, world, item, holder, inventory, combat or vec3.</param>
+/// <param name="Group">Section: Hooks, Globals, part, creation, world, item, holder, inventory, combat, farm or vec3.</param>
 public sealed record LuaApiEntry(string Name, string Signature, string Summary, string Group);
 
 /// <summary>
@@ -27,7 +27,7 @@ public static class LuaApi
         new("on_equip", "function on_equip()", "Item scripts: a player took the item in hand.", "Hooks"),
         new("on_unequip", "function on_unequip()", "Item scripts: the item left the player's hand (another item or tool, or death).", "Hooks"),
         new("can_use", "function can_use(target)", "Item scripts: return nil to allow a use, or the reason it is refused. May not change the world.", "Hooks"),
-        new("on_use", "function on_use(target)", "Item scripts: the player used the item (target has from and direction); the return value is the action's result.", "Hooks"),
+        new("on_use", "function on_use(target)", "Item scripts: the player used the item (target has from and direction, plus creation and part when aimed at a part in reach); the return value is the action's result.", "Hooks"),
         new("on_hit", "function on_hit(landing)", "Item scripts: a projectile the item launched landed: {id, position, hit?, data}.", "Hooks"),
 
         new("state", "state", "Table that survives hot reloads. Keep plain data in it.", "Globals"),
@@ -85,6 +85,10 @@ public static class LuaApi
         new("combat.splash", "combat.splash(at, radius, damage, impulse?)", "Damage falling off to 0 at radius m around at, for players, parts and world objects; returns a list of hits.", "combat"),
         new("combat.pellets", "combat.pellets(direction, count, spread)", "count directions: the first along direction, the rest evenly round a cone of spread degrees.", "combat"),
         new("combat.projectile", "combat.projectile(from, velocity, options?)", "Launches a projectile ({gravity?, lifetime?, data?}); on_hit runs where it lands. Returns its id.", "combat"),
+
+        new("farm.soil", "farm.soil(creation, part)", "A soil part in the holder's reach: {seed?, crop?, stage, ripe, water, capacity}, or nil and why.", "farm"),
+        new("farm.plant", "farm.plant(creation, part, seed?)", "Plants seed (default: this item) in empty soil in reach; returns the soil, or nil and why. Takes no items.", "farm"),
+        new("farm.water", "farm.water(creation, part, seconds)", "Adds seconds of water to soil in reach, up to its capacity; returns the soil, or nil and why. Takes no items.", "farm"),
 
         new("vec3", "vec3(x, y, z)", "A vector with x, y, z. Supports + - * / unary minus, == and tostring.", "vec3"),
         new("vec3.dot", "a:dot(b)", "Dot product.", "vec3"),

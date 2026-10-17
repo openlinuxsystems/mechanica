@@ -58,7 +58,9 @@ public sealed record ScriptCallResult(bool Ok, IReadOnlyList<JsonNode?> Values, 
 /// <summary>Arguments of <c>UseItem</c>: use the item in a slot of the caller's inventory (its script's <c>on_use</c>).</summary>
 /// <param name="Slot">The slot holding the item.</param>
 /// <param name="Direction">Where the caller aims from their eyes; the host checks it against where they look. Omitted means where they look.</param>
-public sealed record UseItemArgs(int Slot, Mechanica.Core.Data.Vec3? Direction = null);
+/// <param name="Creation">The Creation of the part the item is used on (soil for a seed), if any. Give it with <paramref name="Part"/>.</param>
+/// <param name="Part">The part the item is used on, if any. The script checks reach (<c>farm.soil</c> does).</param>
+public sealed record UseItemArgs(int Slot, Mechanica.Core.Data.Vec3? Direction = null, int? Creation = null, int? Part = null);
 
 /// <summary>Arguments of <c>EquipItem</c>: take the item in a slot in hand, or empty the hand.</summary>
 /// <param name="Slot">The slot holding the item; omitted (null) empties the hand.</param>

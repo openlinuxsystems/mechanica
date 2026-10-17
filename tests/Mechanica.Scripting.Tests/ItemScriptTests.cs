@@ -9,7 +9,7 @@ using static Mechanica.Core.Tests.Survival.SurvivalFixture;
 
 namespace Mechanica.Scripting.Tests;
 
-/// <summary>Held items in Lua (chunk 20b): the vanilla food and potato gun scripts, and the item hooks.</summary>
+/// <summary>Held items in Lua (chunk 20b): the vanilla food, potato gun, seed and watering scripts, and the item hooks.</summary>
 public sealed class ItemScriptTests : IDisposable
 {
     private static readonly Vec3 Ahead = new(0, 0, -1);
@@ -28,7 +28,6 @@ public sealed class ItemScriptTests : IDisposable
         F.Pockets(Me).Add(Crop, 2);
         var slot = F.SlotOf(Me, Crop);
         Assert.Equal("You are already at full health.", _rig.Refused(Me, slot));
-        Assert.Equal("Seed cannot be used.", _rig.Refused(Me, F.SlotOf(Me, Seed)));
 
         F.Survival.Damage(Me.Peer, 50, "test");
         Assert.Equal(80.0, _rig.Used(Me, slot)["health"]!.GetValue<double>());
@@ -310,6 +309,66 @@ public sealed class ItemScriptTests : IDisposable
         Assert.True(reload.Ok, reload.Error);
         Assert.Equal(2, reload.Instances);
         Assert.Equal(12, _rig.Used(Me, mine).GetValue<int>());
+    }
+
+    // ---- Farming (mods/vanilla/scripts/seed.lua and watering.lua) ----
+
+    [Fact]
+    public void ASeedIsPlantedAndWateredFromTheHand()
+    {
+        var soil = F.Add(Soil, new Vector3(0, 0, 1));
+        var on = (soil, 1);
+        F.Pockets(Me).Add(Bucket, 3);
+        var seed = F.SlotOf(Me, Seed);
+        var bucket = F.SlotOf(Me, Bucket);
+
+        Assert.Equal("Aim at soil to plant the Seed.", _rig.Refused(Me, seed));
+        Assert.Equal("Aim at soil to water it.", _rig.Refused(Me, bucket));
+        Assert.Equal("creation and part go together.", F.Dispatch(Me, ScriptRuntime.UseItem, new { slot = seed, creation = soil }).Message);
+        Assert.Equal("There is no part 7 in creation " + soil + ".", _rig.Refused(Me, seed, on: (soil, 7)));
+
+        var planted = _rig.Used(Me, seed, on: on);
+        Assert.Equal((Seed, Crop, 0, false, 60.0), (planted["seed"]!.GetValue<string>(), planted["crop"]!.GetValue<string>(),
+            planted["stage"]!.GetValue<int>(), planted["ripe"]!.GetValue<bool>(), planted["capacity"]!.GetValue<double>()));
+        Assert.Equal(1, F.Pockets(Me).Count(Seed));
+        Assert.Equal("Something is already growing there.", _rig.Refused(Me, seed, on: on));
+
+        Assert.Equal(30.0, _rig.Used(Me, bucket, on: on)["water"]!.GetValue<double>());
+        Assert.Equal(60.0, _rig.Used(Me, bucket, on: on)["water"]!.GetValue<double>());
+        Assert.Equal("The soil is already full of water.", _rig.Refused(Me, bucket, on: on));
+        Assert.Equal(1, F.Pockets(Me).Count(Bucket));
+
+        F.Survival.Tick(20); // growth 2: ripe after 20 s
+        var view = F.Survival.SoilViewOf(F.World.FindCreation(soil)!, 1);
+        Assert.True(view.Ripe);
+        Assert.Equal(40f, view.Water); // a second of water per second of growing
+        Assert.DoesNotContain(_rig.Messages, m => m.Kind == ScriptMessageKind.Error);
+    }
+
+    [Fact]
+    public void FarmingFromTheHandNeedsSoilInReach()
+    {
+        var far = F.Add(Soil, new Vector3(0, 0, 30));
+        var block = F.Add(Block, new Vector3(0, 0, 1));
+        F.Pockets(Me).Add(Bucket, 1);
+        Assert.StartsWith("That is ", _rig.Refused(Me, F.SlotOf(Me, Seed), on: (far, 1)));
+        Assert.Equal("The Block is not soil.", _rig.Refused(Me, F.SlotOf(Me, Bucket), on: (block, 1)));
+        Assert.Equal(2, F.Pockets(Me).Count(Seed));
+    }
+
+    [Fact]
+    public void FarmFunctionsActOnlyInOnUse()
+    {
+        var soil = F.Add(Soil, new Vector3(0, 0, 1));
+        _rig.Write("scripts/sneaky.lua", """
+            function can_use(target)
+              farm.water(target.creation, target.part, 10)
+            end
+            """);
+        var sneaky = _rig.AddItem("sneaky", "scripts/sneaky.lua");
+        F.Pockets(Me).Add(sneaky, 1);
+        Assert.Contains("farm.water changes the world", _rig.Refused(Me, F.SlotOf(Me, sneaky), on: (soil, 1)));
+        Assert.Equal(0f, F.World.FindCreation(soil)!.SoilOf(1)!.Water);
     }
 
     private sealed class Near(float tolerance) : IEqualityComparer<Vector3>

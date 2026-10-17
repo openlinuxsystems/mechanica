@@ -60,19 +60,26 @@ internal sealed class ItemRig : IDisposable
         return qualified;
     }
 
-    public ActionResult Use(ActionCaller caller, int slot, Vec3? direction = null) =>
-        F.Dispatch(caller, ScriptRuntime.UseItem, direction is { } d ? new { slot, direction = d } : new { slot });
-
-    public JsonNode Used(ActionCaller caller, int slot, Vec3? direction = null)
+    public ActionResult Use(ActionCaller caller, int slot, Vec3? direction = null, (int Creation, int Part)? on = null)
     {
-        var result = Use(caller, slot, direction);
+        var args = new Dictionary<string, object> { ["slot"] = slot };
+        if (direction is { } d)
+            args["direction"] = d;
+        if (on is { } target)
+            (args["creation"], args["part"]) = (target.Creation, target.Part);
+        return F.Dispatch(caller, ScriptRuntime.UseItem, args);
+    }
+
+    public JsonNode Used(ActionCaller caller, int slot, Vec3? direction = null, (int Creation, int Part)? on = null)
+    {
+        var result = Use(caller, slot, direction, on);
         Assert.True(result.Ok, result.ToString());
         return JsonNode.Parse(result.Value!.Value.GetRawText())!;
     }
 
-    public string Refused(ActionCaller caller, int slot, Vec3? direction = null)
+    public string Refused(ActionCaller caller, int slot, Vec3? direction = null, (int Creation, int Part)? on = null)
     {
-        var result = Use(caller, slot, direction);
+        var result = Use(caller, slot, direction, on);
         Assert.False(result.Ok, "the use should be refused");
         return result.Message!;
     }

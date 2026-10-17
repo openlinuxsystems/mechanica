@@ -145,11 +145,11 @@ public sealed record PartDefinition
     /// <summary>Makes the part a crafting station that runs recipes naming it. Needs <see cref="Inventory"/> for its output.</summary>
     public CraftingDefinition? Crafting { get; init; }
 
-    /// <summary>Makes an item a seed that grows into a crop on soil (chunk 20). Items only.</summary>
+    /// <summary>
+    /// Makes an item a seed that grows into a crop on soil (chunk 20). Items only. Planting it is the item's
+    /// Lua script (<c>farm.plant</c>); growing and harvesting read this.
+    /// </summary>
     public SeedDefinition? Seed { get; init; }
-
-    /// <summary>Makes an item water soil when used on it (chunk 20). Items only.</summary>
-    public WateringDefinition? Watering { get; init; }
 
     /// <summary>Makes a placeable part farm soil that seeds are planted in (chunk 20).</summary>
     public SoilDefinition? Soil { get; init; }
@@ -218,17 +218,6 @@ public sealed record SeedDefinition
 
     /// <summary>What one ripe crop is worth to raids (chunk 21 scales raids by planted crop value). Omitted means 1.</summary>
     public float? Value { get; init; }
-
-    /// <summary>Keys this build does not know.</summary>
-    [JsonExtensionData]
-    public Dictionary<string, JsonElement>? Extra { get; init; }
-}
-
-/// <summary>An item that waters soil when used on it, and is used up doing so.</summary>
-public sealed record WateringDefinition
-{
-    /// <summary>Seconds of growth one use waters the soil for (more than 0).</summary>
-    public float? Seconds { get; init; }
 
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]

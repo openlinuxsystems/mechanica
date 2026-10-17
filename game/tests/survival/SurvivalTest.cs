@@ -16,7 +16,7 @@ namespace Mechanica.Game.Tests;
 /// <summary>
 /// The survival loop, host plus client (chunk 20, D10), with the vanilla content on a flat world. The
 /// client starts with the starting items and pays for what it builds; it plants, waters and harvests a
-/// carrot, eats, shoots the host with a Potato Blaster (food and weapons are Lua item scripts, chunk 20b),
+/// carrot, eats, shoots the host with a Potato Blaster (seeds, water, food and weapons are Lua item scripts, chunk 20b),
 /// sees a projectile fly, falls, dies, drops its things, respawns, picks them back up, and respawns at a bed
 /// it slept in. Every step is checked on the host and on the client.
 /// </summary>
@@ -90,14 +90,19 @@ public partial class SurvivalTest : StagedTest
         {
             if (frame == 0)
             {
-                Request(SurvivalActions.Plant, new PartUseArgs(_soil, _soilPart, SlotOf(Seed)));
-                Request(SurvivalActions.Water, new PartUseArgs(_soil, _soilPart, SlotOf(Bucket)));
+                Request(ScriptRuntime.UseItem, new UseItemArgs(SlotOf(Seed), Creation: _soil, Part: _soilPart));
+                Request(ScriptRuntime.UseItem, new UseItemArgs(SlotOf(Bucket), Creation: _soil, Part: _soilPart));
             }
             if (frame == 30)
-                Request(SurvivalActions.Water, new PartUseArgs(_soil, _soilPart, SlotOf(Bucket)));
+                Request(ScriptRuntime.UseItem, new UseItemArgs(SlotOf(Bucket), Creation: _soil, Part: _soilPart));
             if (_results.Count < 3 || _client.Main.Survival.Soil.GetValueOrDefault((_soil, _soilPart)) is not { Seed: not null } soil || soil.Water < 250)
                 return false;
             Check(_results.All(r => r.Ok), $"planting and watering succeed ({string.Join("; ", _results)})");
+            var planted = System.Text.Json.Nodes.JsonNode.Parse(_results[0].Value!.Value.GetRawText())!;
+            Check((string?)planted["seed"] == Seed && (string?)planted["crop"] == Carrot, $"the seed's script answers with the soil ({planted.ToJsonString()})");
+            var host = HostSurvival.SoilViewOf(_host.Main.Creations.Find(_soil)!, _soilPart);
+            // The host's water drains as the crop grows; the client sees it on the next stage.
+            Check(host.Seed == soil.Seed && host.Water <= soil.Water + 0.01f && host.Water > 200, $"the host and client agree on the soil ({host} vs {soil})");
             Check(Count(Seed) == 3 && Count(Bucket) == 0, $"a seed and both buckets are used ({Items()})");
             Check(!soil.Ripe && _client.Main.Survival.CropNodes.ContainsKey((_soil, _soilPart)), "the client shows a young crop");
             return true;

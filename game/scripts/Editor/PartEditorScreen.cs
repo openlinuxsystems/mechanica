@@ -724,13 +724,6 @@ public partial class PartEditorScreen : Control
             _partGrid.AddBool("Respawn point", d.RespawnPoint, v => Set("Set respawn point", x => x with { RespawnPoint = v == true ? true : null }), optional: true);
             return;
         }
-        _partGrid.AddNumber("Waters for", d.Watering?.Seconds, 1, 1e5, 10, v =>
-        {
-            if ((v is null) != (Document?.Definition.Watering is null))
-                Document?.Apply(v is null ? "Remove watering" : "Make watering", x => x with { Watering = v is null ? null : new WateringDefinition { Seconds = (float)v } });
-            else if (v is not null)
-                Set("Set watering", x => x with { Watering = x.Watering! with { Seconds = (float)v } });
-        }, optional: true, fallback: 120, suffix: "s");
         _partGrid.AddBool("Seed", d.Seed is not null, v => Toggle("seed", v == true,
             x => x with { Seed = x.Seed ?? new SeedDefinition { GrowTime = 240, Yield = 1 } }, x => x with { Seed = null }));
         if (d.Seed is { } seed)
