@@ -182,11 +182,7 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
     }
 
     /// <inheritdoc/>
-    public IEnumerable<Creation> AllCreations => Creations.All.Select(c =>
-    {
-        Creations.NodeOf(c.Id)?.SyncToCreation();
-        return c;
-    });
+    public IEnumerable<Creation> AllCreations => Creations.All;
 
     /// <inheritdoc/>
     public System.Numerics.Vector3? EyeOf(int peer) =>

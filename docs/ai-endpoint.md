@@ -72,7 +72,9 @@ will be Lua parts built on them; players don't call them directly and are refuse
 Limits (largest force, torque, push duration, bearing speed and torque) are data in
 `game/data/motion.json`. A Creation that is parked because nobody is near it can't be moved.
 
-`PlacePart` and `RemovePart` build and take apart Creations as described in the building docs.
+`PlacePart` and `RemovePart` build and take apart Creations as described in the building docs. The
+survival actions (`Eat`, `Fire`, `Plant`, `Harvest`, `PickUp`, `Respawn`, ...) are listed in
+[Survival](survival.md#action-api).
 
 ## Recording and replay
 

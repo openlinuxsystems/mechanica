@@ -119,7 +119,7 @@ public interface ISurvivalWorld
     /// <summary>The Creation with this id, with its Body poses current, or null.</summary>
     Creation? FindCreation(int id);
 
-    /// <summary>Every Creation in the world, live or parked.</summary>
+    /// <summary>Every Creation in the world, live or parked. Their Body poses may be stale; <see cref="FindCreation"/> one to read them.</summary>
     IEnumerable<Creation> AllCreations { get; }
 
     /// <summary>World position of a peer's player's eyes, or null when it has no player.</summary>

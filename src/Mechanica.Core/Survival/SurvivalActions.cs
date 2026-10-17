@@ -403,7 +403,8 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
                 Damage(peer, dealt, "explosion");
             hits.Add(new ShotHitView("player", centre.ToVec3(), dealt, Player: peer));
         }
-        foreach (var creation in world.AllCreations.ToList())
+        // FindCreation brings each Creation's Body poses up to date.
+        foreach (var creation in world.AllCreations.Select(c => c.Id).ToList().Select(world.FindCreation).OfType<Creation>())
         {
             foreach (var part in creation.Parts.ToList())
             {
