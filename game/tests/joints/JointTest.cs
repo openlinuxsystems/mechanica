@@ -18,7 +18,7 @@ namespace Mechanica.Game.Tests;
 /// drops back to its stop when freed;</item>
 /// <item>a spring sags by m·g/k and comes to rest;</item>
 /// <item>a car on four side-mounted suspensions settles level, drives, and stays together;</item>
-/// <item>the client shows every joint where the host has it.</item>
+/// <item>the client shows every joint where the host has it, and the joint debug overlay draws them all.</item>
 /// </list>
 /// </summary>
 public partial class JointTest : StagedTest
@@ -190,6 +190,16 @@ public partial class JointTest : StagedTest
                 Check(MathF.Abs(Position(_host, Car, spring) - Position(_client, Car, spring)) < 0.01f, $"the client's spring {spring} matches the host's");
             return true;
         });
+        Add("the joint overlay draws every joint on the host and the client", _ => CheckOverlay(_host) && CheckOverlay(_client));
+    }
+
+    private bool CheckOverlay(Instance instance)
+    {
+        instance.Main.JointOverlay.Redraw();
+        var expected = instance.Main.Creations.All.Sum(c => c.Joints.Count);
+        Check(expected == 12 && instance.Main.JointOverlay.JointsDrawn == expected,
+            $"{instance}'s joint overlay draws all {expected} joints ({instance.Main.JointOverlay.JointsDrawn})");
+        return true;
     }
 
     // A heavy base, the joint part on top of it and a block on the joint's head.
