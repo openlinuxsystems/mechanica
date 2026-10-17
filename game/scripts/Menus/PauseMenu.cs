@@ -125,7 +125,8 @@ public partial class PauseMenu : CanvasLayer
 
     public override void _UnhandledInput(InputEvent @event)
     {
-        // Esc with nothing open opens the menu, whether or not the game has the mouse.
+        // Esc with nothing open opens the menu, whether or not the game has the mouse. While watching another player,
+        // the Spectator uses Esc up in _Input first to give the view back.
         if (GameInput.Pressed(@event, InputActions.Pause) && EscapeStack.Topmost is null)
         {
             Open();
