@@ -1,0 +1,25 @@
+{
+  "id": "glass_wedge",
+  "name": "Glass Wedge",
+  "description": "Glass block cut on the diagonal. Same material, half the mass.",
+  "category": "block",
+  "mass": 1.5,
+  "durability": 1,
+  "friction": 0.3,
+  "buoyancy": 0.4,
+  "flammable": false,
+  "stack_size": 100,
+  "sound_material": "glass",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/glass_wedge.glb",
+  "visual": {
+    "color": "#bfe3f0",
+    "roughness": 0.05,
+    "metallic": 0,
+    "opacity": 0.35
+  },
+  "collision": {
+    "shape": "convex",
+    "mesh": "meshes/blocks/glass_wedge.glb"
+  }
+}

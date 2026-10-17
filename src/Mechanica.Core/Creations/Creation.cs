@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using Mechanica.Core.Data;
+using Mechanica.Core.Items;
 
 namespace Mechanica.Core.Creations;
 
@@ -29,6 +30,9 @@ public sealed class Creation
     private readonly Dictionary<int, float> _damage = [];
     // World velocity of each part's Body, stored the same way as poses.
     private readonly Dictionary<int, BodyVelocity> _velocities = [];
+    // Item storage and crafting orders of container and station parts, made when first asked for.
+    private readonly Dictionary<int, Inventory> _inventories = [];
+    private readonly Dictionary<int, CraftingQueue> _crafting = [];
     private Layout? _layout;
     private bool _onLift;
     private int _authorityPeer;
@@ -173,6 +177,38 @@ public sealed class Creation
         else
             _damage.Remove(partId);
     }
+
+    /// <summary>
+    /// The item storage of a part whose definition has an <c>inventory</c>, or null for other parts. Its
+    /// contents follow the part through splits and welds and are saved with the Creation.
+    /// </summary>
+    public Inventory? InventoryOf(int partId)
+    {
+        if (_inventories.TryGetValue(partId, out var inventory))
+            return inventory;
+        if (!_definitions.TryGetValue(partId, out var definition) || Inventory.For(Catalog, definition) is not { } made)
+            return null;
+        _inventories[partId] = made;
+        return made;
+    }
+
+    /// <summary>The crafting orders of a part whose definition has <c>crafting</c>, or null for other parts.</summary>
+    public CraftingQueue? CraftingOf(int partId)
+    {
+        if (_crafting.TryGetValue(partId, out var queue))
+            return queue;
+        if (!_definitions.TryGetValue(partId, out var definition) || definition.Crafting is null)
+            return null;
+        return _crafting[partId] = new CraftingQueue();
+    }
+
+    /// <summary>True when a part holds items or has crafting orders.</summary>
+    public bool HoldsItems(int partId) =>
+        _inventories.GetValueOrDefault(partId) is { IsEmpty: false } || _crafting.GetValueOrDefault(partId) is { IsEmpty: false };
+
+    /// <summary>Stations with orders, by part id.</summary>
+    public IEnumerable<(int PartId, CraftingQueue Queue)> ActiveCrafting =>
+        _crafting.Where(kv => !kv.Value.IsEmpty).OrderBy(kv => kv.Key).Select(kv => (kv.Key, kv.Value));
 
     /// <summary>Paints a part (Paint Tool): <paramref name="color"/> is <c>"#rrggbb"</c>, or null for its own colour.</summary>
     /// <returns>True when the colour changed.</returns>
@@ -368,6 +404,10 @@ public sealed class Creation
                     creation._damage[id] = damage;
                 if (_velocities.TryGetValue(id, out var velocity))
                     creation._velocities[id] = velocity;
+                if (_inventories.TryGetValue(id, out var inventory))
+                    creation._inventories[id] = inventory;
+                if (_crafting.TryGetValue(id, out var queue))
+                    creation._crafting[id] = queue;
             }
             foreach (var connection in _connections.Where(c => members.Contains(c.A)).ToList())
             {
@@ -500,6 +540,10 @@ public sealed class Creation
             // Velocities are in world space, so they carry over unchanged.
             if (other._velocities.TryGetValue(oldId, out var velocity))
                 _velocities[newId] = velocity;
+            if (other._inventories.TryGetValue(oldId, out var inventory))
+                _inventories[newId] = inventory;
+            if (other._crafting.TryGetValue(oldId, out var queue))
+                _crafting[newId] = queue;
         }
         foreach (var c in other._connections)
             _connections.Add(c.Type == ConnectionType.Structural
@@ -600,6 +644,8 @@ public sealed class Creation
         _poses.Remove(partId);
         _damage.Remove(partId);
         _velocities.Remove(partId);
+        _inventories.Remove(partId);
+        _crafting.Remove(partId);
         _connections.RemoveWhere(c => c.Involves(partId));
     }
 

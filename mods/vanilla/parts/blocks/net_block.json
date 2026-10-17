@@ -1,0 +1,21 @@
+{
+  "id": "net_block",
+  "name": "Net Block",
+  "description": "See-through rope netting.",
+  "category": "block",
+  "mass": 1,
+  "durability": 1,
+  "friction": 0.6,
+  "buoyancy": 0.9,
+  "flammable": true,
+  "stack_size": 100,
+  "sound_material": "fabric",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/net_block.glb",
+  "visual": {
+    "color": "#c8c0a8",
+    "roughness": 0.9,
+    "metallic": 0,
+    "opacity": 0.5
+  }
+}

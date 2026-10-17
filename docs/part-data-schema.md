@@ -84,6 +84,8 @@ you; this page is the reference for what each key means, so you can read, review
 | `sockets` | list | no | Attachment points. Placeable parts only. See [sockets](#sockets). |
 | `script` | path | no | `.lua` behaviour script. |
 | `sounds` | object | no | Sound events: local event name → sound id (`"start": "engine_start"`). Ids are snake_case, or `mod_id:sound_id` for another mod's sound. |
+| `inventory` | object | no | Item storage. Placeable parts only. See [inventory and crafting](#inventory-and-crafting). |
+| `crafting` | object | no | Makes the part a crafting station. Needs `inventory`. See [inventory and crafting](#inventory-and-crafting). |
 | `properties` | object | no | Free-form numbers and settings that only the part's Lua script reads (torque, thrust, range). Key order is kept. |
 
 "Placeable" means the categories that exist in the world on the build grid: `block`, `interactive`,
@@ -111,6 +113,8 @@ you; this page is the reference for what each key means, so you can read, review
 | `color` | `"#rrggbb"` | Base colour. It multiplies the mesh's own colour, so white keeps the model as it is. |
 | `roughness` | 0–1 | 0 is mirror-smooth, 1 is matte. |
 | `metallic` | 0–1 | 0 is plastic or wood, 1 is bare metal. |
+| `opacity` | 0–1 | How solid it looks. Omitted means 1; lower values are see-through, like glass. Physics is unaffected. |
+| `emission` | `"#rrggbb"` | Glow colour added on top of the lit surface. It does not light other things. |
 | `texture` | path | `.png` albedo texture, replacing the mesh's own. |
 | `paintable` | bool | Whether the Paint Tool can recolour it. Omitted means true. |
 | `variants` | list | Named colour choices: `{ "id": "black", "name": "Black", "color": "#202020" }`. Ids are unique in the part. |
@@ -159,6 +163,62 @@ How parts attach when they are placed touching each other:
 
 The Part Editor's connection preview shows the result on every face: green for rigid, blue for a
 joint, red where nothing attaches.
+
+## inventory and crafting
+
+Inventories are a built-in primitive (players, chests, fuel tanks, station output), configured here
+rather than in Lua.
+
+| Key | Type | Meaning |
+|-----|------|---------|
+| `inventory.slots` | integer 1–256 | Number of item slots. Required when `inventory` is present. |
+| `inventory.accepts` | list of item ids | Only these items go in (`["gasoline"]` for a gas container). Omitted means any item. |
+| `crafting.speed` | number > 0 | Multiplier on recipe times: 2 crafts twice as fast. Default 1. |
+| `crafting.queue_size` | integer 1–64 | Most orders waiting at once. Default 1. |
+
+Each slot holds one stack of one item, up to that item's `stack_size`. A station runs every recipe that
+lists its part id in `stations`: the crafting player's inventory pays the inputs when the order is
+queued, and finished crafts land in the station's own inventory, where any player in reach can take
+them. A container or station that holds items, or has orders queued, can't be picked up with the
+Hammer. Its contents are saved with the Creation.
+
+```json
+"inventory": { "slots": 12 },
+"crafting": { "speed": 1, "queue_size": 8 }
+```
+
+## Recipes
+
+Recipes live in their own files, `recipes/**/*.json`, one recipe per file. The editor's recipe panel
+writes them.
+
+```json
+{
+  "id": "chest",
+  "stations": ["fabricator", "mini_fabricator"],
+  "inputs": [
+    { "item": "scrap_wood", "count": 4 },
+    { "item": "scrap_metal", "count": 2 }
+  ],
+  "outputs": [
+    { "item": "chest", "count": 1 }
+  ],
+  "time": 4
+}
+```
+
+| Key | Type | Required | Meaning |
+|-----|------|----------|---------|
+| `id` | string | always | Lowercase snake_case, unique in the mod; the game-wide id is `mod_id:id`. Usually the main output's id. |
+| `name` | string | no | Display name. Omitted means the first output's name. |
+| `stations` | list of part ids | always | Parts with `crafting` that can run it. |
+| `inputs` | list of `{ item, count }` | always | Items used up. Each item once; add the counts together. |
+| `outputs` | list of `{ item, count }` | always | Items made. |
+| `time` | number ≥ 0 | always | Seconds for one craft at speed 1. |
+
+Item and station ids are `id` (vanilla) or `mod_id:id`, and must name parts that are loaded. A recipe
+with errors is left out and the rest still load. Host and clients compare their recipes when a client
+joins.
 
 ## The editor source file
 
@@ -211,3 +271,6 @@ example `error MD0201: mods/my_mod/parts/a.json(4) $.mass: mass must be greater 
 | MD04xx | Saved Creation problems. |
 | MD0501 | Editor source problem (a model piece). |
 | MD0502 | Export could not write to the mod folder. |
+| MD0503 | A Part Editor batch file problem. See [Getting Started](getting-started.md#10-many-similar-parts-batches). |
+| MD0701 | A recipe value is missing or invalid. |
+| MD0702 | Two recipe files in a mod use the same id. |

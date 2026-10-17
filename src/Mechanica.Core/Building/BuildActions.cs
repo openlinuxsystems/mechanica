@@ -151,6 +151,8 @@ public sealed class BuildActions(IPartCatalog catalog, BuildSettings settings, I
             return $"There is no creation {args.Creation}.";
         if (creation.FindPart(args.Part) is not { } part)
             return $"Creation {args.Creation} has no part {args.Part}.";
+        if (creation.HoldsItems(part.Id))
+            return $"Empty the {creation.DefinitionOf(part.Id).Name ?? part.Part} before picking it up.";
         var pose = creation.BodyPose(creation.BodyIndexOf(part.Id));
         var centre = pose.Apply(PartGeometry.CentreMetres(creation.DefinitionOf(part.Id), part.Cell, part.Rotation).ToNumerics());
         return CheckReach(caller, centre);

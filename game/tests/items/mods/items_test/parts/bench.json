@@ -1,0 +1,25 @@
+{
+  "id": "bench",
+  "name": "Test Bench",
+  "category": "station",
+  "mass": 25,
+  "durability": 4,
+  "friction": 0.6,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "size": [
+    4,
+    3,
+    4
+  ],
+  "visual": {
+    "color": "#3070d0"
+  },
+  "inventory": {
+    "slots": 2
+  },
+  "crafting": {
+    "speed": 2,
+    "queue_size": 2
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "id": "metal_crate",
+  "name": "Metal Crate",
+  "category": "container",
+  "mass": 20,
+  "durability": 10,
+  "friction": 0.5,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "sound_material": "metal",
+  "size": [3, 3, 3],
+  "mesh": "meshes/metal_crate.glb",
+  "visual": {
+    "color": "#5a6068",
+    "paintable": true
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.375, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "sounds": {
+    "open": "container_open",
+    "place": "place_metal"
+  },
+  "inventory": {
+    "slots": 15
+  }
+}

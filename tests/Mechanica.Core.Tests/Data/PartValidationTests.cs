@@ -60,6 +60,8 @@ public class PartValidationTests
     [InlineData("""{ "visual": { "color": "red" } }""", "$.visual.color", "hex text")]
     [InlineData("""{ "visual": { "roughness": 1.5 } }""", "$.visual.roughness", "between 0 and 1")]
     [InlineData("""{ "visual": { "metallic": -1 } }""", "$.visual.metallic", "between 0 and 1")]
+    [InlineData("""{ "visual": { "opacity": 1.2 } }""", "$.visual.opacity", "between 0 and 1")]
+    [InlineData("""{ "visual": { "emission": "#ffd8" } }""", "$.visual.emission", "hex text")]
     [InlineData("""{ "visual": { "texture": "textures/a.jpg" } }""", "$.visual.texture", ".png")]
     [InlineData("""{ "visual": { "variants": [{ "id": "red", "name": "Red", "color": "#ff00zz" }] } }""", "$.visual.variants[0].color", "hex text")]
     [InlineData("""{ "visual": { "variants": [{ "id": "red", "color": "#ff0000" }] } }""", "$.visual.variants[0].name", "name is required")]

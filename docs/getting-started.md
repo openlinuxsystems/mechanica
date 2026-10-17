@@ -101,6 +101,8 @@ neighbours on every face. Parts with joints (bearings, pistons, suspension) use 
 The **Look** tab sets the part's material:
 
 - **Colour**, **Roughness** and **Metallic**.
+- **Opacity**: below 1 the part is see-through, like glass.
+- **Glow**: a colour the surface gives off, like a path light. It does not light anything else.
 - **Paintable**: whether players can paint the part.
 - **Colour variants**: named colours a player can pick, each with an id. Press **+ Variant** to add
   one.
@@ -138,6 +140,61 @@ in front of you.
 - **Back** returns to the editor with your part still open.
 
 You can also open the sandbox from the main menu with **Test Sandbox**.
+
+## 10. Many similar parts: batches
+
+When a mod has many parts that differ only in a few numbers, such as a set of blocks and their
+wedges, describe them once in a **batch file** and let the editor make them all. A batch lives in
+your mod at `editor/batches/<name>.json`, and the game never reads it.
+
+```json
+{
+  "format_version": 1,
+  "parts": [
+    {
+      "file": "parts/blocks/oak_block.json",
+      "template": "block",
+      "set": { "name": "Oak Block", "mass": 4, "visual": { "color": "#a07040" } },
+      "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }]
+    },
+    {
+      "file": "parts/blocks/oak_wedge.json",
+      "base": "oak_block",
+      "set": { "name": "Oak Wedge", "mass": 2 },
+      "model": [{ "kind": "wedge", "size": [0.25, 0.25, 0.25] }],
+      "collision_from_model": true
+    }
+  ]
+}
+```
+
+Each entry is one part, made exactly as you would by hand:
+
+| Key | Meaning |
+|-----|---------|
+| `file` | The part file to write, under `parts/`. Its name is the part id. |
+| `template` | A template from the **New…** dialog to start from (`block`, `decor`, `interactive`, `item`). |
+| `base` | Or an earlier part in the same batch to start from, so a wedge inherits everything from its block. |
+| `set` | Part keys to change. Objects such as `visual` merge key by key, other values replace, and `null` removes a key. |
+| `model` | Model pieces, as in the editor source (see the [schema reference](part-data-schema.md#the-editor-source-file)). |
+| `collision_from_model` | `true` makes the collision shape the convex hull of the part's own baked model. |
+| `recipes` | Recipes that make the part, as in a `recipes/*.json` file. Each is saved to `recipes/<id>.json` after the parts. |
+
+Press **Run batch…** and pick the file. The editor makes every part, bakes its model and exports it
+with the same checks as **Export**, saves the recipes as the **Recipes** tab would, then opens the last
+part. Problems are listed with the entry they come from. A mistake in the batch itself (a missing
+template, a bad file name) stops it before anything is written; a part or recipe that fails its own
+checks is skipped and the rest are still written. Running a batch again updates the parts and recipes
+it made, so keep the batch as the place you edit them.
+
+A batch can also run without opening the game window:
+
+```sh
+godot --headless --path game -- --part-batch mods/my_mod/editor/batches/blocks.json
+```
+
+It prints every problem and exits with 0 when every part and recipe exported. Vanilla's blocks and wedges are
+made this way from `mods/vanilla/editor/batches/structural_blocks.json` (`tools/author-vanilla.sh`).
 
 ## Where to go next
 

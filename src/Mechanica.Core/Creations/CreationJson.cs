@@ -2,6 +2,7 @@ using System.Numerics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Mechanica.Core.Data;
+using Mechanica.Core.Items;
 
 namespace Mechanica.Core.Creations;
 
@@ -27,7 +28,10 @@ namespace Mechanica.Core.Creations;
 /// and <c>angular_velocity</c> (rad/s), both in world space and both optional (missing means at rest),
 /// so a late joiner or a reloaded save picks it up mid-motion (<see cref="BodyVelocity"/>).
 /// <c>on_lift</c> (written only when true) marks a Creation a Lift holds; a part's <c>color</c> is its
-/// Paint Tool colour and <c>damage</c> the health it has lost, each written only when set.
+/// Paint Tool colour and <c>damage</c> the health it has lost, each written only when set. A container
+/// or station part also stores its <c>inventory</c> (filled slots: <c>{ "slot": 0, "item": "vanilla:scrap_metal",
+/// "count": 12 }</c>) and its <c>crafting</c> orders (<c>{ "recipe": "vanilla:chest", "count": 2, "progress": 1.5 }</c>),
+/// each written only when not empty.
 /// </summary>
 public static class CreationJson
 {
@@ -51,6 +55,10 @@ public static class CreationJson
                 Rotation = p.Rotation,
                 Color = p.Color,
                 Damage = creation.PartDamage(p.Id) is var damage and > 0 ? damage : null,
+                Inventory = InventorySlots(creation.HoldsItems(p.Id) ? creation.InventoryOf(p.Id) : null),
+                Crafting = creation.HoldsItems(p.Id) && creation.CraftingOf(p.Id) is { IsEmpty: false } queue
+                    ? [.. queue.Jobs.Select(j => new CraftJobData { Recipe = j.Recipe, Count = j.Count, Progress = j.Progress > 0 ? j.Progress : null })]
+                    : null,
                 Extra = Sorted(p.Extra),
             })],
             Connections = [.. creation.Connections.Select(c => new ConnectionData
@@ -122,6 +130,7 @@ public static class CreationJson
             creation.Load(part, definition);
             if (data.Parts[i].Damage is { } damage)
                 creation.SetPartDamage(part.Id, damage);
+            ReadStorage(data.Parts[i], path, creation, part.Id, sink);
         }
         if (sink.ErrorCount > 0)
             return null;
@@ -232,6 +241,67 @@ public static class CreationJson
         }
     }
 
+    private static List<SlotData>? InventorySlots(Inventory? inventory)
+    {
+        if (inventory is null || inventory.IsEmpty)
+            return null;
+        return [.. inventory.Slots.Select((s, i) => (s, i)).Where(x => x.s is not null)
+            .Select(x => new SlotData { Slot = x.i, Item = x.s!.Item, Count = x.s.Count })];
+    }
+
+    private static void ReadStorage(PartInstanceData data, string path, Creation creation, int partId, DiagnosticSink sink)
+    {
+        const string invalid = DiagnosticCodes.CreationInvalid;
+        if (data.Inventory is { Count: > 0 } slots)
+        {
+            if (creation.InventoryOf(partId) is not { } inventory)
+            {
+                sink.Error(invalid, $"{path}.inventory", $"part '{data.Part}' has no inventory.");
+            }
+            else
+            {
+                for (var i = 0; i < slots.Count; i++)
+                {
+                    var slotPath = $"{path}.inventory[{i}]";
+                    var slot = slots[i];
+                    if (slot.Slot is not { } index || slot.Item is null || slot.Count is not { } count)
+                        sink.Error(invalid, slotPath, "a slot needs slot, item and count.");
+                    else if (index < 0 || index >= inventory.SlotCount)
+                        sink.Error(invalid, $"{slotPath}.slot", $"slot must be 0 to {inventory.SlotCount - 1} (got {index}).");
+                    else if (inventory[index] is not null)
+                        sink.Error(invalid, $"{slotPath}.slot", $"slot {index} is listed twice.");
+                    else if (inventory.CheckStack(new ItemStack(Identifiers.Qualify(slot.Item), count)) is { } error)
+                        sink.Error(invalid, slotPath, error);
+                    else
+                        inventory.SetSlot(index, new ItemStack(slot.Item, count));
+                }
+            }
+        }
+        if (data.Crafting is { Count: > 0 } jobs)
+        {
+            if (creation.CraftingOf(partId) is not { } queue)
+            {
+                sink.Error(invalid, $"{path}.crafting", $"part '{data.Part}' is not a crafting station.");
+                return;
+            }
+            var read = new List<CraftJob>();
+            for (var i = 0; i < jobs.Count; i++)
+            {
+                var job = jobs[i];
+                var jobPath = $"{path}.crafting[{i}]";
+                if (!PartValidator.IsItemRef(job.Recipe))
+                    sink.Error(invalid, $"{jobPath}.recipe", "recipe must be a recipe id or 'mod_id:recipe_id'.");
+                else if (job.Count is not ({ } count and >= 1))
+                    sink.Error(invalid, $"{jobPath}.count", "count must be 1 or more.");
+                else if (job.Progress is { } progress && !(float.IsFinite(progress) && progress >= 0))
+                    sink.Error(invalid, $"{jobPath}.progress", "progress must be 0 or more seconds.");
+                else
+                    read.Add(new CraftJob(Identifiers.Qualify(job.Recipe!), count, job.Progress ?? 0));
+            }
+            queue.Load(read);
+        }
+    }
+
     private static bool IsFinite(Vec3 v) => float.IsFinite(v.X) && float.IsFinite(v.Y) && float.IsFinite(v.Z);
 
     private static (PartInstance, PartDefinition)? ReadPart(PartInstanceData data, string path, IPartCatalog catalog, DiagnosticSink sink)
@@ -301,8 +371,30 @@ public static class CreationJson
 
         public float? Damage { get; init; }
 
+        public List<SlotData>? Inventory { get; init; }
+
+        public List<CraftJobData>? Crafting { get; init; }
+
         [JsonExtensionData]
         public Dictionary<string, JsonElement>? Extra { get; init; }
+    }
+
+    internal sealed record SlotData
+    {
+        public int? Slot { get; init; }
+
+        public string? Item { get; init; }
+
+        public int? Count { get; init; }
+    }
+
+    internal sealed record CraftJobData
+    {
+        public string? Recipe { get; init; }
+
+        public int? Count { get; init; }
+
+        public float? Progress { get; init; }
     }
 
     internal sealed record ConnectionData

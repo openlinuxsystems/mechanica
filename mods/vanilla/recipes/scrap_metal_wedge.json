@@ -1,0 +1,20 @@
+{
+  "id": "scrap_metal_wedge",
+  "stations": [
+    "fabricator",
+    "mini_fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "scrap_metal_wedge",
+      "count": 4
+    }
+  ],
+  "time": 2
+}

@@ -47,6 +47,7 @@ public partial class PartEditorScreen : Control
     private Button _redo = null!;
     private FileDialog _openDialog = null!;
     private FileDialog _importDialog = null!;
+    private FileDialog _batchDialog = null!;
     private ConfirmationDialog _newDialog = null!;
     private AcceptDialog _message = null!;
     private HelpWindow _help = null!;
@@ -67,6 +68,9 @@ public partial class PartEditorScreen : Control
 
     /// <summary>The part being edited, or null before one is opened.</summary>
     public PartDocument? Document { get; private set; }
+
+    /// <summary>The Recipes tab: recipes in the part's mod that make the part.</summary>
+    public RecipePanel Recipes { get; private set; } = null!;
 
     /// <summary>The 3D preview.</summary>
     public PartPreview Preview => _preview;
@@ -102,6 +106,8 @@ public partial class PartEditorScreen : Control
         AddButton(toolbar, "Open…", () => _openDialog.PopupCentered(new Vector2I(900, 600)), "Open a part file from a mod");
         AddButton(toolbar, "Export", () => _ = ExportAsync(), "Validate and write the part into its mod folder (Ctrl+S)");
         AddButton(toolbar, "Test in Sandbox", () => _ = TestInSandboxAsync(), "Export, then spawn the part in the Test Sandbox");
+        AddButton(toolbar, "Run batch…", () => _batchDialog.PopupCentered(new Vector2I(900, 600)),
+            "Make or update many parts from a batch file (editor/batches/*.json in a mod)");
         toolbar.AddChild(new VSeparator());
         _undo = AddButton(toolbar, "Undo", () => Document?.Undo(), "Ctrl+Z");
         _redo = AddButton(toolbar, "Redo", () => Document?.Redo(), "Ctrl+Shift+Z");
@@ -241,25 +247,28 @@ public partial class PartEditorScreen : Control
     {
         if (Document is not { } document)
             return null;
-        byte[]? baked = null;
-        if (document.Source.NeedsBake)
-        {
-            // Bake an untinted copy so the runtime's visual tint isn't applied twice.
-            var model = ModelBuilder.Build(document.Source, path => _assets.LoadMeshes(path, document.ModId));
-            model.Visible = false;
-            _viewport.AddChild(model);
-            if (model is CsgShape3D)
-            {
-                await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-                await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-            }
-            baked = ModelBuilder.Bake(model);
-            _viewport.RemoveChild(model);
-            model.QueueFree();
-        }
+        var baked = document.Source.NeedsBake
+            ? await ModelBuilder.BakeAsync(_viewport, document.Source, path => _assets.LoadMeshes(path, document.ModId))
+            : null;
         var result = PartExporter.Export(document, baked);
         _assets.ClearCache();
         ShowProblems(result.Diagnostics, result.Succeeded ? $"Exported {result.QualifiedId} to {Display(result.PartFile!)}." : "Export failed; nothing was written.");
+        return result;
+    }
+
+    /// <summary>
+    /// Runs a batch file (<see cref="PartBatch"/>) into the mod that holds it, then opens the last part
+    /// it made. Problems are listed in the problems pane.
+    /// </summary>
+    public async Task<BatchRunResult> RunBatchAsync(string file)
+    {
+        var result = await PartBatchRunner.RunAsync(_viewport, file);
+        if (result.Exports.LastOrDefault(e => e.Succeeded) is { PartFile: { } last })
+            OpenPart(last);
+        var made = result.Exports.Count(e => e.Succeeded);
+        ShowProblems(result.Diagnostics, result.Succeeded
+            ? $"Batch {Path.GetFileName(file)} exported {made} parts and recipes."
+            : $"Batch {Path.GetFileName(file)} failed; {made} of {result.Exports.Count} parts and recipes exported.");
         return result;
     }
 
@@ -335,6 +344,8 @@ public partial class PartEditorScreen : Control
 
         _lookGrid = AddTab("Look");
         _behaviourGrid = AddTab("Behaviour");
+        Recipes = new RecipePanel { Name = "RecipePanel", Editor = this, SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        AddTabBox("Recipes").AddChild(Recipes);
     }
 
     private void BuildDialogs()
@@ -354,6 +365,18 @@ public partial class PartEditorScreen : Control
         };
         _openDialog.FileSelected += path => ShowError(OpenPart(path));
         AddChild(_openDialog);
+
+        _batchDialog = new FileDialog
+        {
+            Title = "Run batch",
+            Access = FileDialog.AccessEnum.Filesystem,
+            FileMode = FileDialog.FileModeEnum.OpenFile,
+            Filters = ["*.json ; Batch files"],
+            CurrentDir = ModsRoot,
+            UseNativeDialog = false,
+        };
+        _batchDialog.FileSelected += path => _ = RunBatchAsync(path);
+        AddChild(_batchDialog);
 
         _importDialog = new FileDialog
         {
@@ -399,6 +422,7 @@ public partial class PartEditorScreen : Control
         _openDialog.CurrentDir = document.ModDirectory;
         _preview.Frame(document.Definition.Size ?? GridSize.One);
         Refresh(rebuildInspector: true);
+        Recipes.Reload();
     }
 
     private void OnDocumentChanged()
@@ -496,6 +520,8 @@ public partial class PartEditorScreen : Control
             _partGrid.AddGridSize("Size", d.Size ?? GridSize.One, v => Set("Resize", x => x with { Size = v }));
         }
         AddAssetField(_partGrid, "Icon", d.Icon, AssetKind.Texture, v => Set("Set icon", x => x with { Icon = v }));
+        if (d.IsPlaceable)
+            AddStorageFields(d);
 
         // Model: the selected piece.
         if (_selectedPiece >= 0)
@@ -574,6 +600,8 @@ public partial class PartEditorScreen : Control
         _lookGrid.AddColor("Colour", look.Color, v => SetLook("Set colour", x => x with { Color = v }));
         _lookGrid.AddNumber("Roughness", look.Roughness, 0, 1, 0.05, v => SetLook("Set roughness", x => x with { Roughness = (float?)v }), optional: true, fallback: 0.8);
         _lookGrid.AddNumber("Metallic", look.Metallic, 0, 1, 0.05, v => SetLook("Set metallic", x => x with { Metallic = (float?)v }), optional: true);
+        _lookGrid.AddNumber("Opacity", look.Opacity, 0, 1, 0.05, v => SetLook("Set opacity", x => x with { Opacity = (float?)v }), optional: true, fallback: 1);
+        _lookGrid.AddColor("Glow", look.Emission, v => SetLook("Set glow", x => x with { Emission = v }));
         AddAssetField(_lookGrid, "Texture", look.Texture, AssetKind.Texture, v => SetLook("Set texture", x => x with { Texture = v }));
         _lookGrid.AddBool("Paintable", look.Paintable, v => SetLook("Set paintable", x => x with { Paintable = v }), optional: true);
         _lookGrid.AddHeading("Colour variants");
@@ -631,6 +659,36 @@ public partial class PartEditorScreen : Control
             }
         });
     }
+
+    // Inventory and crafting station fields (chunk 18). Turning either on or off rebuilds the inspector.
+    private void AddStorageFields(PartDefinition d)
+    {
+        _partGrid.AddHeading("Storage and crafting");
+        _partGrid.AddNumber("Inventory slots", d.Inventory?.Slots, 1, 256, 1, v =>
+        {
+            if ((v is null) != (Document?.Definition.Inventory is null))
+                Document?.Apply(v is null ? "Remove inventory" : "Add inventory", x => x with { Inventory = v is null ? null : new InventoryDefinition { Slots = (int)v } });
+            else if (v is not null)
+                Set("Set inventory slots", x => x with { Inventory = x.Inventory! with { Slots = (int)v } });
+        }, optional: true, fallback: 10);
+        if (d.Inventory is { } inventory)
+        {
+            _partGrid.AddText("Accepts", inventory.Accepts is { } accepts ? string.Join(", ", accepts) : null,
+                v => Set("Set accepted items", x => x with { Inventory = x.Inventory! with { Accepts = SplitIds(v) } }), "any item, or ids: gasoline, crude_oil");
+        }
+        _partGrid.AddBool("Crafting station", d.Crafting is not null,
+            v => Document?.Apply(v == true ? "Make crafting station" : "Remove crafting", x => x with { Crafting = v == true ? x.Crafting ?? new CraftingDefinition() : null }));
+        if (d.Crafting is { } crafting)
+        {
+            _partGrid.AddNumber("Crafting speed", crafting.Speed, 0.01, 100, 0.05,
+                v => Set("Set crafting speed", x => x with { Crafting = x.Crafting! with { Speed = (float?)v } }), optional: true, fallback: 1, suffix: "×");
+            _partGrid.AddNumber("Queue size", crafting.QueueSize, 1, 64, 1,
+                v => Set("Set queue size", x => x with { Crafting = x.Crafting! with { QueueSize = (int?)v } }), optional: true, fallback: 1);
+        }
+    }
+
+    private static List<string>? SplitIds(string? text) =>
+        text?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) is { Length: > 0 } ids ? [.. ids] : null;
 
     // ---- Edits ----
 
@@ -734,11 +792,12 @@ public partial class PartEditorScreen : Control
 
     // An empty visual block is dropped from the data instead of writing "visual": {}.
     private static VisualDefinition? Normalize(VisualDefinition visual) =>
-        visual is { Color: null, Roughness: null, Metallic: null, Texture: null, Paintable: null, Variants: null or { Count: 0 }, Extra: null } ? null : visual;
+        visual is { Color: null, Roughness: null, Metallic: null, Opacity: null, Emission: null, Texture: null, Paintable: null, Variants: null or { Count: 0 }, Extra: null } ? null : visual;
 
     // ---- Output ----
 
-    private void ShowProblems(IReadOnlyList<DataDiagnostic> diagnostics, string? headline)
+    /// <summary>Lists problems in the problems pane under an optional headline.</summary>
+    internal void ShowProblems(IReadOnlyList<DataDiagnostic> diagnostics, string? headline)
     {
         var lines = new List<string>();
         if (headline is not null)
