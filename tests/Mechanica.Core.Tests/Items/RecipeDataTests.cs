@@ -221,4 +221,26 @@ public class RecipeDataTests : IDisposable
         Assert.True(creation.TryPlacePart(part, new GridCell(0, 0, 0), default, out _, out _));
         return creation;
     }
+
+    [Fact]
+    public void VanillaRecipesLoadAndCraftAChest()
+    {
+        var content = ModLoader.LoadAll(Path.Combine(TestMods.RepoRoot, "mods"));
+        var book = RecipeBook.Load(content);
+
+        Assert.Empty(book.Diagnostics);
+        var chest = book.Find("chest")!;
+        Assert.True(chest.RunsAt("fabricator") && chest.RunsAt("mini_fabricator"));
+        Assert.True(book.Find("gasoline")!.RunsAt("refiner"));
+
+        var player = new Inventory(content, 30);
+        player.Add("vanilla:scrap_wood", 4);
+        player.Add("vanilla:scrap_metal", 2);
+        Assert.True(player.HasAll(chest.InputsFor(1)));
+        var station = Inventory.For(content, content.FindDefinition("vanilla:fabricator")!)!;
+        var queue = new CraftingQueue();
+        queue.Enqueue(new CraftJob(chest.QualifiedId, 1));
+        queue.Tick(chest.Time, 1, book, station);
+        Assert.Equal(1, station.Count("vanilla:chest"));
+    }
 }
