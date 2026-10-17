@@ -117,6 +117,16 @@ public partial class FabricatorTest : StagedTest
             Check(_screen.ListedRecipes.Count == all, "All lists everything again");
             return true;
         });
+        Add("recipes the player can't make still read as choosable", _ =>
+        {
+            var rows = _screen.RecipeRows;
+            Check(rows.Any(r => !r.CanMake) && rows.Any(r => r.CanMake), $"some recipes are short and some are not ({rows.Count(r => !r.CanMake)} of {rows.Count} short)");
+            Check(rows.All(r => r.FullText), "every recipe's text is drawn at full strength");
+            var shortOne = rows.First(r => !r.CanMake).Recipe;
+            _screen.Choose(shortOne);
+            Check(_screen.ChosenRecipe == shortOne && _screen.CraftButton.Disabled, $"a short recipe can still be chosen ({shortOne}), with Craft off");
+            return true;
+        });
         Add("the preview counts the linked chest and shows what is short", _ =>
         {
             _screen.Choose(Chest);

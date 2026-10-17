@@ -20,6 +20,7 @@ public partial class InventoryScreen
     private const int StationColumns = 5;
     private const int StationSlot = 52;
     private const float FlashSeconds = 0.45f;
+    private static readonly string[] IconStates = ["icon_normal_color", "icon_hover_color", "icon_pressed_color", "icon_hover_pressed_color", "icon_focus_color"];
 
     private Control _station = null!;
     private Label _stationTitle = null!;
@@ -57,6 +58,10 @@ public partial class InventoryScreen
 
     /// <summary>The recipes listed, by qualified id, in order.</summary>
     public IReadOnlyList<string> ListedRecipes => [.. _recipeList.GetChildren().OfType<Button>().Select(b => (string)b.GetMeta("recipe"))];
+
+    /// <summary>The recipe rows as shown: whether the player can make each, and whether its text is drawn at full strength.</summary>
+    public IReadOnlyList<(string Recipe, bool CanMake, bool FullText)> RecipeRows =>
+        [.. _recipeList.GetChildren().OfType<Button>().Select(b => ((string)b.GetMeta("recipe"), (bool)b.GetMeta("can_make"), b.Modulate == Colors.White && b.SelfModulate == Colors.White && !b.Disabled && !b.HasThemeColorOverride("font_color")))];
 
     /// <summary>The recipe chosen for the preview, or null.</summary>
     public string? ChosenRecipe => _chosen;
@@ -335,11 +340,15 @@ public partial class InventoryScreen
                     Alignment = HorizontalAlignment.Left,
                     TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis,
                     SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-                    // Recipes the player can't make yet are listed dimmer.
-                    Modulate = canMake ? Colors.White : Colors.White with { A = 0.55f },
                     TooltipText = canMake ? "" : Loc.T("Missing inputs"),
                 });
                 button.AddThemeConstantOverride("icon_max_width", 32);
+                // Recipes the player can't make yet keep full-strength text, so they still read as choosable; only
+                // the icon dims.
+                if (!canMake)
+                    foreach (var state in IconStates)
+                        button.AddThemeColorOverride(state, UiTokens.Disabled);
+                button.SetMeta("can_make", canMake);
                 button.SetMeta("recipe", id);
                 button.Pressed += () => Choose(id);
                 _recipeList.AddChild(button);
