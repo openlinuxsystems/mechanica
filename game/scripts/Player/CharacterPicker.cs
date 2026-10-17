@@ -112,7 +112,7 @@ public partial class CharacterPreview : SubViewportContainer
     {
         CustomMinimumSize = Size;
         Stretch = true;
-        var viewport = new SubViewport { Size = Size, OwnWorld3D = true, TransparentBg = true, Msaa3D = Viewport.Msaa.Msaa4X };
+        var viewport = new SubViewport { Size = Size, OwnWorld3D = true, TransparentBg = true, Msaa3D = Viewport.Msaa.Msaa4X, GuiDisableInput = true };
         AddChild(viewport);
         var environment = new Godot.Environment
         {
@@ -167,17 +167,19 @@ public partial class CharacterChoiceWindow : Control
 
     public override void _Ready()
     {
-        SetAnchorsPreset(LayoutPreset.FullRect);
-        MouseFilter = MouseFilterEnum.Stop;
-        var layer = new CanvasLayer { Layer = 50 };
+        SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        UiInput.KeepMouse(this);
+        // Under the in-game menu (layer 10), so Esc still opens it to quit without choosing.
+        var layer = new CanvasLayer { Layer = 5 };
         AddChild(layer);
-        var dim = new ColorRect { Color = new Color(UiTokens.DeepNavy, 0.6f), MouseFilter = MouseFilterEnum.Stop };
+        var dim = UiInput.KeepMouse(new ColorRect { Color = new Color(UiTokens.DeepNavy, 0.6f) });
         layer.AddChild(dim);
-        dim.SetAnchorsPreset(LayoutPreset.FullRect);
+        dim.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         var center = new CenterContainer { MouseFilter = MouseFilterEnum.Ignore };
         layer.AddChild(center);
-        center.SetAnchorsPreset(LayoutPreset.FullRect);
-        var panel = new PanelContainer();
+        center.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        // The dim is beside the panel, not behind it in the tree, so the panel keeps its own wheel turns.
+        var panel = UiInput.KeepMouse(new PanelContainer());
         center.AddChild(panel);
         var column = new VBoxContainer();
         column.AddThemeConstantOverride("separation", 12);
