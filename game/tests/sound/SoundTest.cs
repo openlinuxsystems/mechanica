@@ -33,6 +33,7 @@ public partial class SoundTest : StagedTest
     private Instance _late = null!;
     private int _creation;
     private int _loop;
+    private Vector3? _lastCentre;
 
     protected override string Tag => "sound";
 
@@ -264,10 +265,16 @@ public partial class SoundTest : StagedTest
         {
             if (frame == 0)
                 Request(ToolActions.Sledge, new SledgeArgs(_creation, 1));
-            if (frame < 30)
+            // The voice moves on the process tick and the body on the physics tick (and a resync can snap
+            // it), so they can differ by a frame while it moves: wait until the plank settles under it.
+            if (frame < 30 || Loop(_client)?.Voice is not { } voice)
                 return false;
-            var voice = Loop(_client)!.Voice!;
-            Check(voice.Position.DistanceTo(PartCentre(_client, _creation, 1)) < 0.05f, "the voice stays on the part");
+            var centre = PartCentre(_client, _creation, 1);
+            var still = _lastCentre is { } last && last.DistanceTo(centre) < 1e-4f;
+            _lastCentre = centre;
+            if (!still || voice.Position.DistanceTo(centre) >= 0.05f)
+                return false;
+            Check(true, "the voice stays on the part");
             return true;
         });
         Add("removing the plank stops the loop everywhere", frame =>
