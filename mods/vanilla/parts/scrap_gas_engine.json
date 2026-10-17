@@ -1,0 +1,57 @@
+{
+  "id": "scrap_gas_engine",
+  "name": "Scrap Gas Engine",
+  "description": "A weaker gas engine from scrap. It burns gasoline faster.",
+  "category": "interactive",
+  "mass": 10,
+  "durability": 4,
+  "friction": 0.5,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "stack_size": 10,
+  "sound_material": "scrap",
+  "size": [2, 2, 2],
+  "mesh": "meshes/scrap_gas_engine.glb",
+  "visual": {
+    "color": "#8c5a3c",
+    "roughness": 0.85,
+    "metallic": 0.3
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.25, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "script": "scripts/engine.lua",
+  "sounds": {
+    "start": "engine_start",
+    "loop": "engine_idle",
+    "stop": "engine_sputter"
+  },
+  "logic": {
+    "inputs": 4,
+    "outputs": 10
+  },
+  "settings": [
+    {
+      "id": "gear",
+      "name": "Gear",
+      "type": "number",
+      "min": 1,
+      "max": 5,
+      "step": 1,
+      "default": 3
+    }
+  ],
+  "properties": {
+    "speed": 15,
+    "torque": 80,
+    "brake": 60,
+    "fuel": "gasoline",
+    "fuel_time": 25,
+    "loop_parameter": "load"
+  }
+}

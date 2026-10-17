@@ -41,6 +41,9 @@
     "retract": "piston_retract",
     "stall": "piston_stall"
   },
+  "logic": {
+    "inputs": 4
+  },
   "properties": {
     "speed": 1,
     "force": 5000

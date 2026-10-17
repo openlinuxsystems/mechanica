@@ -1,0 +1,27 @@
+{
+  "id": "electric_engine",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal",
+      "count": 4
+    },
+    {
+      "item": "component_kit",
+      "count": 2
+    },
+    {
+      "item": "circuit_board",
+      "count": 3
+    }
+  ],
+  "outputs": [
+    {
+      "item": "electric_engine",
+      "count": 1
+    }
+  ],
+  "time": 12
+}

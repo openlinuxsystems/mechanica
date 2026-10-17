@@ -1,0 +1,22 @@
+{
+  "id": "new_logic_part",
+  "name": "New Logic Part",
+  "description": "A node of the logic bus. Its script turns the outputs linked to it into its own output.",
+  "category": "interactive",
+  "mass": 1,
+  "durability": 3,
+  "friction": 0.5,
+  "buoyancy": 0.3,
+  "flammable": false,
+  "sound_material": "plastic",
+  "size": [1, 1, 1],
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.125, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "logic": { "inputs": 10, "outputs": 10 }
+}

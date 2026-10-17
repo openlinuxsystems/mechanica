@@ -1,0 +1,49 @@
+{
+  "id": "logic_gate",
+  "name": "Logic Gate",
+  "description": "Turns its inputs into one on or off output: and, or, xor, nand, nor or xnor (R with the Connect Tool).",
+  "category": "interactive",
+  "mass": 1,
+  "durability": 3,
+  "friction": 0.5,
+  "buoyancy": 0.3,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "plastic",
+  "size": [1, 1, 1],
+  "mesh": "meshes/logic_gate.glb",
+  "visual": {
+    "color": "#d9d2c3",
+    "roughness": 0.5,
+    "metallic": 0.2
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.125, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "script": "scripts/logic_gate.lua",
+  "logic": {
+    "inputs": 10,
+    "outputs": 10
+  },
+  "settings": [
+    {
+      "id": "mode",
+      "name": "Mode",
+      "type": "choice",
+      "options": [
+        "and",
+        "or",
+        "xor",
+        "nand",
+        "nor",
+        "xnor"
+      ],
+      "default": "and"
+    }
+  ]
+}

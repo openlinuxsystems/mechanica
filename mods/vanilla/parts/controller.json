@@ -1,0 +1,72 @@
+{
+  "id": "controller",
+  "name": "Controller",
+  "description": "While its input is on, turns the bearings it is linked to through a list of angles (R with the Connect Tool).",
+  "category": "interactive",
+  "mass": 1,
+  "durability": 3,
+  "friction": 0.5,
+  "buoyancy": 0.3,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "plastic",
+  "size": [1, 1, 1],
+  "mesh": "meshes/controller.glb",
+  "visual": {
+    "color": "#6a5ab8",
+    "roughness": 0.5,
+    "metallic": 0.2
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.125, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "script": "scripts/controller.lua",
+  "sounds": {
+    "start": "controller_start",
+    "tick": "controller_tick",
+    "stop": "controller_stop"
+  },
+  "logic": {
+    "inputs": 10,
+    "outputs": 10
+  },
+  "settings": [
+    {
+      "id": "frames",
+      "name": "Angles (°)",
+      "type": "number_list",
+      "min": -180,
+      "max": 180,
+      "step": 1,
+      "max_count": 10,
+      "default": [
+        0,
+        90
+      ]
+    },
+    {
+      "id": "frame_time",
+      "name": "Seconds per angle",
+      "type": "number",
+      "min": 0.1,
+      "max": 10,
+      "step": 0.1,
+      "default": 1
+    },
+    {
+      "id": "loop",
+      "name": "Loop",
+      "type": "toggle",
+      "default": false
+    }
+  ],
+  "properties": {
+    "speed": 2,
+    "torque": 1000
+  }
+}

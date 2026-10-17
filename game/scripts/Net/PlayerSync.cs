@@ -168,7 +168,8 @@ public partial class PlayerSync : Node
 
     private void Reconcile(PlayerState state, float delta)
     {
-        if (state.AckSequence == 0 || LocalPlayer is not { } player)
+        // A seated player sits where its seat is; there is no walk to correct.
+        if (state.AckSequence == 0 || LocalPlayer is not { } player || player.Seated)
             return;
         if (!_history.Reconcile(state.AckSequence, state.Position))
             return;

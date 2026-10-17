@@ -40,5 +40,8 @@
     "start": "bearing_start",
     "spin_loop": "bearing_spin_loop",
     "stop": "bearing_stop"
+  },
+  "logic": {
+    "inputs": 4
   }
 }

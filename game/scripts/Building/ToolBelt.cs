@@ -7,8 +7,8 @@ using Mechanica.Game.Survival;
 namespace Mechanica.Game.Building;
 
 /// <summary>
-/// The local player's hand tools and which one is in hand. Keys 1 to 6 pick the Hammer, Lift, Weld
-/// Tool, Paint Tool, Sledgehammer or the item in hand (<see cref="ItemTool"/>); the HUD at the bottom left shows the tool in hand and its keys.
+/// The local player's hand tools and which one is in hand. Keys 1 to 7 pick the Hammer, Lift, Weld
+/// Tool, Paint Tool, Sledgehammer, the item in hand (<see cref="ItemTool"/>) or the Connect Tool; the HUD at the bottom left shows the tool in hand and its keys.
 /// </summary>
 public partial class ToolBelt : Node
 {
@@ -54,6 +54,9 @@ public partial class ToolBelt : Node
     /// <summary>The item in hand: food, weapons, seeds and water.</summary>
     public ItemTool Item { get; private set; } = null!;
 
+    /// <summary>The Connect Tool (chunk 10).</summary>
+    public ConnectTool Connector { get; private set; } = null!;
+
     /// <summary>Every tool, in key order.</summary>
     public IReadOnlyList<HandTool> Tools => _tools;
 
@@ -68,6 +71,7 @@ public partial class ToolBelt : Node
         Paint = Add(new PaintTool { Name = "Paint", Player = Player, Actions = Actions, Build = Build, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput });
         Sledge = Add(new SledgeTool { Name = "Sledge", Player = Player, Actions = Actions, Build = Build, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput });
         Item = Add(new ItemTool { Name = "Item", Player = Player, Actions = Actions, Build = Build, Inventory = Inventory, Survival = Survival, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput });
+        Connector = Add(new ConnectTool { Name = "Connect", Player = Player, Actions = Actions, Build = Build, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput });
         Hammer.Active = true;
         if (!ReadDeviceInput)
             return;

@@ -1,0 +1,193 @@
+using System.Text.Json;
+using Godot;
+using Mechanica.Core.Actions;
+using Mechanica.Core.Creations;
+using Mechanica.Core.Logic;
+using Mechanica.Game.Building;
+using Mechanica.Game.Creations;
+using Mechanica.Game.Net;
+using Mechanica.Game.Player;
+using Mechanica.Game.Scripting;
+
+namespace Mechanica.Game.Logic;
+
+/// <summary>
+/// The logic and power bus and seats over the network (chunk 10, D10). On the host it registers
+/// <see cref="LogicActions"/> (the Connect Tool's links, part settings, using parts, seats and the Creation
+/// Inspector's query) over the part scripts, hands seated players' input to their seats' scripts, and
+/// stands up players whose seat went away. Who sits where is sent to every client, and every peer keeps its
+/// seated players on their seats. Links and settings live in the Creation, so <see cref="CreationSync"/>
+/// sends them with it.
+/// </summary>
+public partial class LogicSync : Node
+{
+    private int _sentSeats = -1;
+
+    /// <summary>The session. Set before adding to the tree.</summary>
+    public NetSession Session { get; init; } = null!;
+
+    /// <summary>Players, to seat them. Set before adding to the tree.</summary>
+    public PlayerSync Players { get; init; } = null!;
+
+    /// <summary>The Creations this peer shows. Set before adding to the tree.</summary>
+    public CreationWorld Creations { get; init; } = null!;
+
+    /// <summary>Building, for reach and sounds. Set before adding to the tree.</summary>
+    public BuildSync Build { get; init; } = null!;
+
+    /// <summary>The host's part scripts. Set before adding to the tree.</summary>
+    public ScriptSync Scripts { get; init; } = null!;
+
+    /// <summary>True in Creative, where engines need no fuel.</summary>
+    public bool Creative { get; init; }
+
+    /// <summary>Who sits where: the host's own, or a client's copy of it.</summary>
+    public SeatRegistry Seats { get; } = new();
+
+    /// <summary>The logic actions, once registered.</summary>
+    public LogicActions? Actions { get; private set; }
+
+    /// <summary>Raised on every peer when the seats change.</summary>
+    public event Action? SeatsChanged;
+
+    /// <summary>Registers the logic actions (every peer registers; only the host runs them).</summary>
+    public void RegisterActions(ActionDispatcher dispatcher)
+    {
+        Build.Settings ??= BuildSync.LoadSettings();
+        Actions = new LogicActions(Build.Settings, Build, Scripts.Runtime, Seats);
+        Actions.Register(dispatcher);
+        Actions.SeatChanged += (seat, entered) =>
+        {
+            if (!entered)
+                Stood(seat);
+        };
+    }
+
+    public override void _Ready()
+    {
+        // After the players and before the scripts, so a seat reads this step's input.
+        ProcessPhysicsPriority = Scripts.ProcessPhysicsPriority - 1;
+        var runtime = Scripts.Runtime;
+        runtime.Seats = Seats;
+        runtime.Creative = Creative;
+        runtime.OccupantInput = peer => Players.Players.TryGetValue(peer, out var player) && !player.Dead ? player.LastInput : null;
+        Session.PeerReady += SendSeatsTo;
+        Session.StateChanged += OnStateChanged;
+    }
+
+    public override void _ExitTree()
+    {
+        Session.PeerReady -= SendSeatsTo;
+        Session.StateChanged -= OnStateChanged;
+    }
+
+    public override void _PhysicsProcess(double delta)
+    {
+        if (Session.IsHost && Actions is { } actions)
+        {
+            foreach (var seat in actions.Vacate(peer => Players.Players.TryGetValue(peer, out var player) && !player.Dead))
+                StandUp(seat);
+            if (Seats.Revision != _sentSeats)
+            {
+                _sentSeats = Seats.Revision;
+                var json = JsonSerializer.Serialize(Seats.All, ActionJson.Options);
+                foreach (var peer in Session.ReadyPeers)
+                    RpcId(peer, MethodName.ClientSeats, json);
+                SeatsChanged?.Invoke();
+            }
+        }
+        Attach();
+    }
+
+    // Visual only: keeps seated players on their seats between physics steps, where Creations interpolate.
+    public override void _Process(double delta)
+    {
+        foreach (var player in Players.Players.Values)
+        {
+            if (player.Seated && !player.Simulated)
+                player.SitStill();
+        }
+    }
+
+    /// <summary>Where a seat puts its player's feet now, and how fast the seat moves; null when this peer does not show it.</summary>
+    public (Vector3 Feet, Vector3 Velocity)? SeatPose(int creationId, int partId)
+    {
+        if (Creations.NodeOf(creationId) is not { } node || node.Creation.FindPart(partId) is not { } part)
+            return null;
+        var creation = node.Creation;
+        var index = creation.BodyIndexOf(partId);
+        if (index >= node.Bodies.Count)
+            return null;
+        var definition = creation.DefinitionOf(partId);
+        var local = PartGeometry.CentreMetres(definition, part.Cell, part.Rotation) + part.Rotation.Apply(definition.Seat?.Offset ?? Core.Data.Vec3.Zero);
+        var body = node.Bodies[index];
+        return (body.GlobalTransform * local.ToNumerics().ToGodot(), body.LinearVelocity);
+    }
+
+    // Gives each seated player its seat, and takes it away from players who stood up.
+    private void Attach()
+    {
+        foreach (var (peer, player) in Players.Players)
+        {
+            if (Seats.SeatOf(peer) is { } seat)
+            {
+                if (!player.Seated)
+                    player.Seat = () => SeatPose(seat.Creation, seat.Part);
+                if (!player.Simulated)
+                    player.SitStill();
+            }
+            else if (player.Seated)
+            {
+                player.Seat = null;
+            }
+        }
+    }
+
+    // A player whose seat is gone lands next to where it was.
+    private void StandUp(SeatAssignment seat)
+    {
+        if (Players.Players.TryGetValue(seat.Peer, out var player))
+        {
+            player.Seat = null;
+            Players.HostTeleport(seat.Peer, player.GlobalPosition + Vector3.Up * 0.5f);
+        }
+    }
+
+    // Host side: a player stood up with LeaveSeat; they land above the seat.
+    private void Stood(SeatAssignment seat)
+    {
+        if (!Players.Players.TryGetValue(seat.Peer, out var player))
+            return;
+        var at = SeatPose(seat.Creation, seat.Part)?.Feet ?? player.GlobalPosition;
+        player.Seat = null;
+        Players.HostTeleport(seat.Peer, at + Vector3.Up * 0.75f);
+    }
+
+    private void SendSeatsTo(int peer) =>
+        RpcId(peer, MethodName.ClientSeats, JsonSerializer.Serialize(Seats.All, ActionJson.Options));
+
+    /// <summary>Host → client: who sits where.</summary>
+    [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void ClientSeats(string json)
+    {
+        if (Session.IsHost)
+            return;
+        try
+        {
+            Seats.Load(JsonSerializer.Deserialize<List<SeatAssignment>>(json, ActionJson.Options) ?? []);
+        }
+        catch (JsonException e)
+        {
+            GD.PushWarning($"[logic] bad seats from the host: {e.Message}");
+            return;
+        }
+        SeatsChanged?.Invoke();
+    }
+
+    private void OnStateChanged(NetSession.SessionState state)
+    {
+        // A client's copy belongs to the session it leaves; a host starts with everyone standing.
+        Seats.Load([]);
+        _sentSeats = -1;
+    }
+}
