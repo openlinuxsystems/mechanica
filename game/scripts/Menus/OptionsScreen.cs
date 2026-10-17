@@ -2,6 +2,7 @@ using Godot;
 using Mechanica.Core.Input;
 using Mechanica.Core.Saves;
 using Mechanica.Core.Settings;
+using Mechanica.Core.Survival;
 using Mechanica.Core.Ui;
 using Mechanica.Game.Player;
 using Mechanica.Game.Settings;
@@ -43,6 +44,9 @@ public partial class OptionsScreen : ToolWindow
 
     /// <summary>The profile file for the player's name; null uses <see cref="Main.ProfilePath"/>.</summary>
     public string? ProfileFile { get; init; }
+
+    /// <summary>The world's game mode and difficulty when opened over a world (shown, not changed, on Gameplay); null from the main menu.</summary>
+    public (GameMode Mode, Difficulty Difficulty)? World { get; init; }
 
     /// <summary>The settings as edited so far.</summary>
     public UserSettings Draft => _draft;
@@ -386,6 +390,13 @@ public partial class OptionsScreen : ToolWindow
 
     private void BuildGameplay(VBoxContainer page)
     {
+        if (World is { } world)
+        {
+            page.AddChild(new Label { Text = "This world", ThemeTypeVariation = "TitleLabel" });
+            var difficulty = world.Mode == GameMode.Creative ? "None (Creative)" : world.Difficulty.ToString();
+            Row(page, "Difficulty", "Chosen when the world was made, in New Game; it stays with the world.")
+                .AddChild(new Label { Name = "WorldDifficulty", Text = difficulty, ThemeTypeVariation = "SecondaryLabel" });
+        }
         page.AddChild(new Label { Text = "Camera", ThemeTypeVariation = "TitleLabel" });
         Slider(page, "Mouse sensitivity", _draft.MouseSensitivity * 1000, 0.2f, 20f, 0.1f, v => Live(_draft with { MouseSensitivity = v / 1000 }), v => $"{v:0.0}");
         Toggle(page, "Invert Y", _draft.InvertY, v => Live(_draft with { InvertY = v }));

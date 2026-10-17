@@ -13,6 +13,37 @@ public enum GameMode
     Survival,
 }
 
+/// <summary>How hard a Survival world is (UI spec §14 New Game). The host picks it when the world is made.</summary>
+public enum Difficulty
+{
+    /// <summary>Gentler bots and smaller, rarer raids.</summary>
+    Easy,
+
+    /// <summary>The game as balanced.</summary>
+    Normal,
+}
+
+/// <summary>What a <see cref="Difficulty"/> changes, as multipliers on the normal numbers.</summary>
+public sealed record DifficultySettings
+{
+    /// <summary>Damage bots do to players.</summary>
+    public float BotDamage { get; init; } = 1f;
+
+    /// <summary>A raid's budget (how many bots it sends).</summary>
+    public float RaidBudget { get; init; } = 1f;
+
+    /// <summary>The wait after a raid before the next can start.</summary>
+    public float RaidCooldown { get; init; } = 1f;
+
+    /// <summary>Throws <see cref="FormatException"/> naming the first out-of-range value.</summary>
+    public void Validate(string name)
+    {
+        SurvivalSettings.Positive(BotDamage, $"difficulties.{name}.bot_damage");
+        SurvivalSettings.Positive(RaidBudget, $"difficulties.{name}.raid_budget");
+        SurvivalSettings.Positive(RaidCooldown, $"difficulties.{name}.raid_cooldown");
+    }
+}
+
 /// <summary>An item and how many, in survival data.</summary>
 /// <param name="Item">Item id (<c>carrot_seed</c>, or <c>mod_id:item</c>).</param>
 /// <param name="Count">How many (1 or more).</param>
@@ -79,6 +110,13 @@ public sealed record SurvivalSettings
     /// <summary>Impact damage to parts.</summary>
     public ImpactSettings Impact { get; init; } = new();
 
+    /// <summary>What each difficulty changes, by name (<c>easy</c>, <c>normal</c>); a missing one changes nothing.</summary>
+    public IReadOnlyDictionary<string, DifficultySettings> Difficulties { get; init; } = new Dictionary<string, DifficultySettings>();
+
+    /// <summary>The multipliers for <paramref name="difficulty"/>.</summary>
+    public DifficultySettings For(Difficulty difficulty) =>
+        Difficulties.TryGetValue(difficulty.ToString().ToLowerInvariant(), out var d) ? d : new DifficultySettings();
+
     /// <summary>Parses settings from JSON and validates them.</summary>
     /// <exception cref="FormatException">The JSON is malformed or a value is out of range.</exception>
     public static SurvivalSettings FromJson(string json)
@@ -122,6 +160,12 @@ public sealed record SurvivalSettings
         }
         Fall.Validate();
         Impact.Validate();
+        foreach (var (name, d) in Difficulties)
+        {
+            if (!Enum.TryParse<Difficulty>(name, ignoreCase: true, out _) || name != name.ToLowerInvariant())
+                throw new FormatException($"difficulties: '{name}' is not a difficulty (easy or normal).");
+            d.Validate(name);
+        }
     }
 
     internal static void Positive(float value, string name)

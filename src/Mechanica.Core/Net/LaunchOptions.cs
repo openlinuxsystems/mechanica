@@ -18,7 +18,7 @@ public enum SessionMode
 
 /// <summary>
 /// Session settings from the command line (the user arguments after <c>--</c>):
-/// <c>--host [port]</c>, <c>--join address[:port]</c>, <c>--max-players n</c> and <c>--seed n</c>; on the host also the
+/// <c>--host [port]</c>, <c>--join address[:port]</c>, <c>--max-players n</c>, <c>--seed n</c>, <c>--creative</c> or <c>--survival</c> and <c>--easy</c>; on the host also the
 /// external AI endpoint (<c>--ai [port]</c>, <c>--ai-bind address</c>, <c>--ai-token token</c>) and
 /// record/replay of Action API calls (<c>--record file</c>, <c>--replay file</c>) and a saved world to load
 /// (<c>--load file</c>); on any instance the player's name (<c>--name name</c>).
@@ -63,6 +63,9 @@ public sealed record LaunchOptions
 
     /// <summary>How the world plays when this instance hosts it (<c>--creative</c>, <c>--survival</c>). A joining client plays the host's mode.</summary>
     public Survival.GameMode GameMode { get; init; } = Survival.GameMode.Survival;
+
+    /// <summary>How hard a new Survival world is (<c>--easy</c>); a loaded world keeps its own.</summary>
+    public Survival.Difficulty Difficulty { get; init; } = Survival.Difficulty.Normal;
 
     /// <summary>A save file to load on the host instead of a new world (<c>--load file</c>), or null.</summary>
     public string? LoadPath { get; init; }
@@ -151,6 +154,9 @@ public sealed record LaunchOptions
                     break;
                 case "--survival":
                     result = result with { GameMode = Survival.GameMode.Survival };
+                    break;
+                case "--easy":
+                    result = result with { Difficulty = Survival.Difficulty.Easy };
                     break;
                 case "--seed":
                     if (next is null || !long.TryParse(next, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var seed))

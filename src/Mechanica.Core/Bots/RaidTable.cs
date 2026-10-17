@@ -338,13 +338,18 @@ public sealed class RaidTable
         return sent;
     }
 
-    /// <summary>The raid a crop value and player count set off, or null when the value is below the first level.</summary>
-    public RaidPlan? Plan(float cropValue, int players, int? forceLevel = null)
+    /// <summary>
+    /// The raid a crop value and player count set off, or null when the value is below the first level.
+    /// <paramref name="budgetScale"/> is the difficulty's raid budget multiplier (at least 1 point is left).
+    /// </summary>
+    public RaidPlan? Plan(float cropValue, int players, int? forceLevel = null, float budgetScale = 1f)
     {
         var level = forceLevel is { } n ? Levels.FirstOrDefault(l => l.Level == n) : LevelFor(cropValue);
         if (level is null)
             return null;
         var budget = BudgetFor(level, Math.Max(cropValue, level.MinValue), players);
+        if (budgetScale != 1f)
+            budget = Math.Max(1, (int)MathF.Round(budget * budgetScale, MidpointRounding.AwayFromZero));
         return new RaidPlan(level.Level, budget, Compose(level, budget));
     }
 }

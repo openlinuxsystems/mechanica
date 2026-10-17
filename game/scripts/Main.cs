@@ -204,7 +204,7 @@ public partial class Main : Node3D
         var mods = Mods ??= LoadMods();
         var save = Save ??= TakeMenuSave() ?? ReadSave(Options.LoadPath);
         if (save is not null && Options.Mode != SessionMode.Join)
-            Options = Options with { Seed = save.Seed, GameMode = save.Mode };
+            Options = Options with { Seed = save.Seed, GameMode = save.Mode, Difficulty = save.Difficulty };
         else
             Save = save = null;
         var profile = Profile ??= LoadProfile(Options.PlayerName);
@@ -302,6 +302,7 @@ public partial class Main : Node3D
             Inventory = Inventory,
             Catalog = new LoadedParts(this),
             Mode = Options.GameMode,
+            Difficulty = Options.Difficulty,
         };
         // Before building's actions, so building is paid for in Survival.
         Survival.RegisterActions(Actions.Dispatcher);
@@ -418,6 +419,7 @@ public partial class Main : Node3D
             {
                 Name = "PauseMenu", Session = Session, Saves = Saves, Lan = Lan,
                 HelpTopic = () => questLog.IsOpen ? "quests.md" : inventory.IsOpen ? "survival.md" : "playing.md",
+                World = () => Survival.Own is { } own ? (own.Mode, own.Difficulty) : null,
             });
             AddChild(PartSettings);
             AddChild(new RaidBanner { Name = "RaidBanner", Bots = Bots });

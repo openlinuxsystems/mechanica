@@ -75,6 +75,9 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
     /// <summary>How the world plays when this peer hosts it.</summary>
     public GameMode Mode { get; init; } = GameMode.Survival;
 
+    /// <summary>How hard the world is when this peer hosts it.</summary>
+    public Difficulty Difficulty { get; init; } = Difficulty.Normal;
+
     /// <summary>The numbers; null loads <see cref="SettingsPath"/>.</summary>
     public SurvivalSettings? Settings { get; set; }
 
@@ -152,7 +155,7 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
     public void RegisterActions(ActionDispatcher dispatcher)
     {
         Settings ??= LoadSettings();
-        Actions = new SurvivalActions(Catalog, Settings, Inventory.Items!, this) { Mode = Mode };
+        Actions = new SurvivalActions(Catalog, Settings, Inventory.Items!, this) { Mode = Mode, Difficulty = Difficulty };
         Actions.Register(dispatcher);
         dispatcher.Gate = Actions.Gate;
         Actions.VitalsChanged += OnVitalsChanged;
