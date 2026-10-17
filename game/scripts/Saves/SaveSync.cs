@@ -2,6 +2,7 @@ using Godot;
 using Mechanica.Core.Data;
 using Mechanica.Core.Net;
 using Mechanica.Core.Saves;
+using Mechanica.Core.Settings;
 using Mechanica.Core.Survival;
 using Mechanica.Core.World;
 using Mechanica.Game.Creations;
@@ -10,6 +11,7 @@ using Mechanica.Game.Net;
 using Mechanica.Game.Player;
 using Mechanica.Game.Quests;
 using Mechanica.Game.Scripting;
+using Mechanica.Game.Settings;
 using Mechanica.Game.Survival;
 using Mechanica.Game.World;
 
@@ -68,6 +70,14 @@ public partial class SaveSync : Node
     /// <summary>The world's name: the loaded save's, or what it was last saved as.</summary>
     public string WorldName { get; set; } = "World";
 
+    /// <summary>
+    /// Saves on the interval chosen in Options (Gameplay, Auto-save) while hosting. Off in test scenes,
+    /// which never write to the player's save folder on their own.
+    /// </summary>
+    public bool AutoSave { get; set; } = GameSettings.Persist;
+
+    private readonly AutoSaveClock _autoSave = new();
+
     /// <summary>Raised on the host after a save is written, with its path.</summary>
     public event Action<string>? Saved;
 
@@ -82,6 +92,12 @@ public partial class SaveSync : Node
         Players.PlayerLeaving += OnPlayerLeaving;
         foreach (var player in Players.Players.Values)
             OnPlayerSpawned(player);
+    }
+
+    public override void _Process(double delta)
+    {
+        if (AutoSave && Session.IsHost && _autoSave.Tick(delta, GameSettings.Current.Gameplay.AutoSaveMinutes))
+            SaveNow();
     }
 
     public override void _ExitTree()
@@ -165,6 +181,7 @@ public partial class SaveSync : Node
         {
             var path = Store!.Write(save);
             WorldName = save.Name;
+            _autoSave.Reset();
             GD.Print($"[save] saved '{save.Name}' to {path} ({save.Creations.Count} creations, {save.Players.Count} players)");
             Saved?.Invoke(path);
             return path;

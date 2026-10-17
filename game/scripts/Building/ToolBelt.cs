@@ -3,6 +3,7 @@ using Mechanica.Core.Input;
 using Mechanica.Game.Items;
 using Mechanica.Game.Net;
 using Mechanica.Game.Player;
+using Mechanica.Game.Settings;
 using Mechanica.Game.Survival;
 
 namespace Mechanica.Game.Building;
@@ -89,7 +90,10 @@ public partial class ToolBelt : Node
 
     public override void _Process(double delta)
     {
-        if (_hud is not null)
+        if (_hud is null)
+            return;
+        _hud.Visible = GameSettings.Current.Interface.ShowHotbar;
+        if (_hud.Visible)
             _hud.Text = $"[{GameInput.Label(InputActions.Hotbar(1))}-{GameInput.Label(InputActions.Hotbar(_tools.Count))}] {string.Join("  ", _tools.Select(t => t.Active ? $"[{t.ToolName}]" : t.ToolName))}\n{Current.HudText()}";
     }
 

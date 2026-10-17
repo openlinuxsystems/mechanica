@@ -68,7 +68,7 @@ public partial class MainMenu : Control
         AddButton(column, "New game", () => OpenNewGame());
         AddButton(column, "Load game", OpenLoad);
         AddButton(column, "Join game", () => OpenJoin());
-        AddButton(column, "Settings", () => OpenSettings());
+        AddButton(column, "Options", () => OpenOptions());
         AddButton(column, "Help (F1)", () => _help.Open("playing.md"));
         column.AddChild(new HSeparator());
         column.AddChild(new Label { Text = "Mod tools", HorizontalAlignment = HorizontalAlignment.Center });
@@ -120,10 +120,10 @@ public partial class MainMenu : Control
         return screen;
     }
 
-    /// <summary>Opens Settings.</summary>
-    public SettingsScreen OpenSettings()
+    /// <summary>Opens Options.</summary>
+    public OptionsScreen OpenOptions()
     {
-        var screen = new SettingsScreen { Name = "Settings" };
+        var screen = new OptionsScreen();
         screen.CloseRequested += () => Close(screen);
         Open(Centered(screen));
         return screen;
