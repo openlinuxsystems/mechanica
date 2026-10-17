@@ -12,9 +12,12 @@ Claude (Code or Desktop)  <-stdio->  tools/ai/bridge/mcp-server.mjs  <-WebSocket
 ## 1. Start the game with the AI endpoint
 
 ```sh
-godot --path game -- --host --ai --ai-token s3cret
-# or, from an exported build:
-./Mechanica --host --ai --ai-token s3cret
+# From a checkout (needs the .NET 10 SDK); install-godot.sh downloads the pinned Godot once.
+dotnet build Mechanica.sln
+GODOT=$(tools/install-godot.sh)
+$GODOT --path game -- --host --ai --ai-token s3cret
+# or, from an exported build (tools/package.sh linux, or a release zip):
+./Mechanica.x86_64 -- --host --ai --ai-token s3cret   # Mechanica.exe on Windows
 ```
 
 The endpoint listens on `ws://127.0.0.1:27461`. See [connect-grok-local.md](connect-grok-local.md#2-start-the-game-with-the-ai-endpoint)
@@ -73,6 +76,12 @@ path to your checkout, then restart Claude Desktop:
 With `--name Claude` the server joins the world as the player "Claude (AI)" as soon as it reaches the
 game; without it, Claude can call `mechanica__join` itself or stay an external agent. The server starts
 before the game is needed and reconnects if the game restarts, so Claude can be opened first.
+
+## Watching it play
+
+Claude is a player in your world, so you see it from your own seat in the game. Press **V** (Watch players)
+to follow it with the camera; X and C zoom, left and right click switch players, and V or Esc stops. When
+Claude calls `SetThought`, the banner shows what it is doing (the system prompt asks it to).
 
 ## Options
 

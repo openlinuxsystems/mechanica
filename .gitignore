@@ -17,3 +17,6 @@ TestResults/
 .idea/
 .vscode/
 __pycache__/
+
+# tools/ai/play.sh settings (model server, token)
+/.ai-play.env

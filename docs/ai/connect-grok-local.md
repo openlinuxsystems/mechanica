@@ -14,6 +14,24 @@ The bridge reads the game's methods from `mechanica.describe`, offers them to th
 the calls the model makes, feeds back results and game events, and saves the model's notes and bug
 reports to a file. It needs Node 22 or newer and no packages.
 
+## Quick start: one script
+
+Once a model server is running (step 1, or Ollama below), `tools/ai/play.sh` does the rest on a Linux
+machine with the .NET 10 SDK and Node 22: it checks the model server, builds the game, downloads the
+pinned Godot, hosts a world with the AI endpoint and a fresh token, and starts the bridge so the AI joins.
+
+```sh
+tools/ai/play.sh --model-url http://192.168.1.137:11434/v1 --model qwen3.8:27b   # first time
+tools/ai/play.sh                                                                  # later: same settings
+tools/ai/play.sh --job "Build a small car and report anything odd about the physics"
+```
+
+It saves the model settings and token to `.ai-play.env` (not committed). The AI starts with the tools
+for playing (`--groups all` offers every tool, for modding jobs). Ctrl+C stops the AI and leaves the
+game running. Logs, the AI's notes and its transcript go to `build/ai-play/`. `--no-ai` only hosts and
+prints the token, for connecting an AI yourself; `--help` lists the rest. The steps below are what the
+script does, for other setups.
+
 ## 1. Serve Grok 2
 
 Grok 2's weights are about 500 GB. xAI's recipe serves them with SGLang across 8 GPUs with more than
@@ -50,9 +68,12 @@ Models trained for tool calling do noticeably better at this game than models th
 On the machine that hosts the world:
 
 ```sh
-godot --path game -- --host --ai --ai-token s3cret
-# or, from an exported build:
-./Mechanica --host --ai --ai-token s3cret
+# From a checkout (needs the .NET 10 SDK); install-godot.sh downloads the pinned Godot once.
+dotnet build Mechanica.sln
+GODOT=$(tools/install-godot.sh)
+$GODOT --path game -- --host --ai --ai-token s3cret
+# or, from an exported build (tools/package.sh linux, or a release zip):
+./Mechanica.x86_64 -- --host --ai --ai-token s3cret   # Mechanica.exe on Windows
 ```
 
 The endpoint listens on `ws://127.0.0.1:27461`. A token is optional on 127.0.0.1 but keeps other local
@@ -83,6 +104,15 @@ What happens:
 4. It stops when Grok says `DONE` with no tool call, after `--max-steps` turns (200 by default), or when
    you press Ctrl+C. Grok's notes, recommendations and bug reports are in `grok-notes.md`; every turn
    is in `grok-session.jsonl`.
+
+### Watching it play
+
+The AI is a player in your world, so you see it walk, build and fight from your own seat in the game. Press
+**V** (Watch players) to follow it with the camera: a banner at the top shows its name and what it last said
+it is doing (the bridge passes the model's words to the game with `SetThought`; `--no-thoughts` turns that
+off). Left and right click switch between players, X and C zoom between its own view and behind it, and V
+or Esc gives you your view back. A short version of its thought also shows under its name tag. Its full
+reasoning and every call it makes scroll by in the bridge's terminal.
 
 ### Tool mode
 
@@ -135,6 +165,7 @@ Run `node tools/ai/bridge/openai-bridge.mjs --help` for the full list:
 | `--game` | `ws://127.0.0.1:27461` | The game's endpoint |
 | `--token` | `MECHANICA_AI_TOKEN` | The endpoint token |
 | `--name` | `Grok` | The player name ("(AI)" is added); `--no-join` stays an external agent |
+| `--no-thoughts` | off | Don't show the model's words to people watching in the game |
 | `--groups` | all | Only offer methods of these areas |
 | `--topics` | hurt, vitals, dialogue, quest, chat, messages, raid | Event topics to subscribe to |
 | `--job`, `--prompt` | | The job, or a whole prompt of your own |
@@ -184,6 +215,11 @@ node tools/ai/bridge/openai-bridge.mjs --base-url https://api.x.ai/v1 --model <m
 - **"cannot connect to the game"**: the game is not hosting with `--ai`, or it uses another port; pass
   `--game ws://127.0.0.1:PORT`.
 - **A token error**: pass the same token the game was started with (`--token` or `MECHANICA_AI_TOKEN`).
+- **The AI's player appears but does nothing**: the model is still reading its first prompt. The bridge
+  says so and prints how long the reply took. Offer fewer tools with `--groups` (for playing,
+  `--groups perception,remote,items,survival,quests,chat` is about a quarter of the list), and on Ollama
+  check with `ollama ps` that the context is as large as you set it; a context that is too small cuts
+  the prompt short.
 - **"model server answered 4xx/5xx"**: check `--base-url` (it ends in `/v1`) and `--model` against
   `/v1/models`.
 - **The model writes about tools instead of calling them**: use `--tool-mode prompt`, lower the

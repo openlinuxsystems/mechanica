@@ -2435,6 +2435,25 @@
       }
     },
     {
+      "name": "SetThought",
+      "kind": "action",
+      "group": "remote",
+      "scope": "play",
+      "description": "Shows what an agent's own player is doing or thinking to the people watching it (the spectator camera and its name tag). Arguments of SetThought.",
+      "params": {
+        "description": "Arguments of SetThought.",
+        "type": "object",
+        "properties": {
+          "text": {
+            "description": "What the agent is doing or thinking now, in a sentence or two; empty clears it. Longer text is cut to the host's max_thought_chars.",
+            "type": "string",
+            "default": ""
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
       "name": "Sledge",
       "kind": "action",
       "group": "building",

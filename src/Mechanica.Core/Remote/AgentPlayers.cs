@@ -31,6 +31,9 @@ public sealed record AgentSettings
     /// <summary>Added to an agent's name so people can tell it is an AI.</summary>
     public string NameSuffix { get; init; } = " (AI)";
 
+    /// <summary>Most characters of an agent's thought (<c>SetThought</c>) that are kept and shown to people watching.</summary>
+    public int MaxThoughtChars { get; init; } = 280;
+
     /// <summary>Parses settings from JSON and validates them.</summary>
     /// <exception cref="FormatException">The JSON is malformed or a value is out of range.</exception>
     public static AgentSettings FromJson(string json)
@@ -50,6 +53,8 @@ public sealed record AgentSettings
             throw new FormatException("max_agents must not be negative.");
         if (settings.MaxInputTicks < 1)
             throw new FormatException("max_input_ticks must be at least 1.");
+        if (settings.MaxThoughtChars < 1)
+            throw new FormatException("max_thought_chars must be at least 1.");
         return settings;
     }
 }
@@ -81,6 +86,10 @@ public sealed record SetPlayerInputArgs(
     bool Sprint = false,
     bool Crawl = false,
     int Ticks = 1);
+
+/// <summary>Arguments of <c>SetThought</c>.</summary>
+/// <param name="Text">What the agent is doing or thinking now, in a sentence or two; empty clears it. Longer text is cut to the host's <c>max_thought_chars</c>.</param>
+public sealed record SetThoughtArgs(string Text = "");
 
 /// <summary>
 /// What the game does when an endpoint connection joins as a player (<c>mechanica.join</c>) or leaves:
@@ -117,6 +126,14 @@ public sealed class AgentPlayers(AgentSettings settings)
     /// <summary>Action name: moves an agent's own player and turns its view.</summary>
     public const string SetPlayerInput = "SetPlayerInput";
 
+    /// <summary>
+    /// Action name: shows what an agent's own player is doing or thinking to the people watching it (the
+    /// spectator camera and its name tag).
+    /// </summary>
+    public const string SetThought = "SetThought";
+
+    private readonly Dictionary<int, string> _thoughts = [];
+
     private readonly record struct Held(PlayerInput Input, bool KeepYaw, bool KeepPitch, int Ticks);
 
     private readonly Dictionary<int, Held> _inputs = [];
@@ -131,9 +148,60 @@ public sealed class AgentPlayers(AgentSettings settings)
     /// <summary>The agent <paramref name="connectionId"/> plays as, or null.</summary>
     public AgentPlayer? OfConnection(string connectionId) => _agents.Values.FirstOrDefault(a => a.ConnectionId == connectionId);
 
-    /// <summary>Registers <c>SetPlayerInput</c>, which only an agent's own player may call.</summary>
-    public void Register(ActionDispatcher dispatcher) =>
+    /// <summary>Raised on the host when an agent's thought changes, with its peer and the new text ("" when cleared or gone).</summary>
+    public event Action<int, string>? ThoughtChanged;
+
+    /// <summary>Each agent's current thought, by peer; agents without one are left out.</summary>
+    public IReadOnlyDictionary<int, string> Thoughts => _thoughts;
+
+    /// <summary>Registers <c>SetPlayerInput</c> and <c>SetThought</c>, which only an agent's own player may call.</summary>
+    public void Register(ActionDispatcher dispatcher)
+    {
         dispatcher.Register<SetPlayerInputArgs>(SetPlayerInput, ValidateInput, ApplyInput);
+        dispatcher.Register<SetThoughtArgs>(SetThought, ValidateThought, ApplyThought);
+    }
+
+    private string? ValidateThought(ActionCaller caller, SetThoughtArgs args) =>
+        caller.Source != ActionSource.Player || !IsAgent(caller.Peer)
+            ? "Only an agent that joined with mechanica.join shares its thoughts this way."
+            : null;
+
+    private JsonElement? ApplyThought(ActionCaller caller, SetThoughtArgs args)
+    {
+        SetThoughtOf(caller.Peer, CleanThought(args.Text ?? ""));
+        return null;
+    }
+
+    /// <summary>
+    /// A thought as people see it: one line, control characters and runs of spaces collapsed, at most
+    /// <see cref="AgentSettings.MaxThoughtChars"/> characters (an ellipsis marks a cut).
+    /// </summary>
+    public string CleanThought(string text)
+    {
+        var builder = new StringBuilder(Math.Min(text.Length, settings.MaxThoughtChars + 1));
+        foreach (var c in text)
+        {
+            var ch = char.IsControl(c) || char.IsWhiteSpace(c) ? ' ' : c;
+            if (ch == ' ' && (builder.Length == 0 || builder[^1] == ' '))
+                continue;
+            builder.Append(ch);
+        }
+        var clean = builder.ToString().TrimEnd();
+        if (clean.Length > settings.MaxThoughtChars)
+            clean = clean[..Math.Max(0, settings.MaxThoughtChars - 1)].TrimEnd() + "…";
+        return clean;
+    }
+
+    private void SetThoughtOf(int peer, string text)
+    {
+        if ((_thoughts.TryGetValue(peer, out var old) ? old : "") == text)
+            return;
+        if (text.Length == 0)
+            _thoughts.Remove(peer);
+        else
+            _thoughts[peer] = text;
+        ThoughtChanged?.Invoke(peer, text);
+    }
 
     private string? ValidateInput(ActionCaller caller, SetPlayerInputArgs args)
     {
@@ -206,6 +274,7 @@ public sealed class AgentPlayers(AgentSettings settings)
     public bool Leave(int peer)
     {
         _inputs.Remove(peer);
+        SetThoughtOf(peer, "");
         return _agents.Remove(peer);
     }
 
