@@ -79,6 +79,10 @@ public static class DiagnosticCodes
     public const string CreationOverlap = "MD0403";
     public const string CreationConnection = "MD0404";
     public const string CreationDisconnected = "MD0405";
+
+    // 05xx: Part Editor sources and export
+    public const string EditorSourceInvalid = "MD0501";
+    public const string ExportFailed = "MD0502";
 }
 
 /// <summary>Collects diagnostics for one file, filling in the file name.</summary>

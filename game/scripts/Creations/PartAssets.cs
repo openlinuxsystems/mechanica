@@ -3,8 +3,21 @@ using Mechanica.Core.Data;
 
 namespace Mechanica.Game.Creations;
 
-/// <summary>One mesh of a part's model, placed relative to the part centre.</summary>
-public sealed record PartMesh(Mesh Mesh, Transform3D Transform);
+/// <summary>
+/// One mesh of a part's model, placed relative to the part centre. <see cref="SurfaceMaterials"/>, when
+/// set, overrides each surface's material (from the part's <c>visual</c> data).
+/// </summary>
+public sealed record PartMesh(Mesh Mesh, Transform3D Transform, IReadOnlyList<Material?>? SurfaceMaterials = null)
+{
+    /// <summary>A mesh instance showing this mesh with its overrides.</summary>
+    public MeshInstance3D Instantiate()
+    {
+        var instance = new MeshInstance3D { Mesh = Mesh, Transform = Transform };
+        for (var i = 0; i < (SurfaceMaterials?.Count ?? 0); i++)
+            instance.SetSurfaceOverrideMaterial(i, SurfaceMaterials![i]);
+        return instance;
+    }
+}
 
 /// <summary>
 /// What the runtime needs to show and collide one part definition, in part-local metres with the
@@ -40,6 +53,8 @@ public sealed class PartAssets
         var model = meshes is { Count: > 0 }
             ? new PartModel(meshes, shape, shapeTransform, IsPlaceholder: false)
             : new PartModel([new PartMesh(PlaceholderMesh(definition, shape), shapeTransform)], shape, shapeTransform, IsPlaceholder: true);
+        if (definition.Visual is { } visual)
+            model = model with { Meshes = [.. model.Meshes.Select(m => ApplyVisual(m, visual, modId))] };
         return _models[qualifiedId] = model;
     }
 
@@ -124,6 +139,48 @@ public sealed class PartAssets
         };
         mesh.Material = PlaceholderMaterial;
         return mesh;
+    }
+
+    /// <summary>
+    /// The mesh with each surface's material copied and adjusted by <paramref name="visual"/>: albedo
+    /// multiplied by its colour, roughness, metalness and texture replaced where given.
+    /// </summary>
+    public PartMesh ApplyVisual(PartMesh mesh, VisualDefinition visual, string? modId)
+    {
+        var texture = visual.Texture is { } path && modId is not null ? LoadTexture(path, modId) : null;
+        var tint = HexColor.TryParse(visual.Color, out var c) ? new Color(c.R, c.G, c.B) : Colors.White;
+        var materials = new List<Material?>();
+        for (var i = 0; i < mesh.Mesh.GetSurfaceCount(); i++)
+        {
+            var original = mesh.SurfaceMaterials?.ElementAtOrDefault(i) ?? mesh.Mesh.SurfaceGetMaterial(i);
+            var material = original is BaseMaterial3D b ? (BaseMaterial3D)b.Duplicate() : new StandardMaterial3D();
+            material.AlbedoColor *= tint;
+            if (visual.Roughness is { } roughness)
+                material.Roughness = roughness;
+            if (visual.Metallic is { } metallic)
+                material.Metallic = metallic;
+            if (texture is not null)
+                material.AlbedoTexture = texture;
+            materials.Add(material);
+        }
+        return mesh with { SurfaceMaterials = materials };
+    }
+
+    private Texture2D? LoadTexture(string path, string modId)
+    {
+        if (!AssetPath.TryParse(path, modId, AssetKind.Texture, out var asset, out var error))
+        {
+            GD.PushWarning($"[creations] {error}");
+            return null;
+        }
+        var mod = _content?.Mods.FirstOrDefault(m => m.Id == asset.ModId);
+        var image = mod is null ? null : Image.LoadFromFile(asset.Resolve(mod.Directory));
+        if (image is null)
+        {
+            GD.PushWarning($"[creations] texture '{asset}' did not load.");
+            return null;
+        }
+        return ImageTexture.CreateFromImage(image);
     }
 
     private static IReadOnlyList<PartMesh>? Warn(string message)

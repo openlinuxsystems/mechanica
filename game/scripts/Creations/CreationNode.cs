@@ -135,7 +135,7 @@ public partial class CreationNode : Node3D
             node.AddChild(new CollisionShape3D { Name = $"Shape{id}", Shape = model.Shape, Transform = placed * model.ShapeTransform });
             var visual = new Node3D { Name = $"Part{id}", Transform = placed };
             foreach (var mesh in model.Meshes)
-                visual.AddChild(new MeshInstance3D { Mesh = mesh.Mesh, Transform = mesh.Transform });
+                visual.AddChild(mesh.Instantiate());
             node.AddChild(visual);
             if (definition.Friction is { } f)
             {

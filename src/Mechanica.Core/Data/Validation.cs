@@ -97,6 +97,8 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
         CheckAsset(part.Mesh, "$.mesh", AssetKind.Mesh, sink);
         CheckAsset(part.Icon, "$.icon", AssetKind.Texture, sink);
         CheckAsset(part.Script, "$.script", AssetKind.Script, sink);
+        if (part.Visual is { } visual)
+            ValidateVisual(visual, sink);
         if (part.Collision is { } collision)
             ValidateCollision(collision, sink);
         ValidateSockets(part, placeable, sink);
@@ -110,6 +112,40 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
         }
 
         KnownKeys.WarnUnknown(part.Extra, "$", sink, typeof(PartDefinition));
+    }
+
+    private void ValidateVisual(VisualDefinition v, DiagnosticSink sink)
+    {
+        const string p = "$.visual";
+        CheckColor(v.Color, $"{p}.color", sink);
+        if (v.Roughness is { } r && !(r >= 0 && r <= 1))
+            sink.Error(Code, $"{p}.roughness", "roughness must be between 0 and 1.");
+        if (v.Metallic is { } m && !(m >= 0 && m <= 1))
+            sink.Error(Code, $"{p}.metallic", "metallic must be between 0 and 1.");
+        CheckAsset(v.Texture, $"{p}.texture", AssetKind.Texture, sink);
+        var ids = new HashSet<string>();
+        for (var i = 0; i < (v.Variants?.Count ?? 0); i++)
+        {
+            var variant = v.Variants![i];
+            var path = $"{p}.variants[{i}]";
+            if (!Identifiers.IsValid(variant.Id))
+                sink.Error(Code, $"{path}.id", variant.Id is null ? "variant id is required." : $"variant id '{variant.Id}' must be lowercase snake_case.");
+            else if (!ids.Add(variant.Id))
+                sink.Error(Code, $"{path}.id", $"variant id '{variant.Id}' is used twice in this part.");
+            if (string.IsNullOrWhiteSpace(variant.Name))
+                sink.Error(Code, $"{path}.name", "variant name is required.");
+            if (variant.Color is null)
+                sink.Error(Code, $"{path}.color", "variant color (\"#rrggbb\") is required.");
+            CheckColor(variant.Color, $"{path}.color", sink);
+            KnownKeys.WarnUnknown(variant.Extra, path, sink, typeof(ColorVariant));
+        }
+        KnownKeys.WarnUnknown(v.Extra, p, sink, typeof(VisualDefinition));
+    }
+
+    private static void CheckColor(string? color, string path, DiagnosticSink sink)
+    {
+        if (color is not null && !HexColor.TryParse(color, out _))
+            sink.Error(Code, path, $"color '{color}' must be hex text like \"#a07040\".");
     }
 
     private void ValidateCollision(CollisionDefinition c, DiagnosticSink sink)

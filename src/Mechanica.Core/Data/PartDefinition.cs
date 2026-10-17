@@ -124,6 +124,9 @@ public sealed record PartDefinition
     /// <summary>Inventory icon (<c>.png</c>).</summary>
     public string? Icon { get; init; }
 
+    /// <summary>Colour, surface material and colour variants. Omitted means the mesh's own materials.</summary>
+    public VisualDefinition? Visual { get; init; }
+
     /// <summary>Collision shape. Omitted on a placeable part means a box filling <see cref="Size"/>.</summary>
     public CollisionDefinition? Collision { get; init; }
 
@@ -173,6 +176,73 @@ public sealed record CollisionDefinition
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>
+/// How a part looks beyond its mesh: a base colour that tints it, a simple PBR surface and the
+/// colour variants a player can pick. Colours are <c>"#rrggbb"</c> hex text.
+/// </summary>
+public sealed record VisualDefinition
+{
+    /// <summary>Base colour, <c>"#rrggbb"</c>. Multiplies the mesh's own colour; white leaves it as modelled.</summary>
+    public string? Color { get; init; }
+
+    /// <summary>Surface roughness, 0 (mirror) to 1 (matte).</summary>
+    public float? Roughness { get; init; }
+
+    /// <summary>Metalness, 0 to 1.</summary>
+    public float? Metallic { get; init; }
+
+    /// <summary>Albedo texture (<c>.png</c>), relative to the mod root or <c>other_mod:path</c>.</summary>
+    public string? Texture { get; init; }
+
+    /// <summary>Whether the Paint Tool can recolour the part. Omitted means true.</summary>
+    public bool? Paintable { get; init; }
+
+    /// <summary>Named colour choices besides the base colour, in display order.</summary>
+    public List<ColorVariant>? Variants { get; init; }
+
+    /// <summary>Keys this build does not know.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>A named colour choice for a part.</summary>
+public sealed record ColorVariant
+{
+    /// <summary>Id, unique within the part (lowercase snake_case).</summary>
+    public string? Id { get; init; }
+
+    /// <summary>Display name.</summary>
+    public string? Name { get; init; }
+
+    /// <summary>The colour, <c>"#rrggbb"</c>.</summary>
+    public string? Color { get; init; }
+
+    /// <summary>Keys this build does not know.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>Parses and formats <c>"#rrggbb"</c> colours.</summary>
+public static class HexColor
+{
+    /// <summary>Reads <c>"#rrggbb"</c> into 0–1 channels. Case-insensitive.</summary>
+    public static bool TryParse(string? text, out (float R, float G, float B) color)
+    {
+        color = default;
+        if (text is not { Length: 7 } || text[0] != '#' || !text[1..].All(char.IsAsciiHexDigit))
+            return false;
+        var value = Convert.ToInt32(text[1..], 16);
+        color = (((value >> 16) & 0xFF) / 255f, ((value >> 8) & 0xFF) / 255f, (value & 0xFF) / 255f);
+        return true;
+    }
+
+    /// <summary>Formats 0–1 channels as lowercase <c>"#rrggbb"</c>, clamping out-of-range values.</summary>
+    public static string Format(float r, float g, float b) =>
+        $"#{Channel(r):x2}{Channel(g):x2}{Channel(b):x2}";
+
+    private static int Channel(float v) => (int)MathF.Round(Math.Clamp(v, 0f, 1f) * 255f);
 }
 
 /// <summary>An attachment point on a part.</summary>

@@ -63,6 +63,11 @@ public static class DataJson
     public static string Write(PartDefinition part) => Serialize(part with
     {
         Extra = Sorted(part.Extra),
+        Visual = part.Visual is null ? null : part.Visual with
+        {
+            Extra = Sorted(part.Visual.Extra),
+            Variants = part.Visual.Variants?.Select(v => v with { Extra = Sorted(v.Extra) }).ToList(),
+        },
         Collision = part.Collision is null ? null : part.Collision with { Extra = Sorted(part.Collision.Extra) },
         Sockets = part.Sockets?.Select(s => s with { Extra = Sorted(s.Extra) }).ToList(),
     });

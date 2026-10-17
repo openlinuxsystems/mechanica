@@ -169,7 +169,11 @@ public partial class CreationTest : Node3D
         var size = block.Meshes.Count == 1 ? block.Meshes[0].Mesh.GetAabb().Size : Vector3.Zero;
         Check(!block.IsPlaceholder && size.IsEqualApprox(Vector3.One * 0.25f), $"block mesh loads from glTF at runtime (size {size})");
         Check(block.Shape is BoxShape3D { Size: var box } && box.IsEqualApprox(Vector3.One * 0.25f), "block without collision data gets a footprint box");
-        Check(Model("heavy_block").IsPlaceholder, "part without a mesh gets a placeholder");
+        var heavy = Model("heavy_block");
+        Check(heavy.IsPlaceholder, "part without a mesh gets a placeholder");
+        Check(heavy.Meshes[0].SurfaceMaterials?.FirstOrDefault() is StandardMaterial3D { Roughness: 0.25f, Metallic: 1f } tinted
+            && tinted.AlbedoColor.IsEqualApprox(new Color(0.62f, 0.62f * 128 / 255f, 0, 1)),
+            "visual colour tints the model and sets its surface");
         Check(Model("knob").Shape is ConvexPolygonShape3D { Points.Length: 8 }, "convex collision is built from the glTF mesh");
         Check(Model("bearing").Shape is CylinderShape3D { Radius: 0.125f, Height: 0.25f }, "cylinder collision comes from part data");
         Check(ReferenceEquals(Model("block"), block), "models are cached per part");
