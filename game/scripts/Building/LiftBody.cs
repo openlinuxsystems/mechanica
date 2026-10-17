@@ -70,6 +70,9 @@ public partial class LiftBody : StaticBody3D
     /// <summary>The model's root, or null when it did not load.</summary>
     public Node3D? Model => _model;
 
+    /// <summary>World position of the middle of the deck as shown now.</summary>
+    public Vector3 Top => GlobalPosition + new Vector3(0, ShownTop, 0);
+
     public override void _Ready()
     {
         AddChild(new CollisionShape3D { Name = "Base", Shape = new BoxShape3D { Size = new Vector3(BaseSize, BaseHeight, BaseSize) }, Position = new Vector3(0, BaseHeight / 2, 0) });

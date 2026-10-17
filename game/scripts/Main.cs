@@ -562,6 +562,7 @@ public partial class Main : Node3D
             AddChild(Blueprints);
             AddChild(new RaidBanner { Name = "RaidBanner", Bots = Bots });
             AddChild(new Ui.Nameplates { Name = "Nameplates", Players = PlayerSync });
+            AddChild(new Ui.InUseIndicators { Name = "InUse", Session = Session, Players = PlayerSync, Inventory = Inventory, Logic = Logic, Build = Build, Creations = Creations });
             AddChild(new Mechanica.Game.Chat.ChatPanel { Name = "ChatPanel", Chat = Chat, Actions = Actions });
             AddChild(new Ui.CompassHud
             {

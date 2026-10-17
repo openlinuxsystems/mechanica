@@ -175,6 +175,10 @@ bottom left with the speaker's name in cyan and fade after a few seconds; open c
 is at most 200 characters and each player may send 5 every 10 seconds. Chat is the `SendChat` action, so
 agents on the AI endpoint can talk too.
 
+When another player has a Fabricator, chest or other station open, sits in a seat, or has their Lift out, a
+small blue **in use** icon with their name floats over it. You can still open a station someone else is using;
+the icon just says you're sharing it. The icons fade with distance and hide with the HUD (Alt + Z).
+
 To keep strangers out, set a **Server password** in Options, Gameplay (or start with `--password text`).
 Players then type it in the password box on **Join game**; the list marks worlds that need one. A changed
 password counts from the next player who joins. The password is sent unencrypted, so don't reuse a real one.
