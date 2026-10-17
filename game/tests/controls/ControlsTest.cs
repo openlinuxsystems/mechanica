@@ -42,6 +42,13 @@ public partial class ControlsTest : StagedTest
             Check(GameInput.Pressed(Wheel(MouseButton.WheelUp, alt: true), InputActions.ZoomIn) && !GameInput.Pressed(Wheel(MouseButton.WheelUp, alt: true), InputActions.HotbarPrevious),
                 "Alt+wheel zooms");
             Check(GameInput.Pressed(KeyPress(Key.Shift, shift: true), InputActions.Sprint), "a modifier key on its own is its own binding");
+            Check(GameInput.Pressed(Click(MouseButton.Left, shift: true), InputActions.Primary)
+                && GameInput.Pressed(Click(MouseButton.Right, shift: true), InputActions.Secondary),
+                "clicks still swing and block while sprinting (Shift held)");
+            Check(GameInput.Pressed(Click(MouseButton.Left, ctrl: true), InputActions.Primary) && GameInput.Pressed(KeyPress(Key.E, shift: true), InputActions.Interact),
+                "a click while crawling (Ctrl) and E while sprinting still count");
+            Check(!GameInput.Pressed(Wheel(MouseButton.WheelUp, alt: true), InputActions.HotbarPrevious) && !GameInput.Pressed(KeyPress(Key.Q, shift: true), InputActions.Rotate),
+                "a chord that is bound never falls back to the bare key");
             Check(!GameInput.Pressed(new InputEventKey { PhysicalKeycode = Key.E, Pressed = true, Echo = true }, InputActions.Interact), "key repeats are not presses");
             Check(GameInput.Label(InputActions.Primary) == "Left Click" && GameInput.Label(InputActions.RotateBack) == "Shift + Q", "labels read as players expect");
             return true;
@@ -85,6 +92,9 @@ public partial class ControlsTest : StagedTest
 
     private static InputEventKey KeyPress(Key key, bool shift = false) =>
         new() { PhysicalKeycode = key, Pressed = true, ShiftPressed = shift };
+
+    private static InputEventMouseButton Click(MouseButton button, bool shift = false, bool ctrl = false) =>
+        new() { ButtonIndex = button, Pressed = true, ShiftPressed = shift, CtrlPressed = ctrl };
 
     private static InputEventMouseButton Wheel(MouseButton button, bool alt = false) =>
         new() { ButtonIndex = button, Pressed = true, AltPressed = alt };

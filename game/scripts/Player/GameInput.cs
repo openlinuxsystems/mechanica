@@ -8,8 +8,9 @@ namespace Mechanica.Game.Player;
 /// <see cref="InputActions"/> id becomes an input action with the player's bindings, which is what held
 /// keys are polled through (<c>Input.GetVector</c>, <c>Input.IsActionPressed</c>). Presses are matched
 /// with <see cref="Pressed"/> instead, which compares modifiers exactly, so <c>Q</c> and <c>Shift+Q</c>
-/// or the wheel and <c>Alt</c>+wheel are different actions. HUD hints use <see cref="Label"/> so they
-/// show the player's keys.
+/// or the wheel and <c>Alt</c>+wheel are different actions. A chord nothing is bound to falls back to its
+/// bare key, so a click while sprinting (Shift) or crawling (Ctrl) is still a click. HUD hints use
+/// <see cref="Label"/> so they show the player's keys.
 /// </summary>
 public static class GameInput
 {
@@ -46,11 +47,23 @@ public static class GameInput
     /// <summary>The key the player reads for <paramref name="action"/>, e.g. <c>Q</c> or <c>Left Click</c>.</summary>
     public static string Label(string action) => _keymap.Label(action);
 
-    /// <summary>True for a fresh press (no echo) of one of <paramref name="action"/>'s bindings.</summary>
+    /// <summary>
+    /// True for a fresh press (no echo) of one of <paramref name="action"/>'s bindings. A press with
+    /// modifiers held that no action is bound to counts as the bare key, so held Sprint or Crawl doesn't
+    /// swallow a click or a key.
+    /// </summary>
     public static bool Pressed(InputEvent @event, string action)
     {
         if (ToChord(@event, pressedOnly: true) is not { } chord)
             return false;
+        if (Matches(action, chord))
+            return true;
+        var bare = new InputChord(chord.Code);
+        return bare != chord && Matches(action, bare) && !InputActions.All.Any(def => Matches(def.Id, chord));
+    }
+
+    private static bool Matches(string action, InputChord chord)
+    {
         foreach (var bound in _keymap.Bindings(action))
         {
             if (bound == chord || (bound.IsBareModifier && bound.Code == chord.Code))
