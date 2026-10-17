@@ -8,7 +8,8 @@ namespace Mechanica.Core.Reports;
 /// <param name="Text">The note (Markdown).</param>
 /// <param name="Tags">Tags for filtering: lower case letters, digits, <c>-</c> and <c>_</c>.</param>
 /// <param name="Screenshot">True to attach what the host's screen shows.</param>
-public sealed record NoteParams(string Title, string Text = "", IReadOnlyList<string>? Tags = null, bool Screenshot = false);
+/// <param name="Author">Who is writing (a model or agent name); the connection's name when left out.</param>
+public sealed record NoteParams(string Title, string Text = "", IReadOnlyList<string>? Tags = null, bool Screenshot = false, string? Author = null);
 
 /// <summary>Arguments of <c>reports.recommend</c>.</summary>
 /// <param name="Title">One line, at most 200 characters.</param>
@@ -17,8 +18,9 @@ public sealed record NoteParams(string Title, string Text = "", IReadOnlyList<st
 /// <param name="Priority">How much it matters.</param>
 /// <param name="Tags">Tags for filtering.</param>
 /// <param name="Screenshot">True to attach what the host's screen shows.</param>
+/// <param name="Author">Who is writing (a model or agent name); the connection's name when left out.</param>
 public sealed record RecommendParams(string Title, string Text, string? Area = null, RecommendationPriority Priority = RecommendationPriority.Medium,
-    IReadOnlyList<string>? Tags = null, bool Screenshot = false);
+    IReadOnlyList<string>? Tags = null, bool Screenshot = false, string? Author = null);
 
 /// <summary>Arguments of <c>reports.bug</c>.</summary>
 /// <param name="Title">One line, at most 200 characters.</param>
@@ -32,8 +34,10 @@ public sealed record RecommendParams(string Title, string Text, string? Area = n
 /// <param name="Screenshot">True (the default) to attach what the host's screen shows; a headless host notes why it has none.</param>
 /// <param name="ReplayActions">Most state-changing calls to keep in the replay file, newest last; null keeps every call since the world started.</param>
 /// <param name="Messages">Most recent log lines to keep (0 to 200).</param>
+/// <param name="Author">Who is writing (a model or agent name); the connection's name when left out.</param>
 public sealed record BugParams(string Title, IReadOnlyList<string> Steps, string Expected, string Actual, BugSeverity Severity = BugSeverity.Medium,
-    string Text = "", string? Area = null, IReadOnlyList<string>? Tags = null, bool Screenshot = true, int? ReplayActions = null, int Messages = 50);
+    string Text = "", string? Area = null, IReadOnlyList<string>? Tags = null, bool Screenshot = true, int? ReplayActions = null, int Messages = 50,
+    string? Author = null);
 
 /// <summary>Arguments of <c>reports.list</c>.</summary>
 /// <param name="Kind">Only this kind.</param>
@@ -98,10 +102,10 @@ public sealed partial class Reporter(ReportStore store, RecentActivity activity,
     /// <summary>Raised with each new report, for the <c>reports</c> event topic.</summary>
     public event Action<AiReport>? Added;
 
-    /// <summary>Saves a note.</summary>
+    /// <summary>Saves a note; <paramref name="author"/> is used unless the note names its own.</summary>
     /// <exception cref="ReportException">A field is missing or too long.</exception>
     public AiReport Note(string author, NoteParams p) =>
-        Add(Base(ReportKind.Note, author, p.Title, p.Text, p.Tags, null), null, p.Screenshot);
+        Add(Base(ReportKind.Note, p.Author ?? author, p.Title, p.Text, p.Tags, null), null, p.Screenshot);
 
     /// <summary>Saves a recommendation.</summary>
     /// <exception cref="ReportException">A field is missing or too long.</exception>
@@ -109,7 +113,7 @@ public sealed partial class Reporter(ReportStore store, RecentActivity activity,
     {
         if (string.IsNullOrWhiteSpace(p.Text))
             throw new ReportException("text must say what to change and why.");
-        return Add(Base(ReportKind.Recommendation, author, p.Title, p.Text, p.Tags, p.Area) with { Priority = p.Priority }, null, p.Screenshot);
+        return Add(Base(ReportKind.Recommendation, p.Author ?? author, p.Title, p.Text, p.Tags, p.Area) with { Priority = p.Priority }, null, p.Screenshot);
     }
 
     /// <summary>Saves a bug report with its replay slice and recent log lines.</summary>
@@ -126,7 +130,7 @@ public sealed partial class Reporter(ReportStore store, RecentActivity activity,
             throw new ReportException("replay_actions must be 0 or more (or left out for every call).");
         if (p.Messages is < 0 or > MaxMessages)
             throw new ReportException($"messages must be from 0 to {MaxMessages}.");
-        var report = Base(ReportKind.Bug, author, p.Title, p.Text, p.Tags, p.Area) with
+        var report = Base(ReportKind.Bug, p.Author ?? author, p.Title, p.Text, p.Tags, p.Area) with
         {
             Steps = [.. p.Steps.Select(s => s.Trim())],
             Expected = p.Expected.Trim(),
@@ -176,6 +180,7 @@ public sealed partial class Reporter(ReportStore store, RecentActivity activity,
 
     private AiReport Base(ReportKind kind, string author, string title, string text, IReadOnlyList<string>? tags, string? area)
     {
+        CheckLine(author, "author", 64);
         CheckLine(title, "title", MaxTitle);
         CheckText(text, "text", required: false);
         if (area is not null)

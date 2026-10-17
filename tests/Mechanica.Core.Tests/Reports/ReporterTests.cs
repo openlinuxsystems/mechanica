@@ -254,6 +254,16 @@ public sealed class ReporterTests : IDisposable
     }
 
     [Fact]
+    public void AReportMayNameItsOwnAuthor()
+    {
+        var reporter = NewReporter();
+
+        Assert.Equal("Claude", reporter.Note("agent 1", new NoteParams("Hello", Author: "Claude")).Author);
+        Assert.Equal("agent 1", reporter.Bug("agent 1", Bug()).Author);
+        Assert.Throws<ReportException>(() => reporter.Note("agent 1", new NoteParams("Hello", Author: " ")));
+    }
+
+    [Fact]
     public void ScreenshotsKnowTheirSize() => Assert.Equal((2, 3), new Screenshot(Png, null).Size);
 
     [Fact]
