@@ -1,6 +1,7 @@
 using Godot;
 using Mechanica.Core;
 using Mechanica.Core.Net;
+using Mechanica.Core.Saves;
 
 namespace Mechanica.Game.Net;
 
@@ -10,7 +11,7 @@ namespace Mechanica.Game.Net;
 /// clients (D10).
 /// <para>
 /// Joining is a handshake: once ENet connects, the client sends <see cref="Hello"/> with its protocol
-/// version and <see cref="Content"/> manifest; the host answers <see cref="Welcome"/> and only then treats the peer as
+/// version, <see cref="Content"/> manifest and <see cref="Profile"/>; the host answers <see cref="Welcome"/> and only then treats the peer as
 /// <see cref="IsReady">ready</see> (spawns a player for it, accepts its input and actions). Peers that
 /// send the wrong version or different mods, or nothing within <see cref="NetProtocol.HandshakeTimeoutSeconds"/>, are
 /// dropped. Every RPC sits on a node at the same path on every peer, so the scene layout is the protocol.
@@ -39,6 +40,7 @@ public partial class NetSession : Node
     private const int BandwidthBytesPerSecond = 0;
 
     private readonly HashSet<int> _readyPeers = [];
+    private readonly Dictionary<int, PlayerProfile> _profiles = [];
     private int _maxPlayers = NetProtocol.DefaultMaxPlayers;
     private string? _refusal;
 
@@ -47,6 +49,16 @@ public partial class NetSession : Node
     /// names the mods that differ. Empty until the game loads mods at startup.
     /// </summary>
     public ContentManifest Content { get; set; } = ContentManifest.Empty;
+
+    /// <summary>This instance's player. Set before the session starts.</summary>
+    public PlayerProfile Profile { get; set; } = PlayerProfile.Fixed("Player");
+
+    /// <summary>
+    /// Who a ready peer is: the profile it sent on join, or <see cref="Profile"/> for this instance's own peer.
+    /// Null for anyone else. On a client only its own profile is known.
+    /// </summary>
+    public PlayerProfile? ProfileOf(int peer) =>
+        peer == LocalPeer || (IsHost && peer == NetProtocol.HostPeer) ? Profile : _profiles.GetValueOrDefault(peer);
 
     /// <summary>Current state.</summary>
     public SessionState State { get; private set; } = SessionState.Offline;
@@ -96,6 +108,7 @@ public partial class NetSession : Node
         Multiplayer.ServerDisconnected -= OnServerDisconnected;
         CloseSocket();
         _readyPeers.Clear();
+        _profiles.Clear();
         State = SessionState.Offline;
     }
 
@@ -155,13 +168,14 @@ public partial class NetSession : Node
             return;
         CloseSocket();
         _readyPeers.Clear();
+        _profiles.Clear();
         LastMessage = reason;
         SetState(SessionState.Offline);
     }
 
     /// <summary>Client → host: first message after connecting.</summary>
     [Rpc(MultiplayerApi.RpcMode.AnyPeer, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-    private void Hello(int protocolVersion, string gameName, string contentJson)
+    private void Hello(int protocolVersion, string gameName, string contentJson, string profileJson)
     {
         if (State != SessionState.Hosting)
             return;
@@ -183,14 +197,25 @@ public partial class NetSession : Node
             Refuse(peer, $"Your mods don't match the host's: {string.Join("; ", differences)}.");
             return;
         }
+        if (profileJson.Length > 4096 || PlayerProfile.FromJson(profileJson) is not { } profile)
+        {
+            Refuse(peer, "Your client sent an unreadable player profile.");
+            return;
+        }
+        if (profile.Id == Profile.Id || _profiles.Values.Any(p => p.Id == profile.Id))
+        {
+            Refuse(peer, $"A player with your profile ({profile.Name}) is already in this session.");
+            return;
+        }
         if (_readyPeers.Count + 1 >= _maxPlayers)
         {
             Refuse(peer, "The session is full.");
             return;
         }
         _readyPeers.Add(peer);
+        _profiles[peer] = profile;
         RpcId(peer, MethodName.Welcome, NetProtocol.Version);
-        GD.Print($"[net] peer {peer} joined");
+        GD.Print($"[net] peer {peer} ({profile.Name}) joined");
         PeerReady?.Invoke(peer);
     }
 
@@ -247,13 +272,14 @@ public partial class NetSession : Node
         {
             GD.Print($"[net] peer {peer} left");
             PeerLeft?.Invoke(peer);
+            _profiles.Remove(peer);
         }
     }
 
     private void OnConnectedToServer()
     {
         DisableThrottle(NetProtocol.HostPeer);
-        RpcId(NetProtocol.HostPeer, MethodName.Hello, NetProtocol.Version, MechanicaInfo.GameName, Content.ToJson());
+        RpcId(NetProtocol.HostPeer, MethodName.Hello, NetProtocol.Version, MechanicaInfo.GameName, Content.ToJson(), Profile.ToJson());
     }
 
     /// <summary>
