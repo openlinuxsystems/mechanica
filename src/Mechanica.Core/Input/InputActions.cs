@@ -56,6 +56,7 @@ public static class InputActions
     public const string ZoomIn = "zoom_in";
     public const string ZoomOut = "zoom_out";
     public const string SeatCamera = "seat_camera";
+    public const string Spectate = "spectate";
     public const string Chat = "chat";
     public const string Handbook = "handbook";
     public const string PagePrevious = "page_previous";
@@ -112,6 +113,7 @@ public static class InputActions
             new(ZoomIn, "Zoom in", camera, "X", "Alt+WheelUp"),
             new(ZoomOut, "Zoom out", camera, "C", "Alt+WheelDown"),
             new(SeatCamera, "Seated camera", camera, "Ctrl", Context: InputContext.Seated),
+            new(Spectate, "Watch players", camera, "V"),
             new(Inventory, "Inventory", menus, "I", "Tab"),
             new(Logbook, "Logbook", menus, "L"),
             new(Handbook, "Handbook", menus, "H", "F1"),

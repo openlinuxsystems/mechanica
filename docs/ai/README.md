@@ -28,7 +28,8 @@ starting it, tokens and scopes), so any program that can open a WebSocket can dr
 ready-made bridges in `tools/ai/bridge` (Node 22+, no packages) connect a model to it, hand it the
 system prompt and the game's methods as tools, and save its notes and bug reports:
 
-- [connect-grok-local.md](connect-grok-local.md): Grok 2 served on your own GPUs with SGLang, through
+- [connect-grok-local.md](connect-grok-local.md): `tools/ai/play.sh` builds, hosts and connects in
+  one command. The guide also covers Grok 2 served on your own GPUs with SGLang, through
   `openai-bridge.mjs`. The same bridge works with any OpenAI-compatible server (vLLM, llama.cpp,
   Ollama, LM Studio) and with xAI's hosted API, with native tool calls or tools described in the prompt.
 - [connect-claude.md](connect-claude.md): Claude Code or Claude Desktop, through the MCP server

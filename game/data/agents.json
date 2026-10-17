@@ -3,5 +3,7 @@
   // Loaded by game/scripts/Remote/AgentHost.cs; see src/Mechanica.Core/Remote/AgentPlayers.cs.
   "max_agents": 8,
   "max_input_ticks": 600,
-  "name_suffix": " (AI)"
+  "name_suffix": " (AI)",
+  // Longest thought (SetThought) shown to people watching an agent.
+  "max_thought_chars": 280
 }

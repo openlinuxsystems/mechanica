@@ -124,6 +124,34 @@ public class AgentPlayersTests
     }
 
     [Fact]
+    public void AnAgentsThoughtIsCleanedCutAndClearedWhenItLeaves()
+    {
+        var agents = new AgentPlayers(Settings with { MaxThoughtChars = 20 });
+        var dispatcher = new ActionDispatcher();
+        agents.Register(dispatcher);
+        var agent = agents.Join("1", "Grok", _ => false, out _)!;
+        var changes = new List<(int Peer, string Text)>();
+        agents.ThoughtChanged += (peer, text) => changes.Add((peer, text));
+        var caller = new ActionCaller(agent.Peer, ActionSource.Player);
+
+        Assert.True(dispatcher.Dispatch(caller, AgentPlayers.SetThought, """{ "text": "  Walking\n\tnorth  " }""").Ok);
+        Assert.Equal("Walking north", agents.Thoughts[agent.Peer]);
+        Assert.True(dispatcher.Dispatch(caller, AgentPlayers.SetThought, """{ "text": "Walking north" }""").Ok);
+        Assert.Single(changes);
+        Assert.True(dispatcher.Dispatch(caller, AgentPlayers.SetThought, """{ "text": "Building a car with four wheels" }""").Ok);
+        Assert.Equal("Building a car with…", agents.Thoughts[agent.Peer]);
+        Assert.Equal(20, agents.Thoughts[agent.Peer].Length);
+        Assert.True(dispatcher.Dispatch(caller, AgentPlayers.SetThought, """{ "text": "" }""").Ok);
+        Assert.False(agents.Thoughts.ContainsKey(agent.Peer));
+
+        Assert.True(dispatcher.Dispatch(caller, AgentPlayers.SetThought, """{ "text": "Bye" }""").Ok);
+        agents.Leave(agent.Peer);
+        Assert.Empty(agents.Thoughts);
+        Assert.Equal((agent.Peer, ""), changes[^1]);
+        Assert.Equal(ActionErrors.Rejected, dispatcher.Dispatch(new ActionCaller(1, ActionSource.Player), AgentPlayers.SetThought, """{ "text": "hi" }""").Code);
+    }
+
+    [Fact]
     public void SettingsLoadAndRefuseBadValues()
     {
         var settings = AgentSettings.FromJson("""{ "max_agents": 4, /* c */ "max_input_ticks": 120, }""");
@@ -131,6 +159,7 @@ public class AgentPlayersTests
         Assert.Equal(120, settings.MaxInputTicks);
         Assert.Equal(" (AI)", settings.NameSuffix);
         Assert.Throws<FormatException>(() => AgentSettings.FromJson("""{ "max_input_ticks": 0 }"""));
+        Assert.Throws<FormatException>(() => AgentSettings.FromJson("""{ "max_thought_chars": 0 }"""));
         Assert.Throws<FormatException>(() => AgentSettings.FromJson("""{ "nonsense": 1 }"""));
         var shipped = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "game", "data", "agents.json");
         Assert.True(AgentSettings.FromJson(File.ReadAllText(shipped)).MaxAgents > 0);

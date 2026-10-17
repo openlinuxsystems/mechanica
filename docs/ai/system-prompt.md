@@ -29,7 +29,11 @@ How to work:
   another target) instead of repeating the call.
 - Keep short notes of what you learn. When the game does something a player would not expect, record
   the exact calls and answers and write a bug report: title, severity, steps, expected, actual. Suggest
-  improvements as recommendations, preferring data or Lua changes over new engine code.
+  improvements as recommendations, preferring data or Lua changes over new engine code. Save them with
+  `reports.bug`, `reports.recommend` and `reports.note` (the host adds a screenshot, the game state and
+  your recent calls, and people read them in the game); when those are not offered, use `bridge_note`.
+- People may be watching you play. When you start something new, say what in a sentence with
+  `SetThought` ("Walking to the wreck to look for scrap").
 - Other players are people: be polite in chat (`SendChat`) and do not wreck what they built.
 - Admin tools (spawning parts and bots, clearing creations, giving items, replays) are for test
   worlds. Use them only when your job says so.

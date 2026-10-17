@@ -156,6 +156,18 @@ function* jsonObjects(text) {
   }
 }
 
+/**
+ * What to show people watching the AI (SetThought) for a reply's text: the words without code blocks or
+ * tool-call JSON, on one line, at most max characters. "" when nothing is left.
+ */
+export function thoughtText(text, max = 280) {
+  if (!text) return "";
+  let words = text.replace(/```[\s\S]*?(```|$)/g, " ");
+  for (const json of [...jsonObjects(words)]) if (callsIn(json).length > 0) words = words.replace(json, " ");
+  words = words.replace(/\s+/g, " ").trim();
+  return words.length <= max ? words : `${words.slice(0, max - 1).trimEnd()}…`;
+}
+
 /** Shortens text to at most max characters, saying how much was cut. */
 export function clip(text, max) {
   if (text.length <= max) return text;

@@ -46,6 +46,12 @@ public partial class PlayerController : CharacterBody3D
     /// <summary>The player's name, from the profile they joined with; shown over their head to others.</summary>
     public string DisplayName { get; set; } = "";
 
+    /// <summary>
+    /// What an AI agent's player says it is doing (<c>SetThought</c>), or "" (people, and agents that said
+    /// nothing). Synced by <see cref="Net.PlayerSync"/>; the spectator camera and name tags show it.
+    /// </summary>
+    public string Thought { get; set; } = "";
+
     /// <summary>When false the body does not move itself; something else poses it each tick.</summary>
     public bool Simulated { get; set; } = true;
 

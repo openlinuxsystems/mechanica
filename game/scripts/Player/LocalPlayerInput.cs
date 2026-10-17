@@ -18,6 +18,9 @@ public partial class LocalPlayerInput : Node
     /// <summary>Radians of look per pixel of mouse motion.</summary>
     public float MouseSensitivity => GameSettings.Current.MouseSensitivity;
 
+    /// <summary>True while the player's owner watches someone else (<see cref="Spectator"/>): the player stands still.</summary>
+    public Func<bool> Suspended { get; set; } = () => false;
+
     /// <summary>The player this input drives.</summary>
     public PlayerController Target { get; set; } = null!;
 
@@ -90,7 +93,7 @@ public partial class LocalPlayerInput : Node
     public override void _PhysicsProcess(double delta)
     {
         // A menu or panel has the mouse: keys belong to it, so the player doesn't walk or drive.
-        var playing = Input.MouseMode == Input.MouseModeEnum.Captured;
+        var playing = Input.MouseMode == Input.MouseModeEnum.Captured && !Suspended();
         var move = playing
             ? Input.GetVector(InputActions.MoveLeft, InputActions.MoveRight, InputActions.MoveBack, InputActions.MoveForward)
             : Vector2.Zero;
