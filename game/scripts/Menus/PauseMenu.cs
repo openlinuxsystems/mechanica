@@ -91,7 +91,7 @@ public partial class PauseMenu : CanvasLayer
 
         column.AddChild(new HSeparator());
         AddButton(column, "Options…", () => OpenOptions());
-        AddButton(column, "Help (F1)", () => OpenHelp());
+        Loc.Live(AddButton(column, "", () => OpenHelp()), () => Loc.T("Help ({0})", GameInput.Label(InputActions.Handbook)));
         AddButton(column, "Quit to main menu", () => GetTree().ChangeSceneToFile(MainMenu.MenuScene));
         AddButton(column, "Quit game", () => GetTree().Quit());
         _status = new Label { Name = "Status", ThemeTypeVariation = "ErrorLabel" };
@@ -137,10 +137,10 @@ public partial class PauseMenu : CanvasLayer
         _session.Text = state switch
         {
             NetSession.SessionState.Hosting =>
-                $"Hosting on port {Session.Port}, {Session.ReadyPeers.Count + 1} of {Session.MaxPlayers} players. "
-                + (Lan?.Listening == true ? "Players on your network see this world under Join game." : "Others join by your address and port."),
+                Loc.T("Hosting on port {0}, {1} of {2} players.", Session.Port, Session.ReadyPeers.Count + 1, Session.MaxPlayers) + " "
+                + Loc.T(Lan?.Listening == true ? "Players on your network see this world under Join game." : "Others join by your address and port."),
             NetSession.SessionState.Offline => "Playing alone. Open the world to let others on your network join.",
-            _ => $"{state}. {Session.LastMessage}",
+            _ => $"{Loc.T(state.ToString())}. {Session.LastMessage}",
         };
     }
 

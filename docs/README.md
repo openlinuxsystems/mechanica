@@ -21,6 +21,7 @@ Other references:
 
 - [How to Play](playing.md): controls, playing together, saving
 - [UI Style Guide](ui-style-guide.md): palette, theme and rules for new menus and mod tools
+- [Translating](translating.md): language files, the pseudo-locale and how UI text reaches the string tables
 
 - [World Generation and POI Prefabs](world-generation.md)
 - [Sound Events](sound-events.md)

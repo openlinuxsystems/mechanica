@@ -1,5 +1,6 @@
 using Godot;
 using Mechanica.Core.Docs;
+using Mechanica.Game.Ui;
 
 namespace Mechanica.Game.Editor;
 
@@ -42,15 +43,16 @@ public partial class HelpWindow : Window
         _search = new LineEdit { Name = "Search", PlaceholderText = "Search help", ClearButtonEnabled = true };
         _search.TextChanged += Search;
         side.AddChild(_search);
-        _list = new ItemList { SizeFlagsVertical = Control.SizeFlags.ExpandFill };
+        // The handbook pages are English for now; their titles and text show as written.
+        _list = Loc.Verbatim(new ItemList { SizeFlagsVertical = Control.SizeFlags.ExpandFill });
         _list.ItemSelected += i => Open(_files[(int)i]);
         side.AddChild(_list);
-        _text = new RichTextLabel
+        _text = Loc.Verbatim(new RichTextLabel
         {
             BbcodeEnabled = true,
             SelectionEnabled = true,
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-        };
+        });
         _text.MetaClicked += meta => FollowLink(meta.AsString());
         split.AddChild(_text);
 
@@ -89,7 +91,7 @@ public partial class HelpWindow : Window
         var path = Path.Combine(DocsRoot, Path.GetFileName(fileName.Split('#')[0]));
         _text.Text = File.Exists(path)
             ? MarkdownBbcode.Convert(File.ReadAllText(path))
-            : $"No help file '{MarkdownBbcode.Escape(fileName)}' in {MarkdownBbcode.Escape(DocsRoot)}.";
+            : Loc.T("No help file '{0}' in {1}.", MarkdownBbcode.Escape(fileName), MarkdownBbcode.Escape(DocsRoot));
         Current = Path.GetFileName(path);
         if (!_files.Contains(Current))
             Search("");

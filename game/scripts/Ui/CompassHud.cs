@@ -114,9 +114,10 @@ public partial class CompassHud : CanvasLayer
             var point = bearing % 45f == 0f;
             if (point)
             {
-                var name = Compass.Points[(int)(bearing / 45f)];
+                var cardinal = Compass.Points[(int)(bearing / 45f)];
+                var name = Loc.T(cardinal);
                 var size = _font.GetStringSize(name, HorizontalAlignment.Left, -1, 14);
-                _bar.DrawString(_font, new Vector2(at - size.X / 2, 17), name, HorizontalAlignment.Left, -1, 14, name.Length == 1 ? UiTokens.Text : UiTokens.TextSecondary);
+                _bar.DrawString(_font, new Vector2(at - size.X / 2, 17), name, HorizontalAlignment.Left, -1, 14, cardinal.Length == 1 ? UiTokens.Text : UiTokens.TextSecondary);
             }
             else
             {
@@ -140,7 +141,7 @@ public partial class CompassHud : CanvasLayer
                 var tip = x + s * (r + 8);
                 _bar.DrawColoredPolygon([new(tip, 12), new(tip - s * 6, 7), new(tip - s * 6, 17)], colour);
             }
-            if (Compass.DistanceLabel(mark.Distance) is { } label)
+            if (Compass.DistanceLabel(mark.Distance) is not null && Loc.T("{0} m", $"{mark.Distance:0}") is var label)
             {
                 var size = _font.GetStringSize(label, HorizontalAlignment.Left, -1, 12);
                 _bar.DrawString(_font, new Vector2(Mathf.Clamp(x - size.X / 2, 0, w - size.X), 38), label, HorizontalAlignment.Left, -1, 12, UiTokens.Text);

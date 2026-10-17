@@ -1,6 +1,7 @@
 using System.Globalization;
 using Godot;
 using Mechanica.Core.Data;
+using Mechanica.Game.Ui;
 
 namespace Mechanica.Game.Editor;
 
@@ -33,10 +34,12 @@ public partial class PropertyGrid : GridContainer
     }
 
     /// <summary>A heading row spanning both columns.</summary>
-    public void AddHeading(string text)
+    public Label AddHeading(string text)
     {
-        AddChild(new Label { Text = text, ThemeTypeVariation = "HeaderSmall" });
+        var heading = new Label { Text = text, ThemeTypeVariation = "HeaderSmall" };
+        AddChild(heading);
         AddChild(new Control());
+        return heading;
     }
 
     /// <summary>A text field; an empty text commits null.</summary>
@@ -110,7 +113,8 @@ public partial class PropertyGrid : GridContainer
     /// <summary>A dropdown of an enum's snake_case names. With <paramref name="optional"/>, "(not set)" commits null.</summary>
     public OptionButton AddEnum<T>(string label, T? value, Action<T?> set, bool optional = false) where T : struct, Enum
     {
-        var option = new OptionButton { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        // Enum values are the JSON's own words.
+        var option = Loc.Verbatim(new OptionButton { SizeFlagsHorizontal = SizeFlags.ExpandFill });
         var values = Enum.GetValues<T>();
         if (optional)
             option.AddItem("(not set)");
@@ -187,7 +191,7 @@ public partial class PropertyGrid : GridContainer
                 set(text);
         };
         box.AddChild(picker);
-        box.AddChild(new Label { Text = hex ?? "(none)" });
+        box.AddChild(Loc.Verbatim(new Label { Text = hex ?? Loc.T("(none)") }));
         var clear = new Button { Text = "Clear", Disabled = hex is null };
         clear.Pressed += () => set(null);
         box.AddChild(clear);

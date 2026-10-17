@@ -1,6 +1,7 @@
 using Godot;
 using Mechanica.Core.Data;
 using Mechanica.Core.Saves;
+using Mechanica.Game.Ui;
 
 namespace Mechanica.Game.Saves;
 
@@ -43,7 +44,7 @@ public partial class SaveScreen : PanelContainer
         var rows = new VBoxContainer();
         AddChild(rows);
         rows.AddChild(new Label { Text = Saves is null ? "Load a world" : "Save or load", ThemeTypeVariation = "HeaderMedium" });
-        _list = new ItemList { SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0, 240) };
+        _list = Loc.Verbatim(new ItemList { SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0, 240) });
         _list.ItemSelected += i => Select((int)i);
         _list.ItemActivated += i => Load((int)i);
         rows.AddChild(_list);
@@ -88,7 +89,7 @@ public partial class SaveScreen : PanelContainer
         foreach (var save in _saves)
         {
             var when = save.SavedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
-            _list.AddItem(save.Error is null ? $"{save.Name}  ·  {save.Mode}  ·  {when}" : $"{save.Name}  ·  can't load: {save.Error}");
+            _list.AddItem(save.Error is null ? $"{save.Name}  ·  {Loc.T(save.Mode.ToString())}  ·  {when}" : Loc.T("{0}  ·  can't load: {1}", save.Name, save.Error));
         }
         Select(-1);
     }
@@ -99,7 +100,7 @@ public partial class SaveScreen : PanelContainer
         if (Saves is null)
             return;
         var path = Saves.SaveNow(_name.Text);
-        _status.Text = path is null ? "Could not save the world; see the log." : $"Saved as {Path.GetFileName(path)}.";
+        _status.Text = path is null ? Loc.T("Could not save the world; see the log.") : Loc.T("Saved as {0}.", Path.GetFileName(path));
         Refresh();
     }
 
@@ -111,7 +112,7 @@ public partial class SaveScreen : PanelContainer
         var diagnostics = new List<DataDiagnostic>();
         if (SaveStore.Read(_saves[index].Path, diagnostics) is not { } save)
         {
-            _status.Text = $"Can't load {_saves[index].Name}: {diagnostics.FirstOrDefault()?.Message}";
+            _status.Text = Loc.T("Can't load {0}: {1}", _saves[index].Name, diagnostics.FirstOrDefault()?.Message);
             return;
         }
         LoadRequested?.Invoke(save);
@@ -139,7 +140,7 @@ public partial class SaveScreen : PanelContainer
             return;
         }
         if (Store!.Delete(_saves[i].Path))
-            _status.Text = $"Deleted {_saves[i].Name}.";
+            _status.Text = Loc.T("Deleted {0}.", _saves[i].Name);
         Refresh();
     }
 }

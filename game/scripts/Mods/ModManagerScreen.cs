@@ -72,17 +72,18 @@ public partial class ModManagerScreen : Control
 
         var left = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsStretchRatio = 2 };
         split.AddChild(left);
-        _list = new Tree
+        // Mod names show as written; the titles and statuses are translated here.
+        _list = Loc.Verbatim(new Tree
         {
             Columns = 3,
             ColumnTitlesVisible = true,
             HideRoot = true,
             SelectMode = Tree.SelectModeEnum.Row,
             SizeFlagsVertical = SizeFlags.ExpandFill,
-        };
-        _list.SetColumnTitle(0, "Mod");
-        _list.SetColumnTitle(1, "Version");
-        _list.SetColumnTitle(2, "Status");
+        });
+        _list.SetColumnTitle(0, Loc.T("Mod"));
+        _list.SetColumnTitle(1, Loc.T("Version"));
+        _list.SetColumnTitle(2, Loc.T("Status"));
         _list.SetColumnExpand(1, false);
         _list.SetColumnCustomMinimumWidth(1, 80);
         _list.ItemEdited += OnItemEdited;
@@ -98,10 +99,10 @@ public partial class ModManagerScreen : Control
 
         var right = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
         split.AddChild(right);
-        _details = new RichTextLabel { BbcodeEnabled = true, FitContent = true, SelectionEnabled = true };
+        _details = Loc.Verbatim(new RichTextLabel { BbcodeEnabled = true, FitContent = true, SelectionEnabled = true });
         right.AddChild(_details);
         right.AddChild(new Label { Text = "Problems" });
-        _problems = new RichTextLabel { BbcodeEnabled = true, SizeFlagsVertical = SizeFlags.ExpandFill, SelectionEnabled = true };
+        _problems = Loc.Verbatim(new RichTextLabel { BbcodeEnabled = true, SizeFlagsVertical = SizeFlags.ExpandFill, SelectionEnabled = true });
         right.AddChild(_problems);
 
         var bottom = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.End };
@@ -189,15 +190,15 @@ public partial class ModManagerScreen : Control
     private (string Text, Color Color) Status(InstalledMod mod, LoadedMod? loaded)
     {
         if (!Manager.IsEnabled(mod.Id))
-            return ("Disabled", UiTokens.Disabled);
+            return (Loc.T("Disabled"), UiTokens.Disabled);
         if (loaded is null)
         {
             var reason = DiagnosticsFor(mod.Id).FirstOrDefault(d => d.Severity == DiagnosticSeverity.Error)?.Message;
-            return ($"Not loaded{(reason is null ? "" : $": {reason}")}", UiTokens.Error);
+            return (reason is null ? Loc.T("Not loaded") : Loc.T("Not loaded: {0}", reason), UiTokens.Error);
         }
         var lost = Preview.Conflicts.Count(c => c.ModId == mod.Id);
-        var status = loaded.Overrides.Count > 0 ? $"Loaded, overrides {loaded.Overrides.Count} part(s)" : "Loaded";
-        return lost > 0 ? ($"{status}; {lost} override(s) replaced by later mods", UiTokens.Warning) : (status, UiTokens.Success);
+        var status = loaded.Overrides.Count > 0 ? Loc.T("Loaded, overrides {0} part(s)", loaded.Overrides.Count) : Loc.T("Loaded");
+        return lost > 0 ? (Loc.T("{0}; {1} override(s) replaced by later mods", status, lost), UiTokens.Warning) : (status, UiTokens.Success);
     }
 
     private IEnumerable<DataDiagnostic> DiagnosticsFor(string id)
@@ -215,8 +216,8 @@ public partial class ModManagerScreen : Control
             lines.Add($"[color={color}]{Escape(d.ToString())}[/color]");
         }
         foreach (var id in Manager.MissingMods)
-            lines.Add($"[color={UiPalette.TextSecondary}]{Escape($"'{id}' is in your mod list but not installed; it keeps its place if you reinstall it.")}[/color]");
-        return lines.Count == 0 ? "No problems." : string.Join("\n", lines);
+            lines.Add($"[color={UiPalette.TextSecondary}]{Escape(Loc.T("'{0}' is in your mod list but not installed; it keeps its place if you reinstall it.", id))}[/color]");
+        return lines.Count == 0 ? Loc.T("No problems.") : string.Join("\n", lines);
     }
 
     private void UpdateDetails()
@@ -226,25 +227,25 @@ public partial class ModManagerScreen : Control
         _up.Disabled = _down.Disabled = mod is null;
         if (mod is null)
         {
-            _details.Text = "Select a mod to see its details.";
+            _details.Text = Loc.T("Select a mod to see its details.");
             return;
         }
         var m = mod.Manifest;
         var text = $"[b]{Escape(m.Name ?? mod.Id)}[/b] {mod.Version}  [color={UiPalette.TextSecondary}]{mod.Id}[/color]\n";
         if (m.Authors is { Count: > 0 })
-            text += $"By {Escape(string.Join(", ", m.Authors))}\n";
+            text += Loc.T("By {0}", Escape(string.Join(", ", m.Authors))) + "\n";
         if (m.Description is not null)
             text += $"{Escape(m.Description)}\n";
-        text += $"Needs: {References(m.Dependencies)}\nConflicts with: {References(m.Conflicts)}\n";
+        text += Loc.T("Needs: {0}", References(m.Dependencies)) + "\n" + Loc.T("Conflicts with: {0}", References(m.Conflicts)) + "\n";
         if (Preview.Mods.FirstOrDefault(l => l.Id == mod.Id) is { } loaded)
-            text += $"{loaded.Parts.Count} part(s), {loaded.Overrides.Count} override(s)\n";
+            text += Loc.T("{0} part(s), {1} override(s)", loaded.Parts.Count, loaded.Overrides.Count) + "\n";
         text += $"[color={UiPalette.TextSecondary}]{Escape(mod.Directory)}[/color]";
         _details.Text = text;
     }
 
     private static string References(List<ModDependency>? list) => list is { Count: > 0 }
         ? Escape(string.Join(", ", list.Select(d => d.Version is null ? d.Id : $"{d.Id} {d.Version}")))
-        : "nothing";
+        : Loc.T("nothing");
 
     private void OnItemEdited()
     {

@@ -7,6 +7,7 @@ using Mechanica.Core.Input;
 using Mechanica.Game.Creations;
 using Mechanica.Game.Net;
 using Mechanica.Game.Player;
+using Mechanica.Game.Ui;
 
 namespace Mechanica.Game.Building;
 
@@ -230,8 +231,9 @@ public partial class HammerTool : HandTool
     public override string HudText()
     {
         if (Selected is null)
-            return "Hammer: no placeable parts are loaded";
+            return Loc.T("Hammer: no placeable parts are loaded");
         var name = Build.Catalog.FindDefinition(Selected)?.Name ?? Selected;
-        return $"Hammer: {name}   {Key(InputActions.HotbarPrevious)}/{Key(InputActions.HotbarNext)} part  {Key(InputActions.Rotate)} turn  {Key(InputActions.Tip)} tip  {Key(InputActions.Primary)} place  {Key(InputActions.Secondary)} remove{Status}";
+        return Loc.T("Hammer: {0}   {1}/{2} part  {3} turn  {4} tip  {5} place  {6} remove", name, Key(InputActions.HotbarPrevious), Key(InputActions.HotbarNext),
+            Key(InputActions.Rotate), Key(InputActions.Tip), Key(InputActions.Primary), Key(InputActions.Secondary)) + Status;
     }
 }

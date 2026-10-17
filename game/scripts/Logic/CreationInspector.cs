@@ -7,6 +7,7 @@ using Mechanica.Core.Logic;
 using Mechanica.Game.Building;
 using Mechanica.Game.Net;
 using Mechanica.Game.Player;
+using Mechanica.Game.Ui;
 
 namespace Mechanica.Game.Logic;
 
@@ -50,7 +51,7 @@ public partial class CreationInspector : CanvasLayer
         _panel = new PanelContainer { Name = "Inspector", Visible = false, CustomMinimumSize = new Vector2(460, 0) };
         AddChild(_panel);
         _panel.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.TopRight, Control.LayoutPresetMode.KeepSize, 16);
-        _text = new RichTextLabel { BbcodeEnabled = true, FitContent = true, ScrollActive = false, CustomMinimumSize = new Vector2(440, 0) };
+        _text = Loc.Verbatim(new RichTextLabel { BbcodeEnabled = true, FitContent = true, ScrollActive = false, CustomMinimumSize = new Vector2(440, 0) });
         _panel.AddChild(_text);
     }
 
@@ -124,25 +125,25 @@ public partial class CreationInspector : CanvasLayer
     public static string Describe(CreationInspection c)
     {
         var text = new StringBuilder();
-        text.AppendLine($"[b]Creation {c.Id}[/b]  {c.Mass:0.#} kg, {c.Parts.Count} parts, revision {c.Revision}, simulated by peer {c.AuthorityPeer}");
-        text.AppendLine($"Bodies: {string.Join(", ", c.Bodies.Select(b => $"#{b.Index} {b.Parts} parts {b.Mass:0.#} kg"))}");
+        text.AppendLine($"[b]{Loc.T("Creation {0}", c.Id)}[/b]  {Loc.T("{0} kg, {1} parts, revision {2}, simulated by peer {3}", $"{c.Mass:0.#}", c.Parts.Count, c.Revision, c.AuthorityPeer)}");
+        text.AppendLine(Loc.T("Bodies: {0}", string.Join(", ", c.Bodies.Select(b => Loc.T("#{0} {1} parts {2} kg", b.Index, b.Parts, $"{b.Mass:0.#}")))));
         if (c.Joints.Count > 0)
-            text.AppendLine($"Joints: {string.Join(", ", c.Joints.Select(j => $"{j.Part}→{j.Other} {j.Type.ToString().ToLowerInvariant()}{(j.Locked ? " (locked)" : "")}"))}");
+            text.AppendLine(Loc.T("Joints: {0}", string.Join(", ", c.Joints.Select(j => $"{j.Part}→{j.Other} {j.Type.ToString().ToLowerInvariant()}{(j.Locked ? " " + Loc.T("(locked)") : "")}"))));
         if (c.Links.Count > 0)
-            text.AppendLine($"Links: {string.Join(", ", c.Links.Select(l => $"{l.From}→{l.To}"))}");
+            text.AppendLine(Loc.T("Links: {0}", string.Join(", ", c.Links.Select(l => $"{l.From}→{l.To}"))));
         foreach (var p in c.Parts)
         {
-            var details = new List<string> { $"body {p.Body}" };
+            var details = new List<string> { Loc.T("body {0}", p.Body) };
             if (p.Output != 0 || p.Input != 0)
-                details.Add($"out {p.Output:0.###} in {p.Input:0.###}");
+                details.Add(Loc.T("out {0} in {1}", $"{p.Output:0.###}", $"{p.Input:0.###}"));
             if (p.Settings is { Count: > 0 } settings)
                 details.Add(string.Join(" ", settings.Select(s => $"{s.Key}={s.Value.GetRawText()}")));
             if (p.Occupant is { } peer)
-                details.Add($"seated: peer {peer}");
+                details.Add(Loc.T("seated: peer {0}", peer));
             if (p.Fault is { } fault)
-                details.Add($"[color=#ff6060]script stopped: {fault}[/color]");
+                details.Add($"[color=#ff6060]{Loc.T("script stopped: {0}", fault)}[/color]");
             else if (p.Script is not null)
-                details.Add("script runs");
+                details.Add(Loc.T("script runs"));
             text.AppendLine($"  {p.Id} {p.Name}: {string.Join(", ", details)}");
         }
         return text.ToString();

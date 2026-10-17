@@ -4,6 +4,7 @@ using Mechanica.Core.Building;
 using Mechanica.Core.Creations;
 using Mechanica.Core.Input;
 using Mechanica.Game.Creations;
+using Mechanica.Game.Ui;
 
 namespace Mechanica.Game.Building;
 
@@ -118,8 +119,8 @@ public partial class WeldTool : HandTool
     /// <inheritdoc/>
     public override string HudText()
     {
-        var state = Selected is { } s ? $"part {s.Part} of creation {s.Creation} selected" : "nothing selected";
-        return $"Weld Tool ({state})   {Key(InputActions.Primary)} select / weld  {Key(InputActions.Rotate)} turn  {Key(InputActions.Tip)} tip  {Key(InputActions.Secondary)} clear{Status}";
+        var state = Selected is { } s ? Loc.T("part {0} of creation {1} selected", s.Part, s.Creation) : Loc.T("nothing selected");
+        return Loc.T("Weld Tool ({0})   {1} select / weld  {2} turn  {3} tip  {4} clear", state, Key(InputActions.Primary), Key(InputActions.Rotate), Key(InputActions.Tip), Key(InputActions.Secondary)) + Status;
     }
 
     /// <inheritdoc/>

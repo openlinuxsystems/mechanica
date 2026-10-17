@@ -36,6 +36,7 @@ public partial class Nameplates : Node
             {
                 plate = new Label3D
                 {
+                    AutoTranslateMode = AutoTranslateModeEnum.Disabled,
                     Name = "Nameplate",
                     Position = new Vector3(0, Height, 0),
                     Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,

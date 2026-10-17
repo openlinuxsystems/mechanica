@@ -6,6 +6,7 @@ using Mechanica.Core.Items;
 using Mechanica.Core.Survival;
 using Mechanica.Game.Items;
 using Mechanica.Game.Survival;
+using Mechanica.Game.Ui;
 using Mechanica.Scripting;
 
 namespace Mechanica.Game.Building;
@@ -88,8 +89,8 @@ public partial class ItemTool : HandTool
     public override string HudText()
     {
         var hand = InHand;
-        var name = hand is null ? "nothing usable" : $"{Survival.Catalog.FindDefinition(hand.Item)?.Name ?? hand.Item} x{hand.Count}";
-        return $"Item: {name}   {Key(InputActions.HotbarPrevious)}/{Key(InputActions.HotbarNext)} choose  {Key(InputActions.Primary)} use  {Key(InputActions.Drop)} drop one{Status}";
+        var name = hand is null ? Loc.T("nothing usable") : $"{Survival.Catalog.FindDefinition(hand.Item)?.Name ?? hand.Item} x{hand.Count}";
+        return Loc.T("Item: {0}   {1}/{2} choose  {3} use  {4} drop one", name, Key(InputActions.HotbarPrevious), Key(InputActions.HotbarNext), Key(InputActions.Primary), Key(InputActions.Drop)) + Status;
     }
 
     /// <inheritdoc/>

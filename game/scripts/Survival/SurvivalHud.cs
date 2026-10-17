@@ -61,7 +61,7 @@ public partial class SurvivalHud : CanvasLayer
         _health.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.CenterBottom, Control.LayoutPresetMode.KeepSize, 24);
         _healthText = new Label { Name = "HealthText", HorizontalAlignment = HorizontalAlignment.Center };
         _health.AddChild(_healthText);
-        _healthText.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        _healthText.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
         _hint = new Label { Name = "Hint", HorizontalAlignment = HorizontalAlignment.Center };
         AddChild(_hint);
         _hint.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.Center, Control.LayoutPresetMode.KeepSize);
@@ -94,7 +94,7 @@ public partial class SurvivalHud : CanvasLayer
         {
             var wait = Survival.OwnRespawnIn;
             var where = own.HasBed ? "your bed" : "the spawn";
-            _deathText.Text = wait > 0 ? $"You died.\nRespawn in {Math.Ceiling(wait):0} s" : $"You died.\n[{GameInput.Label(InputActions.Interact)}] respawn at {where}";
+            _deathText.Text = wait > 0 ? Loc.T("You died.\nRespawn in {0} s", $"{Math.Ceiling(wait):0}") : Loc.T("You died.\n[{0}] respawn at {1}", GameInput.Label(InputActions.Interact), where);
         }
         _hint.Text = own is { Dead: true } ? "" : Interaction() is { } what ? $"[{GameInput.Label(InputActions.Interact)}] {what.Label}" : "";
     }
@@ -140,24 +140,24 @@ public partial class SurvivalHud : CanvasLayer
         if (Players.LocalPlayer is not { } player || Survival.Settings is not { } settings)
             return null;
         if (Logic is not null && player.Seated)
-            return ("stand up", () => Request(LogicActions.LeaveSeat, new NoArgs()));
+            return (Loc.T("stand up"), () => Request(LogicActions.LeaveSeat, new NoArgs()));
         if (HandTool.PartHit(HandTool.Cast(player, settings.Reach)) is { } aimed)
         {
             var creation = aimed.Node.Creation;
             var definition = creation.DefinitionOf(aimed.Part);
             if (Logic is not null && definition.Seat is not null && Logic.Seats.Occupant(creation.Id, aimed.Part) is null)
-                return ($"sit in the {definition.Name ?? "seat"}", () => Request(LogicActions.EnterSeat, new LogicPartArgs(creation.Id, aimed.Part)));
+                return (Loc.T("sit in the {0}", definition.Name ?? Loc.T("seat")), () => Request(LogicActions.EnterSeat, new LogicPartArgs(creation.Id, aimed.Part)));
             if (Logic is not null && definition.Logic?.Use is { } use)
-                return ($"{use} the {definition.Name ?? "part"}", () => Request(LogicActions.ActivatePart, new LogicPartArgs(creation.Id, aimed.Part)));
+                return (Loc.T("{0} the {1}", use, definition.Name ?? Loc.T("part")), () => Request(LogicActions.ActivatePart, new LogicPartArgs(creation.Id, aimed.Part)));
             // Harvesting is the soil script's on_activate (D2); the prompt only shows once the synced crop is ripe.
             if (definition.Soil is not null && Survival.Soil.GetValueOrDefault((creation.Id, aimed.Part)) is { Ripe: true } soil)
-                return ($"harvest {Catalog.FindDefinition(soil.Crop!)?.Name ?? soil.Crop}", () => Request(LogicActions.ActivatePart, new LogicPartArgs(creation.Id, aimed.Part)));
+                return (Loc.T("harvest {0}", Catalog.FindDefinition(soil.Crop!)?.Name ?? soil.Crop), () => Request(LogicActions.ActivatePart, new LogicPartArgs(creation.Id, aimed.Part)));
             if (definition.RespawnPoint == true)
-                return ($"sleep here: respawn at this {definition.Name ?? "bed"}", () => Request(SurvivalActions.SetSpawn, new PartUseArgs(creation.Id, aimed.Part)));
+                return (Loc.T("sleep here: respawn at this {0}", definition.Name ?? Loc.T("bed")), () => Request(SurvivalActions.SetSpawn, new PartUseArgs(creation.Id, aimed.Part)));
             if (Containers?.AimedInventory() is { } where)
-                return ($"open the {definition.Name ?? "container"}", () => Containers.Show(where));
+                return (Loc.T("open the {0}", definition.Name ?? Loc.T("container")), () => Containers.Show(where));
             if (PartSettings is not null && definition.Settings is { Count: > 0 })
-                return ($"set up the {definition.Name ?? "part"}", () => PartSettings.Open(creation.Id, aimed.Part));
+                return (Loc.T("set up the {0}", definition.Name ?? Loc.T("part")), () => PartSettings.Open(creation.Id, aimed.Part));
         }
         if (Quests?.Prompt() is { } quest)
             return (QuestLabel(quest), () => Request(QuestTracker.QuestInteract, new NoArgs()));
@@ -171,14 +171,14 @@ public partial class SurvivalHud : CanvasLayer
         if (nearest is null)
             return null;
         var label = string.Join(", ", nearest.Items.Select(s => $"{Catalog.FindDefinition(s.Item)?.Name ?? s.Item} x{s.Count}"));
-        return ($"pick up {label}", () => Request(SurvivalActions.PickUp, new PickUpArgs(nearest.Id)));
+        return (Loc.T("pick up {0}", label), () => Request(SurvivalActions.PickUp, new PickUpArgs(nearest.Id)));
     }
 
     private string QuestLabel(QuestInteractResult quest) => quest switch
     {
-        { Marker: "npc" } => "talk",
-        { Ref: { } id } => $"use the {Catalog.FindDefinition(id)?.Name ?? id}",
-        _ => $"use the {quest.Marker.Replace('_', ' ')}",
+        { Marker: "npc" } => Loc.T("talk"),
+        { Ref: { } id } => Loc.T("use the {0}", Catalog.FindDefinition(id)?.Name ?? id),
+        _ => Loc.T("use the {0}", quest.Marker.Replace('_', ' ')),
     };
 
     private void Request<T>(string action, T args) =>

@@ -42,12 +42,12 @@ public partial class TutorialHints : CanvasLayer
         Layer = 4;
         Tutorial ??= Load();
         _panel = new PanelContainer { Name = "Hint", Visible = false, MouseFilter = Control.MouseFilterEnum.Ignore };
-        _text = new Label
+        _text = Loc.Verbatim(new Label
         {
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
             CustomMinimumSize = new Vector2(460, 0),
             HorizontalAlignment = HorizontalAlignment.Center,
-        };
+        });
         _panel.AddChild(_text);
         AddChild(_panel);
         // Under the compass (10% from the top, about 44 px tall).
@@ -107,7 +107,7 @@ public partial class TutorialHints : CanvasLayer
     {
         Showing = hint;
         _left = Tutorial.HintSeconds;
-        _text.Text = Tutorial.Fill(hint.Text, id => InputActions.Find(id) is null ? null : GameInput.Label(id));
+        _text.Text = Tutorial.Fill(Loc.T(hint.Text), id => InputActions.Find(id) is null ? null : GameInput.Label(id));
         _panel.Visible = true;
         // Seen as soon as it shows, so quitting mid-tip doesn't show it again.
         var gameplay = GameSettings.Current.Gameplay;

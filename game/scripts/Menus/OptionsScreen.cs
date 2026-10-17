@@ -172,8 +172,8 @@ public partial class OptionsScreen : ToolWindow
             SetBinding(action, slot, chord, swap: false);
             return;
         }
-        var others = string.Join(", ", conflicts.Select(c => InputActions.Find(c.Action)?.Name ?? c.Action));
-        var dialog = ConfirmDialog.Ask(this, "Key in use", $"{chord.Display()} is already used for {others}. Swap the keys, or take it over and leave {others} without it?",
+        var others = string.Join(", ", conflicts.Select(c => InputActions.Find(c.Action) is { } d ? ActionName(d) : c.Action));
+        var dialog = ConfirmDialog.Ask(this, "Key in use", Loc.T("{0} is already used for {1}. Swap the keys, or take it over and leave {1} without it?", chord.Display(), others),
             "Overwrite", () => SetBinding(action, slot, chord, swap: false), RefreshBindings);
         dialog.AddChoice("Swap", () => SetBinding(action, slot, chord, swap: true));
     }
@@ -195,7 +195,7 @@ public partial class OptionsScreen : ToolWindow
         GameSettings.Apply(WithSeen(_draft));
         GameSettings.ApplyWindow();
         _revertLeft = RevertSeconds;
-        _revert = ConfirmDialog.Ask(this, "Display settings", $"Keep these display settings? They go back in {RevertSeconds:0} seconds.",
+        _revert = ConfirmDialog.Ask(this, "Display settings", Loc.T("Keep these display settings? They go back in {0} seconds.", $"{RevertSeconds:0}"),
             "Keep", () =>
             {
                 _revert = null;
@@ -235,7 +235,7 @@ public partial class OptionsScreen : ToolWindow
         {
             var header = new HBoxContainer();
             header.AddChild(new Label { Text = category, ThemeTypeVariation = "TitleLabel", SizeFlagsHorizontal = SizeFlags.ExpandFill });
-            var reset = new Button { Text = "Reset Category", TooltipText = $"Put the {category} keys back to their defaults" };
+            var reset = new Button { Text = "Reset Category", TooltipText = Loc.T("Put the {0} keys back to their defaults", Loc.T(category)) };
             reset.Pressed += () =>
             {
                 _keymap.ResetCategory(category);
@@ -246,7 +246,7 @@ public partial class OptionsScreen : ToolWindow
             foreach (var def in InputActions.All.Where(a => a.Category == category))
             {
                 var row = new HBoxContainer();
-                var name = new Label { Text = def.Name, SizeFlagsHorizontal = SizeFlags.ExpandFill };
+                var name = new Label { Text = ActionName(def), SizeFlagsHorizontal = SizeFlags.ExpandFill };
                 row.AddChild(name);
                 var primary = KeyButton(def.Id, BindingSlot.Primary);
                 var alternate = KeyButton(def.Id, BindingSlot.Alternate);
@@ -259,9 +259,16 @@ public partial class OptionsScreen : ToolWindow
         RefreshBindings();
     }
 
+    // An action's name in the language in use; the numbered hotbar slots share one key.
+    private static string ActionName(InputActionDef def) =>
+        def.Id.StartsWith("hotbar_", StringComparison.Ordinal) && int.TryParse(def.Id["hotbar_".Length..], out var slot)
+            ? Loc.T("Hotbar {0}", slot)
+            : Loc.T(def.Name);
+
     private Button KeyButton(string action, BindingSlot slot)
     {
-        var button = new Button { CustomMinimumSize = new Vector2(170, 32), TooltipText = slot == BindingSlot.Primary ? "Primary key: click to change" : "Alternate key: click to change" };
+        // Key names show as the keyboard has them.
+        var button = Loc.Verbatim(new Button { CustomMinimumSize = new Vector2(170, 32), TooltipText = Loc.T(slot == BindingSlot.Primary ? "Primary key: click to change" : "Alternate key: click to change") });
         button.SetMeta(HoverScale.OptOut, true);
         button.Pressed += () => StartCapture(action, slot);
         return button;
@@ -300,7 +307,9 @@ public partial class OptionsScreen : ToolWindow
         {
             row.Visible = term.Length == 0
                 || def.Name.Contains(term, StringComparison.OrdinalIgnoreCase)
+                || ActionName(def).Contains(term, StringComparison.OrdinalIgnoreCase)
                 || def.Category.Contains(term, StringComparison.OrdinalIgnoreCase)
+                || Loc.T(def.Category).Contains(term, StringComparison.OrdinalIgnoreCase)
                 || primary.Text.Contains(term, StringComparison.OrdinalIgnoreCase)
                 || alternate.Text.Contains(term, StringComparison.OrdinalIgnoreCase);
         }
@@ -329,7 +338,7 @@ public partial class OptionsScreen : ToolWindow
         });
         _custom = new VBoxContainer { Visible = g.Preset == Quality.Custom };
         page.AddChild(_custom);
-        Slider(_custom, "View distance", g.ViewDistance, GraphicsSettings.MinViewDistance, GraphicsSettings.MaxViewDistance, 32, v => SetGraphics(x => x with { ViewDistance = v }), v => $"{v:0} m");
+        Slider(_custom, "View distance", g.ViewDistance, GraphicsSettings.MinViewDistance, GraphicsSettings.MaxViewDistance, 32, v => SetGraphics(x => x with { ViewDistance = v }), v => Loc.T("{0} m", $"{v:0}"));
         Option(_custom, "Shadows", levels, (int)g.Shadows, i => SetGraphics(x => x with { Shadows = (Quality)i }));
         Option(_custom, "Anti-aliasing", levels, (int)g.Antialiasing, i => SetGraphics(x => x with { Antialiasing = (Quality)i }));
         Option(_custom, "Textures", levels, (int)g.Textures, i => SetGraphics(x => x with { Textures = (Quality)i }));
@@ -414,7 +423,7 @@ public partial class OptionsScreen : ToolWindow
         Row(page, "Tips already seen", "Tips show once each. This brings them all back.").AddChild(again);
         page.AddChild(new Label { Text = "Saving", ThemeTypeVariation = "TitleLabel" });
         var choices = GameplaySettings.AutoSaveChoices;
-        Option(page, "Auto-save", [.. choices.Select(m => m == 0 ? "Off" : $"Every {m} min")], choices.ToList().IndexOf(_draft.Gameplay.AutoSaveMinutes),
+        Option(page, "Auto-save", [.. choices.Select(m => m == 0 ? Loc.T("Off") : Loc.T("Every {0} min", m))], choices.ToList().IndexOf(_draft.Gameplay.AutoSaveMinutes),
             i => Live(_draft with { Gameplay = _draft.Gameplay with { AutoSaveMinutes = choices[i] } }), "How often a world you host saves itself.");
         page.AddChild(new Label { Text = "Multiplayer", ThemeTypeVariation = "TitleLabel" });
         Slider(page, "Max players (host)", _draft.Gameplay.MaxPlayers, GameplaySettings.MinPlayers, GameplaySettings.MaxMaxPlayers, 1,
@@ -444,6 +453,10 @@ public partial class OptionsScreen : ToolWindow
         Option(page, "Colour-blind filter", [.. modes.Select(m => m == ColorBlindMode.Off ? "Off" : m.ToString())], Array.IndexOf(modes, _draft.Interface.ColorBlind),
             i => Live(_draft with { Interface = _draft.Interface with { ColorBlind = modes[i] } }),
             "Corrects colours on the whole screen so ones that look alike stay apart: Protanopia (red), Deuteranopia (green), Tritanopia (blue).");
+        var languages = Loc.Refresh();
+        Loc.Verbatim(Option(page, "Language", [.. languages.Select(l => l.Name)], languages.ToList().FindIndex(l => l.Code.Equals(_draft.Interface.Language, StringComparison.OrdinalIgnoreCase)) is var at and >= 0 ? at : 0,
+            i => Live(_draft with { Interface = _draft.Interface with { Language = languages[i].Code } }),
+            Loc.T("The language of menus and the HUD. To add one, put its file in {0}.", ProjectSettings.GlobalizePath(Loc.UserFolder))));
         Slider(page, "Chat opacity", _draft.Interface.ChatOpacity, 0f, 1f, 0.05f, v => Live(_draft with { Interface = _draft.Interface with { ChatOpacity = v } }), Percent);
     }
 
@@ -461,7 +474,7 @@ public partial class OptionsScreen : ToolWindow
     private void AskReset()
     {
         var tab = CurrentTab;
-        ConfirmDialog.Ask(this, "Reset to defaults", $"Put every {tab} setting back to its default?", "Reset", () =>
+        ConfirmDialog.Ask(this, "Reset to defaults", Loc.T("Put every {0} setting back to its default?", Loc.T(tab)), "Reset", () =>
         {
             var d = new UserSettings();
             switch (tab)
@@ -516,7 +529,7 @@ public partial class OptionsScreen : ToolWindow
         return row;
     }
 
-    private static void Option(VBoxContainer page, string label, IReadOnlyList<string> items, int selected, Action<int> changed, string? tooltip = null)
+    private static OptionButton Option(VBoxContainer page, string label, IReadOnlyList<string> items, int selected, Action<int> changed, string? tooltip = null)
     {
         var option = new OptionButton { Name = label, SizeFlagsHorizontal = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0, 32), TooltipText = tooltip ?? "" };
         foreach (var item in items)
@@ -524,6 +537,7 @@ public partial class OptionsScreen : ToolWindow
         option.Selected = Math.Clamp(selected, 0, items.Count - 1);
         option.ItemSelected += i => changed((int)i);
         Row(page, label, tooltip).AddChild(option);
+        return option;
     }
 
     private static void Toggle(VBoxContainer page, string label, bool value, Action<bool> changed, string? tooltip = null)

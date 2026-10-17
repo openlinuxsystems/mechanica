@@ -72,6 +72,9 @@ CI (`.github/workflows/ci.yml`) runs the same three steps. Keep it green.
   and Esc to close, and `ConfirmDialog` before anything destructive. Any other panel the player opens over
   the world calls `UiInput.KeepMouse` so clicks and wheel turns over it never reach the game; cover new
   windows in `game/tests/windows`.
+- UI text goes through the string tables (`game/scripts/Ui/Loc.cs`, `docs/translating.md`): literal text on a control
+  auto-translates, text built at run time uses `Loc.T("… {0}", value)`, and player or mod text uses `Loc.Verbatim`.
+  After changing UI text, re-run `res://tests/language/LanguageTest.tscn -- --collect` to regenerate `game/data/lang/en.json`.
 - Never hard-code a key. Add the action to `src/Mechanica.Core/Input/InputActions.cs` (spec §1 default) and
   match it with `GameInput.Pressed`; HUD hints use `GameInput.Label` so they follow the player's bindings.
 - Engine settings (`game/data/*.json`: movement, streaming, build reach, sync) ship with the build and

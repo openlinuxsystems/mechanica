@@ -4,8 +4,11 @@ using Godot;
 using Mechanica.Core;
 using Mechanica.Core.Data;
 using Mechanica.Core.Editor;
+using Mechanica.Core.Input;
 using Mechanica.Game.Creations;
 using Mechanica.Game.Mods;
+using Mechanica.Game.Player;
+using Mechanica.Game.Ui;
 using FileAccess = Godot.FileAccess;
 
 namespace Mechanica.Game.Editor;
@@ -121,7 +124,7 @@ public partial class PartEditorScreen : Control
         toolbar.AddChild(new VSeparator());
         AddButton(toolbar, "Help", () => OpenHelp("getting-started.md"), "Getting Started, the Part Data Schema Reference and the Lua API Reference");
         AddButton(toolbar, "Close", () => CloseRequested?.Invoke(), "Back to the menu");
-        _title = new Label { SizeFlagsHorizontal = SizeFlags.ExpandFill, HorizontalAlignment = HorizontalAlignment.Right };
+        _title = Loc.Verbatim(new Label { SizeFlagsHorizontal = SizeFlags.ExpandFill, HorizontalAlignment = HorizontalAlignment.Right });
         toolbar.AddChild(_title);
 
         var split = new HSplitContainer { SizeFlagsVertical = SizeFlags.ExpandFill, SplitOffsets = [440] };
@@ -171,7 +174,7 @@ public partial class PartEditorScreen : Control
             Modulate = new Color(1, 1, 1, 0.7f),
         };
         overlays.AddChild(_hint);
-        _problems = new RichTextLabel { BbcodeEnabled = true, SelectionEnabled = true, SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0, 90) };
+        _problems = Loc.Verbatim(new RichTextLabel { BbcodeEnabled = true, SelectionEnabled = true, SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0, 90) });
         right.AddChild(_problems);
 
         BuildDialogs();
@@ -201,14 +204,14 @@ public partial class PartEditorScreen : Control
     public string? NewPart(string modId, string partId, string name, string template)
     {
         if (!Identifiers.IsValid(modId))
-            return $"Mod id '{modId}' must be lowercase snake_case.";
+            return Loc.T("Mod id '{0}' must be lowercase snake_case.", modId);
         if (!Identifiers.IsValid(partId))
-            return $"Part id '{partId}' must be lowercase snake_case.";
+            return Loc.T("Part id '{0}' must be lowercase snake_case.", partId);
         var text = FileAccess.GetFileAsString($"{TemplatesPath}/{template}.json");
         var diagnostics = new List<DataDiagnostic>();
         var definition = ModLoader.ParseJson<PartDefinition>(text, $"{template}.json", diagnostics);
         if (definition is null)
-            return $"Template '{template}' could not be read: {string.Join("; ", diagnostics)}";
+            return Loc.T("Template '{0}' could not be read: {1}", template, string.Join("; ", diagnostics));
         SetDocument(PartDocument.New(Path.Combine(ModsRoot, modId), definition, partId, string.IsNullOrWhiteSpace(name) ? partId : name));
         return null;
     }
@@ -264,7 +267,7 @@ public partial class PartEditorScreen : Control
             : null;
         var result = PartExporter.Export(document, baked);
         _assets.ClearCache();
-        ShowProblems(result.Diagnostics, result.Succeeded ? $"Exported {result.QualifiedId} to {Display(result.PartFile!)}." : "Export failed; nothing was written.");
+        ShowProblems(result.Diagnostics, result.Succeeded ? Loc.T("Exported {0} to {1}.", result.QualifiedId, Display(result.PartFile!)) : Loc.T("Export failed; nothing was written."));
         return result;
     }
 
@@ -279,8 +282,8 @@ public partial class PartEditorScreen : Control
             OpenPart(last);
         var made = result.Exports.Count(e => e.Succeeded);
         ShowProblems(result.Diagnostics, result.Succeeded
-            ? $"Batch {Path.GetFileName(file)} exported {made} parts and recipes."
-            : $"Batch {Path.GetFileName(file)} failed; {made} of {result.Exports.Count} parts and recipes exported.");
+            ? Loc.T("Batch {0} exported {1} parts and recipes.", Path.GetFileName(file), made)
+            : Loc.T("Batch {0} failed; {1} of {2} parts and recipes exported.", Path.GetFileName(file), made, result.Exports.Count));
         return result;
     }
 
@@ -311,7 +314,7 @@ public partial class PartEditorScreen : Control
         _partGrid = AddTab("Part");
 
         var model = AddTabBox("Model");
-        _pieces = new ItemList { CustomMinimumSize = new Vector2(0, 140) };
+        _pieces = Loc.Verbatim(new ItemList { CustomMinimumSize = new Vector2(0, 140) });
         _pieces.ItemSelected += i => SelectPiece((int)i);
         model.AddChild(_pieces);
         var add = new HFlowContainer();
@@ -344,12 +347,12 @@ public partial class PartEditorScreen : Control
         _collisionGrid = AddTab("Collision");
 
         var sockets = AddTabBox("Sockets");
-        _sockets = new ItemList { CustomMinimumSize = new Vector2(0, 120) };
+        _sockets = Loc.Verbatim(new ItemList { CustomMinimumSize = new Vector2(0, 120) });
         _sockets.ItemSelected += i => SelectSocket((int)i);
         sockets.AddChild(_sockets);
         var socketButtons = new HFlowContainer();
         sockets.AddChild(socketButtons);
-        var side = new OptionButton();
+        var side = Loc.Verbatim(new OptionButton());
         foreach (var name in new[] { "+X", "-X", "+Y", "-Y", "+Z", "-Z" })
             side.AddItem(name);
         side.Selected = 2;
@@ -390,6 +393,7 @@ public partial class PartEditorScreen : Control
         _openDialog = new FileDialog
         {
             Title = "Open part",
+            ModeOverridesTitle = false,
             Access = FileDialog.AccessEnum.Filesystem,
             FileMode = FileDialog.FileModeEnum.OpenFile,
             Filters = ["*.json ; Part files"],
@@ -401,6 +405,7 @@ public partial class PartEditorScreen : Control
         _batchDialog = new FileDialog
         {
             Title = "Run batch",
+            ModeOverridesTitle = false,
             Access = FileDialog.AccessEnum.Filesystem,
             FileMode = FileDialog.FileModeEnum.OpenFile,
             Filters = ["*.json ; Batch files"],
@@ -413,6 +418,7 @@ public partial class PartEditorScreen : Control
         _importDialog = new FileDialog
         {
             Title = "Import",
+            ModeOverridesTitle = false,
             Access = FileDialog.AccessEnum.Filesystem,
             FileMode = FileDialog.FileModeEnum.OpenFile,
             UseNativeDialog = false,
@@ -426,7 +432,7 @@ public partial class PartEditorScreen : Control
         var mod = new LineEdit { Text = "my_mod", CustomMinimumSize = new Vector2(240, 0), TooltipText = "Folder name in the mods folder; created if missing" };
         var id = new LineEdit { Text = "new_part" };
         var name = new LineEdit { Text = "New Part" };
-        var template = new OptionButton();
+        var template = Loc.Verbatim(new OptionButton());
         foreach (var t in TemplateNames)
             template.AddItem(t);
         foreach (var (label, control) in new (string, Control)[] { ("Mod", mod), ("Part id", id), ("Name", name), ("Template", template) })
@@ -491,14 +497,16 @@ public partial class PartEditorScreen : Control
         var doc = Document;
         _undo.Disabled = doc?.CanUndo != true;
         _redo.Disabled = doc?.CanRedo != true;
-        _undo.TooltipText = doc?.UndoLabel is { } u ? $"Undo {u} (Ctrl+Z)" : "Ctrl+Z";
-        _redo.TooltipText = doc?.RedoLabel is { } r ? $"Redo {r} (Ctrl+Shift+Z)" : "Ctrl+Shift+Z";
+        _undo.TooltipText = doc?.UndoLabel is { } u ? Loc.T("Undo {0} (Ctrl+Z)", u) : "Ctrl+Z";
+        _redo.TooltipText = doc?.RedoLabel is { } r ? Loc.T("Redo {0} (Ctrl+Shift+Z)", r) : "Ctrl+Shift+Z";
         _title.Text = doc is null
-            ? "No part open: New or Open"
-            : $"{doc.ModId}:{doc.Definition.Id}  ({doc.RelativeFile ?? "not exported yet"}){(doc.IsDirty ? "  • unsaved" : "")}";
+            ? Loc.T("No part open: New or Open")
+            : doc.IsDirty
+                ? Loc.T("{0}  ({1})  • unsaved", $"{doc.ModId}:{doc.Definition.Id}", doc.RelativeFile ?? Loc.T("not exported yet"))
+                : $"{doc.ModId}:{doc.Definition.Id}  ({doc.RelativeFile ?? Loc.T("not exported yet")})";
         if (doc is null)
         {
-            _problems.Text = "Start with New (from a template) or Open (a part file in a mod). Press Help for the Getting Started guide.";
+            _problems.Text = Loc.T("Start with New (from a template) or Open (a part file in a mod). Press Help for the Getting Started guide.");
             return;
         }
 
@@ -578,7 +586,7 @@ public partial class PartEditorScreen : Control
             var index = _selectedPiece;
             void SetPiece(string label, Func<ModelPiece, ModelPiece> change) =>
                 Edit(() => doc.SetPiece(index, change(doc.Source.Pieces[index]), label));
-            _pieceGrid.AddHeading($"Piece {index + 1}: {piece.Kind?.ToString().ToLowerInvariant()}");
+            _pieceGrid.AddHeading(Loc.T("Piece {0}: {1}", index + 1, piece.Kind?.ToString().ToLowerInvariant()));
             _pieceGrid.AddEnum<CsgOperation>("Operation", piece.Operation ?? CsgOperation.Union,
                 v => SetPiece("Set operation", p => p with { Operation = v == CsgOperation.Union ? null : v }));
             switch (piece.Kind)
@@ -662,10 +670,10 @@ public partial class PartEditorScreen : Control
             var variant = variants[i];
             void SetVariant(Func<ColorVariant, ColorVariant> change) =>
                 Edit(() => doc.SetVariant(index, change(doc.Definition.Visual!.Variants![index])));
-            _lookGrid.AddText($"Variant {i + 1} id", variant.Id, v => SetVariant(x => x with { Id = v }));
-            _lookGrid.AddText($"Variant {i + 1} name", variant.Name, v => SetVariant(x => x with { Name = v }));
-            _lookGrid.AddColor($"Variant {i + 1} colour", variant.Color, v => SetVariant(x => x with { Color = v }));
-            var remove = new Button { Text = $"Remove variant {i + 1}" };
+            _lookGrid.AddText(Loc.T("Variant {0} id", i + 1), variant.Id, v => SetVariant(x => x with { Id = v }));
+            _lookGrid.AddText(Loc.T("Variant {0} name", i + 1), variant.Name, v => SetVariant(x => x with { Name = v }));
+            _lookGrid.AddColor(Loc.T("Variant {0} colour", i + 1), variant.Color, v => SetVariant(x => x with { Color = v }));
+            var remove = new Button { Text = Loc.T("Remove variant {0}", i + 1) };
             remove.Pressed += () => doc.RemoveVariant(index);
             _lookGrid.Row("", remove);
         }
@@ -682,7 +690,7 @@ public partial class PartEditorScreen : Control
         AddAssetField(_behaviourGrid, "Script", d.Script, AssetKind.Script, v => Set("Set script", x => x with { Script = v }));
         _behaviourGrid.Row("Sounds", new Label
         {
-            Text = d.Sounds is { Count: > 0 } bound ? $"{string.Join(", ", bound.Keys.Order(StringComparer.Ordinal))}: bound in the Sounds tab" : "None bound: see the Sounds tab",
+            Text = d.Sounds is { Count: > 0 } bound ? Loc.T("{0}: bound in the Sounds tab", string.Join(", ", bound.Keys.Order(StringComparer.Ordinal))) : "None bound: see the Sounds tab",
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
         });
         _behaviourGrid.AddJson("Properties", d.Properties?.ToJsonString(DataJson.WriteOptions) ?? "{}", text =>
@@ -777,7 +785,7 @@ public partial class PartEditorScreen : Control
             v => SetLogic("Set input links", l => l with { Inputs = (int?)v }), optional: true, fallback: 1);
         _partGrid.AddNumber("Output links", d.Logic?.Outputs, 0, LogicDefinition.MaxLinks, 1,
             v => SetLogic("Set output links", l => l with { Outputs = (int?)v }), optional: true, fallback: 10);
-        _partGrid.AddText("Use (E)", d.Logic?.Use, v => SetLogic("Set use", l => l with { Use = string.IsNullOrWhiteSpace(v) ? null : v }), "toggle, press…");
+        _partGrid.AddText(Loc.T("Use ({0})", GameInput.Label(InputActions.Interact)), d.Logic?.Use, v => SetLogic("Set use", l => l with { Use = string.IsNullOrWhiteSpace(v) ? null : v }), "toggle, press…");
         _partGrid.AddBool("Seat", d.Seat is not null, v => Document?.Apply(v == true ? "Make seat" : "Remove seat",
             x => x with { Seat = v == true ? x.Seat ?? new SeatDefinition() : null }));
         if (d.Seat is { } seat)
@@ -878,7 +886,7 @@ public partial class PartEditorScreen : Control
     private void AddAssetField(PropertyGrid grid, string label, string? value, AssetKind kind, Action<string?> set)
     {
         var box = new HBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        var edit = new LineEdit { Text = value ?? "", PlaceholderText = $"{AssetImporter.FolderFor(kind)}/…", SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        var edit = Loc.Verbatim(new LineEdit { Text = value ?? "", PlaceholderText = $"{AssetImporter.FolderFor(kind)}/…", SizeFlagsHorizontal = SizeFlags.ExpandFill });
         void Commit()
         {
             var text = edit.Text.Trim();
@@ -979,10 +987,10 @@ public partial class PartEditorScreen : Control
         foreach (var d in diagnostics)
         {
             var color = d.Severity == DiagnosticSeverity.Error ? "#ff7070" : "#ffd060";
-            lines.Add($"[color={color}]{(d.Severity == DiagnosticSeverity.Error ? "Error" : "Warning")}[/color] {Escape(d.JsonPath ?? d.File)}: {Escape(d.Message)}");
+            lines.Add($"[color={color}]{(d.Severity == DiagnosticSeverity.Error ? Loc.T("Error") : Loc.T("Warning"))}[/color] {Escape(d.JsonPath ?? d.File)}: {Escape(d.Message)}");
         }
         if (diagnostics.Count == 0 && headline is null)
-            lines.Add("[color=#80e080]No problems.[/color] Export writes the part into its mod.");
+            lines.Add($"[color=#80e080]{Loc.T("No problems.")}[/color] {Loc.T("Export writes the part into its mod.")}");
         _problems.Text = string.Join("\n", lines);
     }
 

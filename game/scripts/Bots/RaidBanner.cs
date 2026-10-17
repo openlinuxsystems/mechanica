@@ -1,5 +1,6 @@
 using Godot;
 using Mechanica.Core.Bots;
+using Mechanica.Game.Ui;
 
 namespace Mechanica.Game.Bots;
 
@@ -31,8 +32,8 @@ public partial class RaidBanner : CanvasLayer
         _text.Visible = raid.Phase != RaidPhases.None;
         _text.Text = raid.Phase switch
         {
-            RaidPhases.Warning => $"Raid incoming! Level {raid.Level}: {raid.Bots} bots are coming for your crops.",
-            RaidPhases.Attacking => $"Raid level {raid.Level}: {raid.Bots} raider{(raid.Bots == 1 ? "" : "s")} left.",
+            RaidPhases.Warning => Loc.T("Raid incoming! Level {0}: {1} bots are coming for your crops.", raid.Level, raid.Bots),
+            RaidPhases.Attacking => Loc.T(raid.Bots == 1 ? "Raid level {0}: {1} raider left." : "Raid level {0}: {1} raiders left.", raid.Level, raid.Bots),
             _ => "",
         };
     }

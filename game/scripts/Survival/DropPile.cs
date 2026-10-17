@@ -27,6 +27,8 @@ public partial class DropPile : Node3D
         AddChild(_box);
         _label = new Label3D
         {
+            // Names are the mods' own text.
+            AutoTranslateMode = AutoTranslateModeEnum.Disabled,
             Name = "Label",
             Position = new Vector3(0, Size + 0.25f, 0),
             Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
