@@ -17,3 +17,4 @@ TestResults/
 .vs/
 .idea/
 .vscode/
+__pycache__/

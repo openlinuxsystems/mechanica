@@ -156,6 +156,18 @@ public partial class WindowsTest : StagedTest
             inventory.Hide();
             return Clean("the inventory");
         });
+        Add("the character choice keeps them", _ =>
+        {
+            var window = _main.Characters.Window;
+            if (!Check(window is not null, "a new world asks the player to choose a character"))
+                return true;
+            var panel = Walk(window!).OfType<PanelContainer>().First();
+            Check(panel.GetGlobalRect().Size.X > 300 && window!.GetGlobalRect().Size == GetViewport().GetVisibleRect().Size, "the choice covers the screen");
+            Scrub(panel);
+            Scrub(window!.GetChild<CanvasLayer>(0).GetChild<Control>(0), wheels: 4);
+            Check(_main.Characters.Window is not null, "the choice is still open");
+            return Clean("the character choice");
+        });
     }
 
     private bool Clean(string what)

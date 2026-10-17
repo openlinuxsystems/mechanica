@@ -52,6 +52,9 @@ public partial class SaveSync : Node
     /// <summary>Part scripts, for their state tables.</summary>
     public ScriptSync Scripts { get; init; } = null!;
 
+    /// <summary>Who plays as which character. Optional.</summary>
+    public Core.Characters.CharacterActions? Characters { get; init; }
+
     /// <summary>Quests, for the story's state. Optional.</summary>
     public QuestSync? Quests { get; init; }
 
@@ -211,6 +214,8 @@ public partial class SaveSync : Node
     {
         if (Session.ProfileOf(player.PeerId) is not { } profile || Roster.Find(profile.Id) is not { } saved)
             return;
+        if (saved.Character is not null)
+            Characters?.Restore(player.PeerId, saved.Character);
         if (Inventory.Items is { } items)
         {
             foreach (var problem in PlayerRoster.Restore(items.PlayerInventory(player.PeerId), saved.Inventory))
@@ -240,7 +245,8 @@ public partial class SaveSync : Node
             // A dead player comes back at their spawn or bed, not where they fell.
             dead ? null : new Vec3(at.X, at.Y, at.Z),
             player.Rotation.Y,
-            bed is { } b ? new SavedPart(b.Creation, b.Part) : null));
+            bed is { } b ? new SavedPart(b.Creation, b.Part) : null,
+            Characters?.ChosenBy(player.PeerId)));
     }
 
     private static DataDiagnostic Warning(string file, string message) =>

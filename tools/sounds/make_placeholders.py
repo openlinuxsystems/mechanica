@@ -524,6 +524,33 @@ ev("player", "footstep_default", lambda rng: edges(peak(thud(rng, 0.2, 60, 1500,
 ev("player", "footstep_metal", lambda rng: edges(peak(mat_place("metal")(rng) * 0.5 + thud(rng, 0.4, 60, 800, 0.02, 0.5), 0.5)),
    variants=3, pitch_variation=0.1, volume_variation_db=2.0, max_distance=15.0)
 
+def splash(rng, dur, size=1.0, level=0.7):
+    """Water: a burst of hissing spray plus a few rising bubble blips."""
+    spray = band(noise(rng, dur), 500, 6000) * decay(dur, 0.06 + 0.12 * size, 0.004)
+    body = band(noise(rng, dur), 80, 700) * decay(dur, 0.05 + 0.08 * size) * 0.8 * size
+    bubbles = [(glide(rng.uniform(500, 900), rng.uniform(1200, 2000), 0.05) * decay(0.05, 0.015) * 0.3, rng.uniform(0.02, dur * 0.7))
+               for _ in range(int(4 + 6 * size))]
+    return edges(peak(mix(dur, (spray + body, 0), *bubbles), level))
+
+
+ev("player", "footstep_wood", lambda rng: edges(peak(mat_place("wood")(rng) * 0.4 + thud(rng, 0.4, 60, 1000, 0.025, 0.6), 0.5)),
+   variants=3, pitch_variation=0.1, volume_variation_db=2.0, max_distance=15.0)
+ev("player", "footstep_water", lambda rng: splash(rng, 0.3, 0.3, 0.5), variants=3, pitch_variation=0.1, volume_variation_db=2.0, max_distance=15.0)
+ev("player", "player_jump", lambda rng: edges(peak(mix(0.3, (whoosh(rng, 0.22, 250, 2500, 0.5), 0), (thud(rng, 0.15, 50, 900, 0.02, 0.6), 0)), 0.5)),
+   pitch_variation=0.08, max_distance=15.0)
+ev("player", "player_land", lambda rng: edges(peak(thud(rng, 0.3, 40, 1200, 0.035, 1.0) + band(noise(rng, 0.3), 1200, 5000) * decay(0.3, 0.02) * 0.25, 0.6)),
+   variants=2, pitch_variation=0.08, max_distance=20.0)
+ev("player", "player_land_hard", lambda rng: edges(peak(mix(0.6, (thud(rng, 0.6, 30, 900, 0.08, 1.0), 0), (mat_impact("fabric")(rng) * 0.6, 0.0),
+                                                            (band(noise(rng, 0.3), 1500, 6000) * decay(0.3, 0.03) * 0.3, 0.02)), 0.8)),
+   pitch_variation=0.05, max_distance=30.0)
+ev("player", "swim_stroke", lambda rng: edges(peak(mix(0.5, (whoosh(rng, 0.4, 200, 2500, 0.5), 0), (splash(rng, 0.3, 0.2, 0.4), 0.15)), 0.5)),
+   variants=2, pitch_variation=0.1, volume_variation_db=2.0, max_distance=20.0)
+ev("player", "water_enter", lambda rng: splash(rng, 0.9, 1.0, 0.8), pitch_variation=0.06, max_distance=30.0)
+ev("player", "water_exit", lambda rng: edges(peak(mix(0.8, (splash(rng, 0.4, 0.5, 0.5), 0), (splash(rng, 0.3, 0.15, 0.25), 0.35)), 0.6)),
+   pitch_variation=0.06, max_distance=20.0)
+ev("player", "tool_equip", lambda rng: edges(peak(mix(0.25, (click(rng, 1600), 0), (mat_place("metal")(rng) * 0.25, 0.04)), 0.45)),
+   pitch_variation=0.06, max_distance=12.0, cooldown=0.05)
+
 # UI: not positional.
 UI = dict(bus="ui")
 ev("ui", "ui_click", lambda rng: click(rng, 2400, 0.05), **UI, cooldown=0.03)

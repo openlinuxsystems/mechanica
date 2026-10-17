@@ -1,5 +1,6 @@
 using Godot;
 using Mechanica.Core.Actions;
+using Mechanica.Core.Characters;
 using Mechanica.Core.Data;
 using Mechanica.Core.Input;
 using Mechanica.Core.Items;
@@ -37,6 +38,29 @@ public partial class ItemTool : HandTool
 
     /// <inheritdoc/>
     public override string ToolName => "Item";
+
+    /// <summary>How items look in hand. Null shows every item as <see cref="ItemPose.Default"/>.</summary>
+    public CharacterSettings? Characters { get; init; }
+
+    /// <inheritdoc/>
+    public override CharacterProp Prop => PoseInHand?.Prop ?? CharacterProp.None;
+
+    /// <inheritdoc/>
+    protected override CharacterGesture GestureFor(InputEvent @event) =>
+        Pressed(@event, InputActions.Primary) ? PoseInHand?.Gesture ?? CharacterGesture.None : CharacterGesture.None;
+
+    // How the item in hand looks, or null with nothing usable in hand.
+    private ItemPose? PoseInHand
+    {
+        get
+        {
+            if (InHand is not { } hand)
+                return null;
+            var category = Survival.Catalog.FindDefinition(hand.Item)?.Category;
+            var name = category is { } c ? System.Text.Json.JsonNamingPolicy.SnakeCaseLower.ConvertName(c.ToString()) : null;
+            return Characters?.PoseFor(hand.Item, name) ?? ItemPose.Default;
+        }
+    }
 
     /// <summary>The usable items the player carries, as (slot, item) in slot order, one per item.</summary>
     public IReadOnlyList<SlotView> Usable =>

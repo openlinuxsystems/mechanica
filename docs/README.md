@@ -28,6 +28,7 @@ Other references:
 - [Survival](survival.md)
 - [Saves](saves.md)
 - [Quests and Dialogue](quests.md)
+- [Player Characters](characters.md): adding a character or skin
 
 ## Engine settings
 

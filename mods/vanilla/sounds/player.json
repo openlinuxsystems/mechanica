@@ -58,6 +58,88 @@
       "volume_variation_db": 2,
       "pitch_variation": 0.1,
       "max_distance": 15
+    },
+    {
+      "id": "footstep_wood",
+      "clips": [
+        "sounds/player/footstep_wood.ogg",
+        "sounds/player/footstep_wood_2.ogg",
+        "sounds/player/footstep_wood_3.ogg"
+      ],
+      "volume_variation_db": 2,
+      "pitch_variation": 0.1,
+      "max_distance": 15
+    },
+    {
+      "id": "footstep_water",
+      "clips": [
+        "sounds/player/footstep_water.ogg",
+        "sounds/player/footstep_water_2.ogg",
+        "sounds/player/footstep_water_3.ogg"
+      ],
+      "volume_variation_db": 2,
+      "pitch_variation": 0.1,
+      "max_distance": 15
+    },
+    {
+      "id": "player_jump",
+      "clips": [
+        "sounds/player/player_jump.ogg"
+      ],
+      "pitch_variation": 0.08,
+      "max_distance": 15
+    },
+    {
+      "id": "player_land",
+      "clips": [
+        "sounds/player/player_land.ogg",
+        "sounds/player/player_land_2.ogg"
+      ],
+      "pitch_variation": 0.08,
+      "max_distance": 20
+    },
+    {
+      "id": "player_land_hard",
+      "clips": [
+        "sounds/player/player_land_hard.ogg"
+      ],
+      "pitch_variation": 0.05,
+      "max_distance": 30
+    },
+    {
+      "id": "swim_stroke",
+      "clips": [
+        "sounds/player/swim_stroke.ogg",
+        "sounds/player/swim_stroke_2.ogg"
+      ],
+      "volume_variation_db": 2,
+      "pitch_variation": 0.1,
+      "max_distance": 20
+    },
+    {
+      "id": "water_enter",
+      "clips": [
+        "sounds/player/water_enter.ogg"
+      ],
+      "pitch_variation": 0.06,
+      "max_distance": 30
+    },
+    {
+      "id": "water_exit",
+      "clips": [
+        "sounds/player/water_exit.ogg"
+      ],
+      "pitch_variation": 0.06,
+      "max_distance": 20
+    },
+    {
+      "id": "tool_equip",
+      "clips": [
+        "sounds/player/tool_equip.ogg"
+      ],
+      "pitch_variation": 0.06,
+      "max_distance": 12,
+      "cooldown": 0.05
     }
   ]
 }

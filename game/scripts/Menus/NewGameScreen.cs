@@ -1,12 +1,15 @@
 using Godot;
+using Mechanica.Core.Characters;
 using Mechanica.Core.Net;
 using Mechanica.Core.Survival;
+using Mechanica.Game.Mods;
+using Mechanica.Game.Player;
 
 namespace Mechanica.Game.Menus;
 
 /// <summary>
 /// The main menu's New game screen: the world's name, Survival or Creative, the difficulty (Survival), an optional seed (blank picks
-/// one), and whether to open the world to the LAN, on which port.
+/// one), whether to open the world to the LAN, on which port, and which character the player plays as.
 /// </summary>
 public partial class NewGameScreen : PanelContainer
 {
@@ -17,6 +20,18 @@ public partial class NewGameScreen : PanelContainer
     private CheckBox _lan = null!;
     private LineEdit _port = null!;
     private Label _status = null!;
+
+    /// <summary>The characters to choose from. Null loads the enabled mods' characters.</summary>
+    public CharacterBook? Characters { get; set; }
+
+    /// <summary>Models for the character previews. Null loads them from the enabled mods.</summary>
+    public CharacterAssets? CharacterAssets { get; set; }
+
+    /// <summary>The character cards.</summary>
+    public CharacterPicker CharacterPicker { get; private set; } = null!;
+
+    /// <summary>The chosen character's qualified id, or null when no mod has characters.</summary>
+    public string? Character => CharacterPicker.Selected;
 
     /// <summary>Raised with how to start the world and its name.</summary>
     public event Action<LaunchOptions, string>? StartRequested;
@@ -54,6 +69,19 @@ public partial class NewGameScreen : PanelContainer
         _seed = Row(grid, "Seed", new LineEdit { PlaceholderText = "random" });
         _lan = Row(grid, "Open to LAN", new CheckBox());
         _port = Row(grid, "Port", new LineEdit { Text = NetProtocol.DefaultPort.ToString() });
+        if (Characters is null || CharacterAssets is null)
+        {
+            var content = ModPaths.LoadContent();
+            Characters ??= CharacterBook.Load(content);
+            if (CharacterAssets is null)
+            {
+                CharacterAssets = new CharacterAssets(content);
+                TreeExiting += CharacterAssets.Dispose;
+            }
+        }
+        column.AddChild(new Label { Text = "Character" });
+        CharacterPicker = new CharacterPicker { Name = "Characters", Book = Characters, Assets = CharacterAssets, PreviewSize = new Vector2I(150, 200) };
+        column.AddChild(CharacterPicker);
         _status = new Label { ThemeTypeVariation = "ErrorLabel", AutowrapMode = TextServer.AutowrapMode.WordSmart };
         column.AddChild(_status);
         var buttons = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.End };

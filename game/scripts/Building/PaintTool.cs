@@ -1,4 +1,5 @@
 using Godot;
+using Mechanica.Core.Characters;
 using Mechanica.Core.Actions;
 using Mechanica.Core.Building;
 using Mechanica.Core.Input;
@@ -17,6 +18,12 @@ public partial class PaintTool : HandTool
 
     /// <inheritdoc/>
     public override string ToolName => "Paint Tool";
+
+    /// <inheritdoc/>
+    public override CharacterProp Prop => CharacterProp.PaintTool;
+
+    /// <inheritdoc/>
+    protected override CharacterGesture UseGesture => CharacterGesture.PaintSpray;
 
     /// <summary>The colour <see cref="Paint"/> uses, <c>"#rrggbb"</c>.</summary>
     public string Color => Build.Settings!.Paint.Palette[_index];

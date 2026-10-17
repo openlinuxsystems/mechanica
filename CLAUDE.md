@@ -52,7 +52,8 @@ CI (`.github/workflows/ci.yml`) runs the same three steps. Keep it green.
   generation rules; the last mod in load order wins) and `pois/*.json` (POI prefabs; see
   `docs/world-generation.md`) and `recipes/*.json` (crafting recipes; see `docs/part-data-schema.md`), `bots/*.json` (bot types:
   stats, attacks, drops, behaviour tree, optional Lua script) and `raids/raids.json` (the raid table; the
-  last mod in load order wins) and `quests/*.json` (quests and dialogue; see `docs/quests.md`), plus `overrides/<other_mod>/` (full part files that
+  last mod in load order wins) and `quests/*.json` (quests and dialogue; see `docs/quests.md`), `characters/*.json` (player characters and
+  skins on the shared humanoid rig; see `docs/characters.md`), plus `overrides/<other_mod>/` (full part files that
   replace another mod's part, and `overrides/<other_mod>/recipes/**/*.json` for its recipes; the mod later in
   load order wins). Paths in data are relative to the mod
   root (`other_mod:path` for another mod). No `res://` paths or Godot-imported formats in mod data.

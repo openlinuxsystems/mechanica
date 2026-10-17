@@ -1,0 +1,7 @@
+{
+  "id": "scrapper_male",
+  "name": "Male Scrapper",
+  "description": "Olive work jacket, goggles and a pack full of tools.",
+  "mesh": "meshes/characters/scrapper_male.glb",
+  "order": 0
+}

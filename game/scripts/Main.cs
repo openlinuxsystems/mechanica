@@ -1,6 +1,7 @@
 using Godot;
 using Mechanica.Core;
 using Mechanica.Core.Bots;
+using Mechanica.Core.Characters;
 using Mechanica.Core.Data;
 using Mechanica.Core.Items;
 using Mechanica.Core.Net;
@@ -50,6 +51,9 @@ public partial class Main : Node3D
 
     /// <summary>The name the main menu's New game gave the next world.</summary>
     public static string? MenuWorldName { get; set; }
+
+    /// <summary>The character the main menu's New game picked for the host's player.</summary>
+    public static string? MenuCharacter { get; set; }
 
     /// <summary>A saved world the main menu picked to load; it overrides the command line's <c>--load</c>.</summary>
     public static SaveGame? MenuSave { get; set; }
@@ -103,6 +107,12 @@ public partial class Main : Node3D
 
     /// <summary>The raid table. Null loads it from <see cref="Mods"/> when the scene starts; tests may set it.</summary>
     public RaidTable? RaidTable { get; set; }
+
+    /// <summary>Player characters. Null loads them from <see cref="Mods"/> when the scene starts; tests may set them.</summary>
+    public CharacterBook? CharacterBook { get; set; }
+
+    /// <summary>Who plays as which character, and drawing them.</summary>
+    public CharacterSync Characters { get; private set; } = null!;
 
     /// <summary>Quests from the enabled mods. Null loads them on ready.</summary>
     public QuestBook? QuestBook { get; set; }
@@ -216,11 +226,12 @@ public partial class Main : Node3D
         var bots = BotTypes ??= LoadBots(mods);
         var raids = RaidTable ??= LoadRaids(mods, bots);
         var quests = QuestBook ??= LoadQuests(mods, recipes, world);
+        var characters = CharacterBook ??= LoadCharacters(mods);
         // World data, recipes, bots, raids and quests are part of the content check on join: every peer regenerates
         // the world from the first, shows the recipes in its station screens and the bots the host sends.
         var content = Content ??= ContentManifest.From(mods) with
         {
-            Fingerprint = $"{mods.Fingerprint}+{world.Fingerprint}+{recipes.Fingerprint}+{bots.Fingerprint}+{raids.Fingerprint}+{quests.Fingerprint}",
+            Fingerprint = $"{mods.Fingerprint}+{world.Fingerprint}+{recipes.Fingerprint}+{bots.Fingerprint}+{raids.Fingerprint}+{quests.Fingerprint}+{characters.Fingerprint}",
         };
         Assets = new PartAssets(mods);
 
@@ -233,6 +244,8 @@ public partial class Main : Node3D
             Name = "PlayerSync",
             Session = Session,
             PlayersRoot = players,
+            // Every peer generates the same world, so each one knows where the sea is.
+            WaterLevel = () => Streamer.Generator.SeaLevel,
             SpawnPoint = () => GetNodeOrNull<Node3D>("SpawnPoint")?.GlobalTransform ?? Transform3D.Identity,
         };
         Creations = new CreationWorld { Name = "Creations" };
@@ -363,11 +376,26 @@ public partial class Main : Node3D
         };
         Quests.RegisterActions(Actions.Dispatcher);
         AddChild(Quests);
+        Characters = new CharacterSync
+        {
+            Name = "Characters",
+            Session = Session,
+            Players = PlayerSync,
+            Assets = new CharacterAssets(mods),
+            Sounds = Sounds,
+            Actions = Actions,
+            Choices = new CharacterActions(characters),
+            Survival = Survival,
+            InitialChoice = save is null ? TakeMenuCharacter() : null,
+            ReadDeviceInput = ReadDeviceInput,
+        };
+        Characters.RegisterActions(Actions.Dispatcher);
         Chat = new Mechanica.Game.Chat.ChatSync { Name = "Chat", Session = Session };
         Chat.RegisterActions(Actions.Dispatcher);
         AddChild(Chat);
         Saves = new SaveSync
         {
+            Characters = Characters.Choices,
             Quests = Quests,
             Name = "Saves",
             Session = Session,
@@ -382,6 +410,7 @@ public partial class Main : Node3D
             Content = () => Content!,
         };
         AddChild(Saves);
+        AddChild(Characters);
         if (TakeMenuWorldName() is { } worldName && save is null)
             Saves.WorldName = worldName;
         Lan = new LanBeacon { Name = "Lan", Session = Session, Port = LanPort, Describe = DescribeForLan };
@@ -540,6 +569,14 @@ public partial class Main : Node3D
         return quests;
     }
 
+    private static CharacterBook LoadCharacters(ModLoadResult mods)
+    {
+        var characters = Core.Characters.CharacterBook.Load(mods);
+        foreach (var diagnostic in characters.Diagnostics)
+            GD.PushWarning($"[characters] {diagnostic}");
+        return characters;
+    }
+
     private static RecipeBook LoadRecipes(ModLoadResult mods)
     {
         var recipes = RecipeBook.Load(mods);
@@ -617,6 +654,13 @@ public partial class Main : Node3D
         return options;
     }
 
+    private static string? TakeMenuCharacter()
+    {
+        var character = MenuCharacter;
+        MenuCharacter = null;
+        return character;
+    }
+
     private static string? TakeMenuWorldName()
     {
         var name = MenuWorldName;
@@ -669,6 +713,7 @@ public partial class Main : Node3D
             Inventory = Inventory,
             Survival = Survival,
             Sounds = Sounds,
+            Characters = Characters?.Assets.Settings,
             ReadDeviceInput = ReadDeviceInput,
         };
         AddChild(Tools);

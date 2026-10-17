@@ -34,6 +34,11 @@ public partial class CompassTest : StagedTest
             }
             if (_main.LocalPlayer is null || frame < 30)
                 return false;
+            // A new world asks which character to play first, and that window covers the game until answered.
+            if (_main.Characters.Window is { } choice)
+                choice.Confirm();
+            if (_main.Characters.LocalNeedsChoice)
+                return false;
             _compass = _main.GetNode<CompassHud>("Compass");
             Check(_compass.Bar.Visible, "the bar shows");
             var size = GetViewport().GetVisibleRect().Size;

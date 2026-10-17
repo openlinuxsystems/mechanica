@@ -53,6 +53,33 @@ public sealed record PlayerMovementSettings
     /// <summary>Force in N the player applies to a rigid body it walks into.</summary>
     public float PushForce { get; init; } = 600f;
 
+    /// <summary>Top crouching speed in m/s.</summary>
+    public float CrawlSpeed { get; init; } = 1.5f;
+
+    /// <summary>How deep the feet are below the water surface when the player starts swimming, in metres.</summary>
+    public float SwimDepth { get; init; } = 1.2f;
+
+    /// <summary>How deep the feet float below the surface when the player swims without rising or diving, in metres.</summary>
+    public float FloatDepth { get; init; } = 1.4f;
+
+    /// <summary>Top swimming speed in m/s.</summary>
+    public float SwimSpeed { get; init; } = 2.5f;
+
+    /// <summary>Top swimming speed with sprint held in m/s.</summary>
+    public float SwimSprintSpeed { get; init; } = 4f;
+
+    /// <summary>Speed rising (jump held) or diving (crouch held) in water, m/s.</summary>
+    public float SwimVerticalSpeed { get; init; } = 2f;
+
+    /// <summary>Acceleration in water in m/s², horizontal and vertical.</summary>
+    public float SwimAcceleration { get; init; } = 6f;
+
+    /// <summary>Upward speed per metre the player is below their float depth, 1/s.</summary>
+    public float Buoyancy { get; init; } = 3f;
+
+    /// <summary>What walking speed is multiplied by when wading in water shallower than <see cref="SwimDepth"/>.</summary>
+    public float WadeSpeedScale { get; init; } = 0.7f;
+
     /// <summary>Parses settings from JSON and validates them.</summary>
     /// <exception cref="FormatException">The JSON is malformed or a value is out of range.</exception>
     public static PlayerMovementSettings FromJson(string json)
@@ -86,6 +113,17 @@ public sealed record PlayerMovementSettings
         Positive(Height, "height");
         Positive(Radius, "radius");
         NonNegative(PushForce, "push_force");
+        Positive(CrawlSpeed, "crawl_speed");
+        Positive(SwimDepth, "swim_depth");
+        Positive(SwimSpeed, "swim_speed");
+        Positive(SwimSprintSpeed, "swim_sprint_speed");
+        Positive(SwimVerticalSpeed, "swim_vertical_speed");
+        Positive(SwimAcceleration, "swim_acceleration");
+        Positive(Buoyancy, "buoyancy");
+        if (!float.IsFinite(FloatDepth) || FloatDepth < SwimDepth || FloatDepth >= EyeHeight)
+            throw new FormatException($"float_depth must be from swim_depth up to below eye_height, so a floating player swims with their head out (got {FloatDepth}).");
+        if (!float.IsFinite(WadeSpeedScale) || WadeSpeedScale is <= 0f or > 1f)
+            throw new FormatException($"wade_speed_scale must be above 0 and at most 1 (got {WadeSpeedScale}).");
         if (!float.IsFinite(MaxPitchDegrees) || MaxPitchDegrees is <= 0f or >= 90f)
             throw new FormatException($"max_pitch_degrees must be between 0 and 90 (got {MaxPitchDegrees}).");
         if (Height < 2f * Radius)

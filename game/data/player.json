@@ -11,5 +11,15 @@
   "height": 1.8,
   "radius": 0.35,
   "eye_height": 1.6,
-  "push_force": 600.0
+  "push_force": 600.0,
+  "crawl_speed": 1.5,
+  // Swimming: from swim_depth (feet below the surface) the player swims, floating at float_depth.
+  "swim_depth": 1.2,
+  "float_depth": 1.4,
+  "swim_speed": 2.5,
+  "swim_sprint_speed": 4.0,
+  "swim_vertical_speed": 2.0,
+  "swim_acceleration": 6.0,
+  "buoyancy": 3.0,
+  "wade_speed_scale": 0.7
 }
