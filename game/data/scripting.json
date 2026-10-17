@@ -6,6 +6,7 @@
   "max_ray_length": 500,
   "max_overlap_radius": 25,
   "max_messages": 500,
+  "max_loops_per_part": 4,
   "max_projectiles": 128,
   "max_projectile_lifetime": 10
 }
