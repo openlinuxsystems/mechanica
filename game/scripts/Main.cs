@@ -241,6 +241,12 @@ public partial class Main : Node3D
     /// <summary>The part settings panel the Connect Tool opens; null without device input.</summary>
     public PartSettingsPanel? PartSettings { get; private set; }
 
+    /// <summary>The local player's camera in a seat (Ctrl switches interior and chase), when reading device input.</summary>
+    public SeatCamera? SeatCamera { get; private set; }
+
+    /// <summary>The seat's creation hotbar of linked switches and buttons, when reading device input.</summary>
+    public CreationHotbar? CreationHotbar { get; private set; }
+
     /// <summary>Saving and loading the world, and players' saved selves.</summary>
     public SaveSync Saves { get; private set; } = null!;
 
@@ -423,7 +429,7 @@ public partial class Main : Node3D
         };
         AddChild(Logic);
         Logic.RegisterActions(Actions.Dispatcher);
-        Display = new PartDisplaySync { Name = "Display", Session = Session, Creations = Creations, Scripts = Scripts };
+        Display = new PartDisplaySync { Name = "Display", Session = Session, Creations = Creations, Scripts = Scripts, ConnectToolOut = () => Tools?.Connector.Active == true };
         AddChild(Display);
         LogicOverlay = new LogicOverlay { Creations = Creations, Players = PlayerSync, Actions = Actions, Build = Build, ReadDeviceInput = ReadDeviceInput, Connector = () => Tools?.Connector };
         AddChild(LogicOverlay);
@@ -535,7 +541,10 @@ public partial class Main : Node3D
             };
             AddChild(inventory);
             AddChild(Upgrades);
-            PartSettings = new PartSettingsPanel { Name = "PartSettings", Actions = Actions, Creations = Creations };
+            PartSettings = new PartSettingsPanel
+            {
+                Name = "PartSettings", Actions = Actions, Creations = Creations, Readouts = () => Display.Readouts, Signals = LogicOverlay, Assets = Assets,
+            };
             var hudRoot = new Ui.HudRoot { Name = "HudRoot" };
             AddChild(hudRoot);
             Ui.WorldHud? worldHud = null;
@@ -575,6 +584,13 @@ public partial class Main : Node3D
             AddChild(pause);
             hudRoot.Covered = () => inventory.IsOpen || pause.IsOpen || questLog.IsOpen || Ui.ToolWindow.Topmost is not null || Characters.Window is not null;
             AddChild(PartSettings);
+            SeatCamera = new SeatCamera { Logic = Logic, Players = PlayerSync, Turn = yaw => _input?.Turn(yaw) };
+            AddChild(SeatCamera);
+            CreationHotbar = new CreationHotbar
+            {
+                Logic = Logic, Players = PlayerSync, Creations = Creations, Actions = Actions, Signals = LogicOverlay, Icons = Icons, Belt = () => Tools,
+            };
+            AddChild(CreationHotbar);
             var snapshots = new Ui.CreationSnapshots { Name = "CreationSnapshots", Assets = Assets };
             AddChild(snapshots);
             Blueprints = new BlueprintMenu

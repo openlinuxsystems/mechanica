@@ -45,6 +45,13 @@
     "inputs": 4,
     "kind": "bearing"
   },
+  "display": {
+    "bar": {
+      "readout": "extension",
+      "offset": [0.075, 0.125, 0],
+      "length": 1
+    }
+  },
   "properties": {
     "speed": 1,
     "force": 5000

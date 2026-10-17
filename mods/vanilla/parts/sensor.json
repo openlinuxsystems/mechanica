@@ -1,7 +1,7 @@
 {
   "id": "sensor",
   "name": "Sensor",
-  "description": "On while something is in front of its face, up to the range you set.",
+  "description": "On while something it is set to detect is in front of its face, up to the range you set (E).",
   "category": "interactive",
   "mass": 1,
   "durability": 3,
@@ -38,13 +38,51 @@
       "id": "range",
       "name": "Range (m)",
       "type": "number",
-      "min": 0.25,
+      "min": 1,
       "max": 20,
       "step": 0.25,
       "default": 4
+    },
+    {
+      "id": "players",
+      "name": "Players",
+      "type": "toggle",
+      "default": true,
+      "group": "Detects"
+    },
+    {
+      "id": "bots",
+      "name": "Bots",
+      "type": "toggle",
+      "default": true,
+      "group": "Detects"
+    },
+    {
+      "id": "blocks",
+      "name": "Blocks",
+      "type": "toggle",
+      "default": true,
+      "group": "Detects"
+    },
+    {
+      "id": "creations",
+      "name": "Creations",
+      "type": "toggle",
+      "default": true,
+      "group": "Detects"
     }
   ],
+  "menu": {
+    "signals": true,
+    "preview": {
+      "shape": "cone",
+      "range": "range",
+      "axis": [0, 1, 0],
+      "angle": 8
+    }
+  },
   "properties": {
-    "interval": 2
+    "interval": 2,
+    "cone": 8
   }
 }

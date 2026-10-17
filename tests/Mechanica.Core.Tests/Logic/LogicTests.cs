@@ -10,13 +10,15 @@ using Mechanica.Core.Tests.Data;
 namespace Mechanica.Core.Tests.Logic;
 
 /// <summary>Logic links, part settings, the signal bus, seats and the logic actions (chunk 10).</summary>
-public class LogicTests
+public partial class LogicTests
 {
     private const string Block = "test:block";
     private const string Source = "test:source";
     private const string Lamp = "test:lamp";
     private const string Gate = "test:gate";
     private const string Seat = "test:seat";
+    private const string Switch = "test:switch";
+    private const string Sequencer = "test:sequencer";
     private const int Host = Creation.HostPeer, Peer = 2;
 
     private static readonly ActionCaller Player = new(Peer, ActionSource.Player);
@@ -36,6 +38,11 @@ public class LogicTests
         Id = "frames", Name = "Frames", Type = SettingType.NumberList, Min = -90, Max = 90, Step = 1, MaxCount = 3,
     };
 
+    private static readonly SettingDefinition Steps = new()
+    {
+        Id = "frames", Name = "Frames", Type = SettingType.Sequence, Min = -90, Max = 90, Step = 1, MaxCount = 3, MaxSpeed = 5, Preview = "preview",
+    };
+
     private static readonly PartCatalog Catalog = new PartCatalog()
         .Add(Block, Part(null))
         .Add(Source, Part(new LogicDefinition { Outputs = 2 }))
@@ -44,7 +51,9 @@ public class LogicTests
         {
             Settings = [Mode, Delay, Frames, new SettingDefinition { Id = "loop", Name = "Loop", Type = SettingType.Toggle }],
         })
-        .Add(Seat, Part(new LogicDefinition { Outputs = 4 }) with { Seat = new SeatDefinition() });
+        .Add(Seat, Part(new LogicDefinition { Outputs = 4 }) with { Seat = new SeatDefinition() })
+        .Add(Switch, Part(new LogicDefinition { Inputs = 1, Outputs = 4, Use = "toggle" }))
+        .Add(Sequencer, Part(new LogicDefinition { Inputs = 4, Outputs = 4 }) with { Settings = [Steps] });
 
     private readonly FakeWorld _world = new();
     private readonly FakeHost _host = new();
@@ -426,6 +435,15 @@ public class LogicTests
         public void Seated(SeatAssignment seat, bool entered) => Seatings.Add($"{(entered ? "enter" : "leave")} {seat.Part}");
 
         public (string? Script, string? Fault) ScriptOf(int creation, int part) => Scripts.GetValueOrDefault(part);
+
+        public string? RefuseCommand { get; set; }
+
+        public List<(int Peer, int Part, string Command, string? Args)> Commands { get; } = [];
+
+        public string? CheckCommand(Creation creation, int part) => RefuseCommand;
+
+        public void Command(ActionCaller caller, Creation creation, int part, string command, JsonElement? args) =>
+            Commands.Add((caller.Peer, part, command, args?.GetRawText()));
     }
 
     private sealed class FakeWorld : IBuildWorld
