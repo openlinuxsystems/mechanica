@@ -65,6 +65,30 @@ public sealed class ScriptRuntimeTests : IDisposable
     }
 
     [Fact]
+    public void ScriptStateSurvivesASaveRoundTrip()
+    {
+        _rig.Write("scripts/thruster.lua", "function on_update(dt) state.n = (state.n or 0) + 1; state.tag = 'a' end");
+        var creation = _rig.AddCreation(1, Thruster);
+        var part = PartOf(creation, Thruster);
+        _rig.Runtime.Update(0.1f);
+        _rig.Runtime.Update(0.1f);
+
+        var save = new Mechanica.Core.Saves.SaveGame
+        {
+            Seed = 1,
+            Scripts = [new Mechanica.Core.Saves.SavedScriptState(1, part, _rig.Runtime.ExportState(1, part)!.AsObject())],
+        };
+        var read = Mechanica.Core.Saves.SaveGame.Read(save.Write(), "w.json", [])!;
+        _rig.Runtime.Update(0.1f);
+        Assert.True(_rig.Runtime.ImportState(1, part, read.Scripts[0].State));
+        _rig.Runtime.Update(0.1f);
+
+        var state = _rig.Runtime.ExportState(1, part)!;
+        Assert.Equal(3.0, state["n"]!.GetValue<double>());
+        Assert.Equal("a", state["tag"]!.GetValue<string>());
+    }
+
+    [Fact]
     public void ABrokenReloadKeepsTheOldCodeRunning()
     {
         _rig.Write("scripts/thruster.lua", "function on_update(dt) state.n = (state.n or 0) + 1 end");

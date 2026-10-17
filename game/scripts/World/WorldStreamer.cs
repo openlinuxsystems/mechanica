@@ -46,6 +46,9 @@ public partial class WorldStreamer : Node3D
     /// <summary>Seed of the world this peer starts with; a client replaces it with the host's. Set before adding to the tree.</summary>
     public long Seed { get; init; }
 
+    /// <summary>Host: destroyed objects to start with (a loaded save); used only when its seed is <see cref="Seed"/>.</summary>
+    public WorldState? InitialState { get; init; }
+
     /// <summary>Tuning; null reads <see cref="DefaultSettingsPath"/> when the node starts.</summary>
     public StreamingSettings? Settings { get; set; }
 
@@ -82,7 +85,7 @@ public partial class WorldStreamer : Node3D
     {
         ProcessPhysicsPriority = -200;
         Settings ??= LoadDefaultSettings();
-        State = new WorldState(Seed);
+        State = InitialState is { } loaded && loaded.Seed == Seed ? loaded : new WorldState(Seed);
         Generator = new WorldGenerator(WorldGen, Seed, Settings.WorldSize);
         Streamer = new ChunkStreamer(Settings);
         Creations.Removed += Streamer.Forget;

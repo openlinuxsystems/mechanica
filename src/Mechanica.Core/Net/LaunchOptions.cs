@@ -20,7 +20,8 @@ public enum SessionMode
 /// Session settings from the command line (the user arguments after <c>--</c>):
 /// <c>--host [port]</c>, <c>--join address[:port]</c>, <c>--max-players n</c> and <c>--seed n</c>; on the host also the
 /// external AI endpoint (<c>--ai [port]</c>, <c>--ai-bind address</c>, <c>--ai-token token</c>) and
-/// record/replay of Action API calls (<c>--record file</c>, <c>--replay file</c>).
+/// record/replay of Action API calls (<c>--record file</c>, <c>--replay file</c>) and a saved world to load
+/// (<c>--load file</c>); on any instance the player's name (<c>--name name</c>).
 /// </summary>
 public sealed record LaunchOptions
 {
@@ -62,6 +63,12 @@ public sealed record LaunchOptions
 
     /// <summary>How the world plays when this instance hosts it (<c>--creative</c>, <c>--survival</c>). A joining client plays the host's mode.</summary>
     public Survival.GameMode GameMode { get; init; } = Survival.GameMode.Survival;
+
+    /// <summary>A save file to load on the host instead of a new world (<c>--load file</c>), or null.</summary>
+    public string? LoadPath { get; init; }
+
+    /// <summary>The player's display name for this run (<c>--name</c>), or null for the saved profile's.</summary>
+    public string? PlayerName { get; init; }
 
     /// <summary>Options for hosting on <paramref name="port"/>.</summary>
     public static LaunchOptions ForHost(int port, int maxPlayers = NetProtocol.DefaultMaxPlayers) =>
@@ -117,6 +124,8 @@ public sealed record LaunchOptions
                 case "--ai-token":
                 case "--record":
                 case "--replay":
+                case "--load":
+                case "--name":
                     if (next is null)
                         return Fail($"{args[i]} needs a value.", out error);
                     result = args[i] switch
@@ -124,6 +133,8 @@ public sealed record LaunchOptions
                         "--ai-bind" => result with { AiBind = next },
                         "--ai-token" => result with { AiToken = next },
                         "--record" => result with { RecordPath = next },
+                        "--load" => result with { LoadPath = next },
+                        "--name" => result with { PlayerName = next },
                         _ => result with { ReplayPath = next },
                     };
                     i++;
@@ -150,8 +161,8 @@ public sealed record LaunchOptions
             }
         }
 
-        if (result.Mode == SessionMode.Join && (result.AiPort is not null || result.RecordPath is not null || result.ReplayPath is not null))
-            return Fail("--ai, --record and --replay run on the host, not on a joining client.", out error);
+        if (result.Mode == SessionMode.Join && (result.AiPort is not null || result.RecordPath is not null || result.ReplayPath is not null || result.LoadPath is not null))
+            return Fail("--ai, --record, --replay and --load run on the host, not on a joining client.", out error);
 
         options = result;
         return true;

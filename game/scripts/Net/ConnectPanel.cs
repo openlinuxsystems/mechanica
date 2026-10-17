@@ -20,6 +20,11 @@ public partial class ConnectPanel : CanvasLayer
     /// <summary>The session the buttons drive. Set before adding to the tree.</summary>
     public NetSession Session { get; init; } = null!;
 
+    /// <summary>The world's saves, for the Save / load button; null hides it.</summary>
+    public Saves.SaveSync? Saves { get; init; }
+
+    private Control? _saveScreen;
+
     public override void _Ready()
     {
         _panel = new PanelContainer { Position = new Vector2(16, 16) };
@@ -46,13 +51,44 @@ public partial class ConnectPanel : CanvasLayer
         _leave = new Button { Text = "Leave" };
         _leave.Pressed += () => Session.Leave();
         rows.AddChild(_leave);
+        if (Saves is not null)
+        {
+            var saveLoad = new Button { Text = "Save / load…" };
+            saveLoad.Pressed += OpenSaves;
+            rows.AddChild(saveLoad);
+        }
         _status = new Label();
         rows.AddChild(_status);
+    }
+
+    private void OpenSaves()
+    {
+        if (_saveScreen is not null)
+            return;
+        var holder = new CenterContainer();
+        holder.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        var screen = new Saves.SaveScreen { Saves = Saves };
+        screen.CloseRequested += () =>
+        {
+            holder.QueueFree();
+            _saveScreen = null;
+        };
+        // Loading starts the world again from the save; a hosted session ends and can be hosted again.
+        screen.LoadRequested += save =>
+        {
+            Main.MenuSave = save;
+            GetTree().ChangeSceneToFile(MainMenu.WorldScene);
+        };
+        holder.AddChild(screen);
+        AddChild(holder);
+        _saveScreen = holder;
     }
 
     public override void _Process(double delta)
     {
         _panel.Visible = Input.MouseMode != Input.MouseModeEnum.Captured;
+        if (_saveScreen is not null)
+            _saveScreen.Visible = _panel.Visible;
         if (!_panel.Visible)
             return;
         var offline = Session.State == NetSession.SessionState.Offline;

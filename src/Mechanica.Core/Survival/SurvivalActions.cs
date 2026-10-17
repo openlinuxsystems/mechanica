@@ -277,6 +277,25 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         return v.Health;
     }
 
+    /// <summary>
+    /// Puts back a returning player's saved health and bed (a loaded save, a rejoin). Health is clamped to
+    /// the maximum, and a bed that no longer exists is dropped. Does nothing for an unknown or dead peer.
+    /// </summary>
+    public void Restore(int peer, float? health, (int Creation, int Part)? bed)
+    {
+        if (!_vitals.TryGetValue(peer, out var v) || v.Dead)
+            return;
+        if (health is { } h && float.IsFinite(h) && h > 0)
+            v.Health = Math.Min(settings.MaxHealth, h);
+        v.Bed = bed;
+        v.Bed = BedOf(peer); // null again when that bed is gone
+
+        VitalsChanged?.Invoke(peer);
+    }
+
+    /// <summary>The bed a player respawns at, or null when they have none (or it is gone).</summary>
+    public (int Creation, int Part)? RespawnBedOf(int peer) => BedOf(peer);
+
     /// <summary>A player's health, or null for an unknown peer.</summary>
     public float? HealthOf(int peer) => _vitals.TryGetValue(peer, out var v) ? v.Health : null;
 
