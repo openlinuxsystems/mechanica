@@ -1,7 +1,7 @@
 {
   "id": "mini_fabricator",
   "name": "Mini Fabricator",
-  "description": "A small, slow Fabricator.",
+  "description": "A small, slow Fabricator that works one order at a time.",
   "category": "station",
   "mass": 10,
   "durability": 8,
@@ -34,6 +34,41 @@
   },
   "crafting": {
     "speed": 0.5,
-    "queue_size": 4
-  }
+    "queue_size": 1,
+    "link_range": 0.5
+  },
+  "upgrades": [
+    {
+      "cost": [
+        {
+          "item": "component_kit",
+          "count": 2
+        }
+      ],
+      "set": {
+        "crafting": {
+          "speed": 0.75
+        },
+        "inventory": {
+          "slots": 6
+        }
+      }
+    },
+    {
+      "cost": [
+        {
+          "item": "component_kit",
+          "count": 4
+        }
+      ],
+      "set": {
+        "crafting": {
+          "speed": 1
+        },
+        "inventory": {
+          "slots": 8
+        }
+      }
+    }
+  ]
 }

@@ -116,6 +116,7 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
         ValidateLogic(part, placeable, sink);
         ValidateLight(part, placeable, sink);
         ValidateAnimation(part, placeable, sink);
+        ValidateUpgrades(part, placeable, sink);
 
         foreach (var (key, sound) in part.Sounds ?? [])
         {
@@ -351,7 +352,56 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
                 sink.Error(Code, $"{p}.speed", "speed must be greater than 0.");
             if (crafting.QueueSize is < 1 or > MaxQueue)
                 sink.Error(Code, $"{p}.queue_size", $"queue_size must be 1 to {MaxQueue}.");
+            if (crafting.LinkRange is { } range && !(range >= 0 && range <= MaxLinkRange))
+                sink.Error(Code, $"{p}.link_range", $"link_range must be 0 to {MaxLinkRange} m.");
             KnownKeys.WarnUnknown(crafting.Extra, p, sink, typeof(CraftingDefinition));
+        }
+    }
+
+    // Upgrade levels (UI spec §4): each level's cost and the part it makes, which must still be a valid part.
+    private static void ValidateUpgrades(PartDefinition part, bool placeable, DiagnosticSink sink)
+    {
+        if (part.Upgrades is not { } upgrades)
+            return;
+        if (!placeable)
+            sink.Error(Code, "$.upgrades", "only placeable parts can be upgraded.");
+        if (upgrades.Count > PartUpgrades.MaxLevels)
+            sink.Error(Code, "$.upgrades", $"a part has at most {PartUpgrades.MaxLevels} upgrade levels (got {upgrades.Count}).");
+        var before = part;
+        for (var i = 0; i < upgrades.Count && i < PartUpgrades.MaxLevels; i++)
+        {
+            var p = $"$.upgrades[{i}]";
+            var level = upgrades[i];
+            for (var c = 0; c < (level.Cost?.Count ?? 0); c++)
+            {
+                var cost = level.Cost![c];
+                if (!IsItemRef(cost.Item))
+                    sink.Error(Code, $"{p}.cost[{c}].item", $"'{cost.Item}' must be an item id or 'mod_id:item_id'.");
+                if (cost.Count is not >= 1)
+                    sink.Error(Code, $"{p}.cost[{c}].count", "count must be 1 or more.");
+                KnownKeys.WarnUnknown(cost.Extra, $"{p}.cost[{c}]", sink, typeof(Items.RecipeItem));
+            }
+            KnownKeys.WarnUnknown(level.Extra, p, sink, typeof(UpgradeDefinition));
+            if (level.Set is not { Count: > 0 })
+            {
+                sink.Error(Code, $"{p}.set", "set is required: the part keys this level changes.");
+                break;
+            }
+            if (PartUpgrades.Apply(part, i + 1, out var error) is not { } after)
+            {
+                sink.Error(Code, $"{p}.set", error!);
+                break;
+            }
+            var found = new List<DataDiagnostic>();
+            var inner = new DiagnosticSink(sink.File, found);
+            ValidateStorage(after, placeable, inner);
+            foreach (var d in found.Where(d => d.Severity == DiagnosticSeverity.Error))
+                sink.Error(Code, d.JsonPath is { } path ? $"{p}.set{path[1..]}" : $"{p}.set", d.Message);
+            if (after.Inventory?.Slots < before.Inventory?.Slots || (before.Inventory is not null && after.Inventory is null))
+                sink.Error(Code, $"{p}.set.inventory", "an upgrade cannot take inventory slots away.");
+            if (before.Crafting is not null && after.Crafting is null)
+                sink.Error(Code, $"{p}.set.crafting", "an upgrade cannot stop a station crafting.");
+            before = after;
         }
     }
 
@@ -500,6 +550,9 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
 
     /// <summary>Most jobs one station may queue.</summary>
     internal const int MaxQueue = 64;
+
+    /// <summary>Longest a station's <c>crafting.link_range</c> may be, in metres.</summary>
+    internal const float MaxLinkRange = 8f;
 
     /// <summary>True for <c>item_id</c> or <c>mod_id:item_id</c>.</summary>
     internal static bool IsItemRef([System.Diagnostics.CodeAnalysis.NotNullWhen(true)] string? id) => id is not null && IsSoundId(id);

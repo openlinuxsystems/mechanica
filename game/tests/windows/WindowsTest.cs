@@ -9,7 +9,7 @@ namespace Mechanica.Game.Tests;
 
 /// <summary>
 /// Windows keep their own mouse input in a running world (UI spec §13). Wheel turns and clicks anywhere over
-/// the in-game menu, Options (every tab, scrolled past both ends), the save screen, the inventory, the Lift's
+/// the in-game menu, Options (every tab, scrolled past both ends), the save screen, the inventory, the Fabricator screen, the upgrade dialog, the Lift's
 /// blueprint menu, the Paint Tool's colour picker and a confirm dialog never reach the game behind them (nor over the hotbar while the inventory is open), nor do clicks on the screen around a window opened from
 /// the menu, where a wheel changes the hotbar and a click takes the
 /// mouse back and closes the menu. The windows are still open afterwards.
@@ -19,6 +19,7 @@ public partial class WindowsTest : StagedTest
     private readonly List<InputEvent> _leaked = [];
     private Main _main = null!;
     private PauseMenu _menu = null!;
+    private (int Creation, int Part) _station;
 
     protected override string Tag => "windows";
 
@@ -158,6 +159,35 @@ public partial class WindowsTest : StagedTest
             inventory.Hide();
             return Clean("the inventory");
         });
+        Add("the Fabricator screen keeps them", frame =>
+        {
+            var inventory = _main.GetNode<Items.InventoryScreen>("InventoryScreen");
+            if (frame == 0)
+            {
+                _station = BuildFabricator();
+                inventory.Show(Core.Items.InventoryRef.OfPart(_station.Creation, _station.Part));
+                return false;
+            }
+            if (!inventory.StationMode)
+                return false;
+            Scrub(inventory.GetNode<Control>("Panel"));
+            Check(inventory.IsOpen && inventory.StationMode, "the Fabricator screen is still open");
+            inventory.Hide();
+            return Clean("the Fabricator screen");
+        });
+        Add("the upgrade dialog keeps them", frame =>
+        {
+            var dialog = _main.Upgrades!;
+            if (frame == 0)
+            {
+                dialog.Open(_station);
+                return false;
+            }
+            Scrub(dialog.Window);
+            Check(dialog.IsOpen, "the upgrade dialog is still open");
+            dialog.Close();
+            return Clean("the upgrade dialog");
+        });
         Add("the Lift's blueprint menu keeps them", frame =>
         {
             var menu = _main.Blueprints!;
@@ -196,6 +226,27 @@ public partial class WindowsTest : StagedTest
             Check(_main.Characters.Window is not null, "the choice is still open");
             return Clean("the character choice");
         });
+    }
+
+    // A Fabricator on a small wooden floor in front of the player.
+    private (int Creation, int Part) BuildFabricator()
+    {
+        var build = _main.Build;
+        var creation = new Core.Creations.Creation(build.NextCreationId(), build.Catalog);
+        for (var x = 0; x < 8; x++)
+        for (var z = 0; z < 8; z++)
+            creation.TryPlacePart("vanilla:wood_block", new Core.Creations.GridCell(x, 0, z), default, out _, out _);
+        Core.Creations.PartInstance? fabricator = null;
+        for (var z = 0; z < 4 && fabricator is null; z++)
+        {
+            if (creation.TryPlacePart("vanilla:fabricator", new Core.Creations.GridCell(2, 1, z), default, out var placed, out _))
+                fabricator = placed;
+        }
+        Check(fabricator is not null, "the Fabricator fits on the floor");
+        var feet = _main.LocalPlayer!.GlobalPosition;
+        creation.SetAllBodyPoses(new Core.Creations.Pose((feet + new Vector3(-1, 0, -3)).ToNumerics(), System.Numerics.Quaternion.Identity));
+        build.Added(creation);
+        return (creation.Id, fabricator?.Id ?? 0);
     }
 
     private bool Clean(string what)

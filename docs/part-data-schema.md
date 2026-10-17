@@ -92,6 +92,7 @@ you; this page is the reference for what each key means, so you can read, review
 | `logic`, `settings`, `seat` | object, list, object | no | Logic bus links, player-set settings and seats. Placeable parts only. See [logic, settings and seats](#logic-settings-and-seats). |
 | `light`, `animation` | object, object | no | A light the script switches, and a model the script turns. Placeable parts only. See [light and animation](#light-and-animation). |
 | `properties` | object | no | Free-form numbers and settings that only the part's Lua script reads (torque, thrust, range). Key order is kept. |
+| `upgrades` | list | no | Upgrade levels, in order. Placeable parts only. See [upgrades](#upgrades). |
 
 "Placeable" means the categories that exist in the world on the build grid: `block`, `interactive`,
 `container`, `station`, `light` and `decor`.
@@ -201,17 +202,39 @@ rather than in Lua.
 | `inventory.accepts` | list of item ids | Only these items go in (`["gasoline"]` for a gas container). Omitted means any item. |
 | `crafting.speed` | number > 0 | Multiplier on recipe times: 2 crafts twice as fast. Default 1. |
 | `crafting.queue_size` | integer 1–64 | Most orders waiting at once. Default 1. |
+| `crafting.link_range` | number 0–8 (m) | Containers on the same Creation within this distance of the station (surface to surface) are its linked storage. Omitted or 0 links none. |
 
 Each slot holds one stack of one item, up to that item's `stack_size`. A station runs every recipe that
-lists its part id in `stations`: the crafting player's inventory pays the inputs when the order is
-queued, and finished crafts land in the station's own inventory, where any player in reach can take
-them. A container or station that holds items, or has orders queued, can't be picked up with the
+lists its part id in `stations`: when an order is queued its inputs come from the station's linked
+storage first, then the crafting player's inventory, and finished crafts land in linked storage first,
+then the station's own inventory, where any player in reach can take them. A linked container can be
+opened from the station's screen while the station is in reach. A container or station that holds items, or has orders queued, can't be picked up with the
 Hammer. Its contents are saved with the Creation; if it is broken (Sledgehammer, weapons, a crash) they
 fall out as a pile of items on the ground.
 
 ```json
 "inventory": { "slots": 12 },
-"crafting": { "speed": 1, "queue_size": 8 }
+"crafting": { "speed": 1, "queue_size": 8, "link_range": 1 }
+```
+
+### upgrades
+
+Each entry is one level above the part as written (level 0). A player raises a part one level at a
+time with Upgrade (**U**) or from the station's screen; it is free in Creative and costs the entry's
+items in Survival. A placed part's level is saved with the Creation; blueprints keep only level 0.
+
+| Key | Type | Meaning |
+|-----|------|---------|
+| `cost` | list of `{ "item", "count" }` | What reaching this level costs in Survival. |
+| `set` | object | Keys merged over the part at this level, on top of the levels below. Only `crafting`, `inventory`, `logic` and `properties` can change; objects merge key by key. A level can't shrink `inventory.slots` or remove `crafting`. |
+
+At most 10 levels. The Part Editor lists them under Upgrades.
+
+```json
+"upgrades": [
+  { "cost": [{ "item": "component_kit", "count": 2 }], "set": { "crafting": { "speed": 1.25 }, "inventory": { "slots": 12 } } },
+  { "cost": [{ "item": "component_kit", "count": 4 }], "set": { "crafting": { "speed": 1.5 } } }
+]
 ```
 
 ## survival

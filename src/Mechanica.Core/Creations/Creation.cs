@@ -323,6 +323,31 @@ public sealed class Creation
         return true;
     }
 
+    /// <summary>A part's upgrade level (<see cref="PartInstance.Level"/>).</summary>
+    public int LevelOf(int partId) => _parts[partId].Level;
+
+    /// <summary>
+    /// Sets a part's upgrade level (UI spec §4): its definition becomes the part's at that level
+    /// (<see cref="PartUpgrades.At"/>) and its inventory grows to the new slot count. The caller checks the level and
+    /// takes the cost. Bumps <see cref="Revision"/>.
+    /// </summary>
+    /// <returns>True when the level changed.</returns>
+    public bool SetLevel(int partId, int level)
+    {
+        var part = _parts.TryGetValue(partId, out var p) ? p : throw new ArgumentException($"Creation {Id} has no part {partId}.", nameof(partId));
+        var written = Catalog.FindDefinition(part.Part) ?? throw new InvalidOperationException($"'{part.Part}' is no longer in the catalog.");
+        ArgumentOutOfRangeException.ThrowIfNegative(level);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(level, PartUpgrades.MaxLevel(written));
+        if (part.Level == level)
+            return false;
+        _parts[partId] = part with { Level = level };
+        var definition = _definitions[partId] = PartUpgrades.At(written, level);
+        if (_inventories.TryGetValue(partId, out var inventory) && definition.Inventory?.Slots is { } slots)
+            inventory.Grow(slots);
+        Revision++;
+        return true;
+    }
+
     private static bool SameSettings(IReadOnlyDictionary<string, JsonElement>? a, IReadOnlyDictionary<string, JsonElement>? b)
     {
         if (a is null || b is null)

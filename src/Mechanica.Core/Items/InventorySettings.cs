@@ -31,6 +31,12 @@ public sealed record InventorySettings
     /// </summary>
     public bool AllowGive { get; init; } = true;
 
+    /// <summary>
+    /// Whether <c>UpgradePart</c> is free (Creative). Survival takes each level's cost from the player's inventory.
+    /// Like <see cref="AllowGive"/>, the game mode sets it.
+    /// </summary>
+    public bool FreeUpgrades { get; init; } = true;
+
     /// <summary>Most items one <c>GiveItems</c> call may make.</summary>
     public int MaxGiveCount { get; init; } = 1000;
 
