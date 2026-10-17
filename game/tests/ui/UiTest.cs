@@ -123,7 +123,7 @@ public partial class UiTest : StagedTest
                 AddChild(menu);
                 menu.OpenNewGame();
                 menu.OpenJoin();
-                menu.OpenSettings();
+                menu.OpenOptions();
                 return false;
             }
             foreach (var control in Walk(this).OfType<Control>())

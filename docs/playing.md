@@ -27,12 +27,33 @@ These are the default keys. Every one can be changed in Options, Controls.
 | E | Use: open a container or station, pick up items, harvest, sleep in a bed, sit in or leave a seat, use a part, change a part's settings, use a quest marker, talk, respawn after dying |
 | I or B | Inventory |
 | L | Logbook: the quest log, where you pick an answer when a quest asks you to decide |
-| Esc | Menu: save, load, open your world to the LAN, help, quit. Esc also closes any open window. |
+| Esc | Menu: save, load, open your world to the LAN, Options, help, quit. Esc also closes any open window. |
 | H or F1 | Help |
 | F7 / F8 / F9 | Logic Visualizer, Creation Inspector and force overlay |
 
 While a menu or the inventory is open, your character stands still, and a Creation you are driving
 stops getting your input.
+
+## Options
+
+**Options** is on the main menu and in the menu (Esc). Its tabs:
+
+- **Controls**: every action with a primary and an alternate key. Click a key, then press the new key
+  or mouse button (Esc cancels). If another action already has it, choose **Swap** to trade keys or
+  **Overwrite** to take it; actions that share a key show in red. Search at the top; each category and
+  the whole list can be reset.
+- **Graphics**: resolution, display mode (windowed, borderless, fullscreen) and VSync, which change
+  when you press **Apply** and go back after 15 seconds unless you keep them; a quality preset (Low,
+  Medium, High, Ultra, or Custom for view distance, shadows, anti-aliasing, textures and effects); UI
+  scale from 75% to 150%.
+- **Audio**: master, music, sound effects and interface volume, mute all, and the output device.
+- **Gameplay**: mouse sensitivity, invert Y, field of view, auto-save (off, or every 5, 10 or 15
+  minutes while you host), the most players a world you host takes, and your player name.
+- **Interface**: show or hide the tool bar and key hints.
+
+Everything else applies as you change it. **Reset to Defaults** resets the open tab after asking, and
+closing Options saves your settings in `settings.json` in the game's user data folder. Settings are
+yours alone: they never change the world or other players' games.
 
 ## Playing together
 

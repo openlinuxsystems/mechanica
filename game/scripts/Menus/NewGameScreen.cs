@@ -88,7 +88,7 @@ public partial class NewGameScreen : PanelContainer
                 _status.Text = "Enter a port from 1 to 65535.";
                 return;
             }
-            options = options with { Mode = SessionMode.Host, Port = port };
+            options = options with { Mode = SessionMode.Host, Port = port, MaxPlayers = Settings.GameSettings.Current.Gameplay.MaxPlayers };
         }
         _status.Text = "";
         StartRequested?.Invoke(options, name);
