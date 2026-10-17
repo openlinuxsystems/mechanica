@@ -10,7 +10,7 @@ namespace Mechanica.Game.Tests;
 /// <summary>
 /// Windows keep their own mouse input in a running world (UI spec §13). Wheel turns and clicks anywhere over
 /// the in-game menu, Options (every tab, scrolled past both ends), the save screen, the inventory, the Fabricator screen, the upgrade dialog, the Lift's
-/// blueprint menu, the Paint Tool's colour picker and a confirm dialog never reach the game behind them (nor over the hotbar while the inventory is open), nor do clicks on the screen around a window opened from
+/// blueprint menu, the Paint Tool's colour picker, a part's menu and a confirm dialog never reach the game behind them (nor over the hotbar while the inventory is open), nor do clicks on the screen around a window opened from
 /// the menu, where a wheel changes the hotbar and a click takes the
 /// mouse back and closes the menu. The windows are still open afterwards.
 /// </summary>
@@ -214,6 +214,19 @@ public partial class WindowsTest : StagedTest
             picker.Close();
             return Clean("the colour picker");
         });
+        Add("a part's menu keeps them", frame =>
+        {
+            var panel = _main.PartSettings!;
+            if (frame == 0)
+            {
+                panel.Open(_station.Creation, BuildEngine(_station.Creation));
+                return false;
+            }
+            Scrub(panel.Window);
+            Check(panel.IsOpen, "the engine's menu is still open");
+            panel.Close();
+            return Clean("a part's menu");
+        });
         Add("the character choice keeps them", _ =>
         {
             var window = _main.Characters.Window;
@@ -247,6 +260,21 @@ public partial class WindowsTest : StagedTest
         creation.SetAllBodyPoses(new Core.Creations.Pose((feet + new Vector3(-1, 0, -3)).ToNumerics(), System.Numerics.Quaternion.Identity));
         build.Added(creation);
         return (creation.Id, fabricator?.Id ?? 0);
+    }
+
+    // A gas engine on the Fabricator's floor, for its menu.
+    private int BuildEngine(int creationId)
+    {
+        var creation = _main.Creations.Find(creationId)!;
+        Core.Creations.PartInstance? engine = null;
+        for (var z = 0; z < 8 && engine is null; z++)
+        {
+            if (creation.TryPlacePart("vanilla:gas_engine", new Core.Creations.GridCell(6, 1, z), default, out var placed, out _))
+                engine = placed;
+        }
+        Check(engine is not null, "the engine fits on the floor");
+        _main.Build.Changed(creation);
+        return engine?.Id ?? 0;
     }
 
     private bool Clean(string what)

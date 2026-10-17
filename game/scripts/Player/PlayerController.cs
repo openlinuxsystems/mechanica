@@ -34,6 +34,11 @@ public partial class PlayerController : CharacterBody3D
     private CharacterGesture _gesture;
     private byte _gestureCount;
     private Func<(Vector3 Feet, Vector3 Velocity)?>? _seat;
+    // The seat transition (UI spec §9): where the body was shown when it started, and how long is left.
+    private Vector3 _shownFrom;
+    private double _transitionLeft;
+    private double _sinceSeatChange = double.MaxValue;
+    private Vector3 _lastShown;
 
     /// <summary>Peer that controls this player (1 is the host).</summary>
     public int PeerId { get; init; } = 1;
@@ -93,8 +98,71 @@ public partial class PlayerController : CharacterBody3D
             _seat = value;
             Velocity = Vector3.Zero;
             _shape.SetDeferred(CollisionShape3D.PropertyName.Disabled, value is not null || _dead);
+            // Sitting down glides from where it stood; standing up glides once the host puts it beside the seat (_Process).
+            if (value is not null)
+                BeginTransition(ShownPosition);
+            _sinceSeatChange = 0;
         }
     }
+
+    /// <summary>
+    /// Where the body is drawn: its position, or on its way there while it sits down or stands up (it glides over
+    /// <see cref="PlayerMovementSettings.SeatTransitionSeconds"/> instead of jumping).
+    /// </summary>
+    public Vector3 ShownPosition => GlobalPosition + ShownOffset;
+
+    /// <summary>True while the body glides into or out of a seat.</summary>
+    public bool InTransition => _transitionLeft > 0;
+
+    private Vector3 ShownOffset
+    {
+        get
+        {
+            if (_transitionLeft <= 0 || Settings is null)
+                return Vector3.Zero;
+            var t = 1f - (float)(_transitionLeft / Settings.SeatTransitionSeconds);
+            var eased = t * t * (3f - 2f * t);
+            return _shownFrom.Lerp(GlobalPosition, eased) - GlobalPosition;
+        }
+    }
+
+    private void BeginTransition(Vector3 from)
+    {
+        if (Settings is null || !IsInsideTree())
+            return;
+        _shownFrom = from;
+        _transitionLeft = Settings.SeatTransitionSeconds;
+    }
+
+    /// <summary>True when a standing player's capsule at <paramref name="feet"/> touches nothing (this player aside).</summary>
+    public bool RoomAt(Vector3 feet)
+    {
+        var query = new PhysicsShapeQueryParameters3D
+        {
+            Shape = new CapsuleShape3D { Height = Settings.Height, Radius = Settings.Radius },
+            Transform = new Transform3D(Basis.Identity, feet + new Vector3(0, Settings.Height / 2f, 0)),
+            CollisionMask = CollisionMask,
+            Exclude = [GetRid()],
+        };
+        return GetWorld3D().DirectSpaceState.IntersectShape(query, 1).Count == 0;
+    }
+
+    public override void _Process(double delta)
+    {
+        // Standing up, the host moves the player beside the seat a moment after the seat lets go: glide from where it was.
+        _sinceSeatChange += delta;
+        if (_sinceSeatChange < 0.6 && !Seated && _lastShown.DistanceTo(GlobalPosition) > 0.3f && _transitionLeft <= 0)
+            BeginTransition(_lastShown);
+        if (_transitionLeft > 0)
+            _transitionLeft = Math.Max(0, _transitionLeft - delta);
+        ShownLocalOffset = Basis.Inverse() * ShownOffset;
+        _head.Position = new Vector3(0, _eyeHeight, 0) + ShownLocalOffset;
+        _bodyMesh.Position = _shape.Position + ShownLocalOffset;
+        _lastShown = ShownPosition;
+    }
+
+    /// <summary>How far the drawn body is from the player's position, in its own frame (the character model adds it).</summary>
+    public Vector3 ShownLocalOffset { get; private set; }
 
     /// <summary>True while the player sits in a seat.</summary>
     public bool Seated => _seat is not null;

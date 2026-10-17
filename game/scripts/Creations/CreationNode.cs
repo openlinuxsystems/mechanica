@@ -25,6 +25,8 @@ public partial class CreationNode : Node3D
     private readonly List<(MeshInstance3D Mesh, JointLink Link, JointFrame Frame)> _shafts = [];
     private readonly List<(int Part, Light3D Light, float Energy)> _lights = [];
     private readonly List<(int Part, Node3D Model, Vector3 Axis, Vector3 Pivot)> _animated = [];
+    private readonly List<PartDisplayVisual> _displays = [];
+    private readonly Dictionary<int, Node3D> _partNodes = [];
     private readonly List<(int Station, int Container)> _pipes = [];
 
     // The pipe from a station to each container linked to it (UI spec §4): visual only, no collision.
@@ -129,6 +131,22 @@ public partial class CreationNode : Node3D
         }
     }
 
+    /// <summary>What each part with a <c>display</c> section shows on itself (UI spec §12).</summary>
+    public IReadOnlyList<PartDisplayVisual> Displays => _displays;
+
+    /// <summary>Draws every part's display from <paramref name="readouts"/> (after <see cref="ApplyAnimations"/>).</summary>
+    public void ApplyDisplays(Core.Logic.PartReadouts readouts, bool connecting, double delta)
+    {
+        foreach (var display in _displays)
+        {
+            var linked = Creation.LinksFrom(display.Part).Count > 0 || Creation.LinksTo(display.Part).Count > 0;
+            display.Apply(readouts, linked, connecting, _animated.Any(a => a.Part == display.Part), delta);
+        }
+    }
+
+    /// <summary>A placed part's node (its frame in the world), or null when this Creation has no such part.</summary>
+    public Node3D? PartNode(int part) => _partNodes.GetValueOrDefault(part);
+
     /// <summary>Writes every body's current world pose and velocity back to <see cref="Creation"/>.</summary>
     public void SyncToCreation()
     {
@@ -213,6 +231,8 @@ public partial class CreationNode : Node3D
         _shafts.Clear();
         _lights.Clear();
         _animated.Clear();
+        _displays.Clear();
+        _partNodes.Clear();
         _pipes.Clear();
         _bodies.Clear();
     }
@@ -257,6 +277,9 @@ public partial class CreationNode : Node3D
             }
             if (definition.Animation is { } animation)
                 _animated.Add((id, shown, (animation.Axis ?? new Vec3(0, 1, 0)).ToGodot().Normalized(), (animation.Pivot ?? Vec3.Zero).ToGodot()));
+            if (definition.Display is not null)
+                _displays.Add(new PartDisplayVisual(Creation.Id, id, definition, visual, shown));
+            _partNodes[id] = visual;
             node.AddChild(visual);
             if (definition.Friction is { } f)
             {

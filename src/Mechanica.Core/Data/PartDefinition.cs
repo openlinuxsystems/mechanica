@@ -197,6 +197,20 @@ public sealed record PartDefinition
     /// </summary>
     public AnimationDefinition? Animation { get; init; }
 
+    /// <summary>
+    /// How the part's menu works when a player uses it with E (UI spec §12): whether E opens the menu or cycles a
+    /// setting, the values its script shows there, live signals, a world preview and whether changes wait for
+    /// Apply. Omitted opens a menu of <see cref="Settings"/> that applies each change at once. Placeable parts only.
+    /// </summary>
+    public MenuDefinition? Menu { get; init; }
+
+    /// <summary>
+    /// What the part shows on itself as its script drives it (UI spec §12): a running/idle icon, a glow, an
+    /// extension bar, a turning highlight. Each follows a value the script sets with <c>part.display</c>.
+    /// Placeable parts only.
+    /// </summary>
+    public DisplayDefinition? Display { get; init; }
+
     /// <summary>Free-form, part-specific data for the Lua script. Key order is kept as written.</summary>
     public JsonObject? Properties { get; init; }
 
@@ -390,8 +404,16 @@ public enum SettingType
     /// <summary>True or false.</summary>
     Toggle,
 
-    /// <summary>Up to <see cref="SettingDefinition.MaxCount"/> numbers, each between min and max (a controller's frames).</summary>
+    /// <summary>Up to <see cref="SettingDefinition.MaxCount"/> numbers, each between min and max.</summary>
     NumberList,
+
+    /// <summary>
+    /// Up to <see cref="SettingDefinition.MaxCount"/> frames (a controller's sequence). Each frame lists joints the part
+    /// is linked to, as <c>{"part": id, "target": value, "speed": value}</c>: a bearing's angle in degrees or a piston's
+    /// extension in m, between min and max, and a speed above 0 and at most <see cref="SettingDefinition.MaxSpeed"/>.
+    /// A frame that is a plain number sends every linked bearing to that angle.
+    /// </summary>
+    Sequence,
 }
 
 /// <summary>One setting a player can change on a placed part, with the Connect Tool's settings panel.</summary>
@@ -426,6 +448,257 @@ public sealed record SettingDefinition
     /// (toggle) or an empty list.
     /// </summary>
     public JsonElement? Default { get; init; }
+
+    /// <summary>Buttons in the menu that set a number to a named value (an engine's Low, Medium and High), in display order.</summary>
+    public List<SettingPreset>? Presets { get; init; }
+
+    /// <summary>
+    /// A short heading shared by toggles shown side by side in one row (a sensor's "Detects": Players, Bots, …).
+    /// Toggles next to each other with the same group share the row.
+    /// </summary>
+    public string? Group { get; init; }
+
+    /// <summary>
+    /// True hides the setting while anything is linked into the part (an engine's On switch, when a seat drives it).
+    /// </summary>
+    public bool? HideWhenLinked { get; init; }
+
+    /// <summary>A picture per option of a choice setting (<c>.png</c>, relative to the mod root), shown large when it is picked.</summary>
+    public Dictionary<string, string>? Icons { get; init; }
+
+    /// <summary>Highest speed of a sequence frame's joint (rad/s for bearings, m/s for pistons). Required for sequences.</summary>
+    public float? MaxSpeed { get; init; }
+
+    /// <summary>
+    /// For a sequence: the part's <c>on_command</c> name that previews a sequence before it is applied. The menu sends
+    /// the frames with <c>{"playing": true}</c> to start and <c>{"playing": false}</c> to stop. Omitted shows no preview.
+    /// </summary>
+    public string? Preview { get; init; }
+
+    /// <summary>Keys this build does not know.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>A named value a setting's preset button sets.</summary>
+public sealed record SettingPreset
+{
+    /// <summary>Button label.</summary>
+    public string? Name { get; init; }
+
+    /// <summary>The value it sets.</summary>
+    public float? Value { get; init; }
+
+    /// <summary>Keys this build does not know.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>What Use (E) on a part does.</summary>
+public enum MenuUse
+{
+    /// <summary>Opens the part's menu.</summary>
+    Open,
+
+    /// <summary>Steps <see cref="MenuDefinition.Cycle"/> to its next option and shows it large for a moment.</summary>
+    Cycle,
+}
+
+/// <summary>How a <see cref="ReadoutDefinition"/> shows its value.</summary>
+public enum ReadoutKind
+{
+    /// <summary>A cyan bar from 0 to <see cref="ReadoutDefinition.Max"/> (fuel, charge).</summary>
+    Bar,
+
+    /// <summary>A number with <see cref="ReadoutDefinition.Unit"/> (RPM, torque).</summary>
+    Number,
+
+    /// <summary>Text the script sets (a status line).</summary>
+    Text,
+}
+
+/// <summary>The shape a part's <see cref="PreviewDefinition"/> draws in the world.</summary>
+public enum PreviewShape
+{
+    /// <summary>A line along the axis.</summary>
+    Ray,
+
+    /// <summary>A cone along the axis, <see cref="PreviewDefinition.Angle"/> degrees from its middle to its edge.</summary>
+    Cone,
+
+    /// <summary>A sphere around the part.</summary>
+    Sphere,
+}
+
+/// <summary>The menu a player opens on a part with E (UI spec §12). Behaviour stays in the part's script (D2).</summary>
+public sealed record MenuDefinition
+{
+    /// <summary>What E does. Omitted means <see cref="MenuUse.Open"/>.</summary>
+    public MenuUse? Use { get; init; }
+
+    /// <summary>The choice setting E steps through when <see cref="Use"/> is <see cref="MenuUse.Cycle"/>.</summary>
+    public string? Cycle { get; init; }
+
+    /// <summary>Values the part's script shows in the menu with <c>part.display(id, value)</c>, in display order.</summary>
+    public List<ReadoutDefinition>? Readouts { get; init; }
+
+    /// <summary>True shows the part's inputs and its output live (a logic gate).</summary>
+    public bool? Signals { get; init; }
+
+    /// <summary>What the part reaches, drawn in the world while the menu is open (a sensor's range).</summary>
+    public PreviewDefinition? Preview { get; init; }
+
+    /// <summary>True keeps changes in the menu until the player presses Apply or closes it (a controller's sequence).</summary>
+    public bool? Apply { get; init; }
+
+    /// <summary>Keys this build does not know.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>One value a part's script shows in its menu.</summary>
+public sealed record ReadoutDefinition
+{
+    /// <summary>Id the script sets with <c>part.display</c> (lowercase snake_case).</summary>
+    public string? Id { get; init; }
+
+    /// <summary>Label. Omitted shows the id.</summary>
+    public string? Name { get; init; }
+
+    /// <summary>How it shows. Omitted means <see cref="ReadoutKind.Number"/>.</summary>
+    public ReadoutKind? Kind { get; init; }
+
+    /// <summary>A full bar's value. Omitted means 1.</summary>
+    public float? Max { get; init; }
+
+    /// <summary>Unit after a number (<c>rpm</c>, <c>N·m</c>).</summary>
+    public string? Unit { get; init; }
+
+    /// <summary>Digits after the point. Omitted means 0.</summary>
+    public int? Decimals { get; init; }
+
+    /// <summary>Keys this build does not know.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>What a part reaches, drawn in the world while its menu is open.</summary>
+public sealed record PreviewDefinition
+{
+    /// <summary>The shape. Omitted means <see cref="PreviewShape.Ray"/>.</summary>
+    public PreviewShape? Shape { get; init; }
+
+    /// <summary>The number setting holding its reach in m.</summary>
+    public string? Range { get; init; }
+
+    /// <summary>The direction it looks, in the part's frame. Omitted means +Y.</summary>
+    public Vec3? Axis { get; init; }
+
+    /// <summary>A cone's half angle in degrees (more than 0, under 90).</summary>
+    public float? Angle { get; init; }
+
+    /// <summary>Keys this build does not know.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>What a part shows on itself as its script drives it (UI spec §12).</summary>
+public sealed record DisplayDefinition
+{
+    /// <summary>
+    /// A readout drawn as an icon above the part while it has links and the Connect Tool is put away: green while the
+    /// value is on (not 0), gray while it is off (an engine running or idle).
+    /// </summary>
+    public string? Status { get; init; }
+
+    /// <summary>A faint blue glow whose strength follows a readout from 0 to 1 (a thruster's or rotor's power).</summary>
+    public GlowDefinition? Glow { get; init; }
+
+    /// <summary>A thin cyan bar showing a readout from 0 to 1 while the Connect Tool is out (a piston's extension).</summary>
+    public BarDefinition? Bar { get; init; }
+
+    /// <summary>A highlight that turns about an axis while a readout is not 0 (a powered bearing).</summary>
+    public HighlightDefinition? Highlight { get; init; }
+
+    /// <summary>The model pushed in while a readout is not 0 (a switch that is on, a button held down).</summary>
+    public PressDefinition? Press { get; init; }
+
+    /// <summary>Keys this build does not know.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>A glow on a part.</summary>
+public sealed record GlowDefinition
+{
+    /// <summary>The readout (0 to 1) that sets its strength.</summary>
+    public string? Readout { get; init; }
+
+    /// <summary>Where it comes from, relative to the part centre in m in the part's frame. Omitted means the centre.</summary>
+    public Vec3? Offset { get; init; }
+
+    /// <summary>Which way it streams, in the part's frame. Omitted means +Y.</summary>
+    public Vec3? Direction { get; init; }
+
+    /// <summary>How far it reaches at full strength, in m. Omitted means 0.5.</summary>
+    public float? Length { get; init; }
+
+    /// <summary>Keys this build does not know.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>A bar along a part.</summary>
+public sealed record BarDefinition
+{
+    /// <summary>The readout (0 to 1) it fills to.</summary>
+    public string? Readout { get; init; }
+
+    /// <summary>Where the empty end is, relative to the part centre in m in the part's frame. Omitted means the centre.</summary>
+    public Vec3? Offset { get; init; }
+
+    /// <summary>The direction it fills, in the part's frame. Omitted means +Y.</summary>
+    public Vec3? Axis { get; init; }
+
+    /// <summary>A full bar's length in m (more than 0).</summary>
+    public float? Length { get; init; }
+
+    /// <summary>Keys this build does not know.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>A turning highlight on a part.</summary>
+public sealed record HighlightDefinition
+{
+    /// <summary>The readout that turns it on while it is not 0.</summary>
+    public string? Readout { get; init; }
+
+    /// <summary>The axis it turns about, in the part's frame. Omitted means +Y.</summary>
+    public Vec3? Axis { get; init; }
+
+    /// <summary>Its centre, relative to the part centre in m in the part's frame. Omitted means the centre.</summary>
+    public Vec3? Offset { get; init; }
+
+    /// <summary>Its radius in m (more than 0).</summary>
+    public float? Radius { get; init; }
+
+    /// <summary>Keys this build does not know.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>A part's model pushed in, as a button is pressed.</summary>
+public sealed record PressDefinition
+{
+    /// <summary>The readout that pushes it in while it is not 0.</summary>
+    public string? Readout { get; init; }
+
+    /// <summary>The direction it moves when pushed, in the part's frame. Omitted means -Y.</summary>
+    public Vec3? Axis { get; init; }
+
+    /// <summary>How far it moves, in m (more than 0, at most 0.1). Omitted means 0.02.</summary>
+    public float? Depth { get; init; }
 
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]

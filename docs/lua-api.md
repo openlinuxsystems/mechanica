@@ -89,6 +89,7 @@ template becomes the part's name.
 | `on_destroy()` | When the part is removed or its Creation goes away. Part functions return `nil` here once the part is gone. |
 | `on_activate(peer)` | A player used the part: they pressed F on it (the `ActivatePart` action). Buttons, switches and soil (harvest) use it. What it returns (plain data) is the action's result. |
 | `can_activate(peer)` | Before every `on_activate`. Return `nil` to allow it, or a string: the reason `ActivatePart` is refused. Like an item's `can_use` it only reads: `soil.set`, `soil.clear` and `player.give` raise an error there. |
+| `on_command(name, args, peer)` | A player sent the part a command from its menu (the `CommandPart` action). The only commands are the `preview` names of the part's `sequence` settings: a controller's Play button sends `{playing, frames}`, with `frames` checked like the setting before the script sees it. `peer` is who sent it. A part without this hook takes no commands. |
 | `on_power(amount)` | The sum of the part's logic inputs changed; `amount` is the new sum. It also runs when the script (re)starts with a non-zero input. See the [Logic and Power Tutorial](logic-power-tutorial.md). |
 | `on_collision(other, impulse)` | The part's Body began touching something. `other` is a table with `creation` and `part` when it is a Creation, empty for the ground; `impulse` is in N·s. |
 | `get_outputs()` | Called once per step after `on_update`; what it returns (a number, or a boolean as 1 or 0) is the part's logic output, as if it called `part.set_output`. |
@@ -145,7 +146,7 @@ placed.
 | `part.input()` | The sum of the outputs of every part linked to this one. |
 | `part.inputs()` | Each part linked to this one as `{part, value}`, by part id (a logic gate reads them one by one). |
 | `part.links()` | The ids of the parts this part's output is linked to (an engine finds its bearings here). |
-| `part.setting(id)` | The value of one of the part's settings: a number, a choice (string), a toggle (boolean) or a number list (table); the default until a player changes it. `nil` for an unknown id. |
+| `part.setting(id)` | The value of one of the part's settings: a number, a choice (string), a toggle (boolean), a number list (table) or a sequence (a table of frames, each a number or a list of `{part, target, speed}`); the default until a player changes it. `nil` for an unknown id. |
 | `part.sound(key)` | The sound id the part binds to `key` in its `sounds` (for `sound.play` and `sound.start`), or `nil`. Scripts play the part's own bindings this way, so the ids stay in data. |
 | `part.occupant()` | For a seat: the peer of the player sitting in it, or `nil`. |
 | `part.occupant_input()` | For a seat: the sitting player's input as `{x, z, jump, sprint, yaw, pitch}`. `x` is steering (-1 left to 1 right) and `z` throttle (-1 back to 1 forward). `nil` when the seat is empty. |
@@ -153,6 +154,8 @@ placed.
 | `part.light()` | The part's light level now, 0 to 1. |
 | `part.animate(angle?, speed?)` | For a part with an `animation` section: turns its model (not its collision or Body) about the section's `axis` through its `pivot`, to `angle` rad (`nil` keeps the angle it has), then keeps turning it at `speed` rad/s (default 0). Every client draws it from the host's state, so send it when it changes, not every step. Returns `true`, or `false` and the reason. |
 | `part.animation()` | The model's turn now as `angle, speed` (rad, rad/s). |
+| `part.display(id, value)` | Shows a value on the part under `id` (lowercase snake_case): a number, a boolean (1 or 0), a string (cut to 64 characters) or `nil` to clear it. Its menu's `readouts` and its `display` section (status icon, bar, glow, highlight, press) read these; see the [Part Data Schema](part-data-schema.md#menu-and-display). A part shows at most 16 values. Setting the same value again sends nothing, so it is fine to call every step. The host sends them to every client. Returns `true`, or `false` and the reason. |
+| `part.displayed(id)` | The value the part shows under `id` (a number or a string), or `nil`. |
 
 Pushes last one physics step, so a script that keeps pushing calls `apply_force` every
 `on_update`. They go through the `ApplyForce` action with the part's id, so pushes from different
@@ -173,6 +176,7 @@ The Creation the part belongs to.
 | `creation.set_bearing_angle(part_id, angle, speed?, max_torque?)` | Like `part.set_bearing_angle`, for another bearing of the same Creation (a seat steering the front wheels). |
 | `creation.set_piston(part_id, length, speed?, max_force?)` | Like `part.set_piston`, for another piston of the same Creation (a controller moving several). |
 | `creation.joint(part_id)` | Like `part.joint()`, for another part of the same Creation. |
+| `creation.display(part_id, id, value)` | Like `part.display`, for a part this one's output is linked to (an engine turns its wheel bearings' `drive` highlight). Any other part is refused. |
 | `creation.occupant_input(part_id)` | Like `part.occupant_input()`, for another seat of the same Creation: a control surface or rotor linked from a seat reads its pilot's controls this way. `nil` when that seat is empty. |
 | `creation.count(item)` | How many of an item the Creation's containers hold (gasoline in gas containers, battery packs in batteries). Bare ids are in the part's mod. |
 | `creation.take(item, count?)` | Takes up to `count` (default 1) of an item from the Creation's containers, in part order, and returns how many it took. Engines burn fuel this way. |
@@ -185,8 +189,8 @@ The Creation the part belongs to.
 | `world.time()` | Seconds the world has been simulated. Saves keep it, so the clock carries on when a world loads and times kept in `state` or on soil stay meaningful. |
 | `world.tick()` | Physics steps since the scripts started. |
 | `world.creative()` | `true` in Creative, where engines run without fuel. |
-| `world.raycast(from, to)` | The first thing on the segment from `from` to `to`, skipping the script's own Creation: `{position, normal, distance, creation?, part?}`, or `nil`. A ray may be at most `max_ray_length` m long. |
-| `world.overlap_sphere(centre, radius)` | Everything a sphere touches, skipping the script's own Creation: a list of `{creation?, part?}` (both missing for the ground). `radius` is at most `max_overlap_radius` m. |
+| `world.raycast(from, to)` | The first thing on the segment from `from` to `to`, skipping the script's own Creation: `{position, normal, distance, creation?, part?, player?, bot?}`, or `nil`. `player` is the peer of a player it hit and `bot` the id of a bot; all four are missing for the ground and world objects. A ray may be at most `max_ray_length` m long. |
+| `world.overlap_sphere(centre, radius)` | Everything a sphere touches, skipping the script's own Creation: a list of `{creation?, part?, player?, bot?}` (all missing for the ground). `radius` is at most `max_overlap_radius` m. |
 | `world.item(id, key?)` | An item's or part's data as written in its JSON (snake_case keys), or only its `key` section (`world.item(seed, "seed")` is `{crop, grow_time, yield, seeds, value}`), or `nil` for an unknown id. Bare ids are in the script's mod. Works in part and item scripts. |
 
 ## `soil`

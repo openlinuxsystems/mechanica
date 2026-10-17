@@ -11,7 +11,7 @@
 -- raises with Space and lowers with Shift, at properties.lever_rate per second, that stays where they leave
 -- it. "invert" flips the command.
 -- Sounds: "spin_up" when it starts turning, the "loop" while it turns (its "speed" parameter follows the
--- speed) and "spin_down" when it is told to stop. Its model spins at up to properties.spin_rate rad/s.
+-- speed) and "spin_down" when it is told to stop. Its "power" display (the downwash glow) follows the speed. Its model spins at up to properties.spin_rate rad/s.
 
 -- The spin the model was last given (not saved: a loaded rotor shows its spin afresh).
 local shown_spin
@@ -74,6 +74,7 @@ function on_update(dt)
   local step = properties.spool_rate * dt
   speed = speed + clamp(target - speed, -step, step)
   state.speed = speed
+  part.display("power", math.floor(speed * 20 + 0.5) / 20)
   noise(target, speed)
   -- Clockwise seen from the top is about -Y. Small changes while spooling are not worth sending.
   local spin = speed * properties.spin_rate * (part.setting("spin") == "counterclockwise" and 1 or -1)

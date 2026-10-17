@@ -887,6 +887,29 @@ public partial class PartEditorScreen : Control
                 return e.Message;
             }
         });
+        // The part's menu (readouts, cycle, preview) and what it shows on itself (UI spec §12).
+        AddJsonSection<MenuDefinition>("Menu", d.Menu, "Set menu", (x, v) => x with { Menu = v });
+        AddJsonSection<DisplayDefinition>("Display", d.Display, "Set display", (x, v) => x with { Display = v });
+    }
+
+    // A section edited as JSON; an empty object or "null" removes it.
+    private void AddJsonSection<T>(string label, T? value, string undo, Func<PartDefinition, T?, PartDefinition> apply)
+        where T : class
+    {
+        _partGrid.AddJson(label, value is null ? "{}" : JsonSerializer.Serialize(value, DataJson.WriteOptions), text =>
+        {
+            try
+            {
+                var trimmed = text.Trim();
+                var parsed = trimmed is "" or "{}" or "null" ? null : JsonSerializer.Deserialize<T>(text, DataJson.ReadOptions);
+                Set(undo, x => apply(x, parsed));
+                return null;
+            }
+            catch (JsonException e)
+            {
+                return e.Message;
+            }
+        });
     }
 
     // Light fields (chunk 23): what the part's light looks like at full level. Its script turns it on.

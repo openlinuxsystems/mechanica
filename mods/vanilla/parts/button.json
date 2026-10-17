@@ -30,8 +30,15 @@
     "use": "button_press"
   },
   "logic": {
+    "inputs": 1,
     "outputs": 10,
     "use": "press"
+  },
+  "display": {
+    "press": {
+      "readout": "on",
+      "depth": 0.015
+    }
   },
   "properties": {
     "pulse": 0.5

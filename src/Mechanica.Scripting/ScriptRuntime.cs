@@ -118,6 +118,9 @@ public sealed partial class ScriptRuntime
         /// <summary><c>on_leave(peer)</c>: the player sitting in the part stood up.</summary>
         public const string OnLeave = "on_leave";
 
+        /// <summary><c>on_command(name, args, peer)</c>: a player's menu sent the part a command (a sequence preview).</summary>
+        public const string OnCommand = "on_command";
+
         /// <summary><c>on_equip()</c>: a player took the item in hand.</summary>
         public const string OnEquip = "on_equip";
 
@@ -313,6 +316,7 @@ public sealed partial class ScriptRuntime
         ClearItems();
         Signals.Clear();
         Lights.Clear();
+        Readouts.Clear();
         Animations.Clear();
         _revisions.Clear();
         _files.Clear();
@@ -329,6 +333,8 @@ public sealed partial class ScriptRuntime
             if (_revisions.TryGetValue(creation.Id, out var revision) && revision == creation.Revision)
                 continue;
             _revisions[creation.Id] = creation.Revision;
+            // Parts shown by another part's script (creation.display) have no instance of their own.
+            Readouts.Prune(creation.Id, id => creation.FindPart(id) is not null);
             var wanted = new Dictionary<int, (string Type, ScriptFile File)>();
             foreach (var part in creation.Parts)
             {
@@ -354,6 +360,7 @@ public sealed partial class ScriptRuntime
             _revisions.Remove(gone);
             foreach (var instance in InstancesOf(gone))
                 Destroy(instance);
+            Readouts.Prune(gone, _ => false);
         }
     }
 
@@ -464,6 +471,7 @@ public sealed partial class ScriptRuntime
         _instances.Remove((instance.Creation, instance.Part));
         Signals.Forget(instance.Creation, instance.Part);
         Lights.Forget(instance.Creation, instance.Part);
+        Readouts.Forget(instance.Creation, instance.Part);
         Animations.Forget(instance.Creation, instance.Part);
     }
 

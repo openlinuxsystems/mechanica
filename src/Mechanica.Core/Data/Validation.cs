@@ -116,7 +116,14 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
         ValidateLogic(part, placeable, sink);
         ValidateLight(part, placeable, sink);
         ValidateAnimation(part, placeable, sink);
+        ValidateMenu(part, placeable, sink);
+        ValidateDisplay(part, placeable, sink);
         ValidateUpgrades(part, placeable, sink);
+        for (var i = 0; i < (part.Settings?.Count ?? 0); i++)
+        {
+            foreach (var (option, icon) in part.Settings![i].Icons ?? [])
+                CheckAsset(icon, $"$.settings[{i}].icons.{option}", AssetKind.Texture, sink);
+        }
 
         foreach (var (key, sound) in part.Sounds ?? [])
         {
@@ -457,6 +464,118 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
         KnownKeys.WarnUnknown(animation.Extra, p, sink, typeof(AnimationDefinition));
     }
 
+    private static void ValidateMenu(PartDefinition part, bool placeable, DiagnosticSink sink)
+    {
+        if (part.Menu is not { } menu)
+            return;
+        const string p = "$.menu";
+        if (!placeable)
+            sink.Error(Code, p, "only placeable parts can have a menu.");
+        if (menu.Use == MenuUse.Cycle && part.Settings?.FirstOrDefault(s => s.Id == menu.Cycle) is not { Type: SettingType.Choice })
+            sink.Error(Code, $"{p}.cycle", $"a cycling menu needs cycle to name one of the part's choice settings, not '{menu.Cycle}'.");
+        if (menu.Cycle is not null && menu.Use != MenuUse.Cycle)
+            sink.Error(Code, $"{p}.cycle", "cycle needs \"use\": \"cycle\".");
+        if ((menu.Readouts?.Count > 0 || menu.Preview is not null) && part.Script is null)
+            sink.Error(Code, p, "readouts and previews come from the part's script; it has none.");
+        ValidateReadouts(menu.Readouts, $"{p}.readouts", sink);
+        if (menu.Preview is { } preview)
+        {
+            var path = $"{p}.preview";
+            if (part.Settings?.FirstOrDefault(s => s.Id == preview.Range) is not { Type: SettingType.Number })
+                sink.Error(Code, $"{path}.range", $"range must name one of the part's number settings, not '{preview.Range}'.");
+            if (preview.Axis is { } a && !NonZero(a))
+                sink.Error(Code, $"{path}.axis", "axis must be a non-zero vector.");
+            if (preview.Shape == PreviewShape.Cone && preview.Angle is not (> 0 and < 90))
+                sink.Error(Code, $"{path}.angle", "a cone needs an angle more than 0 and under 90 degrees.");
+            KnownKeys.WarnUnknown(preview.Extra, path, sink, typeof(PreviewDefinition));
+        }
+        KnownKeys.WarnUnknown(menu.Extra, p, sink, typeof(MenuDefinition));
+    }
+
+    private static void ValidateReadouts(List<ReadoutDefinition>? readouts, string p, DiagnosticSink sink)
+    {
+        var ids = new HashSet<string>();
+        for (var i = 0; i < (readouts?.Count ?? 0); i++)
+        {
+            var readout = readouts![i];
+            var path = $"{p}[{i}]";
+            if (!Identifiers.IsValid(readout.Id))
+                sink.Error(Code, $"{path}.id", readout.Id is null ? "readout id is required." : $"readout id '{readout.Id}' must be lowercase snake_case.");
+            else if (!ids.Add(readout.Id))
+                sink.Error(Code, $"{path}.id", $"readout id '{readout.Id}' is listed twice.");
+            RequirePositive(readout.Max, $"{path}.max", "max", false, "a readout", sink);
+            if (readout.Decimals is < 0 or > 4)
+                sink.Error(Code, $"{path}.decimals", "decimals must be 0 to 4.");
+            if (readout.Unit is { Length: > 12 })
+                sink.Error(Code, $"{path}.unit", "unit must be at most 12 characters.");
+            KnownKeys.WarnUnknown(readout.Extra, path, sink, typeof(ReadoutDefinition));
+        }
+        if (readouts?.Count > Logic.PartReadouts.MaxPerPart)
+            sink.Error(Code, p, $"a part shows at most {Logic.PartReadouts.MaxPerPart} readouts.");
+    }
+
+    private static void ValidateDisplay(PartDefinition part, bool placeable, DiagnosticSink sink)
+    {
+        if (part.Display is not { } display)
+            return;
+        const string p = "$.display";
+        if (!placeable)
+            sink.Error(Code, p, "only placeable parts can have a display.");
+        if (display.Status is { } status && !Identifiers.IsValid(status))
+            sink.Error(Code, $"{p}.status", "status names a snake_case readout id.");
+        var extent = (part.Size ?? GridSize.One).Metres;
+        bool Inside(Vec3? o) => o is not { } v || (float.IsFinite(v.X) && float.IsFinite(v.Y) && float.IsFinite(v.Z)
+            && MathF.Abs(v.X) <= extent.X / 2 + Epsilon && MathF.Abs(v.Y) <= extent.Y / 2 + Epsilon && MathF.Abs(v.Z) <= extent.Z / 2 + Epsilon);
+        void Readout(string? id, string path)
+        {
+            if (!Identifiers.IsValid(id))
+                sink.Error(Code, $"{path}.readout", "readout must name a snake_case readout id.");
+        }
+        if (display.Glow is { } glow)
+        {
+            Readout(glow.Readout, $"{p}.glow");
+            if (!Inside(glow.Offset))
+                sink.Error(Code, $"{p}.glow.offset", "the glow's offset is outside the part's footprint.");
+            if (glow.Direction is { } d && !NonZero(d))
+                sink.Error(Code, $"{p}.glow.direction", "direction must be a non-zero vector.");
+            RequirePositive(glow.Length, $"{p}.glow.length", "length (m)", false, "a glow", sink);
+            KnownKeys.WarnUnknown(glow.Extra, $"{p}.glow", sink, typeof(GlowDefinition));
+        }
+        if (display.Bar is { } bar)
+        {
+            Readout(bar.Readout, $"{p}.bar");
+            if (!Inside(bar.Offset))
+                sink.Error(Code, $"{p}.bar.offset", "the bar's offset is outside the part's footprint.");
+            if (bar.Axis is { } a && !NonZero(a))
+                sink.Error(Code, $"{p}.bar.axis", "axis must be a non-zero vector.");
+            RequirePositive(bar.Length, $"{p}.bar.length", "length (m)", true, "a bar", sink);
+            KnownKeys.WarnUnknown(bar.Extra, $"{p}.bar", sink, typeof(BarDefinition));
+        }
+        if (display.Highlight is { } highlight)
+        {
+            Readout(highlight.Readout, $"{p}.highlight");
+            if (!Inside(highlight.Offset))
+                sink.Error(Code, $"{p}.highlight.offset", "the highlight's offset is outside the part's footprint.");
+            if (highlight.Axis is { } a && !NonZero(a))
+                sink.Error(Code, $"{p}.highlight.axis", "axis must be a non-zero vector.");
+            RequirePositive(highlight.Radius, $"{p}.highlight.radius", "radius (m)", true, "a highlight", sink);
+            KnownKeys.WarnUnknown(highlight.Extra, $"{p}.highlight", sink, typeof(HighlightDefinition));
+        }
+        if (display.Press is { } press)
+        {
+            Readout(press.Readout, $"{p}.press");
+            if (press.Axis is { } a && !NonZero(a))
+                sink.Error(Code, $"{p}.press.axis", "axis must be a non-zero vector.");
+            if (press.Depth is { } depth && !(depth > 0 && depth <= 0.1f))
+                sink.Error(Code, $"{p}.press.depth", "depth must be more than 0 and at most 0.1 m.");
+            KnownKeys.WarnUnknown(press.Extra, $"{p}.press", sink, typeof(PressDefinition));
+        }
+        KnownKeys.WarnUnknown(display.Extra, p, sink, typeof(DisplayDefinition));
+    }
+
+    private static bool NonZero(Vec3 v) =>
+        float.IsFinite(v.X) && float.IsFinite(v.Y) && float.IsFinite(v.Z) && v.X * v.X + v.Y * v.Y + v.Z * v.Z > 1e-6f;
+
     private static void ValidateLight(PartDefinition part, bool placeable, DiagnosticSink sink)
     {
         if (part.Light is not { } light)
@@ -523,13 +642,15 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
                 case null:
                     sink.Error(Code, $"{path}.type", $"type is required: one of {EnumList<SettingType>()}.");
                     break;
-                case SettingType.Number or SettingType.NumberList:
+                case SettingType.Number or SettingType.NumberList or SettingType.Sequence:
                     if (setting.Min is not { } min || setting.Max is not { } max || !float.IsFinite(min) || !float.IsFinite(max) || min > max)
                         sink.Error(Code, $"{path}.min", "a number setting needs finite min and max, with min at most max.");
                     if (setting.Step is { } step && !(step > 0 && float.IsFinite(step)))
                         sink.Error(Code, $"{path}.step", "step must be greater than 0.");
-                    if (setting.Type == SettingType.NumberList && setting.MaxCount is not (>= 1 and <= LogicDefinition.MaxLinks))
-                        sink.Error(Code, $"{path}.max_count", $"max_count (1 to {LogicDefinition.MaxLinks}) is required for a number list.");
+                    if (setting.Type != SettingType.Number && setting.MaxCount is not (>= 1 and <= LogicDefinition.MaxLinks))
+                        sink.Error(Code, $"{path}.max_count", $"max_count (1 to {LogicDefinition.MaxLinks}) is required for a number list or sequence.");
+                    if (setting.Type == SettingType.Sequence)
+                        RequirePositive(setting.MaxSpeed, $"{path}.max_speed", "max_speed", true, "a sequence", sink);
                     break;
                 case SettingType.Choice:
                     if (setting.Options is not { Count: > 0 } options)
@@ -538,6 +659,25 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
                         sink.Error(Code, $"{path}.options", "options must be distinct lowercase snake_case ids.");
                     break;
             }
+            if (setting.MaxSpeed is not null && setting.Type != SettingType.Sequence)
+                sink.Error(Code, $"{path}.max_speed", "only a sequence setting has max_speed.");
+            if (setting.Preview is { } preview && (setting.Type != SettingType.Sequence || !Identifiers.IsValid(preview)))
+                sink.Error(Code, $"{path}.preview", "preview names a snake_case on_command name, on a sequence setting only.");
+            for (var j = 0; j < (setting.Presets?.Count ?? 0); j++)
+            {
+                var preset = setting.Presets![j];
+                if (setting.Type != SettingType.Number)
+                    sink.Error(Code, $"{path}.presets", "only a number setting has presets.");
+                else if (string.IsNullOrWhiteSpace(preset.Name) || preset.Name.Length > 24)
+                    sink.Error(Code, $"{path}.presets[{j}].name", "a preset needs a short name (1 to 24 characters).");
+                else if (preset.Value is not { } v || !float.IsFinite(v) || v < (setting.Min ?? float.NegativeInfinity) || v > (setting.Max ?? float.PositiveInfinity))
+                    sink.Error(Code, $"{path}.presets[{j}].value", "a preset's value must be between the setting's min and max.");
+                KnownKeys.WarnUnknown(preset.Extra, $"{path}.presets[{j}]", sink, typeof(SettingPreset));
+            }
+            if (setting.Group is { } group && (setting.Type != SettingType.Toggle || string.IsNullOrWhiteSpace(group) || group.Length > 24))
+                sink.Error(Code, $"{path}.group", "group is a short heading (1 to 24 characters) on toggle settings only.");
+            if (setting.Icons is { } icons && (setting.Type != SettingType.Choice || icons.Keys.Any(k => setting.Options?.Contains(k) != true)))
+                sink.Error(Code, $"{path}.icons", "icons are for a choice setting's options, keyed by option id.");
             if (setting.Default is { } value && setting.Type is not null && sink.ErrorCount == errors
                 && Logic.PartSettings.Check(setting, value) is { } bad)
                 sink.Error(Code, $"{path}.default", $"default: {bad}");

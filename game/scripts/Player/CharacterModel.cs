@@ -142,7 +142,7 @@ public partial class CharacterModel : Node3D
         else
         {
             Rotation = new Vector3(0, Animator.BodyTurn, 0);
-            Position = new Vector3(0, Animator.Lift, 0);
+            Position = new Vector3(0, Animator.Lift, 0) + (Player?.ShownLocalOffset ?? Vector3.Zero);
         }
         Pose();
         ShowProp(Animator.ShowProp && Player is not null ? Player.ShownProp : CharacterProp.None);

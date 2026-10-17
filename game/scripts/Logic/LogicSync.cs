@@ -110,7 +110,14 @@ public partial class LogicSync : Node
     }
 
     /// <summary>Where a seat puts its player's feet now, and how fast the seat moves; null when this peer does not show it.</summary>
-    public (Vector3 Feet, Vector3 Velocity)? SeatPose(int creationId, int partId)
+    public (Vector3 Feet, Vector3 Velocity)? SeatPose(int creationId, int partId) =>
+        SeatTransform(creationId, partId) is { } seat ? (seat.Feet.Origin, seat.Velocity) : null;
+
+    /// <summary>
+    /// The seat's frame now, at the sitting player's feet (the player faces its -Z), and how fast it moves; null when
+    /// this peer does not show it.
+    /// </summary>
+    public (Transform3D Feet, Vector3 Velocity)? SeatTransform(int creationId, int partId)
     {
         if (Creations.NodeOf(creationId) is not { } node || node.Creation.FindPart(partId) is not { } part)
             return null;
@@ -121,7 +128,35 @@ public partial class LogicSync : Node
         var definition = creation.DefinitionOf(partId);
         var local = PartGeometry.CentreMetres(definition, part.Cell, part.Rotation) + part.Rotation.Apply(definition.Seat?.Offset ?? Core.Data.Vec3.Zero);
         var body = node.Bodies[index];
-        return (body.GlobalTransform * local.ToNumerics().ToGodot(), body.LinearVelocity);
+        var frame = body.GlobalTransform * new Transform3D(part.Rotation.ToBasis(), local.ToNumerics().ToGodot());
+        return (frame.Orthonormalized(), body.LinearVelocity);
+    }
+
+    /// <summary>
+    /// Where a player standing up from a seat lands: beside it (left, then right, front, back, then above), the first
+    /// spot with room for them (UI spec §10).
+    /// </summary>
+    public Vector3 BesideSeat(int creationId, int partId, PlayerController player)
+    {
+        if (SeatTransform(creationId, partId) is not { } seat)
+            return player.GlobalPosition + Vector3.Up * 0.5f;
+        var basis = seat.Feet.Basis;
+        var feet = seat.Feet.Origin;
+        // The seat's own up may be tipped; stand upright in the world.
+        Vector3 Flat(Vector3 v) => new Vector3(v.X, 0, v.Z) is var f && f.LengthSquared() > 1e-4f ? f.Normalized() : Vector3.Zero;
+        var side = Flat(basis.X);
+        var front = Flat(-basis.Z);
+        var reach = player.Settings.Radius + 0.45f;
+        Vector3[] spots = [feet - side * reach, feet + side * reach, feet + front * reach, feet - front * reach];
+        foreach (var spot in spots)
+        {
+            if (side == Vector3.Zero && front == Vector3.Zero)
+                break;
+            var at = spot + Vector3.Up * 0.05f;
+            if (player.RoomAt(at))
+                return at;
+        }
+        return feet + Vector3.Up * 0.75f;
     }
 
     // Gives each seated player its seat, and takes it away from players who stood up.
@@ -153,14 +188,14 @@ public partial class LogicSync : Node
         }
     }
 
-    // Host side: a player stood up with LeaveSeat; they land above the seat.
+    // Host side: a player stood up with LeaveSeat; they land beside the seat.
     private void Stood(SeatAssignment seat)
     {
         if (!Players.Players.TryGetValue(seat.Peer, out var player))
             return;
-        var at = SeatPose(seat.Creation, seat.Part)?.Feet ?? player.GlobalPosition;
+        var at = BesideSeat(seat.Creation, seat.Part, player);
         player.Seat = null;
-        Players.HostTeleport(seat.Peer, at + Vector3.Up * 0.75f);
+        Players.HostTeleport(seat.Peer, at);
     }
 
     private void SendSeatsTo(int peer) =>
