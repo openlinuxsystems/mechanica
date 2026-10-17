@@ -243,4 +243,111 @@ public class RecipeDataTests : IDisposable
         queue.Tick(chest.Time, 1, book, station);
         Assert.Equal(1, station.Count("vanilla:chest"));
     }
+
+    private static string ChestRecipe(int wood, string station = "bench") =>
+        $$"""{ "id": "chest", "stations": ["{{station}}"], "inputs": [ { "item": "scrap_wood", "count": {{wood}} } ], "outputs": [ { "item": "chest", "count": 1 } ], "time": 4 }""";
+
+    private TestMods WithChestRecipe() => Content().File("vanilla", "recipes/chest.json", ChestRecipe(4));
+
+    [Fact]
+    public void AModOverridesAnotherModsRecipeKeepingItsId()
+    {
+        var before = RecipeBook.Load(WithChestRecipe().Load()).Fingerprint;
+        var content = _mods
+            .Mod("cheap_chests", dependencies: """[{ "id": "vanilla" }]""")
+            .File("cheap_chests", "overrides/vanilla/recipes/chest.json", ChestRecipe(1))
+            .Load();
+
+        var book = RecipeBook.Load(content);
+
+        Assert.False(content.HasErrors, string.Join("\n", content.Diagnostics));
+        Assert.Empty(book.Diagnostics);
+        var chest = Assert.Single(book.All);
+        Assert.Equal("vanilla:chest", chest.QualifiedId);
+        Assert.Equal(1, chest.Inputs.Single().Count);
+        // A recipe override is not a part override.
+        Assert.Empty(content.Mods.Single(m => m.Id == "cheap_chests").Overrides);
+        Assert.NotEqual(before, book.Fingerprint);
+    }
+
+    [Fact]
+    public void ARecipeOverrideNeedsTheTargetAsADependency()
+    {
+        var content = WithChestRecipe()
+            .Mod("sneaky")
+            .File("sneaky", "overrides/vanilla/recipes/chest.json", ChestRecipe(1))
+            .Load();
+
+        var book = RecipeBook.Load(content);
+
+        Assert.Contains(content.Diagnostics, d => d.Code == DiagnosticCodes.OverrideUndeclaredMod);
+        Assert.Equal(4, book.Find("chest")!.Inputs.Single().Count);
+    }
+
+    [Fact]
+    public void OverridingAnUnknownRecipeIsAnErrorAndTheRestLoad()
+    {
+        var content = WithChestRecipe()
+            .Mod("typo", dependencies: """[{ "id": "vanilla" }]""")
+            .File("typo", "overrides/vanilla/recipes/chets.json", ChestRecipe(1).Replace("\"id\": \"chest\"", "\"id\": \"chets\""))
+            .Load();
+
+        var book = RecipeBook.Load(content);
+
+        var error = Assert.Single(book.Diagnostics);
+        Assert.Equal(DiagnosticCodes.RecipeOverrideUnknown, error.Code);
+        Assert.Equal("typo/overrides/vanilla/recipes/chets.json", error.File);
+        Assert.Equal("mod 'vanilla' has no recipe 'chets' to override.", error.Message);
+        Assert.Equal(4, book.Find("chest")!.Inputs.Single().Count);
+    }
+
+    [Fact]
+    public void ARecipeOverrideIsCheckedLikeARecipe()
+    {
+        var content = WithChestRecipe()
+            .Mod("bad", dependencies: """[{ "id": "vanilla" }]""")
+            .File("bad", "overrides/vanilla/recipes/chest.json", ChestRecipe(1, station: "chest"))
+            .Load();
+
+        var book = RecipeBook.Load(content);
+
+        Assert.Contains(book.Diagnostics, d => d.Code == DiagnosticCodes.RecipeInvalid && d.JsonPath == "$.stations[0]");
+        Assert.Equal(4, book.Find("chest")!.Inputs.Single().Count);
+    }
+
+    [Fact]
+    public void TwoUnrelatedRecipeOverridesWarnAndTheLaterOneWins()
+    {
+        var mods = WithChestRecipe()
+            .Mod("aaa", dependencies: """[{ "id": "vanilla" }]""")
+            .File("aaa", "overrides/vanilla/recipes/chest.json", ChestRecipe(1))
+            .Mod("bbb", dependencies: """[{ "id": "vanilla" }]""")
+            .File("bbb", "overrides/vanilla/recipes/chest.json", ChestRecipe(2));
+
+        var byId = RecipeBook.Load(mods.Load());
+        var swapped = RecipeBook.Load(mods.Load(TestMods.Profile("vanilla", "bbb", "aaa")));
+
+        var warning = Assert.Single(byId.Diagnostics);
+        Assert.Equal(DiagnosticSeverity.Warning, warning.Severity);
+        Assert.Equal(DiagnosticCodes.RecipeOverrideConflict, warning.Code);
+        Assert.False(byId.HasErrors);
+        Assert.Equal(2, byId.Find("chest")!.Inputs.Single().Count);
+        Assert.Equal(1, swapped.Find("chest")!.Inputs.Single().Count);
+    }
+
+    [Fact]
+    public void ARecipeOverrideBuildingOnADependencysOverrideDoesNotWarn()
+    {
+        var content = WithChestRecipe()
+            .Mod("zzz", dependencies: """[{ "id": "vanilla" }]""")
+            .File("zzz", "overrides/vanilla/recipes/chest.json", ChestRecipe(1))
+            .Mod("patch", dependencies: """[{ "id": "vanilla" }, { "id": "zzz" }]""")
+            .File("patch", "overrides/vanilla/recipes/chest.json", ChestRecipe(3))
+            .Load(TestMods.Profile("patch"));
+
+        var book = RecipeBook.Load(content);
+
+        Assert.Empty(book.Diagnostics);
+        Assert.Equal(3, book.Find("chest")!.Inputs.Single().Count);
+    }
 }

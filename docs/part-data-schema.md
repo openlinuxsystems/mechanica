@@ -398,7 +398,9 @@ file. Anything else is baked into one glTF file at `meshes/<path of the part fil
 
 A mod can replace another mod's part by shipping a full part file at
 `overrides/<other_mod>/<any name>.json` that keeps the original `id`. The other mod must be a
-dependency. See the [Packaging Guide](packaging-guide.md).
+dependency. A recipe is replaced the same way, with a full recipe file at
+`overrides/<other_mod>/recipes/<any name>.json` that keeps the original `id`. See the
+[Packaging Guide](packaging-guide.md).
 
 ## Error codes
 
@@ -419,4 +421,6 @@ example `error MD0201: mods/my_mod/parts/a.json(4) $.mass: mass must be greater 
 | MD06xx | World generation and POI prefabs. See [World Generation](world-generation.md). |
 | MD0701 | A recipe value is missing or invalid. |
 | MD0702 | Two recipe files in a mod use the same id. |
+| MD0703 | A recipe override names a recipe the other mod does not have. |
+| MD0704 | Two mods override the same recipe (warning). |
 | MD08xx | Sound events. See [Sound Events](sound-events.md#error-codes). |

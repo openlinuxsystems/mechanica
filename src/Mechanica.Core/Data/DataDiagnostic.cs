@@ -93,6 +93,8 @@ public static class DiagnosticCodes
     // 07xx: recipes and inventories
     public const string RecipeInvalid = "MD0701";
     public const string DuplicateRecipe = "MD0702";
+    public const string RecipeOverrideUnknown = "MD0703";
+    public const string RecipeOverrideConflict = "MD0704";
 
     // 08xx: sound events
     public const string SoundInvalid = "MD0801";
