@@ -136,36 +136,38 @@ public class SurvivalActionsTests
     public void ACropGrowsOnlyWhileWateredAndIsHarvestedRipe()
     {
         var soil = _f.Add(Soil, new Vector3(0, 0, 1));
-        _f.Pockets(Me).Add(Bucket, 3);
-        var seed = _f.SlotOf(Me, Seed);
-        var bucket = _f.SlotOf(Me, Bucket);
+        var survival = _f.Survival;
 
-        Assert.Equal("Bucket cannot be planted.", _f.Refused(Me, SurvivalActions.Plant, new { creation = soil, part = 1, slot = bucket }));
-        var planted = _f.Ok<SoilView>(Me, SurvivalActions.Plant, new { creation = soil, part = 1, slot = seed });
-        Assert.Equal(new SoilView(soil, 1, Seed, Crop, 0, 0, 60), planted);
-        Assert.Equal("Something is already growing there.", _f.Refused(Me, SurvivalActions.Plant, new { creation = soil, part = 1, slot = seed }));
+        Assert.Null(survival.CheckSoil(Me, soil, 1));
+        Assert.Equal("Bucket cannot be planted.", survival.CheckPlant(Me, soil, 1, Bucket));
+        Assert.Throws<InvalidOperationException>(() => survival.PlantSeed(Me, soil, 1, Bucket));
+        Assert.Equal(new SoilView(soil, 1, Seed, Crop, 0, 0, 60), survival.PlantSeed(Me, soil, 1, Seed));
+        Assert.Equal("Something is already growing there.", survival.CheckPlant(Me, soil, 1, Seed));
+        Assert.Equal(2, _f.Pockets(Me).Count(Seed)); // the seed's script uses one up, not the primitive
 
-        _f.Survival.Tick(100);
+        survival.Tick(100);
         Assert.Equal(0, View(soil).Stage); // dry soil: nothing grows
 
-        Assert.Equal(30f, _f.Ok<SoilView>(Me, SurvivalActions.Water, new { creation = soil, part = 1, slot = bucket }).Water);
-        Assert.Equal(60f, _f.Ok<SoilView>(Me, SurvivalActions.Water, new { creation = soil, part = 1, slot = bucket }).Water);
-        Assert.Equal("The soil is already full of water.", _f.Refused(Me, SurvivalActions.Water, new { creation = soil, part = 1, slot = bucket }));
+        Assert.Throws<ArgumentOutOfRangeException>(() => survival.WaterSoil(Me, soil, 1, 0));
+        Assert.Equal(30f, survival.WaterSoil(Me, soil, 1, 30).Water);
+        Assert.Equal(60f, survival.WaterSoil(Me, soil, 1, 45).Water); // up to the capacity
+        Assert.Equal("The soil is already full of water.", survival.CheckWater(Me, soil, 1));
+        Assert.Throws<InvalidOperationException>(() => survival.WaterSoil(Me, soil, 1, 30));
 
-        _f.Survival.Tick(10); // growth 2: 20 of 40 s
+        survival.Tick(10); // growth 2: 20 of 40 s
         Assert.Equal(2, View(soil).Stage);
         Assert.Equal(50f, View(soil).Water);
         Assert.Equal("The Crop is not ripe yet.", _f.Refused(Me, SurvivalActions.Harvest, new { creation = soil, part = 1 }));
-        Assert.Equal(3f, _f.Survival.CropValue());
+        Assert.Equal(3f, survival.CropValue());
 
-        _f.Survival.Tick(100); // ripe after 10 more s; the rest of the water stays
+        survival.Tick(100); // ripe after 10 more s; the rest of the water stays
         Assert.True(View(soil).Ripe);
         Assert.Equal(40f, View(soil).Water);
         var harvest = _f.Ok<HarvestResult>(Me, SurvivalActions.Harvest, new { creation = soil, part = 1 });
         Assert.Equal([new ItemAmount(Crop, 2), new ItemAmount(Seed, 1)], harvest.Items);
-        Assert.Equal(2, _f.Pockets(Me).Count(Seed)); // 2 - 1 planted + 1 back
+        Assert.Equal(3, _f.Pockets(Me).Count(Seed)); // 2 + 1 back
         Assert.Null(View(soil).Seed);
-        Assert.Equal(0f, _f.Survival.CropValue());
+        Assert.Equal(0f, survival.CropValue());
         Assert.Equal("Nothing is growing there.", _f.Refused(Me, SurvivalActions.Harvest, new { creation = soil, part = 1 }));
     }
 
@@ -174,17 +176,19 @@ public class SurvivalActionsTests
     {
         var far = _f.Add(Soil, new Vector3(0, 0, 30));
         var block = _f.Add(Block, new Vector3(0, 0, 1));
-        var seed = _f.SlotOf(Me, Seed);
-        Assert.StartsWith("That is ", _f.Refused(Me, SurvivalActions.Plant, new { creation = far, part = 1, slot = seed }));
-        Assert.Equal("The Block is not soil.", _f.Refused(Me, SurvivalActions.Plant, new { creation = block, part = 1, slot = seed }));
-        Assert.Equal("There is no part 1 in creation 99.", _f.Refused(Me, SurvivalActions.Plant, new { creation = 99, part = 1, slot = seed }));
+        Assert.StartsWith("That is ", _f.Survival.CheckPlant(Me, far, 1, Seed));
+        Assert.StartsWith("That is ", _f.Survival.CheckWater(Me, far, 1));
+        Assert.Null(_f.Survival.CheckSoil(new ActionCaller(Me.Peer, ActionSource.Script), far, 1)); // only players need reach
+        Assert.Equal("The Block is not soil.", _f.Survival.CheckSoil(Me, block, 1));
+        Assert.Equal("There is no part 1 in creation 99.", _f.Survival.CheckWater(Me, 99, 1));
+        Assert.Equal("Unknown item 'test:nothing'.", _f.Survival.CheckPlant(Me, _f.Add(Soil, new Vector3(0, 0, 1)), 1, "test:nothing"));
     }
 
     [Fact]
     public void AHarvestNeedsRoom()
     {
         var soil = _f.Add(Soil, new Vector3(0, 0, 1));
-        _f.Ok(Me, SurvivalActions.Plant, new { creation = soil, part = 1, slot = _f.SlotOf(Me, Seed) });
+        _f.Survival.PlantSeed(Me, soil, 1, Seed);
         _f.World.FindCreation(soil)!.SoilOf(1)!.Load(Seed, 40, 0);
         foreach (var slot in Enumerable.Range(0, 4))
             _f.Pockets(Me).SetSlot(slot, new ItemStack(Scrap, 50));

@@ -16,8 +16,8 @@ namespace Mechanica.Game.Tests;
 /// <summary>
 /// The survival loop, host plus client (chunk 20, D10), with the vanilla content on a flat world. The
 /// client starts with the starting items and pays for what it builds; it plants, waters and harvests a
-/// carrot, eats, shoots the host with a Potato Blaster (food and weapons are Lua item scripts, chunk 20b),
-/// sees a projectile fly, falls, dies, drops its things, respawns, picks them back up, and respawns at a bed
+/// carrot, eats, shoots the host with a Potato Blaster (seeds, water, food and weapons are Lua item scripts, chunk 20b),
+/// throws a Popper that arcs on both machines and bursts, falls, dies, drops its things, respawns, picks them back up, and respawns at a bed
 /// it slept in. Every step is checked on the host and on the client.
 /// </summary>
 public partial class SurvivalTest : StagedTest
@@ -28,6 +28,7 @@ public partial class SurvivalTest : StagedTest
     private const string Soil = "vanilla:soil";
     private const string Blaster = "vanilla:potato_blaster";
     private const string Potato = "vanilla:potato";
+    private const string Popper = "vanilla:popper";
 
     private readonly List<ActionResult> _results = [];
     private NetTestHarness _harness = null!;
@@ -39,6 +40,8 @@ public partial class SurvivalTest : StagedTest
     private Vector3 _diedAt;
     private int _projectile;
     private bool _projectileSeen;
+    private double _thrownAt;
+    private readonly Dictionary<int, double> _landed = [];
 
     protected override string Tag => "survival";
 
@@ -90,14 +93,19 @@ public partial class SurvivalTest : StagedTest
         {
             if (frame == 0)
             {
-                Request(SurvivalActions.Plant, new PartUseArgs(_soil, _soilPart, SlotOf(Seed)));
-                Request(SurvivalActions.Water, new PartUseArgs(_soil, _soilPart, SlotOf(Bucket)));
+                Request(ScriptRuntime.UseItem, new UseItemArgs(SlotOf(Seed), Creation: _soil, Part: _soilPart));
+                Request(ScriptRuntime.UseItem, new UseItemArgs(SlotOf(Bucket), Creation: _soil, Part: _soilPart));
             }
             if (frame == 30)
-                Request(SurvivalActions.Water, new PartUseArgs(_soil, _soilPart, SlotOf(Bucket)));
+                Request(ScriptRuntime.UseItem, new UseItemArgs(SlotOf(Bucket), Creation: _soil, Part: _soilPart));
             if (_results.Count < 3 || _client.Main.Survival.Soil.GetValueOrDefault((_soil, _soilPart)) is not { Seed: not null } soil || soil.Water < 250)
                 return false;
             Check(_results.All(r => r.Ok), $"planting and watering succeed ({string.Join("; ", _results)})");
+            var planted = System.Text.Json.Nodes.JsonNode.Parse(_results[0].Value!.Value.GetRawText())!;
+            Check((string?)planted["seed"] == Seed && (string?)planted["crop"] == Carrot, $"the seed's script answers with the soil ({planted.ToJsonString()})");
+            var host = HostSurvival.SoilViewOf(_host.Main.Creations.Find(_soil)!, _soilPart);
+            // The host's water drains as the crop grows; the client sees it on the next stage.
+            Check(host.Seed == soil.Seed && host.Water <= soil.Water + 0.01f && host.Water > 200, $"the host and client agree on the soil ({host} vs {soil})");
             Check(Count(Seed) == 3 && Count(Bucket) == 0, $"a seed and both buckets are used ({Items()})");
             Check(!soil.Ripe && _client.Main.Survival.CropNodes.ContainsKey((_soil, _soilPart)), "the client shows a young crop");
             return true;
@@ -170,17 +178,37 @@ public partial class SurvivalTest : StagedTest
             Check(_host.Main.Scripts.Runtime.Held.GetValueOrDefault(Peer).Item == Blaster, "the host knows the blaster is in the client's hand");
             return true;
         });
-        Stage("a projectile flies on the client too and lands", frame =>
+        Stage("a thrown Popper arcs on the client too and bursts", frame =>
         {
             if (frame == 0)
-                _projectile = HostSurvival.Launch(1, (Feet(_host) + new Vector3(2, 3, 0)).ToNumerics(), System.Numerics.Vector3.Zero,
-                    new System.Numerics.Vector3(0, -9.81f, 0), 5).Id;
-            var shown = _client.Main.Survival.ProjectileNodes.GetValueOrDefault(_projectile);
-            if (shown is not null)
-                _projectileSeen = true;
-            if (!_projectileSeen || shown is not null || _host.Main.Survival.ProjectileNodes.ContainsKey(_projectile))
+            {
+                _host.Main.Inventory.Items!.PlayerInventory(Peer).Add(Popper, 2);
+                LookAt(_client, Eye(_host) + new Vector3(0, 3, 0)); // lob it up and over, away from the thrower
+                HostSurvival.ProjectileLanded += OnLanded;
+            }
+            if (frame == 20)
+            {
+                var aim = -_client.Main.LocalPlayer!.Camera.GlobalBasis.Z;
+                Request(ScriptRuntime.UseItem, new UseItemArgs(SlotOf(Popper), new Vec3(aim.X, aim.Y, aim.Z)));
+            }
+            if (_results.Count > 0 && _projectile == 0)
+            {
+                Check(_results[0].Ok, $"the Popper is thrown ({_results[0]})");
+                var thrown = System.Text.Json.Nodes.JsonNode.Parse(_results[0].Value!.Value.GetRawText())!["projectiles"]!.AsArray();
+                Check(thrown.Count == 1, $"one Popper flies ({_results[0]})");
+                _projectile = thrown[0]!.GetValue<int>();
+                _thrownAt = HostSurvival.World.Now;
+            }
+            if (_projectile == 0)
                 return false;
-            Check(!HostSurvival.Projectiles.Any(), "the host's projectile hit the ground and is gone");
+            if (_client.Main.Survival.ProjectileNodes.ContainsKey(_projectile))
+                _projectileSeen = true;
+            if (!_landed.TryGetValue(_projectile, out var landedAt) || _client.Main.Survival.ProjectileNodes.ContainsKey(_projectile))
+                return false;
+            HostSurvival.ProjectileLanded -= OnLanded;
+            Check(_projectileSeen, "the client drew the Popper in flight");
+            Check(landedAt - _thrownAt > 0.2, $"it took time to land ({landedAt - _thrownAt:F2} s)");
+            Check(Count(Popper) == 1 && !HostSurvival.Projectiles.Any(), $"one Popper is used up and none is left flying ({Items()})");
             return true;
         });
         Stage("a fall hurts", frame =>
@@ -294,6 +322,11 @@ public partial class SurvivalTest : StagedTest
     }
 
     private void Request<T>(string action, T args) => _client.Main.Actions.Request(action, args, _results.Add);
+
+    private void OnLanded(ProjectileLanding landing)
+    {
+        _landed[landing.Id] = HostSurvival.World.Now;
+    }
 
     private int Count(string item) => _client.Main.Inventory.Own?.Items.Where(s => s.Item == item).Sum(s => s.Count) ?? 0;
 

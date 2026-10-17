@@ -13,11 +13,11 @@ namespace Mechanica.Game.Building;
 /// The item in the local player's hand (chunk 20): Q and E pick one of the usable items in their
 /// inventory (food, weapons, seeds, water), left click uses it and G drops one on the ground.
 /// <list type="bullet">
-/// <item>An item with a script (food, weapons; chunk 20b): <c>UseItem</c> where the crosshair points. Its
-/// Lua decides what that does on the host. While this tool is out, <c>EquipItem</c> tells the host which
-/// scripted item is in hand (its <c>on_equip</c> and <c>on_unequip</c>).</item>
-/// <item>A seed: <c>Plant</c> it in the soil under the crosshair. Water: <c>Water</c> that soil.</item>
-/// <item>Aimed at water with water in hand or nothing usable: <c>CollectWater</c> fills a bucket.</item>
+/// <item>An item with a script (food, weapons, seeds, water; chunk 20b): <c>UseItem</c> where the crosshair
+/// points, with the part under it when that is in reach (the soil a seed is planted in). Its Lua decides
+/// what that does on the host. While this tool is out, <c>EquipItem</c> tells the host which scripted
+/// item is in hand (its <c>on_equip</c> and <c>on_unequip</c>).</item>
+/// <item>Aimed at the sea with water in hand or nothing usable: <c>CollectWater</c> fills a bucket.</item>
 /// </list>
 /// The host decides every one; nothing changes here until it answers.
 /// </summary>
@@ -58,27 +58,20 @@ public partial class ItemTool : HandTool
     {
         var hand = InHand;
         var item = hand is null ? null : Survival.Catalog.FindDefinition(hand.Item);
-        if (item is not null && IsScripted(item))
-        {
-            var aim = -Player.Camera.GlobalBasis.Z;
-            Send(ScriptRuntime.UseItem, new UseItemArgs(hand!.Slot, new Vec3(aim.X, aim.Y, aim.Z)), done);
-            return true;
-        }
         var reach = Survival.Settings!.Reach;
         var hit = Cast(Player, reach);
-        if (PartHit(hit) is { } aimed && aimed.Node.Creation.DefinitionOf(aimed.Part).Soil is not null && hand is not null
-            && (item?.Seed is not null || item?.Watering is not null))
+        var aimed = PartHit(hit);
+        var water = Identifiers.Qualify(Survival.Settings.WaterItem);
+        if ((item is null || hand!.Item == water && aimed is null) && WaterAimed(hit, reach) is { } sea)
         {
-            Send(item!.Seed is not null ? SurvivalActions.Plant : SurvivalActions.Water,
-                new PartUseArgs(aimed.Node.Creation.Id, aimed.Part, hand.Slot), done);
+            Send(SurvivalActions.CollectWater, new CollectWaterArgs(new Vec3(sea.X, sea.Y, sea.Z)), done);
             return true;
         }
-        if ((item is null || item.Watering is not null) && WaterAimed(hit, reach) is { } water)
-        {
-            Send(SurvivalActions.CollectWater, new CollectWaterArgs(new Vec3(water.X, water.Y, water.Z)), done);
-            return true;
-        }
-        return false;
+        if (item is null || !IsScripted(item))
+            return false;
+        var aim = -Player.Camera.GlobalBasis.Z;
+        Send(ScriptRuntime.UseItem, new UseItemArgs(hand!.Slot, new Vec3(aim.X, aim.Y, aim.Z), aimed?.Node.Creation.Id, aimed?.Part), done);
+        return true;
     }
 
     /// <summary>Drops one of the item in hand on the ground in front of the player.</summary>
@@ -138,7 +131,7 @@ public partial class ItemTool : HandTool
     private static bool IsScripted(PartDefinition d) => d.Script is not null && !d.IsPlaceable;
 
     private bool IsUsable(string id) =>
-        Survival.Catalog.FindDefinition(id) is { } d && (IsScripted(d) || d.Seed is not null || d.Watering is not null);
+        Survival.Catalog.FindDefinition(id) is { } d && IsScripted(d);
 
     // Where the aim ray meets the sea within reach, when nothing solid is in the way first.
     private Vector3? WaterAimed(RayHit? hit, float reach)
