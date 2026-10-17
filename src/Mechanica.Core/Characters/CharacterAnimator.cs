@@ -260,7 +260,7 @@ public sealed class CharacterAnimator
         else if (_gesture is not null)
         {
             _gestureTime += delta;
-            if (_gestureTime >= _lengths[_gesture])
+            if (_gestureTime >= GestureLength(_gesture))
                 _gesture = null;
         }
 
@@ -364,7 +364,7 @@ public sealed class CharacterAnimator
         var gesture = 0f;
         if (_gesture is not null)
         {
-            var length = _lengths[_gesture];
+            var length = GestureLength(_gesture);
             gesture = Math.Clamp(MathF.Min(_gestureTime / _settings.GestureFadeIn, (length - _gestureTime) / _settings.GestureFadeOut), 0f, 1f);
         }
 
@@ -372,7 +372,7 @@ public sealed class CharacterAnimator
         foreach (var (clip, weight) in _holds)
             AddTo(_upper, clip, _clock, weight * scale);
         if (_gesture is not null)
-            AddTo(_upper, _gesture, _gestureTime, gesture);
+            AddTo(_upper, _gesture, _gestureTime * _lengths[_gesture] / GestureLength(_gesture), gesture);
         UpperWeight = Math.Clamp(held * (1f - gesture) + gesture, 0f, 1f);
     }
 
@@ -454,6 +454,9 @@ public sealed class CharacterAnimator
         [.. clips.Where(_lengths.ContainsKey).Select(c => (c, SpeedOf(c))).OrderBy(c => c.Item2)];
 
     private float SpeedOf(string clip) => _settings.ClipSpeeds.GetValueOrDefault(clip);
+
+    // How long a gesture plays: its own length unless the settings give it another.
+    private float GestureLength(string clip) => _settings.GestureSeconds.TryGetValue(clip, out var seconds) ? seconds : _lengths[clip];
 
     private void Add(string clip, float time, float weight) => AddTo(_body, clip, time, weight);
 

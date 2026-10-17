@@ -18,14 +18,14 @@ These are the default keys. Every one can be changed in Options, Controls.
 | Mouse | Look. Click the world to take the mouse back after a menu. |
 | X / C | Zoom the camera in or out a step (also Alt + scroll). You start in third person over the shoulder; all the way in is first person. |
 | 1 to 9, 0 | Pick a hotbar slot. It starts with the Hammer, Lift, Weld, Paint, Sledgehammer and Connect Tool. |
-| Left click | Create, attack or place: the Hammer places a part when you let go, the Sledgehammer swings. With the Hammer, hold still to lock the ghost (arrows show the ways it can grow), then drag to lay a grid of up to 16 by 16 parts; Q steps the grid's plane while you drag. |
-| Right click | Remove or pick up: hold it on a part with the Hammer until the ring round the crosshair fills (wood is quickest, metal slower); let go early to stop. Drag with it held to remove the parts of one body across a face. The Lift takes its Creation away. |
+| Left click | Create, attack or place: the Hammer places a part when you let go, the Sledgehammer swings. With the Hammer, hold still to lock the ghost (arrows show the ways it can grow), then drag to lay a grid of up to 16 by 16 parts; Q steps the grid's plane while you drag. Hold and drag with the Paint Tool to paint every part you pass over, or with the Weld Tool from one part to another to weld them. |
+| Right click | Remove or pick up: hold it on a part with the Hammer until the ring round the crosshair fills (wood is quickest, metal slower); let go early to stop. Drag with it held to remove the parts of one body across a face. Hold it with the Lift to take the Lift away, with the Sledgehammer to block, and with the Paint Tool to take paint off (drag for more). |
 | Scroll | Previous or next hotbar slot |
-| Q / Shift + Q | Turn the part (Hammer, Weld, Lift) or pick the next or previous colour (Paint) |
+| Q / Shift + Q | Turn the part (Hammer, Weld, Lift). With the Paint Tool, Q opens the colour picker and Shift + Q picks the previous colour. |
 | T | Hammer and Weld: tip the part over |
 | Up / Down arrows | Raise or lower the Lift |
 | G | Drop one of the item in hand |
-| E | Use: open a container or station, pick up items, harvest, sleep in a bed, sit in or leave a seat, use a part, change a part's settings, use a quest marker, talk, respawn after dying |
+| E | Use: open the blueprint menu (the Lift in hand, aimed at your Lift), open a container or station, pick up items, harvest, sleep in a bed, sit in or leave a seat, use a part, change a part's settings, use a quest marker, talk, respawn after dying |
 | I or B | Inventory |
 | L | Logbook: the quest log, where you pick an answer when a quest asks you to decide |
 | Esc | Menu: save, load, open your world to the LAN, Options, help, quit. Esc also closes any open window. |
@@ -54,6 +54,30 @@ stops getting your input.
   red.
 - **Tips** show at the bottom of the screen, above the hotbar; hold Use (**E**) to dismiss one early.
 - If the game window loses focus, anything you are holding down (such as dismissing a tip) is cancelled.
+
+## Lift, Weld Tool, Paint Tool and Sledgehammer
+
+- **Lift.** Left click on the ground puts your Lift down (you have one; putting it somewhere else moves it).
+  Left click a Creation to slide the Lift under it and pick it up; it stands still on the platform until you
+  take the Lift away. The arrow keys raise and lower it and Q turns what it holds. Hold right click until the
+  ring fills to take the Lift away; what it held drops. A Creation whose chests or tanks hold items cannot be
+  lifted ("Cannot lift with attached resources."): empty it first.
+- **Blueprints.** With the Lift in hand, aim at your Lift and press **E**. The menu lists your newest 50
+  blueprints with a picture of each. Type a name and **Save** to keep what the Lift holds (saving over a name
+  asks first); choose one and **Load** to build it on your empty Lift. In Survival loading takes the parts
+  from your inventory, so you need one of each; what was in chests and any damage are not saved. **Delete**
+  asks before it removes a blueprint. Blueprints are files in your user folder (`user://blueprints/`).
+- **Weld Tool.** Click a part to select it (it gets a blue outline), then click a part of another Creation to
+  move the first one there and weld them, or a touching part of the same Creation to weld the two bodies
+  together. Or hold left click on the first part and let go on the second. A blue square shows where they will
+  join, a see-through copy shows where a moved Creation goes (Q and T turn it), and a blue seam glows on the
+  joined faces for a moment afterwards. Right click drops the selection.
+- **Paint Tool.** Left click paints a part; hold and drag to paint every part you pass over (up to 256 at a
+  time). Right click (or drag) takes the paint off. **Q** opens the colour picker round the cursor: move the
+  mouse towards a colour and click, or press 1 to 0 for the first ten. Esc or Q again closes it.
+- **Sledgehammer.** Left click swings (0.4 s a swing). Hold right click to block: hits from other players'
+  Sledgehammers and from bots do a quarter of their damage while you block. In Creative nothing takes damage,
+  so blocking matters where players can be hurt.
 
 ## Hotbar and inventory
 

@@ -197,6 +197,20 @@ public class CharacterAnimatorTests
     }
 
     [Fact]
+    public void AGestureCanBeTimedToTheTool()
+    {
+        // The sledge clip is 0.45 s long; the swing takes 0.4 s (UI spec §10), so the clip plays faster.
+        var animator = new CharacterAnimator(new CharacterSettings { GestureSeconds = new() { ["sledge_swing"] = 0.4f } }, Lengths);
+        var pose = Standing() with { Prop = CharacterProp.Sledgehammer, Gesture = CharacterGesture.SledgeSwing, GestureCount = 1 };
+        Run(animator, Standing() with { Prop = CharacterProp.Sledgehammer }, 0.2f);
+        Run(animator, pose, 0.2f);
+        // Started on the first of the frames, so 0.2 s less one frame in.
+        Assert.Equal((0.2f - Dt) * 0.45f / 0.4f, animator.Upper.Single(c => c.Clip == "sledge_swing").Time, 3);
+        Run(animator, pose, 0.21f);
+        Assert.Null(animator.Gesture);
+    }
+
+    [Fact]
     public void HandsAreFreeWhileSwimming()
     {
         var animator = Make();

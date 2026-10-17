@@ -109,6 +109,13 @@ public interface IBuildCosts
     /// <summary>Takes payment for one <paramref name="part"/> that was just placed.</summary>
     void Placed(ActionCaller caller, string part);
 
+    /// <summary>
+    /// Null when <paramref name="caller"/> can pay for all of <paramref name="parts"/> at once (qualified id to count),
+    /// as loading a blueprint does, or why not.
+    /// </summary>
+    string? CheckPlaceAll(ActionCaller caller, IReadOnlyDictionary<string, int> parts) =>
+        parts.Keys.Select(p => CheckPlace(caller, p)).FirstOrDefault(r => r is not null);
+
     /// <summary>Gives back one <paramref name="part"/> that was just removed at world point <paramref name="at"/> (dropped there when it does not fit).</summary>
     void Removed(ActionCaller caller, string part, Vector3 at);
 }

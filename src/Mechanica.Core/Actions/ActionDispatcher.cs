@@ -14,6 +14,7 @@ public sealed partial class ActionDispatcher
     private readonly Dictionary<string, Func<ActionCaller, string, ActionResult>> _actions = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Delegate> _typed = new(StringComparer.Ordinal);
     private readonly HashSet<string> _readOnly = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, int> _maxArgs = new(StringComparer.Ordinal);
 
     /// <summary>Raised after every dispatch, successful or not.</summary>
     public event Action<ActionRecord>? Dispatched;
@@ -31,13 +32,16 @@ public sealed partial class ActionDispatcher
     /// Registers an action. <paramref name="validate"/> returns null to accept or a reason to reject and
     /// must not change state; <paramref name="apply"/> runs only after it accepts and returns an optional
     /// result value. A <paramref name="readOnly"/> action only reads state (a query), so recordings skip it.
+    /// Arguments are at most <see cref="ActionJson.MaxArgsLength"/> characters unless <paramref name="maxArgsLength"/>
+    /// allows more (a blueprint carries a whole Creation).
     /// </summary>
     /// <typeparam name="TArgs">Argument record, read from snake_case JSON. Unknown members are rejected.</typeparam>
     public void Register<TArgs>(
         string name,
         Func<ActionCaller, TArgs, string?> validate,
         Func<ActionCaller, TArgs, JsonElement?> apply,
-        bool readOnly = false)
+        bool readOnly = false,
+        int? maxArgsLength = null)
         where TArgs : class
     {
         if (!ValidName().IsMatch(name))
@@ -47,10 +51,15 @@ public sealed partial class ActionDispatcher
         _typed[name] = (Func<ActionCaller, TArgs, ActionResult>)((caller, args) => Check(caller, args, validate, apply));
         if (readOnly)
             _readOnly.Add(name);
+        if (maxArgsLength is { } max)
+            _maxArgs[name] = max;
     }
 
     /// <summary>True when <paramref name="name"/> is registered.</summary>
     public bool Has(string name) => _actions.ContainsKey(name);
+
+    /// <summary>Longest arguments, in characters, <paramref name="name"/> accepts.</summary>
+    public int MaxArgsOf(string name) => _maxArgs.GetValueOrDefault(name, ActionJson.MaxArgsLength);
 
     /// <summary>True when <paramref name="name"/> is a registered query that changes no state.</summary>
     public bool IsReadOnly(string name) => _readOnly.Contains(name);
@@ -61,8 +70,8 @@ public sealed partial class ActionDispatcher
         ActionResult result;
         if (!_actions.TryGetValue(name ?? "", out var run))
             result = ActionResult.Failure(ActionErrors.UnknownAction, $"No action named '{Shorten(name)}'.");
-        else if (argsJson is null || argsJson.Length > ActionJson.MaxArgsLength)
-            result = ActionResult.Failure(ActionErrors.BadArgs, $"Arguments must be a JSON object of at most {ActionJson.MaxArgsLength} characters.");
+        else if (argsJson is null || argsJson.Length > MaxArgsOf(name!))
+            result = ActionResult.Failure(ActionErrors.BadArgs, $"Arguments must be a JSON object of at most {MaxArgsOf(name!)} characters.");
         else if (!_readOnly.Contains(name!) && Gate?.Invoke(caller, name!) is { } closed)
             result = ActionResult.Failure(ActionErrors.Rejected, closed);
         else

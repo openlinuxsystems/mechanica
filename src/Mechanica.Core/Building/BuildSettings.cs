@@ -36,6 +36,9 @@ public sealed record BuildSettings
     /// <summary>The Connect Tool's nodes, lines, drag and tooltips.</summary>
     public ConnectSettings Connect { get; init; } = new();
 
+    /// <summary>The Weld Tool.</summary>
+    public WeldSettings Weld { get; init; } = new();
+
     /// <summary>The Lift.</summary>
     public LiftSettings Lift { get; init; } = new();
 
@@ -75,6 +78,7 @@ public sealed record BuildSettings
             throw new FormatException($"clearance_scale must be in (0, 1] (got {ClearanceScale}).");
         Hammer.Validate();
         Connect.Validate();
+        Weld.Validate();
         Lift.Validate();
         Paint.Validate();
         Sledge.Validate();
@@ -199,9 +203,25 @@ public sealed record ConnectSettings
     }
 }
 
+/// <summary>The Weld Tool (UI spec §8): how long the blue seam stays on the faces a weld joined.</summary>
+public sealed record WeldSettings
+{
+    /// <summary>Seconds the seam highlight takes to fade after a weld.</summary>
+    public double SeamSeconds { get; init; } = 1.5;
+
+    /// <summary>Throws <see cref="FormatException"/> naming the first out-of-range value.</summary>
+    public void Validate()
+    {
+        if (!double.IsFinite(SeamSeconds) || SeamSeconds < 0)
+            throw new FormatException($"weld.seam_seconds must be 0 or more (got {SeamSeconds}).");
+    }
+}
+
 /// <summary>
 /// The Lift: a square platform a player puts on the ground, which holds one Creation still on top and
-/// raises or lowers it in steps. It has no stamina cost (D12).
+/// raises or lowers it in steps. It has no stamina cost (D12). Holding right click for
+/// <see cref="RemoveHoldSeconds"/> takes it away. Its blueprint menu (UI spec §5, §9) lists at most
+/// <see cref="MaxBlueprints"/> saves, and a blueprint sent to the host is at most <see cref="BlueprintMaxBytes"/> long.
 /// </summary>
 public sealed record LiftSettings
 {
@@ -217,6 +237,18 @@ public sealed record LiftSettings
     /// <summary>Highest level.</summary>
     public int MaxLevel { get; init; } = 16;
 
+    /// <summary>Seconds right click is held on the Lift before it is taken away.</summary>
+    public double RemoveHoldSeconds { get; init; } = 0.5;
+
+    /// <summary>When true, a Creation whose storage holds items cannot be picked up (UI spec §9 edge case).</summary>
+    public bool RefuseStoredItems { get; init; } = true;
+
+    /// <summary>Most blueprints the menu lists, newest first.</summary>
+    public int MaxBlueprints { get; init; } = 50;
+
+    /// <summary>Longest blueprint, in characters of JSON, that <c>LoadBlueprint</c> accepts.</summary>
+    public int BlueprintMaxBytes { get; init; } = 1024 * 1024;
+
     /// <summary>Height of the platform's top above its base at <paramref name="level"/>, in metres.</summary>
     public float TopAt(int level) => BaseHeight + level * LevelHeight;
 
@@ -228,6 +260,12 @@ public sealed record LiftSettings
         BuildSettings.Positive(LevelHeight, "lift.level_height");
         if (MaxLevel < 0)
             throw new FormatException($"lift.max_level must be 0 or more (got {MaxLevel}).");
+        if (!double.IsFinite(RemoveHoldSeconds) || RemoveHoldSeconds < 0)
+            throw new FormatException($"lift.remove_hold_seconds must be 0 or more (got {RemoveHoldSeconds}).");
+        if (MaxBlueprints < 1)
+            throw new FormatException($"lift.max_blueprints must be at least 1 (got {MaxBlueprints}).");
+        if (BlueprintMaxBytes < 1024)
+            throw new FormatException($"lift.blueprint_max_bytes must be at least 1024 (got {BlueprintMaxBytes}).");
     }
 }
 
@@ -240,8 +278,11 @@ public sealed record PaintSettings
     /// <summary>Colours the tool offers, <c>"#rrggbb"</c>, in display order. The host accepts any colour.</summary>
     public IReadOnlyList<string> Palette { get; init; } = DefaultPalette;
 
-    /// <summary>Most parts one Paint action may colour.</summary>
+    /// <summary>Most parts one Paint action may colour, and one drag may cover.</summary>
     public int MaxPartsPerAction { get; init; } = 256;
+
+    /// <summary>While dragging, how often the parts passed over are sent to the host, in seconds.</summary>
+    public double DragFlushSeconds { get; init; } = 0.1;
 
     /// <summary>Throws <see cref="FormatException"/> naming the first out-of-range value.</summary>
     public void Validate()
@@ -252,6 +293,8 @@ public sealed record PaintSettings
             throw new FormatException($"paint.palette has \"{bad}\", which is not \"#rrggbb\".");
         if (MaxPartsPerAction < 1)
             throw new FormatException($"paint.max_parts_per_action must be at least 1 (got {MaxPartsPerAction}).");
+        if (!double.IsFinite(DragFlushSeconds) || DragFlushSeconds < 0)
+            throw new FormatException($"paint.drag_flush_seconds must be 0 or more (got {DragFlushSeconds}).");
     }
 }
 
@@ -259,7 +302,8 @@ public sealed record PaintSettings
 /// The Sledgehammer. A part's health is its <c>durability</c> times <see cref="HealthPerDurability"/>
 /// (D13); each hit takes <see cref="Damage"/> and pushes the Body, and a part at 0 health breaks off.
 /// Parts without a durability cannot be broken. Hits on players and world objects take
-/// <see cref="PlayerDamage"/> and <see cref="ObjectDamage"/> instead.
+/// <see cref="PlayerDamage"/> and <see cref="ObjectDamage"/> instead. Holding right click blocks (UI spec §9):
+/// damage of a <see cref="BlockCauses"/> kind the blocking player takes is multiplied by <see cref="BlockDamageScale"/>.
 /// </summary>
 public sealed record SledgeSettings
 {
@@ -270,7 +314,7 @@ public sealed record SledgeSettings
     public float HealthPerDurability { get; init; } = 10f;
 
     /// <summary>Shortest time between one player's hits, in seconds.</summary>
-    public float SwingSeconds { get; init; } = 0.5f;
+    public float SwingSeconds { get; init; } = 0.4f;
 
     /// <summary>Impulse a hit gives the Body it lands on, in N·s, along the swing.</summary>
     public float Impulse { get; init; } = 20f;
@@ -280,6 +324,15 @@ public sealed record SledgeSettings
 
     /// <summary>Health one hit takes from a tree, rock or other world object that can break (chunk 20).</summary>
     public float ObjectDamage { get; init; } = 10f;
+
+    /// <summary>What damage a blocking player takes is multiplied by, 0 to 1.</summary>
+    public float BlockDamageScale { get; init; } = 0.25f;
+
+    /// <summary>The damage causes a block stops (<c>"sledge"</c> hits, <c>"bot"</c> attacks).</summary>
+    public IReadOnlyList<string> BlockCauses { get; init; } = DefaultBlockCauses;
+
+    // One shared default, so settings that keep it compare equal.
+    private static readonly IReadOnlyList<string> DefaultBlockCauses = ["sledge", "bot"];
 
     /// <summary>Full health of a part with <paramref name="durability"/>, or null when it cannot break.</summary>
     public float? HealthOf(int? durability) => durability is > 0 ? durability.Value * HealthPerDurability : null;
@@ -295,5 +348,7 @@ public sealed record SledgeSettings
             throw new FormatException($"sledge.impulse must be 0 or more (got {Impulse}).");
         BuildSettings.Positive(PlayerDamage, "sledge.player_damage");
         BuildSettings.Positive(ObjectDamage, "sledge.object_damage");
+        if (!float.IsFinite(BlockDamageScale) || BlockDamageScale is < 0f or > 1f)
+            throw new FormatException($"sledge.block_damage_scale must be 0 to 1 (got {BlockDamageScale}).");
     }
 }

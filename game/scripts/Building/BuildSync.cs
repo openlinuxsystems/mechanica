@@ -112,7 +112,7 @@ public partial class BuildSync : Node, IToolWorld, IPartCatalog
     {
         Settings ??= LoadSettings();
         new BuildActions(this, Settings, this) { Costs = Costs }.Register(dispatcher);
-        Tools = new ToolActions(Settings, this);
+        Tools = new ToolActions(Settings, this, this) { Costs = Costs };
         Tools.Register(dispatcher);
         _dispatcher = dispatcher;
         dispatcher.Register<SpawnPartArgs>(CreationActions.SpawnPart,

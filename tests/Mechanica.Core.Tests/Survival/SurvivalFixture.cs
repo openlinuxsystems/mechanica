@@ -65,10 +65,12 @@ internal sealed class SurvivalFixture
         };
         Inventories = new InventoryActions(Catalog, RecipeBook.Empty,
             new InventorySettings { Reach = 5, PlayerSlots = 4, AllowGive = true }, World);
-        Tools = new ToolActions(new BuildSettings(), World);
+        Tools = new ToolActions(new BuildSettings(), World, Catalog);
         World.Tools = Tools;
         Survival = new SurvivalActions(Catalog, Settings, Inventories, World) { Mode = mode };
         Tools.Targets = Survival;
+        Tools.Costs = Survival;
+        Survival.DamageScale = Tools.DamageScale;
         World.Survival = Survival;
         Inventories.Register(Dispatcher);
         Tools.Register(Dispatcher);

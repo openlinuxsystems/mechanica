@@ -183,11 +183,16 @@ public partial class LanguageTest : StagedTest
             chat.Open();
             chat.Send("hello");
         });
+        World("the Lift's blueprint menu", () =>
+        {
+            _main.GetNode<Chat.ChatPanel>("ChatPanel").Close();
+            _main.Blueprints!.Open();
+        });
         Add("a part's settings and the Creation Inspector", frame =>
         {
             if (frame == 0)
             {
-                _main.GetNode<Chat.ChatPanel>("ChatPanel").Close();
+                _main.Blueprints!.Close();
                 var at = _main.LocalPlayer!.GlobalPosition + new Vector3(0, 1, -3);
                 _main.Actions.Request(Core.Actions.CreationActions.SpawnPart, new Core.Actions.SpawnPartArgs("vanilla:timer", [at.X, at.Y, at.Z]), r => Check(r.Ok, $"a timer spawns ({r.Message})"));
                 return false;

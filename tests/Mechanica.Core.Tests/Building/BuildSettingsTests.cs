@@ -44,6 +44,11 @@ public class BuildSettingsTests
         var settings = BuildSettings.FromJson(File.ReadAllText(path));
         Assert.Equal(16, settings.Paint.Palette.Count);
         Assert.Equal(new ConnectSettings(), settings.Connect);
+        // UI spec §9, §10.
+        Assert.Equal(0.4f, settings.Sledge.SwingSeconds);
+        Assert.Equal(50, settings.Lift.MaxBlueprints);
+        Assert.True(settings.Lift.RefuseStoredItems);
+        Assert.Equal(256, settings.Paint.MaxPartsPerAction);
     }
 
     [Theory]
@@ -57,6 +62,12 @@ public class BuildSettingsTests
     [InlineData("""{"hammer": {"drag_max_per_axis": 0}}""", "hammer.drag_max_per_axis")]
     [InlineData("""{"hammer": {"remove_seconds_by_material": {"wood": -1}}}""", "remove_seconds_by_material.wood")]
     [InlineData("""{"connect": {"node_pixels": 2}}""", "connect.node_pixels")]
+    [InlineData("""{"weld": {"seam_seconds": -1}}""", "weld.seam_seconds")]
+    [InlineData("""{"lift": {"max_blueprints": 0}}""", "lift.max_blueprints")]
+    [InlineData("""{"lift": {"blueprint_max_bytes": 10}}""", "lift.blueprint_max_bytes")]
+    [InlineData("""{"lift": {"remove_hold_seconds": -1}}""", "lift.remove_hold_seconds")]
+    [InlineData("""{"paint": {"drag_flush_seconds": -1}}""", "paint.drag_flush_seconds")]
+    [InlineData("""{"sledge": {"block_damage_scale": 2}}""", "sledge.block_damage_scale")]
     [InlineData("""{"connect": {"invalid_alpha": 2}}""", "connect.invalid_alpha")]
     [InlineData("""{"connect": {"snap_metres": 0}}""", "connect.snap_metres")]
     [InlineData("""{"connect": {"flash_seconds": -1}}""", "connect.flash_seconds")]

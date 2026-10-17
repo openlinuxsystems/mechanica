@@ -25,11 +25,20 @@
     "flash_seconds": 0.6,
     "range": 40
   },
+  // Weld Tool (UI spec §8): the blue seam on the joined faces fades over this long.
+  "weld": {
+    "seam_seconds": 1.5
+  },
+  // Lift (UI spec §2, §5, §9): hold right click to take it away; E opens the blueprint menu.
   "lift": {
     "platform_size": 2.0,
     "base_height": 0.25,
     "level_height": 0.25,
-    "max_level": 16
+    "max_level": 16,
+    "remove_hold_seconds": 0.5,
+    "refuse_stored_items": true,
+    "max_blueprints": 50,
+    "blueprint_max_bytes": 1048576
   },
   "paint": {
     "palette": [
@@ -38,14 +47,18 @@
       "#40a040", "#20a0a0", "#3070d0", "#203890",
       "#8040b0", "#d050a0", "#8a5a30", "#e8c8a0"
     ],
-    "max_parts_per_action": 256
+    "max_parts_per_action": 256,
+    "drag_flush_seconds": 0.1
   },
   "sledge": {
     "damage": 10,
     "health_per_durability": 10,
-    "swing_seconds": 0.5,
+    "swing_seconds": 0.4,
     "impulse": 20,
     "player_damage": 15,
-    "object_damage": 10
+    "object_damage": 10,
+    // Hold right click to block (UI spec §9): these causes do this share of their damage.
+    "block_damage_scale": 0.25,
+    "block_causes": ["sledge", "bot"]
   }
 }
