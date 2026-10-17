@@ -51,7 +51,7 @@ public partial class ModManagerTest : Node
         Check(reopened.Rows.SequenceEqual(screen.Rows), "reopening the screen restores the saved setup");
 
         GD.Print($"[mods] {(_failed ? "FAILED" : "OK")}");
-        GetTree().Quit(_failed ? 1 : 0);
+        StagedTest.QuitCleanly(this, _failed ? 1 : 0);
     }
 
     private ModManagerScreen Open(string profilePath)

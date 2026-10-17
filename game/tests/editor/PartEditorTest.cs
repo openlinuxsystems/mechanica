@@ -36,7 +36,8 @@ public partial class PartEditorTest : Node3D
             Check(false, $"unexpected {e.GetType().Name}: {e.Message}\n{e.StackTrace}");
         }
         GD.Print($"[editor] {(_failed ? "FAILED" : "OK")}");
-        GetTree().Quit(_failed ? 1 : 0);
+        // The editor makes hundreds of meshes and materials; let .NET release them before quitting.
+        StagedTest.QuitCleanly(this, _failed ? 1 : 0);
     }
 
     private async Task Steps()
