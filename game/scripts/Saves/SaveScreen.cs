@@ -6,17 +6,19 @@ using Mechanica.Game.Ui;
 namespace Mechanica.Game.Saves;
 
 /// <summary>
-/// The save and load screen: the worlds in the save folder, newest first, with Load and Delete. In a world
-/// the host also gets a name box and Save. Loading reads the file and raises <see cref="LoadRequested"/>; the
-/// owner starts the world (see <see cref="Main.MenuSave"/>).
+/// The save and load screen (UI spec §14 "Load Game"): the worlds in the save folder, newest first, one row
+/// each with its picture, name, mode, play time and when it was last played, and its own Load and Delete
+/// buttons. Delete asks first. In a world the host also gets a name box and Save. Loading reads the file and
+/// raises <see cref="LoadRequested"/>; the owner starts the world (see <see cref="Main.MenuSave"/>).
 /// </summary>
-public partial class SaveScreen : PanelContainer
+public partial class SaveScreen : ToolWindow
 {
-    private ItemList _list = null!;
+    /// <summary>Size of a row's picture.</summary>
+    public static readonly Vector2 ThumbnailSize = new(160, 90);
+
+    private VBoxContainer _rows = null!;
     private LineEdit _name = null!;
     private Label _status = null!;
-    private Button _load = null!;
-    private Button _delete = null!;
     private IReadOnlyList<SaveSummary> _saves = [];
 
     /// <summary>The save folder. Null uses <see cref="SaveSync.UserStore"/>.</summary>
@@ -28,26 +30,26 @@ public partial class SaveScreen : PanelContainer
     /// <summary>A save was picked and read.</summary>
     public event Action<SaveGame>? LoadRequested;
 
-    /// <summary>Back was pressed.</summary>
-    public event Action? CloseRequested;
-
     /// <summary>The worlds listed, newest first.</summary>
     public IReadOnlyList<SaveSummary> Listed => _saves;
 
     /// <summary>The status line, for tests.</summary>
     public string Status => _status.Text;
 
+    /// <summary>The list's rows, one per save, for tests.</summary>
+    public IReadOnlyList<Control> Rows => [.. _rows.GetChildren().OfType<Control>()];
+
     public override void _Ready()
     {
+        Title = Saves is null ? "Load Game" : "Save or Load";
+        Name = "Saves";
         Store ??= Saves?.Store ?? SaveSync.UserStore;
-        CustomMinimumSize = new Vector2(520, 420);
-        var rows = new VBoxContainer();
-        AddChild(rows);
-        rows.AddChild(new Label { Text = Saves is null ? "Load a world" : "Save or load", ThemeTypeVariation = "HeaderMedium" });
-        _list = Loc.Verbatim(new ItemList { SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0, 240) });
-        _list.ItemSelected += i => Select((int)i);
-        _list.ItemActivated += i => Load((int)i);
-        rows.AddChild(_list);
+        CustomMinimumSize = new Vector2(640, 480);
+        var scroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0, 320), HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
+        Body.AddChild(scroll);
+        _rows = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        _rows.AddThemeConstantOverride("separation", 6);
+        scroll.AddChild(_rows);
 
         if (Saves is { Session.IsHost: true })
         {
@@ -55,29 +57,19 @@ public partial class SaveScreen : PanelContainer
             _name = new LineEdit { Text = Saves.WorldName, PlaceholderText = "World name", SizeFlagsHorizontal = SizeFlags.ExpandFill };
             _name.TextSubmitted += _ => Save();
             saveRow.AddChild(_name);
-            var save = new Button { Text = "Save" };
+            var save = new Button { Text = "Save", ThemeTypeVariation = "PrimaryButton", TooltipText = "Save the world under this name" };
             save.Pressed += Save;
             saveRow.AddChild(save);
-            rows.AddChild(saveRow);
+            Body.AddChild(saveRow);
         }
         else
         {
             _name = new LineEdit { Visible = false };
+            Body.AddChild(_name);
         }
-
-        var buttons = new HBoxContainer();
-        _load = new Button { Text = "Load", Disabled = true };
-        _load.Pressed += () => Load(Selected);
-        _delete = new Button { Text = "Delete", Disabled = true };
-        _delete.Pressed += Delete;
-        var back = new Button { Text = "Back" };
-        back.Pressed += () => CloseRequested?.Invoke();
-        buttons.AddChild(_load);
-        buttons.AddChild(_delete);
-        buttons.AddChild(back);
-        rows.AddChild(buttons);
-        _status = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart };
-        rows.AddChild(_status);
+        _status = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart, ThemeTypeVariation = "SecondaryLabel" };
+        Body.AddChild(_status);
+        AddAction("Back", RequestClose, tooltip: "Close (Esc)");
         Refresh();
     }
 
@@ -85,13 +77,15 @@ public partial class SaveScreen : PanelContainer
     public void Refresh()
     {
         _saves = Store!.List();
-        _list.Clear();
-        foreach (var save in _saves)
+        foreach (var child in _rows.GetChildren())
         {
-            var when = save.SavedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
-            _list.AddItem(save.Error is null ? $"{save.Name}  ·  {Loc.T(save.Mode.ToString())}  ·  {when}" : Loc.T("{0}  ·  can't load: {1}", save.Name, save.Error));
+            _rows.RemoveChild(child);
+            child.QueueFree();
         }
-        Select(-1);
+        for (var i = 0; i < _saves.Count; i++)
+            _rows.AddChild(Row(i));
+        if (_saves.Count == 0)
+            _rows.AddChild(new Label { Text = "No saved worlds yet.", ThemeTypeVariation = "SecondaryLabel" });
     }
 
     /// <summary>Saves the world under the name in the box (host only).</summary>
@@ -118,29 +112,67 @@ public partial class SaveScreen : PanelContainer
         LoadRequested?.Invoke(save);
     }
 
-    private int Selected => _list.GetSelectedItems() is [var i, ..] ? i : -1;
-
-    private void Select(int index)
+    /// <summary>Asks, then deletes the listed save at <paramref name="index"/>.</summary>
+    public ConfirmDialog? Delete(int index)
     {
-        _load.Disabled = index < 0 || _saves[index].Error is not null;
-        _delete.Text = "Delete";
-        _delete.Disabled = index < 0;
-        if (index >= 0 && _name.Visible && _saves[index].Error is null)
-            _name.Text = _saves[index].Name;
+        if (index < 0 || index >= _saves.Count)
+            return null;
+        var summary = _saves[index];
+        return ConfirmDialog.Ask(this, "Delete world", Loc.T("Delete {0}? This can't be undone.", summary.Name), "Delete", () =>
+        {
+            _status.Text = Store!.Delete(summary.Path) ? Loc.T("Deleted {0}.", summary.Name) : Loc.T("Could not delete {0}.", summary.Name);
+            Refresh();
+        });
     }
 
-    // The first press asks; the second deletes.
-    private void Delete()
+    private Control Row(int index)
     {
-        if (Selected is not (var i and >= 0))
-            return;
-        if (_delete.Text != "Really delete?")
+        var summary = _saves[index];
+        var panel = new PanelContainer { Name = $"Save{index}" };
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", 12);
+        panel.AddChild(row);
+        row.AddChild(Thumbnail(summary));
+        var text = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill, Alignment = BoxContainer.AlignmentMode.Center };
+        text.AddChild(Loc.Verbatim(new Label { Text = summary.Name, ThemeTypeVariation = "TitleLabel" }));
+        var when = summary.SavedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
+        text.AddChild(summary.Error is null
+            ? Loc.Verbatim(new Label { Text = Loc.T("{0}  ·  played {1}  ·  last played {2}", Loc.T(summary.Mode.ToString()), SaveSummary.FormatPlayTime(summary.PlaySeconds, Loc.T), when), ThemeTypeVariation = "SecondaryLabel" })
+            : Loc.Verbatim(new Label { Text = Loc.T("Can't load: {0}", summary.Error), ThemeTypeVariation = "ErrorLabel", AutowrapMode = TextServer.AutowrapMode.WordSmart }));
+        row.AddChild(text);
+        var buttons = new VBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
+        var load = new Button { Text = "Load", ThemeTypeVariation = "PrimaryButton", Disabled = summary.Error is not null, CustomMinimumSize = new Vector2(100, 32), TooltipText = Loc.T("Play {0}", summary.Name) };
+        load.Pressed += () => Load(index);
+        var delete = new Button { Text = "Delete", ThemeTypeVariation = "DangerButton", CustomMinimumSize = new Vector2(100, 32), TooltipText = Loc.T("Delete {0}", summary.Name) };
+        delete.Pressed += () => Delete(index);
+        buttons.AddChild(load);
+        buttons.AddChild(delete);
+        row.AddChild(buttons);
+        panel.GuiInput += e =>
         {
-            _delete.Text = "Really delete?";
-            return;
+            if (e is InputEventMouseButton { DoubleClick: true, ButtonIndex: MouseButton.Left } && summary.Error is null)
+                Load(index);
+            else if (e is InputEventMouseButton { Pressed: true } && summary.Error is null && _name.Visible)
+                _name.Text = summary.Name;
+        };
+        return panel;
+    }
+
+    private static Control Thumbnail(SaveSummary summary)
+    {
+        using var image = summary.Thumbnail is { } file ? Image.LoadFromFile(file) : null;
+        if (image is not null && !image.IsEmpty())
+        {
+            return new TextureRect
+            {
+                Texture = ImageTexture.CreateFromImage(image),
+                CustomMinimumSize = ThumbnailSize,
+                ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+                StretchMode = TextureRect.StretchModeEnum.KeepAspectCovered,
+            };
         }
-        if (Store!.Delete(_saves[i].Path))
-            _status.Text = Loc.T("Deleted {0}.", _saves[i].Name);
-        Refresh();
+        var blank = new Panel { CustomMinimumSize = ThumbnailSize };
+        blank.AddThemeStyleboxOverride("panel", MechanicaTheme.Box(UiTokens.DeepNavy, UiTokens.Blue));
+        return blank;
     }
 }

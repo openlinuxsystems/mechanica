@@ -10,11 +10,34 @@ namespace Mechanica.Core.Saves;
 /// <param name="SavedAt">When it was written.</param>
 /// <param name="Mode">Its game mode.</param>
 /// <param name="Error">Why the file does not load, or null.</param>
-public sealed record SaveSummary(string Path, string Name, DateTimeOffset SavedAt, GameMode Mode, string? Error = null);
+/// <param name="PlaySeconds">Seconds the world has run (its clock, <see cref="SaveGame.Time"/>).</param>
+/// <param name="Thumbnail">The picture taken when it was saved, or null.</param>
+public sealed record SaveSummary(string Path, string Name, DateTimeOffset SavedAt, GameMode Mode, string? Error = null, double PlaySeconds = 0,
+    string? Thumbnail = null)
+{
+    /// <summary>Play time as the load list shows it: "45 min", "3 h 05 min".</summary>
+    public string PlayTime => FormatPlayTime(PlaySeconds);
+
+    /// <summary>
+    /// "Under a minute", "45 min" or "3 h 05 min". <paramref name="text"/> fills a template with its values in the
+    /// language in use; English when left out.
+    /// </summary>
+    public static string FormatPlayTime(double seconds, Func<string, object?[], string>? text = null)
+    {
+        text ??= Ui.Language.Format;
+        var minutes = (long)Math.Max(0, seconds) / 60;
+        return minutes switch
+        {
+            < 1 => text("under a minute", []),
+            < 60 => text("{0} min", [minutes]),
+            _ => text("{0} h {1} min", [minutes / 60, $"{minutes % 60:00}"]),
+        };
+    }
+}
 
 /// <summary>
 /// The folder of save files (<c>user://saves/</c> in the game): one <c>&lt;slug&gt;.json</c> per world,
-/// named after the world. Writes go to a temporary file first and replace the old save in one move, so a
+/// named after the world, with an optional <c>&lt;slug&gt;.png</c> picture beside it. Writes go to a temporary file first and replace the old save in one move, so a
 /// crash mid-save never leaves a half-written world.
 /// </summary>
 public sealed class SaveStore(string directory)
@@ -35,13 +58,19 @@ public sealed class SaveStore(string directory)
             list.Add(save is null
                 ? new SaveSummary(path, System.IO.Path.GetFileNameWithoutExtension(path), File.GetLastWriteTimeUtc(path), GameMode.Survival,
                     diagnostics.FirstOrDefault(d => d.Severity == DiagnosticSeverity.Error)?.Message ?? "unreadable")
-                : new SaveSummary(path, save.Name, save.SavedAt, save.Mode));
+                : new SaveSummary(path, save.Name, save.SavedAt, save.Mode, PlaySeconds: save.Time, Thumbnail: File.Exists(ThumbnailFor(path)) ? ThumbnailFor(path) : null));
         }
         return [.. list.OrderByDescending(s => s.SavedAt).ThenBy(s => s.Name, StringComparer.Ordinal)];
     }
 
     /// <summary>The file a world named <paramref name="name"/> saves to.</summary>
     public string PathFor(string name) => System.IO.Path.Combine(Directory, Slug(name) + ".json");
+
+    /// <summary>The picture file beside the save at <paramref name="path"/>.</summary>
+    public static string ThumbnailFor(string path) => System.IO.Path.ChangeExtension(path, ".png");
+
+    /// <summary>The most recent save that loads, or null: what Continue starts.</summary>
+    public SaveSummary? Latest() => List().FirstOrDefault(s => s.Error is null);
 
     /// <summary>Writes <paramref name="save"/> to <see cref="PathFor"/> its name and returns the path.</summary>
     public string Write(SaveGame save)
@@ -73,6 +102,8 @@ public sealed class SaveStore(string directory)
         if (System.IO.Path.GetDirectoryName(full) != System.IO.Path.GetFullPath(Directory) || !File.Exists(full))
             return false;
         File.Delete(full);
+        if (File.Exists(ThumbnailFor(full)))
+            File.Delete(ThumbnailFor(full));
         return true;
     }
 

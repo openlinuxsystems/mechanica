@@ -5,6 +5,9 @@ public static class MechanicaInfo
 {
     public const string GameName = "Mechanica";
 
+    /// <summary>The game's version, shown on the home screen.</summary>
+    public const string Version = "0.1.0";
+
     /// <summary>Building grid cell size in metres (SI units everywhere, decision D13).</summary>
     public const float GridSize = 0.25f;
 
