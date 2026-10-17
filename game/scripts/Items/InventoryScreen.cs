@@ -187,6 +187,17 @@ public partial class InventoryScreen : CanvasLayer
         _root.Position = new Vector2(Mathf.Round((screen.X - _root.Size.X) / 2), Mathf.Round(Mathf.Max(margin.Y, (room - _root.Size.Y) / 2)));
     }
 
+    public override void _Input(InputEvent @event)
+    {
+        // Tab (the inventory key's default alternate) would otherwise move focus between the screen's controls before
+        // the screen heard it, so an open screen closes on its key here, ahead of the controls.
+        if (IsOpen && GameInput.Pressed(@event, InputActions.Inventory) && !GameInput.Typing(GetViewport()))
+        {
+            Hide();
+            GetViewport().SetInputAsHandled();
+        }
+    }
+
     public override void _UnhandledInput(InputEvent @event)
     {
         var toggle = GameInput.Pressed(@event, InputActions.Inventory) && (IsOpen || Input.MouseMode == Input.MouseModeEnum.Captured);

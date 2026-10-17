@@ -1,0 +1,7 @@
+{
+  // AI agents that join the host's world as players (mechanica.join on the AI endpoint).
+  // Loaded by game/scripts/Remote/AgentHost.cs; see src/Mechanica.Core/Remote/AgentPlayers.cs.
+  "max_agents": 8,
+  "max_input_ticks": 600,
+  "name_suffix": " (AI)"
+}

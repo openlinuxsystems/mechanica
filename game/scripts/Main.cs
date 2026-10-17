@@ -262,6 +262,9 @@ public partial class Main : Node3D
     /// <summary>The external AI endpoint (WebSocket JSON-RPC), listening only when asked to.</summary>
     public AiEndpoint Ai { get; private set; } = null!;
 
+    /// <summary>The AI agents that joined the host's world as players through <see cref="Ai"/>.</summary>
+    public AgentHost AgentHost { get; private set; } = null!;
+
     /// <summary>The local player's Hammer, once the player has spawned.</summary>
     public HammerTool? Hammer => Tools?.Hammer;
 
@@ -527,7 +530,8 @@ public partial class Main : Node3D
         }
         Recorder = new RecordReplay { Name = "Recorder", Session = Session, Actions = Actions };
         AddChild(Recorder);
-        Ai = new AiEndpoint { Name = "Ai", Session = Session, Actions = Actions, Log = Recorder };
+        AgentHost = new AgentHost(Session, PlayerSync, Actions.Dispatcher);
+        Ai = new AiEndpoint { Name = "Ai", Session = Session, Actions = Actions, Log = Recorder, Agents = AgentHost };
         AddChild(Ai);
         RemoteEventSources.Connect(this, Ai.Events);
         var modsRoot = ModsFolder ?? ModPaths.ModsRoot;
@@ -536,6 +540,7 @@ public partial class Main : Node3D
             new Core.ModTools.ModWorkspace(modsRoot, profilePath, Mechanica.Scripting.Editor.LuaSyntax.Problem),
             new ModToolsHost(this, modsRoot, profilePath), Scripts.Settings!);
         Ai.Modules.Add(new Mechanica.Scripting.Editor.ModToolsModule(modTools, Ai.Events));
+        Ai.Modules.Add(new Core.Packages.PackageRpcModule(ModPaths.ModsRoot, ModPaths.PackagesRoot, Ai.Events));
         // The offline player spawned with PlayerSync, before building existed.
         if (LocalPlayer is { } local)
             AddTools(local);

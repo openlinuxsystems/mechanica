@@ -26,9 +26,9 @@ public partial class ControlsTest : StagedTest
             Check(GameSettings.Current.Bindings is null, "a test run starts from the default settings");
             foreach (var def in InputActions.All)
                 Check(InputMap.HasAction(def.Id), $"{def.Id} is an input action");
-            Check(Has(InputActions.Interact, Key.E) && Has(InputActions.Inventory, Key.I) && Has(InputActions.Inventory, Key.B)
+            Check(Has(InputActions.Interact, Key.E) && Has(InputActions.Inventory, Key.I) && Has(InputActions.Inventory, Key.Tab)
                 && Has(InputActions.Logbook, Key.L) && Has(InputActions.Handbook, Key.H) && Has(InputActions.Hotbar(10), Key.Key0),
-                "E uses, I or B opens the inventory, L the logbook, H the handbook, 0 is hotbar 10");
+                "E uses, I or Tab opens the inventory, L the logbook, H the handbook, 0 is hotbar 10");
             return true;
         });
         Add("presses match modifiers exactly", _ =>

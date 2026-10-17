@@ -44,6 +44,7 @@ public partial class NetSession : Node
     private readonly HashSet<int> _readyPeers = [];
     private readonly Dictionary<int, PlayerProfile> _profiles = [];
     private readonly Dictionary<int, ContentManifest> _contents = [];
+    private readonly Dictionary<int, PlayerProfile> _agentProfiles = [];
     private int _maxPlayers = NetProtocol.DefaultMaxPlayers;
     private string? _refusal;
     private string _password = "";
@@ -59,10 +60,24 @@ public partial class NetSession : Node
 
     /// <summary>
     /// Who a ready peer is: the profile it sent on join, or <see cref="Profile"/> for this instance's own peer.
-    /// Null for anyone else. On a client only its own profile is known.
+    /// An AI agent's player has the profile it joined with (<see cref="SetAgentProfile"/>). Null for anyone
+    /// else. On a client only its own profile is known.
     /// </summary>
     public PlayerProfile? ProfileOf(int peer) =>
-        peer == LocalPeer || (IsHost && peer == NetProtocol.HostPeer) ? Profile : _profiles.GetValueOrDefault(peer);
+        peer == LocalPeer || (IsHost && peer == NetProtocol.HostPeer) ? Profile
+        : _profiles.GetValueOrDefault(peer) ?? _agentProfiles.GetValueOrDefault(peer);
+
+    /// <summary>
+    /// Host side: the profile of an AI agent's player, which has no network peer; null forgets it. Network
+    /// events never clear these.
+    /// </summary>
+    public void SetAgentProfile(int peer, PlayerProfile? profile)
+    {
+        if (profile is null)
+            _agentProfiles.Remove(peer);
+        else
+            _agentProfiles[peer] = profile;
+    }
 
     /// <summary>
     /// The world's password. Hosting, joining players must send it (empty lets anyone in); joining, this
