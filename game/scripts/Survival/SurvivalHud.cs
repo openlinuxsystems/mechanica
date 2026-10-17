@@ -227,8 +227,7 @@ public partial class SurvivalHud : CanvasLayer
     {
         if (Players.LocalPlayer is not { } player || Survival.Settings is not { } settings)
             return null;
-        if (HandTool.Cast(player, settings.Reach) is not { Collider: StaticBody3D objects } hit || objects.GetParent() is not TerrainChunk chunk
-            || objects != chunk.Objects || chunk.ObjectAt(hit.Shape) is not { } id)
+        if (HandTool.Cast(player, settings.Reach, brush: true) is not { } hit || TerrainChunk.ObjectHit(hit.Collider, hit.Shape) is not { } id)
             return null;
         return Survival.FindObject(id) is { Definition.Refine: true } node ? node : null;
     }

@@ -212,6 +212,9 @@ public partial class Main : Node3D
     /// <summary>Chunk streaming: the ground, and which Creations are simulated.</summary>
     public WorldStreamer Streamer { get; private set; } = null!;
 
+    /// <summary>Grass, ground cover and bushes drawn round the camera.</summary>
+    public FloraField Flora { get; private set; } = null!;
+
     /// <summary>Building actions and their sync to clients.</summary>
     public BuildSync Build { get; private set; } = null!;
 
@@ -444,6 +447,8 @@ public partial class Main : Node3D
         };
         Bots.RegisterActions(Actions.Dispatcher, unchecked((int)Streamer.Seed));
         AddChild(Bots);
+        Flora = new FloraField { Name = "Flora", World = Streamer, Pushers = FloraPushers };
+        AddChild(Flora);
         Motion = new MotionSync { Name = "Motion", Session = Session, Creations = Creations };
         AddChild(Motion);
         Motion.RegisterActions(Actions.Dispatcher);
@@ -887,6 +892,12 @@ public partial class Main : Node3D
 
     // Players start at the world's spawn (the crash site's spawn marker in vanilla). A world without
     // one keeps the scene's spawn point, moved onto the ground.
+    // Players, bots and the bodies of live Creations: the plants round them bend out of the way.
+    private IEnumerable<Vector3> FloraPushers() =>
+        PlayerSync.Players.Values.Select(p => p.GlobalPosition)
+            .Concat(Bots.Bodies.Values.Select(b => b.GlobalPosition))
+            .Concat(Creations.All.Select(c => Creations.NodeOf(c.Id)).OfType<CreationNode>().SelectMany(n => n.Bodies).Select(b => b.GlobalPosition));
+
     private void PlaceSpawnPoint()
     {
         if (GetNodeOrNull<Node3D>("SpawnPoint") is not { } spawn)

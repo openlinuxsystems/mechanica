@@ -93,7 +93,7 @@ public sealed record PoiMarkerPlacement(PoiInstance Poi, PoiMarker Marker, Vecto
 public sealed class TerrainChunkData
 {
     internal TerrainChunkData(ChunkCoord coord, float size, float resolution, int samples, float[] heights, Vector3[] normals,
-        Vector3[] colors, float seaLevel, IReadOnlyList<WorldObjectPlacement> objects, IReadOnlyList<PoiPiecePlacement> pieces,
+        Vector3[] colors, int[] biomes, bool[] covered, float seaLevel, IReadOnlyList<WorldObjectPlacement> objects, IReadOnlyList<PoiPiecePlacement> pieces,
         IReadOnlyList<PoiMarkerPlacement> markers)
     {
         Coord = coord;
@@ -103,6 +103,8 @@ public sealed class TerrainChunkData
         Heights = heights;
         Normals = normals;
         Colors = colors;
+        Biomes = biomes;
+        Covered = covered;
         SeaLevel = seaLevel;
         Objects = objects;
         Pieces = pieces;
@@ -131,6 +133,12 @@ public sealed class TerrainChunkData
 
     /// <summary>Ground colours (0..1 RGB), laid out like <see cref="Heights"/>.</summary>
     public Vector3[] Colors { get; }
+
+    /// <summary>Index of the biome that dominates each sample, laid out like <see cref="Heights"/>.</summary>
+    public int[] Biomes { get; }
+
+    /// <summary>True where a POI's footprint covers the sample, laid out like <see cref="Heights"/>. Nothing grows there.</summary>
+    public bool[] Covered { get; }
 
     /// <summary>Height of the sea surface.</summary>
     public float SeaLevel { get; }

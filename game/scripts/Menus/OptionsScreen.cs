@@ -343,6 +343,11 @@ public partial class OptionsScreen : ToolWindow
         Option(_custom, "Anti-aliasing", levels, (int)g.Antialiasing, i => SetGraphics(x => x with { Antialiasing = (Quality)i }));
         Option(_custom, "Textures", levels, (int)g.Textures, i => SetGraphics(x => x with { Textures = (Quality)i }));
         Option(_custom, "Effects", levels, (int)g.Effects, i => SetGraphics(x => x with { Effects = (Quality)i }));
+        page.AddChild(new Label { Text = "Foliage density", ThemeTypeVariation = "TitleLabel" });
+        string[] foliage = ["Off", "Low", "Medium", "High", "Very high"];
+        Option(page, "Grass", foliage, (int)g.Grass, i => SetGraphics(x => x with { Grass = (FoliageLevel)i }), "How much grass is drawn, and how far. Lower it for a faster frame rate.");
+        Option(page, "Ground cover", foliage, (int)g.GroundCover, i => SetGraphics(x => x with { GroundCover = (FoliageLevel)i }), "Clover and small flowers under the grass.");
+        Option(page, "Bushes", foliage, (int)g.Bushes, i => SetGraphics(x => x with { Bushes = (FoliageLevel)i }), "Decorative bushes. Bushes that drop seeds always show.");
         page.AddChild(new Label { Text = "Interface size", ThemeTypeVariation = "TitleLabel" });
         Slider(page, "UI scale", _draft.UiScale, UiPalette.MinUiScale, UiPalette.MaxUiScale, 0.05f, v => Live(_draft with { UiScale = v }), v => $"{v * 100:0}%");
     }
