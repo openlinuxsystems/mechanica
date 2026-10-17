@@ -63,6 +63,8 @@ Built-in methods (protocol version 2):
 | `mechanica.describe` | observe | optional `{"names": [...]}` | every method with its `kind` (action, query or method), `scope`, `description` and a JSON Schema of its `params`, plus the event `topics` and error codes |
 | `mechanica.subscribe` | observe | `{"topics": [...]}` | the topics now subscribed; see [Events](#events) |
 | `mechanica.unsubscribe` | observe | optional `{"topics": [...]}` | the topics still subscribed (none given stops all) |
+| `mechanica.join` | play | `{"name": "..."}` | `peer`, `profile_id`, `name`; spawns a player of your own (see [Playing as a player](#playing-as-a-player)) |
+| `mechanica.leave` | play | none | removes your player (it is saved) |
 | `mechanica.record.start` | observe | none | starts recording the host's Action API calls |
 | `mechanica.record.stop` | observe | none | the recording (see below) |
 | `mechanica.replay.start` | admin | `{"recording": {...}, "timed": true}` | `{"total": n}` calls it will replay |
@@ -115,6 +117,32 @@ After `mechanica.subscribe`, the host pushes JSON-RPC notifications (no `id`) on
 
 A connection that falls more than 4096 notifications behind loses the oldest and then receives one
 `events_dropped` notification with the `count` it missed.
+
+## Playing as a player
+
+Without joining, an agent's actions act as an external agent on the host's own peer. `mechanica.join`
+gives the connection a player body of its own instead, with its own inventory, health, quests and
+reach, which human players see with " (AI)" after its name. From then on every action the connection
+calls acts as that player (`mechanica.info` reports its `peer` and `source: "player"`), exactly as if a
+human on another computer had pressed the keys.
+
+```json
+→ {"jsonrpc": "2.0", "id": 1, "method": "mechanica.join", "params": {"name": "Grok"}}
+← {"jsonrpc": "2.0", "result": {"peer": 2130706432, "profile_id": "3f0c…", "name": "Grok (AI)"}, "id": 1}
+→ {"jsonrpc": "2.0", "id": 2, "method": "SetPlayerInput", "params": {"move_z": 1, "yaw": 1.57, "sprint": true, "ticks": 120}}
+```
+
+`SetPlayerInput` holds movement for `ticks` physics ticks (60 per second, at most `max_input_ticks`)
+and then the player stands still, still looking the same way: `move_x` and `move_z` (-1 to 1, relative
+to the look direction), `yaw` and `pitch` in radians (left out keeps the current look; yaw 0 looks down
+-Z), and `jump`, `sprint` and `crawl`. A new call replaces the one still running. Only a connection that
+joined may call it.
+
+The saved player follows the name, case-insensitively: leave and join again as "Grok" and you get its
+inventory, health and position back. One connection plays one player, and two can't share a name.
+Closing the socket removes the player like `mechanica.leave`. The host's limits are in
+`game/data/agents.json` (`max_agents`, `max_input_ticks`, `name_suffix`); agents also take player slots,
+so a full world refuses them.
 
 ## Adding methods (for game code)
 

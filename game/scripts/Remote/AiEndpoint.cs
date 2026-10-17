@@ -68,6 +68,9 @@ public partial class AiEndpoint : Node
         Stop();
     }
 
+    /// <summary>Spawns the players agents join as (<c>mechanica.join</c>). Set before <see cref="Listen(int, string, EndpointAccess)"/>.</summary>
+    public IAgentHost? Agents { get; set; }
+
     /// <summary>
     /// Starts listening on <paramref name="bind"/>:<paramref name="port"/> (0 picks a free port) with one
     /// optional token that grants every scope. Returns an error message or null.
@@ -93,6 +96,7 @@ public partial class AiEndpoint : Node
         _server = server;
         _rpc = new JsonRpcEndpoint(Actions.Dispatcher, Log.Log, Session.LocalPeer, access, Events);
         _rpc.InternalError += OnInternalError;
+        _rpc.Agents = Agents;
         foreach (var module in Modules)
             _rpc.AddModule(module);
         GD.Print($"[ai] endpoint listening on ws://{bind}:{Port}{(_rpc.RequiresToken ? " (token required)" : "")}");

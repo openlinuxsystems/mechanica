@@ -100,7 +100,7 @@ public partial class MapMarkerSync : Node
     // Host → newcomer: its markers, saved ones included.
     private void Welcome(int peer)
     {
-        if (Session.State == NetSession.SessionState.Hosting && Players.Players.ContainsKey(peer))
+        if (Session.State == NetSession.SessionState.Hosting && Players.Players.ContainsKey(peer) && Session.IsReady(peer))
             RpcId(peer, MethodName.ClientMarkers, Pack(Markers.MarkersOf(peer)));
     }
 
