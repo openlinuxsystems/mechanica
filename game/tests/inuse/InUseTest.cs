@@ -137,11 +137,11 @@ public partial class InUseTest : StagedTest
         });
         Add("Hide GUI hides the icons", frame =>
         {
+            // Waits for the icons' next _Process: several physics ticks can run before it.
             if (frame == 0)
                 HudRoot.Hidden = true;
-            if (frame < 3)
+            if (_hostMarks.Shown.Any())
                 return false;
-            Check(!_hostMarks.Shown.Any(), "no icons while the GUI is hidden");
             HudRoot.Hidden = false;
             return true;
         });
