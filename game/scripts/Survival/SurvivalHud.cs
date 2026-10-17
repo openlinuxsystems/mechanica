@@ -1,12 +1,15 @@
 using Godot;
 using Mechanica.Core.Actions;
 using Mechanica.Core.Data;
-using Mechanica.Core.Survival;
+using Mechanica.Core.Input;
 using Mechanica.Core.Logic;
 using Mechanica.Core.Quests;
+using Mechanica.Core.Survival;
 using Mechanica.Game.Building;
+using Mechanica.Game.Items;
 using Mechanica.Game.Logic;
 using Mechanica.Game.Net;
+using Mechanica.Game.Player;
 using Mechanica.Game.Quests;
 using Mechanica.Game.Ui;
 
@@ -41,6 +44,12 @@ public partial class SurvivalHud : CanvasLayer
 
     /// <summary>Seats and usable parts (chunk 10); optional.</summary>
     public LogicSync? Logic { get; init; }
+
+    /// <summary>The inventory screen, which Use on a container or station opens. Optional.</summary>
+    public InventoryScreen? Containers { get; init; }
+
+    /// <summary>The part settings panel, which Use on a part with settings opens. Optional.</summary>
+    public PartSettingsPanel? PartSettings { get; init; }
 
     /// <summary>Quests, for using quest markers and talking. Optional.</summary>
     public QuestSync? Quests { get; init; }
@@ -85,15 +94,15 @@ public partial class SurvivalHud : CanvasLayer
         {
             var wait = Survival.OwnRespawnIn;
             var where = own.HasBed ? "your bed" : "the spawn";
-            _deathText.Text = wait > 0 ? $"You died.\nRespawn in {Math.Ceiling(wait):0} s" : $"You died.\n[R] respawn at {where}";
+            _deathText.Text = wait > 0 ? $"You died.\nRespawn in {Math.Ceiling(wait):0} s" : $"You died.\n[{GameInput.Label(InputActions.Interact)}] respawn at {where}";
         }
-        _hint.Text = own is { Dead: true } ? "" : Interaction() is { } what ? $"[F] {what.Label}" : "";
+        _hint.Text = own is { Dead: true } ? "" : Interaction() is { } what ? $"[{GameInput.Label(InputActions.Interact)}] {what.Label}" : "";
     }
 
     public override void _Input(InputEvent @event)
     {
-        // Ahead of the tools, which use R too: a dead player has no tools.
-        if (Survival.Own is { Dead: true } && @event is InputEventKey { Pressed: true, Echo: false, PhysicalKeycode: Key.R })
+        // Ahead of the tools: a dead player has no tools.
+        if (Survival.Own is { Dead: true } && GameInput.Pressed(@event, InputActions.Interact))
         {
             Respawn();
             GetViewport().SetInputAsHandled();
@@ -102,7 +111,7 @@ public partial class SurvivalHud : CanvasLayer
 
     public override void _UnhandledInput(InputEvent @event)
     {
-        if (Input.MouseMode != Input.MouseModeEnum.Captured || @event is not InputEventKey { Pressed: true, Echo: false, PhysicalKeycode: Key.F })
+        if (Input.MouseMode != Input.MouseModeEnum.Captured || !GameInput.Pressed(@event, InputActions.Interact))
             return;
         Interact();
         GetViewport().SetInputAsHandled();
@@ -121,7 +130,7 @@ public partial class SurvivalHud : CanvasLayer
     }
 
     /// <summary>
-    /// What F would do now: harvest the ripe crop or sleep in the bed under the crosshair, or else pick up
+    /// What Use (E) would do now: harvest the ripe crop or sleep in the bed under the crosshair, or else pick up
     /// the nearest pile in reach. With logic parts (chunk 10) it also stands a seated player up, sits in the
     /// seat under the crosshair, or uses a part that says how (<see cref="LogicDefinition.Use"/>). Null when
     /// there is nothing.
@@ -145,6 +154,10 @@ public partial class SurvivalHud : CanvasLayer
                 return ($"harvest {Catalog.FindDefinition(soil.Crop!)?.Name ?? soil.Crop}", () => Request(LogicActions.ActivatePart, new LogicPartArgs(creation.Id, aimed.Part)));
             if (definition.RespawnPoint == true)
                 return ($"sleep here: respawn at this {definition.Name ?? "bed"}", () => Request(SurvivalActions.SetSpawn, new PartUseArgs(creation.Id, aimed.Part)));
+            if (Containers?.AimedInventory() is { } where)
+                return ($"open the {definition.Name ?? "container"}", () => Containers.Show(where));
+            if (PartSettings is not null && definition.Settings is { Count: > 0 })
+                return ($"set up the {definition.Name ?? "part"}", () => PartSettings.Open(creation.Id, aimed.Part));
         }
         if (Quests?.Prompt() is { } quest)
             return (QuestLabel(quest), () => Request(QuestTracker.QuestInteract, new NoArgs()));

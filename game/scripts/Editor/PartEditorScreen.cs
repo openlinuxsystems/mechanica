@@ -777,7 +777,7 @@ public partial class PartEditorScreen : Control
             v => SetLogic("Set input links", l => l with { Inputs = (int?)v }), optional: true, fallback: 1);
         _partGrid.AddNumber("Output links", d.Logic?.Outputs, 0, LogicDefinition.MaxLinks, 1,
             v => SetLogic("Set output links", l => l with { Outputs = (int?)v }), optional: true, fallback: 10);
-        _partGrid.AddText("Use (F)", d.Logic?.Use, v => SetLogic("Set use", l => l with { Use = string.IsNullOrWhiteSpace(v) ? null : v }), "toggle, press…");
+        _partGrid.AddText("Use (E)", d.Logic?.Use, v => SetLogic("Set use", l => l with { Use = string.IsNullOrWhiteSpace(v) ? null : v }), "toggle, press…");
         _partGrid.AddBool("Seat", d.Seat is not null, v => Document?.Apply(v == true ? "Make seat" : "Remove seat",
             x => x with { Seat = v == true ? x.Seat ?? new SeatDefinition() : null }));
         if (d.Seat is { } seat)

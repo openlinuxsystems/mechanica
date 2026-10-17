@@ -2,16 +2,18 @@ using Godot;
 using Mechanica.Core.Actions;
 using Mechanica.Core.Building;
 using Mechanica.Core.Data;
+using Mechanica.Core.Input;
 using Mechanica.Core.Items;
 using Mechanica.Game.Creations;
 using Mechanica.Game.Net;
+using Mechanica.Game.Player;
 using Mechanica.Game.Ui;
 
 namespace Mechanica.Game.Items;
 
 /// <summary>
-/// The local player's inventory screen. <c>Tab</c> shows the player's own inventory; <c>E</c> on a
-/// container or station opens it beside the player's. Click a stack to pick it up and click a slot to put
+/// The local player's inventory screen. Inventory (<c>I</c> or <c>B</c>) shows the player's own inventory;
+/// Use (<c>E</c>) on a container or station opens it beside the player's (through <see cref="Survival.SurvivalHud"/>). Click a stack to pick it up and click a slot to put
 /// it there (right-click picks up half); shift-click sends a stack straight to the other side. A station
 /// lists the recipes it runs, with Craft buttons, and its queue with progress and Cancel buttons. In
 /// Creative a give box makes items (<c>scrap_metal 50</c>). Every change goes through the Action API.
@@ -89,19 +91,13 @@ public partial class InventoryScreen : CanvasLayer
 
     public override void _UnhandledInput(InputEvent @event)
     {
-        if (@event is not InputEventKey { Pressed: true, Echo: false } key)
-            return;
-        if (key.PhysicalKeycode == Key.Tab || (IsOpen && key.PhysicalKeycode is Key.E or Key.Escape))
+        var toggle = GameInput.Pressed(@event, InputActions.Inventory) && (IsOpen || Input.MouseMode == Input.MouseModeEnum.Captured);
+        if (toggle || (IsOpen && (GameInput.Pressed(@event, InputActions.Interact) || GameInput.Pressed(@event, InputActions.Pause))))
         {
             if (IsOpen)
                 Hide();
             else
                 Show(null);
-            GetViewport().SetInputAsHandled();
-        }
-        else if (key.PhysicalKeycode == Key.E && Input.MouseMode == Input.MouseModeEnum.Captured && AimedInventory() is { } where)
-        {
-            Show(where);
             GetViewport().SetInputAsHandled();
         }
     }
@@ -132,8 +128,8 @@ public partial class InventoryScreen : CanvasLayer
         Input.MouseMode = Input.MouseModeEnum.Captured;
     }
 
-    // The container or station part under the crosshair, within reach.
-    private InventoryRef? AimedInventory()
+    /// <summary>The container or station part under the crosshair, within reach; Use (E) on it opens it.</summary>
+    public InventoryRef? AimedInventory()
     {
         if (Players.LocalPlayer is not { } player)
             return null;

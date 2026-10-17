@@ -3,6 +3,7 @@ using Mechanica.Core.Actions;
 using Mechanica.Core.Building;
 using Mechanica.Core.Creations;
 using Mechanica.Core.Data;
+using Mechanica.Core.Input;
 using Mechanica.Core.World;
 
 namespace Mechanica.Game.Building;
@@ -102,21 +103,26 @@ public partial class LiftTool : HandTool
     public override string HudText()
     {
         var lift = Own is { } own ? $"level {own.Level}{(own.Creation is { } c ? $", holding creation {c}" : "")}" : "not placed";
-        return $"Lift ({lift})   [LMB] place / pick up  [wheel] raise/lower  [R] turn  [RMB] take away{Status}";
+        return $"Lift ({lift})   {Key(InputActions.Primary)} place / pick up  {Key(InputActions.LiftUp)}/{Key(InputActions.LiftDown)} raise/lower  {Key(InputActions.Rotate)} turn  {Key(InputActions.Secondary)} take away{Status}";
     }
 
     /// <inheritdoc/>
     protected override bool HandleInput(InputEvent @event)
     {
-        if (Clicked(@event, MouseButton.Left))
+        if (Pressed(@event, InputActions.Primary))
             Place();
-        else if (Clicked(@event, MouseButton.Right))
+        else if (Pressed(@event, InputActions.Secondary))
             Remove();
-        else if (Clicked(@event, MouseButton.WheelUp))
+        else if (Pressed(@event, InputActions.LiftUp))
             Raise(1);
-        else if (Clicked(@event, MouseButton.WheelDown))
+        else if (Pressed(@event, InputActions.LiftDown))
             Raise(-1);
-        else if (Pressed(@event, Key.R))
+        else if (Pressed(@event, InputActions.RotateBack))
+        {
+            for (var i = 0; i < 3; i++)
+                Turn();
+        }
+        else if (Pressed(@event, InputActions.Rotate))
             Turn();
         else
             return false;

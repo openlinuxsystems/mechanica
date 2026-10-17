@@ -1,7 +1,9 @@
 using Godot;
+using Mechanica.Core.Input;
 using Mechanica.Core.Net;
 using Mechanica.Game.Editor;
 using Mechanica.Game.Net;
+using Mechanica.Game.Player;
 
 namespace Mechanica.Game.Menus;
 
@@ -95,15 +97,13 @@ public partial class PauseMenu : CanvasLayer
 
     public override void _Input(InputEvent @event)
     {
-        if (@event is not InputEventKey { Pressed: true, Echo: false } key)
-            return;
-        if (key.PhysicalKeycode == Key.F1)
+        if (GameInput.Pressed(@event, InputActions.Handbook) && !GameInput.Typing(GetViewport()))
         {
             OpenHelp();
             GetViewport().SetInputAsHandled();
         }
         // Esc while playing opens the menu; while another screen has the mouse, that screen closes first.
-        else if (key.PhysicalKeycode == Key.Escape && (IsOpen || Input.MouseMode == Input.MouseModeEnum.Captured))
+        else if (GameInput.Pressed(@event, InputActions.Pause) && (IsOpen || Input.MouseMode == Input.MouseModeEnum.Captured))
         {
             if (IsOpen)
                 Close();

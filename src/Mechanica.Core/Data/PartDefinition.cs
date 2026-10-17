@@ -285,7 +285,7 @@ public sealed record LogicDefinition
     public int? Outputs { get; init; }
 
     /// <summary>
-    /// What the interact key (F) says on a placed part, such as "toggle" or "press"; it calls the script's
+    /// What the interact key (E) says on a placed part, such as "toggle" or "press"; it calls the script's
     /// <c>on_activate</c>. Omitted means players cannot use the part by hand.
     /// </summary>
     public string? Use { get; init; }

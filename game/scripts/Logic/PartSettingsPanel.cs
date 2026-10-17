@@ -3,14 +3,16 @@ using System.Text.Json;
 using Godot;
 using Mechanica.Core.Actions;
 using Mechanica.Core.Data;
+using Mechanica.Core.Input;
 using Mechanica.Core.Logic;
 using Mechanica.Game.Creations;
 using Mechanica.Game.Net;
+using Mechanica.Game.Player;
 
 namespace Mechanica.Game.Logic;
 
 /// <summary>
-/// The settings of one placed part (chunk 10), opened with R while the Connect Tool is in hand: a field per
+/// The settings of one placed part (chunk 10), opened with Use (E) on the part and closed with Use or Esc: a field per
 /// setting of its definition (<see cref="PartDefinition.Settings"/>), each sent to the host as
 /// <c>ConfigurePart</c> when changed. Number lists are typed as numbers separated by commas.
 /// </summary>
@@ -51,7 +53,7 @@ public partial class PartSettingsPanel : CanvasLayer
 
     public override void _UnhandledInput(InputEvent @event)
     {
-        if (IsOpen && @event is InputEventKey { Pressed: true, Echo: false, PhysicalKeycode: Key.Escape or Key.R })
+        if (IsOpen && (GameInput.Pressed(@event, InputActions.Pause) || GameInput.Pressed(@event, InputActions.Interact)))
         {
             Close();
             GetViewport().SetInputAsHandled();

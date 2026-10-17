@@ -17,7 +17,7 @@ namespace Mechanica.Game.Quests;
 /// Quests over the network (chunk 24). The host runs the <see cref="QuestTracker"/> against the world: players'
 /// feet, the generated POIs' markers, inventories, planted soil, seated speed and raids ending. Every change
 /// of the story's state is sent to every client as JSON, and so are the lines quests say. Each client keeps a
-/// tracker over its copy of the state, only to show what F would do near a quest marker; the actions run on
+/// tracker over its copy of the state, only to show what Use (E) would do near a quest marker; the actions run on
 /// the host.
 /// </summary>
 public partial class QuestSync : Node, IQuestWorld
@@ -116,7 +116,7 @@ public partial class QuestSync : Node, IQuestWorld
     /// <summary>Host: replaces the story's state (a loaded save) and sends it.</summary>
     public void Load(QuestState state) => Tracker.Load(state);
 
-    /// <summary>What F would do near a quest marker for this peer's player now, or null.</summary>
+    /// <summary>What Use (E) would do near a quest marker for this peer's player now, or null.</summary>
     public QuestInteractResult? Prompt() => Tracker?.Preview(Session.LocalPeer);
 
     /// <summary>Choose steps of active quests waiting on a choice, with the quest.</summary>

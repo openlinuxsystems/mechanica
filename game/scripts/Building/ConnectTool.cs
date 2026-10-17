@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Godot;
 using Mechanica.Core.Actions;
+using Mechanica.Core.Input;
 using Mechanica.Core.Logic;
 
 namespace Mechanica.Game.Building;
@@ -73,19 +74,17 @@ public partial class ConnectTool : HandTool
     /// <inheritdoc/>
     public override string HudText()
     {
-        var picked = Source is { } s ? $"part {s.Part} picked: [LMB] another part to link or unlink it" : "[LMB] pick a source part";
-        return $"Connect Tool: {picked}  [RMB] let go  [R] settings{Status}";
+        var picked = Source is { } s ? $"part {s.Part} picked: {Key(InputActions.Primary)} another part to link or unlink it" : $"{Key(InputActions.Primary)} pick a source part";
+        return $"Connect Tool: {picked}  {Key(InputActions.Secondary)} let go  {Key(InputActions.Interact)} settings{Status}";
     }
 
     /// <inheritdoc/>
     protected override bool HandleInput(InputEvent @event)
     {
-        if (Clicked(@event, MouseButton.Left))
+        if (Pressed(@event, InputActions.Primary))
             Pick();
-        else if (Clicked(@event, MouseButton.Right))
+        else if (Pressed(@event, InputActions.Secondary))
             Clear();
-        else if (Pressed(@event, Key.R))
-            OpenSettings();
         else
             return false;
         return true;

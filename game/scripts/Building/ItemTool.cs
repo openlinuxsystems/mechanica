@@ -1,6 +1,7 @@
 using Godot;
 using Mechanica.Core.Actions;
 using Mechanica.Core.Data;
+using Mechanica.Core.Input;
 using Mechanica.Core.Items;
 using Mechanica.Core.Survival;
 using Mechanica.Game.Items;
@@ -88,19 +89,19 @@ public partial class ItemTool : HandTool
     {
         var hand = InHand;
         var name = hand is null ? "nothing usable" : $"{Survival.Catalog.FindDefinition(hand.Item)?.Name ?? hand.Item} x{hand.Count}";
-        return $"Item: {name}   [Q/E] choose  [LMB] use  [G] drop one{Status}";
+        return $"Item: {name}   {Key(InputActions.HotbarPrevious)}/{Key(InputActions.HotbarNext)} choose  {Key(InputActions.Primary)} use  {Key(InputActions.Drop)} drop one{Status}";
     }
 
     /// <inheritdoc/>
     protected override bool HandleInput(InputEvent @event)
     {
-        if (Clicked(@event, MouseButton.Left))
+        if (Pressed(@event, InputActions.Primary))
             Use();
-        else if (Pressed(@event, Key.Q))
+        else if (Pressed(@event, InputActions.HotbarPrevious))
             Cycle(-1);
-        else if (Pressed(@event, Key.E))
+        else if (Pressed(@event, InputActions.HotbarNext))
             Cycle(1);
-        else if (Pressed(@event, Key.G))
+        else if (Pressed(@event, InputActions.Drop))
             DropOne();
         else
             return false;

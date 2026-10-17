@@ -1,9 +1,11 @@
 using Godot;
 using Mechanica.Core;
+using Mechanica.Core.Input;
 using Mechanica.Core.Net;
 using Mechanica.Game.Editor;
-using Mechanica.Game.Mods;
 using Mechanica.Game.Menus;
+using Mechanica.Game.Mods;
+using Mechanica.Game.Player;
 
 namespace Mechanica.Game;
 
@@ -82,7 +84,7 @@ public partial class MainMenu : Control
 
     public override void _UnhandledInput(InputEvent @event)
     {
-        if (_help is not null && @event is InputEventKey { Pressed: true, Echo: false, PhysicalKeycode: Key.F1 })
+        if (_help is not null && GameInput.Pressed(@event, InputActions.Handbook))
         {
             _help.Open("playing.md");
             GetViewport().SetInputAsHandled();

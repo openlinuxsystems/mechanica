@@ -3,6 +3,7 @@ using Mechanica.Core.Actions;
 using Mechanica.Core.Building;
 using Mechanica.Core.Creations;
 using Mechanica.Core.Data;
+using Mechanica.Core.Input;
 using Mechanica.Game.Creations;
 using Mechanica.Game.Net;
 using Mechanica.Game.Player;
@@ -89,17 +90,19 @@ public partial class HammerTool : HandTool
     /// <inheritdoc/>
     protected override bool HandleInput(InputEvent @event)
     {
-        if (Clicked(@event, MouseButton.Left))
+        if (Pressed(@event, InputActions.Primary))
             Place();
-        else if (Clicked(@event, MouseButton.Right))
+        else if (Pressed(@event, InputActions.Secondary))
             Remove();
-        else if (Pressed(@event, Key.Q))
+        else if (Pressed(@event, InputActions.HotbarPrevious))
             Cycle(-1);
-        else if (Pressed(@event, Key.E))
+        else if (Pressed(@event, InputActions.HotbarNext))
             Cycle(1);
-        else if (Pressed(@event, Key.R))
+        else if (Pressed(@event, InputActions.RotateBack))
+            TurnBack();
+        else if (Pressed(@event, InputActions.Rotate))
             Turn();
-        else if (Pressed(@event, Key.T))
+        else if (Pressed(@event, InputActions.Tip))
             Tip();
         else
             return false;
@@ -129,6 +132,13 @@ public partial class HammerTool : HandTool
 
     /// <summary>Turns the part a quarter turn about the face it goes on.</summary>
     public void Turn() => _adjust = BuildAim.Turn(_adjust);
+
+    /// <summary>Turns the part a quarter turn the other way.</summary>
+    public void TurnBack()
+    {
+        for (var i = 0; i < 3; i++)
+            Turn();
+    }
 
     /// <summary>Tips the part a quarter turn over, for wedges and other parts with a top.</summary>
     public void Tip() => _adjust = BuildAim.Tip(_adjust);
@@ -222,6 +232,6 @@ public partial class HammerTool : HandTool
         if (Selected is null)
             return "Hammer: no placeable parts are loaded";
         var name = Build.Catalog.FindDefinition(Selected)?.Name ?? Selected;
-        return $"Hammer: {name}   [Q/E] part  [R] turn  [T] tip  [LMB] place  [RMB] remove{Status}";
+        return $"Hammer: {name}   {Key(InputActions.HotbarPrevious)}/{Key(InputActions.HotbarNext)} part  {Key(InputActions.Rotate)} turn  {Key(InputActions.Tip)} tip  {Key(InputActions.Primary)} place  {Key(InputActions.Secondary)} remove{Status}";
     }
 }

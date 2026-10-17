@@ -2,9 +2,11 @@ using System.Text.Json;
 using Godot;
 using Mechanica.Core.Actions;
 using Mechanica.Core.Creations;
+using Mechanica.Core.Input;
 using Mechanica.Core.Motion;
 using Mechanica.Game.Creations;
 using Mechanica.Game.Net;
+using Mechanica.Game.Player;
 
 namespace Mechanica.Game.Motion;
 
@@ -75,7 +77,7 @@ public partial class ForceOverlay : MeshInstance3D
 
     public override void _UnhandledInput(InputEvent @event)
     {
-        if (!ReadDeviceInput || @event is not InputEventKey { Pressed: true, Echo: false, PhysicalKeycode: Key.F9 })
+        if (!ReadDeviceInput || !GameInput.Pressed(@event, InputActions.ForceOverlay))
             return;
         Enabled = !Enabled;
         GetViewport().SetInputAsHandled();

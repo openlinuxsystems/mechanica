@@ -1,5 +1,6 @@
 using Godot;
 using Mechanica.Core.Actions;
+using Mechanica.Core.Input;
 using Mechanica.Game.Creations;
 using Mechanica.Game.Net;
 using Mechanica.Game.Player;
@@ -137,11 +138,9 @@ public abstract partial class HandTool : Node
     /// <summary>The last refusal as a second HUD line, or empty.</summary>
     protected string Status => LastResult is { Ok: false } failed ? $"\n{failed.Message}" : "";
 
-    /// <summary>True for a fresh press of <paramref name="key"/>.</summary>
-    protected static bool Pressed(InputEvent @event, Key key) =>
-        @event is InputEventKey { Pressed: true, Echo: false } k && k.PhysicalKeycode == key;
+    /// <summary>True for a fresh press of one of <paramref name="action"/>'s bindings (see <see cref="InputActions"/>).</summary>
+    protected static bool Pressed(InputEvent @event, string action) => GameInput.Pressed(@event, action);
 
-    /// <summary>True for a press of a mouse button.</summary>
-    protected static bool Clicked(InputEvent @event, MouseButton button) =>
-        @event is InputEventMouseButton { Pressed: true } m && m.ButtonIndex == button;
+    /// <summary>The player's key for <paramref name="action"/>, in brackets for a HUD hint.</summary>
+    protected static string Key(string action) => $"[{GameInput.Label(action)}]";
 }
