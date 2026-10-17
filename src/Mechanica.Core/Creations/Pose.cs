@@ -48,6 +48,18 @@ public readonly record struct Pose(Vector3 Position, Quaternion Rotation)
     }
 }
 
+/// <summary>A Body's world motion.</summary>
+/// <param name="Linear">Velocity of the Body's centre of mass in m/s.</param>
+/// <param name="Angular">Angular velocity in rad/s (axis times rate).</param>
+public readonly record struct BodyVelocity(Vector3 Linear, Vector3 Angular)
+{
+    /// <summary>At rest.</summary>
+    public static BodyVelocity Zero => default;
+
+    /// <summary>True when both parts are exactly zero.</summary>
+    public bool IsZero => Linear == Vector3.Zero && Angular == Vector3.Zero;
+}
+
 /// <summary>Conversions between Core's JSON vector and System.Numerics.</summary>
 public static class Vec3Numerics
 {

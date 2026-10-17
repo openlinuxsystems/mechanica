@@ -1,0 +1,9 @@
+{
+  // Creation state sync: snapshots, interpolation and interest management (SI units).
+  // Loaded by game/scripts/Net/CreationSync.cs; see src/Mechanica.Core/Net/SyncSettings.cs.
+  "interest_distance": 128.0,
+  "interest_hysteresis": 16.0,
+  "sleeping_snapshot_interval": 0.5,
+  "max_packet_bytes": 1024,
+  "max_extrapolation": 0.1
+}

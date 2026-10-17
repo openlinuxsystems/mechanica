@@ -35,8 +35,8 @@ public sealed class PartAssets
 {
     private static readonly StandardMaterial3D PlaceholderMaterial = new() { AlbedoColor = new Color(0.62f, 0.62f, 0.66f) };
 
-    private readonly ModLoadResult? _content;
-    private readonly Func<string, string?> _modDirectory;
+    private ModLoadResult? _content;
+    private Func<string, string?> _modDirectory;
     private readonly Dictionary<string, IReadOnlyList<PartMesh>?> _files = [];
     private readonly Dictionary<string, PartModel> _models = [];
 
@@ -85,6 +85,14 @@ public sealed class PartAssets
             return cached;
         var directory = _modDirectory(asset.ModId);
         return _files[key] = directory is null ? Warn($"mod '{asset.ModId}' is not loaded, so '{key}' cannot load.") : ReadGltf(asset.Resolve(directory), key);
+    }
+
+    /// <summary>Uses newly loaded <paramref name="content"/> from now on and forgets everything cached.</summary>
+    public void SetContent(ModLoadResult content)
+    {
+        _content = content;
+        _modDirectory = id => content.Mods.FirstOrDefault(m => m.Id == id)?.Directory;
+        ClearCache();
     }
 
     /// <summary>Forgets cached files, so meshes changed on disk load again.</summary>
