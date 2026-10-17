@@ -301,7 +301,8 @@ public partial class BuildSync : Node, IToolWorld, IPartCatalog
             body = _lifts[owner] = new LiftBody
             {
                 Name = $"Lift{owner}", Assets = Assets, FindCreation = Creations.NodeOf, Sounds = Sounds,
-                Riders = () => Players.Players.Values.Where(p => p.Simulated),
+                // The host moves every player (a client's from its input queue); a client only its own.
+                Riders = () => Players.Players.Values.Where(p => Session.IsHost || p.Simulated),
             };
             _liftRoot.AddChild(body);
         }
