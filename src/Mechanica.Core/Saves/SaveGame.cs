@@ -63,6 +63,12 @@ public sealed record SaveGame
     /// <summary>World generation seed.</summary>
     public long Seed { get; init; }
 
+    /// <summary>
+    /// Seconds the world had been simulated (the part scripts' <c>world.time()</c> clock), which carries on from
+    /// here when it loads, so times the scripts and soil stored stay meaningful. 0 in a save from before it.
+    /// </summary>
+    public double Time { get; init; }
+
     /// <summary>Mods the world ran, in load order.</summary>
     public IReadOnlyList<ModStamp> Mods { get; init; } = [];
 
@@ -119,6 +125,7 @@ public sealed record SaveGame
             SavedAt = SavedAt,
             Mode = Mode,
             Seed = Seed,
+            Time = Time > 0 ? Time : null,
             Mods = [.. Mods.Select(m => new ModData { Id = m.Id, Version = m.Version })],
             Fingerprint = Fingerprint,
             Destroyed = Destroyed.Count == 0 ? null : [.. Destroyed.Select(d => d.ToString()).Order(StringComparer.Ordinal)],
@@ -162,6 +169,8 @@ public sealed record SaveGame
             sink.Error(invalid, "$.seed", "seed is required.");
         if (data.Mode is null)
             sink.Error(invalid, "$.mode", "mode is required.");
+        if (data.Time is { } time && !(double.IsFinite(time) && time >= 0))
+            sink.Error(invalid, "$.time", "time must be 0 or more seconds.");
 
         var destroyed = new List<WorldObjectId>();
         foreach (var (text, i) in (data.Destroyed ?? []).Select((t, i) => (t, i)))
@@ -249,6 +258,7 @@ public sealed record SaveGame
             SavedAt = data.SavedAt ?? DateTimeOffset.MinValue,
             Mode = data.Mode!.Value,
             Seed = data.Seed!.Value,
+            Time = data.Time ?? 0,
             Mods = [.. (data.Mods ?? []).Where(m => m?.Id is not null).Select(m => new ModStamp(m.Id!, m.Version ?? ""))],
             Fingerprint = data.Fingerprint ?? "",
             Destroyed = destroyed,
@@ -267,6 +277,7 @@ public sealed record SaveGame
         public DateTimeOffset? SavedAt { get; init; }
         public GameMode? Mode { get; init; }
         public long? Seed { get; init; }
+        public double? Time { get; init; }
         public List<ModData>? Mods { get; init; }
         public string? Fingerprint { get; init; }
         public List<string>? Destroyed { get; init; }

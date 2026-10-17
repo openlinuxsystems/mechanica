@@ -75,8 +75,9 @@ how hard targets are chased, `servo_gain`) are data in
 `game/data/motion.json`. A Creation that is parked because nobody is near it can't be moved.
 
 `PlacePart` and `RemovePart` build and take apart Creations as described in the building docs. The
-survival actions (`UseItem`, `EquipItem`, `Harvest`, `PickUp`, `Respawn`, ...) are listed in
-[Survival](survival.md#action-api).
+survival actions (`UseItem`, `EquipItem`, `PickUp`, `Respawn`, ...) are listed in
+[Survival](survival.md#action-api). A ripe crop is harvested with `ActivatePart` on its soil part (the soil's
+Lua script decides; the result is `{items}`).
 
 ## Recording and replay
 

@@ -342,8 +342,9 @@ public sealed class ContentScriptTests : IDisposable
 
     private void Activate(Creation creation, int part)
     {
-        Assert.Null(_runtime.CheckActivate(creation, part));
-        _runtime.Activate(new ActionCaller(Peer, ActionSource.Player), creation, part);
+        var caller = new ActionCaller(Peer, ActionSource.Player);
+        Assert.Null(_runtime.CheckActivate(caller, creation, part));
+        _runtime.Activate(caller, creation, part);
     }
 
     private void Steps(int count)

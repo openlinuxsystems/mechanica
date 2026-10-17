@@ -14,7 +14,8 @@ namespace Mechanica.Game.Survival;
 /// <summary>
 /// The local player's survival HUD (chunk 20): a health bar (Survival only), the death screen with its
 /// respawn countdown (R respawns), and F to interact with what is in front of the player: harvest a ripe
-/// crop, sleep in a bed to respawn there, or pick up the nearest pile of items.
+/// crop (the soil's <c>on_activate</c>, through <c>ActivatePart</c>), sleep in a bed to respawn there, or pick up
+/// the nearest pile of items.
 /// </summary>
 public partial class SurvivalHud : CanvasLayer
 {
@@ -138,8 +139,9 @@ public partial class SurvivalHud : CanvasLayer
                 return ($"sit in the {definition.Name ?? "seat"}", () => Request(LogicActions.EnterSeat, new LogicPartArgs(creation.Id, aimed.Part)));
             if (Logic is not null && definition.Logic?.Use is { } use)
                 return ($"{use} the {definition.Name ?? "part"}", () => Request(LogicActions.ActivatePart, new LogicPartArgs(creation.Id, aimed.Part)));
+            // Harvesting is the soil script's on_activate (D2); the prompt only shows once the synced crop is ripe.
             if (definition.Soil is not null && Survival.Soil.GetValueOrDefault((creation.Id, aimed.Part)) is { Ripe: true } soil)
-                return ($"harvest {Catalog.FindDefinition(soil.Crop!)?.Name ?? soil.Crop}", () => Request(SurvivalActions.Harvest, new PartUseArgs(creation.Id, aimed.Part)));
+                return ($"harvest {Catalog.FindDefinition(soil.Crop!)?.Name ?? soil.Crop}", () => Request(LogicActions.ActivatePart, new LogicPartArgs(creation.Id, aimed.Part)));
             if (definition.RespawnPoint == true)
                 return ($"sleep here: respawn at this {definition.Name ?? "bed"}", () => Request(SurvivalActions.SetSpawn, new PartUseArgs(creation.Id, aimed.Part)));
         }

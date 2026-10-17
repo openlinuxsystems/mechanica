@@ -361,7 +361,8 @@ public sealed class ItemScriptTests : IDisposable
         Assert.Equal("The soil is already full of water.", _rig.Refused(Me, bucket, on: on));
         Assert.Equal(1, F.Pockets(Me).Count(Bucket));
 
-        F.Survival.Tick(20); // growth 2: ripe after 20 s
+        _rig.Runtime.Update(1); // the soil's script starts and stamps the soil
+        _rig.Runtime.Update(20); // growth 2: ripe after 20 s
         var view = F.Survival.SoilViewOf(F.World.FindCreation(soil)!, 1);
         Assert.True(view.Ripe);
         Assert.Equal(40f, view.Water); // a second of water per second of growing

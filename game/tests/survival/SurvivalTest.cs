@@ -5,6 +5,7 @@ using Mechanica.Core.Building;
 using Mechanica.Core.Creations;
 using Mechanica.Core.Data;
 using Mechanica.Core.Items;
+using Mechanica.Core.Logic;
 using Mechanica.Core.Player;
 using Mechanica.Core.Survival;
 using Mechanica.Core.World;
@@ -110,10 +111,21 @@ public partial class SurvivalTest : StagedTest
             Check(!soil.Ripe && _client.Main.Survival.CropNodes.ContainsKey((_soil, _soilPart)), "the client shows a young crop");
             return true;
         });
-        Stage("the crop ripens on the host and the client sees it", frame =>
+        Stage("an unripe crop cannot be harvested", frame =>
         {
             if (frame == 0)
-                HostSurvival.Tick(300);
+                Request(LogicActions.ActivatePart, new LogicPartArgs(_soil, _soilPart));
+            if (_results.Count == 0)
+                return false;
+            Check(!_results[0].Ok && _results[0].Message == "The Carrot is not ripe yet.", $"the soil's script refuses ({_results[0]})");
+            return true;
+        });
+        Stage("the crop ripens on the host and the client sees it", frame =>
+        {
+            // Skip the host's world clock 300 s ahead: the soil's script catches up on growth from the clock,
+            // as it does for a farm that was parked.
+            if (frame == 0)
+                _host.Main.Scripts.Runtime.Time += 300;
             if (_client.Main.Survival.Soil.GetValueOrDefault((_soil, _soilPart)) is not { Ripe: true })
                 return false;
             var crop = _client.Main.Survival.CropNodes[(_soil, _soilPart)];
@@ -126,11 +138,21 @@ public partial class SurvivalTest : StagedTest
         });
         Stage("the client harvests carrots and a seed", frame =>
         {
+            // F on ripe soil is ActivatePart: the soil script's on_activate (D2).
             if (frame == 0)
-                Request(SurvivalActions.Harvest, new PartUseArgs(_soil, _soilPart));
+                Request(LogicActions.ActivatePart, new LogicPartArgs(_soil, _soilPart));
+            if (_results.Count > 0 && !_results[0].Ok)
+            {
+                Check(false, $"the harvest is refused ({_results[0]})");
+                return true;
+            }
             if (_results.Count == 0 || Count(Carrot) != 5)
                 return false;
             Check(_results[0].Ok && Count(Seed) == 4, $"two carrots and the seed back ({_results[0]}; {Items()})");
+            var items = System.Text.Json.Nodes.JsonNode.Parse(_results[0].Value!.Value.GetRawText())!["items"]!.AsArray();
+            Check(items.Count == 2 && (string?)items[0]!["item"] == Carrot && (int)items[0]!["count"]! == 2, $"on_activate answers with what it gave ({_results[0]})");
+            if (_client.Main.Survival.Soil.GetValueOrDefault((_soil, _soilPart)) is { Seed: not null })
+                return false;
             return true;
         });
         Stage("eating heals", frame =>

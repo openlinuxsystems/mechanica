@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Mechanica.Core.Data;
 using Mechanica.Core.Items;
+using Mechanica.Core.Survival;
 
 namespace Mechanica.Core.Creations;
 
@@ -65,7 +66,14 @@ public static class CreationJson
                     ? [.. queue.Jobs.Select(j => new CraftJobData { Recipe = j.Recipe, Count = j.Count, Progress = j.Progress > 0 ? j.Progress : null })]
                     : null,
                 Soil = creation.SoilOf(p.Id) is { IsEmpty: false } soil
-                    ? new SoilData { Seed = soil.Seed, Grown = soil.Seed is null ? null : soil.Grown, Water = soil.Water > 0 ? soil.Water : null }
+                    ? new SoilData
+                    {
+                        Seed = soil.Seed,
+                        Grown = soil.Seed is null ? null : soil.Grown,
+                        Water = soil.Water > 0 ? soil.Water : null,
+                        Stage = soil.Seed is null || soil.Stage == 0 ? null : soil.Stage,
+                        Updated = soil.Updated,
+                    }
                     : null,
                 Extra = Sorted(p.Extra),
             })],
@@ -336,8 +344,12 @@ public static class CreationJson
             sink.Error(invalid, $"{path}.soil.grown", "grown must be 0 or more seconds.");
         else if (soil.Water is { } water && !(float.IsFinite(water) && water >= 0))
             sink.Error(invalid, $"{path}.soil.water", "water must be 0 or more seconds.");
+        else if (soil.Stage is { } stage && stage is < 0 or > SoilState.Stages)
+            sink.Error(invalid, $"{path}.soil.stage", $"stage must be 0 to {SoilState.Stages}.");
+        else if (soil.Updated is { } updated && !(double.IsFinite(updated) && updated >= 0))
+            sink.Error(invalid, $"{path}.soil.updated", "updated must be 0 or more seconds.");
         else
-            state.Load(soil.Seed is null ? null : Identifiers.Qualify(soil.Seed), soil.Grown ?? 0, soil.Water ?? 0);
+            state.Load(soil.Seed is null ? null : Identifiers.Qualify(soil.Seed), soil.Grown ?? 0, soil.Water ?? 0, soil.Stage ?? 0, soil.Updated);
     }
 
     private static bool IsFinite(Vec3 v) => float.IsFinite(v.X) && float.IsFinite(v.Y) && float.IsFinite(v.Z);
@@ -451,6 +463,10 @@ public static class CreationJson
         public float? Grown { get; init; }
 
         public float? Water { get; init; }
+
+        public int? Stage { get; init; }
+
+        public double? Updated { get; init; }
     }
 
     internal sealed record ConnectionData

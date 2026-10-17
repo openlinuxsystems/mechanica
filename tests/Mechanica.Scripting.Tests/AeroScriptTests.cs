@@ -422,8 +422,9 @@ public sealed class AeroScriptTests : IDisposable
 
     private void Activate(Creation creation, int part)
     {
-        Assert.Null(_runtime.CheckActivate(creation, part));
-        _runtime.Activate(new Core.Actions.ActionCaller(Peer, Core.Actions.ActionSource.Player), creation, part);
+        var caller = new Core.Actions.ActionCaller(Peer, Core.Actions.ActionSource.Player);
+        Assert.Null(_runtime.CheckActivate(caller, creation, part));
+        _runtime.Activate(caller, creation, part);
     }
 
     private sealed class Source : IScriptSource

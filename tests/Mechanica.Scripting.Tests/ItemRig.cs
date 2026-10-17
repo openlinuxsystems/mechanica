@@ -20,7 +20,7 @@ internal sealed class ItemRig : IDisposable
     {
         Directory.CreateDirectory(Root);
         F = fixture ?? new SurvivalFixture();
-        Runtime = new ScriptRuntime(settings ?? new ScriptSettings(), F.Dispatcher, new Motion(F), physics ?? new NoPhysics(), new Source(this));
+        Runtime = new ScriptRuntime(settings ?? new ScriptSettings(), F.Dispatcher, new Motion(this), physics ?? new NoPhysics(), new Source(this));
         Runtime.EnableItems(F.Catalog, F.Survival, F.Inventories);
         Runtime.Message += Messages.Add;
     }
@@ -30,6 +30,9 @@ internal sealed class ItemRig : IDisposable
     public ScriptRuntime Runtime { get; }
 
     public List<ScriptMessage> Messages { get; } = [];
+
+    /// <summary>Creations that are parked (not live), so their parts get no <c>on_update</c>.</summary>
+    public HashSet<int> Parked { get; } = [];
 
     public string Root { get; } = Path.Combine(Path.GetTempPath(), "mechanica-item-tests", Guid.NewGuid().ToString("N"));
 
@@ -109,13 +112,13 @@ internal sealed class ItemRig : IDisposable
     }
 
     // Item scripts move nothing; the runtime still wants a motion world for part scripts.
-    private sealed class Motion(SurvivalFixture f) : IMotionWorld
+    private sealed class Motion(ItemRig rig) : IMotionWorld
     {
-        public Creation? FindCreation(int id) => f.World.FindCreation(id);
+        public Creation? FindCreation(int id) => rig.F.World.FindCreation(id);
 
-        public IEnumerable<Creation> AllCreations => f.World.AllCreations;
+        public IEnumerable<Creation> AllCreations => rig.F.World.AllCreations;
 
-        public bool IsLive(int id) => f.World.Creations.ContainsKey(id);
+        public bool IsLive(int id) => rig.F.World.Creations.ContainsKey(id) && !rig.Parked.Contains(id);
 
         public void ApplyForce(Creation creation, int body, Vector3 force, Vector3 torque, float? duration, int? part, Vector3? at, Vector3 ownTorque)
         {

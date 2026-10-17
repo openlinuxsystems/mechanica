@@ -29,6 +29,7 @@ public class SaveGameTests
             SavedAt = new DateTimeOffset(2026, 10, 17, 12, 0, 0, TimeSpan.Zero),
             Mode = GameMode.Creative,
             Seed = -42,
+            Time = 3600.25,
             Mods = [new ModStamp("test", "1.0.0")],
             Fingerprint = "abc",
             Destroyed = [new WorldObjectId(1, 2, 3)],
@@ -51,6 +52,7 @@ public class SaveGameTests
         Assert.Equal("My World", read.Name);
         Assert.Equal(GameMode.Creative, read.Mode);
         Assert.Equal(-42, read.Seed);
+        Assert.Equal(3600.25, read.Time); // the scripts' clock carries on from here
         Assert.Equal([new WorldObjectId(1, 2, 3)], read.Destroyed);
         var player = read.Player(Ada)!;
         Assert.Equal(new SavedSlot(2, Wood, 5), Assert.Single(player.Inventory));
@@ -83,6 +85,7 @@ public class SaveGameTests
     [InlineData("""{ "format_version": 1, "seed": 1, "mode": "survival", "players": [{ "id": "nope" }] }""", "profile id")]
     [InlineData("""{ "format_version": 1, "seed": 1, "mode": "survival", "destroyed": ["x"] }""", "not a world object id")]
     [InlineData("""{ "format_version": 1, "seed": 1, "mode": "survival", "creations": [1] }""", "must be an object")]
+    [InlineData("""{ "format_version": 1, "seed": 1, "mode": "survival", "time": -1 }""", "time must be 0 or more")]
     [InlineData("""{ "format_version": 1, "seed": 1, "mode": "survival", "creations": [{ "id": 1 }, { "id": 1 }] }""", "used twice")]
     public void BadSavesGiveClearErrors(string json, string message)
     {
@@ -99,6 +102,7 @@ public class SaveGameTests
         var save = SaveGame.Read(json, "w.json", [])!;
 
         Assert.Contains("\"weather\"", save.Write());
+        Assert.Equal(0, save.Time); // a save from before the clock was kept starts it at 0
     }
 
     [Fact]

@@ -40,25 +40,36 @@ public class SurvivalDataTests
     }
 
     [Fact]
-    public void SoilUsesWaterOnlyWhileACropGrows()
+    public void SoilStoresWhatItsScriptDecides()
     {
         var soil = new SoilState();
         soil.AddWater(100, 60);
         Assert.Equal(60f, soil.Water);
-        soil.Tick(10, 1, 40);
-        Assert.Equal(60f, soil.Water); // nothing planted
+        soil.Set(grown: 10, stage: 2, updated: 5);
+        Assert.Equal((0f, 0, 5.0), (soil.Grown, soil.Stage, soil.Updated)); // nothing planted: no growth to store
 
         soil.Plant("vanilla:carrot_seed");
         var revision = soil.Revision;
-        soil.Tick(5, 1, 40);
-        Assert.Equal((5f, 55f, 0), (soil.Grown, soil.Water, soil.StageFor(40)));
-        Assert.Equal(revision, soil.Revision); // same stage: nothing new to show
-        soil.Tick(5, 1, 40);
-        Assert.Equal(1, soil.StageFor(40));
+        soil.Set(grown: 5, water: 55, stage: 0, updated: 10);
+        Assert.Equal((5f, 55f, 0, 10.0), (soil.Grown, soil.Water, soil.Stage, soil.Updated));
+        Assert.Equal(revision, soil.Revision); // same stage, still wet: nothing new to show
+        soil.Set(grown: 10, stage: 1);
         Assert.True(soil.Revision > revision);
+        Assert.Equal((10f, 55f, 10.0), (soil.Grown, soil.Water, soil.Updated)); // what is left out stays
+        revision = soil.Revision;
+        soil.Set(water: 0);
+        Assert.True(soil.Revision > revision); // ran dry
+        Assert.False(soil.Ripe);
+        soil.Set(stage: SoilState.Stages);
+        Assert.True(soil.Ripe);
+        Assert.Throws<ArgumentOutOfRangeException>(() => soil.Set(stage: SoilState.Stages + 1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => soil.Set(grown: -1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => soil.Set(water: float.NaN));
+        Assert.Throws<ArgumentOutOfRangeException>(() => soil.Set(updated: double.PositiveInfinity));
         Assert.Throws<InvalidOperationException>(() => soil.Plant("vanilla:carrot_seed"));
         soil.Clear();
-        Assert.False(soil.IsEmpty);
+        Assert.Equal((null, 0f, 0, false), (soil.Seed, soil.Grown, soil.Stage, soil.Ripe));
+        Assert.True(soil.IsEmpty);
     }
 
     [Theory]

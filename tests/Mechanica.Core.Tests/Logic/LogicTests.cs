@@ -262,7 +262,9 @@ public class LogicTests
         _host.Refuse = "Source has nothing to use.";
         Assert.Equal("Source has nothing to use.", Dispatch(Player, LogicActions.ActivatePart, new LogicPartArgs(1, 1)).Message);
         _host.Refuse = null;
-        Assert.True(Dispatch(Player, LogicActions.ActivatePart, new LogicPartArgs(1, 1)).Ok);
+        var result = Dispatch(Player, LogicActions.ActivatePart, new LogicPartArgs(1, 1));
+        Assert.True(result.Ok);
+        Assert.Equal(1, result.Value!.Value.GetProperty("part").GetInt32()); // what on_activate returned
         Assert.Equal([(Peer, 1)], _host.Activated);
         Assert.Equal(["logic_activate"], _world.Sounds);
     }
@@ -374,9 +376,13 @@ public class LogicTests
         public List<string> Seatings { get; } = [];
         public Dictionary<int, (string?, string?)> Scripts { get; } = [];
 
-        public string? CheckActivate(Creation creation, int part) => Refuse;
+        public string? CheckActivate(ActionCaller caller, Creation creation, int part) => Refuse;
 
-        public void Activate(ActionCaller caller, Creation creation, int part) => Activated.Add((caller.Peer, part));
+        public JsonElement? Activate(ActionCaller caller, Creation creation, int part)
+        {
+            Activated.Add((caller.Peer, part));
+            return Json(new { part });
+        }
 
         public void Seated(SeatAssignment seat, bool entered) => Seatings.Add($"{(entered ? "enter" : "leave")} {seat.Part}");
 
