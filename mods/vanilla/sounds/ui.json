@@ -1,0 +1,86 @@
+{
+  "events": [
+    {
+      "id": "ui_click",
+      "clips": [
+        "sounds/ui/ui_click.wav"
+      ],
+      "bus": "ui",
+      "cooldown": 0.03
+    },
+    {
+      "id": "ui_hover",
+      "clips": [
+        "sounds/ui/ui_hover.wav"
+      ],
+      "bus": "ui",
+      "volume_db": -6,
+      "cooldown": 0.05
+    },
+    {
+      "id": "ui_open",
+      "clips": [
+        "sounds/ui/ui_open.wav"
+      ],
+      "bus": "ui"
+    },
+    {
+      "id": "ui_close",
+      "clips": [
+        "sounds/ui/ui_close.wav"
+      ],
+      "bus": "ui"
+    },
+    {
+      "id": "ui_success",
+      "clips": [
+        "sounds/ui/ui_success.wav"
+      ],
+      "bus": "ui"
+    },
+    {
+      "id": "ui_error",
+      "clips": [
+        "sounds/ui/ui_error.wav"
+      ],
+      "bus": "ui",
+      "cooldown": 0.1
+    },
+    {
+      "id": "inventory_open",
+      "clips": [
+        "sounds/ui/inventory_open.wav"
+      ],
+      "bus": "ui"
+    },
+    {
+      "id": "inventory_close",
+      "clips": [
+        "sounds/ui/inventory_close.wav"
+      ],
+      "bus": "ui"
+    },
+    {
+      "id": "inventory_full",
+      "clips": [
+        "sounds/ui/inventory_full.wav"
+      ],
+      "bus": "ui",
+      "cooldown": 0.3
+    },
+    {
+      "id": "craft_start",
+      "clips": [
+        "sounds/ui/craft_start.wav"
+      ],
+      "bus": "ui"
+    },
+    {
+      "id": "craft_complete",
+      "clips": [
+        "sounds/ui/craft_complete.wav"
+      ],
+      "bus": "ui"
+    }
+  ]
+}

@@ -219,6 +219,25 @@ public sealed class PartDocument
         return d with { Visual = d.Visual! with { Variants = rest.Count > 0 ? rest : null } };
     });
 
+    /// <summary>
+    /// Binds the part's local sound name <paramref name="key"/> to the sound event <paramref name="sound"/>,
+    /// or removes the binding when it is null or empty. An empty map is dropped from the data.
+    /// </summary>
+    public void SetSound(string key, string? sound)
+    {
+        if (Definition.Sounds?.GetValueOrDefault(key) == (string.IsNullOrEmpty(sound) ? null : sound))
+            return;
+        Apply(string.IsNullOrEmpty(sound) ? $"Unbind {key} sound" : $"Bind {key} sound", d =>
+        {
+            var sounds = new Dictionary<string, string>(d.Sounds ?? [], StringComparer.Ordinal);
+            if (string.IsNullOrEmpty(sound))
+                sounds.Remove(key);
+            else
+                sounds[key] = sound;
+            return d with { Sounds = sounds.Count > 0 ? sounds : null };
+        });
+    }
+
     internal void MarkSaved(PartDefinition definition, PartSource source, string relativeFile)
     {
         // Export may fill in derived data (the baked mesh path) without an undo step.

@@ -109,10 +109,10 @@ The **Look** tab sets the part's material:
 
 ## 7. Behaviour
 
-The **Behaviour** tab links a Lua **Script** from the mod's `scripts/` folder, the part's **Sounds**,
-and free-form **Properties** that the script reads. All of this is JSON, and balance numbers belong
-here rather than in code. A plain block needs none of it. The [Lua API Reference](lua-api.md) lists
-what scripts can call.
+The **Behaviour** tab links a Lua **Script** from the mod's `scripts/` folder and free-form
+**Properties** that the script reads. All of this is JSON, and balance numbers belong here rather
+than in code. A plain block needs none of it. The [Lua API Reference](lua-api.md) lists what scripts
+can call.
 
 The **Script** tab edits that script. Pick a template (empty, thruster, bearing motor, wing or
 distance sensor) and press **New from template**: a part without a script gets
@@ -122,7 +122,26 @@ checks it. A compile error is marked on its line. When the Test Sandbox is runni
 save reloads it into the running parts, keeping their `state`, and the **Console** shows what the
 scripts print and every error. Export the part once so the sandbox knows it has a script.
 
-## 8. Export
+## 8. Sounds
+
+The **Sounds** tab is the Sound Event Binder. Its top half lists the part's sound names: `place`,
+`remove`, `break` and `impact`, which the game plays, plus names suggested for the part's category and
+any you add with **+ Sound name** for its script. Pick an event for each from every mod's sounds, or
+leave it on the material fallback shown in brackets (`place_wood` for a `wood` part). Press ▶ to hear
+what it plays.
+
+The bottom half edits your mod's own sound events, saved to `sounds/<mod id>.json`:
+
+- **+ Event from clip…** imports an `.ogg` or `.wav` into the mod's `sounds/` folder and makes an
+  event for it. **Import…** next to **Clips** adds more clips; each play picks one at random.
+- Set the bus, whether it loops, volume and pitch with their random variation, how far it carries, and
+  for a loop its parameters.
+- **▶ Preview** plays the event as it stands, before you save. **Save** checks it with the game's
+  rules and writes the file; problems are listed under it.
+
+Saved events can be bound straight away. See [Sound Events](sound-events.md) for every field.
+
+## 9. Export
 
 Press **Export** (Ctrl+S). The editor checks the part with the same rules the game uses when it
 loads mods. Problems appear in the list under the preview, with errors first. Fix them and export
@@ -132,7 +151,7 @@ A successful export writes `parts/<part id>.json`, the baked mesh, and the edito
 If you rename a part's id, the old part file is replaced. Meshes are kept, because another part may
 use them.
 
-## 9. Test in the sandbox
+## 10. Test in the sandbox
 
 Press **Test in Sandbox**. The editor reloads mods and opens the Test Sandbox, where your part drops
 in front of you.
@@ -149,7 +168,7 @@ in front of you.
 
 You can also open the sandbox from the main menu with **Test Sandbox**.
 
-## 10. Many similar parts: batches
+## 11. Many similar parts: batches
 
 When a mod has many parts that differ only in a few numbers, such as a set of blocks and their
 wedges, describe them once in a **batch file** and let the editor make them all. A batch lives in
@@ -207,4 +226,5 @@ made this way from `mods/vanilla/editor/batches/structural_blocks.json` (`tools/
 ## Where to go next
 
 - [Part Data Schema Reference](part-data-schema.md): every key in a part file.
+- [Sound Events](sound-events.md): sound event files and part sounds.
 - [Packaging Guide](packaging-guide.md): sharing your mod.

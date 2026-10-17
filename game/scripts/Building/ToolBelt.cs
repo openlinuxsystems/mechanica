@@ -24,6 +24,9 @@ public partial class ToolBelt : Node
     /// <summary>Settings, content and the world. Set before adding to the tree.</summary>
     public BuildSync Build { get; init; } = null!;
 
+    /// <summary>Where the tools' own feedback sounds play; null plays none.</summary>
+    public Sound.SoundSync? Sounds { get; init; }
+
     /// <summary>Inventories, for the item in hand. Set before adding to the tree.</summary>
     public InventorySync Inventory { get; init; } = null!;
 
@@ -59,12 +62,12 @@ public partial class ToolBelt : Node
 
     public override void _Ready()
     {
-        Hammer = Add(new HammerTool { Name = "Hammer", Player = Player, Actions = Actions, Build = Build, ReadDeviceInput = ReadDeviceInput });
-        Lift = Add(new LiftTool { Name = "Lift", Player = Player, Actions = Actions, Build = Build, ReadDeviceInput = ReadDeviceInput });
-        Weld = Add(new WeldTool { Name = "Weld", Player = Player, Actions = Actions, Build = Build, ReadDeviceInput = ReadDeviceInput });
-        Paint = Add(new PaintTool { Name = "Paint", Player = Player, Actions = Actions, Build = Build, ReadDeviceInput = ReadDeviceInput });
-        Sledge = Add(new SledgeTool { Name = "Sledge", Player = Player, Actions = Actions, Build = Build, ReadDeviceInput = ReadDeviceInput });
-        Item = Add(new ItemTool { Name = "Item", Player = Player, Actions = Actions, Build = Build, Inventory = Inventory, Survival = Survival, ReadDeviceInput = ReadDeviceInput });
+        Hammer = Add(new HammerTool { Name = "Hammer", Player = Player, Actions = Actions, Build = Build, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput });
+        Lift = Add(new LiftTool { Name = "Lift", Player = Player, Actions = Actions, Build = Build, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput });
+        Weld = Add(new WeldTool { Name = "Weld", Player = Player, Actions = Actions, Build = Build, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput });
+        Paint = Add(new PaintTool { Name = "Paint", Player = Player, Actions = Actions, Build = Build, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput });
+        Sledge = Add(new SledgeTool { Name = "Sledge", Player = Player, Actions = Actions, Build = Build, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput });
+        Item = Add(new ItemTool { Name = "Item", Player = Player, Actions = Actions, Build = Build, Inventory = Inventory, Survival = Survival, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput });
         Hammer.Active = true;
         if (!ReadDeviceInput)
             return;

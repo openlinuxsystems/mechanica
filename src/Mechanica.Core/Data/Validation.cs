@@ -429,7 +429,8 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
     /// <summary>True for <c>item_id</c> or <c>mod_id:item_id</c>.</summary>
     internal static bool IsItemRef([System.Diagnostics.CodeAnalysis.NotNullWhen(true)] string? id) => id is not null && IsSoundId(id);
 
-    private void CheckAsset(string? text, string jsonPath, AssetKind kind, DiagnosticSink sink)
+    /// <summary>Checks an asset path: well formed, in this mod or a declared dependency, and present on disk.</summary>
+    internal void CheckAsset(string? text, string jsonPath, AssetKind kind, DiagnosticSink sink)
     {
         if (text is null)
             return;

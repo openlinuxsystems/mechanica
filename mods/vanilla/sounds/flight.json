@@ -1,0 +1,152 @@
+{
+  "events": [
+    {
+      "id": "thruster_ignite",
+      "clips": [
+        "sounds/flight/thruster_ignite.ogg"
+      ],
+      "max_distance": 120
+    },
+    {
+      "id": "thruster_loop",
+      "clips": [
+        "sounds/flight/thruster_loop.ogg"
+      ],
+      "loop": true,
+      "max_distance": 120,
+      "parameters": [
+        {
+          "name": "thrust",
+          "pitch": [
+            0.8,
+            1.25
+          ],
+          "volume_db": [
+            -12,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": "thruster_cut",
+      "clips": [
+        "sounds/flight/thruster_cut.ogg"
+      ],
+      "max_distance": 120
+    },
+    {
+      "id": "rotor_spin_up",
+      "clips": [
+        "sounds/flight/rotor_spin_up.ogg"
+      ],
+      "max_distance": 80
+    },
+    {
+      "id": "rotor_loop",
+      "clips": [
+        "sounds/flight/rotor_loop.ogg"
+      ],
+      "loop": true,
+      "max_distance": 80,
+      "parameters": [
+        {
+          "name": "speed",
+          "pitch": [
+            0.5,
+            1.6
+          ],
+          "volume_db": [
+            -14,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rotor_spin_down",
+      "clips": [
+        "sounds/flight/rotor_spin_down.ogg"
+      ],
+      "max_distance": 80
+    },
+    {
+      "id": "hover_ignite",
+      "clips": [
+        "sounds/flight/hover_ignite.ogg"
+      ],
+      "max_distance": 60
+    },
+    {
+      "id": "hover_hum",
+      "clips": [
+        "sounds/flight/hover_hum.ogg"
+      ],
+      "loop": true,
+      "max_distance": 60,
+      "parameters": [
+        {
+          "name": "thrust",
+          "pitch": [
+            0.85,
+            1.2
+          ],
+          "volume_db": [
+            -10,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hover_cut",
+      "clips": [
+        "sounds/flight/hover_cut.ogg"
+      ],
+      "max_distance": 60
+    },
+    {
+      "id": "air_whoosh",
+      "clips": [
+        "sounds/flight/air_whoosh.ogg"
+      ],
+      "loop": true,
+      "max_distance": 30,
+      "parameters": [
+        {
+          "name": "airspeed",
+          "pitch": [
+            0.7,
+            1.8
+          ],
+          "volume_db": [
+            -30,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wing_stall",
+      "clips": [
+        "sounds/flight/wing_stall.ogg"
+      ],
+      "max_distance": 40
+    },
+    {
+      "id": "surface_move",
+      "clips": [
+        "sounds/flight/surface_move.ogg"
+      ],
+      "pitch_variation": 0.05,
+      "max_distance": 20
+    },
+    {
+      "id": "surface_lock",
+      "clips": [
+        "sounds/flight/surface_lock.ogg"
+      ],
+      "max_distance": 20
+    }
+  ]
+}

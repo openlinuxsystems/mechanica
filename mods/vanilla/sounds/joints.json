@@ -1,0 +1,82 @@
+{
+  "events": [
+    {
+      "id": "bearing_start",
+      "clips": [
+        "sounds/joints/bearing_start.ogg"
+      ],
+      "max_distance": 30
+    },
+    {
+      "id": "bearing_spin_loop",
+      "clips": [
+        "sounds/joints/bearing_spin_loop.ogg"
+      ],
+      "loop": true,
+      "volume_db": -6,
+      "max_distance": 30,
+      "parameters": [
+        {
+          "name": "speed",
+          "pitch": [
+            0.6,
+            2.2
+          ],
+          "volume_db": [
+            -14,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bearing_stop",
+      "clips": [
+        "sounds/joints/bearing_stop.ogg"
+      ],
+      "max_distance": 30
+    },
+    {
+      "id": "piston_extend",
+      "clips": [
+        "sounds/joints/piston_extend.ogg"
+      ],
+      "pitch_variation": 0.04,
+      "max_distance": 30
+    },
+    {
+      "id": "piston_retract",
+      "clips": [
+        "sounds/joints/piston_retract.ogg"
+      ],
+      "pitch_variation": 0.04,
+      "max_distance": 30
+    },
+    {
+      "id": "piston_stall",
+      "clips": [
+        "sounds/joints/piston_stall.ogg"
+      ],
+      "pitch_variation": 0.04,
+      "max_distance": 30
+    },
+    {
+      "id": "suspension_compress",
+      "clips": [
+        "sounds/joints/suspension_compress.ogg",
+        "sounds/joints/suspension_compress_2.ogg"
+      ],
+      "pitch_variation": 0.08,
+      "max_distance": 20
+    },
+    {
+      "id": "suspension_extend",
+      "clips": [
+        "sounds/joints/suspension_extend.ogg",
+        "sounds/joints/suspension_extend_2.ogg"
+      ],
+      "pitch_variation": 0.08,
+      "max_distance": 20
+    }
+  ]
+}
