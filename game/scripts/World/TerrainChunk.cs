@@ -6,7 +6,10 @@ namespace Mechanica.Game.World;
 /// <summary>
 /// One streamed chunk of generated ground (chunk 19, D11), built from a Core <see cref="TerrainChunkData"/>:
 /// <list type="bullet">
-/// <item>the chunk body itself, with a <see cref="HeightMapShape3D"/> and a vertex-coloured mesh;</item>
+/// <item>the ground: a vertex-coloured mesh, and a <see cref="HeightMapShape3D"/> (<see cref="GroundShape"/>)
+/// added to the streamer's one shared <see cref="Ground"/> body. Every chunk's height map is a shape of
+/// that one body, so Jolt's internal edge removal sees across chunk borders and wheels roll over them
+/// smoothly; with a body per chunk they bumped on the edge of the chunk they were leaving.</item>
 /// <item>a sea surface where the ground dips below sea level (visual only until water exists);</item>
 /// <item><see cref="Objects"/>: one static body holding a collider per scattered object that is not
 /// destroyed, drawn with one <see cref="MultiMesh"/> per object piece;</item>
@@ -15,7 +18,7 @@ namespace Mechanica.Game.World;
 /// </list>
 /// Meshes, materials and the sea are shared between chunks.
 /// </summary>
-public partial class TerrainChunk : StaticBody3D
+public partial class TerrainChunk : Node3D
 {
     private static readonly StandardMaterial3D GroundMaterial = new() { VertexColorUseAsAlbedo = true, VertexColorIsSrgb = true, Roughness = 0.95f };
     private static readonly StandardMaterial3D WaterMaterial = new()
@@ -35,6 +38,12 @@ public partial class TerrainChunk : StaticBody3D
 
     /// <summary>Which objects are destroyed. Set before adding to the tree; call <see cref="RefreshObjects"/> after changing it.</summary>
     public WorldState State { get; set; } = null!;
+
+    /// <summary>The static body every loaded chunk's ground shape belongs to, a sibling of this node. Set before adding to the tree.</summary>
+    public StaticBody3D Ground { get; init; } = null!;
+
+    /// <summary>This chunk's height map collider, a child of <see cref="Ground"/> while the chunk is in the tree.</summary>
+    public CollisionShape3D GroundShape { get; private set; } = null!;
 
     /// <summary>Which chunk this is.</summary>
     public ChunkCoord Coord => Data.Coord;
@@ -61,6 +70,15 @@ public partial class TerrainChunk : StaticBody3D
         AddChild(Objects);
         BuildObjects();
         BuildStructures();
+    }
+
+    // The ground shape lives on the shared body, so it goes when the chunk does.
+    public override void _ExitTree()
+    {
+        if (!IsInstanceValid(GroundShape))
+            return;
+        GroundShape.GetParent()?.RemoveChild(GroundShape);
+        GroundShape.QueueFree();
     }
 
     /// <summary>True when this chunk generated the object (destroyed or not).</summary>
@@ -91,14 +109,16 @@ public partial class TerrainChunk : StaticBody3D
     {
         var n = Data.Samples;
         var res = Data.Resolution;
-        AddChild(new CollisionShape3D
+        GroundShape = new CollisionShape3D
         {
-            Name = "Shape",
+            Name = $"Shape_{Coord.X}_{Coord.Z}",
             Shape = new HeightMapShape3D { MapWidth = n, MapDepth = n, MapData = Data.Heights },
-            // A height map is centred on its node and spaced 1 m; scale it to the resolution.
-            Position = new Vector3(Data.Size / 2f, 0, Data.Size / 2f),
+            // A height map is centred on its node and spaced 1 m; scale it to the resolution. Ground is
+            // this node's sibling, so the shape sits at the chunk's position plus half a chunk.
+            Position = Position + new Vector3(Data.Size / 2f, 0, Data.Size / 2f),
             Scale = new Vector3(res, 1f, res),
-        });
+        };
+        Ground.AddChild(GroundShape, forceReadableName: true);
 
         var vertices = new Vector3[n * n];
         var normals = new Vector3[n * n];

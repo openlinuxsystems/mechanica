@@ -52,6 +52,9 @@ public partial class WorldStreamer : Node3D
     /// <summary>Tuning; null reads <see cref="DefaultSettingsPath"/> when the node starts.</summary>
     public StreamingSettings? Settings { get; set; }
 
+    /// <summary>The one static body that holds every loaded chunk's ground shape (see <see cref="TerrainChunk"/>).</summary>
+    public StaticBody3D Ground { get; private set; } = null!;
+
     /// <summary>The streaming logic, once started.</summary>
     public ChunkStreamer Streamer { get; private set; } = null!;
 
@@ -85,6 +88,8 @@ public partial class WorldStreamer : Node3D
     {
         ProcessPhysicsPriority = -200;
         Settings ??= LoadDefaultSettings();
+        Ground = new StaticBody3D { Name = "Ground" };
+        AddChild(Ground);
         State = InitialState is { } loaded && loaded.Seed == Seed ? loaded : new WorldState(Seed);
         Generator = new WorldGenerator(WorldGen, Seed, Settings.WorldSize);
         Streamer = new ChunkStreamer(Settings);
@@ -168,7 +173,7 @@ public partial class WorldStreamer : Node3D
     private void Build(ChunkCoord chunk)
     {
         _pending.Remove(chunk);
-        var node = new TerrainChunk { Data = Generator.GenerateChunk(chunk, Streamer.Settings.ChunkSize), State = State };
+        var node = new TerrainChunk { Data = Generator.GenerateChunk(chunk, Streamer.Settings.ChunkSize), State = State, Ground = Ground };
         AddChild(node);
         _chunks[chunk] = node;
     }

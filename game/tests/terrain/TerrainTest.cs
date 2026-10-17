@@ -44,7 +44,7 @@ public partial class TerrainTest : StagedTest
             var origin = new ChunkCoord(0, 0);
             var (host, client) = (HostWorld.Chunks[origin], ClientWorld.Chunks[origin]);
             Check(host.Data.Heights.SequenceEqual(client.Data.Heights), "chunk (0, 0) has the same heights on both peers");
-            var shape = host.GetNode<CollisionShape3D>("Shape").Shape as HeightMapShape3D;
+            var shape = host.GroundShape.Shape as HeightMapShape3D;
             Check(shape is not null && shape.MapData.SequenceEqual(host.Data.Heights), "the ground collides as a height map of those heights");
             Check(_host.Main.GetNode<Node3D>("SpawnPoint").GlobalPosition.IsEqualApprox(new Vector3(0, 0, 4)), "players spawn at the crash site's spawn marker");
             foreach (var instance in new[] { _host, _client })

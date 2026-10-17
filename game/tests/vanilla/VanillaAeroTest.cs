@@ -30,8 +30,7 @@ public partial class VanillaAeroTest : StagedTest
     private const int PlaneId = 1, HeliId = 2;
     private static readonly string[] Outputs = ["thruster", "wing", "control_surface", "rotor", "hover_jet"];
 
-    // The plane takes off along the diagonal of one 64 m ground chunk, toward its corner at the origin: wheels
-    // bump where two chunks' ground meets (a chunk 19 follow-up).
+    // The plane takes off along the diagonal of one 64 m ground chunk, toward its corner at the origin.
     private static readonly Vector3 PlaneAt = new(58, 1.2f, 58);
     private static readonly Quaternion PlaneHeading = new(Vector3.Up, Mathf.Pi / 4);
     private static readonly Vector3 HeliAt = new(-20, 1.2f, -40);
