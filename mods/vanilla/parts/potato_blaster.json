@@ -8,11 +8,12 @@
   "visual": {
     "color": "#6a7a50"
   },
+  "script": "scripts/potato_gun.lua",
   "sounds": {
     "fire": "blaster_fire",
     "reload": "blaster_reload"
   },
-  "weapon": {
+  "properties": {
     "damage": 20,
     "interval": 0.25,
     "range": 60,

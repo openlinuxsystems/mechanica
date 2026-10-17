@@ -145,9 +145,6 @@ public sealed record PartDefinition
     /// <summary>Makes the part a crafting station that runs recipes naming it. Needs <see cref="Inventory"/> for its output.</summary>
     public CraftingDefinition? Crafting { get; init; }
 
-    /// <summary>Makes an item edible: eating it restores health (chunk 20). Items only.</summary>
-    public FoodDefinition? Food { get; init; }
-
     /// <summary>Makes an item a seed that grows into a crop on soil (chunk 20). Items only.</summary>
     public SeedDefinition? Seed { get; init; }
 
@@ -156,9 +153,6 @@ public sealed record PartDefinition
 
     /// <summary>Makes a placeable part farm soil that seeds are planted in (chunk 20).</summary>
     public SoilDefinition? Soil { get; init; }
-
-    /// <summary>Makes an item a handheld weapon (chunk 20). Items only.</summary>
-    public WeaponDefinition? Weapon { get; init; }
 
     /// <summary>Makes a placeable part a respawn point a player can set (a bed, chunk 20).</summary>
     public bool? RespawnPoint { get; init; }
@@ -207,17 +201,6 @@ public sealed record CraftingDefinition
     public Dictionary<string, JsonElement>? Extra { get; init; }
 }
 
-/// <summary>An edible item. Health is the only survival meter (D12), so food only heals.</summary>
-public sealed record FoodDefinition
-{
-    /// <summary>Health one eaten item restores (more than 0).</summary>
-    public float? Health { get; init; }
-
-    /// <summary>Keys this build does not know.</summary>
-    [JsonExtensionData]
-    public Dictionary<string, JsonElement>? Extra { get; init; }
-}
-
 /// <summary>A seed: planted in soil, it grows over time while the soil is watered, then is harvested.</summary>
 public sealed record SeedDefinition
 {
@@ -260,42 +243,6 @@ public sealed record SoilDefinition
 
     /// <summary>Speed multiplier on growth (1 grows a crop in its <c>grow_time</c>). Omitted means 1.</summary>
     public float? Growth { get; init; }
-
-    /// <summary>Keys this build does not know.</summary>
-    [JsonExtensionData]
-    public Dictionary<string, JsonElement>? Extra { get; init; }
-}
-
-/// <summary>
-/// A handheld weapon. A shot is a host-side ray (or several pellets) out to <see cref="Range"/> from the
-/// shooter's eyes; what it hits takes <see cref="Damage"/>, and with a <see cref="Radius"/> everything
-/// near the hit point takes splash damage too. Weapon handling is a generic C# primitive configured here.
-/// </summary>
-public sealed record WeaponDefinition
-{
-    /// <summary>Damage one pellet deals to what it hits (more than 0).</summary>
-    public float? Damage { get; init; }
-
-    /// <summary>Seconds between shots (more than 0).</summary>
-    public float? Interval { get; init; }
-
-    /// <summary>How far a shot reaches, in metres (more than 0).</summary>
-    public float? Range { get; init; }
-
-    /// <summary>Item one shot uses up (<c>potato</c>; the weapon's own id for a thrown weapon). Omitted means none.</summary>
-    public string? Ammo { get; init; }
-
-    /// <summary>Rays per shot. Omitted means 1.</summary>
-    public int? Pellets { get; init; }
-
-    /// <summary>Half-angle of the pellet cone in degrees. Omitted means 0.</summary>
-    public float? Spread { get; init; }
-
-    /// <summary>Splash radius around the hit point in metres; damage falls off to 0 at the edge. Omitted means none.</summary>
-    public float? Radius { get; init; }
-
-    /// <summary>Push given to a Creation hit, in N·s per pellet. Omitted means 0.</summary>
-    public float? Impulse { get; init; }
 
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]

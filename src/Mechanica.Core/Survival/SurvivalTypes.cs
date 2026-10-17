@@ -7,15 +7,6 @@ using Mechanica.Core.World;
 
 namespace Mechanica.Core.Survival;
 
-/// <summary>Arguments of <c>Eat</c>: eat one of the food in a slot of the caller's inventory.</summary>
-/// <param name="Slot">The slot.</param>
-public sealed record EatArgs(int Slot);
-
-/// <summary>Arguments of <c>Fire</c>: shoot (or throw) the weapon in a slot of the caller's inventory.</summary>
-/// <param name="Slot">The slot holding the weapon.</param>
-/// <param name="Direction">Where the shot goes from the shooter's eyes; the host checks it against where they look.</param>
-public sealed record FireArgs(int Slot, Vec3 Direction);
-
 /// <summary>Arguments of the soil actions (<c>Plant</c>, <c>Water</c>, <c>Harvest</c>) and <c>SetSpawn</c>.</summary>
 /// <param name="Creation">Creation holding the part.</param>
 /// <param name="Part">The soil (or bed) part.</param>
@@ -71,11 +62,7 @@ public sealed record SoilView(int Creation, int Part, string? Seed = null, strin
 /// <param name="Expires">Host clock time at which it is gone, in seconds.</param>
 public sealed record ItemDrop(int Id, Vec3 Position, IReadOnlyList<ItemStack> Items, double Expires);
 
-/// <summary>Value of a successful <c>Eat</c>.</summary>
-/// <param name="Health">Health after eating.</param>
-public sealed record EatResult(float Health);
-
-/// <summary>One thing a shot hit.</summary>
+/// <summary>One thing a shot, a splash or a bot's attack hit (<see cref="SurvivalActions.Hit"/>, <see cref="SurvivalActions.Splash"/>).</summary>
 /// <param name="Kind"><c>player</c>, <c>part</c>, <c>object</c>, <c>bot</c>, <c>crop</c> (a bot destroyed it) or <c>ground</c>.</param>
 /// <param name="Point">Where, in world metres.</param>
 /// <param name="Damage">Damage dealt.</param>
@@ -86,9 +73,22 @@ public sealed record EatResult(float Health);
 /// <param name="Bot">The bot hit.</param>
 public sealed record ShotHitView(string Kind, Vec3 Point, float Damage, int? Player = null, int? Creation = null, int? Part = null, string? Object = null, int? Bot = null);
 
-/// <summary>Value of a successful <c>Fire</c>.</summary>
-/// <param name="Hits">What the pellets and the splash hit.</param>
-public sealed record FireResult(IReadOnlyList<ShotHitView> Hits);
+/// <summary>A projectile in flight, as clients are sent it to draw (<see cref="SurvivalActions.Launch"/>).</summary>
+/// <param name="Id">Projectile id.</param>
+/// <param name="Owner">Peer whose player launched it.</param>
+/// <param name="From">Where it was launched, in world metres.</param>
+/// <param name="Velocity">Launch velocity, in m/s.</param>
+/// <param name="Gravity">Its constant acceleration, in m/s².</param>
+/// <param name="Lifetime">Seconds it flies before it ends where it is.</param>
+/// <param name="Age">Seconds it had flown when this view was made. Its position is From + Velocity·t + ½·Gravity·t².</param>
+public sealed record ProjectileView(int Id, int Owner, Vec3 From, Vec3 Velocity, Vec3 Gravity, float Lifetime, float Age);
+
+/// <summary>Where a projectile's flight ended.</summary>
+/// <param name="Id">Projectile id.</param>
+/// <param name="Owner">Peer whose player launched it.</param>
+/// <param name="Point">Where it ended, in world metres.</param>
+/// <param name="Hit">What it hit, or null when its lifetime ran out.</param>
+public sealed record ProjectileLanding(int Id, int Owner, Vector3 Point, RayHit? Hit);
 
 /// <summary>Value of a successful <c>Harvest</c>.</summary>
 /// <param name="Items">What went into the caller's inventory.</param>

@@ -153,10 +153,8 @@ public sealed class BotActionsTests
     public void Weapons_and_splash_hurt_bots()
     {
         var bot = _f.Spawn(BotFixture.Grunt, new Vector3(0, 0, -5));
-        S.Pockets(Me).Add(Blaster, 1);
-        S.Pockets(Me).Add(Crop, 3);
         S.World.Ray = (_, _) => new RayHit(new Vector3(0, 0.6f, -5), Bot: bot);
-        var hit = S.Ok<FireResult>(Me, SurvivalActions.Fire, new FireArgs(S.SlotOf(Me, Blaster), new Vec3(0, 0, -1))).Hits.Single();
+        var hit = S.Survival.Hitscan(Me, new Vector3(0, 1.6f, 0), new Vector3(0, 0, -1), 30, 20, 0)!;
         Assert.Equal(("bot", (int?)bot, 20f), (hit.Kind, hit.Bot, hit.Damage));
         Assert.Equal(40, _f.Bots.Find(bot)!.Health);
         var hits = S.Survival.Splash(Me, new Vector3(0, 0.6f, -4), 4, 40, 0);

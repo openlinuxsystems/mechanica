@@ -25,7 +25,8 @@ namespace Mechanica.Game.Survival;
 /// <para>
 /// Clients are sent what they show: every player's <see cref="VitalsView"/> when it changes (so dead
 /// players are hidden everywhere), every pile of items on the ground, and the <see cref="SoilView"/> of
-/// each soil part whose crop or water changed. A peer that becomes ready is sent all of it.
+/// each soil part whose crop or water changed, and every projectile item scripts launch (chunk 20b), which
+/// each peer then flies along its arc itself. A peer that becomes ready is sent all of it.
 /// </para>
 /// </summary>
 public partial class SurvivalSync : Node3D, ISurvivalWorld
@@ -47,6 +48,7 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
     // Host side: each Body's velocity last tick, and Bodies pushed since then (not crashes).
     private readonly Dictionary<ulong, Vector3> _lastVelocity = [];
     private readonly HashSet<ulong> _pushed = [];
+    private readonly Dictionary<int, (ProjectileView View, double ShownAt, MeshInstance3D Node)> _projectiles = [];
     private int _tick;
 
     /// <summary>The session updates travel over. Set before adding to the tree.</summary>
@@ -102,6 +104,9 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
     /// <summary>The nodes showing crops, by Creation and part (tests look at them).</summary>
     public IReadOnlyDictionary<(int Creation, int Part), CropNode> CropNodes => _cropNodes;
 
+    /// <summary>The projectiles this peer shows in flight, by id (tests look at them).</summary>
+    public IReadOnlyDictionary<int, MeshInstance3D> ProjectileNodes => _projectiles.ToDictionary(p => p.Key, p => p.Value.Node);
+
     /// <summary>Raised on this peer when a player's health arrives or changes.</summary>
     public event Action<VitalsView>? VitalsChanged;
 
@@ -153,6 +158,8 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
         Actions.VitalsChanged += OnVitalsChanged;
         Actions.DropChanged += OnDropChanged;
         Actions.DropRemoved += OnDropRemoved;
+        Actions.ProjectileLaunched += view => Broadcast(MethodName.ShowProjectile, Json(view));
+        Actions.ProjectileLanded += OnProjectileLanded;
         Build.Costs = Actions;
     }
 
@@ -170,6 +177,18 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
     {
         foreach (var (key, crop) in _cropNodes)
             crop.Follow(Creations.NodeOf(key.Creation), key.Part);
+        foreach (var (id, (view, shownAt, node)) in _projectiles.ToList())
+        {
+            // The host ends a flight when it lands; a lost message only lets one fly out its lifetime.
+            var t = view.Age + (float)(Now - shownAt);
+            if (t > view.Lifetime + 1f)
+            {
+                HideProjectile(id);
+                continue;
+            }
+            t = Math.Min(t, view.Lifetime);
+            node.Position = view.From.ToGodot() + view.Velocity.ToGodot() * t + view.Gravity.ToGodot() * (0.5f * t * t);
+        }
     }
 
     // ---- ISurvivalWorld ----
@@ -364,6 +383,16 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
 
     private void OnDropChanged(ItemDrop drop) => Broadcast(MethodName.ShowDrop, Json(drop));
 
+    private void OnProjectileLanded(ProjectileLanding landing)
+    {
+        HideProjectile(landing.Id);
+        if (Session.State == NetSession.SessionState.Hosting)
+        {
+            foreach (var peer in Session.ReadyPeers)
+                RpcId(peer, MethodName.HideProjectile, landing.Id);
+        }
+    }
+
     private void OnDropRemoved(int id)
     {
         HideDrop(id);
@@ -395,6 +424,8 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
         }
         foreach (var drop in Actions.Drops.Values)
             RpcId(peer, MethodName.ShowDrop, Json(drop));
+        foreach (var projectile in Actions.Projectiles)
+            RpcId(peer, MethodName.ShowProjectile, Json(projectile));
         foreach (var creation in Creations.All)
         {
             foreach (var (part, _) in creation.ActiveSoil)
@@ -411,6 +442,8 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
         _vitalsAt.Clear();
         foreach (var id in _drops.Keys.ToList())
             HideDrop(id);
+        foreach (var id in _projectiles.Keys.ToList())
+            HideProjectile(id);
         foreach (var key in _soil.Keys.ToList())
             ShowSoil(Json(new SoilView(key.Creation, key.Part, null, null, 0, 0, 0)));
     }
@@ -454,6 +487,34 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
         {
             RemoveChild(node);
             node.QueueFree();
+        }
+    }
+
+    /// <summary>Host → client: a projectile was launched; this peer flies it along its arc.</summary>
+    [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void ShowProjectile(string json)
+    {
+        if (Read<ProjectileView>(json) is not { } view)
+            return;
+        HideProjectile(view.Id);
+        var node = new MeshInstance3D
+        {
+            Name = $"Projectile{view.Id}",
+            Mesh = new SphereMesh { Radius = 0.08f, Height = 0.16f },
+            Position = view.From.ToGodot(),
+        };
+        _projectiles[view.Id] = (view, Now, node);
+        AddChild(node);
+    }
+
+    /// <summary>Host → client: a projectile landed.</summary>
+    [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void HideProjectile(int id)
+    {
+        if (_projectiles.Remove(id, out var shown))
+        {
+            RemoveChild(shown.Node);
+            shown.Node.QueueFree();
         }
     }
 

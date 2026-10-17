@@ -16,8 +16,9 @@ namespace Mechanica.Core.Survival;
 /// <item>Health is the only meter (D12). Damage comes from weapons, the Sledgehammer, falls and splash;
 /// at 0 a player dies, drops what they carry and may <c>Respawn</c> after a delay, at their bed or the
 /// world spawn. In Creative nothing hurts a player.</item>
-/// <item><c>Eat</c> heals with food. <c>Fire</c> shoots a weapon: host-side rays that hurt players, break
-/// parts and fell world objects.</item>
+/// <item>Weapons and food are Lua item scripts (chunk 20b, D2). They hurt and heal through the generic
+/// combat primitives here: <see cref="Hitscan"/>, <see cref="Hit"/>, <see cref="Splash"/>, <see cref="Launch"/>
+/// (projectiles) and <see cref="Heal"/>.</item>
 /// <item>Farming: <c>Plant</c> a seed in soil, <c>Water</c> it (buckets come from <c>CollectWater</c>),
 /// and <c>Harvest</c> it once ripe. Crops grow only while their soil is watered.</item>
 /// <item>Items on the ground: <c>DropItems</c>, <c>PickUp</c>. Broken containers, broken world objects and
@@ -31,12 +32,6 @@ namespace Mechanica.Core.Survival;
 public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings settings, InventoryActions inventories, ISurvivalWorld world)
     : IBuildCosts, IStrikeTargets
 {
-    /// <summary>Action name for eating.</summary>
-    public const string Eat = "Eat";
-
-    /// <summary>Action name for shooting a weapon.</summary>
-    public const string Fire = "Fire";
-
     /// <summary>Action name for planting a seed.</summary>
     public const string Plant = "Plant";
 
@@ -67,14 +62,15 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     /// <summary>Action name for reading what grows on a soil part.</summary>
     public const string GetSoil = "GetSoil";
 
-    // Share of a weapon's interval the host insists on between one player's shots (network jitter).
+    // Share of the filling time the host insists on between one player's buckets (network jitter).
     private const double IntervalJitter = 0.8;
 
     private readonly SortedDictionary<int, Vitals> _vitals = [];
     private readonly SortedDictionary<int, ItemDrop> _drops = [];
-    private readonly Dictionary<int, double> _lastShot = [];
+    private readonly SortedDictionary<int, Flight> _projectiles = [];
     private readonly Dictionary<int, double> _lastWater = [];
     private int _nextDrop = 1;
+    private int _nextProjectile = 1;
 
     private sealed class Vitals(float health)
     {
@@ -90,11 +86,11 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     /// <summary>The numbers in use.</summary>
     public SurvivalSettings Settings => settings;
 
-    /// <summary>Item and part definitions.</summary>
-    public IPartCatalog Catalog => catalog;
-
     /// <summary>The bots weapons, splash and the Sledgehammer can hurt (chunk 21); null when there are none.</summary>
     public IBotTargets? Bots { get; set; }
+
+    /// <summary>Item and part definitions.</summary>
+    public IPartCatalog Catalog => catalog;
 
     /// <summary>Piles of items on the ground, by id.</summary>
     public IReadOnlyDictionary<int, ItemDrop> Drops => _drops;
@@ -117,8 +113,6 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     /// <summary>Registers every survival action.</summary>
     public void Register(ActionDispatcher dispatcher)
     {
-        dispatcher.Register<EatArgs>(Eat, ValidateEat, ApplyEat);
-        dispatcher.Register<FireArgs>(Fire, ValidateFire, ApplyFire);
         dispatcher.Register<PartUseArgs>(Plant, ValidatePlant, ApplyPlant);
         dispatcher.Register<PartUseArgs>(Water, ValidateWater, ApplyWater);
         dispatcher.Register<PartUseArgs>(Harvest, ValidateHarvest, ApplyHarvest);
@@ -161,7 +155,6 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     public void Leave(int peer)
     {
         _vitals.Remove(peer);
-        _lastShot.Remove(peer);
         _lastWater.Remove(peer);
     }
 
@@ -272,81 +265,83 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         return creation.BodyPose(creation.BodyIndexOf(partId)).Apply(top);
     }
 
-    // ---- Eating ----
+    // ---- Combat primitives ----
+    // Held-item scripts (chunk 20b: weapons and food are Lua) and bots (chunk 21) hurt and heal through
+    // these. They change state directly, so callers run them only inside an action the host accepted.
 
-    private string? ValidateEat(ActionCaller caller, EatArgs args)
+    /// <summary>
+    /// Gives a living player back up to <paramref name="amount"/> health, never past the maximum.
+    /// Returns the health they have now (0 for an unknown peer; a dead player is not healed).
+    /// </summary>
+    public float Heal(int peer, float amount)
     {
-        if (CheckSlot(caller, args.Slot, out var item) is { } bad)
-            return bad;
-        if (item!.Food is null)
-            return $"You cannot eat {item.Name}.";
-        if (!_vitals.TryGetValue(caller.Peer, out var v))
-            return "You have no player.";
-        return v.Health >= settings.MaxHealth ? "You are already at full health." : null;
+        if (!_vitals.TryGetValue(peer, out var v))
+            return 0f;
+        if (v.Dead || !(amount > 0) || !float.IsFinite(amount))
+            return v.Health;
+        v.Health = Math.Min(settings.MaxHealth, v.Health + amount);
+        VitalsChanged?.Invoke(peer);
+        return v.Health;
     }
 
-    private JsonElement? ApplyEat(ActionCaller caller, EatArgs args)
+    /// <summary>A player's health, or null for an unknown peer.</summary>
+    public float? HealthOf(int peer) => _vitals.TryGetValue(peer, out var v) ? v.Health : null;
+
+    /// <summary>The world the actions read: players' eyes and looks, the clock, ray casts.</summary>
+    public ISurvivalWorld World => world;
+
+    /// <summary>The first thing a ray hits within <paramref name="range"/> m, ignoring <paramref name="ignorePeer"/>'s player; null for nothing.</summary>
+    public RayHit? Cast(Vector3 from, Vector3 direction, float range, int ignorePeer) =>
+        direction.LengthSquared() < 1e-12f || !(range > 0) ? null : world.Cast(from, Vector3.Normalize(direction), range, ignorePeer);
+
+    /// <summary>
+    /// A hitscan shot: casts from <paramref name="from"/> and deals <paramref name="damage"/> to the first
+    /// thing hit (<see cref="Hit"/>), pushing a Creation with <paramref name="impulse"/> N·s along the shot.
+    /// Null when nothing is in range.
+    /// </summary>
+    public ShotHitView? Hitscan(ActionCaller caller, Vector3 from, Vector3 direction, float range, float damage, float impulse)
     {
-        var pockets = inventories.PlayerInventory(caller.Peer);
-        var stack = pockets[args.Slot]!;
-        var food = catalog.FindDefinition(stack.Item)!.Food!;
-        pockets.SetSlot(args.Slot, stack.Count > 1 ? stack with { Count = stack.Count - 1 } : null);
-        var v = _vitals[caller.Peer];
-        v.Health = Math.Min(settings.MaxHealth, v.Health + (food.Health ?? 0));
-        VitalsChanged?.Invoke(caller.Peer);
-        return Value(new EatResult(v.Health));
+        if (Cast(from, direction, range, caller.Peer) is not { } hit)
+            return null;
+        return Hit(caller, hit, damage, Vector3.Normalize(direction) * impulse);
     }
 
-    // ---- Weapons ----
-
-    private string? ValidateFire(ActionCaller caller, FireArgs args)
+    /// <summary>
+    /// Deals <paramref name="damage"/> to what a ray hit: a player (when <paramref name="caller"/> may hurt
+    /// them), a bot, a part (which may break off; otherwise its Body gets <paramref name="push"/>, in N·s) or a
+    /// world object. Returns what was hit and the damage dealt.
+    /// </summary>
+    public ShotHitView Hit(ActionCaller caller, RayHit hit, float damage, Vector3 push)
     {
-        if (CheckSlot(caller, args.Slot, out var item) is { } bad)
-            return bad;
-        if (item!.Weapon is not { } weapon)
-            return $"{item.Name} is not a weapon.";
-        var direction = args.Direction.ToNumerics();
-        if (!float.IsFinite(direction.X) || !float.IsFinite(direction.Y) || !float.IsFinite(direction.Z) || direction.LengthSquared() < 1e-6f)
-            return "direction must be a non-zero vector.";
-        if (world.EyeOf(caller.Peer) is null)
-            return "You have no player to shoot with.";
-        if (caller.Source == ActionSource.Player)
+        var point = hit.Point.ToVec3();
+        if (!(damage >= 0) || !float.IsFinite(damage))
+            damage = 0;
+        if (hit.Bot is { } bot)
         {
-            if (world.LookOf(caller.Peer) is { } look && AngleDegrees(look, Vector3.Normalize(direction)) > settings.AimTolerance)
-                return "That is not where you are aiming.";
-            if (_lastShot.TryGetValue(caller.Peer, out var last) && world.Now - last < (weapon.Interval ?? 0) * IntervalJitter)
-                return $"The {item.Name} is not ready yet.";
+            Bots?.DamageBot(bot, damage, "weapon", melee: false);
+            return new ShotHitView("bot", point, damage, Bot: bot);
         }
-        if (weapon.Ammo is { } ammo && inventories.PlayerInventory(caller.Peer).Count(ammo) < 1)
-            return $"You have no {NameOf(ammo)} to fire.";
-        return null;
-    }
-
-    private JsonElement? ApplyFire(ActionCaller caller, FireArgs args)
-    {
-        _lastShot[caller.Peer] = world.Now;
-        var pockets = inventories.PlayerInventory(caller.Peer);
-        var weapon = catalog.FindDefinition(pockets[args.Slot]!.Item)!.Weapon!;
-        if (weapon.Ammo is { } ammo)
-            pockets.Remove(ammo, 1);
-        var eye = world.EyeOf(caller.Peer)!.Value;
-        var range = weapon.Range ?? 0;
-        var damage = weapon.Damage ?? 0;
-        var hits = new List<ShotHitView>();
-        foreach (var direction in Pellets(Vector3.Normalize(args.Direction.ToNumerics()), weapon.Pellets ?? 1, weapon.Spread ?? 0))
+        if (hit.Player is { } peer)
         {
-            var hit = world.Cast(eye, direction, range, caller.Peer);
-            if (weapon.Radius is { } radius)
-            {
-                // Splash weapons go off where they hit, or at the end of their range.
-                hits.AddRange(Splash(caller, hit?.Point ?? eye + direction * range, radius, damage, weapon.Impulse ?? 0));
-            }
-            else if (hit is not null)
-            {
-                hits.Add(Hit(caller, hit, damage, direction * (weapon.Impulse ?? 0)));
-            }
+            var dealt = CanHurt(caller, peer) ? damage : 0f;
+            if (dealt > 0)
+                Damage(peer, dealt, "weapon");
+            return new ShotHitView("player", point, dealt, Player: peer);
         }
-        return Value(new FireResult(hits));
+        if (hit.Creation is { } id && hit.Part is { } part && world.FindCreation(id) is { } creation && creation.FindPart(part) is not null)
+        {
+            var body = creation.BodyIndexOf(part);
+            var result = world.DamagePart(creation, part, damage);
+            if (!result.Broken && push != Vector3.Zero && float.IsFinite(push.LengthSquared()))
+                world.Push(creation, body, hit.Point, push);
+            return new ShotHitView("part", point, damage, Creation: id, Part: part);
+        }
+        if (hit.Object is { } objectId)
+        {
+            DamageObject(objectId, damage);
+            return new ShotHitView("object", point, damage, Object: objectId.ToString());
+        }
+        return new ShotHitView("ground", point, 0);
     }
 
     /// <summary>
@@ -371,44 +366,10 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     }
 
     /// <summary>
-    /// The shared damage API for one hit: hurts the player, bot, part or world object a ray hit, and pushes
-    /// a part's Body by <paramref name="push"/> (N·s). Weapons use it; so may anything else that hits.
-    /// </summary>
-    public ShotHitView Hit(ActionCaller caller, RayHit hit, float damage, Vector3 push)
-    {
-        var point = hit.Point.ToVec3();
-        if (hit.Bot is { } bot)
-        {
-            Bots?.DamageBot(bot, damage, "weapon", melee: false);
-            return new ShotHitView("bot", point, damage, Bot: bot);
-        }
-        if (hit.Player is { } peer)
-        {
-            var dealt = CanHurt(caller, peer) ? damage : 0f;
-            if (dealt > 0)
-                Damage(peer, dealt, "weapon");
-            return new ShotHitView("player", point, dealt, Player: peer);
-        }
-        if (hit.Creation is { } id && hit.Part is { } part && world.FindCreation(id) is { } creation && creation.FindPart(part) is not null)
-        {
-            var body = creation.BodyIndexOf(part);
-            var result = world.DamagePart(creation, part, damage);
-            if (!result.Broken && push != Vector3.Zero)
-                world.Push(creation, body, hit.Point, push);
-            return new ShotHitView("part", point, damage, Creation: id, Part: part);
-        }
-        if (hit.Object is { } objectId)
-        {
-            DamageObject(objectId, damage);
-            return new ShotHitView("object", point, damage, Object: objectId.ToString());
-        }
-        return new ShotHitView("ground", point, 0);
-    }
-
-    /// <summary>
-    /// The shared damage API for a blast: players, bots, parts and world objects within
-    /// <paramref name="radius"/> of <paramref name="at"/> take <paramref name="damage"/> falling off linearly
-    /// to 0 at the edge, and Bodies are pushed away (up to <paramref name="impulse"/> N·s). Returns everything it reached.
+    /// Splash: everything within <paramref name="radius"/> of <paramref name="at"/> takes damage falling off
+    /// linearly from <paramref name="damage"/> at the centre to 0 at the edge. Players (the caller's own
+    /// player even with PvP off), bots, parts (pushed away from the centre with up to <paramref name="impulse"/>
+    /// N·s) and world objects. Returns everything it reached.
     /// </summary>
     public IReadOnlyList<ShotHitView> Splash(ActionCaller caller, Vector3 at, float radius, float damage, float impulse)
     {
@@ -459,6 +420,72 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
             hits.Add(new ShotHitView("object", ObjectCentre(placement).ToVec3(), dealt, Object: placement.Id.ToString()));
         }
         return hits;
+    }
+
+    // ---- Projectiles ----
+
+    /// <summary>
+    /// Launches a projectile for <paramref name="owner"/>: it flies from <paramref name="from"/> at
+    /// <paramref name="velocity"/> m/s, accelerated by <paramref name="gravity"/> m/s², until it hits
+    /// something (never its owner's player) or <paramref name="lifetime"/> seconds pass. Flight is stepped
+    /// on the host in <see cref="Tick"/>; <see cref="ProjectileLanded"/> says where it ended, and whoever
+    /// launched it decides what that does (a projectile deals no damage by itself).
+    /// </summary>
+    public ProjectileView Launch(int owner, Vector3 from, Vector3 velocity, Vector3 gravity, float lifetime)
+    {
+        var flight = new Flight(_nextProjectile++, owner, from, velocity, gravity, lifetime, world.Now);
+        _projectiles[flight.Id] = flight;
+        var view = flight.View(world.Now);
+        ProjectileLaunched?.Invoke(view);
+        return view;
+    }
+
+    /// <summary>Projectiles in flight, as clients are sent them (ages as of now).</summary>
+    public IEnumerable<ProjectileView> Projectiles => _projectiles.Values.Select(f => f.View(world.Now)).ToList();
+
+    /// <summary>A projectile was launched.</summary>
+    public event Action<ProjectileView>? ProjectileLaunched;
+
+    /// <summary>A projectile hit something or ran out of time; it is gone.</summary>
+    public event Action<ProjectileLanding>? ProjectileLanded;
+
+    private void StepProjectiles(float seconds)
+    {
+        foreach (var flight in _projectiles.Values.ToList())
+        {
+            var step = Math.Min(seconds, Math.Max(0f, flight.Lifetime - flight.Age));
+            // Constant acceleration: this step's straight chord is exact at both ends.
+            var next = flight.Position + flight.Velocity * step + flight.Gravity * (0.5f * step * step);
+            var chord = next - flight.Position;
+            var hit = chord.LengthSquared() > 1e-12f ? world.Cast(flight.Position, Vector3.Normalize(chord), chord.Length(), flight.Owner) : null;
+            flight.Age += step;
+            if (hit is null)
+            {
+                flight.Position = next;
+                flight.Velocity += flight.Gravity * step;
+                if (flight.Age < flight.Lifetime - 1e-6f)
+                    continue;
+            }
+            _projectiles.Remove(flight.Id);
+            ProjectileLanded?.Invoke(new ProjectileLanding(flight.Id, flight.Owner, hit?.Point ?? flight.Position, hit));
+        }
+    }
+
+    private sealed class Flight(int id, int owner, Vector3 from, Vector3 velocity, Vector3 gravity, float lifetime, double launched)
+    {
+        public int Id { get; } = id;
+        public int Owner { get; } = owner;
+        public Vector3 From { get; } = from;
+        public Vector3 LaunchVelocity { get; } = velocity;
+        public Vector3 Gravity { get; } = gravity;
+        public float Lifetime { get; } = lifetime;
+        public double Launched { get; } = launched;
+        public Vector3 Position { get; set; } = from;
+        public Vector3 Velocity { get; set; } = velocity;
+        public float Age { get; set; }
+
+        public ProjectileView View(double now) =>
+            new(Id, Owner, From.ToVec3(), LaunchVelocity.ToVec3(), Gravity.ToVec3(), Lifetime, (float)Math.Max(0, now - Launched));
     }
 
     private bool CanHurt(ActionCaller caller, int peer) =>
@@ -801,9 +828,13 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
 
     // ---- Ticking ----
 
-    /// <summary>Grows every watered crop and clears piles that have lain too long. The host calls it every physics tick.</summary>
+    /// <summary>
+    /// Grows every watered crop, moves projectiles and clears piles that have lain too long. The host calls
+    /// it every physics tick.
+    /// </summary>
     public void Tick(float seconds)
     {
+        StepProjectiles(seconds);
         foreach (var creation in world.AllCreations)
         {
             foreach (var (part, soil) in creation.ActiveSoil.ToList())
@@ -846,9 +877,6 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         var pose = creation.BodyPose(creation.BodyIndexOf(partId));
         return pose.Apply(PartGeometry.CentreMetres(creation.DefinitionOf(partId), part.Cell, part.Rotation).ToNumerics());
     }
-
-    private static float AngleDegrees(Vector3 a, Vector3 b) =>
-        MathF.Acos(Math.Clamp(Vector3.Dot(Vector3.Normalize(a), Vector3.Normalize(b)), -1f, 1f)) * 180f / MathF.PI;
 
     private string NameOf(string item) => catalog.FindDefinition(item)?.Name ?? item;
 

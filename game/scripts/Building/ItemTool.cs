@@ -5,6 +5,7 @@ using Mechanica.Core.Items;
 using Mechanica.Core.Survival;
 using Mechanica.Game.Items;
 using Mechanica.Game.Survival;
+using Mechanica.Scripting;
 
 namespace Mechanica.Game.Building;
 
@@ -12,7 +13,9 @@ namespace Mechanica.Game.Building;
 /// The item in the local player's hand (chunk 20): Q and E pick one of the usable items in their
 /// inventory (food, weapons, seeds, water), left click uses it and G drops one on the ground.
 /// <list type="bullet">
-/// <item>Food: <c>Eat</c>. A weapon: <c>Fire</c> where the crosshair points.</item>
+/// <item>An item with a script (food, weapons; chunk 20b): <c>UseItem</c> where the crosshair points. Its
+/// Lua decides what that does on the host. While this tool is out, <c>EquipItem</c> tells the host which
+/// scripted item is in hand (its <c>on_equip</c> and <c>on_unequip</c>).</item>
 /// <item>A seed: <c>Plant</c> it in the soil under the crosshair. Water: <c>Water</c> that soil.</item>
 /// <item>Aimed at water with water in hand or nothing usable: <c>CollectWater</c> fills a bucket.</item>
 /// </list>
@@ -21,7 +24,8 @@ namespace Mechanica.Game.Building;
 public partial class ItemTool : HandTool
 {
     private string? _chosen;
-    private double _lastUse = double.NegativeInfinity;
+    // The scripted item the host was last told is in hand: (item, slot), or null for none.
+    private (string Item, int Slot)? _equipped;
 
     /// <summary>Inventories, for what the player carries. Set before adding to the tree.</summary>
     public InventorySync Inventory { get; init; } = null!;
@@ -52,21 +56,12 @@ public partial class ItemTool : HandTool
     /// <summary>Uses the item in hand on what the crosshair points at. False when there is nothing to do.</summary>
     public bool Use(Action<ActionResult>? done = null)
     {
-        var now = Time.GetTicksMsec() / 1000.0;
         var hand = InHand;
         var item = hand is null ? null : Survival.Catalog.FindDefinition(hand.Item);
-        if (item?.Weapon is { } weapon)
+        if (item is not null && IsScripted(item))
         {
-            if (now - _lastUse < (weapon.Interval ?? 0))
-                return false;
-            _lastUse = now;
             var aim = -Player.Camera.GlobalBasis.Z;
-            Send(SurvivalActions.Fire, new FireArgs(hand!.Slot, new Vec3(aim.X, aim.Y, aim.Z)), done);
-            return true;
-        }
-        if (item?.Food is not null)
-        {
-            Send(SurvivalActions.Eat, new EatArgs(hand!.Slot), done);
+            Send(ScriptRuntime.UseItem, new UseItemArgs(hand!.Slot, new Vec3(aim.X, aim.Y, aim.Z)), done);
             return true;
         }
         var reach = Survival.Settings!.Reach;
@@ -128,8 +123,22 @@ public partial class ItemTool : HandTool
         _chosen = usable[(at + step + usable.Count) % usable.Count].Item;
     }
 
+    public override void _Process(double delta)
+    {
+        // Tell the host when the scripted item in hand changes (another item, another tool, death).
+        (string Item, int Slot)? want = Active && Survival.Own is not { Dead: true } && InHand is { } hand
+            && Survival.Catalog.FindDefinition(hand.Item) is { } d && IsScripted(d) ? (hand.Item, hand.Slot) : null;
+        if (want == _equipped || Survival.Own is null)
+            return;
+        _equipped = want;
+        Actions.Request(ScriptRuntime.EquipItem, new EquipItemArgs(want?.Slot), _ => { });
+    }
+
+    // A held item whose behaviour is its Lua script (a placeable part's script runs once it is placed).
+    private static bool IsScripted(PartDefinition d) => d.Script is not null && !d.IsPlaceable;
+
     private bool IsUsable(string id) =>
-        Survival.Catalog.FindDefinition(id) is { } d && (d.Food is not null || d.Weapon is not null || d.Seed is not null || d.Watering is not null);
+        Survival.Catalog.FindDefinition(id) is { } d && (IsScripted(d) || d.Seed is not null || d.Watering is not null);
 
     // Where the aim ray meets the sea within reach, when nothing solid is in the way first.
     private Vector3? WaterAimed(RayHit? hit, float reach)

@@ -8,6 +8,7 @@ using Mechanica.Core.Items;
 using Mechanica.Core.Player;
 using Mechanica.Core.Survival;
 using Mechanica.Core.World;
+using Mechanica.Scripting;
 using Instance = Mechanica.Game.Tests.NetTestHarness.Instance;
 
 namespace Mechanica.Game.Tests;
@@ -15,8 +16,9 @@ namespace Mechanica.Game.Tests;
 /// <summary>
 /// The survival loop, host plus client (chunk 20, D10), with the vanilla content on a flat world. The
 /// client starts with the starting items and pays for what it builds; it plants, waters and harvests a
-/// carrot, eats, shoots the host with a Potato Blaster, falls, dies, drops its things, respawns, picks them
-/// back up, and respawns at a bed it slept in. Every step is checked on the host and on the client.
+/// carrot, eats, shoots the host with a Potato Blaster (food and weapons are Lua item scripts, chunk 20b),
+/// sees a projectile fly, falls, dies, drops its things, respawns, picks them back up, and respawns at a bed
+/// it slept in. Every step is checked on the host and on the client.
 /// </summary>
 public partial class SurvivalTest : StagedTest
 {
@@ -35,6 +37,8 @@ public partial class SurvivalTest : StagedTest
     private int _soilPart;
     private int _bed;
     private Vector3 _diedAt;
+    private int _projectile;
+    private bool _projectileSeen;
 
     protected override string Tag => "survival";
 
@@ -126,7 +130,7 @@ public partial class SurvivalTest : StagedTest
             if (frame == 0)
                 HostSurvival.Damage(Peer, 30, "test");
             if (frame == 10)
-                Request(SurvivalActions.Eat, new EatArgs(SlotOf(Carrot)));
+                Request(ScriptRuntime.UseItem, new UseItemArgs(SlotOf(Carrot)));
             if (_results.Count == 0 || _client.Main.Survival.Own!.Health != 80 || Count(Carrot) != 4)
                 return false;
             Check(_results[0].Ok, $"a carrot heals 10 ({_results[0]})");
@@ -156,12 +160,27 @@ public partial class SurvivalTest : StagedTest
             if (frame == 20)
             {
                 var aim = (Eye(_host) - Eye(_client)).Normalized();
-                Request(SurvivalActions.Fire, new FireArgs(SlotOf(Blaster), new Vec3(aim.X, aim.Y, aim.Z)));
+                Request(ScriptRuntime.UseItem, new UseItemArgs(SlotOf(Blaster), new Vec3(aim.X, aim.Y, aim.Z)));
             }
             if (_results.Count == 0 || _client.Main.Survival.Vitals[1].Health != 80 || Count(Potato) != 4)
                 return false;
-            var hits = Value<FireResult>(_results[0]).Hits;
-            Check(hits.Single() is { Kind: "player", Player: 1, Damage: 20 }, $"the shot hits the host ({_results[0]})");
+            var hits = System.Text.Json.Nodes.JsonNode.Parse(_results[0].Value!.Value.GetRawText())!["hits"]!.AsArray();
+            Check(hits.Count == 1 && hits[0]!["kind"]!.GetValue<string>() == "player" && hits[0]!["player"]!.GetValue<int>() == 1
+                && hits[0]!["damage"]!.GetValue<double>() == 20, $"the shot hits the host ({_results[0]})");
+            Check(_host.Main.Scripts.Runtime.Held.GetValueOrDefault(Peer).Item == Blaster, "the host knows the blaster is in the client's hand");
+            return true;
+        });
+        Stage("a projectile flies on the client too and lands", frame =>
+        {
+            if (frame == 0)
+                _projectile = HostSurvival.Launch(1, (Feet(_host) + new Vector3(2, 3, 0)).ToNumerics(), System.Numerics.Vector3.Zero,
+                    new System.Numerics.Vector3(0, -9.81f, 0), 5).Id;
+            var shown = _client.Main.Survival.ProjectileNodes.GetValueOrDefault(_projectile);
+            if (shown is not null)
+                _projectileSeen = true;
+            if (!_projectileSeen || shown is not null || _host.Main.Survival.ProjectileNodes.ContainsKey(_projectile))
+                return false;
+            Check(!HostSurvival.Projectiles.Any(), "the host's projectile hit the ground and is gone");
             return true;
         });
         Stage("a fall hurts", frame =>
@@ -192,7 +211,7 @@ public partial class SurvivalTest : StagedTest
         {
             if (frame == 0)
             {
-                Request(SurvivalActions.Eat, new EatArgs(0));
+                Request(ScriptRuntime.UseItem, new UseItemArgs(0));
                 Request(SurvivalActions.Respawn, new NoArgs());
             }
             if (_results.Count < 2)

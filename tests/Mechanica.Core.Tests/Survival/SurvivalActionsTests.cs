@@ -111,21 +111,23 @@ public class SurvivalActionsTests
         Assert.Equal(100f - 4 * 8, _f.Survival.View(Me.Peer)!.Health);
     }
 
-    // ---- Eating ----
+    // ---- Healing ----
 
     [Fact]
-    public void EatingHealsAndUsesTheFoodUp()
+    public void HealingStopsAtFullHealthAndSkipsTheDead()
     {
-        _f.Pockets(Me).Add(Crop, 2);
-        var slot = _f.SlotOf(Me, Crop);
-        Assert.Equal("You are already at full health.", _f.Refused(Me, SurvivalActions.Eat, new { slot }));
-        Assert.Equal("You cannot eat Seed.", _f.Refused(Me, SurvivalActions.Eat, new { slot = _f.SlotOf(Me, Seed) }));
-
+        var changed = 0;
+        _f.Survival.VitalsChanged += _ => changed++;
         _f.Survival.Damage(Me.Peer, 50, "test");
-        Assert.Equal(80f, _f.Ok<EatResult>(Me, SurvivalActions.Eat, new { slot }).Health);
-        Assert.Equal(100f, _f.Ok<EatResult>(Me, SurvivalActions.Eat, new { slot }).Health);
-        Assert.Equal(0, _f.Pockets(Me).Count(Crop));
-        Assert.Equal($"Slot {slot} is empty.", _f.Refused(Me, SurvivalActions.Eat, new { slot }));
+        Assert.Equal(80f, _f.Survival.Heal(Me.Peer, 30));
+        Assert.Equal(100f, _f.Survival.Heal(Me.Peer, 30));
+        Assert.Equal(100f, _f.Survival.HealthOf(Me.Peer));
+        Assert.Equal(100f, _f.Survival.Heal(Me.Peer, float.NaN));
+        Assert.Equal(3, changed);
+        _f.Survival.Damage(Me.Peer, 500, "test");
+        Assert.Equal(0f, _f.Survival.Heal(Me.Peer, 30));
+        Assert.Equal(0f, _f.Survival.Heal(99, 30));
+        Assert.Null(_f.Survival.HealthOf(99));
     }
 
     // ---- Farming ----
@@ -226,63 +228,50 @@ public class SurvivalActionsTests
         Assert.Contains(diagnostics, d => d.Message.Contains("is not soil"));
     }
 
-    // ---- Weapons ----
+    // ---- Combat primitives (weapons are Lua item scripts, chunk 20b) ----
 
     [Fact]
-    public void AShotUsesAmmoAndHurtsThePlayerItHits()
+    public void AHitscanHurtsThePlayerItHits()
     {
-        _f.Pockets(Me).Add(Blaster, 1);
-        var slot = _f.SlotOf(Me, Blaster);
-        var aim = new Vec3(0, 0, -1);
-        Assert.Equal("You have no Crop to fire.", _f.Refused(Me, SurvivalActions.Fire, new { slot, direction = aim }));
-        _f.Pockets(Me).Add(Crop, 2);
         _f.World.Ray = (_, _) => new RayHit(new Vector3(0, 1, 0), Player: You.Peer);
+        var eye = _f.World.EyeOf(Me.Peer)!.Value;
 
-        var result = _f.Ok<FireResult>(Me, SurvivalActions.Fire, new { slot, direction = aim });
+        var hit = _f.Survival.Hitscan(Me, eye, new Vector3(0, 0, -2), 50, 20, 5);
 
-        Assert.Equal([new ShotHitView("player", new Vec3(0, 1, 0), 20, Player: 3)], result.Hits);
+        Assert.Equal(new ShotHitView("player", new Vec3(0, 1, 0), 20, Player: 3), hit);
         Assert.Equal(80f, _f.Survival.View(You.Peer)!.Health);
-        Assert.Equal(1, _f.Pockets(Me).Count(Crop));
         Assert.Equal((new Vector3(0, 1.6f, 3), -Vector3.UnitZ), _f.World.Casts[^1]);
-        Assert.Equal("The Blaster is not ready yet.", _f.Refused(Me, SurvivalActions.Fire, new { slot, direction = aim }));
-        _f.World.Now += 1;
-        Assert.Equal("That is not where you are aiming.", _f.Refused(Me, SurvivalActions.Fire, new { slot, direction = new Vec3(1, 0, 0) }));
-        Assert.Equal("direction must be a non-zero vector.", _f.Refused(Me, SurvivalActions.Fire, new { slot, direction = new Vec3(0, 0, 0) }));
-        Assert.Equal("Scrap is not a weapon.", _f.Refused(Me, SurvivalActions.Fire, new { slot = PutScrap(), direction = aim }));
+        _f.World.Ray = (_, _) => null;
+        Assert.Null(_f.Survival.Hitscan(Me, eye, -Vector3.UnitZ, 50, 20, 5));
+        Assert.Null(_f.Survival.Cast(eye, Vector3.Zero, 50, Me.Peer));
     }
 
     [Fact]
-    public void WithPvpOffShotsDoNotHurtPlayers()
+    public void WithPvpOffHitsDoNotHurtPlayers()
     {
         var f = new SurvivalFixture(new SurvivalSettings { Pvp = false });
-        f.Pockets(Me).Add(Blaster, 1);
-        f.Pockets(Me).Add(Crop, 1);
-        f.World.Ray = (_, _) => new RayHit(Vector3.Zero, Player: You.Peer);
-        var result = f.Ok<FireResult>(Me, SurvivalActions.Fire, new { slot = f.SlotOf(Me, Blaster), direction = new Vec3(0, 0, -1) });
-        Assert.Equal(0f, result.Hits[0].Damage);
+        var hit = f.Survival.Hit(Me, new RayHit(Vector3.Zero, Player: You.Peer), 20, Vector3.Zero);
+        Assert.Equal(0f, hit.Damage);
         Assert.Equal(100f, f.Survival.View(You.Peer)!.Health);
+        // Bots (chunk 21) hurt players whatever PvP says.
+        f.Survival.Hit(new ActionCaller(You.Peer, ActionSource.Bot), new RayHit(Vector3.Zero, Player: Me.Peer), 20, Vector3.Zero);
+        Assert.Equal(80f, f.Survival.View(Me.Peer)!.Health);
         Assert.Equal("Players cannot hurt each other in this world.",
             f.Refused(Me, ToolActions.Sledge, new { player = You.Peer }));
     }
 
     [Fact]
-    public void ShotsBreakPartsAndPushTheirBody()
+    public void HitsBreakPartsAndPushTheirBody()
     {
         var block = _f.Add(Bed, new Vector3(0, 0, 0)); // durability 3: 30 health
-        _f.Pockets(Me).Add(Blaster, 1);
-        _f.Pockets(Me).Add(Crop, 2);
-        _f.World.Ray = (_, _) => new RayHit(new Vector3(0, 0.1f, 0.2f), Creation: block, Part: 1);
-        var slot = _f.SlotOf(Me, Blaster);
-        var aim = new Vec3(0, 0, -1);
+        var at = new RayHit(new Vector3(0, 0.1f, 0.2f), Creation: block, Part: 1);
 
-        _f.World.Feet[2] = new Vector3(0, 0, 1);
-        var first = _f.Ok<FireResult>(Me, SurvivalActions.Fire, new { slot, direction = aim });
-        Assert.Equal("part", first.Hits[0].Kind);
+        Assert.Equal("part", _f.Survival.Hit(Me, at, 20, new Vector3(0, 0, -5)).Kind);
         Assert.True(_f.World.Creations.ContainsKey(block));
         Assert.Equal([new Vector3(0, 0, -5)], _f.World.Pushes);
-        _f.World.Now += 1;
-        _f.Ok(Me, SurvivalActions.Fire, new { slot, direction = aim });
+        _f.Survival.Hit(Me, at, 20, new Vector3(0, 0, -5));
         Assert.False(_f.World.Creations.ContainsKey(block));
+        Assert.Equal("ground", _f.Survival.Hit(Me, new RayHit(Vector3.Zero), 20, Vector3.Zero).Kind);
     }
 
     [Fact]
@@ -297,42 +286,68 @@ public class SurvivalActionsTests
         var sideways = pellets.Skip(1).Aggregate(Vector3.Zero, (s, p) => s + p);
         Assert.Equal(0f, sideways.X, 5);
         Assert.Equal(0f, sideways.Y, 5);
-
-        _f.Pockets(Me).Add(Scattergun, 1);
-        _f.Ok(Me, SurvivalActions.Fire, new { slot = _f.SlotOf(Me, Scattergun), direction = new Vec3(0, 0, -1) });
-        Assert.Equal(5, _f.World.Casts.Count);
+        Assert.Equal(3, SurvivalActions.Pellets(-Vector3.UnitZ, 3, 0).Count);
     }
 
     [Fact]
     public void SplashHurtsEverythingNearbyLessFurtherOut()
     {
-        _f.Pockets(Me).Add(Bomb, 2);
         _f.World.Feet[3] = new Vector3(0, 0, -6f); // centre at (0, 0.8, -6): 2 m from the blast
         var block = _f.Add(Block, new Vector3(-0.125f, -0.125f, -8.125f)); // centre 0 0 -8: 2.15 m off
         var tree = new WorldObjectId(0, 1, 1);
         _f.World.Objects[tree] = new WorldObjectPlacement(tree, new WorldObjectDefinition { Id = "tree", Health = 30, Drops = [new ObjectDrop { Item = Scrap, Count = 3 }] },
             new Vector3(0, 0, -8), 0, 1);
-        _f.World.Ray = (_, _) => new RayHit(new Vector3(0, 0.8f, -8));
 
-        var result = _f.Ok<FireResult>(Me, SurvivalActions.Fire, new { slot = _f.SlotOf(Me, Bomb), direction = new Vec3(0, -0.1f, -1) });
+        var hits = _f.Survival.Splash(Me, new Vector3(0, 0.8f, -8), 4, 40, 0);
 
-        Assert.Equal(1, _f.Pockets(Me).Count(Bomb));
         Assert.Equal(80f, _f.Survival.View(You.Peer)!.Health, 2); // 40 × (1 - 2/4)
         Assert.Equal(100f, _f.Survival.View(Me.Peer)!.Health); // 8 m away
-        Assert.Contains(result.Hits, h => h is { Kind: "part", Creation: var c } && c == block);
+        Assert.Contains(hits, h => h is { Kind: "part", Creation: var c } && c == block);
         Assert.True(_f.World.State.IsDestroyed(tree)); // 0.8 m off: 32 damage
         Assert.Contains(_f.Survival.Drops.Values, d => d.Items.SequenceEqual([new ItemStack(Scrap, 3)]));
+        Assert.Empty(_f.Survival.Splash(Me, Vector3.Zero, 0, 40, 0));
     }
 
     [Fact]
-    public void CreativeShotsDoNotHurtPlayers()
+    public void CreativeHitsDoNotHurtPlayers()
     {
         var f = new SurvivalFixture(mode: GameMode.Creative);
-        f.Pockets(Me).Add(Blaster, 1);
-        f.Pockets(Me).Add(Crop, 1);
-        f.World.Ray = (_, _) => new RayHit(Vector3.Zero, Player: You.Peer);
-        f.Ok(Me, SurvivalActions.Fire, new { slot = f.SlotOf(Me, Blaster), direction = new Vec3(0, 0, -1) });
+        f.Survival.Hit(Me, new RayHit(Vector3.Zero, Player: You.Peer), 20, Vector3.Zero);
+        f.Survival.Splash(Me, f.Survival.PlayerCentre(Me.Peer)!.Value, 4, 40, 0);
         Assert.Equal(100f, f.Survival.View(You.Peer)!.Health);
+        Assert.Equal(100f, f.Survival.View(Me.Peer)!.Health);
+    }
+
+    [Fact]
+    public void ProjectilesFlyAlongTheirArcUntilTheyHitOrTimeOut()
+    {
+        var launched = new List<ProjectileView>();
+        var landed = new List<ProjectileLanding>();
+        _f.Survival.ProjectileLaunched += launched.Add;
+        _f.Survival.ProjectileLanded += landed.Add;
+        var gravity = new Vector3(0, -10, 0);
+        // The ground is at y = 0.
+        _f.World.Ray = (from, direction) => direction.Y < 0 && from.Y / -direction.Y <= _f.World.LastRange ? new RayHit(from + direction * (from.Y / -direction.Y)) : null;
+
+        var falling = _f.Survival.Launch(Me.Peer, new Vector3(0, 5, 0), new Vector3(2, 0, 0), gravity, 10);
+        var flat = _f.Survival.Launch(Me.Peer, new Vector3(0, 5, 0), new Vector3(1, 0, 0), Vector3.Zero, 0.5f);
+        Assert.Equal([falling, flat], launched);
+        Assert.Equal(2, _f.Survival.Projectiles.Count());
+
+        for (var i = 0; i < 60 && landed.Count < 2; i++)
+            _f.Survival.Tick(1 / 30f);
+
+        // Flat: no hit, so it ends where it got to after its lifetime.
+        Assert.Equal(flat.Id, landed[0].Id);
+        Assert.Null(landed[0].Hit);
+        Assert.Equal(0.5f, landed[0].Point.X, 3);
+        // Falling from 5 m at -10 m/s² lands after 1 s, 2 m along.
+        Assert.Equal(falling.Id, landed[1].Id);
+        Assert.Equal(Me.Peer, landed[1].Owner);
+        Assert.NotNull(landed[1].Hit);
+        Assert.Equal(2f, landed[1].Point.X, 2);
+        Assert.Equal(0f, landed[1].Point.Y, 3);
+        Assert.Empty(_f.Survival.Projectiles);
     }
 
     // ---- Sledgehammer on players and world objects ----
@@ -471,12 +486,6 @@ public class SurvivalActionsTests
 
         var creative = new SurvivalFixture(mode: GameMode.Creative);
         Assert.Empty(creative.Survival.Impact(creation, 0, new Vector3(0, 50, 0)));
-    }
-
-    private int PutScrap()
-    {
-        _f.Pockets(Me).Add(Scrap, 1);
-        return _f.SlotOf(Me, Scrap);
     }
 
     private SoilView View(int creation) => _f.Survival.SoilViewOf(_f.World.FindCreation(creation)!, 1);

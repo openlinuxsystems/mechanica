@@ -8,11 +8,12 @@
   "visual": {
     "color": "#5a6a48"
   },
+  "script": "scripts/potato_gun.lua",
   "sounds": {
     "fire": "scattergun_fire",
     "pump": "scattergun_pump"
   },
-  "weapon": {
+  "properties": {
     "damage": 9,
     "interval": 0.9,
     "range": 25,
