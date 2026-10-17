@@ -1,32 +1,119 @@
 using Godot;
 using Mechanica.Core;
+using Mechanica.Core.Net;
+using Mechanica.Game.Net;
 using Mechanica.Game.Player;
 
 namespace Mechanica.Game;
 
 /// <summary>
-/// Flat test world: spawns the local player at <c>SpawnPoint</c> and drives it from this machine's
-/// keyboard and mouse. Chunk 2b moves spawning to the host so every peer gets a player.
+/// Flat test world and session root. It builds the networking nodes (<see cref="Session"/>,
+/// <see cref="PlayerSync"/>, <see cref="Actions"/>), starts offline, hosting or joining from
+/// <see cref="Options"/>, and drives whichever player belongs to this peer from the keyboard and mouse.
+/// Every peer runs the same scene, so node paths (and with them RPC routes) match everywhere.
 /// </summary>
 public partial class Main : Node3D
 {
-    /// <summary>The local player, once spawned.</summary>
-    public PlayerController? LocalPlayer { get; private set; }
+    private LocalPlayerInput? _input;
+
+    /// <summary>How to start. Null reads the command line (<c>-- --host 27460</c>, <c>-- --join host:port</c>).</summary>
+    public LaunchOptions? Options { get; set; }
+
+    /// <summary>False in automated tests: nothing reads devices, the test sets the player's input itself.</summary>
+    public bool ReadDeviceInput { get; set; } = true;
+
+    /// <summary>Mods this instance runs, checked against the host on join. Set before adding to the tree.</summary>
+    public ContentManifest Content { get; set; } = ContentManifest.Empty;
+
+    /// <summary>Connection state and handshake.</summary>
+    public NetSession Session { get; private set; } = null!;
+
+    /// <summary>Player spawning and movement sync.</summary>
+    public PlayerSync PlayerSync { get; private set; } = null!;
+
+    /// <summary>Action API entry point for every peer.</summary>
+    public ActionGateway Actions { get; private set; } = null!;
+
+    /// <summary>This peer's own player, once spawned.</summary>
+    public PlayerController? LocalPlayer => PlayerSync.LocalPlayer;
 
     public override void _Ready()
     {
         GD.Print($"{MechanicaInfo.GameName} started (physics: {ProjectSettings.GetSetting("physics/3d/physics_engine")})");
-        LocalPlayer = SpawnPlayer("LocalPlayer");
-        AddChild(new LocalPlayerInput { Name = "LocalPlayerInput", Target = LocalPlayer });
+        Options ??= ReadCommandLine();
+
+        Session = new NetSession { Name = "Session", Content = Content };
+        AddChild(Session);
+        var players = new Node3D { Name = "Players" };
+        AddChild(players);
+        PlayerSync = new PlayerSync
+        {
+            Name = "PlayerSync",
+            Session = Session,
+            PlayersRoot = players,
+            SpawnPoint = () => GetNodeOrNull<Node3D>("SpawnPoint")?.GlobalTransform ?? Transform3D.Identity,
+        };
+        PlayerSync.PlayerSpawned += OnPlayerSpawned;
+        PlayerSync.PlayerDespawning += OnPlayerDespawning;
+        AddChild(PlayerSync);
+        Actions = new ActionGateway { Name = "Actions", Session = Session };
+        AddChild(Actions);
+        PlayerSync.RegisterActions(Actions.Dispatcher);
+        Session.StateChanged += state => SetPropsSimulated(state is NetSession.SessionState.Offline or NetSession.SessionState.Hosting);
+        if (ReadDeviceInput)
+            AddChild(new ConnectPanel { Name = "ConnectPanel", Session = Session });
+
+        Start(Options);
     }
 
-    /// <summary>Adds a player at the spawn point and returns it.</summary>
-    public PlayerController SpawnPlayer(string name)
+    /// <summary>Starts the session <paramref name="options"/> describe. Errors are logged and leave the game offline.</summary>
+    public void Start(LaunchOptions options)
     {
-        var spawn = GetNodeOrNull<Node3D>("SpawnPoint")?.GlobalTransform ?? Transform3D.Identity;
-        var player = new PlayerController { Name = name };
-        AddChild(player);
-        player.GlobalTransform = spawn;
-        return player;
+        var error = options.Mode switch
+        {
+            SessionMode.Host => Session.Host(options.Port, options.MaxPlayers),
+            SessionMode.Join => Session.Join(options.Endpoint!.Value),
+            _ => Error.Ok,
+        };
+        if (error != Error.Ok)
+            GD.PushError($"[net] {Session.LastMessage}");
+    }
+
+    private static LaunchOptions ReadCommandLine()
+    {
+        if (LaunchOptions.TryParse(OS.GetCmdlineUserArgs(), out var options, out var error))
+            return options;
+        GD.PushError($"[net] {error} Starting offline.");
+        return LaunchOptions.Offline;
+    }
+
+    private void OnPlayerSpawned(PlayerController player)
+    {
+        if (player != LocalPlayer)
+            return;
+        player.MakeCameraCurrent();
+        if (!ReadDeviceInput)
+            return;
+        _input = new LocalPlayerInput { Name = "LocalPlayerInput", Target = player };
+        AddChild(_input);
+    }
+
+    private void OnPlayerDespawning(PlayerController player)
+    {
+        if (_input?.Target != player)
+            return;
+        RemoveChild(_input);
+        _input.QueueFree();
+        _input = null;
+    }
+
+    /// <summary>
+    /// Loose rigid props only simulate where the world is simulated (the host). On clients they are
+    /// frozen until state sync (chunk 4b) drives them.
+    /// </summary>
+    private void SetPropsSimulated(bool simulated)
+    {
+        foreach (var body in GetChildren().OfType<RigidBody3D>())
+            body.Freeze = !simulated;
     }
 }
