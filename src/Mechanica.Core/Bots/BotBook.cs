@@ -20,7 +20,12 @@ namespace Mechanica.Core.Bots;
 /// <param name="Sound">Sound event it plays.</param>
 public sealed record BotAttack(
     string Id, BotAttackKind Kind, float Damage, float PartDamage, float Range, float Radius, float Interval,
-    float DamagePerSecond, float DamageSeconds, bool KillsSelf, bool HitsParts, string Sound);
+    float DamagePerSecond, float DamageSeconds, bool KillsSelf, bool HitsParts, string Sound,
+    float SlowFactor = 1f, float SlowSeconds = 0f, float ObjectDamage = 0f)
+{
+    /// <summary>True when it slows players it hits.</summary>
+    public bool Slows => SlowFactor < 1f && SlowSeconds > 0f;
+}
 
 /// <summary>An item a bot may drop, qualified.</summary>
 /// <param name="Item">Qualified item id.</param>
@@ -301,6 +306,16 @@ public sealed class BotBook : IBotCatalog
             Positive(dot.PerSecond, $"{path}.damage_over_time.per_second", "per_second", required: true, sink);
             Positive(dot.Seconds, $"{path}.damage_over_time.seconds", "seconds", required: true, sink);
         }
+        if (a.Slow is { } slow)
+        {
+            KnownKeys.WarnUnknown(slow.Extra, $"{path}.slow", sink, typeof(BotSlow));
+            if (slow.Factor is not { } factor)
+                sink.Error(code, $"{path}.slow.factor", "factor (what speed is multiplied by, between 0 and 1) is required.");
+            else if (!(factor > 0 && factor < 1))
+                sink.Error(code, $"{path}.slow.factor", $"factor must be more than 0 and less than 1 (got {factor}).");
+            Positive(slow.Seconds, $"{path}.slow.seconds", "seconds", required: true, sink);
+        }
+        NonNegative(a.ObjectDamage, $"{path}.object_damage", "object_damage", required: false, sink);
         if (a.Sound is not null && !PartValidator.IsItemRef(a.Sound))
             sink.Error(code, $"{path}.sound", $"sound '{a.Sound}' must be a sound event id.");
         if (sink.ErrorCount > errors)
@@ -308,7 +323,7 @@ public sealed class BotBook : IBotCatalog
         var radius = a.Radius ?? 0f;
         return new BotAttack(a.Id!, a.Kind!.Value, a.Damage!.Value, a.PartDamage ?? a.Damage!.Value, a.Range ?? radius, radius, a.Interval!.Value,
             a.DamageOverTime?.PerSecond ?? 0f, a.DamageOverTime?.Seconds ?? 0f, a.KillsSelf ?? false, a.HitsParts ?? true,
-            a.Sound ?? $"{family}_attack");
+            a.Sound ?? $"{family}_attack", a.Slow?.Factor ?? 1f, a.Slow?.Seconds ?? 0f, a.ObjectDamage ?? 0f);
     }
 
     private static void CheckBehavior(JsonObject node, string path, int depth, int[] count, bool hasScript, DiagnosticSink sink)

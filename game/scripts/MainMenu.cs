@@ -193,9 +193,9 @@ public partial class MainMenu : Control
 
     private void OpenBotEditor()
     {
-        var editor = new BotEditorScreen { Name = "BotEditor" };
-        editor.CloseRequested += () => Close(editor);
-        Open(editor);
+        var mode = new BotEditorMode { Name = "BotEditorMode" };
+        mode.CloseRequested += () => Close(mode);
+        Open(mode);
     }
 
     private void OpenModManager()

@@ -212,6 +212,40 @@ function leaves.stop()
   return SUCCESS
 end
 
+-- Balks at a spinning part nearby for a while, then lets the tree carry on. Stepping back out of range
+-- does not end it early; it hesitates again only once the way has been clear for as long.
+function leaves.hesitate(node)
+  local m = memory(node)
+  local seconds = node.seconds or 2
+  local now = world.time()
+  local spinning = world.spinning(node.range or 4, node.min_speed or 4)[1]
+  if spinning == nil then
+    m.clear = m.clear or now
+    if now - m.clear >= seconds then m.since = nil end
+    return FAILURE
+  end
+  m.clear = nil
+  m.since = m.since or now
+  if now - m.since >= seconds then return FAILURE end
+  local away = bot.position() - spinning.position
+  away.y = 0
+  if away:length() < 0.01 then away = vec3(1, 0, 0) end
+  bot.move(away, bot.speed() * 0.3)
+  return RUNNING
+end
+
+-- ---- World objects ----
+
+function leaves.break_objects(node)
+  if node.attack == nil then error("a break_objects node needs an attack") end
+  local info = bot.attack_info(node.attack)
+  if info == nil then error("the bot has no attack '" .. tostring(node.attack) .. "'") end
+  if not info.ready then return FAILURE end
+  local nearest = world.objects(info.range)[1]
+  if nearest == nil then return FAILURE end
+  return bot.attack(node.attack, { object = nearest.object }) and SUCCESS or FAILURE
+end
+
 -- ---- Fighting and conditions ----
 
 function leaves.attack(node)

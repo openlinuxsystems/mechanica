@@ -161,4 +161,60 @@ public sealed class BotRuntimeTests
         var expected = string.Join(",", BotBehavior.Nodes.Select(n => n.Type).Order(StringComparer.Ordinal));
         Assert.Contains($"bot 1: {expected}", rig.Prints);
     }
+
+    [Fact]
+    public void A_bot_hesitates_near_something_spinning_then_comes_on_anyway()
+    {
+        var wary = RaiderDefinition(tree: """
+            { "type": "sequence", "children": [
+              { "type": "find_player", "range": 20 },
+              { "type": "invert", "children": [ { "type": "hesitate", "range": 4, "min_speed": 4, "seconds": 2 } ] },
+              { "type": "chase", "attack": "whip" },
+              { "type": "attack", "attack": "whip" } ] }
+            """);
+        using var rig = new BotRig(wary);
+        rig.AddPlayer(2, new Vector3(10, 0, 0));
+        rig.Spinner(new Vector3(2, 0, 0), 10);
+        var bot = rig.Spawn(Raider, Vector3.Zero);
+        rig.Step(1.5f);
+        Assert.Empty(rig.Errors);
+        Assert.True(rig.Bots.Find(bot)!.Position.X < 0, $"backing away from the spinning rotor ({rig.Bots.Find(bot)!.Position})");
+        Assert.Equal(100, rig.Survival.View(2)!.Health);
+        rig.Step(4);
+        Assert.True(rig.Bots.Find(bot)!.Position.X > 5, $"came on after a while ({rig.Bots.Find(bot)!.Position})");
+        Assert.True(rig.Survival.View(2)!.Health < 100);
+
+        // A rotor that has stopped does not scare it.
+        using var calm = new BotRig(wary);
+        calm.AddPlayer(2, new Vector3(10, 0, 0));
+        calm.Spinner(new Vector3(2, 0, 0), 1);
+        var other = calm.Spawn(Raider, Vector3.Zero);
+        calm.Step(1.5f);
+        Assert.True(calm.Bots.Find(other)!.Position.X > 2, $"walked straight on ({calm.Bots.Find(other)!.Position})");
+    }
+
+    [Fact]
+    public void A_bot_breaks_world_objects_in_its_way()
+    {
+        var smasher = new BotDefinition
+        {
+            Id = "raider", Name = "Smasher", Health = 500, Speed = 3, Size = new BotSize { Radius = 1, Height = 3 },
+            Attacks = [new BotAttackDefinition { Id = "kick", Kind = BotAttackKind.Melee, Damage = 10, Range = 2, Interval = 1, ObjectDamage = 25 }],
+            Behavior = BotRig.Tree("""
+                { "type": "sequence", "children": [
+                  { "type": "succeed", "children": [ { "type": "break_objects", "attack": "kick" } ] },
+                  { "type": "stop" } ] }
+                """),
+        };
+        using var rig = new BotRig(smasher);
+        var near = rig.Tree(new Vector3(2.5f, 0, 0), 60);
+        var far = rig.Tree(new Vector3(9, 0, 0), 60);
+        rig.Spawn(Raider, Vector3.Zero);
+        rig.Step(1.5f);
+        Assert.Empty(rig.Errors);
+        Assert.False(rig.World.IsDestroyed(near));
+        rig.Step(2);
+        Assert.True(rig.World.IsDestroyed(near));
+        Assert.False(rig.World.IsDestroyed(far));
+    }
 }

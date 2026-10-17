@@ -29,18 +29,21 @@ public static class PlayerMotor
     /// <param name="input">Input for this tick. It is sanitized here, so raw network input is safe.</param>
     /// <param name="settings">Movement tuning.</param>
     /// <param name="delta">Step length in seconds.</param>
+    /// <param name="speedScale">What walking and running speed are multiplied by (a slow from a bot's bubble wrap), 0 to 1.</param>
     public static Vector3 Step(
         Vector3 velocity,
         bool onFloor,
         PlayerInput input,
         PlayerMovementSettings settings,
-        float delta)
+        float delta,
+        float speedScale = 1f)
     {
         if (!float.IsFinite(delta) || delta <= 0f)
             return velocity;
         input = input.Sanitized(settings);
 
-        var speed = input.Sprint ? settings.SprintSpeed : settings.WalkSpeed;
+        var speed = (input.Sprint ? settings.SprintSpeed : settings.WalkSpeed)
+            * (float.IsFinite(speedScale) ? Math.Clamp(speedScale, 0f, 1f) : 1f);
         var target = WishDirection(input.MoveX, input.MoveZ, input.Yaw) * speed;
         var acceleration = onFloor ? settings.GroundAcceleration : settings.AirAcceleration;
 

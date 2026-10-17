@@ -163,6 +163,42 @@ public sealed partial class BotRuntime
             }
             return DynValue.NewTable(list);
         });
+        Fn(world, "objects", args =>
+        {
+            var brain = Current();
+            var range = LuaValues.OptionalNumber(args[0], "world.objects", 1) ?? brain.Bot.Type.Sight;
+            var list = new Table(script);
+            var index = 1;
+            // Measured from the edge of the bot's body, as attack ranges are.
+            foreach (var (id, centre, distance) in _bots.ObjectsNear(brain.Bot.Centre, range + brain.Bot.Type.Radius))
+            {
+                var entry = new Table(script);
+                entry.Set("object", DynValue.NewString(id));
+                entry.Set("position", Vec(centre));
+                entry.Set("distance", DynValue.NewNumber(Math.Max(0, distance - brain.Bot.Type.Radius)));
+                list.Set(index++, DynValue.NewTable(entry));
+            }
+            return DynValue.NewTable(list);
+        });
+        Fn(world, "spinning", args =>
+        {
+            var brain = Current();
+            var range = LuaValues.OptionalNumber(args[0], "world.spinning", 1) ?? brain.Bot.Type.Sight;
+            var minSpeed = LuaValues.OptionalNumber(args[1], "world.spinning", 2) ?? 4f;
+            var list = new Table(script);
+            var index = 1;
+            foreach (var (creation, part, centre, speed, distance) in _bots.SpinningNear(brain.Bot.Centre, range, minSpeed))
+            {
+                var entry = new Table(script);
+                entry.Set("creation", DynValue.NewNumber(creation));
+                entry.Set("part", DynValue.NewNumber(part));
+                entry.Set("position", Vec(centre));
+                entry.Set("speed", DynValue.NewNumber(speed));
+                entry.Set("distance", DynValue.NewNumber(distance));
+                list.Set(index++, DynValue.NewTable(entry));
+            }
+            return DynValue.NewTable(list);
+        });
         Fn(world, "locate", args =>
         {
             Current();
@@ -242,15 +278,16 @@ public sealed partial class BotRuntime
         return DynValue.NewTable(list);
     }
 
-    // A target table: { player = peer }, { creation = c, part = p } or { bot = id }.
+    // A target table: { player = peer }, { creation = c, part = p }, { bot = id } or { object = id }.
     private static BotAttackArgs Target(DynValue value, string function, int argument)
     {
         if (value.Type != DataType.Table)
             throw new ScriptRuntimeException($"bad argument #{argument} to '{function}' (target table expected, got {LuaValues.Describe(value)})");
         int? Field(string key) => value.Table.Get(key) is { Type: DataType.Number } n ? (int)n.Number : null;
-        var target = new BotAttackArgs(0, "", Field("player"), Field("creation"), Field("part"), Field("bot"));
-        if (target.Player is null && target.Target is null && (target.Creation is null || target.Part is null))
-            throw new ScriptRuntimeException($"bad argument #{argument} to '{function}' (a target is {{player = peer}}, {{creation = c, part = p}} or {{bot = id}})");
+        var target = new BotAttackArgs(0, "", Field("player"), Field("creation"), Field("part"), Field("bot"),
+            value.Table.Get("object") is { Type: DataType.String } o ? o.String : null);
+        if (target.Player is null && target.Target is null && target.Object is null && (target.Creation is null || target.Part is null))
+            throw new ScriptRuntimeException($"bad argument #{argument} to '{function}' (a target is {{player = peer}}, {{creation = c, part = p}}, {{bot = id}} or {{object = id}})");
         return target;
     }
 

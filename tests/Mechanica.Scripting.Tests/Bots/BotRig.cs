@@ -22,6 +22,8 @@ internal sealed class BotRig : ISurvivalWorld, IInventoryWorld, IBotWorld, IRaid
     public const string Crop = "test:crop";
     public const string Soil = "test:soil";
     public const string Scrap = "test:scrap";
+    public const string Block = "test:block";
+    public const string Bearing = "test:bearing";
 
     private int _nextCreation = 1;
 
@@ -34,7 +36,18 @@ internal sealed class BotRig : ISurvivalWorld, IInventoryWorld, IBotWorld, IRaid
             .Add(Crop, new PartDefinition { Id = "crop", Name = "Crop", Category = PartCategory.Consumable, StackSize = 20 })
             .Add(Scrap, new PartDefinition { Id = "scrap", Name = "Scrap", Category = PartCategory.Resource, StackSize = 20 })
             .Add(Soil, new PartDefinition { Id = "soil", Name = "Soil", Category = PartCategory.Decor, Mass = 5, Durability = 3, Size = GridSize.One,
-                StackSize = 10, Soil = new SoilDefinition { Capacity = 60, Growth = 1 } });
+                StackSize = 10, Soil = new SoilDefinition { Capacity = 60, Growth = 1 } })
+            .Add(Block, new PartDefinition { Id = "block", Name = "Block", Category = PartCategory.Block, Mass = 4, Durability = 3, Size = GridSize.One })
+            // Base below, rotor above.
+            .Add(Bearing, new PartDefinition
+            {
+                Id = "bearing", Name = "Bearing", Category = PartCategory.Interactive, Mass = 3, Durability = 3, Size = GridSize.One,
+                Sockets =
+                [
+                    new SocketDefinition { Id = "base", Type = SocketType.Structural, Position = new Vec3(0, -0.125f, 0), Normal = new Vec3(0, -1, 0) },
+                    new SocketDefinition { Id = "rotor", Type = SocketType.Rotational, Position = new Vec3(0, 0.125f, 0), Normal = new Vec3(0, 1, 0) },
+                ],
+            });
         Book = BotBook.From(Catalog, [.. bots.Select(b => ("test", b))]);
         var inventories = new InventoryActions(Catalog, RecipeBook.Empty, new InventorySettings(), this);
         Survival = new SurvivalActions(Catalog, new SurvivalSettings(), inventories, this);
@@ -59,6 +72,8 @@ internal sealed class BotRig : ISurvivalWorld, IInventoryWorld, IBotWorld, IRaid
     public Dictionary<int, Creation> Creations { get; } = [];
     public Dictionary<int, Vector3> Feet { get; } = [];
     public double Now { get; set; } = 100;
+    public Dictionary<WorldObjectId, WorldObjectPlacement> Objects { get; } = [];
+    public WorldState World { get; } = new(1);
 
     public IEnumerable<ScriptMessage> Errors => Messages.Where(m => m.Kind == ScriptMessageKind.Error);
 
@@ -98,6 +113,29 @@ internal sealed class BotRig : ISurvivalWorld, IInventoryWorld, IBotWorld, IRaid
         creation.SoilOf(1)!.Plant(Seed);
         Creations[creation.Id] = creation;
         return creation.Id;
+    }
+
+    /// <summary>A block on a bearing whose rotor block turns at <paramref name="speed"/> rad/s, at <paramref name="at"/>.</summary>
+    public int Spinner(Vector3 at, float speed)
+    {
+        var creation = new Creation(_nextCreation++, Catalog);
+        foreach (var (part, y) in new[] { (Block, 0), (Bearing, 1), (Block, 2) })
+            Assert.True(creation.TryPlacePart(part, new GridCell(0, y, 0), default, out _, out var error), error);
+        creation.SetAllBodyPoses(new Pose(at, Quaternion.Identity));
+        creation.SetBodyVelocity(creation.Joints.Single().BodyB, new BodyVelocity(Vector3.Zero, new Vector3(0, speed, 0)));
+        Creations[creation.Id] = creation;
+        return creation.Id;
+    }
+
+    /// <summary>A breakable tree at <paramref name="at"/>.</summary>
+    public WorldObjectId Tree(Vector3 at, float health)
+    {
+        var id = new WorldObjectId(0, 0, Objects.Count + 1);
+        Objects[id] = new WorldObjectPlacement(id, new WorldObjectDefinition
+        {
+            Id = "tree", Health = health, Collider = new ShapeDefinition { Radius = 0.3f, At = new Vec3(0, 1, 0) },
+        }, at, 0, 1);
+        return id;
     }
 
     /// <summary>Runs <paramref name="seconds"/> of the host: brains think, bots walk where they asked to.</summary>
@@ -142,15 +180,14 @@ internal sealed class BotRig : ISurvivalWorld, IInventoryWorld, IBotWorld, IRaid
 
     public bool IsWater(Vector3 point) => false;
 
-    public WorldObjectPlacement? FindObject(WorldObjectId id) => null;
+    public WorldObjectPlacement? FindObject(WorldObjectId id) => Objects.TryGetValue(id, out var o) && !World.IsDestroyed(id) ? o : null;
 
-    public IEnumerable<WorldObjectPlacement> ObjectsNear(Vector3 point, float radius) => [];
+    public IEnumerable<WorldObjectPlacement> ObjectsNear(Vector3 point, float radius) =>
+        Objects.Values.Where(o => !World.IsDestroyed(o.Id) && Vector3.Distance(o.Position, point) <= radius);
 
-    public float AddObjectDamage(WorldObjectId id, float damage) => 0;
+    public float AddObjectDamage(WorldObjectId id, float damage) => World.AddDamage(id, damage);
 
-    public void DestroyObject(WorldObjectId id)
-    {
-    }
+    public void DestroyObject(WorldObjectId id) => World.Destroy(id);
 
     public SledgeResult DamagePart(Creation creation, int partId, float damage) => new(false, null, false, []);
 

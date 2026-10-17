@@ -105,6 +105,7 @@ public static class DataJson
         {
             Extra = Sorted(a.Extra),
             DamageOverTime = a.DamageOverTime is null ? null : a.DamageOverTime with { Extra = Sorted(a.DamageOverTime.Extra) },
+            Slow = a.Slow is null ? null : a.Slow with { Extra = Sorted(a.Slow.Extra) },
         }).ToList(),
         Drops = bot.Drops?.Select(d => d with { Extra = Sorted(d.Extra) }).ToList(),
     });

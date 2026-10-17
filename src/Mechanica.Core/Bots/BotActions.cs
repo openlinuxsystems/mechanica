@@ -5,6 +5,7 @@ using Mechanica.Core.Creations;
 using Mechanica.Core.Data;
 using Mechanica.Core.Items;
 using Mechanica.Core.Survival;
+using Mechanica.Core.World;
 
 namespace Mechanica.Core.Bots;
 
@@ -273,11 +274,14 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
             return $"{bot.Type.Name} has no attack '{args.Attack}'.";
         if (bot.LastUse.TryGetValue(attack.Id, out var last) && survivalWorld.Now - last < attack.Interval * IntervalJitter)
             return $"{bot.Type.Name}'s {attack.Id} is not ready.";
-        var targets = (args.Player is not null ? 1 : 0) + (args.Creation is not null || args.Part is not null ? 1 : 0) + (args.Target is not null ? 1 : 0);
+        var targets = (args.Player is not null ? 1 : 0) + (args.Creation is not null || args.Part is not null ? 1 : 0) + (args.Target is not null ? 1 : 0)
+            + (args.Object is not null ? 1 : 0);
         if (attack.Kind == BotAttackKind.Area)
             return targets == 0 ? null : "An area attack takes no target.";
         if (targets != 1)
-            return "Name one target: a player, a creation and part, or a bot.";
+            return "Name one target: a player, a creation and part, a bot or a world object.";
+        if (args.Object is not null && !(attack.ObjectDamage > 0))
+            return $"{bot.Type.Name}'s {attack.Id} cannot break world objects.";
         if (TargetPoint(args, out var radius) is not { } point)
             return "The target is not there.";
         if (args.Target == args.Bot)
@@ -306,6 +310,13 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
             radius = target.Type.Radius;
             return target.Centre;
         }
+        if (args.Object is { } objectId)
+        {
+            if (!WorldObjectId.TryParse(objectId, out var id) || survivalWorld.FindObject(id) is not { Definition.Health: not null } placement)
+                return null;
+            radius = ObjectRadius(placement);
+            return ObjectCentre(placement);
+        }
         if (args.Creation is not { } creationId || args.Part is not { } partId
             || survivalWorld.FindCreation(creationId) is not { } creation || creation.FindPart(partId) is null)
             return null;
@@ -320,7 +331,8 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
             return true;
         return (args.Player is { } peer && hit.Player == peer)
             || (args.Creation is { } creation && hit.Creation == creation)
-            || (args.Target is { } other && hit.Bot == other);
+            || (args.Target is { } other && hit.Bot == other)
+            || (args.Object is { } id && hit.Object?.ToString() == id);
     }
 
     private JsonElement? ApplyAttack(ActionCaller caller, BotAttackArgs args)
@@ -341,6 +353,11 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
             {
                 DamageBot(other, attack.Damage, "bot", attack.Kind == BotAttackKind.Melee);
                 hits.Add(new ShotHitView("bot", point.ToVec3(), attack.Damage, Bot: other));
+            }
+            else if (args.Object is { } id)
+            {
+                survival.StrikeObject(id, attack.ObjectDamage);
+                hits.Add(new ShotHitView("object", point.ToVec3(), attack.ObjectDamage, Object: id));
             }
             else if (attack.HitsParts)
                 hits.Add(HitPart(bot, attack, survivalWorld.FindCreation(args.Creation!.Value)!, args.Part!.Value, attack.PartDamage));
@@ -364,6 +381,18 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
             if (distance <= attack.Radius)
                 hits.Add(HurtPlayer(peer, attack, Falloff(attack.Damage, distance), centre));
         }
+        if (attack.ObjectDamage > 0)
+        {
+            foreach (var placement in survivalWorld.ObjectsNear(at, attack.Radius).Where(o => o.Definition.Health is not null).ToList())
+            {
+                var centre = ObjectCentre(placement);
+                var damage = Falloff(attack.ObjectDamage, Math.Max(0, Vector3.Distance(centre, at) - ObjectRadius(placement)));
+                if (damage <= 0)
+                    continue;
+                survival.StrikeObject(placement.Id.ToString(), damage);
+                hits.Add(new ShotHitView("object", centre.ToVec3(), damage, Object: placement.Id.ToString()));
+            }
+        }
         if (!attack.HitsParts)
             return;
         foreach (var creation in survivalWorld.AllCreations.Select(c => c.Id).ToList().Select(survivalWorld.FindCreation).OfType<Creation>())
@@ -385,6 +414,8 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
             survival.Damage(peer, damage, "bot");
         if (attack.DamagePerSecond > 0 && survival.Mode == GameMode.Survival)
             _lasting.Add((peer, attack.DamagePerSecond, survivalWorld.Now + attack.DamageSeconds));
+        if (attack.Slows)
+            survival.Slow(peer, attack.SlowFactor, attack.SlowSeconds);
         return new ShotHitView("player", point.ToVec3(), damage, Player: peer);
     }
 
@@ -491,6 +522,62 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
     }
 
     private SeedDefinition? SeedOf(string seed) => survival.Catalog.FindDefinition(seed)?.Seed;
+
+    /// <summary>
+    /// World objects a bot can break (those with health) within <paramref name="range"/> of
+    /// <paramref name="point"/>, measured to their edge, nearest first.
+    /// </summary>
+    public IReadOnlyList<(string Id, Vector3 Centre, float Distance)> ObjectsNear(Vector3 point, float range) =>
+        [.. survivalWorld.ObjectsNear(point, range + MaxObjectRadius)
+            .Where(o => o.Definition.Health is not null)
+            .Select(o => (Id: o.Id.ToString(), Centre: ObjectCentre(o), Distance: Math.Max(0, Vector3.Distance(ObjectCentre(o), point) - ObjectRadius(o))))
+            .Where(o => o.Distance <= range)
+            .OrderBy(o => o.Distance).ThenBy(o => o.Id, StringComparer.Ordinal)];
+
+    /// <summary>
+    /// Parts spinning on a joint near <paramref name="point"/>: the far side of every unlocked rotational
+    /// joint (a bearing's rotor, a wheel, a saw blade) turning faster than <paramref name="minSpeed"/> rad/s
+    /// against its base, within <paramref name="range"/>. Nearest first.
+    /// </summary>
+    public IReadOnlyList<(int Creation, int Part, Vector3 Centre, float Speed, float Distance)> SpinningNear(Vector3 point, float range, float minSpeed)
+    {
+        var list = new List<(int Creation, int Part, Vector3 Centre, float Speed, float Distance)>();
+        foreach (var id in survivalWorld.AllCreations.Where(c => c.Joints.Any(j => !j.IsLocked)).Select(c => c.Id).ToList())
+        {
+            // Finding it again brings its Bodies' poses and velocities up to date.
+            if (survivalWorld.FindCreation(id) is not { } creation)
+                continue;
+            foreach (var joint in creation.Joints.Where(j => !j.IsLocked))
+            {
+                var part = joint.Connection.B;
+                if (creation.FindPart(part) is null || !creation.TryGetJointFrame(joint.Connection, out var frame) || frame.Type != ConnectionType.Rotational)
+                    continue;
+                var centre = PartCentre(creation, part);
+                var distance = Vector3.Distance(centre, point);
+                if (distance > range)
+                    continue;
+                var axis = Vector3.Transform(frame.Axis.ToNumerics(), creation.BodyPose(joint.BodyA).Rotation);
+                var speed = MathF.Abs(Vector3.Dot(creation.GetBodyVelocity(joint.BodyB).Angular - creation.GetBodyVelocity(joint.BodyA).Angular, axis));
+                if (speed >= minSpeed)
+                    list.Add((creation.Id, part, centre, speed, distance));
+            }
+        }
+        return [.. list.OrderBy(s => s.Distance).ThenBy(s => s.Creation).ThenBy(s => s.Part)];
+    }
+
+    // Objects are found by their position; this covers the widest one's reach from it.
+    private const float MaxObjectRadius = 4f;
+
+    private static Vector3 ObjectCentre(WorldObjectPlacement placement) =>
+        placement.Position + new Vector3(0, (placement.Definition.Collider?.At.Y ?? 0) * placement.Scale, 0);
+
+    // A world object's horizontal size: its collider's radius, or half its widest side.
+    private static float ObjectRadius(WorldObjectPlacement placement)
+    {
+        var collider = placement.Definition.Collider;
+        var radius = collider?.Radius ?? (collider?.Size is { } size ? Math.Max(size.X, size.Z) / 2 : 0.5f);
+        return Math.Min(radius * placement.Scale, MaxObjectRadius);
+    }
 
     // ---- Ticking ----
 

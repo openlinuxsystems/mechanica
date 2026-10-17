@@ -33,6 +33,13 @@ public partial class PlayerController : CharacterBody3D
     /// <summary>When false the body does not move itself; something else poses it each tick.</summary>
     public bool Simulated { get; set; } = true;
 
+    /// <summary>
+    /// What walking and running speed are multiplied by, 0 to 1: below 1 while a bot's bubble wrap slows the
+    /// player. The host sets it from <c>SurvivalActions.SpeedScale</c>, a client from its vitals, so
+    /// prediction agrees with the host.
+    /// </summary>
+    public float SpeedScale { get; set; } = 1f;
+
     /// <summary>Whether walking into rigid bodies pushes them. Only the host's simulation pushes.</summary>
     public bool PushesBodies { get; set; } = true;
 
@@ -179,7 +186,7 @@ public partial class PlayerController : CharacterBody3D
         }
 
         var wasOnFloor = IsOnFloor();
-        var velocity = PlayerMotor.Step(Velocity.ToNumerics(), wasOnFloor, input, Settings, delta);
+        var velocity = PlayerMotor.Step(Velocity.ToNumerics(), wasOnFloor, input, Settings, delta, SpeedScale);
         Velocity = velocity.ToGodot();
         MoveAndSlide();
         if (!wasOnFloor && IsOnFloor() && velocity.Y < 0)

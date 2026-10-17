@@ -15,6 +15,8 @@ internal sealed class BotFixture : IBotWorld, IRaidWorld
     public const string Bomber = "test:bomber";
     public const string Tank = "test:tank";
     public const string Critter = "test:critter";
+    public const string Spitter = "test:spitter";
+    public const string Smasher = "test:smasher";
 
     public static readonly ActionCaller Brain = new(1, ActionSource.Bot);
 
@@ -45,7 +47,23 @@ internal sealed class BotFixture : IBotWorld, IRaidWorld
                 Attacks = [new BotAttackDefinition { Id = "boom", Kind = BotAttackKind.Area, Damage = 40, Radius = 4, Interval = 1, KillsSelf = true }],
             }),
             ("test", new BotDefinition { Id = "tank", Name = "Tank", Health = 1500, Speed = 3, RaidCost = 5, MeleeImmune = true }),
-            ("test", new BotDefinition { Id = "critter", Name = "Critter", Health = 30, Speed = 2, Passive = true }));
+            ("test", new BotDefinition { Id = "critter", Name = "Critter", Health = 30, Speed = 2, Passive = true }),
+            ("test", new BotDefinition
+            {
+                Id = "spitter", Name = "Spitter", Health = 40, Speed = 3,
+                Attacks = [new BotAttackDefinition { Id = "wrap", Kind = BotAttackKind.Melee, Damage = 5, Range = 2, Interval = 1,
+                    Slow = new BotSlow { Factor = 0.5f, Seconds = 3 } }],
+            }),
+            ("test", new BotDefinition
+            {
+                Id = "smasher", Name = "Smasher", Health = 500, Speed = 3, Size = new BotSize { Radius = 1, Height = 3 },
+                Attacks =
+                [
+                    new BotAttackDefinition { Id = "kick", Kind = BotAttackKind.Melee, Damage = 10, Range = 2, Interval = 1, ObjectDamage = 20 },
+                    new BotAttackDefinition { Id = "stomp", Kind = BotAttackKind.Area, Damage = 0, Radius = 4, Interval = 5, ObjectDamage = 40, HitsParts = false },
+                    new BotAttackDefinition { Id = "poke", Kind = BotAttackKind.Melee, Damage = 10, Range = 2, Interval = 1 },
+                ],
+            }));
         Raids = RaidTable.From(raids ?? new RaidTableDefinition
         {
             CheckInterval = 10, Cooldown = 100, Warning = 5, SpawnDistance = 30, Duration = 60,

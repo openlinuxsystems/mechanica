@@ -1,7 +1,7 @@
 {
   "id": "rakehand",
   "name": "Rakehand",
-  "description": "A farmhand bot with a pitchfork: quick pokes, and a wide swing when it can.",
+  "description": "A farmhand bot with a pitchfork: quick pokes, and a wide swing when it can. It balks at anything spinning nearby.",
   "family": "rakehand",
   "health": 100,
   "speed": 4,
@@ -74,6 +74,17 @@
             ]
           },
           {
+            "type": "invert",
+            "children": [
+              {
+                "type": "hesitate",
+                "range": 4,
+                "min_speed": 4,
+                "seconds": 2
+              }
+            ]
+          },
+          {
             "type": "chase",
             "attack": "poke",
             "speed": 1
@@ -114,6 +125,17 @@
                     "function": "cry"
                   }
                 ]
+              }
+            ]
+          },
+          {
+            "type": "invert",
+            "children": [
+              {
+                "type": "hesitate",
+                "range": 4,
+                "min_speed": 4,
+                "seconds": 2
               }
             ]
           },

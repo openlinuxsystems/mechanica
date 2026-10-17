@@ -453,6 +453,8 @@ public partial class Main : Node3D
         SoundEvents = LoadSounds(mods);
         Sounds.SetRegistry(SoundEvents);
         Scripts.SetContent(mods);
+        BotTypes = LoadBots(mods);
+        Bots.SetContent(mods, BotTypes);
         Hammer?.ReloadParts();
     }
 

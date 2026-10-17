@@ -146,6 +146,15 @@ public sealed record BotAttackDefinition
     /// <summary>A lasting effect on players hit: damage per second for some seconds (pesticide).</summary>
     public BotDamageOverTime? DamageOverTime { get; init; }
 
+    /// <summary>A lasting effect on players hit: they move slower for some seconds (bubble wrap).</summary>
+    public BotSlow? Slow { get; init; }
+
+    /// <summary>
+    /// Damage to a world object (tree, rock, bush; D11) it is aimed at or, for an area attack, that stands in
+    /// its radius. Omitted or 0 means it cannot hurt world objects.
+    /// </summary>
+    public float? ObjectDamage { get; init; }
+
     /// <summary>When true, using it kills the bot (a kamikaze charge).</summary>
     public bool? KillsSelf { get; init; }
 
@@ -165,6 +174,20 @@ public sealed record BotDamageOverTime
 {
     /// <summary>Damage per second.</summary>
     public float? PerSecond { get; init; }
+
+    /// <summary>How long it lasts, in s.</summary>
+    public float? Seconds { get; init; }
+
+    /// <summary>Keys this build does not know.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>Players hit move slower for a while.</summary>
+public sealed record BotSlow
+{
+    /// <summary>What their walking and running speed is multiplied by, more than 0 and less than 1.</summary>
+    public float? Factor { get; init; }
 
     /// <summary>How long it lasts, in s.</summary>
     public float? Seconds { get; init; }
