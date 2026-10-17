@@ -2814,6 +2814,1002 @@
       }
     },
     {
+      "name": "editor.batch.run",
+      "kind": "method",
+      "group": "editor",
+      "scope": "admin",
+      "description": "Runs a batch file of a mod (Part Editor parts and recipes, Bot Behavior Editor bots and raids, or story POIs and quests) as tools/author-vanilla.sh does; this is how vanilla content is changed. Returns kind, ok, every export and the diagnostics.",
+      "params": {
+        "description": "Params of methods that take a file of a mod.",
+        "type": "object",
+        "properties": {
+          "mod": {
+            "description": "Mod id.",
+            "type": "string"
+          },
+          "path": {
+            "description": "Forward-slash path inside the mod.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mod",
+          "path"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "editor.bot.edit",
+      "kind": "method",
+      "group": "editor",
+      "scope": "admin",
+      "description": "One undo step: merges set into the bot (stats, attacks, drops, script; null removes a key). Returns the document and its diagnostics.",
+      "params": {
+        "description": "Params of editor.bot.edit.",
+        "type": "object",
+        "properties": {
+          "doc": {
+            "description": "Bot document.",
+            "type": "string"
+          },
+          "set": {
+            "description": "Keys to merge into the bot (null removes a key)."
+          },
+          "label": {
+            "description": "Undo label; defaults to \"Edit\".",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "doc",
+          "set"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "editor.bot.export",
+      "kind": "method",
+      "group": "editor",
+      "scope": "admin",
+      "description": "Exports the bot into its mod's bots/. Returns ok, id, file and diagnostics.",
+      "params": {
+        "description": "Params of methods that take one open document.",
+        "type": "object",
+        "properties": {
+          "doc": {
+            "description": "The handle editor.part.new, editor.part.open, editor.bot.new or editor.bot.open returned.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "doc"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "editor.bot.get",
+      "kind": "method",
+      "group": "editor",
+      "scope": "admin",
+      "description": "The bot document as it stands: bot, dirty, undo label.",
+      "params": {
+        "description": "Params of methods that take one open document.",
+        "type": "object",
+        "properties": {
+          "doc": {
+            "description": "The handle editor.part.new, editor.part.open, editor.bot.new or editor.bot.open returned.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "doc"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "editor.bot.new",
+      "kind": "method",
+      "group": "editor",
+      "scope": "admin",
+      "description": "Starts a Bot Behavior Editor document from a template in a mod. Nothing is written until editor.bot.export. Returns the document (doc handle and the bot data, behaviour tree included) and its diagnostics.",
+      "params": {
+        "description": "Params of editor.part.new and editor.bot.new.",
+        "type": "object",
+        "properties": {
+          "mod": {
+            "description": "Mod the new document belongs to.",
+            "type": "string"
+          },
+          "template": {
+            "description": "Template name, from editor.templates.",
+            "type": "string"
+          },
+          "id": {
+            "description": "New id, lowercase snake_case.",
+            "type": "string"
+          },
+          "name": {
+            "description": "Display name; defaults to the id.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "mod",
+          "template",
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "editor.bot.open",
+      "kind": "method",
+      "group": "editor",
+      "scope": "admin",
+      "description": "Opens a bot file of a mod (bots/…). Returns the document and its diagnostics.",
+      "params": {
+        "description": "Params of methods that take a file of a mod.",
+        "type": "object",
+        "properties": {
+          "mod": {
+            "description": "Mod id.",
+            "type": "string"
+          },
+          "path": {
+            "description": "Forward-slash path inside the mod.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mod",
+          "path"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "editor.bot.script",
+      "kind": "method",
+      "group": "editor",
+      "scope": "admin",
+      "description": "The bot's own Lua script, or null when it has none in its mod.",
+      "params": {
+        "description": "Params of methods that take one open document.",
+        "type": "object",
+        "properties": {
+          "doc": {
+            "description": "The handle editor.part.new, editor.part.open, editor.bot.new or editor.bot.open returned.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "doc"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "editor.bot.script_save",
+      "kind": "method",
+      "group": "editor",
+      "scope": "admin",
+      "description": "Compiles the bot's own script, writes it into the mod's scripts/ and points the bot at it (export the bot to keep that). Refused when it doesn't compile. Returns the script path and the bot's diagnostics.",
+      "params": {
+        "description": "Params of editor.bot.script_save.",
+        "type": "object",
+        "properties": {
+          "doc": {
+            "description": "Bot document.",
+            "type": "string"
+          },
+          "code": {
+            "description": "The script.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "doc",
+          "code"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "editor.bot.tree",
+      "kind": "method",
+      "group": "editor",
+      "scope": "admin",
+      "description": "One behaviour tree edit at a node path (child indexes from the root): add a node of a type under it, remove it, move it by delta among its siblings, or set a parameter (name, value; null removes it). Returns the affected node's path, the document and its diagnostics.",
+      "params": {
+        "description": "Params of editor.bot.tree.",
+        "type": "object",
+        "properties": {
+          "doc": {
+            "description": "Bot document.",
+            "type": "string"
+          },
+          "op": {
+            "description": "add, remove, move or set.",
+            "type": "string"
+          },
+          "path": {
+            "description": "Child indexes from the root of the behaviour tree; [] is the root.",
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "type": {
+            "description": "add: the node type.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "delta": {
+            "description": "move: places to move among its siblings (negative is earlier).",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "name": {
+            "description": "set: the parameter.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "value": {
+            "description": "set: its value; null removes it.",
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "doc",
+          "op",
+          "path"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "editor.bot.undo",
+      "kind": "method",
+      "group": "editor",
+      "scope": "admin",
+      "description": "Undoes one step (or redoes, with redo). Returns the document and its diagnostics.",
+      "params": {
+        "description": "Params of editor.part.undo and editor.bot.undo.",
+        "type": "object",
+        "properties": {
+          "doc": {
+            "description": "Document.",
+            "type": "string"
+          },
+          "redo": {
+            "description": "True redoes instead.",
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "doc"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "editor.bot.validate",
+      "kind": "method",
+      "group": "editor",
+      "scope": "admin",
+      "description": "Checks the bot exactly as loading would, against the parts on disk now.",
+      "params": {
+        "description": "Params of methods that take one open document.",
+        "type": "object",
+        "properties": {
+          "doc": {
+            "description": "The handle editor.part.new, editor.part.open, editor.bot.new or editor.bot.open returned.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "doc"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "editor.close",
+      "kind": "method",
+      "group": "editor",
+      "scope": "admin",
+      "description": "Closes a part or bot document; unsaved changes are dropped. At most 64 documents are open at once.",
+      "params": {
+        "description": "Params of methods that take one open document.",
+        "type": "object",
+        "properties": {
+          "doc": {
+            "description": "The handle editor.part.new, editor.part.open, editor.bot.new or editor.bot.open returned.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "doc"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "editor.part.contacts",
+      "kind": "method",
+      "group": "editor",
+      "scope": "admin",
+      "description": "The face contacts the part makes, as the socket preview shows them: cell, direction, connection, socket.",
+      "params": {
+        "description": "Params of methods that take one open document.",
+        "type": "object",
+        "properties": {
+          "doc": {
+            "description": "The handle editor.part.new, editor.part.open, editor.bot.new or editor.bot.open returned.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "doc"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "editor.part.edit",
+      "kind": "method",
+      "group": "editor",
+      "scope": "admin",
+      "description": "One undo step: replace the definition, or merge set into it (null removes a key, objects merge), and/or replace the model pieces (source). Returns the document and its diagnostics.",
+      "params": {
+        "description": "Params of editor.part.edit.",
+        "type": "object",
+        "properties": {
+          "doc": {
+            "description": "Part document.",
+            "type": "string"
+          },
+          "label": {
+            "description": "Undo label; defaults to \"Edit\".",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "definition": {
+            "description": "The whole part definition, replacing it.",
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "set": {
+            "description": "Or: keys to merge into the definition (null removes a key, objects merge).",
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source": {
+            "description": "The model pieces, replacing them.",
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "doc"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "editor.part.export",
+      "kind": "method",
+      "group": "editor",
+      "scope": "admin",
+      "description": "Exports the part into its mod: the part file, its model pieces under editor/parts/, and a mesh baked by the editor's model builder when the pieces need one. Returns ok, id, file and diagnostics; mods.reload loads it.",
+      "params": {
+        "description": "Params of methods that take one open document.",
+        "type": "object",
+        "properties": {
+          "doc": {
+            "description": "The handle editor.part.new, editor.part.open, editor.bot.new or editor.bot.open returned.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "doc"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "editor.part.get",
+      "kind": "method",
+      "group": "editor",
+      "scope": "admin",
+      "description": "The part document as it stands: definition, source (model pieces), dirty, undo and redo labels, needs_bake.",
+      "params": {
+        "description": "Params of methods that take one open document.",
+        "type": "object",
+        "properties": {
+          "doc": {
+            "description": "The handle editor.part.new, editor.part.open, editor.bot.new or editor.bot.open returned.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "doc"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "editor.part.new",
+      "kind": "method",
+      "group": "editor",
+      "scope": "admin",
+      "description": "Starts a Part Editor document from a template (block, wedge, bearing, …) in a mod. Nothing is written until editor.part.export. Returns the document (doc handle, definition, model pieces as source) and its diagnostics.",
+      "params": {
+        "description": "Params of editor.part.new and editor.bot.new.",
+        "type": "object",
+        "properties": {
+          "mod": {
+            "description": "Mod the new document belongs to.",
+            "type": "string"
+          },
+          "template": {
+            "description": "Template name, from editor.templates.",
+            "type": "string"
+          },
+          "id": {
+            "description": "New id, lowercase snake_case.",
+            "type": "string"
+          },
+          "name": {
+            "description": "Display name; defaults to the id.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "mod",
+          "template",
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "editor.part.open",
+      "kind": "method",
+      "group": "editor",
+      "scope": "admin",
+      "description": "Opens a part file of a mod (parts/… or overrides/…) with its model pieces. Returns the document and its diagnostics.",
+      "params": {
+        "description": "Params of methods that take a file of a mod.",
+        "type": "object",
+        "properties": {
+          "mod": {
+            "description": "Mod id.",
+            "type": "string"
+          },
+          "path": {
+            "description": "Forward-slash path inside the mod.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mod",
+          "path"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "editor.part.sound",
+      "kind": "method",
+      "group": "editor",
+      "scope": "admin",
+      "description": "Binds one of the part's sound names to a sound event id, or unbinds it with a null sound. Returns the document and its diagnostics.",
+      "params": {
+        "description": "Params of editor.part.sound.",
+        "type": "object",
+        "properties": {
+          "doc": {
+            "description": "Part document.",
+            "type": "string"
+          },
+          "key": {
+            "description": "The part's sound name, like place or impact.",
+            "type": "string"
+          },
+          "sound": {
+            "description": "Sound event id, or null to unbind it.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "doc",
+          "key"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "editor.part.undo",
+      "kind": "method",
+      "group": "editor",
+      "scope": "admin",
+      "description": "Undoes one step (or redoes, with redo). Returns the document and its diagnostics.",
+      "params": {
+        "description": "Params of editor.part.undo and editor.bot.undo.",
+        "type": "object",
+        "properties": {
+          "doc": {
+            "description": "Document.",
+            "type": "string"
+          },
+          "redo": {
+            "description": "True redoes instead.",
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "doc"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "editor.part.validate",
+      "kind": "method",
+      "group": "editor",
+      "scope": "admin",
+      "description": "Checks the part and its model pieces exactly as export would.",
+      "params": {
+        "description": "Params of methods that take one open document.",
+        "type": "object",
+        "properties": {
+          "doc": {
+            "description": "The handle editor.part.new, editor.part.open, editor.bot.new or editor.bot.open returned.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "doc"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "editor.raids.get",
+      "kind": "method",
+      "group": "editor",
+      "scope": "admin",
+      "description": "A mod's raid table (raids/raids.json), or null when it has none.",
+      "params": {
+        "description": "Params of methods that take a mod.",
+        "type": "object",
+        "properties": {
+          "mod": {
+            "description": "Mod id.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mod"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "editor.raids.save",
+      "kind": "method",
+      "group": "editor",
+      "scope": "admin",
+      "description": "Checks a raid table against the bots on disk and writes it to the mod's raids/raids.json. Returns ok, file and diagnostics.",
+      "params": {
+        "description": "Params of editor.raids.save.",
+        "type": "object",
+        "properties": {
+          "mod": {
+            "description": "Mod id.",
+            "type": "string"
+          },
+          "raids": {
+            "description": "The raid table (the raids/raids.json schema)."
+          }
+        },
+        "required": [
+          "mod",
+          "raids"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "editor.recipes.delete",
+      "kind": "method",
+      "group": "editor",
+      "scope": "admin",
+      "description": "Deletes a recipe file of a mod.",
+      "params": {
+        "description": "Params of methods that take a file of a mod.",
+        "type": "object",
+        "properties": {
+          "mod": {
+            "description": "Mod id.",
+            "type": "string"
+          },
+          "path": {
+            "description": "Forward-slash path inside the mod.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mod",
+          "path"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "editor.recipes.list",
+      "kind": "method",
+      "group": "editor",
+      "scope": "admin",
+      "description": "Every recipe file of a mod, with its recipe.",
+      "params": {
+        "description": "Params of methods that take a mod.",
+        "type": "object",
+        "properties": {
+          "mod": {
+            "description": "Mod id.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mod"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "editor.recipes.save",
+      "kind": "method",
+      "group": "editor",
+      "scope": "admin",
+      "description": "Checks and writes a recipe as the Part Editor's Recipes tab does (previous_file is removed when the id changed). Returns ok, id, file and diagnostics.",
+      "params": {
+        "description": "Params of editor.recipes.save.",
+        "type": "object",
+        "properties": {
+          "mod": {
+            "description": "Mod id.",
+            "type": "string"
+          },
+          "recipe": {
+            "description": "The recipe (the recipes/*.json schema)."
+          },
+          "previous_file": {
+            "description": "The file it was listed from, removed when its id changed.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "mod",
+          "recipe"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "editor.sounds.get",
+      "kind": "method",
+      "group": "editor",
+      "scope": "admin",
+      "description": "The events of a sound bank (the mod's default bank when path is null); empty when it is new.",
+      "params": {
+        "description": "Params of editor.sounds.get.",
+        "type": "object",
+        "properties": {
+          "mod": {
+            "description": "Mod id.",
+            "type": "string"
+          },
+          "path": {
+            "description": "Sound bank file under sounds/; null is the mod's default bank.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "mod"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "editor.sounds.list",
+      "kind": "method",
+      "group": "editor",
+      "scope": "admin",
+      "description": "A mod's sound event files.",
+      "params": {
+        "description": "Params of methods that take a mod.",
+        "type": "object",
+        "properties": {
+          "mod": {
+            "description": "Mod id.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mod"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "editor.sounds.save",
+      "kind": "method",
+      "group": "editor",
+      "scope": "admin",
+      "description": "Replaces a sound bank's events, checks them as loading would and writes the file. Returns ok, id, file and diagnostics.",
+      "params": {
+        "description": "Params of editor.sounds.save.",
+        "type": "object",
+        "properties": {
+          "mod": {
+            "description": "Mod id.",
+            "type": "string"
+          },
+          "events": {
+            "description": "Every event of the bank, replacing them."
+          },
+          "path": {
+            "description": "Sound bank file under sounds/; null is the mod's default bank.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "mod",
+          "events"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "editor.templates",
+      "kind": "method",
+      "group": "editor",
+      "scope": "admin",
+      "description": "Template names for editor.part.new and editor.bot.new.",
+      "params": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "lua.check",
+      "kind": "method",
+      "group": "lua",
+      "scope": "observe",
+      "description": "Compiles a script (source text, or mod and path of a file) the way the host does, without running it. Returns ok, or the line, column and message of the first error.",
+      "params": {
+        "description": "Params of lua.check.",
+        "type": "object",
+        "properties": {
+          "source": {
+            "description": "Script text to compile.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "mod": {
+            "description": "Or: the mod of a script file.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "path": {
+            "description": "And the file's path inside it.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "lua.eval",
+      "kind": "method",
+      "group": "lua",
+      "scope": "admin",
+      "description": "Runs Lua once in a throwaway sandbox with what part scripts start with (safe core libraries and vec3, no io, files or world) under the host's instruction budget. A single expression returns its value. Returns ok, values, printed output and error.",
+      "params": {
+        "description": "Params of lua.eval.",
+        "type": "object",
+        "properties": {
+          "source": {
+            "description": "Lua to run; a single expression returns its value.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "lua.messages",
+      "kind": "method",
+      "group": "lua",
+      "scope": "observe",
+      "description": "The newest lines of the part and bot script consoles, oldest first: source (parts or bots), kind (print, warning, error), script, creation, part, text, tick. Subscribe to the messages topic to have them pushed instead.",
+      "params": {
+        "description": "Params of lua.messages.",
+        "type": "object",
+        "properties": {
+          "since_tick": {
+            "description": "Only lines written after this tick.",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "kinds": {
+            "description": "Only these kinds: print, warning, error.",
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "script": {
+            "description": "Only this script (mod:scripts/x.lua).",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "limit": {
+            "description": "Newest lines to return, 1 to 500; default 100.",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
       "name": "mechanica.auth",
       "kind": "method",
       "group": "mechanica",
@@ -3021,6 +4017,383 @@
             ]
           }
         },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "mods.conflicts",
+      "kind": "method",
+      "group": "mods",
+      "scope": "admin",
+      "description": "Conflicts between the enabled mods: incompatible (not loaded) and override_clash (two mods override one part; the later wins).",
+      "params": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "mods.create",
+      "kind": "method",
+      "group": "mods",
+      "scope": "admin",
+      "description": "Creates a new mod folder with mod.json and empty parts/ and scripts/. It depends on vanilla unless dependencies says otherwise.",
+      "params": {
+        "description": "Params of mods.create.",
+        "type": "object",
+        "properties": {
+          "mod": {
+            "description": "New mod id, lowercase snake_case; also its folder name.",
+            "type": "string"
+          },
+          "name": {
+            "description": "Display name; defaults to the id.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "version": {
+            "description": "Semantic version; defaults to 0.1.0.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "description": {
+            "description": "One paragraph about the mod.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "authors": {
+            "description": "Author names.",
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "dependencies": {
+            "description": "Mod ids it needs; defaults to vanilla.",
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "mod"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "mods.delete",
+      "kind": "method",
+      "group": "mods",
+      "scope": "admin",
+      "description": "Deletes a file of a mod, and folders it leaves empty. mod.json can't be deleted.",
+      "params": {
+        "description": "Params of mods.read and mods.delete.",
+        "type": "object",
+        "properties": {
+          "mod": {
+            "description": "Mod id.",
+            "type": "string"
+          },
+          "path": {
+            "description": "Forward-slash path inside the mod, like parts/wheel.json.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mod",
+          "path"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "mods.enable",
+      "kind": "method",
+      "group": "mods",
+      "scope": "admin",
+      "description": "Enables or disables a mod like the Mod Manager (enabling pulls in its dependencies, disabling its dependents) and saves the profile. Takes effect on mods.reload. Returns the mods that changed.",
+      "params": {
+        "description": "Params of mods.enable.",
+        "type": "object",
+        "properties": {
+          "mod": {
+            "description": "Mod id.",
+            "type": "string"
+          },
+          "enabled": {
+            "description": "False disables it (and the mods that depend on it).",
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "required": [
+          "mod"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "mods.files",
+      "kind": "method",
+      "group": "mods",
+      "scope": "admin",
+      "description": "Lists the files of a mod (or one folder of it): path, size and modified time.",
+      "params": {
+        "description": "Params of mods.files.",
+        "type": "object",
+        "properties": {
+          "mod": {
+            "description": "Mod id.",
+            "type": "string"
+          },
+          "folder": {
+            "description": "Folder inside the mod; null lists the whole mod.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "mod"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "mods.import",
+      "kind": "method",
+      "group": "mods",
+      "scope": "admin",
+      "description": "Imports an asset like the Part Editor: into meshes/, scripts/, textures/ or sounds/ under a clean snake_case name, reusing an identical file. A .gltf brings its buffers and images in companions. Returns the path to write in data.",
+      "params": {
+        "description": "Params of mods.import.",
+        "type": "object",
+        "properties": {
+          "mod": {
+            "description": "Mod id.",
+            "type": "string"
+          },
+          "kind": {
+            "description": "mesh, script, texture or sound.",
+            "type": "string"
+          },
+          "file_name": {
+            "description": "The file's name, like Big Wheel.glb; it is cleaned to snake_case.",
+            "type": "string"
+          },
+          "base64": {
+            "description": "The file, base64.",
+            "type": "string"
+          },
+          "companions": {
+            "description": "A .gltf's buffers and images by relative path, base64.",
+            "anyOf": [
+              {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "mod",
+          "kind",
+          "file_name",
+          "base64"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "mods.list",
+      "kind": "method",
+      "group": "mods",
+      "scope": "admin",
+      "description": "Installed mods in load order: id, name, version, enabled, can_disable, loaded, dependencies; plus profile entries that are not installed (missing) and folders whose mod.json is broken.",
+      "params": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "mods.move",
+      "kind": "method",
+      "group": "mods",
+      "scope": "admin",
+      "description": "Moves a mod in the load order (it stops at its dependencies and dependents) and saves the profile. Returns the index it ended up at.",
+      "params": {
+        "description": "Params of mods.move.",
+        "type": "object",
+        "properties": {
+          "mod": {
+            "description": "Mod id.",
+            "type": "string"
+          },
+          "index": {
+            "description": "Where in the load order it should go (0 is first); it stops at its dependencies.",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "mod",
+          "index"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "mods.read",
+      "kind": "method",
+      "group": "mods",
+      "scope": "admin",
+      "description": "Reads a file of a mod: text for .json, .lua, .gltf, .md and .txt, base64 for the rest. Up to 2 MiB.",
+      "params": {
+        "description": "Params of mods.read and mods.delete.",
+        "type": "object",
+        "properties": {
+          "mod": {
+            "description": "Mod id.",
+            "type": "string"
+          },
+          "path": {
+            "description": "Forward-slash path inside the mod, like parts/wheel.json.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mod",
+          "path"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "mods.reload",
+      "kind": "method",
+      "group": "mods",
+      "scope": "admin",
+      "description": "Reloads the enabled mods into the running world: parts, sounds, part scripts and bot types. World generation, recipes, raids, quests and characters change only in a new world (listed in next_world). Refused while clients are joined unless the host runs with --ai-allow-reload-with-clients, which drops clients whose mods no longer match (dropped_peers).",
+      "params": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "mods.validate",
+      "kind": "method",
+      "group": "mods",
+      "scope": "admin",
+      "description": "Loads all content as a world would (parts, sounds, world generation, recipes, bots, raids, quests, characters) and compiles every Lua script. Returns ok, error and warning counts, the mods that would load, the content fingerprint and every diagnostic (domain, severity, code, mod, file, json_path, line, message). A mod with part errors is left out, so its recipes and bots are checked once its parts load.",
+      "params": {
+        "description": "Params of mods.validate.",
+        "type": "object",
+        "properties": {
+          "mod": {
+            "description": "Only this mod's problems (it is enabled for the check); null checks everything enabled.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "mods.write",
+      "kind": "method",
+      "group": "mods",
+      "scope": "admin",
+      "description": "Writes a file of a mod (text or base64, up to 2 MiB), creating folders. Paths stay inside the mod; vanilla only changes under editor/. Returns the bytes written and a quick check: JSON syntax for .json, a compile for .lua. Run mods.validate for the full check.",
+      "params": {
+        "description": "Params of mods.write.",
+        "type": "object",
+        "properties": {
+          "mod": {
+            "description": "Mod id.",
+            "type": "string"
+          },
+          "path": {
+            "description": "Forward-slash path inside the mod.",
+            "type": "string"
+          },
+          "text": {
+            "description": "Content of a text file (.json, .lua, .gltf, .md, .txt).",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "base64": {
+            "description": "Content of a binary file (.glb, .bin, .png, .ogg, .wav), base64.",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "mod",
+          "path"
+        ],
         "additionalProperties": false
       }
     },

@@ -2,7 +2,7 @@
 
 <!-- Generated from mechanica.describe by tools/ai/gen-docs.sh. Do not edit by hand. -->
 
-Protocol version 2. 103 methods: 56 actions (change the world), 29 queries (only read it) and 18 endpoint methods. Every one is a JSON-RPC method of the same name whose `params` are the named arguments below (snake_case). `describe.json` beside this file is the same data as JSON Schemas, ready to become an AI's tool list. Scopes: `observe` reads, `play` acts as a player, `admin` is for debug powers ([ai-endpoint.md](../ai-endpoint.md#scopes)).
+Protocol version 2. 148 methods: 56 actions (change the world), 29 queries (only read it) and 63 endpoint methods. Every one is a JSON-RPC method of the same name whose `params` are the named arguments below (snake_case). `describe.json` beside this file is the same data as JSON Schemas, ready to become an AI's tool list. Scopes: `observe` reads, `play` acts as a player, `admin` is for debug powers ([ai-endpoint.md](../ai-endpoint.md#scopes)).
 
 ## Contents
 
@@ -22,7 +22,10 @@ Protocol version 2. 103 methods: 56 actions (change the world), 29 queries (only
 - [Quests](#quests) (3)
 - [Survival](#survival) (10)
 - [Using held items](#using-held-items) (4)
+- [Editors (editor.*)](#editors-editor) (30)
+- [Lua tools (lua.*)](#lua-tools-lua) (3)
 - [Mod packages (package.*)](#mod-packages-package) (6)
+- [Mod tools (mods.*)](#mod-tools-mods) (12)
 - [Event topics](#event-topics)
 - [Error codes](#error-codes)
 
@@ -1099,6 +1102,376 @@ Using the item in a slot (UseItemArgs). Arguments of UseItem: use the item in a 
 | `creation` | integer or null |  |  | The Creation of the part the item is used on (soil for a seed), if any. Give it with Part. |
 | `part` | integer or null |  |  | The part the item is used on, if any. The script checks reach (farm.soil does). |
 
+## Editors (editor.*)
+
+### `editor.batch.run`
+
+*method, admin scope*
+
+Runs a batch file of a mod (Part Editor parts and recipes, Bot Behavior Editor bots and raids, or story POIs and quests) as tools/author-vanilla.sh does; this is how vanilla content is changed. Returns kind, ok, every export and the diagnostics.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `mod` | string | yes |  | Mod id. |
+| `path` | string | yes |  | Forward-slash path inside the mod. |
+
+### `editor.bot.edit`
+
+*method, admin scope*
+
+One undo step: merges set into the bot (stats, attacks, drops, script; null removes a key). Returns the document and its diagnostics.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `doc` | string | yes |  | Bot document. |
+| `set` | any | yes |  | Keys to merge into the bot (null removes a key). |
+| `label` | string or null |  |  | Undo label; defaults to "Edit". |
+
+### `editor.bot.export`
+
+*method, admin scope*
+
+Exports the bot into its mod's bots/. Returns ok, id, file and diagnostics.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `doc` | string | yes |  | The handle editor.part.new, editor.part.open, editor.bot.new or editor.bot.open returned. |
+
+### `editor.bot.get`
+
+*method, admin scope*
+
+The bot document as it stands: bot, dirty, undo label.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `doc` | string | yes |  | The handle editor.part.new, editor.part.open, editor.bot.new or editor.bot.open returned. |
+
+### `editor.bot.new`
+
+*method, admin scope*
+
+Starts a Bot Behavior Editor document from a template in a mod. Nothing is written until editor.bot.export. Returns the document (doc handle and the bot data, behaviour tree included) and its diagnostics.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `mod` | string | yes |  | Mod the new document belongs to. |
+| `template` | string | yes |  | Template name, from editor.templates. |
+| `id` | string | yes |  | New id, lowercase snake_case. |
+| `name` | string or null |  |  | Display name; defaults to the id. |
+
+### `editor.bot.open`
+
+*method, admin scope*
+
+Opens a bot file of a mod (bots/…). Returns the document and its diagnostics.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `mod` | string | yes |  | Mod id. |
+| `path` | string | yes |  | Forward-slash path inside the mod. |
+
+### `editor.bot.script`
+
+*method, admin scope*
+
+The bot's own Lua script, or null when it has none in its mod.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `doc` | string | yes |  | The handle editor.part.new, editor.part.open, editor.bot.new or editor.bot.open returned. |
+
+### `editor.bot.script_save`
+
+*method, admin scope*
+
+Compiles the bot's own script, writes it into the mod's scripts/ and points the bot at it (export the bot to keep that). Refused when it doesn't compile. Returns the script path and the bot's diagnostics.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `doc` | string | yes |  | Bot document. |
+| `code` | string | yes |  | The script. |
+
+### `editor.bot.tree`
+
+*method, admin scope*
+
+One behaviour tree edit at a node path (child indexes from the root): add a node of a type under it, remove it, move it by delta among its siblings, or set a parameter (name, value; null removes it). Returns the affected node's path, the document and its diagnostics.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `doc` | string | yes |  | Bot document. |
+| `op` | string | yes |  | add, remove, move or set. |
+| `path` | integer[] | yes |  | Child indexes from the root of the behaviour tree; [] is the root. |
+| `type` | string or null |  |  | add: the node type. |
+| `delta` | integer or null |  |  | move: places to move among its siblings (negative is earlier). |
+| `name` | string or null |  |  | set: the parameter. |
+| `value` | any or null |  |  | set: its value; null removes it. |
+
+### `editor.bot.undo`
+
+*method, admin scope*
+
+Undoes one step (or redoes, with redo). Returns the document and its diagnostics.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `doc` | string | yes |  | Document. |
+| `redo` | boolean |  | `false` | True redoes instead. |
+
+### `editor.bot.validate`
+
+*method, admin scope*
+
+Checks the bot exactly as loading would, against the parts on disk now.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `doc` | string | yes |  | The handle editor.part.new, editor.part.open, editor.bot.new or editor.bot.open returned. |
+
+### `editor.close`
+
+*method, admin scope*
+
+Closes a part or bot document; unsaved changes are dropped. At most 64 documents are open at once.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `doc` | string | yes |  | The handle editor.part.new, editor.part.open, editor.bot.new or editor.bot.open returned. |
+
+### `editor.part.contacts`
+
+*method, admin scope*
+
+The face contacts the part makes, as the socket preview shows them: cell, direction, connection, socket.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `doc` | string | yes |  | The handle editor.part.new, editor.part.open, editor.bot.new or editor.bot.open returned. |
+
+### `editor.part.edit`
+
+*method, admin scope*
+
+One undo step: replace the definition, or merge set into it (null removes a key, objects merge), and/or replace the model pieces (source). Returns the document and its diagnostics.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `doc` | string | yes |  | Part document. |
+| `label` | string or null |  |  | Undo label; defaults to "Edit". |
+| `definition` | any or null |  |  | The whole part definition, replacing it. |
+| `set` | any or null |  |  | Or: keys to merge into the definition (null removes a key, objects merge). |
+| `source` | any or null |  |  | The model pieces, replacing them. |
+
+### `editor.part.export`
+
+*method, admin scope*
+
+Exports the part into its mod: the part file, its model pieces under editor/parts/, and a mesh baked by the editor's model builder when the pieces need one. Returns ok, id, file and diagnostics; mods.reload loads it.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `doc` | string | yes |  | The handle editor.part.new, editor.part.open, editor.bot.new or editor.bot.open returned. |
+
+### `editor.part.get`
+
+*method, admin scope*
+
+The part document as it stands: definition, source (model pieces), dirty, undo and redo labels, needs_bake.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `doc` | string | yes |  | The handle editor.part.new, editor.part.open, editor.bot.new or editor.bot.open returned. |
+
+### `editor.part.new`
+
+*method, admin scope*
+
+Starts a Part Editor document from a template (block, wedge, bearing, …) in a mod. Nothing is written until editor.part.export. Returns the document (doc handle, definition, model pieces as source) and its diagnostics.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `mod` | string | yes |  | Mod the new document belongs to. |
+| `template` | string | yes |  | Template name, from editor.templates. |
+| `id` | string | yes |  | New id, lowercase snake_case. |
+| `name` | string or null |  |  | Display name; defaults to the id. |
+
+### `editor.part.open`
+
+*method, admin scope*
+
+Opens a part file of a mod (parts/… or overrides/…) with its model pieces. Returns the document and its diagnostics.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `mod` | string | yes |  | Mod id. |
+| `path` | string | yes |  | Forward-slash path inside the mod. |
+
+### `editor.part.sound`
+
+*method, admin scope*
+
+Binds one of the part's sound names to a sound event id, or unbinds it with a null sound. Returns the document and its diagnostics.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `doc` | string | yes |  | Part document. |
+| `key` | string | yes |  | The part's sound name, like place or impact. |
+| `sound` | string or null |  |  | Sound event id, or null to unbind it. |
+
+### `editor.part.undo`
+
+*method, admin scope*
+
+Undoes one step (or redoes, with redo). Returns the document and its diagnostics.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `doc` | string | yes |  | Document. |
+| `redo` | boolean |  | `false` | True redoes instead. |
+
+### `editor.part.validate`
+
+*method, admin scope*
+
+Checks the part and its model pieces exactly as export would.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `doc` | string | yes |  | The handle editor.part.new, editor.part.open, editor.bot.new or editor.bot.open returned. |
+
+### `editor.raids.get`
+
+*method, admin scope*
+
+A mod's raid table (raids/raids.json), or null when it has none.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `mod` | string | yes |  | Mod id. |
+
+### `editor.raids.save`
+
+*method, admin scope*
+
+Checks a raid table against the bots on disk and writes it to the mod's raids/raids.json. Returns ok, file and diagnostics.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `mod` | string | yes |  | Mod id. |
+| `raids` | any | yes |  | The raid table (the raids/raids.json schema). |
+
+### `editor.recipes.delete`
+
+*method, admin scope*
+
+Deletes a recipe file of a mod.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `mod` | string | yes |  | Mod id. |
+| `path` | string | yes |  | Forward-slash path inside the mod. |
+
+### `editor.recipes.list`
+
+*method, admin scope*
+
+Every recipe file of a mod, with its recipe.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `mod` | string | yes |  | Mod id. |
+
+### `editor.recipes.save`
+
+*method, admin scope*
+
+Checks and writes a recipe as the Part Editor's Recipes tab does (previous_file is removed when the id changed). Returns ok, id, file and diagnostics.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `mod` | string | yes |  | Mod id. |
+| `recipe` | any | yes |  | The recipe (the recipes/*.json schema). |
+| `previous_file` | string or null |  |  | The file it was listed from, removed when its id changed. |
+
+### `editor.sounds.get`
+
+*method, admin scope*
+
+The events of a sound bank (the mod's default bank when path is null); empty when it is new.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `mod` | string | yes |  | Mod id. |
+| `path` | string or null |  |  | Sound bank file under sounds/; null is the mod's default bank. |
+
+### `editor.sounds.list`
+
+*method, admin scope*
+
+A mod's sound event files.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `mod` | string | yes |  | Mod id. |
+
+### `editor.sounds.save`
+
+*method, admin scope*
+
+Replaces a sound bank's events, checks them as loading would and writes the file. Returns ok, id, file and diagnostics.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `mod` | string | yes |  | Mod id. |
+| `events` | any | yes |  | Every event of the bank, replacing them. |
+| `path` | string or null |  |  | Sound bank file under sounds/; null is the mod's default bank. |
+
+### `editor.templates`
+
+*method, admin scope*
+
+Template names for editor.part.new and editor.bot.new.
+
+No params.
+
+## Lua tools (lua.*)
+
+### `lua.check`
+
+*method, observe scope*
+
+Compiles a script (source text, or mod and path of a file) the way the host does, without running it. Returns ok, or the line, column and message of the first error.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `source` | string or null |  |  | Script text to compile. |
+| `mod` | string or null |  |  | Or: the mod of a script file. |
+| `path` | string or null |  |  | And the file's path inside it. |
+
+### `lua.eval`
+
+*method, admin scope*
+
+Runs Lua once in a throwaway sandbox with what part scripts start with (safe core libraries and vec3, no io, files or world) under the host's instruction budget. A single expression returns its value. Returns ok, values, printed output and error.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `source` | string | yes |  | Lua to run; a single expression returns its value. |
+
+### `lua.messages`
+
+*method, observe scope*
+
+The newest lines of the part and bot script consoles, oldest first: source (parts or bots), kind (print, warning, error), script, creation, part, text, tick. Subscribe to the messages topic to have them pushed instead.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `since_tick` | integer or null |  |  | Only lines written after this tick. |
+| `kinds` | string[] or null |  |  | Only these kinds: print, warning, error. |
+| `script` | string or null |  |  | Only this script (mod:scripts/x.lua). |
+| `limit` | integer or null |  |  | Newest lines to return, 1 to 500; default 100. |
+
 ## Mod packages (package.*)
 
 ### `package.export`
@@ -1159,6 +1532,139 @@ Compares an installed mod with the package.json it was installed with: files cha
 | Param | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|
 | `id` | string | yes |  | Mod id. |
+
+## Mod tools (mods.*)
+
+### `mods.conflicts`
+
+*method, admin scope*
+
+Conflicts between the enabled mods: incompatible (not loaded) and override_clash (two mods override one part; the later wins).
+
+No params.
+
+### `mods.create`
+
+*method, admin scope*
+
+Creates a new mod folder with mod.json and empty parts/ and scripts/. It depends on vanilla unless dependencies says otherwise.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `mod` | string | yes |  | New mod id, lowercase snake_case; also its folder name. |
+| `name` | string or null |  |  | Display name; defaults to the id. |
+| `version` | string or null |  |  | Semantic version; defaults to 0.1.0. |
+| `description` | string or null |  |  | One paragraph about the mod. |
+| `authors` | string[] or null |  |  | Author names. |
+| `dependencies` | string[] or null |  |  | Mod ids it needs; defaults to vanilla. |
+
+### `mods.delete`
+
+*method, admin scope*
+
+Deletes a file of a mod, and folders it leaves empty. mod.json can't be deleted.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `mod` | string | yes |  | Mod id. |
+| `path` | string | yes |  | Forward-slash path inside the mod, like parts/wheel.json. |
+
+### `mods.enable`
+
+*method, admin scope*
+
+Enables or disables a mod like the Mod Manager (enabling pulls in its dependencies, disabling its dependents) and saves the profile. Takes effect on mods.reload. Returns the mods that changed.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `mod` | string | yes |  | Mod id. |
+| `enabled` | boolean |  | `true` | False disables it (and the mods that depend on it). |
+
+### `mods.files`
+
+*method, admin scope*
+
+Lists the files of a mod (or one folder of it): path, size and modified time.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `mod` | string | yes |  | Mod id. |
+| `folder` | string or null |  |  | Folder inside the mod; null lists the whole mod. |
+
+### `mods.import`
+
+*method, admin scope*
+
+Imports an asset like the Part Editor: into meshes/, scripts/, textures/ or sounds/ under a clean snake_case name, reusing an identical file. A .gltf brings its buffers and images in companions. Returns the path to write in data.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `mod` | string | yes |  | Mod id. |
+| `kind` | string | yes |  | mesh, script, texture or sound. |
+| `file_name` | string | yes |  | The file's name, like Big Wheel.glb; it is cleaned to snake_case. |
+| `base64` | string | yes |  | The file, base64. |
+| `companions` | map of string or null |  |  | A .gltf's buffers and images by relative path, base64. |
+
+### `mods.list`
+
+*method, admin scope*
+
+Installed mods in load order: id, name, version, enabled, can_disable, loaded, dependencies; plus profile entries that are not installed (missing) and folders whose mod.json is broken.
+
+No params.
+
+### `mods.move`
+
+*method, admin scope*
+
+Moves a mod in the load order (it stops at its dependencies and dependents) and saves the profile. Returns the index it ended up at.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `mod` | string | yes |  | Mod id. |
+| `index` | integer | yes |  | Where in the load order it should go (0 is first); it stops at its dependencies. |
+
+### `mods.read`
+
+*method, admin scope*
+
+Reads a file of a mod: text for .json, .lua, .gltf, .md and .txt, base64 for the rest. Up to 2 MiB.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `mod` | string | yes |  | Mod id. |
+| `path` | string | yes |  | Forward-slash path inside the mod, like parts/wheel.json. |
+
+### `mods.reload`
+
+*method, admin scope*
+
+Reloads the enabled mods into the running world: parts, sounds, part scripts and bot types. World generation, recipes, raids, quests and characters change only in a new world (listed in next_world). Refused while clients are joined unless the host runs with --ai-allow-reload-with-clients, which drops clients whose mods no longer match (dropped_peers).
+
+No params.
+
+### `mods.validate`
+
+*method, admin scope*
+
+Loads all content as a world would (parts, sounds, world generation, recipes, bots, raids, quests, characters) and compiles every Lua script. Returns ok, error and warning counts, the mods that would load, the content fingerprint and every diagnostic (domain, severity, code, mod, file, json_path, line, message). A mod with part errors is left out, so its recipes and bots are checked once its parts load.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `mod` | string or null |  |  | Only this mod's problems (it is enabled for the check); null checks everything enabled. |
+
+### `mods.write`
+
+*method, admin scope*
+
+Writes a file of a mod (text or base64, up to 2 MiB), creating folders. Paths stay inside the mod; vanilla only changes under editor/. Returns the bytes written and a quick check: JSON syntax for .json, a compile for .lua. Run mods.validate for the full check.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `mod` | string | yes |  | Mod id. |
+| `path` | string | yes |  | Forward-slash path inside the mod. |
+| `text` | string or null |  |  | Content of a text file (.json, .lua, .gltf, .md, .txt). |
+| `base64` | string or null |  |  | Content of a binary file (.glb, .bin, .png, .ogg, .wav), base64. |
 
 ## Event topics
 
