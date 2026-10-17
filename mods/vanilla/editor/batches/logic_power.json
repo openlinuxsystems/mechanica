@@ -7,7 +7,7 @@
       "template": "seat",
       "set": {
         "name": "Driver's Seat",
-        "description": "Sit in it with F and drive: W and S are its output (link it to engines), A and D steer the upright bearings it is linked to.",
+        "description": "Sit in it with E and drive: W and S are its output (link it to engines), A and D steer the upright bearings it is linked to. Switches and buttons it is linked to go on your hotbar while you sit.",
         "mass": 6,
         "durability": 5,
         "stack_size": 10,
@@ -134,7 +134,28 @@
         "logic": { "inputs": 4, "outputs": 10, "kind": "power" },
         "visual": { "color": "#b8452f", "roughness": 0.5, "metallic": 0.6 },
         "sounds": { "start": "engine_start", "loop": "engine_idle", "stop": "engine_sputter" },
-        "settings": [{ "id": "gear", "name": "Gear", "type": "number", "min": 1, "max": 5, "step": 1, "default": 3 }],
+        "settings": [
+          {
+            "id": "gear",
+            "name": "Power",
+            "type": "number",
+            "min": 1,
+            "max": 5,
+            "step": 1,
+            "default": 3,
+            "presets": [{ "name": "Low", "value": 1 }, { "name": "Medium", "value": 3 }, { "name": "High", "value": 5 }]
+          },
+          { "id": "on", "name": "On", "type": "toggle", "default": false, "hide_when_linked": true }
+        ],
+        "menu": {
+          "readouts": [
+            { "id": "fuel", "name": "Fuel", "kind": "bar" },
+            { "id": "fuel_items", "name": "Gasoline in tanks", "kind": "number" },
+            { "id": "rpm", "name": "Speed", "kind": "number", "unit": "rpm" },
+            { "id": "torque", "name": "Torque", "kind": "number", "unit": "N·m" }
+          ]
+        },
+        "display": { "status": "running" },
         "properties": { "speed": 25, "torque": 120, "brake": 80, "fuel": "gasoline", "fuel_time": 40, "loop_parameter": "load" }
       },
       "model": [
@@ -195,6 +216,14 @@
         "description": "Turns the wheel bearings it is linked to like a gas engine, with more pull and less speed. Draws battery packs from the creation's batteries.",
         "mass": 9,
         "visual": { "color": "#2f7fb8", "roughness": 0.4, "metallic": 0.6 },
+        "menu": {
+          "readouts": [
+            { "id": "fuel", "name": "Battery", "kind": "bar" },
+            { "id": "fuel_items", "name": "Battery packs", "kind": "number" },
+            { "id": "rpm", "name": "Speed", "kind": "number", "unit": "rpm" },
+            { "id": "torque", "name": "Torque", "kind": "number", "unit": "N·m" }
+          ]
+        },
         "sounds": {
           "start": "electric_start",
           "loop": "electric_whirr",
@@ -318,7 +347,7 @@
       "template": "logic",
       "set": {
         "name": "Logic Gate",
-        "description": "Turns its inputs into one on or off output: and, or, xor, nand, nor or xnor (R with the Connect Tool).",
+        "description": "Turns its inputs into one on or off output: and, or, xor, nand, nor or xnor. E switches to the next.",
         "stack_size": 20,
         "script": "scripts/logic_gate.lua",
         "visual": { "color": "#d9d2c3", "roughness": 0.5, "metallic": 0.2 },
@@ -328,9 +357,18 @@
             "name": "Mode",
             "type": "choice",
             "options": ["and", "or", "xor", "nand", "nor", "xnor"],
-            "default": "and"
+            "default": "and",
+            "icons": {
+              "and": "textures/logic/gate_and.png",
+              "or": "textures/logic/gate_or.png",
+              "xor": "textures/logic/gate_xor.png",
+              "nand": "textures/logic/gate_nand.png",
+              "nor": "textures/logic/gate_nor.png",
+              "xnor": "textures/logic/gate_xnor.png"
+            }
           }
-        ]
+        ],
+        "menu": { "use": "cycle", "cycle": "mode", "signals": true }
       },
       "model": [
         { "kind": "box", "size": [0.25, 0.08, 0.25], "position": [0, -0.085, 0] },
@@ -351,7 +389,7 @@
       "template": "logic",
       "set": {
         "name": "Timer",
-        "description": "Passes its input on after a delay you set (R with the Connect Tool).",
+        "description": "Passes its input on after a delay you set, once, or blinks on and off every delay while its input is on (E).",
         "stack_size": 20,
         "script": "scripts/timer.lua",
         "visual": { "color": "#c9b25a", "roughness": 0.5, "metallic": 0.2 },
@@ -365,8 +403,10 @@
             "max": 60,
             "step": 0.05,
             "default": 1
-          }
-        ]
+          },
+          { "id": "mode", "name": "Trigger", "type": "choice", "options": ["once", "repeat"], "default": "once" }
+        ],
+        "menu": { "signals": true }
       },
       "model": [
         { "kind": "box", "size": [0.25, 0.08, 0.25], "position": [0, -0.085, 0] },
@@ -387,24 +427,29 @@
       "template": "logic",
       "set": {
         "name": "Sensor",
-        "description": "On while something is in front of its face, up to the range you set.",
+        "description": "On while something it is set to detect is in front of its face, up to the range you set (E).",
         "stack_size": 20,
         "script": "scripts/sensor.lua",
         "visual": { "color": "#5aa0c9", "roughness": 0.5, "metallic": 0.2 },
         "logic": { "inputs": null, "outputs": 10 },
         "sounds": { "detect": "sensor_detect", "lose": "sensor_lose" },
-        "properties": { "interval": 2 },
+        "properties": { "interval": 2, "cone": 8 },
         "settings": [
           {
             "id": "range",
             "name": "Range (m)",
             "type": "number",
-            "min": 0.25,
+            "min": 1,
             "max": 20,
             "step": 0.25,
             "default": 4
-          }
-        ]
+          },
+          { "id": "players", "name": "Players", "type": "toggle", "default": true, "group": "Detects" },
+          { "id": "bots", "name": "Bots", "type": "toggle", "default": true, "group": "Detects" },
+          { "id": "blocks", "name": "Blocks", "type": "toggle", "default": true, "group": "Detects" },
+          { "id": "creations", "name": "Creations", "type": "toggle", "default": true, "group": "Detects" }
+        ],
+        "menu": { "signals": true, "preview": { "shape": "cone", "range": "range", "axis": [0, 1, 0], "angle": 8 } }
       },
       "model": [
         { "kind": "box", "size": [0.25, 0.08, 0.25], "position": [0, -0.085, 0] },
@@ -429,8 +474,9 @@
         "stack_size": 20,
         "script": "scripts/switch.lua",
         "visual": { "color": "#b0473a", "roughness": 0.5, "metallic": 0.2 },
-        "logic": { "inputs": null, "outputs": 10, "use": "toggle" },
-        "sounds": { "use": "switch_toggle" }
+        "logic": { "inputs": 1, "outputs": 10, "use": "toggle" },
+        "sounds": { "use": "switch_toggle" },
+        "display": { "press": { "readout": "on", "depth": 0.015 } }
       },
       "model": [
         { "kind": "box", "size": [0.25, 0.08, 0.25], "position": [0, -0.085, 0] },
@@ -455,8 +501,9 @@
         "stack_size": 20,
         "script": "scripts/button.lua",
         "visual": { "color": "#d9a032", "roughness": 0.5, "metallic": 0.2 },
-        "logic": { "inputs": null, "outputs": 10, "use": "press" },
+        "logic": { "inputs": 1, "outputs": 10, "use": "press" },
         "sounds": { "use": "button_press" },
+        "display": { "press": { "readout": "on", "depth": 0.015 } },
         "properties": { "pulse": 0.5 }
       },
       "model": [
@@ -478,26 +525,28 @@
       "template": "logic",
       "set": {
         "name": "Controller",
-        "description": "While its input is on, turns the bearings it is linked to through a list of angles (R with the Connect Tool).",
+        "description": "While its input is on, steps the bearings and pistons it is linked to through up to 10 frames you set (E).",
         "stack_size": 20,
         "script": "scripts/controller.lua",
         "visual": { "color": "#6a5ab8", "roughness": 0.5, "metallic": 0.2 },
         "sounds": { "start": "controller_start", "tick": "controller_tick", "stop": "controller_stop" },
-        "properties": { "speed": 2, "torque": 1000 },
+        "properties": { "speed": 2, "torque": 1000, "force": 5000 },
         "settings": [
           {
             "id": "frames",
-            "name": "Angles (°)",
-            "type": "number_list",
+            "name": "Frames",
+            "type": "sequence",
             "min": -180,
             "max": 180,
             "step": 1,
             "max_count": 10,
+            "max_speed": 10,
+            "preview": "preview",
             "default": [0, 90]
           },
           {
             "id": "frame_time",
-            "name": "Seconds per angle",
+            "name": "Seconds per frame",
             "type": "number",
             "min": 0.1,
             "max": 10,
@@ -505,7 +554,8 @@
             "default": 1
           },
           { "id": "loop", "name": "Loop", "type": "toggle", "default": false }
-        ]
+        ],
+        "menu": { "apply": true, "signals": true }
       },
       "model": [
         { "kind": "box", "size": [0.25, 0.08, 0.25], "position": [0, -0.085, 0] },

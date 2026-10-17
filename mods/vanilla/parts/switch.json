@@ -30,7 +30,14 @@
     "use": "switch_toggle"
   },
   "logic": {
+    "inputs": 1,
     "outputs": 10,
     "use": "toggle"
+  },
+  "display": {
+    "press": {
+      "readout": "on",
+      "depth": 0.015
+    }
   }
 }

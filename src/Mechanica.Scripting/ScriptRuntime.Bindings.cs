@@ -136,6 +136,10 @@ public sealed partial class ScriptRuntime
                 result.Set("creation", DynValue.NewNumber(c));
             if (hit.Part is { } p)
                 result.Set("part", DynValue.NewNumber(p));
+            if (hit.Player is { } peer)
+                result.Set("player", DynValue.NewNumber(peer));
+            if (hit.Bot is { } bot)
+                result.Set("bot", DynValue.NewNumber(bot));
             return DynValue.NewTable(result);
         });
         Fn(world, "overlap_sphere", args =>
@@ -153,6 +157,10 @@ public sealed partial class ScriptRuntime
                     entry.Set("creation", DynValue.NewNumber(c));
                 if (hit.Part is { } p)
                     entry.Set("part", DynValue.NewNumber(p));
+                if (hit.Player is { } peer)
+                    entry.Set("player", DynValue.NewNumber(peer));
+                if (hit.Bot is { } bot)
+                    entry.Set("bot", DynValue.NewNumber(bot));
                 list.Set(index++, DynValue.NewTable(entry));
             }
             return DynValue.NewTable(list);

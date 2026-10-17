@@ -273,9 +273,21 @@ public sealed class PartAssets
         return mesh with { SurfaceMaterials = materials };
     }
 
+    private readonly Dictionary<(string Mod, string Path), Texture2D?> _textures = [];
+
     /// <summary>A part's own inventory icon (its <c>icon</c> PNG), or null when it has none.</summary>
     public Texture2D? IconFor(string qualifiedId, PartDefinition definition) =>
         definition.Icon is { } icon && _content?.FindPart(qualifiedId)?.ModId is { } modId ? LoadTexture(icon, modId) : null;
+
+    /// <summary>A picture from a part's mod (<paramref name="path"/> relative to its root, or <c>other_mod:path</c>), or null when it does not load.</summary>
+    public Texture2D? TextureFor(string qualifiedId, string path)
+    {
+        if (_content?.FindPart(qualifiedId)?.ModId is not { } modId)
+            return null;
+        if (!_textures.TryGetValue((modId, path), out var texture))
+            _textures[(modId, path)] = texture = LoadTexture(path, modId);
+        return texture;
+    }
 
     private Texture2D? LoadTexture(string path, string modId)
     {
