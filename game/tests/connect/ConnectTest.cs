@@ -87,7 +87,8 @@ public partial class ConnectTest : StagedTest
                 Tools.Use(Connector);
                 return false;
             }
-            if (frame < 4)
+            // The overlay draws on a render frame, and a slow machine can run several physics frames per render frame.
+            if (frame < 4 || (Overlay.DrawnNodes.Count(n => n.Creation == Board) < 5 && frame < 120))
                 return false;
             var mine = Overlay.DrawnNodes.Where(n => n.Creation == Board).Select(n => n.Part).Order().ToList();
             Check(mine.SequenceEqual(new[] { _switch, _engine, _wheel, _wheel2, _gate }.Order()), $"the board's five logic parts have nodes ({string.Join(", ", mine)})");
