@@ -71,7 +71,8 @@ public partial class BuildTest : StagedTest
             Check(Mathf.IsEqualApprox(origin.Y, 0.125f, 1e-3f), $"the block sits on the ground (y={origin.Y:F3})");
             Check(Mathf.IsEqualApprox(origin.X / 0.25f, Mathf.Round(origin.X / 0.25f), 1e-3f)
                 && Mathf.IsEqualApprox(origin.Z / 0.25f, Mathf.Round(origin.Z / 0.25f), 1e-3f), $"and on the 0.25 m world grid ({origin})");
-            Check(!body.Freeze && Body(_client, _creation).Freeze, "the host simulates it, the client mirrors it frozen");
+            Check(_host.Main.Creations.Find(_creation)!.IsGrounded && body.Freeze && Body(_client, _creation).Freeze,
+                "built on the ground, it is anchored there on the host and mirrored frozen on the client");
             return true;
         });
         Wait("the block settles", 30);
@@ -176,7 +177,11 @@ public partial class BuildTest : StagedTest
             Check(_results[0].Ok, $"the host removes it ({_results[0]})");
             var split = _results[0].Value!.Value.GetProperty("split_off").GetArrayLength();
             Check(split == 4 && _host.Main.Creations.Count == 5, $"the four side blocks split off ({split} new, {_host.Main.Creations.Count} in all)");
-            Check(_host.Main.Creations.Find(_creation)!.Parts.Count == 2, "the top block keeps the wedge");
+            var top = _host.Main.Creations.Find(_creation)!;
+            Check(top.Parts.Count == 2, "the top block keeps the wedge");
+            Check(!top.IsGrounded && !Body(_host, _creation).Freeze, "with nothing under it, the top piece is loose and simulates");
+            var sides = _host.Main.Creations.All.Where(c => c.Id != _creation).ToList();
+            Check(sides.All(c => c.IsGrounded && Body(_host, c.Id).Freeze), "the side blocks stay anchored to the ground");
             return true;
         });
         Wait("the pieces settle", 20);
@@ -211,6 +216,34 @@ public partial class BuildTest : StagedTest
             if (frame < 20 || _late.Main.Creations.Count < 4)
                 return false;
             Check(SameEverywhere(), "its creations match the host's");
+            return true;
+        });
+        AddKick();
+    }
+
+    // The bug this guards: a block set down on the ground could be kicked about by walking into it.
+    private void AddKick()
+    {
+        Vector3 before = default;
+        Add("face the nearest grounded block", frame =>
+        {
+            var eye = _client.Main.LocalPlayer!.Camera.GlobalPosition;
+            var near = _host.Main.Creations.All.Where(c => c.IsGrounded).MinBy(c => Centre(_client, c.Id).DistanceTo(eye))!;
+            _creation = near.Id;
+            var d = Centre(_client, near.Id) - eye;
+            before = Body(_host, near.Id).GlobalPosition;
+            return Look(_client, Mathf.Atan2(-d.X, -d.Z), 0f, frame);
+        });
+        Add("walking into it does not move it", frame =>
+        {
+            var player = _client.Main.LocalPlayer!;
+            player.CurrentInput = player.CurrentInput with { MoveZ = 1f };
+            if (frame < 90)
+                return false;
+            player.CurrentInput = player.CurrentInput with { MoveZ = 0f };
+            var body = Body(_host, _creation);
+            Check(body.GlobalPosition.DistanceTo(before) < 1e-3f && body.LinearVelocity == Vector3.Zero,
+                $"the block stays where it was built ({before} → {body.GlobalPosition})");
             return true;
         });
     }

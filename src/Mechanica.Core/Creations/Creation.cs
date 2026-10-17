@@ -38,6 +38,8 @@ public sealed class Creation
     private readonly Dictionary<int, SoilState> _soil = [];
     // How strongly each burning part burns (0 to 1); parts not on fire have no entry.
     private readonly Dictionary<int, float> _fire = [];
+    // Parts that were placed resting on the world (terrain, rocks): their Bodies stay where they are.
+    private readonly HashSet<int> _anchored = [];
     private Layout? _layout;
     private bool _onLift;
     private int _authorityPeer;
@@ -85,7 +87,44 @@ public sealed class Creation
     }
 
     /// <summary>
-    /// Counts graph changes (parts, edges, splits, merges), paint and <see cref="OnLift"/> changes. State
+    /// True when any part is anchored to the world (<see cref="IsAnchored(int)"/>): built on the ground, so at
+    /// least one of its Bodies stays put instead of simulating, as in Scrap Mechanic.
+    /// </summary>
+    public bool IsGrounded => _anchored.Count > 0;
+
+    /// <summary>Anchored part ids, ascending.</summary>
+    public IReadOnlyList<int> AnchoredParts => [.. _anchored.Order()];
+
+    /// <summary>True when part <paramref name="partId"/> rests on the world and holds its Body still.</summary>
+    public bool IsAnchored(int partId) => _anchored.Contains(partId);
+
+    /// <summary>True when the Body at <paramref name="bodyIndex"/> holds an anchored part, so it does not simulate.</summary>
+    public bool IsBodyAnchored(int bodyIndex) =>
+        _anchored.Count > 0 && Bodies[bodyIndex].PartIds.Any(_anchored.Contains);
+
+    /// <summary>
+    /// Anchors part <paramref name="partId"/> to the world or lets it go. Removing the part, or splitting it off,
+    /// takes its anchor with it, so a piece left with none drops.
+    /// </summary>
+    public void SetAnchored(int partId, bool anchored)
+    {
+        if (!_parts.ContainsKey(partId))
+            throw new ArgumentException($"Creation {Id} has no part {partId}.", nameof(partId));
+        if (anchored ? _anchored.Add(partId) : _anchored.Remove(partId))
+            Revision++;
+    }
+
+    /// <summary>Lets go of every anchor (a Lift picks the Creation up), so it simulates once it is free.</summary>
+    public void ClearAnchors()
+    {
+        if (_anchored.Count == 0)
+            return;
+        _anchored.Clear();
+        Revision++;
+    }
+
+    /// <summary>
+    /// Counts graph changes (parts, edges, splits, merges), paint, anchor and <see cref="OnLift"/> changes. State
     /// sync compares it to know when a peer needs the whole Creation again; poses, velocities and part
     /// damage do not change it.
     /// </summary>
@@ -561,6 +600,8 @@ public sealed class Creation
                     creation._soil[id] = soil;
                 if (_fire.TryGetValue(id, out var fire))
                     creation._fire[id] = fire;
+                if (_anchored.Contains(id))
+                    creation._anchored.Add(id);
             }
             foreach (var connection in _connections.Where(c => members.Contains(c.A)).ToList())
             {
@@ -835,6 +876,7 @@ public sealed class Creation
         _crafting.Remove(partId);
         _soil.Remove(partId);
         _fire.Remove(partId);
+        _anchored.Remove(partId);
         _connections.RemoveWhere(c => c.Involves(partId));
         _links.RemoveWhere(l => l.From == partId || l.To == partId);
     }

@@ -293,6 +293,86 @@ public class BuildActionsTests
         Assert.Equal(3, creation.Parts.Count);
     }
 
+    [Fact]
+    public void APartPlacedOnTheGroundIsAnchoredThere()
+    {
+        _world.Ground = 0f;
+        var id = Start(Block);
+
+        var creation = _world.Creations[id];
+        Assert.True(creation.IsGrounded);
+        Assert.True(creation.IsAnchored(1));
+        Assert.True(creation.IsBodyAnchored(0));
+    }
+
+    [Fact]
+    public void APartPlacedOffTheGroundIsNotAnchored()
+    {
+        _world.Ground = 0f;
+        var result = Place(new { part = Block, cell = new[] { 0, 0, 0 }, position = new[] { 0f, 1.5f, 0 } });
+
+        Assert.True(result.Ok, result.ToString());
+        Assert.False(Assert.Single(_world.Creations.Values).IsGrounded);
+    }
+
+    [Fact]
+    public void PartsAddedToAGroundedCreationAreAnchoredOnlyWhereTheyTouchTheGround()
+    {
+        _world.Ground = 0f;
+        var id = Start(Block);
+        Assert.True(Place(new { part = Block, creation = id, cell = new[] { 1, 0, 0 } }).Ok);
+        Assert.True(Place(new { part = Block, creation = id, cell = new[] { 0, 1, 0 } }).Ok);
+
+        Assert.Equal([1, 2], _world.Creations[id].AnchoredParts);
+    }
+
+    [Fact]
+    public void AnUnanchoredCreationOnTheGroundStaysFree()
+    {
+        // A car on its wheels is not anchored, and building onto it at ground level does not anchor it.
+        _world.Ground = 0f;
+        _world.Creations[7] = Fresh(7);
+        Assert.True(Place(new { part = Block, creation = 7, cell = new[] { 1, 0, 0 } }).Ok);
+
+        Assert.False(_world.Creations[7].IsGrounded);
+    }
+
+    [Fact]
+    public void TakingAwayTheGroundedPartFreesWhatItHeld()
+    {
+        _world.Ground = 0f;
+        var id = Start(Block);
+        Assert.True(Place(new { part = Block, creation = id, cell = new[] { 0, 1, 0 } }).Ok);
+
+        Assert.True(Remove(id, 1).Ok);
+
+        var top = _world.Creations[id];
+        Assert.Equal([2], top.Parts.Select(p => p.Id));
+        Assert.False(top.IsGrounded);
+    }
+
+    [Fact]
+    public void PiecesThatSplitOffKeepOnlyTheirOwnAnchors()
+    {
+        // A grounded row with a block on top of its end: taking out the middle leaves two grounded pieces,
+        // and taking the end's ground block from under the top one drops it.
+        _world.Ground = 0f;
+        var dispatcher = Batch();
+        var id = Start(Block);
+        foreach (var cell in new[] { new GridCell(1, 0, 0), new GridCell(2, 0, 0), new GridCell(2, 1, 0) })
+            Assert.True(dispatcher.Dispatch(Player, BuildActions.PlacePart, new PlacePartArgs(Block, cell, Creation: id)).Ok);
+        Assert.Equal([1, 2, 3], _world.Creations[id].AnchoredParts);
+
+        var split = dispatcher.Dispatch(Player, BuildActions.RemovePart, new RemovePartArgs(id, 2)).Value!.Value
+            .Deserialize<RemovePartResult>(ActionJson.Options)!;
+        var piece = _world.Creations[Assert.Single(split.SplitOff)];
+        Assert.All(_world.Creations.Values, c => Assert.True(c.IsGrounded));
+        var end = new[] { _world.Creations[id], piece }.Single(c => c.FindPart(3) is not null);
+
+        Assert.True(dispatcher.Dispatch(Player, BuildActions.RemovePart, new RemovePartArgs(end.Id, 3)).Ok);
+        Assert.False(end.IsGrounded);
+    }
+
     // The actions again with room for a drag's worth of parts.
     private ActionDispatcher Batch()
     {
@@ -337,6 +417,9 @@ public class BuildActionsTests
         public string? Blocked { get; set; }
         public Creation? LastClearTarget { get; private set; }
 
+        // Height of flat ground, or null for a world without any.
+        public float? Ground { get; set; }
+
         public Creation? FindCreation(int id) => Creations.GetValueOrDefault(id);
 
         public Vector3? EyeOf(int peer) => Eyes.TryGetValue(peer, out var eye) ? eye : null;
@@ -347,6 +430,14 @@ public class BuildActionsTests
         {
             LastClearTarget = target;
             return Blocked;
+        }
+
+        public bool RestsOnWorld(Creation? target, PartDefinition definition, GridCell cell, GridRotation rotation, Pose pose)
+        {
+            // Cells are centred on their grid points.
+            var bottom = PartGeometry.Cells(definition, cell, rotation)
+                .Min(c => pose.Apply(new Vector3(c.X, c.Y, c.Z) * MechanicaInfo.GridSize).Y) - MechanicaInfo.GridSize / 2;
+            return Ground is { } ground && bottom <= ground + 0.05f;
         }
 
         public void Added(Creation creation)

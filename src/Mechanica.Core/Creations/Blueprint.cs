@@ -32,7 +32,7 @@ public static class Blueprint
     public const int MaxNameLength = 48;
 
     private static readonly string[] WorldKeys = ["authority_peer", "on_lift"];
-    private static readonly string[] PartWorldKeys = ["level", "damage", "fire", "inventory", "crafting", "soil"];
+    private static readonly string[] PartWorldKeys = ["level", "damage", "fire", "anchored", "inventory", "crafting", "soil"];
     private static readonly string[] BodyWorldKeys = ["linear_velocity", "angular_velocity"];
 
     /// <summary>The blueprint of <paramref name="creation"/> named <paramref name="name"/> (trimmed and shortened).</summary>

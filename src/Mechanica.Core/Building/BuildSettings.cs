@@ -30,6 +30,12 @@ public sealed record BuildSettings
     /// </summary>
     public float ClearanceScale { get; init; } = 0.9f;
 
+    /// <summary>
+    /// How far (m) past a part's faces the world may be for the part to count as resting on it and be anchored
+    /// to the ground (<see cref="IBuildWorld.RestsOnWorld"/>).
+    /// </summary>
+    public float AnchorMargin { get; init; } = 0.05f;
+
     /// <summary>The Hammer's timings and drags.</summary>
     public HammerSettings Hammer { get; init; } = new();
 
@@ -76,6 +82,8 @@ public sealed record BuildSettings
             throw new FormatException($"max_parts_per_creation must be at least 1 (got {MaxPartsPerCreation}).");
         if (!float.IsFinite(ClearanceScale) || ClearanceScale is <= 0f or > 1f)
             throw new FormatException($"clearance_scale must be in (0, 1] (got {ClearanceScale}).");
+        if (!float.IsFinite(AnchorMargin) || AnchorMargin is <= 0f or > 0.5f)
+            throw new FormatException($"anchor_margin must be in (0, 0.5] m (got {AnchorMargin}).");
         Hammer.Validate();
         Connect.Validate();
         Weld.Validate();
