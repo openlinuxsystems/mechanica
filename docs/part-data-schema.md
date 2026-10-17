@@ -70,6 +70,7 @@ you; this page is the reference for what each key means, so you can read, review
 | `description` | string | no | Tooltip text. |
 | `category` | enum | always | See [Categories](#categories). |
 | `mass` | number > 0 | placeable | Mass in kg. A Body's mass is the sum of its parts. |
+| `centre_of_mass` | `[x, y, z]` m | no | Where the part's mass sits, from the part centre in the part's frame. Omitted means the part centre. Must lie within the footprint. A Body's centre of mass is its parts' mass-weighted mean. |
 | `durability` | integer ≥ 1 | placeable | Toughness rating; the part's HP derives from it. |
 | `friction` | number ≥ 0 | placeable | Surface friction coefficient. A Body uses its parts' mass-weighted mean. |
 | `buoyancy` | number ≥ 0 | placeable | Buoyant force factor: force = buoyancy × displaced volume. |
@@ -151,6 +152,7 @@ A socket is an attachment point on the surface of the footprint.
 | `type` | enum | `structural` (rigid), `rotational` (bearing hinge side), `linear` (piston slider side) or `spring` (suspension side). |
 | `position` | `[x, y, z]` m | From the part centre. Must lie within the footprint, normally on a face. |
 | `normal` | `[x, y, z]` | Outward unit direction, normally an axis such as `[0, 1, 0]`. |
+| `joint` | object | `rotational`, `linear` and `spring` sockets only: the joint's axis, travel and spring. Required for `linear` and `spring`. See [joint](#joint). |
 
 How parts attach when they are placed touching each other:
 
@@ -165,6 +167,26 @@ How parts attach when they are placed touching each other:
 
 The Part Editor's connection preview shows the result on every face: green for rigid, blue for a
 joint, red where nothing attaches.
+
+### joint
+
+How the joint at a `rotational`, `linear` or `spring` socket moves. Positions are measured from where
+the two sides were built on the grid: an angle in rad, right-handed about `axis`, or a distance in m
+along it. The [Socket and Joint Guide](socket-joint-guide.md) walks through each kind.
+
+| Key | Type | Meaning |
+|-----|------|---------|
+| `axis` | `[x, y, z]` | Grid direction the joint turns about or slides along, in the part's frame. Omitted means the socket's `normal`. |
+| `min` | number | Lowest position, rad or m. A `rotational` joint with neither `min` nor `max` spins freely; with both, it is a limited hinge within ±π whose range includes 0. A `linear` joint defaults to 0. A `spring` needs it (0 or less). |
+| `max` | number | Highest position, rad or m. Required for `linear` and `spring` (0 or more). Travel (`max` − `min`) is at most 16 m. |
+| `stiffness` | number > 0 | `spring` only, required: spring rate in N/m. A load of `m` kg sags it by about `m × 9.81 / stiffness` m. |
+| `damping` | number ≥ 0 | `spring` only: damping in N·s/m. Omitted means 0. |
+| `shaft_radius` | number, m | `linear` and `spring` only: draws a rod of this radius, in the part's colour, from the socket to where the far side is now, so an extended piston shows its shaft. |
+
+```json
+{ "id": "mount", "type": "spring", "position": [0.125, 0, 0], "normal": [1, 0, 0],
+  "joint": { "axis": [0, 1, 0], "min": -0.08, "max": 0.08, "stiffness": 25000, "damping": 1500 } }
+```
 
 ## inventory and crafting
 
