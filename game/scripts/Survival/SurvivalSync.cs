@@ -206,9 +206,16 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
     public RayHit? Cast(System.Numerics.Vector3 from, System.Numerics.Vector3 direction, float range, int ignorePlayer)
     {
         var start = from.ToGodot();
-        var query = PhysicsRayQueryParameters3D.Create(start, start + direction.ToGodot().Normalized() * range);
-        if (Players.Players.TryGetValue(ignorePlayer, out var shooter))
-            query.Exclude = [shooter.GetRid()];
+        return Players.Players.TryGetValue(ignorePlayer, out var shooter)
+            ? CastBetween(start, start + direction.ToGodot().Normalized() * range, [shooter.GetRid()])
+            : CastBetween(start, start + direction.ToGodot().Normalized() * range, []);
+    }
+
+    /// <summary>What a ray from <paramref name="start"/> to <paramref name="end"/> hits first, skipping <paramref name="exclude"/>; null when clear.</summary>
+    public RayHit? CastBetween(Vector3 start, Vector3 end, Godot.Collections.Array<Rid> exclude)
+    {
+        var query = PhysicsRayQueryParameters3D.Create(start, end);
+        query.Exclude = exclude;
         var hit = GetWorld3D().DirectSpaceState.IntersectRay(query);
         if (hit.Count == 0)
             return null;
@@ -218,6 +225,8 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
         {
             case PlayerController player:
                 return new RayHit(point.ToNumerics(), Player: player.PeerId);
+            case Bots.BotBody bot:
+                return new RayHit(point.ToNumerics(), Bot: bot.BotId);
             case CreationBody body when body.GetParent() is CreationNode node:
                 var toGrid = body.GlobalTransform.AffineInverse();
                 var (cell, _) = BuildAim.FromHit((toGrid * point).ToNumerics(), (toGrid.Basis * normal).ToNumerics());

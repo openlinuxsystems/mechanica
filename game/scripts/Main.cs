@@ -1,11 +1,13 @@
 using Godot;
 using Mechanica.Core;
+using Mechanica.Core.Bots;
 using Mechanica.Core.Data;
 using Mechanica.Core.Items;
 using Mechanica.Core.Net;
 using Mechanica.Core.Sound;
 using Mechanica.Core.Survival;
 using Mechanica.Core.World;
+using Mechanica.Game.Bots;
 using Mechanica.Game.Building;
 using Mechanica.Game.Creations;
 using Mechanica.Game.Items;
@@ -68,6 +70,15 @@ public partial class Main : Node3D
     /// Sound events. Null loads them from <see cref="Mods"/> when the scene starts; tests may set them.
     /// </summary>
     public SoundRegistry? SoundEvents { get; set; }
+
+    /// <summary>Bot types. Null loads them from <see cref="Mods"/> when the scene starts; tests may set them.</summary>
+    public BotBook? BotTypes { get; set; }
+
+    /// <summary>The raid table. Null loads it from <see cref="Mods"/> when the scene starts; tests may set it.</summary>
+    public RaidTable? RaidTable { get; set; }
+
+    /// <summary>Bots, raids and their sync to clients (chunk 21).</summary>
+    public BotSync Bots { get; private set; } = null!;
 
     /// <summary>Sound playback and its sync to clients.</summary>
     public SoundSync Sounds { get; private set; } = null!;
@@ -132,9 +143,14 @@ public partial class Main : Node3D
         var mods = Mods ??= LoadMods();
         var world = WorldGen ??= LoadWorldGen(mods);
         var recipes = Recipes ??= LoadRecipes(mods);
-        // World data and recipes are part of the content check on join: every peer regenerates the world
-        // from the former and shows the latter in its station screens.
-        var content = Content ??= ContentManifest.From(mods) with { Fingerprint = $"{mods.Fingerprint}+{world.Fingerprint}+{recipes.Fingerprint}" };
+        var bots = BotTypes ??= LoadBots(mods);
+        var raids = RaidTable ??= LoadRaids(mods, bots);
+        // World data, recipes, bots and raids are part of the content check on join: every peer regenerates
+        // the world from the first, shows the recipes in its station screens and the bots the host sends.
+        var content = Content ??= ContentManifest.From(mods) with
+        {
+            Fingerprint = $"{mods.Fingerprint}+{world.Fingerprint}+{recipes.Fingerprint}+{bots.Fingerprint}+{raids.Fingerprint}",
+        };
         Assets = new PartAssets(mods);
 
         Session = new NetSession { Name = "Session", Content = content };
@@ -222,6 +238,21 @@ public partial class Main : Node3D
         Build.Tools!.Targets = Survival.Actions;
         AddChild(Inventory);
         AddChild(Survival);
+        Bots = new BotSync
+        {
+            Name = "Bots",
+            Session = Session,
+            Players = PlayerSync,
+            Survival = Survival,
+            World = Streamer,
+            Actions = Actions,
+            Sounds = Sounds,
+            Mods = mods,
+            Book = bots,
+            RaidTable = raids,
+        };
+        Bots.RegisterActions(Actions.Dispatcher, unchecked((int)Streamer.Seed));
+        AddChild(Bots);
         Motion = new MotionSync { Name = "Motion", Session = Session, Creations = Creations };
         AddChild(Motion);
         Motion.RegisterActions(Actions.Dispatcher);
@@ -240,6 +271,7 @@ public partial class Main : Node3D
             AddChild(new ConnectPanel { Name = "ConnectPanel", Session = Session });
             AddChild(new InventoryScreen { Name = "InventoryScreen", Inventory = Inventory, Actions = Actions, Players = PlayerSync, Catalog = mods });
             AddChild(new SurvivalHud { Name = "SurvivalHud", Survival = Survival, Actions = Actions, Players = PlayerSync, Catalog = mods });
+            AddChild(new RaidBanner { Name = "RaidBanner", Bots = Bots });
         }
 
         Start(Options);
@@ -310,6 +342,22 @@ public partial class Main : Node3D
         foreach (var diagnostic in sounds.Diagnostics)
             GD.PushWarning($"[sound] {diagnostic}");
         return sounds;
+    }
+
+    private static BotBook LoadBots(ModLoadResult mods)
+    {
+        var bots = BotBook.Load(mods);
+        foreach (var diagnostic in bots.Diagnostics)
+            GD.PushWarning($"[bots] {diagnostic}");
+        return bots;
+    }
+
+    private static RaidTable LoadRaids(ModLoadResult mods, BotBook bots)
+    {
+        var raids = RaidTable.Load(mods, bots);
+        foreach (var diagnostic in raids.Diagnostics)
+            GD.PushWarning($"[raids] {diagnostic}");
+        return raids;
     }
 
     private static RecipeBook LoadRecipes(ModLoadResult mods)

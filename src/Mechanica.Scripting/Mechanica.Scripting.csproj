@@ -7,6 +7,9 @@
     <PackageReference Include="MoonSharp" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Bots/behavior.lua" LogicalName="Mechanica.Scripting.Bots.behavior.lua" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="../Mechanica.Core/Mechanica.Core.csproj" />
   </ItemGroup>
 </Project>

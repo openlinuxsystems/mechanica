@@ -1,6 +1,7 @@
 using System.Numerics;
 using System.Text.Json;
 using Mechanica.Core.Actions;
+using Mechanica.Core.Bots;
 using Mechanica.Core.Building;
 using Mechanica.Core.Creations;
 using Mechanica.Core.Data;
@@ -88,6 +89,12 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
 
     /// <summary>The numbers in use.</summary>
     public SurvivalSettings Settings => settings;
+
+    /// <summary>Item and part definitions.</summary>
+    public IPartCatalog Catalog => catalog;
+
+    /// <summary>The bots weapons, splash and the Sledgehammer can hurt (chunk 21); null when there are none.</summary>
+    public IBotTargets? Bots { get; set; }
 
     /// <summary>Piles of items on the ground, by id.</summary>
     public IReadOnlyDictionary<int, ItemDrop> Drops => _drops;
@@ -332,11 +339,11 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
             if (weapon.Radius is { } radius)
             {
                 // Splash weapons go off where they hit, or at the end of their range.
-                Explode(caller, hit?.Point ?? eye + direction * range, radius, damage, weapon.Impulse ?? 0, hits);
+                hits.AddRange(Splash(caller, hit?.Point ?? eye + direction * range, radius, damage, weapon.Impulse ?? 0));
             }
             else if (hit is not null)
             {
-                hits.Add(HitOne(caller, hit, damage, direction * (weapon.Impulse ?? 0)));
+                hits.Add(Hit(caller, hit, damage, direction * (weapon.Impulse ?? 0)));
             }
         }
         return Value(new FireResult(hits));
@@ -363,9 +370,18 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         return result;
     }
 
-    private ShotHitView HitOne(ActionCaller caller, RayHit hit, float damage, Vector3 push)
+    /// <summary>
+    /// The shared damage API for one hit: hurts the player, bot, part or world object a ray hit, and pushes
+    /// a part's Body by <paramref name="push"/> (N·s). Weapons use it; so may anything else that hits.
+    /// </summary>
+    public ShotHitView Hit(ActionCaller caller, RayHit hit, float damage, Vector3 push)
     {
         var point = hit.Point.ToVec3();
+        if (hit.Bot is { } bot)
+        {
+            Bots?.DamageBot(bot, damage, "weapon", melee: false);
+            return new ShotHitView("bot", point, damage, Bot: bot);
+        }
         if (hit.Player is { } peer)
         {
             var dealt = CanHurt(caller, peer) ? damage : 0f;
@@ -389,9 +405,18 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         return new ShotHitView("ground", point, 0);
     }
 
-    // Splash: everything within the radius takes damage falling off linearly to 0 at the edge.
-    private void Explode(ActionCaller caller, Vector3 at, float radius, float damage, float impulse, List<ShotHitView> hits)
+    /// <summary>
+    /// The shared damage API for a blast: players, bots, parts and world objects within
+    /// <paramref name="radius"/> of <paramref name="at"/> take <paramref name="damage"/> falling off linearly
+    /// to 0 at the edge, and Bodies are pushed away (up to <paramref name="impulse"/> N·s). Returns everything it reached.
+    /// </summary>
+    public IReadOnlyList<ShotHitView> Splash(ActionCaller caller, Vector3 at, float radius, float damage, float impulse)
     {
+        var hits = new List<ShotHitView>();
+        if (!(radius > 0) || !float.IsFinite(radius) || !(damage > 0) || !float.IsFinite(damage) || !float.IsFinite(at.LengthSquared()))
+            return hits;
+        if (!(impulse >= 0) || !float.IsFinite(impulse))
+            impulse = 0;
         float Falloff(float distance) => damage * Math.Clamp(1 - distance / radius, 0, 1);
         foreach (var peer in _vitals.Keys.ToList())
         {
@@ -402,6 +427,12 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
             if (dealt > 0)
                 Damage(peer, dealt, "explosion");
             hits.Add(new ShotHitView("player", centre.ToVec3(), dealt, Player: peer));
+        }
+        foreach (var (bot, centre) in Bots?.BotsNear(at, radius) ?? [])
+        {
+            var dealt = Falloff(Vector3.Distance(centre, at));
+            Bots!.DamageBot(bot, dealt, "explosion", melee: false);
+            hits.Add(new ShotHitView("bot", centre.ToVec3(), dealt, Bot: bot));
         }
         // FindCreation brings each Creation's Body poses up to date.
         foreach (var creation in world.AllCreations.Select(c => c.Id).ToList().Select(world.FindCreation).OfType<Creation>())
@@ -427,6 +458,7 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
             DamageObject(placement.Id, dealt);
             hits.Add(new ShotHitView("object", ObjectCentre(placement).ToVec3(), dealt, Object: placement.Id.ToString()));
         }
+        return hits;
     }
 
     private bool CanHurt(ActionCaller caller, int peer) =>
@@ -478,6 +510,12 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
 
     /// <inheritdoc/>
     public float StrikeObject(string id, float damage) => WorldObjectId.TryParse(id, out var parsed) ? DamageObject(parsed, damage) : 0f;
+
+    /// <inheritdoc/>
+    public Vector3? BotCentre(int bot) => Bots?.BotCentre(bot);
+
+    /// <inheritdoc/>
+    public float StrikeBot(int bot, float damage) => Bots?.DamageBot(bot, damage, "sledge", melee: true) ?? 0f;
 
     // ---- Impacts ----
 

@@ -53,12 +53,12 @@ public sealed record VitalsView(int Peer, float Health, float MaxHealth, bool De
 /// <summary>What grows on a soil part, as <c>GetSoil</c> returns it and clients are sent it.</summary>
 /// <param name="Creation">Creation holding the part.</param>
 /// <param name="Part">The soil part.</param>
-/// <param name="Seed">Qualified id of the planted seed, or null.</param>
+/// <param name="Seed">Qualified id of the planted seed, or null (left out of the JSON, so it defaults).</param>
 /// <param name="Crop">Qualified id of the item it yields, or null.</param>
 /// <param name="Stage">Growth stage, 0 to <see cref="SoilState.Stages"/> (ripe).</param>
 /// <param name="Water">Seconds of water left.</param>
 /// <param name="Capacity">Most seconds of water the soil holds.</param>
-public sealed record SoilView(int Creation, int Part, string? Seed, string? Crop, int Stage, float Water, float Capacity)
+public sealed record SoilView(int Creation, int Part, string? Seed = null, string? Crop = null, int Stage = 0, float Water = 0, float Capacity = 0)
 {
     /// <summary>True when the crop can be harvested.</summary>
     public bool Ripe => Seed is not null && Stage >= SoilState.Stages;
@@ -76,14 +76,15 @@ public sealed record ItemDrop(int Id, Vec3 Position, IReadOnlyList<ItemStack> It
 public sealed record EatResult(float Health);
 
 /// <summary>One thing a shot hit.</summary>
-/// <param name="Kind"><c>player</c>, <c>part</c>, <c>object</c> or <c>ground</c>.</param>
+/// <param name="Kind"><c>player</c>, <c>part</c>, <c>object</c>, <c>bot</c>, <c>crop</c> (a bot destroyed it) or <c>ground</c>.</param>
 /// <param name="Point">Where, in world metres.</param>
 /// <param name="Damage">Damage dealt.</param>
 /// <param name="Player">The player hit.</param>
 /// <param name="Creation">The Creation hit.</param>
 /// <param name="Part">The part hit.</param>
 /// <param name="Object">The world object hit.</param>
-public sealed record ShotHitView(string Kind, Vec3 Point, float Damage, int? Player = null, int? Creation = null, int? Part = null, string? Object = null);
+/// <param name="Bot">The bot hit.</param>
+public sealed record ShotHitView(string Kind, Vec3 Point, float Damage, int? Player = null, int? Creation = null, int? Part = null, string? Object = null, int? Bot = null);
 
 /// <summary>Value of a successful <c>Fire</c>.</summary>
 /// <param name="Hits">What the pellets and the splash hit.</param>
@@ -108,7 +109,8 @@ public sealed record DropItemsResult(int Drop);
 /// <param name="Creation">The Creation hit.</param>
 /// <param name="Part">The part hit in it.</param>
 /// <param name="Object">The world object hit.</param>
-public sealed record RayHit(Vector3 Point, int? Player = null, int? Creation = null, int? Part = null, WorldObjectId? Object = null);
+/// <param name="Bot">The bot hit.</param>
+public sealed record RayHit(Vector3 Point, int? Player = null, int? Creation = null, int? Part = null, WorldObjectId? Object = null, int? Bot = null);
 
 /// <summary>What the survival actions need from the world. The host's game layer implements it.</summary>
 public interface ISurvivalWorld
