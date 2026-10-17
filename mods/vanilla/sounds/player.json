@@ -42,7 +42,8 @@
       "clips": [
         "sounds/player/footstep_default.ogg",
         "sounds/player/footstep_default_2.ogg",
-        "sounds/player/footstep_default_3.ogg"
+        "sounds/player/footstep_default_3.ogg",
+        "sounds/player/footstep_default_4.ogg"
       ],
       "volume_variation_db": 2,
       "pitch_variation": 0.1,
@@ -64,7 +65,8 @@
       "clips": [
         "sounds/player/footstep_wood.ogg",
         "sounds/player/footstep_wood_2.ogg",
-        "sounds/player/footstep_wood_3.ogg"
+        "sounds/player/footstep_wood_3.ogg",
+        "sounds/player/footstep_wood_4.ogg"
       ],
       "volume_variation_db": 2,
       "pitch_variation": 0.1,

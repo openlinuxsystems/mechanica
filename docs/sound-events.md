@@ -135,10 +135,13 @@ is never sent. Loops belong to the host: it starts them on a point or a part, se
 
 ## Vanilla placeholders
 
-Vanilla's events cover every sound id in the catalog. Their audio is original placeholder synthesis
-made by `tools/sounds/make_placeholders.py` (Python with numpy, plus ffmpeg for Vorbis), seeded per
-id so it rebuilds byte for byte. Run it to regenerate `mods/vanilla/sounds/`, or with `--check` to
-list the events. Replace a placeholder by pointing its event at a new file.
+Vanilla's events cover every sound id in the catalog. `tools/sounds/make_placeholders.py` (Python with
+numpy, plus ffmpeg for Vorbis) makes them all and rebuilds byte for byte. The player's footsteps,
+landings, swimming, splashes, hurt, heartbeat and tool equip, and every material's place, impact and
+break sounds, are CC0 recordings kept in `tools/sounds/recordings/` (sources and licences in its
+`CREDITS.md`), trimmed, layered and levelled by the script. The rest are original synthesis, seeded
+per id. Run it to regenerate `mods/vanilla/sounds/`, or with `--check` to list the events. Replace a
+clip by pointing its event at a new file.
 
 ## Error codes
 
