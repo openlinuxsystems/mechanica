@@ -1,0 +1,200 @@
+using System.Globalization;
+using System.Numerics;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using Mechanica.Core.Data;
+
+namespace Mechanica.Core.World;
+
+/// <summary>A biome ready for generation, with its index in <see cref="WorldGenData.Biomes"/>.</summary>
+public sealed record Biome(int Index, string Id, string Name, float Weight, float Height, float Relief, Vector3 Color);
+
+/// <summary>A scatter rule ready for generation. <see cref="Index"/> is its place among every biome's rules, and part of each object's id.</summary>
+public sealed record Scatter(int Index, int Biome, WorldObjectDefinition Object, float Spacing, float Chance);
+
+/// <summary>A POI prefab that loaded cleanly.</summary>
+/// <param name="QualifiedId">Game-wide id, <c>mod_id:poi_id</c>.</param>
+/// <param name="Prefab">The validated data.</param>
+/// <param name="Biomes">Indices of the biomes a spaced POI may stand in.</param>
+public sealed record LoadedPoi(string QualifiedId, PoiPrefab Prefab, IReadOnlySet<int> Biomes);
+
+/// <summary>
+/// Everything world generation reads from the enabled mods (chunk 19): the <see cref="WorldGenDefinition"/>
+/// of the last mod in load order that ships <c>world/worldgen.json</c>, and every mod's <c>pois/*.json</c>.
+/// A file with errors is left out; <see cref="Diagnostics"/> says why. Host and clients compare
+/// <see cref="Fingerprint"/> on join, because the world is regenerated from the seed on every peer.
+/// </summary>
+public sealed class WorldGenData
+{
+    /// <summary>Where a mod keeps its world generation rules.</summary>
+    public const string DefinitionFile = "world/worldgen.json";
+
+    /// <summary>Where a mod keeps its POI prefabs.</summary>
+    public const string PoiFolder = "pois";
+
+    private WorldGenData(WorldGenDefinition definition, IReadOnlyList<LoadedPoi> pois, IReadOnlyList<DataDiagnostic> diagnostics, string fingerprint)
+    {
+        Definition = definition;
+        Terrain = definition.Terrain;
+        Pois = pois;
+        Diagnostics = diagnostics;
+        Fingerprint = fingerprint;
+        Biomes = [.. (definition.Biomes ?? []).Select((b, i) => new Biome(i, b.Id!, b.Name ?? b.Id!, b.Weight, b.Height, b.Relief, ParseColor(b.Color)))];
+        Objects = (definition.Objects ?? []).ToDictionary(o => o.Id!);
+        var scatter = new List<Scatter>();
+        foreach (var biome in definition.Biomes ?? [])
+            foreach (var rule in biome.Scatter ?? [])
+                scatter.Add(new Scatter(scatter.Count, Biomes.First(b => b.Id == biome.Id).Index, Objects[rule.Object!], rule.Spacing, rule.Chance));
+        ScatterRules = scatter;
+        CoastBiome = definition.CoastBiome is { } coast ? Biomes.First(b => b.Id == coast) : null;
+    }
+
+    /// <summary>The rules in use.</summary>
+    public WorldGenDefinition Definition { get; }
+
+    /// <summary>Height field settings.</summary>
+    public TerrainDefinition Terrain { get; }
+
+    /// <summary>Biomes in file order.</summary>
+    public IReadOnlyList<Biome> Biomes { get; }
+
+    /// <summary>The biome along the world edge, if any.</summary>
+    public Biome? CoastBiome { get; }
+
+    /// <summary>Scattered object kinds by id.</summary>
+    public IReadOnlyDictionary<string, WorldObjectDefinition> Objects { get; }
+
+    /// <summary>Every biome's scatter rules, in biome then file order.</summary>
+    public IReadOnlyList<Scatter> ScatterRules { get; }
+
+    /// <summary>POI prefabs, ordered by qualified id.</summary>
+    public IReadOnlyList<LoadedPoi> Pois { get; }
+
+    /// <summary>Every problem found while loading.</summary>
+    public IReadOnlyList<DataDiagnostic> Diagnostics { get; }
+
+    /// <summary>True when any diagnostic is an error.</summary>
+    public bool HasErrors => Diagnostics.Any(d => d.Severity == DiagnosticSeverity.Error);
+
+    /// <summary>SHA-256 (hex) of the canonical form of the definition and every POI.</summary>
+    public string Fingerprint { get; }
+
+    /// <summary>A flat world at height 0 with one bare biome, no sea, objects or POIs. For tests and as a fallback.</summary>
+    public static WorldGenData Flat { get; } = FromDefinition(new WorldGenDefinition
+    {
+        Terrain = new TerrainDefinition { CoastWidth = 0f, CoastBiomeWidth = 0f, SeaLevel = -100f, SeaFloor = -100f },
+        Biomes = [new BiomeDefinition { Id = "flat", Name = "Flat", Weight = 1f, Color = "#5c7350" }],
+    });
+
+    /// <summary>Loads the world data of the mods in <paramref name="content"/>, in load order.</summary>
+    public static WorldGenData Load(ModLoadResult content)
+    {
+        var diagnostics = new List<DataDiagnostic>();
+        WorldGenDefinition? definition = null;
+        var prefabs = new List<(string ModId, string File, PoiPrefab Prefab)>();
+        foreach (var mod in content.Mods)
+        {
+            var path = Path.Combine(mod.Directory, DefinitionFile);
+            if (File.Exists(path))
+            {
+                var display = $"{mod.Id}/{DefinitionFile}";
+                var sink = new DiagnosticSink(display, diagnostics);
+                if (Read<WorldGenDefinition>(path, sink) is { } read)
+                {
+                    WorldGenValidator.Validate(read, sink);
+                    if (sink.ErrorCount == 0)
+                        definition = read;
+                }
+            }
+            var folder = Path.Combine(mod.Directory, PoiFolder);
+            if (!Directory.Exists(folder))
+                continue;
+            foreach (var file in Directory.EnumerateFiles(folder, "*.json", SearchOption.AllDirectories).Order(StringComparer.Ordinal))
+            {
+                var display = $"{mod.Id}/{Path.GetRelativePath(mod.Directory, file).Replace('\\', '/')}";
+                var sink = new DiagnosticSink(display, diagnostics);
+                if (Read<PoiPrefab>(file, sink) is { } prefab)
+                    prefabs.Add((mod.Id, display, prefab));
+            }
+        }
+        if (definition is null)
+        {
+            diagnostics.Add(new DataDiagnostic(DiagnosticSeverity.Error, DiagnosticCodes.WorldGenMissing, DefinitionFile, null, null,
+                "no enabled mod ships valid world generation rules; the world is flat."));
+            return FromDefinition(Flat.Definition, diagnostics);
+        }
+
+        var pois = new List<LoadedPoi>();
+        var biomeIds = (definition.Biomes ?? []).Select(b => b.Id!).ToList();
+        foreach (var (modId, file, prefab) in prefabs)
+        {
+            var sink = new DiagnosticSink(file, diagnostics);
+            WorldGenValidator.Validate(prefab, biomeIds, sink);
+            var id = $"{modId}:{prefab.Id}";
+            if (pois.Any(p => p.QualifiedId == id))
+                sink.Error(DiagnosticCodes.PoiInvalid, "$.id", $"POI '{id}' is defined twice.");
+            if (sink.ErrorCount == 0)
+                pois.Add(new LoadedPoi(id, prefab, (prefab.Placement!.Biomes ?? []).Select(b => biomeIds.IndexOf(b)).ToHashSet()));
+        }
+        return new WorldGenData(definition, [.. pois.OrderBy(p => p.QualifiedId, StringComparer.Ordinal)], diagnostics, ComputeFingerprint(definition, pois));
+    }
+
+    /// <summary>Builds data from a definition alone (no POIs), validating it.</summary>
+    /// <exception cref="FormatException">The definition has errors.</exception>
+    public static WorldGenData FromDefinition(WorldGenDefinition definition) => FromDefinition(definition, []);
+
+    private static WorldGenData FromDefinition(WorldGenDefinition definition, List<DataDiagnostic> diagnostics)
+    {
+        var errors = new List<DataDiagnostic>();
+        var sink = new DiagnosticSink("worldgen", errors);
+        WorldGenValidator.Validate(definition, sink);
+        if (sink.ErrorCount > 0)
+            throw new FormatException(string.Join("\n", errors.Where(d => d.Severity == DiagnosticSeverity.Error)));
+        return new WorldGenData(definition, [], diagnostics, ComputeFingerprint(definition, []));
+    }
+
+    /// <summary>Parses <c>#rrggbb</c>; anything else gives grey.</summary>
+    public static Vector3 ParseColor(string? text)
+    {
+        if (!TryParseColor(text, out var color))
+            return new Vector3(0.5f);
+        return color;
+    }
+
+    /// <summary>Parses <c>#rrggbb</c> into 0..1 channels.</summary>
+    public static bool TryParseColor(string? text, out Vector3 color)
+    {
+        color = default;
+        if (text is not { Length: 7 } || text[0] != '#'
+            || !int.TryParse(text.AsSpan(1), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var rgb))
+            return false;
+        color = new Vector3((rgb >> 16) & 0xff, (rgb >> 8) & 0xff, rgb & 0xff) / 255f;
+        return true;
+    }
+
+    private static T? Read<T>(string path, DiagnosticSink sink) where T : class
+    {
+        try
+        {
+            return ModLoader.ParseJson<T>(File.ReadAllText(path), sink);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            sink.Error(DiagnosticCodes.FileUnreadable, null, $"could not read file: {e.Message}");
+            return null;
+        }
+    }
+
+    private static string ComputeFingerprint(WorldGenDefinition definition, IEnumerable<LoadedPoi> pois)
+    {
+        using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+        hash.AppendData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(definition, DataJson.WriteOptions)));
+        foreach (var poi in pois.OrderBy(p => p.QualifiedId, StringComparer.Ordinal))
+        {
+            hash.AppendData(Encoding.UTF8.GetBytes(poi.QualifiedId));
+            hash.AppendData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(poi.Prefab, DataJson.WriteOptions)));
+        }
+        return Convert.ToHexStringLower(hash.GetHashAndReset());
+    }
+}

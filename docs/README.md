@@ -15,3 +15,7 @@ written by the chunk that builds the feature it covers.
 | [Packaging Guide](packaging-guide.md) | Mod Package Manager |
 | Bot Tutorial | Bot behaviour runtime |
 | Example bot mod | Bot behaviour runtime |
+
+Other references:
+
+- [World Generation and POI Prefabs](world-generation.md)

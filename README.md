@@ -52,6 +52,13 @@ godot --path game -- --join 192.168.1.20:27460
 A joining client must run the same protocol version and the same mods (same versions, same load
 order) as the host; otherwise the host refuses it and says which mods differ.
 
+## World
+
+The world is a 4 km island generated from a seed and the mods' world data (biomes, terrain, trees
+and rocks, POIs); see [docs/world-generation.md](docs/world-generation.md). Each new game picks a
+random seed; `--seed 1234` picks one. Clients regenerate the host's world from its seed, and the host
+sends them every destroyed tree or rock.
+
 All state changes go through the Action API (`Main.Actions.Request("Respawn", new NoArgs())`): on the
 host the call runs directly, on a client it is sent to the host, which validates it as that peer and
 answers with a result (`ok`, or a code such as `unknown_action`, `bad_args`, `rejected`).

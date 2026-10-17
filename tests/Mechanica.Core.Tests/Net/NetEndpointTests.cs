@@ -70,6 +70,9 @@ public class LaunchOptionsTests
     public void Join() =>
         Assert.Equal(LaunchOptions.ForJoin(new NetEndpoint("10.0.0.2", 4000)), Parse("--join", "10.0.0.2:4000"));
 
+    [Fact]
+    public void Seed() => Assert.Equal(LaunchOptions.ForHost(4000) with { Seed = -42 }, Parse("--host", "4000", "--seed", "-42"));
+
     [Theory]
     [InlineData("--join")]
     [InlineData("--join", "--host")]
@@ -79,6 +82,8 @@ public class LaunchOptionsTests
     [InlineData("--max-players", "0")]
     [InlineData("--max-players", "17")]
     [InlineData("--max-players")]
+    [InlineData("--seed", "x")]
+    [InlineData("--seed")]
     public void RejectsBadArguments(params string[] args)
     {
         Assert.False(LaunchOptions.TryParse(args, out _, out var error));

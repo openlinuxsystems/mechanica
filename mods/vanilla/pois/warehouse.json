@@ -1,0 +1,52 @@
+{
+  "id": "warehouse",
+  "name": "Warehouse",
+  "radius": 48.0,
+  "placement": {
+    "spacing": [600.0, 1000.0],
+    "biomes": ["warehouse_district", "ruin_field"],
+    "priority": 40
+  },
+  "terrain": [
+    { "op": "flatten", "radius": 26.0, "blend": 20.0 }
+  ],
+  "pieces": [
+    { "shape": "box", "size": [24.0, 0.3, 36.0], "at": [0.0, 0.15, 0.0], "color": "#a3a093" },
+    { "shape": "box", "size": [24.0, 0.3, 30.0], "at": [0.0, 4.15, -3.0], "color": "#a3a093" },
+    { "shape": "box", "size": [24.0, 0.3, 30.0], "at": [0.0, 8.15, -3.0], "color": "#a3a093" },
+    { "shape": "box", "size": [24.8, 0.3, 36.8], "at": [0.0, 12.15, 0.0], "color": "#4a4f55" },
+    { "shape": "box", "size": [24.0, 12.0, 0.4], "at": [0.0, 6.0, -18.0], "color": "#7d858c" },
+    { "shape": "box", "size": [0.4, 12.0, 36.0], "at": [-12.0, 6.0, 0.0], "color": "#7d858c" },
+    { "shape": "box", "size": [0.4, 12.0, 36.0], "at": [12.0, 6.0, 0.0], "color": "#7d858c" },
+    { "shape": "box", "size": [10.0, 12.0, 0.4], "at": [-7.0, 6.0, 18.0], "color": "#7d858c" },
+    { "shape": "box", "size": [10.0, 12.0, 0.4], "at": [7.0, 6.0, 18.0], "color": "#7d858c" },
+    { "shape": "box", "size": [4.0, 8.0, 0.4], "at": [0.0, 8.0, 18.0], "color": "#7d858c" },
+    { "shape": "box", "size": [1.0, 0.5, 3.0], "at": [-10.5, 0.25, 15.0], "color": "#8c5a3c" },
+    { "shape": "box", "size": [1.0, 1.0, 3.0], "at": [-9.5, 0.5, 15.0], "color": "#8c5a3c" },
+    { "shape": "box", "size": [1.0, 1.5, 3.0], "at": [-8.5, 0.75, 15.0], "color": "#8c5a3c" },
+    { "shape": "box", "size": [1.0, 2.0, 3.0], "at": [-7.5, 1.0, 15.0], "color": "#8c5a3c" },
+    { "shape": "box", "size": [1.0, 2.5, 3.0], "at": [-6.5, 1.25, 15.0], "color": "#8c5a3c" },
+    { "shape": "box", "size": [1.0, 3.0, 3.0], "at": [-5.5, 1.5, 15.0], "color": "#8c5a3c" },
+    { "shape": "box", "size": [1.0, 3.5, 3.0], "at": [-4.5, 1.75, 15.0], "color": "#8c5a3c" },
+    { "shape": "box", "size": [1.0, 4.0, 3.0], "at": [-3.5, 2.0, 15.0], "color": "#8c5a3c" },
+    { "shape": "box", "size": [1.0, 0.5, 3.0], "at": [10.5, 4.25, 15.0], "color": "#8c5a3c" },
+    { "shape": "box", "size": [1.0, 1.0, 3.0], "at": [9.5, 4.5, 15.0], "color": "#8c5a3c" },
+    { "shape": "box", "size": [1.0, 1.5, 3.0], "at": [8.5, 4.75, 15.0], "color": "#8c5a3c" },
+    { "shape": "box", "size": [1.0, 2.0, 3.0], "at": [7.5, 5.0, 15.0], "color": "#8c5a3c" },
+    { "shape": "box", "size": [1.0, 2.5, 3.0], "at": [6.5, 5.25, 15.0], "color": "#8c5a3c" },
+    { "shape": "box", "size": [1.0, 3.0, 3.0], "at": [5.5, 5.5, 15.0], "color": "#8c5a3c" },
+    { "shape": "box", "size": [1.0, 3.5, 3.0], "at": [4.5, 5.75, 15.0], "color": "#8c5a3c" },
+    { "shape": "box", "size": [1.0, 4.0, 3.0], "at": [3.5, 6.0, 15.0], "color": "#8c5a3c" }
+  ],
+  "markers": [
+    { "type": "door", "ref": "warehouse_key", "at": [0.0, 0.0, 18.0] },
+    { "type": "bot", "ref": "spooler_blue", "at": [0.0, 0.3, -8.0] },
+    { "type": "bot", "ref": "spooler_green", "at": [-4.0, 4.3, -6.0] },
+    { "type": "bot", "ref": "spooler_yellow", "at": [4.0, 8.3, -10.0] },
+    { "type": "item", "ref": "warehouse_key", "at": [8.0, 8.3, -14.0] },
+    { "type": "item", "ref": "metal_crate", "at": [-8.0, 0.3, -14.0] },
+    { "type": "item", "ref": "metal_crate", "at": [8.0, 4.3, -14.0] },
+    { "type": "item", "ref": "wooden_crate", "at": [-8.0, 8.3, -14.0] },
+    { "type": "item", "ref": "warehouse_key_sign", "at": [0.0, 0.0, 22.0] }
+  ]
+}

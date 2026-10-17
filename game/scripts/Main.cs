@@ -2,6 +2,7 @@ using Godot;
 using Mechanica.Core;
 using Mechanica.Core.Data;
 using Mechanica.Core.Net;
+using Mechanica.Core.World;
 using Mechanica.Game.Creations;
 using Mechanica.Game.Mods;
 using Mechanica.Game.Net;
@@ -11,7 +12,7 @@ using Mechanica.Game.World;
 namespace Mechanica.Game;
 
 /// <summary>
-/// Flat test world and session root. It builds the networking nodes (<see cref="Session"/>,
+/// Game world and session root. It builds the networking nodes (<see cref="Session"/>,
 /// <see cref="PlayerSync"/>, <see cref="Actions"/>) and the streamed world (<see cref="Streamer"/>,
 /// <see cref="Creations"/>), starts offline, hosting or joining from
 /// <see cref="Options"/>, and drives whichever player belongs to this peer from the keyboard and mouse.
@@ -32,6 +33,12 @@ public partial class Main : Node3D
     /// (<see cref="ModPaths.LoadContent"/>) when the scene starts; tests may set it directly.
     /// </summary>
     public ContentManifest? Content { get; set; }
+
+    /// <summary>
+    /// World generation rules. Null loads them from the enabled mods when the scene starts; tests may set
+    /// <see cref="WorldGenData.Flat"/>.
+    /// </summary>
+    public WorldGenData? WorldGen { get; set; }
 
     /// <summary>Connection state and handshake.</summary>
     public NetSession Session { get; private set; } = null!;
@@ -55,7 +62,8 @@ public partial class Main : Node3D
     {
         GD.Print($"{MechanicaInfo.GameName} started (physics: {ProjectSettings.GetSetting("physics/3d/physics_engine")})");
         Options ??= ReadCommandLine();
-        var content = Content ??= LoadContentManifest();
+        LoadContent();
+        var content = Content!;
 
         Session = new NetSession { Name = "Session", Content = content };
         AddChild(Session);
@@ -78,8 +86,12 @@ public partial class Main : Node3D
             PlayerSync = PlayerSync,
             Creations = Creations,
             SpawnPoint = () => GetNodeOrNull<Node3D>("SpawnPoint")?.GlobalPosition ?? Vector3.Zero,
+            WorldGen = WorldGen!,
+            Seed = Options.Seed ?? (long)(((ulong)GD.Randi() << 32) | GD.Randi()),
         };
         AddChild(Streamer);
+        PlaceSpawnPoint();
+        Streamer.WorldReplaced += PlaceSpawnPoint;
         PlayerSync.PlayerSpawned += OnPlayerSpawned;
         PlayerSync.PlayerDespawning += OnPlayerDespawning;
         AddChild(PlayerSync);
@@ -106,12 +118,32 @@ public partial class Main : Node3D
             GD.PushError($"[net] {Session.LastMessage}");
     }
 
-    private static ContentManifest LoadContentManifest()
+    // Loads whatever the tests did not set. World data is part of the content check on join, because
+    // every peer regenerates the world from it.
+    private void LoadContent()
     {
+        if (Content is not null && WorldGen is not null)
+            return;
         var content = ModPaths.LoadContent();
         foreach (var diagnostic in content.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error))
             GD.PushWarning($"[mods] {diagnostic}");
-        return ContentManifest.From(content);
+        if (WorldGen is null)
+        {
+            WorldGen = WorldGenData.Load(content);
+            foreach (var diagnostic in WorldGen.Diagnostics)
+                GD.PushWarning($"[world] {diagnostic}");
+        }
+        Content ??= ContentManifest.From(content) with { Fingerprint = $"{content.Fingerprint}+{WorldGen.Fingerprint}" };
+    }
+
+    // Players start at the world's spawn (the crash site's spawn marker in vanilla). A world without
+    // one keeps the scene's spawn point, moved onto the ground.
+    private void PlaceSpawnPoint()
+    {
+        if (GetNodeOrNull<Node3D>("SpawnPoint") is not { } spawn)
+            return;
+        var at = spawn.GlobalPosition;
+        spawn.GlobalPosition = Streamer.Generator.Spawn?.ToGodot() ?? new Vector3(at.X, Streamer.Generator.HeightAt(at.X, at.Z), at.Z);
     }
 
     private static LaunchOptions ReadCommandLine()

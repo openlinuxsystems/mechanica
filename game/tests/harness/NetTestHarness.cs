@@ -34,6 +34,12 @@ public partial class NetTestHarness : Node
         public override string ToString() => Name;
     }
 
+    /// <summary>World seed of the host, fixed so runs repeat.</summary>
+    public long Seed { get; set; } = 1234;
+
+    /// <summary>World generation for every instance started from now on; null loads the mods' rules, like the game.</summary>
+    public Mechanica.Core.World.WorldGenData? WorldGen { get; set; }
+
     /// <summary>The port the host listens on, once started.</summary>
     public int Port { get; private set; }
 
@@ -46,7 +52,7 @@ public partial class NetTestHarness : Node
         for (var attempt = 0; attempt < 20; attempt++)
         {
             var port = (int)GD.RandRange(30000, 60000);
-            var instance = Start(name, LaunchOptions.Offline);
+            var instance = Start(name, LaunchOptions.Offline with { Seed = Seed });
             if (instance.Main.Session.Host(port, maxPlayers) == Error.Ok)
             {
                 Port = port;
@@ -88,6 +94,7 @@ public partial class NetTestHarness : Node
         main.Options = options;
         main.ReadDeviceInput = false;
         main.Content = content; // null: load the real enabled mods, like the game does
+        main.WorldGen = WorldGen;
         viewport.AddChild(main);
         var instance = new Instance(name, viewport, main);
         _instances.Add(instance);
