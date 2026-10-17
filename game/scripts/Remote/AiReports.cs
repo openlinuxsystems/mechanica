@@ -11,7 +11,7 @@ namespace Mechanica.Game.Remote;
 
 /// <summary>
 /// AI notes, recommendations and bug reports on this game (AUDIT §4.5). Owns the <see cref="ReportStore"/>
-/// (<c>user://ai_reports/</c>, one folder per run) and, on the host, the <see cref="Reporter"/> the AI
+/// (<c>user://ai_reports/</c>, one folder per run of the game, across the worlds it loads) and, on the host, the <see cref="Reporter"/> the AI
 /// endpoint's <c>reports.*</c> methods write through. It keeps <see cref="RecentActivity"/> going every
 /// physics tick and feeds it part script and bot messages and the host's own errors and warnings, so a bug
 /// report carries what led up to it. Screenshots are what this window shows.
@@ -53,9 +53,13 @@ public partial class AiReports : Node
     /// <summary>Writes reports.</summary>
     public Reporter Reporter { get; private set; } = null!;
 
+    // One session folder per run of the game, kept when an agent loads another world.
+    private static ReportStore? _runStore;
+
     public override void _Ready()
     {
-        Store = new ReportStore(Folder ?? UserFolder, DateTimeOffset.UtcNow);
+        var root = Folder ?? UserFolder;
+        Store = _runStore is { } run && run.Root == root ? run : _runStore = new ReportStore(root, DateTimeOffset.UtcNow);
         Activity = new RecentActivity(Actions.Dispatcher, Engine.PhysicsTicksPerSecond);
         Reporter = new Reporter(Store, Activity, () => Context() with { Tick = Activity.Now }, Capture);
         _logger = new HostLogger(_hostLog);

@@ -116,6 +116,7 @@ After `mechanica.subscribe`, the host pushes JSON-RPC notifications (no `id`) on
 | `projectiles` | `kind` `launched` or `landed` |
 | `mods` | from the mod tools, `kind` `validated` or `reloaded` with the `mods.validate` or `mods.reload` result as `result`; from packages, `action` `installed` (`id`, `version`, `change`) or `uninstalled` (`id`) |
 | `reports` | an agent filed a note, recommendation or bug report: its summary (see [AI reports](ai-reports.md)) |
+| `world` | `kind` `saved` (with `path`) or `loaded` (a load, new world or reset is ready), with the `world.info` status |
 
 A connection that falls more than 4096 notifications behind loses the oldest and then receives one
 `events_dropped` notification with the `count` it missed.
@@ -152,6 +153,38 @@ so a full world refuses them.
 `reports.screenshot` let an agent write down what it finds, with the game's context, a replay of the calls
 that led up to a bug and a screenshot filled in by the host. See
 [AI Notes, Recommendations and Bug Reports](ai-reports.md).
+
+## Saving, loading and test worlds
+
+All `world.*` methods need the `admin` scope.
+
+| Method | Params | Result |
+|--------|--------|--------|
+| `world.info` | none | `name`, `seed`, `mode`, `difficulty`, `loaded_from` (the save file, or absent), `world_time`, `tick`, `time_scale`, `paused`, `clients` (other players joined), `changing` |
+| `world.save` | `name` (optional; the world's own name) | `name`, `file`, `path` |
+| `world.list` | none | saved worlds, newest first: `name`, `file`, `saved_at`, `mode`, `play_seconds`, and `error` for a save that doesn't load |
+| `world.load` | `name` (the save's name or file name), `disconnect_clients` | the save's listing |
+| `world.new` | `name` (`World`), `seed` (random), `mode` (`survival`), `difficulty` (`normal`), `character`, `disconnect_clients` | what the world will be: `name`, `seed`, `mode`, `difficulty` |
+| `world.reset` | `disconnect_clients` | the same; the running world started again with the same name, seed, mode and difficulty and nothing built |
+| `world.time_scale` | `scale` (0.05 to 10; 1 is real time) | the status |
+| `world.pause` | `paused` | the status |
+
+`world.load`, `world.new` and `world.reset` answer at once and the world changes after. Your connection,
+its token and its subscriptions carry over to the new world, on the same address. Subscribe to `world`
+and wait for the `loaded` event before you call anything else; until then `world.info` shows
+`changing: true` and another load is refused with `-32004`. Changing worlds disconnects every other
+player, so while any are joined these calls are refused with `-32001` unless you pass
+`disconnect_clients: true`. Players can join the new world on the same port. An agent that joined as a player
+(`mechanica.join`) is back to acting as an external agent in the new world; call `mechanica.join` again.
+
+A world change sets the time scale back to 1 and unpauses. While the world is paused the endpoint
+still answers, so an agent can inspect a frozen world and resume it.
+
+```json
+→ {"jsonrpc": "2.0", "id": 7, "method": "world.reset", "params": {"disconnect_clients": true}}
+← {"jsonrpc": "2.0", "id": 7, "result": {"name": "AI test", "seed": 99, "mode": "creative", "difficulty": "normal"}}
+← {"jsonrpc": "2.0", "method": "mechanica.event", "params": {"topic": "world", "tick": 0, "data": {"kind": "loaded", "status": {"name": "AI test", "seed": 99, "changing": false, …}}}}
+```
 
 ## Adding methods (for game code)
 
