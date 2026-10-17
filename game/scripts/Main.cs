@@ -115,6 +115,12 @@ public partial class Main : Node3D
     /// </summary>
     public ModLoadResult? Mods { get; set; }
 
+    /// <summary>The mods folder the AI endpoint's mod tools work in. Null uses <see cref="ModPaths.ModsRoot"/>; tests set their own.</summary>
+    public string? ModsFolder { get; set; }
+
+    /// <summary>The mod profile the AI endpoint's mod tools save. Null uses <see cref="ModPaths.ProfilePath"/>; tests set their own.</summary>
+    public string? ModProfileFile { get; set; }
+
     /// <summary>Meshes and shapes for the parts in <see cref="Mods"/>.</summary>
     public PartAssets Assets { get; private set; } = null!;
 
@@ -524,6 +530,12 @@ public partial class Main : Node3D
         Ai = new AiEndpoint { Name = "Ai", Session = Session, Actions = Actions, Log = Recorder };
         AddChild(Ai);
         RemoteEventSources.Connect(this, Ai.Events);
+        var modsRoot = ModsFolder ?? ModPaths.ModsRoot;
+        var profilePath = ModProfileFile ?? ModPaths.ProfilePath;
+        var modTools = new Mechanica.Scripting.Editor.ModToolService(
+            new Core.ModTools.ModWorkspace(modsRoot, profilePath, Mechanica.Scripting.Editor.LuaSyntax.Problem),
+            new ModToolsHost(this, modsRoot, profilePath), Scripts.Settings!);
+        Ai.Modules.Add(new Mechanica.Scripting.Editor.ModToolsModule(modTools, Ai.Events));
         // The offline player spawned with PlayerSync, before building existed.
         if (LocalPlayer is { } local)
             AddTools(local);

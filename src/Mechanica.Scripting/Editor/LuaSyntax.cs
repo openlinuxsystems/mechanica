@@ -20,11 +20,12 @@ public static partial class LuaSyntax
     /// <summary>The first compile error in <paramref name="source"/>, or null when it compiles.</summary>
     public static LuaSyntaxError? Check(string source)
     {
+        const string prefix = "return function(_ENV) ";
         var script = new Script(LuaHost.SandboxModules);
         try
         {
             // Wrapped exactly as the runtime wraps it, so what passes here loads there.
-            script.LoadString($"return function(_ENV) {source}\nend", null, "script");
+            script.LoadString($"{prefix}{source}\nend", null, "script");
             return null;
         }
         catch (SyntaxErrorException e)
@@ -32,7 +33,10 @@ public static partial class LuaSyntax
             // An error the wrapper's closing line reports (a missing 'end') belongs on the file's last line.
             var error = Parse(e.DecoratedMessage ?? e.Message);
             var lines = source.Split('\n').Length;
-            return error.Line > lines ? error with { Line = lines, Column = 0 } : error;
+            // Columns on the first line count the wrapper too.
+            return error.Line > lines ? error with { Line = lines, Column = 0 }
+                : error.Line == 1 ? error with { Column = Math.Max(0, error.Column - prefix.Length) }
+                : error;
         }
     }
 

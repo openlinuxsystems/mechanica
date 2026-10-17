@@ -66,6 +66,12 @@ public sealed class EditorTests : IDisposable
         Assert.Contains(message, error.Message);
     }
 
+    [Theory]
+    [InlineData("if then", 1, 3)]
+    [InlineData("local a = 1\nif then", 2, 3)]
+    public void SyntaxErrorsPointAtTheColumn(string source, int line, int column) =>
+        Assert.Equal((line, column), (LuaSyntax.Check(source)!.Line, LuaSyntax.Check(source)!.Column));
+
     [Fact]
     public void GoodScriptsPassTheCheck() => Assert.Null(LuaSyntax.Check("function on_update(dt) return _ENV end"));
 
