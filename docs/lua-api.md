@@ -57,6 +57,26 @@ the script gets a fresh environment with its old `state`, runs the file's top le
 `on_reload` (or `on_create` if it never started). A part that was stopped by an error starts again.
 If the new version doesn't compile, the error is reported and the old version keeps running.
 
+## In the Part Editor
+
+The Part Editor's **Script** tab edits the open part's script with highlighting. **Save & reload**
+checks the script the way the host compiles it and marks the line of a compile error. If the Test
+Sandbox runs the script, the save reloads it there at once. The **API** list holds every entry of
+this reference (double-click inserts one), and the **Console** shows the sandbox's script output.
+
+### Templates
+
+**New from template** starts from one of the files in `game/data/lua_templates/`. `{{name}}` in a
+template becomes the part's name.
+
+| Template | What it does |
+|----------|--------------|
+| empty | Every hook, empty. |
+| thruster | Pushes along the part's +Y with `properties.thrust` N. |
+| bearing_motor | Drives a bearing at `properties.speed` rad/s with at most `properties.torque` N·m. |
+| wing | Lift and drag from the air speed across the part, from its `properties`. |
+| distance_sensor | Raycasts along the part's +Y up to `properties.range` m and keeps the distance in `state`. |
+
 ## Hooks
 
 | Hook | When |
