@@ -1,7 +1,7 @@
 {
   "id": "interior_light",
   "name": "Interior Light",
-  "description": "A ceiling lamp for cabins and bases. Build it under a roof; it lights the room around it. Press F to switch it off and on; a linked switch also works.",
+  "description": "A ceiling lamp for cabins and bases. Build it under a roof; it lights the room around it. Use it to switch it off and on; a linked switch also works.",
   "category": "light",
   "mass": 1.5,
   "durability": 2,

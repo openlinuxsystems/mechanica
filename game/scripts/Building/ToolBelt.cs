@@ -11,7 +11,8 @@ namespace Mechanica.Game.Building;
 
 /// <summary>
 /// The local player's hand tools and which one is in hand. Keys 1 to 7 pick the Hammer, Lift, Weld
-/// Tool, Paint Tool, Sledgehammer, the item in hand (<see cref="ItemTool"/>) or the Connect Tool; the HUD at the bottom left shows the tool in hand and its keys.
+/// Tool, Paint Tool, Sledgehammer, the item in hand (<see cref="ItemTool"/>) or the Connect Tool; the HUD at the bottom
+/// centre, inside the safe area, shows the tool in hand and its keys. The crosshair is <see cref="Ui.WorldHud"/>'s.
 /// </summary>
 public partial class ToolBelt : Node
 {
@@ -82,15 +83,16 @@ public partial class ToolBelt : Node
         if (!ReadDeviceInput)
             return;
         var layer = new CanvasLayer { Name = "Hud" };
-        // Bottom left, clear of the connect panel at the top.
-        // Built from translated pieces (tool names, each tool's line) around item names.
-        _hud = Loc.Verbatim(new Label { Name = "ToolLabel", GrowVertical = Control.GrowDirection.Begin, AutowrapMode = TextServer.AutowrapMode.WordSmart });
+        layer.AddToGroup(HudRoot.Group);
+        // Bottom centre, where the hotbar goes. Built from translated pieces (tool names, each tool's line) around item names.
+        _hud = Loc.Verbatim(new Label
+        {
+            Name = "ToolLabel", GrowVertical = Control.GrowDirection.Begin, GrowHorizontal = Control.GrowDirection.Both,
+            AutowrapMode = TextServer.AutowrapMode.WordSmart, HorizontalAlignment = HorizontalAlignment.Center,
+        });
         layer.AddChild(_hud);
         LayoutHud();
         GetViewport().SizeChanged += LayoutHud;
-        var crosshair = new Label { Name = "Crosshair", Text = "+", HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
-        layer.AddChild(crosshair);
-        crosshair.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.Center);
         AddChild(layer);
     }
 
@@ -111,13 +113,18 @@ public partial class ToolBelt : Node
             GetViewport().SizeChanged -= LayoutHud;
     }
 
-    // Bottom left, wrapping before the health bar in the middle (longer languages take more lines).
+    // Bottom centre inside the safe area, wrapping at 60% of the width (longer languages take more lines).
     private void LayoutHud()
     {
         var size = GetViewport().GetVisibleRect().Size;
-        _hud!.CustomMinimumSize = new Vector2(Mathf.Max(240, size.X / 2 - 120 - 48), 0);
-        _hud.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.BottomLeft, Control.LayoutPresetMode.KeepSize, 16);
+        var margin = HudRoot.Margin(GetViewport());
+        _hud!.CustomMinimumSize = new Vector2(size.X * 0.6f, 0);
+        _hud.Size = _hud.CustomMinimumSize;
+        _hud.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.CenterBottom, Control.LayoutPresetMode.KeepSize, (int)margin.Y);
     }
+
+    /// <summary>The tool bar text at the bottom of the screen, or null without a HUD.</summary>
+    public Label? HudLabel => _hud;
 
     public override void _UnhandledInput(InputEvent @event)
     {

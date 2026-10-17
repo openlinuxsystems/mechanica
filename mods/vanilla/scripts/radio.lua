@@ -1,4 +1,4 @@
--- Radio (chunk 23): press F to turn it on or off. It plays the station picked in its settings (1 to 6)
+-- Radio (chunk 23): use it to turn it on or off. It plays the station picked in its settings (1 to 6)
 -- from where it stands; changing the station while it plays retunes it.
 
 local loop, playing

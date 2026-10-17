@@ -1,7 +1,7 @@
 {
   "id": "button",
   "name": "Button",
-  "description": "Press F and it is on for a moment.",
+  "description": "Use it and it is on for a moment.",
   "category": "interactive",
   "mass": 1,
   "durability": 3,

@@ -120,6 +120,9 @@ public partial class HammerTool : HandTool
     /// <inheritdoc/>
     protected override void OnActiveChanged() => _preview.Visible = Active && Aim is not null;
 
+    /// <inheritdoc/>
+    public override Core.Ui.CrosshairState Crosshair => Aim is not null && Selected is not null ? Core.Ui.CrosshairState.Valid : Core.Ui.CrosshairState.Default;
+
     /// <summary>Selects a part by qualified id. Returns false when it is not placeable.</summary>
     public bool Select(string part)
     {

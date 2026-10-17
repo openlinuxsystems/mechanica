@@ -1,4 +1,4 @@
--- Switch: press F on it to turn its output on, and again to turn it off. It stays as it was left.
+-- Switch: use it to turn its output on, and again to turn it off. It stays as it was left.
 
 function on_create()
   state.on = state.on or false

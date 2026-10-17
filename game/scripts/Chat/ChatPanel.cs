@@ -14,7 +14,7 @@ namespace Mechanica.Game.Chat;
 /// closes; while it is closed only lines from the last <see cref="ShowSeconds"/> show. The panel's
 /// background follows Options, Interface, Chat opacity.
 /// </summary>
-public partial class ChatPanel : CanvasLayer
+public partial class ChatPanel : CanvasLayer, IHudLayer
 {
     /// <summary>Seconds a new line stays up while chat is closed.</summary>
     public const double ShowSeconds = 12;
@@ -37,6 +37,9 @@ public partial class ChatPanel : CanvasLayer
     /// <summary>True while the typing box is open.</summary>
     public bool IsOpen => _input.Visible;
 
+    /// <summary>Hide GUI leaves the chat up while the player types.</summary>
+    public bool KeepWhenHidden => IsOpen;
+
     /// <summary>The typing box.</summary>
     public LineEdit Input => _input;
 
@@ -52,6 +55,7 @@ public partial class ChatPanel : CanvasLayer
     public override void _Ready()
     {
         Layer = 3;
+        AddToGroup(HudRoot.Group);
         _panel = UiInput.KeepMouse(new PanelContainer { Name = "Chat" });
         _background = new StyleBoxFlat { BgColor = UiTokens.DeepNavy, ContentMarginLeft = 8, ContentMarginRight = 8, ContentMarginTop = 6, ContentMarginBottom = 6 };
         _background.SetCornerRadiusAll(4);

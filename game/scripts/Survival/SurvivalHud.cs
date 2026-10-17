@@ -16,13 +16,15 @@ using Mechanica.Game.Ui;
 namespace Mechanica.Game.Survival;
 
 /// <summary>
-/// The local player's survival HUD (chunk 20): a health bar (Survival only), the death screen with its
-/// respawn countdown (R respawns), and F to interact with what is in front of the player: harvest a ripe
+/// The local player's survival HUD (chunk 20): a blue health bar at the top left inside the safe area (Survival
+/// only, UI spec §6), the death screen with its respawn countdown, and Use to interact with what is in front of the
+/// player: harvest a ripe
 /// crop (the soil's <c>on_activate</c>, through <c>ActivatePart</c>), sleep in a bed to respawn there, or pick up
 /// the nearest pile of items.
 /// </summary>
 public partial class SurvivalHud : CanvasLayer
 {
+    private readonly StyleBoxFlat _fill = MechanicaTheme.Box(UiTokens.Blue, margin: 0);
     private ProgressBar _health = null!;
     private Label _healthText = null!;
     private Label _hint = null!;
@@ -54,11 +56,20 @@ public partial class SurvivalHud : CanvasLayer
     /// <summary>Quests, for using quest markers and talking. Optional.</summary>
     public QuestSync? Quests { get; init; }
 
+    /// <summary>True while the world tooltip shows, which then carries the Use hint. Optional.</summary>
+    public Func<bool> TooltipShowing { get; init; } = () => false;
+
+    /// <summary>The health bar.</summary>
+    public ProgressBar HealthBar => _health;
+
     public override void _Ready()
     {
         _health = new ProgressBar { Name = "Health", CustomMinimumSize = new Vector2(240, 18), ShowPercentage = false, MaxValue = 100 };
+        // The theme's bar fills cyan; health is blue (§6).
+        _health.AddThemeStyleboxOverride("fill", _fill);
         AddChild(_health);
-        _health.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.CenterBottom, Control.LayoutPresetMode.KeepSize, 24);
+        Layout();
+        GetViewport().SizeChanged += Layout;
         _healthText = new Label { Name = "HealthText", HorizontalAlignment = HorizontalAlignment.Center };
         _health.AddChild(_healthText);
         _healthText.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
@@ -68,7 +79,7 @@ public partial class SurvivalHud : CanvasLayer
         _hint.Position += new Vector2(0, 40);
         _status = new Label { Name = "Status", HorizontalAlignment = HorizontalAlignment.Center };
         AddChild(_status);
-        _status.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.CenterBottom, Control.LayoutPresetMode.KeepSize, 52);
+        _status.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.CenterBottom, Control.LayoutPresetMode.KeepSize, 80);
         _deathScreen = new ColorRect { Name = "DeathScreen", Color = new Color(0.35f, 0f, 0f, 0.55f), Visible = false, MouseFilter = Control.MouseFilterEnum.Ignore };
         AddChild(_deathScreen);
         _deathScreen.SetAnchorsPreset(Control.LayoutPreset.FullRect);
@@ -77,16 +88,28 @@ public partial class SurvivalHud : CanvasLayer
         _deathText.SetAnchorsPreset(Control.LayoutPreset.FullRect);
     }
 
+    public override void _ExitTree() => GetViewport().SizeChanged -= Layout;
+
+    // Top left, inside the safe area.
+    private void Layout()
+    {
+        var margin = HudRoot.Margin(GetViewport());
+        _health.SetAnchorsPreset(Control.LayoutPreset.TopLeft);
+        _health.Position = margin;
+    }
+
     public override void _Process(double delta)
     {
         var own = Survival.Own;
         var survival = own?.Mode == GameMode.Survival;
-        _health.Visible = survival;
+        var hud = !HudRoot.Hidden;
+        _health.Visible = survival && hud;
+        _status.Visible = hud;
         if (own is not null)
         {
             _health.MaxValue = own.MaxHealth;
             _health.Value = own.Health;
-            _health.Modulate = own.Health <= own.MaxHealth * (Survival.Settings?.LowHealth ?? 0) ? UiTokens.Error : Colors.White;
+            _fill.BgColor = own.Health <= own.MaxHealth * (Survival.Settings?.LowHealth ?? 0) ? UiTokens.Error : UiTokens.Blue;
             _healthText.Text = $"{own.Health:0} / {own.MaxHealth:0}";
         }
         _deathScreen.Visible = own?.Dead == true;
@@ -97,6 +120,7 @@ public partial class SurvivalHud : CanvasLayer
             _deathText.Text = wait > 0 ? Loc.T("You died.\nRespawn in {0} s", $"{Math.Ceiling(wait):0}") : Loc.T("You died.\n[{0}] respawn at {1}", GameInput.Label(InputActions.Interact), where);
         }
         _hint.Text = own is { Dead: true } ? "" : Interaction() is { } what ? $"[{GameInput.Label(InputActions.Interact)}] {what.Label}" : "";
+        _hint.Visible = hud && !TooltipShowing();
     }
 
     public override void _Input(InputEvent @event)

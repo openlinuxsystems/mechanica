@@ -1,7 +1,7 @@
 {
   "id": "beacon",
   "name": "Beacon",
-  "description": "Press F to switch it on: it flashes and pings so a base or a wreck can be found again, by day or night.",
+  "description": "Use it to switch it on: it flashes and pings so a base or a wreck can be found again, by day or night.",
   "category": "light",
   "mass": 2,
   "durability": 4,

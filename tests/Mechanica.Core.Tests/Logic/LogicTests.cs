@@ -313,6 +313,7 @@ public class LogicTests
         _host.Signals.Step([c]);
         _seats.Sit(Peer, 1, 3);
         _host.Scripts[2] = ("scripts/gate.lua", "boom at line 3");
+        c.SetPartDamage(2, 4.5f);
         var result = Dispatch(Player, LogicActions.InspectCreation, new InspectCreationArgs(1));
         Assert.True(result.Ok, result.ToString());
         var inspection = result.Value!.Value.Deserialize<CreationInspection>(ActionJson.Options)!;
@@ -322,6 +323,8 @@ public class LogicTests
         Assert.Equal("and", inspection.Parts[1].Settings!["mode"].GetString());
         Assert.Equal("boom at line 3", inspection.Parts[1].Fault);
         Assert.Equal(Peer, inspection.Parts[2].Occupant);
+        Assert.Equal(4.5f, inspection.Parts[1].Damage);
+        Assert.Equal(0f, inspection.Parts[0].Damage);
         Assert.Equal([new LogicLink(1, 2)], inspection.Links);
         Assert.Equal(3f, inspection.Mass);
         Assert.Single(inspection.Bodies);

@@ -8,7 +8,8 @@ namespace Mechanica.Game.Player;
 /// <summary>
 /// Turns this machine's keyboard and mouse into <see cref="PlayerInput"/> for one player.
 /// It writes into the controller; on a client, <see cref="Net.PlayerSync"/> also sends each tick's input to the host.
-/// Crouch slows the player (and dives in deep water). Click captures the mouse, Esc releases it, Zoom in (X) goes first-person and Zoom out (C) third-person.
+/// Crouch slows the player (and dives in deep water). Click captures the mouse and Esc releases it. The camera starts
+/// third-person (UI spec §6); Zoom in (X) and Zoom out (C) step it closer or further, and all the way in is first-person.
 /// Look speed, inverted look and field of view come from the player's settings. While the mouse is free
 /// (a menu, the inventory or a panel is open) the player stands still and a seated player stops driving.
 /// </summary>
@@ -30,6 +31,7 @@ public partial class LocalPlayerInput : Node
         Target.Camera.Fov = GameSettings.Current.FieldOfView;
         GameSettings.Changed += OnSettingsChanged;
         Target.MakeCameraCurrent();
+        Target.CameraDistance = Target.Settings.CameraDistance;
         // Run before the controller so it simulates this frame's input.
         ProcessPhysicsPriority = Target.ProcessPhysicsPriority - 1;
     }
@@ -53,10 +55,10 @@ public partial class LocalPlayerInput : Node
             default:
                 if (GameInput.Pressed(@event, InputActions.Pause))
                     Input.MouseMode = Input.MouseModeEnum.Visible;
-                else if (GameInput.Pressed(@event, InputActions.ZoomIn))
-                    Target.ThirdPerson = false;
-                else if (GameInput.Pressed(@event, InputActions.ZoomOut))
-                    Target.ThirdPerson = true;
+                else if (GameInput.Pressed(@event, InputActions.ZoomIn) && Input.MouseMode == Input.MouseModeEnum.Captured)
+                    Zoom(true);
+                else if (GameInput.Pressed(@event, InputActions.ZoomOut) && Input.MouseMode == Input.MouseModeEnum.Captured)
+                    Zoom(false);
                 else
                     return;
                 break;
@@ -64,6 +66,9 @@ public partial class LocalPlayerInput : Node
 
         GetViewport().SetInputAsHandled();
     }
+
+    /// <summary>Moves the camera one zoom step in or out.</summary>
+    public void Zoom(bool zoomIn) => Target.CameraDistance = CameraZoom.Step(Target.CameraDistance, zoomIn, Target.Settings);
 
     public override void _PhysicsProcess(double delta)
     {

@@ -1,4 +1,4 @@
--- Beacon (chunk 23): press F to switch it on. While on it flashes its light and pings every
+-- Beacon (chunk 23): use it to switch it on. While on it flashes its light and pings every
 -- properties.ping seconds, so a base or a wreck can be found again; flash (s) is how long each flash lasts.
 
 function on_create()

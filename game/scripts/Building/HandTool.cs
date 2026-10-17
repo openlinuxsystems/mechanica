@@ -92,6 +92,12 @@ public abstract partial class HandTool : Node
     /// <summary>The gesture a click with this tool plays.</summary>
     protected virtual CharacterGesture UseGesture => CharacterGesture.ToolUse;
 
+    /// <summary>
+    /// What the crosshair shows for this tool now (UI spec §8): blue when a click would do something. By
+    /// default that is whenever a part is aimed at.
+    /// </summary>
+    public virtual Core.Ui.CrosshairState Crosshair => PartHit(CastRay()) is null ? Core.Ui.CrosshairState.Default : Core.Ui.CrosshairState.Valid;
+
     /// <summary>One line for the HUD: the tool, its state and its keys.</summary>
     public abstract string HudText();
 
@@ -109,9 +115,8 @@ public abstract partial class HandTool : Node
     /// <summary>Casts a ray from <paramref name="player"/>'s camera out to <paramref name="reach"/> metres, ignoring the player.</summary>
     public static RayHit? Cast(PlayerController player, float reach)
     {
-        var camera = player.Camera.GlobalTransform;
-        var from = camera.Origin;
-        var query = PhysicsRayQueryParameters3D.Create(from, from - camera.Basis.Z * reach);
+        var from = player.AimOrigin;
+        var query = PhysicsRayQueryParameters3D.Create(from, from - player.Camera.GlobalBasis.Z * reach);
         query.Exclude = [player.GetRid()];
         var hit = player.GetWorld3D().DirectSpaceState.IntersectRay(query);
         return hit.Count == 0
@@ -129,8 +134,8 @@ public abstract partial class HandTool : Node
         return node.Creation.PartAt(cell) is { } part ? (node, part.Id) : null;
     }
 
-    /// <summary>The camera's world position.</summary>
-    protected Vector3 Eye => Player.Camera.GlobalPosition;
+    /// <summary>Where the player aims from (<see cref="PlayerController.AimOrigin"/>).</summary>
+    protected Vector3 Eye => Player.AimOrigin;
 
     /// <summary>Sends a request and records the host's answer.</summary>
     protected void Send<TArgs>(string action, TArgs args, Action<ActionResult>? done)

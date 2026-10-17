@@ -56,6 +56,7 @@ public partial class CompassHud : CanvasLayer
     public override void _Ready()
     {
         Layer = 2;
+        AddToGroup(HudRoot.Group);
         _font = ThemeDB.FallbackFont;
         _bar = UiInput.KeepMouse(new Control { Name = "Compass" });
         _bar.Draw += DrawBar;
@@ -83,7 +84,7 @@ public partial class CompassHud : CanvasLayer
         var from = player.GlobalPosition.ToNumerics();
         _heading = Compass.Heading(player.Camera.GlobalRotation.Y);
         _marks = [.. Waypoints().Select(w => (w, Compass.Mark(from, _heading, w.Position)))];
-        UpdateWorldMarkers(show);
+        UpdateWorldMarkers(show && !HudRoot.Hidden);
         _bar.Modulate = Colors.White with { A = player.ThirdPerson ? 1f : 0.8f };
         _bar.QueueRedraw();
     }

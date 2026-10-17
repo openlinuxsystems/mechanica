@@ -65,6 +65,24 @@ public sealed record PlayerMovementSettings
     /// <summary>How fast the camera moves between standing and crouching eye height in m/s.</summary>
     public float StanceSpeed { get; init; } = 4f;
 
+    /// <summary>How far behind the player the third-person camera starts, in metres (0 starts first-person).</summary>
+    public float CameraDistance { get; init; } = 3.5f;
+
+    /// <summary>The closest third-person camera distance in metres; zooming in past it goes first-person.</summary>
+    public float CameraMinDistance { get; init; } = 1.5f;
+
+    /// <summary>The furthest third-person camera distance in metres.</summary>
+    public float CameraMaxDistance { get; init; } = 6f;
+
+    /// <summary>Metres one zoom step moves the camera.</summary>
+    public float CameraZoomStep { get; init; } = 1f;
+
+    /// <summary>Metres the third-person camera sits right of the head, over the shoulder, so the player doesn't hide the crosshair.</summary>
+    public float CameraShoulder { get; init; } = 0.5f;
+
+    /// <summary>Metres the third-person camera sits above the head.</summary>
+    public float CameraRaise { get; init; } = 0.25f;
+
     /// <summary>How deep the feet are below the water surface when the player starts swimming, in metres.</summary>
     public float SwimDepth { get; init; } = 1.2f;
 
@@ -144,6 +162,16 @@ public sealed record PlayerMovementSettings
         if (!float.IsFinite(CrouchEyeHeight) || CrouchEyeHeight <= 0f || CrouchEyeHeight > CrouchHeight || CrouchEyeHeight > EyeHeight)
             throw new FormatException($"crouch_eye_height must be in (0, crouch_height] and at most eye_height (got {CrouchEyeHeight}).");
         Positive(StanceSpeed, "stance_speed");
+        Positive(CameraMinDistance, "camera_min_distance");
+        Positive(CameraZoomStep, "camera_zoom_step");
+        if (!float.IsFinite(CameraShoulder) || Math.Abs(CameraShoulder) > 2f)
+            throw new FormatException($"camera_shoulder must be within 2 m either side (got {CameraShoulder}).");
+        if (!float.IsFinite(CameraRaise) || Math.Abs(CameraRaise) > 2f)
+            throw new FormatException($"camera_raise must be within 2 m (got {CameraRaise}).");
+        if (!float.IsFinite(CameraMaxDistance) || CameraMaxDistance < CameraMinDistance)
+            throw new FormatException($"camera_max_distance must be at least camera_min_distance (got {CameraMaxDistance}).");
+        if (!float.IsFinite(CameraDistance) || CameraDistance != 0f && (CameraDistance < CameraMinDistance || CameraDistance > CameraMaxDistance))
+            throw new FormatException($"camera_distance must be 0 (first-person) or from camera_min_distance to camera_max_distance (got {CameraDistance}).");
     }
 
     private static void Positive(float value, string name)

@@ -1,7 +1,7 @@
 {
   "id": "horn",
   "name": "Horn",
-  "description": "Honks while its input is on: link a button or a seat-controlled switch to it. Press F on it for a short honk.",
+  "description": "Honks while its input is on: link a button or a seat-controlled switch to it. Use it for a short honk.",
   "category": "interactive",
   "mass": 0.8,
   "durability": 2,

@@ -1,0 +1,10 @@
+{
+  // The in-world HUD (UI spec §6, §8, §9, §11). Read by src/Mechanica.Core/Ui/Hud.cs.
+  "tooltip_delay_seconds": 0.25,
+  "tooltip_fade_seconds": 0.1,
+  "tooltip_offset": 24,
+  // Share of the screen kept clear around edge-anchored HUD elements.
+  "safe_area": 0.02,
+  "hint_dismiss_seconds": 0.6,
+  "crosshair_pulse_hz": 2.0
+}
