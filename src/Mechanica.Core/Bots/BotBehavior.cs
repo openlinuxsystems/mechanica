@@ -69,6 +69,13 @@ public static class BotBehavior
         new("wait", BotNodeShape.Leaf, "Stands still. Running for the time, then success.",
             [new("seconds", "number", "1", "How long, in s.")]),
         new("stop", BotNodeShape.Leaf, "Stops walking. Succeeds.", []),
+        new("hesitate", BotNodeShape.Leaf,
+            "Balks at something spinning near the bot (a part on a turning bearing: a wheel, rotor or saw): backs away from it, running, for a while, then fails so the tree goes on anyway. Fails at once when nothing spins near. Backing out of range does not end it early, and it hesitates again only once the way has been clear for as long.",
+            [new("range", "number", "4", "How near a spinning part must be, in m."), new("min_speed", "number", "4", "How fast it must turn to count, in rad/s."),
+                new("seconds", "number", "2", "How long it hesitates, in s.")]),
+        new("break_objects", BotNodeShape.Leaf,
+            "Uses an attack on the nearest world object (tree, rock, bush) within its reach, so the bot clears its way. Succeeds when it hit one; fails when none is in reach or the attack is not ready. The attack needs object_damage.",
+            [new("attack", "attack", "", "Which attack.")]),
         new("call", BotNodeShape.Leaf, "Calls a function from the bot's script with (node, dt); its return value (a status string or a boolean) is the result.",
             [new("function", "string", "", "Name of the global function in the bot's script.")]),
     ];

@@ -2,10 +2,12 @@ using System.Numerics;
 using Mechanica.Core.Actions;
 using Mechanica.Core.Bots;
 using Mechanica.Core.Building;
+using Mechanica.Core.Creations;
 using Mechanica.Core.Data;
 using Mechanica.Core.Items;
 using Mechanica.Core.Survival;
 using Mechanica.Core.Tests.Survival;
+using Mechanica.Core.World;
 using static Mechanica.Core.Tests.Survival.SurvivalFixture;
 
 namespace Mechanica.Core.Tests.Bots;
@@ -181,5 +183,108 @@ public sealed class BotActionsTests
         var views = S.Ok<List<BotView>>(Me, BotActions.GetBots, new NoArgs());
         Assert.Equal(new BotView(bot, BotFixture.Critter, new Vec3(2, 0, 2), 0, 30, 30, false, null), views.Single());
         Assert.Equal(bot, S.Ok<BotView>(Me, BotActions.GetBot, new BotArgs(bot)).Id);
+    }
+
+    [Fact]
+    public void Bubble_wrap_slows_a_player_for_a_while()
+    {
+        // You stand at (0, 0, 6).
+        var bot = _f.Spawn(BotFixture.Spitter, new Vector3(0, 0, 8));
+        Assert.Equal(1f, S.Survival.SpeedScale(You.Peer));
+        S.Ok(BotFixture.Brain, BotActions.BotAttack, new BotAttackArgs(bot, "wrap", Player: You.Peer));
+        Assert.Equal(0.5f, S.Survival.SpeedScale(You.Peer));
+        Assert.Equal(1f, S.Survival.SpeedScale(Me.Peer));
+        var view = S.Survival.View(You.Peer)!;
+        Assert.Equal((0.5f, 3f), (view.Slow, view.SlowFor));
+        _f.Advance(2);
+        Assert.Equal(0.5f, S.Survival.SpeedScale(You.Peer));
+        // A second hit keeps it going from now.
+        S.Ok(BotFixture.Brain, BotActions.BotAttack, new BotAttackArgs(bot, "wrap", Player: You.Peer));
+        _f.Advance(2);
+        Assert.Equal(0.5f, S.Survival.SpeedScale(You.Peer));
+        _f.Advance(1.5);
+        Assert.Equal(1f, S.Survival.SpeedScale(You.Peer));
+        Assert.Equal((1f, 0f), (S.Survival.View(You.Peer)!.Slow, S.Survival.View(You.Peer)!.SlowFor));
+    }
+
+    [Fact]
+    public void A_stronger_slow_wins_and_death_or_creative_clear_it()
+    {
+        S.Survival.Slow(You.Peer, 0.5f, 10);
+        S.Survival.Slow(You.Peer, 0.8f, 2);
+        Assert.Equal(0.5f, S.Survival.SpeedScale(You.Peer));
+        Assert.Equal(10f, S.Survival.View(You.Peer)!.SlowFor);
+        S.Survival.Damage(You.Peer, 1000, "test");
+        Assert.Equal(1f, S.Survival.SpeedScale(You.Peer));
+
+        var creative = new BotFixture(GameMode.Creative);
+        creative.Survival.Survival.Slow(You.Peer, 0.5f, 10);
+        Assert.Equal(1f, creative.Survival.Survival.SpeedScale(You.Peer));
+    }
+
+    [Fact]
+    public void A_bot_breaks_a_world_object_with_an_attack_that_has_object_damage()
+    {
+        var tree = Tree(new WorldObjectId(0, 0, 1), new Vector3(10, 0, 0), health: 30);
+        var bot = _f.Spawn(BotFixture.Smasher, new Vector3(7, 0, 0));
+        Assert.Equal([tree.ToString()], _f.Bots.ObjectsNear(_f.Bots.Find(bot)!.Centre, 5).Select(o => o.Id));
+        Assert.Contains("cannot break world objects",
+            S.Refused(BotFixture.Brain, BotActions.BotAttack, new BotAttackArgs(bot, "poke", Object: tree.ToString())));
+        var hit = S.Ok<BotAttackResult>(BotFixture.Brain, BotActions.BotAttack, new BotAttackArgs(bot, "kick", Object: tree.ToString())).Hits.Single();
+        Assert.Equal(("object", 20f, tree.ToString()), (hit.Kind, hit.Damage, hit.Object));
+        Assert.False(S.World.State.IsDestroyed(tree));
+        _f.Advance(1);
+        S.Ok(BotFixture.Brain, BotActions.BotAttack, new BotAttackArgs(bot, "kick", Object: tree.ToString()));
+        Assert.True(S.World.State.IsDestroyed(tree));
+        // Its drops lie where it stood.
+        Assert.Contains(S.Survival.Drops.Values, d => d.Items.Any(i => i.Item == Scrap));
+        Assert.Contains("not there", S.Refused(BotFixture.Brain, BotActions.BotAttack, new BotAttackArgs(_f.Spawn(BotFixture.Smasher, new Vector3(7, 0, 0)), "kick", Object: tree.ToString())));
+    }
+
+    [Fact]
+    public void An_area_attack_with_object_damage_breaks_objects_round_the_bot()
+    {
+        var near = Tree(new WorldObjectId(0, 0, 1), new Vector3(2, 0, 0), health: 20); // 1.8 m off: 22 damage
+        var far = Tree(new WorldObjectId(0, 0, 2), new Vector3(9, 0, 0), health: 30);
+        var bot = _f.Spawn(BotFixture.Smasher, new Vector3(0, 0, 0));
+        var hits = S.Ok<BotAttackResult>(BotFixture.Brain, BotActions.BotAttack, new BotAttackArgs(bot, "stomp")).Hits;
+        Assert.Contains(hits, h => h.Kind == "object" && h.Object == near.ToString());
+        Assert.True(S.World.State.IsDestroyed(near));
+        Assert.False(S.World.State.IsDestroyed(far));
+    }
+
+    [Fact]
+    public void Spinning_parts_are_the_far_side_of_a_turning_bearing()
+    {
+        var creation = new Creation(S.World.NextCreationId(), Creations.TestParts.Catalog());
+        Creations.TestParts.Place(creation, Creations.TestParts.Block, new GridCell(0, 0, 0));
+        Creations.TestParts.Place(creation, Creations.TestParts.Bearing, new GridCell(0, 1, 0));
+        var rotor = Creations.TestParts.Place(creation, Creations.TestParts.Block, new GridCell(0, 2, 0)).Id;
+        creation.SetAllBodyPoses(new Pose(new Vector3(3, 0, 0), Quaternion.Identity));
+        S.World.Added(creation);
+        var link = Assert.Single(creation.Joints);
+        var at = new Vector3(0, 0.5f, 0);
+        Assert.Empty(_f.Bots.SpinningNear(at, 6, 4));
+
+        creation.SetBodyVelocity(link.BodyB, new BodyVelocity(Vector3.Zero, new Vector3(0, 10, 0)));
+        var spinning = Assert.Single(_f.Bots.SpinningNear(at, 6, 4));
+        Assert.Equal((creation.Id, rotor), (spinning.Creation, spinning.Part));
+        Assert.Equal(10f, spinning.Speed, 3);
+        Assert.Empty(_f.Bots.SpinningNear(at, 6, 12));
+        Assert.Empty(_f.Bots.SpinningNear(at, 1, 4));
+
+        // Turning together (the whole Creation tumbling) is not spinning.
+        creation.SetBodyVelocity(link.BodyA, new BodyVelocity(Vector3.Zero, new Vector3(0, 10, 0)));
+        Assert.Empty(_f.Bots.SpinningNear(at, 6, 4));
+    }
+
+    private WorldObjectId Tree(WorldObjectId id, Vector3 at, float health)
+    {
+        S.World.Objects[id] = new WorldObjectPlacement(id, new WorldObjectDefinition
+        {
+            Id = "tree", Health = health, Collider = new ShapeDefinition { Radius = 0.3f, At = new Vec3(0, 1, 0) },
+            Drops = [new ObjectDrop { Item = Scrap, Count = 2 }],
+        }, at, 0, 1);
+        return id;
     }
 }

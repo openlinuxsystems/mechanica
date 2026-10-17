@@ -165,6 +165,7 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
 
     public override void _PhysicsProcess(double delta)
     {
+        UpdateSpeedScales();
         if (!Session.IsHost || Actions is null)
             return;
         Actions.Tick((float)delta);
@@ -300,6 +301,20 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
     /// <inheritdoc/>
     public void Push(Creation creation, int bodyIndex, System.Numerics.Vector3 point, System.Numerics.Vector3 impulse) =>
         Build.Push(creation, bodyIndex, point, impulse);
+
+    // Slowed players move slower: the host from its own state, a client from the vitals it was sent.
+    private void UpdateSpeedScales()
+    {
+        foreach (var (peer, player) in Players.Players)
+        {
+            if (Session.IsHost && Actions is not null)
+                player.SpeedScale = Actions.SpeedScale(peer);
+            else if (_vitals.TryGetValue(peer, out var view) && view.SlowFor > Now - _vitalsAt.GetValueOrDefault(peer))
+                player.SpeedScale = view.Slow;
+            else
+                player.SpeedScale = 1f;
+        }
+    }
 
     // ---- Host: players, impacts, soil ----
 

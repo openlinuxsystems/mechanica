@@ -1,7 +1,7 @@
 {
   "id": "spooler_green",
   "name": "Green Spooler",
-  "description": "Fires bubble wrap: less damage, but it keeps stinging for a while.",
+  "description": "Fires bubble wrap: less damage, but whoever it hits is slowed down for a while.",
   "family": "spooler",
   "health": 40,
   "speed": 3,
@@ -21,8 +21,8 @@
       "part_damage": 5,
       "range": 16,
       "interval": 2.5,
-      "damage_over_time": {
-        "per_second": 2,
+      "slow": {
+        "factor": 0.5,
         "seconds": 3
       },
       "sound": "spooler_fire"

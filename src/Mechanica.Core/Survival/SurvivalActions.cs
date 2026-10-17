@@ -73,6 +73,8 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         public bool Dead;
         public double DiedAt;
         public (int Creation, int Part)? Bed;
+        public float SlowFactor = 1f;
+        public double SlowUntil;
     }
 
     /// <summary>Creative or Survival. The host sets it before players join.</summary>
@@ -160,8 +162,30 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         if (!_vitals.TryGetValue(peer, out var v))
             return null;
         var wait = v.Dead ? Math.Max(0, settings.RespawnDelay - (float)(world.Now - v.DiedAt)) : 0f;
-        return new VitalsView(peer, v.Health, settings.MaxHealth, v.Dead, wait, BedOf(peer) is not null, Mode);
+        var slowFor = (float)Math.Max(0, v.SlowUntil - world.Now);
+        return new VitalsView(peer, v.Health, settings.MaxHealth, v.Dead, wait, BedOf(peer) is not null, Mode,
+            slowFor > 0 ? v.SlowFactor : 1f, slowFor);
     }
+
+    /// <summary>
+    /// Slows a player: their movement speed is multiplied by <paramref name="factor"/> (0 to 1) for
+    /// <paramref name="seconds"/>. A stronger or longer slow already on them is kept. Survival only, and
+    /// not on the dead. Bots' bubble wrap (chunk 21) slows players through this.
+    /// </summary>
+    public void Slow(int peer, float factor, float seconds)
+    {
+        if (!_vitals.TryGetValue(peer, out var v) || Mode == GameMode.Creative || v.Dead
+            || !(factor >= 0 && factor < 1) || !(seconds > 0) || !float.IsFinite(seconds))
+            return;
+        var active = v.SlowUntil > world.Now;
+        v.SlowFactor = active ? Math.Min(v.SlowFactor, factor) : factor;
+        v.SlowUntil = Math.Max(active ? v.SlowUntil : 0, world.Now + seconds);
+        VitalsChanged?.Invoke(peer);
+    }
+
+    /// <summary>What <paramref name="peer"/>'s movement speed is multiplied by now: 1 unless they are slowed.</summary>
+    public float SpeedScale(int peer) =>
+        _vitals.TryGetValue(peer, out var v) && !v.Dead && v.SlowUntil > world.Now ? v.SlowFactor : 1f;
 
     /// <summary>
     /// Takes <paramref name="amount"/> health from a player (nothing in Creative or when dead). At 0 they
@@ -193,6 +217,7 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     {
         v.Health = 0;
         v.Dead = true;
+        v.SlowUntil = 0;
         v.DiedAt = world.Now;
         if (!settings.DropInventoryOnDeath || world.FeetOf(peer) is not { } feet)
             return;

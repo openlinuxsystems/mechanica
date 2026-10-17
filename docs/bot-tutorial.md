@@ -22,7 +22,11 @@ this tutorial is the Sentry Drone in [`examples/mods/example_bots`](../examples/
 5. On the **Script** tab, write any hooks or custom nodes (section 4) and click **Save script**.
 6. Click **Export**. The editor checks the bot against the loaded mods and writes `bots/<id>.json`.
 
-To see it in a world, start a Creative game with your mod enabled and send `SpawnBot` (section 6)
+7. Click **Test in Sandbox**. The editor exports the bot, opens the Test Sandbox with the mods reloaded
+   and spawns the bot a few metres in front of you. The sandbox's bot spawner (**Spawn bot**) spawns any
+   loaded bot type, and **Add local client** checks it with a client too. **Back** returns to the editor.
+
+To see it in a real world, start a Creative game with your mod enabled and send `SpawnBot` (section 6)
 through the [External AI Endpoint](ai-endpoint.md), or add the bot to your raid table and send
 `StartRaid`.
 
@@ -63,6 +67,8 @@ An attack:
 | `radius` | number, m | required for area | Area attacks only: blast radius; damage falls to 0 at the edge. |
 | `interval` | number, s | required | Seconds between two uses. |
 | `damage_over_time` | `{per_second, seconds}` | none | A lasting effect on players hit. |
+| `slow` | `{factor, seconds}` | none | Players hit move at `factor` (more than 0, less than 1) of their speed for `seconds`. The strongest slow on a player wins. Survival only. |
+| `object_damage` | number | 0 | Damage to world objects (trees, rocks, bushes): the one it is aimed at (`{object = id}`), or for an area attack every one in its radius. 0 means it cannot hurt them. Broken objects drop their items as if a player broke them. |
 | `kills_self` | bool | false | Using it kills the bot (a kamikaze charge). |
 | `hits_parts` | bool | true | Whether it can hurt crops and parts. |
 | `sound` | sound id | `<family>_attack` | Sound event it plays. |
@@ -130,6 +136,8 @@ Leaves:
 | `wander` | `radius` (8), `speed` (0.4) | Strolls between random spots near where it spawned. Always running. |
 | `wait` | `seconds` (1) | Stands still. Running for the time, then success. |
 | `stop` | | Stops walking. Succeeds. |
+| `hesitate` | `range` (4), `min_speed` (4), `seconds` (2) | Balks at a part spinning on a joint within `range` m (a bearing's rotor, a wheel, a saw) turning faster than `min_speed` rad/s: backs away, running, for `seconds`, then fails so the tree goes on. Fails at once when nothing spins near. Put it under `invert` before a `chase`. |
+| `break_objects` | `attack` | Uses the attack on the nearest world object within its reach. Succeeds when it hit one; fails when none is in reach or the attack is not ready. The attack needs `object_damage`. |
 | `call` | `function` | Calls a function of the bot's script with `(node, dt)`; its return value is the result. |
 
 `speed` is a share of top speed, 0 to 1. The editor's palette shows the same list with each node's help
@@ -142,6 +150,10 @@ text, and the data checker refuses unknown parameters and attack ids that the bo
 - **A once-in-a-while move:** wrap it in `succeed(cooldown(...))` so the rest of the sequence runs on
   either way. The Rakehand's battle cry is `succeed(cooldown(call "cry"))`.
 - **Shy creature:** `selector[ sequence[find_player, flee], wander ]` (the Grazer, with `passive: true`).
+- **Wary of blades:** put `invert(hesitate)` before each `chase`, so the bot balks at a spinning saw
+  or wheel before it comes on anyway (the Rakehand).
+- **Clearing its way:** `sequence[ succeed(break_objects), selector[...] ]` smashes trees and rocks in
+  reach whatever else it is doing (the Thresher, whose kick has `object_damage`).
 
 ### Using the editor's Behavior tab
 
@@ -229,7 +241,7 @@ The bot whose script is running:
 | `bot.alert()`, `bot.sound(id)` | Play its `_alert` sound, or any sound event, at the bot. |
 
 A **target** is a table naming one thing: `{player = peer}`, `{creation = id, part = id}` (a part or a
-crop's soil), or `{bot = id}`.
+crop's soil), `{bot = id}`, or `{object = id}` (a world object, for attacks with `object_damage`).
 
 ### world.*
 
@@ -239,6 +251,8 @@ crop's soil), or `{bot = id}`.
 | `world.players(range?)` | Living players in range (default: sight), nearest first: `{peer, position, distance}`. |
 | `world.crops(range?)`, `world.crops_near(point, range)` | Planted crops: `{creation, part, position, value, ripe, distance}`. |
 | `world.bots(range?)` | Other bots: `{bot, type, position, distance}`. |
+| `world.objects(range?)` | World objects a bot can break (trees, rocks, bushes) within `range` of its body's edge (default: sight), nearest first: `{object, position, distance}`. |
+| `world.spinning(range?, min_speed?)` | Parts spinning on a joint within `range` m (default: sight) and faster than `min_speed` rad/s (default 4) against what they turn on: `{creation, part, position, speed, distance}`, nearest first. |
 | `world.locate(target)` | Where a target is (`vec3`), or nil. |
 | `world.raycast(from, to)` | The first thing hit: `{position, player?, creation?, part?, bot?}`, or nil. |
 
@@ -295,7 +309,7 @@ starting raids are open to players only in Creative.
 | `SpawnBot` | `bot`, `position`, `yaw?` | Returns `{bot}`. |
 | `DespawnBot` | `bot` | |
 | `MoveBot` | `bot`, `direction?`, `speed?` | Walk that way; no direction stops it. |
-| `BotAttack` | `bot`, `attack`, `player?` / `creation?`, `part?` / `target?` | Checked for reach, line of sight and cooldown. Returns `{hits}`. |
+| `BotAttack` | `bot`, `attack`, `player?` / `creation?`, `part?` / `target?` / `object?` | Checked for reach, line of sight and cooldown. Returns `{hits}`. |
 | `GetBots`, `GetBot` | none; `bot` | Queries. |
 | `StartRaid` | `level?` | Starts a raid now at the given (or the current) level. |
 | `GetRaid` | none | The raid in progress. |

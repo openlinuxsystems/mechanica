@@ -84,6 +84,9 @@ public partial class BotEditorScreen : Control
     /// <summary>The Back button was pressed.</summary>
     public event Action? CloseRequested;
 
+    /// <summary>"Test in Sandbox" exported the bot; carries its qualified id.</summary>
+    public event Action<string>? TestRequested;
+
     public override void _Ready()
     {
         SetAnchorsPreset(LayoutPreset.FullRect);
@@ -180,6 +183,15 @@ public partial class BotEditorScreen : Control
         if (result.Succeeded)
             RefreshBots();
         return result;
+    }
+
+    /// <summary>Exports the open bot and, when that worked, asks to try it in the Test Sandbox.</summary>
+    public bool TestInSandbox()
+    {
+        if (Export() is not { Succeeded: true } result)
+            return false;
+        TestRequested?.Invoke(result.QualifiedId);
+        return true;
     }
 
     /// <summary>Checks the Script tab's Lua and saves it as the bot's script. False on a syntax error.</summary>
@@ -292,6 +304,7 @@ public partial class BotEditorScreen : Control
         Button(bar, "Undo", () => Document?.Undo());
         Button(bar, "Redo", () => Document?.Redo());
         Button(bar, "Export", () => Export());
+        Button(bar, "Test in Sandbox", () => TestInSandbox());
         bar.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
         Button(bar, "Help", () => OpenHelp());
         Button(bar, "Back", () => CloseRequested?.Invoke());

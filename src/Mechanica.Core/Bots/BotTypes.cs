@@ -24,7 +24,8 @@ public sealed record MoveBotArgs(int Bot, Vec3? Direction = null, float? Speed =
 
 /// <summary>
 /// Arguments of <c>BotAttack</c>. Melee and ranged attacks name exactly one target: a player, a part (a
-/// crop's soil counts) or another bot. Area attacks need none.
+/// crop's soil counts), another bot or, for an attack with <c>object_damage</c>, a world object. Area
+/// attacks need none.
 /// </summary>
 /// <param name="Bot">The attacking bot.</param>
 /// <param name="Attack">Id of one of its attacks.</param>
@@ -32,7 +33,9 @@ public sealed record MoveBotArgs(int Bot, Vec3? Direction = null, float? Speed =
 /// <param name="Creation">Creation holding the part to hit.</param>
 /// <param name="Part">The part to hit.</param>
 /// <param name="Target">The bot to hit.</param>
-public sealed record BotAttackArgs(int Bot, string Attack, int? Player = null, int? Creation = null, int? Part = null, int? Target = null);
+/// <param name="Object">The world object to hit (a tree, rock or bush), by its id.</param>
+public sealed record BotAttackArgs(int Bot, string Attack, int? Player = null, int? Creation = null, int? Part = null, int? Target = null,
+    string? Object = null);
 
 /// <summary>Arguments of <c>StartRaid</c>.</summary>
 /// <param name="Level">Raid level to send; null picks it from the crops, as a raid check would.</param>

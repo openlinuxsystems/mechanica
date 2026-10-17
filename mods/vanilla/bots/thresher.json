@@ -1,7 +1,7 @@
 {
   "id": "thresher",
   "name": "Thresher",
-  "description": "A huge farming machine. Kicks, swipes, sprays pesticide, and shrugs off melee weapons.",
+  "description": "A huge farming machine. Kicks, swipes, sprays pesticide, shrugs off melee weapons and smashes trees and rocks in its way.",
   "family": "thresher",
   "health": 1500,
   "speed": 3,
@@ -21,7 +21,8 @@
       "damage": 10,
       "part_damage": 40,
       "range": 2,
-      "interval": 1
+      "interval": 1,
+      "object_damage": 60
     },
     {
       "id": "swipe",
@@ -59,67 +60,81 @@
     }
   ],
   "behavior": {
-    "type": "selector",
+    "type": "sequence",
     "children": [
       {
-        "type": "sequence",
+        "type": "succeed",
         "children": [
           {
-            "type": "find_player",
-            "range": 15
-          },
+            "type": "break_objects",
+            "attack": "kick"
+          }
+        ]
+      },
+      {
+        "type": "selector",
+        "children": [
           {
-            "type": "chase",
-            "attack": "swipe",
-            "speed": 1
-          },
-          {
-            "type": "selector",
+            "type": "sequence",
             "children": [
               {
-                "type": "attack",
-                "attack": "pesticide"
+                "type": "find_player",
+                "range": 15
+              },
+              {
+                "type": "chase",
+                "attack": "swipe",
+                "speed": 1
+              },
+              {
+                "type": "selector",
+                "children": [
+                  {
+                    "type": "attack",
+                    "attack": "pesticide"
+                  },
+                  {
+                    "type": "attack",
+                    "attack": "swipe"
+                  },
+                  {
+                    "type": "attack",
+                    "attack": "kick"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "sequence",
+            "children": [
+              {
+                "type": "in_raid"
+              },
+              {
+                "type": "find_crop"
+              },
+              {
+                "type": "chase",
+                "attack": "swipe",
+                "speed": 1
               },
               {
                 "type": "attack",
                 "attack": "swipe"
-              },
-              {
-                "type": "attack",
-                "attack": "kick"
               }
             ]
+          },
+          {
+            "type": "go_to_raid",
+            "radius": 6
+          },
+          {
+            "type": "wander",
+            "radius": 12,
+            "speed": 0.4
           }
         ]
-      },
-      {
-        "type": "sequence",
-        "children": [
-          {
-            "type": "in_raid"
-          },
-          {
-            "type": "find_crop"
-          },
-          {
-            "type": "chase",
-            "attack": "swipe",
-            "speed": 1
-          },
-          {
-            "type": "attack",
-            "attack": "swipe"
-          }
-        ]
-      },
-      {
-        "type": "go_to_raid",
-        "radius": 6
-      },
-      {
-        "type": "wander",
-        "radius": 12,
-        "speed": 0.4
       }
     ]
   }

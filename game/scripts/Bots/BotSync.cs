@@ -43,6 +43,8 @@ public partial class BotSync : Node3D, IBotWorld, IRaidWorld
     private int _tick;
     private double _sincePoll;
     private double _pollSeconds = 1.0;
+    private ModLoadResult _mods = null!;
+    private BotBook _book = null!;
 
     /// <summary>The session updates travel over. Set before adding to the tree.</summary>
     public NetSession Session { get; init; } = null!;
@@ -62,11 +64,19 @@ public partial class BotSync : Node3D, IBotWorld, IRaidWorld
     /// <summary>Sound, for bot and raid sounds. Optional.</summary>
     public SoundSync? Sounds { get; init; }
 
-    /// <summary>The loaded mods, whose bot scripts run. Set before adding to the tree.</summary>
-    public ModLoadResult Mods { get; set; } = null!;
+    /// <summary>The loaded mods, whose bot scripts run. Set before adding to the tree; <see cref="SetContent"/> swaps them.</summary>
+    public ModLoadResult Mods
+    {
+        get => _mods;
+        init => _mods = value;
+    }
 
-    /// <summary>Bot types. Set before adding to the tree.</summary>
-    public BotBook Book { get; init; } = null!;
+    /// <summary>Bot types. Set before adding to the tree; <see cref="SetContent"/> swaps them.</summary>
+    public BotBook Book
+    {
+        get => _book;
+        init => _book = value;
+    }
 
     /// <summary>The raid table. Set before adding to the tree.</summary>
     public RaidTable RaidTable { get; init; } = RaidTable.None;
@@ -114,7 +124,7 @@ public partial class BotSync : Node3D, IBotWorld, IRaidWorld
     {
         Settings ??= LoadSettings();
         var survival = Survival.Actions ?? throw new InvalidOperationException("Register the survival actions first.");
-        Bots = new BotActions(Book, Settings, survival, Survival, this) { Seed = seed };
+        Bots = new BotActions(new CurrentBook(this), Settings, survival, Survival, this) { Seed = seed };
         Bots.Register(dispatcher);
         survival.Bots = Bots;
         Raids = new RaidDirector(RaidTable, Bots, survival, this);
@@ -127,6 +137,27 @@ public partial class BotSync : Node3D, IBotWorld, IRaidWorld
         Raids.Changed += OnRaidChanged;
     }
 
+    /// <summary>
+    /// Switches to newly loaded mods and their bot types, as the Test Sandbox does after an editor exports:
+    /// bots spawned from now on use the new types and scripts.
+    /// </summary>
+    public void SetContent(ModLoadResult mods, BotBook book)
+    {
+        _mods = mods;
+        _book = book;
+    }
+
+    // The current Book and Mods, so the bot actions and brains keep working after SetContent swaps them.
+    private sealed class CurrentBook(BotSync sync) : IBotCatalog
+    {
+        public Bot? FindBot(string id) => sync.Book.FindBot(id);
+    }
+
+    private sealed class CurrentScripts(BotSync sync) : IBotScriptSource
+    {
+        public ScriptFile? FindScript(Bot bot) => new ModBotScriptSource(sync.Mods).FindScript(bot);
+    }
+
     public override void _Ready()
     {
         Settings ??= LoadSettings();
@@ -134,7 +165,7 @@ public partial class BotSync : Node3D, IBotWorld, IRaidWorld
         {
             var scripting = ScriptSync.LoadSettings();
             _pollSeconds = scripting.ReloadPollSeconds;
-            Runtime = new BotRuntime(scripting, Actions.Dispatcher, Bots, Raids, this, new ModBotScriptSource(Mods));
+            Runtime = new BotRuntime(scripting, Actions.Dispatcher, Bots, Raids, this, new CurrentScripts(this));
             Runtime.Message += Log;
             Runtime.Alerted += id => PlayBotSound(id, "alert");
             Runtime.Sounded += (id, sound) => { if (Bots.Find(id) is { } bot) Emit(sound, bot.Type.ModId, bot.Centre.ToGodot()); };

@@ -1,5 +1,6 @@
 using Godot;
 using Mechanica.Core.Actions;
+using Mechanica.Core.Bots;
 using Mechanica.Core.Data;
 using Mechanica.Core.Net;
 using Mechanica.Game.Creations;
@@ -9,9 +10,9 @@ using Mechanica.Game.Player;
 namespace Mechanica.Game.Editor;
 
 /// <summary>
-/// The Test Sandbox (chunk 5): the flat test world with a part spawner, for trying parts straight from
-/// the Part Editor. It can simulate multiplayer on one machine: "Add local client" starts the world
-/// hosting on localhost and joins up to <see cref="MaxLocalClients"/> extra game instances to it, each
+/// The Test Sandbox (chunk 5): the flat test world with a part spawner and a bot spawner, for trying parts
+/// straight from the Part Editor and bots straight from the Bot Behavior Editor. It can simulate
+/// multiplayer on one machine: "Add local client" starts the world hosting on localhost and joins up to <see cref="MaxLocalClients"/> extra game instances to it, each
 /// with its own physics world and network peer, shown in small views. Tab switches which instance you
 /// control and see full size. Spawning goes through the Action API from whichever instance you control,
 /// so a spawn from a client is validated by the host and appears for everyone (D10).
@@ -40,6 +41,8 @@ public partial class SandboxScreen : Control
     private CheckBox _jointOverlay = null!;
     private CheckBox _forceOverlay = null!;
     private List<string> _partIds = [];
+    private OptionButton _bots = null!;
+    private List<string> _botIds = [];
     private int _active;
     private int _port;
     private LocalPlayerInput? _input;
@@ -69,6 +72,9 @@ public partial class SandboxScreen : Control
 
     /// <summary>Placeable part ids the spawner lists.</summary>
     public IReadOnlyList<string> PartIds => _partIds;
+
+    /// <summary>Bot type ids the bot spawner lists.</summary>
+    public IReadOnlyList<string> BotIds => _botIds;
 
     /// <summary>The last action result shown, for tests.</summary>
     public string LastResult => _result.Text;
@@ -218,6 +224,25 @@ public partial class SandboxScreen : Control
         });
     }
 
+    /// <summary>
+    /// Asks the controlled instance's host to spawn a bot of type <paramref name="botId"/> a few metres in
+    /// front of the controlled player, facing them. <paramref name="done"/> gets the result.
+    /// </summary>
+    public void SpawnBot(string botId, Action<ActionResult>? done = null)
+    {
+        var player = Active.Main.LocalPlayer;
+        var origin = player?.GlobalPosition ?? Vector3.Zero;
+        var forward = player is null ? Vector3.Forward : -player.GlobalBasis.Z with { Y = 0 };
+        forward = forward.LengthSquared() > 0 ? forward.Normalized() : Vector3.Forward;
+        var at = origin + forward * 6f;
+        var yaw = Mathf.RadToDeg(player?.Rotation.Y ?? 0) + 180f;
+        Active.Main.Actions.Request(BotActions.SpawnBot, new SpawnBotArgs(botId, [at.X, at.Y, at.Z], yaw), result =>
+        {
+            _result.Text = result.Ok ? $"Spawned bot {botId}." : $"Bot spawn refused: {result.Message}";
+            done?.Invoke(result);
+        });
+    }
+
     /// <summary>Asks the host to remove every Creation.</summary>
     public void Clear(Action<ActionResult>? done = null) =>
         Active.Main.Actions.Request(CreationActions.ClearCreations, new NoArgs(), result =>
@@ -308,6 +333,11 @@ public partial class SandboxScreen : Control
         _parts.Clear();
         foreach (var id in _partIds)
             _parts.AddItem($"{_content.FindDefinition(id)?.Name}  ({id})");
+        var bots = Host.Main.BotTypes?.All ?? [];
+        _botIds = [.. bots.Select(b => b.QualifiedId).Order(StringComparer.Ordinal)];
+        _bots.Clear();
+        foreach (var id in _botIds)
+            _bots.AddItem($"{bots.First(b => b.QualifiedId == id).Name}  ({id})");
     }
 
     private void BuildPanel()
@@ -338,6 +368,15 @@ public partial class SandboxScreen : Control
         });
         AddButton(row, "Clear all", () => Clear());
         AddButton(row, "Reload mods", ReloadContent);
+        var botRow = new HBoxContainer();
+        column.AddChild(botRow);
+        _bots = new OptionButton { SizeFlagsHorizontal = SizeFlags.ExpandFill, FitToLongestItem = false };
+        botRow.AddChild(_bots);
+        AddButton(botRow, "Spawn bot", () =>
+        {
+            if (_bots.Selected >= 0 && _bots.Selected < _botIds.Count)
+                SpawnBot(_botIds[_bots.Selected]);
+        });
         var net = new HFlowContainer();
         column.AddChild(net);
         AddButton(net, "Add local client", () =>

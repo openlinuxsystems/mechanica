@@ -140,4 +140,50 @@ public class VanillaBotsTests
         var path = Path.Combine(TestMods.RepoRoot, "game", "data", "bot_templates", $"{name}.json");
         return File.Exists(path) ? File.ReadAllText(path) : null;
     }
+
+    [Fact]
+    public void TheGreenSpoolerSlowsTheRakehandHesitatesAndTheThresherBreaksObjects()
+    {
+        var bubble = Bot("spooler_green").Attack("bubble")!;
+        Assert.True(bubble.Slows);
+        Assert.Equal((0.5f, 3f, 0f), (bubble.SlowFactor, bubble.SlowSeconds, bubble.DamagePerSecond));
+        Assert.Contains("\"hesitate\"", Bot("rakehand").Behavior!.ToJsonString());
+        var thresher = Bot("thresher");
+        Assert.True(thresher.Attack("kick")!.ObjectDamage > 0);
+        Assert.Contains("\"break_objects\"", thresher.Behavior!.ToJsonString());
+        Assert.All(Book.Value.All.Where(b => b.QualifiedId != "vanilla:thresher").SelectMany(b => b.Attacks), a => Assert.Equal(0f, a.ObjectDamage));
+    }
+
+    [Theory]
+    [InlineData("""{ "factor": 1, "seconds": 2 }""", "$.attacks[0].slow.factor", "factor must be more than 0 and less than 1 (got 1).")]
+    [InlineData("""{ "factor": 0, "seconds": 2 }""", "$.attacks[0].slow.factor", "factor must be more than 0 and less than 1 (got 0).")]
+    [InlineData("""{ "seconds": 2 }""", "$.attacks[0].slow.factor", "factor (what speed is multiplied by, between 0 and 1) is required.")]
+    [InlineData("""{ "factor": 0.5 }""", "$.attacks[0].slow.seconds", "seconds is required.")]
+    public void BadSlowsAreReported(string slow, string path, string message)
+    {
+        var bot = new BotDefinition
+        {
+            Id = "spitter", Name = "Spitter", Health = 10, Speed = 1,
+            Attacks = [new BotAttackDefinition { Id = "wrap", Kind = BotAttackKind.Melee, Damage = 1, Range = 1, Interval = 1,
+                Slow = System.Text.Json.JsonSerializer.Deserialize<BotSlow>(slow, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.SnakeCaseLower }) }],
+        };
+
+        var diagnostics = BotBook.Validate(bot, "test", null, Vanilla.Value, "test/bots/spitter.json");
+
+        Assert.Contains(diagnostics, d => d.JsonPath == path && d.Message == message);
+    }
+
+    [Fact]
+    public void NegativeObjectDamageIsReported()
+    {
+        var bot = new BotDefinition
+        {
+            Id = "smasher", Name = "Smasher", Health = 10, Speed = 1,
+            Attacks = [new BotAttackDefinition { Id = "kick", Kind = BotAttackKind.Melee, Damage = 1, Range = 1, Interval = 1, ObjectDamage = -1 }],
+        };
+
+        var diagnostics = BotBook.Validate(bot, "test", null, Vanilla.Value, "test/bots/smasher.json");
+
+        Assert.Contains(diagnostics, d => d.JsonPath == "$.attacks[0].object_damage" && d.Message == "object_damage must be 0 or more.");
+    }
 }
