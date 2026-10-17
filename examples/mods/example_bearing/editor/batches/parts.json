@@ -1,0 +1,36 @@
+{
+  // The Motor Bearing, authored with the Part Editor's batch export (D3). Edit this file, then re-run
+  // tools/author-vanilla.sh: it rewrites parts/, editor/parts/ and meshes/ from it.
+  "format_version": 1,
+  "parts": [
+    {
+      // Where the part's JSON goes, relative to the mod root.
+      "file": "parts/motor_bearing.json",
+      // The bearing template brings the sockets: "base" sits on the creation, "rotor" carries the
+      // separate body (a wheel, an arm) on the hinge joint.
+      "template": "bearing",
+      "set": {
+        "name": "Motor Bearing",
+        "description": "A bearing with a motor: it spins at 2 rad/s for every unit of its input. Link a switch, a seat or a timer to it.",
+        "mass": 3,
+        "durability": 4,
+        "stack_size": 20,
+        "collision": { "shape": "cylinder", "radius": 0.115, "height": 0.25 },
+        "visual": { "color": "#3a8fc9", "roughness": 0.45, "metallic": 0.7 },
+        "script": "scripts/motor_bearing.lua",
+        // Another mod's sound: "<mod id>:<sound id>".
+        "sounds": { "spin_loop": "vanilla:bearing_spin_loop" },
+        "logic": { "inputs": 4 },
+        // Free-form numbers the script reads as properties.speed and properties.torque. Balance lives here,
+        // never in the script.
+        "properties": { "speed": 2, "torque": 400 }
+      },
+      // The mesh, made of simple pieces (metres, centred on the part).
+      "model": [
+        { "kind": "cylinder", "radius": 0.115, "height": 0.1, "position": [0, -0.075, 0] },
+        { "kind": "cylinder", "radius": 0.07, "height": 0.06, "position": [0, 0, 0] },
+        { "kind": "cylinder", "radius": 0.105, "height": 0.09, "position": [0, 0.08, 0] }
+      ]
+    }
+  ]
+}

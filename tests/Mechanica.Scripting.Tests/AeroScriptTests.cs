@@ -11,13 +11,16 @@ namespace Mechanica.Scripting.Tests;
 /// <summary>
 /// The vanilla aero and propulsion scripts (chunk 11) on the real vanilla parts: the thruster's push, pilot
 /// controls and fuel, the wing's lift, drag and stall, the control surface's deflection, the rotor's spool,
-/// thrust and counter-torque, and the hover jet's levelling.
+/// thrust and counter-torque, and the hover jet's levelling. Also the Aero Tutorial's example mods
+/// (<c>examples/mods/example_bearing</c> and <c>example_thruster</c>), loaded beside vanilla.
 /// </summary>
 public sealed class AeroScriptTests : IDisposable
 {
     private const int Craft = 1, Peer = 7;
     private const float Rho = 1.225f;
-    private static readonly ModLoadResult Vanilla = ModLoader.Load([ItemRig.VanillaRoot]);
+    private static readonly string Examples = Path.Combine(ItemRig.VanillaRoot, "..", "..", "examples", "mods");
+    private static readonly ModLoadResult Vanilla = ModLoader.Load(
+        [ItemRig.VanillaRoot, Path.Combine(Examples, "example_bearing"), Path.Combine(Examples, "example_thruster")]);
 
     private readonly ScriptRig.FakeWorld _world = new();
     private readonly ScriptRuntime _runtime;
@@ -233,6 +236,68 @@ public sealed class AeroScriptTests : IDisposable
         Assert.Null(Last(rotor));
     }
 
+    [Theory]
+    [InlineData(5f, 0.5f)]
+    [InlineData(12f, 0f)]
+    [InlineData(-2f, 1.2f)]
+    [InlineData(-10f, 1.3f)]
+    public void ARotorPullsLessClimbingAndMoreSinking(float climb, float gain)
+    {
+        var creation = NewCreation();
+        Place(creation, "vanilla:metal_block", new GridCell(-1, 0, 0));
+        Place(creation, "vanilla:metal_block", new GridCell(-2, 0, 0));
+        var toggle = Place(creation, "vanilla:switch", new GridCell(-2, 1, 0));
+        var rotor = Place(creation, "vanilla:rotor", new GridCell(-1, 1, -1));
+        Link(creation, toggle, rotor);
+        Activate(creation, toggle);
+        Steps(120);
+        AssertNear(new Vector3(0, 150, 0), Last(rotor)!.Value.Force, 0.5f);
+
+        // properties.inflow_speed is 10 m/s, up to properties.max_inflow_gain 1.3 times the thrust.
+        creation.SetBodyVelocity(0, new BodyVelocity(new Vector3(0, climb, 0), Vector3.Zero));
+        Steps(2);
+        AssertNear(new Vector3(0, 150 * gain, 0), Last(rotor)?.Force ?? Vector3.Zero, 0.5f);
+    }
+
+    [Fact]
+    public void TheExampleMotorBearingSpinsWithItsInput()
+    {
+        var creation = Board();
+        var toggle = Place(creation, "vanilla:switch", new GridCell(-1, 1, 0));
+        var bearing = Place(creation, "example_bearing:motor_bearing", new GridCell(0, 1, 0));
+        Place(creation, "vanilla:metal_block", new GridCell(0, 2, 0));
+        Link(creation, toggle, bearing);
+        Activate(creation, toggle);
+        Steps(3);
+        // properties.speed is 2 rad/s per unit of input, with at most properties.torque 400 N·m.
+        Assert.Equal(new JointMotor(2, 400), _world.JointMotors[^1]);
+
+        Activate(creation, toggle);
+        Steps(3);
+        Assert.True(_world.JointMotors[^1].IsFree);
+    }
+
+    [Fact]
+    public void TheExampleToyThrusterPushesByItsInputUpToItsCap()
+    {
+        var creation = Board();
+        var switches = new[] { -1, -2, 1 }.Select(x => Place(creation, "vanilla:switch", new GridCell(x, 1, 0))).ToList();
+        var thruster = Place(creation, "example_thruster:toy_thruster", new GridCell(0, 1, 0));
+        foreach (var toggle in switches)
+            Link(creation, toggle, thruster);
+        Steps(2);
+        Assert.Null(Last(thruster));
+
+        // 50 N toward its base per unit of input, at most properties.max_power 2 units.
+        Activate(creation, switches[0]);
+        Steps(3);
+        AssertNear(new Vector3(0, -50, 0), Last(thruster)!.Value.Force);
+        Activate(creation, switches[1]);
+        Activate(creation, switches[2]);
+        Steps(3);
+        AssertNear(new Vector3(0, -100, 0), Last(thruster)!.Value.Force);
+    }
+
     [Fact]
     public void AHoverJetLiftsAndLevelsItsBody()
     {
@@ -365,9 +430,12 @@ public sealed class AeroScriptTests : IDisposable
     {
         public ScriptFile? FindScript(string partId)
         {
-            if (Vanilla.FindDefinition(Identifiers.Qualify(partId))?.Script is not { } script)
+            var id = Identifiers.Qualify(partId);
+            if (Vanilla.FindDefinition(id)?.Script is not { } script)
                 return null;
-            return new ScriptFile($"vanilla:{script}", "vanilla", Path.Combine(ItemRig.VanillaRoot, script));
+            var mod = id[..id.IndexOf(':')];
+            var root = mod == "vanilla" ? ItemRig.VanillaRoot : Path.Combine(Examples, mod);
+            return new ScriptFile($"{mod}:{script}", mod, Path.Combine(root, script));
         }
     }
 }

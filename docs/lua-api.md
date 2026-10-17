@@ -74,7 +74,7 @@ template becomes the part's name.
 | Template | What it does |
 |----------|--------------|
 | empty | Every hook, empty. |
-| thruster | Pushes along the part's +Y with `properties.thrust` N. |
+| thruster | Pushes toward its base (along the part's -Y) with `properties.thrust` N, like `vanilla:thruster`. |
 | bearing_motor | Drives a bearing at `properties.speed` rad/s with at most `properties.torque` N·m. |
 | wing | Lift and drag from the air speed across the part, from its `properties`. |
 | distance_sensor | Raycasts along the part's +Y up to `properties.range` m and keeps the distance in `state`. |

@@ -1,0 +1,29 @@
+{
+  // The Toy Thruster, authored with the Part Editor's batch export (D3). Edit this file, then re-run
+  // tools/author-vanilla.sh: it rewrites parts/, editor/parts/ and meshes/ from it.
+  "format_version": 1,
+  "parts": [
+    {
+      "file": "parts/toy_thruster.json",
+      // The thruster template brings the "base" socket on the part's bottom (-Y), a logic input and the
+      // "control" and "invert" settings, which this simple script ignores.
+      "template": "thruster",
+      "set": {
+        "name": "Toy Thruster",
+        "description": "A small jet that pushes its creation toward its base with 50 N for every unit of its input. Needs no fuel.",
+        "mass": 2,
+        "durability": 3,
+        "stack_size": 20,
+        "visual": { "color": "#d0603a", "roughness": 0.4, "metallic": 0.6 },
+        "script": "scripts/toy_thruster.lua",
+        "sounds": { "loop": "vanilla:thruster_loop" },
+        "settings": [],
+        "properties": { "thrust": 50, "max_power": 2 }
+      },
+      "model": [
+        { "kind": "box", "size": [0.24, 0.04, 0.24], "position": [0, -0.105, 0] },
+        { "kind": "cylinder", "radius": 0.08, "height": 0.17, "position": [0, -0.005, 0] }
+      ]
+    }
+  ]
+}

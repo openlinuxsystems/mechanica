@@ -310,6 +310,28 @@ The vanilla scripts read these properties:
 | `scripts/button.lua` | `pulse` (s) | How long it stays on. |
 | `scripts/controller.lua` | `speed` (rad/s), `torque` (N·m) | How its bearings move between frames. |
 
+### Aero parts
+
+The aero scripts (see the [Aero and Propulsion Tutorial](aero-tutorial.md)) share the `control`
+setting (`link`, `w_s`, `a_d` or `space_shift`) and the `invert` toggle.
+
+| Script | Property | Meaning |
+|--------|----------|---------|
+| `scripts/thruster.lua` | `thrust` (N) | Push toward its base at full power. |
+| | `lever_rate` (1/s) | How fast Space and Shift move the `space_shift` lever. |
+| | `fuel`, `fuel_time` (s) | Item burned from the creation's containers, and seconds of full power per item. Creative needs none. |
+| `scripts/wing.lua` | `area` (m²), `air_density` (kg/m³) | Lifting area and the air. |
+| | `camber_lift`, `lift_slope` (per rad) | Lift coefficient with the air along the surface, and its growth with the angle of attack. |
+| | `max_lift`, `stall_lift` | Lift coefficient where it stalls, and that of a stalled plate at 45°. |
+| | `drag`, `induced_drag`, `stall_drag` | Drag coefficient at no lift, extra drag per lift coefficient squared, and drag square to the air. |
+| | `whoosh_speed` (m/s) | Air speed where the `whoosh` loop is loudest. |
+| | `max_deflection` (°), `lever_rate` (1/s) | Control surfaces: how far the command tilts the air, and the lever's speed. |
+| `scripts/rotor.lua` | `thrust` (N), `counter_torque` (N·m) | Pull and twist at full speed. The `spin` setting picks the twist's direction. |
+| | `spool_rate` (1/s), `lever_rate` (1/s) | How fast its speed follows the command, and the lever's speed. |
+| | `inflow_speed` (m/s), `max_inflow_gain` | Climb speed along its axis where it pulls nothing, and the most extra pull while sinking. |
+| `scripts/hover_jet.lua` | `thrust` (N), `lever_rate` (1/s) | Push toward its base at full power, and the lever's speed. |
+| | `level_torque` (N·m/rad), `level_damping` (N·m·s/rad), `max_level_torque` (N·m) | Levelling while the `stabilize` setting is on. |
+
 ## Recipes
 
 Recipes live in their own files, `recipes/**/*.json`, one recipe per file. The editor's recipe panel

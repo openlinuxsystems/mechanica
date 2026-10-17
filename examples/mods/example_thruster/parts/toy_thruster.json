@@ -1,0 +1,41 @@
+{
+  "id": "toy_thruster",
+  "name": "Toy Thruster",
+  "description": "A small jet that pushes its creation toward its base with 50 N for every unit of its input. Needs no fuel.",
+  "category": "interactive",
+  "mass": 2,
+  "durability": 3,
+  "friction": 0.4,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/toy_thruster.glb",
+  "visual": {
+    "color": "#d0603a",
+    "roughness": 0.4,
+    "metallic": 0.6
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.125, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "script": "scripts/toy_thruster.lua",
+  "sounds": {
+    "loop": "vanilla:thruster_loop"
+  },
+  "logic": {
+    "inputs": 4,
+    "outputs": 10
+  },
+  "settings": [],
+  "properties": {
+    "thrust": 50,
+    "max_power": 2
+  }
+}

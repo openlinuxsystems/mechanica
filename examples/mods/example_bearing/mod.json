@@ -1,0 +1,10 @@
+{
+  "id": "example_bearing",
+  "name": "Example bearing",
+  "version": "1.0.0",
+  "description": "The Aero Tutorial's first example: a Motor Bearing that spins at a speed set by its logic input.",
+  "dependencies": [
+    { "id": "vanilla", "version": "^0.1.0" }
+  ],
+  "conflicts": []
+}

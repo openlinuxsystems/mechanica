@@ -1,0 +1,10 @@
+{
+  "id": "example_thruster",
+  "name": "Example thruster",
+  "version": "1.0.0",
+  "description": "The Aero Tutorial's second example: a Toy Thruster that pushes its creation by the strength of its logic input.",
+  "dependencies": [
+    { "id": "vanilla", "version": "^0.1.0" }
+  ],
+  "conflicts": []
+}

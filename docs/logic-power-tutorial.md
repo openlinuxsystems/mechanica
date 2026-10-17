@@ -30,6 +30,7 @@ ends with what a modder needs to make new logic parts.
 | R (Connect Tool) | Opens the settings of the part under the crosshair (a gate's mode, a timer's delay). |
 | F7 | Turns the **Logic Visualizer** on or off. Links are drawn from the source to an arrowhead at the part they feed: yellow while the source is on, blue while it is off. |
 | F8 | Opens the **Creation Inspector** for the creation under the crosshair: its mass, bodies, joints, links, and for each part its output, input, settings, who sits in it and whether its script runs or stopped on an error. |
+| F9 | Turns the **force overlay** on or off: an arrow for every push a part script makes, such as a thruster's thrust or a wing's lift (see the [Aero and Propulsion Tutorial](aero-tutorial.md)). |
 | F | Uses what you look at: sit in a seat, flip a switch, press a button. While seated, F stands you up. |
 
 Every change goes to the host, which checks it (you must be within reach of both parts, and both ends

@@ -22,14 +22,35 @@ Run("wing maths, no push", new TextSource(wing.Replace("part.apply_force(lift + 
 Run("wing (lift + drag, ApplyForce)", new ModScriptSource(mods), parts, steps);
 Run("wing, maths per component", new TextSource(File.ReadAllText(Path.Combine(root, "bench", "Mechanica.Scripting.Bench", "wing_components.lua"))), parts, steps);
 
-void Run(string name, IScriptSource source, int count, int stepCount)
+// Chunk 11: the shipped vanilla aero scripts, which also read settings, sanitize inputs and drive sounds.
+var vanilla = ModLoader.Load([Path.Combine(root, "mods", "vanilla")]);
+foreach (var d in vanilla.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error))
+    Console.WriteLine(d);
+// The rotor, thruster and hover jet run at full power (their command gets 1 added) in Creative (no fuel),
+// and sounds are accepted.
+Run("vanilla:wing", new ModScriptSource(vanilla), parts, steps, vanilla, "vanilla:wing", 4);
+Run("vanilla:control_surface", new ModScriptSource(vanilla), parts, steps, vanilla, "vanilla:control_surface", 4);
+Run("vanilla:rotor", Powered("rotor"), parts, steps, vanilla, "vanilla:rotor", 3);
+Run("vanilla:thruster", Powered("thruster"), parts, steps, vanilla, "vanilla:thruster", 1);
+Run("vanilla:hover_jet", Powered("hover_jet"), parts, steps, vanilla, "vanilla:hover_jet", 2);
+
+TextSource Powered(string script) => new(File.ReadAllText(Path.Combine(root, "mods", "vanilla", "scripts", script + ".lua"))
+    .Replace("clamp(command(dt), 0, 1)", "clamp(command(dt) + 1, 0, 1)"), "vanilla:" + script);
+
+void Run(string name, IScriptSource source, int count, int stepCount, ModLoadResult? set = null, string partId = "bench:wing", int spacing = 1)
 {
     var world = new World();
-    var creation = new Creation(1, mods);
+    var creation = new Creation(1, set ?? mods);
     var side = (int)Math.Ceiling(Math.Sqrt(count));
+    // Vanilla parts sit on a cardboard deck one cell below, which they attach to by their bottom socket.
+    for (var x = 0; set is not null && x < side * spacing; x++)
+    {
+        for (var z = 0; z < side * spacing; z++)
+            creation.TryPlacePart("vanilla:cardboard_block", new GridCell(x, -1, z), default, out _, out _);
+    }
     for (var i = 0; i < count; i++)
     {
-        if (!creation.TryPlacePart("bench:wing", new GridCell(i % side, 0, i / side), default, out _, out var error))
+        if (!creation.TryPlacePart(partId, new GridCell(i % side * spacing, 0, i / side * spacing), default, out _, out var error))
             throw new InvalidOperationException(error);
     }
     creation.SetAllBodyPoses(new Pose(new Vector3(0, 100, 0), Quaternion.CreateFromAxisAngle(Vector3.UnitX, 0.1f)));
@@ -38,6 +59,8 @@ void Run(string name, IScriptSource source, int count, int stepCount)
     var dispatcher = new ActionDispatcher();
     new MotionActions(new MotionSettings(), world).Register(dispatcher);
     var runtime = new ScriptRuntime(new ScriptSettings(), dispatcher, world, new NoPhysics(), source);
+    runtime.Sound = new SilentSound();
+    runtime.Creative = true;
     runtime.Message += m => { if (m.Kind != ScriptMessageKind.Print) Console.WriteLine(m); };
 
     for (var i = 0; i < 300; i++)
@@ -69,10 +92,36 @@ static string FindRepoRoot()
 sealed class TextSource : IScriptSource
 {
     private readonly string _path = Path.Combine(Path.GetTempPath(), $"mechanica-bench-{Guid.NewGuid():N}.lua");
+    private readonly string? _partId;
 
-    public TextSource(string source) => File.WriteAllText(_path, source);
+    // With a part id, only that part runs it (the deck's blocks run nothing).
+    public TextSource(string source, string? partId = null)
+    {
+        File.WriteAllText(_path, source);
+        _partId = partId;
+    }
 
-    public ScriptFile? FindScript(string partId) => new("bench:variant.lua", "bench", _path);
+    public ScriptFile? FindScript(string partId) => _partId is null || partId == _partId ? new("bench:variant.lua", "bench", _path) : null;
+}
+
+// Accepts every sound and plays nothing, so the scripts' sound calls cost what they would in game.
+sealed class SilentSound : IScriptSound
+{
+    private int _next;
+
+    public string? Play(string sound, string ownerModId, Vector3 position) => null;
+
+    public int StartLoop(string sound, string ownerModId, int creation, int part, IReadOnlyDictionary<string, float>? parameters, out string? error)
+    {
+        error = null;
+        return ++_next;
+    }
+
+    public string? SetLoopParameter(int handle, string name, float value) => null;
+
+    public void StopLoop(int handle)
+    {
+    }
 }
 
 sealed class World : IMotionWorld

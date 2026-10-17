@@ -21,7 +21,7 @@ namespace Mechanica.Game.Tests;
 /// up and climbs; and wires a helicopter (four rotors, paired clockwise and counter-clockwise, and a
 /// stabilizing hover jet, all on the Space/Shift collective), lifts off, climbs, holds a hover without
 /// spinning and comes back down. The client shows both where the host has them, and the client's aero force
-/// overlay draws the host's pushes. It also prints how far the client's view of the moving plane strays
+/// overlay draws the host's pushes. The Aero Tutorial's example mods' batches are checked the same way. It also prints how far the client's view of the moving plane strays
 /// from the host's path (the snapshot rate check of PR #11's follow-up).
 /// </summary>
 public partial class VanillaAeroTest : StagedTest
@@ -38,7 +38,10 @@ public partial class VanillaAeroTest : StagedTest
 
     private readonly List<ActionResult> _results = [];
     private readonly List<(ulong Tick, Vector3 At)> _hostPath = [];
+    private static readonly string[] ExampleMods = ["example_bearing", "example_thruster"];
+
     private Task<BatchRunResult>? _batch;
+    private List<(string Mod, Task<BatchRunResult> Batch)> _examples = [];
     private string _scratchMod = "";
     private NetTestHarness _harness = null!;
     private ModLoadResult _mods = null!;
@@ -56,6 +59,8 @@ public partial class VanillaAeroTest : StagedTest
     protected override int StageTimeoutFrames => 1500;
 
     private static string VanillaDir => Path.Combine(ModPaths.ModsRoot, "vanilla");
+
+    private static string ExamplesDir => Path.Combine(ModPaths.ModsRoot, "..", "examples", "mods");
 
     public override void _Ready()
     {
@@ -90,6 +95,44 @@ public partial class VanillaAeroTest : StagedTest
             var differing = made.Where(f => !File.Exists(Path.Combine(VanillaDir, f))
                 || !File.ReadAllBytes(Path.Combine(VanillaDir, f)).AsSpan().SequenceEqual(File.ReadAllBytes(Path.Combine(_scratchMod, f)))).ToList();
             Check(differing.Count == 0, $"every file matches mods/vanilla (differing: {string.Join(", ", differing)}); re-run tools/author-vanilla.sh");
+            return true;
+        });
+        Add("the Aero Tutorial's example mods' batches reproduce their parts exactly", frame =>
+        {
+            if (frame == 0)
+            {
+                var root = ProjectSettings.GlobalizePath("user://tests/example_aero_mods");
+                if (Directory.Exists(root))
+                    Directory.Delete(root, recursive: true);
+                foreach (var mod in ExampleMods)
+                {
+                    var source = Path.Combine(ExamplesDir, mod);
+                    foreach (var file in Directory.GetFiles(source, "*", SearchOption.AllDirectories))
+                    {
+                        var relative = Path.GetRelativePath(source, file).Replace('\\', '/');
+                        if (IsExampleOutput(relative))
+                            continue;
+                        Directory.CreateDirectory(Path.GetDirectoryName(Path.Combine(root, mod, relative))!);
+                        File.Copy(file, Path.Combine(root, mod, relative));
+                    }
+                }
+                _examples = ExampleMods.Select(mod => (mod, PartBatchRunner.RunAsync(this, Path.Combine(root, mod, "editor/batches/parts.json")))).ToList();
+            }
+            if (_examples.Any(e => !e.Batch.IsCompleted))
+                return false;
+            foreach (var (mod, batch) in _examples)
+            {
+                var result = batch.Result;
+                Check(result.Succeeded && result.Exports.Count == 1, $"{mod}'s batch exports its part ({string.Join("; ", result.Diagnostics)})");
+                var scratch = Path.Combine(ProjectSettings.GlobalizePath("user://tests/example_aero_mods"), mod);
+                var made = Directory.GetFiles(scratch, "*", SearchOption.AllDirectories)
+                    .Select(f => Path.GetRelativePath(scratch, f).Replace('\\', '/')).Where(IsExampleOutput).ToList();
+                var source = Path.Combine(ExamplesDir, mod);
+                var differing = made.Where(f => !File.Exists(Path.Combine(source, f))
+                    || !File.ReadAllBytes(Path.Combine(source, f)).AsSpan().SequenceEqual(File.ReadAllBytes(Path.Combine(scratch, f)))).ToList();
+                Check(made.Count == 3 && differing.Count == 0,
+                    $"{mod}: {made.Count} files, all checked in (differing: {string.Join(", ", differing)}); re-run tools/author-vanilla.sh");
+            }
             return true;
         });
 
@@ -402,6 +445,10 @@ public partial class VanillaAeroTest : StagedTest
             new Dictionary<string, JsonElement?> { [id] = JsonSerializer.SerializeToElement(value) }));
 
     private static Creations.CreationBody Body(Instance instance, int creation) => instance.Main.Creations.NodeOf(creation)!.Bodies[0];
+
+    private static bool IsExampleOutput(string relative) =>
+        relative.StartsWith("parts/", StringComparison.Ordinal) || relative.StartsWith("meshes/", StringComparison.Ordinal)
+        || relative.StartsWith("editor/parts/", StringComparison.Ordinal);
 
     private static bool IsBatchOutput(string relative) =>
         Outputs.Any(id => relative == $"parts/{id}.json" || relative == $"meshes/{id}.glb" || relative == $"editor/parts/{id}.json"
