@@ -2,9 +2,11 @@ using System.Text;
 using System.Text.Json;
 using Godot;
 using Mechanica.Core.Actions;
+using Mechanica.Core.Input;
 using Mechanica.Core.Logic;
 using Mechanica.Game.Building;
 using Mechanica.Game.Net;
+using Mechanica.Game.Player;
 
 namespace Mechanica.Game.Logic;
 
@@ -54,7 +56,7 @@ public partial class CreationInspector : CanvasLayer
 
     public override void _UnhandledInput(InputEvent @event)
     {
-        if (!ReadDeviceInput || @event is not InputEventKey { Pressed: true, Echo: false, PhysicalKeycode: Key.F8 })
+        if (!ReadDeviceInput || !GameInput.Pressed(@event, InputActions.CreationInspector))
             return;
         if (IsOpen)
             Close();

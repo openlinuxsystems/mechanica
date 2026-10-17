@@ -48,17 +48,17 @@ every player, one after another.
 | `type` | Done when | Keys |
 |--------|-----------|------|
 | `reach` | Any player stands within `radius` (default: the POI's radius) of a placed `poi` | `poi`, `radius` |
-| `interact` | Players use `count` different markers of type `marker` (and `ref`, if given) at the `poi` with F | `poi`, `marker`, `ref`, `count` |
+| `interact` | Players use `count` different markers of type `marker` (and `ref`, if given) at the `poi` with E | `poi`, `marker`, `ref`, `count` |
 | `have_item` | Any player holds `count` of `item` | `item`, `count` |
 | `place` | Players place `count` parts (of `part`, if given) | `part`, `count` |
 | `craft` | Players craft `count` items (of `recipe`, if given) | `recipe`, `count` |
 | `drive` | Players seated in a moving Creation cover `distance` metres | `distance` |
 | `crops` | `count` crops are planted in the world at once | `count` |
 | `raid` | `count` raids end | `count` |
-| `choose` | A player picks one of the step's `choices` in the quest log (J) | `choices` on the step |
+| `choose` | A player picks one of the step's `choices` in the logbook (L) | `choices` on the step |
 
 A choice has an `id`, the button `text`, `flags` to set and optional `dialogue`. Whatever objective a step
-has, players near an `npc` marker of the quest's POI can press F to hear the step's dialogue again.
+has, players near an `npc` marker of the quest's POI can press E to hear the step's dialogue again.
 
 ## Markers quests use
 

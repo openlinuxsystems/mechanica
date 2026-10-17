@@ -1,7 +1,9 @@
 using Godot;
 using Mechanica.Core.Data;
+using Mechanica.Core.Input;
 using Mechanica.Core.Quests;
 using Mechanica.Game.Net;
+using Mechanica.Game.Player;
 
 namespace Mechanica.Game.Quests;
 
@@ -104,9 +106,7 @@ public partial class QuestHud : CanvasLayer
 
     public override void _UnhandledInput(InputEvent @event)
     {
-        if (@event is not InputEventKey { Pressed: true, Echo: false } key)
-            return;
-        if (key.PhysicalKeycode == Key.J && (IsOpen || Input.MouseMode == Input.MouseModeEnum.Captured))
+        if (GameInput.Pressed(@event, InputActions.Logbook) && (IsOpen || Input.MouseMode == Input.MouseModeEnum.Captured))
         {
             if (IsOpen)
                 Close();
@@ -114,7 +114,7 @@ public partial class QuestHud : CanvasLayer
                 Open();
             GetViewport().SetInputAsHandled();
         }
-        else if (IsOpen && key.PhysicalKeycode == Key.Escape)
+        else if (IsOpen && GameInput.Pressed(@event, InputActions.Pause))
         {
             Close();
             GetViewport().SetInputAsHandled();

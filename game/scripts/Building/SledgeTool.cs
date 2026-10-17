@@ -1,6 +1,7 @@
 using Godot;
 using Mechanica.Core.Actions;
 using Mechanica.Core.Building;
+using Mechanica.Core.Input;
 using Mechanica.Game.Player;
 using Mechanica.Game.World;
 
@@ -49,13 +50,13 @@ public partial class SledgeTool : HandTool
         var health = LastResult is { Ok: true, Value: { } value } && value.TryGetProperty("health", out var h) && h.ValueKind == System.Text.Json.JsonValueKind.Number
             ? $" (part health {h.GetSingle():0})"
             : "";
-        return $"Sledgehammer{health}   [LMB] swing{Status}";
+        return $"Sledgehammer{health}   {Key(InputActions.Primary)} swing{Status}";
     }
 
     /// <inheritdoc/>
     protected override bool HandleInput(InputEvent @event)
     {
-        if (!Clicked(@event, MouseButton.Left))
+        if (!Pressed(@event, InputActions.Primary))
             return false;
         Swing();
         return true;

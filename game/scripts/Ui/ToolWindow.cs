@@ -1,4 +1,6 @@
 using Godot;
+using Mechanica.Core.Input;
+using Mechanica.Game.Player;
 
 namespace Mechanica.Game.Ui;
 
@@ -80,7 +82,7 @@ public partial class ToolWindow : PanelContainer
 
     public override void _Input(InputEvent @event)
     {
-        if (CloseOnEscape && @event is InputEventKey { Pressed: true, Echo: false, PhysicalKeycode: Key.Escape } && Topmost == this)
+        if (CloseOnEscape && GameInput.Pressed(@event, InputActions.Pause) && Topmost == this)
         {
             GetViewport().SetInputAsHandled();
             RequestClose();

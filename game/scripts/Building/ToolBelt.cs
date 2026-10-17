@@ -1,4 +1,5 @@
 using Godot;
+using Mechanica.Core.Input;
 using Mechanica.Game.Items;
 using Mechanica.Game.Net;
 using Mechanica.Game.Player;
@@ -89,17 +90,22 @@ public partial class ToolBelt : Node
     public override void _Process(double delta)
     {
         if (_hud is not null)
-            _hud.Text = $"[1-{_tools.Count}] {string.Join("  ", _tools.Select(t => t.Active ? $"[{t.ToolName}]" : t.ToolName))}\n{Current.HudText()}";
+            _hud.Text = $"[{GameInput.Label(InputActions.Hotbar(1))}-{GameInput.Label(InputActions.Hotbar(_tools.Count))}] {string.Join("  ", _tools.Select(t => t.Active ? $"[{t.ToolName}]" : t.ToolName))}\n{Current.HudText()}";
     }
 
     public override void _UnhandledInput(InputEvent @event)
     {
-        if (!ReadDeviceInput || Input.MouseMode != Input.MouseModeEnum.Captured
-            || @event is not InputEventKey { Pressed: true, Echo: false } key
-            || key.PhysicalKeycode < Key.Key1 || key.PhysicalKeycode >= Key.Key1 + _tools.Count)
+        if (!ReadDeviceInput || Input.MouseMode != Input.MouseModeEnum.Captured)
             return;
-        Use(_tools[(int)(key.PhysicalKeycode - Key.Key1)]);
-        GetViewport().SetInputAsHandled();
+        for (var slot = 1; slot <= _tools.Count && slot <= InputActions.HotbarSlots; slot++)
+        {
+            if (GameInput.Pressed(@event, InputActions.Hotbar(slot)))
+            {
+                Use(_tools[slot - 1]);
+                GetViewport().SetInputAsHandled();
+                return;
+            }
+        }
     }
 
     /// <summary>Puts <paramref name="tool"/> in hand.</summary>

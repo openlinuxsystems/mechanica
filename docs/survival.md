@@ -11,14 +11,14 @@ so it works the same for every player in a multiplayer game.
 | 6 | Take the item in hand (the sixth tool). Q and E choose among the usable items you carry. |
 | Left click (item in hand) | Use it (all Lua item scripts): eat food, fire a weapon, plant a seed in the soil you aim at or water it. With a bucket or nothing usable in hand, aiming at the sea fills a bucket. |
 | G (item in hand) | Drop one of the item on the ground. |
-| F | Harvest the ripe crop you aim at, sleep in the bed you aim at (you respawn there), or pick up the nearest pile of items. |
-| R (dead) | Respawn, once the respawn delay is over. |
+| E | Harvest the ripe crop you aim at, sleep in the bed you aim at (you respawn there), or pick up the nearest pile of items. |
+| E (dead) | Respawn, once the respawn delay is over. |
 
 - **Health** goes down from weapons, the Sledgehammer, splash, and falls faster than
   `fall.min_speed`. It comes back by eating. At 0 you die: everything you carry falls in a pile where
   you stood, and you respawn at your bed, or at the world spawn if you have none (or it was broken).
 - **Farming:** place soil, plant a seed, and water it. A crop grows only while its soil holds water,
-  using a second of water per second of growth, through four stages. Harvest it ripe (F) for its crop
+  using a second of water per second of growth, through four stages. Harvest it ripe (E) for its crop
   and usually a seed back. Crops keep growing while nobody is near (the soil catches up from the world
   clock when it next runs) and are saved with the soil's Creation.
 - **Building costs items.** Placing a part takes one from your inventory; removing it gives it back

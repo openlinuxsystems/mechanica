@@ -1,11 +1,13 @@
 # How to Play
 
-You start at the crash site. The quest log in the top right says what to do next, and F does most
-things in the world. Press **F1** at any time to open this help; it opens on the page for what you are
+You start at the crash site. The quest log says what to do next, and Use (**E**) does most things in
+the world. Press **H** (or **F1**) at any time to open this help; it opens on the page for what you are
 doing (the quest log, your inventory, the Part Editor, ...). Type in the box at the top of the help to
 search every page.
 
 ## Controls
+
+These are the default keys. Every one can be changed in Options, Controls.
 
 | Key | What it does |
 |-----|--------------|
@@ -13,18 +15,24 @@ search every page.
 | Space | Jump |
 | Shift | Sprint |
 | Mouse | Look. Click the world to take the mouse back after a menu. |
-| V | First or third person |
+| X / C | Zoom in to first person / out to third person (also Alt + scroll) |
 | 1 to 7 | Pick a tool: Hammer, Lift, Weld, Paint, Sledgehammer, item in hand, Connect Tool |
-| Left / right click | Use the tool (the Hammer places and removes parts) |
-| Q / E | Hammer: previous or next part |
-| R / T | Hammer: turn or tip the part |
-| F | Interact: pick up items, harvest, sleep in a bed, sit in a seat, use a part, use a quest marker, talk |
-| Tab | Inventory |
-| E | Open the container or station you are looking at |
-| J | Quest log: pick an answer when a quest asks you to decide |
-| R | Respawn, after dying |
-| Esc | Menu: save, load, open your world to the LAN, help, quit |
-| F1 | Help |
+| Left click | Create, attack or place: the Hammer places parts, the Sledgehammer swings |
+| Right click | Remove or pick up: the Hammer removes parts, the Lift takes its Creation away |
+| Scroll | Hammer: previous or next part. Item in hand: previous or next item. |
+| Q / Shift + Q | Turn the part (Hammer, Weld, Lift) or pick the next or previous colour (Paint) |
+| T | Hammer and Weld: tip the part over |
+| Up / Down arrows | Raise or lower the Lift |
+| G | Drop one of the item in hand |
+| E | Use: open a container or station, pick up items, harvest, sleep in a bed, sit in or leave a seat, use a part, change a part's settings, use a quest marker, talk, respawn after dying |
+| I or B | Inventory |
+| L | Logbook: the quest log, where you pick an answer when a quest asks you to decide |
+| Esc | Menu: save, load, open your world to the LAN, help, quit. Esc also closes any open window. |
+| H or F1 | Help |
+| F7 / F8 / F9 | Logic Visualizer, Creation Inspector and force overlay |
+
+While a menu or the inventory is open, your character stands still, and a Creation you are driving
+stops getting your input.
 
 ## Playing together
 

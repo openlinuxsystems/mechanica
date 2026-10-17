@@ -1,4 +1,5 @@
 using Godot;
+using Mechanica.Core.Input;
 using Mechanica.Core.Player;
 using Mechanica.Game.Player;
 
@@ -29,8 +30,8 @@ public partial class PlayerTest : Node3D
 
     public override void _Ready()
     {
-        PlayerInputActions.EnsureRegistered();
-        Check(InputMap.HasAction(PlayerInputActions.MoveForward) && InputMap.HasAction(PlayerInputActions.Jump),
+        GameInput.EnsureRegistered();
+        Check(InputMap.HasAction(InputActions.MoveForward) && InputMap.HasAction(InputActions.Jump),
             "player input actions are registered");
 
         _main = ResourceLoader.Load<PackedScene>("res://scenes/Main.tscn").Instantiate<Main>();

@@ -2,6 +2,7 @@ using Godot;
 using Mechanica.Core.Actions;
 using Mechanica.Core.Building;
 using Mechanica.Core.Creations;
+using Mechanica.Core.Input;
 using Mechanica.Game.Creations;
 
 namespace Mechanica.Game.Building;
@@ -118,24 +119,29 @@ public partial class WeldTool : HandTool
     public override string HudText()
     {
         var state = Selected is { } s ? $"part {s.Part} of creation {s.Creation} selected" : "nothing selected";
-        return $"Weld Tool ({state})   [LMB] select / weld  [R] turn  [T] tip  [RMB] clear{Status}";
+        return $"Weld Tool ({state})   {Key(InputActions.Primary)} select / weld  {Key(InputActions.Rotate)} turn  {Key(InputActions.Tip)} tip  {Key(InputActions.Secondary)} clear{Status}";
     }
 
     /// <inheritdoc/>
     protected override bool HandleInput(InputEvent @event)
     {
-        if (Clicked(@event, MouseButton.Left))
+        if (Pressed(@event, InputActions.Primary))
         {
             if (Selected is null)
                 Select();
             else
                 Weld();
         }
-        else if (Clicked(@event, MouseButton.Right))
+        else if (Pressed(@event, InputActions.Secondary))
             Deselect();
-        else if (Pressed(@event, Key.R))
+        else if (Pressed(@event, InputActions.RotateBack))
+        {
+            for (var i = 0; i < 3; i++)
+                Turn();
+        }
+        else if (Pressed(@event, InputActions.Rotate))
             Turn();
-        else if (Pressed(@event, Key.T))
+        else if (Pressed(@event, InputActions.Tip))
             Tip();
         else
             return false;

@@ -2,9 +2,11 @@ using System.Text.Json;
 using Godot;
 using Mechanica.Core.Actions;
 using Mechanica.Core.Creations;
+using Mechanica.Core.Input;
 using Mechanica.Core.Logic;
 using Mechanica.Game.Creations;
 using Mechanica.Game.Net;
+using Mechanica.Game.Player;
 
 namespace Mechanica.Game.Logic;
 
@@ -71,7 +73,7 @@ public partial class LogicOverlay : MeshInstance3D
 
     public override void _UnhandledInput(InputEvent @event)
     {
-        if (!ReadDeviceInput || @event is not InputEventKey { Pressed: true, Echo: false, PhysicalKeycode: Key.F7 })
+        if (!ReadDeviceInput || !GameInput.Pressed(@event, InputActions.LogicVisualizer))
             return;
         Enabled = !Enabled;
         GetViewport().SetInputAsHandled();

@@ -237,7 +237,7 @@ in `properties`. The vanilla scripts read these properties:
 | | `impulse` (N·s) | Push given to the Body it hits (splash: at the centre). Default 0. |
 | `scripts/seed.lua` | (none) | Plants the seed in the soil aimed at. Its `seed` section (below) says what grows. |
 | `scripts/watering.lua` | `seconds` (s) | Seconds of water one use adds to the soil aimed at. The item is used up. |
-| `scripts/soil.lua` (a part) | `interval` (s) | How often the soil works out its crop's growth while its Creation is live. Growth is exact whatever it is (it comes from the world clock); it only bounds how late a new stage shows. The soil also grows, from the clock, the time its Creation was parked. F on a ripe crop (`ActivatePart`) harvests it. |
+| `scripts/soil.lua` (a part) | `interval` (s) | How often the soil works out its crop's growth while its Creation is live. Growth is exact whatever it is (it comes from the world clock); it only bounds how late a new stage shows. The soil also grows, from the clock, the time its Creation was parked. E on a ripe crop (`ActivatePart`) harvests it. |
 
 ```json
 "script": "scripts/potato_gun.lua",
@@ -256,7 +256,7 @@ soil script may treat them differently. A bare `crop` id is in the seed's own mo
 | `seed.value` | number ≥ 0 | How much a planted crop draws raids (chunk 21). Default 1. |
 | `soil.capacity` | number > 0 (s) | Most seconds of water the soil holds. Required. |
 | `soil.growth` | number > 0 | Growth speed multiplier for crops on it. Default 1. |
-| `respawn_point` | bool | Players can sleep in it (F) to respawn there. |
+| `respawn_point` | bool | Players can sleep in it (E) to respawn there. |
 
 ```json
 "seed": { "crop": "carrot", "grow_time": 240, "yield": 2, "seeds": 1 }
@@ -271,8 +271,8 @@ script's job (D2). See the [Logic and Power Tutorial](logic-power-tutorial.md).
 |-----|------|---------|
 | `logic.inputs` | integer 0 to 64 | Most links that may end at the part. Default 0: it takes none. |
 | `logic.outputs` | integer 0 to 64 | Most links that may start at the part. Default 0: it sends none. |
-| `logic.use` | string | What F says on the part (`"toggle"`, `"press"`); F calls the script's `on_activate`. Needs a `script`. Omitted means players cannot use it by hand. |
-| `seat` | object | Makes the part a seat a player sits in with F. Its script reads them with `part.occupant()` and `part.occupant_input()`. |
+| `logic.use` | string | What Use (E) says on the part (`"toggle"`, `"press"`); E calls the script's `on_activate`. Needs a `script`. Omitted means players cannot use it by hand. |
+| `seat` | object | Makes the part a seat a player sits in with E. Its script reads them with `part.occupant()` and `part.occupant_input()`. |
 | `seat.offset` | [x, y, z] (m) | Where the sitter's feet go, from the part's centre, in the part's frame. Inside the part's footprint. Default [0, 0, 0]. |
 | `settings` | list | Values a player sets on each placed part with the Connect Tool (R), in display order. The script reads them with `part.setting(id)`. |
 
@@ -341,12 +341,12 @@ setting (`link`, `w_s`, `a_d` or `space_shift`) and the `invert` toggle.
 
 | Script | Property | Meaning |
 |--------|----------|---------|
-| `scripts/light.lua` | `blink` (s), `duty` | Blink period (0 or missing: steady) and the share of it spent lit. With no inputs linked it shines until F turns it off; linked, it shines while its input is above 0. |
-| `scripts/radio.lua` | (the `station` setting) | Plays the `station_N` sound loop; F turns it on and off. |
+| `scripts/light.lua` | `blink` (s), `duty` | Blink period (0 or missing: steady) and the share of it spent lit. With no inputs linked it shines until E turns it off; linked, it shines while its input is above 0. |
+| `scripts/radio.lua` | (the `station` setting) | Plays the `station_N` sound loop; E turns it on and off. |
 | `scripts/beacon.lua` | `ping`, `flash` (s) | Seconds between pings, and how long each ping lights it fully. |
-| `scripts/horn.lua` | `honk` (s) | How long F sounds it; a linked input sounds it while above 0. |
+| `scripts/horn.lua` | `honk` (s) | How long E sounds it; a linked input sounds it while above 0. |
 | `scripts/cutter.lua` | `edge`, `reach` (m), `interval` (s), `damage`, `spin` (rad/s) | Saw and drill: the rays it cuts along (part frame), how far, how often, how hard, and its model's spin while running. |
-| `scripts/water_cannon.lua` | `muzzle`, `range` (m), `water` (s), `impulse` (N·s), `interval` (s) | Fires on a rising input or F: waters soil it hits, else pushes what it hits. |
+| `scripts/water_cannon.lua` | `muzzle`, `range` (m), `water` (s), `impulse` (N·s), `interval` (s) | Fires on a rising input or E: waters soil it hits, else pushes what it hits. |
 | `scripts/mounted_gun.lua` | `ammo`, `muzzle`, `range` (m), `damage`, `impulse` (N·s), `interval` (s) | Hitscan shots taking `ammo` from the creation's containers (none in Creative). |
 
 ## light and animation

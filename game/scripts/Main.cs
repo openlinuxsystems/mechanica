@@ -399,7 +399,12 @@ public partial class Main : Node3D
         {
             var inventory = new InventoryScreen { Name = "InventoryScreen", Inventory = Inventory, Actions = Actions, Players = PlayerSync, Catalog = mods };
             AddChild(inventory);
-            AddChild(new SurvivalHud { Name = "SurvivalHud", Survival = Survival, Actions = Actions, Players = PlayerSync, Catalog = mods, Logic = Logic, Quests = Quests });
+            PartSettings = new PartSettingsPanel { Name = "PartSettings", Actions = Actions, Creations = Creations };
+            AddChild(new SurvivalHud
+            {
+                Name = "SurvivalHud", Survival = Survival, Actions = Actions, Players = PlayerSync, Catalog = mods, Logic = Logic, Quests = Quests,
+                Containers = inventory, PartSettings = PartSettings,
+            });
             var questLog = new QuestHud { Name = "QuestHud", Quests = Quests, Actions = Actions, Players = PlayerSync };
             AddChild(questLog);
             // F1 opens the page for what the player is doing.
@@ -408,7 +413,6 @@ public partial class Main : Node3D
                 Name = "PauseMenu", Session = Session, Saves = Saves, Lan = Lan,
                 HelpTopic = () => questLog.IsOpen ? "quests.md" : inventory.IsOpen ? "survival.md" : "playing.md",
             });
-            PartSettings = new PartSettingsPanel { Name = "PartSettings", Actions = Actions, Creations = Creations };
             AddChild(PartSettings);
             AddChild(new RaidBanner { Name = "RaidBanner", Bots = Bots });
         }
