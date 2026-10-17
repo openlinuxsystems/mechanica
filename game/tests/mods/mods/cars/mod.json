@@ -1,0 +1,1 @@
+{ "id": "cars", "name": "Cars", "version": "1.1.0", "dependencies": [{ "id": "lib", "version": "^2.0.0" }] }

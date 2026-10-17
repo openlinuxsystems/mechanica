@@ -1,0 +1,11 @@
+{
+  "format_version": 1,
+  "id": "runtime_test",
+  "name": "Runtime Test Parts",
+  "version": "0.1.0",
+  "description": "Fixture mod for the headless Creation runtime test.",
+  "authors": [
+    "Mechanica"
+  ],
+  "dependencies": []
+}

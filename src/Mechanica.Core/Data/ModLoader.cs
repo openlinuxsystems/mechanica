@@ -6,10 +6,17 @@ namespace Mechanica.Core.Data;
 
 /// <summary>A part definition that loaded cleanly, with where it came from.</summary>
 /// <param name="QualifiedId">Game-wide id, <c>mod_id:part_id</c>.</param>
-/// <param name="ModId">Owning mod.</param>
+/// <param name="ModId">
+/// Mod whose files define it, so its relative asset paths resolve against this mod's folder. It differs
+/// from the <see cref="QualifiedId"/> prefix when another mod overrides the part.
+/// </param>
 /// <param name="FilePath">Absolute path of the source file.</param>
 /// <param name="Definition">The parsed data.</param>
-public sealed record LoadedPart(string QualifiedId, string ModId, string FilePath, PartDefinition Definition);
+public sealed record LoadedPart(string QualifiedId, string ModId, string FilePath, PartDefinition Definition)
+{
+    /// <summary>True when this definition is another mod's override of the part.</summary>
+    public bool IsOverride => !QualifiedId.StartsWith(ModId + ":", StringComparison.Ordinal);
+}
 
 /// <summary>A mod that loaded cleanly.</summary>
 /// <param name="Manifest">Its validated <c>mod.json</c>.</param>
@@ -22,28 +29,78 @@ public sealed record LoadedMod(ModManifest Manifest, string Directory, IReadOnly
 
     /// <summary>The mod version.</summary>
     public SemVersion Version => Manifest.ParsedVersion!;
+
+    /// <summary>Its replacements for other mods' parts (<c>overrides/&lt;mod_id&gt;/</c>), ordered by qualified id.</summary>
+    public IReadOnlyList<LoadedPart> Overrides { get; init; } = [];
 }
 
+/// <summary>A mod folder whose <c>mod.json</c> is valid, found by <see cref="ModLoader.Scan"/>.</summary>
+/// <param name="Manifest">Its validated <c>mod.json</c>.</param>
+/// <param name="Directory">Absolute path of the mod folder.</param>
+public sealed record InstalledMod(ModManifest Manifest, string Directory)
+{
+    /// <summary>The mod id.</summary>
+    public string Id => Manifest.Id!;
+
+    /// <summary>The mod version.</summary>
+    public SemVersion Version => Manifest.ParsedVersion!;
+
+    /// <summary>Ids of the mods it depends on.</summary>
+    public IEnumerable<string> DependencyIds => (Manifest.Dependencies ?? []).Select(d => d.Id!);
+}
+
+/// <summary>What <see cref="ModLoader.Scan"/> found: installed mods by id, and manifest problems.</summary>
+/// <param name="Mods">Mods with a valid manifest, ordered by id.</param>
+/// <param name="Broken">Ids of mods whose manifest has errors.</param>
+/// <param name="Diagnostics">Every manifest problem found.</param>
+public sealed record ModScanResult(IReadOnlyList<InstalledMod> Mods, IReadOnlySet<string> Broken, IReadOnlyList<DataDiagnostic> Diagnostics);
+
+/// <summary>Kinds of <see cref="ModConflict"/>.</summary>
+public enum ModConflictKind
+{
+    /// <summary>A mod lists an enabled mod under <c>conflicts</c>, so it was not loaded.</summary>
+    Incompatible,
+
+    /// <summary>Two unrelated mods override the same part; the later one in load order wins.</summary>
+    OverrideClash,
+}
+
+/// <summary>A conflict between two enabled mods, shown in the Mod Manager.</summary>
+/// <param name="Kind">What kind of conflict.</param>
+/// <param name="ModId">The mod that lost: not loaded (incompatible) or overridden (override clash).</param>
+/// <param name="OtherModId">The mod it conflicts with.</param>
+/// <param name="PartId">Qualified id of the contested part, for override clashes.</param>
+/// <param name="Message">Readable description, the same as its diagnostic.</param>
+public sealed record ModConflict(ModConflictKind Kind, string ModId, string OtherModId, string? PartId, string Message);
+
 /// <summary>
-/// Everything <see cref="ModLoader"/> produced: the mods that loaded (in dependency order), their
-/// parts by qualified id, and every warning and error. A mod with any error is left out, along
-/// with every mod that depends on it, so the rest of the game can still start.
+/// Everything <see cref="ModLoader"/> produced: the mods that loaded (in load order), their
+/// parts by qualified id, conflicts, and every warning and error. A mod with any error is left out,
+/// along with every mod that depends on it, so the rest of the game can still start.
 /// </summary>
 public sealed class ModLoadResult : IPartCatalog
 {
-    internal ModLoadResult(IReadOnlyList<LoadedMod> mods, IReadOnlyList<DataDiagnostic> diagnostics)
+    internal ModLoadResult(IReadOnlyList<LoadedMod> mods, IReadOnlyDictionary<string, LoadedPart> parts,
+        IReadOnlyList<ModConflict> conflicts, IReadOnlyList<DataDiagnostic> diagnostics)
     {
         Mods = mods;
+        Parts = parts;
+        Conflicts = conflicts;
         Diagnostics = diagnostics;
-        Parts = mods.SelectMany(m => m.Parts).ToDictionary(p => p.QualifiedId, StringComparer.Ordinal);
         Fingerprint = ComputeFingerprint(mods);
     }
 
-    /// <summary>Loaded mods in load order (dependencies first, ties broken by id).</summary>
+    /// <summary>Loaded mods in load order (dependencies first, then the profile's order, then by id).</summary>
     public IReadOnlyList<LoadedMod> Mods { get; }
 
-    /// <summary>All parts from loaded mods, keyed by <c>mod_id:part_id</c>.</summary>
+    /// <summary>
+    /// All parts from loaded mods, keyed by <c>mod_id:part_id</c>. An overridden part maps to the
+    /// override of the last mod in load order that overrides it.
+    /// </summary>
     public IReadOnlyDictionary<string, LoadedPart> Parts { get; }
+
+    /// <summary>Conflicts between enabled mods. Each one also has a diagnostic.</summary>
+    public IReadOnlyList<ModConflict> Conflicts { get; }
 
     /// <summary>Every problem found, in discovery order.</summary>
     public IReadOnlyList<DataDiagnostic> Diagnostics { get; }
@@ -52,8 +109,8 @@ public sealed class ModLoadResult : IPartCatalog
     public bool HasErrors => Diagnostics.Any(d => d.Severity == DiagnosticSeverity.Error);
 
     /// <summary>
-    /// SHA-256 (hex) of the canonical form of every loaded manifest and part, in load order. Host and
-    /// clients compare it on join to confirm they run the same content (D10).
+    /// SHA-256 (hex) of the canonical form of every loaded manifest, part and override, in load order.
+    /// Host and clients compare it on join to confirm they run the same content (D10).
     /// </summary>
     public string Fingerprint { get; }
 
@@ -71,14 +128,21 @@ public sealed class ModLoadResult : IPartCatalog
             hash.AppendData(Encoding.UTF8.GetBytes(DataJson.Write(mod.Manifest)));
             foreach (var part in mod.Parts)
                 hash.AppendData(Encoding.UTF8.GetBytes(DataJson.Write(part.Definition)));
+            foreach (var part in mod.Overrides)
+            {
+                hash.AppendData(Encoding.UTF8.GetBytes(part.QualifiedId));
+                hash.AppendData(Encoding.UTF8.GetBytes(DataJson.Write(part.Definition)));
+            }
         }
         return Convert.ToHexStringLower(hash.GetHashAndReset());
     }
 }
 
 /// <summary>
-/// Discovers mods in a <c>mods/</c> folder, resolves their dependencies and versions, then loads
-/// and validates each mod's <c>parts/**/*.json</c>. Pure file system code, no Godot (D6, D8).
+/// Discovers mods in a <c>mods/</c> folder, applies the player's <see cref="ModProfile"/> (enabled
+/// mods and load order), resolves dependencies, versions and conflicts, then loads and validates each
+/// mod's <c>parts/**/*.json</c> and <c>overrides/&lt;mod_id&gt;/**/*.json</c>. Pure file system code,
+/// no Godot (D6, D8).
 /// </summary>
 public static class ModLoader
 {
@@ -88,22 +152,57 @@ public static class ModLoader
     /// <summary>Folder inside a mod that holds part definitions.</summary>
     public const string PartsFolder = "parts";
 
+    /// <summary>Folder inside a mod that holds replacements for other mods' parts, one subfolder per mod id.</summary>
+    public const string OverridesFolder = "overrides";
+
     /// <summary>Loads every mod folder directly inside <paramref name="modsRoot"/>.</summary>
-    public static ModLoadResult LoadAll(string modsRoot)
+    public static ModLoadResult LoadAll(string modsRoot) => Load(modsRoot, null);
+
+    /// <summary>
+    /// Loads the mods inside <paramref name="modsRoot"/> that <paramref name="profile"/> enables, in its
+    /// load order. A null profile enables every mod. Vanilla is always enabled.
+    /// </summary>
+    public static ModLoadResult Load(string modsRoot, ModProfile? profile)
+    {
+        var scan = Scan(modsRoot);
+        return Load(scan, profile, [.. scan.Diagnostics]);
+    }
+
+    /// <summary>
+    /// Loads with the profile saved at <paramref name="profilePath"/> (no file: every mod enabled). A
+    /// broken profile is reported first in the diagnostics and ignored, so the game still starts.
+    /// </summary>
+    public static ModLoadResult LoadWithProfile(string modsRoot, string profilePath)
+    {
+        var diagnostics = new List<DataDiagnostic>();
+        var profile = ModProfile.Load(profilePath, diagnostics);
+        var scan = Scan(modsRoot);
+        diagnostics.AddRange(scan.Diagnostics);
+        return Load(scan, profile, diagnostics);
+    }
+
+    /// <summary>Loads the given mod folders, all enabled.</summary>
+    public static ModLoadResult Load(IEnumerable<string> modDirectories)
+    {
+        var scan = Scan(modDirectories, []);
+        return Load(scan, null, [.. scan.Diagnostics]);
+    }
+
+    /// <summary>
+    /// Reads and validates the manifest of every mod folder directly inside <paramref name="modsRoot"/>
+    /// without loading parts. This is what the Mod Manager lists.
+    /// </summary>
+    public static ModScanResult Scan(string modsRoot)
     {
         var diagnostics = new List<DataDiagnostic>();
         if (!Directory.Exists(modsRoot))
         {
             diagnostics.Add(new DataDiagnostic(DiagnosticSeverity.Error, DiagnosticCodes.FileUnreadable,
                 modsRoot, null, null, "mods folder does not exist."));
-            return new ModLoadResult([], diagnostics);
+            return new ModScanResult([], new HashSet<string>(), diagnostics);
         }
-        var folders = Directory.GetDirectories(modsRoot).Order(StringComparer.Ordinal);
-        return Load(folders, diagnostics);
+        return Scan(Directory.GetDirectories(modsRoot).Order(StringComparer.Ordinal), diagnostics);
     }
-
-    /// <summary>Loads the given mod folders.</summary>
-    public static ModLoadResult Load(IEnumerable<string> modDirectories) => Load(modDirectories, []);
 
     /// <summary>
     /// Parses one data file's JSON into <typeparamref name="T"/>, reporting malformed JSON as a
@@ -112,9 +211,9 @@ public static class ModLoader
     public static T? ParseJson<T>(string json, string displayFile, List<DataDiagnostic> diagnostics) where T : class =>
         ParseJson<T>(json, new DiagnosticSink(displayFile, diagnostics));
 
-    private static ModLoadResult Load(IEnumerable<string> modDirectories, List<DataDiagnostic> diagnostics)
+    private static ModScanResult Scan(IEnumerable<string> modDirectories, List<DataDiagnostic> diagnostics)
     {
-        var candidates = new Dictionary<string, (ModManifest Manifest, string Directory)>(StringComparer.Ordinal);
+        var candidates = new Dictionary<string, InstalledMod>(StringComparer.Ordinal);
         var broken = new HashSet<string>(StringComparer.Ordinal);
         foreach (var dir in modDirectories.Select(Path.GetFullPath))
         {
@@ -128,26 +227,81 @@ public static class ModLoader
                     $"mod id '{manifest.Id}' is already used by {Display(existing.Directory, ManifestFileName)}; this copy is skipped."));
                 continue;
             }
-            candidates.Add(manifest.Id!, (manifest, dir));
+            candidates.Add(manifest.Id!, new InstalledMod(manifest, dir));
         }
+        return new ModScanResult([.. candidates.Values.OrderBy(m => m.Id, StringComparer.Ordinal)], broken, diagnostics);
+    }
 
-        var loaded = new Dictionary<string, LoadedMod>(StringComparer.Ordinal);
-        foreach (var id in ResolveOrder(candidates, broken, diagnostics))
+    private static ModLoadResult Load(ModScanResult scan, ModProfile? profile, List<DataDiagnostic> diagnostics)
+    {
+        var entries = (profile?.Mods ?? []).Where(e => e.Id is not null).ToDictionary(e => e.Id!, StringComparer.Ordinal);
+        var enabled = new Dictionary<string, InstalledMod>(StringComparer.Ordinal);
+        var disabled = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var mod in scan.Mods)
         {
-            var (manifest, dir) = candidates[id];
-            var file = Display(dir, ManifestFileName);
-            var failedDep = manifest.Dependencies?.Select(d => d.Id!).FirstOrDefault(d => !loaded.ContainsKey(d));
+            if (entries.TryGetValue(mod.Id, out var entry) && !entry.IsEnabled && mod.Id != Identifiers.VanillaModId)
+                disabled.Add(mod.Id);
+            else
+                enabled.Add(mod.Id, mod);
+        }
+        var preference = PreferredOrder(scan.Mods.Select(m => m.Id), profile);
+
+        var conflicts = new List<ModConflict>();
+        var loaded = new Dictionary<string, LoadedMod>(StringComparer.Ordinal);
+        var mods = new List<LoadedMod>();
+        foreach (var id in ResolveOrder(enabled, disabled, scan.Broken, preference, conflicts, diagnostics))
+        {
+            var mod = enabled[id];
+            var file = Display(mod.Directory, ManifestFileName);
+            var failedDep = mod.DependencyIds.FirstOrDefault(d => !loaded.ContainsKey(d));
             if (failedDep is not null)
             {
                 diagnostics.Add(new DataDiagnostic(DiagnosticSeverity.Error, DiagnosticCodes.DependencyFailed,
                     file, null, null, $"mod '{id}' was not loaded because its dependency '{failedDep}' failed to load."));
                 continue;
             }
-            var mod = LoadParts(manifest, dir, loaded, diagnostics);
-            if (mod is not null)
-                loaded.Add(id, mod);
+            var loadedMod = LoadParts(mod.Manifest, mod.Directory, loaded, diagnostics);
+            if (loadedMod is null)
+                continue;
+            loaded.Add(id, loadedMod);
+            mods.Add(loadedMod);
         }
-        return new ModLoadResult([.. loaded.Values], diagnostics);
+        return new ModLoadResult(mods, ApplyOverrides(mods, conflicts, diagnostics), conflicts, diagnostics);
+    }
+
+    /// <summary>
+    /// The profile's mods in its order, then every other id by ordinal. Ids may include mods that are
+    /// not installed; callers filter.
+    /// </summary>
+    internal static List<string> PreferredOrder(IEnumerable<string> installed, ModProfile? profile)
+    {
+        var order = (profile?.Mods ?? []).Select(e => e.Id).OfType<string>().Distinct(StringComparer.Ordinal).ToList();
+        var listed = order.ToHashSet(StringComparer.Ordinal);
+        order.AddRange(installed.Where(id => !listed.Contains(id)).Order(StringComparer.Ordinal));
+        return order;
+    }
+
+    /// <summary>
+    /// Stable dependency sort: walks <paramref name="preference"/> and repeatedly takes the first id
+    /// whose <paramref name="mustPrecede"/> ids are already placed, so the preferred order is kept
+    /// wherever dependencies allow. Ids caught in a cycle are returned in <c>Stuck</c>.
+    /// </summary>
+    internal static (List<string> Order, List<string> Stuck) SortByDependencies(
+        IEnumerable<string> preference, Func<string, IEnumerable<string>> mustPrecede)
+    {
+        var order = new List<string>();
+        var placed = new HashSet<string>(StringComparer.Ordinal);
+        var pending = preference.ToList();
+        while (pending.Count > 0)
+        {
+            var next = pending.FindIndex(id => mustPrecede(id).All(placed.Contains));
+            if (next < 0)
+                break;
+            placed.Add(pending[next]);
+            order.Add(pending[next]);
+            pending.RemoveAt(next);
+        }
+        return (order, pending);
     }
 
     private static ModManifest? ReadManifest(string dir, List<DataDiagnostic> diagnostics, HashSet<string> broken)
@@ -174,58 +328,110 @@ public static class ModLoader
     }
 
     /// <summary>
-    /// Orders mods so dependencies come first; ties go by id so every machine gets the same order.
-    /// Mods with missing, wrong-version or cyclic dependencies are reported and left out.
+    /// Orders enabled mods so dependencies come first, otherwise following <paramref name="preference"/>.
+    /// Mods with missing, disabled, wrong-version or cyclic dependencies, or with an enabled mod listed
+    /// under their <c>conflicts</c>, are reported and left out.
     /// </summary>
     private static List<string> ResolveOrder(
-        Dictionary<string, (ModManifest Manifest, string Directory)> candidates, HashSet<string> broken,
-        List<DataDiagnostic> diagnostics)
+        Dictionary<string, InstalledMod> enabled, HashSet<string> disabled, IReadOnlySet<string> broken,
+        List<string> preference, List<ModConflict> conflicts, List<DataDiagnostic> diagnostics)
     {
-        var usable = new SortedSet<string>(candidates.Keys, StringComparer.Ordinal);
-        foreach (var (id, (manifest, dir)) in candidates.OrderBy(c => c.Key, StringComparer.Ordinal))
+        var usable = new HashSet<string>(enabled.Keys, StringComparer.Ordinal);
+        foreach (var (id, mod) in enabled.OrderBy(c => c.Key, StringComparer.Ordinal))
         {
-            var deps = manifest.Dependencies ?? [];
+            var file = Display(mod.Directory, ManifestFileName);
+            var deps = mod.Manifest.Dependencies ?? [];
             for (var i = 0; i < deps.Count; i++)
             {
                 var dep = deps[i];
-                var error = !candidates.TryGetValue(dep.Id!, out var target)
-                    ? broken.Contains(dep.Id!)
-                        ? (DiagnosticCodes.DependencyFailed, $"mod '{id}' needs mod '{dep.Id}', whose mod.json has errors.")
-                        : (DiagnosticCodes.MissingDependency, $"mod '{id}' needs mod '{dep.Id}', which is not installed.")
-                    : !dep.ParsedVersion!.IsSatisfiedBy(target.Manifest.ParsedVersion!)
+                var error = !enabled.TryGetValue(dep.Id!, out var target)
+                    ? disabled.Contains(dep.Id!)
+                        ? (DiagnosticCodes.DependencyDisabled, $"mod '{id}' needs mod '{dep.Id}', which is disabled; enable it in the Mod Manager.")
+                        : broken.Contains(dep.Id!)
+                            ? (DiagnosticCodes.DependencyFailed, $"mod '{id}' needs mod '{dep.Id}', whose mod.json has errors.")
+                            : (DiagnosticCodes.MissingDependency, $"mod '{id}' needs mod '{dep.Id}', which is not installed.")
+                    : !dep.ParsedVersion!.IsSatisfiedBy(target.Version)
                         ? (DiagnosticCodes.DependencyVersion,
-                            $"mod '{id}' needs '{dep.Id}' version {dep.ParsedVersion.Text}, but {target.Manifest.ParsedVersion} is installed.")
+                            $"mod '{id}' needs '{dep.Id}' version {dep.ParsedVersion.Text}, but {target.Version} is installed.")
                         : default((string, string)?);
                 if (error is { } e)
                 {
-                    diagnostics.Add(new DataDiagnostic(DiagnosticSeverity.Error, e.Item1,
-                        Display(dir, ManifestFileName), $"$.dependencies[{i}]", null, e.Item2));
+                    diagnostics.Add(new DataDiagnostic(DiagnosticSeverity.Error, e.Item1, file, $"$.dependencies[{i}]", null, e.Item2));
                     usable.Remove(id);
                 }
             }
+
+            var refused = mod.Manifest.Conflicts ?? [];
+            for (var i = 0; i < refused.Count; i++)
+            {
+                if (!enabled.TryGetValue(refused[i].Id!, out var other) || !refused[i].ParsedVersion!.IsSatisfiedBy(other.Version))
+                    continue;
+                var message = $"mod '{id}' was not loaded because it conflicts with '{other.Id}' {other.Version}, "
+                    + "which is enabled; disable one of them in the Mod Manager.";
+                diagnostics.Add(new DataDiagnostic(DiagnosticSeverity.Error, DiagnosticCodes.ModIncompatible, file,
+                    $"$.conflicts[{i}]", null, message));
+                conflicts.Add(new ModConflict(ModConflictKind.Incompatible, id, other.Id, null, message));
+                usable.Remove(id);
+            }
         }
 
-        // Kahn's algorithm over usable mods; a mod whose dependency is unusable is handled by the caller.
-        var order = new List<string>();
-        var placed = new HashSet<string>(StringComparer.Ordinal);
-        var pending = new SortedSet<string>(usable, StringComparer.Ordinal);
-        while (pending.Count > 0)
-        {
-            var next = pending.FirstOrDefault(id => (candidates[id].Manifest.Dependencies ?? [])
-                .All(d => placed.Contains(d.Id!) || !usable.Contains(d.Id!)));
-            if (next is null)
-                break;
-            pending.Remove(next);
-            placed.Add(next);
-            order.Add(next);
-        }
-        foreach (var id in pending)
+        // A mod whose dependency is unusable is placed anyway; the caller reports it as a failed dependency.
+        var (order, stuck) = SortByDependencies(preference.Where(usable.Contains),
+            id => enabled[id].DependencyIds.Where(usable.Contains));
+        foreach (var id in stuck)
         {
             diagnostics.Add(new DataDiagnostic(DiagnosticSeverity.Error, DiagnosticCodes.DependencyCycle,
-                Display(candidates[id].Directory, ManifestFileName), "$.dependencies", null,
-                $"mod '{id}' is part of a dependency cycle ({string.Join(", ", pending)}) and was not loaded."));
+                Display(enabled[id].Directory, ManifestFileName), "$.dependencies", null,
+                $"mod '{id}' is part of a dependency cycle ({string.Join(", ", stuck.Order(StringComparer.Ordinal))}) and was not loaded."));
         }
         return order;
+    }
+
+    /// <summary>
+    /// Builds the part table: every mod's own parts, then its overrides in load order, so a later mod's
+    /// override wins. Two overrides of one part are a conflict unless one mod depends on the other.
+    /// </summary>
+    private static Dictionary<string, LoadedPart> ApplyOverrides(List<LoadedMod> mods, List<ModConflict> conflicts,
+        List<DataDiagnostic> diagnostics)
+    {
+        var byId = mods.ToDictionary(m => m.Id, StringComparer.Ordinal);
+        var parts = new Dictionary<string, LoadedPart>(StringComparer.Ordinal);
+        foreach (var mod in mods)
+        {
+            foreach (var part in mod.Parts)
+                parts.Add(part.QualifiedId, part);
+            foreach (var part in mod.Overrides)
+            {
+                var previous = parts[part.QualifiedId];
+                if (previous.IsOverride && !DependsOn(mod.Id, previous.ModId, byId))
+                {
+                    var message = $"mods '{previous.ModId}' and '{mod.Id}' both override '{part.QualifiedId}'; "
+                        + $"'{mod.Id}' loads later and wins. Change the load order in the Mod Manager to pick the other.";
+                    diagnostics.Add(new DataDiagnostic(DiagnosticSeverity.Warning, DiagnosticCodes.OverrideConflict,
+                        Display(mod.Directory, Path.GetRelativePath(mod.Directory, part.FilePath)), "$.id", null, message));
+                    conflicts.Add(new ModConflict(ModConflictKind.OverrideClash, previous.ModId, mod.Id, part.QualifiedId, message));
+                }
+                parts[part.QualifiedId] = part;
+            }
+        }
+        return parts;
+    }
+
+    private static bool DependsOn(string modId, string otherId, Dictionary<string, LoadedMod> mods)
+    {
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var stack = new Stack<string>([modId]);
+        while (stack.TryPop(out var id))
+        {
+            foreach (var dep in mods.GetValueOrDefault(id)?.Manifest.Dependencies ?? [])
+            {
+                if (dep.Id == otherId)
+                    return true;
+                if (seen.Add(dep.Id!))
+                    stack.Push(dep.Id!);
+            }
+        }
+        return false;
     }
 
     private static LoadedMod? LoadParts(ModManifest manifest, string dir, Dictionary<string, LoadedMod> loaded,
@@ -235,15 +441,10 @@ public static class ModLoader
         var deps = (manifest.Dependencies ?? []).Select(d => d.Id!).ToHashSet(StringComparer.Ordinal);
         var validator = new PartValidator(modId, deps,
             id => id == modId ? dir : loaded.GetValueOrDefault(id)?.Directory);
-        var partsDir = Path.Combine(dir, PartsFolder);
-        var files = Directory.Exists(partsDir)
-            ? Directory.GetFiles(partsDir, "*.json", SearchOption.AllDirectories)
-                .OrderBy(f => Path.GetRelativePath(dir, f).Replace('\\', '/'), StringComparer.Ordinal)
-            : Enumerable.Empty<string>();
+        var errors = 0;
 
         var parts = new Dictionary<string, LoadedPart>(StringComparer.Ordinal);
-        var errors = 0;
-        foreach (var file in files)
+        foreach (var file in JsonFiles(dir, Path.Combine(dir, PartsFolder)))
         {
             var sink = new DiagnosticSink(Display(dir, Path.GetRelativePath(dir, file)), diagnostics);
             var part = ReadFile<PartDefinition>(file, sink);
@@ -258,6 +459,42 @@ public static class ModLoader
             }
             errors += sink.ErrorCount;
         }
+
+        var overrides = new Dictionary<string, LoadedPart>(StringComparer.Ordinal);
+        var overridesDir = Path.Combine(dir, OverridesFolder);
+        IEnumerable<string> targets = Directory.Exists(overridesDir) ? Directory.GetDirectories(overridesDir).Order(StringComparer.Ordinal) : [];
+        foreach (var targetDir in targets)
+        {
+            var targetId = Path.GetFileName(targetDir);
+            if (!deps.Contains(targetId) || !loaded.TryGetValue(targetId, out var target))
+            {
+                var sink = new DiagnosticSink(Display(dir, Path.GetRelativePath(dir, targetDir)), diagnostics);
+                sink.Error(DiagnosticCodes.OverrideUndeclaredMod, null,
+                    $"overrides for mod '{targetId}' need '{targetId}' in this mod's dependencies, so it loads first.");
+                errors += sink.ErrorCount;
+                continue;
+            }
+            foreach (var file in JsonFiles(dir, targetDir))
+            {
+                var sink = new DiagnosticSink(Display(dir, Path.GetRelativePath(dir, file)), diagnostics);
+                var part = ReadFile<PartDefinition>(file, sink);
+                if (part is not null)
+                {
+                    validator.Validate(part, sink);
+                    var qualified = $"{targetId}:{part.Id}";
+                    if (part.Id is not null && !target.Parts.Any(p => p.Definition.Id == part.Id))
+                        sink.Error(DiagnosticCodes.OverrideUnknownPart, "$.id",
+                            $"mod '{targetId}' has no part '{part.Id}' to override.");
+                    else if (part.Id is not null && overrides.TryGetValue(qualified, out var other))
+                        sink.Error(DiagnosticCodes.DuplicatePart, "$.id",
+                            $"'{qualified}' is already overridden in {Display(dir, Path.GetRelativePath(dir, other.FilePath))}.");
+                    if (sink.ErrorCount == 0)
+                        overrides.Add(qualified, new LoadedPart(qualified, modId, file, part));
+                }
+                errors += sink.ErrorCount;
+            }
+        }
+
         if (errors > 0)
         {
             diagnostics.Add(new DataDiagnostic(DiagnosticSeverity.Error, DiagnosticCodes.ModNotLoaded,
@@ -265,8 +502,17 @@ public static class ModLoader
                 $"mod '{modId}' was not loaded because {errors} error(s) were found in its files."));
             return null;
         }
-        return new LoadedMod(manifest, dir, [.. parts.Values.OrderBy(p => p.Definition.Id, StringComparer.Ordinal)]);
+        return new LoadedMod(manifest, dir, [.. parts.Values.OrderBy(p => p.Definition.Id, StringComparer.Ordinal)])
+        {
+            Overrides = [.. overrides.Values.OrderBy(p => p.QualifiedId, StringComparer.Ordinal)],
+        };
     }
+
+    // Every *.json under folder, sorted by mod-relative path so all machines read files in the same order.
+    private static IEnumerable<string> JsonFiles(string modDir, string folder) => Directory.Exists(folder)
+        ? Directory.GetFiles(folder, "*.json", SearchOption.AllDirectories)
+            .OrderBy(f => Path.GetRelativePath(modDir, f).Replace('\\', '/'), StringComparer.Ordinal)
+        : [];
 
     private static T? ReadFile<T>(string path, DiagnosticSink sink) where T : class
     {

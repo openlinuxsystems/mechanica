@@ -23,6 +23,8 @@ public sealed class Creation
     private readonly Dictionary<int, PartDefinition> _definitions = [];
     private readonly Dictionary<GridCell, int> _occupancy = [];
     private readonly HashSet<Connection> _connections = [];
+    // World pose of each part's Body, stored on every member so poses survive splits and removals.
+    private readonly Dictionary<int, Pose> _poses = [];
     private Layout? _layout;
     private int _authorityPeer;
     private int _nextPartId = 1;
@@ -86,6 +88,36 @@ public sealed class Creation
     public int BodyIndexOf(int partId) => GetLayout().BodyOfPart[partId];
 
     /// <summary>
+    /// World pose of a Body's grid frame (<see cref="Pose"/>). A Body whose parts carry different poses
+    /// (after a merge) uses its lowest part's; a Body with none stored is at <see cref="Pose.Identity"/>.
+    /// </summary>
+    public Pose BodyPose(int bodyIndex) => StoredPose(Bodies[bodyIndex]) ?? Pose.Identity;
+
+    /// <summary>True when the Body has a stored pose (from a save, a spawn or the simulation).</summary>
+    public bool HasBodyPose(int bodyIndex) => StoredPose(Bodies[bodyIndex]) is not null;
+
+    /// <summary>Sets a Body's world pose; the game writes simulated poses back with this before saving.</summary>
+    public void SetBodyPose(int bodyIndex, Pose pose)
+    {
+        foreach (var id in Bodies[bodyIndex].PartIds)
+            _poses[id] = pose;
+    }
+
+    /// <summary>
+    /// Sets the pose stored on one part, leaving its Body-mates alone. The runtime uses it after a graph
+    /// change to hand each part the pose of the Body it was in, so the lowest-part rule settles merged Bodies.
+    /// </summary>
+    public void SetPartPose(int partId, Pose pose) =>
+        _poses[_parts.ContainsKey(partId) ? partId : throw new ArgumentException($"Creation {Id} has no part {partId}.", nameof(partId))] = pose;
+
+    /// <summary>Puts every Body at <paramref name="pose"/>, as when a Creation is spawned or reset.</summary>
+    public void SetAllBodyPoses(Pose pose)
+    {
+        foreach (var id in _parts.Keys)
+            _poses[id] = pose;
+    }
+
+    /// <summary>
     /// Places a part and attaches it to every touching part whose sockets allow it (see
     /// <see cref="FindAttachments"/>). Fails without changing anything when the definition is unknown or
     /// not placeable, a cell is taken, or the Creation already has parts and the new one attaches to none.
@@ -118,6 +150,9 @@ public sealed class Creation
                 return false;
             }
             _connections.UnionWith(attachments);
+            // A new part joins its neighbours' frame; any attached neighbour will do, they share a grid.
+            if (attachments.Select(c => c.A == instance.Id ? c.B : c.A).FirstOrDefault(_poses.ContainsKey) is var n and > 0)
+                _poses[instance.Id] = _poses[n];
         }
         _nextPartId++;
         _layout = null;
@@ -212,7 +247,11 @@ public sealed class Creation
             var creation = new Creation(allocateCreationId(), Catalog, AuthorityPeer) { _nextPartId = _nextPartId };
             var members = piece.ToHashSet();
             foreach (var id in piece)
+            {
                 creation.Insert(_parts[id], _definitions[id]);
+                if (_poses.TryGetValue(id, out var pose))
+                    creation._poses[id] = pose;
+            }
             foreach (var connection in _connections.Where(c => members.Contains(c.A)).ToList())
             {
                 creation._connections.Add(connection);
@@ -231,7 +270,9 @@ public sealed class Creation
     /// <paramref name="other"/>'s grid is mapped onto this one by <paramref name="rotation"/> then
     /// <paramref name="offset"/>. Parts get new ids (returned as old → new); <paramref name="other"/>'s
     /// edges are kept, and touching faces between the two attach as <see cref="FindAttachments"/> describes.
-    /// Fails without changing anything on overlap or when nothing attaches. <paramref name="other"/> is left
+    /// Body poses carry over, re-expressed in this grid, so a Body of <paramref name="other"/> stays where
+    /// it was in the world; once it joins one of this Creation's Bodies, that Body's pose wins. Fails
+    /// without changing anything on overlap or when nothing attaches. <paramref name="other"/> is left
     /// unchanged for the caller to discard.
     /// </summary>
     public bool TryMergeFrom(Creation other, GridRotation rotation, GridCell offset, bool weld,
@@ -275,6 +316,13 @@ public sealed class Creation
             _nextPartId -= added.Count;
             error = $"creation {other.Id} does not attach to creation {Id}.";
             return false;
+        }
+        // other's grid point p sits at mapping(p) here, so a pose for this grid is otherPose ∘ mapping⁻¹.
+        var unmap = Pose.FromGrid(rotation, offset).Inverse();
+        foreach (var (oldId, newId) in map)
+        {
+            if (other._poses.TryGetValue(oldId, out var pose))
+                _poses[newId] = pose.Compose(unmap);
         }
         foreach (var c in other._connections)
             _connections.Add(c.Type == ConnectionType.Structural
@@ -338,6 +386,9 @@ public sealed class Creation
         return pieces;
     }
 
+    private Pose? StoredPose(Body body) =>
+        body.PartIds.FirstOrDefault(_poses.ContainsKey) is var id and > 0 ? _poses[id] : null;
+
     private bool TryResolve(string qualified, [NotNullWhen(true)] out PartDefinition? definition, [NotNullWhen(false)] out string? error)
     {
         definition = Catalog.FindDefinition(qualified);
@@ -364,6 +415,7 @@ public sealed class Creation
             _occupancy.Remove(c);
         _parts.Remove(partId);
         _definitions.Remove(partId);
+        _poses.Remove(partId);
         _connections.RemoveWhere(c => c.Involves(partId));
     }
 
