@@ -519,7 +519,7 @@ Raising or lowering the caller's Lift. Arguments of SetLiftLevel.
 
 *action, play scope*
 
-A Sledgehammer hit. Arguments of Sledge: one Sledgehammer hit on a part (Creation and Part), a player (Player) or a world object such as a tree (Object).
+A Sledgehammer hit. Arguments of Sledge: one Sledgehammer hit on a part (Creation and Part), a player (Player), a world object such as a tree (Object), a bot (Bot), or, with only At, anything else it lands on (the ground, a rock face): that hit only thuds.
 
 | Param | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|
@@ -528,6 +528,7 @@ A Sledgehammer hit. Arguments of Sledge: one Sledgehammer hit on a part (Creatio
 | `player` | integer or null |  |  | Peer of the player hit. |
 | `object` | string or null |  |  | Id of the world object hit ("3.10.-4"). |
 | `bot` | integer or null |  |  | Id of the bot hit. |
+| `at` | number[3] or null |  |  | Where the head lands, in world metres: the hit's sound and dust play there. |
 
 ### `TurnLift`
 

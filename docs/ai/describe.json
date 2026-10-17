@@ -2439,9 +2439,9 @@
       "kind": "action",
       "group": "building",
       "scope": "play",
-      "description": "A Sledgehammer hit. Arguments of Sledge: one Sledgehammer hit on a part (Creation and Part), a player (Player) or a world object such as a tree (Object).",
+      "description": "A Sledgehammer hit. Arguments of Sledge: one Sledgehammer hit on a part (Creation and Part), a player (Player), a world object such as a tree (Object), a bot (Bot), or, with only At, anything else it lands on (the ground, a rock face): that hit only thuds.",
       "params": {
-        "description": "Arguments of Sledge: one Sledgehammer hit on a part (Creation and Part), a player (Player) or a world object such as a tree (Object).",
+        "description": "Arguments of Sledge: one Sledgehammer hit on a part (Creation and Part), a player (Player), a world object such as a tree (Object), a bot (Bot), or, with only At, anything else it lands on (the ground, a rock face): that hit only thuds.",
         "type": "object",
         "properties": {
           "creation": {
@@ -2493,6 +2493,23 @@
             "anyOf": [
               {
                 "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "at": {
+            "description": "Where the head lands, in world metres: the hit's sound and dust play there.",
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 3,
+                "maxItems": 3,
+                "description": "[x, y, z]"
               },
               {
                 "type": "null"
