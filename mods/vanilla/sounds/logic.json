@@ -113,7 +113,7 @@
     {
       "id": "horn_honk",
       "clips": [
-        "sounds/logic/horn_honk.ogg"
+        "sounds/logic/horn_honk.wav"
       ],
       "loop": true,
       "max_distance": 80

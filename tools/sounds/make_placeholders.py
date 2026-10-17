@@ -399,8 +399,26 @@ def ev(group, sid, recipe, variants=1, loop=None, **opts):
     EVENTS.append((group, sid, recipe, opts, variants, loop is not None, loop))
 
 
+def loudness(x, rate):
+    """The loudest 400 ms of x as RMS in dB (the whole clip when it is shorter)."""
+    w = min(len(x), round(0.4 * rate))
+    power = np.convolve(x * x, np.ones(w) / w, mode="valid")
+    return 10 * np.log10(max(float(np.max(power)), 1e-12))
+
+
+def level_to(x, rate, target_db, ceiling=0.9, squash_db=8.0):
+    """Scales x so its loudest 400 ms sits at target_db. A clip whose peaks would pass the ceiling first is
+    soft-limited (up to squash_db over it) so a sharp transient does not hold its body down; past that it stays quieter."""
+    gain = 10 ** ((target_db - loudness(x, rate)) / 20)
+    top = float(np.max(np.abs(x)))
+    if top * gain <= ceiling:
+        return x * gain
+    gain = min(gain, ceiling / top * 10 ** (squash_db / 20))
+    return ceiling * np.tanh(x * gain / ceiling)
+
+
 def rev(group, sid, makers, **opts):
-    """A recorded event: one maker per variant, each returning rec(...)."""
+    """A recorded event: one maker per variant, each returning rec(...). loudness= (dB) levels every variant alike."""
     ev(group, sid, [lambda rng, make=make: make() for make in makers], variants=len(makers), rate=REC_SR, **opts)
 
 
@@ -466,14 +484,14 @@ MAT_OPTS = dict(pitch_variation=0.06, volume_variation_db=1.5, max_distance=30.0
 
 for mat in MATERIALS:
     place, impact, smash = MATERIAL_RECORDINGS[mat]
-    rev("materials", f"place_{mat}", place, **MAT_OPTS)
-    rev("materials", f"break_{mat}", smash, **{**MAT_OPTS, "max_distance": 45.0})
-    rev("materials", f"impact_{mat}", impact, **{**MAT_OPTS, "max_instances": 6})
+    rev("materials", f"place_{mat}", place, loudness=-21.0, **MAT_OPTS)
+    rev("materials", f"break_{mat}", smash, loudness=-18.0, **{**MAT_OPTS, "max_distance": 45.0})
+    rev("materials", f"impact_{mat}", impact, loudness=-19.0, **{**MAT_OPTS, "max_instances": 6})
 ev("materials", "burn_wood", lambda rng, length: looped(lambda d: crackle(rng, d), length), loop=3.0, max_distance=25.0,
    parameters=[dict(name="intensity", pitch=[0.9, 1.1], volume_db=[-12.0, 0.0])])
 ev("materials", "vehicle_crash", lambda rng: edges(peak(mix(0.9, (mat_break("metal")(rng), 0), (mat_impact("scrap")(rng), 0.05), (boom(rng, 0.9), 0)), 0.9)),
    pitch_variation=0.08, max_distance=80.0)
-rev("materials", "impact_soft", series("impactSoft_medium", (3, 4), level=0.6), pitch_variation=0.08, **QUIET)
+rev("materials", "impact_soft", series("impactSoft_medium", (3, 4), level=0.6), loudness=-20.0, pitch_variation=0.08, **QUIET)
 
 # Building and tools
 ev("building", "part_attach", lambda rng: edges(peak(mix(0.3, (click(rng, 1800), 0), (thud(rng, 0.25, 80, 1200, 0.03, 0.8), 0.02)), 0.7)), pitch_variation=0.05, **TOOL)
@@ -630,27 +648,27 @@ ev("bots", "spooler_fire", lambda rng: edges(peak(mix(0.4, (glide(1400, 500, 0.1
 # Player
 STEP = dict(pitch_variation=0.1, volume_variation_db=2.0, max_distance=15.0)
 rev("player", "player_hurt", [lambda: rec(f"{K}impactPunch_medium_000", take(f"{K}cloth1", 0.02, 0.5), level=0.7),
-                              lambda: rec(f"{K}impactPunch_medium_001", take(f"{K}cloth2", 0.02, 0.5), level=0.7)], pitch_variation=0.06, spatial=False)
+                              lambda: rec(f"{K}impactPunch_medium_001", take(f"{K}cloth2", 0.02, 0.5), level=0.7)], pitch_variation=0.06, spatial=False, loudness=-18.0)
 ev("player", "player_heal", lambda rng: beeps([523, 659, 784, 1046], 0.07, level=0.4), spatial=False)
 ev("player", "heartbeat_low", lambda rng, length: heartbeat(length), loop=2.0, rate=REC_SR, spatial=False,
    parameters=[dict(name="urgency", pitch=[0.9, 1.4], volume_db=[-6.0, 0.0])])
-rev("player", "footstep_default", series("footstep_grass", range(4), level=0.5), **STEP)
+rev("player", "footstep_default", series("footstep_grass", range(4), level=0.5), **STEP, loudness=-25.0)
 rev("player", "footstep_metal", [lambda n=n: rec(f"{K}footstep_concrete_{n:03d}", take(f"{K}impactPlate_light_{n:03d}", 0.0, 0.6), level=0.5, max_dur=0.4)
-                                 for n in range(3)], **STEP)
-rev("player", "footstep_wood", series("footstep_wood", range(4), level=0.5), **STEP)
-rev("player", "footstep_water", [lambda n=n: rec(f"{W}splash_{n:02d}", level=0.45, max_dur=0.35) for n in (10, 9, 6)], **STEP)
-rev("player", "player_jump", [lambda: rec(f"{K}cloth3", take(f"{K}footstep_concrete_004", 0.0, 0.5), level=0.5)], pitch_variation=0.08, max_distance=15.0)
+                                 for n in range(3)], **STEP, loudness=-25.0)
+rev("player", "footstep_wood", series("footstep_wood", range(4), level=0.5), **STEP, loudness=-25.0)
+rev("player", "footstep_water", [lambda n=n: rec(f"{W}splash_{n:02d}", level=0.45, max_dur=0.35) for n in (10, 9, 6)], **STEP, loudness=-25.0)
+rev("player", "player_jump", [lambda: rec(f"{K}cloth3", take(f"{K}footstep_concrete_004", 0.0, 0.5), level=0.5)], pitch_variation=0.08, max_distance=15.0, loudness=-24.0)
 rev("player", "player_land", [lambda: rec(f"{K}footstep_grass_004", take(f"{K}impactSoft_medium_000", 0.0, 0.8), level=0.6),
                               lambda: rec(f"{K}footstep_concrete_003", take(f"{K}impactSoft_medium_001", 0.0, 0.8), level=0.6)],
-    pitch_variation=0.08, max_distance=20.0)
+    pitch_variation=0.08, max_distance=20.0, loudness=-20.0)
 rev("player", "player_land_hard", [lambda: rec(f"{K}impactSoft_heavy_000", take(f"{K}impactPunch_heavy_000", 0.0, 0.5), take(f"{K}cloth4", 0.03, 0.6), level=0.8)],
-    pitch_variation=0.05, max_distance=30.0)
+    pitch_variation=0.05, max_distance=30.0, loudness=-16.0)
 rev("player", "swim_stroke", [lambda n=n: rec(f"{W}splash_{n:02d}", level=0.5, max_dur=0.5) for n in (14, 15)],
-    pitch_variation=0.1, volume_variation_db=2.0, max_distance=20.0)
-rev("player", "water_enter", [lambda: rec(f"{W}splash_01", level=0.8)], pitch_variation=0.06, max_distance=30.0)
-rev("player", "water_exit", [lambda: rec(f"{W}splash_02", take(f"{W}splash_09", 0.3, 0.5), level=0.6)], pitch_variation=0.06, max_distance=20.0)
+    pitch_variation=0.1, volume_variation_db=2.0, max_distance=20.0, loudness=-25.0)
+rev("player", "water_enter", [lambda: rec(f"{W}splash_01", take(f"{W}splash_05", 0.04, 0.8), take(f"{W}splash_11", 0.1, 0.6), level=0.8)], pitch_variation=0.06, max_distance=30.0, loudness=-15.0)
+rev("player", "water_exit", [lambda: rec(f"{W}splash_02", take(f"{W}splash_09", 0.3, 0.5), level=0.6)], pitch_variation=0.06, max_distance=20.0, loudness=-21.0)
 rev("player", "tool_equip", [lambda: rec(f"{K}handleSmallLeather", take(f"{K}metalClick", 0.05, 0.7), level=0.45)],
-    pitch_variation=0.06, max_distance=12.0, cooldown=0.05)
+    pitch_variation=0.06, max_distance=12.0, cooldown=0.05, loudness=-24.0)
 
 # UI: not positional.
 UI = dict(bus="ui")
@@ -715,6 +733,42 @@ def write_ogg(path, x, rate=SR):
                         "-fflags", "+bitexact", "-flags:a", "+bitexact", path], check=True)
 
 
+def decode(path):
+    raw = subprocess.run(["ffmpeg", "-v", "error", "-i", path, "-ac", "1", "-f", "f32le", "-"], check=True, capture_output=True).stdout
+    return np.frombuffer(raw, "<f4").astype(np.float64)
+
+
+def fade_out(x, rate, ms=15):
+    """Fades a one-shot that is still sounding at its last sample, so it never ends on a click."""
+    k = min(len(x) // 2, round(ms / 1000 * rate))
+    if float(np.max(np.abs(x[-k:]))) <= 0.1:
+        return x
+    x = x.copy()
+    x[-k:] *= np.linspace(1, 0, k)
+    return x
+
+
+def write_clip(group, name, x, rate, is_loop):
+    """Writes Vorbis, checked by decoding it: a peak Vorbis pushed past full scale is lowered and the clip rewritten,
+    and a loop whose seam Vorbis smeared (its end no longer meets its start) is kept as 16-bit WAV instead. Loops come
+    back sample-exact; a one-shot gets silence on its end, since Vorbis can cut a few milliseconds off it."""
+    rel = f"sounds/{group}/{name}.ogg"
+    path = os.path.join(ROOT, "mods", "vanilla", rel)
+    if not is_loop:
+        x = np.concatenate([x, np.zeros(512)])  # the encoder can drop up to 256 samples off the end; let it drop silence
+    write_ogg(path, x, rate)
+    y = decode(path)
+    if float(np.max(np.abs(y))) > 0.98:
+        x = x * (0.95 / float(np.max(np.abs(y))))
+        write_ogg(path, x, rate)
+        y = decode(path)
+    if is_loop and abs(y[-1] - y[0]) > abs(x[-1] - x[0]) + 0.05:
+        os.remove(path)
+        rel = f"sounds/{group}/{name}.wav"
+        write_wav(os.path.join(ROOT, "mods", "vanilla", rel), x, rate)
+    return rel
+
+
 def num(v):
     """Formats a number the way System.Text.Json writes a float: shortest round-trip, no trailing .0."""
     f = np.float32(v)
@@ -773,12 +827,16 @@ def main():
             x = peak(make(rng, length), 0.7) if is_loop else make(rng)
             if not np.all(np.isfinite(x)) or float(np.max(np.abs(x))) < 0.05:
                 sys.exit(f"{sid}: the recipe made silence or NaNs")
+            rate = opts.get("rate", SR)
+            if "loudness" in opts:
+                x = level_to(x, rate, opts["loudness"])
+            if not is_loop:
+                x = fade_out(x, rate)
             if group == "ui":
                 rel = f"sounds/{group}/{name}.wav"
                 write_wav(os.path.join(ROOT, "mods", "vanilla", rel), x)
             else:
-                rel = f"sounds/{group}/{name}.ogg"
-                write_ogg(os.path.join(ROOT, "mods", "vanilla", rel), x, opts.get("rate", SR))
+                rel = write_clip(group, name, x, rate, is_loop)
             clips.append(rel)
         entry = {"id": sid, "clips": clips}
         if opts.get("bus"):
