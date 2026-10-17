@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-"""Generates vanilla's placeholder audio and sound event files (chunk 16).
+"""Generates vanilla's audio and sound event files (chunk 16).
 
-Every sound event in CATALOG_IDS.md gets an original, synthesised placeholder: UI sounds as 16-bit
-mono WAV (tiny, and instant to start), everything else as Ogg Vorbis. Nothing is sampled or downloaded. The output is
+Every sound event in CATALOG_IDS.md gets a clip: the player's footsteps, landings, water, hurt and heartbeat
+and every material's place, impact and break sounds are CC0 recordings from tools/sounds/recordings/ (see
+CREDITS.md there), trimmed, layered and levelled; the rest are original synthesis. UI sounds are 16-bit mono
+WAV (tiny, and instant to start), everything else Ogg Vorbis. Nothing is downloaded. The output is
 deterministic for a given numpy and ffmpeg, so rerunning only changes what the recipes change.
 
 Writes mods/vanilla/sounds/<group>.json (canonical DataJson form) and
@@ -133,6 +135,55 @@ def looped(make, length, fade=0.15):
     ramp = np.linspace(0, 1, f)
     out[:f] = x[:f] * ramp + x[n : n + f] * (1 - ramp)
     return out
+
+
+# ---- Recordings --------------------------------------------------------------------------------
+# Footsteps, landings, water and the material hits are CC0 recordings (tools/sounds/recordings/CREDITS.md),
+# trimmed, layered and levelled here. They are written at REC_SR so their highs survive.
+
+REC_SR = 44100
+RECORDINGS = os.path.join(ROOT, "tools", "sounds", "recordings")
+_decoded = {}
+
+
+def load(name, pitch=1.0, lowpass=None):
+    """tools/sounds/recordings/<name>.ogg as mono floats at REC_SR; pitch 0.8 plays it slower and lower."""
+    key = (name, pitch, lowpass)
+    if key not in _decoded:
+        filters = [f"aresample={REC_SR}"]
+        if pitch != 1.0:
+            filters += [f"asetrate={round(REC_SR * pitch)}", f"aresample={REC_SR}"]
+        if lowpass:
+            filters.append(f"lowpass=f={lowpass}")
+        raw = subprocess.run(["ffmpeg", "-v", "error", "-i", os.path.join(RECORDINGS, name + ".ogg"), "-af", ",".join(filters),
+                              "-ac", "1", "-f", "f32le", "-"], check=True, capture_output=True).stdout
+        _decoded[key] = np.frombuffer(raw, "<f4").astype(np.float64)
+    return _decoded[key]
+
+
+def take(name, at=0.0, gain=1.0, **filters):
+    """One layer for rec(): a recording, when it starts in seconds and how loud it is against the others."""
+    return load(name, **filters) * gain, at
+
+
+def rec(*layers, level=0.8, max_dur=None, tail=0.06):
+    """Layers recordings (names or take()s), cuts the silence around them, fades the ends and peaks at level."""
+    layers = [take(l) if isinstance(l, str) else l for l in layers]
+    out = np.zeros(max(round(at * REC_SR) + len(x) for x, at in layers))
+    for x, at in layers:
+        i = round(at * REC_SR)
+        out[i : i + len(x)] += x
+    loud = np.flatnonzero(np.abs(out) > np.max(np.abs(out)) * 0.01)
+    start = max(0, loud[0] - round(0.002 * REC_SR))
+    stop = min(len(out), loud[-1] + round(tail * REC_SR))
+    if max_dur:
+        stop = min(stop, start + round(max_dur * REC_SR))
+    out = out[start:stop].copy()
+    fade = min(len(out) // 3, round(tail * REC_SR))
+    out[len(out) - fade :] *= np.linspace(1, 0, fade) ** 2
+    attack = round(0.002 * REC_SR)
+    out[:attack] *= np.linspace(0, 1, attack)
+    return peak(out, level)
 
 
 # ---- Recipes -----------------------------------------------------------------------------------
@@ -348,19 +399,81 @@ def ev(group, sid, recipe, variants=1, loop=None, **opts):
     EVENTS.append((group, sid, recipe, opts, variants, loop is not None, loop))
 
 
+def rev(group, sid, makers, **opts):
+    """A recorded event: one maker per variant, each returning rec(...)."""
+    ev(group, sid, [lambda rng, make=make: make() for make in makers], variants=len(makers), rate=REC_SR, **opts)
+
+
+K = "kenney/"
+W = "rubberduck/"
+
+
+def series(name, numbers, **kw):
+    """Makers for kenney/<name>_000-style files, one per number."""
+    return [lambda n=n: rec(take(f"{K}{name}_{n:03d}", **{k: v for k, v in kw.items() if k in ("pitch", "lowpass")}), level=kw.get("level", 0.8))
+            for n in numbers]
+
+
+# Per material: place (3 variants), impact (3) and break (2) from recordings.
+MAT_PLACE = 0.75
+MAT_HIT = 0.85
+MATERIAL_RECORDINGS = {
+    "wood": (series("impactWood_light", range(3), level=MAT_PLACE), series("impactWood_medium", range(3), level=MAT_HIT),
+             [lambda: rec(f"{K}impactWood_heavy_000", take(f"{K}impactPlank_medium_000", 0.06, 0.8), take(f"{K}impactWood_light_003", 0.15, 0.6), level=MAT_HIT),
+              lambda: rec(f"{K}impactWood_heavy_001", take(f"{K}impactPlank_medium_001", 0.05, 0.8), take(f"{K}impactWood_light_004", 0.18, 0.6), level=MAT_HIT)]),
+    "metal": (series("impactMetal_light", range(3), level=MAT_PLACE), series("impactMetal_medium", range(3), level=MAT_HIT),
+              [lambda: rec(f"{K}impactMetal_heavy_000", take(f"{K}impactPlate_heavy_000", 0.05, 0.8), take(f"{K}impactMetal_light_003", 0.2, 0.5), level=MAT_HIT),
+               lambda: rec(f"{K}impactMetal_heavy_001", take(f"{K}impactPlate_heavy_001", 0.04, 0.8), take(f"{K}impactMetal_light_004", 0.22, 0.5), level=MAT_HIT)]),
+    "concrete": (series("impactMining", range(3), pitch=0.8, lowpass=2500, level=MAT_PLACE), series("impactMining", (2, 3, 4), pitch=0.9, level=MAT_HIT),
+                 [lambda: rec(take(f"{K}impactSoft_heavy_000", lowpass=600), take(f"{K}impactMining_003", 0, 0.9, pitch=0.8),
+                              take(f"{K}impactMining_004", 0.07, 0.7, pitch=0.85), level=MAT_HIT),
+                  lambda: rec(take(f"{K}impactSoft_heavy_001", lowpass=600), take(f"{K}impactMining_001", 0, 0.9, pitch=0.8),
+                              take(f"{K}impactMining_000", 0.09, 0.7, pitch=0.85), level=MAT_HIT)]),
+    "glass": (series("impactGlass_light", range(3), level=MAT_PLACE), series("impactGlass_medium", range(3), level=MAT_HIT),
+              [lambda: rec(f"{K}impactGlass_heavy_000", take(f"{K}impactGlass_heavy_001", 0.08, 0.8), take(f"{K}impactGlass_light_003", 0.2, 0.6), level=MAT_HIT),
+               lambda: rec(f"{K}impactGlass_heavy_002", take(f"{K}impactGlass_heavy_003", 0.06, 0.8), take(f"{K}impactGlass_light_004", 0.17, 0.6), level=MAT_HIT)]),
+    "scrap": (series("impactTin_medium", range(3), level=MAT_PLACE), series("impactPlate_medium", range(3), level=MAT_HIT),
+              [lambda: rec(f"{K}impactMetal_heavy_002", take(f"{K}impactTin_medium_003", 0.06, 0.8), take(f"{K}impactPlate_light_003", 0.15, 0.6), level=MAT_HIT),
+               lambda: rec(f"{K}impactMetal_heavy_003", take(f"{K}impactTin_medium_004", 0.05, 0.8), take(f"{K}impactPlate_light_004", 0.19, 0.6), level=MAT_HIT)]),
+    "plastic": (series("impactGeneric_light", range(3), level=MAT_PLACE), series("impactGeneric_light", (3, 4, 0), pitch=0.85, level=MAT_HIT),
+                [lambda: rec(f"{K}impactGeneric_light_001", take(f"{K}impactGeneric_light_002", 0.07, 0.8, pitch=1.1), take(f"{K}impactGeneric_light_003", 0.15, 0.6, pitch=1.2), level=MAT_HIT),
+                 lambda: rec(f"{K}impactGeneric_light_004", take(f"{K}impactGeneric_light_000", 0.06, 0.8, pitch=1.1), take(f"{K}impactGeneric_light_001", 0.16, 0.6, pitch=1.2), level=MAT_HIT)]),
+    "tile": (series("impactGlass_light", (3, 4, 0), pitch=0.7, level=MAT_PLACE), series("impactGlass_medium", (3, 4, 2), pitch=0.75, level=MAT_HIT),
+             [lambda: rec(take(f"{K}impactGlass_heavy_004", pitch=0.8), take(f"{K}impactMining_000", 0.03, 0.7), take(f"{K}impactGlass_light_001", 0.15, 0.6, pitch=0.8), level=MAT_HIT),
+              lambda: rec(take(f"{K}impactGlass_heavy_001", pitch=0.8), take(f"{K}impactMining_002", 0.04, 0.7), take(f"{K}impactGlass_light_002", 0.18, 0.6, pitch=0.8), level=MAT_HIT)]),
+    "cardboard": ([lambda n=n: rec(f"{K}bookPlace{n}", level=MAT_PLACE) for n in (1, 2, 3)],
+                  [lambda: rec(f"{K}bookClose", level=MAT_HIT), lambda: rec(f"{K}dropLeather", level=MAT_HIT), lambda: rec(take(f"{K}bookPlace2", pitch=0.8), level=MAT_HIT)],
+                  [lambda: rec(f"{K}bookFlip1", take(f"{K}bookClose", 0.05), take(f"{K}bookFlip2", 0.2, 0.7), level=MAT_HIT),
+                   lambda: rec(f"{K}bookFlip3", take(f"{K}dropLeather", 0.04), level=MAT_HIT)]),
+    "fabric": (series("impactSoft_medium", range(3), level=MAT_PLACE), series("impactSoft_heavy", range(3), level=MAT_HIT),
+               [lambda: rec(f"{K}cloth1", take(f"{K}cloth3", 0.1, 0.8), level=MAT_HIT), lambda: rec(f"{K}cloth2", take(f"{K}cloth4", 0.08, 0.8), level=MAT_HIT)]),
+}
+
+
+def heartbeat(length):
+    """Two low thumps a beat, every second, as a seamless loop."""
+    out = np.zeros(round(length * REC_SR))
+    lub, dub = load(f"{K}impactSoft_heavy_003", lowpass=180), load(f"{K}impactSoft_heavy_004", lowpass=180) * 0.7
+    for beat in range(round(length)):
+        for x, at in ((lub, beat), (dub, beat + 0.25)):
+            np.add.at(out, (round(at * REC_SR) + np.arange(len(x))) % len(out), x)  # a tail past the end wraps to the start
+    return out
+
+
 QUIET = dict(max_distance=20.0)
 TOOL = dict(max_distance=30.0)
 MAT_OPTS = dict(pitch_variation=0.06, volume_variation_db=1.5, max_distance=30.0, cooldown=0.02)
 
 for mat in MATERIALS:
-    ev("materials", f"place_{mat}", mat_place(mat), variants=3, **MAT_OPTS)
-    ev("materials", f"break_{mat}", mat_break(mat), variants=2, **{**MAT_OPTS, "max_distance": 45.0})
-    ev("materials", f"impact_{mat}", mat_impact(mat), variants=3, **{**MAT_OPTS, "max_instances": 6})
+    place, impact, smash = MATERIAL_RECORDINGS[mat]
+    rev("materials", f"place_{mat}", place, **MAT_OPTS)
+    rev("materials", f"break_{mat}", smash, **{**MAT_OPTS, "max_distance": 45.0})
+    rev("materials", f"impact_{mat}", impact, **{**MAT_OPTS, "max_instances": 6})
 ev("materials", "burn_wood", lambda rng, length: looped(lambda d: crackle(rng, d), length), loop=3.0, max_distance=25.0,
    parameters=[dict(name="intensity", pitch=[0.9, 1.1], volume_db=[-12.0, 0.0])])
 ev("materials", "vehicle_crash", lambda rng: edges(peak(mix(0.9, (mat_break("metal")(rng), 0), (mat_impact("scrap")(rng), 0.05), (boom(rng, 0.9), 0)), 0.9)),
    pitch_variation=0.08, max_distance=80.0)
-ev("materials", "impact_soft", lambda rng: edges(peak(thud(rng, 0.3, 40, 400, 0.05), 0.6)), variants=2, pitch_variation=0.08, **QUIET)
+rev("materials", "impact_soft", series("impactSoft_medium", (3, 4), level=0.6), pitch_variation=0.08, **QUIET)
 
 # Building and tools
 ev("building", "part_attach", lambda rng: edges(peak(mix(0.3, (click(rng, 1800), 0), (thud(rng, 0.25, 80, 1200, 0.03, 0.8), 0.02)), 0.7)), pitch_variation=0.05, **TOOL)
@@ -515,41 +628,29 @@ ev("bots", "rakehand_chase", engine_loop(55, 0.35), loop=1.5, max_distance=50.0)
 ev("bots", "spooler_fire", lambda rng: edges(peak(mix(0.4, (glide(1400, 500, 0.15) * decay(0.15, 0.06), 0), (click(rng, 2000, 0.1), 0)), 0.75)), pitch_variation=0.06, max_distance=50.0)
 
 # Player
-ev("player", "player_hurt", lambda rng: voice(180, 0.3, (1.1, 0.8), rng, 0.3, 0.7), variants=2, pitch_variation=0.06, spatial=False)
+STEP = dict(pitch_variation=0.1, volume_variation_db=2.0, max_distance=15.0)
+rev("player", "player_hurt", [lambda: rec(f"{K}impactPunch_medium_000", take(f"{K}cloth1", 0.02, 0.5), level=0.7),
+                              lambda: rec(f"{K}impactPunch_medium_001", take(f"{K}cloth2", 0.02, 0.5), level=0.7)], pitch_variation=0.06, spatial=False)
 ev("player", "player_heal", lambda rng: beeps([523, 659, 784, 1046], 0.07, level=0.4), spatial=False)
-ev("player", "heartbeat_low", pattern_loop(lambda rng: [(thud(rng, 0.15, 30, 200, 0.04, 1.0), 0.0), (thud(rng, 0.15, 30, 200, 0.04, 0.7), 0.25)], 1.0),
-   loop=2.0, spatial=False, parameters=[dict(name="urgency", pitch=[0.9, 1.4], volume_db=[-6.0, 0.0])])
-ev("player", "footstep_default", lambda rng: edges(peak(thud(rng, 0.2, 60, 1500, 0.025, 0.7) + band(noise(rng, 0.2), 1000, 4000) * decay(0.2, 0.02) * 0.3, 0.5)),
-   variants=3, pitch_variation=0.1, volume_variation_db=2.0, max_distance=15.0)
-ev("player", "footstep_metal", lambda rng: edges(peak(mat_place("metal")(rng) * 0.5 + thud(rng, 0.4, 60, 800, 0.02, 0.5), 0.5)),
-   variants=3, pitch_variation=0.1, volume_variation_db=2.0, max_distance=15.0)
-
-def splash(rng, dur, size=1.0, level=0.7):
-    """Water: a burst of hissing spray plus a few rising bubble blips."""
-    spray = band(noise(rng, dur), 500, 6000) * decay(dur, 0.06 + 0.12 * size, 0.004)
-    body = band(noise(rng, dur), 80, 700) * decay(dur, 0.05 + 0.08 * size) * 0.8 * size
-    bubbles = [(glide(rng.uniform(500, 900), rng.uniform(1200, 2000), 0.05) * decay(0.05, 0.015) * 0.3, rng.uniform(0.02, dur * 0.7))
-               for _ in range(int(4 + 6 * size))]
-    return edges(peak(mix(dur, (spray + body, 0), *bubbles), level))
-
-
-ev("player", "footstep_wood", lambda rng: edges(peak(mat_place("wood")(rng) * 0.4 + thud(rng, 0.4, 60, 1000, 0.025, 0.6), 0.5)),
-   variants=3, pitch_variation=0.1, volume_variation_db=2.0, max_distance=15.0)
-ev("player", "footstep_water", lambda rng: splash(rng, 0.3, 0.3, 0.5), variants=3, pitch_variation=0.1, volume_variation_db=2.0, max_distance=15.0)
-ev("player", "player_jump", lambda rng: edges(peak(mix(0.3, (whoosh(rng, 0.22, 250, 2500, 0.5), 0), (thud(rng, 0.15, 50, 900, 0.02, 0.6), 0)), 0.5)),
-   pitch_variation=0.08, max_distance=15.0)
-ev("player", "player_land", lambda rng: edges(peak(thud(rng, 0.3, 40, 1200, 0.035, 1.0) + band(noise(rng, 0.3), 1200, 5000) * decay(0.3, 0.02) * 0.25, 0.6)),
-   variants=2, pitch_variation=0.08, max_distance=20.0)
-ev("player", "player_land_hard", lambda rng: edges(peak(mix(0.6, (thud(rng, 0.6, 30, 900, 0.08, 1.0), 0), (mat_impact("fabric")(rng) * 0.6, 0.0),
-                                                            (band(noise(rng, 0.3), 1500, 6000) * decay(0.3, 0.03) * 0.3, 0.02)), 0.8)),
-   pitch_variation=0.05, max_distance=30.0)
-ev("player", "swim_stroke", lambda rng: edges(peak(mix(0.5, (whoosh(rng, 0.4, 200, 2500, 0.5), 0), (splash(rng, 0.3, 0.2, 0.4), 0.15)), 0.5)),
-   variants=2, pitch_variation=0.1, volume_variation_db=2.0, max_distance=20.0)
-ev("player", "water_enter", lambda rng: splash(rng, 0.9, 1.0, 0.8), pitch_variation=0.06, max_distance=30.0)
-ev("player", "water_exit", lambda rng: edges(peak(mix(0.8, (splash(rng, 0.4, 0.5, 0.5), 0), (splash(rng, 0.3, 0.15, 0.25), 0.35)), 0.6)),
-   pitch_variation=0.06, max_distance=20.0)
-ev("player", "tool_equip", lambda rng: edges(peak(mix(0.25, (click(rng, 1600), 0), (mat_place("metal")(rng) * 0.25, 0.04)), 0.45)),
-   pitch_variation=0.06, max_distance=12.0, cooldown=0.05)
+ev("player", "heartbeat_low", lambda rng, length: heartbeat(length), loop=2.0, rate=REC_SR, spatial=False,
+   parameters=[dict(name="urgency", pitch=[0.9, 1.4], volume_db=[-6.0, 0.0])])
+rev("player", "footstep_default", series("footstep_grass", range(4), level=0.5), **STEP)
+rev("player", "footstep_metal", [lambda n=n: rec(f"{K}footstep_concrete_{n:03d}", take(f"{K}impactPlate_light_{n:03d}", 0.0, 0.6), level=0.5, max_dur=0.4)
+                                 for n in range(3)], **STEP)
+rev("player", "footstep_wood", series("footstep_wood", range(4), level=0.5), **STEP)
+rev("player", "footstep_water", [lambda n=n: rec(f"{W}splash_{n:02d}", level=0.45, max_dur=0.35) for n in (10, 9, 6)], **STEP)
+rev("player", "player_jump", [lambda: rec(f"{K}cloth3", take(f"{K}footstep_concrete_004", 0.0, 0.5), level=0.5)], pitch_variation=0.08, max_distance=15.0)
+rev("player", "player_land", [lambda: rec(f"{K}footstep_grass_004", take(f"{K}impactSoft_medium_000", 0.0, 0.8), level=0.6),
+                              lambda: rec(f"{K}footstep_concrete_003", take(f"{K}impactSoft_medium_001", 0.0, 0.8), level=0.6)],
+    pitch_variation=0.08, max_distance=20.0)
+rev("player", "player_land_hard", [lambda: rec(f"{K}impactSoft_heavy_000", take(f"{K}impactPunch_heavy_000", 0.0, 0.5), take(f"{K}cloth4", 0.03, 0.6), level=0.8)],
+    pitch_variation=0.05, max_distance=30.0)
+rev("player", "swim_stroke", [lambda n=n: rec(f"{W}splash_{n:02d}", level=0.5, max_dur=0.5) for n in (14, 15)],
+    pitch_variation=0.1, volume_variation_db=2.0, max_distance=20.0)
+rev("player", "water_enter", [lambda: rec(f"{W}splash_01", level=0.8)], pitch_variation=0.06, max_distance=30.0)
+rev("player", "water_exit", [lambda: rec(f"{W}splash_02", take(f"{W}splash_09", 0.3, 0.5), level=0.6)], pitch_variation=0.06, max_distance=20.0)
+rev("player", "tool_equip", [lambda: rec(f"{K}handleSmallLeather", take(f"{K}metalClick", 0.05, 0.7), level=0.45)],
+    pitch_variation=0.06, max_distance=12.0, cooldown=0.05)
 
 # UI: not positional.
 UI = dict(bus="ui")
@@ -597,19 +698,19 @@ KEY_ORDER = ["id", "description", "clips", "bus", "loop", "volume_db", "pitch", 
 PARAM_ORDER = ["name", "min", "max", "default", "pitch", "volume_db"]
 
 
-def write_wav(path, x):
+def write_wav(path, x, rate=SR):
     data = (np.clip(x, -1, 1) * 32767).astype("<i2").tobytes()
     with wave.open(path, "wb") as w:
         w.setnchannels(1)
         w.setsampwidth(2)
-        w.setframerate(SR)
+        w.setframerate(rate)
         w.writeframes(data)
 
 
-def write_ogg(path, x):
+def write_ogg(path, x, rate=SR):
     with tempfile.TemporaryDirectory() as tmp:
         src = os.path.join(tmp, "in.wav")
-        write_wav(src, x)
+        write_wav(src, x, rate)
         subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", src, "-c:a", "libvorbis", "-q:a", "3", "-map_metadata", "-1",
                         "-fflags", "+bitexact", "-flags:a", "+bitexact", path], check=True)
 
@@ -668,7 +769,8 @@ def main():
         for v in range(variants):
             rng = np.random.default_rng(zlib.crc32(f"{sid}#{v}".encode()))
             name = sid if v == 0 else f"{sid}_{v + 1}"
-            x = peak(recipe(rng, length), 0.7) if is_loop else recipe(rng)
+            make = recipe[v] if isinstance(recipe, list) else recipe
+            x = peak(make(rng, length), 0.7) if is_loop else make(rng)
             if not np.all(np.isfinite(x)) or float(np.max(np.abs(x))) < 0.05:
                 sys.exit(f"{sid}: the recipe made silence or NaNs")
             if group == "ui":
@@ -676,7 +778,7 @@ def main():
                 write_wav(os.path.join(ROOT, "mods", "vanilla", rel), x)
             else:
                 rel = f"sounds/{group}/{name}.ogg"
-                write_ogg(os.path.join(ROOT, "mods", "vanilla", rel), x)
+                write_ogg(os.path.join(ROOT, "mods", "vanilla", rel), x, opts.get("rate", SR))
             clips.append(rel)
         entry = {"id": sid, "clips": clips}
         if opts.get("bus"):
