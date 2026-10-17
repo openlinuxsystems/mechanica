@@ -3,6 +3,8 @@
   "reach": 7.5,
   "max_parts_per_creation": 4096,
   "clearance_scale": 0.9,
+  // A part built within this many metres of the ground is anchored there and stays put.
+  "anchor_margin": 0.05,
   // Hammer timings (UI spec §8, §9): hold to align, move to drag, hold right click to remove.
   "hammer": {
     "align_hold_seconds": 0.15,

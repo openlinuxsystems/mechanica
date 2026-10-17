@@ -475,6 +475,8 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
                 carried.SetBodyVelocity(i, BodyVelocity.Zero);
             }
             carried.OnLift = true;
+            // Off the ground now, so it is no longer anchored: it drops and simulates when the Lift lets go.
+            carried.ClearAnchors();
             world.Moved(carried);
         }
         world.LiftChanged(lift.Owner, lift);

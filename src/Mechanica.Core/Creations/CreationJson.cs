@@ -31,7 +31,8 @@ namespace Mechanica.Core.Creations;
 /// so a late joiner or a reloaded save picks it up mid-motion (<see cref="BodyVelocity"/>).
 /// <c>on_lift</c> (written only when true) marks a Creation a Lift holds; a part's <c>color</c> is its
 /// Paint Tool colour, <c>settings</c> the settings changed from its defaults (<c>{ "mode": "xor" }</c>) and
-/// <c>damage</c> the health it has lost, each written only when set. <c>links</c> are the Connect Tool's logic
+/// <c>damage</c> the health it has lost and <c>anchored</c> (true) that it rests on the ground and holds its Body still,
+/// each written only when set. <c>links</c> are the Connect Tool's logic
 /// links (chunk 10), written only when there are some. A container
 /// or station part also stores its <c>inventory</c> (filled slots: <c>{ "slot": 0, "item": "vanilla:scrap_metal",
 /// "count": 12 }</c>) and its <c>crafting</c> orders (<c>{ "recipe": "vanilla:chest", "count": 2, "progress": 1.5 }</c>),
@@ -63,6 +64,7 @@ public static class CreationJson
                 Level = p.Level > 0 ? p.Level : null,
                 Damage = creation.PartDamage(p.Id) is var damage and > 0 ? damage : null,
                 Fire = creation.FireOf(p.Id) is var fire and > 0 ? fire : null,
+                Anchored = creation.IsAnchored(p.Id) ? true : null,
                 Inventory = InventorySlots(creation.HoldsItems(p.Id) ? creation.InventoryOf(p.Id) : null),
                 Crafting = creation.HoldsItems(p.Id) && creation.CraftingOf(p.Id) is { IsEmpty: false } queue
                     ? [.. queue.Jobs.Select(j => new CraftJobData { Recipe = j.Recipe, Count = j.Count, Progress = j.Progress > 0 ? j.Progress : null })]
@@ -151,6 +153,8 @@ public static class CreationJson
                 creation.SetPartDamage(part.Id, damage);
             if (data.Parts[i].Fire is { } fire)
                 creation.SetFire(part.Id, fire);
+            if (data.Parts[i].Anchored == true)
+                creation.SetAnchored(part.Id, true);
             ReadStorage(data.Parts[i], path, creation, part.Id, sink);
             ReadSoil(data.Parts[i], path, creation, part.Id, sink);
         }
@@ -440,6 +444,8 @@ public static class CreationJson
         public float? Damage { get; init; }
 
         public float? Fire { get; init; }
+
+        public bool? Anchored { get; init; }
 
         public List<SlotData>? Inventory { get; init; }
 

@@ -177,6 +177,24 @@ public partial class BuildSync : Node, IToolWorld, IPartCatalog
     }
 
     /// <inheritdoc/>
+    public bool RestsOnWorld(Creation? target, PartDefinition definition, GridCell cell, GridRotation rotation, Pose pose)
+    {
+        // The part's box grown by a margin touches whatever it sits on or leans against.
+        var size = (definition.Size ?? GridSize.One).Metres.ToGodot() + Vector3.One * (2 * Settings!.AnchorMargin);
+        var transform = pose.ToTransform()
+            * new Transform3D(rotation.ToBasis(), PartGeometry.CentreMetres(definition, cell, rotation).ToGodot());
+        var query = new PhysicsShapeQueryParameters3D { Shape = new BoxShape3D { Size = size }, Transform = transform, CollideWithBodies = true };
+        var exclude = new Godot.Collections.Array<Rid>();
+        foreach (var body in target is null ? [] : Creations.NodeOf(target.Id)?.Bodies ?? [])
+            exclude.Add(body.GetRid());
+        query.Exclude = exclude;
+        // Only the world's own static bodies hold a part: terrain, its objects and structures. Lifts are static too but
+        // carry Creations rather than anchoring them.
+        return GetViewport().FindWorld3D().DirectSpaceState.IntersectShape(query, 32)
+            .Any(hit => hit["collider"].AsGodotObject() is StaticBody3D and not LiftBody);
+    }
+
+    /// <inheritdoc/>
     public string? CheckLiftClear(LiftState lift, IReadOnlyCollection<int> ignoreCreations)
     {
         var height = Settings!.Lift.TopAt(lift.Level);
@@ -233,7 +251,7 @@ public partial class BuildSync : Node, IToolWorld, IPartCatalog
     /// <inheritdoc/>
     public void Push(Creation creation, int bodyIndex, System.Numerics.Vector3 point, System.Numerics.Vector3 impulse)
     {
-        if (Creations.NodeOf(creation.Id) is not { IsFrozen: false } node || bodyIndex >= node.Bodies.Count)
+        if (Creations.NodeOf(creation.Id) is not { IsFrozen: false } node || bodyIndex >= node.Bodies.Count || node.IsBodyFrozen(bodyIndex))
             return;
         var body = node.Bodies[bodyIndex];
         body.Sleeping = false;
