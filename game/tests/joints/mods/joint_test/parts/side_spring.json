@@ -1,0 +1,17 @@
+{
+  // A suspension carrying a wheel bearing on its +X side; the spring slides along its Y.
+  "id": "side_spring",
+  "name": "Test Side Suspension",
+  "category": "interactive",
+  "mass": 5,
+  "durability": 5,
+  "friction": 0.4,
+  "buoyancy": 0,
+  "flammable": false,
+  "size": [1, 1, 1],
+  "sockets": [
+    { "id": "base", "type": "structural", "position": [-0.125, 0, 0], "normal": [-1, 0, 0] },
+    { "id": "mount", "type": "spring", "position": [0.125, 0, 0], "normal": [1, 0, 0],
+      "joint": { "axis": [0, 1, 0], "min": -0.1, "max": 0.1, "stiffness": 6000, "damping": 600 } }
+  ]
+}

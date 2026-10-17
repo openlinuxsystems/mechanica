@@ -3,6 +3,7 @@ using Mechanica.Core;
 using Mechanica.Core.Creations;
 using Mechanica.Core.Data;
 using Mechanica.Core.World;
+using Mechanica.Game.Mods;
 using Mechanica.Scripting;
 using Instance = Mechanica.Game.Tests.NetTestHarness.Instance;
 
@@ -14,8 +15,9 @@ namespace Mechanica.Game.Tests;
 /// sees it there through state sync without running any script. The script is then rewritten while it
 /// runs: the new code takes over within a reload poll and keeps the part's <c>state</c>; a broken
 /// version is refused and the old code keeps hovering; a fixed one that switches the thrust off falls,
-/// gets <c>on_collision</c> when it lands and measures the ground with a raycast. Uses a copy of the
-/// fixture mod in <c>tests/scripting/mods</c>, so the test can rewrite the script.
+/// gets <c>on_collision</c> when it lands and measures the ground with a raycast. Then it plays a
+/// one-shot and a loop the client hears too, and the loop ends when the script stops on an error.
+/// Uses a copy of the fixture mod in <c>tests/scripting/mods</c>, so the test can rewrite the script.
 /// </summary>
 public partial class ScriptingTest : StagedTest
 {
@@ -43,7 +45,8 @@ public partial class ScriptingTest : StagedTest
     {
         _modsRoot = Path.Combine(OS.GetUserDataDir(), "tests", $"scripting-{System.Environment.ProcessId}");
         CopyDirectory(ProjectSettings.GlobalizePath("res://tests/scripting/mods"), _modsRoot);
-        _mods = ModLoader.LoadAll(_modsRoot);
+        // Vanilla for its sound events.
+        _mods = ModLoader.Load([Path.Combine(ModPaths.ModsRoot, Identifiers.VanillaModId), Path.Combine(_modsRoot, Mod)]);
         _harness = new NetTestHarness { Name = "Harness", WorldGen = WorldGenData.Flat };
         AddChild(_harness);
         _host = _harness.StartHost(mods: _mods);
@@ -137,6 +140,46 @@ public partial class ScriptingTest : StagedTest
             Check(ground is > 0.25 and < 0.5, $"the raycast found the ground {ground:F3} m below the part");
             Check(HostY() < 0.5f, $"the machine is back on the ground (y={HostY():F2})");
             return true;
+        });
+        Add("a script plays sounds and runs a loop that reaches the client", frame =>
+        {
+            if (frame == 0)
+            {
+                File.WriteAllText(ScriptPath, """
+                    -- Version 4: an ignition one-shot and a thruster hum the script bends.
+                    function on_reload()
+                      state.played = sound.play("vanilla:thruster_ignite")
+                      state.hum = sound.start("vanilla:thruster_loop", {thrust = 0.25})
+                      state.bad, state.why = sound.start("vanilla:thruster_ignite")
+                    end
+                    function on_update(dt)
+                      if state.hum then sound.set_parameter(state.hum, "thrust", 0.75) end
+                    end
+                    """);
+                File.SetLastWriteTimeUtc(ScriptPath, DateTime.UtcNow.AddSeconds(4));
+            }
+            if (State()["hum"] is not { } hum || _client.Main.Sounds.Loops.GetValueOrDefault((int)hum.GetValue<double>()) is not { } clientLoop
+                || clientLoop.Parameters.GetValueOrDefault("thrust") != 0.75f)
+                return false;
+            var state = State();
+            var handle = (int)state["hum"]!.GetValue<double>();
+            Check(state["played"]?.GetValue<bool>() == true, "the one-shot plays");
+            Check(state["why"]?.GetValue<string>() == "'vanilla:thruster_ignite' is not a loop; play it with sound.play",
+                $"a one-shot can't start as a loop ({state["why"]})");
+            Check(_host.Main.Sounds.Loops.GetValueOrDefault(handle) is { Anchor: { Creation: Hovering } anchor } && anchor.Part == _hover,
+                "the host's loop follows the hover part");
+            Check(clientLoop.Event.QualifiedId == "vanilla:thruster_loop" && clientLoop.Anchor.Part == _hover,
+                "the client runs the same loop with the script's parameter");
+            return true;
+        });
+        Add("a script that stops on an error stops its loop everywhere", frame =>
+        {
+            if (frame == 0)
+            {
+                File.WriteAllText(ScriptPath, "function on_update(dt) error(\"stalled\") end");
+                File.SetLastWriteTimeUtc(ScriptPath, DateTime.UtcNow.AddSeconds(5));
+            }
+            return Runtime.Instances is [{ Fault: not null }] && _host.Main.Sounds.Loops.Count == 0 && _client.Main.Sounds.Loops.Count == 0;
         });
     }
 

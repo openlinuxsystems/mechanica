@@ -15,6 +15,7 @@ internal sealed class ScriptRig : IDisposable
     public const string Block = "test:block";
     public const string Thruster = "test:thruster";
     public const string Bearing = "test:bearing";
+    public const string Piston = "test:piston";
     public const string Other = "other:gadget";
 
     public ScriptRig(ScriptSettings? settings = null, IScriptPhysics? physics = null)
@@ -29,6 +30,13 @@ internal sealed class ScriptRig : IDisposable
             .Add(Bearing, Part(PartCategory.Interactive, 3, "scripts/bearing.lua",
                 new SocketDefinition { Id = "base", Type = SocketType.Structural, Position = new Vec3(0, -0.125f, 0), Normal = new Vec3(0, -1, 0) },
                 new SocketDefinition { Id = "rotor", Type = SocketType.Rotational, Position = new Vec3(0, 0.125f, 0), Normal = new Vec3(0, 1, 0) }))
+            .Add(Piston, Part(PartCategory.Interactive, 4, "scripts/piston.lua",
+                new SocketDefinition { Id = "base", Type = SocketType.Structural, Position = new Vec3(0, -0.125f, 0), Normal = new Vec3(0, -1, 0) },
+                new SocketDefinition
+                {
+                    Id = "head", Type = SocketType.Linear, Position = new Vec3(0, 0.125f, 0), Normal = new Vec3(0, 1, 0),
+                    Joint = new JointDefinition { Max = 1 },
+                }))
             .Add(Other, Part(PartCategory.Interactive, 1, "scripts/gadget.lua"));
         Motion = new MotionActions(new MotionSettings(), World);
         Motion.Register(Dispatcher);
@@ -135,7 +143,17 @@ internal sealed class ScriptRig : IDisposable
         public void ApplyForce(Creation creation, int body, Vector3 force, Vector3 torque, float? duration, int? part) =>
             Pushes.Add((creation.Id, body, force, torque, part));
 
-        public void SetBearingTarget(Creation creation, JointLink joint, float? velocity, float maxTorque) =>
-            Motors.Add((joint.Connection.A, velocity, maxTorque));
+        public List<JointMotor> JointMotors { get; } = [];
+
+        public Dictionary<int, float> Positions { get; } = [];
+
+        public void SetJointMotor(Creation creation, JointLink joint, JointMotor motor)
+        {
+            Motors.Add((joint.Connection.A, motor.Velocity, motor.MaxEffort));
+            JointMotors.Add(motor);
+        }
+
+        public float? JointPosition(Creation creation, JointLink joint) =>
+            Positions.TryGetValue(joint.Connection.A, out var p) ? p : null;
     }
 }

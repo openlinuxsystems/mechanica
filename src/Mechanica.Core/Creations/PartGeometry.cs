@@ -28,6 +28,20 @@ public static class PartGeometry
     public static Vec3 CentreMetres(PartDefinition definition, GridCell origin, GridRotation rotation) =>
         Centre(definition, origin, rotation) * MechanicaInfo.GridSize;
 
+    /// <summary>
+    /// Centre of mass in metres in the Creation's grid frame: the footprint centre moved by the part's
+    /// <see cref="PartDefinition.CentreOfMass"/> override, turned with the part.
+    /// </summary>
+    public static Vec3 CentreOfMassMetres(PartDefinition definition, GridCell origin, GridRotation rotation) =>
+        CentreMetres(definition, origin, rotation) + rotation.Apply(definition.CentreOfMass ?? Vec3.Zero);
+
+    /// <summary>
+    /// The direction a socket's joint turns about or slides along, in the Creation's grid frame: the
+    /// joint's <see cref="JointDefinition.Axis"/>, or the socket normal when it has none.
+    /// </summary>
+    public static Vec3 JointAxis(SocketDefinition socket, GridRotation rotation) =>
+        rotation.Apply(socket.Joint?.Axis ?? socket.Normal ?? Vec3.Zero);
+
     /// <summary>A socket's position (metres) and outward normal in the Creation's grid frame.</summary>
     public static (Vec3 Position, Vec3 Normal) SocketFrame(PartDefinition definition, SocketDefinition socket,
         GridCell origin, GridRotation rotation)

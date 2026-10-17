@@ -101,6 +101,9 @@ public partial class Main : Node3D
     /// <summary>Creation state sync: interest, full syncs and body snapshots.</summary>
     public CreationSync CreationSync { get; private set; } = null!;
 
+    /// <summary>The joint debug overlay, hidden until something shows it (the Test Sandbox).</summary>
+    public JointOverlay JointOverlay { get; private set; } = null!;
+
     /// <summary>Chunk streaming: the ground, and which Creations are simulated.</summary>
     public WorldStreamer Streamer { get; private set; } = null!;
 
@@ -166,6 +169,8 @@ public partial class Main : Node3D
         };
         Creations = new CreationWorld { Name = "Creations" };
         AddChild(Creations);
+        JointOverlay = new JointOverlay { Creations = Creations };
+        AddChild(JointOverlay);
         Sounds = new SoundSync { Name = "Sounds", Session = Session, Players = PlayerSync, Creations = Creations, Registry = SoundEvents ??= LoadSounds(mods) };
         AddChild(Sounds);
         // Before the players, so the spawn has ground on the first frame.
@@ -257,7 +262,7 @@ public partial class Main : Node3D
         Motion = new MotionSync { Name = "Motion", Session = Session, Creations = Creations };
         AddChild(Motion);
         Motion.RegisterActions(Actions.Dispatcher);
-        Scripts = new ScriptSync { Name = "Scripts", Session = Session, Creations = Creations, Motion = Motion, Actions = Actions, Mods = mods, Survival = Survival };
+        Scripts = new ScriptSync { Name = "Scripts", Session = Session, Creations = Creations, Motion = Motion, Actions = Actions, Sounds = Sounds, Mods = mods, Survival = Survival };
         AddChild(Scripts);
         Recorder = new RecordReplay { Name = "Recorder", Session = Session, Actions = Actions };
         AddChild(Recorder);

@@ -6,5 +6,11 @@
   "max_lever_arm": 50,
   "max_bearing_speed": 60,
   "max_bearing_torque": 2000,
-  "default_bearing_torque": 200
+  "default_bearing_torque": 200,
+  "default_bearing_speed": 3,
+  "max_piston_speed": 10,
+  "max_piston_force": 50000,
+  "default_piston_speed": 1,
+  "default_piston_force": 2000,
+  "servo_gain": 10
 }

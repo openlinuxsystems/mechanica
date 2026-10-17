@@ -1,0 +1,23 @@
+{
+  "id": "offroad_suspension",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal",
+      "count": 4
+    },
+    {
+      "item": "component_kit",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "offroad_suspension",
+      "count": 1
+    }
+  ],
+  "time": 8
+}

@@ -38,6 +38,9 @@ public sealed record ScriptSettings
     /// <summary>Most messages (prints, warnings, errors) the host keeps for the editor console.</summary>
     public int MaxMessages { get; init; } = 500;
 
+    /// <summary>Most sound loops one part may run at once (<c>sound.start</c>).</summary>
+    public int MaxLoopsPerPart { get; init; } = 4;
+
     /// <summary>Most projectiles item scripts may have in flight at once (<c>combat.projectile</c>).</summary>
     public int MaxProjectiles { get; init; } = 128;
 
@@ -78,6 +81,8 @@ public sealed record ScriptSettings
             throw new FormatException($"max_overlap_radius must be a positive number (got {MaxOverlapRadius}).");
         if (MaxMessages < 1)
             throw new FormatException($"max_messages must be positive (got {MaxMessages}).");
+        if (MaxLoopsPerPart < 0)
+            throw new FormatException($"max_loops_per_part must not be negative (got {MaxLoopsPerPart}).");
         if (MaxProjectiles < 0)
             throw new FormatException($"max_projectiles must be 0 or more (got {MaxProjectiles}).");
         if (!float.IsFinite(MaxProjectileLifetime) || MaxProjectileLifetime <= 0f)
