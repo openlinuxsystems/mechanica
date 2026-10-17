@@ -12,8 +12,9 @@ These are the default keys. Every one can be changed in Options, Controls.
 | Key | What it does |
 |-----|--------------|
 | W A S D | Walk |
-| Space | Jump |
-| Shift | Sprint |
+| Space | Jump. In deep water, swim up; at the surface, jump out. |
+| Shift | Sprint (and swim faster) |
+| Ctrl | Crouch: move slowly. In deep water, dive. |
 | Mouse | Look. Click the world to take the mouse back after a menu. |
 | X / C | Zoom in to first person / out to third person (also Alt + scroll) |
 | 1 to 7 | Pick a tool: Hammer, Lift, Weld, Paint, Sledgehammer, item in hand, Connect Tool |
@@ -30,6 +31,9 @@ These are the default keys. Every one can be changed in Options, Controls.
 | Esc | Menu: save, load, open your world to the LAN, Options, help, quit. Esc also closes any open window. |
 | H or F1 | Help |
 | F7 / F8 / F9 | Logic Visualizer, Creation Inspector and force overlay |
+
+In water deeper than about chest height you swim: there is no ground to stand on, you float with your
+head out, Space rises and Ctrl dives. Shallower water slows you down.
 
 While a menu or the inventory is open, your character stands still, and a Creation you are driving
 stops getting your input.
@@ -54,6 +58,12 @@ stops getting your input.
 Everything else applies as you change it. **Reset to Defaults** resets the open tab after asking, and
 closing Options saves your settings in `settings.json` in the game's user data folder. Settings are
 yours alone: they never change the world or other players' games.
+
+## Your character
+
+The first time you play in a world you choose the **Male Scrapper** or the **Female Scrapper** (on the New
+game screen when you start the world, or in a window when you join one). They move and play the same; the
+choice is kept for you in that world and everyone sees it. See [Player Characters](characters.md).
 
 ## Playing together
 
