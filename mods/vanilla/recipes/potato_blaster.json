@@ -1,0 +1,24 @@
+{
+  "id": "potato_blaster",
+  "stations": [
+    "fabricator",
+    "mini_fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal",
+      "count": 3
+    },
+    {
+      "item": "component_kit",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "potato_blaster",
+      "count": 1
+    }
+  ],
+  "time": 10
+}

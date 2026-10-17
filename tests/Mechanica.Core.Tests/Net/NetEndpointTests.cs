@@ -83,6 +83,14 @@ public class LaunchOptionsTests
     [Fact]
     public void Seed() => Assert.Equal(LaunchOptions.ForHost(4000) with { Seed = -42 }, Parse("--host", "4000", "--seed", "-42"));
 
+    [Fact]
+    public void GameMode()
+    {
+        Assert.Equal(Mechanica.Core.Survival.GameMode.Survival, Parse("--host").GameMode);
+        Assert.Equal(Mechanica.Core.Survival.GameMode.Creative, Parse("--creative", "--host").GameMode);
+        Assert.Equal(Mechanica.Core.Survival.GameMode.Survival, Parse("--creative", "--survival").GameMode);
+    }
+
     [Theory]
     [InlineData("127.0.0.1", true)]
     [InlineData("127.1.2.3", true)]

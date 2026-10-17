@@ -27,6 +27,14 @@
     "place": "place_metal"
   },
   "inventory": {
-    "slots": 30
+    "slots": 30,
+    "accepts": [
+      "carrot",
+      "potato",
+      "tomato",
+      "carrot_seed",
+      "potato_seed",
+      "tomato_seed"
+    ]
   }
 }

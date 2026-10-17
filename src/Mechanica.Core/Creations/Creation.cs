@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using Mechanica.Core.Data;
 using Mechanica.Core.Items;
+using Mechanica.Core.Survival;
 
 namespace Mechanica.Core.Creations;
 
@@ -33,6 +34,7 @@ public sealed class Creation
     // Item storage and crafting orders of container and station parts, made when first asked for.
     private readonly Dictionary<int, Inventory> _inventories = [];
     private readonly Dictionary<int, CraftingQueue> _crafting = [];
+    private readonly Dictionary<int, SoilState> _soil = [];
     private Layout? _layout;
     private bool _onLift;
     private int _authorityPeer;
@@ -201,6 +203,23 @@ public sealed class Creation
             return null;
         return _crafting[partId] = new CraftingQueue();
     }
+
+    /// <summary>
+    /// What grows on a part whose definition has <c>soil</c>, or null for other parts. Like an inventory,
+    /// it follows the part through splits and welds and is saved with the Creation.
+    /// </summary>
+    public SoilState? SoilOf(int partId)
+    {
+        if (_soil.TryGetValue(partId, out var soil))
+            return soil;
+        if (!_definitions.TryGetValue(partId, out var definition) || definition.Soil is null)
+            return null;
+        return _soil[partId] = new SoilState();
+    }
+
+    /// <summary>Soil parts with something planted or some water, by part id.</summary>
+    public IEnumerable<(int PartId, SoilState Soil)> ActiveSoil =>
+        _soil.Where(kv => !kv.Value.IsEmpty).OrderBy(kv => kv.Key).Select(kv => (kv.Key, kv.Value));
 
     /// <summary>True when a part holds items or has crafting orders.</summary>
     public bool HoldsItems(int partId) =>
@@ -408,6 +427,8 @@ public sealed class Creation
                     creation._inventories[id] = inventory;
                 if (_crafting.TryGetValue(id, out var queue))
                     creation._crafting[id] = queue;
+                if (_soil.TryGetValue(id, out var soil))
+                    creation._soil[id] = soil;
             }
             foreach (var connection in _connections.Where(c => members.Contains(c.A)).ToList())
             {
@@ -544,6 +565,8 @@ public sealed class Creation
                 _inventories[newId] = inventory;
             if (other._crafting.TryGetValue(oldId, out var queue))
                 _crafting[newId] = queue;
+            if (other._soil.TryGetValue(oldId, out var soil))
+                _soil[newId] = soil;
         }
         foreach (var c in other._connections)
             _connections.Add(c.Type == ConnectionType.Structural
@@ -667,6 +690,7 @@ public sealed class Creation
         _velocities.Remove(partId);
         _inventories.Remove(partId);
         _crafting.Remove(partId);
+        _soil.Remove(partId);
         _connections.RemoveWhere(c => c.Involves(partId));
     }
 

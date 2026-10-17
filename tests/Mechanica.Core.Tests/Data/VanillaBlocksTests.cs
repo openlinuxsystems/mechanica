@@ -138,26 +138,31 @@ public class VanillaBlocksTests
         }
     }
 
-    [Fact]
-    public void PartFilesAreThePartEditorBatchOutput()
+    [Theory]
+    [InlineData("structural_blocks.json", 40)]
+    [InlineData("survival.json", 14)]
+    public void PartFilesAreThePartEditorBatchOutput(string file, int parts)
     {
         var mod = Path.Combine(TestMods.RepoRoot, "mods", "vanilla");
         var templates = Path.Combine(TestMods.RepoRoot, "game", "data", "part_templates");
         var diagnostics = new List<DataDiagnostic>();
-        var batchFile = Path.Combine(mod, "editor", "batches", "structural_blocks.json");
-        var batch = PartBatch.Read(File.ReadAllText(batchFile), "structural_blocks.json", diagnostics);
+        var batchFile = Path.Combine(mod, "editor", "batches", file);
+        var batch = PartBatch.Read(File.ReadAllText(batchFile), file, diagnostics);
         var documents = PartBatch.Prepare(batch!, mod, name => File.ReadAllText(Path.Combine(templates, $"{name}.json")),
-            "structural_blocks.json", diagnostics);
+            file, diagnostics);
 
         Assert.Empty(diagnostics);
-        Assert.Equal(40, documents!.Count);
+        Assert.Equal(parts, documents!.Count);
         foreach (var recipe in batch!.Parts!.SelectMany(e => e.Recipes ?? []))
             Assert.Equal(DataJson.Write(recipe), File.ReadAllText(Path.Combine(mod, RecipeExporter.TargetFile(recipe.Id!))));
         foreach (var document in documents)
         {
             Assert.False(document.IsDirty, $"{document.RelativeFile} differs from the batch; re-run it with tools/author-vanilla.sh");
             Assert.Equal(DataJson.Write(document.Definition), File.ReadAllText(Path.Combine(mod, document.RelativeFile!)));
-            Assert.Equal(PartSource.Write(document.Source), File.ReadAllText(Path.Combine(mod, PartDocument.SourcePathFor(document.RelativeFile!))));
+            var source = Path.Combine(mod, PartDocument.SourcePathFor(document.RelativeFile!));
+            // Items without a model of their own have no editor source.
+            if (document.Source.Pieces.Count > 0 || File.Exists(source))
+                Assert.Equal(PartSource.Write(document.Source), File.ReadAllText(source));
         }
     }
 

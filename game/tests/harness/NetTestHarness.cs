@@ -41,6 +41,12 @@ public partial class NetTestHarness : Node
     /// <summary>World generation for every instance started from now on; null loads the mods' rules, like the game.</summary>
     public Mechanica.Core.World.WorldGenData? WorldGen { get; set; }
 
+    /// <summary>
+    /// The host's game mode. Creative by default, so tests that are not about survival build and give
+    /// items freely and nobody gets hurt.
+    /// </summary>
+    public Mechanica.Core.Survival.GameMode GameMode { get; set; } = Mechanica.Core.Survival.GameMode.Creative;
+
     /// <summary>The port the host listens on, once started.</summary>
     public int Port { get; private set; }
 
@@ -53,7 +59,7 @@ public partial class NetTestHarness : Node
         for (var attempt = 0; attempt < 20; attempt++)
         {
             var port = (int)GD.RandRange(30000, 60000);
-            var instance = Start(name, LaunchOptions.Offline with { Seed = Seed }, mods: mods);
+            var instance = Start(name, LaunchOptions.Offline with { Seed = Seed, GameMode = GameMode }, mods: mods);
             if (instance.Main.Session.Host(port, maxPlayers) == Error.Ok)
             {
                 Port = port;

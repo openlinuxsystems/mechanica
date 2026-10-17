@@ -1,0 +1,24 @@
+{
+  "id": "potato_scattergun",
+  "name": "Potato Scattergun",
+  "description": "Fires a spread of potato bits. Strong up close.",
+  "category": "weapon",
+  "mass": 3,
+  "stack_size": 1,
+  "visual": {
+    "color": "#5a6a48"
+  },
+  "sounds": {
+    "fire": "scattergun_fire",
+    "pump": "scattergun_pump"
+  },
+  "weapon": {
+    "damage": 9,
+    "interval": 0.9,
+    "range": 25,
+    "ammo": "potato",
+    "pellets": 8,
+    "spread": 6,
+    "impulse": 10
+  }
+}

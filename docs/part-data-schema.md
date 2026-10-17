@@ -86,6 +86,8 @@ you; this page is the reference for what each key means, so you can read, review
 | `sounds` | object | no | Sound events: local event name → sound id (`"start": "engine_start"`). Ids are snake_case, or `mod_id:sound_id` for another mod's sound. |
 | `inventory` | object | no | Item storage. Placeable parts only. See [inventory and crafting](#inventory-and-crafting). |
 | `crafting` | object | no | Makes the part a crafting station. Needs `inventory`. See [inventory and crafting](#inventory-and-crafting). |
+| `soil`, `respawn_point` | object, bool | no | Farming soil and respawn beds. Placeable parts only. See [survival](#survival). |
+| `food`, `seed`, `watering`, `weapon` | object | no | What an item does in Survival. Items only. See [survival](#survival). |
 | `properties` | object | no | Free-form numbers and settings that only the part's Lua script reads (torque, thrust, range). Key order is kept. |
 
 "Placeable" means the categories that exist in the world on the build grid: `block`, `interactive`,
@@ -180,11 +182,44 @@ Each slot holds one stack of one item, up to that item's `stack_size`. A station
 lists its part id in `stations`: the crafting player's inventory pays the inputs when the order is
 queued, and finished crafts land in the station's own inventory, where any player in reach can take
 them. A container or station that holds items, or has orders queued, can't be picked up with the
-Hammer. Its contents are saved with the Creation.
+Hammer. Its contents are saved with the Creation; if it is broken (Sledgehammer, weapons, a crash) they
+fall out as a pile of items on the ground.
 
 ```json
 "inventory": { "slots": 12 },
 "crafting": { "speed": 1, "queue_size": 8 }
+```
+
+## survival
+
+What items do in the survival loop, and the parts it needs. These are built-in primitives, configured
+here rather than in Lua. Numbers are SI: health points, seconds, metres, N·s. See also
+[Survival](survival.md).
+
+| Key | Type | Meaning |
+|-----|------|---------|
+| `food.health` | number > 0 | Health one eaten item gives back. Required. |
+| `seed.crop` | item id | What the seed grows into. Required. |
+| `seed.grow_time` | number > 0 (s) | Seconds of watered growth until ripe. Required. |
+| `seed.yield` | integer ≥ 1 | Crop items a harvest gives. Default 1. |
+| `seed.seeds` | integer ≥ 0 | Seeds a harvest gives back. Default 0. |
+| `seed.value` | number ≥ 0 | How much a planted crop draws raids (chunk 21). Default 1. |
+| `watering.seconds` | number > 0 (s) | Seconds of water one item adds to soil. Required. |
+| `weapon.damage` | number > 0 | Damage per hit, or at the centre of a splash. Required. |
+| `weapon.interval` | number > 0 (s) | Shortest time between shots. Required. |
+| `weapon.range` | number > 0 (m) | How far a shot reaches. Required. |
+| `weapon.ammo` | item id | Item used up per shot (it can be the weapon itself, like a Popper). Omitted means none. |
+| `weapon.pellets` | integer 1–32 | Shots per trigger pull, spread evenly round a cone. Default 1. |
+| `weapon.spread` | number 0 to under 90 (°) | Half-angle of that cone. |
+| `weapon.radius` | number > 0 (m) | Makes it a splash weapon: damage falls off to 0 at this distance from where it hits. |
+| `weapon.impulse` | number ≥ 0 (N·s) | Push given to the Body it hits (splash: at the centre). |
+| `soil.capacity` | number > 0 (s) | Most seconds of water the soil holds. Required. |
+| `soil.growth` | number > 0 | Growth speed multiplier for crops on it. Default 1. |
+| `respawn_point` | bool | Players can sleep in it (F) to respawn there. |
+
+```json
+"seed": { "crop": "carrot", "grow_time": 240, "yield": 2, "seeds": 1 },
+"weapon": { "damage": 20, "interval": 0.25, "range": 60, "ammo": "potato" }
 ```
 
 ## Recipes

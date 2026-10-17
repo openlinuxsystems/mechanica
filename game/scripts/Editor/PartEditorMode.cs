@@ -29,6 +29,8 @@ public partial class PartEditorMode : Node
         Editor.TestRequested += Test;
         Editor.CloseRequested += () => GetTree().ChangeSceneToFile(MenuScene);
         AddChild(Editor);
+        // Saving a script hot reloads it into the sandbox's host, which runs every script (D5).
+        Editor.Lua.Runtime = () => Sandbox?.Host.Main.Scripts.Runtime;
     }
 
     /// <summary>Shows the sandbox with fresh mods and spawns <paramref name="qualifiedId"/> in front of the player.</summary>

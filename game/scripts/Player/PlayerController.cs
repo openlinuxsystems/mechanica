@@ -23,6 +23,8 @@ public partial class PlayerController : CharacterBody3D
     private Node3D _head = null!;
     private SpringArm3D _cameraArm = null!;
     private MeshInstance3D _bodyMesh = null!;
+    private CollisionShape3D _shape = null!;
+    private bool _dead;
 
     /// <summary>Peer that controls this player (1 is the host).</summary>
     public int PeerId { get; init; } = 1;
@@ -35,6 +37,24 @@ public partial class PlayerController : CharacterBody3D
 
     /// <summary>Raised after each physics tick the player simulated, with the sanitized input it used.</summary>
     public event Action<PlayerInput>? Stepped;
+
+    /// <summary>Raised when the player lands on the floor after falling, with the downward speed it hit at (m/s).</summary>
+    public event Action<float>? Landed;
+
+    /// <summary>
+    /// A dead player (chunk 20) neither moves nor collides and is not drawn, until it respawns.
+    /// </summary>
+    public bool Dead
+    {
+        get => _dead;
+        set
+        {
+            _dead = value;
+            Velocity = Vector3.Zero;
+            _shape.SetDeferred(CollisionShape3D.PropertyName.Disabled, value);
+            _bodyMesh.Visible = !value && (ThirdPerson || !Camera.Current);
+        }
+    }
 
     /// <summary>Movement tuning. Set before the node enters the tree to override the default file.</summary>
     public PlayerMovementSettings Settings { get; set; } = null!;
@@ -55,7 +75,7 @@ public partial class PlayerController : CharacterBody3D
         set
         {
             _cameraArm.SpringLength = value ? ThirdPersonDistance : 0f;
-            _bodyMesh.Visible = value || !Camera.Current;
+            _bodyMesh.Visible = !_dead && (value || !Camera.Current);
         }
     }
 
@@ -74,12 +94,13 @@ public partial class PlayerController : CharacterBody3D
         FloorSnapLength = 0.2f;
 
         var capsuleCentre = new Vector3(0, Settings.Height / 2f, 0);
-        AddChild(new CollisionShape3D
+        _shape = new CollisionShape3D
         {
             Name = "Shape",
             Position = capsuleCentre,
             Shape = new CapsuleShape3D { Height = Settings.Height, Radius = Settings.Radius },
-        });
+        };
+        AddChild(_shape);
         _bodyMesh = new MeshInstance3D
         {
             Name = "BodyMesh",
@@ -120,10 +141,15 @@ public partial class PlayerController : CharacterBody3D
     {
         input = input.Sanitized(Settings);
         ApplyLook(input.Yaw, input.Pitch);
+        if (_dead)
+            return input;
 
-        var velocity = PlayerMotor.Step(Velocity.ToNumerics(), IsOnFloor(), input, Settings, delta);
+        var wasOnFloor = IsOnFloor();
+        var velocity = PlayerMotor.Step(Velocity.ToNumerics(), wasOnFloor, input, Settings, delta);
         Velocity = velocity.ToGodot();
         MoveAndSlide();
+        if (!wasOnFloor && IsOnFloor() && velocity.Y < 0)
+            Landed?.Invoke(-velocity.Y);
         if (PushesBodies)
             PushRigidBodies(delta);
         return input;
