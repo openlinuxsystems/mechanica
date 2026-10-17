@@ -36,8 +36,12 @@ public partial class CompassTest : StagedTest
                 return false;
             // A new world asks which character to play first, and that window covers the game until answered.
             if (_main.Characters.Window is { } choice)
+            {
                 choice.Confirm();
-            if (_main.Characters.LocalNeedsChoice)
+                return false;
+            }
+            // The HUD stays out of the way of the window until it has gone.
+            if (_main.Characters.LocalNeedsChoice || !_main.GetNode<CompassHud>("Compass").Bar.Visible && frame < 300)
                 return false;
             _compass = _main.GetNode<CompassHud>("Compass");
             Check(_compass.Bar.Visible, "the bar shows");

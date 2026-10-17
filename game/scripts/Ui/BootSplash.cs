@@ -21,7 +21,7 @@ public partial class BootSplash : CanvasLayer
         Layer = 30;
         Seconds ??= LoadingScreen.LoadSettings().SplashSeconds;
         _root = UiInput.KeepMouse(new Control { Name = "Splash" });
-        _root.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        _root.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
         AddChild(_root);
         _root.AddChild(new ColorRect { Color = UiTokens.DeepNavy, AnchorRight = 1, AnchorBottom = 1, MouseFilter = Control.MouseFilterEnum.Ignore });
         var centre = new CenterContainer { AnchorRight = 1, AnchorBottom = 1, MouseFilter = Control.MouseFilterEnum.Ignore };
