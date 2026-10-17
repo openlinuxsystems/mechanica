@@ -32,6 +32,10 @@ public partial class CreationNode : Node3D
     /// <summary>Jolt joints, in <see cref="Creation.Joints"/> order with locked links skipped.</summary>
     public IReadOnlyList<Joint3D> Joints => _joints;
 
+    /// <summary>The Jolt joint built for a joint edge, or null when it is locked or has none.</summary>
+    public Joint3D? JointOf(Connection connection) =>
+        _joints.FirstOrDefault(j => j.Name == JointName(connection));
+
     /// <summary>Grid-frame box of each body, in <see cref="Bodies"/> order (<see cref="CreationBounds"/>).</summary>
     public IReadOnlyList<WorldBounds> LocalBounds { get; private set; } = [];
 
@@ -161,6 +165,8 @@ public partial class CreationNode : Node3D
         return node;
     }
 
+    private static string JointName(Connection c) => $"Joint{c.A}_{c.B}";
+
     private Joint3D? BuildJoint(JointLink link)
     {
         var c = link.Connection;
@@ -171,7 +177,7 @@ public partial class CreationNode : Node3D
         var axis = new GridCell((int)MathF.Round(normal.X), (int)MathF.Round(normal.Y), (int)MathF.Round(normal.Z));
         var frame = GridRotation.All.First(r => (c.Type == ConnectionType.Rotational ? r.ZAxis : r.XAxis) == axis);
         var poseA = Creation.BodyPose(link.BodyA).ToTransform();
-        joint.Name = $"Joint{c.A}_{c.B}";
+        joint.Name = JointName(c);
         joint.TopLevel = true;
         joint.Transform = poseA * new Transform3D(frame.ToBasis(), position.ToGodot());
         // Spring links get a free slider until chunk 9 adds the spring primitive.

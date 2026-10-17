@@ -12,6 +12,9 @@ public static class NetProtocol
     /// <summary>UDP port used when none is given.</summary>
     public const int DefaultPort = 27460;
 
+    /// <summary>TCP port of the external AI endpoint (WebSocket JSON-RPC) when <c>--ai</c> gives none.</summary>
+    public const int DefaultAiPort = 27461;
+
     /// <summary>Players per session, host included (the spec's 4-player target).</summary>
     public const int DefaultMaxPlayers = 4;
 

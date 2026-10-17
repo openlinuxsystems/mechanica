@@ -18,7 +18,9 @@ public enum SessionMode
 
 /// <summary>
 /// Session settings from the command line (the user arguments after <c>--</c>):
-/// <c>--host [port]</c>, <c>--join address[:port]</c> and <c>--max-players n</c>.
+/// <c>--host [port]</c>, <c>--join address[:port]</c> and <c>--max-players n</c>; on the host also the
+/// external AI endpoint (<c>--ai [port]</c>, <c>--ai-bind address</c>, <c>--ai-token token</c>) and
+/// record/replay of Action API calls (<c>--record file</c>, <c>--replay file</c>).
 /// </summary>
 public sealed record LaunchOptions
 {
@@ -36,6 +38,24 @@ public sealed record LaunchOptions
 
     /// <summary>Players allowed when hosting, host included.</summary>
     public int MaxPlayers { get; init; } = NetProtocol.DefaultMaxPlayers;
+
+    /// <summary>Port of the external AI endpoint (WebSocket JSON-RPC), or null to leave it closed.</summary>
+    public int? AiPort { get; init; }
+
+    /// <summary>Address the AI endpoint listens on. Loopback unless the host opts in, since it can do anything the host can.</summary>
+    public string AiBind { get; init; } = "127.0.0.1";
+
+    /// <summary>
+    /// Token agents must give before calling anything. Required when <see cref="AiBind"/> is not loopback;
+    /// the game also reads it from the <c>MECHANICA_AI_TOKEN</c> environment variable.
+    /// </summary>
+    public string? AiToken { get; init; }
+
+    /// <summary>File to write the host's Action API calls to when the game quits, or null.</summary>
+    public string? RecordPath { get; init; }
+
+    /// <summary>Recording to replay on the host once the session is up, or null.</summary>
+    public string? ReplayPath { get; init; }
 
     /// <summary>Options for hosting on <paramref name="port"/>.</summary>
     public static LaunchOptions ForHost(int port, int maxPlayers = NetProtocol.DefaultMaxPlayers) =>
@@ -77,6 +97,31 @@ public sealed record LaunchOptions
                     result = result with { Mode = SessionMode.Join, Endpoint = endpoint };
                     i++;
                     break;
+                case "--ai":
+                    var aiPort = NetProtocol.DefaultAiPort;
+                    if (next is not null)
+                    {
+                        if (!NetEndpoint.TryParsePort(next, out aiPort))
+                            return Fail($"'{next}' is not a valid AI endpoint port (1-65535).", out error);
+                        i++;
+                    }
+                    result = result with { AiPort = aiPort };
+                    break;
+                case "--ai-bind":
+                case "--ai-token":
+                case "--record":
+                case "--replay":
+                    if (next is null)
+                        return Fail($"{args[i]} needs a value.", out error);
+                    result = args[i] switch
+                    {
+                        "--ai-bind" => result with { AiBind = next },
+                        "--ai-token" => result with { AiToken = next },
+                        "--record" => result with { RecordPath = next },
+                        _ => result with { ReplayPath = next },
+                    };
+                    i++;
+                    break;
                 case "--max-players":
                     if (next is null || !int.TryParse(next, NumberStyles.None, CultureInfo.InvariantCulture, out var max)
                         || max is < 1 or > NetProtocol.MaxPlayersLimit)
@@ -87,9 +132,16 @@ public sealed record LaunchOptions
             }
         }
 
+        if (result.Mode == SessionMode.Join && (result.AiPort is not null || result.RecordPath is not null || result.ReplayPath is not null))
+            return Fail("--ai, --record and --replay run on the host, not on a joining client.", out error);
+
         options = result;
         return true;
     }
+
+    /// <summary>True for addresses only this machine can reach.</summary>
+    public static bool IsLoopback(string address) =>
+        address is "localhost" or "::1" || address.StartsWith("127.", StringComparison.Ordinal);
 
     private static bool Fail(string message, out string error)
     {
