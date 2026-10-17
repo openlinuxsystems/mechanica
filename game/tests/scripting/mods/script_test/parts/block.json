@@ -1,0 +1,11 @@
+{
+  "id": "block",
+  "name": "Test Block",
+  "category": "block",
+  "mass": 4,
+  "durability": 3,
+  "friction": 0.6,
+  "buoyancy": 0.6,
+  "flammable": false,
+  "size": [1, 1, 1]
+}

@@ -109,7 +109,8 @@ The **Look** tab sets the part's material:
 
 The **Behaviour** tab links a Lua **Script** from the mod's `scripts/` folder, the part's **Sounds**,
 and free-form **Properties** that the script reads. All of this is JSON, and balance numbers belong
-here rather than in code. A plain block needs none of it.
+here rather than in code. A plain block needs none of it. The [Lua API Reference](lua-api.md) lists
+what scripts can call.
 
 ## 8. Export
 

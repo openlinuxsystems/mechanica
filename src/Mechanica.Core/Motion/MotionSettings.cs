@@ -27,6 +27,9 @@ public sealed record MotionSettings
     /// <summary>Longest time one <c>ApplyForce</c> call keeps pushing, in s.</summary>
     public float MaxDuration { get; init; } = 5f;
 
+    /// <summary>Farthest an <c>ApplyForce</c> point (<c>at</c>) may be from the Body's centre of mass, in m.</summary>
+    public float MaxLeverArm { get; init; } = 50f;
+
     /// <summary>Fastest bearing motor target, in rad/s.</summary>
     public float MaxBearingSpeed { get; init; } = 60f;
 
@@ -61,6 +64,7 @@ public sealed record MotionSettings
         Positive(MaxForce, "max_force");
         Positive(MaxTorque, "max_torque");
         Positive(MaxDuration, "max_duration");
+        Positive(MaxLeverArm, "max_lever_arm");
         Positive(MaxBearingSpeed, "max_bearing_speed");
         Positive(MaxBearingTorque, "max_bearing_torque");
         Positive(DefaultBearingTorque, "default_bearing_torque");

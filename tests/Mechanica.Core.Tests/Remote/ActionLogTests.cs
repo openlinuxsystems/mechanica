@@ -48,6 +48,8 @@ public class ActionLogTests
         _dispatcher.Dispatch(Player, "Move", "[1]");
         Advance(2);
         _dispatcher.Dispatch(Agent, "Move", """{ "distance": 2 }""");
+        // Part scripts re-run on replay, so their calls are not recorded.
+        _dispatcher.Dispatch(new ActionCaller(1, ActionSource.Script), "Move", """{ "distance": 3 }""");
         return _log.StopRecording()!;
     }
 
@@ -58,7 +60,7 @@ public class ActionLogTests
 
         Assert.False(_log.IsRecording);
         Assert.Equal(60, recording.TickRate);
-        // Queries, unknown actions and arguments that aren't an object are left out.
+        // Queries, script calls, unknown actions and arguments that aren't an object are left out.
         Assert.Equal([(0L, "Move", true), (3L, "Move", false), (5L, "Move", true)],
             recording.Actions.Select(a => (a.Tick, a.Action, a.Result.Ok)));
         Assert.Equal(ActionErrors.Rejected, recording.Actions[1].Result.Code);

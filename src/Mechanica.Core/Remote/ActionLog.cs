@@ -19,8 +19,9 @@ public sealed record ReplayStatus(bool Running, int Dispatched, int Total, IRead
 
 /// <summary>
 /// Record and replay of Action API calls on the host. While recording, every state-changing call the
-/// dispatcher handles (from any player, bot, script or external agent; read-only queries are skipped)
-/// is kept with its physics tick. A replay dispatches a recording's calls again through the same
+/// dispatcher handles (from any player, bot or external agent) is kept with its physics tick. Read-only
+/// queries are skipped, and so are calls from part scripts: the scripts run again during a replay and
+/// make those calls themselves. A replay dispatches a recording's calls again through the same
 /// validated dispatcher, as the caller who asked for the replay, and on the same tick spacing unless
 /// it is untimed. Calls that failed when recorded are skipped. The game calls <see cref="Tick"/> once
 /// per physics step.
@@ -166,7 +167,8 @@ public sealed class ActionLog : IDisposable
 
     private void OnDispatched(ActionRecord record)
     {
-        if (_recordStart is not { } start || _dispatcher.IsReadOnly(record.Action) || !_dispatcher.Has(record.Action))
+        if (_recordStart is not { } start || record.Caller.Source == ActionSource.Script
+            || _dispatcher.IsReadOnly(record.Action) || !_dispatcher.Has(record.Action))
             return;
         if (_recorded.Count >= MaxEntries)
         {
