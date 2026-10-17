@@ -18,6 +18,9 @@ public static class ModPaths
     /// <summary>Absolute path of the player's <see cref="ModProfile"/>.</summary>
     public static string ProfilePath => ProjectSettings.GlobalizePath($"user://{ModProfile.FileName}");
 
+    /// <summary>Where the Mod Manager writes exported packages by default (<c>user://mod_packages</c>).</summary>
+    public static string PackagesRoot => ProjectSettings.GlobalizePath("user://mod_packages");
+
     /// <summary>Loads the content this run uses: the mods the saved profile enables, in its load order.</summary>
     public static ModLoadResult LoadContent() => ModLoader.LoadWithProfile(ModsRoot, ProfilePath);
 }
