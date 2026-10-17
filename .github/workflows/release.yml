@@ -35,6 +35,7 @@ jobs:
     name: Package ${{ matrix.platform }}
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         platform: [linux, windows, macos]
     env:

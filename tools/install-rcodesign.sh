@@ -3,11 +3,11 @@
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 source "$root/tools/versions.env"
-name="apple-codesign-${RCODESIGN_VERSION}-x86_64-unknown-linux-musl"
+name="apple-codesign-${APPLE_CODESIGN_VERSION}-x86_64-unknown-linux-musl"
 bin="$root/.tools/$name/rcodesign"
 if [[ ! -x "$bin" ]]; then
   mkdir -p "$root/.tools"
-  curl -fsSL "https://github.com/indygreg/apple-platform-rs/releases/download/apple-codesign%2F${RCODESIGN_VERSION}/${name}.tar.gz" \
+  curl -fsSL "https://github.com/indygreg/apple-platform-rs/releases/download/apple-codesign%2F${APPLE_CODESIGN_VERSION}/${name}.tar.gz" \
     | tar xz -C "$root/.tools"
 fi
 echo "$bin"

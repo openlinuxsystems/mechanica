@@ -21,9 +21,21 @@ name="Mechanica-$version-$platform"
 out="$root/build/$name"
 rm -rf "$out" "$root/build/$platform" "$out.zip"
 mkdir -p "$root/build/$platform"
+# Build first so the editor loads the game's scripts (autoloads) before it exports.
+dotnet build "$root/Mechanica.sln" -c Debug
 "$godot" --headless --path "$root/game" --import
 "$godot" --headless --path "$root/game" --export-release "$preset" "$root/build/$platform/$exe"
-test -f "$root/build/$platform/$exe"
+# Godot reports a failed .NET publish as a warning and still writes the binary, so check for the assemblies.
+if [[ "$platform" == macos ]]; then
+  assemblies="$(unzip -l "$root/build/$platform/$exe" | grep -c 'data_Mechanica.Game_macos_.*/Mechanica.Game.dll' || true)"
+else
+  assemblies="$(find "$root/build/$platform" -path '*/data_Mechanica.Game_*/Mechanica.Game.dll' | wc -l)"
+fi
+if [[ ! -f "$root/build/$platform/$exe" || "$assemblies" -eq 0 ]]; then
+  echo "export failed: no game assemblies in the $platform build; MSBuild logs:" >&2
+  find "${XDG_DATA_HOME:-$HOME/.local/share}/godot/mono/build_logs" -name msbuild_log.txt -exec grep -hE "error|warning" {} + >&2 2>/dev/null || true
+  exit 1
+fi
 if [[ "$platform" == macos ]]; then
   # Godot exports the app bundle as a zip; the content goes inside it, then the bundle is signed (Apple Silicon
   # refuses unsigned code, and signing after adding files keeps the seal valid).
