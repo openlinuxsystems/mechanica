@@ -43,6 +43,12 @@ public partial class CharacterModel : Node3D
     /// <summary>The model scene from <see cref="CharacterAssets.Instantiate"/>. Set before adding to the tree.</summary>
     public Node3D Model { get; init; } = null!;
 
+    /// <summary>
+    /// True for the local player's first-person arms (<see cref="CharacterAssets.Arms"/>), a child of the camera: shown
+    /// only while the player looks out of its own eyes, held where <see cref="CharacterSettings.FirstPersonOffset"/> says.
+    /// </summary>
+    public bool FirstPerson { get; init; }
+
     /// <summary>Where the body's sounds play; null plays none.</summary>
     public SoundSync? Sounds { get; init; }
 
@@ -119,11 +125,25 @@ public partial class CharacterModel : Node3D
             PlaySound(e);
             Event?.Invoke(e);
         }
+        if (FirstPerson)
+        {
+            Visible = Player is { BodyVisible: false, Dead: false, Seated: false };
+            if (!Visible)
+                return;
+            var offset = Assets.Settings.FirstPersonOffset;
+            Position = new Vector3(offset[0], offset[1], offset[2]);
+            Rotation = new Vector3(-Mathf.DegToRad(Assets.Settings.FirstPersonPitchDegrees), 0, 0);
+        }
         // Seen from inside its own head (or dead) the body is hidden; it still makes its sounds.
-        if (Player is { BodyVisible: false })
+        else if (Player is { BodyVisible: false })
+        {
             return;
-        Rotation = new Vector3(0, Animator.BodyTurn, 0);
-        Position = new Vector3(0, Animator.Lift, 0);
+        }
+        else
+        {
+            Rotation = new Vector3(0, Animator.BodyTurn, 0);
+            Position = new Vector3(0, Animator.Lift, 0);
+        }
         Pose();
         ShowProp(Animator.ShowProp && Player is not null ? Player.ShownProp : CharacterProp.None);
     }
@@ -142,7 +162,7 @@ public partial class CharacterModel : Node3D
                     _rotations[b] = _rotations[b].Slerp(_upperRotations[b], Animator.UpperWeight);
             }
         }
-        var pitch = -Animator.HeadPitch / 2f;
+        var pitch = FirstPerson ? 0f : -Animator.HeadPitch / 2f;
         foreach (var bone in new[] { _neck, _head })
         {
             if (bone >= 0)

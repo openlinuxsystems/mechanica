@@ -188,9 +188,14 @@ public partial class CharacterSync : Node
         if (character is null || Assets.Instantiate(character) is not { } model)
         {
             player.SetCharacter(null);
+            player.SetArms(null);
             return;
         }
         player.SetCharacter(new CharacterModel { Player = player, Character = character, Assets = Assets, Model = model, Sounds = Sounds });
+        // Only the local player looks out of its own eyes, so only it has first-person arms.
+        player.SetArms(peer == Session.LocalPeer && Assets.Arms(character) is { } arms
+            ? new CharacterModel { Player = player, Character = character, Assets = Assets, Model = arms, FirstPerson = true }
+            : null);
     }
 
     private void SetLocalNeedsChoice(bool needs)

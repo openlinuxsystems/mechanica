@@ -94,6 +94,15 @@ public sealed record CharacterSettings
     /// <summary>Share of the look pitch the neck and head follow (0 to 1).</summary>
     public float HeadPitchShare { get; init; } = 0.6f;
 
+    /// <summary>
+    /// Where the first-person arms' model stands relative to the camera, in metres (right, up, back). The model's
+    /// feet sit here, so the hands come into the lower part of the view.
+    /// </summary>
+    public float[] FirstPersonOffset { get; init; } = [0f, -1.25f, 0.1f];
+
+    /// <summary>How far the first-person arms tip forward from upright, in degrees, to bring the hands into view.</summary>
+    public float FirstPersonPitchDegrees { get; init; } = 10f;
+
     /// <summary>Parses settings from JSON and validates them.</summary>
     /// <exception cref="FormatException">The JSON is malformed or a value is out of range.</exception>
     public static CharacterSettings FromJson(string json)
@@ -141,6 +150,10 @@ public sealed record CharacterSettings
             throw new FormatException($"seated_offset must be from -2 to 2 metres (got {SeatedOffset}).");
         if (!float.IsFinite(HeadPitchShare) || HeadPitchShare is < 0f or > 1f)
             throw new FormatException($"head_pitch_share must be from 0 to 1 (got {HeadPitchShare}).");
+        if (FirstPersonOffset is not { Length: 3 } || FirstPersonOffset.Any(v => !float.IsFinite(v) || MathF.Abs(v) > 3f))
+            throw new FormatException("first_person_offset must be three numbers from -3 to 3 metres.");
+        if (!float.IsFinite(FirstPersonPitchDegrees) || MathF.Abs(FirstPersonPitchDegrees) > 60f)
+            throw new FormatException($"first_person_pitch_degrees must be from -60 to 60 (got {FirstPersonPitchDegrees}).");
     }
 
     private static void CheckPoses(Dictionary<string, ItemPose> poses, string name)

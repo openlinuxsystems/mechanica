@@ -152,7 +152,7 @@ public class SaveGameTests
         store.Write(Sample() with { Name = "Older", SavedAt = DateTimeOffset.UnixEpoch });
         var junk = Path.Combine(store.Directory, "junk.json");
         File.WriteAllText(junk, "{");
-        // An unreadable save sorts by its file time; pin it between the two saves rather than to "now".
+        // An unreadable file lists by its write time; pin it between the two saves so the order never follows the clock.
         File.SetLastWriteTimeUtc(junk, new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc));
 
         Assert.Equal("my-world.json", Path.GetFileName(path));

@@ -27,6 +27,7 @@ public partial class CharacterTest : StagedTest
     private CharacterModel? _watched;
     private bool _swung;
     private string? _refused;
+    private ulong _drawnFrame;
     private Func<float>? _seaLevel;
 
     protected override string Tag => "characters";
@@ -82,6 +83,39 @@ public partial class CharacterTest : StagedTest
                 _a.Main.Characters.Choose(Male);
             return Shown(_host, _a) == Male && Shown(_a, _a) == Male && !_a.Main.Characters.LocalNeedsChoice;
         });
+        Add("only the local player has first-person arms, on its camera", frame =>
+        {
+            var player = _host.Main.LocalPlayer!;
+            if (frame == 0)
+            {
+                player.ThirdPerson = false;
+                _drawnFrame = Engine.GetProcessFrames() + 2;
+            }
+            if (Engine.GetProcessFrames() < _drawnFrame)
+                return false;
+            if (!Check(player.Arms is CharacterModel { FirstPerson: true }, "the host's player has first-person arms"))
+                return true;
+            var arms = (CharacterModel)player.Arms!;
+            Check(arms.GetParent() == player.Camera, "they ride the camera");
+            Check(_host.Main.PlayerSync.Players[_a.Peer].Arms is null && _a.Main.PlayerSync.Players[_host.Peer].Arms is null, "nobody has arms for another player");
+            Check(arms.Visible || !player.Camera.Current, "they show while the player looks out of its own eyes");
+            var body = (CharacterModel)player.Character!;
+            Check(Triangles(arms) > 0 && Triangles(arms) < Triangles(body) / 4, $"they are only the forearms and hands ({Triangles(arms)} of {Triangles(body)} triangles)");
+            player.ThirdPerson = true;
+            return true;
+        });
+        Add("in third person the arms hide", frame =>
+        {
+            var player = _host.Main.LocalPlayer!;
+            // The arms follow the view in _Process; stages step on physics frames, which can run several to one drawn frame.
+            if (frame == 0)
+                _drawnFrame = Engine.GetProcessFrames() + 2;
+            if (Engine.GetProcessFrames() < _drawnFrame)
+                return false;
+            var hidden = !player.Arms!.Visible;
+            player.ThirdPerson = false;
+            return Check(hidden, "the first-person arms hide when the body shows");
+        });
         Add("a second pick in the same world is refused", frame =>
         {
             if (frame == 0)
@@ -124,6 +158,18 @@ public partial class CharacterTest : StagedTest
             return ((CharacterModel)_a.Main.PlayerSync.Players[_host.Peer].Character!).PropNode is null;
         });
 
+        Add("a crouching player is crouched on another peer", frame =>
+        {
+            _host.Main.LocalPlayer!.CurrentInput = new PlayerInput(0, 0, 0, 0, false, false, Crawl: true);
+            var seen = _a.Main.PlayerSync.Players[_host.Peer];
+            var model = (CharacterModel)seen.Character!;
+            if (!seen.Crouched || model.Animator.Mode != CharacterMode.Crouch)
+                return false;
+            Check(Mathf.IsEqualApprox(seen.CapsuleHeight, seen.Settings.CrouchHeight), $"the client's copy has the crouching capsule ({seen.CapsuleHeight})");
+            _host.Main.LocalPlayer!.CurrentInput = PlayerInput.None;
+            return true;
+        });
+        Add("standing up shows on another peer", _ => !_a.Main.PlayerSync.Players[_host.Peer].Crouched);
         Add("a player in deep water swims everywhere", frame =>
         {
             var player = _host.Main.LocalPlayer!;
@@ -172,6 +218,10 @@ public partial class CharacterTest : StagedTest
             return Shown(_b, _host) == Female && Shown(_b, _a) == Male;
         });
     }
+
+    private static int Triangles(Node node) =>
+        node.FindChildren("*", nameof(MeshInstance3D), owned: false).OfType<MeshInstance3D>().Where(m => m.Visible && m.Mesh is not null)
+            .Sum(m => Enumerable.Range(0, m.Mesh.GetSurfaceCount()).Sum(i => m.Mesh.SurfaceGetArrays(i)[(int)Mesh.ArrayType.Index].AsInt32Array().Length / 3));
 
     // What player `who` is drawn as on `on`.
     private static string? Shown(Instance on, Instance who) =>

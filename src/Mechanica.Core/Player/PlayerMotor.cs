@@ -69,6 +69,24 @@ public static class PlayerMotor
         return new Vector3(horizontal.X, vertical, horizontal.Z);
     }
 
+    /// <summary>
+    /// Whether the player is crouched after this tick. Holding Crawl crouches; letting go stands up only when
+    /// there is room above (<paramref name="roomToStand"/>), so a player under a low ceiling stays down rather than
+    /// sticking into it. Swimmers never crouch (Crawl dives instead).
+    /// </summary>
+    public static bool Crouched(bool wantCrouch, bool wasCrouched, bool roomToStand, bool swimming) =>
+        !swimming && (wantCrouch || (wasCrouched && !roomToStand));
+
+    /// <summary>Moves eye height <paramref name="current"/> toward the stance's height at the settings' stance speed.</summary>
+    public static float EyeHeight(float current, bool crouched, PlayerMovementSettings settings, float delta)
+    {
+        var target = crouched ? settings.CrouchEyeHeight : settings.EyeHeight;
+        if (!float.IsFinite(current) || !float.IsFinite(delta) || delta <= 0f)
+            return float.IsFinite(current) ? current : target;
+        var step = settings.StanceSpeed * delta;
+        return MathF.Abs(target - current) <= step ? target : current + MathF.CopySign(step, target - current);
+    }
+
     /// <summary>True when feet <paramref name="waterDepth"/> metres under the surface swim rather than walk.</summary>
     public static bool IsSwimming(float waterDepth, PlayerMovementSettings settings) =>
         float.IsFinite(waterDepth) && waterDepth >= settings.SwimDepth;

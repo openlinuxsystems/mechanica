@@ -180,6 +180,27 @@ public class PlayerMotorTests
         Assert.Equal(Settings.SwimVerticalSpeed, velocity.Y, 3);
     }
 
+    [Theory]
+    [InlineData(true, false, true, false, true)]   // holding Crawl crouches
+    [InlineData(false, true, true, false, false)]  // letting go with room stands up
+    [InlineData(false, true, false, false, true)]  // under a low ceiling it stays down
+    [InlineData(false, false, false, false, false)] // standing stays standing
+    [InlineData(true, true, false, true, false)]   // swimmers never crouch
+    public void CrouchingStandsUpOnlyWithRoom(bool want, bool was, bool room, bool swimming, bool expected) =>
+        Assert.Equal(expected, PlayerMotor.Crouched(want, was, room, swimming));
+
+    [Fact]
+    public void EyeHeightMovesToTheStanceAtStanceSpeed()
+    {
+        var eye = Settings.EyeHeight;
+        eye = PlayerMotor.EyeHeight(eye, crouched: true, Settings, 0.05f);
+        Assert.Equal(Settings.EyeHeight - Settings.StanceSpeed * 0.05f, eye, 4);
+        for (var i = 0; i < 100; i++)
+            eye = PlayerMotor.EyeHeight(eye, crouched: true, Settings, Dt);
+        Assert.Equal(Settings.CrouchEyeHeight, eye);
+        Assert.Equal(Settings.EyeHeight, PlayerMotor.EyeHeight(float.NaN, crouched: false, Settings, Dt));
+    }
+
     private static Vector3 Simulate(PlayerInput input, bool onFloor, float seconds, Vector3 start = default)
     {
         var velocity = start;

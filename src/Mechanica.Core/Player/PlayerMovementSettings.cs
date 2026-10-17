@@ -56,6 +56,15 @@ public sealed record PlayerMovementSettings
     /// <summary>Top crouching speed in m/s.</summary>
     public float CrawlSpeed { get; init; } = 1.5f;
 
+    /// <summary>Capsule height while crouching in metres, so a crouching player fits under low gaps.</summary>
+    public float CrouchHeight { get; init; } = 1.2f;
+
+    /// <summary>Camera height above the feet while crouching in metres.</summary>
+    public float CrouchEyeHeight { get; init; } = 1.05f;
+
+    /// <summary>How fast the camera moves between standing and crouching eye height in m/s.</summary>
+    public float StanceSpeed { get; init; } = 4f;
+
     /// <summary>How deep the feet are below the water surface when the player starts swimming, in metres.</summary>
     public float SwimDepth { get; init; } = 1.2f;
 
@@ -130,6 +139,11 @@ public sealed record PlayerMovementSettings
             throw new FormatException($"height ({Height}) must be at least twice radius ({Radius}).");
         if (!float.IsFinite(EyeHeight) || EyeHeight <= 0f || EyeHeight > Height)
             throw new FormatException($"eye_height must be in (0, height] (got {EyeHeight}).");
+        if (!float.IsFinite(CrouchHeight) || CrouchHeight < 2f * Radius || CrouchHeight > Height)
+            throw new FormatException($"crouch_height must be from twice radius up to height (got {CrouchHeight}).");
+        if (!float.IsFinite(CrouchEyeHeight) || CrouchEyeHeight <= 0f || CrouchEyeHeight > CrouchHeight || CrouchEyeHeight > EyeHeight)
+            throw new FormatException($"crouch_eye_height must be in (0, crouch_height] and at most eye_height (got {CrouchEyeHeight}).");
+        Positive(StanceSpeed, "stance_speed");
     }
 
     private static void Positive(float value, string name)

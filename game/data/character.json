@@ -41,5 +41,8 @@
     "consumable": { "prop": "item", "gesture": "eat" },
     "weapon": { "prop": "item", "gesture": "throw" }
   },
-  "head_pitch_share": 0.6
+  "head_pitch_share": 0.6,
+  // First-person arms: where the arms-only model stands from the camera (right, up, back, in metres) and how far it tips forward.
+  "first_person_offset": [0.0, -1.24, 0.14],
+  "first_person_pitch_degrees": 14
 }

@@ -21,6 +21,8 @@ public partial class PlayerTest : Node3D
 
     private Main _main = null!;
     private PlayerController _player = null!;
+    private StaticBody3D _ceiling = null!;
+    private float _crouchedTop;
     private RigidBody3D _crate = null!;
     private Vector3 _mark;
     private float _peak;
@@ -111,6 +113,53 @@ public partial class PlayerTest : Node3D
                 return false;
             var moved = _crate.GlobalPosition - _mark;
             Check(moved.Z < -0.5f, $"walking into a crate pushes it (moved {moved})");
+            return true;
+        });
+        Add("crouch shrinks the capsule and lowers the camera", frame =>
+        {
+            if (frame == 0)
+            {
+                _player.GlobalPosition = new Vector3(-20, 0.1f, -20);
+                _player.Velocity = Vector3.Zero;
+            }
+            _player.CurrentInput = new PlayerInput(0, 0, 0, 0, false, false, Crawl: true);
+            if (frame < 30)
+                return false;
+            var settings = _player.Settings;
+            Check(_player.Crouched && Mathf.IsEqualApprox(_player.CapsuleHeight, settings.CrouchHeight), $"the capsule is {settings.CrouchHeight} m ({_player.CapsuleHeight})");
+            Check(Mathf.IsEqualApprox(_player.Head.Position.Y, settings.CrouchEyeHeight), $"the camera is at {settings.CrouchEyeHeight} m ({_player.Head.Position.Y:F2})");
+            Check(_player.Body.HasFlag(Core.Net.BodyFlags.Crawl), "the body shows crouching");
+            return true;
+        });
+        Add("under a low ceiling the player stays down", frame =>
+        {
+            if (frame == 0)
+            {
+                // 1.3 m clear: room to crouch, not to stand.
+                _ceiling = new StaticBody3D { Name = "Ceiling", Position = new Vector3(-20, 1.4f, -20) };
+                _ceiling.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = new Vector3(2, 0.2f, 2) } });
+                AddChild(_ceiling);
+            }
+            _player.CurrentInput = PlayerInput.None;
+            if (frame < 30)
+                return false;
+            Check(_player.Crouched && Mathf.IsEqualApprox(_player.CapsuleHeight, _player.Settings.CrouchHeight), "letting go of crouch under the ceiling keeps the player crouched");
+            Check(_player.GlobalPosition.Y < 0.1f && _player.IsOnFloor(), $"the player is not pushed through the floor or ceiling (y={_player.GlobalPosition.Y:F2})");
+            return true;
+        });
+        Add("out from under it the player stands", frame =>
+        {
+            _player.CurrentInput = new PlayerInput(0, 1, 0, 0, false, true);
+            if (_player.Crouched)
+            {
+                var speed = new Vector2(_player.Velocity.X, _player.Velocity.Z).Length();
+                _crouchedTop = Mathf.Max(_crouchedTop, speed);
+                return false;
+            }
+            Check(_crouchedTop > 1f && _crouchedTop <= _player.Settings.CrawlSpeed + 0.01f, $"kept down, the player moved at crouching speed ({_crouchedTop:F2} m/s)");
+            Check(_player.GlobalPosition.Z < -21f + _player.Settings.Radius, $"the player stood up only past the ceiling's edge (z={_player.GlobalPosition.Z:F2})");
+            Check(Mathf.IsEqualApprox(_player.CapsuleHeight, _player.Settings.Height), "the capsule is full height again");
+            _player.CurrentInput = PlayerInput.None;
             return true;
         });
     }
