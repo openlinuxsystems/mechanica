@@ -9,7 +9,7 @@ written by the chunk that builds the feature it covers.
 | [Part Data Schema Reference](part-data-schema.md) | Part Editor v1 |
 | [Lua API Reference](lua-api.md) | MoonSharp host |
 | [Socket and Joint Guide](socket-joint-guide.md) | Joint primitives |
-| Logic and Power Tutorial | Signal/logic bus |
+| [Logic and Power Tutorial](logic-power-tutorial.md) | Signal/logic bus |
 | Aero Tutorial | Aero/propulsion |
 | Example mods (bearing, thruster) | Aero/propulsion |
 | [Packaging Guide](packaging-guide.md) | Mod Package Manager |

@@ -89,6 +89,7 @@ you; this page is the reference for what each key means, so you can read, review
 | `crafting` | object | no | Makes the part a crafting station. Needs `inventory`. See [inventory and crafting](#inventory-and-crafting). |
 | `soil`, `respawn_point` | object, bool | no | Farming soil and respawn beds. Placeable parts only. See [survival](#survival). |
 | `seed` | object | no | What a seed grows into. Items only. See [survival](#survival). |
+| `logic`, `settings`, `seat` | object, list, object | no | Logic bus links, player-set settings and seats. Placeable parts only. See [logic, settings and seats](#logic-settings-and-seats). |
 | `properties` | object | no | Free-form numbers and settings that only the part's Lua script reads (torque, thrust, range). Key order is kept. |
 
 "Placeable" means the categories that exist in the world on the build grid: `block`, `interactive`,
@@ -255,6 +256,59 @@ in `properties`. The vanilla scripts read these properties:
 ```json
 "seed": { "crop": "carrot", "grow_time": 240, "yield": 2, "seeds": 1 }
 ```
+
+## logic, settings and seats
+
+The logic and power bus (chunk 10). The game moves the signals; what a part does with them is its
+script's job (D2). See the [Logic and Power Tutorial](logic-power-tutorial.md).
+
+| Key | Type | Meaning |
+|-----|------|---------|
+| `logic.inputs` | integer 0 to 64 | Most links that may end at the part. Default 0: it takes none. |
+| `logic.outputs` | integer 0 to 64 | Most links that may start at the part. Default 0: it sends none. |
+| `logic.use` | string | What F says on the part (`"toggle"`, `"press"`); F calls the script's `on_activate`. Needs a `script`. Omitted means players cannot use it by hand. |
+| `seat` | object | Makes the part a seat a player sits in with F. Its script reads them with `part.occupant()` and `part.occupant_input()`. |
+| `seat.offset` | [x, y, z] (m) | Where the sitter's feet go, from the part's centre, in the part's frame. Inside the part's footprint. Default [0, 0, 0]. |
+| `settings` | list | Values a player sets on each placed part with the Connect Tool (R), in display order. The script reads them with `part.setting(id)`. |
+
+Each setting:
+
+| Key | Type | Meaning |
+|-----|------|---------|
+| `id` | snake_case | Unique within the part. Required. |
+| `name` | string | Label in the settings panel. Default: the id. |
+| `type` | `number`, `choice`, `toggle` or `number_list` | Required. |
+| `min`, `max` | number | Range of a number, and of each entry of a number list. Required for both, with `min` ≤ `max`. |
+| `step` | number > 0 | Step of the settings panel's field. |
+| `options` | list of snake_case | The choices of a `choice`, distinct. Required for a choice. |
+| `max_count` | integer 1 to 64 | Most entries of a `number_list`. Required for a number list. |
+| `default` | value | The value a placed part starts with. It must fit the setting. Default: `min` (or 0), the first option, false, or an empty list. |
+
+```json
+"script": "scripts/logic_gate.lua",
+"logic": { "inputs": 10, "outputs": 10 },
+"settings": [
+  { "id": "mode", "name": "Mode", "type": "choice", "options": ["and", "or", "xor", "nand", "nor", "xnor"], "default": "and" }
+]
+```
+
+A saved creation keeps the settings a player changed on each part (`"settings": { "mode": "or" }`,
+only values that differ from the default) and its links as a top-level list:
+`"links": [{ "from": 1, "to": 4 }]`. Loading a save checks both against the part data.
+
+The vanilla scripts read these properties:
+
+| Script | Property | Meaning |
+|--------|----------|---------|
+| `scripts/seat.lua` | `steer_angle` (°) | How far A and D turn the upright bearings the seat feeds. |
+| | `steer_speed` (rad/s), `steer_torque` (N·m) | How fast and how hard they turn. |
+| `scripts/engine.lua` | `speed` (rad/s) | Wheel bearing speed at full throttle in top gear (the `gear` setting, 1 to 5, gives a fifth each). |
+| | `torque`, `brake` (N·m) | Most torque while driving, and while holding the wheels with no throttle. |
+| | `fuel`, `fuel_time` (s) | Item burned from the creation's containers, and seconds of full throttle per item. Creative needs none. |
+| | `loop_parameter` | Parameter of the `loop` sound that follows the throttle (`load`, `speed`). |
+| `scripts/sensor.lua` | `interval` | Steps between looks (its `range` is a setting). |
+| `scripts/button.lua` | `pulse` (s) | How long it stays on. |
+| `scripts/controller.lua` | `speed` (rad/s), `torque` (N·m) | How its bearings move between frames. |
 
 ## Recipes
 
