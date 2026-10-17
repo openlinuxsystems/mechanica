@@ -44,11 +44,11 @@ public class BuildSettingsTests
         var settings = BuildSettings.FromJson(File.ReadAllText(path));
         Assert.Equal(16, settings.Paint.Palette.Count);
         Assert.Equal(new ConnectSettings(), settings.Connect);
-        // The Sledgehammer: one swing a second, the hit 0.6 s in, 3 m reach (Chase's sledgehammer brief); the shipped
-        // file and the defaults agree.
+        // The Sledgehammer: a swing every 0.6 s with the hit 0.25 s in (Chase asked for Scrap Mechanic's pace), 3 m
+        // reach; the shipped file and the defaults agree.
         Assert.Equal(new SledgeSettings(), settings.Sledge with { BlockCauses = new SledgeSettings().BlockCauses });
-        Assert.Equal(1.0f, settings.Sledge.SwingSeconds);
-        Assert.Equal(0.6f, settings.Sledge.StrikeSeconds);
+        Assert.Equal(0.6f, settings.Sledge.SwingSeconds);
+        Assert.Equal(0.25f, settings.Sledge.StrikeSeconds);
         Assert.Equal(3.0f, settings.Sledge.Reach);
         Assert.Equal(50, settings.Lift.MaxBlueprints);
         Assert.True(settings.Lift.RefuseStoredItems);

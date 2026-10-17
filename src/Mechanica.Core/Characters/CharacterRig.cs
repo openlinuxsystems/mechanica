@@ -173,8 +173,18 @@ public static class CharacterRig
         "hold_tool", "hold_heavy", "hold_heavy_block", "hold_gun", "hold_item",
         "hammer_swing", "sledge_swing", "tool_use", "weld", "paint_spray", "fire_gun", "eat", "throw", "plant", "pour",
         "interact", "hurt",
-        "hold_heavy_fp", "hold_heavy_block_fp", "sledge_swing_fp",
+        "sledge_swing_side", "sledge_swing_back",
+        "hold_heavy_fp", "hold_heavy_block_fp", "sledge_swing_fp", "sledge_swing_side_fp", "sledge_swing_back_fp",
     ];
+
+    /// <summary>
+    /// Gestures with more than one clip, the first being the one <see cref="GestureClip(CharacterGesture)"/> names: the
+    /// Sledgehammer swings overhead, as a forehand from the right or as a backhand from the left.
+    /// </summary>
+    public static IReadOnlyDictionary<string, string[]> GestureVariants { get; } = new Dictionary<string, string[]>(StringComparer.Ordinal)
+    {
+        ["sledge_swing"] = ["sledge_swing", "sledge_swing_side", "sledge_swing_back"],
+    };
 
     /// <summary>
     /// Ending of a clip's first-person version: the local player's arms play <c>name_fp</c> instead of <c>name</c>
@@ -215,6 +225,42 @@ public static class CharacterRig
         CharacterGesture.Hurt => "hurt",
         _ => null,
     };
+
+    /// <summary>
+    /// The clip the <paramref name="count"/>th gesture plays: for a gesture with <see cref="GestureVariants"/>, one of
+    /// them at random, never the same twice running. The pick follows from the replicated gesture count alone, so every
+    /// peer (and the player's own first-person arms) plays the same swing with no traffic of its own.
+    /// </summary>
+    public static string? GestureClip(CharacterGesture gesture, byte count)
+    {
+        if (GestureClip(gesture) is not { } clip || !GestureVariants.TryGetValue(clip, out var variants))
+            return GestureClip(gesture);
+        // Each step moves on by 1 to n-1 places, chosen by a hash of the step: a shuffle with no repeats.
+        var pick = 0;
+        for (var c = 1; c <= count; c++)
+            pick = (pick + 1 + (int)(Mix((uint)c) % (uint)(variants.Length - 1))) % variants.Length;
+        return variants[pick];
+    }
+
+    /// <summary>The gesture clip <paramref name="clip"/> stands in for: itself, or the first of its variants.</summary>
+    public static string GestureOf(string clip)
+    {
+        foreach (var (name, variants) in GestureVariants)
+        {
+            if (Array.IndexOf(variants, clip) >= 0)
+                return name;
+        }
+        return clip;
+    }
+
+    private static uint Mix(uint x)
+    {
+        x ^= x >> 16;
+        x *= 0x7feb352dU;
+        x ^= x >> 15;
+        x *= 0x846ca68bU;
+        return x ^ (x >> 16);
+    }
 
     /// <summary>
     /// The node in the hand-tools model drawn for <paramref name="prop"/>, or null when nothing is drawn

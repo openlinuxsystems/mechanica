@@ -57,9 +57,9 @@
   "sledge": {
     "damage": 10,
     "health_per_durability": 10,
-    // One swing a second: wind-up, then the hit lands strike_seconds after the click, then recovery.
-    "swing_seconds": 1.0,
-    "strike_seconds": 0.6,
+    // A quick swing (about Scrap Mechanic's pace): wind-up, the hit strike_seconds after the click, then recovery.
+    "swing_seconds": 0.6,
+    "strike_seconds": 0.25,
     "reach": 3.0,
     // Knockback on the Body hit (N·s), but never faster than max_knockback_speed (m/s) for a light Body.
     "impulse": 5000,
