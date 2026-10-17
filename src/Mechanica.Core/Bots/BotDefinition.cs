@@ -30,6 +30,9 @@ public sealed record BotDefinition
     /// <summary>Display name.</summary>
     public string? Name { get; init; }
 
+    /// <summary>A sentence about it, for the editor and wikis.</summary>
+    public string? Description { get; init; }
+
     /// <summary>
     /// Family the bot belongs to (<c>scuttler</c> for every coloured Scuttler). Its sound events are
     /// <c>&lt;family&gt;_idle</c>, <c>_alert</c>, <c>_attack</c> and <c>_death</c>. Omitted means the id.

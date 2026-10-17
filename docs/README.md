@@ -13,8 +13,8 @@ written by the chunk that builds the feature it covers.
 | Aero Tutorial | Aero/propulsion |
 | Example mods (bearing, thruster) | Aero/propulsion |
 | [Packaging Guide](packaging-guide.md) | Mod Package Manager |
-| Bot Tutorial | Bot behaviour runtime |
-| Example bot mod | Bot behaviour runtime |
+| [Bot Tutorial](bot-tutorial.md) | Bot behaviour runtime |
+| [Example bot mod](../examples/mods/example_bots) | Bot behaviour runtime |
 | [External AI Endpoint and Record/Replay](ai-endpoint.md) | External AI endpoint |
 
 Other references:
