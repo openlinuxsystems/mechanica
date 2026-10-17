@@ -3,6 +3,15 @@
   "reach": 7.5,
   "max_parts_per_creation": 4096,
   "clearance_scale": 0.9,
+  // Hammer timings (UI spec §8, §9): hold to align, move to drag, hold right click to remove.
+  "hammer": {
+    "align_hold_seconds": 0.15,
+    "drag_seconds": 0.1,
+    "drag_max_per_axis": 16,
+    "remove_seconds": 0.6,
+    "remove_seconds_by_material": { "wood": 0.4, "metal": 0.7, "concrete": 0.9 },
+    "rollback_seconds": 0.4
+  },
   "lift": {
     "platform_size": 2.0,
     "base_height": 0.25,

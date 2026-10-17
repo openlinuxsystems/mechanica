@@ -30,6 +30,9 @@ public sealed record BuildSettings
     /// </summary>
     public float ClearanceScale { get; init; } = 0.9f;
 
+    /// <summary>The Hammer's timings and drags.</summary>
+    public HammerSettings Hammer { get; init; } = new();
+
     /// <summary>The Lift.</summary>
     public LiftSettings Lift { get; init; } = new();
 
@@ -67,6 +70,7 @@ public sealed record BuildSettings
             throw new FormatException($"max_parts_per_creation must be at least 1 (got {MaxPartsPerCreation}).");
         if (!float.IsFinite(ClearanceScale) || ClearanceScale is <= 0f or > 1f)
             throw new FormatException($"clearance_scale must be in (0, 1] (got {ClearanceScale}).");
+        Hammer.Validate();
         Lift.Validate();
         Paint.Validate();
         Sledge.Validate();
@@ -76,6 +80,60 @@ public sealed record BuildSettings
     {
         if (!float.IsFinite(value) || value <= 0f)
             throw new FormatException($"{name} must be a positive number (got {value}).");
+    }
+}
+
+/// <summary>
+/// The Hammer's timings (UI spec §8, §9): holding the left button still for <see cref="AlignHoldSeconds"/> enters
+/// alignment mode, moving for <see cref="DragSeconds"/> while held starts a drag, and holding the right button on a
+/// part removes it after <see cref="RemoveSeconds"/>, or the time its <c>sound_material</c> has in
+/// <see cref="RemoveSecondsByMaterial"/>. A drag covers at most <see cref="DragMaxPerAxis"/> parts along each side.
+/// </summary>
+public sealed record HammerSettings
+{
+    // One shared default, so settings that keep it compare equal.
+    private static readonly IReadOnlyDictionary<string, double> NoMaterials = new Dictionary<string, double>();
+
+    /// <summary>Seconds the left button is held still before the ghost locks for a drag (§9: 0.15).</summary>
+    public double AlignHoldSeconds { get; init; } = 0.15;
+
+    /// <summary>Seconds of movement with a button held before it is a drag (§9: 0.1).</summary>
+    public double DragSeconds { get; init; } = 0.1;
+
+    /// <summary>Most parts a drag places or removes along each side of its rectangle (§10: 16).</summary>
+    public int DragMaxPerAxis { get; init; } = 16;
+
+    /// <summary>Seconds of holding the right button to remove a part whose material has no time of its own (§9: 0.6).</summary>
+    public double RemoveSeconds { get; init; } = 0.6;
+
+    /// <summary>Removal seconds by <c>sound_material</c> (§9: wood 0.4, metal 0.7, concrete 0.9).</summary>
+    public IReadOnlyDictionary<string, double> RemoveSecondsByMaterial { get; init; } = NoMaterials;
+
+    /// <summary>Seconds a refused placement's ghost takes to fade out red (§9).</summary>
+    public double RollbackSeconds { get; init; } = 0.4;
+
+    /// <summary>Most parts one drag sends: the whole rectangle.</summary>
+    public int MaxPartsPerAction => DragMaxPerAxis * DragMaxPerAxis;
+
+    /// <summary>Seconds to remove a part of <paramref name="material"/> (null: none named).</summary>
+    public double RemoveSecondsFor(string? material) =>
+        material is not null && RemoveSecondsByMaterial.TryGetValue(material, out var seconds) ? seconds : RemoveSeconds;
+
+    /// <summary>Throws <see cref="FormatException"/> naming the first out-of-range value.</summary>
+    public void Validate()
+    {
+        if (!double.IsFinite(AlignHoldSeconds) || AlignHoldSeconds < 0)
+            throw new FormatException($"hammer.align_hold_seconds must be 0 or more (got {AlignHoldSeconds}).");
+        if (!double.IsFinite(DragSeconds) || DragSeconds < 0)
+            throw new FormatException($"hammer.drag_seconds must be 0 or more (got {DragSeconds}).");
+        if (DragMaxPerAxis is < 1 or > 64)
+            throw new FormatException($"hammer.drag_max_per_axis must be 1 to 64 (got {DragMaxPerAxis}).");
+        if (!double.IsFinite(RemoveSeconds) || RemoveSeconds < 0)
+            throw new FormatException($"hammer.remove_seconds must be 0 or more (got {RemoveSeconds}).");
+        if (RemoveSecondsByMaterial.FirstOrDefault(p => !double.IsFinite(p.Value) || p.Value < 0) is { Key: { } bad } entry)
+            throw new FormatException($"hammer.remove_seconds_by_material.{bad} must be 0 or more (got {entry.Value}).");
+        if (!double.IsFinite(RollbackSeconds) || RollbackSeconds < 0)
+            throw new FormatException($"hammer.rollback_seconds must be 0 or more (got {RollbackSeconds}).");
     }
 }
 

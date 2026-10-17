@@ -225,6 +225,83 @@ public class BuildActionsTests
         Assert.Empty(_world.Sounds);
     }
 
+    [Fact]
+    public void ADragPlacesARowAsOneCreationAndSkipsWhatIsBlocked()
+    {
+        var dispatcher = Batch();
+        var cells = BuildDrag.Cells(GridCell.Zero, new GridCell(3, 0, 0), 1, new GridSize(1, 1, 1), 16);
+        var result = dispatcher.Dispatch(Player, BuildActions.PlaceParts, new PlacePartsArgs(Block, cells, Position: new Vec3(0, 0.125f, 0)));
+
+        Assert.True(result.Ok, result.ToString());
+        var batch = result.Value!.Value.Deserialize<BatchResult>(ActionJson.Options)!;
+        Assert.Equal((4, 0), (batch.Done, batch.Skipped));
+        Assert.Equal(4, Assert.Single(_world.Creations.Values).Parts.Count);
+        // One sound for the drag, not one per part.
+        Assert.Single(_world.Sounds);
+
+        _world.Blocked = "A player is in the way.";
+        var more = dispatcher.Dispatch(Player, BuildActions.PlaceParts, new PlacePartsArgs(Block, [new(0, 1, 0), new(1, 1, 0)], Creation: batch.Creation));
+        Assert.False(more.Ok);
+        Assert.Equal("A player is in the way.", more.Message);
+    }
+
+    [Theory]
+    [InlineData(0, "at least one")]
+    [InlineData(257, "At most 256")]
+    public void ADragHasLimits(int count, string message)
+    {
+        var cells = Enumerable.Range(0, count).Select(i => new GridCell(i % 16, 0, i / 16)).ToList();
+        var result = Batch().Dispatch(Player, BuildActions.PlaceParts, new PlacePartsArgs(Block, cells, Position: new Vec3(0, 0.125f, 0)));
+
+        Assert.False(result.Ok);
+        Assert.Contains(message, result.Message);
+    }
+
+    [Fact]
+    public void ADragRemovesPartsOfOneBodyEvenAsTheCreationSplits()
+    {
+        var dispatcher = Batch();
+        var placed = dispatcher.Dispatch(Player, BuildActions.PlaceParts, new PlacePartsArgs(Block, [.. Enumerable.Range(0, 5).Select(x => new GridCell(x, 0, 0))], Position: new Vec3(0, 0.125f, 0)));
+        var id = placed.Value!.Value.Deserialize<BatchResult>(ActionJson.Options)!.Creation;
+        _world.Sounds.Clear();
+
+        // Taking the middle three splits the ends apart part way through.
+        var result = dispatcher.Dispatch(Player, BuildActions.RemoveParts, new RemovePartsArgs(id, [3, 2, 4]));
+
+        Assert.True(result.Ok, result.ToString());
+        var batch = result.Value!.Value.Deserialize<BatchResult>(ActionJson.Options)!;
+        Assert.Equal((3, 0), (batch.Done, batch.Skipped));
+        Assert.Equal(2, _world.Creations.Count);
+        Assert.All(_world.Creations.Values, c => Assert.Single(c.Parts));
+        Assert.Single(_world.Sounds);
+    }
+
+    [Fact]
+    public void ADragNeverRemovesAcrossAJoint()
+    {
+        var dispatcher = Batch();
+        var id = Start(Block);
+        Assert.True(Place(new { part = Bearing, creation = id, cell = new[] { 0, 1, 0 } }).Ok);
+        Assert.True(dispatcher.Dispatch(Player, BuildActions.PlacePart, new PlacePartArgs(Block, new GridCell(0, 2, 0), Creation: id)).Ok);
+        var creation = _world.Creations[id];
+        Assert.Equal(2, creation.Bodies.Count);
+
+        var result = dispatcher.Dispatch(Player, BuildActions.RemoveParts, new RemovePartsArgs(id, [1, 3]));
+
+        Assert.False(result.Ok);
+        Assert.Contains("same body", result.Message);
+        Assert.Equal(3, creation.Parts.Count);
+    }
+
+    // The actions again with room for a drag's worth of parts.
+    private ActionDispatcher Batch()
+    {
+        var dispatcher = new ActionDispatcher();
+        var catalog = Catalog();
+        new BuildActions(catalog, new BuildSettings { Reach = 10f }, _world).Register(dispatcher);
+        return dispatcher;
+    }
+
     private int Start(string part)
     {
         var result = Place(new { part, cell = new[] { 0, 0, 0 }, position = new[] { 0f, 0.125f, 0 } });

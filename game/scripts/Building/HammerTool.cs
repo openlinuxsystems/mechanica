@@ -15,13 +15,18 @@ namespace Mechanica.Game.Building;
 /// <summary>
 /// Building by hand for the local player. Every physics frame while in hand it casts a ray from the
 /// camera and works out where the selected part would go (<see cref="BuildAim"/>), showing a see-through
-/// preview there. <see cref="Place"/> and <see cref="Remove"/> send <c>PlacePart</c>/<c>RemovePart</c>
-/// through the Action API, so the host decides; nothing changes locally until it answers.
+/// ghost there: blue when it would fit, red when it would not (checked here, the same way the host checks).
+/// Requests go through the Action API, so the host decides; a placed part's ghost stays until the host answers
+/// and fades out red if it refuses (<see cref="PendingGhost"/>).
 /// <para>
 /// Aiming at a Creation attaches to it. Aiming at anything else starts a new Creation, its grid
-/// aligned with the world and snapped to 0.25 m across the surface. Keys: left click places, right
-/// click removes, Q turns the part about the face (Shift+Q back), T tips it over. The part comes from the
-/// hotbar slot picked (<see cref="ToolBelt"/>).
+/// aligned with the world and snapped to 0.25 m across the surface. Left click places on release (UI spec §9).
+/// Holding it still for a moment enters alignment mode: the ghost locks and arrows show the ways a drag can grow.
+/// Moving while held drags out a grid of parts in one plane, up to 16 along each side, placed on release; Q steps
+/// the plane (XY, XZ, YZ) while dragging. Holding right click on a part fills a ring round the crosshair and removes
+/// it when full (0.4 to 0.9 s by material); letting go early cancels. Dragging with right click held marks the parts
+/// of that body in the face's plane and removes them on release. Otherwise Q turns the part about the face
+/// (Shift+Q back) and T tips it over. The part comes from the hotbar slot picked (<see cref="ToolBelt"/>).
 /// </para>
 /// </summary>
 public partial class HammerTool : HandTool
@@ -35,10 +40,31 @@ public partial class HammerTool : HandTool
         NoDepthTest = true,
     };
 
+    /// <summary>The look of a ghost that would not fit, and of parts marked to come off.</summary>
+    public static readonly StandardMaterial3D InvalidMaterial = new()
+    {
+        AlbedoColor = UiTokens.Error with { A = 0.4f },
+        Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
+        ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
+        NoDepthTest = true,
+    };
+
     private readonly List<string> _parts = [];
+    private readonly List<Node3D> _ghosts = [];
+    private readonly List<MeshInstance3D> _marks = [];
+    private readonly List<GridCell> _dragCells = [];
+    private readonly List<int> _dragParts = [];
     private Node3D _preview = null!;
+    private Node3D _arrows = null!;
     private string? _previewPart;
     private GridRotation _adjust;
+    private ToolGesture _place = null!;
+    private ToolGesture _remove = null!;
+    private Target? _anchor;
+    private int _plane = 1;
+    private (CreationNode Node, int Part, int Body, GridCell Face, Transform3D Frame)? _removing;
+    private bool _removed;
+    private bool _previewValid;
 
     /// <summary>What the ray currently points at.</summary>
     /// <param name="Creation">The Creation hit, or null for the ground and other world objects.</param>
@@ -47,7 +73,10 @@ public partial class HammerTool : HandTool
     /// <param name="Position">For a new Creation, the world position of its grid origin.</param>
     /// <param name="HitPart">The part under the crosshair, if any (what <see cref="Remove"/> takes).</param>
     /// <param name="Preview">World transform of the selected part's centre where it would go.</param>
-    public sealed record Target(Creation? Creation, GridCell Cell, GridRotation Rotation, Vec3? Position, int? HitPart, Transform3D Preview);
+    /// <param name="Face">The grid face the part goes on, in that grid.</param>
+    /// <param name="Frame">World transform of that grid (the Body's, or the new Creation's).</param>
+    public sealed record Target(Creation? Creation, GridCell Cell, GridRotation Rotation, Vec3? Position, int? HitPart, Transform3D Preview,
+        GridCell Face = default, Transform3D Frame = default);
 
     /// <inheritdoc/>
     public override string ToolName => "Hammer";
@@ -70,12 +99,51 @@ public partial class HammerTool : HandTool
     /// <summary>The current aim, updated every physics frame (and by <see cref="UpdateAim"/>).</summary>
     public Target? Aim { get; private set; }
 
+    /// <summary>Where the left button's gesture is: pressed, aligning (held still) or dragging.</summary>
+    public GesturePhase PlacePhase => _place.Phase;
+
+    /// <summary>Where the right button's gesture is: pressed or held (timed removal), or dragging.</summary>
+    public GesturePhase RemovePhase => _remove.Phase;
+
+    /// <summary>The normal axis of the plane a drag spreads in (0 = X, 1 = Y, 2 = Z).</summary>
+    public int Plane => _plane;
+
+    /// <summary>The origin cells a placing drag covers now (empty when not dragging).</summary>
+    public IReadOnlyList<GridCell> DragCells => _dragCells;
+
+    /// <summary>The parts a removing drag has marked.</summary>
+    public IReadOnlyList<int> DragParts => _dragParts;
+
+    /// <summary>True when the ghost would fit where it is (the local check; the host has the last word).</summary>
+    public bool PreviewValid => _previewValid;
+
+    /// <summary>Why the ghost would not fit, or null.</summary>
+    public string? PreviewProblem { get; private set; }
+
+    /// <summary>The arrows alignment mode shows (hidden otherwise).</summary>
+    public Node3D Arrows => _arrows;
+
+    /// <summary>Whether the player has one of a part to place; null builds with anything (Creative).</summary>
+    public Func<string, bool>? CanAfford { get; set; }
+
+    /// <summary>The time the gestures run on, in seconds.</summary>
+    public static double Now => Time.GetTicksUsec() / 1e6;
+
+    private HammerSettings Timing => Build.Settings!.Hammer;
+
     public override void _Ready()
     {
         ReloadParts();
         _preview = new Node3D { Name = "Preview", TopLevel = true, Visible = false };
         AddChild(_preview);
+        _arrows = new Node3D { Name = "Arrows", TopLevel = true, Visible = false };
+        AddChild(_arrows);
+        _place = new ToolGesture(Timing.AlignHoldSeconds, Timing.DragSeconds);
+        _remove = new ToolGesture(Timing.AlignHoldSeconds, Timing.DragSeconds);
+        HudRoot.FocusLost += CancelGestures;
     }
+
+    public override void _ExitTree() => HudRoot.FocusLost -= CancelGestures;
 
     /// <summary>Re-reads the placeable parts from the catalog, after mods are reloaded. Keeps the selection if it still exists.</summary>
     public void ReloadParts()
@@ -92,17 +160,27 @@ public partial class HammerTool : HandTool
 
     public override void _PhysicsProcess(double delta)
     {
-        if (Active)
-            UpdateAim();
+        if (!Active)
+            return;
+        // A release the tool never heard (the mouse freed for a window, focus lost) ends nothing.
+        if (ReadDeviceInput && Input.MouseMode != Input.MouseModeEnum.Captured && (_place.Down || _remove.Down))
+            CancelGestures();
+        UpdateAim();
+        UpdatePlacing();
+        UpdateRemoving();
     }
 
     /// <inheritdoc/>
     protected override bool HandleInput(InputEvent @event)
     {
         if (Pressed(@event, InputActions.Primary))
-            Place();
+            PressPlace();
+        else if (GameInput.Released(@event, InputActions.Primary))
+            return ReleasePlace();
         else if (Pressed(@event, InputActions.Secondary))
-            Remove();
+            PressRemove();
+        else if (GameInput.Released(@event, InputActions.Secondary))
+            return ReleaseRemove();
         else if (Pressed(@event, InputActions.RotateBack))
             TurnBack();
         else if (Pressed(@event, InputActions.Rotate))
@@ -115,10 +193,20 @@ public partial class HammerTool : HandTool
     }
 
     /// <inheritdoc/>
-    protected override void OnActiveChanged() => _preview.Visible = Active && Aim is not null;
+    protected override void OnActiveChanged()
+    {
+        if (!Active)
+            CancelGestures();
+        _preview.Visible = Active && Aim is not null;
+    }
 
     /// <inheritdoc/>
-    public override Core.Ui.CrosshairState Crosshair => Aim is not null && Selected is not null ? Core.Ui.CrosshairState.Valid : Core.Ui.CrosshairState.Default;
+    public override Core.Ui.CrosshairState Crosshair => Aim is not null && Selected is not null && _previewValid ? Core.Ui.CrosshairState.Valid : Core.Ui.CrosshairState.Default;
+
+    /// <inheritdoc/>
+    public override float? Progress => _removing is { } r && _remove.Phase is GesturePhase.Pressed or GesturePhase.Holding && !_removed
+        ? (float)Math.Min(1, _remove.Held / Math.Max(1e-6, RemoveSecondsOf(r.Node.Creation, r.Part)))
+        : null;
 
     /// <summary>Selects a part by qualified id. Returns false when it is not placeable.</summary>
     public bool Select(string part)
@@ -138,30 +226,172 @@ public partial class HammerTool : HandTool
         Selected = _parts[((index + step) % _parts.Count + _parts.Count) % _parts.Count];
     }
 
-    /// <summary>Turns the part a quarter turn about the face it goes on.</summary>
-    public void Turn() => _adjust = BuildAim.Turn(_adjust);
+    /// <summary>Turns the part a quarter turn about the face it goes on; while a drag is held, Q steps its plane instead.</summary>
+    public void Turn()
+    {
+        if (_place.Phase is GesturePhase.Holding or GesturePhase.Dragging)
+            CyclePlane();
+        else
+            _adjust = BuildAim.Turn(_adjust);
+    }
 
     /// <summary>Turns the part a quarter turn the other way.</summary>
     public void TurnBack()
     {
+        if (_place.Phase is GesturePhase.Holding or GesturePhase.Dragging)
+        {
+            CyclePlane();
+            CyclePlane();
+            return;
+        }
         for (var i = 0; i < 3; i++)
-            Turn();
+            _adjust = BuildAim.Turn(_adjust);
     }
 
     /// <summary>Tips the part a quarter turn over, for wedges and other parts with a top.</summary>
     public void Tip() => _adjust = BuildAim.Tip(_adjust);
 
-    /// <summary>Asks the host to place the selected part where the preview is. False when there is nothing to aim at.</summary>
-    public bool Place(Action<ActionResult>? done = null)
+    /// <summary>Steps the drag plane: XY, XZ, YZ (UI spec §8).</summary>
+    public void CyclePlane() => _plane = BuildDrag.NextPlane(_plane);
+
+    /// <summary>Starts the left button's gesture on the ghost: a click, an alignment hold or a drag.</summary>
+    public void PressPlace()
     {
         if (Aim is not { } aim || Selected is null)
+            return;
+        _anchor = aim;
+        _plane = BuildDrag.AxisOf(aim.Face);
+        _place.Press(Now, aim.Cell);
+    }
+
+    /// <summary>
+    /// Ends the left button's gesture: a click or hold places one part where the ghost is (if it fits; a soft error
+    /// sound if not), a drag places the whole grid. False when no gesture was under way.
+    /// </summary>
+    public bool ReleasePlace(Action<ActionResult>? done = null)
+    {
+        UpdatePlacing();
+        var end = _place.Release(Now);
+        var anchor = _anchor;
+        _anchor = null;
+        _arrows.Visible = false;
+        if (end is null)
             return false;
-        PlayFeedback("hammer_swing");
-        Send(BuildActions.PlacePart, new PlacePartArgs(Selected, aim.Cell, aim.Rotation, aim.Creation?.Id, aim.Position), done);
+        if (end == GestureEnd.Drag && anchor is not null && _dragCells.Count > 1)
+        {
+            PlaceMany(anchor, [.. _dragCells], done);
+        }
+        else if (end == GestureEnd.Hold && anchor is not null)
+        {
+            if (Check(anchor) is null)
+                PlaceAt(anchor, done);
+            else
+                Sounds?.PlayUi("ui_error");
+        }
+        else if (!_previewValid)
+        {
+            Sounds?.PlayUi("ui_error");
+        }
+        else
+        {
+            Place(done);
+        }
+        _dragCells.Clear();
+        ShowGhosts();
         return true;
     }
 
-    /// <summary>Asks the host to remove the part under the crosshair. False when no part is aimed at.</summary>
+    /// <summary>Starts the right button's gesture on the part under the crosshair: held, it removes it; dragged, an area.</summary>
+    public void PressRemove()
+    {
+        if (CastRay() is not { Body: { } body, Node: { } node } hit || PartHit(hit) is not var (_, part))
+            return;
+        var frame = body.GlobalTransform;
+        var toGrid = frame.AffineInverse();
+        var (cell, face) = BuildAim.FromHit((toGrid * hit.Point).ToNumerics(), (toGrid.Basis * hit.Normal).ToNumerics());
+        _removing = (node, part, node.Creation.BodyIndexOf(part), face, frame);
+        _removed = false;
+        _remove.Press(Now, cell);
+    }
+
+    /// <summary>
+    /// Ends the right button's gesture: a drag removes the parts it marked; anything else that had not filled the
+    /// ring cancels. False when no gesture was under way.
+    /// </summary>
+    public bool ReleaseRemove(Action<ActionResult>? done = null)
+    {
+        UpdateRemoving();
+        var end = _remove.Release(Now);
+        var removing = _removing;
+        _removing = null;
+        if (end is null)
+            return false;
+        if (end == GestureEnd.Drag && removing is { } r && _dragParts.Count > 0)
+        {
+            PlayFeedback("hammer_swing");
+            Send(BuildActions.RemoveParts, new RemovePartsArgs(r.Node.Creation.Id, [.. _dragParts]), done);
+        }
+        _dragParts.Clear();
+        ShowMarks();
+        return true;
+    }
+
+    /// <summary>Drops both gestures without acting.</summary>
+    public void CancelGestures()
+    {
+        _place.Cancel();
+        _remove.Cancel();
+        _anchor = null;
+        _removing = null;
+        _dragCells.Clear();
+        _dragParts.Clear();
+        if (_arrows is not null)
+        {
+            _arrows.Visible = false;
+            ShowGhosts();
+            ShowMarks();
+        }
+    }
+
+    /// <summary>Asks the host to place the selected part where the preview is. False when there is nothing to aim at.</summary>
+    public bool Place(Action<ActionResult>? done = null) => Aim is { } aim && PlaceAt(aim, done);
+
+    private bool PlaceAt(Target aim, Action<ActionResult>? done)
+    {
+        if (Selected is null)
+            return false;
+        PlayFeedback("hammer_swing");
+        var ghost = PendingGhost.Leave(this, _preview);
+        ghost.GlobalTransform = aim.Preview;
+        Send(BuildActions.PlacePart, new PlacePartArgs(Selected, aim.Cell, aim.Rotation, aim.Creation?.Id, aim.Position), result =>
+        {
+            if (IsInstanceValid(ghost))
+                ghost.Resolve(result, Timing.RollbackSeconds);
+            done?.Invoke(result);
+        });
+        return true;
+    }
+
+    private void PlaceMany(Target anchor, IReadOnlyList<GridCell> cells, Action<ActionResult>? done)
+    {
+        if (Selected is not { } part || Build.Catalog.FindDefinition(part) is not { } definition)
+            return;
+        PlayFeedback("hammer_swing");
+        var ghosts = cells.Select(cell =>
+        {
+            var ghost = PendingGhost.Leave(this, _preview);
+            ghost.GlobalTransform = anchor.Frame * PartFrame(definition, cell, anchor.Rotation);
+            return ghost;
+        }).ToList();
+        Send(BuildActions.PlaceParts, new PlacePartsArgs(part, cells, anchor.Rotation, anchor.Creation?.Id, anchor.Position), result =>
+        {
+            foreach (var ghost in ghosts.Where(IsInstanceValid))
+                ghost.Resolve(result, Timing.RollbackSeconds);
+            done?.Invoke(result);
+        });
+    }
+
+    /// <summary>Asks the host to remove the part under the crosshair at once. False when no part is aimed at.</summary>
     public bool Remove(Action<ActionResult>? done = null)
     {
         if (Aim is not { Creation: { } creation, HitPart: { } part })
@@ -171,18 +401,204 @@ public partial class HammerTool : HandTool
         return true;
     }
 
+    /// <summary>Seconds of holding right click that remove a part: its material's time (§9).</summary>
+    public double RemoveSecondsOf(Creation creation, int part) =>
+        creation.FindPart(part) is null ? Timing.RemoveSeconds : Timing.RemoveSecondsFor(creation.DefinitionOf(part).SoundMaterial);
+
     /// <summary>Casts the aim ray now and moves the preview.</summary>
     public void UpdateAim()
     {
         Aim = Selected is { } selected && Build.Catalog.FindDefinition(selected) is { } definition
             ? Cast(definition)
             : null;
-        _preview.Visible = Active && Aim is not null;
-        if (Aim is null)
+        // Aligning and dragging lock the ghost to the cell the button went down on.
+        var shown = _place.Phase is GesturePhase.Holding or GesturePhase.Dragging ? _anchor : Aim;
+        _preview.Visible = Active && shown is not null && _dragCells.Count <= 1;
+        if (shown is null)
+        {
+            _previewValid = false;
+            PreviewProblem = null;
             return;
+        }
         if (_previewPart != Selected)
             BuildPreview(Selected!, Build.Catalog.FindDefinition(Selected!)!);
-        _preview.GlobalTransform = Aim.Preview;
+        _preview.GlobalTransform = shown.Preview;
+        PreviewProblem = Check(shown);
+        _previewValid = PreviewProblem is null;
+        SetPreviewMaterial(_preview, _previewValid ? PreviewMaterial : InvalidMaterial);
+    }
+
+    // The same checks the host makes, so the ghost turns red where a placement would be refused.
+    private string? Check(Target aim)
+    {
+        if (Selected is not { } part || Build.Catalog.FindDefinition(part) is not { } definition)
+            return "no part";
+        if (Eye.DistanceTo(aim.Preview.Origin) > Build.Settings!.Reach)
+            return Loc.T("Too far away");
+        if (CanAfford?.Invoke(part) == false)
+            return Loc.T("You have none left");
+        Pose pose;
+        if (aim.Creation is { } creation)
+        {
+            if (creation.Parts.Count >= Build.Settings.MaxPartsPerCreation)
+                return Loc.T("This creation has the most parts allowed");
+            if (!creation.CanPlacePart(part, aim.Cell, aim.Rotation, out _, out var error))
+                return error;
+            pose = aim.Frame.ToPose();
+        }
+        else
+        {
+            pose = new Pose(aim.Position!.Value.ToNumerics(), System.Numerics.Quaternion.Identity);
+        }
+        return Build.CheckClear(aim.Creation, definition, aim.Cell, aim.Rotation, pose);
+    }
+
+    // Alignment shows arrows; a drag grows the grid from the anchor towards where the aim meets the plane.
+    private void UpdatePlacing()
+    {
+        if (!_place.Down || _anchor is not { } anchor || Selected is not { } part || Build.Catalog.FindDefinition(part) is not { } definition)
+            return;
+        // On the plane of the surface the ghost sits on, the aim meets that surface; Q's other planes cut through the ghost.
+        var cell = _plane == BuildDrag.AxisOf(anchor.Face) ? AimOnPlane(anchor.Frame, anchor.Cell, _plane, -anchor.Face) : AimOnPlane(anchor.Frame, anchor.Cell, _plane);
+        var phase = _place.Update(Now, cell);
+        _dragCells.Clear();
+        if (phase == GesturePhase.Dragging)
+            _dragCells.AddRange(BuildDrag.Cells(anchor.Cell, _place.Current, _plane, BuildDrag.StepOf(definition, anchor.Rotation), Timing.DragMaxPerAxis));
+        ShowGhosts();
+        _arrows.Visible = phase == GesturePhase.Holding;
+        if (_arrows.Visible)
+            ShowArrows(anchor);
+    }
+
+    // A held right button fills the ring and removes the part once; a drag marks the parts of its body in the plane.
+    private void UpdateRemoving()
+    {
+        if (!_remove.Down || _removing is not { } r)
+            return;
+        if (!IsInstanceValid(r.Node) || r.Node.Creation.FindPart(r.Part) is not { } start)
+        {
+            _remove.Cancel();
+            _removing = null;
+            ShowMarks();
+            return;
+        }
+        var axis = BuildDrag.AxisOf(r.Face);
+        var cell = AimOnPlane(r.Frame, _remove.Start, axis, r.Face);
+        var phase = _remove.Update(Now, cell);
+        _dragParts.Clear();
+        if (phase == GesturePhase.Dragging)
+        {
+            var creation = r.Node.Creation;
+            foreach (var at in BuildDrag.Cells(_remove.Start, _remove.Current, axis, new GridSize(1, 1, 1), Timing.DragMaxPerAxis))
+            {
+                if (creation.PartAt(at) is { } p && !_dragParts.Contains(p.Id) && creation.BodyIndexOf(p.Id) == r.Body)
+                    _dragParts.Add(p.Id);
+            }
+        }
+        else if (!_removed && _remove.Held >= RemoveSecondsOf(r.Node.Creation, r.Part))
+        {
+            // One removal per press: hold again for the next part (no queue).
+            _removed = true;
+            PlayFeedback("hammer_swing");
+            Send(BuildActions.RemovePart, new RemovePartArgs(r.Node.Creation.Id, start.Id), null);
+        }
+        ShowMarks();
+    }
+
+    // The cell where the aim ray crosses the plane through cell with normal axis (or cell's face side), in the grid at frame.
+    private GridCell? AimOnPlane(Transform3D frame, GridCell cell, int axis, GridCell? face = null)
+    {
+        var toGrid = frame.AffineInverse();
+        var size = Core.MechanicaInfo.GridSize;
+        var origin = (toGrid * Eye) / size;
+        var direction = (toGrid.Basis * -Player.Camera.GlobalBasis.Z).Normalized();
+        return face is { } side
+            ? BuildDrag.OnFace(origin.ToNumerics(), direction.ToNumerics(), cell, side)
+            : BuildDrag.OnPlane(origin.ToNumerics(), direction.ToNumerics(), cell, axis);
+    }
+
+    private void ShowGhosts()
+    {
+        if (_ghosts.Count > 0 && _ghosts[0].GetMeta("part", "").AsString() != (Selected ?? ""))
+        {
+            foreach (var ghost in _ghosts)
+                ghost.QueueFree();
+            _ghosts.Clear();
+        }
+        var count = _dragCells.Count > 1 ? _dragCells.Count : 0;
+        while (_ghosts.Count < count)
+        {
+            var ghost = new Node3D { Name = "DragGhost", TopLevel = true };
+            ghost.SetMeta("part", Selected ?? "");
+            foreach (var mesh in _preview.GetChildren().OfType<MeshInstance3D>())
+                ghost.AddChild(new MeshInstance3D { Mesh = mesh.Mesh, Transform = mesh.Transform, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off });
+            AddChild(ghost);
+            _ghosts.Add(ghost);
+        }
+        var definition = Selected is { } part ? Build.Catalog.FindDefinition(part) : null;
+        for (var i = 0; i < _ghosts.Count; i++)
+        {
+            var ghost = _ghosts[i];
+            ghost.Visible = i < count && _anchor is not null && definition is not null;
+            if (!ghost.Visible)
+                continue;
+            var cell = _dragCells[i];
+            var target = _anchor! with { Cell = cell, Preview = _anchor.Frame * PartFrame(definition!, cell, _anchor.Rotation) };
+            ghost.GlobalTransform = target.Preview;
+            // The first is checked fully; the rest attach to the ones before, so only room and reach count.
+            var fits = i == 0 ? Check(target) is null : Eye.DistanceTo(target.Preview.Origin) <= Build.Settings!.Reach
+                && Build.CheckClear(target.Creation, definition!, cell, target.Rotation, target.Creation is null ? new Pose(target.Position!.Value.ToNumerics(), System.Numerics.Quaternion.Identity) : target.Frame.ToPose()) is null;
+            SetPreviewMaterial(ghost, fits ? PreviewMaterial : InvalidMaterial);
+        }
+    }
+
+    private void ShowMarks()
+    {
+        var creation = _removing?.Node is { } node && IsInstanceValid(node) ? node.Creation : null;
+        while (_marks.Count < _dragParts.Count)
+        {
+            var mark = new MeshInstance3D { Name = "RemoveMark", TopLevel = true, Mesh = new BoxMesh { Size = Vector3.One * Core.MechanicaInfo.GridSize * 1.04f }, MaterialOverride = InvalidMaterial };
+            AddChild(mark);
+            _marks.Add(mark);
+        }
+        for (var i = 0; i < _marks.Count; i++)
+        {
+            var mark = _marks[i];
+            mark.Visible = creation is not null && i < _dragParts.Count && creation.FindPart(_dragParts[i]) is not null;
+            if (!mark.Visible)
+                continue;
+            var part = creation!.FindPart(_dragParts[i])!;
+            var definition = creation.DefinitionOf(part.Id);
+            var size = BuildDrag.StepOf(definition, part.Rotation);
+            ((BoxMesh)mark.Mesh).Size = new Vector3(size.X, size.Y, size.Z) * Core.MechanicaInfo.GridSize * 1.04f;
+            mark.GlobalTransform = _removing!.Value.Frame * new Transform3D(Basis.Identity, PartGeometry.CentreMetres(definition, part.Cell, part.Rotation).ToGodot());
+        }
+    }
+
+    // Four arrows round the locked ghost, along the plane's axes.
+    private void ShowArrows(Target anchor)
+    {
+        if (_arrows.GetChildCount() == 0)
+        {
+            var material = new StandardMaterial3D { AlbedoColor = UiTokens.Cyan, ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded, NoDepthTest = true };
+            for (var i = 0; i < 4; i++)
+                _arrows.AddChild(new MeshInstance3D { Name = $"Arrow{i}", Mesh = new CylinderMesh { TopRadius = 0, BottomRadius = 0.06f, Height = 0.16f }, MaterialOverride = material, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off });
+        }
+        var directions = BuildDrag.Directions(_plane);
+        _arrows.GlobalTransform = new Transform3D(anchor.Frame.Basis.Orthonormalized(), anchor.Preview.Origin);
+        for (var i = 0; i < 4; i++)
+        {
+            var arrow = _arrows.GetChild<MeshInstance3D>(i);
+            var d = directions[i].AsVector.ToNumerics().ToGodot();
+            // A cylinder points up its Y axis; turn it to point along d, just outside the part.
+            arrow.Transform = new Transform3D(new Basis(new Quaternion(Vector3.Up, d)), d * 0.32f);
+        }
+    }
+
+    private static void SetPreviewMaterial(Node3D preview, Material material)
+    {
+        foreach (var mesh in preview.GetChildren().OfType<MeshInstance3D>())
+            mesh.MaterialOverride = material;
     }
 
     private Target? Cast(PartDefinition definition)
@@ -199,7 +615,7 @@ public partial class HammerTool : HandTool
             var rotation = BuildAim.Orient(face, (toGrid.Basis * (from - point)).ToNumerics(), _adjust);
             var origin = BuildAim.Anchor(definition, rotation, cell + face, face);
             return new Target(node.Creation, origin, rotation, null, node.Creation.PartAt(cell)?.Id,
-                frame * PartFrame(definition, origin, rotation));
+                frame * PartFrame(definition, origin, rotation), face, frame);
         }
 
         // A new Creation: its grid follows the world axes, the first cell sits on the surface.
@@ -211,7 +627,7 @@ public partial class HammerTool : HandTool
         var turned = BuildAim.Orient(worldFace, (from - point).ToNumerics(), _adjust);
         var anchor = BuildAim.Anchor(definition, turned, GridCell.Zero, worldFace);
         return new Target(null, anchor, turned, position.ToNumerics().ToVec3(), null,
-            new Transform3D(Basis.Identity, position) * PartFrame(definition, anchor, turned));
+            new Transform3D(Basis.Identity, position) * PartFrame(definition, anchor, turned), worldFace, new Transform3D(Basis.Identity, position));
     }
 
     private static Transform3D PartFrame(PartDefinition definition, GridCell origin, GridRotation rotation) =>
@@ -240,7 +656,14 @@ public partial class HammerTool : HandTool
         if (Selected is null)
             return Loc.T("Hammer: no placeable parts are loaded");
         var name = Build.Catalog.FindDefinition(Selected)?.Name ?? Selected;
-        return Loc.T("Hammer: {0}   {1} turn  {2} tip  {3} place  {4} remove", name,
-            Key(InputActions.Rotate), Key(InputActions.Tip), Key(InputActions.Primary), Key(InputActions.Secondary)) + Status;
+        if (_place.Phase == GesturePhase.Dragging)
+            return Loc.T("Hammer: {0} × {1} on the {2} plane   {3} next plane  let go to place", name, _dragCells.Count, BuildDrag.PlaneName(_plane), Key(InputActions.Rotate));
+        if (_place.Phase == GesturePhase.Holding)
+            return Loc.T("Hammer: {0}   drag to place a grid on the {1} plane   {2} next plane", name, BuildDrag.PlaneName(_plane), Key(InputActions.Rotate));
+        if (_remove.Phase == GesturePhase.Dragging)
+            return Loc.T("Hammer: remove {0} parts   let go to remove", _dragParts.Count);
+        var problem = !_previewValid && PreviewProblem is { Length: > 0 } p && Aim is not null ? $"\n{p}" : "";
+        return Loc.T("Hammer: {0}   {1} turn  {2} tip  {3} place (hold to drag)  {4} hold to remove", name,
+            Key(InputActions.Rotate), Key(InputActions.Tip), Key(InputActions.Primary), Key(InputActions.Secondary)) + (Status.Length > 0 ? Status : problem);
     }
 }

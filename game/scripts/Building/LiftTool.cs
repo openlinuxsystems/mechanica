@@ -75,7 +75,14 @@ public partial class LiftTool : HandTool
     {
         if (Aim is not { } aim)
             return false;
-        Send(ToolActions.PlaceLift, new PlaceLiftArgs(aim.Position, aim.Creation), done);
+        // A new Lift shows where it goes until the host answers; a refusal fades it out red.
+        var ghost = aim.Creation is null && _preview.Visible ? PendingGhost.Leave(this, _preview) : null;
+        Send(ToolActions.PlaceLift, new PlaceLiftArgs(aim.Position, aim.Creation), result =>
+        {
+            if (ghost is not null && IsInstanceValid(ghost))
+                ghost.Resolve(result, Build.Settings!.Hammer.RollbackSeconds);
+            done?.Invoke(result);
+        });
         return true;
     }
 

@@ -19,6 +19,7 @@ namespace Mechanica.Game.Ui;
 public partial class WorldHud : CanvasLayer
 {
     private CrosshairView _crosshair = null!;
+    private ProgressRing _ring = null!;
     private PanelContainer _tooltip = null!;
     private Label _name = null!;
     private Label _description = null!;
@@ -52,6 +53,9 @@ public partial class WorldHud : CanvasLayer
     /// <summary>What the crosshair shows now.</summary>
     public CrosshairState State { get; private set; }
 
+    /// <summary>The ring round the crosshair that fills while a tool's timed action is held (§8, §11), hidden otherwise.</summary>
+    public ProgressRing Ring => _ring;
+
     /// <summary>The crosshair control.</summary>
     public Control CrosshairControl => _crosshair;
 
@@ -75,6 +79,10 @@ public partial class WorldHud : CanvasLayer
         _crosshair = new CrosshairView { Name = "Crosshair" };
         AddChild(_crosshair);
         _crosshair.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.Center, Control.LayoutPresetMode.KeepSize);
+        // Screen-space and centred, so it keeps its size and place at any resolution or zoom.
+        _ring = new ProgressRing { Name = "Ring", Visible = false, CustomMinimumSize = new Vector2(44, 44), Size = new Vector2(44, 44), Thickness = 4 };
+        AddChild(_ring);
+        _ring.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.Center, Control.LayoutPresetMode.KeepSize);
         _tooltip = new PanelContainer { Name = "Tooltip", Visible = false, MouseFilter = Control.MouseFilterEnum.Ignore, ThemeTypeVariation = "TooltipPanel" };
         var column = new VBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
         _tooltip.AddChild(column);
@@ -93,6 +101,9 @@ public partial class WorldHud : CanvasLayer
         var player = Players.LocalPlayer;
         var playing = player is { Dead: false } && !Covered();
         _crosshair.Visible = playing;
+        var progress = playing ? Tool()?.Progress : null;
+        _ring.Visible = progress is not null;
+        _ring.Value = progress ?? 0;
         if (!playing)
         {
             State = CrosshairState.Default;
