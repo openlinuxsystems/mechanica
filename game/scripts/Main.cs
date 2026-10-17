@@ -75,6 +75,9 @@ public partial class Main : Node3D
     /// <summary>Creation state sync: interest, full syncs and body snapshots.</summary>
     public CreationSync CreationSync { get; private set; } = null!;
 
+    /// <summary>The joint debug overlay, hidden until something shows it (the Test Sandbox).</summary>
+    public JointOverlay JointOverlay { get; private set; } = null!;
+
     /// <summary>Chunk streaming: the ground, and which Creations are simulated.</summary>
     public WorldStreamer Streamer { get; private set; } = null!;
 
@@ -130,6 +133,8 @@ public partial class Main : Node3D
         };
         Creations = new CreationWorld { Name = "Creations" };
         AddChild(Creations);
+        JointOverlay = new JointOverlay { Creations = Creations };
+        AddChild(JointOverlay);
         // Before the players, so the spawn has ground on the first frame.
         Streamer = new WorldStreamer
         {

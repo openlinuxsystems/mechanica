@@ -37,6 +37,7 @@ public partial class SandboxScreen : Control
     private Label _status = null!;
     private Label _result = null!;
     private CheckBox _collisionOverlay = null!;
+    private CheckBox _jointOverlay = null!;
     private List<string> _partIds = [];
     private int _active;
     private int _port;
@@ -106,6 +107,8 @@ public partial class SandboxScreen : Control
         }
         if (_collisionOverlay.ButtonPressed)
             CollisionOverlay.Apply(Active.Main.Creations);
+        for (var i = 0; i < _instances.Count; i++)
+            _instances[i].Main.JointOverlay.Visible = _jointOverlay.ButtonPressed && i == _active;
         _status.Text = string.Join("\n", _instances.Select((inst, i) =>
             $"{(i == _active ? "▶ " : "  ")}{inst.Name}: {inst.Main.Session.State}, peer {inst.Main.Session.LocalPeer}, "
             + $"{inst.Main.PlayerSync.Players.Count} players, {inst.Main.Creations.All.Count()} creations"));
@@ -344,6 +347,9 @@ public partial class SandboxScreen : Control
                 CollisionOverlay.Remove(Active.Main.Creations);
         };
         column.AddChild(_collisionOverlay);
+        // Drawn on the instance being watched, so a client's view shows the joints as it received them.
+        _jointOverlay = new CheckBox { Text = "Show joints" };
+        column.AddChild(_jointOverlay);
         _result = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart };
         column.AddChild(_result);
         _status = new Label { Modulate = new Color(1, 1, 1, 0.8f) };

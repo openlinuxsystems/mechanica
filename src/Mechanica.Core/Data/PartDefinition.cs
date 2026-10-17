@@ -326,6 +326,9 @@ public sealed record SocketDefinition
 /// </summary>
 public sealed record JointDefinition
 {
+    /// <summary>Longest travel (max − min) a linear or spring joint may have, in m.</summary>
+    public const float MaxTravel = 16f;
+
     /// <summary>
     /// Unit grid direction the joint turns about (rotational) or slides along (linear, spring), in the
     /// part's frame. Omitted means the socket's normal: a bearing turns about its rotor face, a piston

@@ -9,7 +9,8 @@ namespace Mechanica.Game.Editor;
 
 /// <summary>
 /// The Part Editor's 3D view: the part's model, its footprint grid, its collision shape as a
-/// wireframe, its sockets as arrows and the connection preview on every face. It lives in its own
+/// wireframe, its sockets as arrows, joint axes with their range of motion, the centre of mass, and the
+/// connection preview on every face. It lives in its own
 /// <see cref="SubViewport"/>; <see cref="OrbitBy"/> and <see cref="ZoomBy"/> move the camera around the part.
 /// </summary>
 public partial class PartPreview : Node3D
@@ -17,6 +18,7 @@ public partial class PartPreview : Node3D
     private static readonly Color FootprintColor = new(1, 1, 1, 0.35f);
     private static readonly Color CollisionColor = new(1f, 0.85f, 0.1f);
     private static readonly Color SelectedColor = new(1f, 1f, 0.2f);
+    private static readonly Color CentreOfMassColor = new(1f, 0.3f, 0.3f);
 
     private Camera3D _camera = null!;
     private Node3D _content = null!;
@@ -32,6 +34,9 @@ public partial class PartPreview : Node3D
 
     /// <summary>Whether sockets are drawn.</summary>
     public bool ShowSockets { get; set; } = true;
+
+    /// <summary>Whether joint axes and ranges, and the centre of mass, are drawn.</summary>
+    public bool ShowJoints { get; set; } = true;
 
     /// <summary>Whether the connection preview tiles are drawn.</summary>
     public bool ShowConnections { get; set; } = true;
@@ -125,6 +130,16 @@ public partial class PartPreview : Node3D
             var sockets = definition.Sockets ?? [];
             for (var i = 0; i < sockets.Count; i++)
                 _content.AddChild(SocketGizmo(sockets[i], i == selectedSocket));
+        }
+        if (ShowJoints)
+        {
+            foreach (var socket in definition.Sockets ?? [])
+            {
+                if (JointGizmo.FrameOf(socket) is { } frame)
+                    _content.AddChild(JointGizmo.Mesh($"Joint_{socket.Id}", JointGizmo.RangeLines(frame), JointGizmo.ColorOf(frame.Type)));
+            }
+            if (definition.IsPlaceable)
+                _content.AddChild(JointGizmo.Mesh("CentreOfMass", JointGizmo.CrossLines((definition.CentreOfMass ?? Vec3.Zero).ToGodot()), CentreOfMassColor));
         }
         Contacts = definition.IsPlaceable ? SocketTools.PreviewConnections(definition) : [];
         if (ShowConnections)

@@ -57,9 +57,6 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
     private const string Code = DiagnosticCodes.PartInvalid;
     private const float Epsilon = 1e-4f;
 
-    /// <summary>Longest travel a linear or spring joint may have, in m.</summary>
-    public const float MaxJointTravel = 16f;
-
     public void Validate(PartDefinition part, DiagnosticSink sink)
     {
         if (part.Id is null)
@@ -305,8 +302,8 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
             sink.Error(Code, $"{path}.max", "max must be more than min.");
         else if (min > Epsilon || max < -Epsilon)
             sink.Error(Code, $"{path}.min", "the travel must include 0, the position the joint is built at.");
-        else if (max - min > MaxJointTravel)
-            sink.Error(Code, $"{path}.max", $"travel is {JsonNumbers.Format(max - min)} m; the most allowed is {JsonNumbers.Format(MaxJointTravel)} m.");
+        else if (max - min > JointDefinition.MaxTravel)
+            sink.Error(Code, $"{path}.max", $"travel is {JsonNumbers.Format(max - min)} m; the most allowed is {JsonNumbers.Format(JointDefinition.MaxTravel)} m.");
     }
 
     private static bool IsGridDirection(Vec3 v) =>
