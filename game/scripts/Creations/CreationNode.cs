@@ -1,5 +1,6 @@
 using Godot;
 using Mechanica.Core.Creations;
+using Mechanica.Core.Data;
 using Mechanica.Core.World;
 
 namespace Mechanica.Game.Creations;
@@ -21,6 +22,7 @@ public partial class CreationNode : Node3D
     private readonly List<CreationBody> _bodies = [];
     private readonly List<Joint3D> _joints = [];
     private readonly Dictionary<Joint3D, JointFrame> _frames = [];
+    private readonly List<(MeshInstance3D Mesh, JointLink Link, JointFrame Frame)> _shafts = [];
 
     /// <summary>The graph this node shows. Set before adding the node to the tree.</summary>
     public Creation Creation { get; init; } = null!;
@@ -65,6 +67,22 @@ public partial class CreationNode : Node3D
     {
         Name = $"Creation{Creation.Id}";
         Build();
+    }
+
+    public override void _Process(double delta)
+    {
+        foreach (var (mesh, link, frame) in _shafts)
+        {
+            // The rod runs from the anchor to where the far side is now, along the axis.
+            var length = JointPosition(link) ?? 0f;
+            mesh.Visible = length > 0.002f;
+            if (!mesh.Visible)
+                continue;
+            var axis = frame.Axis.ToGodot();
+            // Cylinders stand along +Y; Godot's arc quaternion can't turn +Y onto -Y, so that case is a half turn about X.
+            var turn = axis.Y < -0.99f ? new Basis(Vector3.Right, Mathf.Pi) : new Basis(new Quaternion(Vector3.Up, axis));
+            mesh.Transform = new Transform3D(turn * Basis.FromScale(new Vector3(1, length, 1)), frame.Anchor.ToGodot() + axis * (length / 2));
+        }
     }
 
     /// <summary>Writes every body's current world pose and velocity back to <see cref="Creation"/>.</summary>
@@ -148,6 +166,7 @@ public partial class CreationNode : Node3D
         }
         _joints.Clear();
         _frames.Clear();
+        _shafts.Clear();
         _bodies.Clear();
     }
 
@@ -221,6 +240,8 @@ public partial class CreationNode : Node3D
         AddChild(joint);
         b.Transform = actual;
         _frames[joint] = frame;
+        if (!rotational && frame.ShaftRadius is { } radius)
+            AddShaft(link, frame, radius, a);
         return joint;
     }
 
@@ -234,6 +255,23 @@ public partial class CreationNode : Node3D
         var rotational = frame.Type == ConnectionType.Rotational;
         var turn = GridRotation.All.First(r => (rotational ? r.ZAxis : r.XAxis) == axis);
         return new Transform3D(turn.ToBasis(), frame.Anchor.ToGodot());
+    }
+
+    // A rod hanging off the joint part's body, stretched each frame by _Process.
+    private void AddShaft(JointLink link, JointFrame frame, float radius, CreationBody body)
+    {
+        var part = Creation.FindPart(link.Connection.A)!;
+        var definition = Creation.DefinitionOf(part.Id);
+        var visual = (definition.Visual ?? new VisualDefinition()) with { Color = part.Color ?? definition.Visual?.Color };
+        var mesh = new MeshInstance3D
+        {
+            Name = $"Shaft{link.Connection.A}_{link.Connection.B}",
+            Mesh = new CylinderMesh { TopRadius = radius, BottomRadius = radius, Height = 1f, RadialSegments = 12 },
+            MaterialOverride = Assets.VisualMaterial(visual, part.Part.Split(':')[0]),
+            Visible = false,
+        };
+        body.AddChild(mesh);
+        _shafts.Add((mesh, link, frame));
     }
 
     private static HingeJoint3D Hinge(JointFrame frame)

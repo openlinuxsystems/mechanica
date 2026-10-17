@@ -896,10 +896,12 @@ public partial class PartEditorScreen : Control
             _socketGrid.AddNumber("Stiffness", joint.Stiffness, 0.001, 1e7, 100, v => set(j => j with { Stiffness = (float?)v }), optional: true, fallback: 5000, suffix: "N/m");
             _socketGrid.AddNumber("Damping", joint.Damping, 0, 1e7, 10, v => set(j => j with { Damping = (float?)v }), optional: true, fallback: 300, suffix: "N·s/m");
         }
+        if (!rotational)
+            _socketGrid.AddNumber("Shaft radius", joint.ShaftRadius, 0.001, 1, 0.005, v => set(j => j with { ShaftRadius = (float?)v }), optional: true, fallback: 0.04, suffix: "m");
     }
 
     private static JointDefinition? Normalize(JointDefinition joint) =>
-        joint is { Axis: null, Min: null, Max: null, Stiffness: null, Damping: null, Extra: null or { Count: 0 } } ? null : joint;
+        joint is { Axis: null, Min: null, Max: null, Stiffness: null, Damping: null, ShaftRadius: null, Extra: null or { Count: 0 } } ? null : joint;
 
     private static VisualDefinition? Normalize(VisualDefinition visual) =>
         visual is { Color: null, Roughness: null, Metallic: null, Opacity: null, Emission: null, Texture: null, Paintable: null, Variants: null or { Count: 0 }, Extra: null } ? null : visual;

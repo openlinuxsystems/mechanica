@@ -606,7 +606,7 @@ public sealed class Creation
         var joint = socket.Joint;
         frame = new JointFrame(connection.Type, anchor, PartGeometry.JointAxis(socket, part.Rotation), normal,
             connection.Type == ConnectionType.Linear ? joint?.Min ?? 0f : joint?.Min, joint?.Max,
-            joint?.Stiffness, joint?.Damping);
+            joint?.Stiffness, joint?.Damping, joint?.ShaftRadius);
         return true;
     }
 

@@ -45,11 +45,17 @@ public static class LuaApi
         new("part.apply_force", "part.apply_force(force, at?)", "Pushes the part's Body with a world force (N), through the centre of mass or at a world point; returns true or false, reason.", "part"),
         new("part.apply_torque", "part.apply_torque(torque)", "Twists the part's Body with a world torque (N·m); returns true or false, reason.", "part"),
         new("part.set_bearing", "part.set_bearing(velocity, max_torque?)", "Drives this bearing's motor at velocity rad/s, or frees it with nil; returns true or false, reason.", "part"),
+        new("part.set_bearing_angle", "part.set_bearing_angle(angle, speed?, max_torque?)", "Turns this bearing to angle rad (from where it was built) at up to speed rad/s and holds it; returns true or false, reason.", "part"),
+        new("part.set_piston", "part.set_piston(length, speed?, max_force?)", "Moves this piston to length m at up to speed m/s and holds it, or frees it with nil; returns true or false, reason.", "part"),
+        new("part.joint", "part.joint()", "This part's own joint as {type, other, position, min, max, locked}, or nil.", "part"),
 
         new("creation.id", "creation.id()", "The id of the script's Creation.", "creation"),
         new("creation.mass", "creation.mass()", "Total mass of the Creation, in kg.", "creation"),
         new("creation.parts", "creation.parts()", "List of the Creation's parts as {id, type}.", "creation"),
         new("creation.set_bearing", "creation.set_bearing(part_id, velocity, max_torque?)", "Drives another bearing of the same Creation; returns true or false, reason.", "creation"),
+        new("creation.set_bearing_angle", "creation.set_bearing_angle(part_id, angle, speed?, max_torque?)", "Turns another bearing of the same Creation to an angle; returns true or false, reason.", "creation"),
+        new("creation.set_piston", "creation.set_piston(part_id, length, speed?, max_force?)", "Moves another piston of the same Creation to a length, or frees it with nil; returns true or false, reason.", "creation"),
+        new("creation.joint", "creation.joint(part_id)", "The joint another part of the Creation owns, like part.joint(), or nil.", "creation"),
 
         new("world.gravity", "world.gravity()", "Gravity acceleration, in m/s².", "world"),
         new("world.time", "world.time()", "Seconds simulated since the scripts started.", "world"),

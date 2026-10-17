@@ -46,7 +46,7 @@ public partial class PartEditorTest : Node3D
         AddChild(screen);
         await Frames(1);
 
-        Check(PartEditorScreen.TemplateNames.SequenceEqual(["block", "decor", "interactive", "item"]),
+        Check(PartEditorScreen.TemplateNames.SequenceEqual(["bearing", "block", "decor", "interactive", "item", "piston", "suspension"]),
             $"templates are listed ({string.Join(", ", PartEditorScreen.TemplateNames)})");
         Check(screen.NewPart(Mod, "Bad Id", "x", "block") is not null, "a bad part id is refused");
         Check(screen.NewPart(Mod, "holed_block", "Holed Block", "block") is null, "a new block starts from the template");

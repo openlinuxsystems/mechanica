@@ -147,8 +147,10 @@ public partial class MotionSync : Node, IMotionWorld
                 continue;
             }
             // Parked: keep the target for when it comes back.
-            if (Creations.NodeOf(key.Creation) is not { } node || node.JointOf(motor.Joint) is not { } joint
-                || creation.Joints.FirstOrDefault(j => j.Connection == motor.Joint) is not { } link)
+            // The motor belongs to the part, so it carries over to whatever the part's joint holds now.
+            if (Creations.NodeOf(key.Creation) is not { } node
+                || creation.Joints.FirstOrDefault(j => j.Connection.A == key.Part && j.Connection.Type == motor.Joint.Type) is not { } link
+                || node.JointOf(link.Connection) is not { } joint)
                 continue;
             var frame = node.FrameOf(joint);
             var velocity = motor.Drive.Target is null

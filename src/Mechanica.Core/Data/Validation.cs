@@ -247,6 +247,10 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
         }
         if (j.Axis is { } axis && !IsGridDirection(axis))
             sink.Error(Code, $"{path}.axis", $"axis {axis} must be a grid direction like [0, 1, 0].");
+        if (j.ShaftRadius is { } shaft && (!float.IsFinite(shaft) || shaft <= 0 || shaft > 1))
+            sink.Error(Code, $"{path}.shaft_radius", "shaft_radius must be more than 0 and at most 1 m.");
+        else if (j.ShaftRadius is not null && type == SocketType.Rotational)
+            sink.Error(Code, $"{path}.shaft_radius", "only linear and spring joints draw a shaft.");
         foreach (var (value, key) in new[] { (j.Min, "min"), (j.Max, "max"), (j.Stiffness, "stiffness"), (j.Damping, "damping") })
         {
             if (value is { } v && !float.IsFinite(v))

@@ -465,6 +465,12 @@ public sealed record JointDefinition
     /// <summary>Damping in N·s/m (spring joints only). Omitted means 0, an undamped spring.</summary>
     public float? Damping { get; init; }
 
+    /// <summary>
+    /// Linear and spring joints only: draws a rod of this radius (m), in the part's colour, from the
+    /// anchor to where the far side is now, so an extended piston shows its shaft. Omitted draws none.
+    /// </summary>
+    public float? ShaftRadius { get; init; }
+
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }

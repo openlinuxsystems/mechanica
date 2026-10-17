@@ -1,0 +1,21 @@
+{
+  "format_version": 1,
+  "model": [
+    {
+      "kind": "box",
+      "size": [0.08, 0.25, 0.22],
+      "position": [-0.085, 0, 0]
+    },
+    {
+      "kind": "cylinder",
+      "radius": 0.05,
+      "height": 0.2,
+      "position": [0.02, 0, 0]
+    },
+    {
+      "kind": "box",
+      "size": [0.06, 0.22, 0.2],
+      "position": [0.095, 0, 0]
+    }
+  ]
+}

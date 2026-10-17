@@ -101,8 +101,9 @@ public sealed record JointLink(Connection Connection, int BodyA, int BodyB)
 /// <param name="Max">Highest position (rad or m); null on a free-spinning hinge.</param>
 /// <param name="Stiffness">Spring rate in N/m, for spring joints.</param>
 /// <param name="Damping">Spring damping in N·s/m, for spring joints.</param>
+/// <param name="ShaftRadius">Radius of the rod drawn along a linear or spring joint, or null for none.</param>
 public sealed record JointFrame(ConnectionType Type, Vec3 Anchor, Vec3 Axis, Vec3 Normal, float? Min, float? Max,
-    float? Stiffness, float? Damping)
+    float? Stiffness, float? Damping, float? ShaftRadius = null)
 {
     /// <summary>True for a hinge with no limits.</summary>
     public bool SpinsFreely => Type == ConnectionType.Rotational && (Min is null || Max is null);
