@@ -1,0 +1,22 @@
+{
+  "id": "potato_seed",
+  "name": "Potato Seed",
+  "description": "Plant in watered soil. Grows into potatoes, which are also blaster ammo.",
+  "category": "consumable",
+  "mass": 0.05,
+  "stack_size": 50,
+  "visual": {
+    "color": "#a08050"
+  },
+  "sounds": {
+    "pickup": "seed_pickup",
+    "place": "seed_place"
+  },
+  "seed": {
+    "crop": "potato",
+    "grow_time": 300,
+    "yield": 3,
+    "seeds": 1,
+    "value": 1
+  }
+}

@@ -48,7 +48,8 @@ public partial class MainMenu : Control
         center.AddChild(column);
         _menu = column;
         column.AddChild(new Label { Text = MechanicaInfo.GameName, ThemeTypeVariation = "HeaderLarge", HorizontalAlignment = HorizontalAlignment.Center });
-        AddButton(column, "Play test world", () => GetTree().ChangeSceneToFile(WorldScene));
+        AddButton(column, "Play survival", () => Play(Core.Survival.GameMode.Survival));
+        AddButton(column, "Play creative", () => Play(Core.Survival.GameMode.Creative));
         column.AddChild(new HSeparator());
         column.AddChild(new Label { Text = "Mod tools", HorizontalAlignment = HorizontalAlignment.Center });
         AddButton(column, "Part Editor", () => GetTree().ChangeSceneToFile(PartEditorScene));
@@ -76,6 +77,12 @@ public partial class MainMenu : Control
         }
         GD.Print($"[batch] {(result.Succeeded ? "OK" : "FAILED")}: {result.Exports.Count(e => e.Succeeded)} of {result.Exports.Count} parts and recipes exported from {file}.");
         GetTree().Quit(result.Succeeded ? 0 : 1);
+    }
+
+    private void Play(Core.Survival.GameMode mode)
+    {
+        Main.MenuGameMode = mode;
+        GetTree().ChangeSceneToFile(WorldScene);
     }
 
     private void OpenSandbox()

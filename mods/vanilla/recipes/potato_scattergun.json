@@ -1,0 +1,23 @@
+{
+  "id": "potato_scattergun",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal",
+      "count": 5
+    },
+    {
+      "item": "component_kit",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "potato_scattergun",
+      "count": 1
+    }
+  ],
+  "time": 15
+}

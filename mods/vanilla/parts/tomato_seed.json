@@ -1,0 +1,22 @@
+{
+  "id": "tomato_seed",
+  "name": "Tomato Seed",
+  "description": "Plant in watered soil. Grows into tomatoes.",
+  "category": "consumable",
+  "mass": 0.05,
+  "stack_size": 50,
+  "visual": {
+    "color": "#d0b070"
+  },
+  "sounds": {
+    "pickup": "seed_pickup",
+    "place": "seed_place"
+  },
+  "seed": {
+    "crop": "tomato",
+    "grow_time": 360,
+    "yield": 2,
+    "seeds": 1,
+    "value": 1.5
+  }
+}

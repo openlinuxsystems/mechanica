@@ -1,4 +1,5 @@
 using Mechanica.Core.Data;
+using Mechanica.Core.Items;
 using Mechanica.Core.Survival;
 using Mechanica.Core.Tests.Data;
 using Mechanica.Core.World;
@@ -104,5 +105,27 @@ public class SurvivalDataTests
         Assert.DoesNotContain(data.Diagnostics, d => d.Severity == DiagnosticSeverity.Error);
         Assert.Contains(data.Objects["tree"].Drops!, d => d.Item == "scrap_wood");
         Assert.Contains(data.Objects["rock_node"].Drops!, d => d.Item == "scrap_metal");
+    }
+
+    [Fact]
+    public void VanillaSurvivalContentHangsTogether()
+    {
+        var mods = ModLoader.LoadAll(Path.Combine(TestMods.RepoRoot, "mods"));
+        Assert.DoesNotContain(mods.Diagnostics, d => d.Severity == DiagnosticSeverity.Error);
+        var settings = SurvivalSettings.FromJson(File.ReadAllText(Path.Combine(TestMods.RepoRoot, "game", "data", "survival.json")));
+        foreach (var start in settings.StartingItems)
+            Assert.True(mods.FindDefinition(start.Item) is not null, $"starting item {start.Item} exists");
+        Assert.NotNull(mods.FindDefinition(settings.WaterItem)?.Watering);
+        foreach (var seed in new[] { "carrot_seed", "potato_seed", "tomato_seed" })
+            Assert.NotNull(mods.FindDefinition(mods.FindDefinition(seed)!.Seed!.Crop!)?.Food);
+        foreach (var weapon in new[] { "potato_blaster", "potato_scattergun", "potato_launcher", "popper" })
+            Assert.NotNull(mods.FindDefinition(mods.FindDefinition(weapon)!.Weapon!.Ammo!));
+        Assert.NotNull(mods.FindDefinition("soil")!.Soil);
+        Assert.True(mods.FindDefinition("respawn_bed")!.RespawnPoint);
+        Assert.Contains("vanilla:carrot", mods.FindDefinition("fridge")!.Inventory!.Accepts!.Select(a => Identifiers.Qualify(a)));
+        var recipes = RecipeBook.Load(mods);
+        Assert.Empty(recipes.Diagnostics);
+        foreach (var made in new[] { "soil", "respawn_bed", "potato_blaster", "potato_scattergun", "potato_launcher", "popper" })
+            Assert.Contains(recipes.All, r => r.Outputs.Any(o => o.Item == $"vanilla:{made}"));
     }
 }

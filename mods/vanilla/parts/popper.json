@@ -1,0 +1,22 @@
+{
+  "id": "popper",
+  "name": "Popper",
+  "description": "Throw it and it pops, hurting everything close by.",
+  "category": "weapon",
+  "mass": 0.3,
+  "stack_size": 10,
+  "visual": {
+    "color": "#e0c040"
+  },
+  "sounds": {
+    "explode": "popper_explode"
+  },
+  "weapon": {
+    "damage": 50,
+    "interval": 1,
+    "range": 15,
+    "ammo": "popper",
+    "radius": 2.5,
+    "impulse": 300
+  }
+}

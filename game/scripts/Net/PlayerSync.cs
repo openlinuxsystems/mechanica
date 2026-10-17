@@ -1,5 +1,4 @@
 using Godot;
-using Mechanica.Core.Actions;
 using Mechanica.Core.Net;
 using Mechanica.Core.Player;
 using Mechanica.Game.Player;
@@ -86,22 +85,24 @@ public partial class PlayerSync : Node
         Session.StateChanged -= OnStateChanged;
     }
 
-    /// <summary>Registers the player actions: <c>Respawn</c> (no arguments) puts the caller back on its spawn spot.</summary>
-    public void RegisterActions(ActionDispatcher dispatcher) =>
-        dispatcher.Register<NoArgs>("Respawn",
-            (caller, _) => _players.ContainsKey(caller.Peer) ? null : "You have no player to respawn.",
-            (caller, _) =>
-            {
-                HostRespawn(caller.Peer);
-                return null;
-            });
+    /// <summary>
+    /// Host side: puts a player back on its spawn spot. Returns false if the peer has no player. The
+    /// <c>Respawn</c> action (<see cref="Core.Survival.SurvivalActions"/>) does this for living players.
+    /// </summary>
+    public bool HostRespawn(int peer) => SpawnSpotOf(peer) is { } spot && HostTeleport(peer, spot);
 
-    /// <summary>Host side: puts a player back on its spawn spot. Returns false if the peer has no player.</summary>
-    public bool HostRespawn(int peer)
+    /// <summary>Where a peer's player spawns (its slot's spot), or null when it has no slot.</summary>
+    public Vector3? SpawnSpotOf(int peer) => _slots.SlotOf(peer) is { } slot ? SpawnTransform(slot).Origin : null;
+
+    /// <summary>
+    /// Host side: moves a player's feet to <paramref name="feet"/>, at rest. A client's own prediction
+    /// is corrected by the next snapshot. Returns false if the peer has no player.
+    /// </summary>
+    public bool HostTeleport(int peer, Vector3 feet)
     {
-        if (!Session.IsHost || !_players.TryGetValue(peer, out var player) || _slots.SlotOf(peer) is not { } slot)
+        if (!Session.IsHost || !_players.TryGetValue(peer, out var player))
             return false;
-        player.ApplyState(SpawnTransform(slot).Origin, Vector3.Zero, player.Rotation.Y, 0f);
+        player.ApplyState(feet, Vector3.Zero, player.Rotation.Y, player.Head.Rotation.X);
         return true;
     }
 

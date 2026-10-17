@@ -19,7 +19,8 @@
     { "item": "potato_seed", "count": 4 },
     { "item": "soil", "count": 8 },
     { "item": "water_bucket", "count": 2 },
-    { "item": "carrot", "count": 3 }
+    { "item": "carrot", "count": 3 },
+    { "item": "mini_fabricator", "count": 1 }
   ],
   "fall": {
     "min_speed": 11,

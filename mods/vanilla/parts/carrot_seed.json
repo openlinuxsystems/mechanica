@@ -1,0 +1,22 @@
+{
+  "id": "carrot_seed",
+  "name": "Carrot Seed",
+  "description": "Plant in watered soil. Grows into carrots.",
+  "category": "consumable",
+  "mass": 0.05,
+  "stack_size": 50,
+  "visual": {
+    "color": "#c8a060"
+  },
+  "sounds": {
+    "pickup": "seed_pickup",
+    "place": "seed_place"
+  },
+  "seed": {
+    "crop": "carrot",
+    "grow_time": 240,
+    "yield": 2,
+    "seeds": 1,
+    "value": 1
+  }
+}
