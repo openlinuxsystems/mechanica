@@ -41,6 +41,14 @@ public class MarkdownBbcodeTests
     }
 
     [Fact]
+    public void WrappedLinesJoinIntoOneParagraph()
+    {
+        var bbcode = MarkdownBbcode.Convert("You start at the\ncrash site.\n\nNext one.\n- A list item that\n  goes on here\n- Second\n# Title\n");
+
+        Assert.Equal("You start at the crash site.\n\nNext one.\n• A list item that goes on here\n• Second\n[font_size=26][b]Title[/b][/font_size]\n", bbcode);
+    }
+
+    [Fact]
     public void EveryShippedDocConverts()
     {
         foreach (var file in Directory.GetFiles(Path.Combine(TestMods.RepoRoot, "docs"), "*.md"))

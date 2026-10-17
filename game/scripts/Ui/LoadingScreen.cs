@@ -141,7 +141,7 @@ public partial class LoadingScreen : CanvasLayer
         Loading ??= new WorldLoading(LoadSettings());
         Tips ??= TutorialHints.Load();
         _root = UiInput.KeepMouse(new Control { Name = "Loading" });
-        _root.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        _root.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
         AddChild(_root);
         _root.AddChild(new ColorRect { Color = UiTokens.DeepNavy, AnchorRight = 1, AnchorBottom = 1, MouseFilter = Control.MouseFilterEnum.Ignore });
         _content = new Control { Name = "Content", AnchorRight = 1, AnchorBottom = 1, MouseFilter = Control.MouseFilterEnum.Ignore };

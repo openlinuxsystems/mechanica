@@ -11,9 +11,10 @@ namespace Mechanica.Game.Editor;
 /// the repo's <c>docs/</c> from the source tree), so the help and the repo docs are the same files.
 /// Links to other docs open in place; web links open in the browser. The box above the list searches every
 /// page's title and text. Esc closes it, and so does the Handbook key (H or F1) that opened it; each page
-/// keeps its scroll position while the window is open or hidden.
+/// keeps its scroll position while the window is open or hidden. It is a <see cref="ToolWindow"/> over the middle of the
+/// screen (70% of it, never past its edges), like every other window.
 /// </summary>
-public partial class HelpWindow : Window
+public partial class HelpWindow : ToolWindow
 {
     private ItemList _list = null!;
     private RichTextLabel _text = null!;
@@ -36,13 +37,13 @@ public partial class HelpWindow : Window
     public override void _Ready()
     {
         Title = "Help";
-        Size = new Vector2I(960, 680);
-        MinSize = new Vector2I(640, 400);
-        Exclusive = false;
+        // The middle 70% of the screen, as the pop-up window it replaces was.
+        AnchorLeft = AnchorTop = 0.15f;
+        AnchorRight = AnchorBottom = 0.85f;
+        OffsetLeft = OffsetTop = OffsetRight = OffsetBottom = 0;
         CloseRequested += Hide;
-        var split = new HSplitContainer();
-        split.SetAnchorsPreset(Control.LayoutPreset.FullRect);
-        AddChild(split);
+        var split = new HSplitContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
+        Body.AddChild(split);
         var side = new VBoxContainer { CustomMinimumSize = new Vector2(220, 0) };
         split.AddChild(side);
         _search = new LineEdit { Name = "Search", PlaceholderText = "Search help", ClearButtonEnabled = true };
@@ -110,7 +111,9 @@ public partial class HelpWindow : Window
         if (_scroll.TryGetValue(Current, out var at))
             Callable.From(() => _text.GetVScrollBar().Value = at).CallDeferred();
         if (!Visible)
-            PopupCenteredRatio(0.7f);
+            Show();
+        // Over whatever else is open beside it.
+        GetParent()?.MoveChild(this, -1);
     }
 
     /// <summary>Shows <paramref name="fileName"/>, or hides the window when it is already open.</summary>
@@ -131,11 +134,11 @@ public partial class HelpWindow : Window
 
     public override void _Input(InputEvent @event)
     {
-        if (!Visible)
-            return;
-        if (GameInput.Pressed(@event, InputActions.Pause) || (GameInput.Pressed(@event, InputActions.Handbook) && !GameInput.Typing(this)))
+        // Esc is the window's own; the Handbook key that opened it closes it too.
+        base._Input(@event);
+        if (Visible && GameInput.Pressed(@event, InputActions.Handbook) && !GameInput.Typing(GetViewport()))
         {
-            SetInputAsHandled();
+            GetViewport().SetInputAsHandled();
             Hide();
         }
     }

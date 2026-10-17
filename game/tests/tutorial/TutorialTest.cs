@@ -36,6 +36,14 @@ public partial class TutorialTest : StagedTest
             }
             if (_main.LocalPlayer is null || _main.Tools is null || _main.GetNodeOrNull("TutorialHints") is null)
                 return false;
+            // A new world asks which character to play first, and tips wait while that window covers the game.
+            if (_main.Characters.Window is { } choice)
+            {
+                choice.Confirm();
+                return false;
+            }
+            if (_main.Characters.LocalNeedsChoice)
+                return false;
             _hints = _main.GetNode<TutorialHints>("TutorialHints");
             // The shipped tips, shown for a fifth of a second each.
             using var file = Godot.FileAccess.Open(TutorialHints.DataPath, Godot.FileAccess.ModeFlags.Read);
