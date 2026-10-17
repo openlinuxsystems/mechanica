@@ -66,9 +66,13 @@ public partial class LocalPlayerInput : Node
                 Input.MouseMode = Input.MouseModeEnum.Captured;
                 break;
             default:
+                // Esc frees the mouse; the key goes on to the in-game menu, which opens or closes what is open.
                 if (GameInput.Pressed(@event, InputActions.Pause))
+                {
                     Input.MouseMode = Input.MouseModeEnum.Visible;
-                else if (GameInput.Pressed(@event, InputActions.ZoomIn) && Input.MouseMode == Input.MouseModeEnum.Captured)
+                    return;
+                }
+                if (GameInput.Pressed(@event, InputActions.ZoomIn) && Input.MouseMode == Input.MouseModeEnum.Captured)
                     Zoom(true);
                 else if (GameInput.Pressed(@event, InputActions.ZoomOut) && Input.MouseMode == Input.MouseModeEnum.Captured)
                     Zoom(false);
