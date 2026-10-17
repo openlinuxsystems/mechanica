@@ -1,0 +1,112 @@
+using Godot;
+using Mechanica.Core.Characters;
+using Mechanica.Core.Net;
+using Mechanica.Core.Player;
+using Mechanica.Game.Player;
+
+namespace Mechanica.Game.Tools;
+
+/// <summary>
+/// Renders the player character in a running world to PNGs: standing, holding and swinging tools, looking up and down,
+/// crouching, moving, and in first person with each tool. For checking how a character or skin looks in game; run
+/// <c>tools/capture-characters.sh</c>, which uses a virtual display and the compatibility renderer.
+/// </summary>
+public partial class CaptureScene : Node
+{
+    private readonly Queue<(string Name, int Frames, Action Setup)> _shots = new();
+    private Main _main = null!;
+    private Camera3D _camera = null!;
+    private string _out = "";
+    private double _time;
+    private (string Name, int Frames, Action Setup)? _shot;
+
+    public override void _Ready()
+    {
+        // Software rendering runs at a few frames a second; slow the game so a quick swing spans several frames.
+        Engine.TimeScale = 0.1;
+        var args = OS.GetCmdlineUserArgs();
+        _out = args.Length > 0 ? args[0] : OS.GetUserDataDir();
+        Main.MenuCharacter = args.Length > 1 ? args[1] : "scrapper_male";
+        _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
+        _main.Options = LaunchOptions.Offline with { Seed = 7 };
+        _main.ReadDeviceInput = false;
+        AddChild(_main);
+        _camera = new Camera3D { Fov = 40 };
+        AddChild(_camera);
+        Shot("front", 60, () => Look(new Vector3(0, 1.0f, -3.2f)));
+        Shot("side", 10, () => Look(new Vector3(-3.2f, 1.0f, 0)));
+        Shot("hammer", 40, () => { Player.HeldProp = CharacterProp.Hammer; Look(new Vector3(-1.6f, 1.2f, -2.2f)); });
+        Shot("swing", 9, () => Player.Gesture(CharacterGesture.HammerSwing));
+        Shot("sledge", 40, () => { Tool<Building.SledgeTool>(); Look(new Vector3(-1.6f, 1.2f, -2.2f)); });
+        Shot("weld", 40, () => Tool<Building.WeldTool>());
+        Shot("look_up", 40, () => { Tool<Building.HammerTool>(); Input(pitch: 0.9f); Look(new Vector3(-2.6f, 1.2f, -1.6f)); });
+        Shot("look_down", 40, () => Input(pitch: -0.9f));
+        Shot("crouch", 40, () => Input(crawl: true));
+        Shot("walk", 23, () => { Input(z: 1); });
+        Shot("run", 23, () => { Input(z: 1, sprint: true); });
+        Shot("first_person", 40, () => { Input(); Player.MakeCameraCurrent(); });
+        Shot("first_person_up", 30, () => Input(pitch: 0.6f));
+        Shot("first_person_swing", 9, () => Player.Gesture(CharacterGesture.HammerSwing));
+        Shot("first_person_walk", 30, () => Input(z: 1));
+        Shot("first_person_sledge", 30, () => { Input(); Tool<Building.SledgeTool>(); });
+        Shot("first_person_sledge_swing", 14, () => Player.Gesture(CharacterGesture.SledgeSwing));
+        Shot("first_person_weld", 30, () => Tool<Building.WeldTool>());
+        Shot("first_person_paint", 30, () => Tool<Building.PaintTool>());
+        Shot("first_person_lift", 30, () => Tool<Building.LiftTool>());
+        Shot("first_person_connect", 30, () => Tool<Building.ConnectTool>());
+        Shot("first_person_crouch", 30, () => Input(crawl: true));
+    }
+
+    private PlayerController Player => _main.LocalPlayer!;
+
+    private void Tool<T>() where T : Building.HandTool => _main.Tools!.Use(_main.Tools.Tools.OfType<T>().First());
+
+    private void Shot(string name, int frames, Action setup) => _shots.Enqueue((name, frames, setup));
+
+    private void Input(float z = 0, float pitch = 0, bool crawl = false, bool sprint = false) =>
+        Player.CurrentInput = new PlayerInput(0, z, Player.CurrentInput.Yaw, pitch, false, sprint, crawl);
+
+    // Puts the capture camera at an offset from the player's feet, in the player's frame, looking at its chest.
+    private void Look(Vector3 offset)
+    {
+        Player.ThirdPerson = true; // shows the player's own body
+        _camera.MakeCurrent();
+        _follow = offset;
+    }
+
+    private Vector3? _follow;
+
+    public override void _Process(double delta)
+    {
+        if (_main.LocalPlayer is null || _main.Characters.LocalNeedsChoice || Player.Character is null)
+            return;
+        if (_follow is { } offset)
+        {
+            var basis = Player.GlobalTransform.Basis;
+            _camera.GlobalPosition = Player.GlobalPosition + basis * offset;
+            _camera.LookAt(Player.GlobalPosition + Vector3.Up * 1.0f);
+        }
+        if (_shot is null)
+        {
+            if (!_shots.TryDequeue(out var next))
+            {
+                GetTree().Quit();
+                return;
+            }
+            _shot = next;
+            _time = 0;
+            next.Setup();
+            if (next.Name.StartsWith("first_person"))
+                _follow = null;
+        }
+        _time += delta;
+        if (_time < _shot.Value.Frames / 60.0)
+            return;
+        if (Player.Character is CharacterModel body)
+            GD.Print($"[capture] {_shot.Value.Name}: fps={Engine.GetFramesPerSecond()} delta={delta:F3} gesture={body.Animator.Gesture} upper={body.Animator.UpperWeight:F2} shown={Player.ShownGesture} prop={Player.ShownProp} mode={body.Animator.Mode}");
+        var path = $"{_out}/{_shot.Value.Name}.png";
+        GetViewport().GetTexture().GetImage().SavePng(path);
+        GD.Print($"[capture] {path}");
+        _shot = null;
+    }
+}

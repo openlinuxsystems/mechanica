@@ -72,6 +72,9 @@ public class VanillaCharactersTests
     [InlineData("""{ "head_pitch_share": 2 }""")]
     [InlineData("""{ "item_poses": { "x": { "prop": "laser" } } }""")]
     [InlineData("""{ "nonsense": 1 }""")]
+    [InlineData("""{ "first_person_offset": [0, 1] }""")]
+    [InlineData("""{ "first_person_offset": [0, 9, 0] }""")]
+    [InlineData("""{ "first_person_pitch_degrees": 80 }""")]
     public void BadSettingsAreRefused(string json) => Assert.Throws<FormatException>(() => CharacterSettings.FromJson(json));
 
     [Fact]
