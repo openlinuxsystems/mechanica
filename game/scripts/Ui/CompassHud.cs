@@ -175,7 +175,8 @@ public partial class CompassHud : CanvasLayer
                 _bar.DrawColoredPolygon([new(tip, 12), new(tip - s * 6, 7), new(tip - s * 6, 17)], UiTokens.Text);
             }
             var distance = mark.Distance >= 1000 ? Loc.T("{0} km", $"{mark.Distance / 1000:0.0}") : Loc.T("{0} m", $"{mark.Distance:0}");
-            var label = Loc.T("{0} · {1}", name, distance);
+            // The name is the player's own text and the distance is already translated; only the dot joins them.
+            var label = $"{name}  ·  {distance}";
             var size = _font.GetStringSize(label, HorizontalAlignment.Left, -1, 12);
             _bar.DrawString(_font, new Vector2(Mathf.Clamp(x - size.X / 2, 0, w - size.X), 38), label, HorizontalAlignment.Left, -1, 12, UiTokens.TextSecondary);
         }
