@@ -13,7 +13,9 @@ namespace Mechanica.Core.Net;
 /// <param name="Mode">Game mode, <c>survival</c> or <c>creative</c>.</param>
 /// <param name="Protocol">The host's <see cref="NetProtocol.Version"/>.</param>
 /// <param name="Mods">The host's mods, <c>id version</c> each, in load order.</param>
-public sealed record LanSession(string World, string Host, int Port, int Players, int MaxPlayers, string Mode, int Protocol, IReadOnlyList<string> Mods)
+/// <param name="Password">True when joining needs a password.</param>
+public sealed record LanSession(string World, string Host, int Port, int Players, int MaxPlayers, string Mode, int Protocol, IReadOnlyList<string> Mods,
+    bool Password = false)
 {
     /// <summary>True when this build can join it (same protocol version).</summary>
     public bool Compatible => Protocol == NetProtocol.Version;

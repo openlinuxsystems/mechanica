@@ -59,6 +59,9 @@ public partial class WindowsTest : StagedTest
                 return false;
             }
             var options = Find<OptionsScreen>(_menu);
+            options.ShowTab(Array.IndexOf(OptionsScreen.Tabs, "Gameplay"));
+            var difficulty = Walk(options).OfType<Label>().FirstOrDefault(l => l.Name == "WorldDifficulty");
+            Check(difficulty?.Text == "Normal", $"Gameplay shows the world's difficulty ({difficulty?.Text})");
             for (var tab = 0; tab < OptionsScreen.Tabs.Length; tab++)
             {
                 options.ShowTab(tab);

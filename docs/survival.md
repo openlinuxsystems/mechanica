@@ -1,8 +1,19 @@
 # Survival
 
-A Survival world (the default; `--creative` or Creative in the main menu's New game starts Creative) has
+A Survival world (the default; `--creative` or Creative in the main menu's New Game starts Creative) has
 one meter, health (D12: no stamina, no hunger). The host decides everything through the Action API,
 so it works the same for every player in a multiplayer game.
+
+## Difficulty
+
+New Game picks **Normal** or **Easy** for a Survival world (`--easy` on the command line). The world
+keeps it in its save. Easy changes these, as multipliers in `game/data/survival.json` (`difficulties`):
+
+| Key | Easy | What it scales |
+|-----|------|----------------|
+| `bot_damage` | 0.5 | Damage bots do to players |
+| `raid_budget` | 0.6 | How many bots a raid sends |
+| `raid_cooldown` | 1.5 | The wait after a raid before the next |
 
 ## Playing
 

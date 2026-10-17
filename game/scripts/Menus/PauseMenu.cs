@@ -40,6 +40,9 @@ public partial class PauseMenu : CanvasLayer
     /// <summary>The help page for what the player is doing now (<c>quests.md</c>, ...).</summary>
     public Func<string> HelpTopic { get; init; } = () => "playing.md";
 
+    /// <summary>The world's game mode and difficulty, for Options to show, or null before they are known.</summary>
+    public Func<(Core.Survival.GameMode Mode, Core.Survival.Difficulty Difficulty)?> World { get; init; } = () => null;
+
     /// <summary>True while the menu is shown.</summary>
     public bool IsOpen => _root.Visible;
 
@@ -172,6 +175,7 @@ public partial class PauseMenu : CanvasLayer
             _status.Text = "Enter a port from 1 to 65535.";
             return;
         }
+        Session.PasswordFrom = () => Settings.GameSettings.Current.Gameplay.ServerPassword;
         _status.Text = Session.Host(port, Settings.GameSettings.Current.Gameplay.MaxPlayers) == Error.Ok ? "" : Session.LastMessage;
     }
 
@@ -219,7 +223,7 @@ public partial class PauseMenu : CanvasLayer
         // The whole screen behind a window opened from the menu is its: a stray click or wheel there must not close everything.
         var holder = UiInput.KeepMouse(new CenterContainer());
         holder.SetAnchorsPreset(Control.LayoutPreset.FullRect);
-        var screen = new OptionsScreen();
+        var screen = new OptionsScreen { World = World() };
         screen.CloseRequested += () =>
         {
             holder.QueueFree();

@@ -11,7 +11,7 @@ namespace Mechanica.Game.Net;
 /// clients (D10).
 /// <para>
 /// Joining is a handshake: once ENet connects, the client sends <see cref="Hello"/> with its protocol
-/// version, <see cref="Content"/> manifest and <see cref="Profile"/>; the host answers <see cref="Welcome"/> and only then treats the peer as
+/// version, <see cref="Password"/>, <see cref="Content"/> manifest and <see cref="Profile"/>; the host answers <see cref="Welcome"/> and only then treats the peer as
 /// <see cref="IsReady">ready</see> (spawns a player for it, accepts its input and actions). Peers that
 /// send the wrong version or different mods, or nothing within <see cref="NetProtocol.HandshakeTimeoutSeconds"/>, are
 /// dropped. Every RPC sits on a node at the same path on every peer, so the scene layout is the protocol.
@@ -43,6 +43,7 @@ public partial class NetSession : Node
     private readonly Dictionary<int, PlayerProfile> _profiles = [];
     private int _maxPlayers = NetProtocol.DefaultMaxPlayers;
     private string? _refusal;
+    private string _password = "";
 
     /// <summary>
     /// Content this instance runs. A joining client's manifest must match the host's; the refusal
@@ -59,6 +60,23 @@ public partial class NetSession : Node
     /// </summary>
     public PlayerProfile? ProfileOf(int peer) =>
         peer == LocalPeer || (IsHost && peer == NetProtocol.HostPeer) ? Profile : _profiles.GetValueOrDefault(peer);
+
+    /// <summary>
+    /// The world's password. Hosting, joining players must send it (empty lets anyone in); joining, this
+    /// player sends it. Set before hosting or joining.
+    /// </summary>
+    public string Password
+    {
+        get => PasswordFrom?.Invoke() ?? _password;
+        set
+        {
+            _password = value;
+            PasswordFrom = null;
+        }
+    }
+
+    /// <summary>Where a host reads <see cref="Password"/> from at each join (the player's settings), or null for the value set.</summary>
+    public Func<string>? PasswordFrom { get; set; }
 
     /// <summary>Current state.</summary>
     public SessionState State { get; private set; } = SessionState.Offline;
@@ -179,7 +197,7 @@ public partial class NetSession : Node
 
     /// <summary>Client → host: first message after connecting.</summary>
     [Rpc(MultiplayerApi.RpcMode.AnyPeer, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-    private void Hello(int protocolVersion, string gameName, string contentJson, string profileJson)
+    private void Hello(int protocolVersion, string gameName, string password, string contentJson, string profileJson)
     {
         if (State != SessionState.Hosting)
             return;
@@ -189,6 +207,11 @@ public partial class NetSession : Node
         if (protocolVersion != NetProtocol.Version || gameName != MechanicaInfo.GameName)
         {
             Refuse(peer, $"Version mismatch: host runs protocol {NetProtocol.Version}, you run {protocolVersion}.");
+            return;
+        }
+        if (NetPassword.Check(Password, password) is { } wrong)
+        {
+            Refuse(peer, wrong);
             return;
         }
         if (ContentManifest.FromJson(contentJson) is not { } content)
@@ -283,7 +306,7 @@ public partial class NetSession : Node
     private void OnConnectedToServer()
     {
         DisableThrottle(NetProtocol.HostPeer);
-        RpcId(NetProtocol.HostPeer, MethodName.Hello, NetProtocol.Version, MechanicaInfo.GameName, Content.ToJson(), Profile.ToJson());
+        RpcId(NetProtocol.HostPeer, MethodName.Hello, NetProtocol.Version, MechanicaInfo.GameName, Password, Content.ToJson(), Profile.ToJson());
     }
 
     /// <summary>

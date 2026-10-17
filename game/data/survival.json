@@ -22,6 +22,11 @@
     { "item": "carrot", "count": 3 },
     { "item": "mini_fabricator", "count": 1 }
   ],
+  // New Game's difficulty for Survival worlds (UI spec §14): multipliers on the normal numbers.
+  "difficulties": {
+    "easy": { "bot_damage": 0.5, "raid_budget": 0.6, "raid_cooldown": 1.5 },
+    "normal": { "bot_damage": 1, "raid_budget": 1, "raid_cooldown": 1 }
+  },
   "fall": {
     "min_speed": 11,
     "damage_per_speed": 8

@@ -113,7 +113,7 @@ public partial class MainMenu : Control
         screen.CloseRequested += () => Close(screen);
         screen.JoinRequested += endpoint =>
         {
-            Main.MenuOptions = LaunchOptions.ForJoin(endpoint);
+            Main.MenuOptions = LaunchOptions.ForJoin(endpoint) with { Password = NetPassword.Clamp(screen.Password) };
             Go();
         };
         Open(Centered(screen));

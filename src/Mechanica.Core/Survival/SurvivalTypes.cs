@@ -41,8 +41,9 @@ public sealed record GetSoilArgs(int Creation, int Part);
 /// <param name="Mode">The world's game mode.</param>
 /// <param name="Slow">What the player's movement speed is multiplied by now (1 when not slowed).</param>
 /// <param name="SlowFor">Seconds the slow lasts from now (0 when not slowed).</param>
+/// <param name="Difficulty">The world's difficulty, so every player can see it (Options, Gameplay).</param>
 public sealed record VitalsView(int Peer, float Health, float MaxHealth, bool Dead, float RespawnIn, bool HasBed, GameMode Mode,
-    float Slow = 1f, float SlowFor = 0f);
+    float Slow = 1f, float SlowFor = 0f, Difficulty Difficulty = Difficulty.Normal);
 
 /// <summary>What grows on a soil part, as <c>GetSoil</c> returns it and clients are sent it.</summary>
 /// <param name="Creation">Creation holding the part.</param>

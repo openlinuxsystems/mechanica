@@ -30,6 +30,9 @@ public partial class PlayerController : CharacterBody3D
     /// <summary>Peer that controls this player (1 is the host).</summary>
     public int PeerId { get; init; } = 1;
 
+    /// <summary>The player's name, from the profile they joined with; shown over their head to others.</summary>
+    public string DisplayName { get; set; } = "";
+
     /// <summary>When false the body does not move itself; something else poses it each tick.</summary>
     public bool Simulated { get; set; } = true;
 

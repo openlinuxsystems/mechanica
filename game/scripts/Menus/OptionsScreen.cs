@@ -1,7 +1,9 @@
 using Godot;
 using Mechanica.Core.Input;
+using Mechanica.Core.Net;
 using Mechanica.Core.Saves;
 using Mechanica.Core.Settings;
+using Mechanica.Core.Survival;
 using Mechanica.Core.Ui;
 using Mechanica.Game.Player;
 using Mechanica.Game.Settings;
@@ -43,6 +45,9 @@ public partial class OptionsScreen : ToolWindow
 
     /// <summary>The profile file for the player's name; null uses <see cref="Main.ProfilePath"/>.</summary>
     public string? ProfileFile { get; init; }
+
+    /// <summary>The world's game mode and difficulty when opened over a world (shown, not changed, on Gameplay); null from the main menu.</summary>
+    public (GameMode Mode, Difficulty Difficulty)? World { get; init; }
 
     /// <summary>The settings as edited so far.</summary>
     public UserSettings Draft => _draft;
@@ -386,6 +391,13 @@ public partial class OptionsScreen : ToolWindow
 
     private void BuildGameplay(VBoxContainer page)
     {
+        if (World is { } world)
+        {
+            page.AddChild(new Label { Text = "This world", ThemeTypeVariation = "TitleLabel" });
+            var difficulty = world.Mode == GameMode.Creative ? "None (Creative)" : world.Difficulty.ToString();
+            Row(page, "Difficulty", "Chosen when the world was made, in New Game; it stays with the world.")
+                .AddChild(new Label { Name = "WorldDifficulty", Text = difficulty, ThemeTypeVariation = "SecondaryLabel" });
+        }
         page.AddChild(new Label { Text = "Camera", ThemeTypeVariation = "TitleLabel" });
         Slider(page, "Mouse sensitivity", _draft.MouseSensitivity * 1000, 0.2f, 20f, 0.1f, v => Live(_draft with { MouseSensitivity = v / 1000 }), v => $"{v:0.0}");
         Toggle(page, "Invert Y", _draft.InvertY, v => Live(_draft with { InvertY = v }));
@@ -407,6 +419,13 @@ public partial class OptionsScreen : ToolWindow
         page.AddChild(new Label { Text = "Multiplayer", ThemeTypeVariation = "TitleLabel" });
         Slider(page, "Max players (host)", _draft.Gameplay.MaxPlayers, GameplaySettings.MinPlayers, GameplaySettings.MaxMaxPlayers, 1,
             v => Live(_draft with { Gameplay = _draft.Gameplay with { MaxPlayers = (int)v } }), v => $"{v:0}");
+        var password = new LineEdit
+        {
+            Name = "Server password", Text = _draft.Gameplay.ServerPassword, Secret = true, MaxLength = NetPassword.MaxLength,
+            PlaceholderText = "none: anyone on your network can join", SizeFlagsHorizontal = SizeFlags.ExpandFill,
+        };
+        password.TextChanged += t => Live(_draft with { Gameplay = _draft.Gameplay with { ServerPassword = t } });
+        Row(page, "Server password (host)", "Players must type this to join a world you open to the LAN. It is not encrypted, so don't reuse a real password.").AddChild(password);
         var row = Row(page, "Player name", "Other players see this name. Saved worlds know you by your profile, so you can change it any time.");
         _name = new LineEdit { Text = Main.UserProfile(null, ProfilePath).Name, MaxLength = PlayerProfile.MaxNameLength, SizeFlagsHorizontal = SizeFlags.ExpandFill };
         row.AddChild(_name);
@@ -417,6 +436,8 @@ public partial class OptionsScreen : ToolWindow
     private void BuildInterface(VBoxContainer page)
     {
         Toggle(page, "Show the tool bar and key hints", _draft.Interface.ShowHotbar, v => Live(_draft with { Interface = _draft.Interface with { ShowHotbar = v } }));
+        Toggle(page, "Show player names", _draft.Interface.ShowPlayerNames, v => Live(_draft with { Interface = _draft.Interface with { ShowPlayerNames = v } }),
+            "Other players' names over their heads.");
     }
 
     // ---- Shared ----

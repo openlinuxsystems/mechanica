@@ -155,6 +155,9 @@ public sealed record InterfaceSettings
     /// <summary>Shows the tool bar and its key hints at the bottom of the screen.</summary>
     public bool ShowHotbar { get; init; } = true;
 
+    /// <summary>Shows other players' names over their heads.</summary>
+    public bool ShowPlayerNames { get; init; } = true;
+
         /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
@@ -197,6 +200,12 @@ public sealed record GameplaySettings
     /// <summary>The tips already shown, by id, so each shows once.</summary>
     public SortedSet<string>? SeenHints { get; init; }
 
+    /// <summary>
+    /// The password players need to join a world this player hosts; empty lets anyone on the network in.
+    /// Kept on this machine only (<see cref="Net.NetPassword"/>).
+    /// </summary>
+    public string ServerPassword { get; init; } = "";
+
     /// <summary>The auto-save choices offered.</summary>
     public static readonly IReadOnlyList<int> AutoSaveChoices = [0, 5, 10, 15];
 
@@ -212,5 +221,6 @@ public sealed record GameplaySettings
     {
         AutoSaveMinutes = AutoSaveChoices.Contains(AutoSaveMinutes) ? AutoSaveMinutes : 10,
         MaxPlayers = Math.Clamp(MaxPlayers, MinPlayers, MaxMaxPlayers),
+        ServerPassword = Net.NetPassword.Clamp(ServerPassword),
     };
 }
