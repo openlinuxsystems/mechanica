@@ -129,6 +129,9 @@ public static class DiagnosticCodes
     public const string PackageConflict = "MD1308";
     public const string PackageExportRefused = "MD1309";
     public const string PackageModified = "MD1310";
+
+    // 14xx: Lua scripts
+    public const string ScriptSyntax = "MD1401";
 }
 
 /// <summary>Collects diagnostics for one file, filling in the file name.</summary>

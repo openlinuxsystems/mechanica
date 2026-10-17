@@ -12,6 +12,7 @@ godot --path game -- --host --ai                  # ws://127.0.0.1:27461
 godot --path game -- --host --ai 5000             # another port
 godot --path game -- --host --ai --ai-bind 0.0.0.0 --ai-token s3cret
 godot --path game -- --host --ai --ai-token player --ai-admin-token root --ai-observe-token watch
+godot --path game -- --host --ai --ai-allow-reload-with-clients   # mods.reload drops clients instead of refusing
 ```
 
 The endpoint listens on loopback by default. Listening on any other address needs a token, given
@@ -113,7 +114,8 @@ After `mechanica.subscribe`, the host pushes JSON-RPC notifications (no `id`) on
 | `fire` | a fire went out |
 | `seats` | someone sat down or stood up: `seat`, `seated` |
 | `projectiles` | `kind` `launched` or `landed` |
-| `mods`, `reports` | reserved for the mod tools and AI reports |
+| `mods` | from the mod tools, `kind` `validated` or `reloaded` with the `mods.validate` or `mods.reload` result as `result`; from packages, `action` `installed` (`id`, `version`, `change`) or `uninstalled` (`id`) |
+| `reports` | reserved for AI reports |
 
 A connection that falls more than 4096 notifications behind loses the oldest and then receives one
 `events_dropped` notification with the `count` it missed.
@@ -205,6 +207,48 @@ the content loaded now, so they follow mod reloads.
 | `ListBotTypes` | none | `id` (what `SpawnBot` takes), `mod`, `name`, `health`, speeds, `sight`, size, `melee_immune`, `passive`, `raid_cost`, `attacks`, `drops`, `script`, `behavior` (the tree) |
 | `GetQuestBook` | none | quests: `id`, `name`, `summary`, `requires`, `steps` (`id`, `text`, `kind`, `poi`, `marker`, `target`, `count`, `dialogue`, `choices` with the ids `ChooseQuestOption` takes), rewards (`items`, `reveal`, `flags`) and `outro` |
 | `ListCharacters` | none | `id` (what `ChooseCharacter` takes), `name`, `description` |
+
+## Mod tools
+
+An agent with the admin scope can make and change mods in the host's mods folder (the one the Mod Manager
+shows), check them, and load them into the running world. Paths are forward-slash paths inside one mod
+(`parts/wheel.json`); `..`, absolute paths, hidden names, links and unknown file types are refused, files are
+at most 2 MiB, and vanilla changes only under `editor/` (vanilla content is authored as Part Editor batches).
+A refusal fails with -32001 (`rejected`) and a message saying why; a wrong or unknown param is -32602.
+
+| Method | Scope | Params | Result |
+|--------|-------|--------|--------|
+| `mods.list` | admin | none | `mods` in load order (`id`, `name`, `version`, `enabled`, `can_disable`, `loaded`, `dependencies`, `description`), `missing` (enabled but not installed), `broken` (folders whose `mod.json` doesn't load) |
+| `mods.enable` | admin | `mod`, optional `enabled` (default true) | `changed`: enabling pulls in dependencies, disabling takes dependents along. Saved to the profile; loads on `mods.reload` |
+| `mods.move` | admin | `mod`, `index` | `index` it ended at (it stops at its dependencies and dependents) |
+| `mods.conflicts` | admin | none | `[{kind, mod, other, part, message}]`: `incompatible` (not loaded) and `override_clash` (two mods override one part; the later wins) |
+| `mods.create` | admin | `mod` (snake_case id), optional `name`, `version`, `description`, `authors`, `dependencies` (default `["vanilla"]`) | `manifest`: the new `mod.json` path. Makes `parts/` and `scripts/` |
+| `mods.files` | admin | `mod`, optional `folder` | `[{path, size, modified}]` |
+| `mods.read` | admin | `mod`, `path` | `path`, `size`, and `text` (.json, .lua, .gltf, .md, .txt) or `base64` (.glb, .bin, .png, .ogg, .wav) |
+| `mods.write` | admin | `mod`, `path`, `text` or `base64` | `bytes` and `check`: `{ok, line, column, message}` from a JSON parse or a Lua compile (null for other files) |
+| `mods.delete` | admin | `mod`, `path` | null; empty folders go too. `mod.json` stays |
+| `mods.import` | admin | `mod`, `kind` (`mesh`, `script`, `texture`, `sound`), `file_name`, `base64`, optional `companions` (a .gltf's buffers and images: relative path to base64) | `path` to write in data, like the Part Editor's import: a clean snake_case name in the right folder, reusing an identical file |
+| `mods.validate` | admin | optional `mod` (enabled for the check; only its problems are listed) | `ok`, `errors`, `warnings`, `loaded_mods`, `fingerprint`, `diagnostics` `[{domain, severity, code, mod, file, json_path, line, message}]` |
+| `mods.reload` | admin | none | `fingerprint`, `loaded_mods`, `errors`, `warnings`, `next_world`, `dropped_peers` |
+| `lua.check` | observe | `source`, or `mod` and `path` | `ok`, or the `line`, `column` (0-based) and `message` of the first compile error |
+| `lua.messages` | observe | optional `since_tick`, `kinds` (`print`, `warning`, `error`), `script` (`mod:scripts/x.lua`), `limit` (1 to 500, default 100) | the newest console lines, oldest first: `source` (`parts` or `bots`), `kind`, `script`, `creation`, `part`, `text`, `tick` |
+| `lua.eval` | admin | `source` | `ok`, `values`, `output` (printed lines), `error`. Runs once in a throwaway sandbox with what part scripts start with (safe libraries and `vec3`, no files, no world) under the host's instruction budget; a single expression returns its value |
+
+`mods.validate` loads everything a world would (parts, sounds, world generation, recipes, bots, raids, quests,
+characters) and compiles every enabled mod's Lua (code `MD1401`, domain `scripts`). Diagnostic `domain` is one
+of `mods`, `sounds`, `world`, `recipes`, `bots`, `raids`, `quests`, `characters`, `scripts`; codes are listed in
+`src/Mechanica.Core/Data/DataDiagnostic.cs`. A mod with part errors doesn't load, so its recipes and bots are
+checked once its parts are fixed.
+
+`mods.reload` loads the enabled mods into the running world: parts, sounds, part scripts and bot types change
+at once. World generation, recipes, raids, quests and characters are read when a world starts, so changes to
+them are listed in `next_world` and apply to the next world. While clients are joined a reload is refused,
+because their mods would no longer match; a host started with `--ai-allow-reload-with-clients` reloads anyway
+and drops those clients (`dropped_peers`), who can rejoin once they have the same mods.
+
+A typical loop: `mods.create`, `mods.write` the part and script files (fix anything `check` reports),
+`mods.enable`, `mods.validate` until `ok`, `mods.reload`, then `PlacePart` the new part and watch
+`lua.messages` (or the `messages` topic) while it runs.
 
 ## Mod packages
 
