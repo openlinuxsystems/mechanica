@@ -5,7 +5,7 @@ namespace Mechanica.Game.Player;
 
 /// <summary>
 /// Turns this machine's keyboard and mouse into <see cref="PlayerInput"/> for one player.
-/// Today it writes straight into the controller; in chunk 2b the same struct is sent to the host.
+/// It writes into the controller; on a client, <see cref="Net.PlayerSync"/> also sends each tick's input to the host.
 /// Click captures the mouse, Esc releases it, V toggles the third-person camera.
 /// </summary>
 public partial class LocalPlayerInput : Node
