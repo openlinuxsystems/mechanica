@@ -211,6 +211,30 @@ public static class ModLoader
     public static T? ParseJson<T>(string json, string displayFile, List<DataDiagnostic> diagnostics) where T : class =>
         ParseJson<T>(json, new DiagnosticSink(displayFile, diagnostics));
 
+    /// <summary>
+    /// Validates one part as if it were a file in the mod at <paramref name="modDirectory"/>, the way
+    /// loading would, without loading the mod. The Part Editor checks a part with this before export.
+    /// The mod id is the folder name; its <c>mod.json</c>, when present, supplies the dependencies that
+    /// <c>other_mod:path</c> assets may name, found as sibling folders.
+    /// </summary>
+    /// <param name="part">The part to check.</param>
+    /// <param name="modDirectory">Folder of the mod the part belongs to; it need not exist yet.</param>
+    /// <param name="displayFile">File name shown in the diagnostics.</param>
+    public static IReadOnlyList<DataDiagnostic> ValidatePart(PartDefinition part, string modDirectory, string displayFile)
+    {
+        var diagnostics = new List<DataDiagnostic>();
+        var dir = Path.GetFullPath(modDirectory);
+        var modId = Path.GetFileName(dir);
+        var manifestPath = Path.Combine(dir, ManifestFileName);
+        var deps = new HashSet<string>(StringComparer.Ordinal);
+        if (File.Exists(manifestPath) && ReadFile<ModManifest>(manifestPath, new DiagnosticSink(displayFile, [])) is { } manifest)
+            deps.UnionWith((manifest.Dependencies ?? []).Select(d => d.Id).OfType<string>());
+        var root = Path.GetDirectoryName(dir) ?? dir;
+        var validator = new PartValidator(modId, deps, id => id == modId ? dir : Path.Combine(root, id));
+        validator.Validate(part, new DiagnosticSink(displayFile, diagnostics));
+        return diagnostics;
+    }
+
     private static ModScanResult Scan(IEnumerable<string> modDirectories, List<DataDiagnostic> diagnostics)
     {
         var candidates = new Dictionary<string, InstalledMod>(StringComparer.Ordinal);
