@@ -41,6 +41,12 @@ public sealed record ScriptSettings
     /// <summary>Most sound loops one part may run at once (<c>sound.start</c>).</summary>
     public int MaxLoopsPerPart { get; init; } = 4;
 
+    /// <summary>Most projectiles item scripts may have in flight at once (<c>combat.projectile</c>).</summary>
+    public int MaxProjectiles { get; init; } = 128;
+
+    /// <summary>Longest a projectile may fly, in s (and how long it flies when a script doesn't say).</summary>
+    public float MaxProjectileLifetime { get; init; } = 10f;
+
     /// <summary>Parses settings from JSON and validates them.</summary>
     /// <exception cref="FormatException">The JSON is malformed or a value is out of range.</exception>
     public static ScriptSettings FromJson(string json)
@@ -77,5 +83,9 @@ public sealed record ScriptSettings
             throw new FormatException($"max_messages must be positive (got {MaxMessages}).");
         if (MaxLoopsPerPart < 0)
             throw new FormatException($"max_loops_per_part must not be negative (got {MaxLoopsPerPart}).");
+        if (MaxProjectiles < 0)
+            throw new FormatException($"max_projectiles must be 0 or more (got {MaxProjectiles}).");
+        if (!float.IsFinite(MaxProjectileLifetime) || MaxProjectileLifetime <= 0f)
+            throw new FormatException($"max_projectile_lifetime must be a positive number (got {MaxProjectileLifetime}).");
     }
 }

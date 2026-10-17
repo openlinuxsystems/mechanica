@@ -65,6 +65,12 @@ public sealed partial class ScriptRuntime
         // Sound loops the part started; they end with the part or when its script stops.
         public HashSet<int> Loops { get; } = [];
 
+        // Held items (chunk 20b): the peer holding the item, the slot it was last used from and who acts.
+        public int? Holder { get; init; }
+        public int Slot { get; set; }
+        public ActionCaller Caller { get; set; }
+        public bool IsItem => Holder is not null;
+
         // Where the part is this step; bodies only move between steps.
         public (long Tick, int Revision, PartKinematics State)? Kinematics { get; set; }
 
@@ -101,6 +107,21 @@ public sealed partial class ScriptRuntime
 
         /// <summary><c>get_outputs()</c>: the part's signal outputs.</summary>
         public const string GetOutputs = "get_outputs";
+
+        /// <summary><c>on_equip()</c>: a player took the item in hand.</summary>
+        public const string OnEquip = "on_equip";
+
+        /// <summary><c>on_unequip()</c>: the item left the player's hand (another item, another tool, or death).</summary>
+        public const string OnUnequip = "on_unequip";
+
+        /// <summary><c>can_use(target)</c>: may the item be used now? Nil to allow, or the reason it can't. Changes nothing.</summary>
+        public const string CanUse = "can_use";
+
+        /// <summary><c>on_use(target)</c>: the player used the item; what it returns is the action's value.</summary>
+        public const string OnUse = "on_use";
+
+        /// <summary><c>on_hit(landing)</c>: a projectile the item launched hit something or ran out of time.</summary>
+        public const string OnHit = "on_hit";
     }
 
     /// <summary>Creates a runtime over the host's world.</summary>
@@ -173,6 +194,7 @@ public sealed partial class ScriptRuntime
         Tick++;
         Time += dt;
         Reconcile();
+        ReconcileItems();
         var arg = DynValue.NewNumber(dt);
         foreach (var instance in _instances.Values.ToList())
         {
@@ -222,7 +244,7 @@ public sealed partial class ScriptRuntime
     {
         if (!_files.TryGetValue(script, out var entry))
             return new ScriptReloadResult(false, script, $"No part uses the script '{script}'.", 0);
-        var users = _instances.Values.Where(i => i.File == entry).ToList();
+        var users = _instances.Values.Concat(_items.Values).Where(i => i.File == entry).ToList();
         if (!Compile(entry, keepOld: entry.Factory is not null))
             return new ScriptReloadResult(false, script, entry.Error, users.Count);
         foreach (var instance in users)
@@ -265,6 +287,7 @@ public sealed partial class ScriptRuntime
     {
         foreach (var instance in _instances.Values.ToList())
             Destroy(instance);
+        ClearItems();
         _revisions.Clear();
         _files.Clear();
         _contexts.Clear();
@@ -379,8 +402,9 @@ public sealed partial class ScriptRuntime
         var env = context.NewEnvironment();
         instance.State ??= new Table(context.Script);
         env.Set("state", DynValue.NewTable(instance.State));
-        var creation = _motion.FindCreation(instance.Creation);
-        var properties = creation?.FindPart(instance.Part) is not null ? creation.DefinitionOf(instance.Part).Properties : null;
+        var creation = instance.IsItem ? null : _motion.FindCreation(instance.Creation);
+        var properties = instance.IsItem ? _catalog?.FindDefinition(instance.PartType)?.Properties
+            : creation?.FindPart(instance.Part) is not null ? creation.DefinitionOf(instance.Part).Properties : null;
         env.Set("properties", properties is null ? DynValue.NewTable(new Table(context.Script)) : LuaValues.FromJson(context.Script, properties));
         instance.Env = env;
         instance.Fault = null;
@@ -390,7 +414,17 @@ public sealed partial class ScriptRuntime
             return;
         var first = !instance.Created;
         instance.Created = true;
-        CallHook(instance, first ? Hooks.OnCreate : Hooks.OnReload);
+        // An item's setup runs outside any accepted action, so it may read but not change the world.
+        var phase = _phase;
+        _phase = instance.IsItem ? ItemPhase.Checking : phase;
+        try
+        {
+            CallHook(instance, first ? Hooks.OnCreate : Hooks.OnReload);
+        }
+        finally
+        {
+            _phase = phase;
+        }
     }
 
     private void Destroy(Instance instance)
@@ -447,7 +481,10 @@ public sealed partial class ScriptRuntime
     {
         instance.Fault = fault;
         StopLoops(instance);
-        Post(ScriptMessageKind.Error, instance.File.File.Key, instance.Creation, instance.Part, $"{fault}; the part's script is stopped until it is reloaded");
+        if (instance.IsItem)
+            Post(ScriptMessageKind.Error, instance.File.File.Key, null, null, $"{fault}; the {instance.PartType} script of player {instance.Holder} is stopped until it is reloaded");
+        else
+            Post(ScriptMessageKind.Error, instance.File.File.Key, instance.Creation, instance.Part, $"{fault}; the part's script is stopped until it is reloaded");
     }
 
     private void Post(ScriptMessageKind kind, string script, int? creation, int? part, string text)
@@ -461,7 +498,9 @@ public sealed partial class ScriptRuntime
 
     private void Print(string text)
     {
-        if (_current is { } instance)
+        if (_current is { IsItem: true } item)
+            Post(ScriptMessageKind.Print, item.File.File.Key, null, null, text);
+        else if (_current is { } instance)
             Post(ScriptMessageKind.Print, instance.File.File.Key, instance.Creation, instance.Part, text);
         else
             Post(ScriptMessageKind.Print, "?", null, null, text);

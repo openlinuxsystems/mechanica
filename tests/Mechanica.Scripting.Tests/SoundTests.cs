@@ -1,4 +1,5 @@
 using System.Numerics;
+using Mechanica.Core.Tests.Survival;
 using static Mechanica.Scripting.Tests.ScriptRig;
 
 namespace Mechanica.Scripting.Tests;
@@ -91,6 +92,29 @@ public sealed class SoundTests : IDisposable
 
         _rig.World.Creations.Remove(1);
         _rig.Runtime.Update(0.1f);
+        Assert.Empty(_sound.Loops);
+    }
+
+    [Fact]
+    public void AnItemPlaysOneShotsAtItsHoldersEyesButRunsNoLoops()
+    {
+        using var items = new ItemRig();
+        items.Runtime.Sound = _sound;
+        items.Write("scripts/horn.lua", """
+            function on_use(target)
+              local loop, why = sound.start("hum")
+              return { played = sound.play("honk"), loop = loop, why = why }
+            end
+            """);
+        var horn = items.AddItem("horn", "scripts/horn.lua");
+        items.F.Pockets(SurvivalFixture.Me).Add(horn, 1);
+
+        var result = items.Used(SurvivalFixture.Me, items.F.SlotOf(SurvivalFixture.Me, horn));
+
+        Assert.True(result["played"]!.GetValue<bool>());
+        Assert.Null(result["loop"]);
+        Assert.Equal("sound loops only work in part scripts; an item plays one-shots", result["why"]!.GetValue<string>());
+        Assert.Equal(("honk", "test", new Vector3(0, 1.6f, 3)), Assert.Single(_sound.Played));
         Assert.Empty(_sound.Loops);
     }
 

@@ -1,5 +1,6 @@
 using System.Numerics;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Mechanica.Core.Actions;
 using Mechanica.Core.Building;
 using Mechanica.Core.Creations;
@@ -24,6 +25,7 @@ internal sealed class SurvivalFixture
     public const string Block = "test:block";
     public const string Chest = "test:chest";
     public const string Scrap = "test:scrap";
+    public const string Gun = "scripts/potato_gun.lua";
 
     public static readonly ActionCaller Me = new(2, ActionSource.Player);
     public static readonly ActionCaller You = new(3, ActionSource.Player);
@@ -34,16 +36,17 @@ internal sealed class SurvivalFixture
             .Add(Seed, new PartDefinition { Id = "seed", Name = "Seed", Category = PartCategory.Consumable, StackSize = 20,
                 Seed = new SeedDefinition { Crop = Crop, GrowTime = 40, Yield = 2, Seeds = 1, Value = 3 } })
             .Add(Crop, new PartDefinition { Id = "crop", Name = "Crop", Category = PartCategory.Consumable, StackSize = 20,
-                Food = new FoodDefinition { Health = 30 } })
+                Script = "scripts/food.lua", Properties = new JsonObject { ["health"] = 30 } })
             .Add(Bucket, new PartDefinition { Id = "bucket", Name = "Bucket", Category = PartCategory.Consumable, StackSize = 5,
                 Watering = new WateringDefinition { Seconds = 30 } })
             .Add(Scrap, new PartDefinition { Id = "scrap", Name = "Scrap", Category = PartCategory.Resource, StackSize = 50 })
-            .Add(Blaster, new PartDefinition { Id = "blaster", Name = "Blaster", Category = PartCategory.Weapon,
-                Weapon = new WeaponDefinition { Damage = 20, Interval = 1, Range = 50, Ammo = Crop, Impulse = 5 } })
-            .Add(Scattergun, new PartDefinition { Id = "scatter", Name = "Scattergun", Category = PartCategory.Weapon,
-                Weapon = new WeaponDefinition { Damage = 5, Interval = 1, Range = 20, Pellets = 5, Spread = 10 } })
-            .Add(Bomb, new PartDefinition { Id = "bomb", Name = "Bomb", Category = PartCategory.Weapon, StackSize = 10,
-                Weapon = new WeaponDefinition { Damage = 40, Interval = 1, Range = 10, Ammo = Bomb, Radius = 4 } })
+            // Weapons run the vanilla potato gun script (chunk 20b); the Scripting tests use them.
+            .Add(Blaster, new PartDefinition { Id = "blaster", Name = "Blaster", Category = PartCategory.Weapon, Script = Gun,
+                Properties = new JsonObject { ["damage"] = 20, ["interval"] = 1, ["range"] = 50, ["ammo"] = "crop", ["impulse"] = 5 } })
+            .Add(Scattergun, new PartDefinition { Id = "scatter", Name = "Scattergun", Category = PartCategory.Weapon, Script = Gun,
+                Properties = new JsonObject { ["damage"] = 5, ["interval"] = 1, ["range"] = 20, ["pellets"] = 5, ["spread"] = 10 } })
+            .Add(Bomb, new PartDefinition { Id = "bomb", Name = "Bomb", Category = PartCategory.Weapon, StackSize = 10, Script = Gun,
+                Properties = new JsonObject { ["damage"] = 40, ["interval"] = 1, ["range"] = 10, ["ammo"] = "bomb", ["radius"] = 4 } })
             .Add(Block, Placeable("block", PartCategory.Block) with { Durability = 2 })
             .Add(Chest, Placeable("chest", PartCategory.Container) with { Inventory = new InventoryDefinition { Slots = 4 } })
             .Add(Soil, Placeable("soil", PartCategory.Decor) with { Soil = new SoilDefinition { Capacity = 60, Growth = 2 } })
@@ -149,6 +152,7 @@ internal sealed class SurvivalFixture
         public WorldState State { get; } = new(1);
         public List<(Vector3 From, Vector3 Direction)> Casts { get; } = [];
         public Func<Vector3, Vector3, RayHit?> Ray { get; set; } = (_, _) => null;
+        public float LastRange { get; private set; }
         public List<Vector3> Pushes { get; } = [];
         public List<(int Peer, Vector3 Feet)> Teleports { get; } = [];
         public Vector3 Spawn { get; set; } = new(10, 0, 10);
@@ -176,6 +180,7 @@ internal sealed class SurvivalFixture
         public RayHit? Cast(Vector3 from, Vector3 direction, float range, int ignorePlayer)
         {
             Casts.Add((from, direction));
+            LastRange = range;
             return Ray(from, direction);
         }
 

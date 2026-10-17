@@ -8,10 +8,11 @@
   "visual": {
     "color": "#e0c040"
   },
+  "script": "scripts/potato_gun.lua",
   "sounds": {
     "explode": "popper_explode"
   },
-  "weapon": {
+  "properties": {
     "damage": 50,
     "interval": 1,
     "range": 15,

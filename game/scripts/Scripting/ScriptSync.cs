@@ -5,6 +5,7 @@ using Mechanica.Game.Creations;
 using Mechanica.Game.Motion;
 using Mechanica.Game.Net;
 using Mechanica.Game.Sound;
+using Mechanica.Game.Survival;
 using Mechanica.Scripting;
 
 namespace Mechanica.Game.Scripting;
@@ -14,8 +15,9 @@ namespace Mechanica.Game.Scripting;
 /// tick before <see cref="MotionSync"/> applies the pushes it asked for, reloads scripts whose files
 /// change, and calls <c>on_collision</c> when a scripted part's Body starts touching something. It
 /// answers the scripts' physics queries (raycasts, overlaps, gravity) from Jolt and their sounds through
-/// <see cref="SoundSync"/>. Clients run no
-/// scripts: they see what the scripts do through <see cref="CreationSync"/> snapshots.
+/// <see cref="SoundSync"/>. With <see cref="Survival"/> set it also runs held items' scripts (chunk 20b:
+/// <c>UseItem</c>, <c>EquipItem</c>). Clients run no scripts: they see what the scripts do through
+/// <see cref="CreationSync"/> snapshots and survival sync.
 /// </summary>
 public partial class ScriptSync : Node, IScriptPhysics, IScriptSound
 {
@@ -44,6 +46,9 @@ public partial class ScriptSync : Node, IScriptPhysics, IScriptSound
     /// <summary>The loaded mods, whose parts' scripts run. Set before adding to the tree; see <see cref="SetContent"/>.</summary>
     public ModLoadResult Mods { get; set; } = null!;
 
+    /// <summary>Survival, whose items' scripts run here (weapons, food). Set before adding to the tree; null runs part scripts only.</summary>
+    public SurvivalSync? Survival { get; init; }
+
     /// <summary>Scripting limits; null loads <see cref="SettingsPath"/>.</summary>
     public ScriptSettings? Settings { get; set; }
 
@@ -70,6 +75,8 @@ public partial class ScriptSync : Node, IScriptPhysics, IScriptSound
         Runtime = new ScriptRuntime(Settings, Actions.Dispatcher, Motion, this, new ModScriptSource(Mods), () => Creations.All);
         Runtime.Sound = this;
         Runtime.Message += Log;
+        if (Survival?.Actions is { } survival)
+            Runtime.EnableItems(Survival.Catalog, survival, Survival.Inventory.Items!);
         Session.StateChanged += OnStateChanged;
     }
 

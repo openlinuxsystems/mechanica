@@ -26,7 +26,10 @@ internal static class ItemParts
         .Add(Chest, Placeable("chest", "Chest", PartCategory.Container, new InventoryDefinition { Slots = 4 }, null))
         .Add(Tank, Placeable("tank", "Tank", PartCategory.Container, new InventoryDefinition { Slots = 1, Accepts = ["test:fuel"] }, null))
         .Add(Bench, Placeable("bench", "Bench", PartCategory.Station, new InventoryDefinition { Slots = 2 },
-            new CraftingDefinition { Speed = 2, QueueSize = 2 }));
+            new CraftingDefinition { Speed = 2, QueueSize = 2 }) with
+        {
+            Sounds = new() { ["start"] = "bench_start", ["work"] = "bench_work", ["complete"] = "bench_done" },
+        });
 
     /// <summary>Bench recipes: 2 scrap + 1 wood make a chest in 4 s; 1 scrap makes 10 blocks in 1 s.</summary>
     public static RecipeBook Recipes(IPartCatalog catalog) => RecipeBook.From(catalog,

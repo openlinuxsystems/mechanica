@@ -104,6 +104,42 @@ public class CraftingTests
     }
 
     [Fact]
+    public void AStationPlaysItsStartWorkAndCompleteSounds()
+    {
+        var (creation, bench) = Station();
+        Give(Player, Scrap, 4);
+        Give(Player, Wood, 2);
+        Assert.True(Dispatch(Player, InventoryActions.Craft, new { creation, part = bench, recipe = "test:chest", count = 2 }).Ok);
+        _world.Sounds.Clear();
+
+        _items.Tick(1f);
+        Assert.Equal(["bench_start@test", $"loop bench_work@test {creation}/{bench}"], _world.Sounds);
+        _world.Sounds.Clear();
+        _items.Tick(1f); // the first chest
+        _items.Tick(1f);
+        Assert.Equal(["bench_done@test"], _world.Sounds);
+        _world.Sounds.Clear();
+        _items.Tick(1f); // the second, and the queue is empty
+        Assert.Equal(["bench_done@test", $"stop loop {creation}/{bench}"], _world.Sounds);
+        _world.Sounds.Clear();
+        _items.Tick(1f);
+        Assert.Empty(_world.Sounds);
+    }
+
+    [Fact]
+    public void AStationWithAFullOutputStopsItsWorkLoop()
+    {
+        var (creation, bench) = Station();
+        Give(Player, Scrap, 3);
+        Assert.True(Dispatch(Player, InventoryActions.Craft, new { creation, part = bench, recipe = "test:blocks", count = 3 }).Ok);
+        _world.Sounds.Clear();
+
+        _items.Tick(0.25f);
+        _items.Tick(10f); // two stacks of 10 fill both slots, the third craft waits
+        Assert.Equal(["bench_start@test", $"loop bench_work@test {creation}/{bench}", "bench_done@test", $"stop loop {creation}/{bench}"], _world.Sounds);
+    }
+
+    [Fact]
     public void TheCrafterTakesTheOutputWithMoveItems()
     {
         var (creation, bench) = Station();
@@ -314,6 +350,13 @@ public class CraftingTests
         public Creation? FindCreation(int id) => Creations.GetValueOrDefault(id);
 
         public Vector3? EyeOf(int peer) => Eyes.TryGetValue(peer, out var eye) ? eye : null;
+
+        public List<string> Sounds { get; } = [];
+
+        public void PlaySound(string sound, string ownerModId, Vector3 position) => Sounds.Add($"{sound}@{ownerModId}");
+
+        public void SetPartLoop(int creation, int partId, string? sound, string ownerModId) =>
+            Sounds.Add(sound is null ? $"stop loop {creation}/{partId}" : $"loop {sound}@{ownerModId} {creation}/{partId}");
 
         public int NextCreationId() => _nextId++;
 

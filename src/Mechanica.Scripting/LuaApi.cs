@@ -4,7 +4,7 @@ namespace Mechanica.Scripting;
 /// <param name="Name">What a script writes: <c>part.apply_force</c>, <c>on_update</c>, <c>state</c>.</param>
 /// <param name="Signature">How it is called, e.g. <c>part.apply_force(force, at?)</c>.</param>
 /// <param name="Summary">One line on what it does.</param>
-/// <param name="Group">Section: Hooks, Globals, part, creation, world, sound or vec3.</param>
+/// <param name="Group">Section: Hooks, Globals, part, creation, world, sound, item, holder, inventory, combat or vec3.</param>
 public sealed record LuaApiEntry(string Name, string Signature, string Summary, string Group);
 
 /// <summary>
@@ -24,6 +24,11 @@ public static class LuaApi
         new("on_power", "function on_power(amount)", "The part's power or logic input changed (signal bus, chunk 10).", "Hooks"),
         new("on_collision", "function on_collision(other, impulse)", "The part's Body began touching something; other has creation and part when it is a Creation.", "Hooks"),
         new("get_outputs", "function get_outputs()", "Returns the part's signal outputs (signal bus, chunk 10).", "Hooks"),
+        new("on_equip", "function on_equip()", "Item scripts: a player took the item in hand.", "Hooks"),
+        new("on_unequip", "function on_unequip()", "Item scripts: the item left the player's hand (another item or tool, or death).", "Hooks"),
+        new("can_use", "function can_use(target)", "Item scripts: return nil to allow a use, or the reason it is refused. May not change the world.", "Hooks"),
+        new("on_use", "function on_use(target)", "Item scripts: the player used the item (target has from and direction); the return value is the action's result.", "Hooks"),
+        new("on_hit", "function on_hit(landing)", "Item scripts: a projectile the item launched landed: {id, position, hit?, data}.", "Hooks"),
 
         new("state", "state", "Table that survives hot reloads. Keep plain data in it.", "Globals"),
         new("properties", "properties", "The part's free-form properties from its JSON.", "Globals"),
@@ -61,6 +66,30 @@ public static class LuaApi
         new("sound.start", "sound.start(id, parameters?)", "Starts a looping sound event that follows the part; returns its handle, or nil, reason.", "sound"),
         new("sound.set_parameter", "sound.set_parameter(handle, name, value)", "Bends one of the part's loops (pitch, volume or the event's own parameters); returns true or false, reason.", "sound"),
         new("sound.stop", "sound.stop(handle)", "Stops one of the part's loops; returns true or false, reason.", "sound"),
+
+        new("item.id", "item.id()", "The held item's qualified id, e.g. vanilla:potato_blaster.", "item"),
+        new("item.name", "item.name(id?)", "The held item's display name, or another item's.", "item"),
+        new("item.slot", "item.slot()", "The inventory slot the item is used from.", "item"),
+        new("item.count", "item.count()", "How many of the item that slot holds.", "item"),
+        new("item.consume", "item.consume(count?)", "Uses up count (default 1) of the item from its slot; true, or false when there aren't enough.", "item"),
+
+        new("holder.peer", "holder.peer()", "The peer of the player holding the item.", "holder"),
+        new("holder.eye", "holder.eye()", "World position of the holder's eyes, in m.", "holder"),
+        new("holder.feet", "holder.feet()", "World position of the holder's feet, in m.", "holder"),
+        new("holder.look", "holder.look()", "Unit direction the holder looks in.", "holder"),
+        new("holder.health", "holder.health()", "The holder's health.", "holder"),
+        new("holder.max_health", "holder.max_health()", "The most health a player can have.", "holder"),
+        new("holder.heal", "holder.heal(amount)", "Gives the holder health, up to the maximum; returns their health.", "holder"),
+
+        new("inventory.count", "inventory.count(item)", "How many of an item the holder carries (bare ids are in the item's mod).", "inventory"),
+        new("inventory.take", "inventory.take(item, count?)", "Takes count (default 1) of an item from the holder; true, or false when they carry too few.", "inventory"),
+
+        new("combat.cast", "combat.cast(from, direction, range)", "The first thing a ray hits, skipping the holder: {kind, position, distance, player?, creation?, part?, object?} or nil.", "combat"),
+        new("combat.hit", "combat.hit(hit, damage, push?)", "Deals damage to what a cast hit, pushing a part's Body with push N·s; returns the hit with damage dealt.", "combat"),
+        new("combat.hitscan", "combat.hitscan(from, direction, range, damage, impulse?)", "A cast plus a hit along the ray; returns the hit with damage dealt, or nil.", "combat"),
+        new("combat.splash", "combat.splash(at, radius, damage, impulse?)", "Damage falling off to 0 at radius m around at, for players, parts and world objects; returns a list of hits.", "combat"),
+        new("combat.pellets", "combat.pellets(direction, count, spread)", "count directions: the first along direction, the rest evenly round a cone of spread degrees.", "combat"),
+        new("combat.projectile", "combat.projectile(from, velocity, options?)", "Launches a projectile ({gravity?, lifetime?, data?}); on_hit runs where it lands. Returns its id.", "combat"),
 
         new("vec3", "vec3(x, y, z)", "A vector with x, y, z. Supports + - * / unary minus, == and tostring.", "vec3"),
         new("vec3.dot", "a:dot(b)", "Dot product.", "vec3"),
