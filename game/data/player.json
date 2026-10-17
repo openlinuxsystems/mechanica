@@ -13,6 +13,10 @@
   "eye_height": 1.6,
   "push_force": 600.0,
   "crawl_speed": 1.5,
+  // Crouching: a shorter capsule (fits under 1.2 m gaps) and a lower camera.
+  "crouch_height": 1.2,
+  "crouch_eye_height": 1.05,
+  "stance_speed": 4.0,
   // Swimming: from swim_depth (feet below the surface) the player swims, floating at float_depth.
   "swim_depth": 1.2,
   "float_depth": 1.4,
