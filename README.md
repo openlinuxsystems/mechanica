@@ -31,15 +31,16 @@ at an existing binary. Open `game/project.godot` in Godot 4.7.2 .NET to edit sce
 
 ## Releasing
 
-`tools/package.sh linux` (or `windows`) exports a playable build into `build/Mechanica-<version>-<platform>.zip`:
-the game, the bundled .NET runtime, `mods/` (all content) and `docs/` next to the executable, plus a player
-`README.txt` (from `tools/release/`). It downloads the pinned export templates on first use. Check an
+`tools/package.sh linux` (or `windows`, `macos`) exports a playable build into `build/Mechanica-<version>-<platform>.zip`:
+the game, the bundled .NET runtime, `mods/` (all content) and `docs/` next to the executable (inside
+`Mechanica.app/Contents/Resources` on macOS, a universal app ad-hoc signed with rcodesign), plus a player
+`README.txt` (from `tools/release/`). It downloads the pinned export templates and rcodesign on first use. Check an
 exported build with `./Mechanica.x86_64 --headless -- --self-test`: it loads a world and every part model and
 sound clip, prints a summary and exits 0 only when nothing is missing.
 
 To publish, push a tag: `git tag v0.2.0 && git push origin v0.2.0`. The Release workflow
-(`.github/workflows/release.yml`) packages Windows and Linux, self-tests each on its own OS, and attaches
-both zips to a GitHub Release for that tag. **Actions → Release → Run workflow** does the same from any
+(`.github/workflows/release.yml`) packages Windows, macOS and Linux, self-tests each on its own OS, and attaches
+the zips to a GitHub Release for that tag. **Actions → Release → Run workflow** does the same from any
 branch (with a tag to publish, or empty to only build the zips as run artifacts).
 
 ## Playing

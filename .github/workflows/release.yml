@@ -1,6 +1,6 @@
 name: Release
 
-# Builds playable Windows and Linux packages (game, bundled .NET runtime, mods/ and docs/), checks each one
+# Builds playable Windows, macOS and Linux packages (game, bundled .NET runtime, mods/ and docs/), checks each one
 # launches and loads a world (--self-test), and attaches them to a GitHub Release.
 # Push a tag such as v0.2.0 to publish a release; "Run workflow" builds the packages as run artifacts,
 # and publishes a release too when given a tag. Pull requests that change packaging build and self-test without publishing.
@@ -11,6 +11,11 @@ on:
   pull_request:
     paths:
       - .github/workflows/release.yml
+      - game/project.godot
+      - game/scripts/Mods/ModPaths.cs
+      - game/scripts/SelfTest.cs
+      - tools/versions.env
+      - tools/install-rcodesign.sh
       - game/export_presets.cfg
       - tools/package.sh
       - tools/install-godot-templates.sh
@@ -31,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        platform: [linux, windows]
+        platform: [linux, windows, macos]
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: "1"
       DOTNET_NOLOGO: "1"
@@ -64,7 +69,7 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: ~/.local/share/godot/export_templates
-          key: godot-templates-${{ env.GODOT_VERSION }}-mono-linux-windows
+          key: godot-templates-${{ env.GODOT_VERSION }}-mono-linux-windows-macos
 
       - name: Export and zip
         run: tools/package.sh ${{ matrix.platform }} "$VERSION"
@@ -103,9 +108,27 @@ jobs:
           Get-Content $log
           if ($p.ExitCode -ne 0) { Write-Error "self-test exited with $($p.ExitCode)"; exit 1 }
 
+  verify-macos:
+    name: Self-test on macOS
+    needs: package
+    runs-on: macos-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: Mechanica-*-macos
+
+      - name: Unzip, check the signature and run --self-test
+        run: |
+          zip="$(find . -name 'Mechanica-*-macos.zip' | head -1)"
+          ditto -x -k "$zip" "$RUNNER_TEMP/game"
+          app="$(find "$RUNNER_TEMP/game" -maxdepth 2 -name Mechanica.app | head -1)"
+          codesign --verify --deep --strict --verbose=2 "$app"
+          cd "$RUNNER_TEMP"
+          "$app/Contents/MacOS/Mechanica" --headless -- --self-test --seed 1234
+
   release:
     name: Publish the GitHub Release
-    needs: [package, verify-windows]
+    needs: [package, verify-windows, verify-macos]
     if: github.event_name == 'push' || inputs.tag != ''
     runs-on: ubuntu-latest
     steps:
@@ -119,7 +142,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.event_name == 'push' && github.ref_name || inputs.tag }}
         run: |
-          notes="Download the zip for your system, unzip it and run Mechanica.exe (Windows) or Mechanica.x86_64 (Linux). README.txt inside explains LAN play."
+          notes="Download the zip for your system, unzip it and run Mechanica.exe (Windows), Mechanica.app (macOS) or Mechanica.x86_64 (Linux). README.txt inside explains LAN play."
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release upload "$TAG" Mechanica-*.zip --clobber --repo "$GITHUB_REPOSITORY"
           else
