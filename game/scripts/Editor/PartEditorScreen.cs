@@ -699,8 +699,8 @@ public partial class PartEditorScreen : Control
         }
     }
 
-    // Survival fields (chunk 20): food, seeds, water and weapons on items; soil and beds on parts.
-    // Turning a section on or off rebuilds the inspector.
+    // Survival fields (chunk 20): seeds and water on items; soil and beds on parts. Weapons and food are
+    // item scripts (Behaviour: Script and Properties). Turning a section on or off rebuilds the inspector.
     private void AddSurvivalFields(PartDefinition d)
     {
         _partGrid.AddHeading("Survival");
@@ -720,13 +720,6 @@ public partial class PartEditorScreen : Control
             _partGrid.AddBool("Respawn point", d.RespawnPoint, v => Set("Set respawn point", x => x with { RespawnPoint = v == true ? true : null }), optional: true);
             return;
         }
-        _partGrid.AddNumber("Food: heals", d.Food?.Health, 0.1, 1e4, 1, v =>
-        {
-            if ((v is null) != (Document?.Definition.Food is null))
-                Document?.Apply(v is null ? "Remove food" : "Make food", x => x with { Food = v is null ? null : new FoodDefinition { Health = (float)v } });
-            else if (v is not null)
-                Set("Set food health", x => x with { Food = x.Food! with { Health = (float)v } });
-        }, optional: true, fallback: 10, suffix: "health");
         _partGrid.AddNumber("Waters for", d.Watering?.Seconds, 1, 1e5, 10, v =>
         {
             if ((v is null) != (Document?.Definition.Watering is null))
@@ -744,20 +737,6 @@ public partial class PartEditorScreen : Control
             _partGrid.AddNumber("Yield", seed.Yield, 1, 1000, 1, v => SetSeed("Set yield", x => x with { Yield = (int?)v }), optional: true, fallback: 1);
             _partGrid.AddNumber("Seeds back", seed.Seeds, 0, 1000, 1, v => SetSeed("Set seeds back", x => x with { Seeds = (int?)v }), optional: true);
             _partGrid.AddNumber("Raid value", seed.Value, 0, 1000, 0.5, v => SetSeed("Set raid value", x => x with { Value = (float?)v }), optional: true, fallback: 1);
-        }
-        _partGrid.AddBool("Weapon", d.Weapon is not null, v => Toggle("weapon", v == true,
-            x => x with { Weapon = x.Weapon ?? new WeaponDefinition { Damage = 10, Interval = 0.5f, Range = 30 } }, x => x with { Weapon = null }));
-        if (d.Weapon is { } weapon)
-        {
-            void SetWeapon(string label, Func<WeaponDefinition, WeaponDefinition> change) => Set(label, x => x with { Weapon = change(x.Weapon!) });
-            _partGrid.AddNumber("Damage", weapon.Damage, 0, 1e4, 1, v => SetWeapon("Set damage", x => x with { Damage = (float?)v }));
-            _partGrid.AddNumber("Interval", weapon.Interval, 0, 60, 0.05, v => SetWeapon("Set interval", x => x with { Interval = (float?)v }), suffix: "s");
-            _partGrid.AddNumber("Range", weapon.Range, 0.1, 1000, 1, v => SetWeapon("Set range", x => x with { Range = (float?)v }), suffix: "m");
-            _partGrid.AddText("Ammo", weapon.Ammo, v => SetWeapon("Set ammo", x => x with { Ammo = v }), "item id, or none");
-            _partGrid.AddNumber("Pellets", weapon.Pellets, 1, 32, 1, v => SetWeapon("Set pellets", x => x with { Pellets = (int?)v }), optional: true, fallback: 1);
-            _partGrid.AddNumber("Spread", weapon.Spread, 0, 45, 0.5, v => SetWeapon("Set spread", x => x with { Spread = (float?)v }), optional: true, suffix: "°");
-            _partGrid.AddNumber("Splash radius", weapon.Radius, 0.1, 100, 0.25, v => SetWeapon("Set splash radius", x => x with { Radius = (float?)v }), optional: true, fallback: 2, suffix: "m");
-            _partGrid.AddNumber("Push", weapon.Impulse, 0, 1e5, 10, v => SetWeapon("Set push", x => x with { Impulse = (float?)v }), optional: true, suffix: "N·s");
         }
     }
 
