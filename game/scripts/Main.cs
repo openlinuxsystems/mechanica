@@ -484,6 +484,11 @@ public partial class Main : Node3D
         Chat = new Mechanica.Game.Chat.ChatSync { Name = "Chat", Session = Session };
         Chat.RegisterActions(Actions.Dispatcher);
         AddChild(Chat);
+        // Read-only perception and catalog queries for agents, scripts and tools (AI support PR 3).
+        var perception = new PerceptionWorld(this);
+        new Core.Perception.PerceptionActions(perception).Register(Actions.Dispatcher);
+        new Core.Perception.CatalogActions(perception).Register(Actions.Dispatcher);
+        Motion.Actions.Sledge = Build.Settings!.Sledge;
         Saves = new SaveSync
         {
             Characters = Characters.Choices,

@@ -1,6 +1,7 @@
 using System.Numerics;
 using System.Text.Json;
 using Mechanica.Core.Actions;
+using Mechanica.Core.Building;
 using Mechanica.Core.Creations;
 using Mechanica.Core.Data;
 
@@ -111,6 +112,24 @@ public sealed record BodyState(
 public sealed record JointState(int Part, int Other, ConnectionType Type, int BodyA, int BodyB, bool Locked,
     float? Position = null, float? Min = null, float? Max = null);
 
+/// <summary>One placed part in the value of <c>GetCreation</c>: enough to see it in the world and to rebuild it.</summary>
+/// <param name="Id">Part id within the Creation.</param>
+/// <param name="Part">Qualified definition id.</param>
+/// <param name="Cell">Grid cell of the part's local origin cell, in the Creation's grid frame (as <c>PlacePart</c> takes it).</param>
+/// <param name="Rotation">Orientation on the grid (as <c>PlacePart</c> takes it).</param>
+/// <param name="Body">Index of the Body it belongs to.</param>
+/// <param name="Centre">World position of the part's centre now, in m.</param>
+/// <param name="Level">Upgrade level (0 is the part as written).</param>
+/// <param name="Damage">Health lost to hits.</param>
+/// <param name="Color">Paint colour <c>"#rrggbb"</c>, or null for the part's own.</param>
+/// <param name="Health">Health left, or null when the part can't be broken by hits.</param>
+/// <param name="MaxHealth">Full health, or null when the part can't be broken by hits.</param>
+/// <param name="Fire">Fire strength on the part (0 to 1), or null when it isn't burning.</param>
+/// <param name="Settings">Settings changed from the part's defaults, or null.</param>
+public sealed record PartState(
+    int Id, string Part, GridCell Cell, GridRotation Rotation, int Body, Vec3 Centre, int Level, float Damage, string? Color = null,
+    float? Health = null, float? MaxHealth = null, float? Fire = null, IReadOnlyDictionary<string, JsonElement>? Settings = null);
+
 /// <summary>Value of <c>GetCreation</c>.</summary>
 /// <param name="Id">Creation id.</param>
 /// <param name="AuthorityPeer">Peer that simulates it (D5).</param>
@@ -118,8 +137,10 @@ public sealed record JointState(int Part, int Other, ConnectionType Type, int Bo
 /// <param name="Parts">Part ids, ascending.</param>
 /// <param name="Bodies">Bodies, by index.</param>
 /// <param name="Joints">Joint links.</param>
+/// <param name="PartStates">Every part's type, grid cell, rotation, colour, health and settings, by id ascending.</param>
 public sealed record CreationState(
-    int Id, int AuthorityPeer, bool Simulated, IReadOnlyList<int> Parts, IReadOnlyList<BodyState> Bodies, IReadOnlyList<JointState> Joints);
+    int Id, int AuthorityPeer, bool Simulated, IReadOnlyList<int> Parts, IReadOnlyList<BodyState> Bodies, IReadOnlyList<JointState> Joints,
+    IReadOnlyList<PartState> PartStates);
 
 /// <summary>Arguments of <c>GetForces</c>.</summary>
 /// <param name="Creation">Creation whose pushes to read.</param>
@@ -188,6 +209,9 @@ public interface IMotionWorld
 /// </summary>
 public sealed class MotionActions(MotionSettings settings, IMotionWorld world)
 {
+    /// <summary>How part health derives from durability, for <see cref="PartState.Health"/>; null leaves health out.</summary>
+    public SledgeSettings? Sledge { get; set; }
+
     /// <summary>Action name for pushing a Body.</summary>
     public const string ApplyForce = "ApplyForce";
 
@@ -243,8 +267,19 @@ public sealed class MotionActions(MotionSettings settings, IMotionWorld world)
             return new JointState(j.Connection.A, j.Connection.B, j.Connection.Type, j.BodyA, j.BodyB, j.IsLocked,
                 j.IsLocked ? 0f : world.JointPosition(creation, j), frame?.Min, frame?.Max);
         }).ToList();
+        var parts = creation.Parts.OrderBy(p => p.Id).Select(p =>
+        {
+            var body = creation.BodyIndexOf(p.Id);
+            var definition = creation.DefinitionOf(p.Id);
+            var centre = creation.BodyPose(body).Apply(PartGeometry.CentreMetres(definition, p.Cell, p.Rotation).ToNumerics());
+            var damage = creation.PartDamage(p.Id);
+            var full = Sledge?.HealthOf(definition.Durability);
+            var fire = creation.FireOf(p.Id);
+            return new PartState(p.Id, p.Part, p.Cell, p.Rotation, body, ToVec(centre), p.Level, damage, p.Color,
+                full is { } f ? MathF.Max(0f, f - damage) : null, full, fire > 0f ? fire : null, p.Settings);
+        }).ToList();
         return new CreationState(creation.Id, creation.AuthorityPeer, world.IsLive(creation.Id),
-            [.. creation.Parts.Select(p => p.Id).Order()], bodies, joints);
+            [.. creation.Parts.Select(p => p.Id).Order()], bodies, joints, parts);
     }
 
     private string? ValidateForce(ActionCaller caller, ApplyForceArgs args)
