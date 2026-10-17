@@ -42,6 +42,15 @@
     "stop": "bearing_stop"
   },
   "logic": {
-    "inputs": 4
-  }
+    "inputs": 4,
+    "kind": "bearing",
+    "reverse": "reverse"
+  },
+  "settings": [
+    {
+      "id": "reverse",
+      "name": "Reverse",
+      "type": "toggle"
+    }
+  ]
 }

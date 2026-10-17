@@ -290,12 +290,54 @@ public sealed record LogicDefinition
     /// </summary>
     public string? Use { get; init; }
 
+    /// <summary>
+    /// What kind of connection node the part shows with the Connect Tool (UI spec §12), which also names the kind of
+    /// link that starts at it. Omitted means <see cref="PortKind.Logic"/>.
+    /// </summary>
+    public PortKind? Kind { get; init; }
+
+    /// <summary>
+    /// The kinds of part whose links may end at this one (an engine's power, a seat's logic). Omitted means any
+    /// kind but <see cref="PortKind.Structural"/>.
+    /// </summary>
+    public IReadOnlyList<PortKind>? Accepts { get; init; }
+
+    /// <summary>
+    /// The id of one of the part's toggle settings that reverses which way it turns: right click on its node with
+    /// the Connect Tool flips it, and a curved arrow by the node shows it. Scripts that drive the part read it as
+    /// <c>joint.reversed</c>. Omitted means the part has no direction to reverse.
+    /// </summary>
+    public string? Reverse { get; init; }
+
+    /// <summary>The node kind, <see cref="PortKind.Logic"/> when omitted.</summary>
+    [JsonIgnore]
+    public PortKind KindOrDefault => Kind ?? PortKind.Logic;
+
+    /// <summary>True when a link from a part of kind <paramref name="source"/> may end at this part.</summary>
+    public bool Takes(PortKind source) => Accepts?.Contains(source) ?? source != PortKind.Structural;
+
     /// <summary>Most links one side of a part may have.</summary>
     public const int MaxLinks = 64;
 
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>The kinds of connection node (UI spec §12): each has its own colour.</summary>
+public enum PortKind
+{
+    /// <summary>On/off and value signals: switches, buttons, gates, timers, sensors, seats, lights (blue).</summary>
+    Logic,
+
+    /// <summary>Something that makes or uses power: engines, thrusters, rotors (cyan).</summary>
+    Power,
+
+    /// <summary>A joint something drives: bearings and pistons (white with a blue outline).</summary>
+    Bearing,
+
+    /// <summary>Structural or weld-related (light gray); its links go nowhere by default.</summary>
+    Structural,
 }
 
 /// <summary>What kind of value a <see cref="SettingDefinition"/> holds.</summary>

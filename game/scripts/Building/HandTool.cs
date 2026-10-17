@@ -101,6 +101,16 @@ public abstract partial class HandTool : Node
     /// <summary>How far a timed action being held has got, 0 to 1 (the ring round the crosshair), or null when none is.</summary>
     public virtual float? Progress => null;
 
+    /// <summary>
+    /// A tooltip of the tool's own for what the crosshair is over (the Connect Tool's nodes and lines), shown in
+    /// place of the part's after the hover delay; <c>Key</c> restarts the delay when it changes. Null shows the
+    /// part's tooltip.
+    /// </summary>
+    public virtual (object Key, string Title, string Body)? HoverTip => null;
+
+    /// <summary>The sound the player hears when the host refuses one of this tool's requests.</summary>
+    protected virtual string RefusalSound => "ui_error";
+
     /// <summary>One line for the HUD: the tool, its state and its keys.</summary>
     public abstract string HudText();
 
@@ -148,7 +158,7 @@ public abstract partial class HandTool : Node
         {
             LastResult = result;
             if (!result.Ok)
-                Sounds?.PlayUi("ui_error");
+                Sounds?.PlayUi(RefusalSound);
             if (!result.Ok && ReadDeviceInput)
                 GD.Print($"[{ToolName.ToLowerInvariant()}] {result.Message}");
             done?.Invoke(result);

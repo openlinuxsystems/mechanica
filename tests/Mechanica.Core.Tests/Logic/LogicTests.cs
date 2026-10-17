@@ -341,6 +341,9 @@ public class LogicTests
     [InlineData("\"settings\": [{ \"id\": \"a\", \"type\": \"choice\", \"options\": [\"x\", \"x\"] }]", "$.settings[0].options", "")]
     [InlineData("\"settings\": [{ \"id\": \"a\", \"type\": \"number\", \"min\": 0, \"max\": 1, \"default\": 5 }]", "$.settings[0].default", "between 0 and 1")]
     [InlineData("\"settings\": [{ \"id\": \"a\", \"type\": \"toggle\" }, { \"id\": \"a\", \"type\": \"toggle\" }]", "$.settings[1].id", "")]
+    [InlineData("\"logic\": { \"inputs\": 1, \"accepts\": [\"power\", \"power\"] }", "$.logic.accepts", "twice")]
+    [InlineData("\"logic\": { \"inputs\": 1, \"reverse\": \"spin\" }", "$.logic.reverse", "toggle settings")]
+    [InlineData("\"logic\": { \"inputs\": 1, \"reverse\": \"a\" }, \"settings\": [{ \"id\": \"a\", \"type\": \"number\", \"min\": 0, \"max\": 1 }]", "$.logic.reverse", "toggle settings")]
     public void BadLogicDataGivesClearErrors(string json, string path, string messagePart)
     {
         using var mods = new TestMods().Mod("m");
@@ -349,6 +352,39 @@ public class LogicTests
         var error = Assert.Single(errors);
         Assert.Equal(path, error.JsonPath);
         Assert.Contains(messagePart, error.Message);
+    }
+
+    [Fact]
+    public void LinksOnlyEndAtPartsThatTakeTheirSourcesKind()
+    {
+        var catalog = new PartCatalog()
+            .Add("test:engine", Part(new LogicDefinition { Inputs = 1, Outputs = 2, Kind = PortKind.Power }))
+            .Add("test:switch", Part(new LogicDefinition { Outputs = 2 }))
+            .Add("test:frame", Part(new LogicDefinition { Outputs = 2, Kind = PortKind.Structural }))
+            .Add("test:wheel", Part(new LogicDefinition { Inputs = 4, Kind = PortKind.Bearing, Accepts = [PortKind.Power] }))
+            .Add("test:lamp", Part(new LogicDefinition { Inputs = 4 }));
+        var c = new Creation(1, catalog);
+        string[] parts = ["test:engine", "test:switch", "test:frame", "test:wheel", "test:lamp"];
+        for (var i = 0; i < parts.Length; i++)
+            Assert.True(c.TryPlacePart(parts[i], new GridCell(i, 0, 0), default, out _, out var error), error);
+        Assert.Null(c.CheckLink(1, 4));
+        Assert.Contains("takes no logic links", c.CheckLink(2, 4));
+        Assert.Null(c.CheckLink(2, 5));
+        Assert.Null(c.CheckLink(1, 5));
+        Assert.Contains("takes no structural links", c.CheckLink(3, 5));
+        Assert.Equal(PortKind.Logic, c.DefinitionOf(2).Logic!.KindOrDefault);
+    }
+
+    [Fact]
+    public void APartIsReversedOnlyWhileItsReverseToggleIsOn()
+    {
+        var bearing = Part(new LogicDefinition { Inputs = 1, Kind = PortKind.Bearing, Reverse = "reverse" }) with
+        {
+            Settings = [new SettingDefinition { Id = "reverse", Name = "Reverse", Type = SettingType.Toggle }],
+        };
+        Assert.False(PartSettings.Reversed(bearing, null));
+        Assert.True(PartSettings.Reversed(bearing, new Dictionary<string, JsonElement> { ["reverse"] = Json(true) }));
+        Assert.False(PartSettings.Reversed(bearing with { Logic = bearing.Logic! with { Reverse = null } }, new Dictionary<string, JsonElement> { ["reverse"] = Json(true) }));
     }
 
     [Fact]

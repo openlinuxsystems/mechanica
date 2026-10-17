@@ -13,6 +13,7 @@
         "durability": 4,
         "stack_size": 10,
         "script": "scripts/thruster.lua",
+        "logic": { "inputs": 4, "outputs": 10, "kind": "power" },
         "visual": { "color": "#5b6470", "roughness": 0.4, "metallic": 0.8 },
         "sounds": { "ignite": "thruster_ignite", "loop": "thruster_loop", "cut": "thruster_cut" },
         "properties": { "thrust": 200, "lever_rate": 0.5, "fuel": "gasoline", "fuel_time": 112 }
@@ -131,6 +132,7 @@
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.125, 0], "normal": [0, -1, 0] }],
         "collision": { "shape": "cylinder", "radius": 0.36, "height": 0.08, "offset": [0, 0.07, 0] },
         "script": "scripts/rotor.lua",
+        "logic": { "inputs": 4, "outputs": 10, "kind": "power" },
         "settings": [
           { "id": "control", "name": "Control", "type": "choice", "options": ["link", "w_s", "a_d", "space_shift"], "default": "link" },
           { "id": "invert", "name": "Invert", "type": "toggle", "default": false },
@@ -169,6 +171,7 @@
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.125, 0], "normal": [0, -1, 0] }],
         "collision": { "shape": "box", "size": [0.5, 0.25, 0.5] },
         "script": "scripts/hover_jet.lua",
+        "logic": { "inputs": 4, "outputs": 10, "kind": "power" },
         "settings": [
           { "id": "control", "name": "Control", "type": "choice", "options": ["link", "w_s", "a_d", "space_shift"], "default": "link" },
           { "id": "invert", "name": "Invert", "type": "toggle", "default": false },

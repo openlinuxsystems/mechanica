@@ -822,6 +822,15 @@ public partial class PartEditorScreen : Control
         }
     }
 
+    // "logic, power" as node kinds; unknown words are dropped, and an empty list means the default (any kind).
+    private static IReadOnlyList<PortKind>? ParseKinds(string? text)
+    {
+        var kinds = (text ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(w => Enum.TryParse<PortKind>(w, ignoreCase: true, out var k) ? k : (PortKind?)null)
+            .OfType<PortKind>().Distinct().ToList();
+        return kinds.Count == 0 ? null : kinds;
+    }
+
     // Logic and power fields (chunk 10): Connect Tool links in and out, a seat, and the settings players
     // change on each placed part (edited as JSON, like Properties).
     private void AddLogicFields(PartDefinition d)
@@ -830,13 +839,18 @@ public partial class PartEditorScreen : Control
         void SetLogic(string label, Func<LogicDefinition, LogicDefinition> change) => Set(label, x =>
         {
             var logic = change(x.Logic ?? new LogicDefinition());
-            return x with { Logic = logic.Inputs is null && logic.Outputs is null && logic.Use is null ? null : logic };
+            return x with { Logic = logic is { Inputs: null, Outputs: null, Use: null, Kind: null, Accepts: null, Reverse: null, Extra: null } ? null : logic };
         });
         _partGrid.AddNumber("Input links", d.Logic?.Inputs, 0, LogicDefinition.MaxLinks, 1,
             v => SetLogic("Set input links", l => l with { Inputs = (int?)v }), optional: true, fallback: 1);
         _partGrid.AddNumber("Output links", d.Logic?.Outputs, 0, LogicDefinition.MaxLinks, 1,
             v => SetLogic("Set output links", l => l with { Outputs = (int?)v }), optional: true, fallback: 10);
         _partGrid.AddText(Loc.T("Use ({0})", GameInput.Label(InputActions.Interact)), d.Logic?.Use, v => SetLogic("Set use", l => l with { Use = string.IsNullOrWhiteSpace(v) ? null : v }), "toggle, press…");
+        // The Connect Tool's node (UI spec §12): its colour, what may link to it, and the setting right click flips.
+        _partGrid.AddEnum("Node kind", d.Logic?.Kind, v => SetLogic("Set node kind", l => l with { Kind = v }), optional: true);
+        _partGrid.AddText("Takes links from", d.Logic?.Accepts is { } accepts ? string.Join(", ", accepts.Select(k => k.ToString().ToLowerInvariant())) : null,
+            v => SetLogic("Set accepted links", l => l with { Accepts = ParseKinds(v) }), "logic, power, bearing…");
+        _partGrid.AddText("Reverse setting", d.Logic?.Reverse, v => SetLogic("Set reverse setting", l => l with { Reverse = string.IsNullOrWhiteSpace(v) ? null : v.Trim() }), "a toggle setting id");
         _partGrid.AddBool("Seat", d.Seat is not null, v => Document?.Apply(v == true ? "Make seat" : "Remove seat",
             x => x with { Seat = v == true ? x.Seat ?? new SeatDefinition() : null }));
         if (d.Seat is { } seat)

@@ -327,7 +327,8 @@ public sealed partial class ScriptRuntime
         return result.Ok ? DynValue.True : Refused(instance, result.Message ?? result.Code ?? "refused");
     }
 
-    // The joint a part owns (its bearing, piston or suspension side) as {type, other, position, min, max, locked, axis}, or nil.
+    // The joint a part owns (its bearing, piston or suspension side) as {type, other, position, min, max, locked, axis,
+    // reversed}, or nil.
     private DynValue Joint(Script script, Func<Vector3, DynValue> vec, Instance instance, int part)
     {
         if (_motion.FindCreation(instance.Creation) is not { } creation
@@ -338,6 +339,7 @@ public sealed partial class ScriptRuntime
         table.Set("type", DynValue.NewString(link.Connection.Type.ToString().ToLowerInvariant()));
         table.Set("other", DynValue.NewNumber(link.Connection.B));
         table.Set("locked", DynValue.NewBoolean(link.IsLocked));
+        table.Set("reversed", DynValue.NewBoolean(creation.FindPart(part) is { } owner && Core.Logic.PartSettings.Reversed(creation.DefinitionOf(part), owner.Settings)));
         table.Set("axis", vec(JointAxis(creation, link, frame)));
         if ((link.IsLocked ? 0f : _motion.JointPosition(creation, link)) is { } position)
             table.Set("position", DynValue.NewNumber(position));

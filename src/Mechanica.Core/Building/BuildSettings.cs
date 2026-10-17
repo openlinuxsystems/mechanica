@@ -33,6 +33,9 @@ public sealed record BuildSettings
     /// <summary>The Hammer's timings and drags.</summary>
     public HammerSettings Hammer { get; init; } = new();
 
+    /// <summary>The Connect Tool's nodes, lines, drag and tooltips.</summary>
+    public ConnectSettings Connect { get; init; } = new();
+
     /// <summary>The Lift.</summary>
     public LiftSettings Lift { get; init; } = new();
 
@@ -71,6 +74,7 @@ public sealed record BuildSettings
         if (!float.IsFinite(ClearanceScale) || ClearanceScale is <= 0f or > 1f)
             throw new FormatException($"clearance_scale must be in (0, 1] (got {ClearanceScale}).");
         Hammer.Validate();
+        Connect.Validate();
         Lift.Validate();
         Paint.Validate();
         Sledge.Validate();
@@ -134,6 +138,64 @@ public sealed record HammerSettings
             throw new FormatException($"hammer.remove_seconds_by_material.{bad} must be 0 or more (got {entry.Value}).");
         if (!double.IsFinite(RollbackSeconds) || RollbackSeconds < 0)
             throw new FormatException($"hammer.rollback_seconds must be 0 or more (got {RollbackSeconds}).");
+    }
+}
+
+/// <summary>
+/// How connections look and feel (UI spec §9, §10, §12): node size and pulse, line thickness and chevron spacing, the
+/// drag's snap radius, how faint invalid targets get, and how long links flash when a signal changes with the
+/// Connect Tool put away. Sizes are in screen pixels at 1080 p.
+/// </summary>
+public sealed record ConnectSettings
+{
+    /// <summary>Diameter of a connection node, in px (§12: 12 to 16).</summary>
+    public float NodePixels { get; init; } = 14f;
+
+    /// <summary>How much a hovered node grows (§12: 20%).</summary>
+    public float HoverScale { get; init; } = 1.2f;
+
+    /// <summary>Seconds of one pulse of an active node (§12: 0.8).</summary>
+    public double PulseSeconds { get; init; } = 0.8;
+
+    /// <summary>Thickness of a connection line, in px (§12: 3).</summary>
+    public float LineWidth { get; init; } = 3f;
+
+    /// <summary>Pixels between the chevrons along a line (§12: 40).</summary>
+    public float ChevronSpacing { get; init; } = 40f;
+
+    /// <summary>Pixels between lines that join the same two parts, so both show (§12).</summary>
+    public float LaneGap { get; init; } = 5f;
+
+    /// <summary>A drag snaps to the nearest valid node this close to the aim, in m (§10: 0.5).</summary>
+    public float SnapMetres { get; init; } = 0.5f;
+
+    /// <summary>Opacity of targets a drag cannot end on (§9: 30%).</summary>
+    public float InvalidAlpha { get; init; } = 0.3f;
+
+    /// <summary>Seconds a link shows when its signal changes while the Connect Tool is put away (§12: a brief flash).</summary>
+    public double FlashSeconds { get; init; } = 0.6;
+
+    /// <summary>How far from the player connections are drawn, in m.</summary>
+    public float Range { get; init; } = 40f;
+
+    /// <summary>Throws <see cref="FormatException"/> naming the first out-of-range value.</summary>
+    public void Validate()
+    {
+        if (!float.IsFinite(NodePixels) || NodePixels is < 4f or > 64f)
+            throw new FormatException($"connect.node_pixels must be 4 to 64 (got {NodePixels}).");
+        if (!float.IsFinite(HoverScale) || HoverScale is < 1f or > 3f)
+            throw new FormatException($"connect.hover_scale must be 1 to 3 (got {HoverScale}).");
+        foreach (var (value, name) in new[] { (LineWidth, "line_width"), (ChevronSpacing, "chevron_spacing"), (SnapMetres, "snap_metres"), (Range, "range") })
+            BuildSettings.Positive(value, $"connect.{name}");
+        if (!float.IsFinite(LaneGap) || LaneGap < 0f)
+            throw new FormatException($"connect.lane_gap must be 0 or more (got {LaneGap}).");
+        if (!float.IsFinite(InvalidAlpha) || InvalidAlpha is < 0f or > 1f)
+            throw new FormatException($"connect.invalid_alpha must be 0 to 1 (got {InvalidAlpha}).");
+        foreach (var (value, name) in new[] { (PulseSeconds, "pulse_seconds"), (FlashSeconds, "flash_seconds") })
+        {
+            if (!double.IsFinite(value) || value < 0)
+                throw new FormatException($"connect.{name} must be 0 or more (got {value}).");
+        }
     }
 }
 

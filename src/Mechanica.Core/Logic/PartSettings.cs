@@ -78,6 +78,13 @@ public static class PartSettings
         return stored is not null && stored.TryGetValue(id, out var value) ? value : DefaultOf(setting);
     }
 
+    /// <summary>
+    /// True when the part's direction is reversed: it names a reverse setting (<see cref="LogicDefinition.Reverse"/>)
+    /// and that toggle is on.
+    /// </summary>
+    public static bool Reversed(PartDefinition part, IReadOnlyDictionary<string, JsonElement>? stored) =>
+        part.Logic?.Reverse is { } id && Value(part, stored, id) is { ValueKind: JsonValueKind.True };
+
     /// <summary>Every setting's value (stored or default), in the definition's order.</summary>
     public static IReadOnlyList<(string Id, JsonElement Value)> All(PartDefinition part, IReadOnlyDictionary<string, JsonElement>? stored) =>
         [.. (part.Settings ?? []).Select(s => (s.Id!, stored is not null && stored.TryGetValue(s.Id!, out var v) ? v : DefaultOf(s)))];

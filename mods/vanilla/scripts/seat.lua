@@ -14,7 +14,8 @@ local function steering(id, up)
   if math.abs(upright) < 0.7 then
     return nil
   end
-  return upright > 0 and 1 or -1
+  local sign = upright > 0 and 1 or -1
+  return joint.reversed and -sign or sign
 end
 
 local function steer(x)

@@ -395,7 +395,7 @@ public partial class Main : Node3D
         Logic.RegisterActions(Actions.Dispatcher);
         Display = new PartDisplaySync { Name = "Display", Session = Session, Creations = Creations, Scripts = Scripts };
         AddChild(Display);
-        LogicOverlay = new LogicOverlay { Creations = Creations, Players = PlayerSync, Actions = Actions, ReadDeviceInput = ReadDeviceInput, Linking = () => Tools?.Connector.Active == true };
+        LogicOverlay = new LogicOverlay { Creations = Creations, Players = PlayerSync, Actions = Actions, Build = Build, ReadDeviceInput = ReadDeviceInput, Connector = () => Tools?.Connector };
         AddChild(LogicOverlay);
         ForceOverlay = new ForceOverlay { Creations = Creations, Players = PlayerSync, Actions = Actions, ReadDeviceInput = ReadDeviceInput };
         AddChild(ForceOverlay);
@@ -499,7 +499,7 @@ public partial class Main : Node3D
             AddChild(survivalHud);
             worldHud = new Ui.WorldHud
             {
-                Name = "WorldHud", Players = PlayerSync, Actions = Actions, Build = Build, Tool = () => Tools?.Current,
+                Name = "WorldHud", Players = PlayerSync, Actions = Actions, Build = Build, Tool = () => Tools?.Current, Sounds = Sounds,
                 Interaction = () => survivalHud.Interaction()?.Label,
             };
             AddChild(worldHud);
@@ -842,6 +842,7 @@ public partial class Main : Node3D
         };
         AddChild(Tools);
         Tools.Connector.SettingsRequested += (creation, part) => PartSettings?.Open(creation, part);
+        Tools.Connector.SignalOf = LogicOverlay.SignalOf;
     }
 
     private void OnPlayerDespawning(PlayerController player)

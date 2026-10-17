@@ -24,11 +24,13 @@ ends with what a modder needs to make new logic parts.
 
 | Key | What it does |
 |-----|--------------|
-| 7 | Takes the **Connect Tool** in hand. While it is in hand you see every link nearby. |
-| Left click (Connect Tool) | Picks the part under the crosshair as the source. Left click another part of the same creation to link the source to it, or click a part it already feeds to take that link away. The source stays picked, so you can feed several parts in a row. Clicking the source again lets go. |
-| Right click (Connect Tool) | Lets go of the source. |
+| 7 | Takes the **Connect Tool** in hand. While it is in hand every part with logic shows a round **node** and you see every link nearby. Nodes are blue for logic (switches, gates, seats, lights), cyan for power (engines, thrusters, rotors), white with a blue ring for bearings and pistons, and gray for structural parts. A node pulses cyan while its part's signal is on. |
+| Left drag (Connect Tool) | Press on a node and drag: a line follows your aim and snaps to the nearest node it can end on within half a metre. Nodes it cannot end on (another creation, a part with no free input, a kind the part does not take) fade. Let go on a node to link the two, or on a part it already feeds to take that link away. Every bearing you drag over on the way is linked too, so one drag from an engine wires all its wheels. |
+| Left drag on a line | Grabs the line's far end. Let go in the air to disconnect it, or on another node to move it there. |
+| Right click (Connect Tool) | On a bearing's node, reverses which way it turns (the small curved arrow by the node flips). During a drag, cancels it. |
+| Hover (Connect Tool) | On a node, a tooltip shows the part and its kind; on a line, "Source → Target" and its signal. |
 | E | On a part with settings, opens them (a gate's mode, a timer's delay). |
-| F7 | Turns the **Logic Visualizer** on or off. Links are drawn from the source to an arrowhead at the part they feed: cyan while the source is on, blue while it is off. |
+| F7 | Turns the **Logic Visualizer** on or off: links show without the Connect Tool. Each link is a blue line with a cyan core (bright while the source is on) and chevrons pointing from the source to the part it feeds. With both off, a link flashes briefly when its signal changes. |
 | F8 | Opens the **Creation Inspector** for the creation under the crosshair: its mass, bodies, joints, links, and for each part its output, input, settings, who sits in it and whether its script runs or stopped on an error. |
 | F9 | Turns the **force overlay** on or off: an arrow for every push a part script makes, such as a thruster's thrust or a wing's lift (see the [Aero and Propulsion Tutorial](aero-tutorial.md)). |
 | E | Uses what you look at: sit in a seat, flip a switch, press a button. While seated, E stands you up. |
@@ -51,15 +53,17 @@ you also need a gas container with gasoline in it; in Creative engines run witho
 4. **Steering.** Under the front block put a bearing with its rotor facing down, a block under the
    rotor (the axle), and a bearing and a wheel on each side of the axle as at the back. The upright
    bearing is the steering bearing.
-5. **Wire it.** Take the Connect Tool. Click the seat, then the engine, then the steering bearing: the
-   seat now feeds both. Click the engine, then each of the four wheel bearings.
+5. **Wire it.** Take the Connect Tool. Drag from the seat's node to the engine's, then from the seat to
+   the steering bearing: the seat now feeds both. Drag from the engine across all four wheel bearings;
+   each one you pass over is linked.
 6. **Gear.** Aim at the engine and press E. Gear 1 is slow and easy to control; gear 5 is the top
    speed (`speed` in the engine's data). Each gear is a fifth of it.
 7. **Drive.** Look at the seat and press E. W and S are the throttle, A and D steer. With no throttle
    the engine holds the wheels (its `brake`), so the car does not roll away. E stands you up.
 
-If the car drives backwards, the engine faces the wrong way: turn it round. If it steers the wrong way,
-the steering bearing is at the back. A seat only steers bearings that turn about an upright axis, and an
+If the car drives backwards, the engine faces the wrong way: turn it round. If one wheel turns against
+the others, right click its bearing's node with the Connect Tool to reverse it. If it steers the wrong way,
+the steering bearing is at the back (or right click it to reverse it). A seat only steers bearings that turn about an upright axis, and an
 engine only drives bearings whose axis is across its front, so linking the seat to a wheel bearing or the
 engine to the steering bearing does nothing.
 
@@ -73,7 +77,7 @@ Inspector shows an engine's input, so you can tell an empty tank from a broken w
 ## A switch and a piston
 
 1. Put a switch and a piston on a block, and something on the piston's head.
-2. With the Connect Tool, click the switch, then the piston.
+2. With the Connect Tool, drag from the switch's node to the piston's.
 3. Look at the switch and press E. The piston pushes out to the end of its stroke and holds there.
    Press E again and it pulls back.
 

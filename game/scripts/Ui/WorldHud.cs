@@ -47,6 +47,9 @@ public partial class WorldHud : CanvasLayer
     /// <summary>What Use would do now (for example "open the Chest"), or null. Set before adding to the tree.</summary>
     public Func<string?> Interaction { get; init; } = () => null;
 
+    /// <summary>Where the tooltip's tick plays (§10); null plays none.</summary>
+    public Sound.SoundSync? Sounds { get; init; }
+
     /// <summary>True while a menu or panel has the mouse; tests set it.</summary>
     public Func<bool> Covered { get; init; } = () => Input.MouseMode != Input.MouseModeEnum.Captured;
 
@@ -118,7 +121,24 @@ public partial class WorldHud : CanvasLayer
 
         var hit = Build.Settings is { } settings ? HandTool.PartHit(HandTool.Cast(player!, settings.Reach)) : null;
         var aimed = hit is var (node, part) ? (node.Creation.Id, part) : ((int, int)?)null;
-        _hover.Tick(aimed, delta);
+        // A tool's own tooltip (a Connect Tool node or line) takes the part's place.
+        var tip = Tool()?.HoverTip;
+        _hover.Tick(tip is { } t ? t.Key : aimed, delta);
+        if (tip is var (_, title, body))
+        {
+            _aimed = null;
+            if (!_hover.Showing)
+            {
+                HideTooltip();
+                return;
+            }
+            _name.Text = title;
+            _description.Text = body;
+            _description.Visible = body.Length > 0;
+            _key.Visible = _status.Visible = false;
+            ShowTooltip();
+            return;
+        }
         if (aimed != _aimed)
         {
             _aimed = aimed;
@@ -146,6 +166,14 @@ public partial class WorldHud : CanvasLayer
         _key.Visible = _key.Text.Length > 0;
         _status.Text = interactive ? Status(creation, aimedPart, definition) : "";
         _status.Visible = _status.Text.Length > 0;
+        ShowTooltip();
+    }
+
+    // Shows the tooltip beside the crosshair, kept on screen, with a soft tick as it appears (§10).
+    private void ShowTooltip()
+    {
+        if (!_tooltip.Visible)
+            Sounds?.PlayUi("ui_hover");
         _tooltip.Visible = true;
         _tooltip.Modulate = Colors.White with { A = _hover.Opacity };
         _tooltip.ResetSize();
@@ -159,8 +187,11 @@ public partial class WorldHud : CanvasLayer
     private string Status(Core.Creations.Creation creation, int part, Core.Data.PartDefinition definition)
     {
         var bits = new List<string>();
-        if (definition.Logic is not null)
+        if (definition.Logic is { } logic)
         {
+            bits.Add(Loc.T("{0} connection", Game.Logic.ConnectionNodes.KindName(logic.KindOrDefault)));
+            if (logic.Reverse is not null)
+                bits.Add(PartSettings.Reversed(definition, creation.FindPart(part)?.Settings) ? Loc.T("reversed") : Loc.T("forward"));
             if (_inspected is { } p)
                 bits.Add(p.Output != 0 ? Loc.T("Signal on ({0})", $"{p.Output:0.##}") : Loc.T("Signal off"));
             var links = creation.Links.Count(l => l.From == part || l.To == part);

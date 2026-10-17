@@ -42,8 +42,8 @@ stops getting your input.
 ## The HUD
 
 - The **crosshair** is white, turns blue when a click or Use would do something where you aim (a valid
-  place for the Hammer's part, something to use), and pulses cyan over a part with logic when you hold the
-  Connect Tool.
+  place for the Hammer's part, something to use), and pulses cyan over a connection node when you hold the
+  Connect Tool (see the [Logic and Power Tutorial](logic-power-tutorial.md) for dragging links).
 - Aim at a part for a moment and a **tooltip** shows its name, what it is and what Use does. Parts you can
   use, sit in, open or set up add a line with their signal (on or off), how many connections they have and
   their durability.

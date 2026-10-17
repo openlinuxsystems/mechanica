@@ -14,7 +14,7 @@ local function clamp(v)
 end
 
 -- +1 when a positive velocity on the bearing rolls its wheel toward the engine's front, -1 when it rolls it
--- back, nil when the link does not go to a bearing.
+-- back (the other way round on a bearing the player reversed), nil when the link does not go to a bearing.
 local function direction(id)
   local joint = creation.joint(id)
   if not joint or joint.type ~= "rotational" or not joint.axis then
@@ -26,7 +26,8 @@ local function direction(id)
   if math.abs(roll) < 0.5 then
     return nil -- it turns about an upright or lengthwise axis: a steering or other bearing, not a wheel
   end
-  return roll > 0 and 1 or -1
+  local sign = roll > 0 and 1 or -1
+  return joint.reversed and -sign or sign
 end
 
 -- Burns fuel for dt seconds at this throttle; false when the engine is out of fuel.

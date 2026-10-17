@@ -49,11 +49,19 @@ the Part Editor, the Test Sandbox and the world.
 | Joint locked | `#5A6470` | a locked joint in the joint overlay |
 | Signal on | `#00D4FF` | a logic connection whose source is on |
 | Signal off | `#2E86DE` | a logic connection whose source is off |
+| Node logic | `#2E86DE` | a logic connection node with the Connect Tool (solid) |
+| Node power | `#00D4FF` | a power connection node (solid) |
+| Node bearing | `#FFFFFF` | a bearing connection node, with a blue ring |
+| Node structural | `#C3CBD6` | a structural or weld-related connection node |
 | Force arrow | `#00D4FF` | forces in the force overlay (aero, thrust) |
 | Torque arrow | `#A47CF3` | torques in the force overlay |
 | Preview background | `#1A2332` | the background of 3D previews |
 
 Tool previews (the hammer's ghost) are cyan at 35% opacity.
+
+Connection lines (the Connect Tool, UI spec §12) are 3 px blue with a 1 px cyan core and a chevron every 40 px
+pointing from source to target. Nodes are 14 px, grow 20% under the crosshair and pulse cyan every 0.8 s while
+their part's signal is on. Targets a drag cannot end on fade to 30%; a refused link fades out in the error red.
 
 ## Script editor
 

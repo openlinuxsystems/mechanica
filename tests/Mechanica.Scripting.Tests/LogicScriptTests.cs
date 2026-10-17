@@ -182,6 +182,22 @@ public sealed class LogicScriptTests : IDisposable
     }
 
     [Fact]
+    public void ReversedBearingsTurnTheOtherWay()
+    {
+        var (creation, seat, _, wheels, steering) = BuildCar();
+        var (reversed, side) = wheels[0];
+        Configure(creation, reversed, "reverse", true);
+        Configure(creation, steering, "reverse", true);
+        _runtime.Seats!.Sit(Peer, Car, seat);
+        _input = new PlayerInput(1, 1, 0, 0, false, false);
+        Steps(3);
+        Assert.Equal(new JointMotor(side * 15f, 120f), LastMotor(reversed));
+        foreach (var (bearing, other) in wheels.Skip(1))
+            Assert.Equal(new JointMotor(-other * 15f, 120f), LastMotor(bearing));
+        Assert.Equal(-MathF.PI / 6, LastMotor(steering).Target!.Value, 4);
+    }
+
+    [Fact]
     public void AnEngineBurnsFuelFromTheCreationsGasContainers()
     {
         _runtime.Creative = false;
