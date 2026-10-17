@@ -8,13 +8,14 @@ using Mechanica.Game.Player;
 namespace Mechanica.Game.Menus;
 
 /// <summary>
-/// The main menu's New game screen: the world's name, Survival or Creative, an optional seed (blank picks
+/// The main menu's New game screen: the world's name, Survival or Creative, the difficulty (Survival), an optional seed (blank picks
 /// one), whether to open the world to the LAN, on which port, and which character the player plays as.
 /// </summary>
 public partial class NewGameScreen : PanelContainer
 {
     private LineEdit _name = null!;
     private OptionButton _mode = null!;
+    private OptionButton _difficulty = null!;
     private LineEdit _seed = null!;
     private CheckBox _lan = null!;
     private LineEdit _port = null!;
@@ -61,6 +62,10 @@ public partial class NewGameScreen : PanelContainer
         _mode = Row(grid, "Mode", new OptionButton());
         _mode.AddItem("Survival", (int)GameMode.Survival);
         _mode.AddItem("Creative", (int)GameMode.Creative);
+        _difficulty = Row(grid, "Difficulty", new OptionButton { Name = "Difficulty", TooltipText = "Easy: bots hit softer and raids are smaller and rarer. Kept with the world." });
+        _difficulty.AddItem("Normal", (int)Difficulty.Normal);
+        _difficulty.AddItem("Easy", (int)Difficulty.Easy);
+        _mode.ItemSelected += _ => _difficulty.Disabled = (GameMode)_mode.GetSelectedId() == GameMode.Creative;
         _seed = Row(grid, "Seed", new LineEdit { PlaceholderText = "random" });
         _lan = Row(grid, "Open to LAN", new CheckBox());
         _port = Row(grid, "Port", new LineEdit { Text = NetProtocol.DefaultPort.ToString() });
@@ -90,7 +95,14 @@ public partial class NewGameScreen : PanelContainer
     }
 
     /// <summary>Picks Survival or Creative.</summary>
-    public void SetMode(GameMode mode) => _mode.Select(_mode.GetItemIndex((int)mode));
+    public void SetMode(GameMode mode)
+    {
+        _mode.Select(_mode.GetItemIndex((int)mode));
+        _difficulty.Disabled = mode == GameMode.Creative;
+    }
+
+    /// <summary>Picks how hard a Survival world is.</summary>
+    public void SetDifficulty(Difficulty difficulty) => _difficulty.Select(_difficulty.GetItemIndex((int)difficulty));
 
     /// <summary>Checks the boxes and raises <see cref="StartRequested"/>.</summary>
     public void Start()
@@ -108,7 +120,7 @@ public partial class NewGameScreen : PanelContainer
             // A number is used as it is; any other text is turned into one, so "island" is always the same world.
             seed = long.TryParse(seedText, out var number) ? number : StableHash(seedText);
         }
-        var options = LaunchOptions.Offline with { Seed = seed, GameMode = (GameMode)_mode.GetSelectedId() };
+        var options = LaunchOptions.Offline with { Seed = seed, GameMode = (GameMode)_mode.GetSelectedId(), Difficulty = (Difficulty)_difficulty.GetSelectedId() };
         if (_lan.ButtonPressed)
         {
             if (!NetEndpoint.TryParsePort(_port.Text.Trim(), out var port))

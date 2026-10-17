@@ -242,12 +242,13 @@ public partial class PlayerSync : Node
 
     /// <summary>Host → client: a player exists.</summary>
     [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-    private void ClientSpawn(int peer, Vector3 position, float yaw)
+    private void ClientSpawn(int peer, Vector3 position, float yaw, string name)
     {
         if (Session.IsHost || _players.ContainsKey(peer))
             return;
         var local = peer == Session.LocalPeer;
         var player = AddPlayer(peer, new Transform3D(new Basis(Vector3.Up, yaw), position));
+        player.DisplayName = Core.Saves.PlayerProfile.CleanName(name);
         player.Simulated = local;
         player.PushesBodies = false;
         if (local)
@@ -284,9 +285,9 @@ public partial class PlayerSync : Node
         PlayerSpawned?.Invoke(player);
 
         foreach (var other in Session.ReadyPeers.Where(p => p != peer))
-            RpcId(other, MethodName.ClientSpawn, peer, spawn.Origin, player.Rotation.Y);
+            RpcId(other, MethodName.ClientSpawn, peer, spawn.Origin, player.Rotation.Y, player.DisplayName);
         foreach (var existing in _players.Values)
-            RpcId(peer, MethodName.ClientSpawn, existing.PeerId, existing.GlobalPosition, existing.Rotation.Y);
+            RpcId(peer, MethodName.ClientSpawn, existing.PeerId, existing.GlobalPosition, existing.Rotation.Y, existing.DisplayName);
     }
 
     private void HostRemovePeer(int peer)
@@ -353,7 +354,7 @@ public partial class PlayerSync : Node
 
     private PlayerController AddPlayer(int peer, Transform3D transform)
     {
-        var player = new PlayerController { Name = $"Player{peer}", PeerId = peer, WaterLevel = WaterLevel };
+        var player = new PlayerController { Name = $"Player{peer}", PeerId = peer, WaterLevel = WaterLevel, DisplayName = Session.ProfileOf(peer)?.Name ?? $"Player {peer}" };
         PlayersRoot.AddChild(player);
         player.GlobalTransform = transform;
         player.CurrentInput = PlayerInput.None with { Yaw = player.Rotation.Y };

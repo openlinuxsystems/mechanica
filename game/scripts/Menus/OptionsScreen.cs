@@ -1,7 +1,9 @@
 using Godot;
 using Mechanica.Core.Input;
+using Mechanica.Core.Net;
 using Mechanica.Core.Saves;
 using Mechanica.Core.Settings;
+using Mechanica.Core.Survival;
 using Mechanica.Core.Ui;
 using Mechanica.Game.Player;
 using Mechanica.Game.Settings;
@@ -43,6 +45,9 @@ public partial class OptionsScreen : ToolWindow
 
     /// <summary>The profile file for the player's name; null uses <see cref="Main.ProfilePath"/>.</summary>
     public string? ProfileFile { get; init; }
+
+    /// <summary>The world's game mode and difficulty when opened over a world (shown, not changed, on Gameplay); null from the main menu.</summary>
+    public (GameMode Mode, Difficulty Difficulty)? World { get; init; }
 
     /// <summary>The settings as edited so far.</summary>
     public UserSettings Draft => _draft;
@@ -178,7 +183,7 @@ public partial class OptionsScreen : ToolWindow
     {
         if (_revert is not null)
             _revert.Cancel();
-        GameSettings.Save(_draft);
+        GameSettings.Save(WithSeen(_draft));
         var profile = Main.UserProfile(_name.Text, ProfilePath);
         _name.Text = profile.Name;
     }
@@ -187,21 +192,21 @@ public partial class OptionsScreen : ToolWindow
     public void ApplyWindow()
     {
         _revertTo = GameSettings.Current.Graphics;
-        GameSettings.Apply(_draft);
+        GameSettings.Apply(WithSeen(_draft));
         GameSettings.ApplyWindow();
         _revertLeft = RevertSeconds;
         _revert = ConfirmDialog.Ask(this, "Display settings", $"Keep these display settings? They go back in {RevertSeconds:0} seconds.",
             "Keep", () =>
             {
                 _revert = null;
-                GameSettings.Save(_draft);
+                GameSettings.Save(WithSeen(_draft));
                 UpdateApply();
             },
             () =>
             {
                 _revert = null;
                 _draft = _draft with { Graphics = _draft.Graphics with { Resolution = _revertTo.Resolution, DisplayMode = _revertTo.DisplayMode, VSync = _revertTo.VSync } };
-                GameSettings.Apply(_draft);
+                GameSettings.Apply(WithSeen(_draft));
                 GameSettings.ApplyWindow();
                 RebuildPage("Graphics", BuildGraphics);
                 UpdateApply();
@@ -271,7 +276,7 @@ public partial class OptionsScreen : ToolWindow
     private void KeymapChanged()
     {
         _draft = _draft.WithKeymap(_keymap);
-        GameSettings.Apply(_draft);
+        GameSettings.Apply(WithSeen(_draft));
         RefreshBindings();
     }
 
@@ -324,7 +329,7 @@ public partial class OptionsScreen : ToolWindow
         });
         _custom = new VBoxContainer { Visible = g.Preset == Quality.Custom };
         page.AddChild(_custom);
-        Slider(_custom, "View distance", g.ViewDistance, GraphicsSettings.MinViewDistance, GraphicsSettings.MaxViewDistance, 50, v => SetGraphics(x => x with { ViewDistance = v }), v => $"{v:0} m");
+        Slider(_custom, "View distance", g.ViewDistance, GraphicsSettings.MinViewDistance, GraphicsSettings.MaxViewDistance, 32, v => SetGraphics(x => x with { ViewDistance = v }), v => $"{v:0} m");
         Option(_custom, "Shadows", levels, (int)g.Shadows, i => SetGraphics(x => x with { Shadows = (Quality)i }));
         Option(_custom, "Anti-aliasing", levels, (int)g.Antialiasing, i => SetGraphics(x => x with { Antialiasing = (Quality)i }));
         Option(_custom, "Textures", levels, (int)g.Textures, i => SetGraphics(x => x with { Textures = (Quality)i }));
@@ -386,10 +391,27 @@ public partial class OptionsScreen : ToolWindow
 
     private void BuildGameplay(VBoxContainer page)
     {
+        if (World is { } world)
+        {
+            page.AddChild(new Label { Text = "This world", ThemeTypeVariation = "TitleLabel" });
+            var difficulty = world.Mode == GameMode.Creative ? "None (Creative)" : world.Difficulty.ToString();
+            Row(page, "Difficulty", "Chosen when the world was made, in New Game; it stays with the world.")
+                .AddChild(new Label { Name = "WorldDifficulty", Text = difficulty, ThemeTypeVariation = "SecondaryLabel" });
+        }
         page.AddChild(new Label { Text = "Camera", ThemeTypeVariation = "TitleLabel" });
         Slider(page, "Mouse sensitivity", _draft.MouseSensitivity * 1000, 0.2f, 20f, 0.1f, v => Live(_draft with { MouseSensitivity = v / 1000 }), v => $"{v:0.0}");
         Toggle(page, "Invert Y", _draft.InvertY, v => Live(_draft with { InvertY = v }));
         Slider(page, "Field of view", _draft.FieldOfView, UserSettings.MinFieldOfView, UserSettings.MaxFieldOfView, 1, v => Live(_draft with { FieldOfView = v }), v => $"{v:0}°");
+        page.AddChild(new Label { Text = "Help", ThemeTypeVariation = "TitleLabel" });
+        Toggle(page, "Show tutorial hints", _draft.Gameplay.ShowTutorialHints, v => Live(_draft with { Gameplay = _draft.Gameplay with { ShowTutorialHints = v } }),
+            "A short tip the first time you start, pick up each tool or open each screen.");
+        var again = new Button { Name = "Show tips again", Text = "Show tips again", Disabled = (GameSettings.Current.Gameplay.SeenHints?.Count ?? 0) == 0 };
+        again.Pressed += () => ConfirmDialog.Ask(this, "Show tips again", "Show every tutorial tip again as you play?", "Show again", () =>
+        {
+            GameSettings.Save(GameSettings.Current with { Gameplay = GameSettings.Current.Gameplay with { SeenHints = null } });
+            again.Disabled = true;
+        }, destructive: false);
+        Row(page, "Tips already seen", "Tips show once each. This brings them all back.").AddChild(again);
         page.AddChild(new Label { Text = "Saving", ThemeTypeVariation = "TitleLabel" });
         var choices = GameplaySettings.AutoSaveChoices;
         Option(page, "Auto-save", [.. choices.Select(m => m == 0 ? "Off" : $"Every {m} min")], choices.ToList().IndexOf(_draft.Gameplay.AutoSaveMinutes),
@@ -397,6 +419,13 @@ public partial class OptionsScreen : ToolWindow
         page.AddChild(new Label { Text = "Multiplayer", ThemeTypeVariation = "TitleLabel" });
         Slider(page, "Max players (host)", _draft.Gameplay.MaxPlayers, GameplaySettings.MinPlayers, GameplaySettings.MaxMaxPlayers, 1,
             v => Live(_draft with { Gameplay = _draft.Gameplay with { MaxPlayers = (int)v } }), v => $"{v:0}");
+        var password = new LineEdit
+        {
+            Name = "Server password", Text = _draft.Gameplay.ServerPassword, Secret = true, MaxLength = NetPassword.MaxLength,
+            PlaceholderText = "none: anyone on your network can join", SizeFlagsHorizontal = SizeFlags.ExpandFill,
+        };
+        password.TextChanged += t => Live(_draft with { Gameplay = _draft.Gameplay with { ServerPassword = t } });
+        Row(page, "Server password (host)", "Players must type this to join a world you open to the LAN. It is not encrypted, so don't reuse a real password.").AddChild(password);
         var row = Row(page, "Player name", "Other players see this name. Saved worlds know you by your profile, so you can change it any time.");
         _name = new LineEdit { Text = Main.UserProfile(null, ProfilePath).Name, MaxLength = PlayerProfile.MaxNameLength, SizeFlagsHorizontal = SizeFlags.ExpandFill };
         row.AddChild(_name);
@@ -407,6 +436,8 @@ public partial class OptionsScreen : ToolWindow
     private void BuildInterface(VBoxContainer page)
     {
         Toggle(page, "Show the tool bar and key hints", _draft.Interface.ShowHotbar, v => Live(_draft with { Interface = _draft.Interface with { ShowHotbar = v } }));
+        Toggle(page, "Show player names", _draft.Interface.ShowPlayerNames, v => Live(_draft with { Interface = _draft.Interface with { ShowPlayerNames = v } }),
+            "Other players' names over their heads.");
     }
 
     // ---- Shared ----
@@ -414,8 +445,11 @@ public partial class OptionsScreen : ToolWindow
     private void Live(UserSettings settings)
     {
         _draft = settings.Clamped();
-        GameSettings.Apply(_draft with { Graphics = _draft.Graphics with { Resolution = WindowApplied.Resolution, DisplayMode = WindowApplied.DisplayMode, VSync = WindowApplied.VSync } });
+        GameSettings.Apply(WithSeen(_draft) with { Graphics = _draft.Graphics with { Resolution = WindowApplied.Resolution, DisplayMode = WindowApplied.DisplayMode, VSync = WindowApplied.VSync } });
     }
+
+    // Tips seen while Options is open (it can be opened over the world) are kept, not undone by the draft.
+    private static UserSettings WithSeen(UserSettings s) => s with { Gameplay = s.Gameplay with { SeenHints = GameSettings.Current.Gameplay.SeenHints } };
 
     private void AskReset()
     {

@@ -214,7 +214,7 @@ public partial class Main : Node3D
         var mods = Mods ??= LoadMods();
         var save = Save ??= TakeMenuSave() ?? ReadSave(Options.LoadPath);
         if (save is not null && Options.Mode != SessionMode.Join)
-            Options = Options with { Seed = save.Seed, GameMode = save.Mode };
+            Options = Options with { Seed = save.Seed, GameMode = save.Mode, Difficulty = save.Difficulty };
         else
             Save = save = null;
         var profile = Profile ??= LoadProfile(Options.PlayerName);
@@ -315,6 +315,7 @@ public partial class Main : Node3D
             Inventory = Inventory,
             Catalog = new LoadedParts(this),
             Mode = Options.GameMode,
+            Difficulty = Options.Difficulty,
         };
         // Before building's actions, so building is paid for in Survival.
         Survival.RegisterActions(Actions.Dispatcher);
@@ -436,14 +437,22 @@ public partial class Main : Node3D
             });
             var questLog = new QuestHud { Name = "QuestHud", Quests = Quests, Actions = Actions, Players = PlayerSync };
             AddChild(questLog);
+            AddChild(new Ui.TutorialHints
+            {
+                Name = "TutorialHints",
+                Tool = () => LocalPlayer is null ? null : Tools?.Current.Name,
+                Screens = [("inventory", () => inventory.IsOpen), ("logbook", () => questLog.IsOpen)],
+            });
             // F1 opens the page for what the player is doing.
             AddChild(new PauseMenu
             {
                 Name = "PauseMenu", Session = Session, Saves = Saves, Lan = Lan,
                 HelpTopic = () => questLog.IsOpen ? "quests.md" : inventory.IsOpen ? "survival.md" : "playing.md",
+                World = () => Survival.Own is { } own ? (own.Mode, own.Difficulty) : null,
             });
             AddChild(PartSettings);
             AddChild(new RaidBanner { Name = "RaidBanner", Bots = Bots });
+            AddChild(new Ui.Nameplates { Name = "Nameplates", Players = PlayerSync });
         }
 
         Start(Options);
@@ -452,6 +461,10 @@ public partial class Main : Node3D
     /// <summary>Starts the session <paramref name="options"/> describe. Errors are logged and leave the game offline.</summary>
     public void Start(LaunchOptions options)
     {
+        // A host without --password follows Options, so a changed password counts from the next join.
+        Session.Password = options.Password ?? "";
+        if (options.Mode == SessionMode.Host && options.Password is null)
+            Session.PasswordFrom = () => Settings.GameSettings.Current.Gameplay.ServerPassword;
         var error = options.Mode switch
         {
             SessionMode.Host => Session.Host(options.Port, options.MaxPlayers),
@@ -650,7 +663,8 @@ public partial class Main : Node3D
         Session.MaxPlayers,
         Options!.GameMode.ToString().ToLowerInvariant(),
         NetProtocol.Version,
-        [.. Content!.Mods.Select(m => $"{m.Id} {m.Version}")]);
+        [.. Content!.Mods.Select(m => $"{m.Id} {m.Version}")],
+        Session.Password.Length > 0);
 
     private static LaunchOptions ReadCommandLine()
     {

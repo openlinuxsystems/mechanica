@@ -159,6 +159,7 @@ public partial class SaveSync : Node
             Name = string.IsNullOrWhiteSpace(name) ? WorldName : name.Trim(),
             SavedAt = DateTimeOffset.UtcNow,
             Mode = Survival.Mode,
+            Difficulty = Survival.Actions?.Difficulty ?? Survival.Difficulty,
             Seed = World.Seed,
             Time = runtime.Time,
             Mods = content.Mods,

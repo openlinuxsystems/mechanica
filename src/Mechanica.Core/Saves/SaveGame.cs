@@ -61,6 +61,9 @@ public sealed record SaveGame
     /// <summary>The game mode the world plays in.</summary>
     public GameMode Mode { get; init; } = GameMode.Survival;
 
+    /// <summary>How hard the world is; missing in older saves (Normal).</summary>
+    public Difficulty Difficulty { get; init; } = Difficulty.Normal;
+
     /// <summary>World generation seed.</summary>
     public long Seed { get; init; }
 
@@ -125,6 +128,7 @@ public sealed record SaveGame
             Name = Name,
             SavedAt = SavedAt,
             Mode = Mode,
+            Difficulty = Difficulty == Difficulty.Normal ? null : Difficulty,
             Seed = Seed,
             Time = Time > 0 ? Time : null,
             Mods = [.. Mods.Select(m => new ModData { Id = m.Id, Version = m.Version })],
@@ -261,6 +265,7 @@ public sealed record SaveGame
             Name = string.IsNullOrWhiteSpace(data.Name) ? Path.GetFileNameWithoutExtension(file) : data.Name.Trim(),
             SavedAt = data.SavedAt ?? DateTimeOffset.MinValue,
             Mode = data.Mode!.Value,
+            Difficulty = data.Difficulty ?? Difficulty.Normal,
             Seed = data.Seed!.Value,
             Time = data.Time ?? 0,
             Mods = [.. (data.Mods ?? []).Where(m => m?.Id is not null).Select(m => new ModStamp(m.Id!, m.Version ?? ""))],
@@ -286,6 +291,7 @@ public sealed record SaveGame
         public string? Name { get; init; }
         public DateTimeOffset? SavedAt { get; init; }
         public GameMode? Mode { get; init; }
+        public Difficulty? Difficulty { get; init; }
         public long? Seed { get; init; }
         public double? Time { get; init; }
         public List<ModData>? Mods { get; init; }

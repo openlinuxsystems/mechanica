@@ -1,4 +1,5 @@
 using Godot;
+using Mechanica.Game.Ui;
 using Mechanica.Core.Data;
 using Mechanica.Core.Input;
 using Mechanica.Core.Quests;
@@ -49,7 +50,7 @@ public partial class QuestHud : CanvasLayer
 
     public override void _Ready()
     {
-        _log = new PanelContainer { Name = "QuestLog", MouseFilter = Control.MouseFilterEnum.Stop };
+        _log = UiInput.KeepMouse(new PanelContainer { Name = "QuestLog" });
         AddChild(_log);
         _log.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.TopRight, Control.LayoutPresetMode.KeepSize, 12);
         _log.GrowHorizontal = Control.GrowDirection.Begin;

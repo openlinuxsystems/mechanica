@@ -87,7 +87,7 @@ public sealed class RaidDirector(RaidTable table, BotActions bots, SurvivalActio
     {
         var value = survival.CropValue();
         var players = Math.Max(1, survival.Players.Count());
-        if (FarmTarget() is not { } target || table.Plan(value, players, level) is not { } plan)
+        if (FarmTarget() is not { } target || table.Plan(value, players, level, survival.Rules.RaidBudget) is not { } plan)
             return null;
         Current = new RaidView(_nextId++, plan.Level, plan.Budget, value, players, RaidPhases.Warning, target.ToVec3(), plan.Bots.Count, plan.Bots);
         PhaseEnds = world.Now + table.Warning;
@@ -160,7 +160,7 @@ public sealed class RaidDirector(RaidTable table, BotActions bots, SurvivalActio
                 bots.Remove(id);
         }
         _raiders.Clear();
-        _cooldownUntil = world.Now + table.Cooldown;
+        _cooldownUntil = world.Now + table.Cooldown * survival.Rules.RaidCooldown;
         Current = RaidView.None;
         Changed?.Invoke(Current);
     }

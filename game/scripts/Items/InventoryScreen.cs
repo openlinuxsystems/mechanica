@@ -52,7 +52,7 @@ public partial class InventoryScreen : CanvasLayer
     public override void _Ready()
     {
         Layer = 5;
-        _root = new PanelContainer { Name = "Panel", Visible = false };
+        _root = UiInput.KeepMouse(new PanelContainer { Name = "Panel", Visible = false });
         AddChild(_root);
         _root.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.Center, Control.LayoutPresetMode.KeepSize);
         var columns = new HBoxContainer();

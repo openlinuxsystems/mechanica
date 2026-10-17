@@ -128,6 +128,10 @@ public partial class MenuTest : StagedTest
             screen.Seed.Text = "42";
             screen.Start();
             Check(Main.MenuOptions is { Mode: SessionMode.Host, Port: NetProtocol.DefaultPort, Seed: 42 }, $"Open to LAN hosts ({Main.MenuOptions})");
+            screen.SetMode(GameMode.Survival);
+            screen.SetDifficulty(Difficulty.Easy);
+            screen.Start();
+            Check(Main.MenuOptions is { GameMode: GameMode.Survival, Difficulty: Difficulty.Easy }, $"Survival can be Easy ({Main.MenuOptions})");
             screen.WorldName.Text = "";
             Main.MenuOptions = null;
             screen.Start();

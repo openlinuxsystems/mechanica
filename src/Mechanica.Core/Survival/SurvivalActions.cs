@@ -78,6 +78,12 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     /// <summary>Creative or Survival. The host sets it before players join.</summary>
     public GameMode Mode { get; set; } = GameMode.Survival;
 
+    /// <summary>How hard the world is; it scales bot damage and raids (<see cref="SurvivalSettings.Difficulties"/>).</summary>
+    public Difficulty Difficulty { get; set; } = Difficulty.Normal;
+
+    /// <summary>The multipliers of <see cref="Difficulty"/>.</summary>
+    public DifficultySettings Rules => settings.For(Difficulty);
+
     /// <summary>The numbers in use.</summary>
     public SurvivalSettings Settings => settings;
 
@@ -161,7 +167,7 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         var wait = v.Dead ? Math.Max(0, settings.RespawnDelay - (float)(world.Now - v.DiedAt)) : 0f;
         var slowFor = (float)Math.Max(0, v.SlowUntil - world.Now);
         return new VitalsView(peer, v.Health, settings.MaxHealth, v.Dead, wait, BedOf(peer) is not null, Mode,
-            slowFor > 0 ? v.SlowFactor : 1f, slowFor);
+            slowFor > 0 ? v.SlowFactor : 1f, slowFor, Difficulty);
     }
 
     /// <summary>
@@ -194,6 +200,8 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
             return 0f;
         if (Mode == GameMode.Creative || v.Dead || !(amount > 0) || !float.IsFinite(amount))
             return v.Health;
+        if (cause == "bot")
+            amount *= Rules.BotDamage;
         var lost = Math.Min(v.Health, amount);
         v.Health -= lost;
         Hurt?.Invoke(peer, lost, cause);

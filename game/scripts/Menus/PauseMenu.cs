@@ -40,6 +40,9 @@ public partial class PauseMenu : CanvasLayer
     /// <summary>The help page for what the player is doing now (<c>quests.md</c>, ...).</summary>
     public Func<string> HelpTopic { get; init; } = () => "playing.md";
 
+    /// <summary>The world's game mode and difficulty, for Options to show, or null before they are known.</summary>
+    public Func<(Core.Survival.GameMode Mode, Core.Survival.Difficulty Difficulty)?> World { get; init; } = () => null;
+
     /// <summary>True while the menu is shown.</summary>
     public bool IsOpen => _root.Visible;
 
@@ -58,7 +61,7 @@ public partial class PauseMenu : CanvasLayer
         _root = new CenterContainer { Name = "Menu", Visible = false };
         _root.SetAnchorsPreset(Control.LayoutPreset.FullRect);
         AddChild(_root);
-        _panel = new PanelContainer();
+        _panel = UiInput.KeepMouse(new PanelContainer());
         _root.AddChild(_panel);
         var column = new VBoxContainer { CustomMinimumSize = new Vector2(340, 0) };
         _panel.AddChild(column);
@@ -172,6 +175,7 @@ public partial class PauseMenu : CanvasLayer
             _status.Text = "Enter a port from 1 to 65535.";
             return;
         }
+        Session.PasswordFrom = () => Settings.GameSettings.Current.Gameplay.ServerPassword;
         _status.Text = Session.Host(port, Settings.GameSettings.Current.Gameplay.MaxPlayers) == Error.Ok ? "" : Session.LastMessage;
     }
 
@@ -190,7 +194,8 @@ public partial class PauseMenu : CanvasLayer
     {
         if (_saveScreen is not null)
             return;
-        var holder = new CenterContainer();
+        // The whole screen behind a window opened from the menu is its: a stray click or wheel there must not close everything.
+        var holder = UiInput.KeepMouse(new CenterContainer());
         holder.SetAnchorsPreset(Control.LayoutPreset.FullRect);
         var screen = new Saves.SaveScreen { Saves = Saves };
         screen.CloseRequested += () =>
@@ -206,7 +211,7 @@ public partial class PauseMenu : CanvasLayer
             GetTree().ChangeSceneToFile(MainMenu.WorldScene);
         };
         holder.AddChild(screen);
-        _root.AddChild(holder);
+        AddChild(holder);
         _saveScreen = holder;
         _panel.Visible = false;
     }
@@ -215,9 +220,10 @@ public partial class PauseMenu : CanvasLayer
     public OptionsScreen OpenOptions()
     {
         _saveScreen?.QueueFree();
-        var holder = new CenterContainer();
+        // The whole screen behind a window opened from the menu is its: a stray click or wheel there must not close everything.
+        var holder = UiInput.KeepMouse(new CenterContainer());
         holder.SetAnchorsPreset(Control.LayoutPreset.FullRect);
-        var screen = new OptionsScreen();
+        var screen = new OptionsScreen { World = World() };
         screen.CloseRequested += () =>
         {
             holder.QueueFree();
@@ -225,7 +231,7 @@ public partial class PauseMenu : CanvasLayer
             _panel.Visible = true;
         };
         holder.AddChild(screen);
-        _root.AddChild(holder);
+        AddChild(holder);
         _saveScreen = holder;
         _panel.Visible = false;
         return screen;

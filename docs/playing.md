@@ -49,11 +49,15 @@ stops getting your input.
 - **Graphics**: resolution, display mode (windowed, borderless, fullscreen) and VSync, which change
   when you press **Apply** and go back after 15 seconds unless you keep them; a quality preset (Low,
   Medium, High, Ultra, or Custom for view distance, shadows, anti-aliasing, textures and effects); UI
-  scale from 75% to 150%.
+  scale from 75% to 150%. View distance (128 to 1024 m) is how far you see: the ground around players
+  is simulated out to 128 m, and past that the land and its rocks and trees are drawn as scenery you
+  can't touch, fading into fog at the view distance.
 - **Audio**: master, music, sound effects and interface volume, mute all, and the output device.
-- **Gameplay**: mouse sensitivity, invert Y, field of view, auto-save (off, or every 5, 10 or 15
-  minutes while you host), the most players a world you host takes, and your player name.
-- **Interface**: show or hide the tool bar and key hints.
+- **Gameplay**: over a world, its difficulty (chosen in New Game, see [Survival](survival.md#difficulty)); mouse sensitivity, invert Y, field of view, tutorial hints (a short tip at the top of
+  the screen the first time you start, pick up each tool or open each screen; **Show tips again** brings
+  back the ones you have seen; the tips are in `game/data/tutorial.json`), auto-save (off, or every 5, 10 or 15
+  minutes while you host), the most players a world you host takes, the server password for worlds you host, and your player name.
+- **Interface**: show or hide the tool bar and key hints, and other players' names over their heads.
 
 Everything else applies as you change it. **Reset to Defaults** resets the open tab after asking, and
 closing Options saves your settings in `settings.json` in the game's user data folder. Settings are
@@ -71,6 +75,10 @@ Everyone plays in one world: the host's. From the menu (Esc), **Open to LAN** le
 network join; they see your world under **Join game** in the main menu, or can type your address and
 port (27460 unless you changed it). Players outside your network join by address once the port is
 forwarded to you. Quest progress is shared by everyone in the world.
+
+To keep strangers out, set a **Server password** in Options, Gameplay (or start with `--password text`).
+Players then type it in the password box on **Join game**; the list marks worlds that need one. A changed
+password counts from the next player who joins. The password is sent unencrypted, so don't reuse a real one.
 
 ## Saving
 

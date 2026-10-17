@@ -7,12 +7,14 @@ namespace Mechanica.Game.Menus;
 
 /// <summary>
 /// The main menu's Join game screen: games found on the LAN (with their world, host, players and mode),
-/// and a box for an address and port. A game running another version is listed but can't be picked.
+/// a box for an address and port, and one for the world's password. A game running another version is listed
+/// but can't be picked; one that needs a password says so.
 /// </summary>
 public partial class JoinScreen : PanelContainer
 {
     private ItemList _list = null!;
     private LineEdit _address = null!;
+    private LineEdit _password = null!;
     private Label _status = null!;
     private List<LanEntry> _shown = [];
 
@@ -30,6 +32,12 @@ public partial class JoinScreen : PanelContainer
 
     /// <summary>The address box.</summary>
     public LineEdit Address => _address;
+
+    /// <summary>The password box: what this player sends to a world that has one.</summary>
+    public LineEdit PasswordBox => _password;
+
+    /// <summary>The password to send, as typed.</summary>
+    public string Password => _password.Text;
 
     /// <summary>Why Join did nothing, or empty.</summary>
     public string Status => _status.Text;
@@ -49,6 +57,13 @@ public partial class JoinScreen : PanelContainer
         _address = new LineEdit { PlaceholderText = $"address:port (port {NetProtocol.DefaultPort} if left out)", SizeFlagsHorizontal = SizeFlags.ExpandFill };
         _address.TextSubmitted += _ => JoinAddress();
         row.AddChild(_address);
+        _password = new LineEdit
+        {
+            Name = "Password", Secret = true, PlaceholderText = "password, if the world has one", MaxLength = NetPassword.MaxLength,
+            CustomMinimumSize = new Vector2(200, 0),
+        };
+        _password.TextSubmitted += _ => JoinAddress();
+        row.AddChild(_password);
         _status = new Label { ThemeTypeVariation = "ErrorLabel", AutowrapMode = TextServer.AutowrapMode.WordSmart };
         column.AddChild(_status);
         var buttons = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.End };
@@ -84,6 +99,11 @@ public partial class JoinScreen : PanelContainer
             _status.Text = $"That game runs another version of {Core.MechanicaInfo.GameName} (protocol {entry.Session.Protocol}, this is {NetProtocol.Version}).";
         else if (!entry.Session.HasRoom)
             _status.Text = "That game is full.";
+        else if (entry.Session.Password && _password.Text.Length == 0)
+        {
+            _status.Text = "That game needs a password. Type it in the password box.";
+            _password.GrabFocus();
+        }
         else
             JoinRequested?.Invoke(entry.Endpoint);
     }
@@ -107,7 +127,7 @@ public partial class JoinScreen : PanelContainer
         foreach (var entry in _shown)
         {
             var s = entry.Session;
-            var text = $"{s.World}  ·  {s.Host}  ·  {s.Players}/{s.MaxPlayers} players  ·  {s.Mode}  ·  {entry.Endpoint}";
+            var text = $"{s.World}  ·  {s.Host}  ·  {s.Players}/{s.MaxPlayers} players  ·  {s.Mode}{(s.Password ? "  ·  password" : "")}  ·  {entry.Endpoint}";
             var index = _list.AddItem(s.Compatible ? text : $"{text}  (other version)");
             _list.SetItemTooltip(index, s.Mods.Count == 0 ? "No mods" : "Mods: " + string.Join(", ", s.Mods));
             if (!s.Compatible || !s.HasRoom)

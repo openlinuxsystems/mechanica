@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using Godot;
+using Mechanica.Game.Ui;
 using Mechanica.Core.Actions;
 using Mechanica.Core.Data;
 using Mechanica.Core.Input;
@@ -37,7 +38,7 @@ public partial class PartSettingsPanel : CanvasLayer
     public override void _Ready()
     {
         Layer = 5;
-        _panel = new PanelContainer { Name = "Settings", Visible = false, CustomMinimumSize = new Vector2(360, 0) };
+        _panel = UiInput.KeepMouse(new PanelContainer { Name = "Settings", Visible = false, CustomMinimumSize = new Vector2(360, 0) });
         AddChild(_panel);
         _panel.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.Center, Control.LayoutPresetMode.KeepSize);
         var box = new VBoxContainer();

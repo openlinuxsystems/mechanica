@@ -27,6 +27,8 @@ public partial class WorldStreamer : Node3D
 
     private readonly Dictionary<ChunkCoord, TerrainChunk> _chunks = [];
     private readonly HashSet<ChunkCoord> _pending = [];
+    private readonly Dictionary<ChunkCoord, TerrainChunk> _scenery = [];
+    private Node3D _sceneryRoot = null!;
 
     /// <summary>The session, for this peer's role. Set before adding to the tree.</summary>
     public NetSession Session { get; init; } = null!;
@@ -70,6 +72,24 @@ public partial class WorldStreamer : Node3D
     /// </summary>
     public IReadOnlyDictionary<ChunkCoord, TerrainChunk> Chunks => _chunks;
 
+    /// <summary>
+    /// Scenery past the loaded chunks, out to the player's view distance (Options, Graphics): drawn only,
+    /// never simulated. Not part of <see cref="Chunks"/>.
+    /// </summary>
+    public IReadOnlyDictionary<ChunkCoord, TerrainChunk> Scenery => _scenery;
+
+    /// <summary>
+    /// Draws <see cref="Scenery"/>. Off without a display (test scenes and dedicated hosts draw nothing
+    /// anyone sees); a test that checks scenery turns it on.
+    /// </summary>
+    public bool DrawScenery { get; set; } = DisplayServer.GetName() != "headless";
+
+    /// <summary>How far scenery reaches, in m; null follows the player's graphics settings.</summary>
+    public float? ViewDistance { get; set; }
+
+    /// <summary>Seconds of each tick spent building scenery.</summary>
+    public const double SceneryBudget = 0.002;
+
     /// <summary>Client side: the host's world replaced the one this peer started with.</summary>
     public event Action? WorldReplaced;
 
@@ -90,6 +110,8 @@ public partial class WorldStreamer : Node3D
         Settings ??= LoadDefaultSettings();
         Ground = new StaticBody3D { Name = "Ground" };
         AddChild(Ground);
+        _sceneryRoot = new Node3D { Name = "Scenery" };
+        AddChild(_sceneryRoot);
         State = InitialState is { } loaded && loaded.Seed == Seed ? loaded : new WorldState(Seed);
         Generator = new WorldGenerator(WorldGen, Seed, Settings.WorldSize);
         Streamer = new ChunkStreamer(Settings);
@@ -141,6 +163,7 @@ public partial class WorldStreamer : Node3D
             Creations.Resume(id);
         foreach (var id in update.FellAsleep)
             Creations.Sleep(id);
+        UpdateScenery();
         return update;
     }
 
@@ -176,6 +199,36 @@ public partial class WorldStreamer : Node3D
         var node = new TerrainChunk { Data = Generator.GenerateChunk(chunk, Streamer.Settings.ChunkSize), State = State, Ground = Ground };
         AddChild(node);
         _chunks[chunk] = node;
+    }
+
+    // Drops scenery that is out of view or now simulated, then builds what is missing, nearest first,
+    // within the budget. The viewer is this peer's own player (or the spawn point before it exists).
+    private void UpdateScenery()
+    {
+        var reach = ViewDistance ?? Mechanica.Game.Settings.GameSettings.Current.Graphics.Effective().ViewDistance;
+        var simulated = new HashSet<ChunkCoord>(Streamer.Loaded);
+        simulated.UnionWith(_pending);
+        IReadOnlyList<ChunkCoord> wanted = DrawScenery
+            ? FarChunks.Wanted((PlayerSync.LocalPlayer?.GlobalPosition ?? SpawnPoint()).ToNumerics(), reach, Streamer.Settings.ChunkSize, Streamer.InWorld, simulated)
+            : [];
+        var keep = wanted.ToHashSet();
+        foreach (var chunk in _scenery.Keys.Where(c => !keep.Contains(c)).ToList())
+        {
+            _scenery.Remove(chunk, out var node);
+            _sceneryRoot.RemoveChild(node);
+            node!.QueueFree();
+        }
+        var started = System.Diagnostics.Stopwatch.GetTimestamp();
+        foreach (var chunk in wanted)
+        {
+            if (_scenery.ContainsKey(chunk))
+                continue;
+            var node = new TerrainChunk { Data = Generator.GenerateChunk(chunk, Streamer.Settings.ChunkSize), State = State, Ground = Ground, Scenery = true };
+            _sceneryRoot.AddChild(node);
+            _scenery[chunk] = node;
+            if (System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalSeconds >= SceneryBudget)
+                break;
+        }
     }
 
     // Distance (x/z) from a player to a chunk's centre.
@@ -230,13 +283,16 @@ public partial class WorldStreamer : Node3D
             }
             _chunks.Clear();
             _pending.Clear();
+            foreach (var node in _scenery.Values)
+                node.QueueFree();
+            _scenery.Clear();
             Creations.Removed -= Streamer.Forget;
             Streamer = new ChunkStreamer(Streamer.Settings);
             Creations.Removed += Streamer.Forget;
         }
         else
         {
-            foreach (var node in _chunks.Values)
+            foreach (var node in _chunks.Values.Concat(_scenery.Values))
             {
                 node.State = State;
                 node.RefreshObjects();
@@ -258,7 +314,7 @@ public partial class WorldStreamer : Node3D
 
     private void RefreshChunkHolding(WorldObjectId id)
     {
-        foreach (var node in _chunks.Values)
+        foreach (var node in _chunks.Values.Concat(_scenery.Values))
         {
             if (node.Holds(id))
                 node.RefreshObjects();
