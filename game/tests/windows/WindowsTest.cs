@@ -20,6 +20,7 @@ public partial class WindowsTest : StagedTest
     private Main _main = null!;
     private PauseMenu _menu = null!;
     private (int Creation, int Part) _station;
+    private ulong _chatFrame;
 
     protected override string Tag => "windows";
 
@@ -152,9 +153,11 @@ public partial class WindowsTest : StagedTest
                 Settings.GameSettings.Apply(Settings.GameSettings.Current with { Interface = Settings.GameSettings.Current.Interface with { ChatOpacity = 0.25f } });
                 chat.Open();
                 chat.Send("again");
+                _chatFrame = Engine.GetProcessFrames();
                 return false;
             }
-            if ((frame < 3 || chat.Shown.LastOrDefault()?.EndsWith("again") != true) && frame < 120)
+            // The panel draws its background in _Process, which can lag several physics ticks behind on a busy machine.
+            if ((Engine.GetProcessFrames() < _chatFrame + 2 || chat.Shown.LastOrDefault()?.EndsWith("again") != true) && frame < 120)
                 return false;
             Check(Mathf.IsEqualApprox(chat.BackgroundAlpha, 0.25f), $"a recent line shows on a 25% background ({chat.BackgroundAlpha})");
             Settings.GameSettings.Apply(new());
