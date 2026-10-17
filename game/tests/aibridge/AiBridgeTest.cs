@@ -24,6 +24,7 @@ public partial class AiBridgeTest : StagedTest
     private Process? _node;
     private string _resultPath = "";
     private readonly HashSet<string> _seenByClient = [];
+    private readonly HashSet<string> _thoughtsSeen = [];
 
     protected override string Tag => "aibridge";
 
@@ -60,6 +61,8 @@ public partial class AiBridgeTest : StagedTest
                 return true;
             foreach (var name in AgentNames)
                 Check(_seenByClient.Contains(name), $"the client saw {name}");
+            Check(_thoughtsSeen.Contains("Grok (AI): Walking north."), $"the client saw what the model said as its thought ({string.Join(" | ", _thoughtsSeen)})");
+            Check(_thoughtsSeen.Contains("Grok2 (AI): First I look."), "in prompt mode too, without the tool block");
             using var result = JsonDocument.Parse(File.ReadAllText(_resultPath));
             var failed = new List<string>();
             foreach (var check in result.RootElement.GetProperty("checks").EnumerateArray())
@@ -114,6 +117,10 @@ public partial class AiBridgeTest : StagedTest
     private void Watch()
     {
         foreach (var player in _client.Main.PlayerSync.Players.Values)
+        {
             _seenByClient.Add(player.DisplayName);
+            if (player.Thought.Length > 0)
+                _thoughtsSeen.Add($"{player.DisplayName}: {player.Thought}");
+        }
     }
 }

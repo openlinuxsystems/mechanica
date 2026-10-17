@@ -28,6 +28,7 @@ public sealed class AgentHost : IAgentHost
         Agents = new AgentPlayers(settings ?? LoadDefaultSettings());
         Agents.Register(dispatcher);
         players.Agents = Agents;
+        Agents.ThoughtChanged += players.HostSetThought;
         // A player can also go without a leave (the host joins another world): forget the agent then.
         players.PlayerDespawning += OnDespawning;
     }

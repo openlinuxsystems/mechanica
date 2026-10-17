@@ -193,6 +193,29 @@ public partial class PlayerSync : Node
             RpcId(other, MethodName.ClientDespawn, peer);
     }
 
+    /// <summary>
+    /// Host side: sets what an AI agent's player is thinking (<c>SetThought</c>) and tells every ready client;
+    /// "" clears it. Shown on its name tag and to anyone watching it.
+    /// </summary>
+    public void HostSetThought(int peer, string text)
+    {
+        if (!Session.IsHost || !_players.TryGetValue(peer, out var player))
+            return;
+        player.Thought = text;
+        if (Session.State != NetSession.SessionState.Hosting)
+            return;
+        foreach (var other in Session.ReadyPeers)
+            RpcId(other, MethodName.ClientThought, peer, text);
+    }
+
+    /// <summary>Host → client: what an AI agent's player is thinking now.</summary>
+    [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void ClientThought(int peer, string text)
+    {
+        if (!Session.IsHost && _players.TryGetValue(peer, out var player))
+            player.Thought = text;
+    }
+
     private WorldSnapshot BuildSnapshot() => new(_tick, [.. _players.Values.Select(p => new PlayerState(
         p.PeerId,
         _queues.GetValueOrDefault(p.PeerId)?.LastApplied ?? 0,
@@ -338,7 +361,11 @@ public partial class PlayerSync : Node
         foreach (var other in Session.ReadyPeers.Where(p => p != peer))
             RpcId(other, MethodName.ClientSpawn, peer, spawn.Origin, player.Rotation.Y, player.DisplayName);
         foreach (var existing in _players.Values)
+        {
             RpcId(peer, MethodName.ClientSpawn, existing.PeerId, existing.GlobalPosition, existing.Rotation.Y, existing.DisplayName);
+            if (existing.Thought.Length > 0)
+                RpcId(peer, MethodName.ClientThought, existing.PeerId, existing.Thought);
+        }
     }
 
     private void HostRemovePeer(int peer)

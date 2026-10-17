@@ -2,12 +2,12 @@
 
 <!-- Generated from mechanica.describe by tools/ai/gen-docs.sh. Do not edit by hand. -->
 
-Protocol version 2. 163 methods: 56 actions (change the world), 29 queries (only read it) and 78 endpoint methods. Every one is a JSON-RPC method of the same name whose `params` are the named arguments below (snake_case). `describe.json` beside this file is the same data as JSON Schemas, ready to become an AI's tool list. Scopes: `observe` reads, `play` acts as a player, `admin` is for debug powers ([ai-endpoint.md](../ai-endpoint.md#scopes)).
+Protocol version 2. 164 methods: 57 actions (change the world), 29 queries (only read it) and 78 endpoint methods. Every one is a JSON-RPC method of the same name whose `params` are the named arguments below (snake_case). `describe.json` beside this file is the same data as JSON Schemas, ready to become an AI's tool list. Scopes: `observe` reads, `play` acts as a player, `admin` is for debug powers ([ai-endpoint.md](../ai-endpoint.md#scopes)).
 
 ## Contents
 
 - [Endpoint built-ins (mechanica.*)](#endpoint-built-ins-mechanica) (12)
-- [Agent players](#agent-players) (1)
+- [Agent players](#agent-players) (2)
 - [Seeing the world and the catalog](#seeing-the-world-and-the-catalog) (15)
 - [Bots and raids](#bots-and-raids) (8)
 - [Building](#building) (14)
@@ -160,6 +160,16 @@ Moves an agent's own player and turns its view. Arguments of SetPlayerInput: wha
 | `sprint` | boolean |  | `false` | Hold sprint. |
 | `crawl` | boolean |  | `false` | Hold crouch (dives in deep water). |
 | `ticks` | integer |  | `1` | How many physics ticks to hold this for, 1 to the host's max_input_ticks; then the player stands still. |
+
+### `SetThought`
+
+*action, play scope*
+
+Shows what an agent's own player is doing or thinking to the people watching it (the spectator camera and its name tag). Arguments of SetThought.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `text` | string |  | `""` | What the agent is doing or thinking now, in a sentence or two; empty clears it. Longer text is cut to the host's max_thought_chars. |
 
 ## Seeing the world and the catalog
 
