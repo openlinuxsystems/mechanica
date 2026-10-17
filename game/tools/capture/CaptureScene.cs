@@ -9,7 +9,8 @@ namespace Mechanica.Game.Tools;
 /// <summary>
 /// Renders the player character in a running world to PNGs: standing, holding and swinging tools, looking up and down,
 /// crouching, moving, and in first person with each tool. For checking how a character or skin looks in game; run
-/// <c>tools/capture-characters.sh</c>, which uses a virtual display and the compatibility renderer.
+/// <c>tools/capture-characters.sh</c>, which uses a virtual display and the compatibility renderer. Given <c>lift</c> instead
+/// of a character it puts the player's Lift down and captures its deploy, a raise and full extension (<c>tools/capture-lift.sh</c>).
 /// </summary>
 public partial class CaptureScene : Node
 {
@@ -26,13 +27,19 @@ public partial class CaptureScene : Node
         Engine.TimeScale = 0.1;
         var args = OS.GetCmdlineUserArgs();
         _out = args.Length > 0 ? args[0] : OS.GetUserDataDir();
-        Main.MenuCharacter = args.Length > 1 ? args[1] : "scrapper_male";
+        var lift = args.Length > 1 && args[1] == "lift";
+        Main.MenuCharacter = args.Length > 1 && !lift ? args[1] : "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
         _main.Options = LaunchOptions.Offline with { Seed = 7 };
         _main.ReadDeviceInput = false;
         AddChild(_main);
         _camera = new Camera3D { Fov = 40 };
         AddChild(_camera);
+        if (lift)
+        {
+            LiftShots();
+            return;
+        }
         Shot("front", 60, () => Look(new Vector3(0, 1.0f, -3.2f)));
         Shot("side", 10, () => Look(new Vector3(-3.2f, 1.0f, 0)));
         Shot("hammer", 40, () => { Player.HeldProp = CharacterProp.Hammer; Look(new Vector3(-1.6f, 1.2f, -2.2f)); });
@@ -62,6 +69,44 @@ public partial class CaptureScene : Node
     }
 
     private PlayerController Player => _main.LocalPlayer!;
+
+    private Vector3 _liftAt;
+
+    private void LiftShots()
+    {
+        Engine.TimeScale = 1.0;
+        Shot("lift_00_wait", 60, () => { });
+        Shot("lift_01_placed", 2, () =>
+        {
+            var from = Player.GlobalPosition + Player.GlobalTransform.Basis * new Vector3(0, 2, -2.5f);
+            var hit = Player.GetWorld3D().DirectSpaceState.IntersectRay(PhysicsRayQueryParameters3D.Create(from, from + Vector3.Down * 10));
+            _liftAt = hit.Count > 0 ? hit["position"].AsVector3() : Player.GlobalPosition;
+            _main.Actions.Request(Core.Building.ToolActions.PlaceLift, new Core.Building.PlaceLiftArgs(new Core.Data.Vec3(_liftAt.X, _liftAt.Y, _liftAt.Z)));
+            LookAtLift(new Vector3(1.8f, 1.3f, -2.2f), 0.3f);
+        });
+        foreach (var frames in new[] { 24, 18, 18, 24, 30 })
+            Shot($"lift_deploy_{_shots.Count:00}", frames, () => { });
+        Shot("lift_raised_8", 200, () =>
+        {
+            _main.Actions.Request(Core.Building.ToolActions.SetLiftLevel, new Core.Building.SetLiftLevelArgs(8));
+            LookAtLift(new Vector3(3.5f, 2.2f, -4.5f), 1.3f);
+        });
+        Shot("lift_top", 400, () =>
+        {
+            _main.Actions.Request(Core.Building.ToolActions.SetLiftLevel, new Core.Building.SetLiftLevelArgs(_main.Build.Settings!.Lift.MaxLevel));
+            LookAtLift(new Vector3(6f, 3.5f, -8f), 2.8f);
+        });
+        Shot("lift_close", 2, () => LookAtLift(new Vector3(1.2f, 0.9f, -1.5f), 0.3f));
+    }
+
+    private void LookAtLift(Vector3 offset, float height)
+    {
+        Player.ThirdPerson = true;
+        _camera.MakeCurrent();
+        _follow = null;
+        _camera.GlobalPosition = _liftAt + offset;
+        _camera.LookAt(_liftAt + Vector3.Up * height);
+    }
 
     private void Tool<T>() where T : Building.HandTool => _main.Tools!.Use(_main.Tools.Tools.OfType<T>().First());
 

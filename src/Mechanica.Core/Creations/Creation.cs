@@ -36,6 +36,8 @@ public sealed class Creation
     private readonly Dictionary<int, Inventory> _inventories = [];
     private readonly Dictionary<int, CraftingQueue> _crafting = [];
     private readonly Dictionary<int, SoilState> _soil = [];
+    // How strongly each burning part burns (0 to 1); parts not on fire have no entry.
+    private readonly Dictionary<int, float> _fire = [];
     private Layout? _layout;
     private bool _onLift;
     private int _authorityPeer;
@@ -189,6 +191,23 @@ public sealed class Creation
         else
             _damage.Remove(partId);
     }
+
+    /// <summary>How strongly a part burns, 0 (not on fire) to 1. Fire follows the part through splits and welds.</summary>
+    public float FireOf(int partId) => _fire.GetValueOrDefault(partId);
+
+    /// <summary>Sets how strongly a part burns (clamped to 1; 0 or less puts it out).</summary>
+    public void SetFire(int partId, float strength)
+    {
+        if (!_parts.ContainsKey(partId))
+            throw new ArgumentException($"Creation {Id} has no part {partId}.", nameof(partId));
+        if (strength > 0 && float.IsFinite(strength))
+            _fire[partId] = Math.Min(1f, strength);
+        else
+            _fire.Remove(partId);
+    }
+
+    /// <summary>The parts on fire and how strongly, by part id.</summary>
+    public IEnumerable<(int PartId, float Strength)> Burning => _fire.OrderBy(kv => kv.Key).Select(kv => (kv.Key, kv.Value));
 
     /// <summary>
     /// The item storage of a part whose definition has an <c>inventory</c>, or null for other parts. Its
@@ -540,6 +559,8 @@ public sealed class Creation
                     creation._crafting[id] = queue;
                 if (_soil.TryGetValue(id, out var soil))
                     creation._soil[id] = soil;
+                if (_fire.TryGetValue(id, out var fire))
+                    creation._fire[id] = fire;
             }
             foreach (var connection in _connections.Where(c => members.Contains(c.A)).ToList())
             {
@@ -685,6 +706,8 @@ public sealed class Creation
                 _crafting[newId] = queue;
             if (other._soil.TryGetValue(oldId, out var soil))
                 _soil[newId] = soil;
+            if (other._fire.TryGetValue(oldId, out var fire))
+                _fire[newId] = fire;
         }
         foreach (var c in other._connections)
             _connections.Add(c.Type == ConnectionType.Structural
@@ -811,6 +834,7 @@ public sealed class Creation
         _inventories.Remove(partId);
         _crafting.Remove(partId);
         _soil.Remove(partId);
+        _fire.Remove(partId);
         _connections.RemoveWhere(c => c.Involves(partId));
         _links.RemoveWhere(l => l.From == partId || l.To == partId);
     }

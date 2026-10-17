@@ -226,16 +226,31 @@ public sealed record WeldSettings
 public sealed record LiftSettings
 {
     /// <summary>Width and depth of the platform, in metres.</summary>
-    public float PlatformSize { get; init; } = 2f;
+    public float PlatformSize { get; init; } = 1f;
 
     /// <summary>Height of the platform's top above the ground at level 0, in metres.</summary>
-    public float BaseHeight { get; init; } = 0.25f;
+    public float BaseHeight { get; init; } = 0.5f;
 
     /// <summary>How far one level raises the platform, in metres.</summary>
     public float LevelHeight { get; init; } = 0.25f;
 
     /// <summary>Highest level.</summary>
-    public int MaxLevel { get; init; } = 16;
+    public int MaxLevel { get; init; } = 20;
+
+    /// <summary>
+    /// The Lift's model (<c>mod:path</c> to a glTF file). Its <c>deploy</c> clip plays when the Lift is put down and its
+    /// <c>extend</c> clip is scrubbed by deck height (time in seconds = metres); see <c>tools/lift/build_lift.py</c>.
+    /// </summary>
+    public string Model { get; init; } = "vanilla:meshes/lift/lift.glb";
+
+    /// <summary>Fastest the shown platform moves between levels, in metres per second.</summary>
+    public float RaiseSpeed { get; init; } = 0.9f;
+
+    /// <summary>How quickly the shown platform speeds up and slows down, in metres per second squared.</summary>
+    public float RaiseAcceleration { get; init; } = 4f;
+
+    /// <summary>Sound event each peer plays when the platform comes to rest at level 0 or the highest level.</summary>
+    public string EndStopSound { get; init; } = "impact_metal";
 
     /// <summary>Seconds right click is held on the Lift before it is taken away.</summary>
     public double RemoveHoldSeconds { get; init; } = 0.5;
@@ -260,6 +275,8 @@ public sealed record LiftSettings
         BuildSettings.Positive(LevelHeight, "lift.level_height");
         if (MaxLevel < 0)
             throw new FormatException($"lift.max_level must be 0 or more (got {MaxLevel}).");
+        BuildSettings.Positive(RaiseSpeed, "lift.raise_speed");
+        BuildSettings.Positive(RaiseAcceleration, "lift.raise_acceleration");
         if (!double.IsFinite(RemoveHoldSeconds) || RemoveHoldSeconds < 0)
             throw new FormatException($"lift.remove_hold_seconds must be 0 or more (got {RemoveHoldSeconds}).");
         if (MaxBlueprints < 1)

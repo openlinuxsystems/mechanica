@@ -62,6 +62,7 @@ public static class CreationJson
                 Settings = p.Settings is null ? null : new SortedDictionary<string, JsonElement>(p.Settings.ToDictionary(), StringComparer.Ordinal),
                 Level = p.Level > 0 ? p.Level : null,
                 Damage = creation.PartDamage(p.Id) is var damage and > 0 ? damage : null,
+                Fire = creation.FireOf(p.Id) is var fire and > 0 ? fire : null,
                 Inventory = InventorySlots(creation.HoldsItems(p.Id) ? creation.InventoryOf(p.Id) : null),
                 Crafting = creation.HoldsItems(p.Id) && creation.CraftingOf(p.Id) is { IsEmpty: false } queue
                     ? [.. queue.Jobs.Select(j => new CraftJobData { Recipe = j.Recipe, Count = j.Count, Progress = j.Progress > 0 ? j.Progress : null })]
@@ -148,6 +149,8 @@ public static class CreationJson
             creation.Load(part, definition);
             if (data.Parts[i].Damage is { } damage)
                 creation.SetPartDamage(part.Id, damage);
+            if (data.Parts[i].Fire is { } fire)
+                creation.SetFire(part.Id, fire);
             ReadStorage(data.Parts[i], path, creation, part.Id, sink);
             ReadSoil(data.Parts[i], path, creation, part.Id, sink);
         }
@@ -374,6 +377,8 @@ public static class CreationJson
             sink.Error(invalid, $"{path}.color", $"color must be \"#rrggbb\" (got \"{data.Color}\").");
         if (data.Damage is { } damage && !(float.IsFinite(damage) && damage >= 0))
             sink.Error(invalid, $"{path}.damage", $"damage must be a number of 0 or more (got {damage}).");
+        if (data.Fire is { } fire && !(float.IsFinite(fire) && fire >= 0 && fire <= 1))
+            sink.Error(invalid, $"{path}.fire", $"fire must be a number from 0 to 1 (got {fire}).");
         if (definition is not null && data.Settings is { } settings && Logic.PartSettings.Check(definition, settings) is { } bad)
             sink.Error(invalid, $"{path}.settings", bad);
         if (definition is not null && data.Level is { } level && (level < 0 || level > PartUpgrades.MaxLevel(definition)))
@@ -433,6 +438,8 @@ public static class CreationJson
         public int? Level { get; init; }
 
         public float? Damage { get; init; }
+
+        public float? Fire { get; init; }
 
         public List<SlotData>? Inventory { get; init; }
 

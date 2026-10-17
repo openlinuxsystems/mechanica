@@ -22,6 +22,7 @@ internal sealed class ItemRig : IDisposable
         F = fixture ?? new SurvivalFixture();
         Runtime = new ScriptRuntime(settings ?? new ScriptSettings(), F.Dispatcher, new Motion(this), physics ?? new NoPhysics(), new Source(this));
         Runtime.EnableItems(F.Catalog, F.Survival, F.Inventories);
+        Runtime.Fire = F.Fire;
         Runtime.Message += Messages.Add;
     }
 

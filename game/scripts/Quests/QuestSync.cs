@@ -6,6 +6,7 @@ using Mechanica.Core.Quests;
 using Mechanica.Core.World;
 using Mechanica.Game.Bots;
 using Mechanica.Game.Creations;
+using Mechanica.Game.Fire;
 using Mechanica.Game.Items;
 using Mechanica.Game.Logic;
 using Mechanica.Game.Net;
@@ -15,7 +16,7 @@ namespace Mechanica.Game.Quests;
 
 /// <summary>
 /// Quests over the network (chunk 24). The host runs the <see cref="QuestTracker"/> against the world: players'
-/// feet, the generated POIs' markers, inventories, planted soil, seated speed and raids ending. Every change
+/// feet, the generated POIs' markers, inventories, planted soil, seated speed, raids ending and fires put out. Every change
 /// of the story's state is sent to every client as JSON, and so are the lines quests say. Each client keeps a
 /// tracker over its copy of the state, only to show what Use (E) would do near a quest marker; the actions run on
 /// the host.
@@ -51,6 +52,9 @@ public partial class QuestSync : Node, IQuestWorld
 
     /// <summary>Raids, for raid steps. Optional.</summary>
     public BotSync? Bots { get; init; }
+
+    /// <summary>Fire, for extinguish steps. Optional.</summary>
+    public FireSync? Fire { get; init; }
 
     /// <summary>The quests of the enabled mods.</summary>
     public QuestBook Book { get; init; } = QuestBook.Empty;
@@ -192,6 +196,9 @@ public partial class QuestSync : Node, IQuestWorld
     /// <inheritdoc/>
     public float? SeatedSpeed(int peer) =>
         Logic?.Seats.SeatOf(peer) is { } seat ? Creations.Sample(seat.Creation).LinearSpeed : null;
+
+    /// <inheritdoc/>
+    public int FiresOut(string poi, string marker) => Fire?.Actions?.SitesOut(poi, marker) ?? 0;
 
     private void OnRaidChanged(RaidView raid)
     {

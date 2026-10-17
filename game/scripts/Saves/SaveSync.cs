@@ -9,6 +9,7 @@ using Mechanica.Game.Creations;
 using Mechanica.Game.Items;
 using Mechanica.Game.Net;
 using Mechanica.Game.Player;
+using Mechanica.Game.Fire;
 using Mechanica.Game.Quests;
 using Mechanica.Game.Scripting;
 using Mechanica.Game.Settings;
@@ -60,6 +61,9 @@ public partial class SaveSync : Node
 
     /// <summary>Quests, for the story's state. Optional.</summary>
     public QuestSync? Quests { get; init; }
+
+    /// <summary>Fire, for the fires at POI markers. Optional.</summary>
+    public FireSync? Fire { get; init; }
 
     /// <summary>The part catalog Creations and inventories are read against.</summary>
     public IPartCatalog Catalog { get; init; } = null!;
@@ -137,6 +141,8 @@ public partial class SaveSync : Node
         }
         if (save.Quests is { } quests && Quests is not null)
             Quests.Load(quests);
+        if (save.Fires is { } fires)
+            Fire?.Actions?.LoadSites(fires);
         Roster = new PlayerRoster(save.Players);
         // Players already in the world (the host's own) get their saved selves back now.
         foreach (var player in Players.Players.Values)
@@ -175,6 +181,7 @@ public partial class SaveSync : Node
             Scripts = scripts,
             Players = [.. Roster.All],
             Quests = Quests?.State,
+            Fires = Fire?.Actions?.SaveSites(),
         };
     }
 

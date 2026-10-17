@@ -22,10 +22,11 @@ asks first.
 | `time` | Seconds the world has been simulated (the scripts' `world.time()`); the clock carries on from it when the world loads, so times scripts stored, such as a soil's last growth, stay right. Missing in older saves (0) |
 | `mods`, `fingerprint` | The mods the world ran. Loading with different mods works but logs what differs |
 | `destroyed` | Trees, rocks and other world objects that were destroyed |
-| `creations` | Every Creation in the Creation format: parts, links, body poses and velocities, part settings, damage, container contents, crafting queues and soil (`seed`, `grown`, `water`, `stage` and `updated`, the world time growth was last worked out at) |
+| `creations` | Every Creation in the Creation format: parts, links, body poses and velocities, part settings, damage, container contents, crafting queues, soil (`seed`, `grown`, `water`, `stage` and `updated`, the world time growth was last worked out at) and `fire`, how strongly a burning part burns (0 to 1) |
 | `scripts` | Each scripted part's Lua `state` table, by creation and part id |
 | `players` | Every player the host has seen, by profile id: name, inventory, health, respawn bed, position and facing |
 | `quests` | The story: each started quest's progress, story flags and revealed POIs (see [Quests](quests.md)) |
+| `fires` | Fires at POI markers, `[{site, marker, strength}]` by POI index and marker index; a put-out one has strength 0 and stays out. Missing in older saves, whose POI fires are lit again (see [Fire](survival.md#fire)) |
 
 Unknown keys are kept as they are, so later chunks can add their own.
 

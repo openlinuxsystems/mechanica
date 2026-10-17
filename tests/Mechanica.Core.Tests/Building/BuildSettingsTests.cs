@@ -52,6 +52,12 @@ public class BuildSettingsTests
         Assert.Equal(3.0f, settings.Sledge.Reach);
         Assert.Equal(50, settings.Lift.MaxBlueprints);
         Assert.True(settings.Lift.RefuseStoredItems);
+        // The hydraulic lift: 4 x 4 units, resting at 2 units, 1-unit steps up to 22 units (1 unit = 0.25 m).
+        Assert.Equal(1f, settings.Lift.PlatformSize);
+        Assert.Equal(0.5f, settings.Lift.TopAt(0));
+        Assert.Equal(0.25f, settings.Lift.LevelHeight);
+        Assert.Equal(5.5f, settings.Lift.TopAt(settings.Lift.MaxLevel));
+        Assert.Equal("vanilla:meshes/lift/lift.glb", settings.Lift.Model);
         Assert.Equal(256, settings.Paint.MaxPartsPerAction);
     }
 

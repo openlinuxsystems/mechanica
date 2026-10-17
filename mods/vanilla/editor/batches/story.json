@@ -59,8 +59,8 @@
         "steps": [
           {
             "id": "extinguish_fires",
-            "text": "Put out the three fires at the crash site.",
-            "objective": { "type": "interact", "poi": "crash_site", "marker": "fire", "count": 3 },
+            "text": "Put out the three fires at the crash site with water.",
+            "objective": { "type": "extinguish", "poi": "crash_site", "count": 3 },
             "dialogue": [{ "speaker": "Logbook", "text": "Hull breach. Fires spreading. Suppress them before the core cells go." }]
           },
           {

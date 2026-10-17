@@ -38,6 +38,7 @@ public partial class ToolsTest : StagedTest
     private int _bar;
     private int _lone;
     private float _ground;
+    private bool _barRode;
     private int _sent;
     private BlueprintMenu _menu = null!;
     private string _blueprints = null!;
@@ -202,7 +203,7 @@ public partial class ToolsTest : StagedTest
             Check(_results[0].Ok, $"the host lifts it ({_results[0]})");
             var bar = _host.Main.Creations.Find(_bar)!;
             Check(bar.OnLift && Body(_host, _bar).Freeze, "the host holds the bar still");
-            Check(Mathf.IsEqualApprox(Bottom(_host, _bar), _ground + 0.25f, 1e-3f), $"it rests on the platform (bottom {Bottom(_host, _bar):F3})");
+            Check(Mathf.IsEqualApprox(Bottom(_host, _bar), _ground + _host.Main.Build.Settings!.Lift.TopAt(0), 1e-3f), $"it rests on the platform (bottom {Bottom(_host, _bar):F3})");
             Check(_client.Main.Creations.Find(_bar)!.OnLift, "the client knows it is lifted");
             Check(Mathf.IsEqualApprox(Bottom(_client, _bar), Bottom(_host, _bar), 1e-3f), "and shows it at the same height");
             var lift = _client.Main.Build.Lifts[_client.Peer];
@@ -216,13 +217,25 @@ public partial class ToolsTest : StagedTest
                 _results.Clear();
                 Check(Tools.Lift.Raise(2, _results.Add), "the Lift sends SetLiftLevel");
             }
+            var raised = _host.Main.Build.Settings!.Lift.TopAt(2);
             if (_results.Count == 0 || _client.Main.Build.Lifts[_client.Peer].State.Level != 2
-                || !Mathf.IsEqualApprox(Bottom(_client, _bar), _ground + 0.75f, 1e-3f))
+                || !Mathf.IsEqualApprox(Bottom(_client, _bar), _ground + raised, 1e-3f))
                 return false;
             Check(_results[0].Ok, $"the host raises it ({_results[0]})");
-            Check(Mathf.IsEqualApprox(Bottom(_host, _bar), _ground + 0.75f, 1e-3f), $"the bar is 0.5 m higher ({Bottom(_host, _bar):F3})");
-            var top = _host.Main.Build.Lifts[_client.Peer].GetNode<CollisionShape3D>("Shape").Shape as BoxShape3D;
-            Check(top is not null && Mathf.IsEqualApprox(top.Size.Y, 0.75f, 1e-3f), "the host's Lift column grew");
+            Check(Mathf.IsEqualApprox(Bottom(_host, _bar), _ground + raised, 1e-3f), $"the bar is 0.5 m higher ({Bottom(_host, _bar):F3})");
+            // Host and client ease the column up the same way and settle at the new height.
+            var hostLift = _host.Main.Build.Lifts[_client.Peer];
+            var clientLift = _client.Main.Build.Lifts[_client.Peer];
+            if (clientLift.Moving && _client.Main.Creations.NodeOf(_bar)!.VisualOffset.Y < -1e-3f)
+                _barRode = true;
+            if (hostLift.Moving || clientLift.Moving)
+                return false;
+            Check(_barRode, "while the column rises the bar is drawn riding the deck, below where the host put it");
+            Check(Mathf.IsEqualApprox(hostLift.ShownTop, raised, 1e-3f) && Mathf.IsEqualApprox(clientLift.ShownTop, raised, 1e-3f),
+                $"both show the deck at the new height ({hostLift.ShownTop:F3}, {clientLift.ShownTop:F3})");
+            var top = hostLift.GetNode<CollisionShape3D>("Shape");
+            Check(Mathf.IsEqualApprox(top.Position.Y + ((BoxShape3D)top.Shape).Size.Y / 2, raised, 1e-3f), "the host's Lift platform rose with it");
+            Check(_client.Main.Creations.NodeOf(_bar)!.VisualOffset == Vector3.Zero, "the bar is drawn where it is once the Lift stops");
             return true;
         });
         Add("the Lift turns the bar", frame =>

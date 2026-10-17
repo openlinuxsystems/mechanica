@@ -150,7 +150,7 @@
       "template": "item",
       "set": {
         "name": "Water Bucket",
-        "description": "Fill it at the sea, then water soil with it.",
+        "description": "Fill it at water, then water soil or put out a fire with it.",
         "category": "consumable",
         "mass": 4,
         "stack_size": 5,
@@ -160,7 +160,10 @@
         "sounds": {},
         "script": "scripts/watering.lua",
         "properties": {
-          "seconds": 150
+          "seconds": 150,
+          "douse": 1,
+          "range": 6,
+          "splash": 1.2
         }
       }
     },

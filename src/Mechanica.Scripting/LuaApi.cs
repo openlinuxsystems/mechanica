@@ -4,7 +4,7 @@ namespace Mechanica.Scripting;
 /// <param name="Name">What a script writes: <c>part.apply_force</c>, <c>on_update</c>, <c>state</c>.</param>
 /// <param name="Signature">How it is called, e.g. <c>part.apply_force(force, at?)</c>.</param>
 /// <param name="Summary">One line on what it does.</param>
-/// <param name="Group">Section: Hooks, Globals, part, creation, world, sound, soil, player, item, holder, inventory, combat, farm or vec3.</param>
+/// <param name="Group">Section: Hooks, Globals, part, creation, world, sound, soil, player, item, holder, inventory, combat, farm, fire or vec3.</param>
 public sealed record LuaApiEntry(string Name, string Signature, string Summary, string Group);
 
 /// <summary>
@@ -124,6 +124,11 @@ public static class LuaApi
         new("farm.soil", "farm.soil(creation, part)", "A soil part in the holder's reach: {seed?, crop?, stage, ripe, water, capacity}, or nil and why.", "farm"),
         new("farm.plant", "farm.plant(creation, part, seed?)", "Plants seed (default: this item) in empty soil in reach; returns the soil, or nil and why. Takes no items.", "farm"),
         new("farm.water", "farm.water(creation, part, seconds)", "Adds seconds of water to soil in reach, up to its capacity; returns the soil, or nil and why. Takes no items.", "farm"),
+
+        new("fire.near", "fire.near(position, radius)", "Fires burning within radius m of position, nearest first: a list of {id, position, strength, creation?, part?}.", "fire"),
+        new("fire.douse", "fire.douse(position, radius, amount)", "Water: every fire within radius m loses amount strength (out at 0); returns the fires it reached, or nil and why.", "fire"),
+        new("fire.ignite", "fire.ignite(creation, part, strength?)", "Sets a flammable part alight; returns true, or false and why.", "fire"),
+        new("fire.strength", "fire.strength(creation, part)", "How strongly a part burns, 0 (not on fire) to 1.", "fire"),
 
         new("vec3", "vec3(x, y, z)", "A vector with x, y, z. Supports + - * / unary minus, == and tostring.", "vec3"),
         new("vec3.dot", "a:dot(b)", "Dot product.", "vec3"),

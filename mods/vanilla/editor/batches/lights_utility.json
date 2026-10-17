@@ -569,7 +569,7 @@
       "template": "interactive",
       "set": {
         "name": "Water Cannon",
-        "description": "Fires a jet of water out of its front when its input turns on or when you use it. It waters soil it hits and shoves anything else.",
+        "description": "Fires a jet of water out of its front when its input turns on or when you use it. It puts out fires along the jet, waters soil it hits and shoves anything else.",
         "mass": 5,
         "durability": 4,
         "stack_size": 10,
@@ -579,7 +579,7 @@
         "visual": { "color": "#3a7ab0", "roughness": 0.5, "metallic": 0.5 },
         "sounds": { "fire": "water_cannon_fire" },
         "logic": { "inputs": 1, "use": "fire" },
-        "properties": { "interval": 0.5, "range": 15, "water": 60, "impulse": 60, "muzzle": -0.4 },
+        "properties": { "interval": 0.5, "range": 15, "water": 60, "impulse": 60, "muzzle": -0.4, "douse": 0.35, "splash": 1 },
         "sound_material": "metal"
       },
       "model": [
