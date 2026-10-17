@@ -161,11 +161,18 @@ public sealed record InterfaceSettings
     /// <summary>Shows other players' names over their heads.</summary>
     public bool ShowPlayerNames { get; init; } = true;
 
+    /// <summary>The colour-blind filter over the screen.</summary>
+    public Ui.ColorBlindMode ColorBlind { get; init; } = Ui.ColorBlindMode.Off;
+
     /// <summary>How opaque the chat panel's background is, 0 to 1.</summary>
     public float ChatOpacity { get; init; } = 0.6f;
 
     /// <summary>A copy with every value in range.</summary>
-    public InterfaceSettings Clamped() => this with { ChatOpacity = float.IsFinite(ChatOpacity) ? Math.Clamp(ChatOpacity, 0f, 1f) : 0.6f };
+    public InterfaceSettings Clamped() => this with
+    {
+        ChatOpacity = float.IsFinite(ChatOpacity) ? Math.Clamp(ChatOpacity, 0f, 1f) : 0.6f,
+        ColorBlind = Enum.IsDefined(ColorBlind) ? ColorBlind : Ui.ColorBlindMode.Off,
+    };
 
         /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]
