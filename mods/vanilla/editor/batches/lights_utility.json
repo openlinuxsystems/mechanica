@@ -196,7 +196,7 @@
       "template": "interactive",
       "set": {
         "name": "Interior Light",
-        "description": "A ceiling lamp for cabins and bases. Build it under a roof; it lights the room around it. Press F to switch it off and on; a linked switch also works.",
+        "description": "A ceiling lamp for cabins and bases. Build it under a roof; it lights the room around it. Use it to switch it off and on; a linked switch also works.",
         "category": "light",
         "mass": 1.5,
         "durability": 2,
@@ -290,7 +290,7 @@
       "template": "interactive",
       "set": {
         "name": "Radio",
-        "description": "Press F to play music where it stands. Pick one of six stations in its settings with the Connect Tool.",
+        "description": "Use it to play music where it stands. Pick one of six stations in its settings with the Connect Tool.",
         "mass": 3,
         "durability": 3,
         "stack_size": 10,
@@ -346,7 +346,7 @@
       "template": "interactive",
       "set": {
         "name": "Beacon",
-        "description": "Press F to switch it on: it flashes and pings so a base or a wreck can be found again, by day or night.",
+        "description": "Use it to switch it on: it flashes and pings so a base or a wreck can be found again, by day or night.",
         "mass": 2,
         "durability": 4,
         "stack_size": 10,
@@ -385,7 +385,7 @@
       "template": "interactive",
       "set": {
         "name": "Horn",
-        "description": "Honks while its input is on: link a button or a seat-controlled switch to it. Press F on it for a short honk.",
+        "description": "Honks while its input is on: link a button or a seat-controlled switch to it. Use it for a short honk.",
         "mass": 0.8,
         "durability": 2,
         "stack_size": 20,
@@ -569,7 +569,7 @@
       "template": "interactive",
       "set": {
         "name": "Water Cannon",
-        "description": "Fires a jet of water out of its front when its input turns on or when you press F on it. It waters soil it hits and shoves anything else.",
+        "description": "Fires a jet of water out of its front when its input turns on or when you use it. It waters soil it hits and shoves anything else.",
         "mass": 5,
         "durability": 4,
         "stack_size": 10,
@@ -608,7 +608,7 @@
       "template": "interactive",
       "set": {
         "name": "Mounted Potato Blaster",
-        "description": "A Potato Blaster built into a creation. It fires out of its front when its input turns on or when you press F on it, using potatoes from the creation's chests.",
+        "description": "A Potato Blaster built into a creation. It fires out of its front when its input turns on or when you use it, using potatoes from the creation's chests.",
         "mass": 8,
         "durability": 6,
         "stack_size": 5,

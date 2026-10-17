@@ -42,6 +42,10 @@ public class PlayerMovementSettingsTests
     [InlineData("""{ "stance_speed": 0 }""", "stance_speed")]
     [InlineData("""{ "walk_sped": 4 }""", "walk_sped")]
     [InlineData("""{ "walk_speed": "fast" }""", "walk_speed")]
+    [InlineData("""{ "camera_max_distance": 1 }""", "camera_max_distance")]
+    [InlineData("""{ "camera_distance": 1 }""", "camera_distance")]
+    [InlineData("""{ "camera_zoom_step": 0 }""", "camera_zoom_step")]
+    [InlineData("""{ "camera_shoulder": 5 }""", "camera_shoulder")]
     [InlineData("null", "null")]
     public void BadDataGivesAClearError(string json, string mentioned)
     {

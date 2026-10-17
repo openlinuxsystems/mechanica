@@ -14,7 +14,7 @@ namespace Mechanica.Game.Quests;
 /// dialogue box at the bottom. When a quest waits on a choice, J opens the log with a button per choice
 /// (and frees the mouse); J or Escape closes it again.
 /// </summary>
-public partial class QuestHud : CanvasLayer
+public partial class QuestHud : CanvasLayer, IHudLayer
 {
     private readonly Queue<DialogueLine> _queue = new();
     private PanelContainer _log = null!;
@@ -39,6 +39,9 @@ public partial class QuestHud : CanvasLayer
     /// <summary>True while the log is open with its choices.</summary>
     public bool IsOpen { get; private set; }
 
+    /// <summary>Hide GUI leaves the log up while it is open with its choices.</summary>
+    public bool KeepWhenHidden => IsOpen;
+
     /// <summary>The log's text now, for tests.</summary>
     public string LogText => _logText.Text;
 
@@ -50,9 +53,11 @@ public partial class QuestHud : CanvasLayer
 
     public override void _Ready()
     {
+        AddToGroup(HudRoot.Group);
         _log = UiInput.KeepMouse(new PanelContainer { Name = "QuestLog" });
         AddChild(_log);
-        _log.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.TopRight, Control.LayoutPresetMode.KeepSize, 12);
+        // Top right, inside the safe area.
+        _log.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.TopRight, Control.LayoutPresetMode.KeepSize, (int)HudRoot.Margin(GetViewport()).X);
         _log.GrowHorizontal = Control.GrowDirection.Begin;
         var box = new VBoxContainer();
         _log.AddChild(box);

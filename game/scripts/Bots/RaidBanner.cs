@@ -14,6 +14,7 @@ public partial class RaidBanner : CanvasLayer
 
     public override void _Ready()
     {
+        AddToGroup(HudRoot.Group);
         _text = new Label
         {
             Name = "Text",
@@ -23,7 +24,7 @@ public partial class RaidBanner : CanvasLayer
         };
         _text.AddThemeFontSizeOverride("font_size", 26);
         AddChild(_text);
-        _text.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.CenterTop, Control.LayoutPresetMode.KeepSize, 24);
+        _text.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.CenterTop, Control.LayoutPresetMode.KeepSize, (int)HudRoot.Margin(GetViewport()).Y);
     }
 
     public override void _Process(double delta)

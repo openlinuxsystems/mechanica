@@ -47,8 +47,9 @@ public sealed record ConfigureResult(IReadOnlyDictionary<string, JsonElement> Se
 /// <param name="Script">Its script, when it runs one.</param>
 /// <param name="Fault">Why its script is stopped, when it is.</param>
 /// <param name="Occupant">The player sitting in it, when it is a taken seat.</param>
+/// <param name="Damage">Health it has lost (0 when undamaged), for its durability.</param>
 public sealed record PartInspection(int Id, string Type, string Name, int Body, float Output, float Input,
-    IReadOnlyDictionary<string, JsonElement>? Settings = null, string? Script = null, string? Fault = null, int? Occupant = null);
+    IReadOnlyDictionary<string, JsonElement>? Settings = null, string? Script = null, string? Fault = null, int? Occupant = null, float Damage = 0);
 
 /// <summary>One Body in the value of <c>InspectCreation</c>.</summary>
 /// <param name="Index">Body index.</param>
@@ -183,7 +184,7 @@ public sealed class LogicActions(BuildSettings settings, IBuildWorld world, ILog
             return new PartInspection(p.Id, p.Part, definition.Name ?? p.Part, creation.BodyIndexOf(p.Id),
                 host.Signals.Output(creation.Id, p.Id), host.Signals.Inputs(creation, p.Id).Sum(i => i.Value),
                 definition.Settings is { Count: > 0 } ? PartSettings.All(definition, p.Settings).ToDictionary(s => s.Id, s => s.Value) : null,
-                script, fault, seats.Occupant(creation.Id, p.Id));
+                script, fault, seats.Occupant(creation.Id, p.Id), creation.PartDamage(p.Id));
         }).ToList();
         return new CreationInspection(creation.Id, creation.AuthorityPeer, creation.Revision, creation.Bodies.Sum(b => b.Mass), parts,
             [.. creation.Bodies.Select(b => new BodyInspection(b.Index, b.PartIds.Count, b.Mass))],

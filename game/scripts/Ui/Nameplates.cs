@@ -27,7 +27,7 @@ public partial class Nameplates : Node
 
     public override void _Process(double delta)
     {
-        var show = GameSettings.Current.Interface.ShowPlayerNames;
+        var show = GameSettings.Current.Interface.ShowPlayerNames && !HudRoot.Hidden;
         foreach (var (peer, player) in Players.Players)
         {
             if (player == Players.LocalPlayer)

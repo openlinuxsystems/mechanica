@@ -1,4 +1,4 @@
--- Soil (chunk 20, D2): grows the crop planted in it and hands it to the player who harvests it (F).
+-- Soil (chunk 20, D2): grows the crop planted in it and hands it to the player who harvests it (Use).
 -- A crop grows only while the soil holds water, using one second of water per second of growth, at the
 -- soil's soil.growth speed, through soil.get().stages stages; it is ripe after its seed's grow_time. The
 -- host stores the result (seed, grown, water, stage) on the soil, where clients, bots and saves see it.

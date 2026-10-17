@@ -83,6 +83,12 @@ public partial class ConnectTool : HandTool
         return true;
     }
 
+    /// <summary>Over a part with logic (a connection dot) the crosshair pulses cyan.</summary>
+    public override Core.Ui.CrosshairState Crosshair =>
+        PartHit(CastRay()) is var (node, part) && node.Creation.DefinitionOf(part).Logic is not null
+            ? Core.Ui.CrosshairState.Connection
+            : Core.Ui.CrosshairState.Default;
+
     /// <inheritdoc/>
     public override string HudText()
     {

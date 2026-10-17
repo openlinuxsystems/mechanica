@@ -20,8 +20,6 @@ public partial class PlayerController : CharacterBody3D
     /// <summary>Godot path of the default movement tuning.</summary>
     public const string DefaultSettingsPath = "res://data/player.json";
 
-    private const float ThirdPersonDistance = 3.5f;
-
     private Node3D _head = null!;
     private SpringArm3D _cameraArm = null!;
     private MeshInstance3D _bodyMesh = null!;
@@ -122,14 +120,41 @@ public partial class PlayerController : CharacterBody3D
     /// <summary>The collision capsule's current height in metres.</summary>
     public float CapsuleHeight => _capsule.Height;
 
-    /// <summary>Whether the camera is pulled back behind the player.</summary>
+    /// <summary>
+    /// Whether the camera is pulled back behind the player. Setting it true puts the camera at the default
+    /// third-person distance (<see cref="PlayerMovementSettings.CameraDistance"/>, or the closest when that is 0).
+    /// </summary>
     public bool ThirdPerson
     {
         get => _cameraArm.SpringLength > 0f;
+        set => CameraDistance = value ? Settings.CameraDistance > 0 ? Settings.CameraDistance : Settings.CameraMinDistance : 0f;
+    }
+
+    /// <summary>How far behind the player's head the camera sits, in metres; 0 is first-person (UI spec §6, X and C zoom).</summary>
+    public float CameraDistance
+    {
+        get => _cameraArm.SpringLength;
         set
         {
-            _cameraArm.SpringLength = value ? ThirdPersonDistance : 0f;
+            _cameraArm.SpringLength = Mathf.Max(0f, value);
+            // Over the shoulder in third person, easing in as the camera closes on the head.
+            var share = Settings.CameraMinDistance > 0 ? Mathf.Min(1f, _cameraArm.SpringLength / Settings.CameraMinDistance) : 1f;
+            _cameraArm.Position = new Vector3(Settings.CameraShoulder, Settings.CameraRaise, 0) * share;
             UpdateBodyVisibility();
+        }
+    }
+
+    /// <summary>
+    /// Where aim rays start: the point on the camera's line of sight level with the player's head, so a
+    /// third-person camera reaches as far as a first-person one and never aims at what is behind the player.
+    /// </summary>
+    public Vector3 AimOrigin
+    {
+        get
+        {
+            var camera = Camera.GlobalTransform;
+            var forward = -camera.Basis.Z;
+            return camera.Origin + forward * Mathf.Max(0f, forward.Dot(_head.GlobalPosition - camera.Origin));
         }
     }
 

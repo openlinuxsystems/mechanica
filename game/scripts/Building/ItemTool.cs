@@ -163,7 +163,7 @@ public partial class ItemTool : HandTool
     private Vector3? WaterAimed(RayHit? hit, float reach)
     {
         var generator = Survival.World.Generator;
-        var from = Player.Camera.GlobalPosition;
+        var from = Player.AimOrigin;
         var direction = -Player.Camera.GlobalBasis.Z;
         if (direction.Y >= -1e-3f)
             return null;

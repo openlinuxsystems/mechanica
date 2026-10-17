@@ -469,11 +469,20 @@ public partial class Main : Node3D
             var inventory = new InventoryScreen { Name = "InventoryScreen", Inventory = Inventory, Actions = Actions, Players = PlayerSync, Catalog = mods };
             AddChild(inventory);
             PartSettings = new PartSettingsPanel { Name = "PartSettings", Actions = Actions, Creations = Creations };
-            AddChild(new SurvivalHud
+            AddChild(new Ui.HudRoot { Name = "HudRoot" });
+            Ui.WorldHud? worldHud = null;
+            var survivalHud = new SurvivalHud
             {
                 Name = "SurvivalHud", Survival = Survival, Actions = Actions, Players = PlayerSync, Catalog = mods, Logic = Logic, Quests = Quests,
-                Containers = inventory, PartSettings = PartSettings,
-            });
+                Containers = inventory, PartSettings = PartSettings, TooltipShowing = () => worldHud?.TooltipShowing == true,
+            };
+            AddChild(survivalHud);
+            worldHud = new Ui.WorldHud
+            {
+                Name = "WorldHud", Players = PlayerSync, Actions = Actions, Build = Build, Tool = () => Tools?.Current,
+                Interaction = () => survivalHud.Interaction()?.Label,
+            };
+            AddChild(worldHud);
             var questLog = new QuestHud { Name = "QuestHud", Quests = Quests, Actions = Actions, Players = PlayerSync };
             AddChild(questLog);
             AddChild(new Ui.TutorialHints

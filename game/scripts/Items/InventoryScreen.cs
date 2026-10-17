@@ -133,8 +133,8 @@ public partial class InventoryScreen : CanvasLayer
     {
         if (Players.LocalPlayer is not { } player)
             return null;
-        var camera = player.Camera.GlobalTransform;
-        var query = PhysicsRayQueryParameters3D.Create(camera.Origin, camera.Origin - camera.Basis.Z * Inventory.Settings!.Reach);
+        var from = player.AimOrigin;
+        var query = PhysicsRayQueryParameters3D.Create(from, from - player.Camera.GlobalBasis.Z * Inventory.Settings!.Reach);
         query.Exclude = [player.GetRid()];
         var hit = player.GetWorld3D().DirectSpaceState.IntersectRay(query);
         if (hit.Count == 0 || hit["collider"].AsGodotObject() is not CreationBody body || body.GetParent() is not CreationNode node)

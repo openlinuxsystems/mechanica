@@ -1,7 +1,7 @@
 {
   "id": "radio",
   "name": "Radio",
-  "description": "Press F to play music where it stands. Pick one of six stations in its settings with the Connect Tool.",
+  "description": "Use it to play music where it stands. Pick one of six stations in its settings with the Connect Tool.",
   "category": "interactive",
   "mass": 3,
   "durability": 3,

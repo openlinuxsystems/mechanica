@@ -426,7 +426,7 @@
       "template": "interactive",
       "set": {
         "name": "Respawn Bed",
-        "description": "Sleep here (F) and you respawn here when you die.",
+        "description": "Sleep here (Use) and you respawn here when you die.",
         "category": "interactive",
         "mass": 30,
         "durability": 6,

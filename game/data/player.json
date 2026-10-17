@@ -25,5 +25,13 @@
   "swim_vertical_speed": 2.0,
   "swim_acceleration": 6.0,
   "buoyancy": 3.0,
-  "wade_speed_scale": 0.7
+  "wade_speed_scale": 0.7,
+  // Camera (UI spec §6): third-person by default; zoom in (X) and out (C) by a step, in past the closest goes first-person.
+  "camera_distance": 3.5,
+  "camera_min_distance": 1.5,
+  "camera_max_distance": 6.0,
+  "camera_zoom_step": 1.0,
+  // Over the shoulder: right of and above the head, so the player doesn't hide the crosshair.
+  "camera_shoulder": 0.5,
+  "camera_raise": 0.25
 }

@@ -141,6 +141,9 @@ public partial class LiftTool : HandTool
     /// <inheritdoc/>
     protected override void OnActiveChanged() => _preview.Visible = Active && Aim is { Creation: null };
 
+    /// <inheritdoc/>
+    public override Core.Ui.CrosshairState Crosshair => Aim is null ? Core.Ui.CrosshairState.Default : Core.Ui.CrosshairState.Valid;
+
     private Target? Cast()
     {
         if (CastRay() is not { } hit || hit.Collider is LiftBody)

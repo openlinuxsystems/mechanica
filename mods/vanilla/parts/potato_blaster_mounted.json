@@ -1,7 +1,7 @@
 {
   "id": "potato_blaster_mounted",
   "name": "Mounted Potato Blaster",
-  "description": "A Potato Blaster built into a creation. It fires out of its front when its input turns on or when you press F on it, using potatoes from the creation's chests.",
+  "description": "A Potato Blaster built into a creation. It fires out of its front when its input turns on or when you use it, using potatoes from the creation's chests.",
   "category": "interactive",
   "mass": 8,
   "durability": 6,

@@ -16,7 +16,7 @@ These are the default keys. Every one can be changed in Options, Controls.
 | Shift | Sprint (and swim faster) |
 | Ctrl | Crouch: move slowly and fit under gaps 1.2 m high (you stand up again once there is room). In deep water, dive. |
 | Mouse | Look. Click the world to take the mouse back after a menu. |
-| X / C | Zoom in to first person / out to third person (also Alt + scroll) |
+| X / C | Zoom the camera in or out a step (also Alt + scroll). You start in third person over the shoulder; all the way in is first person. |
 | 1 to 7 | Pick a tool: Hammer, Lift, Weld, Paint, Sledgehammer, item in hand, Connect Tool |
 | Left click | Create, attack or place: the Hammer places parts, the Sledgehammer swings |
 | Right click | Remove or pick up: the Hammer removes parts, the Lift takes its Creation away |
@@ -31,12 +31,26 @@ These are the default keys. Every one can be changed in Options, Controls.
 | Esc | Menu: save, load, open your world to the LAN, Options, help, quit. Esc also closes any open window. |
 | H or F1 | Help |
 | F7 / F8 / F9 | Logic Visualizer, Creation Inspector and force overlay |
+| Alt + Z | Hide the HUD (crosshair, tool bar, compass, tips, chat, quest log and names), and show it again |
 
 In water deeper than about chest height you swim: there is no ground to stand on, you float with your
 head out, Space rises and Ctrl dives. Shallower water slows you down.
 
 While a menu or the inventory is open, your character stands still, and a Creation you are driving
 stops getting your input.
+
+## The HUD
+
+- The **crosshair** is white, turns blue when a click or Use would do something where you aim (a valid
+  place for the Hammer's part, something to use), and pulses cyan over a part with logic when you hold the
+  Connect Tool.
+- Aim at a part for a moment and a **tooltip** shows its name, what it is and what Use does. Parts you can
+  use, sit in, open or set up add a line with their signal (on or off), how many connections they have and
+  their durability.
+- **Health** is the blue bar at the top left (Survival). The quest log is at the top right, the compass at
+  the top, the tool bar at the bottom and chat at the bottom left.
+- **Tips** show at the bottom of the screen; hold Use (**E**) to dismiss one early.
+- If the game window loses focus, anything you are holding down (such as dismissing a tip) is cancelled.
 
 ## Options
 
@@ -53,7 +67,7 @@ stops getting your input.
   is simulated out to 128 m, and past that the land and its rocks and trees are drawn as scenery you
   can't touch, fading into fog at the view distance.
 - **Audio**: master, music, sound effects and interface volume, mute all, and the output device.
-- **Gameplay**: over a world, its difficulty (chosen in New Game, see [Survival](survival.md#difficulty)); mouse sensitivity, invert Y, field of view, tutorial hints (a short tip at the top of
+- **Gameplay**: over a world, its difficulty (chosen in New Game, see [Survival](survival.md#difficulty)); mouse sensitivity, invert Y, field of view, tutorial hints (a short tip at the bottom of
   the screen the first time you start, pick up each tool or open each screen; **Show tips again** brings
   back the ones you have seen; the tips are in `game/data/tutorial.json`), auto-save (off, or every 5, 10 or 15
   minutes while you host), the most players a world you host takes, the server password for worlds you host, and your player name.

@@ -1,4 +1,4 @@
--- Button: press F on it and its output is on for properties.pulse seconds.
+-- Button: use it and its output is on for properties.pulse seconds.
 
 function on_create()
   state.until_time = state.until_time or 0

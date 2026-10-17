@@ -142,6 +142,8 @@ public partial class CreationInspector : CanvasLayer
                 details.Add(Loc.T("out {0} in {1}", $"{p.Output:0.###}", $"{p.Input:0.###}"));
             if (p.Settings is { Count: > 0 } settings)
                 details.Add(string.Join(" ", settings.Select(s => $"{s.Key}={s.Value.GetRawText()}")));
+            if (p.Damage > 0)
+                details.Add(Loc.T("damage {0}", $"{p.Damage:0.#}"));
             if (p.Occupant is { } peer)
                 details.Add(Loc.T("seated: peer {0}", peer));
             if (p.Fault is { } fault)
