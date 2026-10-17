@@ -1,0 +1,23 @@
+{
+  "id": "metal_block",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal",
+      "count": 2
+    },
+    {
+      "item": "component_kit",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "metal_block",
+      "count": 4
+    }
+  ],
+  "time": 2
+}

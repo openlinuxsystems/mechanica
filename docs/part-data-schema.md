@@ -113,6 +113,8 @@ you; this page is the reference for what each key means, so you can read, review
 | `color` | `"#rrggbb"` | Base colour. It multiplies the mesh's own colour, so white keeps the model as it is. |
 | `roughness` | 0–1 | 0 is mirror-smooth, 1 is matte. |
 | `metallic` | 0–1 | 0 is plastic or wood, 1 is bare metal. |
+| `opacity` | 0–1 | How solid it looks. Omitted means 1; lower values are see-through, like glass. Physics is unaffected. |
+| `emission` | `"#rrggbb"` | Glow colour added on top of the lit surface. It does not light other things. |
 | `texture` | path | `.png` albedo texture, replacing the mesh's own. |
 | `paintable` | bool | Whether the Paint Tool can recolour it. Omitted means true. |
 | `variants` | list | Named colour choices: `{ "id": "black", "name": "Black", "color": "#202020" }`. Ids are unique in the part. |
@@ -269,5 +271,6 @@ example `error MD0201: mods/my_mod/parts/a.json(4) $.mass: mass must be greater 
 | MD04xx | Saved Creation problems. |
 | MD0501 | Editor source problem (a model piece). |
 | MD0502 | Export could not write to the mod folder. |
+| MD0503 | A Part Editor batch file problem. See [Getting Started](getting-started.md#10-many-similar-parts-batches). |
 | MD0701 | A recipe value is missing or invalid. |
 | MD0702 | Two recipe files in a mod use the same id. |

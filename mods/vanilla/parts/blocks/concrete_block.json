@@ -1,0 +1,20 @@
+{
+  "id": "concrete_block",
+  "name": "Concrete Block",
+  "description": "Heavy block for solid bases.",
+  "category": "block",
+  "mass": 10,
+  "durability": 8,
+  "friction": 0.6,
+  "buoyancy": 0,
+  "flammable": false,
+  "stack_size": 100,
+  "sound_material": "concrete",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/concrete_block.glb",
+  "visual": {
+    "color": "#a9a9a3",
+    "roughness": 0.95,
+    "metallic": 0
+  }
+}

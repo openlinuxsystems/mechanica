@@ -9,7 +9,9 @@ namespace Mechanica.Game;
 /// <summary>
 /// Start screen: play the test world, or open the mod tools that ship in the game (D9): the Part
 /// Editor, the Test Sandbox and the Mod Manager. Launching with <c>--host</c> or <c>--join</c> skips
-/// straight to the world. Menus proper come in chunk 24.
+/// straight to the world. <c>--part-batch file</c> runs a Part Editor batch, prints its problems and
+/// quits (0 when every part and recipe exported), which is how vanilla's blocks are re-made headless. Menus proper
+/// come in chunk 24.
 /// </summary>
 public partial class MainMenu : Control
 {
@@ -21,8 +23,17 @@ public partial class MainMenu : Control
 
     private Control _menu = null!;
 
+    /// <summary>Command-line flag that runs a Part Editor batch file and quits.</summary>
+    public const string PartBatchFlag = "--part-batch";
+
     public override void _Ready()
     {
+        var args = OS.GetCmdlineUserArgs();
+        if (Array.IndexOf(args, PartBatchFlag) is var at and >= 0)
+        {
+            _ = RunBatch(at + 1 < args.Length ? args[at + 1] : null);
+            return;
+        }
         if (LaunchOptions.TryParse(OS.GetCmdlineUserArgs(), out var options, out _) && options.Mode != SessionMode.Offline)
         {
             Callable.From(() => GetTree().ChangeSceneToFile(WorldScene)).CallDeferred();
@@ -45,6 +56,26 @@ public partial class MainMenu : Control
         AddButton(column, "Mod Manager", OpenModManager);
         column.AddChild(new HSeparator());
         AddButton(column, "Quit", () => GetTree().Quit());
+    }
+
+    private async Task RunBatch(string? file)
+    {
+        if (file is null)
+        {
+            GD.PrintErr($"[batch] {PartBatchFlag} needs a batch file.");
+            GetTree().Quit(2);
+            return;
+        }
+        var result = await PartBatchRunner.RunAsync(this, file);
+        foreach (var d in result.Diagnostics)
+        {
+            if (d.Severity == Core.Data.DiagnosticSeverity.Error)
+                GD.PrintErr($"[batch] {d}");
+            else
+                GD.Print($"[batch] {d}");
+        }
+        GD.Print($"[batch] {(result.Succeeded ? "OK" : "FAILED")}: {result.Exports.Count(e => e.Succeeded)} of {result.Exports.Count} parts and recipes exported from {file}.");
+        GetTree().Quit(result.Succeeded ? 0 : 1);
     }
 
     private void OpenSandbox()

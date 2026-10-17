@@ -1,0 +1,25 @@
+{
+  "id": "path_light_wedge",
+  "name": "Path Light Wedge",
+  "description": "Path Light block cut on the diagonal. Same material, half the mass.",
+  "category": "block",
+  "mass": 1.5,
+  "durability": 1,
+  "friction": 0.3,
+  "buoyancy": 0.4,
+  "flammable": false,
+  "stack_size": 100,
+  "sound_material": "glass",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/path_light_wedge.glb",
+  "visual": {
+    "color": "#fff2c0",
+    "roughness": 0.2,
+    "metallic": 0,
+    "emission": "#ffd870"
+  },
+  "collision": {
+    "shape": "convex",
+    "mesh": "meshes/blocks/path_light_wedge.glb"
+  }
+}

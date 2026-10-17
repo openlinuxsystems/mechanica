@@ -1,0 +1,20 @@
+{
+  "id": "aluminum_block",
+  "name": "Aluminum Block",
+  "description": "Light metal for aircraft.",
+  "category": "block",
+  "mass": 4,
+  "durability": 4,
+  "friction": 0.3,
+  "buoyancy": 0.3,
+  "flammable": false,
+  "stack_size": 100,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/aluminum_block.glb",
+  "visual": {
+    "color": "#d0d4d8",
+    "roughness": 0.3,
+    "metallic": 0.9
+  }
+}

@@ -196,7 +196,8 @@ public sealed class PartAssets
 
     /// <summary>
     /// A copy of <paramref name="original"/> (or a plain white material) adjusted by <paramref name="visual"/>:
-    /// albedo multiplied by its colour, roughness, metalness and texture replaced where given.
+    /// albedo multiplied by its colour, roughness, metalness and texture replaced where given, alpha
+    /// scaled by its opacity and its glow colour emitted.
     /// </summary>
     public BaseMaterial3D VisualMaterial(VisualDefinition visual, string? modId, Material? original = null)
     {
@@ -209,6 +210,16 @@ public sealed class PartAssets
             material.Metallic = metallic;
         if (visual.Texture is { } path && modId is not null && LoadTexture(path, modId) is { } texture)
             material.AlbedoTexture = texture;
+        if (visual.Opacity is { } opacity && opacity < 1)
+        {
+            material.Transparency = BaseMaterial3D.TransparencyEnum.Alpha;
+            material.AlbedoColor = material.AlbedoColor with { A = material.AlbedoColor.A * opacity };
+        }
+        if (HexColor.TryParse(visual.Emission, out var glow))
+        {
+            material.EmissionEnabled = true;
+            material.Emission = new Color(glow.R, glow.G, glow.B);
+        }
         return material;
     }
 
