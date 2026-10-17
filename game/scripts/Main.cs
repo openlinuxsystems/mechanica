@@ -529,7 +529,7 @@ public partial class Main : Node3D
             worldHud = new Ui.WorldHud
             {
                 Name = "WorldHud", Players = PlayerSync, Actions = Actions, Build = Build, Tool = () => Tools?.Current, Sounds = Sounds,
-                Interaction = () => survivalHud.Interaction()?.Label,
+                Interaction = () => survivalHud.Interaction()?.Label, HeldProgress = () => survivalHud.RefineProgress,
             };
             AddChild(worldHud);
             var questLog = new QuestHud { Name = "QuestHud", Quests = Quests, Actions = Actions, Players = PlayerSync };

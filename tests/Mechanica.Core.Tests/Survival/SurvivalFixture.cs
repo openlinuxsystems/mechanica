@@ -167,6 +167,7 @@ internal sealed class SurvivalFixture
         public Vector3 Spawn { get; set; } = new(10, 0, 10);
         public float WaterLevel { get; set; } = -1;
         public double Now { get; set; } = 1000;
+        public List<(string Sound, string Mod, Vector3 At)> Sounds { get; } = [];
 
         public IEnumerable<Creation> AllCreations => Creations.Values;
 
@@ -206,6 +207,8 @@ internal sealed class SurvivalFixture
         public float AddObjectDamage(WorldObjectId id, float damage) => State.AddDamage(id, damage);
 
         public void DestroyObject(WorldObjectId id) => State.Destroy(id);
+
+        public void PlaySound(string sound, string ownerModId, Vector3 position) => Sounds.Add((sound, ownerModId, position));
 
         public SledgeResult DamagePart(Creation creation, int partId, float damage) => Tools.DamagePart(creation, partId, damage);
 

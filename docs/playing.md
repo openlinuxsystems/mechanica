@@ -19,13 +19,15 @@ These are the default keys. Every one can be changed in Options, Controls.
 | X / C | Zoom the camera in or out a step (also Alt + scroll). You start in third person over the shoulder; all the way in is first person. |
 | 1 to 9, 0 | Pick a hotbar slot. It starts with the Hammer, Lift, Weld, Paint, Sledgehammer and Connect Tool. |
 | Left click | Create, attack or place: the Hammer places a part when you let go, the Sledgehammer swings. With the Hammer, hold still to lock the ghost (arrows show the ways it can grow), then drag to lay a grid of up to 16 by 16 parts; Q steps the grid's plane while you drag. Hold and drag with the Paint Tool to paint every part you pass over, or with the Weld Tool from one part to another to weld them. |
-| Right click | Remove or pick up: hold it on a part with the Hammer until the ring round the crosshair fills (wood is quickest, metal slower); let go early to stop. Drag with it held to remove the parts of one body across a face. Hold it with the Lift to take the Lift away, with the Sledgehammer to block, and with the Paint Tool to take paint off (drag for more). |
+| Right click | Remove or pick up: hold it on a part with the Hammer until the ring round the crosshair fills (wood is quickest, metal slower); let go early to stop. Drag with it held to remove the parts of one body across a face. Hold it with the Lift to take the Lift away, with the Sledgehammer to block, and with the Paint Tool to take paint off (drag for more). Right click on items lying on the ground picks them up at once, whatever is in hand. With a weapon in hand, hold it to aim: the view zooms in a little and the crosshair tightens. |
 | Scroll | Previous or next hotbar slot |
 | Q / Shift + Q | Turn the part (Hammer, Weld, Lift). With the Paint Tool, Q opens the colour picker and Shift + Q picks the previous colour. |
 | T | Hammer and Weld: tip the part over |
 | Up / Down arrows | Raise or lower the Lift |
 | G | Drop one of the item in hand |
-| E | Use: open the blueprint menu (the Lift in hand, aimed at your Lift), open a container or station, pick up items, harvest, sleep in a bed, sit in or leave a seat, use a part, change a part's settings, use a quest marker, talk, respawn after dying |
+| F (hold) | Force build: hold it and left click to put the item in hand (food, a bucket, a glowstick) where you aim, where it stays. Also hold it while dragging a stack out of the inventory to drop it. |
+| R | Reload the weapon in hand |
+| E | Use. Hold it on a tree or rock node (they get a blue outline) until the ring fills to refine it: what it gives goes straight into your inventory. Letting go or walking away stops it. Also: open the blueprint menu (the Lift in hand, aimed at your Lift), open a container or station, pick up items, harvest, sleep in a bed, sit in or leave a seat, use a part, change a part's settings, use a quest marker, talk, respawn after dying |
 | I or B | Inventory |
 | U | Upgrade the part you are aiming at (a station), or the station whose screen is open |
 | L | Logbook: the quest log, where you pick an answer when a quest asks you to decide |
@@ -87,7 +89,10 @@ item, and shows its picture, how many you carry (Survival) and its key. Pick a s
 the scroll wheel; the slot picked has a bright cyan border. A tool slot puts that tool in hand, a part slot
 puts the Hammer in hand ready to place that part, and any other item (food, seeds, a weapon) goes in hand.
 In Survival, something you pick up for the first time goes in the first empty slot. Your hotbar is saved
-with the world.
+with the world. A weapon's slot shows its ammo instead: the rounds loaded out of its magazine (the Potato
+Blaster holds 15, the Scattergun 4), or the potatoes you carry for one that does not reload. With it in hand,
+the counter at the bottom right shows the rounds and the potatoes; when it is empty, **R** reloads it from
+the potatoes you carry (the ring round the crosshair fills while it does).
 
 The **inventory** (**I** or **B**) is a grid of six columns with tabs along the top: All, Blocks,
 Interactive, Tools, Resources and Consumables.

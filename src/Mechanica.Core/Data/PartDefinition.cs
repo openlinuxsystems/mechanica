@@ -175,6 +175,12 @@ public sealed record PartDefinition
     /// </summary>
     public List<SettingDefinition>? Settings { get; init; }
 
+    /// <summary>
+    /// Makes a held item (a weapon) aim while right click is held (UI spec §10): the view zooms in a little and the
+    /// crosshair tightens; the item's script sees <c>target.aiming</c>. Items only.
+    /// </summary>
+    public AimDefinition? Aim { get; init; }
+
     /// <summary>Makes the part a seat a player can sit in (chunk 10). Placeable parts only.</summary>
     public SeatDefinition? Seat { get; init; }
 
@@ -426,6 +432,23 @@ public sealed record SettingDefinition
     /// (toggle) or an empty list.
     /// </summary>
     public JsonElement? Default { get; init; }
+
+    /// <summary>Keys this build does not know.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>How a held item aims with right click (UI spec §10). What aiming changes about a shot is up to its script.</summary>
+public sealed record AimDefinition
+{
+    /// <summary>Default <see cref="Zoom"/>.</summary>
+    public const float DefaultZoom = 0.85f;
+
+    /// <summary>What the field of view is multiplied by while aiming: under 1 zooms in. Default <see cref="DefaultZoom"/>.</summary>
+    public float? Zoom { get; init; }
+
+    /// <summary>True fires when right click is let go, as well as on left click while aiming.</summary>
+    public bool? FireOnRelease { get; init; }
 
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]

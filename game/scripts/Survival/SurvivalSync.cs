@@ -49,6 +49,8 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
     private readonly Dictionary<ulong, Vector3> _lastVelocity = [];
     private readonly HashSet<ulong> _pushed = [];
     private readonly Dictionary<int, (ProjectileView View, double ShownAt, MeshInstance3D Node)> _projectiles = [];
+    // This peer's own item counters (a weapon's rounds loaded), by item, with when each arrived.
+    private readonly Dictionary<string, (Mechanica.Scripting.ItemCounterView View, double At)> _counters = [];
     private int _tick;
 
     /// <summary>The session updates travel over. Set before adding to the tree.</summary>
@@ -109,6 +111,28 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
 
     /// <summary>The projectiles this peer shows in flight, by id (tests look at them).</summary>
     public IReadOnlyDictionary<int, MeshInstance3D> ProjectileNodes => _projectiles.ToDictionary(p => p.Key, p => p.Value.Node);
+
+    /// <summary>
+    /// What this peer's own item shows on its hotbar slot and the HUD counter (a weapon's rounds loaded, UI spec §10),
+    /// as its script last set it, or null.
+    /// </summary>
+    public Mechanica.Scripting.ItemCounterView? CounterOf(string item) => _counters.TryGetValue(item, out var c) ? c.View : null;
+
+    /// <summary>Seconds this peer's <paramref name="item"/> is still busy for (reloading), counting down since its counter arrived.</summary>
+    public float BusyFor(string item) =>
+        _counters.TryGetValue(item, out var c) ? Math.Max(0f, c.View.Busy - (float)(Now - c.At)) : 0f;
+
+    /// <summary>
+    /// Host: sends <paramref name="peer"/> what their item's counter shows (from <c>item.counter</c>). Only the holder
+    /// is told; the host's own player is shown it here.
+    /// </summary>
+    public void SendCounter(int peer, Mechanica.Scripting.ItemCounterView view)
+    {
+        if (peer == Session.LocalPeer)
+            ShowCounter(Json(view));
+        else if (Session.State == NetSession.SessionState.Hosting && Session.ReadyPeers.Contains(peer))
+            RpcId(peer, MethodName.ShowCounter, Json(view));
+    }
 
     /// <summary>Raised on this peer when a player's health arrives or changes.</summary>
     public event Action<VitalsView>? VitalsChanged;
@@ -299,6 +323,9 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
     public void DestroyObject(WorldObjectId id) => World.DestroyObject(id);
 
     /// <inheritdoc/>
+    public void PlaySound(string sound, string ownerModId, System.Numerics.Vector3 position) => Build.PlaySound(sound, ownerModId, position);
+
+    /// <inheritdoc/>
     public SledgeResult DamagePart(Creation creation, int partId, float damage) => Build.Tools!.DamagePart(creation, partId, damage);
 
     /// <inheritdoc/>
@@ -458,6 +485,7 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
             return;
         _vitals.Clear();
         _vitalsAt.Clear();
+        _counters.Clear();
         foreach (var id in _drops.Keys.ToList())
             HideDrop(id);
         foreach (var id in _projectiles.Keys.ToList())
@@ -479,6 +507,14 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
         if (Players.Players.TryGetValue(view.Peer, out var player) && player.Dead != view.Dead)
             player.Dead = view.Dead;
         VitalsChanged?.Invoke(view);
+    }
+
+    /// <summary>Host → the item's holder: what their item's counter shows.</summary>
+    [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void ShowCounter(string json)
+    {
+        if (Read<Mechanica.Scripting.ItemCounterView>(json) is { } view)
+            _counters[view.Item] = (view, Now);
     }
 
     /// <summary>Host → client: a pile of items appeared or changed.</summary>

@@ -836,6 +836,14 @@ public partial class PartEditorScreen : Control
             _partGrid.AddNumber("Seeds back", seed.Seeds, 0, 1000, 1, v => SetSeed("Set seeds back", x => x with { Seeds = (int?)v }), optional: true);
             _partGrid.AddNumber("Raid value", seed.Value, 0, 1000, 0.5, v => SetSeed("Set raid value", x => x with { Value = (float?)v }), optional: true, fallback: 1);
         }
+        // A weapon that aims with right click (UI spec §10).
+        _partGrid.AddBool("Aims", d.Aim is not null, v => Toggle("aim", v == true, x => x with { Aim = x.Aim ?? new AimDefinition() }, x => x with { Aim = null }));
+        if (d.Aim is { } aim)
+        {
+            _partGrid.AddNumber("Aim zoom", aim.Zoom, 0.2, 1, 0.05, v => Set("Set aim zoom", x => x with { Aim = x.Aim! with { Zoom = (float?)v } }),
+                optional: true, fallback: AimDefinition.DefaultZoom, suffix: "×");
+            _partGrid.AddBool("Fire on release", aim.FireOnRelease, v => Set("Set fire on release", x => x with { Aim = x.Aim! with { FireOnRelease = v == true ? true : null } }), optional: true);
+        }
     }
 
     // "logic, power" as node kinds; unknown words are dropped, and an empty list means the default (any kind).

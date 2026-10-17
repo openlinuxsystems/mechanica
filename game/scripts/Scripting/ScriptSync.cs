@@ -76,7 +76,11 @@ public partial class ScriptSync : Node, IScriptPhysics, IScriptSound
         Runtime.Sound = this;
         Runtime.Message += Log;
         if (Survival?.Actions is { } survival)
+        {
             Runtime.EnableItems(Survival.Catalog, survival, Survival.Inventory.Items!);
+            // A weapon's rounds loaded go to its holder's hotbar and HUD (UI spec §10).
+            Runtime.ItemCounterChanged += Survival.SendCounter;
+        }
         Session.StateChanged += OnStateChanged;
     }
 

@@ -101,7 +101,8 @@
       "scale": [0.8, 1.25],
       "sink": 0.3,
       "health": 60.0,
-      "drops": [{ "item": "scrap_wood", "count": 6 }]
+      "drops": [{ "item": "scrap_wood", "count": 6 }],
+      "refine": true
     },
     {
       "id": "rock_node",
@@ -114,7 +115,8 @@
       "scale": [0.9, 1.2],
       "sink": 0.2,
       "health": 40.0,
-      "drops": [{ "item": "scrap_metal", "count": 4 }]
+      "drops": [{ "item": "scrap_metal", "count": 4 }],
+      "refine": true
     },
     {
       "id": "boulder",

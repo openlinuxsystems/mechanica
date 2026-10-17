@@ -419,6 +419,13 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
                 sink.Error(Code, $"$.{key}", $"only placeable parts can have {key}.");
         }
         ItemOnly(part.Seed, "seed");
+        ItemOnly(part.Aim, "aim");
+        if (part.Aim is { } aim)
+        {
+            if (aim.Zoom is { } zoom && !(zoom is >= 0.2f and <= 1f))
+                sink.Error(Code, "$.aim.zoom", $"zoom must be 0.2 to 1 (got {zoom}).");
+            KnownKeys.WarnUnknown(aim.Extra, "$.aim", sink, typeof(AimDefinition));
+        }
         PartOnly(part.Soil, "soil");
         PartOnly(part.RespawnPoint == true ? true : null, "respawn_point");
         if (part.Seed is { } seed)

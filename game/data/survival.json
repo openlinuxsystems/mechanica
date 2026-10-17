@@ -13,6 +13,9 @@
   "aim_tolerance": 25,
   "water_item": "water_bucket",
   "water_seconds": 1,
+  // Hold Use on a resource node (UI spec §9, §10): seconds to refine it, and how far you may move before it stops.
+  "refine_seconds": 1.2,
+  "refine_cancel_distance": 1.5,
   // What each player starts a Survival world with, until quests and loot hand out the rest.
   "starting_items": [
     { "item": "carrot_seed", "count": 4 },
