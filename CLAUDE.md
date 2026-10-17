@@ -30,6 +30,8 @@ exported builds take `--self-test`. `tools/lua-bench.sh` runs the D2 Lua benchma
   tests in `tests/Mechanica.Core.Tests`.
 - `src/Mechanica.Scripting` hosts MoonSharp. No Godot reference; tests in
   `tests/Mechanica.Scripting.Tests`. Scripts run sandboxed (no io/os/file loading).
+- `game/project.godot` stays exactly as the editor writes it (no comments); reasons for its values are in
+  `game/project-settings.md`.
 - `game/` is the only Godot code. Keep it thin: it adapts Core to nodes, physics and UI.
 - Headless Godot checks live in `game/tests/` as scenes that call `GetTree().Quit(code)`.
 
