@@ -18,3 +18,6 @@ project/solution_directory="../"
 
 3d/physics_engine="Jolt Physics"
 common/physics_ticks_per_second=60
+
+; Jolt's default (15π rad/s) caps a 0.36 m wheel at 17 m/s, below a plane's takeoff speed.
+jolt_physics_3d/limits/max_angular_velocity=150.0

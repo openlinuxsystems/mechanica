@@ -1,0 +1,27 @@
+{
+  "id": "hover_jet",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal",
+      "count": 4
+    },
+    {
+      "item": "component_kit",
+      "count": 3
+    },
+    {
+      "item": "circuit_board",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "hover_jet",
+      "count": 1
+    }
+  ],
+  "time": 8
+}

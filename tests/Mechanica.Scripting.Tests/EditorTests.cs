@@ -44,14 +44,14 @@ public sealed class EditorTests : IDisposable
     }
 
     [Fact]
-    public void TheThrusterTemplatePushesAlongItsAxis()
+    public void TheThrusterTemplatePushesTowardItsBase()
     {
         _rig.Write("scripts/thruster.lua", LuaTemplates.Load(TemplatesDir).Single(t => t.Id == "thruster").For("Test"));
         _rig.AddCreation(1, ScriptRig.Thruster);
 
         _rig.Runtime.Update(1 / 60f);
 
-        Assert.Equal(new Vector3(0, 50, 0), Assert.Single(_rig.World.Pushes).Force);
+        Assert.Equal(new Vector3(0, -50, 0), Assert.Single(_rig.World.Pushes).Force);
     }
 
     [Theory]

@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://tests/vanilla/VanillaAeroTest.cs" id="1_aero"]
+
+[node name="VanillaAeroTest" type="Node"]
+script = ExtResource("1_aero")

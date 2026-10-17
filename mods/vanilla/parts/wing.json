@@ -1,0 +1,97 @@
+{
+  "id": "wing",
+  "name": "Wing",
+  "description": "A 1 m by 1 m cambered wing: lift and drag from the air flowing over it, lifting toward its top even when level. Attach it by its root edge or its underside; another wing goes on its tip.",
+  "category": "interactive",
+  "mass": 2,
+  "durability": 3,
+  "friction": 0.4,
+  "buoyancy": 0.3,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [4, 1, 4],
+  "mesh": "meshes/wing.glb",
+  "visual": {
+    "color": "#c8ccd2",
+    "roughness": 0.5,
+    "metallic": 0.5
+  },
+  "collision": {
+    "shape": "box",
+    "size": [1, 0.06, 1]
+  },
+  "sockets": [
+    {
+      "id": "root_1",
+      "type": "structural",
+      "position": [-0.5, 0, -0.375],
+      "normal": [-1, 0, 0]
+    },
+    {
+      "id": "root_2",
+      "type": "structural",
+      "position": [-0.5, 0, -0.125],
+      "normal": [-1, 0, 0]
+    },
+    {
+      "id": "root_3",
+      "type": "structural",
+      "position": [-0.5, 0, 0.125],
+      "normal": [-1, 0, 0]
+    },
+    {
+      "id": "root_4",
+      "type": "structural",
+      "position": [-0.5, 0, 0.375],
+      "normal": [-1, 0, 0]
+    },
+    {
+      "id": "tip_1",
+      "type": "structural",
+      "position": [0.5, 0, -0.375],
+      "normal": [1, 0, 0]
+    },
+    {
+      "id": "tip_2",
+      "type": "structural",
+      "position": [0.5, 0, -0.125],
+      "normal": [1, 0, 0]
+    },
+    {
+      "id": "tip_3",
+      "type": "structural",
+      "position": [0.5, 0, 0.125],
+      "normal": [1, 0, 0]
+    },
+    {
+      "id": "tip_4",
+      "type": "structural",
+      "position": [0.5, 0, 0.375],
+      "normal": [1, 0, 0]
+    },
+    {
+      "id": "mount",
+      "type": "structural",
+      "position": [0, -0.125, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "script": "scripts/wing.lua",
+  "sounds": {
+    "whoosh": "air_whoosh",
+    "stall": "wing_stall"
+  },
+  "properties": {
+    "area": 1.0,
+    "air_density": 1.225,
+    "camber_lift": 0.4,
+    "lift_slope": 4.5,
+    "max_lift": 1.2,
+    "stall_lift": 0.9,
+    "drag": 0.15,
+    "induced_drag": 0.05,
+    "stall_drag": 1.2,
+    "whoosh_speed": 40
+  }
+}

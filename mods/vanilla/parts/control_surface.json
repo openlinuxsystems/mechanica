@@ -1,0 +1,112 @@
+{
+  "id": "control_surface",
+  "name": "Control Surface",
+  "description": "A 1 m by 0.5 m flap that steers in the air: its command tilts the air it meets by up to 10°. Link a seat to it; it follows W/S unless you pick another control with the Connect Tool (R).",
+  "category": "interactive",
+  "mass": 1.5,
+  "durability": 3,
+  "friction": 0.4,
+  "buoyancy": 0.3,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [4, 1, 2],
+  "mesh": "meshes/control_surface.glb",
+  "visual": {
+    "color": "#d0b04a",
+    "roughness": 0.5,
+    "metallic": 0.4
+  },
+  "collision": {
+    "shape": "box",
+    "size": [1, 0.06, 0.5]
+  },
+  "sockets": [
+    {
+      "id": "hinge_1",
+      "type": "structural",
+      "position": [-0.375, 0, -0.25],
+      "normal": [0, 0, -1]
+    },
+    {
+      "id": "hinge_2",
+      "type": "structural",
+      "position": [-0.125, 0, -0.25],
+      "normal": [0, 0, -1]
+    },
+    {
+      "id": "hinge_3",
+      "type": "structural",
+      "position": [0.125, 0, -0.25],
+      "normal": [0, 0, -1]
+    },
+    {
+      "id": "hinge_4",
+      "type": "structural",
+      "position": [0.375, 0, -0.25],
+      "normal": [0, 0, -1]
+    },
+    {
+      "id": "root_1",
+      "type": "structural",
+      "position": [-0.5, 0, -0.125],
+      "normal": [-1, 0, 0]
+    },
+    {
+      "id": "root_2",
+      "type": "structural",
+      "position": [-0.5, 0, 0.125],
+      "normal": [-1, 0, 0]
+    },
+    {
+      "id": "mount",
+      "type": "structural",
+      "position": [0, -0.125, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "script": "scripts/wing.lua",
+  "sounds": {
+    "whoosh": "air_whoosh",
+    "stall": "wing_stall",
+    "move": "surface_move",
+    "lock": "surface_lock"
+  },
+  "logic": {
+    "inputs": 4
+  },
+  "settings": [
+    {
+      "id": "control",
+      "name": "Control",
+      "type": "choice",
+      "options": [
+        "link",
+        "w_s",
+        "a_d",
+        "space_shift"
+      ],
+      "default": "w_s"
+    },
+    {
+      "id": "invert",
+      "name": "Invert",
+      "type": "toggle",
+      "default": false
+    }
+  ],
+  "properties": {
+    "area": 0.5,
+    "air_density": 1.225,
+    "camber_lift": 0,
+    "lift_slope": 4.5,
+    "max_lift": 1.2,
+    "stall_lift": 0.9,
+    "drag": 0.15,
+    "induced_drag": 0.05,
+    "stall_drag": 1.2,
+    "whoosh_speed": 40,
+    "max_deflection": 10,
+    "lever_rate": 1
+  }
+}

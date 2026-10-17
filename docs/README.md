@@ -10,8 +10,8 @@ written by the chunk that builds the feature it covers.
 | [Lua API Reference](lua-api.md) | MoonSharp host |
 | [Socket and Joint Guide](socket-joint-guide.md) | Joint primitives |
 | [Logic and Power Tutorial](logic-power-tutorial.md) | Signal/logic bus |
-| Aero Tutorial | Aero/propulsion |
-| Example mods (bearing, thruster) | Aero/propulsion |
+| [Aero and Propulsion Tutorial](aero-tutorial.md) | Aero/propulsion |
+| Example mods ([bearing](../examples/mods/example_bearing), [thruster](../examples/mods/example_thruster)) | Aero/propulsion |
 | [Packaging Guide](packaging-guide.md) | Mod Package Manager |
 | [Bot Tutorial](bot-tutorial.md) | Bot behaviour runtime |
 | [Example bot mod](../examples/mods/example_bots) | Bot behaviour runtime |

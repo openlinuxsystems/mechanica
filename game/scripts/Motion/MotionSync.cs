@@ -28,7 +28,9 @@ public partial class MotionSync : Node, IMotionWorld
     private readonly Dictionary<int, (ulong Frame, int Revision)> _synced = [];
     private readonly Dictionary<(int Creation, int Part), Motor> _motors = [];
 
-    private sealed record Push(int Revision, Vector3 Force, Vector3 Torque)
+    private readonly List<(int Creation, PushState Push)> _applied = [];
+
+    private sealed record Push(int Revision, Vector3 Force, Vector3 Torque, PushState Shown)
     {
         public int StepsLeft { get; set; }
     }
@@ -95,11 +97,17 @@ public partial class MotionSync : Node, IMotionWorld
     public bool IsLive(int id) => Creations.NodeOf(id) is not null;
 
     /// <inheritdoc/>
-    public void ApplyForce(Creation creation, int body, System.Numerics.Vector3 force, System.Numerics.Vector3 torque, float? duration, int? part)
+    public void ApplyForce(Creation creation, int body, System.Numerics.Vector3 force, System.Numerics.Vector3 torque, float? duration, int? part,
+        System.Numerics.Vector3? at, System.Numerics.Vector3 ownTorque)
     {
         var steps = duration is { } d ? Math.Max(1, (int)MathF.Round(d * Engine.PhysicsTicksPerSecond)) : 1;
-        _pushes[(creation.Id, body, part ?? -1)] = new Push(creation.Revision, force.ToGodot(), torque.ToGodot()) { StepsLeft = steps };
+        var shown = new PushState(part, body, Vec(force), at is { } a ? Vec(a) : null, Vec(ownTorque));
+        _pushes[(creation.Id, body, part ?? -1)] = new Push(creation.Revision, force.ToGodot(), torque.ToGodot(), shown) { StepsLeft = steps };
     }
+
+    /// <inheritdoc/>
+    public IReadOnlyList<PushState> PushesOn(Creation creation) =>
+        [.. _applied.Where(a => a.Creation == creation.Id).Select(a => a.Push)];
 
     /// <inheritdoc/>
     public void SetJointMotor(Creation creation, JointLink joint, JointMotor motor)
@@ -123,8 +131,10 @@ public partial class MotionSync : Node, IMotionWorld
         {
             _pushes.Clear();
             _motors.Clear();
+            _applied.Clear();
             return;
         }
+        _applied.Clear();
         foreach (var (key, push) in _pushes.ToList())
         {
             if (Creations.NodeOf(key.Creation) is not { } node || node.Creation.Revision != push.Revision || key.Body >= node.Bodies.Count)
@@ -136,6 +146,7 @@ public partial class MotionSync : Node, IMotionWorld
             body.Sleeping = false;
             body.ApplyCentralForce(push.Force);
             body.ApplyTorque(push.Torque);
+            _applied.Add((key.Creation, push.Shown));
             if (--push.StepsLeft <= 0)
                 _pushes.Remove(key);
         }
@@ -180,6 +191,8 @@ public partial class MotionSync : Node, IMotionWorld
                 Wake(node, link.BodyA, link.BodyB);
         }
     }
+
+    private static Core.Data.Vec3 Vec(System.Numerics.Vector3 v) => new(v.X, v.Y, v.Z);
 
     private static void EnableMotor(Joint3D joint, bool on)
     {

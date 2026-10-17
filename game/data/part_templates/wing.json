@@ -1,0 +1,25 @@
+{
+  "id": "new_wing",
+  "name": "New Wing",
+  "description": "Lift and drag from the air flowing over it. Attach it by its root edge or its underside; another wing goes on its tip.",
+  "category": "interactive",
+  "mass": 2,
+  "durability": 3,
+  "friction": 0.4,
+  "buoyancy": 0.3,
+  "flammable": false,
+  "sound_material": "metal",
+  "size": [4, 1, 4],
+  "sockets": [
+    { "id": "root_1", "type": "structural", "position": [-0.5, 0, -0.375], "normal": [-1, 0, 0] },
+    { "id": "root_2", "type": "structural", "position": [-0.5, 0, -0.125], "normal": [-1, 0, 0] },
+    { "id": "root_3", "type": "structural", "position": [-0.5, 0, 0.125], "normal": [-1, 0, 0] },
+    { "id": "root_4", "type": "structural", "position": [-0.5, 0, 0.375], "normal": [-1, 0, 0] },
+    { "id": "tip_1", "type": "structural", "position": [0.5, 0, -0.375], "normal": [1, 0, 0] },
+    { "id": "tip_2", "type": "structural", "position": [0.5, 0, -0.125], "normal": [1, 0, 0] },
+    { "id": "tip_3", "type": "structural", "position": [0.5, 0, 0.125], "normal": [1, 0, 0] },
+    { "id": "tip_4", "type": "structural", "position": [0.5, 0, 0.375], "normal": [1, 0, 0] },
+    { "id": "mount", "type": "structural", "position": [0, -0.125, 0], "normal": [0, -1, 0] }
+  ],
+  "collision": { "shape": "box", "size": [1, 0.06, 1] }
+}

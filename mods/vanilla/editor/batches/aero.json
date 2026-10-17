@@ -1,0 +1,199 @@
+{
+  // Aero and propulsion parts (chunk 11): thruster, wing, control surface, rotor and hover jet. Their
+  // behaviour is in Lua (D2); the numbers are spec §21.2's. Re-run with tools/author-vanilla.sh.
+  "format_version": 1,
+  "parts": [
+    {
+      "file": "parts/thruster.json",
+      "template": "thruster",
+      "set": {
+        "name": "Thruster",
+        "description": "A jet that pushes its creation toward its base. Link a switch or a seat to it, or pick a pilot control with the Connect Tool (R). Burns gasoline from the creation's gas containers.",
+        "mass": 4,
+        "durability": 4,
+        "stack_size": 10,
+        "script": "scripts/thruster.lua",
+        "visual": { "color": "#5b6470", "roughness": 0.4, "metallic": 0.8 },
+        "sounds": { "ignite": "thruster_ignite", "loop": "thruster_loop", "cut": "thruster_cut" },
+        "properties": { "thrust": 200, "lever_rate": 0.5, "fuel": "gasoline", "fuel_time": 112 }
+      },
+      "model": [
+        { "kind": "box", "size": [0.24, 0.04, 0.24], "position": [0, -0.105, 0] },
+        { "kind": "cylinder", "radius": 0.09, "height": 0.17, "position": [0, -0.005, 0] },
+        { "kind": "cylinder", "radius": 0.11, "height": 0.05, "position": [0, 0.1, 0] }
+      ],
+      "recipes": [
+        {
+          "id": "thruster",
+          "stations": ["fabricator"],
+          "inputs": [
+            { "item": "scrap_metal", "count": 4 },
+            { "item": "component_kit", "count": 2 },
+            { "item": "gasoline", "count": 2 }
+          ],
+          "outputs": [{ "item": "thruster", "count": 1 }],
+          "time": 8
+        }
+      ]
+    },
+    {
+      "file": "parts/wing.json",
+      "template": "wing",
+      "set": {
+        "name": "Wing",
+        "description": "A 1 m by 1 m cambered wing: lift and drag from the air flowing over it, lifting toward its top even when level. Attach it by its root edge or its underside; another wing goes on its tip.",
+        "mass": 2,
+        "durability": 3,
+        "stack_size": 20,
+        "script": "scripts/wing.lua",
+        "visual": { "color": "#c8ccd2", "roughness": 0.5, "metallic": 0.5 },
+        "sounds": { "whoosh": "air_whoosh", "stall": "wing_stall" },
+        "properties": {
+          "area": 1.0,
+          "air_density": 1.225,
+          "camber_lift": 0.4,
+          "lift_slope": 4.5,
+          "max_lift": 1.2,
+          "stall_lift": 0.9,
+          "drag": 0.15,
+          "induced_drag": 0.05,
+          "stall_drag": 1.2,
+          "whoosh_speed": 40
+        }
+      },
+      "model": [
+        { "kind": "box", "size": [1, 0.04, 1], "position": [0, 0, 0] },
+        { "kind": "box", "size": [1, 0.06, 0.12], "position": [0, 0, -0.44] }
+      ],
+      "recipes": [
+        {
+          "id": "wing",
+          "stations": ["fabricator", "mini_fabricator"],
+          "inputs": [{ "item": "scrap_metal", "count": 2 }, { "item": "component_kit", "count": 1 }],
+          "outputs": [{ "item": "wing", "count": 1 }],
+          "time": 4
+        }
+      ]
+    },
+    {
+      "file": "parts/control_surface.json",
+      "base": "wing",
+      "set": {
+        "name": "Control Surface",
+        "description": "A 1 m by 0.5 m flap that steers in the air: its command tilts the air it meets by up to 10°. Link a seat to it; it follows W/S unless you pick another control with the Connect Tool (R).",
+        "mass": 1.5,
+        "durability": 3,
+        "size": [4, 1, 2],
+        "sockets": [
+          { "id": "hinge_1", "type": "structural", "position": [-0.375, 0, -0.25], "normal": [0, 0, -1] },
+          { "id": "hinge_2", "type": "structural", "position": [-0.125, 0, -0.25], "normal": [0, 0, -1] },
+          { "id": "hinge_3", "type": "structural", "position": [0.125, 0, -0.25], "normal": [0, 0, -1] },
+          { "id": "hinge_4", "type": "structural", "position": [0.375, 0, -0.25], "normal": [0, 0, -1] },
+          { "id": "root_1", "type": "structural", "position": [-0.5, 0, -0.125], "normal": [-1, 0, 0] },
+          { "id": "root_2", "type": "structural", "position": [-0.5, 0, 0.125], "normal": [-1, 0, 0] },
+          { "id": "mount", "type": "structural", "position": [0, -0.125, 0], "normal": [0, -1, 0] }
+        ],
+        "collision": { "shape": "box", "size": [1, 0.06, 0.5] },
+        "logic": { "inputs": 4 },
+        "settings": [
+          { "id": "control", "name": "Control", "type": "choice", "options": ["link", "w_s", "a_d", "space_shift"], "default": "w_s" },
+          { "id": "invert", "name": "Invert", "type": "toggle", "default": false }
+        ],
+        "visual": { "color": "#d0b04a", "roughness": 0.5, "metallic": 0.4 },
+        "sounds": { "whoosh": "air_whoosh", "stall": "wing_stall", "move": "surface_move", "lock": "surface_lock" },
+        "properties": { "area": 0.5, "camber_lift": 0, "max_deflection": 10, "lever_rate": 1, "whoosh_speed": 40 }
+      },
+      "model": [
+        { "kind": "box", "size": [1, 0.04, 0.5], "position": [0, 0, 0] },
+        { "kind": "cylinder", "radius": 0.03, "height": 1, "position": [0, 0, -0.22], "rotation": [0, 0, 90] }
+      ],
+      "recipes": [
+        {
+          "id": "control_surface",
+          "stations": ["fabricator", "mini_fabricator"],
+          "inputs": [{ "item": "scrap_metal", "count": 1 }, { "item": "component_kit", "count": 1 }],
+          "outputs": [{ "item": "control_surface", "count": 1 }],
+          "time": 3
+        }
+      ]
+    },
+    {
+      "file": "parts/rotor.json",
+      "template": "thruster",
+      "set": {
+        "name": "Rotor",
+        "description": "A powered propeller that pulls its creation away from its base and twists it the other way from its spin. Pair clockwise and counter-clockwise rotors (R) to cancel the twist.",
+        "mass": 5,
+        "durability": 4,
+        "stack_size": 10,
+        "size": [3, 1, 3],
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.125, 0], "normal": [0, -1, 0] }],
+        "collision": { "shape": "cylinder", "radius": 0.36, "height": 0.08, "offset": [0, 0.07, 0] },
+        "script": "scripts/rotor.lua",
+        "settings": [
+          { "id": "control", "name": "Control", "type": "choice", "options": ["link", "w_s", "a_d", "space_shift"], "default": "link" },
+          { "id": "invert", "name": "Invert", "type": "toggle", "default": false },
+          { "id": "spin", "name": "Spin", "type": "choice", "options": ["clockwise", "counterclockwise"], "default": "clockwise" }
+        ],
+        "visual": { "color": "#3f4a55", "roughness": 0.5, "metallic": 0.6 },
+        "sounds": { "spin_up": "rotor_spin_up", "loop": "rotor_loop", "spin_down": "rotor_spin_down" },
+        "properties": { "thrust": 150, "counter_torque": 40, "spool_rate": 0.8, "lever_rate": 0.5, "inflow_speed": 10, "max_inflow_gain": 1.3 }
+      },
+      "model": [
+        { "kind": "cylinder", "radius": 0.07, "height": 0.2, "position": [0, -0.025, 0] },
+        { "kind": "box", "size": [0.72, 0.02, 0.08], "position": [0, 0.07, 0], "rotation": [0, 0, 0] },
+        { "kind": "box", "size": [0.72, 0.02, 0.08], "position": [0, 0.07, 0], "rotation": [0, 90, 0] }
+      ],
+      "recipes": [
+        {
+          "id": "rotor",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "scrap_metal", "count": 5 }, { "item": "component_kit", "count": 3 }],
+          "outputs": [{ "item": "rotor", "count": 1 }],
+          "time": 8
+        }
+      ]
+    },
+    {
+      "file": "parts/hover_jet.json",
+      "template": "thruster",
+      "set": {
+        "name": "Hover Jet",
+        "description": "Pushes its creation toward its base, so one underneath lifts it. With Stabilize on (R) it also keeps its creation level while it runs.",
+        "mass": 4,
+        "durability": 4,
+        "stack_size": 10,
+        "size": [2, 1, 2],
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.125, 0], "normal": [0, -1, 0] }],
+        "collision": { "shape": "box", "size": [0.5, 0.25, 0.5] },
+        "script": "scripts/hover_jet.lua",
+        "settings": [
+          { "id": "control", "name": "Control", "type": "choice", "options": ["link", "w_s", "a_d", "space_shift"], "default": "link" },
+          { "id": "invert", "name": "Invert", "type": "toggle", "default": false },
+          { "id": "stabilize", "name": "Stabilize", "type": "toggle", "default": true }
+        ],
+        "visual": { "color": "#4f7a8a", "roughness": 0.4, "metallic": 0.7 },
+        "sounds": { "ignite": "hover_ignite", "loop": "hover_hum", "cut": "hover_cut" },
+        "properties": { "thrust": 300, "lever_rate": 0.5, "level_torque": 300, "level_damping": 120, "max_level_torque": 600 }
+      },
+      "model": [
+        { "kind": "box", "size": [0.5, 0.08, 0.5], "position": [0, -0.085, 0] },
+        { "kind": "cylinder", "radius": 0.2, "height": 0.12, "position": [0, 0.02, 0] },
+        { "kind": "cylinder", "radius": 0.14, "height": 0.04, "position": [0, 0.1, 0] }
+      ],
+      "recipes": [
+        {
+          "id": "hover_jet",
+          "stations": ["fabricator"],
+          "inputs": [
+            { "item": "scrap_metal", "count": 4 },
+            { "item": "component_kit", "count": 3 },
+            { "item": "circuit_board", "count": 1 }
+          ],
+          "outputs": [{ "item": "hover_jet", "count": 1 }],
+          "time": 8
+        }
+      ]
+    }
+  ]
+}

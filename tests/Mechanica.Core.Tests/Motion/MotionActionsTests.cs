@@ -231,6 +231,26 @@ public class MotionActionsTests
     }
 
     [Fact]
+    public void GetForcesListsThePushesWithWhereTheyAct()
+    {
+        var part = _car.Bodies[0].PartIds[0];
+        var at = MotionActions.CentreOfMass(_car, 0) + new Vector3(0, 0, 2);
+        _dispatcher.Dispatch(Agent, MotionActions.ApplyForce,
+            $$"""{ "creation": 7, "force": [10, 0, 0], "torque": [0, 0, 3], "at": [{{at.X}}, {{at.Y}}, {{at.Z}}], "part": {{part}} }""");
+
+        var result = _dispatcher.Dispatch(Agent, MotionActions.GetForces, """{ "creation": 7 }""");
+
+        Assert.True(result.Ok, result.ToString());
+        var push = Assert.Single(result.Value!.Value.Deserialize<List<PushState>>(ActionJson.Options)!);
+        Assert.Equal(part, push.Part);
+        Assert.Equal(new Vec3(10, 0, 0), push.Force);
+        Assert.Equal(at.Z, push.At!.Value.Z, 3);
+        // The torque asked for on top of the force, not the force's own twist.
+        Assert.Equal(new Vec3(0, 0, 3), push.Torque);
+        Assert.False(_dispatcher.Dispatch(Agent, MotionActions.GetForces, """{ "creation": 99 }""").Ok);
+    }
+
+    [Fact]
     public void QueriesAreReadOnly()
     {
         Assert.True(_dispatcher.IsReadOnly(MotionActions.GetCreation));
@@ -291,11 +311,17 @@ public class MotionActionsTests
 
         public bool IsLive(int id) => !Parked.Contains(id);
 
-        public void ApplyForce(Creation creation, int body, Vector3 force, Vector3 torque, float? duration, int? part)
+        public void ApplyForce(Creation creation, int body, Vector3 force, Vector3 torque, float? duration, int? part, Vector3? at, Vector3 ownTorque)
         {
             Pushes.Add((creation.Id, body, force, torque, duration));
             PushParts.Add(part);
+            Applied.Add(new PushState(part, body, new Vec3(force.X, force.Y, force.Z), at is { } a ? new Vec3(a.X, a.Y, a.Z) : null,
+                new Vec3(ownTorque.X, ownTorque.Y, ownTorque.Z)));
         }
+
+        public List<PushState> Applied { get; } = [];
+
+        public IReadOnlyList<PushState> PushesOn(Creation creation) => Applied;
 
         public List<JointMotor> JointMotors { get; } = [];
 

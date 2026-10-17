@@ -74,7 +74,7 @@ template becomes the part's name.
 | Template | What it does |
 |----------|--------------|
 | empty | Every hook, empty. |
-| thruster | Pushes along the part's +Y with `properties.thrust` N. |
+| thruster | Pushes toward its base (along the part's -Y) with `properties.thrust` N, like `vanilla:thruster`. |
 | bearing_motor | Drives a bearing at `properties.speed` rad/s with at most `properties.torque` N·m. |
 | wing | Lift and drag from the air speed across the part, from its `properties`. |
 | distance_sensor | Raycasts along the part's +Y up to `properties.range` m and keeps the distance in `state`. |
@@ -168,6 +168,7 @@ The Creation the part belongs to.
 | `creation.set_bearing_angle(part_id, angle, speed?, max_torque?)` | Like `part.set_bearing_angle`, for another bearing of the same Creation (a seat steering the front wheels). |
 | `creation.set_piston(part_id, length, speed?, max_force?)` | Like `part.set_piston`, for another piston of the same Creation (a controller moving several). |
 | `creation.joint(part_id)` | Like `part.joint()`, for another part of the same Creation. |
+| `creation.occupant_input(part_id)` | Like `part.occupant_input()`, for another seat of the same Creation: a control surface or rotor linked from a seat reads its pilot's controls this way. `nil` when that seat is empty. |
 | `creation.count(item)` | How many of an item the Creation's containers hold (gasoline in gas containers, battery packs in batteries). Bare ids are in the part's mod. |
 | `creation.take(item, count?)` | Takes up to `count` (default 1) of an item from the Creation's containers, in part order, and returns how many it took. Engines burn fuel this way. |
 
