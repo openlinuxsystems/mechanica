@@ -4,6 +4,7 @@ using Godot;
 using Mechanica.Core.Actions;
 using Mechanica.Core.Input;
 using Mechanica.Core.Logic;
+using Mechanica.Core.Ui;
 using Mechanica.Game.Building;
 using Mechanica.Game.Net;
 using Mechanica.Game.Player;
@@ -141,7 +142,7 @@ public partial class CreationInspector : CanvasLayer
             if (p.Occupant is { } peer)
                 details.Add(Loc.T("seated: peer {0}", peer));
             if (p.Fault is { } fault)
-                details.Add($"[color=#ff6060]{Loc.T("script stopped: {0}", fault)}[/color]");
+                details.Add($"[color={UiPalette.Error}]{Loc.T("script stopped: {0}", fault)}[/color]");
             else if (p.Script is not null)
                 details.Add(Loc.T("script runs"));
             text.AppendLine($"  {p.Id} {p.Name}: {string.Join(", ", details)}");

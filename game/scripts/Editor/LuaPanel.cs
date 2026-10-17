@@ -1,5 +1,6 @@
 using Godot;
 using Mechanica.Core.Data;
+using Mechanica.Core.Ui;
 using Mechanica.Game.Ui;
 using Mechanica.Scripting;
 using Mechanica.Scripting.Editor;
@@ -27,7 +28,7 @@ public partial class LuaPanel : VBoxContainer
     public const string TemplatesPath = "res://data/lua_templates";
 
     private const int ConsoleLines = 200;
-    private static readonly Color ErrorLineColor = new(0.55f, 0.1f, 0.1f, 0.6f);
+    private static readonly Color ErrorLineColor = UiTokens.Error with { A = 0.3f };
 
     private Label _path = null!;
     private OptionButton _templates = null!;
@@ -280,7 +281,7 @@ public partial class LuaPanel : VBoxContainer
 
     private string Line(ScriptMessage m)
     {
-        var color = m.Kind switch { ScriptMessageKind.Error => "#ff7070", ScriptMessageKind.Warning => "#ffd060", _ => "#d0d0d0" };
+        var color = m.Kind switch { ScriptMessageKind.Error => UiPalette.Error, ScriptMessageKind.Warning => UiPalette.Warning, _ => UiPalette.TextSecondary };
         var where = m.Part is { } part ? " " + Loc.T("part {0}", part) : "";
         var text = $"[color={color}]{Escape(m.Script + where)}:[/color] {Escape(m.Text)}";
         // The open part's own script stands out.
@@ -300,24 +301,26 @@ public partial class LuaPanel : VBoxContainer
     {
         var highlighter = new CodeHighlighter
         {
-            NumberColor = new Color("#b5cea8"),
-            SymbolColor = new Color("#d4d4d4"),
-            FunctionColor = new Color("#dcdcaa"),
-            MemberVariableColor = new Color("#9cdcfe"),
+            NumberColor = new Color(UiPalette.SyntaxNumber),
+            SymbolColor = new Color(UiPalette.SyntaxSymbol),
+            FunctionColor = new Color(UiPalette.SyntaxFunction),
+            MemberVariableColor = new Color(UiPalette.SyntaxMember),
         };
         foreach (var keyword in LuaApi.Keywords)
-            highlighter.AddKeywordColor(keyword, new Color("#c586c0"));
+            highlighter.AddKeywordColor(keyword, new Color(UiPalette.SyntaxKeyword));
         foreach (var library in LuaApi.Libraries)
-            highlighter.AddKeywordColor(library, new Color("#4ec9b0"));
+            highlighter.AddKeywordColor(library, new Color(UiPalette.SyntaxLibrary));
         foreach (var name in LuaApi.Entries.Select(e => e.Name.Split('.')[0]).Distinct())
-            highlighter.AddKeywordColor(name, new Color(name.StartsWith("on_", StringComparison.Ordinal) || name == "get_outputs" ? "#dcdcaa" : "#4fc1ff"));
+            highlighter.AddKeywordColor(name, new Color(name.StartsWith("on_", StringComparison.Ordinal) || name == "get_outputs" ? UiPalette.SyntaxCallback : UiPalette.SyntaxApi));
         foreach (var member in LuaApi.Entries.Where(e => e.Name.Contains('.')).Select(e => e.Name.Split('.')[1]).Distinct())
-            highlighter.AddMemberKeywordColor(member, new Color("#4fc1ff"));
-        highlighter.AddColorRegion("--[[", "]]", new Color("#6a9955"));
-        highlighter.AddColorRegion("--", "", new Color("#6a9955"), lineOnly: true);
-        highlighter.AddColorRegion("[[", "]]", new Color("#ce9178"));
-        highlighter.AddColorRegion("\"", "\"", new Color("#ce9178"));
-        highlighter.AddColorRegion("'", "'", new Color("#ce9178"));
+            highlighter.AddMemberKeywordColor(member, new Color(UiPalette.SyntaxApi));
+        var comment = new Color(UiPalette.SyntaxComment);
+        var text = new Color(UiPalette.SyntaxString);
+        highlighter.AddColorRegion("--[[", "]]", comment);
+        highlighter.AddColorRegion("--", "", comment, lineOnly: true);
+        highlighter.AddColorRegion("[[", "]]", text);
+        highlighter.AddColorRegion("\"", "\"", text);
+        highlighter.AddColorRegion("'", "'", text);
         return highlighter;
     }
 

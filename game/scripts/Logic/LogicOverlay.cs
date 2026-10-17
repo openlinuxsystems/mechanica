@@ -7,6 +7,7 @@ using Mechanica.Core.Logic;
 using Mechanica.Game.Creations;
 using Mechanica.Game.Net;
 using Mechanica.Game.Player;
+using Mechanica.Game.Ui;
 
 namespace Mechanica.Game.Logic;
 
@@ -25,8 +26,8 @@ public partial class LogicOverlay : MeshInstance3D
     /// <summary>Seconds between signal reads.</summary>
     public const double PollSeconds = 0.2;
 
-    private static readonly Color OnColor = new(1f, 0.85f, 0.2f);
-    private static readonly Color OffColor = new(0.3f, 0.45f, 0.9f);
+    private static readonly Color OnColor = UiTokens.SignalOn;
+    private static readonly Color OffColor = UiTokens.SignalOff;
 
     private readonly ImmediateMesh _lines = new();
     private readonly Dictionary<int, IReadOnlyDictionary<int, float>> _signals = [];

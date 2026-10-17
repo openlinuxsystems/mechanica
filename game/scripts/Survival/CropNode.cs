@@ -39,7 +39,7 @@ public partial class CropNode : Node3D
         _fruit.Visible = view.Ripe;
         _fruit.Position = new Vector3(0, height + 0.03f, 0);
         var color = view.Crop is { } crop ? catalog.FindDefinition(crop)?.Visual?.Color : null;
-        _fruit.MaterialOverride = new StandardMaterial3D { AlbedoColor = color is null ? new Color(0.9f, 0.5f, 0.1f) : Color.FromHtml(color) };
+        _fruit.MaterialOverride = new StandardMaterial3D { AlbedoColor = color is null ? new Color(0.8f, 0.25f, 0.3f) : Color.FromHtml(color) };
     }
 
     /// <summary>Stands on top of the soil part in <paramref name="node"/>'s Body; hidden when the part is gone.</summary>

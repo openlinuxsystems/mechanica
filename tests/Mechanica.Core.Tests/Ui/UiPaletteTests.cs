@@ -31,11 +31,28 @@ public class UiPaletteTests
     [Fact]
     public void NoPaletteColourIsOrange()
     {
-        foreach (var (name, hex) in UiPalette.All)
+        foreach (var (name, hex) in UiPalette.All.Concat(UiPalette.Overlays).Concat(UiPalette.Syntax))
         {
             var (r, g, b) = UiPalette.Parse(hex);
             Assert.False(UiPalette.IsOrange(r, g, b), $"{name} {hex} reads as orange");
         }
+    }
+
+    [Fact]
+    public void JointColoursCanBeToldApart()
+    {
+        string[] joints = [UiPalette.JointRigid, UiPalette.JointHinge, UiPalette.JointSlider, UiPalette.JointSpring, UiPalette.NoConnection];
+        Assert.Equal(joints.Length, joints.Distinct().Count());
+        Assert.NotEqual(UiPalette.SignalOn, UiPalette.SignalOff);
+        Assert.NotEqual(UiPalette.ForceArrow, UiPalette.TorqueArrow);
+    }
+
+    [Fact]
+    public void TheStyleGuideListsEveryColour()
+    {
+        var guide = File.ReadAllText(Path.Combine(RepoRoot(), "docs", "ui-style-guide.md"));
+        foreach (var (name, hex) in UiPalette.All.Concat(UiPalette.Overlays).Concat(UiPalette.Syntax))
+            Assert.True(guide.Contains($"`{hex}`", StringComparison.OrdinalIgnoreCase), $"docs/ui-style-guide.md is missing {name} ({hex})");
     }
 
     [Theory]
@@ -55,4 +72,12 @@ public class UiPaletteTests
     [InlineData(1.2f, 1.2f)]
     [InlineData(2f, 1.5f)]
     public void UiScaleIsClamped(float scale, float expected) => Assert.Equal(expected, UiPalette.ClampUiScale(scale));
+
+    private static string RepoRoot()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "Mechanica.sln")))
+            dir = dir.Parent;
+        return dir?.FullName ?? throw new DirectoryNotFoundException("Mechanica.sln not found above the test output.");
+    }
 }

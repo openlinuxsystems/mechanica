@@ -400,7 +400,7 @@ public partial class SandboxScreen : Control
         column.AddChild(_forceOverlay);
         _result = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart };
         column.AddChild(_result);
-        _status = Loc.Verbatim(new Label { Modulate = new Color(1, 1, 1, 0.8f) });
+        _status = Loc.Verbatim(new Label { ThemeTypeVariation = "SecondaryLabel" });
         column.AddChild(_status);
         AddButton(column, "Back", EmitBack);
     }
@@ -419,13 +419,13 @@ public static class CollisionOverlay
     private const string NodeName = "DebugOverlay";
     private static readonly StandardMaterial3D ShapeMaterial = new()
     {
-        AlbedoColor = new Color(1f, 0.85f, 0.1f),
+        AlbedoColor = UiTokens.Collision,
         ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
         NoDepthTest = true,
     };
     private static readonly StandardMaterial3D MassMaterial = new()
     {
-        AlbedoColor = new Color(1f, 0.2f, 0.9f),
+        AlbedoColor = UiTokens.CentreOfMass,
         ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
         NoDepthTest = true,
     };

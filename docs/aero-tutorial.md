@@ -59,8 +59,8 @@ While seated, F stands you up, so Space and Shift are free for the lever.
 Press **F9** to show the force overlay (the Test Sandbox has a "Show forces" box). For every creation
 within 60 m it draws each push the host applied in its last step:
 
-- an **orange arrow** from the part along the force, 1 m per 100 N (at most 6 m);
-- a **cyan line** along a twist, such as a rotor's counter-torque, 1 m per 50 N·m.
+- a **cyan arrow** from the part along the force, 1 m per 100 N (at most 6 m);
+- a **violet line** along a twist, such as a rotor's counter-torque, 1 m per 50 N·m.
 
 A plane in level flight shows thruster arrows pointing forward, wing arrows pointing mostly up and
 leaning back (the drag), and small control surface arrows that swing as you press W and S. A client

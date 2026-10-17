@@ -3,6 +3,7 @@ using Mechanica.Core;
 using Mechanica.Core.Data;
 using Mechanica.Core.Editor;
 using Mechanica.Core.Sound;
+using Mechanica.Core.Ui;
 using Mechanica.Game.Mods;
 using Mechanica.Game.Sound;
 using Mechanica.Game.Ui;
@@ -381,16 +382,16 @@ public partial class SoundBinderPanel : VBoxContainer
             lines.Add($"[b]{Escape(headline)}[/b]");
         foreach (var d in diagnostics)
         {
-            var color = d.Severity == DiagnosticSeverity.Error ? "#ff7070" : "#ffd060";
+            var color = d.Severity == DiagnosticSeverity.Error ? UiPalette.Error : UiPalette.Warning;
             lines.Add($"[color={color}]{(d.Severity == DiagnosticSeverity.Error ? Loc.T("Error") : Loc.T("Warning"))}[/color] {Escape(d.JsonPath ?? d.File)}: {Escape(d.Message)}");
         }
         if (diagnostics.Count == 0 && headline is null)
-            lines.Add($"[color=#80e080]{Loc.T("No problems.")}[/color]" + (Bank is { IsDirty: true } ? " " + Loc.T("Save writes the mod's sound bank.") : ""));
+            lines.Add($"[color={UiPalette.Success}]{Loc.T("No problems.")}[/color]" + (Bank is { IsDirty: true } ? " " + Loc.T("Save writes the mod's sound bank.") : ""));
         _bankProblems.Text = string.Join("\n", lines);
     }
 
     private static Label Hint(string text) =>
-        new() { Text = text, AutowrapMode = TextServer.AutowrapMode.WordSmart, Modulate = new Color(1, 1, 1, 0.7f) };
+        new() { Text = text, AutowrapMode = TextServer.AutowrapMode.WordSmart, ThemeTypeVariation = "SecondaryLabel" };
 
     private static Button AddButton(Container parent, string text, Action pressed, string tooltip = "")
     {

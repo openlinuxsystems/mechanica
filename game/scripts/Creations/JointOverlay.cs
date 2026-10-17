@@ -1,5 +1,6 @@
 using Godot;
 using Mechanica.Core.Creations;
+using Mechanica.Game.Ui;
 
 namespace Mechanica.Game.Creations;
 
@@ -12,8 +13,8 @@ namespace Mechanica.Game.Creations;
 /// </summary>
 public partial class JointOverlay : MeshInstance3D
 {
-    private static readonly Color LockedColor = new(0.55f, 0.55f, 0.55f);
-    private static readonly Color CentreOfMassColor = new(1f, 0.3f, 0.3f);
+    private static readonly Color LockedColor = UiTokens.JointLocked;
+    private static readonly Color CentreOfMassColor = UiTokens.CentreOfMass;
 
     private readonly ImmediateMesh _lines = new();
 

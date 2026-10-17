@@ -1,6 +1,7 @@
 using Godot;
 using Mechanica.Core.Creations;
 using Mechanica.Core.Data;
+using Mechanica.Game.Ui;
 
 namespace Mechanica.Game.Creations;
 
@@ -20,14 +21,14 @@ public static class JointGizmo
     /// <summary>The colour of each joint type, matching the socket colours.</summary>
     public static Color ColorOf(ConnectionType type) => type switch
     {
-        ConnectionType.Rotational => new Color(0.25f, 0.55f, 1f),
-        ConnectionType.Linear => new Color(1f, 0.55f, 0.15f),
-        ConnectionType.Spring => new Color(0.75f, 0.35f, 1f),
-        _ => new Color(0.3f, 0.9f, 0.4f),
+        ConnectionType.Rotational => UiTokens.JointHinge,
+        ConnectionType.Linear => UiTokens.JointSlider,
+        ConnectionType.Spring => UiTokens.JointSpring,
+        _ => UiTokens.JointRigid,
     };
 
     /// <summary>Colour of the "where it is now" marker.</summary>
-    public static readonly Color PositionColor = new(1f, 1f, 1f);
+    public static readonly Color PositionColor = UiTokens.GizmoSelected;
 
     /// <summary>A joint's frame from a socket alone, in the part's own frame (for the editor).</summary>
     public static JointFrame? FrameOf(SocketDefinition socket)
