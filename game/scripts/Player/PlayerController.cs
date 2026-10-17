@@ -25,6 +25,10 @@ public partial class PlayerController : CharacterBody3D
     private Node3D _head = null!;
     private SpringArm3D _cameraArm = null!;
     private MeshInstance3D _bodyMesh = null!;
+    private CapsuleShape3D _capsule = null!;
+    private CapsuleShape3D _headroom = null!;
+    private bool _crouched;
+    private float _eyeHeight;
     private Node3D? _character;
     private CollisionShape3D _shape = null!;
     private bool _dead;
@@ -110,6 +114,12 @@ public partial class PlayerController : CharacterBody3D
 
     /// <summary>Pivot at eye height that carries the look pitch.</summary>
     public Node3D Head => _head;
+
+    /// <summary>True while the player is crouched: its capsule is <see cref="PlayerMovementSettings.CrouchHeight"/> tall.</summary>
+    public bool Crouched => _crouched;
+
+    /// <summary>The collision capsule's current height in metres.</summary>
+    public float CapsuleHeight => _capsule.Height;
 
     /// <summary>Whether the camera is pulled back behind the player.</summary>
     public bool ThirdPerson
@@ -208,11 +218,14 @@ public partial class PlayerController : CharacterBody3D
         FloorSnapLength = 0.2f;
 
         var capsuleCentre = new Vector3(0, Settings.Height / 2f, 0);
-        _shape = new CollisionShape3D
+        _capsule = new CapsuleShape3D { Height = Settings.Height, Radius = Settings.Radius };
+        _shape = new CollisionShape3D { Name = "Shape", Position = capsuleCentre, Shape = _capsule };
+        // The space a standing player needs above a crouching one, a little narrower so walls beside it don't count.
+        var headroomRadius = Settings.Radius - 0.05f;
+        _headroom = new CapsuleShape3D
         {
-            Name = "Shape",
-            Position = capsuleCentre,
-            Shape = new CapsuleShape3D { Height = Settings.Height, Radius = Settings.Radius },
+            Radius = headroomRadius,
+            Height = Mathf.Min(Settings.Height - Settings.CrouchHeight + 2f * headroomRadius, Settings.Height - 0.05f),
         };
         AddChild(_shape);
         _bodyMesh = new MeshInstance3D
@@ -223,7 +236,8 @@ public partial class PlayerController : CharacterBody3D
         };
         AddChild(_bodyMesh);
 
-        _head = new Node3D { Name = "Head", Position = new Vector3(0, Settings.EyeHeight, 0) };
+        _eyeHeight = Settings.EyeHeight;
+        _head = new Node3D { Name = "Head", Position = new Vector3(0, _eyeHeight, 0) };
         AddChild(_head);
         _cameraArm = new SpringArm3D { Name = "CameraArm", SpringLength = 0f, Margin = 0.1f };
         _cameraArm.AddExcludedObject(GetRid());
@@ -269,7 +283,11 @@ public partial class PlayerController : CharacterBody3D
 
         var wasOnFloor = IsOnFloor();
         var depth = WaterDepth;
-        var velocity = PlayerMotor.Step(Velocity.ToNumerics(), wasOnFloor, input, Settings, delta, SpeedScale, depth);
+        var swimming = PlayerMotor.IsSwimming(depth, Settings);
+        SetCrouched(PlayerMotor.Crouched(input.Crawl, _crouched, !_crouched || RoomToStand(), swimming));
+        // Kept down under a low ceiling, the player moves at crouching speed whatever it holds.
+        var move = swimming ? input : input with { Crawl = _crouched };
+        var velocity = PlayerMotor.Step(Velocity.ToNumerics(), wasOnFloor, move, Settings, delta, SpeedScale, depth);
         Velocity = velocity.ToGodot();
         MoveAndSlide();
         if (!wasOnFloor && IsOnFloor() && velocity.Y < 0)
@@ -278,7 +296,8 @@ public partial class PlayerController : CharacterBody3D
             PushRigidBodies(delta);
         Body = (IsOnFloor() ? BodyFlags.OnFloor : 0)
             | (PlayerMotor.IsSwimming(WaterDepth, Settings) ? BodyFlags.Swimming : 0)
-            | (input.Crawl ? BodyFlags.Crawl : 0);
+            | (_crouched ? BodyFlags.Crawl : 0);
+        StepEyeHeight(delta);
         return input;
     }
 
@@ -304,8 +323,43 @@ public partial class PlayerController : CharacterBody3D
     public void ApplyBody(BodyFlags body, CharacterProp prop, CharacterGesture gesture, byte gestureCount)
     {
         Body = body;
+        SetCrouched(body.HasFlag(BodyFlags.Crawl));
+        StepEyeHeight((float)GetPhysicsProcessDeltaTime());
         ShownProp = prop;
         ShownGesture = (gesture, gestureCount);
+    }
+
+    // Shrinks or restores the capsule, keeping the feet where they are.
+    private void SetCrouched(bool crouched)
+    {
+        if (crouched == _crouched)
+            return;
+        _crouched = crouched;
+        var height = crouched ? Settings.CrouchHeight : Settings.Height;
+        _capsule.Height = height;
+        _shape.Position = new Vector3(0, height / 2f, 0);
+        if (_bodyMesh.Mesh is CapsuleMesh mesh)
+            mesh.Height = height;
+        _bodyMesh.Position = _shape.Position;
+    }
+
+    private void StepEyeHeight(float delta)
+    {
+        _eyeHeight = PlayerMotor.EyeHeight(_eyeHeight, _crouched, Settings, delta);
+        _head.Position = new Vector3(0, _eyeHeight, 0);
+    }
+
+    // True when nothing is in the space a standing player would fill above the crouched capsule.
+    private bool RoomToStand()
+    {
+        var query = new PhysicsShapeQueryParameters3D
+        {
+            Shape = _headroom,
+            Transform = new Transform3D(Basis.Identity, GlobalPosition + new Vector3(0, Settings.Height - _headroom.Height / 2f, 0)),
+            CollisionMask = CollisionMask,
+            Exclude = [GetRid()],
+        };
+        return GetWorld3D().DirectSpaceState.IntersectShape(query, 1).Count == 0;
     }
 
     private void ApplyLook(float yaw, float pitch)

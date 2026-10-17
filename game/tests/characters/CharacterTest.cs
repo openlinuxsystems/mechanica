@@ -124,6 +124,18 @@ public partial class CharacterTest : StagedTest
             return ((CharacterModel)_a.Main.PlayerSync.Players[_host.Peer].Character!).PropNode is null;
         });
 
+        Add("a crouching player is crouched on another peer", frame =>
+        {
+            _host.Main.LocalPlayer!.CurrentInput = new PlayerInput(0, 0, 0, 0, false, false, Crawl: true);
+            var seen = _a.Main.PlayerSync.Players[_host.Peer];
+            var model = (CharacterModel)seen.Character!;
+            if (!seen.Crouched || model.Animator.Mode != CharacterMode.Crouch)
+                return false;
+            Check(Mathf.IsEqualApprox(seen.CapsuleHeight, seen.Settings.CrouchHeight), $"the client's copy has the crouching capsule ({seen.CapsuleHeight})");
+            _host.Main.LocalPlayer!.CurrentInput = PlayerInput.None;
+            return true;
+        });
+        Add("standing up shows on another peer", _ => !_a.Main.PlayerSync.Players[_host.Peer].Crouched);
         Add("a player in deep water swims everywhere", frame =>
         {
             var player = _host.Main.LocalPlayer!;

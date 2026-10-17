@@ -14,7 +14,7 @@ These are the default keys. Every one can be changed in Options, Controls.
 | W A S D | Walk |
 | Space | Jump. In deep water, swim up; at the surface, jump out. |
 | Shift | Sprint (and swim faster) |
-| Ctrl | Crouch: move slowly. In deep water, dive. |
+| Ctrl | Crouch: move slowly and fit under gaps 1.2 m high (you stand up again once there is room). In deep water, dive. |
 | Mouse | Look. Click the world to take the mouse back after a menu. |
 | X / C | Zoom in to first person / out to third person (also Alt + scroll) |
 | 1 to 7 | Pick a tool: Hammer, Lift, Weld, Paint, Sledgehammer, item in hand, Connect Tool |
