@@ -83,6 +83,9 @@ public partial class Main : Node3D
     /// <summary>The folder blueprints are saved in. Null uses <c>user://blueprints</c>; tests set their own.</summary>
     public string? BlueprintFolder { get; set; }
 
+    /// <summary>The folder worlds are saved in. Null uses <c>user://saves</c>; tests set their own.</summary>
+    public string? SaveFolder { get; set; }
+
     /// <summary>The Lift's blueprint menu, when reading device input.</summary>
     public BlueprintMenu? Blueprints { get; private set; }
 
@@ -265,6 +268,15 @@ public partial class Main : Node3D
 
     /// <summary>The AI agents that joined the host's world as players through <see cref="Ai"/>.</summary>
     public AgentHost AgentHost { get; private set; } = null!;
+
+    /// <summary>Saving, loading and starting worlds for AI agents (the <c>world.*</c> methods).</summary>
+    public WorldSession WorldSession { get; private set; } = null!;
+
+    /// <summary>
+    /// Replaces this world with the next one, as <see cref="MenuOptions"/> and <see cref="MenuSave"/> describe it.
+    /// Null reloads the world scene; tests that host several worlds in one scene set their own.
+    /// </summary>
+    public Action? ReplaceWorld { get; set; }
 
     /// <summary>AI notes, recommendations and bug reports, and what led up to them.</summary>
     public AiReports Reports { get; private set; } = null!;
@@ -507,6 +519,7 @@ public partial class Main : Node3D
         Motion.Actions.Sledge = Build.Settings!.Sledge;
         Saves = new SaveSync
         {
+            Store = SaveFolder is null ? null : new SaveStore(SaveFolder),
             Characters = Characters.Choices,
             Hotbars = Hotbar.Bars,
             Markers = MapMarkers.Markers,
@@ -547,8 +560,21 @@ public partial class Main : Node3D
             Scripts = () => Scripts.Runtime, Bots = () => Bots.Runtime,
         };
         AddChild(Reports);
-        Ai = new AiEndpoint { Name = "Ai", Session = Session, Actions = Actions, Log = Recorder, Agents = AgentHost };
+        // An agent that loaded this world keeps its endpoint and connection.
+        if (AiEndpoint.TakeCarried() is { } carried)
+        {
+            carried.Session = Session;
+            carried.Actions = Actions;
+            carried.Log = Recorder;
+            carried.Agents = AgentHost;
+            Ai = carried;
+        }
+        else
+            Ai = new AiEndpoint { Session = Session, Actions = Actions, Log = Recorder, Agents = AgentHost };
+        Ai.Name = "Ai";
         AddChild(Ai);
+        WorldSession = new WorldSession(this);
+        ReplaceWorld ??= () => GetTree().ChangeSceneToFile(MainMenu.WorldScene);
         RemoteEventSources.Connect(this, Ai.Events);
         var modsRoot = ModsFolder ?? ModPaths.ModsRoot;
         var profilePath = ModProfileFile ?? ModPaths.ProfilePath;
@@ -558,6 +584,7 @@ public partial class Main : Node3D
         Ai.Modules.Add(new Mechanica.Scripting.Editor.ModToolsModule(modTools, Ai.Events));
         Ai.Modules.Add(new Core.Packages.PackageRpcModule(ModPaths.ModsRoot, ModPaths.PackagesRoot, Ai.Events));
         Ai.Modules.Add(new Core.Reports.ReportsModule(Reports.Reporter, Ai.Events));
+        Ai.Modules.Add(new WorldModule(new WorldControl(WorldSession)));
         // The offline player spawned with PlayerSync, before building existed.
         if (LocalPlayer is { } local)
             AddTools(local);
@@ -658,6 +685,8 @@ public partial class Main : Node3D
     public override void _Process(double delta)
     {
         UpdateLoading();
+        if (Loading?.Entered == true && Remote.WorldSession.Changing)
+            WorldSession.Entered();
         if (Options?.SelfTest == true)
             SelfTest.Update(this);
     }
@@ -733,15 +762,26 @@ public partial class Main : Node3D
         if (error != Error.Ok)
         {
             GD.PushError($"[net] {Session.LastMessage}");
+            if (Ai.IsCarried)
+                Ai.Stop();
             return;
         }
         if (!Session.IsHost)
+        {
+            if (Ai.IsCarried)
+                Ai.Stop();
             return;
+        }
         if (options.RecordPath is { } record)
             Recorder.RecordTo(record);
         if (options.ReplayPath is { } replay && Recorder.ReplayFrom(replay) is { } replayError)
             GD.PushError($"[replay] {replayError}");
-        if (options.AiPort is { } port)
+        if (Ai.IsCarried)
+        {
+            if (Ai.Resume() is { } resumeError)
+                GD.PushError($"[ai] {resumeError}");
+        }
+        else if (options.AiPort is { } port)
         {
             if (Ai.Listen(port, options.AiBind, options.AiAccess(OS.GetEnvironment)) is { } aiError)
                 GD.PushError($"[ai] {aiError}");
