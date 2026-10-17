@@ -34,10 +34,12 @@ public sealed class BlueprintTests : IDisposable
         creation.SetPartColor(1, "#3070d0");
         creation.SetPartDamage(1, 1.5f);
         creation.InventoryOf(2)!.Add(Scrap, 5);
+        creation.SetAnchored(1, true);
         creation.OnLift = true;
 
         var json = Blueprint.Write(creation, "  My cart\n ", Noon);
 
+        Assert.DoesNotContain("anchored", json);
         Assert.DoesNotContain("damage", json);
         Assert.DoesNotContain("inventory", json);
         Assert.DoesNotContain("on_lift", json);

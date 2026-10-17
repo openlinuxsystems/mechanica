@@ -77,6 +77,14 @@ public interface IBuildWorld
     /// </summary>
     string? CheckClear(Creation? target, PartDefinition definition, GridCell cell, GridRotation rotation, Pose pose);
 
+    /// <summary>
+    /// True when a part placed at <paramref name="pose"/> rests on the world itself (the ground, a rock, a building),
+    /// not only on players, Creations, Lifts or loose props. <paramref name="target"/>'s own bodies don't count.
+    /// Such a part is anchored (<see cref="Creation.SetAnchored"/>) when it starts a Creation or joins a grounded one.
+    /// Worlds without terrain anchor nothing.
+    /// </summary>
+    bool RestsOnWorld(Creation? target, PartDefinition definition, GridCell cell, GridRotation rotation, Pose pose) => false;
+
     /// <summary>A new Creation now exists (placed on the ground, or split off).</summary>
     void Added(Creation creation);
 
@@ -276,6 +284,10 @@ public sealed class BuildActions(IPartCatalog catalog, BuildSettings settings, I
             var target = world.FindCreation(id)!;
             if (!target.TryPlacePart(args.Part, args.Cell, args.Rotation, out placed, out error))
                 throw new InvalidOperationException(error);
+            // A part set down on the ground holds a grounded Creation there too, so it stays put when others come off.
+            if (target.IsGrounded && world.RestsOnWorld(target, target.DefinitionOf(placed.Id), args.Cell, args.Rotation,
+                    target.BodyPose(target.BodyIndexOf(placed.Id))))
+                target.SetAnchored(placed.Id, true);
             world.Changed(target);
             if (sound)
                 PlayPlaced(world, target, placed.Id);
@@ -286,7 +298,11 @@ public sealed class BuildActions(IPartCatalog catalog, BuildSettings settings, I
         var creation = new Creation(world.NextCreationId(), catalog);
         if (!creation.TryPlacePart(args.Part, args.Cell, args.Rotation, out placed, out error))
             throw new InvalidOperationException(error);
-        creation.SetAllBodyPoses(new Pose(args.Position!.Value.ToNumerics(), Quaternion.Identity));
+        var start = new Pose(args.Position!.Value.ToNumerics(), Quaternion.Identity);
+        creation.SetAllBodyPoses(start);
+        // Built on the ground, it is anchored there as in Scrap Mechanic: players can't kick it about.
+        if (world.RestsOnWorld(null, creation.DefinitionOf(placed.Id), args.Cell, args.Rotation, start))
+            creation.SetAnchored(placed.Id, true);
         world.Added(creation);
         PlayPlaced(world, creation, placed.Id);
         Costs?.Placed(caller, placed.Part);

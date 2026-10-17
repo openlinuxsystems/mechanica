@@ -59,6 +59,8 @@ internal static class WorldGenValidator
                 sink.Error(Code, $"{path}.scale", "scale must be [min, max] with 0 < min <= max.");
             if (o.Health is { } health && !(health > 0 && float.IsFinite(health)))
                 sink.Error(Code, $"{path}.health", "health must be greater than 0.");
+            if (o.Model is { } model && FloraModels.Find(model) is null)
+                sink.Error(Code, $"{path}.model", $"'{model}' is not a built-in flora model ({string.Join(", ", FloraModels.All.Select(m => m.Id))}).");
             if (o.Drops is { Count: > 0 } && o.Health is null)
                 sink.Warning(Code, $"{path}.drops", "drops are never left: the object has no health, so it cannot break.");
             for (var d = 0; d < (o.Drops?.Count ?? 0); d++)
@@ -101,6 +103,8 @@ internal static class WorldGenValidator
                 if (!(rule.Chance is >= 0f and <= 1f))
                     sink.Error(Code, $"{rulePath}.chance", $"chance must be 0 to 1 (got {rule.Chance}).");
             }
+            for (var r = 0; r < (b.Flora?.Count ?? 0); r++)
+                Flora(b.Flora![r], $"{path}.flora[{r}]", sink);
         }
         if (biomes.Count > 0 && !biomes.Any(b => b.Weight > 0f && b.Id != definition.CoastBiome))
             sink.Error(Code, "$.biomes", "at least one inland biome needs a weight above 0.");
@@ -183,6 +187,37 @@ internal static class WorldGenValidator
                 sink.Error(code, $"{path}.ref", $"'{reference}' is not an id (id or mod_id:id).");
         }
     }
+
+    private static void Flora(FloraRule rule, string path, DiagnosticSink sink)
+    {
+        KnownKeys.WarnUnknown(rule.Extra, path, sink, typeof(FloraRule));
+        if (rule.Kind is null)
+            sink.Error(Code, $"{path}.kind", "kind is required (grass, ground_cover or bush).");
+        // Plants are scattered per square metre of ground; more than this many is a typo, and would stall the game.
+        if (!float.IsFinite(rule.Density) || rule.Density < 0f || rule.Density > 20f)
+            sink.Error(Code, $"{path}.density", $"density must be 0 to 20 plants per square metre (got {rule.Density}).");
+        if (!(rule.Coverage is >= 0f and <= 1f))
+            sink.Error(Code, $"{path}.coverage", $"coverage must be 0 to 1 (got {rule.Coverage}).");
+        Positive(rule.PatchSize, $"{path}.patch_size", sink);
+        NonNegative(rule.MaxSlope, $"{path}.max_slope", sink);
+        if (rule.Scale is { } scale && (scale.Count != 2 || !(scale[0] > 0f) || !(scale[0] <= scale[1]) || !float.IsFinite(scale[1])))
+            sink.Error(Code, $"{path}.scale", "scale must be [min, max] with 0 < min <= max.");
+        for (var m = 0; m < (rule.Models?.Count ?? 0); m++)
+        {
+            var model = FloraModels.Find(rule.Models![m]);
+            if (model is null)
+                sink.Error(Code, $"{path}.models[{m}]", $"'{rule.Models[m]}' is not a built-in flora model ({string.Join(", ", FloraModels.All.Select(x => x.Id))}).");
+            else if (rule.Kind is { } k && model.Kind != k)
+                sink.Error(Code, $"{path}.models[{m}]", $"'{model.Id}' is a {Kind(model.Kind)} model, not {Kind(k)}.");
+        }
+        for (var c = 0; c < (rule.Colors?.Count ?? 0); c++)
+        {
+            if (!WorldGenData.TryParseColor(rule.Colors![c], out _))
+                sink.Error(Code, $"{path}.colors[{c}]", $"'{rule.Colors[c]}' is not a colour; use #rrggbb.");
+        }
+    }
+
+    private static string Kind(FloraKind kind) => kind switch { FloraKind.GroundCover => "ground_cover", _ => kind.ToString().ToLowerInvariant() };
 
     private static void Shape(ShapeDefinition shape, string path, DiagnosticSink sink, string code = Code)
     {

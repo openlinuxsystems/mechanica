@@ -124,7 +124,7 @@ public partial class SledgeTool : HandTool
         _strikeDone = null;
         if (!Active)
             return;
-        if (Cast(Player, Build.Settings!.Sledge.Reach) is not { } hit)
+        if (Cast(Player, Build.Settings!.Sledge.Reach, brush: true) is not { } hit)
         {
             done?.Invoke(ActionResult.Failure("miss", "The swing hit nothing."));
             return;
@@ -136,8 +136,7 @@ public partial class SledgeTool : HandTool
             args = new SledgeArgs(Player: target.PeerId, At: at);
         else if (hit.Collider is Bots.BotBody bot)
             args = new SledgeArgs(Bot: bot.BotId, At: at);
-        else if (hit.Collider is StaticBody3D objects && objects.GetParent() is TerrainChunk chunk && objects == chunk.Objects
-            && chunk.ObjectAt(hit.Shape) is { } id)
+        else if (TerrainChunk.ObjectHit(hit.Collider, hit.Shape) is { } id)
             args = new SledgeArgs(Object: id.ToString(), At: at);
         else if (PartHit(hit) is { } aimed)
             args = new SledgeArgs(aimed.Node.Creation.Id, aimed.Part, At: at);

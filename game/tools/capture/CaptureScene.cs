@@ -2,7 +2,11 @@ using Godot;
 using Mechanica.Core.Characters;
 using Mechanica.Core.Net;
 using Mechanica.Core.Player;
+using Mechanica.Core.Settings;
+using Mechanica.Core.World;
 using Mechanica.Game.Player;
+using Mechanica.Game.Settings;
+using Mechanica.Game.World;
 
 namespace Mechanica.Game.Tools;
 
@@ -11,6 +15,8 @@ namespace Mechanica.Game.Tools;
 /// crouching, moving, and in first person with each tool. For checking how a character or skin looks in game; run
 /// <c>tools/capture-characters.sh</c>, which uses a virtual display and the compatibility renderer. Given <c>lift</c> instead
 /// of a character it puts the player's Lift down and captures its deploy, a raise and full extension (<c>tools/capture-lift.sh</c>).
+/// Given <c>flora</c> it takes the player to a meadow and captures the grass, ground cover and bushes: wide and close, at every
+/// Foliage density level, a player in a bush, and every flora model in a row (<c>tools/capture-flora.sh</c>).
 /// Given <c>icons</c> it saves the item picture of every tool and a few parts, then the HUD with the hotbar and the Lift's
 /// placement ghost (<c>tools/capture-icons.sh</c>).
 /// </summary>
@@ -30,8 +36,9 @@ public partial class CaptureScene : Node
         var args = OS.GetCmdlineUserArgs();
         _out = args.Length > 0 ? args[0] : OS.GetUserDataDir();
         var lift = args.Length > 1 && args[1] == "lift";
+        var flora = args.Length > 1 && args[1] == "flora";
         var icons = args.Length > 1 && args[1] == "icons";
-        Main.MenuCharacter = args.Length > 1 && !lift && !icons ? args[1] : "scrapper_male";
+        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons ? args[1] : "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
         _main.Options = LaunchOptions.Offline with { Seed = 7 };
         _main.ReadDeviceInput = icons;
@@ -41,6 +48,11 @@ public partial class CaptureScene : Node
         if (lift)
         {
             LiftShots();
+            return;
+        }
+        if (flora)
+        {
+            FloraShots();
             return;
         }
         if (icons)
@@ -107,6 +119,137 @@ public partial class CaptureScene : Node
         Shot("lift_close", 2, () => LookAtLift(new Vector3(1.2f, 0.9f, -1.5f), 0.3f));
     }
 
+    private Vector3 _meadow;
+
+    private void FloraShots()
+    {
+        Engine.TimeScale = 1.0;
+        Shot("flora_00_wait", 60, () => { });
+        Shot("flora_00_go", 240, () =>
+        {
+            var gen = _main.Streamer.Generator;
+            for (var r = 100f; r < 2000f && _meadow == default; r += 50f)
+            {
+                for (var a = 0f; a < Mathf.Tau && _meadow == default; a += 0.3f)
+                {
+                    var (x, z) = (r * Mathf.Cos(a), r * Mathf.Sin(a));
+                    if (new[] { (0f, 0f), (40f, 0f), (-40f, 0f), (0f, 40f), (0f, -40f) }.All(d => gen.BiomeAt(x + d.Item1, z + d.Item2).Id == "meadow")
+                        && gen.SlopeAt(x, z) < 0.15f && !gen.PoisAt(x, z).Any() && !gen.ObjectsIn(x - 5, z - 5, x + 5, z + 5).Any())
+                        _meadow = new Vector3(x, gen.HeightAt(x, z), z);
+                }
+            }
+            GD.Print($"[capture] meadow at {_meadow}");
+            _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, _meadow + Vector3.Up * 0.3f, 0f);
+            Player.ThirdPerson = true;
+            _camera.MakeCurrent();
+            _camera.GlobalPosition = _meadow + new Vector3(0, 30, 0);
+        });
+        Shot("flora_01_meadow", 30, () => { _main.Flora.BuildAll(); View(new Vector3(-3f, 1.8f, 3f), new Vector3(8f, 0.4f, -14f)); });
+        Shot("flora_02_overview", 30, () => View(new Vector3(-12f, 9f, 12f), new Vector3(6f, 0f, -6f)));
+        Shot("flora_03_grass_close", 30, () => View(new Vector3(1.2f, 0.9f, 1.6f), new Vector3(2.4f, 0.1f, -0.6f)));
+        Shot("flora_04_grass_low_angle", 30, () => View(new Vector3(0.5f, 0.35f, 2.5f), new Vector3(3f, 0.25f, -4f)));
+        Shot("flora_05_bush", 30, () =>
+        {
+            var bush = NearestFlora(FloraKind.Bush);
+            ViewAt(bush, new Vector3(2.2f, 1.3f, 2.2f), 0.5f);
+        });
+        Shot("flora_06_ground_cover", 30, () =>
+        {
+            var cover = NearestFlora(FloraKind.GroundCover);
+            ViewAt(cover, new Vector3(0.9f, 0.7f, 0.9f), 0.1f);
+        });
+        Shot("flora_07_seed_bush", 30, () =>
+        {
+            var gen = _main.Streamer.Generator;
+            var bush = gen.ObjectsIn(_meadow.X - 120, _meadow.Z - 120, _meadow.X + 120, _meadow.Z + 120).Where(o => o.Definition.Id == "bush")
+                .OrderBy(o => o.Position.ToGodot().DistanceTo(_meadow)).First();
+            _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, bush.Position.ToGodot() + new Vector3(-1.6f, 0.3f, 1.2f), 0f);
+            _main.Flora.BuildAll();
+            ViewAt(bush.Position.ToGodot(), new Vector3(2f, 1.4f, 2.4f), 0.5f);
+        });
+        Shot("flora_08_player_in_bush", 60, () =>
+        {
+            var bush = NearestFlora(FloraKind.Bush);
+            _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, bush + Vector3.Up * 0.3f, 0f);
+            ViewAt(bush, new Vector3(2.5f, 1.8f, 3.2f), 0.8f);
+        });
+        foreach (var level in new[] { FoliageLevel.Off, FoliageLevel.Low, FoliageLevel.Medium, FoliageLevel.High, FoliageLevel.VeryHigh })
+        {
+            Shot($"flora_10_level_{(int)level}_{level}", 30, () =>
+            {
+                _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, _meadow + Vector3.Up * 0.3f, 0f);
+                GameSettings.Apply(GameSettings.Current with { Graphics = GameSettings.Current.Graphics with { Grass = level, GroundCover = level, Bushes = level } });
+                _main.Flora.BuildAll();
+                View(new Vector3(-4f, 3.2f, 4f), new Vector3(10f, 0f, -22f));
+            });
+        }
+        Shot("flora_20_models", 30, () =>
+        {
+            GameSettings.Apply(GameSettings.Current with { Graphics = GameSettings.Current.Graphics with { Grass = FoliageLevel.Off, GroundCover = FoliageLevel.Off, Bushes = FoliageLevel.Off } });
+            _main.Flora.BuildAll();
+            var row = new Node3D { Name = "Models" };
+            AddChild(row);
+            var gen = _main.Streamer.Generator;
+            var models = FloraModels.All;
+            var tints = new Dictionary<FloraKind, Color> { [FloraKind.Grass] = new(0.49f, 0.78f, 0.23f), [FloraKind.GroundCover] = new(0.47f, 0.76f, 0.24f), [FloraKind.Bush] = new(0.4f, 0.7f, 0.24f) };
+            var counts = new Dictionary<FloraKind, int>();
+            // Foliage is off, which fades the shared materials out; the row gets copies that draw at any distance.
+            var lineup = new[] { FloraKind.Grass, FloraKind.GroundCover, FloraKind.Bush }.ToDictionary(k => k, k =>
+            {
+                var material = (ShaderMaterial)FloraMaterials.For(k).Duplicate();
+                FloraMaterials.Configure(material, 0.3f, 1f, 1000f, 2000f);
+                return material;
+            });
+            foreach (var model in models)
+            {
+                var index = counts[model.Kind] = counts.GetValueOrDefault(model.Kind) + 1;
+                var (spacing, depth) = model.Kind switch { FloraKind.Bush => (1.6f, -2.2f), FloraKind.Grass => (0.75f, 0f), _ => (0.6f, 1.1f) };
+                var x = _meadow.X + (index - 1) * spacing - spacing * 2.5f;
+                var z = _meadow.Z + depth;
+                var at = new Vector3(x, gen.HeightAt(x, z), z);
+                var multi = FloraField.New(FloraMaterials.Meshes(model).Full, 1);
+                multi.SetInstanceTransform(0, new Transform3D(Basis.Identity, at));
+                multi.SetInstanceColor(0, Colors.White);
+                multi.SetInstanceCustomData(0, tints[model.Kind].SrgbToLinear() with { A = 0.3f });
+                row.AddChild(new MultiMeshInstance3D { Name = model.Id, Multimesh = multi, MaterialOverride = lineup[model.Kind] });
+            }
+            _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, _meadow + new Vector3(-6f, 0.3f, 3f), 0f);
+            View(new Vector3(0.3f, 2.1f, 4.6f), new Vector3(0.3f, 0.2f, -0.6f));
+        });
+    }
+
+    // The plant of a kind nearest the meadow spot, from the flora drawn there.
+    private Vector3 NearestFlora(FloraKind kind)
+    {
+        var world = _main.Streamer;
+        var settings = _main.Flora.Settings!;
+        return world.Chunks.Values
+            .SelectMany(c => FloraScatter.Grow(world.Generator, c.Data, kind, settings.MaxDensity))
+            .Where(p => p.Rank < settings.Keep(FoliageLevel.High))
+            .Select(p => p.Position.ToGodot())
+            .OrderBy(p => p.DistanceTo(_meadow + new Vector3(3f, 0f, -3f)))
+            .First();
+    }
+
+    // Camera at an offset from the meadow spot, looking at another offset from it.
+    private void View(Vector3 from, Vector3 to)
+    {
+        _follow = null;
+        _camera.MakeCurrent();
+        _camera.GlobalPosition = Ground(_meadow + from) + Vector3.Up * from.Y;
+        _camera.LookAt(Ground(_meadow + to) + Vector3.Up * to.Y);
+    }
+
+    private void ViewAt(Vector3 target, Vector3 offset, float height)
+    {
+        _follow = null;
+        _camera.MakeCurrent();
+        _camera.GlobalPosition = Ground(target + offset) + Vector3.Up * offset.Y;
+        _camera.LookAt(target + Vector3.Up * height);
+    }
+
+    private Vector3 Ground(Vector3 at) => new(at.X, _main.Streamer.Generator.HeightAt(at.X, at.Z), at.Z);
+
     private static readonly string[] IconItems = [.. Core.Items.HotbarTools.All, "vanilla:gas_engine", "vanilla:wheel", "vanilla:chest"];
 
     // Each picture is saved as it becomes ready; the last shot is the HUD, with the hotbar showing the tools.
@@ -158,7 +301,13 @@ public partial class CaptureScene : Node
 
     private void Tool<T>() where T : Building.HandTool => _main.Tools!.Use(_main.Tools.Tools.OfType<T>().First());
 
-    private void Shot(string name, int frames, Action setup) => _shots.Enqueue((name, frames, setup));
+    // CAPTURE_ONLY=text keeps the shots whose names contain it (and the setup shots, named *_00_*).
+    private void Shot(string name, int frames, Action setup)
+    {
+        if (OS.GetEnvironment("CAPTURE_ONLY") is { Length: > 0 } only && !name.Contains(only, StringComparison.Ordinal) && !name.Contains("_00_", StringComparison.Ordinal))
+            return;
+        _shots.Enqueue((name, frames, setup));
+    }
 
     private void Input(float z = 0, float pitch = 0, bool crawl = false, bool sprint = false) =>
         Player.CurrentInput = new PlayerInput(0, z, Player.CurrentInput.Yaw, pitch, false, sprint, crawl);

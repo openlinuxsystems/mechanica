@@ -22,7 +22,7 @@ asks first.
 | `time` | Seconds the world has been simulated (the scripts' `world.time()`); the clock carries on from it when the world loads, so times scripts stored, such as a soil's last growth, stay right. Missing in older saves (0) |
 | `mods`, `fingerprint` | The mods the world ran. Loading with different mods works but logs what differs |
 | `destroyed` | Trees, rocks and other world objects that were destroyed |
-| `creations` | Every Creation in the Creation format: parts, links, body poses and velocities, part settings, damage, container contents, crafting queues, soil (`seed`, `grown`, `water`, `stage` and `updated`, the world time growth was last worked out at) and `fire`, how strongly a burning part burns (0 to 1) |
+| `creations` | Every Creation in the Creation format: parts, links, body poses and velocities, part settings, damage, container contents, crafting queues, soil (`seed`, `grown`, `water`, `stage` and `updated`, the world time growth was last worked out at), `fire`, how strongly a burning part burns (0 to 1), and `anchored`, true on a part built resting on the ground, which holds its Body still (missing in older saves, whose Creations all simulate) |
 | `scripts` | Each scripted part's Lua `state` table, by creation and part id |
 | `players` | Every player the host has seen, by profile id: name, inventory, health, respawn bed, position and facing |
 | `quests` | The story: each started quest's progress, story flags and revealed POIs (see [Quests](quests.md)) |
