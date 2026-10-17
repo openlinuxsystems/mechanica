@@ -72,6 +72,9 @@ public partial class PartEditorScreen : Control
     /// <summary>The Recipes tab: recipes in the part's mod that make the part.</summary>
     public RecipePanel Recipes { get; private set; } = null!;
 
+    /// <summary>The Script tab (Lua editor).</summary>
+    public LuaPanel Lua { get; private set; } = null!;
+
     /// <summary>The 3D preview.</summary>
     public PartPreview Preview => _preview;
 
@@ -112,7 +115,7 @@ public partial class PartEditorScreen : Control
         _undo = AddButton(toolbar, "Undo", () => Document?.Undo(), "Ctrl+Z");
         _redo = AddButton(toolbar, "Redo", () => Document?.Redo(), "Ctrl+Shift+Z");
         toolbar.AddChild(new VSeparator());
-        AddButton(toolbar, "Help", () => _help.Open("getting-started.md"), "Getting Started and the Part Data Schema Reference");
+        AddButton(toolbar, "Help", () => OpenHelp("getting-started.md"), "Getting Started, the Part Data Schema Reference and the Lua API Reference");
         AddButton(toolbar, "Close", () => CloseRequested?.Invoke(), "Back to the menu");
         _title = new Label { SizeFlagsHorizontal = SizeFlags.ExpandFill, HorizontalAlignment = HorizontalAlignment.Right };
         toolbar.AddChild(_title);
@@ -279,6 +282,9 @@ public partial class PartEditorScreen : Control
             TestRequested?.Invoke(result.QualifiedId);
     }
 
+    /// <summary>Shows one of the docs (<c>lua-api.md</c>) in the help window.</summary>
+    public void OpenHelp(string fileName) => _help.Open(fileName);
+
     // ---- Building the UI ----
 
     private void BuildTabs()
@@ -346,6 +352,9 @@ public partial class PartEditorScreen : Control
         _behaviourGrid = AddTab("Behaviour");
         Recipes = new RecipePanel { Name = "RecipePanel", Editor = this, SizeFlagsHorizontal = SizeFlags.ExpandFill };
         AddTabBox("Recipes").AddChild(Recipes);
+        // The script editor fills its tab instead of scrolling with it.
+        Lua = new LuaPanel { Name = "Script", Editor = this };
+        _tabs.AddChild(Lua);
     }
 
     private void BuildDialogs()
@@ -423,6 +432,7 @@ public partial class PartEditorScreen : Control
         _preview.Frame(document.Definition.Size ?? GridSize.One);
         Refresh(rebuildInspector: true);
         Recipes.Reload();
+        Lua.Reload();
     }
 
     private void OnDocumentChanged()
@@ -435,6 +445,7 @@ public partial class PartEditorScreen : Control
         if (_selectedSocket >= (Document.Definition.Sockets?.Count ?? 0))
             _selectedSocket = (Document.Definition.Sockets?.Count ?? 0) - 1;
         Refresh(rebuildInspector: !_quiet);
+        Lua.Reload();
     }
 
     // An edit from a field: the field already shows the new value, so the inspector is not rebuilt under it.
