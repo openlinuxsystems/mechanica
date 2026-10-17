@@ -42,6 +42,7 @@ public partial class MainMenu : Control
     /// <summary>Command-line flag that runs a Part Editor batch file and quits.</summary>
     public const string PartBatchFlag = "--part-batch";
 
+    private static bool _booted;
     private readonly List<Control> _open = [];
     /// <summary>The home screen's links (UI spec §14 bottom bar).</summary>
     public const string LinksPath = "res://data/links.json";
@@ -88,7 +89,7 @@ public partial class MainMenu : Control
         var rows = new VBoxContainer();
         layout.AddChild(rows);
         rows.AddChild(new Control { CustomMinimumSize = new Vector2(0, 40) });
-        rows.AddChild(Logo());
+        rows.AddChild(Ui.Logo.Create(84));
         rows.AddChild(new Control { CustomMinimumSize = new Vector2(0, 24) });
         var center = new CenterContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
         rows.AddChild(center);
@@ -126,8 +127,15 @@ public partial class MainMenu : Control
         rows.AddChild(BottomBar());
         _help = new HelpWindow { Name = "Help", Visible = false };
         AddChild(_help);
+        // The splash once per run, when the game starts on the menu (not in test scenes that add a menu).
+        if (Splash ?? (!_booted && GetTree().CurrentScene == this))
+            AddChild(new BootSplash { Name = "Splash" });
+        _booted = true;
         Callable.From(() => ((Button?)_continue ?? column.GetChildren().OfType<Button>().First()).GrabFocus()).CallDeferred();
     }
+
+    /// <summary>Whether the boot splash shows; null shows it the first time the game starts on the menu.</summary>
+    public bool? Splash { get; set; }
 
     /// <summary>The Continue button, when a save exists.</summary>
     public Button? ContinueButton => _continue;
@@ -169,20 +177,6 @@ public partial class MainMenu : Control
     public ConfirmDialog? AskQuit() => _quit.HasFocus()
         ? ConfirmDialog.Ask(this, "Quit", Loc.T("Quit {0}?", MechanicaInfo.GameName), "Quit", () => GetTree().Quit(), () => _quit.GrabFocus())
         : null;
-
-    private static Label Logo()
-    {
-        var logo = new Label { Name = "Logo", AutoTranslateMode = AutoTranslateModeEnum.Disabled, Text = MechanicaInfo.GameName.ToUpperInvariant(), HorizontalAlignment = HorizontalAlignment.Center };
-        logo.AddThemeFontSizeOverride("font_size", 84);
-        logo.AddThemeColorOverride("font_color", UiTokens.Text);
-        logo.AddThemeColorOverride("font_outline_color", UiTokens.Blue);
-        logo.AddThemeConstantOverride("outline_size", 8);
-        logo.AddThemeColorOverride("font_shadow_color", UiTokens.Cyan with { A = 0.45f });
-        logo.AddThemeConstantOverride("shadow_outline_size", 22);
-        logo.AddThemeConstantOverride("shadow_offset_x", 0);
-        logo.AddThemeConstantOverride("shadow_offset_y", 0);
-        return logo;
-    }
 
     private Control BottomBar()
     {
@@ -254,7 +248,8 @@ public partial class MainMenu : Control
         if (StartWorld is { } start)
             start();
         else
-            GetTree().ChangeSceneToFile(WorldScene);
+            // Loading the mods takes a moment; the world's own loading screen takes over once it starts.
+            LoadingScreen.Transition(this, "Loading mods…", () => GetTree().ChangeSceneToFile(WorldScene));
     }
 
     private async Task RunBatch(string? file)

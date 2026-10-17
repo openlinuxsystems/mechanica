@@ -27,6 +27,7 @@ public partial class WorldStreamer : Node3D
 
     private readonly Dictionary<ChunkCoord, TerrainChunk> _chunks = [];
     private readonly HashSet<ChunkCoord> _pending = [];
+    private bool _received;
     private readonly Dictionary<ChunkCoord, TerrainChunk> _scenery = [];
     private Node3D _sceneryRoot = null!;
 
@@ -92,6 +93,15 @@ public partial class WorldStreamer : Node3D
 
     /// <summary>Client side: the host's world replaced the one this peer started with.</summary>
     public event Action? WorldReplaced;
+
+    /// <summary>A client: true once the host's world has arrived. The host always has its own.</summary>
+    public bool HasWorld => Session.IsHost || _received;
+
+    /// <summary>Chunks waiting to be built around the players and force-loaded Creations.</summary>
+    public int PendingChunks => _pending.Count;
+
+    /// <summary>Scenery chunks in view not built yet, as of the last step.</summary>
+    public int SceneryMissing { get; private set; }
 
     /// <summary>True when this peer decides which Creations are simulated.</summary>
     public bool StreamsCreations => Session.IsHost;
@@ -229,6 +239,7 @@ public partial class WorldStreamer : Node3D
             if (System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalSeconds >= SceneryBudget)
                 break;
         }
+        SceneryMissing = wanted.Count(c => !_scenery.ContainsKey(c));
     }
 
     // Distance (x/z) from a player to a chunk's centre.
@@ -298,6 +309,7 @@ public partial class WorldStreamer : Node3D
                 node.RefreshObjects();
             }
         }
+        _received = true;
         GD.Print($"[world] joined world {state.Seed} ({state.Destroyed.Count} objects destroyed)");
         Step(0f);
         WorldReplaced?.Invoke();

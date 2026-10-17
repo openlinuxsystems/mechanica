@@ -92,6 +92,34 @@ public partial class LanguageTest : StagedTest
         Screen("the Bot Behavior Editor", () => _menu.OpenBotEditor(), tabs: true);
         Screen("the Test Sandbox", () => _menu.OpenSandbox(), tabs: true);
         Screen("the Mod Manager", () => _menu.OpenModManager());
+        Add("the loading screen, loading and failed", frame =>
+        {
+            if (frame == 0)
+            {
+                _menu.CloseAll();
+                var screen = new LoadingScreen { Name = "LoadingScreen" };
+                _menu.AddChild(screen);
+                screen.Report(LoadStage.Chunks, 0.5);
+                return false;
+            }
+            var loading = _menu.GetNode<LoadingScreen>("LoadingScreen");
+            if (frame == 30)
+            {
+                Audit("the loading screen", loading, false);
+                loading.Fail(Loc.T("The world took too long to load."));
+            }
+            if (frame < 60)
+                return false;
+            Audit("the failed loading screen", loading, false);
+            loading.QueueFree();
+            var transition = LoadingScreen.Transition(_menu, "Returning to menu…", () => { });
+            Callable.From(() =>
+            {
+                Audit("the menu transition", transition, false);
+                transition.QueueFree();
+            }).CallDeferred();
+            return true;
+        });
         Add("the Part Editor", frame =>
         {
             if (frame == 0)
@@ -191,6 +219,9 @@ public partial class LanguageTest : StagedTest
                 _keys.UnionWith(Enum.GetNames<Core.Survival.GameMode>());
                 _keys.UnionWith(Walk(_main).OfType<Building.HandTool>().Select(t => t.ToolName));
                 _keys.UnionWith(TutorialHints.Load().Hints.Select(h => h.Text));
+                _keys.UnionWith(TutorialHints.Load().Tips);
+                _keys.UnionWith(Enum.GetValues<LoadStage>().Select(WorldLoading.Text));
+                _keys.UnionWith(["Loading mods…", "Returning to menu…"]);
                 var now = DateTimeOffset.Now;
                 foreach (var seconds in new[] { 0, 300, 4000 })
                     SaveSummary.FormatPlayTime(seconds, (key, _) => { _keys.Add(key); return key; });

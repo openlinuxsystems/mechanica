@@ -2,6 +2,7 @@ using Godot;
 using Mechanica.Core;
 using Mechanica.Core.Net;
 using Mechanica.Core.Saves;
+using Mechanica.Core.Ui;
 using Mechanica.Game.Ui;
 
 namespace Mechanica.Game.Net;
@@ -100,6 +101,15 @@ public partial class NetSession : Node
     /// <summary>Why the last connection attempt or session ended, for the UI.</summary>
     public string LastMessage { get; private set; } = "";
 
+    /// <summary>
+    /// Host: where its own world load stands (UI spec §15), sent to each client as it joins and on every change.
+    /// Client: the host's, as last reported; <see cref="LoadStage.WaitingForHost"/> until the host says.
+    /// </summary>
+    public LoadStage HostStage { get; private set; } = LoadStage.Entering;
+
+    /// <summary>Client: the host player's name, once the host reports its load stage.</summary>
+    public string HostName { get; private set; } = "";
+
     /// <summary>Host side: a peer finished the handshake.</summary>
     public event Action<int>? PeerReady;
 
@@ -179,6 +189,8 @@ public partial class NetSession : Node
         }
         Multiplayer.MultiplayerPeer = peer;
         _refusal = null;
+        HostStage = LoadStage.WaitingForHost;
+        HostName = "";
         LastMessage = Loc.T("Connecting to {0}…", endpoint);
         SetState(SessionState.Connecting);
         return Error.Ok;
@@ -192,6 +204,9 @@ public partial class NetSession : Node
         CloseSocket();
         _readyPeers.Clear();
         _profiles.Clear();
+        // Back to hosting its own (loaded) world.
+        if (State == SessionState.Connecting || State == SessionState.Connected)
+            HostStage = LoadStage.Entering;
         LastMessage = reason;
         SetState(SessionState.Offline);
     }
@@ -243,6 +258,7 @@ public partial class NetSession : Node
         _readyPeers.Add(peer);
         _profiles[peer] = profile;
         RpcId(peer, MethodName.Welcome, NetProtocol.Version);
+        RpcId(peer, MethodName.HostLoading, (int)HostStage, Profile.Name);
         GD.Print($"[net] peer {peer} ({profile.Name}) joined");
         PeerReady?.Invoke(peer);
     }
@@ -256,6 +272,28 @@ public partial class NetSession : Node
         LastMessage = Loc.T("Connected.");
         SetState(SessionState.Connected);
         Joined?.Invoke();
+    }
+
+    /// <summary>Host: reports its own load stage to every client, and to each that joins later.</summary>
+    public void ReportStage(LoadStage stage)
+    {
+        if (!IsHost || stage == HostStage)
+            return;
+        HostStage = stage;
+        if (State != SessionState.Hosting)
+            return;
+        foreach (var peer in _readyPeers)
+            RpcId(peer, MethodName.HostLoading, (int)stage, Profile.Name);
+    }
+
+    /// <summary>Host → client: where the host's own world load stands.</summary>
+    [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void HostLoading(int stage, string name)
+    {
+        if (State != SessionState.Connected || !Enum.IsDefined((LoadStage)stage))
+            return;
+        HostStage = (LoadStage)stage;
+        HostName = name.Length > 64 ? name[..64] : name;
     }
 
     /// <summary>Host → client: the host is about to drop us, and why.</summary>

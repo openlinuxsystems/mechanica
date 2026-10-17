@@ -31,6 +31,9 @@ public partial class TutorialHints : CanvasLayer
     /// <summary>Screens that show a tip when first open, by name (<c>screen:name</c>). Set before adding to the tree.</summary>
     public IReadOnlyList<(string Name, Func<bool> IsOpen)> Screens { get; init; } = [];
 
+    /// <summary>True while tips wait (the loading screen is up). Set before adding to the tree.</summary>
+    public Func<bool> Waiting { get; init; } = () => false;
+
     /// <summary>The tip on screen, or null.</summary>
     public TutorialHint? Showing { get; private set; }
 
@@ -65,6 +68,8 @@ public partial class TutorialHints : CanvasLayer
 
     public override void _Process(double delta)
     {
+        if (Waiting())
+            return;
         Fire("start");
         if (Tool() is { } tool)
             Fire($"tool:{tool.ToLowerInvariant()}");
