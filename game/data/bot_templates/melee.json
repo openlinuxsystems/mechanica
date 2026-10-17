@@ -1,0 +1,31 @@
+{
+  // Bot Behavior Editor template: a raider that goes for crops during raids and for players it sees.
+  "id": "new_bot",
+  "name": "New Bot",
+  "family": "scuttler",
+  "health": 60,
+  "speed": 4,
+  "sight": 30,
+  "size": { "radius": 0.4, "height": 1.2 },
+  "color": "#808080",
+  "raid_cost": 1,
+  "attacks": [
+    { "id": "hit", "kind": "melee", "damage": 15, "part_damage": 10, "range": 1.5, "interval": 1 }
+  ],
+  "behavior": {
+    "type": "selector",
+    "children": [
+      { "type": "sequence", "children": [
+        { "type": "find_player", "range": 12 },
+        { "type": "chase", "attack": "hit", "speed": 1 },
+        { "type": "attack", "attack": "hit" } ] },
+      { "type": "sequence", "children": [
+        { "type": "in_raid" },
+        { "type": "find_crop" },
+        { "type": "chase", "attack": "hit", "speed": 1 },
+        { "type": "attack", "attack": "hit" } ] },
+      { "type": "go_to_raid", "radius": 6 },
+      { "type": "wander", "radius": 8, "speed": 0.4 }
+    ]
+  }
+}

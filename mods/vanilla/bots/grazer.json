@@ -1,0 +1,42 @@
+{
+  "id": "grazer",
+  "name": "Grazer",
+  "description": "A passive grazing animal. Runs when hurt.",
+  "family": "grazer",
+  "health": 50,
+  "speed": 3,
+  "water_speed": 1,
+  "sight": 10,
+  "size": {
+    "radius": 0.6,
+    "height": 1.2
+  },
+  "color": "#c9b48a",
+  "passive": true,
+  "behavior": {
+    "type": "selector",
+    "children": [
+      {
+        "type": "sequence",
+        "children": [
+          {
+            "type": "health_below",
+            "fraction": 0.999
+          },
+          {
+            "type": "find_player"
+          },
+          {
+            "type": "flee",
+            "range": 15
+          }
+        ]
+      },
+      {
+        "type": "wander",
+        "radius": 8,
+        "speed": 0.3
+      }
+    ]
+  }
+}

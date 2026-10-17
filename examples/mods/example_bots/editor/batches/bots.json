@@ -1,0 +1,46 @@
+// Bot Behavior Editor batch for the example mod. Re-run with tools/author-vanilla.sh (or open the bot in
+// the editor and Export); bots/sentry_drone.json is its output.
+{
+  "format_version": 1,
+  "bots": [
+    {
+      "file": "bots/sentry_drone.json",
+      "template": "ranged",
+      "set": {
+        "name": "Sentry Drone",
+        "description": "Patrols a square around where it was placed, shoots intruders, and backs off when badly hurt.",
+        "family": "spooler",
+        "health": 120,
+        "speed": 3.5,
+        "sight": 25,
+        "size": { "radius": 0.4, "height": 1.4 },
+        "color": "#4a6fa5",
+        "raid_cost": null,
+        "script": "scripts/bots/sentry_drone.lua",
+        "properties": { "patrol": [[6, 0], [6, 6], [0, 6], [0, 0]] },
+        "attacks": [
+          { "id": "zap", "kind": "ranged", "damage": 12, "part_damage": 0, "range": 15, "interval": 1.5, "hits_parts": false, "sound": "spooler_fire" }
+        ],
+        "drops": [
+          { "item": "vanilla:circuit_board", "chance": 1, "count": 1 },
+          { "item": "vanilla:battery_pack", "chance": 0.25, "count": 1 }
+        ],
+        "behavior": {
+          "type": "selector",
+          "children": [
+            { "type": "sequence", "children": [
+              { "type": "health_below", "fraction": 0.25 },
+              { "type": "find_player" },
+              { "type": "flee", "range": 20 } ] },
+            { "type": "sequence", "children": [
+              { "type": "find_player", "range": 15 },
+              { "type": "target_in_range", "attack": "zap" },
+              { "type": "stop" },
+              { "type": "attack", "attack": "zap" } ] },
+            { "type": "patrol", "speed": 0.5 }
+          ]
+        }
+      }
+    }
+  ]
+}

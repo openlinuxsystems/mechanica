@@ -1,0 +1,90 @@
+{
+  "id": "spooler_green",
+  "name": "Green Spooler",
+  "description": "Fires bubble wrap: less damage, but it keeps stinging for a while.",
+  "family": "spooler",
+  "health": 40,
+  "speed": 3,
+  "water_speed": 1.5,
+  "sight": 35,
+  "size": {
+    "radius": 0.35,
+    "height": 1
+  },
+  "color": "#5fae3e",
+  "raid_cost": 2,
+  "attacks": [
+    {
+      "id": "bubble",
+      "kind": "ranged",
+      "damage": 15,
+      "part_damage": 5,
+      "range": 16,
+      "interval": 2.5,
+      "damage_over_time": {
+        "per_second": 2,
+        "seconds": 3
+      },
+      "sound": "spooler_fire"
+    }
+  ],
+  "drops": [
+    {
+      "item": "component_kit",
+      "chance": 0.5,
+      "count": 1
+    }
+  ],
+  "behavior": {
+    "type": "selector",
+    "children": [
+      {
+        "type": "sequence",
+        "children": [
+          {
+            "type": "find_player",
+            "range": 25
+          },
+          {
+            "type": "chase",
+            "attack": "bubble",
+            "speed": 1
+          },
+          {
+            "type": "attack",
+            "attack": "bubble"
+          }
+        ]
+      },
+      {
+        "type": "sequence",
+        "children": [
+          {
+            "type": "in_raid"
+          },
+          {
+            "type": "find_crop"
+          },
+          {
+            "type": "chase",
+            "attack": "bubble",
+            "speed": 1
+          },
+          {
+            "type": "attack",
+            "attack": "bubble"
+          }
+        ]
+      },
+      {
+        "type": "go_to_raid",
+        "radius": 12
+      },
+      {
+        "type": "wander",
+        "radius": 8,
+        "speed": 0.4
+      }
+    ]
+  }
+}

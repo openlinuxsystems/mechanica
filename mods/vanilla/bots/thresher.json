@@ -1,0 +1,126 @@
+{
+  "id": "thresher",
+  "name": "Thresher",
+  "description": "A huge farming machine. Kicks, swipes, sprays pesticide, and shrugs off melee weapons.",
+  "family": "thresher",
+  "health": 1500,
+  "speed": 3,
+  "water_speed": 1.5,
+  "sight": 40,
+  "size": {
+    "radius": 1.4,
+    "height": 3.5
+  },
+  "color": "#7a7f86",
+  "melee_immune": true,
+  "raid_cost": 5,
+  "attacks": [
+    {
+      "id": "kick",
+      "kind": "melee",
+      "damage": 10,
+      "part_damage": 40,
+      "range": 2,
+      "interval": 1
+    },
+    {
+      "id": "swipe",
+      "kind": "melee",
+      "damage": 35,
+      "part_damage": 60,
+      "range": 3,
+      "interval": 3
+    },
+    {
+      "id": "pesticide",
+      "kind": "area",
+      "damage": 0,
+      "part_damage": 0,
+      "range": 4,
+      "radius": 5,
+      "interval": 8,
+      "damage_over_time": {
+        "per_second": 5,
+        "seconds": 4
+      },
+      "hits_parts": false
+    }
+  ],
+  "drops": [
+    {
+      "item": "component_kit",
+      "chance": 1,
+      "count": 4
+    },
+    {
+      "item": "circuit_board",
+      "chance": 0.5,
+      "count": 1
+    }
+  ],
+  "behavior": {
+    "type": "selector",
+    "children": [
+      {
+        "type": "sequence",
+        "children": [
+          {
+            "type": "find_player",
+            "range": 15
+          },
+          {
+            "type": "chase",
+            "attack": "swipe",
+            "speed": 1
+          },
+          {
+            "type": "selector",
+            "children": [
+              {
+                "type": "attack",
+                "attack": "pesticide"
+              },
+              {
+                "type": "attack",
+                "attack": "swipe"
+              },
+              {
+                "type": "attack",
+                "attack": "kick"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "sequence",
+        "children": [
+          {
+            "type": "in_raid"
+          },
+          {
+            "type": "find_crop"
+          },
+          {
+            "type": "chase",
+            "attack": "swipe",
+            "speed": 1
+          },
+          {
+            "type": "attack",
+            "attack": "swipe"
+          }
+        ]
+      },
+      {
+        "type": "go_to_raid",
+        "radius": 6
+      },
+      {
+        "type": "wander",
+        "radius": 12,
+        "speed": 0.4
+      }
+    ]
+  }
+}

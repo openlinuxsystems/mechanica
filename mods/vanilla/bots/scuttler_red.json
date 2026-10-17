@@ -1,0 +1,87 @@
+{
+  "id": "scuttler_red",
+  "name": "Red Scuttler",
+  "description": "Runs at you and blows itself up.",
+  "family": "scuttler",
+  "health": 40,
+  "speed": 6,
+  "water_speed": 3,
+  "sight": 30,
+  "size": {
+    "radius": 0.35,
+    "height": 0.9
+  },
+  "color": "#d0402e",
+  "attacks": [
+    {
+      "id": "explode",
+      "kind": "area",
+      "damage": 40,
+      "part_damage": 30,
+      "range": 1.5,
+      "radius": 4,
+      "interval": 1,
+      "kills_self": true,
+      "sound": "scuttler_explode"
+    }
+  ],
+  "drops": [
+    {
+      "item": "explosive_remnant",
+      "chance": 1,
+      "count": 1
+    }
+  ],
+  "behavior": {
+    "type": "selector",
+    "children": [
+      {
+        "type": "sequence",
+        "children": [
+          {
+            "type": "find_player",
+            "range": 12
+          },
+          {
+            "type": "chase",
+            "attack": "explode",
+            "speed": 1
+          },
+          {
+            "type": "attack",
+            "attack": "explode"
+          }
+        ]
+      },
+      {
+        "type": "sequence",
+        "children": [
+          {
+            "type": "in_raid"
+          },
+          {
+            "type": "find_crop"
+          },
+          {
+            "type": "chase",
+            "attack": "explode",
+            "speed": 1
+          },
+          {
+            "type": "attack",
+            "attack": "explode"
+          }
+        ]
+      },
+      {
+        "type": "go_to_raid",
+        "radius": 6
+      },
+      {
+        "type": "wander",
+        "radius": 8,
+        "speed": 0.4
+      }
+    ]
+  }
+}

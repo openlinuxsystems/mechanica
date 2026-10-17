@@ -1,0 +1,86 @@
+{
+  "id": "spooler_yellow",
+  "name": "Yellow Spooler",
+  "description": "Fires lighter tape, much faster.",
+  "family": "spooler",
+  "health": 50,
+  "speed": 3,
+  "water_speed": 1.5,
+  "sight": 35,
+  "size": {
+    "radius": 0.35,
+    "height": 1
+  },
+  "color": "#e0c030",
+  "raid_cost": 3,
+  "attacks": [
+    {
+      "id": "tape",
+      "kind": "ranged",
+      "damage": 15,
+      "part_damage": 8,
+      "range": 18,
+      "interval": 1.2,
+      "sound": "spooler_fire"
+    }
+  ],
+  "drops": [
+    {
+      "item": "component_kit",
+      "chance": 0.5,
+      "count": 1
+    }
+  ],
+  "behavior": {
+    "type": "selector",
+    "children": [
+      {
+        "type": "sequence",
+        "children": [
+          {
+            "type": "find_player",
+            "range": 25
+          },
+          {
+            "type": "chase",
+            "attack": "tape",
+            "speed": 1
+          },
+          {
+            "type": "attack",
+            "attack": "tape"
+          }
+        ]
+      },
+      {
+        "type": "sequence",
+        "children": [
+          {
+            "type": "in_raid"
+          },
+          {
+            "type": "find_crop"
+          },
+          {
+            "type": "chase",
+            "attack": "tape",
+            "speed": 1
+          },
+          {
+            "type": "attack",
+            "attack": "tape"
+          }
+        ]
+      },
+      {
+        "type": "go_to_raid",
+        "radius": 12
+      },
+      {
+        "type": "wander",
+        "radius": 8,
+        "speed": 0.4
+      }
+    ]
+  }
+}

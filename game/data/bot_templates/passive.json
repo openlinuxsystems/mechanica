@@ -1,0 +1,22 @@
+{
+  // Bot Behavior Editor template: a harmless creature that grazes near home and runs from players.
+  "id": "new_bot",
+  "name": "New Creature",
+  "family": "grazer",
+  "health": 50,
+  "speed": 3,
+  "sight": 10,
+  "size": { "radius": 0.5, "height": 1.0 },
+  "color": "#808080",
+  "passive": true,
+  "behavior": {
+    "type": "selector",
+    "children": [
+      { "type": "sequence", "children": [
+        { "type": "health_below", "fraction": 0.999 },
+        { "type": "find_player" },
+        { "type": "flee", "range": 15 } ] },
+      { "type": "wander", "radius": 8, "speed": 0.3 }
+    ]
+  }
+}
