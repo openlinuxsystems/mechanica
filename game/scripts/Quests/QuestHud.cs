@@ -20,6 +20,9 @@ public partial class QuestHud : CanvasLayer, IHudLayer
     private PanelContainer _log = null!;
     private Label _logText = null!;
     private VBoxContainer _choices = null!;
+    // How far the dialogue line sits above the bottom edge.
+    private const float DialogueMargin = 120;
+
     private PanelContainer _dialogue = null!;
     private Label _dialogueText = null!;
     private Label _status = null!;
@@ -71,7 +74,7 @@ public partial class QuestHud : CanvasLayer, IHudLayer
 
         _dialogue = new PanelContainer { Name = "Dialogue", Visible = false, MouseFilter = Control.MouseFilterEnum.Ignore };
         AddChild(_dialogue);
-        _dialogue.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.CenterBottom, Control.LayoutPresetMode.KeepSize, 120);
+        _dialogue.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.CenterBottom, Control.LayoutPresetMode.KeepSize, (int)DialogueMargin);
         _dialogue.GrowHorizontal = Control.GrowDirection.Both;
         _dialogue.GrowVertical = Control.GrowDirection.Begin;
         _dialogueText = Loc.Verbatim(new Label
@@ -98,6 +101,11 @@ public partial class QuestHud : CanvasLayer, IHudLayer
     {
         if (_dialogue.Visible)
         {
+            // Above a tutorial tip, which shares the bottom centre, rather than on top of it.
+            var bottom = GetViewport().GetVisibleRect().Size.Y - DialogueMargin;
+            if (Ui.TutorialHints.Shown is { } tip)
+                bottom = Mathf.Min(bottom, tip.Position.Y - 8);
+            _dialogue.Position = new Vector2(_dialogue.Position.X, bottom - _dialogue.Size.Y);
             _lineLeft -= delta;
             if (_lineLeft <= 0)
                 NextLine();

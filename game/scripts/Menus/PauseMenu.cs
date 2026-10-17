@@ -59,7 +59,7 @@ public partial class PauseMenu : CanvasLayer
     {
         Layer = 10;
         _root = new CenterContainer { Name = "Menu", Visible = false };
-        _root.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        _root.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
         AddChild(_root);
         _panel = UiInput.KeepMouse(new PanelContainer());
         _root.AddChild(_panel);
@@ -196,7 +196,7 @@ public partial class PauseMenu : CanvasLayer
             return;
         // The whole screen behind a window opened from the menu is its: a stray click or wheel there must not close everything.
         var holder = UiInput.KeepMouse(new CenterContainer());
-        holder.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        holder.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
         var screen = new Saves.SaveScreen { Saves = Saves };
         screen.CloseRequested += () =>
         {
@@ -222,7 +222,7 @@ public partial class PauseMenu : CanvasLayer
         _saveScreen?.QueueFree();
         // The whole screen behind a window opened from the menu is its: a stray click or wheel there must not close everything.
         var holder = UiInput.KeepMouse(new CenterContainer());
-        holder.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        holder.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
         var screen = new OptionsScreen { World = World() };
         screen.CloseRequested += () =>
         {
