@@ -31,7 +31,7 @@ ends with what a modder needs to make new logic parts.
 | Left drag on a line | Grabs the line's far end. Let go in the air to disconnect it, or on another node to move it there. |
 | Right click (Connect Tool) | On a bearing's node, reverses which way it turns (the small curved arrow by the node flips). During a drag, cancels it. |
 | Hover (Connect Tool) | On a node, a tooltip shows the part and its kind; on a line, "Source → Target" and its signal. |
-| E | On a part with settings, opens them (a gate's mode, a timer's delay). |
+| E | On a part with settings, opens its menu (a timer's delay, an engine's power). On a logic gate it switches to the next mode. R with the Connect Tool opens any part's menu. |
 | F7 | Turns the **Logic Visualizer** on or off: links show without the Connect Tool. Each link is a blue line with a cyan core (bright while the source is on) and chevrons pointing from the source to the part it feeds. With both off, a link flashes briefly when its signal changes. |
 | F8 | Opens the **Creation Inspector** for the creation under the crosshair: its mass, bodies, joints, links, and for each part its output, input, settings, who sits in it and whether its script runs or stopped on an error. |
 | F9 | Turns the **force overlay** on or off: an arrow for every push a part script makes, such as a thruster's thrust or a wing's lift (see the [Aero and Propulsion Tutorial](aero-tutorial.md)). |
@@ -58,8 +58,9 @@ you also need a gas container with gasoline in it; in Creative engines run witho
 5. **Wire it.** Take the Connect Tool. Drag from the seat's node to the engine's, then from the seat to
    the steering bearing: the seat now feeds both. Drag from the engine across all four wheel bearings;
    each one you pass over is linked.
-6. **Gear.** Aim at the engine and press E. Gear 1 is slow and easy to control; gear 5 is the top
-   speed (`speed` in the engine's data). Each gear is a fifth of it.
+6. **Power.** Aim at the engine and press E. Low (1) is slow and easy to control; High (5) is the top
+   speed (`speed` in the engine's data). Each step is a fifth of it. The menu also shows the fuel left,
+   the gasoline in the tanks, the wheel speed in rpm and the torque.
 7. **Drive.** Look at the seat and press E. W and S are the throttle, A and D steer. With no throttle
    the engine holds the wheels (its `brake`), so the car does not roll away. E stands you up.
 
@@ -68,6 +69,12 @@ the others, right click its bearing's node with the Connect Tool to reverse it. 
 the steering bearing is at the back (or right click it to reverse it). A seat only steers bearings that turn about an upright axis, and an
 engine only drives bearings whose axis is across its front, so linking the seat to a wheel bearing or the
 engine to the steering bearing does nothing.
+
+While the engine runs, a green dot above it shows it is on (gray when it is off), and a cyan ring turns on
+each wheel bearing it drives. With the Connect Tool out a piston shows a bar of how far out it is.
+
+An engine with nothing linked into it has an **On** toggle in its menu: on, it drives at full throttle.
+Link the seat back in and the toggle gives way to the seat.
 
 ### Fuel
 
@@ -83,8 +90,9 @@ Inspector shows an engine's input, so you can tell an empty tank from a broken w
 3. Look at the switch and press E. The piston pushes out to the end of its stroke and holds there.
    Press E again and it pulls back.
 
-Put a **timer** between them (switch → timer → piston) and set its delay with R: the piston moves that
-many seconds after the switch. Use a **button** instead of the switch for a short pulse, or a **logic
+Put a **timer** between them (switch → timer → piston) and set its delay with E: the piston moves that
+many seconds after the switch. Set its Trigger to **repeat** and the piston pumps in and out every delay
+while the switch is on. Use a **button** instead of the switch for a short pulse, or a **logic
 gate** to need two switches at once.
 
 ## The vanilla logic parts
@@ -95,17 +103,28 @@ Settings are changed with E on the part; properties are fixed in the part's data
 |------|--------|----------|------------|
 | Driver's Seat, Scrap Driver's Seat | The driver's throttle, -1 to 1 | | `steer_angle` (°), `steer_speed` (rad/s), `steer_torque` (N·m) |
 | Passenger Seat, Scrap Seat | (none) | | |
-| Gas Engine, Scrap Gas Engine, Electric Engine | Its throttle while it runs | `gear` 1 to 5 | `speed` (rad/s in top gear), `torque` and `brake` (N·m), `fuel` (item), `fuel_time` (s per item), `loop_parameter` |
+| Gas Engine, Scrap Gas Engine, Electric Engine | Its throttle while it runs | `gear` (Power) 1 to 5, `on` (with nothing linked in) | `speed` (rad/s at full power), `torque` and `brake` (N·m), `fuel` (item), `fuel_time` (s per item), `loop_parameter` |
 | Logic Gate | 1 or 0 | `mode`: and, or, xor, nand, nor, xnor | |
-| Timer | Its input, `delay` seconds later | `delay` (s) | |
-| Sensor | 1 while something is within `range` of its face | `range` (m) | `interval` (steps between checks) |
+| Timer | Its input, `delay` seconds later; or on and off every `delay` while its input is on | `delay` (s), `mode` (once, repeat) | |
+| Sensor | 1 while something it detects is within `range` of its face | `range` (1 to 20 m), `players`, `bots`, `blocks`, `creations` | `interval` (steps between checks), `cone` (°) |
 | Switch | 1 while on; E toggles it | | |
 | Button | 1 for `pulse` seconds after E | | `pulse` (s) |
-| Controller | 1 while it runs | `frames` (angles in °, up to 10), `frame_time` (s), `loop` | `speed` (rad/s), `torque` (N·m) |
+| Controller | 1 while it runs | `frames` (up to 10), `frame_time` (s), `loop` | `speed` (rad/s), `torque` (N·m), `force` (N) |
 
-The **controller** steps the bearings it is linked to through its list of angles while its input is
-on: each bearing turns to the next angle every `frame_time` seconds, and starts over when `loop` is on.
-Every bearing it feeds goes to the same angle. It is how you make doors, arms and walking legs.
+The **controller** steps the bearings and pistons it is linked to through its frames while its input is
+on: every `frame_time` seconds it moves to the next frame, and starts over when `loop` is on. In its
+menu the timeline along the top picks a frame; Add frame copies the picked one after it and Remove frame
+deletes it. Each frame lists every joint the controller feeds with its target (an angle in degrees for a
+bearing, metres out for a piston) and its speed. Play runs the frames on the creation so you can see
+them; nothing changes until you press Apply or close the menu. It is how you make doors, arms and
+walking legs.
+
+The **sensor** looks out of its face in a narrow cone. Its menu shows the cone while it is open, and the
+Detects toggles pick what turns it on: players, bots, blocks (the ground and the world's objects) and
+creations. Anything else in the way still blocks its view.
+
+Link a seat to switches and buttons and they go on your hotbar while you sit there, so you can work a
+crane or open a door from the driver's seat.
 
 A logic gate counts each input that is not 0 as on. With no inputs everything is off, so nand, nor and
 xnor are on. xor is on when an odd number of inputs are on.
