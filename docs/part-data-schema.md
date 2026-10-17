@@ -83,12 +83,12 @@ you; this page is the reference for what each key means, so you can read, review
 | `visual` | object | no | Colour, surface and colour variants. See [visual](#visual). |
 | `collision` | object | no | Collision shape. Omitted means a box filling `size`. See [collision](#collision). |
 | `sockets` | list | no | Attachment points. Placeable parts only. See [sockets](#sockets). |
-| `script` | path | no | `.lua` behaviour script. |
+| `script` | path | no | `.lua` behaviour script. A placed part runs it while it exists; an item (food, a weapon) runs it while a player holds and uses it. See the [Lua API Reference](lua-api.md). |
 | `sounds` | object | no | Sound events: local sound name → sound id (`"start": "engine_start"`). The game plays `place`, `remove`, `break` and `impact`; other names are for the script. A bare id is the part's own mod's event, else vanilla's; `mod_id:sound_id` names another mod's. See [Sound Events](sound-events.md#part-sounds). |
 | `inventory` | object | no | Item storage. Placeable parts only. See [inventory and crafting](#inventory-and-crafting). |
 | `crafting` | object | no | Makes the part a crafting station. Needs `inventory`. See [inventory and crafting](#inventory-and-crafting). |
 | `soil`, `respawn_point` | object, bool | no | Farming soil and respawn beds. Placeable parts only. See [survival](#survival). |
-| `food`, `seed`, `watering`, `weapon` | object | no | What an item does in Survival. Items only. See [survival](#survival). |
+| `seed`, `watering` | object | no | Farming items. Items only. See [survival](#survival). |
 | `properties` | object | no | Free-form numbers and settings that only the part's Lua script reads (torque, thrust, range). Key order is kept. |
 
 "Placeable" means the categories that exist in the world on the build grid: `block`, `interactive`,
@@ -214,34 +214,43 @@ fall out as a pile of items on the ground.
 
 ## survival
 
-What items do in the survival loop, and the parts it needs. These are built-in primitives, configured
-here rather than in Lua. Numbers are SI: health points, seconds, metres, N·s. See also
-[Survival](survival.md).
+Farming and respawn beds in the survival loop. These are built-in primitives, configured here rather
+than in Lua. Numbers are SI: health points, seconds, metres, N·s. See also [Survival](survival.md).
+
+Food and weapons are item scripts (chunk 20b): a `script` plus its numbers in `properties`. The
+vanilla scripts read these properties:
+
+| Script | Property | Meaning |
+|--------|----------|---------|
+| `scripts/food.lua` | `health` | Health one eaten item gives back. |
+| `scripts/potato_gun.lua` | `damage` | Damage per hit, or at the centre of a splash. |
+| | `interval` (s) | Shortest time between shots. |
+| | `range` (m) | How far a shot reaches. |
+| | `ammo` | Item used up per shot (it can be the weapon itself, like a Popper). Omitted means none. |
+| | `pellets` | Shots per trigger pull, spread evenly round a cone (at most 64). Default 1. |
+| | `spread` (°) | Half-angle of that cone, under 90. Default 0. |
+| | `radius` (m) | Makes it a splash weapon: damage falls off to 0 at this distance from where it hits (or the end of its range). |
+| | `impulse` (N·s) | Push given to the Body it hits (splash: at the centre). Default 0. |
+
+```json
+"script": "scripts/potato_gun.lua",
+"properties": { "damage": 20, "interval": 0.25, "range": 60, "ammo": "potato", "impulse": 20 }
+```
 
 | Key | Type | Meaning |
 |-----|------|---------|
-| `food.health` | number > 0 | Health one eaten item gives back. Required. |
 | `seed.crop` | item id | What the seed grows into. Required. |
 | `seed.grow_time` | number > 0 (s) | Seconds of watered growth until ripe. Required. |
 | `seed.yield` | integer ≥ 1 | Crop items a harvest gives. Default 1. |
 | `seed.seeds` | integer ≥ 0 | Seeds a harvest gives back. Default 0. |
 | `seed.value` | number ≥ 0 | How much a planted crop draws raids (chunk 21). Default 1. |
 | `watering.seconds` | number > 0 (s) | Seconds of water one item adds to soil. Required. |
-| `weapon.damage` | number > 0 | Damage per hit, or at the centre of a splash. Required. |
-| `weapon.interval` | number > 0 (s) | Shortest time between shots. Required. |
-| `weapon.range` | number > 0 (m) | How far a shot reaches. Required. |
-| `weapon.ammo` | item id | Item used up per shot (it can be the weapon itself, like a Popper). Omitted means none. |
-| `weapon.pellets` | integer 1–32 | Shots per trigger pull, spread evenly round a cone. Default 1. |
-| `weapon.spread` | number 0 to under 90 (°) | Half-angle of that cone. |
-| `weapon.radius` | number > 0 (m) | Makes it a splash weapon: damage falls off to 0 at this distance from where it hits. |
-| `weapon.impulse` | number ≥ 0 (N·s) | Push given to the Body it hits (splash: at the centre). |
 | `soil.capacity` | number > 0 (s) | Most seconds of water the soil holds. Required. |
 | `soil.growth` | number > 0 | Growth speed multiplier for crops on it. Default 1. |
 | `respawn_point` | bool | Players can sleep in it (F) to respawn there. |
 
 ```json
-"seed": { "crop": "carrot", "grow_time": 240, "yield": 2, "seeds": 1 },
-"weapon": { "damage": 20, "interval": 0.25, "range": 60, "ammo": "potato" }
+"seed": { "crop": "carrot", "grow_time": 240, "yield": 2, "seeds": 1 }
 ```
 
 ## Recipes

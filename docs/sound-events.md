@@ -106,6 +106,9 @@ plays these names:
 | `remove` | The Hammer takes it off. | `remove_block` for blocks, else `part_detach` |
 | `impact` | A Sledgehammer hits it without breaking it. | `impact_<sound_material>` |
 | `break` | It breaks. | `break_<sound_material>` |
+| `start` | A crafting station begins working its queue. | nothing |
+| `work` | A loop while the station works; it stops when the queue empties or the output is full. | nothing |
+| `complete` | The station finishes a craft. | nothing |
 
 Any other name is for the part's Lua script to play. The loader warns about a part that names an
 event nobody registered (MD0804).

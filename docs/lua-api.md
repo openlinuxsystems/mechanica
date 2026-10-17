@@ -1,6 +1,7 @@
 # Lua API Reference
 
-Every part's behaviour is a Lua script (decision D2). A part names its script in its JSON
+Every part's behaviour is a Lua script (decision D2), and so is every held item's (weapons, food;
+see [Item scripts](#item-scripts)). A part names its script in its JSON
 (`"script": "scripts/thruster.lua"`, relative to the mod root), and every placed part of that type
 runs its own copy. Scripts run only on the host, which simulates the world; clients see what the
 scripts do through state sync. Part-specific numbers such as thrust or lift belong in the part's
@@ -46,8 +47,9 @@ end
   `coroutine.yield` straight out of a hook is an error.
 
 Limits live in `game/data/scripting.json`: `instruction_budget` (per hook call),
-`reload_poll_seconds`, `max_string_length`, `max_ray_length`, `max_overlap_radius` and
-`max_messages`. The motion limits (largest force, torque, bearing speed and piston force) are in
+`reload_poll_seconds`, `max_string_length`, `max_ray_length`, `max_overlap_radius`,
+`max_messages`, `max_projectiles` and `max_projectile_lifetime`. The motion limits (largest force,
+torque, bearing speed and piston force) are in
 `game/data/motion.json`.
 
 ## Hot reload
@@ -89,6 +91,16 @@ template becomes the part's name.
 | `on_power(amount)` | The part's power or logic input changed. The signal bus wires this up in chunk 10. |
 | `on_collision(other, impulse)` | The part's Body began touching something. `other` is a table with `creation` and `part` when it is a Creation, empty for the ground; `impulse` is in N·s. |
 | `get_outputs()` | Returns the part's signal outputs, for the signal bus (chunk 10). |
+
+Held items have their own hooks (see [Item scripts](#item-scripts)):
+
+| Hook | When |
+|------|------|
+| `on_equip()` | The player took the item in hand. |
+| `on_unequip()` | The item left the player's hand: they took another item or tool, or died. |
+| `can_use(target)` | Before every use. Return `nil` to allow it, or a string: the reason the host refuses the use. It may read but not change the world. |
+| `on_use(target)` | The player used the item. `target` is `{from, direction}`: their eyes and where they aim. What it returns (plain data) is the `UseItem` action's result. |
+| `on_hit(landing)` | A projectile the item launched landed: `{id, position, hit?, data}`. `hit` is missing when its lifetime ran out. |
 
 ## Globals
 
@@ -155,6 +167,86 @@ The Creation the part belongs to.
 | `world.tick()` | Physics steps since the scripts started. |
 | `world.raycast(from, to)` | The first thing on the segment from `from` to `to`, skipping the script's own Creation: `{position, normal, distance, creation?, part?}`, or `nil`. A ray may be at most `max_ray_length` m long. |
 | `world.overlap_sphere(centre, radius)` | Everything a sphere touches, skipping the script's own Creation: a list of `{creation?, part?}` (both missing for the ground). `radius` is at most `max_overlap_radius` m. |
+
+## Item scripts
+
+Items (anything not placeable: food, weapons) can name a `script` too (chunk 20b, D2). The item's
+behaviour lives there, and its numbers in its `properties`. The vanilla ones are
+`mods/vanilla/scripts/food.lua` and `mods/vanilla/scripts/potato_gun.lua`.
+
+- **One instance per player and item type.** Each player gets their own copy of the script, with its
+  own `state`, the first time they take one in hand or use one. It is dropped when they leave.
+- **Uses go through the Action API.** The Item tool (and bots or agents) call
+  `UseItem {slot, direction?}`. The host checks the slot holds a scripted item, that `direction` is
+  close to where the player looks (`aim_tolerance` in `survival.json`), then runs `can_use` and, if
+  that allows it, `on_use`. `EquipItem {slot?}` says what is in hand. A dead player's uses are refused.
+- **`can_use` and the script's setup only read.** Functions that change the world (`item.consume`,
+  `holder.heal`, `inventory.take` and the `combat` ones that deal damage or launch) raise an error
+  there.
+- **Damage follows the world's rules.** In Creative nothing hurts players; with `pvp` off a shot
+  can't hurt another player, but a player's own splash still hurts them.
+- `part` and `creation` functions don't work in an item script; `world` and `log` do. The `item`,
+  `holder`, `inventory` and `combat` libraries only work in an item script.
+
+```lua
+-- Food: eating one heals properties.health.
+function can_use(target)
+  if holder.health() >= holder.max_health() then
+    return "You are already at full health."
+  end
+end
+
+function on_use(target)
+  item.consume(1)
+  return { health = holder.heal(properties.health) }
+end
+```
+
+### `item`
+
+| Function | Returns |
+|----------|---------|
+| `item.id()` | The item's qualified id, e.g. `vanilla:potato_blaster`. |
+| `item.name(id?)` | The item's display name, or another item's (bare ids are in the item's own mod). |
+| `item.slot()` | The inventory slot the item is used from. |
+| `item.count()` | How many of the item that slot holds. |
+| `item.consume(count?)` | Uses up `count` (default 1) of the item from its slot. `true`, or `false` when the slot holds fewer. |
+
+### `holder`
+
+| Function | Returns |
+|----------|---------|
+| `holder.peer()` | The peer of the player holding the item. |
+| `holder.eye()` | World position of their eyes, in m. |
+| `holder.feet()` | World position of their feet, in m. |
+| `holder.look()` | Unit direction they look in. |
+| `holder.health()` | Their health. |
+| `holder.max_health()` | The most health a player can have (`max_health` in `survival.json`). |
+| `holder.heal(amount)` | Gives them up to `amount` health, never past the maximum, and returns their health. |
+
+### `inventory`
+
+The holder's inventory. Item ids may be bare (`potato`, in the item's own mod) or `mod_id:item`.
+
+| Function | Returns |
+|----------|---------|
+| `inventory.count(item)` | How many of `item` they carry. |
+| `inventory.take(item, count?)` | Takes `count` (default 1). `true`, or `false` (and nothing taken) when they carry fewer. |
+
+### `combat`
+
+Hits are tables `{kind, position, player?, creation?, part?, object?}`; `kind` is `player`, `part`,
+`object` (a tree, rock or bush) or `ground`. What damage did comes back with `damage` added. These
+are the same primitives bots use (chunk 21).
+
+| Function | Returns |
+|----------|---------|
+| `combat.cast(from, direction, range)` | The first thing a ray hits within `range` m, skipping the holder, with its `distance`; or `nil`. `range` is at most `max_ray_length`. |
+| `combat.hit(hit, damage, push?)` | Deals `damage` to what a cast hit. A part's Body also gets `push` (a `vec3` impulse, N·s) unless the part broke off. Returns the hit with `damage` dealt. |
+| `combat.hitscan(from, direction, range, damage, impulse?)` | `combat.cast` then `combat.hit`, pushing along the ray with `impulse` N·s. The hit, or `nil` when nothing is in range. |
+| `combat.splash(at, radius, damage, impulse?)` | Hurts every player, part and world object within `radius` m of `at`, falling off from `damage` at the centre to 0 at the edge, and pushes parts away with up to `impulse` N·s. A list of hits. `radius` is at most `max_overlap_radius`. |
+| `combat.pellets(direction, count, spread)` | `count` (at most 64) unit directions: the first along `direction`, the rest evenly round a cone of `spread` degrees. No randomness, so every replay agrees. |
+| `combat.projectile(from, velocity, options?)` | Launches a projectile from `from` at `velocity` m/s. `options`: `gravity` (a `vec3`, default `world.gravity()`), `lifetime` (s, default and at most `max_projectile_lifetime`), `data` (passed to `on_hit`). It flies on the host, every client draws it along its arc, and `on_hit` runs where it lands; it deals no damage by itself. Returns its id, or `false` and the reason when `max_projectiles` are already in flight. |
 
 ## `vec3`
 

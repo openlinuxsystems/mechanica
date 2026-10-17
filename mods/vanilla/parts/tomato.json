@@ -8,11 +8,12 @@
   "visual": {
     "color": "#d23a2a"
   },
+  "script": "scripts/food.lua",
   "sounds": {
     "pickup": "pickup_produce",
     "eat": "eat_soft"
   },
-  "food": {
+  "properties": {
     "health": 15
   }
 }

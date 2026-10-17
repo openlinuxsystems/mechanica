@@ -62,13 +62,9 @@ public class SurvivalDataTests
     }
 
     [Theory]
-    [InlineData("""{ "id": "c", "name": "C", "category": "consumable", "food": {} }""", "$.food.health", "health is required")]
     [InlineData("""{ "id": "c", "name": "C", "category": "consumable", "seed": { "grow_time": 10 } }""", "$.seed.crop", "crop")]
     [InlineData("""{ "id": "c", "name": "C", "category": "consumable", "seed": { "crop": "carrot", "grow_time": 0 } }""", "$.seed.grow_time", "greater than 0")]
     [InlineData("""{ "id": "c", "name": "C", "category": "consumable", "watering": { "seconds": -1 } }""", "$.watering.seconds", "greater than 0")]
-    [InlineData("""{ "id": "w", "name": "W", "category": "weapon", "weapon": { "damage": 1, "interval": 1, "range": 1, "pellets": 99 } }""", "$.weapon.pellets", "1 to 32")]
-    [InlineData("""{ "id": "w", "name": "W", "category": "weapon", "weapon": { "damage": 1, "interval": 1 } }""", "$.weapon.range", "range (m) is required")]
-    [InlineData("""{ "id": "w", "name": "W", "category": "weapon", "weapon": { "damage": 1, "interval": 1, "range": 1, "spread": 95 } }""", "$.weapon.spread", "under 90")]
     [InlineData("""{ "id": "s", "name": "S", "category": "resource", "soil": { "capacity": 10 } }""", "$.soil", "only placeable parts")]
     [InlineData("""{ "id": "s", "name": "S", "category": "resource", "respawn_point": true }""", "$.respawn_point", "only placeable parts")]
     public void SurvivalSectionsAreChecked(string json, string path, string message)
@@ -81,11 +77,11 @@ public class SurvivalDataTests
     }
 
     [Fact]
-    public void PlaceablePartsCannotBeFood()
+    public void PlaceablePartsCannotBeSeeds()
     {
         using var mods = new TestMods().Mod("m");
-        mods.Part("m", "p.json", TestMods.Block().Replace("\"id\"", "\"food\": { \"health\": 5 }, \"id\""));
-        Assert.Contains(mods.Load().Diagnostics, d => d.JsonPath == "$.food" && d.Message.Contains("only items"));
+        mods.Part("m", "p.json", TestMods.Block().Replace("\"id\"", "\"seed\": { \"crop\": \"carrot\", \"grow_time\": 5 }, \"id\""));
+        Assert.Contains(mods.Load().Diagnostics, d => d.JsonPath == "$.seed" && d.Message.Contains("only items"));
     }
 
     [Theory]
@@ -116,10 +112,19 @@ public class SurvivalDataTests
         foreach (var start in settings.StartingItems)
             Assert.True(mods.FindDefinition(start.Item) is not null, $"starting item {start.Item} exists");
         Assert.NotNull(mods.FindDefinition(settings.WaterItem)?.Watering);
+        // Food and weapons are Lua item scripts (chunk 20b) whose numbers are properties.
         foreach (var seed in new[] { "carrot_seed", "potato_seed", "tomato_seed" })
-            Assert.NotNull(mods.FindDefinition(mods.FindDefinition(seed)!.Seed!.Crop!)?.Food);
+        {
+            var crop = mods.FindDefinition(mods.FindDefinition(seed)!.Seed!.Crop!)!;
+            Assert.Equal("scripts/food.lua", crop.Script);
+            Assert.True(crop.Properties!["health"]!.GetValue<double>() > 0);
+        }
         foreach (var weapon in new[] { "potato_blaster", "potato_scattergun", "potato_launcher", "popper" })
-            Assert.NotNull(mods.FindDefinition(mods.FindDefinition(weapon)!.Weapon!.Ammo!));
+        {
+            var definition = mods.FindDefinition(weapon)!;
+            Assert.Equal("scripts/potato_gun.lua", definition.Script);
+            Assert.NotNull(mods.FindDefinition(definition.Properties!["ammo"]!.GetValue<string>()));
+        }
         Assert.NotNull(mods.FindDefinition("soil")!.Soil);
         Assert.True(mods.FindDefinition("respawn_bed")!.RespawnPoint);
         Assert.Contains("vanilla:carrot", mods.FindDefinition("fridge")!.Inventory!.Accepts!.Select(a => Identifiers.Qualify(a)));

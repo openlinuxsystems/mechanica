@@ -34,6 +34,7 @@ public partial class InventorySync : Node, IInventoryWorld
     // Host side: per peer, the inventories it sees and the version it was last sent.
     private readonly Dictionary<int, Dictionary<InventoryRef, InventoryVersion?>> _viewers = [];
     private readonly Dictionary<InventoryRef, InventoryView> _shown = [];
+    private readonly Dictionary<(int Creation, int Part), int> _loops = [];
     private int _tick;
 
     /// <summary>The session updates travel over. Set before adding to the tree.</summary>
@@ -50,6 +51,9 @@ public partial class InventorySync : Node, IInventoryWorld
 
     /// <summary>Recipes of the loaded mods. Set before adding to the tree.</summary>
     public RecipeBook Recipes { get; init; } = RecipeBook.Empty;
+
+    /// <summary>Where stations' crafting sounds play; null plays none.</summary>
+    public Sound.SoundSync? Sounds { get; init; }
 
     /// <summary>Limits; null loads <see cref="SettingsPath"/>.</summary>
     public InventorySettings? Settings { get; set; }
@@ -71,6 +75,21 @@ public partial class InventorySync : Node, IInventoryWorld
 
     /// <inheritdoc/>
     public IEnumerable<Creation> AllCreations => Creations.All;
+
+    /// <inheritdoc/>
+    public void PlaySound(string sound, string ownerModId, System.Numerics.Vector3 position) =>
+        Sounds?.Emit(sound, ownerModId, position.ToGodot());
+
+    /// <inheritdoc/>
+    public void SetPartLoop(int creation, int partId, string? sound, string ownerModId)
+    {
+        if (Sounds is null)
+            return;
+        if (_loops.Remove((creation, partId), out var playing))
+            Sounds.StopLoop(playing);
+        if (sound is not null && Sounds.StartLoop(sound, ownerModId, Sound.SoundAnchor.OnPart(creation, partId)) is > 0 and var handle)
+            _loops[(creation, partId)] = handle;
+    }
 
     public override void _Ready()
     {

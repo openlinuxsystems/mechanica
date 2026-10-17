@@ -15,6 +15,11 @@
   "visual": {
     "color": "#3070d0"
   },
+  "sounds": {
+    "complete": "bench_done",
+    "start": "bench_start",
+    "work": "bench_work"
+  },
   "inventory": {
     "slots": 2
   },

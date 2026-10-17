@@ -352,7 +352,7 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
         }
     }
 
-    // Food, farming, weapons and respawn points (chunk 20).
+    // Farming and respawn points (chunk 20). Weapons and food are Lua item scripts (chunk 20b).
     private static void ValidateSurvival(PartDefinition part, bool placeable, DiagnosticSink sink)
     {
         void ItemOnly(object? section, string key)
@@ -365,17 +365,10 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
             if (section is not null && !placeable)
                 sink.Error(Code, $"$.{key}", $"only placeable parts can have {key}.");
         }
-        ItemOnly(part.Food, "food");
         ItemOnly(part.Seed, "seed");
         ItemOnly(part.Watering, "watering");
-        ItemOnly(part.Weapon, "weapon");
         PartOnly(part.Soil, "soil");
         PartOnly(part.RespawnPoint == true ? true : null, "respawn_point");
-        if (part.Food is { } food)
-        {
-            RequirePositive(food.Health, "$.food.health", "health", true, "food", sink);
-            KnownKeys.WarnUnknown(food.Extra, "$.food", sink, typeof(FoodDefinition));
-        }
         if (part.Seed is { } seed)
         {
             if (!IsItemRef(seed.Crop))
@@ -399,26 +392,7 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
             RequirePositive(soil.Growth, "$.soil.growth", "growth", false, "soil", sink);
             KnownKeys.WarnUnknown(soil.Extra, "$.soil", sink, typeof(SoilDefinition));
         }
-        if (part.Weapon is { } weapon)
-        {
-            const string p = "$.weapon";
-            RequirePositive(weapon.Damage, $"{p}.damage", "damage", true, "a weapon", sink);
-            RequirePositive(weapon.Interval, $"{p}.interval", "interval (s)", true, "a weapon", sink);
-            RequirePositive(weapon.Range, $"{p}.range", "range (m)", true, "a weapon", sink);
-            if (weapon.Ammo is not null && !IsItemRef(weapon.Ammo))
-                sink.Error(Code, $"{p}.ammo", $"'{weapon.Ammo}' must be an item id or 'mod_id:item_id'.");
-            if (weapon.Pellets is < 1 or > MaxPellets)
-                sink.Error(Code, $"{p}.pellets", $"pellets must be 1 to {MaxPellets}.");
-            if (weapon.Spread is { } spread && !(spread >= 0 && spread < 90))
-                sink.Error(Code, $"{p}.spread", "spread must be 0 or more and under 90 degrees.");
-            RequirePositive(weapon.Radius, $"{p}.radius", "radius (m)", false, "a weapon", sink);
-            RequireNonNegative(weapon.Impulse, $"{p}.impulse", "impulse (N·s)", false, "a weapon", sink);
-            KnownKeys.WarnUnknown(weapon.Extra, p, sink, typeof(WeaponDefinition));
-        }
     }
-
-    /// <summary>Most pellets one shot may fire.</summary>
-    internal const int MaxPellets = 32;
 
     /// <summary>Most slots one inventory may have.</summary>
     internal const int MaxSlots = 256;

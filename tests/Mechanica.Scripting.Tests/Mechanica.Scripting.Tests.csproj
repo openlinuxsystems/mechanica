@@ -12,6 +12,10 @@
     <Using Include="Xunit" />
   </ItemGroup>
   <ItemGroup>
+    <!-- The survival test world, shared with the Core tests: item scripts run in it. -->
+    <Compile Include="../Mechanica.Core.Tests/Survival/SurvivalFixture.cs" Link="Survival/SurvivalFixture.cs" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="../../src/Mechanica.Scripting/Mechanica.Scripting.csproj" />
   </ItemGroup>
 </Project>

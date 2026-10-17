@@ -1,0 +1,24 @@
+{
+  "events": [
+    {
+      "id": "bench_start",
+      "clips": [
+        "sounds/hum.wav"
+      ]
+    },
+    {
+      "id": "bench_work",
+      "clips": [
+        "sounds/hum.wav"
+      ],
+      "loop": true
+    },
+    {
+      "id": "bench_done",
+      "clips": [
+        "sounds/hum.wav"
+      ],
+      "pitch": 2
+    }
+  ]
+}

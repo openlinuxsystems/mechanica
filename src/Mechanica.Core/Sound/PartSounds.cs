@@ -23,6 +23,15 @@ public static class PartSounds
     /// <summary>Played where the part is struck without breaking.</summary>
     public const string Impact = "impact";
 
+    /// <summary>Played where a station begins working its crafting queue.</summary>
+    public const string Start = "start";
+
+    /// <summary>Loop on a station while it works its crafting queue.</summary>
+    public const string Work = "work";
+
+    /// <summary>Played where a station finishes a craft.</summary>
+    public const string Complete = "complete";
+
     /// <summary>The names that fall back to the part's sound material.</summary>
     public static IReadOnlyList<string> MaterialKeys { get; } = [Place, Break, Impact];
 
@@ -53,7 +62,7 @@ public static class PartSounds
         PartCategory.Block or PartCategory.Decor => [Place, Remove, Break, Impact],
         PartCategory.Interactive => [Place, Remove, Break, Impact, "start", "loop", "stop"],
         PartCategory.Container => [Place, Remove, Break, Impact, "open", "close"],
-        PartCategory.Station => [Place, Remove, Break, Impact, "start", "work", "complete"],
+        PartCategory.Station => [Place, Remove, Break, Impact, Start, Work, Complete],
         PartCategory.Light => [Place, Remove, Break, Impact, "on", "off"],
         PartCategory.Tool or PartCategory.Weapon => ["use", "fire", "reload"],
         PartCategory.Resource or PartCategory.Consumable => ["pickup", "drop", "use"],
