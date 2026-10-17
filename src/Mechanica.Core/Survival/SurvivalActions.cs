@@ -1,6 +1,7 @@
 using System.Numerics;
 using System.Text.Json;
 using Mechanica.Core.Actions;
+using Mechanica.Core.Bots;
 using Mechanica.Core.Building;
 using Mechanica.Core.Creations;
 using Mechanica.Core.Data;
@@ -84,6 +85,12 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
 
     /// <summary>The numbers in use.</summary>
     public SurvivalSettings Settings => settings;
+
+    /// <summary>The bots weapons, splash and the Sledgehammer can hurt (chunk 21); null when there are none.</summary>
+    public IBotTargets? Bots { get; set; }
+
+    /// <summary>Item and part definitions.</summary>
+    public IPartCatalog Catalog => catalog;
 
     /// <summary>Piles of items on the ground, by id.</summary>
     public IReadOnlyDictionary<int, ItemDrop> Drops => _drops;
@@ -301,7 +308,7 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
 
     /// <summary>
     /// Deals <paramref name="damage"/> to what a ray hit: a player (when <paramref name="caller"/> may hurt
-    /// them), a part (which may break off; otherwise its Body gets <paramref name="push"/>, in N·s) or a
+    /// them), a bot, a part (which may break off; otherwise its Body gets <paramref name="push"/>, in N·s) or a
     /// world object. Returns what was hit and the damage dealt.
     /// </summary>
     public ShotHitView Hit(ActionCaller caller, RayHit hit, float damage, Vector3 push)
@@ -309,6 +316,11 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         var point = hit.Point.ToVec3();
         if (!(damage >= 0) || !float.IsFinite(damage))
             damage = 0;
+        if (hit.Bot is { } bot)
+        {
+            Bots?.DamageBot(bot, damage, "weapon", melee: false);
+            return new ShotHitView("bot", point, damage, Bot: bot);
+        }
         if (hit.Player is { } peer)
         {
             var dealt = CanHurt(caller, peer) ? damage : 0f;
@@ -356,7 +368,7 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     /// <summary>
     /// Splash: everything within <paramref name="radius"/> of <paramref name="at"/> takes damage falling off
     /// linearly from <paramref name="damage"/> at the centre to 0 at the edge. Players (the caller's own
-    /// player even with PvP off), parts (pushed away from the centre with up to <paramref name="impulse"/>
+    /// player even with PvP off), bots, parts (pushed away from the centre with up to <paramref name="impulse"/>
     /// N·s) and world objects. Returns everything it reached.
     /// </summary>
     public IReadOnlyList<ShotHitView> Splash(ActionCaller caller, Vector3 at, float radius, float damage, float impulse)
@@ -376,6 +388,12 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
             if (dealt > 0)
                 Damage(peer, dealt, "explosion");
             hits.Add(new ShotHitView("player", centre.ToVec3(), dealt, Player: peer));
+        }
+        foreach (var (bot, centre) in Bots?.BotsNear(at, radius) ?? [])
+        {
+            var dealt = Falloff(Vector3.Distance(centre, at));
+            Bots!.DamageBot(bot, dealt, "explosion", melee: false);
+            hits.Add(new ShotHitView("bot", centre.ToVec3(), dealt, Bot: bot));
         }
         // FindCreation brings each Creation's Body poses up to date.
         foreach (var creation in world.AllCreations.Select(c => c.Id).ToList().Select(world.FindCreation).OfType<Creation>())
@@ -519,6 +537,12 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
 
     /// <inheritdoc/>
     public float StrikeObject(string id, float damage) => WorldObjectId.TryParse(id, out var parsed) ? DamageObject(parsed, damage) : 0f;
+
+    /// <inheritdoc/>
+    public Vector3? BotCentre(int bot) => Bots?.BotCentre(bot);
+
+    /// <inheritdoc/>
+    public float StrikeBot(int bot, float damage) => Bots?.DamageBot(bot, damage, "sledge", melee: true) ?? 0f;
 
     // ---- Impacts ----
 

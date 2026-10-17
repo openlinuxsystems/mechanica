@@ -266,8 +266,8 @@ The holder's inventory. Item ids may be bare (`potato`, in the item's own mod) o
 
 ### `combat`
 
-Hits are tables `{kind, position, player?, creation?, part?, object?}`; `kind` is `player`, `part`,
-`object` (a tree, rock or bush) or `ground`. What damage did comes back with `damage` added. These
+Hits are tables `{kind, position, player?, creation?, part?, object?, bot?}`; `kind` is `player`, `part`,
+`object` (a tree, rock or bush), `bot` or `ground`. What damage did comes back with `damage` added. These
 are the same primitives bots use (chunk 21).
 
 | Function | Returns |

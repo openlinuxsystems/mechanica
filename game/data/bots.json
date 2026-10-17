@@ -1,0 +1,11 @@
+{
+  // Bot engine limits and timings (chunk 21, SI units). A bot's own numbers live in its mod's
+  // bots/*.json, and raids in raids/raids.json. Loaded by game/scripts/Bots/BotSync.cs; see
+  // src/Mechanica.Core/Bots/BotSettings.cs.
+  "max_bots": 128,
+  "think_interval": 0.1,
+  "corpse_seconds": 3.0,
+  "range_tolerance": 0.4,
+  "player_radius": 0.4,
+  "max_spawn_distance": 2048.0
+}

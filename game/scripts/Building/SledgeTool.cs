@@ -29,6 +29,8 @@ public partial class SledgeTool : HandTool
         SledgeArgs args;
         if (hit?.Collider is PlayerController target)
             args = new SledgeArgs(Player: target.PeerId);
+        else if (hit?.Collider is Bots.BotBody bot)
+            args = new SledgeArgs(Bot: bot.BotId);
         else if (hit?.Collider is StaticBody3D objects && objects.GetParent() is TerrainChunk chunk && objects == chunk.Objects
             && chunk.ObjectAt(hit.Value.Shape) is { } id)
             args = new SledgeArgs(Object: id.ToString());

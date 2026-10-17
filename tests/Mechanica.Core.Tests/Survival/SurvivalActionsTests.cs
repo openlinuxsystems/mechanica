@@ -14,6 +14,15 @@ public class SurvivalActionsTests
 {
     private readonly SurvivalFixture _f = new();
 
+    [Fact]
+    public void Bare_soil_views_survive_the_wire()
+    {
+        // Nulls are left out of the JSON clients are sent; the view must still read back.
+        var bare = new SoilView(3, 4, null, null, 0, 0, 0);
+        var json = System.Text.Json.JsonSerializer.Serialize(bare, ActionJson.Options);
+        Assert.Equal(bare, System.Text.Json.JsonSerializer.Deserialize<SoilView>(json, ActionJson.Options));
+    }
+
     // ---- Health, death and respawn ----
 
     [Fact]
@@ -349,7 +358,7 @@ public class SurvivalActionsTests
         _f.Ok(Me, ToolActions.Sledge, new { player = You.Peer });
         Assert.Equal(85f, _f.Survival.View(You.Peer)!.Health);
         Assert.Equal("You cannot hit yourself.", _f.Refused(Me, ToolActions.Sledge, new { player = Me.Peer }));
-        Assert.Equal("Hit one thing: a creation and part, a player or an object.",
+        Assert.Equal("Hit one thing: a creation and part, a player, an object or a bot.",
             _f.Refused(Me, ToolActions.Sledge, new { player = You.Peer, @object = "1.2.3" }));
 
         var rock = new WorldObjectId(2, 0, 0);

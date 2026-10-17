@@ -444,11 +444,11 @@ public sealed partial class ScriptRuntime
         return (from, Vector3.Normalize(direction), range);
     }
 
-    // What a ray hit, as scripts see it: {kind, position, distance?, player?, creation?, part?, object?}.
+    // What a ray hit, as scripts see it: {kind, position, distance?, player?, creation?, part?, object?, bot?}.
     private static DynValue HitTable(LuaContext context, RayHit hit, Vector3? from)
     {
         var table = new Table(context.Script);
-        table.Set("kind", DynValue.NewString(hit.Player is not null ? "player" : hit.Creation is not null && hit.Part is not null ? "part"
+        table.Set("kind", DynValue.NewString(hit.Bot is not null ? "bot" : hit.Player is not null ? "player" : hit.Creation is not null && hit.Part is not null ? "part"
             : hit.Object is not null ? "object" : "ground"));
         table.Set("position", LuaValues.Vector(context.Script, context.Vec3Meta, hit.Point));
         if (from is { } start)
@@ -461,6 +461,8 @@ public sealed partial class ScriptRuntime
             table.Set("part", DynValue.NewNumber(part));
         if (hit.Object is { } id)
             table.Set("object", DynValue.NewString(id.ToString()));
+        if (hit.Bot is { } bot)
+            table.Set("bot", DynValue.NewNumber(bot));
         return DynValue.NewTable(table);
     }
 
@@ -469,7 +471,7 @@ public sealed partial class ScriptRuntime
         var position = LuaValues.ToVector(table.Get("position"), function, 1);
         static int? Int(DynValue v) => v.Type == DataType.Number ? (int)v.Number : null;
         WorldObjectId? id = table.Get("object") is { Type: DataType.String } text && WorldObjectId.TryParse(text.String, out var parsed) ? parsed : null;
-        return new RayHit(position, Int(table.Get("player")), Int(table.Get("creation")), Int(table.Get("part")), id);
+        return new RayHit(position, Int(table.Get("player")), Int(table.Get("creation")), Int(table.Get("part")), id, Int(table.Get("bot")));
     }
 
     // What a hit did: the hit table plus the damage dealt.
@@ -487,6 +489,8 @@ public sealed partial class ScriptRuntime
             table.Set("part", DynValue.NewNumber(part));
         if (view.Object is { } id)
             table.Set("object", DynValue.NewString(id));
+        if (view.Bot is { } bot)
+            table.Set("bot", DynValue.NewNumber(bot));
         return DynValue.NewTable(table);
     }
 

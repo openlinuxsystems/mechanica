@@ -50,7 +50,9 @@ CI (`.github/workflows/ci.yml`) runs the same three steps. Keep it green.
   `meshes/*.glb|.gltf`, `textures/*.png`, `sounds/*.ogg|.wav` with `sounds/**/*.json` (sound events; see
   `docs/sound-events.md`), `world/worldgen.json` (world
   generation rules; the last mod in load order wins) and `pois/*.json` (POI prefabs; see
-  `docs/world-generation.md`) and `recipes/*.json` (crafting recipes; see `docs/part-data-schema.md`). Paths in data are relative to the mod
+  `docs/world-generation.md`) and `recipes/*.json` (crafting recipes; see `docs/part-data-schema.md`), `bots/*.json` (bot types:
+  stats, attacks, drops, behaviour tree, optional Lua script) and `raids/raids.json` (the raid table; the
+  last mod in load order wins). Paths in data are relative to the mod
   root (`other_mod:path` for another mod). No `res://` paths or Godot-imported formats in mod data.
   Reject `..` and absolute paths.
 - Mod tools are in-game modes and ship in exported builds; no Godot editor plugins.
