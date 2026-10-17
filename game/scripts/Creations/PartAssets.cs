@@ -35,12 +35,23 @@ public sealed class PartAssets
 {
     private static readonly StandardMaterial3D PlaceholderMaterial = new() { AlbedoColor = new Color(0.62f, 0.62f, 0.66f) };
 
-    private readonly ModLoadResult? _content;
+    private ModLoadResult? _content;
+    private Func<string, string?> _modDirectory;
     private readonly Dictionary<string, IReadOnlyList<PartMesh>?> _files = [];
     private readonly Dictionary<string, PartModel> _models = [];
 
     /// <summary>Uses <paramref name="content"/> to find mod folders; without it every part is a placeholder.</summary>
-    public PartAssets(ModLoadResult? content) => _content = content;
+    public PartAssets(ModLoadResult? content)
+    {
+        _content = content;
+        _modDirectory = id => content?.Mods.FirstOrDefault(m => m.Id == id)?.Directory;
+    }
+
+    /// <summary>
+    /// Finds mod folders with <paramref name="modDirectory"/> (mod id → folder, or null) instead of loaded
+    /// content. The Part Editor uses it for mods that are being written and may not load yet.
+    /// </summary>
+    public PartAssets(Func<string, string?> modDirectory) => _modDirectory = modDirectory;
 
     /// <summary>
     /// The model for a placed part, by qualified id. <paramref name="paint"/> (<c>"#rrggbb"</c>, from the
@@ -84,11 +95,27 @@ public sealed class PartAssets
         var key = asset.ToString();
         if (_files.TryGetValue(key, out var cached))
             return cached;
-        var mod = _content?.Mods.FirstOrDefault(m => m.Id == asset.ModId);
-        return _files[key] = mod is null ? Warn($"mod '{asset.ModId}' is not loaded, so '{key}' cannot load.") : ReadGltf(asset.Resolve(mod.Directory), key);
+        var directory = _modDirectory(asset.ModId);
+        return _files[key] = directory is null ? Warn($"mod '{asset.ModId}' is not loaded, so '{key}' cannot load.") : ReadGltf(asset.Resolve(directory), key);
     }
 
-    private static IReadOnlyList<PartMesh>? ReadGltf(string file, string key)
+    /// <summary>Uses newly loaded <paramref name="content"/> from now on and forgets everything cached.</summary>
+    public void SetContent(ModLoadResult content)
+    {
+        _content = content;
+        _modDirectory = id => content.Mods.FirstOrDefault(m => m.Id == id)?.Directory;
+        ClearCache();
+    }
+
+    /// <summary>Forgets cached files, so meshes changed on disk load again.</summary>
+    public void ClearCache()
+    {
+        _files.Clear();
+        _models.Clear();
+    }
+
+    /// <summary>Every mesh in a glTF file on disk with its transform relative to the file's root, or null when it fails to load.</summary>
+    public static IReadOnlyList<PartMesh>? ReadGltf(string file, string key)
     {
         var document = new GltfDocument();
         var state = new GltfState();
@@ -114,7 +141,8 @@ public sealed class PartAssets
             Collect(child, transform, meshes);
     }
 
-    private (Shape3D, Transform3D) BuildShape(PartDefinition definition, string? modId)
+    /// <summary>The collision shape of a part and its transform from the part centre.</summary>
+    public (Shape3D Shape, Transform3D Transform) BuildShape(PartDefinition definition, string? modId)
     {
         var collision = definition.Collision;
         var offset = new Transform3D(Basis.Identity, (collision?.Offset ?? Vec3.Zero).ToGodot());
@@ -139,7 +167,8 @@ public sealed class PartAssets
         return points.Length >= 4 ? new ConvexPolygonShape3D { Points = points } : null;
     }
 
-    private static Mesh PlaceholderMesh(PartDefinition definition, Shape3D shape)
+    /// <summary>A grey primitive mesh matching <paramref name="shape"/>, for parts without a model.</summary>
+    public static Mesh PlaceholderMesh(PartDefinition definition, Shape3D shape)
     {
         PrimitiveMesh mesh = shape switch
         {
@@ -159,23 +188,28 @@ public sealed class PartAssets
     /// </summary>
     public PartMesh ApplyVisual(PartMesh mesh, VisualDefinition visual, string? modId)
     {
-        var texture = visual.Texture is { } path && modId is not null ? LoadTexture(path, modId) : null;
-        var tint = HexColor.TryParse(visual.Color, out var c) ? new Color(c.R, c.G, c.B) : Colors.White;
         var materials = new List<Material?>();
         for (var i = 0; i < mesh.Mesh.GetSurfaceCount(); i++)
-        {
-            var original = mesh.SurfaceMaterials?.ElementAtOrDefault(i) ?? mesh.Mesh.SurfaceGetMaterial(i);
-            var material = original is BaseMaterial3D b ? (BaseMaterial3D)b.Duplicate() : new StandardMaterial3D();
-            material.AlbedoColor *= tint;
-            if (visual.Roughness is { } roughness)
-                material.Roughness = roughness;
-            if (visual.Metallic is { } metallic)
-                material.Metallic = metallic;
-            if (texture is not null)
-                material.AlbedoTexture = texture;
-            materials.Add(material);
-        }
+            materials.Add(VisualMaterial(visual, modId, mesh.SurfaceMaterials?.ElementAtOrDefault(i) ?? mesh.Mesh.SurfaceGetMaterial(i)));
         return mesh with { SurfaceMaterials = materials };
+    }
+
+    /// <summary>
+    /// A copy of <paramref name="original"/> (or a plain white material) adjusted by <paramref name="visual"/>:
+    /// albedo multiplied by its colour, roughness, metalness and texture replaced where given.
+    /// </summary>
+    public BaseMaterial3D VisualMaterial(VisualDefinition visual, string? modId, Material? original = null)
+    {
+        var material = original is BaseMaterial3D b ? (BaseMaterial3D)b.Duplicate() : new StandardMaterial3D();
+        if (HexColor.TryParse(visual.Color, out var c))
+            material.AlbedoColor *= new Color(c.R, c.G, c.B);
+        if (visual.Roughness is { } roughness)
+            material.Roughness = roughness;
+        if (visual.Metallic is { } metallic)
+            material.Metallic = metallic;
+        if (visual.Texture is { } path && modId is not null && LoadTexture(path, modId) is { } texture)
+            material.AlbedoTexture = texture;
+        return material;
     }
 
     // Every surface's material copied with its albedo colour replaced; textures keep showing through.
@@ -199,8 +233,8 @@ public sealed class PartAssets
             GD.PushWarning($"[creations] {error}");
             return null;
         }
-        var mod = _content?.Mods.FirstOrDefault(m => m.Id == asset.ModId);
-        var image = mod is null ? null : Image.LoadFromFile(asset.Resolve(mod.Directory));
+        var directory = _modDirectory(asset.ModId);
+        var image = directory is null || !File.Exists(asset.Resolve(directory)) ? null : Image.LoadFromFile(asset.Resolve(directory));
         if (image is null)
         {
             GD.PushWarning($"[creations] texture '{asset}' did not load.");

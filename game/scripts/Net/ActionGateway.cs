@@ -44,7 +44,9 @@ public partial class ActionGateway : Node
     {
         if (Session.IsHost)
         {
-            done?.Invoke(Dispatcher.Dispatch(new ActionCaller(Session.LocalPeer, ActionSource.Player), action, argsJson));
+            // Dispatch outside done?.Invoke(...), which would skip it when there is no callback.
+            var result = Dispatcher.Dispatch(new ActionCaller(Session.LocalPeer, ActionSource.Player), action, argsJson);
+            done?.Invoke(result);
             return;
         }
         if (Session.State != NetSession.SessionState.Connected)

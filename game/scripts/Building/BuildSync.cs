@@ -17,6 +17,8 @@ namespace Mechanica.Game.Building;
 /// answers reach and clearance questions from the live scene and applies each change to the host's
 /// <see cref="CreationWorld"/>. It also shows every player's Lift and sends Lift changes to every
 /// client, and all Lifts to a peer when it becomes ready.
+/// It also runs <c>SpawnPart</c> and <c>ClearCreations</c> (<see cref="CreationActions"/>), which the Test
+/// Sandbox uses, and is the part catalog for the building actions, so <see cref="SetContent"/> can swap mods.
 /// <para>
 /// Clients get the result from <see cref="CreationSync"/>: a changed graph bumps
 /// <see cref="Creation.Revision"/>, so every peer near the Creation is sent it whole again (save JSON,
@@ -25,7 +27,7 @@ namespace Mechanica.Game.Building;
 /// Creation's moves reach clients as ordinary snapshots.
 /// </para>
 /// </summary>
-public partial class BuildSync : Node, IToolWorld
+public partial class BuildSync : Node, IToolWorld, IPartCatalog
 {
     /// <summary>Where the building limits are read from.</summary>
     public const string SettingsPath = "res://data/building.json";
@@ -45,8 +47,8 @@ public partial class BuildSync : Node, IToolWorld
     /// <summary>The Creations this peer shows. Set before adding to the tree.</summary>
     public CreationWorld Creations { get; init; } = null!;
 
-    /// <summary>Part definitions (the loaded mods). Set before adding to the tree.</summary>
-    public ModLoadResult Catalog { get; init; } = null!;
+    /// <summary>Part definitions (the loaded mods). Set before adding to the tree; <see cref="SetContent"/> swaps it.</summary>
+    public ModLoadResult Catalog { get; set; } = null!;
 
     /// <summary>Meshes and shapes for the parts. Set before adding to the tree.</summary>
     public PartAssets Assets { get; init; } = null!;
@@ -80,14 +82,42 @@ public partial class BuildSync : Node, IToolWorld
         Session.StateChanged -= OnStateChanged;
     }
 
-    /// <summary>Registers <c>PlacePart</c>, <c>RemovePart</c> and the tool actions.</summary>
+    /// <summary>
+    /// Uses <paramref name="mods"/> from now on, as the Test Sandbox does after the Part Editor exports.
+    /// Creations already in the world keep the parts they were built with.
+    /// </summary>
+    public void SetContent(ModLoadResult mods) => Catalog = mods;
+
+    /// <inheritdoc/>
+    public PartDefinition? FindDefinition(string id) => Catalog.FindDefinition(id);
+
+    /// <summary>
+    /// Registers <c>PlacePart</c>, <c>RemovePart</c>, the tool actions, <c>SpawnPart</c>
+    /// (<see cref="SpawnPartArgs"/>; returns the new Creation's id) and <c>ClearCreations</c> (no arguments).
+    /// </summary>
     public void RegisterActions(ActionDispatcher dispatcher)
     {
         Settings ??= LoadSettings();
-        new BuildActions(Catalog, Settings, this).Register(dispatcher);
+        new BuildActions(this, Settings, this).Register(dispatcher);
         Tools = new ToolActions(Settings, this);
         Tools.Register(dispatcher);
         _dispatcher = dispatcher;
+        dispatcher.Register<SpawnPartArgs>(CreationActions.SpawnPart,
+            (_, args) => CreationActions.ValidateSpawn(args, this, Creations.All.Count()),
+            (_, args) =>
+            {
+                var creation = CreationActions.BuildSpawn(args, NextCreationId(), this);
+                Added(creation);
+                return System.Text.Json.JsonSerializer.SerializeToElement(creation.Id);
+            });
+        dispatcher.Register<NoArgs>(CreationActions.ClearCreations,
+            (_, _) => null,
+            (_, _) =>
+            {
+                foreach (var id in Creations.All.Select(c => c.Id).ToList())
+                    Removed(id);
+                return null;
+            });
     }
 
     /// <summary>Reads <see cref="SettingsPath"/>, failing loudly on bad data.</summary>

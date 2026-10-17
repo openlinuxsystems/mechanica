@@ -1,0 +1,7 @@
+{
+  "id": "new_item",
+  "name": "New Item",
+  "category": "resource",
+  "mass": 0.5,
+  "stack_size": 50
+}
