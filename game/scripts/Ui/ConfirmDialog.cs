@@ -33,10 +33,11 @@ public partial class ConfirmDialog : CanvasLayer
         Action? onCancel = null, bool destructive = true)
     {
         var dialog = new ConfirmDialog { Name = "ConfirmDialog", Layer = 100, _onConfirm = onConfirm, _onCancel = onCancel, Message = message };
-        var dim = new ColorRect { Color = new Color(0, 0, 0, 0.5f), MouseFilter = Control.MouseFilterEnum.Stop };
+        var dim = UiInput.KeepMouse(new ColorRect { Color = new Color(0, 0, 0, 0.5f) });
         dim.SetAnchorsPreset(Control.LayoutPreset.FullRect);
         dialog.AddChild(dim);
-        var center = new CenterContainer();
+        // The window sits over the dim, which keeps every click and wheel off the game.
+        var center = new CenterContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
         center.SetAnchorsPreset(Control.LayoutPreset.FullRect);
         dialog.AddChild(center);
         dialog.Window = new ToolWindow { Name = "Window", Title = title, CustomMinimumSize = new Vector2(420, 0) };

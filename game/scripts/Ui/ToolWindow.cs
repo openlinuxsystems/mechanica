@@ -58,6 +58,9 @@ public partial class ToolWindow : PanelContainer
 
     public ToolWindow()
     {
+        // A window keeps every click and wheel over it, even past the end of a scroll, so none reaches the
+        // game behind it (where a click takes the mouse back and closes the menu).
+        UiInput.KeepMouse(this);
         var column = new VBoxContainer();
         column.AddThemeConstantOverride("separation", 8);
         AddChild(column);
