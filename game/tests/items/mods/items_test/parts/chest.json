@@ -1,0 +1,22 @@
+{
+  "id": "chest",
+  "name": "Test Chest",
+  "category": "container",
+  "mass": 8,
+  "durability": 3,
+  "friction": 0.6,
+  "buoyancy": 0.6,
+  "flammable": true,
+  "stack_size": 10,
+  "size": [
+    2,
+    2,
+    2
+  ],
+  "visual": {
+    "color": "#8a5a30"
+  },
+  "inventory": {
+    "slots": 4
+  }
+}

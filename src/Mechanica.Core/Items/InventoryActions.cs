@@ -77,18 +77,18 @@ public sealed record CraftJobView(string Recipe, int Count, float Progress, floa
 /// slots, and for a station its orders.
 /// </summary>
 /// <param name="Inventory">Which inventory.</param>
-/// <param name="Part">Qualified part id of a container or station; null for a player's inventory.</param>
 /// <param name="SlotCount">Number of slots.</param>
 /// <param name="Items">Filled slots in slot order.</param>
+/// <param name="Part">Qualified part id of a container or station; null for a player's inventory.</param>
 /// <param name="Accepts">Item ids it takes, or null for any.</param>
 /// <param name="Queue">A station's orders (null for other inventories).</param>
 /// <param name="Speed">A station's crafting speed.</param>
 /// <param name="Blocked">True when a station's finished craft is waiting for room.</param>
 public sealed record InventoryView(
     InventoryRef Inventory,
-    string? Part,
     int SlotCount,
     IReadOnlyList<SlotView> Items,
+    string? Part = null,
     IReadOnlyList<string>? Accepts = null,
     IReadOnlyList<CraftJobView>? Queue = null,
     float? Speed = null,
@@ -216,11 +216,11 @@ public sealed class InventoryActions(IPartCatalog catalog, RecipeBook recipes, I
             .Select(x => new SlotView(x.i, x.s!.Item, x.s.Count)).ToList();
         var accepts = inventory.AcceptedItems?.Order(StringComparer.Ordinal).ToList();
         if (where.IsPlayer)
-            return new InventoryView(where, null, inventory.SlotCount, items, accepts);
+            return new InventoryView(where, inventory.SlotCount, items, Accepts: accepts);
         var creation = world.FindCreation(where.Creation!.Value)!;
         var part = creation.FindPart(where.Part!.Value)!;
         var queue = creation.CraftingOf(part.Id);
-        return new InventoryView(where, part.Part, inventory.SlotCount, items, accepts,
+        return new InventoryView(where, inventory.SlotCount, items, part.Part, accepts,
             queue?.Jobs.Select(j => new CraftJobView(j.Recipe, j.Count, j.Progress, recipes.Find(j.Recipe)?.Time ?? 0)).ToList(),
             queue is null ? null : SpeedOf(creation.DefinitionOf(part.Id)),
             queue?.IsBlocked ?? false);
