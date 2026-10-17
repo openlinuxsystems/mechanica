@@ -16,7 +16,7 @@ namespace Mechanica.Game;
 /// <summary>
 /// Flat test world and session root. It builds the networking nodes (<see cref="Session"/>,
 /// <see cref="PlayerSync"/>, <see cref="CreationSync"/>, <see cref="Actions"/>), the streamed world (<see cref="Streamer"/>,
-/// <see cref="Creations"/>), building (<see cref="Build"/>, the local player's <see cref="Hammer"/>), the
+/// <see cref="Creations"/>), building (<see cref="Build"/>, the local player's <see cref="Tools"/>), the
 /// motion primitives (<see cref="Motion"/>) and the host's external AI endpoint and record/replay
 /// (<see cref="Ai"/>, <see cref="Recorder"/>). It starts offline, hosting or joining from
 /// <see cref="Options"/>, and drives whichever player belongs to this peer from the keyboard and mouse.
@@ -68,6 +68,8 @@ public partial class Main : Node3D
     /// <summary>Building actions and their sync to clients.</summary>
     public BuildSync Build { get; private set; } = null!;
 
+    /// <summary>The local player's hand tools, once the player has spawned.</summary>
+    public ToolBelt? Tools { get; private set; }
     /// <summary>Forces, torques and bearing motors for scripts, bots and external agents.</summary>
     public MotionSync Motion { get; private set; } = null!;
 
@@ -78,7 +80,7 @@ public partial class Main : Node3D
     public AiEndpoint Ai { get; private set; } = null!;
 
     /// <summary>The local player's Hammer, once the player has spawned.</summary>
-    public HammerTool? Hammer { get; private set; }
+    public HammerTool? Hammer => Tools?.Hammer;
 
     /// <summary>This peer's own player, once spawned.</summary>
     public PlayerController? LocalPlayer => PlayerSync.LocalPlayer;
@@ -150,7 +152,7 @@ public partial class Main : Node3D
         AddChild(Ai);
         // The offline player spawned with PlayerSync, before building existed.
         if (LocalPlayer is { } local)
-            AddHammer(local);
+            AddTools(local);
         Session.StateChanged += state => SetPropsSimulated(state is NetSession.SessionState.Offline or NetSession.SessionState.Hosting);
         if (ReadDeviceInput)
             AddChild(new ConnectPanel { Name = "ConnectPanel", Session = Session });
@@ -207,28 +209,28 @@ public partial class Main : Node3D
         if (player != LocalPlayer)
             return;
         player.MakeCameraCurrent();
-        AddHammer(player);
+        AddTools(player);
         if (!ReadDeviceInput)
             return;
         _input = new LocalPlayerInput { Name = "LocalPlayerInput", Target = player };
         AddChild(_input);
     }
 
-    private void AddHammer(PlayerController player)
+    private void AddTools(PlayerController player)
     {
-        if (Build is null || Hammer is not null)
+        if (Build is null || Tools is not null)
             return;
-        Hammer = new HammerTool { Name = "Hammer", Player = player, Actions = Actions, Build = Build, ReadDeviceInput = ReadDeviceInput };
-        AddChild(Hammer);
+        Tools = new ToolBelt { Name = "Tools", Player = player, Actions = Actions, Build = Build, ReadDeviceInput = ReadDeviceInput };
+        AddChild(Tools);
     }
 
     private void OnPlayerDespawning(PlayerController player)
     {
-        if (Hammer?.Player == player)
+        if (Tools?.Player == player)
         {
-            RemoveChild(Hammer);
-            Hammer.QueueFree();
-            Hammer = null;
+            RemoveChild(Tools);
+            Tools.QueueFree();
+            Tools = null;
         }
         if (_input?.Target != player)
             return;
