@@ -33,10 +33,20 @@ public class ActionDispatcherTests
     }
 
     [Fact]
-    public void TypedDispatchSerializesArgs()
+    public void TypedDispatchValidatesAndRecordsTheArgsAsJson()
     {
+        var records = new List<ActionRecord>();
+        _dispatcher.Dispatched += records.Add;
+
         Assert.True(_dispatcher.Dispatch(Client, "Move", new MoveArgs(4, "x")).Ok);
-        Assert.Equal([(42, 4)], _applied);
+        Assert.Equal(ActionErrors.Rejected, _dispatcher.Dispatch(Client, "Move", new MoveArgs(40)).Code);
+        // Another type goes through JSON like a remote call.
+        Assert.True(_dispatcher.Dispatch(Client, "Move", new { distance = 5 }).Ok);
+
+        Assert.Equal([(42, 4), (42, 5)], _applied);
+        Assert.Equal("""{"distance":4,"label":"x"}""", records[0].ArgsJson);
+        Assert.Equal("""{"distance":40}""", records[1].ArgsJson);
+        Assert.Equal("""{"distance":5}""", records[2].ArgsJson);
     }
 
     [Fact]

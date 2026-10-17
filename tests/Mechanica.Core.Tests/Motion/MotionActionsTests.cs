@@ -38,6 +38,45 @@ public class MotionActionsTests
         Assert.Equal([(7, 0, new Vector3(10, 0, 0), new Vector3(0, 1, 0), (float?)0.5f)], _world.Pushes);
     }
 
+    [Fact]
+    public void ApplyForceOffCentreAlsoTwists()
+    {
+        var com = MotionActions.CentreOfMass(_car, 0);
+        var at = com + new Vector3(0, 0, 2);
+        var result = _dispatcher.Dispatch(Agent, MotionActions.ApplyForce,
+            $$"""{ "creation": 7, "force": [10, 0, 0], "at": [{{at.X}}, {{at.Y}}, {{at.Z}}], "part": {{_car.Bodies[0].PartIds[0]}} }""");
+
+        Assert.True(result.Ok, result.ToString());
+        var (_, _, force, torque, _) = Assert.Single(_world.Pushes);
+        Assert.Equal(new Vector3(10, 0, 0), force);
+        // r × F = (0, 0, 2) × (10, 0, 0) = (0, 20, 0).
+        Assert.Equal(0, torque.X, 3);
+        Assert.Equal(20, torque.Y, 3);
+        Assert.Equal(0, torque.Z, 3);
+        Assert.Equal(_car.Bodies[0].PartIds[0], Assert.Single(_world.PushParts));
+    }
+
+    [Theory]
+    [InlineData("""{ "creation": 7, "force": [1, 0, 0], "part": 99 }""", "no part 99")]
+    [InlineData("""{ "creation": 7, "force": [1, 0, 0], "at": [500, 0, 0] }""", "most allowed is 50 m")]
+    public void ApplyForceChecksPartAndPoint(string args, string reason)
+    {
+        var result = _dispatcher.Dispatch(Agent, MotionActions.ApplyForce, args);
+
+        Assert.Equal(ActionErrors.Rejected, result.Code);
+        Assert.Contains(reason, result.Message);
+    }
+
+    [Fact]
+    public void ApplyForceRefusesAPartOfAnotherBody()
+    {
+        var top = _car.Bodies[^1];
+        Assert.NotEqual(0, top.Index);
+        var result = _dispatcher.Dispatch(Agent, MotionActions.ApplyForce, $$"""{ "creation": 7, "force": [1, 0, 0], "part": {{top.PartIds[0]}} }""");
+
+        Assert.Contains($"is in body {top.Index}", result.Message);
+    }
+
     [Theory]
     [InlineData("""{ "creation": 8, "force": [1, 0, 0] }""", "no creation 8")]
     [InlineData("""{ "creation": 7, "force": [1, 0, 0], "body": 5 }""", "no body 5")]
@@ -141,6 +180,7 @@ public class MotionActionsTests
         public Dictionary<int, Creation> Creations { get; } = [];
         public HashSet<int> Parked { get; } = [];
         public List<(int, int, Vector3, Vector3, float?)> Pushes { get; } = [];
+        public List<int?> PushParts { get; } = [];
         public List<(int, float?, float)> Motors { get; } = [];
 
         public Creation? FindCreation(int id) => Creations.GetValueOrDefault(id);
@@ -149,8 +189,11 @@ public class MotionActionsTests
 
         public bool IsLive(int id) => !Parked.Contains(id);
 
-        public void ApplyForce(Creation creation, int body, Vector3 force, Vector3 torque, float? duration) =>
+        public void ApplyForce(Creation creation, int body, Vector3 force, Vector3 torque, float? duration, int? part)
+        {
             Pushes.Add((creation.Id, body, force, torque, duration));
+            PushParts.Add(part);
+        }
 
         public void SetBearingTarget(Creation creation, JointLink joint, float? velocity, float maxTorque) =>
             Motors.Add((joint.Connection.A, velocity, maxTorque));

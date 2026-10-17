@@ -1,0 +1,56 @@
+using System.Text.Json.Nodes;
+
+namespace Mechanica.Scripting;
+
+/// <summary>What kind of line a script message is.</summary>
+public enum ScriptMessageKind
+{
+    /// <summary>Output of <c>print</c> or <c>log</c>.</summary>
+    Print,
+
+    /// <summary>Something the script did was refused (an action failed validation); the script keeps running.</summary>
+    Warning,
+
+    /// <summary>The script failed to load, raised an error or ran too long. Its part stops until the script is fixed and reloaded.</summary>
+    Error,
+}
+
+/// <summary>One line of script output for the editor console and the log.</summary>
+/// <param name="Kind">Print, warning or error.</param>
+/// <param name="Script">Qualified script path (<c>mod:scripts/x.lua</c>).</param>
+/// <param name="Creation">Creation of the part the line came from, if any.</param>
+/// <param name="Part">Part id the line came from, if any.</param>
+/// <param name="Text">The message.</param>
+/// <param name="Tick">Runtime tick the line was written on.</param>
+public sealed record ScriptMessage(ScriptMessageKind Kind, string Script, int? Creation, int? Part, string Text, long Tick)
+{
+    /// <inheritdoc/>
+    public override string ToString() =>
+        $"[{Kind.ToString().ToLowerInvariant()}] {Script}{(Part is { } p ? $" (creation {Creation}, part {p})" : "")}: {Text}";
+}
+
+/// <summary>One running part script, as the editor and tests see it.</summary>
+/// <param name="Creation">Creation id.</param>
+/// <param name="Part">Part id.</param>
+/// <param name="PartType">Qualified part type id.</param>
+/// <param name="Script">Qualified script path.</param>
+/// <param name="Fault">Why the script is stopped, or null while it runs.</param>
+/// <param name="Version">How many times the script has been loaded; goes up on each successful hot reload.</param>
+public sealed record ScriptInstanceInfo(int Creation, int Part, string PartType, string Script, string? Fault, int Version);
+
+/// <summary>Result of reloading a script.</summary>
+/// <param name="Ok">True when the new code compiled and every instance took it.</param>
+/// <param name="Script">Qualified script path.</param>
+/// <param name="Error">Compile error, when the old code keeps running.</param>
+/// <param name="Instances">Parts running the script.</param>
+public sealed record ScriptReloadResult(bool Ok, string Script, string? Error, int Instances);
+
+/// <summary>Result of calling a hook from the host.</summary>
+/// <param name="Ok">False when the script is stopped, has no such part, or the call failed.</param>
+/// <param name="Values">The hook's return values as plain data (null when missing or not plain data).</param>
+/// <param name="Error">Why it failed.</param>
+public sealed record ScriptCallResult(bool Ok, IReadOnlyList<JsonNode?> Values, string? Error)
+{
+    /// <summary>A failure.</summary>
+    public static ScriptCallResult Fail(string error) => new(false, [], error);
+}

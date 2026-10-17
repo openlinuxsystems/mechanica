@@ -1,0 +1,11 @@
+{
+  "format_version": 1,
+  "id": "script_test",
+  "name": "Script Test Parts",
+  "version": "0.1.0",
+  "description": "Fixture mod for the headless Lua test: a block and a scripted hover thruster.",
+  "authors": [
+    "Mechanica"
+  ],
+  "dependencies": []
+}

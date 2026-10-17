@@ -20,7 +20,9 @@ public partial class MotionSync : Node, IMotionWorld
     /// <summary>Where the motion limits are read from.</summary>
     public const string SettingsPath = "res://data/motion.json";
 
-    private readonly Dictionary<(int Creation, int Body), Push> _pushes = [];
+    // Part -1 is a Body's shared push (calls without a part).
+    private readonly Dictionary<(int Creation, int Body, int Part), Push> _pushes = [];
+    private readonly Dictionary<int, (ulong Frame, int Revision)> _synced = [];
     private readonly Dictionary<(int Creation, int Part), Motor> _motors = [];
 
     private sealed record Push(int Revision, Vector3 Force, Vector3 Torque)
@@ -68,7 +70,17 @@ public partial class MotionSync : Node, IMotionWorld
     /// <inheritdoc/>
     public Creation? FindCreation(int id)
     {
-        Creations.NodeOf(id)?.SyncToCreation();
+        // Bodies only move in the physics step, so one read per step serves every call in it (scripts
+        // push many times a step).
+        if (Creations.NodeOf(id) is { } node)
+        {
+            var stamp = (Engine.GetPhysicsFrames(), node.Creation.Revision);
+            if (_synced.GetValueOrDefault(id) != stamp)
+            {
+                node.SyncToCreation();
+                _synced[id] = stamp;
+            }
+        }
         return Creations.Find(id);
     }
 
@@ -79,10 +91,10 @@ public partial class MotionSync : Node, IMotionWorld
     public bool IsLive(int id) => Creations.NodeOf(id) is not null;
 
     /// <inheritdoc/>
-    public void ApplyForce(Creation creation, int body, System.Numerics.Vector3 force, System.Numerics.Vector3 torque, float? duration)
+    public void ApplyForce(Creation creation, int body, System.Numerics.Vector3 force, System.Numerics.Vector3 torque, float? duration, int? part)
     {
         var steps = duration is { } d ? Math.Max(1, (int)MathF.Round(d * Engine.PhysicsTicksPerSecond)) : 1;
-        _pushes[(creation.Id, body)] = new Push(creation.Revision, force.ToGodot(), torque.ToGodot()) { StepsLeft = steps };
+        _pushes[(creation.Id, body, part ?? -1)] = new Push(creation.Revision, force.ToGodot(), torque.ToGodot()) { StepsLeft = steps };
     }
 
     /// <inheritdoc/>
@@ -158,6 +170,7 @@ public partial class MotionSync : Node, IMotionWorld
 
     private void Forget(int creation)
     {
+        _synced.Remove(creation);
         foreach (var key in _pushes.Keys.Where(k => k.Creation == creation).ToList())
             _pushes.Remove(key);
         foreach (var key in _motors.Keys.Where(k => k.Creation == creation).ToList())

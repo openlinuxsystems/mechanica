@@ -59,14 +59,14 @@ Errors carry the Action API code in `error.data.code`:
 
 ## Actions for driving
 
-These are the generic motion primitives (decision D2). Seats, engines and controllers (chunk 10)
-will be Lua parts built on them; players don't call them directly and are refused if they try.
+These are the generic motion primitives (decision D2). Part scripts call the same actions (see the
+[Lua API Reference](lua-api.md)); seats, engines and controllers (chunk 10) will be Lua parts built on them; players don't call them directly and are refused if they try.
 
 | Action | Arguments | Notes |
 |--------|-----------|-------|
 | `ListCreations` | none | `[{id, parts, position}]` |
 | `GetCreation` | `creation` | parts, bodies (`index`, `parts`, `mass`, `position`, `rotation` `[x,y,z,w]`, `forward`, `up`, velocities) and joints (`part`, `other`, `type`, `locked`) |
-| `ApplyForce` | `creation`, `force` (N, world), optional `body` (default 0), `torque` (N·m), `duration` (s, default one physics step) | a later call on the same body replaces the push; it ends early if the Creation is rebuilt |
+| `ApplyForce` | `creation`, `force` (N, world), optional `body` (default 0), `torque` (N·m), `duration` (s, default one physics step), `at` (world point, m; default the centre of mass), `part` (the pushing part, in `body`) | a later call on the same body replaces the push; with `part`, pushes from different parts add up and a later call replaces only that part's push. An `at` off the centre of mass also twists the body (at most `max_lever_arm` m away). It ends early if the Creation is rebuilt |
 | `SetBearingTarget` | `creation`, `part` (the bearing), `velocity` (rad/s about the rotor normal, or `null` to free it), optional `max_torque` (N·m) | the motor stays on until changed |
 
 Limits (largest force, torque, push duration, bearing speed and torque) are data in

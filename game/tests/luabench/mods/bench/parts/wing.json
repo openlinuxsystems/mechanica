@@ -1,0 +1,20 @@
+{
+  "id": "wing",
+  "name": "Benchmark Wing",
+  "category": "interactive",
+  "mass": 5,
+  "durability": 2,
+  "friction": 0.5,
+  "buoyancy": 0.5,
+  "flammable": false,
+  "size": [1, 1, 1],
+  "collision": { "shape": "box", "size": [0.25, 0.25, 0.25] },
+  "script": "scripts/wing.lua",
+  "properties": {
+    "air_density": 1.225,
+    "area": 0.0625,
+    "lift_slope": 5.5,
+    "drag_min": 0.02,
+    "drag_slope": 1.2
+  }
+}
