@@ -29,10 +29,12 @@ tools/smoke.sh            # builds, then runs every headless Godot test scene in
 `tools/smoke.sh` downloads the pinned Godot build into `.tools/` unless `GODOT` points
 at an existing binary. Open `game/project.godot` in Godot 4.7.2 .NET to edit scenes.
 
-## Playing the test world
+## Playing
 
-The main scene is a flat test world. Click to capture the mouse, then: WASD to move, mouse to
-look, Space to jump, Shift to sprint, V to toggle the third-person camera, Esc to free the mouse.
+The main menu starts a **New game** (a name, Survival or Creative, an optional seed, and whether to
+open it to the LAN), loads a saved one, or joins one. Click to capture the mouse, then: WASD to move,
+mouse to look, Space to jump, Shift to sprint, V to toggle the third-person camera, F to interact, J for
+the quest log, Esc for the menu and F1 for help. [docs/playing.md](docs/playing.md) has every key.
 Movement tuning (speeds, jump, capsule size) is data in `game/data/player.json`.
 
 ## Multiplayer
@@ -41,8 +43,10 @@ Every game is a session (D10): playing alone is hosting with nobody else connect
 simulates everything; clients send their input and predict their own player, and the host corrects
 them when they disagree.
 
-Press Esc to free the mouse and open the connect panel: **Host** opens the session on a UDP port
-(default 27460), **Join** connects to `address:port`. From the command line (arguments after `--`):
+In a world, Esc opens the menu: **Open to LAN** hosts the session on a UDP port (default 27460) with
+the world and players as they are. A host also answers LAN discovery queries on UDP port 27462, so the
+main menu's **Join game** lists every game on the network (world, host, players, mode); it also joins
+`address:port` typed in. From the command line (arguments after `--`):
 
 ```sh
 godot --path game -- --host 27460 --max-players 4
@@ -61,7 +65,7 @@ sends them every destroyed tree or rock.
 
 ## Saving and loading
 
-The host saves the world: press Esc, then **Save / load…**, name the world and press **Save**. The main
+The host saves the world: press Esc, then **Save or load…**, name the world and press **Save**. The main
 menu's **Load game** (or `-- --load path/to/world.json`, combinable with `--host`) starts a saved world.
 Saves are JSON files in the user data folder's `saves/` (one per world name); see
 [docs/saves.md](docs/saves.md) for what they hold.
