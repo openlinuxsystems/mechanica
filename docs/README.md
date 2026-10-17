@@ -19,7 +19,18 @@ written by the chunk that builds the feature it covers.
 
 Other references:
 
+- [How to Play](playing.md): controls, playing together, saving
+
 - [World Generation and POI Prefabs](world-generation.md)
 - [Sound Events](sound-events.md)
 - [Survival](survival.md)
 - [Saves](saves.md)
+- [Quests and Dialogue](quests.md)
+
+## Engine settings
+
+`game/data/*.json` (`player.json`, `streaming.json`, `building.json`, `survival.json`, ...) tunes the
+engine itself: movement, streaming radii, build reach, damage rules, sync rates. These files ship with
+the game and are not moddable. Every peer must run the same engine, and a mod can't change them without
+a load step to check them on join. Content (parts, items, recipes, bots, raids, worlds, POIs, quests)
+lives in mods.

@@ -294,6 +294,16 @@ public partial class PartEditorScreen : Control
     /// <summary>Shows one of the docs (<c>lua-api.md</c>) in the help window.</summary>
     public void OpenHelp(string fileName) => _help.Open(fileName);
 
+    // F1 opens the help, as everywhere in the game.
+    public override void _UnhandledInput(InputEvent @event)
+    {
+        if (@event is InputEventKey { Pressed: true, Echo: false, PhysicalKeycode: Key.F1 })
+        {
+            OpenHelp("getting-started.md");
+            GetViewport().SetInputAsHandled();
+        }
+    }
+
     // ---- Building the UI ----
 
     private void BuildTabs()

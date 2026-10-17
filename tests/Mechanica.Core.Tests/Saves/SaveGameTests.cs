@@ -4,6 +4,7 @@ using Mechanica.Core.Creations;
 using Mechanica.Core.Data;
 using Mechanica.Core.Items;
 using Mechanica.Core.Net;
+using Mechanica.Core.Quests;
 using Mechanica.Core.Saves;
 using Mechanica.Core.Survival;
 using Mechanica.Core.World;
@@ -94,10 +95,40 @@ public class SaveGameTests
     [Fact]
     public void UnknownKeysAreKept()
     {
-        var json = """{ "format_version": 1, "seed": 1, "mode": "survival", "quests": { "a": 1 } }""";
+        var json = """{ "format_version": 1, "seed": 1, "mode": "survival", "weather": { "a": 1 } }""";
         var save = SaveGame.Read(json, "w.json", [])!;
 
-        Assert.Contains("\"quests\"", save.Write());
+        Assert.Contains("\"weather\"", save.Write());
+    }
+
+    [Fact]
+    public void TheStorySurvivesASave()
+    {
+        var story = new QuestState();
+        story.Quests["vanilla:getting_started"] = new QuestProgress { Status = QuestStatus.Active, Step = 1, Count = 2, Used = ["0:1", "0:2"] };
+        story.Flags["faction_stance"] = "ally";
+        story.Revealed.Add("vanilla:ai_core_facility");
+        var json = (Sample() with { Quests = story }).Write();
+        var read = SaveGame.Read(json, "w.json", [])!;
+
+        Assert.Equal(json, read.Write());
+        Assert.Equal("ally", read.Quests!.Flags["faction_stance"]);
+        Assert.Equal(["0:1", "0:2"], read.Quests.Of("vanilla:getting_started")!.Used!);
+        Assert.Contains("vanilla:ai_core_facility", read.Quests.Revealed);
+    }
+
+    [Fact]
+    public void ASaveWithoutAStoryHasNone() =>
+        Assert.Null(SaveGame.Read(Sample().Write(), "w.json", [])!.Quests);
+
+    [Fact]
+    public void AMalformedStoryIsAnError()
+    {
+        var diagnostics = new List<DataDiagnostic>();
+        var json = """{ "format_version": 1, "seed": 1, "mode": "survival", "quests": [1, 2] }""";
+
+        Assert.Null(SaveGame.Read(json, "w.json", diagnostics));
+        Assert.Contains(diagnostics, d => d.Code == DiagnosticCodes.SaveInvalid && d.JsonPath == "$.quests");
     }
 
     [Fact]

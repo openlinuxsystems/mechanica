@@ -1,0 +1,42 @@
+{
+  "name": "Workshop Outpost",
+  "summary": "Find a Workshop Outpost and get its Fabricator working.",
+  "requires": [
+    "getting_started"
+  ],
+  "steps": [
+    {
+      "id": "reach",
+      "text": "Reach a Workshop Outpost.",
+      "objective": {
+        "type": "reach",
+        "poi": "outpost",
+        "radius": 20
+      },
+      "dialogue": [
+        {
+          "speaker": "Logbook",
+          "text": "Workshop beacon on the long-range band. Follow it."
+        }
+      ]
+    },
+    {
+      "id": "craft",
+      "text": "Order something at the outpost's Fabricator.",
+      "objective": {
+        "type": "craft"
+      }
+    }
+  ],
+  "rewards": {
+    "flags": {
+      "fabricator_unlocked": "yes"
+    }
+  },
+  "outro": [
+    {
+      "speaker": "Logbook",
+      "text": "Fabricator linked. Build something that moves."
+    }
+  ]
+}

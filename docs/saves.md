@@ -17,8 +17,9 @@ late-join sync as any other world. Writes go to a temporary file and replace the
 | `creations` | Every Creation in the Creation format: parts, links, body poses and velocities, part settings, damage, container contents, crafting queues and soil |
 | `scripts` | Each scripted part's Lua `state` table, by creation and part id |
 | `players` | Every player the host has seen, by profile id: name, inventory, health, respawn bed, position and facing |
+| `quests` | The story: each started quest's progress, story flags and revealed POIs (see [Quests](quests.md)) |
 
-Unknown keys are kept as they are, so later chunks can add their own (quests do).
+Unknown keys are kept as they are, so later chunks can add their own.
 
 ## Loading
 

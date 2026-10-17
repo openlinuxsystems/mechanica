@@ -69,6 +69,9 @@ public partial class NetSession : Node
     /// <summary>Players allowed, host included. Fixed when hosting starts.</summary>
     public int MaxPlayers => _maxPlayers;
 
+    /// <summary>The port this host listens on, once it has hosted.</summary>
+    public int Port { get; private set; }
+
     /// <summary>This instance's peer id (1 for the host).</summary>
     public int LocalPeer => Multiplayer.GetUniqueId();
 
@@ -134,6 +137,7 @@ public partial class NetSession : Node
         // throttles its unreliable packets to 1 in 32 and holds back reliable ones. Reset it before anyone joins.
         peer.Host.BandwidthLimit(BandwidthBytesPerSecond, BandwidthBytesPerSecond);
         _maxPlayers = maxPlayers;
+        Port = port;
         Multiplayer.MultiplayerPeer = peer;
         if (Multiplayer is SceneMultiplayer scene)
             scene.ServerRelay = false; // clients only ever talk to the host

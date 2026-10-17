@@ -1,0 +1,35 @@
+{
+  "name": "Data Core Location",
+  "summary": "Locate the site of the colony's AI core.",
+  "requires": [
+    "faction_contact"
+  ],
+  "steps": [
+    {
+      "id": "scrap",
+      "text": "Gather 10 Component Kits to rebuild the long-range scanner.",
+      "objective": {
+        "type": "have_item",
+        "item": "component_kit",
+        "count": 10
+      },
+      "dialogue": [
+        {
+          "speaker": "Logbook",
+          "text": "Core telemetry is faint. A rebuilt scanner could triangulate it."
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "reveal": [
+      "ai_core_facility"
+    ]
+  },
+  "outro": [
+    {
+      "speaker": "Logbook",
+      "text": "Core coordinates locked. Multiple factions contesting site."
+    }
+  ]
+}

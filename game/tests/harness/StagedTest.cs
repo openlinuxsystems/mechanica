@@ -1,3 +1,4 @@
+using System.Reflection;
 using Godot;
 
 namespace Mechanica.Game.Tests;
@@ -87,18 +88,46 @@ public abstract partial class StagedTest : Node
         ShutDown(code);
     }
 
-    // Frees the test's nodes and lets .NET release its wrappers before quitting. Left to engine
-    // teardown, wrappers the GC has not collected yet (sessions, ENet peers, collisions) can outlive
-    // the .NET runtime, and Godot aborts on exit after the test already passed.
-    private async void ShutDown(int code)
+    // Clears the test's own fields, then quits through QuitCleanly.
+    private void ShutDown(int code)
     {
-        foreach (var child in GetChildren())
+        ForgetFields();
+        QuitCleanly(this, code);
+    }
+
+    /// <summary>
+    /// Frees <paramref name="test"/>'s nodes and lets .NET release its wrappers, then quits with
+    /// <paramref name="code"/>. Left to engine teardown, wrappers the GC has not collected yet (sessions,
+    /// ENet peers, collisions, meshes and materials) can outlive the .NET runtime, and Godot aborts on exit
+    /// after the test already passed. A test that holds screens in fields clears them first.
+    /// </summary>
+    public static async void QuitCleanly(Node test, int code)
+    {
+        var tree = test.GetTree();
+        foreach (var child in test.GetChildren())
             child.QueueFree();
-        await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-        await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-        GC.Collect();
-        GC.WaitForPendingFinalizers();
-        GC.Collect();
-        GetTree().Quit(code);
+        await test.ToSignal(tree, SceneTree.SignalName.ProcessFrame);
+        await test.ToSignal(tree, SceneTree.SignalName.ProcessFrame);
+        for (var pass = 0; pass < 2; pass++)
+        {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+            await test.ToSignal(tree, SceneTree.SignalName.ProcessFrame);
+        }
+        tree.Quit(code);
+    }
+
+    // Drops every object the concrete test holds in its fields (strings stay, for cleanup on exit).
+    private void ForgetFields()
+    {
+        for (var type = GetType(); type is not null && type != typeof(StagedTest); type = type.BaseType)
+        {
+            foreach (var field in type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly))
+            {
+                if (!field.FieldType.IsValueType && field.FieldType != typeof(string))
+                    field.SetValue(this, null);
+            }
+        }
     }
 }

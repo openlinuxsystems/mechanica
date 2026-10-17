@@ -8,6 +8,7 @@ using Mechanica.Game.Creations;
 using Mechanica.Game.Items;
 using Mechanica.Game.Net;
 using Mechanica.Game.Player;
+using Mechanica.Game.Quests;
 using Mechanica.Game.Scripting;
 using Mechanica.Game.Survival;
 using Mechanica.Game.World;
@@ -48,6 +49,9 @@ public partial class SaveSync : Node
 
     /// <summary>Part scripts, for their state tables.</summary>
     public ScriptSync Scripts { get; init; } = null!;
+
+    /// <summary>Quests, for the story's state. Optional.</summary>
+    public QuestSync? Quests { get; init; }
 
     /// <summary>The part catalog Creations and inventories are read against.</summary>
     public IPartCatalog Catalog { get; init; } = null!;
@@ -104,6 +108,8 @@ public partial class SaveSync : Node
             if (Creations.Find(script.Creation) is not null && !Scripts.Runtime.ImportState(script.Creation, script.Part, script.State))
                 diagnostics.Add(Warning(save.Name, $"creation {script.Creation} part {script.Part} no longer runs a script; its state was dropped."));
         }
+        if (save.Quests is { } quests && Quests is not null)
+            Quests.Load(quests);
         Roster = new PlayerRoster(save.Players);
         // Players already in the world (the host's own) get their saved selves back now.
         foreach (var player in Players.Players.Values)
@@ -139,6 +145,7 @@ public partial class SaveSync : Node
             Creations = [.. Creations.All.OrderBy(c => c.Id).Select(c => { Creations.NodeOf(c.Id)?.SyncToCreation(); return Core.Creations.CreationJson.Write(c); })],
             Scripts = scripts,
             Players = [.. Roster.All],
+            Quests = Quests?.State,
         };
     }
 

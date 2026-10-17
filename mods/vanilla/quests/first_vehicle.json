@@ -1,0 +1,31 @@
+{
+  "name": "First Vehicle",
+  "summary": "Build a working vehicle and drive it.",
+  "requires": [
+    "workshop_outpost"
+  ],
+  "steps": [
+    {
+      "id": "drive",
+      "text": "Build a vehicle with a seat and drive it 100 m.",
+      "objective": {
+        "type": "drive",
+        "distance": 100
+      }
+    }
+  ],
+  "rewards": {
+    "items": [
+      {
+        "item": "component_kit",
+        "count": 4
+      }
+    ]
+  },
+  "outro": [
+    {
+      "speaker": "Logbook",
+      "text": "Vehicle functional. Connection stable. Proceed to farm zone."
+    }
+  ]
+}

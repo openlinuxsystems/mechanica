@@ -122,6 +122,39 @@ public static class DataJson
         }).ToList(),
     });
 
+    /// <summary>Serializes a POI prefab in canonical form.</summary>
+    public static string Write(World.PoiPrefab poi) => Serialize(poi with
+    {
+        Extra = Sorted(poi.Extra),
+        Placement = poi.Placement is null ? null : poi.Placement with { Extra = Sorted(poi.Placement.Extra) },
+        Terrain = poi.Terrain?.Select(t => t with { Extra = Sorted(t.Extra) }).ToList(),
+        Pieces = poi.Pieces?.Select(p => p with { Extra = Sorted(p.Extra) }).ToList(),
+        Markers = poi.Markers?.Select(m => m with { Extra = Sorted(m.Extra) }).ToList(),
+    });
+
+    /// <summary>Serializes a quest in canonical form.</summary>
+    public static string Write(Quests.QuestDefinition quest) => Serialize(quest with
+    {
+        Extra = Sorted(quest.Extra),
+        Steps = quest.Steps?.Select(s => s with
+        {
+            Extra = Sorted(s.Extra),
+            Objective = s.Objective is null ? null : s.Objective with { Extra = Sorted(s.Objective.Extra) },
+            Dialogue = s.Dialogue?.Select(l => l with { Extra = Sorted(l.Extra) }).ToList(),
+            Choices = s.Choices?.Select(c => c with
+            {
+                Extra = Sorted(c.Extra),
+                Dialogue = c.Dialogue?.Select(l => l with { Extra = Sorted(l.Extra) }).ToList(),
+            }).ToList(),
+        }).ToList(),
+        Rewards = quest.Rewards is null ? null : quest.Rewards with
+        {
+            Extra = Sorted(quest.Rewards.Extra),
+            Items = quest.Rewards.Items?.Select(i => i with { Extra = Sorted(i.Extra) }).ToList(),
+        },
+        Outro = quest.Outro?.Select(l => l with { Extra = Sorted(l.Extra) }).ToList(),
+    });
+
     private static string Serialize<T>(T value) => JsonSerializer.Serialize(value, WriteOptions) + "\n";
 
     private static Dictionary<string, JsonElement>? Sorted(Dictionary<string, JsonElement>? extra) =>

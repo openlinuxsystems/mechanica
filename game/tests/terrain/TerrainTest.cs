@@ -38,13 +38,13 @@ public partial class TerrainTest : StagedTest
         Wait("players settle", 30);
         Add("the client regenerates the host's world", _ =>
         {
-            Check(HostWorld.WorldGen.Pois.Count == 4 && !HostWorld.WorldGen.HasErrors, "the vanilla world rules and POIs load");
+            Check(HostWorld.WorldGen.Pois.Count == 6 && !HostWorld.WorldGen.HasErrors, "the vanilla world rules and POIs load");
             Check(ClientWorld.State.Seed == 20261017 && ClientWorld.Generator.Seed == HostWorld.Generator.Seed, "the client uses the host's seed");
             Check(ClientWorld.Generator.Pois.Select(p => p.Centre).SequenceEqual(HostWorld.Generator.Pois.Select(p => p.Centre)), "both peers lay out the same POIs");
             var origin = new ChunkCoord(0, 0);
             var (host, client) = (HostWorld.Chunks[origin], ClientWorld.Chunks[origin]);
             Check(host.Data.Heights.SequenceEqual(client.Data.Heights), "chunk (0, 0) has the same heights on both peers");
-            var shape = host.GetNode<CollisionShape3D>("Shape").Shape as HeightMapShape3D;
+            var shape = host.GroundShape.Shape as HeightMapShape3D;
             Check(shape is not null && shape.MapData.SequenceEqual(host.Data.Heights), "the ground collides as a height map of those heights");
             Check(_host.Main.GetNode<Node3D>("SpawnPoint").GlobalPosition.IsEqualApprox(new Vector3(0, 0, 4)), "players spawn at the crash site's spawn marker");
             foreach (var instance in new[] { _host, _client })

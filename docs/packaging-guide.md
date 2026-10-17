@@ -14,7 +14,7 @@ mods/
     mod.json            required: identity, version, dependencies, conflicts
     parts/              part and item definitions (*.json, any subfolders)
       wheels/sport_wheel.json
-    overrides/          replacements for other mods' parts, one folder per mod id
+    overrides/          replacements for other mods' parts (and, in recipes/, recipes), one folder per mod id
       vanilla/wheel.json
     scripts/            Lua behaviour (*.lua)
     meshes/             glTF models (*.glb, *.gltf)
@@ -135,6 +135,22 @@ mods/better_wheels/overrides/vanilla/wheel.json   replaces vanilla:wheel
 - When two mods override the same part, the one later in the load order wins and the Mod Manager shows
   a warning (`MD0205`). If your mod deliberately builds on another mod's override, depend on that mod:
   then yours always loads later and no warning is shown.
+
+### Overriding recipes
+
+A recipe is replaced the same way: put a complete recipe with the same `id` in
+`overrides/<mod_id>/recipes/`. It keeps its game-wide id (`vanilla:chest`), so crafting queues and
+saves keep working.
+
+```
+mods/cheap_chests/overrides/vanilla/recipes/chest.json   replaces the recipe vanilla:chest
+```
+
+- The same dependency rule applies (`MD0203`), and the recipe must exist in that mod (`MD0703`).
+- It is checked like any recipe (`MD0701`). A recipe override with errors is left out and the original
+  recipe stays.
+- When two mods override the same recipe, the later one in the load order wins with a warning
+  (`MD0704`), unless one depends on the other.
 
 ## 7. Load order and the Mod Manager
 

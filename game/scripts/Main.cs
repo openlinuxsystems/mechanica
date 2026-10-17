@@ -4,6 +4,7 @@ using Mechanica.Core.Bots;
 using Mechanica.Core.Data;
 using Mechanica.Core.Items;
 using Mechanica.Core.Net;
+using Mechanica.Core.Quests;
 using Mechanica.Core.Saves;
 using Mechanica.Core.Sound;
 using Mechanica.Core.Survival;
@@ -13,10 +14,12 @@ using Mechanica.Game.Building;
 using Mechanica.Game.Creations;
 using Mechanica.Game.Items;
 using Mechanica.Game.Logic;
+using Mechanica.Game.Menus;
 using Mechanica.Game.Mods;
 using Mechanica.Game.Motion;
 using Mechanica.Game.Net;
 using Mechanica.Game.Player;
+using Mechanica.Game.Quests;
 using Mechanica.Game.Remote;
 using Mechanica.Game.Saves;
 using Mechanica.Game.Scripting;
@@ -42,8 +45,11 @@ public partial class Main : Node3D
     /// <summary>How to start. Null reads the command line (<c>-- --host 27460</c>, <c>-- --join host:port</c>).</summary>
     public LaunchOptions? Options { get; set; }
 
-    /// <summary>The game mode the main menu picked for the next world; it overrides the command line's.</summary>
-    public static GameMode? MenuGameMode { get; set; }
+    /// <summary>How the main menu's New game or Join game wants the next world started; it overrides the command line.</summary>
+    public static LaunchOptions? MenuOptions { get; set; }
+
+    /// <summary>The name the main menu's New game gave the next world.</summary>
+    public static string? MenuWorldName { get; set; }
 
     /// <summary>A saved world the main menu picked to load; it overrides the command line's <c>--load</c>.</summary>
     public static SaveGame? MenuSave { get; set; }
@@ -97,6 +103,18 @@ public partial class Main : Node3D
 
     /// <summary>The raid table. Null loads it from <see cref="Mods"/> when the scene starts; tests may set it.</summary>
     public RaidTable? RaidTable { get; set; }
+
+    /// <summary>Quests from the enabled mods. Null loads them on ready.</summary>
+    public QuestBook? QuestBook { get; set; }
+
+    /// <summary>Lists this world on the LAN while hosting (chunk 24).</summary>
+    public LanBeacon Lan { get; private set; } = null!;
+
+    /// <summary>The UDP port the LAN beacon listens on; tests use their own.</summary>
+    public int LanPort { get; set; } = NetProtocol.LanPort;
+
+    /// <summary>Quests and their sync to clients (chunk 24).</summary>
+    public QuestSync Quests { get; private set; } = null!;
 
     /// <summary>Bots, raids and their sync to clients (chunk 21).</summary>
     public BotSync Bots { get; private set; } = null!;
@@ -182,9 +200,7 @@ public partial class Main : Node3D
     public override void _Ready()
     {
         GD.Print($"{MechanicaInfo.GameName} started (physics: {ProjectSettings.GetSetting("physics/3d/physics_engine")})");
-        Options ??= ReadCommandLine();
-        if (MenuGameMode is { } chosen)
-            Options = Options with { GameMode = chosen };
+        Options ??= TakeMenuOptions() ?? ReadCommandLine();
         var mods = Mods ??= LoadMods();
         var save = Save ??= TakeMenuSave() ?? ReadSave(Options.LoadPath);
         if (save is not null && Options.Mode != SessionMode.Join)
@@ -196,11 +212,12 @@ public partial class Main : Node3D
         var recipes = Recipes ??= LoadRecipes(mods);
         var bots = BotTypes ??= LoadBots(mods);
         var raids = RaidTable ??= LoadRaids(mods, bots);
-        // World data, recipes, bots and raids are part of the content check on join: every peer regenerates
+        var quests = QuestBook ??= LoadQuests(mods, recipes, world);
+        // World data, recipes, bots, raids and quests are part of the content check on join: every peer regenerates
         // the world from the first, shows the recipes in its station screens and the bots the host sends.
         var content = Content ??= ContentManifest.From(mods) with
         {
-            Fingerprint = $"{mods.Fingerprint}+{world.Fingerprint}+{recipes.Fingerprint}+{bots.Fingerprint}+{raids.Fingerprint}",
+            Fingerprint = $"{mods.Fingerprint}+{world.Fingerprint}+{recipes.Fingerprint}+{bots.Fingerprint}+{raids.Fingerprint}+{quests.Fingerprint}",
         };
         Assets = new PartAssets(mods);
 
@@ -328,8 +345,23 @@ public partial class Main : Node3D
         AddChild(ForceOverlay);
         Inspector = new CreationInspector { Name = "Inspector", Players = PlayerSync, Actions = Actions, ReadDeviceInput = ReadDeviceInput };
         AddChild(Inspector);
+        Quests = new QuestSync
+        {
+            Name = "Quests",
+            Session = Session,
+            Players = PlayerSync,
+            Creations = Creations,
+            World = Streamer,
+            Inventory = Inventory,
+            Logic = Logic,
+            Bots = Bots,
+            Book = quests,
+        };
+        Quests.RegisterActions(Actions.Dispatcher);
+        AddChild(Quests);
         Saves = new SaveSync
         {
+            Quests = Quests,
             Name = "Saves",
             Session = Session,
             Players = PlayerSync,
@@ -343,6 +375,10 @@ public partial class Main : Node3D
             Content = () => Content!,
         };
         AddChild(Saves);
+        if (TakeMenuWorldName() is { } worldName && save is null)
+            Saves.WorldName = worldName;
+        Lan = new LanBeacon { Name = "Lan", Session = Session, Port = LanPort, Describe = DescribeForLan };
+        AddChild(Lan);
         if (save is not null)
         {
             foreach (var diagnostic in save.ContentDifferences(content))
@@ -361,9 +397,17 @@ public partial class Main : Node3D
         Session.StateChanged += state => SetPropsSimulated(state is NetSession.SessionState.Offline or NetSession.SessionState.Hosting);
         if (ReadDeviceInput)
         {
-            AddChild(new ConnectPanel { Name = "ConnectPanel", Session = Session, Saves = Saves });
-            AddChild(new InventoryScreen { Name = "InventoryScreen", Inventory = Inventory, Actions = Actions, Players = PlayerSync, Catalog = mods });
-            AddChild(new SurvivalHud { Name = "SurvivalHud", Survival = Survival, Actions = Actions, Players = PlayerSync, Catalog = mods, Logic = Logic });
+            var inventory = new InventoryScreen { Name = "InventoryScreen", Inventory = Inventory, Actions = Actions, Players = PlayerSync, Catalog = mods };
+            AddChild(inventory);
+            AddChild(new SurvivalHud { Name = "SurvivalHud", Survival = Survival, Actions = Actions, Players = PlayerSync, Catalog = mods, Logic = Logic, Quests = Quests });
+            var questLog = new QuestHud { Name = "QuestHud", Quests = Quests, Actions = Actions, Players = PlayerSync };
+            AddChild(questLog);
+            // F1 opens the page for what the player is doing.
+            AddChild(new PauseMenu
+            {
+                Name = "PauseMenu", Session = Session, Saves = Saves, Lan = Lan,
+                HelpTopic = () => questLog.IsOpen ? "quests.md" : inventory.IsOpen ? "survival.md" : "playing.md",
+            });
             PartSettings = new PartSettingsPanel { Name = "PartSettings", Actions = Actions, Creations = Creations };
             AddChild(PartSettings);
             AddChild(new RaidBanner { Name = "RaidBanner", Bots = Bots });
@@ -455,6 +499,14 @@ public partial class Main : Node3D
         return raids;
     }
 
+    private static QuestBook LoadQuests(ModLoadResult mods, RecipeBook recipes, WorldGenData world)
+    {
+        var quests = QuestBook.Load(mods, recipes, world);
+        foreach (var diagnostic in quests.Diagnostics)
+            GD.PushWarning($"[quests] {diagnostic}");
+        return quests;
+    }
+
     private static RecipeBook LoadRecipes(ModLoadResult mods)
     {
         var recipes = RecipeBook.Load(mods);
@@ -507,9 +559,15 @@ public partial class Main : Node3D
         return state;
     }
 
-    private static PlayerProfile LoadProfile(string? name)
+    private static PlayerProfile LoadProfile(string? name) => UserProfile(name);
+
+    /// <summary>
+    /// Reads (or makes) the player profile at <paramref name="path"/> (default <see cref="ProfilePath"/>),
+    /// renamed to <paramref name="name"/> and written back when that changes it.
+    /// </summary>
+    public static PlayerProfile UserProfile(string? name, string? path = null)
     {
-        var path = ProjectSettings.GlobalizePath(ProfilePath);
+        path ??= ProjectSettings.GlobalizePath(ProfilePath);
         var profile = PlayerProfile.LoadOrCreate(path, OS.GetEnvironment("USER") is { Length: > 0 } user ? user : "Player");
         if (name is not null && PlayerProfile.CleanName(name) != profile.Name)
         {
@@ -518,6 +576,31 @@ public partial class Main : Node3D
         }
         return profile;
     }
+
+    private static LaunchOptions? TakeMenuOptions()
+    {
+        var options = MenuOptions;
+        MenuOptions = null;
+        return options;
+    }
+
+    private static string? TakeMenuWorldName()
+    {
+        var name = MenuWorldName;
+        MenuWorldName = null;
+        return name;
+    }
+
+    // What the LAN beacon says about this world while hosting.
+    private LanSession? DescribeForLan() => Session.State != NetSession.SessionState.Hosting ? null : new LanSession(
+        Saves.WorldName,
+        Session.Profile.Name,
+        Session.Port,
+        PlayerSync.Players.Count,
+        Session.MaxPlayers,
+        Options!.GameMode.ToString().ToLowerInvariant(),
+        NetProtocol.Version,
+        [.. Content!.Mods.Select(m => $"{m.Id} {m.Version}")]);
 
     private static LaunchOptions ReadCommandLine()
     {
