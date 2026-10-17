@@ -625,7 +625,12 @@ public partial class Main : Node3D
         Start(Options);
     }
 
-    public override void _Process(double delta) => UpdateLoading();
+    public override void _Process(double delta)
+    {
+        UpdateLoading();
+        if (Options?.SelfTest == true)
+            SelfTest.Update(this);
+    }
 
     public override void _PhysicsProcess(double delta)
     {
