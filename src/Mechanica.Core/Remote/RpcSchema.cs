@@ -18,7 +18,7 @@ namespace Mechanica.Core.Remote;
 public static partial class RpcSchema
 {
     private static readonly Dictionary<Assembly, XmlDocs> Docs = [];
-    private static readonly Dictionary<Assembly, Dictionary<string, string>> ActionNames = [];
+    private static readonly Dictionary<Assembly, Dictionary<string, (string Doc, Type Declarer)>> ActionNames = [];
     private static readonly Lock Gate = new();
     private static readonly List<string> SearchDirectories = [];
 
@@ -95,6 +95,9 @@ public static partial class RpcSchema
         var required = new JsonArray();
         foreach (var property in info.Properties)
         {
+            // Computed, get-only properties (InventoryRef.IsPlayer) are written but never read from params.
+            if (property.Set is null && property.AssociatedParameter is null)
+                continue;
             var node = Build(property.PropertyType, depth + 1);
             var parameter = property.AssociatedParameter;
             var nullable = parameter?.IsNullable ?? property.IsSetNullable;
@@ -163,15 +166,35 @@ public static partial class RpcSchema
         var parts = new List<string>();
         foreach (var assembly in new[] { argsType.Assembly, typeof(RpcSchema).Assembly }.Distinct())
         {
-            if (NameDocs(assembly).TryGetValue(action, out var doc))
+            if (NameDocs(assembly).TryGetValue(action, out var named))
             {
-                parts.Add(doc);
+                parts.Add(named.Doc);
                 break;
             }
         }
         if (argsType != typeof(NoArgs) && DocsOf(argsType.Assembly).Summary(TypeKey(argsType)) is { Length: > 0 } summary)
             parts.Add(summary);
         return string.Join(" ", parts);
+    }
+
+    /// <summary>
+    /// The game area an action belongs to, in lowercase: the namespace of the class that names it (or of its
+    /// args record), like <c>survival</c> or <c>building</c>.
+    /// </summary>
+    public static string GroupOfAction(string action, Type argsType)
+    {
+        var declarer = argsType;
+        foreach (var assembly in new[] { argsType.Assembly, typeof(RpcSchema).Assembly }.Distinct())
+        {
+            if (NameDocs(assembly).TryGetValue(action, out var named))
+            {
+                declarer = named.Declarer;
+                break;
+            }
+        }
+        var ns = declarer.Namespace ?? "";
+        var group = ns[(ns.LastIndexOf('.') + 1)..].ToLowerInvariant();
+        return group is "" or "core" or "actions" ? "general" : group;
     }
 
     /// <summary>The documentation summary of <paramref name="type"/>, or empty.</summary>
@@ -242,13 +265,13 @@ public static partial class RpcSchema
         }
     }
 
-    private static Dictionary<string, string> NameDocs(Assembly assembly)
+    private static Dictionary<string, (string Doc, Type Declarer)> NameDocs(Assembly assembly)
     {
         lock (Gate)
         {
             if (ActionNames.TryGetValue(assembly, out var map))
                 return map;
-            map = new Dictionary<string, string>(StringComparer.Ordinal);
+            map = new Dictionary<string, (string Doc, Type Declarer)>(StringComparer.Ordinal);
             ActionNames[assembly] = map;
             var docs = DocsOf(assembly);
             Type[] types;
@@ -267,7 +290,7 @@ public static partial class RpcSchema
                     if (!field.IsLiteral || field.FieldType != typeof(string) || field.GetRawConstantValue() is not string value
                         || map.ContainsKey(value) || docs.Summary($"F:{TypeName(type)}.{field.Name}") is not { Length: > 0 } text)
                         continue;
-                    map[value] = CleanActionDoc(text);
+                    map[value] = (CleanActionDoc(text), type);
                 }
             }
             return map;
