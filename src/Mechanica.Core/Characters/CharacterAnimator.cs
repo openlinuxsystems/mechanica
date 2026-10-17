@@ -265,7 +265,7 @@ public sealed class CharacterAnimator
         if (pose.GestureCount != _gestureCount)
         {
             _gestureCount = pose.GestureCount;
-            if (Version(CharacterRig.GestureClip(CharacterRig.Sanitize(pose.Gesture))) is { } clip && _lengths.ContainsKey(clip))
+            if (Version(CharacterRig.GestureClip(CharacterRig.Sanitize(pose.Gesture), pose.GestureCount)) is { } clip && _lengths.ContainsKey(clip))
             {
                 _gesture = clip;
                 _gestureTime = 0f;
@@ -469,11 +469,11 @@ public sealed class CharacterAnimator
 
     private float SpeedOf(string clip) => _settings.ClipSpeeds.GetValueOrDefault(clip);
 
-    // How long a gesture plays: its own length unless the settings give it another (a first-person version lasts as
-    // long as the clip it stands in for).
+    // How long a gesture plays: its own length unless the settings give it another (a first-person version or a
+    // variant lasts as long as the clip it stands in for).
     private float GestureLength(string clip)
     {
-        var name = clip.EndsWith(CharacterRig.FirstPersonSuffix, StringComparison.Ordinal) ? clip[..^CharacterRig.FirstPersonSuffix.Length] : clip;
+        var name = CharacterRig.GestureOf(clip.EndsWith(CharacterRig.FirstPersonSuffix, StringComparison.Ordinal) ? clip[..^CharacterRig.FirstPersonSuffix.Length] : clip);
         return _settings.GestureSeconds.TryGetValue(name, out var seconds) ? seconds : _lengths[clip];
     }
 

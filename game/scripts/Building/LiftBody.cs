@@ -22,6 +22,8 @@ public partial class LiftBody : StaticBody3D
     private const float BaseHeight = 0.22f;
     private const float BaseSize = 0.86f;
     private const float ColumnRadius = 0.14f;
+    private const float RiderMargin = 0.1f;
+    private const float RiderAbove = 0.35f;
 
     private static readonly StandardMaterial3D FallbackMaterial = new() { AlbedoColor = UiTokens.Blue };
 
@@ -52,6 +54,9 @@ public partial class LiftBody : StaticBody3D
     /// <summary>Plays the end-stop sound on this peer; null plays none.</summary>
     public Sound.SoundSync? Sounds { get; init; }
 
+    /// <summary>The players this peer moves itself; those standing on the deck are kept on it as it moves.</summary>
+    public Func<IEnumerable<Node3D>>? Riders { get; init; }
+
     /// <summary>The Lift's state as last shown.</summary>
     public LiftState State { get; private set; } = null!;
 
@@ -60,6 +65,9 @@ public partial class LiftBody : StaticBody3D
 
     /// <summary>True once the deploy animation has finished (at once without the model).</summary>
     public bool Deployed => _deploy is null || _deployTime >= _deploy.Length;
+
+    /// <summary>How fast the deck is moving now, in metres per second (positive going up).</summary>
+    public float Speed => _motion?.Velocity ?? 0f;
 
     /// <summary>True while the column is moving between levels.</summary>
     public bool Moving => _motion?.Moving ?? false;
@@ -72,6 +80,19 @@ public partial class LiftBody : StaticBody3D
 
     /// <summary>World position of the middle of the deck as shown now.</summary>
     public Vector3 Top => GlobalPosition + new Vector3(0, ShownTop, 0);
+
+    /// <summary>
+    /// True when feet at <paramref name="feet"/> (world space) stand on the deck as shown: over the platform and at its
+    /// height. Such a player rides the deck up and down.
+    /// </summary>
+    public bool Carries(Vector3 feet)
+    {
+        if (State is null)
+            return false;
+        var local = feet - GlobalPosition;
+        var half = _settings.PlatformSize / 2 + RiderMargin;
+        return Math.Abs(local.X) <= half && Math.Abs(local.Z) <= half && local.Y > ShownTop - RiderMargin && local.Y < ShownTop + RiderAbove;
+    }
 
     public override void _Ready()
     {
@@ -101,7 +122,8 @@ public partial class LiftBody : StaticBody3D
         Pose(0);
     }
 
-    public override void _Process(double delta)
+    // On the physics tick, like everything else that moves, so the deck's collision and the players riding it move together.
+    public override void _PhysicsProcess(double delta)
     {
         if (State is not null)
             Pose(delta);
@@ -183,6 +205,8 @@ public partial class LiftBody : StaticBody3D
             Sounds?.PlayLocal(_settings.EndStopSound, Identifiers.VanillaModId, GlobalPosition + new Vector3(0, target, 0));
         if (_deploy is null || _deployTime >= _deploy.Length)
             ShownTop = _motion.Height;
+        // Players standing on the deck move with it (a character takes its floor's velocity).
+        ConstantLinearVelocity = new Vector3(0, _motion.Velocity, 0);
         if (_extend is not null)
             Apply(_extend, ShownTop);
         if (_fallback is not null)
@@ -197,9 +221,22 @@ public partial class LiftBody : StaticBody3D
         var column = Math.Max(0.01f, ShownTop - PlatformThickness - BaseHeight);
         _column.Height = column;
         _columnShape.Position = new Vector3(0, BaseHeight + column / 2, 0);
+        CarryRiders();
         // The deck as drawn (the model's settle and bounce included) against where the host put the held Creation.
         var deck = _deck is not null && _deck.IsInsideTree() ? _deck.GlobalPosition.Y - GlobalPosition.Y : ShownTop;
         Hold(State.Creation, deck - target);
+    }
+
+    // A rising deck lifts whoever stands on it; their own movement only follows it a tick late, so they would sink in.
+    private void CarryRiders()
+    {
+        var top = GlobalPosition.Y + ShownTop;
+        foreach (var rider in Riders?.Invoke() ?? [])
+        {
+            var feet = rider.GlobalPosition;
+            if (feet.Y < top && Carries(feet))
+                rider.GlobalPosition = feet with { Y = top };
+        }
     }
 
     private void Hold(int? creation, float offset)

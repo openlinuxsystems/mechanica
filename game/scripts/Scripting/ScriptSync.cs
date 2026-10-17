@@ -168,8 +168,10 @@ public partial class ScriptSync : Node, IScriptPhysics, IScriptSound
         if (hit.Count == 0)
             return null;
         var position = hit["position"].AsVector3();
-        var (creation, part) = Identify(hit["collider"].AsGodotObject(), hit["shape"].AsInt32());
-        return new ScriptRayHit(position.ToNumerics(), hit["normal"].AsVector3().ToNumerics(), position.DistanceTo(from.ToGodot()), creation, part);
+        var collider = hit["collider"].AsGodotObject();
+        var (creation, part) = Identify(collider, hit["shape"].AsInt32());
+        return new ScriptRayHit(position.ToNumerics(), hit["normal"].AsVector3().ToNumerics(), position.DistanceTo(from.ToGodot()), creation, part,
+            (collider as Player.PlayerController)?.PeerId, (collider as Bots.BotBody)?.BotId);
     }
 
     /// <inheritdoc/>
@@ -184,8 +186,9 @@ public partial class ScriptSync : Node, IScriptPhysics, IScriptSound
         var results = new List<ScriptOverlap>();
         foreach (var hit in GetViewport().FindWorld3D().DirectSpaceState.IntersectShape(query, 64))
         {
-            var (creation, part) = Identify(hit["collider"].AsGodotObject(), hit["shape"].AsInt32());
-            results.Add(new ScriptOverlap(creation, part));
+            var collider = hit["collider"].AsGodotObject();
+            var (creation, part) = Identify(collider, hit["shape"].AsInt32());
+            results.Add(new ScriptOverlap(creation, part, (collider as Player.PlayerController)?.PeerId, (collider as Bots.BotBody)?.BotId));
         }
         return results;
     }

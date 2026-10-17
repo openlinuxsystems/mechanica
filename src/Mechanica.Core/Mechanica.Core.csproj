@@ -2,5 +2,8 @@
   <!-- Pure C# game logic. Must never reference Godot. -->
   <PropertyGroup>
     <RootNamespace>Mechanica.Core</RootNamespace>
+    <!-- The XML docs feed mechanica.describe's descriptions; doc-comment warnings stay off. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS0419;CS1570;CS1572;CS1573;CS1574;CS1580;CS1584;CS1587;CS1591;CS1711;CS1712;CS1734</NoWarn>
   </PropertyGroup>
 </Project>

@@ -52,5 +52,12 @@
       "name": "Reverse",
       "type": "toggle"
     }
-  ]
+  ],
+  "display": {
+    "highlight": {
+      "readout": "drive",
+      "offset": [0, 0.08, 0],
+      "radius": 0.13
+    }
+  }
 }

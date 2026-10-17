@@ -151,6 +151,19 @@ public class ToolActionsTests
     }
 
     [Fact]
+    public void ReachToTheLiftCountsTheWholeColumn()
+    {
+        Dispatch(ToolActions.PlaceLift, new { position = new[] { 0f, 0f, 0f } });
+        Assert.True(Dispatch(ToolActions.SetLiftLevel, new { level = 4 }).Ok);
+
+        // Out of reach of the base (6.3 m) but within reach of the raised deck (5.8 m), as a player riding it is.
+        _world.Eyes[2] = new Vector3(0, 3f, 5.5f);
+        Assert.True(Dispatch(ToolActions.SetLiftLevel, new { level = 3 }).Ok);
+        _world.Eyes[2] = new Vector3(0, 3f, 7f);
+        Assert.Contains("you can reach", Dispatch(ToolActions.SetLiftLevel, new { level = 2 }).Message);
+    }
+
+    [Fact]
     public void LiftClearanceIgnoresTheCarriedCreationAndOwnLift()
     {
         var id = Add(Car());

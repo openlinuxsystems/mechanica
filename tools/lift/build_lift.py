@@ -9,7 +9,7 @@ What it builds (procedurally, from scratch: no .blend inputs, no downloads):
     2-unit height, the platform thuds into place and the amber lights flash, then hold.
   - ``extend`` (scrubbed, never played): the telescoping column. **Time in seconds = the height of the
     platform's deck above the ground, in metres**, so the game seeks it to the deck height it shows.
-    It covers 0.45 m (transport) to 8.25 m (33 units).
+    It covers 0.45 m (transport) to 5.5 m (22 units: the resting 2 plus 20 levels).
 
   Two empty nodes carry values the game reads instead of transforms: ``ColumnDrive`` (its height is the
   deck height the deploy clip wants) and ``LightDrive`` (its height is the lights' brightness, 0 to 1).
@@ -52,13 +52,13 @@ UNIT = 0.25
 # ---- Dimensions (metres) ----------------------------------------------------------------------------
 H_TRANSPORT = 0.45          # deck height before the column comes up
 H_REST = 0.50               # deck height at level 0 (2 units)
-H_MAX = 8.25                # deck height at full extension (33 units)
+H_MAX = 5.50                # deck height at full extension (22 units)
 STAGE_BOTTOM = 0.03         # where the nested stages stand inside the base
 DECK_ABOVE_STAGE = 0.105    # head plate (0.015) + platform (0.09) above the top stage's top
 STAGE_LEN = H_TRANSPORT - DECK_ABOVE_STAGE - STAGE_BOTTOM   # 0.315
-STAGES = 31
-STAGE_TRAVEL = (H_MAX - H_TRANSPORT) / STAGES               # about 0.2516
-R0, DR = 0.125, 0.0027      # outermost stage radius and the step between stages
+STAGES = 20
+STAGE_TRAVEL = (H_MAX - H_TRANSPORT) / STAGES               # 0.2525
+R0, DR = 0.125, 0.0042      # outermost stage radius and the step between stages
 BASE_HALF = 0.40            # housing half-width
 DECK_Z = 0.215              # top of the base's deck plate
 HINGE = (0.46, 0.46, 0.19)  # outrigger hinge of the back-right corner (the others are turned copies)
