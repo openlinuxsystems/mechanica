@@ -19,7 +19,7 @@
   "gesture_fade_out": 0.12,
   // Gestures that play faster or slower than authored, in seconds (the sledge swing matches sledge.swing_seconds).
   "gesture_seconds": {
-    "sledge_swing": 1.0
+    "sledge_swing": 0.6
   },
   "air_grace": 0.15,
   "jump_detect_speed": 1.5,

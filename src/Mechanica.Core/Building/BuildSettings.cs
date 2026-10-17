@@ -235,7 +235,7 @@ public sealed record LiftSettings
     public float LevelHeight { get; init; } = 0.25f;
 
     /// <summary>Highest level.</summary>
-    public int MaxLevel { get; init; } = 31;
+    public int MaxLevel { get; init; } = 20;
 
     /// <summary>
     /// The Lift's model (<c>mod:path</c> to a glTF file). Its <c>deploy</c> clip plays when the Lift is put down and its
@@ -333,10 +333,10 @@ public sealed record SledgeSettings
     public float HealthPerDurability { get; init; } = 10f;
 
     /// <summary>Shortest time between one player's hits, in seconds: one whole swing.</summary>
-    public float SwingSeconds { get; init; } = 1.0f;
+    public float SwingSeconds { get; init; } = 0.6f;
 
     /// <summary>Seconds from the click to the hit, when the head comes down at the end of the strike.</summary>
-    public float StrikeSeconds { get; init; } = 0.6f;
+    public float StrikeSeconds { get; init; } = 0.25f;
 
     /// <summary>How far from the eye a swing reaches, in metres.</summary>
     public float Reach { get; init; } = 3.0f;

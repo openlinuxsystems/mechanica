@@ -343,7 +343,8 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
             return "You have no lift.";
         if (args.Level < 0 || args.Level > settings.Lift.MaxLevel)
             return $"level must be 0 to {settings.Lift.MaxLevel} (got {args.Level}).";
-        return CheckReach(caller, lift.Position.ToNumerics())
+        // Anywhere along the column counts, so a player riding the deck can drive it all the way up.
+        return CheckReach(caller, new WorldBounds(lift.Position.ToNumerics(), PlatformTop(lift)))
             ?? CheckLift(lift with { Level = args.Level }, Held(lift), 0);
     }
 

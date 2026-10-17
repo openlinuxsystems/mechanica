@@ -14,6 +14,7 @@ public class CharacterAnimatorTests
         ["jump"] = 0.3f, ["fall"] = 1f, ["land"] = 0.35f, ["swim_idle"] = 2f, ["swim"] = 1.2f, ["sit"] = 2f,
         ["hold_tool"] = 2f, ["hold_heavy"] = 2f, ["hold_heavy_block"] = 2f, ["hold_gun"] = 2f, ["hold_item"] = 2f,
         ["hold_heavy_fp"] = 2f, ["hold_heavy_block_fp"] = 2f, ["sledge_swing_fp"] = 1f,
+        ["sledge_swing_side"] = 1f, ["sledge_swing_back"] = 1f, ["sledge_swing_side_fp"] = 1f, ["sledge_swing_back_fp"] = 1f,
         ["hammer_swing"] = 0.35f, ["sledge_swing"] = 1f, ["tool_use"] = 0.3f, ["weld"] = 0.5f, ["paint_spray"] = 0.4f,
         ["fire_gun"] = 0.25f, ["eat"] = 1f, ["throw"] = 0.5f, ["plant"] = 0.8f, ["pour"] = 0.8f, ["interact"] = 0.4f, ["hurt"] = 0.3f,
     };
@@ -194,7 +195,7 @@ public class CharacterAnimatorTests
         Run(animator, pose, 1.1f);
         Assert.Null(animator.Gesture);
         Run(animator, pose with { GestureCount = 2 }, Dt);
-        Assert.Equal("sledge_swing", animator.Gesture);
+        Assert.Equal(CharacterRig.GestureClip(CharacterGesture.SledgeSwing, 2), animator.Gesture);
     }
 
     [Fact]
@@ -206,8 +207,38 @@ public class CharacterAnimatorTests
         Run(animator, Standing() with { Prop = CharacterProp.Sledgehammer }, 0.2f);
         Run(animator, pose, 0.4f);
         // Started on the first of the frames, so 0.4 s less one frame in.
-        Assert.Equal((0.4f - Dt) * 1f / 0.8f, animator.Upper.Single(c => c.Clip == "sledge_swing").Time, 3);
+        Assert.Equal((0.4f - Dt) * 1f / 0.8f, animator.Upper.Single(c => c.Clip == CharacterRig.GestureClip(CharacterGesture.SledgeSwing, 1)).Time, 3);
         Run(animator, pose, 0.45f);
+        Assert.Null(animator.Gesture);
+    }
+
+    [Fact]
+    public void SledgeSwingsMixOverheadAndSideSwingsAtRandom()
+    {
+        // Every peer works the swing out from the replicated gesture count: the same count, the same swing.
+        var swings = Enumerable.Range(0, 256).Select(c => CharacterRig.GestureClip(CharacterGesture.SledgeSwing, (byte)c)).ToList();
+        Assert.Equal(swings, Enumerable.Range(0, 256).Select(c => CharacterRig.GestureClip(CharacterGesture.SledgeSwing, (byte)c)));
+        Assert.All(CharacterRig.GestureVariants["sledge_swing"], v => Assert.InRange(swings.Count(s => s == v), 60, 110));
+        // Never the same swing twice running, and not a fixed rotation either.
+        Assert.All(swings.Zip(swings.Skip(1)), p => Assert.NotEqual(p.First, p.Second));
+        Assert.Contains(swings.Zip(swings.Skip(1), swings.Skip(2)), t => t.First == t.Third);
+        Assert.Contains(swings.Zip(swings.Skip(1), swings.Skip(2)), t => t.First != t.Third);
+        // Other gestures have one clip.
+        Assert.Equal("hammer_swing", CharacterRig.GestureClip(CharacterGesture.HammerSwing, 7));
+        Assert.Equal("sledge_swing", CharacterRig.GestureOf("sledge_swing_back"));
+        Assert.Equal("weld", CharacterRig.GestureOf("weld"));
+    }
+
+    [Fact]
+    public void ASideSwingTakesTheSwingsTime()
+    {
+        var animator = new CharacterAnimator(new CharacterSettings { GestureSeconds = new() { ["sledge_swing"] = 0.5f } }, Lengths);
+        var count = (byte)Enumerable.Range(1, 20).First(c => CharacterRig.GestureClip(CharacterGesture.SledgeSwing, (byte)c) == "sledge_swing_side");
+        Run(animator, Standing() with { Prop = CharacterProp.Sledgehammer, GestureCount = (byte)(count - 1) }, 0.2f);
+        Run(animator, Standing() with { Prop = CharacterProp.Sledgehammer, Gesture = CharacterGesture.SledgeSwing, GestureCount = count }, 0.3f);
+        Assert.Equal("sledge_swing_side", animator.Gesture);
+        Assert.Equal((0.3f - Dt) / 0.5f, animator.Upper.Single(c => c.Clip == "sledge_swing_side").Time, 3);
+        Run(animator, Standing() with { Prop = CharacterProp.Sledgehammer, Gesture = CharacterGesture.SledgeSwing, GestureCount = count }, 0.25f);
         Assert.Null(animator.Gesture);
     }
 
@@ -220,9 +251,9 @@ public class CharacterAnimatorTests
 
         var pose = Standing() with { Prop = CharacterProp.Sledgehammer, Gesture = CharacterGesture.SledgeSwing, GestureCount = 1 };
         Run(animator, pose, 0.4f);
-        Assert.Equal("sledge_swing_fp", animator.Gesture);
+        Assert.Equal(CharacterRig.GestureClip(CharacterGesture.SledgeSwing, 1) + "_fp", animator.Gesture);
         // Timed like the clip it stands in for.
-        Assert.Equal((0.4f - Dt) / 0.8f, animator.Upper.Single(c => c.Clip == "sledge_swing_fp").Time, 3);
+        Assert.Equal((0.4f - Dt) / 0.8f, animator.Upper.Single(c => c.Clip == CharacterRig.GestureClip(CharacterGesture.SledgeSwing, 1) + "_fp").Time, 3);
 
         // A tool without first-person clips plays the ordinary ones.
         Run(animator, Standing() with { Prop = CharacterProp.Hammer }, 1f);

@@ -85,8 +85,9 @@ switches it to the next mode and shows it for a moment; R with the Connect Tool 
   It is a hydraulic lift with a 4 x 4 unit (1 m) grated platform: set down, its four outriggers swing out and
   lock and the column rises to its resting height of 2 units (0.5 m).
   Left click a Creation to slide the Lift under it and pick it up; it stands still on the platform until you
-  take the Lift away. The arrow keys raise and lower it one unit (0.25 m) at a time, up to 33 units (8.25 m);
-  hold an arrow and the column runs smoothly until you let go, stopping at the next unit. Q turns what it holds. Aim at the Lift (or
+  take the Lift away. The arrow keys raise and lower it one unit (0.25 m) at a time, up to 20 units above its resting height
+  (the deck at 22 units, 5.5 m); hold an arrow and the column runs smoothly until you let go, stopping at the next
+  unit. Standing on the deck you ride it, and the arrow keys drive it whatever you have in hand. Q turns what it holds. Aim at the Lift (or
   what it holds) and hold right click until the ring fills to pick the Lift back up; what it held drops. A Creation whose chests or tanks hold items cannot be
   lifted ("Cannot lift with attached resources."): empty it first.
 - **Blueprints.** With the Lift in hand, aim at your Lift and press **E**. The menu lists your newest 50
@@ -102,8 +103,8 @@ switches it to the next mode and shows it for a moment; R with the Connect Tool 
 - **Paint Tool.** Left click paints a part; hold and drag to paint every part you pass over (up to 256 at a
   time). Right click (or drag) takes the paint off. **Q** opens the colour picker round the cursor: move the
   mouse towards a colour and click, or press 1 to 0 for the first ten. Esc or Q again closes it.
-- **Sledgehammer.** Left click swings it overhead: one swing a second, and the blow lands at the bottom of the
-  arc (0.6 s after the click) on whatever is under the crosshair within 3 m. The hit knocks a part's body back
+- **Sledgehammer.** Left click swings it: overhead, or sideways from the right or the left, at random. A swing
+  takes 0.6 s and the blow lands 0.25 s after the click on whatever is under the crosshair within 3 m. The hit knocks a part's body back
   (about 5000 N·s, but never faster than 4 m/s, so light parts don't fly off), throws dust, chips and sparks and
   gives the camera a small jolt. Hold right click to raise the hammer across your chest and block: hits from other
   players' Sledgehammers and from bots do a quarter of their damage while you block. In Creative nothing takes
