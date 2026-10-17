@@ -52,7 +52,7 @@ public class BuildSettingsTests
         Assert.Equal(1f, settings.Lift.PlatformSize);
         Assert.Equal(0.5f, settings.Lift.TopAt(0));
         Assert.Equal(0.25f, settings.Lift.LevelHeight);
-        Assert.Equal(5.5f, settings.Lift.TopAt(settings.Lift.MaxLevel));
+        Assert.Equal(8.25f, settings.Lift.TopAt(settings.Lift.MaxLevel));
         Assert.Equal("vanilla:meshes/lift/lift.glb", settings.Lift.Model);
         Assert.Equal(256, settings.Paint.MaxPartsPerAction);
     }

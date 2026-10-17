@@ -37,6 +37,9 @@ public partial class ToolsTest : StagedTest
     private int _lone;
     private float _ground;
     private bool _barRode;
+    private int _heldTo;
+    private int _heldStops;
+    private bool _heldMoved;
     private int _sent;
     private BlueprintMenu _menu = null!;
     private string _blueprints = null!;
@@ -248,6 +251,44 @@ public partial class ToolsTest : StagedTest
             Check(_results[0].Ok, $"the host turns it ({_results[0]})");
             var box = Box(_host, _bar);
             Check(Mathf.IsEqualApprox(box.Max.Z - box.Min.Z, 0.75f, 1e-3f), $"the bar now runs along z ({box.Min} – {box.Max})");
+            return true;
+        });
+        Add("holding an arrow key keeps raising until it is let go", frame =>
+        {
+            var lift = _client.Main.Build.Lifts[_client.Peer];
+            if (frame == 0)
+            {
+                Check(Tools.Lift.PressRaise(1) && Tools.Lift.RaiseHeld, "the arrow key raises and holds");
+                _heldStops = 0;
+                _heldMoved = false;
+                return false;
+            }
+            if (Tools.Lift.RaiseHeld)
+            {
+                // Once going, the column never stops or slows to a halt while the key is held.
+                if (lift.Moving)
+                    _heldMoved = true;
+                else if (_heldMoved)
+                    _heldStops++;
+                if (lift.State.Level < 6)
+                    return false;
+                Check(_heldStops == 0, $"held, the column runs on without stopping at each level ({_heldStops} stops)");
+                Tools.Lift.ReleaseRaise();
+                _heldTo = lift.State.Level;
+                return false;
+            }
+            if (lift.Moving || _host.Main.Build.Lifts[_client.Peer].Moving)
+                return false;
+            Check(_heldTo is 6 or 7 && lift.State.Level == _heldTo, $"it stepped level by level and stopped where it was let go ({_heldTo}, {lift.State.Level})");
+            Check(Mathf.IsEqualApprox(Bottom(_host, _bar), _ground + _host.Main.Build.Settings!.Lift.TopAt(lift.State.Level), 1e-3f), "the bar went up with it");
+            Tools.Lift.Raise(2 - lift.State.Level);
+            return true;
+        });
+        Add("back to level two", _ => _client.Main.Build.Lifts[_client.Peer] is { Moving: false, State.Level: 2 } && !_host.Main.Build.Lifts[_client.Peer].Moving);
+        Add("look away from the Lift", frame => LookAt(_client, PartCentre(_client, _bar, 2) + new Vector3(4, -0.5f, 4), frame));
+        Add("right click aimed away from the Lift does nothing", _ =>
+        {
+            Check(!Tools.Lift.AimsAtOwnLift() && !Tools.Lift.PressRemove() && Tools.Lift.Progress is null, "no ring without aiming at the Lift");
             return true;
         });
         Add("look at the bar on the Lift", frame => LookAt(_client, PartCentre(_client, _bar, 2), frame));

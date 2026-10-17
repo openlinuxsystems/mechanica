@@ -262,7 +262,7 @@
     "Level {0} of {1}": "Level {0} of {1}",
     "Level {0}, budget {1} for {2} player(s): ": "Level {0}, budget {1} for {2} player(s): ",
     "Lift": "Lift",
-    "Lift ({0})   {1} place / pick up  {2}/{3} raise/lower  {4} turn  hold {5} take away  {6} on the Lift: blueprints": "Lift ({0})   {1} place / pick up  {2}/{3} raise/lower  {4} turn  hold {5} take away  {6} on the Lift: blueprints",
+    "Lift ({0})   {1} place / pick up  {2}/{3} raise/lower  {4} turn  hold {5} on the Lift: pick up  {6} on the Lift: blueprints": "Lift ({0})   {1} place / pick up  {2}/{3} raise/lower  {4} turn  hold {5} on the Lift: pick up  {6} on the Lift: blueprints",
     "Lift down": "Lift down",
     "Lift up": "Lift up",
     "Light": "Light",
