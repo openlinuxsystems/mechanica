@@ -53,8 +53,8 @@ public partial class StreamingTest : StagedTest
         _assets = new PartAssets(_content);
         _harness = new NetTestHarness { Name = "Harness", WorldGen = WorldGenData.Flat };
         AddChild(_harness);
-        _host = _harness.StartHost();
-        _client = _harness.StartClient("Client");
+        _host = _harness.StartHost(mods: _content);
+        _client = _harness.StartClient("Client", mods: _content);
 
         Add("client joins", _ => _host.Main.PlayerSync.Players.Count == 2 && _client.Main.LocalPlayer is not null);
         Wait("players settle", 30);

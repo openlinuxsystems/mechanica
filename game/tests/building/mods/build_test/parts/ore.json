@@ -1,0 +1,6 @@
+{
+  "id": "ore",
+  "name": "Test Ore",
+  "category": "resource",
+  "stack_size": 64
+}

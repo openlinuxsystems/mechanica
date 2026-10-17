@@ -1,0 +1,9 @@
+{
+  // Limits for the motion primitives of the Action API (SI units). Loaded by game/scripts/Motion/MotionSync.cs.
+  "max_force": 20000,
+  "max_torque": 10000,
+  "max_duration": 5,
+  "max_bearing_speed": 60,
+  "max_bearing_torque": 2000,
+  "default_bearing_torque": 200
+}

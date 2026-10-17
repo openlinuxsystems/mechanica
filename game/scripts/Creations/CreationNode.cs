@@ -10,9 +10,9 @@ namespace Mechanica.Game.Creations;
 /// origin; bodies are top-level so physics moves them freely.
 /// <para>
 /// The graph stays the source of truth. After a graph change call <see cref="Rebuild"/>; before saving
-/// call <see cref="SyncToCreation"/> so the simulated poses reach the save. Only the Creation's
-/// authority peer simulates (D5): on other peers the bodies are frozen kinematic for state sync (chunk 4b)
-/// to drive.
+/// call <see cref="SyncToCreation"/> so the simulated poses and velocities reach the save. Only the
+/// Creation's authority peer simulates (D5): on other peers the bodies are frozen kinematic and
+/// <see cref="Net.CreationSync"/> poses them from snapshots.
 /// </para>
 /// </summary>
 public partial class CreationNode : Node3D
@@ -32,6 +32,10 @@ public partial class CreationNode : Node3D
     /// <summary>Jolt joints, in <see cref="Creation.Joints"/> order with locked links skipped.</summary>
     public IReadOnlyList<Joint3D> Joints => _joints;
 
+    /// <summary>The Jolt joint built for a joint edge, or null when it is locked or has none.</summary>
+    public Joint3D? JointOf(Connection connection) =>
+        _joints.FirstOrDefault(j => j.Name == JointName(connection));
+
     /// <summary>Grid-frame box of each body, in <see cref="Bodies"/> order (<see cref="CreationBounds"/>).</summary>
     public IReadOnlyList<WorldBounds> LocalBounds { get; private set; } = [];
 
@@ -44,11 +48,15 @@ public partial class CreationNode : Node3D
         Build();
     }
 
-    /// <summary>Writes every body's current world pose back to <see cref="Creation"/>.</summary>
+    /// <summary>Writes every body's current world pose and velocity back to <see cref="Creation"/>.</summary>
     public void SyncToCreation()
     {
         foreach (var body in _bodies)
-            Creation.SetBodyPose(Creation.BodyIndexOf(body.PartIds[0]), body.GlobalTransform.ToPose());
+        {
+            var index = Creation.BodyIndexOf(body.PartIds[0]);
+            Creation.SetBodyPose(index, body.GlobalTransform.ToPose());
+            Creation.SetBodyVelocity(index, new BodyVelocity(body.LinearVelocity.ToNumerics(), body.AngularVelocity.ToNumerics()));
+        }
     }
 
     /// <summary>
@@ -87,7 +95,13 @@ public partial class CreationNode : Node3D
     {
         var simulated = IsSimulated;
         foreach (var body in Creation.Bodies)
-            _bodies.Add(BuildBody(body, simulated));
+        {
+            var node = BuildBody(body, simulated);
+            // A saved or synced Creation carries on moving as it was.
+            var velocity = Creation.GetBodyVelocity(body.Index);
+            (node.LinearVelocity, node.AngularVelocity) = (velocity.Linear.ToGodot(), velocity.Angular.ToGodot());
+            _bodies.Add(node);
+        }
         LocalBounds = CreationBounds.LocalBodyBounds(Creation);
         foreach (var link in Creation.Joints)
         {
@@ -151,6 +165,8 @@ public partial class CreationNode : Node3D
         return node;
     }
 
+    private static string JointName(Connection c) => $"Joint{c.A}_{c.B}";
+
     private Joint3D? BuildJoint(JointLink link)
     {
         var c = link.Connection;
@@ -161,7 +177,7 @@ public partial class CreationNode : Node3D
         var axis = new GridCell((int)MathF.Round(normal.X), (int)MathF.Round(normal.Y), (int)MathF.Round(normal.Z));
         var frame = GridRotation.All.First(r => (c.Type == ConnectionType.Rotational ? r.ZAxis : r.XAxis) == axis);
         var poseA = Creation.BodyPose(link.BodyA).ToTransform();
-        joint.Name = $"Joint{c.A}_{c.B}";
+        joint.Name = JointName(c);
         joint.TopLevel = true;
         joint.Transform = poseA * new Transform3D(frame.ToBasis(), position.ToGodot());
         // Spring links get a free slider until chunk 9 adds the spring primitive.

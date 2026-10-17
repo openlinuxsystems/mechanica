@@ -70,3 +70,11 @@ process, each in its own viewport with its own physics world and multiplayer API
 real ENet sockets on localhost. `game/tests/net/NetTest.tscn` uses it to check joining, movement
 sync, prediction, the Action API, bad packets, late join, full sessions and leaving. Later chunks
 add their own host-plus-client scenes the same way (subclass `StagedTest`, add a `NetTestHarness`).
+
+### External AI endpoint
+
+`--ai [port]` on the host opens a WebSocket JSON-RPC endpoint (loopback, port 27461 by default) so
+outside programs can call the Action API like a player, and `--record file` / `--replay file`
+record and replay the host's Action API calls. See [docs/ai-endpoint.md](docs/ai-endpoint.md) and the
+example agent `tools/ai/drive_car.mjs`.
+

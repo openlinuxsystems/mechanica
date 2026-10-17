@@ -3,18 +3,23 @@ using Mechanica.Core;
 using Mechanica.Core.Data;
 using Mechanica.Core.Net;
 using Mechanica.Core.World;
+using Mechanica.Game.Building;
 using Mechanica.Game.Creations;
 using Mechanica.Game.Mods;
+using Mechanica.Game.Motion;
 using Mechanica.Game.Net;
 using Mechanica.Game.Player;
+using Mechanica.Game.Remote;
 using Mechanica.Game.World;
 
 namespace Mechanica.Game;
 
 /// <summary>
 /// Game world and session root. It builds the networking nodes (<see cref="Session"/>,
-/// <see cref="PlayerSync"/>, <see cref="Actions"/>) and the streamed world (<see cref="Streamer"/>,
-/// <see cref="Creations"/>), starts offline, hosting or joining from
+/// <see cref="PlayerSync"/>, <see cref="CreationSync"/>, <see cref="Actions"/>), the streamed world (<see cref="Streamer"/>,
+/// <see cref="Creations"/>), building (<see cref="Build"/>, the local player's <see cref="Hammer"/>), the
+/// motion primitives (<see cref="Motion"/>) and the host's external AI endpoint and record/replay
+/// (<see cref="Ai"/>, <see cref="Recorder"/>). It starts offline, hosting or joining from
 /// <see cref="Options"/>, and drives whichever player belongs to this peer from the keyboard and mouse.
 /// Every peer runs the same scene, so node paths (and with them RPC routes) match everywhere.
 /// </summary>
@@ -35,7 +40,16 @@ public partial class Main : Node3D
     public ContentManifest? Content { get; set; }
 
     /// <summary>
-    /// World generation rules. Null loads them from the enabled mods when the scene starts; tests may set
+    /// Loaded mods, the part catalog for building. Null loads the enabled mods when the scene starts;
+    /// tests may set it (and <see cref="Content"/> then defaults to its manifest).
+    /// </summary>
+    public ModLoadResult? Mods { get; set; }
+
+    /// <summary>Meshes and shapes for the parts in <see cref="Mods"/>.</summary>
+    public PartAssets Assets { get; private set; } = null!;
+
+    /// <summary>
+    /// World generation rules. Null loads them from <see cref="Mods"/> when the scene starts; tests may set
     /// <see cref="WorldGenData.Flat"/>.
     /// </summary>
     public WorldGenData? WorldGen { get; set; }
@@ -52,8 +66,26 @@ public partial class Main : Node3D
     /// <summary>Every Creation in the world, live or parked.</summary>
     public CreationWorld Creations { get; private set; } = null!;
 
+    /// <summary>Creation state sync: interest, full syncs and body snapshots.</summary>
+    public CreationSync CreationSync { get; private set; } = null!;
+
     /// <summary>Chunk streaming: the ground, and which Creations are simulated.</summary>
     public WorldStreamer Streamer { get; private set; } = null!;
+
+    /// <summary>Building actions and their sync to clients.</summary>
+    public BuildSync Build { get; private set; } = null!;
+
+    /// <summary>Forces, torques and bearing motors for scripts, bots and external agents.</summary>
+    public MotionSync Motion { get; private set; } = null!;
+
+    /// <summary>Record/replay of the host's Action API calls.</summary>
+    public RecordReplay Recorder { get; private set; } = null!;
+
+    /// <summary>The external AI endpoint (WebSocket JSON-RPC), listening only when asked to.</summary>
+    public AiEndpoint Ai { get; private set; } = null!;
+
+    /// <summary>The local player's Hammer, once the player has spawned.</summary>
+    public HammerTool? Hammer { get; private set; }
 
     /// <summary>This peer's own player, once spawned.</summary>
     public PlayerController? LocalPlayer => PlayerSync.LocalPlayer;
@@ -62,8 +94,11 @@ public partial class Main : Node3D
     {
         GD.Print($"{MechanicaInfo.GameName} started (physics: {ProjectSettings.GetSetting("physics/3d/physics_engine")})");
         Options ??= ReadCommandLine();
-        LoadContent();
-        var content = Content!;
+        var mods = Mods ??= LoadMods();
+        var world = WorldGen ??= LoadWorldGen(mods);
+        // World data is part of the content check on join, because every peer regenerates the world from it.
+        var content = Content ??= ContentManifest.From(mods) with { Fingerprint = $"{mods.Fingerprint}+{world.Fingerprint}" };
+        Assets = new PartAssets(mods);
 
         Session = new NetSession { Name = "Session", Content = content };
         AddChild(Session);
@@ -95,9 +130,40 @@ public partial class Main : Node3D
         PlayerSync.PlayerSpawned += OnPlayerSpawned;
         PlayerSync.PlayerDespawning += OnPlayerDespawning;
         AddChild(PlayerSync);
+        CreationSync = new CreationSync
+        {
+            Name = "CreationSync",
+            Session = Session,
+            PlayerSync = PlayerSync,
+            Creations = Creations,
+            Catalog = mods,
+            Assets = Assets,
+        };
+        AddChild(CreationSync);
         Actions = new ActionGateway { Name = "Actions", Session = Session };
         AddChild(Actions);
         PlayerSync.RegisterActions(Actions.Dispatcher);
+        Build = new BuildSync
+        {
+            Name = "Build",
+            Session = Session,
+            Players = PlayerSync,
+            Creations = Creations,
+            Catalog = mods,
+            Assets = Assets,
+        };
+        AddChild(Build);
+        Build.RegisterActions(Actions.Dispatcher);
+        Motion = new MotionSync { Name = "Motion", Session = Session, Creations = Creations };
+        AddChild(Motion);
+        Motion.RegisterActions(Actions.Dispatcher);
+        Recorder = new RecordReplay { Name = "Recorder", Session = Session, Actions = Actions };
+        AddChild(Recorder);
+        Ai = new AiEndpoint { Name = "Ai", Session = Session, Actions = Actions, Log = Recorder };
+        AddChild(Ai);
+        // The offline player spawned with PlayerSync, before building existed.
+        if (LocalPlayer is { } local)
+            AddHammer(local);
         Session.StateChanged += state => SetPropsSimulated(state is NetSession.SessionState.Offline or NetSession.SessionState.Hosting);
         if (ReadDeviceInput)
             AddChild(new ConnectPanel { Name = "ConnectPanel", Session = Session });
@@ -115,25 +181,38 @@ public partial class Main : Node3D
             _ => Error.Ok,
         };
         if (error != Error.Ok)
+        {
             GD.PushError($"[net] {Session.LastMessage}");
+            return;
+        }
+        if (!Session.IsHost)
+            return;
+        if (options.RecordPath is { } record)
+            Recorder.RecordTo(record);
+        if (options.ReplayPath is { } replay && Recorder.ReplayFrom(replay) is { } replayError)
+            GD.PushError($"[replay] {replayError}");
+        if (options.AiPort is { } port)
+        {
+            var token = options.AiToken ?? OS.GetEnvironment("MECHANICA_AI_TOKEN");
+            if (Ai.Listen(port, options.AiBind, token) is { } aiError)
+                GD.PushError($"[ai] {aiError}");
+        }
     }
 
-    // Loads whatever the tests did not set. World data is part of the content check on join, because
-    // every peer regenerates the world from it.
-    private void LoadContent()
+    private static ModLoadResult LoadMods()
     {
-        if (Content is not null && WorldGen is not null)
-            return;
         var content = ModPaths.LoadContent();
         foreach (var diagnostic in content.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error))
             GD.PushWarning($"[mods] {diagnostic}");
-        if (WorldGen is null)
-        {
-            WorldGen = WorldGenData.Load(content);
-            foreach (var diagnostic in WorldGen.Diagnostics)
-                GD.PushWarning($"[world] {diagnostic}");
-        }
-        Content ??= ContentManifest.From(content) with { Fingerprint = $"{content.Fingerprint}+{WorldGen.Fingerprint}" };
+        return content;
+    }
+
+    private static WorldGenData LoadWorldGen(ModLoadResult mods)
+    {
+        var world = WorldGenData.Load(mods);
+        foreach (var diagnostic in world.Diagnostics)
+            GD.PushWarning($"[world] {diagnostic}");
+        return world;
     }
 
     // Players start at the world's spawn (the crash site's spawn marker in vanilla). A world without
@@ -159,14 +238,29 @@ public partial class Main : Node3D
         if (player != LocalPlayer)
             return;
         player.MakeCameraCurrent();
+        AddHammer(player);
         if (!ReadDeviceInput)
             return;
         _input = new LocalPlayerInput { Name = "LocalPlayerInput", Target = player };
         AddChild(_input);
     }
 
+    private void AddHammer(PlayerController player)
+    {
+        if (Build is null || Hammer is not null)
+            return;
+        Hammer = new HammerTool { Name = "Hammer", Player = player, Actions = Actions, Build = Build, ReadDeviceInput = ReadDeviceInput };
+        AddChild(Hammer);
+    }
+
     private void OnPlayerDespawning(PlayerController player)
     {
+        if (Hammer?.Player == player)
+        {
+            RemoveChild(Hammer);
+            Hammer.QueueFree();
+            Hammer = null;
+        }
         if (_input?.Target != player)
             return;
         RemoveChild(_input);
@@ -175,8 +269,8 @@ public partial class Main : Node3D
     }
 
     /// <summary>
-    /// Loose rigid props only simulate where the world is simulated (the host). On clients they are
-    /// frozen until state sync (chunk 4b) drives them.
+    /// Loose rigid props only simulate where the world is simulated (the host). They are test-world
+    /// fixtures, not Creations, so state sync does not cover them and they stay frozen on clients.
     /// </summary>
     private void SetPropsSimulated(bool simulated)
     {

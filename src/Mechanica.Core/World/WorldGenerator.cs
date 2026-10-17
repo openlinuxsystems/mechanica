@@ -122,12 +122,13 @@ public sealed class WorldGenerator
         var n = cells + 1;
         var (ox, oz) = coord.Origin(chunkSize);
 
-        // Heights with a one-sample border, so normals at the chunk edge match the neighbour's.
+        // Heights with a one-sample border, so normals at the chunk edge match the neighbour's. Samples
+        // are independent and the generator is read-only, so rows run in parallel.
         var m = n + 2;
         var bordered = new float[m * m];
         var heights = new float[n * n];
         var colors = new Vector3[n * n];
-        for (var j = 0; j < m; j++)
+        Parallel.For(0, m, j =>
         {
             for (var i = 0; i < m; i++)
             {
@@ -141,7 +142,7 @@ public sealed class WorldGenerator
                     colors[(j - 1) * n + i - 1] = sample.Color;
                 }
             }
-        }
+        });
         var normals = new Vector3[n * n];
         for (var j = 0; j < n; j++)
         {

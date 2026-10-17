@@ -8,6 +8,8 @@ namespace Mechanica.Game.Creations;
 /// Every Creation in the world, live or parked. A live Creation has a <see cref="CreationNode"/> in the
 /// physics world; a parked one (chunk 12, <see cref="ChunkStreamer"/>) has only its Core graph, with its
 /// Body poses written back and its Body velocities kept here, so it resumes exactly as it stopped.
+/// The host changes the graphs through the Action API; clients mirror the Creations near them
+/// (<see cref="Net.CreationSync"/>).
 /// </summary>
 public partial class CreationWorld : Node3D
 {
@@ -27,6 +29,9 @@ public partial class CreationWorld : Node3D
     /// <summary>Every Creation, by ascending id.</summary>
     public IEnumerable<Creation> All => _entries.Values.Select(e => e.Creation);
 
+    /// <summary>How many Creations there are, live or parked.</summary>
+    public int Count => _entries.Count;
+
     /// <summary>The Creation with this id, or null.</summary>
     public Creation? Find(int id) => _entries.GetValueOrDefault(id)?.Creation;
 
@@ -43,6 +48,34 @@ public partial class CreationWorld : Node3D
             throw new ArgumentException($"Creation {creation.Id} is already in the world.", nameof(creation));
         var entry = _entries[creation.Id] = new Entry(creation, assets);
         return Spawn(entry);
+    }
+
+    /// <summary>Adds a Creation, or swaps out the one with the same id (a client mirroring the host).</summary>
+    public CreationNode Replace(Creation creation, PartAssets assets)
+    {
+        Remove(creation.Id);
+        return Add(creation, assets);
+    }
+
+    /// <summary>
+    /// Shows a graph change: a live Creation rebuilds its bodies in place, a parked one spawns from the
+    /// new graph when it resumes.
+    /// </summary>
+    public void Rebuild(int id)
+    {
+        if (_entries.GetValueOrDefault(id) is not { } entry)
+            return;
+        if (entry.Node is { } node)
+            node.Rebuild();
+        else
+            entry.Velocities.Clear();
+    }
+
+    /// <summary>Removes every Creation.</summary>
+    public void Clear()
+    {
+        foreach (var id in _entries.Keys.ToList())
+            Remove(id);
     }
 
     /// <summary>Removes a Creation, live or parked.</summary>

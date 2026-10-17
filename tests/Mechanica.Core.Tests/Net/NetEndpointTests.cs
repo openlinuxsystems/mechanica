@@ -71,9 +71,33 @@ public class LaunchOptionsTests
         Assert.Equal(LaunchOptions.ForJoin(new NetEndpoint("10.0.0.2", 4000)), Parse("--join", "10.0.0.2:4000"));
 
     [Fact]
+    public void AiEndpointAndRecordReplay()
+    {
+        var options = Parse("--host", "--ai", "--record", "run.json", "--replay", "old.json", "--ai-token", "t");
+        Assert.Equal((NetProtocol.DefaultAiPort, "127.0.0.1", "t", "run.json", "old.json"),
+            (options.AiPort, options.AiBind, options.AiToken, options.RecordPath, options.ReplayPath));
+        Assert.Equal((5000, "0.0.0.0"), (Parse("--ai", "5000", "--ai-bind", "0.0.0.0").AiPort, Parse("--ai-bind", "0.0.0.0").AiBind));
+        Assert.Null(Parse("--host").AiPort);
+    }
+
+    [Fact]
     public void Seed() => Assert.Equal(LaunchOptions.ForHost(4000) with { Seed = -42 }, Parse("--host", "4000", "--seed", "-42"));
 
     [Theory]
+    [InlineData("127.0.0.1", true)]
+    [InlineData("127.1.2.3", true)]
+    [InlineData("localhost", true)]
+    [InlineData("::1", true)]
+    [InlineData("0.0.0.0", false)]
+    [InlineData("192.168.1.2", false)]
+    public void LoopbackAddresses(string address, bool loopback) => Assert.Equal(loopback, LaunchOptions.IsLoopback(address));
+
+    [Theory]
+    [InlineData("--ai", "0")]
+    [InlineData("--ai-token")]
+    [InlineData("--record")]
+    [InlineData("--join", "a", "--ai")]
+    [InlineData("--join", "a", "--replay", "x.json")]
     [InlineData("--join")]
     [InlineData("--join", "--host")]
     [InlineData("--host", "--join", "a")]

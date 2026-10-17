@@ -26,6 +26,7 @@ public partial class WorldStreamer : Node3D
     public const string DefaultSettingsPath = "res://data/streaming.json";
 
     private readonly Dictionary<ChunkCoord, TerrainChunk> _chunks = [];
+    private readonly HashSet<ChunkCoord> _pending = [];
 
     /// <summary>The session, for this peer's role. Set before adding to the tree.</summary>
     public NetSession Session { get; init; } = null!;
@@ -57,7 +58,10 @@ public partial class WorldStreamer : Node3D
     /// <summary>Seed and destroyed objects, once started.</summary>
     public WorldState State { get; private set; } = null!;
 
-    /// <summary>Ground nodes of the loaded chunks.</summary>
+    /// <summary>
+    /// Ground nodes of the loaded chunks. A chunk the streamer loads is built at once when a player or a
+    /// Creation is on or near it, otherwise within a tick or a few (<see cref="StreamingSettings.ChunkBuildBudget"/>).
+    /// </summary>
     public IReadOnlyDictionary<ChunkCoord, TerrainChunk> Chunks => _chunks;
 
     /// <summary>Client side: the host's world replaced the one this peer started with.</summary>
@@ -116,23 +120,62 @@ public partial class WorldStreamer : Node3D
             Creations.Park(id);
         foreach (var chunk in update.Unload)
         {
+            _pending.Remove(chunk);
             if (_chunks.Remove(chunk, out var node))
             {
                 RemoveChild(node);
                 node.QueueFree();
             }
         }
-        foreach (var chunk in update.Load)
-        {
-            var node = new TerrainChunk { Data = Generator.GenerateChunk(chunk, Streamer.Settings.ChunkSize), State = State };
-            AddChild(node);
-            _chunks[chunk] = node;
-        }
+        _pending.UnionWith(update.Load);
+        BuildPending(players, samples);
         foreach (var id in update.Resume)
             Creations.Resume(id);
         foreach (var id in update.FellAsleep)
             Creations.Sleep(id);
         return update;
+    }
+
+    // Builds the chunks under players and force-loaded Creations now, then others nearest a player first
+    // within the per-tick budget. Building a chunk takes milliseconds, and a client joining or a player
+    // crossing into new ground asks for many at once.
+    private void BuildPending(List<System.Numerics.Vector3> players, List<CreationSample> samples)
+    {
+        if (_pending.Count == 0)
+            return;
+        var settings = Streamer.Settings;
+        var margin = new System.Numerics.Vector3(settings.GroundMargin);
+        var urgent = players.SelectMany(p => Streamer.ChunksOf(WorldBounds.Around(p, margin)))
+            .Concat(samples.SelectMany(c => Streamer.ChunksOf(c.Bounds.Expand(settings.CreationBuffer + settings.GroundMargin))))
+            .Where(_pending.Contains)
+            .ToHashSet();
+        foreach (var chunk in urgent)
+            Build(chunk);
+        var started = System.Diagnostics.Stopwatch.GetTimestamp();
+        var budget = TimeSpan.FromSeconds(settings.ChunkBuildBudget);
+        var queue = _pending.OrderBy(c => players.Min(p => Distance(c, p))).ToList();
+        foreach (var chunk in queue)
+        {
+            Build(chunk);
+            if (System.Diagnostics.Stopwatch.GetElapsedTime(started) >= budget)
+                break;
+        }
+    }
+
+    private void Build(ChunkCoord chunk)
+    {
+        _pending.Remove(chunk);
+        var node = new TerrainChunk { Data = Generator.GenerateChunk(chunk, Streamer.Settings.ChunkSize), State = State };
+        AddChild(node);
+        _chunks[chunk] = node;
+    }
+
+    // Distance (x/z) from a player to a chunk's centre.
+    private float Distance(ChunkCoord chunk, System.Numerics.Vector3 player)
+    {
+        var size = Streamer.Settings.ChunkSize;
+        var (x, z) = chunk.Origin(size);
+        return System.Numerics.Vector2.Distance(new(x + size / 2f, z + size / 2f), new(player.X, player.Z));
     }
 
     /// <summary>
@@ -178,6 +221,7 @@ public partial class WorldStreamer : Node3D
                 node.QueueFree();
             }
             _chunks.Clear();
+            _pending.Clear();
             Creations.Removed -= Streamer.Forget;
             Streamer = new ChunkStreamer(Streamer.Settings);
             Creations.Removed += Streamer.Forget;

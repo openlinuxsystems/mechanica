@@ -1,0 +1,20 @@
+{
+  "id": "wedge",
+  "name": "Test Wedge",
+  "category": "block",
+  "mass": 2,
+  "durability": 3,
+  "friction": 0.6,
+  "buoyancy": 0.6,
+  "flammable": false,
+  "size": [
+    1,
+    1,
+    1
+  ],
+  "mesh": "meshes/wedge.gltf",
+  "collision": {
+    "shape": "convex",
+    "mesh": "meshes/wedge.gltf"
+  }
+}
