@@ -14,6 +14,8 @@ tools/smoke.sh                  # headless Godot smoke scene, needed for anythin
 CI (`.github/workflows/ci.yml`) runs the same three steps. Keep it green.
 `tools/package.sh <linux|windows|macos>` exports a release zip (`.github/workflows/release.yml` runs it on `v*` tags);
 exported builds take `--self-test`. `tools/lua-bench.sh` runs the D2 Lua benchmark (headless, then in Godot with real step times).
+After adding, renaming or re-documenting an action or AI endpoint method, run `tools/ai/gen-docs.sh`: the AI docs
+(`docs/ai/reference.md`, `docs/ai/describe.json`) are generated from `mechanica.describe` and `game/tests/aidocs` fails when they drift.
 
 ## Toolchain pins
 
