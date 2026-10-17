@@ -68,6 +68,12 @@ public partial class PlayerSync : Node
     /// <summary>Raised before a player is removed.</summary>
     public event Action<PlayerController>? PlayerDespawning;
 
+    /// <summary>
+    /// A player is about to despawn, raised before <see cref="PlayerDespawning"/> while every system still
+    /// holds their state (health, inventory), so it can be saved.
+    /// </summary>
+    public event Action<PlayerController>? PlayerLeaving;
+
     public override void _Ready()
     {
         ProcessPhysicsPriority = -100;
@@ -96,13 +102,13 @@ public partial class PlayerSync : Node
 
     /// <summary>
     /// Host side: moves a player's feet to <paramref name="feet"/>, at rest. A client's own prediction
-    /// is corrected by the next snapshot. Returns false if the peer has no player.
+    /// is corrected by the next snapshot. <paramref name="yaw"/> turns them too. Returns false if the peer has no player.
     /// </summary>
-    public bool HostTeleport(int peer, Vector3 feet)
+    public bool HostTeleport(int peer, Vector3 feet, float? yaw = null)
     {
         if (!Session.IsHost || !_players.TryGetValue(peer, out var player))
             return false;
-        player.ApplyState(feet, Vector3.Zero, player.Rotation.Y, player.Head.Rotation.X);
+        player.ApplyState(feet, Vector3.Zero, yaw ?? player.Rotation.Y, player.Head.Rotation.X);
         return true;
     }
 
@@ -350,6 +356,7 @@ public partial class PlayerSync : Node
         if (!_players.Remove(peer, out var player))
             return;
         _buffers.Remove(peer);
+        PlayerLeaving?.Invoke(player);
         PlayerDespawning?.Invoke(player);
         player.Stepped -= OnLocalStepped;
         PlayersRoot.RemoveChild(player);

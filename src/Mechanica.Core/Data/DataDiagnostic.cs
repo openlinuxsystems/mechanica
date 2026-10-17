@@ -105,6 +105,9 @@ public static class DiagnosticCodes
     public const string DuplicateBot = "MD0902";
     public const string RaidInvalid = "MD0903";
     public const string BotBehaviorUnknownNode = "MD0904";
+
+    // 10xx: saves
+    public const string SaveInvalid = "MD1001";
 }
 
 /// <summary>Collects diagnostics for one file, filling in the file name.</summary>

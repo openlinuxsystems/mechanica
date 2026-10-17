@@ -53,6 +53,15 @@ public class LaunchOptionsTests
     }
 
     [Fact]
+    public void ParsesALoadAndAName()
+    {
+        var options = Parse("--host", "--load", "saves/world.json", "--name", "Ada");
+        Assert.Equal("saves/world.json", options.LoadPath);
+        Assert.Equal("Ada", options.PlayerName);
+        Assert.Equal("Bo", Parse("--join", "a", "--name", "Bo").PlayerName);
+    }
+
+    [Fact]
     public void NoArgumentsIsOffline() => Assert.Equal(LaunchOptions.Offline, Parse());
 
     [Fact]
@@ -116,6 +125,8 @@ public class LaunchOptionsTests
     [InlineData("--max-players")]
     [InlineData("--seed", "x")]
     [InlineData("--seed")]
+    [InlineData("--load")]
+    [InlineData("--join", "a", "--load", "world.json")]
     public void RejectsBadArguments(params string[] args)
     {
         Assert.False(LaunchOptions.TryParse(args, out _, out var error));

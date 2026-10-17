@@ -4,6 +4,7 @@ using Mechanica.Core.Bots;
 using Mechanica.Core.Data;
 using Mechanica.Core.Items;
 using Mechanica.Core.Net;
+using Mechanica.Core.Saves;
 using Mechanica.Core.Sound;
 using Mechanica.Core.Survival;
 using Mechanica.Core.World;
@@ -17,6 +18,7 @@ using Mechanica.Game.Motion;
 using Mechanica.Game.Net;
 using Mechanica.Game.Player;
 using Mechanica.Game.Remote;
+using Mechanica.Game.Saves;
 using Mechanica.Game.Scripting;
 using Mechanica.Game.Sound;
 using Mechanica.Game.Survival;
@@ -42,6 +44,24 @@ public partial class Main : Node3D
 
     /// <summary>The game mode the main menu picked for the next world; it overrides the command line's.</summary>
     public static GameMode? MenuGameMode { get; set; }
+
+    /// <summary>A saved world the main menu picked to load; it overrides the command line's <c>--load</c>.</summary>
+    public static SaveGame? MenuSave { get; set; }
+
+    /// <summary>
+    /// The world to load instead of making a new one. Null reads <see cref="MenuSave"/> or the command line's
+    /// <c>--load</c>; tests may set it. Its seed and mode replace <see cref="Options"/>'.
+    /// </summary>
+    public SaveGame? Save { get; set; }
+
+    /// <summary>
+    /// This instance's player. Null loads (or makes) <c>user://profile.json</c>, renamed by <c>--name</c>; tests
+    /// set fixed profiles so restarted instances are the same players.
+    /// </summary>
+    public PlayerProfile? Profile { get; set; }
+
+    /// <summary>Where the player profile lives.</summary>
+    public const string ProfilePath = "user://profile.json";
 
     /// <summary>False in automated tests: nothing reads devices, the test sets the player's input itself.</summary>
     public bool ReadDeviceInput { get; set; } = true;
@@ -141,6 +161,9 @@ public partial class Main : Node3D
     /// <summary>The part settings panel the Connect Tool opens; null without device input.</summary>
     public PartSettingsPanel? PartSettings { get; private set; }
 
+    /// <summary>Saving and loading the world, and players' saved selves.</summary>
+    public SaveSync Saves { get; private set; } = null!;
+
     /// <summary>Record/replay of the host's Action API calls.</summary>
     public RecordReplay Recorder { get; private set; } = null!;
 
@@ -160,6 +183,12 @@ public partial class Main : Node3D
         if (MenuGameMode is { } chosen)
             Options = Options with { GameMode = chosen };
         var mods = Mods ??= LoadMods();
+        var save = Save ??= TakeMenuSave() ?? ReadSave(Options.LoadPath);
+        if (save is not null && Options.Mode != SessionMode.Join)
+            Options = Options with { Seed = save.Seed, GameMode = save.Mode };
+        else
+            Save = save = null;
+        var profile = Profile ??= LoadProfile(Options.PlayerName);
         var world = WorldGen ??= LoadWorldGen(mods);
         var recipes = Recipes ??= LoadRecipes(mods);
         var bots = BotTypes ??= LoadBots(mods);
@@ -172,7 +201,7 @@ public partial class Main : Node3D
         };
         Assets = new PartAssets(mods);
 
-        Session = new NetSession { Name = "Session", Content = content };
+        Session = new NetSession { Name = "Session", Content = content, Profile = profile };
         AddChild(Session);
         var players = new Node3D { Name = "Players" };
         AddChild(players);
@@ -199,6 +228,7 @@ public partial class Main : Node3D
             SpawnPoint = () => GetNodeOrNull<Node3D>("SpawnPoint")?.GlobalPosition ?? Vector3.Zero,
             WorldGen = WorldGen!,
             Seed = Options.Seed ?? (long)(((ulong)GD.Randi() << 32) | GD.Randi()),
+            InitialState = save is null ? null : StateOf(save),
         };
         AddChild(Streamer);
         PlaceSpawnPoint();
@@ -293,6 +323,29 @@ public partial class Main : Node3D
         AddChild(ForceOverlay);
         Inspector = new CreationInspector { Name = "Inspector", Players = PlayerSync, Actions = Actions, ReadDeviceInput = ReadDeviceInput };
         AddChild(Inspector);
+        Saves = new SaveSync
+        {
+            Name = "Saves",
+            Session = Session,
+            Players = PlayerSync,
+            Creations = Creations,
+            Assets = Assets,
+            World = Streamer,
+            Inventory = Inventory,
+            Survival = Survival,
+            Scripts = Scripts,
+            Catalog = new LoadedParts(this),
+            Content = () => Content!,
+        };
+        AddChild(Saves);
+        if (save is not null)
+        {
+            foreach (var diagnostic in save.ContentDifferences(content))
+                GD.PushWarning($"[save] '{save.Name}' was saved with different mods: {diagnostic}");
+            foreach (var diagnostic in Saves.Apply(save))
+                GD.PushWarning($"[save] {diagnostic}");
+            GD.Print($"[save] loaded '{save.Name}' ({Creations.Count} creations)");
+        }
         Recorder = new RecordReplay { Name = "Recorder", Session = Session, Actions = Actions };
         AddChild(Recorder);
         Ai = new AiEndpoint { Name = "Ai", Session = Session, Actions = Actions, Log = Recorder };
@@ -303,7 +356,7 @@ public partial class Main : Node3D
         Session.StateChanged += state => SetPropsSimulated(state is NetSession.SessionState.Offline or NetSession.SessionState.Hosting);
         if (ReadDeviceInput)
         {
-            AddChild(new ConnectPanel { Name = "ConnectPanel", Session = Session });
+            AddChild(new ConnectPanel { Name = "ConnectPanel", Session = Session, Saves = Saves });
             AddChild(new InventoryScreen { Name = "InventoryScreen", Inventory = Inventory, Actions = Actions, Players = PlayerSync, Catalog = mods });
             AddChild(new SurvivalHud { Name = "SurvivalHud", Survival = Survival, Actions = Actions, Players = PlayerSync, Catalog = mods, Logic = Logic });
             PartSettings = new PartSettingsPanel { Name = "PartSettings", Actions = Actions, Creations = Creations };
@@ -421,6 +474,44 @@ public partial class Main : Node3D
             return;
         var at = spawn.GlobalPosition;
         spawn.GlobalPosition = Streamer.Generator.Spawn?.ToGodot() ?? new Vector3(at.X, Streamer.Generator.HeightAt(at.X, at.Z), at.Z);
+    }
+
+    private static SaveGame? TakeMenuSave()
+    {
+        var save = MenuSave;
+        MenuSave = null;
+        return save;
+    }
+
+    private static SaveGame? ReadSave(string? path)
+    {
+        if (path is null)
+            return null;
+        var diagnostics = new List<DataDiagnostic>();
+        var save = SaveStore.Read(path, diagnostics);
+        foreach (var diagnostic in diagnostics)
+            GD.PushError($"[save] {diagnostic}");
+        return save;
+    }
+
+    private static WorldState StateOf(SaveGame save)
+    {
+        var state = new WorldState(save.Seed);
+        foreach (var id in save.Destroyed)
+            state.Destroy(id);
+        return state;
+    }
+
+    private static PlayerProfile LoadProfile(string? name)
+    {
+        var path = ProjectSettings.GlobalizePath(ProfilePath);
+        var profile = PlayerProfile.LoadOrCreate(path, OS.GetEnvironment("USER") is { Length: > 0 } user ? user : "Player");
+        if (name is not null && PlayerProfile.CleanName(name) != profile.Name)
+        {
+            profile = profile with { Name = PlayerProfile.CleanName(name) };
+            PlayerProfile.Save(path, profile);
+        }
+        return profile;
     }
 
     private static LaunchOptions ReadCommandLine()

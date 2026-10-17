@@ -257,6 +257,8 @@ public partial class SandboxScreen : Control
         main.Options = options;
         main.ReadDeviceInput = false;
         main.Mods = _content;
+        // Local clients are separate players, so each needs its own profile.
+        main.Profile = Core.Saves.PlayerProfile.Fixed($"Sandbox {name}");
         viewport.AddChild(main);
         var instance = new Instance(name, viewport, main);
         _instances.Add(instance);

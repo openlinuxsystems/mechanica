@@ -59,6 +59,18 @@ and rocks, POIs); see [docs/world-generation.md](docs/world-generation.md). Each
 random seed; `--seed 1234` picks one. Clients regenerate the host's world from its seed, and the host
 sends them every destroyed tree or rock.
 
+## Saving and loading
+
+The host saves the world: press Esc, then **Save / load…**, name the world and press **Save**. The main
+menu's **Load game** (or `-- --load path/to/world.json`, combinable with `--host`) starts a saved world.
+Saves are JSON files in the user data folder's `saves/` (one per world name); see
+[docs/saves.md](docs/saves.md) for what they hold.
+
+Each install has a player profile (`profile.json` in the user data folder: a random id and a name,
+`--name Ada` renames it). The host keeps every player's inventory, health, respawn bed and position by
+profile id, so a player who leaves and joins again, in this session or after a load, gets their things
+back. Two instances with the same profile can't be in one session.
+
 All state changes go through the Action API (`Main.Actions.Request("Respawn", new NoArgs())`): on the
 host the call runs directly, on a client it is sent to the host, which validates it as that peer and
 answers with a result (`ok`, or a code such as `unknown_action`, `bad_args`, `rejected`).

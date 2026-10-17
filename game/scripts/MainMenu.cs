@@ -50,6 +50,7 @@ public partial class MainMenu : Control
         column.AddChild(new Label { Text = MechanicaInfo.GameName, ThemeTypeVariation = "HeaderLarge", HorizontalAlignment = HorizontalAlignment.Center });
         AddButton(column, "Play survival", () => Play(Core.Survival.GameMode.Survival));
         AddButton(column, "Play creative", () => Play(Core.Survival.GameMode.Creative));
+        AddButton(column, "Load game", OpenLoad);
         column.AddChild(new HSeparator());
         column.AddChild(new Label { Text = "Mod tools", HorizontalAlignment = HorizontalAlignment.Center });
         AddButton(column, "Part Editor", () => GetTree().ChangeSceneToFile(PartEditorScene));
@@ -95,6 +96,21 @@ public partial class MainMenu : Control
     {
         Main.MenuGameMode = mode;
         GetTree().ChangeSceneToFile(WorldScene);
+    }
+
+    private void OpenLoad()
+    {
+        var holder = new CenterContainer { Name = "Load" };
+        holder.SetAnchorsPreset(LayoutPreset.FullRect);
+        var screen = new Saves.SaveScreen();
+        screen.CloseRequested += () => Close(holder);
+        screen.LoadRequested += save =>
+        {
+            Main.MenuSave = save;
+            GetTree().ChangeSceneToFile(WorldScene);
+        };
+        holder.AddChild(screen);
+        Open(holder);
     }
 
     private void OpenSandbox()

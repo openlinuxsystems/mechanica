@@ -56,6 +56,9 @@ public partial class NetTestHarness : Node
     /// <summary>The raid table every instance uses; null loads the mods' own.</summary>
     public Mechanica.Core.Bots.RaidTable? RaidTable { get; set; }
 
+    /// <summary>A saved world the next host loads; null makes a new world.</summary>
+    public Mechanica.Core.Saves.SaveGame? Save { get; set; }
+
     /// <summary>Running instances, host first.</summary>
     public IReadOnlyList<Instance> Instances => _instances;
 
@@ -114,6 +117,10 @@ public partial class NetTestHarness : Node
         main.WorldGen = WorldGen; // null: the world data of those mods
         main.BotTypes = BotTypes; // null: the bots of those mods
         main.RaidTable = RaidTable; // null: the raid table of those mods
+        // The same name is the same player, so a test that restarts an instance gets its saved player back.
+        main.Profile = Mechanica.Core.Saves.PlayerProfile.Fixed(name);
+        if (options.Mode != SessionMode.Join)
+            main.Save = Save;
         viewport.AddChild(main);
         var instance = new Instance(name, viewport, main);
         _instances.Add(instance);
