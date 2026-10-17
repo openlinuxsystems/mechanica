@@ -22,7 +22,8 @@ namespace Mechanica.Game.Tests;
 public partial class VanillaContentTest : StagedTest
 {
     private const int RigId = 1;
-    private static readonly string[] Batches = ["lights_utility.json", "decor.json", "containers_stations.json"];
+    // Stations first: the other batches' recipes name the Fabricator.
+    private static readonly string[] Batches = ["containers_stations.json", "lights_utility.json", "decor.json"];
 
     private readonly List<ActionResult> _results = [];
     private readonly List<(string File, HashSet<string> Outputs)> _batches = [];
@@ -223,7 +224,9 @@ public partial class VanillaContentTest : StagedTest
         {
             outputs.Add(entry.File!);
             outputs.Add(PartDocument.SourcePathFor(entry.File!));
-            outputs.Add(PartExporter.BakedMeshPath(entry.File!));
+            // A part whose model is one existing mesh points at that mesh and bakes nothing.
+            if ((PartSource.Empty with { Model = entry.Model is { Count: > 0 } model ? [.. model] : null }).NeedsBake)
+                outputs.Add(PartExporter.BakedMeshPath(entry.File!));
             foreach (var recipe in entry.Recipes ?? [])
                 outputs.Add(RecipeExporter.TargetFile(recipe.Id!));
         }

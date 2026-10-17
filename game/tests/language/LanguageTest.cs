@@ -26,6 +26,7 @@ public partial class LanguageTest : StagedTest
     private HashSet<string> _keyLabels = [];
     private MainMenu _menu = null!;
     private Main _main = null!;
+    private (int Creation, int Part) _fabricator;
 
     protected override string Tag => "language";
 
@@ -204,10 +205,31 @@ public partial class LanguageTest : StagedTest
             return true;
         });
         World("the open part settings and inspector", () => { });
+        Add("a Fabricator", frame =>
+        {
+            if (frame == 0)
+            {
+                _main.PartSettings!.Close();
+                _main.Inspector.Close();
+                var at = _main.LocalPlayer!.GlobalPosition + new Vector3(1, 1, -3);
+                _main.Actions.Request(Core.Actions.CreationActions.SpawnPart, new Core.Actions.SpawnPartArgs("vanilla:fabricator", [at.X, at.Y, at.Z]), r => Check(r.Ok, $"a Fabricator spawns ({r.Message})"));
+                return false;
+            }
+            if (_main.Creations.All.FirstOrDefault(c => c.Parts.Any(p => p.Part == "vanilla:fabricator")) is not { } creation)
+                return false;
+            _fabricator = (creation.Id, creation.Parts.First(p => p.Part == "vanilla:fabricator").Id);
+            _main.GetNode<Items.InventoryScreen>("InventoryScreen").Show(Core.Items.InventoryRef.OfPart(_fabricator.Creation, _fabricator.Part));
+            return true;
+        });
+        World("the Fabricator screen", () => { });
+        World("the upgrade dialog", () =>
+        {
+            _main.GetNode<Items.InventoryScreen>("InventoryScreen").Hide();
+            _main.Upgrades!.Open(_fabricator);
+        });
         World("a confirm dialog", () =>
         {
-            _main.PartSettings!.Close();
-            _main.Inspector.Close();
+            _main.Upgrades!.Close();
             var pause = _main.GetNode<PauseMenu>("PauseMenu");
             pause.OpenOptions();
             var options = Find<OptionsScreen>(pause);
@@ -228,6 +250,7 @@ public partial class LanguageTest : StagedTest
                 _keys.UnionWith(TutorialHints.Load().Tips);
                 _keys.UnionWith(Enum.GetValues<LoadStage>().Select(WorldLoading.Text));
                 _keys.UnionWith(["Loading mods…", "Returning to menu…"]);
+                _keys.UnionWith(["Speed", "Queue", "Link range", "Slots", "Inputs", "Outputs"]);
                 var now = DateTimeOffset.Now;
                 foreach (var seconds in new[] { 0, 300, 4000 })
                     SaveSummary.FormatPlayTime(seconds, (key, _) => { _keys.Add(key); return key; });

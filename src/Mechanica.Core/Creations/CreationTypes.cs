@@ -22,6 +22,9 @@ public sealed record PartInstance(int Id, string Part, GridCell Cell, GridRotati
     /// </summary>
     public IReadOnlyDictionary<string, JsonElement>? Settings { get; init; }
 
+    /// <summary>Upgrade level (UI spec §4): 0 is the part as written, up to its <see cref="Data.PartDefinition.Upgrades"/> count.</summary>
+    public int Level { get; init; }
+
     /// <summary>Keys this build does not know, kept so a save round-trips without losing data.</summary>
     public IReadOnlyDictionary<string, JsonElement>? Extra { get; init; }
 }

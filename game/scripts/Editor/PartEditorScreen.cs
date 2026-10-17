@@ -785,7 +785,23 @@ public partial class PartEditorScreen : Control
                 v => Set("Set crafting speed", x => x with { Crafting = x.Crafting! with { Speed = (float?)v } }), optional: true, fallback: 1, suffix: "×");
             _partGrid.AddNumber("Queue size", crafting.QueueSize, 1, 64, 1,
                 v => Set("Set queue size", x => x with { Crafting = x.Crafting! with { QueueSize = (int?)v } }), optional: true, fallback: 1);
+            _partGrid.AddNumber("Link range", crafting.LinkRange, 0, 8, 0.25,
+                v => Set("Set link range", x => x with { Crafting = x.Crafting! with { LinkRange = (float?)v } }), optional: true, fallback: 0, suffix: "m");
         }
+        // Upgrade levels (UI spec §4): a JSON list of { "cost": [...], "set": { ... } }, checked like the rest of the part.
+        _partGrid.AddJson("Upgrades", d.Upgrades is { Count: > 0 } upgrades ? JsonSerializer.Serialize(upgrades, DataJson.WriteOptions) : "[]", text =>
+        {
+            try
+            {
+                var levels = JsonSerializer.Deserialize<List<UpgradeDefinition>>(text, DataJson.ReadOptions);
+                Set("Set upgrades", x => x with { Upgrades = levels is { Count: > 0 } ? levels : null });
+                return null;
+            }
+            catch (JsonException e)
+            {
+                return e.Message;
+            }
+        });
     }
 
     // Survival fields (chunk 20): seeds and water on items; soil and beds on parts. Weapons and food are
