@@ -9,7 +9,7 @@
 
 import { appendFileSync, readFileSync } from "node:fs";
 import { DEFAULT_URL, Game } from "./game.mjs";
-import { LOCAL_TOOLS, clip, openAiTools, options, parseToolCalls, promptToolsText, runTool, systemPrompt, toolsFromDescribe } from "./tools.mjs";
+import { LOCAL_TOOLS, clip, openAiTools, options, parseToolCalls, promptToolsText, runTool, systemPrompt, thoughtText, toolsFromDescribe } from "./tools.mjs";
 
 const USAGE = `Usage: node tools/ai/bridge/openai-bridge.mjs --base-url URL --model NAME [options]
 
@@ -30,6 +30,7 @@ Game
   --game URL           The game's AI endpoint (default ${DEFAULT_URL})
   --token TOKEN        Endpoint token (or MECHANICA_AI_TOKEN)
   --name NAME          Join the world as a player with this name (default Grok); --no-join to stay external
+  --no-thoughts        Don't show the AI's words to people watching it in the game (SetThought)
   --groups a,b         Only offer methods of these areas (see docs/ai/reference.md), to save context
   --topics a,b         Event topics to subscribe to (default hurt,vitals,dialogue,quest,chat,messages,raid)
 
@@ -43,7 +44,7 @@ Session
   --history N          Messages kept besides the instructions (default 60)
 `;
 
-const opts = options(process.argv.slice(2), ["no-join", "no-system-role", "help"]);
+const opts = options(process.argv.slice(2), ["no-join", "no-system-role", "no-thoughts", "help"]);
 if (opts.help || !opts["base-url"] || !opts.model) {
   console.log(USAGE);
   process.exit(opts.help ? 0 : 2);
@@ -73,7 +74,7 @@ const tools = [
   ...toolsFromDescribe(describe, { scopes: info.scopes, groups: opts.groups?.split(","), exclude: [] }),
   ...LOCAL_TOOLS.map((t) => ({ ...t, method: null })),
 ];
-log(`[bridge] offering ${tools.length} tools`);
+log(`[bridge] offering ${tools.length} tools (about ${Math.round(JSON.stringify(openAiTools(tools)).length / 4000)}k tokens; --groups offers fewer)`);
 
 let joined = null;
 if (!opts["no-join"] && info.scopes.includes("play")) {
@@ -92,13 +93,18 @@ const start = [
 
 const messages = [];
 let refusedTurns = 0;
+let lastThought = "";
 
 for (let step = 1; step <= maxSteps && !game.closed; step++) {
   const events = game.takeEvents();
   if (step === 1) messages.push({ role: "user", content: start + eventText(events) });
   else if (events.length > 0) messages.push({ role: "user", content: `Game events:${eventText(events)}` });
 
+  const started = Date.now();
+  if (step === 1) log("[bridge] waiting for the model's first reply (it reads the whole tool list first; a slow model can take minutes)");
   const reply = await complete();
+  const seconds = (Date.now() - started) / 1000;
+  if (step === 1 || seconds > 30) log(`[bridge] the model answered in ${seconds.toFixed(0)} s`);
   const message = reply.message;
   let calls = (message.tool_calls ?? []).map((c) => ({ id: c.id, name: c.function?.name, arguments: parseArgs(c.function?.arguments) }));
   if (calls.length === 0) calls = parseToolCalls(message.content ?? "").map((c, i) => ({ id: `text-${step}-${i}`, ...c, fromText: true }));
@@ -108,6 +114,7 @@ for (let step = 1; step <= maxSteps && !game.closed; step++) {
   messages.push(assistant);
   record({ step, role: "assistant", content: assistant.content, calls });
   if (assistant.content?.trim()) log(`[ai] ${clip(assistant.content.trim(), 600)}`);
+  await shareThought(message, calls);
 
   if (calls.length === 0) {
     if ((message.content ?? "").includes(stopWord)) {
@@ -142,6 +149,20 @@ game.close();
 log("[bridge] finished");
 
 // ---- helpers ----
+
+// Shows people watching the AI in the game what it is doing: its words (or its reasoning, for models
+// that only reason before a tool call), unless it set a thought itself this turn.
+async function shareThought(message, calls) {
+  if (!joined || opts["no-thoughts"] || calls.some((c) => c.name === "SetThought")) return;
+  const text = thoughtText(message.content) || thoughtText(message.reasoning ?? message.reasoning_content);
+  if (!text || text === lastThought) return;
+  lastThought = text;
+  try {
+    await game.call("SetThought", { text });
+  } catch {
+    // An older host without SetThought: nothing to show.
+  }
+}
 
 function eventText(events) {
   if (events.length === 0) return "";

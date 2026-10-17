@@ -156,7 +156,8 @@ public partial class LiftBody : StaticBody3D
         CollectLights(_model);
     }
 
-    private static AnimationPlayer? FindPlayer(Node node)
+    /// <summary>The first <see cref="AnimationPlayer"/> at or under <paramref name="node"/>, or null.</summary>
+    public static AnimationPlayer? FindPlayer(Node node)
     {
         if (node is AnimationPlayer player)
             return player;
@@ -269,19 +270,53 @@ public partial class LiftBody : StaticBody3D
             _tracks[clip] = tracks;
         }
         foreach (var (track, node, type) in tracks)
+            ApplyTrack(clip, track, node, type, time);
+    }
+
+    /// <summary>
+    /// A new copy of the Lift's model standing still: folded as its <c>deploy</c> clip starts, or put down as it ends
+    /// (<paramref name="deployed"/>), with nothing left to play. Null when the model does not load.
+    /// </summary>
+    public static Node3D? StillModel(PartAssets assets, LiftSettings settings, bool deployed)
+    {
+        if (assets.InstantiateScene(settings.Model, Identifiers.VanillaModId) is not { } model)
+            return null;
+        if (FindPlayer(model) is { } player)
         {
-            switch (type)
-            {
-                case Animation.TrackType.Position3D:
-                    node.Position = clip.PositionTrackInterpolate(track, time);
-                    break;
-                case Animation.TrackType.Rotation3D:
-                    node.Quaternion = clip.RotationTrackInterpolate(track, time);
-                    break;
-                case Animation.TrackType.Scale3D:
-                    node.Scale = clip.ScaleTrackInterpolate(track, time);
-                    break;
-            }
+            if (player.HasAnimation("deploy") && player.GetAnimation("deploy") is { } deploy)
+                PoseAt(model, deploy, deployed ? deploy.Length : 0);
+            player.GetParent().RemoveChild(player);
+            player.Free();
+        }
+        return model;
+    }
+
+    /// <summary>
+    /// Poses <paramref name="model"/> (an instance of the Lift's model) as <paramref name="clip"/> has it at
+    /// <paramref name="time"/>, without playing anything. Used for still pictures of the Lift.
+    /// </summary>
+    public static void PoseAt(Node3D model, Animation clip, double time)
+    {
+        for (var track = 0; track < clip.GetTrackCount(); track++)
+        {
+            if (model.GetNodeOrNull<Node3D>(new NodePath(clip.TrackGetPath(track).GetConcatenatedNames())) is { } target)
+                ApplyTrack(clip, track, target, clip.TrackGetType(track), time);
+        }
+    }
+
+    private static void ApplyTrack(Animation clip, int track, Node3D node, Animation.TrackType type, double time)
+    {
+        switch (type)
+        {
+            case Animation.TrackType.Position3D:
+                node.Position = clip.PositionTrackInterpolate(track, time);
+                break;
+            case Animation.TrackType.Rotation3D:
+                node.Quaternion = clip.RotationTrackInterpolate(track, time);
+                break;
+            case Animation.TrackType.Scale3D:
+                node.Scale = clip.ScaleTrackInterpolate(track, time);
+                break;
         }
     }
 }

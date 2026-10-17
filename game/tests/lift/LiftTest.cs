@@ -47,6 +47,29 @@ public partial class LiftTest : StagedTest
 
         Add("host and client are in", _ => _client.Main.PlayerSync.Players.Count == 2 && _host.Main.PlayerSync.Players.Count == 2
             && _client.Main.LocalPlayer is not null && _client.Main.Tools is not null);
+        Add("the Lift's ghost and the tool icons are the real models", _ =>
+        {
+            var ghost = _client.Main.Tools!.Lift.Ghost;
+            var meshes = ghost.GetChildren().OfType<MeshInstance3D>().ToList();
+            Check(meshes.Count > 10 && meshes.All(m => m.MaterialOverride == LiftTool.GhostMaterial), $"the ghost is the lift's meshes in the ghost look ({meshes.Count})");
+            var deployed = Footprint(meshes.Select(m => m.Transform * m.GetAabb()));
+            Check(deployed > Settings.PlatformSize * 1.3f, $"the ghost stands with its outriggers out ({deployed:F2} m across)");
+            var models = new Ui.ToolIconModels(_client.Main.Characters.Assets, _client.Main.Assets, Settings);
+            Check(models.For(Core.Items.HotbarTools.Hammer) is null, "a tool with no model draws as its initials");
+            foreach (var tool in new[] { Core.Items.HotbarTools.Sledge, Core.Items.HotbarTools.Lift })
+            {
+                var model = models.For(tool);
+                Check(model is not null && model.FindChildren("*", nameof(MeshInstance3D), owned: false).Count > 0, $"the {tool} icon is drawn from its model");
+                if (tool == Core.Items.HotbarTools.Lift && model is not null)
+                {
+                    AddChild(model);
+                    var folded = Footprint(model.FindChildren("*", nameof(MeshInstance3D), owned: false).OfType<MeshInstance3D>().Select(m => m.GlobalTransform * m.GetAabb()));
+                    Check(folded < deployed, $"the Lift's icon is folded, outriggers in ({folded:F2} m across)");
+                }
+                model?.QueueFree();
+            }
+            return true;
+        });
         Add("the client puts its Lift down", frame =>
         {
             if (frame == 0)
@@ -260,4 +283,11 @@ public partial class LiftTest : StagedTest
     }
 
     private static float Deck(LiftBody lift) => ((Node3D)lift.Model!.FindChild("Deck", true, false)).GlobalPosition.Y - lift.GlobalPosition.Y;
+
+    // Width across of the boxes on the ground plane.
+    private static float Footprint(IEnumerable<Aabb> boxes)
+    {
+        var all = boxes.Aggregate((a, b) => a.Merge(b));
+        return Math.Max(all.Size.X, all.Size.Z);
+    }
 }

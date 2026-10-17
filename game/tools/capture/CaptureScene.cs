@@ -11,6 +11,8 @@ namespace Mechanica.Game.Tools;
 /// crouching, moving, and in first person with each tool. For checking how a character or skin looks in game; run
 /// <c>tools/capture-characters.sh</c>, which uses a virtual display and the compatibility renderer. Given <c>lift</c> instead
 /// of a character it puts the player's Lift down and captures its deploy, a raise and full extension (<c>tools/capture-lift.sh</c>).
+/// Given <c>icons</c> it saves the item picture of every tool and a few parts, then the HUD with the hotbar and the Lift's
+/// placement ghost (<c>tools/capture-icons.sh</c>).
 /// </summary>
 public partial class CaptureScene : Node
 {
@@ -28,16 +30,22 @@ public partial class CaptureScene : Node
         var args = OS.GetCmdlineUserArgs();
         _out = args.Length > 0 ? args[0] : OS.GetUserDataDir();
         var lift = args.Length > 1 && args[1] == "lift";
-        Main.MenuCharacter = args.Length > 1 && !lift ? args[1] : "scrapper_male";
+        var icons = args.Length > 1 && args[1] == "icons";
+        Main.MenuCharacter = args.Length > 1 && !lift && !icons ? args[1] : "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
         _main.Options = LaunchOptions.Offline with { Seed = 7 };
-        _main.ReadDeviceInput = false;
+        _main.ReadDeviceInput = icons;
         AddChild(_main);
         _camera = new Camera3D { Fov = 40 };
         AddChild(_camera);
         if (lift)
         {
             LiftShots();
+            return;
+        }
+        if (icons)
+        {
+            IconShots();
             return;
         }
         Shot("front", 60, () => Look(new Vector3(0, 1.0f, -3.2f)));
@@ -99,6 +107,46 @@ public partial class CaptureScene : Node
         Shot("lift_close", 2, () => LookAtLift(new Vector3(1.2f, 0.9f, -1.5f), 0.3f));
     }
 
+    private static readonly string[] IconItems = [.. Core.Items.HotbarTools.All, "vanilla:gas_engine", "vanilla:wheel", "vanilla:chest"];
+
+    // Each picture is saved as it becomes ready; the last shot is the HUD, with the hotbar showing the tools.
+    private void IconShots()
+    {
+        Engine.TimeScale = 1.0;
+        var saved = new HashSet<string>();
+        Shot("icons_wait", 60, () => { });
+        Shot("icons_hud", 240, () =>
+        {
+            foreach (var id in IconItems)
+                _main.Icons!.For(id);
+        });
+        Shot("lift_ghost", 60, () =>
+        {
+            // The mouse would set the look every tick; stop it, so the player looks down at where the Lift would go.
+            foreach (var reader in _main.FindChildren("*", owned: false).OfType<LocalPlayerInput>())
+                reader.SetPhysicsProcess(false);
+            Tool<Building.LiftTool>();
+            Input(pitch: -0.5f);
+            Player.MakeCameraCurrent();
+        });
+        _iconTick = () =>
+        {
+            if (_main.Icons is not { } iconsNode)
+                return;
+            foreach (var id in IconItems)
+            {
+                if (saved.Contains(id) || iconsNode.For(id) is not { } texture)
+                    continue;
+                saved.Add(id);
+                var path = $"{_out}/icon_{id.Replace(':', '_')}.png";
+                texture.GetImage().SavePng(path);
+                GD.Print($"[capture] {path}");
+            }
+        };
+    }
+
+    private Action? _iconTick;
+
     private void LookAtLift(Vector3 offset, float height)
     {
         Player.ThirdPerson = true;
@@ -129,6 +177,7 @@ public partial class CaptureScene : Node
     {
         if (_main.LocalPlayer is null || _main.Characters.LocalNeedsChoice || Player.Character is null)
             return;
+        _iconTick?.Invoke();
         if (_follow is { } offset)
         {
             var basis = Player.GlobalTransform.Basis;

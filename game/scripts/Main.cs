@@ -254,6 +254,9 @@ public partial class Main : Node3D
     /// <summary>The local player's camera in a seat (Ctrl switches interior and chase), when reading device input.</summary>
     public SeatCamera? SeatCamera { get; private set; }
 
+    /// <summary>Watch players: the camera that follows another player (an AI agent, say).</summary>
+    public Spectator Spectator { get; private set; } = null!;
+
     /// <summary>The seat's creation hotbar of linked switches and buttons, when reading device input.</summary>
     public CreationHotbar? CreationHotbar { get; private set; }
 
@@ -465,6 +468,8 @@ public partial class Main : Node3D
         AddChild(ForceOverlay);
         Inspector = new CreationInspector { Name = "Inspector", Players = PlayerSync, Actions = Actions, ReadDeviceInput = ReadDeviceInput };
         AddChild(Inspector);
+        Spectator = new Spectator { Name = "Spectator", Players = PlayerSync, ReadDeviceInput = ReadDeviceInput };
+        AddChild(Spectator);
         Quests = new QuestSync
         {
             Name = "Quests",
@@ -506,7 +511,8 @@ public partial class Main : Node3D
         AddChild(MapMarkers);
         if (ReadDeviceInput)
         {
-            Icons = new Ui.ItemIcons { Name = "ItemIcons", Catalog = mods, Assets = Assets };
+            var toolModels = new Ui.ToolIconModels(Characters.Assets, Assets, Build.Settings!.Lift);
+            Icons = new Ui.ItemIcons { Name = "ItemIcons", Catalog = mods, Assets = Assets, ToolModel = toolModels.For };
             AddChild(Icons);
         }
         Chat = new Mechanica.Game.Chat.ChatSync { Name = "Chat", Session = Session };
@@ -999,7 +1005,7 @@ public partial class Main : Node3D
         AddTools(player);
         if (!ReadDeviceInput)
             return;
-        _input = new LocalPlayerInput { Name = "LocalPlayerInput", Target = player };
+        _input = new LocalPlayerInput { Name = "LocalPlayerInput", Target = player, Suspended = () => Spectator.Watching };
         AddChild(_input);
     }
 

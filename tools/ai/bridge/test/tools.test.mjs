@@ -1,9 +1,9 @@
-// node --test tools/ai/bridge/test
+// node --test tools/ai/bridge/test/*.test.mjs
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { test } from "node:test";
-import { DOCS, clip, methodName, openAiTools, options, parseToolCalls, promptToolsText, systemPrompt, toolName, toolsFromDescribe } from "../tools.mjs";
+import { DOCS, clip, methodName, openAiTools, options, parseToolCalls, promptToolsText, systemPrompt, thoughtText, toolName, toolsFromDescribe } from "../tools.mjs";
 
 const describe = JSON.parse(readFileSync(join(DOCS, "describe.json"), "utf8"));
 
@@ -57,4 +57,13 @@ test("helpers", () => {
   assert.doesNotMatch(prompt, /---/);
   assert.match(systemPrompt("Build a car."), /Your job: Build a car\.$/);
   assert.deepEqual(options(["--model", "m", "--no-join", "x"], ["no-join"]), { _: ["x"], model: "m", "no-join": true });
+});
+
+test("thoughts shown to watchers leave out tool calls and stay short", () => {
+  assert.equal(thoughtText('I will look around.\n```tool\n{"name": "GetPlayer", "arguments": {}}\n```'), "I will look around.");
+  assert.equal(thoughtText('Checking {"name": "Raycast", "arguments": {}} first'), "Checking first");
+  assert.equal(thoughtText("Velocity is {x: 1}"), "Velocity is {x: 1}");
+  assert.equal(thoughtText("```tool\n{}\n```"), "");
+  assert.equal(thoughtText(null), "");
+  assert.equal(thoughtText("a ".repeat(200), 11), "a a a a a…");
 });

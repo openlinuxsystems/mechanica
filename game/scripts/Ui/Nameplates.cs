@@ -8,6 +8,7 @@ namespace Mechanica.Game.Ui;
 /// Other players' names over their heads (UI spec §11 and §16 Interface, "Show player names"). Each player
 /// but this peer's own gets a blue billboard label that faces the camera and stays readable through walls,
 /// fading out between <see cref="FadeStart"/> and <see cref="FadeEnd"/>; the Interface setting hides them all.
+/// An AI player's latest thought (<c>SetThought</c>) shows under its name, shortened.
 /// </summary>
 public partial class Nameplates : Node
 {
@@ -51,7 +52,7 @@ public partial class Nameplates : Node
                 player.AddChild(plate);
                 _plates[peer] = plate;
             }
-            plate.Text = player.DisplayName;
+            plate.Text = player.Thought.Length > 0 ? $"{player.DisplayName}\n{Short(player.Thought)}" : player.DisplayName;
             var distance = GetViewport().GetCamera3D() is { } camera ? camera.GlobalPosition.DistanceTo(plate.GlobalPosition) : 0f;
             var alpha = 1f - Mathf.Clamp((distance - FadeStart) / (FadeEnd - FadeStart), 0f, 1f);
             plate.Modulate = UiTokens.Blue with { A = alpha };
@@ -61,4 +62,9 @@ public partial class Nameplates : Node
         foreach (var peer in _plates.Keys.Where(p => !Players.Players.ContainsKey(p)).ToList())
             _plates.Remove(peer);
     }
+
+    /// <summary>Most characters of an AI player's thought shown under its name; Watch players shows all of it.</summary>
+    public const int ThoughtChars = 60;
+
+    private static string Short(string thought) => thought.Length <= ThoughtChars ? thought : thought[..(ThoughtChars - 1)].TrimEnd() + "…";
 }
