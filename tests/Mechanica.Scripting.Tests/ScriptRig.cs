@@ -15,6 +15,7 @@ internal sealed class ScriptRig : IDisposable
     public const string Block = "test:block";
     public const string Thruster = "test:thruster";
     public const string Bearing = "test:bearing";
+    public const string Piston = "test:piston";
     public const string Other = "other:gadget";
 
     public ScriptRig(ScriptSettings? settings = null, IScriptPhysics? physics = null)
@@ -29,6 +30,13 @@ internal sealed class ScriptRig : IDisposable
             .Add(Bearing, Part(PartCategory.Interactive, 3, "scripts/bearing.lua",
                 new SocketDefinition { Id = "base", Type = SocketType.Structural, Position = new Vec3(0, -0.125f, 0), Normal = new Vec3(0, -1, 0) },
                 new SocketDefinition { Id = "rotor", Type = SocketType.Rotational, Position = new Vec3(0, 0.125f, 0), Normal = new Vec3(0, 1, 0) }))
+            .Add(Piston, Part(PartCategory.Interactive, 4, "scripts/piston.lua",
+                new SocketDefinition { Id = "base", Type = SocketType.Structural, Position = new Vec3(0, -0.125f, 0), Normal = new Vec3(0, -1, 0) },
+                new SocketDefinition
+                {
+                    Id = "head", Type = SocketType.Linear, Position = new Vec3(0, 0.125f, 0), Normal = new Vec3(0, 1, 0),
+                    Joint = new JointDefinition { Max = 1 },
+                }))
             .Add(Other, Part(PartCategory.Interactive, 1, "scripts/gadget.lua"));
         Motion = new MotionActions(new MotionSettings(), World);
         Motion.Register(Dispatcher);

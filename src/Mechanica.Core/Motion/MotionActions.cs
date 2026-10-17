@@ -34,7 +34,7 @@ public sealed record ApplyForceArgs(int Creation, Vec3 Force, int Body = 0, Vec3
 /// Angle in rad to turn to and hold, measured from the pose the bearing was built in (steering, doors).
 /// Within ±π, and within the joint's limits when it has them. Null drives at <paramref name="Velocity"/>.
 /// </param>
-public sealed record SetBearingTargetArgs(int Creation, int Part, float? Velocity, float? MaxTorque = null, float? Angle = null);
+public sealed record SetBearingTargetArgs(int Creation, int Part, float? Velocity = null, float? MaxTorque = null, float? Angle = null);
 
 /// <summary>Arguments of <c>SetPistonTarget</c>.</summary>
 /// <param name="Creation">Creation holding the piston.</param>
