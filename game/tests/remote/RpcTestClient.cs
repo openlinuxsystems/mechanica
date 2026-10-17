@@ -23,6 +23,9 @@ public sealed class RpcTestClient
     /// <summary>Answers that carried no id (parse errors and the like), in arrival order.</summary>
     public List<JsonElement> Unmatched { get; } = [];
 
+    /// <summary>Notifications the endpoint pushed (<c>mechanica.event</c>), oldest first.</summary>
+    public List<JsonElement> Events { get; } = [];
+
     /// <summary>Messages received, single or batch.</summary>
     public int MessagesReceived { get; private set; }
 
@@ -46,7 +49,9 @@ public sealed class RpcTestClient
             var root = document.RootElement;
             foreach (var response in root.ValueKind == JsonValueKind.Array ? root.EnumerateArray().ToArray() : [root])
             {
-                if (response.GetProperty("id") is { ValueKind: JsonValueKind.Number } id)
+                if (response.TryGetProperty("method", out _) && !response.TryGetProperty("id", out _))
+                    Events.Add(response.Clone());
+                else if (response.TryGetProperty("id", out var id) && id.ValueKind == JsonValueKind.Number)
                     _responses[id.GetInt64()] = response.Clone();
                 else
                     Unmatched.Add(response.Clone());

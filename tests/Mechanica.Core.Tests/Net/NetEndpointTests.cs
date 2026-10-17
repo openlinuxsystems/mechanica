@@ -1,4 +1,5 @@
 using Mechanica.Core.Net;
+using Mechanica.Core.Remote;
 
 namespace Mechanica.Core.Tests.Net;
 
@@ -90,6 +91,26 @@ public class LaunchOptionsTests
     }
 
     [Fact]
+    public void AiTokensMapToScopes()
+    {
+        static string? NoEnvironment(string _) => null;
+        Assert.False(Parse("--ai").HasAiToken(NoEnvironment));
+
+        var single = Parse("--ai", "--ai-token", "t").AiAccess(NoEnvironment);
+        Assert.Equal(EndpointAccess.All, single.ScopesFor("t"));
+
+        var split = Parse("--ai", "--ai-token", "p", "--ai-admin-token", "a", "--ai-observe-token", "o").AiAccess(NoEnvironment);
+        Assert.Equal(new HashSet<AgentScope> { AgentScope.Observe, AgentScope.Play }, split.ScopesFor("p"));
+        Assert.Equal(EndpointAccess.All, split.ScopesFor("a"));
+        Assert.Equal(new HashSet<AgentScope> { AgentScope.Observe }, split.ScopesFor("o"));
+        Assert.Null(split.ScopesFor("x"));
+
+        var fromEnvironment = Parse("--ai").AiAccess(name => name == "MECHANICA_AI_ADMIN_TOKEN" ? "env" : null);
+        Assert.Equal(EndpointAccess.All, fromEnvironment.ScopesFor("env"));
+        Assert.Equal("cli", Parse("--ai-admin-token", "cli").AiAdminToken);
+    }
+
+    [Fact]
     public void Seed() => Assert.Equal(LaunchOptions.ForHost(4000) with { Seed = -42 }, Parse("--host", "4000", "--seed", "-42"));
 
     [Fact]
@@ -112,6 +133,8 @@ public class LaunchOptionsTests
     [Theory]
     [InlineData("--ai", "0")]
     [InlineData("--ai-token")]
+    [InlineData("--ai-admin-token")]
+    [InlineData("--ai-observe-token")]
     [InlineData("--record")]
     [InlineData("--join", "a", "--ai")]
     [InlineData("--join", "a", "--replay", "x.json")]

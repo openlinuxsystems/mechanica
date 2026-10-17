@@ -11,12 +11,35 @@ that apply to bots and scripts (no reach limit, since they have no body).
 godot --path game -- --host --ai                  # ws://127.0.0.1:27461
 godot --path game -- --host --ai 5000             # another port
 godot --path game -- --host --ai --ai-bind 0.0.0.0 --ai-token s3cret
+godot --path game -- --host --ai --ai-token player --ai-admin-token root --ai-observe-token watch
 ```
 
 The endpoint listens on loopback by default. Listening on any other address needs a token, given
 with `--ai-token` or the `MECHANICA_AI_TOKEN` environment variable (the variable keeps it out of
 the process list). Only the host runs the endpoint: a game that joins someone else closes it.
 Up to 8 agents can connect at once.
+
+## Scopes
+
+Each connection holds scopes that decide what it may call:
+
+| Scope | Allows |
+|-------|--------|
+| `observe` | queries (read-only actions), `mechanica.info`, `mechanica.describe`, events, recording |
+| `play` | every state-changing action, validated like anyone else's |
+| `admin` | `SpawnPart`, `ClearCreations`, `SpawnBot`, `DespawnBot`, `MoveBot`, `BotAttack`, `StartRaid`, `GiveItems`, replays, and admin methods added by modules (mod tools, session control) |
+
+Without any token every connection has all three. With tokens, a connection gets the scopes of the
+token it gives to `mechanica.auth`:
+
+| Token | Variable | Scopes |
+|-------|----------|--------|
+| `--ai-token` | `MECHANICA_AI_TOKEN` | all three when no admin token is set, otherwise observe and play |
+| `--ai-admin-token` | `MECHANICA_AI_ADMIN_TOKEN` | all three |
+| `--ai-observe-token` | `MECHANICA_AI_OBSERVE_TOKEN` | observe |
+
+A call outside the connection's scopes fails with -32005 (`data.code` `forbidden`). `mechanica.info`
+lists the connection's scopes.
 
 ## Protocol
 
@@ -31,17 +54,24 @@ arguments (snake_case). The answer's `result` is the action's value, or `null`.
 ← {"jsonrpc": "2.0", "result": {"creation": 1, "part": 1}, "id": 1}
 ```
 
-Built-in methods:
+Built-in methods (protocol version 2):
 
-| Method | Params | Result |
-|--------|--------|--------|
-| `mechanica.auth` | `{"token": "..."}` | `true`; needed first when the host set a token |
-| `mechanica.info` | none | game name, `protocol_version`, `tick_rate`, `actions`, `queries` (read-only actions) |
-| `mechanica.record.start` | none | starts recording the host's Action API calls |
-| `mechanica.record.stop` | none | the recording (see below) |
-| `mechanica.replay.start` | `{"recording": {...}, "timed": true}` | `{"total": n}` calls it will replay |
-| `mechanica.replay.status` | none | `running`, `dispatched`, `total`, `mismatches` |
-| `mechanica.replay.stop` | none | stops a replay in progress |
+| Method | Scope | Params | Result |
+|--------|-------|--------|--------|
+| `mechanica.auth` | | `{"token": "..."}` | `true`; needed first when the host set a token, grants its scopes |
+| `mechanica.info` | observe | none | game name, `protocol_version`, `tick_rate`, `tick` (current physics tick), this connection's `scopes`, `peer` and `source`, and the names of every `actions`, `queries`, `methods` and event `topics` |
+| `mechanica.describe` | observe | optional `{"names": [...]}` | every method with its `kind` (action, query or method), `scope`, `description` and a JSON Schema of its `params`, plus the event `topics` and error codes |
+| `mechanica.subscribe` | observe | `{"topics": [...]}` | the topics now subscribed; see [Events](#events) |
+| `mechanica.unsubscribe` | observe | optional `{"topics": [...]}` | the topics still subscribed (none given stops all) |
+| `mechanica.record.start` | observe | none | starts recording the host's Action API calls |
+| `mechanica.record.stop` | observe | none | the recording (see below) |
+| `mechanica.replay.start` | admin | `{"recording": {...}, "timed": true}` | `{"total": n}` calls it will replay |
+| `mechanica.replay.status` | observe | none | `running`, `dispatched`, `total`, `mismatches` |
+| `mechanica.replay.stop` | admin | none | stops a replay in progress |
+
+`mechanica.describe` is the way to build an AI's tool list: each entry's `params` is a JSON Schema
+(snake_case properties, `required`, `additionalProperties: false`, vectors as `[x, y, z]` arrays, grid
+rotations as strings like `"+x+y"`), and its `description` comes from the game's own documentation.
 
 Errors carry the Action API code in `error.data.code`:
 
@@ -54,8 +84,46 @@ Errors carry the Action API code in `error.data.code`:
 | -32001 | `rejected` | the host's validation refused it; `message` says why |
 | -32002 | `rate_limited` | too many calls (600 per second per connection, bursts of 1200) |
 | -32003 | | call `mechanica.auth` first, or the token was wrong |
-| -32004 | | record/replay can't do that now (nothing recording, no replay) |
+| -32004 | | can't be done now (nothing recording, no replay, busy) |
+| -32005 | `forbidden` | the connection lacks the method's scope |
 | -32603 | `internal_error` | the action failed on the host |
+
+## Events
+
+After `mechanica.subscribe`, the host pushes JSON-RPC notifications (no `id`) on the same socket:
+
+```json
+← {"jsonrpc": "2.0", "method": "mechanica.event", "params": {"topic": "hurt", "tick": 5120, "data": {"peer": 1, "amount": 12, "cause": "weapon"}}}
+```
+
+| Topic | Data |
+|-------|------|
+| `actions` | every state-changing Action API call by players, bots and agents (not Lua scripts): `peer`, `source`, `action`, `args`, `ok`, `code`, `message`, `value` |
+| `messages` | Lua prints, warnings and errors from part, item and bot scripts (`kind`, `source`, `script`, `creation`, `part`, `text`), and host failures while handling an agent's call (`kind` `error`, `source` `endpoint`, `method`, `text`) |
+| `hurt` | a player took damage: `peer`, `amount`, `cause` |
+| `vitals` | a player's health changed, they died or respawned: the `GetVitals` view |
+| `dialogue` | a quest character spoke: `quest`, `lines` |
+| `quest` | quest progress changed: the `GetQuests` state |
+| `raid` | a raid started, advanced or ended: the `GetRaid` view |
+| `bots` | `kind` `spawned`, `removed`, `attacked` or `crop_destroyed`, with the bot, attack or crop |
+| `drop` | `kind` `changed` or `removed`, with the drop |
+| `chat` | a chat line |
+| `fire` | a fire went out |
+| `seats` | someone sat down or stood up: `seat`, `seated` |
+| `projectiles` | `kind` `launched` or `landed` |
+| `mods`, `reports` | reserved for the mod tools and AI reports |
+
+A connection that falls more than 4096 notifications behind loses the oldest and then receives one
+`events_dropped` notification with the `count` it missed.
+
+## Adding methods (for game code)
+
+Game systems add endpoint methods outside the Action API as an `IRpcModule`
+(`src/Mechanica.Core/Remote/RpcModules.cs`): each `RpcMethod.Create<TParams>(name, scope, description,
+handler)` gets a lowercase dotted name (`mods.validate`), a scope, and a snake_case params record that
+`mechanica.describe` turns into a schema. Handlers throw `RpcException` with an `RpcErrors` code to fail. `RpcMethod.CreateAsync` takes a handler that returns a `Task` (for work that waits for Godot frames, such as baking a mesh); the endpoint answers when it completes, and inside a batch such a call is answered on its own afterwards. Module params are limited only by the 4 MiB message size, not the Action API's 16 KiB.
+Add the module to `Main.Ai.Modules` before the endpoint starts listening. Host code publishes events
+with `Main.Ai.Events.Publish(topic, data)`; new topics go in `RemoteEvents.Topics`.
 
 ## Actions for driving
 

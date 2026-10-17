@@ -15,6 +15,7 @@ public sealed partial class ActionDispatcher
     private readonly Dictionary<string, Delegate> _typed = new(StringComparer.Ordinal);
     private readonly HashSet<string> _readOnly = new(StringComparer.Ordinal);
     private readonly Dictionary<string, int> _maxArgs = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, Type> _argTypes = new(StringComparer.Ordinal);
 
     /// <summary>Raised after every dispatch, successful or not.</summary>
     public event Action<ActionRecord>? Dispatched;
@@ -49,6 +50,7 @@ public sealed partial class ActionDispatcher
         if (!_actions.TryAdd(name, (caller, json) => Run(caller, json, validate, apply)))
             throw new ArgumentException($"Action '{name}' is already registered.", nameof(name));
         _typed[name] = (Func<ActionCaller, TArgs, ActionResult>)((caller, args) => Check(caller, args, validate, apply));
+        _argTypes[name] = typeof(TArgs);
         if (readOnly)
             _readOnly.Add(name);
         if (maxArgsLength is { } max)
@@ -57,6 +59,9 @@ public sealed partial class ActionDispatcher
 
     /// <summary>True when <paramref name="name"/> is registered.</summary>
     public bool Has(string name) => _actions.ContainsKey(name);
+
+    /// <summary>The argument record type of <paramref name="name"/>, or null when it isn't registered.</summary>
+    public Type? ArgsTypeOf(string name) => _argTypes.GetValueOrDefault(name);
 
     /// <summary>Longest arguments, in characters, <paramref name="name"/> accepts.</summary>
     public int MaxArgsOf(string name) => _maxArgs.GetValueOrDefault(name, ActionJson.MaxArgsLength);
