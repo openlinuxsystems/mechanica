@@ -71,7 +71,7 @@ public partial class MainMenu : Control
             _ = RunBatch(at + 1 < args.Length ? args[at + 1] : null);
             return;
         }
-        if (LaunchOptions.TryParse(OS.GetCmdlineUserArgs(), out var options, out _) && options.Mode != SessionMode.Offline)
+        if (LaunchOptions.TryParse(OS.GetCmdlineUserArgs(), out var options, out _) && (options.Mode != SessionMode.Offline || options.SelfTest))
         {
             Callable.From(() => GetTree().ChangeSceneToFile(WorldScene)).CallDeferred();
             return;

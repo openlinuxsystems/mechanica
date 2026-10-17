@@ -53,6 +53,16 @@ public class LaunchOptionsTests
     }
 
     [Fact]
+    public void SelfTestIsOffUnlessAsked()
+    {
+        Assert.False(Parse().SelfTest);
+        var options = Parse("--self-test", "--seed", "1234");
+        Assert.True(options.SelfTest);
+        Assert.Equal(1234, options.Seed);
+        Assert.Equal(SessionMode.Offline, options.Mode);
+    }
+
+    [Fact]
     public void ParsesALoadAndAName()
     {
         var options = Parse("--host", "--load", "saves/world.json", "--name", "Ada");

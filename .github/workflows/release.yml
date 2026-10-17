@@ -1,0 +1,127 @@
+name: Release
+
+# Builds playable Windows and Linux packages (game, bundled .NET runtime, mods/ and docs/), checks each one
+# launches and loads a world (--self-test), and attaches them to a GitHub Release.
+# Push a tag such as v0.2.0 to publish a release; "Run workflow" builds the packages as run artifacts,
+# and publishes a release too when given a tag. Pull requests that change packaging build and self-test without publishing.
+
+on:
+  push:
+    tags: ["v*"]
+  pull_request:
+    paths:
+      - .github/workflows/release.yml
+      - game/export_presets.cfg
+      - tools/package.sh
+      - tools/install-godot-templates.sh
+      - tools/release/**
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to create, e.g. v0.2.0 (leave empty to only build the packages)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    name: Package ${{ matrix.platform }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        platform: [linux, windows]
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      DOTNET_NOLOGO: "1"
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - name: Read pinned versions
+        run: grep -E '^[A-Z_]+=' tools/versions.env >> "$GITHUB_ENV"
+
+      - name: Pick the version
+        run: |
+          tag="${{ github.event_name == 'push' && github.ref_name || inputs.tag }}"
+          if [[ -n "$tag" ]]; then version="${tag#v}"; else version="dev-${GITHUB_SHA::7}"; fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ hashFiles('Directory.Packages.props', '**/*.csproj', 'global.json') }}
+
+      - uses: actions/cache@v4
+        with:
+          path: .tools
+          key: godot-${{ env.GODOT_VERSION }}-mono-linux-x86_64
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.local/share/godot/export_templates
+          key: godot-templates-${{ env.GODOT_VERSION }}-mono-linux-windows
+
+      - name: Export and zip
+        run: tools/package.sh ${{ matrix.platform }} "$VERSION"
+
+      - name: Self-test the exported build
+        if: matrix.platform == 'linux'
+        run: |
+          cd "$RUNNER_TEMP"
+          timeout 600 "$GITHUB_WORKSPACE/build/Mechanica-$VERSION-linux/Mechanica.x86_64" --headless -- --self-test --seed 1234
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Mechanica-${{ env.VERSION }}-${{ matrix.platform }}
+          path: build/Mechanica-${{ env.VERSION }}-${{ matrix.platform }}.zip
+          if-no-files-found: error
+
+  verify-windows:
+    name: Self-test on Windows
+    needs: package
+    runs-on: windows-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: Mechanica-*-windows
+
+      - name: Unzip and run --self-test
+        shell: pwsh
+        run: |
+          $zip = Get-ChildItem -Recurse -Filter "Mechanica-*-windows.zip" | Select-Object -First 1
+          Expand-Archive $zip.FullName -DestinationPath "$env:RUNNER_TEMP\game"
+          $dir = Get-ChildItem "$env:RUNNER_TEMP\game" -Directory | Select-Object -First 1
+          $log = "$env:RUNNER_TEMP\self-test.log"
+          $p = Start-Process -FilePath "$($dir.FullName)\Mechanica.exe" -WorkingDirectory $env:RUNNER_TEMP `
+            -ArgumentList "--headless", "--log-file", $log, "--", "--self-test", "--seed", "1234" -PassThru
+          if (-not $p.WaitForExit(600000)) { $p.Kill(); Write-Error "self-test timed out" }
+          Get-Content $log
+          if ($p.ExitCode -ne 0) { Write-Error "self-test exited with $($p.ExitCode)"; exit 1 }
+
+  release:
+    name: Publish the GitHub Release
+    needs: [package, verify-windows]
+    if: github.event_name == 'push' || inputs.tag != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: Mechanica-*
+          merge-multiple: true
+
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event_name == 'push' && github.ref_name || inputs.tag }}
+        run: |
+          notes="Download the zip for your system, unzip it and run Mechanica.exe (Windows) or Mechanica.x86_64 (Linux). README.txt inside explains LAN play."
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG" Mechanica-*.zip --clobber --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$TAG" Mechanica-*.zip --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Mechanica ${TAG#v}" --notes "$notes"
+          fi

@@ -12,7 +12,8 @@ tools/smoke.sh                  # headless Godot smoke scene, needed for anythin
 ```
 
 CI (`.github/workflows/ci.yml`) runs the same three steps. Keep it green.
-`tools/lua-bench.sh` runs the D2 Lua benchmark (headless, then in Godot with real step times).
+`tools/package.sh <linux|windows>` exports a release zip (`.github/workflows/release.yml` runs it on `v*` tags);
+exported builds take `--self-test`. `tools/lua-bench.sh` runs the D2 Lua benchmark (headless, then in Godot with real step times).
 
 ## Toolchain pins
 
