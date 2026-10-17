@@ -132,7 +132,8 @@ public partial class LanguageTest : StagedTest
             }
             return _main.LocalPlayer is not null && frame > 60;
         });
-        World("the HUD", () => { });
+        World("the character choice", () => { });
+        World("the HUD", () => _main.Characters.Window?.Confirm());
         World("the in-game menu", () => _main.GetNode<PauseMenu>("PauseMenu").Open());
         World("Options in a world", () => _main.GetNode<PauseMenu>("PauseMenu").OpenOptions(), tabs: true);
         World("saves in a world", () => _main.GetNode<PauseMenu>("PauseMenu").OpenSaves());
