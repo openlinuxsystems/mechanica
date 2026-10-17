@@ -147,6 +147,12 @@ public sealed class JsonRpcEndpoint
     /// <summary>The notifications connections can subscribe to.</summary>
     public RemoteEvents Events { get; }
 
+    /// <summary>
+    /// Spawns and removes the players agents join as (<c>mechanica.join</c>, <c>mechanica.leave</c>). Null
+    /// refuses joins.
+    /// </summary>
+    public IAgentHost? Agents { get; set; }
+
     /// <summary>Raised when a call fails inside the host (an exception), with the method and message, so the game can log it.</summary>
     public event Action<string, string>? InternalError;
 
@@ -185,6 +191,9 @@ public sealed class JsonRpcEndpoint
     /// <summary>Forgets a closed connection.</summary>
     public void Disconnect(RemoteConnection connection)
     {
+        if (connection.Caller != _caller)
+            Agents?.Leave(ContextId(connection));
+        connection.Caller = _caller;
         _limiter.Forget(connection.Id);
         _contextConnections.Remove(connection.Id.ToString(System.Globalization.CultureInfo.InvariantCulture));
         if (connection.Subscriber is { } subscriber)
@@ -338,6 +347,9 @@ public sealed class JsonRpcEndpoint
             return Authenticate(connection, parameters);
         if (!connection.Authenticated)
             return Outcome.Fail(Codes.Unauthorized, "Call mechanica.auth with the endpoint's token first.");
+        // The host can remove an agent's player without a leave (it left the world): act as the host again.
+        if (connection.Caller != _caller && Agents?.PeerOf(ContextId(connection)) != connection.Caller.Peer)
+            connection.Caller = _caller;
         try
         {
             if (_methods.TryGetValue(method, out var info))
@@ -361,7 +373,7 @@ public sealed class JsonRpcEndpoint
             return Outcome.Fail(Codes.RateLimited, "Too many calls; slow down.", ActionErrors.RateLimited);
         try
         {
-            var context = new RpcContext(connection.Caller, connection.Scopes, connection.Id.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            var context = new RpcContext(connection.Caller, connection.Scopes, ContextId(connection));
             if (info.InvokeAsync is { } start)
             {
                 var task = start(context, parameters);
@@ -450,6 +462,12 @@ public sealed class JsonRpcEndpoint
 
     private sealed record ReplayParams(JsonElement Recording, bool Timed = true);
 
+    /// <summary>Params of <c>mechanica.join</c>.</summary>
+    /// <param name="Name">The agent's name. Its saved player (inventory, health, position) follows the name, so use the same one to come back.</param>
+    private sealed record JoinParams(string Name);
+
+    private static string ContextId(RemoteConnection connection) => connection.Id.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
     private IEnumerable<RpcMethodInfo> BuiltIns()
     {
         yield return RpcMethod.Create<AuthParams>("mechanica.auth", AgentScope.Observe,
@@ -480,6 +498,31 @@ public sealed class JsonRpcEndpoint
         yield return RpcMethod.Create<TopicsParams>("mechanica.unsubscribe", AgentScope.Observe,
             "Stops the given topics, or every topic when none are given. Returns the topics still subscribed.",
             (context, args) => Subscribe(Connection(context), args.Topics, add: false));
+        yield return RpcMethod.Create<JoinParams>("mechanica.join", AgentScope.Play,
+            "Joins the world as a player of your own, marked as an AI. From then on this connection's actions act as that player (its inventory, reach and quests), and SetPlayerInput moves it. Returns its peer, profile id and shown name.",
+            (context, args) =>
+            {
+                var connection = Connection(context);
+                if (Agents is not { } agents)
+                    throw new RpcException(RpcErrors.Busy, "This host doesn't take agent players.");
+                if (connection.Caller != _caller)
+                    throw new RpcException(RpcErrors.Rejected, "This connection already plays; call mechanica.leave first.");
+                if (agents.Join(context.ConnectionId, args.Name, out var error) is not { } agent)
+                    throw new RpcException(RpcErrors.Rejected, error ?? "The host refused the join.");
+                connection.Caller = new ActionCaller(agent.Peer, ActionSource.Player);
+                return Value(new { peer = agent.Peer, profile_id = agent.Profile.Id, name = agent.Profile.Name });
+            });
+        yield return RpcMethod.Create<NoArgs>("mechanica.leave", AgentScope.Play,
+            "Removes the player this connection joined as (it is saved) and goes back to acting as an external agent on the host.",
+            (context, _) =>
+            {
+                var connection = Connection(context);
+                if (connection.Caller == _caller)
+                    throw new RpcException(RpcErrors.Busy, "This connection isn't playing.");
+                Agents?.Leave(context.ConnectionId);
+                connection.Caller = _caller;
+                return null;
+            });
         yield return RpcMethod.Create<NoArgs>("mechanica.record.start", AgentScope.Observe,
             "Starts recording every state-changing Action API call on the host.",
             (_, _) => _log.StartRecording() ? null : throw new RpcException(RpcErrors.Busy, "A recording is already running."));

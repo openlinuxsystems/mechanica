@@ -1,6 +1,7 @@
 using Godot;
 using Mechanica.Core.Net;
 using Mechanica.Core.Player;
+using Mechanica.Core.Remote;
 using Mechanica.Game.Player;
 
 namespace Mechanica.Game.Net;
@@ -15,6 +16,8 @@ namespace Mechanica.Game.Net;
 /// every <see cref="NetProtocol.SnapshotInterval"/> ticks.</item>
 /// <item>A client predicts its own player locally and corrects it when the host disagrees, replaying
 /// the inputs the host has not seen yet. Other players are posed by interpolating snapshots.</item>
+/// <item>AI agents that join through the AI endpoint get host-only players with no network peer
+/// (<see cref="HostAddAgent"/>), stepped from <see cref="Agents"/>; clients see them like anyone else.</item>
 /// </list>
 /// Runs early in the physics frame so remote inputs and corrections land before players move.
 /// </summary>
@@ -37,6 +40,9 @@ public partial class PlayerSync : Node
 
     /// <summary>The session this syncs over. Set before adding to the tree.</summary>
     public NetSession Session { get; init; } = null!;
+
+    /// <summary>Host side: the AI agents playing, whose players step from their held input.</summary>
+    public AgentPlayers? Agents { get; set; }
 
     /// <summary>Where player nodes are added. Set before adding to the tree.</summary>
     public Node3D PlayersRoot { get; init; } = null!;
@@ -140,6 +146,51 @@ public partial class PlayerSync : Node
             foreach (var input in queue.NextTick())
                 player.Step(input, delta);
         }
+        if (Agents is { } agents)
+        {
+            foreach (var peer in agents.All.Keys)
+            {
+                if (_players.TryGetValue(peer, out var player))
+                    player.Step(agents.NextInput(peer, player.LastInput), delta);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Host side: spawns an AI agent's player on a free slot and tells every ready client. Its profile must
+    /// already be known to <see cref="Session"/>. Returns an error, or null.
+    /// </summary>
+    public string? HostAddAgent(int peer)
+    {
+        if (!Session.IsHost)
+            return "Only the host spawns agent players.";
+        if (_players.ContainsKey(peer))
+            return "That player already exists.";
+        if (_slots.Claim(peer) is not { } slot)
+            return $"The world is full ({Session.MaxPlayers} players).";
+        var spawn = SpawnTransform(slot);
+        var player = AddPlayer(peer, spawn);
+        player.Simulated = false; // stepped from Agents in HostTick
+        PlayerSpawned?.Invoke(player);
+        if (Session.State == NetSession.SessionState.Hosting)
+        {
+            foreach (var other in Session.ReadyPeers)
+                RpcId(other, MethodName.ClientSpawn, peer, player.GlobalPosition, player.Rotation.Y, player.DisplayName);
+        }
+        return null;
+    }
+
+    /// <summary>Host side: removes an AI agent's player (it is saved first) and tells every ready client.</summary>
+    public void HostRemoveAgent(int peer)
+    {
+        if (!Session.IsHost || !_players.ContainsKey(peer))
+            return;
+        _slots.Release(peer);
+        RemovePlayer(peer);
+        if (Session.State != NetSession.SessionState.Hosting)
+            return;
+        foreach (var other in Session.ReadyPeers)
+            RpcId(other, MethodName.ClientDespawn, peer);
     }
 
     private WorldSnapshot BuildSnapshot() => new(_tick, [.. _players.Values.Select(p => new PlayerState(
@@ -312,8 +363,8 @@ public partial class PlayerSync : Node
                 ClearPlayers();
                 break;
             case NetSession.SessionState.Offline when _wasHosting:
-                // The host keeps its world and player; only the remote players go.
-                foreach (var peer in _players.Keys.Where(p => p != NetProtocol.HostPeer).ToList())
+                // The host keeps its world, its player and AI agents' players; only the remote players go.
+                foreach (var peer in _players.Keys.Where(p => p != NetProtocol.HostPeer && Agents?.IsAgent(p) != true).ToList())
                     HostRemovePeer(peer);
                 break;
             case NetSession.SessionState.Offline:
