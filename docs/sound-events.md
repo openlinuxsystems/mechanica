@@ -113,6 +113,12 @@ plays these names:
 Any other name is for the part's Lua script to play. The loader warns about a part that names an
 event nobody registered (MD0804).
 
+## Character sounds
+
+Footsteps, jumps, landings, swimming and taking a tool in hand play through the character's own `sounds`
+bindings, the same way as a part's; see [Player Characters](characters.md#sounds). Each peer plays them
+for every player near it from that player's movement, so they are never sent over the network.
+
 ## Replacing sounds
 
 An event whose id is `other_mod:id` replaces that mod's event everywhere it is used. The other mod must

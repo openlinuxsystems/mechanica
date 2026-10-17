@@ -8,7 +8,7 @@ namespace Mechanica.Game.Player;
 /// <summary>
 /// Turns this machine's keyboard and mouse into <see cref="PlayerInput"/> for one player.
 /// It writes into the controller; on a client, <see cref="Net.PlayerSync"/> also sends each tick's input to the host.
-/// Click captures the mouse, Esc releases it, Zoom in (X) goes first-person and Zoom out (C) third-person.
+/// Crouch slows the player (and dives in deep water). Click captures the mouse, Esc releases it, Zoom in (X) goes first-person and Zoom out (C) third-person.
 /// Look speed, inverted look and field of view come from the player's settings. While the mouse is free
 /// (a menu, the inventory or a panel is open) the player stands still and a seated player stops driving.
 /// </summary>
@@ -78,6 +78,7 @@ public partial class LocalPlayerInput : Node
             _yaw,
             _pitch,
             playing && Input.IsActionPressed(InputActions.Jump),
-            playing && Input.IsActionPressed(InputActions.Sprint));
+            playing && Input.IsActionPressed(InputActions.Sprint),
+            playing && Input.IsActionPressed(InputActions.Crawl));
     }
 }

@@ -1,5 +1,6 @@
 using Godot;
 using Mechanica.Core.Actions;
+using Mechanica.Core.Characters;
 using Mechanica.Core.Input;
 using Mechanica.Game.Creations;
 using Mechanica.Game.Net;
@@ -72,9 +73,24 @@ public abstract partial class HandTool : Node
     {
         if (!ReadDeviceInput || !Active || Input.MouseMode != Input.MouseModeEnum.Captured)
             return;
-        if (HandleInput(@event))
-            GetViewport().SetInputAsHandled();
+        if (!HandleInput(@event))
+            return;
+        GetViewport().SetInputAsHandled();
+        Player.Gesture(GestureFor(@event));
     }
+
+    /// <summary>What others see in the player's hand while this tool is out.</summary>
+    public virtual CharacterProp Prop => CharacterProp.None;
+
+    /// <summary>
+    /// The arm movement others see when <paramref name="event"/> was used by <see cref="HandleInput"/>
+    /// (<see cref="CharacterGesture.None"/> for none). By default a click swings or points the tool.
+    /// </summary>
+    protected virtual CharacterGesture GestureFor(InputEvent @event) =>
+        Pressed(@event, InputActions.Primary) || Pressed(@event, InputActions.Secondary) ? UseGesture : CharacterGesture.None;
+
+    /// <summary>The gesture a click with this tool plays.</summary>
+    protected virtual CharacterGesture UseGesture => CharacterGesture.ToolUse;
 
     /// <summary>One line for the HUD: the tool, its state and its keys.</summary>
     public abstract string HudText();

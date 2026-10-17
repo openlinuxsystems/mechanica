@@ -1,0 +1,7 @@
+{
+  "id": "scrapper_female",
+  "name": "Female Scrapper",
+  "description": "Denim jacket, canvas overalls and a braid tucked under her goggles.",
+  "mesh": "meshes/characters/scrapper_female.glb",
+  "order": 1
+}

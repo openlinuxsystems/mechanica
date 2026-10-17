@@ -219,6 +219,7 @@ public partial class MainMenu : Control
         {
             Main.MenuOptions = options;
             Main.MenuWorldName = name;
+            Main.MenuCharacter = screen.Character;
             Go();
         };
         Open(Centered(screen));

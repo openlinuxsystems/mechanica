@@ -26,8 +26,9 @@ public sealed record SavedSlot(int Slot, string Item, int Count);
 /// <param name="Position">Feet position in metres, or null to spawn normally.</param>
 /// <param name="Yaw">Facing in radians.</param>
 /// <param name="Bed">The respawn bed they set, or null.</param>
+/// <param name="Character">The qualified id of the character they chose in this world, or null when they have not chosen.</param>
 public sealed record SavedPlayer(string Id, string Name, IReadOnlyList<SavedSlot> Inventory, float? Health = null, Vec3? Position = null, float Yaw = 0,
-    SavedPart? Bed = null);
+    SavedPart? Bed = null, string? Character = null);
 
 /// <summary>A part of a Creation, by id.</summary>
 /// <param name="Creation">Creation id.</param>
@@ -144,6 +145,7 @@ public sealed record SaveGame
                 Position = p.Position,
                 Yaw = p.Yaw == 0 ? null : p.Yaw,
                 Bed = p.Bed is { } bed ? new PartData { Creation = bed.Creation, Part = bed.Part } : null,
+                Character = p.Character,
                 Inventory = p.Inventory.Count == 0 ? null : [.. p.Inventory.OrderBy(s => s.Slot).Select(s => new SlotData { Slot = s.Slot, Item = s.Item, Count = s.Count })],
             })],
             Quests = Quests?.ToElement(),
@@ -243,7 +245,9 @@ public sealed record SaveGame
                 else
                     sink.Error(invalid, $"{path}.bed", "a bed needs creation and part.");
             }
-            players.Add(new SavedPlayer(p.Id!, PlayerProfile.CleanName(p.Name), slots, p.Health, p.Position, p.Yaw ?? 0, bed));
+            if (p.Character is { } character && !IsQualifiedId(character))
+                sink.Error(invalid, $"{path}.character", $"'{character}' is not a character id (mod_id:character_id).");
+            players.Add(new SavedPlayer(p.Id!, PlayerProfile.CleanName(p.Name), slots, p.Health, p.Position, p.Yaw ?? 0, bed, p.Character));
         }
 
         QuestState? quests = null;
@@ -273,6 +277,12 @@ public sealed record SaveGame
             Quests = quests,
             Extra = data.Extra,
         };
+    }
+
+    private static bool IsQualifiedId(string id)
+    {
+        var colon = id.IndexOf(':');
+        return colon > 0 && Identifiers.IsValid(id[..colon]) && Identifiers.IsValid(id[(colon + 1)..]);
     }
 
     private sealed record SaveData
@@ -317,6 +327,7 @@ public sealed record SaveGame
         public Vec3? Position { get; init; }
         public float? Yaw { get; init; }
         public PartData? Bed { get; init; }
+        public string? Character { get; init; }
         public List<SlotData>? Inventory { get; init; }
     }
 

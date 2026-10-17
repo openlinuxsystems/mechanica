@@ -133,6 +133,13 @@ public static class DataJson
         Markers = poi.Markers?.Select(m => m with { Extra = Sorted(m.Extra) }).ToList(),
     });
 
+    /// <summary>Serializes a character definition in canonical form.</summary>
+    public static string Write(Characters.CharacterDefinition character) => Serialize(character with
+    {
+        Extra = Sorted(character.Extra),
+        Sounds = character.Sounds?.OrderBy(p => p.Key, StringComparer.Ordinal).ToDictionary(p => p.Key, p => p.Value, StringComparer.Ordinal),
+    });
+
     /// <summary>Serializes a quest in canonical form.</summary>
     public static string Write(Quests.QuestDefinition quest) => Serialize(quest with
     {

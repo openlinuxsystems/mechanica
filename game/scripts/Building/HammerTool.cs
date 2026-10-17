@@ -1,4 +1,5 @@
 using Godot;
+using Mechanica.Core.Characters;
 using Mechanica.Core.Actions;
 using Mechanica.Core.Building;
 using Mechanica.Core.Creations;
@@ -49,6 +50,12 @@ public partial class HammerTool : HandTool
 
     /// <inheritdoc/>
     public override string ToolName => "Hammer";
+
+    /// <inheritdoc/>
+    public override CharacterProp Prop => CharacterProp.Hammer;
+
+    /// <inheritdoc/>
+    protected override CharacterGesture UseGesture => CharacterGesture.HammerSwing;
 
     /// <summary>Placeable parts to pick from, by qualified id.</summary>
     public IReadOnlyList<string> Parts => _parts;

@@ -129,6 +129,57 @@ public class PlayerMotorTests
         AssertNear(new Vector3(0.5f, 0, 0), PlayerMotor.MoveToward(Vector3.Zero, new Vector3(1, 0, 0), 0.5f));
     }
 
+    [Fact]
+    public void CrawlingIsSlowerThanWalking()
+    {
+        var velocity = Simulate(new PlayerInput(0, 1, 0, 0, false, true, Crawl: true), onFloor: true, seconds: 1f);
+        Assert.Equal(Settings.CrawlSpeed, velocity.Length(), 3);
+    }
+
+    [Fact]
+    public void WadingSlowsWalking()
+    {
+        var velocity = Vector3.Zero;
+        for (var t = 0f; t < 1f; t += Dt)
+            velocity = PlayerMotor.Step(velocity, true, new PlayerInput(0, 1, 0, 0, false, false), Settings, Dt, waterDepth: 0.5f);
+        Assert.Equal(Settings.WalkSpeed * Settings.WadeSpeedScale, velocity.Length(), 3);
+    }
+
+    [Fact]
+    public void DeepWaterSwims()
+    {
+        Assert.False(PlayerMotor.IsSwimming(Settings.SwimDepth - 0.01f, Settings));
+        Assert.True(PlayerMotor.IsSwimming(Settings.SwimDepth, Settings));
+        Assert.False(PlayerMotor.IsSwimming(float.NaN, Settings));
+        var velocity = Vector3.Zero;
+        for (var t = 0f; t < 2f; t += Dt)
+            velocity = PlayerMotor.Step(velocity, false, new PlayerInput(0, 1, 0, 0, false, false), Settings, Dt, waterDepth: Settings.FloatDepth);
+        AssertNear(new Vector3(0, 0, -Settings.SwimSpeed), velocity, 1e-3f);
+    }
+
+    [Fact]
+    public void BuoyancyFloatsASinkingSwimmerUpAndCrawlDives()
+    {
+        var deep = Settings.FloatDepth + 2f;
+        var up = PlayerMotor.Step(new Vector3(0, -1, 0), false, PlayerInput.None, Settings, Dt, waterDepth: deep);
+        Assert.True(up.Y > -1f);
+        var velocity = Vector3.Zero;
+        for (var t = 0f; t < 2f; t += Dt)
+            velocity = PlayerMotor.Step(velocity, false, new PlayerInput(0, 0, 0, 0, false, false, Crawl: true), Settings, Dt, waterDepth: deep);
+        Assert.Equal(-Settings.SwimVerticalSpeed, velocity.Y, 3);
+    }
+
+    [Fact]
+    public void JumpAtTheSurfaceLeapsAndUnderwaterRises()
+    {
+        var jump = new PlayerInput(0, 0, 0, 0, true, false);
+        Assert.Equal(Settings.JumpSpeed, PlayerMotor.Step(Vector3.Zero, false, jump, Settings, Dt, waterDepth: Settings.FloatDepth).Y);
+        var velocity = Vector3.Zero;
+        for (var t = 0f; t < 2f; t += Dt)
+            velocity = PlayerMotor.Step(velocity, false, jump, Settings, Dt, waterDepth: Settings.FloatDepth + 3f);
+        Assert.Equal(Settings.SwimVerticalSpeed, velocity.Y, 3);
+    }
+
     private static Vector3 Simulate(PlayerInput input, bool onFloor, float seconds, Vector3 start = default)
     {
         var velocity = start;

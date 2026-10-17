@@ -126,6 +126,8 @@ public partial class SurvivalHud : CanvasLayer
         if (Interaction() is not { } what)
             return false;
         what.Run();
+        // Others see the player reach out and press.
+        Players.LocalPlayer?.Gesture(Core.Characters.CharacterGesture.Interact);
         return true;
     }
 
