@@ -150,7 +150,10 @@ public class SaveGameTests
         var store = new SaveStore(Path.Combine(Path.GetTempPath(), "mechanica-tests", Guid.NewGuid().ToString("N")));
         var path = store.Write(Sample());
         store.Write(Sample() with { Name = "Older", SavedAt = DateTimeOffset.UnixEpoch });
-        File.WriteAllText(Path.Combine(store.Directory, "junk.json"), "{");
+        var junk = Path.Combine(store.Directory, "junk.json");
+        File.WriteAllText(junk, "{");
+        // An unreadable save sorts by its file time; pin it between the two saves rather than to "now".
+        File.SetLastWriteTimeUtc(junk, new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc));
 
         Assert.Equal("my-world.json", Path.GetFileName(path));
         var listed = store.List();
