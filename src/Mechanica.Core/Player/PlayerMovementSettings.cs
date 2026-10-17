@@ -83,6 +83,21 @@ public sealed record PlayerMovementSettings
     /// <summary>Metres the third-person camera sits above the head.</summary>
     public float CameraRaise { get; init; } = 0.25f;
 
+    /// <summary>Seconds a player takes to sit down in a seat or stand up beside it (UI spec §9, §10).</summary>
+    public float SeatTransitionSeconds { get; init; } = 0.3f;
+
+    /// <summary>Eye height above a seated player's feet in metres, for the seat's interior camera.</summary>
+    public float SeatedEyeHeight { get; init; } = 1.1f;
+
+    /// <summary>How far behind the seat the external chase camera sits, in metres (Ctrl toggles it).</summary>
+    public float ChaseDistance { get; init; } = 6f;
+
+    /// <summary>How high above the seat the chase camera sits, in metres.</summary>
+    public float ChaseHeight { get; init; } = 2.2f;
+
+    /// <summary>How quickly the chase camera catches up with the seat (1/s); higher is stiffer.</summary>
+    public float ChaseStiffness { get; init; } = 8f;
+
     /// <summary>How deep the feet are below the water surface when the player starts swimming, in metres.</summary>
     public float SwimDepth { get; init; } = 1.2f;
 
@@ -169,6 +184,12 @@ public sealed record PlayerMovementSettings
         if (!float.IsFinite(CrouchEyeHeight) || CrouchEyeHeight <= 0f || CrouchEyeHeight > CrouchHeight || CrouchEyeHeight > EyeHeight)
             throw new FormatException($"crouch_eye_height must be in (0, crouch_height] and at most eye_height (got {CrouchEyeHeight}).");
         Positive(StanceSpeed, "stance_speed");
+        Positive(SeatTransitionSeconds, "seat_transition_seconds");
+        Positive(SeatedEyeHeight, "seated_eye_height");
+        Positive(ChaseDistance, "chase_distance");
+        Positive(ChaseStiffness, "chase_stiffness");
+        if (!float.IsFinite(ChaseHeight) || Math.Abs(ChaseHeight) > 20f)
+            throw new FormatException($"chase_height must be within 20 m (got {ChaseHeight}).");
         Positive(CameraMinDistance, "camera_min_distance");
         Positive(CameraZoomStep, "camera_zoom_step");
         if (!float.IsFinite(CameraShoulder) || Math.Abs(CameraShoulder) > 2f)

@@ -1,7 +1,7 @@
 {
   "id": "drivers_seat",
   "name": "Driver's Seat",
-  "description": "Sit in it with F and drive: W and S are its output (link it to engines), A and D steer the upright bearings it is linked to.",
+  "description": "Sit in it with E and drive: W and S are its output (link it to engines), A and D steer the upright bearings it is linked to. Switches and buttons it is linked to go on your hotbar while you sit.",
   "category": "interactive",
   "mass": 6,
   "durability": 5,

@@ -245,6 +245,171 @@ public sealed class LogicScriptTests : IDisposable
         Assert.Equal(-MathF.PI / 4, LastMotor(arm).Target!.Value, 4);
     }
 
+    [Theory]
+    [InlineData(null, "blocks")]
+    [InlineData("player", "players")]
+    [InlineData("bot", "bots")]
+    [InlineData("creation", "creations")]
+    public void ASensorOnlySeesWhatItIsSetToDetect(string? kind, string setting)
+    {
+        var creation = Board();
+        var sensor = Place(creation, "vanilla:sensor", new GridCell(0, 1, 0));
+        _physics.WallAt = 2f;
+        _physics.WallKind = kind;
+        Steps(3);
+        Assert.Equal(1f, _runtime.Signals.Output(Car, sensor));
+        Configure(creation, sensor, setting, false);
+        Steps(3);
+        Assert.Equal(0f, _runtime.Signals.Output(Car, sensor));
+    }
+
+    [Fact]
+    public void ARepeatTimerBlinksWhileItsInputIsOn()
+    {
+        var creation = Board();
+        var toggle = Place(creation, "vanilla:switch", new GridCell(1, 1, 0));
+        var timer = Place(creation, "vanilla:timer", new GridCell(0, 1, 0));
+        Link(creation, toggle, timer);
+        Configure(creation, timer, "delay", 0.5);
+        Configure(creation, timer, "mode", "repeat");
+        Steps(1);
+        Activate(creation, toggle);
+        Steps(20);
+        Assert.Equal(0f, _runtime.Signals.Output(Car, timer));
+        Steps(15);
+        Assert.Equal(1f, _runtime.Signals.Output(Car, timer));
+        Steps(30);
+        Assert.Equal(0f, _runtime.Signals.Output(Car, timer));
+        Steps(30);
+        Assert.Equal(1f, _runtime.Signals.Output(Car, timer));
+        Activate(creation, toggle);
+        Steps(3);
+        Assert.Equal(0f, _runtime.Signals.Output(Car, timer));
+        Steps(60);
+        Assert.Equal(0f, _runtime.Signals.Output(Car, timer));
+    }
+
+    [Fact]
+    public void SwitchesAndButtonsShowWhetherTheyArePressed()
+    {
+        var creation = Board();
+        var toggle = Place(creation, "vanilla:switch", new GridCell(1, 1, 0));
+        var press = Place(creation, "vanilla:button", new GridCell(-1, 1, 0));
+        Steps(1);
+        Assert.Equal(0f, _runtime.Readouts.Number(Car, toggle, "on"));
+        Assert.Equal(0f, _runtime.Readouts.Number(Car, press, "on"));
+        Activate(creation, toggle);
+        Activate(creation, press);
+        Steps(1);
+        Assert.Equal(1f, _runtime.Readouts.Number(Car, toggle, "on"));
+        Assert.Equal(1f, _runtime.Readouts.Number(Car, press, "on"));
+        Steps(31);
+        Assert.Equal(0f, _runtime.Readouts.Number(Car, press, "on"));
+    }
+
+    [Fact]
+    public void AnEngineShowsItsFuelSpeedAndTorqueAndLightsItsWheels()
+    {
+        _runtime.Creative = false;
+        var (creation, seat, engine, wheels, steering) = BuildCar();
+        var tank = Place(creation, "vanilla:gas_container", new GridCell(0, 1, -1));
+        creation.InventoryOf(tank)!.Add("vanilla:gasoline", 3);
+        _runtime.Seats!.Sit(Peer, Car, seat);
+        _input = new PlayerInput(1, 1, 0, 0, false, false);
+        Steps(10);
+        var readouts = _runtime.Readouts;
+        Assert.Equal(1f, readouts.Number(Car, engine, "running"));
+        Assert.Equal(2f, readouts.Number(Car, engine, "fuel_items"));
+        Assert.InRange(readouts.Number(Car, engine, "fuel")!.Value, 0.9f, 1f);
+        Assert.Equal(120f, readouts.Number(Car, engine, "torque"));
+        Assert.True(readouts.Has(Car, engine, "rpm"));
+        foreach (var (bearing, side) in wheels)
+            Assert.Equal(-side * 15f, readouts.Number(Car, bearing, "drive"));
+        Assert.Equal(1f, readouts.Number(Car, steering, "drive"));
+
+        _input = null;
+        Steps(10);
+        Assert.Equal(0f, readouts.Number(Car, engine, "running"));
+        Assert.Equal(0f, readouts.Number(Car, engine, "torque"));
+        foreach (var (bearing, _) in wheels)
+            Assert.False(readouts.Has(Car, bearing, "drive"));
+        Assert.False(readouts.Has(Car, steering, "drive"));
+    }
+
+    [Fact]
+    public void AnEngineWithNothingLinkedInRunsWhileItIsOn()
+    {
+        var (creation, seat, engine, wheels, _) = BuildCar();
+        Assert.True(creation.Unlink(seat, engine));
+        Steps(3);
+        Assert.All(wheels, w => Assert.Equal(0f, LastMotor(w.Bearing).Velocity));
+        Configure(creation, engine, "on", true);
+        Configure(creation, engine, "gear", 5);
+        Steps(3);
+        Assert.All(wheels, w => Assert.Equal(-w.Side * 25f, LastMotor(w.Bearing).Velocity));
+        Assert.Equal(1f, _runtime.Signals.Output(Car, engine));
+    }
+
+    [Fact]
+    public void AControllerDrivesBearingsAndPistonsThroughItsSequence()
+    {
+        var creation = Board();
+        var toggle = Place(creation, "vanilla:switch", new GridCell(-1, 1, 0));
+        var controller = Place(creation, "vanilla:controller", new GridCell(0, 1, 0));
+        var arm = Bearing(creation, new GridCell(3, 0, 0), new GridCell(1, 0, 0));
+        Place(creation, "vanilla:metal_block", new GridCell(4, 0, 0));
+        var piston = Place(creation, "vanilla:piston", new GridCell(2, 1, 0));
+        Place(creation, "vanilla:metal_block", new GridCell(2, 2, 0));
+        Link(creation, toggle, controller);
+        Link(creation, controller, arm);
+        Link(creation, controller, piston);
+        Configure(creation, controller, "frames", new object[]
+        {
+            new object[] { new { part = arm, target = 45, speed = 2 }, new { part = piston, target = 0.5, speed = 0.25 } },
+            new object[] { new { part = arm, target = -30, speed = 1 } },
+        });
+        Configure(creation, controller, "frame_time", 0.5);
+        Steps(1);
+        Activate(creation, toggle);
+        Steps(3);
+        Assert.Equal(MathF.PI / 4, LastMotor(arm).Target!.Value, 4);
+        Assert.Equal(2f, LastMotor(arm).Velocity);
+        // The controller's target wins over the piston pushing out on its own input.
+        Assert.Equal(0.5f, LastMotor(piston).Target!.Value, 4);
+        Assert.Equal(0.25f, LastMotor(piston).Velocity);
+        Steps(31);
+        Assert.Equal(-MathF.PI / 6, LastMotor(arm).Target!.Value, 4);
+        Assert.Equal(0.5f, LastMotor(piston).Target!.Value, 4);
+    }
+
+    [Fact]
+    public void AControllerPreviewsFramesThatAreNotAppliedYet()
+    {
+        var creation = Board();
+        var controller = Place(creation, "vanilla:controller", new GridCell(0, 1, 0));
+        var arm = Bearing(creation, new GridCell(3, 0, 0), new GridCell(1, 0, 0));
+        Place(creation, "vanilla:metal_block", new GridCell(4, 0, 0));
+        Link(creation, controller, arm);
+        Configure(creation, controller, "frame_time", 0.5);
+        Steps(1);
+        var caller = new Core.Actions.ActionCaller(Peer, Core.Actions.ActionSource.Player);
+        Assert.Null(_runtime.CheckCommand(creation, controller));
+        var draft = new { playing = true, frames = new[] { new[] { new { part = arm, target = 60, speed = 1 } }, new[] { new { part = arm, target = 0, speed = 1 } } } };
+        _runtime.Command(caller, creation, controller, "preview", JsonSerializer.SerializeToElement(draft));
+        Steps(2);
+        Assert.Equal(MathF.PI / 3, LastMotor(arm).Target!.Value, 4);
+        Steps(31);
+        Assert.Equal(0f, LastMotor(arm).Target!.Value, 4);
+        // It loops while it previews, and the controller's output stays off.
+        Steps(31);
+        Assert.Equal(MathF.PI / 3, LastMotor(arm).Target!.Value, 4);
+        Assert.Equal(0f, _runtime.Signals.Output(Car, controller));
+        _runtime.Command(caller, creation, controller, "preview", JsonSerializer.SerializeToElement(new { playing = false }));
+        var motors = _world.Motors.Count;
+        Steps(62);
+        Assert.Equal(motors, _world.Motors.Count);
+    }
+
     // A metal chassis along Z (z 0..4) with a driver's seat and a gas engine on top, both facing -Z.
     // The front (-Z) wheels hang off an axle under a steering bearing at z 0; the rear ones off a post at z 4.
     private (Creation Creation, int Seat, int Engine, List<(int Bearing, int Side)> Wheels, int Steering) BuildCar()
@@ -360,6 +525,9 @@ public sealed class LogicScriptTests : IDisposable
     {
         public float? WallAt { get; set; }
 
+        /// <summary>What the wall is: null for the ground, else "player", "bot" or "creation".</summary>
+        public string? WallKind { get; set; }
+
         public (System.Numerics.Vector3 From, System.Numerics.Vector3 To)? LastRay { get; private set; }
 
         public System.Numerics.Vector3 Gravity => new(0, -9.81f, 0);
@@ -369,7 +537,8 @@ public sealed class LogicScriptTests : IDisposable
             LastRay = (from, to);
             if (WallAt is not { } y || to.Y < y || from.Y > y)
                 return null;
-            return new ScriptRayHit(new System.Numerics.Vector3(from.X, y, from.Z), -System.Numerics.Vector3.UnitY, y - from.Y, null, null);
+            return new ScriptRayHit(new System.Numerics.Vector3(from.X, y, from.Z), -System.Numerics.Vector3.UnitY, y - from.Y,
+                WallKind == "creation" ? 9 : null, WallKind == "creation" ? 1 : null, WallKind == "player" ? 3 : null, WallKind == "bot" ? 5 : null);
         }
 
         public IReadOnlyList<ScriptOverlap> OverlapSphere(System.Numerics.Vector3 centre, float radius, int? ignoreCreation) => [];
