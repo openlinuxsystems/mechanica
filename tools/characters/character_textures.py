@@ -114,6 +114,7 @@ KINDS = {
     "lens_orange": "lens", "lens_blue": "lens", "screen": "lens", "water": "water",
     "jacket_olive": "canvas", "jacket_olive_dark": "canvas", "trouser_olive": "canvas",
     "backpack_olive": "canvas", "canvas": "canvas", "canvas_dark": "canvas", "lining": "canvas",
+    "void": "void",
     "shirt": "knit",
     "denim": "denim", "denim_light": "denim", "denim_dark": "denim",
     "paint_olive": "painted", "paint_grey": "painted", "tool_orange": "plastic", "tool_blue": "plastic",
@@ -651,6 +652,9 @@ def shade(c, palette):
                 beard = np.exp(-((z - 1.575) / 0.03) ** 2) * (y < -0.02) * sstep(0.03, 0.06, np.abs(x) + 0.03)
                 alb = np.where(sk[:, None], mix(alb, alb * 0.82, np.clip(beard, 0, 1) * 0.35), alb)
 
+    # void (the inside of a cut sleeve): flat black that reflects nothing, not even its own dirt or stitches
+    vd = kind == "void"
+    alb[vd], rough[vd], metal[vd], height[vd] = base[vd], 1.0, 1.0, 0.0
     rough = np.clip(rough, 0.04, 1.0)
     metal = np.clip(metal, 0.0, 1.0)
     alb = np.clip(alb, 0.0, 1.0)

@@ -75,7 +75,9 @@ otherwise vanilla's.
 In first person you see your character's own forearms and hands, holding the tool or item and playing its swings.
 They are cut from the character's mesh when it loads (the triangles skinned to the forearm, hand, finger and thumb
 bones), so a new character or skin gets them with no extra work. Where they sit in view is `first_person_offset`
-and `first_person_pitch_degrees` in `game/data/character.json`.
+and `first_person_pitch_degrees` in `game/data/character.json`. A sleeve that crosses the elbow is cut open there;
+vanilla's build closes each opening with a black cap that shares the cut edge's vertices and weights (hidden inside the
+sleeve on the full body), so first person shows no hollow tube. A skin can do the same.
 
 ### Seeing it in game
 
