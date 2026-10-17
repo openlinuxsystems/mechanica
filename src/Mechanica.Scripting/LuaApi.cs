@@ -55,7 +55,7 @@ public static class LuaApi
         new("part.set_bearing", "part.set_bearing(velocity, max_torque?)", "Drives this bearing's motor at velocity rad/s, or frees it with nil; returns true or false, reason.", "part"),
         new("part.set_bearing_angle", "part.set_bearing_angle(angle, speed?, max_torque?)", "Turns this bearing to angle rad (from where it was built) at up to speed rad/s and holds it; returns true or false, reason.", "part"),
         new("part.set_piston", "part.set_piston(length, speed?, max_force?)", "Moves this piston to length m at up to speed m/s and holds it, or frees it with nil; returns true or false, reason.", "part"),
-        new("part.joint", "part.joint()", "This part's own joint as {type, other, position, min, max, locked, axis}, or nil; axis is a world vec3.", "part"),
+        new("part.joint", "part.joint()", "This part's own joint as {type, other, position, min, max, locked, axis, reversed}, or nil; axis is a world vec3, and reversed is true when the player reversed the part with the Connect Tool.", "part"),
         new("part.set_output", "part.set_output(value)", "Sets the part's output on the logic bus (a number, or a boolean as 1 or 0); linked parts get it next step.", "part"),
         new("part.output", "part.output()", "The part's own output on the logic bus.", "part"),
         new("part.input", "part.input()", "The sum of the outputs of every part linked to this one.", "part"),

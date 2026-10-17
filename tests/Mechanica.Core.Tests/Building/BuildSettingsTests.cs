@@ -43,6 +43,7 @@ public class BuildSettingsTests
         var path = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "game", "data", "building.json");
         var settings = BuildSettings.FromJson(File.ReadAllText(path));
         Assert.Equal(16, settings.Paint.Palette.Count);
+        Assert.Equal(new ConnectSettings(), settings.Connect);
     }
 
     [Theory]
@@ -55,6 +56,10 @@ public class BuildSettingsTests
     [InlineData("""{"lift": {"height": 1}}""", "height")]
     [InlineData("""{"hammer": {"drag_max_per_axis": 0}}""", "hammer.drag_max_per_axis")]
     [InlineData("""{"hammer": {"remove_seconds_by_material": {"wood": -1}}}""", "remove_seconds_by_material.wood")]
+    [InlineData("""{"connect": {"node_pixels": 2}}""", "connect.node_pixels")]
+    [InlineData("""{"connect": {"invalid_alpha": 2}}""", "connect.invalid_alpha")]
+    [InlineData("""{"connect": {"snap_metres": 0}}""", "connect.snap_metres")]
+    [InlineData("""{"connect": {"flash_seconds": -1}}""", "connect.flash_seconds")]
     [InlineData("""{"reach": 0}""", "reach")]
     [InlineData("""{"max_parts_per_creation": 0}""", "max_parts_per_creation")]
     [InlineData("""{"clearance_scale": 1.5}""", "clearance_scale")]

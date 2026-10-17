@@ -81,6 +81,18 @@ public static class UiTokens
     /// <summary>Logic connections whose source is off.</summary>
     public static readonly Color SignalOff = From(UiPalette.SignalOff);
 
+    /// <summary>Logic connection nodes.</summary>
+    public static readonly Color NodeLogic = From(UiPalette.NodeLogic);
+
+    /// <summary>Power connection nodes.</summary>
+    public static readonly Color NodePower = From(UiPalette.NodePower);
+
+    /// <summary>Bearing connection nodes (with a <see cref="Blue"/> ring).</summary>
+    public static readonly Color NodeBearing = From(UiPalette.NodeBearing);
+
+    /// <summary>Structural connection nodes.</summary>
+    public static readonly Color NodeStructural = From(UiPalette.NodeStructural);
+
     /// <summary>Force arrows.</summary>
     public static readonly Color ForceArrow = From(UiPalette.ForceArrow);
 

@@ -34,7 +34,8 @@
   },
   "logic": {
     "inputs": 4,
-    "outputs": 10
+    "outputs": 10,
+    "kind": "power"
   },
   "settings": [
     {

@@ -157,6 +157,7 @@ public partial class HudTest : StagedTest
         {
             Check(_hud.TooltipText.StartsWith("Switch\n"), $"its name ({_hud.TooltipText})");
             Check(_hud.TooltipText.Contains("0 connections") && _hud.TooltipText.Contains("Durability 100%"), $"connections and durability ({_hud.TooltipText})");
+            Check(_hud.TooltipText.Contains("Logic connection"), $"and its connection kind ({_hud.TooltipText})");
             Tools.Use(Tools.Hammer);
             return true;
         });

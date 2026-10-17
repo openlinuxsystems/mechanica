@@ -42,7 +42,8 @@
     "stall": "piston_stall"
   },
   "logic": {
-    "inputs": 4
+    "inputs": 4,
+    "kind": "bearing"
   },
   "properties": {
     "speed": 1,

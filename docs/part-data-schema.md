@@ -272,6 +272,9 @@ script's job (D2). See the [Logic and Power Tutorial](logic-power-tutorial.md).
 | `logic.inputs` | integer 0 to 64 | Most links that may end at the part. Default 0: it takes none. |
 | `logic.outputs` | integer 0 to 64 | Most links that may start at the part. Default 0: it sends none. |
 | `logic.use` | string | What Use (E) says on the part (`"toggle"`, `"press"`); E calls the script's `on_activate`. Needs a `script`. Omitted means players cannot use it by hand. |
+| `logic.kind` | `logic`, `power`, `bearing` or `structural` | The part's connection node with the Connect Tool (UI spec §12), which also names the links that start at it: blue for `logic` (switches, gates, seats, lights), cyan for `power` (engines, thrusters, rotors), white with a blue ring for `bearing` (bearings, pistons), light gray for `structural`. Default `logic`. |
+| `logic.accepts` | list of kinds | The kinds of part whose links may end here, such as `["power"]` for a wheel bearing only engines turn. The Connect Tool grays out other targets and the host refuses them. Default: any kind but `structural`. |
+| `logic.reverse` | setting id | One of the part's `toggle` settings that reverses which way it turns. Right click on its node with the Connect Tool flips it, a curved arrow by the node shows it, and scripts that drive the part read it as `joint.reversed`. Vanilla bearings use `"reverse"`. |
 | `seat` | object | Makes the part a seat a player sits in with E. Its script reads them with `part.occupant()` and `part.occupant_input()`. |
 | `seat.offset` | [x, y, z] (m) | Where the sitter's feet go, from the part's centre, in the part's frame. Inside the part's footprint. Default [0, 0, 0]. |
 | `settings` | list | Values a player sets on each placed part with the Connect Tool (R), in display order. The script reads them with `part.setting(id)`. |

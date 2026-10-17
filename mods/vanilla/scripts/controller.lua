@@ -1,7 +1,7 @@
 -- Controller: while its input is on, steps the bearings its output is linked to through the "frames"
 -- setting (angles in degrees, up to 10), one frame every "frame_time" seconds, and starts over when the
--- "loop" setting is on. Every linked bearing goes to the same angle. When the input goes off it stops
--- where it is. Its output is 1 while it runs.
+-- "loop" setting is on. Every linked bearing goes to the same angle (the opposite one on a reversed bearing).
+-- When the input goes off it stops where it is. Its output is 1 while it runs.
 -- Properties: "speed" (rad/s) and "torque" (N·m) for the bearings. Sounds: "start", "tick" on each frame
 -- and "stop".
 
@@ -14,7 +14,7 @@ local function go(frame)
   for _, id in ipairs(part.links()) do
     local joint = creation.joint(id)
     if joint and joint.type == "rotational" then
-      creation.set_bearing_angle(id, angle, properties.speed, properties.torque)
+      creation.set_bearing_angle(id, joint.reversed and -angle or angle, properties.speed, properties.torque)
     end
   end
 end

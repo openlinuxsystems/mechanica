@@ -81,6 +81,18 @@ public static class UiPalette
     /// <summary>A logic connection whose source is off.</summary>
     public const string SignalOff = Blue;
 
+    /// <summary>A logic connection node (UI spec §12): solid blue.</summary>
+    public const string NodeLogic = Blue;
+
+    /// <summary>A power connection node: solid cyan.</summary>
+    public const string NodePower = Cyan;
+
+    /// <summary>A bearing connection node: white, with a <see cref="Blue"/> ring.</summary>
+    public const string NodeBearing = Text;
+
+    /// <summary>A structural or weld-related connection node: light gray.</summary>
+    public const string NodeStructural = "#C3CBD6";
+
     /// <summary>Force arrows in the force overlay (aero and thrust).</summary>
     public const string ForceArrow = Cyan;
 
@@ -166,6 +178,10 @@ public static class UiPalette
         [nameof(JointLocked)] = JointLocked,
         [nameof(SignalOn)] = SignalOn,
         [nameof(SignalOff)] = SignalOff,
+        [nameof(NodeLogic)] = NodeLogic,
+        [nameof(NodePower)] = NodePower,
+        [nameof(NodeBearing)] = NodeBearing,
+        [nameof(NodeStructural)] = NodeStructural,
         [nameof(ForceArrow)] = ForceArrow,
         [nameof(TorqueArrow)] = TorqueArrow,
         [nameof(PreviewBackground)] = PreviewBackground,

@@ -14,7 +14,8 @@
         "collision": { "shape": "cylinder", "radius": 0.115, "height": 0.25 },
         "visual": { "color": "#c9a23a", "roughness": 0.45, "metallic": 0.7 },
         "sounds": { "start": "bearing_start", "spin_loop": "bearing_spin_loop", "stop": "bearing_stop" },
-        "logic": { "inputs": 4 }
+        "logic": { "inputs": 4, "kind": "bearing", "reverse": "reverse" },
+        "settings": [{ "id": "reverse", "name": "Reverse", "type": "toggle" }]
       },
       "model": [
         { "kind": "cylinder", "radius": 0.115, "height": 0.1, "position": [0, -0.075, 0] },
@@ -46,7 +47,7 @@
         "script": "scripts/piston.lua",
         "visual": { "color": "#7d8792", "roughness": 0.4, "metallic": 0.8 },
         "sounds": { "extend": "piston_extend", "retract": "piston_retract", "stall": "piston_stall" },
-        "logic": { "inputs": 4 },
+        "logic": { "inputs": 4, "kind": "bearing" },
         "properties": { "speed": 1, "force": 5000 }
       },
       "model": [

@@ -277,6 +277,8 @@ public sealed class Creation
             return $"{source.Name ?? source.Id} has no output to link from.";
         if (inputs == 0)
             return $"{target.Name ?? target.Id} takes no input.";
+        if (!target.Logic!.Takes(source.Logic!.KindOrDefault))
+            return $"{target.Name ?? target.Id} takes no {source.Logic.KindOrDefault.ToString().ToLowerInvariant()} links.";
         if (_links.Count(l => l.From == from) >= outputs)
             return $"{source.Name ?? source.Id} already has all {outputs} of its output links.";
         if (_links.Count(l => l.To == to) >= inputs)

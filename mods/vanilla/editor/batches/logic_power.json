@@ -131,6 +131,7 @@
         "durability": 6,
         "stack_size": 10,
         "script": "scripts/engine.lua",
+        "logic": { "inputs": 4, "outputs": 10, "kind": "power" },
         "visual": { "color": "#b8452f", "roughness": 0.5, "metallic": 0.6 },
         "sounds": { "start": "engine_start", "loop": "engine_idle", "stop": "engine_sputter" },
         "settings": [{ "id": "gear", "name": "Gear", "type": "number", "min": 1, "max": 5, "step": 1, "default": 3 }],
@@ -160,6 +161,7 @@
       "file": "parts/scrap_gas_engine.json",
       "base": "gas_engine",
       "set": {
+        "logic": { "inputs": 4, "outputs": 10, "kind": "power" },
         "name": "Scrap Gas Engine",
         "description": "A weaker gas engine from scrap. It burns gasoline faster.",
         "mass": 10,
@@ -188,6 +190,7 @@
       "file": "parts/electric_engine.json",
       "base": "gas_engine",
       "set": {
+        "logic": { "inputs": 4, "outputs": 10, "kind": "power" },
         "name": "Electric Engine",
         "description": "Turns the wheel bearings it is linked to like a gas engine, with more pull and less speed. Draws battery packs from the creation's batteries.",
         "mass": 9,
