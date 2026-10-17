@@ -35,6 +35,28 @@ public class CreationTests
     }
 
     [Fact]
+    public void CanPlacePartChecksWithoutChangingAnything()
+    {
+        _creation.Place(Block, GridCell.Zero);
+        _creation.Place(Block, new GridCell(1, 0, 0));
+        var before = CreationJson.Write(_creation);
+
+        Assert.True(_creation.CanPlacePart(Block, new GridCell(1, 1, 0), default, out var attached, out _));
+        Assert.Equal([2], attached);
+        Assert.False(_creation.CanPlacePart(Block, GridCell.Zero, default, out _, out var error));
+        Assert.Contains("already taken", error);
+        Assert.False(_creation.CanPlacePart(Block, new GridCell(4, 0, 0), default, out _, out error));
+        Assert.Contains("does not attach", error);
+        Assert.False(_creation.CanPlacePart(Ore, new GridCell(0, 1, 0), default, out _, out error));
+        Assert.Contains("cannot be placed", error);
+
+        Assert.Equal(before, CreationJson.Write(_creation));
+        Assert.Equal(3, _creation.Place(Block, new GridCell(0, 1, 0)).Id);
+        Assert.True(new Creation(2, Catalog()).CanPlacePart(Block, GridCell.Zero, default, out attached, out _));
+        Assert.Empty(attached);
+    }
+
+    [Fact]
     public void PlacementFailures()
     {
         _creation.Place(Block, GridCell.Zero);

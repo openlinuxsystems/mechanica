@@ -2,6 +2,7 @@ using Godot;
 using Mechanica.Core;
 using Mechanica.Core.Data;
 using Mechanica.Core.Net;
+using Mechanica.Game.Building;
 using Mechanica.Game.Creations;
 using Mechanica.Game.Mods;
 using Mechanica.Game.Net;
@@ -12,9 +13,10 @@ namespace Mechanica.Game;
 
 /// <summary>
 /// Flat test world and session root. It builds the networking nodes (<see cref="Session"/>,
-/// <see cref="PlayerSync"/>, <see cref="CreationSync"/>, <see cref="Actions"/>) and the streamed world
-/// (<see cref="Streamer"/>, <see cref="Creations"/>), starts offline, hosting or joining from
-/// <see cref="Options"/>, and drives whichever player belongs to this peer from the keyboard and mouse.
+/// <see cref="PlayerSync"/>, <see cref="CreationSync"/>, <see cref="Actions"/>), the streamed world (<see cref="Streamer"/>,
+/// <see cref="Creations"/>) and building (<see cref="Build"/>, the local player's <see cref="Hammer"/>),
+/// starts offline, hosting or joining from <see cref="Options"/>, and drives whichever player belongs
+/// to this peer from the keyboard and mouse.
 /// Every peer runs the same scene, so node paths (and with them RPC routes) match everywhere.
 /// </summary>
 public partial class Main : Node3D
@@ -34,12 +36,12 @@ public partial class Main : Node3D
     public ContentManifest? Content { get; set; }
 
     /// <summary>
-    /// Part definitions Creations are built from. Null loads the enabled mods when the scene starts (and
-    /// <see cref="Content"/> then describes them); tests may set it to a fixture mod.
+    /// Loaded mods, the part catalog for building. Null loads the enabled mods when the scene starts;
+    /// tests may set it (and <see cref="Content"/> then defaults to its manifest).
     /// </summary>
-    public ModLoadResult? Parts { get; set; }
+    public ModLoadResult? Mods { get; set; }
 
-    /// <summary>Meshes and shapes for <see cref="Parts"/>.</summary>
+    /// <summary>Meshes and shapes for the parts in <see cref="Mods"/>.</summary>
     public PartAssets Assets { get; private set; } = null!;
 
     /// <summary>Connection state and handshake.</summary>
@@ -60,6 +62,12 @@ public partial class Main : Node3D
     /// <summary>Chunk streaming: the ground, and which Creations are simulated.</summary>
     public WorldStreamer Streamer { get; private set; } = null!;
 
+    /// <summary>Building actions and their sync to clients.</summary>
+    public BuildSync Build { get; private set; } = null!;
+
+    /// <summary>The local player's Hammer, once the player has spawned.</summary>
+    public HammerTool? Hammer { get; private set; }
+
     /// <summary>This peer's own player, once spawned.</summary>
     public PlayerController? LocalPlayer => PlayerSync.LocalPlayer;
 
@@ -67,9 +75,9 @@ public partial class Main : Node3D
     {
         GD.Print($"{MechanicaInfo.GameName} started (physics: {ProjectSettings.GetSetting("physics/3d/physics_engine")})");
         Options ??= ReadCommandLine();
-        Parts ??= LoadParts();
-        Assets = new PartAssets(Parts);
-        var content = Content ??= ContentManifest.From(Parts);
+        var mods = Mods ??= LoadMods();
+        var content = Content ??= ContentManifest.From(mods);
+        Assets = new PartAssets(mods);
 
         Session = new NetSession { Name = "Session", Content = content };
         AddChild(Session);
@@ -103,13 +111,27 @@ public partial class Main : Node3D
             Session = Session,
             PlayerSync = PlayerSync,
             Creations = Creations,
-            Catalog = Parts,
+            Catalog = mods,
             Assets = Assets,
         };
         AddChild(CreationSync);
         Actions = new ActionGateway { Name = "Actions", Session = Session };
         AddChild(Actions);
         PlayerSync.RegisterActions(Actions.Dispatcher);
+        Build = new BuildSync
+        {
+            Name = "Build",
+            Session = Session,
+            Players = PlayerSync,
+            Creations = Creations,
+            Catalog = mods,
+            Assets = Assets,
+        };
+        AddChild(Build);
+        Build.RegisterActions(Actions.Dispatcher);
+        // The offline player spawned with PlayerSync, before building existed.
+        if (LocalPlayer is { } local)
+            AddHammer(local);
         Session.StateChanged += state => SetPropsSimulated(state is NetSession.SessionState.Offline or NetSession.SessionState.Hosting);
         if (ReadDeviceInput)
             AddChild(new ConnectPanel { Name = "ConnectPanel", Session = Session });
@@ -130,7 +152,7 @@ public partial class Main : Node3D
             GD.PushError($"[net] {Session.LastMessage}");
     }
 
-    private static ModLoadResult LoadParts()
+    private static ModLoadResult LoadMods()
     {
         var content = ModPaths.LoadContent();
         foreach (var diagnostic in content.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error))
@@ -151,14 +173,29 @@ public partial class Main : Node3D
         if (player != LocalPlayer)
             return;
         player.MakeCameraCurrent();
+        AddHammer(player);
         if (!ReadDeviceInput)
             return;
         _input = new LocalPlayerInput { Name = "LocalPlayerInput", Target = player };
         AddChild(_input);
     }
 
+    private void AddHammer(PlayerController player)
+    {
+        if (Build is null || Hammer is not null)
+            return;
+        Hammer = new HammerTool { Name = "Hammer", Player = player, Actions = Actions, Build = Build, ReadDeviceInput = ReadDeviceInput };
+        AddChild(Hammer);
+    }
+
     private void OnPlayerDespawning(PlayerController player)
     {
+        if (Hammer?.Player == player)
+        {
+            RemoveChild(Hammer);
+            Hammer.QueueFree();
+            Hammer = null;
+        }
         if (_input?.Target != player)
             return;
         RemoveChild(_input);

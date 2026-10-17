@@ -219,8 +219,7 @@ public partial class CreationSync : Node
             GD.PushError($"[sync] the host sent a creation this client cannot load: {string.Join("; ", diagnostics.Select(d => d.Message))}");
             return;
         }
-        Forget(creation.Id);
-        var node = Creations.Add(creation, Assets);
+        var node = Creations.Replace(creation, Assets);
         var tracks = new BodyTrack[creation.Bodies.Count];
         for (var i = 0; i < tracks.Length; i++)
         {

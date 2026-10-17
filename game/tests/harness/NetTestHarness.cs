@@ -1,4 +1,5 @@
 using Godot;
+using Mechanica.Core.Data;
 using Mechanica.Core.Net;
 
 namespace Mechanica.Game.Tests;
@@ -34,22 +35,19 @@ public partial class NetTestHarness : Node
         public override string ToString() => Name;
     }
 
-    /// <summary>Part definitions every instance started from now on builds Creations from; null loads the real mods.</summary>
-    public Mechanica.Core.Data.ModLoadResult? Parts { get; set; }
-
     /// <summary>The port the host listens on, once started.</summary>
     public int Port { get; private set; }
 
     /// <summary>Running instances, host first.</summary>
     public IReadOnlyList<Instance> Instances => _instances;
 
-    /// <summary>Starts a hosting instance on a free localhost port.</summary>
-    public Instance StartHost(int maxPlayers = NetProtocol.DefaultMaxPlayers, string name = "Host")
+    /// <summary>Starts a hosting instance on a free localhost port, optionally with its own mods instead of the enabled ones.</summary>
+    public Instance StartHost(int maxPlayers = NetProtocol.DefaultMaxPlayers, string name = "Host", ModLoadResult? mods = null)
     {
         for (var attempt = 0; attempt < 20; attempt++)
         {
             var port = (int)GD.RandRange(30000, 60000);
-            var instance = Start(name, LaunchOptions.Offline);
+            var instance = Start(name, LaunchOptions.Offline, mods: mods);
             if (instance.Main.Session.Host(port, maxPlayers) == Error.Ok)
             {
                 Port = port;
@@ -60,9 +58,12 @@ public partial class NetTestHarness : Node
         throw new InvalidOperationException("No free port for the test host.");
     }
 
-    /// <summary>Starts an instance that joins the host, optionally with its own mod list instead of the loaded mods.</summary>
-    public Instance StartClient(string name, ContentManifest? content = null) =>
-        Start(name, LaunchOptions.ForJoin(new NetEndpoint("127.0.0.1", Port)), content);
+    /// <summary>
+    /// Starts an instance that joins the host, optionally with its own mod list (<paramref name="content"/>,
+    /// checked on join) or its own loaded mods (<paramref name="mods"/>) instead of the enabled ones.
+    /// </summary>
+    public Instance StartClient(string name, ContentManifest? content = null, ModLoadResult? mods = null) =>
+        Start(name, LaunchOptions.ForJoin(new NetEndpoint("127.0.0.1", Port)), content, mods);
 
     /// <summary>Disconnects and frees an instance.</summary>
     public void Stop(Instance instance)
@@ -75,7 +76,7 @@ public partial class NetTestHarness : Node
         instance.Viewport.QueueFree();
     }
 
-    private Instance Start(string name, LaunchOptions options, ContentManifest? content = null)
+    private Instance Start(string name, LaunchOptions options, ContentManifest? content = null, ModLoadResult? mods = null)
     {
         var viewport = new SubViewport
         {
@@ -90,8 +91,8 @@ public partial class NetTestHarness : Node
         var main = ResourceLoader.Load<PackedScene>(MainScene).Instantiate<Main>();
         main.Options = options;
         main.ReadDeviceInput = false;
-        main.Content = content; // null: load the real enabled mods, like the game does
-        main.Parts = Parts;
+        main.Content = content; // null: the manifest of the mods below
+        main.Mods = mods; // null: load the real enabled mods, like the game does
         viewport.AddChild(main);
         var instance = new Instance(name, viewport, main);
         _instances.Add(instance);

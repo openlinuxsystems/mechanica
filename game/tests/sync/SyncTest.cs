@@ -49,11 +49,11 @@ public partial class SyncTest : StagedTest
     public override void _Ready()
     {
         _content = ModLoader.LoadAll(ProjectSettings.GlobalizePath("res://tests/creation/mods"));
-        _harness = new NetTestHarness { Name = "Harness", Parts = _content };
+        _harness = new NetTestHarness { Name = "Harness" };
         AddChild(_harness);
-        _host = _harness.StartHost(maxPlayers: 4);
-        _a = _harness.StartClient("ClientA");
-        _b = _harness.StartClient("ClientB");
+        _host = _harness.StartHost(maxPlayers: 4, mods: _content);
+        _a = _harness.StartClient("ClientA", mods: _content);
+        _b = _harness.StartClient("ClientB", mods: _content);
         // One body per packet, so every snapshot is split across packets and reassembled.
         var sync = _host.Main.CreationSync;
         sync.Settings = sync.Settings! with { MaxPacketBytes = BodySnapshot.MinPacketBytes };
@@ -95,7 +95,7 @@ public partial class SyncTest : StagedTest
         {
             Record();
             if (frame == 20)
-                _late = _harness.StartClient("ClientLate");
+                _late = _harness.StartClient("ClientLate", mods: _content);
             if (_late is not null && _lateJoinSpeed < 0 && Remote(_late, Machine) is not null)
                 _lateJoinSpeed = HostBodies(Machine).Max(b => b.LinearVelocity.Length());
             foreach (var client in Clients)
