@@ -27,8 +27,9 @@ public sealed record SavedSlot(int Slot, string Item, int Count);
 /// <param name="Yaw">Facing in radians.</param>
 /// <param name="Bed">The respawn bed they set, or null.</param>
 /// <param name="Character">The qualified id of the character they chose in this world, or null when they have not chosen.</param>
+/// <param name="Hotbar">What each of their ten hotbar slots holds (null entries are empty), or null for the default hotbar.</param>
 public sealed record SavedPlayer(string Id, string Name, IReadOnlyList<SavedSlot> Inventory, float? Health = null, Vec3? Position = null, float Yaw = 0,
-    SavedPart? Bed = null, string? Character = null);
+    SavedPart? Bed = null, string? Character = null, IReadOnlyList<string?>? Hotbar = null);
 
 /// <summary>A part of a Creation, by id.</summary>
 /// <param name="Creation">Creation id.</param>
@@ -146,6 +147,7 @@ public sealed record SaveGame
                 Yaw = p.Yaw == 0 ? null : p.Yaw,
                 Bed = p.Bed is { } bed ? new PartData { Creation = bed.Creation, Part = bed.Part } : null,
                 Character = p.Character,
+                Hotbar = p.Hotbar is { } bar ? [.. bar] : null,
                 Inventory = p.Inventory.Count == 0 ? null : [.. p.Inventory.OrderBy(s => s.Slot).Select(s => new SlotData { Slot = s.Slot, Item = s.Item, Count = s.Count })],
             })],
             Quests = Quests?.ToElement(),
@@ -247,7 +249,9 @@ public sealed record SaveGame
             }
             if (p.Character is { } character && !IsQualifiedId(character))
                 sink.Error(invalid, $"{path}.character", $"'{character}' is not a character id (mod_id:character_id).");
-            players.Add(new SavedPlayer(p.Id!, PlayerProfile.CleanName(p.Name), slots, p.Health, p.Position, p.Yaw ?? 0, bed, p.Character));
+            if (p.Hotbar is { Count: > Items.HotbarActions.SlotCount })
+                sink.Error(invalid, $"{path}.hotbar", $"a hotbar has at most {Items.HotbarActions.SlotCount} slots.");
+            players.Add(new SavedPlayer(p.Id!, PlayerProfile.CleanName(p.Name), slots, p.Health, p.Position, p.Yaw ?? 0, bed, p.Character, p.Hotbar));
         }
 
         QuestState? quests = null;
@@ -328,6 +332,7 @@ public sealed record SaveGame
         public float? Yaw { get; init; }
         public PartData? Bed { get; init; }
         public string? Character { get; init; }
+        public List<string?>? Hotbar { get; init; }
         public List<SlotData>? Inventory { get; init; }
     }
 

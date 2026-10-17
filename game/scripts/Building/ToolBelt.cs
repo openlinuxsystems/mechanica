@@ -1,5 +1,6 @@
 using Godot;
 using Mechanica.Core.Input;
+using Mechanica.Core.Items;
 using Mechanica.Game.Items;
 using Mechanica.Game.Net;
 using Mechanica.Game.Player;
@@ -10,14 +11,20 @@ using Mechanica.Game.Ui;
 namespace Mechanica.Game.Building;
 
 /// <summary>
-/// The local player's hand tools and which one is in hand. Keys 1 to 7 pick the Hammer, Lift, Weld
-/// Tool, Paint Tool, Sledgehammer, the item in hand (<see cref="ItemTool"/>) or the Connect Tool; the HUD at the bottom
-/// centre, inside the safe area, shows the tool in hand and its keys. The crosshair is <see cref="Ui.WorldHud"/>'s.
+/// The local player's hand tools and the hotbar that picks them (UI spec §3). Each of the ten hotbar slots
+/// (<see cref="HotbarSync"/>) holds a tool, an item or nothing; keys 1 to 9 and 0 pick a slot and the wheel steps
+/// along the bar. A tool slot puts that tool in hand. A placeable part puts the Hammer in hand with that part to
+/// place, and any other item goes in hand as the item (<see cref="ItemTool"/>); an empty slot leaves the hand
+/// empty. In Survival, items the player gets fill empty slots. The bar sits at the bottom centre inside the safe
+/// area with the tool's keys above it; the crosshair is <see cref="Ui.WorldHud"/>'s.
 /// </summary>
 public partial class ToolBelt : Node
 {
     private readonly List<HandTool> _tools = [];
+    private readonly HashSet<string> _seenItems = [];
     private Label? _hud;
+    private HotbarView? _bar;
+    private int _selected;
 
     /// <summary>The player whose tools these are. Set before adding to the tree.</summary>
     public PlayerController Player { get; init; } = null!;
@@ -39,6 +46,12 @@ public partial class ToolBelt : Node
 
     /// <summary>How items look in hand; null shows every item the same way.</summary>
     public Core.Characters.CharacterSettings? Characters { get; init; }
+
+    /// <summary>The hotbar's slots; null holds every tool in key order and never changes.</summary>
+    public HotbarSync? Hotbar { get; init; }
+
+    /// <summary>Item pictures for the bar; null shows initials.</summary>
+    public ItemIcons? Icons { get; init; }
 
     /// <summary>False in automated tests: keys and mouse do nothing and no HUD is shown.</summary>
     public bool ReadDeviceInput { get; init; } = true;
@@ -70,6 +83,27 @@ public partial class ToolBelt : Node
     /// <summary>The tool in hand.</summary>
     public HandTool Current => _tools.First(t => t.Active);
 
+    /// <summary>The hotbar slot picked, 0 to 9.</summary>
+    public int Selected => _selected;
+
+    /// <summary>What each hotbar slot holds.</summary>
+    public IReadOnlyList<string?> Slots => Hotbar?.Own ?? HotbarActions.Default;
+
+    /// <summary>The hotbar at the bottom of the screen, or null without a HUD.</summary>
+    public HotbarView? Bar => _bar;
+
+    /// <summary>The tool a hotbar entry names, or null when it names an item or nothing.</summary>
+    public HandTool? ToolFor(string? entry) => entry switch
+    {
+        HotbarTools.Hammer => Hammer,
+        HotbarTools.Lift => Lift,
+        HotbarTools.Weld => Weld,
+        HotbarTools.Paint => Paint,
+        HotbarTools.Sledge => Sledge,
+        HotbarTools.Connect => Connector,
+        _ => null,
+    };
+
     public override void _Ready()
     {
         Hammer = Add(new HammerTool { Name = "Hammer", Player = Player, Actions = Actions, Build = Build, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput });
@@ -80,6 +114,9 @@ public partial class ToolBelt : Node
         Item = Add(new ItemTool { Name = "Item", Player = Player, Actions = Actions, Build = Build, Inventory = Inventory, Survival = Survival, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput, Characters = Characters });
         Connector = Add(new ConnectTool { Name = "Connect", Player = Player, Actions = Actions, Build = Build, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput });
         Hammer.Active = true;
+        if (Hotbar is not null)
+            Hotbar.OwnChanged += OnSlotsChanged;
+        Inventory.ViewChanged += OnInventoryChanged;
         if (!ReadDeviceInput)
             return;
         var layer = new CanvasLayer { Name = "Hud" };
@@ -91,9 +128,11 @@ public partial class ToolBelt : Node
             AutowrapMode = TextServer.AutowrapMode.WordSmart, HorizontalAlignment = HorizontalAlignment.Center,
         });
         layer.AddChild(_hud);
+        _bar = new HotbarView { Name = "Hotbar", Belt = this };
+        layer.AddChild(_bar);
+        AddChild(layer);
         LayoutHud();
         GetViewport().SizeChanged += LayoutHud;
-        AddChild(layer);
     }
 
     public override void _Process(double delta)
@@ -102,25 +141,29 @@ public partial class ToolBelt : Node
         Player.HeldProp = Current.Prop;
         if (_hud is null)
             return;
-        _hud.Visible = GameSettings.Current.Interface.ShowHotbar;
+        _hud.Visible = _bar!.Visible = GameSettings.Current.Interface.ShowHotbar;
         if (_hud.Visible)
-            _hud.Text = $"[{GameInput.Label(InputActions.Hotbar(1))}-{GameInput.Label(InputActions.Hotbar(_tools.Count))}] {string.Join("  ", _tools.Select(t => t.Active ? $"[{Loc.T(t.ToolName)}]" : Loc.T(t.ToolName)))}\n{Current.HudText()}";
+            _hud.Text = Current.HudText();
     }
 
     public override void _ExitTree()
     {
         if (_hud is not null)
             GetViewport().SizeChanged -= LayoutHud;
+        if (Hotbar is not null)
+            Hotbar.OwnChanged -= OnSlotsChanged;
+        Inventory.ViewChanged -= OnInventoryChanged;
     }
 
-    // Bottom centre inside the safe area, wrapping at 60% of the width (longer languages take more lines).
+    // The bar at the bottom centre inside the safe area, the tool's keys just above it (wrapping at 60% of the width).
     private void LayoutHud()
     {
         var size = GetViewport().GetVisibleRect().Size;
         var margin = HudRoot.Margin(GetViewport());
+        _bar!.Layout(size, margin);
         _hud!.CustomMinimumSize = new Vector2(size.X * 0.6f, 0);
         _hud.Size = _hud.CustomMinimumSize;
-        _hud.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.CenterBottom, Control.LayoutPresetMode.KeepSize, (int)margin.Y);
+        _hud.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.CenterBottom, Control.LayoutPresetMode.KeepSize, (int)(margin.Y + _bar.SlotSize + 8));
     }
 
     /// <summary>The tool bar text at the bottom of the screen, or null without a HUD.</summary>
@@ -130,14 +173,60 @@ public partial class ToolBelt : Node
     {
         if (!ReadDeviceInput || Input.MouseMode != Input.MouseModeEnum.Captured)
             return;
-        for (var slot = 1; slot <= _tools.Count && slot <= InputActions.HotbarSlots; slot++)
+        // The wheel steps along the bar unless a tool uses it with a modifier (Alt zooms, Shift turns).
+        if (GameInput.Pressed(@event, InputActions.HotbarNext))
+            Select(InventoryTabs.Step(_selected, 1));
+        else if (GameInput.Pressed(@event, InputActions.HotbarPrevious))
+            Select(InventoryTabs.Step(_selected, -1));
+        else if (Enumerable.Range(1, InputActions.HotbarSlots).FirstOrDefault(s => GameInput.Pressed(@event, InputActions.Hotbar(s))) is var slot and > 0)
+            Select(slot - 1);
+        else
+            return;
+        GetViewport().SetInputAsHandled();
+    }
+
+    /// <summary>Picks hotbar slot <paramref name="slot"/> (0 to 9) and puts what it holds in hand.</summary>
+    public void Select(int slot)
+    {
+        _selected = Math.Clamp(slot, 0, HotbarActions.SlotCount - 1);
+        Apply();
+    }
+
+    // Puts the picked slot's tool or item in hand.
+    private void Apply()
+    {
+        var entry = Slots[_selected];
+        if (ToolFor(entry) is { } tool)
         {
-            if (GameInput.Pressed(@event, InputActions.Hotbar(slot)))
-            {
-                Use(_tools[slot - 1]);
-                GetViewport().SetInputAsHandled();
+            Use(tool);
+            return;
+        }
+        if (entry is not null && Build.Catalog.FindDefinition(entry) is { IsPlaceable: true } && Hammer.Select(entry))
+        {
+            Use(Hammer);
+            return;
+        }
+        Item.Choose(entry);
+        Use(Item);
+    }
+
+    private void OnSlotsChanged() => Apply();
+
+    // Survival: an item the player gets for the first time goes in the first empty slot, once.
+    private void OnInventoryChanged(Core.Items.InventoryView view)
+    {
+        if (Hotbar is null || view.Inventory != InventoryRef.OfPlayer(Inventory.Session.LocalPeer) || Survival.Own?.Mode != Core.Survival.GameMode.Survival)
+            return;
+        var slots = Slots.ToList();
+        foreach (var item in view.Items.Select(s => s.Item).Distinct())
+        {
+            if (!_seenItems.Add(item) || slots.Contains(item) || Build.Catalog.FindDefinition(item) is not { } d || !(d.IsPlaceable || d.Script is not null))
+                continue;
+            var empty = slots.IndexOf(null);
+            if (empty < 0)
                 return;
-            }
+            slots[empty] = item;
+            Hotbar.Set(empty, item);
         }
     }
 

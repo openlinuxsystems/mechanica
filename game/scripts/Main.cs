@@ -131,6 +131,12 @@ public partial class Main : Node3D
     /// <summary>Who plays as which character, and drawing them.</summary>
     public CharacterSync Characters { get; private set; } = null!;
 
+    /// <summary>Every player's hotbar slots, and the local player's (UI spec §3).</summary>
+    public HotbarSync Hotbar { get; private set; } = null!;
+
+    /// <summary>Item pictures for the hotbar and inventory; null without a display.</summary>
+    public Ui.ItemIcons? Icons { get; private set; }
+
     /// <summary>Quests from the enabled mods. Null loads them on ready.</summary>
     public QuestBook? QuestBook { get; set; }
 
@@ -423,12 +429,21 @@ public partial class Main : Node3D
             ReadDeviceInput = ReadDeviceInput,
         };
         Characters.RegisterActions(Actions.Dispatcher);
+        Hotbar = new HotbarSync { Name = "Hotbar", Session = Session, Players = PlayerSync, Actions = Actions, Bars = new HotbarActions(mods) };
+        Hotbar.RegisterActions(Actions.Dispatcher);
+        AddChild(Hotbar);
+        if (ReadDeviceInput)
+        {
+            Icons = new Ui.ItemIcons { Name = "ItemIcons", Catalog = mods, Assets = Assets };
+            AddChild(Icons);
+        }
         Chat = new Mechanica.Game.Chat.ChatSync { Name = "Chat", Session = Session };
         Chat.RegisterActions(Actions.Dispatcher);
         AddChild(Chat);
         Saves = new SaveSync
         {
             Characters = Characters.Choices,
+            Hotbars = Hotbar.Bars,
             Quests = Quests,
             Name = "Saves",
             Session = Session,
@@ -466,7 +481,12 @@ public partial class Main : Node3D
         Session.StateChanged += state => SetPropsSimulated(state is NetSession.SessionState.Offline or NetSession.SessionState.Hosting);
         if (ReadDeviceInput)
         {
-            var inventory = new InventoryScreen { Name = "InventoryScreen", Inventory = Inventory, Actions = Actions, Players = PlayerSync, Catalog = mods };
+            var inventory = new InventoryScreen
+            {
+                Name = "InventoryScreen", Inventory = Inventory, Actions = Actions, Players = PlayerSync, Catalog = mods, Hotbar = Hotbar, Icons = Icons, Sounds = Sounds,
+                Mode = () => Survival.Own?.Mode,
+                AllItems = () => HotbarTools.All.Concat(Build.Catalog.Parts.Where(p => p.Value.Definition.Category is not null).Select(p => p.Key)),
+            };
             AddChild(inventory);
             PartSettings = new PartSettingsPanel { Name = "PartSettings", Actions = Actions, Creations = Creations };
             AddChild(new Ui.HudRoot { Name = "HudRoot" });
@@ -816,6 +836,8 @@ public partial class Main : Node3D
             Survival = Survival,
             Sounds = Sounds,
             Characters = Characters?.Assets.Settings,
+            Hotbar = Hotbar,
+            Icons = Icons,
             ReadDeviceInput = ReadDeviceInput,
         };
         AddChild(Tools);

@@ -237,6 +237,10 @@ public sealed class PartAssets
         return mesh with { SurfaceMaterials = materials };
     }
 
+    /// <summary>A part's own inventory icon (its <c>icon</c> PNG), or null when it has none.</summary>
+    public Texture2D? IconFor(string qualifiedId, PartDefinition definition) =>
+        definition.Icon is { } icon && _content?.FindPart(qualifiedId)?.ModId is { } modId ? LoadTexture(icon, modId) : null;
+
     private Texture2D? LoadTexture(string path, string modId)
     {
         if (!AssetPath.TryParse(path, modId, AssetKind.Texture, out var asset, out var error))

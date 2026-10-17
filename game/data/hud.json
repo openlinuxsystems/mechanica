@@ -3,6 +3,7 @@
   "tooltip_delay_seconds": 0.25,
   "tooltip_fade_seconds": 0.1,
   "tooltip_offset": 24,
+  "window_fade_seconds": 0.15,
   // Share of the screen kept clear around edge-anchored HUD elements.
   "safe_area": 0.02,
   "hint_dismiss_seconds": 0.6,

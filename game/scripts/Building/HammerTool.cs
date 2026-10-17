@@ -20,7 +20,8 @@ namespace Mechanica.Game.Building;
 /// <para>
 /// Aiming at a Creation attaches to it. Aiming at anything else starts a new Creation, its grid
 /// aligned with the world and snapped to 0.25 m across the surface. Keys: left click places, right
-/// click removes, Q/E pick the part, R turns it about the face, T tips it over.
+/// click removes, Q turns the part about the face (Shift+Q back), T tips it over. The part comes from the
+/// hotbar slot picked (<see cref="ToolBelt"/>).
 /// </para>
 /// </summary>
 public partial class HammerTool : HandTool
@@ -102,10 +103,6 @@ public partial class HammerTool : HandTool
             Place();
         else if (Pressed(@event, InputActions.Secondary))
             Remove();
-        else if (Pressed(@event, InputActions.HotbarPrevious))
-            Cycle(-1);
-        else if (Pressed(@event, InputActions.HotbarNext))
-            Cycle(1);
         else if (Pressed(@event, InputActions.RotateBack))
             TurnBack();
         else if (Pressed(@event, InputActions.Rotate))
@@ -243,7 +240,7 @@ public partial class HammerTool : HandTool
         if (Selected is null)
             return Loc.T("Hammer: no placeable parts are loaded");
         var name = Build.Catalog.FindDefinition(Selected)?.Name ?? Selected;
-        return Loc.T("Hammer: {0}   {1}/{2} part  {3} turn  {4} tip  {5} place  {6} remove", name, Key(InputActions.HotbarPrevious), Key(InputActions.HotbarNext),
+        return Loc.T("Hammer: {0}   {1} turn  {2} tip  {3} place  {4} remove", name,
             Key(InputActions.Rotate), Key(InputActions.Tip), Key(InputActions.Primary), Key(InputActions.Secondary)) + Status;
     }
 }

@@ -34,6 +34,12 @@ public sealed record InventorySettings
     /// <summary>Most items one <c>GiveItems</c> call may make.</summary>
     public int MaxGiveCount { get; init; } = 1000;
 
+    /// <summary>With this many empty slots or fewer, the inventory warns it is nearly full (UI spec §8, Survival).</summary>
+    public int NearFullSlots { get; init; } = 3;
+
+    /// <summary>True when an inventory with <paramref name="emptySlots"/> free should warn it is nearly full.</summary>
+    public bool NearlyFull(int emptySlots) => emptySlots <= NearFullSlots;
+
     /// <summary>Parses settings from JSON and validates them.</summary>
     /// <exception cref="FormatException">The JSON is malformed or a value is out of range.</exception>
     public static InventorySettings FromJson(string json)
@@ -62,6 +68,8 @@ public sealed record InventorySettings
             throw new FormatException($"player_slots must be 1 to 256 (got {PlayerSlots}).");
         if (MaxCraftCount < 1)
             throw new FormatException($"max_craft_count must be 1 or more (got {MaxCraftCount}).");
+        if (NearFullSlots < 0 || NearFullSlots >= PlayerSlots)
+            throw new FormatException($"near_full_slots must be 0 up to below player_slots (got {NearFullSlots}).");
         if (MaxGiveCount < 1)
             throw new FormatException($"max_give_count must be 1 or more (got {MaxGiveCount}).");
     }

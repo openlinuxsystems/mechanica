@@ -90,6 +90,8 @@ public class HudTests
         Assert.Equal(0.25, settings.TooltipDelaySeconds);
         Assert.Equal(0.1, settings.TooltipFadeSeconds);
         Assert.Equal(0.02f, settings.SafeArea);
+        Assert.Equal(0.15, settings.WindowFadeSeconds);
+        Assert.Throws<FormatException>(() => HudSettings.Parse("""{ "window_fade_seconds": -1 }"""));
         Assert.Throws<FormatException>(() => HudSettings.Parse("""{ "safe_area": 0.5 }"""));
         Assert.Throws<FormatException>(() => HudSettings.Parse("""{ "hint_dismiss_seconds": 0 }"""));
     }
