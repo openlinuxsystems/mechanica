@@ -1,5 +1,6 @@
 using Godot;
 using Mechanica.Core.Building;
+using Mechanica.Game.Ui;
 
 namespace Mechanica.Game.Building;
 
@@ -9,7 +10,7 @@ namespace Mechanica.Game.Building;
 /// </summary>
 public partial class LiftBody : StaticBody3D
 {
-    private static readonly StandardMaterial3D Material = new() { AlbedoColor = new Color(0.85f, 0.62f, 0.12f) };
+    private static readonly StandardMaterial3D Material = new() { AlbedoColor = UiTokens.Blue };
 
     private readonly BoxShape3D _shape = new();
     private readonly BoxMesh _mesh = new() { Material = Material };

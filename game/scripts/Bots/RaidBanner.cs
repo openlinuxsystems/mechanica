@@ -17,7 +17,7 @@ public partial class RaidBanner : CanvasLayer
         {
             Name = "Text",
             HorizontalAlignment = HorizontalAlignment.Center,
-            Modulate = new Color(1f, 0.55f, 0.45f),
+            ThemeTypeVariation = "ErrorLabel",
             Visible = false,
         };
         _text.AddThemeFontSizeOverride("font_size", 26);

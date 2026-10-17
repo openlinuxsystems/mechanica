@@ -86,7 +86,7 @@ public partial class PauseMenu : CanvasLayer
         AddButton(column, "Help (F1)", () => OpenHelp());
         AddButton(column, "Quit to main menu", () => GetTree().ChangeSceneToFile(MainMenu.MenuScene));
         AddButton(column, "Quit game", () => GetTree().Quit());
-        _status = new Label { Name = "Status", Modulate = new Color(1f, 0.6f, 0.5f) };
+        _status = new Label { Name = "Status", ThemeTypeVariation = "ErrorLabel" };
         column.AddChild(_status);
 
         _help = new HelpWindow { Name = "Help", Visible = false };

@@ -20,6 +20,7 @@ written by the chunk that builds the feature it covers.
 Other references:
 
 - [How to Play](playing.md): controls, playing together, saving
+- [UI Style Guide](ui-style-guide.md): palette, theme and rules for new menus and mod tools
 
 - [World Generation and POI Prefabs](world-generation.md)
 - [Sound Events](sound-events.md)
