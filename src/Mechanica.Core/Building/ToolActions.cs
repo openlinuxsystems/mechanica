@@ -54,10 +54,15 @@ public sealed record WeldPartsArgs(int Creation, int A, int B);
 /// <param name="Color"><c>"#rrggbb"</c>, or null to take the paint off.</param>
 public sealed record PaintArgs(int Creation, IReadOnlyList<int> Parts, string? Color = null);
 
-/// <summary>Arguments of <c>Sledge</c>: one Sledgehammer hit.</summary>
+/// <summary>
+/// Arguments of <c>Sledge</c>: one Sledgehammer hit on a part (<see cref="Creation"/> and <see cref="Part"/>),
+/// a player (<see cref="Player"/>) or a world object such as a tree (<see cref="Object"/>).
+/// </summary>
 /// <param name="Creation">The Creation hit.</param>
 /// <param name="Part">The part hit.</param>
-public sealed record SledgeArgs(int Creation, int Part);
+/// <param name="Player">Peer of the player hit.</param>
+/// <param name="Object">Id of the world object hit (<c>"3.10.-4"</c>).</param>
+public sealed record SledgeArgs(int? Creation = null, int? Part = null, int? Player = null, string? Object = null);
 
 /// <summary>Value of a successful Lift action: the caller's Lift as it is now (absent after <c>RemoveLift</c>).</summary>
 /// <param name="Position">Middle of the platform's base.</param>
@@ -80,6 +85,28 @@ public sealed record PaintResult(int Painted);
 /// <param name="Destroyed">True when the broken part was its Creation's last.</param>
 /// <param name="SplitOff">New Creations made from pieces the break disconnected.</param>
 public sealed record SledgeResult(bool Broken, float? Health, bool Destroyed, IReadOnlyList<int> SplitOff);
+
+/// <summary>
+/// Players and world objects the Sledgehammer can hit besides parts (chunk 20). Survival implements it;
+/// without it only parts can be hit.
+/// </summary>
+public interface IStrikeTargets
+{
+    /// <summary>Middle of a player's body, or null when the peer has no living player.</summary>
+    Vector3? PlayerCentre(int peer);
+
+    /// <summary>Null when <paramref name="caller"/> may hurt <paramref name="peer"/>, or why not.</summary>
+    string? CheckStrikePlayer(ActionCaller caller, int peer);
+
+    /// <summary>Takes <paramref name="damage"/> health from a player. Returns the health left.</summary>
+    float StrikePlayer(ActionCaller caller, int peer, float damage);
+
+    /// <summary>Middle of a world object that can break, or null when there is none with that id.</summary>
+    Vector3? ObjectCentre(string id);
+
+    /// <summary>Takes <paramref name="damage"/> health from a world object. Returns the health left (0 when it broke).</summary>
+    float StrikeObject(string id, float damage);
+}
 
 /// <summary>What the tool actions need from the world beyond building. The host's game layer implements it.</summary>
 public interface IToolWorld : IBuildWorld
@@ -110,6 +137,11 @@ public interface IToolWorld : IBuildWorld
 
     /// <summary>Gives a Body an impulse (N·s) at a world point.</summary>
     void Push(Creation creation, int bodyIndex, Vector3 point, Vector3 impulse);
+
+    /// <summary>A part is about to break off at 0 health; what it holds should spill out.</summary>
+    void Breaking(Creation creation, int partId)
+    {
+    }
 }
 
 /// <summary>
@@ -121,7 +153,8 @@ public interface IToolWorld : IBuildWorld
 /// <item><c>Weld</c>: moves one Creation onto another and merges them, every touching face rigid (D7).
 /// <c>WeldParts</c>: welds two touching parts of different Bodies of one Creation, merging the Bodies.</item>
 /// <item><c>Paint</c>: colours parts, or takes the paint off.</item>
-/// <item><c>Sledge</c>: a Sledgehammer hit, which pushes the Body and damages the part until it breaks off.</item>
+/// <item><c>Sledge</c>: a Sledgehammer hit, which pushes the Body and damages the part until it breaks off;
+/// with <see cref="Targets"/> it can also hit players and world objects.</item>
 /// </list>
 /// Player callers must be within <see cref="BuildSettings.Reach"/> of what they act on. Each action plays its
 /// tool's sound where it happened (chunk 16): <c>lift_place</c>, <c>lift_raise</c>/<c>lift_lower</c> at the
@@ -160,6 +193,9 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world)
 
     private readonly SortedDictionary<int, LiftState> _lifts = [];
     private readonly Dictionary<int, double> _lastSwing = [];
+
+    /// <summary>Players and world objects a Sledgehammer can hit; null hits parts only.</summary>
+    public IStrikeTargets? Targets { get; set; }
 
     /// <summary>Every Lift, by owner.</summary>
     public IReadOnlyCollection<LiftState> Lifts => _lifts.Values;
@@ -451,40 +487,87 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world)
 
     private string? ValidateSledge(ActionCaller caller, SledgeArgs args)
     {
-        if (world.FindCreation(args.Creation) is not { } creation)
-            return $"There is no creation {args.Creation}.";
-        if (creation.FindPart(args.Part) is null)
-            return $"Creation {args.Creation} has no part {args.Part}.";
+        if (CheckSledgeTarget(caller, args) is { } bad)
+            return bad;
         if (caller.Source == ActionSource.Player && _lastSwing.TryGetValue(caller.Peer, out var last)
             && world.Now - last < settings.Sledge.SwingSeconds * SwingJitter)
             return "The Sledgehammer is still swinging.";
-        return CheckReach(caller, PartCentre(creation, args.Part));
+        return null;
+    }
+
+    private string? CheckSledgeTarget(ActionCaller caller, SledgeArgs args)
+    {
+        var targets = (args.Creation is not null || args.Part is not null ? 1 : 0) + (args.Player is not null ? 1 : 0) + (args.Object is not null ? 1 : 0);
+        if (targets != 1)
+            return "Hit one thing: a creation and part, a player or an object.";
+        if (args.Player is { } peer)
+        {
+            if (Targets?.PlayerCentre(peer) is not { } centre)
+                return $"There is no player {peer} to hit.";
+            if (peer == caller.Peer)
+                return "You cannot hit yourself.";
+            return Targets.CheckStrikePlayer(caller, peer) ?? CheckReach(caller, centre);
+        }
+        if (args.Object is { } id)
+            return Targets?.ObjectCentre(id) is { } centre ? CheckReach(caller, centre) : $"There is no object {id} that can break.";
+        if (args.Creation is not { } creationId || args.Part is not { } partId)
+            return "Give both creation and part.";
+        if (world.FindCreation(creationId) is not { } creation)
+            return $"There is no creation {creationId}.";
+        if (creation.FindPart(partId) is null)
+            return $"Creation {creationId} has no part {partId}.";
+        return CheckReach(caller, PartCentre(creation, partId));
     }
 
     private JsonElement? ApplySledge(ActionCaller caller, SledgeArgs args)
     {
         _lastSwing[caller.Peer] = world.Now;
-        var creation = world.FindCreation(args.Creation)!;
-        var centre = PartCentre(creation, args.Part);
-        var health = settings.Sledge.HealthOf(creation.DefinitionOf(args.Part).Durability);
-        if (health is { } full)
+        if (args.Player is { } peer)
         {
-            var damage = creation.PartDamage(args.Part) + settings.Sledge.Damage;
-            if (damage >= full)
-            {
-                world.PlaySound("smash_break", Identifiers.VanillaModId, centre);
-                BuildActions.PlayPartSound(world, creation, args.Part, PartSounds.Break, null);
-                var removal = BuildActions.Remove(world, creation, args.Part);
-                return Value(new SledgeResult(true, 0f, removal.Destroyed, removal.SplitOff));
-            }
-            creation.SetPartDamage(args.Part, damage);
-            health = full - damage;
+            world.PlaySound("smash_hit", Identifiers.VanillaModId, Targets!.PlayerCentre(peer)!.Value);
+            return Value(new SledgeResult(false, Targets.StrikePlayer(caller, peer, settings.Sledge.PlayerDamage), false, []));
         }
-        world.PlaySound("smash_hit", Identifiers.VanillaModId, centre);
-        BuildActions.PlayPartSound(world, creation, args.Part, PartSounds.Impact, null);
-        if (caller.Source == ActionSource.Player && world.EyeOf(caller.Peer) is { } eye && centre != eye)
-            world.Push(creation, creation.BodyIndexOf(args.Part), centre, Vector3.Normalize(centre - eye) * settings.Sledge.Impulse);
-        return Value(new SledgeResult(false, health, false, []));
+        if (args.Object is { } id)
+        {
+            var at = Targets!.ObjectCentre(id)!.Value;
+            var left = Targets.StrikeObject(id, settings.Sledge.ObjectDamage);
+            world.PlaySound(left <= 0 ? "smash_break" : "smash_hit", Identifiers.VanillaModId, at);
+            return Value(new SledgeResult(left <= 0, left, left <= 0, []));
+        }
+        var creation = world.FindCreation(args.Creation!.Value)!;
+        var centre = PartCentre(creation, args.Part!.Value);
+        var result = DamagePart(creation, args.Part.Value, settings.Sledge.Damage);
+        world.PlaySound(result.Broken ? "smash_break" : "smash_hit", Identifiers.VanillaModId, centre);
+        if (!result.Broken && caller.Source == ActionSource.Player && world.EyeOf(caller.Peer) is { } eye && centre != eye)
+            world.Push(creation, creation.BodyIndexOf(args.Part.Value), centre, Vector3.Normalize(centre - eye) * settings.Sledge.Impulse);
+        return Value(result);
+    }
+
+    /// <summary>
+    /// Takes <paramref name="damage"/> health off a part (its full health is durability ×
+    /// <see cref="SledgeSettings.HealthPerDurability"/>). At 0 it breaks off: what it holds spills out
+    /// (<see cref="IToolWorld.Breaking"/>) and the pieces it held together split. Weapons and impacts use
+    /// it as well as the Sledgehammer. A part without a durability takes no damage. The part plays its
+    /// <c>impact</c> sound, or its <c>break</c> sound as it breaks (<see cref="PartSounds"/>).
+    /// </summary>
+    public SledgeResult DamagePart(Creation creation, int partId, float damage)
+    {
+        if (settings.Sledge.HealthOf(creation.DefinitionOf(partId).Durability) is not { } full)
+        {
+            BuildActions.PlayPartSound(world, creation, partId, PartSounds.Impact, null);
+            return new SledgeResult(false, null, false, []);
+        }
+        var total = creation.PartDamage(partId) + Math.Max(0, damage);
+        if (total >= full)
+        {
+            BuildActions.PlayPartSound(world, creation, partId, PartSounds.Break, null);
+            world.Breaking(creation, partId);
+            var removal = BuildActions.Remove(world, creation, partId);
+            return new SledgeResult(true, 0f, removal.Destroyed, removal.SplitOff);
+        }
+        BuildActions.PlayPartSound(world, creation, partId, PartSounds.Impact, null);
+        creation.SetPartDamage(partId, total);
+        return new SledgeResult(false, full - total, false, []);
     }
 
     // ---- Shared ----

@@ -74,6 +74,23 @@ public interface IBuildWorld
 }
 
 /// <summary>
+/// What building costs, in Survival: a player pays for each part placed with one of that item from
+/// their inventory, and gets it back when they take the part off again. Null costs (Creative) make
+/// building free.
+/// </summary>
+public interface IBuildCosts
+{
+    /// <summary>Null when <paramref name="caller"/> can pay for one <paramref name="part"/> (a qualified id), or why not.</summary>
+    string? CheckPlace(ActionCaller caller, string part);
+
+    /// <summary>Takes payment for one <paramref name="part"/> that was just placed.</summary>
+    void Placed(ActionCaller caller, string part);
+
+    /// <summary>Gives back one <paramref name="part"/> that was just removed at world point <paramref name="at"/> (dropped there when it does not fit).</summary>
+    void Removed(ActionCaller caller, string part, Vector3 at);
+}
+
+/// <summary>
 /// The building actions of the Action API, validated on the host like every other action:
 /// <list type="bullet">
 /// <item><c>PlacePart</c>: places a part against an existing Creation, attaching by the D7 face rules,
@@ -81,12 +98,17 @@ public interface IBuildWorld
 /// <item><c>RemovePart</c>: removes a part; pieces that lose their link split into new Creations, and a
 /// Creation with no parts left is destroyed.</item>
 /// </list>
-/// Player callers must be within <see cref="BuildSettings.Reach"/> of the part. Each change plays the
-/// part's sound where it happened (<see cref="PartSounds"/>): its place sound, or <c>part_attach</c> for a
-/// part without one; its remove sound, or <c>remove_block</c> (blocks) or <c>part_detach</c> (other parts).
+/// Player callers must be within <see cref="BuildSettings.Reach"/> of the part. With <see cref="Costs"/>
+/// (Survival), placing a part uses one from the caller's inventory and removing it gives it back. Each
+/// change plays the part's sound where it happened (<see cref="PartSounds"/>): its place sound, or
+/// <c>part_attach</c> for a part without one; its remove sound, or <c>remove_block</c> (blocks) or
+/// <c>part_detach</c> (other parts).
 /// </summary>
 public sealed class BuildActions(IPartCatalog catalog, BuildSettings settings, IBuildWorld world)
 {
+    /// <summary>What parts cost; null builds for free (Creative).</summary>
+    public IBuildCosts? Costs { get; init; }
+
     /// <summary>Action name for placing.</summary>
     public const string PlacePart = "PlacePart";
 
@@ -133,7 +155,8 @@ public sealed class BuildActions(IPartCatalog catalog, BuildSettings settings, I
 
         var centre = pose.Apply(PartGeometry.CentreMetres(definition, args.Cell, args.Rotation).ToNumerics());
         return CheckReach(caller, centre)
-            ?? world.CheckClear(target, definition, args.Cell, args.Rotation, pose);
+            ?? world.CheckClear(target, definition, args.Cell, args.Rotation, pose)
+            ?? Costs?.CheckPlace(caller, Identifiers.Qualify(args.Part));
     }
 
     private JsonElement? ApplyPlace(ActionCaller caller, PlacePartArgs args)
@@ -147,6 +170,7 @@ public sealed class BuildActions(IPartCatalog catalog, BuildSettings settings, I
                 throw new InvalidOperationException(error);
             world.Changed(target);
             PlayPlaced(world, target, placed.Id);
+            Costs?.Placed(caller, placed.Part);
             return Value(new PlacePartResult(target.Id, placed.Id));
         }
 
@@ -156,6 +180,7 @@ public sealed class BuildActions(IPartCatalog catalog, BuildSettings settings, I
         creation.SetAllBodyPoses(new Pose(args.Position!.Value.ToNumerics(), Quaternion.Identity));
         world.Added(creation);
         PlayPlaced(world, creation, placed.Id);
+        Costs?.Placed(caller, placed.Part);
         return Value(new PlacePartResult(creation.Id, placed.Id));
     }
 
@@ -178,7 +203,11 @@ public sealed class BuildActions(IPartCatalog catalog, BuildSettings settings, I
         var definition = creation.DefinitionOf(args.Part);
         var fallback = definition.Category == PartCategory.Block ? "remove_block" : "part_detach";
         PlayPartSound(world, creation, args.Part, PartSounds.Remove, fallback);
-        return Value(Remove(world, creation, args.Part));
+        var part = creation.FindPart(args.Part)!;
+        var centre = PartCentre(creation, part.Id);
+        var result = Remove(world, creation, args.Part);
+        Costs?.Removed(caller, part.Part, centre);
+        return Value(result);
     }
 
     /// <summary>

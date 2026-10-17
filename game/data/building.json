@@ -22,6 +22,8 @@
     "damage": 10,
     "health_per_durability": 10,
     "swing_seconds": 0.5,
-    "impulse": 20
+    "impulse": 20,
+    "player_damage": 15,
+    "object_damage": 10
   }
 }

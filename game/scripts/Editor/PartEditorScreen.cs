@@ -73,6 +73,9 @@ public partial class PartEditorScreen : Control
     /// <summary>The Recipes tab: recipes in the part's mod that make the part.</summary>
     public RecipePanel Recipes { get; private set; } = null!;
 
+    /// <summary>The Script tab (Lua editor).</summary>
+    public LuaPanel Lua { get; private set; } = null!;
+
     /// <summary>The 3D preview.</summary>
     public PartPreview Preview => _preview;
 
@@ -116,7 +119,7 @@ public partial class PartEditorScreen : Control
         _undo = AddButton(toolbar, "Undo", () => Document?.Undo(), "Ctrl+Z");
         _redo = AddButton(toolbar, "Redo", () => Document?.Redo(), "Ctrl+Shift+Z");
         toolbar.AddChild(new VSeparator());
-        AddButton(toolbar, "Help", () => _help.Open("getting-started.md"), "Getting Started and the Part Data Schema Reference");
+        AddButton(toolbar, "Help", () => OpenHelp("getting-started.md"), "Getting Started, the Part Data Schema Reference and the Lua API Reference");
         AddButton(toolbar, "Close", () => CloseRequested?.Invoke(), "Back to the menu");
         _title = new Label { SizeFlagsHorizontal = SizeFlags.ExpandFill, HorizontalAlignment = HorizontalAlignment.Right };
         toolbar.AddChild(_title);
@@ -283,6 +286,9 @@ public partial class PartEditorScreen : Control
             TestRequested?.Invoke(result.QualifiedId);
     }
 
+    /// <summary>Shows one of the docs (<c>lua-api.md</c>) in the help window.</summary>
+    public void OpenHelp(string fileName) => _help.Open(fileName);
+
     // ---- Building the UI ----
 
     private void BuildTabs()
@@ -350,6 +356,9 @@ public partial class PartEditorScreen : Control
         _behaviourGrid = AddTab("Behaviour");
         Recipes = new RecipePanel { Name = "RecipePanel", Editor = this, SizeFlagsHorizontal = SizeFlags.ExpandFill };
         AddTabBox("Recipes").AddChild(Recipes);
+        // The script editor fills its tab instead of scrolling with it.
+        Lua = new LuaPanel { Name = "Script", Editor = this };
+        _tabs.AddChild(Lua);
 
         _sounds = new SoundBinderPanel { Name = "Binder", ModsRoot = () => ModsRoot, Import = Import, ShowError = ShowError };
         AddTabBox("Sounds").AddChild(_sounds);
@@ -432,6 +441,7 @@ public partial class PartEditorScreen : Control
         _sounds.SetPart(document);
         Refresh(rebuildInspector: true);
         Recipes.Reload();
+        Lua.Reload();
     }
 
     private void OnDocumentChanged()
@@ -444,6 +454,7 @@ public partial class PartEditorScreen : Control
         if (_selectedSocket >= (Document.Definition.Sockets?.Count ?? 0))
             _selectedSocket = (Document.Definition.Sockets?.Count ?? 0) - 1;
         Refresh(rebuildInspector: !_quiet);
+        Lua.Reload();
     }
 
     // An edit from a field: the field already shows the new value, so the inspector is not rebuilt under it.
@@ -534,6 +545,7 @@ public partial class PartEditorScreen : Control
         AddAssetField(_partGrid, "Icon", d.Icon, AssetKind.Texture, v => Set("Set icon", x => x with { Icon = v }));
         if (d.IsPlaceable)
             AddStorageFields(d);
+        AddSurvivalFields(d);
 
         // Model: the selected piece.
         if (_selectedPiece >= 0)
@@ -688,6 +700,68 @@ public partial class PartEditorScreen : Control
                 v => Set("Set crafting speed", x => x with { Crafting = x.Crafting! with { Speed = (float?)v } }), optional: true, fallback: 1, suffix: "×");
             _partGrid.AddNumber("Queue size", crafting.QueueSize, 1, 64, 1,
                 v => Set("Set queue size", x => x with { Crafting = x.Crafting! with { QueueSize = (int?)v } }), optional: true, fallback: 1);
+        }
+    }
+
+    // Survival fields (chunk 20): food, seeds, water and weapons on items; soil and beds on parts.
+    // Turning a section on or off rebuilds the inspector.
+    private void AddSurvivalFields(PartDefinition d)
+    {
+        _partGrid.AddHeading("Survival");
+        void Toggle(string what, bool on, Func<PartDefinition, PartDefinition> add, Func<PartDefinition, PartDefinition> remove) =>
+            Document?.Apply(on ? $"Add {what}" : $"Remove {what}", x => on ? add(x) : remove(x));
+        if (d.IsPlaceable)
+        {
+            _partGrid.AddBool("Soil", d.Soil is not null, v => Toggle("soil", v == true,
+                x => x with { Soil = x.Soil ?? new SoilDefinition { Capacity = 300 } }, x => x with { Soil = null }));
+            if (d.Soil is { } soil)
+            {
+                _partGrid.AddNumber("Water capacity", soil.Capacity, 1, 1e5, 10,
+                    v => Set("Set water capacity", x => x with { Soil = x.Soil! with { Capacity = (float?)v } }), optional: true, suffix: "s");
+                _partGrid.AddNumber("Growth speed", soil.Growth, 0.01, 100, 0.05,
+                    v => Set("Set growth speed", x => x with { Soil = x.Soil! with { Growth = (float?)v } }), optional: true, fallback: 1, suffix: "×");
+            }
+            _partGrid.AddBool("Respawn point", d.RespawnPoint, v => Set("Set respawn point", x => x with { RespawnPoint = v == true ? true : null }), optional: true);
+            return;
+        }
+        _partGrid.AddNumber("Food: heals", d.Food?.Health, 0.1, 1e4, 1, v =>
+        {
+            if ((v is null) != (Document?.Definition.Food is null))
+                Document?.Apply(v is null ? "Remove food" : "Make food", x => x with { Food = v is null ? null : new FoodDefinition { Health = (float)v } });
+            else if (v is not null)
+                Set("Set food health", x => x with { Food = x.Food! with { Health = (float)v } });
+        }, optional: true, fallback: 10, suffix: "health");
+        _partGrid.AddNumber("Waters for", d.Watering?.Seconds, 1, 1e5, 10, v =>
+        {
+            if ((v is null) != (Document?.Definition.Watering is null))
+                Document?.Apply(v is null ? "Remove watering" : "Make watering", x => x with { Watering = v is null ? null : new WateringDefinition { Seconds = (float)v } });
+            else if (v is not null)
+                Set("Set watering", x => x with { Watering = x.Watering! with { Seconds = (float)v } });
+        }, optional: true, fallback: 120, suffix: "s");
+        _partGrid.AddBool("Seed", d.Seed is not null, v => Toggle("seed", v == true,
+            x => x with { Seed = x.Seed ?? new SeedDefinition { GrowTime = 240, Yield = 1 } }, x => x with { Seed = null }));
+        if (d.Seed is { } seed)
+        {
+            void SetSeed(string label, Func<SeedDefinition, SeedDefinition> change) => Set(label, x => x with { Seed = change(x.Seed!) });
+            _partGrid.AddText("Grows into", seed.Crop, v => SetSeed("Set crop", x => x with { Crop = v }), "item id: carrot");
+            _partGrid.AddNumber("Grow time", seed.GrowTime, 1, 1e6, 10, v => SetSeed("Set grow time", x => x with { GrowTime = (float?)v }), suffix: "s");
+            _partGrid.AddNumber("Yield", seed.Yield, 1, 1000, 1, v => SetSeed("Set yield", x => x with { Yield = (int?)v }), optional: true, fallback: 1);
+            _partGrid.AddNumber("Seeds back", seed.Seeds, 0, 1000, 1, v => SetSeed("Set seeds back", x => x with { Seeds = (int?)v }), optional: true);
+            _partGrid.AddNumber("Raid value", seed.Value, 0, 1000, 0.5, v => SetSeed("Set raid value", x => x with { Value = (float?)v }), optional: true, fallback: 1);
+        }
+        _partGrid.AddBool("Weapon", d.Weapon is not null, v => Toggle("weapon", v == true,
+            x => x with { Weapon = x.Weapon ?? new WeaponDefinition { Damage = 10, Interval = 0.5f, Range = 30 } }, x => x with { Weapon = null }));
+        if (d.Weapon is { } weapon)
+        {
+            void SetWeapon(string label, Func<WeaponDefinition, WeaponDefinition> change) => Set(label, x => x with { Weapon = change(x.Weapon!) });
+            _partGrid.AddNumber("Damage", weapon.Damage, 0, 1e4, 1, v => SetWeapon("Set damage", x => x with { Damage = (float?)v }));
+            _partGrid.AddNumber("Interval", weapon.Interval, 0, 60, 0.05, v => SetWeapon("Set interval", x => x with { Interval = (float?)v }), suffix: "s");
+            _partGrid.AddNumber("Range", weapon.Range, 0.1, 1000, 1, v => SetWeapon("Set range", x => x with { Range = (float?)v }), suffix: "m");
+            _partGrid.AddText("Ammo", weapon.Ammo, v => SetWeapon("Set ammo", x => x with { Ammo = v }), "item id, or none");
+            _partGrid.AddNumber("Pellets", weapon.Pellets, 1, 32, 1, v => SetWeapon("Set pellets", x => x with { Pellets = (int?)v }), optional: true, fallback: 1);
+            _partGrid.AddNumber("Spread", weapon.Spread, 0, 45, 0.5, v => SetWeapon("Set spread", x => x with { Spread = (float?)v }), optional: true, suffix: "°");
+            _partGrid.AddNumber("Splash radius", weapon.Radius, 0.1, 100, 0.25, v => SetWeapon("Set splash radius", x => x with { Radius = (float?)v }), optional: true, fallback: 2, suffix: "m");
+            _partGrid.AddNumber("Push", weapon.Impulse, 0, 1e5, 10, v => SetWeapon("Set push", x => x with { Impulse = (float?)v }), optional: true, suffix: "N·s");
         }
     }
 

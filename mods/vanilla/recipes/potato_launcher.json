@@ -1,0 +1,23 @@
+{
+  "id": "potato_launcher",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal",
+      "count": 6
+    },
+    {
+      "item": "component_kit",
+      "count": 3
+    }
+  ],
+  "outputs": [
+    {
+      "item": "potato_launcher",
+      "count": 1
+    }
+  ],
+  "time": 20
+}

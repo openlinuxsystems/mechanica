@@ -1,0 +1,18 @@
+{
+  "id": "potato",
+  "name": "Potato",
+  "description": "Heals a little when eaten. Potato weapons fire them.",
+  "category": "consumable",
+  "mass": 0.3,
+  "stack_size": 50,
+  "visual": {
+    "color": "#b8925a"
+  },
+  "sounds": {
+    "pickup": "pickup_produce",
+    "eat": "eat_soft"
+  },
+  "food": {
+    "health": 8
+  }
+}

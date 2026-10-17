@@ -3,7 +3,6 @@
   "reach": 7.5,
   "player_slots": 30,
   "max_craft_count": 99,
-  // Creative: GiveItems makes items from nothing. Survival (chunk 20) turns this off.
-  "allow_give": true,
+  // GiveItems (making items from nothing) works only in Creative; the game mode decides, not this file.
   "max_give_count": 1000
 }

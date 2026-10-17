@@ -90,7 +90,7 @@ public partial class SandboxScreen : Control
         BuildPanel();
 
         _content = LoadContent();
-        StartInstance("Host", LaunchOptions.Offline);
+        StartInstance("Host", LaunchOptions.Offline with { GameMode = Core.Survival.GameMode.Creative });
         Activate(0);
         RefreshParts();
     }

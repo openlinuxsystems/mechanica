@@ -21,3 +21,4 @@ Other references:
 
 - [World Generation and POI Prefabs](world-generation.md)
 - [Sound Events](sound-events.md)
+- [Survival](survival.md)

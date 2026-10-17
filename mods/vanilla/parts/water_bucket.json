@@ -1,0 +1,15 @@
+{
+  "id": "water_bucket",
+  "name": "Water Bucket",
+  "description": "Fill it at the sea, then water soil with it.",
+  "category": "consumable",
+  "mass": 4,
+  "stack_size": 5,
+  "visual": {
+    "color": "#3a7ad0"
+  },
+  "sounds": {},
+  "watering": {
+    "seconds": 150
+  }
+}

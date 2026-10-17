@@ -1,0 +1,20 @@
+{
+  "id": "soil",
+  "stations": [
+    "fabricator",
+    "mini_fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_wood",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "soil",
+      "count": 2
+    }
+  ],
+  "time": 3
+}

@@ -152,6 +152,29 @@ public sealed record WorldObjectDefinition
     /// <summary>Metres the object sinks into the ground, so it sits on slopes.</summary>
     public float Sink { get; init; }
 
+    /// <summary>
+    /// Health of the object (chunk 20): sledge hits and weapons take it off, and at 0 the object breaks
+    /// and leaves its <see cref="Drops"/>. Omitted means it cannot be broken that way.
+    /// </summary>
+    public float? Health { get; init; }
+
+    /// <summary>Items the object leaves on the ground when it breaks.</summary>
+    public List<ObjectDrop>? Drops { get; init; }
+
+    /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>Items a broken world object leaves behind.</summary>
+public sealed record ObjectDrop
+{
+    /// <summary>Item id (<c>scrap_wood</c>, or <c>mod_id:item</c>).</summary>
+    public string? Item { get; init; }
+
+    /// <summary>How many (1 or more).</summary>
+    public int Count { get; init; } = 1;
+
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }

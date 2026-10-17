@@ -1,12 +1,14 @@
 using Godot;
+using Mechanica.Game.Items;
 using Mechanica.Game.Net;
 using Mechanica.Game.Player;
+using Mechanica.Game.Survival;
 
 namespace Mechanica.Game.Building;
 
 /// <summary>
-/// The local player's hand tools and which one is in hand. Keys 1 to 5 pick the Hammer, Lift, Weld
-/// Tool, Paint Tool or Sledgehammer; the HUD at the bottom left shows the tool in hand and its keys.
+/// The local player's hand tools and which one is in hand. Keys 1 to 6 pick the Hammer, Lift, Weld
+/// Tool, Paint Tool, Sledgehammer or the item in hand (<see cref="ItemTool"/>); the HUD at the bottom left shows the tool in hand and its keys.
 /// </summary>
 public partial class ToolBelt : Node
 {
@@ -24,6 +26,12 @@ public partial class ToolBelt : Node
 
     /// <summary>Where the tools' own feedback sounds play; null plays none.</summary>
     public Sound.SoundSync? Sounds { get; init; }
+
+    /// <summary>Inventories, for the item in hand. Set before adding to the tree.</summary>
+    public InventorySync Inventory { get; init; } = null!;
+
+    /// <summary>Survival state, for the item in hand. Set before adding to the tree.</summary>
+    public SurvivalSync Survival { get; init; } = null!;
 
     /// <summary>False in automated tests: keys and mouse do nothing and no HUD is shown.</summary>
     public bool ReadDeviceInput { get; init; } = true;
@@ -43,6 +51,9 @@ public partial class ToolBelt : Node
     /// <summary>The Sledgehammer.</summary>
     public SledgeTool Sledge { get; private set; } = null!;
 
+    /// <summary>The item in hand: food, weapons, seeds and water.</summary>
+    public ItemTool Item { get; private set; } = null!;
+
     /// <summary>Every tool, in key order.</summary>
     public IReadOnlyList<HandTool> Tools => _tools;
 
@@ -56,6 +67,7 @@ public partial class ToolBelt : Node
         Weld = Add(new WeldTool { Name = "Weld", Player = Player, Actions = Actions, Build = Build, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput });
         Paint = Add(new PaintTool { Name = "Paint", Player = Player, Actions = Actions, Build = Build, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput });
         Sledge = Add(new SledgeTool { Name = "Sledge", Player = Player, Actions = Actions, Build = Build, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput });
+        Item = Add(new ItemTool { Name = "Item", Player = Player, Actions = Actions, Build = Build, Inventory = Inventory, Survival = Survival, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput });
         Hammer.Active = true;
         if (!ReadDeviceInput)
             return;
@@ -73,14 +85,14 @@ public partial class ToolBelt : Node
     public override void _Process(double delta)
     {
         if (_hud is not null)
-            _hud.Text = $"[1-5] {string.Join("  ", _tools.Select(t => t.Active ? $"[{t.ToolName}]" : t.ToolName))}\n{Current.HudText()}";
+            _hud.Text = $"[1-{_tools.Count}] {string.Join("  ", _tools.Select(t => t.Active ? $"[{t.ToolName}]" : t.ToolName))}\n{Current.HudText()}";
     }
 
     public override void _UnhandledInput(InputEvent @event)
     {
         if (!ReadDeviceInput || Input.MouseMode != Input.MouseModeEnum.Captured
             || @event is not InputEventKey { Pressed: true, Echo: false } key
-            || key.PhysicalKeycode is < Key.Key1 or > Key.Key5)
+            || key.PhysicalKeycode < Key.Key1 || key.PhysicalKeycode >= Key.Key1 + _tools.Count)
             return;
         Use(_tools[(int)(key.PhysicalKeycode - Key.Key1)]);
         GetViewport().SetInputAsHandled();

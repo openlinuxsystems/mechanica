@@ -23,7 +23,8 @@ public abstract partial class HandTool : Node
     /// <param name="Point">World hit point.</param>
     /// <param name="Normal">World surface normal there.</param>
     /// <param name="Collider">What was hit.</param>
-    public readonly record struct RayHit(Vector3 Point, Vector3 Normal, GodotObject Collider)
+    /// <param name="Shape">Index of the collider's shape that was hit.</param>
+    public readonly record struct RayHit(Vector3 Point, Vector3 Normal, GodotObject Collider, int Shape = 0)
     {
         /// <summary>The Creation body hit, or null.</summary>
         public CreationBody? Body => Collider as CreationBody;
@@ -86,16 +87,29 @@ public abstract partial class HandTool : Node
     }
 
     /// <summary>Casts the aim ray, ignoring the player itself.</summary>
-    protected RayHit? CastRay()
+    protected RayHit? CastRay() => Cast(Player, Build.Settings!.Reach);
+
+    /// <summary>Casts a ray from <paramref name="player"/>'s camera out to <paramref name="reach"/> metres, ignoring the player.</summary>
+    public static RayHit? Cast(PlayerController player, float reach)
     {
-        var camera = Player.Camera.GlobalTransform;
+        var camera = player.Camera.GlobalTransform;
         var from = camera.Origin;
-        var query = PhysicsRayQueryParameters3D.Create(from, from - camera.Basis.Z * Build.Settings!.Reach);
-        query.Exclude = [Player.GetRid()];
-        var hit = Player.GetWorld3D().DirectSpaceState.IntersectRay(query);
+        var query = PhysicsRayQueryParameters3D.Create(from, from - camera.Basis.Z * reach);
+        query.Exclude = [player.GetRid()];
+        var hit = player.GetWorld3D().DirectSpaceState.IntersectRay(query);
         return hit.Count == 0
             ? null
-            : new RayHit(hit["position"].AsVector3(), hit["normal"].AsVector3(), hit["collider"].AsGodotObject());
+            : new RayHit(hit["position"].AsVector3(), hit["normal"].AsVector3(), hit["collider"].AsGodotObject(), hit["shape"].AsInt32());
+    }
+
+    /// <summary>The part a ray hit (its Creation node and part id), or null when it hit no part.</summary>
+    public static (CreationNode Node, int Part)? PartHit(RayHit? hit)
+    {
+        if (hit is not { Body: { } body, Node: { } node } h)
+            return null;
+        var toGrid = body.GlobalTransform.AffineInverse();
+        var (cell, _) = Core.Building.BuildAim.FromHit((toGrid * h.Point).ToNumerics(), (toGrid.Basis * h.Normal).ToNumerics());
+        return node.Creation.PartAt(cell) is { } part ? (node, part.Id) : null;
     }
 
     /// <summary>The camera's world position.</summary>

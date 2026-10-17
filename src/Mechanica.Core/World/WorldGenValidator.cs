@@ -54,6 +54,19 @@ internal static class WorldGenValidator
             NonNegative(o.Sink, $"{path}.sink", sink);
             if (o.Scale is { } scale && (scale.Count != 2 || !(scale[0] > 0f) || !(scale[0] <= scale[1]) || !float.IsFinite(scale[1])))
                 sink.Error(Code, $"{path}.scale", "scale must be [min, max] with 0 < min <= max.");
+            if (o.Health is { } health && !(health > 0 && float.IsFinite(health)))
+                sink.Error(Code, $"{path}.health", "health must be greater than 0.");
+            if (o.Drops is { Count: > 0 } && o.Health is null)
+                sink.Warning(Code, $"{path}.drops", "drops are never left: the object has no health, so it cannot break.");
+            for (var d = 0; d < (o.Drops?.Count ?? 0); d++)
+            {
+                var drop = o.Drops![d];
+                KnownKeys.WarnUnknown(drop.Extra, $"{path}.drops[{d}]", sink, typeof(ObjectDrop));
+                if (!PartValidator.IsItemRef(drop.Item))
+                    sink.Error(Code, $"{path}.drops[{d}].item", "item must be an item id or 'mod_id:item_id'.");
+                if (drop.Count < 1)
+                    sink.Error(Code, $"{path}.drops[{d}].count", "count must be 1 or more.");
+            }
         }
 
         var biomeIds = new HashSet<string>();

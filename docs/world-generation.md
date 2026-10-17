@@ -68,7 +68,9 @@ streamed in 64 m chunks. Height samples are `resolution` metres apart and must d
       "pieces": [{ "shape": "sphere", "radius": 2.6, "at": [0.0, 8.0, 0.0], "color": "#2f5e2a" }],
       "footprint": 1.5,
       "scale": [0.8, 1.25],
-      "sink": 0.3
+      "sink": 0.3,
+      "health": 60,
+      "drops": [{ "item": "scrap_wood", "count": 6 }]
     }
   ]
 }
@@ -83,6 +85,8 @@ streamed in 64 m chunks. Height samples are `resolution` metres apart and must d
 | `biomes[].weight` | Chance an inland cell is this biome. 0 means only where placed explicitly (the coast). |
 | `biomes[].scatter[]` | `spacing` is the side of the rule's grid cells; each cell holds at most one object, kept with probability `chance`. |
 | `objects[]` | Destructible world objects. Use catalog ids (`tree`, `rock_node`, `boulder`, ...). `footprint` is the radius other scattered objects keep clear of; `sink` lowers the object into the ground. |
+| `objects[].health` | Damage the object takes before it breaks (Sledgehammer, weapons, splash). Omitted means it cannot be broken. Damage is not saved: a part-felled tree is whole again after a restart. |
+| `objects[].drops[]` | Items (`item`, `count`, default 1) left on the ground as a pile when it breaks. |
 
 Shapes (`collider`, `pieces`) are `box` (`size`), `sphere` (`radius`) or `cylinder` (`radius`,
 `height`, upright), centred at `at`, turned `yaw` degrees about +Y, coloured `#rrggbb`. They are

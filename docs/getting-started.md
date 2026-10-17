@@ -114,6 +114,14 @@ The **Behaviour** tab links a Lua **Script** from the mod's `scripts/` folder an
 than in code. A plain block needs none of it. The [Lua API Reference](lua-api.md) lists what scripts
 can call.
 
+The **Script** tab edits that script. Pick a template (empty, thruster, bearing motor, wing or
+distance sensor) and press **New from template**: a part without a script gets
+`scripts/<part id>.lua`. The **API** list under the code shows everything a script can call;
+double-click an entry to insert it. **Save & reload** (Ctrl+S in the code) writes the file and
+checks it. A compile error is marked on its line. When the Test Sandbox is running the script, the
+save reloads it into the running parts, keeping their `state`, and the **Console** shows what the
+scripts print and every error. Export the part once so the sandbox knows it has a script.
+
 ## 8. Sounds
 
 The **Sounds** tab is the Sound Event Binder. Its top half lists the part's sound names: `place`,
@@ -160,7 +168,7 @@ in front of you.
 
 You can also open the sandbox from the main menu with **Test Sandbox**.
 
-## 10. Many similar parts: batches
+## 11. Many similar parts: batches
 
 When a mod has many parts that differ only in a few numbers, such as a set of blocks and their
 wedges, describe them once in a **batch file** and let the editor make them all. A batch lives in

@@ -1,0 +1,32 @@
+{
+  "id": "soil",
+  "name": "Soil",
+  "description": "Plant seeds here and keep it watered. Crops grow on top.",
+  "category": "interactive",
+  "mass": 20,
+  "durability": 2,
+  "friction": 0.8,
+  "buoyancy": 0.3,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "fabric",
+  "size": [4, 1, 4],
+  "mesh": "meshes/soil.glb",
+  "visual": {
+    "color": "#5a3f28",
+    "roughness": 1,
+    "metallic": 0
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.125, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "soil": {
+    "capacity": 300,
+    "growth": 1
+  }
+}
