@@ -10,7 +10,7 @@ namespace Mechanica.Game.Tests;
 /// The hydraulic lift model, host plus a client with the vanilla mods. A client puts its Lift down and both peers load
 /// the model and play its deploy: the outriggers swing out until the feet stand on the ground, the column rises from its
 /// transport height to the resting 2 units, the lights flash and hold. Raising eases the column up level by level the same
-/// way on both peers, the deck and its collision follow the extend clip exactly (to 22 units at the top), and coming to
+/// way on both peers, the deck and its collision follow the extend clip exactly (to 33 units at the top), and coming to
 /// rest at the top or bottom plays the end-stop clunk.
 /// </summary>
 public partial class LiftTest : StagedTest
@@ -64,7 +64,7 @@ public partial class LiftTest : StagedTest
             {
                 Check(lift.Model is not null, $"the {who} loads the lift model");
                 Check(!lift.Deployed && lift.ShownTop < Settings.TopAt(0), $"the {who} starts the deploy below the resting height ({lift.ShownTop:F3})");
-                Check(lift.Model!.FindChild("Stage19", true, false) is not null && lift.Model.FindChild("Platform", true, false) is not null, $"the {who}'s model has every column stage and the platform");
+                Check(lift.Model!.FindChild("Stage30", true, false) is not null && lift.Model.FindChild("Platform", true, false) is not null, $"the {who}'s model has every column stage and the platform");
             }
             return true;
         });
@@ -120,15 +120,15 @@ public partial class LiftTest : StagedTest
             Check(_endStops == 0, "stopping between the ends makes no end-stop clunk");
             return true;
         });
-        Add("at the top it stands 22 units tall and clunks", frame =>
+        Add("at the top it stands 33 units tall and clunks", frame =>
         {
             if (frame == 0)
                 Request(ToolActions.SetLiftLevel, new SetLiftLevelArgs(Settings.MaxLevel));
             if (!Both(out var host, out var client) || client.State.Level != Settings.MaxLevel || host.Moving || client.Moving
                 || !Mathf.IsEqualApprox(client.ShownTop, Settings.TopAt(Settings.MaxLevel), 1e-4f))
                 return false;
-            Check(Mathf.IsEqualApprox(Settings.TopAt(Settings.MaxLevel), 22 * 0.25f), "the top level is 22 units");
-            Check(Mathf.IsEqualApprox(Deck(client), 5.5f, 3e-3f), $"the model's deck reaches 5.5 m ({Deck(client):F4})");
+            Check(Mathf.IsEqualApprox(Settings.TopAt(Settings.MaxLevel), 33 * 0.25f), "the top level is 33 units");
+            Check(Mathf.IsEqualApprox(Deck(client), 8.25f, 3e-3f), $"the model's deck reaches 8.25 m ({Deck(client):F4})");
             Check(_endStops == 1, $"the end stop clunks once ({_endStops})");
             return true;
         });

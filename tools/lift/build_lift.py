@@ -9,7 +9,7 @@ What it builds (procedurally, from scratch: no .blend inputs, no downloads):
     2-unit height, the platform thuds into place and the amber lights flash, then hold.
   - ``extend`` (scrubbed, never played): the telescoping column. **Time in seconds = the height of the
     platform's deck above the ground, in metres**, so the game seeks it to the deck height it shows.
-    It covers 0.45 m (transport) to 5.5 m (22 units).
+    It covers 0.45 m (transport) to 8.25 m (33 units).
 
   Two empty nodes carry values the game reads instead of transforms: ``ColumnDrive`` (its height is the
   deck height the deploy clip wants) and ``LightDrive`` (its height is the lights' brightness, 0 to 1).
@@ -46,19 +46,19 @@ import lift_textures as lt  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[2]
 OUT = REPO / "mods" / "vanilla" / "meshes" / "lift" / "lift.glb"
-FPS = 30
+FPS = 40
 UNIT = 0.25
 
 # ---- Dimensions (metres) ----------------------------------------------------------------------------
 H_TRANSPORT = 0.45          # deck height before the column comes up
 H_REST = 0.50               # deck height at level 0 (2 units)
-H_MAX = 5.50                # deck height at full extension (22 units)
+H_MAX = 8.25                # deck height at full extension (33 units)
 STAGE_BOTTOM = 0.03         # where the nested stages stand inside the base
 DECK_ABOVE_STAGE = 0.105    # head plate (0.015) + platform (0.09) above the top stage's top
 STAGE_LEN = H_TRANSPORT - DECK_ABOVE_STAGE - STAGE_BOTTOM   # 0.315
-STAGES = 20
-STAGE_TRAVEL = (H_MAX - H_TRANSPORT) / STAGES               # 0.2525
-R0, DR = 0.125, 0.0042      # outermost stage radius and the step between stages
+STAGES = 31
+STAGE_TRAVEL = (H_MAX - H_TRANSPORT) / STAGES               # about 0.2516
+R0, DR = 0.125, 0.0027      # outermost stage radius and the step between stages
 BASE_HALF = 0.40            # housing half-width
 DECK_Z = 0.215              # top of the base's deck plate
 HINGE = (0.46, 0.46, 0.19)  # outrigger hinge of the back-right corner (the others are turned copies)
@@ -358,7 +358,7 @@ def build_stage(i):
     r = R0 - i * DR
     L = STAGE_LEN
     cylinder(g, (0, 0, 0), (0, 0, L - 0.02), r, "chrome", segs=40, cap0=False, cap1=False)
-    ring(g, L - 0.022, L, r - 0.003, r + 0.0062, "dark_steel", segs=40)          # locking collar
+    ring(g, L - 0.022, L, r - 0.0015, r + 0.0062, "dark_steel", segs=40)         # locking collar
     for k in range(2):
         a = math.pi * k + (math.pi / 2 if i % 2 else 0)
         c = Matrix.Rotation(a, 3, "Z")

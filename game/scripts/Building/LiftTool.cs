@@ -14,14 +14,16 @@ namespace Mechanica.Game.Building;
 /// The Lift in the local player's hand (UI spec §2, §8). Aimed at the ground it shows where the platform would go and
 /// <see cref="Place"/> puts the player's Lift there (carrying whatever it holds); aimed at a Creation,
 /// <see cref="Place"/> slides the Lift under it and picks it up. Keys: left click places or picks up, the arrow keys
-/// raise and lower, Q turns the held Creation, holding right click takes the Lift away (a ring fills round the
-/// crosshair), and Use (E) aimed at the Lift opens the blueprint menu (<see cref="BlueprintMenu"/>), which saves what the
+/// raise and lower a level a time (held, the column runs on smoothly until let go), Q turns the held Creation, holding
+/// right click aimed at the Lift (or what it holds) picks the Lift back up (a ring fills round the crosshair; what it held
+/// drops), and Use (E) aimed at the Lift opens the blueprint menu (<see cref="BlueprintMenu"/>), which saves what the
 /// Lift holds or loads a saved Creation onto it. Every change is a <see cref="ToolActions"/> request; the host decides.
 /// </summary>
 public partial class LiftTool : HandTool
 {
     private MeshInstance3D _preview = null!;
     private double? _removeFrom;
+    private int _raiseHeld;
 
     /// <summary>What the Lift would do now.</summary>
     /// <param name="Position">Where the middle of the platform's base would go.</param>
@@ -71,24 +73,72 @@ public partial class LiftTool : HandTool
         if (!Active)
             return;
         UpdateAim();
-        // A release the tool never heard (the mouse freed for a window) ends the hold without removing.
+        // A release the tool never heard (the mouse freed for a window) ends the holds without removing.
         if (ReadDeviceInput && Input.MouseMode != Input.MouseModeEnum.Captured)
-            _removeFrom = null;
-        if (_removeFrom is { } from && HammerTool.Now - from >= Build.Settings!.Lift.RemoveHoldSeconds)
         {
             _removeFrom = null;
-            Remove();
+            _raiseHeld = 0;
         }
+        if (_removeFrom is { } from)
+        {
+            // Looking away from the Lift ends the hold, like letting go.
+            if (!AimsAtOwnLift())
+                _removeFrom = null;
+            else if (HammerTool.Now - from >= Build.Settings!.Lift.RemoveHoldSeconds)
+            {
+                _removeFrom = null;
+                Remove();
+            }
+        }
+        RepeatRaise();
     }
 
-    /// <summary>Right click pressed: starts the hold that takes the Lift away. False without a Lift.</summary>
+    /// <summary>
+    /// Right click pressed: starts the hold that picks the Lift back up. False without a Lift or when the crosshair is
+    /// not on it (or on what it holds).
+    /// </summary>
     public bool PressRemove()
     {
-        if (Own is null)
+        if (Own is null || !AimsAtOwnLift())
             return false;
         _removeFrom = HammerTool.Now;
         return true;
     }
+
+    /// <summary>
+    /// An arrow key pressed (<paramref name="direction"/> +1 up, -1 down): one level now, and while it is held the next
+    /// before the column gets there, so it keeps moving. False without a Lift.
+    /// </summary>
+    public bool PressRaise(int direction)
+    {
+        _raiseHeld = Math.Sign(direction);
+        _raisePending = Raise(_raiseHeld, _ => _raisePending = false);
+        return _raisePending;
+    }
+
+    /// <summary>The arrow key let go: the column stops at the level it is going to.</summary>
+    public void ReleaseRaise() => _raiseHeld = 0;
+
+    /// <summary>True while an arrow key is held.</summary>
+    public bool RaiseHeld => _raiseHeld != 0;
+
+    // A held arrow key asks for the next level while the deck is still on its way to the last one, so the column runs
+    // on smoothly instead of stopping at every level; let go, it stops at the level it is going to.
+    private void RepeatRaise()
+    {
+        if (_raiseHeld == 0 || _raisePending || Own is not { } lift)
+            return;
+        var settings = Build.Settings!.Lift;
+        var top = lift.Level + _raiseHeld;
+        if (top < 0 || top > settings.MaxLevel)
+            return;
+        if (!Build.Lifts.TryGetValue(Player.PeerId, out var body) || !body.Deployed || body.State.Level != lift.Level
+            || Math.Abs(settings.TopAt(lift.Level) - body.ShownTop) > settings.LevelHeight * 0.9f)
+            return;
+        _raisePending = Raise(_raiseHeld, _ => _raisePending = false);
+    }
+
+    private bool _raisePending;
 
     /// <summary>Right click let go: a hold too short to take the Lift away ends without doing anything.</summary>
     public void ReleaseRemove() => _removeFrom = null;
@@ -194,7 +244,7 @@ public partial class LiftTool : HandTool
     public override string HudText()
     {
         var lift = Own is { } own ? own.Creation is { } c ? Loc.T("level {0}, holding creation {1}", own.Level, c) : Loc.T("level {0}", own.Level) : Loc.T("not placed");
-        return Loc.T("Lift ({0})   {1} place / pick up  {2}/{3} raise/lower  {4} turn  hold {5} take away  {6} on the Lift: blueprints", lift, Key(InputActions.Primary), Key(InputActions.LiftUp), Key(InputActions.LiftDown),
+        return Loc.T("Lift ({0})   {1} place / pick up  {2}/{3} raise/lower  {4} turn  hold {5} on the Lift: pick up  {6} on the Lift: blueprints", lift, Key(InputActions.Primary), Key(InputActions.LiftUp), Key(InputActions.LiftDown),
             Key(InputActions.Rotate), Key(InputActions.Secondary), Key(InputActions.Interact)) + Status;
     }
 
@@ -212,9 +262,15 @@ public partial class LiftTool : HandTool
             ReleaseRemove();
         }
         else if (Pressed(@event, InputActions.LiftUp))
-            Raise(1);
+            PressRaise(1);
         else if (Pressed(@event, InputActions.LiftDown))
-            Raise(-1);
+            PressRaise(-1);
+        else if (Released(@event, InputActions.LiftUp) || Released(@event, InputActions.LiftDown))
+        {
+            if (_raiseHeld == 0)
+                return false;
+            ReleaseRaise();
+        }
         else if (Pressed(@event, InputActions.RotateBack))
         {
             for (var i = 0; i < 3; i++)
@@ -232,7 +288,10 @@ public partial class LiftTool : HandTool
     {
         _preview.Visible = Active && Aim is { Creation: null };
         if (!Active)
+        {
             _removeFrom = null;
+            _raiseHeld = 0;
+        }
     }
 
     /// <inheritdoc/>
