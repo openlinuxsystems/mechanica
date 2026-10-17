@@ -56,14 +56,17 @@ public sealed record PaintArgs(int Creation, IReadOnlyList<int> Parts, string? C
 
 /// <summary>
 /// Arguments of <c>Sledge</c>: one Sledgehammer hit on a part (<see cref="Creation"/> and <see cref="Part"/>),
-/// a player (<see cref="Player"/>) or a world object such as a tree (<see cref="Object"/>).
+/// a player (<see cref="Player"/>), a world object such as a tree (<see cref="Object"/>), a bot (<see cref="Bot"/>),
+/// or, with only <see cref="At"/>, anything else it lands on (the ground, a rock face): that hit only thuds.
 /// </summary>
 /// <param name="Creation">The Creation hit.</param>
 /// <param name="Part">The part hit.</param>
 /// <param name="Player">Peer of the player hit.</param>
 /// <param name="Object">Id of the world object hit (<c>"3.10.-4"</c>).</param>
 /// <param name="Bot">Id of the bot hit.</param>
-public sealed record SledgeArgs(int? Creation = null, int? Part = null, int? Player = null, string? Object = null, int? Bot = null);
+/// <param name="At">Where the head lands, in world metres: the hit's sound and dust play there.</param>
+public sealed record SledgeArgs(int? Creation = null, int? Part = null, int? Player = null, string? Object = null, int? Bot = null,
+    Vec3? At = null);
 
 /// <summary>Arguments of <c>LoadBlueprint</c>: a blueprint file's JSON (<see cref="Creations.Blueprint"/>), loaded onto the caller's empty Lift.</summary>
 /// <param name="Blueprint">The blueprint.</param>
@@ -600,8 +603,12 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
     {
         var targets = (args.Creation is not null || args.Part is not null ? 1 : 0) + (args.Player is not null ? 1 : 0) + (args.Object is not null ? 1 : 0)
             + (args.Bot is not null ? 1 : 0);
-        if (targets != 1)
+        if (targets > 1)
             return "Hit one thing: a creation and part, a player, an object or a bot.";
+        if (args.At is { } at && !(float.IsFinite(at.X) && float.IsFinite(at.Y) && float.IsFinite(at.Z)))
+            return "Give a real place for the hit.";
+        if (targets == 0)
+            return args.At is { } ground ? CheckSledgeReach(caller, ground.ToNumerics()) : "Hit one thing: a creation and part, a player, an object or a bot.";
         if (args.Bot is { } bot)
             return Targets?.BotCentre(bot) is { } botCentre ? CheckSledgeReach(caller, botCentre) : $"There is no bot {bot} to hit.";
         if (args.Player is { } peer)
@@ -625,45 +632,57 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
 
     // The swing reaches sledge.reach from the eye to the crosshair; the target's centre may sit up to half a block
     // further in (a big part, a bot's middle), so that much slack is allowed.
-    private string? CheckSledgeReach(ActionCaller caller, Vector3 centre)
+    private string? CheckSledgeReach(ActionCaller caller, Vector3 centre, float slack = SledgeReachSlack)
     {
         if (caller.Source != ActionSource.Player)
             return null;
         if (world.EyeOf(caller.Peer) is not { } eye)
             return "You have no player to use tools with.";
         var distance = Vector3.Distance(eye, centre);
-        var reach = settings.Sledge.Reach + SledgeReachSlack;
+        var reach = settings.Sledge.Reach + slack;
         return distance <= reach ? null : $"That is {distance:F1} m away; the Sledgehammer reaches {settings.Sledge.Reach:F1} m.";
     }
+
+    // Where a hit's sound and dust go: where the head landed, when that is on the thing hit, else its centre.
+    private static Vector3 HitPoint(SledgeArgs args, Vector3 centre) =>
+        args.At is { } at && Vector3.Distance(at.ToNumerics(), centre) <= HitPointSlack ? at.ToNumerics() : centre;
+
+    // How far from a target's centre the head may land and still count as on it (half a big part, a bot's reach).
+    private const float HitPointSlack = 1.5f;
 
     private JsonElement? ApplySledge(ActionCaller caller, SledgeArgs args)
     {
         _lastSwing[caller.Peer] = world.Now;
+        if (args is { Creation: null, Part: null, Player: null, Object: null, Bot: null, At: { } ground })
+        {
+            world.PlaySound("smash_hit", Identifiers.VanillaModId, ground.ToNumerics());
+            return Value(new SledgeResult(false, null, false, []));
+        }
         if (args.Player is { } peer)
         {
-            world.PlaySound("smash_hit", Identifiers.VanillaModId, Targets!.PlayerCentre(peer)!.Value);
+            world.PlaySound("smash_hit", Identifiers.VanillaModId, HitPoint(args, Targets!.PlayerCentre(peer)!.Value));
             return Value(new SledgeResult(false, Targets.StrikePlayer(caller, peer, settings.Sledge.PlayerDamage), false, []));
         }
         if (args.Bot is { } bot)
         {
-            world.PlaySound("smash_hit", Identifiers.VanillaModId, Targets!.BotCentre(bot)!.Value);
+            world.PlaySound("smash_hit", Identifiers.VanillaModId, HitPoint(args, Targets!.BotCentre(bot)!.Value));
             var health = Targets.StrikeBot(bot, settings.Sledge.PlayerDamage);
             return Value(new SledgeResult(health <= 0, health, false, []));
         }
         if (args.Object is { } id)
         {
-            var at = Targets!.ObjectCentre(id)!.Value;
+            var at = HitPoint(args, Targets!.ObjectCentre(id)!.Value);
             var left = Targets.StrikeObject(id, settings.Sledge.ObjectDamage);
             world.PlaySound(left <= 0 ? "smash_break" : "smash_hit", Identifiers.VanillaModId, at);
             return Value(new SledgeResult(left <= 0, left, left <= 0, []));
         }
         var creation = world.FindCreation(args.Creation!.Value)!;
-        var centre = PartCentre(creation, args.Part!.Value);
+        var centre = HitPoint(args, PartCentre(creation, args.Part!.Value));
+        var body = creation.BodyIndexOf(args.Part.Value);
         var result = DamagePart(creation, args.Part.Value, settings.Sledge.Damage);
         world.PlaySound(result.Broken ? "smash_break" : "smash_hit", Identifiers.VanillaModId, centre);
         if (!result.Broken && caller.Source == ActionSource.Player && world.EyeOf(caller.Peer) is { } eye && centre != eye)
         {
-            var body = creation.BodyIndexOf(args.Part.Value);
             var impulse = settings.Sledge.ImpulseFor(creation.Bodies[body].Mass);
             if (impulse > 0f)
                 world.Push(creation, body, centre, Vector3.Normalize(centre - eye) * impulse);

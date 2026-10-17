@@ -141,9 +141,13 @@ public partial class CharacterSync : Node
     {
         if (Session.State != NetSession.SessionState.Hosting || !Players.Players.ContainsKey(peer))
             return;
-        foreach (var other in Players.Players.Keys.Where(p => p != peer))
-            RpcId(peer, MethodName.ClientCharacter, other, Choices.ChosenBy(other) ?? "");
-        RpcId(peer, MethodName.ClientCharacter, peer, Choices.ChosenBy(peer) ?? "");
+        // An AI agent's player has no network peer to tell; the others still hear about it.
+        if (Session.IsReady(peer))
+        {
+            foreach (var other in Players.Players.Keys.Where(p => p != peer))
+                RpcId(peer, MethodName.ClientCharacter, other, Choices.ChosenBy(other) ?? "");
+            RpcId(peer, MethodName.ClientCharacter, peer, Choices.ChosenBy(peer) ?? "");
+        }
         foreach (var other in Session.ReadyPeers.Where(p => p != peer))
             RpcId(other, MethodName.ClientCharacter, peer, Choices.ChosenBy(peer) ?? "");
     }

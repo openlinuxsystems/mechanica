@@ -112,7 +112,7 @@ public static class InputActions
             new(ZoomIn, "Zoom in", camera, "X", "Alt+WheelUp"),
             new(ZoomOut, "Zoom out", camera, "C", "Alt+WheelDown"),
             new(SeatCamera, "Seated camera", camera, "Ctrl", Context: InputContext.Seated),
-            new(Inventory, "Inventory", menus, "I", "B"),
+            new(Inventory, "Inventory", menus, "I", "Tab"),
             new(Logbook, "Logbook", menus, "L"),
             new(Handbook, "Handbook", menus, "H", "F1"),
             new(PagePrevious, "Handbook: previous page", menus, "Left", "Pageup"),

@@ -257,6 +257,9 @@ public partial class Main : Node3D
     /// <summary>The external AI endpoint (WebSocket JSON-RPC), listening only when asked to.</summary>
     public AiEndpoint Ai { get; private set; } = null!;
 
+    /// <summary>The AI agents that joined the host's world as players through <see cref="Ai"/>.</summary>
+    public AgentHost AgentHost { get; private set; } = null!;
+
     /// <summary>AI notes, recommendations and bug reports, and what led up to them.</summary>
     public AiReports Reports { get; private set; } = null!;
 
@@ -534,13 +537,14 @@ public partial class Main : Node3D
         }
         Recorder = new RecordReplay { Name = "Recorder", Session = Session, Actions = Actions };
         AddChild(Recorder);
+        AgentHost = new AgentHost(Session, PlayerSync, Actions.Dispatcher);
         Reports = new AiReports
         {
             Name = "Reports", Session = Session, Actions = Actions, Folder = ReportsFolder ?? (Settings.GameSettings.Persist ? null : System.IO.Path.Combine(System.IO.Path.GetTempPath(), "mechanica-test-ai-reports", $"{System.Environment.ProcessId}-{GetInstanceId()}")), Context = DescribeForReport,
             Scripts = () => Scripts.Runtime, Bots = () => Bots.Runtime,
         };
         AddChild(Reports);
-        Ai = new AiEndpoint { Name = "Ai", Session = Session, Actions = Actions, Log = Recorder };
+        Ai = new AiEndpoint { Name = "Ai", Session = Session, Actions = Actions, Log = Recorder, Agents = AgentHost };
         AddChild(Ai);
         RemoteEventSources.Connect(this, Ai.Events);
         Ai.Modules.Add(new Core.Packages.PackageRpcModule(ModPaths.ModsRoot, ModPaths.PackagesRoot, Ai.Events));
