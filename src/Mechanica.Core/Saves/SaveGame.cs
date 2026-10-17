@@ -29,8 +29,9 @@ public sealed record SavedSlot(int Slot, string Item, int Count);
 /// <param name="Bed">The respawn bed they set, or null.</param>
 /// <param name="Character">The qualified id of the character they chose in this world, or null when they have not chosen.</param>
 /// <param name="Hotbar">What each of their ten hotbar slots holds (null entries are empty), or null for the default hotbar.</param>
+/// <param name="Markers">The places they marked on their Logbook map, or null for none.</param>
 public sealed record SavedPlayer(string Id, string Name, IReadOnlyList<SavedSlot> Inventory, float? Health = null, Vec3? Position = null, float Yaw = 0,
-    SavedPart? Bed = null, string? Character = null, IReadOnlyList<string?>? Hotbar = null);
+    SavedPart? Bed = null, string? Character = null, IReadOnlyList<string?>? Hotbar = null, IReadOnlyList<Ui.MapMarker>? Markers = null);
 
 /// <summary>A part of a Creation, by id.</summary>
 /// <param name="Creation">Creation id.</param>
@@ -155,6 +156,7 @@ public sealed record SaveGame
                 Bed = p.Bed is { } bed ? new PartData { Creation = bed.Creation, Part = bed.Part } : null,
                 Character = p.Character,
                 Hotbar = p.Hotbar is { } bar ? [.. bar] : null,
+                Markers = p.Markers is { Count: > 0 } markers ? [.. markers.Select(m => new MarkerData { Id = m.Id, Name = m.Name, X = m.X, Y = m.Y, Z = m.Z })] : null,
                 Inventory = p.Inventory.Count == 0 ? null : [.. p.Inventory.OrderBy(s => s.Slot).Select(s => new SlotData { Slot = s.Slot, Item = s.Item, Count = s.Count })],
             })],
             Quests = Quests?.ToElement(),
@@ -260,7 +262,16 @@ public sealed record SaveGame
                 sink.Error(invalid, $"{path}.character", $"'{character}' is not a character id (mod_id:character_id).");
             if (p.Hotbar is { Count: > Items.HotbarActions.SlotCount })
                 sink.Error(invalid, $"{path}.hotbar", $"a hotbar has at most {Items.HotbarActions.SlotCount} slots.");
-            players.Add(new SavedPlayer(p.Id!, PlayerProfile.CleanName(p.Name), slots, p.Health, p.Position, p.Yaw ?? 0, bed, p.Character, p.Hotbar));
+            var markers = new List<Ui.MapMarker>();
+            foreach (var (marker, j) in (p.Markers ?? []).Select((m, j) => (m, j)))
+            {
+                if (marker is not { Id: { } markerId, X: var x, Y: var y, Z: var z } || !float.IsFinite(x) || !float.IsFinite(y) || !float.IsFinite(z))
+                    sink.Error(invalid, $"{path}.markers[{j}]", "a marker needs an id and a finite x, y and z.");
+                else
+                    markers.Add(new Ui.MapMarker(markerId, marker.Name ?? "", x, y, z));
+            }
+            players.Add(new SavedPlayer(p.Id!, PlayerProfile.CleanName(p.Name), slots, p.Health, p.Position, p.Yaw ?? 0, bed, p.Character, p.Hotbar,
+                markers.Count == 0 ? null : markers));
         }
 
         QuestState? quests = null;
@@ -359,7 +370,17 @@ public sealed record SaveGame
         public PartData? Bed { get; init; }
         public string? Character { get; init; }
         public List<string?>? Hotbar { get; init; }
+        public List<MarkerData?>? Markers { get; init; }
         public List<SlotData>? Inventory { get; init; }
+    }
+
+    private sealed record MarkerData
+    {
+        public string? Id { get; init; }
+        public string? Name { get; init; }
+        public float X { get; init; } = float.NaN;
+        public float Y { get; init; } = float.NaN;
+        public float Z { get; init; } = float.NaN;
     }
 
     private sealed record PartData

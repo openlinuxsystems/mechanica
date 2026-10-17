@@ -3,29 +3,28 @@ using Mechanica.Game.Ui;
 using Mechanica.Core.Data;
 using Mechanica.Core.Input;
 using Mechanica.Core.Quests;
+using Mechanica.Core.Ui;
+using Mechanica.Core.World;
 using Mechanica.Game.Net;
 using Mechanica.Game.Player;
 
 namespace Mechanica.Game.Quests;
 
 /// <summary>
-/// The quest log and dialogue (chunk 24). The log in the top right shows each active quest's current step
-/// and progress, and the POIs quests revealed with how far away they are. Lines quests say queue up in the
-/// dialogue box at the bottom. When a quest waits on a choice, J opens the log with a button per choice
-/// (and frees the mouse); J or Escape closes it again.
+/// The quest tracker, the Logbook and dialogue (chunk 24, UI spec §5, §10). The tracker in the top right shows each
+/// active quest's current step and progress, and the POIs quests revealed with how far away they are. Lines quests
+/// say queue up in the dialogue box at the bottom. The Logbook key (L) opens the <see cref="LogbookWindow"/> with the
+/// quest list, any choices waiting and the map, and frees the mouse; L, Escape or its X closes it again.
 /// </summary>
 public partial class QuestHud : CanvasLayer, IHudLayer
 {
     private readonly Queue<DialogueLine> _queue = new();
     private PanelContainer _log = null!;
     private Label _logText = null!;
-    private VBoxContainer _choices = null!;
+    private LogbookWindow _logbook = null!;
     private PanelContainer _dialogue = null!;
     private Label _dialogueText = null!;
-    private Label _status = null!;
     private double _lineLeft;
-    private string _shownChoices = "";
-    private bool _closeWhenDecided;
 
     /// <summary>Quests. Set before adding to the tree.</summary>
     public QuestSync Quests { get; init; } = null!;
@@ -36,10 +35,25 @@ public partial class QuestHud : CanvasLayer, IHudLayer
     /// <summary>Players, for the local player's position. Set before adding to the tree.</summary>
     public PlayerSync Players { get; init; } = null!;
 
-    /// <summary>True while the log is open with its choices.</summary>
+    /// <summary>The local player's map markers, or null for none (tests). Set before adding to the tree.</summary>
+    public MapMarkerSync? Markers { get; init; }
+
+    /// <summary>The Logbook map's numbers. Set before adding to the tree.</summary>
+    public LogbookSettings MapSettings { get; init; } = new();
+
+    /// <summary>The world the map shows, or null before it exists. Set before adding to the tree.</summary>
+    public Func<WorldGenerator?> World { get; init; } = () => null;
+
+    /// <summary>The compass, whose primary waypoint the Logbook sets; null for none.</summary>
+    public CompassHud? Compass { get; set; }
+
+    /// <summary>The Logbook window.</summary>
+    public LogbookWindow Logbook => _logbook;
+
+    /// <summary>True while the Logbook is open.</summary>
     public bool IsOpen { get; private set; }
 
-    /// <summary>Hide GUI leaves the log up while it is open with its choices.</summary>
+    /// <summary>Hide GUI leaves the Logbook up while it is open.</summary>
     public bool KeepWhenHidden => IsOpen;
 
     /// <summary>The log's text now, for tests.</summary>
@@ -64,10 +78,22 @@ public partial class QuestHud : CanvasLayer, IHudLayer
         // Quest names, steps and lines are the mod's own text.
         _logText = Loc.Verbatim(new Label { Name = "Text", CustomMinimumSize = new Vector2(320, 0), AutowrapMode = TextServer.AutowrapMode.WordSmart });
         box.AddChild(_logText);
-        _choices = new VBoxContainer { Name = "Choices", Visible = false };
-        box.AddChild(_choices);
-        _status = new Label { Name = "Status", ThemeTypeVariation = "ErrorLabel" };
-        box.AddChild(_status);
+
+        _logbook = new LogbookWindow
+        {
+            Visible = false,
+            Quests = Quests,
+            Choose = Choose,
+            Markers = Markers,
+            Settings = MapSettings,
+            World = World,
+            Waypoints = Quests.Waypoints,
+            Primary = () => Compass?.Primary,
+            SetPrimary = id => Compass?.SetPrimary(id),
+            Player = () => Players.LocalPlayer is { } me ? (me.GlobalPosition, Core.Ui.Compass.Heading(me.Camera.GlobalRotation.Y)) : null,
+        };
+        _logbook.CloseRequested += Close;
+        AddChild(_logbook);
 
         _dialogue = new PanelContainer { Name = "Dialogue", Visible = false, MouseFilter = Control.MouseFilterEnum.Ignore };
         AddChild(_dialogue);
@@ -113,6 +139,7 @@ public partial class QuestHud : CanvasLayer, IHudLayer
 
     public override void _UnhandledInput(InputEvent @event)
     {
+        // Esc is the Logbook window's own.
         if (GameInput.Pressed(@event, InputActions.Logbook) && (IsOpen || Input.MouseMode == Input.MouseModeEnum.Captured))
         {
             if (IsOpen)
@@ -121,26 +148,22 @@ public partial class QuestHud : CanvasLayer, IHudLayer
                 Open();
             GetViewport().SetInputAsHandled();
         }
-        else if (IsOpen && GameInput.Pressed(@event, InputActions.Pause))
-        {
-            Close();
-            GetViewport().SetInputAsHandled();
-        }
     }
 
-    /// <summary>Opens the log with the pending choices and frees the mouse.</summary>
+    /// <summary>Opens the Logbook and frees the mouse.</summary>
     public void Open()
     {
         IsOpen = true;
-        _status.Text = "";
+        _logbook.Visible = true;
         Input.MouseMode = Input.MouseModeEnum.Visible;
         Refresh();
     }
 
-    /// <summary>Closes the log's choices and captures the mouse again.</summary>
+    /// <summary>Closes the Logbook and captures the mouse again.</summary>
     public void Close()
     {
         IsOpen = false;
+        _logbook.Visible = false;
         Input.MouseMode = Input.MouseModeEnum.Captured;
         Refresh();
     }
@@ -149,9 +172,7 @@ public partial class QuestHud : CanvasLayer, IHudLayer
     public void Choose(string quest, string choice) =>
         Actions.Request(QuestTracker.ChooseQuestOption, new ChooseQuestOptionArgs(quest, choice), result =>
         {
-            _status.Text = result.Ok ? "" : result.Message ?? "";
-            // The new state can land after the result; Refresh closes the log once it has.
-            _closeWhenDecided = result.Ok;
+            _logbook.Answered(result);
             Refresh();
         });
 
@@ -187,19 +208,9 @@ public partial class QuestHud : CanvasLayer, IHudLayer
             if (state.Of(quest.QualifiedId) is not { Status: QuestStatus.Active } progress || Quests.Tracker.CurrentStep(quest.QualifiedId) is not { } step)
                 continue;
             lines.Add(quest.Name);
-            lines.Add($"  {step.Text}{Progress(step, progress)}");
+            lines.Add($"  {step.Text}{LogbookWindow.Progress(step, progress)}");
         }
-        var pending = Quests.PendingChoices().ToList();
-        if (_closeWhenDecided && pending.Count == 0)
-        {
-            _closeWhenDecided = false;
-            if (IsOpen)
-            {
-                Close();
-                return;
-            }
-        }
-        if (pending.Count > 0 && !IsOpen)
+        if (Quests.PendingChoices().Any() && !IsOpen)
             lines.Add(Loc.T("[{0}] decide", GameInput.Label(InputActions.Logbook)));
         var feet = Players.LocalPlayer?.GlobalPosition;
         foreach (var poi in state.Revealed)
@@ -211,38 +222,10 @@ public partial class QuestHud : CanvasLayer, IHudLayer
             }
         }
         _logText.Text = lines.Count == 0 ? Loc.T("No quests right now.") : string.Join("\n", lines);
-        _log.Visible = lines.Count > 0 || IsOpen;
-
-        _choices.Visible = IsOpen && pending.Count > 0;
-        // Rebuilt only when the choices change, so a periodic refresh doesn't swallow a click.
-        var shown = _choices.Visible ? string.Join(";", pending.Select(p => $"{p.Quest.QualifiedId}/{p.Step.Id}")) : "";
-        if (shown == _shownChoices)
-            return;
-        _shownChoices = shown;
-        foreach (var child in _choices.GetChildren())
-            child.QueueFree();
-        if (!_choices.Visible)
-            return;
-        foreach (var (quest, step) in pending)
-        {
-            foreach (var choice in step.Choices)
-            {
-                var id = quest.QualifiedId;
-                var button = Loc.Verbatim(new Button { Name = $"Choice_{choice.Id}", Text = choice.Text ?? choice.Id });
-                button.Pressed += () => Choose(id, choice.Id!);
-                _choices.AddChild(button);
-            }
-        }
+        // The Logbook shows all of it while it is open.
+        _log.Visible = lines.Count > 0 && !IsOpen;
+        _logbook.Refresh();
     }
-
-    private static string Progress(QuestStepInfo step, QuestProgress progress) => step.Kind switch
-    {
-        QuestObjectiveKind.Interact or QuestObjectiveKind.Extinguish or QuestObjectiveKind.Place or QuestObjectiveKind.Craft or QuestObjectiveKind.Crops
-            or QuestObjectiveKind.Raid
-            when step.Count > 1 => $" ({progress.Count}/{step.Count})",
-        QuestObjectiveKind.Drive => " " + Loc.T("({0}/{1} m)", (int)progress.Distance, (int)step.Distance),
-        _ => "",
-    };
 
     // Distance and compass direction, e.g. "420 m north-east".
     private static string Where(Vector3 from, System.Numerics.Vector3 to)
