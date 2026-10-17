@@ -92,7 +92,7 @@ public partial class PaintPicker : CanvasLayer
     {
         if (!IsOpen)
             return;
-        if (GameInput.Pressed(@event, InputActions.Rotate) || GameInput.Pressed(@event, InputActions.RotateBack))
+        if ((GameInput.Pressed(@event, InputActions.Pause) && EscapeStack.Topmost == this) || GameInput.Pressed(@event, InputActions.Rotate) || GameInput.Pressed(@event, InputActions.RotateBack))
             Close();
         else if (Enumerable.Range(1, InputActions.HotbarSlots).FirstOrDefault(s => GameInput.Pressed(@event, InputActions.Hotbar(s))) is var slot and > 0)
             Choose(slot - 1);
