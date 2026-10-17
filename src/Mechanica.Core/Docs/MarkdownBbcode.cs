@@ -7,7 +7,8 @@ namespace Mechanica.Core.Docs;
 /// Converts the Markdown the docs are written in to Godot <c>RichTextLabel</c> BBCode, so the same
 /// files ship as repo docs and as in-game help. It covers what the docs use: headings, paragraphs,
 /// bullet and numbered lists, bold, italics, inline code, fenced code blocks, links and tables (shown
-/// as aligned monospace text). Everything else passes through as plain text with brackets escaped.
+/// as aligned monospace text). Everything else passes through as plain text with brackets escaped. As in Markdown,
+/// lines wrapped inside a paragraph or a list item join into one line, so the label wraps them to its own width.
 /// </summary>
 public static partial class MarkdownBbcode
 {
@@ -46,19 +47,32 @@ public static partial class MarkdownBbcode
             }
             if (Bullet().Match(line) is { Success: true } bullet)
             {
-                output.Append(bullet.Groups[1].Value).Append("• ").Append(Inline(bullet.Groups[2].Value)).Append('\n');
+                output.Append(bullet.Groups[1].Value).Append("• ").Append(Inline(Joined(bullet.Groups[2].Value, lines, ref i))).Append('\n');
                 continue;
             }
             if (Numbered().Match(line) is { Success: true } numbered)
             {
                 output.Append(numbered.Groups[1].Value).Append(numbered.Groups[2].Value).Append(". ")
-                    .Append(Inline(numbered.Groups[3].Value)).Append('\n');
+                    .Append(Inline(Joined(numbered.Groups[3].Value, lines, ref i))).Append('\n');
                 continue;
             }
-            output.Append(line.Length == 0 ? "\n" : Inline(line) + "\n");
+            output.Append(line.Length == 0 ? "\n" : Inline(Joined(line, lines, ref i)) + "\n");
         }
         return output.ToString().TrimEnd('\n') + "\n";
     }
+
+    // A paragraph or list item goes on for as long as the lines after it are plain text, which join with a space.
+    private static string Joined(string first, string[] lines, ref int i)
+    {
+        var text = new StringBuilder(first.TrimEnd());
+        while (i + 1 < lines.Length && Continues(lines[i + 1]))
+            text.Append(' ').Append(lines[++i].Trim());
+        return text.ToString();
+    }
+
+    private static bool Continues(string line) =>
+        line.Trim().Length > 0 && !line.StartsWith("```", StringComparison.Ordinal) && !line.TrimStart().StartsWith('|')
+        && !Heading().IsMatch(line) && !Bullet().IsMatch(line) && !Numbered().IsMatch(line);
 
     /// <summary>Escapes BBCode brackets in plain text.</summary>
     public static string Escape(string text) => text.Replace("[", "[lb]");

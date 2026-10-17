@@ -517,7 +517,8 @@ public partial class Main : Node3D
             AddChild(inventory);
             AddChild(Upgrades);
             PartSettings = new PartSettingsPanel { Name = "PartSettings", Actions = Actions, Creations = Creations };
-            AddChild(new Ui.HudRoot { Name = "HudRoot" });
+            var hudRoot = new Ui.HudRoot { Name = "HudRoot" };
+            AddChild(hudRoot);
             Ui.WorldHud? worldHud = null;
             var survivalHud = new SurvivalHud
             {
@@ -549,6 +550,7 @@ public partial class Main : Node3D
                 World = () => Survival.Own is { } own ? (own.Mode, own.Difficulty) : null,
             };
             AddChild(pause);
+            hudRoot.Covered = () => inventory.IsOpen || pause.IsOpen || questLog.IsOpen || Ui.ToolWindow.Topmost is not null || Characters.Window is not null;
             AddChild(PartSettings);
             var snapshots = new Ui.CreationSnapshots { Name = "CreationSnapshots", Assets = Assets };
             AddChild(snapshots);
@@ -565,7 +567,7 @@ public partial class Main : Node3D
             {
                 Name = "Compass", Players = PlayerSync,
                 Waypoints = () => LocalPlayer is { } me ? Quests.Waypoints(me.GlobalPosition.ToNumerics()) : [],
-                Covered = () => inventory.IsOpen || pause.IsOpen,
+                Covered = () => Ui.HudRoot.IsCovered,
             });
         }
 

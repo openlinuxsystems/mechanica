@@ -392,6 +392,44 @@ def chord(names, octave=3):
 
 # ---- The catalog -------------------------------------------------------------------------------
 
+# ---- The Lift (tools/lift/build_lift.py times its deploy clip to lift_place) --------------------------
+
+def clank(rng, amount=1.0, scale=1.0):
+    m = MATERIALS["metal"]
+    return hit(rng, 0.6, m["lo"] * 0.5, m["hi"] * 0.8, 0.03, m["partials"], 0.22, scale, amount) + thud(rng, 0.6, 50, 500, 0.05, 0.7 * amount)
+
+
+def pump(rng, dur, f0, f1, grit=0.35):
+    """A hydraulic pump under load: a gliding hum with its harmonics, valve noise and a soft start and stop."""
+    env = np.sin(np.pi * np.linspace(0, 1, n_of(dur))) ** 0.6
+    hum = glide(f0, f1, dur) + 0.5 * glide(f0 * 2, f1 * 2, dur) + 0.25 * glide(f0 * 3.01, f1 * 3.01, dur)
+    flutter = 1 + 0.15 * np.sin(2 * np.pi * 23 * t_of(dur))
+    return (hum * 0.35 * flutter + band(noise(rng, dur), 400, 3000) * grit) * env
+
+
+def lift_deploy(rng):
+    """1.9 s: settle, outriggers swing out (0.25-0.86) and lock with a clank (0.88), the column rises
+    (0.98-1.45), the platform locks with a thud (1.48), the lights' relays tick, a last rattle."""
+    pins = [(clank(rng, rng.uniform(0.6, 0.9), rng.uniform(0.95, 1.1)), 0.875 + 0.012 * k) for k in range(4)]
+    return edges(peak(mix(1.9,
+                          (thud(rng, 0.4, 40, 700, 0.07), 0.19),
+                          (pump(rng, 0.62, 150, 230, 0.25) * 0.55, 0.25),
+                          *pins,
+                          (pump(rng, 0.5, 95, 135, 0.4) * 0.7, 0.97),
+                          (hiss(rng, 0.25, 1500, 6000, 0.01, 0.2, 0.18), 1.4),
+                          (thud(rng, 0.5, 35, 500, 0.09, 1.3), 1.47),
+                          (clank(rng, 0.45, 0.8), 1.475),
+                          (click(rng, 1800) * 0.25, 1.5), (click(rng, 1800) * 0.25, 1.62), (click(rng, 1800) * 0.2, 1.74),
+                          (hit(rng, 0.3, 1500, 6000, 0.01, scale=1.0, amount=0.15), 1.65)), 0.85))
+
+
+def lift_move(rng, up):
+    """One step of the column: the pump hums up (or a valve lets it down with a hiss), then a soft stop."""
+    dur = 0.55
+    body = pump(rng, 0.45, 105, 150) if up else pump(rng, 0.45, 140, 95, 0.2) + hiss(rng, 0.45, 1200, 5000, 0.04, 0.2, 0.25)
+    return edges(peak(mix(dur, (body, 0.0), (thud(rng, 0.1, 50, 600, 0.03, 0.3), 0.43), (click(rng, 1200) * 0.15, 0.44)), 0.75))
+
+
 EVENTS = []  # (group, id, recipe, options, variants, is_loop, loop_length)
 
 
@@ -498,9 +536,9 @@ ev("building", "part_attach", lambda rng: edges(peak(mix(0.3, (click(rng, 1800),
 ev("building", "part_detach", lambda rng: edges(peak(mix(0.3, (glide(900, 300, 0.12) * decay(0.12, 0.04), 0), (click(rng, 1200), 0.05)), 0.7)), pitch_variation=0.05, **TOOL)
 ev("building", "remove_block", lambda rng: edges(peak(mix(0.35, (glide(600, 180, 0.15) * decay(0.15, 0.05), 0), (thud(rng, 0.3, 60, 900, 0.04), 0.03)), 0.75)), pitch_variation=0.06, **TOOL)
 ev("building", "hammer_swing", lambda rng: whoosh(rng, 0.22, 300, 4000, 0.5), variants=2, pitch_variation=0.1, volume_variation_db=2.0, max_distance=15.0)
-ev("building", "lift_place", lambda rng: edges(peak(mix(0.5, (thud(rng, 0.4, 50, 900, 0.08), 0), (click(rng, 900, 0.1), 0.05)), 0.8)), **TOOL)
-ev("building", "lift_raise", lambda rng: edges(peak(glide(120, 220, 0.7) * 0.5 + band(noise(rng, 0.7), 300, 2500) * 0.25 * np.sin(np.pi * np.linspace(0, 1, n_of(0.7))), 0.7)), **TOOL)
-ev("building", "lift_lower", lambda rng: edges(peak(glide(220, 110, 0.7) * 0.5 + band(noise(rng, 0.7), 300, 2500) * 0.25 * np.sin(np.pi * np.linspace(0, 1, n_of(0.7))), 0.7)), **TOOL)
+ev("building", "lift_place", lambda rng: lift_deploy(rng), **TOOL)
+ev("building", "lift_raise", lambda rng: lift_move(rng, up=True), **TOOL)
+ev("building", "lift_lower", lambda rng: lift_move(rng, up=False), **TOOL)
 ev("building", "connect_success", lambda rng: beeps([880, 1320]), **QUIET)
 ev("building", "connect_fail", lambda rng: beeps([440, 330], wave_fn=square, level=0.5), **QUIET)
 ev("building", "disconnect", lambda rng: beeps([990, 660], step=0.06), **QUIET)

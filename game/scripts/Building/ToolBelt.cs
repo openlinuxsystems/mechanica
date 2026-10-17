@@ -124,6 +124,8 @@ public partial class ToolBelt : Node
             return;
         var layer = new CanvasLayer { Name = "Hud" };
         layer.AddToGroup(HudRoot.Group);
+        // The tool bar stays up under the inventory, which drops onto it; the tool's key line steps aside.
+        layer.SetMeta(HudRoot.KeepWhenCoveredMeta, true);
         // Bottom centre, where the hotbar goes. Built from translated pieces (tool names, each tool's line) around item names.
         _hud = Loc.Verbatim(new Label
         {
@@ -147,12 +149,16 @@ public partial class ToolBelt : Node
         Player.HeldProp = Current.Prop;
         if (_hud is null)
             return;
-        _hud.Visible = _bar!.Visible = GameSettings.Current.Interface.ShowHotbar;
+        _bar!.Visible = GameSettings.Current.Interface.ShowHotbar;
+        _hud.Visible = _bar.Visible && !HudRoot.IsCovered;
         if (_hud.Visible)
             _hud.Text = Current.HudText();
         var ammo = AmmoText();
-        _ammo!.Visible = ammo is not null;
+        _ammo!.Visible = ammo is not null && !HudRoot.IsCovered;
         _ammo.Text = ammo ?? "";
+        HudTop = _hud.Visible && _hud.Text.Length > 0 ? _hud.GetGlobalRect().Position.Y
+            : _bar.Visible ? _bar.GetGlobalRect().Position.Y
+            : null;
     }
 
     /// <summary>
@@ -174,8 +180,15 @@ public partial class ToolBelt : Node
         return string.Join("\n", lines);
     }
 
+    /// <summary>
+    /// The top of the tool bar and the key line over it on screen, or null when neither shows; lines that share the
+    /// bottom centre (tutorial tips) sit above it.
+    /// </summary>
+    public static float? HudTop { get; private set; }
+
     public override void _ExitTree()
     {
+        HudTop = null;
         if (_hud is not null)
             GetViewport().SizeChanged -= LayoutHud;
         if (Hotbar is not null)

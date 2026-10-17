@@ -44,7 +44,7 @@ public partial class PaintPicker : CanvasLayer
     {
         Layer = 6;
         _ring = UiInput.KeepMouse(new RingView { Name = "Ring", Picker = this, Visible = false });
-        _ring.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        _ring.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
         AddChild(_ring);
     }
 

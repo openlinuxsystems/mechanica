@@ -128,10 +128,10 @@ public partial class SurvivalHud : CanvasLayer
         _status.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.CenterBottom, Control.LayoutPresetMode.KeepSize, 80);
         _deathScreen = new ColorRect { Name = "DeathScreen", Color = new Color(0.35f, 0f, 0f, 0.55f), Visible = false, MouseFilter = Control.MouseFilterEnum.Ignore };
         AddChild(_deathScreen);
-        _deathScreen.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        _deathScreen.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
         _deathText = new Label { Name = "DeathText", HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
         _deathScreen.AddChild(_deathText);
-        _deathText.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        _deathText.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
     }
 
     public override void _ExitTree() => GetViewport().SizeChanged -= Layout;

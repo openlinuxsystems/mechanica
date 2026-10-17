@@ -51,8 +51,12 @@ public partial class NewGameScreen : Ui.ToolWindow
     public override void _Ready()
     {
         Title = "New Game";
-        var column = Body;
-        column.CustomMinimumSize = new Vector2(420, 0);
+        // The world's settings on the left and the characters on the right, so the screen is wide rather than tall.
+        var columns = new HBoxContainer { Name = "Columns" };
+        columns.AddThemeConstantOverride("separation", 24);
+        Body.AddChild(columns);
+        var column = new VBoxContainer { Name = "World", CustomMinimumSize = new Vector2(380, 0) };
+        columns.AddChild(column);
         var grid = new GridContainer { Columns = 2 };
         column.AddChild(grid);
         _name = Row(grid, "World name", new LineEdit { Text = "My World", MaxLength = 48 });
@@ -76,9 +80,11 @@ public partial class NewGameScreen : Ui.ToolWindow
                 TreeExiting += CharacterAssets.Dispose;
             }
         }
-        column.AddChild(new Label { Text = "Character" });
+        var characters = new VBoxContainer { Name = "Character" };
+        columns.AddChild(characters);
+        characters.AddChild(new Label { Text = "Character" });
         CharacterPicker = new CharacterPicker { Name = "Characters", Book = Characters, Assets = CharacterAssets, PreviewSize = new Vector2I(150, 200) };
-        column.AddChild(CharacterPicker);
+        characters.AddChild(CharacterPicker);
         _status = new Label { ThemeTypeVariation = "ErrorLabel", AutowrapMode = TextServer.AutowrapMode.WordSmart };
         column.AddChild(_status);
         AddAction("Back", RequestClose, tooltip: "Close (Esc)");
