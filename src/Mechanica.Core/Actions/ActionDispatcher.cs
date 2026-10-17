@@ -12,6 +12,7 @@ namespace Mechanica.Core.Actions;
 public sealed partial class ActionDispatcher
 {
     private readonly Dictionary<string, Func<ActionCaller, string, ActionResult>> _actions = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, Delegate> _typed = new(StringComparer.Ordinal);
     private readonly HashSet<string> _readOnly = new(StringComparer.Ordinal);
 
     /// <summary>Raised after every dispatch, successful or not.</summary>
@@ -37,6 +38,7 @@ public sealed partial class ActionDispatcher
             throw new ArgumentException($"'{name}' is not a valid action name (PascalCase letters and digits).", nameof(name));
         if (!_actions.TryAdd(name, (caller, json) => Run(caller, json, validate, apply)))
             throw new ArgumentException($"Action '{name}' is already registered.", nameof(name));
+        _typed[name] = (Func<ActionCaller, TArgs, ActionResult>)((caller, args) => Check(caller, args, validate, apply));
         if (readOnly)
             _readOnly.Add(name);
     }
@@ -61,9 +63,19 @@ public sealed partial class ActionDispatcher
         return result;
     }
 
-    /// <summary>Serializes <paramref name="args"/> and dispatches it (for in-process callers).</summary>
-    public ActionResult Dispatch<TArgs>(ActionCaller caller, string name, TArgs args) =>
-        Dispatch(caller, name, JsonSerializer.Serialize(args, ActionJson.Options));
+    /// <summary>
+    /// Dispatches typed arguments (for in-process callers such as scripts and bots). When
+    /// <typeparamref name="TArgs"/> is the action's own argument type the call skips JSON and runs the same
+    /// validation directly; otherwise the arguments are serialized and parsed like a remote call.
+    /// </summary>
+    public ActionResult Dispatch<TArgs>(ActionCaller caller, string name, TArgs args)
+    {
+        if (args is null || name is null || _typed.GetValueOrDefault(name) is not Func<ActionCaller, TArgs, ActionResult> run)
+            return Dispatch(caller, name!, JsonSerializer.Serialize(args, ActionJson.Options));
+        var result = run(caller, args);
+        Dispatched?.Invoke(new ActionRecord(caller, name, () => JsonSerializer.Serialize(args, ActionJson.Options), result));
+        return result;
+    }
 
     private static ActionResult Run<TArgs>(
         ActionCaller caller,
@@ -91,7 +103,16 @@ public sealed partial class ActionDispatcher
         }
         if (args is null)
             return ActionResult.Failure(ActionErrors.BadArgs, "Arguments must be a JSON object.");
+        return Check(caller, args, validate, apply);
+    }
 
+    private static ActionResult Check<TArgs>(
+        ActionCaller caller,
+        TArgs args,
+        Func<ActionCaller, TArgs, string?> validate,
+        Func<ActionCaller, TArgs, JsonElement?> apply)
+        where TArgs : class
+    {
         string? reason;
         try
         {

@@ -93,11 +93,49 @@ public sealed record ActionResult
 }
 
 /// <summary>A call the dispatcher handled, for logs and record/replay.</summary>
-/// <param name="Caller">Who called.</param>
-/// <param name="Action">Action name.</param>
-/// <param name="ArgsJson">Arguments exactly as received.</param>
-/// <param name="Result">What happened.</param>
-public sealed record ActionRecord(ActionCaller Caller, string Action, string ArgsJson, ActionResult Result);
+public sealed record ActionRecord
+{
+    private Func<string>? _writeArgs;
+    private string? _argsJson;
+
+    /// <summary>A record of a call that arrived as JSON.</summary>
+    /// <param name="caller">Who called.</param>
+    /// <param name="action">Action name.</param>
+    /// <param name="argsJson">Arguments exactly as received.</param>
+    /// <param name="result">What happened.</param>
+    public ActionRecord(ActionCaller caller, string action, string argsJson, ActionResult result)
+        : this(caller, action, result) => _argsJson = argsJson;
+
+    /// <summary>A record of an in-process call; the arguments are only written as JSON if someone reads them.</summary>
+    internal ActionRecord(ActionCaller caller, string action, Func<string> writeArgs, ActionResult result)
+        : this(caller, action, result) => _writeArgs = writeArgs;
+
+    private ActionRecord(ActionCaller caller, string action, ActionResult result) =>
+        (Caller, Action, Result) = (caller, action, result);
+
+    /// <summary>Who called.</summary>
+    public ActionCaller Caller { get; }
+
+    /// <summary>Action name.</summary>
+    public string Action { get; }
+
+    /// <summary>Arguments as JSON: exactly as received, or written from an in-process call's arguments.</summary>
+    public string ArgsJson
+    {
+        get
+        {
+            if (_argsJson is null && _writeArgs is { } write)
+            {
+                _argsJson = write();
+                _writeArgs = null;
+            }
+            return _argsJson ?? "";
+        }
+    }
+
+    /// <summary>What happened.</summary>
+    public ActionResult Result { get; }
+}
 
 /// <summary>Argument type for actions that take none (<c>{}</c>).</summary>
 public sealed record NoArgs;

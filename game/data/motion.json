@@ -3,6 +3,7 @@
   "max_force": 20000,
   "max_torque": 10000,
   "max_duration": 5,
+  "max_lever_arm": 50,
   "max_bearing_speed": 60,
   "max_bearing_torque": 2000,
   "default_bearing_torque": 200
