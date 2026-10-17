@@ -436,8 +436,11 @@ public partial class OptionsScreen : ToolWindow
     private void BuildInterface(VBoxContainer page)
     {
         Toggle(page, "Show the tool bar and key hints", _draft.Interface.ShowHotbar, v => Live(_draft with { Interface = _draft.Interface with { ShowHotbar = v } }));
+        Toggle(page, "Show compass", _draft.Interface.ShowCompass, v => Live(_draft with { Interface = _draft.Interface with { ShowCompass = v } }),
+            "The compass bar at the top of the screen, with quest goals and places you've found.");
         Toggle(page, "Show player names", _draft.Interface.ShowPlayerNames, v => Live(_draft with { Interface = _draft.Interface with { ShowPlayerNames = v } }),
             "Other players' names over their heads.");
+        Slider(page, "Chat opacity", _draft.Interface.ChatOpacity, 0f, 1f, 0.05f, v => Live(_draft with { Interface = _draft.Interface with { ChatOpacity = v } }), Percent);
     }
 
     // ---- Shared ----

@@ -50,7 +50,8 @@ public partial class TutorialHints : CanvasLayer
         };
         _panel.AddChild(_text);
         AddChild(_panel);
-        _panel.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.CenterTop, Control.LayoutPresetMode.KeepSize, 72);
+        // Under the compass (10% from the top, about 44 px tall).
+        _panel.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.CenterTop, Control.LayoutPresetMode.KeepSize, (int)(GetViewport().GetVisibleRect().Size.Y * 0.1f) + 56);
         _panel.GrowHorizontal = Control.GrowDirection.Both;
     }
 

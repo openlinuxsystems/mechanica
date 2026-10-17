@@ -152,6 +152,34 @@ public partial class QuestSync : Node, IQuestWorld
         return _sites.TryGetValue(poi, out var found) ? found : [];
     }
 
+    /// <summary>
+    /// Where the compass points for a player at <paramref name="from"/>: the nearest site of each active quest's
+    /// current goal (the first quest's first, so it is the default primary), then every place found so far.
+    /// </summary>
+    public IReadOnlyList<Mechanica.Core.Ui.Waypoint> Waypoints(System.Numerics.Vector3 from)
+    {
+        var found = new List<Mechanica.Core.Ui.Waypoint>();
+        if (Tracker is null)
+            return found;
+        foreach (var quest in Book.All)
+        {
+            if (Tracker.CurrentStep(quest.QualifiedId) is not { Poi: { } poi })
+                continue;
+            if (SitesOf(poi).OrderBy(s => System.Numerics.Vector3.DistanceSquared(s.Centre, from)).FirstOrDefault() is { } site)
+                found.Add(new($"quest:{quest.QualifiedId}", quest.Name, site.Centre));
+        }
+        foreach (var poi in State.Revealed)
+        {
+            var name = World.WorldGen.Pois.FirstOrDefault(p => p.QualifiedId == poi)?.Prefab.Name ?? poi;
+            foreach (var site in SitesOf(poi))
+            {
+                if (!found.Any(w => w.Position == site.Centre))
+                    found.Add(new($"poi:{poi}:{site.Index}", name, site.Centre));
+            }
+        }
+        return found;
+    }
+
     /// <inheritdoc/>
     public int CountItem(int peer, string item) => Inventory.Items?.PlayerInventory(peer).Count(item) ?? 0;
 
