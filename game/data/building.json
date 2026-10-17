@@ -1,0 +1,6 @@
+{
+  // Building by hand (SI units). Loaded by game/scripts/Building/BuildSync.cs.
+  "reach": 7.5,
+  "max_parts_per_creation": 4096,
+  "clearance_scale": 0.9
+}

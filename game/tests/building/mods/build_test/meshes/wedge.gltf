@@ -1,0 +1,75 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "Mechanica test fixture"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "Wedge",
+      "mesh": 0
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Wedge",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0
+          },
+          "indices": 1
+        }
+      ]
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 6,
+      "type": "VEC3",
+      "min": [
+        -0.125,
+        -0.125,
+        -0.125
+      ],
+      "max": [
+        0.125,
+        0.125,
+        0.125
+      ]
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5123,
+      "count": 24,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 72
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 72,
+      "byteLength": 48
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 120,
+      "uri": "data:application/octet-stream;base64,AAAAvgAAAL4AAAC+AAAAPgAAAL4AAAC+AAAAPgAAAL4AAAA+AAAAvgAAAL4AAAA+AAAAvgAAAD4AAAC+AAAAPgAAAD4AAAC+AAABAAIAAAACAAMAAAAEAAUAAAAFAAEAAwACAAUAAwAFAAQAAAADAAQAAQAFAAIA"
+    }
+  ]
+}
