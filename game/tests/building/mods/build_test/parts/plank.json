@@ -1,0 +1,15 @@
+{
+  "id": "plank",
+  "name": "Test Plank",
+  "category": "block",
+  "mass": 6,
+  "durability": 3,
+  "friction": 0.6,
+  "buoyancy": 0.6,
+  "flammable": false,
+  "size": [
+    3,
+    1,
+    1
+  ]
+}

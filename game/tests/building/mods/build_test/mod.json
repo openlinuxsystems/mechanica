@@ -1,0 +1,11 @@
+{
+  "format_version": 1,
+  "id": "build_test",
+  "name": "Build Test Parts",
+  "version": "0.1.0",
+  "description": "Fixture mod for the headless building test.",
+  "authors": [
+    "Mechanica"
+  ],
+  "dependencies": []
+}

@@ -161,6 +161,43 @@ public sealed class Creation
     }
 
     /// <summary>
+    /// Checks a placement without making it: the same rules as <see cref="TryPlacePart"/>, reporting
+    /// the existing parts the new one would attach to (empty when the Creation is empty).
+    /// </summary>
+    public bool CanPlacePart(string partId, GridCell cell, GridRotation rotation,
+        [NotNullWhen(true)] out IReadOnlyList<int>? attachedTo, [NotNullWhen(false)] out string? error)
+    {
+        attachedTo = null;
+        var qualified = Identifiers.Qualify(partId);
+        if (!TryResolve(qualified, out var definition, out error))
+            return false;
+        foreach (var c in PartGeometry.Cells(definition, cell, rotation))
+        {
+            if (_occupancy.TryGetValue(c, out var other))
+            {
+                error = $"cell {c} is already taken by part {other}.";
+                return false;
+            }
+        }
+        if (_parts.Count == 0)
+        {
+            attachedTo = [];
+            return true;
+        }
+        // Insert, look and take out again: the id is not consumed and no edge is kept.
+        Insert(new PartInstance(_nextPartId, qualified, cell, rotation), definition);
+        var neighbours = FindAttachments(_nextPartId).Select(c => c.A == _nextPartId ? c.B : c.A).Distinct().Order().ToList();
+        Delete(_nextPartId);
+        if (neighbours.Count == 0)
+        {
+            error = $"'{qualified}' at {cell} does not attach to any part of creation {Id}.";
+            return false;
+        }
+        attachedTo = neighbours;
+        return true;
+    }
+
+    /// <summary>
     /// The edges <paramref name="partId"/> would form with the parts touching it, by face contact:
     /// <list type="bullet">
     /// <item>Blocks, and parts with no sockets, attach structurally on every face, as in Scrap Mechanic (D7).
