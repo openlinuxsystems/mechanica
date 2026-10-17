@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using Mechanica.Core.Remote;
 
 namespace Mechanica.Core.Net;
 
@@ -19,7 +20,7 @@ public enum SessionMode
 /// <summary>
 /// Session settings from the command line (the user arguments after <c>--</c>):
 /// <c>--host [port]</c>, <c>--join address[:port]</c>, <c>--max-players n</c>, <c>--seed n</c>, <c>--creative</c> or <c>--survival</c> and <c>--easy</c>; on the host also the
-/// external AI endpoint (<c>--ai [port]</c>, <c>--ai-bind address</c>, <c>--ai-token token</c>) and
+/// external AI endpoint (<c>--ai [port]</c>, <c>--ai-bind address</c>, <c>--ai-token token</c>, <c>--ai-admin-token token</c>, <c>--ai-observe-token token</c>) and
 /// record/replay of Action API calls (<c>--record file</c>, <c>--replay file</c>) and a saved world to load
 /// (<c>--load file</c>); on any instance the player's name (<c>--name name</c>) and the world's password (<c>--password text</c>).
 /// </summary>
@@ -54,6 +55,38 @@ public sealed record LaunchOptions
     /// the game also reads it from the <c>MECHANICA_AI_TOKEN</c> environment variable.
     /// </summary>
     public string? AiToken { get; init; }
+
+    /// <summary>
+    /// Token that grants the AI endpoint's admin scope (debug actions, session control, mod tools). When it is
+    /// set, <see cref="AiToken"/> grants only observe and play. Also read from <c>MECHANICA_AI_ADMIN_TOKEN</c>.
+    /// </summary>
+    public string? AiAdminToken { get; init; }
+
+    /// <summary>Token that grants only the observe scope (queries and events). Also read from <c>MECHANICA_AI_OBSERVE_TOKEN</c>.</summary>
+    public string? AiObserveToken { get; init; }
+
+    /// <summary>True when any AI endpoint token is set here or in <paramref name="environment"/>.</summary>
+    public bool HasAiToken(Func<string, string?> environment) => AiAccess(environment).RequiresToken;
+
+    /// <summary>
+    /// The AI endpoint's tokens and the scopes each grants, from the options and then the environment. With
+    /// only <see cref="AiToken"/> it grants every scope (as before scopes existed); with an admin token too,
+    /// it grants observe and play and the admin token grants everything.
+    /// </summary>
+    public EndpointAccess AiAccess(Func<string, string?> environment)
+    {
+        static string? Set(string? value) => string.IsNullOrEmpty(value) ? null : value;
+        var play = Set(AiToken) ?? Set(environment("MECHANICA_AI_TOKEN"));
+        var admin = Set(AiAdminToken) ?? Set(environment("MECHANICA_AI_ADMIN_TOKEN"));
+        var observe = Set(AiObserveToken) ?? Set(environment("MECHANICA_AI_OBSERVE_TOKEN"));
+        var access = new EndpointAccess();
+        if (admin is null)
+            access.AddToken(play, [.. EndpointAccess.All]);
+        else
+            access.AddToken(play, AgentScope.Observe, AgentScope.Play).AddToken(admin, [.. EndpointAccess.All]);
+        access.AddToken(observe, AgentScope.Observe);
+        return access;
+    }
 
     /// <summary>File to write the host's Action API calls to when the game quits, or null.</summary>
     public string? RecordPath { get; init; }
@@ -131,6 +164,8 @@ public sealed record LaunchOptions
                     break;
                 case "--ai-bind":
                 case "--ai-token":
+                case "--ai-admin-token":
+                case "--ai-observe-token":
                 case "--record":
                 case "--replay":
                 case "--load":
@@ -142,6 +177,8 @@ public sealed record LaunchOptions
                     {
                         "--ai-bind" => result with { AiBind = next },
                         "--ai-token" => result with { AiToken = next },
+                        "--ai-admin-token" => result with { AiAdminToken = next },
+                        "--ai-observe-token" => result with { AiObserveToken = next },
                         "--record" => result with { RecordPath = next },
                         "--load" => result with { LoadPath = next },
                         "--name" => result with { PlayerName = next },

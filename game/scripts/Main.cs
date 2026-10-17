@@ -526,6 +526,7 @@ public partial class Main : Node3D
         AddChild(Recorder);
         Ai = new AiEndpoint { Name = "Ai", Session = Session, Actions = Actions, Log = Recorder };
         AddChild(Ai);
+        RemoteEventSources.Connect(this, Ai.Events);
         // The offline player spawned with PlayerSync, before building existed.
         if (LocalPlayer is { } local)
             AddTools(local);
@@ -706,8 +707,7 @@ public partial class Main : Node3D
             GD.PushError($"[replay] {replayError}");
         if (options.AiPort is { } port)
         {
-            var token = options.AiToken ?? OS.GetEnvironment("MECHANICA_AI_TOKEN");
-            if (Ai.Listen(port, options.AiBind, token) is { } aiError)
+            if (Ai.Listen(port, options.AiBind, options.AiAccess(OS.GetEnvironment)) is { } aiError)
                 GD.PushError($"[ai] {aiError}");
         }
     }

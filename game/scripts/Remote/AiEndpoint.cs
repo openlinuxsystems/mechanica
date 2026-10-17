@@ -11,7 +11,9 @@ namespace Mechanica.Game.Remote;
 /// messages (<see cref="JsonRpcEndpoint"/>). Each call is an Action API call made through the host's
 /// dispatcher as an external agent, validated exactly like a player's. It listens on loopback unless
 /// told otherwise, and then only with a token, since an agent can do anything the Action API allows.
-/// It runs only while this peer is the host; joining a session closes it.
+/// It runs only while this peer is the host; joining a session closes it. Each connection holds scopes
+/// (observe, play, admin) from the token it gave, receives the <see cref="Events"/> it subscribed to, and
+/// can call the methods of every module in <see cref="Modules"/>.
 /// </summary>
 public partial class AiEndpoint : Node
 {
@@ -24,6 +26,7 @@ public partial class AiEndpoint : Node
     private readonly List<(WebSocketPeer Socket, RemoteConnection Connection)> _clients = [];
     private TcpServer? _server;
     private JsonRpcEndpoint? _rpc;
+    private IDisposable? _actionWatch;
 
     /// <summary>The session; the endpoint closes when this peer stops being the host. Set before adding to the tree.</summary>
     public NetSession Session { get; init; } = null!;
@@ -34,6 +37,12 @@ public partial class AiEndpoint : Node
     /// <summary>Record/replay, for the <c>mechanica.record.*</c> and <c>mechanica.replay.*</c> methods. Set before adding to the tree.</summary>
     public RecordReplay Log { get; init; } = null!;
 
+    /// <summary>Notifications agents subscribe to; host systems publish into it (see <see cref="RemoteEventSources"/>).</summary>
+    public RemoteEvents Events { get; } = new();
+
+    /// <summary>Endpoint method groups beyond the Action API. Add before <see cref="Listen(int, string, EndpointAccess)"/>.</summary>
+    public List<IRpcModule> Modules { get; } = [];
+
     /// <summary>True while listening.</summary>
     public bool IsListening => _server?.IsListening() == true;
 
@@ -43,31 +52,49 @@ public partial class AiEndpoint : Node
     /// <summary>Agents connected now (handshake done or in progress).</summary>
     public int ConnectionCount => _clients.Count;
 
-    public override void _Ready() => Session.StateChanged += OnStateChanged;
+    public override void _Ready()
+    {
+        Session.StateChanged += OnStateChanged;
+        Events.Clock = () => Log.Log.CurrentTick;
+        AddDocumentationDirectories();
+        _actionWatch = Events.WatchActions(Actions.Dispatcher);
+    }
 
     public override void _ExitTree()
     {
         Session.StateChanged -= OnStateChanged;
+        _actionWatch?.Dispose();
+        _actionWatch = null;
         Stop();
     }
 
     /// <summary>
-    /// Starts listening on <paramref name="bind"/>:<paramref name="port"/> (0 picks a free port). A
-    /// non-loopback address needs a <paramref name="token"/>. Returns an error message or null.
+    /// Starts listening on <paramref name="bind"/>:<paramref name="port"/> (0 picks a free port) with one
+    /// optional token that grants every scope. Returns an error message or null.
     /// </summary>
-    public string? Listen(int port, string bind = "127.0.0.1", string? token = null)
+    public string? Listen(int port, string bind = "127.0.0.1", string? token = null) =>
+        Listen(port, bind, new EndpointAccess().AddToken(token, [.. EndpointAccess.All]));
+
+    /// <summary>
+    /// Starts listening on <paramref name="bind"/>:<paramref name="port"/> (0 picks a free port). A
+    /// non-loopback address needs at least one token in <paramref name="access"/>. Returns an error message or null.
+    /// </summary>
+    public string? Listen(int port, string bind, EndpointAccess access)
     {
         Stop();
         if (!Session.IsHost)
             return "The AI endpoint runs on the host only.";
-        if (string.IsNullOrEmpty(token) && !LaunchOptions.IsLoopback(bind))
+        if (!access.RequiresToken && !LaunchOptions.IsLoopback(bind))
             return $"Listening on {bind} opens the AI endpoint to the network; give a token (--ai-token or MECHANICA_AI_TOKEN).";
         var server = new TcpServer();
         var error = server.Listen((ushort)port, bind);
         if (error != Error.Ok)
             return $"Cannot listen on {bind}:{port} ({error}).";
         _server = server;
-        _rpc = new JsonRpcEndpoint(Actions.Dispatcher, Log.Log, Session.LocalPeer, token);
+        _rpc = new JsonRpcEndpoint(Actions.Dispatcher, Log.Log, Session.LocalPeer, access, Events);
+        _rpc.InternalError += OnInternalError;
+        foreach (var module in Modules)
+            _rpc.AddModule(module);
         GD.Print($"[ai] endpoint listening on ws://{bind}:{Port}{(_rpc.RequiresToken ? " (token required)" : "")}");
         return null;
     }
@@ -136,7 +163,33 @@ public partial class AiEndpoint : Node
                 if (_rpc is null)
                     return; // A call stopped the endpoint (the session ended).
             }
+            foreach (var notification in _rpc.DrainOutgoing(connection))
+                socket.SendText(notification);
         }
+    }
+
+    // Godot loads the game's assemblies without a file location, so tell mechanica.describe where their
+    // XML docs are: the build folders when run from the project, the data folder next to an export.
+    private static void AddDocumentationDirectories()
+    {
+        var folders = new List<string>();
+        var builds = ProjectSettings.GlobalizePath("res://.godot/mono/temp/bin");
+        if (Directory.Exists(builds))
+            folders.AddRange(Directory.GetDirectories(builds));
+        var exe = Path.GetDirectoryName(OS.GetExecutablePath());
+        if (exe is not null && Directory.Exists(exe))
+        {
+            folders.Add(exe);
+            folders.AddRange(Directory.GetDirectories(exe, "data_*"));
+        }
+        foreach (var folder in folders)
+            RpcSchema.AddDocumentationDirectory(folder);
+    }
+
+    private void OnInternalError(string method, string message)
+    {
+        GD.PushError($"[ai] {method} failed on the host: {message}");
+        Events.Publish("messages", () => new { kind = "error", source = "endpoint", method, text = message });
     }
 
     private void OnStateChanged(NetSession.SessionState state)

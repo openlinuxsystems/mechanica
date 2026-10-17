@@ -23,6 +23,7 @@ public partial class RemoteTest : StagedTest
 {
     private const string Mod = "drive_test";
     private const string Token = "test-token";
+    private const string WatchToken = "watch-token";
     private const float Speed = 12f; // rad/s at the wheels
     private const float WheelTorque = 25f; // N·m
     private const float TurnTorque = 80f; // N·m: skid steering scrubs the wheels sideways
@@ -36,6 +37,14 @@ public partial class RemoteTest : StagedTest
     private Instance _replayHost = null!;
     private readonly RpcTestClient _agent = new();
     private readonly RpcTestClient _replayAgent = new();
+    private readonly RpcTestClient _watcher = new();
+
+    /// <summary>A module method, to check modules are reachable over the real transport.</summary>
+    private sealed class PingModule : IRpcModule
+    {
+        public IEnumerable<RpcMethodInfo> Methods =>
+            [RpcMethod.Create<NoArgs>("test.ping", AgentScope.Observe, "Answers pong.", (_, _) => RpcMethod.Value("pong"))];
+    }
     private readonly Dictionary<string, long> _ids = [];
     private long[] _batch = [];
     private int _creation;
@@ -69,11 +78,14 @@ public partial class RemoteTest : StagedTest
             Check(!_mods.HasErrors, $"fixture mod loads ({string.Join("; ", _mods.Diagnostics)})");
             Check(_host.Main.Ai.Listen(0, "0.0.0.0") is { } refusal && refusal.Contains("token"), "a network-wide endpoint needs a token");
             Check(_client.Main.Ai.Listen(0) is not null, "a client can't open the endpoint");
-            Check(_host.Main.Ai.Listen(0, token: Token) is null && _host.Main.Ai.Port > 0, $"the host listens on port {_host.Main.Ai.Port}");
+            _host.Main.Ai.Modules.Add(new PingModule());
+            var access = new EndpointAccess().AddToken(Token, [.. EndpointAccess.All]).AddToken(WatchToken, AgentScope.Observe);
+            Check(_host.Main.Ai.Listen(0, "127.0.0.1", access) is null && _host.Main.Ai.Port > 0, $"the host listens on port {_host.Main.Ai.Port}");
             Check(_agent.Connect(_host.Main.Ai.Port) == Error.Ok, "the agent starts connecting");
+            Check(_watcher.Connect(_host.Main.Ai.Port) == Error.Ok, "an observe-only agent starts connecting");
             return true;
         });
-        Add("the agent connects", _ => Pump() && _agent.IsOpen);
+        Add("the agent connects", _ => Pump() && _agent.IsOpen && _watcher.IsOpen);
         Add("calls before mechanica.auth are refused", frame =>
         {
             if (frame == 0)
@@ -91,6 +103,36 @@ public partial class RemoteTest : StagedTest
             var actions = RpcTestClient.Result(info).GetProperty("actions").EnumerateArray().Select(a => a.GetString()).ToList();
             Check(new[] { "PlacePart", "RemovePart", "ApplyForce", "SetBearingTarget", "GetCreation", "ListCreations" }.All(actions.Contains),
                 $"mechanica.info lists the actions ({string.Join(", ", actions)})");
+            return true;
+        });
+        Add("describe, modules, scopes and events work over the socket", frame =>
+        {
+            if (frame == 0)
+            {
+                _ids["describe"] = _agent.Call("mechanica.describe", new { names = new[] { BuildActions.PlacePart, "test.ping" } });
+                _ids["describe-all"] = _agent.Call("mechanica.describe");
+                _ids["ping"] = _agent.Call("test.ping");
+                _ids["subscribe"] = _agent.Call("mechanica.subscribe", new { topics = new[] { "actions" } });
+                _ids["watch-auth"] = _watcher.Call("mechanica.auth", new { token = WatchToken });
+                _ids["watch-subscribe"] = _watcher.Call("mechanica.subscribe", new { topics = new[] { "actions" } });
+                _ids["watch-place"] = _watcher.Call(BuildActions.PlacePart, new PlacePartArgs($"{Mod}:block", new GridCell(0, 0, 0), Position: Start));
+                _ids["watch-list"] = _watcher.Call(MotionActions.ListCreations);
+            }
+            if (!Pump() || Answer("subscribe") is not { } subscribed || Answer("watch-list", _watcher) is not { } list)
+                return false;
+            var methods = RpcTestClient.Result(Answer("describe")!.Value).GetProperty("methods").EnumerateArray().ToList();
+            Check(methods.Count == 2 && methods[0].GetProperty("params").GetProperty("properties").TryGetProperty("cell", out _),
+                "mechanica.describe gives PlacePart's params schema");
+            var all = RpcTestClient.Result(Answer("describe-all")!.Value).GetProperty("methods").EnumerateArray().ToList();
+            var undocumented = all.Where(m => string.IsNullOrEmpty(m.GetProperty("description").GetString())).Select(m => m.GetProperty("name").GetString()).ToList();
+            Check(all.Count > _host.Main.Actions.Dispatcher.Names.Count && all.All(m => m.GetProperty("params").GetProperty("type").GetString() == "object"),
+                $"every one of the host's {all.Count} methods has a params schema");
+            Check(undocumented.Count == 0, $"and a description ({string.Join(", ", undocumented)})");
+            Check(RpcTestClient.Result(Answer("ping")!.Value).GetString() == "pong", "a module method answers");
+            Check(RpcTestClient.ErrorCode(subscribed) is null, "the agent subscribes to actions");
+            Check(RpcTestClient.ErrorCode(Answer("watch-auth", _watcher)!.Value) is null, "the observe token is accepted");
+            Check(RpcTestClient.ErrorCode(Answer("watch-place", _watcher)!.Value) == JsonRpcEndpoint.Codes.Forbidden, "an observer can't build");
+            Check(RpcTestClient.ErrorCode(list) is null, "an observer can query");
             return true;
         });
         Add("bad requests get JSON-RPC errors", frame =>
@@ -127,6 +169,15 @@ public partial class RemoteTest : StagedTest
             Check(RpcTestClient.ErrorCode(chassis) is null, $"PlacePart accepted ({chassis})");
             _creation = RpcTestClient.Result(chassis).GetProperty("creation").GetInt32();
             return true;
+        });
+        Add("subscribers are told about the placement", _ =>
+        {
+            Pump();
+            static bool Placed(JsonElement e) =>
+                e.GetProperty("params") is var p && p.GetProperty("topic").GetString() == "actions"
+                && p.GetProperty("data").GetProperty("action").GetString() == BuildActions.PlacePart
+                && p.GetProperty("data").GetProperty("ok").GetBoolean();
+            return _agent.Events.Any(Placed) && _watcher.Events.Any(Placed);
         });
         Add("the agent builds the rest of the car in one batch", frame =>
         {
@@ -306,6 +357,7 @@ public partial class RemoteTest : StagedTest
             var replayed = ChassisPosition(_replayHost);
             Check(replayed.DistanceTo(original) < 0.25f, $"within 0.25 m ({replayed} vs {original})");
             _agent.Close();
+            _watcher.Close();
             _replayAgent.Close();
             return true;
         });
@@ -319,6 +371,7 @@ public partial class RemoteTest : StagedTest
     private bool Pump()
     {
         _agent.Poll();
+        _watcher.Poll();
         _replayAgent.Poll();
         return true;
     }
