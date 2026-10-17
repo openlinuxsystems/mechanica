@@ -4,6 +4,7 @@ using Mechanica.Core.Net;
 using Mechanica.Core.Player;
 using Mechanica.Game.Net;
 using Mechanica.Game.Player;
+using Mechanica.Game.Settings;
 using Instance = Mechanica.Game.Tests.NetTestHarness.Instance;
 
 namespace Mechanica.Game.Tests;
@@ -25,6 +26,7 @@ public partial class NetTest : StagedTest
     private Instance _late = null!;
     private Instance _extra = null!;
     private Instance _wrong = null!;
+    private Mechanica.Game.Ui.Nameplates _plates = null!;
     private ContentManifest _hostContent = ContentManifest.Empty;
     private Vector3 _mark;
     private float _peak;
@@ -56,6 +58,32 @@ public partial class NetTest : StagedTest
                 "a client simulates only its own player");
             Check(_a.Main.GetNode<RigidBody3D>("Crate1").Freeze && !_host.Main.GetNode<RigidBody3D>("Crate1").Freeze,
                 "props are frozen on clients and simulated on the host");
+            Check(_a.Main.PlayerSync.Players[NetProtocol.HostPeer].DisplayName == "Host" && _a.Main.PlayerSync.Players[_b.Peer].DisplayName == "ClientB"
+                && _b.Main.PlayerSync.Players[_a.Peer].DisplayName == "ClientA", "every player knows the others' names");
+            return true;
+        });
+        Add("names show over other players' heads, and can be turned off", frame =>
+        {
+            if (frame == 0)
+            {
+                _plates = new Mechanica.Game.Ui.Nameplates { Name = "Nameplates", Players = _a.Main.PlayerSync };
+                _a.Main.AddChild(_plates);
+                return false;
+            }
+            if (frame < 30)
+                return false;
+            if (frame == 30)
+            {
+                Check(_plates.PlateOf(_b.Peer)?.Text == "ClientB" && _plates.PlateOf(NetProtocol.HostPeer)?.Text == "Host", "others have their names over them");
+                Check(_plates.PlateOf(_a.Peer) is null, "the player's own name is not shown");
+                GameSettings.Apply(GameSettings.Current with { Interface = GameSettings.Current.Interface with { ShowPlayerNames = false } });
+                return false;
+            }
+            if (frame < 60)
+                return false;
+            Check(_plates.PlateOf(_b.Peer) is null, "Show player names off hides them");
+            GameSettings.Apply(new());
+            _plates.QueueFree();
             return true;
         });
         Wait("players settle", 30);

@@ -423,6 +423,7 @@ public partial class Main : Node3D
             });
             AddChild(PartSettings);
             AddChild(new RaidBanner { Name = "RaidBanner", Bots = Bots });
+            AddChild(new Ui.Nameplates { Name = "Nameplates", Players = PlayerSync });
         }
 
         Start(Options);

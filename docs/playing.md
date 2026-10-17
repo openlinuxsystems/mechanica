@@ -53,7 +53,7 @@ stops getting your input.
   the screen the first time you start, pick up each tool or open each screen; **Show tips again** brings
   back the ones you have seen; the tips are in `game/data/tutorial.json`), auto-save (off, or every 5, 10 or 15
   minutes while you host), the most players a world you host takes, the server password for worlds you host, and your player name.
-- **Interface**: show or hide the tool bar and key hints.
+- **Interface**: show or hide the tool bar and key hints, and other players' names over their heads.
 
 Everything else applies as you change it. **Reset to Defaults** resets the open tab after asking, and
 closing Options saves your settings in `settings.json` in the game's user data folder. Settings are

@@ -436,6 +436,8 @@ public partial class OptionsScreen : ToolWindow
     private void BuildInterface(VBoxContainer page)
     {
         Toggle(page, "Show the tool bar and key hints", _draft.Interface.ShowHotbar, v => Live(_draft with { Interface = _draft.Interface with { ShowHotbar = v } }));
+        Toggle(page, "Show player names", _draft.Interface.ShowPlayerNames, v => Live(_draft with { Interface = _draft.Interface with { ShowPlayerNames = v } }),
+            "Other players' names over their heads.");
     }
 
     // ---- Shared ----
