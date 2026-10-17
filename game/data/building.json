@@ -2,5 +2,26 @@
   // Building by hand (SI units). Loaded by game/scripts/Building/BuildSync.cs.
   "reach": 7.5,
   "max_parts_per_creation": 4096,
-  "clearance_scale": 0.9
+  "clearance_scale": 0.9,
+  "lift": {
+    "platform_size": 2.0,
+    "base_height": 0.25,
+    "level_height": 0.25,
+    "max_level": 16
+  },
+  "paint": {
+    "palette": [
+      "#e8e8e8", "#9a9a9a", "#3a3a3a", "#141414",
+      "#d03030", "#e86820", "#f0d830", "#a0d040",
+      "#40a040", "#20a0a0", "#3070d0", "#203890",
+      "#8040b0", "#d050a0", "#8a5a30", "#e8c8a0"
+    ],
+    "max_parts_per_action": 256
+  },
+  "sledge": {
+    "damage": 10,
+    "health_per_durability": 10,
+    "swing_seconds": 0.5,
+    "impulse": 20
+  }
 }

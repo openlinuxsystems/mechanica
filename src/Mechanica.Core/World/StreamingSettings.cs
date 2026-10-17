@@ -54,6 +54,18 @@ public sealed record StreamingSettings
     /// <summary>Most chunks that awake unattended Creations may force-load beyond what players already load.</summary>
     public int MaxUnattendedChunks { get; init; } = 64;
 
+    /// <summary>
+    /// Seconds per physics tick spent building chunks the streamer asked for, nearest to a player first,
+    /// so crossing into new ground does not stall a frame. At least one chunk is built per tick.
+    /// </summary>
+    public float ChunkBuildBudget { get; init; } = 0.004f;
+
+    /// <summary>
+    /// Chunks within this many metres (x/z) of a player, or of a force-loaded Creation's buffered box, are
+    /// built at once, outside <see cref="ChunkBuildBudget"/>, so nothing ever stands on missing ground.
+    /// </summary>
+    public float GroundMargin { get; init; } = 8f;
+
     /// <summary>Parses settings from JSON and validates them.</summary>
     /// <exception cref="FormatException">The JSON is malformed or a value is out of range.</exception>
     public static StreamingSettings FromJson(string json)
@@ -86,6 +98,8 @@ public sealed record StreamingSettings
         NonNegative(SleepLinearSpeed, "sleep_linear_speed");
         NonNegative(SleepAngularSpeed, "sleep_angular_speed");
         NonNegative(SleepDelay, "sleep_delay");
+        NonNegative(ChunkBuildBudget, "chunk_build_budget");
+        NonNegative(GroundMargin, "ground_margin");
         if (MaxUnattendedCreations < 0)
             throw new FormatException($"max_unattended_creations must be zero or positive (got {MaxUnattendedCreations}).");
         if (MaxUnattendedChunks < 0)

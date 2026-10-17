@@ -11,5 +11,7 @@
   "sleep_angular_speed": 0.1,
   "sleep_delay": 2.0,
   "max_unattended_creations": 16,
-  "max_unattended_chunks": 64
+  "max_unattended_chunks": 64,
+  "chunk_build_budget": 0.004,
+  "ground_margin": 8.0
 }

@@ -40,7 +40,18 @@ public abstract partial class StagedTest : Node
             _stageFrames = 0;
         }
 
-        if (_stage.Tick(_stageFrames))
+        bool finished;
+        try
+        {
+            finished = _stage.Tick(_stageFrames);
+        }
+        catch (Exception e)
+        {
+            // Without this an exception repeats every frame and the stage never times out.
+            Check(false, $"stage '{_stage.Name}' threw {e}");
+            return;
+        }
+        if (finished)
         {
             GD.Print($"[{Tag}] done: {_stage.Name} ({_stageFrames} frames)");
             _stage = null;

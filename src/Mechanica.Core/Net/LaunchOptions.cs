@@ -18,7 +18,7 @@ public enum SessionMode
 
 /// <summary>
 /// Session settings from the command line (the user arguments after <c>--</c>):
-/// <c>--host [port]</c>, <c>--join address[:port]</c> and <c>--max-players n</c>; on the host also the
+/// <c>--host [port]</c>, <c>--join address[:port]</c>, <c>--max-players n</c> and <c>--seed n</c>; on the host also the
 /// external AI endpoint (<c>--ai [port]</c>, <c>--ai-bind address</c>, <c>--ai-token token</c>) and
 /// record/replay of Action API calls (<c>--record file</c>, <c>--replay file</c>).
 /// </summary>
@@ -38,6 +38,9 @@ public sealed record LaunchOptions
 
     /// <summary>Players allowed when hosting, host included.</summary>
     public int MaxPlayers { get; init; } = NetProtocol.DefaultMaxPlayers;
+
+    /// <summary>World seed when this instance generates the world (offline or hosting). Null picks a random one; a joining client always uses the host's.</summary>
+    public long? Seed { get; init; }
 
     /// <summary>Port of the external AI endpoint (WebSocket JSON-RPC), or null to leave it closed.</summary>
     public int? AiPort { get; init; }
@@ -127,6 +130,12 @@ public sealed record LaunchOptions
                         || max is < 1 or > NetProtocol.MaxPlayersLimit)
                         return Fail($"--max-players needs a number from 1 to {NetProtocol.MaxPlayersLimit}.", out error);
                     result = result with { MaxPlayers = max };
+                    i++;
+                    break;
+                case "--seed":
+                    if (next is null || !long.TryParse(next, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var seed))
+                        return Fail("--seed needs a whole number.", out error);
+                    result = result with { Seed = seed };
                     i++;
                     break;
             }

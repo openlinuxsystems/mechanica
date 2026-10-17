@@ -158,15 +158,23 @@ public sealed class BuildActions(IPartCatalog catalog, BuildSettings settings, I
 
     private JsonElement? ApplyRemove(ActionCaller caller, RemovePartArgs args)
     {
-        var creation = world.FindCreation(args.Creation)!;
-        var result = creation.RemovePart(args.Part, world.NextCreationId);
+        return Value(Remove(world, world.FindCreation(args.Creation)!, args.Part));
+    }
+
+    /// <summary>
+    /// Takes a part out of a Creation and tells <paramref name="world"/>: the Creation is removed when
+    /// that was its last part, otherwise changed, and every piece that split off is added.
+    /// </summary>
+    internal static RemovePartResult Remove(IBuildWorld world, Creation creation, int partId)
+    {
+        var result = creation.RemovePart(partId, world.NextCreationId);
         if (creation.IsEmpty)
             world.Removed(creation.Id);
         else
             world.Changed(creation);
         foreach (var piece in result.SplitOff)
             world.Added(piece);
-        return Value(new RemovePartResult(creation.Id, creation.IsEmpty, [.. result.SplitOff.Select(c => c.Id)]));
+        return new RemovePartResult(creation.Id, creation.IsEmpty, [.. result.SplitOff.Select(c => c.Id)]);
     }
 
     private string? CheckReach(ActionCaller caller, Vector3 point)

@@ -83,6 +83,11 @@ public static class DiagnosticCodes
     // 05xx: Part Editor sources and export
     public const string EditorSourceInvalid = "MD0501";
     public const string ExportFailed = "MD0502";
+
+    // 06xx: world generation and POI prefabs
+    public const string WorldGenInvalid = "MD0601";
+    public const string WorldGenMissing = "MD0602";
+    public const string PoiInvalid = "MD0603";
 }
 
 /// <summary>Collects diagnostics for one file, filling in the file name.</summary>

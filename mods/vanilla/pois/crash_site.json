@@ -1,0 +1,31 @@
+{
+  "id": "crash_site",
+  "name": "Crash Site",
+  "radius": 80.0,
+  "placement": {
+    "fixed": [0.0, 0.0],
+    "pad_height": 0.0,
+    "yaw": 0.0
+  },
+  "terrain": [
+    { "op": "flatten", "radius": 40.0, "blend": 38.0 },
+    { "op": "basin", "at": [30.0, 26.0], "radius": 7.0, "blend": 6.0, "depth": 7.0 }
+  ],
+  "pieces": [
+    { "shape": "box", "size": [8.0, 4.0, 16.0], "at": [0.0, 2.0, 22.0], "yaw": 12.0, "color": "#9aa3ab" },
+    { "shape": "box", "size": [6.0, 2.5, 6.0], "at": [1.5, 5.2, 19.0], "yaw": 12.0, "color": "#9aa3ab" },
+    { "shape": "box", "size": [14.0, 0.4, 4.0], "at": [-10.0, 0.6, 24.0], "yaw": 25.0, "color": "#7d858c" },
+    { "shape": "cylinder", "radius": 1.2, "height": 3.0, "at": [7.0, 1.5, 32.0], "color": "#4a4f55" },
+    { "shape": "box", "size": [2.0, 1.0, 1.5], "at": [-6.0, 0.5, 14.0], "yaw": 40.0, "color": "#7d858c" },
+    { "shape": "box", "size": [1.2, 0.8, 2.5], "at": [9.0, 0.4, 16.0], "yaw": 70.0, "color": "#7d858c" }
+  ],
+  "markers": [
+    { "type": "spawn", "at": [0.0, 0.0, 4.0] },
+    { "type": "fire", "at": [3.0, 0.0, 13.0] },
+    { "type": "fire", "at": [-6.0, 0.0, 29.0] },
+    { "type": "fire", "at": [7.0, 0.0, 27.0] },
+    { "type": "item", "ref": "master_battery", "at": [-2.0, 0.5, 12.0] },
+    { "type": "item", "ref": "logbook", "at": [2.0, 0.5, 12.0] },
+    { "type": "item", "ref": "chest", "at": [4.0, 0.0, 10.0] }
+  ]
+}
