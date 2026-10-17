@@ -68,8 +68,9 @@ stops getting your input.
   It is a hydraulic lift with a 4 x 4 unit (1 m) grated platform: set down, its four outriggers swing out and
   lock and the column rises to its resting height of 2 units (0.5 m).
   Left click a Creation to slide the Lift under it and pick it up; it stands still on the platform until you
-  take the Lift away. The arrow keys raise and lower it one unit (0.25 m) at a time, up to 33 units (8.25 m);
-  hold an arrow and the column runs smoothly until you let go, stopping at the next unit. Q turns what it holds. Aim at the Lift (or
+  take the Lift away. The arrow keys raise and lower it one unit (0.25 m) at a time, up to 20 units above its resting height
+  (the deck at 22 units, 5.5 m); hold an arrow and the column runs smoothly until you let go, stopping at the next
+  unit. Standing on the deck you ride it, and the arrow keys drive it whatever you have in hand. Q turns what it holds. Aim at the Lift (or
   what it holds) and hold right click until the ring fills to pick the Lift back up; what it held drops. A Creation whose chests or tanks hold items cannot be
   lifted ("Cannot lift with attached resources."): empty it first.
 - **Blueprints.** With the Lift in hand, aim at your Lift and press **E**. The menu lists your newest 50
