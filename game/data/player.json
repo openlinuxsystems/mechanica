@@ -25,6 +25,8 @@
   "swim_vertical_speed": 2.0,
   "swim_acceleration": 6.0,
   "buoyancy": 3.0,
+  // Jumping at the surface lifts the feet this far above the water, so a swimmer can climb out onto an edge this high.
+  "swim_leap_height": 0.6,
   "wade_speed_scale": 0.7,
   // Camera (UI spec §6): third-person by default; zoom in (X) and out (C) by a step, in past the closest goes first-person.
   "camera_distance": 3.5,
