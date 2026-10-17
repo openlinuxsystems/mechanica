@@ -11,7 +11,9 @@ namespace Mechanica.Game.Ui;
 /// found) are blue diamonds with their distance under them within 500 m; the primary one is larger and
 /// pulses cyan, and clicking a diamond (while the mouse is free, as with the logbook open) makes it primary.
 /// A waypoint behind the player sits at the edge it is nearer turning to, with an arrow. Within 100 m a
-/// diamond also floats over the place itself, hidden behind whatever is in the way. The bar hides while a
+/// diamond also floats over the place itself, hidden behind whatever is in the way. Every other player in the
+/// world, AI agents included, is a white dot with their name and distance under it at any range, pinned to an
+/// edge with an arrow like a waypoint when behind. The bar hides while a
 /// full-screen window is open and with Show compass off (Options, Interface), and is 20% fainter in first person.
 /// </summary>
 public partial class CompassHud : CanvasLayer
@@ -26,10 +28,11 @@ public partial class CompassHud : CanvasLayer
     private Node3D _worldRoot = null!;
     private Font _font = null!;
     private List<(Waypoint Waypoint, CompassMark Mark)> _marks = [];
+    private List<(int Peer, string Name, CompassMark Mark)> _playerMarks = [];
     private string? _primary;
     private float _heading;
 
-    /// <summary>Players, for the local one. Set before adding to the tree.</summary>
+    /// <summary>Players: the local one the bar turns with, and everyone else it marks. Set before adding to the tree.</summary>
     public PlayerSync Players { get; init; } = null!;
 
     /// <summary>The waypoints now, the default primary first. Set before adding to the tree.</summary>
@@ -46,6 +49,9 @@ public partial class CompassHud : CanvasLayer
 
     /// <summary>The waypoints on the bar as last drawn.</summary>
     public IReadOnlyList<(Waypoint Waypoint, CompassMark Mark)> Marks => _marks;
+
+    /// <summary>The other players on the bar as last drawn, by peer.</summary>
+    public IReadOnlyList<(int Peer, string Name, CompassMark Mark)> PlayerMarks => _playerMarks;
 
     /// <summary>The primary waypoint's id: the player's pick while it exists, else the first waypoint's.</summary>
     public string? Primary => _marks.Any(m => m.Waypoint.Id == _primary) ? _primary : _marks.FirstOrDefault().Waypoint?.Id;
@@ -76,6 +82,7 @@ public partial class CompassHud : CanvasLayer
         var show = GameSettings.Current.Interface.ShowCompass && player is not null && !Covered();
         _bar.Visible = show;
         _marks.Clear();
+        _playerMarks.Clear();
         if (player is null)
         {
             HideWorldMarkers();
@@ -84,6 +91,8 @@ public partial class CompassHud : CanvasLayer
         var from = player.GlobalPosition.ToNumerics();
         _heading = Compass.Heading(player.Camera.GlobalRotation.Y);
         _marks = [.. Waypoints().Select(w => (w, Compass.Mark(from, _heading, w.Position)))];
+        _playerMarks = [.. Players.Players.Where(p => p.Value != player)
+            .Select(p => (p.Key, p.Value.DisplayName, Compass.Mark(from, _heading, p.Value.GlobalPosition.ToNumerics())))];
         UpdateWorldMarkers(show && !HudRoot.Hidden);
         _bar.Modulate = Colors.White with { A = player.ThirdPerson ? 1f : 0.8f };
         _bar.QueueRedraw();
@@ -126,6 +135,7 @@ public partial class CompassHud : CanvasLayer
             }
         }
         _bar.DrawLine(new Vector2(w / 2, 0), new Vector2(w / 2, 6), UiTokens.Cyan, 2);
+        DrawPlayers(w);
         var primary = Primary;
         var pulse = 0.65f + 0.35f * Mathf.Sin((float)Time.GetTicksMsec() / 1000f * Mathf.Tau);
         foreach (var (waypoint, mark) in _marks.OrderBy(m => m.Waypoint.Id == primary))
@@ -147,6 +157,27 @@ public partial class CompassHud : CanvasLayer
                 var size = _font.GetStringSize(label, HorizontalAlignment.Left, -1, 12);
                 _bar.DrawString(_font, new Vector2(Mathf.Clamp(x - size.X / 2, 0, w - size.X), 38), label, HorizontalAlignment.Left, -1, 12, UiTokens.Text);
             }
+        }
+    }
+
+    // Other players under the waypoints: a white dot with a navy rim, the name and distance under it.
+    private void DrawPlayers(float w)
+    {
+        foreach (var (_, name, mark) in _playerMarks.OrderByDescending(m => m.Mark.Distance))
+        {
+            var x = XOf(mark.X);
+            _bar.DrawCircle(new Vector2(x, 12), 5.5f, UiTokens.DeepNavy);
+            _bar.DrawCircle(new Vector2(x, 12), 4f, UiTokens.Text);
+            if (mark.Behind)
+            {
+                var s = mark.X < 0 ? -1f : 1f;
+                var tip = x + s * 13;
+                _bar.DrawColoredPolygon([new(tip, 12), new(tip - s * 6, 7), new(tip - s * 6, 17)], UiTokens.Text);
+            }
+            var distance = mark.Distance >= 1000 ? Loc.T("{0} km", $"{mark.Distance / 1000:0.0}") : Loc.T("{0} m", $"{mark.Distance:0}");
+            var label = Loc.T("{0} · {1}", name, distance);
+            var size = _font.GetStringSize(label, HorizontalAlignment.Left, -1, 12);
+            _bar.DrawString(_font, new Vector2(Mathf.Clamp(x - size.X / 2, 0, w - size.X), 38), label, HorizontalAlignment.Left, -1, 12, UiTokens.TextSecondary);
         }
     }
 
