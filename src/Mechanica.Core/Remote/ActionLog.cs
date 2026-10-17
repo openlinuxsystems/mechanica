@@ -66,6 +66,9 @@ public sealed class ActionLog : IDisposable
     /// <summary>Most calls one recording keeps.</summary>
     public int MaxEntries { get; }
 
+    /// <summary>The physics tick last passed to <see cref="Tick"/>.</summary>
+    public long CurrentTick => _now;
+
     /// <summary>True while recording.</summary>
     public bool IsRecording => _recordStart is not null;
 
