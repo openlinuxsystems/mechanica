@@ -230,6 +230,18 @@ public class CharacterAnimatorTests
     }
 
     [Fact]
+    public void TheLegsKeepWalkingThroughASwing()
+    {
+        var animator = Make();
+        var walking = Standing(vz: -1.5f) with { Prop = CharacterProp.Sledgehammer };
+        Run(animator, walking, 0.5f);
+        Run(animator, walking with { Gesture = CharacterGesture.SledgeSwing, GestureCount = 1 }, 0.3f);
+        Assert.StartsWith("sledge_swing", animator.Gesture);
+        Assert.Equal(1f, animator.Body.Where(c => c.Clip == "walk").Sum(c => c.Weight), 2);
+        Assert.Contains(animator.Upper, c => c.Clip.StartsWith("sledge_swing", StringComparison.Ordinal) && c.Weight > 0.9f);
+    }
+
+    [Fact]
     public void ASideSwingTakesTheSwingsTime()
     {
         var animator = new CharacterAnimator(new CharacterSettings { GestureSeconds = new() { ["sledge_swing"] = 0.5f } }, Lengths);

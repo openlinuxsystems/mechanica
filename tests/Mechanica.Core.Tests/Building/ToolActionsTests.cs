@@ -351,6 +351,47 @@ public class ToolActionsTests
     }
 
     [Fact]
+    public void ASwingAtTheGroundThudsWhereItLands()
+    {
+        _world.Eyes[2] = new Vector3(0, 1.6f, 0);
+
+        var hit = Dispatch(ToolActions.Sledge, new { at = new[] { 0.5f, 0f, -1.5f } });
+
+        Assert.True(hit.Ok, hit.Message);
+        Assert.Equal(["smash_hit@vanilla (0.5, 0, -1.5)"], _world.Sounds);
+        Assert.Empty(_world.Pushes);
+        // Out of reach is refused like any other swing, and so is a hit on nothing at all.
+        _world.Now += 10;
+        Assert.Contains("reaches 3.0 m", Dispatch(ToolActions.Sledge, new { at = new[] { 0f, 0f, -6f } }).Message);
+        Assert.False(Dispatch(ToolActions.Sledge, new { }).Ok);
+    }
+
+    [Fact]
+    public void AHitSoundsWhereTheHeadLandsOnThePart()
+    {
+        var id = Add(Car(durability: 5));
+        _world.Eyes[2] = new Vector3(0, 1.6f, 2.5f);
+        string Smash() => _world.Sounds.Single(s => s.StartsWith("smash_hit@vanilla", StringComparison.Ordinal));
+
+        // Without a landing point the sound plays at the part's centre.
+        Assert.True(Dispatch(ToolActions.Sledge, new { creation = id, part = 2 }).Ok);
+        var centre = Smash();
+        var xyz = centre[(centre.IndexOf('(') + 1)..^1].Split(", ").Select(v => float.Parse(v, System.Globalization.CultureInfo.InvariantCulture)).ToArray();
+        var face = new Vector3(xyz[0], xyz[1], xyz[2] + 0.125f);
+
+        _world.Sounds.Clear();
+        _world.Now += 10;
+        Assert.True(Dispatch(ToolActions.Sledge, new { creation = id, part = 2, at = new[] { face.X, face.Y, face.Z } }).Ok);
+        Assert.EndsWith(FormattableString.Invariant($"({face.X:0.###}, {face.Y:0.###}, {face.Z:0.###})"), Smash());
+
+        // A landing point nowhere near the part falls back to its centre.
+        _world.Sounds.Clear();
+        _world.Now += 10;
+        Assert.True(Dispatch(ToolActions.Sledge, new { creation = id, part = 2, at = new[] { 40f, 0f, 0f } }).Ok);
+        Assert.Equal(centre, Smash());
+    }
+
+    [Fact]
     public void KnockbackIsCappedSoLightBodiesDoNotFly()
     {
         var settings = _settings with { Sledge = new SledgeSettings { Impulse = 5000f, MaxKnockbackSpeed = 4f } };

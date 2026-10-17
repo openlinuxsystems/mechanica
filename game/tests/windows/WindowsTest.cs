@@ -144,6 +144,26 @@ public partial class WindowsTest : StagedTest
             Settings.GameSettings.Apply(new());
             return true;
         });
+        // Tab is the inventory key's alternate (I the main one); a headless run can't capture the mouse to open the
+        // screen by key, so this opens it and checks that Tab closes it even with one of its controls focused.
+        Add("Tab closes the inventory", frame =>
+        {
+            var inventory = _main.GetNode<Items.InventoryScreen>("InventoryScreen");
+            if (frame == 0)
+            {
+                Check(InputActions.Find(InputActions.Inventory)?.Alternate == "Tab", "Tab is bound to the inventory");
+                inventory.Show(null);
+                return false;
+            }
+            if (frame == 1)
+            {
+                Walk(inventory).OfType<Control>().FirstOrDefault(c => c.FocusMode != Control.FocusModeEnum.None && c.IsVisibleInTree())?.GrabFocus();
+                GetViewport().PushInput(new InputEventKey { Pressed = true, PhysicalKeycode = Key.Tab, Keycode = Key.Tab });
+                return false;
+            }
+            Check(!inventory.IsOpen, "Tab closes it, ahead of moving the focus");
+            return true;
+        });
         Add("the inventory keeps them", frame =>
         {
             var inventory = _main.GetNode<Items.InventoryScreen>("InventoryScreen");
