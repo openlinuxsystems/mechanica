@@ -7,6 +7,7 @@ using Mechanica.Core.Player;
 using Mechanica.Core.World;
 using Mechanica.Game.Building;
 using Mechanica.Game.Creations;
+using Mechanica.Game.Player;
 using Instance = Mechanica.Game.Tests.NetTestHarness.Instance;
 
 namespace Mechanica.Game.Tests;
@@ -31,6 +32,8 @@ public partial class ToolsTest : StagedTest
     private ModLoadResult _mods = null!;
     private int _struck;
     private Vector3 _standing;
+    private Vector3 _walkFrom;
+    private int _swingsBefore;
     private Instance _host = null!;
     private Instance _client = null!;
     private Instance _late = null!;
@@ -515,6 +518,49 @@ public partial class ToolsTest : StagedTest
             Check(!_results[0].Ok && _results[0].Code == "miss", $"a swing at nothing misses ({_results[0]})");
             return true;
         });
+        Add("look down at the ground", frame => Look(_client, 0f, -1.1f, frame));
+        Add("a swing at the ground lands on it", frame =>
+        {
+            if (frame == 0)
+            {
+                _results.Clear();
+                Check(Tools.Sledge.Swing(_results.Add), "the swing starts");
+                return false;
+            }
+            if (_results.Count == 0 || Tools.Sledge.Swinging)
+                return false;
+            Check(_results[0].Ok, $"the head lands on the ground ({_results[0]})");
+            return true;
+        });
+        Add("holding left click keeps swinging while walking", frame =>
+        {
+            var me = _client.Main.LocalPlayer!;
+            if (frame == 0)
+            {
+                _walkFrom = me.GlobalPosition;
+                _swingsBefore = Tools.Sledge.Swings;
+                Tools.Sledge.HoldingSwing = true;
+            }
+            // Backing away from the bar, still looking down at the ground.
+            me.CurrentInput = PlayerInput.None with { MoveZ = -1f, Pitch = -1.1f };
+            if (frame == 45 && _host.Main.PlayerSync.Players[_client.Peer].Character is CharacterModel seen)
+            {
+                Check(seen.Animator.Gesture?.StartsWith("sledge_swing", StringComparison.Ordinal) == true, $"others see the swing ({seen.Animator.Gesture})");
+                Check(seen.Animator.Body.Any(c => c.Clip is "walk" or "jog" && c.Weight > 0.3f),
+                    $"with the legs walking under it ({string.Join(", ", seen.Animator.Body.Select(c => $"{c.Clip} {c.Weight:0.00}"))})");
+            }
+            if (frame < 80)
+                return false;
+            Tools.Sledge.HoldingSwing = false;
+            me.CurrentInput = PlayerInput.None with { Pitch = -1.1f };
+            var walked = new Vector2(me.GlobalPosition.X - _walkFrom.X, me.GlobalPosition.Z - _walkFrom.Z).Length();
+            Check(walked > 1f, $"the player walked through the swings ({walked:0.00} m)");
+            var swings = Tools.Sledge.Swings - _swingsBefore;
+            Check(swings >= 2, $"one swing after another ({swings} swings)");
+            Check(Tools.Sledge.LastResult is { Ok: true }, $"each landing on the ground ({Tools.Sledge.LastResult})");
+            return true;
+        });
+        Add("the last swing ends", _ => !Tools.Sledge.Swinging);
         Add("holding right click blocks on the host", frame =>
         {
             if (frame == 0)

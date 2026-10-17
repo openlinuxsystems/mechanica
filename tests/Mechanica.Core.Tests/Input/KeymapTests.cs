@@ -39,7 +39,7 @@ public class KeymapTests
         var map = new Keymap();
         Assert.Equal("E", map.Get(InputActions.Interact)?.ToString());
         Assert.Equal("I", map.Get(InputActions.Inventory)?.ToString());
-        Assert.Equal("B", map.Get(InputActions.Inventory, BindingSlot.Alternate)?.ToString());
+        Assert.Equal("Tab", map.Get(InputActions.Inventory, BindingSlot.Alternate)?.ToString());
         Assert.Equal("L", map.Get(InputActions.Logbook)?.ToString());
         Assert.Equal("H", map.Get(InputActions.Handbook)?.ToString());
         Assert.Equal("Shift+Q", map.Get(InputActions.RotateBack)?.ToString());
@@ -96,7 +96,7 @@ public class KeymapTests
         Assert.Equal("Space", map.Get(InputActions.Jump)?.ToString());
         Assert.Null(map.Get(InputActions.Inventory, BindingSlot.Alternate));
         map.ResetAll();
-        Assert.Equal("B", map.Get(InputActions.Inventory, BindingSlot.Alternate)?.ToString());
+        Assert.Equal("Tab", map.Get(InputActions.Inventory, BindingSlot.Alternate)?.ToString());
     }
 
     [Fact]
@@ -131,8 +131,8 @@ public class KeymapTests
     public void BindingTheSameChordToBothSlotsKeepsOne()
     {
         var map = new Keymap();
-        map.Set(InputActions.Inventory, BindingSlot.Primary, InputChord.Parse("B"));
-        Assert.Equal("B", map.Get(InputActions.Inventory)?.ToString());
+        map.Set(InputActions.Inventory, BindingSlot.Primary, InputChord.Parse("Tab"));
+        Assert.Equal("Tab", map.Get(InputActions.Inventory)?.ToString());
         Assert.Null(map.Get(InputActions.Inventory, BindingSlot.Alternate));
     }
 }

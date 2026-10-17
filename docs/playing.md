@@ -29,7 +29,7 @@ These are the default keys. Every one can be changed in Options, Controls.
 | F (hold) | Force build: hold it and left click to put the item in hand (food, a bucket, a glowstick) where you aim, where it stays. Also hold it while dragging a stack out of the inventory to drop it. |
 | R | Reload the weapon in hand |
 | E | Use. Hold it on a tree or rock node (they get a blue outline) until the ring fills to refine it: what it gives goes straight into your inventory. Letting go or walking away stops it. Also: open the blueprint menu (the Lift in hand, aimed at your Lift), open a container or station, pick up items, harvest, sleep in a bed, sit in or leave a seat, use a part, change a part's settings, use a quest marker, talk, respawn after dying |
-| I or B | Inventory |
+| I or Tab | Inventory |
 | U | Upgrade the part you are aiming at (a station), or the station whose screen is open |
 | L | Logbook: your quests, the map and your markers; you pick an answer here when a quest asks you to decide |
 | Esc | Menu: save, load, open your world to the LAN, Options, help, quit. Esc also closes any open window. |
@@ -104,7 +104,9 @@ switches it to the next mode and shows it for a moment; R with the Connect Tool 
   time). Right click (or drag) takes the paint off. **Q** opens the colour picker round the cursor: move the
   mouse towards a colour and click, or press 1 to 0 for the first ten. Esc or Q again closes it.
 - **Sledgehammer.** Left click swings it: overhead, or sideways from the right or the left, at random. A swing
-  takes 0.6 s and the blow lands 0.25 s after the click on whatever is under the crosshair within 3 m. The hit knocks a part's body back
+  takes 0.6 s and the blow lands 0.25 s after the click on whatever is under the crosshair within 3 m, the
+  ground and rocks included (those only thud and kick up dust). Hold left click to keep swinging; you can walk,
+  run and jump while you swing. The hit knocks a part's body back
   (about 5000 N·s, but never faster than 4 m/s, so light parts don't fly off), throws dust, chips and sparks and
   gives the camera a small jolt. Hold right click to raise the hammer across your chest and block: hits from other
   players' Sledgehammers and from bots do a quarter of their damage while you block. In Creative nothing takes

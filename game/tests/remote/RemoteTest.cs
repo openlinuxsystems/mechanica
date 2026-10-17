@@ -128,6 +128,9 @@ public partial class RemoteTest : StagedTest
             Check(all.Count > _host.Main.Actions.Dispatcher.Names.Count && all.All(m => m.GetProperty("params").GetProperty("type").GetString() == "object"),
                 $"every one of the host's {all.Count} methods has a params schema");
             Check(undocumented.Count == 0, $"and a description ({string.Join(", ", undocumented)})");
+            var names = all.Select(m => m.GetProperty("name").GetString()).ToList();
+            Check(new[] { "package.list", "package.inspect", "package.export", "package.install", "package.uninstall", "package.verify" }.All(names.Contains),
+                "the game registers the package.* methods");
             Check(RpcTestClient.Result(Answer("ping")!.Value).GetString() == "pong", "a module method answers");
             Check(RpcTestClient.ErrorCode(subscribed) is null, "the agent subscribes to actions");
             Check(RpcTestClient.ErrorCode(Answer("watch-auth", _watcher)!.Value) is null, "the observe token is accepted");
