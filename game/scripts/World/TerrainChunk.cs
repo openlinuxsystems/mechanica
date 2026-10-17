@@ -45,6 +45,12 @@ public partial class TerrainChunk : Node3D
     /// <summary>This chunk's height map collider, a child of <see cref="Ground"/> while the chunk is in the tree.</summary>
     public CollisionShape3D GroundShape { get; private set; } = null!;
 
+    /// <summary>
+    /// True for scenery past the simulated ground (<see cref="FarChunks"/>): drawn only, with no colliders,
+    /// POI markers or object lookups, and the ground mesh at half its resolution.
+    /// </summary>
+    public bool Scenery { get; init; }
+
     /// <summary>Which chunk this is.</summary>
     public ChunkCoord Coord => Data.Coord;
 
@@ -62,7 +68,7 @@ public partial class TerrainChunk : Node3D
 
     public override void _Ready()
     {
-        Name = $"Chunk_{Coord.X}_{Coord.Z}";
+        Name = $"{(Scenery ? "Scenery" : "Chunk")}_{Coord.X}_{Coord.Z}";
         var (x, z) = Coord.Origin(Data.Size);
         Position = new Vector3(x, 0, z);
         BuildGround();
@@ -109,31 +115,27 @@ public partial class TerrainChunk : Node3D
     {
         var n = Data.Samples;
         var res = Data.Resolution;
-        GroundShape = new CollisionShape3D
+        if (!Scenery)
+            BuildGroundShape(n, res);
+        // Scenery skips every other sample when the grid allows it: far away, half the triangles look the same.
+        var step = Scenery && (n - 1) % 2 == 0 ? 2 : 1;
+        var m = (n - 1) / step + 1;
+        var vertices = new Vector3[m * m];
+        var normals = new Vector3[m * m];
+        var colors = new Color[m * m];
+        for (var j = 0; j < m; j++)
         {
-            Name = $"Shape_{Coord.X}_{Coord.Z}",
-            Shape = new HeightMapShape3D { MapWidth = n, MapDepth = n, MapData = Data.Heights },
-            // A height map is centred on its node and spaced 1 m; scale it to the resolution. Ground is
-            // this node's sibling, so the shape sits at the chunk's position plus half a chunk.
-            Position = Position + new Vector3(Data.Size / 2f, 0, Data.Size / 2f),
-            Scale = new Vector3(res, 1f, res),
-        };
-        Ground.AddChild(GroundShape, forceReadableName: true);
-
-        var vertices = new Vector3[n * n];
-        var normals = new Vector3[n * n];
-        var colors = new Color[n * n];
-        for (var j = 0; j < n; j++)
-        {
-            for (var i = 0; i < n; i++)
+            for (var i = 0; i < m; i++)
             {
-                var k = j * n + i;
-                vertices[k] = new Vector3(i * res, Data.Heights[k], j * res);
-                normals[k] = Data.Normals[k].ToGodot();
+                var k = j * step * n + i * step;
+                var v = j * m + i;
+                vertices[v] = new Vector3(i * step * res, Data.Heights[k], j * step * res);
+                normals[v] = Data.Normals[k].ToGodot();
                 var c = Data.Colors[k];
-                colors[k] = new Color(c.X, c.Y, c.Z);
+                colors[v] = new Color(c.X, c.Y, c.Z);
             }
         }
+        n = m;
         var indices = new int[(n - 1) * (n - 1) * 6];
         var t = 0;
         for (var j = 0; j < n - 1; j++)
@@ -175,6 +177,20 @@ public partial class TerrainChunk : Node3D
         }
     }
 
+    private void BuildGroundShape(int n, float res)
+    {
+        GroundShape = new CollisionShape3D
+        {
+            Name = $"Shape_{Coord.X}_{Coord.Z}",
+            Shape = new HeightMapShape3D { MapWidth = n, MapDepth = n, MapData = Data.Heights },
+            // A height map is centred on its node and spaced 1 m; scale it to the resolution. Ground is
+            // this node's sibling, so the shape sits at the chunk's position plus half a chunk.
+            Position = Position + new Vector3(Data.Size / 2f, 0, Data.Size / 2f),
+            Scale = new Vector3(res, 1f, res),
+        };
+        Ground.AddChild(GroundShape, forceReadableName: true);
+    }
+
     private void BuildObjects()
     {
         var origin = Position;
@@ -182,15 +198,18 @@ public partial class TerrainChunk : Node3D
         foreach (var o in LiveObjects)
         {
             var placed = new Transform3D(new Basis(Vector3.Up, o.Yaw).Scaled(new Vector3(o.Scale, o.Scale, o.Scale)), o.Position.ToGodot() - origin);
-            var collider = o.Definition.Collider!;
-            // Colliders are sized rather than scaled: physics engines handle unscaled shapes best.
-            var shape = new CollisionShape3D
+            if (!Scenery)
             {
-                Shape = MakeShape(collider, o.Scale),
-                Transform = new Transform3D(new Basis(Vector3.Up, o.Yaw + Mathf.DegToRad(collider.Yaw)), placed * collider.At.ToGodot()),
-            };
-            Objects.AddChild(shape);
-            _objectShapes[shape.GetInstanceId()] = o.Id;
+                var collider = o.Definition.Collider!;
+                // Colliders are sized rather than scaled: physics engines handle unscaled shapes best.
+                var shape = new CollisionShape3D
+                {
+                    Shape = MakeShape(collider, o.Scale),
+                    Transform = new Transform3D(new Basis(Vector3.Up, o.Yaw + Mathf.DegToRad(collider.Yaw)), placed * collider.At.ToGodot()),
+                };
+                Objects.AddChild(shape);
+                _objectShapes[shape.GetInstanceId()] = o.Id;
+            }
             var pieces = o.Definition.Pieces ?? [];
             for (var p = 0; p < pieces.Count; p++)
             {
@@ -217,12 +236,13 @@ public partial class TerrainChunk : Node3D
         foreach (var piece in Data.Pieces)
         {
             var transform = new Transform3D(new Basis(Vector3.Up, piece.Yaw), piece.Position.ToGodot() - origin);
-            Structures.AddChild(new CollisionShape3D { Shape = MakeShape(piece.Shape, 1f), Transform = transform });
+            if (!Scenery)
+                Structures.AddChild(new CollisionShape3D { Shape = MakeShape(piece.Shape, 1f), Transform = transform });
             Structures.AddChild(new MeshInstance3D { Mesh = MeshOf(piece.Shape), MaterialOverride = MaterialOf(piece.Shape.Color), Transform = transform });
         }
         Markers = new Node3D { Name = "Markers" };
         AddChild(Markers);
-        foreach (var marker in Data.Markers)
+        foreach (var marker in Data.Markers.Where(_ => !Scenery))
         {
             var node = new Marker3D { Name = marker.Marker.Type!, Position = marker.Position.ToGodot() - origin, Rotation = new Vector3(0, marker.Yaw, 0) };
             node.SetMeta("type", marker.Marker.Type!);

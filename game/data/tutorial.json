@@ -1,0 +1,26 @@
+{
+  // First-time tips (Options, Gameplay, "Show tutorial hints") and the loading screen's tips.
+  // A hint shows once, the first time its trigger happens. {action_id} becomes the player's key for that
+  // action (ids in src/Mechanica.Core/Input/InputActions.cs). Read by src/Mechanica.Core/Ui/Tutorial.cs.
+  "hint_seconds": 8,
+  "hints": [
+    { "id": "start", "trigger": "start", "text": "Your quests are in the logbook ({logbook}). Press {handbook} for help at any time." },
+    { "id": "hammer", "trigger": "tool:hammer", "text": "The Hammer builds: {use_primary} places the part, {use_secondary} removes one, {rotate} turns it and the scroll wheel picks another part." },
+    { "id": "lift", "trigger": "tool:lift", "text": "The Lift holds a Creation still so you can build on it without physics. {use_primary} places the Lift or picks a Creation up; {lift_up} and {lift_down} raise and lower it." },
+    { "id": "weld", "trigger": "tool:weld", "text": "The Weld Tool joins Creations: {use_primary} picks a part, then {use_primary} on another Creation welds them into one." },
+    { "id": "paint", "trigger": "tool:paint", "text": "The Paint Tool colours parts: {rotate} picks the colour, {use_primary} paints and {use_secondary} takes the paint off." },
+    { "id": "sledge", "trigger": "tool:sledge", "text": "Swing the Sledgehammer with {use_primary} to break parts and fight." },
+    { "id": "connect", "trigger": "tool:connect", "text": "The Connect Tool links parts: {use_primary} a source part, then {use_primary} the part it drives. {interact} opens a part's settings." },
+    { "id": "item", "trigger": "tool:item", "text": "Use the item in your hand with {use_primary}: eat, plant, water or fire. The scroll wheel picks another and {drop_item} drops one." },
+    { "id": "inventory", "trigger": "screen:inventory", "text": "Click an item to pick it up and click a slot to put it down. Right click takes half a stack." },
+    { "id": "logbook", "trigger": "screen:logbook", "text": "The logbook lists your quests. When a quest asks you to decide, pick an answer here." }
+  ],
+  "tips": [
+    "Connections carry power and logic between parts.",
+    "The Lift lets you build and edit Creations without physics.",
+    "Use the Connect Tool to link engines to bearings.",
+    "Welding joins Creations into one rigid body.",
+    "Crops draw raids. Guard your farm when the horn sounds.",
+    "Press {handbook} at any time for help on what you are doing."
+  ]
+}

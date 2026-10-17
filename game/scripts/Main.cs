@@ -407,6 +407,12 @@ public partial class Main : Node3D
             });
             var questLog = new QuestHud { Name = "QuestHud", Quests = Quests, Actions = Actions, Players = PlayerSync };
             AddChild(questLog);
+            AddChild(new Ui.TutorialHints
+            {
+                Name = "TutorialHints",
+                Tool = () => LocalPlayer is null ? null : Tools?.Current.Name,
+                Screens = [("inventory", () => inventory.IsOpen), ("logbook", () => questLog.IsOpen)],
+            });
             // F1 opens the page for what the player is doing.
             AddChild(new PauseMenu
             {

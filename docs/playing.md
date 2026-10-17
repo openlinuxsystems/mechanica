@@ -45,9 +45,13 @@ stops getting your input.
 - **Graphics**: resolution, display mode (windowed, borderless, fullscreen) and VSync, which change
   when you press **Apply** and go back after 15 seconds unless you keep them; a quality preset (Low,
   Medium, High, Ultra, or Custom for view distance, shadows, anti-aliasing, textures and effects); UI
-  scale from 75% to 150%.
+  scale from 75% to 150%. View distance (128 to 1024 m) is how far you see: the ground around players
+  is simulated out to 128 m, and past that the land and its rocks and trees are drawn as scenery you
+  can't touch, fading into fog at the view distance.
 - **Audio**: master, music, sound effects and interface volume, mute all, and the output device.
-- **Gameplay**: mouse sensitivity, invert Y, field of view, auto-save (off, or every 5, 10 or 15
+- **Gameplay**: mouse sensitivity, invert Y, field of view, tutorial hints (a short tip at the top of
+  the screen the first time you start, pick up each tool or open each screen; **Show tips again** brings
+  back the ones you have seen; the tips are in `game/data/tutorial.json`), auto-save (off, or every 5, 10 or 15
   minutes while you host), the most players a world you host takes, and your player name.
 - **Interface**: show or hide the tool bar and key hints.
 

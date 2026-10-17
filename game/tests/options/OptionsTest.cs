@@ -81,7 +81,8 @@ public partial class OptionsTest : StagedTest
             Find<OptionButton>("Preset").EmitSignal(OptionButton.SignalName.ItemSelected, 0);
             var camera = new Camera3D();
             AddChild(camera);
-            Check(GameSettings.Current.Graphics.Preset == Quality.Low && Mathf.IsEqualApprox(camera.Far, 300f), $"Low draws to 300 m ({camera.Far})");
+            var low = GraphicsSettings.MinViewDistance + DisplayApplier.FogMargin;
+            Check(GameSettings.Current.Graphics.Preset == Quality.Low && Mathf.IsEqualApprox(camera.Far, low), $"Low draws only the simulated ground ({camera.Far} m)");
             camera.QueueFree();
             return true;
         });
