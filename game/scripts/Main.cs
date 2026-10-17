@@ -431,6 +431,10 @@ public partial class Main : Node3D
     /// <summary>Starts the session <paramref name="options"/> describe. Errors are logged and leave the game offline.</summary>
     public void Start(LaunchOptions options)
     {
+        // A host without --password follows Options, so a changed password counts from the next join.
+        Session.Password = options.Password ?? "";
+        if (options.Mode == SessionMode.Host && options.Password is null)
+            Session.PasswordFrom = () => Settings.GameSettings.Current.Gameplay.ServerPassword;
         var error = options.Mode switch
         {
             SessionMode.Host => Session.Host(options.Port, options.MaxPlayers),
@@ -614,7 +618,8 @@ public partial class Main : Node3D
         Session.MaxPlayers,
         Options!.GameMode.ToString().ToLowerInvariant(),
         NetProtocol.Version,
-        [.. Content!.Mods.Select(m => $"{m.Id} {m.Version}")]);
+        [.. Content!.Mods.Select(m => $"{m.Id} {m.Version}")],
+        Session.Password.Length > 0);
 
     private static LaunchOptions ReadCommandLine()
     {

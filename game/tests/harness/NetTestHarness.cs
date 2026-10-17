@@ -86,8 +86,8 @@ public partial class NetTestHarness : Node
     /// Starts an instance that joins the host, optionally with its own mod list (<paramref name="content"/>,
     /// checked on join) or its own loaded mods (<paramref name="mods"/>) instead of the enabled ones.
     /// </summary>
-    public Instance StartClient(string name, ContentManifest? content = null, ModLoadResult? mods = null) =>
-        Start(name, LaunchOptions.ForJoin(new NetEndpoint("127.0.0.1", Port)), content, mods);
+    public Instance StartClient(string name, ContentManifest? content = null, ModLoadResult? mods = null, string? password = null) =>
+        Start(name, LaunchOptions.ForJoin(new NetEndpoint("127.0.0.1", Port)) with { Password = password }, content, mods);
 
     /// <summary>Disconnects and frees an instance.</summary>
     public void Stop(Instance instance)

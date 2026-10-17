@@ -24,6 +24,7 @@ public partial class NetTest : StagedTest
     private Instance _b = null!;
     private Instance _late = null!;
     private Instance _extra = null!;
+    private Instance _wrong = null!;
     private ContentManifest _hostContent = ContentManifest.Empty;
     private Vector3 _mark;
     private float _peak;
@@ -216,6 +217,35 @@ public partial class NetTest : StagedTest
             _host.Main.Session.Content = _hostContent;
             return true;
         });
+        Add("a world with a password turns away players without it", frame =>
+        {
+            if (frame == 0)
+            {
+                _host.Main.Session.Password = "hunter2";
+                _extra = _harness.StartClient("ClientNoPassword");
+                _wrong = _harness.StartClient("ClientWrongPassword", password: "letmein");
+            }
+            if (frame < 10 || _extra.Main.Session.State != NetSession.SessionState.Offline || _wrong.Main.Session.State != NetSession.SessionState.Offline)
+                return false;
+            Check(_extra.Main.Session.LastMessage.Contains(NetPassword.Needed), $"no password: {_extra.Main.Session.LastMessage}");
+            Check(_wrong.Main.Session.LastMessage.Contains(NetPassword.Wrong), $"a wrong one: {_wrong.Main.Session.LastMessage}");
+            Check(_host.Main.Session.ReadyPeers.Count == 2, "host still has two clients");
+            _harness.Stop(_extra);
+            _harness.Stop(_wrong);
+            return true;
+        });
+        Add("the right password lets a player in", frame =>
+        {
+            if (frame == 0)
+                _extra = _harness.StartClient("ClientPassword", password: "hunter2");
+            if (_extra.Main.Session.State != NetSession.SessionState.Connected)
+                return false;
+            Check(_host.Main.Session.ReadyPeers.Count == 3, "host has three clients");
+            _harness.Stop(_extra);
+            _host.Main.Session.Password = "";
+            return true;
+        });
+        Add("the password's player has gone", _ => _host.Main.Session.ReadyPeers.Count == 2);
         Add("a late joiner sees everyone where they are", frame =>
         {
             if (frame == 0)

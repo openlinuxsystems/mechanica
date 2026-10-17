@@ -1,5 +1,6 @@
 using Godot;
 using Mechanica.Core.Input;
+using Mechanica.Core.Net;
 using Mechanica.Core.Saves;
 using Mechanica.Core.Settings;
 using Mechanica.Core.Survival;
@@ -418,6 +419,13 @@ public partial class OptionsScreen : ToolWindow
         page.AddChild(new Label { Text = "Multiplayer", ThemeTypeVariation = "TitleLabel" });
         Slider(page, "Max players (host)", _draft.Gameplay.MaxPlayers, GameplaySettings.MinPlayers, GameplaySettings.MaxMaxPlayers, 1,
             v => Live(_draft with { Gameplay = _draft.Gameplay with { MaxPlayers = (int)v } }), v => $"{v:0}");
+        var password = new LineEdit
+        {
+            Name = "Server password", Text = _draft.Gameplay.ServerPassword, Secret = true, MaxLength = NetPassword.MaxLength,
+            PlaceholderText = "none: anyone on your network can join", SizeFlagsHorizontal = SizeFlags.ExpandFill,
+        };
+        password.TextChanged += t => Live(_draft with { Gameplay = _draft.Gameplay with { ServerPassword = t } });
+        Row(page, "Server password (host)", "Players must type this to join a world you open to the LAN. It is not encrypted, so don't reuse a real password.").AddChild(password);
         var row = Row(page, "Player name", "Other players see this name. Saved worlds know you by your profile, so you can change it any time.");
         _name = new LineEdit { Text = Main.UserProfile(null, ProfilePath).Name, MaxLength = PlayerProfile.MaxNameLength, SizeFlagsHorizontal = SizeFlags.ExpandFill };
         row.AddChild(_name);

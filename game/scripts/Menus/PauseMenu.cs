@@ -175,6 +175,7 @@ public partial class PauseMenu : CanvasLayer
             _status.Text = "Enter a port from 1 to 65535.";
             return;
         }
+        Session.PasswordFrom = () => Settings.GameSettings.Current.Gameplay.ServerPassword;
         _status.Text = Session.Host(port, Settings.GameSettings.Current.Gameplay.MaxPlayers) == Error.Ok ? "" : Session.LastMessage;
     }
 
