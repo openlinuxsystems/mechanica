@@ -20,6 +20,8 @@ mods/
     meshes/             glTF models (*.glb, *.gltf)
     textures/           icons and textures (*.png)
     sounds/             audio (*.ogg, *.wav)
+    world/worldgen.json world generation rules; the last mod in load order that ships one wins
+    pois/               POI prefabs (*.json), see world-generation.md
 ```
 
 Rules the loader enforces:

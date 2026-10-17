@@ -15,7 +15,8 @@ namespace Mechanica.Game.Tests;
 /// ground and simulation around them. Each must stay in one piece the whole way. The plane then lands,
 /// falls asleep and parks as its ground unloads; the client's player walking up (teleported on the host)
 /// brings the ground back and resumes it exactly where it parked. The test (not parts) is the engine:
-/// drivable and flyable parts come in chunks 10 and 11.
+/// drivable and flyable parts come in chunks 10 and 11. The world is flat so heights stay simple;
+/// generated terrain has its own test.
 /// </summary>
 public partial class StreamingTest : StagedTest
 {
@@ -50,7 +51,7 @@ public partial class StreamingTest : StagedTest
     {
         _content = ModLoader.LoadAll(ProjectSettings.GlobalizePath("res://tests/creation/mods"));
         _assets = new PartAssets(_content);
-        _harness = new NetTestHarness { Name = "Harness" };
+        _harness = new NetTestHarness { Name = "Harness", WorldGen = WorldGenData.Flat };
         AddChild(_harness);
         _host = _harness.StartHost(mods: _content);
         _client = _harness.StartClient("Client", mods: _content);

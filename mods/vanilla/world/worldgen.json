@@ -1,0 +1,155 @@
+{
+  // World generation rules (chunk 19, D11). SI units. POI layouts are in pois/*.json.
+  // See src/Mechanica.Core/World/WorldGenDefinition.cs for every key.
+  "terrain": {
+    "resolution": 1.0,
+    "sea_level": -4.0,
+    "sea_floor": -24.0,
+    "coast_width": 160.0,
+    "coast_biome_width": 240.0,
+    "coast_wobble": 140.0,
+    "noise_scale": 420.0,
+    "octaves": 5,
+    "lacunarity": 2.0,
+    "gain": 0.5,
+    "biome_cell_size": 760.0,
+    "biome_blend": 80.0,
+    "biome_warp": 160.0,
+    "max_scatter_slope": 0.7
+  },
+  "coast_biome": "coastal",
+  "biomes": [
+    {
+      "id": "meadow",
+      "name": "Meadow",
+      "weight": 3.0,
+      "height": 6.0,
+      "relief": 8.0,
+      "color": "#79a35a",
+      "scatter": [
+        { "object": "tree", "spacing": 30.0, "chance": 0.25 },
+        { "object": "boulder", "spacing": 60.0, "chance": 0.2 },
+        { "object": "bush", "spacing": 14.0, "chance": 0.2 },
+        { "object": "small_rock", "spacing": 18.0, "chance": 0.15 }
+      ]
+    },
+    {
+      "id": "forest",
+      "name": "Forest",
+      "weight": 3.0,
+      "height": 12.0,
+      "relief": 20.0,
+      "color": "#3f6d3a",
+      "scatter": [
+        { "object": "tree", "spacing": 7.0, "chance": 0.6 },
+        { "object": "large_rock", "spacing": 30.0, "chance": 0.15 },
+        { "object": "fallen_log", "spacing": 22.0, "chance": 0.2 },
+        { "object": "bush", "spacing": 9.0, "chance": 0.25 }
+      ]
+    },
+    {
+      "id": "ruin_field",
+      "name": "Ruin Field",
+      "weight": 2.0,
+      "height": 5.0,
+      "relief": 5.0,
+      "color": "#8b8a68",
+      "scatter": [
+        { "object": "rock_node", "spacing": 20.0, "chance": 0.35 },
+        { "object": "boulder", "spacing": 34.0, "chance": 0.25 },
+        { "object": "small_rock", "spacing": 12.0, "chance": 0.2 },
+        { "object": "bush", "spacing": 20.0, "chance": 0.1 }
+      ]
+    },
+    {
+      "id": "warehouse_district",
+      "name": "Warehouse District",
+      "weight": 2.0,
+      "height": 4.0,
+      "relief": 2.0,
+      "color": "#7f8288",
+      "scatter": [
+        { "object": "small_rock", "spacing": 20.0, "chance": 0.1 },
+        { "object": "bush", "spacing": 26.0, "chance": 0.08 }
+      ]
+    },
+    {
+      "id": "coastal",
+      "name": "Coastal",
+      "weight": 0.0,
+      "height": 0.0,
+      "relief": 4.0,
+      "color": "#d9c890",
+      "scatter": [
+        { "object": "boulder", "spacing": 40.0, "chance": 0.2 },
+        { "object": "small_rock", "spacing": 15.0, "chance": 0.15 },
+        { "object": "bush", "spacing": 30.0, "chance": 0.1 }
+      ]
+    }
+  ],
+  // Destructible objects (D11): placeholder primitives until meshes are authored.
+  "objects": [
+    {
+      "id": "tree",
+      "collider": { "shape": "cylinder", "radius": 0.35, "height": 9.0, "at": [0.0, 4.5, 0.0] },
+      "pieces": [
+        { "shape": "cylinder", "radius": 0.35, "height": 9.0, "at": [0.0, 4.5, 0.0], "color": "#6b4a2e" },
+        { "shape": "sphere", "radius": 2.6, "at": [0.0, 8.0, 0.0], "color": "#2f5e2a" }
+      ],
+      "footprint": 1.5,
+      "scale": [0.8, 1.25],
+      "sink": 0.3
+    },
+    {
+      "id": "rock_node",
+      "collider": { "shape": "sphere", "radius": 1.0, "at": [0.0, 0.6, 0.0] },
+      "pieces": [
+        { "shape": "sphere", "radius": 1.0, "at": [0.0, 0.6, 0.0], "color": "#6f7680" },
+        { "shape": "sphere", "radius": 0.35, "at": [0.45, 1.25, 0.2], "color": "#b0884a" }
+      ],
+      "footprint": 1.3,
+      "scale": [0.9, 1.2],
+      "sink": 0.2
+    },
+    {
+      "id": "boulder",
+      "collider": { "shape": "sphere", "radius": 1.8, "at": [0.0, 1.2, 0.0] },
+      "pieces": [{ "shape": "sphere", "radius": 1.8, "at": [0.0, 1.2, 0.0], "color": "#7c7b76" }],
+      "footprint": 2.2,
+      "scale": [0.8, 1.3],
+      "sink": 0.3
+    },
+    {
+      "id": "large_rock",
+      "collider": { "shape": "sphere", "radius": 1.1, "at": [0.0, 0.7, 0.0] },
+      "pieces": [{ "shape": "sphere", "radius": 1.1, "at": [0.0, 0.7, 0.0], "color": "#85837c" }],
+      "footprint": 1.4,
+      "scale": [0.8, 1.2],
+      "sink": 0.2
+    },
+    {
+      "id": "small_rock",
+      "collider": { "shape": "sphere", "radius": 0.45, "at": [0.0, 0.25, 0.0] },
+      "pieces": [{ "shape": "sphere", "radius": 0.45, "at": [0.0, 0.25, 0.0], "color": "#8d8b84" }],
+      "footprint": 0.6,
+      "scale": [0.7, 1.3],
+      "sink": 0.1
+    },
+    {
+      "id": "bush",
+      "collider": { "shape": "sphere", "radius": 0.9, "at": [0.0, 0.6, 0.0] },
+      "pieces": [{ "shape": "sphere", "radius": 0.9, "at": [0.0, 0.6, 0.0], "color": "#4b7a33" }],
+      "footprint": 1.0,
+      "scale": [0.7, 1.3],
+      "sink": 0.2
+    },
+    {
+      "id": "fallen_log",
+      "collider": { "shape": "box", "size": [0.6, 0.6, 5.0], "at": [0.0, 0.3, 0.0] },
+      "pieces": [{ "shape": "box", "size": [0.6, 0.6, 5.0], "at": [0.0, 0.3, 0.0], "color": "#5e4127" }],
+      "footprint": 2.6,
+      "scale": [0.8, 1.2],
+      "sink": 0.1
+    }
+  ]
+}

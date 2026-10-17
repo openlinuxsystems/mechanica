@@ -80,6 +80,9 @@ public class LaunchOptionsTests
         Assert.Null(Parse("--host").AiPort);
     }
 
+    [Fact]
+    public void Seed() => Assert.Equal(LaunchOptions.ForHost(4000) with { Seed = -42 }, Parse("--host", "4000", "--seed", "-42"));
+
     [Theory]
     [InlineData("127.0.0.1", true)]
     [InlineData("127.1.2.3", true)]
@@ -103,6 +106,8 @@ public class LaunchOptionsTests
     [InlineData("--max-players", "0")]
     [InlineData("--max-players", "17")]
     [InlineData("--max-players")]
+    [InlineData("--seed", "x")]
+    [InlineData("--seed")]
     public void RejectsBadArguments(params string[] args)
     {
         Assert.False(LaunchOptions.TryParse(args, out _, out var error));

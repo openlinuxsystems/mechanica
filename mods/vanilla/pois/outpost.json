@@ -1,0 +1,27 @@
+{
+  "id": "outpost",
+  "name": "Workshop Outpost",
+  "radius": 40.0,
+  "placement": {
+    "spacing": [800.0, 1200.0],
+    "biomes": ["meadow", "forest", "ruin_field", "warehouse_district"],
+    "priority": 50
+  },
+  "terrain": [
+    { "op": "flatten", "radius": 18.0, "blend": 20.0 }
+  ],
+  "pieces": [
+    { "shape": "box", "size": [16.0, 0.3, 16.0], "at": [0.0, 0.15, 0.0], "color": "#a3a093" },
+    { "shape": "box", "size": [16.0, 4.0, 0.4], "at": [0.0, 2.0, -7.8], "color": "#7d858c" },
+    { "shape": "box", "size": [0.4, 4.0, 10.0], "at": [-7.8, 2.0, -3.0], "color": "#7d858c" },
+    { "shape": "box", "size": [0.4, 4.0, 10.0], "at": [7.8, 2.0, -3.0], "color": "#7d858c" },
+    { "shape": "box", "size": [16.4, 0.3, 10.4], "at": [0.0, 4.15, -3.0], "color": "#4a4f55" }
+  ],
+  "markers": [
+    { "type": "item", "ref": "fabricator", "at": [0.0, 0.3, -5.0] },
+    { "type": "item", "ref": "dispenser", "at": [5.0, 0.3, -6.0] },
+    { "type": "item", "ref": "respawn_bed", "at": [-5.0, 0.3, -6.0] },
+    { "type": "item", "ref": "chest", "at": [-5.0, 0.3, 3.0] },
+    { "type": "item", "ref": "outpost_sign", "at": [0.0, 0.0, 9.0] }
+  ]
+}

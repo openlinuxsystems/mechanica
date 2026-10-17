@@ -34,6 +34,7 @@ public class StreamingSettingsTests
     [InlineData("""{ "chunk_size": 0 }""", "chunk_size")]
     [InlineData("""{ "unload_delay": -1 }""", "unload_delay")]
     [InlineData("""{ "max_unattended_chunks": -1 }""", "max_unattended_chunks")]
+    [InlineData("""{ "chunk_build_budget": -0.001 }""", "chunk_build_budget")]
     [InlineData("""{ "world_size": 32, "chunk_size": 64 }""", "world_size")]
     [InlineData("""{ "chunk_sise": 64 }""", "chunk_sise")]
     [InlineData("null", "null")]
