@@ -91,6 +91,9 @@ public sealed record ReportContext
     /// <summary>Difficulty, lower case.</summary>
     public string Difficulty { get; init; } = "";
 
+    /// <summary>Whether players could hurt each other.</summary>
+    public bool FriendlyFire { get; init; }
+
     /// <summary>Physics tick when written.</summary>
     public long Tick { get; init; }
 

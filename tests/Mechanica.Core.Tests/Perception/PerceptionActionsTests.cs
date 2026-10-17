@@ -297,6 +297,7 @@ public class PerceptionActionsTests
         public GameMode Mode => GameMode.Survival;
 
         public Difficulty Difficulty => Difficulty.Normal;
+        public bool FriendlyFire => false;
 
         public WorldGenerator? Generator { get; set; }
 

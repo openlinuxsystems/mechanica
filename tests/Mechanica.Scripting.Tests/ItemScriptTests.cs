@@ -135,9 +135,9 @@ public sealed class ItemScriptTests : IDisposable
     }
 
     [Fact]
-    public void WithPvpOffOrInCreativeShotsDoNotHurtPlayers()
+    public void WithFriendlyFireOffOrInCreativeShotsDoNotHurtPlayers()
     {
-        foreach (var fixture in new[] { new SurvivalFixture(new SurvivalSettings { Pvp = false }), new SurvivalFixture(mode: GameMode.Creative) })
+        foreach (var fixture in new[] { new SurvivalFixture(friendlyFire: false), new SurvivalFixture(mode: GameMode.Creative) })
         {
             using var rig = new ItemRig(fixture);
             fixture.Pockets(Me).Add(Blaster, 1);

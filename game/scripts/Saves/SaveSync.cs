@@ -175,6 +175,7 @@ public partial class SaveSync : Node
             SavedAt = DateTimeOffset.UtcNow,
             Mode = Survival.Mode,
             Difficulty = Survival.Actions?.Difficulty ?? Survival.Difficulty,
+            FriendlyFire = Survival.Actions?.FriendlyFire ?? Survival.FriendlyFire,
             Seed = World.Seed,
             Time = runtime.Time,
             Mods = content.Mods,

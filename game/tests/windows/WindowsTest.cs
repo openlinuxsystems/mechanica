@@ -69,6 +69,17 @@ public partial class WindowsTest : StagedTest
             options.ShowTab(Array.IndexOf(OptionsScreen.Tabs, "Gameplay"));
             var difficulty = Walk(options).OfType<Label>().FirstOrDefault(l => l.Name == "WorldDifficulty");
             Check(difficulty?.Text == "Normal", $"Gameplay shows the world's difficulty ({difficulty?.Text})");
+            var friendlyFire = Walk(options).OfType<CheckButton>().FirstOrDefault(c => c.Name == "WorldFriendlyFire");
+            Check(friendlyFire is { ButtonPressed: false }, "Gameplay shows friendly fire, off by default");
+            if (friendlyFire is { Disabled: false })
+            {
+                friendlyFire.ButtonPressed = true;
+                Check(_main.Survival.Actions!.FriendlyFire, "the host turns friendly fire on from Options");
+                friendlyFire.ButtonPressed = false;
+                Check(!_main.Survival.Actions.FriendlyFire, "and off again");
+            }
+            else
+                Check(false, "the host can change friendly fire");
             for (var tab = 0; tab < OptionsScreen.Tabs.Length; tab++)
             {
                 options.ShowTab(tab);

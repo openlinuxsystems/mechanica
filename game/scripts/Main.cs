@@ -319,7 +319,7 @@ public partial class Main : Node3D
         if (save is null && Options.LoadPath is { } unreadable && Options.Mode != SessionMode.Join)
             Loading.Fail(Ui.Loc.T("The save {0} could not be read.", System.IO.Path.GetFileName(unreadable)));
         if (save is not null && Options.Mode != SessionMode.Join)
-            Options = Options with { Seed = save.Seed, GameMode = save.Mode, Difficulty = save.Difficulty };
+            Options = Options with { Seed = save.Seed, GameMode = save.Mode, Difficulty = save.Difficulty, FriendlyFire = save.FriendlyFire };
         else
             Save = save = null;
         var profile = Profile ??= LoadProfile(Options.PlayerName);
@@ -419,6 +419,7 @@ public partial class Main : Node3D
             Catalog = new LoadedParts(this),
             Mode = Options.GameMode,
             Difficulty = Options.Difficulty,
+            FriendlyFire = Options.FriendlyFire,
         };
         // Before building's actions, so building is paid for in Survival.
         Survival.RegisterActions(Actions.Dispatcher);
@@ -650,7 +651,10 @@ public partial class Main : Node3D
             {
                 Name = "PauseMenu", Session = Session, Saves = Saves, Lan = Lan, Reports = Reports.Store,
                 HelpTopic = () => questLog.IsOpen ? "quests.md" : inventory.IsOpen ? "survival.md" : "playing.md",
-                World = () => Survival.Own is { } own ? (own.Mode, own.Difficulty) : null,
+                World = () => Survival.Own is { } own
+                    ? new WorldRules(own.Mode, own.Difficulty, own.FriendlyFire,
+                        Session.IsHost ? on => Actions.Request(Core.Survival.SurvivalActions.SetFriendlyFire, new Core.Survival.SetFriendlyFireArgs(on)) : null)
+                    : null,
             };
             AddChild(pause);
             hudRoot.Covered = () => inventory.IsOpen || pause.IsOpen || questLog.IsOpen || Ui.ToolWindow.Topmost is not null || Characters.Window is not null;
@@ -972,6 +976,7 @@ public partial class Main : Node3D
         Seed = Streamer.Seed,
         Mode = Options!.GameMode.ToString().ToLowerInvariant(),
         Difficulty = Options.Difficulty.ToString().ToLowerInvariant(),
+        FriendlyFire = Survival.Actions?.FriendlyFire ?? Options.FriendlyFire,
         WorldTime = Scripts.Runtime.Time,
         Headless = DisplayServer.GetName() == "headless",
         Players = [.. PlayerSync.Players.Values.OrderBy(p => p.PeerId).Select(p => new Core.Reports.ReportPlayer(p.PeerId, p.DisplayName, p.GlobalPosition.ToNumerics().ToVec3()))],

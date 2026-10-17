@@ -8,7 +8,7 @@ using Mechanica.Game.Player;
 namespace Mechanica.Game.Menus;
 
 /// <summary>
-/// The main menu's New game screen: the world's name, Survival or Creative, the difficulty (Survival), an optional seed (blank picks
+/// The main menu's New game screen: the world's name, Survival or Creative, the difficulty and friendly fire (Survival), an optional seed (blank picks
 /// one), whether to open the world to the LAN, on which port, and which character the player plays as.
 /// </summary>
 public partial class NewGameScreen : Ui.ToolWindow
@@ -16,6 +16,7 @@ public partial class NewGameScreen : Ui.ToolWindow
     private LineEdit _name = null!;
     private OptionButton _mode = null!;
     private OptionButton _difficulty = null!;
+    private CheckBox _friendlyFire = null!;
     private LineEdit _seed = null!;
     private CheckBox _lan = null!;
     private LineEdit _port = null!;
@@ -42,6 +43,9 @@ public partial class NewGameScreen : Ui.ToolWindow
     /// <summary>The seed box.</summary>
     public LineEdit Seed => _seed;
 
+    /// <summary>The Friendly fire box (off by default).</summary>
+    public CheckBox FriendlyFire => _friendlyFire;
+
     /// <summary>The Open to LAN box.</summary>
     public CheckBox Lan => _lan;
 
@@ -66,7 +70,11 @@ public partial class NewGameScreen : Ui.ToolWindow
         _difficulty = Row(grid, "Difficulty", new OptionButton { Name = "Difficulty", TooltipText = "Easy: bots hit softer and raids are smaller and rarer. Kept with the world." });
         _difficulty.AddItem("Normal", (int)Difficulty.Normal);
         _difficulty.AddItem("Easy", (int)Difficulty.Easy);
-        _mode.ItemSelected += _ => _difficulty.Disabled = (GameMode)_mode.GetSelectedId() == GameMode.Creative;
+        _friendlyFire = Row(grid, "Friendly fire", new CheckBox
+        {
+            Name = "FriendlyFire", TooltipText = "Let players hurt each other with weapons and the Sledgehammer. Off: only bots hurt players. The host can change it later.",
+        });
+        _mode.ItemSelected += _ => _difficulty.Disabled = _friendlyFire.Disabled = (GameMode)_mode.GetSelectedId() == GameMode.Creative;
         _seed = Row(grid, "Seed", new LineEdit { PlaceholderText = "random" });
         _lan = Row(grid, "Open to LAN", new CheckBox());
         _port = Row(grid, "Port", new LineEdit { Text = NetProtocol.DefaultPort.ToString() });
@@ -95,7 +103,7 @@ public partial class NewGameScreen : Ui.ToolWindow
     public void SetMode(GameMode mode)
     {
         _mode.Select(_mode.GetItemIndex((int)mode));
-        _difficulty.Disabled = mode == GameMode.Creative;
+        _difficulty.Disabled = _friendlyFire.Disabled = mode == GameMode.Creative;
     }
 
     /// <summary>Picks how hard a Survival world is.</summary>
@@ -117,7 +125,8 @@ public partial class NewGameScreen : Ui.ToolWindow
             // A number is used as it is; any other text is turned into one, so "island" is always the same world.
             seed = long.TryParse(seedText, out var number) ? number : StableHash(seedText);
         }
-        var options = LaunchOptions.Offline with { Seed = seed, GameMode = (GameMode)_mode.GetSelectedId(), Difficulty = (Difficulty)_difficulty.GetSelectedId() };
+        var options = LaunchOptions.Offline with { Seed = seed, GameMode = (GameMode)_mode.GetSelectedId(), Difficulty = (Difficulty)_difficulty.GetSelectedId(),
+            FriendlyFire = _friendlyFire.ButtonPressed && (GameMode)_mode.GetSelectedId() == GameMode.Survival };
         if (_lan.ButtonPressed)
         {
             if (!NetEndpoint.TryParsePort(_port.Text.Trim(), out var port))
