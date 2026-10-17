@@ -38,6 +38,9 @@ public sealed record ScriptSettings
     /// <summary>Most messages (prints, warnings, errors) the host keeps for the editor console.</summary>
     public int MaxMessages { get; init; } = 500;
 
+    /// <summary>Most sound loops one part may run at once (<c>sound.start</c>).</summary>
+    public int MaxLoopsPerPart { get; init; } = 4;
+
     /// <summary>Parses settings from JSON and validates them.</summary>
     /// <exception cref="FormatException">The JSON is malformed or a value is out of range.</exception>
     public static ScriptSettings FromJson(string json)
@@ -72,5 +75,7 @@ public sealed record ScriptSettings
             throw new FormatException($"max_overlap_radius must be a positive number (got {MaxOverlapRadius}).");
         if (MaxMessages < 1)
             throw new FormatException($"max_messages must be positive (got {MaxMessages}).");
+        if (MaxLoopsPerPart < 0)
+            throw new FormatException($"max_loops_per_part must not be negative (got {MaxLoopsPerPart}).");
     }
 }

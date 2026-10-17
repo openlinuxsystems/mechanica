@@ -4,6 +4,7 @@ using Mechanica.Core.Data;
 using Mechanica.Game.Creations;
 using Mechanica.Game.Motion;
 using Mechanica.Game.Net;
+using Mechanica.Game.Sound;
 using Mechanica.Scripting;
 
 namespace Mechanica.Game.Scripting;
@@ -12,10 +13,11 @@ namespace Mechanica.Game.Scripting;
 /// Runs part scripts on the host (D2). Owns the <see cref="ScriptRuntime"/>, steps it every physics
 /// tick before <see cref="MotionSync"/> applies the pushes it asked for, reloads scripts whose files
 /// change, and calls <c>on_collision</c> when a scripted part's Body starts touching something. It
-/// answers the scripts' physics queries (raycasts, overlaps, gravity) from Jolt. Clients run no
+/// answers the scripts' physics queries (raycasts, overlaps, gravity) from Jolt and their sounds through
+/// <see cref="SoundSync"/>. Clients run no
 /// scripts: they see what the scripts do through <see cref="CreationSync"/> snapshots.
 /// </summary>
-public partial class ScriptSync : Node, IScriptPhysics
+public partial class ScriptSync : Node, IScriptPhysics, IScriptSound
 {
     /// <summary>Where the scripting limits are read from.</summary>
     public const string SettingsPath = "res://data/scripting.json";
@@ -35,6 +37,9 @@ public partial class ScriptSync : Node, IScriptPhysics
 
     /// <summary>The host's Action API. Set before adding to the tree.</summary>
     public ActionGateway Actions { get; init; } = null!;
+
+    /// <summary>Sound, for the scripts' <c>sound</c> table. Set before adding to the tree.</summary>
+    public SoundSync Sounds { get; init; } = null!;
 
     /// <summary>The loaded mods, whose parts' scripts run. Set before adding to the tree; see <see cref="SetContent"/>.</summary>
     public ModLoadResult Mods { get; set; } = null!;
@@ -63,6 +68,7 @@ public partial class ScriptSync : Node, IScriptPhysics
         Settings ??= LoadSettings();
         // The graphs alone keep the instances in step; poses are read (and written back) only for parts that ask.
         Runtime = new ScriptRuntime(Settings, Actions.Dispatcher, Motion, this, new ModScriptSource(Mods), () => Creations.All);
+        Runtime.Sound = this;
         Runtime.Message += Log;
         Session.StateChanged += OnStateChanged;
     }
@@ -108,6 +114,39 @@ public partial class ScriptSync : Node, IScriptPhysics
         ReportCollisions();
         LastStepMilliseconds = System.Diagnostics.Stopwatch.GetElapsedTime(start).TotalMilliseconds;
     }
+
+    /// <inheritdoc/>
+    public string? Play(string sound, string ownerModId, System.Numerics.Vector3 position) =>
+        Sounds.Emit(sound, ownerModId, position.ToGodot()) ? null : $"there is no sound event '{sound}'";
+
+    /// <inheritdoc/>
+    public int StartLoop(string sound, string ownerModId, int creation, int part, IReadOnlyDictionary<string, float>? parameters, out string? error)
+    {
+        error = Sounds.Registry.Find(sound, ownerModId) switch
+        {
+            null => $"there is no sound event '{sound}'",
+            { Loop: false } => $"'{sound}' is not a loop; play it with sound.play",
+            var e => parameters?.Keys.FirstOrDefault(name => e.FindParameter(name) is null) is { } unknown
+                ? $"'{sound}' has no parameter '{unknown}'"
+                : null,
+        };
+        if (error is not null)
+            return 0;
+        var handle = Sounds.StartLoop(sound, ownerModId, SoundAnchor.OnPart(creation, part), parameters);
+        if (handle == 0)
+            error = "only the host plays loops";
+        return handle;
+    }
+
+    /// <inheritdoc/>
+    public string? SetLoopParameter(int handle, string name, float value) =>
+        Sounds.SetLoopParameter(handle, name, value) ? null
+        : Sounds.Loops.TryGetValue(handle, out var loop) && loop.Event.FindParameter(name) is null ? $"'{loop.Event.QualifiedId}' has no parameter '{name}'"
+        : Sounds.Loops.ContainsKey(handle) ? $"{name} must be a finite number"
+        : "the loop has stopped";
+
+    /// <inheritdoc/>
+    public void StopLoop(int handle) => Sounds.StopLoop(handle);
 
     /// <inheritdoc/>
     public ScriptRayHit? Raycast(System.Numerics.Vector3 from, System.Numerics.Vector3 to, int? ignoreCreation)

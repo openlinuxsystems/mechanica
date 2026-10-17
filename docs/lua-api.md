@@ -46,8 +46,8 @@ end
   `coroutine.yield` straight out of a hook is an error.
 
 Limits live in `game/data/scripting.json`: `instruction_budget` (per hook call),
-`reload_poll_seconds`, `max_string_length`, `max_ray_length`, `max_overlap_radius` and
-`max_messages`. The motion limits (largest force, torque and bearing speed) are in
+`reload_poll_seconds`, `max_string_length`, `max_ray_length`, `max_overlap_radius`,
+`max_messages` and `max_loops_per_part`. The motion limits (largest force, torque and bearing speed) are in
 `game/data/motion.json`.
 
 ## Hot reload
@@ -147,6 +147,37 @@ The Creation the part belongs to.
 | `world.tick()` | Physics steps since the scripts started. |
 | `world.raycast(from, to)` | The first thing on the segment from `from` to `to`, skipping the script's own Creation: `{position, normal, distance, creation?, part?}`, or `nil`. A ray may be at most `max_ray_length` m long. |
 | `world.overlap_sphere(centre, radius)` | Everything a sphere touches, skipping the script's own Creation: a list of `{creation?, part?}` (both missing for the ground). `radius` is at most `max_overlap_radius` m. |
+
+## `sound`
+
+Sound events come from the mods' sound banks (`sounds/*.json`, edited with the Part Editor's Sound
+Event Binder). An id without a mod (`"rotor_loop"`) is one of the part's own mod; another mod's is
+written `vanilla:thruster_loop`. Sounds are played by the host and heard by every player in earshot.
+A loop's parameters are the ones its event declares, each with its own range (`thruster_loop` has
+`thrust`, from 0 to 1).
+
+| Function | Returns |
+|----------|---------|
+| `sound.play(id, at?)` | Plays a one-shot at the part's centre, or at the world point `at`. Returns `true`, or `false` and the reason. |
+| `sound.start(id, parameters?)` | Starts a looping event that follows the part, with optional starting parameter values (`{thrust = 0.5}`). Returns its handle, or `nil` and the reason. A part runs at most `max_loops_per_part` loops. |
+| `sound.set_parameter(handle, name, value)` | Sets a parameter of one of the part's loops, which bends its pitch and volume as the event says. Changes reach clients up to 20 times a second. Returns `true`, or `false` and the reason. |
+| `sound.stop(handle)` | Stops one of the part's loops. Returns `true`, or `false` and the reason. |
+
+A part's loops keep playing across hot reloads, so keep their handles in `state`. They stop when
+the part is removed or its script stops on an error.
+
+```lua
+function on_create()
+  sound.play("vanilla:thruster_ignite")
+  state.hum = sound.start("vanilla:thruster_loop", {thrust = 0})
+end
+
+function on_update(dt)
+  -- Louder and higher the faster the part goes, full at 20 m/s.
+  local speed = part.velocity():length()
+  if state.hum then sound.set_parameter(state.hum, "thrust", math.min(speed / 20, 1)) end
+end
+```
 
 ## `vec3`
 
