@@ -81,16 +81,17 @@ public partial class MainMenu : Control
         AddChild(new HomeBackground { Name = "Background" });
         AddChild(new MenuMusic { Name = "Music" });
         var layout = new MarginContainer { Name = "Home" };
-        layout.SetAnchorsPreset(LayoutPreset.FullRect);
+        layout.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         foreach (var side in new[] { "left", "right", "top", "bottom" })
             layout.AddThemeConstantOverride($"margin_{side}", 16);
         AddChild(layout);
         _menu = layout;
         var rows = new VBoxContainer();
         layout.AddChild(rows);
-        rows.AddChild(new Control { CustomMinimumSize = new Vector2(0, 40) });
+        // The space over the logo gives way first, so the menu still fits a small window at a large UI scale.
+        rows.AddChild(new Control { SizeFlagsVertical = SizeFlags.ExpandFill, SizeFlagsStretchRatio = 0.25f });
         rows.AddChild(Ui.Logo.Create(84));
-        rows.AddChild(new Control { CustomMinimumSize = new Vector2(0, 24) });
+        rows.AddChild(new Control { CustomMinimumSize = new Vector2(0, 16) });
         var center = new CenterContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
         rows.AddChild(center);
         var columns = new HBoxContainer();
@@ -333,7 +334,7 @@ public partial class MainMenu : Control
     private static CenterContainer Centered(Control screen)
     {
         var holder = new CenterContainer { Name = $"{screen.Name}Holder" };
-        holder.SetAnchorsPreset(LayoutPreset.FullRect);
+        holder.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         holder.AddChild(screen);
         return holder;
     }
@@ -344,6 +345,7 @@ public partial class MainMenu : Control
         foreach (var screen in _open.Where(IsInstanceValid))
             Close(screen);
         _open.Clear();
+        _help.Hide();
     }
 
     private void Open(Control screen)
