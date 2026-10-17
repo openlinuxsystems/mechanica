@@ -15,7 +15,7 @@
   "properties": {
     "damage": 60,
     "interval": 1.5,
-    "range": 50,
+    "speed": 30,
     "ammo": "potato",
     "radius": 3,
     "impulse": 400

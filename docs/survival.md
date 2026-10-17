@@ -9,7 +9,7 @@ so it works the same for every player in a multiplayer game.
 | Key | What it does |
 |-----|--------------|
 | 6 | Take the item in hand (the sixth tool). Q and E choose among the usable items you carry. |
-| Left click (item in hand) | Use it: eat food or fire a weapon (both Lua item scripts), plant a seed in the soil you aim at, water it, or fill a bucket at the sea. |
+| Left click (item in hand) | Use it (all Lua item scripts): eat food, fire a weapon, plant a seed in the soil you aim at or water it. With a bucket or nothing usable in hand, aiming at the sea fills a bucket. |
 | G (item in hand) | Drop one of the item on the ground. |
 | F | Harvest the ripe crop you aim at, sleep in the bed you aim at (you respawn there), or pick up the nearest pile of items. |
 | R (dead) | Respawn, once the respawn delay is over. |
@@ -33,10 +33,11 @@ Creative turns damage off, makes building free and lets `GiveItems` make items f
 
 - `game/data/survival.json`: health, respawn delay, PvP, reach, starting items, fall and impact
   damage, piles. Unknown keys are refused.
-- Items and parts: `seed`, `watering`, `soil` and `respawn_point` in part data
-  ([Part Data Schema](part-data-schema.md#survival)). Food and weapons are item scripts
-  (`mods/vanilla/scripts/food.lua`, `mods/vanilla/scripts/potato_gun.lua`) with their numbers in
-  `properties`; see [Item scripts](lua-api.md#item-scripts). Vanilla's items are authored by the Part
+- Items and parts: `seed`, `soil` and `respawn_point` in part data
+  ([Part Data Schema](part-data-schema.md#survival)). Food, weapons, seeds and the water bucket are
+  item scripts (`food.lua`, `potato_gun.lua`, `seed.lua` and `watering.lua` in `mods/vanilla/scripts/`)
+  with their numbers in `properties`; see [Item scripts](lua-api.md#item-scripts). A seed's `seed`
+  section still says what it grows into and how fast: the host grows and harvests crops. Vanilla's items are authored by the Part
   Editor batch `mods/vanilla/editor/batches/survival.json`.
 - `game/data/building.json`: `sledge.player_damage` and `sledge.object_damage`.
 
@@ -44,9 +45,9 @@ Creative turns damage off, makes building free and lets `GiveItems` make items f
 
 | Action | Arguments | Notes |
 |--------|-----------|-------|
-| `UseItem` | `slot`, `direction?` | Runs the item's script: eat, fire. `direction` (from the caller's eyes) must be within `aim_tolerance` degrees of where they look; omitted means where they look. The script's `can_use` may refuse it; what `on_use` returns is the result (the potato guns return `{hits}`, food `{health}`). |
+| `UseItem` | `slot`, `direction?`, `creation?`, `part?` | Runs the item's script: eat, fire, plant, water. `direction` (from the caller's eyes) must be within `aim_tolerance` degrees of where they look; omitted means where they look. `creation` and `part` name the part it is used on (the soil a seed goes in, which must be in reach). The script's `can_use` may refuse it; what `on_use` returns is the result (the hitscan potato guns return `{hits}`, the Launcher and Popper `{projectiles}`, food `{health}`, seeds and water the soil). |
 | `EquipItem` | `slot?` | Says which scripted item is in hand (its `on_equip` and `on_unequip`); no slot empties the hand. |
-| `Plant`, `Water`, `Harvest` | `creation`, `part`, `slot` | On a soil part in reach. |
+| `Harvest` | `creation`, `part` | A ripe crop on a soil part in reach. |
 | `CollectWater` | `point` | A point on the sea in reach; adds one `water_item`. |
 | `SetSpawn` | `creation`, `part` | A `respawn_point` part in reach. |
 | `DropItems` | `slot`, `count` | `count` omitted drops the stack. |
@@ -57,4 +58,6 @@ Creative turns damage off, makes building free and lets `GiveItems` make items f
 A dead player's other actions are refused. Item scripts hurt and heal through the same host-side
 primitives bots use (`SurvivalActions.Hit`, `Hitscan`, `Splash`, `Launch` for projectiles, `Heal`,
 `Damage`), so the PvP and Creative rules apply to them the same way. Projectiles fly on the host;
-every client is sent each launch and draws it along its arc until the host says it landed.
+every client is sent each launch and draws it along its arc until the host says it landed. The Potato
+Launcher and Popper lob theirs (D14): `speed` in their properties sets the throw, and they burst
+(`radius`) where they land; the Popper also bursts when its `fuse` runs out.

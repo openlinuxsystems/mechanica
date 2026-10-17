@@ -201,23 +201,25 @@ end
 
 ## Item scripts
 
-Items (anything not placeable: food, weapons) can name a `script` too (chunk 20b, D2). The item's
-behaviour lives there, and its numbers in its `properties`. The vanilla ones are
-`mods/vanilla/scripts/food.lua` and `mods/vanilla/scripts/potato_gun.lua`.
+Items (anything not placeable: food, weapons, seeds, the water bucket) can name a `script` too
+(chunk 20b, D2). The item's behaviour lives there, and its numbers in its `properties`. The vanilla
+ones are `food.lua`, `potato_gun.lua`, `seed.lua` and `watering.lua` in `mods/vanilla/scripts/`.
 
 - **One instance per player and item type.** Each player gets their own copy of the script, with its
   own `state`, the first time they take one in hand or use one. It is dropped when they leave.
 - **Uses go through the Action API.** The Item tool (and bots or agents) call
-  `UseItem {slot, direction?}`. The host checks the slot holds a scripted item, that `direction` is
-  close to where the player looks (`aim_tolerance` in `survival.json`), then runs `can_use` and, if
-  that allows it, `on_use`. `EquipItem {slot?}` says what is in hand. A dead player's uses are refused.
+  `UseItem {slot, direction?, creation?, part?}`. The host checks the slot holds a scripted item, that
+  `direction` is close to where the player looks (`aim_tolerance` in `survival.json`) and that the
+  part exists, then runs `can_use` and, if that allows it, `on_use`. Both get `target`:
+  `{from, direction, creation?, part?}`, where `creation` and `part` are what the Item tool's crosshair
+  points at within reach. `EquipItem {slot?}` says what is in hand. A dead player's uses are refused.
 - **`can_use` and the script's setup only read.** Functions that change the world (`item.consume`,
-  `holder.heal`, `inventory.take` and the `combat` ones that deal damage or launch) raise an error
-  there.
+  `holder.heal`, `inventory.take`, `farm.plant`, `farm.water` and the `combat` ones that deal damage
+  or launch) raise an error there.
 - **Damage follows the world's rules.** In Creative nothing hurts players; with `pvp` off a shot
   can't hurt another player, but a player's own splash still hurts them.
 - `part` and `creation` functions don't work in an item script; `world` and `log` do. The `item`,
-  `holder`, `inventory` and `combat` libraries only work in an item script.
+  `holder`, `inventory`, `combat` and `farm` libraries only work in an item script.
 
 ```lua
 -- Food: eating one heals properties.health.
@@ -278,6 +280,20 @@ are the same primitives bots use (chunk 21).
 | `combat.splash(at, radius, damage, impulse?)` | Hurts every player, part and world object within `radius` m of `at`, falling off from `damage` at the centre to 0 at the edge, and pushes parts away with up to `impulse` N·s. A list of hits. `radius` is at most `max_overlap_radius`. |
 | `combat.pellets(direction, count, spread)` | `count` (at most 64) unit directions: the first along `direction`, the rest evenly round a cone of `spread` degrees. No randomness, so every replay agrees. |
 | `combat.projectile(from, velocity, options?)` | Launches a projectile from `from` at `velocity` m/s. `options`: `gravity` (a `vec3`, default `world.gravity()`), `lifetime` (s, default and at most `max_projectile_lifetime`), `data` (passed to `on_hit`). It flies on the host, every client draws it along its arc, and `on_hit` runs where it lands; it deals no damage by itself. Returns its id, or `false` and the reason when `max_projectiles` are already in flight. |
+
+### `farm`
+
+Soil parts (chunk 20). A soil table is `{seed?, crop?, stage, ripe, water, capacity}`: the planted
+seed and its crop (qualified ids), the growth stage (0 to 4, 4 is `ripe`) and the seconds of water it
+holds of its `capacity`. Each function checks the part is soil within the holder's `reach`, and
+returns `nil` and the reason when it can't act. Crops grow, and are harvested, by the host (`Harvest`);
+the seed's own `seed` section sets what grows and how fast.
+
+| Function | Returns |
+|----------|---------|
+| `farm.soil(creation, part)` | The soil table. |
+| `farm.plant(creation, part, seed?)` | Plants `seed` (an item with a `seed` section; default this item) in empty soil and returns the soil table. It takes nothing from the inventory: use `item.consume`. |
+| `farm.water(creation, part, seconds)` | Adds `seconds` of water, up to `capacity`, and returns the soil table. Takes nothing from the inventory either. |
 
 ## `vec3`
 

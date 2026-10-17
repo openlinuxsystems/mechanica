@@ -15,7 +15,8 @@
   "properties": {
     "damage": 50,
     "interval": 1,
-    "range": 15,
+    "speed": 14,
+    "fuse": 1.5,
     "ammo": "popper",
     "radius": 2.5,
     "impulse": 300

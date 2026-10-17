@@ -19,8 +19,9 @@ namespace Mechanica.Core.Survival;
 /// <item>Weapons and food are Lua item scripts (chunk 20b, D2). They hurt and heal through the generic
 /// combat primitives here: <see cref="Hitscan"/>, <see cref="Hit"/>, <see cref="Splash"/>, <see cref="Launch"/>
 /// (projectiles) and <see cref="Heal"/>.</item>
-/// <item>Farming: <c>Plant</c> a seed in soil, <c>Water</c> it (buckets come from <c>CollectWater</c>),
-/// and <c>Harvest</c> it once ripe. Crops grow only while their soil is watered.</item>
+/// <item>Farming: seeds and the water bucket are Lua item scripts (chunk 20b) that plant and water soil
+/// through <see cref="PlantSeed"/> and <see cref="WaterSoil"/>. Buckets come from <c>CollectWater</c>, crops
+/// grow only while their soil is watered, and <c>Harvest</c> picks them once ripe.</item>
 /// <item>Items on the ground: <c>DropItems</c>, <c>PickUp</c>. Broken containers, broken world objects and
 /// dead players leave piles too.</item>
 /// <item><c>SetSpawn</c> picks the bed a player respawns at. <c>GetVitals</c> and <c>GetSoil</c> are queries.</item>
@@ -32,12 +33,6 @@ namespace Mechanica.Core.Survival;
 public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings settings, InventoryActions inventories, ISurvivalWorld world)
     : IBuildCosts, IStrikeTargets
 {
-    /// <summary>Action name for planting a seed.</summary>
-    public const string Plant = "Plant";
-
-    /// <summary>Action name for watering soil.</summary>
-    public const string Water = "Water";
-
     /// <summary>Action name for harvesting a ripe crop.</summary>
     public const string Harvest = "Harvest";
 
@@ -113,8 +108,6 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     /// <summary>Registers every survival action.</summary>
     public void Register(ActionDispatcher dispatcher)
     {
-        dispatcher.Register<PartUseArgs>(Plant, ValidatePlant, ApplyPlant);
-        dispatcher.Register<PartUseArgs>(Water, ValidateWater, ApplyWater);
         dispatcher.Register<PartUseArgs>(Harvest, ValidateHarvest, ApplyHarvest);
         dispatcher.Register<CollectWaterArgs>(CollectWater, ValidateCollectWater, ApplyCollectWater);
         dispatcher.Register<PartUseArgs>(SetSpawn, ValidateSetSpawn, ApplySetSpawn);
@@ -576,46 +569,63 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
 
     // ---- Farming ----
 
-    private string? ValidatePlant(ActionCaller caller, PartUseArgs args)
+    /// <summary>
+    /// Why <paramref name="caller"/> cannot work the soil part (it is not soil, or is out of reach); null when they can.
+    /// </summary>
+    public string? CheckSoil(ActionCaller caller, int creationId, int partId)
     {
-        if (CheckSoilUse(caller, args, out var soil, out _) is { } bad)
+        if (FindSoil(creationId, partId, out _, out _) is { } bad)
             return bad;
-        if (CheckSlot(caller, args.Slot, out var item) is { } noItem)
-            return noItem;
-        if (item!.Seed is not { } seed || catalog.FindDefinition(seed.Crop ?? "") is null)
-            return $"{item.Name} cannot be planted.";
-        return soil!.Seed is not null ? "Something is already growing there." : null;
+        return CheckReach(caller, PartCentre(world.FindCreation(creationId)!, partId));
     }
 
-    private JsonElement? ApplyPlant(ActionCaller caller, PartUseArgs args)
+    /// <summary>Why <paramref name="caller"/> cannot plant <paramref name="seed"/> in the soil part; null when they can.</summary>
+    public string? CheckPlant(ActionCaller caller, int creationId, int partId, string seed)
     {
-        var pockets = inventories.PlayerInventory(caller.Peer);
-        var stack = pockets[args.Slot]!;
-        pockets.SetSlot(args.Slot, stack.Count > 1 ? stack with { Count = stack.Count - 1 } : null);
-        world.FindCreation(args.Creation)!.SoilOf(args.Part)!.Plant(stack.Item);
-        return Value(SoilViewOf(world.FindCreation(args.Creation)!, args.Part));
-    }
-
-    private string? ValidateWater(ActionCaller caller, PartUseArgs args)
-    {
-        if (CheckSoilUse(caller, args, out var soil, out var definition) is { } bad)
+        if (CheckSoil(caller, creationId, partId) is { } bad)
             return bad;
-        if (CheckSlot(caller, args.Slot, out var item) is { } noItem)
-            return noItem;
-        if (item!.Watering is null)
-            return $"{item.Name} does not water anything.";
-        return soil!.Water >= (definition!.Soil!.Capacity ?? 0) ? "The soil is already full of water." : null;
+        if (catalog.FindDefinition(seed) is not { } item)
+            return $"Unknown item '{seed}'.";
+        if (item.Seed?.Crop is not { } crop || catalog.FindDefinition(crop) is null)
+            return $"{item.Name ?? seed} cannot be planted.";
+        return world.FindCreation(creationId)!.SoilOf(partId)!.Seed is not null ? "Something is already growing there." : null;
     }
 
-    private JsonElement? ApplyWater(ActionCaller caller, PartUseArgs args)
+    /// <summary>
+    /// Plants <paramref name="seed"/> (an item with a <c>seed</c> section) in the soil part. It takes nothing
+    /// from an inventory: the seed's item script uses one up. Throws when <see cref="CheckPlant"/> refuses.
+    /// </summary>
+    public SoilView PlantSeed(ActionCaller caller, int creationId, int partId, string seed)
     {
-        var pockets = inventories.PlayerInventory(caller.Peer);
-        var stack = pockets[args.Slot]!;
-        var watering = catalog.FindDefinition(stack.Item)!.Watering!;
-        pockets.SetSlot(args.Slot, stack.Count > 1 ? stack with { Count = stack.Count - 1 } : null);
-        var creation = world.FindCreation(args.Creation)!;
-        creation.SoilOf(args.Part)!.AddWater(watering.Seconds ?? 0, creation.DefinitionOf(args.Part).Soil!.Capacity ?? 0);
-        return Value(SoilViewOf(creation, args.Part));
+        if (CheckPlant(caller, creationId, partId, seed) is { } bad)
+            throw new InvalidOperationException(bad);
+        var creation = world.FindCreation(creationId)!;
+        creation.SoilOf(partId)!.Plant(Identifiers.Qualify(seed));
+        return SoilViewOf(creation, partId);
+    }
+
+    /// <summary>Why <paramref name="caller"/> cannot water the soil part (also when it is full); null when they can.</summary>
+    public string? CheckWater(ActionCaller caller, int creationId, int partId)
+    {
+        if (CheckSoil(caller, creationId, partId) is { } bad)
+            return bad;
+        var creation = world.FindCreation(creationId)!;
+        return creation.SoilOf(partId)!.Water >= (creation.DefinitionOf(partId).Soil!.Capacity ?? 0) ? "The soil is already full of water." : null;
+    }
+
+    /// <summary>
+    /// Adds <paramref name="seconds"/> of water to the soil part, up to its capacity. The watering item's script
+    /// says how much and uses itself up. Throws when <see cref="CheckWater"/> refuses or seconds is not positive.
+    /// </summary>
+    public SoilView WaterSoil(ActionCaller caller, int creationId, int partId, float seconds)
+    {
+        if (!(seconds > 0f) || !float.IsFinite(seconds))
+            throw new ArgumentOutOfRangeException(nameof(seconds), "seconds of water must be more than 0.");
+        if (CheckWater(caller, creationId, partId) is { } bad)
+            throw new InvalidOperationException(bad);
+        var creation = world.FindCreation(creationId)!;
+        creation.SoilOf(partId)!.AddWater(seconds, creation.DefinitionOf(partId).Soil!.Capacity ?? 0);
+        return SoilViewOf(creation, partId);
     }
 
     private string? ValidateHarvest(ActionCaller caller, PartUseArgs args)

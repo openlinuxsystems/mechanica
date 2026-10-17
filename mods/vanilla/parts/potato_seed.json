@@ -8,6 +8,7 @@
   "visual": {
     "color": "#a08050"
   },
+  "script": "scripts/seed.lua",
   "sounds": {
     "pickup": "seed_pickup",
     "place": "seed_place"
