@@ -82,6 +82,32 @@ public static class ModelBuilder
         }
     }
 
+    /// <summary>
+    /// Builds and bakes <paramref name="source"/> under <paramref name="parent"/>, waiting for CSG to
+    /// evaluate when the model needs it. Returns the glTF binary, or null when it has no geometry.
+    /// The model is baked untinted, so the runtime's visual tint isn't applied twice.
+    /// </summary>
+    public static async Task<byte[]?> BakeAsync(Node parent, PartSource source, Func<string, IReadOnlyList<PartMesh>?> meshes)
+    {
+        var model = Build(source, meshes);
+        model.Visible = false;
+        parent.AddChild(model);
+        try
+        {
+            if (model is CsgShape3D)
+            {
+                await parent.ToSignal(parent.GetTree(), SceneTree.SignalName.ProcessFrame);
+                await parent.ToSignal(parent.GetTree(), SceneTree.SignalName.ProcessFrame);
+            }
+            return Bake(model);
+        }
+        finally
+        {
+            parent.RemoveChild(model);
+            model.QueueFree();
+        }
+    }
+
     /// <summary>The piece's placement relative to the part centre.</summary>
     public static Transform3D PieceTransform(ModelPiece piece)
     {

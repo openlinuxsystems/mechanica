@@ -1,0 +1,24 @@
+{
+  "id": "metal_wedge",
+  "name": "Metal Wedge",
+  "description": "Metal block cut on the diagonal. Same material, half the mass.",
+  "category": "block",
+  "mass": 4,
+  "durability": 6,
+  "friction": 0.4,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "stack_size": 100,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/metal_wedge.glb",
+  "visual": {
+    "color": "#9aa0a8",
+    "roughness": 0.4,
+    "metallic": 0.8
+  },
+  "collision": {
+    "shape": "convex",
+    "mesh": "meshes/blocks/metal_wedge.glb"
+  }
+}

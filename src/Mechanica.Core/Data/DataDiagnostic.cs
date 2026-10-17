@@ -83,6 +83,7 @@ public static class DiagnosticCodes
     // 05xx: Part Editor sources and export
     public const string EditorSourceInvalid = "MD0501";
     public const string ExportFailed = "MD0502";
+    public const string BatchInvalid = "MD0503";
 
     // 06xx: world generation and POI prefabs
     public const string WorldGenInvalid = "MD0601";

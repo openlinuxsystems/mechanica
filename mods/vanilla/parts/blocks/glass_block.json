@@ -1,0 +1,21 @@
+{
+  "id": "glass_block",
+  "name": "Glass Block",
+  "description": "Transparent and fragile.",
+  "category": "block",
+  "mass": 3,
+  "durability": 1,
+  "friction": 0.3,
+  "buoyancy": 0.4,
+  "flammable": false,
+  "stack_size": 100,
+  "sound_material": "glass",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/glass_block.glb",
+  "visual": {
+    "color": "#bfe3f0",
+    "roughness": 0.05,
+    "metallic": 0,
+    "opacity": 0.35
+  }
+}
