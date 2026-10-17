@@ -596,6 +596,7 @@ public sealed class JsonRpcEndpoint
             {
                 ["name"] = name,
                 ["kind"] = _dispatcher.IsReadOnly(name) ? "query" : "action",
+                ["group"] = RpcSchema.GroupOfAction(name, type),
                 ["scope"] = AgentPermissions.ScopeOf(_dispatcher, name).ToString().ToLowerInvariant(),
                 ["description"] = RpcSchema.DescribeAction(name, type),
                 ["params"] = Schema(name, type),
@@ -612,6 +613,7 @@ public sealed class JsonRpcEndpoint
             {
                 ["name"] = method.Name,
                 ["kind"] = "method",
+                ["group"] = method.Name[..method.Name.IndexOf('.')],
                 ["scope"] = method.Scope.ToString().ToLowerInvariant(),
                 ["description"] = method.Description,
                 ["params"] = Schema(method.Name, method.ParamsType),

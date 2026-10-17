@@ -94,13 +94,22 @@ public partial class AiEndpoint : Node
         if (error != Error.Ok)
             return $"Cannot listen on {bind}:{port} ({error}).";
         _server = server;
-        _rpc = new JsonRpcEndpoint(Actions.Dispatcher, Log.Log, Session.LocalPeer, access, Events);
+        _rpc = CreateEndpoint(access);
         _rpc.InternalError += OnInternalError;
-        _rpc.Agents = Agents;
-        foreach (var module in Modules)
-            _rpc.AddModule(module);
         GD.Print($"[ai] endpoint listening on ws://{bind}:{Port}{(_rpc.RequiresToken ? " (token required)" : "")}");
         return null;
+    }
+
+    /// <summary>
+    /// The protocol over this host's dispatcher, recorder, events, agents and <see cref="Modules"/>, without a
+    /// socket: what <see cref="Listen(int, string, EndpointAccess)"/> serves, and what the AI docs are generated from.
+    /// </summary>
+    public JsonRpcEndpoint CreateEndpoint(EndpointAccess access)
+    {
+        var rpc = new JsonRpcEndpoint(Actions.Dispatcher, Log.Log, Session.LocalPeer, access, Events) { Agents = Agents };
+        foreach (var module in Modules)
+            rpc.AddModule(module);
+        return rpc;
     }
 
     /// <summary>Closes every connection and stops listening.</summary>

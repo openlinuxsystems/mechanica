@@ -1,0 +1,27 @@
+# Mechanica
+
+> A Scrap Mechanic-style physics sandbox (Godot 4 .NET, Jolt physics, Lua part scripts, host-authoritative
+> multiplayer). An AI can play and mod it through a JSON-RPC 2.0 WebSocket endpoint on the host
+> (`--host --ai`): every game action is a method, `mechanica.describe` returns JSON Schemas for all of
+> them, and `mechanica.join` gives the AI a player of its own.
+
+## For an AI
+
+- [System prompt](docs/ai/system-prompt.md): what the game is and how to behave, ready to use
+- [Method reference](docs/ai/reference.md): every method with its params, generated from the game
+- [Method schemas](docs/ai/describe.json): the same as JSON Schemas, for tool lists
+- [Playing guide](docs/ai/playing.md): joining, seeing, moving, building, surviving, quests
+- [Modding guide](docs/ai/modding.md): reading and changing mods, packages
+- [Bug-hunting guide](docs/ai/bug-hunting.md): exploring, reproducing and reporting
+
+## For people connecting an AI
+
+- [Overview](docs/ai/README.md)
+- [AI endpoint](docs/ai-endpoint.md): starting it, tokens and scopes, protocol, events
+
+## Optional
+
+- [Part data schema](docs/part-data-schema.md)
+- [Lua API](docs/lua-api.md)
+- [Packaging guide](docs/packaging-guide.md)
+- [How to play](docs/playing.md)
