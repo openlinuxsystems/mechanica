@@ -53,11 +53,20 @@ stops getting your input.
   the screen the first time you start, pick up each tool or open each screen; **Show tips again** brings
   back the ones you have seen; the tips are in `game/data/tutorial.json`), auto-save (off, or every 5, 10 or 15
   minutes while you host), the most players a world you host takes, the server password for worlds you host, and your player name.
-- **Interface**: show or hide the tool bar and key hints, other players' names over their heads, and how opaque the chat background is.
+- **Interface**: show or hide the tool bar and key hints, the compass, other players' names over their heads, and how opaque the chat background is.
 
 Everything else applies as you change it. **Reset to Defaults** resets the open tab after asking, and
 closing Options saves your settings in `settings.json` in the game's user data folder. Settings are
 yours alone: they never change the world or other players' games.
+
+## Compass
+
+The bar at the top of the screen shows which way you face, with the points and a tick every 15°. Blue
+diamonds are your quest goals and the places you have found, with the distance under them within 500 m;
+the primary one is larger and pulses cyan. With the logbook open (the mouse is free), click a diamond to
+make it primary. A goal behind you sits at the edge you are nearer turning to, with an arrow. Within
+100 m a diamond also floats over the place itself. The compass hides while the inventory or menu is open,
+and Options, Interface, Show compass turns it off.
 
 ## Playing together
 

@@ -421,16 +421,23 @@ public partial class Main : Node3D
                 Screens = [("inventory", () => inventory.IsOpen), ("logbook", () => questLog.IsOpen)],
             });
             // F1 opens the page for what the player is doing.
-            AddChild(new PauseMenu
+            var pause = new PauseMenu
             {
                 Name = "PauseMenu", Session = Session, Saves = Saves, Lan = Lan,
                 HelpTopic = () => questLog.IsOpen ? "quests.md" : inventory.IsOpen ? "survival.md" : "playing.md",
                 World = () => Survival.Own is { } own ? (own.Mode, own.Difficulty) : null,
-            });
+            };
+            AddChild(pause);
             AddChild(PartSettings);
             AddChild(new RaidBanner { Name = "RaidBanner", Bots = Bots });
             AddChild(new Ui.Nameplates { Name = "Nameplates", Players = PlayerSync });
             AddChild(new Mechanica.Game.Chat.ChatPanel { Name = "ChatPanel", Chat = Chat, Actions = Actions });
+            AddChild(new Ui.CompassHud
+            {
+                Name = "Compass", Players = PlayerSync,
+                Waypoints = () => LocalPlayer is { } me ? Quests.Waypoints(me.GlobalPosition.ToNumerics()) : [],
+                Covered = () => inventory.IsOpen || pause.IsOpen,
+            });
         }
 
         Start(Options);

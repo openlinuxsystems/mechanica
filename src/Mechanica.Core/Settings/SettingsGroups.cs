@@ -155,6 +155,9 @@ public sealed record InterfaceSettings
     /// <summary>Shows the tool bar and its key hints at the bottom of the screen.</summary>
     public bool ShowHotbar { get; init; } = true;
 
+    /// <summary>Shows the compass along the top of the screen.</summary>
+    public bool ShowCompass { get; init; } = true;
+
     /// <summary>Shows other players' names over their heads.</summary>
     public bool ShowPlayerNames { get; init; } = true;
 
