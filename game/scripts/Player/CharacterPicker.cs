@@ -62,6 +62,12 @@ public partial class CharacterPicker : HBoxContainer
                     AutowrapMode = TextServer.AutowrapMode.WordSmart, CustomMinimumSize = new Vector2(PreviewSize.X, 0), MouseFilter = MouseFilterEnum.Ignore,
                 });
             }
+            // A button does not grow with what is inside it, so the card follows its column (a long description wraps onto more lines).
+            column.MinimumSizeChanged += () =>
+            {
+                var inner = column.GetCombinedMinimumSize();
+                card.CustomMinimumSize = new Vector2(Mathf.Max(PreviewSize.X + 16, inner.X + 16), Mathf.Max(PreviewSize.Y + 64, inner.Y + 16));
+            };
             card.Toggled += on =>
             {
                 if (on)

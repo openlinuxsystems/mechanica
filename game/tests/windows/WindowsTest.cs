@@ -10,7 +10,7 @@ namespace Mechanica.Game.Tests;
 /// <summary>
 /// Windows keep their own mouse input in a running world (UI spec §13). Wheel turns and clicks anywhere over
 /// the in-game menu, Options (every tab, scrolled past both ends), the save screen, the inventory and a
-/// confirm dialog never reach the game behind them, nor do clicks on the screen around a window opened from
+/// confirm dialog never reach the game behind them (nor over the hotbar while the inventory is open), nor do clicks on the screen around a window opened from
 /// the menu, where a wheel changes the hotbar and a click takes the
 /// mouse back and closes the menu. The windows are still open afterwards.
 /// </summary>
@@ -152,6 +152,8 @@ public partial class WindowsTest : StagedTest
                 return false;
             }
             Scrub(inventory.GetNode<Control>("Panel"));
+            // The hotbar takes drops while the inventory is open, so it keeps the mouse too.
+            Scrub(_main.Tools!.Bar!, wheels: 4);
             Check(inventory.IsOpen, "the inventory is still open");
             inventory.Hide();
             return Clean("the inventory");

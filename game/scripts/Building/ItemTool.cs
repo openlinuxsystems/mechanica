@@ -27,6 +27,7 @@ namespace Mechanica.Game.Building;
 public partial class ItemTool : HandTool
 {
     private string? _chosen;
+    private bool _empty;
     // The scripted item the host was last told is in hand: (item, slot), or null for none.
     private (string Item, int Slot)? _equipped;
 
@@ -66,18 +67,24 @@ public partial class ItemTool : HandTool
     public IReadOnlyList<SlotView> Usable =>
         [.. (Inventory.Own?.Items ?? []).Where(s => IsUsable(s.Item)).GroupBy(s => s.Item).Select(g => g.First())];
 
-    /// <summary>The slot in hand, or null when the player carries nothing usable.</summary>
+    /// <summary>
+    /// The slot in hand: the chosen item if the player carries it (usable or not, so it can be dropped), else the
+    /// first usable item until one is chosen; null with an empty hand or nothing usable.
+    /// </summary>
     public SlotView? InHand
     {
         get
         {
-            var usable = Usable;
-            return usable.FirstOrDefault(s => s.Item == _chosen) ?? usable.FirstOrDefault();
+            if (_empty)
+                return null;
+            if (_chosen is not null && Inventory.Own?.Items.FirstOrDefault(s => s.Item == _chosen) is { } chosen)
+                return chosen;
+            return _chosen is null ? Usable.FirstOrDefault() : null;
         }
     }
 
-    /// <summary>Puts <paramref name="item"/> (a qualified id) in hand, if the player carries it.</summary>
-    public void Choose(string item) => _chosen = item;
+    /// <summary>Puts <paramref name="item"/> (a qualified id) in hand, if the player carries it; null empties the hand.</summary>
+    public void Choose(string? item) => (_chosen, _empty) = (item, item is null);
 
     /// <summary>Uses the item in hand on what the crosshair points at. False when there is nothing to do.</summary>
     public bool Use(Action<ActionResult>? done = null)
@@ -114,7 +121,7 @@ public partial class ItemTool : HandTool
     {
         var hand = InHand;
         var name = hand is null ? Loc.T("nothing usable") : $"{Survival.Catalog.FindDefinition(hand.Item)?.Name ?? hand.Item} x{hand.Count}";
-        return Loc.T("Item: {0}   {1}/{2} choose  {3} use  {4} drop one", name, Key(InputActions.HotbarPrevious), Key(InputActions.HotbarNext), Key(InputActions.Primary), Key(InputActions.Drop)) + Status;
+        return Loc.T("Item: {0}   {1} use  {2} drop one", name, Key(InputActions.Primary), Key(InputActions.Drop)) + Status;
     }
 
     /// <inheritdoc/>
@@ -122,24 +129,11 @@ public partial class ItemTool : HandTool
     {
         if (Pressed(@event, InputActions.Primary))
             Use();
-        else if (Pressed(@event, InputActions.HotbarPrevious))
-            Cycle(-1);
-        else if (Pressed(@event, InputActions.HotbarNext))
-            Cycle(1);
         else if (Pressed(@event, InputActions.Drop))
             DropOne();
         else
             return false;
         return true;
-    }
-
-    private void Cycle(int step)
-    {
-        var usable = Usable;
-        if (usable.Count == 0)
-            return;
-        var at = Math.Max(0, usable.ToList().FindIndex(s => s.Item == InHand?.Item));
-        _chosen = usable[(at + step + usable.Count) % usable.Count].Item;
     }
 
     public override void _Process(double delta)

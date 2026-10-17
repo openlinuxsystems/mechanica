@@ -35,7 +35,8 @@ public class SaveGameTests
             Destroyed = [new WorldObjectId(1, 2, 3)],
             Creations = [CreationJson.Write(chest)],
             Scripts = [new SavedScriptState(3, 1, new JsonObject { ["count"] = 2 })],
-            Players = [new SavedPlayer(Ada, "Ada", [new SavedSlot(2, Wood, 5)], 80f, new Vec3(4, 0, 5), 1.5f, new SavedPart(3, 1), "vanilla:scrapper_female")],
+            Players = [new SavedPlayer(Ada, "Ada", [new SavedSlot(2, Wood, 5)], 80f, new Vec3(4, 0, 5), 1.5f, new SavedPart(3, 1), "vanilla:scrapper_female",
+                ["vanilla:hammer", null, "test:chest"])],
         };
     }
 
@@ -58,6 +59,7 @@ public class SaveGameTests
         Assert.Equal(new SavedSlot(2, Wood, 5), Assert.Single(player.Inventory));
         Assert.Equal((80f, new Vec3(4, 0, 5), 1.5f, new SavedPart(3, 1)), (player.Health, player.Position, player.Yaw, player.Bed));
         Assert.Equal("vanilla:scrapper_female", player.Character);
+        Assert.Equal(["vanilla:hammer", null, "test:chest"], player.Hotbar!);
         Assert.Equal(2, read.Scripts[0].State["count"]!.GetValue<int>());
 
         var creation = Assert.Single(read.ReadCreations(_catalog, "my-world.json", diagnostics));

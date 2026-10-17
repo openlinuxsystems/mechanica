@@ -55,6 +55,9 @@ public partial class SaveSync : Node
     /// <summary>Who plays as which character. Optional.</summary>
     public Core.Characters.CharacterActions? Characters { get; init; }
 
+    /// <summary>Every player's hotbar, saved under their profile. Optional.</summary>
+    public Core.Items.HotbarActions? Hotbars { get; init; }
+
     /// <summary>Quests, for the story's state. Optional.</summary>
     public QuestSync? Quests { get; init; }
 
@@ -230,6 +233,7 @@ public partial class SaveSync : Node
             return;
         if (saved.Character is not null)
             Characters?.Restore(player.PeerId, saved.Character);
+        Hotbars?.Restore(player.PeerId, saved.Hotbar);
         if (Inventory.Items is { } items)
         {
             foreach (var problem in PlayerRoster.Restore(items.PlayerInventory(player.PeerId), saved.Inventory))
@@ -260,7 +264,8 @@ public partial class SaveSync : Node
             dead ? null : new Vec3(at.X, at.Y, at.Z),
             player.Rotation.Y,
             bed is { } b ? new SavedPart(b.Creation, b.Part) : null,
-            Characters?.ChosenBy(player.PeerId)));
+            Characters?.ChosenBy(player.PeerId),
+            Hotbars?.SavedOf(player.PeerId)));
     }
 
     private static DataDiagnostic Warning(string file, string message) =>

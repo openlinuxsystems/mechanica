@@ -17,10 +17,10 @@ These are the default keys. Every one can be changed in Options, Controls.
 | Ctrl | Crouch: move slowly and fit under gaps 1.2 m high (you stand up again once there is room). In deep water, dive. |
 | Mouse | Look. Click the world to take the mouse back after a menu. |
 | X / C | Zoom the camera in or out a step (also Alt + scroll). You start in third person over the shoulder; all the way in is first person. |
-| 1 to 7 | Pick a tool: Hammer, Lift, Weld, Paint, Sledgehammer, item in hand, Connect Tool |
+| 1 to 9, 0 | Pick a hotbar slot. It starts with the Hammer, Lift, Weld, Paint, Sledgehammer and Connect Tool. |
 | Left click | Create, attack or place: the Hammer places parts, the Sledgehammer swings |
 | Right click | Remove or pick up: the Hammer removes parts, the Lift takes its Creation away |
-| Scroll | Hammer: previous or next part. Item in hand: previous or next item. |
+| Scroll | Previous or next hotbar slot |
 | Q / Shift + Q | Turn the part (Hammer, Weld, Lift) or pick the next or previous colour (Paint) |
 | T | Hammer and Weld: tip the part over |
 | Up / Down arrows | Raise or lower the Lift |
@@ -49,8 +49,31 @@ stops getting your input.
   their durability.
 - **Health** is the blue bar at the top left (Survival). The quest log is at the top right, the compass at
   the top, the tool bar at the bottom and chat at the bottom left.
-- **Tips** show at the bottom of the screen; hold Use (**E**) to dismiss one early.
+- **Tips** show at the bottom of the screen, above the hotbar; hold Use (**E**) to dismiss one early.
 - If the game window loses focus, anything you are holding down (such as dismissing a tip) is cancelled.
+
+## Hotbar and inventory
+
+The **hotbar** is the row of ten slots at the bottom of the screen. Each slot holds a tool, a part or an
+item, and shows its picture, how many you carry (Survival) and its key. Pick a slot with **1** to **0** or
+the scroll wheel; the slot picked has a bright cyan border. A tool slot puts that tool in hand, a part slot
+puts the Hammer in hand ready to place that part, and any other item (food, seeds, a weapon) goes in hand.
+In Survival, something you pick up for the first time goes in the first empty slot. Your hotbar is saved
+with the world.
+
+The **inventory** (**I** or **B**) is a grid of six columns with tabs along the top: All, Blocks,
+Interactive, Tools, Resources and Consumables.
+
+- Drag a stack onto the hotbar to put it in a slot, onto another slot to move it, or onto the other side
+  when a container is open. Drag a hotbar slot onto another slot to swap them, or onto the inventory or
+  off the bar to empty it.
+- Click a stack to pick it up and click a slot to put it down. **Right click** picks up half a stack and
+  **Shift + right click** one; **Shift + click** sends a stack straight to the other side.
+- Hold **Force build** (**F**) and drag a stack out of the window to drop it on the ground.
+- Hover a stack for its name, description, how many are in the stack and its durability.
+- In **Creative**, every part and tool is listed under the grid; drag one onto the hotbar, or into your
+  inventory for a full stack.
+- In **Survival**, a warning shows at the top when only a few slots are free.
 
 ## Options
 

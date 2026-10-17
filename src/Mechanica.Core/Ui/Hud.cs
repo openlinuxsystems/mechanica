@@ -25,6 +25,9 @@ public sealed record HudSettings
     /// <summary>Pulses per second of the crosshair over a connection dot.</summary>
     public double CrosshairPulseHz { get; init; } = 2.0;
 
+    /// <summary>Seconds the inventory fades in and out over (§9: 0.15).</summary>
+    public double WindowFadeSeconds { get; init; } = 0.15;
+
     /// <summary>Gap in pixels between the crosshair and the hover tooltip.</summary>
     public float TooltipOffset { get; init; } = 24f;
 
@@ -41,7 +44,7 @@ public sealed record HudSettings
             throw new FormatException($"Invalid HUD JSON: {e.Message}", e);
         }
         settings ??= new HudSettings();
-        if (settings.TooltipDelaySeconds < 0 || settings.TooltipFadeSeconds < 0 || settings.HintDismissSeconds <= 0
+        if (settings.TooltipDelaySeconds < 0 || settings.TooltipFadeSeconds < 0 || settings.WindowFadeSeconds < 0 || settings.HintDismissSeconds <= 0
             || settings.CrosshairPulseHz <= 0 || settings.TooltipOffset < 0 || settings.SafeArea is < 0 or >= 0.25f)
             throw new FormatException("HUD times and offsets must not be negative, hint_dismiss_seconds and crosshair_pulse_hz must be above zero, and safe_area must be below 0.25.");
         return settings;
