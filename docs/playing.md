@@ -53,7 +53,7 @@ stops getting your input.
   the screen the first time you start, pick up each tool or open each screen; **Show tips again** brings
   back the ones you have seen; the tips are in `game/data/tutorial.json`), auto-save (off, or every 5, 10 or 15
   minutes while you host), the most players a world you host takes, the server password for worlds you host, and your player name.
-- **Interface**: show or hide the tool bar and key hints, and other players' names over their heads.
+- **Interface**: show or hide the tool bar and key hints, other players' names over their heads, and how opaque the chat background is.
 
 Everything else applies as you change it. **Reset to Defaults** resets the open tab after asking, and
 closing Options saves your settings in `settings.json` in the game's user data folder. Settings are
@@ -65,6 +65,11 @@ Everyone plays in one world: the host's. From the menu (Esc), **Open to LAN** le
 network join; they see your world under **Join game** in the main menu, or can type your address and
 port (27460 unless you changed it). Players outside your network join by address once the port is
 forwarded to you. Quest progress is shared by everyone in the world.
+
+Press **Enter** (Chat) to talk: type a line and press Enter to send it, or Esc to close. Lines show
+bottom left with the speaker's name in cyan and fade after a few seconds; open chat to scroll back. A line
+is at most 200 characters and each player may send 5 every 10 seconds. Chat is the `SendChat` action, so
+agents on the AI endpoint can talk too.
 
 To keep strangers out, set a **Server password** in Options, Gameplay (or start with `--password text`).
 Players then type it in the password box on **Join game**; the list marks worlds that need one. A changed

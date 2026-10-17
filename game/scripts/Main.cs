@@ -152,6 +152,9 @@ public partial class Main : Node3D
     /// <summary>The local player's hand tools, once the player has spawned.</summary>
     public ToolBelt? Tools { get; private set; }
 
+    /// <summary>Text chat between players.</summary>
+    public Mechanica.Game.Chat.ChatSync Chat { get; private set; } = null!;
+
     /// <summary>Inventories, containers and crafting, and their sync to clients.</summary>
     public InventorySync Inventory { get; private set; } = null!;
 
@@ -360,6 +363,9 @@ public partial class Main : Node3D
         };
         Quests.RegisterActions(Actions.Dispatcher);
         AddChild(Quests);
+        Chat = new Mechanica.Game.Chat.ChatSync { Name = "Chat", Session = Session };
+        Chat.RegisterActions(Actions.Dispatcher);
+        AddChild(Chat);
         Saves = new SaveSync
         {
             Quests = Quests,
@@ -424,6 +430,7 @@ public partial class Main : Node3D
             AddChild(PartSettings);
             AddChild(new RaidBanner { Name = "RaidBanner", Bots = Bots });
             AddChild(new Ui.Nameplates { Name = "Nameplates", Players = PlayerSync });
+            AddChild(new Mechanica.Game.Chat.ChatPanel { Name = "ChatPanel", Chat = Chat, Actions = Actions });
         }
 
         Start(Options);

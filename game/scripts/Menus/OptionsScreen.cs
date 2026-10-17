@@ -438,6 +438,7 @@ public partial class OptionsScreen : ToolWindow
         Toggle(page, "Show the tool bar and key hints", _draft.Interface.ShowHotbar, v => Live(_draft with { Interface = _draft.Interface with { ShowHotbar = v } }));
         Toggle(page, "Show player names", _draft.Interface.ShowPlayerNames, v => Live(_draft with { Interface = _draft.Interface with { ShowPlayerNames = v } }),
             "Other players' names over their heads.");
+        Slider(page, "Chat opacity", _draft.Interface.ChatOpacity, 0f, 1f, 0.05f, v => Live(_draft with { Interface = _draft.Interface with { ChatOpacity = v } }), Percent);
     }
 
     // ---- Shared ----

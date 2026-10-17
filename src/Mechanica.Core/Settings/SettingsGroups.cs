@@ -158,6 +158,12 @@ public sealed record InterfaceSettings
     /// <summary>Shows other players' names over their heads.</summary>
     public bool ShowPlayerNames { get; init; } = true;
 
+    /// <summary>How opaque the chat panel's background is, 0 to 1.</summary>
+    public float ChatOpacity { get; init; } = 0.6f;
+
+    /// <summary>A copy with every value in range.</summary>
+    public InterfaceSettings Clamped() => this with { ChatOpacity = float.IsFinite(ChatOpacity) ? Math.Clamp(ChatOpacity, 0f, 1f) : 0.6f };
+
         /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
