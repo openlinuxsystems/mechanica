@@ -60,6 +60,9 @@ public sealed record LaunchOptions
     /// <summary>Recording to replay on the host once the session is up, or null.</summary>
     public string? ReplayPath { get; init; }
 
+    /// <summary>How the world plays when this instance hosts it (<c>--creative</c>, <c>--survival</c>). A joining client plays the host's mode.</summary>
+    public Survival.GameMode GameMode { get; init; } = Survival.GameMode.Survival;
+
     /// <summary>Options for hosting on <paramref name="port"/>.</summary>
     public static LaunchOptions ForHost(int port, int maxPlayers = NetProtocol.DefaultMaxPlayers) =>
         new() { Mode = SessionMode.Host, Port = port, MaxPlayers = maxPlayers };
@@ -131,6 +134,12 @@ public sealed record LaunchOptions
                         return Fail($"--max-players needs a number from 1 to {NetProtocol.MaxPlayersLimit}.", out error);
                     result = result with { MaxPlayers = max };
                     i++;
+                    break;
+                case "--creative":
+                    result = result with { GameMode = Survival.GameMode.Creative };
+                    break;
+                case "--survival":
+                    result = result with { GameMode = Survival.GameMode.Survival };
                     break;
                 case "--seed":
                     if (next is null || !long.TryParse(next, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var seed))
