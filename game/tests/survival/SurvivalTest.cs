@@ -164,8 +164,9 @@ public partial class SurvivalTest : StagedTest
             }
             if (_results.Count == 0 || _client.Main.Survival.Vitals[1].Health != 80 || Count(Potato) != 4)
                 return false;
-            var hits = Value<ShotResult>(_results[0]).Hits;
-            Check(hits.Single() is { Kind: "player", Player: 1, Damage: 20 }, $"the shot hits the host ({_results[0]})");
+            var hits = System.Text.Json.Nodes.JsonNode.Parse(_results[0].Value!.Value.GetRawText())!["hits"]!.AsArray();
+            Check(hits.Count == 1 && hits[0]!["kind"]!.GetValue<string>() == "player" && hits[0]!["player"]!.GetValue<int>() == 1
+                && hits[0]!["damage"]!.GetValue<double>() == 20, $"the shot hits the host ({_results[0]})");
             Check(_host.Main.Scripts.Runtime.Held.GetValueOrDefault(Peer).Item == Blaster, "the host knows the blaster is in the client's hand");
             return true;
         });
@@ -313,9 +314,4 @@ public partial class SurvivalTest : StagedTest
     }
 
     private static T Value<T>(ActionResult result) => result.Value!.Value.Deserialize<T>(ActionJson.Options)!;
-
-    // What the potato gun script returns from on_use.
-    private sealed record ShotResult(List<ShotHit> Hits);
-
-    private sealed record ShotHit(string Kind, float Damage, int? Player);
 }

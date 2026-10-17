@@ -83,6 +83,9 @@ public partial class WeldTool : HandTool
     {
         if (Selected is not { } selected || Aim is not { } aim)
             return false;
+        if (aim.Creation.Id == selected.Creation && aim.Part is null)
+            return false;
+        PlayFeedback("weld_start");
         if (aim.Creation.Id == selected.Creation)
         {
             if (aim.Part is not { } part)

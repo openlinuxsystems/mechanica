@@ -1,0 +1,38 @@
+{
+  "events": [
+    {
+      "id": "plank_pop",
+      "clips": [
+        "vanilla:sounds/building/part_detach.ogg"
+      ]
+    },
+    {
+      "id": "hum",
+      "clips": [
+        "vanilla:sounds/joints/bearing_spin_loop.ogg"
+      ],
+      "loop": true,
+      "max_distance": 30,
+      "parameters": [
+        {
+          "name": "speed",
+          "pitch": [
+            1,
+            2
+          ],
+          "volume_db": [
+            -12,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": "click_loop",
+      "clips": [
+        "vanilla:sounds/ui/ui_click.wav"
+      ],
+      "loop": true
+    }
+  ]
+}

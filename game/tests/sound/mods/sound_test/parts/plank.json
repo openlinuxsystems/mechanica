@@ -1,0 +1,19 @@
+{
+  "id": "plank",
+  "name": "Test Plank",
+  "category": "block",
+  "mass": 2,
+  "durability": 2,
+  "friction": 0.6,
+  "buoyancy": 0.6,
+  "flammable": true,
+  "sound_material": "wood",
+  "size": [
+    1,
+    1,
+    1
+  ],
+  "sounds": {
+    "remove": "plank_pop"
+  }
+}

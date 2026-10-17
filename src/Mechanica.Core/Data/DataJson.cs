@@ -82,6 +82,17 @@ public static class DataJson
         Outputs = recipe.Outputs?.Select(i => i with { Extra = Sorted(i.Extra) }).ToList(),
     });
 
+    /// <summary>Serializes a sound bank file in canonical form.</summary>
+    public static string Write(Sound.SoundBankFile bank) => Serialize(bank with
+    {
+        Extra = Sorted(bank.Extra),
+        Events = bank.Events?.Select(e => e with
+        {
+            Extra = Sorted(e.Extra),
+            Parameters = e.Parameters?.Select(p => p with { Extra = Sorted(p.Extra) }).ToList(),
+        }).ToList(),
+    });
+
     private static string Serialize<T>(T value) => JsonSerializer.Serialize(value, WriteOptions) + "\n";
 
     private static Dictionary<string, JsonElement>? Sorted(Dictionary<string, JsonElement>? extra) =>
