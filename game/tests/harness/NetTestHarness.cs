@@ -57,7 +57,7 @@ public partial class NetTestHarness : Node
         throw new InvalidOperationException("No free port for the test host.");
     }
 
-    /// <summary>Starts an instance that joins the host, optionally with its own mod list.</summary>
+    /// <summary>Starts an instance that joins the host, optionally with its own mod list instead of the loaded mods.</summary>
     public Instance StartClient(string name, ContentManifest? content = null) =>
         Start(name, LaunchOptions.ForJoin(new NetEndpoint("127.0.0.1", Port)), content);
 
@@ -87,7 +87,7 @@ public partial class NetTestHarness : Node
         var main = ResourceLoader.Load<PackedScene>(MainScene).Instantiate<Main>();
         main.Options = options;
         main.ReadDeviceInput = false;
-        main.Content = content ?? ContentManifest.Empty;
+        main.Content = content; // null: load the real enabled mods, like the game does
         viewport.AddChild(main);
         var instance = new Instance(name, viewport, main);
         _instances.Add(instance);

@@ -24,6 +24,7 @@ public partial class NetTest : StagedTest
     private Instance _b = null!;
     private Instance _late = null!;
     private Instance _extra = null!;
+    private ContentManifest _hostContent = ContentManifest.Empty;
     private Vector3 _mark;
     private float _peak;
     private readonly List<ActionResult> _results = [];
@@ -44,6 +45,9 @@ public partial class NetTest : StagedTest
             if (!AllSee(3, _host, _a, _b))
                 return false;
             Check(_a.Main.Session.State == NetSession.SessionState.Connected, "client A is connected");
+            var mods = _host.Main.Session.Content;
+            Check(mods.Mods.Any(m => m.Id == "vanilla") && mods.Fingerprint.Length > 0,
+                $"instances load the real mods and join with them ({string.Join(", ", mods.Mods.Select(m => $"{m.Id} {m.Version}"))})");
             Check(_host.Main.Session.ReadyPeers.Count == 2, "host has two ready peers");
             var spots = _host.Main.PlayerSync.Players.Values.Select(p => p.GlobalPosition).ToList();
             Check(spots.Distinct().Count() == 3, $"players spawn on distinct spots ({string.Join(", ", spots)})");
@@ -195,6 +199,7 @@ public partial class NetTest : StagedTest
         {
             if (frame == 0)
             {
+                _hostContent = _host.Main.Session.Content;
                 _host.Main.Session.Content = new ContentManifest([new ModStamp("vanilla", "1.0.0"), new ModStamp("cars", "2.0.0")], "a");
                 _extra = _harness.StartClient("ClientModded", new ContentManifest([new ModStamp("vanilla", "1.0.0"), new ModStamp("cars", "1.0.0")], "b"));
             }
@@ -204,7 +209,7 @@ public partial class NetTest : StagedTest
             Check(message.Contains("cars: host has 2.0.0, you have 1.0.0"), $"the refusal names the mod ({message})");
             Check(_host.Main.Session.ReadyPeers.Count == 2, "host still has two clients");
             _harness.Stop(_extra);
-            _host.Main.Session.Content = ContentManifest.Empty;
+            _host.Main.Session.Content = _hostContent;
             return true;
         });
         Add("a late joiner sees everyone where they are", frame =>

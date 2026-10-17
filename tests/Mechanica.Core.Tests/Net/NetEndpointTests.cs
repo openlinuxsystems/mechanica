@@ -131,3 +131,16 @@ public class ContentManifestTests
     [InlineData("""{"mods": [], "fingerprint": "", "more": 1}""")]
     public void RejectsMalformedJson(string json) => Assert.Null(ContentManifest.FromJson(json));
 }
+
+public class ContentManifestFromLoaderTests
+{
+    [Fact]
+    public void ListsLoadedModsInOrderWithTheLoaderFingerprint()
+    {
+        var content = Mechanica.Core.Data.ModLoader.LoadAll(Data.TestMods.FixtureRoot);
+        var manifest = ContentManifest.From(content);
+        Assert.Equal(content.Mods.Select(m => m.Id), manifest.Mods.Select(m => m.Id));
+        Assert.Equal(content.Fingerprint, manifest.Fingerprint);
+        Assert.Empty(ContentManifest.Differences(manifest, ContentManifest.From(Mechanica.Core.Data.ModLoader.LoadAll(Data.TestMods.FixtureRoot))));
+    }
+}

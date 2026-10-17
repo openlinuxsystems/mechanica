@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Mechanica.Core.Actions;
+using Mechanica.Core.Data;
 
 namespace Mechanica.Core.Net;
 
@@ -22,6 +23,10 @@ public sealed record ContentManifest(IReadOnlyList<ModStamp> Mods, string Finger
 
     /// <summary>No mods loaded.</summary>
     public static ContentManifest Empty { get; } = new([], "");
+
+    /// <summary>The manifest of loaded content: its mods in load order and the loader's fingerprint.</summary>
+    public static ContentManifest From(ModLoadResult content) =>
+        new([.. content.Mods.Select(m => new ModStamp(m.Id, m.Manifest.Version ?? ""))], content.Fingerprint);
 
     /// <summary>The wire form.</summary>
     public string ToJson() => JsonSerializer.Serialize(this, ActionJson.Options);

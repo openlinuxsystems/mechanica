@@ -1,6 +1,8 @@
 using Godot;
 using Mechanica.Core;
+using Mechanica.Core.Data;
 using Mechanica.Core.Net;
+using Mechanica.Game.Mods;
 using Mechanica.Game.Net;
 using Mechanica.Game.Player;
 
@@ -22,8 +24,11 @@ public partial class Main : Node3D
     /// <summary>False in automated tests: nothing reads devices, the test sets the player's input itself.</summary>
     public bool ReadDeviceInput { get; set; } = true;
 
-    /// <summary>Mods this instance runs, checked against the host on join. Set before adding to the tree.</summary>
-    public ContentManifest Content { get; set; } = ContentManifest.Empty;
+    /// <summary>
+    /// Mods this instance runs, checked against the host on join. Null loads the enabled mods
+    /// (<see cref="ModPaths.LoadContent"/>) when the scene starts; tests may set it directly.
+    /// </summary>
+    public ContentManifest? Content { get; set; }
 
     /// <summary>Connection state and handshake.</summary>
     public NetSession Session { get; private set; } = null!;
@@ -41,8 +46,9 @@ public partial class Main : Node3D
     {
         GD.Print($"{MechanicaInfo.GameName} started (physics: {ProjectSettings.GetSetting("physics/3d/physics_engine")})");
         Options ??= ReadCommandLine();
+        var content = Content ??= LoadContentManifest();
 
-        Session = new NetSession { Name = "Session", Content = Content };
+        Session = new NetSession { Name = "Session", Content = content };
         AddChild(Session);
         var players = new Node3D { Name = "Players" };
         AddChild(players);
@@ -77,6 +83,14 @@ public partial class Main : Node3D
         };
         if (error != Error.Ok)
             GD.PushError($"[net] {Session.LastMessage}");
+    }
+
+    private static ContentManifest LoadContentManifest()
+    {
+        var content = ModPaths.LoadContent();
+        foreach (var diagnostic in content.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error))
+            GD.PushWarning($"[mods] {diagnostic}");
+        return ContentManifest.From(content);
     }
 
     private static LaunchOptions ReadCommandLine()
