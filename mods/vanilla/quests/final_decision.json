@@ -1,0 +1,68 @@
+{
+  "name": "Final Decision",
+  "summary": "Reach the AI core and decide its fate.",
+  "requires": [
+    "data_core_location"
+  ],
+  "steps": [
+    {
+      "id": "reach",
+      "text": "Reach the AI Core Facility.",
+      "objective": {
+        "type": "reach",
+        "poi": "ai_core_facility",
+        "radius": 30
+      }
+    },
+    {
+      "id": "core",
+      "text": "Access the AI core.",
+      "objective": {
+        "type": "interact",
+        "poi": "ai_core_facility",
+        "marker": "core"
+      }
+    },
+    {
+      "id": "choose",
+      "text": "Restore the original AI, or let the factions evolve.",
+      "objective": {
+        "type": "choose"
+      },
+      "dialogue": [
+        {
+          "speaker": "AI Core",
+          "text": "Restore original AI or allow faction evolution. Choose."
+        }
+      ],
+      "choices": [
+        {
+          "id": "restore",
+          "text": "Restore the original AI.",
+          "flags": {
+            "ending": "restored"
+          },
+          "dialogue": [
+            {
+              "speaker": "AI Core",
+              "text": "Colony directives reloading. The factions will be brought back into line."
+            }
+          ]
+        },
+        {
+          "id": "evolve",
+          "text": "Let the factions evolve.",
+          "flags": {
+            "ending": "evolved"
+          },
+          "dialogue": [
+            {
+              "speaker": "AI Core",
+              "text": "Shutting down. The colony belongs to whoever builds it now."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

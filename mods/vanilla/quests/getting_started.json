@@ -1,0 +1,50 @@
+{
+  "name": "Getting Started",
+  "summary": "Get the crashed ship's systems running again.",
+  "steps": [
+    {
+      "id": "extinguish_fires",
+      "text": "Put out the three fires at the crash site.",
+      "objective": {
+        "type": "interact",
+        "poi": "crash_site",
+        "marker": "fire",
+        "count": 3
+      },
+      "dialogue": [
+        {
+          "speaker": "Logbook",
+          "text": "Hull breach. Fires spreading. Suppress them before the core cells go."
+        }
+      ]
+    },
+    {
+      "id": "restore_power",
+      "text": "Restore power at the ship's Master Battery.",
+      "objective": {
+        "type": "interact",
+        "poi": "crash_site",
+        "marker": "item",
+        "ref": "master_battery"
+      }
+    }
+  ],
+  "rewards": {
+    "items": [
+      {
+        "item": "component_kit",
+        "count": 2
+      },
+      {
+        "item": "battery_pack",
+        "count": 1
+      }
+    ]
+  },
+  "outro": [
+    {
+      "speaker": "Logbook",
+      "text": "Power restored. Logbook online. Proceed to Mechanic Station."
+    }
+  ]
+}

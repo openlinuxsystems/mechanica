@@ -3,9 +3,11 @@ using Mechanica.Core.Actions;
 using Mechanica.Core.Data;
 using Mechanica.Core.Survival;
 using Mechanica.Core.Logic;
+using Mechanica.Core.Quests;
 using Mechanica.Game.Building;
 using Mechanica.Game.Logic;
 using Mechanica.Game.Net;
+using Mechanica.Game.Quests;
 
 namespace Mechanica.Game.Survival;
 
@@ -37,6 +39,9 @@ public partial class SurvivalHud : CanvasLayer
 
     /// <summary>Seats and usable parts (chunk 10); optional.</summary>
     public LogicSync? Logic { get; init; }
+
+    /// <summary>Quests, for using quest markers and talking. Optional.</summary>
+    public QuestSync? Quests { get; init; }
 
     public override void _Ready()
     {
@@ -138,6 +143,8 @@ public partial class SurvivalHud : CanvasLayer
             if (definition.RespawnPoint == true)
                 return ($"sleep here: respawn at this {definition.Name ?? "bed"}", () => Request(SurvivalActions.SetSpawn, new PartUseArgs(creation.Id, aimed.Part)));
         }
+        if (Quests?.Prompt() is { } quest)
+            return (QuestLabel(quest), () => Request(QuestTracker.QuestInteract, new NoArgs()));
         var feet = player.GlobalPosition;
         var nearest = Survival.Drops.Values
             .Select(d => (Drop: d, Distance: d.Position.ToGodot().DistanceTo(feet)))
@@ -150,6 +157,13 @@ public partial class SurvivalHud : CanvasLayer
         var label = string.Join(", ", nearest.Items.Select(s => $"{Catalog.FindDefinition(s.Item)?.Name ?? s.Item} x{s.Count}"));
         return ($"pick up {label}", () => Request(SurvivalActions.PickUp, new PickUpArgs(nearest.Id)));
     }
+
+    private string QuestLabel(QuestInteractResult quest) => quest switch
+    {
+        { Marker: "npc" } => "talk",
+        { Ref: { } id } => $"use the {Catalog.FindDefinition(id)?.Name ?? id}",
+        _ => $"use the {quest.Marker.Replace('_', ' ')}",
+    };
 
     private void Request<T>(string action, T args) =>
         Actions.Request(action, args, result => _status.Text = result.Ok ? "" : result.Message ?? "");

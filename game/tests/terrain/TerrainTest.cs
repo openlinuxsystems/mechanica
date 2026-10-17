@@ -38,7 +38,7 @@ public partial class TerrainTest : StagedTest
         Wait("players settle", 30);
         Add("the client regenerates the host's world", _ =>
         {
-            Check(HostWorld.WorldGen.Pois.Count == 4 && !HostWorld.WorldGen.HasErrors, "the vanilla world rules and POIs load");
+            Check(HostWorld.WorldGen.Pois.Count == 6 && !HostWorld.WorldGen.HasErrors, "the vanilla world rules and POIs load");
             Check(ClientWorld.State.Seed == 20261017 && ClientWorld.Generator.Seed == HostWorld.Generator.Seed, "the client uses the host's seed");
             Check(ClientWorld.Generator.Pois.Select(p => p.Centre).SequenceEqual(HostWorld.Generator.Pois.Select(p => p.Centre)), "both peers lay out the same POIs");
             var origin = new ChunkCoord(0, 0);

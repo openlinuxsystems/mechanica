@@ -117,6 +117,6 @@ Adding, removing or reordering scatter rules changes those ids, so do it before 
 | `placement.priority` | Higher kinds are placed first and win contested ground. |
 | `terrain[]` | `flatten` levels a disc to the pad height; `basin` sinks it `depth` metres below the pad (below `sea_level` it fills with water). Full strength inside `radius`, fading over `blend`, centred at `at` (`[x, z]`). Must stay inside the POI radius. |
 | `pieces[]` | Static structure, as shapes. Positions are relative to the POI centre on its pad. |
-| `markers[]` | Points for other systems: `type` (`spawn`, `item`, `bot`, `fire`, `door`, ...) and an optional catalog `ref`. The first `spawn` marker of a fixed POI is where players start. |
+| `markers[]` | Points for other systems: `type` (`spawn`, `item`, `bot`, `fire`, `door`, `npc`, `core`, ...) and an optional `ref` (a catalog id, or a character id for `npc`). The first `spawn` marker of a fixed POI is where players start. [Quests](quests.md) point at markers. |
 
 The pad height of a spaced POI is the natural ground height at its centre.

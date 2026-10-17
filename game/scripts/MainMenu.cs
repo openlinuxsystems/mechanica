@@ -10,7 +10,7 @@ namespace Mechanica.Game;
 /// Start screen: play the test world, or open the mod tools that ship in the game (D9): the Part
 /// Editor, the Bot Behavior Editor, the Test Sandbox and the Mod Manager. Launching with <c>--host</c> or <c>--join</c> skips
 /// straight to the world. <c>--part-batch file</c> runs a Part Editor batch, prints its problems and
-/// quits (0 when everything exported); a Bot Behavior Editor batch (one with <c>bots</c>) runs the same way, which is how vanilla's blocks are re-made headless. Menus proper
+/// quits (0 when everything exported); a Bot Behavior Editor batch (one with <c>bots</c>) and a story batch (one with <c>quests</c> or <c>pois</c>) run the same way, which is how vanilla's blocks are re-made headless. Menus proper
 /// come in chunk 24.
 /// </summary>
 public partial class MainMenu : Control
@@ -73,6 +73,11 @@ public partial class MainMenu : Control
         {
             var bots = BotBatchRunner.Run(file);
             Report(bots, file, "bots and raid tables");
+            return;
+        }
+        if (File.Exists(file) && Core.Editor.StoryBatch.IsStoryBatch(File.ReadAllText(file)))
+        {
+            Report(StoryBatchRunner.Run(file), file, "POIs and quests");
             return;
         }
         var result = await PartBatchRunner.RunAsync(this, file);

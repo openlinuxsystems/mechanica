@@ -1,0 +1,97 @@
+{
+  "id": "faction_outpost",
+  "name": "Faction Outpost",
+  "radius": 36,
+  "placement": {
+    "yaw": 0,
+    "spacing": [
+      1100,
+      1500
+    ],
+    "biomes": [
+      "meadow",
+      "forest",
+      "ruin_field"
+    ],
+    "priority": 45
+  },
+  "terrain": [
+    {
+      "op": "flatten",
+      "radius": 18,
+      "blend": 16,
+      "depth": 0
+    }
+  ],
+  "pieces": [
+    {
+      "shape": "box",
+      "size": [14, 0.3, 14],
+      "at": [0, 0.15, 0],
+      "yaw": 0,
+      "color": "#6f6a5e"
+    },
+    {
+      "shape": "box",
+      "size": [0.4, 3, 14],
+      "at": [-6.8, 1.5, 0],
+      "yaw": 0,
+      "color": "#5b4a3a"
+    },
+    {
+      "shape": "box",
+      "size": [0.4, 3, 14],
+      "at": [6.8, 1.5, 0],
+      "yaw": 0,
+      "color": "#5b4a3a"
+    },
+    {
+      "shape": "box",
+      "size": [14, 3, 0.4],
+      "at": [0, 1.5, -6.8],
+      "yaw": 0,
+      "color": "#5b4a3a"
+    },
+    {
+      "shape": "cylinder",
+      "radius": 0.2,
+      "height": 8,
+      "at": [5, 4, 5],
+      "yaw": 0,
+      "color": "#4a4f55"
+    },
+    {
+      "shape": "box",
+      "size": [2, 1.2, 0.1],
+      "at": [5, 7.2, 5.6],
+      "yaw": 0,
+      "color": "#b5452f"
+    }
+  ],
+  "markers": [
+    {
+      "type": "npc",
+      "ref": "faction_envoy",
+      "at": [0, 0.3, -3],
+      "yaw": 0
+    },
+    {
+      "type": "bot",
+      "ref": "scuttler_green",
+      "at": [-4, 0.3, 3],
+      "yaw": 0
+    },
+    {
+      "type": "bot",
+      "ref": "scuttler_green",
+      "at": [4, 0.3, 3],
+      "yaw": 0
+    },
+    {
+      "type": "item",
+      "ref": "chest",
+      "at": [-5, 0.3, -5],
+      "yaw": 0
+    }
+  ]
+}

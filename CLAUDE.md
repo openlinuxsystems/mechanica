@@ -52,14 +52,15 @@ CI (`.github/workflows/ci.yml`) runs the same three steps. Keep it green.
   generation rules; the last mod in load order wins) and `pois/*.json` (POI prefabs; see
   `docs/world-generation.md`) and `recipes/*.json` (crafting recipes; see `docs/part-data-schema.md`), `bots/*.json` (bot types:
   stats, attacks, drops, behaviour tree, optional Lua script) and `raids/raids.json` (the raid table; the
-  last mod in load order wins). Paths in data are relative to the mod
+  last mod in load order wins) and `quests/*.json` (quests and dialogue; see `docs/quests.md`). Paths in data are relative to the mod
   root (`other_mod:path` for another mod). No `res://` paths or Godot-imported formats in mod data.
   Reject `..` and absolute paths.
 - Mod tools are in-game modes and ship in exported builds; no Godot editor plugins.
 - Once the Part Editor exists, vanilla items are authored through it, not by hand-written JSON.
   Families of similar parts (blocks and wedges) are Part Editor batches in
   `mods/vanilla/editor/batches/`; edit the batch and re-run `tools/author-vanilla.sh`. Bots and the
-  raid table are the Bot Behavior Editor batch `mods/vanilla/editor/batches/bots.json` the same way.
+  raid table are the Bot Behavior Editor batch `mods/vanilla/editor/batches/bots.json` the same way, and
+  the story (quest POIs and quests) is `mods/vanilla/editor/batches/story.json`.
 - Item and sound IDs come from the canonical catalog (CATALOG_IDS.md in the project files). Use the
   original names (Scuttler, Fabricator, …), never Scrap Mechanic's.
 - Balance numbers live in data, never in code.

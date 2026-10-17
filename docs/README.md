@@ -23,3 +23,4 @@ Other references:
 - [Sound Events](sound-events.md)
 - [Survival](survival.md)
 - [Saves](saves.md)
+- [Quests and Dialogue](quests.md)

@@ -69,6 +69,6 @@ public partial class SmokeTest : Node3D
             return;
         _done = true;
         GD.Print($"[smoke] {(code == 0 ? "OK" : "FAILED")}");
-        GetTree().Quit(code);
+        StagedTest.QuitCleanly(this, code);
     }
 }
