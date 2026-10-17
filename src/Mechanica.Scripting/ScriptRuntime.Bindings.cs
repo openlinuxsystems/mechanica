@@ -71,6 +71,17 @@ public sealed partial class ScriptRuntime
             return Bearing(instance, instance.Part, LuaValues.OptionalNumber(args[0], "part.set_bearing", 1),
                 LuaValues.OptionalNumber(args[1], "part.set_bearing", 2));
         });
+        Fn(part, "set_bearing_angle", args =>
+        {
+            var instance = Current();
+            return BearingAngle(instance, instance.Part, args, "part.set_bearing_angle", 0);
+        });
+        Fn(part, "set_piston", args =>
+        {
+            var instance = Current();
+            return Piston(instance, instance.Part, args, "part.set_piston", 0);
+        });
+        Fn(part, "joint", _ => Joint(script, Current(), Current().Part));
         globals.Set("part", DynValue.NewTable(part));
 
         var creation = new Table(script);
@@ -98,6 +109,11 @@ public sealed partial class ScriptRuntime
             (int)LuaValues.Number(args[0], "creation.set_bearing", 1),
             LuaValues.OptionalNumber(args[1], "creation.set_bearing", 2),
             LuaValues.OptionalNumber(args[2], "creation.set_bearing", 3)));
+        Fn(creation, "set_bearing_angle", args => BearingAngle(Current(),
+            (int)LuaValues.Number(args[0], "creation.set_bearing_angle", 1), args, "creation.set_bearing_angle", 1));
+        Fn(creation, "set_piston", args => Piston(Current(),
+            (int)LuaValues.Number(args[0], "creation.set_piston", 1), args, "creation.set_piston", 1));
+        Fn(creation, "joint", args => Joint(script, Current(), (int)LuaValues.Number(args[0], "creation.joint", 1)));
         globals.Set("creation", DynValue.NewTable(creation));
 
         var world = new Table(script);
@@ -217,6 +233,47 @@ public sealed partial class ScriptRuntime
         var result = _dispatcher.Dispatch(Caller, MotionActions.SetBearingTarget,
             new SetBearingTargetArgs(instance.Creation, part, velocity, maxTorque));
         return result.Ok ? DynValue.True : Refused(instance, result.Message ?? result.Code ?? "refused");
+    }
+
+    // set_bearing_angle(angle, speed?, max_torque?), with the angle at args[first].
+    private DynValue BearingAngle(Instance instance, int part, CallbackArguments args, string function, int first)
+    {
+        var angle = LuaValues.Number(args[first], function, first + 1);
+        var speed = LuaValues.OptionalNumber(args[first + 1], function, first + 2);
+        var torque = LuaValues.OptionalNumber(args[first + 2], function, first + 3);
+        var result = _dispatcher.Dispatch(Caller, MotionActions.SetBearingTarget,
+            new SetBearingTargetArgs(instance.Creation, part, speed, torque, angle));
+        return result.Ok ? DynValue.True : Refused(instance, result.Message ?? result.Code ?? "refused");
+    }
+
+    // set_piston(length?, speed?, max_force?), with the length at args[first]; a nil length frees it.
+    private DynValue Piston(Instance instance, int part, CallbackArguments args, string function, int first)
+    {
+        var result = _dispatcher.Dispatch(Caller, MotionActions.SetPistonTarget, new SetPistonTargetArgs(instance.Creation, part,
+            LuaValues.OptionalNumber(args[first], function, first + 1),
+            LuaValues.OptionalNumber(args[first + 1], function, first + 2),
+            LuaValues.OptionalNumber(args[first + 2], function, first + 3)));
+        return result.Ok ? DynValue.True : Refused(instance, result.Message ?? result.Code ?? "refused");
+    }
+
+    // The joint a part owns (its bearing, piston or suspension side) as {type, other, position, min, max, locked}, or nil.
+    private DynValue Joint(Script script, Instance instance, int part)
+    {
+        if (_motion.FindCreation(instance.Creation) is not { } creation
+            || creation.Joints.FirstOrDefault(j => j.Connection.A == part) is not { } link
+            || !creation.TryGetJointFrame(link.Connection, out var frame))
+            return DynValue.Nil;
+        var table = new Table(script);
+        table.Set("type", DynValue.NewString(link.Connection.Type.ToString().ToLowerInvariant()));
+        table.Set("other", DynValue.NewNumber(link.Connection.B));
+        table.Set("locked", DynValue.NewBoolean(link.IsLocked));
+        if ((link.IsLocked ? 0f : _motion.JointPosition(creation, link)) is { } position)
+            table.Set("position", DynValue.NewNumber(position));
+        if (frame.Min is { } min)
+            table.Set("min", DynValue.NewNumber(min));
+        if (frame.Max is { } max)
+            table.Set("max", DynValue.NewNumber(max));
+        return DynValue.NewTable(table);
     }
 
     // A refused action: (false, reason) to the script, and a warning the first time each reason appears.

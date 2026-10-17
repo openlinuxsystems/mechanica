@@ -1,0 +1,23 @@
+{
+  "id": "piston",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal",
+      "count": 3
+    },
+    {
+      "item": "component_kit",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "piston",
+      "count": 1
+    }
+  ],
+  "time": 8
+}

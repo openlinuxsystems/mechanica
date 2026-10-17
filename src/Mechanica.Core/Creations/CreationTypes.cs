@@ -88,6 +88,30 @@ public sealed record JointLink(Connection Connection, int BodyA, int BodyB)
     public bool IsLocked => BodyA == BodyB;
 }
 
+/// <summary>
+/// A joint edge's geometry and data in the Creation's grid frame (<see cref="Creation.TryGetJointFrame"/>).
+/// Positions along the joint are measured from the pose both sides were built in on the grid: an
+/// angle in rad about <see cref="Axis"/> (right-handed), or a distance in m along it.
+/// </summary>
+/// <param name="Type">Rotational, linear or spring.</param>
+/// <param name="Anchor">The joint socket's point, in m.</param>
+/// <param name="Axis">Unit grid direction the joint turns about or slides along.</param>
+/// <param name="Normal">The joint socket's outward normal.</param>
+/// <param name="Min">Lowest position (rad or m); null on a free-spinning hinge.</param>
+/// <param name="Max">Highest position (rad or m); null on a free-spinning hinge.</param>
+/// <param name="Stiffness">Spring rate in N/m, for spring joints.</param>
+/// <param name="Damping">Spring damping in N·s/m, for spring joints.</param>
+/// <param name="ShaftRadius">Radius of the rod drawn along a linear or spring joint, or null for none.</param>
+public sealed record JointFrame(ConnectionType Type, Vec3 Anchor, Vec3 Axis, Vec3 Normal, float? Min, float? Max,
+    float? Stiffness, float? Damping, float? ShaftRadius = null)
+{
+    /// <summary>True for a hinge with no limits.</summary>
+    public bool SpinsFreely => Type == ConnectionType.Rotational && (Min is null || Max is null);
+
+    /// <summary>Clamps a position into the joint's range (unchanged on a free hinge).</summary>
+    public float Clamp(float position) => SpinsFreely ? position : Math.Clamp(position, Min ?? position, Max ?? position);
+}
+
 /// <summary>What <see cref="Creation.RemovePart"/> did.</summary>
 /// <param name="Removed">The part that was taken out.</param>
 /// <param name="SplitOff">New Creations made from pieces that lost their link to the rest, in order of their lowest part id.</param>

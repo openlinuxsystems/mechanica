@@ -83,5 +83,6 @@ sealed class World : IMotionWorld
     public IEnumerable<Creation> AllCreations => Creations.Values;
     public bool IsLive(int id) => true;
     public void ApplyForce(Creation creation, int body, Vector3 force, Vector3 torque, float? duration, int? part) => Pushes++;
-    public void SetBearingTarget(Creation creation, JointLink joint, float? velocity, float maxTorque) { }
+    public void SetJointMotor(Creation creation, JointLink joint, JointMotor motor) { }
+    public float? JointPosition(Creation creation, JointLink joint) => null;
 }

@@ -158,9 +158,14 @@ public partial class PartEditorScreen : Control
             _preview.ShowConnections = on;
             Refresh(rebuildInspector: false);
         });
+        AddToggle(overlays, "Joints", true, on =>
+        {
+            _preview.ShowJoints = on;
+            Refresh(rebuildInspector: false);
+        });
         _hint = new Label
         {
-            Text = "Right-drag to orbit, wheel to zoom. Connections: green rigid, blue/orange/purple joint, red none.",
+            Text = "Right-drag to orbit, wheel to zoom. Connections: green rigid, blue/orange/purple joint, red none. Joints show their axis and range.",
             SizeFlagsHorizontal = SizeFlags.ExpandFill,
             HorizontalAlignment = HorizontalAlignment.Right,
             Modulate = new Color(1, 1, 1, 0.7f),
@@ -538,6 +543,9 @@ public partial class PartEditorScreen : Control
         _partGrid.AddNumber("Stack size", d.StackSize, 1, 1e6, 1, v => Set("Set stack size", x => x with { StackSize = (int?)v }), optional: true, fallback: 1);
         _partGrid.AddText("Sound material", d.SoundMaterial, v => Set("Set sound material", x => x with { SoundMaterial = v }), "wood, metal, concrete…");
         if (d.IsPlaceable)
+            _partGrid.AddVector("Centre of mass (m)", d.CentreOfMass ?? Vec3.Zero, PositionStep / 2,
+                v => Set("Move centre of mass", x => x with { CentreOfMass = v == Vec3.Zero ? null : v }), -32, 32);
+        if (d.IsPlaceable)
         {
             _partGrid.AddHeading("Footprint (0.25 m cells)");
             _partGrid.AddGridSize("Size", d.Size ?? GridSize.One, v => Set("Resize", x => x with { Size = v }));
@@ -615,6 +623,8 @@ public partial class PartEditorScreen : Control
             _socketGrid.AddEnum<SocketType>("Type", socket.Type, v => SetSocket("Set socket type", s => s with { Type = v }));
             _socketGrid.AddVector("Position (m)", socket.Position ?? Vec3.Zero, PositionStep / 2, v => SetSocket("Move socket", s => s with { Position = v }));
             _socketGrid.AddVector("Normal", socket.Normal ?? new Vec3(0, 1, 0), 1, v => SetSocket("Turn socket", s => s with { Normal = v }), -1, 1);
+            if (socket.Type is SocketType.Rotational or SocketType.Linear or SocketType.Spring)
+                AddJointFields(socket, change => SetSocket("Edit joint", s => s with { Joint = Normalize(change(s.Joint ?? new JointDefinition())) }));
         }
 
         // Look: colour, surface, variants.
@@ -841,6 +851,34 @@ public partial class PartEditorScreen : Control
     }
 
     // An empty visual block is dropped from the data instead of writing "visual": {}.
+    // The joint section of a rotational, linear or spring socket: axis, travel and (for springs) rate and damping.
+    private void AddJointFields(SocketDefinition socket, Action<Func<JointDefinition, JointDefinition>> set)
+    {
+        var joint = socket.Joint ?? new JointDefinition();
+        var rotational = socket.Type == SocketType.Rotational;
+        var normal = socket.Normal ?? new Vec3(0, 1, 0);
+        _socketGrid.AddHeading(socket.Type switch
+        {
+            SocketType.Rotational => "Joint: hinge (no limits spins freely)",
+            SocketType.Linear => "Joint: slider (piston)",
+            _ => "Joint: spring (suspension)",
+        });
+        _socketGrid.AddVector("Axis", joint.Axis ?? normal, 1, v => set(j => j with { Axis = v == normal ? null : v }), -1, 1);
+        var (limit, unit, step) = rotational ? (Math.PI, "rad", 0.05) : ((double)JointDefinition.MaxTravel, "m", PositionStep / 5);
+        _socketGrid.AddNumber("Min", joint.Min, -limit, 0, step, v => set(j => j with { Min = (float?)v }), optional: true, suffix: unit);
+        _socketGrid.AddNumber("Max", joint.Max, 0, limit, step, v => set(j => j with { Max = (float?)v }), optional: true, suffix: unit);
+        if (socket.Type == SocketType.Spring)
+        {
+            _socketGrid.AddNumber("Stiffness", joint.Stiffness, 0.001, 1e7, 100, v => set(j => j with { Stiffness = (float?)v }), optional: true, fallback: 5000, suffix: "N/m");
+            _socketGrid.AddNumber("Damping", joint.Damping, 0, 1e7, 10, v => set(j => j with { Damping = (float?)v }), optional: true, fallback: 300, suffix: "N·s/m");
+        }
+        if (!rotational)
+            _socketGrid.AddNumber("Shaft radius", joint.ShaftRadius, 0.001, 1, 0.005, v => set(j => j with { ShaftRadius = (float?)v }), optional: true, fallback: 0.04, suffix: "m");
+    }
+
+    private static JointDefinition? Normalize(JointDefinition joint) =>
+        joint is { Axis: null, Min: null, Max: null, Stiffness: null, Damping: null, ShaftRadius: null, Extra: null or { Count: 0 } } ? null : joint;
+
     private static VisualDefinition? Normalize(VisualDefinition visual) =>
         visual is { Color: null, Roughness: null, Metallic: null, Opacity: null, Emission: null, Texture: null, Paintable: null, Variants: null or { Count: 0 }, Extra: null } ? null : visual;
 

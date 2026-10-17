@@ -1,0 +1,31 @@
+{
+  "id": "new_piston",
+  "name": "New Piston",
+  "description": "Pushes whatever touches its head out along its axis, up to the joint's max.",
+  "category": "interactive",
+  "mass": 4,
+  "durability": 4,
+  "friction": 0.4,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.125, 0],
+      "normal": [0, -1, 0]
+    },
+    {
+      "id": "head",
+      "type": "linear",
+      "position": [0, 0.125, 0],
+      "normal": [0, 1, 0],
+      "joint": {
+        "max": 1,
+        "shaft_radius": 0.04
+      }
+    }
+  ]
+}
