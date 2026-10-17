@@ -5,7 +5,9 @@ using Godot;
 using Mechanica.Core.Bots;
 using Mechanica.Core.Data;
 using Mechanica.Core.Editor;
+using Mechanica.Core.Input;
 using Mechanica.Game.Mods;
+using Mechanica.Game.Player;
 using Mechanica.Game.Ui;
 using Mechanica.Scripting.Editor;
 using FileAccess = Godot.FileAccess;
@@ -50,6 +52,8 @@ public partial class BotEditorScreen : Control
     private HelpWindow _help = null!;
     private RaidTableDefinition? _raids;
     private bool _raidsDirty;
+    private Button _export = null!;
+    private Button _test = null!;
     private string _savedScript = "";
     private IReadOnlyList<int> _selected = [];
 
@@ -87,7 +91,10 @@ public partial class BotEditorScreen : Control
     /// <summary>True when the bot, its script or the raid table has changes not written yet.</summary>
     public bool HasUnsavedChanges => Document?.IsDirty == true || (Document is not null && _script.Text != _savedScript) || _raidsDirty;
 
-    /// <summary>The Back button was pressed.</summary>
+    /// <summary>The editor's window: its X and Esc close the editor (asking first about unsaved changes).</summary>
+    public ToolWindow Window { get; private set; } = null!;
+
+    /// <summary>The window was closed (X or Esc).</summary>
     public event Action? CloseRequested;
 
     /// <summary>"Test in Sandbox" exported the bot; carries its qualified id.</summary>
@@ -95,15 +102,16 @@ public partial class BotEditorScreen : Control
 
     public override void _Ready()
     {
-        SetAnchorsPreset(LayoutPreset.FullRect);
-        AddChild(new Panel { AnchorRight = 1, AnchorBottom = 1 });
+        SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         Templates = LoadTemplates();
-        var margin = new MarginContainer { AnchorRight = 1, AnchorBottom = 1 };
-        foreach (var side in new[] { "left", "right", "top", "bottom" })
-            margin.AddThemeConstantOverride($"margin_{side}", 12);
-        AddChild(margin);
-        var column = new VBoxContainer();
-        margin.AddChild(column);
+        Window = new ToolWindow { Name = "Window", Title = "Bot Behavior Editor" };
+        Window.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        Window.CloseGuard = then => Discard(then);
+        Window.CloseRequested += () => CloseRequested?.Invoke();
+        AddChild(Window);
+        var column = Window.Body;
+        _test = Window.AddAction("Test in Sandbox", () => TestInSandbox(), tooltip: "Export, then spawn the bot in the Test Sandbox");
+        _export = Window.AddAction("Export", () => Export(), primary: true, tooltip: "Check the bot and write it into its mod");
         column.AddChild(BuildToolbar());
         var split = new HSplitContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
         column.AddChild(split);
@@ -281,12 +289,12 @@ public partial class BotEditorScreen : Control
     /// <summary>Shows the Bot Tutorial.</summary>
     public void OpenHelp(string fileName = HelpFile) => _help.Open(fileName);
 
-    // F1 opens the help, as everywhere in the game.
+    // The Handbook key (H or F1) opens and closes the help, as everywhere in the game.
     public override void _UnhandledInput(InputEvent @event)
     {
-        if (@event is InputEventKey { Pressed: true, Echo: false, PhysicalKeycode: Key.F1 })
+        if (GameInput.Pressed(@event, InputActions.Handbook) && IsVisibleInTree())
         {
-            OpenHelp(HelpFile);
+            _help.Toggle(HelpFile);
             GetViewport().SetInputAsHandled();
         }
     }
@@ -311,11 +319,8 @@ public partial class BotEditorScreen : Control
         bar.AddChild(new VSeparator());
         Button(bar, "Undo", () => Document?.Undo(), "Undo the last change (Ctrl+Z)");
         Button(bar, "Redo", () => Document?.Redo(), "Redo the last undone change (Ctrl+Y)");
-        Button(bar, "Export", () => Export(), "Check the bot and write it into its mod");
-        Button(bar, "Test in Sandbox", () => TestInSandbox(), "Export, then spawn the bot in the Test Sandbox");
         bar.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
         Button(bar, "Help", () => OpenHelp(), "The Bot Tutorial");
-        Button(bar, "Back", () => Discard(() => CloseRequested?.Invoke()), "Back to the main menu");
         return bar;
     }
 
@@ -471,6 +476,7 @@ public partial class BotEditorScreen : Control
 
     private void Refresh()
     {
+        _export.Disabled = _test.Disabled = Document is null;
         RefreshBotGrid();
         RefreshTree();
     }

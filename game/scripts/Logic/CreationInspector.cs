@@ -16,14 +16,14 @@ namespace Mechanica.Game.Logic;
 /// The Creation Inspector (chunk 10): F8 shows a panel describing the Creation under the crosshair (or the
 /// last one inspected): its mass, Bodies, joints, logic links, and each part's signal output and input,
 /// settings, script and who sits in it. It reads everything with the <c>InspectCreation</c> query twice a
-/// second, so a client sees the host's state, script faults included.
+/// second, so a client sees the host's state, script faults included. Esc or its X closes it.
 /// </summary>
 public partial class CreationInspector : CanvasLayer
 {
     /// <summary>Seconds between reads while the panel is up.</summary>
     public const double PollSeconds = 0.5;
 
-    private PanelContainer _panel = null!;
+    private ToolWindow _panel = null!;
     private RichTextLabel _text = null!;
     private double _sincePoll;
     private bool _asking;
@@ -49,11 +49,14 @@ public partial class CreationInspector : CanvasLayer
     public override void _Ready()
     {
         Layer = 4;
-        _panel = new PanelContainer { Name = "Inspector", Visible = false, CustomMinimumSize = new Vector2(460, 0) };
+        // Top right, up to most of the screen's height; a big Creation scrolls.
+        _panel = new ToolWindow { Name = "Inspector", Title = "Creation Inspector", Visible = false };
+        _panel.CloseRequested += Close;
         AddChild(_panel);
-        _panel.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.TopRight, Control.LayoutPresetMode.KeepSize, 16);
-        _text = Loc.Verbatim(new RichTextLabel { BbcodeEnabled = true, FitContent = true, ScrollActive = false, CustomMinimumSize = new Vector2(440, 0) });
-        _panel.AddChild(_text);
+        (_panel.AnchorLeft, _panel.AnchorRight, _panel.AnchorTop, _panel.AnchorBottom) = (1, 1, 0, 0.7f);
+        (_panel.OffsetLeft, _panel.OffsetRight, _panel.OffsetTop, _panel.OffsetBottom) = (-476, -16, 16, 0);
+        _text = Loc.Verbatim(new RichTextLabel { BbcodeEnabled = true, SizeFlagsVertical = Control.SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(440, 0) });
+        _panel.Body.AddChild(_text);
     }
 
     public override void _UnhandledInput(InputEvent @event)

@@ -29,6 +29,12 @@ public partial class ModManagerScreen : Control
     /// <summary>Profile file to read and save. Set before the node enters the tree.</summary>
     public string ProfilePath { get; set; } = ModPaths.ProfilePath;
 
+    /// <summary>The screen's window: its X and Esc close it (asking first about an unapplied setup).</summary>
+    public ToolWindow Window { get; private set; } = null!;
+
+    /// <summary>The window was closed (X or Esc).</summary>
+    public event Action? CloseRequested;
+
     /// <summary>The current, possibly unsaved, setup.</summary>
     public ModPackageManager Manager { get; private set; } = null!;
 
@@ -50,16 +56,13 @@ public partial class ModManagerScreen : Control
 
     public override void _Ready()
     {
-        SetAnchorsPreset(LayoutPreset.FullRect);
-        var margin = new MarginContainer();
-        margin.SetAnchorsPreset(LayoutPreset.FullRect);
-        foreach (var side in new[] { "left", "right", "top", "bottom" })
-            margin.AddThemeConstantOverride($"margin_{side}", 16);
-        AddChild(margin);
-
-        var column = new VBoxContainer();
-        margin.AddChild(column);
-        column.AddChild(new Label { Text = "Mods", ThemeTypeVariation = "HeaderLarge" });
+        SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        Window = new ToolWindow { Name = "Window", Title = "Mod Manager" };
+        Window.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        Window.CloseGuard = Discard;
+        Window.CloseRequested += () => CloseRequested?.Invoke();
+        AddChild(Window);
+        var column = Window.Body;
         column.AddChild(new Label
         {
             Text = "Mods load top to bottom; a later mod's overrides win. Changes apply the next time you start or host a game. "
@@ -105,10 +108,8 @@ public partial class ModManagerScreen : Control
         _problems = Loc.Verbatim(new RichTextLabel { BbcodeEnabled = true, SizeFlagsVertical = SizeFlags.ExpandFill, SelectionEnabled = true });
         right.AddChild(_problems);
 
-        var bottom = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.End };
-        column.AddChild(bottom);
-        _revert = AddButton(bottom, "Revert", () => Discard(Reopen), "Go back to the saved setup");
-        _apply = AddButton(bottom, "Apply", Apply, "Save this setup; it loads with the next world");
+        _revert = Window.AddAction("Revert", () => Discard(Reopen), tooltip: "Go back to the saved setup");
+        _apply = Window.AddAction("Apply", Apply, primary: true, tooltip: "Save this setup; it loads with the next world");
 
         Reopen();
     }

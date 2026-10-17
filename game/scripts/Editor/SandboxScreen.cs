@@ -56,6 +56,9 @@ public partial class SandboxScreen : Control
     /// <param name="Main">Its game scene.</param>
     public sealed record Instance(string Name, SubViewport Viewport, Main Main);
 
+    /// <summary>The sandbox's panel: its X closes the sandbox, and so does Esc once the mouse is free.</summary>
+    public ToolWindow Window { get; private set; } = null!;
+
     /// <summary>Raised when the user leaves the sandbox.</summary>
     public event Action? BackRequested;
 
@@ -106,6 +109,8 @@ public partial class SandboxScreen : Control
 
     public override void _Process(double delta)
     {
+        // The first Esc frees the mouse (the player's own), the next one closes the sandbox.
+        Window.CloseOnEscape = Input.MouseMode != Input.MouseModeEnum.Captured;
         var size = (Vector2I)GetViewportRect().Size;
         for (var i = 0; i < _instances.Count; i++)
         {
@@ -343,15 +348,13 @@ public partial class SandboxScreen : Control
 
     private void BuildPanel()
     {
-        var panel = new PanelContainer { Position = new Vector2(12, 12) };
-        panel.CustomMinimumSize = new Vector2(340, 0);
-        AddChild(panel);
-        var column = new VBoxContainer();
-        panel.AddChild(column);
-        column.AddChild(new Label { Text = "Test Sandbox", ThemeTypeVariation = "HeaderMedium" });
+        Window = new ToolWindow { Name = "Window", Title = "Test Sandbox", Position = new Vector2(12, 12), CustomMinimumSize = new Vector2(340, 0) };
+        Window.CloseRequested += EmitBack;
+        AddChild(Window);
+        var column = Window.Body;
         column.AddChild(new Label
         {
-            Text = "Click the world to look around, Esc frees the mouse. WASD moves, Space jumps. Tab switches instance.",
+            Text = "Click the world to look around. Esc frees the mouse, and Esc again closes the sandbox. WASD moves, Space jumps. Tab switches instance.",
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
         });
         _filter = new LineEdit { PlaceholderText = "Filter parts" };
@@ -402,7 +405,6 @@ public partial class SandboxScreen : Control
         column.AddChild(_result);
         _status = Loc.Verbatim(new Label { ThemeTypeVariation = "SecondaryLabel" });
         column.AddChild(_status);
-        AddButton(column, "Back", EmitBack, "Leave the sandbox");
     }
 
     /// <summary>Asks, then removes every Creation and bot from the sandbox.</summary>

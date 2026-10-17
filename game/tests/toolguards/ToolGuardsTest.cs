@@ -44,10 +44,18 @@ public partial class ToolGuardsTest : StagedTest
                 AddChild(_parts);
                 return false;
             }
+            var export = _parts.Window.Actions.GetChildren().OfType<Button>().LastOrDefault();
+            Check(_parts.Window.Title == "Part Editor" && export is { Text: "Export", Disabled: true } && export.ThemeTypeVariation == "PrimaryButton",
+                "the editor has a title bar, and Export is its primary action, off with no part open");
             Check(_parts.NewPart(Mod, "crate", "Crate", "block") is null && _parts.HasUnsavedChanges, "a new part is unsaved");
-            Press(_parts, "Close");
-            Check(Asked("Unsaved changes") && _closed == 0, "Close asks first");
+            Check(export is { Disabled: false }, "Export turns on with a part open");
+            _parts.Window.CloseButton.EmitSignal(BaseButton.SignalName.Pressed);
+            Check(Asked("Unsaved changes") && _closed == 0, "the X asks first");
             ConfirmDialog.Current!.Cancel();
+            Esc();
+            Check(Asked("Unsaved changes") && _closed == 0, "so does Esc");
+            Esc();
+            Check(ConfirmDialog.Current is null && _closed == 0, "and Esc again cancels the question, not the editor");
             Check(_closed == 0 && _parts.Document?.Definition.Id == "crate", "Cancel keeps the part open");
             Press(_parts, "New…");
             Check(Asked("Unsaved changes"), "New over an unsaved part asks too");
@@ -55,7 +63,7 @@ public partial class ToolGuardsTest : StagedTest
             Press(_parts, "Open…");
             Check(Asked("Unsaved changes"), "and so does Open");
             ConfirmDialog.Current!.Cancel();
-            Press(_parts, "Close");
+            _parts.Window.CloseButton.EmitSignal(BaseButton.SignalName.Pressed);
             ConfirmDialog.Current!.Confirm();
             Check(_closed == 1, "Discard closes");
             _ = _parts.ExportAsync();
@@ -65,8 +73,35 @@ public partial class ToolGuardsTest : StagedTest
         {
             if (_parts.HasUnsavedChanges)
                 return false;
-            Press(_parts, "Close");
+            _parts.Window.CloseButton.EmitSignal(BaseButton.SignalName.Pressed);
             Check(ConfirmDialog.Current is null && _closed == 2, "nothing to lose, no question");
+            return true;
+        });
+        Add("Esc and the Handbook key close the help", frame =>
+        {
+            var help = _parts.GetChildren().OfType<HelpWindow>().Single();
+            if (frame == 0)
+            {
+                _parts.OpenHelp("getting-started.md");
+                return false;
+            }
+            if (frame == 2)
+            {
+                Check(help.Visible, "the help is open");
+                help.Scroll = 300;
+                Esc();
+                return false;
+            }
+            if (frame == 4)
+            {
+                Check(!help.Visible && _closed == 2, "Esc closes the help and leaves the editor open");
+                _parts.OpenHelp("getting-started.md");
+                return false;
+            }
+            if (frame < 7)
+                return false;
+            Check(help.Scroll > 0, $"the page opens where it was left ({help.Scroll})");
+            help.Hide();
             return true;
         });
         Add("a new part over an existing file asks", _ =>
@@ -142,7 +177,7 @@ public partial class ToolGuardsTest : StagedTest
             }
             _closed = 0;
             Check(_bots.SelectMod(Mod) && _bots.New("melee", "biter") && _bots.HasUnsavedChanges, "a new bot is unsaved");
-            Press(_bots, "Back");
+            _bots.Window.CloseButton.EmitSignal(BaseButton.SignalName.Pressed);
             Check(Asked("Unsaved changes"), "Back asks first");
             ConfirmDialog.Current!.Cancel();
             Check(_closed == 0 && _bots.Document?.Id == "biter", "Cancel stays");
@@ -156,7 +191,7 @@ public partial class ToolGuardsTest : StagedTest
             _bots.AskNew("melee", "biter");
             Check(Asked("Bot exists") && ConfirmDialog.Current!.Message.Contains("bots/biter.json"), "a new bot over an existing file asks");
             ConfirmDialog.Current!.Cancel();
-            Press(_bots, "Back");
+            _bots.Window.CloseButton.EmitSignal(BaseButton.SignalName.Pressed);
             Check(ConfirmDialog.Current is null && _closed == 1, "with nothing unsaved, Back just goes");
             RemoveChild(_bots);
             _bots.QueueFree();
@@ -192,6 +227,8 @@ public partial class ToolGuardsTest : StagedTest
             return true;
         });
     }
+
+    private void Esc() => GetViewport().PushInput(new InputEventKey { Pressed = true, PhysicalKeycode = Key.Escape, Keycode = Key.Escape });
 
     private bool Asked(string title) => ConfirmDialog.Current is { } d && d.Window.Title == title;
 

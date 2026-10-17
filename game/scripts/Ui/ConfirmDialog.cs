@@ -86,6 +86,8 @@ public partial class ConfirmDialog : CanvasLayer
     {
         if (IsQueuedForDeletion())
             return;
+        // Gone at once, so an Esc later this frame goes to the window behind.
+        Visible = false;
         QueueFree();
         if (Current == this)
             Current = null;
