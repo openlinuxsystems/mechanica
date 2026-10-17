@@ -323,7 +323,7 @@ public partial class BotEditorScreen : Control
     {
         if (GameInput.Pressed(@event, InputActions.Handbook) && IsVisibleInTree())
         {
-            _help.Toggle(HelpFile);
+            _help.ToggleLast(HelpFile);
             GetViewport().SetInputAsHandled();
         }
     }

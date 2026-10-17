@@ -341,7 +341,7 @@ public partial class PartEditorScreen : Control
     {
         if (GameInput.Pressed(@event, InputActions.Handbook) && IsVisibleInTree())
         {
-            _help.Toggle("getting-started.md");
+            _help.ToggleLast("getting-started.md");
             GetViewport().SetInputAsHandled();
         }
     }

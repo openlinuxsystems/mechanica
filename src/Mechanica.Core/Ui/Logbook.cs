@@ -225,12 +225,12 @@ public static class WorldMap
                     var biome = world.BiomeAt(x, z).Color;
                     var t = Math.Clamp((h - world.SeaLevel) / MathF.Max(1f, high - world.SeaLevel), 0f, 1f);
                     // Biomes differ by lightness only, so the map stays blue.
-                    var lightness = 0.8f + 0.5f * Luminance(biome);
+                    var lightness = 0.55f + 0.9f * Luminance(biome);
                     colour = Vector3.Lerp(Lowland, Highland, t) * lightness;
                     // Light from the north-west.
                     var dx = (heights[(j + 1) * w + i + 2] - heights[(j + 1) * w + i]) / (2 * metresPerPixel);
                     var dz = (heights[(j + 2) * w + i + 1] - heights[j * w + i + 1]) / (2 * metresPerPixel);
-                    colour *= Math.Clamp(1f - 0.6f * (dx + dz), 0.55f, 1.35f);
+                    colour *= Math.Clamp(1f - 1.2f * (dx + dz), 0.5f, 1.4f);
                     if (Contour(h, heights[(j + 1) * w + i + 2], heights[(j + 2) * w + i + 1], contourInterval))
                         colour = Vector3.Lerp(colour, Highland * 1.3f, 0.35f);
                 }

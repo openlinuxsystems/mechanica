@@ -36,7 +36,7 @@ keeps it under `quests` (see [Saves](saves.md)).
 | `requires` | Quests that must be done first (`other_mod:quest` for another mod's). A quest with none starts when the world does. Loops are errors. |
 | `steps[]` | Done in order. Each has an `id`, the log `text`, an `objective`, and optional `dialogue` said when the step begins. |
 | `rewards.items` | Given to every player in the session when the quest is done. |
-| `rewards.reveal` | POIs shown in every player's quest log, with distance and direction. |
+| `rewards.reveal` | POIs shown in every player's quest log, with distance and direction, and on the Logbook map. |
 | `rewards.flags` | Story flags set when the quest is done. |
 | `outro` | Lines said when the quest is done. |
 

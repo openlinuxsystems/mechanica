@@ -1,9 +1,10 @@
 # How to Play
 
 You start at the crash site. The quest log says what to do next, and Use (**E**) does most things in
-the world. Press **H** (or **F1**) at any time to open this help; it opens on the page for what you are
-doing (the quest log, your inventory, the Part Editor, ...). Type in the box at the top of the help to
-search every page.
+the world. Press **H** (or **F1**) at any time to open this Handbook. It opens at the page you read last
+(the first time, on the page for what you are doing: the Logbook, your inventory, the Part Editor, ...).
+The arrow keys (or Page Up and Page Down) and the buttons under the page turn pages, and the box at the
+top searches every page.
 
 ## Controls
 
@@ -28,9 +29,10 @@ These are the default keys. Every one can be changed in Options, Controls.
 | E | Use: open the blueprint menu (the Lift in hand, aimed at your Lift), open a container or station, pick up items, harvest, sleep in a bed, sit in or leave a seat, use a part, change a part's settings, use a quest marker, talk, respawn after dying |
 | I or B | Inventory |
 | U | Upgrade the part you are aiming at (a station), or the station whose screen is open |
-| L | Logbook: the quest log, where you pick an answer when a quest asks you to decide |
+| L | Logbook: your quests, the map and your markers; you pick an answer here when a quest asks you to decide |
 | Esc | Menu: save, load, open your world to the LAN, Options, help, quit. Esc also closes any open window. |
-| H or F1 | Help |
+| H or F1 | Handbook |
+| Left / Right (or Page Up / Page Down) | Turn the Handbook's pages |
 | F7 / F8 / F9 | Logic Visualizer, Creation Inspector and force overlay |
 | Alt + Z | Hide the HUD (crosshair, tool bar, compass, tips, chat, quest log and names), and show it again |
 
@@ -55,6 +57,8 @@ stops getting your input.
   red.
 - **Tips** show at the bottom of the screen, above the hotbar; hold Use (**E**) to dismiss one early.
 - If the game window loses focus, anything you are holding down (such as dismissing a tip) is cancelled.
+
+![Where the HUD shows what](images/hud.png)
 
 ## Lift, Weld Tool, Paint Tool and Sledgehammer
 
@@ -153,6 +157,23 @@ yours alone: they never change the world or other players' games.
 The first time you play in a world you choose the **Male Scrapper** or the **Female Scrapper** (on the New
 game screen when you start the world, or in a window when you join one). They move and play the same; the
 choice is kept for you in that world and everyone sees it. See [Player Characters](characters.md).
+
+## Logbook
+
+Press **L** to open the Logbook, and L, Esc or its X to close it. On the left are your quests: each one you are
+working on with its current step and progress, and the ones you have finished greyed out under them. When a
+quest asks you to decide, its answers are buttons under it. Then come the places quests have shown you and
+your own markers.
+
+On the right is the map of the island. Drag it to move around and turn the mouse wheel to zoom in on the
+cursor; **−**, **+**, **Whole map** and **Find me** do the same with buttons. The cyan arrow is you, pointing
+the way you face. Blue diamonds are quest goals (they pulse), places found and your markers; hover over one for
+its name and distance. Click a diamond, or a quest, place or marker in the list, to make it the compass's
+primary waypoint (it pulses cyan) and centre the map on it. Right-click the map to mark a place: it shows on
+the compass and in the world like any waypoint. Right-click one of your markers (or its ✕ in the list) to
+remove it. Your markers are saved with the world; you can have up to 20. The map keeps where you left it.
+
+![The Logbook](images/logbook.png)
 
 ## Compass
 

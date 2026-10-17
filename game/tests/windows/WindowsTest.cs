@@ -9,7 +9,7 @@ namespace Mechanica.Game.Tests;
 
 /// <summary>
 /// Windows keep their own mouse input in a running world (UI spec §13). Wheel turns and clicks anywhere over
-/// the in-game menu, Options (every tab, scrolled past both ends), the save screen, the inventory, the Fabricator screen, the upgrade dialog, the Lift's
+/// the in-game menu, Options (every tab, scrolled past both ends), the save screen, the inventory, the Fabricator screen, the upgrade dialog, the Logbook, the Lift's
 /// blueprint menu, the Paint Tool's colour picker and a confirm dialog never reach the game behind them (nor over the hotbar while the inventory is open), nor do clicks on the screen around a window opened from
 /// the menu, where a wheel changes the hotbar and a click takes the
 /// mouse back and closes the menu. The windows are still open afterwards.
@@ -187,6 +187,20 @@ public partial class WindowsTest : StagedTest
             Check(dialog.IsOpen, "the upgrade dialog is still open");
             dialog.Close();
             return Clean("the upgrade dialog");
+        });
+        Add("the Logbook keeps them", frame =>
+        {
+            var log = _main.GetNode<Quests.QuestHud>("QuestHud");
+            if (frame == 0)
+            {
+                log.Open();
+                return false;
+            }
+            // The map takes the wheel (zoom) and right clicks (markers) itself; none reach the game.
+            Scrub(log.Logbook);
+            Check(log.IsOpen, "the Logbook is still open");
+            log.Close();
+            return Clean("the Logbook");
         });
         Add("the Lift's blueprint menu keeps them", frame =>
         {

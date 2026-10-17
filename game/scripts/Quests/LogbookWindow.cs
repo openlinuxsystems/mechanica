@@ -92,7 +92,7 @@ public partial class LogbookWindow : ToolWindow
             Player = Player,
             SizeFlagsHorizontal = SizeFlags.ExpandFill,
             SizeFlagsVertical = SizeFlags.ExpandFill,
-            CustomMinimumSize = new Vector2(320, 240),
+            CustomMinimumSize = new Vector2(320, 160),
         };
         Map.Picked += Pick;
         Map.MarkRequested += at => Markers?.Add(at, done: Answered);

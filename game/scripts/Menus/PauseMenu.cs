@@ -91,7 +91,7 @@ public partial class PauseMenu : CanvasLayer
 
         column.AddChild(new HSeparator());
         AddButton(column, "Options…", () => OpenOptions());
-        Loc.Live(AddButton(column, "", () => OpenHelp()), b => b.Text = Loc.T("Help ({0})", GameInput.Label(InputActions.Handbook)));
+        Loc.Live(AddButton(column, "", () => OpenHelp()), b => b.Text = Loc.T("Handbook ({0})", GameInput.Label(InputActions.Handbook)));
         AddButton(column, "Quit to main menu", () => LoadingScreen.Transition(this, "Returning to menu…", () => GetTree().ChangeSceneToFile(MainMenu.MenuScene)));
         AddButton(column, "Quit game", () => GetTree().Quit());
         _status = new Label { Name = "Status", ThemeTypeVariation = "ErrorLabel" };
@@ -160,11 +160,17 @@ public partial class PauseMenu : CanvasLayer
         Input.MouseMode = Input.MouseModeEnum.Captured;
     }
 
-    /// <summary>Opens help on <paramref name="topic"/>, or on the page for what the player is doing.</summary>
+    /// <summary>
+    /// Opens the Handbook on <paramref name="topic"/>, or at the page read last (UI spec §10), or before any on the page for
+    /// what the player is doing.
+    /// </summary>
     public void OpenHelp(string? topic = null)
     {
         Input.MouseMode = Input.MouseModeEnum.Visible;
-        _help.Open(topic ?? HelpTopic());
+        if (topic is null)
+            _help.OpenLast(HelpTopic());
+        else
+            _help.Open(topic);
     }
 
     /// <summary>Hosts on the port in the box; the world and players carry over.</summary>
