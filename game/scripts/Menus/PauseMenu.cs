@@ -5,6 +5,8 @@ using Mechanica.Game.Editor;
 using Mechanica.Game.Net;
 using Mechanica.Game.Player;
 
+using Mechanica.Game.Ui;
+
 namespace Mechanica.Game.Menus;
 
 /// <summary>
@@ -85,6 +87,7 @@ public partial class PauseMenu : CanvasLayer
         _stop = AddButton(column, "Stop hosting", () => Session.Leave("Stopped hosting."));
 
         column.AddChild(new HSeparator());
+        AddButton(column, "Options…", () => OpenOptions());
         AddButton(column, "Help (F1)", () => OpenHelp());
         AddButton(column, "Quit to main menu", () => GetTree().ChangeSceneToFile(MainMenu.MenuScene));
         AddButton(column, "Quit game", () => GetTree().Quit());
@@ -105,6 +108,9 @@ public partial class PauseMenu : CanvasLayer
         // Esc while playing opens the menu; while another screen has the mouse, that screen closes first.
         else if (GameInput.Pressed(@event, InputActions.Pause) && (IsOpen || Input.MouseMode == Input.MouseModeEnum.Captured))
         {
+            // A window open inside the menu (Options, saves) closes first.
+            if (IsOpen && _saveScreen is not null && ToolWindow.Topmost is { } top && _saveScreen.IsAncestorOf(top))
+                return;
             if (IsOpen)
                 Close();
             else
@@ -166,12 +172,14 @@ public partial class PauseMenu : CanvasLayer
             _status.Text = "Enter a port from 1 to 65535.";
             return;
         }
-        _status.Text = Session.Host(port) == Error.Ok ? "" : Session.LastMessage;
+        _status.Text = Session.Host(port, Settings.GameSettings.Current.Gameplay.MaxPlayers) == Error.Ok ? "" : Session.LastMessage;
     }
 
     private new void Hide()
     {
         _root.Visible = false;
+        if (_saveScreen?.GetChildOrNull<OptionsScreen>(0) is { } options)
+            options.Commit();
         _saveScreen?.QueueFree();
         _saveScreen = null;
         _panel.Visible = true;
@@ -201,6 +209,26 @@ public partial class PauseMenu : CanvasLayer
         _root.AddChild(holder);
         _saveScreen = holder;
         _panel.Visible = false;
+    }
+
+    /// <summary>Opens Options in place of the menu; closing it comes back here.</summary>
+    public OptionsScreen OpenOptions()
+    {
+        _saveScreen?.QueueFree();
+        var holder = new CenterContainer();
+        holder.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        var screen = new OptionsScreen();
+        screen.CloseRequested += () =>
+        {
+            holder.QueueFree();
+            _saveScreen = null;
+            _panel.Visible = true;
+        };
+        holder.AddChild(screen);
+        _root.AddChild(holder);
+        _saveScreen = holder;
+        _panel.Visible = false;
+        return screen;
     }
 
     private static Button AddButton(Container parent, string text, Action pressed)

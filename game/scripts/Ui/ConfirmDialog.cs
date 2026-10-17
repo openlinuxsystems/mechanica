@@ -61,6 +61,9 @@ public partial class ConfirmDialog : CanvasLayer
     /// <summary>Answers yes.</summary>
     public void Confirm() => Answer(_onConfirm);
 
+    /// <summary>Adds another answer next to the confirm button, such as Swap beside Overwrite.</summary>
+    public Button AddChoice(string text, Action then) => Window.AddAction(text, () => Answer(then));
+
     /// <summary>Answers no.</summary>
     public void Cancel() => Answer(_onCancel);
 

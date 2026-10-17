@@ -136,16 +136,16 @@ public partial class MenuTest : StagedTest
             menu.QueueFree();
             return true;
         });
-        Add("Settings renames the player's profile", _ =>
+        Add("Options renames the player's profile", _ =>
         {
             var file = ProjectSettings.GlobalizePath("user://test_profile.json");
             if (File.Exists(file))
                 File.Delete(file);
-            var screen = new SettingsScreen { ProfileFile = file };
+            var screen = new OptionsScreen { ProfileFile = file };
             AddChild(screen);
             var id = Main.UserProfile(null, file).Id;
             screen.PlayerName.Text = "  Zed ";
-            screen.Save();
+            screen.Commit();
             var saved = Main.UserProfile(null, file);
             Check(saved.Name == "Zed" && saved.Id == id, $"the profile keeps its id and has the new name ({saved})");
             screen.QueueFree();
