@@ -324,7 +324,7 @@ public partial class OptionsScreen : ToolWindow
         });
         _custom = new VBoxContainer { Visible = g.Preset == Quality.Custom };
         page.AddChild(_custom);
-        Slider(_custom, "View distance", g.ViewDistance, GraphicsSettings.MinViewDistance, GraphicsSettings.MaxViewDistance, 50, v => SetGraphics(x => x with { ViewDistance = v }), v => $"{v:0} m");
+        Slider(_custom, "View distance", g.ViewDistance, GraphicsSettings.MinViewDistance, GraphicsSettings.MaxViewDistance, 32, v => SetGraphics(x => x with { ViewDistance = v }), v => $"{v:0} m");
         Option(_custom, "Shadows", levels, (int)g.Shadows, i => SetGraphics(x => x with { Shadows = (Quality)i }));
         Option(_custom, "Anti-aliasing", levels, (int)g.Antialiasing, i => SetGraphics(x => x with { Antialiasing = (Quality)i }));
         Option(_custom, "Textures", levels, (int)g.Textures, i => SetGraphics(x => x with { Textures = (Quality)i }));

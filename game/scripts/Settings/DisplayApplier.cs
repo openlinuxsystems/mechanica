@@ -8,12 +8,15 @@ namespace Mechanica.Game.Settings;
 /// <summary>
 /// Puts graphics and audio settings into effect (UI spec §16). The window (size, mode, VSync) and the root
 /// viewport (anti-aliasing, texture sharpness, shadow atlas) change at once; cameras get the view distance
-/// and world environments the effects level as they enter the tree, so a world loaded later still matches.
+/// (plus <see cref="FogMargin"/>) and world environments the effects level and fog at the view distance as they enter the tree, so a world loaded later still matches.
 /// Volumes go to the sound buses; Ambient follows SFX.
 /// </summary>
 public static class DisplayApplier
 {
     private static GraphicsSettings _graphics = new();
+
+    /// <summary>Metres the camera draws past the view distance, so fog, not the far plane, ends the world.</summary>
+    public const float FogMargin = 32f;
 
     /// <summary>Applies the window settings: display mode, size in windowed mode and VSync.</summary>
     public static void ApplyWindow(GraphicsSettings g)
@@ -55,12 +58,20 @@ public static class DisplayApplier
         switch (node)
         {
             case Camera3D camera:
-                camera.Far = _graphics.ViewDistance;
+                camera.Far = _graphics.ViewDistance + FogMargin;
                 break;
             case WorldEnvironment { Environment: { } env }:
                 env.GlowEnabled = _graphics.Effects >= Quality.Medium;
                 env.SsaoEnabled = _graphics.Effects >= Quality.High;
                 env.SsilEnabled = _graphics.Effects >= Quality.Ultra;
+                // Fog takes the sky's colour and closes in at the view distance, so scenery fades out
+                // instead of ending at an edge.
+                env.FogEnabled = true;
+                env.FogMode = Godot.Environment.FogModeEnum.Depth;
+                env.FogAerialPerspective = 1f;
+                env.FogDensity = 1f;
+                env.FogDepthBegin = _graphics.ViewDistance * 0.55f;
+                env.FogDepthEnd = _graphics.ViewDistance;
                 break;
             case DirectionalLight3D light:
                 light.ShadowEnabled = _graphics.Shadows >= Quality.Medium;

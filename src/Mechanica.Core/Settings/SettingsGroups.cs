@@ -47,8 +47,11 @@ public sealed record GraphicsSettings
     /// <summary>The quality preset; <see cref="Quality.Custom"/> uses the levels below.</summary>
     public Quality Preset { get; init; } = Quality.High;
 
-    /// <summary>How far the camera draws, in metres.</summary>
-    public float ViewDistance { get; init; } = 1000f;
+    /// <summary>
+    /// How far the world is drawn, in metres: the simulated ground, then scenery out to here
+    /// (<see cref="World.FarChunks"/>), with fog at the edge.
+    /// </summary>
+    public float ViewDistance { get; init; } = DefaultViewDistance;
 
     /// <summary>Shadow quality.</summary>
     public Quality Shadows { get; init; } = Quality.High;
@@ -66,7 +69,10 @@ public sealed record GraphicsSettings
     public bool VSync { get; init; } = true;
 
     /// <summary>Shortest and longest view distance offered.</summary>
-    public const float MinViewDistance = 150f, MaxViewDistance = 3000f;
+    public const float MinViewDistance = World.FarChunks.MinViewDistance, MaxViewDistance = 1024f;
+
+    /// <summary>The High preset's view distance.</summary>
+    public const float DefaultViewDistance = 384f;
 
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]
@@ -77,7 +83,7 @@ public sealed record GraphicsSettings
     {
         if (preset == Quality.Custom)
             return this with { Preset = preset };
-        var distance = preset switch { Quality.Low => 300f, Quality.Medium => 600f, Quality.High => 1000f, _ => 2000f };
+        var distance = preset switch { Quality.Low => MinViewDistance, Quality.Medium => 256f, Quality.High => DefaultViewDistance, _ => 640f };
         return this with
         {
             Preset = preset, ViewDistance = distance, Shadows = preset, Antialiasing = preset, Textures = preset, Effects = preset,
@@ -100,7 +106,7 @@ public sealed record GraphicsSettings
     /// <summary>A copy with every value in range.</summary>
     public GraphicsSettings Clamped() => this with
     {
-        ViewDistance = float.IsFinite(ViewDistance) ? Math.Clamp(ViewDistance, MinViewDistance, MaxViewDistance) : 1000f,
+        ViewDistance = float.IsFinite(ViewDistance) ? Math.Clamp(ViewDistance, MinViewDistance, MaxViewDistance) : DefaultViewDistance,
         Resolution = ParseResolution() is { } r ? $"{r.Width}x{r.Height}" : null,
         Shadows = Shadows == Quality.Custom ? Quality.High : Shadows,
         Antialiasing = Antialiasing == Quality.Custom ? Quality.High : Antialiasing,
@@ -149,7 +155,7 @@ public sealed record InterfaceSettings
     /// <summary>Shows the tool bar and its key hints at the bottom of the screen.</summary>
     public bool ShowHotbar { get; init; } = true;
 
-    /// <summary>Keys this build does not know.</summary>
+        /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
 }
