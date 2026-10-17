@@ -13,6 +13,9 @@
     "fire": "scattergun_fire",
     "pump": "scattergun_pump"
   },
+  "aim": {
+    "zoom": 0.85
+  },
   "properties": {
     "damage": 9,
     "interval": 0.9,
@@ -20,6 +23,9 @@
     "ammo": "potato",
     "pellets": 8,
     "spread": 6,
-    "impulse": 10
+    "impulse": 10,
+    "aim_spread": 3.5,
+    "magazine": 4,
+    "reload": 2
   }
 }

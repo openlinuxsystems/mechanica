@@ -130,6 +130,12 @@ public partial class PlayerController : CharacterBody3D
         set => CameraDistance = value ? Settings.CameraDistance > 0 ? Settings.CameraDistance : Settings.CameraMinDistance : 0f;
     }
 
+    /// <summary>
+    /// What the field of view is multiplied by: below 1 while a weapon is aimed (the slight zoom of UI spec §10,
+    /// the weapon's <c>aim_zoom</c>). The local camera eases towards it.
+    /// </summary>
+    public float AimZoom { get; set; } = 1f;
+
     /// <summary>How far behind the player's head the camera sits, in metres; 0 is first-person (UI spec §6, X and C zoom).</summary>
     public float CameraDistance
     {

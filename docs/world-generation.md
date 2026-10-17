@@ -70,7 +70,8 @@ streamed in 64 m chunks. Height samples are `resolution` metres apart and must d
       "scale": [0.8, 1.25],
       "sink": 0.3,
       "health": 60,
-      "drops": [{ "item": "scrap_wood", "count": 6 }]
+      "drops": [{ "item": "scrap_wood", "count": 6 }],
+      "refine": true
     }
   ]
 }
@@ -87,6 +88,7 @@ streamed in 64 m chunks. Height samples are `resolution` metres apart and must d
 | `objects[]` | Destructible world objects. Use catalog ids (`tree`, `rock_node`, `boulder`, ...). `footprint` is the radius other scattered objects keep clear of; `sink` lowers the object into the ground. |
 | `objects[].health` | Damage the object takes before it breaks (Sledgehammer, weapons, splash). Omitted means it cannot be broken. Damage is not saved: a part-felled tree is whole again after a restart. |
 | `objects[].drops[]` | Items (`item`, `count`, default 1) left on the ground as a pile when it breaks. |
+| `objects[].refine` | `true` for a raw resource node (tree, rock node): holding Use (E) on it for `refine_seconds` (`game/data/survival.json`, 1.2 s) refines it, and its `drops` go straight into the inventory. Moving more than `refine_cancel_distance` (1.5 m) or letting go cancels. Default `false`. |
 
 Shapes (`collider`, `pieces`) are `box` (`size`), `sphere` (`radius`) or `cylinder` (`radius`,
 `height`, upright), centred at `at`, turned `yaw` degrees about +Y, coloured `#rrggbb`. They are

@@ -86,7 +86,9 @@ public partial class HotbarView : HBoxContainer
             var name = entry is null ? "" : Belt.ToolFor(entry) is { } tool ? Loc.T(tool.ToolName) : Belt.Build.Catalog.FindDefinition(entry)?.Name ?? entry;
             var count = entry is null ? null : Count(entry);
             var missing = entry is not null && Belt.ToolFor(entry) is null && count is 0;
-            _slots[i].Show(entry, entry is null ? null : Belt.Icons?.For(entry), name, count, key, i == Belt.Selected, dim: missing);
+            // A weapon shows its ammo in the count's place (UI spec §10).
+            var badge = entry is null || Belt.ToolFor(entry) is not null ? null : Belt.Item.CounterFor(entry)?.Text;
+            _slots[i].Show(entry, entry is null ? null : Belt.Icons?.For(entry), name, count, key, i == Belt.Selected, dim: missing, badge: badge);
         }
     }
 

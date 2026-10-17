@@ -55,6 +55,18 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     /// <summary>Action name for reading what grows on a soil part.</summary>
     public const string GetSoil = "GetSoil";
 
+    /// <summary>Action name for starting to hold Use on a resource node to refine it.</summary>
+    public const string StartRefine = "StartRefine";
+
+    /// <summary>Action name for letting go of Use (or moving off) before a refine finished.</summary>
+    public const string CancelRefine = "CancelRefine";
+
+    /// <summary>Action name for finishing a refine once Use has been held long enough.</summary>
+    public const string FinishRefine = "FinishRefine";
+
+    /// <summary>Sound key an item plays when it is picked up (<see cref="Sound.PartSounds"/>).</summary>
+    public const string PickupSound = "pickup";
+
     // Share of the filling time the host insists on between one player's buckets (network jitter).
     private const double IntervalJitter = 0.8;
 
@@ -62,6 +74,8 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     private readonly SortedDictionary<int, ItemDrop> _drops = [];
     private readonly SortedDictionary<int, Flight> _projectiles = [];
     private readonly Dictionary<int, double> _lastWater = [];
+    // Refines being held, by peer: the node, when Use went down and where the player stood (per player, UI spec §10).
+    private readonly Dictionary<int, (WorldObjectId Object, double Started, Vector3 Feet)> _refining = [];
     private int _nextDrop = 1;
     private int _nextProjectile = 1;
 
@@ -125,6 +139,13 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         dispatcher.Register<DropItemsArgs>(DropItems, ValidateDrop, ApplyDrop);
         dispatcher.Register<PickUpArgs>(PickUp, ValidatePickUp, ApplyPickUp);
         dispatcher.Register<NoArgs>(Respawn, ValidateRespawn, ApplyRespawn);
+        dispatcher.Register<RefineArgs>(StartRefine, ValidateStartRefine, ApplyStartRefine);
+        dispatcher.Register<NoArgs>(CancelRefine, (_, _) => null, (caller, _) =>
+        {
+            _refining.Remove(caller.Peer);
+            return null;
+        });
+        dispatcher.Register<RefineArgs>(FinishRefine, ValidateFinishRefine, ApplyFinishRefine);
         dispatcher.Register<NoArgs>(GetVitals, (c, _) => _vitals.ContainsKey(c.Peer) ? null : "You have no player.",
             (c, _) => Value(View(c.Peer)), readOnly: true);
         dispatcher.Register<GetSoilArgs>(GetSoil, (caller, a) => FindSoil(a.Creation, a.Part, out _, out _),
@@ -160,6 +181,7 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     {
         _vitals.Remove(peer);
         _lastWater.Remove(peer);
+        _refining.Remove(peer);
     }
 
     /// <summary>True while <paramref name="peer"/>'s player is dead.</summary>
@@ -557,11 +579,20 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         if (total < full)
             return full - total;
         world.DestroyObject(id);
-        var items = (placement.Definition.Drops ?? [])
-            .Where(d => d.Item is not null && catalog.FindDefinition(d.Item) is not null)
-            .Select(d => new ItemStack(Identifiers.Qualify(d.Item!), d.Count)).ToList();
-        AddDrop(placement.Position + new Vector3(0, 0.5f, 0), items);
+        AddDrop(placement.Position + new Vector3(0, 0.5f, 0), ObjectDrops(placement));
         return 0f;
+    }
+
+    // The items a world object leaves when it breaks or is refined.
+    private List<ItemStack> ObjectDrops(WorldObjectPlacement placement) => [.. (placement.Definition.Drops ?? [])
+        .Where(d => d.Item is not null && catalog.FindDefinition(d.Item) is not null)
+        .Select(d => new ItemStack(Identifiers.Qualify(d.Item!), d.Count))];
+
+    // Plays an item's pickup sound where it was taken, if it binds one.
+    private void PlayPickup(string item, Vector3 at)
+    {
+        if (catalog.FindDefinition(item) is { } definition && Sound.PartSounds.For(definition, PickupSound) is { } sound)
+            world.PlaySound(sound, item.Contains(':') ? item.Split(':')[0] : Identifiers.VanillaModId, at);
     }
 
     private static Vector3 ObjectCentre(WorldObjectPlacement placement) =>
@@ -742,6 +773,72 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         return null;
     }
 
+    // ---- Refining (UI spec §9, §10) ----
+
+    /// <summary>The node a player is refining and when they started, or null.</summary>
+    public (WorldObjectId Object, double Started)? RefiningOf(int peer) =>
+        _refining.TryGetValue(peer, out var r) ? (r.Object, r.Started) : null;
+
+    // A node that still stands, can be refined and is in reach of the caller.
+    private string? CheckRefinable(ActionCaller caller, string id, out WorldObjectPlacement? placement)
+    {
+        placement = null;
+        if (!WorldObjectId.TryParse(id, out var parsed) || world.FindObject(parsed) is not { } found)
+            return $"There is nothing to refine there ({id}).";
+        if (!found.Definition.Refine)
+            return $"The {found.Definition.Id} cannot be refined.";
+        placement = found;
+        return CheckReach(caller, ObjectCentre(found));
+    }
+
+    private string? ValidateStartRefine(ActionCaller caller, RefineArgs args) =>
+        world.FeetOf(caller.Peer) is null ? "You have no player to refine with." : CheckRefinable(caller, args.Object, out _);
+
+    private JsonElement? ApplyStartRefine(ActionCaller caller, RefineArgs args)
+    {
+        WorldObjectId.TryParse(args.Object, out var id);
+        _refining[caller.Peer] = (id, world.Now, world.FeetOf(caller.Peer)!.Value);
+        return null;
+    }
+
+    private string? ValidateFinishRefine(ActionCaller caller, RefineArgs args)
+    {
+        if (CheckRefinable(caller, args.Object, out var placement) is { } bad)
+            return bad;
+        if (caller.Source != ActionSource.Player)
+            return null;
+        if (!_refining.TryGetValue(caller.Peer, out var held) || held.Object != placement!.Id)
+            return "Hold Use on it to refine it.";
+        if (world.Now - held.Started < settings.RefineSeconds * IntervalJitter)
+            return "Keep holding Use to refine it.";
+        if (world.FeetOf(caller.Peer) is not { } feet || Vector3.Distance(feet, held.Feet) > settings.RefineCancelDistance)
+            return "You moved away, so the refine stopped.";
+        return null;
+    }
+
+    private JsonElement? ApplyFinishRefine(ActionCaller caller, RefineArgs args)
+    {
+        _refining.Remove(caller.Peer);
+        WorldObjectId.TryParse(args.Object, out var id);
+        var placement = world.FindObject(id)!;
+        world.DestroyObject(id);
+        var pockets = inventories.PlayerInventory(caller.Peer);
+        var left = new List<ItemStack>();
+        var taken = 0;
+        foreach (var stack in ObjectDrops(placement))
+        {
+            var added = pockets.Add(stack.Item, stack.Count);
+            taken += added;
+            if (added < stack.Count)
+                left.Add(stack with { Count = stack.Count - added });
+        }
+        // What does not fit stays on the ground where the node stood.
+        AddDrop(placement.Position + new Vector3(0, 0.5f, 0), left);
+        if (taken > 0)
+            PlayPickup(ObjectDrops(placement).First().Item, ObjectCentre(placement));
+        return Value(new RefineResult(taken, left.Sum(s => s.Count)));
+    }
+
     // ---- Items on the ground ----
 
     private string? ValidateDrop(ActionCaller caller, DropItemsArgs args)
@@ -751,6 +848,14 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         var stack = inventories.PlayerInventory(caller.Peer)[args.Slot]!;
         if (args.Count is { } count && (count < 1 || count > stack.Count))
             return $"count must be 1 to {stack.Count} (got {count}).";
+        if (args.At is { } at)
+        {
+            var point = at.ToNumerics();
+            if (!float.IsFinite(point.X) || !float.IsFinite(point.Y) || !float.IsFinite(point.Z))
+                return "at must be finite.";
+            if (CheckReach(caller, point) is { } far)
+                return far;
+        }
         return world.FeetOf(caller.Peer) is null ? "You have no player to drop it from." : null;
     }
 
@@ -760,6 +865,8 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         var stack = pockets[args.Slot]!;
         var count = args.Count ?? stack.Count;
         pockets.SetSlot(args.Slot, count < stack.Count ? stack with { Count = stack.Count - count } : null);
+        if (args.At is { } at)
+            return Value(new DropItemsResult(AddDrop(at.ToNumerics(), [stack with { Count = count }], placed: true)?.Id ?? 0));
         var look = world.LookOf(caller.Peer) ?? Vector3.UnitZ;
         var ahead = new Vector3(look.X, 0, look.Z) is { } flat && flat.LengthSquared() > 1e-4f ? Vector3.Normalize(flat) : Vector3.Zero;
         var drop = AddDrop(world.FeetOf(caller.Peer)!.Value + ahead + new Vector3(0, 0.5f, 0), [stack with { Count = count }]);
@@ -804,21 +911,24 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
             _drops[drop.Id] = drop with { Items = left };
             DropChanged?.Invoke(_drops[drop.Id]);
         }
+        if (taken > 0)
+            PlayPickup(drop.Items[0].Item, drop.Position.ToNumerics());
         return Value(new PickUpResult(taken, left.Sum(s => s.Count)));
     }
 
     /// <summary>
-    /// Puts a pile of items on the ground below <paramref name="at"/>. Returns it, or null when there was
-    /// nothing to drop. Past <see cref="SurvivalSettings.MaxDrops"/> piles the oldest goes.
+    /// Puts a pile of items on the ground below <paramref name="at"/>, or exactly at it when <paramref name="placed"/>
+    /// (Force Build: it then never expires). Returns it, or null when there was nothing to drop. Past
+    /// <see cref="SurvivalSettings.MaxDrops"/> piles the oldest goes.
     /// </summary>
-    public ItemDrop? AddDrop(Vector3 at, IReadOnlyList<ItemStack> items)
+    public ItemDrop? AddDrop(Vector3 at, IReadOnlyList<ItemStack> items, bool placed = false)
     {
         var kept = items.Where(s => s.Count > 0).ToList();
         if (kept.Count == 0)
             return null;
         while (_drops.Count >= settings.MaxDrops)
             RemoveDrop(_drops.Keys.First());
-        var drop = new ItemDrop(_nextDrop++, world.GroundBelow(at).ToVec3(), kept, world.Now + settings.DropLifetime);
+        var drop = new ItemDrop(_nextDrop++, (placed ? at : world.GroundBelow(at)).ToVec3(), kept, world.Now + settings.DropLifetime, placed);
         _drops[drop.Id] = drop;
         DropChanged?.Invoke(drop);
         return drop;
@@ -886,7 +996,7 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     public void Tick(float seconds)
     {
         StepProjectiles(seconds);
-        foreach (var expired in _drops.Values.Where(d => d.Expires <= world.Now).Select(d => d.Id).ToList())
+        foreach (var expired in _drops.Values.Where(d => !d.Placed && d.Expires <= world.Now).Select(d => d.Id).ToList())
             RemoveDrop(expired);
     }
 

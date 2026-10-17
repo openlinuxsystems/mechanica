@@ -38,7 +38,17 @@ public partial class LocalPlayerInput : Node
 
     public override void _ExitTree() => GameSettings.Changed -= OnSettingsChanged;
 
-    private void OnSettingsChanged() => Target.Camera.Fov = GameSettings.Current.FieldOfView;
+    private void OnSettingsChanged() => Target.Camera.Fov = GameSettings.Current.FieldOfView * Target.AimZoom;
+
+    public override void _Process(double delta)
+    {
+        // Aiming a weapon zooms in a little (UI spec §10), quickly but not in one jump.
+        var want = GameSettings.Current.FieldOfView * Target.AimZoom;
+        Target.Camera.Fov = Mathf.MoveToward(Target.Camera.Fov, want, (float)delta * AimZoomSpeed);
+    }
+
+    /// <summary>Degrees of field of view per second the camera moves while aiming starts or stops.</summary>
+    public const float AimZoomSpeed = 180f;
 
     public override void _UnhandledInput(InputEvent @event)
     {

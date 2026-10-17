@@ -20,11 +20,24 @@ public sealed record CollectWaterArgs(Vec3 Point);
 /// <summary>Arguments of <c>DropItems</c>: put items from a slot on the ground in front of the caller.</summary>
 /// <param name="Slot">The slot.</param>
 /// <param name="Count">How many; null drops the whole stack.</param>
-public sealed record DropItemsArgs(int Slot, int? Count = null);
+/// <param name="At">
+/// Force Build (UI spec §1, §9): the world point the caller aims at, within reach, where the items are placed and stay
+/// (they never expire). Null drops them in front of the caller.
+/// </param>
+public sealed record DropItemsArgs(int Slot, int? Count = null, Vec3? At = null);
 
 /// <summary>Arguments of <c>PickUp</c>: take a pile of items off the ground.</summary>
 /// <param name="Drop">The pile's id.</param>
 public sealed record PickUpArgs(int Drop);
+
+/// <summary>Arguments of <c>StartRefine</c> and <c>FinishRefine</c>: the resource node held Use on.</summary>
+/// <param name="Object">Id of the world object (<c>"3.10.-4"</c>).</param>
+public sealed record RefineArgs(string Object);
+
+/// <summary>Value of a successful <c>FinishRefine</c>.</summary>
+/// <param name="Taken">Items that went into the inventory.</param>
+/// <param name="Left">Items that did not fit and were left on the ground where the node stood.</param>
+public sealed record RefineResult(int Taken, int Left);
 
 /// <summary>Arguments of <c>GetSoil</c>.</summary>
 /// <param name="Creation">Creation holding the soil part.</param>
@@ -63,8 +76,9 @@ public sealed record SoilView(int Creation, int Part, string? Seed = null, strin
 /// <param name="Id">The pile's id.</param>
 /// <param name="Position">World position, in metres, on the ground.</param>
 /// <param name="Items">What it holds (qualified ids).</param>
-/// <param name="Expires">Host clock time at which it is gone, in seconds.</param>
-public sealed record ItemDrop(int Id, Vec3 Position, IReadOnlyList<ItemStack> Items, double Expires);
+/// <param name="Expires">Host clock time at which it is gone, in seconds (ignored when <paramref name="Placed"/>).</param>
+/// <param name="Placed">True for items put down with Force Build: they stay where they were placed and never expire.</param>
+public sealed record ItemDrop(int Id, Vec3 Position, IReadOnlyList<ItemStack> Items, double Expires, bool Placed = false);
 
 /// <summary>One thing a shot, a splash or a bot's attack hit (<see cref="SurvivalActions.Hit"/>, <see cref="SurvivalActions.Splash"/>).</summary>
 /// <param name="Kind"><c>player</c>, <c>part</c>, <c>object</c>, <c>bot</c>, <c>crop</c> (a bot destroyed it) or <c>ground</c>.</param>
@@ -159,6 +173,14 @@ public interface ISurvivalWorld
 
     /// <summary>Destroys a world object for every peer.</summary>
     void DestroyObject(WorldObjectId id);
+
+    /// <summary>
+    /// Plays a sound event at a world point for everyone in earshot: a bare id is <paramref name="ownerModId"/>'s
+    /// event, else vanilla's. Worlds without sound ignore it.
+    /// </summary>
+    void PlaySound(string sound, string ownerModId, Vector3 position)
+    {
+    }
 
     /// <summary>Takes health off a part; at 0 it breaks off (<see cref="ToolActions.DamagePart"/>).</summary>
     SledgeResult DamagePart(Creation creation, int partId, float damage);

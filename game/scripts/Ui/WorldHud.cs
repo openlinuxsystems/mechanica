@@ -14,7 +14,8 @@ namespace Mechanica.Game.Ui;
 /// Aiming at a part for 0.25 s fades in a tooltip beside the crosshair with its name, short description and what
 /// Use does; parts with logic, a seat, storage or settings add a line with their signal, connection count and
 /// durability, read from the host. The tooltip goes the moment the aim leaves the part and stays on screen near
-/// edges. Both hide while a menu has the mouse and with Hide GUI.
+/// edges. Both hide while a menu has the mouse and with Hide GUI. While a weapon is aimed the cross tightens (§10), and
+/// the ring also fills for timed holds that are not a tool's (refining a resource node, §9).
 /// </summary>
 public partial class WorldHud : CanvasLayer
 {
@@ -46,6 +47,9 @@ public partial class WorldHud : CanvasLayer
 
     /// <summary>What Use would do now (for example "open the Chest"), or null. Set before adding to the tree.</summary>
     public Func<string?> Interaction { get; init; } = () => null;
+
+    /// <summary>How far a timed hold that is not the tool's (a refine) has got, 0 to 1, or null. Set before adding to the tree.</summary>
+    public Func<float?> HeldProgress { get; init; } = () => null;
 
     /// <summary>Where the tooltip's tick plays (§10); null plays none.</summary>
     public Sound.SoundSync? Sounds { get; init; }
@@ -104,7 +108,9 @@ public partial class WorldHud : CanvasLayer
         var player = Players.LocalPlayer;
         var playing = player is { Dead: false } && !Covered();
         _crosshair.Visible = playing;
-        var progress = playing ? Tool()?.Progress : null;
+        var progress = playing ? HeldProgress() ?? Tool()?.Progress : null;
+        // Aiming tightens the cross over a tenth of a second.
+        _crosshair.Tightness = Mathf.MoveToward(_crosshair.Tightness, playing && Tool()?.Aiming == true ? 1f : 0f, (float)delta * 10f);
         _ring.Visible = progress is not null;
         _ring.Value = progress ?? 0;
         if (!playing)
@@ -231,6 +237,20 @@ public partial class WorldHud : CanvasLayer
 public partial class CrosshairView : Control
 {
     private Color _colour = UiTokens.Text;
+    private float _tightness;
+
+    /// <summary>0 for the normal cross, 1 for the tight one shown while a weapon is aimed (UI spec §10).</summary>
+    public float Tightness
+    {
+        get => _tightness;
+        set
+        {
+            if (Mathf.IsEqualApprox(value, _tightness))
+                return;
+            _tightness = value;
+            QueueRedraw();
+        }
+    }
 
     /// <summary>The cross's colour (with its opacity).</summary>
     public Color Colour
@@ -255,7 +275,8 @@ public partial class CrosshairView : Control
     public override void _Draw()
     {
         var c = Size / 2;
-        const float arm = 8f, thick = 2f;
+        const float thick = 2f;
+        var arm = Mathf.Lerp(8f, 4.5f, _tightness);
         var outline = UiTokens.DeepNavy with { A = 0.6f * _colour.A };
         DrawRect(new Rect2(c.X - arm - 1, c.Y - thick / 2 - 1, arm * 2 + 2, thick + 2), outline);
         DrawRect(new Rect2(c.X - thick / 2 - 1, c.Y - arm - 1, thick + 2, arm * 2 + 2), outline);

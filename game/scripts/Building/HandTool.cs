@@ -98,6 +98,9 @@ public abstract partial class HandTool : Node
     /// </summary>
     public virtual Core.Ui.CrosshairState Crosshair => PartHit(CastRay()) is null ? Core.Ui.CrosshairState.Default : Core.Ui.CrosshairState.Valid;
 
+    /// <summary>True while right click aims the item in hand (UI spec §10): the crosshair tightens.</summary>
+    public virtual bool Aiming => false;
+
     /// <summary>How far a timed action being held has got, 0 to 1 (the ring round the crosshair), or null when none is.</summary>
     public virtual float? Progress => null;
 

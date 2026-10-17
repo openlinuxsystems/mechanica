@@ -23,6 +23,7 @@ public partial class ToolBelt : Node
     private readonly List<HandTool> _tools = [];
     private readonly HashSet<string> _seenItems = [];
     private Label? _hud;
+    private Label? _ammo;
     private HotbarView? _bar;
     private int _selected;
 
@@ -134,6 +135,9 @@ public partial class ToolBelt : Node
         layer.AddChild(_hud);
         _bar = new HotbarView { Name = "Hotbar", Belt = this };
         layer.AddChild(_bar);
+        // The weapon's ammo counter, bottom right inside the safe area (UI spec §10, §11).
+        _ammo = Loc.Verbatim(new Label { Name = "AmmoCounter", HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Bottom, ThemeTypeVariation = "TitleLabel" });
+        layer.AddChild(_ammo);
         AddChild(layer);
         LayoutHud();
         GetViewport().SizeChanged += LayoutHud;
@@ -149,9 +153,31 @@ public partial class ToolBelt : Node
         _hud.Visible = _bar.Visible && !HudRoot.IsCovered;
         if (_hud.Visible)
             _hud.Text = Current.HudText();
+        var ammo = AmmoText();
+        _ammo!.Visible = ammo is not null && !HudRoot.IsCovered;
+        _ammo.Text = ammo ?? "";
         HudTop = _hud.Visible && _hud.Text.Length > 0 ? _hud.GetGlobalRect().Position.Y
             : _bar.Visible ? _bar.GetGlobalRect().Position.Y
             : null;
+    }
+
+    /// <summary>
+    /// The HUD's ammo counter for the weapon in hand (UI spec §10): the rounds loaded out of the magazine and the ammo
+    /// carried, "Reloading…" while it reloads, or a reload hint when it is empty. Null with no weapon in hand.
+    /// </summary>
+    public string? AmmoText()
+    {
+        if (Current != Item || Item.InHand is not { } hand || Item.CounterFor(hand.Item) is not { } counter
+            || Survival.CounterOf(hand.Item) is not { } view)
+            return null;
+        var ammoName = view.Ammo is { } ammo ? Build.Catalog.FindDefinition(ammo)?.Name ?? ammo : null;
+        var carried = ammoName is null ? null : $"{ammoName} {counter.Carried}";
+        var lines = new List<string> { counter.Loaded is null ? carried ?? counter.Text : carried is null ? counter.Text : $"{counter.Text}   {carried}" };
+        if (Survival.BusyFor(hand.Item) > 0)
+            lines.Add(Loc.T("Reloading…"));
+        else if (counter.Loaded == 0 && counter.Carried > 0)
+            lines.Add(Loc.T("[{0}] reload", GameInput.Label(InputActions.Reload)));
+        return string.Join("\n", lines);
     }
 
     /// <summary>
@@ -179,6 +205,11 @@ public partial class ToolBelt : Node
         _hud!.CustomMinimumSize = new Vector2(size.X * 0.6f, 0);
         _hud.Size = _hud.CustomMinimumSize;
         _hud.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.CenterBottom, Control.LayoutPresetMode.KeepSize, (int)(margin.Y + _bar.SlotSize + 8));
+        // Anchored to the bottom-right corner and growing up and left as the text does.
+        _ammo!.GrowHorizontal = _ammo.GrowVertical = Control.GrowDirection.Begin;
+        _ammo.AnchorLeft = _ammo.AnchorRight = _ammo.AnchorTop = _ammo.AnchorBottom = 1f;
+        _ammo.OffsetLeft = _ammo.OffsetRight = -margin.X;
+        _ammo.OffsetTop = _ammo.OffsetBottom = -margin.Y;
     }
 
     /// <summary>The tool bar text at the bottom of the screen, or null without a HUD.</summary>

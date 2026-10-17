@@ -252,6 +252,18 @@ public partial class TerrainChunk : Node3D
         }
     }
 
+    /// <summary>
+    /// A copy of <paramref name="o"/>'s pieces in world space drawn with <paramref name="material"/> (the blue hover
+    /// outline round a resource node, UI spec §10).
+    /// </summary>
+    public static Node3D Shell(WorldObjectPlacement o, Material material)
+    {
+        var root = new Node3D { Name = "Shell", Transform = new Transform3D(new Basis(Vector3.Up, o.Yaw).Scaled(new Vector3(o.Scale, o.Scale, o.Scale)), o.Position.ToGodot()) };
+        foreach (var piece in o.Definition.Pieces ?? [])
+            root.AddChild(new MeshInstance3D { Mesh = MeshOf(piece), MaterialOverride = material, Transform = Local(piece), CastShadow = GeometryInstance3D.ShadowCastingSetting.Off });
+        return root;
+    }
+
     // A piece's own placement relative to its owner: turned about +Y, then moved to its centre.
     private static Transform3D Local(ShapeDefinition shape) => new(new Basis(Vector3.Up, Mathf.DegToRad(shape.Yaw)), shape.At.ToGodot());
 

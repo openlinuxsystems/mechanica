@@ -101,6 +101,12 @@ public sealed record SurvivalSettings
     /// <summary>Shortest time between one player's fills at water, in seconds.</summary>
     public float WaterSeconds { get; init; } = 1f;
 
+    /// <summary>Seconds Use (E) is held on a resource node (a tree, a rock node) to refine it (UI spec §9).</summary>
+    public float RefineSeconds { get; init; } = 1.2f;
+
+    /// <summary>How far, in metres, a player may move while refining before it is cancelled (UI spec §10).</summary>
+    public float RefineCancelDistance { get; init; } = 1.5f;
+
     /// <summary>Items each player starts a Survival world with.</summary>
     public IReadOnlyList<ItemCount> StartingItems { get; init; } = [];
 
@@ -153,6 +159,8 @@ public sealed record SurvivalSettings
         if (!Data.Identifiers.IsValid(WaterItem.Split(':')[^1]))
             throw new FormatException($"water_item '{WaterItem}' is not an item id.");
         NonNegative(WaterSeconds, "water_seconds");
+        Positive(RefineSeconds, "refine_seconds");
+        Positive(RefineCancelDistance, "refine_cancel_distance");
         foreach (var start in StartingItems)
         {
             if (start.Count < 1)

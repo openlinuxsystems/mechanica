@@ -13,11 +13,16 @@
     "fire": "blaster_fire",
     "reload": "blaster_reload"
   },
+  "aim": {
+    "zoom": 0.8
+  },
   "properties": {
     "damage": 20,
     "interval": 0.25,
     "range": 60,
     "ammo": "potato",
-    "impulse": 20
+    "impulse": 20,
+    "magazine": 15,
+    "reload": 1.5
   }
 }
