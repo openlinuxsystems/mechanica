@@ -144,6 +144,31 @@ Run `node tools/ai/bridge/openai-bridge.mjs --help` for the full list:
 | `--transcript` | none | Every turn as JSON lines |
 | `--history` | 60 | Messages kept besides the instructions |
 
+## A local model on Ollama
+
+Ollama serves the same API with native tool calls, so no `--tool-mode` is needed. Pick a model trained
+for tool calling that fits your GPU memory, for example `qwen3:32b` or `qwen3-coder:30b` with 24 GB or
+more, `gpt-oss:20b` or `qwen3:14b` with about 16 GB, and `qwen3:8b` with 8 to 12 GB.
+
+The tool list is long, so raise Ollama's context length to at least 32768 tokens. If Ollama runs on
+another machine, make it listen on the network and open its port (Fedora shown):
+
+```sh
+sudo systemctl edit ollama   # add under [Service]:
+# Environment="OLLAMA_HOST=0.0.0.0"
+# Environment="OLLAMA_CONTEXT_LENGTH=32768"
+sudo systemctl restart ollama
+sudo firewall-cmd --permanent --add-port=11434/tcp && sudo firewall-cmd --reload
+ollama pull qwen3:32b
+```
+
+Then, on the machine with the game:
+
+```sh
+node tools/ai/bridge/openai-bridge.mjs --base-url http://<ollama-host>:11434/v1 --model qwen3:32b \
+  --token s3cret --name Qwen --notes ai-notes.md
+```
+
 ## Grok through xAI's API
 
 xAI's hosted API is OpenAI-compatible and supports native tool calls, so no local GPUs are needed:
