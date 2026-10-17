@@ -10,6 +10,8 @@ namespace Mechanica.Core.Tests.Building;
 
 public class BuildActionsTests
 {
+    private const string Plank = "test:plank";
+
     private static readonly ActionCaller Player = new(2, ActionSource.Player);
 
     private readonly FakeWorld _world = new();
@@ -17,7 +19,17 @@ public class BuildActionsTests
 
     public BuildActionsTests()
     {
-        new BuildActions(Catalog(), new BuildSettings { Reach = 5f, MaxPartsPerCreation = 3 }, _world).Register(_dispatcher);
+        var catalog = Catalog().Add(Plank, new PartDefinition
+        {
+            Id = "plank",
+            Name = "Plank",
+            Category = PartCategory.Block,
+            Mass = 2,
+            Size = GridSize.One,
+            SoundMaterial = "wood",
+            Sounds = new() { ["remove"] = "plank_pop" },
+        });
+        new BuildActions(catalog, new BuildSettings { Reach = 5f, MaxPartsPerCreation = 3 }, _world).Register(_dispatcher);
         _world.Eyes[2] = new Vector3(0, 1.6f, 2);
     }
 
@@ -184,6 +196,35 @@ public class BuildActionsTests
         Assert.Single(_world.Creations[id].Parts);
     }
 
+    [Fact]
+    public void PlacingAndRemovingPlayThePartsSounds()
+    {
+        var id = Start(Plank);
+        Assert.True(Place(new { part = Block, creation = id, cell = new[] { 1, 0, 0 } }).Ok);
+        Assert.True(Place(new { part = Bearing, creation = id, cell = new[] { 0, 1, 0 } }).Ok);
+        Assert.True(Remove(id, 3).Ok);
+        Assert.True(Remove(id, 2).Ok);
+        Assert.True(Remove(id, 1).Ok);
+
+        Assert.Equal(
+        [
+            "place_wood@test (0, 0.125, 0)", // the plank's material, looked up in its own mod first
+            "part_attach@vanilla (0.25, 0.125, 0)", // no sound material
+            "part_attach@vanilla (0, 0.375, 0)",
+            "part_detach@vanilla (0, 0.375, 0)", // an interactive part
+            "remove_block@vanilla (0.25, 0.125, 0)", // a block
+            "plank_pop@test (0, 0.125, 0)", // bound by the part, so its own mod's id
+        ], _world.Sounds);
+    }
+
+    [Fact]
+    public void RefusedActionsPlayNothing()
+    {
+        _world.Blocked = "A player is in the way.";
+        Assert.False(Place(new { part = Plank, cell = new[] { 0, 0, 0 }, position = new[] { 0f, 0.125f, 0 } }).Ok);
+        Assert.Empty(_world.Sounds);
+    }
+
     private int Start(string part)
     {
         var result = Place(new { part, cell = new[] { 0, 0, 0 }, position = new[] { 0f, 0.125f, 0 } });
@@ -210,6 +251,8 @@ public class BuildActionsTests
     private sealed class FakeWorld : IBuildWorld
     {
         private int _nextId = 1;
+
+        public List<string> Sounds { get; } = [];
 
         public Dictionary<int, Creation> Creations { get; } = [];
         public Dictionary<int, Vector3> Eyes { get; } = [];
@@ -242,5 +285,8 @@ public class BuildActionsTests
             Creations.Remove(creationId);
             Log.Add($"removed {creationId}");
         }
+
+        public void PlaySound(string sound, string ownerModId, Vector3 position) =>
+            Sounds.Add(FormattableString.Invariant($"{sound}@{ownerModId} ({position.X:0.###}, {position.Y:0.###}, {position.Z:0.###})"));
     }
 }

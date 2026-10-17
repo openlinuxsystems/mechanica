@@ -1,0 +1,153 @@
+{
+  "events": [
+    {
+      "id": "pickup_metal",
+      "clips": [
+        "sounds/items/pickup_metal.ogg"
+      ],
+      "pitch_variation": 0.06,
+      "max_distance": 20
+    },
+    {
+      "id": "drop_metal",
+      "clips": [
+        "sounds/items/drop_metal.ogg"
+      ],
+      "pitch_variation": 0.06,
+      "max_distance": 20
+    },
+    {
+      "id": "pickup_wood",
+      "clips": [
+        "sounds/items/pickup_wood.ogg"
+      ],
+      "pitch_variation": 0.06,
+      "max_distance": 20
+    },
+    {
+      "id": "drop_wood",
+      "clips": [
+        "sounds/items/drop_wood.ogg"
+      ],
+      "pitch_variation": 0.06,
+      "max_distance": 20
+    },
+    {
+      "id": "pickup_component",
+      "clips": [
+        "sounds/items/pickup_component.ogg"
+      ],
+      "pitch_variation": 0.06,
+      "max_distance": 20
+    },
+    {
+      "id": "drop_component",
+      "clips": [
+        "sounds/items/drop_component.ogg"
+      ],
+      "pitch_variation": 0.06,
+      "max_distance": 20
+    },
+    {
+      "id": "pickup_fuel",
+      "clips": [
+        "sounds/items/pickup_fuel.ogg"
+      ],
+      "max_distance": 20
+    },
+    {
+      "id": "pickup_battery",
+      "clips": [
+        "sounds/items/pickup_battery.ogg"
+      ],
+      "max_distance": 20
+    },
+    {
+      "id": "pickup_produce",
+      "clips": [
+        "sounds/items/pickup_produce.ogg"
+      ],
+      "pitch_variation": 0.08,
+      "max_distance": 20
+    },
+    {
+      "id": "seed_place",
+      "clips": [
+        "sounds/items/seed_place.ogg"
+      ],
+      "pitch_variation": 0.1,
+      "max_distance": 20
+    },
+    {
+      "id": "seed_pickup",
+      "clips": [
+        "sounds/items/seed_pickup.ogg"
+      ],
+      "pitch_variation": 0.1,
+      "max_distance": 20
+    },
+    {
+      "id": "eat_crunch",
+      "clips": [
+        "sounds/items/eat_crunch.ogg",
+        "sounds/items/eat_crunch_2.ogg"
+      ],
+      "pitch_variation": 0.1,
+      "max_distance": 20
+    },
+    {
+      "id": "eat_soft",
+      "clips": [
+        "sounds/items/eat_soft.ogg"
+      ],
+      "pitch_variation": 0.1,
+      "max_distance": 20
+    },
+    {
+      "id": "blaster_fire",
+      "clips": [
+        "sounds/items/blaster_fire.ogg",
+        "sounds/items/blaster_fire_2.ogg"
+      ],
+      "pitch_variation": 0.06,
+      "max_distance": 50
+    },
+    {
+      "id": "blaster_reload",
+      "clips": [
+        "sounds/items/blaster_reload.ogg"
+      ],
+      "max_distance": 20
+    },
+    {
+      "id": "scattergun_fire",
+      "clips": [
+        "sounds/items/scattergun_fire.ogg"
+      ],
+      "pitch_variation": 0.05,
+      "max_distance": 60
+    },
+    {
+      "id": "scattergun_pump",
+      "clips": [
+        "sounds/items/scattergun_pump.ogg"
+      ],
+      "max_distance": 20
+    },
+    {
+      "id": "launcher_fire",
+      "clips": [
+        "sounds/items/launcher_fire.ogg"
+      ],
+      "max_distance": 80
+    },
+    {
+      "id": "popper_explode",
+      "clips": [
+        "sounds/items/popper_explode.ogg"
+      ],
+      "max_distance": 150,
+      "rolloff": "linear"
+    }
+  ]
+}

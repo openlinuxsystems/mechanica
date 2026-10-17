@@ -20,3 +20,4 @@ written by the chunk that builds the feature it covers.
 Other references:
 
 - [World Generation and POI Prefabs](world-generation.md)
+- [Sound Events](sound-events.md)

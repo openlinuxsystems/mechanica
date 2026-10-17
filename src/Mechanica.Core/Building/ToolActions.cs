@@ -3,6 +3,7 @@ using System.Text.Json;
 using Mechanica.Core.Actions;
 using Mechanica.Core.Creations;
 using Mechanica.Core.Data;
+using Mechanica.Core.Sound;
 using Mechanica.Core.World;
 
 namespace Mechanica.Core.Building;
@@ -122,7 +123,10 @@ public interface IToolWorld : IBuildWorld
 /// <item><c>Paint</c>: colours parts, or takes the paint off.</item>
 /// <item><c>Sledge</c>: a Sledgehammer hit, which pushes the Body and damages the part until it breaks off.</item>
 /// </list>
-/// Player callers must be within <see cref="BuildSettings.Reach"/> of what they act on.
+/// Player callers must be within <see cref="BuildSettings.Reach"/> of what they act on. Each action plays its
+/// tool's sound where it happened (chunk 16): <c>lift_place</c>, <c>lift_raise</c>/<c>lift_lower</c> at the
+/// Lift; <c>weld_complete</c> where the weld joins; <c>paint_spray</c>/<c>paint_erase</c> on the first part;
+/// <c>smash_hit</c> plus the part's impact sound, or <c>smash_break</c> plus its break sound.
 /// </summary>
 public sealed class ToolActions(BuildSettings settings, IToolWorld world)
 {
@@ -240,6 +244,7 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world)
         var lift = PlannedLift(caller.Peer, args, out var carried);
         if (Held(LiftOf(caller.Peer)) is { } old && old != carried)
             Release(old);
+        world.PlaySound("lift_place", Identifiers.VanillaModId, lift.Position.ToNumerics());
         return Commit(lift, carried, 0);
     }
 
@@ -256,6 +261,8 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world)
     private JsonElement? ApplyLevel(ActionCaller caller, SetLiftLevelArgs args)
     {
         var lift = LiftOf(caller.Peer)!;
+        if (args.Level != lift.Level)
+            world.PlaySound(args.Level > lift.Level ? "lift_raise" : "lift_lower", Identifiers.VanillaModId, PlatformTop(lift));
         return Commit(lift with { Level = args.Level }, Held(lift), 0);
     }
 
@@ -271,6 +278,7 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world)
     private JsonElement? ApplyTurn(ActionCaller caller, TurnLiftArgs args)
     {
         var lift = LiftOf(caller.Peer)!;
+        world.PlaySound("lift_place", Identifiers.VanillaModId, PlatformTop(lift));
         return Commit(lift, Held(lift), args.Turns);
     }
 
@@ -281,6 +289,7 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world)
     {
         if (Held(LiftOf(caller.Peer)) is { } carried)
             Release(carried);
+        world.PlaySound("lift_lower", Identifiers.VanillaModId, LiftOf(caller.Peer)!.Position.ToNumerics());
         _lifts.Remove(caller.Peer);
         world.LiftChanged(caller.Peer, null);
         return null;
@@ -380,6 +389,7 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world)
             target.SetPartPose(id, pose);
         world.Removed(source.Id);
         world.Changed(target);
+        world.PlaySound("weld_complete", Identifiers.VanillaModId, PartCentre(target, attachedTo[0]));
         return Value(new WeldResult(target.Id, target.Bodies.Count));
     }
 
@@ -398,6 +408,7 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world)
         if (!creation.TryWeldParts(args.A, args.B, out var error))
             throw new InvalidOperationException(error);
         world.Changed(creation);
+        world.PlaySound("weld_complete", Identifiers.VanillaModId, PartCentre(creation, args.B));
         return Value(new WeldResult(creation.Id, creation.Bodies.Count));
     }
 
@@ -432,6 +443,7 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world)
         var painted = args.Parts.Count(id => creation.SetPartColor(id, args.Color));
         if (painted > 0)
             world.Changed(creation);
+        world.PlaySound(args.Color is null ? "paint_erase" : "paint_spray", Identifiers.VanillaModId, PartCentre(creation, args.Parts[0]));
         return Value(new PaintResult(painted));
     }
 
@@ -460,12 +472,16 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world)
             var damage = creation.PartDamage(args.Part) + settings.Sledge.Damage;
             if (damage >= full)
             {
+                world.PlaySound("smash_break", Identifiers.VanillaModId, centre);
+                BuildActions.PlayPartSound(world, creation, args.Part, PartSounds.Break, null);
                 var removal = BuildActions.Remove(world, creation, args.Part);
                 return Value(new SledgeResult(true, 0f, removal.Destroyed, removal.SplitOff));
             }
             creation.SetPartDamage(args.Part, damage);
             health = full - damage;
         }
+        world.PlaySound("smash_hit", Identifiers.VanillaModId, centre);
+        BuildActions.PlayPartSound(world, creation, args.Part, PartSounds.Impact, null);
         if (caller.Source == ActionSource.Player && world.EyeOf(caller.Peer) is { } eye && centre != eye)
             world.Push(creation, creation.BodyIndexOf(args.Part), centre, Vector3.Normalize(centre - eye) * settings.Sledge.Impulse);
         return Value(new SledgeResult(false, health, false, []));
@@ -473,12 +489,7 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world)
 
     // ---- Shared ----
 
-    private static Vector3 PartCentre(Creation creation, int partId)
-    {
-        var part = creation.FindPart(partId)!;
-        var pose = creation.BodyPose(creation.BodyIndexOf(partId));
-        return pose.Apply(PartGeometry.CentreMetres(creation.DefinitionOf(partId), part.Cell, part.Rotation).ToNumerics());
-    }
+    private static Vector3 PartCentre(Creation creation, int partId) => BuildActions.PartCentre(creation, partId);
 
     private string? CheckReach(ActionCaller caller, Vector3 point) => CheckReach(caller, new WorldBounds(point, point));
 

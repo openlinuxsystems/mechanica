@@ -13,7 +13,7 @@ namespace Mechanica.Game.Editor;
 /// <summary>
 /// The in-game Part Editor (chunk 5, D9). Make a new part from a template or open one from a mod;
 /// build its model from imported glTF meshes and primitive/CSG pieces; set its footprint, physical and
-/// visual properties, colour variants, collision shape and sockets; watch the 3D preview with collision,
+/// visual properties, colour variants, collision shape, sockets and sounds (<see cref="SoundBinderPanel"/>); watch the 3D preview with collision,
 /// socket and connection overlays; and export it into its mod folder in one click. "Test in Sandbox"
 /// exports and spawns it in the Test Sandbox.
 /// <para>
@@ -41,6 +41,7 @@ public partial class PartEditorScreen : Control
     private PropertyGrid _socketGrid = null!;
     private PropertyGrid _lookGrid = null!;
     private PropertyGrid _behaviourGrid = null!;
+    private SoundBinderPanel _sounds = null!;
     private ItemList _pieces = null!;
     private ItemList _sockets = null!;
     private Button _undo = null!;
@@ -73,6 +74,9 @@ public partial class PartEditorScreen : Control
 
     /// <summary>The problems list as plain text, for tests.</summary>
     public string ProblemsText => _problems.GetParsedText();
+
+    /// <summary>The Sounds tab: the Sound Event Binder.</summary>
+    public SoundBinderPanel Sounds => _sounds;
 
     /// <summary>The selected model piece, or -1.</summary>
     public int SelectedPiece => _selectedPiece;
@@ -335,6 +339,10 @@ public partial class PartEditorScreen : Control
 
         _lookGrid = AddTab("Look");
         _behaviourGrid = AddTab("Behaviour");
+
+        _sounds = new SoundBinderPanel { Name = "Binder", ModsRoot = () => ModsRoot, Import = Import, ShowError = ShowError };
+        AddTabBox("Sounds").AddChild(_sounds);
+        _sounds.RegistryChanged += () => Refresh(rebuildInspector: false);
     }
 
     private void BuildDialogs()
@@ -398,6 +406,7 @@ public partial class PartEditorScreen : Control
         _assets = new PartAssets(modId => Path.Combine(Path.GetDirectoryName(document.ModDirectory)!, modId));
         _openDialog.CurrentDir = document.ModDirectory;
         _preview.Frame(document.Definition.Size ?? GridSize.One);
+        _sounds.SetPart(document);
         Refresh(rebuildInspector: true);
     }
 
@@ -444,10 +453,13 @@ public partial class PartEditorScreen : Control
         }
 
         _preview.Show(doc.Definition, doc.Source, _assets, doc.ModId, _selectedSocket);
-        ShowProblems(doc.Validate(), null);
+        ShowProblems([.. doc.Validate(), .. _sounds.Registry.CheckPart(doc.Definition, doc.ModId, doc.RelativeFile ?? PartExporter.TargetFile(doc))], null);
         RefreshLists();
         if (rebuildInspector)
+        {
             RebuildInspector();
+            _sounds.RebuildBindings();
+        }
     }
 
     private void RefreshLists()
@@ -602,18 +614,10 @@ public partial class PartEditorScreen : Control
 
         // Behaviour: script, sounds and free-form properties.
         AddAssetField(_behaviourGrid, "Script", d.Script, AssetKind.Script, v => Set("Set script", x => x with { Script = v }));
-        _behaviourGrid.AddJson("Sounds", JsonSerializer.Serialize(d.Sounds ?? [], DataJson.WriteOptions), text =>
+        _behaviourGrid.Row("Sounds", new Label
         {
-            try
-            {
-                var sounds = DataJson.Read<Dictionary<string, string>>(text);
-                Set("Set sounds", x => x with { Sounds = sounds is { Count: > 0 } ? sounds : null });
-                return null;
-            }
-            catch (JsonException e)
-            {
-                return e.Message;
-            }
+            Text = d.Sounds is { Count: > 0 } bound ? $"{string.Join(", ", bound.Keys.Order(StringComparer.Ordinal))}: bound in the Sounds tab" : "None bound: see the Sounds tab",
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
         });
         _behaviourGrid.AddJson("Properties", d.Properties?.ToJsonString(DataJson.WriteOptions) ?? "{}", text =>
         {

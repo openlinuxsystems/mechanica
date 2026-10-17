@@ -335,6 +335,49 @@ public class ToolActionsTests
         Assert.Empty(_world.Pushes);
     }
 
+    // ---- Sounds ----
+
+    [Fact]
+    public void LiftActionsPlayTheLiftSounds()
+    {
+        var id = Add(Car());
+        Dispatch(ToolActions.PlaceLift, new { position = new[] { 1f, 0f, 0f }, creation = id });
+        Dispatch(ToolActions.SetLiftLevel, new { level = 2 });
+        Dispatch(ToolActions.SetLiftLevel, new { level = 2 });
+        Dispatch(ToolActions.SetLiftLevel, new { level = 1 });
+        Dispatch(ToolActions.TurnLift, new { turns = 1 });
+        Dispatch(ToolActions.RemoveLift, new { });
+
+        Assert.Equal(
+        [
+            "lift_place@vanilla (1, 0, 0)",
+            "lift_raise@vanilla (1, 0.25, 0)", // from the platform top where it starts
+            "lift_lower@vanilla (1, 0.75, 0)", // the unchanged level played nothing
+            "lift_place@vanilla (1, 0.5, 0)",
+            "lift_lower@vanilla (1, 0, 0)",
+        ], _world.Sounds);
+    }
+
+    [Fact]
+    public void WeldPaintAndSledgePlayTheirSounds()
+    {
+        var tower = Add(i => Tower(i, new Vector3(0, 0.125f, 0)));
+        var car = Add(Car(durability: 1));
+
+        Assert.True(Dispatch(ToolActions.WeldParts, new { creation = tower, a = 3, b = 2 }).Ok);
+        Assert.True(Dispatch(ToolActions.Paint, new { creation = car, parts = new[] { 2, 3 }, color = "#ff0000" }).Ok);
+        Assert.True(Dispatch(ToolActions.Paint, new { creation = car, parts = new[] { 3 } }).Ok);
+        Assert.True(Dispatch(ToolActions.Sledge, new { creation = car, part = 3 }).Ok);
+
+        Assert.Equal(
+        [
+            "weld_complete@vanilla (0, 0.375, 0)",
+            "paint_spray@vanilla (0, 0.125, 0)",
+            "paint_erase@vanilla (0.25, 0.125, 0)",
+            "smash_break@vanilla (0.25, 0.125, 0)", // the test block has no sound material, so no break sound of its own
+        ], _world.Sounds);
+    }
+
     // ---- Helpers ----
 
     private static Func<int, Creation> Car(Vector3? at = null, int? durability = null) => id =>
@@ -400,6 +443,8 @@ public class ToolActionsTests
     {
         private int _nextId = 1;
 
+        public List<string> Sounds { get; } = [];
+
         public Dictionary<int, Creation> Creations { get; } = [];
         public Dictionary<int, Vector3> Eyes { get; } = [];
         public List<string> Log { get; } = [];
@@ -449,5 +494,8 @@ public class ToolActionsTests
                 : $"lift {owner} at ({lift.Position.X}, {lift.Position.Y}, {lift.Position.Z}) level {lift.Level}{(lift.Creation is { } c ? $" holding {c}" : "")}");
 
         public void Push(Creation creation, int bodyIndex, Vector3 point, Vector3 impulse) => Pushes.Add(impulse);
+
+        public void PlaySound(string sound, string ownerModId, Vector3 position) =>
+            Sounds.Add(FormattableString.Invariant($"{sound}@{ownerModId} ({position.X:0.###}, {position.Y:0.###}, {position.Z:0.###})"));
     }
 }

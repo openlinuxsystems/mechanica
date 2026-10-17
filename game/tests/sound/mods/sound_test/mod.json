@@ -1,0 +1,11 @@
+{
+  "id": "sound_test",
+  "name": "Sound Test",
+  "version": "0.1.0",
+  "description": "Fixture mod for the headless sound test.",
+  "dependencies": [
+    {
+      "id": "vanilla"
+    }
+  ]
+}

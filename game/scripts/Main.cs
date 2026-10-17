@@ -2,6 +2,7 @@ using Godot;
 using Mechanica.Core;
 using Mechanica.Core.Data;
 using Mechanica.Core.Net;
+using Mechanica.Core.Sound;
 using Mechanica.Core.World;
 using Mechanica.Game.Building;
 using Mechanica.Game.Creations;
@@ -10,6 +11,7 @@ using Mechanica.Game.Motion;
 using Mechanica.Game.Net;
 using Mechanica.Game.Player;
 using Mechanica.Game.Remote;
+using Mechanica.Game.Sound;
 using Mechanica.Game.World;
 
 namespace Mechanica.Game;
@@ -18,8 +20,8 @@ namespace Mechanica.Game;
 /// Game world and session root. It builds the networking nodes (<see cref="Session"/>,
 /// <see cref="PlayerSync"/>, <see cref="CreationSync"/>, <see cref="Actions"/>), the streamed world (<see cref="Streamer"/>,
 /// <see cref="Creations"/>), building (<see cref="Build"/>, the local player's <see cref="Tools"/>), the
-/// motion primitives (<see cref="Motion"/>) and the host's external AI endpoint and record/replay
-/// (<see cref="Ai"/>, <see cref="Recorder"/>). It starts offline, hosting or joining from
+/// motion primitives (<see cref="Motion"/>), sound (<see cref="Sounds"/>) and the host's external AI endpoint
+/// and record/replay (<see cref="Ai"/>, <see cref="Recorder"/>). It starts offline, hosting or joining from
 /// <see cref="Options"/>, and drives whichever player belongs to this peer from the keyboard and mouse.
 /// Every peer runs the same scene, so node paths (and with them RPC routes) match everywhere.
 /// </summary>
@@ -53,6 +55,14 @@ public partial class Main : Node3D
     /// <see cref="WorldGenData.Flat"/>.
     /// </summary>
     public WorldGenData? WorldGen { get; set; }
+
+    /// <summary>
+    /// Sound events. Null loads them from <see cref="Mods"/> when the scene starts; tests may set them.
+    /// </summary>
+    public SoundRegistry? SoundEvents { get; set; }
+
+    /// <summary>Sound playback and its sync to clients.</summary>
+    public SoundSync Sounds { get; private set; } = null!;
 
     /// <summary>Connection state and handshake.</summary>
     public NetSession Session { get; private set; } = null!;
@@ -115,6 +125,8 @@ public partial class Main : Node3D
         };
         Creations = new CreationWorld { Name = "Creations" };
         AddChild(Creations);
+        Sounds = new SoundSync { Name = "Sounds", Session = Session, Players = PlayerSync, Creations = Creations, Registry = SoundEvents ??= LoadSounds(mods) };
+        AddChild(Sounds);
         // Before the players, so the spawn has ground on the first frame.
         Streamer = new WorldStreamer
         {
@@ -153,6 +165,7 @@ public partial class Main : Node3D
             Creations = Creations,
             Catalog = mods,
             Assets = Assets,
+            Sounds = Sounds,
         };
         AddChild(Build);
         Build.RegisterActions(Actions.Dispatcher);
@@ -212,6 +225,8 @@ public partial class Main : Node3D
         Session.Content = Content;
         Assets.SetContent(mods);
         Build.SetContent(mods);
+        SoundEvents = LoadSounds(mods);
+        Sounds.SetRegistry(SoundEvents);
         Hammer?.ReloadParts();
     }
 
@@ -227,6 +242,14 @@ public partial class Main : Node3D
         foreach (var diagnostic in content.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error))
             GD.PushWarning($"[mods] {diagnostic}");
         return content;
+    }
+
+    private static SoundRegistry LoadSounds(ModLoadResult mods)
+    {
+        var sounds = SoundRegistry.Load(mods);
+        foreach (var diagnostic in sounds.Diagnostics)
+            GD.PushWarning($"[sound] {diagnostic}");
+        return sounds;
     }
 
     private static WorldGenData LoadWorldGen(ModLoadResult mods)
@@ -271,7 +294,7 @@ public partial class Main : Node3D
     {
         if (Build is null || Tools is not null)
             return;
-        Tools = new ToolBelt { Name = "Tools", Player = player, Actions = Actions, Build = Build, ReadDeviceInput = ReadDeviceInput };
+        Tools = new ToolBelt { Name = "Tools", Player = player, Actions = Actions, Build = Build, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput };
         AddChild(Tools);
     }
 

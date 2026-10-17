@@ -138,6 +138,7 @@ public partial class HammerTool : HandTool
     {
         if (Aim is not { } aim || Selected is null)
             return false;
+        PlayFeedback("hammer_swing");
         Send(BuildActions.PlacePart, new PlacePartArgs(Selected, aim.Cell, aim.Rotation, aim.Creation?.Id, aim.Position), done);
         return true;
     }
@@ -147,6 +148,7 @@ public partial class HammerTool : HandTool
     {
         if (Aim is not { Creation: { } creation, HitPart: { } part })
             return false;
+        PlayFeedback("hammer_swing");
         Send(BuildActions.RemovePart, new RemovePartArgs(creation.Id, part), done);
         return true;
     }

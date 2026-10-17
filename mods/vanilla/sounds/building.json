@@ -1,0 +1,130 @@
+{
+  "events": [
+    {
+      "id": "part_attach",
+      "clips": [
+        "sounds/building/part_attach.ogg"
+      ],
+      "pitch_variation": 0.05,
+      "max_distance": 30
+    },
+    {
+      "id": "part_detach",
+      "clips": [
+        "sounds/building/part_detach.ogg"
+      ],
+      "pitch_variation": 0.05,
+      "max_distance": 30
+    },
+    {
+      "id": "remove_block",
+      "clips": [
+        "sounds/building/remove_block.ogg"
+      ],
+      "pitch_variation": 0.06,
+      "max_distance": 30
+    },
+    {
+      "id": "hammer_swing",
+      "clips": [
+        "sounds/building/hammer_swing.ogg",
+        "sounds/building/hammer_swing_2.ogg"
+      ],
+      "volume_variation_db": 2,
+      "pitch_variation": 0.1,
+      "max_distance": 15
+    },
+    {
+      "id": "lift_place",
+      "clips": [
+        "sounds/building/lift_place.ogg"
+      ],
+      "max_distance": 30
+    },
+    {
+      "id": "lift_raise",
+      "clips": [
+        "sounds/building/lift_raise.ogg"
+      ],
+      "max_distance": 30
+    },
+    {
+      "id": "lift_lower",
+      "clips": [
+        "sounds/building/lift_lower.ogg"
+      ],
+      "max_distance": 30
+    },
+    {
+      "id": "connect_success",
+      "clips": [
+        "sounds/building/connect_success.ogg"
+      ],
+      "max_distance": 20
+    },
+    {
+      "id": "connect_fail",
+      "clips": [
+        "sounds/building/connect_fail.ogg"
+      ],
+      "max_distance": 20
+    },
+    {
+      "id": "disconnect",
+      "clips": [
+        "sounds/building/disconnect.ogg"
+      ],
+      "max_distance": 20
+    },
+    {
+      "id": "weld_start",
+      "clips": [
+        "sounds/building/weld_start.ogg"
+      ],
+      "pitch_variation": 0.05,
+      "max_distance": 30
+    },
+    {
+      "id": "weld_complete",
+      "clips": [
+        "sounds/building/weld_complete.ogg"
+      ],
+      "max_distance": 30
+    },
+    {
+      "id": "paint_spray",
+      "clips": [
+        "sounds/building/paint_spray.ogg",
+        "sounds/building/paint_spray_2.ogg"
+      ],
+      "pitch_variation": 0.05,
+      "max_distance": 20
+    },
+    {
+      "id": "paint_erase",
+      "clips": [
+        "sounds/building/paint_erase.ogg"
+      ],
+      "pitch_variation": 0.05,
+      "max_distance": 20
+    },
+    {
+      "id": "smash_hit",
+      "clips": [
+        "sounds/building/smash_hit.ogg",
+        "sounds/building/smash_hit_2.ogg"
+      ],
+      "volume_variation_db": 1.5,
+      "pitch_variation": 0.07,
+      "max_distance": 40
+    },
+    {
+      "id": "smash_break",
+      "clips": [
+        "sounds/building/smash_break.ogg"
+      ],
+      "pitch_variation": 0.07,
+      "max_distance": 45
+    }
+  ]
+}

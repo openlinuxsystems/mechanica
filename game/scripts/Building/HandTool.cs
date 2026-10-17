@@ -11,7 +11,9 @@ namespace Mechanica.Game.Building;
 /// aims with a ray from the player's camera out to <see cref="Core.Building.BuildSettings.Reach"/> and
 /// sends its requests through the Action API, so the host decides and nothing changes locally until it
 /// answers. Only the <see cref="Active"/> tool reads keys and the mouse and shows its preview;
-/// <see cref="ToolBelt"/> picks it.
+/// <see cref="ToolBelt"/> picks it. The host plays what an action did for everyone in earshot
+/// (<see cref="Core.Building.ToolActions"/>); a tool itself only plays feedback its player alone hears: the
+/// swing or spark as a request goes out, and <c>ui_error</c> when the host refuses one.
 /// </summary>
 public abstract partial class HandTool : Node
 {
@@ -38,6 +40,9 @@ public abstract partial class HandTool : Node
 
     /// <summary>Settings, content and the world. Set before adding to the tree.</summary>
     public BuildSync Build { get; init; } = null!;
+
+    /// <summary>Where feedback sounds play; null plays none.</summary>
+    public Sound.SoundSync? Sounds { get; init; }
 
     /// <summary>False in automated tests: keys and mouse do nothing.</summary>
     public bool ReadDeviceInput { get; init; } = true;
@@ -103,11 +108,17 @@ public abstract partial class HandTool : Node
         Actions.Request(action, args, result =>
         {
             LastResult = result;
+            if (!result.Ok)
+                Sounds?.PlayUi("ui_error");
             if (!result.Ok && ReadDeviceInput)
                 GD.Print($"[{ToolName.ToLowerInvariant()}] {result.Message}");
             done?.Invoke(result);
         });
     }
+
+    /// <summary>Plays a vanilla sound only this player hears, at <paramref name="at"/> (the hand when null).</summary>
+    protected void PlayFeedback(string sound, Vector3? at = null) =>
+        Sounds?.PlayLocal(sound, Core.Data.Identifiers.VanillaModId, at ?? Eye);
 
     /// <summary>The last refusal as a second HUD line, or empty.</summary>
     protected string Status => LastResult is { Ok: false } failed ? $"\n{failed.Message}" : "";

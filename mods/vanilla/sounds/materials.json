@@ -1,0 +1,366 @@
+{
+  "events": [
+    {
+      "id": "place_wood",
+      "clips": [
+        "sounds/materials/place_wood.ogg",
+        "sounds/materials/place_wood_2.ogg",
+        "sounds/materials/place_wood_3.ogg"
+      ],
+      "volume_variation_db": 1.5,
+      "pitch_variation": 0.06,
+      "max_distance": 30,
+      "cooldown": 0.02
+    },
+    {
+      "id": "break_wood",
+      "clips": [
+        "sounds/materials/break_wood.ogg",
+        "sounds/materials/break_wood_2.ogg"
+      ],
+      "volume_variation_db": 1.5,
+      "pitch_variation": 0.06,
+      "max_distance": 45,
+      "cooldown": 0.02
+    },
+    {
+      "id": "impact_wood",
+      "clips": [
+        "sounds/materials/impact_wood.ogg",
+        "sounds/materials/impact_wood_2.ogg",
+        "sounds/materials/impact_wood_3.ogg"
+      ],
+      "volume_variation_db": 1.5,
+      "pitch_variation": 0.06,
+      "max_distance": 30,
+      "max_instances": 6,
+      "cooldown": 0.02
+    },
+    {
+      "id": "place_metal",
+      "clips": [
+        "sounds/materials/place_metal.ogg",
+        "sounds/materials/place_metal_2.ogg",
+        "sounds/materials/place_metal_3.ogg"
+      ],
+      "volume_variation_db": 1.5,
+      "pitch_variation": 0.06,
+      "max_distance": 30,
+      "cooldown": 0.02
+    },
+    {
+      "id": "break_metal",
+      "clips": [
+        "sounds/materials/break_metal.ogg",
+        "sounds/materials/break_metal_2.ogg"
+      ],
+      "volume_variation_db": 1.5,
+      "pitch_variation": 0.06,
+      "max_distance": 45,
+      "cooldown": 0.02
+    },
+    {
+      "id": "impact_metal",
+      "clips": [
+        "sounds/materials/impact_metal.ogg",
+        "sounds/materials/impact_metal_2.ogg",
+        "sounds/materials/impact_metal_3.ogg"
+      ],
+      "volume_variation_db": 1.5,
+      "pitch_variation": 0.06,
+      "max_distance": 30,
+      "max_instances": 6,
+      "cooldown": 0.02
+    },
+    {
+      "id": "place_concrete",
+      "clips": [
+        "sounds/materials/place_concrete.ogg",
+        "sounds/materials/place_concrete_2.ogg",
+        "sounds/materials/place_concrete_3.ogg"
+      ],
+      "volume_variation_db": 1.5,
+      "pitch_variation": 0.06,
+      "max_distance": 30,
+      "cooldown": 0.02
+    },
+    {
+      "id": "break_concrete",
+      "clips": [
+        "sounds/materials/break_concrete.ogg",
+        "sounds/materials/break_concrete_2.ogg"
+      ],
+      "volume_variation_db": 1.5,
+      "pitch_variation": 0.06,
+      "max_distance": 45,
+      "cooldown": 0.02
+    },
+    {
+      "id": "impact_concrete",
+      "clips": [
+        "sounds/materials/impact_concrete.ogg",
+        "sounds/materials/impact_concrete_2.ogg",
+        "sounds/materials/impact_concrete_3.ogg"
+      ],
+      "volume_variation_db": 1.5,
+      "pitch_variation": 0.06,
+      "max_distance": 30,
+      "max_instances": 6,
+      "cooldown": 0.02
+    },
+    {
+      "id": "place_glass",
+      "clips": [
+        "sounds/materials/place_glass.ogg",
+        "sounds/materials/place_glass_2.ogg",
+        "sounds/materials/place_glass_3.ogg"
+      ],
+      "volume_variation_db": 1.5,
+      "pitch_variation": 0.06,
+      "max_distance": 30,
+      "cooldown": 0.02
+    },
+    {
+      "id": "break_glass",
+      "clips": [
+        "sounds/materials/break_glass.ogg",
+        "sounds/materials/break_glass_2.ogg"
+      ],
+      "volume_variation_db": 1.5,
+      "pitch_variation": 0.06,
+      "max_distance": 45,
+      "cooldown": 0.02
+    },
+    {
+      "id": "impact_glass",
+      "clips": [
+        "sounds/materials/impact_glass.ogg",
+        "sounds/materials/impact_glass_2.ogg",
+        "sounds/materials/impact_glass_3.ogg"
+      ],
+      "volume_variation_db": 1.5,
+      "pitch_variation": 0.06,
+      "max_distance": 30,
+      "max_instances": 6,
+      "cooldown": 0.02
+    },
+    {
+      "id": "place_scrap",
+      "clips": [
+        "sounds/materials/place_scrap.ogg",
+        "sounds/materials/place_scrap_2.ogg",
+        "sounds/materials/place_scrap_3.ogg"
+      ],
+      "volume_variation_db": 1.5,
+      "pitch_variation": 0.06,
+      "max_distance": 30,
+      "cooldown": 0.02
+    },
+    {
+      "id": "break_scrap",
+      "clips": [
+        "sounds/materials/break_scrap.ogg",
+        "sounds/materials/break_scrap_2.ogg"
+      ],
+      "volume_variation_db": 1.5,
+      "pitch_variation": 0.06,
+      "max_distance": 45,
+      "cooldown": 0.02
+    },
+    {
+      "id": "impact_scrap",
+      "clips": [
+        "sounds/materials/impact_scrap.ogg",
+        "sounds/materials/impact_scrap_2.ogg",
+        "sounds/materials/impact_scrap_3.ogg"
+      ],
+      "volume_variation_db": 1.5,
+      "pitch_variation": 0.06,
+      "max_distance": 30,
+      "max_instances": 6,
+      "cooldown": 0.02
+    },
+    {
+      "id": "place_plastic",
+      "clips": [
+        "sounds/materials/place_plastic.ogg",
+        "sounds/materials/place_plastic_2.ogg",
+        "sounds/materials/place_plastic_3.ogg"
+      ],
+      "volume_variation_db": 1.5,
+      "pitch_variation": 0.06,
+      "max_distance": 30,
+      "cooldown": 0.02
+    },
+    {
+      "id": "break_plastic",
+      "clips": [
+        "sounds/materials/break_plastic.ogg",
+        "sounds/materials/break_plastic_2.ogg"
+      ],
+      "volume_variation_db": 1.5,
+      "pitch_variation": 0.06,
+      "max_distance": 45,
+      "cooldown": 0.02
+    },
+    {
+      "id": "impact_plastic",
+      "clips": [
+        "sounds/materials/impact_plastic.ogg",
+        "sounds/materials/impact_plastic_2.ogg",
+        "sounds/materials/impact_plastic_3.ogg"
+      ],
+      "volume_variation_db": 1.5,
+      "pitch_variation": 0.06,
+      "max_distance": 30,
+      "max_instances": 6,
+      "cooldown": 0.02
+    },
+    {
+      "id": "place_tile",
+      "clips": [
+        "sounds/materials/place_tile.ogg",
+        "sounds/materials/place_tile_2.ogg",
+        "sounds/materials/place_tile_3.ogg"
+      ],
+      "volume_variation_db": 1.5,
+      "pitch_variation": 0.06,
+      "max_distance": 30,
+      "cooldown": 0.02
+    },
+    {
+      "id": "break_tile",
+      "clips": [
+        "sounds/materials/break_tile.ogg",
+        "sounds/materials/break_tile_2.ogg"
+      ],
+      "volume_variation_db": 1.5,
+      "pitch_variation": 0.06,
+      "max_distance": 45,
+      "cooldown": 0.02
+    },
+    {
+      "id": "impact_tile",
+      "clips": [
+        "sounds/materials/impact_tile.ogg",
+        "sounds/materials/impact_tile_2.ogg",
+        "sounds/materials/impact_tile_3.ogg"
+      ],
+      "volume_variation_db": 1.5,
+      "pitch_variation": 0.06,
+      "max_distance": 30,
+      "max_instances": 6,
+      "cooldown": 0.02
+    },
+    {
+      "id": "place_cardboard",
+      "clips": [
+        "sounds/materials/place_cardboard.ogg",
+        "sounds/materials/place_cardboard_2.ogg",
+        "sounds/materials/place_cardboard_3.ogg"
+      ],
+      "volume_variation_db": 1.5,
+      "pitch_variation": 0.06,
+      "max_distance": 30,
+      "cooldown": 0.02
+    },
+    {
+      "id": "break_cardboard",
+      "clips": [
+        "sounds/materials/break_cardboard.ogg",
+        "sounds/materials/break_cardboard_2.ogg"
+      ],
+      "volume_variation_db": 1.5,
+      "pitch_variation": 0.06,
+      "max_distance": 45,
+      "cooldown": 0.02
+    },
+    {
+      "id": "impact_cardboard",
+      "clips": [
+        "sounds/materials/impact_cardboard.ogg",
+        "sounds/materials/impact_cardboard_2.ogg",
+        "sounds/materials/impact_cardboard_3.ogg"
+      ],
+      "volume_variation_db": 1.5,
+      "pitch_variation": 0.06,
+      "max_distance": 30,
+      "max_instances": 6,
+      "cooldown": 0.02
+    },
+    {
+      "id": "place_fabric",
+      "clips": [
+        "sounds/materials/place_fabric.ogg",
+        "sounds/materials/place_fabric_2.ogg",
+        "sounds/materials/place_fabric_3.ogg"
+      ],
+      "volume_variation_db": 1.5,
+      "pitch_variation": 0.06,
+      "max_distance": 30,
+      "cooldown": 0.02
+    },
+    {
+      "id": "break_fabric",
+      "clips": [
+        "sounds/materials/break_fabric.ogg",
+        "sounds/materials/break_fabric_2.ogg"
+      ],
+      "volume_variation_db": 1.5,
+      "pitch_variation": 0.06,
+      "max_distance": 45,
+      "cooldown": 0.02
+    },
+    {
+      "id": "impact_fabric",
+      "clips": [
+        "sounds/materials/impact_fabric.ogg",
+        "sounds/materials/impact_fabric_2.ogg",
+        "sounds/materials/impact_fabric_3.ogg"
+      ],
+      "volume_variation_db": 1.5,
+      "pitch_variation": 0.06,
+      "max_distance": 30,
+      "max_instances": 6,
+      "cooldown": 0.02
+    },
+    {
+      "id": "burn_wood",
+      "clips": [
+        "sounds/materials/burn_wood.ogg"
+      ],
+      "loop": true,
+      "max_distance": 25,
+      "parameters": [
+        {
+          "name": "intensity",
+          "pitch": [
+            0.9,
+            1.1
+          ],
+          "volume_db": [
+            -12,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vehicle_crash",
+      "clips": [
+        "sounds/materials/vehicle_crash.ogg"
+      ],
+      "pitch_variation": 0.08,
+      "max_distance": 80
+    },
+    {
+      "id": "impact_soft",
+      "clips": [
+        "sounds/materials/impact_soft.ogg",
+        "sounds/materials/impact_soft_2.ogg"
+      ],
+      "pitch_variation": 0.08,
+      "max_distance": 20
+    }
+  ]
+}

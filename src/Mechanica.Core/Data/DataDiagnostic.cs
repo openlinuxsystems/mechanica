@@ -88,6 +88,12 @@ public static class DiagnosticCodes
     public const string WorldGenInvalid = "MD0601";
     public const string WorldGenMissing = "MD0602";
     public const string PoiInvalid = "MD0603";
+
+    // 07xx: sound events
+    public const string SoundInvalid = "MD0701";
+    public const string SoundDuplicate = "MD0702";
+    public const string SoundOverrideConflict = "MD0703";
+    public const string SoundUnknown = "MD0704";
 }
 
 /// <summary>Collects diagnostics for one file, filling in the file name.</summary>

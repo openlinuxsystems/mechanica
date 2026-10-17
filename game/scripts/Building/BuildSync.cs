@@ -19,6 +19,7 @@ namespace Mechanica.Game.Building;
 /// client, and all Lifts to a peer when it becomes ready.
 /// It also runs <c>SpawnPart</c> and <c>ClearCreations</c> (<see cref="CreationActions"/>), which the Test
 /// Sandbox uses, and is the part catalog for the building actions, so <see cref="SetContent"/> can swap mods.
+/// The actions' sounds go to <see cref="Sounds"/>, which sends them to the clients in earshot.
 /// <para>
 /// Clients get the result from <see cref="CreationSync"/>: a changed graph bumps
 /// <see cref="Creation.Revision"/>, so every peer near the Creation is sent it whole again (save JSON,
@@ -52,6 +53,9 @@ public partial class BuildSync : Node, IToolWorld, IPartCatalog
 
     /// <summary>Meshes and shapes for the parts. Set before adding to the tree.</summary>
     public PartAssets Assets { get; init; } = null!;
+
+    /// <summary>Where the building and tool actions' sounds play (host side); null plays none.</summary>
+    public Sound.SoundSync? Sounds { get; init; }
 
     /// <summary>Building limits; null loads <see cref="SettingsPath"/>.</summary>
     public BuildSettings? Settings { get; set; }
@@ -218,6 +222,10 @@ public partial class BuildSync : Node, IToolWorld, IPartCatalog
         body.Sleeping = false;
         body.ApplyImpulse(impulse.ToGodot(), point.ToGodot() - body.GlobalPosition);
     }
+
+    /// <inheritdoc/>
+    public void PlaySound(string sound, string ownerModId, System.Numerics.Vector3 position) =>
+        Sounds?.Emit(sound, ownerModId, position.ToGodot());
 
     /// <inheritdoc/>
     public void Added(Creation creation) => Creations.Add(creation, Assets);

@@ -1,0 +1,79 @@
+{
+  "events": [
+    {
+      "id": "saw_spin",
+      "clips": [
+        "sounds/part_tools/saw_spin.ogg"
+      ],
+      "loop": true,
+      "max_distance": 40,
+      "parameters": [
+        {
+          "name": "load",
+          "pitch": [
+            1,
+            0.8
+          ],
+          "volume_db": [
+            0,
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "id": "saw_cut",
+      "clips": [
+        "sounds/part_tools/saw_cut.ogg",
+        "sounds/part_tools/saw_cut_2.ogg"
+      ],
+      "pitch_variation": 0.06,
+      "max_distance": 40
+    },
+    {
+      "id": "drill_spin",
+      "clips": [
+        "sounds/part_tools/drill_spin.ogg"
+      ],
+      "loop": true,
+      "max_distance": 40,
+      "parameters": [
+        {
+          "name": "load",
+          "pitch": [
+            1,
+            0.8
+          ],
+          "volume_db": [
+            0,
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "id": "drill_hit",
+      "clips": [
+        "sounds/part_tools/drill_hit.ogg",
+        "sounds/part_tools/drill_hit_2.ogg"
+      ],
+      "pitch_variation": 0.06,
+      "max_distance": 40
+    },
+    {
+      "id": "drill_break",
+      "clips": [
+        "sounds/part_tools/drill_break.ogg"
+      ],
+      "pitch_variation": 0.06,
+      "max_distance": 45
+    },
+    {
+      "id": "water_cannon_fire",
+      "clips": [
+        "sounds/part_tools/water_cannon_fire.ogg"
+      ],
+      "max_distance": 40
+    }
+  ]
+}

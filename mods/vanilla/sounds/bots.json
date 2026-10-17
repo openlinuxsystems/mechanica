@@ -1,0 +1,209 @@
+{
+  "events": [
+    {
+      "id": "scuttler_idle",
+      "clips": [
+        "sounds/bots/scuttler_idle.ogg",
+        "sounds/bots/scuttler_idle_2.ogg"
+      ],
+      "volume_variation_db": 2,
+      "pitch_variation": 0.08,
+      "max_distance": 40
+    },
+    {
+      "id": "scuttler_alert",
+      "clips": [
+        "sounds/bots/scuttler_alert.ogg"
+      ],
+      "pitch_variation": 0.05,
+      "max_distance": 60
+    },
+    {
+      "id": "scuttler_attack",
+      "clips": [
+        "sounds/bots/scuttler_attack.ogg"
+      ],
+      "pitch_variation": 0.06,
+      "max_distance": 40
+    },
+    {
+      "id": "scuttler_death",
+      "clips": [
+        "sounds/bots/scuttler_death.ogg"
+      ],
+      "max_distance": 40
+    },
+    {
+      "id": "rakehand_idle",
+      "clips": [
+        "sounds/bots/rakehand_idle.ogg",
+        "sounds/bots/rakehand_idle_2.ogg"
+      ],
+      "volume_variation_db": 2,
+      "pitch_variation": 0.08,
+      "max_distance": 40
+    },
+    {
+      "id": "rakehand_alert",
+      "clips": [
+        "sounds/bots/rakehand_alert.ogg"
+      ],
+      "pitch_variation": 0.05,
+      "max_distance": 60
+    },
+    {
+      "id": "rakehand_attack",
+      "clips": [
+        "sounds/bots/rakehand_attack.ogg"
+      ],
+      "pitch_variation": 0.06,
+      "max_distance": 40
+    },
+    {
+      "id": "rakehand_death",
+      "clips": [
+        "sounds/bots/rakehand_death.ogg"
+      ],
+      "max_distance": 40
+    },
+    {
+      "id": "spooler_idle",
+      "clips": [
+        "sounds/bots/spooler_idle.ogg",
+        "sounds/bots/spooler_idle_2.ogg"
+      ],
+      "volume_variation_db": 2,
+      "pitch_variation": 0.08,
+      "max_distance": 40
+    },
+    {
+      "id": "spooler_alert",
+      "clips": [
+        "sounds/bots/spooler_alert.ogg"
+      ],
+      "pitch_variation": 0.05,
+      "max_distance": 60
+    },
+    {
+      "id": "spooler_attack",
+      "clips": [
+        "sounds/bots/spooler_attack.ogg"
+      ],
+      "pitch_variation": 0.06,
+      "max_distance": 40
+    },
+    {
+      "id": "spooler_death",
+      "clips": [
+        "sounds/bots/spooler_death.ogg"
+      ],
+      "max_distance": 40
+    },
+    {
+      "id": "thresher_idle",
+      "clips": [
+        "sounds/bots/thresher_idle.ogg",
+        "sounds/bots/thresher_idle_2.ogg"
+      ],
+      "volume_variation_db": 2,
+      "pitch_variation": 0.08,
+      "max_distance": 80
+    },
+    {
+      "id": "thresher_alert",
+      "clips": [
+        "sounds/bots/thresher_alert.ogg"
+      ],
+      "pitch_variation": 0.05,
+      "max_distance": 120
+    },
+    {
+      "id": "thresher_attack",
+      "clips": [
+        "sounds/bots/thresher_attack.ogg"
+      ],
+      "pitch_variation": 0.06,
+      "max_distance": 80
+    },
+    {
+      "id": "thresher_death",
+      "clips": [
+        "sounds/bots/thresher_death.ogg"
+      ],
+      "max_distance": 80
+    },
+    {
+      "id": "grazer_idle",
+      "clips": [
+        "sounds/bots/grazer_idle.ogg",
+        "sounds/bots/grazer_idle_2.ogg"
+      ],
+      "volume_variation_db": 2,
+      "pitch_variation": 0.08,
+      "max_distance": 40
+    },
+    {
+      "id": "grazer_alert",
+      "clips": [
+        "sounds/bots/grazer_alert.ogg"
+      ],
+      "pitch_variation": 0.05,
+      "max_distance": 60
+    },
+    {
+      "id": "grazer_attack",
+      "clips": [
+        "sounds/bots/grazer_attack.ogg"
+      ],
+      "pitch_variation": 0.06,
+      "max_distance": 40
+    },
+    {
+      "id": "grazer_death",
+      "clips": [
+        "sounds/bots/grazer_death.ogg"
+      ],
+      "max_distance": 40
+    },
+    {
+      "id": "scuttler_charge",
+      "clips": [
+        "sounds/bots/scuttler_charge.ogg"
+      ],
+      "max_distance": 50
+    },
+    {
+      "id": "scuttler_stomp",
+      "clips": [
+        "sounds/bots/scuttler_stomp.ogg",
+        "sounds/bots/scuttler_stomp_2.ogg"
+      ],
+      "pitch_variation": 0.08,
+      "max_distance": 40
+    },
+    {
+      "id": "scuttler_explode",
+      "clips": [
+        "sounds/bots/scuttler_explode.ogg"
+      ],
+      "max_distance": 120,
+      "rolloff": "linear"
+    },
+    {
+      "id": "rakehand_chase",
+      "clips": [
+        "sounds/bots/rakehand_chase.ogg"
+      ],
+      "loop": true,
+      "max_distance": 50
+    },
+    {
+      "id": "spooler_fire",
+      "clips": [
+        "sounds/bots/spooler_fire.ogg"
+      ],
+      "pitch_variation": 0.06,
+      "max_distance": 50
+    }
+  ]
+}

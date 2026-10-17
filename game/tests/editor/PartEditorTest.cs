@@ -2,8 +2,10 @@ using Godot;
 using Mechanica.Core.Creations;
 using Mechanica.Core.Data;
 using Mechanica.Core.Editor;
+using Mechanica.Core.Sound;
 using Mechanica.Game.Creations;
 using Mechanica.Game.Editor;
+using Mechanica.Game.Mods;
 
 namespace Mechanica.Game.Tests;
 
@@ -11,7 +13,8 @@ namespace Mechanica.Game.Tests;
 /// Headless Part Editor test (chunk 5). Drives the editor screen the way a modder would: a new block
 /// from a template, a CSG model (a box with a hole), colour and a variant, undo/redo, export into a
 /// fresh mod, then loads that mod like the game does and drops the block onto a floor. Also covers glTF
-/// import, sockets and the connection preview on an interactive part, reopening, renaming and help.
+/// import, sockets and the connection preview on an interactive part, reopening, renaming, help and the
+/// Sound Event Binder (chunk 16).
 /// Exits 0 on success, 1 on failure.
 /// </summary>
 public partial class PartEditorTest : Node3D
@@ -137,6 +140,69 @@ public partial class PartEditorTest : Node3D
             && File.Exists(Path.Combine(modDir, "meshes", "ring_block.glb")), "renaming moves the part and re-bakes its mesh");
         Check(ModLoader.LoadAll(modsRoot).Parts.Keys.Order().SequenceEqual([$"{Mod}:cube_prop", $"{Mod}:ring_block"]),
             "the mod has exactly the exported parts");
+
+        await SoundSteps(screen, modsRoot, modDir);
+    }
+
+    // The Sound Event Binder: a new event from an imported clip, previewed, saved and bound to the block.
+    private async Task SoundSteps(PartEditorScreen screen, string modsRoot, string modDir)
+    {
+        var binder = screen.Sounds;
+        Check(screen.OpenPart(Path.Combine(modDir, "parts", "ring_block.json")) is null, "reopen for sounds");
+        Check(binder.Registry.Find("place_wood") is not null && binder.Bank is { Events.Count: 0, RelativeFile: "sounds/editor_test.json" },
+            "vanilla's sounds can be bound and the mod's bank starts empty");
+        Check(new[] { "place", "remove", "break", "impact" }.All(binder.BindingFields.ContainsKey), "a block offers its four sound names");
+        Check(binder.BindingFields["place"] is OptionButton { Selected: 0 } place && place.GetItemText(0) == "(material: place_wood)",
+            "an unbound place shows the material fallback");
+        var voice = binder.PreviewBinding("place");
+        Check(voice?.Event.QualifiedId == "vanilla:place_wood", "and plays it");
+
+        var clip = Path.Combine(ModPaths.ModsRoot, "vanilla", "sounds", "joints", "bearing_spin_loop.ogg");
+        Check(binder.NewEventFromClip(clip) is null && binder.Bank!.Events.Single() is { Id: "bearing_spin_loop", Clips: ["sounds/bearing_spin_loop.ogg"] },
+            "importing a clip copies it into the mod and makes an event for it");
+        Check(File.Exists(Path.Combine(modDir, "sounds", "bearing_spin_loop.ogg")), "the clip is in the mod's sounds folder");
+        var bank = binder.Bank!;
+        bank.Set(0, bank.Events[0] with
+        {
+            Id = "ring_hum",
+            Loop = true,
+            PitchVariation = 0.05f,
+            Parameters = [new SoundParameter { Name = "speed", Default = 0.5f, Pitch = [1, 2] }],
+        });
+        voice = binder.PreviewSelected();
+        Check(voice is { Event.Loop: true } && Mathf.IsEqualApprox(voice.PitchScale, voice.Roll.Pitch * 1.5f, 1e-4f),
+            $"the unsaved loop previews at its default speed ({voice?.PitchScale:F3})");
+        binder.Player.StopAll();
+
+        screen.Document!.SetSound("impact", "ring_hum");
+        Check(screen.ProblemsText.Contains("impact sound 'ring_hum' is not a registered sound event"), "binding an unsaved event warns");
+        bank.Set(0, bank.Events[0] with { Clips = [] });
+        Check(binder.SaveBank() is { Succeeded: false } && !File.Exists(bank.FilePath) && binder.BankProblemsText.Contains("clips"),
+            "a bank with errors is not saved");
+        bank.Set(0, bank.Events[0] with { Clips = ["sounds/bearing_spin_loop.ogg"] });
+        var saved = binder.SaveBank();
+        Check(saved is { Succeeded: true } && File.ReadAllText(bank.FilePath) == DataJson.Write(bank.Bank), "the bank saves in canonical form");
+        Check(binder.Registry.Find("ring_hum", Mod) is { Loop: true }, "and its event is registered");
+        Check(!screen.ProblemsText.Contains("not a registered sound event"), $"the binding resolves now ({screen.ProblemsText})");
+        var impact = (OptionButton)binder.BindingFields["impact"];
+        Check(impact.GetItemText(impact.Selected) == "ring_hum", "the picker shows the bound event");
+        Check(binder.PreviewBinding("impact")?.Event.QualifiedId == $"{Mod}:ring_hum", "and previews it");
+        binder.Player.StopAll();
+        var pick = Enumerable.Range(0, impact.ItemCount).First(i => impact.GetItemText(i) == "smash_hit");
+        impact.Select(pick);
+        impact.EmitSignal(OptionButton.SignalName.ItemSelected, pick);
+        Check(screen.Document.Definition.Sounds?["impact"] == "smash_hit", "picking another event rebinds it");
+        Check(screen.Document.Undo() && screen.Document.Definition.Sounds?["impact"] == "ring_hum", "undo brings back the old binding");
+
+        var result = await screen.ExportAsync();
+        Check(result is { Succeeded: true }, "the block exports with its sound");
+        var content = ModLoader.Load([Path.Combine(ModPaths.ModsRoot, "vanilla"), modDir]);
+        var sounds = SoundRegistry.Load(content);
+        Check(!sounds.HasErrors && !sounds.Diagnostics.Any(d => d.File.StartsWith(Mod, StringComparison.Ordinal)),
+            $"the game loads the mod's sounds without problems ({string.Join("; ", sounds.Diagnostics)})");
+        var part = content.FindDefinition($"{Mod}:ring_block")!;
+        Check(sounds.Find(PartSounds.For(part, PartSounds.Impact), Mod)?.QualifiedId == $"{Mod}:ring_hum", "the part's impact plays the new event");
+        await Frames(1);
     }
 
     private async Task Frames(int count)
