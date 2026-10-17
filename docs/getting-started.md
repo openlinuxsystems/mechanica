@@ -93,8 +93,8 @@ neighbours on every face. Parts with joints (bearings, pistons, suspension) use 
 - Select a socket to set its **Id**, **Type**, **Position** and **Normal**. **Snap to face** moves
   it onto the nearest outer face.
 - Turn on **Sockets** above the preview to see them, and **Connections** to see how each face of the
-  part would join a neighbouring block. Green is a rigid weld; blue, orange and purple are joints;
-  red means nothing would attach there.
+  part would join a neighbouring block. Green is a rigid weld; blue is a bearing, teal a piston and
+  violet a spring; red means nothing would attach there.
 
 ## 6. Look
 

@@ -5,6 +5,7 @@ using Mechanica.Core;
 using Mechanica.Core.Data;
 using Mechanica.Core.Editor;
 using Mechanica.Core.Input;
+using Mechanica.Core.Ui;
 using Mechanica.Game.Creations;
 using Mechanica.Game.Mods;
 using Mechanica.Game.Player;
@@ -168,10 +169,10 @@ public partial class PartEditorScreen : Control
         });
         _hint = new Label
         {
-            Text = "Right-drag to orbit, wheel to zoom. Connections: green rigid, blue/orange/purple joint, red none. Joints show their axis and range.",
+            Text = "Right-drag to orbit, wheel to zoom. Connections: green rigid, blue hinge, teal slider, violet spring, red none. Joints show their axis and range.",
             SizeFlagsHorizontal = SizeFlags.ExpandFill,
             HorizontalAlignment = HorizontalAlignment.Right,
-            Modulate = new Color(1, 1, 1, 0.7f),
+            ThemeTypeVariation = "SecondaryLabel",
         };
         overlays.AddChild(_hint);
         _problems = Loc.Verbatim(new RichTextLabel { BbcodeEnabled = true, SelectionEnabled = true, SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0, 90) });
@@ -986,11 +987,11 @@ public partial class PartEditorScreen : Control
             lines.Add($"[b]{Escape(headline)}[/b]");
         foreach (var d in diagnostics)
         {
-            var color = d.Severity == DiagnosticSeverity.Error ? "#ff7070" : "#ffd060";
+            var color = d.Severity == DiagnosticSeverity.Error ? UiPalette.Error : UiPalette.Warning;
             lines.Add($"[color={color}]{(d.Severity == DiagnosticSeverity.Error ? Loc.T("Error") : Loc.T("Warning"))}[/color] {Escape(d.JsonPath ?? d.File)}: {Escape(d.Message)}");
         }
         if (diagnostics.Count == 0 && headline is null)
-            lines.Add($"[color=#80e080]{Loc.T("No problems.")}[/color] {Loc.T("Export writes the part into its mod.")}");
+            lines.Add($"[color={UiPalette.Success}]{Loc.T("No problems.")}[/color] {Loc.T("Export writes the part into its mod.")}");
         _problems.Text = string.Join("\n", lines);
     }
 

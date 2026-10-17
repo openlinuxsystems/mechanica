@@ -28,7 +28,7 @@ public partial class HammerTool : HandTool
     /// <summary>The see-through look of tool previews.</summary>
     public static readonly StandardMaterial3D PreviewMaterial = new()
     {
-        AlbedoColor = new Color(0.4f, 0.8f, 1f, 0.35f),
+        AlbedoColor = UiTokens.Cyan with { A = 0.35f },
         Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
         ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
         NoDepthTest = true,

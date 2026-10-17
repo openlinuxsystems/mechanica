@@ -34,7 +34,7 @@ a chassis by its base, put a wheel on its rotor, and only the rotor face makes a
 
 In the Part Editor's **Sockets** tab, "+ Socket on side" adds a socket centred on a face and "Snap to
 face" moves a stray one back onto the nearest face. The connection preview colours every face: green
-rigid, blue hinge, orange slider, purple spring, red nothing.
+rigid, blue hinge, teal slider, violet spring, red nothing.
 
 ## The joint object
 

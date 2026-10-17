@@ -154,8 +154,8 @@ mods/cheap_chests/overrides/vanilla/recipes/chest.json   replaces the recipe van
 
 ## 7. Load order and the Mod Manager
 
-Players manage mods in the in-game **Mod Manager** (`scenes/ModManager.tscn`; it moves to the main menu
-when menus are built). It lists every installed mod in load order and shows, for the setup on screen:
+Players manage mods in the in-game **Mod Manager** (under **Mod tools** on the main menu). It lists
+every installed mod in load order and shows, for the setup on screen:
 
 - a checkbox per mod. Enabling a mod also enables what it depends on. Disabling a mod also disables the
   mods that depend on it. Vanilla cannot be disabled.

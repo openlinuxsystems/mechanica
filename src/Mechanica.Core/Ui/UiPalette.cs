@@ -48,6 +48,78 @@ public static class UiPalette
     /// <summary>Success and "running" states.</summary>
     public const string Success = "#4CD07D";
 
+    /// <summary>Rigid (welded) connections in previews and gizmos: green, like success.</summary>
+    public const string JointRigid = Success;
+
+    /// <summary>Bearings (hinges) and rotational sockets.</summary>
+    public const string JointHinge = Blue;
+
+    /// <summary>Pistons (sliders) and linear sockets: teal.</summary>
+    public const string JointSlider = "#2FD9C4";
+
+    /// <summary>Suspension (springs) and spring sockets: violet.</summary>
+    public const string JointSpring = "#A47CF3";
+
+    /// <summary>Faces where nothing would attach.</summary>
+    public const string NoConnection = Error;
+
+    /// <summary>The selected socket or handle in a gizmo.</summary>
+    public const string GizmoSelected = Text;
+
+    /// <summary>Collision wireframes.</summary>
+    public const string Collision = Cyan;
+
+    /// <summary>Centre-of-mass markers.</summary>
+    public const string CentreOfMass = Error;
+
+    /// <summary>Locked joints in the joint overlay.</summary>
+    public const string JointLocked = Disabled;
+
+    /// <summary>A logic connection whose source is on.</summary>
+    public const string SignalOn = Cyan;
+
+    /// <summary>A logic connection whose source is off.</summary>
+    public const string SignalOff = Blue;
+
+    /// <summary>Force arrows in the force overlay (aero and thrust).</summary>
+    public const string ForceArrow = Cyan;
+
+    /// <summary>Torque lines in the force overlay.</summary>
+    public const string TorqueArrow = JointSpring;
+
+    /// <summary>Background of 3D previews in the mod tools.</summary>
+    public const string PreviewBackground = Navy;
+
+    /// <summary>Lua keywords (<c>local</c>, <c>function</c>, …).</summary>
+    public const string SyntaxKeyword = "#C586C0";
+
+    /// <summary>Lua standard libraries (<c>math</c>, <c>string</c>, …).</summary>
+    public const string SyntaxLibrary = "#4EC9B0";
+
+    /// <summary>Mechanica's Lua API names and members.</summary>
+    public const string SyntaxApi = "#4FC1FF";
+
+    /// <summary>Callbacks the game calls (<c>on_tick</c>, …).</summary>
+    public const string SyntaxCallback = Cyan;
+
+    /// <summary>Other function calls.</summary>
+    public const string SyntaxFunction = "#8AB4F8";
+
+    /// <summary>Table members.</summary>
+    public const string SyntaxMember = "#9CDCFE";
+
+    /// <summary>String literals.</summary>
+    public const string SyntaxString = "#8FD9A8";
+
+    /// <summary>Number literals.</summary>
+    public const string SyntaxNumber = "#D7BAFF";
+
+    /// <summary>Operators and punctuation.</summary>
+    public const string SyntaxSymbol = "#D4D4D4";
+
+    /// <summary>Comments.</summary>
+    public const string SyntaxComment = "#6A8A9A";
+
     /// <summary>Hover scale for buttons (§13 "Buttons").</summary>
     public const float ButtonHoverScale = 1.05f;
 
@@ -78,6 +150,40 @@ public static class UiPalette
         [nameof(Error)] = Error,
         [nameof(Warning)] = Warning,
         [nameof(Success)] = Success,
+    };
+
+    /// <summary>Every overlay, gizmo and preview colour (mod tools and debug views), for tests and the style guide.</summary>
+    public static IReadOnlyDictionary<string, string> Overlays { get; } = new Dictionary<string, string>
+    {
+        [nameof(JointRigid)] = JointRigid,
+        [nameof(JointHinge)] = JointHinge,
+        [nameof(JointSlider)] = JointSlider,
+        [nameof(JointSpring)] = JointSpring,
+        [nameof(NoConnection)] = NoConnection,
+        [nameof(GizmoSelected)] = GizmoSelected,
+        [nameof(Collision)] = Collision,
+        [nameof(CentreOfMass)] = CentreOfMass,
+        [nameof(JointLocked)] = JointLocked,
+        [nameof(SignalOn)] = SignalOn,
+        [nameof(SignalOff)] = SignalOff,
+        [nameof(ForceArrow)] = ForceArrow,
+        [nameof(TorqueArrow)] = TorqueArrow,
+        [nameof(PreviewBackground)] = PreviewBackground,
+    };
+
+    /// <summary>Every Lua syntax colour in the script editor, for tests and the style guide.</summary>
+    public static IReadOnlyDictionary<string, string> Syntax { get; } = new Dictionary<string, string>
+    {
+        [nameof(SyntaxKeyword)] = SyntaxKeyword,
+        [nameof(SyntaxLibrary)] = SyntaxLibrary,
+        [nameof(SyntaxApi)] = SyntaxApi,
+        [nameof(SyntaxCallback)] = SyntaxCallback,
+        [nameof(SyntaxFunction)] = SyntaxFunction,
+        [nameof(SyntaxMember)] = SyntaxMember,
+        [nameof(SyntaxString)] = SyntaxString,
+        [nameof(SyntaxNumber)] = SyntaxNumber,
+        [nameof(SyntaxSymbol)] = SyntaxSymbol,
+        [nameof(SyntaxComment)] = SyntaxComment,
     };
 
     /// <summary>Parses <c>#RRGGBB</c> into channels from 0 to 1.</summary>

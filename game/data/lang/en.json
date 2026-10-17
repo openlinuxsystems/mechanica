@@ -384,7 +384,7 @@
     "Return to Menu": "Return to Menu",
     "Returning to menu…": "Returning to menu…",
     "Revert": "Revert",
-    "Right-drag to orbit, wheel to zoom. Connections: green rigid, blue/orange/purple joint, red none. Joints show their axis and range.": "Right-drag to orbit, wheel to zoom. Connections: green rigid, blue/orange/purple joint, red none. Joints show their axis and range.",
+    "Right-drag to orbit, wheel to zoom. Connections: green rigid, blue hinge, teal slider, violet spring, red none. Joints show their axis and range.": "Right-drag to orbit, wheel to zoom. Connections: green rigid, blue hinge, teal slider, violet spring, red none. Joints show their axis and range.",
     "Rolloff": "Rolloff",
     "Rotation (°)": "Rotation (°)",
     "Roughness": "Roughness",

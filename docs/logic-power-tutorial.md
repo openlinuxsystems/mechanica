@@ -28,7 +28,7 @@ ends with what a modder needs to make new logic parts.
 | Left click (Connect Tool) | Picks the part under the crosshair as the source. Left click another part of the same creation to link the source to it, or click a part it already feeds to take that link away. The source stays picked, so you can feed several parts in a row. Clicking the source again lets go. |
 | Right click (Connect Tool) | Lets go of the source. |
 | E | On a part with settings, opens them (a gate's mode, a timer's delay). |
-| F7 | Turns the **Logic Visualizer** on or off. Links are drawn from the source to an arrowhead at the part they feed: yellow while the source is on, blue while it is off. |
+| F7 | Turns the **Logic Visualizer** on or off. Links are drawn from the source to an arrowhead at the part they feed: cyan while the source is on, blue while it is off. |
 | F8 | Opens the **Creation Inspector** for the creation under the crosshair: its mass, bodies, joints, links, and for each part its output, input, settings, who sits in it and whether its script runs or stopped on an error. |
 | F9 | Turns the **force overlay** on or off: an arrow for every push a part script makes, such as a thruster's thrust or a wing's lift (see the [Aero and Propulsion Tutorial](aero-tutorial.md)). |
 | E | Uses what you look at: sit in a seat, flip a switch, press a button. While seated, E stands you up. |

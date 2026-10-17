@@ -1,4 +1,6 @@
 using Godot;
+using Mechanica.Core.Creations;
+using Mechanica.Core.Data;
 using Mechanica.Core.Ui;
 using Mechanica.Game.Ui;
 
@@ -9,6 +11,8 @@ namespace Mechanica.Game.Tests;
 /// the window scales from a 1280×720 base and won't shrink below it, tooltips wait 0.25 s, buttons grow
 /// 1.05× on hover, a <see cref="ToolWindow"/> closes on Esc and its X (through its guard), a
 /// <see cref="ConfirmDialog"/> answers yes or no, and nothing in the theme or the main menu is orange.
+/// Screens under a plain node or a canvas layer (the Part Editor, the HUD) still get the theme, and the
+/// overlay and gizmo colours have no orange either.
 /// </summary>
 public partial class UiTest : StagedTest
 {
@@ -113,6 +117,47 @@ public partial class UiTest : StagedTest
             Check(_answer == "no" && _closes == 3, $"Esc cancels it and leaves the window behind alone ({_answer}, {_closes})");
             ConfirmDialog.Ask(this, "Reset", "Reset?", "Reset", () => _answer = "yes", destructive: false).Confirm();
             Check(_answer == "yes", "confirm runs the action");
+            return true;
+        });
+        Add("screens under a plain node or a canvas layer get the theme", frame =>
+        {
+            if (frame == 0)
+            {
+                var layer = new CanvasLayer { Name = "Layer" };
+                layer.AddChild(new PanelContainer { Name = "Panel" });
+                layer.GetNode("Panel").AddChild(new Button { Name = "Button", Text = "Hi" });
+                AddChild(layer);
+                AddChild(new Editor.PartEditorMode { Name = "PartEditorMode" });
+                return false;
+            }
+            var normal = MechanicaTheme.Theme.GetStylebox("normal", "Button");
+            var layered = GetNode<Button>("Layer/Panel/Button");
+            Check(layered.GetThemeStylebox("normal") == normal, "a button on a canvas layer uses the theme");
+            var editor = GetNode<Editor.PartEditorMode>("PartEditorMode").Editor;
+            Check(editor.Theme == MechanicaTheme.Theme, "the Part Editor, under a plain node, gets the theme");
+            var buttons = Walk(editor).OfType<Button>().Where(b => b.GetType() == typeof(Button) && string.IsNullOrEmpty(b.ThemeTypeVariation) && !b.HasThemeStyleboxOverride("normal")).ToList();
+            Check(buttons.Count > 0 && buttons.All(b => b.GetThemeStylebox("normal") == normal), $"and so do its {buttons.Count} buttons");
+            foreach (var control in Walk(editor).OfType<Control>())
+            {
+                if (UiTokens.IsOrange(control.Modulate) || UiTokens.IsOrange(control.SelfModulate))
+                    Check(false, $"{control.GetPath()} is tinted orange");
+            }
+            foreach (var node in new[] { "Layer", "PartEditorMode" })
+            {
+                var n = GetNode(node);
+                RemoveChild(n);
+                n.QueueFree();
+            }
+            return true;
+        });
+        Add("overlays and gizmos have no orange", _ =>
+        {
+            SocketType?[] sockets = [null, .. Enum.GetValues<SocketType>()];
+            foreach (var type in sockets)
+                Check(!UiTokens.IsOrange(Editor.PartPreview.SocketColor(type)), $"the {type?.ToString() ?? "rigid"} socket colour is not orange");
+            foreach (var type in Enum.GetValues<ConnectionType>())
+                Check(!UiTokens.IsOrange(Creations.JointGizmo.ColorOf(type)), $"the {type} joint colour is not orange");
+            Check(!UiTokens.IsOrange(Building.HammerTool.PreviewMaterial.AlbedoColor), "the tool ghost is not orange");
             return true;
         });
         Add("the main menu has no orange", frame =>

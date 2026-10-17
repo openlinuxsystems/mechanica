@@ -7,6 +7,7 @@ using Mechanica.Core.Motion;
 using Mechanica.Game.Creations;
 using Mechanica.Game.Net;
 using Mechanica.Game.Player;
+using Mechanica.Game.Ui;
 
 namespace Mechanica.Game.Motion;
 
@@ -35,8 +36,8 @@ public partial class ForceOverlay : MeshInstance3D
     /// <summary>Longest arrow, in m, so a big push stays on screen.</summary>
     public const float MaxLength = 6f;
 
-    private static readonly Color ForceColor = new(1f, 0.55f, 0.15f);
-    private static readonly Color TorqueColor = new(0.3f, 0.85f, 1f);
+    private static readonly Color ForceColor = UiTokens.ForceArrow;
+    private static readonly Color TorqueColor = UiTokens.TorqueArrow;
 
     private readonly ImmediateMesh _lines = new();
     private readonly Dictionary<int, IReadOnlyList<PushState>> _pushes = [];

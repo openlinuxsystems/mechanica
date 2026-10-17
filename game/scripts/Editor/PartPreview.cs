@@ -4,6 +4,7 @@ using Mechanica.Core.Creations;
 using Mechanica.Core.Data;
 using Mechanica.Core.Editor;
 using Mechanica.Game.Creations;
+using Mechanica.Game.Ui;
 
 namespace Mechanica.Game.Editor;
 
@@ -15,10 +16,10 @@ namespace Mechanica.Game.Editor;
 /// </summary>
 public partial class PartPreview : Node3D
 {
-    private static readonly Color FootprintColor = new(1, 1, 1, 0.35f);
-    private static readonly Color CollisionColor = new(1f, 0.85f, 0.1f);
-    private static readonly Color SelectedColor = new(1f, 1f, 0.2f);
-    private static readonly Color CentreOfMassColor = new(1f, 0.3f, 0.3f);
+    private static readonly Color FootprintColor = UiTokens.Text with { A = 0.35f };
+    private static readonly Color CollisionColor = UiTokens.Collision;
+    private static readonly Color SelectedColor = UiTokens.GizmoSelected;
+    private static readonly Color CentreOfMassColor = UiTokens.CentreOfMass;
 
     private Camera3D _camera = null!;
     private Node3D _content = null!;
@@ -51,7 +52,7 @@ public partial class PartPreview : Node3D
             Environment = new Godot.Environment
             {
                 BackgroundMode = Godot.Environment.BGMode.Color,
-                BackgroundColor = new Color(0.16f, 0.17f, 0.19f),
+                BackgroundColor = UiTokens.PreviewBackground,
                 AmbientLightSource = Godot.Environment.AmbientSource.Color,
                 AmbientLightColor = new Color(0.55f, 0.55f, 0.6f),
             },
@@ -88,7 +89,7 @@ public partial class PartPreview : Node3D
 
     /// <summary>
     /// Redraws everything for <paramref name="definition"/> and <paramref name="source"/>. The highlighted
-    /// socket index is drawn in yellow.
+    /// socket index is drawn in the selected-gizmo colour.
     /// </summary>
     public void Show(PartDefinition definition, PartSource source, PartAssets assets, string modId, int selectedSocket = -1)
     {
@@ -205,18 +206,18 @@ public partial class PartPreview : Node3D
     /// <summary>The gizmo colour of each socket type.</summary>
     public static Color SocketColor(SocketType? type) => type switch
     {
-        SocketType.Rotational => new Color(0.25f, 0.55f, 1f),
-        SocketType.Linear => new Color(1f, 0.55f, 0.15f),
-        SocketType.Spring => new Color(0.75f, 0.35f, 1f),
-        _ => new Color(0.3f, 0.9f, 0.4f),
+        SocketType.Rotational => UiTokens.JointHinge,
+        SocketType.Linear => UiTokens.JointSlider,
+        SocketType.Spring => UiTokens.JointSpring,
+        _ => UiTokens.JointRigid,
     };
 
     private static MeshInstance3D FaceTile(GridSize size, FaceContact contact)
     {
         var color = contact.Connection switch
         {
-            ConnectionType.Structural => new Color(0.3f, 0.9f, 0.4f, 0.35f),
-            null => new Color(0.95f, 0.25f, 0.25f, 0.25f),
+            ConnectionType.Structural => UiTokens.JointRigid with { A = 0.35f },
+            null => UiTokens.NoConnection with { A = 0.25f },
             ConnectionType.Rotational => SocketColor(SocketType.Rotational) with { A = 0.45f },
             ConnectionType.Linear => SocketColor(SocketType.Linear) with { A = 0.45f },
             _ => SocketColor(SocketType.Spring) with { A = 0.45f },
