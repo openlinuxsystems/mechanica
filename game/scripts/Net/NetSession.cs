@@ -34,9 +34,9 @@ public partial class NetSession : Node
         Connected,
     }
 
-    // Stated explicitly: with "unlimited" (0) ENet's bandwidth throttle clamped the packet throttle limit
-    // to 1/32 on localhost and dropped most unreliable snapshots.
-    private const int BandwidthBytesPerSecond = 10_000_000;
+    // 0 is unlimited. An explicit limit is a trap: ENet works out bytes per interval as limit × elapsed ms
+    // in 32 bits, which overflows above about 4 MB/s.
+    private const int BandwidthBytesPerSecond = 0;
 
     private readonly HashSet<int> _readyPeers = [];
     private int _maxPlayers = NetProtocol.DefaultMaxPlayers;
@@ -116,6 +116,10 @@ public partial class NetSession : Node
             LastMessage = $"Could not host on port {port}: {error}.";
             return error;
         }
+        // Godot's create_server passes its arguments to the ENet host one place off, so the host's
+        // incoming bandwidth ends up as the channel count (a few bytes per second). Every client then
+        // throttles its unreliable packets to 1 in 32 and holds back reliable ones. Reset it before anyone joins.
+        peer.Host.BandwidthLimit(BandwidthBytesPerSecond, BandwidthBytesPerSecond);
         _maxPlayers = maxPlayers;
         Multiplayer.MultiplayerPeer = peer;
         if (Multiplayer is SceneMultiplayer scene)

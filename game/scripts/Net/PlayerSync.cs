@@ -196,12 +196,10 @@ public partial class PlayerSync : Node
     }
 
     /// <summary>
-    /// Client → host: the client's newest inputs. Sent reliably on its own channel: on localhost ENet's
-    /// unreliable path lost runs of 20+ packets in a row, which starved the host of input; reliable
-    /// delivery was steady. Each packet still repeats the last few inputs, so switching back to
-    /// unreliable later needs no format change.
+    /// Client → host: the client's newest inputs, unreliable on their own channel. Each packet repeats
+    /// the last few inputs, so a lost one costs nothing and none waits behind a lost one.
     /// </summary>
-    [Rpc(MultiplayerApi.RpcMode.AnyPeer, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable,
+    [Rpc(MultiplayerApi.RpcMode.AnyPeer, TransferMode = MultiplayerPeer.TransferModeEnum.Unreliable,
         TransferChannel = NetProtocol.InputChannel)]
     private void SubmitInputs(byte[] packet)
     {

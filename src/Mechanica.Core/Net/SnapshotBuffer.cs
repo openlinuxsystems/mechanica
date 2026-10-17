@@ -93,6 +93,9 @@ public sealed class InterpolationClock
             RenderTick = tick + 1;
     }
 
+    /// <summary>Forgets the host's clock, as before the first snapshot.</summary>
+    public void Reset() => RenderTick = null;
+
     /// <summary>Feeds the tick of a snapshot that just arrived.</summary>
     public void OnSnapshot(uint hostTick)
     {

@@ -92,7 +92,7 @@ public sealed record ActionResult
     public override string ToString() => Ok ? "ok" : $"{Code}: {Message}";
 }
 
-/// <summary>A call the dispatcher handled, for logs and (later) record/replay.</summary>
+/// <summary>A call the dispatcher handled, for logs and record/replay.</summary>
 /// <param name="Caller">Who called.</param>
 /// <param name="Action">Action name.</param>
 /// <param name="ArgsJson">Arguments exactly as received.</param>

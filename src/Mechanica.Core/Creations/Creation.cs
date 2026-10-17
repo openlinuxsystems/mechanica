@@ -27,7 +27,10 @@ public sealed class Creation
     private readonly Dictionary<int, Pose> _poses = [];
     // Health each part has lost (Sledgehammer hits); parts at full health have no entry.
     private readonly Dictionary<int, float> _damage = [];
+    // World velocity of each part's Body, stored the same way as poses.
+    private readonly Dictionary<int, BodyVelocity> _velocities = [];
     private Layout? _layout;
+    private bool _onLift;
     private int _authorityPeer;
     private int _nextPartId = 1;
 
@@ -59,7 +62,25 @@ public sealed class Creation
     /// True while a Lift holds the Creation: its Bodies stay where the Lift put them instead of simulating.
     /// Pieces that split off do not inherit it, so they drop.
     /// </summary>
-    public bool OnLift { get; set; }
+    public bool OnLift
+    {
+        get => _onLift;
+        set
+        {
+            if (_onLift == value)
+                return;
+            _onLift = value;
+            // Peers need the whole Creation again to know it is held.
+            Revision++;
+        }
+    }
+
+    /// <summary>
+    /// Counts graph changes (parts, edges, splits, merges), paint and <see cref="OnLift"/> changes. State
+    /// sync compares it to know when a peer needs the whole Creation again; poses, velocities and part
+    /// damage do not change it.
+    /// </summary>
+    public int Revision { get; private set; }
 
     /// <summary>Parts by ascending id.</summary>
     public IReadOnlyCollection<PartInstance> Parts => _parts.Values;
@@ -112,6 +133,20 @@ public sealed class Creation
     }
 
     /// <summary>
+    /// World linear and angular velocity of a Body (from a save, a late-join sync or the simulation).
+    /// Uses the same lowest-part rule as <see cref="BodyPose"/>; a Body with none stored is at rest.
+    /// </summary>
+    public BodyVelocity GetBodyVelocity(int bodyIndex) =>
+        Bodies[bodyIndex].PartIds.FirstOrDefault(_velocities.ContainsKey) is var id and > 0 ? _velocities[id] : BodyVelocity.Zero;
+
+    /// <summary>Sets a Body's world velocity; the game writes simulated velocities back with this before saving.</summary>
+    public void SetBodyVelocity(int bodyIndex, BodyVelocity velocity)
+    {
+        foreach (var id in Bodies[bodyIndex].PartIds)
+            _velocities[id] = velocity;
+    }
+
+    /// <summary>
     /// Sets the pose stored on one part, leaving its Body-mates alone. The runtime uses it after a graph
     /// change to hand each part the pose of the Body it was in, so the lowest-part rule settles merged Bodies.
     /// </summary>
@@ -150,6 +185,7 @@ public sealed class Creation
         if (part.Color == color)
             return false;
         _parts[partId] = part with { Color = color };
+        Revision++;
         return true;
     }
 
@@ -188,10 +224,14 @@ public sealed class Creation
             _connections.UnionWith(attachments);
             // A new part joins its neighbours' frame; any attached neighbour will do, they share a grid.
             if (attachments.Select(c => c.A == instance.Id ? c.B : c.A).FirstOrDefault(_poses.ContainsKey) is var n and > 0)
+            {
                 _poses[instance.Id] = _poses[n];
+                if (_velocities.TryGetValue(n, out var velocity))
+                    _velocities[instance.Id] = velocity;
+            }
         }
         _nextPartId++;
-        _layout = null;
+        Changed();
         placed = instance;
         return true;
     }
@@ -281,7 +321,7 @@ public sealed class Creation
         if (!CheckConnection(connection, out error))
             return false;
         if (_connections.Add(connection))
-            _layout = null;
+            Changed();
         return true;
     }
 
@@ -296,7 +336,7 @@ public sealed class Creation
             ? part
             : throw new ArgumentException($"Creation {Id} has no part {partId}.", nameof(partId));
         Delete(partId);
-        _layout = null;
+        Changed();
         return new RemovalResult(removed, SplitDisconnected(allocateCreationId));
     }
 
@@ -326,6 +366,8 @@ public sealed class Creation
                     creation._poses[id] = pose;
                 if (_damage.TryGetValue(id, out var damage))
                     creation._damage[id] = damage;
+                if (_velocities.TryGetValue(id, out var velocity))
+                    creation._velocities[id] = velocity;
             }
             foreach (var connection in _connections.Where(c => members.Contains(c.A)).ToList())
             {
@@ -336,7 +378,7 @@ public sealed class Creation
                 Delete(id);
             split.Add(creation);
         }
-        _layout = null;
+        Changed();
         return split;
     }
 
@@ -399,7 +441,7 @@ public sealed class Creation
         if (!CanWeldParts(a, b, out error))
             return false;
         _connections.Add(Connection.Rigid(a, b));
-        _layout = null;
+        Changed();
         return true;
     }
 
@@ -455,13 +497,16 @@ public sealed class Creation
                 _poses[newId] = pose.Compose(unmap);
             if (other._damage.TryGetValue(oldId, out var damage))
                 _damage[newId] = damage;
+            // Velocities are in world space, so they carry over unchanged.
+            if (other._velocities.TryGetValue(oldId, out var velocity))
+                _velocities[newId] = velocity;
         }
         foreach (var c in other._connections)
             _connections.Add(c.Type == ConnectionType.Structural
                 ? Connection.Rigid(map[c.A], map[c.B])
                 : c with { A = map[c.A], B = map[c.B] });
         _connections.UnionWith(attachments);
-        _layout = null;
+        Changed();
         error = null;
         return true;
     }
@@ -482,7 +527,7 @@ public sealed class Creation
     {
         Insert(part, definition);
         _nextPartId = Math.Max(_nextPartId, part.Id + 1);
-        _layout = null;
+        Changed();
     }
 
     /// <summary>Connected pieces in order of lowest part id, each sorted ascending.</summary>
@@ -517,6 +562,12 @@ public sealed class Creation
         return pieces;
     }
 
+    private void Changed()
+    {
+        _layout = null;
+        Revision++;
+    }
+
     private Pose? StoredPose(Body body) =>
         body.PartIds.FirstOrDefault(_poses.ContainsKey) is var id and > 0 ? _poses[id] : null;
 
@@ -548,6 +599,7 @@ public sealed class Creation
         _definitions.Remove(partId);
         _poses.Remove(partId);
         _damage.Remove(partId);
+        _velocities.Remove(partId);
         _connections.RemoveWhere(c => c.Involves(partId));
     }
 

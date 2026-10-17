@@ -294,7 +294,7 @@ public partial class ToolsTest : StagedTest
         {
             if (frame == 0)
                 _harness.Stop(_client);
-            if (_host.Main.Build.Lifts.Count != 0 || _late.Main.Build.Lifts.Count != 0)
+            if (_host.Main.Build.Lifts.Count != 0 || _late.Main.Build.Lifts.Count != 0 || _late.Main.Creations.Find(_bar)?.OnLift != false)
                 return false;
             Check(_host.Main.Build.Tools!.Lifts.Count == 0, "the host forgets the Lift");
             Check(!_host.Main.Creations.Find(_bar)!.OnLift && !_late.Main.Creations.Find(_bar)!.OnLift, "the bar drops");

@@ -321,7 +321,10 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world)
         {
             var poses = Seat(carried, PlatformTop(lift), turns);
             for (var i = 0; i < poses.Count; i++)
+            {
                 carried.SetBodyPose(i, poses[i]);
+                carried.SetBodyVelocity(i, BodyVelocity.Zero);
+            }
             carried.OnLift = true;
             world.Moved(carried);
         }

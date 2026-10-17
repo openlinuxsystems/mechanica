@@ -23,11 +23,11 @@ namespace Mechanica.Core.Creations;
 /// }
 /// </code>
 /// A body's <c>position</c> (metres) and <c>rotation</c> (unit quaternion <c>[x, y, z, w]</c>) place its
-/// grid frame in the world (<see cref="Pose"/>). Linear and angular velocity are not stored yet.
+/// grid frame in the world (<see cref="Pose"/>). A moving body also stores <c>linear_velocity</c> (m/s)
+/// and <c>angular_velocity</c> (rad/s), both in world space and both optional (missing means at rest),
+/// so a late joiner or a reloaded save picks it up mid-motion (<see cref="BodyVelocity"/>).
 /// <c>on_lift</c> (written only when true) marks a Creation a Lift holds; a part's <c>color</c> is its
 /// Paint Tool colour and <c>damage</c> the health it has lost, each written only when set.
-/// <code>
-/// </code>
 /// </summary>
 public static class CreationJson
 {
@@ -164,7 +164,15 @@ public static class CreationJson
         foreach (var body in creation.Bodies.Where(b => creation.HasBodyPose(b.Index)))
         {
             var pose = creation.BodyPose(body.Index);
-            poses.Add(new BodyPoseData { Part = body.PartIds[0], Position = pose.Position.ToVec3(), Rotation = pose.Rotation });
+            var velocity = creation.GetBodyVelocity(body.Index);
+            poses.Add(new BodyPoseData
+            {
+                Part = body.PartIds[0],
+                Position = pose.Position.ToVec3(),
+                Rotation = pose.Rotation,
+                LinearVelocity = velocity.IsZero ? null : velocity.Linear.ToVec3(),
+                AngularVelocity = velocity.IsZero ? null : velocity.Angular.ToVec3(),
+            });
         }
         return poses.Count > 0 ? poses : null;
     }
@@ -195,9 +203,19 @@ public static class CreationJson
                 sink.Error(invalid, $"{path}.rotation", $"rotation must be a unit quaternion [x, y, z, w]; its length is {length}.");
                 continue;
             }
-            if (!float.IsFinite(position.X) || !float.IsFinite(position.Y) || !float.IsFinite(position.Z))
+            if (!IsFinite(position))
             {
                 sink.Error(invalid, $"{path}.position", "position must be finite.");
+                continue;
+            }
+            if (b.LinearVelocity is { } linear && !IsFinite(linear))
+            {
+                sink.Error(invalid, $"{path}.linear_velocity", "linear_velocity must be finite.");
+                continue;
+            }
+            if (b.AngularVelocity is { } angular && !IsFinite(angular))
+            {
+                sink.Error(invalid, $"{path}.angular_velocity", "angular_velocity must be finite.");
                 continue;
             }
             var body = creation.BodyIndexOf(part);
@@ -208,8 +226,13 @@ public static class CreationJson
             }
             claimed[body] = part;
             creation.SetBodyPose(body, new Pose(position.ToNumerics(), Quaternion.Normalize(rotation)));
+            var velocity = new BodyVelocity(b.LinearVelocity?.ToNumerics() ?? Vector3.Zero, b.AngularVelocity?.ToNumerics() ?? Vector3.Zero);
+            if (!velocity.IsZero)
+                creation.SetBodyVelocity(body, velocity);
         }
     }
+
+    private static bool IsFinite(Vec3 v) => float.IsFinite(v.X) && float.IsFinite(v.Y) && float.IsFinite(v.Z);
 
     private static (PartInstance, PartDefinition)? ReadPart(PartInstanceData data, string path, IPartCatalog catalog, DiagnosticSink sink)
     {
@@ -306,6 +329,10 @@ public static class CreationJson
 
         [JsonConverter(typeof(QuaternionJsonConverter))]
         public Quaternion? Rotation { get; init; }
+
+        public Vec3? LinearVelocity { get; init; }
+
+        public Vec3? AngularVelocity { get; init; }
 
         [JsonExtensionData]
         public Dictionary<string, JsonElement>? Extra { get; init; }

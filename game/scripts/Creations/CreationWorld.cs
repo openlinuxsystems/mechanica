@@ -8,7 +8,8 @@ namespace Mechanica.Game.Creations;
 /// Every Creation in the world, live or parked. A live Creation has a <see cref="CreationNode"/> in the
 /// physics world; a parked one (chunk 12, <see cref="ChunkStreamer"/>) has only its Core graph, with its
 /// Body poses written back and its Body velocities kept here, so it resumes exactly as it stopped.
-/// The host changes the graphs through the Action API; clients mirror them (<see cref="Building.BuildSync"/>).
+/// The host changes the graphs through the Action API; clients mirror the Creations near them
+/// (<see cref="Net.CreationSync"/>).
 /// </summary>
 public partial class CreationWorld : Node3D
 {

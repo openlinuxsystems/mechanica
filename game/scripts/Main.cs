@@ -5,18 +5,21 @@ using Mechanica.Core.Net;
 using Mechanica.Game.Building;
 using Mechanica.Game.Creations;
 using Mechanica.Game.Mods;
+using Mechanica.Game.Motion;
 using Mechanica.Game.Net;
 using Mechanica.Game.Player;
+using Mechanica.Game.Remote;
 using Mechanica.Game.World;
 
 namespace Mechanica.Game;
 
 /// <summary>
 /// Flat test world and session root. It builds the networking nodes (<see cref="Session"/>,
-/// <see cref="PlayerSync"/>, <see cref="Actions"/>), the streamed world (<see cref="Streamer"/>,
-/// <see cref="Creations"/>) and building (<see cref="Build"/>, the local player's <see cref="Tools"/>),
-/// starts offline, hosting or joining from <see cref="Options"/>, and drives whichever player belongs
-/// to this peer from the keyboard and mouse.
+/// <see cref="PlayerSync"/>, <see cref="CreationSync"/>, <see cref="Actions"/>), the streamed world (<see cref="Streamer"/>,
+/// <see cref="Creations"/>), building (<see cref="Build"/>, the local player's <see cref="Tools"/>), the
+/// motion primitives (<see cref="Motion"/>) and the host's external AI endpoint and record/replay
+/// (<see cref="Ai"/>, <see cref="Recorder"/>). It starts offline, hosting or joining from
+/// <see cref="Options"/>, and drives whichever player belongs to this peer from the keyboard and mouse.
 /// Every peer runs the same scene, so node paths (and with them RPC routes) match everywhere.
 /// </summary>
 public partial class Main : Node3D
@@ -41,6 +44,9 @@ public partial class Main : Node3D
     /// </summary>
     public ModLoadResult? Mods { get; set; }
 
+    /// <summary>Meshes and shapes for the parts in <see cref="Mods"/>.</summary>
+    public PartAssets Assets { get; private set; } = null!;
+
     /// <summary>Connection state and handshake.</summary>
     public NetSession Session { get; private set; } = null!;
 
@@ -53,6 +59,9 @@ public partial class Main : Node3D
     /// <summary>Every Creation in the world, live or parked.</summary>
     public CreationWorld Creations { get; private set; } = null!;
 
+    /// <summary>Creation state sync: interest, full syncs and body snapshots.</summary>
+    public CreationSync CreationSync { get; private set; } = null!;
+
     /// <summary>Chunk streaming: the ground, and which Creations are simulated.</summary>
     public WorldStreamer Streamer { get; private set; } = null!;
 
@@ -61,6 +70,14 @@ public partial class Main : Node3D
 
     /// <summary>The local player's hand tools, once the player has spawned.</summary>
     public ToolBelt? Tools { get; private set; }
+    /// <summary>Forces, torques and bearing motors for scripts, bots and external agents.</summary>
+    public MotionSync Motion { get; private set; } = null!;
+
+    /// <summary>Record/replay of the host's Action API calls.</summary>
+    public RecordReplay Recorder { get; private set; } = null!;
+
+    /// <summary>The external AI endpoint (WebSocket JSON-RPC), listening only when asked to.</summary>
+    public AiEndpoint Ai { get; private set; } = null!;
 
     /// <summary>The local player's Hammer, once the player has spawned.</summary>
     public HammerTool? Hammer => Tools?.Hammer;
@@ -74,6 +91,7 @@ public partial class Main : Node3D
         Options ??= ReadCommandLine();
         var mods = Mods ??= LoadMods();
         var content = Content ??= ContentManifest.From(mods);
+        Assets = new PartAssets(mods);
 
         Session = new NetSession { Name = "Session", Content = content };
         AddChild(Session);
@@ -101,6 +119,16 @@ public partial class Main : Node3D
         PlayerSync.PlayerSpawned += OnPlayerSpawned;
         PlayerSync.PlayerDespawning += OnPlayerDespawning;
         AddChild(PlayerSync);
+        CreationSync = new CreationSync
+        {
+            Name = "CreationSync",
+            Session = Session,
+            PlayerSync = PlayerSync,
+            Creations = Creations,
+            Catalog = mods,
+            Assets = Assets,
+        };
+        AddChild(CreationSync);
         Actions = new ActionGateway { Name = "Actions", Session = Session };
         AddChild(Actions);
         PlayerSync.RegisterActions(Actions.Dispatcher);
@@ -111,10 +139,17 @@ public partial class Main : Node3D
             Players = PlayerSync,
             Creations = Creations,
             Catalog = mods,
-            Assets = new PartAssets(mods),
+            Assets = Assets,
         };
         AddChild(Build);
         Build.RegisterActions(Actions.Dispatcher);
+        Motion = new MotionSync { Name = "Motion", Session = Session, Creations = Creations };
+        AddChild(Motion);
+        Motion.RegisterActions(Actions.Dispatcher);
+        Recorder = new RecordReplay { Name = "Recorder", Session = Session, Actions = Actions };
+        AddChild(Recorder);
+        Ai = new AiEndpoint { Name = "Ai", Session = Session, Actions = Actions, Log = Recorder };
+        AddChild(Ai);
         // The offline player spawned with PlayerSync, before building existed.
         if (LocalPlayer is { } local)
             AddTools(local);
@@ -135,7 +170,22 @@ public partial class Main : Node3D
             _ => Error.Ok,
         };
         if (error != Error.Ok)
+        {
             GD.PushError($"[net] {Session.LastMessage}");
+            return;
+        }
+        if (!Session.IsHost)
+            return;
+        if (options.RecordPath is { } record)
+            Recorder.RecordTo(record);
+        if (options.ReplayPath is { } replay && Recorder.ReplayFrom(replay) is { } replayError)
+            GD.PushError($"[replay] {replayError}");
+        if (options.AiPort is { } port)
+        {
+            var token = options.AiToken ?? OS.GetEnvironment("MECHANICA_AI_TOKEN");
+            if (Ai.Listen(port, options.AiBind, token) is { } aiError)
+                GD.PushError($"[ai] {aiError}");
+        }
     }
 
     private static ModLoadResult LoadMods()
@@ -190,8 +240,8 @@ public partial class Main : Node3D
     }
 
     /// <summary>
-    /// Loose rigid props only simulate where the world is simulated (the host). On clients they are
-    /// frozen until state sync (chunk 4b) drives them.
+    /// Loose rigid props only simulate where the world is simulated (the host). They are test-world
+    /// fixtures, not Creations, so state sync does not cover them and they stay frozen on clients.
     /// </summary>
     private void SetPropsSimulated(bool simulated)
     {

@@ -14,12 +14,15 @@ namespace Mechanica.Game.Building;
 /// <summary>
 /// Building over the network (D10). On the host it is the <see cref="IToolWorld"/> behind the Hammer's
 /// <c>PlacePart</c>/<c>RemovePart</c> and the other hand tools' actions (<see cref="ToolActions"/>): it
-/// answers reach and clearance questions from the live scene, rebuilds Creation nodes after each change
-/// and sends the changed Creation and every Lift change to every client. A late joiner gets every
-/// Creation and Lift when it becomes ready. Clients only mirror what arrives.
+/// answers reach and clearance questions from the live scene and applies each change to the host's
+/// <see cref="CreationWorld"/>. It also shows every player's Lift and sends Lift changes to every
+/// client, and all Lifts to a peer when it becomes ready.
 /// <para>
-/// Each update carries the whole Creation as save JSON (graph plus Body poses), which keeps clients
-/// exact without a delta format. Moving bodies between changes is physics state sync's job (chunk 4b).
+/// Clients get the result from <see cref="CreationSync"/>: a changed graph bumps
+/// <see cref="Creation.Revision"/>, so every peer near the Creation is sent it whole again (save JSON,
+/// graph plus Body poses and velocities), and a removed one is forgotten. Late joiners and interest
+/// management come with it. Paint and a Lift picking up or letting go bump the revision too; a held
+/// Creation's moves reach clients as ordinary snapshots.
 /// </para>
 /// </summary>
 public partial class BuildSync : Node, IToolWorld
@@ -65,14 +68,14 @@ public partial class BuildSync : Node, IToolWorld
         Settings ??= LoadSettings();
         _liftRoot = new Node3D { Name = "Lifts" };
         AddChild(_liftRoot);
-        Session.PeerReady += SendAllTo;
+        Session.PeerReady += SendLiftsTo;
         Session.PeerLeft += OnPeerLeft;
         Session.StateChanged += OnStateChanged;
     }
 
     public override void _ExitTree()
     {
-        Session.PeerReady -= SendAllTo;
+        Session.PeerReady -= SendLiftsTo;
         Session.PeerLeft -= OnPeerLeft;
         Session.StateChanged -= OnStateChanged;
     }
@@ -165,11 +168,7 @@ public partial class BuildSync : Node, IToolWorld
     }
 
     /// <inheritdoc/>
-    public void Moved(Creation creation)
-    {
-        Creations.Moved(creation.Id);
-        Broadcast(creation);
-    }
+    public void Moved(Creation creation) => Creations.Moved(creation.Id);
 
     /// <inheritdoc/>
     public void LiftChanged(int owner, LiftState? lift)
@@ -191,41 +190,13 @@ public partial class BuildSync : Node, IToolWorld
     }
 
     /// <inheritdoc/>
-    public void Added(Creation creation)
-    {
-        Creations.Add(creation, Assets);
-        Broadcast(creation);
-    }
+    public void Added(Creation creation) => Creations.Add(creation, Assets);
 
     /// <inheritdoc/>
-    public void Changed(Creation creation)
-    {
-        Creations.Rebuild(creation.Id);
-        Broadcast(creation);
-    }
+    public void Changed(Creation creation) => Creations.Rebuild(creation.Id);
 
     /// <inheritdoc/>
-    public void Removed(int creationId)
-    {
-        Creations.Remove(creationId);
-        foreach (var peer in Session.ReadyPeers)
-            RpcId(peer, MethodName.ClientRemoveCreation, creationId);
-    }
-
-    /// <summary>Host → client: a Creation as it is now (save JSON).</summary>
-    [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-    private void ClientSetCreation(string json)
-    {
-        if (Session.IsHost)
-            return;
-        var diagnostics = new List<DataDiagnostic>();
-        if (CreationJson.Read(json, Catalog, "host", diagnostics) is not { } creation)
-        {
-            GD.PushError($"[build] the host sent a Creation this client cannot read: {string.Join("; ", diagnostics)}");
-            return;
-        }
-        Creations.Replace(creation, Assets);
-    }
+    public void Removed(int creationId) => Creations.Remove(creationId);
 
     /// <summary>Host → client: a player's Lift as it is now (Action API JSON), or empty when it is gone.</summary>
     [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
@@ -249,27 +220,8 @@ public partial class BuildSync : Node, IToolWorld
         ShowLift(owner, lift);
     }
 
-    /// <summary>Host → client: a Creation is gone.</summary>
-    [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-    private void ClientRemoveCreation(int id)
+    private void SendLiftsTo(int peer)
     {
-        if (!Session.IsHost)
-            Creations.Remove(id);
-    }
-
-    private void Broadcast(Creation creation)
-    {
-        if (Session.ReadyPeers.Count == 0)
-            return;
-        var json = Write(creation);
-        foreach (var peer in Session.ReadyPeers)
-            RpcId(peer, MethodName.ClientSetCreation, json);
-    }
-
-    private void SendAllTo(int peer)
-    {
-        foreach (var creation in Creations.All)
-            RpcId(peer, MethodName.ClientSetCreation, Write(creation));
         foreach (var lift in Tools?.Lifts ?? [])
             RpcId(peer, MethodName.ClientSetLift, lift.Owner, JsonSerializer.Serialize(lift, ActionJson.Options));
     }
@@ -299,12 +251,6 @@ public partial class BuildSync : Node, IToolWorld
         if (Session.IsHost && Tools?.LiftOf(peer) is not null)
             _dispatcher?.Dispatch(new ActionCaller(peer, ActionSource.Player), ToolActions.RemoveLift, "{}");
         Tools?.Forget(peer);
-    }
-
-    private string Write(Creation creation)
-    {
-        Creations.NodeOf(creation.Id)?.SyncToCreation();
-        return CreationJson.Write(creation);
     }
 
     private void OnStateChanged(NetSession.SessionState state)
