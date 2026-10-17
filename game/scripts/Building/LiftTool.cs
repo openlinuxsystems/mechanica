@@ -21,7 +21,7 @@ namespace Mechanica.Game.Building;
 /// </summary>
 public partial class LiftTool : HandTool
 {
-    private MeshInstance3D _preview = null!;
+    private Node3D _preview = null!;
     private double? _removeFrom;
     private int _raiseHeld;
 
@@ -51,21 +51,56 @@ public partial class LiftTool : HandTool
     /// <summary>Opens the blueprint menu; Use (E) on the Lift calls it. Set by the game.</summary>
     public Action? OpenBlueprints { get; set; }
 
+    /// <summary>Where a new Lift would go: the Lift's model as it stands once put down, in see-through blue.</summary>
+    public Node3D Ghost => _preview;
+
     /// <summary>True while right click is held to take the Lift away.</summary>
     public bool Removing => _removeFrom is not null;
 
     public override void _Ready()
     {
         var size = Build.Settings!.Lift;
-        _preview = new MeshInstance3D
+        _preview = new Node3D { Name = "Preview", TopLevel = true, Visible = false };
+        // The Lift as it will stand once put down, in see-through blue; a plain box when the model does not load.
+        var meshes = LiftBody.StillModel(Build.Assets, size, deployed: true) is { } model ? Flatten(model) : [];
+        if (meshes.Count == 0)
+            meshes.Add((new BoxMesh { Size = new Vector3(size.PlatformSize, size.BaseHeight, size.PlatformSize) }, new Transform3D(Basis.Identity, new Vector3(0, size.BaseHeight / 2, 0))));
+        foreach (var (mesh, transform) in meshes)
         {
-            Name = "Preview",
-            TopLevel = true,
-            Visible = false,
-            Mesh = new BoxMesh { Size = new Vector3(size.PlatformSize, size.BaseHeight, size.PlatformSize), Material = HammerTool.PreviewMaterial },
-            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
-        };
+            _preview.AddChild(new MeshInstance3D
+            {
+                Mesh = mesh, Transform = transform, MaterialOverride = GhostMaterial,
+                CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+            });
+        }
         AddChild(_preview);
+    }
+
+    /// <summary>The look of the Lift's placement ghost: see-through blue, only its outer surface drawn.</summary>
+    public static readonly StandardMaterial3D GhostMaterial = new()
+    {
+        AlbedoColor = UiTokens.Cyan with { A = 0.45f },
+        Transparency = BaseMaterial3D.TransparencyEnum.AlphaDepthPrePass,
+        EmissionEnabled = true,
+        Emission = UiTokens.Cyan,
+        EmissionEnergyMultiplier = 0.35f,
+    };
+
+    // Every mesh in a model with its place relative to the model's root, then frees the model.
+    private static List<(Mesh Mesh, Transform3D Transform)> Flatten(Node3D model)
+    {
+        var meshes = new List<(Mesh, Transform3D)>();
+        void Walk(Node node, Transform3D parent)
+        {
+            var here = node is Node3D spatial ? parent * spatial.Transform : parent;
+            if (node is MeshInstance3D { Mesh: { } mesh, Visible: true })
+                meshes.Add((mesh, here));
+            foreach (var child in node.GetChildren())
+                Walk(child, here);
+        }
+        Walk(model, Transform3D.Identity);
+        model.Free();
+        return meshes;
     }
 
     public override void _PhysicsProcess(double delta)
@@ -202,7 +237,7 @@ public partial class LiftTool : HandTool
         Aim = Cast();
         _preview.Visible = Active && Aim is { Creation: null };
         if (Aim is not null)
-            _preview.GlobalPosition = Aim.Position.ToGodot() + new Vector3(0, Build.Settings!.Lift.BaseHeight / 2, 0);
+            _preview.GlobalPosition = Aim.Position.ToGodot();
     }
 
     /// <summary>Places the Lift or picks up the aimed-at Creation. False when nothing is aimed at.</summary>

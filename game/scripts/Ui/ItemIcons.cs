@@ -9,12 +9,16 @@ namespace Mechanica.Game.Ui;
 /// Pictures of items for the hotbar and inventory (UI spec §3). A part with its own <c>icon</c> PNG uses it; any
 /// other item is drawn once from its model, three-quarter view on a clear background, in an offscreen viewport, one
 /// item a frame, and kept. Until a picture is ready (and with no display, where nothing renders) <see cref="For"/>
-/// returns null and callers show the item's initials. Tools draw as their initials.
+/// returns null and callers show the item's initials. Tools with a model (<see cref="ToolModel"/>) are drawn from it the
+/// same way; the rest draw as their initials.
 /// </summary>
 public partial class ItemIcons : Node
 {
     /// <summary>Pixels along each side of a picture.</summary>
     public const int Size = 96;
+
+    /// <summary>Where the camera looks at a model from (it looks at the model's middle, with Y up).</summary>
+    public static readonly Vector3 ViewFrom = new(2, 1.6f, 2);
 
     private readonly Dictionary<string, Texture2D?> _icons = [];
     private readonly Queue<string> _queue = new();
@@ -28,6 +32,9 @@ public partial class ItemIcons : Node
 
     /// <summary>Where models come from. Set before adding to the tree.</summary>
     public PartAssets Assets { get; init; } = null!;
+
+    /// <summary>A new, posed copy of a tool's model, or null when the tool has none (see <see cref="ToolIconModels"/>).</summary>
+    public Func<string, Node3D?>? ToolModel { get; init; }
 
     /// <summary>Raised when a picture becomes ready.</summary>
     public event Action<string>? IconReady;
@@ -46,7 +53,7 @@ public partial class ItemIcons : Node
         AddChild(_viewport);
         var camera = new Camera3D { Projection = Camera3D.ProjectionType.Orthogonal, Current = true };
         _viewport.AddChild(camera);
-        camera.LookAtFromPosition(new Vector3(2, 1.6f, 2), Vector3.Zero, Vector3.Up);
+        camera.LookAtFromPosition(ViewFrom, Vector3.Zero, Vector3.Up);
         var light = new DirectionalLight3D { LightEnergy = 1.2f };
         _viewport.AddChild(light);
         light.LookAtFromPosition(new Vector3(1, 2, 1.5f), Vector3.Zero, Vector3.Up);
@@ -61,9 +68,14 @@ public partial class ItemIcons : Node
     {
         if (_icons.TryGetValue(id, out var icon))
             return icon;
-        if (HotbarTools.IsTool(id) || Catalog.FindDefinition(id) is not { } definition)
+        if (HotbarTools.IsTool(id))
+        {
+            if (ToolModel is null)
+                return _icons[id] = null;
+        }
+        else if (Catalog.FindDefinition(id) is not { } definition)
             return _icons[id] = null;
-        if (Assets.IconFor(id, definition) is { } own)
+        else if (Assets.IconFor(id, definition) is { } own)
             return _icons[id] = own;
         if (!CanRender)
             return _icons[id] = null;
@@ -88,33 +100,71 @@ public partial class ItemIcons : Node
             IconReady?.Invoke(id);
             return;
         }
-        if (!_queue.TryDequeue(out var next) || Catalog.FindDefinition(next) is not { } definition)
+        if (!_queue.TryDequeue(out var next))
             return;
-        Stage(next, definition);
+        if (!Stage(next))
+        {
+            _icons[next] = null;
+            IconReady?.Invoke(next);
+            return;
+        }
         _rendering = next;
         _wait = 2;
         _viewport.RenderTargetUpdateMode = SubViewport.UpdateMode.Always;
     }
 
-    // Puts the item's model in the middle of the stage, sized to fill the picture.
-    private void Stage(string id, PartDefinition definition)
+    // Puts the item's model in the middle of the stage, sized to fill the picture. False when it has no model.
+    private bool Stage(string id)
     {
         _model?.QueueFree();
+        _model = null;
+        var model = HotbarTools.IsTool(id) ? ToolModel?.Invoke(id) : PartModel(id);
+        if (model is null)
+            return false;
         _model = new Node3D();
         _viewport!.AddChild(_model);
-        var bounds = new Aabb();
-        var first = true;
-        foreach (var mesh in Assets.ModelFor(id, definition).Meshes)
-        {
-            var instance = mesh.Instantiate();
-            _model.AddChild(instance);
-            var box = instance.Transform * instance.GetAabb();
-            bounds = first ? box : bounds.Merge(box);
-            first = false;
-        }
+        _model.AddChild(model);
         var camera = _viewport.GetCamera3D()!;
-        camera.Size = Mathf.Max(0.2f, bounds.Size.Length()) * 1.05f;
-        _model.Position = -bounds.GetCenter();
+        if (!HotbarTools.IsTool(id))
+        {
+            if (Bounds(_model, Transform3D.Identity) is not { } bounds)
+                return false;
+            camera.Size = Mathf.Max(0.2f, bounds.Size.Length()) * 1.05f;
+            _model.Position = -bounds.GetCenter();
+            return true;
+        }
+        // Tools are long and thin: fitted to what the camera sees of them, not to their box, so they fill the picture.
+        var view = camera.GlobalTransform.Basis;
+        if (Bounds(_model, new Transform3D(view.Inverse(), Vector3.Zero)) is not { } seen)
+            return false;
+        camera.Size = Mathf.Max(0.2f, Mathf.Max(seen.Size.X, seen.Size.Y)) * 1.08f;
+        _model.Position = -(view * seen.GetCenter());
+        return true;
+    }
+
+    private Node3D? PartModel(string id)
+    {
+        if (Catalog.FindDefinition(id) is not { } definition)
+            return null;
+        var root = new Node3D();
+        foreach (var mesh in Assets.ModelFor(id, definition).Meshes)
+            root.AddChild(mesh.Instantiate());
+        return root;
+    }
+
+    // The box around every mesh under root, in root's space turned by `view`, or null when there are none.
+    private static Aabb? Bounds(Node3D root, Transform3D view)
+    {
+        Aabb? bounds = null;
+        var toRoot = view * root.GlobalTransform.AffineInverse();
+        foreach (var mesh in root.FindChildren("*", nameof(MeshInstance3D), owned: false).OfType<MeshInstance3D>())
+        {
+            if (!mesh.IsVisibleInTree())
+                continue;
+            var box = toRoot * mesh.GlobalTransform * mesh.GetAabb();
+            bounds = bounds is { } b ? b.Merge(box) : box;
+        }
+        return bounds;
     }
 
     /// <summary>Short text standing in for a picture: the initials of <paramref name="name"/>.</summary>
