@@ -138,6 +138,7 @@ public class EndpointProtocolTests
     public void AsyncMethodsAnswerWhenTheyFinish()
     {
         var gate = new TaskCompletionSource<JsonElement?>();
+        var failGate = new TaskCompletionSource();
         var endpoint = Endpoint();
         endpoint.AddModule(new Module(
             RpcMethod.CreateAsync<EchoParams>("test.later", AgentScope.Observe, "Answers later.", (_, _) => gate.Task),
@@ -145,7 +146,7 @@ public class EndpointProtocolTests
             RpcMethod.CreateAsync<NoArgs>("test.fails", AgentScope.Observe, "Fails later.",
                 async (_, _) =>
                 {
-                    await Task.Yield();
+                    await failGate.Task;
                     throw new RpcException(RpcErrors.Rejected, "Nope.");
                 })));
         var connection = endpoint.Connect();
@@ -162,6 +163,8 @@ public class EndpointProtocolTests
 
         var batch = endpoint.Handle(connection, """[{ "jsonrpc": "2.0", "id": 1, "method": "test.now" }, { "jsonrpc": "2.0", "id": 2, "method": "test.fails" }]""", 0);
         Assert.Single(JsonDocument.Parse(batch!).RootElement.EnumerateArray());
+        Assert.Empty(endpoint.DrainOutgoing(connection));
+        failGate.SetResult();
         var deadline = DateTime.UtcNow.AddSeconds(5);
         IReadOnlyList<string> later = [];
         while (later.Count == 0 && DateTime.UtcNow < deadline)
