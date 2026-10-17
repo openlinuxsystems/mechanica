@@ -115,7 +115,7 @@ Adding, removing or reordering scatter rules changes those ids, so do it before 
 | `placement.fixed` | `[x, z]` of a single POI, with optional `pad_height` and `yaw` (a multiple of 90). Give this or `spacing`. |
 | `placement.spacing` | `[min, max]` metres between neighbours of this kind. `min` must be at least twice the radius. Needs `biomes`. A spaced POI is turned a random quarter turn. |
 | `placement.priority` | Higher kinds are placed first and win contested ground. |
-| `terrain[]` | `flatten` levels a disc to the pad height; `basin` sinks it `depth` metres below the pad (below `sea_level` it fills with water). Full strength inside `radius`, fading over `blend`, centred at `at` (`[x, z]`). Must stay inside the POI radius. |
+| `terrain[]` | `flatten` levels a disc to the pad height; `basin` sinks it `depth` metres below the pad (below `sea_level` it fills with water). A basin's `blend` must be at least 1.5 × `depth`, so its bank is no steeper than the 45° a player can walk up and a pond is never a trap. Full strength inside `radius`, fading over `blend`, centred at `at` (`[x, z]`). Must stay inside the POI radius. |
 | `pieces[]` | Static structure, as shapes. Positions are relative to the POI centre on its pad. |
 | `markers[]` | Points for other systems: `type` (`spawn`, `item`, `bot`, `fire`, `door`, `npc`, `core`, ...) and an optional `ref` (a catalog id, or a character id for `npc`). The first `spawn` marker of a fixed POI is where players start. [Quests](quests.md) point at markers. |
 

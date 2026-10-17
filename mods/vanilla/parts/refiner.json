@@ -34,6 +34,7 @@
   },
   "crafting": {
     "speed": 1,
-    "queue_size": 8
+    "queue_size": 8,
+    "link_range": 1
   }
 }

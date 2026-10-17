@@ -51,6 +51,15 @@ public sealed record CraftArgs(int Creation, int Part, string Recipe, int Count 
 /// <param name="Job">Index of the order in the station's queue (0 is the one being worked).</param>
 public sealed record CancelCraftArgs(int Creation, int Part, int Job);
 
+/// <summary>Arguments of <c>UpgradePart</c>: raise a placed part one upgrade level.</summary>
+/// <param name="Creation">Creation holding the part.</param>
+/// <param name="Part">The part.</param>
+public sealed record UpgradePartArgs(int Creation, int Part);
+
+/// <summary>Value of a successful <c>UpgradePart</c>.</summary>
+/// <param name="Level">The part's level now.</param>
+public sealed record UpgradePartResult(int Level);
+
 /// <summary>Arguments of <c>GiveItems</c> (Creative only).</summary>
 /// <param name="Item">Item id.</param>
 /// <param name="Count">How many (1 or more).</param>
@@ -86,6 +95,10 @@ public sealed record CraftJobView(string Recipe, int Count, float Progress, floa
 /// <param name="Queue">A station's orders (null for other inventories).</param>
 /// <param name="Speed">A station's crafting speed.</param>
 /// <param name="Blocked">True when a station's finished craft is waiting for room.</param>
+/// <param name="QueueSize">Most orders a station takes at once.</param>
+/// <param name="Linked">Containers linked to a station (<see cref="StorageLinks"/>), by part id; null for other inventories.</param>
+/// <param name="Level">The part's upgrade level.</param>
+/// <param name="MaxLevel">The part's top upgrade level (0 when it has none).</param>
 public sealed record InventoryView(
     InventoryRef Inventory,
     int SlotCount,
@@ -94,7 +107,11 @@ public sealed record InventoryView(
     IReadOnlyList<string>? Accepts = null,
     IReadOnlyList<CraftJobView>? Queue = null,
     float? Speed = null,
-    bool Blocked = false)
+    bool Blocked = false,
+    int? QueueSize = null,
+    IReadOnlyList<InventoryRef>? Linked = null,
+    int Level = 0,
+    int MaxLevel = 0)
 {
     /// <summary>The stack in <paramref name="slot"/>, or null.</summary>
     public SlotView? At(int slot) => Items.FirstOrDefault(i => i.Slot == slot);
@@ -107,7 +124,8 @@ public sealed record InventoryView(
 /// <param name="Inventory">The inventory object.</param>
 /// <param name="Revision">Its revision.</param>
 /// <param name="QueueRevision">Its station queue's revision, or 0.</param>
-public sealed record InventoryVersion(Inventory Inventory, int Revision, int QueueRevision);
+/// <param name="CreationRevision">Its Creation's revision (links and levels follow the build), or 0 for a player's.</param>
+public sealed record InventoryVersion(Inventory Inventory, int Revision, int QueueRevision, int CreationRevision = 0);
 
 /// <summary>Value of a successful <c>MoveItems</c>.</summary>
 /// <param name="Moved">How many items moved.</param>
@@ -156,15 +174,19 @@ public interface IInventoryWorld
 /// Inventories and crafting in the Action API (chunk 18), validated on the host like every other action:
 /// <list type="bullet">
 /// <item><c>MoveItems</c>: moves items between the caller's own inventory and containers in reach, or within one.</item>
-/// <item><c>Craft</c>: takes a recipe's inputs from the caller's inventory and queues it at a station in reach.
-/// The station works its queue over time (<see cref="Tick"/>) and puts what it makes in its own inventory.</item>
-/// <item><c>CancelCraft</c>: drops an order and returns the inputs of its unfinished crafts.</item>
+/// <item><c>Craft</c>: takes a recipe's inputs from the station's linked storage (<see cref="StorageLinks"/>), then the
+/// caller's inventory, and queues it at a station in reach. The station works its queue over time (<see cref="Tick"/>)
+/// and puts what it makes in its linked storage, then its own inventory.</item>
+/// <item><c>CancelCraft</c>: drops an order and returns the inputs of its unfinished crafts to the caller, then the
+/// linked storage.</item>
+/// <item><c>UpgradePart</c>: raises a part one upgrade level (<see cref="PartUpgrades"/>), taking the level's cost from
+/// the caller's inventory unless <see cref="InventorySettings.FreeUpgrades"/> (Creative).</item>
 /// <item><c>GiveItems</c>: makes items from nothing, only while <see cref="InventorySettings.AllowGive"/> (Creative).</item>
 /// <item><c>GetInventory</c>: reads an inventory the caller may use (a query).</item>
 /// </list>
 /// Each player's own inventory lives here, keyed by peer; container and station inventories live in
 /// their Creation's parts, so they move, split, weld and save with them. No caller can touch another
-/// player's inventory.
+/// player's inventory. A container linked to a station in reach counts as in reach.
 /// </summary>
 public sealed class InventoryActions(IPartCatalog catalog, RecipeBook recipes, InventorySettings settings, IInventoryWorld world)
 {
@@ -179,6 +201,9 @@ public sealed class InventoryActions(IPartCatalog catalog, RecipeBook recipes, I
 
     /// <summary>Action name for cancelling an order.</summary>
     public const string CancelCraft = "CancelCraft";
+
+    /// <summary>Action name for upgrading a part.</summary>
+    public const string UpgradePart = "UpgradePart";
 
     /// <summary>Action name for making items (Creative).</summary>
     public const string GiveItems = "GiveItems";
@@ -201,6 +226,7 @@ public sealed class InventoryActions(IPartCatalog catalog, RecipeBook recipes, I
         dispatcher.Register<CraftArgs>(Craft, ValidateCraft, ApplyCraft);
         dispatcher.Register<CancelCraftArgs>(CancelCraft, ValidateCancel, ApplyCancel);
         dispatcher.Register<GiveItemsArgs>(GiveItems, ValidateGive, ApplyGive);
+        dispatcher.Register<UpgradePartArgs>(UpgradePart, ValidateUpgrade, ApplyUpgrade);
         dispatcher.Register<GetInventoryArgs>(GetInventory, (c, a) => CheckAccess(c, a.Inventory, out _), (c, a) => Value(View(a.Inventory)), readOnly: true);
     }
 
@@ -237,11 +263,16 @@ public sealed class InventoryActions(IPartCatalog catalog, RecipeBook recipes, I
             return new InventoryView(where, inventory.SlotCount, items, Accepts: accepts);
         var creation = world.FindCreation(where.Creation!.Value)!;
         var part = creation.FindPart(where.Part!.Value)!;
+        var definition = creation.DefinitionOf(part.Id);
         var queue = creation.CraftingOf(part.Id);
         return new InventoryView(where, inventory.SlotCount, items, part.Part, accepts,
             queue?.Jobs.Select(j => new CraftJobView(j.Recipe, j.Count, j.Progress, recipes.Find(j.Recipe)?.Time ?? 0)).ToList(),
-            queue is null ? null : SpeedOf(creation.DefinitionOf(part.Id)),
-            queue?.IsBlocked ?? false);
+            queue is null ? null : SpeedOf(definition),
+            queue?.IsBlocked ?? false,
+            queue is null ? null : definition.Crafting!.QueueSize ?? 1,
+            queue is null ? null : [.. StorageLinks.Of(creation, part.Id).Select(id => InventoryRef.OfPart(creation.Id, id))],
+            part.Level,
+            PartUpgrades.MaxLevel(creation.Catalog.FindDefinition(part.Part) ?? definition));
     }
 
     /// <summary>
@@ -252,9 +283,10 @@ public sealed class InventoryActions(IPartCatalog catalog, RecipeBook recipes, I
     {
         if (Find(where) is not { } inventory)
             return null;
-        var queue = where.IsPlayer ? null : world.FindCreation(where.Creation!.Value)!.CraftingOf(where.Part!.Value);
+        var creation = where.IsPlayer ? null : world.FindCreation(where.Creation!.Value)!;
+        var queue = creation?.CraftingOf(where.Part!.Value);
         // The inventory object follows its part, so after a weld or split renames the part it is a new one here.
-        return new InventoryVersion(inventory, inventory.Revision, queue?.Revision ?? 0);
+        return new InventoryVersion(inventory, inventory.Revision, queue?.Revision ?? 0, creation?.Revision ?? 0);
     }
 
     /// <summary>Null when <paramref name="caller"/> may use the inventory <paramref name="where"/> names, or why not.</summary>
@@ -278,7 +310,8 @@ public sealed class InventoryActions(IPartCatalog catalog, RecipeBook recipes, I
             return $"Creation {id} has no part {partId}.";
         if (creation.InventoryOf(partId) is not { } found)
             return $"{creation.DefinitionOf(partId).Name ?? part.Part} has no inventory.";
-        if (CheckReach(caller, creation, partId) is { } far)
+        if (CheckReach(caller, creation, partId) is { } far
+            && !StorageLinks.StationsOf(creation, partId).Any(station => CheckReach(caller, creation, station) is null))
             return far;
         inventory = found;
         return null;
@@ -300,7 +333,7 @@ public sealed class InventoryActions(IPartCatalog catalog, RecipeBook recipes, I
                 if (creation.InventoryOf(part) is not { } output)
                     continue;
                 var definition = creation.DefinitionOf(part);
-                var finished = queue.Tick(seconds, SpeedOf(definition), recipes, output);
+                var finished = queue.Tick(seconds, SpeedOf(definition), recipes, [.. Linked(creation, part), output]);
                 var owner = BuildActions.OwnerOf(creation.FindPart(part)!.Part);
                 if (finished > 0 && PartSounds.For(definition, PartSounds.Complete) is { } complete)
                     world.PlaySound(complete, owner, BuildActions.PartCentre(creation, part));
@@ -350,46 +383,62 @@ public sealed class InventoryActions(IPartCatalog catalog, RecipeBook recipes, I
         var limit = creation.DefinitionOf(args.Part).Crafting!.QueueSize ?? 1;
         if (queue!.Jobs.Count >= limit)
             return $"The {creation.DefinitionOf(args.Part).Name ?? station} queue is full ({limit}).";
-        var pockets = PlayerInventory(caller.Peer);
+        var pool = Supplies(caller, creation, args.Part);
         foreach (var input in recipe.InputsFor(args.Count))
         {
-            var have = pockets.Count(input.Item);
+            var have = ItemPool.Count(pool, input.Item);
             if (have < input.Count)
                 return $"You need {input.Count} {Name(input.Item)} and have {have}.";
         }
         return null;
     }
 
+    /// <summary>
+    /// Where a craft at a station takes its inputs from, in order: the station's linked storage, then the caller's own
+    /// inventory (a script or the host has none).
+    /// </summary>
+    public IReadOnlyList<Inventory> Supplies(ActionCaller caller, Creation creation, int station) =>
+        [.. Linked(creation, station), PlayerInventory(caller.Peer)];
+
+    // The inventories of the containers linked to a station.
+    private static IEnumerable<Inventory> Linked(Creation creation, int station) =>
+        StorageLinks.Of(creation, station).Select(creation.InventoryOf).OfType<Inventory>();
+
     private JsonElement? ApplyCraft(ActionCaller caller, CraftArgs args)
     {
         var creation = world.FindCreation(args.Creation)!;
         var queue = creation.CraftingOf(args.Part)!;
         var recipe = recipes.Find(args.Recipe)!;
-        var pockets = PlayerInventory(caller.Peer);
+        var pool = Supplies(caller, creation, args.Part);
         foreach (var input in recipe.InputsFor(args.Count))
-            pockets.Remove(input.Item, input.Count);
+            ItemPool.Remove(pool, input.Item, input.Count);
         queue.Enqueue(new CraftJob(recipe.QualifiedId, args.Count));
         return Value(new CraftResult(args.Count, queue.Jobs.Count - 1));
     }
 
     private string? ValidateCancel(ActionCaller caller, CancelCraftArgs args)
     {
-        var bad = CheckStation(caller, args.Creation, args.Part, out _, out var found);
+        var bad = CheckStation(caller, args.Creation, args.Part, out var creation, out var found);
         if (bad is not null || found is not { } queue)
             return bad;
         if (args.Job < 0 || args.Job >= queue.Jobs.Count)
             return queue.IsEmpty ? "Nothing is queued." : $"job must be 0 to {queue.Jobs.Count - 1} (got {args.Job}).";
         var refund = Refund(queue.Jobs[args.Job]);
-        return PlayerInventory(caller.Peer).CanAddAll(refund) ? null : "Make room in your inventory for the returned items first.";
+        return ItemPool.CanAddAll(Returns(caller, creation!, args.Part), refund) ? null : "Make room in your inventory for the returned items first.";
     }
 
     private JsonElement? ApplyCancel(ActionCaller caller, CancelCraftArgs args)
     {
-        var queue = world.FindCreation(args.Creation)!.CraftingOf(args.Part)!;
+        var creation = world.FindCreation(args.Creation)!;
+        var queue = creation.CraftingOf(args.Part)!;
         var refund = Refund(queue.RemoveAt(args.Job));
-        PlayerInventory(caller.Peer).TryAddAll(refund);
+        ItemPool.TryAddAll(Returns(caller, creation, args.Part), refund);
         return Value(new CancelCraftResult(refund));
     }
+
+    // Where a cancelled order's inputs go: the caller's own inventory, then the station's linked storage.
+    private IReadOnlyList<Inventory> Returns(ActionCaller caller, Creation creation, int station) =>
+        [PlayerInventory(caller.Peer), .. Linked(creation, station)];
 
     // Inputs of an order's crafts that have not finished; a recipe that no longer exists returns nothing.
     private List<ItemAmount> Refund(CraftJob job) => recipes.Find(job.Recipe) is { } recipe ? [.. recipe.InputsFor(job.Count)] : [];
@@ -408,6 +457,53 @@ public sealed class InventoryActions(IPartCatalog catalog, RecipeBook recipes, I
             return far;
         queue = found;
         return null;
+    }
+
+    // ---- UpgradePart ----
+
+    /// <summary>
+    /// What raising the part one level costs (empty when it is free or at its top level), as qualified amounts.
+    /// </summary>
+    public IReadOnlyList<ItemAmount> UpgradeCost(Creation creation, int partId)
+    {
+        if (settings.FreeUpgrades || creation.FindPart(partId) is not { } part || catalog.FindDefinition(part.Part) is not { } written
+            || part.Level >= PartUpgrades.MaxLevel(written))
+            return [];
+        return [.. (written.Upgrades![part.Level].Cost ?? []).Select(c => new ItemAmount(Identifiers.Qualify(c.Item!), c.Count ?? 1))];
+    }
+
+    private string? ValidateUpgrade(ActionCaller caller, UpgradePartArgs args)
+    {
+        if (world.FindCreation(args.Creation) is not { } creation)
+            return $"There is no creation {args.Creation}.";
+        if (creation.FindPart(args.Part) is not { } part)
+            return $"Creation {args.Creation} has no part {args.Part}.";
+        var name = creation.DefinitionOf(args.Part).Name ?? part.Part;
+        var top = PartUpgrades.MaxLevel(catalog.FindDefinition(part.Part) ?? creation.DefinitionOf(args.Part));
+        if (top == 0)
+            return $"The {name} can't be upgraded.";
+        if (part.Level >= top)
+            return $"The {name} is already at its top level ({top}).";
+        if (CheckReach(caller, creation, args.Part) is { } far)
+            return far;
+        var pockets = PlayerInventory(caller.Peer);
+        foreach (var cost in UpgradeCost(creation, args.Part))
+        {
+            var have = pockets.Count(cost.Item);
+            if (have < cost.Count)
+                return $"You need {cost.Count} {Name(cost.Item)} and have {have}.";
+        }
+        return null;
+    }
+
+    private JsonElement? ApplyUpgrade(ActionCaller caller, UpgradePartArgs args)
+    {
+        var creation = world.FindCreation(args.Creation)!;
+        var pockets = PlayerInventory(caller.Peer);
+        foreach (var cost in UpgradeCost(creation, args.Part))
+            pockets.Remove(cost.Item, cost.Count);
+        creation.SetLevel(args.Part, creation.LevelOf(args.Part) + 1);
+        return Value(new UpgradePartResult(creation.LevelOf(args.Part)));
     }
 
     // ---- GiveItems ----

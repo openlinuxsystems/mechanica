@@ -27,6 +27,7 @@ These are the default keys. Every one can be changed in Options, Controls.
 | G | Drop one of the item in hand |
 | E | Use: open the blueprint menu (the Lift in hand, aimed at your Lift), open a container or station, pick up items, harvest, sleep in a bed, sit in or leave a seat, use a part, change a part's settings, use a quest marker, talk, respawn after dying |
 | I or B | Inventory |
+| U | Upgrade the part you are aiming at (a station), or the station whose screen is open |
 | L | Logbook: the quest log, where you pick an answer when a quest asks you to decide |
 | Esc | Menu: save, load, open your world to the LAN, Options, help, quit. Esc also closes any open window. |
 | H or F1 | Help |
@@ -104,6 +105,19 @@ Interactive, Tools, Resources and Consumables.
 - In **Creative**, every part and tool is listed under the grid; drag one onto the hotbar, or into your
   inventory for a full stack.
 - In **Survival**, a warning shows at the top when only a few slots are free.
+
+**Stations.** Use (**E**) on a Fabricator or another station to open its screen in three columns. On the
+left are its recipes, with a search box and the same category filters; a recipe you can't afford yet is
+dimmed. The middle shows the chosen recipe: what it makes, how long it takes and what it needs (red when
+you are short), a quantity and **Craft**, then the queue with a progress bar and the time left for each
+order (Cancel gives the inputs back), and the station's output slots. On the right are your inventory and
+the station's **linked storage**: any chest built on the same Creation right next to the station (a
+pipe joins them). Crafting takes inputs from linked chests first, then from you, and puts what it makes
+in a linked chest when there is room.
+
+**Upgrades.** Press **U** (or **Upgrade** on the station's screen) to see what the next level costs and
+what it changes, such as speed, queue length and slots. Upgrades cost Component Kits in Survival and are
+free in Creative.
 
 ## Options
 

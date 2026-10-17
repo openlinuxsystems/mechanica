@@ -60,6 +60,7 @@ public static class CreationJson
                 Rotation = p.Rotation,
                 Color = p.Color,
                 Settings = p.Settings is null ? null : new SortedDictionary<string, JsonElement>(p.Settings.ToDictionary(), StringComparer.Ordinal),
+                Level = p.Level > 0 ? p.Level : null,
                 Damage = creation.PartDamage(p.Id) is var damage and > 0 ? damage : null,
                 Inventory = InventorySlots(creation.HoldsItems(p.Id) ? creation.InventoryOf(p.Id) : null),
                 Crafting = creation.HoldsItems(p.Id) && creation.CraftingOf(p.Id) is { IsEmpty: false } queue
@@ -375,6 +376,8 @@ public static class CreationJson
             sink.Error(invalid, $"{path}.damage", $"damage must be a number of 0 or more (got {damage}).");
         if (definition is not null && data.Settings is { } settings && Logic.PartSettings.Check(definition, settings) is { } bad)
             sink.Error(invalid, $"{path}.settings", bad);
+        if (definition is not null && data.Level is { } level && (level < 0 || level > PartUpgrades.MaxLevel(definition)))
+            sink.Error(invalid, $"{path}.level", $"level must be 0 to {PartUpgrades.MaxLevel(definition)} for '{data.Part}' (got {level}).");
         if (sink.ErrorCount > errors)
             return null;
         KnownKeys.WarnUnknown(data.Extra, path, sink, typeof(PartInstanceData));
@@ -382,9 +385,10 @@ public static class CreationJson
         {
             Color = data.Color?.ToLowerInvariant(),
             Settings = data.Settings is { Count: > 0 } s ? new SortedDictionary<string, JsonElement>(s, StringComparer.Ordinal) : null,
+            Level = data.Level ?? 0,
             Extra = data.Extra,
         };
-        return (part, definition!);
+        return (part, PartUpgrades.At(definition!, part.Level));
     }
 
     private static Dictionary<string, JsonElement>? Sorted(IReadOnlyDictionary<string, JsonElement>? extra) =>
@@ -425,6 +429,8 @@ public static class CreationJson
         public string? Color { get; init; }
 
         public SortedDictionary<string, JsonElement>? Settings { get; init; }
+
+        public int? Level { get; init; }
 
         public float? Damage { get; init; }
 

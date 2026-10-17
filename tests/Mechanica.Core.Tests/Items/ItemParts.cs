@@ -15,6 +15,7 @@ internal static class ItemParts
     public const string Tank = "test:tank";
     public const string Bench = "test:bench";
     public const string Block = "test:block";
+    public const string Forge = "test:forge";
 
     public static PartCatalog Catalog() => new PartCatalog()
         .Add(Scrap, Item("scrap", "Scrap", 50))
@@ -29,14 +30,34 @@ internal static class ItemParts
             new CraftingDefinition { Speed = 2, QueueSize = 2 }) with
         {
             Sounds = new() { ["start"] = "bench_start", ["work"] = "bench_work", ["complete"] = "bench_done" },
+        })
+        .Add(Forge, Placeable("forge", "Forge", PartCategory.Station, new InventoryDefinition { Slots = 2 },
+            new CraftingDefinition { Speed = 1, QueueSize = 2, LinkRange = 0.5f }) with
+        {
+            Upgrades =
+            [
+                new UpgradeDefinition
+                {
+                    Cost = [new RecipeItem { Item = Kit, Count = 2 }],
+                    Set = (System.Text.Json.Nodes.JsonObject)System.Text.Json.Nodes.JsonNode.Parse("""{ "crafting": { "speed": 4 }, "inventory": { "slots": 3 } }""")!,
+                },
+                new UpgradeDefinition
+                {
+                    Cost = [new RecipeItem { Item = Kit, Count = 3 }],
+                    Set = (System.Text.Json.Nodes.JsonObject)System.Text.Json.Nodes.JsonNode.Parse("""{ "crafting": { "queue_size": 3 } }""")!,
+                },
+            ],
         });
 
-    /// <summary>Bench recipes: 2 scrap + 1 wood make a chest in 4 s; 1 scrap makes 10 blocks in 1 s.</summary>
+    /// <summary>
+    /// Bench recipes: 2 scrap + 1 wood make a chest in 4 s (also at the Forge); 1 scrap makes 10 blocks in 1 s. The Forge
+    /// links containers within 0.5 m and has two upgrade levels (2 then 3 kits).
+    /// </summary>
     public static RecipeBook Recipes(IPartCatalog catalog) => RecipeBook.From(catalog,
         ("test", new RecipeDefinition
         {
             Id = "chest",
-            Stations = [Bench],
+            Stations = [Bench, Forge],
             Inputs = [new RecipeItem { Item = Scrap, Count = 2 }, new RecipeItem { Item = Wood, Count = 1 }],
             Outputs = [new RecipeItem { Item = Chest, Count = 1 }],
             Time = 4,

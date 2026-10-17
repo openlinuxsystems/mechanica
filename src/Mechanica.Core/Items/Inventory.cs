@@ -21,7 +21,7 @@ public readonly record struct ItemAmount(string Item, int Count);
 /// </summary>
 public sealed class Inventory
 {
-    private readonly ItemStack?[] _slots;
+    private ItemStack?[] _slots;
     private readonly HashSet<string>? _accepts;
 
     /// <summary>Creates an empty inventory.</summary>
@@ -184,6 +184,15 @@ public sealed class Inventory
             return $"this inventory does not take '{stack.Item}'.";
         var max = StackSizeOf(stack.Item);
         return stack.Count < 1 || stack.Count > max ? $"count must be 1 to {max} for '{stack.Item}' (got {stack.Count})." : null;
+    }
+
+    /// <summary>Adds empty slots at the end until there are <paramref name="slots"/> (an upgrade); never removes any.</summary>
+    public void Grow(int slots)
+    {
+        if (slots <= _slots.Length)
+            return;
+        Array.Resize(ref _slots, slots);
+        Revision++;
     }
 
     /// <summary>Empties every slot.</summary>

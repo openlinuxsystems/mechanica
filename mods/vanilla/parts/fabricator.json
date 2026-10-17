@@ -34,6 +34,60 @@
   },
   "crafting": {
     "speed": 1,
-    "queue_size": 8
-  }
+    "queue_size": 8,
+    "link_range": 1
+  },
+  "upgrades": [
+    {
+      "cost": [
+        {
+          "item": "component_kit",
+          "count": 2
+        }
+      ],
+      "set": {
+        "crafting": {
+          "speed": 1.25,
+          "queue_size": 10
+        },
+        "inventory": {
+          "slots": 12
+        }
+      }
+    },
+    {
+      "cost": [
+        {
+          "item": "component_kit",
+          "count": 4
+        }
+      ],
+      "set": {
+        "crafting": {
+          "speed": 1.5,
+          "queue_size": 12
+        },
+        "inventory": {
+          "slots": 15
+        }
+      }
+    },
+    {
+      "cost": [
+        {
+          "item": "component_kit",
+          "count": 6
+        }
+      ],
+      "set": {
+        "crafting": {
+          "speed": 2,
+          "queue_size": 16
+        },
+        "inventory": {
+          "slots": 20
+        }
+      }
+    }
+  ]
 }

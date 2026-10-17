@@ -27,6 +27,17 @@ public partial class CreationNode : Node3D
     private readonly List<(int Part, Node3D Model, Vector3 Axis, Vector3 Pivot)> _animated = [];
     private readonly List<(CreationBody Body, Node3D Visual, Transform3D Placed)> _visuals = [];
     private Vector3 _visualOffset;
+    private readonly List<(int Station, int Container)> _pipes = [];
+
+    // The pipe from a station to each container linked to it (UI spec §4): visual only, no collision.
+    private static readonly StandardMaterial3D PipeMaterial = new()
+    {
+        AlbedoColor = Ui.UiTokens.Blue.Darkened(0.35f),
+        Metallic = 0.7f,
+        Roughness = 0.35f,
+    };
+
+    private static readonly CylinderMesh PipeMesh = new() { TopRadius = 0.035f, BottomRadius = 0.035f, Height = 1f, RadialSegments = 10, Rings = 1, Material = PipeMaterial };
 
     /// <summary>The graph this node shows. Set before adding the node to the tree.</summary>
     public Creation Creation { get; init; } = null!;
@@ -60,6 +71,9 @@ public partial class CreationNode : Node3D
 
     /// <summary>Grid-frame box of each body, in <see cref="Bodies"/> order (<see cref="CreationBounds"/>).</summary>
     public IReadOnlyList<WorldBounds> LocalBounds { get; private set; } = [];
+
+    /// <summary>The storage pipes drawn, station then linked container (<see cref="Core.Items.StorageLinks"/>).</summary>
+    public IReadOnlyList<(int Station, int Container)> Pipes => _pipes;
 
     /// <summary>True when this peer runs the physics for the Creation.</summary>
     public bool IsSimulated => Multiplayer.GetUniqueId() == Creation.AuthorityPeer;
@@ -226,6 +240,7 @@ public partial class CreationNode : Node3D
         _lights.Clear();
         _animated.Clear();
         _visuals.Clear();
+        _pipes.Clear();
         _bodies.Clear();
     }
 
@@ -278,11 +293,46 @@ public partial class CreationNode : Node3D
                 frictionMass += m;
             }
         }
+        AddPipes(node, body);
         // Jolt has one material per body, so a Body's friction is its parts' mass-weighted mean.
         if (frictionMass > 0)
             node.PhysicsMaterialOverride = new PhysicsMaterial { Friction = friction / frictionMass };
         AddChild(node);
         return node;
+    }
+
+    // A pipe from each station in the body to every linked container in the same body, centre to centre.
+    private void AddPipes(CreationBody node, Body body)
+    {
+        foreach (var station in body.PartIds.Where(id => Creation.DefinitionOf(id).Crafting is not null))
+        {
+            foreach (var container in Core.Items.StorageLinks.Of(Creation, station).Where(body.PartIds.Contains))
+            {
+                var from = Centre(station);
+                var to = Centre(container);
+                var length = from.DistanceTo(to);
+                if (length < 0.01f)
+                    continue;
+                var up = (to - from) / length;
+                var side = Mathf.Abs(up.Dot(Vector3.Forward)) > 0.9f ? Vector3.Right : Vector3.Forward;
+                var x = up.Cross(side).Normalized();
+                var basis = new Basis(x, up, x.Cross(up)).Scaled(new Vector3(1, length, 1));
+                node.AddChild(new MeshInstance3D
+                {
+                    Name = $"Pipe{station}to{container}",
+                    Mesh = PipeMesh,
+                    CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+                    Transform = new Transform3D(basis, (from + to) / 2),
+                });
+                _pipes.Add((station, container));
+            }
+        }
+    }
+
+    private Vector3 Centre(int part)
+    {
+        var instance = Creation.FindPart(part)!;
+        return PartGeometry.CentreMetres(Creation.DefinitionOf(part), instance.Cell, instance.Rotation).ToGodot();
     }
 
     // A part's light, dark until its script turns it up. Spots shine along local -Z, so they are turned to the light's direction.
