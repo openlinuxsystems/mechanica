@@ -1,0 +1,1109 @@
+// Bot Behavior Editor batch (chunk 21, D3): every vanilla bot and the raid table (spec §11.6, §16, §21.2).
+// Edit here and re-run tools/author-vanilla.sh; the bots/ and raids/ files are its output.
+{
+  "format_version": 1,
+  "bots": [
+    {
+      "file": "bots/scuttler_green.json",
+      "template": "melee",
+      "set": {
+        "name": "Green Scuttler",
+        "description": "Small, fast and common. Raids in swarms and whips whatever it reaches.",
+        "family": "scuttler",
+        "health": 60,
+        "speed": 5,
+        "water_speed": 3,
+        "sight": 30,
+        "size": {
+          "radius": 0.35,
+          "height": 0.9
+        },
+        "color": "#5fae3e",
+        "raid_cost": 1,
+        "attacks": [
+          {
+            "id": "whip",
+            "kind": "melee",
+            "damage": 15,
+            "part_damage": 10,
+            "range": 1.4,
+            "interval": 1.0
+          }
+        ],
+        "drops": [
+          {
+            "item": "circuit_board",
+            "chance": 0.75,
+            "count": 1
+          },
+          {
+            "item": "scuttler_head",
+            "chance": 0.1,
+            "count": 1
+          }
+        ],
+        "behavior": {
+          "type": "selector",
+          "children": [
+            {
+              "type": "sequence",
+              "children": [
+                {
+                  "type": "find_player",
+                  "range": 12
+                },
+                {
+                  "type": "chase",
+                  "attack": "whip",
+                  "speed": 1
+                },
+                {
+                  "type": "attack",
+                  "attack": "whip"
+                }
+              ]
+            },
+            {
+              "type": "sequence",
+              "children": [
+                {
+                  "type": "in_raid"
+                },
+                {
+                  "type": "find_crop"
+                },
+                {
+                  "type": "chase",
+                  "attack": "whip",
+                  "speed": 1
+                },
+                {
+                  "type": "attack",
+                  "attack": "whip"
+                }
+              ]
+            },
+            {
+              "type": "go_to_raid",
+              "radius": 6
+            },
+            {
+              "type": "wander",
+              "radius": 8,
+              "speed": 0.4
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": "bots/scuttler_blue.json",
+      "base": "scuttler_green",
+      "set": {
+        "name": "Blue Scuttler",
+        "description": "Charges with a drill, and is even faster in water.",
+        "water_speed": 7,
+        "color": "#3e7fd0",
+        "raid_cost": 2,
+        "script": "scripts/bots/scuttler.lua",
+        "attacks": [
+          {
+            "id": "drill",
+            "kind": "melee",
+            "damage": 20,
+            "part_damage": 15,
+            "range": 1.5,
+            "interval": 1.2,
+            "sound": "scuttler_attack"
+          }
+        ],
+        "drops": [
+          {
+            "item": "circuit_board",
+            "chance": 0.75,
+            "count": 1
+          },
+          {
+            "item": "glue",
+            "chance": 0.4,
+            "count": 1
+          }
+        ],
+        "behavior": {
+          "type": "selector",
+          "children": [
+            {
+              "type": "sequence",
+              "children": [
+                {
+                  "type": "find_player",
+                  "range": 12
+                },
+                {
+                  "type": "call",
+                  "function": "charge"
+                },
+                {
+                  "type": "chase",
+                  "attack": "drill",
+                  "speed": 1
+                },
+                {
+                  "type": "attack",
+                  "attack": "drill"
+                }
+              ]
+            },
+            {
+              "type": "sequence",
+              "children": [
+                {
+                  "type": "in_raid"
+                },
+                {
+                  "type": "find_crop"
+                },
+                {
+                  "type": "call",
+                  "function": "charge"
+                },
+                {
+                  "type": "chase",
+                  "attack": "drill",
+                  "speed": 1
+                },
+                {
+                  "type": "attack",
+                  "attack": "drill"
+                }
+              ]
+            },
+            {
+              "type": "go_to_raid",
+              "radius": 6
+            },
+            {
+              "type": "wander",
+              "radius": 8,
+              "speed": 0.4
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": "bots/scuttler_yellow.json",
+      "base": "scuttler_green",
+      "set": {
+        "name": "Yellow Scuttler",
+        "description": "Heavier. Stomps the ground, hurting everything around it.",
+        "health": 80,
+        "speed": 4,
+        "size": {
+          "radius": 0.45,
+          "height": 1.1
+        },
+        "color": "#e0c030",
+        "raid_cost": 4,
+        "attacks": [
+          {
+            "id": "stomp",
+            "kind": "area",
+            "damage": 25,
+            "part_damage": 15,
+            "range": 2.0,
+            "radius": 3.0,
+            "interval": 2.0,
+            "sound": "scuttler_stomp"
+          }
+        ],
+        "drops": [
+          {
+            "item": "circuit_board",
+            "chance": 0.75,
+            "count": 1
+          },
+          {
+            "item": "battery_pack",
+            "chance": 0.4,
+            "count": 1
+          }
+        ],
+        "behavior": {
+          "type": "selector",
+          "children": [
+            {
+              "type": "sequence",
+              "children": [
+                {
+                  "type": "find_player",
+                  "range": 12
+                },
+                {
+                  "type": "chase",
+                  "attack": "stomp",
+                  "speed": 1
+                },
+                {
+                  "type": "attack",
+                  "attack": "stomp"
+                }
+              ]
+            },
+            {
+              "type": "sequence",
+              "children": [
+                {
+                  "type": "in_raid"
+                },
+                {
+                  "type": "find_crop"
+                },
+                {
+                  "type": "chase",
+                  "attack": "stomp",
+                  "speed": 1
+                },
+                {
+                  "type": "attack",
+                  "attack": "stomp"
+                }
+              ]
+            },
+            {
+              "type": "go_to_raid",
+              "radius": 6
+            },
+            {
+              "type": "wander",
+              "radius": 8,
+              "speed": 0.4
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": "bots/scuttler_red.json",
+      "base": "scuttler_green",
+      "set": {
+        "name": "Red Scuttler",
+        "description": "Runs at you and blows itself up.",
+        "health": 40,
+        "speed": 6,
+        "color": "#d0402e",
+        "raid_cost": null,
+        "attacks": [
+          {
+            "id": "explode",
+            "kind": "area",
+            "damage": 40,
+            "part_damage": 30,
+            "range": 1.5,
+            "radius": 4.0,
+            "interval": 1.0,
+            "kills_self": true,
+            "sound": "scuttler_explode"
+          }
+        ],
+        "drops": [
+          {
+            "item": "explosive_remnant",
+            "chance": 1.0,
+            "count": 1
+          }
+        ],
+        "behavior": {
+          "type": "selector",
+          "children": [
+            {
+              "type": "sequence",
+              "children": [
+                {
+                  "type": "find_player",
+                  "range": 12
+                },
+                {
+                  "type": "chase",
+                  "attack": "explode",
+                  "speed": 1
+                },
+                {
+                  "type": "attack",
+                  "attack": "explode"
+                }
+              ]
+            },
+            {
+              "type": "sequence",
+              "children": [
+                {
+                  "type": "in_raid"
+                },
+                {
+                  "type": "find_crop"
+                },
+                {
+                  "type": "chase",
+                  "attack": "explode",
+                  "speed": 1
+                },
+                {
+                  "type": "attack",
+                  "attack": "explode"
+                }
+              ]
+            },
+            {
+              "type": "go_to_raid",
+              "radius": 6
+            },
+            {
+              "type": "wander",
+              "radius": 8,
+              "speed": 0.4
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": "bots/scuttler_seed.json",
+      "base": "scuttler_green",
+      "set": {
+        "name": "Seed Scuttler",
+        "description": "A weak scuttler that carries seeds it has stolen.",
+        "health": 30,
+        "speed": 4,
+        "size": {
+          "radius": 0.3,
+          "height": 0.8
+        },
+        "color": "#9a7b4f",
+        "raid_cost": null,
+        "attacks": [
+          {
+            "id": "nip",
+            "kind": "melee",
+            "damage": 8,
+            "part_damage": 5,
+            "range": 1.3,
+            "interval": 1.0
+          }
+        ],
+        "drops": [
+          {
+            "item": "carrot_seed",
+            "chance": 0.5,
+            "count": 2
+          },
+          {
+            "item": "potato_seed",
+            "chance": 0.5,
+            "count": 2
+          },
+          {
+            "item": "tomato_seed",
+            "chance": 0.3,
+            "count": 1
+          }
+        ],
+        "behavior": {
+          "type": "selector",
+          "children": [
+            {
+              "type": "sequence",
+              "children": [
+                {
+                  "type": "find_player",
+                  "range": 6
+                },
+                {
+                  "type": "chase",
+                  "attack": "nip",
+                  "speed": 1
+                },
+                {
+                  "type": "attack",
+                  "attack": "nip"
+                }
+              ]
+            },
+            {
+              "type": "sequence",
+              "children": [
+                {
+                  "type": "in_raid"
+                },
+                {
+                  "type": "find_crop"
+                },
+                {
+                  "type": "chase",
+                  "attack": "nip",
+                  "speed": 1
+                },
+                {
+                  "type": "attack",
+                  "attack": "nip"
+                }
+              ]
+            },
+            {
+              "type": "go_to_raid",
+              "radius": 6
+            },
+            {
+              "type": "wander",
+              "radius": 8,
+              "speed": 0.4
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": "bots/rakehand.json",
+      "template": "melee",
+      "set": {
+        "name": "Rakehand",
+        "description": "A farmhand bot with a pitchfork: quick pokes, and a wide swing when it can.",
+        "family": "rakehand",
+        "health": 100,
+        "speed": 4,
+        "water_speed": 2,
+        "sight": 30,
+        "size": {
+          "radius": 0.45,
+          "height": 1.8
+        },
+        "color": "#a8743a",
+        "raid_cost": 1,
+        "script": "scripts/bots/rakehand.lua",
+        "attacks": [
+          {
+            "id": "poke",
+            "kind": "melee",
+            "damage": 20,
+            "part_damage": 12,
+            "range": 2.0,
+            "interval": 1.2
+          },
+          {
+            "id": "swing",
+            "kind": "melee",
+            "damage": 30,
+            "part_damage": 20,
+            "range": 2.4,
+            "interval": 3.0
+          }
+        ],
+        "drops": [
+          {
+            "item": "component_kit",
+            "chance": 0.65,
+            "count": 1
+          },
+          {
+            "item": "gasoline",
+            "chance": 0.3,
+            "count": 1
+          },
+          {
+            "item": "scrap_metal",
+            "chance": 0.5,
+            "count": 2
+          }
+        ],
+        "behavior": {
+          "type": "selector",
+          "children": [
+            {
+              "type": "sequence",
+              "children": [
+                {
+                  "type": "find_player",
+                  "range": 12
+                },
+                {
+                  "type": "succeed",
+                  "children": [
+                    {
+                      "type": "cooldown",
+                      "seconds": 8,
+                      "children": [
+                        {
+                          "type": "call",
+                          "function": "cry"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "chase",
+                  "attack": "poke",
+                  "speed": 1
+                },
+                {
+                  "type": "selector",
+                  "children": [
+                    {
+                      "type": "attack",
+                      "attack": "swing"
+                    },
+                    {
+                      "type": "attack",
+                      "attack": "poke"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "sequence",
+              "children": [
+                {
+                  "type": "in_raid"
+                },
+                {
+                  "type": "find_crop"
+                },
+                {
+                  "type": "succeed",
+                  "children": [
+                    {
+                      "type": "cooldown",
+                      "seconds": 8,
+                      "children": [
+                        {
+                          "type": "call",
+                          "function": "cry"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "chase",
+                  "attack": "poke",
+                  "speed": 1
+                },
+                {
+                  "type": "attack",
+                  "attack": "poke"
+                }
+              ]
+            },
+            {
+              "type": "go_to_raid",
+              "radius": 6
+            },
+            {
+              "type": "wander",
+              "radius": 8,
+              "speed": 0.4
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": "bots/spooler_blue.json",
+      "template": "ranged",
+      "set": {
+        "name": "Blue Spooler",
+        "description": "Shoots sticky tape from a distance. Common in warehouses.",
+        "family": "spooler",
+        "health": 40,
+        "speed": 3,
+        "water_speed": 1.5,
+        "sight": 35,
+        "size": {
+          "radius": 0.35,
+          "height": 1.0
+        },
+        "color": "#3e7fd0",
+        "raid_cost": 2,
+        "attacks": [
+          {
+            "id": "tape",
+            "kind": "ranged",
+            "damage": 25,
+            "part_damage": 10,
+            "range": 18,
+            "interval": 2.5,
+            "sound": "spooler_fire"
+          }
+        ],
+        "drops": [
+          {
+            "item": "component_kit",
+            "chance": 0.5,
+            "count": 1
+          }
+        ],
+        "behavior": {
+          "type": "selector",
+          "children": [
+            {
+              "type": "sequence",
+              "children": [
+                {
+                  "type": "find_player",
+                  "range": 25
+                },
+                {
+                  "type": "chase",
+                  "attack": "tape",
+                  "speed": 1
+                },
+                {
+                  "type": "attack",
+                  "attack": "tape"
+                }
+              ]
+            },
+            {
+              "type": "sequence",
+              "children": [
+                {
+                  "type": "in_raid"
+                },
+                {
+                  "type": "find_crop"
+                },
+                {
+                  "type": "chase",
+                  "attack": "tape",
+                  "speed": 1
+                },
+                {
+                  "type": "attack",
+                  "attack": "tape"
+                }
+              ]
+            },
+            {
+              "type": "go_to_raid",
+              "radius": 12
+            },
+            {
+              "type": "wander",
+              "radius": 8,
+              "speed": 0.4
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": "bots/spooler_green.json",
+      "base": "spooler_blue",
+      "set": {
+        "name": "Green Spooler",
+        "description": "Fires bubble wrap: less damage, but it keeps stinging for a while.",
+        "color": "#5fae3e",
+        "raid_cost": 2,
+        "attacks": [
+          {
+            "id": "bubble",
+            "kind": "ranged",
+            "damage": 15,
+            "part_damage": 5,
+            "range": 16,
+            "interval": 2.5,
+            "damage_over_time": {
+              "per_second": 2,
+              "seconds": 3
+            },
+            "sound": "spooler_fire"
+          }
+        ],
+        "behavior": {
+          "type": "selector",
+          "children": [
+            {
+              "type": "sequence",
+              "children": [
+                {
+                  "type": "find_player",
+                  "range": 25
+                },
+                {
+                  "type": "chase",
+                  "attack": "bubble",
+                  "speed": 1
+                },
+                {
+                  "type": "attack",
+                  "attack": "bubble"
+                }
+              ]
+            },
+            {
+              "type": "sequence",
+              "children": [
+                {
+                  "type": "in_raid"
+                },
+                {
+                  "type": "find_crop"
+                },
+                {
+                  "type": "chase",
+                  "attack": "bubble",
+                  "speed": 1
+                },
+                {
+                  "type": "attack",
+                  "attack": "bubble"
+                }
+              ]
+            },
+            {
+              "type": "go_to_raid",
+              "radius": 12
+            },
+            {
+              "type": "wander",
+              "radius": 8,
+              "speed": 0.4
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": "bots/spooler_yellow.json",
+      "base": "spooler_blue",
+      "set": {
+        "name": "Yellow Spooler",
+        "description": "Fires lighter tape, much faster.",
+        "health": 50,
+        "color": "#e0c030",
+        "raid_cost": 3,
+        "attacks": [
+          {
+            "id": "tape",
+            "kind": "ranged",
+            "damage": 15,
+            "part_damage": 8,
+            "range": 18,
+            "interval": 1.2,
+            "sound": "spooler_fire"
+          }
+        ]
+      }
+    },
+    {
+      "file": "bots/spooler_red.json",
+      "base": "spooler_blue",
+      "set": {
+        "name": "Red Spooler",
+        "description": "A long-range spooler whose heavy tape tears parts apart.",
+        "health": 40,
+        "color": "#d0402e",
+        "raid_cost": 3,
+        "attacks": [
+          {
+            "id": "tape",
+            "kind": "ranged",
+            "damage": 30,
+            "part_damage": 25,
+            "range": 24,
+            "interval": 3.5,
+            "sound": "spooler_fire"
+          }
+        ]
+      }
+    },
+    {
+      "file": "bots/thresher.json",
+      "template": "melee",
+      "set": {
+        "name": "Thresher",
+        "description": "A huge farming machine. Kicks, swipes, sprays pesticide, and shrugs off melee weapons.",
+        "family": "thresher",
+        "health": 1500,
+        "speed": 3,
+        "water_speed": 1.5,
+        "sight": 40,
+        "size": {
+          "radius": 1.4,
+          "height": 3.5
+        },
+        "color": "#7a7f86",
+        "melee_immune": true,
+        "raid_cost": 5,
+        "attacks": [
+          {
+            "id": "kick",
+            "kind": "melee",
+            "damage": 10,
+            "part_damage": 40,
+            "range": 2.0,
+            "interval": 1.0
+          },
+          {
+            "id": "swipe",
+            "kind": "melee",
+            "damage": 35,
+            "part_damage": 60,
+            "range": 3.0,
+            "interval": 3.0
+          },
+          {
+            "id": "pesticide",
+            "kind": "area",
+            "damage": 0,
+            "part_damage": 0,
+            "range": 4.0,
+            "radius": 5.0,
+            "interval": 8.0,
+            "hits_parts": false,
+            "damage_over_time": {
+              "per_second": 5,
+              "seconds": 4
+            }
+          }
+        ],
+        "drops": [
+          {
+            "item": "component_kit",
+            "chance": 1.0,
+            "count": 4
+          },
+          {
+            "item": "circuit_board",
+            "chance": 0.5,
+            "count": 1
+          }
+        ],
+        "behavior": {
+          "type": "selector",
+          "children": [
+            {
+              "type": "sequence",
+              "children": [
+                {
+                  "type": "find_player",
+                  "range": 15
+                },
+                {
+                  "type": "chase",
+                  "attack": "swipe",
+                  "speed": 1
+                },
+                {
+                  "type": "selector",
+                  "children": [
+                    {
+                      "type": "attack",
+                      "attack": "pesticide"
+                    },
+                    {
+                      "type": "attack",
+                      "attack": "swipe"
+                    },
+                    {
+                      "type": "attack",
+                      "attack": "kick"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "sequence",
+              "children": [
+                {
+                  "type": "in_raid"
+                },
+                {
+                  "type": "find_crop"
+                },
+                {
+                  "type": "chase",
+                  "attack": "swipe",
+                  "speed": 1
+                },
+                {
+                  "type": "attack",
+                  "attack": "swipe"
+                }
+              ]
+            },
+            {
+              "type": "go_to_raid",
+              "radius": 6
+            },
+            {
+              "type": "wander",
+              "radius": 12,
+              "speed": 0.4
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": "bots/grazer.json",
+      "template": "passive",
+      "set": {
+        "name": "Grazer",
+        "description": "A passive grazing animal. Runs when hurt.",
+        "family": "grazer",
+        "health": 50,
+        "speed": 3,
+        "water_speed": 1,
+        "sight": 10,
+        "size": {
+          "radius": 0.6,
+          "height": 1.2
+        },
+        "color": "#c9b48a"
+      }
+    }
+  ],
+  "raids": {
+    "check_interval": 60,
+    "cooldown": 900,
+    "warning": 10,
+    "spawn_distance": 35,
+    "duration": 300,
+    "player_multipliers": [
+      1.0,
+      1.3,
+      1.6,
+      2.0
+    ],
+    "levels": [
+      {
+        "level": 1,
+        "min_value": 10,
+        "budget": 4,
+        "bots": [
+          {
+            "bot": "scuttler_green",
+            "count": 4
+          }
+        ],
+        "notes": "Early warning (crop value 10–30)."
+      },
+      {
+        "level": 2,
+        "min_value": 31,
+        "budget": 8,
+        "bots": [
+          {
+            "bot": "scuttler_green",
+            "count": 6
+          },
+          {
+            "bot": "rakehand",
+            "count": 2
+          }
+        ],
+        "notes": "First real pressure (31–60)."
+      },
+      {
+        "level": 3,
+        "min_value": 61,
+        "budget": 12,
+        "bots": [
+          {
+            "bot": "scuttler_green",
+            "count": 4
+          },
+          {
+            "bot": "rakehand",
+            "count": 4
+          },
+          {
+            "bot": "scuttler_blue",
+            "count": 2
+          }
+        ],
+        "notes": "Mixed (61–100)."
+      },
+      {
+        "level": 4,
+        "min_value": 101,
+        "budget": 16,
+        "bots": [
+          {
+            "bot": "rakehand",
+            "count": 4
+          },
+          {
+            "bot": "scuttler_blue",
+            "count": 4
+          },
+          {
+            "bot": "spooler_blue",
+            "count": 2
+          }
+        ],
+        "notes": "Ranged appears (101–160)."
+      },
+      {
+        "level": 5,
+        "min_value": 161,
+        "budget": 22,
+        "bots": [
+          {
+            "bot": "rakehand",
+            "count": 6
+          },
+          {
+            "bot": "spooler_blue",
+            "count": 4
+          },
+          {
+            "bot": "scuttler_yellow",
+            "count": 2
+          }
+        ],
+        "notes": "Higher damage (161–250)."
+      },
+      {
+        "level": 6,
+        "min_value": 251,
+        "budget": 30,
+        "bots": [
+          {
+            "bot": "rakehand",
+            "count": 8
+          },
+          {
+            "bot": "spooler_blue",
+            "count": 6
+          },
+          {
+            "bot": "thresher",
+            "count": 2
+          }
+        ],
+        "notes": "Elite appears (251–400)."
+      },
+      {
+        "level": 7,
+        "min_value": 401,
+        "budget": 36,
+        "budget_per_value": 0.05,
+        "bots": [
+          {
+            "bot": "thresher",
+            "count": 4
+          },
+          {
+            "bot": "spooler_blue",
+            "count": 8
+          }
+        ],
+        "notes": "Continuous scaling (401+): heavy Thresher and Spooler mix, one more budget point per 20 crop value."
+      }
+    ]
+  }
+}

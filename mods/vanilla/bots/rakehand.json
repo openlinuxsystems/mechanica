@@ -1,0 +1,143 @@
+{
+  "id": "rakehand",
+  "name": "Rakehand",
+  "description": "A farmhand bot with a pitchfork: quick pokes, and a wide swing when it can.",
+  "family": "rakehand",
+  "health": 100,
+  "speed": 4,
+  "water_speed": 2,
+  "sight": 30,
+  "size": {
+    "radius": 0.45,
+    "height": 1.8
+  },
+  "color": "#a8743a",
+  "raid_cost": 1,
+  "attacks": [
+    {
+      "id": "poke",
+      "kind": "melee",
+      "damage": 20,
+      "part_damage": 12,
+      "range": 2,
+      "interval": 1.2
+    },
+    {
+      "id": "swing",
+      "kind": "melee",
+      "damage": 30,
+      "part_damage": 20,
+      "range": 2.4,
+      "interval": 3
+    }
+  ],
+  "drops": [
+    {
+      "item": "component_kit",
+      "chance": 0.65,
+      "count": 1
+    },
+    {
+      "item": "gasoline",
+      "chance": 0.3,
+      "count": 1
+    },
+    {
+      "item": "scrap_metal",
+      "chance": 0.5,
+      "count": 2
+    }
+  ],
+  "behavior": {
+    "type": "selector",
+    "children": [
+      {
+        "type": "sequence",
+        "children": [
+          {
+            "type": "find_player",
+            "range": 12
+          },
+          {
+            "type": "succeed",
+            "children": [
+              {
+                "type": "cooldown",
+                "seconds": 8,
+                "children": [
+                  {
+                    "type": "call",
+                    "function": "cry"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "chase",
+            "attack": "poke",
+            "speed": 1
+          },
+          {
+            "type": "selector",
+            "children": [
+              {
+                "type": "attack",
+                "attack": "swing"
+              },
+              {
+                "type": "attack",
+                "attack": "poke"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "sequence",
+        "children": [
+          {
+            "type": "in_raid"
+          },
+          {
+            "type": "find_crop"
+          },
+          {
+            "type": "succeed",
+            "children": [
+              {
+                "type": "cooldown",
+                "seconds": 8,
+                "children": [
+                  {
+                    "type": "call",
+                    "function": "cry"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "chase",
+            "attack": "poke",
+            "speed": 1
+          },
+          {
+            "type": "attack",
+            "attack": "poke"
+          }
+        ]
+      },
+      {
+        "type": "go_to_raid",
+        "radius": 6
+      },
+      {
+        "type": "wander",
+        "radius": 8,
+        "speed": 0.4
+      }
+    ]
+  },
+  "script": "scripts/bots/rakehand.lua"
+}

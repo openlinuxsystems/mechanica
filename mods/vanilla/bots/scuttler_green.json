@@ -1,0 +1,90 @@
+{
+  "id": "scuttler_green",
+  "name": "Green Scuttler",
+  "description": "Small, fast and common. Raids in swarms and whips whatever it reaches.",
+  "family": "scuttler",
+  "health": 60,
+  "speed": 5,
+  "water_speed": 3,
+  "sight": 30,
+  "size": {
+    "radius": 0.35,
+    "height": 0.9
+  },
+  "color": "#5fae3e",
+  "raid_cost": 1,
+  "attacks": [
+    {
+      "id": "whip",
+      "kind": "melee",
+      "damage": 15,
+      "part_damage": 10,
+      "range": 1.4,
+      "interval": 1
+    }
+  ],
+  "drops": [
+    {
+      "item": "circuit_board",
+      "chance": 0.75,
+      "count": 1
+    },
+    {
+      "item": "scuttler_head",
+      "chance": 0.1,
+      "count": 1
+    }
+  ],
+  "behavior": {
+    "type": "selector",
+    "children": [
+      {
+        "type": "sequence",
+        "children": [
+          {
+            "type": "find_player",
+            "range": 12
+          },
+          {
+            "type": "chase",
+            "attack": "whip",
+            "speed": 1
+          },
+          {
+            "type": "attack",
+            "attack": "whip"
+          }
+        ]
+      },
+      {
+        "type": "sequence",
+        "children": [
+          {
+            "type": "in_raid"
+          },
+          {
+            "type": "find_crop"
+          },
+          {
+            "type": "chase",
+            "attack": "whip",
+            "speed": 1
+          },
+          {
+            "type": "attack",
+            "attack": "whip"
+          }
+        ]
+      },
+      {
+        "type": "go_to_raid",
+        "radius": 6
+      },
+      {
+        "type": "wander",
+        "radius": 8,
+        "speed": 0.4
+      }
+    ]
+  }
+}

@@ -1,0 +1,140 @@
+{
+  "check_interval": 60,
+  "cooldown": 900,
+  "warning": 10,
+  "spawn_distance": 35,
+  "duration": 300,
+  "player_multipliers": [
+    1,
+    1.3,
+    1.6,
+    2
+  ],
+  "levels": [
+    {
+      "level": 1,
+      "min_value": 10,
+      "budget": 4,
+      "bots": [
+        {
+          "bot": "scuttler_green",
+          "count": 4
+        }
+      ],
+      "notes": "Early warning (crop value 10–30)."
+    },
+    {
+      "level": 2,
+      "min_value": 31,
+      "budget": 8,
+      "bots": [
+        {
+          "bot": "scuttler_green",
+          "count": 6
+        },
+        {
+          "bot": "rakehand",
+          "count": 2
+        }
+      ],
+      "notes": "First real pressure (31–60)."
+    },
+    {
+      "level": 3,
+      "min_value": 61,
+      "budget": 12,
+      "bots": [
+        {
+          "bot": "scuttler_green",
+          "count": 4
+        },
+        {
+          "bot": "rakehand",
+          "count": 4
+        },
+        {
+          "bot": "scuttler_blue",
+          "count": 2
+        }
+      ],
+      "notes": "Mixed (61–100)."
+    },
+    {
+      "level": 4,
+      "min_value": 101,
+      "budget": 16,
+      "bots": [
+        {
+          "bot": "rakehand",
+          "count": 4
+        },
+        {
+          "bot": "scuttler_blue",
+          "count": 4
+        },
+        {
+          "bot": "spooler_blue",
+          "count": 2
+        }
+      ],
+      "notes": "Ranged appears (101–160)."
+    },
+    {
+      "level": 5,
+      "min_value": 161,
+      "budget": 22,
+      "bots": [
+        {
+          "bot": "rakehand",
+          "count": 6
+        },
+        {
+          "bot": "spooler_blue",
+          "count": 4
+        },
+        {
+          "bot": "scuttler_yellow",
+          "count": 2
+        }
+      ],
+      "notes": "Higher damage (161–250)."
+    },
+    {
+      "level": 6,
+      "min_value": 251,
+      "budget": 30,
+      "bots": [
+        {
+          "bot": "rakehand",
+          "count": 8
+        },
+        {
+          "bot": "spooler_blue",
+          "count": 6
+        },
+        {
+          "bot": "thresher",
+          "count": 2
+        }
+      ],
+      "notes": "Elite appears (251–400)."
+    },
+    {
+      "level": 7,
+      "min_value": 401,
+      "budget": 36,
+      "budget_per_value": 0.05,
+      "bots": [
+        {
+          "bot": "thresher",
+          "count": 4
+        },
+        {
+          "bot": "spooler_blue",
+          "count": 8
+        }
+      ],
+      "notes": "Continuous scaling (401+): heavy Thresher and Spooler mix, one more budget point per 20 crop value."
+    }
+  ]
+}

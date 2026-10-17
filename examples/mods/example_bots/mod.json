@@ -1,0 +1,10 @@
+{
+  "id": "example_bots",
+  "name": "Example bots",
+  "version": "1.0.0",
+  "description": "The Bot Tutorial's example: a Sentry Drone that patrols, shoots intruders and backs off when hurt.",
+  "dependencies": [
+    { "id": "vanilla", "version": "^0.1.0" }
+  ],
+  "conflicts": []
+}

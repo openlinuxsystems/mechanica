@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://tests/boteditor/BotEditorTest.cs" id="1_boteditor"]
+
+[node name="BotEditorTest" type="Node"]
+script = ExtResource("1_boteditor")

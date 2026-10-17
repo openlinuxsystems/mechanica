@@ -1,0 +1,31 @@
+{
+  // Bot Behavior Editor template: shoots from a distance, closing in only until its shot reaches.
+  "id": "new_bot",
+  "name": "New Bot",
+  "family": "spooler",
+  "health": 40,
+  "speed": 3,
+  "sight": 35,
+  "size": { "radius": 0.35, "height": 1.0 },
+  "color": "#808080",
+  "raid_cost": 2,
+  "attacks": [
+    { "id": "shot", "kind": "ranged", "damage": 25, "part_damage": 10, "range": 18, "interval": 2.5 }
+  ],
+  "behavior": {
+    "type": "selector",
+    "children": [
+      { "type": "sequence", "children": [
+        { "type": "find_player" },
+        { "type": "chase", "attack": "shot", "speed": 1 },
+        { "type": "attack", "attack": "shot" } ] },
+      { "type": "sequence", "children": [
+        { "type": "in_raid" },
+        { "type": "find_crop" },
+        { "type": "chase", "attack": "shot", "speed": 1 },
+        { "type": "attack", "attack": "shot" } ] },
+      { "type": "go_to_raid", "radius": 10 },
+      { "type": "wander", "radius": 8, "speed": 0.4 }
+    ]
+  }
+}

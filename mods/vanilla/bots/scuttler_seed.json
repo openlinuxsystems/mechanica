@@ -1,0 +1,94 @@
+{
+  "id": "scuttler_seed",
+  "name": "Seed Scuttler",
+  "description": "A weak scuttler that carries seeds it has stolen.",
+  "family": "scuttler",
+  "health": 30,
+  "speed": 4,
+  "water_speed": 3,
+  "sight": 30,
+  "size": {
+    "radius": 0.3,
+    "height": 0.8
+  },
+  "color": "#9a7b4f",
+  "attacks": [
+    {
+      "id": "nip",
+      "kind": "melee",
+      "damage": 8,
+      "part_damage": 5,
+      "range": 1.3,
+      "interval": 1
+    }
+  ],
+  "drops": [
+    {
+      "item": "carrot_seed",
+      "chance": 0.5,
+      "count": 2
+    },
+    {
+      "item": "potato_seed",
+      "chance": 0.5,
+      "count": 2
+    },
+    {
+      "item": "tomato_seed",
+      "chance": 0.3,
+      "count": 1
+    }
+  ],
+  "behavior": {
+    "type": "selector",
+    "children": [
+      {
+        "type": "sequence",
+        "children": [
+          {
+            "type": "find_player",
+            "range": 6
+          },
+          {
+            "type": "chase",
+            "attack": "nip",
+            "speed": 1
+          },
+          {
+            "type": "attack",
+            "attack": "nip"
+          }
+        ]
+      },
+      {
+        "type": "sequence",
+        "children": [
+          {
+            "type": "in_raid"
+          },
+          {
+            "type": "find_crop"
+          },
+          {
+            "type": "chase",
+            "attack": "nip",
+            "speed": 1
+          },
+          {
+            "type": "attack",
+            "attack": "nip"
+          }
+        ]
+      },
+      {
+        "type": "go_to_raid",
+        "radius": 6
+      },
+      {
+        "type": "wander",
+        "radius": 8,
+        "speed": 0.4
+      }
+    ]
+  }
+}

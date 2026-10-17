@@ -1,0 +1,100 @@
+{
+  "id": "scuttler_blue",
+  "name": "Blue Scuttler",
+  "description": "Charges with a drill, and is even faster in water.",
+  "family": "scuttler",
+  "health": 60,
+  "speed": 5,
+  "water_speed": 7,
+  "sight": 30,
+  "size": {
+    "radius": 0.35,
+    "height": 0.9
+  },
+  "color": "#3e7fd0",
+  "raid_cost": 2,
+  "attacks": [
+    {
+      "id": "drill",
+      "kind": "melee",
+      "damage": 20,
+      "part_damage": 15,
+      "range": 1.5,
+      "interval": 1.2,
+      "sound": "scuttler_attack"
+    }
+  ],
+  "drops": [
+    {
+      "item": "circuit_board",
+      "chance": 0.75,
+      "count": 1
+    },
+    {
+      "item": "glue",
+      "chance": 0.4,
+      "count": 1
+    }
+  ],
+  "behavior": {
+    "type": "selector",
+    "children": [
+      {
+        "type": "sequence",
+        "children": [
+          {
+            "type": "find_player",
+            "range": 12
+          },
+          {
+            "type": "call",
+            "function": "charge"
+          },
+          {
+            "type": "chase",
+            "attack": "drill",
+            "speed": 1
+          },
+          {
+            "type": "attack",
+            "attack": "drill"
+          }
+        ]
+      },
+      {
+        "type": "sequence",
+        "children": [
+          {
+            "type": "in_raid"
+          },
+          {
+            "type": "find_crop"
+          },
+          {
+            "type": "call",
+            "function": "charge"
+          },
+          {
+            "type": "chase",
+            "attack": "drill",
+            "speed": 1
+          },
+          {
+            "type": "attack",
+            "attack": "drill"
+          }
+        ]
+      },
+      {
+        "type": "go_to_raid",
+        "radius": 6
+      },
+      {
+        "type": "wander",
+        "radius": 8,
+        "speed": 0.4
+      }
+    ]
+  },
+  "script": "scripts/bots/scuttler.lua"
+}

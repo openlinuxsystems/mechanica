@@ -76,7 +76,7 @@ public sealed record RaidLevelDefinition
 /// <summary>A bot type and how many, in a raid level.</summary>
 public sealed record RaidBotDefinition
 {
-    /// <summary>Bot id, <c>id</c> or <c>mod_id:id</c>.</summary>
+    /// <summary>Bot id: <c>mod_id:id</c>, or a bare <c>id</c> for the table's own mod.</summary>
     public string? Bot { get; init; }
 
     /// <summary>How many.</summary>
@@ -179,7 +179,7 @@ public sealed class RaidTable
             }
             if (definition is null)
                 return new RaidTable(new RaidTableDefinition(), [], sink.File, diagnostics);
-            var levels = Check(definition, bots, sink);
+            var levels = Check(definition, bots, mod.Id, sink);
             return new RaidTable(definition, sink.ErrorCount == 0 ? levels : [], sink.File, diagnostics);
         }
         return None;
@@ -187,24 +187,28 @@ public sealed class RaidTable
 
     /// <summary>Builds a table in code (tests, tools). Throws on any error.</summary>
     /// <exception cref="FormatException">The table has errors.</exception>
-    public static RaidTable From(RaidTableDefinition definition, IBotCatalog bots)
+    public static RaidTable From(RaidTableDefinition definition, IBotCatalog bots, string modId = Identifiers.VanillaModId)
     {
         var diagnostics = new List<DataDiagnostic>();
-        var levels = Check(definition, bots, new DiagnosticSink("raids", diagnostics));
+        var levels = Check(definition, bots, modId, new DiagnosticSink("raids", diagnostics));
         if (diagnostics.Any(d => d.Severity == DiagnosticSeverity.Error))
             throw new FormatException(string.Join("\n", diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error)));
         return new RaidTable(definition, levels, null, diagnostics);
     }
 
-    /// <summary>Checks a raid table as the loader would. The Bot Behavior Editor checks with this before it saves.</summary>
-    public static IReadOnlyList<DataDiagnostic> Validate(RaidTableDefinition definition, IBotCatalog bots, string displayFile)
+    /// <summary>
+    /// Checks a raid table as the loader would, as if it were in mod <paramref name="modId"/> (bare bot ids
+    /// mean that mod's). The Bot Behavior Editor checks with this before it saves.
+    /// </summary>
+    public static IReadOnlyList<DataDiagnostic> Validate(RaidTableDefinition definition, IBotCatalog bots, string displayFile,
+        string modId = Identifiers.VanillaModId)
     {
         var diagnostics = new List<DataDiagnostic>();
-        Check(definition, bots, new DiagnosticSink(displayFile, diagnostics));
+        Check(definition, bots, modId, new DiagnosticSink(displayFile, diagnostics));
         return diagnostics;
     }
 
-    private static List<RaidLevel> Check(RaidTableDefinition t, IBotCatalog bots, DiagnosticSink sink)
+    private static List<RaidLevel> Check(RaidTableDefinition t, IBotCatalog bots, string modId, DiagnosticSink sink)
     {
         const string code = DiagnosticCodes.RaidInvalid;
         KnownKeys.WarnUnknown(t.Extra, "$", sink, typeof(RaidTableDefinition));
@@ -249,7 +253,7 @@ public sealed class RaidTable
                 var entry = row.Bots![j];
                 var at = $"{path}.bots[{j}]";
                 KnownKeys.WarnUnknown(entry.Extra, at, sink, typeof(RaidBotDefinition));
-                if (entry.Bot is null || bots.FindBot(entry.Bot) is not { } bot)
+                if (entry.Bot is null || bots.FindBot(Identifiers.Qualify(entry.Bot, modId)) is not { } bot)
                     sink.Error(code, $"{at}.bot", entry.Bot is null ? "bot is required." : $"there is no bot '{entry.Bot}'.");
                 else if (bot.RaidCost is null)
                     sink.Error(code, $"{at}.bot", $"'{bot.QualifiedId}' has no raid_cost, so it cannot raid.");

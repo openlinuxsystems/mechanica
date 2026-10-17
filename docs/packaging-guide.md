@@ -22,6 +22,8 @@ mods/
     sounds/             audio (*.ogg, *.wav)
     world/worldgen.json world generation rules; the last mod in load order that ships one wins
     pois/               POI prefabs (*.json), see world-generation.md
+    bots/               bot types (*.json), see bot-tutorial.md
+    raids/raids.json    the raid table; the last mod in load order that ships one wins
 ```
 
 Rules the loader enforces:

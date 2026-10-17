@@ -8,9 +8,9 @@ namespace Mechanica.Game;
 
 /// <summary>
 /// Start screen: play the test world, or open the mod tools that ship in the game (D9): the Part
-/// Editor, the Test Sandbox and the Mod Manager. Launching with <c>--host</c> or <c>--join</c> skips
+/// Editor, the Bot Behavior Editor, the Test Sandbox and the Mod Manager. Launching with <c>--host</c> or <c>--join</c> skips
 /// straight to the world. <c>--part-batch file</c> runs a Part Editor batch, prints its problems and
-/// quits (0 when every part and recipe exported), which is how vanilla's blocks are re-made headless. Menus proper
+/// quits (0 when everything exported); a Bot Behavior Editor batch (one with <c>bots</c>) runs the same way, which is how vanilla's blocks are re-made headless. Menus proper
 /// come in chunk 24.
 /// </summary>
 public partial class MainMenu : Control
@@ -53,6 +53,7 @@ public partial class MainMenu : Control
         column.AddChild(new HSeparator());
         column.AddChild(new Label { Text = "Mod tools", HorizontalAlignment = HorizontalAlignment.Center });
         AddButton(column, "Part Editor", () => GetTree().ChangeSceneToFile(PartEditorScene));
+        AddButton(column, "Bot Behavior Editor", OpenBotEditor);
         AddButton(column, "Test Sandbox", OpenSandbox);
         AddButton(column, "Mod Manager", OpenModManager);
         column.AddChild(new HSeparator());
@@ -67,7 +68,18 @@ public partial class MainMenu : Control
             GetTree().Quit(2);
             return;
         }
+        if (File.Exists(file) && Core.Editor.BotBatch.IsBotBatch(File.ReadAllText(file)))
+        {
+            var bots = BotBatchRunner.Run(file);
+            Report(bots, file, "bots and raid tables");
+            return;
+        }
         var result = await PartBatchRunner.RunAsync(this, file);
+        Report(result, file, "parts and recipes");
+    }
+
+    private void Report(BatchRunResult result, string file, string what)
+    {
         foreach (var d in result.Diagnostics)
         {
             if (d.Severity == Core.Data.DiagnosticSeverity.Error)
@@ -75,7 +87,7 @@ public partial class MainMenu : Control
             else
                 GD.Print($"[batch] {d}");
         }
-        GD.Print($"[batch] {(result.Succeeded ? "OK" : "FAILED")}: {result.Exports.Count(e => e.Succeeded)} of {result.Exports.Count} parts and recipes exported from {file}.");
+        GD.Print($"[batch] {(result.Succeeded ? "OK" : "FAILED")}: {result.Exports.Count(e => e.Succeeded)} of {result.Exports.Count} {what} exported from {file}.");
         GetTree().Quit(result.Succeeded ? 0 : 1);
     }
 
@@ -90,6 +102,13 @@ public partial class MainMenu : Control
         var sandbox = new SandboxScreen { Name = "Sandbox" };
         sandbox.BackRequested += () => Close(sandbox);
         Open(sandbox);
+    }
+
+    private void OpenBotEditor()
+    {
+        var editor = new BotEditorScreen { Name = "BotEditor" };
+        editor.CloseRequested += () => Close(editor);
+        Open(editor);
     }
 
     private void OpenModManager()

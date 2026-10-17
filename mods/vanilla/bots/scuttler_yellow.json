@@ -1,0 +1,92 @@
+{
+  "id": "scuttler_yellow",
+  "name": "Yellow Scuttler",
+  "description": "Heavier. Stomps the ground, hurting everything around it.",
+  "family": "scuttler",
+  "health": 80,
+  "speed": 4,
+  "water_speed": 3,
+  "sight": 30,
+  "size": {
+    "radius": 0.45,
+    "height": 1.1
+  },
+  "color": "#e0c030",
+  "raid_cost": 4,
+  "attacks": [
+    {
+      "id": "stomp",
+      "kind": "area",
+      "damage": 25,
+      "part_damage": 15,
+      "range": 2,
+      "radius": 3,
+      "interval": 2,
+      "sound": "scuttler_stomp"
+    }
+  ],
+  "drops": [
+    {
+      "item": "circuit_board",
+      "chance": 0.75,
+      "count": 1
+    },
+    {
+      "item": "battery_pack",
+      "chance": 0.4,
+      "count": 1
+    }
+  ],
+  "behavior": {
+    "type": "selector",
+    "children": [
+      {
+        "type": "sequence",
+        "children": [
+          {
+            "type": "find_player",
+            "range": 12
+          },
+          {
+            "type": "chase",
+            "attack": "stomp",
+            "speed": 1
+          },
+          {
+            "type": "attack",
+            "attack": "stomp"
+          }
+        ]
+      },
+      {
+        "type": "sequence",
+        "children": [
+          {
+            "type": "in_raid"
+          },
+          {
+            "type": "find_crop"
+          },
+          {
+            "type": "chase",
+            "attack": "stomp",
+            "speed": 1
+          },
+          {
+            "type": "attack",
+            "attack": "stomp"
+          }
+        ]
+      },
+      {
+        "type": "go_to_raid",
+        "radius": 6
+      },
+      {
+        "type": "wander",
+        "radius": 8,
+        "speed": 0.4
+      }
+    ]
+  }
+}
