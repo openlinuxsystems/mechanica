@@ -57,6 +57,12 @@ public class PartValidationTests
     [InlineData("""{ "collision": { "shape": "capsule", "radius": 0.1, "height": 0.1 } }""", "$.collision.height", "twice the radius")]
     [InlineData("""{ "collision": { "shape": "convex" } }""", "$.collision.mesh", "needs a mesh")]
     [InlineData("""{ "collision": {} }""", "$.collision.shape", "box, sphere, cylinder, capsule, convex")]
+    [InlineData("""{ "visual": { "color": "red" } }""", "$.visual.color", "hex text")]
+    [InlineData("""{ "visual": { "roughness": 1.5 } }""", "$.visual.roughness", "between 0 and 1")]
+    [InlineData("""{ "visual": { "metallic": -1 } }""", "$.visual.metallic", "between 0 and 1")]
+    [InlineData("""{ "visual": { "texture": "textures/a.jpg" } }""", "$.visual.texture", ".png")]
+    [InlineData("""{ "visual": { "variants": [{ "id": "red", "name": "Red", "color": "#ff00zz" }] } }""", "$.visual.variants[0].color", "hex text")]
+    [InlineData("""{ "visual": { "variants": [{ "id": "red", "color": "#ff0000" }] } }""", "$.visual.variants[0].name", "name is required")]
     public void BadValuesGiveClearErrors(string overrides, string path, string messagePart)
     {
         var error = Single(TestMods.Block(overrides: overrides), path);
@@ -82,6 +88,16 @@ public class PartValidationTests
             ["$.sockets[1].id", "$.sockets[1].position", "$.sockets[1].normal", "$.sockets[2].type", "$.sockets[2].position", "$.sockets[2].normal"],
             diagnostics.Select(d => d.JsonPath));
         Assert.Contains("outside the part's [1, 1, 1] footprint", diagnostics[1].Message);
+    }
+
+    [Fact]
+    public void VariantIdsAreUniqueAndColourRequired()
+    {
+        var diagnostics = Check(TestMods.Block(overrides: """
+            { "visual": { "color": "#A07040", "variants": [{ "id": "a", "name": "A", "color": "#000000" }, { "id": "a", "name": "B" }] } }
+            """));
+
+        Assert.Equal(["$.visual.variants[1].id", "$.visual.variants[1].color"], diagnostics.Select(d => d.JsonPath));
     }
 
     [Fact]
