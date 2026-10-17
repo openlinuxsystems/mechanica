@@ -46,7 +46,8 @@ Extra bones (hair, a tail) are fine; no clip moves them. Keep the bone rest pose
 skeleton, since the clips are authored against them: start from `scrapper_male.glb`, change the mesh,
 and keep the armature. Model in metres, standing on the origin, facing +Z (Blender's -Y, the default glTF
 export), about 1.8 m tall. Vanilla's models are made by `tools/characters/build_characters.py` (Blender
-as a Python module), which also writes the animation set and the hand-held tools.
+as a Python module), which also writes the animation set and the hand-held tools; their procedural textures
+are baked by `tools/characters/character_textures.py`.
 
 The loader refuses a character whose mesh is missing, is not skinned, or lacks a rig bone (MD1201), and
 warns when two files share an id (MD1202).

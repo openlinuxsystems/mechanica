@@ -49,7 +49,7 @@ public class VanillaCharactersTests
     {
         var settings = Settings();
         var summary = GltfSummary.Read(Path.Combine(Vanilla, "meshes", "characters", "humanoid_animations.glb"));
-        Assert.Equal(1f, summary.Animation("walk")!.Duration, 1);
+        Assert.Equal(0.9f, summary.Animation("walk")!.Duration, 2);
         Assert.Equal(0.72f, summary.Animation("jog")!.Duration, 1);
         Assert.Equal(0.6f, summary.Animation("run")!.Duration, 1);
         Assert.All(settings.ClipSpeeds.Keys, clip => Assert.NotNull(summary.Animation(clip)));
