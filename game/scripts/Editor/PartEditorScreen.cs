@@ -113,8 +113,8 @@ public partial class PartEditorScreen : Control
 
         var toolbar = new HBoxContainer();
         column.AddChild(toolbar);
-        AddButton(toolbar, "New…", () => _newDialog.PopupCentered(new Vector2I(420, 220)), "Start a part from a template");
-        AddButton(toolbar, "Open…", () => _openDialog.PopupCentered(new Vector2I(900, 600)), "Open a part file from a mod");
+        AddButton(toolbar, "New…", () => Discard(() => _newDialog.PopupCentered(new Vector2I(420, 220))), "Start a part from a template");
+        AddButton(toolbar, "Open…", () => Discard(() => _openDialog.PopupCentered(new Vector2I(900, 600))), "Open a part file from a mod");
         AddButton(toolbar, "Export", () => _ = ExportAsync(), "Validate and write the part into its mod folder (Ctrl+S)");
         AddButton(toolbar, "Test in Sandbox", () => _ = TestInSandboxAsync(), "Export, then spawn the part in the Test Sandbox");
         AddButton(toolbar, "Run batch…", () => _batchDialog.PopupCentered(new Vector2I(900, 600)),
@@ -124,7 +124,7 @@ public partial class PartEditorScreen : Control
         _redo = AddButton(toolbar, "Redo", () => Document?.Redo(), "Ctrl+Shift+Z");
         toolbar.AddChild(new VSeparator());
         AddButton(toolbar, "Help", () => OpenHelp("getting-started.md"), "Getting Started, the Part Data Schema Reference and the Lua API Reference");
-        AddButton(toolbar, "Close", () => CloseRequested?.Invoke(), "Back to the menu");
+        AddButton(toolbar, "Close", () => Discard(() => CloseRequested?.Invoke()), "Back to the menu");
         _title = Loc.Verbatim(new Label { SizeFlagsHorizontal = SizeFlags.ExpandFill, HorizontalAlignment = HorizontalAlignment.Right });
         toolbar.AddChild(_title);
 
@@ -198,6 +198,12 @@ public partial class PartEditorScreen : Control
             return;
         GetViewport().SetInputAsHandled();
     }
+
+    /// <summary>True when the part, its script, its recipes or its mod's sound bank has changes not written yet.</summary>
+    public bool HasUnsavedChanges => Document?.IsDirty == true || Lua.IsDirty || Recipes.IsDirty || Sounds.Bank?.IsDirty == true;
+
+    /// <summary>Runs <paramref name="then"/>, asking first when it would throw away unsaved changes.</summary>
+    public void Discard(Action then) => ConfirmDialog.Discard(this, HasUnsavedChanges, then);
 
     // ---- Public operations (buttons call these; tests drive them directly) ----
 
@@ -413,7 +419,9 @@ public partial class PartEditorScreen : Control
             CurrentDir = ModsRoot,
             UseNativeDialog = false,
         };
-        _batchDialog.FileSelected += path => _ = RunBatchAsync(path);
+        _batchDialog.FileSelected += path => ConfirmDialog.Ask(this, "Run batch",
+            Loc.T("Run {0}? It writes every part and recipe it lists into its mod, replacing the files already there.", Path.GetFileName(path)),
+            "Run batch", () => Discard(() => _ = RunBatchAsync(path)));
         AddChild(_batchDialog);
 
         _importDialog = new FileDialog
@@ -442,7 +450,14 @@ public partial class PartEditorScreen : Control
             grid.AddChild(control);
         }
         _newDialog.Confirmed += () =>
-            ShowError(NewPart(mod.Text.Trim(), id.Text.Trim(), name.Text.Trim(), template.GetItemText(template.Selected)));
+        {
+            var (modId, partId) = (mod.Text.Trim(), id.Text.Trim());
+            void Start() => ShowError(NewPart(modId, partId, name.Text.Trim(), template.GetItemText(template.Selected)));
+            if (Identifiers.IsValid(modId) && PartExporter.ExistingPartFile(Path.Combine(ModsRoot, modId), partId) is { } existing)
+                ConfirmDialog.Ask(this, "Part exists", Loc.T("{0} already has {1}. Start a new part anyway? Exporting it replaces that file.", modId, existing), "Start new", Start);
+            else
+                Start();
+        };
         AddChild(_newDialog);
     }
 

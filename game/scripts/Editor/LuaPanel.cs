@@ -95,11 +95,11 @@ public partial class LuaPanel : VBoxContainer
         foreach (var template in Templates)
             _templates.AddItem(template.Title);
         buttons.AddChild(_templates);
-        AddButton(buttons, "New from template", () => ShowStatus(NewFromTemplate(Templates[_templates.Selected].Id)),
+        AddButton(buttons, "New from template", () => AskNewFromTemplate(),
             "Replace the script with the template (the part gets scripts/<id>.lua if it has no script)");
         AddButton(buttons, "Save & reload", () => Save(), "Check and write the script; the Test Sandbox reloads it in place (Ctrl+S)");
-        AddButton(buttons, "Revert", Load, "Throw away unsaved changes");
-        AddButton(buttons, "Lua API Reference", () => Editor.OpenHelp("lua-api.md"));
+        AddButton(buttons, "Revert", () => ConfirmDialog.Discard(this, IsDirty, Load), "Throw away unsaved changes");
+        AddButton(buttons, "Lua API Reference", () => Editor.OpenHelp("lua-api.md"), "Every function a part script can call");
 
         var split = new VSplitContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
         AddChild(split);
@@ -216,6 +216,20 @@ public partial class LuaPanel : VBoxContainer
         var entry = LuaApi.Entries[index];
         _code.InsertTextAtCaret(entry.Group == "Hooks" ? $"{entry.Signature}\n  \nend\n" : entry.Signature);
         _code.GrabFocus();
+    }
+
+    /// <summary>
+    /// Puts the selected template in the editor, asking first when that replaces code already there.
+    /// Returns the question, or null when the editor was empty and the template went straight in.
+    /// </summary>
+    public ConfirmDialog? AskNewFromTemplate()
+    {
+        var template = Templates[_templates.Selected];
+        void Replace() => ShowStatus(NewFromTemplate(template.Id));
+        if (!string.IsNullOrWhiteSpace(_code.Text))
+            return ConfirmDialog.Ask(this, "Replace script", Loc.T("Replace the code in the editor with the {0} template?", template.Title), "Replace", Replace);
+        Replace();
+        return null;
     }
 
     private void Load()

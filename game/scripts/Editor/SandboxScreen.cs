@@ -366,9 +366,9 @@ public partial class SandboxScreen : Control
         {
             if (_parts.GetSelectedItems() is [var i, ..])
                 Spawn(_partIds[i]);
-        });
-        AddButton(row, "Clear all", () => Clear());
-        AddButton(row, "Reload mods", ReloadContent);
+        }, "Put the selected part in front of you");
+        AddButton(row, "Clear all", () => AskClear(), "Remove every Creation and bot from the sandbox");
+        AddButton(row, "Reload mods", ReloadContent, "Read every mod again, so edits made since show up");
         var botRow = new HBoxContainer();
         column.AddChild(botRow);
         _bots = Loc.Verbatim(new OptionButton { SizeFlagsHorizontal = SizeFlags.ExpandFill, FitToLongestItem = false });
@@ -377,15 +377,15 @@ public partial class SandboxScreen : Control
         {
             if (_bots.Selected >= 0 && _bots.Selected < _botIds.Count)
                 SpawnBot(_botIds[_bots.Selected]);
-        });
+        }, "Put the selected bot in front of you");
         var net = new HFlowContainer();
         column.AddChild(net);
         AddButton(net, "Add local client", () =>
         {
             if (AddLocalClient() is null && _instances.Count > MaxLocalClients)
                 _result.Text = Loc.T("At most {0} local clients.", MaxLocalClients);
-        });
-        AddButton(net, "Remove client", RemoveLocalClient);
+        }, "Join a second player to this sandbox to test multiplayer");
+        AddButton(net, "Remove client", () => AskRemoveClient(), "Disconnect the last local client");
         _collisionOverlay = new CheckBox { Text = "Show collision and centre of mass" };
         _collisionOverlay.Toggled += on =>
         {
@@ -402,12 +402,20 @@ public partial class SandboxScreen : Control
         column.AddChild(_result);
         _status = Loc.Verbatim(new Label { ThemeTypeVariation = "SecondaryLabel" });
         column.AddChild(_status);
-        AddButton(column, "Back", EmitBack);
+        AddButton(column, "Back", EmitBack, "Leave the sandbox");
     }
 
-    private static void AddButton(Container parent, string text, Action pressed)
+    /// <summary>Asks, then removes every Creation and bot from the sandbox.</summary>
+    public ConfirmDialog AskClear() =>
+        ConfirmDialog.Ask(this, "Clear the sandbox", "Remove every Creation and bot from the sandbox?", "Clear", () => Clear());
+
+    /// <summary>Asks, then disconnects the last local client. Null when there is none.</summary>
+    public ConfirmDialog? AskRemoveClient() => _instances.Count < 2 ? null
+        : ConfirmDialog.Ask(this, "Remove client", "Disconnect the last local client?", "Remove", RemoveLocalClient);
+
+    private static void AddButton(Container parent, string text, Action pressed, string tooltip)
     {
-        var button = new Button { Text = text };
+        var button = new Button { Text = text, TooltipText = tooltip };
         button.Pressed += pressed;
         parent.AddChild(button);
     }

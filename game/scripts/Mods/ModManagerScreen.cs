@@ -92,10 +92,10 @@ public partial class ModManagerScreen : Control
 
         var rowButtons = new HBoxContainer();
         left.AddChild(rowButtons);
-        _up = AddButton(rowButtons, "Move up", () => MoveSelected(-1));
-        _down = AddButton(rowButtons, "Move down", () => MoveSelected(1));
-        AddButton(rowButtons, "Rescan", Reopen);
-        AddButton(rowButtons, "Open mods folder", () => OS.ShellOpen(ModsRoot));
+        _up = AddButton(rowButtons, "Move up", () => MoveSelected(-1), "Load the selected mod earlier");
+        _down = AddButton(rowButtons, "Move down", () => MoveSelected(1), "Load the selected mod later, so its overrides win");
+        AddButton(rowButtons, "Rescan", () => Discard(Reopen), "Look for new and changed mods in the mods folder");
+        AddButton(rowButtons, "Open mods folder", () => OS.ShellOpen(ModsRoot), "Show the mods folder in your file manager");
 
         var right = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
         split.AddChild(right);
@@ -107,8 +107,8 @@ public partial class ModManagerScreen : Control
 
         var bottom = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.End };
         column.AddChild(bottom);
-        _revert = AddButton(bottom, "Revert", Reopen);
-        _apply = AddButton(bottom, "Apply", Apply);
+        _revert = AddButton(bottom, "Revert", () => Discard(Reopen), "Go back to the saved setup");
+        _apply = AddButton(bottom, "Apply", Apply, "Save this setup; it loads with the next world");
 
         Reopen();
     }
@@ -260,9 +260,13 @@ public partial class ModManagerScreen : Control
             MoveMod(id, delta);
     }
 
-    private static Button AddButton(Container parent, string text, Action pressed)
+    /// <summary>Runs <paramref name="then"/>, asking first when it would throw away unsaved changes.</summary>
+    public void Discard(Action then) => ConfirmDialog.Discard(this, HasUnsavedChanges, then,
+        message: "Your changes to the mod setup are not applied. Discard them?");
+
+    private static Button AddButton(Container parent, string text, Action pressed, string tooltip)
     {
-        var button = new Button { Text = text };
+        var button = new Button { Text = text, TooltipText = tooltip };
         button.Pressed += pressed;
         parent.AddChild(button);
         return button;

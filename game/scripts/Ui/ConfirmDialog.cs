@@ -53,6 +53,20 @@ public partial class ConfirmDialog : CanvasLayer
         return dialog;
     }
 
+    /// <summary>
+    /// Runs <paramref name="then"/> at once when <paramref name="unsaved"/> is false; otherwise asks first
+    /// whether to throw the unsaved changes away. <paramref name="onCancel"/> runs when the answer is no.
+    /// </summary>
+    public static void Discard(Node owner, bool unsaved, Action then, Action? onCancel = null, string? message = null)
+    {
+        if (!unsaved)
+        {
+            then();
+            return;
+        }
+        Ask(owner, "Unsaved changes", message ?? Loc.T("You have unsaved changes. Discard them?"), "Discard", then, onCancel);
+    }
+
     public override void _ExitTree()
     {
         if (Current == this)

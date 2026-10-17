@@ -3,6 +3,7 @@ using Mechanica.Core.Actions;
 using Mechanica.Core.Data;
 using Mechanica.Core.Editor;
 using Mechanica.Game.Editor;
+using Mechanica.Game.Ui;
 
 namespace Mechanica.Game.Tests;
 
@@ -110,6 +111,22 @@ public partial class SandboxTest : StagedTest
             if (frame == 0)
                 _sandbox.Host.Main.Actions.Request(CreationActions.SpawnPart, new SpawnPartArgs(Part, [4, 1, 4]));
             return Count(_sandbox.Host) == 3 && Count(_client1) == 3 && Count(_client2) == 3;
+        });
+        Add("Clear all and Remove client ask first", frame =>
+        {
+            if (frame == 0)
+            {
+                _sandbox.AskClear();
+                Check(ConfirmDialog.Current?.Window.Title == "Clear the sandbox", "Clear all asks");
+                ConfirmDialog.Current?.Cancel();
+                Check(_sandbox.AskRemoveClient() is not null && ConfirmDialog.Current?.Window.Title == "Remove client", "Remove client asks");
+                ConfirmDialog.Current?.Cancel();
+                return false;
+            }
+            if (frame < 10)
+                return false;
+            Check(Count(_sandbox.Host) == 3 && _sandbox.Instances.Count == 3, "Cancel leaves the Creations and clients alone");
+            return true;
         });
         Add("clearing removes it for everyone", frame =>
         {

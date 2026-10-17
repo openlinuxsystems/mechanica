@@ -9,6 +9,18 @@ public class PartExporterTests
     private static readonly byte[] FakeGlb = [0x67, 0x6C, 0x54, 0x46, 2, 0, 0, 0];
 
     [Fact]
+    public void ExistingPartFileFindsAPartByIdInAnyFolder()
+    {
+        using var mods = new TestMods();
+        var mod = Path.Combine(mods.Root, "my_mod");
+        Assert.Null(PartExporter.ExistingPartFile(mod, "oak_block"));
+        Directory.CreateDirectory(Path.Combine(mod, "parts", "wood"));
+        File.WriteAllText(Path.Combine(mod, "parts", "wood", "oak_block.json"), "{}");
+        Assert.Equal("parts/wood/oak_block.json", PartExporter.ExistingPartFile(mod, "oak_block"));
+        Assert.Null(PartExporter.ExistingPartFile(mod, "oak"));
+    }
+
+    [Fact]
     public void NewBlockExportsIntoANewModThatLoads()
     {
         using var mods = new TestMods();
