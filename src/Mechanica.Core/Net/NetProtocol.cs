@@ -7,7 +7,7 @@ namespace Mechanica.Core.Net;
 public static class NetProtocol
 {
     /// <summary>Wire protocol version, checked in the join handshake.</summary>
-    public const int Version = 4;
+    public const int Version = 5;
 
     /// <summary>UDP port used when none is given.</summary>
     public const int DefaultPort = 27460;

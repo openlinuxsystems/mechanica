@@ -9,6 +9,7 @@ using Mechanica.Core.Quests;
 using Mechanica.Core.Saves;
 using Mechanica.Core.Sound;
 using Mechanica.Core.Survival;
+using Mechanica.Core.Ui;
 using Mechanica.Core.World;
 using Mechanica.Game.Bots;
 using Mechanica.Game.Building;
@@ -70,11 +71,27 @@ public partial class Main : Node3D
     /// </summary>
     public PlayerProfile? Profile { get; set; }
 
+    private Ui.LoadingScreen? _loadingScreen;
+    private int _physicsSteps;
+    private int _sceneryMost;
+
     /// <summary>Where the player profile lives.</summary>
     public const string ProfilePath = "user://profile.json";
 
     /// <summary>False in automated tests: nothing reads devices, the test sets the player's input itself.</summary>
     public bool ReadDeviceInput { get; set; } = true;
+
+    /// <summary>
+    /// Whether the loading screen covers the world while it loads (UI spec §15). Null shows it in the real game
+    /// (settings that persist) when reading device input, and not in test scenes.
+    /// </summary>
+    public bool? ShowLoading { get; set; }
+
+    /// <summary>The loading screen, while it shows.</summary>
+    public Ui.LoadingScreen? LoadingScreen => IsInstanceValid(_loadingScreen) ? _loadingScreen : null;
+
+    /// <summary>Where this instance's world load stands; the host reports it to joining clients.</summary>
+    public WorldLoading Loading { get; private set; } = null!;
 
     /// <summary>
     /// Mods this instance runs, checked against the host on join. Null uses the manifest of
@@ -214,8 +231,24 @@ public partial class Main : Node3D
     {
         GD.Print($"{MechanicaInfo.GameName} started (physics: {ProjectSettings.GetSetting("physics/3d/physics_engine")})");
         Options ??= TakeMenuOptions() ?? ReadCommandLine();
+        Loading = new WorldLoading(Ui.LoadingScreen.LoadSettings());
+        if (ReadDeviceInput && (ShowLoading ?? Settings.GameSettings.Persist))
+        {
+            _loadingScreen = new Ui.LoadingScreen
+            {
+                Name = "LoadingScreen",
+                Loading = Loading,
+                World = DescribeWorld,
+                Detail = () => Session is not null && !Session.IsHost && Session.HostName.Length > 0 && Session.HostStage < LoadStage.Entering
+                    ? Ui.Loc.T("Host: {0}  ·  {1}", Session.HostName, Ui.Loc.T(WorldLoading.Text(Session.HostStage)))
+                    : null,
+            };
+            AddChild(_loadingScreen);
+        }
         var mods = Mods ??= LoadMods();
         var save = Save ??= TakeMenuSave() ?? ReadSave(Options.LoadPath);
+        if (save is null && Options.LoadPath is { } unreadable && Options.Mode != SessionMode.Join)
+            Loading.Fail(Ui.Loc.T("The save {0} could not be read.", System.IO.Path.GetFileName(unreadable)));
         if (save is not null && Options.Mode != SessionMode.Join)
             Options = Options with { Seed = save.Seed, GameMode = save.Mode, Difficulty = save.Difficulty };
         else
@@ -446,6 +479,7 @@ public partial class Main : Node3D
             AddChild(new Ui.TutorialHints
             {
                 Name = "TutorialHints",
+                Waiting = () => LoadingScreen is not null,
                 Tool = () => LocalPlayer is null ? null : Tools?.Current.Name,
                 Screens = [("inventory", () => inventory.IsOpen), ("logbook", () => questLog.IsOpen)],
             });
@@ -469,7 +503,66 @@ public partial class Main : Node3D
             });
         }
 
+        if (_loadingScreen is not null)
+            _loadingScreen.Sounds = SoundEvents;
         Start(Options);
+    }
+
+    public override void _Process(double delta) => UpdateLoading();
+
+    public override void _PhysicsProcess(double delta)
+    {
+        if (Loading?.Stage == LoadStage.Physics)
+            _physicsSteps++;
+    }
+
+    // Moves the load on from what the world actually has (§15): a client first reaches the host and waits for
+    // its world, then every peer builds the ground and chunks around the spawn, the scenery in view, runs physics
+    // on it and spawns its player. The host passes its stage on to joining clients.
+    private void UpdateLoading()
+    {
+        if (Loading is null || Loading.Entered || Loading.Error is not null)
+            return;
+        if (Options?.Mode == SessionMode.Join && Session.State == NetSession.SessionState.Offline)
+            Loading.Fail(Session.LastMessage.Length > 0 ? Session.LastMessage : Ui.Loc.T("Could not reach the host."));
+        else if (Session.State == NetSession.SessionState.Connecting)
+            Loading.Report(LoadStage.Connecting);
+        else if (!Streamer.HasWorld || (!Session.IsHost && Session.HostStage < LoadStage.Entering))
+            Loading.Report(LoadStage.WaitingForHost);
+        else if (Streamer.Chunks.Count == 0)
+            Loading.Report(LoadStage.Terrain);
+        else if (Streamer.PendingChunks > 0)
+        {
+            Loading.Report(LoadStage.Terrain, 1);
+            Loading.Report(LoadStage.Chunks, Streamer.Chunks.Count / (double)(Streamer.Chunks.Count + Streamer.PendingChunks));
+        }
+        else if (Streamer.SceneryMissing > 0)
+        {
+            _sceneryMost = Math.Max(_sceneryMost, Streamer.SceneryMissing);
+            Loading.Report(LoadStage.Structures, 1 - Streamer.SceneryMissing / (double)_sceneryMost);
+        }
+        else if (_physicsSteps < Loading.Settings.PhysicsSteps)
+            Loading.Report(LoadStage.Physics, _physicsSteps / (double)Loading.Settings.PhysicsSteps);
+        else if (LocalPlayer is null)
+            Loading.Report(LoadStage.Player);
+        else if (Loading.Stage < LoadStage.Finalizing)
+            Loading.Report(LoadStage.Finalizing);
+        else
+            Loading.Report(LoadStage.Entering);
+        if (Session.IsHost)
+            Session.ReportStage(Loading.Stage);
+    }
+
+    // Bottom right of the loading screen: the world's name and mode once known.
+    private string? DescribeWorld()
+    {
+        if (Session is null || Saves is null)
+            return null;
+        if (Session.IsHost)
+            return $"{Saves.WorldName}  ·  {Ui.Loc.T((Options?.GameMode ?? GameMode.Creative).ToString())}";
+        var mode = Survival.Own?.Mode;
+        return Session.HostName.Length == 0 ? null
+            : mode is { } m ? Ui.Loc.T("{0}'s world  ·  {1}", Session.HostName, Ui.Loc.T(m.ToString())) : Ui.Loc.T("{0}'s world", Session.HostName);
     }
 
     /// <summary>Starts the session <paramref name="options"/> describe. Errors are logged and leave the game offline.</summary>

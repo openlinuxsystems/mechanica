@@ -1,0 +1,11 @@
+{
+  // The world loading screen and boot splash (UI spec §14, §15). Read by src/Mechanica.Core/Ui/WorldLoading.cs.
+  // Tips come from tutorial.json.
+  "min_seconds": 2.0,
+  "tip_seconds": 5.0,
+  "fade_seconds": 0.2,
+  "enter_fade_seconds": 0.4,
+  "timeout_seconds": 60.0,
+  "physics_steps": 3,
+  "splash_seconds": 1.5
+}
