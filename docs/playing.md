@@ -1,9 +1,10 @@
 # How to Play
 
 You start at the crash site. The quest log says what to do next, and Use (**E**) does most things in
-the world. Press **H** (or **F1**) at any time to open this help; it opens on the page for what you are
-doing (the quest log, your inventory, the Part Editor, ...). Type in the box at the top of the help to
-search every page.
+the world. Press **H** (or **F1**) at any time to open this Handbook. It opens at the page you read last
+(the first time, on the page for what you are doing: the Logbook, your inventory, the Part Editor, ...).
+The arrow keys (or Page Up and Page Down) and the buttons under the page turn pages, and the box at the
+top searches every page.
 
 ## Controls
 
@@ -19,18 +20,21 @@ These are the default keys. Every one can be changed in Options, Controls.
 | X / C | Zoom the camera in or out a step (also Alt + scroll). You start in third person over the shoulder; all the way in is first person. |
 | 1 to 9, 0 | Pick a hotbar slot. It starts with the Hammer, Lift, Weld, Paint, Sledgehammer and Connect Tool. |
 | Left click | Create, attack or place: the Hammer places a part when you let go, the Sledgehammer swings. With the Hammer, hold still to lock the ghost (arrows show the ways it can grow), then drag to lay a grid of up to 16 by 16 parts; Q steps the grid's plane while you drag. Hold and drag with the Paint Tool to paint every part you pass over, or with the Weld Tool from one part to another to weld them. |
-| Right click | Remove or pick up: hold it on a part with the Hammer until the ring round the crosshair fills (wood is quickest, metal slower); let go early to stop. Drag with it held to remove the parts of one body across a face. Hold it with the Lift to take the Lift away, with the Sledgehammer to block, and with the Paint Tool to take paint off (drag for more). |
+| Right click | Remove or pick up: hold it on a part with the Hammer until the ring round the crosshair fills (wood is quickest, metal slower); let go early to stop. Drag with it held to remove the parts of one body across a face. Hold it with the Lift to take the Lift away, with the Sledgehammer to block, and with the Paint Tool to take paint off (drag for more). Right click on items lying on the ground picks them up at once, whatever is in hand. With a weapon in hand, hold it to aim: the view zooms in a little and the crosshair tightens. |
 | Scroll | Previous or next hotbar slot |
 | Q / Shift + Q | Turn the part (Hammer, Weld, Lift). With the Paint Tool, Q opens the colour picker and Shift + Q picks the previous colour. |
 | T | Hammer and Weld: tip the part over |
 | Up / Down arrows | Raise or lower the Lift |
 | G | Drop one of the item in hand |
-| E | Use: open the blueprint menu (the Lift in hand, aimed at your Lift), open a container or station, pick up items, harvest, sleep in a bed, sit in or leave a seat, use a part, change a part's settings, use a quest marker, talk, respawn after dying |
+| F (hold) | Force build: hold it and left click to put the item in hand (food, a bucket, a glowstick) where you aim, where it stays. Also hold it while dragging a stack out of the inventory to drop it. |
+| R | Reload the weapon in hand |
+| E | Use. Hold it on a tree or rock node (they get a blue outline) until the ring fills to refine it: what it gives goes straight into your inventory. Letting go or walking away stops it. Also: open the blueprint menu (the Lift in hand, aimed at your Lift), open a container or station, pick up items, harvest, sleep in a bed, sit in or leave a seat, use a part, change a part's settings, use a quest marker, talk, respawn after dying |
 | I or B | Inventory |
 | U | Upgrade the part you are aiming at (a station), or the station whose screen is open |
-| L | Logbook: the quest log, where you pick an answer when a quest asks you to decide |
+| L | Logbook: your quests, the map and your markers; you pick an answer here when a quest asks you to decide |
 | Esc | Menu: save, load, open your world to the LAN, Options, help, quit. Esc also closes any open window. |
-| H or F1 | Help |
+| H or F1 | Handbook |
+| Left / Right (or Page Up / Page Down) | Turn the Handbook's pages |
 | F7 / F8 / F9 | Logic Visualizer, Creation Inspector and force overlay |
 | Alt + Z | Hide the HUD (crosshair, tool bar, compass, tips, chat, quest log and names), and show it again |
 
@@ -73,15 +77,17 @@ switches it to the next mode and shows it for a moment; R with the Connect Tool 
 - **Tips** show at the bottom of the screen, above the hotbar; hold Use (**E**) to dismiss one early.
 - If the game window loses focus, anything you are holding down (such as dismissing a tip) is cancelled.
 
+![Where the HUD shows what](images/hud.png)
+
 ## Lift, Weld Tool, Paint Tool and Sledgehammer
 
 - **Lift.** Left click on the ground puts your Lift down (you have one; putting it somewhere else moves it).
   It is a hydraulic lift with a 4 x 4 unit (1 m) grated platform: set down, its four outriggers swing out and
   lock and the column rises to its resting height of 2 units (0.5 m).
   Left click a Creation to slide the Lift under it and pick it up; it stands still on the platform until you
-  take the Lift away. The arrow keys raise and lower it one unit (0.25 m) at a time, up to 22 units (5.5 m),
-  and Q turns what it holds. Hold right click until the
-  ring fills to take the Lift away; what it held drops. A Creation whose chests or tanks hold items cannot be
+  take the Lift away. The arrow keys raise and lower it one unit (0.25 m) at a time, up to 33 units (8.25 m);
+  hold an arrow and the column runs smoothly until you let go, stopping at the next unit. Q turns what it holds. Aim at the Lift (or
+  what it holds) and hold right click until the ring fills to pick the Lift back up; what it held drops. A Creation whose chests or tanks hold items cannot be
   lifted ("Cannot lift with attached resources."): empty it first.
 - **Blueprints.** With the Lift in hand, aim at your Lift and press **E**. The menu lists your newest 50
   blueprints with a picture of each. Type a name and **Save** to keep what the Lift holds (saving over a name
@@ -96,9 +102,13 @@ switches it to the next mode and shows it for a moment; R with the Connect Tool 
 - **Paint Tool.** Left click paints a part; hold and drag to paint every part you pass over (up to 256 at a
   time). Right click (or drag) takes the paint off. **Q** opens the colour picker round the cursor: move the
   mouse towards a colour and click, or press 1 to 0 for the first ten. Esc or Q again closes it.
-- **Sledgehammer.** Left click swings (0.4 s a swing). Hold right click to block: hits from other players'
-  Sledgehammers and from bots do a quarter of their damage while you block. In Creative nothing takes damage,
-  so blocking matters where players can be hurt.
+- **Sledgehammer.** Left click swings it overhead: one swing a second, and the blow lands at the bottom of the
+  arc (0.6 s after the click) on whatever is under the crosshair within 3 m. The hit knocks a part's body back
+  (about 5000 N·s, but never faster than 4 m/s, so light parts don't fly off), throws dust, chips and sparks and
+  gives the camera a small jolt. Hold right click to raise the hammer across your chest and block: hits from other
+  players' Sledgehammers and from bots do a quarter of their damage while you block. In Creative nothing takes
+  damage, so there the block is only the pose. Timing, reach and knockback are the `sledge` section of
+  `game/data/building.json`.
 
 ## Hotbar and inventory
 
@@ -107,7 +117,10 @@ item, and shows its picture, how many you carry (Survival) and its key. Pick a s
 the scroll wheel; the slot picked has a bright cyan border. A tool slot puts that tool in hand, a part slot
 puts the Hammer in hand ready to place that part, and any other item (food, seeds, a weapon) goes in hand.
 In Survival, something you pick up for the first time goes in the first empty slot. Your hotbar is saved
-with the world.
+with the world. A weapon's slot shows its ammo instead: the rounds loaded out of its magazine (the Potato
+Blaster holds 15, the Scattergun 4), or the potatoes you carry for one that does not reload. With it in hand,
+the counter at the bottom right shows the rounds and the potatoes; when it is empty, **R** reloads it from
+the potatoes you carry (the ring round the crosshair fills while it does).
 
 The **inventory** (**I** or **B**) is a grid of six columns with tabs along the top: All, Blocks,
 Interactive, Tools, Resources and Consumables.
@@ -170,6 +183,23 @@ yours alone: they never change the world or other players' games.
 The first time you play in a world you choose the **Male Scrapper** or the **Female Scrapper** (on the New
 game screen when you start the world, or in a window when you join one). They move and play the same; the
 choice is kept for you in that world and everyone sees it. See [Player Characters](characters.md).
+
+## Logbook
+
+Press **L** to open the Logbook, and L, Esc or its X to close it. On the left are your quests: each one you are
+working on with its current step and progress, and the ones you have finished greyed out under them. When a
+quest asks you to decide, its answers are buttons under it. Then come the places quests have shown you and
+your own markers.
+
+On the right is the map of the island. Drag it to move around and turn the mouse wheel to zoom in on the
+cursor; **−**, **+**, **Whole map** and **Find me** do the same with buttons. The cyan arrow is you, pointing
+the way you face. Blue diamonds are quest goals (they pulse), places found and your markers; hover over one for
+its name and distance. Click a diamond, or a quest, place or marker in the list, to make it the compass's
+primary waypoint (it pulses cyan) and centre the map on it. Right-click the map to mark a place: it shows on
+the compass and in the world like any waypoint. Right-click one of your markers (or its ✕ in the list) to
+remove it. Your markers are saved with the world; you can have up to 20. The map keeps where you left it.
+
+![The Logbook](images/logbook.png)
 
 ## Compass
 

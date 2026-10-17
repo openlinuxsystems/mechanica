@@ -89,6 +89,7 @@ you; this page is the reference for what each key means, so you can read, review
 | `crafting` | object | no | Makes the part a crafting station. Needs `inventory`. See [inventory and crafting](#inventory-and-crafting). |
 | `soil`, `respawn_point` | object, bool | no | Farming soil and respawn beds. Placeable parts only. See [survival](#survival). |
 | `seed` | object | no | What a seed grows into. Items only. See [survival](#survival). |
+| `aim` | object | no | A weapon aims while right click is held. Items only. See [survival](#survival). |
 | `logic`, `settings`, `seat` | object, list, object | no | Logic bus links, player-set settings and seats. Placeable parts only. See [logic, settings and seats](#logic-settings-and-seats). |
 | `light`, `animation` | object, object | no | A light the script switches, and a model the script turns. Placeable parts only. See [light and animation](#light-and-animation). |
 | `menu`, `display` | object, object | no | What the part's menu shows and does, and what the part shows on itself. Placeable parts only. See [menu and display](#menu-and-display). |
@@ -259,6 +260,9 @@ in `properties`. The vanilla scripts read these properties:
 | | `spread` (°) | Half-angle of that cone, under 90. Default 0. |
 | | `radius` (m) | Makes it a splash weapon: damage falls off to 0 at this distance from where it hits (or the end of its range). |
 | | `impulse` (N·s) | Push given to the Body it hits (splash: at the centre). Default 0. |
+| | `aim_spread` (°) | `spread` while the player aims (holds right click, with an `aim` section). Default `spread`. |
+| | `magazine` | Shots between reloads; Reload (R) loads it again from the `ammo` carried. The hotbar slot and HUD show the rounds loaded and the ammo carried. Omitted means no reloading (each shot just uses `ammo`). |
+| | `reload` (s) | How long a reload takes. Default 1. |
 | `scripts/seed.lua` | (none) | Plants the seed in the soil aimed at. Its `seed` section (below) says what grows. |
 | `scripts/watering.lua` | `seconds` (s) | Seconds of water one use adds to the soil aimed at. The item is used up. |
 | `scripts/soil.lua` (a part) | `interval` (s) | How often the soil works out its crop's growth while its Creation is live. Growth is exact whatever it is (it comes from the world clock); it only bounds how late a new stage shows. The soil also grows, from the clock, the time its Creation was parked. E on a ripe crop (`ActivatePart`) harvests it. |
@@ -281,6 +285,8 @@ soil script may treat them differently. A bare `crop` id is in the seed's own mo
 | `soil.capacity` | number > 0 (s) | Most seconds of water the soil holds. Required. |
 | `soil.growth` | number > 0 | Growth speed multiplier for crops on it. Default 1. |
 | `respawn_point` | bool | Players can sleep in it (E) to respawn there. |
+| `aim.zoom` | number 0.2 to 1 | While right click is held the field of view is multiplied by this (a slight zoom) and the crosshair tightens. Default 0.85. The script sees `target.aiming`. |
+| `aim.fire_on_release` | bool | Fire when right click is let go, as well as on left click while aiming. Default false. |
 
 ```json
 "seed": { "crop": "carrot", "grow_time": 240, "yield": 2, "seeds": 1 }

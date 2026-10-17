@@ -23,16 +23,29 @@ public sealed partial class ScriptRuntime
     /// <summary>Action name for taking an item in hand, or emptying the hand (<see cref="EquipItemArgs"/>).</summary>
     public const string EquipItem = "EquipItem";
 
+    /// <summary>Action name for reloading the item in a slot (<see cref="ReloadItemArgs"/>).</summary>
+    public const string ReloadItem = "ReloadItem";
+
+    /// <summary>Action name for starting or stopping aiming the item in hand (<see cref="AimItemArgs"/>).</summary>
+    public const string AimItem = "AimItem";
+
     // Most pellets one combat.pellets call may make.
     private const int MaxPellets = 64;
 
     private readonly SortedDictionary<(int Peer, string Item), Instance> _items = [];
     private readonly Dictionary<int, (string Item, int Slot)> _held = [];
     private readonly Dictionary<int, (int Peer, string Item, DynValue Data)> _flights = [];
+    private readonly HashSet<int> _aiming = [];
     private IPartCatalog? _catalog;
     private SurvivalActions? _survival;
     private InventoryActions? _inventories;
     private ItemPhase _phase;
+
+    /// <summary>
+    /// An item script set what its holder's hotbar slot and HUD counter show (<c>item.counter</c>): the holder's peer
+    /// and the view. The game sends it to that player.
+    /// </summary>
+    public event Action<int, ItemCounterView>? ItemCounterChanged;
 
     // What item hooks may do: read only (can_use, setup) or act (on_use, on_equip, on_unequip, on_hit).
     private enum ItemPhase
@@ -52,6 +65,8 @@ public sealed partial class ScriptRuntime
         (_catalog, _survival, _inventories) = (catalog, survival, inventories);
         _dispatcher.Register<UseItemArgs>(UseItem, ValidateUse, ApplyUse);
         _dispatcher.Register<EquipItemArgs>(EquipItem, ValidateEquip, ApplyEquip);
+        _dispatcher.Register<ReloadItemArgs>(ReloadItem, ValidateReload, ApplyReload);
+        _dispatcher.Register<AimItemArgs>(AimItem, ValidateAim, ApplyAim);
         survival.ProjectileLanded += OnProjectileLanded;
         survival.VitalsChanged += peer =>
         {
@@ -62,6 +77,9 @@ public sealed partial class ScriptRuntime
 
     /// <summary>The item each player holds, by peer: its qualified id and slot.</summary>
     public IReadOnlyDictionary<int, (string Item, int Slot)> Held => _held;
+
+    /// <summary>True while <paramref name="peer"/> aims the item in hand (right click held).</summary>
+    public bool IsAiming(int peer) => _aiming.Contains(peer);
 
     /// <summary>Every held-item script instance, by player then item.</summary>
     public IReadOnlyList<ItemScriptInfo> ItemInstances =>
@@ -142,6 +160,47 @@ public sealed partial class ScriptRuntime
         return null;
     }
 
+    private string? ValidateReload(ActionCaller caller, ReloadItemArgs args)
+    {
+        if (CheckItem(caller, args.Slot, out var id, out var definition) is { } bad)
+            return bad;
+        if (_survival!.World.EyeOf(caller.Peer) is null)
+            return "You have no player to reload with.";
+        var instance = ItemInstance(caller, id!, args.Slot);
+        if (instance?.Fault is { } fault)
+            return $"The {definition!.Name ?? id}'s script is stopped: {fault}";
+        if (instance?.Env?.RawGet(Hooks.OnReloadItem) is not { Type: DataType.Function })
+            return $"The {definition!.Name ?? id} does not reload.";
+        var values = CallItem(instance, Hooks.CanReloadItem, ItemPhase.Checking);
+        if (values is null)
+            return $"The {definition!.Name ?? id}'s script is stopped: {instance.Fault}";
+        return values.Length > 0 && values[0].Type == DataType.String ? values[0].String
+            : values.Length > 0 && values[0].Type == DataType.Boolean && !values[0].Boolean ? $"You cannot reload the {definition!.Name ?? id} now."
+            : null;
+    }
+
+    private JsonElement? ApplyReload(ActionCaller caller, ReloadItemArgs args)
+    {
+        var id = Identifiers.Qualify(_inventories!.PlayerInventory(caller.Peer)[args.Slot]!.Item);
+        Equip(caller, id, args.Slot);
+        var instance = ItemInstance(caller, id, args.Slot)!;
+        if (CallItem(instance, Hooks.OnReloadItem, ItemPhase.Acting) is null)
+            throw new InvalidOperationException($"the {instance.PartType} script failed: {instance.Fault}");
+        return null;
+    }
+
+    private string? ValidateAim(ActionCaller caller, AimItemArgs args) =>
+        !args.On || _held.ContainsKey(caller.Peer) ? null : "You have nothing in hand to aim.";
+
+    private JsonElement? ApplyAim(ActionCaller caller, AimItemArgs args)
+    {
+        if (args.On)
+            _aiming.Add(caller.Peer);
+        else
+            _aiming.Remove(caller.Peer);
+        return null;
+    }
+
     // The slot holds an item that runs a script.
     private string? CheckItem(ActionCaller caller, int slot, out string? id, out PartDefinition? definition)
     {
@@ -174,6 +233,7 @@ public sealed partial class ScriptRuntime
 
     private void Unequip(int peer)
     {
+        _aiming.Remove(peer);
         if (!_held.Remove(peer, out var held))
             return;
         if (_items.TryGetValue((peer, held.Item), out var instance))
@@ -223,6 +283,7 @@ public sealed partial class ScriptRuntime
         var target = new Table(script);
         target.Set("from", LuaValues.Vector(script, instance.File.Context.Vec3Meta, eye));
         target.Set("direction", LuaValues.Vector(script, instance.File.Context.Vec3Meta, direction ?? -Vector3.UnitZ));
+        target.Set("aiming", DynValue.NewBoolean(_aiming.Contains(instance.Holder!.Value)));
         if (args is { Creation: { } creation, Part: { } part })
         {
             target.Set("creation", DynValue.NewNumber(creation));
@@ -241,12 +302,14 @@ public sealed partial class ScriptRuntime
             _items.Remove(key);
         foreach (var peer in _held.Keys.Where(p => !players.Contains(p)).ToList())
             _held.Remove(peer);
+        _aiming.RemoveWhere(p => !players.Contains(p));
     }
 
     private void ClearItems()
     {
         _items.Clear();
         _held.Clear();
+        _aiming.Clear();
         _flights.Clear();
     }
 
@@ -297,6 +360,34 @@ public sealed partial class ScriptRuntime
             pockets.SetSlot(instance.Slot, stack.Count > count ? stack with { Count = stack.Count - count } : null);
             return DynValue.True;
         });
+        Fn(item, "counter", args =>
+        {
+            var instance = Acting("item.counter");
+            var table = args.AsType(0, "item.counter", DataType.Table).Table;
+            int? Whole(string key)
+            {
+                var v = table.Get(key);
+                if (v.IsNil())
+                    return null;
+                var n = LuaValues.Number(v, $"item.counter ({key})", 1);
+                if (n < 0 || n != MathF.Floor(n))
+                    throw new ScriptRuntimeException($"item.counter: {key} must be a whole number of 0 or more");
+                return (int)n;
+            }
+            var ammo = table.Get("ammo") is { Type: DataType.String } a ? ItemId(instance, a.String) : null;
+            var busyValue = table.Get("busy");
+            var busy = busyValue.IsNil() ? 0f : LuaValues.Number(busyValue, "item.counter (busy)", 1);
+            if (!(busy >= 0f) || !float.IsFinite(busy))
+                throw new ScriptRuntimeException("item.counter: busy must be 0 or more seconds");
+            ItemCounterChanged?.Invoke(instance.Holder!.Value, new ItemCounterView(instance.PartType, Whole("value"), Whole("max"), ammo, busy));
+            return DynValue.Nil;
+        });
+        Fn(item, "sound", args =>
+        {
+            var instance = ItemNow();
+            var key = args.AsType(0, "item.sound", DataType.String).String;
+            return _catalog!.FindDefinition(instance.PartType)?.Sounds?.GetValueOrDefault(key) is { } id ? DynValue.NewString(id) : DynValue.Nil;
+        });
         globals.Set("item", DynValue.NewTable(item));
 
         var holder = new Table(script);
@@ -315,6 +406,7 @@ public sealed partial class ScriptRuntime
             var instance = Acting("holder.heal");
             return DynValue.NewNumber(_survival!.Heal(instance.Holder!.Value, LuaValues.Number(args[0], "holder.heal", 1)));
         });
+        Fn(holder, "aiming", _ => DynValue.NewBoolean(_aiming.Contains(ItemNow().Holder!.Value)));
         globals.Set("holder", DynValue.NewTable(holder));
 
         var inventory = new Table(script);

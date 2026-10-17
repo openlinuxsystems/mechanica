@@ -5,6 +5,7 @@ using Mechanica.Core.Input;
 using Mechanica.Core.Logic;
 using Mechanica.Core.Quests;
 using Mechanica.Core.Survival;
+using Mechanica.Core.World;
 using Mechanica.Game.Building;
 using Mechanica.Game.Items;
 using Mechanica.Game.Logic;
@@ -12,6 +13,7 @@ using Mechanica.Game.Net;
 using Mechanica.Game.Player;
 using Mechanica.Game.Quests;
 using Mechanica.Game.Ui;
+using Mechanica.Game.World;
 
 namespace Mechanica.Game.Survival;
 
@@ -21,6 +23,13 @@ namespace Mechanica.Game.Survival;
 /// player: harvest a ripe
 /// crop (the soil's <c>on_activate</c>, through <c>ActivatePart</c>), sleep in a bed to respawn there, or pick up
 /// the nearest pile of items.
+/// <para>
+/// Also the survival interactions of UI spec §9 and §10: right click on a pile of items picks it up at once, with any
+/// tool. A resource node (a tree, a rock node) under the crosshair gets a blue outline; holding Use on it fills the
+/// ring round the crosshair over <see cref="SurvivalSettings.RefineSeconds"/> and refines it into the inventory.
+/// Letting go, moving more than <see cref="SurvivalSettings.RefineCancelDistance"/>, opening a window or the game
+/// losing focus cancels it. The host checks the hold (<c>StartRefine</c>, <c>FinishRefine</c>).
+/// </para>
 /// </summary>
 public partial class SurvivalHud : CanvasLayer
 {
@@ -31,6 +40,20 @@ public partial class SurvivalHud : CanvasLayer
     private ColorRect _deathScreen = null!;
     private Label _deathText = null!;
     private Label _status = null!;
+    private Node3D? _outline;
+    private WorldObjectId? _outlined;
+    // The refine being held: the node, when Use went down (this peer's clock) and where the player stood.
+    private (WorldObjectId Id, double Started, Vector3 Feet)? _refine;
+
+    // Blue, unshaded and drawn from the inside, slightly grown, so it reads as an outline round the node.
+    private static readonly StandardMaterial3D OutlineMaterial = new()
+    {
+        ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
+        CullMode = BaseMaterial3D.CullModeEnum.Front,
+        Grow = true,
+        GrowAmount = 0.06f,
+        AlbedoColor = UiTokens.Blue,
+    };
 
     /// <summary>Survival state. Set before adding to the tree.</summary>
     public SurvivalSync Survival { get; init; } = null!;
@@ -65,8 +88,25 @@ public partial class SurvivalHud : CanvasLayer
     /// <summary>What the tool in hand does with Use (E), ahead of the rest (the Lift's blueprint menu), or null.</summary>
     public Func<(string Label, Action Run)?> ToolInteraction { get; init; } = () => null;
 
+    /// <summary>True while Use (E) is held; tests set it.</summary>
+    public Func<bool> UseHeld { get; init; } = () => Input.IsActionPressed(InputActions.Interact);
+
+    /// <summary>True while the player is in the world rather than a window (the mouse is captured); tests set it.</summary>
+    public Func<bool> Playing { get; init; } = () => Input.MouseMode == Input.MouseModeEnum.Captured;
+
     /// <summary>The health bar.</summary>
     public ProgressBar HealthBar => _health;
+
+    /// <summary>The node being refined, or null.</summary>
+    public WorldObjectId? Refining => _refine?.Id;
+
+    /// <summary>How far the refine being held has got, 0 to 1 (the ring round the crosshair), or null when none is.</summary>
+    public float? RefineProgress => _refine is { } r && Survival.Settings is { } settings
+        ? Math.Clamp((float)((Survival.Now - r.Started) / settings.RefineSeconds), 0f, 1f)
+        : null;
+
+    /// <summary>The resource node shown with the blue outline, or null.</summary>
+    public WorldObjectId? Outlined => _outlined;
 
     public override void _Ready()
     {
@@ -125,8 +165,12 @@ public partial class SurvivalHud : CanvasLayer
             var where = own.HasBed ? "your bed" : "the spawn";
             _deathText.Text = wait > 0 ? Loc.T("You died.\nRespawn in {0} s", $"{Math.Ceiling(wait):0}") : Loc.T("You died.\n[{0}] respawn at {1}", GameInput.Label(InputActions.Interact), where);
         }
+        UpdateRefine();
+        UpdateOutline(own is not { Dead: true } && Playing() ? AimedNode() : null);
         var hints = new List<string>();
-        if (own is not { Dead: true } && Interaction() is { } what)
+        if (_refine is { } refining)
+            hints.Add(Loc.T("Refining the {0}…", NodeName(Survival.FindObject(refining.Id))));
+        else if (own is not { Dead: true } && Interaction() is { } what)
             hints.Add($"[{GameInput.Label(InputActions.Interact)}] {what.Label}");
         else if (own is not { Dead: true } && Notice() is { } notice)
             hints.Add(notice);
@@ -144,7 +188,103 @@ public partial class SurvivalHud : CanvasLayer
             Respawn();
             GetViewport().SetInputAsHandled();
         }
+        // Right click on a loose pile picks it up whatever is in hand (UI spec §9), ahead of the tool's own right click.
+        else if (Survival.Own is not { Dead: true } && Playing() && GameInput.Pressed(@event, InputActions.Secondary) && PickUpAimed())
+            GetViewport().SetInputAsHandled();
     }
+
+    public override void _Notification(int what)
+    {
+        // A hold never outlives the window losing focus (UI spec §11).
+        if (what == NotificationApplicationFocusOut)
+            CancelRefine();
+    }
+
+    /// <summary>The pile of items under the crosshair within pickup reach, or null.</summary>
+    public Core.Survival.ItemDrop? AimedDrop()
+    {
+        if (Players.LocalPlayer is not { } player || Survival.Settings is not { } settings)
+            return null;
+        var from = player.AimOrigin;
+        var direction = -player.Camera.GlobalBasis.Z;
+        // A pile behind a wall or a part is not aimed at.
+        var blocked = HandTool.Cast(player, settings.PickupReach) is { } hit ? hit.Point.DistanceTo(from) : settings.PickupReach;
+        return DropAim.Aimed(Survival.Drops.Values, from.ToNumerics(), direction.ToNumerics(), Math.Min(blocked + DropAim.Radius, settings.PickupReach));
+    }
+
+    /// <summary>Picks up the pile under the crosshair. False when there is none.</summary>
+    public bool PickUpAimed()
+    {
+        if (AimedDrop() is not { } drop)
+            return false;
+        Request(SurvivalActions.PickUp, new PickUpArgs(drop.Id));
+        Players.LocalPlayer?.Gesture(Core.Characters.CharacterGesture.Interact);
+        return true;
+    }
+
+    /// <summary>The resource node (<see cref="WorldObjectDefinition.Refine"/>) under the crosshair within reach, or null.</summary>
+    public WorldObjectPlacement? AimedNode()
+    {
+        if (Players.LocalPlayer is not { } player || Survival.Settings is not { } settings)
+            return null;
+        if (HandTool.Cast(player, settings.Reach) is not { Collider: StaticBody3D objects } hit || objects.GetParent() is not TerrainChunk chunk
+            || objects != chunk.Objects || chunk.ObjectAt(hit.Shape) is not { } id)
+            return null;
+        return Survival.FindObject(id) is { Definition.Refine: true } node ? node : null;
+    }
+
+    /// <summary>Starts holding Use on <paramref name="node"/> to refine it.</summary>
+    public void BeginRefine(WorldObjectPlacement node)
+    {
+        if (Players.LocalPlayer is not { } player)
+            return;
+        _refine = (node.Id, Survival.Now, player.GlobalPosition);
+        Request(SurvivalActions.StartRefine, new RefineArgs(node.Id.ToString()));
+        player.Gesture(Core.Characters.CharacterGesture.Interact);
+    }
+
+    /// <summary>Stops a refine being held before it finished.</summary>
+    public void CancelRefine()
+    {
+        if (_refine is null)
+            return;
+        _refine = null;
+        Request(SurvivalActions.CancelRefine, new NoArgs());
+    }
+
+    // Finishes the refine once Use has been held long enough, or cancels it on letting go, moving off or a window.
+    private void UpdateRefine()
+    {
+        if (_refine is not { } r || Survival.Settings is not { } settings)
+            return;
+        var player = Players.LocalPlayer;
+        if (player is null || Survival.Own is { Dead: true } || !UseHeld() || !Playing()
+            || player.GlobalPosition.DistanceTo(r.Feet) > settings.RefineCancelDistance)
+        {
+            CancelRefine();
+            return;
+        }
+        if (Survival.Now - r.Started < settings.RefineSeconds)
+            return;
+        _refine = null;
+        Request(SurvivalActions.FinishRefine, new RefineArgs(r.Id.ToString()));
+    }
+
+    // The blue outline round the resource node under the crosshair (UI spec §10).
+    private void UpdateOutline(WorldObjectPlacement? node)
+    {
+        if (node?.Id == _outlined)
+            return;
+        _outline?.QueueFree();
+        _outline = null;
+        _outlined = node?.Id;
+        if (node is null)
+            return;
+        _outline = TerrainChunk.Shell(node, OutlineMaterial);
+        Survival.AddChild(_outline);
+    }
+
+    private static string NodeName(WorldObjectPlacement? node) => (node?.Definition.Id ?? "node").Replace('_', ' ');
 
     public override void _UnhandledInput(InputEvent @event)
     {
@@ -220,6 +360,8 @@ public partial class SurvivalHud : CanvasLayer
         }
         if (Quests?.Prompt() is { } quest)
             return (QuestLabel(quest), () => Request(QuestTracker.QuestInteract, new NoArgs()));
+        if (AimedNode() is { } node)
+            return (Loc.T("hold to refine the {0}", NodeName(node)), () => BeginRefine(node));
         var feet = player.GlobalPosition;
         var nearest = Survival.Drops.Values
             .Select(d => (Drop: d, Distance: d.Position.ToGodot().DistanceTo(feet)))

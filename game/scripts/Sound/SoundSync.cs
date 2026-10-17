@@ -116,6 +116,9 @@ public partial class SoundSync : Node
         Player.ClearCache();
     }
 
+    /// <summary>Raised when a world one-shot plays here (<see cref="Emit"/> on the host, its copies on clients), for effects that go with it.</summary>
+    public event Action<SoundEvent, Vector3>? Played;
+
     /// <summary>
     /// Plays a one-shot for everyone in earshot. On the host it plays here and is sent to clients near
     /// <paramref name="position"/>; on a client it only plays here. False when the event is unknown.
@@ -125,6 +128,7 @@ public partial class SoundSync : Node
         if (Registry.Find(sound, ownerModId) is not { } e)
             return false;
         Player.Play(e, position);
+        Played?.Invoke(e, position);
         if (!Session.IsHost)
             return true;
         foreach (var peer in Session.ReadyPeers)
@@ -204,7 +208,10 @@ public partial class SoundSync : Node
     private void ClientPlay(string sound, Vector3 position)
     {
         if (Session.State == NetSession.SessionState.Connected && Registry.Find(sound) is { } e)
+        {
             Player.Play(e, position);
+            Played?.Invoke(e, position);
+        }
     }
 
     /// <summary>Host → client: a loop started (or was running when this client joined).</summary>

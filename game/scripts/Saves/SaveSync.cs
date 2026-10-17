@@ -59,6 +59,9 @@ public partial class SaveSync : Node
     /// <summary>Every player's hotbar, saved under their profile. Optional.</summary>
     public Core.Items.HotbarActions? Hotbars { get; init; }
 
+    /// <summary>Every player's Logbook map markers, saved with them; null leaves them out.</summary>
+    public Core.Ui.MapMarkers? Markers { get; init; }
+
     /// <summary>Quests, for the story's state. Optional.</summary>
     public QuestSync? Quests { get; init; }
 
@@ -241,6 +244,7 @@ public partial class SaveSync : Node
         if (saved.Character is not null)
             Characters?.Restore(player.PeerId, saved.Character);
         Hotbars?.Restore(player.PeerId, saved.Hotbar);
+        Markers?.Restore(player.PeerId, saved.Markers);
         if (Inventory.Items is { } items)
         {
             foreach (var problem in PlayerRoster.Restore(items.PlayerInventory(player.PeerId), saved.Inventory))
@@ -272,7 +276,8 @@ public partial class SaveSync : Node
             player.Rotation.Y,
             bed is { } b ? new SavedPart(b.Creation, b.Part) : null,
             Characters?.ChosenBy(player.PeerId),
-            Hotbars?.SavedOf(player.PeerId)));
+            Hotbars?.SavedOf(player.PeerId),
+            Markers?.SavedOf(player.PeerId)));
     }
 
     private static DataDiagnostic Warning(string file, string message) =>

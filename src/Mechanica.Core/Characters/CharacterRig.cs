@@ -170,19 +170,29 @@ public static class CharacterRig
     /// <summary>Clips that move only <see cref="UpperBodyBones"/>.</summary>
     public static IReadOnlyList<string> UpperBodyClips { get; } =
     [
-        "hold_tool", "hold_heavy", "hold_gun", "hold_item",
+        "hold_tool", "hold_heavy", "hold_heavy_block", "hold_gun", "hold_item",
         "hammer_swing", "sledge_swing", "tool_use", "weld", "paint_spray", "fire_gun", "eat", "throw", "plant", "pour",
         "interact", "hurt",
+        "hold_heavy_fp", "hold_heavy_block_fp", "sledge_swing_fp",
     ];
+
+    /// <summary>
+    /// Ending of a clip's first-person version: the local player's arms play <c>name_fp</c> instead of <c>name</c>
+    /// when the set has one, posed for the camera rather than for someone watching.
+    /// </summary>
+    public const string FirstPersonSuffix = "_fp";
 
     /// <summary>Every clip the animation set must have.</summary>
     public static IEnumerable<string> Clips => FullBodyClips.Concat(UpperBodyClips);
 
-    /// <summary>The arm pose for holding <paramref name="prop"/>, or null for empty hands.</summary>
-    public static string? HoldClip(CharacterProp prop) => prop switch
+    /// <summary>
+    /// The arm pose for holding <paramref name="prop"/>, or null for empty hands. <paramref name="guard"/> (right click
+    /// held with the Sledgehammer) raises it to block.
+    /// </summary>
+    public static string? HoldClip(CharacterProp prop, bool guard = false) => prop switch
     {
         CharacterProp.None => null,
-        CharacterProp.Sledgehammer => "hold_heavy",
+        CharacterProp.Sledgehammer => guard ? "hold_heavy_block" : "hold_heavy",
         CharacterProp.PotatoBlaster => "hold_gun",
         CharacterProp.WaterBucket or CharacterProp.Item => "hold_item",
         _ => "hold_tool",

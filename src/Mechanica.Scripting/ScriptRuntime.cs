@@ -135,6 +135,12 @@ public sealed partial class ScriptRuntime
 
         /// <summary><c>on_hit(landing)</c>: a projectile the item launched hit something or ran out of time.</summary>
         public const string OnHit = "on_hit";
+
+        /// <summary><c>can_reload_item()</c>: may the item be reloaded now? Nil to allow, or the reason it can't. Changes nothing.</summary>
+        public const string CanReloadItem = "can_reload_item";
+
+        /// <summary><c>on_reload_item()</c>: the player pressed Reload (R) with the item in hand.</summary>
+        public const string OnReloadItem = "on_reload_item";
     }
 
     /// <summary>Creates a runtime over the host's world.</summary>

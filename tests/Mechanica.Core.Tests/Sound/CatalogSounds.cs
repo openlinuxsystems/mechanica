@@ -14,7 +14,7 @@ internal static class CatalogSounds
         "place_cardboard", "break_cardboard", "impact_cardboard", "place_fabric", "break_fabric", "impact_fabric",
         "burn_wood", "vehicle_crash", "impact_soft", "part_attach", "part_detach", "remove_block", "hammer_swing",
         "lift_place", "lift_raise", "lift_lower", "connect_success", "connect_fail", "disconnect", "weld_start",
-        "weld_complete", "paint_spray", "paint_erase", "smash_hit", "smash_break", "engine_start", "engine_idle",
+        "weld_complete", "paint_spray", "paint_erase", "smash_hit", "smash_break", "sledgehammer_swing", "engine_start", "engine_idle",
         "engine_rev", "engine_sputter", "electric_start", "electric_whirr", "battery_insert", "battery_drain",
         "fuel_pour", "bearing_start", "bearing_spin_loop", "bearing_stop", "piston_extend", "piston_retract", "piston_stall",
         "suspension_compress", "suspension_extend", "thruster_ignite", "thruster_loop", "thruster_cut", "rotor_spin_up",

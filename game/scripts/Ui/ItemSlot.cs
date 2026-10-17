@@ -54,6 +54,9 @@ public partial class ItemSlot : PanelContainer
     /// <summary>The text standing in for a picture, empty when the picture shows.</summary>
     public string Initials => _initials.Text;
 
+    /// <summary>The count text in the corner (a stack's size, or a weapon's ammo).</summary>
+    public string CountText => _count.Text;
+
     /// <summary>What a drag from here carries, or null to drag nothing.</summary>
     public Func<ItemDrag?>? DragSource { get; set; }
 
@@ -86,14 +89,17 @@ public partial class ItemSlot : PanelContainer
         TooltipText = " ";
     }
 
-    /// <summary>Shows <paramref name="entry"/> with its picture (null: initials of <paramref name="name"/>) and count.</summary>
-    public void Show(string? entry, Texture2D? icon, string name, int? count, string? key = null, bool selected = false, bool dim = false)
+    /// <summary>
+    /// Shows <paramref name="entry"/> with its picture (null: initials of <paramref name="name"/>) and count; a
+    /// <paramref name="badge"/> (a weapon's ammo, UI spec §10) shows in the count's place.
+    /// </summary>
+    public void Show(string? entry, Texture2D? icon, string name, int? count, string? key = null, bool selected = false, bool dim = false, string? badge = null)
     {
         Entry = entry;
         Count = count;
         _icon.Texture = entry is null ? null : icon;
         _initials.Text = entry is null || icon is not null ? "" : ItemIcons.Initials(name);
-        _count.Text = count is { } n && n > 1 ? $"{n}" : "";
+        _count.Text = badge ?? (count is { } n && n > 1 ? $"{n}" : "");
         _key.Text = key ?? "";
         Modulate = Colors.White with { A = dim ? 0.35f : 1f };
         if (selected == _selected)

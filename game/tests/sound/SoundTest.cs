@@ -165,9 +165,10 @@ public partial class SoundTest : StagedTest
                 return false;
             Check(_results[0].Ok && !_results[0].Value!.Value.GetProperty("broken").GetBoolean(), $"the first hit only damages it ({_results[0]})");
             Check(Heard(_client, "vanilla:smash_hit") && Heard(_host, "vanilla:smash_hit") && Heard(_host, "vanilla:impact_wood"), "both peers hear the hit");
+            Check(Bursts(_client) == 1 && Bursts(_host) == 1, $"dust and chips fly on both peers ({Bursts(_client)}, {Bursts(_host)})");
             return true;
         });
-        Wait("the swing ends", 40);
+        Wait("the swing ends", 60);
         Add("the second hit breaks it: smash_break and break_wood", frame =>
         {
             if (frame == 0)
@@ -180,6 +181,7 @@ public partial class SoundTest : StagedTest
             Check(_results[0].Ok && _results[0].Value!.Value.GetProperty("broken").GetBoolean(), $"the plank breaks ({_results[0]})");
             Check(Heard(_client, "vanilla:smash_break") && Heard(_host, "vanilla:break_wood") && !Heard(_host, "vanilla:smash_hit"),
                 "both peers hear it break, not a plain hit");
+            Check(Bursts(_client) == 2 && Bursts(_host) == 2, $"and again for the break ({Bursts(_client)}, {Bursts(_host)})");
             return true;
         });
     }
@@ -321,6 +323,8 @@ public partial class SoundTest : StagedTest
         var body = who.Main.Creations.NodeOf(creation)!.Bodies[graph.BodyIndexOf(partId)];
         return body.GlobalTransform * PartGeometry.CentreMetres(graph.DefinitionOf(partId), part.Cell, part.Rotation).ToGodot();
     }
+
+    private static int Bursts(Instance who) => who.Main.GetNode<SledgeImpacts>("SledgeImpacts").Bursts;
 
     private static bool LookAt(Instance who, Vector3 target, int frame)
     {

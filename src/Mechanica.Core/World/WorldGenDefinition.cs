@@ -161,6 +161,13 @@ public sealed record WorldObjectDefinition
     /// <summary>Items the object leaves on the ground when it breaks.</summary>
     public List<ObjectDrop>? Drops { get; init; }
 
+    /// <summary>
+    /// True for a raw resource node (a tree, a rock node): holding Use (E) on it for
+    /// <see cref="Survival.SurvivalSettings.RefineSeconds"/> refines it, and its <see cref="Drops"/> go straight into
+    /// the player's inventory (UI spec §9, §10).
+    /// </summary>
+    public bool Refine { get; init; }
+
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }

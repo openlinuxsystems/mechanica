@@ -1,0 +1,19 @@
+{
+  // The Logbook map and markers (UI spec §5, §10, §13). Read by src/Mechanica.Core/Ui/Logbook.cs.
+  // Pixels across the whole-world map drawn when the Logbook first opens.
+  "map_resolution": 512,
+  // Pixels across the sharper map of the area in view, drawn once panning and zooming settle.
+  "detail_resolution": 384,
+  "detail_delay_seconds": 0.25,
+  // Closest zoom, in metres per screen pixel.
+  "min_metres_per_pixel": 0.25,
+  // Zoom per wheel step (1.25 is 25%).
+  "zoom_step": 1.25,
+  // Metres of height between the map's height lines.
+  "contour_interval": 10.0,
+  // Screen pixels within which a click picks a marker.
+  "pick_radius": 12.0,
+  // Markers each player may place; the host refuses more.
+  "max_markers": 20,
+  "marker_name_length": 32
+}

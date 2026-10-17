@@ -13,8 +13,12 @@ using Mechanica.Scripting;
 namespace Mechanica.Game.Building;
 
 /// <summary>
-/// The item in the local player's hand (chunk 20): Q and E pick one of the usable items in their
-/// inventory (food, weapons, seeds, water), left click uses it and G drops one on the ground.
+/// The item in the local player's hand (chunk 20): the hotbar picks one of the items in their inventory (food,
+/// weapons, seeds, water), left click uses it and G drops one on the ground. Holding Force Build (F) while left
+/// clicking places one where the crosshair points instead, where it stays (UI spec §1, §9: food, buckets, glowsticks).
+/// A weapon with an <c>aim</c> section aims while right click is held: the view zooms in a little and the crosshair
+/// tightens (<c>AimItem</c>); left click fires, and so does letting go when it fires on release. Reload (R) runs
+/// <c>ReloadItem</c>. The rounds loaded and the ammo carried show on its hotbar slot and the HUD (UI spec §10).
 /// <list type="bullet">
 /// <item>An item with a script (food, weapons, seeds, water; chunk 20b): <c>UseItem</c> where the crosshair
 /// points, with the part under it when that is in reach (the soil a seed is planted in). Its Lua decides
@@ -30,6 +34,7 @@ public partial class ItemTool : HandTool
     private bool _empty;
     // The scripted item the host was last told is in hand: (item, slot), or null for none.
     private (string Item, int Slot)? _equipped;
+    private bool _aiming;
 
     /// <summary>Inventories, for what the player carries. Set before adding to the tree.</summary>
     public InventorySync Inventory { get; init; } = null!;
@@ -107,6 +112,73 @@ public partial class ItemTool : HandTool
         return true;
     }
 
+    /// <inheritdoc/>
+    public override bool Aiming => _aiming;
+
+    /// <summary>How the item in hand aims, or null when it does not.</summary>
+    public AimDefinition? AimOfHand => InHand is { } hand ? Survival.Catalog.FindDefinition(hand.Item)?.Aim : null;
+
+    /// <summary>What the item in hand's counter shows (rounds loaded and ammo carried), or null when it has none.</summary>
+    public (string Text, int? Loaded, int Carried)? Counter => InHand is { } hand ? CounterFor(hand.Item) : null;
+
+    /// <summary>
+    /// What <paramref name="item"/>'s counter shows (UI spec §10), from what its script last set: the rounds loaded out of
+    /// the magazine, or the ammo carried when it has no magazine; null when it has no counter.
+    /// </summary>
+    public (string Text, int? Loaded, int Carried)? CounterFor(string item)
+    {
+        if (Survival.CounterOf(item) is not { } view)
+            return null;
+        var carried = view.Ammo is { } ammo ? Inventory.Own?.Count(ammo) ?? 0 : 0;
+        var text = view.Value is { } loaded
+            ? view.Max is { } max ? $"{loaded} / {max}" : $"{loaded}"
+            : $"{carried}";
+        return (text, view.Value, carried);
+    }
+
+    /// <summary>Starts (or stops) aiming the item in hand. False when it does not aim.</summary>
+    public bool Aim(bool on, Action<ActionResult>? done = null)
+    {
+        if (on && AimOfHand is null)
+            return false;
+        if (_aiming == on)
+            return true;
+        _aiming = on;
+        Player.AimZoom = on ? AimOfHand?.Zoom ?? AimDefinition.DefaultZoom : 1f;
+        // Not through Send: the answer to the last shot stays on the HUD.
+        Actions.Request(ScriptRuntime.AimItem, new AimItemArgs(on), result => done?.Invoke(result));
+        return true;
+    }
+
+    /// <summary>Reloads the item in hand. False with nothing in hand.</summary>
+    public bool Reload(Action<ActionResult>? done = null)
+    {
+        if (InHand is not { } hand || Survival.Catalog.FindDefinition(hand.Item) is not { } item || !IsScripted(item))
+            return false;
+        Send(ScriptRuntime.ReloadItem, new ReloadItemArgs(hand.Slot), done);
+        return true;
+    }
+
+    /// <summary>
+    /// Force Build: places one of the item in hand where the crosshair points, within reach, where it stays. False
+    /// with nothing in hand or nothing in reach to put it on.
+    /// </summary>
+    public bool PlaceOne(Action<ActionResult>? done = null)
+    {
+        if (InHand is not { } hand || Cast(Player, Survival.Settings!.Reach) is not { } hit)
+            return false;
+        // Just above the surface, so it sits on it.
+        var at = hit.Point + hit.Normal * 0.02f;
+        Send(SurvivalActions.DropItems, new DropItemsArgs(hand.Slot, 1, new Vec3(at.X, at.Y, at.Z)), done);
+        return true;
+    }
+
+    /// <inheritdoc/>
+    public override float? Progress =>
+        InHand is { } hand && Survival.CounterOf(hand.Item) is { Busy: > 0 } view && Survival.BusyFor(hand.Item) is > 0 and var left
+            ? 1f - left / view.Busy
+            : null;
+
     /// <summary>Drops one of the item in hand on the ground in front of the player.</summary>
     public bool DropOne(Action<ActionResult>? done = null)
     {
@@ -121,23 +193,57 @@ public partial class ItemTool : HandTool
     {
         var hand = InHand;
         var name = hand is null ? Loc.T("nothing usable") : $"{Survival.Catalog.FindDefinition(hand.Item)?.Name ?? hand.Item} x{hand.Count}";
-        return Loc.T("Item: {0}   {1} use  {2} drop one", name, Key(InputActions.Primary), Key(InputActions.Drop)) + Status;
+        var line = Loc.T("Item: {0}   {1} use  {2} drop one  hold {3} + {1} place", name, Key(InputActions.Primary), Key(InputActions.Drop), Key(InputActions.ForceBuild));
+        if (AimOfHand is not null)
+            line += "  " + Loc.T("hold {0} aim", Key(InputActions.Secondary));
+        if (hand is not null && Survival.CounterOf(hand.Item) is { Max: not null })
+            line += "  " + Loc.T("{0} reload", Key(InputActions.Reload));
+        return line + Status;
     }
 
     /// <inheritdoc/>
     protected override bool HandleInput(InputEvent @event)
     {
         if (Pressed(@event, InputActions.Primary))
-            Use();
+        {
+            if (Input.IsActionPressed(InputActions.ForceBuild))
+                PlaceOne();
+            else
+                Use();
+        }
         else if (Pressed(@event, InputActions.Drop))
             DropOne();
+        else if (Pressed(@event, InputActions.Reload))
+            Reload();
+        else if (Pressed(@event, InputActions.Secondary) && AimOfHand is not null)
+            Aim(true);
+        else if (Released(@event, InputActions.Secondary) && _aiming)
+            Release();
         else
             return false;
         return true;
     }
 
+    /// <summary>Lets go of right click: stops aiming, and fires first when the item fires on release.</summary>
+    public void Release()
+    {
+        if (_aiming && AimOfHand is { FireOnRelease: true })
+            Use();
+        Aim(false);
+    }
+
+    /// <inheritdoc/>
+    protected override void OnActiveChanged()
+    {
+        if (!Active)
+            Aim(false);
+    }
+
     public override void _Process(double delta)
     {
+        // A release the tool never heard (the mouse freed for a window, another item in hand) ends the aim.
+        if (_aiming && (!Active || AimOfHand is null || (ReadDeviceInput && Input.MouseMode != Input.MouseModeEnum.Captured)))
+            Aim(false);
         // Tell the host when the scripted item in hand changes (another item, another tool, death).
         (string Item, int Slot)? want = Active && Survival.Own is not { Dead: true } && InHand is { } hand
             && Survival.Catalog.FindDefinition(hand.Item) is { } d && IsScripted(d) ? (hand.Item, hand.Slot) : null;

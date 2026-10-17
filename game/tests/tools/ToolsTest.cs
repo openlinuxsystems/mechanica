@@ -29,6 +29,8 @@ public partial class ToolsTest : StagedTest
     private readonly List<ActionResult> _results = [];
     private NetTestHarness _harness = null!;
     private ModLoadResult _mods = null!;
+    private int _struck;
+    private Vector3 _standing;
     private Instance _host = null!;
     private Instance _client = null!;
     private Instance _late = null!;
@@ -37,6 +39,9 @@ public partial class ToolsTest : StagedTest
     private int _lone;
     private float _ground;
     private bool _barRode;
+    private int _heldTo;
+    private int _heldStops;
+    private bool _heldMoved;
     private int _sent;
     private BlueprintMenu _menu = null!;
     private string _blueprints = null!;
@@ -250,6 +255,44 @@ public partial class ToolsTest : StagedTest
             Check(Mathf.IsEqualApprox(box.Max.Z - box.Min.Z, 0.75f, 1e-3f), $"the bar now runs along z ({box.Min} – {box.Max})");
             return true;
         });
+        Add("holding an arrow key keeps raising until it is let go", frame =>
+        {
+            var lift = _client.Main.Build.Lifts[_client.Peer];
+            if (frame == 0)
+            {
+                Check(Tools.Lift.PressRaise(1) && Tools.Lift.RaiseHeld, "the arrow key raises and holds");
+                _heldStops = 0;
+                _heldMoved = false;
+                return false;
+            }
+            if (Tools.Lift.RaiseHeld)
+            {
+                // Once going, the column never stops or slows to a halt while the key is held.
+                if (lift.Moving)
+                    _heldMoved = true;
+                else if (_heldMoved)
+                    _heldStops++;
+                if (lift.State.Level < 6)
+                    return false;
+                Check(_heldStops == 0, $"held, the column runs on without stopping at each level ({_heldStops} stops)");
+                Tools.Lift.ReleaseRaise();
+                _heldTo = lift.State.Level;
+                return false;
+            }
+            if (lift.Moving || _host.Main.Build.Lifts[_client.Peer].Moving)
+                return false;
+            Check(_heldTo is 6 or 7 && lift.State.Level == _heldTo, $"it stepped level by level and stopped where it was let go ({_heldTo}, {lift.State.Level})");
+            Check(Mathf.IsEqualApprox(Bottom(_host, _bar), _ground + _host.Main.Build.Settings!.Lift.TopAt(lift.State.Level), 1e-3f), "the bar went up with it");
+            Tools.Lift.Raise(2 - lift.State.Level);
+            return true;
+        });
+        Add("back to level two", _ => _client.Main.Build.Lifts[_client.Peer] is { Moving: false, State.Level: 2 } && !_host.Main.Build.Lifts[_client.Peer].Moving);
+        Add("look away from the Lift", frame => LookAt(_client, PartCentre(_client, _bar, 2) + new Vector3(4, -0.5f, 4), frame));
+        Add("right click aimed away from the Lift does nothing", _ =>
+        {
+            Check(!Tools.Lift.AimsAtOwnLift() && !Tools.Lift.PressRemove() && Tools.Lift.Progress is null, "no ring without aiming at the Lift");
+            return true;
+        });
         Add("look at the bar on the Lift", frame => LookAt(_client, PartCentre(_client, _bar, 2), frame));
         Add("Use on the Lift opens the blueprint menu and saves the bar", _ =>
         {
@@ -413,10 +456,21 @@ public partial class ToolsTest : StagedTest
 
     private void AddSledge()
     {
+        // The Sledgehammer reaches 3 m (sledge.reach), less than the building tools: step up to the bar first.
+        Add("step up to the bar", frame =>
+        {
+            var at = _client.Main.LocalPlayer!.GlobalPosition;
+            if (frame == 0)
+            {
+                _standing = at;
+                _host.Main.PlayerSync.HostTeleport(_client.Peer, new Vector3(at.X, at.Y, 2.4f));
+            }
+            return frame >= 20 && Mathf.Abs(at.Z - 2.4f) < 0.1f;
+        });
         Add("aim at the welded block", frame =>
         {
-            var bar = _client.Main.Creations.Find(_bar)!;
-            return LookAt(_client, PartCentre(_client, _bar, bar.Parts.Last().Id) + new Vector3(0, 0.1f, 0), frame);
+            _struck = _client.Main.Creations.Find(_bar)!.Parts.Last().Id;
+            return LookAt(_client, PartCentre(_client, _bar, _struck) + new Vector3(0, 0.1f, 0), frame);
         });
         Add("three Sledgehammer hits break it off", frame =>
         {
@@ -426,7 +480,10 @@ public partial class ToolsTest : StagedTest
                 _sent = 0;
                 Tools.Use(Tools.Sledge);
             }
-            // Block durability 3 at 10 health each, 10 per hit; the tool waits out each swing.
+            // Block durability 3 at 10 health each, 10 per hit; the tool waits out each swing. Each hit shoves the bar, so
+            // keep looking at the block until the strike lands on it.
+            if (_results.Count < 3 && _client.Main.Creations.Find(_bar)?.FindPart(_struck) is not null)
+                LookAt(_client, PartCentre(_client, _bar, _struck) + new Vector3(0, 0.1f, 0), frame);
             if (_results.Count < 3 && _results.Count == _sent)
             {
                 if (Tools.Sledge.Swing(_results.Add))
@@ -441,6 +498,23 @@ public partial class ToolsTest : StagedTest
             Check(_host.Main.Creations.Find(_bar)!.Parts.Count == 3, "the bar is back to three blocks");
             return true;
         });
+        Add("look up at the sky", frame => Look(_client, 0f, 1.3f, frame) && !Tools.Sledge.Swinging);
+        Add("a swing is one a second and lands after the wind-up", frame =>
+        {
+            if (frame == 0)
+            {
+                _results.Clear();
+                Check(Tools.Sledge.Swing(_results.Add), "a fresh swing starts");
+                Check(!Tools.Sledge.Swing(), "a second click during the swing does nothing");
+                Check(_results.Count == 0, "nothing is hit at the click");
+                return false;
+            }
+            // Aimed at the sky, nothing is in reach: the swing lands on air.
+            if (_results.Count == 0 || Tools.Sledge.Swinging)
+                return false;
+            Check(!_results[0].Ok && _results[0].Code == "miss", $"a swing at nothing misses ({_results[0]})");
+            return true;
+        });
         Add("holding right click blocks on the host", frame =>
         {
             if (frame == 0)
@@ -449,9 +523,11 @@ public partial class ToolsTest : StagedTest
                 Tools.Sledge.Block(true, _results.Add);
                 return false;
             }
-            if (_results.Count == 0)
+            // The raised hammer reaches the host with the next input packet, which can trail the action's answer.
+            if (_results.Count == 0 || (!_host.Main.PlayerSync.Players[_client.Peer].Body.HasFlag(Core.Net.BodyFlags.Guard) && frame < 60))
                 return false;
             Check(_results[0].Ok && _host.Main.Build.Tools!.Blocking.Contains(_client.Peer), "the host knows the player blocks");
+            Check(_host.Main.PlayerSync.Players[_client.Peer].Body.HasFlag(Core.Net.BodyFlags.Guard), "the host sees the hammer raised to block");
             Check(_host.Main.Build.Tools!.DamageScale(_client.Peer, "sledge") < 1f, "a hit would do less");
             _results.Clear();
             Tools.Use(Tools.Hammer);
@@ -459,6 +535,12 @@ public partial class ToolsTest : StagedTest
             return true;
         });
         Add("and the host hears the block end", _ => !_host.Main.Build.Tools!.Blocking.Contains(_client.Peer));
+        Add("step back", frame =>
+        {
+            if (frame == 0)
+                _host.Main.PlayerSync.HostTeleport(_client.Peer, _standing);
+            return frame >= 20 && _client.Main.LocalPlayer!.GlobalPosition.DistanceTo(_standing) < 0.1f;
+        });
     }
 
     private void AddLateJoinAndLeave()

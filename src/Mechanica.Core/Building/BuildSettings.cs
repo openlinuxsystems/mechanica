@@ -235,7 +235,7 @@ public sealed record LiftSettings
     public float LevelHeight { get; init; } = 0.25f;
 
     /// <summary>Highest level.</summary>
-    public int MaxLevel { get; init; } = 20;
+    public int MaxLevel { get; init; } = 31;
 
     /// <summary>
     /// The Lift's model (<c>mod:path</c> to a glTF file). Its <c>deploy</c> clip plays when the Lift is put down and its
@@ -318,6 +318,8 @@ public sealed record PaintSettings
 /// <summary>
 /// The Sledgehammer. A part's health is its <c>durability</c> times <see cref="HealthPerDurability"/>
 /// (D13); each hit takes <see cref="Damage"/> and pushes the Body, and a part at 0 health breaks off.
+/// A swing takes <see cref="SwingSeconds"/> and lands <see cref="StrikeSeconds"/> after the click, on what is
+/// within <see cref="Reach"/> under the crosshair.
 /// Parts without a durability cannot be broken. Hits on players and world objects take
 /// <see cref="PlayerDamage"/> and <see cref="ObjectDamage"/> instead. Holding right click blocks (UI spec §9):
 /// damage of a <see cref="BlockCauses"/> kind the blocking player takes is multiplied by <see cref="BlockDamageScale"/>.
@@ -330,11 +332,32 @@ public sealed record SledgeSettings
     /// <summary>Health per point of a part's durability.</summary>
     public float HealthPerDurability { get; init; } = 10f;
 
-    /// <summary>Shortest time between one player's hits, in seconds.</summary>
-    public float SwingSeconds { get; init; } = 0.4f;
+    /// <summary>Shortest time between one player's hits, in seconds: one whole swing.</summary>
+    public float SwingSeconds { get; init; } = 1.0f;
+
+    /// <summary>Seconds from the click to the hit, when the head comes down at the end of the strike.</summary>
+    public float StrikeSeconds { get; init; } = 0.6f;
+
+    /// <summary>How far from the eye a swing reaches, in metres.</summary>
+    public float Reach { get; init; } = 3.0f;
 
     /// <summary>Impulse a hit gives the Body it lands on, in N·s, along the swing.</summary>
-    public float Impulse { get; init; } = 20f;
+    public float Impulse { get; init; } = 5000f;
+
+    /// <summary>
+    /// Fastest a hit sets a Body moving, in m/s: a light Body gets less than <see cref="Impulse"/>, so a hit knocks a
+    /// heavy Creation about without throwing a single block across the map.
+    /// </summary>
+    public float MaxKnockbackSpeed { get; init; } = 4.0f;
+
+    /// <summary>How far the swinging player's camera jolts when a hit lands, in metres (0: no shake).</summary>
+    public float ShakeMetres { get; init; } = 0.03f;
+
+    /// <summary>How long that jolt takes to settle, in seconds.</summary>
+    public float ShakeSeconds { get; init; } = 0.2f;
+
+    /// <summary>The impulse a hit gives a Body of <paramref name="mass"/> kg, in N·s.</summary>
+    public float ImpulseFor(float mass) => float.IsFinite(mass) && mass > 0f ? MathF.Min(Impulse, mass * MaxKnockbackSpeed) : 0f;
 
     /// <summary>Health one hit takes from a player (Survival, chunk 20).</summary>
     public float PlayerDamage { get; init; } = 15f;
@@ -361,8 +384,16 @@ public sealed record SledgeSettings
         BuildSettings.Positive(HealthPerDurability, "sledge.health_per_durability");
         if (!float.IsFinite(SwingSeconds) || SwingSeconds < 0f)
             throw new FormatException($"sledge.swing_seconds must be 0 or more (got {SwingSeconds}).");
+        if (!float.IsFinite(StrikeSeconds) || StrikeSeconds < 0f || StrikeSeconds > SwingSeconds)
+            throw new FormatException($"sledge.strike_seconds must be 0 to sledge.swing_seconds (got {StrikeSeconds}).");
+        BuildSettings.Positive(Reach, "sledge.reach");
         if (!float.IsFinite(Impulse) || Impulse < 0f)
             throw new FormatException($"sledge.impulse must be 0 or more (got {Impulse}).");
+        if (!float.IsFinite(MaxKnockbackSpeed) || MaxKnockbackSpeed < 0f)
+            throw new FormatException($"sledge.max_knockback_speed must be 0 or more (got {MaxKnockbackSpeed}).");
+        if (!float.IsFinite(ShakeMetres) || ShakeMetres is < 0f or > 0.5f)
+            throw new FormatException($"sledge.shake_metres must be 0 to 0.5 (got {ShakeMetres}).");
+        BuildSettings.Positive(ShakeSeconds, "sledge.shake_seconds");
         BuildSettings.Positive(PlayerDamage, "sledge.player_damage");
         BuildSettings.Positive(ObjectDamage, "sledge.object_damage");
         if (!float.IsFinite(BlockDamageScale) || BlockDamageScale is < 0f or > 1f)

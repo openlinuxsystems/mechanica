@@ -170,6 +170,9 @@ public sealed record InterfaceSettings
     /// <summary>The code of the language the UI shows (a file in <c>lang/</c>); <c>en</c> is the built-in English.</summary>
     public string Language { get; init; } = Ui.Language.English;
 
+    /// <summary>The Handbook page read last (a file name in <c>docs/</c>), which the Handbook opens at (UI spec §10); null before any.</summary>
+    public string? HandbookPage { get; init; }
+
     /// <summary>A copy with every value in range.</summary>
     public InterfaceSettings Clamped() => this with
     {

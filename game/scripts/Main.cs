@@ -144,6 +144,16 @@ public partial class Main : Node3D
     /// <summary>Every player's hotbar slots, and the local player's (UI spec §3).</summary>
     public HotbarSync Hotbar { get; private set; } = null!;
 
+    /// <summary>The local player's Logbook map markers.</summary>
+    public MapMarkerSync MapMarkers { get; private set; } = null!;
+
+    /// <summary>The Logbook map's numbers, from <c>res://data/logbook.json</c>.</summary>
+    public static Core.Ui.LogbookSettings LogbookSettings => _logbookSettings ??=
+        Godot.FileAccess.FileExists(LogbookDataPath) ? Core.Ui.LogbookSettings.Parse(Godot.FileAccess.GetFileAsString(LogbookDataPath)) : new Core.Ui.LogbookSettings();
+
+    private const string LogbookDataPath = "res://data/logbook.json";
+    private static Core.Ui.LogbookSettings? _logbookSettings;
+
     /// <summary>Item pictures for the hotbar and inventory; null without a display.</summary>
     public Ui.ItemIcons? Icons { get; private set; }
 
@@ -312,6 +322,7 @@ public partial class Main : Node3D
         AddChild(JointOverlay);
         Sounds = new SoundSync { Name = "Sounds", Session = Session, Players = PlayerSync, Creations = Creations, Registry = SoundEvents ??= LoadSounds(mods) };
         AddChild(Sounds);
+        AddChild(new Building.SledgeImpacts { Name = "SledgeImpacts", Sounds = Sounds });
         // Before the players, so the spawn has ground on the first frame.
         Streamer = new WorldStreamer
         {
@@ -458,6 +469,13 @@ public partial class Main : Node3D
         Hotbar = new HotbarSync { Name = "Hotbar", Session = Session, Players = PlayerSync, Actions = Actions, Bars = new HotbarActions(mods) };
         Hotbar.RegisterActions(Actions.Dispatcher);
         AddChild(Hotbar);
+        MapMarkers = new MapMarkerSync
+        {
+            Name = "MapMarkers", Session = Session, Players = PlayerSync, Actions = Actions,
+            Markers = new Core.Ui.MapMarkers(LogbookSettings, Streamer.Settings!.WorldSize),
+        };
+        MapMarkers.RegisterActions(Actions.Dispatcher);
+        AddChild(MapMarkers);
         if (ReadDeviceInput)
         {
             Icons = new Ui.ItemIcons { Name = "ItemIcons", Catalog = mods, Assets = Assets };
@@ -470,6 +488,7 @@ public partial class Main : Node3D
         {
             Characters = Characters.Choices,
             Hotbars = Hotbar.Bars,
+            Markers = MapMarkers.Markers,
             Quests = Quests,
             Fire = Fire,
             Name = "Saves",
@@ -539,10 +558,14 @@ public partial class Main : Node3D
             worldHud = new Ui.WorldHud
             {
                 Name = "WorldHud", Players = PlayerSync, Actions = Actions, Build = Build, Tool = () => Tools?.Current, Sounds = Sounds,
-                Interaction = () => survivalHud.Interaction()?.Label,
+                Interaction = () => survivalHud.Interaction()?.Label, HeldProgress = () => survivalHud.RefineProgress,
             };
             AddChild(worldHud);
-            var questLog = new QuestHud { Name = "QuestHud", Quests = Quests, Actions = Actions, Players = PlayerSync };
+            var questLog = new QuestHud
+            {
+                Name = "QuestHud", Quests = Quests, Actions = Actions, Players = PlayerSync,
+                Markers = MapMarkers, MapSettings = LogbookSettings, World = () => Streamer.Generator,
+            };
             AddChild(questLog);
             AddChild(new Ui.TutorialHints
             {
@@ -580,12 +603,14 @@ public partial class Main : Node3D
             AddChild(new Ui.Nameplates { Name = "Nameplates", Players = PlayerSync });
             AddChild(new Ui.InUseIndicators { Name = "InUse", Session = Session, Players = PlayerSync, Inventory = Inventory, Logic = Logic, Build = Build, Creations = Creations });
             AddChild(new Mechanica.Game.Chat.ChatPanel { Name = "ChatPanel", Chat = Chat, Actions = Actions });
-            AddChild(new Ui.CompassHud
+            var compass = new Ui.CompassHud
             {
                 Name = "Compass", Players = PlayerSync,
-                Waypoints = () => LocalPlayer is { } me ? Quests.Waypoints(me.GlobalPosition.ToNumerics()) : [],
+                Waypoints = () => LocalPlayer is { } me ? [.. Quests.Waypoints(me.GlobalPosition.ToNumerics()), .. MapMarkers.Own.Select(m => m.ToWaypoint())] : [],
                 Covered = () => Ui.HudRoot.IsCovered,
-            });
+            };
+            AddChild(compass);
+            questLog.Compass = compass;
         }
 
         if (_loadingScreen is not null)

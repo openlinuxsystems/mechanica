@@ -12,6 +12,10 @@
   "sounds": {
     "fire": "launcher_fire"
   },
+  "aim": {
+    "zoom": 0.85,
+    "fire_on_release": true
+  },
   "properties": {
     "damage": 60,
     "interval": 1.5,

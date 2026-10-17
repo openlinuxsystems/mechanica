@@ -58,6 +58,8 @@ public static class InputActions
     public const string SeatCamera = "seat_camera";
     public const string Chat = "chat";
     public const string Handbook = "handbook";
+    public const string PagePrevious = "page_previous";
+    public const string PageNext = "page_next";
     public const string Pause = "pause";
     public const string HideGui = "hide_gui";
     public const string LogicVisualizer = "toggle_logic_visualizer";
@@ -113,6 +115,8 @@ public static class InputActions
             new(Inventory, "Inventory", menus, "I", "B"),
             new(Logbook, "Logbook", menus, "L"),
             new(Handbook, "Handbook", menus, "H", "F1"),
+            new(PagePrevious, "Handbook: previous page", menus, "Left", "Pageup"),
+            new(PageNext, "Handbook: next page", menus, "Right", "Pagedown"),
             new(Chat, "Chat", menus, "Enter"),
             new(Pause, "Pause / close", menus, "Escape"),
             new(HideGui, "Hide GUI", menus, "Alt+Z"),

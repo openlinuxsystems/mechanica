@@ -16,6 +16,7 @@ namespace Mechanica.Core.Player;
 /// <param name="Prop">What the player holds, for how others see them. It does not change movement.</param>
 /// <param name="Gesture">The player's newest tool or item gesture, for how others see them.</param>
 /// <param name="GestureCount">Goes up by one with every gesture, so a repeat is still seen as new.</param>
+/// <param name="Guard">Right click is held to block with the Sledgehammer, for how others see them.</param>
 public readonly record struct PlayerInput(
     float MoveX,
     float MoveZ,
@@ -26,7 +27,8 @@ public readonly record struct PlayerInput(
     bool Crawl = false,
     CharacterProp Prop = CharacterProp.None,
     CharacterGesture Gesture = CharacterGesture.None,
-    byte GestureCount = 0)
+    byte GestureCount = 0,
+    bool Guard = false)
 {
     /// <summary>No movement, looking straight ahead.</summary>
     public static PlayerInput None => default;
@@ -58,6 +60,7 @@ public readonly record struct PlayerInput(
             Pitch = Math.Clamp(Finite(Pitch), -maxPitch, maxPitch),
             Prop = CharacterRig.Sanitize(Prop),
             Gesture = CharacterRig.Sanitize(Gesture),
+            Guard = Guard && CharacterRig.Sanitize(Prop) == CharacterProp.Sledgehammer,
         };
     }
 

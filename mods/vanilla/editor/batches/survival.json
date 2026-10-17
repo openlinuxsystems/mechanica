@@ -189,8 +189,11 @@
           "interval": 0.25,
           "range": 60,
           "ammo": "potato",
-          "impulse": 20
-        }
+          "impulse": 20,
+          "magazine": 15,
+          "reload": 1.5
+        },
+        "aim": { "zoom": 0.8 }
       },
       "recipes": [
         {
@@ -240,8 +243,12 @@
           "ammo": "potato",
           "pellets": 8,
           "spread": 6,
-          "impulse": 10
-        }
+          "impulse": 10,
+          "aim_spread": 3.5,
+          "magazine": 4,
+          "reload": 2
+        },
+        "aim": { "zoom": 0.85 }
       },
       "recipes": [
         {
@@ -290,7 +297,8 @@
           "ammo": "potato",
           "radius": 3,
           "impulse": 400
-        }
+        },
+        "aim": { "zoom": 0.85, "fire_on_release": true }
       },
       "recipes": [
         {

@@ -23,7 +23,8 @@ public static class InputPacket
     private const byte JumpFlag = 1;
     private const byte SprintFlag = 2;
     private const byte CrawlFlag = 4;
-    private const byte AllFlags = JumpFlag | SprintFlag | CrawlFlag;
+    private const byte GuardFlag = 8;
+    private const byte AllFlags = JumpFlag | SprintFlag | CrawlFlag | GuardFlag;
 
     /// <summary>Encodes 1 to <see cref="MaxInputs"/> inputs.</summary>
     public static byte[] Encode(IReadOnlyList<SequencedInput> inputs)
@@ -40,7 +41,7 @@ public static class InputPacket
             BinaryPrimitives.WriteSingleLittleEndian(span[8..], input.MoveZ);
             BinaryPrimitives.WriteSingleLittleEndian(span[12..], input.Yaw);
             BinaryPrimitives.WriteSingleLittleEndian(span[16..], input.Pitch);
-            span[20] = (byte)((input.Jump ? JumpFlag : 0) | (input.Sprint ? SprintFlag : 0) | (input.Crawl ? CrawlFlag : 0));
+            span[20] = (byte)((input.Jump ? JumpFlag : 0) | (input.Sprint ? SprintFlag : 0) | (input.Crawl ? CrawlFlag : 0) | (input.Guard ? GuardFlag : 0));
             span[21] = (byte)input.Prop;
             span[22] = (byte)input.Gesture;
             span[23] = input.GestureCount;
@@ -76,7 +77,8 @@ public static class InputPacket
                     (flags & CrawlFlag) != 0,
                     (CharacterProp)span[21],
                     (CharacterGesture)span[22],
-                    span[23]));
+                    span[23],
+                    (flags & GuardFlag) != 0));
             span = span[EntrySize..];
         }
         return result;

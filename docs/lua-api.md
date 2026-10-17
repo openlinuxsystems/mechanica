@@ -105,6 +105,8 @@ Held items have their own hooks (see [Item scripts](#item-scripts)):
 | `can_use(target)` | Before every use. Return `nil` to allow it, or a string: the reason the host refuses the use. It may read but not change the world. |
 | `on_use(target)` | The player used the item. `target` is `{from, direction}`: their eyes and where they aim. What it returns (plain data) is the `UseItem` action's result. |
 | `on_hit(landing)` | A projectile the item launched landed: `{id, position, hit?, data}`. `hit` is missing when its lifetime ran out. |
+| `can_reload_item()` | Before every reload. Return `nil` to allow it, or a string: the reason the host refuses it. It may read but not change the world. |
+| `on_reload_item()` | The player pressed Reload (R) with the item in hand (`ReloadItem`). An item that does not define it cannot be reloaded. |
 
 ## Globals
 
@@ -262,8 +264,10 @@ ones are `food.lua`, `potato_gun.lua`, `seed.lua` and `watering.lua` in `mods/va
   `direction` is close to where the player looks (`aim_tolerance` in `survival.json`) and that the
   part exists, then runs `can_use` and, if that allows it, `on_use`. Both get `target`:
   `{from, direction, creation?, part?}`, where `creation` and `part` are what the Item tool's crosshair
-  points at within reach. `EquipItem {slot?}` says what is in hand. A dead player's uses are refused.
-- **`can_use` and the script's setup only read.** Functions that change the world (`item.consume`,
+  points at within reach, and `aiming`, true while the player holds right click to aim (`AimItem {on}`).
+  `EquipItem {slot?}` says what is in hand. `ReloadItem {slot}` runs `can_reload_item`, then `on_reload_item`.
+  A dead player's uses are refused.
+- **`can_use`, `can_reload_item` and the script's setup only read.** Functions that change the world (`item.consume`, `item.counter`,
   `holder.heal`, `inventory.take`, `farm.plant`, `farm.water`, `fire.douse`, `fire.ignite` and the `combat` ones that deal damage
   or launch) raise an error there.
 - **Damage follows the world's rules.** In Creative nothing hurts players; with `pvp` off a shot
@@ -294,6 +298,8 @@ end
 | `item.slot()` | The inventory slot the item is used from. |
 | `item.count()` | How many of the item that slot holds. |
 | `item.consume(count?)` | Uses up `count` (default 1) of the item from its slot. `true`, or `false` when the slot holds fewer. |
+| `item.counter({value?, max?, ammo?, busy?})` | Sets what the holder's hotbar slot and HUD counter show for the item (UI spec §10): `value` (rounds loaded) out of `max`, the `ammo` item they carry (counted from their inventory), and `busy` seconds while it reloads. Only the holder is sent it. |
+| `item.sound(key)` | The sound id the item binds to `key` in its `sounds` (`fire`, `reload`), for `sound.play`; `nil` when unbound. |
 
 ### `holder`
 
@@ -306,6 +312,7 @@ end
 | `holder.health()` | Their health. |
 | `holder.max_health()` | The most health a player can have (`max_health` in `survival.json`). |
 | `holder.heal(amount)` | Gives them up to `amount` health, never past the maximum, and returns their health. |
+| `holder.aiming()` | `true` while they hold right click to aim the item. |
 
 ### `inventory`
 

@@ -62,6 +62,26 @@ public sealed record ScriptCallResult(bool Ok, IReadOnlyList<JsonNode?> Values, 
 /// <param name="Part">The part the item is used on, if any. The script checks reach (<c>farm.soil</c> does).</param>
 public sealed record UseItemArgs(int Slot, Mechanica.Core.Data.Vec3? Direction = null, int? Creation = null, int? Part = null);
 
+/// <summary>Arguments of <c>ReloadItem</c>: reload the item in a slot (its script's <c>on_reload_item</c>; UI spec §1, §10).</summary>
+/// <param name="Slot">The slot holding the item.</param>
+public sealed record ReloadItemArgs(int Slot);
+
+/// <summary>Arguments of <c>AimItem</c>: the caller starts or stops aiming the item in hand (holding right click; UI spec §10).</summary>
+/// <param name="On">True while right click is held.</param>
+public sealed record AimItemArgs(bool On);
+
+/// <summary>
+/// The number an item script shows on its hotbar slot and the HUD counter while it is in hand (<c>item.counter</c>):
+/// a weapon's loaded rounds out of its magazine, plus the ammo it draws from so the HUD can count what is carried.
+/// The host sends it to the holder alone.
+/// </summary>
+/// <param name="Item">Qualified id of the item it belongs to.</param>
+/// <param name="Value">The number shown (rounds loaded), or null to show only what is carried of <paramref name="Ammo"/>.</param>
+/// <param name="Max">What <paramref name="Value"/> is out of (the magazine), or null.</param>
+/// <param name="Ammo">Qualified id of the item it draws from, or null.</param>
+/// <param name="Busy">Seconds from now the item is busy for (a reload), 0 when it is ready.</param>
+public sealed record ItemCounterView(string Item, int? Value = null, int? Max = null, string? Ammo = null, float Busy = 0f);
+
 /// <summary>Arguments of <c>EquipItem</c>: take the item in a slot in hand, or empty the hand.</summary>
 /// <param name="Slot">The slot holding the item; omitted (null) empties the hand.</param>
 public sealed record EquipItemArgs(int? Slot = null);

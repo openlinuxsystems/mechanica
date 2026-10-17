@@ -174,7 +174,8 @@ public interface IToolWorld : IBuildWorld
 /// with <see cref="Targets"/> it can also hit players and world objects. <c>Block</c>: holding right click with it
 /// blocks, and <see cref="DamageScale"/> says how much of a hit a blocking player takes.</item>
 /// </list>
-/// Player callers must be within <see cref="BuildSettings.Reach"/> of what they act on. Each action plays its
+/// Player callers must be within <see cref="BuildSettings.Reach"/> of what they act on (the Sledgehammer: its own
+/// <see cref="SledgeSettings.Reach"/>). Each action plays its
 /// tool's sound where it happened (chunk 16): <c>lift_place</c>, <c>lift_raise</c>/<c>lift_lower</c> at the
 /// Lift; <c>weld_complete</c> where the weld joins; <c>paint_spray</c>/<c>paint_erase</c> on the first part;
 /// <c>smash_hit</c> plus the part's impact sound, or <c>smash_break</c> plus its break sound.
@@ -217,6 +218,9 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
     // Share of the swing time the host insists on between one player's hits: swings the client spaced
     // correctly can arrive closer together after network jitter.
     private const double SwingJitter = 0.8;
+
+    // Metres past sledge.reach a target's centre may be (see CheckSledgeReach).
+    private const float SledgeReachSlack = 0.75f;
 
     private readonly SortedDictionary<int, LiftState> _lifts = [];
     private readonly Dictionary<int, double> _lastSwing = [];
@@ -598,24 +602,37 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
         if (targets != 1)
             return "Hit one thing: a creation and part, a player, an object or a bot.";
         if (args.Bot is { } bot)
-            return Targets?.BotCentre(bot) is { } botCentre ? CheckReach(caller, botCentre) : $"There is no bot {bot} to hit.";
+            return Targets?.BotCentre(bot) is { } botCentre ? CheckSledgeReach(caller, botCentre) : $"There is no bot {bot} to hit.";
         if (args.Player is { } peer)
         {
             if (Targets?.PlayerCentre(peer) is not { } centre)
                 return $"There is no player {peer} to hit.";
             if (peer == caller.Peer)
                 return "You cannot hit yourself.";
-            return Targets.CheckStrikePlayer(caller, peer) ?? CheckReach(caller, centre);
+            return Targets.CheckStrikePlayer(caller, peer) ?? CheckSledgeReach(caller, centre);
         }
         if (args.Object is { } id)
-            return Targets?.ObjectCentre(id) is { } centre ? CheckReach(caller, centre) : $"There is no object {id} that can break.";
+            return Targets?.ObjectCentre(id) is { } centre ? CheckSledgeReach(caller, centre) : $"There is no object {id} that can break.";
         if (args.Creation is not { } creationId || args.Part is not { } partId)
             return "Give both creation and part.";
         if (world.FindCreation(creationId) is not { } creation)
             return $"There is no creation {creationId}.";
         if (creation.FindPart(partId) is null)
             return $"Creation {creationId} has no part {partId}.";
-        return CheckReach(caller, PartCentre(creation, partId));
+        return CheckSledgeReach(caller, PartCentre(creation, partId));
+    }
+
+    // The swing reaches sledge.reach from the eye to the crosshair; the target's centre may sit up to half a block
+    // further in (a big part, a bot's middle), so that much slack is allowed.
+    private string? CheckSledgeReach(ActionCaller caller, Vector3 centre)
+    {
+        if (caller.Source != ActionSource.Player)
+            return null;
+        if (world.EyeOf(caller.Peer) is not { } eye)
+            return "You have no player to use tools with.";
+        var distance = Vector3.Distance(eye, centre);
+        var reach = settings.Sledge.Reach + SledgeReachSlack;
+        return distance <= reach ? null : $"That is {distance:F1} m away; the Sledgehammer reaches {settings.Sledge.Reach:F1} m.";
     }
 
     private JsonElement? ApplySledge(ActionCaller caller, SledgeArgs args)
@@ -644,7 +661,12 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
         var result = DamagePart(creation, args.Part.Value, settings.Sledge.Damage);
         world.PlaySound(result.Broken ? "smash_break" : "smash_hit", Identifiers.VanillaModId, centre);
         if (!result.Broken && caller.Source == ActionSource.Player && world.EyeOf(caller.Peer) is { } eye && centre != eye)
-            world.Push(creation, creation.BodyIndexOf(args.Part.Value), centre, Vector3.Normalize(centre - eye) * settings.Sledge.Impulse);
+        {
+            var body = creation.BodyIndexOf(args.Part.Value);
+            var impulse = settings.Sledge.ImpulseFor(creation.Bodies[body].Mass);
+            if (impulse > 0f)
+                world.Push(creation, body, centre, Vector3.Normalize(centre - eye) * impulse);
+        }
         return Value(result);
     }
 

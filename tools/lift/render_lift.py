@@ -244,7 +244,7 @@ def render_all(rig, out: Path, build):
     build.apply_extend(rig, build.H_MAX)
     sil.location = (-1.25, 0.3, 0)
     sil.rotation_euler = (0, 0, 0)
-    cam = camera("Full", (0, -14, 2.8), (0, 0, 2.8), ortho=6.4)
+    cam = camera("Full", (0, -20, build.H_MAX / 2 + 0.3), (0, 0, build.H_MAX / 2 + 0.3), ortho=build.H_MAX * 1.16)
     shots["full"] = render(cam, out / "lift_full_extension.png", 760, H)
     labels["full"] = [(project(cam, (0.6, 0, 0), 760, H), project(cam, (0.6, 0, build.H_MAX), 760, H), units(build.H_MAX), (40, 0), True)]
     # deploy sequence
@@ -265,7 +265,7 @@ def render_all(rig, out: Path, build):
     d = ImageDraw.Draw(sheet)
     d.text((60, 40), "MECHANICA LIFT - INDUSTRIAL HYDRAULIC PLATFORM", fill=INK, font=title_f)
     d.text((60, 100), "Review renders from tools/lift/build_lift.py. 1 unit = 0.25 m. Collapsed 4 x 4 x 2 units "
-           "(1.00 x 1.00 x 0.50 m), extends in 1-unit steps to 22 units (5.50 m). Silhouette 1.5 m.", fill=INK, font=font(24))
+           "(1.00 x 1.00 x 0.50 m), extends in 1-unit steps to " + f"{build.H_MAX / 0.25:g} units ({build.H_MAX:.2f} m). Silhouette 1.5 m.", fill=INK, font=font(24))
 
     def place(key, title, x, y, scale=1.0):
         im = Image.open(shots[key]).convert("RGB")
@@ -283,7 +283,7 @@ def render_all(rig, out: Path, build):
     place("top", "TOP-DOWN VIEW (4 x 4 unit grated deck)", 2280, 190)
     place("three_quarter", "THREE-QUARTER (collapsed / resting)", 60, 1010)
     place("extended", "THREE-QUARTER (partly extended, 8 units)", 1170, 1010)
-    place("full", "FULL EXTENSION (22 units)", 2280, 1010, scale=1.0)
+    place("full", f"FULL EXTENSION ({build.H_MAX / 0.25:g} units)", 2280, 1010, scale=1.0)
     d.text((60, 1800), "DEPLOY SEQUENCE (1.9 s): settle, outriggers swing out and lock, column rises to 2 units, platform locks, lights flash",
            fill=INK, font=head_f)
     for i, (t, p) in enumerate(seq):

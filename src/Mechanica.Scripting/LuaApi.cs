@@ -33,6 +33,8 @@ public static class LuaApi
         new("can_use", "function can_use(target)", "Item scripts: return nil to allow a use, or the reason it is refused. May not change the world.", "Hooks"),
         new("on_use", "function on_use(target)", "Item scripts: the player used the item (target has from and direction, plus creation and part when aimed at a part in reach); the return value is the action's result.", "Hooks"),
         new("on_hit", "function on_hit(landing)", "Item scripts: a projectile the item launched landed: {id, position, hit?, data}.", "Hooks"),
+        new("can_reload_item", "function can_reload_item()", "Item scripts: return nil to allow a reload, or the reason it is refused. May not change the world.", "Hooks"),
+        new("on_reload_item", "function on_reload_item()", "Item scripts: the player pressed Reload (R) with the item in hand (ReloadItem). An item without it cannot be reloaded.", "Hooks"),
 
         new("state", "state", "Table that survives hot reloads. Keep plain data in it.", "Globals"),
         new("properties", "properties", "The part's free-form properties from its JSON.", "Globals"),
@@ -106,6 +108,8 @@ public static class LuaApi
         new("item.slot", "item.slot()", "The inventory slot the item is used from.", "item"),
         new("item.count", "item.count()", "How many of the item that slot holds.", "item"),
         new("item.consume", "item.consume(count?)", "Uses up count (default 1) of the item from its slot; true, or false when there aren't enough.", "item"),
+        new("item.counter", "item.counter({value?, max?, ammo?, busy?})", "What the holder's hotbar slot and HUD counter show for the item: value (rounds loaded) out of max, the ammo item carried, and busy seconds (a reload).", "item"),
+        new("item.sound", "item.sound(key)", "The sound id the item binds to key in its sounds (fire, reload), for sound.play; nil when unbound.", "item"),
 
         new("holder.peer", "holder.peer()", "The peer of the player holding the item.", "holder"),
         new("holder.eye", "holder.eye()", "World position of the holder's eyes, in m.", "holder"),
@@ -114,6 +118,7 @@ public static class LuaApi
         new("holder.health", "holder.health()", "The holder's health.", "holder"),
         new("holder.max_health", "holder.max_health()", "The most health a player can have.", "holder"),
         new("holder.heal", "holder.heal(amount)", "Gives the holder health, up to the maximum; returns their health.", "holder"),
+        new("holder.aiming", "holder.aiming()", "True while the holder holds right click to aim the item (AimItem).", "holder"),
 
         new("inventory.count", "inventory.count(item)", "How many of an item the holder carries (bare ids are in the item's mod).", "inventory"),
         new("inventory.take", "inventory.take(item, count?)", "Takes count (default 1) of an item from the holder; true, or false when they carry too few.", "inventory"),
