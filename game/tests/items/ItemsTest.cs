@@ -10,7 +10,7 @@ namespace Mechanica.Game.Tests;
 
 /// <summary>
 /// Inventories and crafting from data, host plus clients (chunk 18, D10). A client gets scrap and wood
-/// (Creative give), places a bench and a chest, crafts two chests at the bench from the fixture recipe,
+/// (Creative give), places a bench and a chest, crafts two chests at the bench from the fixture recipe (hearing it start, work and finish),
 /// takes them, and stores scrap in the chest. Each step goes through the host, and the client must see
 /// every inventory it uses change. The host sees the same chest, a chest holding items cannot be picked
 /// up, and a late joiner receives the chest's contents with the Creation. Uses the fixture mod in
@@ -25,6 +25,7 @@ public partial class ItemsTest : StagedTest
 
     private readonly List<ActionResult> _results = [];
     private NetTestHarness _harness = null!;
+    private readonly List<string> _clientHeard = [];
     private ModLoadResult _mods = null!;
     private Instance _host = null!;
     private Instance _client = null!;
@@ -47,6 +48,7 @@ public partial class ItemsTest : StagedTest
         AddChild(_harness);
         _host = _harness.StartHost(mods: _mods);
         _client = _harness.StartClient("Client", mods: _mods);
+        _client.Main.Sounds.Player.VoiceStarted += v => _clientHeard.Add(v.Event.QualifiedId);
 
         Add("the client joins and sees its empty inventory", _ =>
         {
@@ -113,7 +115,14 @@ public partial class ItemsTest : StagedTest
             Check(_results[0].Ok, $"the host queued it ({_results[0]})");
             Check(ClientOwn.Count(Wood) == 0, "the inputs left the client's inventory");
             Check(_host.Main.Creations.Find(_bench)!.InventoryOf(1)!.Count(Chest) == 2, "the host's bench holds two chests");
+            Check(new[] { "items_test:bench_start", "items_test:bench_work", "items_test:bench_done" }.All(_clientHeard.Contains),
+                $"the client hears the bench start, work and finish ({string.Join(", ", _clientHeard)})");
             return true;
+        });
+        Add("the bench's work loop stops with an empty queue", _ =>
+        {
+            return _host.Main.Sounds.Loops.Count == 0 && _client.Main.Sounds.Loops.Count == 0
+                && _client.Main.Sounds.Player.Voices.All(v => v.Event.QualifiedId != "items_test:bench_work");
         });
         Add("the client sees the queue while it works", frame =>
         {
