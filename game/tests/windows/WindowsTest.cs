@@ -1,6 +1,8 @@
 using Godot;
+using Mechanica.Core.Input;
 using Mechanica.Core.Net;
 using Mechanica.Game.Menus;
+using Mechanica.Game.Player;
 using Mechanica.Game.Ui;
 
 namespace Mechanica.Game.Tests;
@@ -96,6 +98,50 @@ public partial class WindowsTest : StagedTest
             Check(_menu.IsOpen, "the menu is still open");
             _menu.Close();
             return Clean("the save screen");
+        });
+        Add("chat sends a line and keeps the mouse", frame =>
+        {
+            var chat = _main.GetNode<Chat.ChatPanel>("ChatPanel");
+            // Headless, the mouse can't be captured, so the Chat key's own path (only while playing) is not
+            // reachable here; Open is what it calls.
+            if (frame == 0)
+            {
+                chat.Open();
+                return false;
+            }
+            if (frame == 1)
+            {
+                Check(chat.IsOpen && chat.Input.HasFocus() && GameInput.Label(InputActions.Chat) == "Enter", "the box opens with the focus; Chat is on Enter");
+                chat.Send("hello [world]");
+                return false;
+            }
+            if (!chat.Shown.Any() && frame < 120)
+                return false;
+            if (!Check(chat.Shown.Any(), "the line shows"))
+                return true;
+            Check(chat.Shown.Last() == $"{_main.Session.Profile.Name}: hello [world]", $"the line shows with the speaker's name ({chat.Shown.Last()})");
+            Check(!chat.IsOpen, "sending closes the box");
+            chat.Open();
+            Scrub(chat.GetNode<Control>("Chat"));
+            Check(chat.IsOpen, "chat is still open");
+            chat.Close();
+            return Clean("the chat panel");
+        });
+        Add("the chat background follows Chat opacity", frame =>
+        {
+            var chat = _main.GetNode<Chat.ChatPanel>("ChatPanel");
+            if (frame == 0)
+            {
+                Settings.GameSettings.Apply(Settings.GameSettings.Current with { Interface = Settings.GameSettings.Current.Interface with { ChatOpacity = 0.25f } });
+                chat.Open();
+                chat.Send("again");
+                return false;
+            }
+            if ((frame < 3 || chat.Shown.LastOrDefault()?.EndsWith("again") != true) && frame < 120)
+                return false;
+            Check(Mathf.IsEqualApprox(chat.BackgroundAlpha, 0.25f), $"a recent line shows on a 25% background ({chat.BackgroundAlpha})");
+            Settings.GameSettings.Apply(new());
+            return true;
         });
         Add("the inventory keeps them", frame =>
         {

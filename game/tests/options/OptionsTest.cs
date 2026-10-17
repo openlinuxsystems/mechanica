@@ -75,6 +75,22 @@ public partial class OptionsTest : StagedTest
             Check(!GameSettings.Current.Interface.ShowHotbar, "the tool bar can be hidden");
             return true;
         });
+        Add("a colour-blind filter covers the screen", _ =>
+        {
+            var filter = Find<OptionButton>("Colour-blind filter");
+            filter.Select(2);
+            filter.EmitSignal(OptionButton.SignalName.ItemSelected, 2);
+            var shown = GameSettings.Filter!;
+            Check(GameSettings.Current.Interface.ColorBlind == Mechanica.Core.Ui.ColorBlindMode.Deuteranopia && shown.Mode == Mechanica.Core.Ui.ColorBlindMode.Deuteranopia,
+                "Deuteranopia is picked and in use");
+            Check(shown.Rect.Visible && shown.Layer == 128 && shown.Rect.MouseFilter == Control.MouseFilterEnum.Ignore
+                && shown.Rect.Material is ShaderMaterial { Shader.Code: var code } && code.Contains("hint_screen_texture"),
+                "a full-screen shader on the top layer that never takes the mouse");
+            filter.Select(0);
+            filter.EmitSignal(OptionButton.SignalName.ItemSelected, 0);
+            Check(!shown.Rect.Visible, "Off removes it");
+            return true;
+        });
         Add("a preset reaches cameras added later", _ =>
         {
             Find<OptionButton>("Preset").Select(0);

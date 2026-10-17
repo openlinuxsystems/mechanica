@@ -274,6 +274,31 @@ public partial class NetTest : StagedTest
             return true;
         });
         Add("the password's player has gone", _ => _host.Main.Session.ReadyPeers.Count == 2);
+        Add("a chat line reaches everyone with its speaker's name", frame =>
+        {
+            if (frame == 0)
+                _a.Main.Actions.Request(Mechanica.Core.Chat.ChatLog.SendChat, new Mechanica.Core.Chat.SendChatArgs("hello [b]all[/b]"), _results.Add);
+            if (_b.Main.Chat.Log.Lines.Count == 0 || _host.Main.Chat.Log.Lines.Count == 0 || _a.Main.Chat.Log.Lines.Count == 0)
+                return Missed(frame, "the line arrives");
+            var line = _b.Main.Chat.Log.Lines[^1];
+            Check(line is { Name: "ClientA", Text: "hello [b]all[/b]" } && line.Peer == _a.Peer, $"B hears A ({line})");
+            Check(_host.Main.Chat.Log.Lines[^1] == line && _a.Main.Chat.Log.Lines[^1] == line, "the host and A have the same line");
+            return true;
+        });
+        Add("chat is rate limited per player", frame =>
+        {
+            if (frame == 0)
+            {
+                _results.Clear();
+                for (var i = 0; i < Mechanica.Core.Chat.ChatLog.Burst + 1; i++)
+                    _b.Main.Actions.Request(Mechanica.Core.Chat.ChatLog.SendChat, new Mechanica.Core.Chat.SendChatArgs($"spam {i}"), _results.Add);
+            }
+            if (_results.Count < Mechanica.Core.Chat.ChatLog.Burst + 1)
+                return Missed(frame, "every request is answered");
+            Check(_results.Count(r => r.Ok) == Mechanica.Core.Chat.ChatLog.Burst && _results.Any(r => r.Message?.Contains("Slow down") == true),
+                $"{Mechanica.Core.Chat.ChatLog.Burst} lines go through, then B is told to slow down ({string.Join(", ", _results)})");
+            return true;
+        });
         Add("a late joiner sees everyone where they are", frame =>
         {
             if (frame == 0)
@@ -282,6 +307,7 @@ public partial class NetTest : StagedTest
                 return false;
             ExpectSame(_a, "late joiner's view of A", _late);
             ExpectSame(_host, "late joiner's view of the host", _late);
+            Check(_late.Main.Chat.Log.Lines.Select(l => l.Text).SequenceEqual(_host.Main.Chat.Log.Lines.Select(l => l.Text)), "the late joiner gets the recent chat");
             return true;
         });
         Add("a fifth player is turned away", frame =>
@@ -334,5 +360,14 @@ public partial class NetTest : StagedTest
         var truth = PlayerOn(_host, owner).GlobalPosition;
         var seen = PlayerOn(viewer ?? owner, owner).GlobalPosition;
         Check(truth.DistanceTo(seen) < Tolerance, $"{what} matches the host (off by {truth.DistanceTo(seen):F3} m)");
+    }
+
+    // False while waiting; after two seconds the wait fails the check and ends the stage.
+    private bool Missed(int frame, string what)
+    {
+        if (frame < 120)
+            return false;
+        Check(false, what);
+        return true;
     }
 }

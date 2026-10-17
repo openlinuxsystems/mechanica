@@ -72,7 +72,7 @@ public sealed record UserSettings
         Graphics = (Graphics ?? new()).Clamped(),
         Audio = (Audio ?? new()).Clamped(),
         Gameplay = (Gameplay ?? new()).Clamped(),
-        Interface = Interface ?? new(),
+        Interface = (Interface ?? new()).Clamped(),
     };
 
     /// <summary>Reads <paramref name="json"/>; null when it isn't valid settings.</summary>

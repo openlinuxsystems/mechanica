@@ -28,6 +28,9 @@ public partial class GameSettings : Node
     /// <summary>The settings in use.</summary>
     public static UserSettings Current => _current;
 
+    /// <summary>The colour-blind filter over everything.</summary>
+    public static ColorFilter? Filter { get; private set; }
+
     /// <summary>Raised after settings change.</summary>
     public static event Action? Changed;
 
@@ -35,6 +38,8 @@ public partial class GameSettings : Node
     {
         _persist = !OS.GetCmdlineArgs().Any(a => a.StartsWith("res://tests/", StringComparison.Ordinal));
         GetTree().NodeAdded += DisplayApplier.Configure;
+        Filter = new ColorFilter { Name = "ColorFilter" };
+        AddChild(Filter);
         Apply(_persist ? UserSettings.Load(ProjectSettings.GlobalizePath(SettingsPath)) : new UserSettings());
         ApplyWindow();
     }
@@ -62,6 +67,7 @@ public partial class GameSettings : Node
         if (Engine.GetMainLoop() is SceneTree tree)
             DisplayApplier.ApplyQuality(tree, _current.Graphics);
         DisplayApplier.ApplyAudio(_current.Audio);
+        Filter?.Apply(_current.Interface.ColorBlind);
         Changed?.Invoke();
     }
 

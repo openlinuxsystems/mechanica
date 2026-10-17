@@ -57,7 +57,9 @@ stops getting your input.
   the screen the first time you start, pick up each tool or open each screen; **Show tips again** brings
   back the ones you have seen; the tips are in `game/data/tutorial.json`), auto-save (off, or every 5, 10 or 15
   minutes while you host), the most players a world you host takes, the server password for worlds you host, and your player name.
-- **Interface**: show or hide the tool bar and key hints, and other players' names over their heads.
+- **Interface**: show or hide the tool bar and key hints, the compass, other players' names over their heads, how opaque the chat background is, and a
+  colour-blind filter (Protanopia, Deuteranopia or Tritanopia) that corrects colours on the whole screen
+  so ones that look alike stay apart.
 
 Everything else applies as you change it. **Reset to Defaults** resets the open tab after asking, and
 closing Options saves your settings in `settings.json` in the game's user data folder. Settings are
@@ -69,12 +71,26 @@ The first time you play in a world you choose the **Male Scrapper** or the **Fem
 game screen when you start the world, or in a window when you join one). They move and play the same; the
 choice is kept for you in that world and everyone sees it. See [Player Characters](characters.md).
 
+## Compass
+
+The bar at the top of the screen shows which way you face, with the points and a tick every 15°. Blue
+diamonds are your quest goals and the places you have found, with the distance under them within 500 m;
+the primary one is larger and pulses cyan. With the logbook open (the mouse is free), click a diamond to
+make it primary. A goal behind you sits at the edge you are nearer turning to, with an arrow. Within
+100 m a diamond also floats over the place itself. The compass hides while the inventory or menu is open,
+and Options, Interface, Show compass turns it off.
+
 ## Playing together
 
 Everyone plays in one world: the host's. From the menu (Esc), **Open to LAN** lets players on your
 network join; they see your world under **Join game** in the main menu, or can type your address and
 port (27460 unless you changed it). Players outside your network join by address once the port is
 forwarded to you. Quest progress is shared by everyone in the world.
+
+Press **Enter** (Chat) to talk: type a line and press Enter to send it, or Esc to close. Lines show
+bottom left with the speaker's name in cyan and fade after a few seconds; open chat to scroll back. A line
+is at most 200 characters and each player may send 5 every 10 seconds. Chat is the `SendChat` action, so
+agents on the AI endpoint can talk too.
 
 To keep strangers out, set a **Server password** in Options, Gameplay (or start with `--password text`).
 Players then type it in the password box on **Join game**; the list marks worlds that need one. A changed
