@@ -139,6 +139,12 @@ public sealed record PartDefinition
     /// <summary>Sound events this part plays, keyed by local event name (<c>"start": "engine_start"</c>).</summary>
     public Dictionary<string, string>? Sounds { get; init; }
 
+    /// <summary>Item storage this part holds (chests, fuel tanks, stations' output). Placeable parts only.</summary>
+    public InventoryDefinition? Inventory { get; init; }
+
+    /// <summary>Makes the part a crafting station that runs recipes naming it. Needs <see cref="Inventory"/> for its output.</summary>
+    public CraftingDefinition? Crafting { get; init; }
+
     /// <summary>Free-form, part-specific data for the Lua script. Key order is kept as written.</summary>
     public JsonObject? Properties { get; init; }
 
@@ -150,6 +156,37 @@ public sealed record PartDefinition
     [JsonIgnore]
     public bool IsPlaceable => Category is PartCategory.Block or PartCategory.Interactive or PartCategory.Container
         or PartCategory.Station or PartCategory.Light or PartCategory.Decor;
+}
+
+/// <summary>The item storage of a placeable part. Inventory is a C# primitive (D2), configured here.</summary>
+public sealed record InventoryDefinition
+{
+    /// <summary>Number of item slots (1 or more).</summary>
+    public int? Slots { get; init; }
+
+    /// <summary>
+    /// Item ids the slots take (<c>gasoline</c>, <c>other_mod:fuel</c>; a bare id means vanilla). Omitted
+    /// means any item.
+    /// </summary>
+    public List<string>? Accepts { get; init; }
+
+    /// <summary>Keys this build does not know.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>A crafting station: recipes that list this part in <c>stations</c> run here.</summary>
+public sealed record CraftingDefinition
+{
+    /// <summary>Speed multiplier on recipe times (1 runs a recipe in its <c>time</c>; 2 in half). Omitted means 1.</summary>
+    public float? Speed { get; init; }
+
+    /// <summary>Most jobs waiting at once. Omitted means 1.</summary>
+    public int? QueueSize { get; init; }
+
+    /// <summary>Keys this build does not know.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
 }
 
 /// <summary>A collision shape, in metres, relative to the part centre.</summary>
@@ -192,6 +229,12 @@ public sealed record VisualDefinition
 
     /// <summary>Metalness, 0 to 1.</summary>
     public float? Metallic { get; init; }
+
+    /// <summary>How opaque the surface is, 0 (invisible) to 1 (solid). Omitted means 1. Below 1 the part is drawn see-through.</summary>
+    public float? Opacity { get; init; }
+
+    /// <summary>Glow colour, <c>"#rrggbb"</c>, added on top of the lit surface. Omitted means none. It lights nothing else.</summary>
+    public string? Emission { get; init; }
 
     /// <summary>Albedo texture (<c>.png</c>), relative to the mod root or <c>other_mod:path</c>.</summary>
     public string? Texture { get; init; }

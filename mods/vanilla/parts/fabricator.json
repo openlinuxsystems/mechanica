@@ -1,0 +1,39 @@
+{
+  "id": "fabricator",
+  "name": "Fabricator",
+  "description": "Crafts parts and items from resources.",
+  "category": "station",
+  "mass": 25,
+  "durability": 12,
+  "friction": 0.5,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "sound_material": "metal",
+  "size": [6, 6, 4],
+  "mesh": "meshes/fabricator.glb",
+  "visual": {
+    "color": "#d08a2c",
+    "paintable": true
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.75, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "sounds": {
+    "start": "fabricator_start",
+    "work": "fabricator_work",
+    "complete": "fabricator_complete",
+    "place": "place_metal"
+  },
+  "inventory": {
+    "slots": 10
+  },
+  "crafting": {
+    "speed": 1,
+    "queue_size": 8
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "id": "chest",
+  "stations": [
+    "items_test:bench"
+  ],
+  "inputs": [
+    {
+      "item": "items_test:scrap",
+      "count": 2
+    },
+    {
+      "item": "items_test:wood",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "items_test:chest",
+      "count": 1
+    }
+  ],
+  "time": 1
+}

@@ -1,0 +1,11 @@
+{
+  "id": "master_battery",
+  "name": "Master Battery",
+  "description": "A large battery found at crash sites.",
+  "category": "resource",
+  "mass": 2,
+  "stack_size": 1,
+  "sounds": {
+    "pickup": "pickup_battery"
+  }
+}

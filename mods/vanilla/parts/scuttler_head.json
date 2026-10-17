@@ -1,0 +1,12 @@
+{
+  "id": "scuttler_head",
+  "name": "Scuttler Head",
+  "description": "Dropped by a Scuttler.",
+  "category": "resource",
+  "mass": 2,
+  "stack_size": 10,
+  "sounds": {
+    "pickup": "pickup_metal",
+    "drop": "drop_metal"
+  }
+}

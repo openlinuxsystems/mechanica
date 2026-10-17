@@ -1,0 +1,12 @@
+{
+  "id": "warehouse_key",
+  "name": "Warehouse Key",
+  "description": "Opens a warehouse's locked door.",
+  "category": "resource",
+  "mass": 0.1,
+  "stack_size": 1,
+  "sounds": {
+    "pickup": "pickup_metal",
+    "drop": "drop_metal"
+  }
+}

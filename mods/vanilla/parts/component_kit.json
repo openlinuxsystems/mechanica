@@ -1,0 +1,11 @@
+{
+  "id": "component_kit",
+  "name": "Component Kit",
+  "category": "resource",
+  "mass": 0.3,
+  "stack_size": 20,
+  "sounds": {
+    "pickup": "pickup_component",
+    "drop": "drop_component"
+  }
+}

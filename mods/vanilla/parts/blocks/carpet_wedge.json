@@ -1,0 +1,24 @@
+{
+  "id": "carpet_wedge",
+  "name": "Carpet Wedge",
+  "description": "Carpet block cut on the diagonal. Same material, half the mass.",
+  "category": "block",
+  "mass": 1,
+  "durability": 1,
+  "friction": 0.8,
+  "buoyancy": 0.5,
+  "flammable": true,
+  "stack_size": 100,
+  "sound_material": "fabric",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/carpet_wedge.glb",
+  "visual": {
+    "color": "#7a3040",
+    "roughness": 1,
+    "metallic": 0
+  },
+  "collision": {
+    "shape": "convex",
+    "mesh": "meshes/blocks/carpet_wedge.glb"
+  }
+}

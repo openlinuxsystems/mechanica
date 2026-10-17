@@ -1,0 +1,20 @@
+{
+  "id": "scrap_metal_block",
+  "name": "Scrap Metal Block",
+  "description": "Rough early survival metal.",
+  "category": "block",
+  "mass": 6,
+  "durability": 4,
+  "friction": 0.4,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "stack_size": 100,
+  "sound_material": "scrap",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/scrap_metal_block.glb",
+  "visual": {
+    "color": "#7c7466",
+    "roughness": 0.6,
+    "metallic": 0.6
+  }
+}

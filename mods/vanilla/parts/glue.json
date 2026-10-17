@@ -1,0 +1,11 @@
+{
+  "id": "glue",
+  "name": "Glue",
+  "category": "resource",
+  "mass": 0.2,
+  "stack_size": 20,
+  "sounds": {
+    "pickup": "pickup_component",
+    "drop": "drop_component"
+  }
+}

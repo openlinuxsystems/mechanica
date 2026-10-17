@@ -1,0 +1,11 @@
+{
+  "id": "circuit_board",
+  "name": "Circuit Board",
+  "category": "resource",
+  "mass": 0.1,
+  "stack_size": 20,
+  "sounds": {
+    "pickup": "pickup_component",
+    "drop": "drop_component"
+  }
+}

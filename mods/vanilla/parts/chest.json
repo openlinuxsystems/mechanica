@@ -1,0 +1,33 @@
+{
+  "id": "chest",
+  "name": "Chest",
+  "category": "container",
+  "mass": 8,
+  "durability": 6,
+  "friction": 0.5,
+  "buoyancy": 0.6,
+  "flammable": true,
+  "sound_material": "wood",
+  "size": [4, 3, 3],
+  "mesh": "meshes/chest.glb",
+  "visual": {
+    "color": "#8a5a30",
+    "paintable": true
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.375, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "sounds": {
+    "open": "chest_open",
+    "close": "chest_close",
+    "place": "chest_place"
+  },
+  "inventory": {
+    "slots": 20
+  }
+}

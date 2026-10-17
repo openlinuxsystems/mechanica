@@ -1,11 +1,13 @@
 using Godot;
 using Mechanica.Core;
 using Mechanica.Core.Data;
+using Mechanica.Core.Items;
 using Mechanica.Core.Net;
 using Mechanica.Core.Sound;
 using Mechanica.Core.World;
 using Mechanica.Game.Building;
 using Mechanica.Game.Creations;
+using Mechanica.Game.Items;
 using Mechanica.Game.Mods;
 using Mechanica.Game.Motion;
 using Mechanica.Game.Net;
@@ -64,6 +66,9 @@ public partial class Main : Node3D
     /// <summary>Sound playback and its sync to clients.</summary>
     public SoundSync Sounds { get; private set; } = null!;
 
+    /// <summary>Crafting recipes. Null loads them from <see cref="Mods"/> when the scene starts; tests may set them.</summary>
+    public RecipeBook? Recipes { get; set; }
+
     /// <summary>Connection state and handshake.</summary>
     public NetSession Session { get; private set; } = null!;
 
@@ -87,6 +92,10 @@ public partial class Main : Node3D
 
     /// <summary>The local player's hand tools, once the player has spawned.</summary>
     public ToolBelt? Tools { get; private set; }
+
+    /// <summary>Inventories, containers and crafting, and their sync to clients.</summary>
+    public InventorySync Inventory { get; private set; } = null!;
+
     /// <summary>Forces, torques and bearing motors for scripts, bots and external agents.</summary>
     public MotionSync Motion { get; private set; } = null!;
 
@@ -108,8 +117,10 @@ public partial class Main : Node3D
         Options ??= ReadCommandLine();
         var mods = Mods ??= LoadMods();
         var world = WorldGen ??= LoadWorldGen(mods);
-        // World data is part of the content check on join, because every peer regenerates the world from it.
-        var content = Content ??= ContentManifest.From(mods) with { Fingerprint = $"{mods.Fingerprint}+{world.Fingerprint}" };
+        var recipes = Recipes ??= LoadRecipes(mods);
+        // World data and recipes are part of the content check on join: every peer regenerates the world
+        // from the former and shows the latter in its station screens.
+        var content = Content ??= ContentManifest.From(mods) with { Fingerprint = $"{mods.Fingerprint}+{world.Fingerprint}+{recipes.Fingerprint}" };
         Assets = new PartAssets(mods);
 
         Session = new NetSession { Name = "Session", Content = content };
@@ -169,6 +180,17 @@ public partial class Main : Node3D
         };
         AddChild(Build);
         Build.RegisterActions(Actions.Dispatcher);
+        Inventory = new InventorySync
+        {
+            Name = "Inventory",
+            Session = Session,
+            Players = PlayerSync,
+            Creations = Creations,
+            Catalog = mods,
+            Recipes = recipes,
+        };
+        AddChild(Inventory);
+        Inventory.RegisterActions(Actions.Dispatcher);
         Motion = new MotionSync { Name = "Motion", Session = Session, Creations = Creations };
         AddChild(Motion);
         Motion.RegisterActions(Actions.Dispatcher);
@@ -181,7 +203,10 @@ public partial class Main : Node3D
             AddTools(local);
         Session.StateChanged += state => SetPropsSimulated(state is NetSession.SessionState.Offline or NetSession.SessionState.Hosting);
         if (ReadDeviceInput)
+        {
             AddChild(new ConnectPanel { Name = "ConnectPanel", Session = Session });
+            AddChild(new InventoryScreen { Name = "InventoryScreen", Inventory = Inventory, Actions = Actions, Players = PlayerSync, Catalog = mods });
+        }
 
         Start(Options);
     }
@@ -250,6 +275,14 @@ public partial class Main : Node3D
         foreach (var diagnostic in sounds.Diagnostics)
             GD.PushWarning($"[sound] {diagnostic}");
         return sounds;
+    }
+
+    private static RecipeBook LoadRecipes(ModLoadResult mods)
+    {
+        var recipes = RecipeBook.Load(mods);
+        foreach (var diagnostic in recipes.Diagnostics)
+            GD.PushWarning($"[recipes] {diagnostic}");
+        return recipes;
     }
 
     private static WorldGenData LoadWorldGen(ModLoadResult mods)

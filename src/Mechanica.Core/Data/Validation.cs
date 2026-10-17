@@ -102,6 +102,7 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
         if (part.Collision is { } collision)
             ValidateCollision(collision, sink);
         ValidateSockets(part, placeable, sink);
+        ValidateStorage(part, placeable, sink);
 
         foreach (var (key, sound) in part.Sounds ?? [])
         {
@@ -122,6 +123,9 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
             sink.Error(Code, $"{p}.roughness", "roughness must be between 0 and 1.");
         if (v.Metallic is { } m && !(m >= 0 && m <= 1))
             sink.Error(Code, $"{p}.metallic", "metallic must be between 0 and 1.");
+        if (v.Opacity is { } o && !(o >= 0 && o <= 1))
+            sink.Error(Code, $"{p}.opacity", "opacity must be between 0 and 1.");
+        CheckColor(v.Emission, $"{p}.emission", sink);
         CheckAsset(v.Texture, $"{p}.texture", AssetKind.Texture, sink);
         var ids = new HashSet<string>();
         for (var i = 0; i < (v.Variants?.Count ?? 0); i++)
@@ -214,6 +218,52 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
             KnownKeys.WarnUnknown(s.Extra, path, sink, typeof(SocketDefinition));
         }
     }
+
+    private static void ValidateStorage(PartDefinition part, bool placeable, DiagnosticSink sink)
+    {
+        if (part.Inventory is { } inventory)
+        {
+            const string p = "$.inventory";
+            if (!placeable)
+                sink.Error(Code, p, "only placeable parts can have an inventory; items go in one.");
+            if (inventory.Slots is not { } slots)
+                sink.Error(Code, $"{p}.slots", "slots (1 or more) is required.");
+            else if (slots is < 1 or > MaxSlots)
+                sink.Error(Code, $"{p}.slots", $"slots must be 1 to {MaxSlots} (got {slots}).");
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            for (var i = 0; i < (inventory.Accepts?.Count ?? 0); i++)
+            {
+                var item = inventory.Accepts![i];
+                if (!IsItemRef(item))
+                    sink.Error(Code, $"{p}.accepts[{i}]", $"'{item}' must be an item id or 'mod_id:item_id'.");
+                else if (!seen.Add(Identifiers.Qualify(item)))
+                    sink.Error(Code, $"{p}.accepts[{i}]", $"'{item}' is listed twice.");
+            }
+            KnownKeys.WarnUnknown(inventory.Extra, p, sink, typeof(InventoryDefinition));
+        }
+        if (part.Crafting is { } crafting)
+        {
+            const string p = "$.crafting";
+            if (!placeable)
+                sink.Error(Code, p, "only placeable parts can be crafting stations.");
+            if (part.Inventory is null)
+                sink.Error(Code, p, "a crafting station needs an inventory for what it makes.");
+            if (crafting.Speed is { } speed && !(speed > 0 && float.IsFinite(speed)))
+                sink.Error(Code, $"{p}.speed", "speed must be greater than 0.");
+            if (crafting.QueueSize is < 1 or > MaxQueue)
+                sink.Error(Code, $"{p}.queue_size", $"queue_size must be 1 to {MaxQueue}.");
+            KnownKeys.WarnUnknown(crafting.Extra, p, sink, typeof(CraftingDefinition));
+        }
+    }
+
+    /// <summary>Most slots one inventory may have.</summary>
+    internal const int MaxSlots = 256;
+
+    /// <summary>Most jobs one station may queue.</summary>
+    internal const int MaxQueue = 64;
+
+    /// <summary>True for <c>item_id</c> or <c>mod_id:item_id</c>.</summary>
+    internal static bool IsItemRef([System.Diagnostics.CodeAnalysis.NotNullWhen(true)] string? id) => id is not null && IsSoundId(id);
 
     /// <summary>Checks an asset path: well formed, in this mod or a declared dependency, and present on disk.</summary>
     internal void CheckAsset(string? text, string jsonPath, AssetKind kind, DiagnosticSink sink)

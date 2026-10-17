@@ -1,0 +1,20 @@
+{
+  "id": "rusted_metal_block",
+  "name": "Rusted Metal Block",
+  "description": "Weathered metal, weaker than new.",
+  "category": "block",
+  "mass": 7,
+  "durability": 4,
+  "friction": 0.5,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "stack_size": 100,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/rusted_metal_block.glb",
+  "visual": {
+    "color": "#8a5a3a",
+    "roughness": 0.8,
+    "metallic": 0.4
+  }
+}

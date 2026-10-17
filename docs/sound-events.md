@@ -108,13 +108,13 @@ plays these names:
 | `break` | It breaks. | `break_<sound_material>` |
 
 Any other name is for the part's Lua script to play. The loader warns about a part that names an
-event nobody registered (MD0704).
+event nobody registered (MD0804).
 
 ## Replacing sounds
 
 An event whose id is `other_mod:id` replaces that mod's event everywhere it is used. The other mod must
 be a dependency, so it loads first. When two mods replace the same event, the one later in the load
-order wins and the loader warns (MD0703).
+order wins and the loader warns (MD0803).
 
 ## Multiplayer
 
@@ -135,7 +135,7 @@ list the events. Replace a placeholder by pointing its event at a new file.
 
 | Code | Meaning |
 |------|---------|
-| MD0701 | A sound event value is missing or invalid, or a file was left out because of its errors. |
-| MD0702 | Two events in a mod share an id. |
-| MD0703 | Two mods replace the same event (warning). |
-| MD0704 | A part names a sound event nobody registered (warning). |
+| MD0801 | A sound event value is missing or invalid, or a file was left out because of its errors. |
+| MD0802 | Two events in a mod share an id. |
+| MD0803 | Two mods replace the same event (warning). |
+| MD0804 | A part names a sound event nobody registered (warning). |

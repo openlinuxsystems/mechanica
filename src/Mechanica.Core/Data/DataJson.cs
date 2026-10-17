@@ -70,6 +70,16 @@ public static class DataJson
         },
         Collision = part.Collision is null ? null : part.Collision with { Extra = Sorted(part.Collision.Extra) },
         Sockets = part.Sockets?.Select(s => s with { Extra = Sorted(s.Extra) }).ToList(),
+        Inventory = part.Inventory is null ? null : part.Inventory with { Extra = Sorted(part.Inventory.Extra) },
+        Crafting = part.Crafting is null ? null : part.Crafting with { Extra = Sorted(part.Crafting.Extra) },
+    });
+
+    /// <summary>Serializes a recipe in canonical form.</summary>
+    public static string Write(Items.RecipeDefinition recipe) => Serialize(recipe with
+    {
+        Extra = Sorted(recipe.Extra),
+        Inputs = recipe.Inputs?.Select(i => i with { Extra = Sorted(i.Extra) }).ToList(),
+        Outputs = recipe.Outputs?.Select(i => i with { Extra = Sorted(i.Extra) }).ToList(),
     });
 
     /// <summary>Serializes a sound bank file in canonical form.</summary>
