@@ -12,7 +12,9 @@ namespace Mechanica.Game.World;
 /// smoothly; with a body per chunk they bumped on the edge of the chunk they were leaving.</item>
 /// <item>a sea surface where the ground dips below sea level (visual only until water exists);</item>
 /// <item><see cref="Objects"/>: one static body holding a collider per scattered object that is not
-/// destroyed, drawn with one <see cref="MultiMesh"/> per object piece;</item>
+/// destroyed, drawn with one <see cref="MultiMesh"/> per object piece or flora model. Objects that are not
+/// <see cref="WorldObjectDefinition.Solid"/> (bushes) put their collider in <see cref="Brush"/> instead, an area
+/// nothing collides with and only rays that ask for areas (the sledge) hit;</item>
 /// <item><see cref="Structures"/>: the static pieces of POIs whose centre lies in this chunk, and
 /// <see cref="Markers"/> for later systems.</item>
 /// </list>
@@ -57,6 +59,12 @@ public partial class TerrainChunk : Node3D
     /// <summary>The body holding scattered objects' colliders.</summary>
     public StaticBody3D Objects { get; private set; } = null!;
 
+    /// <summary>
+    /// Colliders of the objects players, bots and Creations pass through (not <see cref="WorldObjectDefinition.Solid"/>):
+    /// an area, so physics bodies ignore it and so do rays unless they collide with areas.
+    /// </summary>
+    public Area3D Brush { get; private set; } = null!;
+
     /// <summary>The body holding POI structure pieces.</summary>
     public StaticBody3D Structures { get; private set; } = null!;
 
@@ -74,6 +82,8 @@ public partial class TerrainChunk : Node3D
         BuildGround();
         Objects = new StaticBody3D { Name = "Objects" };
         AddChild(Objects);
+        Brush = new Area3D { Name = "Brush", Monitoring = false };
+        AddChild(Brush);
         BuildObjects();
         BuildStructures();
     }
@@ -90,21 +100,29 @@ public partial class TerrainChunk : Node3D
     /// <summary>True when this chunk generated the object (destroyed or not).</summary>
     public bool Holds(WorldObjectId id) => Data.Objects.Any(o => o.Id == id);
 
+    /// <summary>The object a ray or collision hit, from what it hit and the hit's shape index; null when it was no object.</summary>
+    public static WorldObjectId? ObjectHit(GodotObject? collider, int shapeIndex) =>
+        collider is CollisionObject3D body && body.GetParent() is TerrainChunk chunk && (body == chunk.Objects || body == chunk.Brush)
+            ? chunk.ObjectAt(body, shapeIndex)
+            : null;
+
     /// <summary>The object a collision with <see cref="Objects"/> hit, from the hit's shape index.</summary>
-    public WorldObjectId? ObjectAt(int shapeIndex)
+    public WorldObjectId? ObjectAt(int shapeIndex) => ObjectAt(Objects, shapeIndex);
+
+    private WorldObjectId? ObjectAt(CollisionObject3D body, int shapeIndex)
     {
-        if (shapeIndex < 0 || shapeIndex >= Objects.GetShapeOwners().Length)
+        if (shapeIndex < 0 || shapeIndex >= body.GetShapeOwners().Length)
             return null;
-        var owner = Objects.ShapeFindOwner(shapeIndex);
-        return Objects.ShapeOwnerGetOwner(owner) is CollisionShape3D shape && _objectShapes.TryGetValue(shape.GetInstanceId(), out var id) ? id : null;
+        var owner = body.ShapeFindOwner(shapeIndex);
+        return body.ShapeOwnerGetOwner(owner) is CollisionShape3D shape && _objectShapes.TryGetValue(shape.GetInstanceId(), out var id) ? id : null;
     }
 
     /// <summary>Rebuilds the objects, after one was destroyed or <see cref="State"/> changed.</summary>
     public void RefreshObjects()
     {
-        foreach (var child in Objects.GetChildren())
+        foreach (var child in Objects.GetChildren().Concat(Brush.GetChildren()))
         {
-            Objects.RemoveChild(child);
+            child.GetParent().RemoveChild(child);
             child.QueueFree();
         }
         _objectShapes.Clear();
@@ -195,6 +213,7 @@ public partial class TerrainChunk : Node3D
     {
         var origin = Position;
         var transforms = new Dictionary<(WorldObjectDefinition, int), List<Transform3D>>();
+        var models = new Dictionary<WorldObjectDefinition, List<Transform3D>>();
         foreach (var o in LiveObjects)
         {
             var placed = new Transform3D(new Basis(Vector3.Up, o.Yaw).Scaled(new Vector3(o.Scale, o.Scale, o.Scale)), o.Position.ToGodot() - origin);
@@ -207,8 +226,15 @@ public partial class TerrainChunk : Node3D
                     Shape = MakeShape(collider, o.Scale),
                     Transform = new Transform3D(new Basis(Vector3.Up, o.Yaw + Mathf.DegToRad(collider.Yaw)), placed * collider.At.ToGodot()),
                 };
-                Objects.AddChild(shape);
+                (o.Definition.Solid ? (Node)Objects : Brush).AddChild(shape);
                 _objectShapes[shape.GetInstanceId()] = o.Id;
+            }
+            if (FloraModels.Find(o.Definition.Model) is not null)
+            {
+                if (!models.TryGetValue(o.Definition, out var placements))
+                    models[o.Definition] = placements = [];
+                placements.Add(placed);
+                continue;
             }
             var pieces = o.Definition.Pieces ?? [];
             for (var p = 0; p < pieces.Count; p++)
@@ -225,6 +251,19 @@ public partial class TerrainChunk : Node3D
             for (var i = 0; i < list.Count; i++)
                 multi.SetInstanceTransform(i, list[i]);
             Objects.AddChild(new MultiMeshInstance3D { Name = $"{definition.Id}_{piece}", Multimesh = multi, MaterialOverride = MaterialOf(shape.Color) });
+        }
+        foreach (var (definition, list) in models)
+        {
+            var model = FloraModels.Find(definition.Model)!;
+            var multi = FloraField.New(FloraMaterials.Meshes(model).Full, list.Count);
+            var tint = FloraTint.SrgbToLinear();
+            for (var i = 0; i < list.Count; i++)
+            {
+                multi.SetInstanceTransform(i, list[i]);
+                multi.SetInstanceColor(i, Colors.White);
+                multi.SetInstanceCustomData(i, new Color(tint.R, tint.G, tint.B, i * 0.37f % 1f));
+            }
+            Objects.AddChild(new MultiMeshInstance3D { Name = definition.Id!, Multimesh = multi, MaterialOverride = FloraMaterials.For(model.Kind) });
         }
     }
 
@@ -259,10 +298,18 @@ public partial class TerrainChunk : Node3D
     public static Node3D Shell(WorldObjectPlacement o, Material material)
     {
         var root = new Node3D { Name = "Shell", Transform = new Transform3D(new Basis(Vector3.Up, o.Yaw).Scaled(new Vector3(o.Scale, o.Scale, o.Scale)), o.Position.ToGodot()) };
+        if (FloraModels.Find(o.Definition.Model) is { } model)
+        {
+            root.AddChild(new MeshInstance3D { Mesh = FloraMaterials.Meshes(model).Full, MaterialOverride = material, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off });
+            return root;
+        }
         foreach (var piece in o.Definition.Pieces ?? [])
             root.AddChild(new MeshInstance3D { Mesh = MeshOf(piece), MaterialOverride = material, Transform = Local(piece), CastShadow = GeometryInstance3D.ShadowCastingSetting.Off });
         return root;
     }
+
+    // Leaf colour of world objects drawn with a flora model (the harvestable bush).
+    private static readonly Color FloraTint = new(0.36f, 0.68f, 0.24f);
 
     // A piece's own placement relative to its owner: turned about +Y, then moved to its centre.
     private static Transform3D Local(ShapeDefinition shape) => new(new Basis(Vector3.Up, Mathf.DegToRad(shape.Yaw)), shape.At.ToGodot());

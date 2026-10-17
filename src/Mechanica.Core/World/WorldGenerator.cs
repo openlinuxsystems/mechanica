@@ -128,6 +128,8 @@ public sealed class WorldGenerator
         var bordered = new float[m * m];
         var heights = new float[n * n];
         var colors = new Vector3[n * n];
+        var biomes = new int[n * n];
+        var covered = new bool[n * n];
         Parallel.For(0, m, j =>
         {
             for (var i = 0; i < m; i++)
@@ -140,6 +142,8 @@ public sealed class WorldGenerator
                 {
                     heights[(j - 1) * n + i - 1] = h;
                     colors[(j - 1) * n + i - 1] = sample.Color;
+                    biomes[(j - 1) * n + i - 1] = sample.Biome;
+                    covered[(j - 1) * n + i - 1] = PoisAt(x, z).Any();
                 }
             }
         });
@@ -175,7 +179,7 @@ public sealed class WorldGenerator
                     markers.Add(new PoiMarkerPlacement(poi, marker, at, poi.Yaw + Radians(marker.Yaw)));
             }
         }
-        return new TerrainChunkData(coord, chunkSize, res, n, heights, normals, colors, SeaLevel, objects, pieces, markers);
+        return new TerrainChunkData(coord, chunkSize, res, n, heights, normals, colors, biomes, covered, SeaLevel, objects, pieces, markers);
     }
 
     /// <summary>Scattered objects whose ground point lies in [x0, x1) × [z0, z1), in rule then cell order.</summary>

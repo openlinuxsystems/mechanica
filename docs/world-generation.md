@@ -25,6 +25,7 @@ Host and clients must have identical world data: it is part of the content check
    edge the land falls to `sea_floor` over `coast_width`, so the world is an island. Each POI then
    applies its `terrain` ops.
 4. **Objects.** Each biome's `scatter` rules place trees, rocks and so on.
+5. **Flora.** Each biome's `flora` rules grow decorative grass, ground cover and bushes (see [Flora](#flora)).
 
 The world is a square of `world_size` (from `game/data/streaming.json`, 4096 m) centred on the origin,
 streamed in 64 m chunks. Height samples are `resolution` metres apart and must divide the chunk size.
@@ -58,7 +59,11 @@ streamed in 64 m chunks. Height samples are `resolution` metres apart and must d
       "height": 12.0,
       "relief": 20.0,
       "color": "#3f6d3a",
-      "scatter": [{ "object": "tree", "spacing": 7.0, "chance": 0.6 }]
+      "scatter": [{ "object": "tree", "spacing": 7.0, "chance": 0.6 }],
+      "flora": [
+        { "kind": "grass", "density": 1.2, "coverage": 0.6, "patch_size": 10.0, "scale": [0.8, 1.4], "colors": ["#5fae36", "#6fba3c"] },
+        { "kind": "bush", "density": 0.03, "coverage": 0.7, "patch_size": 30.0, "models": ["bush_round", "bush_low"] }
+      ]
     }
   ],
   "objects": [
@@ -88,6 +93,8 @@ streamed in 64 m chunks. Height samples are `resolution` metres apart and must d
 | `objects[]` | Destructible world objects. Use catalog ids (`tree`, `rock_node`, `boulder`, ...). `footprint` is the radius other scattered objects keep clear of; `sink` lowers the object into the ground. |
 | `objects[].health` | Damage the object takes before it breaks (Sledgehammer, weapons, splash). Omitted means it cannot be broken. Damage is not saved: a part-felled tree is whole again after a restart. |
 | `objects[].drops[]` | Items (`item`, `count`, default 1) left on the ground as a pile when it breaks. |
+| `objects[].model` | A built-in flora model (see [Flora](#flora)) drawn instead of `pieces`, such as `bush_berry`. |
+| `objects[].solid` | `false` for an object players, bots and Creations walk and drive through, like the seed bush: its collider only catches the Sledgehammer's swing, so it still breaks for its drops. Default `true`. |
 | `objects[].refine` | `true` for a raw resource node (tree, rock node): holding Use (E) on it for `refine_seconds` (`game/data/survival.json`, 1.2 s) refines it, and its `drops` go straight into the inventory. Moving more than `refine_cancel_distance` (1.5 m) or letting go cancels. Default `false`. |
 
 Shapes (`collider`, `pieces`) are `box` (`size`), `sphere` (`radius`) or `cylinder` (`radius`,
@@ -96,6 +103,36 @@ placeholders until meshes are authored.
 
 Scattered objects keep stable ids (`rule.cell_x.cell_z`), which is how a destroyed tree stays destroyed.
 Adding, removing or reordering scatter rules changes those ids, so do it before a world is saved.
+
+### Flora
+
+`biomes[].flora[]` grows decorative plants: tufts of grass, ground cover (clover and small flowers) and
+leafy bushes, drawn with GPU instancing round the camera. Flora is decor only. It has no collider, so
+players, bots and Creations pass through it (and it bends out of their way); it is never saved or synced,
+because every peer grows the same plants from the seed. Plants keep off water, ground steeper than
+`max_slope`, POI footprints, and (bushes) scattered objects.
+
+| Key | Meaning |
+|-----|---------|
+| `kind` | `grass`, `ground_cover` or `bush`. Each kind has its own Foliage density setting (Options, Graphics). |
+| `density` | Plants per square metre in a full patch, at the High foliage level (0 to 20). |
+| `coverage` | Share (0 to 1) of the biome's ground covered by patches; noise decides where. Default 1, everywhere. |
+| `patch_size` | Typical width of a patch in metres. Default 12. |
+| `scale` | Random scale range `[min, max]`. Default 1. |
+| `models` | Models to pick from (below). Default: every model of the kind. |
+| `colors` | Tints to pick from, `#rrggbb`. Leaves take the tint; flowers and bolts keep their own colours. |
+| `max_slope` | Steepest ground (rise over run) the plants grow on. Default 1. |
+
+The models are built in code: grass `grass_short`, `grass_tall`, `grass_wide`, `grass_mixed`,
+`grass_tipped` (yellow tips) and `grass_patch`; ground cover `clover`, `sprouts`, `flowers_yellow`,
+`flowers_white` and `flowers_purple`; bushes `bush_round`, `bush_spiky`, `bush_low`, `bush_flowering`,
+`bush_lumpy` (yellow-tipped lumps) and `bush_berry` (red flowers and bolts, the vanilla seed bush). Run
+`tools/capture-flora.sh OUT_DIR` to render them all in a meadow.
+
+How much is drawn, how far and how much it sways in the wind is the player's choice (Options, Graphics,
+Foliage density: Off, Low, Medium, High, Very high, for grass, ground cover and bushes apart), tuned in
+`game/data/flora.json`, which ships with the build and is not moddable. Lower levels draw a subset of the
+plants of higher ones, and Low turns the wind off.
 
 ## `pois/<id>.json`
 

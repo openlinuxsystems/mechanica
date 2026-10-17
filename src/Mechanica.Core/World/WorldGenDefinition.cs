@@ -102,6 +102,9 @@ public sealed record BiomeDefinition
     /// <summary>Objects scattered on this biome's ground.</summary>
     public List<ScatterRule>? Scatter { get; init; }
 
+    /// <summary>Decorative grass, ground cover and bushes growing on this biome's ground.</summary>
+    public List<FloraRule>? Flora { get; init; }
+
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
@@ -130,7 +133,7 @@ public sealed record ScatterRule
 
 /// <summary>
 /// A destructible object placed on the ground (D11): saw, drill and sledge targets. Until meshes are
-/// authored it is drawn from primitive <see cref="Pieces"/>.
+/// authored it is drawn from primitive <see cref="Pieces"/>, or from a built-in flora <see cref="Model"/>.
 /// </summary>
 public sealed record WorldObjectDefinition
 {
@@ -142,6 +145,18 @@ public sealed record WorldObjectDefinition
 
     /// <summary>Visual pieces, relative to the object's ground point.</summary>
     public List<ShapeDefinition>? Pieces { get; init; }
+
+    /// <summary>
+    /// A built-in flora model (<see cref="FloraModels"/>, such as <c>bush_berry</c>) drawn instead of <see cref="Pieces"/>,
+    /// standing on the object's ground point.
+    /// </summary>
+    public string? Model { get; init; }
+
+    /// <summary>
+    /// False for an object players, bots and Creations walk and drive through, like a bush: its collider only
+    /// catches the sledge, so it can still be broken for its drops. True (the default) blocks movement.
+    /// </summary>
+    public bool Solid { get; init; } = true;
 
     /// <summary>Radius in metres that other scattered objects keep clear of.</summary>
     public float Footprint { get; init; } = 1f;

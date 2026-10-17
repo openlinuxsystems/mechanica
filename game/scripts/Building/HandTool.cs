@@ -131,12 +131,16 @@ public abstract partial class HandTool : Node
     /// <summary>Casts the aim ray, ignoring the player itself.</summary>
     protected RayHit? CastRay() => Cast(Player, Build.Settings!.Reach);
 
-    /// <summary>Casts a ray from <paramref name="player"/>'s camera out to <paramref name="reach"/> metres, ignoring the player.</summary>
-    public static RayHit? Cast(PlayerController player, float reach)
+    /// <summary>
+    /// Casts a ray from <paramref name="player"/>'s camera out to <paramref name="reach"/> metres, ignoring the player.
+    /// With <paramref name="brush"/> it also hits walk-through objects such as bushes (<see cref="World.TerrainChunk.Brush"/>).
+    /// </summary>
+    public static RayHit? Cast(PlayerController player, float reach, bool brush = false)
     {
         var from = player.AimOrigin;
         var query = PhysicsRayQueryParameters3D.Create(from, from - player.Camera.GlobalBasis.Z * reach);
         query.Exclude = [player.GetRid()];
+        query.CollideWithAreas = brush;
         var hit = player.GetWorld3D().DirectSpaceState.IntersectRay(query);
         return hit.Count == 0
             ? null

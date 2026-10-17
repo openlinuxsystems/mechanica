@@ -35,6 +35,28 @@ public enum Quality
     Custom,
 }
 
+/// <summary>
+/// How much decorative flora is drawn (Options, Graphics, Foliage density), set for grass, ground cover and bushes
+/// apart. Each level scales the plant count and how far plants are drawn (<see cref="World.FloraSettings"/>).
+/// </summary>
+public enum FoliageLevel
+{
+    /// <summary>None at all.</summary>
+    Off,
+
+    /// <summary>A few, near the player, without wind.</summary>
+    Low,
+
+    /// <summary>Thinner and closer than High.</summary>
+    Medium,
+
+    /// <summary>The default.</summary>
+    High,
+
+    /// <summary>Denser and further than High.</summary>
+    VeryHigh,
+}
+
 /// <summary>The Graphics tab (UI spec §16). Window changes need Apply and a confirm; the rest apply live.</summary>
 public sealed record GraphicsSettings
 {
@@ -67,6 +89,23 @@ public sealed record GraphicsSettings
 
     /// <summary>Waits for the display's refresh.</summary>
     public bool VSync { get; init; } = true;
+
+    /// <summary>Grass density. Not part of the quality preset, so it stays as the player set it.</summary>
+    public FoliageLevel Grass { get; init; } = FoliageLevel.High;
+
+    /// <summary>Ground cover (clover, small flowers) density.</summary>
+    public FoliageLevel GroundCover { get; init; } = FoliageLevel.High;
+
+    /// <summary>Bush density.</summary>
+    public FoliageLevel Bushes { get; init; } = FoliageLevel.High;
+
+    /// <summary>The foliage level of one kind of flora.</summary>
+    public FoliageLevel Foliage(World.FloraKind kind) => kind switch
+    {
+        World.FloraKind.Grass => Grass,
+        World.FloraKind.GroundCover => GroundCover,
+        _ => Bushes,
+    };
 
     /// <summary>Shortest and longest view distance offered.</summary>
     public const float MinViewDistance = World.FarChunks.MinViewDistance, MaxViewDistance = 1024f;
@@ -112,6 +151,9 @@ public sealed record GraphicsSettings
         Antialiasing = Antialiasing == Quality.Custom ? Quality.High : Antialiasing,
         Textures = Textures == Quality.Custom ? Quality.High : Textures,
         Effects = Effects == Quality.Custom ? Quality.High : Effects,
+        Grass = Enum.IsDefined(Grass) ? Grass : FoliageLevel.High,
+        GroundCover = Enum.IsDefined(GroundCover) ? GroundCover : FoliageLevel.High,
+        Bushes = Enum.IsDefined(Bushes) ? Bushes : FoliageLevel.High,
     };
 }
 

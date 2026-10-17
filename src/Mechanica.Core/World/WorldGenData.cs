@@ -13,6 +13,21 @@ public sealed record Biome(int Index, string Id, string Name, float Weight, floa
 /// <summary>A scatter rule ready for generation. <see cref="Index"/> is its place among every biome's rules, and part of each object's id.</summary>
 public sealed record Scatter(int Index, int Biome, WorldObjectDefinition Object, float Spacing, float Chance);
 
+/// <summary>A biome's flora rule ready for growing. <see cref="Index"/> is its place among every biome's flora rules.</summary>
+/// <param name="Index">Place among every biome's flora rules; salts its random numbers.</param>
+/// <param name="Biome">Index of the biome it grows in.</param>
+/// <param name="Kind">Which kind of flora, and so which Foliage density setting controls it.</param>
+/// <param name="Density">Plants per square metre in a full patch at the High foliage level.</param>
+/// <param name="Coverage">Share of the ground its patches cover.</param>
+/// <param name="PatchSize">Wavelength of the patch noise in metres.</param>
+/// <param name="MinScale">Smallest random scale.</param>
+/// <param name="MaxScale">Largest random scale.</param>
+/// <param name="Models">Models to pick from.</param>
+/// <param name="Colors">Tints to pick from (0..1 RGB).</param>
+/// <param name="MaxSlope">Steepest ground it grows on (rise over run).</param>
+public sealed record Flora(int Index, int Biome, FloraKind Kind, float Density, float Coverage, float PatchSize, float MinScale, float MaxScale,
+    IReadOnlyList<FloraModel> Models, IReadOnlyList<Vector3> Colors, float MaxSlope);
+
 /// <summary>A POI prefab that loaded cleanly.</summary>
 /// <param name="QualifiedId">Game-wide id, <c>mod_id:poi_id</c>.</param>
 /// <param name="Prefab">The validated data.</param>
@@ -47,6 +62,20 @@ public sealed class WorldGenData
             foreach (var rule in biome.Scatter ?? [])
                 scatter.Add(new Scatter(scatter.Count, Biomes.First(b => b.Id == biome.Id).Index, Objects[rule.Object!], rule.Spacing, rule.Chance));
         ScatterRules = scatter;
+        var flora = new List<Flora>();
+        foreach (var biome in definition.Biomes ?? [])
+        {
+            foreach (var rule in biome.Flora ?? [])
+            {
+                var kind = rule.Kind!.Value;
+                var models = rule.Models is { Count: > 0 } ids ? ids.Select(id => FloraModels.Find(id)!).ToList() : FloraModels.OfKind(kind);
+                var colors = rule.Colors is { Count: > 0 } tints ? tints.Select(ParseColor).ToList() : [Vector3.One];
+                var (min, max) = rule.Scale is [var lo, var hi] ? (lo, hi) : (1f, 1f);
+                flora.Add(new Flora(flora.Count, Biomes.First(b => b.Id == biome.Id).Index, kind, rule.Density, rule.Coverage, rule.PatchSize, min, max, models, colors, rule.MaxSlope));
+            }
+        }
+        FloraRules = flora;
+        FloraByBiome = [.. Biomes.Select(b => (IReadOnlyList<Flora>)[.. flora.Where(f => f.Biome == b.Index)])];
         CoastBiome = definition.CoastBiome is { } coast ? Biomes.First(b => b.Id == coast) : null;
     }
 
@@ -67,6 +96,12 @@ public sealed class WorldGenData
 
     /// <summary>Every biome's scatter rules, in biome then file order.</summary>
     public IReadOnlyList<Scatter> ScatterRules { get; }
+
+    /// <summary>Every biome's flora rules, in biome then file order.</summary>
+    public IReadOnlyList<Flora> FloraRules { get; }
+
+    /// <summary>The flora rules of each biome, by biome index.</summary>
+    public IReadOnlyList<IReadOnlyList<Flora>> FloraByBiome { get; }
 
     /// <summary>POI prefabs, ordered by qualified id.</summary>
     public IReadOnlyList<LoadedPoi> Pois { get; }
