@@ -1,3 +1,4 @@
+using System.Reflection;
 using Godot;
 
 namespace Mechanica.Game.Tests;
@@ -88,17 +89,37 @@ public abstract partial class StagedTest : Node
     }
 
     // Frees the test's nodes and lets .NET release its wrappers before quitting. Left to engine
-    // teardown, wrappers the GC has not collected yet (sessions, ENet peers, collisions) can outlive
-    // the .NET runtime, and Godot aborts on exit after the test already passed.
+    // teardown, wrappers the GC has not collected yet (sessions, ENet peers, collisions, meshes) can
+    // outlive the .NET runtime, and Godot aborts on exit after the test already passed. The test's own
+    // fields are cleared first: a field still holding a freed screen keeps every mesh and material it
+    // made alive, whenever the GC happens to run.
     private async void ShutDown(int code)
     {
         foreach (var child in GetChildren())
             child.QueueFree();
         await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
         await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-        GC.Collect();
-        GC.WaitForPendingFinalizers();
-        GC.Collect();
+        ForgetFields();
+        for (var pass = 0; pass < 2; pass++)
+        {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+            await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        }
         GetTree().Quit(code);
+    }
+
+    // Drops every object the concrete test holds in its fields (strings stay, for cleanup on exit).
+    private void ForgetFields()
+    {
+        for (var type = GetType(); type is not null && type != typeof(StagedTest); type = type.BaseType)
+        {
+            foreach (var field in type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly))
+            {
+                if (!field.FieldType.IsValueType && field.FieldType != typeof(string))
+                    field.SetValue(this, null);
+            }
+        }
     }
 }
