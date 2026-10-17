@@ -186,7 +186,7 @@ public partial class MainMenu : Control
         Links = Godot.FileAccess.FileExists(LinksPath) ? HomeScreen.ParseLinks(Godot.FileAccess.GetFileAsString(LinksPath)) : [];
         foreach (var link in Links)
             AddButton(bar, link.Label, () => OS.ShellOpen(link.Url), link.Url);
-        var help = Loc.Live(AddButton(bar, "?", () => _help.Open("playing.md")), b => b.TooltipText = Loc.T("Help ({0})", GameInput.Label(InputActions.Handbook)));
+        var help = Loc.Live(AddButton(bar, "?", () => _help.OpenLast("playing.md")), b => b.TooltipText = Loc.T("Handbook ({0})", GameInput.Label(InputActions.Handbook)));
         help.CustomMinimumSize = new Vector2(40, 32);
         return bar;
     }
@@ -195,7 +195,7 @@ public partial class MainMenu : Control
     {
         if (_help is not null && GameInput.Pressed(@event, InputActions.Handbook))
         {
-            _help.Open("playing.md");
+            _help.OpenLast("playing.md");
             GetViewport().SetInputAsHandled();
         }
         else if (_quit is not null && _menu.Visible && GameInput.Pressed(@event, InputActions.Pause) && ConfirmDialog.Current is null)

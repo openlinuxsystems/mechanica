@@ -133,7 +133,8 @@ public partial class QuestTest : StagedTest
                 AddChild(_hud);
                 _hud.Open();
                 var buttons = _hud.FindChildren("Choice_*", "Button", owned: false);
-                Check(buttons.Count == 2, $"the quest log offers both choices ({buttons.Count})");
+                Check(buttons.Count == 2, $"the Logbook offers both choices ({buttons.Count})");
+                Check(_hud.Logbook.Visible && _hud.Logbook.List.FindChild(LogbookWindow.NodeName("Quest", FactionContact), owned: false) is Button, "the Logbook lists the quest");
                 Check(_hud.LogText.Contains("Faction Contact", StringComparison.Ordinal), $"the log shows the quest ({_hud.LogText})");
                 _hud.Choose(FactionContact, "ally");
                 _asked = true;
@@ -144,7 +145,10 @@ public partial class QuestTest : StagedTest
                 Check(false, $"talking failed ({string.Join("; ", _results)})");
             if (ClientQuests.State.Flags.GetValueOrDefault("faction_stance") != "ally" || !ClientQuests.State.IsDone(FactionContact))
                 return false;
-            Check(!_hud!.IsOpen, "the log closes once nothing waits on a choice");
+            _hud!.Logbook.Refresh();
+            Check(_hud.IsOpen && _hud.FindChildren("Choice_*", "Button", owned: false).Count == 0, "the Logbook stays open with the choices gone once decided");
+            Check(_hud.Logbook.List.FindChild(LogbookWindow.NodeName("Done", FactionContact), owned: false) is Label, "the finished quest is listed greyed out");
+            _hud.Close();
             _hud.QueueFree();
             return true;
         });

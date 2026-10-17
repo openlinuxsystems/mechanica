@@ -75,6 +75,8 @@ public readonly record struct InputChord(string Code, bool Shift = false, bool C
             "Down" => "Down Arrow",
             "Left" => "Left Arrow",
             "Right" => "Right Arrow",
+            "Pageup" => "Page Up",
+            "Pagedown" => "Page Down",
             ['K', 'e', 'y', var d] when char.IsAsciiDigit(d) => d.ToString(),
             _ => Code,
         };

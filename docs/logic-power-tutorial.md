@@ -20,6 +20,8 @@ ends with what a modder needs to make new logic parts.
 - Links are saved with the creation and copied with it. Taking a part off removes its links, and when
   a creation breaks in two, a link between the two pieces is lost.
 
+![A switch, a logic gate and an engine linked with the Connect Tool](images/logic-chain.png)
+
 ## The tools
 
 | Key | What it does |

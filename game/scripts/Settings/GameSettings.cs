@@ -54,6 +54,14 @@ public partial class GameSettings : Node
             _current.Save(ProjectSettings.GlobalizePath(SettingsPath));
     }
 
+    /// <summary>Uses and (outside tests) saves <paramref name="settings"/> whose change needs nothing applied, such as the Handbook's last page.</summary>
+    public static void Remember(UserSettings settings)
+    {
+        _current = settings.Clamped();
+        if (_persist)
+            _current.Save(ProjectSettings.GlobalizePath(SettingsPath));
+    }
+
     /// <summary>
     /// Uses and applies <paramref name="settings"/> without saving: bindings, UI scale, quality and audio
     /// at once. The window itself (size, display mode, VSync) changes only through <see cref="ApplyWindow"/>,

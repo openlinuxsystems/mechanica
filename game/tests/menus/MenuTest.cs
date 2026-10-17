@@ -16,6 +16,10 @@ namespace Mechanica.Game.Tests;
 /// </summary>
 public partial class MenuTest : StagedTest
 {
+    private PauseMenu? _handbook;
+    private bool _handbookTurned;
+    private int _diagramWidth;
+    private string _handbookTopic = "";
     private NetTestHarness _harness = null!;
     private Instance _host = null!;
     private Instance? _client;
@@ -91,22 +95,78 @@ public partial class MenuTest : StagedTest
             Check(!_hostMenu.IsOpen, "Resume closes the menu");
             return true;
         });
-        Add("help opens on the page for what the player is doing and searches", _ =>
+        Add("the Handbook opens at the page read last, turns pages and searches", frame =>
         {
-            var topic = "playing.md";
-            var menu = new PauseMenu { Session = _host.Main.Session, HelpTopic = () => topic };
-            AddChild(menu);
-            menu.OpenHelp();
-            Check(menu.Help.Current == "playing.md" && menu.Help.Text.Contains("Controls", StringComparison.Ordinal), $"F1 shows How to Play ({menu.Help.Current})");
-            topic = "quests.md";
-            menu.OpenHelp();
-            Check(menu.Help.Current == "quests.md", $"with the quest log open it shows the quests page ({menu.Help.Current})");
+            if (frame == 0)
+            {
+                Settings.GameSettings.Remember(Settings.GameSettings.Current with
+                {
+                    Interface = Settings.GameSettings.Current.Interface with { HandbookPage = null },
+                });
+                _handbookTopic = "playing.md";
+                _handbook = new PauseMenu { Session = _host.Main.Session, HelpTopic = () => _handbookTopic };
+                AddChild(_handbook);
+                _handbook.OpenHelp();
+                return false;
+            }
+            var menu = _handbook!;
+            var help = menu.Help;
+            if (!_handbookTurned)
+            {
+                // The diagram is drawn again at the page's width once the window is laid out.
+                if (frame < 30 && help.Diagrams is not [{ Width: > 200 }, ..])
+                    return false;
+                _handbookTurned = true;
+                Check(help.Current == "playing.md" && help.Text.Contains("Controls", StringComparison.Ordinal), $"before any page it shows the page for what the player does ({help.Current})");
+                Check(help.Diagrams.Count > 0 && help.Diagrams[0].Path == "images/hud.png" && help.Diagrams.All(d => d.Width is > 200 && d.Width <= help.GetGlobalRect().Size.X),
+                    $"the page's diagrams fit it ({string.Join(", ", help.Diagrams)})");
+                help.Open("quests.md");
+                help.Hide();
+                _handbookTopic = "survival.md";
+                menu.OpenHelp();
+                Check(help.Current == "quests.md", $"it opens at the page read last ({help.Current})");
+                Check(Settings.GameSettings.Current.Interface.HandbookPage == "quests.md", "the last page is kept in the settings");
+                var listed = help.Listed.ToList();
+                var at = listed.IndexOf("quests.md");
+                help.Turn(1);
+                Check(help.Current == listed[at + 1] && help.PageText == $"{at + 2} / {listed.Count}", $"Next turns the page ({help.Current}, {help.PageText})");
+                // The arrow key turns it back.
+                GetViewport().PushInput(new InputEventKey { PhysicalKeycode = Key.Left, Keycode = Key.Left, Pressed = true });
+                GetViewport().PushInput(new InputEventKey { PhysicalKeycode = Key.Left, Keycode = Key.Left, Pressed = false });
+                return false;
+            }
+            Check(help.Current == "quests.md", $"Left turns back ({help.Current})");
+            help.Open(help.Listed[0]);
+            help.Turn(-1);
+            Check(help.Current == help.Listed[0], "the first page stays put");
             menu.Help.Search("choose dialogue");
             Check(menu.Help.Listed.Contains("quests.md") && !menu.Help.Listed.Contains("packaging-guide.md"),
                 $"searching finds the pages with every word ({string.Join(", ", menu.Help.Listed)})");
             menu.Help.Search("");
             Check(menu.Help.Listed.Count > 10, $"an empty search lists every page ({menu.Help.Listed.Count})");
-            menu.QueueFree();
+            return true;
+        });
+        Add("the Handbook's diagrams scale with the window", frame =>
+        {
+            var help = _handbook!.Help;
+            if (frame == 0)
+            {
+                help.Open("playing.md");
+                return false;
+            }
+            if (frame == 10)
+            {
+                _diagramWidth = help.Diagrams[0].Width;
+                // Half as wide.
+                help.AnchorRight = 0.5f;
+                return false;
+            }
+            if (frame < 20)
+                return false;
+            Check(help.Diagrams[0].Width < _diagramWidth && help.Diagrams[0].Width <= help.GetGlobalRect().Size.X,
+                $"narrower window, narrower diagram ({_diagramWidth} → {help.Diagrams[0].Width})");
+            _handbook!.QueueFree();
+            _handbook = null;
             return true;
         });
         Add("New game turns its boxes into launch options", _ =>
