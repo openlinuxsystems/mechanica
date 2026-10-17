@@ -9,9 +9,10 @@ MoonSharp Lua, Godot MultiplayerAPI over ENet.
 dotnet build Mechanica.sln      # warnings are errors
 dotnet test Mechanica.sln
 tools/smoke.sh                  # headless Godot smoke scene, needed for anything in game/
+node --test tools/ai/bridge/test/*.test.mjs   # AI bridges (Node 22+); game/tests/aibridge runs them end to end
 ```
 
-CI (`.github/workflows/ci.yml`) runs the same three steps. Keep it green.
+CI (`.github/workflows/ci.yml`) runs the same steps. Keep it green.
 `tools/package.sh <linux|windows|macos>` exports a release zip (`.github/workflows/release.yml` runs it on `v*` tags);
 exported builds take `--self-test`. `tools/lua-bench.sh` runs the D2 Lua benchmark (headless, then in Godot with real step times).
 After adding, renaming or re-documenting an action or AI endpoint method, run `tools/ai/gen-docs.sh`: the AI docs

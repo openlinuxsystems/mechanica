@@ -396,3 +396,11 @@ node tools/ai/drive_car.mjs --mod drive_test
 
 The headless test `game/tests/remote/RemoteTest.tscn` does the same with a host and a client, and
 also checks errors, authentication, recording and a replay on a second host.
+
+## Connecting a model
+
+To let a language model play rather than a script, use the bridges in `tools/ai/bridge`:
+`openai-bridge.mjs` for any OpenAI-compatible chat API (Grok running locally, vLLM, llama.cpp, Ollama,
+xAI's API) and `mcp-server.mjs` for Claude and other MCP clients. The guides are
+[connect-grok-local.md](ai/connect-grok-local.md) and [connect-claude.md](ai/connect-claude.md); the
+headless test `game/tests/aibridge` runs both against a host and a client.

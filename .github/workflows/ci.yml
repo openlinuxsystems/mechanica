@@ -54,6 +54,10 @@ jobs:
         with:
           global-json-file: global.json
 
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
       - name: Read pinned versions
         if: steps.scope.outputs.build == 'true'
         run: grep -E '^[A-Z_]+=' tools/versions.env >> "$GITHUB_ENV"
@@ -82,6 +86,9 @@ jobs:
       - name: Unit tests
         if: steps.scope.outputs.build == 'true'
         run: dotnet test Mechanica.sln --no-build -c Debug --logger "console;verbosity=normal"
+
+      - name: AI bridge tests
+        run: node --test tools/ai/bridge/test/*.test.mjs
 
       - name: Godot headless smoke test
         if: steps.scope.outputs.build == 'true'
