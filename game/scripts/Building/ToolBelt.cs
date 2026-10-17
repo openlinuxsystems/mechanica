@@ -35,6 +35,9 @@ public partial class ToolBelt : Node
     /// <summary>Survival state, for the item in hand. Set before adding to the tree.</summary>
     public SurvivalSync Survival { get; init; } = null!;
 
+    /// <summary>How items look in hand; null shows every item the same way.</summary>
+    public Core.Characters.CharacterSettings? Characters { get; init; }
+
     /// <summary>False in automated tests: keys and mouse do nothing and no HUD is shown.</summary>
     public bool ReadDeviceInput { get; init; } = true;
 
@@ -72,7 +75,7 @@ public partial class ToolBelt : Node
         Weld = Add(new WeldTool { Name = "Weld", Player = Player, Actions = Actions, Build = Build, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput });
         Paint = Add(new PaintTool { Name = "Paint", Player = Player, Actions = Actions, Build = Build, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput });
         Sledge = Add(new SledgeTool { Name = "Sledge", Player = Player, Actions = Actions, Build = Build, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput });
-        Item = Add(new ItemTool { Name = "Item", Player = Player, Actions = Actions, Build = Build, Inventory = Inventory, Survival = Survival, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput });
+        Item = Add(new ItemTool { Name = "Item", Player = Player, Actions = Actions, Build = Build, Inventory = Inventory, Survival = Survival, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput, Characters = Characters });
         Connector = Add(new ConnectTool { Name = "Connect", Player = Player, Actions = Actions, Build = Build, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput });
         Hammer.Active = true;
         if (!ReadDeviceInput)
@@ -90,6 +93,8 @@ public partial class ToolBelt : Node
 
     public override void _Process(double delta)
     {
+        // What others see in the player's hand.
+        Player.HeldProp = Current.Prop;
         if (_hud is null)
             return;
         _hud.Visible = GameSettings.Current.Interface.ShowHotbar;

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Godot;
+using Mechanica.Core.Characters;
 using Mechanica.Core.Actions;
 using Mechanica.Core.Input;
 using Mechanica.Core.Logic;
@@ -18,6 +19,16 @@ public partial class ConnectTool : HandTool
 {
     /// <inheritdoc/>
     public override string ToolName => "Connect Tool";
+
+    /// <inheritdoc/>
+    public override CharacterProp Prop => CharacterProp.ConnectTool;
+
+    /// <inheritdoc/>
+    protected override CharacterGesture GestureFor(InputEvent @event) =>
+        Pressed(@event, Core.Input.InputActions.Primary) ? UseGesture : CharacterGesture.None;
+
+    /// <inheritdoc/>
+    protected override CharacterGesture UseGesture => CharacterGesture.ToolUse;
 
     /// <summary>The picked source part, or null.</summary>
     public (int Creation, int Part)? Source { get; private set; }

@@ -25,5 +25,21 @@
   "max_body_turn_degrees": 60.0,
   "body_turn_rate": 540.0,
   "seated_offset": 0.0,
+  // How items look in hand (prop, and the gesture using one plays), by item id, then by part category.
+  "item_poses": {
+    "water_bucket": { "prop": "water_bucket", "gesture": "pour" },
+    "potato_blaster": { "prop": "potato_blaster", "gesture": "fire_gun" },
+    "potato_scattergun": { "prop": "potato_blaster", "gesture": "fire_gun" },
+    "potato_launcher": { "prop": "potato_blaster", "gesture": "fire_gun" },
+    "popper": { "prop": "item", "gesture": "throw" },
+    "glowstick": { "prop": "item", "gesture": "throw" },
+    "carrot_seed": { "prop": "item", "gesture": "plant" },
+    "potato_seed": { "prop": "item", "gesture": "plant" },
+    "tomato_seed": { "prop": "item", "gesture": "plant" }
+  },
+  "category_poses": {
+    "consumable": { "prop": "item", "gesture": "eat" },
+    "weapon": { "prop": "item", "gesture": "throw" }
+  },
   "head_pitch_share": 0.6
 }

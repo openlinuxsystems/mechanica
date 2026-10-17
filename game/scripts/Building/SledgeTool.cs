@@ -1,4 +1,5 @@
 using Godot;
+using Mechanica.Core.Characters;
 using Mechanica.Core.Actions;
 using Mechanica.Core.Building;
 using Mechanica.Core.Input;
@@ -19,6 +20,12 @@ public partial class SledgeTool : HandTool
 
     /// <inheritdoc/>
     public override string ToolName => "Sledgehammer";
+
+    /// <inheritdoc/>
+    public override CharacterProp Prop => CharacterProp.Sledgehammer;
+
+    /// <inheritdoc/>
+    protected override CharacterGesture UseGesture => CharacterGesture.SledgeSwing;
 
     /// <summary>Swings at the part under the crosshair. False when no part is aimed at or the last swing is still going.</summary>
     public bool Swing(Action<ActionResult>? done = null)

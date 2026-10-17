@@ -15,6 +15,7 @@ public sealed record CharacterSettings
         ReadCommentHandling = JsonCommentHandling.Skip,
         AllowTrailingCommas = true,
         UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
+        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.SnakeCaseLower, allowIntegerValues: false) },
     };
 
     /// <summary>The shared animation set (<see cref="CharacterRig.Clips"/>), as a mod asset path.</summary>
@@ -74,6 +75,22 @@ public sealed record CharacterSettings
     /// <summary>How far the model moves up from the seat point while sitting, in metres (negative is down).</summary>
     public float SeatedOffset { get; init; } = 0f;
 
+    /// <summary>
+    /// How a held item looks, by bare item id: the prop drawn and the gesture its use plays. Items not listed
+    /// use <see cref="CategoryPoses"/> for their category, then <see cref="CharacterProp.Item"/> with no gesture.
+    /// </summary>
+    public Dictionary<string, ItemPose> ItemPoses { get; init; } = [];
+
+    /// <summary>How a held item looks by its part category (<c>consumable</c>, <c>weapon</c>, …).</summary>
+    public Dictionary<string, ItemPose> CategoryPoses { get; init; } = [];
+
+    /// <summary>How the item <paramref name="itemId"/> (qualified or bare) of <paramref name="category"/> looks in hand.</summary>
+    public ItemPose PoseFor(string itemId, string? category)
+    {
+        var bare = itemId[(itemId.IndexOf(':') + 1)..];
+        return ItemPoses.GetValueOrDefault(bare) ?? (category is null ? null : CategoryPoses.GetValueOrDefault(category)) ?? ItemPose.Default;
+    }
+
     /// <summary>Share of the look pitch the neck and head follow (0 to 1).</summary>
     public float HeadPitchShare { get; init; } = 0.6f;
 
@@ -118,10 +135,21 @@ public sealed record CharacterSettings
         Positive(BodyTurnRate, "body_turn_rate");
         if (!float.IsFinite(MaxBodyTurnDegrees) || MaxBodyTurnDegrees is < 0f or > 90f)
             throw new FormatException($"max_body_turn_degrees must be from 0 to 90 (got {MaxBodyTurnDegrees}).");
+        CheckPoses(ItemPoses, "item_poses");
+        CheckPoses(CategoryPoses, "category_poses");
         if (!float.IsFinite(SeatedOffset) || MathF.Abs(SeatedOffset) > 2f)
             throw new FormatException($"seated_offset must be from -2 to 2 metres (got {SeatedOffset}).");
         if (!float.IsFinite(HeadPitchShare) || HeadPitchShare is < 0f or > 1f)
             throw new FormatException($"head_pitch_share must be from 0 to 1 (got {HeadPitchShare}).");
+    }
+
+    private static void CheckPoses(Dictionary<string, ItemPose> poses, string name)
+    {
+        foreach (var (key, pose) in poses)
+        {
+            if (pose is null || !Enum.IsDefined(pose.Prop) || !Enum.IsDefined(pose.Gesture))
+                throw new FormatException($"{name}.{key} needs a known prop and gesture.");
+        }
     }
 
     private static void Positive(float value, string name)
@@ -135,4 +163,17 @@ public sealed record CharacterSettings
         if (!float.IsFinite(value) || value < 0f)
             throw new FormatException($"{name} must be zero or positive (got {value}).");
     }
+}
+
+/// <summary>How an item looks in hand: the prop drawn and the gesture using it plays.</summary>
+public sealed record ItemPose
+{
+    /// <summary>An item with no pose of its own: held up, no gesture.</summary>
+    public static ItemPose Default { get; } = new() { Prop = CharacterProp.Item };
+
+    /// <summary>The prop drawn (and so the arm pose).</summary>
+    public CharacterProp Prop { get; init; } = CharacterProp.Item;
+
+    /// <summary>The gesture played when it is used.</summary>
+    public CharacterGesture Gesture { get; init; }
 }

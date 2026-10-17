@@ -1,4 +1,5 @@
 using Godot;
+using Mechanica.Core.Characters;
 using Mechanica.Core.Actions;
 using Mechanica.Core.Building;
 using Mechanica.Core.Creations;
@@ -36,6 +37,16 @@ public partial class WeldTool : HandTool
 
     /// <inheritdoc/>
     public override string ToolName => "Weld Tool";
+
+    /// <inheritdoc/>
+    public override CharacterProp Prop => CharacterProp.WeldTool;
+
+    /// <inheritdoc/>
+    protected override CharacterGesture GestureFor(InputEvent @event) =>
+        Pressed(@event, Core.Input.InputActions.Primary) ? UseGesture : CharacterGesture.None;
+
+    /// <inheritdoc/>
+    protected override CharacterGesture UseGesture => CharacterGesture.Weld;
 
     /// <summary>The selected part, or null.</summary>
     public Selection? Selected { get; private set; }

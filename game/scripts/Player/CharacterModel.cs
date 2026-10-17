@@ -31,8 +31,8 @@ public partial class CharacterModel : Node3D
     private Vector3[] _positions = [];
     private Quaternion[] _upperRotations = [];
 
-    /// <summary>The player this draws. Set before adding to the tree.</summary>
-    public PlayerController Player { get; init; } = null!;
+    /// <summary>The player this draws, or null for a preview that stands idle (the character picker).</summary>
+    public PlayerController? Player { get; init; }
 
     /// <summary>The character it is. Set before adding to the tree.</summary>
     public Character Character { get; init; } = null!;
@@ -113,19 +113,19 @@ public partial class CharacterModel : Node3D
 
     public override void _Process(double delta)
     {
-        Animator.Update(Player.Pose, (float)delta);
+        Animator.Update(Player?.Pose ?? new CharacterPose(System.Numerics.Vector3.Zero, 0f, 0f, OnFloor: true), (float)delta);
         foreach (var e in Animator.Events)
         {
             PlaySound(e);
             Event?.Invoke(e);
         }
         // Seen from inside its own head (or dead) the body is hidden; it still makes its sounds.
-        if (!Player.BodyVisible)
+        if (Player is { BodyVisible: false })
             return;
         Rotation = new Vector3(0, Animator.BodyTurn, 0);
         Position = new Vector3(0, Animator.Lift, 0);
         Pose();
-        ShowProp(Animator.ShowProp ? Player.ShownProp : CharacterProp.None);
+        ShowProp(Animator.ShowProp && Player is not null ? Player.ShownProp : CharacterProp.None);
     }
 
     /// <summary>Applies the animator's current blend to the skeleton (called every visible frame).</summary>
@@ -201,14 +201,14 @@ public partial class CharacterModel : Node3D
         // The prop file places each prop in the rest-pose right hand; keep that grip relative to the hand bone.
         var hand = _skeleton.GetBoneGlobalRest(_skeleton.FindBone(CharacterRig.PropBone));
         var skeletonInModel = Model.GlobalTransform.AffineInverse() * _skeleton.GlobalTransform;
-        made.Node.Transform = hand.AffineInverse() * skeletonInModel.AffineInverse() * made.Rest;
+        made.Node.Transform = hand.AffineInverse() * skeletonInModel.AffineInverse() * made.Grip;
         _prop = made.Node;
         _hand.AddChild(_prop);
     }
 
     private void PlaySound(CharacterEvent e)
     {
-        if (Sounds is null)
+        if (Sounds is null || Player is null)
             return;
         var name = e switch
         {
@@ -229,12 +229,13 @@ public partial class CharacterModel : Node3D
     // What the feet are on: water, a part's material, or the ground.
     private string FootstepSound()
     {
-        if (Player.WaterDepth > 0.05f)
+        var player = Player!;
+        if (player.WaterDepth > 0.05f)
             return CharacterSounds.FootstepWater;
-        var from = Player.GlobalPosition + Vector3.Up * 0.2f;
+        var from = player.GlobalPosition + Vector3.Up * 0.2f;
         var query = PhysicsRayQueryParameters3D.Create(from, from + Vector3.Down * 0.6f);
-        query.Exclude = [Player.GetRid()];
-        var hit = Player.GetWorld3D().DirectSpaceState.IntersectRay(query);
+        query.Exclude = [player.GetRid()];
+        var hit = player.GetWorld3D().DirectSpaceState.IntersectRay(query);
         if (hit.Count == 0)
             return CharacterSounds.Footstep;
         var ray = new HandTool.RayHit(hit["position"].AsVector3(), hit["normal"].AsVector3(), hit["collider"].AsGodotObject(), hit["shape"].AsInt32());

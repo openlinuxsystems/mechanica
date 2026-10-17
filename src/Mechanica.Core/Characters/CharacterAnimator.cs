@@ -156,6 +156,19 @@ public sealed class CharacterAnimator
     /// <summary>The gesture playing, or null.</summary>
     public string? Gesture => _gesture;
 
+    /// <summary>
+    /// Starts <paramref name="gesture"/> now, outside the replicated gesture count: for things every peer sees
+    /// for itself, such as flinching when a player's health drops.
+    /// </summary>
+    public void Play(CharacterGesture gesture)
+    {
+        if (CharacterRig.GestureClip(CharacterRig.Sanitize(gesture)) is { } clip && _lengths.ContainsKey(clip))
+        {
+            _gesture = clip;
+            _gestureTime = 0f;
+        }
+    }
+
     /// <summary>Advances by <paramref name="delta"/> seconds with this frame's <paramref name="pose"/>.</summary>
     public void Update(CharacterPose pose, float delta)
     {

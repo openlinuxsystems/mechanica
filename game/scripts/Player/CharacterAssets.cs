@@ -48,7 +48,7 @@ public sealed class CharacterAssets
     public IReadOnlyDictionary<string, Animation> Clips => _clips ??= LoadClips();
 
     /// <summary>Clip lengths in seconds, by name, for <see cref="CharacterAnimator"/>.</summary>
-    public IReadOnlyDictionary<string, float> ClipLengths => Clips.ToDictionary(c => c.Key, c => c.Value.Length);
+    public IReadOnlyDictionary<string, float> ClipLengths => Clips.ToDictionary(c => c.Key, c => (float)c.Value.Length);
 
     /// <summary>
     /// A new instance of <paramref name="character"/>'s model (a scene holding a <see cref="Skeleton3D"/>), or null
@@ -66,7 +66,7 @@ public sealed class CharacterAssets
     /// A new instance of the prop node for <paramref name="prop"/> and where it sits in the rest-pose character's
     /// right hand (character model space), or null when nothing is drawn for it.
     /// </summary>
-    public (Node3D Node, Transform3D Rest)? Prop(CharacterProp prop)
+    public (Node3D Node, Transform3D Grip)? Prop(CharacterProp prop)
     {
         _props ??= LoadProps();
         if (CharacterRig.PropNode(prop) is not { } name || !_props.TryGetValue(name, out var template))

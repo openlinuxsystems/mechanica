@@ -1,4 +1,5 @@
 using Godot;
+using Mechanica.Core.Characters;
 using Mechanica.Core.Actions;
 using Mechanica.Core.Building;
 using Mechanica.Core.Creations;
@@ -26,6 +27,12 @@ public partial class LiftTool : HandTool
 
     /// <inheritdoc/>
     public override string ToolName => "Lift";
+
+    /// <inheritdoc/>
+    public override CharacterProp Prop => CharacterProp.LiftRemote;
+
+    /// <inheritdoc/>
+    protected override CharacterGesture UseGesture => CharacterGesture.ToolUse;
 
     /// <summary>The current aim, updated every physics frame while in hand (and by <see cref="UpdateAim"/>).</summary>
     public Target? Aim { get; private set; }
