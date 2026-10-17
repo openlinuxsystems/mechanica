@@ -37,6 +37,7 @@ public partial class HelpWindow : Window
     {
         Title = "Help";
         Size = new Vector2I(960, 680);
+        MinSize = new Vector2I(640, 400);
         Exclusive = false;
         CloseRequested += Hide;
         var split = new HSplitContainer();
@@ -109,7 +110,7 @@ public partial class HelpWindow : Window
         if (_scroll.TryGetValue(Current, out var at))
             Callable.From(() => _text.GetVScrollBar().Value = at).CallDeferred();
         if (!Visible)
-            PopupCentered();
+            PopupCenteredRatio(0.7f);
     }
 
     /// <summary>Shows <paramref name="fileName"/>, or hides the window when it is already open.</summary>

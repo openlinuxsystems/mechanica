@@ -85,7 +85,7 @@ public partial class SoundBinderPanel : VBoxContainer
             }
             _newKey.Text = "";
             AddKey(key);
-        });
+        }, "Add a sound name this part can play, such as start or hit");
 
         AddChild(new HSeparator());
         _bankTitle = new Label { Text = "Sound events", ThemeTypeVariation = "HeaderSmall" };
@@ -98,8 +98,8 @@ public partial class SoundBinderPanel : VBoxContainer
         AddButton(buttons, "+ Event", () => SelectEvent(Bank?.Add("new_sound") ?? -1), "Add a sound event to this mod");
         AddButton(buttons, "+ Event from clip…", () => Import(AssetKind.Sound, path => ShowError(NewEventFromClip(path))), "Import an .ogg or .wav and make an event for it");
         AddButton(buttons, "Delete", () => AskDeleteEvent(), "Remove the selected sound event from this mod");
-        AddButton(buttons, "▶ Preview", () => ShowError(PreviewSelected() is null ? "Fix the event's problems to preview it." : null));
-        AddButton(buttons, "■ Stop", () => Player.StopAll());
+        AddButton(buttons, "▶ Preview", () => ShowError(PreviewSelected() is null ? "Fix the event's problems to preview it." : null), "Play the selected sound event");
+        AddButton(buttons, "■ Stop", () => Player.StopAll(), "Stop every sound playing");
         AddButton(buttons, "Save", () => SaveBank(), "Validate and write the mod's sound bank");
         _eventGrid = new PropertyGrid();
         AddChild(_eventGrid);
@@ -399,7 +399,7 @@ public partial class SoundBinderPanel : VBoxContainer
     private static Label Hint(string text) =>
         new() { Text = text, AutowrapMode = TextServer.AutowrapMode.WordSmart, ThemeTypeVariation = "SecondaryLabel" };
 
-    private static Button AddButton(Container parent, string text, Action pressed, string tooltip = "")
+    private static Button AddButton(Container parent, string text, Action pressed, string tooltip)
     {
         var button = new Button { Text = text, TooltipText = tooltip };
         button.Pressed += pressed;

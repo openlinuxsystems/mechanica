@@ -348,10 +348,16 @@ public partial class SandboxScreen : Control
 
     private void BuildPanel()
     {
-        Window = new ToolWindow { Name = "Window", Title = "Test Sandbox", Position = new Vector2(12, 12), CustomMinimumSize = new Vector2(340, 0) };
+        // A strip down the left, 2% in from the edges; it scrolls when it is taller than the screen.
+        Window = new ToolWindow { Name = "Window", Title = "Test Sandbox" };
         Window.CloseRequested += EmitBack;
         AddChild(Window);
-        var column = Window.Body;
+        (Window.AnchorLeft, Window.AnchorTop, Window.AnchorRight, Window.AnchorBottom) = (0.02f, 0.02f, 0.02f, 0.98f);
+        (Window.OffsetLeft, Window.OffsetTop, Window.OffsetRight, Window.OffsetBottom) = (0, 0, 360, 0);
+        var scroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
+        Window.Body.AddChild(scroll);
+        var column = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        scroll.AddChild(column);
         column.AddChild(new Label
         {
             Text = "Click the world to look around. Esc frees the mouse, and Esc again closes the sandbox. WASD moves, Space jumps. Tab switches instance.",
@@ -389,7 +395,7 @@ public partial class SandboxScreen : Control
                 _result.Text = Loc.T("At most {0} local clients.", MaxLocalClients);
         }, "Join a second player to this sandbox to test multiplayer");
         AddButton(net, "Remove client", () => AskRemoveClient(), "Disconnect the last local client");
-        _collisionOverlay = new CheckBox { Text = "Show collision and centre of mass" };
+        _collisionOverlay = new CheckBox { Text = "Show collision and centre of mass", TooltipText = "Draw each body's collision shapes and centre of mass" };
         _collisionOverlay.Toggled += on =>
         {
             if (!on)
@@ -397,9 +403,9 @@ public partial class SandboxScreen : Control
         };
         column.AddChild(_collisionOverlay);
         // Drawn on the instance being watched, so a client's view shows the joints as it received them.
-        _jointOverlay = new CheckBox { Text = "Show joints" };
+        _jointOverlay = new CheckBox { Text = "Show joints", TooltipText = "Draw each joint's axis, range and state" };
         column.AddChild(_jointOverlay);
-        _forceOverlay = new CheckBox { Text = "Show forces" };
+        _forceOverlay = new CheckBox { Text = "Show forces", TooltipText = "Draw the forces and torques parts put on their bodies" };
         column.AddChild(_forceOverlay);
         _result = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart };
         column.AddChild(_result);

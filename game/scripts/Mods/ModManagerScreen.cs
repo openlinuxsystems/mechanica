@@ -112,7 +112,14 @@ public partial class ModManagerScreen : Control
         _apply = Window.AddAction("Apply", Apply, primary: true, tooltip: "Save this setup; it loads with the next world");
 
         Reopen();
+        // The mod picked when the screen last closed (UI spec §13 "Preserve user state").
+        if (_lastSelected is { } id && Rows.Any(r => r.Id == id))
+            Select(id);
     }
+
+    private static string? _lastSelected;
+
+    public override void _ExitTree() => _lastSelected = SelectedId ?? _lastSelected;
 
     /// <summary>Rescans the mods folder and reloads the saved profile, dropping unsaved changes.</summary>
     public void Reopen()

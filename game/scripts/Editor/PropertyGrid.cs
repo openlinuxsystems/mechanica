@@ -205,7 +205,7 @@ public partial class PropertyGrid : GridContainer
         var box = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
         var edit = new CodeEdit { Text = json, CustomMinimumSize = new Vector2(0, 120), SizeFlagsHorizontal = SizeFlags.ExpandFill };
         var status = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart };
-        var apply = new Button { Text = "Apply" };
+        var apply = new Button { Text = "Apply", TooltipText = "Check the JSON and use it" };
         apply.Pressed += () => status.Text = set(edit.Text) ?? "";
         box.AddChild(edit);
         var row = new HBoxContainer();

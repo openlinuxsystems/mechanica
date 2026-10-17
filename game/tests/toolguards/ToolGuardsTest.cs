@@ -35,6 +35,37 @@ public partial class ToolGuardsTest : StagedTest
         File.WriteAllText(Path.Combine(_modsRoot, Mod, ModLoader.ManifestFileName),
             $$"""{ "id": "{{Mod}}", "name": "Guard test", "version": "1.0.0" }""");
 
+        Add("every tool fits the screen at 75% and 150% UI scale", frame =>
+        {
+            float[] scales = [0.75f, 1.5f];
+            if (frame == 0)
+            {
+                AddChild(new PartEditorScreen { Name = "FitParts", ModsRoot = _modsRoot });
+                AddChild(new BotEditorScreen { Name = "FitBots", ModsRoot = _modsRoot });
+                AddChild(new ModManagerScreen { Name = "FitMods", ModsRoot = ProjectSettings.GlobalizePath("res://tests/mods/mods"), ProfilePath = ProjectSettings.GlobalizePath("user://tests/guard_fit.json") });
+            }
+            if (frame % 4 == 0 && frame / 4 < scales.Length)
+                UiRoot.UiScale = scales[frame / 4];
+            if (frame % 4 != 3)
+                return false;
+            var screen = GetViewport().GetVisibleRect();
+            foreach (var name in new[] { "FitParts", "FitBots", "FitMods" })
+            {
+                var window = Walk(GetNode(name)).OfType<ToolWindow>().First();
+                var rect = window.GetGlobalRect();
+                Check(screen.Grow(1).Encloses(rect), $"{name} fits at {UiRoot.UiScale:P0} ({rect} in {screen})");
+            }
+            if (frame / 4 < scales.Length - 1)
+                return false;
+            UiRoot.UiScale = 1f;
+            foreach (var name in new[] { "FitParts", "FitBots", "FitMods" })
+            {
+                var node = GetNode(name);
+                RemoveChild(node);
+                node.QueueFree();
+            }
+            return true;
+        });
         Add("the Part Editor asks before closing over an unsaved part", frame =>
         {
             if (frame == 0)
@@ -44,6 +75,7 @@ public partial class ToolGuardsTest : StagedTest
                 AddChild(_parts);
                 return false;
             }
+            CheckTooltips(_parts, "the Part Editor");
             var export = _parts.Window.Actions.GetChildren().OfType<Button>().LastOrDefault();
             Check(_parts.Window.Title == "Part Editor" && export is { Text: "Export", Disabled: true } && export.ThemeTypeVariation == "PrimaryButton",
                 "the editor has a title bar, and Export is its primary action, off with no part open");
@@ -162,6 +194,20 @@ public partial class ToolGuardsTest : StagedTest
             Check(lua.Code == "-- my code", "Cancel keeps the code");
             lua.Code = "";
             Check(lua.AskNewFromTemplate() is null && lua.Code.Length > 0, "an empty editor takes the template straight away");
+            _parts.Tabs.CurrentTab = 1;
+            RemoveChild(_parts);
+            _parts.QueueFree();
+            return true;
+        });
+        Add("the Part Editor opens where it was left", frame =>
+        {
+            if (frame == 0)
+            {
+                _parts = new PartEditorScreen { Name = "PartEditor2", ModsRoot = _modsRoot };
+                AddChild(_parts);
+                return false;
+            }
+            Check(_parts.Document?.Definition.Id == "crate" && _parts.Tabs.CurrentTab == 1, $"the part and tab are back ({_parts.Document?.Definition.Id}, tab {_parts.Tabs.CurrentTab})");
             RemoveChild(_parts);
             _parts.QueueFree();
             return true;
@@ -176,6 +222,7 @@ public partial class ToolGuardsTest : StagedTest
                 return false;
             }
             _closed = 0;
+            CheckTooltips(_bots, "the Bot Behavior Editor");
             Check(_bots.SelectMod(Mod) && _bots.New("melee", "biter") && _bots.HasUnsavedChanges, "a new bot is unsaved");
             _bots.Window.CloseButton.EmitSignal(BaseButton.SignalName.Pressed);
             Check(Asked("Unsaved changes"), "Back asks first");
@@ -193,6 +240,20 @@ public partial class ToolGuardsTest : StagedTest
             ConfirmDialog.Current!.Cancel();
             _bots.Window.CloseButton.EmitSignal(BaseButton.SignalName.Pressed);
             Check(ConfirmDialog.Current is null && _closed == 1, "with nothing unsaved, Back just goes");
+            _bots.Tabs.CurrentTab = 2;
+            RemoveChild(_bots);
+            _bots.QueueFree();
+            return true;
+        });
+        Add("the Bot Behavior Editor opens where it was left", frame =>
+        {
+            if (frame == 0)
+            {
+                _bots = new BotEditorScreen { Name = "BotEditor2", ModsRoot = _modsRoot };
+                AddChild(_bots);
+                return false;
+            }
+            Check(_bots.Document?.Id == "biter" && _bots.Tabs.CurrentTab == 2, $"the bot and tab are back ({_bots.Document?.Id}, tab {_bots.Tabs.CurrentTab})");
             RemoveChild(_bots);
             _bots.QueueFree();
             return true;
@@ -211,6 +272,7 @@ public partial class ToolGuardsTest : StagedTest
                 AddChild(_manager);
                 return false;
             }
+            CheckTooltips(_manager, "the Mod Manager");
             var id = _manager.Rows.First(r => r.Id != "vanilla" && r.Enabled).Id;
             _manager.SetModEnabled(id, false);
             Check(_manager.HasUnsavedChanges, "turning a mod off is unsaved");
@@ -226,6 +288,17 @@ public partial class ToolGuardsTest : StagedTest
             _manager.QueueFree();
             return true;
         });
+    }
+
+    // Every button says what it does (UI spec §13: tooltips with a name and a short description), and is a
+    // big enough target: 32 px at 1080p is 21 px on the 1280×720 layout.
+    private void CheckTooltips(Node root, string tool)
+    {
+        var buttons = Walk(root).OfType<BaseButton>().Where(b => b is not OptionButton && b.GetParent() is not ColorPicker).ToList();
+        var bare = buttons.Where(b => string.IsNullOrWhiteSpace(b.TooltipText)).Select(b => b is Button { Text: var t } && t.Length > 0 ? t : b.Name.ToString()).ToList();
+        Check(bare.Count == 0, $"every button in {tool} has a tooltip ({string.Join(", ", bare)})");
+        var small = buttons.Where(b => b.IsVisibleInTree()).Where(b => b.Size.X < 21 || b.Size.Y < 21).Select(b => $"{(b as Button)?.Text ?? b.Name} {b.Size}").ToList();
+        Check(small.Count == 0, $"every button in {tool} is at least 32 px at 1080p ({string.Join(", ", small)})");
     }
 
     private void Esc() => GetViewport().PushInput(new InputEventKey { Pressed = true, PhysicalKeycode = Key.Escape, Keycode = Key.Escape });

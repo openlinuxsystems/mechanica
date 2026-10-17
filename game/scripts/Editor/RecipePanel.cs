@@ -48,19 +48,19 @@ public partial class RecipePanel : VBoxContainer
         AddChild(_list);
         var buttons = new HFlowContainer();
         AddChild(buttons);
-        AddButton(buttons, "New recipe", () => ConfirmDialog.Discard(this, IsDirty, () => NewRecipe()));
-        _save = AddButton(buttons, "Save recipe", () => Save());
-        _delete = AddButton(buttons, "Delete", () => AskDelete());
+        AddButton(buttons, "New recipe", () => ConfirmDialog.Discard(this, IsDirty, () => NewRecipe()), "Start a recipe that makes this part");
+        _save = AddButton(buttons, "Save recipe", () => Save(), "Check the recipe and write it into the mod");
+        _delete = AddButton(buttons, "Delete", () => AskDelete(), "Delete this recipe's file from the mod");
         _grid = new PropertyGrid();
         AddChild(_grid);
         AddChild(new Label { Text = "Inputs" });
         _inputs = new VBoxContainer();
         AddChild(_inputs);
-        AddButton(this, "+ Input", () => Edit(r => r with { Inputs = [.. r.Inputs ?? [], new RecipeItem { Item = "", Count = 1 }] }, rebuild: true));
+        AddButton(this, "+ Input", () => Edit(r => r with { Inputs = [.. r.Inputs ?? [], new RecipeItem { Item = "", Count = 1 }] }, rebuild: true), "Add an item the recipe uses up");
         AddChild(new Label { Text = "Outputs" });
         _outputs = new VBoxContainer();
         AddChild(_outputs);
-        AddButton(this, "+ Output", () => Edit(r => r with { Outputs = [.. r.Outputs ?? [], new RecipeItem { Item = "", Count = 1 }] }, rebuild: true));
+        AddButton(this, "+ Output", () => Edit(r => r with { Outputs = [.. r.Outputs ?? [], new RecipeItem { Item = "", Count = 1 }] }, rebuild: true), "Add an item the recipe makes");
         Rebuild();
     }
 
@@ -237,9 +237,9 @@ public partial class RecipePanel : VBoxContainer
         }
     }
 
-    private static Button AddButton(Container parent, string text, Action pressed)
+    private static Button AddButton(Container parent, string text, Action pressed, string tooltip)
     {
-        var button = new Button { Text = text };
+        var button = new Button { Text = text, TooltipText = tooltip };
         button.Pressed += pressed;
         parent.AddChild(button);
         return button;

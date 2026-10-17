@@ -338,7 +338,7 @@ public partial class LuaPanel : VBoxContainer
         return highlighter;
     }
 
-    private static Button AddButton(Container parent, string text, Action pressed, string tooltip = "")
+    private static Button AddButton(Container parent, string text, Action pressed, string tooltip)
     {
         var button = new Button { Text = text, TooltipText = tooltip };
         button.Pressed += pressed;

@@ -40,6 +40,9 @@ public partial class BotEditorScreen : Control
     private LineEdit _newId = null!;
     private ItemList _bots = null!;
     private TabContainer _tabs = null!;
+
+    /// <summary>The editor's tabs.</summary>
+    public TabContainer Tabs => _tabs;
     private PropertyGrid _botGrid = null!;
     private Tree _tree = null!;
     private OptionButton _palette = null!;
@@ -115,13 +118,14 @@ public partial class BotEditorScreen : Control
         column.AddChild(BuildToolbar());
         var split = new HSplitContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
         column.AddChild(split);
-        var left = new VBoxContainer { CustomMinimumSize = new Vector2(220, 0) };
+        // 20/80: the bot list, then the tabs.
+        var left = new VBoxContainer { CustomMinimumSize = new Vector2(180, 0), SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsStretchRatio = 2 };
         left.AddChild(new Label { Text = "Bots in this mod" });
         _bots = Loc.Verbatim(new ItemList { SizeFlagsVertical = SizeFlags.ExpandFill });
         _bots.ItemSelected += i => Discard(() => Open(_bots.GetItemText((int)i)), ShowSelection);
         left.AddChild(_bots);
         split.AddChild(left);
-        _tabs = new TabContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        _tabs = new TabContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsStretchRatio = 8 };
         split.AddChild(_tabs);
         BuildTabs();
         _status = Loc.Verbatim(new RichTextLabel { FitContent = true, BbcodeEnabled = false, CustomMinimumSize = new Vector2(0, 40), ScrollActive = false });
@@ -129,6 +133,31 @@ public partial class BotEditorScreen : Control
         _help = new HelpWindow { Visible = false };
         AddChild(_help);
         RefreshMods();
+        Resume();
+    }
+
+    // Where the editor was when it last closed: the mod, the saved bot and the tab (UI spec §13
+    // "Preserve user state").
+    private sealed record Session(string ModsRoot, string Mod, string? BotFile, int Tab);
+
+    private static Session? _session;
+
+    public override void _ExitTree()
+    {
+        if (ModDirectory is { } mod)
+            _session = new Session(ModsRoot, Path.GetFileName(mod), Document is { } d && File.Exists(Path.Combine(mod, d.TargetFile)) ? d.TargetFile : null, _tabs.CurrentTab);
+    }
+
+    private void Resume()
+    {
+        if (_session is not { } s || s.ModsRoot != ModsRoot || !SelectMod(s.Mod))
+            return;
+        if (s.BotFile is { } file && File.Exists(Path.Combine(ModDirectory!, file)))
+        {
+            Open(file);
+            ShowSelection();
+        }
+        _tabs.CurrentTab = Math.Clamp(s.Tab, 0, _tabs.GetTabCount() - 1);
     }
 
     public override void _UnhandledKeyInput(InputEvent e)

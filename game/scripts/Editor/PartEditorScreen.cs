@@ -41,6 +41,9 @@ public partial class PartEditorScreen : Control
     private Label _hint = null!;
     private RichTextLabel _problems = null!;
     private TabContainer _tabs = null!;
+
+    /// <summary>The editor's tabs.</summary>
+    public TabContainer Tabs => _tabs;
     private PropertyGrid _partGrid = null!;
     private PropertyGrid _pieceGrid = null!;
     private PropertyGrid _collisionGrid = null!;
@@ -127,13 +130,14 @@ public partial class PartEditorScreen : Control
         _title = Loc.Verbatim(new Label { SizeFlagsHorizontal = SizeFlags.ExpandFill, HorizontalAlignment = HorizontalAlignment.Right, TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis });
         toolbar.AddChild(_title);
 
-        var split = new HSplitContainer { SizeFlagsVertical = SizeFlags.ExpandFill, SplitOffsets = [440] };
+        // 30/70: the tabs, then the preview over the problems.
+        var split = new HSplitContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
         column.AddChild(split);
-        _tabs = new TabContainer { CustomMinimumSize = new Vector2(420, 0) };
+        _tabs = new TabContainer { CustomMinimumSize = new Vector2(320, 0), SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsStretchRatio = 3 };
         split.AddChild(_tabs);
         BuildTabs();
 
-        var right = new VSplitContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        var right = new VSplitContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsStretchRatio = 7 };
         split.AddChild(right);
         var view = new VBoxContainer { SizeFlagsVertical = SizeFlags.ExpandFill, SizeFlagsStretchRatio = 3 };
         right.AddChild(view);
@@ -150,37 +154,62 @@ public partial class PartEditorScreen : Control
         {
             _preview.ShowCollision = on;
             Refresh(rebuildInspector: false);
-        });
+        }, "Show the collision shape as a wireframe");
         AddToggle(overlays, "Sockets", true, on =>
         {
             _preview.ShowSockets = on;
             Refresh(rebuildInspector: false);
-        });
+        }, "Show the part's sockets as arrows");
         AddToggle(overlays, "Connections", true, on =>
         {
             _preview.ShowConnections = on;
             Refresh(rebuildInspector: false);
-        });
+        }, "Colour each face by how it would join a neighbour");
         AddToggle(overlays, "Joints", true, on =>
         {
             _preview.ShowJoints = on;
             Refresh(rebuildInspector: false);
-        });
+        }, "Show joint axes, their range and the centre of mass");
         _hint = new Label
         {
             Text = "Right-drag to orbit, wheel to zoom. Connections: green rigid, blue hinge, teal slider, violet spring, red none. Joints show their axis and range.",
             SizeFlagsHorizontal = SizeFlags.ExpandFill,
             HorizontalAlignment = HorizontalAlignment.Right,
-            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+            // One line, cut short when narrow; the tooltip has it all.
+            TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis,
+            TooltipText = "Right-drag to orbit, wheel to zoom. Connections: green rigid, blue hinge, teal slider, violet spring, red none. Joints show their axis and range.",
+            MouseFilter = MouseFilterEnum.Stop,
             ThemeTypeVariation = "SecondaryLabel",
         };
         overlays.AddChild(_hint);
-        _problems = Loc.Verbatim(new RichTextLabel { BbcodeEnabled = true, SelectionEnabled = true, SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0, 90) });
+        _problems = Loc.Verbatim(new RichTextLabel { BbcodeEnabled = true, SelectionEnabled = true, SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0, 60) });
         right.AddChild(_problems);
 
         BuildDialogs();
         _assets = new PartAssets(id => Path.Combine(ModsRoot, id));
         Refresh(rebuildInspector: true);
+        Resume();
+    }
+
+    // Where the editor was when it last closed: the saved part, the tab and the selection (UI spec §13
+    // "Preserve user state"). Unsaved changes were asked about before closing, so the saved file is right.
+    private sealed record Session(string ModsRoot, string PartFile, int Tab, int Piece, int Socket);
+
+    private static Session? _session;
+
+    public override void _ExitTree()
+    {
+        if (Document is { RelativeFile: { } relative } doc)
+            _session = new Session(ModsRoot, Path.Combine(doc.ModDirectory, relative), _tabs.CurrentTab, _selectedPiece, _selectedSocket);
+    }
+
+    private void Resume()
+    {
+        if (_session is not { } s || s.ModsRoot != ModsRoot || !File.Exists(s.PartFile) || OpenPart(s.PartFile) is not null)
+            return;
+        _tabs.CurrentTab = Math.Clamp(s.Tab, 0, _tabs.GetTabCount() - 1);
+        SelectPiece(s.Piece);
+        SelectSocket(s.Socket);
     }
 
     public override void _UnhandledKeyInput(InputEvent @event)
@@ -329,20 +358,20 @@ public partial class PartEditorScreen : Control
         model.AddChild(_pieces);
         var add = new HFlowContainer();
         model.AddChild(add);
-        AddButton(add, "+ Box", () => AddPiece(ModelPiece.NewBox(Footprint())));
-        AddButton(add, "+ Wedge", () => AddPiece(new ModelPiece { Kind = ModelPieceKind.Wedge, Size = Footprint() }));
-        AddButton(add, "+ Cylinder", () => AddPiece(new ModelPiece { Kind = ModelPieceKind.Cylinder, Radius = MinHalf(), Height = Footprint().Y }));
-        AddButton(add, "+ Sphere", () => AddPiece(new ModelPiece { Kind = ModelPieceKind.Sphere, Radius = MinHalf() }));
-        AddButton(add, "Import mesh…", () => Import(AssetKind.Mesh, path => ShowError(ImportMesh(path))));
+        AddButton(add, "+ Box", () => AddPiece(ModelPiece.NewBox(Footprint())), "Add a box the size of the part");
+        AddButton(add, "+ Wedge", () => AddPiece(new ModelPiece { Kind = ModelPieceKind.Wedge, Size = Footprint() }), "Add a wedge the size of the part");
+        AddButton(add, "+ Cylinder", () => AddPiece(new ModelPiece { Kind = ModelPieceKind.Cylinder, Radius = MinHalf(), Height = Footprint().Y }), "Add a cylinder that fits the part");
+        AddButton(add, "+ Sphere", () => AddPiece(new ModelPiece { Kind = ModelPieceKind.Sphere, Radius = MinHalf() }), "Add a sphere that fits the part");
+        AddButton(add, "Import mesh…", () => Import(AssetKind.Mesh, path => ShowError(ImportMesh(path))), "Copy a .glb or .gltf model into the mod and add it as a piece");
         var order = new HBoxContainer();
         model.AddChild(order);
-        AddButton(order, "Up", () => MovePiece(-1));
-        AddButton(order, "Down", () => MovePiece(1));
+        AddButton(order, "Up", () => MovePiece(-1), "Move the selected piece up the list");
+        AddButton(order, "Down", () => MovePiece(1), "Move the selected piece down the list");
         AddButton(order, "Duplicate", () =>
         {
             if (Document is not null && _selectedPiece >= 0)
                 AddPiece(Document.Source.Pieces[_selectedPiece]);
-        });
+        }, "Add a copy of the selected piece");
         AddButton(order, "Remove", () =>
         {
             if (Document is null || _selectedPiece < 0)
@@ -350,7 +379,7 @@ public partial class PartEditorScreen : Control
             var index = _selectedPiece;
             _selectedPiece = -1;
             Document.RemovePiece(index);
-        });
+        }, "Remove the selected piece (Undo brings it back)");
         _pieceGrid = new PropertyGrid();
         model.AddChild(_pieceGrid);
 
@@ -366,9 +395,9 @@ public partial class PartEditorScreen : Control
         foreach (var name in new[] { "+X", "-X", "+Y", "-Y", "+Z", "-Z" })
             side.AddItem(name);
         side.Selected = 2;
-        AddButton(socketButtons, "+ Socket on side", () => AddSideSocket(Core.Creations.GridCell.Directions[side.Selected]));
+        AddButton(socketButtons, "+ Socket on side", () => AddSideSocket(Core.Creations.GridCell.Directions[side.Selected]), "Add a socket centred on the chosen face");
         socketButtons.AddChild(side);
-        AddButton(socketButtons, "Snap to face", SnapSelectedSocket);
+        AddButton(socketButtons, "Snap to face", SnapSelectedSocket, "Move the selected socket back onto the nearest face");
         AddButton(socketButtons, "Remove", () =>
         {
             if (Document is null || _selectedSocket < 0)
@@ -376,7 +405,7 @@ public partial class PartEditorScreen : Control
             var index = _selectedSocket;
             _selectedSocket = -1;
             Document.RemoveSocket(index);
-        });
+        }, "Remove the selected socket (Undo brings it back)");
         _socketGrid = new PropertyGrid();
         sockets.AddChild(_socketGrid);
 
@@ -384,9 +413,11 @@ public partial class PartEditorScreen : Control
         _behaviourGrid = AddTab("Behaviour");
         Recipes = new RecipePanel { Name = "RecipePanel", Editor = this, SizeFlagsHorizontal = SizeFlags.ExpandFill };
         AddTabBox("Recipes").AddChild(Recipes);
-        // The script editor fills its tab instead of scrolling with it.
-        Lua = new LuaPanel { Name = "Script", Editor = this };
-        _tabs.AddChild(Lua);
+        // The script editor fills its tab; on a short screen (a large UI scale) the tab scrolls instead.
+        var script = new ScrollContainer { Name = "Script", HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
+        _tabs.AddChild(script);
+        Lua = new LuaPanel { Name = "LuaPanel", Editor = this, SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsVertical = SizeFlags.ExpandFill };
+        script.AddChild(Lua);
 
         _sounds = new SoundBinderPanel { Name = "Binder", ModsRoot = () => ModsRoot, Import = Import, ShowError = ShowError };
         AddTabBox("Sounds").AddChild(_sounds);
@@ -1060,7 +1091,7 @@ public partial class PartEditorScreen : Control
         return box;
     }
 
-    private static Button AddButton(Container parent, string text, Action pressed, string tooltip = "")
+    private static Button AddButton(Container parent, string text, Action pressed, string tooltip)
     {
         var button = new Button { Text = text, TooltipText = tooltip };
         button.Pressed += pressed;
@@ -1068,9 +1099,9 @@ public partial class PartEditorScreen : Control
         return button;
     }
 
-    private static void AddToggle(Container parent, string text, bool on, Action<bool> toggled)
+    private static void AddToggle(Container parent, string text, bool on, Action<bool> toggled, string tooltip)
     {
-        var check = new CheckBox { Text = text, ButtonPressed = on };
+        var check = new CheckBox { Text = text, ButtonPressed = on, TooltipText = tooltip };
         check.Toggled += value => toggled(value);
         parent.AddChild(check);
     }
