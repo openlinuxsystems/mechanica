@@ -1,0 +1,24 @@
+{
+  "id": "tool_cabinet",
+  "stations": [
+    "fabricator",
+    "mini_fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal",
+      "count": 4
+    },
+    {
+      "item": "component_kit",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "tool_cabinet",
+      "count": 1
+    }
+  ],
+  "time": 4
+}

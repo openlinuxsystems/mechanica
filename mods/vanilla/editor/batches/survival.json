@@ -494,6 +494,7 @@
       "template": "decor",
       "set": {
         "name": "Fridge",
+        "description": "Keeps produce and seeds: 30 slots.",
         "category": "container",
         "mass": 40,
         "durability": 10,
@@ -533,6 +534,19 @@
           "operation": "subtract",
           "size": [0.8, 1.4, 0.04],
           "position": [0, 0, 0.375]
+        }
+      ],
+      "recipes": [
+        {
+          "id": "fridge",
+          "stations": ["fabricator"],
+          "inputs": [
+            { "item": "scrap_metal", "count": 6 },
+            { "item": "component_kit", "count": 2 },
+            { "item": "circuit_board", "count": 1 }
+          ],
+          "outputs": [{ "item": "fridge", "count": 1 }],
+          "time": 8
         }
       ]
     }

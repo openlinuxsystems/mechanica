@@ -1,0 +1,27 @@
+{
+  "id": "battery",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal",
+      "count": 2
+    },
+    {
+      "item": "component_kit",
+      "count": 1
+    },
+    {
+      "item": "circuit_board",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "battery",
+      "count": 1
+    }
+  ],
+  "time": 5
+}

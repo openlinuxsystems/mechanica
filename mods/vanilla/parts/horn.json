@@ -1,0 +1,39 @@
+{
+  "id": "horn",
+  "name": "Horn",
+  "description": "Honks while its input is on: link a button or a seat-controlled switch to it. Press F on it for a short honk.",
+  "category": "interactive",
+  "mass": 0.8,
+  "durability": 2,
+  "friction": 0.5,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/horn.glb",
+  "visual": {
+    "color": "#c8b040",
+    "roughness": 0.4,
+    "metallic": 0.7
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.125, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "script": "scripts/horn.lua",
+  "sounds": {
+    "honk": "horn_honk"
+  },
+  "logic": {
+    "inputs": 1,
+    "use": "honk"
+  },
+  "properties": {
+    "honk": 0.6
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "id": "large_pipe_short",
+  "name": "Large Pipe (Short)",
+  "description": "A short length of wide pipe.",
+  "category": "decor",
+  "mass": 10,
+  "durability": 4,
+  "friction": 0.5,
+  "buoyancy": 0.3,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [2, 2, 2],
+  "mesh": "meshes/decor/large_pipe_short.glb",
+  "visual": {
+    "color": "#6a7078",
+    "roughness": 0.4,
+    "metallic": 0.8
+  }
+}

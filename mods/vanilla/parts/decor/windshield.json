@@ -1,0 +1,21 @@
+{
+  "id": "windshield",
+  "name": "Windshield",
+  "description": "A sloped glass pane for the front of a cabin.",
+  "category": "decor",
+  "mass": 8,
+  "durability": 2,
+  "friction": 0.5,
+  "buoyancy": 0.3,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "glass",
+  "size": [6, 4, 2],
+  "mesh": "meshes/decor/windshield.glb",
+  "visual": {
+    "color": "#a8d0e0",
+    "roughness": 0.05,
+    "metallic": 0,
+    "opacity": 0.35
+  }
+}

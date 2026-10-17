@@ -1,0 +1,30 @@
+{
+  "format_version": 1,
+  "model": [
+    {
+      "kind": "box",
+      "size": [0.6, 0.08, 0.6],
+      "position": [0, -0.335, 0]
+    },
+    {
+      "kind": "box",
+      "size": [0.12, 0.25, 0.12],
+      "position": [0, -0.17, 0]
+    },
+    {
+      "kind": "cylinder",
+      "radius": 0.25,
+      "height": 0.42,
+      "position": [0, 0.1, -0.1],
+      "rotation": [90, 0, 0]
+    },
+    {
+      "kind": "cylinder",
+      "operation": "subtract",
+      "radius": 0.22,
+      "height": 0.02,
+      "position": [0, 0.1, -0.32],
+      "rotation": [90, 0, 0]
+    }
+  ]
+}

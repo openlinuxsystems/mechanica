@@ -1,0 +1,24 @@
+{
+  "id": "glowstick",
+  "stations": [
+    "fabricator",
+    "mini_fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_wood",
+      "count": 1
+    },
+    {
+      "item": "crude_oil",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "glowstick",
+      "count": 1
+    }
+  ],
+  "time": 2
+}

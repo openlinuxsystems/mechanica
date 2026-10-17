@@ -1,0 +1,20 @@
+{
+  "id": "mud_flap",
+  "stations": [
+    "fabricator",
+    "mini_fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "mud_flap",
+      "count": 1
+    }
+  ],
+  "time": 2
+}

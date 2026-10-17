@@ -1,6 +1,7 @@
 {
   "id": "battery",
   "name": "Battery",
+  "description": "Holds battery packs, which power the creation's electric engines.",
   "category": "container",
   "mass": 3,
   "durability": 6,

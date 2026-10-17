@@ -1,0 +1,24 @@
+{
+  "id": "stairs_block",
+  "name": "Stairs Block",
+  "description": "A flight of four steps in one block of 1 m by 1 m.",
+  "category": "decor",
+  "mass": 40,
+  "durability": 6,
+  "friction": 0.5,
+  "buoyancy": 0.3,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "concrete",
+  "size": [4, 4, 4],
+  "mesh": "meshes/decor/stairs_block.glb",
+  "visual": {
+    "color": "#9a9890",
+    "roughness": 0.7,
+    "metallic": 0
+  },
+  "collision": {
+    "shape": "convex",
+    "mesh": "meshes/decor/stairs_block.glb"
+  }
+}

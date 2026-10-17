@@ -1,0 +1,20 @@
+{
+  "id": "large_pipe_long",
+  "name": "Large Pipe (Long)",
+  "description": "A long length of wide pipe.",
+  "category": "decor",
+  "mass": 20,
+  "durability": 4,
+  "friction": 0.5,
+  "buoyancy": 0.3,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [2, 2, 4],
+  "mesh": "meshes/decor/large_pipe_long.glb",
+  "visual": {
+    "color": "#6a7078",
+    "roughness": 0.4,
+    "metallic": 0.8
+  }
+}

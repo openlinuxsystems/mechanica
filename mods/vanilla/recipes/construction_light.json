@@ -1,0 +1,23 @@
+{
+  "id": "construction_light",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal",
+      "count": 3
+    },
+    {
+      "item": "component_kit",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "construction_light",
+      "count": 1
+    }
+  ],
+  "time": 5
+}

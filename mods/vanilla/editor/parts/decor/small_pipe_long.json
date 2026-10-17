@@ -1,0 +1,18 @@
+{
+  "format_version": 1,
+  "model": [
+    {
+      "kind": "cylinder",
+      "radius": 0.08,
+      "height": 1,
+      "rotation": [90, 0, 0]
+    },
+    {
+      "kind": "cylinder",
+      "operation": "subtract",
+      "radius": 0.06,
+      "height": 1.01,
+      "rotation": [90, 0, 0]
+    }
+  ]
+}

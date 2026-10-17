@@ -1,0 +1,20 @@
+{
+  "id": "license_plate",
+  "stations": [
+    "fabricator",
+    "mini_fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "license_plate",
+      "count": 1
+    }
+  ],
+  "time": 2
+}

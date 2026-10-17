@@ -1,0 +1,20 @@
+{
+  "id": "support_bracket",
+  "stations": [
+    "fabricator",
+    "mini_fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "support_bracket",
+      "count": 1
+    }
+  ],
+  "time": 2
+}

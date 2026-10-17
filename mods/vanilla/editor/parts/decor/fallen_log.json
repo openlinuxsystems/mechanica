@@ -1,0 +1,11 @@
+{
+  "format_version": 1,
+  "model": [
+    {
+      "kind": "cylinder",
+      "radius": 0.3,
+      "height": 1.95,
+      "rotation": [90, 0, 0]
+    }
+  ]
+}

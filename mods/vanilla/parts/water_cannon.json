@@ -1,0 +1,43 @@
+{
+  "id": "water_cannon",
+  "name": "Water Cannon",
+  "description": "Fires a jet of water out of its front when its input turns on or when you press F on it. It waters soil it hits and shoves anything else.",
+  "category": "interactive",
+  "mass": 5,
+  "durability": 4,
+  "friction": 0.5,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "stack_size": 10,
+  "sound_material": "metal",
+  "size": [2, 2, 3],
+  "mesh": "meshes/water_cannon.glb",
+  "visual": {
+    "color": "#3a7ab0",
+    "roughness": 0.5,
+    "metallic": 0.5
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.25, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "script": "scripts/water_cannon.lua",
+  "sounds": {
+    "fire": "water_cannon_fire"
+  },
+  "logic": {
+    "inputs": 1,
+    "use": "fire"
+  },
+  "properties": {
+    "interval": 0.5,
+    "range": 15,
+    "water": 60,
+    "impulse": 60,
+    "muzzle": -0.4
+  }
+}

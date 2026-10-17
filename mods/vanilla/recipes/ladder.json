@@ -1,0 +1,20 @@
+{
+  "id": "ladder",
+  "stations": [
+    "fabricator",
+    "mini_fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "ladder",
+      "count": 1
+    }
+  ],
+  "time": 2
+}

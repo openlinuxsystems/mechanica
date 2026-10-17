@@ -1,0 +1,27 @@
+{
+  "id": "refiner",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal",
+      "count": 10
+    },
+    {
+      "item": "component_kit",
+      "count": 4
+    },
+    {
+      "item": "circuit_board",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "refiner",
+      "count": 1
+    }
+  ],
+  "time": 15
+}

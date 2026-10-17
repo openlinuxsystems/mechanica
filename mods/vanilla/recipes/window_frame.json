@@ -1,0 +1,20 @@
+{
+  "id": "window_frame",
+  "stations": [
+    "fabricator",
+    "mini_fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_wood",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "window_frame",
+      "count": 1
+    }
+  ],
+  "time": 2
+}

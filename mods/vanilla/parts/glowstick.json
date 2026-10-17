@@ -1,0 +1,28 @@
+{
+  "id": "glowstick",
+  "name": "Glowstick",
+  "description": "A snap-light that glows green for good. Stick it on anything to mark a path or light a corner; it needs no power.",
+  "category": "light",
+  "mass": 0.1,
+  "durability": 1,
+  "friction": 0.5,
+  "buoyancy": 1,
+  "flammable": false,
+  "stack_size": 50,
+  "sound_material": "plastic",
+  "size": [1, 1, 1],
+  "mesh": "meshes/glowstick.glb",
+  "visual": {
+    "color": "#6aff6a",
+    "roughness": 0.3,
+    "metallic": 0,
+    "emission": "#40ff40"
+  },
+  "script": "scripts/light.lua",
+  "light": {
+    "kind": "omni",
+    "color": "#60ff70",
+    "energy": 0.8,
+    "range": 4
+  }
+}

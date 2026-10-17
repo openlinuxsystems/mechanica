@@ -1,0 +1,20 @@
+{
+  "id": "file_cabinet",
+  "stations": [
+    "fabricator",
+    "mini_fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal",
+      "count": 4
+    }
+  ],
+  "outputs": [
+    {
+      "item": "file_cabinet",
+      "count": 1
+    }
+  ],
+  "time": 4
+}

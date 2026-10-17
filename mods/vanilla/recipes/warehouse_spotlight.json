@@ -1,0 +1,27 @@
+{
+  "id": "warehouse_spotlight",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal",
+      "count": 4
+    },
+    {
+      "item": "component_kit",
+      "count": 2
+    },
+    {
+      "item": "circuit_board",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "warehouse_spotlight",
+      "count": 1
+    }
+  ],
+  "time": 8
+}

@@ -167,6 +167,9 @@ public partial class Main : Node3D
     /// <summary>The logic and power bus, links, part settings and seats (chunk 10).</summary>
     public LogicSync Logic { get; private set; } = null!;
 
+    /// <summary>Part lights and animations: the host's, sent to every client (chunk 23).</summary>
+    public PartDisplaySync Display { get; private set; } = null!;
+
     /// <summary>The Logic Visualizer (F7, and while the Connect Tool is in hand).</summary>
     public LogicOverlay LogicOverlay { get; private set; } = null!;
 
@@ -334,6 +337,8 @@ public partial class Main : Node3D
         };
         AddChild(Logic);
         Logic.RegisterActions(Actions.Dispatcher);
+        Display = new PartDisplaySync { Name = "Display", Session = Session, Creations = Creations, Scripts = Scripts };
+        AddChild(Display);
         LogicOverlay = new LogicOverlay { Creations = Creations, Players = PlayerSync, Actions = Actions, ReadDeviceInput = ReadDeviceInput, Linking = () => Tools?.Connector.Active == true };
         AddChild(LogicOverlay);
         ForceOverlay = new ForceOverlay { Creations = Creations, Players = PlayerSync, Actions = Actions, ReadDeviceInput = ReadDeviceInput };

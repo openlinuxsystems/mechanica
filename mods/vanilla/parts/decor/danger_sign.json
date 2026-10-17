@@ -1,0 +1,20 @@
+{
+  "id": "danger_sign",
+  "name": "Danger Sign",
+  "description": "A red and white DANGER plate on a post.",
+  "category": "decor",
+  "mass": 3,
+  "durability": 2,
+  "friction": 0.5,
+  "buoyancy": 0.3,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [3, 6, 1],
+  "mesh": "meshes/decor/danger_sign.glb",
+  "visual": {
+    "color": "#d03030",
+    "roughness": 0.5,
+    "metallic": 0.5
+  }
+}

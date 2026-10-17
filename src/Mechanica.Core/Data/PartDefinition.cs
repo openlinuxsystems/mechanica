@@ -178,6 +178,19 @@ public sealed record PartDefinition
     /// <summary>Makes the part a seat a player can sit in (chunk 10). Placeable parts only.</summary>
     public SeatDefinition? Seat { get; init; }
 
+    /// <summary>
+    /// Makes the part give off light (chunk 23). It starts dark; the part's script turns it up with
+    /// <c>part.set_light(level)</c>. Placeable parts only.
+    /// </summary>
+    public LightDefinition? Light { get; init; }
+
+    /// <summary>
+    /// Lets the part's script turn its model about an axis (chunk 23): a rotor's blades, a flap, a saw.
+    /// The script sets the angle and speed with <c>part.animate(angle, speed)</c>; it moves only how the part
+    /// looks, never its collision or its Body. Placeable parts only.
+    /// </summary>
+    public AnimationDefinition? Animation { get; init; }
+
     /// <summary>Free-form, part-specific data for the Lua script. Key order is kept as written.</summary>
     public JsonObject? Properties { get; init; }
 
@@ -344,6 +357,62 @@ public sealed record SeatDefinition
 {
     /// <summary>Where the sitting player's feet go, relative to the part centre in metres in the part's frame. Omitted means the centre.</summary>
     public Vec3? Offset { get; init; }
+
+    /// <summary>Keys this build does not know.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>How a <see cref="LightDefinition"/> spreads its light.</summary>
+public enum LightKind
+{
+    /// <summary>Every direction from one point (a lamp or a glowstick).</summary>
+    Omni,
+
+    /// <summary>A cone along <see cref="LightDefinition.Direction"/> (a headlight or a spotlight).</summary>
+    Spot,
+}
+
+/// <summary>
+/// The light a part gives off at full level. A light is a C# primitive (like sound), so its numbers live
+/// here and its behaviour (when it is on, how bright, blinking) lives in the part's Lua script.
+/// </summary>
+public sealed record LightDefinition
+{
+    /// <summary>Omni or spot. Omitted means omni.</summary>
+    public LightKind? Kind { get; init; }
+
+    /// <summary>Light colour as hex text (<c>"#ffe8c0"</c>). Omitted means white.</summary>
+    public string? Color { get; init; }
+
+    /// <summary>Brightness at full level (Godot light energy, 0 or more). Omitted means 1.</summary>
+    public float? Energy { get; init; }
+
+    /// <summary>How far the light reaches, in m (more than 0).</summary>
+    public float? Range { get; init; }
+
+    /// <summary>A spot's half-angle, in degrees (more than 0, under 90). Omitted means 30.</summary>
+    public float? Angle { get; init; }
+
+    /// <summary>Where the light sits relative to the part centre, in m in the part's frame. Omitted means the centre.</summary>
+    public Vec3? Offset { get; init; }
+
+    /// <summary>A spot's direction in the part's frame. Omitted means -Z (the part's front).</summary>
+    public Vec3? Direction { get; init; }
+
+    /// <summary>Keys this build does not know.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>How a part's model turns when its script animates it (<see cref="PartDefinition.Animation"/>).</summary>
+public sealed record AnimationDefinition
+{
+    /// <summary>The axis the model turns about, in the part's frame (right-handed). Omitted means +Y.</summary>
+    public Vec3? Axis { get; init; }
+
+    /// <summary>A point on the axis relative to the part centre, in m in the part's frame. Omitted means the centre.</summary>
+    public Vec3? Pivot { get; init; }
 
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]

@@ -1,0 +1,20 @@
+{
+  "id": "ladder",
+  "name": "Ladder",
+  "description": "A steel ladder, 2 m tall. Decor only: climb it like stairs.",
+  "category": "decor",
+  "mass": 8,
+  "durability": 4,
+  "friction": 0.5,
+  "buoyancy": 0.3,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [2, 8, 1],
+  "mesh": "meshes/decor/ladder.glb",
+  "visual": {
+    "color": "#a0a8b0",
+    "roughness": 0.4,
+    "metallic": 0.8
+  }
+}

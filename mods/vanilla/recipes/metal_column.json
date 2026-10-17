@@ -1,0 +1,20 @@
+{
+  "id": "metal_column",
+  "stations": [
+    "fabricator",
+    "mini_fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal",
+      "count": 5
+    }
+  ],
+  "outputs": [
+    {
+      "item": "metal_column",
+      "count": 1
+    }
+  ],
+  "time": 2
+}

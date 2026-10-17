@@ -1,6 +1,7 @@
 {
   "id": "chemical_container",
   "name": "Chemical Container",
+  "description": "Holds crude oil for the Refiner.",
   "category": "container",
   "mass": 6,
   "durability": 6,

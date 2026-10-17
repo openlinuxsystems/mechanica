@@ -1,0 +1,20 @@
+{
+  "id": "window_frame",
+  "name": "Window Frame",
+  "description": "A frame for a window opening, 1 m square.",
+  "category": "decor",
+  "mass": 10,
+  "durability": 4,
+  "friction": 0.5,
+  "buoyancy": 0.3,
+  "flammable": true,
+  "stack_size": 20,
+  "sound_material": "wood",
+  "size": [4, 4, 1],
+  "mesh": "meshes/decor/window_frame.glb",
+  "visual": {
+    "color": "#8a6a4a",
+    "roughness": 0.7,
+    "metallic": 0
+  }
+}

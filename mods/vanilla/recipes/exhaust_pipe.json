@@ -1,0 +1,20 @@
+{
+  "id": "exhaust_pipe",
+  "stations": [
+    "fabricator",
+    "mini_fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "exhaust_pipe",
+      "count": 1
+    }
+  ],
+  "time": 2
+}

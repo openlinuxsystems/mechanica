@@ -1,0 +1,20 @@
+{
+  "id": "pallet",
+  "name": "Pallet",
+  "description": "A wooden shipping pallet.",
+  "category": "decor",
+  "mass": 15,
+  "durability": 3,
+  "friction": 0.5,
+  "buoyancy": 0.8,
+  "flammable": true,
+  "stack_size": 20,
+  "sound_material": "wood",
+  "size": [5, 1, 5],
+  "mesh": "meshes/decor/pallet.glb",
+  "visual": {
+    "color": "#b08850",
+    "roughness": 0.7,
+    "metallic": 0
+  }
+}

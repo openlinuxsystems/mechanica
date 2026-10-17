@@ -14,6 +14,12 @@ public sealed partial class ScriptRuntime : ILogicHost
     /// <summary>The logic and power bus: every part's output, and the inputs <see cref="Update"/> delivers as <c>on_power</c>.</summary>
     public SignalBus Signals { get; } = new();
 
+    /// <summary>How bright each part's light is (chunk 23), set by <c>part.set_light</c>; the game sends it to clients.</summary>
+    public LightLevels Lights { get; } = new();
+
+    /// <summary>How far each animated part's model is turned (chunk 23), set by <c>part.animate</c> on the script clock (<see cref="Time"/>).</summary>
+    public PartAnimations Animations { get; } = new();
+
     /// <summary>Who sits where, for <c>part.occupant()</c>. Null means no seats.</summary>
     public SeatRegistry? Seats { get; set; }
 
@@ -128,6 +134,27 @@ public sealed partial class ScriptRuntime : ILogicHost
                 ? DynValue.NewString(id)
                 : DynValue.Nil;
         });
+        Fn(part, "set_light", args =>
+        {
+            var instance = PartInstance();
+            var level = SignalOf(args[0], "part.set_light");
+            if (Here() is not { } h || h.Creation.DefinitionOf(instance.Part).Light is null)
+                return Refused(instance, "the part has no light");
+            Lights.Set(instance.Creation, instance.Part, level);
+            return DynValue.True;
+        });
+        Fn(part, "light", _ => DynValue.NewNumber(Lights.Level(PartInstance().Creation, PartInstance().Part)));
+        Fn(part, "animate", args =>
+        {
+            var instance = PartInstance();
+            float? angle = args.Count > 0 && !args[0].IsNil() ? LuaValues.Number(args[0], "part.animate", 1) : null;
+            var speed = LuaValues.OptionalNumber(args[1], "part.animate", 2) ?? 0f;
+            if (Here() is not { } h || h.Creation.DefinitionOf(instance.Part).Animation is null)
+                return Refused(instance, "the part has no animation");
+            Animations.Set(instance.Creation, instance.Part, angle, speed, Time);
+            return DynValue.True;
+        });
+        Fn(part, "animation", _ => DynValue.NewNumber(Animations.AngleAt(PartInstance().Creation, PartInstance().Part, Time)));
         Fn(part, "occupant", _ =>
         {
             var instance = PartInstance();

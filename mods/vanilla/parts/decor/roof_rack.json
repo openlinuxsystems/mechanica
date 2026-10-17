@@ -1,0 +1,20 @@
+{
+  "id": "roof_rack",
+  "name": "Roof Rack",
+  "description": "A rail frame for the roof of a vehicle.",
+  "category": "decor",
+  "mass": 8,
+  "durability": 4,
+  "friction": 0.5,
+  "buoyancy": 0.3,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [6, 1, 8],
+  "mesh": "meshes/decor/roof_rack.glb",
+  "visual": {
+    "color": "#303030",
+    "roughness": 0.4,
+    "metallic": 0.7
+  }
+}

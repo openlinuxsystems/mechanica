@@ -1,0 +1,27 @@
+{
+  "id": "drill",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal",
+      "count": 5
+    },
+    {
+      "item": "component_kit",
+      "count": 2
+    },
+    {
+      "item": "circuit_board",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "drill",
+      "count": 1
+    }
+  ],
+  "time": 8
+}

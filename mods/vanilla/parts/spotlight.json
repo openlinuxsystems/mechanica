@@ -1,0 +1,45 @@
+{
+  "id": "spotlight",
+  "name": "Spotlight",
+  "description": "A bright narrow beam on a swivel base. It shines toward its front while its input is on, or all the time with nothing linked.",
+  "category": "light",
+  "mass": 4,
+  "durability": 3,
+  "friction": 0.5,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [2, 2, 2],
+  "mesh": "meshes/spotlight.glb",
+  "visual": {
+    "color": "#3f4448",
+    "roughness": 0.4,
+    "metallic": 0.5,
+    "emission": "#fffbe8"
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.25, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "script": "scripts/light.lua",
+  "sounds": {
+    "on": "light_on",
+    "off": "light_off"
+  },
+  "logic": {
+    "inputs": 1
+  },
+  "light": {
+    "kind": "spot",
+    "color": "#fffbe8",
+    "energy": 6,
+    "range": 40,
+    "angle": 15,
+    "offset": [0, 0.07, -0.2]
+  }
+}

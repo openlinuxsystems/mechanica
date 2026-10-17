@@ -1,0 +1,20 @@
+{
+  "id": "large_pipe_short",
+  "stations": [
+    "fabricator",
+    "mini_fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "large_pipe_short",
+      "count": 1
+    }
+  ],
+  "time": 2
+}

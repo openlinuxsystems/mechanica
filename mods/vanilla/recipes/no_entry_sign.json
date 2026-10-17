@@ -1,0 +1,20 @@
+{
+  "id": "no_entry_sign",
+  "stations": [
+    "fabricator",
+    "mini_fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "no_entry_sign",
+      "count": 1
+    }
+  ],
+  "time": 2
+}

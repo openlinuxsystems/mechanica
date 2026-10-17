@@ -1,0 +1,20 @@
+{
+  "id": "tree_trunk",
+  "name": "Tree Trunk",
+  "description": "A sawn-off trunk, 2 m tall.",
+  "category": "decor",
+  "mass": 200,
+  "durability": 12,
+  "friction": 0.5,
+  "buoyancy": 0.7,
+  "flammable": true,
+  "stack_size": 20,
+  "sound_material": "wood",
+  "size": [3, 8, 3],
+  "mesh": "meshes/decor/tree_trunk.glb",
+  "visual": {
+    "color": "#6a4a2a",
+    "roughness": 0.9,
+    "metallic": 0
+  }
+}

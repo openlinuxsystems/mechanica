@@ -1,0 +1,24 @@
+{
+  "id": "ramp_block",
+  "name": "Ramp Block",
+  "description": "A 1 m by 1 m slope for driving up.",
+  "category": "decor",
+  "mass": 45,
+  "durability": 6,
+  "friction": 0.5,
+  "buoyancy": 0.3,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "concrete",
+  "size": [4, 4, 4],
+  "mesh": "meshes/decor/ramp_block.glb",
+  "visual": {
+    "color": "#8a8880",
+    "roughness": 0.7,
+    "metallic": 0
+  },
+  "collision": {
+    "shape": "convex",
+    "mesh": "meshes/decor/ramp_block.glb"
+  }
+}

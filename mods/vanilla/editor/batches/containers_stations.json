@@ -1,0 +1,252 @@
+{
+  // Containers and stations from chunk 18 that had no recipe yet (chunk 23). The rest of chunk 18's
+  // containers, stations and resources predate batches. Re-run with tools/author-vanilla.sh.
+  "format_version": 1,
+  "parts": [
+    {
+      "file": "parts/battery.json",
+      "template": "interactive",
+      "set": {
+        "name": "Battery",
+        "description": "Holds battery packs, which power the creation's electric engines.",
+        "category": "container",
+        "mass": 3,
+        "durability": 6,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "sound_material": "metal",
+        "size": [2, 2, 2],
+        "visual": { "color": "#2e7d4a", "paintable": true },
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.25, 0], "normal": [0, -1, 0] }],
+        "sounds": { "open": "container_open", "place": "place_metal" },
+        "inventory": { "slots": 5, "accepts": ["battery_pack"] }
+      },
+      "model": [
+        { "kind": "box", "size": [0.5, 0.5, 0.5] },
+        { "kind": "box", "operation": "subtract", "size": [0.4, 0.4, 0.04], "position": [0, 0, 0.25] }
+      ],
+      "recipes": [
+        {
+          "id": "battery",
+          "stations": ["fabricator"],
+          "inputs": [
+            { "item": "scrap_metal", "count": 2 },
+            { "item": "component_kit", "count": 1 },
+            { "item": "circuit_board", "count": 1 }
+          ],
+          "outputs": [{ "item": "battery", "count": 1 }],
+          "time": 5
+        }
+      ]
+    },
+    {
+      "file": "parts/chemical_container.json",
+      "template": "interactive",
+      "set": {
+        "name": "Chemical Container",
+        "description": "Holds crude oil for the Refiner.",
+        "category": "container",
+        "mass": 6,
+        "durability": 6,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "sound_material": "plastic",
+        "size": [2, 3, 2],
+        "visual": { "color": "#6a3a9a", "paintable": true },
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
+        "sounds": { "open": "container_open", "place": "place_plastic" },
+        "inventory": { "slots": 5, "accepts": ["crude_oil"] }
+      },
+      "model": [
+        { "kind": "box", "size": [0.5, 0.75, 0.5] },
+        { "kind": "box", "operation": "subtract", "size": [0.4, 0.6, 0.04], "position": [0, 0, 0.25] }
+      ],
+      "recipes": [
+        {
+          "id": "chemical_container",
+          "stations": ["fabricator", "mini_fabricator"],
+          "inputs": [{ "item": "scrap_metal", "count": 2 }, { "item": "component_kit", "count": 1 }],
+          "outputs": [{ "item": "chemical_container", "count": 1 }],
+          "time": 4
+        }
+      ]
+    },
+    {
+      "file": "parts/locker.json",
+      "template": "interactive",
+      "set": {
+        "name": "Locker",
+        "description": "A tall steel locker with 20 slots.",
+        "category": "container",
+        "mass": 25,
+        "durability": 10,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "sound_material": "metal",
+        "size": [2, 7, 2],
+        "visual": { "color": "#4a6a8a", "paintable": true },
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.875, 0], "normal": [0, -1, 0] }],
+        "sounds": { "open": "container_open", "place": "place_metal" },
+        "inventory": { "slots": 20 }
+      },
+      "model": [
+        { "kind": "box", "size": [0.5, 1.75, 0.5] },
+        { "kind": "box", "operation": "subtract", "size": [0.4, 1.4, 0.04], "position": [0, 0, 0.25] }
+      ],
+      "recipes": [
+        {
+          "id": "locker",
+          "stations": ["fabricator", "mini_fabricator"],
+          "inputs": [{ "item": "scrap_metal", "count": 5 }],
+          "outputs": [{ "item": "locker", "count": 1 }],
+          "time": 5
+        }
+      ]
+    },
+    {
+      "file": "parts/file_cabinet.json",
+      "template": "interactive",
+      "set": {
+        "name": "File Cabinet",
+        "description": "A steel cabinet with 10 slots.",
+        "category": "container",
+        "mass": 20,
+        "durability": 8,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "sound_material": "metal",
+        "size": [2, 5, 3],
+        "visual": { "color": "#7a7a72", "paintable": true },
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.625, 0], "normal": [0, -1, 0] }],
+        "sounds": { "open": "container_open", "place": "place_metal" },
+        "inventory": { "slots": 10 }
+      },
+      "model": [
+        { "kind": "box", "size": [0.5, 1.25, 0.75] },
+        { "kind": "box", "operation": "subtract", "size": [0.4, 1, 0.04], "position": [0, 0, 0.375] }
+      ],
+      "recipes": [
+        {
+          "id": "file_cabinet",
+          "stations": ["fabricator", "mini_fabricator"],
+          "inputs": [{ "item": "scrap_metal", "count": 4 }],
+          "outputs": [{ "item": "file_cabinet", "count": 1 }],
+          "time": 4
+        }
+      ]
+    },
+    {
+      "file": "parts/tool_cabinet.json",
+      "template": "interactive",
+      "set": {
+        "name": "Tool Cabinet",
+        "description": "A red tool chest with 15 slots.",
+        "category": "container",
+        "mass": 20,
+        "durability": 8,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "sound_material": "metal",
+        "size": [3, 4, 2],
+        "visual": { "color": "#b03030", "paintable": true },
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.5, 0], "normal": [0, -1, 0] }],
+        "sounds": { "open": "container_open", "place": "place_metal" },
+        "inventory": { "slots": 15 }
+      },
+      "model": [
+        { "kind": "box", "size": [0.75, 1, 0.5] },
+        { "kind": "box", "operation": "subtract", "size": [0.6, 0.8, 0.04], "position": [0, 0, 0.25] }
+      ],
+      "recipes": [
+        {
+          "id": "tool_cabinet",
+          "stations": ["fabricator", "mini_fabricator"],
+          "inputs": [{ "item": "scrap_metal", "count": 4 }, { "item": "component_kit", "count": 1 }],
+          "outputs": [{ "item": "tool_cabinet", "count": 1 }],
+          "time": 4
+        }
+      ]
+    },
+    {
+      "file": "parts/barrel.json",
+      "template": "interactive",
+      "set": {
+        "name": "Barrel",
+        "description": "A steel drum with 8 slots.",
+        "category": "container",
+        "mass": 12,
+        "durability": 6,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "sound_material": "metal",
+        "size": [2, 4, 2],
+        "visual": { "color": "#3a5a8a", "paintable": true },
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.5, 0], "normal": [0, -1, 0] }],
+        "sounds": { "open": "container_open", "place": "place_metal" },
+        "inventory": { "slots": 8 }
+      },
+      "model": [
+        { "kind": "box", "size": [0.5, 1, 0.5] },
+        { "kind": "box", "operation": "subtract", "size": [0.4, 0.8, 0.04], "position": [0, 0, 0.25] }
+      ],
+      "recipes": [
+        {
+          "id": "barrel",
+          "stations": ["fabricator", "mini_fabricator"],
+          "inputs": [{ "item": "scrap_metal", "count": 3 }],
+          "outputs": [{ "item": "barrel", "count": 1 }],
+          "time": 3
+        }
+      ]
+    },
+    {
+      "file": "parts/refiner.json",
+      "template": "interactive",
+      "set": {
+        "name": "Refiner",
+        "description": "Refines raw materials such as crude oil.",
+        "category": "station",
+        "mass": 20,
+        "durability": 10,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "sound_material": "metal",
+        "size": [4, 6, 4],
+        "visual": { "color": "#5a7a8c", "paintable": true },
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.75, 0], "normal": [0, -1, 0] }],
+        "sounds": {
+          "start": "refiner_start",
+          "work": "refiner_work",
+          "complete": "refiner_complete",
+          "place": "place_metal"
+        },
+        "inventory": { "slots": 6 },
+        "crafting": { "speed": 1, "queue_size": 8 }
+      },
+      "model": [
+        { "kind": "box", "size": [1, 1.5, 1] },
+        { "kind": "box", "operation": "subtract", "size": [0.8, 1.2, 0.04], "position": [0, 0, 0.5] }
+      ],
+      "recipes": [
+        {
+          "id": "refiner",
+          "stations": ["fabricator"],
+          "inputs": [
+            { "item": "scrap_metal", "count": 10 },
+            { "item": "component_kit", "count": 4 },
+            { "item": "circuit_board", "count": 2 }
+          ],
+          "outputs": [{ "item": "refiner", "count": 1 }],
+          "time": 15
+        }
+      ]
+    }
+  ]
+}
