@@ -440,6 +440,10 @@ public partial class OptionsScreen : ToolWindow
             "The compass bar at the top of the screen, with quest goals and places you've found.");
         Toggle(page, "Show player names", _draft.Interface.ShowPlayerNames, v => Live(_draft with { Interface = _draft.Interface with { ShowPlayerNames = v } }),
             "Other players' names over their heads.");
+        var modes = Enum.GetValues<ColorBlindMode>();
+        Option(page, "Colour-blind filter", [.. modes.Select(m => m == ColorBlindMode.Off ? "Off" : m.ToString())], Array.IndexOf(modes, _draft.Interface.ColorBlind),
+            i => Live(_draft with { Interface = _draft.Interface with { ColorBlind = modes[i] } }),
+            "Corrects colours on the whole screen so ones that look alike stay apart: Protanopia (red), Deuteranopia (green), Tritanopia (blue).");
         Slider(page, "Chat opacity", _draft.Interface.ChatOpacity, 0f, 1f, 0.05f, v => Live(_draft with { Interface = _draft.Interface with { ChatOpacity = v } }), Percent);
     }
 
