@@ -10,7 +10,7 @@ namespace Mechanica.Game.Tests;
 /// The hydraulic lift model, host plus a client with the vanilla mods. A client puts its Lift down and both peers load
 /// the model and play its deploy: the outriggers swing out until the feet stand on the ground, the column rises from its
 /// transport height to the resting 2 units, the lights flash and hold. Raising eases the column up level by level the same
-/// way on both peers, the deck and its collision follow the extend clip exactly (to 33 units at the top), and coming to
+/// way on both peers, the deck and its collision follow the extend clip exactly (to 22 units at the top), and coming to
 /// rest at the top or bottom plays the end-stop clunk.
 /// </summary>
 public partial class LiftTest : StagedTest
@@ -24,6 +24,13 @@ public partial class LiftTest : StagedTest
     private float _lastTop;
     private bool _rose;
     private int _endStops;
+    private float _worstRide;
+    private int _offDeck;
+    private int _heldTo;
+    private int _heldStops;
+    private bool _heldMoved;
+    private float _slowest;
+    private int _corrections;
 
     protected override string Tag => "lift";
 
@@ -64,7 +71,7 @@ public partial class LiftTest : StagedTest
             {
                 Check(lift.Model is not null, $"the {who} loads the lift model");
                 Check(!lift.Deployed && lift.ShownTop < Settings.TopAt(0), $"the {who} starts the deploy below the resting height ({lift.ShownTop:F3})");
-                Check(lift.Model!.FindChild("Stage30", true, false) is not null && lift.Model.FindChild("Platform", true, false) is not null, $"the {who}'s model has every column stage and the platform");
+                Check(lift.Model!.FindChild("Stage19", true, false) is not null && lift.Model.FindChild("Platform", true, false) is not null, $"the {who}'s model has every column stage and the platform");
             }
             return true;
         });
@@ -120,15 +127,15 @@ public partial class LiftTest : StagedTest
             Check(_endStops == 0, "stopping between the ends makes no end-stop clunk");
             return true;
         });
-        Add("at the top it stands 33 units tall and clunks", frame =>
+        Add("at the top it stands 22 units tall and clunks", frame =>
         {
             if (frame == 0)
                 Request(ToolActions.SetLiftLevel, new SetLiftLevelArgs(Settings.MaxLevel));
             if (!Both(out var host, out var client) || client.State.Level != Settings.MaxLevel || host.Moving || client.Moving
                 || !Mathf.IsEqualApprox(client.ShownTop, Settings.TopAt(Settings.MaxLevel), 1e-4f))
                 return false;
-            Check(Mathf.IsEqualApprox(Settings.TopAt(Settings.MaxLevel), 33 * 0.25f), "the top level is 33 units");
-            Check(Mathf.IsEqualApprox(Deck(client), 8.25f, 3e-3f), $"the model's deck reaches 8.25 m ({Deck(client):F4})");
+            Check(Mathf.IsEqualApprox(Settings.TopAt(Settings.MaxLevel), 22 * 0.25f), "the top level is 22 units");
+            Check(Mathf.IsEqualApprox(Deck(client), 5.5f, 3e-3f), $"the model's deck reaches 5.5 m ({Deck(client):F4})");
             Check(_endStops == 1, $"the end stop clunks once ({_endStops})");
             return true;
         });
@@ -143,6 +150,81 @@ public partial class LiftTest : StagedTest
             Check(_endStops == 2, $"and clunks at the bottom ({_endStops})");
             return true;
         });
+        Add("the player steps onto the deck", frame =>
+        {
+            if (frame == 0)
+                _host.Main.PlayerSync.HostTeleport(_client.Peer, _at + new Vector3(0, Settings.TopAt(0) + 0.05f, 0));
+            return frame > 60 && OnDeck(_client.Main.LocalPlayer!, out _) && OnDeck(HostPlayer, out _);
+        });
+        foreach (var (level, way) in new[] { (8, "up"), (0, "down") })
+        {
+            Add($"standing on the deck the player rides it {way}", frame =>
+            {
+                if (frame == 0)
+                {
+                    Request(ToolActions.SetLiftLevel, new SetLiftLevelArgs(level));
+                    _worstRide = 0;
+                    _offDeck = 0;
+                }
+                foreach (var player in new[] { _client.Main.LocalPlayer!, HostPlayer })
+                {
+                    OnDeck(player, out var gap);
+                    if (!Corrected(player))
+                        _worstRide = Math.Max(_worstRide, Math.Abs(gap));
+                    if (!player.IsOnFloor())
+                        _offDeck++;
+                }
+                if (!Both(out var host, out var client) || client.State.Level != level || host.Moving || client.Moving || frame < 30)
+                    return false;
+                Check(_worstRide < 0.03f, $"the player's feet stay on the deck ({_worstRide:F3} m at worst)");
+                Check(_offDeck < 6, $"and the player never leaves the floor ({_offDeck} frames off it)");
+                return true;
+            });
+        }
+        foreach (var (direction, stopAt, way) in new[] { (1, 6, "up"), (-1, 2, "down") })
+        {
+            Add($"with the Hammer in hand, holding the arrow key on the deck drives the Lift {way} smoothly", frame =>
+            {
+                var tool = _client.Main.Tools!.Lift;
+                var lift = _client.Main.Build.Lifts[_client.Peer];
+                if (frame == 0)
+                {
+                    tool.Active = false;
+                    Check(tool.StandsOnOwnLift, "the player stands on their Lift");
+                    Check(tool.PressRaise(direction) && tool.RaiseHeld, "the arrow key drives it from the deck");
+                    _heldStops = 0;
+                    _heldMoved = false;
+                    _worstRide = 0;
+                    _slowest = float.MaxValue;
+                    return false;
+                }
+                OnDeck(_client.Main.LocalPlayer!, out var gap);
+                if (!Corrected(_client.Main.LocalPlayer!))
+                    _worstRide = Math.Max(_worstRide, Math.Abs(gap));
+                if (tool.RaiseHeld)
+                {
+                    if (lift.Moving)
+                        _heldMoved = true;
+                    else if (_heldMoved)
+                        _heldStops++;
+                    // Once up to speed it holds that speed: no slowing at each level.
+                    if (_slowest < float.MaxValue || Math.Abs(lift.Speed) >= Settings.RaiseSpeed * 0.99f)
+                        _slowest = Math.Min(_slowest, Math.Abs(lift.Speed));
+                    if (direction > 0 ? lift.State.Level < stopAt : lift.State.Level > stopAt)
+                        return false;
+                    tool.ReleaseRaise();
+                    _heldTo = lift.State.Level;
+                    return false;
+                }
+                if (lift.Moving || _host.Main.Build.Lifts[_client.Peer].Moving)
+                    return false;
+                Check(_heldStops == 0, $"held, the column runs on without stopping at each level ({_heldStops} stops)");
+                Check(_slowest >= Settings.RaiseSpeed * 0.99f && _slowest < float.MaxValue, $"at an even speed ({_slowest:F3} m/s at slowest)");
+                Check(Math.Abs(_heldTo - stopAt) <= 1 && lift.State.Level == _heldTo, $"let go, it stops at the next level ({_heldTo})");
+                Check(_worstRide < 0.03f, $"and the player rides it the whole way ({_worstRide:F3} m at worst)");
+                return true;
+            });
+        }
     }
 
     private void Request<TArgs>(string action, TArgs args) => _client.Main.Actions.Request(action, args, _results.Add);
@@ -152,6 +234,29 @@ public partial class LiftTest : StagedTest
         _host.Main.Build.Lifts.TryGetValue(_client.Peer, out host!);
         _client.Main.Build.Lifts.TryGetValue(_client.Peer, out client!);
         return host is not null && client is not null;
+    }
+
+    // True on the tick the client's prediction was corrected: the replay starts from where the host had the player a
+    // few ticks back, under the deck that has risen since, and the Lift puts them back on it before the frame is drawn.
+    private bool Corrected(Game.Player.PlayerController player)
+    {
+        if (player == HostPlayer)
+            return false;
+        var corrections = _client.Main.PlayerSync.Corrections;
+        var changed = corrections != _corrections;
+        _corrections = corrections;
+        return changed;
+    }
+
+    private Game.Player.PlayerController HostPlayer => _host.Main.PlayerSync.Players[_client.Peer];
+
+    // True when the player's feet are over the deck; gap is how far above the deck's top they are.
+    private bool OnDeck(Game.Player.PlayerController player, out float gap)
+    {
+        var body = (player == HostPlayer ? _host : _client).Main.Build.Lifts[_client.Peer];
+        gap = player.GlobalPosition.Y - (body.GlobalPosition.Y + body.ShownTop);
+        var flat = new Vector2(player.GlobalPosition.X - body.GlobalPosition.X, player.GlobalPosition.Z - body.GlobalPosition.Z);
+        return Math.Abs(flat.X) < 0.5f && Math.Abs(flat.Y) < 0.5f && Math.Abs(gap) < 0.06f;
     }
 
     private static float Deck(LiftBody lift) => ((Node3D)lift.Model!.FindChild("Deck", true, false)).GlobalPosition.Y - lift.GlobalPosition.Y;

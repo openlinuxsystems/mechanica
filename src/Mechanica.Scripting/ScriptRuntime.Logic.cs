@@ -20,6 +20,9 @@ public sealed partial class ScriptRuntime : ILogicHost
     /// <summary>How far each animated part's model is turned (chunk 23), set by <c>part.animate</c> on the script clock (<see cref="Time"/>).</summary>
     public PartAnimations Animations { get; } = new();
 
+    /// <summary>What each part's script shows (UI spec §12), set by <c>part.display</c>; the game sends it to clients.</summary>
+    public PartReadouts Readouts { get; } = new();
+
     /// <summary>Who sits where, for <c>part.occupant()</c>. Null means no seats.</summary>
     public SeatRegistry? Seats { get; set; }
 
@@ -75,6 +78,25 @@ public sealed partial class ScriptRuntime : ILogicHost
     /// <inheritdoc/>
     public (string? Script, string? Fault) ScriptOf(int creation, int part) =>
         _instances.TryGetValue((creation, part), out var instance) ? (instance.File.File.Key, instance.Fault) : (null, null);
+
+    /// <inheritdoc/>
+    public string? CheckCommand(Creation creation, int part)
+    {
+        Reconcile();
+        if (!_instances.TryGetValue((creation.Id, part), out var instance) || instance.Env is null)
+            return $"{creation.DefinitionOf(part).Name ?? creation.FindPart(part)!.Part} runs no script.";
+        if (instance.Fault is { } fault)
+            return $"Its script is stopped: {fault}";
+        return instance.Env.RawGet(Hooks.OnCommand) is { Type: DataType.Function } ? null : $"{creation.DefinitionOf(part).Name ?? instance.PartType} takes no commands.";
+    }
+
+    /// <inheritdoc/>
+    public void Command(ActionCaller caller, Creation creation, int part, string command, JsonElement? args)
+    {
+        var result = Invoke(creation.Id, part, Hooks.OnCommand, command, args is { } a ? System.Text.Json.Nodes.JsonNode.Parse(a.GetRawText()) : null, (double)caller.Peer);
+        if (!result.Ok)
+            throw new InvalidOperationException(result.Error);
+    }
 
     // Hands each part whose input changed its on_power(amount); the inputs come from last step's outputs.
     private void DeliverSignals()
@@ -166,6 +188,27 @@ public sealed partial class ScriptRuntime : ILogicHost
             Lights.Set(instance.Creation, instance.Part, level);
             return DynValue.True;
         });
+        Fn(part, "display", args =>
+        {
+            var instance = PartInstance();
+            return Display(instance, instance.Part, args.AsType(0, "part.display", DataType.String).String, args[1], "part.display");
+        });
+        Fn(part, "displayed", args =>
+        {
+            var instance = PartInstance();
+            var id = args.AsType(0, "part.displayed", DataType.String).String;
+            return Readouts.Text(instance.Creation, instance.Part, id) is { } text ? DynValue.NewString(text)
+                : Readouts.Number(instance.Creation, instance.Part, id) is { } n ? DynValue.NewNumber(n) : DynValue.Nil;
+        });
+        // A part this one is linked to (an engine's wheel bearings): its highlight follows what drives it.
+        Fn(creation, "display", args =>
+        {
+            var instance = PartInstance();
+            var target = (int)LuaValues.Number(args[0], "creation.display", 1);
+            if (target != instance.Part && (_motion.FindCreation(instance.Creation) is not { } c || !c.LinksFrom(instance.Part).Contains(target)))
+                return Refused(instance, $"creation.display: part {target} is not linked from this part");
+            return Display(instance, target, args.AsType(1, "creation.display", DataType.String).String, args[2], "creation.display");
+        });
         Fn(part, "light", _ => DynValue.NewNumber(Lights.Level(PartInstance().Creation, PartInstance().Part)));
         Fn(part, "animate", args =>
         {
@@ -217,6 +260,27 @@ public sealed partial class ScriptRuntime : ILogicHost
         });
 
         Fn(world, "creative", _ => DynValue.NewBoolean(Creative));
+    }
+
+    // Sets (a number, boolean or string) or clears (nil) one of a part's readouts.
+    private DynValue Display(Instance instance, int part, string id, DynValue value, string function)
+    {
+        string? error;
+        switch (value.Type)
+        {
+            case DataType.Nil or DataType.Void:
+                Readouts.Clear(instance.Creation, part, id);
+                return DynValue.True;
+            case DataType.String:
+                error = Readouts.Set(instance.Creation, part, id, value.String);
+                break;
+            case DataType.Boolean or DataType.Number:
+                error = Readouts.Set(instance.Creation, part, id, SignalOf(value, function));
+                break;
+            default:
+                throw new ScriptRuntimeException($"{function}: a value is a number, a boolean, a string or nil, not a {value.Type.ToLuaTypeString()}");
+        }
+        return error is null ? DynValue.True : Refused(instance, error);
     }
 
     // A seated player's input as {x, z, jump, sprint, yaw, pitch}, or nil when the seat is empty.

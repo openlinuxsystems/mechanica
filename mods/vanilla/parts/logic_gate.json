@@ -1,7 +1,7 @@
 {
   "id": "logic_gate",
   "name": "Logic Gate",
-  "description": "Turns its inputs into one on or off output: and, or, xor, nand, nor or xnor (R with the Connect Tool).",
+  "description": "Turns its inputs into one on or off output: and, or, xor, nand, nor or xnor. E switches to the next.",
   "category": "interactive",
   "mass": 1,
   "durability": 3,
@@ -43,7 +43,20 @@
         "nor",
         "xnor"
       ],
-      "default": "and"
+      "default": "and",
+      "icons": {
+        "and": "textures/logic/gate_and.png",
+        "or": "textures/logic/gate_or.png",
+        "xor": "textures/logic/gate_xor.png",
+        "nand": "textures/logic/gate_nand.png",
+        "nor": "textures/logic/gate_nor.png",
+        "xnor": "textures/logic/gate_xnor.png"
+      }
     }
-  ]
+  ],
+  "menu": {
+    "use": "cycle",
+    "cycle": "mode",
+    "signals": true
+  }
 }

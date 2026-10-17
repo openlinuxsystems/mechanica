@@ -3174,8 +3174,24 @@ def heavy_ready():
     return clip_hold_heavy(0.0)
 
 
-# Overhead swing, 1 s (sledge.swing_seconds): wind-up to 0.35 s, strike to the hit at 0.6 s (sledge.strike_seconds),
-# recovery back to the ready pose by 1 s. The right fist slides down to the left one as the head comes over.
+# Three swings, picked at random for each click (CharacterRig.GestureClip): overhead, a forehand sweep from the right
+# and a backhand from the left. Each lasts SWING_SECONDS (sledge.swing_seconds): a quick wind-up, the hit at
+# STRIKE_SECONDS (sledge.strike_seconds), then the recovery back to the ready pose. The overhead keys below were
+# first laid out over 1 s and are squeezed onto that timing by swing_time.
+SWING_SECONDS = 0.6
+STRIKE_SECONDS = 0.25
+
+
+def swing_time(t):
+    """Maps a key time on the 1 s layout (wind-up 0.35, hit 0.6) onto the swing's own timing."""
+    pts = [(0.0, 0.0), (0.35, 0.14), (0.6, STRIKE_SECONDS), (1.0, SWING_SECONDS)]
+    for (a, x), (b, y) in zip(pts, pts[1:]):
+        if t <= b + 1e-9:
+            return x + (y - x) * (t - a) / (b - a)
+    return SWING_SECONDS
+
+
+# Overhead: the right fist slides down to the left one as the head comes over.
 SLEDGE_SWING_KEYS = [
     (0.0, None),
     (0.17, ((-0.11, -0.14, 1.6), (-0.12, 0.5, 0.86), 0.22,
@@ -3196,9 +3212,62 @@ SLEDGE_SWING_KEYS = [
 ]
 
 
-def heavy_clip(keys, ready, t):
-    return oneshot([(kt, ready if k is None else heavy_key(k[0], k[1], k[2], **k[3])) for kt, k in keys], t,
-                   template=ready)
+def heavy_clip(keys, ready, t, timing=swing_time):
+    return oneshot([(timing(kt), ready if k is None else heavy_key(k[0], k[1], k[2], d_hint=k[4] if len(k) > 4 else None, **k[3]))
+                    for kt, k in keys], t, template=ready)
+
+
+def same_time(t):
+    return t
+
+
+# Forehand: the hammer drawn back past the right hip with the body turned right, swept flat across the front from
+# right to left (the face leading, +x), the hit straight ahead at chest height, then round to the left.
+SWEEP_KEYS = [
+    (0.0, None),
+    (0.07, ((-0.2, -0.12, 1.36), (-0.55, 0.45, 0.7), 0.2, None, None)),
+    (0.14, ((-0.26, -0.12, 1.2), (-0.9, 0.15, 0.4), 0.2,
+            dict(spine=(-2.0, -3.0, -16.0), chest=(-3.0, -2.0, -18.0), neck=(0.0, 0, 15.0), head=(0.0, 0, 12.0)), (0.2, -0.8, 0.0))),
+    (0.2, ((-0.16, -0.32, 1.12), (-0.62, -0.62, 0.3), 0.17,
+           dict(spine=(4.0, -1.0, -6.0), chest=(3.0, 0, -6.0), neck=(-2.0, 0, 6.0), head=(-2.0, 0, 4.0)), (0.7, -0.6, 0.0))),
+    (STRIKE_SECONDS, ((-0.02, -0.46, 1.1), (0.08, -0.98, 0.12), 0.15,
+                      dict(spine=(8.0, 1.0, 4.0), chest=(6.0, 1.0, 6.0), neck=(-5.0, 0, -5.0), head=(-4.0, 0, -4.0)), (1.0, 0.0, 0.0))),
+    (0.32, ((0.14, -0.36, 1.1), (0.75, -0.6, 0.2), 0.15,
+            dict(spine=(6.0, 2.0, 14.0), chest=(4.0, 2.0, 16.0), neck=(-4.0, 0, -12.0), head=(-3.0, 0, -10.0)), (0.6, 0.8, 0.0))),
+    (0.42, ((0.08, -0.3, 1.2), (0.6, -0.15, 0.78), 0.18,
+            dict(spine=(3.0, 1.0, 8.0), chest=(2.0, 1.0, 8.0), neck=(-2.0, 0, -6.0), head=(-2.0, 0, -5.0)), None)),
+    (SWING_SECONDS, None),
+]
+
+# Backhand: the mirror image, drawn back past the left hip and swept from left to right (the face leading, -x).
+BACKHAND_KEYS = [
+    (0.0, None),
+    (0.07, ((0.02, -0.26, 1.36), (0.45, 0.35, 0.82), 0.2, None, None)),
+    (0.14, ((0.14, -0.16, 1.2), (0.85, 0.25, 0.45), 0.2,
+            dict(spine=(-2.0, 3.0, 16.0), chest=(-3.0, 2.0, 18.0), neck=(0.0, 0, -15.0), head=(0.0, 0, -12.0)), (-0.2, -0.8, 0.0))),
+    (0.2, ((0.06, -0.36, 1.12), (0.62, -0.62, 0.3), 0.17,
+           dict(spine=(4.0, 1.0, 6.0), chest=(3.0, 0, 6.0), neck=(-2.0, 0, -6.0), head=(-2.0, 0, -4.0)), (-0.7, -0.6, 0.0))),
+    (STRIKE_SECONDS, ((-0.06, -0.46, 1.1), (-0.08, -0.98, 0.12), 0.15,
+                      dict(spine=(8.0, -1.0, -4.0), chest=(6.0, -1.0, -6.0), neck=(-5.0, 0, 5.0), head=(-4.0, 0, 4.0)), (-1.0, 0.0, 0.0))),
+    (0.32, ((-0.22, -0.34, 1.1), (-0.75, -0.6, 0.2), 0.15,
+            dict(spine=(6.0, -2.0, -14.0), chest=(4.0, -2.0, -16.0), neck=(-4.0, 0, 12.0), head=(-3.0, 0, 10.0)), (-0.6, 0.8, 0.0))),
+    (0.42, ((-0.18, -0.3, 1.24), (-0.45, 0.2, 0.87), 0.2,
+            dict(spine=(2.0, -1.0, -6.0), chest=(1.0, -1.0, -8.0), neck=(-1.0, 0, 6.0), head=(-1.0, 0, 5.0)), None)),
+    (SWING_SECONDS, None),
+]
+
+
+def side_keys(keys, ready_body):
+    """Fills a side swing's missing torso angles with the ready pose's."""
+    return [(kt, k if k is None else (k[0], k[1], k[2], k[3] if k[3] is not None else ready_body, k[4])) for kt, k in keys]
+
+
+def clip_sledge_swing_side(t):
+    return heavy_clip(side_keys(SWEEP_KEYS, HEAVY_BODY), heavy_ready(), t, timing=same_time)
+
+
+def clip_sledge_swing_back(t):
+    return heavy_clip(side_keys(BACKHAND_KEYS, HEAVY_BODY), heavy_ready(), t, timing=same_time)
 
 
 def clip_sledge_swing(t):
@@ -3260,6 +3329,38 @@ SLEDGE_SWING_FP_KEYS = [
 
 def clip_sledge_swing_fp(t):
     return heavy_clip(SLEDGE_SWING_FP_KEYS, clip_hold_heavy_fp(0.0), t)
+
+
+# First-person side swings: the head comes in from one edge of the view and crosses the middle at the hit.
+SWEEP_FP_KEYS = [
+    (0.0, None),
+    (0.07, ((-0.24, -0.33, 1.1), (-0.55, 0.2, 0.8), 0.16, FP_BODY, None)),
+    (0.14, ((-0.28, -0.26, 1.06), (-0.9, 0.05, 0.44), 0.16, FP_BODY, (0.2, -0.9, 0.0))),
+    (0.2, ((-0.2, -0.38, 1.02), (-0.6, -0.62, 0.5), 0.14, FP_BODY, (0.8, -0.5, 0.0))),
+    (STRIKE_SECONDS, ((-0.08, -0.42, 1.0), (0.12, -0.82, 0.56), 0.13, FP_BODY, (1.0, 0.0, 0.0))),
+    (0.32, ((0.06, -0.4, 0.98), (0.78, -0.48, 0.4), 0.13, FP_BODY, (0.5, 0.8, 0.0))),
+    (0.42, ((-0.06, -0.42, 1.0), (0.3, -0.4, 0.86), 0.15, FP_BODY, None)),
+    (SWING_SECONDS, None),
+]
+
+BACKHAND_FP_KEYS = [
+    (0.0, None),
+    (0.07, ((-0.06, -0.36, 1.06), (0.3, -0.1, 0.95), 0.16, FP_BODY, None)),
+    (0.14, ((0.08, -0.32, 1.02), (0.88, 0.0, 0.48), 0.16, FP_BODY, (-0.2, -0.9, 0.0))),
+    (0.2, ((0.02, -0.4, 1.0), (0.6, -0.62, 0.5), 0.14, FP_BODY, (-0.8, -0.5, 0.0))),
+    (STRIKE_SECONDS, ((-0.1, -0.42, 1.0), (-0.12, -0.82, 0.56), 0.13, FP_BODY, (-1.0, 0.0, 0.0))),
+    (0.32, ((-0.24, -0.38, 0.98), (-0.78, -0.48, 0.4), 0.13, FP_BODY, (-0.5, 0.8, 0.0))),
+    (0.42, ((-0.22, -0.4, 1.02), (-0.4, -0.3, 0.86), 0.15, FP_BODY, None)),
+    (SWING_SECONDS, None),
+]
+
+
+def clip_sledge_swing_side_fp(t):
+    return heavy_clip(SWEEP_FP_KEYS, clip_hold_heavy_fp(0.0), t, timing=same_time)
+
+
+def clip_sledge_swing_back_fp(t):
+    return heavy_clip(BACKHAND_FP_KEYS, clip_hold_heavy_fp(0.0), t, timing=same_time)
 
 
 def clip_hold_heavy_block_fp(t, T=2.0):
@@ -3435,8 +3536,12 @@ CLIPS = {
     "hold_gun": (clip_hold_gun, 2.0, True, True),
     "hold_item": (clip_hold_item, 2.0, True, True),
     "hammer_swing": (clip_hammer_swing, 0.35, False, True),
-    "sledge_swing": (clip_sledge_swing, 1.0, False, True),
-    "sledge_swing_fp": (clip_sledge_swing_fp, 1.0, False, True),
+    "sledge_swing": (clip_sledge_swing, SWING_SECONDS, False, True),
+    "sledge_swing_side": (clip_sledge_swing_side, SWING_SECONDS, False, True),
+    "sledge_swing_back": (clip_sledge_swing_back, SWING_SECONDS, False, True),
+    "sledge_swing_fp": (clip_sledge_swing_fp, SWING_SECONDS, False, True),
+    "sledge_swing_side_fp": (clip_sledge_swing_side_fp, SWING_SECONDS, False, True),
+    "sledge_swing_back_fp": (clip_sledge_swing_back_fp, SWING_SECONDS, False, True),
     "tool_use": (clip_tool_use, 0.3, False, True),
     "weld": (clip_weld, 0.5, False, True),
     "paint_spray": (clip_paint_spray, 0.4, False, True),
@@ -3453,7 +3558,8 @@ CLIPS = {
 CLIP_PROP = {"hold_tool": "hammer", "hammer_swing": "hammer", "tool_use": "lift_remote", "weld": "weld_tool",
              "paint_spray": "paint_tool", "hold_heavy": "sledgehammer", "sledge_swing": "sledgehammer",
              "hold_heavy_block": "sledgehammer", "hold_heavy_fp": "sledgehammer", "hold_heavy_block_fp": "sledgehammer",
-             "sledge_swing_fp": "sledgehammer",
+             "sledge_swing_fp": "sledgehammer", "sledge_swing_side": "sledgehammer", "sledge_swing_back": "sledgehammer",
+             "sledge_swing_side_fp": "sledgehammer", "sledge_swing_back_fp": "sledgehammer",
              "hold_gun": "potato_blaster", "fire_gun": "potato_blaster", "pour": "water_bucket"}
 
 

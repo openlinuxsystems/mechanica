@@ -182,11 +182,17 @@ public partial class BuildSync : Node, IToolWorld, IPartCatalog
         var height = Settings!.Lift.TopAt(lift.Level);
         var size = new Vector3(Settings.Lift.PlatformSize, height, Settings.Lift.PlatformSize) * Settings.ClearanceScale;
         var transform = new Transform3D(Basis.Identity, lift.Position.ToGodot() + new Vector3(0, height / 2, 0));
-        return Overlap(new BoxShape3D { Size = size }, transform, ignoreCreations, lift.Owner);
+        // Players standing on the deck ride it up; they are not in its way.
+        var riders = _lifts.TryGetValue(lift.Owner, out var shown)
+            ? Players.Players.Values.Where(p => shown.Carries(p.GlobalPosition)).Select(p => p.GetRid())
+            : [];
+        return Overlap(new BoxShape3D { Size = size }, transform, ignoreCreations, lift.Owner, riders);
     }
 
-    // What overlaps a shape, apart from the given Creations' bodies and Lift, as a reason; null when nothing does.
-    private string? Overlap(Shape3D shape, Transform3D transform, IReadOnlyCollection<int> ignoreCreations, int? ignoreLiftOf)
+    // What overlaps a shape, apart from the given Creations' bodies and Lift (and any other bodies), as a reason; null
+    // when nothing does.
+    private string? Overlap(Shape3D shape, Transform3D transform, IReadOnlyCollection<int> ignoreCreations, int? ignoreLiftOf,
+        IEnumerable<Rid>? ignoreBodies = null)
     {
         var query = new PhysicsShapeQueryParameters3D { Shape = shape, Transform = transform, CollideWithBodies = true };
         var exclude = new Godot.Collections.Array<Rid>();
@@ -197,6 +203,8 @@ public partial class BuildSync : Node, IToolWorld, IPartCatalog
         }
         if (ignoreLiftOf is { } owner && _lifts.TryGetValue(owner, out var own))
             exclude.Add(own.GetRid());
+        foreach (var rid in ignoreBodies ?? [])
+            exclude.Add(rid);
         query.Exclude = exclude;
         var hits = GetViewport().FindWorld3D().DirectSpaceState.IntersectShape(query, 1);
         if (hits.Count == 0)
@@ -290,7 +298,11 @@ public partial class BuildSync : Node, IToolWorld, IPartCatalog
         }
         if (!_lifts.TryGetValue(owner, out var body))
         {
-            body = _lifts[owner] = new LiftBody { Name = $"Lift{owner}", Assets = Assets, FindCreation = Creations.NodeOf, Sounds = Sounds };
+            body = _lifts[owner] = new LiftBody
+            {
+                Name = $"Lift{owner}", Assets = Assets, FindCreation = Creations.NodeOf, Sounds = Sounds,
+                Riders = () => Players.Players.Values.Where(p => p.Simulated),
+            };
             _liftRoot.AddChild(body);
         }
         body.Show(lift, Settings!.Lift);

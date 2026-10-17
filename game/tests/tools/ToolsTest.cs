@@ -499,7 +499,7 @@ public partial class ToolsTest : StagedTest
             return true;
         });
         Add("look up at the sky", frame => Look(_client, 0f, 1.3f, frame) && !Tools.Sledge.Swinging);
-        Add("a swing is one a second and lands after the wind-up", frame =>
+        Add("one swing at a time, landing after the wind-up", frame =>
         {
             if (frame == 0)
             {

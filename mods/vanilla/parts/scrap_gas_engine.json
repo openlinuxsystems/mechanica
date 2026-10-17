@@ -39,14 +39,64 @@
   "settings": [
     {
       "id": "gear",
-      "name": "Gear",
+      "name": "Power",
       "type": "number",
       "min": 1,
       "max": 5,
       "step": 1,
-      "default": 3
+      "default": 3,
+      "presets": [
+        {
+          "name": "Low",
+          "value": 1
+        },
+        {
+          "name": "Medium",
+          "value": 3
+        },
+        {
+          "name": "High",
+          "value": 5
+        }
+      ]
+    },
+    {
+      "id": "on",
+      "name": "On",
+      "type": "toggle",
+      "default": false,
+      "hide_when_linked": true
     }
   ],
+  "menu": {
+    "readouts": [
+      {
+        "id": "fuel",
+        "name": "Fuel",
+        "kind": "bar"
+      },
+      {
+        "id": "fuel_items",
+        "name": "Gasoline in tanks",
+        "kind": "number"
+      },
+      {
+        "id": "rpm",
+        "name": "Speed",
+        "kind": "number",
+        "unit": "rpm"
+      },
+      {
+        "id": "torque",
+        "name": "Torque",
+        "kind": "number",
+        "unit": "N·m"
+      }
+    ]
+  },
+  "display": {
+    "status": "running"
+  },
   "properties": {
     "speed": 15,
     "torque": 80,

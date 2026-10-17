@@ -7,7 +7,7 @@
 -- It burns properties.fuel from the Creation's containers, one item per properties.fuel_time seconds at
 -- full power; in Creative it needs none.
 -- Sounds: "ignite" when it lights, the "loop" while it burns (its "thrust" parameter follows the power)
--- and "cut" when it goes out.
+-- and "cut" when it goes out. Its "power" display (a glow at the exhaust) follows the power.
 
 local function clamp(v, lo, hi)
   return math.max(lo, math.min(hi, v))
@@ -81,6 +81,7 @@ function on_update(dt)
     power = 0
   end
   state.power = power
+  part.display("power", power)
   flame(power)
   if power > 0 then
     -- The exhaust leaves through +Y, so the push is along -Y, at the part.

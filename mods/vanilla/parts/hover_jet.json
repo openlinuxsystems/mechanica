@@ -66,6 +66,14 @@
       "default": true
     }
   ],
+  "display": {
+    "glow": {
+      "readout": "power",
+      "offset": [0, 0.125, 0],
+      "direction": [0, 1, 0],
+      "length": 0.5
+    }
+  },
   "properties": {
     "thrust": 300,
     "lever_rate": 0.5,

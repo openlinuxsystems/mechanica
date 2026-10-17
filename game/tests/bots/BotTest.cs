@@ -144,7 +144,7 @@ public partial class BotTest : StagedTest
         Stage("the client kills the raiders with the Sledgehammer and the raid ends", frame =>
         {
             var target = _host.Main.Bots.Bots!.Bots.Values.FirstOrDefault(b => !b.Dead);
-            // One swing a second at most (sledge.swing_seconds), so a step every 80 frames.
+            // No faster than one swing per sledge.swing_seconds, so a step every 80 frames.
             if (target is not null && frame % 80 == 0)
                 _host.Main.PlayerSync.HostTeleport(Peer, target.Position.ToGodot() + new Vector3(1.5f, 0, 0));
             if (target is not null && frame % 80 == 20)

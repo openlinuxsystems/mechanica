@@ -270,14 +270,14 @@ def whoosh(rng, dur, lo=200, hi=3000, level=0.6):
     return edges(peak((a * (1 - ramp) + b * ramp) * env, level))
 
 
-def sledge_whoosh(rng, dur=0.66, peak_at=0.56, level=0.65):
-    """A long, low whoosh that builds through the wind-up and peaks as the head comes down, cut at the hit."""
+def sledge_whoosh(rng, dur=0.28, peak_at=0.22, level=0.65):
+    """A short, low whoosh that builds through the wind-up and peaks as the head comes down, cut at the hit."""
     t = np.linspace(0, dur, n_of(dur))
-    env = np.exp(-((t - peak_at) / 0.11) ** 2) + 0.12 * np.exp(-((t - 0.22) / 0.1) ** 2)
-    env *= np.clip((dur - t) / 0.03, 0, 1)
+    env = np.exp(-((t - peak_at) / 0.06) ** 2) + 0.12 * np.exp(-((t - 0.08) / 0.05) ** 2)
+    env *= np.clip((dur - t) / 0.02, 0, 1)
     a = band(noise(rng, dur), 90, 700)
     b = band(noise(rng, dur), 300, 2200)
-    sweep = np.clip((t - 0.3) / (peak_at - 0.3), 0, 1)
+    sweep = np.clip((t - 0.1) / (peak_at - 0.1), 0, 1)
     return edges(peak((a * (1 - 0.6 * sweep) + b * sweep * 0.8) * env, level))
 
 
