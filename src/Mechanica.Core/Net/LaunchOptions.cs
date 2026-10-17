@@ -23,7 +23,8 @@ public enum SessionMode
 /// external AI endpoint (<c>--ai [port]</c>, <c>--ai-bind address</c>, <c>--ai-token token</c>, <c>--ai-admin-token token</c>, <c>--ai-observe-token token</c>,
 /// <c>--ai-allow-reload-with-clients</c>) and
 /// record/replay of Action API calls (<c>--record file</c>, <c>--replay file</c>) and a saved world to load
-/// (<c>--load file</c>); on any instance the player's name (<c>--name name</c>) and the world's password (<c>--password text</c>).
+/// (<c>--load file</c>); on any instance the player's name (<c>--name name</c>), the world's password (<c>--password text</c>)
+/// and <c>--self-test</c>.
 /// </summary>
 public sealed record LaunchOptions
 {
@@ -119,6 +120,12 @@ public sealed record LaunchOptions
     /// <summary>The player's display name for this run (<c>--name</c>), or null for the saved profile's.</summary>
     public string? PlayerName { get; init; }
 
+    /// <summary>
+    /// Load the world, check every part model and sound clip loads, print a summary and quit (<c>--self-test</c>):
+    /// exit code 0 when the world was entered with nothing missing. Release packaging runs it on the exported build.
+    /// </summary>
+    public bool SelfTest { get; init; }
+
     /// <summary>Options for hosting on <paramref name="port"/>.</summary>
     public static LaunchOptions ForHost(int port, int maxPlayers = NetProtocol.DefaultMaxPlayers) =>
         new() { Mode = SessionMode.Host, Port = port, MaxPlayers = maxPlayers };
@@ -209,6 +216,9 @@ public sealed record LaunchOptions
                     break;
                 case "--survival":
                     result = result with { GameMode = Survival.GameMode.Survival };
+                    break;
+                case "--self-test":
+                    result = result with { SelfTest = true };
                     break;
                 case "--easy":
                     result = result with { Difficulty = Survival.Difficulty.Easy };
