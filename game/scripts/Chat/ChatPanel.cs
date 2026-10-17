@@ -86,6 +86,7 @@ public partial class ChatPanel : CanvasLayer, IHudLayer
         GetViewport().SizeChanged += Layout;
         Layout();
         TakeMouse(false);
+        EscapeStack.Add(this, () => IsOpen, Close);
     }
 
     public override void _ExitTree()
@@ -124,6 +125,7 @@ public partial class ChatPanel : CanvasLayer, IHudLayer
     {
         _input.Visible = true;
         _status.Visible = false;
+        EscapeStack.Raise(this);
         TakeMouse(true);
         Godot.Input.MouseMode = Godot.Input.MouseModeEnum.Visible;
         _input.GrabFocus();

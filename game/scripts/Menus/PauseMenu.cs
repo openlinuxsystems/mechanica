@@ -10,8 +10,8 @@ using Mechanica.Game.Ui;
 namespace Mechanica.Game.Menus;
 
 /// <summary>
-/// The in-game menu (chunk 24), opened with Esc while playing and closed with Esc, Resume or a click on
-/// the world. It saves and loads the world (host only), opens the world to the LAN or stops hosting, shows
+/// The in-game menu (chunk 24), opened with Esc when no window is open and closed with Esc, Resume or a click on
+/// the world. Esc with a window open closes the window opened last instead (<see cref="EscapeStack"/>). It saves and loads the world (host only), opens the world to the LAN or stops hosting, shows
 /// how others join, opens help, and quits to the main menu or the desktop. The world keeps running behind
 /// it: other players are still playing. F1 opens help on the page for what the player is doing.
 /// </summary>
@@ -104,6 +104,7 @@ public partial class PauseMenu : CanvasLayer
 
         _help = new HelpWindow { Name = "Help", Visible = false };
         AddChild(_help);
+        EscapeStack.Add(this, () => IsOpen, Close);
     }
 
     public override void _Input(InputEvent @event)
@@ -113,16 +114,22 @@ public partial class PauseMenu : CanvasLayer
             OpenHelp();
             GetViewport().SetInputAsHandled();
         }
-        // Esc while playing opens the menu; while another screen has the mouse, that screen closes first.
-        else if (GameInput.Pressed(@event, InputActions.Pause) && (IsOpen || Input.MouseMode == Input.MouseModeEnum.Captured))
+        // Esc closes what was opened last. A window (Options, saves, a part's menu) closes itself; any other panel
+        // (this menu, the inventory, chat) closes here, ahead of the controls on it.
+        else if (GameInput.Pressed(@event, InputActions.Pause) && EscapeStack.Topmost is not null and not ToolWindow)
         {
-            // A window open inside the menu (Options, saves) closes first.
-            if (IsOpen && _saveScreen is not null && ToolWindow.Topmost is { } top && _saveScreen.IsAncestorOf(top))
-                return;
-            if (IsOpen)
-                Close();
-            else
-                Open();
+            EscapeStack.CloseTopmost();
+            GetViewport().SetInputAsHandled();
+        }
+    }
+
+    public override void _UnhandledInput(InputEvent @event)
+    {
+        // Esc with nothing open opens the menu, whether or not the game has the mouse. While watching another player,
+        // the Spectator uses Esc up in _Input first to give the view back.
+        if (GameInput.Pressed(@event, InputActions.Pause) && EscapeStack.Topmost is null)
+        {
+            Open();
             GetViewport().SetInputAsHandled();
         }
     }
@@ -154,6 +161,7 @@ public partial class PauseMenu : CanvasLayer
     {
         _status.Text = "";
         _root.Visible = true;
+        EscapeStack.Raise(this);
         Input.MouseMode = Input.MouseModeEnum.Visible;
         _Process(0);
     }

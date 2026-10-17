@@ -11,13 +11,14 @@ namespace Mechanica.Game.Tests;
 /// <summary>
 /// The compass (UI spec §13): the story's goal is on it in a new world; waypoints sit where their bearing
 /// puts them, behind ones at an edge, distance shown within 500 m and a world diamond within 100 m. Clicking
-/// a diamond makes it primary; the bar hides under the inventory and with Show compass off.
+/// a diamond makes it primary; other players, AI agents included, are on it at any distance; the bar hides under the inventory and with Show compass off.
 /// </summary>
 public partial class CompassTest : StagedTest
 {
     private Main _main = null!;
     private CompassHud _compass = null!;
     private int _closedAt;
+    private int _agentPeer;
 
     protected override string Tag => "compass";
 
@@ -90,6 +91,38 @@ public partial class CompassTest : StagedTest
                 return false;
             }
             Check(_compass.Primary == "right", $"the clicked one is primary ({_compass.Primary})");
+            return true;
+        });
+        Add("other players are on it at any distance", frame =>
+        {
+            if (frame == 0)
+            {
+                var joined = _main.AgentHost.Join("compass-test", "Scout", out var error);
+                if (!Check(joined is not null, $"an AI agent joins ({error})"))
+                    return true;
+                _agentPeer = joined!.Peer;
+                // Far behind the player: well past the 500 m waypoints show their distance within.
+                var me = _main.LocalPlayer!.GlobalPosition;
+                var heading = _compass.Heading * MathF.PI / 180f;
+                var behind = me - new Vector3(MathF.Sin(heading), 0, -MathF.Cos(heading)) * 2000f;
+                Check(_main.PlayerSync.HostTeleport(_agentPeer, behind), "the agent is moved 2 km behind");
+                return false;
+            }
+            if (!_compass.PlayerMarks.Any(m => m.Peer == _agentPeer && m.Mark.Distance > 1500) && frame < 60)
+                return false;
+            var mark = _compass.PlayerMarks.FirstOrDefault(m => m.Peer == _agentPeer);
+            Check(mark.Name == "Scout (AI)", $"the agent is on the bar by name ({string.Join(", ", _compass.PlayerMarks.Select(m => m.Name))})");
+            Check(mark.Mark.Behind && mark.Mark.Distance > 1500, $"behind and 2 km away ({mark.Mark})");
+            Check(_compass.PlayerMarks.All(m => m.Peer != _main.Session.LocalPeer), "the local player is not marked");
+            Check(_compass.Primary == "right", "a player never becomes the primary waypoint");
+            _main.AgentHost.Leave("compass-test");
+            return true;
+        });
+        Add("a player who leaves comes off it", frame =>
+        {
+            if (_compass.PlayerMarks.Any(m => m.Peer == _agentPeer) && frame < 60)
+                return false;
+            Check(!_compass.PlayerMarks.Any(m => m.Peer == _agentPeer), "the agent's mark is gone");
             return true;
         });
         Add("the bar hides under the inventory", frame =>

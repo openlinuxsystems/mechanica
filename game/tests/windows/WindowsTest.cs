@@ -12,7 +12,8 @@ namespace Mechanica.Game.Tests;
 /// the in-game menu, Options (every tab, scrolled past both ends), the save screen, AI Reports, the inventory, the Fabricator screen, the upgrade dialog, the Logbook, the Lift's
 /// blueprint menu, the Paint Tool's colour picker, a part's menu and a confirm dialog never reach the game behind them (nor over the hotbar while the inventory is open), nor do clicks on the screen around a window opened from
 /// the menu, where a wheel changes the hotbar and a click takes the
-/// mouse back and closes the menu. The windows are still open afterwards.
+/// mouse back and closes the menu. The windows are still open afterwards. Esc closes each of them, the window opened
+/// last first, and opens the menu only when nothing is open.
 /// </summary>
 public partial class WindowsTest : StagedTest
 {
@@ -21,6 +22,8 @@ public partial class WindowsTest : StagedTest
     private PauseMenu _menu = null!;
     private (int Creation, int Part) _station;
     private ulong _chatFrame;
+    private int _engine;
+    private int _escAt;
 
     protected override string Tag => "windows";
 
@@ -272,13 +275,70 @@ public partial class WindowsTest : StagedTest
             var panel = _main.PartSettings!;
             if (frame == 0)
             {
-                panel.Open(_station.Creation, BuildEngine(_station.Creation));
+                panel.Open(_station.Creation, _engine = BuildEngine(_station.Creation));
                 return false;
             }
             Scrub(panel.Window);
             Check(panel.IsOpen, "the engine's menu is still open");
             panel.Close();
             return Clean("a part's menu");
+        });
+        // Esc closes the window opened last (UI spec §1); only with nothing open does it open the in-game menu.
+        EscCloses("the inventory", () => _main.GetNode<Items.InventoryScreen>("InventoryScreen").Show(null), () => _main.GetNode<Items.InventoryScreen>("InventoryScreen").IsOpen);
+        EscCloses("the Fabricator screen", () => _main.GetNode<Items.InventoryScreen>("InventoryScreen").Show(Core.Items.InventoryRef.OfPart(_station.Creation, _station.Part)), () => _main.GetNode<Items.InventoryScreen>("InventoryScreen").IsOpen);
+        EscCloses("the Logbook", () => _main.GetNode<Quests.QuestHud>("QuestHud").Open(), () => _main.GetNode<Quests.QuestHud>("QuestHud").IsOpen);
+        EscCloses("the blueprint menu", () => _main.Blueprints!.Open(), () => _main.Blueprints!.IsOpen);
+        EscCloses("the colour picker", () => _main.Tools!.Paint.Picker.Open(0), () => _main.Tools!.Paint.Picker.IsOpen);
+        EscCloses("a part's menu", () => _main.PartSettings!.Open(_station.Creation, _engine), () => _main.PartSettings!.IsOpen);
+        EscCloses("the upgrade dialog", () => _main.Upgrades!.Open(_station), () => _main.Upgrades!.IsOpen);
+        EscCloses("the Creation Inspector", () => _main.Inspector.Open(_station.Creation), () => _main.Inspector.IsOpen);
+        EscCloses("the Handbook", () => _menu.OpenHelp(), () => _menu.Help.IsVisibleInTree());
+        EscCloses("chat", () => _main.GetNode<Chat.ChatPanel>("ChatPanel").Open(), () => _main.GetNode<Chat.ChatPanel>("ChatPanel").IsOpen);
+        Add("Esc closes the topmost of two windows first", frame =>
+        {
+            var inventory = _main.GetNode<Items.InventoryScreen>("InventoryScreen");
+            var upgrade = _main.Upgrades!;
+            switch (frame)
+            {
+                case 0:
+                    inventory.Show(Core.Items.InventoryRef.OfPart(_station.Creation, _station.Part));
+                    upgrade.Open(_station);
+                    return false;
+                case 1:
+                    PressEsc();
+                    return false;
+                case 2:
+                    Check(!upgrade.IsOpen && inventory.IsOpen, "the first Esc closes the upgrade dialog over the Fabricator screen, which stays open");
+                    PressEsc();
+                    return false;
+                default:
+                    Check(!inventory.IsOpen && !_menu.IsOpen, "the second Esc closes the Fabricator screen, without opening the menu");
+                    return true;
+            }
+        });
+        Add("Esc with nothing open opens the menu, and Esc closes what it opened", frame =>
+        {
+            switch (frame)
+            {
+                case 0:
+                    Check(EscapeStack.Topmost is null, $"nothing is open ({EscapeStack.Topmost?.Name})");
+                    PressEsc();
+                    return false;
+                case 1:
+                    Check(_menu.IsOpen, "Esc opens the menu");
+                    _menu.OpenOptions();
+                    return false;
+                case 2:
+                    PressEsc();
+                    return false;
+                case 3:
+                    Check(_menu.IsOpen && Walk(_menu).OfType<OptionsScreen>().All(o => o.IsQueuedForDeletion()), "Esc closes Options and leaves the menu open");
+                    PressEsc();
+                    return false;
+                default:
+                    Check(!_menu.IsOpen, "the next Esc closes the menu");
+                    return true;
+            }
         });
         Add("the character choice keeps them", _ =>
         {
@@ -328,6 +388,36 @@ public partial class WindowsTest : StagedTest
         Check(engine is not null, "the engine fits on the floor");
         _main.Build.Changed(creation);
         return engine?.Id ?? 0;
+    }
+
+    // Opens a window, presses Esc, and checks that the window closed without the menu opening behind it. A window on a
+    // HUD layer shows once the HUD has caught up (a process frame), which can lag a few physics ticks.
+    private void EscCloses(string what, Action open, Func<bool> isOpen) => Add($"Esc closes {what}", frame =>
+    {
+        if (frame == 0)
+        {
+            open();
+            _escAt = -1;
+            return false;
+        }
+        if (_escAt < 0)
+        {
+            if (EscapeStack.Topmost is null && frame < 120)
+                return false;
+            Check(isOpen() && EscapeStack.Topmost is not null, $"{what} opens, on top ({EscapeStack.Topmost?.Name})");
+            _escAt = frame;
+            PressEsc();
+            return false;
+        }
+        Check(!isOpen(), $"Esc closes {what}");
+        Check(!_menu.IsOpen, $"Esc on {what} does not open the menu too");
+        return true;
+    });
+
+    private void PressEsc()
+    {
+        GetViewport().PushInput(new InputEventKey { Pressed = true, PhysicalKeycode = Key.Escape, Keycode = Key.Escape });
+        GetViewport().PushInput(new InputEventKey { Pressed = false, PhysicalKeycode = Key.Escape, Keycode = Key.Escape });
     }
 
     private bool Clean(string what)
