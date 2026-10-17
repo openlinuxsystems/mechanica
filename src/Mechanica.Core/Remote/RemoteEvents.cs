@@ -37,6 +37,7 @@ public sealed class RemoteEvents
         ["projectiles"] = "A projectile was launched or landed.",
         ["mods"] = "Mod content was validated or reloaded.",
         ["reports"] = "An agent filed a note, recommendation or bug report.",
+        ["world"] = "The world was saved, or a load, new world or reset finished: kind (saved, loaded), plus the world.info status.",
         ["events_dropped"] = "Sent automatically when a subscriber fell behind and notifications were dropped: count.",
     };
 
@@ -141,6 +142,8 @@ public sealed class RemoteEvents
     }
 
     internal void Remove(Subscriber subscriber) => _subscribers.Remove(subscriber);
+
+    internal bool Has(Subscriber subscriber) => _subscribers.Contains(subscriber);
 
     internal string DroppedNotice(int count) =>
         Notification("events_dropped", Clock?.Invoke() ?? 0, JsonSerializer.SerializeToElement(new { count }));

@@ -2,7 +2,7 @@
 
 <!-- Generated from mechanica.describe by tools/ai/gen-docs.sh. Do not edit by hand. -->
 
-Protocol version 2. 155 methods: 56 actions (change the world), 29 queries (only read it) and 70 endpoint methods. Every one is a JSON-RPC method of the same name whose `params` are the named arguments below (snake_case). `describe.json` beside this file is the same data as JSON Schemas, ready to become an AI's tool list. Scopes: `observe` reads, `play` acts as a player, `admin` is for debug powers ([ai-endpoint.md](../ai-endpoint.md#scopes)).
+Protocol version 2. 163 methods: 56 actions (change the world), 29 queries (only read it) and 78 endpoint methods. Every one is a JSON-RPC method of the same name whose `params` are the named arguments below (snake_case). `describe.json` beside this file is the same data as JSON Schemas, ready to become an AI's tool list. Scopes: `observe` reads, `play` acts as a player, `admin` is for debug powers ([ai-endpoint.md](../ai-endpoint.md#scopes)).
 
 ## Contents
 
@@ -22,6 +22,7 @@ Protocol version 2. 155 methods: 56 actions (change the world), 29 queries (only
 - [Quests](#quests) (3)
 - [Survival](#survival) (10)
 - [Using held items](#using-held-items) (4)
+- [World](#world) (8)
 - [Editors (editor.*)](#editors-editor) (30)
 - [Lua tools (lua.*)](#lua-tools-lua) (3)
 - [Mod packages (package.*)](#mod-packages-package) (6)
@@ -1103,6 +1104,90 @@ Using the item in a slot (UseItemArgs). Arguments of UseItem: use the item in a 
 | `creation` | integer or null |  |  | The Creation of the part the item is used on (soil for a seed), if any. Give it with Part. |
 | `part` | integer or null |  |  | The part the item is used on, if any. The script checks reach (farm.soil does). |
 
+## World
+
+### `world.info`
+
+*method, admin scope*
+
+The running world: name, seed, mode, difficulty, the save it came from, world time, tick, time scale, paused, joined players, and whether a world change is under way.
+
+No params.
+
+### `world.list`
+
+*method, admin scope*
+
+Saved worlds, newest first: name, file, saved_at, mode, play_seconds, and error for a save that does not load.
+
+No params.
+
+### `world.load`
+
+*method, admin scope*
+
+Load a saved world by name or file name. Answers at once; the world loads after, and the connection carries over. Players joined are disconnected, so it needs disconnect_clients when there are any.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `name` | string | yes |  | A saved world's name or file name, as world.list shows it. |
+| `disconnect_clients` | boolean |  | `false` | True to go ahead although players are joined; they are disconnected and can join the new world. |
+
+### `world.new`
+
+*method, admin scope*
+
+Start a new world (name, seed, mode, difficulty, character). Answers at once with what it will be; the world starts after.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `name` | string |  | `"World"` | The new world's name. |
+| `seed` | integer or null |  |  | World seed; random when left out. |
+| `mode` | one of "creative", "survival" |  | `"survival"` | Game mode. |
+| `difficulty` | one of "easy", "normal" |  | `"normal"` | Difficulty. |
+| `character` | string or null |  |  | The host player's character (qualified id). |
+| `disconnect_clients` | boolean |  | `false` | True to go ahead although players are joined. |
+
+### `world.pause`
+
+*method, admin scope*
+
+Pause or resume the world. The endpoint keeps answering while paused. Returns the status.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `paused` | boolean | yes |  | True to pause, false to resume. |
+
+### `world.reset`
+
+*method, admin scope*
+
+Start the running world again from nothing: the same name, seed, mode and difficulty, nothing built. For a clean test world.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `disconnect_clients` | boolean |  | `false` | True to go ahead although players are joined. |
+
+### `world.save`
+
+*method, admin scope*
+
+Save the world, under its own name or a new one. Returns the name, file and path.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `name` | string or null |  |  | Name to save as; the world's own name when left out. |
+
+### `world.time_scale`
+
+*method, admin scope*
+
+Run the world faster or slower (0.05 to 10, 1 is real time). Returns the status.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `scale` | number | yes |  | How fast the world runs, from MinTimeScale to MaxTimeScale (1 is real time). |
+
 ## Editors (editor.*)
 
 ### `editor.batch.run`
@@ -1785,6 +1870,7 @@ Subscribe with `mechanica.subscribe {"topics": [...]}`; each arrives as a `mecha
 | `reports` | An agent filed a note, recommendation or bug report. |
 | `seats` | Someone sat down or stood up: seat, seated. |
 | `vitals` | A player's vitals changed (health, death, respawn): the GetVitals view. |
+| `world` | The world was saved, or a load, new world or reset finished: kind (saved, loaded), plus the world.info status. |
 
 ## Error codes
 
