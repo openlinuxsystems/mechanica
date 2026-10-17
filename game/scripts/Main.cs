@@ -2,6 +2,7 @@ using Godot;
 using Mechanica.Core;
 using Mechanica.Core.Bots;
 using Mechanica.Core.Characters;
+using Mechanica.Core.Creations;
 using Mechanica.Core.Data;
 using Mechanica.Core.Items;
 using Mechanica.Core.Net;
@@ -249,6 +250,15 @@ public partial class Main : Node3D
 
     /// <summary>The external AI endpoint (WebSocket JSON-RPC), listening only when asked to.</summary>
     public AiEndpoint Ai { get; private set; } = null!;
+
+    /// <summary>AI notes, recommendations and bug reports, and what led up to them.</summary>
+    public AiReports Reports { get; private set; } = null!;
+
+    /// <summary>
+    /// The AI reports folder. Null uses <c>user://ai_reports</c> in the real game and a folder under the system's
+    /// temporary folder in test scenes, which never write to the player's own reports.
+    /// </summary>
+    public string? ReportsFolder { get; set; }
 
     /// <summary>The local player's Hammer, once the player has spawned.</summary>
     public HammerTool? Hammer => Tools?.Hammer;
@@ -513,6 +523,12 @@ public partial class Main : Node3D
         }
         Recorder = new RecordReplay { Name = "Recorder", Session = Session, Actions = Actions };
         AddChild(Recorder);
+        Reports = new AiReports
+        {
+            Name = "Reports", Session = Session, Actions = Actions, Folder = ReportsFolder ?? (Settings.GameSettings.Persist ? null : System.IO.Path.Combine(System.IO.Path.GetTempPath(), "mechanica-test-ai-reports", $"{System.Environment.ProcessId}-{GetInstanceId()}")), Context = DescribeForReport,
+            Scripts = () => Scripts.Runtime, Bots = () => Bots.Runtime,
+        };
+        AddChild(Reports);
         Ai = new AiEndpoint { Name = "Ai", Session = Session, Actions = Actions, Log = Recorder };
         AddChild(Ai);
         // The offline player spawned with PlayerSync, before building existed.
@@ -568,7 +584,7 @@ public partial class Main : Node3D
             // F1 opens the page for what the player is doing.
             var pause = new PauseMenu
             {
-                Name = "PauseMenu", Session = Session, Saves = Saves, Lan = Lan,
+                Name = "PauseMenu", Session = Session, Saves = Saves, Lan = Lan, Reports = Reports.Store,
                 HelpTopic = () => questLog.IsOpen ? "quests.md" : inventory.IsOpen ? "survival.md" : "playing.md",
                 World = () => Survival.Own is { } own ? (own.Mode, own.Difficulty) : null,
             };
@@ -854,6 +870,22 @@ public partial class Main : Node3D
         MenuWorldName = null;
         return name;
     }
+
+    // The game as an AI report records it.
+    private Core.Reports.ReportContext DescribeForReport() => new()
+    {
+        ProtocolVersion = Core.Remote.JsonRpcEndpoint.ProtocolVersion,
+        ContentFingerprint = Content?.Fingerprint ?? "",
+        Mods = [.. (Content?.Mods ?? []).Select(m => $"{m.Id} {m.Version}")],
+        World = Saves.WorldName,
+        LoadedFrom = Save is null ? null : Options?.LoadPath ?? (Saves.Store ?? SaveSync.UserStore).PathFor(Save.Name),
+        Seed = Streamer.Seed,
+        Mode = Options!.GameMode.ToString().ToLowerInvariant(),
+        Difficulty = Options.Difficulty.ToString().ToLowerInvariant(),
+        WorldTime = Scripts.Runtime.Time,
+        Headless = DisplayServer.GetName() == "headless",
+        Players = [.. PlayerSync.Players.Values.OrderBy(p => p.PeerId).Select(p => new Core.Reports.ReportPlayer(p.PeerId, p.DisplayName, p.GlobalPosition.ToNumerics().ToVec3()))],
+    };
 
     // What the LAN beacon says about this world while hosting.
     private LanSession? DescribeForLan() => Session.State != NetSession.SessionState.Hosting ? null : new LanSession(
