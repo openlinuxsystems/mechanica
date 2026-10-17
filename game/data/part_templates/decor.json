@@ -1,0 +1,12 @@
+{
+  "id": "new_prop",
+  "name": "New Prop",
+  "category": "decor",
+  "mass": 5,
+  "durability": 2,
+  "friction": 0.5,
+  "buoyancy": 0.3,
+  "flammable": true,
+  "sound_material": "wood",
+  "size": [2, 2, 2]
+}

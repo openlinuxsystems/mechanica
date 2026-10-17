@@ -1,5 +1,6 @@
 using Godot;
 using FileAccess = Godot.FileAccess;
+using Mechanica.Core.Actions;
 using Mechanica.Core.Building;
 using Mechanica.Core.Creations;
 using Mechanica.Core.Data;
@@ -14,12 +15,14 @@ namespace Mechanica.Game.Building;
 /// <c>PlacePart</c>/<c>RemovePart</c> actions: it answers reach and clearance questions from the live
 /// scene, rebuilds Creation nodes after each graph change and sends the changed Creation to every
 /// client. A late joiner gets every Creation when it becomes ready. Clients only mirror what arrives.
+/// It also runs <c>SpawnPart</c> and <c>ClearCreations</c> (<see cref="CreationActions"/>), which the Test
+/// Sandbox uses, and is the part catalog for all four actions, so <see cref="SetContent"/> can swap mods.
 /// <para>
 /// Each update carries the whole Creation as save JSON (graph plus Body poses), which keeps clients
 /// exact without a delta format. Moving bodies between changes is physics state sync's job (chunk 4b).
 /// </para>
 /// </summary>
-public partial class BuildSync : Node, IBuildWorld
+public partial class BuildSync : Node, IBuildWorld, IPartCatalog
 {
     /// <summary>Where the building limits are read from.</summary>
     public const string SettingsPath = "res://data/building.json";
@@ -36,11 +39,11 @@ public partial class BuildSync : Node, IBuildWorld
     /// <summary>The Creations this peer shows. Set before adding to the tree.</summary>
     public CreationWorld Creations { get; init; } = null!;
 
-    /// <summary>Part definitions (the loaded mods). Set before adding to the tree.</summary>
-    public ModLoadResult Catalog { get; init; } = null!;
+    /// <summary>Part definitions (the loaded mods). Set before adding to the tree; <see cref="SetContent"/> swaps it.</summary>
+    public ModLoadResult Catalog { get; set; } = null!;
 
-    /// <summary>Meshes and shapes for the parts. Set before adding to the tree.</summary>
-    public PartAssets Assets { get; init; } = null!;
+    /// <summary>Meshes and shapes for the parts. Set before adding to the tree; <see cref="SetContent"/> swaps it.</summary>
+    public PartAssets Assets { get; set; } = null!;
 
     /// <summary>Building limits; null loads <see cref="SettingsPath"/>.</summary>
     public BuildSettings? Settings { get; set; }
@@ -58,11 +61,43 @@ public partial class BuildSync : Node, IBuildWorld
         Session.StateChanged -= OnStateChanged;
     }
 
-    /// <summary>Registers <c>PlacePart</c> and <c>RemovePart</c>.</summary>
-    public void RegisterActions(Core.Actions.ActionDispatcher dispatcher)
+    /// <summary>
+    /// Uses <paramref name="mods"/> from now on, as the Test Sandbox does after the Part Editor exports.
+    /// Creations already in the world keep the parts they were built with.
+    /// </summary>
+    public void SetContent(ModLoadResult mods)
+    {
+        Catalog = mods;
+        Assets = new PartAssets(mods);
+    }
+
+    /// <inheritdoc/>
+    public PartDefinition? FindDefinition(string id) => Catalog.FindDefinition(id);
+
+    /// <summary>
+    /// Registers <c>PlacePart</c>, <c>RemovePart</c>, <c>SpawnPart</c> (<see cref="SpawnPartArgs"/>; returns
+    /// the new Creation's id) and <c>ClearCreations</c> (no arguments).
+    /// </summary>
+    public void RegisterActions(ActionDispatcher dispatcher)
     {
         Settings ??= LoadSettings();
-        new BuildActions(Catalog, Settings, this).Register(dispatcher);
+        new BuildActions(this, Settings, this).Register(dispatcher);
+        dispatcher.Register<SpawnPartArgs>(CreationActions.SpawnPart,
+            (_, args) => CreationActions.ValidateSpawn(args, this, Creations.All.Count()),
+            (_, args) =>
+            {
+                var creation = CreationActions.BuildSpawn(args, NextCreationId(), this);
+                Added(creation);
+                return System.Text.Json.JsonSerializer.SerializeToElement(creation.Id);
+            });
+        dispatcher.Register<NoArgs>(CreationActions.ClearCreations,
+            (_, _) => null,
+            (_, _) =>
+            {
+                foreach (var id in Creations.All.Select(c => c.Id).ToList())
+                    Removed(id);
+                return null;
+            });
     }
 
     /// <summary>Reads <see cref="SettingsPath"/>, failing loudly on bad data.</summary>

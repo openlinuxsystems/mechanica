@@ -30,8 +30,8 @@ public partial class Main : Node3D
     public bool ReadDeviceInput { get; set; } = true;
 
     /// <summary>
-    /// Mods this instance runs, checked against the host on join. Null loads the enabled mods
-    /// (<see cref="ModPaths.LoadContent"/>) when the scene starts; tests may set it directly.
+    /// Mods this instance runs, checked against the host on join. Null uses the manifest of
+    /// <see cref="Mods"/>; tests may set it directly.
     /// </summary>
     public ContentManifest? Content { get; set; }
 
@@ -133,6 +133,19 @@ public partial class Main : Node3D
         };
         if (error != Error.Ok)
             GD.PushError($"[net] {Session.LastMessage}");
+    }
+
+    /// <summary>
+    /// Switches to newly loaded mods, as the Test Sandbox does after the Part Editor exports. Clients
+    /// already connected stay; the next client to join is checked against the new mods.
+    /// </summary>
+    public void ReloadMods(ModLoadResult mods)
+    {
+        Mods = mods;
+        Content = ContentManifest.From(mods);
+        Session.Content = Content;
+        Build.SetContent(mods);
+        Hammer?.ReloadParts();
     }
 
     private static ModLoadResult LoadMods()

@@ -1,0 +1,17 @@
+{
+  "id": "new_block",
+  "name": "New Block",
+  "category": "block",
+  "mass": 2,
+  "durability": 3,
+  "friction": 0.6,
+  "buoyancy": 0.5,
+  "flammable": false,
+  "sound_material": "wood",
+  "size": [1, 1, 1],
+  "visual": {
+    "color": "#b08850",
+    "roughness": 0.8,
+    "metallic": 0
+  }
+}

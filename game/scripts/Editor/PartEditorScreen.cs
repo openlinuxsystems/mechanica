@@ -1,0 +1,818 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using Godot;
+using Mechanica.Core;
+using Mechanica.Core.Data;
+using Mechanica.Core.Editor;
+using Mechanica.Game.Creations;
+using Mechanica.Game.Mods;
+using FileAccess = Godot.FileAccess;
+
+namespace Mechanica.Game.Editor;
+
+/// <summary>
+/// The in-game Part Editor (chunk 5, D9). Make a new part from a template or open one from a mod;
+/// build its model from imported glTF meshes and primitive/CSG pieces; set its footprint, physical and
+/// visual properties, colour variants, collision shape and sockets; watch the 3D preview with collision,
+/// socket and connection overlays; and export it into its mod folder in one click. "Test in Sandbox"
+/// exports and spawns it in the Test Sandbox.
+/// <para>
+/// All data logic lives in Core (<see cref="PartDocument"/>, <see cref="PartExporter"/>,
+/// <see cref="SocketTools"/>, <see cref="AssetImporter"/>); this node only draws it and forwards edits.
+/// </para>
+/// </summary>
+public partial class PartEditorScreen : Control
+{
+    /// <summary>Where the part templates live (part JSON files, one per starting point).</summary>
+    public const string TemplatesPath = "res://data/part_templates";
+
+    private const float PositionStep = MechanicaInfo.GridSize / 8;
+
+    private PartAssets _assets = null!;
+    private PartPreview _preview = null!;
+    private SubViewport _viewport = null!;
+    private Label _title = null!;
+    private Label _hint = null!;
+    private RichTextLabel _problems = null!;
+    private TabContainer _tabs = null!;
+    private PropertyGrid _partGrid = null!;
+    private PropertyGrid _pieceGrid = null!;
+    private PropertyGrid _collisionGrid = null!;
+    private PropertyGrid _socketGrid = null!;
+    private PropertyGrid _lookGrid = null!;
+    private PropertyGrid _behaviourGrid = null!;
+    private ItemList _pieces = null!;
+    private ItemList _sockets = null!;
+    private Button _undo = null!;
+    private Button _redo = null!;
+    private FileDialog _openDialog = null!;
+    private FileDialog _importDialog = null!;
+    private ConfirmationDialog _newDialog = null!;
+    private AcceptDialog _message = null!;
+    private HelpWindow _help = null!;
+    private Action<string>? _importTarget;
+    private bool _quiet;
+    private int _selectedPiece = -1;
+    private int _selectedSocket = -1;
+    private int _selectedVariant = -1;
+
+    /// <summary>Raised after a successful export when the user asked to test the part; carries its qualified id.</summary>
+    public event Action<string>? TestRequested;
+
+    /// <summary>Raised when the user leaves the editor.</summary>
+    public event Action? CloseRequested;
+
+    /// <summary>Mods folder parts are opened from and saved to. Set before the node enters the tree.</summary>
+    public string ModsRoot { get; set; } = ModPaths.ModsRoot;
+
+    /// <summary>The part being edited, or null before one is opened.</summary>
+    public PartDocument? Document { get; private set; }
+
+    /// <summary>The 3D preview.</summary>
+    public PartPreview Preview => _preview;
+
+    /// <summary>The problems list as plain text, for tests.</summary>
+    public string ProblemsText => _problems.GetParsedText();
+
+    /// <summary>The selected model piece, or -1.</summary>
+    public int SelectedPiece => _selectedPiece;
+
+    /// <summary>The selected socket, or -1.</summary>
+    public int SelectedSocket => _selectedSocket;
+
+    /// <summary>Template names (file names without <c>.json</c>), sorted.</summary>
+    public static IReadOnlyList<string> TemplateNames =>
+        [.. DirAccess.GetFilesAt(TemplatesPath).Where(f => f.EndsWith(".json", StringComparison.Ordinal)).Select(f => f[..^5]).Order(StringComparer.Ordinal)];
+
+    public override void _Ready()
+    {
+        SetAnchorsPreset(LayoutPreset.FullRect);
+        AddChild(new Panel { AnchorRight = 1, AnchorBottom = 1 });
+        var margin = new MarginContainer();
+        margin.SetAnchorsPreset(LayoutPreset.FullRect);
+        foreach (var side in new[] { "left", "right", "top", "bottom" })
+            margin.AddThemeConstantOverride($"margin_{side}", 8);
+        AddChild(margin);
+        var column = new VBoxContainer();
+        margin.AddChild(column);
+
+        var toolbar = new HBoxContainer();
+        column.AddChild(toolbar);
+        AddButton(toolbar, "New…", () => _newDialog.PopupCentered(new Vector2I(420, 220)), "Start a part from a template");
+        AddButton(toolbar, "Open…", () => _openDialog.PopupCentered(new Vector2I(900, 600)), "Open a part file from a mod");
+        AddButton(toolbar, "Export", () => _ = ExportAsync(), "Validate and write the part into its mod folder (Ctrl+S)");
+        AddButton(toolbar, "Test in Sandbox", () => _ = TestInSandboxAsync(), "Export, then spawn the part in the Test Sandbox");
+        toolbar.AddChild(new VSeparator());
+        _undo = AddButton(toolbar, "Undo", () => Document?.Undo(), "Ctrl+Z");
+        _redo = AddButton(toolbar, "Redo", () => Document?.Redo(), "Ctrl+Shift+Z");
+        toolbar.AddChild(new VSeparator());
+        AddButton(toolbar, "Help", () => _help.Open("getting-started.md"), "Getting Started and the Part Data Schema Reference");
+        AddButton(toolbar, "Close", () => CloseRequested?.Invoke(), "Back to the menu");
+        _title = new Label { SizeFlagsHorizontal = SizeFlags.ExpandFill, HorizontalAlignment = HorizontalAlignment.Right };
+        toolbar.AddChild(_title);
+
+        var split = new HSplitContainer { SizeFlagsVertical = SizeFlags.ExpandFill, SplitOffsets = [440] };
+        column.AddChild(split);
+        _tabs = new TabContainer { CustomMinimumSize = new Vector2(420, 0) };
+        split.AddChild(_tabs);
+        BuildTabs();
+
+        var right = new VSplitContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        split.AddChild(right);
+        var view = new VBoxContainer { SizeFlagsVertical = SizeFlags.ExpandFill, SizeFlagsStretchRatio = 3 };
+        right.AddChild(view);
+        var container = new SubViewportContainer { Stretch = true, SizeFlagsVertical = SizeFlags.ExpandFill };
+        container.GuiInput += OnViewInput;
+        view.AddChild(container);
+        _viewport = new SubViewport { OwnWorld3D = true, Msaa3D = Viewport.Msaa.Msaa4X };
+        container.AddChild(_viewport);
+        _preview = new PartPreview { Name = "Preview" };
+        _viewport.AddChild(_preview);
+        var overlays = new HBoxContainer();
+        view.AddChild(overlays);
+        AddToggle(overlays, "Collision", true, on =>
+        {
+            _preview.ShowCollision = on;
+            Refresh(rebuildInspector: false);
+        });
+        AddToggle(overlays, "Sockets", true, on =>
+        {
+            _preview.ShowSockets = on;
+            Refresh(rebuildInspector: false);
+        });
+        AddToggle(overlays, "Connections", true, on =>
+        {
+            _preview.ShowConnections = on;
+            Refresh(rebuildInspector: false);
+        });
+        _hint = new Label
+        {
+            Text = "Right-drag to orbit, wheel to zoom. Connections: green rigid, blue/orange/purple joint, red none.",
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Modulate = new Color(1, 1, 1, 0.7f),
+        };
+        overlays.AddChild(_hint);
+        _problems = new RichTextLabel { BbcodeEnabled = true, SelectionEnabled = true, SizeFlagsVertical = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0, 90) };
+        right.AddChild(_problems);
+
+        BuildDialogs();
+        _assets = new PartAssets(id => Path.Combine(ModsRoot, id));
+        Refresh(rebuildInspector: true);
+    }
+
+    public override void _UnhandledKeyInput(InputEvent @event)
+    {
+        if (@event is not InputEventKey { Pressed: true, Echo: false } key || !IsVisibleInTree())
+            return;
+        var ctrl = key.CtrlPressed || key.MetaPressed;
+        if (ctrl && key.Keycode == Key.Z)
+            _ = key.ShiftPressed ? Document?.Redo() : Document?.Undo();
+        else if (ctrl && key.Keycode == Key.Y)
+            Document?.Redo();
+        else if (ctrl && key.Keycode == Key.S)
+            _ = ExportAsync();
+        else
+            return;
+        GetViewport().SetInputAsHandled();
+    }
+
+    // ---- Public operations (buttons call these; tests drive them directly) ----
+
+    /// <summary>Starts a new part from a template in <c>ModsRoot/&lt;modId&gt;</c>. Returns an error, or null.</summary>
+    public string? NewPart(string modId, string partId, string name, string template)
+    {
+        if (!Identifiers.IsValid(modId))
+            return $"Mod id '{modId}' must be lowercase snake_case.";
+        if (!Identifiers.IsValid(partId))
+            return $"Part id '{partId}' must be lowercase snake_case.";
+        var text = FileAccess.GetFileAsString($"{TemplatesPath}/{template}.json");
+        var diagnostics = new List<DataDiagnostic>();
+        var definition = ModLoader.ParseJson<PartDefinition>(text, $"{template}.json", diagnostics);
+        if (definition is null)
+            return $"Template '{template}' could not be read: {string.Join("; ", diagnostics)}";
+        SetDocument(PartDocument.New(Path.Combine(ModsRoot, modId), definition, partId, string.IsNullOrWhiteSpace(name) ? partId : name));
+        return null;
+    }
+
+    /// <summary>Opens a part file. Returns an error, or null.</summary>
+    public string? OpenPart(string file)
+    {
+        var diagnostics = new List<DataDiagnostic>();
+        var document = PartDocument.Open(file, diagnostics);
+        if (document is null)
+            return string.Join("\n", diagnostics);
+        SetDocument(document);
+        return null;
+    }
+
+    /// <summary>Imports a glTF file into the part's mod and adds it as a model piece. Returns an error, or null.</summary>
+    public string? ImportMesh(string file)
+    {
+        if (Document is null)
+            return "Open or create a part first.";
+        if (!AssetImporter.TryImport(file, Document.ModDirectory, AssetKind.Mesh, out var path, out var error))
+            return error;
+        _assets.ClearCache();
+        Document.AddPiece(ModelPiece.NewMesh(path));
+        SelectPiece(Document.Source.Pieces.Count - 1);
+        return null;
+    }
+
+    /// <summary>Selects a model piece and shows its fields.</summary>
+    public void SelectPiece(int index)
+    {
+        _selectedPiece = Document is not null && index >= 0 && index < Document.Source.Pieces.Count ? index : -1;
+        Refresh(rebuildInspector: true);
+    }
+
+    /// <summary>Selects a socket and shows its fields.</summary>
+    public void SelectSocket(int index)
+    {
+        _selectedSocket = Document is not null && index >= 0 && index < (Document.Definition.Sockets?.Count ?? 0) ? index : -1;
+        Refresh(rebuildInspector: true);
+    }
+
+    /// <summary>
+    /// Validates and writes the part into its mod. A model that needs baking is evaluated first (CSG
+    /// takes two frames). Problems are listed in the problems pane either way.
+    /// </summary>
+    public async Task<ExportResult?> ExportAsync()
+    {
+        if (Document is not { } document)
+            return null;
+        byte[]? baked = null;
+        if (document.Source.NeedsBake)
+        {
+            // Bake an untinted copy so the runtime's visual tint isn't applied twice.
+            var model = ModelBuilder.Build(document.Source, path => _assets.LoadMeshes(path, document.ModId));
+            model.Visible = false;
+            _viewport.AddChild(model);
+            if (model is CsgShape3D)
+            {
+                await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+                await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+            }
+            baked = ModelBuilder.Bake(model);
+            _viewport.RemoveChild(model);
+            model.QueueFree();
+        }
+        var result = PartExporter.Export(document, baked);
+        _assets.ClearCache();
+        ShowProblems(result.Diagnostics, result.Succeeded ? $"Exported {result.QualifiedId} to {Display(result.PartFile!)}." : "Export failed; nothing was written.");
+        return result;
+    }
+
+    /// <summary>Exports, then asks to test the part in the sandbox.</summary>
+    public async Task TestInSandboxAsync()
+    {
+        if (await ExportAsync() is { Succeeded: true } result)
+            TestRequested?.Invoke(result.QualifiedId);
+    }
+
+    // ---- Building the UI ----
+
+    private void BuildTabs()
+    {
+        _partGrid = AddTab("Part");
+
+        var model = AddTabBox("Model");
+        _pieces = new ItemList { CustomMinimumSize = new Vector2(0, 140) };
+        _pieces.ItemSelected += i => SelectPiece((int)i);
+        model.AddChild(_pieces);
+        var add = new HFlowContainer();
+        model.AddChild(add);
+        AddButton(add, "+ Box", () => AddPiece(ModelPiece.NewBox(Footprint())));
+        AddButton(add, "+ Wedge", () => AddPiece(new ModelPiece { Kind = ModelPieceKind.Wedge, Size = Footprint() }));
+        AddButton(add, "+ Cylinder", () => AddPiece(new ModelPiece { Kind = ModelPieceKind.Cylinder, Radius = MinHalf(), Height = Footprint().Y }));
+        AddButton(add, "+ Sphere", () => AddPiece(new ModelPiece { Kind = ModelPieceKind.Sphere, Radius = MinHalf() }));
+        AddButton(add, "Import mesh…", () => Import(AssetKind.Mesh, path => ShowError(ImportMesh(path))));
+        var order = new HBoxContainer();
+        model.AddChild(order);
+        AddButton(order, "Up", () => MovePiece(-1));
+        AddButton(order, "Down", () => MovePiece(1));
+        AddButton(order, "Duplicate", () =>
+        {
+            if (Document is not null && _selectedPiece >= 0)
+                AddPiece(Document.Source.Pieces[_selectedPiece]);
+        });
+        AddButton(order, "Remove", () =>
+        {
+            if (Document is null || _selectedPiece < 0)
+                return;
+            var index = _selectedPiece;
+            _selectedPiece = -1;
+            Document.RemovePiece(index);
+        });
+        _pieceGrid = new PropertyGrid();
+        model.AddChild(_pieceGrid);
+
+        _collisionGrid = AddTab("Collision");
+
+        var sockets = AddTabBox("Sockets");
+        _sockets = new ItemList { CustomMinimumSize = new Vector2(0, 120) };
+        _sockets.ItemSelected += i => SelectSocket((int)i);
+        sockets.AddChild(_sockets);
+        var socketButtons = new HFlowContainer();
+        sockets.AddChild(socketButtons);
+        var side = new OptionButton();
+        foreach (var name in new[] { "+X", "-X", "+Y", "-Y", "+Z", "-Z" })
+            side.AddItem(name);
+        side.Selected = 2;
+        AddButton(socketButtons, "+ Socket on side", () => AddSideSocket(Core.Creations.GridCell.Directions[side.Selected]));
+        socketButtons.AddChild(side);
+        AddButton(socketButtons, "Snap to face", SnapSelectedSocket);
+        AddButton(socketButtons, "Remove", () =>
+        {
+            if (Document is null || _selectedSocket < 0)
+                return;
+            var index = _selectedSocket;
+            _selectedSocket = -1;
+            Document.RemoveSocket(index);
+        });
+        _socketGrid = new PropertyGrid();
+        sockets.AddChild(_socketGrid);
+
+        _lookGrid = AddTab("Look");
+        _behaviourGrid = AddTab("Behaviour");
+    }
+
+    private void BuildDialogs()
+    {
+        _message = new AcceptDialog { Title = "Part Editor" };
+        AddChild(_message);
+        _help = new HelpWindow { Visible = false };
+        AddChild(_help);
+
+        _openDialog = new FileDialog
+        {
+            Title = "Open part",
+            Access = FileDialog.AccessEnum.Filesystem,
+            FileMode = FileDialog.FileModeEnum.OpenFile,
+            Filters = ["*.json ; Part files"],
+            UseNativeDialog = false,
+        };
+        _openDialog.FileSelected += path => ShowError(OpenPart(path));
+        AddChild(_openDialog);
+
+        _importDialog = new FileDialog
+        {
+            Title = "Import",
+            Access = FileDialog.AccessEnum.Filesystem,
+            FileMode = FileDialog.FileModeEnum.OpenFile,
+            UseNativeDialog = false,
+        };
+        _importDialog.FileSelected += path => _importTarget?.Invoke(path);
+        AddChild(_importDialog);
+
+        _newDialog = new ConfirmationDialog { Title = "New part" };
+        var grid = new GridContainer { Columns = 2 };
+        _newDialog.AddChild(grid);
+        var mod = new LineEdit { Text = "my_mod", CustomMinimumSize = new Vector2(240, 0), TooltipText = "Folder name in the mods folder; created if missing" };
+        var id = new LineEdit { Text = "new_part" };
+        var name = new LineEdit { Text = "New Part" };
+        var template = new OptionButton();
+        foreach (var t in TemplateNames)
+            template.AddItem(t);
+        foreach (var (label, control) in new (string, Control)[] { ("Mod", mod), ("Part id", id), ("Name", name), ("Template", template) })
+        {
+            grid.AddChild(new Label { Text = label });
+            grid.AddChild(control);
+        }
+        _newDialog.Confirmed += () =>
+            ShowError(NewPart(mod.Text.Trim(), id.Text.Trim(), name.Text.Trim(), template.GetItemText(template.Selected)));
+        AddChild(_newDialog);
+    }
+
+    // ---- Refreshing from the document ----
+
+    private void SetDocument(PartDocument document)
+    {
+        if (Document is not null)
+            Document.Changed -= OnDocumentChanged;
+        Document = document;
+        Document.Changed += OnDocumentChanged;
+        _selectedPiece = document.Source.Pieces.Count > 0 ? 0 : -1;
+        _selectedSocket = (document.Definition.Sockets?.Count ?? 0) > 0 ? 0 : -1;
+        _selectedVariant = -1;
+        _assets = new PartAssets(modId => Path.Combine(Path.GetDirectoryName(document.ModDirectory)!, modId));
+        _openDialog.CurrentDir = document.ModDirectory;
+        _preview.Frame(document.Definition.Size ?? GridSize.One);
+        Refresh(rebuildInspector: true);
+    }
+
+    private void OnDocumentChanged()
+    {
+        if (Document is null)
+            return;
+        // Undo can remove the selected item.
+        if (_selectedPiece >= Document.Source.Pieces.Count)
+            _selectedPiece = Document.Source.Pieces.Count - 1;
+        if (_selectedSocket >= (Document.Definition.Sockets?.Count ?? 0))
+            _selectedSocket = (Document.Definition.Sockets?.Count ?? 0) - 1;
+        Refresh(rebuildInspector: !_quiet);
+    }
+
+    // An edit from a field: the field already shows the new value, so the inspector is not rebuilt under it.
+    private void Edit(Action edit)
+    {
+        _quiet = true;
+        try
+        {
+            edit();
+        }
+        finally
+        {
+            _quiet = false;
+        }
+    }
+
+    private void Refresh(bool rebuildInspector)
+    {
+        var doc = Document;
+        _undo.Disabled = doc?.CanUndo != true;
+        _redo.Disabled = doc?.CanRedo != true;
+        _undo.TooltipText = doc?.UndoLabel is { } u ? $"Undo {u} (Ctrl+Z)" : "Ctrl+Z";
+        _redo.TooltipText = doc?.RedoLabel is { } r ? $"Redo {r} (Ctrl+Shift+Z)" : "Ctrl+Shift+Z";
+        _title.Text = doc is null
+            ? "No part open: New or Open"
+            : $"{doc.ModId}:{doc.Definition.Id}  ({doc.RelativeFile ?? "not exported yet"}){(doc.IsDirty ? "  • unsaved" : "")}";
+        if (doc is null)
+        {
+            _problems.Text = "Start with New (from a template) or Open (a part file in a mod). Press Help for the Getting Started guide.";
+            return;
+        }
+
+        _preview.Show(doc.Definition, doc.Source, _assets, doc.ModId, _selectedSocket);
+        ShowProblems(doc.Validate(), null);
+        RefreshLists();
+        if (rebuildInspector)
+            RebuildInspector();
+    }
+
+    private void RefreshLists()
+    {
+        var doc = Document!;
+        _pieces.Clear();
+        for (var i = 0; i < doc.Source.Pieces.Count; i++)
+        {
+            var p = doc.Source.Pieces[i];
+            var op = (p.Operation ?? CsgOperation.Union) switch { CsgOperation.Subtract => "− ", CsgOperation.Intersect => "∩ ", _ => "+ " };
+            _pieces.AddItem($"{i + 1}. {op}{p.Kind?.ToString().ToLowerInvariant()}{(p.Mesh is { } m ? $" ({m})" : "")}");
+        }
+        if (_selectedPiece >= 0)
+            _pieces.Select(_selectedPiece);
+        _sockets.Clear();
+        foreach (var s in doc.Definition.Sockets ?? [])
+            _sockets.AddItem($"{s.Id} ({s.Type?.ToString().ToLowerInvariant()})");
+        if (_selectedSocket >= 0)
+            _sockets.Select(_selectedSocket);
+    }
+
+    private void RebuildInspector()
+    {
+        foreach (var grid in new[] { _partGrid, _pieceGrid, _collisionGrid, _socketGrid, _lookGrid, _behaviourGrid })
+            grid.Clear();
+        var doc = Document!;
+        var d = doc.Definition;
+
+        // Part: identity, physics and footprint.
+        _partGrid.AddHeading("Identity");
+        _partGrid.AddText("Id", d.Id, v => Set("Rename", x => x with { Id = v }), "snake_case");
+        _partGrid.AddText("Name", d.Name, v => Set("Set name", x => x with { Name = v }));
+        _partGrid.AddText("Description", d.Description, v => Set("Set description", x => x with { Description = v }));
+        _partGrid.AddEnum<PartCategory>("Category", d.Category, v => Set("Set category", x => x with { Category = v }));
+        _partGrid.AddHeading("Physics (SI units)");
+        _partGrid.AddNumber("Mass", d.Mass, 0.001, 1e6, 0.1, v => Set("Set mass", x => x with { Mass = (float?)v }), optional: !d.IsPlaceable, fallback: 1, suffix: "kg");
+        _partGrid.AddNumber("Durability", d.Durability, 1, 100, 1, v => Set("Set durability", x => x with { Durability = (int?)v }), optional: !d.IsPlaceable, fallback: 1);
+        _partGrid.AddNumber("Friction", d.Friction, 0, 10, 0.05, v => Set("Set friction", x => x with { Friction = (float?)v }), optional: !d.IsPlaceable, fallback: 0.5);
+        _partGrid.AddNumber("Buoyancy", d.Buoyancy, 0, 100, 0.05, v => Set("Set buoyancy", x => x with { Buoyancy = (float?)v }), optional: !d.IsPlaceable, fallback: 0.5);
+        _partGrid.AddBool("Flammable", d.Flammable, v => Set("Set flammable", x => x with { Flammable = v }), optional: !d.IsPlaceable);
+        _partGrid.AddNumber("Stack size", d.StackSize, 1, 1e6, 1, v => Set("Set stack size", x => x with { StackSize = (int?)v }), optional: true, fallback: 1);
+        _partGrid.AddText("Sound material", d.SoundMaterial, v => Set("Set sound material", x => x with { SoundMaterial = v }), "wood, metal, concrete…");
+        if (d.IsPlaceable)
+        {
+            _partGrid.AddHeading("Footprint (0.25 m cells)");
+            _partGrid.AddGridSize("Size", d.Size ?? GridSize.One, v => Set("Resize", x => x with { Size = v }));
+        }
+        AddAssetField(_partGrid, "Icon", d.Icon, AssetKind.Texture, v => Set("Set icon", x => x with { Icon = v }));
+
+        // Model: the selected piece.
+        if (_selectedPiece >= 0)
+        {
+            var piece = doc.Source.Pieces[_selectedPiece];
+            var index = _selectedPiece;
+            void SetPiece(string label, Func<ModelPiece, ModelPiece> change) =>
+                Edit(() => doc.SetPiece(index, change(doc.Source.Pieces[index]), label));
+            _pieceGrid.AddHeading($"Piece {index + 1}: {piece.Kind?.ToString().ToLowerInvariant()}");
+            _pieceGrid.AddEnum<CsgOperation>("Operation", piece.Operation ?? CsgOperation.Union,
+                v => SetPiece("Set operation", p => p with { Operation = v == CsgOperation.Union ? null : v }));
+            switch (piece.Kind)
+            {
+                case ModelPieceKind.Mesh:
+                    AddAssetField(_pieceGrid, "Mesh", piece.Mesh, AssetKind.Mesh, v => SetPiece("Set mesh", p => p with { Mesh = v }));
+                    break;
+                case ModelPieceKind.Box or ModelPieceKind.Wedge:
+                    _pieceGrid.AddVector("Size (m)", piece.Size ?? Footprint(), PositionStep, v => SetPiece("Resize piece", p => p with { Size = v }), 0.001, 64);
+                    break;
+                case ModelPieceKind.Cylinder:
+                    _pieceGrid.AddNumber("Radius", piece.Radius, 0.001, 64, PositionStep / 2, v => SetPiece("Set radius", p => p with { Radius = (float?)v }), suffix: "m");
+                    _pieceGrid.AddNumber("Height", piece.Height, 0.001, 64, PositionStep, v => SetPiece("Set height", p => p with { Height = (float?)v }), suffix: "m");
+                    break;
+                case ModelPieceKind.Sphere:
+                    _pieceGrid.AddNumber("Radius", piece.Radius, 0.001, 64, PositionStep / 2, v => SetPiece("Set radius", p => p with { Radius = (float?)v }), suffix: "m");
+                    break;
+            }
+            _pieceGrid.AddHeading("Transform");
+            _pieceGrid.AddVector("Position (m)", piece.Position ?? Vec3.Zero, PositionStep,
+                v => SetPiece("Move piece", p => p with { Position = v == Vec3.Zero ? null : v }));
+            _pieceGrid.AddVector("Rotation (°)", piece.Rotation ?? Vec3.Zero, 15,
+                v => SetPiece("Rotate piece", p => p with { Rotation = v == Vec3.Zero ? null : v }), -360, 360);
+            _pieceGrid.AddNumber("Scale", piece.Scale ?? 1, 0.01, 100, 0.05,
+                v => SetPiece("Scale piece", p => p with { Scale = v is 1 or null ? null : (float?)v }));
+        }
+
+        // Collision.
+        var c = d.Collision;
+        _collisionGrid.AddEnum<CollisionShape>("Shape", c?.Shape, v => Set("Set collision shape",
+            x => x with { Collision = v is null ? null : DefaultCollision(v.Value, x) }), optional: true);
+        _collisionGrid.AddChild(new Label { Text = c is null ? "Not set: a box filling the footprint." : "", AutowrapMode = TextServer.AutowrapMode.WordSmart });
+        _collisionGrid.AddChild(new Control());
+        if (c is not null)
+        {
+            void SetCollision(string label, Func<CollisionDefinition, CollisionDefinition> change) =>
+                Set(label, x => x with { Collision = change(x.Collision!) });
+            if (c.Shape == CollisionShape.Box)
+                _collisionGrid.AddVector("Size (m)", c.Size ?? Footprint(), PositionStep, v => SetCollision("Resize collision", x => x with { Size = v }), 0.001, 64);
+            if (c.Shape is CollisionShape.Sphere or CollisionShape.Cylinder or CollisionShape.Capsule)
+                _collisionGrid.AddNumber("Radius", c.Radius, 0.001, 64, PositionStep / 2, v => SetCollision("Set collision radius", x => x with { Radius = (float?)v }), suffix: "m");
+            if (c.Shape is CollisionShape.Cylinder or CollisionShape.Capsule)
+                _collisionGrid.AddNumber("Height", c.Height, 0.001, 64, PositionStep, v => SetCollision("Set collision height", x => x with { Height = (float?)v }), suffix: "m");
+            if (c.Shape == CollisionShape.Convex)
+                AddAssetField(_collisionGrid, "Mesh", c.Mesh, AssetKind.Mesh, v => SetCollision("Set collision mesh", x => x with { Mesh = v }));
+            _collisionGrid.AddVector("Offset (m)", c.Offset ?? Vec3.Zero, PositionStep,
+                v => SetCollision("Move collision", x => x with { Offset = v == Vec3.Zero ? null : v }));
+        }
+
+        // Sockets: the selected one.
+        if (_selectedSocket >= 0)
+        {
+            var socket = d.Sockets![_selectedSocket];
+            var index = _selectedSocket;
+            void SetSocket(string label, Func<SocketDefinition, SocketDefinition> change) =>
+                Edit(() => doc.SetSocket(index, change(doc.Definition.Sockets![index]), label));
+            _socketGrid.AddText("Id", socket.Id, v => SetSocket("Rename socket", s => s with { Id = v }));
+            _socketGrid.AddEnum<SocketType>("Type", socket.Type, v => SetSocket("Set socket type", s => s with { Type = v }));
+            _socketGrid.AddVector("Position (m)", socket.Position ?? Vec3.Zero, PositionStep / 2, v => SetSocket("Move socket", s => s with { Position = v }));
+            _socketGrid.AddVector("Normal", socket.Normal ?? new Vec3(0, 1, 0), 1, v => SetSocket("Turn socket", s => s with { Normal = v }), -1, 1);
+        }
+
+        // Look: colour, surface, variants.
+        var look = d.Visual ?? new VisualDefinition();
+        void SetLook(string label, Func<VisualDefinition, VisualDefinition> change) =>
+            Set(label, x => x with { Visual = Normalize(change(x.Visual ?? new VisualDefinition())) });
+        _lookGrid.AddColor("Colour", look.Color, v => SetLook("Set colour", x => x with { Color = v }));
+        _lookGrid.AddNumber("Roughness", look.Roughness, 0, 1, 0.05, v => SetLook("Set roughness", x => x with { Roughness = (float?)v }), optional: true, fallback: 0.8);
+        _lookGrid.AddNumber("Metallic", look.Metallic, 0, 1, 0.05, v => SetLook("Set metallic", x => x with { Metallic = (float?)v }), optional: true);
+        AddAssetField(_lookGrid, "Texture", look.Texture, AssetKind.Texture, v => SetLook("Set texture", x => x with { Texture = v }));
+        _lookGrid.AddBool("Paintable", look.Paintable, v => SetLook("Set paintable", x => x with { Paintable = v }), optional: true);
+        _lookGrid.AddHeading("Colour variants");
+        var variants = look.Variants ?? [];
+        for (var i = 0; i < variants.Count; i++)
+        {
+            var index = i;
+            var variant = variants[i];
+            void SetVariant(Func<ColorVariant, ColorVariant> change) =>
+                Edit(() => doc.SetVariant(index, change(doc.Definition.Visual!.Variants![index])));
+            _lookGrid.AddText($"Variant {i + 1} id", variant.Id, v => SetVariant(x => x with { Id = v }));
+            _lookGrid.AddText($"Variant {i + 1} name", variant.Name, v => SetVariant(x => x with { Name = v }));
+            _lookGrid.AddColor($"Variant {i + 1} colour", variant.Color, v => SetVariant(x => x with { Color = v }));
+            var remove = new Button { Text = $"Remove variant {i + 1}" };
+            remove.Pressed += () => doc.RemoveVariant(index);
+            _lookGrid.Row("", remove);
+        }
+        var addVariant = new Button { Text = "+ Variant" };
+        addVariant.Pressed += () => doc.AddVariant(new ColorVariant
+        {
+            Id = $"variant_{variants.Count + 1}",
+            Name = $"Variant {variants.Count + 1}",
+            Color = look.Color ?? "#ffffff",
+        });
+        _lookGrid.Row("", addVariant);
+
+        // Behaviour: script, sounds and free-form properties.
+        AddAssetField(_behaviourGrid, "Script", d.Script, AssetKind.Script, v => Set("Set script", x => x with { Script = v }));
+        _behaviourGrid.AddJson("Sounds", JsonSerializer.Serialize(d.Sounds ?? [], DataJson.WriteOptions), text =>
+        {
+            try
+            {
+                var sounds = DataJson.Read<Dictionary<string, string>>(text);
+                Set("Set sounds", x => x with { Sounds = sounds is { Count: > 0 } ? sounds : null });
+                return null;
+            }
+            catch (JsonException e)
+            {
+                return e.Message;
+            }
+        });
+        _behaviourGrid.AddJson("Properties", d.Properties?.ToJsonString(DataJson.WriteOptions) ?? "{}", text =>
+        {
+            try
+            {
+                var node = JsonNode.Parse(text, documentOptions: new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
+                if (node is not JsonObject properties)
+                    return "Properties must be a JSON object.";
+                Set("Set properties", x => x with { Properties = properties.Count > 0 ? properties : null });
+                return null;
+            }
+            catch (JsonException e)
+            {
+                return e.Message;
+            }
+        });
+    }
+
+    // ---- Edits ----
+
+    private void Set(string label, Func<PartDefinition, PartDefinition> change) => Edit(() => Document?.Apply(label, change));
+
+    private void AddPiece(ModelPiece piece)
+    {
+        if (Document is null)
+            return;
+        Document.AddPiece(piece);
+        SelectPiece(Document.Source.Pieces.Count - 1);
+    }
+
+    private void MovePiece(int offset)
+    {
+        if (Document is null || _selectedPiece < 0)
+            return;
+        var target = Math.Clamp(_selectedPiece + offset, 0, Document.Source.Pieces.Count - 1);
+        Document.MovePiece(_selectedPiece, offset);
+        SelectPiece(target);
+    }
+
+    private void AddSideSocket(Core.Creations.GridCell direction)
+    {
+        if (Document is null)
+            return;
+        var size = Document.Definition.Size ?? GridSize.One;
+        Document.AddSocket(SocketTools.SideSocket(size, direction, SocketTools.UnusedSocketId(Document.Definition), SocketType.Structural));
+        SelectSocket(Document.Definition.Sockets!.Count - 1);
+    }
+
+    private void SnapSelectedSocket()
+    {
+        if (Document is null || _selectedSocket < 0)
+            return;
+        var socket = Document.Definition.Sockets![_selectedSocket];
+        var (position, normal) = SocketTools.SnapToFace(Document.Definition.Size ?? GridSize.One, socket.Position ?? Vec3.Zero, socket.Normal ?? new Vec3(0, 1, 0));
+        Document.SetSocket(_selectedSocket, socket with { Position = position, Normal = normal }, "Snap socket");
+    }
+
+    private void AddAssetField(PropertyGrid grid, string label, string? value, AssetKind kind, Action<string?> set)
+    {
+        var box = new HBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        var edit = new LineEdit { Text = value ?? "", PlaceholderText = $"{AssetImporter.FolderFor(kind)}/…", SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        void Commit()
+        {
+            var text = edit.Text.Trim();
+            if (text != (value ?? ""))
+                set(text.Length == 0 ? null : text);
+        }
+        edit.TextSubmitted += _ => Commit();
+        edit.FocusExited += Commit;
+        box.AddChild(edit);
+        var import = new Button { Text = "Import…" };
+        import.Pressed += () => Import(kind, path =>
+        {
+            if (Document is null)
+                return;
+            if (AssetImporter.TryImport(path, Document.ModDirectory, kind, out var relative, out var error))
+            {
+                _assets.ClearCache();
+                set(relative);
+            }
+            else
+            {
+                ShowError(error);
+            }
+        });
+        box.AddChild(import);
+        grid.Row(label, box);
+    }
+
+    private void Import(AssetKind kind, Action<string> then)
+    {
+        _importTarget = then;
+        _importDialog.Filters = [$"{string.Join(", ", AssetPath.ExtensionsFor(kind).Select(e => "*" + e))} ; {kind}"];
+        _importDialog.PopupCentered(new Vector2I(900, 600));
+    }
+
+    private Vec3 Footprint() => (Document?.Definition.Size ?? GridSize.One).Metres;
+
+    private float MinHalf()
+    {
+        var f = Footprint();
+        return MathF.Min(f.X, f.Z) / 2;
+    }
+
+    private static CollisionDefinition DefaultCollision(CollisionShape shape, PartDefinition part)
+    {
+        var size = (part.Size ?? GridSize.One).Metres;
+        var radius = MathF.Min(size.X, size.Z) / 2;
+        return shape switch
+        {
+            CollisionShape.Box => new CollisionDefinition { Shape = shape, Size = size },
+            CollisionShape.Sphere => new CollisionDefinition { Shape = shape, Radius = MathF.Min(radius, size.Y / 2) },
+            CollisionShape.Capsule => new CollisionDefinition { Shape = shape, Radius = MathF.Min(radius, size.Y / 2), Height = size.Y },
+            CollisionShape.Convex => new CollisionDefinition { Shape = shape, Mesh = part.Mesh },
+            _ => new CollisionDefinition { Shape = shape, Radius = radius, Height = size.Y },
+        };
+    }
+
+    // An empty visual block is dropped from the data instead of writing "visual": {}.
+    private static VisualDefinition? Normalize(VisualDefinition visual) =>
+        visual is { Color: null, Roughness: null, Metallic: null, Texture: null, Paintable: null, Variants: null or { Count: 0 }, Extra: null } ? null : visual;
+
+    // ---- Output ----
+
+    private void ShowProblems(IReadOnlyList<DataDiagnostic> diagnostics, string? headline)
+    {
+        var lines = new List<string>();
+        if (headline is not null)
+            lines.Add($"[b]{Escape(headline)}[/b]");
+        foreach (var d in diagnostics)
+        {
+            var color = d.Severity == DiagnosticSeverity.Error ? "#ff7070" : "#ffd060";
+            lines.Add($"[color={color}]{(d.Severity == DiagnosticSeverity.Error ? "Error" : "Warning")}[/color] {Escape(d.JsonPath ?? d.File)}: {Escape(d.Message)}");
+        }
+        if (diagnostics.Count == 0 && headline is null)
+            lines.Add("[color=#80e080]No problems.[/color] Export writes the part into its mod.");
+        _problems.Text = string.Join("\n", lines);
+    }
+
+    private void ShowError(string? error)
+    {
+        if (error is null)
+            return;
+        _message.DialogText = error;
+        _message.PopupCentered();
+    }
+
+    private void OnViewInput(InputEvent @event)
+    {
+        switch (@event)
+        {
+            case InputEventMouseMotion motion when (motion.ButtonMask & (MouseButtonMask.Right | MouseButtonMask.Middle)) != 0:
+                _preview.OrbitBy(-motion.Relative.X * 0.01f, -motion.Relative.Y * 0.01f);
+                break;
+            case InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.WheelUp }:
+                _preview.ZoomBy(0.9f);
+                break;
+            case InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.WheelDown }:
+                _preview.ZoomBy(1.1f);
+                break;
+            default:
+                return;
+        }
+        AcceptEvent();
+    }
+
+    private string Display(string file) => Path.GetRelativePath(Path.GetDirectoryName(ModsRoot) ?? ModsRoot, file).Replace('\\', '/');
+
+    private PropertyGrid AddTab(string title)
+    {
+        var box = AddTabBox(title);
+        var grid = new PropertyGrid();
+        box.AddChild(grid);
+        return grid;
+    }
+
+    private VBoxContainer AddTabBox(string title)
+    {
+        var scroll = new ScrollContainer { Name = title, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
+        var box = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        scroll.AddChild(box);
+        _tabs.AddChild(scroll);
+        return box;
+    }
+
+    private static Button AddButton(Container parent, string text, Action pressed, string tooltip = "")
+    {
+        var button = new Button { Text = text, TooltipText = tooltip };
+        button.Pressed += pressed;
+        parent.AddChild(button);
+        return button;
+    }
+
+    private static void AddToggle(Container parent, string text, bool on, Action<bool> toggled)
+    {
+        var check = new CheckBox { Text = text, ButtonPressed = on };
+        check.Toggled += value => toggled(value);
+        parent.AddChild(check);
+    }
+
+    private static string Escape(string text) => text.Replace("[", "[lb]");
+}

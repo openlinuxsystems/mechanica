@@ -5,7 +5,7 @@ written by the chunk that builds the feature it covers.
 
 | Doc | Written in |
 |-----|------------|
-| Getting Started | Part Editor v1 |
+| [Getting Started](getting-started.md) | Part Editor v1 |
 | [Part Data Schema Reference](part-data-schema.md) | Part Editor v1 |
 | Lua API Reference | MoonSharp host |
 | Socket and Joint Guide | Joint primitives |

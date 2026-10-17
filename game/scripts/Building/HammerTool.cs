@@ -74,11 +74,7 @@ public partial class HammerTool : Node
 
     public override void _Ready()
     {
-        _parts.AddRange(Build.Catalog.Parts
-            .Where(p => p.Value.Definition.IsPlaceable)
-            .Select(p => p.Key)
-            .Order(StringComparer.Ordinal));
-        Selected = _parts.FirstOrDefault();
+        ReloadParts();
         _preview = new Node3D { Name = "Preview", TopLevel = true, Visible = false };
         AddChild(_preview);
         if (ReadDeviceInput)
@@ -93,6 +89,19 @@ public partial class HammerTool : Node
             crosshair.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.Center);
             AddChild(layer);
         }
+    }
+
+    /// <summary>Re-reads the placeable parts from the catalog, after mods are reloaded. Keeps the selection if it still exists.</summary>
+    public void ReloadParts()
+    {
+        _parts.Clear();
+        _parts.AddRange(Build.Catalog.Parts
+            .Where(p => p.Value.Definition.IsPlaceable)
+            .Select(p => p.Key)
+            .Order(StringComparer.Ordinal));
+        if (Selected is null || !_parts.Contains(Selected))
+            Selected = _parts.FirstOrDefault();
+        _previewPart = null;
     }
 
     public override void _PhysicsProcess(double delta)
