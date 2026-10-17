@@ -24,6 +24,7 @@ public partial class LiftBody : StaticBody3D
     private const float ColumnRadius = 0.14f;
     private const float RiderMargin = 0.1f;
     private const float RiderAbove = 0.35f;
+    private const float RiderSnap = 0.1f;
 
     private static readonly StandardMaterial3D FallbackMaterial = new() { AlbedoColor = UiTokens.Blue };
 
@@ -54,7 +55,7 @@ public partial class LiftBody : StaticBody3D
     /// <summary>Plays the end-stop sound on this peer; null plays none.</summary>
     public Sound.SoundSync? Sounds { get; init; }
 
-    /// <summary>The players this peer moves itself; those standing on the deck are kept on it as it moves.</summary>
+    /// <summary>The players this peer moves (on the host, every player); those standing on the deck are kept on it as it moves.</summary>
     public Func<IEnumerable<Node3D>>? Riders { get; init; }
 
     /// <summary>The Lift's state as last shown.</summary>
@@ -227,14 +228,20 @@ public partial class LiftBody : StaticBody3D
         Hold(State.Creation, deck - target);
     }
 
-    // A rising deck lifts whoever stands on it; their own movement only follows it a tick late, so they would sink in.
+    // Keeps whoever stands on the deck on it. Their own movement only follows the deck a tick late, and a client's
+    // replay after a correction starts from where the host had them a few ticks back: rising, they would sink in, and
+    // lowering they would hang above it and drop. A rider going up faster than the deck (jumping) is left alone.
     private void CarryRiders()
     {
         var top = GlobalPosition.Y + ShownTop;
         foreach (var rider in Riders?.Invoke() ?? [])
         {
             var feet = rider.GlobalPosition;
-            if (feet.Y < top && Carries(feet))
+            if (!Carries(feet))
+                continue;
+            var above = feet.Y - top;
+            var rising = rider is CharacterBody3D body && body.Velocity.Y > Math.Max(Speed, 0f) + 1e-3f;
+            if (above < 0f || (Speed < 0f && above < RiderSnap && !rising))
                 rider.GlobalPosition = feet with { Y = top };
         }
     }
