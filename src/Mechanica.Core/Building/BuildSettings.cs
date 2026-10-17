@@ -235,7 +235,7 @@ public sealed record LiftSettings
     public float LevelHeight { get; init; } = 0.25f;
 
     /// <summary>Highest level.</summary>
-    public int MaxLevel { get; init; } = 31;
+    public int MaxLevel { get; init; } = 20;
 
     /// <summary>
     /// The Lift's model (<c>mod:path</c> to a glTF file). Its <c>deploy</c> clip plays when the Lift is put down and its

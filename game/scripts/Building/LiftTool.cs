@@ -71,7 +71,13 @@ public partial class LiftTool : HandTool
     public override void _PhysicsProcess(double delta)
     {
         if (!Active)
+        {
+            // Riding the deck with something else in hand: the arrow keys still drive it, until the player steps off.
+            if (_raiseHeld != 0 && (!StandsOnOwnLift || (ReadDeviceInput && Input.MouseMode != Input.MouseModeEnum.Captured)))
+                _raiseHeld = 0;
+            RepeatRaise();
             return;
+        }
         UpdateAim();
         // A release the tool never heard (the mouse freed for a window) ends the holds without removing.
         if (ReadDeviceInput && Input.MouseMode != Input.MouseModeEnum.Captured)
@@ -118,6 +124,9 @@ public partial class LiftTool : HandTool
 
     /// <summary>The arrow key let go: the column stops at the level it is going to.</summary>
     public void ReleaseRaise() => _raiseHeld = 0;
+
+    /// <summary>True when the local player stands on the deck of their own Lift, where the arrow keys drive it whatever is in hand.</summary>
+    public bool StandsOnOwnLift => Build.Lifts.TryGetValue(Player.PeerId, out var body) && body.Carries(Player.GlobalPosition);
 
     /// <summary>True while an arrow key is held.</summary>
     public bool RaiseHeld => _raiseHeld != 0;
@@ -248,6 +257,17 @@ public partial class LiftTool : HandTool
             Key(InputActions.Rotate), Key(InputActions.Secondary), Key(InputActions.Interact)) + Status;
     }
 
+    public override void _UnhandledInput(InputEvent @event)
+    {
+        if (Active || !ReadDeviceInput || Input.MouseMode != Input.MouseModeEnum.Captured)
+        {
+            base._UnhandledInput(@event);
+            return;
+        }
+        if (StandsOnOwnLift && HandleArrows(@event))
+            GetViewport().SetInputAsHandled();
+    }
+
     /// <inheritdoc/>
     protected override bool HandleInput(InputEvent @event)
     {
@@ -261,16 +281,8 @@ public partial class LiftTool : HandTool
                 return false;
             ReleaseRemove();
         }
-        else if (Pressed(@event, InputActions.LiftUp))
-            PressRaise(1);
-        else if (Pressed(@event, InputActions.LiftDown))
-            PressRaise(-1);
-        else if (Released(@event, InputActions.LiftUp) || Released(@event, InputActions.LiftDown))
-        {
-            if (_raiseHeld == 0)
-                return false;
-            ReleaseRaise();
-        }
+        else if (HandleArrows(@event))
+            return true;
         else if (Pressed(@event, InputActions.RotateBack))
         {
             for (var i = 0; i < 3; i++)
@@ -278,6 +290,20 @@ public partial class LiftTool : HandTool
         }
         else if (Pressed(@event, InputActions.Rotate))
             Turn();
+        else
+            return false;
+        return true;
+    }
+
+    // The arrow keys: pressed, the Lift goes a level and keeps going while held; let go, it stops at the next level.
+    private bool HandleArrows(InputEvent @event)
+    {
+        if (Pressed(@event, InputActions.LiftUp))
+            PressRaise(1);
+        else if (Pressed(@event, InputActions.LiftDown))
+            PressRaise(-1);
+        else if ((Released(@event, InputActions.LiftUp) || Released(@event, InputActions.LiftDown)) && _raiseHeld != 0)
+            ReleaseRaise();
         else
             return false;
         return true;
