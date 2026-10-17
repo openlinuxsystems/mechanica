@@ -558,6 +558,7 @@ public partial class PartEditorScreen : Control
         {
             AddLogicFields(d);
             AddLightFields(d);
+            AddAnimationFields(d);
         }
 
         // Model: the selected piece.
@@ -807,6 +808,19 @@ public partial class PartEditorScreen : Control
         _partGrid.AddVector("Offset", light.Offset ?? Vec3.Zero, 0.05, v => SetLight("Move light", l => l with { Offset = v == Vec3.Zero ? null : v }), -2, 2);
         if (light.Kind == LightKind.Spot)
             _partGrid.AddVector("Direction", light.Direction ?? new Vec3(0, 0, -1), 0.1, v => SetLight("Aim light", l => l with { Direction = v }), -1, 1);
+    }
+
+    // Animation fields (chunk 23): the axis the part's script turns its model about with part.animate.
+    private void AddAnimationFields(PartDefinition d)
+    {
+        _partGrid.AddHeading("Animation");
+        _partGrid.AddBool("Animated", d.Animation is not null, v => Document?.Apply(v == true ? "Animate" : "Stop animating",
+            x => x with { Animation = v == true ? x.Animation ?? new AnimationDefinition() : null }));
+        if (d.Animation is not { } animation)
+            return;
+        void SetAnimation(string label, Func<AnimationDefinition, AnimationDefinition> change) => Set(label, x => x with { Animation = change(x.Animation!) });
+        _partGrid.AddVector("Axis", animation.Axis ?? new Vec3(0, 1, 0), 0.1, v => SetAnimation("Set animation axis", a => a with { Axis = v }), -1, 1);
+        _partGrid.AddVector("Pivot", animation.Pivot ?? Vec3.Zero, 0.05, v => SetAnimation("Move animation pivot", a => a with { Pivot = v == Vec3.Zero ? null : v }), -2, 2);
     }
 
     private static List<string>? SplitIds(string? text) =>

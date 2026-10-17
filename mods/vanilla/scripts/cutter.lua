@@ -2,7 +2,7 @@
 -- seconds, cuts whatever is within properties.reach metres of its cutting edge: parts, bots, players
 -- and world objects such as trees and rocks, for properties.damage each. Its edge is a list of rays in
 -- the part's frame, properties.edge = { {from = {x, y, z}, direction = {x, y, z}}, ... }, each starting
--- just outside the part so it never cuts its own creation.
+-- just outside the part so it never cuts its own creation. Its model spins at properties.spin rad/s.
 
 local loop
 
@@ -16,9 +16,11 @@ local function spin(on)
     if id then
       loop = sound.start(id, { load = 0 })
     end
+    part.animate(nil, properties.spin)
   elseif not on and loop then
     sound.stop(loop)
     loop = nil
+    part.animate(nil, 0)
   end
 end
 

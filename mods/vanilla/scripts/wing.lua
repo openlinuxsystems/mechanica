@@ -16,6 +16,9 @@
 
 local MIN_SPEED = 2 -- m/s; slower air makes no noticeable force
 
+-- The deflection the flap's model was last given (not saved: a loaded flap shows it afresh).
+local shown_deflection
+
 local function clamp(v, lo, hi)
   return math.max(lo, math.min(hi, v))
 end
@@ -92,6 +95,11 @@ function on_update(dt)
     if moving and not state.moving then play("move") end
     if c == 0 and (state.command or 0) ~= 0 then play("lock") end
     state.moving, state.command = moving, c
+    -- The flap's model tilts with it (trailing edge down for a positive command).
+    if shown_deflection == nil or math.abs(deflection - shown_deflection) > 0.002 then
+      part.animate(deflection)
+      shown_deflection = deflection
+    end
   end
 
   local v = part.velocity()

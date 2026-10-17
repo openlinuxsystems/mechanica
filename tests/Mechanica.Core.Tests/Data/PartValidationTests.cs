@@ -72,6 +72,8 @@ public class PartValidationTests
     [InlineData("""{ "light": { "range": 5, "kind": "spot", "angle": 90 } }""", "$.light.angle", "under 90 degrees")]
     [InlineData("""{ "light": { "range": 5, "offset": [0, 0.2, 0] } }""", "$.light.offset", "outside the part's [1, 1, 1] footprint")]
     [InlineData("""{ "light": { "range": 5, "direction": [0, 0, 0] } }""", "$.light.direction", "non-zero")]
+    [InlineData("""{ "animation": { "axis": [0, 0, 0] } }""", "$.animation.axis", "non-zero")]
+    [InlineData("""{ "animation": { "pivot": [0.3, 0, 0] } }""", "$.animation.pivot", "outside the part's [1, 1, 1] footprint")]
     public void BadValuesGiveClearErrors(string overrides, string path, string messagePart)
     {
         var error = Single(TestMods.Block(overrides: overrides), path);
@@ -116,6 +118,15 @@ public class PartValidationTests
             { "light": { "kind": "spot", "color": "#fff0c0", "energy": 2, "range": 20, "angle": 30, "offset": [0, 0, -0.1], "direction": [0, -1, -1] } }
             """)));
         var error = Single("""{ "id": "a", "name": "A", "category": "resource", "light": { "range": 4 } }""", "$.light");
+
+        Assert.Contains("only placeable parts", error.Message);
+    }
+
+    [Fact]
+    public void AnAnimationIsValidOnAPlaceablePartOnly()
+    {
+        Assert.Empty(Check(TestMods.Block(overrides: """{ "animation": { "axis": [1, 0, 0], "pivot": [0, 0, -0.1] } }""")));
+        var error = Single("""{ "id": "a", "name": "A", "category": "resource", "animation": {} }""", "$.animation");
 
         Assert.Contains("only placeable parts", error.Message);
     }

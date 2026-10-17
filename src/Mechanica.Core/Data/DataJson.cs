@@ -76,6 +76,7 @@ public static class DataJson
         Settings = part.Settings?.Select(s => s with { Extra = Sorted(s.Extra) }).ToList(),
         Seat = part.Seat is null ? null : part.Seat with { Extra = Sorted(part.Seat.Extra) },
         Light = part.Light is null ? null : part.Light with { Extra = Sorted(part.Light.Extra) },
+        Animation = part.Animation is null ? null : part.Animation with { Extra = Sorted(part.Animation.Extra) },
     });
 
     /// <summary>Serializes a recipe in canonical form.</summary>

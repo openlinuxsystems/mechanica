@@ -184,6 +184,13 @@ public sealed record PartDefinition
     /// </summary>
     public LightDefinition? Light { get; init; }
 
+    /// <summary>
+    /// Lets the part's script turn its model about an axis (chunk 23): a rotor's blades, a flap, a saw.
+    /// The script sets the angle and speed with <c>part.animate(angle, speed)</c>; it moves only how the part
+    /// looks, never its collision or its Body. Placeable parts only.
+    /// </summary>
+    public AnimationDefinition? Animation { get; init; }
+
     /// <summary>Free-form, part-specific data for the Lua script. Key order is kept as written.</summary>
     public JsonObject? Properties { get; init; }
 
@@ -392,6 +399,20 @@ public sealed record LightDefinition
 
     /// <summary>A spot's direction in the part's frame. Omitted means -Z (the part's front).</summary>
     public Vec3? Direction { get; init; }
+
+    /// <summary>Keys this build does not know.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>How a part's model turns when its script animates it (<see cref="PartDefinition.Animation"/>).</summary>
+public sealed record AnimationDefinition
+{
+    /// <summary>The axis the model turns about, in the part's frame (right-handed). Omitted means +Y.</summary>
+    public Vec3? Axis { get; init; }
+
+    /// <summary>A point on the axis relative to the part centre, in m in the part's frame. Omitted means the centre.</summary>
+    public Vec3? Pivot { get; init; }
 
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]

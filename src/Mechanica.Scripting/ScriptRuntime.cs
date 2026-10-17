@@ -300,6 +300,7 @@ public sealed partial class ScriptRuntime
         ClearItems();
         Signals.Clear();
         Lights.Clear();
+        Animations.Clear();
         _revisions.Clear();
         _files.Clear();
         _contexts.Clear();
@@ -450,6 +451,7 @@ public sealed partial class ScriptRuntime
         _instances.Remove((instance.Creation, instance.Part));
         Signals.Forget(instance.Creation, instance.Part);
         Lights.Forget(instance.Creation, instance.Part);
+        Animations.Forget(instance.Creation, instance.Part);
     }
 
     private void StopLoops(Instance instance)
@@ -502,6 +504,7 @@ public sealed partial class ScriptRuntime
         {
             Signals.SetOutput(instance.Creation, instance.Part, 0f);
             Lights.Set(instance.Creation, instance.Part, 0f);
+            Animations.Set(instance.Creation, instance.Part, null, 0f, Time);
         }
         if (instance.IsItem)
             Post(ScriptMessageKind.Error, instance.File.File.Key, null, null, $"{fault}; the {instance.PartType} script of player {instance.Holder} is stopped until it is reloaded");

@@ -24,6 +24,7 @@ public partial class CreationNode : Node3D
     private readonly Dictionary<Joint3D, JointFrame> _frames = [];
     private readonly List<(MeshInstance3D Mesh, JointLink Link, JointFrame Frame)> _shafts = [];
     private readonly List<(int Part, Light3D Light, float Energy)> _lights = [];
+    private readonly List<(int Part, Node3D Model, Vector3 Axis, Vector3 Pivot)> _animated = [];
 
     /// <summary>The graph this node shows. Set before adding the node to the tree.</summary>
     public Creation Creation { get; init; } = null!;
@@ -97,6 +98,20 @@ public partial class CreationNode : Node3D
             var level = levels.Level(Creation.Id, part);
             light.Visible = level > 0f;
             light.LightEnergy = energy * level;
+        }
+    }
+
+    /// <summary>The model node of each part with an <c>animation</c> section, by part id (chunk 23).</summary>
+    public IEnumerable<(int Part, Node3D Model)> AnimatedModels => _animated.Select(a => (a.Part, a.Model));
+
+    /// <summary>Turns every animated part's model to its angle at <paramref name="now"/> on the animations' clock.</summary>
+    public void ApplyAnimations(Core.Logic.PartAnimations animations, double now)
+    {
+        foreach (var (part, model, axis, pivot) in _animated)
+        {
+            var turn = new Basis(axis, animations.AngleAt(Creation.Id, part, now));
+            // Turning about the pivot: the model's origin swings round it.
+            model.Transform = new Transform3D(turn, pivot - turn * pivot);
         }
     }
 
@@ -183,6 +198,7 @@ public partial class CreationNode : Node3D
         _frames.Clear();
         _shafts.Clear();
         _lights.Clear();
+        _animated.Clear();
         _bodies.Clear();
     }
 
@@ -213,14 +229,19 @@ public partial class CreationNode : Node3D
             // Shapes must be direct children of the body; meshes hang off a node per part.
             node.AddChild(new CollisionShape3D { Name = $"Shape{id}", Shape = model.Shape, Transform = placed * model.ShapeTransform });
             var visual = new Node3D { Name = $"Part{id}", Transform = placed };
+            // The meshes and light hang off a model node, which an animated part's script turns.
+            var shown = new Node3D { Name = "Model" };
+            visual.AddChild(shown);
             foreach (var mesh in model.Meshes)
-                visual.AddChild(mesh.Instantiate());
+                shown.AddChild(mesh.Instantiate());
             if (definition.Light is { } light)
             {
                 var lamp = BuildLight(light);
-                visual.AddChild(lamp);
+                shown.AddChild(lamp);
                 _lights.Add((id, lamp, light.Energy ?? 1f));
             }
+            if (definition.Animation is { } animation)
+                _animated.Add((id, shown, (animation.Axis ?? new Vec3(0, 1, 0)).ToGodot().Normalized(), (animation.Pivot ?? Vec3.Zero).ToGodot()));
             node.AddChild(visual);
             if (definition.Friction is { } f)
             {

@@ -115,6 +115,7 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
         ValidateSurvival(part, placeable, sink);
         ValidateLogic(part, placeable, sink);
         ValidateLight(part, placeable, sink);
+        ValidateAnimation(part, placeable, sink);
 
         foreach (var (key, sound) in part.Sounds ?? [])
         {
@@ -388,6 +389,22 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
             RequirePositive(soil.Growth, "$.soil.growth", "growth", false, "soil", sink);
             KnownKeys.WarnUnknown(soil.Extra, "$.soil", sink, typeof(SoilDefinition));
         }
+    }
+
+    private static void ValidateAnimation(PartDefinition part, bool placeable, DiagnosticSink sink)
+    {
+        if (part.Animation is not { } animation)
+            return;
+        const string p = "$.animation";
+        if (!placeable)
+            sink.Error(Code, p, "only placeable parts can have animation.");
+        if (animation.Axis is { } a && !(float.IsFinite(a.X) && float.IsFinite(a.Y) && float.IsFinite(a.Z) && a.X * a.X + a.Y * a.Y + a.Z * a.Z > 1e-6f))
+            sink.Error(Code, $"{p}.axis", "axis must be a non-zero vector.");
+        var extent = (part.Size ?? GridSize.One).Metres;
+        if (animation.Pivot is { } o && (!float.IsFinite(o.X) || !float.IsFinite(o.Y) || !float.IsFinite(o.Z)
+            || MathF.Abs(o.X) > extent.X / 2 + Epsilon || MathF.Abs(o.Y) > extent.Y / 2 + Epsilon || MathF.Abs(o.Z) > extent.Z / 2 + Epsilon))
+            sink.Error(Code, $"{p}.pivot", $"animation pivot {o} is outside the part's {part.Size ?? GridSize.One} footprint.");
+        KnownKeys.WarnUnknown(animation.Extra, p, sink, typeof(AnimationDefinition));
     }
 
     private static void ValidateLight(PartDefinition part, bool placeable, DiagnosticSink sink)

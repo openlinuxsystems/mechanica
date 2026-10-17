@@ -111,7 +111,7 @@ public partial class ToolsTest : StagedTest
                 return false;
             Check(_results[0].Ok, $"the host paints it ({_results[0]})");
             Check(_host.Main.Creations.Find(_bar)!.FindPart(2)!.Color == Red, "the host's part is red");
-            var mesh = Body(_client, _bar).GetNode<Node3D>("Part2").GetChild<MeshInstance3D>(0);
+            var mesh = Body(_client, _bar).GetNode<Node3D>("Part2/Model").GetChild<MeshInstance3D>(0);
             var albedo = ((BaseMaterial3D)mesh.GetSurfaceOverrideMaterial(0)).AlbedoColor;
             Check(albedo.IsEqualApprox(new Color(Red)), $"the client shows it red ({albedo})");
             return true;

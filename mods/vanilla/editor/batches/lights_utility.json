@@ -468,10 +468,12 @@
         "visual": { "color": "#b8bcc0", "roughness": 0.3, "metallic": 0.9 },
         "sounds": { "spin": "saw_spin", "hit": "saw_cut" },
         "logic": { "inputs": 1 },
+        "animation": { "axis": [0, 1, 0] },
         "properties": {
           "damage": 15,
           "interval": 0.25,
           "reach": 0.12,
+          "spin": 30,
           "edge": [
             { "from": [0.38, 0, 0], "direction": [1, 0, 0] },
             { "from": [-0.38, 0, 0], "direction": [-1, 0, 0] },
@@ -514,10 +516,12 @@
         "visual": { "color": "#8a7a50", "roughness": 0.4, "metallic": 0.8 },
         "sounds": { "spin": "drill_spin", "hit": "drill_hit" },
         "logic": { "inputs": 1 },
+        "animation": { "axis": [0, 0, -1] },
         "properties": {
           "damage": 25,
           "interval": 0.3,
           "reach": 0.15,
+          "spin": 25,
           "edge": [{ "from": [0, 0, -0.39], "direction": [0, 0, -1] }]
         },
         "sound_material": "metal"

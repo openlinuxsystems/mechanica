@@ -148,6 +148,10 @@ placed.
 | `part.sound(key)` | The sound id the part binds to `key` in its `sounds` (for `sound.play` and `sound.start`), or `nil`. Scripts play the part's own bindings this way, so the ids stay in data. |
 | `part.occupant()` | For a seat: the peer of the player sitting in it, or `nil`. |
 | `part.occupant_input()` | For a seat: the sitting player's input as `{x, z, jump, sprint, yaw, pitch}`. `x` is steering (-1 left to 1 right) and `z` throttle (-1 back to 1 forward). `nil` when the seat is empty. |
+| `part.set_light(level)` | For a part with a `light` section: sets how bright it shines, 0 (dark) to 1 (its full `energy`), or `true`/`false` for 1/0. It stays until changed; the host sends it to every client. Returns `true`, or `false` and the reason. |
+| `part.light()` | The part's light level now, 0 to 1. |
+| `part.animate(angle?, speed?)` | For a part with an `animation` section: turns its model (not its collision or Body) about the section's `axis` through its `pivot`, to `angle` rad (`nil` keeps the angle it has), then keeps turning it at `speed` rad/s (default 0). Every client draws it from the host's state, so send it when it changes, not every step. Returns `true`, or `false` and the reason. |
+| `part.animation()` | The model's turn now as `angle, speed` (rad, rad/s). |
 
 Pushes last one physics step, so a script that keeps pushing calls `apply_force` every
 `on_update`. They go through the `ApplyForce` action with the part's id, so pushes from different
@@ -280,6 +284,10 @@ The holder's inventory. Item ids may be bare (`potato`, in the item's own mod) o
 |----------|---------|
 | `inventory.count(item)` | How many of `item` they carry. |
 | `inventory.take(item, count?)` | Takes `count` (default 1). `true`, or `false` (and nothing taken) when they carry fewer. |
+
+Part scripts can use `combat.cast`, `combat.hit`, `combat.hitscan`, `farm.soil` and `farm.water` too (a
+saw, a drill, a water cannon or a mounted gun). They act for the host, skip nothing (aim rays out of the
+part) and have no reach limit beyond the ray's range.
 
 ### `combat`
 

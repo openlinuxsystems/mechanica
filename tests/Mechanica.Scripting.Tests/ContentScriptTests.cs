@@ -26,7 +26,9 @@ public sealed class ContentScriptTests : IDisposable
     public ContentScriptTests()
     {
         Assert.False(Vanilla.HasErrors, string.Join("; ", Vanilla.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error)));
-        _runtime = new ScriptRuntime(new ScriptSettings(), _f.Dispatcher, new Motion(_f), new NoPhysics(), new Source()) { Sound = _sound };
+        var motion = new Motion(_f);
+        new MotionActions(new MotionSettings(), motion).Register(_f.Dispatcher);
+        _runtime = new ScriptRuntime(new ScriptSettings(), _f.Dispatcher, motion, new NoPhysics(), new Source()) { Sound = _sound };
         _runtime.EnableItems(_f.Catalog, _f.Survival, _f.Inventories);
         _runtime.Message += _messages.Add;
     }
@@ -187,6 +189,34 @@ public sealed class ContentScriptTests : IDisposable
         Assert.Equal(15f * hits, target.PartDamage(target.Parts.First().Id), 3);
         Assert.Contains(_sound.Played, p => p.Sound == "saw_cut");
         Assert.Equal(1f, Assert.Single(_sound.Loops.Values).Parameters["load"]);
+        Assert.Equal(30f, _runtime.Animations.Speed(creation.Id, saw));
+
+        Activate(creation, power);
+        Steps(2);
+        Assert.Empty(_sound.Loops);
+        Assert.Equal(0f, _runtime.Animations.Speed(creation.Id, saw));
+        NoErrors();
+    }
+
+    [Fact]
+    public void ARotorsModelSpinsWithItsSpeedAndAFlapTiltsWithItsCommand()
+    {
+        var creation = Board();
+        var rotor = Place(creation, "vanilla:rotor", new GridCell(-1, 1, -1));
+        var flap = Place(creation, "vanilla:control_surface", new GridCell(-4, 1, 3));
+        var power = Place(creation, "vanilla:switch", new GridCell(3, 1, 3));
+        Link(creation, power, rotor);
+        Link(creation, power, flap);
+        Configure(creation, flap, "control", "link");
+        Steps(2);
+        Assert.Equal(0f, _runtime.Animations.Speed(creation.Id, rotor));
+        Activate(creation, power);
+        // properties.spool_rate is 0.8 a second: full speed after 1.25 s.
+        Steps(90);
+        // Clockwise seen from the top: about -Y at properties.spin_rate.
+        Assert.Equal(-40f, _runtime.Animations.Speed(creation.Id, rotor), 1);
+        // The flap tilts by max_deflection (10°), trailing edge down.
+        Assert.Equal(10f * MathF.PI / 180, _runtime.Animations.AngleAt(creation.Id, flap, _runtime.Time), 3);
         NoErrors();
     }
 

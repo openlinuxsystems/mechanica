@@ -71,12 +71,16 @@
       "default": "clockwise"
     }
   ],
+  "animation": {
+    "axis": [0, 1, 0]
+  },
   "properties": {
     "thrust": 150,
     "counter_torque": 40,
     "spool_rate": 0.8,
     "lever_rate": 0.5,
     "inflow_speed": 10,
-    "max_inflow_gain": 1.3
+    "max_inflow_gain": 1.3,
+    "spin_rate": 40
   }
 }

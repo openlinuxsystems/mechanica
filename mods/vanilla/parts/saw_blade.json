@@ -33,10 +33,14 @@
   "logic": {
     "inputs": 1
   },
+  "animation": {
+    "axis": [0, 1, 0]
+  },
   "properties": {
     "damage": 15,
     "interval": 0.25,
     "reach": 0.12,
+    "spin": 30,
     "edge": [
       {
         "from": [

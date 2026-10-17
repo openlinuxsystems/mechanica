@@ -11,7 +11,10 @@
 -- raises with Space and lowers with Shift, at properties.lever_rate per second, that stays where they leave
 -- it. "invert" flips the command.
 -- Sounds: "spin_up" when it starts turning, the "loop" while it turns (its "speed" parameter follows the
--- speed) and "spin_down" when it is told to stop.
+-- speed) and "spin_down" when it is told to stop. Its model spins at up to properties.spin_rate rad/s.
+
+-- The spin the model was last given (not saved: a loaded rotor shows its spin afresh).
+local shown_spin
 
 local function clamp(v, lo, hi)
   return math.max(lo, math.min(hi, v))
@@ -72,6 +75,13 @@ function on_update(dt)
   speed = speed + clamp(target - speed, -step, step)
   state.speed = speed
   noise(target, speed)
+  -- Clockwise seen from the top is about -Y. Small changes while spooling are not worth sending.
+  local spin = speed * properties.spin_rate * (part.setting("spin") == "counterclockwise" and 1 or -1)
+  local settled = speed == target and spin ~= shown_spin
+  if shown_spin == nil or settled or math.abs(spin - shown_spin) > 0.02 * properties.spin_rate then
+    part.animate(nil, spin)
+    shown_spin = spin
+  end
   if speed <= 0 then return end
   local axis = part.to_world(vec3(0, 1, 0))
   local ax, ay, az = axis.x, axis.y, axis.z
