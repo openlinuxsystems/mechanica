@@ -53,6 +53,8 @@ public class BuildSettingsTests
     [InlineData("""{"sledge": {"damage": 0}}""", "sledge.damage")]
     [InlineData("""{"sledge": {"impulse": -1}}""", "sledge.impulse")]
     [InlineData("""{"lift": {"height": 1}}""", "height")]
+    [InlineData("""{"hammer": {"drag_max_per_axis": 0}}""", "hammer.drag_max_per_axis")]
+    [InlineData("""{"hammer": {"remove_seconds_by_material": {"wood": -1}}}""", "remove_seconds_by_material.wood")]
     [InlineData("""{"reach": 0}""", "reach")]
     [InlineData("""{"max_parts_per_creation": 0}""", "max_parts_per_creation")]
     [InlineData("""{"clearance_scale": 1.5}""", "clearance_scale")]

@@ -107,7 +107,15 @@ public partial class WeldTool : HandTool
         }
         else
         {
-            Send(ToolActions.Weld, new WeldArgs(selected.Creation, aim.Creation.Id, aim.Offset, aim.Rotation), Done(done));
+            // The moved Creation shows where it goes until the host answers; a refusal fades it out red.
+            var ghost = _preview.Visible ? PendingGhost.Leave(this, _preview) : null;
+            var finish = Done(done);
+            Send(ToolActions.Weld, new WeldArgs(selected.Creation, aim.Creation.Id, aim.Offset, aim.Rotation), result =>
+            {
+                if (ghost is not null && IsInstanceValid(ghost))
+                    ghost.Resolve(result, Build.Settings!.Hammer.RollbackSeconds);
+                finish(result);
+            });
         }
         return true;
     }

@@ -24,6 +24,29 @@ public sealed record PlacePartArgs(string Part, GridCell Cell, GridRotation Rota
 /// <param name="Part">Part id within that Creation.</param>
 public sealed record RemovePartArgs(int Creation, int Part);
 
+/// <summary>
+/// Arguments of <c>PlaceParts</c>: one part at each of <see cref="Cells"/>, all in one grid frame (a Hammer drag,
+/// UI spec §2). With <see cref="Position"/> the first cell starts a new Creation there and the rest attach to it.
+/// </summary>
+/// <param name="Part">Part id, <c>mod_id:part_id</c>.</param>
+/// <param name="Cells">Origin cells, each touching one before it.</param>
+/// <param name="Rotation">Orientation of every part.</param>
+/// <param name="Creation">Creation to attach to.</param>
+/// <param name="Position">World position in metres of a new Creation's grid origin.</param>
+public sealed record PlacePartsArgs(string Part, IReadOnlyList<GridCell> Cells, GridRotation Rotation = default, int? Creation = null, Vec3? Position = null);
+
+/// <summary>Arguments of <c>RemoveParts</c>: parts of one Body of a Creation (a Hammer drag, UI spec §8).</summary>
+/// <param name="Creation">Creation holding the parts.</param>
+/// <param name="Parts">Part ids, all on the same Body.</param>
+public sealed record RemovePartsArgs(int Creation, IReadOnlyList<int> Parts);
+
+/// <summary>Value of a successful <c>PlaceParts</c> or <c>RemoveParts</c>.</summary>
+/// <param name="Creation">Creation the parts went into or came from.</param>
+/// <param name="Done">How many were placed or removed.</param>
+/// <param name="Skipped">How many could not be (blocked, out of reach, nothing left to pay with).</param>
+/// <param name="Reason">Why the first skipped one could not be, or null.</param>
+public sealed record BatchResult(int Creation, int Done, int Skipped, string? Reason = null);
+
 /// <summary>Value of a successful <c>PlacePart</c>.</summary>
 /// <param name="Creation">Creation the part is now in.</param>
 /// <param name="Part">The new part's id.</param>
@@ -115,11 +138,89 @@ public sealed class BuildActions(IPartCatalog catalog, BuildSettings settings, I
     /// <summary>Action name for removing.</summary>
     public const string RemovePart = "RemovePart";
 
-    /// <summary>Registers both actions.</summary>
+    /// <summary>Action name for placing a drag's worth of parts.</summary>
+    public const string PlaceParts = "PlaceParts";
+
+    /// <summary>Action name for removing a drag's worth of parts.</summary>
+    public const string RemoveParts = "RemoveParts";
+
+    /// <summary>Registers the actions.</summary>
     public void Register(ActionDispatcher dispatcher)
     {
-        dispatcher.Register<PlacePartArgs>(PlacePart, ValidatePlace, ApplyPlace);
-        dispatcher.Register<RemovePartArgs>(RemovePart, ValidateRemove, ApplyRemove);
+        dispatcher.Register<PlacePartArgs>(PlacePart, ValidatePlace, (caller, args) => ApplyPlace(caller, args, sound: true));
+        dispatcher.Register<RemovePartArgs>(RemovePart, ValidateRemove, (caller, args) => ApplyRemove(caller, args, sound: true));
+        dispatcher.Register<PlacePartsArgs>(PlaceParts, ValidatePlaceMany, ApplyPlaceMany);
+        dispatcher.Register<RemovePartsArgs>(RemoveParts, ValidateRemoveMany, ApplyRemoveMany);
+    }
+
+    // The batch is refused only when its first part is; later ones that no longer fit are skipped.
+    private string? ValidatePlaceMany(ActionCaller caller, PlacePartsArgs args)
+    {
+        if (args.Cells is not { Count: > 0 } cells)
+            return "Give at least one cell.";
+        if (cells.Count > settings.Hammer.MaxPartsPerAction)
+            return $"At most {settings.Hammer.MaxPartsPerAction} parts go down at once.";
+        if (cells.Distinct().Count() != cells.Count)
+            return "A cell is given twice.";
+        return ValidatePlace(caller, new PlacePartArgs(args.Part, cells[0], args.Rotation, args.Creation, args.Position));
+    }
+
+    private JsonElement? ApplyPlaceMany(ActionCaller caller, PlacePartsArgs args)
+    {
+        var first = ApplyPlace(caller, new PlacePartArgs(args.Part, args.Cells[0], args.Rotation, args.Creation, args.Position), sound: true)!.Value
+            .Deserialize<PlacePartResult>(ActionJson.Options)!;
+        var (done, skipped, reason) = (1, 0, (string?)null);
+        foreach (var cell in args.Cells.Skip(1))
+        {
+            var one = new PlacePartArgs(args.Part, cell, args.Rotation, first.Creation);
+            if (ValidatePlace(caller, one) is { } error)
+            {
+                skipped++;
+                reason ??= error;
+                continue;
+            }
+            ApplyPlace(caller, one, sound: false);
+            done++;
+        }
+        return Value(new BatchResult(first.Creation, done, skipped, reason));
+    }
+
+    private string? ValidateRemoveMany(ActionCaller caller, RemovePartsArgs args)
+    {
+        if (args.Parts is not { Count: > 0 } parts)
+            return "Give at least one part.";
+        if (parts.Count > settings.Hammer.MaxPartsPerAction)
+            return $"At most {settings.Hammer.MaxPartsPerAction} parts come off at once.";
+        if (ValidateRemove(caller, new RemovePartArgs(args.Creation, parts[0])) is { } error)
+            return error;
+        var creation = world.FindCreation(args.Creation)!;
+        var body = creation.BodyIndexOf(parts[0]);
+        // Removing across a joint takes the joint's own part (UI spec §8).
+        if (parts.Any(p => creation.FindPart(p) is null || creation.BodyIndexOf(p) != body))
+            return "Every part must be on the same body; take the bearing or piston off on its own.";
+        return null;
+    }
+
+    private JsonElement? ApplyRemoveMany(ActionCaller caller, RemovePartsArgs args)
+    {
+        // Part ids stay the same when pieces split off, so each part is found in whichever piece now holds it.
+        var pieces = new List<int> { args.Creation };
+        var (done, skipped, reason) = (0, 0, (string?)null);
+        foreach (var part in args.Parts)
+        {
+            var holder = pieces.Select(world.FindCreation).FirstOrDefault(c => c?.FindPart(part) is not null);
+            var one = new RemovePartArgs(holder?.Id ?? args.Creation, part);
+            if ((holder is null ? $"Part {part} is already gone." : ValidateRemove(caller, one)) is { } error)
+            {
+                skipped++;
+                reason ??= error;
+                continue;
+            }
+            var result = ApplyRemove(caller, one, sound: done == 0)!.Value.Deserialize<RemovePartResult>(ActionJson.Options)!;
+            pieces.AddRange(result.SplitOff);
+            done++;
+        }
+        return Value(new BatchResult(args.Creation, done, skipped, reason));
     }
 
     private string? ValidatePlace(ActionCaller caller, PlacePartArgs args)
@@ -159,7 +260,7 @@ public sealed class BuildActions(IPartCatalog catalog, BuildSettings settings, I
             ?? Costs?.CheckPlace(caller, Identifiers.Qualify(args.Part));
     }
 
-    private JsonElement? ApplyPlace(ActionCaller caller, PlacePartArgs args)
+    private JsonElement? ApplyPlace(ActionCaller caller, PlacePartArgs args, bool sound)
     {
         PartInstance? placed;
         string? error;
@@ -169,7 +270,8 @@ public sealed class BuildActions(IPartCatalog catalog, BuildSettings settings, I
             if (!target.TryPlacePart(args.Part, args.Cell, args.Rotation, out placed, out error))
                 throw new InvalidOperationException(error);
             world.Changed(target);
-            PlayPlaced(world, target, placed.Id);
+            if (sound)
+                PlayPlaced(world, target, placed.Id);
             Costs?.Placed(caller, placed.Part);
             return Value(new PlacePartResult(target.Id, placed.Id));
         }
@@ -197,12 +299,13 @@ public sealed class BuildActions(IPartCatalog catalog, BuildSettings settings, I
         return CheckReach(caller, centre);
     }
 
-    private JsonElement? ApplyRemove(ActionCaller caller, RemovePartArgs args)
+    private JsonElement? ApplyRemove(ActionCaller caller, RemovePartArgs args, bool sound)
     {
         var creation = world.FindCreation(args.Creation)!;
         var definition = creation.DefinitionOf(args.Part);
         var fallback = definition.Category == PartCategory.Block ? "remove_block" : "part_detach";
-        PlayPartSound(world, creation, args.Part, PartSounds.Remove, fallback);
+        if (sound)
+            PlayPartSound(world, creation, args.Part, PartSounds.Remove, fallback);
         var part = creation.FindPart(args.Part)!;
         var centre = PartCentre(creation, part.Id);
         var result = Remove(world, creation, args.Part);

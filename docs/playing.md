@@ -18,8 +18,8 @@ These are the default keys. Every one can be changed in Options, Controls.
 | Mouse | Look. Click the world to take the mouse back after a menu. |
 | X / C | Zoom the camera in or out a step (also Alt + scroll). You start in third person over the shoulder; all the way in is first person. |
 | 1 to 9, 0 | Pick a hotbar slot. It starts with the Hammer, Lift, Weld, Paint, Sledgehammer and Connect Tool. |
-| Left click | Create, attack or place: the Hammer places parts, the Sledgehammer swings |
-| Right click | Remove or pick up: the Hammer removes parts, the Lift takes its Creation away |
+| Left click | Create, attack or place: the Hammer places a part when you let go, the Sledgehammer swings. With the Hammer, hold still to lock the ghost (arrows show the ways it can grow), then drag to lay a grid of up to 16 by 16 parts; Q steps the grid's plane while you drag. |
+| Right click | Remove or pick up: hold it on a part with the Hammer until the ring round the crosshair fills (wood is quickest, metal slower); let go early to stop. Drag with it held to remove the parts of one body across a face. The Lift takes its Creation away. |
 | Scroll | Previous or next hotbar slot |
 | Q / Shift + Q | Turn the part (Hammer, Weld, Lift) or pick the next or previous colour (Paint) |
 | T | Hammer and Weld: tip the part over |
@@ -49,6 +49,9 @@ stops getting your input.
   their durability.
 - **Health** is the blue bar at the top left (Survival). The quest log is at the top right, the compass at
   the top, the tool bar at the bottom and chat at the bottom left.
+- The Hammer's **ghost** is blue where the part fits and red where it would not (something in the way, out of
+  reach, or none left in Survival). A part you place shows straight away; if the host turns it down, it fades out
+  red.
 - **Tips** show at the bottom of the screen, above the hotbar; hold Use (**E**) to dismiss one early.
 - If the game window loses focus, anything you are holding down (such as dismissing a tip) is cancelled.
 

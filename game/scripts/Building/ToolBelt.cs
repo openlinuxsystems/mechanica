@@ -114,6 +114,8 @@ public partial class ToolBelt : Node
         Item = Add(new ItemTool { Name = "Item", Player = Player, Actions = Actions, Build = Build, Inventory = Inventory, Survival = Survival, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput, Characters = Characters });
         Connector = Add(new ConnectTool { Name = "Connect", Player = Player, Actions = Actions, Build = Build, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput });
         Hammer.Active = true;
+        // In Survival a part is placed from the inventory, so the ghost turns red with none left.
+        Hammer.CanAfford = part => Survival.Own?.Mode != Core.Survival.GameMode.Survival || Inventory.Own?.Count(part) > 0;
         if (Hotbar is not null)
             Hotbar.OwnChanged += OnSlotsChanged;
         Inventory.ViewChanged += OnInventoryChanged;
