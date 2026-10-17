@@ -1,7 +1,7 @@
 -- Driver's seat: the sitting player's throttle (W/S, -1 to 1) is the seat's output, so link it to engines.
 -- Linked bearings that turn about an upright axis steer: A/D turns them up to properties.steer_angle
 -- degrees, at properties.steer_speed rad/s with at most properties.steer_torque N·m. When the seat is empty
--- the output is 0 and the wheels straighten.
+-- the output is 0 and the wheels straighten. A steering bearing's "drive" display turns while it steers.
 
 local RESEND = 30
 
@@ -29,6 +29,7 @@ local function steer(x)
       local key = tostring(id)
       if resend or state.steer[key] ~= angle then
         creation.set_bearing_angle(id, angle, properties.steer_speed, properties.steer_torque)
+        creation.display(id, "drive", x ~= 0 and -x * sign or nil)
         state.steer[key] = angle
       end
     end

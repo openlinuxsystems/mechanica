@@ -172,6 +172,8 @@ public partial class SurvivalHud : CanvasLayer
             hints.Add(Loc.T("Refining the {0}…", NodeName(Survival.FindObject(refining.Id))));
         else if (own is not { Dead: true } && Interaction() is { } what)
             hints.Add($"[{GameInput.Label(InputActions.Interact)}] {what.Label}");
+        else if (own is not { Dead: true } && Notice() is { } notice)
+            hints.Add(notice);
         if (own is not { Dead: true } && Upgrades is { IsOpen: false } upgrades && upgrades.Aimed() is { } part && upgrades.CanUpgrade(part))
             hints.Add($"[{GameInput.Label(InputActions.Upgrade)}] {Loc.T("upgrade")}");
         _hint.Text = string.Join("   ", hints);
@@ -288,8 +290,24 @@ public partial class SurvivalHud : CanvasLayer
     {
         if (Input.MouseMode != Input.MouseModeEnum.Captured || !GameInput.Pressed(@event, InputActions.Interact))
             return;
-        Interact();
+        if (!Interact() && Notice() is { } notice)
+            _status.Text = notice;
         GetViewport().SetInputAsHandled();
+    }
+
+    /// <summary>
+    /// Why Use (E) does nothing on what the crosshair is on, when it says so: "Seat occupied" on a seat someone else
+    /// sits in (UI spec §8). Null otherwise.
+    /// </summary>
+    public string? Notice()
+    {
+        if (Logic is null || Players.LocalPlayer is not { Seated: false } player || Survival.Settings is not { } settings
+            || HandTool.PartHit(HandTool.Cast(player, settings.Reach)) is not { } aimed)
+            return null;
+        var creation = aimed.Node.Creation;
+        return creation.DefinitionOf(aimed.Part).Seat is not null && Logic.Seats.Occupant(creation.Id, aimed.Part) is { } other && other != player.PeerId
+            ? Loc.T("Seat occupied")
+            : null;
     }
 
     /// <summary>Asks to respawn.</summary>
@@ -335,7 +353,9 @@ public partial class SurvivalHud : CanvasLayer
                 return (Loc.T("sleep here: respawn at this {0}", definition.Name ?? Loc.T("bed")), () => Request(SurvivalActions.SetSpawn, new PartUseArgs(creation.Id, aimed.Part)));
             if (Containers?.AimedInventory() is { } where)
                 return (Loc.T("open the {0}", definition.Name ?? Loc.T("container")), () => Containers.Show(where));
-            if (PartSettings is not null && definition.Settings is { Count: > 0 })
+            if (PartSettings is not null && definition.Menu is { Use: MenuUse.Cycle, Cycle: not null } && PartSettings.NextOption(creation.Id, aimed.Part) is { } next)
+                return (Loc.T("switch the {0} to {1}", definition.Name ?? Loc.T("part"), PartSettingsPanel.OptionLabel(next)), () => PartSettings.Cycle(creation.Id, aimed.Part));
+            if (PartSettings is not null && (definition.Settings is { Count: > 0 } || definition.Menu is not null))
                 return (Loc.T("set up the {0}", definition.Name ?? Loc.T("part")), () => PartSettings.Open(creation.Id, aimed.Part));
         }
         if (Quests?.Prompt() is { } quest)

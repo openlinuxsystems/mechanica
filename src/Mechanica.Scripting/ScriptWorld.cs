@@ -10,12 +10,16 @@ namespace Mechanica.Scripting;
 /// <param name="Distance">Distance from the ray's start, in m.</param>
 /// <param name="Creation">Creation hit, or null for terrain and other objects.</param>
 /// <param name="Part">Part hit, when <paramref name="Creation"/> is set and the part is known.</param>
-public readonly record struct ScriptRayHit(Vector3 Position, Vector3 Normal, float Distance, int? Creation, int? Part);
+/// <param name="Player">The player hit (their peer), when it is one.</param>
+/// <param name="Bot">The bot hit (its id), when it is one.</param>
+public readonly record struct ScriptRayHit(Vector3 Position, Vector3 Normal, float Distance, int? Creation, int? Part, int? Player = null, int? Bot = null);
 
 /// <summary>One thing inside a <c>world.overlap_sphere</c> test.</summary>
 /// <param name="Creation">Creation, or null for terrain and other objects.</param>
 /// <param name="Part">Part, when <paramref name="Creation"/> is set and the part is known.</param>
-public readonly record struct ScriptOverlap(int? Creation, int? Part);
+/// <param name="Player">The player (their peer), when it is one.</param>
+/// <param name="Bot">The bot (its id), when it is one.</param>
+public readonly record struct ScriptOverlap(int? Creation, int? Part, int? Player = null, int? Bot = null);
 
 /// <summary>
 /// The physics queries scripts can make that the Creation graph cannot answer. The game implements it

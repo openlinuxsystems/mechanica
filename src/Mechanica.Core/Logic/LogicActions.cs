@@ -24,6 +24,13 @@ public sealed record ConfigurePartArgs(int Creation, int Part, Dictionary<string
 /// <param name="Part">The part.</param>
 public sealed record LogicPartArgs(int Creation, int Part);
 
+/// <summary>Arguments of <c>CommandPart</c>: a command from a part's menu to its script's <c>on_command</c>.</summary>
+/// <param name="Creation">The Creation holding the part.</param>
+/// <param name="Part">The part.</param>
+/// <param name="Command">The command, one the part's data offers (a sequence setting's <see cref="SettingDefinition.Preview"/>).</param>
+/// <param name="Args">Plain data for the script.</param>
+public sealed record PartCommandArgs(int Creation, int Part, string Command, JsonElement? Args = null);
+
 /// <summary>Arguments of <c>InspectCreation</c>.</summary>
 /// <param name="Creation">The Creation to describe.</param>
 public sealed record InspectCreationArgs(int Creation);
@@ -96,6 +103,30 @@ public interface ILogicHost
 
     /// <summary>The part's script and why it is stopped (null while it runs), or nulls when it runs none.</summary>
     (string? Script, string? Fault) ScriptOf(int creation, int part);
+
+    /// <summary>Null when the part's script takes commands (it defines <c>on_command</c>), or why not. Changes nothing.</summary>
+    string? CheckCommand(Creation creation, int part);
+
+    /// <summary>Calls the part's <c>on_command(name, args, peer)</c>.</summary>
+    void Command(ActionCaller caller, Creation creation, int part, string command, JsonElement? args);
+}
+
+/// <summary>
+/// The creation hotbar (UI spec §8, §10): while a player sits in a seat, the parts it is linked to that players use
+/// (switches and buttons, <see cref="LogicDefinition.Use"/>) take the hotbar's slots, in part order.
+/// </summary>
+public static class SeatHotbar
+{
+    /// <summary>Most parts on the bar.</summary>
+    public const int Slots = 10;
+
+    /// <summary>The parts on <paramref name="seat"/>'s bar, at most <see cref="Slots"/>.</summary>
+    public static IReadOnlyList<int> Parts(Creation creation, int seat) =>
+        [.. creation.LinksFrom(seat).Where(to => creation.FindPart(to) is not null && creation.DefinitionOf(to).Logic?.Use is not null).Take(Slots)];
+
+    /// <summary>True when <paramref name="peer"/> sits in a seat of <paramref name="creation"/> whose bar holds <paramref name="part"/>.</summary>
+    public static bool Holds(SeatRegistry seats, int peer, Creation creation, int part) =>
+        seats.SeatOf(peer) is { } seat && seat.Creation == creation.Id && Parts(creation, seat.Part).Contains(part);
 }
 
 /// <summary>
@@ -107,9 +138,12 @@ public interface ILogicHost
 /// <item><c>ActivatePart</c>: a player uses a part (a button, a switch, soil with a ripe crop), which calls its script's
 /// <c>can_activate</c> and <c>on_activate</c>; what <c>on_activate</c> returns is the action's value.</item>
 /// <item><c>EnterSeat</c> / <c>LeaveSeat</c>: a player sits in a seat part or stands up (<see cref="SeatRegistry"/>).</item>
+/// <item><c>CommandPart</c>: a part's menu sends its script a command (a controller previews a sequence), which calls
+/// its <c>on_command(name, args, peer)</c>.</item>
 /// <item><c>InspectCreation</c>: reads a Creation's parts, Bodies, joints, links, signals and scripts (a query).</item>
 /// </list>
-/// Player callers must be within <see cref="BuildSettings.Reach"/> of the parts they act on. Links and settings
+/// Player callers must be within <see cref="BuildSettings.Reach"/> of the parts they act on, except that a seated
+/// player may use the parts on their seat's bar (<see cref="SeatHotbar"/>) from anywhere. Links and settings
 /// bump <see cref="Creation.Revision"/>, so state sync sends the Creation to clients again.
 /// </summary>
 public sealed class LogicActions(BuildSettings settings, IBuildWorld world, ILogicHost host, SeatRegistry seats)
@@ -132,6 +166,12 @@ public sealed class LogicActions(BuildSettings settings, IBuildWorld world, ILog
     /// <summary>Action name: stand up from the caller's seat.</summary>
     public const string LeaveSeat = "LeaveSeat";
 
+    /// <summary>Action name: send a part's script a command from its menu.</summary>
+    public const string CommandPart = "CommandPart";
+
+    /// <summary>Largest command arguments, as JSON text.</summary>
+    public const int MaxCommandBytes = 8192;
+
     /// <summary>Action name: describe a Creation (read-only).</summary>
     public const string InspectCreation = "InspectCreation";
 
@@ -150,6 +190,7 @@ public sealed class LogicActions(BuildSettings settings, IBuildWorld world, ILog
         dispatcher.Register<LogicPartArgs>(ActivatePart, ValidateActivate, ApplyActivate);
         dispatcher.Register<LogicPartArgs>(EnterSeat, ValidateEnter, ApplyEnter);
         dispatcher.Register<NoArgs>(LeaveSeat, ValidateLeave, ApplyLeave);
+        dispatcher.Register<PartCommandArgs>(CommandPart, ValidateCommand, ApplyCommand);
         dispatcher.Register<InspectCreationArgs>(InspectCreation, (_, args) => world.FindCreation(args.Creation) is null ? $"There is no creation {args.Creation}." : null,
             (_, args) => Value(Inspect(world.FindCreation(args.Creation)!)), readOnly: true);
     }
@@ -264,7 +305,33 @@ public sealed class LogicActions(BuildSettings settings, IBuildWorld world, ILog
             return $"There is no creation {args.Creation}.";
         if (creation.FindPart(args.Part) is null)
             return $"Creation {args.Creation} has no part {args.Part}.";
-        return host.CheckActivate(caller, creation, args.Part) ?? CheckReach(caller, creation, args.Part);
+        return host.CheckActivate(caller, creation, args.Part)
+            ?? (SeatHotbar.Holds(seats, caller.Peer, creation, args.Part) ? null : CheckReach(caller, creation, args.Part));
+    }
+
+    private string? ValidateCommand(ActionCaller caller, PartCommandArgs args)
+    {
+        if (world.FindCreation(args.Creation) is not { } creation)
+            return $"There is no creation {args.Creation}.";
+        if (creation.FindPart(args.Part) is null)
+            return $"Creation {args.Creation} has no part {args.Part}.";
+        var definition = creation.DefinitionOf(args.Part);
+        if (definition.Settings?.FirstOrDefault(s => s.Preview == args.Command) is not { } setting)
+            return $"{definition.Name ?? definition.Id} takes no command '{args.Command}'.";
+        if (args.Args is { } data)
+        {
+            if (data.GetRawText().Length > MaxCommandBytes)
+                return $"The command's data is over {MaxCommandBytes} bytes.";
+            if (data.ValueKind == JsonValueKind.Object && data.TryGetProperty(setting.Id!, out var frames) && PartSettings.Check(setting, frames) is { } error)
+                return error;
+        }
+        return host.CheckCommand(creation, args.Part) ?? CheckReach(caller, creation, args.Part);
+    }
+
+    private JsonElement? ApplyCommand(ActionCaller caller, PartCommandArgs args)
+    {
+        host.Command(caller, world.FindCreation(args.Creation)!, args.Part, args.Command, args.Args);
+        return null;
     }
 
     private JsonElement? ApplyActivate(ActionCaller caller, LogicPartArgs args)

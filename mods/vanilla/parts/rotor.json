@@ -75,6 +75,14 @@
   "animation": {
     "axis": [0, 1, 0]
   },
+  "display": {
+    "glow": {
+      "readout": "power",
+      "offset": [0, 0.08, 0],
+      "direction": [0, -1, 0],
+      "length": 0.5
+    }
+  },
   "properties": {
     "thrust": 150,
     "counter_torque": 40,
