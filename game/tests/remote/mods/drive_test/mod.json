@@ -1,0 +1,11 @@
+{
+  "format_version": 1,
+  "id": "drive_test",
+  "name": "Drive Test Parts",
+  "version": "0.1.0",
+  "description": "Fixture mod for the headless AI endpoint test: a chassis block, a bearing and a wheel.",
+  "authors": [
+    "Mechanica"
+  ],
+  "dependencies": []
+}
