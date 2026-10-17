@@ -195,6 +195,7 @@ public partial class Main : Node3D
         {
             Name = "Inventory",
             Session = Session,
+            Sounds = Sounds,
             Players = PlayerSync,
             Creations = Creations,
             Catalog = mods,

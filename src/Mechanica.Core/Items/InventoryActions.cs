@@ -1,8 +1,10 @@
 using System.Numerics;
 using System.Text.Json;
 using Mechanica.Core.Actions;
+using Mechanica.Core.Building;
 using Mechanica.Core.Creations;
 using Mechanica.Core.Data;
+using Mechanica.Core.Sound;
 
 namespace Mechanica.Core.Items;
 
@@ -135,6 +137,19 @@ public interface IInventoryWorld
 
     /// <summary>Every Creation in the world, live or parked.</summary>
     IEnumerable<Creation> AllCreations { get; }
+
+    /// <summary>Plays a one-shot sound event at a world position (a station starting or finishing a craft).</summary>
+    void PlaySound(string sound, string ownerModId, Vector3 position)
+    {
+    }
+
+    /// <summary>
+    /// Starts the loop <paramref name="sound"/> on a part, replacing any loop already set there, or stops it
+    /// when <paramref name="sound"/> is null (a station working its queue).
+    /// </summary>
+    void SetPartLoop(int creation, int partId, string? sound, string ownerModId)
+    {
+    }
 }
 
 /// <summary>
@@ -153,6 +168,9 @@ public interface IInventoryWorld
 /// </summary>
 public sealed class InventoryActions(IPartCatalog catalog, RecipeBook recipes, InventorySettings settings, IInventoryWorld world)
 {
+    // Stations whose work loop is playing.
+    private HashSet<(int Creation, int Part)> _working = [];
+
     /// <summary>Action name for moving items.</summary>
     public const string MoveItems = "MoveItems";
 
@@ -266,17 +284,40 @@ public sealed class InventoryActions(IPartCatalog catalog, RecipeBook recipes, I
         return null;
     }
 
-    /// <summary>Works every station's queue for <paramref name="seconds"/>. The host calls it every physics tick.</summary>
+    /// <summary>
+    /// Works every station's queue for <paramref name="seconds"/>. The host calls it every physics tick. A
+    /// station plays its <c>start</c> sound when it begins working, its <c>work</c> loop while it works and
+    /// its <c>complete</c> sound when crafts finish (<see cref="PartSounds"/>); the loop stops when the
+    /// queue empties or the output is full.
+    /// </summary>
     public void Tick(float seconds)
     {
+        var working = new HashSet<(int Creation, int Part)>();
         foreach (var creation in world.AllCreations)
         {
             foreach (var (part, queue) in creation.ActiveCrafting.ToList())
             {
-                if (creation.InventoryOf(part) is { } output)
-                    queue.Tick(seconds, SpeedOf(creation.DefinitionOf(part)), recipes, output);
+                if (creation.InventoryOf(part) is not { } output)
+                    continue;
+                var definition = creation.DefinitionOf(part);
+                var finished = queue.Tick(seconds, SpeedOf(definition), recipes, output);
+                var owner = BuildActions.OwnerOf(creation.FindPart(part)!.Part);
+                if (finished > 0 && PartSounds.For(definition, PartSounds.Complete) is { } complete)
+                    world.PlaySound(complete, owner, BuildActions.PartCentre(creation, part));
+                if (queue.IsEmpty || queue.IsBlocked)
+                    continue;
+                working.Add((creation.Id, part));
+                if (_working.Contains((creation.Id, part)))
+                    continue;
+                if (PartSounds.For(definition, PartSounds.Start) is { } start)
+                    world.PlaySound(start, owner, BuildActions.PartCentre(creation, part));
+                if (PartSounds.For(definition, PartSounds.Work) is { } work)
+                    world.SetPartLoop(creation.Id, part, work, owner);
             }
         }
+        foreach (var (creation, part) in _working.Where(w => !working.Contains(w)))
+            world.SetPartLoop(creation, part, null, Identifiers.VanillaModId);
+        _working = working;
     }
 
     // ---- MoveItems ----

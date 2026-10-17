@@ -240,7 +240,7 @@ public sealed class BuildActions(IPartCatalog catalog, BuildSettings settings, I
         PlayPartSound(world, creation, partId, PartSounds.Place, "part_attach");
 
     // Mod a part id belongs to: its prefix, vanilla for a bare id.
-    private static string OwnerOf(string partId)
+    internal static string OwnerOf(string partId)
     {
         var qualified = Identifiers.Qualify(partId);
         return qualified[..qualified.IndexOf(':')];
