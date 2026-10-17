@@ -73,6 +73,21 @@ public abstract partial class StagedTest : Node
             return;
         _done = true;
         GD.Print($"[{Tag}] {(code == 0 ? "OK" : "FAILED")}");
+        ShutDown(code);
+    }
+
+    // Frees the test's nodes and lets .NET release its wrappers before quitting. Left to engine
+    // teardown, wrappers the GC has not collected yet (sessions, ENet peers, collisions) can outlive
+    // the .NET runtime, and Godot aborts on exit after the test already passed.
+    private async void ShutDown(int code)
+    {
+        foreach (var child in GetChildren())
+            child.QueueFree();
+        await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
         GetTree().Quit(code);
     }
 }
