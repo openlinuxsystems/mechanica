@@ -32,6 +32,7 @@ public partial class PlayerController : CharacterBody3D
     private Node3D? _character;
     private CollisionShape3D _shape = null!;
     private bool _dead;
+    private Node3D? _arms;
     private CharacterGesture _gesture;
     private byte _gestureCount;
     private Func<(Vector3 Feet, Vector3 Velocity)?>? _seat;
@@ -176,6 +177,20 @@ public partial class PlayerController : CharacterBody3D
         _gesture = gesture;
         _gestureCount++;
     }
+
+    /// <summary>Puts <paramref name="arms"/> (first-person arms, or null for none) on the camera, replacing any before.</summary>
+    public void SetArms(Node3D? arms)
+    {
+        if (_arms == arms)
+            return;
+        _arms?.QueueFree();
+        _arms = arms;
+        if (arms is not null)
+            Camera.AddChild(arms);
+    }
+
+    /// <summary>The first-person arms on the camera, or null.</summary>
+    public Node3D? Arms => _arms;
 
     /// <summary>Draws <paramref name="model"/> as this player instead of the capsule (null goes back to the capsule).</summary>
     public void SetCharacter(Node3D? model)

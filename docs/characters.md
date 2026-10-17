@@ -69,6 +69,19 @@ otherwise vanilla's.
 | `water_enter` / `water_exit` | Starting and stopping swimming. | `water_enter` / `water_exit` |
 | `tool_equip` | Taking a different tool or item in hand. | `tool_equip` |
 
+### First-person arms
+
+In first person you see your character's own forearms and hands, holding the tool or item and playing its swings.
+They are cut from the character's mesh when it loads (the triangles skinned to the forearm, hand, finger and thumb
+bones), so a new character or skin gets them with no extra work. Where they sit in view is `first_person_offset`
+and `first_person_pitch_degrees` in `game/data/character.json`.
+
+### Seeing it in game
+
+`tools/capture-characters.sh OUT_DIR [character ...]` starts a world and renders each character to PNGs: standing,
+holding and swinging tools, looking up and down, crouching, moving, and in first person with each tool. It needs a
+display, or `xvfb-run` without one.
+
 ## Animations
 
 The animation set is shared by every character: `idle`, `walk`, `jog`, `run`, `crouch_idle`, `crouch_walk`,

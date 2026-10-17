@@ -63,6 +63,64 @@ public sealed class CharacterAssets : IDisposable
     }
 
     /// <summary>
+    /// A new instance of <paramref name="character"/>'s model cut down to its arms (<see cref="CharacterRig.ArmBones"/>),
+    /// for first person, or null when its mesh fails to load. Built from the character's own mesh, so every skin has arms.
+    /// </summary>
+    public Node3D? Arms(Character character)
+    {
+        var key = "arms:" + character.Mesh;
+        if (!_models.TryGetValue(key, out var template))
+        {
+            template = Instantiate(character);
+            if (template is not null)
+                CutToArms(template);
+            _models[key] = template;
+        }
+        return template?.Duplicate() as Node3D;
+    }
+
+    // Keeps only the arm triangles of every skinned mesh under root; non-skinned meshes go.
+    private static void CutToArms(Node3D root)
+    {
+        foreach (var instance in root.FindChildren("*", nameof(MeshInstance3D), owned: false).OfType<MeshInstance3D>().ToList())
+        {
+            if (instance.Mesh is not { } mesh || instance.Skin is not { } skin || instance.GetNodeOrNull<Skeleton3D>(instance.Skeleton) is not { } skeleton)
+            {
+                instance.Visible = false;
+                continue;
+            }
+            var arms = new ArrayMesh();
+            for (var surface = 0; surface < mesh.GetSurfaceCount(); surface++)
+            {
+                var arrays = mesh.SurfaceGetArrays(surface);
+                var format = mesh is ArrayMesh array ? array.SurfaceGetFormat(surface) : 0;
+                var vertices = arrays[(int)Mesh.ArrayType.Vertex].AsVector3Array();
+                var bones = arrays[(int)Mesh.ArrayType.Bones].AsInt32Array();
+                var weights = arrays[(int)Mesh.ArrayType.Weights].AsFloat32Array();
+                if (vertices.Length == 0 || bones.Length == 0)
+                    continue;
+                var indexed = arrays[(int)Mesh.ArrayType.Index].VariantType != Variant.Type.Nil;
+                var kept = CharacterRig.ArmTriangles(indexed ? arrays[(int)Mesh.ArrayType.Index].AsInt32Array() : null, vertices.Length, bones, weights,
+                    bones.Length / vertices.Length, b => b < skin.GetBindCount() && CharacterRig.ArmBones.Contains(BindName(skin, skeleton, b)));
+                if (kept.Length == 0)
+                    continue;
+                arrays[(int)Mesh.ArrayType.Index] = kept;
+                var flags = (Mesh.ArrayFormat)((long)format & (long)Mesh.ArrayFormat.FlagUse8BoneWeights);
+                arms.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, arrays, flags: flags);
+                arms.SurfaceSetMaterial(arms.GetSurfaceCount() - 1, instance.GetSurfaceOverrideMaterial(surface) ?? mesh.SurfaceGetMaterial(surface));
+            }
+            instance.Mesh = arms;
+            instance.CastShadow = GeometryInstance3D.ShadowCastingSetting.Off;
+        }
+    }
+
+    private static string BindName(Skin skin, Skeleton3D skeleton, int bind)
+    {
+        var name = skin.GetBindName(bind).ToString();
+        return name.Length > 0 ? name : skeleton.GetBoneName(skin.GetBindBone(bind));
+    }
+
+    /// <summary>
     /// A new instance of the prop node for <paramref name="prop"/> and where it sits in the rest-pose character's
     /// right hand (character model space), or null when nothing is drawn for it.
     /// </summary>

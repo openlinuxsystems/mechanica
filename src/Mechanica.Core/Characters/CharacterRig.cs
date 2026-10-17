@@ -111,6 +111,53 @@ public static class CharacterRig
         "shoulder_r", "upper_arm_r", "forearm_r", "hand_r", "fingers_r", "thumb_r",
     };
 
+    /// <summary>
+    /// The bones first-person arms are made of: forearms and hands, what a player sees of their own body when looking
+    /// ahead. Upper arms are left out; that close to the eye they would fill the sides of the view.
+    /// </summary>
+    public static IReadOnlySet<string> ArmBones { get; } = new HashSet<string>(StringComparer.Ordinal)
+    {
+        "forearm_l", "hand_l", "fingers_l", "thumb_l",
+        "forearm_r", "hand_r", "fingers_r", "thumb_r",
+    };
+
+    /// <summary>
+    /// The triangles of a skinned mesh that belong to the arms: those whose three corners each follow an arm bone
+    /// more than any other. <paramref name="indices"/> lists the corners of each triangle (null: the vertices in
+    /// order), <paramref name="bones"/> and <paramref name="weights"/> give <paramref name="influences"/> bones per
+    /// vertex, and <paramref name="isArm"/> says whether a bone index is an arm bone. Returns the kept corners.
+    /// </summary>
+    public static int[] ArmTriangles(int[]? indices, int vertexCount, int[] bones, float[] weights, int influences, Func<int, bool> isArm)
+    {
+        ArgumentNullException.ThrowIfNull(bones);
+        ArgumentNullException.ThrowIfNull(weights);
+        if (influences <= 0 || bones.Length < vertexCount * influences || weights.Length < vertexCount * influences)
+            throw new ArgumentException("bones and weights need influences entries for every vertex.");
+        var arm = new bool[vertexCount];
+        for (var v = 0; v < vertexCount; v++)
+        {
+            var best = -1;
+            var bestWeight = 0f;
+            for (var i = 0; i < influences; i++)
+            {
+                if (weights[v * influences + i] > bestWeight)
+                {
+                    bestWeight = weights[v * influences + i];
+                    best = bones[v * influences + i];
+                }
+            }
+            arm[v] = best >= 0 && isArm(best);
+        }
+        var corners = indices ?? Enumerable.Range(0, vertexCount).ToArray();
+        var kept = new List<int>();
+        for (var t = 0; t + 2 < corners.Length; t += 3)
+        {
+            if (arm[corners[t]] && arm[corners[t + 1]] && arm[corners[t + 2]])
+                kept.AddRange([corners[t], corners[t + 1], corners[t + 2]]);
+        }
+        return [.. kept];
+    }
+
     /// <summary>The bone props are held by.</summary>
     public const string PropBone = "hand_r";
 
