@@ -5,9 +5,13 @@ using FileAccess = Godot.FileAccess;
 namespace Mechanica.Game.Player;
 
 /// <summary>
-/// On-foot player body. It never reads devices: whoever owns it (local input today, host-side
-/// network input in chunk 2b) sets <see cref="CurrentInput"/> each physics tick, and the movement
-/// itself comes from <see cref="PlayerMotor"/> in Core. The node origin is at the feet.
+/// On-foot player body. It never reads devices: whoever owns it (local input, or the host's network
+/// input queue) sets <see cref="CurrentInput"/> each physics tick, and the movement itself comes from
+/// <see cref="PlayerMotor"/> in Core. The node origin is at the feet.
+/// <para>
+/// In multiplayer the host simulates every player. A client simulates only its own player (prediction)
+/// and shows the others with <see cref="Simulated"/> off, posed from snapshots by <see cref="ApplyState"/>.
+/// </para>
 /// </summary>
 public partial class PlayerController : CharacterBody3D
 {
@@ -19,6 +23,18 @@ public partial class PlayerController : CharacterBody3D
     private Node3D _head = null!;
     private SpringArm3D _cameraArm = null!;
     private MeshInstance3D _bodyMesh = null!;
+
+    /// <summary>Peer that controls this player (1 is the host).</summary>
+    public int PeerId { get; init; } = 1;
+
+    /// <summary>When false the body does not move itself; something else poses it each tick.</summary>
+    public bool Simulated { get; set; } = true;
+
+    /// <summary>Whether walking into rigid bodies pushes them. Only the host's simulation pushes.</summary>
+    public bool PushesBodies { get; set; } = true;
+
+    /// <summary>Raised after each physics tick the player simulated, with the sanitized input it used.</summary>
+    public event Action<PlayerInput>? Stepped;
 
     /// <summary>Movement tuning. Set before the node enters the tree to override the default file.</summary>
     public PlayerMovementSettings Settings { get; set; } = null!;
@@ -90,14 +106,41 @@ public partial class PlayerController : CharacterBody3D
 
     public override void _PhysicsProcess(double delta)
     {
-        var input = CurrentInput.Sanitized(Settings);
-        Rotation = new Vector3(0, input.Yaw, 0);
-        _head.Rotation = new Vector3(input.Pitch, 0, 0);
+        if (!Simulated)
+            return;
+        var input = Step(CurrentInput, (float)delta);
+        Stepped?.Invoke(input);
+    }
 
-        var velocity = PlayerMotor.Step(Velocity.ToNumerics(), IsOnFloor(), input, Settings, (float)delta);
+    /// <summary>
+    /// Simulates one tick of <paramref name="input"/> and returns the sanitized input used. Called by
+    /// <see cref="_PhysicsProcess"/>, and directly when a client replays inputs after a correction.
+    /// </summary>
+    public PlayerInput Step(PlayerInput input, float delta)
+    {
+        input = input.Sanitized(Settings);
+        ApplyLook(input.Yaw, input.Pitch);
+
+        var velocity = PlayerMotor.Step(Velocity.ToNumerics(), IsOnFloor(), input, Settings, delta);
         Velocity = velocity.ToGodot();
         MoveAndSlide();
-        PushRigidBodies((float)delta);
+        if (PushesBodies)
+            PushRigidBodies(delta);
+        return input;
+    }
+
+    /// <summary>Poses the player from a host snapshot (remote players on clients).</summary>
+    public void ApplyState(Vector3 position, Vector3 velocity, float yaw, float pitch)
+    {
+        GlobalPosition = position;
+        Velocity = velocity;
+        ApplyLook(yaw, pitch);
+    }
+
+    private void ApplyLook(float yaw, float pitch)
+    {
+        Rotation = new Vector3(0, yaw, 0);
+        _head.Rotation = new Vector3(pitch, 0, 0);
     }
 
     private void PushRigidBodies(float delta)
