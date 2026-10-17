@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://tests/vanilla/VanillaLogicTest.cs" id="1_logic"]
+
+[node name="VanillaLogicTest" type="Node"]
+script = ExtResource("1_logic")

@@ -161,7 +161,7 @@ public sealed class LogicScriptTests : IDisposable
         Steps(3);
         // Nobody presses anything: the engine brakes and the wheels point ahead.
         foreach (var (bearing, _) in wheels)
-            Assert.Equal(new JointMotor(0f, 300f), LastMotor(bearing));
+            Assert.Equal(new JointMotor(0f, 80f), LastMotor(bearing));
         Assert.Equal(0f, LastMotor(steering).Target);
 
         _input = new PlayerInput(1, 1, 0, 0, false, false);
@@ -171,7 +171,7 @@ public sealed class LogicScriptTests : IDisposable
         // Gear 3 of 5 of 25 rad/s. Rolling toward -Z (the engine's front) is a negative spin about +X
         // (right-handed), so the right wheels turn negative and the left ones, about -X, positive.
         foreach (var (bearing, side) in wheels)
-            Assert.Equal(new JointMotor(-side * 15f, 600f), LastMotor(bearing));
+            Assert.Equal(new JointMotor(-side * 15f, 120f), LastMotor(bearing));
         // Right is clockwise from above: about the steering bearing's -Y axis that is +30°.
         Assert.Equal(MathF.PI / 6, LastMotor(steering).Target!.Value, 4);
 
@@ -230,7 +230,7 @@ public sealed class LogicScriptTests : IDisposable
     }
 
     // A metal chassis along Z (z 0..4) with a driver's seat and a gas engine on top, both facing -Z.
-    // Rear wheels hang off a post at z 0; the front wheels hang off an axle under a steering bearing at z 4.
+    // The front (-Z) wheels hang off an axle under a steering bearing at z 0; the rear ones off a post at z 4.
     private (Creation Creation, int Seat, int Engine, List<(int Bearing, int Side)> Wheels, int Steering) BuildCar()
     {
         var creation = NewCreation();
@@ -238,10 +238,10 @@ public sealed class LogicScriptTests : IDisposable
             Place(creation, "vanilla:metal_block", new GridCell(0, 0, z));
         var seat = Place(creation, "vanilla:drivers_seat", new GridCell(0, 1, 1));
         var engine = Place(creation, "vanilla:gas_engine", new GridCell(0, 1, 3));
-        Place(creation, "vanilla:metal_block", new GridCell(0, -1, 0));
-        Place(creation, "vanilla:metal_block", new GridCell(0, -2, 0));
-        var steering = Bearing(creation, new GridCell(0, -1, 4), new GridCell(0, -1, 0));
+        Place(creation, "vanilla:metal_block", new GridCell(0, -1, 4));
         Place(creation, "vanilla:metal_block", new GridCell(0, -2, 4));
+        var steering = Bearing(creation, new GridCell(0, -1, 0), new GridCell(0, -1, 0));
+        Place(creation, "vanilla:metal_block", new GridCell(0, -2, 0));
         var wheels = new List<(int, int)>();
         foreach (var z in new[] { 0, 4 })
         {

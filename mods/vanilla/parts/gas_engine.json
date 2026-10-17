@@ -48,8 +48,8 @@
   ],
   "properties": {
     "speed": 25,
-    "torque": 600,
-    "brake": 300,
+    "torque": 120,
+    "brake": 80,
     "fuel": "gasoline",
     "fuel_time": 40,
     "loop_parameter": "load"

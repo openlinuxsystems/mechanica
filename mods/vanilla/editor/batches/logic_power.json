@@ -134,7 +134,7 @@
         "visual": { "color": "#b8452f", "roughness": 0.5, "metallic": 0.6 },
         "sounds": { "start": "engine_start", "loop": "engine_idle", "stop": "engine_sputter" },
         "settings": [{ "id": "gear", "name": "Gear", "type": "number", "min": 1, "max": 5, "step": 1, "default": 3 }],
-        "properties": { "speed": 25, "torque": 600, "brake": 300, "fuel": "gasoline", "fuel_time": 40, "loop_parameter": "load" }
+        "properties": { "speed": 25, "torque": 120, "brake": 80, "fuel": "gasoline", "fuel_time": 40, "loop_parameter": "load" }
       },
       "model": [
         { "kind": "box", "size": [0.46, 0.08, 0.46], "position": [0, -0.21, 0] },
@@ -166,7 +166,7 @@
         "durability": 4,
         "sound_material": "scrap",
         "visual": { "color": "#8c5a3c", "roughness": 0.85, "metallic": 0.3 },
-        "properties": { "speed": 15, "torque": 350, "brake": 200, "fuel": "gasoline", "fuel_time": 25, "loop_parameter": "load" }
+        "properties": { "speed": 15, "torque": 80, "brake": 60, "fuel": "gasoline", "fuel_time": 25, "loop_parameter": "load" }
       },
       "model": [
         { "kind": "box", "size": [0.46, 0.08, 0.46], "position": [0, -0.21, 0] },
@@ -198,7 +198,7 @@
           "rev": "electric_whirr",
           "stop": "battery_drain"
         },
-        "properties": { "speed": 20, "torque": 800, "brake": 400, "fuel": "battery_pack", "fuel_time": 90, "loop_parameter": "speed" }
+        "properties": { "speed": 20, "torque": 160, "brake": 100, "fuel": "battery_pack", "fuel_time": 90, "loop_parameter": "speed" }
       },
       "model": [
         { "kind": "box", "size": [0.46, 0.08, 0.46], "position": [0, -0.21, 0] },
