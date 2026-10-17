@@ -65,6 +65,9 @@ public partial class NetTestHarness : Node
     /// <summary>The UDP port hosts list themselves on for LAN discovery.</summary>
     public int LanPort { get; set; } = NetProtocol.LanPort;
 
+    /// <summary>The folder every instance saves worlds in. Null uses the game's own.</summary>
+    public string? SaveFolder { get; set; }
+
     /// <summary>Running instances, host first.</summary>
     public IReadOnlyList<Instance> Instances => _instances;
 
@@ -124,14 +127,44 @@ public partial class NetTestHarness : Node
         main.BotTypes = BotTypes; // null: the bots of those mods
         main.RaidTable = RaidTable; // null: the raid table of those mods
         main.LanPort = LanPort;
+        main.SaveFolder = SaveFolder;
         // The same name is the same player, so a test that restarts an instance gets its saved player back.
         main.Profile = Mechanica.Core.Saves.PlayerProfile.Fixed(name);
         if (options.Mode != SessionMode.Join)
             main.Save = Save;
         Setup?.Invoke(main);
-        viewport.AddChild(main);
         var instance = new Instance(name, viewport, main);
+        main.ReplaceWorld = () => ReplaceWorld(instance);
+        viewport.AddChild(main);
         _instances.Add(instance);
         return instance;
+    }
+
+    /// <summary>The instance in <paramref name="viewport"/> now (a world change replaces it).</summary>
+    public Instance Current(Instance instance) => _instances.First(i => i.Viewport == instance.Viewport);
+
+    // What the game does on a world change (load, new world): the next Main reads Main.MenuOptions and
+    // Main.MenuSave, here in the same viewport and with the same test settings.
+    private void ReplaceWorld(Instance old)
+    {
+        var current = Current(old);
+        var main = ResourceLoader.Load<PackedScene>(MainScene).Instantiate<Main>();
+        main.ReadDeviceInput = false;
+        main.Content = current.Main.Content;
+        main.Mods = current.Main.Mods;
+        main.WorldGen = WorldGen;
+        main.BotTypes = BotTypes;
+        main.RaidTable = RaidTable;
+        main.LanPort = LanPort;
+        main.Profile = current.Main.Profile;
+        main.SaveFolder = current.Main.SaveFolder;
+        main.ReportsFolder = current.Main.ReportsFolder;
+        Setup?.Invoke(main);
+        var next = new Instance(current.Name, current.Viewport, main);
+        main.ReplaceWorld = () => ReplaceWorld(next);
+        current.Viewport.RemoveChild(current.Main);
+        current.Main.QueueFree();
+        current.Viewport.AddChild(main);
+        _instances[_instances.IndexOf(current)] = next;
     }
 }

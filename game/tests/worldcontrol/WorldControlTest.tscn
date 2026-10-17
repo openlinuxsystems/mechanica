@@ -1,0 +1,7 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://tests/worldcontrol/WorldControlTest.cs" id="1_world"]
+
+[node name="WorldControlTest" type="Node"]
+process_mode = 3
+script = ExtResource("1_world")

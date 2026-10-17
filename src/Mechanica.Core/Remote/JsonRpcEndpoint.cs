@@ -188,6 +188,21 @@ public sealed class JsonRpcEndpoint
         return connection;
     }
 
+    /// <summary>
+    /// Takes over a connection from an earlier endpoint that shared this one's <see cref="Events"/> (the game
+    /// rebuilds the endpoint when it loads another world): it keeps its id, authentication, scopes and
+    /// subscriptions, acts as an external agent on the host's peer again, and loses unanswered asynchronous calls.
+    /// </summary>
+    public void Adopt(RemoteConnection connection)
+    {
+        _nextConnection = Math.Max(_nextConnection, connection.Id);
+        connection.Caller = _caller;
+        connection.Pending.Clear();
+        if (connection.Subscriber is { } subscriber && !Events.Has(subscriber))
+            connection.Subscriber = null;
+        _contextConnections[connection.Id.ToString(System.Globalization.CultureInfo.InvariantCulture)] = connection;
+    }
+
     /// <summary>Forgets a closed connection.</summary>
     public void Disconnect(RemoteConnection connection)
     {
