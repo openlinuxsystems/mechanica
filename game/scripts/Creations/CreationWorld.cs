@@ -70,6 +70,20 @@ public partial class CreationWorld : Node3D
             entry.Velocities.Clear();
     }
 
+    /// <summary>
+    /// Shows a Creation moved without a graph change: a live one jumps to its stored poses at rest, a
+    /// parked one forgets its velocities.
+    /// </summary>
+    public void Moved(int id)
+    {
+        if (_entries.GetValueOrDefault(id) is not { } entry)
+            return;
+        if (entry.Node is { } node)
+            node.Teleport();
+        else
+            entry.Velocities.Clear();
+    }
+
     /// <summary>Removes every Creation.</summary>
     public void Clear()
     {

@@ -42,9 +42,21 @@ public sealed class PartAssets
     /// <summary>Uses <paramref name="content"/> to find mod folders; without it every part is a placeholder.</summary>
     public PartAssets(ModLoadResult? content) => _content = content;
 
-    /// <summary>The model for a placed part, by qualified id.</summary>
-    public PartModel ModelFor(string qualifiedId, PartDefinition definition)
+    /// <summary>
+    /// The model for a placed part, by qualified id. <paramref name="paint"/> (<c>"#rrggbb"</c>, from the
+    /// Paint Tool) replaces the part's colour; shapes are shared with the unpainted model.
+    /// </summary>
+    public PartModel ModelFor(string qualifiedId, PartDefinition definition, string? paint = null)
     {
+        if (paint is not null)
+        {
+            var key = $"{qualifiedId}|{paint}";
+            if (_models.TryGetValue(key, out var painted))
+                return painted;
+            var plain = ModelFor(qualifiedId, definition);
+            var color = HexColor.TryParse(paint, out var c) ? new Color(c.R, c.G, c.B) : Colors.White;
+            return _models[key] = plain with { Meshes = [.. plain.Meshes.Select(m => Paint(m, color))] };
+        }
         if (_models.TryGetValue(qualifiedId, out var cached))
             return cached;
         var modId = _content?.FindPart(qualifiedId)?.ModId;
@@ -161,6 +173,20 @@ public sealed class PartAssets
                 material.Metallic = metallic;
             if (texture is not null)
                 material.AlbedoTexture = texture;
+            materials.Add(material);
+        }
+        return mesh with { SurfaceMaterials = materials };
+    }
+
+    // Every surface's material copied with its albedo colour replaced; textures keep showing through.
+    private static PartMesh Paint(PartMesh mesh, Color color)
+    {
+        var materials = new List<Material?>();
+        for (var i = 0; i < mesh.Mesh.GetSurfaceCount(); i++)
+        {
+            var original = mesh.SurfaceMaterials?.ElementAtOrDefault(i) ?? mesh.Mesh.SurfaceGetMaterial(i);
+            var material = original is BaseMaterial3D b ? (BaseMaterial3D)b.Duplicate() : new StandardMaterial3D();
+            material.AlbedoColor = new Color(color, material.AlbedoColor.A);
             materials.Add(material);
         }
         return mesh with { SurfaceMaterials = materials };

@@ -16,13 +16,16 @@ namespace Mechanica.Core.Creations;
 ///   "format_version": 1,
 ///   "id": 7,
 ///   "authority_peer": 1,
-///   "parts": [ { "id": 1, "part": "vanilla:wood_block", "cell": [0, 0, 0], "rotation": "+x+y" } ],
+///   "on_lift": true,
+///   "parts": [ { "id": 1, "part": "vanilla:wood_block", "cell": [0, 0, 0], "rotation": "+x+y", "color": "#d02020", "damage": 10 } ],
 ///   "connections": [ { "type": "rotational", "a": 2, "a_socket": "rotor", "b": 3 } ],
 ///   "bodies": [ { "part": 1, "position": [0, 2.5, 0], "rotation": [0, 0, 0, 1] } ]
 /// }
 /// </code>
 /// A body's <c>position</c> (metres) and <c>rotation</c> (unit quaternion <c>[x, y, z, w]</c>) place its
 /// grid frame in the world (<see cref="Pose"/>). Linear and angular velocity are not stored yet.
+/// <c>on_lift</c> (written only when true) marks a Creation a Lift holds; a part's <c>color</c> is its
+/// Paint Tool colour and <c>damage</c> the health it has lost, each written only when set.
 /// <code>
 /// </code>
 /// </summary>
@@ -39,12 +42,15 @@ public static class CreationJson
             FormatVersion = FormatVersion,
             Id = creation.Id,
             AuthorityPeer = creation.AuthorityPeer,
+            OnLift = creation.OnLift ? true : null,
             Parts = [.. creation.Parts.Select(p => new PartInstanceData
             {
                 Id = p.Id,
                 Part = p.Part,
                 Cell = p.Cell,
                 Rotation = p.Rotation,
+                Color = p.Color,
+                Damage = creation.PartDamage(p.Id) is var damage and > 0 ? damage : null,
                 Extra = Sorted(p.Extra),
             })],
             Connections = [.. creation.Connections.Select(c => new ConnectionData
@@ -92,7 +98,7 @@ public static class CreationJson
         if (sink.ErrorCount > 0)
             return null;
 
-        var creation = new Creation(id, catalog, peer) { Extra = data.Extra };
+        var creation = new Creation(id, catalog, peer) { Extra = data.Extra, OnLift = data.OnLift == true };
         var owner = new Dictionary<GridCell, int>();
         for (var i = 0; i < data.Parts!.Count; i++)
         {
@@ -114,6 +120,8 @@ public static class CreationJson
             foreach (var c in cells)
                 owner[c] = part.Id;
             creation.Load(part, definition);
+            if (data.Parts[i].Damage is { } damage)
+                creation.SetPartDamage(part.Id, damage);
         }
         if (sink.ErrorCount > 0)
             return null;
@@ -218,11 +226,16 @@ public static class CreationJson
             sink.Error(DiagnosticCodes.CreationUnknownPart, $"{path}.part", $"unknown part '{data.Part}'; is its mod loaded?");
         else if (!definition.IsPlaceable)
             sink.Error(invalid, $"{path}.part", $"'{data.Part}' cannot be placed.");
+        if (data.Color is not null && !HexColor.TryParse(data.Color, out _))
+            sink.Error(invalid, $"{path}.color", $"color must be \"#rrggbb\" (got \"{data.Color}\").");
+        if (data.Damage is { } damage && !(float.IsFinite(damage) && damage >= 0))
+            sink.Error(invalid, $"{path}.damage", $"damage must be a number of 0 or more (got {damage}).");
         if (sink.ErrorCount > errors)
             return null;
         KnownKeys.WarnUnknown(data.Extra, path, sink, typeof(PartInstanceData));
         var part = new PartInstance(data.Id!.Value, Identifiers.Qualify(data.Part!), data.Cell!.Value, data.Rotation ?? GridRotation.Identity)
         {
+            Color = data.Color?.ToLowerInvariant(),
             Extra = data.Extra,
         };
         return (part, definition!);
@@ -238,6 +251,8 @@ public static class CreationJson
         public int? Id { get; init; }
 
         public int? AuthorityPeer { get; init; }
+
+        public bool? OnLift { get; init; }
 
         public List<PartInstanceData>? Parts { get; init; }
 
@@ -258,6 +273,10 @@ public static class CreationJson
         public GridCell? Cell { get; init; }
 
         public GridRotation? Rotation { get; init; }
+
+        public string? Color { get; init; }
+
+        public float? Damage { get; init; }
 
         [JsonExtensionData]
         public Dictionary<string, JsonElement>? Extra { get; init; }

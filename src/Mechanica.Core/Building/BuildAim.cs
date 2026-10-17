@@ -48,10 +48,22 @@ public static class BuildAim
     /// <paramref name="face"/> side and its contact layer covers <paramref name="target"/> as centrally
     /// as the footprint allows. For a one-cell part this is <paramref name="target"/> itself.
     /// </summary>
-    public static GridCell Anchor(PartDefinition definition, GridRotation rotation, GridCell target, GridCell face)
+    public static GridCell Anchor(PartDefinition definition, GridRotation rotation, GridCell target, GridCell face) =>
+        Anchor(PartGeometry.Cells(definition, GridCell.Zero, rotation).ToList(), PartGeometry.Centre(definition, GridCell.Zero, rotation).ToNumerics(), target, face);
+
+    /// <summary>
+    /// <see cref="Anchor(PartDefinition, GridRotation, GridCell, GridCell)"/> for a whole set of cells, such
+    /// as a Creation the Weld Tool moves: the offset that puts <paramref name="cells"/> against the face,
+    /// their contact layer covering <paramref name="target"/> as centrally as it can.
+    /// </summary>
+    public static GridCell Anchor(IReadOnlyCollection<GridCell> cells, GridCell target, GridCell face)
     {
-        var cells = PartGeometry.Cells(definition, GridCell.Zero, rotation).ToList();
-        var centre = PartGeometry.Centre(definition, GridCell.Zero, rotation).ToNumerics();
+        var centre = cells.Aggregate(Vector3.Zero, (sum, c) => sum + c.AsVector.ToNumerics()) / cells.Count;
+        return Anchor(cells, centre, target, face);
+    }
+
+    private static GridCell Anchor(IReadOnlyCollection<GridCell> cells, Vector3 centre, GridCell target, GridCell face)
+    {
         var normal = face.AsVector.ToNumerics();
         var lowest = cells.Min(c => Dot(c, face));
         var contact = cells

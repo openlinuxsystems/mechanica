@@ -12,7 +12,7 @@ namespace Mechanica.Game.Creations;
 /// The graph stays the source of truth. After a graph change call <see cref="Rebuild"/>; before saving
 /// call <see cref="SyncToCreation"/> so the simulated poses reach the save. Only the Creation's
 /// authority peer simulates (D5): on other peers the bodies are frozen kinematic for state sync (chunk 4b)
-/// to drive.
+/// to drive. A Creation on a Lift (<see cref="Creation.OnLift"/>) is frozen everywhere.
 /// </para>
 /// </summary>
 public partial class CreationNode : Node3D
@@ -37,6 +37,9 @@ public partial class CreationNode : Node3D
 
     /// <summary>True when this peer runs the physics for the Creation.</summary>
     public bool IsSimulated => Multiplayer.GetUniqueId() == Creation.AuthorityPeer;
+
+    /// <summary>True when the bodies are held still: another peer simulates them, or a Lift holds them.</summary>
+    public bool IsFrozen => !IsSimulated || Creation.OnLift;
 
     public override void _Ready()
     {
@@ -83,11 +86,21 @@ public partial class CreationNode : Node3D
         }
     }
 
+    /// <summary>
+    /// Puts every body back at its stored pose, at rest, after the Creation was moved without a graph
+    /// change (a Lift picked it up, moved or let go of it).
+    /// </summary>
+    public void Teleport()
+    {
+        Clear();
+        Build();
+    }
+
     private void Build()
     {
-        var simulated = IsSimulated;
+        var frozen = IsFrozen;
         foreach (var body in Creation.Bodies)
-            _bodies.Add(BuildBody(body, simulated));
+            _bodies.Add(BuildBody(body, frozen));
         LocalBounds = CreationBounds.LocalBodyBounds(Creation);
         foreach (var link in Creation.Joints)
         {
@@ -107,7 +120,7 @@ public partial class CreationNode : Node3D
         _bodies.Clear();
     }
 
-    private CreationBody BuildBody(Body body, bool simulated)
+    private CreationBody BuildBody(Body body, bool frozen)
     {
         var node = new CreationBody
         {
@@ -119,7 +132,7 @@ public partial class CreationNode : Node3D
             Mass = body.Mass,
             CenterOfMassMode = RigidBody3D.CenterOfMassModeEnum.Custom,
             CenterOfMass = body.CentreOfMass.ToGodot(),
-            Freeze = !simulated,
+            Freeze = frozen,
             FreezeMode = RigidBody3D.FreezeModeEnum.Kinematic,
         };
         var friction = 0f;
@@ -128,7 +141,7 @@ public partial class CreationNode : Node3D
         {
             var part = Creation.FindPart(id)!;
             var definition = Creation.DefinitionOf(id);
-            var model = Assets.ModelFor(part.Part, definition);
+            var model = Assets.ModelFor(part.Part, definition, part.Color);
             var placed = new Transform3D(part.Rotation.ToBasis(),
                 PartGeometry.CentreMetres(definition, part.Cell, part.Rotation).ToGodot());
             // Shapes must be direct children of the body; meshes hang off a node per part.

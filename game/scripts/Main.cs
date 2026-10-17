@@ -14,7 +14,7 @@ namespace Mechanica.Game;
 /// <summary>
 /// Flat test world and session root. It builds the networking nodes (<see cref="Session"/>,
 /// <see cref="PlayerSync"/>, <see cref="Actions"/>), the streamed world (<see cref="Streamer"/>,
-/// <see cref="Creations"/>) and building (<see cref="Build"/>, the local player's <see cref="Hammer"/>),
+/// <see cref="Creations"/>) and building (<see cref="Build"/>, the local player's <see cref="Tools"/>),
 /// starts offline, hosting or joining from <see cref="Options"/>, and drives whichever player belongs
 /// to this peer from the keyboard and mouse.
 /// Every peer runs the same scene, so node paths (and with them RPC routes) match everywhere.
@@ -59,8 +59,11 @@ public partial class Main : Node3D
     /// <summary>Building actions and their sync to clients.</summary>
     public BuildSync Build { get; private set; } = null!;
 
+    /// <summary>The local player's hand tools, once the player has spawned.</summary>
+    public ToolBelt? Tools { get; private set; }
+
     /// <summary>The local player's Hammer, once the player has spawned.</summary>
-    public HammerTool? Hammer { get; private set; }
+    public HammerTool? Hammer => Tools?.Hammer;
 
     /// <summary>This peer's own player, once spawned.</summary>
     public PlayerController? LocalPlayer => PlayerSync.LocalPlayer;
@@ -114,7 +117,7 @@ public partial class Main : Node3D
         Build.RegisterActions(Actions.Dispatcher);
         // The offline player spawned with PlayerSync, before building existed.
         if (LocalPlayer is { } local)
-            AddHammer(local);
+            AddTools(local);
         Session.StateChanged += state => SetPropsSimulated(state is NetSession.SessionState.Offline or NetSession.SessionState.Hosting);
         if (ReadDeviceInput)
             AddChild(new ConnectPanel { Name = "ConnectPanel", Session = Session });
@@ -156,28 +159,28 @@ public partial class Main : Node3D
         if (player != LocalPlayer)
             return;
         player.MakeCameraCurrent();
-        AddHammer(player);
+        AddTools(player);
         if (!ReadDeviceInput)
             return;
         _input = new LocalPlayerInput { Name = "LocalPlayerInput", Target = player };
         AddChild(_input);
     }
 
-    private void AddHammer(PlayerController player)
+    private void AddTools(PlayerController player)
     {
-        if (Build is null || Hammer is not null)
+        if (Build is null || Tools is not null)
             return;
-        Hammer = new HammerTool { Name = "Hammer", Player = player, Actions = Actions, Build = Build, ReadDeviceInput = ReadDeviceInput };
-        AddChild(Hammer);
+        Tools = new ToolBelt { Name = "Tools", Player = player, Actions = Actions, Build = Build, ReadDeviceInput = ReadDeviceInput };
+        AddChild(Tools);
     }
 
     private void OnPlayerDespawning(PlayerController player)
     {
-        if (Hammer?.Player == player)
+        if (Tools?.Player == player)
         {
-            RemoveChild(Hammer);
-            Hammer.QueueFree();
-            Hammer = null;
+            RemoveChild(Tools);
+            Tools.QueueFree();
+            Tools = null;
         }
         if (_input?.Target != player)
             return;

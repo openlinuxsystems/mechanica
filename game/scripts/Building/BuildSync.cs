@@ -1,5 +1,7 @@
+using System.Text.Json;
 using Godot;
 using FileAccess = Godot.FileAccess;
+using Mechanica.Core.Actions;
 using Mechanica.Core.Building;
 using Mechanica.Core.Creations;
 using Mechanica.Core.Data;
@@ -10,20 +12,24 @@ using Mechanica.Game.Player;
 namespace Mechanica.Game.Building;
 
 /// <summary>
-/// Building over the network (D10). On the host it is the <see cref="IBuildWorld"/> behind the
-/// <c>PlacePart</c>/<c>RemovePart</c> actions: it answers reach and clearance questions from the live
-/// scene, rebuilds Creation nodes after each graph change and sends the changed Creation to every
-/// client. A late joiner gets every Creation when it becomes ready. Clients only mirror what arrives.
+/// Building over the network (D10). On the host it is the <see cref="IToolWorld"/> behind the Hammer's
+/// <c>PlacePart</c>/<c>RemovePart</c> and the other hand tools' actions (<see cref="ToolActions"/>): it
+/// answers reach and clearance questions from the live scene, rebuilds Creation nodes after each change
+/// and sends the changed Creation and every Lift change to every client. A late joiner gets every
+/// Creation and Lift when it becomes ready. Clients only mirror what arrives.
 /// <para>
 /// Each update carries the whole Creation as save JSON (graph plus Body poses), which keeps clients
 /// exact without a delta format. Moving bodies between changes is physics state sync's job (chunk 4b).
 /// </para>
 /// </summary>
-public partial class BuildSync : Node, IBuildWorld
+public partial class BuildSync : Node, IToolWorld
 {
     /// <summary>Where the building limits are read from.</summary>
     public const string SettingsPath = "res://data/building.json";
 
+    private readonly Dictionary<int, LiftBody> _lifts = [];
+    private Node3D _liftRoot = null!;
+    private ActionDispatcher? _dispatcher;
     private int _nextCreationId = 1;
     private bool _wasConnected;
 
@@ -45,24 +51,40 @@ public partial class BuildSync : Node, IBuildWorld
     /// <summary>Building limits; null loads <see cref="SettingsPath"/>.</summary>
     public BuildSettings? Settings { get; set; }
 
+    /// <summary>The tool actions, once registered (host-side Lift state lives here).</summary>
+    public ToolActions? Tools { get; private set; }
+
+    /// <summary>The Lifts this peer shows, by owner peer.</summary>
+    public IReadOnlyDictionary<int, LiftBody> Lifts => _lifts;
+
+    /// <inheritdoc/>
+    public double Now => Time.GetTicksMsec() / 1000.0;
+
     public override void _Ready()
     {
         Settings ??= LoadSettings();
+        _liftRoot = new Node3D { Name = "Lifts" };
+        AddChild(_liftRoot);
         Session.PeerReady += SendAllTo;
+        Session.PeerLeft += OnPeerLeft;
         Session.StateChanged += OnStateChanged;
     }
 
     public override void _ExitTree()
     {
         Session.PeerReady -= SendAllTo;
+        Session.PeerLeft -= OnPeerLeft;
         Session.StateChanged -= OnStateChanged;
     }
 
-    /// <summary>Registers <c>PlacePart</c> and <c>RemovePart</c>.</summary>
-    public void RegisterActions(Core.Actions.ActionDispatcher dispatcher)
+    /// <summary>Registers <c>PlacePart</c>, <c>RemovePart</c> and the tool actions.</summary>
+    public void RegisterActions(ActionDispatcher dispatcher)
     {
         Settings ??= LoadSettings();
         new BuildActions(Catalog, Settings, this).Register(dispatcher);
+        Tools = new ToolActions(Settings, this);
+        Tools.Register(dispatcher);
+        _dispatcher = dispatcher;
     }
 
     /// <summary>Reads <see cref="SettingsPath"/>, failing loudly on bad data.</summary>
@@ -95,18 +117,41 @@ public partial class BuildSync : Node, IBuildWorld
     }
 
     /// <inheritdoc/>
-    public string? CheckClear(Creation? target, PartDefinition definition, GridCell cell, GridRotation rotation, Pose pose)
+    public string? CheckClear(Creation? target, PartDefinition definition, GridCell cell, GridRotation rotation, Pose pose) =>
+        CheckPartClear(definition, cell, rotation, pose, target is null ? [] : [target.Id], null);
+
+    /// <inheritdoc/>
+    public string? CheckPartClear(PartDefinition definition, GridCell cell, GridRotation rotation, Pose pose,
+        IReadOnlyCollection<int> ignoreCreations, int? ignoreLiftOf)
     {
         var size = (definition.Size ?? GridSize.One).Metres.ToGodot() * Settings!.ClearanceScale;
-        var query = new PhysicsShapeQueryParameters3D
+        var transform = pose.ToTransform()
+            * new Transform3D(rotation.ToBasis(), PartGeometry.CentreMetres(definition, cell, rotation).ToGodot());
+        return Overlap(new BoxShape3D { Size = size }, transform, ignoreCreations, ignoreLiftOf);
+    }
+
+    /// <inheritdoc/>
+    public string? CheckLiftClear(LiftState lift, IReadOnlyCollection<int> ignoreCreations)
+    {
+        var height = Settings!.Lift.TopAt(lift.Level);
+        var size = new Vector3(Settings.Lift.PlatformSize, height, Settings.Lift.PlatformSize) * Settings.ClearanceScale;
+        var transform = new Transform3D(Basis.Identity, lift.Position.ToGodot() + new Vector3(0, height / 2, 0));
+        return Overlap(new BoxShape3D { Size = size }, transform, ignoreCreations, lift.Owner);
+    }
+
+    // What overlaps a shape, apart from the given Creations' bodies and Lift, as a reason; null when nothing does.
+    private string? Overlap(Shape3D shape, Transform3D transform, IReadOnlyCollection<int> ignoreCreations, int? ignoreLiftOf)
+    {
+        var query = new PhysicsShapeQueryParameters3D { Shape = shape, Transform = transform, CollideWithBodies = true };
+        var exclude = new Godot.Collections.Array<Rid>();
+        foreach (var id in ignoreCreations)
         {
-            Shape = new BoxShape3D { Size = size },
-            Transform = pose.ToTransform()
-                * new Transform3D(rotation.ToBasis(), PartGeometry.CentreMetres(definition, cell, rotation).ToGodot()),
-            CollideWithBodies = true,
-        };
-        if (target is not null && Creations.NodeOf(target.Id) is { } own)
-            query.Exclude = [.. own.Bodies.Select(b => b.GetRid())];
+            foreach (var body in Creations.NodeOf(id)?.Bodies ?? [])
+                exclude.Add(body.GetRid());
+        }
+        if (ignoreLiftOf is { } owner && _lifts.TryGetValue(owner, out var own))
+            exclude.Add(own.GetRid());
+        query.Exclude = exclude;
         var hits = GetViewport().FindWorld3D().DirectSpaceState.IntersectShape(query, 1);
         if (hits.Count == 0)
             return null;
@@ -114,8 +159,35 @@ public partial class BuildSync : Node, IBuildWorld
         {
             PlayerController => "A player is in the way.",
             CreationBody body when body.GetParent() is CreationNode node => $"Creation {node.Creation.Id} is in the way.",
+            LiftBody => "A lift is in the way.",
             _ => "Something is in the way.",
         };
+    }
+
+    /// <inheritdoc/>
+    public void Moved(Creation creation)
+    {
+        Creations.Moved(creation.Id);
+        Broadcast(creation);
+    }
+
+    /// <inheritdoc/>
+    public void LiftChanged(int owner, LiftState? lift)
+    {
+        ShowLift(owner, lift);
+        var json = lift is null ? "" : JsonSerializer.Serialize(lift, ActionJson.Options);
+        foreach (var peer in Session.ReadyPeers)
+            RpcId(peer, MethodName.ClientSetLift, owner, json);
+    }
+
+    /// <inheritdoc/>
+    public void Push(Creation creation, int bodyIndex, System.Numerics.Vector3 point, System.Numerics.Vector3 impulse)
+    {
+        if (Creations.NodeOf(creation.Id) is not { IsFrozen: false } node || bodyIndex >= node.Bodies.Count)
+            return;
+        var body = node.Bodies[bodyIndex];
+        body.Sleeping = false;
+        body.ApplyImpulse(impulse.ToGodot(), point.ToGodot() - body.GlobalPosition);
     }
 
     /// <inheritdoc/>
@@ -155,6 +227,28 @@ public partial class BuildSync : Node, IBuildWorld
         Creations.Replace(creation, Assets);
     }
 
+    /// <summary>Host → client: a player's Lift as it is now (Action API JSON), or empty when it is gone.</summary>
+    [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void ClientSetLift(int owner, string json)
+    {
+        if (Session.IsHost)
+            return;
+        LiftState? lift = null;
+        if (json.Length > 0)
+        {
+            try
+            {
+                lift = JsonSerializer.Deserialize<LiftState>(json, ActionJson.Options);
+            }
+            catch (JsonException e)
+            {
+                GD.PushError($"[build] the host sent a lift this client cannot read: {e.Message}");
+                return;
+            }
+        }
+        ShowLift(owner, lift);
+    }
+
     /// <summary>Host → client: a Creation is gone.</summary>
     [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
     private void ClientRemoveCreation(int id)
@@ -176,6 +270,35 @@ public partial class BuildSync : Node, IBuildWorld
     {
         foreach (var creation in Creations.All)
             RpcId(peer, MethodName.ClientSetCreation, Write(creation));
+        foreach (var lift in Tools?.Lifts ?? [])
+            RpcId(peer, MethodName.ClientSetLift, lift.Owner, JsonSerializer.Serialize(lift, ActionJson.Options));
+    }
+
+    private void ShowLift(int owner, LiftState? lift)
+    {
+        if (lift is null)
+        {
+            if (_lifts.Remove(owner, out var gone))
+            {
+                _liftRoot.RemoveChild(gone);
+                gone.QueueFree();
+            }
+            return;
+        }
+        if (!_lifts.TryGetValue(owner, out var body))
+        {
+            body = _lifts[owner] = new LiftBody { Name = $"Lift{owner}" };
+            _liftRoot.AddChild(body);
+        }
+        body.Show(lift, Settings!.Lift);
+    }
+
+    // A player who leaves takes their Lift with them; what it held drops.
+    private void OnPeerLeft(int peer)
+    {
+        if (Session.IsHost && Tools?.LiftOf(peer) is not null)
+            _dispatcher?.Dispatch(new ActionCaller(peer, ActionSource.Player), ToolActions.RemoveLift, "{}");
+        Tools?.Forget(peer);
     }
 
     private string Write(Creation creation)
@@ -188,7 +311,11 @@ public partial class BuildSync : Node, IBuildWorld
     {
         // A client shows the host's world only while connected to it; the host keeps its own.
         if (state == NetSession.SessionState.Connecting || (state == NetSession.SessionState.Offline && _wasConnected))
+        {
             Creations.Clear();
+            foreach (var owner in _lifts.Keys.ToList())
+                ShowLift(owner, null);
+        }
         _wasConnected = state == NetSession.SessionState.Connected;
     }
 }

@@ -25,6 +25,8 @@ public sealed class Creation
     private readonly HashSet<Connection> _connections = [];
     // World pose of each part's Body, stored on every member so poses survive splits and removals.
     private readonly Dictionary<int, Pose> _poses = [];
+    // Health each part has lost (Sledgehammer hits); parts at full health have no entry.
+    private readonly Dictionary<int, float> _damage = [];
     private Layout? _layout;
     private int _authorityPeer;
     private int _nextPartId = 1;
@@ -52,6 +54,12 @@ public sealed class Creation
 
     /// <summary>Keys this build does not know, kept from a loaded save.</summary>
     public IReadOnlyDictionary<string, JsonElement>? Extra { get; set; }
+
+    /// <summary>
+    /// True while a Lift holds the Creation: its Bodies stay where the Lift put them instead of simulating.
+    /// Pieces that split off do not inherit it, so they drop.
+    /// </summary>
+    public bool OnLift { get; set; }
 
     /// <summary>Parts by ascending id.</summary>
     public IReadOnlyCollection<PartInstance> Parts => _parts.Values;
@@ -115,6 +123,34 @@ public sealed class Creation
     {
         foreach (var id in _parts.Keys)
             _poses[id] = pose;
+    }
+
+    /// <summary>Health a part has lost; 0 when it is undamaged.</summary>
+    public float PartDamage(int partId) => _damage.GetValueOrDefault(partId);
+
+    /// <summary>Sets the health a part has lost (0 or less clears it).</summary>
+    public void SetPartDamage(int partId, float damage)
+    {
+        if (!_parts.ContainsKey(partId))
+            throw new ArgumentException($"Creation {Id} has no part {partId}.", nameof(partId));
+        if (damage > 0)
+            _damage[partId] = damage;
+        else
+            _damage.Remove(partId);
+    }
+
+    /// <summary>Paints a part (Paint Tool): <paramref name="color"/> is <c>"#rrggbb"</c>, or null for its own colour.</summary>
+    /// <returns>True when the colour changed.</returns>
+    public bool SetPartColor(int partId, string? color)
+    {
+        var part = _parts.TryGetValue(partId, out var p) ? p : throw new ArgumentException($"Creation {Id} has no part {partId}.", nameof(partId));
+        if (color is not null && !HexColor.TryParse(color, out _))
+            throw new ArgumentException($"'{color}' is not a #rrggbb colour.", nameof(color));
+        color = color?.ToLowerInvariant();
+        if (part.Color == color)
+            return false;
+        _parts[partId] = part with { Color = color };
+        return true;
     }
 
     /// <summary>
@@ -288,6 +324,8 @@ public sealed class Creation
                 creation.Insert(_parts[id], _definitions[id]);
                 if (_poses.TryGetValue(id, out var pose))
                     creation._poses[id] = pose;
+                if (_damage.TryGetValue(id, out var damage))
+                    creation._damage[id] = damage;
             }
             foreach (var connection in _connections.Where(c => members.Contains(c.A)).ToList())
             {
@@ -316,6 +354,60 @@ public sealed class Creation
         [NotNullWhen(true)] out IReadOnlyDictionary<int, int>? idMap, [NotNullWhen(false)] out string? error)
     {
         idMap = null;
+        if (!Merge(other, rotation, offset, weld, commit: true, out var map, out _, out error))
+            return false;
+        idMap = map;
+        return true;
+    }
+
+    /// <summary>
+    /// Checks <see cref="TryMergeFrom"/> without changing either Creation, reporting this Creation's parts
+    /// that <paramref name="other"/> would attach to.
+    /// </summary>
+    public bool CanMergeFrom(Creation other, GridRotation rotation, GridCell offset, bool weld,
+        [NotNullWhen(true)] out IReadOnlyList<int>? attachedTo, [NotNullWhen(false)] out string? error)
+    {
+        attachedTo = null;
+        if (!Merge(other, rotation, offset, weld, commit: false, out _, out var touched, out error))
+            return false;
+        attachedTo = touched;
+        return true;
+    }
+
+    /// <summary>
+    /// Checks <see cref="TryWeldParts"/> without changing anything: both parts exist, sit in different
+    /// Bodies, and touch face to face.
+    /// </summary>
+    public bool CanWeldParts(int a, int b, [NotNullWhen(false)] out string? error)
+    {
+        error = !_parts.ContainsKey(a) ? $"creation {Id} has no part {a}."
+            : !_parts.ContainsKey(b) ? $"creation {Id} has no part {b}."
+            : a == b ? $"part {a} cannot be welded to itself."
+            : BodyIndexOf(a) == BodyIndexOf(b) ? $"parts {a} and {b} are already one rigid body."
+            : !Touches(a, b) ? $"parts {a} and {b} do not touch."
+            : null;
+        return error is null;
+    }
+
+    /// <summary>
+    /// Welds two touching parts of different Bodies (Weld Tool, D7): adds a rigid edge between them, so
+    /// their Bodies merge into one and any joint between those Bodies locks. The merged Body takes the
+    /// pose of its lowest part, as after any merge.
+    /// </summary>
+    public bool TryWeldParts(int a, int b, [NotNullWhen(false)] out string? error)
+    {
+        if (!CanWeldParts(a, b, out error))
+            return false;
+        _connections.Add(Connection.Rigid(a, b));
+        _layout = null;
+        return true;
+    }
+
+    private bool Merge(Creation other, GridRotation rotation, GridCell offset, bool weld, bool commit,
+        out Dictionary<int, int> map, out IReadOnlyList<int> attachedTo, [NotNullWhen(false)] out string? error)
+    {
+        map = [];
+        attachedTo = [];
         if (other == this || other.IsEmpty)
         {
             error = "nothing to merge.";
@@ -336,7 +428,7 @@ public sealed class Creation
             }
         }
 
-        var map = new Dictionary<int, int>();
+        var firstId = _nextPartId;
         foreach (var part in moved)
         {
             map[part.Id] = _nextPartId;
@@ -346,13 +438,14 @@ public sealed class Creation
         var attachments = added
             .SelectMany(id => FindAttachments(id, weld, n => !added.Contains(n)))
             .ToHashSet();
-        if (attachments.Count == 0)
+        if (attachments.Count == 0 || !commit)
         {
+            attachedTo = [.. attachments.Select(c => added.Contains(c.A) ? c.B : c.A).Distinct().Order()];
             foreach (var id in added)
                 Delete(id);
-            _nextPartId -= added.Count;
-            error = $"creation {other.Id} does not attach to creation {Id}.";
-            return false;
+            _nextPartId = firstId;
+            error = attachments.Count == 0 ? $"creation {other.Id} does not attach to creation {Id}." : null;
+            return error is null;
         }
         // other's grid point p sits at mapping(p) here, so a pose for this grid is otherPose ∘ mapping⁻¹.
         var unmap = Pose.FromGrid(rotation, offset).Inverse();
@@ -360,6 +453,8 @@ public sealed class Creation
         {
             if (other._poses.TryGetValue(oldId, out var pose))
                 _poses[newId] = pose.Compose(unmap);
+            if (other._damage.TryGetValue(oldId, out var damage))
+                _damage[newId] = damage;
         }
         foreach (var c in other._connections)
             _connections.Add(c.Type == ConnectionType.Structural
@@ -367,7 +462,6 @@ public sealed class Creation
                 : c with { A = map[c.A], B = map[c.B] });
         _connections.UnionWith(attachments);
         _layout = null;
-        idMap = map;
         error = null;
         return true;
     }
@@ -453,6 +547,7 @@ public sealed class Creation
         _parts.Remove(partId);
         _definitions.Remove(partId);
         _poses.Remove(partId);
+        _damage.Remove(partId);
         _connections.RemoveWhere(c => c.Involves(partId));
     }
 

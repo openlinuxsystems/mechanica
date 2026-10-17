@@ -10,19 +10,20 @@ using Mechanica.Game.Player;
 namespace Mechanica.Game.Building;
 
 /// <summary>
-/// Building by hand for the local player. Every physics frame it casts a ray from the camera and
-/// works out where the selected part would go (<see cref="BuildAim"/>), showing a see-through preview
-/// there. <see cref="Place"/> and <see cref="Remove"/> send <c>PlacePart</c>/<c>RemovePart</c> through the
-/// Action API, so the host decides; nothing changes locally until it answers.
+/// Building by hand for the local player. Every physics frame while in hand it casts a ray from the
+/// camera and works out where the selected part would go (<see cref="BuildAim"/>), showing a see-through
+/// preview there. <see cref="Place"/> and <see cref="Remove"/> send <c>PlacePart</c>/<c>RemovePart</c>
+/// through the Action API, so the host decides; nothing changes locally until it answers.
 /// <para>
 /// Aiming at a Creation attaches to it. Aiming at anything else starts a new Creation, its grid
 /// aligned with the world and snapped to 0.25 m across the surface. Keys: left click places, right
 /// click removes, Q/E pick the part, R turns it about the face, T tips it over.
 /// </para>
 /// </summary>
-public partial class HammerTool : Node
+public partial class HammerTool : HandTool
 {
-    private static readonly StandardMaterial3D PreviewMaterial = new()
+    /// <summary>The see-through look of tool previews.</summary>
+    public static readonly StandardMaterial3D PreviewMaterial = new()
     {
         AlbedoColor = new Color(0.4f, 0.8f, 1f, 0.35f),
         Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
@@ -33,7 +34,6 @@ public partial class HammerTool : Node
     private readonly List<string> _parts = [];
     private Node3D _preview = null!;
     private string? _previewPart;
-    private Label? _hud;
     private GridRotation _adjust;
 
     /// <summary>What the ray currently points at.</summary>
@@ -45,17 +45,8 @@ public partial class HammerTool : Node
     /// <param name="Preview">World transform of the selected part's centre where it would go.</param>
     public sealed record Target(Creation? Creation, GridCell Cell, GridRotation Rotation, Vec3? Position, int? HitPart, Transform3D Preview);
 
-    /// <summary>The player whose camera aims. Set before adding to the tree.</summary>
-    public PlayerController Player { get; init; } = null!;
-
-    /// <summary>Where requests go. Set before adding to the tree.</summary>
-    public ActionGateway Actions { get; init; } = null!;
-
-    /// <summary>Settings and content. Set before adding to the tree.</summary>
-    public BuildSync Build { get; init; } = null!;
-
-    /// <summary>False in automated tests: keys and mouse do nothing and no HUD is shown.</summary>
-    public bool ReadDeviceInput { get; init; } = true;
+    /// <inheritdoc/>
+    public override string ToolName => "Hammer";
 
     /// <summary>Placeable parts to pick from, by qualified id.</summary>
     public IReadOnlyList<string> Parts => _parts;
@@ -69,9 +60,6 @@ public partial class HammerTool : Node
     /// <summary>The current aim, updated every physics frame (and by <see cref="UpdateAim"/>).</summary>
     public Target? Aim { get; private set; }
 
-    /// <summary>The host's answer to the last request, or null while waiting or before any.</summary>
-    public ActionResult? LastResult { get; private set; }
-
     public override void _Ready()
     {
         _parts.AddRange(Build.Catalog.Parts
@@ -81,56 +69,36 @@ public partial class HammerTool : Node
         Selected = _parts.FirstOrDefault();
         _preview = new Node3D { Name = "Preview", TopLevel = true, Visible = false };
         AddChild(_preview);
-        if (ReadDeviceInput)
-        {
-            var layer = new CanvasLayer { Name = "Hud" };
-            // Bottom left, clear of the connect panel at the top.
-            _hud = new Label { Name = "HammerLabel", GrowVertical = Control.GrowDirection.Begin };
-            layer.AddChild(_hud);
-            _hud.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.BottomLeft, Control.LayoutPresetMode.KeepSize, 16);
-            var crosshair = new Label { Name = "Crosshair", Text = "+", HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
-            layer.AddChild(crosshair);
-            crosshair.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.Center);
-            AddChild(layer);
-        }
     }
 
     public override void _PhysicsProcess(double delta)
     {
-        UpdateAim();
-        if (_hud is not null)
-            _hud.Text = HudText();
+        if (Active)
+            UpdateAim();
     }
 
-    public override void _UnhandledInput(InputEvent @event)
+    /// <inheritdoc/>
+    protected override bool HandleInput(InputEvent @event)
     {
-        if (!ReadDeviceInput || Input.MouseMode != Input.MouseModeEnum.Captured)
-            return;
-        switch (@event)
-        {
-            case InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left }:
-                Place();
-                break;
-            case InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Right }:
-                Remove();
-                break;
-            case InputEventKey { Pressed: true, Echo: false, PhysicalKeycode: Key.Q }:
-                Cycle(-1);
-                break;
-            case InputEventKey { Pressed: true, Echo: false, PhysicalKeycode: Key.E }:
-                Cycle(1);
-                break;
-            case InputEventKey { Pressed: true, Echo: false, PhysicalKeycode: Key.R }:
-                Turn();
-                break;
-            case InputEventKey { Pressed: true, Echo: false, PhysicalKeycode: Key.T }:
-                Tip();
-                break;
-            default:
-                return;
-        }
-        GetViewport().SetInputAsHandled();
+        if (Clicked(@event, MouseButton.Left))
+            Place();
+        else if (Clicked(@event, MouseButton.Right))
+            Remove();
+        else if (Pressed(@event, Key.Q))
+            Cycle(-1);
+        else if (Pressed(@event, Key.E))
+            Cycle(1);
+        else if (Pressed(@event, Key.R))
+            Turn();
+        else if (Pressed(@event, Key.T))
+            Tip();
+        else
+            return false;
+        return true;
     }
+
+    /// <inheritdoc/>
+    protected override void OnActiveChanged() => _preview.Visible = Active && Aim is not null;
 
     /// <summary>Selects a part by qualified id. Returns false when it is not placeable.</summary>
     public bool Select(string part)
@@ -161,10 +129,7 @@ public partial class HammerTool : Node
     {
         if (Aim is not { } aim || Selected is null)
             return false;
-        LastResult = null;
-        Actions.Request(BuildActions.PlacePart,
-            new PlacePartArgs(Selected, aim.Cell, aim.Rotation, aim.Creation?.Id, aim.Position),
-            result => Answered(result, done));
+        Send(BuildActions.PlacePart, new PlacePartArgs(Selected, aim.Cell, aim.Rotation, aim.Creation?.Id, aim.Position), done);
         return true;
     }
 
@@ -173,8 +138,7 @@ public partial class HammerTool : Node
     {
         if (Aim is not { Creation: { } creation, HitPart: { } part })
             return false;
-        LastResult = null;
-        Actions.Request(BuildActions.RemovePart, new RemovePartArgs(creation.Id, part), result => Answered(result, done));
+        Send(BuildActions.RemovePart, new RemovePartArgs(creation.Id, part), done);
         return true;
     }
 
@@ -184,7 +148,7 @@ public partial class HammerTool : Node
         Aim = Selected is { } selected && Build.Catalog.FindDefinition(selected) is { } definition
             ? Cast(definition)
             : null;
-        _preview.Visible = Aim is not null;
+        _preview.Visible = Active && Aim is not null;
         if (Aim is null)
             return;
         if (_previewPart != Selected)
@@ -194,18 +158,11 @@ public partial class HammerTool : Node
 
     private Target? Cast(PartDefinition definition)
     {
-        var camera = Player.Camera.GlobalTransform;
-        var from = camera.Origin;
-        var to = from - camera.Basis.Z * Build.Settings!.Reach;
-        var query = PhysicsRayQueryParameters3D.Create(from, to);
-        query.Exclude = [Player.GetRid()];
-        var hit = Player.GetWorld3D().DirectSpaceState.IntersectRay(query);
-        if (hit.Count == 0)
+        if (CastRay() is not { } hit)
             return null;
-        var point = hit["position"].AsVector3();
-        var normal = hit["normal"].AsVector3();
+        var (point, normal, from) = (hit.Point, hit.Normal, Eye);
 
-        if (hit["collider"].AsGodotObject() is CreationBody body && body.GetParent() is CreationNode node)
+        if (hit is { Body: { } body, Node: { } node })
         {
             var frame = body.GlobalTransform;
             var toGrid = frame.AffineInverse();
@@ -248,20 +205,12 @@ public partial class HammerTool : Node
         _previewPart = part;
     }
 
-    private void Answered(ActionResult result, Action<ActionResult>? done)
-    {
-        LastResult = result;
-        if (!result.Ok && ReadDeviceInput)
-            GD.Print($"[build] {result.Message}");
-        done?.Invoke(result);
-    }
-
-    private string HudText()
+    /// <inheritdoc/>
+    public override string HudText()
     {
         if (Selected is null)
             return "Hammer: no placeable parts are loaded";
         var name = Build.Catalog.FindDefinition(Selected)?.Name ?? Selected;
-        var status = LastResult is { Ok: false } failed ? $"\n{failed.Message}" : "";
-        return $"Hammer: {name}   [Q/E] part  [R] turn  [T] tip  [LMB] place  [RMB] remove{status}";
+        return $"Hammer: {name}   [Q/E] part  [R] turn  [T] tip  [LMB] place  [RMB] remove{Status}";
     }
 }

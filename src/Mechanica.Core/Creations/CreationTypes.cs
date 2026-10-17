@@ -13,6 +13,9 @@ namespace Mechanica.Core.Creations;
 /// <param name="Rotation">Orientation on the grid.</param>
 public sealed record PartInstance(int Id, string Part, GridCell Cell, GridRotation Rotation)
 {
+    /// <summary>Paint Tool colour, lowercase <c>"#rrggbb"</c>; null shows the part's own colour.</summary>
+    public string? Color { get; init; }
+
     /// <summary>Keys this build does not know, kept so a save round-trips without losing data.</summary>
     public IReadOnlyDictionary<string, JsonElement>? Extra { get; init; }
 }
