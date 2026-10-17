@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://tests/windows/WindowsTest.cs" id="1_windows"]
+
+[node name="WindowsTest" type="Node"]
+script = ExtResource("1_windows")

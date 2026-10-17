@@ -69,7 +69,9 @@ CI (`.github/workflows/ci.yml`) runs the same three steps. Keep it green.
 - UI follows the UI spec (`UI_SPEC.md` in the project files; it wins over SPEC_SUMMARY on controls, UI and
   menus). Every screen inherits the code-built theme in `game/scripts/Ui/MechanicaTheme.cs`: no per-screen
   colours, and never orange. Use `UiTokens` for hand-drawn colours, `ToolWindow` for a titled panel with an X
-  and Esc to close, and `ConfirmDialog` before anything destructive.
+  and Esc to close, and `ConfirmDialog` before anything destructive. Any other panel the player opens over
+  the world calls `UiInput.KeepMouse` so clicks and wheel turns over it never reach the game; cover new
+  windows in `game/tests/windows`.
 - Never hard-code a key. Add the action to `src/Mechanica.Core/Input/InputActions.cs` (spec §1 default) and
   match it with `GameInput.Pressed`; HUD hints use `GameInput.Label` so they follow the player's bindings.
 - Engine settings (`game/data/*.json`: movement, streaming, build reach, sync) ship with the build and

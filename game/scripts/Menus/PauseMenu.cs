@@ -58,7 +58,7 @@ public partial class PauseMenu : CanvasLayer
         _root = new CenterContainer { Name = "Menu", Visible = false };
         _root.SetAnchorsPreset(Control.LayoutPreset.FullRect);
         AddChild(_root);
-        _panel = new PanelContainer();
+        _panel = UiInput.KeepMouse(new PanelContainer());
         _root.AddChild(_panel);
         var column = new VBoxContainer { CustomMinimumSize = new Vector2(340, 0) };
         _panel.AddChild(column);
@@ -190,7 +190,8 @@ public partial class PauseMenu : CanvasLayer
     {
         if (_saveScreen is not null)
             return;
-        var holder = new CenterContainer();
+        // The whole screen behind a window opened from the menu is its: a stray click or wheel there must not close everything.
+        var holder = UiInput.KeepMouse(new CenterContainer());
         holder.SetAnchorsPreset(Control.LayoutPreset.FullRect);
         var screen = new Saves.SaveScreen { Saves = Saves };
         screen.CloseRequested += () =>
@@ -206,7 +207,7 @@ public partial class PauseMenu : CanvasLayer
             GetTree().ChangeSceneToFile(MainMenu.WorldScene);
         };
         holder.AddChild(screen);
-        _root.AddChild(holder);
+        AddChild(holder);
         _saveScreen = holder;
         _panel.Visible = false;
     }
@@ -215,7 +216,8 @@ public partial class PauseMenu : CanvasLayer
     public OptionsScreen OpenOptions()
     {
         _saveScreen?.QueueFree();
-        var holder = new CenterContainer();
+        // The whole screen behind a window opened from the menu is its: a stray click or wheel there must not close everything.
+        var holder = UiInput.KeepMouse(new CenterContainer());
         holder.SetAnchorsPreset(Control.LayoutPreset.FullRect);
         var screen = new OptionsScreen();
         screen.CloseRequested += () =>
@@ -225,7 +227,7 @@ public partial class PauseMenu : CanvasLayer
             _panel.Visible = true;
         };
         holder.AddChild(screen);
-        _root.AddChild(holder);
+        AddChild(holder);
         _saveScreen = holder;
         _panel.Visible = false;
         return screen;
