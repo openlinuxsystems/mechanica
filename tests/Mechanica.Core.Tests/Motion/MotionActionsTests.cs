@@ -195,7 +195,17 @@ public class MotionActionsTests
             PushParts.Add(part);
         }
 
-        public void SetBearingTarget(Creation creation, JointLink joint, float? velocity, float maxTorque) =>
-            Motors.Add((joint.Connection.A, velocity, maxTorque));
+        public List<JointMotor> JointMotors { get; } = [];
+
+        public Dictionary<int, float> Positions { get; } = [];
+
+        public void SetJointMotor(Creation creation, JointLink joint, JointMotor motor)
+        {
+            Motors.Add((joint.Connection.A, motor.Velocity, motor.MaxEffort));
+            JointMotors.Add(motor);
+        }
+
+        public float? JointPosition(Creation creation, JointLink joint) =>
+            Positions.TryGetValue(joint.Connection.A, out var p) ? p : null;
     }
 }

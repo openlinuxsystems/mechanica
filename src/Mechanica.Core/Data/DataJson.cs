@@ -69,7 +69,7 @@ public static class DataJson
             Variants = part.Visual.Variants?.Select(v => v with { Extra = Sorted(v.Extra) }).ToList(),
         },
         Collision = part.Collision is null ? null : part.Collision with { Extra = Sorted(part.Collision.Extra) },
-        Sockets = part.Sockets?.Select(s => s with { Extra = Sorted(s.Extra) }).ToList(),
+        Sockets = part.Sockets?.Select(s => s with { Extra = Sorted(s.Extra), Joint = s.Joint is null ? null : s.Joint with { Extra = Sorted(s.Joint.Extra) } }).ToList(),
         Inventory = part.Inventory is null ? null : part.Inventory with { Extra = Sorted(part.Inventory.Extra) },
         Crafting = part.Crafting is null ? null : part.Crafting with { Extra = Sorted(part.Crafting.Extra) },
     });

@@ -24,9 +24,58 @@ public sealed record ApplyForceArgs(int Creation, Vec3 Force, int Body = 0, Vec3
 /// <summary>Arguments of <c>SetBearingTarget</c>.</summary>
 /// <param name="Creation">Creation holding the bearing.</param>
 /// <param name="Part">The bearing's part id (the part that owns the rotational joint).</param>
-/// <param name="Velocity">Target speed in rad/s about the bearing's rotor normal. Null turns the motor off so the bearing spins freely.</param>
+/// <param name="Velocity">
+/// Target speed in rad/s about the bearing's axis. Without <paramref name="Angle"/>, null turns the motor
+/// off so the bearing spins freely. With an angle it is the most speed the bearing turns there at (either
+/// sign); null uses the default from data.
+/// </param>
 /// <param name="MaxTorque">Motor torque limit in N·m; null uses the default from data.</param>
-public sealed record SetBearingTargetArgs(int Creation, int Part, float? Velocity, float? MaxTorque = null);
+/// <param name="Angle">
+/// Angle in rad to turn to and hold, measured from the pose the bearing was built in (steering, doors).
+/// Within ±π, and within the joint's limits when it has them. Null drives at <paramref name="Velocity"/>.
+/// </param>
+public sealed record SetBearingTargetArgs(int Creation, int Part, float? Velocity, float? MaxTorque = null, float? Angle = null);
+
+/// <summary>Arguments of <c>SetPistonTarget</c>.</summary>
+/// <param name="Creation">Creation holding the piston.</param>
+/// <param name="Part">The piston's part id (the part that owns the linear joint).</param>
+/// <param name="Length">
+/// Extension in m to move to and hold, within the joint's <c>min</c> and <c>max</c>. Null turns the motor off
+/// so the piston slides freely.
+/// </param>
+/// <param name="Speed">Most speed in m/s; null uses the default from data.</param>
+/// <param name="MaxForce">Motor force limit in N; null uses the default from data.</param>
+public sealed record SetPistonTargetArgs(int Creation, int Part, float? Length, float? Speed = null, float? MaxForce = null);
+
+/// <summary>
+/// What a joint's motor does (<see cref="IMotionWorld.SetJointMotor"/>). With no <see cref="Target"/> it
+/// drives at <see cref="Velocity"/> (rad/s or m/s), or frees the joint when that is null too. With a
+/// target position (rad or m) it moves there at up to |<see cref="Velocity"/>| and holds it.
+/// </summary>
+/// <param name="Velocity">Speed, or the most speed toward <paramref name="Target"/>.</param>
+/// <param name="MaxEffort">Torque limit in N·m (hinges) or force limit in N (sliders).</param>
+/// <param name="Target">Position to hold, or null.</param>
+public sealed record JointMotor(float? Velocity, float MaxEffort, float? Target = null)
+{
+    /// <summary>True when the motor is off and the joint moves freely.</summary>
+    public bool IsFree => Velocity is null && Target is null;
+
+    /// <summary>
+    /// The speed to drive at now, given where the joint is: the set speed, or for a target a speed toward
+    /// it that slows down near it (<paramref name="gain"/> per s) and never exceeds the top speed.
+    /// <paramref name="period"/> wraps the error for a free-spinning hinge (2π), so it turns the short way.
+    /// </summary>
+    public float DriveVelocity(float position, float gain, float? period = null)
+    {
+        if (Target is not { } target)
+            return Velocity ?? 0f;
+        var error = target - position;
+        if (period is { } p)
+            error -= p * MathF.Round(error / p);
+        var top = MathF.Abs(Velocity ?? 0f);
+        return Math.Clamp(error * gain, -top, top);
+    }
+}
 
 /// <summary>Arguments of <c>GetCreation</c>.</summary>
 /// <param name="Creation">Creation to describe.</param>
@@ -53,7 +102,14 @@ public sealed record BodyState(
 /// <param name="BodyA">Body of <paramref name="Part"/>.</param>
 /// <param name="BodyB">Body of <paramref name="Other"/>.</param>
 /// <param name="Locked">True when both sides are in one Body, so the joint can't move.</param>
-public sealed record JointState(int Part, int Other, ConnectionType Type, int BodyA, int BodyB, bool Locked);
+/// <param name="Position">
+/// Where the joint is now: angle in rad or extension in m from the pose it was built in. Null when the
+/// world can't tell (the Creation is parked).
+/// </param>
+/// <param name="Min">Lowest position the joint allows (rad or m); null on a free-spinning bearing.</param>
+/// <param name="Max">Highest position the joint allows; null on a free-spinning bearing.</param>
+public sealed record JointState(int Part, int Other, ConnectionType Type, int BodyA, int BodyB, bool Locked,
+    float? Position = null, float? Min = null, float? Max = null);
 
 /// <summary>Value of <c>GetCreation</c>.</summary>
 /// <param name="Id">Creation id.</param>
@@ -90,8 +146,11 @@ public interface IMotionWorld
     /// </summary>
     void ApplyForce(Creation creation, int body, Vector3 force, Vector3 torque, float? duration, int? part);
 
-    /// <summary>Sets or (with a null velocity) clears the motor of the bearing joint <paramref name="joint"/>.</summary>
-    void SetBearingTarget(Creation creation, JointLink joint, float? velocity, float maxTorque);
+    /// <summary>Sets or (with a <see cref="JointMotor.IsFree"/> motor) clears the motor of a bearing or piston joint.</summary>
+    void SetJointMotor(Creation creation, JointLink joint, JointMotor motor);
+
+    /// <summary>Where a joint is now (rad or m from its built pose), or null when it is not simulated here.</summary>
+    float? JointPosition(Creation creation, JointLink joint);
 }
 
 /// <summary>
@@ -99,7 +158,8 @@ public interface IMotionWorld
 /// joint motor targets; part behaviour such as engines and seats builds on them in Lua):
 /// <list type="bullet">
 /// <item><c>ApplyForce</c>: pushes a Body with a force and torque for a while.</item>
-/// <item><c>SetBearingTarget</c>: drives a bearing's motor at a target speed, or frees it.</item>
+/// <item><c>SetBearingTarget</c>: drives a bearing's motor at a target speed or to an angle, or frees it.</item>
+/// <item><c>SetPistonTarget</c>: moves a piston to a length and holds it, or frees it.</item>
 /// <item><c>GetCreation</c> and <c>ListCreations</c>: read-only queries of Creation state.</item>
 /// </list>
 /// Players don't call the motion actions directly: they drive through seats and controllers (chunk 10),
@@ -114,17 +174,21 @@ public sealed class MotionActions(MotionSettings settings, IMotionWorld world)
     /// <summary>Action name for driving a bearing.</summary>
     public const string SetBearingTarget = "SetBearingTarget";
 
+    /// <summary>Action name for driving a piston.</summary>
+    public const string SetPistonTarget = "SetPistonTarget";
+
     /// <summary>Action name for reading one Creation.</summary>
     public const string GetCreation = "GetCreation";
 
     /// <summary>Action name for listing Creations.</summary>
     public const string ListCreations = "ListCreations";
 
-    /// <summary>Registers all four actions.</summary>
+    /// <summary>Registers all five actions.</summary>
     public void Register(ActionDispatcher dispatcher)
     {
         dispatcher.Register<ApplyForceArgs>(ApplyForce, ValidateForce, ApplyForceNow);
         dispatcher.Register<SetBearingTargetArgs>(SetBearingTarget, ValidateBearing, ApplyBearing);
+        dispatcher.Register<SetPistonTargetArgs>(SetPistonTarget, ValidatePiston, ApplyPiston);
         dispatcher.Register<GetCreationArgs>(GetCreation,
             (_, args) => world.FindCreation(args.Creation) is null ? $"There is no creation {args.Creation}." : null,
             (_, args) => Value(Describe(world.FindCreation(args.Creation)!)),
@@ -147,7 +211,11 @@ public sealed class MotionActions(MotionSettings settings, IMotionWorld world)
                 ToVec(velocity.Linear), ToVec(velocity.Angular));
         }).ToList();
         var joints = creation.Joints.Select(j =>
-            new JointState(j.Connection.A, j.Connection.B, j.Connection.Type, j.BodyA, j.BodyB, j.IsLocked)).ToList();
+        {
+            creation.TryGetJointFrame(j.Connection, out var frame);
+            return new JointState(j.Connection.A, j.Connection.B, j.Connection.Type, j.BodyA, j.BodyB, j.IsLocked,
+                j.IsLocked ? 0f : world.JointPosition(creation, j), frame?.Min, frame?.Max);
+        }).ToList();
         return new CreationState(creation.Id, creation.AuthorityPeer, world.IsLive(creation.Id),
             [.. creation.Parts.Select(p => p.Id).Order()], bodies, joints);
     }
@@ -202,7 +270,7 @@ public sealed class MotionActions(MotionSettings settings, IMotionWorld world)
             return refusal;
         if (creation!.FindPart(args.Part) is null)
             return $"Creation {args.Creation} has no part {args.Part}.";
-        if (FindBearing(creation, args.Part) is not { } joint)
+        if (FindJoint(creation, args.Part, ConnectionType.Rotational) is not { } joint)
             return $"Part {args.Part} is not a bearing with something on its rotor.";
         if (joint.IsLocked)
             return $"Bearing {args.Part} is locked: both its sides are in one body.";
@@ -210,14 +278,62 @@ public sealed class MotionActions(MotionSettings settings, IMotionWorld world)
             return $"velocity must be at most {settings.MaxBearingSpeed:0.###} rad/s either way.";
         if (args.MaxTorque is { } t && (!float.IsFinite(t) || t <= 0f || t > settings.MaxBearingTorque))
             return $"max_torque must be more than 0 and at most {settings.MaxBearingTorque:0.###} N·m.";
+        if (args.Angle is { } angle)
+        {
+            if (!float.IsFinite(angle) || MathF.Abs(angle) > MathF.PI + 1e-4f)
+                return "angle must be within ±π rad (±180°).";
+            if (args.Velocity == 0f)
+                return "velocity is the most speed toward the angle, so it can't be 0.";
+            creation.TryGetJointFrame(joint.Connection, out var frame);
+            if (frame is { SpinsFreely: false, Min: { } lo, Max: { } hi } && (angle < lo - 1e-4f || angle > hi + 1e-4f))
+                return $"angle {angle:0.###} rad is outside bearing {args.Part}'s limits ({lo:0.###} to {hi:0.###} rad).";
+        }
         return null;
     }
 
     private JsonElement? ApplyBearing(ActionCaller caller, SetBearingTargetArgs args)
     {
         var creation = world.FindCreation(args.Creation)!;
-        world.SetBearingTarget(creation, FindBearing(creation, args.Part)!, args.Velocity,
-            args.MaxTorque ?? settings.DefaultBearingTorque);
+        var torque = args.MaxTorque ?? settings.DefaultBearingTorque;
+        var motor = args.Angle is { } angle
+            ? new JointMotor(MathF.Abs(args.Velocity ?? settings.DefaultBearingSpeed), torque, angle)
+            : new JointMotor(args.Velocity, torque);
+        world.SetJointMotor(creation, FindJoint(creation, args.Part, ConnectionType.Rotational)!, motor);
+        return null;
+    }
+
+    private string? ValidatePiston(ActionCaller caller, SetPistonTargetArgs args)
+    {
+        if (CheckMover(caller, args.Creation, out var creation) is { } refusal)
+            return refusal;
+        if (creation!.FindPart(args.Part) is null)
+            return $"Creation {args.Creation} has no part {args.Part}.";
+        if (FindJoint(creation, args.Part, ConnectionType.Linear) is not { } joint)
+            return $"Part {args.Part} is not a piston with something on its head.";
+        if (joint.IsLocked)
+            return $"Piston {args.Part} is locked: both its sides are in one body.";
+        if (args.Length is { } length)
+        {
+            creation.TryGetJointFrame(joint.Connection, out var frame);
+            var (lo, hi) = (frame!.Min ?? 0f, frame.Max ?? 0f);
+            if (!float.IsFinite(length) || length < lo - 1e-4f || length > hi + 1e-4f)
+                return $"length must be from {lo:0.###} to {hi:0.###} m for piston {args.Part}.";
+        }
+        if (args.Speed is { } v && (!float.IsFinite(v) || v <= 0f || v > settings.MaxPistonSpeed))
+            return $"speed must be more than 0 and at most {settings.MaxPistonSpeed:0.###} m/s.";
+        if (args.MaxForce is { } f && (!float.IsFinite(f) || f <= 0f || f > settings.MaxPistonForce))
+            return $"max_force must be more than 0 and at most {settings.MaxPistonForce:0.###} N.";
+        return null;
+    }
+
+    private JsonElement? ApplyPiston(ActionCaller caller, SetPistonTargetArgs args)
+    {
+        var creation = world.FindCreation(args.Creation)!;
+        var force = args.MaxForce ?? settings.DefaultPistonForce;
+        var motor = args.Length is { } length
+            ? new JointMotor(args.Speed ?? settings.DefaultPistonSpeed, force, length)
+            : new JointMotor(null, force);
+        world.SetJointMotor(creation, FindJoint(creation, args.Part, ConnectionType.Linear)!, motor);
         return null;
     }
 
@@ -236,8 +352,8 @@ public sealed class MotionActions(MotionSettings settings, IMotionWorld world)
         return null;
     }
 
-    private static JointLink? FindBearing(Creation creation, int part) =>
-        creation.Joints.FirstOrDefault(j => j.Connection.Type == ConnectionType.Rotational && j.Connection.A == part);
+    private static JointLink? FindJoint(Creation creation, int part, ConnectionType type) =>
+        creation.Joints.FirstOrDefault(j => j.Connection.Type == type && j.Connection.A == part);
 
     private static string? CheckVector(Vec3 v, string name, float max, string unit) =>
         !float.IsFinite(v.X) || !float.IsFinite(v.Y) || !float.IsFinite(v.Z)

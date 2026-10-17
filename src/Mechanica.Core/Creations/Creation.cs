@@ -566,6 +566,27 @@ public sealed class Creation
         return true;
     }
 
+    /// <summary>
+    /// Where and how a joint edge moves, in this Creation's grid frame: its anchor on the joint socket, its
+    /// axis and the limits and spring from the socket's <see cref="JointDefinition"/>. False for a
+    /// structural edge or a socket the part no longer has.
+    /// </summary>
+    public bool TryGetJointFrame(Connection connection, [NotNullWhen(true)] out JointFrame? frame)
+    {
+        frame = null;
+        if (connection.Type == ConnectionType.Structural || connection.ASocket is null
+            || !_parts.TryGetValue(connection.A, out var part)
+            || _definitions[connection.A].Sockets?.FirstOrDefault(s => s.Id == connection.ASocket) is not { } socket)
+            return false;
+        var definition = _definitions[connection.A];
+        var (anchor, normal) = PartGeometry.SocketFrame(definition, socket, part.Cell, part.Rotation);
+        var joint = socket.Joint;
+        frame = new JointFrame(connection.Type, anchor, PartGeometry.JointAxis(socket, part.Rotation), normal,
+            connection.Type == ConnectionType.Linear ? joint?.Min ?? 0f : joint?.Min, joint?.Max,
+            joint?.Stiffness, joint?.Damping);
+        return true;
+    }
+
     /// <summary>Adds a part from a save without attaching it. Callers check overlap first.</summary>
     internal void Load(PartInstance part, PartDefinition definition)
     {
@@ -729,7 +750,7 @@ public sealed class Creation
             foreach (var id in piece)
             {
                 var part = _parts[id];
-                var centre = PartGeometry.CentreMetres(_definitions[id], part.Cell, part.Rotation);
+                var centre = PartGeometry.CentreOfMassMetres(_definitions[id], part.Cell, part.Rotation);
                 var m = _definitions[id].Mass ?? 0f;
                 mass += m;
                 weighted += centre * m;
