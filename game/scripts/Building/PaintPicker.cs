@@ -46,6 +46,7 @@ public partial class PaintPicker : CanvasLayer
         _ring = UiInput.KeepMouse(new RingView { Name = "Ring", Picker = this, Visible = false });
         _ring.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
         AddChild(_ring);
+        EscapeStack.Add(this, () => IsOpen, Close);
     }
 
     /// <summary>Opens the ring round the middle of the screen (where the crosshair is), <paramref name="current"/> marked.</summary>
@@ -54,6 +55,7 @@ public partial class PaintPicker : CanvasLayer
         _current = current;
         Hovered = -1;
         _ring.Visible = true;
+        EscapeStack.Raise(this);
         Input.MouseMode = Input.MouseModeEnum.Visible;
         _ring.WarpMouse(Centre);
         _ring.QueueRedraw();
@@ -90,7 +92,7 @@ public partial class PaintPicker : CanvasLayer
     {
         if (!IsOpen)
             return;
-        if (GameInput.Pressed(@event, InputActions.Pause) || GameInput.Pressed(@event, InputActions.Rotate) || GameInput.Pressed(@event, InputActions.RotateBack))
+        if (GameInput.Pressed(@event, InputActions.Rotate) || GameInput.Pressed(@event, InputActions.RotateBack))
             Close();
         else if (Enumerable.Range(1, InputActions.HotbarSlots).FirstOrDefault(s => GameInput.Pressed(@event, InputActions.Hotbar(s))) is var slot and > 0)
             Choose(slot - 1);

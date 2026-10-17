@@ -109,6 +109,7 @@ public partial class InventoryScreen : CanvasLayer
     public override void _Ready()
     {
         Layer = 5;
+        EscapeStack.Add(this, () => IsOpen, Hide);
         _root = UiInput.KeepMouse(new PanelContainer { Name = "Panel", Visible = false });
         AddChild(_root);
         // A hotbar slot dropped anywhere on the window empties; a stack dropped on the window's background stays put.
@@ -207,9 +208,9 @@ public partial class InventoryScreen : CanvasLayer
             GetViewport().SetInputAsHandled();
             return;
         }
-        if (GameInput.Typing(GetViewport()) && !GameInput.Pressed(@event, InputActions.Pause))
+        if (GameInput.Typing(GetViewport()))
             return;
-        if (toggle || (IsOpen && (GameInput.Pressed(@event, InputActions.Interact) || GameInput.Pressed(@event, InputActions.Pause))))
+        if (toggle || (IsOpen && GameInput.Pressed(@event, InputActions.Interact)))
         {
             if (IsOpen)
                 Hide();
@@ -238,6 +239,8 @@ public partial class InventoryScreen : CanvasLayer
             Sounds?.PlayUi("ui_open");
             Fade(true);
         }
+        if (!_shown)
+            EscapeStack.Raise(this);
         _shown = true;
         Input.MouseMode = Input.MouseModeEnum.Visible;
         Refresh();
