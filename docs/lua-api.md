@@ -145,6 +145,7 @@ placed.
 | `part.inputs()` | Each part linked to this one as `{part, value}`, by part id (a logic gate reads them one by one). |
 | `part.links()` | The ids of the parts this part's output is linked to (an engine finds its bearings here). |
 | `part.setting(id)` | The value of one of the part's settings: a number, a choice (string), a toggle (boolean) or a number list (table); the default until a player changes it. `nil` for an unknown id. |
+| `part.sound(key)` | The sound id the part binds to `key` in its `sounds` (for `sound.play` and `sound.start`), or `nil`. Scripts play the part's own bindings this way, so the ids stay in data. |
 | `part.occupant()` | For a seat: the peer of the player sitting in it, or `nil`. |
 | `part.occupant_input()` | For a seat: the sitting player's input as `{x, z, jump, sprint, yaw, pitch}`. `x` is steering (-1 left to 1 right) and `z` throttle (-1 back to 1 forward). `nil` when the seat is empty. |
 

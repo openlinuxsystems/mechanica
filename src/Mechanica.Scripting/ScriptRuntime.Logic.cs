@@ -121,6 +121,13 @@ public sealed partial class ScriptRuntime : ILogicHost
                 return DynValue.Nil;
             return LuaValues.FromJson(script, System.Text.Json.Nodes.JsonNode.Parse(value.GetRawText()));
         });
+        Fn(part, "sound", args =>
+        {
+            var key = args.AsType(0, "part.sound", DataType.String).String;
+            return Here() is { } h && h.Creation.DefinitionOf(h.Instance.Part).Sounds?.GetValueOrDefault(key) is { } id
+                ? DynValue.NewString(id)
+                : DynValue.Nil;
+        });
         Fn(part, "occupant", _ =>
         {
             var instance = PartInstance();

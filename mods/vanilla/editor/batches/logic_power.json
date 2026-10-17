@@ -132,9 +132,9 @@
         "stack_size": 10,
         "script": "scripts/engine.lua",
         "visual": { "color": "#b8452f", "roughness": 0.5, "metallic": 0.6 },
-        "sounds": { "start": "engine_start", "loop": "engine_idle", "rev": "engine_rev", "stop": "engine_sputter" },
+        "sounds": { "start": "engine_start", "loop": "engine_idle", "stop": "engine_sputter" },
         "settings": [{ "id": "gear", "name": "Gear", "type": "number", "min": 1, "max": 5, "step": 1, "default": 3 }],
-        "properties": { "speed": 25, "torque": 600, "brake": 300, "fuel": "gasoline", "fuel_time": 40 }
+        "properties": { "speed": 25, "torque": 600, "brake": 300, "fuel": "gasoline", "fuel_time": 40, "loop_parameter": "load" }
       },
       "model": [
         { "kind": "box", "size": [0.46, 0.08, 0.46], "position": [0, -0.21, 0] },
@@ -166,7 +166,7 @@
         "durability": 4,
         "sound_material": "scrap",
         "visual": { "color": "#8c5a3c", "roughness": 0.85, "metallic": 0.3 },
-        "properties": { "speed": 15, "torque": 350, "brake": 200, "fuel": "gasoline", "fuel_time": 25 }
+        "properties": { "speed": 15, "torque": 350, "brake": 200, "fuel": "gasoline", "fuel_time": 25, "loop_parameter": "load" }
       },
       "model": [
         { "kind": "box", "size": [0.46, 0.08, 0.46], "position": [0, -0.21, 0] },
@@ -198,7 +198,7 @@
           "rev": "electric_whirr",
           "stop": "battery_drain"
         },
-        "properties": { "speed": 20, "torque": 800, "brake": 400, "fuel": "battery_pack", "fuel_time": 90 }
+        "properties": { "speed": 20, "torque": 800, "brake": 400, "fuel": "battery_pack", "fuel_time": 90, "loop_parameter": "speed" }
       },
       "model": [
         { "kind": "box", "size": [0.46, 0.08, 0.46], "position": [0, -0.21, 0] },
@@ -319,7 +319,6 @@
         "stack_size": 20,
         "script": "scripts/logic_gate.lua",
         "visual": { "color": "#d9d2c3", "roughness": 0.5, "metallic": 0.2 },
-        "sounds": { "use": "logic_activate" },
         "settings": [
           {
             "id": "mode",
@@ -353,6 +352,7 @@
         "stack_size": 20,
         "script": "scripts/timer.lua",
         "visual": { "color": "#c9b25a", "roughness": 0.5, "metallic": 0.2 },
+        "sounds": { "complete": "timer_complete" },
         "settings": [
           {
             "id": "delay",
@@ -389,6 +389,7 @@
         "script": "scripts/sensor.lua",
         "visual": { "color": "#5aa0c9", "roughness": 0.5, "metallic": 0.2 },
         "logic": { "inputs": null, "outputs": 10 },
+        "sounds": { "detect": "sensor_detect", "lose": "sensor_lose" },
         "properties": { "interval": 2 },
         "settings": [
           {

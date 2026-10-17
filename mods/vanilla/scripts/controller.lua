@@ -2,7 +2,12 @@
 -- setting (angles in degrees, up to 10), one frame every "frame_time" seconds, and starts over when the
 -- "loop" setting is on. Every linked bearing goes to the same angle. When the input goes off it stops
 -- where it is. Its output is 1 while it runs.
--- Properties: "speed" (rad/s) and "torque" (N·m) for the bearings.
+-- Properties: "speed" (rad/s) and "torque" (N·m) for the bearings. Sounds: "start", "tick" on each frame
+-- and "stop".
+
+local function play(key)
+  if part.sound(key) then sound.play(part.sound(key)) end
+end
 
 local function go(frame)
   local angle = math.rad(frame)
@@ -22,6 +27,9 @@ end
 
 function on_power(amount)
   local running = amount ~= 0
+  if running ~= state.running then
+    play(running and "start" or "stop")
+  end
   if running and not state.running then
     state.next = world.time()
     if state.index >= #(part.setting("frames") or {}) then
@@ -42,12 +50,14 @@ function on_update(dt)
   if state.index >= #frames then
     if not part.setting("loop") then
       state.running = false
+      play("stop")
       return
     end
     state.index = 0
   end
   state.index = state.index + 1
   go(frames[state.index])
+  play("tick")
   state.next = world.time() + (part.setting("frame_time") or 1)
 end
 

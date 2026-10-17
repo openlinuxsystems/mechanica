@@ -4,6 +4,8 @@
 -- Properties: "speed" (rad/s at the top gear), "torque" (N·m), "brake" (N·m), "fuel" (item id) and
 -- "fuel_time" (seconds of full throttle per item). In Creative it needs no fuel.
 -- Setting "gear" (1 to 5): each gear turns a fifth of the top speed.
+-- Sounds: "start" when it starts, the "loop" while it runs (its properties.loop_parameter follows the
+-- throttle), and "stop" when it runs out of fuel.
 
 local RESEND = 30
 
@@ -75,13 +77,34 @@ function on_reload()
   state.sent = {}
 end
 
+-- Starts the running loop on the first throttle, follows the throttle with it, and stops it on empty.
+local function hum(throttle, fueled)
+  if not fueled then
+    if state.hum then
+      sound.stop(state.hum)
+      state.hum = nil
+      if part.sound("stop") then sound.play(part.sound("stop")) end
+    end
+    return
+  end
+  if not state.hum and throttle ~= 0 and part.sound("loop") then
+    if part.sound("start") then sound.play(part.sound("start")) end
+    state.hum = sound.start(part.sound("loop"))
+  end
+  if state.hum and properties.loop_parameter then
+    sound.set_parameter(state.hum, properties.loop_parameter, math.abs(throttle))
+  end
+end
+
 function on_update(dt)
   local throttle = clamp(part.input())
-  if not burn(throttle, dt) then
+  local fueled = burn(throttle, dt)
+  if not fueled then
     throttle = 0
   end
   state.throttle = throttle
   drive(throttle)
+  hum(throttle, fueled)
 end
 
 function get_outputs()

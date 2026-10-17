@@ -1,0 +1,58 @@
+{
+  "id": "electric_engine",
+  "name": "Electric Engine",
+  "description": "Turns the wheel bearings it is linked to like a gas engine, with more pull and less speed. Draws battery packs from the creation's batteries.",
+  "category": "interactive",
+  "mass": 9,
+  "durability": 6,
+  "friction": 0.5,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "stack_size": 10,
+  "sound_material": "metal",
+  "size": [2, 2, 2],
+  "mesh": "meshes/electric_engine.glb",
+  "visual": {
+    "color": "#2f7fb8",
+    "roughness": 0.4,
+    "metallic": 0.6
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.25, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "script": "scripts/engine.lua",
+  "sounds": {
+    "start": "electric_start",
+    "loop": "electric_whirr",
+    "stop": "battery_drain",
+    "rev": "electric_whirr"
+  },
+  "logic": {
+    "inputs": 4,
+    "outputs": 10
+  },
+  "settings": [
+    {
+      "id": "gear",
+      "name": "Gear",
+      "type": "number",
+      "min": 1,
+      "max": 5,
+      "step": 1,
+      "default": 3
+    }
+  ],
+  "properties": {
+    "speed": 20,
+    "torque": 800,
+    "brake": 400,
+    "fuel": "battery_pack",
+    "fuel_time": 90,
+    "loop_parameter": "speed"
+  }
+}

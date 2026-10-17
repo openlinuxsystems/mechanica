@@ -1,0 +1,50 @@
+{
+  "id": "sensor",
+  "name": "Sensor",
+  "description": "On while something is in front of its face, up to the range you set.",
+  "category": "interactive",
+  "mass": 1,
+  "durability": 3,
+  "friction": 0.5,
+  "buoyancy": 0.3,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "plastic",
+  "size": [1, 1, 1],
+  "mesh": "meshes/sensor.glb",
+  "visual": {
+    "color": "#5aa0c9",
+    "roughness": 0.5,
+    "metallic": 0.2
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.125, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "script": "scripts/sensor.lua",
+  "sounds": {
+    "detect": "sensor_detect",
+    "lose": "sensor_lose"
+  },
+  "logic": {
+    "outputs": 10
+  },
+  "settings": [
+    {
+      "id": "range",
+      "name": "Range (m)",
+      "type": "number",
+      "min": 0.25,
+      "max": 20,
+      "step": 0.25,
+      "default": 4
+    }
+  ],
+  "properties": {
+    "interval": 2
+  }
+}

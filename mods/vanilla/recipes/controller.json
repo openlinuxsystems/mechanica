@@ -1,0 +1,24 @@
+{
+  "id": "controller",
+  "stations": [
+    "fabricator",
+    "mini_fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "component_kit",
+      "count": 2
+    },
+    {
+      "item": "circuit_board",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "controller",
+      "count": 1
+    }
+  ],
+  "time": 6
+}

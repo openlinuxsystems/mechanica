@@ -53,8 +53,8 @@ public partial class ToolsTest : StagedTest
         {
             if (_client.Main.PlayerSync.Players.Count != 2 || _client.Main.Tools is null || _host.Main.PlayerSync.Players.Count != 2)
                 return false;
-            Check(Tools.Tools.Select(t => t.ToolName).SequenceEqual(["Hammer", "Lift", "Weld Tool", "Paint Tool", "Sledgehammer", "Item"]),
-                "the belt holds the Hammer, Lift, Weld Tool, Paint Tool, Sledgehammer and the item in hand");
+            Check(Tools.Tools.Select(t => t.ToolName).SequenceEqual(["Hammer", "Lift", "Weld Tool", "Paint Tool", "Sledgehammer", "Item", "Connect Tool"]),
+                "the belt holds the Hammer, Lift, Weld Tool, Paint Tool, Sledgehammer, the item in hand and the Connect Tool");
             Check(Tools.Current == Tools.Hammer, "the Hammer starts in hand");
             Tools.Use(Tools.Lift);
             Check(Tools.Current == Tools.Lift && !Tools.Hammer.Active, "a tool can be put in hand");

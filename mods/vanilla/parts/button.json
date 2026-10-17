@@ -1,0 +1,39 @@
+{
+  "id": "button",
+  "name": "Button",
+  "description": "Press F and it is on for a moment.",
+  "category": "interactive",
+  "mass": 1,
+  "durability": 3,
+  "friction": 0.5,
+  "buoyancy": 0.3,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "plastic",
+  "size": [1, 1, 1],
+  "mesh": "meshes/button.glb",
+  "visual": {
+    "color": "#d9a032",
+    "roughness": 0.5,
+    "metallic": 0.2
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.125, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "script": "scripts/button.lua",
+  "sounds": {
+    "use": "button_press"
+  },
+  "logic": {
+    "outputs": 10,
+    "use": "press"
+  },
+  "properties": {
+    "pulse": 0.5
+  }
+}

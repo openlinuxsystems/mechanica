@@ -61,6 +61,7 @@ public static class LuaApi
         new("part.inputs", "part.inputs()", "Each part linked to this one as {part, value}, by part id.", "part"),
         new("part.links", "part.links()", "Ids of the parts this part's output is linked to.", "part"),
         new("part.setting", "part.setting(id)", "The value of one of the part's settings (number, string, boolean or list), or nil.", "part"),
+        new("part.sound", "part.sound(key)", "The sound id the part binds to key in its sounds, for sound.play or sound.start; nil when unbound.", "part"),
         new("part.occupant", "part.occupant()", "The peer of the player sitting in this seat, or nil.", "part"),
         new("part.occupant_input", "part.occupant_input()", "The seated player's input as {x, z, jump, sprint, yaw, pitch} (x right, z forward, -1 to 1), or nil.", "part"),
 

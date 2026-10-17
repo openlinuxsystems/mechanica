@@ -1,0 +1,28 @@
+{
+  "id": "scrap_drivers_seat",
+  "stations": [
+    "fabricator",
+    "mini_fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal",
+      "count": 3
+    },
+    {
+      "item": "scrap_wood",
+      "count": 2
+    },
+    {
+      "item": "component_kit",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "scrap_drivers_seat",
+      "count": 1
+    }
+  ],
+  "time": 5
+}
