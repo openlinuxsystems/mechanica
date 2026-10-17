@@ -87,21 +87,21 @@ public static partial class Loc
     }
 
     /// <summary>
-    /// Shows <paramref name="text"/> on <paramref name="button"/> verbatim and builds it again whenever the
-    /// settings change, for text built with values that follow the language or the key bindings.
+    /// Runs <paramref name="apply"/> on <paramref name="control"/> now and again whenever the settings change, for
+    /// text built with values that follow the language or the key bindings. The control shows its text verbatim.
     /// </summary>
-    public static T Live<T>(T button, Func<string> text) where T : Button
+    public static T Live<T>(T control, Action<T> apply) where T : Control
     {
-        Verbatim(button);
-        button.Text = text();
+        Verbatim(control);
+        apply(control);
         void Refresh()
         {
-            if (GodotObject.IsInstanceValid(button))
-                button.Text = text();
+            if (GodotObject.IsInstanceValid(control))
+                apply(control);
         }
         Settings.GameSettings.Changed += Refresh;
-        button.TreeExited += () => Settings.GameSettings.Changed -= Refresh;
-        return button;
+        control.TreeExited += () => Settings.GameSettings.Changed -= Refresh;
+        return control;
     }
 
     /// <summary>Starts recording every key <see cref="T"/> is asked for and the text it builds, to build <c>en.json</c> from a run (the language test's collect mode).</summary>

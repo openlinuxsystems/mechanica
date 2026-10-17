@@ -37,8 +37,10 @@ public partial class CharacterPicker : HBoxContainer
         AddThemeConstantOverride("separation", 16);
         foreach (var character in Book.All)
         {
+            // Names and descriptions are mod content, shown as the mod wrote them.
             var card = new Button
             {
+                AutoTranslateMode = AutoTranslateModeEnum.Disabled,
                 Name = character.Definition.Id ?? character.QualifiedId,
                 ToggleMode = true,
                 ButtonGroup = _group,
@@ -50,11 +52,12 @@ public partial class CharacterPicker : HBoxContainer
             column.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect, LayoutPresetMode.Minsize, 8);
             if (Assets is not null)
                 column.AddChild(new CharacterPreview { Character = character, Assets = Assets, Size = PreviewSize, MouseFilter = MouseFilterEnum.Ignore });
-            column.AddChild(new Label { Text = character.Name, HorizontalAlignment = HorizontalAlignment.Center, ThemeTypeVariation = "TitleLabel", MouseFilter = MouseFilterEnum.Ignore });
+            column.AddChild(new Label { AutoTranslateMode = AutoTranslateModeEnum.Disabled, Text = character.Name, HorizontalAlignment = HorizontalAlignment.Center, ThemeTypeVariation = "TitleLabel", MouseFilter = MouseFilterEnum.Ignore });
             if (character.Description.Length > 0)
             {
                 column.AddChild(new Label
                 {
+                    AutoTranslateMode = AutoTranslateModeEnum.Disabled,
                     Text = character.Description, HorizontalAlignment = HorizontalAlignment.Center, ThemeTypeVariation = "SecondaryLabel",
                     AutowrapMode = TextServer.AutowrapMode.WordSmart, CustomMinimumSize = new Vector2(PreviewSize.X, 0), MouseFilter = MouseFilterEnum.Ignore,
                 });
@@ -194,12 +197,12 @@ public partial class CharacterChoiceWindow : Control
         column.AddChild(Picker);
         var buttons = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.End };
         column.AddChild(buttons);
-        ConfirmButton = new Button { Name = "Confirm", Text = "Play", ThemeTypeVariation = "PrimaryButton" };
+        ConfirmButton = Loc.Verbatim(new Button { Name = "Confirm", Text = Loc.T("Play"), ThemeTypeVariation = "PrimaryButton" });
         ConfirmButton.Pressed += Confirm;
         buttons.AddChild(ConfirmButton);
-        Picker.SelectionChanged += id => ConfirmButton.Text = $"Play as {Book.Find(id)?.Name ?? id}";
+        Picker.SelectionChanged += id => ConfirmButton.Text = Loc.T("Play as {0}", Book.Find(id)?.Name ?? id);
         if (Picker.Selected is { } selected)
-            ConfirmButton.Text = $"Play as {Book.Find(selected)?.Name ?? selected}";
+            ConfirmButton.Text = Loc.T("Play as {0}", Book.Find(selected)?.Name ?? selected);
     }
 
     /// <summary>Chooses the selected character.</summary>

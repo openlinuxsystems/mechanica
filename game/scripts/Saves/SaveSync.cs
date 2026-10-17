@@ -87,6 +87,9 @@ public partial class SaveSync : Node
     /// <summary>The save folder in the user data folder.</summary>
     public static SaveStore UserStore => new(ProjectSettings.GlobalizePath("user://saves"));
 
+    /// <summary>The player's save folder, or null in test scenes (which never read the player's saves).</summary>
+    public static SaveStore? UserStoreIfPersisted => GameSettings.Persist ? UserStore : null;
+
     public override void _Ready()
     {
         Store ??= UserStore;
@@ -186,6 +189,7 @@ public partial class SaveSync : Node
             var path = Store!.Write(save);
             WorldName = save.Name;
             _autoSave.Reset();
+            SaveThumbnail(SaveStore.ThumbnailFor(path));
             GD.Print($"[save] saved '{save.Name}' to {path} ({save.Creations.Count} creations, {save.Players.Count} players)");
             Saved?.Invoke(path);
             return path;
@@ -195,6 +199,16 @@ public partial class SaveSync : Node
             GD.PushError($"[save] could not save '{save.Name}': {e.Message}");
             return null;
         }
+    }
+
+    // A small picture of the screen for the load list; none without a display.
+    private void SaveThumbnail(string file)
+    {
+        if (DisplayServer.GetName() == "headless" || GetViewport()?.GetTexture()?.GetImage() is not { } image || image.IsEmpty())
+            return;
+        image.Resize((int)SaveScreen.ThumbnailSize.X * 2, (int)SaveScreen.ThumbnailSize.Y * 2, Image.Interpolation.Bilinear);
+        if (image.SavePng(file) != Error.Ok)
+            GD.PushWarning($"[save] could not write the picture {file}");
     }
 
     private void OnPlayerSpawned(PlayerController player)

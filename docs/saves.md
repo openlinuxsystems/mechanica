@@ -3,6 +3,13 @@
 A saved world is one JSON file (D8) in the user data folder's `saves/` folder, named after the world
 (`My World` → `my-world.json`). Only the host saves; clients get a loaded world through the same
 late-join sync as any other world. Writes go to a temporary file and replace the old save in one move.
+Beside each save is a small picture of the screen when it was saved (`my-world.png`), shown in the load
+list; deleting a world from the list deletes both. A host auto-saves on the interval set in Options,
+Gameplay (every 10 minutes unless changed).
+
+**Continue** on the home screen starts the newest save that loads. **Load Game** lists every world with
+its picture, mode, play time (its `time`) and when it was last played, each with Load and Delete; Delete
+asks first.
 
 ## What a save holds
 

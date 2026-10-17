@@ -11,7 +11,7 @@ namespace Mechanica.Game.Menus;
 /// The main menu's New game screen: the world's name, Survival or Creative, the difficulty (Survival), an optional seed (blank picks
 /// one), whether to open the world to the LAN, on which port, and which character the player plays as.
 /// </summary>
-public partial class NewGameScreen : PanelContainer
+public partial class NewGameScreen : Ui.ToolWindow
 {
     private LineEdit _name = null!;
     private OptionButton _mode = null!;
@@ -36,9 +36,6 @@ public partial class NewGameScreen : PanelContainer
     /// <summary>Raised with how to start the world and its name.</summary>
     public event Action<LaunchOptions, string>? StartRequested;
 
-    /// <summary>Raised by Back.</summary>
-    public event Action? CloseRequested;
-
     /// <summary>The world name box.</summary>
     public LineEdit WorldName => _name;
 
@@ -53,9 +50,9 @@ public partial class NewGameScreen : PanelContainer
 
     public override void _Ready()
     {
-        var column = new VBoxContainer { CustomMinimumSize = new Vector2(380, 0) };
-        AddChild(column);
-        column.AddChild(new Label { Text = "New game", ThemeTypeVariation = "HeaderLarge", HorizontalAlignment = HorizontalAlignment.Center });
+        Title = "New Game";
+        var column = Body;
+        column.CustomMinimumSize = new Vector2(420, 0);
         var grid = new GridContainer { Columns = 2 };
         column.AddChild(grid);
         _name = Row(grid, "World name", new LineEdit { Text = "My World", MaxLength = 48 });
@@ -84,14 +81,8 @@ public partial class NewGameScreen : PanelContainer
         column.AddChild(CharacterPicker);
         _status = new Label { ThemeTypeVariation = "ErrorLabel", AutowrapMode = TextServer.AutowrapMode.WordSmart };
         column.AddChild(_status);
-        var buttons = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.End };
-        column.AddChild(buttons);
-        var back = new Button { Text = "Back" };
-        back.Pressed += () => CloseRequested?.Invoke();
-        buttons.AddChild(back);
-        var start = new Button { Name = "Start", Text = "Start" };
-        start.Pressed += Start;
-        buttons.AddChild(start);
+        AddAction("Back", RequestClose, tooltip: "Close (Esc)");
+        AddAction("Create", Start, primary: true, tooltip: "Create the world and start playing").Name = "Create";
     }
 
     /// <summary>Picks Survival or Creative.</summary>
