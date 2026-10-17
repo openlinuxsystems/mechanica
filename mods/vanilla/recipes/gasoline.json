@@ -1,0 +1,19 @@
+{
+  "id": "gasoline",
+  "stations": [
+    "refiner"
+  ],
+  "inputs": [
+    {
+      "item": "crude_oil",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "gasoline",
+      "count": 1
+    }
+  ],
+  "time": 10
+}

@@ -1,0 +1,10 @@
+{
+  "id": "crude_oil",
+  "name": "Crude Oil",
+  "category": "resource",
+  "mass": 1,
+  "stack_size": 20,
+  "sounds": {
+    "pickup": "pickup_fuel"
+  }
+}

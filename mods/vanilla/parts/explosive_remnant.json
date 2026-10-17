@@ -1,0 +1,11 @@
+{
+  "id": "explosive_remnant",
+  "name": "Explosive Remnant",
+  "category": "resource",
+  "mass": 0.5,
+  "stack_size": 10,
+  "sounds": {
+    "pickup": "pickup_metal",
+    "drop": "drop_metal"
+  }
+}
