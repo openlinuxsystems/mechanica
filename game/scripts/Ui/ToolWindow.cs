@@ -85,12 +85,15 @@ public partial class ToolWindow : PanelContainer
 
     public override void _Input(InputEvent @event)
     {
-        if (CloseOnEscape && GameInput.Pressed(@event, InputActions.Pause) && Topmost == this)
+        if (CloseOnEscape && GameInput.Pressed(@event, InputActions.Pause) && Topmost == this && !Completing())
         {
             GetViewport().SetInputAsHandled();
             RequestClose();
         }
     }
+
+    // Esc in a script editor first closes its completion list.
+    private bool Completing() => GetViewport().GuiGetFocusOwner() is CodeEdit code && code.GetCodeCompletionSelectedIndex() >= 0;
 
     /// <summary>Adds a button to the action bar; a primary one is cyan.</summary>
     public Button AddAction(string text, Action pressed, bool primary = false, string? tooltip = null)

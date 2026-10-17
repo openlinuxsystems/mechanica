@@ -85,7 +85,7 @@ public partial class SoundBinderPanel : VBoxContainer
             }
             _newKey.Text = "";
             AddKey(key);
-        });
+        }, "Add a sound name this part can play, such as start or hit");
 
         AddChild(new HSeparator());
         _bankTitle = new Label { Text = "Sound events", ThemeTypeVariation = "HeaderSmall" };
@@ -97,16 +97,9 @@ public partial class SoundBinderPanel : VBoxContainer
         AddChild(buttons);
         AddButton(buttons, "+ Event", () => SelectEvent(Bank?.Add("new_sound") ?? -1), "Add a sound event to this mod");
         AddButton(buttons, "+ Event from clip…", () => Import(AssetKind.Sound, path => ShowError(NewEventFromClip(path))), "Import an .ogg or .wav and make an event for it");
-        AddButton(buttons, "Delete", () =>
-        {
-            if (Bank is null || _selected < 0)
-                return;
-            var index = _selected;
-            _selected = -1;
-            Bank.Remove(index);
-        });
-        AddButton(buttons, "▶ Preview", () => ShowError(PreviewSelected() is null ? "Fix the event's problems to preview it." : null));
-        AddButton(buttons, "■ Stop", () => Player.StopAll());
+        AddButton(buttons, "Delete", () => AskDeleteEvent(), "Remove the selected sound event from this mod");
+        AddButton(buttons, "▶ Preview", () => ShowError(PreviewSelected() is null ? "Fix the event's problems to preview it." : null), "Play the selected sound event");
+        AddButton(buttons, "■ Stop", () => Player.StopAll(), "Stop every sound playing");
         AddButton(buttons, "Save", () => SaveBank(), "Validate and write the mod's sound bank");
         _eventGrid = new PropertyGrid();
         AddChild(_eventGrid);
@@ -390,10 +383,23 @@ public partial class SoundBinderPanel : VBoxContainer
         _bankProblems.Text = string.Join("\n", lines);
     }
 
+    /// <summary>Asks, then removes the selected sound event from the bank. Null when none is selected.</summary>
+    public ConfirmDialog? AskDeleteEvent()
+    {
+        if (Bank is not { } bank || _selected < 0)
+            return null;
+        var index = _selected;
+        return ConfirmDialog.Ask(this, "Delete sound event", Loc.T("Delete the sound event {0}? It leaves the mod's sound bank when you save.", bank.Events[index].Id ?? ""), "Delete", () =>
+        {
+            _selected = -1;
+            bank.Remove(index);
+        });
+    }
+
     private static Label Hint(string text) =>
         new() { Text = text, AutowrapMode = TextServer.AutowrapMode.WordSmart, ThemeTypeVariation = "SecondaryLabel" };
 
-    private static Button AddButton(Container parent, string text, Action pressed, string tooltip = "")
+    private static Button AddButton(Container parent, string text, Action pressed, string tooltip)
     {
         var button = new Button { Text = text, TooltipText = tooltip };
         button.Pressed += pressed;

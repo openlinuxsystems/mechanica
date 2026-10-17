@@ -34,6 +34,20 @@ public static class PartExporter
     }
 
     /// <summary>
+    /// The part file in <paramref name="modDirectory"/> (relative to it) named for <paramref name="id"/>, in
+    /// <c>parts/</c> or any folder under it, or null when there is none. The Part Editor asks before
+    /// starting a new part over one of these.
+    /// </summary>
+    public static string? ExistingPartFile(string modDirectory, string id)
+    {
+        var parts = Path.Combine(modDirectory, ModLoader.PartsFolder);
+        if (!Directory.Exists(parts))
+            return null;
+        var found = Directory.EnumerateFiles(parts, id + ".json", SearchOption.AllDirectories).Order(StringComparer.Ordinal).FirstOrDefault();
+        return found is null ? null : Path.GetRelativePath(modDirectory, found).Replace('\\', '/');
+    }
+
+    /// <summary>
     /// The part file an export will write: the file the part came from, renamed when its id changed, or
     /// <c>parts/&lt;id&gt;.json</c> for a new part.
     /// </summary>

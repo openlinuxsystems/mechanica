@@ -20,7 +20,7 @@ public partial class BotEditorMode : Control
     /// <summary>The sandbox, once a bot was tested.</summary>
     public SandboxScreen? Sandbox { get; private set; }
 
-    /// <summary>The editor's Back button was pressed.</summary>
+    /// <summary>The editor was closed (X or Esc).</summary>
     public event Action? CloseRequested;
 
     public override void _Ready()

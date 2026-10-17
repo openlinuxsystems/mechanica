@@ -1,5 +1,7 @@
 using Godot;
 using Mechanica.Core.Docs;
+using Mechanica.Core.Input;
+using Mechanica.Game.Player;
 using Mechanica.Game.Ui;
 
 namespace Mechanica.Game.Editor;
@@ -8,7 +10,8 @@ namespace Mechanica.Game.Editor;
 /// In-tool help: shows the Markdown docs from <c>docs/</c> (next to the executable in exported builds,
 /// the repo's <c>docs/</c> from the source tree), so the help and the repo docs are the same files.
 /// Links to other docs open in place; web links open in the browser. The box above the list searches every
-/// page's title and text.
+/// page's title and text. Esc closes it, and so does the Handbook key (H or F1) that opened it; each page
+/// keeps its scroll position while the window is open or hidden.
 /// </summary>
 public partial class HelpWindow : Window
 {
@@ -17,6 +20,7 @@ public partial class HelpWindow : Window
     private List<string> _files = [];
     private List<string> _all = [];
     private LineEdit _search = null!;
+    private readonly Dictionary<string, double> _scroll = [];
 
     /// <summary>The docs folder for this run.</summary>
     public static string DocsRoot => OS.HasFeature("template")
@@ -33,6 +37,7 @@ public partial class HelpWindow : Window
     {
         Title = "Help";
         Size = new Vector2I(960, 680);
+        MinSize = new Vector2I(640, 400);
         Exclusive = false;
         CloseRequested += Hide;
         var split = new HSplitContainer();
@@ -89,6 +94,8 @@ public partial class HelpWindow : Window
     public void Open(string fileName)
     {
         var path = Path.Combine(DocsRoot, Path.GetFileName(fileName.Split('#')[0]));
+        if (Current is not null)
+            _scroll[Current] = _text.GetVScrollBar().Value;
         _text.Text = File.Exists(path)
             ? MarkdownBbcode.Convert(File.ReadAllText(path))
             : Loc.T("No help file '{0}' in {1}.", MarkdownBbcode.Escape(fileName), MarkdownBbcode.Escape(DocsRoot));
@@ -99,8 +106,38 @@ public partial class HelpWindow : Window
         if (index >= 0)
             _list.Select(index);
         _text.ScrollToLine(0);
+        // Back at the place the reader left this page.
+        if (_scroll.TryGetValue(Current, out var at))
+            Callable.From(() => _text.GetVScrollBar().Value = at).CallDeferred();
         if (!Visible)
-            PopupCentered();
+            PopupCenteredRatio(0.7f);
+    }
+
+    /// <summary>Shows <paramref name="fileName"/>, or hides the window when it is already open.</summary>
+    public void Toggle(string fileName)
+    {
+        if (Visible)
+            Hide();
+        else
+            Open(fileName);
+    }
+
+    /// <summary>The page's scroll position, for tests.</summary>
+    public double Scroll
+    {
+        get => _text.GetVScrollBar().Value;
+        set => _text.GetVScrollBar().Value = value;
+    }
+
+    public override void _Input(InputEvent @event)
+    {
+        if (!Visible)
+            return;
+        if (GameInput.Pressed(@event, InputActions.Pause) || (GameInput.Pressed(@event, InputActions.Handbook) && !GameInput.Typing(this)))
+        {
+            SetInputAsHandled();
+            Hide();
+        }
     }
 
     private void FollowLink(string link)

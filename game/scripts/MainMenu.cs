@@ -324,17 +324,10 @@ public partial class MainMenu : Control
     /// <summary>Opens the Mod Manager.</summary>
     public Control OpenModManager()
     {
-        var holder = new Control { Name = "ModManager" };
-        holder.SetAnchorsPreset(LayoutPreset.FullRect);
-        holder.AddChild(new Panel { AnchorRight = 1, AnchorBottom = 1 });
-        holder.AddChild(new ModManagerScreen());
-        var back = new Button { Text = "Back" };
-        back.SetAnchorsAndOffsetsPreset(LayoutPreset.BottomLeft);
-        (back.OffsetLeft, back.OffsetTop, back.OffsetRight, back.OffsetBottom) = (16, -56, 96, -16);
-        back.Pressed += () => Close(holder);
-        holder.AddChild(back);
-        Open(holder);
-        return holder;
+        var screen = new ModManagerScreen { Name = "ModManager" };
+        screen.CloseRequested += () => Close(screen);
+        Open(screen);
+        return screen;
     }
 
     private static CenterContainer Centered(Control screen)

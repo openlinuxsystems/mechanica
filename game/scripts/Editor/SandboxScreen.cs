@@ -56,6 +56,9 @@ public partial class SandboxScreen : Control
     /// <param name="Main">Its game scene.</param>
     public sealed record Instance(string Name, SubViewport Viewport, Main Main);
 
+    /// <summary>The sandbox's panel: its X closes the sandbox, and so does Esc once the mouse is free.</summary>
+    public ToolWindow Window { get; private set; } = null!;
+
     /// <summary>Raised when the user leaves the sandbox.</summary>
     public event Action? BackRequested;
 
@@ -106,6 +109,8 @@ public partial class SandboxScreen : Control
 
     public override void _Process(double delta)
     {
+        // The first Esc frees the mouse (the player's own), the next one closes the sandbox.
+        Window.CloseOnEscape = Input.MouseMode != Input.MouseModeEnum.Captured;
         var size = (Vector2I)GetViewportRect().Size;
         for (var i = 0; i < _instances.Count; i++)
         {
@@ -343,15 +348,19 @@ public partial class SandboxScreen : Control
 
     private void BuildPanel()
     {
-        var panel = new PanelContainer { Position = new Vector2(12, 12) };
-        panel.CustomMinimumSize = new Vector2(340, 0);
-        AddChild(panel);
-        var column = new VBoxContainer();
-        panel.AddChild(column);
-        column.AddChild(new Label { Text = "Test Sandbox", ThemeTypeVariation = "HeaderMedium" });
+        // A strip down the left, 2% in from the edges; it scrolls when it is taller than the screen.
+        Window = new ToolWindow { Name = "Window", Title = "Test Sandbox" };
+        Window.CloseRequested += EmitBack;
+        AddChild(Window);
+        (Window.AnchorLeft, Window.AnchorTop, Window.AnchorRight, Window.AnchorBottom) = (0.02f, 0.02f, 0.02f, 0.98f);
+        (Window.OffsetLeft, Window.OffsetTop, Window.OffsetRight, Window.OffsetBottom) = (0, 0, 360, 0);
+        var scroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
+        Window.Body.AddChild(scroll);
+        var column = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        scroll.AddChild(column);
         column.AddChild(new Label
         {
-            Text = "Click the world to look around, Esc frees the mouse. WASD moves, Space jumps. Tab switches instance.",
+            Text = "Click the world to look around. Esc frees the mouse, and Esc again closes the sandbox. WASD moves, Space jumps. Tab switches instance.",
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
         });
         _filter = new LineEdit { PlaceholderText = "Filter parts" };
@@ -366,9 +375,9 @@ public partial class SandboxScreen : Control
         {
             if (_parts.GetSelectedItems() is [var i, ..])
                 Spawn(_partIds[i]);
-        });
-        AddButton(row, "Clear all", () => Clear());
-        AddButton(row, "Reload mods", ReloadContent);
+        }, "Put the selected part in front of you");
+        AddButton(row, "Clear all", () => AskClear(), "Remove every Creation and bot from the sandbox");
+        AddButton(row, "Reload mods", ReloadContent, "Read every mod again, so edits made since show up");
         var botRow = new HBoxContainer();
         column.AddChild(botRow);
         _bots = Loc.Verbatim(new OptionButton { SizeFlagsHorizontal = SizeFlags.ExpandFill, FitToLongestItem = false });
@@ -377,16 +386,16 @@ public partial class SandboxScreen : Control
         {
             if (_bots.Selected >= 0 && _bots.Selected < _botIds.Count)
                 SpawnBot(_botIds[_bots.Selected]);
-        });
+        }, "Put the selected bot in front of you");
         var net = new HFlowContainer();
         column.AddChild(net);
         AddButton(net, "Add local client", () =>
         {
             if (AddLocalClient() is null && _instances.Count > MaxLocalClients)
                 _result.Text = Loc.T("At most {0} local clients.", MaxLocalClients);
-        });
-        AddButton(net, "Remove client", RemoveLocalClient);
-        _collisionOverlay = new CheckBox { Text = "Show collision and centre of mass" };
+        }, "Join a second player to this sandbox to test multiplayer");
+        AddButton(net, "Remove client", () => AskRemoveClient(), "Disconnect the last local client");
+        _collisionOverlay = new CheckBox { Text = "Show collision and centre of mass", TooltipText = "Draw each body's collision shapes and centre of mass" };
         _collisionOverlay.Toggled += on =>
         {
             if (!on)
@@ -394,20 +403,27 @@ public partial class SandboxScreen : Control
         };
         column.AddChild(_collisionOverlay);
         // Drawn on the instance being watched, so a client's view shows the joints as it received them.
-        _jointOverlay = new CheckBox { Text = "Show joints" };
+        _jointOverlay = new CheckBox { Text = "Show joints", TooltipText = "Draw each joint's axis, range and state" };
         column.AddChild(_jointOverlay);
-        _forceOverlay = new CheckBox { Text = "Show forces" };
+        _forceOverlay = new CheckBox { Text = "Show forces", TooltipText = "Draw the forces and torques parts put on their bodies" };
         column.AddChild(_forceOverlay);
         _result = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart };
         column.AddChild(_result);
         _status = Loc.Verbatim(new Label { ThemeTypeVariation = "SecondaryLabel" });
         column.AddChild(_status);
-        AddButton(column, "Back", EmitBack);
     }
 
-    private static void AddButton(Container parent, string text, Action pressed)
+    /// <summary>Asks, then removes every Creation and bot from the sandbox.</summary>
+    public ConfirmDialog AskClear() =>
+        ConfirmDialog.Ask(this, "Clear the sandbox", "Remove every Creation and bot from the sandbox?", "Clear", () => Clear());
+
+    /// <summary>Asks, then disconnects the last local client. Null when there is none.</summary>
+    public ConfirmDialog? AskRemoveClient() => _instances.Count < 2 ? null
+        : ConfirmDialog.Ask(this, "Remove client", "Disconnect the last local client?", "Remove", RemoveLocalClient);
+
+    private static void AddButton(Container parent, string text, Action pressed, string tooltip)
     {
-        var button = new Button { Text = text };
+        var button = new Button { Text = text, TooltipText = tooltip };
         button.Pressed += pressed;
         parent.AddChild(button);
     }

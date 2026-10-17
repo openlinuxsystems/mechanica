@@ -44,23 +44,23 @@ public partial class RecipePanel : VBoxContainer
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
         });
         _list = Loc.Verbatim(new ItemList { CustomMinimumSize = new Vector2(0, 100) });
-        _list.ItemSelected += i => Select((int)i);
+        _list.ItemSelected += i => ConfirmDialog.Discard(this, IsDirty, () => Select((int)i), ShowSelection);
         AddChild(_list);
         var buttons = new HFlowContainer();
         AddChild(buttons);
-        AddButton(buttons, "New recipe", () => NewRecipe());
-        _save = AddButton(buttons, "Save recipe", () => Save());
-        _delete = AddButton(buttons, "Delete", () => DeleteCurrent());
+        AddButton(buttons, "New recipe", () => ConfirmDialog.Discard(this, IsDirty, () => NewRecipe()), "Start a recipe that makes this part");
+        _save = AddButton(buttons, "Save recipe", () => Save(), "Check the recipe and write it into the mod");
+        _delete = AddButton(buttons, "Delete", () => AskDelete(), "Delete this recipe's file from the mod");
         _grid = new PropertyGrid();
         AddChild(_grid);
         AddChild(new Label { Text = "Inputs" });
         _inputs = new VBoxContainer();
         AddChild(_inputs);
-        AddButton(this, "+ Input", () => Edit(r => r with { Inputs = [.. r.Inputs ?? [], new RecipeItem { Item = "", Count = 1 }] }, rebuild: true));
+        AddButton(this, "+ Input", () => Edit(r => r with { Inputs = [.. r.Inputs ?? [], new RecipeItem { Item = "", Count = 1 }] }, rebuild: true), "Add an item the recipe uses up");
         AddChild(new Label { Text = "Outputs" });
         _outputs = new VBoxContainer();
         AddChild(_outputs);
-        AddButton(this, "+ Output", () => Edit(r => r with { Outputs = [.. r.Outputs ?? [], new RecipeItem { Item = "", Count = 1 }] }, rebuild: true));
+        AddButton(this, "+ Output", () => Edit(r => r with { Outputs = [.. r.Outputs ?? [], new RecipeItem { Item = "", Count = 1 }] }, rebuild: true), "Add an item the recipe makes");
         Rebuild();
     }
 
@@ -164,6 +164,20 @@ public partial class RecipePanel : VBoxContainer
         return deleted;
     }
 
+    /// <summary>Asks, then deletes the recipe being edited from the mod. Null when it was never saved.</summary>
+    public ConfirmDialog? AskDelete() => _file is null ? null
+        : ConfirmDialog.Ask(this, "Delete recipe", Loc.T("Delete {0}? This removes the file from the mod.", _file), "Delete", () => DeleteCurrent());
+
+    // Puts the list's highlight back on the recipe being edited (after a switch was cancelled).
+    private void ShowSelection()
+    {
+        var index = _recipes.FindIndex(r => r.RelativeFile == _file);
+        if (index >= 0)
+            _list.Select(index);
+        else
+            _list.DeselectAll();
+    }
+
     private void SetCurrent(RecipeDefinition? recipe, string? file)
     {
         Current = recipe;
@@ -223,9 +237,9 @@ public partial class RecipePanel : VBoxContainer
         }
     }
 
-    private static Button AddButton(Container parent, string text, Action pressed)
+    private static Button AddButton(Container parent, string text, Action pressed, string tooltip)
     {
-        var button = new Button { Text = text };
+        var button = new Button { Text = text, TooltipText = tooltip };
         button.Pressed += pressed;
         parent.AddChild(button);
         return button;

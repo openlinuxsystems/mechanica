@@ -5,7 +5,9 @@ using Godot;
 using Mechanica.Core.Bots;
 using Mechanica.Core.Data;
 using Mechanica.Core.Editor;
+using Mechanica.Core.Input;
 using Mechanica.Game.Mods;
+using Mechanica.Game.Player;
 using Mechanica.Game.Ui;
 using Mechanica.Scripting.Editor;
 using FileAccess = Godot.FileAccess;
@@ -38,6 +40,9 @@ public partial class BotEditorScreen : Control
     private LineEdit _newId = null!;
     private ItemList _bots = null!;
     private TabContainer _tabs = null!;
+
+    /// <summary>The editor's tabs.</summary>
+    public TabContainer Tabs => _tabs;
     private PropertyGrid _botGrid = null!;
     private Tree _tree = null!;
     private OptionButton _palette = null!;
@@ -49,6 +54,10 @@ public partial class BotEditorScreen : Control
     private RichTextLabel _status = null!;
     private HelpWindow _help = null!;
     private RaidTableDefinition? _raids;
+    private bool _raidsDirty;
+    private Button _export = null!;
+    private Button _test = null!;
+    private string _savedScript = "";
     private IReadOnlyList<int> _selected = [];
 
     /// <summary>Mods folder the editor works in. Set before the node enters the tree.</summary>
@@ -82,7 +91,13 @@ public partial class BotEditorScreen : Control
         set => _script.Text = value;
     }
 
-    /// <summary>The Back button was pressed.</summary>
+    /// <summary>True when the bot, its script or the raid table has changes not written yet.</summary>
+    public bool HasUnsavedChanges => Document?.IsDirty == true || (Document is not null && _script.Text != _savedScript) || _raidsDirty;
+
+    /// <summary>The editor's window: its X and Esc close the editor (asking first about unsaved changes).</summary>
+    public ToolWindow Window { get; private set; } = null!;
+
+    /// <summary>The window was closed (X or Esc).</summary>
     public event Action? CloseRequested;
 
     /// <summary>"Test in Sandbox" exported the bot; carries its qualified id.</summary>
@@ -90,26 +105,27 @@ public partial class BotEditorScreen : Control
 
     public override void _Ready()
     {
-        SetAnchorsPreset(LayoutPreset.FullRect);
-        AddChild(new Panel { AnchorRight = 1, AnchorBottom = 1 });
+        SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         Templates = LoadTemplates();
-        var margin = new MarginContainer { AnchorRight = 1, AnchorBottom = 1 };
-        foreach (var side in new[] { "left", "right", "top", "bottom" })
-            margin.AddThemeConstantOverride($"margin_{side}", 12);
-        AddChild(margin);
-        var column = new VBoxContainer();
-        margin.AddChild(column);
+        Window = new ToolWindow { Name = "Window", Title = "Bot Behavior Editor" };
+        Window.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        Window.CloseGuard = then => Discard(then);
+        Window.CloseRequested += () => CloseRequested?.Invoke();
+        AddChild(Window);
+        var column = Window.Body;
+        _test = Window.AddAction("Test in Sandbox", () => TestInSandbox(), tooltip: "Export, then spawn the bot in the Test Sandbox");
+        _export = Window.AddAction("Export", () => Export(), primary: true, tooltip: "Check the bot and write it into its mod");
         column.AddChild(BuildToolbar());
         var split = new HSplitContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
         column.AddChild(split);
-        var left = new VBoxContainer { CustomMinimumSize = new Vector2(220, 0) };
+        // 20/80: the bot list, then the tabs.
+        var left = new VBoxContainer { CustomMinimumSize = new Vector2(180, 0), SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsStretchRatio = 2 };
         left.AddChild(new Label { Text = "Bots in this mod" });
         _bots = Loc.Verbatim(new ItemList { SizeFlagsVertical = SizeFlags.ExpandFill });
-        _bots.ItemActivated += i => Open(_bots.GetItemText((int)i));
-        _bots.ItemSelected += i => Open(_bots.GetItemText((int)i));
+        _bots.ItemSelected += i => Discard(() => Open(_bots.GetItemText((int)i)), ShowSelection);
         left.AddChild(_bots);
         split.AddChild(left);
-        _tabs = new TabContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        _tabs = new TabContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsStretchRatio = 8 };
         split.AddChild(_tabs);
         BuildTabs();
         _status = Loc.Verbatim(new RichTextLabel { FitContent = true, BbcodeEnabled = false, CustomMinimumSize = new Vector2(0, 40), ScrollActive = false });
@@ -117,6 +133,31 @@ public partial class BotEditorScreen : Control
         _help = new HelpWindow { Visible = false };
         AddChild(_help);
         RefreshMods();
+        Resume();
+    }
+
+    // Where the editor was when it last closed: the mod, the saved bot and the tab (UI spec §13
+    // "Preserve user state").
+    private sealed record Session(string ModsRoot, string Mod, string? BotFile, int Tab);
+
+    private static Session? _session;
+
+    public override void _ExitTree()
+    {
+        if (ModDirectory is { } mod)
+            _session = new Session(ModsRoot, Path.GetFileName(mod), Document is { } d && File.Exists(Path.Combine(mod, d.TargetFile)) ? d.TargetFile : null, _tabs.CurrentTab);
+    }
+
+    private void Resume()
+    {
+        if (_session is not { } s || s.ModsRoot != ModsRoot || !SelectMod(s.Mod))
+            return;
+        if (s.BotFile is { } file && File.Exists(Path.Combine(ModDirectory!, file)))
+        {
+            Open(file);
+            ShowSelection();
+        }
+        _tabs.CurrentTab = Math.Clamp(s.Tab, 0, _tabs.GetTabCount() - 1);
     }
 
     public override void _UnhandledKeyInput(InputEvent e)
@@ -153,7 +194,7 @@ public partial class BotEditorScreen : Control
         if (!Identifiers.IsValid(id))
             return Fail(Loc.T("'{0}' is not a valid id: use lowercase snake_case, like my_bot.", id));
         Use(BotDocument.New(ModDirectory, json, id, Humanize(id)));
-        _script.Text = "";
+        _script.Text = _savedScript = "";
         Say(Loc.T("New bot '{0}' from the {1} template. Export to save it.", id, template));
         return true;
     }
@@ -167,7 +208,7 @@ public partial class BotEditorScreen : Control
         if (BotDocument.Open(ModDirectory, relativeFile, diagnostics) is not { } document)
             return Fail(string.Join("\n", diagnostics));
         Use(document);
-        _script.Text = BotExporter.ReadScript(document) ?? "";
+        _script.Text = _savedScript = BotExporter.ReadScript(document) ?? "";
         Say(Loc.T("Opened {0}.", relativeFile));
         return true;
     }
@@ -206,6 +247,7 @@ public partial class BotEditorScreen : Control
             return Fail(Loc.T("Lua error on line {0}: {1}", error.Line, error.Message));
         }
         var file = BotExporter.SaveScript(Document, _script.Text);
+        _savedScript = _script.Text;
         Say(Loc.T("Saved {0}. Export the bot to keep its script setting.", file));
         return true;
     }
@@ -257,6 +299,7 @@ public partial class BotEditorScreen : Control
         if (ModLoader.ParseJson<RaidTableDefinition>(json, RaidTable.FilePath, diagnostics) is not { } raids)
             return string.Join("\n", diagnostics);
         _raids = raids;
+        _raidsDirty = true;
         UpdateRaidPreview(null, 1);
         return null;
     }
@@ -267,6 +310,7 @@ public partial class BotEditorScreen : Control
         if (ModDirectory is null || _raids is null)
             return null;
         var result = BotExporter.ExportRaids(ModDirectory, _raids, BotBook.Load(ModLoader.LoadAll(ModsRoot)));
+        _raidsDirty &= !result.Succeeded;
         Say(result.Succeeded ? Loc.T("Saved {0}.", RaidTable.FilePath) + Problems(result.Diagnostics) : Loc.T("Raid table not saved:") + Problems(result.Diagnostics));
         return result;
     }
@@ -274,12 +318,12 @@ public partial class BotEditorScreen : Control
     /// <summary>Shows the Bot Tutorial.</summary>
     public void OpenHelp(string fileName = HelpFile) => _help.Open(fileName);
 
-    // F1 opens the help, as everywhere in the game.
+    // The Handbook key (H or F1) opens and closes the help, as everywhere in the game.
     public override void _UnhandledInput(InputEvent @event)
     {
-        if (@event is InputEventKey { Pressed: true, Echo: false, PhysicalKeycode: Key.F1 })
+        if (GameInput.Pressed(@event, InputActions.Handbook) && IsVisibleInTree())
         {
-            OpenHelp(HelpFile);
+            _help.Toggle(HelpFile);
             GetViewport().SetInputAsHandled();
         }
     }
@@ -291,7 +335,7 @@ public partial class BotEditorScreen : Control
         var bar = new HBoxContainer();
         bar.AddChild(new Label { Text = "Mod" });
         _mods = Loc.Verbatim(new OptionButton { CustomMinimumSize = new Vector2(140, 0) });
-        _mods.ItemSelected += i => UseMod(_mods.GetItemText((int)i));
+        _mods.ItemSelected += i => Discard(() => UseMod(_mods.GetItemText((int)i)), ShowSelection);
         bar.AddChild(_mods);
         bar.AddChild(new VSeparator());
         _templates = Loc.Verbatim(new OptionButton());
@@ -300,15 +344,12 @@ public partial class BotEditorScreen : Control
         bar.AddChild(_templates);
         _newId = Loc.Verbatim(new LineEdit { PlaceholderText = "new_bot_id", CustomMinimumSize = new Vector2(140, 0) });
         bar.AddChild(_newId);
-        Button(bar, "New", () => New(_templates.GetItemText(_templates.Selected), _newId.Text.Trim()));
+        Button(bar, "New", () => AskNew(_templates.GetItemText(_templates.Selected), _newId.Text.Trim()), "Start a bot from the chosen template with this id");
         bar.AddChild(new VSeparator());
-        Button(bar, "Undo", () => Document?.Undo());
-        Button(bar, "Redo", () => Document?.Redo());
-        Button(bar, "Export", () => Export());
-        Button(bar, "Test in Sandbox", () => TestInSandbox());
+        Button(bar, "Undo", () => Document?.Undo(), "Undo the last change (Ctrl+Z)");
+        Button(bar, "Redo", () => Document?.Redo(), "Redo the last undone change (Ctrl+Y)");
         bar.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
-        Button(bar, "Help", () => OpenHelp());
-        Button(bar, "Back", () => CloseRequested?.Invoke());
+        Button(bar, "Help", () => OpenHelp(), "The Bot Tutorial");
         return bar;
     }
 
@@ -334,10 +375,10 @@ public partial class BotEditorScreen : Control
             _palette.AddItem(node.Type);
         _palette.ItemSelected += _ => ShowNodeHelp(_palette.GetItemText(_palette.Selected));
         row.AddChild(_palette);
-        Button(row, "Add", () => AddNode(_palette.GetItemText(_palette.Selected)));
-        Button(row, "Up", () => MoveNode(-1));
-        Button(row, "Down", () => MoveNode(1));
-        Button(row, "Remove", () => RemoveNode());
+        Button(row, "Add", () => AddNode(_palette.GetItemText(_palette.Selected)), "Add the chosen node under the selected one");
+        Button(row, "Up", () => MoveNode(-1), "Run the selected node earlier");
+        Button(row, "Down", () => MoveNode(1), "Run the selected node later");
+        Button(row, "Remove", () => RemoveNode(), "Remove the selected node and everything under it");
         treeColumn.AddChild(row);
         // Node help is reference text from the behaviour tree's own docs, in English like the handbook.
         _nodeHelp = Loc.Verbatim(new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart, CustomMinimumSize = new Vector2(0, 48) });
@@ -359,8 +400,8 @@ public partial class BotEditorScreen : Control
         _script = new CodeEdit { SizeFlagsVertical = SizeFlags.ExpandFill, GuttersDrawLineNumbers = true };
         script.AddChild(_script);
         var scriptRow = new HBoxContainer();
-        Button(scriptRow, "Save script", () => SaveScript());
-        Button(scriptRow, "Lua API", () => OpenHelp("lua-api.md"));
+        Button(scriptRow, "Save script", () => SaveScript(), "Check the Lua and save it as the bot's script");
+        Button(scriptRow, "Lua API", () => OpenHelp("lua-api.md"), "Every function a script can call");
         script.AddChild(scriptRow);
         _tabs.AddChild(script);
 
@@ -374,9 +415,9 @@ public partial class BotEditorScreen : Control
         _tabs.AddChild(raids);
     }
 
-    private static void Button(Container parent, string text, Action pressed)
+    private static void Button(Container parent, string text, Action pressed, string tooltip)
     {
-        var button = new Button { Text = text };
+        var button = new Button { Text = text, TooltipText = tooltip };
         button.Pressed += pressed;
         parent.AddChild(button);
     }
@@ -403,11 +444,44 @@ public partial class BotEditorScreen : Control
         _selected = [];
         var diagnostics = new List<DataDiagnostic>();
         _raids = BotExporter.ReadRaids(ModDirectory, diagnostics) ?? new RaidTableDefinition { Levels = [] };
+        _raidsDirty = false;
         RefreshBots();
         Refresh();
         RefreshRaids();
         if (diagnostics.Count > 0)
             Say(string.Join("\n", diagnostics));
+    }
+
+    /// <summary>Runs <paramref name="then"/>, asking first when it would throw away unsaved changes.</summary>
+    public void Discard(Action then, Action? onCancel = null) => ConfirmDialog.Discard(this, HasUnsavedChanges, then, onCancel);
+
+    /// <summary>
+    /// Starts a new bot like <see cref="New"/>, asking first when that throws away unsaved changes or when
+    /// the mod already has a bot file with that id.
+    /// </summary>
+    public void AskNew(string template, string id) => Discard(() =>
+    {
+        if (ModDirectory is not null && Identifiers.IsValid(id) && File.Exists(Path.Combine(ModDirectory, BotBook.Folder, id + ".json")))
+            ConfirmDialog.Ask(this, "Bot exists", Loc.T("This mod already has {0}. Start a new bot anyway? Exporting it replaces that file.", $"{BotBook.Folder}/{id}.json"),
+                "Start new", () => New(template, id));
+        else
+            New(template, id);
+    });
+
+    // Puts the mod and bot lists' highlight back on what is open (after a switch was cancelled).
+    private void ShowSelection()
+    {
+        for (var i = 0; i < _mods.ItemCount; i++)
+        {
+            if (ModDirectory is not null && _mods.GetItemText(i) == Path.GetFileName(ModDirectory))
+                _mods.Select(i);
+        }
+        _bots.DeselectAll();
+        for (var i = 0; i < _bots.ItemCount; i++)
+        {
+            if (Document is not null && _bots.GetItemText(i) == Document.TargetFile)
+                _bots.Select(i);
+        }
     }
 
     private void RefreshBots()
@@ -431,6 +505,7 @@ public partial class BotEditorScreen : Control
 
     private void Refresh()
     {
+        _export.Disabled = _test.Disabled = Document is null;
         RefreshBotGrid();
         RefreshTree();
     }
@@ -537,7 +612,7 @@ public partial class BotEditorScreen : Control
         var players = 1;
         _raidGrid.AddNumber("Preview crop value", value, 0, 100000, 1, v => UpdateRaidPreview(v, null));
         _raidGrid.AddNumber("Preview players", players, 1, 16, 1, v => UpdateRaidPreview(null, (int?)v));
-        var save = new Button { Text = "Save raid table" };
+        var save = new Button { Text = "Save raid table", TooltipText = "Check the raid table against the mods' bots and save it" };
         save.Pressed += () => SaveRaids();
         _raidGrid.Row("", save);
         UpdateRaidPreview(value, players);

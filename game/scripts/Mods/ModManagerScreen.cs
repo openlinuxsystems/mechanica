@@ -29,6 +29,12 @@ public partial class ModManagerScreen : Control
     /// <summary>Profile file to read and save. Set before the node enters the tree.</summary>
     public string ProfilePath { get; set; } = ModPaths.ProfilePath;
 
+    /// <summary>The screen's window: its X and Esc close it (asking first about an unapplied setup).</summary>
+    public ToolWindow Window { get; private set; } = null!;
+
+    /// <summary>The window was closed (X or Esc).</summary>
+    public event Action? CloseRequested;
+
     /// <summary>The current, possibly unsaved, setup.</summary>
     public ModPackageManager Manager { get; private set; } = null!;
 
@@ -50,16 +56,13 @@ public partial class ModManagerScreen : Control
 
     public override void _Ready()
     {
-        SetAnchorsPreset(LayoutPreset.FullRect);
-        var margin = new MarginContainer();
-        margin.SetAnchorsPreset(LayoutPreset.FullRect);
-        foreach (var side in new[] { "left", "right", "top", "bottom" })
-            margin.AddThemeConstantOverride($"margin_{side}", 16);
-        AddChild(margin);
-
-        var column = new VBoxContainer();
-        margin.AddChild(column);
-        column.AddChild(new Label { Text = "Mods", ThemeTypeVariation = "HeaderLarge" });
+        SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        Window = new ToolWindow { Name = "Window", Title = "Mod Manager" };
+        Window.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        Window.CloseGuard = Discard;
+        Window.CloseRequested += () => CloseRequested?.Invoke();
+        AddChild(Window);
+        var column = Window.Body;
         column.AddChild(new Label
         {
             Text = "Mods load top to bottom; a later mod's overrides win. Changes apply the next time you start or host a game. "
@@ -92,10 +95,10 @@ public partial class ModManagerScreen : Control
 
         var rowButtons = new HBoxContainer();
         left.AddChild(rowButtons);
-        _up = AddButton(rowButtons, "Move up", () => MoveSelected(-1));
-        _down = AddButton(rowButtons, "Move down", () => MoveSelected(1));
-        AddButton(rowButtons, "Rescan", Reopen);
-        AddButton(rowButtons, "Open mods folder", () => OS.ShellOpen(ModsRoot));
+        _up = AddButton(rowButtons, "Move up", () => MoveSelected(-1), "Load the selected mod earlier");
+        _down = AddButton(rowButtons, "Move down", () => MoveSelected(1), "Load the selected mod later, so its overrides win");
+        AddButton(rowButtons, "Rescan", () => Discard(Reopen), "Look for new and changed mods in the mods folder");
+        AddButton(rowButtons, "Open mods folder", () => OS.ShellOpen(ModsRoot), "Show the mods folder in your file manager");
 
         var right = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
         split.AddChild(right);
@@ -105,13 +108,18 @@ public partial class ModManagerScreen : Control
         _problems = Loc.Verbatim(new RichTextLabel { BbcodeEnabled = true, SizeFlagsVertical = SizeFlags.ExpandFill, SelectionEnabled = true });
         right.AddChild(_problems);
 
-        var bottom = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.End };
-        column.AddChild(bottom);
-        _revert = AddButton(bottom, "Revert", Reopen);
-        _apply = AddButton(bottom, "Apply", Apply);
+        _revert = Window.AddAction("Revert", () => Discard(Reopen), tooltip: "Go back to the saved setup");
+        _apply = Window.AddAction("Apply", Apply, primary: true, tooltip: "Save this setup; it loads with the next world");
 
         Reopen();
+        // The mod picked when the screen last closed (UI spec §13 "Preserve user state").
+        if (_lastSelected is { } id && Rows.Any(r => r.Id == id))
+            Select(id);
     }
+
+    private static string? _lastSelected;
+
+    public override void _ExitTree() => _lastSelected = SelectedId ?? _lastSelected;
 
     /// <summary>Rescans the mods folder and reloads the saved profile, dropping unsaved changes.</summary>
     public void Reopen()
@@ -260,9 +268,13 @@ public partial class ModManagerScreen : Control
             MoveMod(id, delta);
     }
 
-    private static Button AddButton(Container parent, string text, Action pressed)
+    /// <summary>Runs <paramref name="then"/>, asking first when it would throw away unsaved changes.</summary>
+    public void Discard(Action then) => ConfirmDialog.Discard(this, HasUnsavedChanges, then,
+        message: "Your changes to the mod setup are not applied. Discard them?");
+
+    private static Button AddButton(Container parent, string text, Action pressed, string tooltip)
     {
-        var button = new Button { Text = text };
+        var button = new Button { Text = text, TooltipText = tooltip };
         button.Pressed += pressed;
         parent.AddChild(button);
         return button;

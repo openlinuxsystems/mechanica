@@ -19,7 +19,7 @@ namespace Mechanica.Game.Logic;
 /// </summary>
 public partial class PartSettingsPanel : CanvasLayer
 {
-    private PanelContainer _panel = null!;
+    private ToolWindow _panel = null!;
     private VBoxContainer _rows = null!;
     private Label _status = null!;
 
@@ -38,18 +38,15 @@ public partial class PartSettingsPanel : CanvasLayer
     public override void _Ready()
     {
         Layer = 5;
-        _panel = UiInput.KeepMouse(new PanelContainer { Name = "Settings", Visible = false, CustomMinimumSize = new Vector2(360, 0) });
+        _panel = new ToolWindow { Name = "Settings", Title = "Part settings", Visible = false, CustomMinimumSize = new Vector2(360, 0) };
+        _panel.CloseRequested += Close;
         AddChild(_panel);
         _panel.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.Center, Control.LayoutPresetMode.KeepSize);
-        var box = new VBoxContainer();
-        _panel.AddChild(box);
         _rows = new VBoxContainer();
-        box.AddChild(_rows);
+        _panel.Body.AddChild(_rows);
         _status = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart };
-        box.AddChild(_status);
-        var close = new Button { Text = "Close" };
-        close.Pressed += Close;
-        box.AddChild(close);
+        _panel.Body.AddChild(_status);
+        _panel.AddAction("Close", Close, primary: true, tooltip: "Close the settings; changes are already applied");
     }
 
     public override void _UnhandledInput(InputEvent @event)
