@@ -10,7 +10,7 @@ namespace Mechanica.Game.Player;
 /// mod folders with <see cref="GltfDocument"/> (like part meshes) and cached, so every player of a character
 /// shares one mesh and every player shares one set of clips.
 /// </summary>
-public sealed class CharacterAssets
+public sealed class CharacterAssets : IDisposable
 {
     /// <summary>Godot path of the animation tuning.</summary>
     public const string DefaultSettingsPath = "res://data/character.json";
@@ -75,6 +75,18 @@ public sealed class CharacterAssets
         var rest = node.Transform;
         node.Transform = Transform3D.Identity;
         return (node, rest);
+    }
+
+    /// <summary>Frees the cached model and prop templates (instances already made are unaffected).</summary>
+    public void Dispose()
+    {
+        foreach (var template in _models.Values.OfType<Node3D>().Concat(_props?.Values ?? Enumerable.Empty<Node3D>()))
+        {
+            if (GodotObject.IsInstanceValid(template))
+                template.Free();
+        }
+        _models.Clear();
+        _props = null;
     }
 
     private Dictionary<string, Animation> LoadClips()

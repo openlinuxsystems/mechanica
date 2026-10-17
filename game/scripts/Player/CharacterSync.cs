@@ -83,6 +83,7 @@ public partial class CharacterSync : Node
         Session.StateChanged -= OnStateChanged;
         if (Survival is not null)
             Survival.VitalsChanged -= OnVitals;
+        Assets.Dispose();
     }
 
     // Every peer sees every player's health, so each one makes a hurt player flinch on its own.

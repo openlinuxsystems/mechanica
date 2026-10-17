@@ -68,7 +68,11 @@ public partial class NewGameScreen : PanelContainer
         {
             var content = ModPaths.LoadContent();
             Characters ??= CharacterBook.Load(content);
-            CharacterAssets ??= new CharacterAssets(content);
+            if (CharacterAssets is null)
+            {
+                CharacterAssets = new CharacterAssets(content);
+                TreeExiting += CharacterAssets.Dispose;
+            }
         }
         column.AddChild(new Label { Text = "Character" });
         CharacterPicker = new CharacterPicker { Name = "Characters", Book = Characters, Assets = CharacterAssets, PreviewSize = new Vector2I(150, 200) };

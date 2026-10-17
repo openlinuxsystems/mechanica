@@ -27,6 +27,7 @@ public partial class CharacterTest : StagedTest
     private CharacterModel? _watched;
     private bool _swung;
     private string? _refused;
+    private Func<float>? _seaLevel;
 
     protected override string Tag => "characters";
 
@@ -126,20 +127,26 @@ public partial class CharacterTest : StagedTest
         Add("a player in deep water swims everywhere", frame =>
         {
             var player = _host.Main.LocalPlayer!;
-            var generator = _host.Main.Streamer.Generator;
             if (frame == 0)
             {
+                // The test seed has no sea near spawn, so raise the host's water over where the player stands.
                 Watch(_a, _host);
-                var spot = Deep(generator, player.GlobalPosition);
-                if (!Check(spot is not null, "there is deep water near spawn"))
-                    return false;
-                player.GlobalPosition = new Vector3(spot!.Value.X, generator.SeaLevel - 1.6f, spot.Value.Y);
-                player.Velocity = Vector3.Zero;
+                _seaLevel = player.WaterLevel;
+                var level = player.GlobalPosition.Y + 1.6f;
+                player.WaterLevel = () => level;
             }
             var model = (CharacterModel)_a.Main.PlayerSync.Players[_host.Peer].Character!;
             if (!player.Body.HasFlag(BodyFlags.Swimming) || model.Animator.Mode != CharacterMode.Swim || !_events.Contains(CharacterEvent.WaterEnter))
                 return false;
             return Check(MathF.Abs(player.Velocity.Y) < 3f, $"the swimmer floats ({player.Velocity.Y:F2} m/s)");
+        });
+        Add("leaving the water walks again", frame =>
+        {
+            var player = _host.Main.LocalPlayer!;
+            if (frame == 0)
+                player.WaterLevel = _seaLevel;
+            var model = (CharacterModel)_a.Main.PlayerSync.Players[_host.Peer].Character!;
+            return !player.Body.HasFlag(BodyFlags.Swimming) && model.Animator.Mode != CharacterMode.Swim && _events.Contains(CharacterEvent.WaterExit);
         });
 
         Add("a client that leaves and comes back keeps its character", frame =>
@@ -177,21 +184,5 @@ public partial class CharacterTest : StagedTest
         _events.Clear();
         _watched = (CharacterModel)on.Main.PlayerSync.Players[who.Peer].Character!;
         _watched.Event += _events.Add;
-    }
-
-    // The nearest spot within 400 m whose sea floor is well under the surface.
-    private static Vector2? Deep(Core.World.WorldGenerator generator, Vector3 from)
-    {
-        for (var radius = 0f; radius <= 400f; radius += 8f)
-        {
-            for (var a = 0; a < 32; a++)
-            {
-                var x = from.X + radius * MathF.Cos(a * MathF.Tau / 32);
-                var z = from.Z + radius * MathF.Sin(a * MathF.Tau / 32);
-                if (generator.HeightAt(x, z) < generator.SeaLevel - 4f)
-                    return new Vector2(x, z);
-            }
-        }
-        return null;
     }
 }
