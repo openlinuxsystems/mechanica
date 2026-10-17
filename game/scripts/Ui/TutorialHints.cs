@@ -2,6 +2,7 @@ using Godot;
 using Mechanica.Core.Input;
 using Mechanica.Core.Ui;
 using Mechanica.Game.Player;
+using Mechanica.Game.Building;
 using Mechanica.Game.Settings;
 
 namespace Mechanica.Game.Ui;
@@ -13,10 +14,13 @@ namespace Mechanica.Game.Ui;
 /// dismisses it early, with a ring filling as it is held; losing window focus cancels the hold. Each tip shows
 /// once; the ones seen are kept in the player's settings, and Options can turn tips off or show them again.
 /// </summary>
-public partial class TutorialHints : CanvasLayer
+public partial class TutorialHints : CanvasLayer, IHudLayer
 {
     /// <summary>Where the tips live.</summary>
     public const string DataPath = "res://data/tutorial.json";
+
+    // Over every window (the inventory and station screens, tool windows and dialogs).
+    private const int CoveredLayer = 15;
 
     private readonly Queue<TutorialHint> _queue = [];
     private PanelContainer _panel = null!;
@@ -49,6 +53,15 @@ public partial class TutorialHints : CanvasLayer
 
     /// <summary>The tip on screen, or null.</summary>
     public TutorialHint? Showing { get; private set; }
+
+    /// <summary>Where the tip shows on screen, or null when none does; other bottom-centre lines stack above it.</summary>
+    public static Rect2? Shown { get; private set; }
+
+    /// <inheritdoc/>
+    public bool KeepWhenHidden => false;
+
+    /// <summary>A tip about the window that is open stays over it; any other tip waits until the window closes.</summary>
+    public bool KeepWhenCovered => Showing is { } hint && IsScreenTip(hint);
 
     /// <summary>The text on screen, with keys filled in.</summary>
     public string Text => _text.Text;
@@ -86,6 +99,7 @@ public partial class TutorialHints : CanvasLayer
 
     public override void _ExitTree()
     {
+        Shown = null;
         GetViewport().SizeChanged -= Layout;
         HudRoot.FocusLost -= CancelHold;
     }
@@ -93,6 +107,15 @@ public partial class TutorialHints : CanvasLayer
     // Bottom centre, above the tool bar and the status line, inside the safe area.
     private void Layout() =>
         _panel.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.CenterBottom, Control.LayoutPresetMode.KeepSize, (int)HudRoot.Margin(GetViewport()).Y + 110);
+
+    // Just over the tool bar and its key line, however tall they are. A tip about the open window shows over it, the
+    // window's own layer being under this one only while nothing covers the world.
+    private void Place()
+    {
+        Layer = HudRoot.IsCovered ? CoveredLayer : 4;
+        if (ToolBelt.HudTop is { } top)
+            _panel.Position = new Vector2(_panel.Position.X, top - 8 - _panel.Size.Y);
+    }
 
     private void CancelHold() => _dismiss.Cancel();
 
@@ -123,6 +146,18 @@ public partial class TutorialHints : CanvasLayer
             Clear();
             return;
         }
+        if (HudRoot.IsCovered && Showing is { } waiting && !IsScreenTip(waiting))
+        {
+            // The open window's own tip goes first; the one it covered comes back after.
+            if (!_queue.Any(IsScreenTip))
+                return;
+            var rest = _queue.Where(h => !IsScreenTip(h)).Prepend(waiting).ToList();
+            var screen = _queue.Where(IsScreenTip).ToList();
+            _queue.Clear();
+            foreach (var hint in screen.Concat(rest))
+                _queue.Enqueue(hint);
+            Clear();
+        }
         if (Showing is not null && (_dismiss.Tick(UseHeld(), delta) || (_left -= delta) <= 0))
             Clear();
         // A hold that dismissed one tip has to be let go before it can dismiss the next.
@@ -131,6 +166,8 @@ public partial class TutorialHints : CanvasLayer
         _ring.Modulate = Colors.White with { A = fraction > 0 ? 1 : 0 };
         if (Showing is null && _queue.TryDequeue(out var next))
             Show(next);
+        Place();
+        Shown = Visible && _panel.Visible ? _panel.GetGlobalRect() : null;
     }
 
     /// <summary>
@@ -162,6 +199,8 @@ public partial class TutorialHints : CanvasLayer
         var seen = new SortedSet<string>(gameplay.SeenHints ?? [], StringComparer.Ordinal) { hint.Id };
         GameSettings.Save(GameSettings.Current with { Gameplay = gameplay with { SeenHints = seen } });
     }
+
+    private static bool IsScreenTip(TutorialHint hint) => hint.Trigger.StartsWith("screen:", StringComparison.Ordinal);
 
     private void Clear()
     {

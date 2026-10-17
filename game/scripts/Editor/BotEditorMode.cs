@@ -25,7 +25,7 @@ public partial class BotEditorMode : Control
 
     public override void _Ready()
     {
-        SetAnchorsPreset(LayoutPreset.FullRect);
+        SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         Editor = new BotEditorScreen { Name = "BotEditor", ModsRoot = ModsRoot };
         Editor.TestRequested += Test;
         Editor.CloseRequested += () => CloseRequested?.Invoke();

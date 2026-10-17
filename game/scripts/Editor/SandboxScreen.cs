@@ -85,14 +85,14 @@ public partial class SandboxScreen : Control
 
     public override void _Ready()
     {
-        SetAnchorsPreset(LayoutPreset.FullRect);
+        SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         _views = new Control { MouseFilter = MouseFilterEnum.Ignore };
-        _views.SetAnchorsPreset(LayoutPreset.FullRect);
+        _views.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         AddChild(_views);
         _overlayRoot = new Node { Name = "Instances" };
         AddChild(_overlayRoot);
         _mainView = new TextureRect { ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.Scale, MouseFilter = MouseFilterEnum.Ignore };
-        _mainView.SetAnchorsPreset(LayoutPreset.FullRect);
+        _mainView.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         _views.AddChild(_mainView);
         _panes = new VBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
         _panes.SetAnchorsAndOffsetsPreset(LayoutPreset.TopRight);
