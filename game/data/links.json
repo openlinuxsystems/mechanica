@@ -1,0 +1,5 @@
+{
+  // Links shown at the bottom right of the home screen (UI spec §14). Each opens in the browser.
+  // "label" is a short word shown on the button; "url" must start with https://.
+  "links": []
+}

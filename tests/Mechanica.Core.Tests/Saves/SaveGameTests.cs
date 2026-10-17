@@ -161,6 +161,30 @@ public class SaveGameTests
         Assert.Equal(2, store.List().Count);
     }
 
+    [Fact]
+    public void TheListCarriesPlayTimeAndPictureAndContinuePicksTheNewestGoodSave()
+    {
+        var store = new SaveStore(Path.Combine(Path.GetTempPath(), "mechanica-tests", Guid.NewGuid().ToString("N")));
+        var path = store.Write(Sample() with { Name = "Kept", Time = 3 * 3600 + 5 * 60, SavedAt = DateTimeOffset.UnixEpoch });
+        File.WriteAllBytes(SaveStore.ThumbnailFor(path), [1, 2, 3]);
+        File.WriteAllText(Path.Combine(store.Directory, "broken.json"), "{");
+        File.SetLastWriteTimeUtc(Path.Combine(store.Directory, "broken.json"), DateTime.UtcNow);
+
+        var latest = store.Latest()!;
+        Assert.Equal("Kept", latest.Name);
+        Assert.Equal("3 h 05 min", latest.PlayTime);
+        Assert.Equal(SaveStore.ThumbnailFor(path), latest.Thumbnail);
+        Assert.True(store.Delete(path));
+        Assert.False(File.Exists(SaveStore.ThumbnailFor(path)));
+        Assert.Null(store.Latest());
+    }
+
+    [Theory]
+    [InlineData(0, "under a minute")]
+    [InlineData(45 * 60 + 30, "45 min")]
+    [InlineData(3600, "1 h 00 min")]
+    public void PlayTimeReadsNaturally(double seconds, string text) => Assert.Equal(text, SaveSummary.FormatPlayTime(seconds));
+
     [Theory]
     [InlineData("My World", "my-world")]
     [InlineData("  ../../etc  ", "etc")]

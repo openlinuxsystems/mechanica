@@ -91,7 +91,7 @@ public partial class PauseMenu : CanvasLayer
 
         column.AddChild(new HSeparator());
         AddButton(column, "Options…", () => OpenOptions());
-        Loc.Live(AddButton(column, "", () => OpenHelp()), () => Loc.T("Help ({0})", GameInput.Label(InputActions.Handbook)));
+        Loc.Live(AddButton(column, "", () => OpenHelp()), b => b.Text = Loc.T("Help ({0})", GameInput.Label(InputActions.Handbook)));
         AddButton(column, "Quit to main menu", () => GetTree().ChangeSceneToFile(MainMenu.MenuScene));
         AddButton(column, "Quit game", () => GetTree().Quit());
         _status = new Label { Name = "Status", ThemeTypeVariation = "ErrorLabel" };

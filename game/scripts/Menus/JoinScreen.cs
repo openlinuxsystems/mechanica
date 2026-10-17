@@ -10,7 +10,7 @@ namespace Mechanica.Game.Menus;
 /// a box for an address and port, and one for the world's password. A game running another version is listed
 /// but can't be picked; one that needs a password says so.
 /// </summary>
-public partial class JoinScreen : PanelContainer
+public partial class JoinScreen : Ui.ToolWindow
 {
     private ItemList _list = null!;
     private LineEdit _address = null!;
@@ -20,9 +20,6 @@ public partial class JoinScreen : PanelContainer
 
     /// <summary>Raised with where to join.</summary>
     public event Action<NetEndpoint>? JoinRequested;
-
-    /// <summary>Raised by Back.</summary>
-    public event Action? CloseRequested;
 
     /// <summary>The LAN browser, for tests that listen on another port. Set before adding to the tree, or one is made.</summary>
     public LanBrowser? Browser { get; set; }
@@ -44,10 +41,10 @@ public partial class JoinScreen : PanelContainer
 
     public override void _Ready()
     {
-        var column = new VBoxContainer { CustomMinimumSize = new Vector2(520, 0) };
-        AddChild(column);
-        column.AddChild(new Label { Text = "Join game", ThemeTypeVariation = "HeaderLarge", HorizontalAlignment = HorizontalAlignment.Center });
-        column.AddChild(new Label { Text = "Games on your network" });
+        Title = "Join Game";
+        var column = Body;
+        column.CustomMinimumSize = new Vector2(520, 0);
+        column.AddChild(new Label { Text = "Games on your network", ThemeTypeVariation = "TitleLabel" });
         _list = Loc.Verbatim(new ItemList { CustomMinimumSize = new Vector2(0, 200) });
         _list.ItemActivated += i => JoinListed((int)i);
         _list.ItemSelected += i => _address.Text = _shown[(int)i].Endpoint.ToString();
@@ -66,17 +63,9 @@ public partial class JoinScreen : PanelContainer
         row.AddChild(_password);
         _status = new Label { ThemeTypeVariation = "ErrorLabel", AutowrapMode = TextServer.AutowrapMode.WordSmart };
         column.AddChild(_status);
-        var buttons = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.End };
-        column.AddChild(buttons);
-        var back = new Button { Text = "Back" };
-        back.Pressed += () => CloseRequested?.Invoke();
-        buttons.AddChild(back);
-        var refresh = new Button { Text = "Refresh" };
-        refresh.Pressed += () => Browser?.Refresh();
-        buttons.AddChild(refresh);
-        var join = new Button { Name = "JoinButton", Text = "Join" };
-        join.Pressed += JoinAddress;
-        buttons.AddChild(join);
+        AddAction("Back", RequestClose, tooltip: "Close (Esc)");
+        AddAction("Refresh", () => Browser?.Refresh(), tooltip: "Look for games on your network again");
+        AddAction("Join", JoinAddress, primary: true, tooltip: "Join the game at the address in the box").Name = "JoinButton";
 
         Browser ??= new LanBrowser { Name = "Browser" };
         Browser.Changed += Refresh;
@@ -87,6 +76,7 @@ public partial class JoinScreen : PanelContainer
 
     public override void _ExitTree()
     {
+        base._ExitTree();
         if (Browser is not null)
             Browser.Changed -= Refresh;
     }

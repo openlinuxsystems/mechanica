@@ -1,5 +1,6 @@
 using Godot;
 using Mechanica.Core.Net;
+using Mechanica.Core.Saves;
 using Mechanica.Core.Ui;
 using Mechanica.Game.Editor;
 using Mechanica.Game.Menus;
@@ -191,6 +192,11 @@ public partial class LanguageTest : StagedTest
                 _keys.UnionWith(Enum.GetNames<Core.Survival.GameMode>());
                 _keys.UnionWith(Walk(_main).OfType<Building.HandTool>().Select(t => t.ToolName));
                 _keys.UnionWith(TutorialHints.Load().Hints.Select(h => h.Text));
+                var now = DateTimeOffset.Now;
+                foreach (var seconds in new[] { 0, 300, 4000 })
+                    SaveSummary.FormatPlayTime(seconds, (key, _) => { _keys.Add(key); return key; });
+                foreach (var minutes in new[] { 0, 1, 5, 61, 180, 1500, 4000 })
+                    HomeScreen.Ago(now.AddMinutes(-minutes), now, (key, _) => { _keys.Add(key); return key; });
                 foreach (var file in Directory.EnumerateFiles(ProjectSettings.GlobalizePath("res://scripts"), "*.cs", SearchOption.AllDirectories))
                     _keys.UnionWith(LocKeys.In(File.ReadAllText(file)));
                 var keys = _keys.Where(k => k.Any(char.IsLetter)).ToDictionary(k => k, k => k, StringComparer.Ordinal);
