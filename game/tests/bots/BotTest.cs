@@ -10,6 +10,7 @@ using Mechanica.Core.Survival;
 using Mechanica.Core.World;
 using Mechanica.Game.Bots;
 using Mechanica.Game.Mods;
+using Mechanica.Scripting;
 using Instance = Mechanica.Game.Tests.NetTestHarness.Instance;
 
 namespace Mechanica.Game.Tests;
@@ -87,7 +88,7 @@ public partial class BotTest : StagedTest
             {
                 var placed = Value<PlacePartResult>(_results[0]);
                 (_soil, _soilPart) = (placed.Creation, placed.Part);
-                Request(SurvivalActions.Plant, new PartUseArgs(_soil, _soilPart, SlotOf(Seed)));
+                Request(ScriptRuntime.UseItem, new UseItemArgs(SlotOf(Seed), Creation: _soil, Part: _soilPart));
             }
             if (_results.Count < 2 || _client.Main.Survival.Soil.GetValueOrDefault((_soil, _soilPart)) is not { Seed: not null })
                 return false;
