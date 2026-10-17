@@ -1,4 +1,6 @@
 using Godot;
+using Mechanica.Core.Characters;
+using Mechanica.Core.Net;
 using Mechanica.Core.Player;
 using FileAccess = Godot.FileAccess;
 
@@ -23,8 +25,11 @@ public partial class PlayerController : CharacterBody3D
     private Node3D _head = null!;
     private SpringArm3D _cameraArm = null!;
     private MeshInstance3D _bodyMesh = null!;
+    private Node3D? _character;
     private CollisionShape3D _shape = null!;
     private bool _dead;
+    private CharacterGesture _gesture;
+    private byte _gestureCount;
     private Func<(Vector3 Feet, Vector3 Velocity)?>? _seat;
 
     /// <summary>Peer that controls this player (1 is the host).</summary>
@@ -60,7 +65,7 @@ public partial class PlayerController : CharacterBody3D
             _dead = value;
             Velocity = Vector3.Zero;
             _shape.SetDeferred(CollisionShape3D.PropertyName.Disabled, value || _seat is not null);
-            _bodyMesh.Visible = !value && (ThirdPerson || !Camera.Current);
+            UpdateBodyVisibility();
         }
     }
 
@@ -110,8 +115,79 @@ public partial class PlayerController : CharacterBody3D
         set
         {
             _cameraArm.SpringLength = value ? ThirdPersonDistance : 0f;
-            _bodyMesh.Visible = !_dead && (value || !Camera.Current);
+            UpdateBodyVisibility();
         }
+    }
+
+    /// <summary>
+    /// Where the water surface is (world Y), or null when there is no water. Set by whoever owns the world; the
+    /// player swims when deep enough below it.
+    /// </summary>
+    public Func<float>? WaterLevel { get; set; }
+
+    /// <summary>How far the feet are below the water surface in metres (0 or less: out of the water).</summary>
+    public float WaterDepth => WaterLevel is { } level ? level() - GlobalPosition.Y : 0f;
+
+    /// <summary>
+    /// What this player holds, as others see it. The local player's tools set it; it travels with the input,
+    /// so the host and other players see it too.
+    /// </summary>
+    public CharacterProp HeldProp { get; set; }
+
+    /// <summary>How the body stands after the last tick (or snapshot, for players this peer does not simulate).</summary>
+    public BodyFlags Body { get; private set; } = BodyFlags.OnFloor;
+
+    /// <summary>The prop shown in hand after the last tick or snapshot.</summary>
+    public CharacterProp ShownProp { get; private set; }
+
+    /// <summary>The newest gesture after the last tick or snapshot, and its count.</summary>
+    public (CharacterGesture Gesture, byte Count) ShownGesture { get; private set; }
+
+    /// <summary>The character model drawn for this player, or null while it is drawn as a capsule.</summary>
+    public Node3D? Character => _character;
+
+    /// <summary>Everything the character's animation needs this frame.</summary>
+    public CharacterPose Pose => new(
+        Velocity.ToNumerics(), Rotation.Y, _head.Rotation.X,
+        Body.HasFlag(BodyFlags.OnFloor), Body.HasFlag(BodyFlags.Swimming), Body.HasFlag(BodyFlags.Crawl), Seated || Body.HasFlag(BodyFlags.Seated),
+        ShownProp, ShownGesture.Gesture, ShownGesture.Count);
+
+    /// <summary>
+    /// Plays a gesture on this player (the local player's tools and items call it). Like <see cref="HeldProp"/> it
+    /// travels with the input.
+    /// </summary>
+    public void Gesture(CharacterGesture gesture)
+    {
+        if (gesture == CharacterGesture.None)
+            return;
+        _gesture = gesture;
+        _gestureCount++;
+    }
+
+    /// <summary>Draws <paramref name="model"/> as this player instead of the capsule (null goes back to the capsule).</summary>
+    public void SetCharacter(Node3D? model)
+    {
+        if (_character == model)
+            return;
+        if (_character is not null)
+        {
+            RemoveChild(_character);
+            _character.QueueFree();
+        }
+        _character = model;
+        if (model is not null)
+            AddChild(model);
+        UpdateBodyVisibility();
+    }
+
+    /// <summary>True when this player's body is drawn: alive, and not seen from inside its own head.</summary>
+    public bool BodyVisible => !_dead && (ThirdPerson || !Camera.Current);
+
+    private void UpdateBodyVisibility()
+    {
+        _bodyMesh.Visible = _character is null && BodyVisible;
+        if (_character is not null)
+            _character.Visible = BodyVisible;
     }
 
     /// <summary>Loads <see cref="DefaultSettingsPath"/>, failing loudly on bad data.</summary>
@@ -164,7 +240,7 @@ public partial class PlayerController : CharacterBody3D
     {
         if (!Simulated)
             return;
-        var input = Step(CurrentInput, (float)delta);
+        var input = Step(CurrentInput with { Prop = HeldProp, Gesture = _gesture, GestureCount = _gestureCount }, (float)delta);
         Stepped?.Invoke(input);
     }
 
@@ -177,22 +253,29 @@ public partial class PlayerController : CharacterBody3D
         input = input.Sanitized(Settings);
         LastInput = input;
         ApplyLook(input.Yaw, input.Pitch);
+        ShownProp = input.Prop;
+        ShownGesture = (input.Gesture, input.GestureCount);
         if (_dead)
             return input;
         if (_seat is not null)
         {
             SitStill();
+            Body = BodyFlags.Seated;
             return input;
         }
 
         var wasOnFloor = IsOnFloor();
-        var velocity = PlayerMotor.Step(Velocity.ToNumerics(), wasOnFloor, input, Settings, delta, SpeedScale);
+        var depth = WaterDepth;
+        var velocity = PlayerMotor.Step(Velocity.ToNumerics(), wasOnFloor, input, Settings, delta, SpeedScale, depth);
         Velocity = velocity.ToGodot();
         MoveAndSlide();
         if (!wasOnFloor && IsOnFloor() && velocity.Y < 0)
             Landed?.Invoke(-velocity.Y);
         if (PushesBodies)
             PushRigidBodies(delta);
+        Body = (IsOnFloor() ? BodyFlags.OnFloor : 0)
+            | (PlayerMotor.IsSwimming(WaterDepth, Settings) ? BodyFlags.Swimming : 0)
+            | (input.Crawl ? BodyFlags.Crawl : 0);
         return input;
     }
 
@@ -212,6 +295,14 @@ public partial class PlayerController : CharacterBody3D
         GlobalPosition = position;
         Velocity = velocity;
         ApplyLook(yaw, pitch);
+    }
+
+    /// <summary>Shows how a player this peer does not simulate stands and what they hold, from a host snapshot.</summary>
+    public void ApplyBody(BodyFlags body, CharacterProp prop, CharacterGesture gesture, byte gestureCount)
+    {
+        Body = body;
+        ShownProp = prop;
+        ShownGesture = (gesture, gestureCount);
     }
 
     private void ApplyLook(float yaw, float pitch)

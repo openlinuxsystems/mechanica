@@ -41,6 +41,9 @@ public partial class PlayerSync : Node
     /// <summary>Where player nodes are added. Set before adding to the tree.</summary>
     public Node3D PlayersRoot { get; init; } = null!;
 
+    /// <summary>Where the water surface is (world Y), or null for a world without water. Given to every player.</summary>
+    public Func<float>? WaterLevel { get; init; }
+
     /// <summary>Spawn point for slot 0; other slots are offset from it. Set before adding to the tree.</summary>
     public Func<Transform3D> SpawnPoint { get; init; } = () => Transform3D.Identity;
 
@@ -145,7 +148,11 @@ public partial class PlayerSync : Node
         p.GlobalPosition.ToNumerics(),
         p.Velocity.ToNumerics(),
         p.Rotation.Y,
-        p.Head.Rotation.X))]);
+        p.Head.Rotation.X,
+        p.Body,
+        p.ShownProp,
+        p.ShownGesture.Gesture,
+        p.ShownGesture.Count))]);
 
     private void ClientTick(float delta)
     {
@@ -168,7 +175,10 @@ public partial class PlayerSync : Node
         foreach (var (peer, buffer) in _buffers)
         {
             if (buffer.Sample(renderTick) is { } s && _players.TryGetValue(peer, out var player))
+            {
                 player.ApplyState(s.Position.ToGodot(), s.Velocity.ToGodot(), s.Yaw, s.Pitch);
+                player.ApplyBody(s.Body, s.Prop, s.Gesture, s.GestureCount);
+            }
         }
     }
 
@@ -343,7 +353,7 @@ public partial class PlayerSync : Node
 
     private PlayerController AddPlayer(int peer, Transform3D transform)
     {
-        var player = new PlayerController { Name = $"Player{peer}", PeerId = peer };
+        var player = new PlayerController { Name = $"Player{peer}", PeerId = peer, WaterLevel = WaterLevel };
         PlayersRoot.AddChild(player);
         player.GlobalTransform = transform;
         player.CurrentInput = PlayerInput.None with { Yaw = player.Rotation.Y };

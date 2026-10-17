@@ -1,0 +1,29 @@
+{
+  // How player characters are animated (engine settings, not moddable). Loaded by game/scripts/Player/CharacterAssets.cs.
+  // The skeleton and the clip names are fixed in src/Mechanica.Core/Characters/CharacterRig.cs.
+  "animations": "vanilla:meshes/characters/humanoid_animations.glb",
+  "hand_tools": "vanilla:meshes/characters/hand_tools.glb",
+  // Ground speed (m/s) each moving clip is authored for; it plays one cycle per clip length at that speed.
+  "clip_speeds": {
+    "walk": 1.5,
+    "jog": 4.0,
+    "run": 7.0,
+    "crouch_walk": 1.5,
+    "swim": 2.5
+  },
+  "step_phases": [0.0, 0.5],
+  "stroke_phases": [0.25, 0.75],
+  "mode_fade": 0.15,
+  "hold_fade": 0.2,
+  "gesture_fade_in": 0.06,
+  "gesture_fade_out": 0.12,
+  "air_grace": 0.15,
+  "jump_detect_speed": 1.5,
+  "land_min_speed": 2.5,
+  "hard_land_speed": 9.0,
+  "min_step_speed": 0.3,
+  "max_body_turn_degrees": 60.0,
+  "body_turn_rate": 540.0,
+  "seated_offset": 0.0,
+  "head_pitch_share": 0.6
+}

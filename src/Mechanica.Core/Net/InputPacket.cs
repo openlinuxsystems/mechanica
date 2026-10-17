@@ -1,4 +1,5 @@
 using System.Buffers.Binary;
+using Mechanica.Core.Characters;
 using Mechanica.Core.Player;
 
 namespace Mechanica.Core.Net;
@@ -18,9 +19,11 @@ public static class InputPacket
     /// <summary>Most inputs one packet may carry.</summary>
     public const int MaxInputs = 8;
 
-    private const int EntrySize = 4 + 4 * 4 + 1;
+    private const int EntrySize = 4 + 4 * 4 + 1 + 3;
     private const byte JumpFlag = 1;
     private const byte SprintFlag = 2;
+    private const byte CrawlFlag = 4;
+    private const byte AllFlags = JumpFlag | SprintFlag | CrawlFlag;
 
     /// <summary>Encodes 1 to <see cref="MaxInputs"/> inputs.</summary>
     public static byte[] Encode(IReadOnlyList<SequencedInput> inputs)
@@ -37,7 +40,10 @@ public static class InputPacket
             BinaryPrimitives.WriteSingleLittleEndian(span[8..], input.MoveZ);
             BinaryPrimitives.WriteSingleLittleEndian(span[12..], input.Yaw);
             BinaryPrimitives.WriteSingleLittleEndian(span[16..], input.Pitch);
-            span[20] = (byte)((input.Jump ? JumpFlag : 0) | (input.Sprint ? SprintFlag : 0));
+            span[20] = (byte)((input.Jump ? JumpFlag : 0) | (input.Sprint ? SprintFlag : 0) | (input.Crawl ? CrawlFlag : 0));
+            span[21] = (byte)input.Prop;
+            span[22] = (byte)input.Gesture;
+            span[23] = input.GestureCount;
             span = span[EntrySize..];
         }
         return bytes;
@@ -56,7 +62,7 @@ public static class InputPacket
         for (var i = 0; i < count; i++)
         {
             var flags = span[20];
-            if ((flags & ~(JumpFlag | SprintFlag)) != 0)
+            if ((flags & ~AllFlags) != 0)
                 return null;
             result[i] = new SequencedInput(
                 BinaryPrimitives.ReadUInt32LittleEndian(span),
@@ -66,7 +72,11 @@ public static class InputPacket
                     BinaryPrimitives.ReadSingleLittleEndian(span[12..]),
                     BinaryPrimitives.ReadSingleLittleEndian(span[16..]),
                     (flags & JumpFlag) != 0,
-                    (flags & SprintFlag) != 0));
+                    (flags & SprintFlag) != 0,
+                    (flags & CrawlFlag) != 0,
+                    (CharacterProp)span[21],
+                    (CharacterGesture)span[22],
+                    span[23]));
             span = span[EntrySize..];
         }
         return result;

@@ -113,6 +113,10 @@ public static class DiagnosticCodes
 
     // 11xx: quests
     public const string QuestInvalid = "MD1101";
+
+    // 12xx: player characters
+    public const string CharacterInvalid = "MD1201";
+    public const string DuplicateCharacter = "MD1202";
 }
 
 /// <summary>Collects diagnostics for one file, filling in the file name.</summary>
