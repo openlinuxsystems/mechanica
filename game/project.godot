@@ -40,3 +40,8 @@ jolt_physics_3d/limits/max_angular_velocity=150.0
 
 ; UI spec §9 and §13: tooltips after 0.25 s of hover.
 timers/tooltip_delay_sec=0.25
+
+[rendering]
+
+; Apple Silicon Macs need ETC2/ASTC textures for the macOS export (game content loads at run time, so this only affects res://).
+textures/vram_compression/import_etc2_astc=true
