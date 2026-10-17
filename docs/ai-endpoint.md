@@ -178,6 +178,24 @@ the content loaded now, so they follow mod reloads.
 | `GetQuestBook` | none | quests: `id`, `name`, `summary`, `requires`, `steps` (`id`, `text`, `kind`, `poi`, `marker`, `target`, `count`, `dialogue`, `choices` with the ids `ChooseQuestOption` takes), rewards (`items`, `reveal`, `flags`) and `outro` |
 | `ListCharacters` | none | `id` (what `ChooseCharacter` takes), `name`, `description` |
 
+## Mod packages
+
+Admin methods that share mods as verified packages, through the same code as the Mod Manager's
+Export, Install and Uninstall ([Packaging Guide](packaging-guide.md) §9 has the format). Packages live in
+one folder (`user://mod_packages`; on Linux `~/.local/share/godot/app_userdata/Mechanica/mod_packages/`):
+methods name a package by its file name there, never by path. Installs and uninstalls take effect with the
+next world and are published on the `mods` topic (`action` `installed` or `uninstalled`). Every
+`problems` entry is `{severity, code, file, message}` with the codes from the Packaging Guide.
+
+| Method | Params | Result |
+|--------|--------|--------|
+| `package.list` | none | `folder`, `packages` `[{file, size}]` |
+| `package.inspect` | `file` | `valid`, `can_install`, `change` (`new`, `upgrade`, `reinstall`, `downgrade`, `replace_broken`), `installed_version`, `manifest` (the package.json), `problems` |
+| `package.export` | `id` | `ok`, `file`, `version`, `sha256`, `files` (count), `skipped`, `problems`; a mod with errors is not exported |
+| `package.install` | `file`, optional `replace` (default false) | `ok`, `id`, `version`, `change`, `installed_version`, `needs_replace` (true when it stopped because a copy is installed), `problems` |
+| `package.uninstall` | `id` | `ok`, `id`, `dependents` (installed mods that need it and stop loading), `problems`; vanilla can't be uninstalled |
+| `package.verify` | `id` | `from_package`, `unchanged`, `problems` (files changed, missing or added since install) |
+
 ## Recording and replay
 
 The host records every state-changing call from every player, bot, script and agent (queries are
