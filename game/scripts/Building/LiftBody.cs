@@ -18,6 +18,9 @@ public partial class LiftBody : StaticBody3D
     /// <summary>The Lift's state as last shown.</summary>
     public LiftState State { get; private set; } = null!;
 
+    /// <summary>World position of the middle of the platform top.</summary>
+    public Vector3 Top => GlobalPosition + new Vector3(0, _shape.Size.Y / 2, 0);
+
     public override void _Ready()
     {
         AddChild(new CollisionShape3D { Name = "Shape", Shape = _shape });

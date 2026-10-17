@@ -4,6 +4,7 @@ using Mechanica.Core.Actions;
 using Mechanica.Core.Creations;
 using Mechanica.Core.Data;
 using Mechanica.Core.Items;
+using Mechanica.Core.Net;
 using Mechanica.Game.Creations;
 using Mechanica.Game.Net;
 using FileAccess = Godot.FileAccess;
@@ -35,6 +36,7 @@ public partial class InventorySync : Node, IInventoryWorld
     private readonly Dictionary<int, Dictionary<InventoryRef, InventoryVersion?>> _viewers = [];
     private readonly Dictionary<InventoryRef, InventoryView> _shown = [];
     private readonly Dictionary<(int Creation, int Part), int> _loops = [];
+    private IReadOnlyList<OpenInventory> _open = [];
     private int _tick;
 
     /// <summary>The session updates travel over. Set before adding to the tree.</summary>
@@ -72,6 +74,15 @@ public partial class InventorySync : Node, IInventoryWorld
 
     /// <summary>Raised on this peer when the host stops showing an inventory, with its reason.</summary>
     public event Action<InventoryRef, string>? ViewClosed;
+
+    /// <summary>
+    /// Every station and container any player has open, as the host last told this peer, for the "in use"
+    /// marks (UI spec §11).
+    /// </summary>
+    public IReadOnlyList<OpenInventory> OpenByAnyone => _open;
+
+    /// <summary>Raised on this peer when <see cref="OpenByAnyone"/> changes.</summary>
+    public event Action? OpenChanged;
 
     /// <inheritdoc/>
     public IEnumerable<Creation> AllCreations => Creations.All;
@@ -161,7 +172,24 @@ public partial class InventorySync : Node, IInventoryWorld
             return;
         Items.Tick((float)delta);
         if (++_tick % ViewInterval == 0)
+        {
             SendViews();
+            SendOpen();
+        }
+    }
+
+    private void SendOpen()
+    {
+        var open = InUseMarks.Open(_viewers.Select(v => new KeyValuePair<int, IEnumerable<InventoryRef>>(v.Key, v.Value.Keys)));
+        if (open.SequenceEqual(_open))
+            return;
+        _open = open;
+        OpenChanged?.Invoke();
+        if (Session.State != NetSession.SessionState.Hosting)
+            return;
+        var json = JsonSerializer.Serialize(open, ActionJson.Options);
+        foreach (var peer in Session.ReadyPeers)
+            RpcId(peer, MethodName.ClientOpen, json);
     }
 
     private void SendViews()
@@ -266,13 +294,36 @@ public partial class InventorySync : Node, IInventoryWorld
         ViewClosed?.Invoke(where, reason);
     }
 
+    /// <summary>Host → client: who has which station or container open.</summary>
+    [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void ClientOpen(string json)
+    {
+        if (Session.State != NetSession.SessionState.Connected)
+            return;
+        try
+        {
+            _open = JsonSerializer.Deserialize<List<OpenInventory>>(json, ActionJson.Options) ?? [];
+        }
+        catch (JsonException e)
+        {
+            GD.PushWarning($"[items] unreadable in-use list from the host: {e.Message}");
+            return;
+        }
+        OpenChanged?.Invoke();
+    }
+
     private void WatchOwn(int peer)
     {
         if (!_viewers.ContainsKey(peer))
             _viewers[peer] = new() { [InventoryRef.OfPlayer(peer)] = null };
     }
 
-    private void OnPeerReady(int peer) => WatchOwn(peer);
+    private void OnPeerReady(int peer)
+    {
+        WatchOwn(peer);
+        if (Session.State == NetSession.SessionState.Hosting && _open.Count > 0)
+            RpcId(peer, MethodName.ClientOpen, JsonSerializer.Serialize(_open, ActionJson.Options));
+    }
 
     private void OnPeerLeft(int peer)
     {
@@ -285,6 +336,8 @@ public partial class InventorySync : Node, IInventoryWorld
         // A new session: a client's peer id changes and the host forgets everyone it showed things to.
         _shown.Clear();
         _viewers.Clear();
+        _open = [];
+        OpenChanged?.Invoke();
         if (Session.IsHost)
             WatchOwn(Session.LocalPeer);
     }
