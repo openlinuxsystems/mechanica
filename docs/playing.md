@@ -55,7 +55,9 @@ stops getting your input.
   minutes while you host), the most players a world you host takes, the server password for worlds you host, and your player name.
 - **Interface**: show or hide the tool bar and key hints, the compass, other players' names over their heads, how opaque the chat background is, and a
   colour-blind filter (Protanopia, Deuteranopia or Tritanopia) that corrects colours on the whole screen
-  so ones that look alike stay apart.
+  so ones that look alike stay apart, and the **Language** of menus and the HUD. The game ships in English; a
+  language file dropped into your `lang` folder (Options shows where) adds that language to the list. See
+  [Translating](translating.md).
 
 Everything else applies as you change it. **Reset to Defaults** resets the open tab after asking, and
 closing Options saves your settings in `settings.json` in the game's user data folder. Settings are

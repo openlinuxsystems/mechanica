@@ -2,6 +2,7 @@ using Godot;
 using Mechanica.Core.Actions;
 using Mechanica.Core.Building;
 using Mechanica.Core.Input;
+using Mechanica.Game.Ui;
 
 namespace Mechanica.Game.Building;
 
@@ -34,7 +35,8 @@ public partial class PaintTool : HandTool
     public bool Erase(Action<ActionResult>? done = null) => Send(null, done);
 
     /// <inheritdoc/>
-    public override string HudText() => $"Paint Tool ({Color})   {Key(InputActions.Rotate)}/{Key(InputActions.RotateBack)} colour  {Key(InputActions.Primary)} paint  {Key(InputActions.Secondary)} remove paint{Status}";
+    public override string HudText() =>
+        Loc.T("Paint Tool ({0})   {1}/{2} colour  {3} paint  {4} remove paint", Color, Key(InputActions.Rotate), Key(InputActions.RotateBack), Key(InputActions.Primary), Key(InputActions.Secondary)) + Status;
 
     /// <inheritdoc/>
     protected override bool HandleInput(InputEvent @event)

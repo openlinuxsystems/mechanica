@@ -1,5 +1,6 @@
 using Godot;
 using Mechanica.Core.Data;
+using Mechanica.Game.Ui;
 using Mechanica.Scripting;
 using Mechanica.Scripting.Editor;
 using FileAccess = Godot.FileAccess;
@@ -89,7 +90,7 @@ public partial class LuaPanel : VBoxContainer
         AddChild(_path);
         var buttons = new HFlowContainer();
         AddChild(buttons);
-        _templates = new OptionButton { TooltipText = "Script template" };
+        _templates = Loc.Verbatim(new OptionButton { TooltipText = Loc.T("Script template") });
         foreach (var template in Templates)
             _templates.AddItem(template.Title);
         buttons.AddChild(_templates);
@@ -122,7 +123,8 @@ public partial class LuaPanel : VBoxContainer
 
         var lower = new TabContainer { CustomMinimumSize = new Vector2(0, 160), SizeFlagsVertical = SizeFlags.ExpandFill };
         split.AddChild(lower);
-        _api = new ItemList { Name = "API", TooltipText = "Double-click to insert" };
+        // The API list is reference text, in English like the handbook.
+        _api = Loc.Verbatim(new ItemList { Name = "API", TooltipText = Loc.T("Double-click to insert") });
         foreach (var entry in LuaApi.Entries)
         {
             var index = _api.AddItem($"{entry.Signature}  —  {entry.Summary}");
@@ -130,7 +132,7 @@ public partial class LuaPanel : VBoxContainer
         }
         _api.ItemActivated += i => InsertApi((int)i);
         lower.AddChild(_api);
-        _console = new RichTextLabel { Name = "Console", BbcodeEnabled = true, SelectionEnabled = true, ScrollFollowing = true };
+        _console = Loc.Verbatim(new RichTextLabel { Name = "Console", BbcodeEnabled = true, SelectionEnabled = true, ScrollFollowing = true });
         lower.AddChild(_console);
 
         _status = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart };
@@ -164,12 +166,12 @@ public partial class LuaPanel : VBoxContainer
         if (Editor.Document is not { } doc)
             return "Open or create a part first.";
         if (Templates.FirstOrDefault(t => t.Id == templateId) is not { } template)
-            return $"No script template '{templateId}'.";
+            return Loc.T("No script template '{0}'.", templateId);
         if (doc.Definition.Script is null)
             doc.Apply("Add script", d => d with { Script = LuaTemplates.PathFor(d.Id ?? "script") });
         Reload();
         if (ScriptFile is null)
-            return $"The script path '{doc.Definition.Script}' can't be used.";
+            return Loc.T("The script path '{0}' can't be used.", doc.Definition.Script);
         _code.Text = template.For(doc.Definition.Name ?? doc.Definition.Id ?? "part");
         return null;
     }
@@ -190,19 +192,19 @@ public partial class LuaPanel : VBoxContainer
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
-            return Finish(new LuaSaveResult(false, null, null, $"Could not write {ScriptKey}: {e.Message}"));
+            return Finish(new LuaSaveResult(false, null, null, Loc.T("Could not write {0}: {1}", ScriptKey, e.Message)));
         }
         _savedText = text;
         var error = LuaSyntax.Check(text);
         MarkError(error);
         if (error is not null)
-            return Finish(new LuaSaveResult(true, error, null, $"Saved {ScriptKey} with an error on {error}. The sandbox keeps the old code."));
+            return Finish(new LuaSaveResult(true, error, null, Loc.T("Saved {0} with an error on {1}. The sandbox keeps the old code.", ScriptKey, error)));
         if (Runtime() is not { } runtime || !runtime.Scripts.Contains(ScriptKey))
-            return Finish(new LuaSaveResult(true, null, null, $"Saved {ScriptKey}. Export and Test in Sandbox to run it."));
+            return Finish(new LuaSaveResult(true, null, null, Loc.T("Saved {0}. Export and Test in Sandbox to run it.", ScriptKey)));
         var reload = runtime.Reload(ScriptKey);
         return Finish(new LuaSaveResult(true, null, reload, reload.Ok
-            ? $"Saved {ScriptKey}; reloaded on {reload.Instances} part{(reload.Instances == 1 ? "" : "s")} in the sandbox."
-            : $"Saved {ScriptKey}, but the sandbox refused it: {reload.Error}"));
+            ? Loc.T(reload.Instances == 1 ? "Saved {0}; reloaded on {1} part in the sandbox." : "Saved {0}; reloaded on {1} parts in the sandbox.", ScriptKey, reload.Instances)
+            : Loc.T("Saved {0}, but the sandbox refused it: {1}", ScriptKey, reload.Error)));
     }
 
     /// <summary>Inserts an API entry's call at the caret (a hook becomes an empty function).</summary>
@@ -227,7 +229,7 @@ public partial class LuaPanel : VBoxContainer
             ? "No part open."
             : ScriptKey is null
                 ? "This part has no script. Pick a template and press New from template, or set Script on the Behaviour tab."
-                : $"{ScriptKey}{(_savedText is null ? "  (new file, not saved yet)" : "")}";
+                : _savedText is null ? Loc.T("{0}  (new file, not saved yet)", ScriptKey) : ScriptKey;
         ShowStatus(null);
     }
 
@@ -260,8 +262,8 @@ public partial class LuaPanel : VBoxContainer
 
     private void ShowStatus(string? message)
     {
-        var dirty = IsDirty ? "Unsaved changes. " : "";
-        _status.Text = message ?? (ScriptFile is null ? "" : $"{dirty}Ctrl+S saves and reloads the script.");
+        var saves = Loc.T("Ctrl+S saves and reloads the script.");
+        _status.Text = message ?? (ScriptFile is null ? "" : IsDirty ? $"{Loc.T("Unsaved changes.")} {saves}" : saves);
     }
 
     private void RefreshConsole()
@@ -272,14 +274,14 @@ public partial class LuaPanel : VBoxContainer
             return;
         _lastShown = last;
         _console.Text = messages.Count == 0
-            ? "Script output from the Test Sandbox shows here."
+            ? Loc.T("Script output from the Test Sandbox shows here.")
             : string.Join("\n", messages.TakeLast(ConsoleLines).Select(Line));
     }
 
     private string Line(ScriptMessage m)
     {
         var color = m.Kind switch { ScriptMessageKind.Error => "#ff7070", ScriptMessageKind.Warning => "#ffd060", _ => "#d0d0d0" };
-        var where = m.Part is { } part ? $" part {part}" : "";
+        var where = m.Part is { } part ? " " + Loc.T("part {0}", part) : "";
         var text = $"[color={color}]{Escape(m.Script + where)}:[/color] {Escape(m.Text)}";
         // The open part's own script stands out.
         return m.Script == ScriptKey ? $"[b]{text}[/b]" : text;

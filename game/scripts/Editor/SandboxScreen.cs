@@ -6,6 +6,7 @@ using Mechanica.Core.Net;
 using Mechanica.Game.Creations;
 using Mechanica.Game.Mods;
 using Mechanica.Game.Player;
+using Mechanica.Game.Ui;
 
 namespace Mechanica.Game.Editor;
 
@@ -120,8 +121,8 @@ public partial class SandboxScreen : Control
             _instances[i].Main.ForceOverlay.Enabled = _forceOverlay.ButtonPressed && i == _active;
         }
         _status.Text = string.Join("\n", _instances.Select((inst, i) =>
-            $"{(i == _active ? "▶ " : "  ")}{inst.Name}: {inst.Main.Session.State}, peer {inst.Main.Session.LocalPeer}, "
-            + $"{inst.Main.PlayerSync.Players.Count} players, {inst.Main.Creations.All.Count()} creations"));
+            (i == _active ? "▶ " : "  ") + Loc.T("{0}: {1}, peer {2}, {3} players, {4} creations",
+                inst.Name, inst.Main.Session.State, inst.Main.Session.LocalPeer, inst.Main.PlayerSync.Players.Count, inst.Main.Creations.All.Count())));
     }
 
     public override void _UnhandledInput(InputEvent @event)
@@ -156,7 +157,7 @@ public partial class SandboxScreen : Control
             instance.Main.ReloadMods(_content);
         RefreshParts();
         var errors = _content.Diagnostics.Count(d => d.Severity == DiagnosticSeverity.Error);
-        _result.Text = errors == 0 ? $"Mods reloaded: {_content.Parts.Count} parts." : $"Mods reloaded with {errors} error(s); see the log.";
+        _result.Text = errors == 0 ? Loc.T("Mods reloaded: {0} parts.", _content.Parts.Count) : Loc.T("Mods reloaded with {0} error(s); see the log.", errors);
         foreach (var d in _content.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error))
             GD.PushWarning($"[sandbox] {d}");
     }
@@ -219,7 +220,7 @@ public partial class SandboxScreen : Control
         var yaw = Mathf.RadToDeg(player?.Rotation.Y ?? 0);
         Active.Main.Actions.Request(CreationActions.SpawnPart, new SpawnPartArgs(partId, [at.X, at.Y, at.Z], yaw), result =>
         {
-            _result.Text = result.Ok ? $"Spawned {partId} (creation {result.Value})." : $"Spawn refused: {result.Message}";
+            _result.Text = result.Ok ? Loc.T("Spawned {0} (creation {1}).", partId, result.Value) : Loc.T("Spawn refused: {0}", result.Message);
             done?.Invoke(result);
         });
     }
@@ -238,7 +239,7 @@ public partial class SandboxScreen : Control
         var yaw = Mathf.RadToDeg(player?.Rotation.Y ?? 0) + 180f;
         Active.Main.Actions.Request(BotActions.SpawnBot, new SpawnBotArgs(botId, [at.X, at.Y, at.Z], yaw), result =>
         {
-            _result.Text = result.Ok ? $"Spawned bot {botId}." : $"Bot spawn refused: {result.Message}";
+            _result.Text = result.Ok ? Loc.T("Spawned bot {0}.", botId) : Loc.T("Bot spawn refused: {0}", result.Message);
             done?.Invoke(result);
         });
     }
@@ -247,7 +248,7 @@ public partial class SandboxScreen : Control
     public void Clear(Action<ActionResult>? done = null) =>
         Active.Main.Actions.Request(CreationActions.ClearCreations, new NoArgs(), result =>
         {
-            _result.Text = result.Ok ? "Cleared." : $"Clear refused: {result.Message}";
+            _result.Text = result.Ok ? Loc.T("Cleared.") : Loc.T("Clear refused: {0}", result.Message);
             done?.Invoke(result);
         });
 
@@ -262,7 +263,7 @@ public partial class SandboxScreen : Control
                 return true;
             }
         }
-        _result.Text = $"Could not host: {Host.Main.Session.LastMessage}";
+        _result.Text = Loc.T("Could not host: {0}", Host.Main.Session.LastMessage);
         return false;
     }
 
@@ -309,7 +310,7 @@ public partial class SandboxScreen : Control
             if (i == _active)
                 continue;
             var pane = new VBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
-            pane.AddChild(new Label { Text = $"{_instances[i].Name} (Tab to switch)" });
+            pane.AddChild(new Label { Text = Loc.T("{0} (Tab to switch)", _instances[i].Name) });
             pane.AddChild(new TextureRect
             {
                 Texture = _instances[i].Viewport.GetTexture(),
@@ -356,7 +357,7 @@ public partial class SandboxScreen : Control
         _filter = new LineEdit { PlaceholderText = "Filter parts" };
         _filter.TextChanged += _ => RefreshParts();
         column.AddChild(_filter);
-        _parts = new ItemList { CustomMinimumSize = new Vector2(0, 200) };
+        _parts = Loc.Verbatim(new ItemList { CustomMinimumSize = new Vector2(0, 200) });
         _parts.ItemActivated += i => Spawn(_partIds[(int)i]);
         column.AddChild(_parts);
         var row = new HFlowContainer();
@@ -370,7 +371,7 @@ public partial class SandboxScreen : Control
         AddButton(row, "Reload mods", ReloadContent);
         var botRow = new HBoxContainer();
         column.AddChild(botRow);
-        _bots = new OptionButton { SizeFlagsHorizontal = SizeFlags.ExpandFill, FitToLongestItem = false };
+        _bots = Loc.Verbatim(new OptionButton { SizeFlagsHorizontal = SizeFlags.ExpandFill, FitToLongestItem = false });
         botRow.AddChild(_bots);
         AddButton(botRow, "Spawn bot", () =>
         {
@@ -382,7 +383,7 @@ public partial class SandboxScreen : Control
         AddButton(net, "Add local client", () =>
         {
             if (AddLocalClient() is null && _instances.Count > MaxLocalClients)
-                _result.Text = $"At most {MaxLocalClients} local clients.";
+                _result.Text = Loc.T("At most {0} local clients.", MaxLocalClients);
         });
         AddButton(net, "Remove client", RemoveLocalClient);
         _collisionOverlay = new CheckBox { Text = "Show collision and centre of mass" };
@@ -399,7 +400,7 @@ public partial class SandboxScreen : Control
         column.AddChild(_forceOverlay);
         _result = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart };
         column.AddChild(_result);
-        _status = new Label { Modulate = new Color(1, 1, 1, 0.8f) };
+        _status = Loc.Verbatim(new Label { Modulate = new Color(1, 1, 1, 0.8f) });
         column.AddChild(_status);
         AddButton(column, "Back", EmitBack);
     }

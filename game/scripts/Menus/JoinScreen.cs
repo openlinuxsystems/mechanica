@@ -48,13 +48,13 @@ public partial class JoinScreen : PanelContainer
         AddChild(column);
         column.AddChild(new Label { Text = "Join game", ThemeTypeVariation = "HeaderLarge", HorizontalAlignment = HorizontalAlignment.Center });
         column.AddChild(new Label { Text = "Games on your network" });
-        _list = new ItemList { CustomMinimumSize = new Vector2(0, 200) };
+        _list = Loc.Verbatim(new ItemList { CustomMinimumSize = new Vector2(0, 200) });
         _list.ItemActivated += i => JoinListed((int)i);
         _list.ItemSelected += i => _address.Text = _shown[(int)i].Endpoint.ToString();
         column.AddChild(_list);
         var row = new HBoxContainer();
         column.AddChild(row);
-        _address = new LineEdit { PlaceholderText = $"address:port (port {NetProtocol.DefaultPort} if left out)", SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        _address = new LineEdit { PlaceholderText = Loc.T("address:port (port {0} if left out)", NetProtocol.DefaultPort), SizeFlagsHorizontal = SizeFlags.ExpandFill };
         _address.TextSubmitted += _ => JoinAddress();
         row.AddChild(_address);
         _password = new LineEdit
@@ -96,7 +96,7 @@ public partial class JoinScreen : PanelContainer
     {
         var entry = _shown[index];
         if (!entry.Session.Compatible)
-            _status.Text = $"That game runs another version of {Core.MechanicaInfo.GameName} (protocol {entry.Session.Protocol}, this is {NetProtocol.Version}).";
+            _status.Text = Loc.T("That game runs another version of {0} (protocol {1}, this is {2}).", Core.MechanicaInfo.GameName, entry.Session.Protocol, NetProtocol.Version);
         else if (!entry.Session.HasRoom)
             _status.Text = "That game is full.";
         else if (entry.Session.Password && _password.Text.Length == 0)
@@ -127,13 +127,13 @@ public partial class JoinScreen : PanelContainer
         foreach (var entry in _shown)
         {
             var s = entry.Session;
-            var text = $"{s.World}  ·  {s.Host}  ·  {s.Players}/{s.MaxPlayers} players  ·  {s.Mode}{(s.Password ? "  ·  password" : "")}  ·  {entry.Endpoint}";
-            var index = _list.AddItem(s.Compatible ? text : $"{text}  (other version)");
-            _list.SetItemTooltip(index, s.Mods.Count == 0 ? "No mods" : "Mods: " + string.Join(", ", s.Mods));
+            var text = $"{s.World}  ·  {s.Host}  ·  {Loc.T("{0}/{1} players", s.Players, s.MaxPlayers)}  ·  {(Enum.TryParse<Core.Survival.GameMode>(s.Mode, true, out var mode) ? Loc.T(mode.ToString()) : s.Mode)}{(s.Password ? "  ·  " + Loc.T("password") : "")}  ·  {entry.Endpoint}";
+            var index = _list.AddItem(s.Compatible ? text : Loc.T("{0}  (other version)", text));
+            _list.SetItemTooltip(index, s.Mods.Count == 0 ? Loc.T("No mods") : Loc.T("Mods: {0}", string.Join(", ", s.Mods)));
             if (!s.Compatible || !s.HasRoom)
                 _list.SetItemCustomFgColor(index, UiTokens.Disabled);
         }
         if (_shown.Count == 0)
-            _list.AddItem("Looking for games…", selectable: false);
+            _list.AddItem(Loc.T("Looking for games…"), selectable: false);
     }
 }

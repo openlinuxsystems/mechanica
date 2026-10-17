@@ -5,6 +5,7 @@ using Mechanica.Game.Net;
 using Mechanica.Game.Player;
 using Mechanica.Game.Settings;
 using Mechanica.Game.Survival;
+using Mechanica.Game.Ui;
 
 namespace Mechanica.Game.Building;
 
@@ -79,9 +80,11 @@ public partial class ToolBelt : Node
             return;
         var layer = new CanvasLayer { Name = "Hud" };
         // Bottom left, clear of the connect panel at the top.
-        _hud = new Label { Name = "ToolLabel", GrowVertical = Control.GrowDirection.Begin };
+        // Built from translated pieces (tool names, each tool's line) around item names.
+        _hud = Loc.Verbatim(new Label { Name = "ToolLabel", GrowVertical = Control.GrowDirection.Begin, AutowrapMode = TextServer.AutowrapMode.WordSmart });
         layer.AddChild(_hud);
-        _hud.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.BottomLeft, Control.LayoutPresetMode.KeepSize, 16);
+        LayoutHud();
+        GetViewport().SizeChanged += LayoutHud;
         var crosshair = new Label { Name = "Crosshair", Text = "+", HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
         layer.AddChild(crosshair);
         crosshair.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.Center);
@@ -94,7 +97,21 @@ public partial class ToolBelt : Node
             return;
         _hud.Visible = GameSettings.Current.Interface.ShowHotbar;
         if (_hud.Visible)
-            _hud.Text = $"[{GameInput.Label(InputActions.Hotbar(1))}-{GameInput.Label(InputActions.Hotbar(_tools.Count))}] {string.Join("  ", _tools.Select(t => t.Active ? $"[{t.ToolName}]" : t.ToolName))}\n{Current.HudText()}";
+            _hud.Text = $"[{GameInput.Label(InputActions.Hotbar(1))}-{GameInput.Label(InputActions.Hotbar(_tools.Count))}] {string.Join("  ", _tools.Select(t => t.Active ? $"[{Loc.T(t.ToolName)}]" : Loc.T(t.ToolName)))}\n{Current.HudText()}";
+    }
+
+    public override void _ExitTree()
+    {
+        if (_hud is not null)
+            GetViewport().SizeChanged -= LayoutHud;
+    }
+
+    // Bottom left, wrapping before the health bar in the middle (longer languages take more lines).
+    private void LayoutHud()
+    {
+        var size = GetViewport().GetVisibleRect().Size;
+        _hud!.CustomMinimumSize = new Vector2(Mathf.Max(240, size.X / 2 - 120 - 48), 0);
+        _hud.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.BottomLeft, Control.LayoutPresetMode.KeepSize, 16);
     }
 
     public override void _UnhandledInput(InputEvent @event)

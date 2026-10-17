@@ -2,6 +2,7 @@ using Godot;
 using Mechanica.Core.Data;
 using Mechanica.Core.Editor;
 using Mechanica.Core.Items;
+using Mechanica.Game.Ui;
 
 namespace Mechanica.Game.Editor;
 
@@ -42,7 +43,7 @@ public partial class RecipePanel : VBoxContainer
             Text = "Recipes in this mod that make this part. Stations are parts with crafting turned on.",
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
         });
-        _list = new ItemList { CustomMinimumSize = new Vector2(0, 100) };
+        _list = Loc.Verbatim(new ItemList { CustomMinimumSize = new Vector2(0, 100) });
         _list.ItemSelected += i => Select((int)i);
         AddChild(_list);
         var buttons = new HFlowContainer();
@@ -139,8 +140,8 @@ public partial class RecipePanel : VBoxContainer
         };
         var result = RecipeExporter.Export(doc.ModDirectory, clean, catalog, extra, _file);
         Editor.ShowProblems(result.Diagnostics, result.Succeeded
-            ? $"Saved recipe {result.QualifiedId} to {RecipeExporter.TargetFile(clean.Id!)}."
-            : "The recipe was not saved.");
+            ? Loc.T("Saved recipe {0} to {1}.", result.QualifiedId, RecipeExporter.TargetFile(clean.Id!))
+            : Loc.T("The recipe was not saved."));
         if (!result.Succeeded)
             return result;
         var saved = RecipeExporter.TargetFile(clean.Id!);
@@ -187,7 +188,10 @@ public partial class RecipePanel : VBoxContainer
         _delete.Disabled = _file is null;
         if (Current is not { } r)
             return;
-        _grid.AddHeading(_file ?? "New recipe (not saved)");
+        if (_file is null)
+            _grid.AddHeading("New recipe (not saved)");
+        else
+            Loc.Verbatim(_grid.AddHeading(_file));
         _grid.AddText("Id", r.Id, v => Edit(x => x with { Id = v }), "snake_case");
         _grid.AddText("Name", r.Name, v => Edit(x => x with { Name = v }), "the output's name");
         _grid.AddText("Stations", string.Join(", ", r.Stations ?? []), v => Edit(x => x with

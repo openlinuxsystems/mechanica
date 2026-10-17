@@ -2,6 +2,7 @@ using Godot;
 using Mechanica.Core;
 using Mechanica.Core.Net;
 using Mechanica.Core.Saves;
+using Mechanica.Game.Ui;
 
 namespace Mechanica.Game.Net;
 
@@ -147,7 +148,7 @@ public partial class NetSession : Node
         var error = peer.CreateServer(port, maxPlayers, NetProtocol.ChannelCount, BandwidthBytesPerSecond, BandwidthBytesPerSecond);
         if (error != Error.Ok)
         {
-            LastMessage = $"Could not host on port {port}: {error}.";
+            LastMessage = Loc.T("Could not host on port {0}: {1}.", port, error);
             return error;
         }
         // Godot's create_server passes its arguments to the ENet host one place off, so the host's
@@ -159,7 +160,7 @@ public partial class NetSession : Node
         Multiplayer.MultiplayerPeer = peer;
         if (Multiplayer is SceneMultiplayer scene)
             scene.ServerRelay = false; // clients only ever talk to the host
-        LastMessage = $"Hosting on port {port}.";
+        LastMessage = Loc.T("Hosting on port {0}.", port);
         SetState(SessionState.Hosting);
         return Error.Ok;
     }
@@ -173,12 +174,12 @@ public partial class NetSession : Node
         var error = peer.CreateClient(endpoint.Address, endpoint.Port, NetProtocol.ChannelCount, BandwidthBytesPerSecond, BandwidthBytesPerSecond);
         if (error != Error.Ok)
         {
-            LastMessage = $"Could not connect to {endpoint}: {error}.";
+            LastMessage = Loc.T("Could not connect to {0}: {1}.", endpoint, error);
             return error;
         }
         Multiplayer.MultiplayerPeer = peer;
         _refusal = null;
-        LastMessage = $"Connecting to {endpoint}…";
+        LastMessage = Loc.T("Connecting to {0}…", endpoint);
         SetState(SessionState.Connecting);
         return Error.Ok;
     }
@@ -252,7 +253,7 @@ public partial class NetSession : Node
     {
         if (State != SessionState.Connecting)
             return;
-        LastMessage = "Connected.";
+        LastMessage = Loc.T("Connected.");
         SetState(SessionState.Connected);
         Joined?.Invoke();
     }

@@ -160,7 +160,8 @@ public partial class ChatPanel : CanvasLayer
     private void Add(ChatMessage message)
     {
         var name = UiTokens.Cyan.ToHtml(false);
-        var label = new RichTextLabel
+        // What players say shows as they wrote it.
+        var label = Loc.Verbatim(new RichTextLabel
         {
             BbcodeEnabled = true,
             FitContent = true,
@@ -169,7 +170,7 @@ public partial class ChatPanel : CanvasLayer
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             MouseFilter = Control.MouseFilterEnum.Ignore,
             Text = $"[color=#{name}]{Escape(message.Name)}[/color]: {Escape(message.Text)}",
-        };
+        });
         _list.AddChild(label);
         _lines.Add((label, Time.GetTicksMsec() / 1000.0));
         while (_lines.Count > ChatLog.Kept)

@@ -56,7 +56,8 @@ public partial class QuestHud : CanvasLayer
         _log.GrowHorizontal = Control.GrowDirection.Begin;
         var box = new VBoxContainer();
         _log.AddChild(box);
-        _logText = new Label { Name = "Text", CustomMinimumSize = new Vector2(320, 0), AutowrapMode = TextServer.AutowrapMode.WordSmart };
+        // Quest names, steps and lines are the mod's own text.
+        _logText = Loc.Verbatim(new Label { Name = "Text", CustomMinimumSize = new Vector2(320, 0), AutowrapMode = TextServer.AutowrapMode.WordSmart });
         box.AddChild(_logText);
         _choices = new VBoxContainer { Name = "Choices", Visible = false };
         box.AddChild(_choices);
@@ -68,13 +69,13 @@ public partial class QuestHud : CanvasLayer
         _dialogue.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.CenterBottom, Control.LayoutPresetMode.KeepSize, 120);
         _dialogue.GrowHorizontal = Control.GrowDirection.Both;
         _dialogue.GrowVertical = Control.GrowDirection.Begin;
-        _dialogueText = new Label
+        _dialogueText = Loc.Verbatim(new Label
         {
             Name = "Text",
             CustomMinimumSize = new Vector2(560, 0),
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
             HorizontalAlignment = HorizontalAlignment.Center,
-        };
+        });
         _dialogue.AddChild(_dialogueText);
 
         Quests.Said += OnSaid;
@@ -194,7 +195,7 @@ public partial class QuestHud : CanvasLayer
             }
         }
         if (pending.Count > 0 && !IsOpen)
-            lines.Add("[J] decide");
+            lines.Add(Loc.T("[{0}] decide", GameInput.Label(InputActions.Logbook)));
         var feet = Players.LocalPlayer?.GlobalPosition;
         foreach (var poi in state.Revealed)
         {
@@ -204,7 +205,7 @@ public partial class QuestHud : CanvasLayer
                 lines.Add(feet is { } f ? $"{name}: {Where(f, site.Centre)}" : name);
             }
         }
-        _logText.Text = lines.Count == 0 ? "No quests right now." : string.Join("\n", lines);
+        _logText.Text = lines.Count == 0 ? Loc.T("No quests right now.") : string.Join("\n", lines);
         _log.Visible = lines.Count > 0 || IsOpen;
 
         _choices.Visible = IsOpen && pending.Count > 0;
@@ -222,7 +223,7 @@ public partial class QuestHud : CanvasLayer
             foreach (var choice in step.Choices)
             {
                 var id = quest.QualifiedId;
-                var button = new Button { Name = $"Choice_{choice.Id}", Text = choice.Text ?? choice.Id };
+                var button = Loc.Verbatim(new Button { Name = $"Choice_{choice.Id}", Text = choice.Text ?? choice.Id });
                 button.Pressed += () => Choose(id, choice.Id!);
                 _choices.AddChild(button);
             }
@@ -233,7 +234,7 @@ public partial class QuestHud : CanvasLayer
     {
         QuestObjectiveKind.Interact or QuestObjectiveKind.Place or QuestObjectiveKind.Craft or QuestObjectiveKind.Crops or QuestObjectiveKind.Raid
             when step.Count > 1 => $" ({progress.Count}/{step.Count})",
-        QuestObjectiveKind.Drive => $" ({(int)progress.Distance}/{(int)step.Distance} m)",
+        QuestObjectiveKind.Drive => " " + Loc.T("({0}/{1} m)", (int)progress.Distance, (int)step.Distance),
         _ => "",
     };
 
@@ -245,7 +246,7 @@ public partial class QuestHud : CanvasLayer
         var distance = MathF.Sqrt(dx * dx + dz * dz);
         // -z is north.
         var bearing = (MathF.Atan2(dx, -dz) * 180f / MathF.PI + 360f) % 360f;
-        string[] names = ["north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west"];
-        return $"{distance:0} m {names[(int)MathF.Round(bearing / 45f) % 8]}";
+        string[] names = [Loc.T("north"), Loc.T("north-east"), Loc.T("east"), Loc.T("south-east"), Loc.T("south"), Loc.T("south-west"), Loc.T("west"), Loc.T("north-west")];
+        return Loc.T("{0} m {1}", $"{distance:0}", names[(int)MathF.Round(bearing / 45f) % 8]);
     }
 }

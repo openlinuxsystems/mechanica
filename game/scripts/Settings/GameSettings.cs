@@ -68,6 +68,7 @@ public partial class GameSettings : Node
             DisplayApplier.ApplyQuality(tree, _current.Graphics);
         DisplayApplier.ApplyAudio(_current.Audio);
         Filter?.Apply(_current.Interface.ColorBlind);
+        Loc.Use(_current.Interface.Language);
         Changed?.Invoke();
     }
 

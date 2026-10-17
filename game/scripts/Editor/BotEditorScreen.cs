@@ -6,6 +6,7 @@ using Mechanica.Core.Bots;
 using Mechanica.Core.Data;
 using Mechanica.Core.Editor;
 using Mechanica.Game.Mods;
+using Mechanica.Game.Ui;
 using Mechanica.Scripting.Editor;
 using FileAccess = Godot.FileAccess;
 
@@ -103,7 +104,7 @@ public partial class BotEditorScreen : Control
         column.AddChild(split);
         var left = new VBoxContainer { CustomMinimumSize = new Vector2(220, 0) };
         left.AddChild(new Label { Text = "Bots in this mod" });
-        _bots = new ItemList { SizeFlagsVertical = SizeFlags.ExpandFill };
+        _bots = Loc.Verbatim(new ItemList { SizeFlagsVertical = SizeFlags.ExpandFill });
         _bots.ItemActivated += i => Open(_bots.GetItemText((int)i));
         _bots.ItemSelected += i => Open(_bots.GetItemText((int)i));
         left.AddChild(_bots);
@@ -111,7 +112,7 @@ public partial class BotEditorScreen : Control
         _tabs = new TabContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
         split.AddChild(_tabs);
         BuildTabs();
-        _status = new RichTextLabel { FitContent = true, BbcodeEnabled = false, CustomMinimumSize = new Vector2(0, 40), ScrollActive = false };
+        _status = Loc.Verbatim(new RichTextLabel { FitContent = true, BbcodeEnabled = false, CustomMinimumSize = new Vector2(0, 40), ScrollActive = false });
         column.AddChild(_status);
         _help = new HelpWindow { Visible = false };
         AddChild(_help);
@@ -148,12 +149,12 @@ public partial class BotEditorScreen : Control
     public bool New(string template, string id)
     {
         if (ModDirectory is null || !Templates.TryGetValue(template, out var json))
-            return Fail($"Pick a mod and one of the templates ({string.Join(", ", Templates.Keys)}).");
+            return Fail(Loc.T("Pick a mod and one of the templates ({0}).", string.Join(", ", Templates.Keys)));
         if (!Identifiers.IsValid(id))
-            return Fail($"'{id}' is not a valid id: use lowercase snake_case, like my_bot.");
+            return Fail(Loc.T("'{0}' is not a valid id: use lowercase snake_case, like my_bot.", id));
         Use(BotDocument.New(ModDirectory, json, id, Humanize(id)));
         _script.Text = "";
-        Say($"New bot '{id}' from the {template} template. Export to save it.");
+        Say(Loc.T("New bot '{0}' from the {1} template. Export to save it.", id, template));
         return true;
     }
 
@@ -167,7 +168,7 @@ public partial class BotEditorScreen : Control
             return Fail(string.Join("\n", diagnostics));
         Use(document);
         _script.Text = BotExporter.ReadScript(document) ?? "";
-        Say($"Opened {relativeFile}.");
+        Say(Loc.T("Opened {0}.", relativeFile));
         return true;
     }
 
@@ -178,8 +179,8 @@ public partial class BotEditorScreen : Control
             return null;
         var result = BotExporter.Export(Document, Catalog());
         Say(result.Succeeded
-            ? $"Exported {result.QualifiedId} to {Document.TargetFile}." + Problems(result.Diagnostics)
-            : $"Not exported:{Problems(result.Diagnostics)}");
+            ? Loc.T("Exported {0} to {1}.", result.QualifiedId, Document.TargetFile) + Problems(result.Diagnostics)
+            : Loc.T("Not exported:") + Problems(result.Diagnostics));
         if (result.Succeeded)
             RefreshBots();
         return result;
@@ -202,10 +203,10 @@ public partial class BotEditorScreen : Control
         if (LuaSyntax.Check(_script.Text) is { } error)
         {
             _script.SetCaretLine(Math.Max(0, error.Line - 1));
-            return Fail($"Lua error on line {error.Line}: {error.Message}");
+            return Fail(Loc.T("Lua error on line {0}: {1}", error.Line, error.Message));
         }
         var file = BotExporter.SaveScript(Document, _script.Text);
-        Say($"Saved {file}. Export the bot to keep its script setting.");
+        Say(Loc.T("Saved {0}. Export the bot to keep its script setting.", file));
         return true;
     }
 
@@ -266,7 +267,7 @@ public partial class BotEditorScreen : Control
         if (ModDirectory is null || _raids is null)
             return null;
         var result = BotExporter.ExportRaids(ModDirectory, _raids, BotBook.Load(ModLoader.LoadAll(ModsRoot)));
-        Say(result.Succeeded ? $"Saved {RaidTable.FilePath}." + Problems(result.Diagnostics) : $"Raid table not saved:{Problems(result.Diagnostics)}");
+        Say(result.Succeeded ? Loc.T("Saved {0}.", RaidTable.FilePath) + Problems(result.Diagnostics) : Loc.T("Raid table not saved:") + Problems(result.Diagnostics));
         return result;
     }
 
@@ -289,15 +290,15 @@ public partial class BotEditorScreen : Control
     {
         var bar = new HBoxContainer();
         bar.AddChild(new Label { Text = "Mod" });
-        _mods = new OptionButton { CustomMinimumSize = new Vector2(140, 0) };
+        _mods = Loc.Verbatim(new OptionButton { CustomMinimumSize = new Vector2(140, 0) });
         _mods.ItemSelected += i => UseMod(_mods.GetItemText((int)i));
         bar.AddChild(_mods);
         bar.AddChild(new VSeparator());
-        _templates = new OptionButton();
+        _templates = Loc.Verbatim(new OptionButton());
         foreach (var name in Templates.Keys)
             _templates.AddItem(name);
         bar.AddChild(_templates);
-        _newId = new LineEdit { PlaceholderText = "new_bot_id", CustomMinimumSize = new Vector2(140, 0) };
+        _newId = Loc.Verbatim(new LineEdit { PlaceholderText = "new_bot_id", CustomMinimumSize = new Vector2(140, 0) });
         bar.AddChild(_newId);
         Button(bar, "New", () => New(_templates.GetItemText(_templates.Selected), _newId.Text.Trim()));
         bar.AddChild(new VSeparator());
@@ -320,7 +321,7 @@ public partial class BotEditorScreen : Control
 
         var behavior = new HSplitContainer { Name = "Behavior" };
         var treeColumn = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        _tree = new Tree { SizeFlagsVertical = SizeFlags.ExpandFill, HideRoot = false };
+        _tree = Loc.Verbatim(new Tree { SizeFlagsVertical = SizeFlags.ExpandFill, HideRoot = false });
         _tree.ItemSelected += () =>
         {
             if (_tree.GetSelected()?.GetMetadata(0).AsString() is { } meta && meta != PathKey(_selected))
@@ -328,7 +329,7 @@ public partial class BotEditorScreen : Control
         };
         treeColumn.AddChild(_tree);
         var row = new HBoxContainer();
-        _palette = new OptionButton();
+        _palette = Loc.Verbatim(new OptionButton());
         foreach (var node in BotBehavior.Nodes)
             _palette.AddItem(node.Type);
         _palette.ItemSelected += _ => ShowNodeHelp(_palette.GetItemText(_palette.Selected));
@@ -338,7 +339,8 @@ public partial class BotEditorScreen : Control
         Button(row, "Down", () => MoveNode(1));
         Button(row, "Remove", () => RemoveNode());
         treeColumn.AddChild(row);
-        _nodeHelp = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart, CustomMinimumSize = new Vector2(0, 48) };
+        // Node help is reference text from the behaviour tree's own docs, in English like the handbook.
+        _nodeHelp = Loc.Verbatim(new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart, CustomMinimumSize = new Vector2(0, 48) });
         treeColumn.AddChild(_nodeHelp);
         behavior.AddChild(treeColumn);
         var nodeScroll = new ScrollContainer { CustomMinimumSize = new Vector2(300, 0) };
@@ -442,7 +444,7 @@ public partial class BotEditorScreen : Control
             return;
         }
         var j = d.Json;
-        _botGrid.AddHeading(d.IsDirty ? $"{d.Id} (not exported)" : d.Id ?? "");
+        Loc.Verbatim(_botGrid.AddHeading(d.IsDirty ? Loc.T("{0} (not exported)", d.Id) : d.Id ?? ""));
         _botGrid.AddText("Id", Str(j, "id"), v => d.Set("id", v));
         _botGrid.AddText("Name", Str(j, "name"), v => d.Set("name", v));
         _botGrid.AddText("Description", Str(j, "description"), v => d.Set("description", v));
@@ -470,7 +472,7 @@ public partial class BotEditorScreen : Control
         _nodeGrid.Clear();
         if (Document?.Tree is not { } root)
         {
-            _nodeHelp.Text = Document is null ? "" : "The bot has no behaviour tree. Pick a node type and press Add to start one (usually a selector).";
+            _nodeHelp.Text = Document is null ? "" : Loc.T("The bot has no behaviour tree. Pick a node type and press Add to start one (usually a selector).");
             return;
         }
         if (Document.Node(_selected) is null)
@@ -479,7 +481,7 @@ public partial class BotEditorScreen : Control
         var node = Document.Node(_selected)!;
         var type = Str(node, "type") ?? "";
         ShowNodeHelp(type);
-        _nodeGrid.AddHeading(type);
+        Loc.Verbatim(_nodeGrid.AddHeading(type));
         var info = BotBehavior.Find(type);
         var names = (info?.Parameters.Select(p => p.Name) ?? [])
             .Concat(node.Select(kv => kv.Key).Where(k => k is not "type" and not "children"))
@@ -521,7 +523,7 @@ public partial class BotEditorScreen : Control
     {
         _nodeHelp.Text = BotBehavior.Find(type) is { } info
             ? $"{info.Type} ({info.Shape.ToString().ToLowerInvariant()}): {info.Help}"
-            : $"{type}: a leaf from the bot's script (a global function named {type}).";
+            : Loc.T("{0}: a leaf from the bot's script (a global function named {0}).", type);
     }
 
     private void RefreshRaids()
@@ -529,7 +531,7 @@ public partial class BotEditorScreen : Control
         _raidGrid.Clear();
         if (_raids is null)
             return;
-        _raidGrid.AddHeading($"Raid table ({RaidTable.FilePath}); the last mod in load order that has one wins");
+        _raidGrid.AddHeading(Loc.T("Raid table ({0}); the last mod in load order that has one wins", RaidTable.FilePath));
         _raidGrid.AddJson("Table", DataJson.Write(_raids), SetRaidsJson);
         var value = 0.0;
         var players = 1;
@@ -555,13 +557,13 @@ public partial class BotEditorScreen : Control
         var errors = RaidTable.Validate(_raids, bots, RaidTable.FilePath, modId).Where(d => d.Severity == DiagnosticSeverity.Error).ToList();
         if (errors.Count > 0)
         {
-            _raidPreview.Text = "Fix the table first:\n" + string.Join("\n", errors);
+            _raidPreview.Text = Loc.T("Fix the table first:") + "\n" + string.Join("\n", errors);
             return;
         }
         var plan = RaidTable.From(_raids, bots, modId).Plan((float)_previewValue, _previewPlayers);
         _raidPreview.Text = plan is null
-            ? $"Crops worth {_previewValue:0} set off no raid."
-            : $"Level {plan.Level}, budget {plan.Budget} for {_previewPlayers} player(s): "
+            ? Loc.T("Crops worth {0} set off no raid.", $"{_previewValue:0}")
+            : Loc.T("Level {0}, budget {1} for {2} player(s): ", plan.Level, plan.Budget, _previewPlayers)
               + string.Join(", ", plan.Bots.GroupBy(b => b).Select(g => $"{g.Count()}x {g.Key}"));
     }
 

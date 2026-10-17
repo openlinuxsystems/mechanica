@@ -5,6 +5,7 @@ using Mechanica.Core.Editor;
 using Mechanica.Core.Sound;
 using Mechanica.Game.Mods;
 using Mechanica.Game.Sound;
+using Mechanica.Game.Ui;
 
 namespace Mechanica.Game.Editor;
 
@@ -78,7 +79,7 @@ public partial class SoundBinderPanel : VBoxContainer
             var key = _newKey.Text.Trim();
             if (!Identifiers.IsValid(key))
             {
-                ShowError($"Sound name '{key}' must be lowercase snake_case.");
+                ShowError(Loc.T("Sound name '{0}' must be lowercase snake_case.", key));
                 return;
             }
             _newKey.Text = "";
@@ -88,7 +89,7 @@ public partial class SoundBinderPanel : VBoxContainer
         AddChild(new HSeparator());
         _bankTitle = new Label { Text = "Sound events", ThemeTypeVariation = "HeaderSmall" };
         AddChild(_bankTitle);
-        _events = new ItemList { CustomMinimumSize = new Vector2(0, 120) };
+        _events = Loc.Verbatim(new ItemList { CustomMinimumSize = new Vector2(0, 120) });
         _events.ItemSelected += i => SelectEvent((int)i);
         AddChild(_events);
         var buttons = new HFlowContainer();
@@ -108,7 +109,7 @@ public partial class SoundBinderPanel : VBoxContainer
         AddButton(buttons, "Save", () => SaveBank(), "Validate and write the mod's sound bank");
         _eventGrid = new PropertyGrid();
         AddChild(_eventGrid);
-        _bankProblems = new RichTextLabel { BbcodeEnabled = true, FitContent = true, SelectionEnabled = true };
+        _bankProblems = Loc.Verbatim(new RichTextLabel { BbcodeEnabled = true, FitContent = true, SelectionEnabled = true });
         AddChild(_bankProblems);
 
         ReloadRegistry();
@@ -228,7 +229,7 @@ public partial class SoundBinderPanel : VBoxContainer
         var result = Bank.Save();
         if (result.Succeeded)
             ReloadRegistry();
-        ShowBankProblems(result.Diagnostics, result.Succeeded ? $"Saved {Bank.ModId}/{Bank.RelativeFile}." : "Save failed; nothing was written.");
+        ShowBankProblems(result.Diagnostics, result.Succeeded ? Loc.T("Saved {0}.", $"{Bank.ModId}/{Bank.RelativeFile}") : Loc.T("Save failed; nothing was written."));
         return result;
     }
 
@@ -251,8 +252,8 @@ public partial class SoundBinderPanel : VBoxContainer
         var part = _part!;
         var bound = d.Sounds?.GetValueOrDefault(key);
         var fallback = PartSounds.For(d with { Sounds = null }, key);
-        var picker = new OptionButton { SizeFlagsHorizontal = SizeFlags.ExpandFill, FitToLongestItem = false };
-        picker.AddItem(fallback is null ? "(none)" : $"(material: {fallback})");
+        var picker = Loc.Verbatim(new OptionButton { SizeFlagsHorizontal = SizeFlags.ExpandFill, FitToLongestItem = false });
+        picker.AddItem(fallback is null ? Loc.T("(none)") : Loc.T("(material: {0})", fallback));
         var ids = Registry.Ids.ToList();
         foreach (var id in ids)
             picker.AddItem(Registry.ShortId(id, part.ModId));
@@ -267,7 +268,7 @@ public partial class SoundBinderPanel : VBoxContainer
         }
         else
         {
-            picker.AddItem($"{bound} (not registered)");
+            picker.AddItem(Loc.T("{0} (not registered)", bound));
             picker.Selected = picker.ItemCount - 1;
         }
         picker.ItemSelected += i =>
@@ -278,7 +279,7 @@ public partial class SoundBinderPanel : VBoxContainer
                 Bind(key, Registry.ShortId(ids[(int)i - 1], part.ModId));
         };
         if (fallback is not null && bound is null)
-            picker.TooltipText = $"Unbound: plays {fallback} from the sound material";
+            picker.TooltipText = Loc.T("Unbound: plays {0} from the sound material", fallback);
         var box = new HBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
         box.AddChild(picker);
         AddButton(box, "▶", () => PreviewBinding(key), "Play it");
@@ -315,7 +316,7 @@ public partial class SoundBinderPanel : VBoxContainer
             _bankProblems.Text = "";
             return;
         }
-        _bankTitle.Text = $"Sound events in {Bank.ModId}/{Bank.RelativeFile}{(Bank.IsDirty ? "  • unsaved" : "")}";
+        _bankTitle.Text = Loc.T(Bank.IsDirty ? "Sound events in {0}  • unsaved" : "Sound events in {0}", $"{Bank.ModId}/{Bank.RelativeFile}");
         foreach (var e in Bank.Events)
             _events.AddItem($"{e.Id}{(e.Loop == true ? "  (loop)" : "")}");
         if (_selected >= 0)
@@ -334,7 +335,7 @@ public partial class SoundBinderPanel : VBoxContainer
         g.AddText("Id", e.Id, v => Set(x => x with { Id = v }), "snake_case");
         g.AddText("Description", e.Description, v => Set(x => x with { Description = v }));
         var clips = new HBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        var clipText = new LineEdit { Text = string.Join(", ", e.Clips ?? []), PlaceholderText = "sounds/…ogg, other_mod:sounds/…wav", SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        var clipText = Loc.Verbatim(new LineEdit { Text = string.Join(", ", e.Clips ?? []), PlaceholderText = "sounds/…ogg, other_mod:sounds/…wav", SizeFlagsHorizontal = SizeFlags.ExpandFill });
         void CommitClips()
         {
             var list = clipText.Text.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).ToList();
@@ -381,10 +382,10 @@ public partial class SoundBinderPanel : VBoxContainer
         foreach (var d in diagnostics)
         {
             var color = d.Severity == DiagnosticSeverity.Error ? "#ff7070" : "#ffd060";
-            lines.Add($"[color={color}]{(d.Severity == DiagnosticSeverity.Error ? "Error" : "Warning")}[/color] {Escape(d.JsonPath ?? d.File)}: {Escape(d.Message)}");
+            lines.Add($"[color={color}]{(d.Severity == DiagnosticSeverity.Error ? Loc.T("Error") : Loc.T("Warning"))}[/color] {Escape(d.JsonPath ?? d.File)}: {Escape(d.Message)}");
         }
         if (diagnostics.Count == 0 && headline is null)
-            lines.Add(Bank is { IsDirty: true } ? "[color=#80e080]No problems.[/color] Save writes the mod's sound bank." : "[color=#80e080]No problems.[/color]");
+            lines.Add($"[color=#80e080]{Loc.T("No problems.")}[/color]" + (Bank is { IsDirty: true } ? " " + Loc.T("Save writes the mod's sound bank.") : ""));
         _bankProblems.Text = string.Join("\n", lines);
     }
 

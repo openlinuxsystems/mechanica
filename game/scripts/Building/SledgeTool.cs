@@ -3,6 +3,7 @@ using Mechanica.Core.Actions;
 using Mechanica.Core.Building;
 using Mechanica.Core.Input;
 using Mechanica.Game.Player;
+using Mechanica.Game.Ui;
 using Mechanica.Game.World;
 
 namespace Mechanica.Game.Building;
@@ -48,9 +49,9 @@ public partial class SledgeTool : HandTool
     public override string HudText()
     {
         var health = LastResult is { Ok: true, Value: { } value } && value.TryGetProperty("health", out var h) && h.ValueKind == System.Text.Json.JsonValueKind.Number
-            ? $" (part health {h.GetSingle():0})"
+            ? " " + Loc.T("(part health {0})", $"{h.GetSingle():0}")
             : "";
-        return $"Sledgehammer{health}   {Key(InputActions.Primary)} swing{Status}";
+        return Loc.T("Sledgehammer{0}   {1} swing", health, Key(InputActions.Primary)) + Status;
     }
 
     /// <inheritdoc/>

@@ -5,6 +5,7 @@ using Mechanica.Core.Creations;
 using Mechanica.Core.Data;
 using Mechanica.Core.Input;
 using Mechanica.Core.World;
+using Mechanica.Game.Ui;
 
 namespace Mechanica.Game.Building;
 
@@ -102,8 +103,9 @@ public partial class LiftTool : HandTool
     /// <inheritdoc/>
     public override string HudText()
     {
-        var lift = Own is { } own ? $"level {own.Level}{(own.Creation is { } c ? $", holding creation {c}" : "")}" : "not placed";
-        return $"Lift ({lift})   {Key(InputActions.Primary)} place / pick up  {Key(InputActions.LiftUp)}/{Key(InputActions.LiftDown)} raise/lower  {Key(InputActions.Rotate)} turn  {Key(InputActions.Secondary)} take away{Status}";
+        var lift = Own is { } own ? own.Creation is { } c ? Loc.T("level {0}, holding creation {1}", own.Level, c) : Loc.T("level {0}", own.Level) : Loc.T("not placed");
+        return Loc.T("Lift ({0})   {1} place / pick up  {2}/{3} raise/lower  {4} turn  {5} take away", lift, Key(InputActions.Primary), Key(InputActions.LiftUp), Key(InputActions.LiftDown),
+            Key(InputActions.Rotate), Key(InputActions.Secondary)) + Status;
     }
 
     /// <inheritdoc/>

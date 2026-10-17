@@ -6,6 +6,7 @@ using Mechanica.Game.Editor;
 using Mechanica.Game.Menus;
 using Mechanica.Game.Mods;
 using Mechanica.Game.Player;
+using Mechanica.Game.Ui;
 
 namespace Mechanica.Game;
 
@@ -33,6 +34,7 @@ public partial class MainMenu : Control
     /// <summary>Command-line flag that runs a Part Editor batch file and quits.</summary>
     public const string PartBatchFlag = "--part-batch";
 
+    private readonly List<Control> _open = [];
     private Control _menu = null!;
     private HelpWindow _help = null!;
 
@@ -64,18 +66,18 @@ public partial class MainMenu : Control
         var column = new VBoxContainer { CustomMinimumSize = new Vector2(320, 0) };
         center.AddChild(column);
         _menu = column;
-        column.AddChild(new Label { Text = MechanicaInfo.GameName, ThemeTypeVariation = "HeaderLarge", HorizontalAlignment = HorizontalAlignment.Center });
+        column.AddChild(Loc.Verbatim(new Label { Text = MechanicaInfo.GameName, ThemeTypeVariation = "HeaderLarge", HorizontalAlignment = HorizontalAlignment.Center }));
         AddButton(column, "New game", () => OpenNewGame());
-        AddButton(column, "Load game", OpenLoad);
+        AddButton(column, "Load game", () => OpenLoad());
         AddButton(column, "Join game", () => OpenJoin());
         AddButton(column, "Options", () => OpenOptions());
-        AddButton(column, "Help (F1)", () => _help.Open("playing.md"));
+        Loc.Live(AddButton(column, "", () => _help.Open("playing.md")), () => Loc.T("Help ({0})", GameInput.Label(InputActions.Handbook)));
         column.AddChild(new HSeparator());
         column.AddChild(new Label { Text = "Mod tools", HorizontalAlignment = HorizontalAlignment.Center });
         AddButton(column, "Part Editor", () => GetTree().ChangeSceneToFile(PartEditorScene));
-        AddButton(column, "Bot Behavior Editor", OpenBotEditor);
-        AddButton(column, "Test Sandbox", OpenSandbox);
-        AddButton(column, "Mod Manager", OpenModManager);
+        AddButton(column, "Bot Behavior Editor", () => OpenBotEditor());
+        AddButton(column, "Test Sandbox", () => OpenSandbox());
+        AddButton(column, "Mod Manager", () => OpenModManager());
         column.AddChild(new HSeparator());
         AddButton(column, "Quit", () => GetTree().Quit());
         _help = new HelpWindow { Name = "Help", Visible = false };
@@ -173,7 +175,8 @@ public partial class MainMenu : Control
         GetTree().Quit(result.Succeeded ? 0 : 1);
     }
 
-    private void OpenLoad()
+    /// <summary>Opens Load game.</summary>
+    public Saves.SaveScreen OpenLoad()
     {
         var holder = Centered(new Saves.SaveScreen());
         var screen = (Saves.SaveScreen)holder.GetChild(0);
@@ -184,23 +187,29 @@ public partial class MainMenu : Control
             Go();
         };
         Open(holder);
+        return screen;
     }
 
-    private void OpenSandbox()
+    /// <summary>Opens the Test Sandbox.</summary>
+    public SandboxScreen OpenSandbox()
     {
         var sandbox = new SandboxScreen { Name = "Sandbox" };
         sandbox.BackRequested += () => Close(sandbox);
         Open(sandbox);
+        return sandbox;
     }
 
-    private void OpenBotEditor()
+    /// <summary>Opens the Bot Behavior Editor.</summary>
+    public BotEditorMode OpenBotEditor()
     {
         var mode = new BotEditorMode { Name = "BotEditorMode" };
         mode.CloseRequested += () => Close(mode);
         Open(mode);
+        return mode;
     }
 
-    private void OpenModManager()
+    /// <summary>Opens the Mod Manager.</summary>
+    public Control OpenModManager()
     {
         var holder = new Control { Name = "ModManager" };
         holder.SetAnchorsPreset(LayoutPreset.FullRect);
@@ -212,6 +221,7 @@ public partial class MainMenu : Control
         back.Pressed += () => Close(holder);
         holder.AddChild(back);
         Open(holder);
+        return holder;
     }
 
     private static CenterContainer Centered(Control screen)
@@ -222,9 +232,19 @@ public partial class MainMenu : Control
         return holder;
     }
 
+    /// <summary>Closes every screen opened from the menu.</summary>
+    public void CloseAll()
+    {
+        foreach (var screen in _open.Where(IsInstanceValid))
+            screen.QueueFree();
+        _open.Clear();
+        _menu.GetParent<Control>().Visible = true;
+    }
+
     private void Open(Control screen)
     {
         _menu.GetParent<Control>().Visible = false;
+        _open.Add(screen);
         AddChild(screen);
     }
 
@@ -236,10 +256,11 @@ public partial class MainMenu : Control
         _menu.GetParent<Control>().Visible = true;
     }
 
-    private static void AddButton(Container parent, string text, Action pressed)
+    private static Button AddButton(Container parent, string text, Action pressed)
     {
         var button = new Button { Text = text };
         button.Pressed += pressed;
         parent.AddChild(button);
+        return button;
     }
 }

@@ -3,6 +3,7 @@ using Godot;
 using Mechanica.Core.Actions;
 using Mechanica.Core.Input;
 using Mechanica.Core.Logic;
+using Mechanica.Game.Ui;
 
 namespace Mechanica.Game.Building;
 
@@ -74,8 +75,8 @@ public partial class ConnectTool : HandTool
     /// <inheritdoc/>
     public override string HudText()
     {
-        var picked = Source is { } s ? $"part {s.Part} picked: {Key(InputActions.Primary)} another part to link or unlink it" : $"{Key(InputActions.Primary)} pick a source part";
-        return $"Connect Tool: {picked}  {Key(InputActions.Secondary)} let go  {Key(InputActions.Interact)} settings{Status}";
+        var picked = Source is { } s ? Loc.T("part {0} picked: {1} another part to link or unlink it", s.Part, Key(InputActions.Primary)) : Loc.T("{0} pick a source part", Key(InputActions.Primary));
+        return Loc.T("Connect Tool: {0}  {1} let go  {2} settings", picked, Key(InputActions.Secondary), Key(InputActions.Interact)) + Status;
     }
 
     /// <inheritdoc/>

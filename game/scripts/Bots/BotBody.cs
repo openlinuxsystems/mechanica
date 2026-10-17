@@ -1,6 +1,7 @@
 using Godot;
 using Mechanica.Core.Bots;
 using Mechanica.Core.Data;
+using Mechanica.Game.Ui;
 
 namespace Mechanica.Game.Bots;
 
@@ -57,6 +58,8 @@ public partial class BotBody : CharacterBody3D
         });
         _label = new Label3D
         {
+            // Names are the mods' own text.
+            AutoTranslateMode = AutoTranslateModeEnum.Disabled,
             Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
             Position = new Vector3(0, Type.Height + 0.35f, 0),
             FontSize = 48,
@@ -72,7 +75,7 @@ public partial class BotBody : CharacterBody3D
     {
         View = view;
         _label.Visible = view.Health < view.MaxHealth;
-        _label.Text = view.Dead ? $"{Type.Name} (destroyed)" : $"{Type.Name}  {view.Health:0}/{view.MaxHealth:0}";
+        _label.Text = view.Dead ? Loc.T("{0} (destroyed)", Type.Name) : $"{Type.Name}  {view.Health:0}/{view.MaxHealth:0}";
         _material.AlbedoColor = view.Dead ? new Color(0.2f, 0.2f, 0.2f) : _material.AlbedoColor;
         // A dead bot's body no longer blocks shots or players.
         CollisionLayer = view.Dead ? 0u : 1u;

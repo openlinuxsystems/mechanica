@@ -167,9 +167,13 @@ public sealed record InterfaceSettings
     /// <summary>How opaque the chat panel's background is, 0 to 1.</summary>
     public float ChatOpacity { get; init; } = 0.6f;
 
+    /// <summary>The code of the language the UI shows (a file in <c>lang/</c>); <c>en</c> is the built-in English.</summary>
+    public string Language { get; init; } = Ui.Language.English;
+
     /// <summary>A copy with every value in range.</summary>
     public InterfaceSettings Clamped() => this with
     {
+        Language = string.IsNullOrWhiteSpace(Language) ? Ui.Language.English : Language.Trim(),
         ChatOpacity = float.IsFinite(ChatOpacity) ? Math.Clamp(ChatOpacity, 0f, 1f) : 0.6f,
         ColorBlind = Enum.IsDefined(ColorBlind) ? ColorBlind : Ui.ColorBlindMode.Off,
     };

@@ -70,7 +70,7 @@ public partial class PartSettingsPanel : CanvasLayer
         foreach (var child in _rows.GetChildren())
             child.QueueFree();
         var definition = creation.DefinitionOf(partId);
-        _rows.AddChild(new Label { Text = $"{definition.Name ?? part.Part} (part {partId})" });
+        _rows.AddChild(Loc.Verbatim(new Label { Text = Loc.T("{0} (part {1})", definition.Name ?? part.Part, partId) }));
         _status.Text = definition.Settings is { Count: > 0 } ? "" : "This part has no settings.";
         foreach (var (id, value) in PartSettings.All(definition, part.Settings))
             _rows.AddChild(Field(PartSettings.Find(definition, id)!, value));
@@ -91,7 +91,7 @@ public partial class PartSettingsPanel : CanvasLayer
     private Control Field(SettingDefinition setting, JsonElement value)
     {
         var row = new HBoxContainer();
-        row.AddChild(new Label { Text = setting.Name ?? setting.Id, CustomMinimumSize = new Vector2(140, 0) });
+        row.AddChild(Loc.Verbatim(new Label { Text = setting.Name ?? setting.Id, CustomMinimumSize = new Vector2(140, 0) }));
         switch (setting.Type)
         {
             case SettingType.Number:
@@ -104,7 +104,7 @@ public partial class PartSettingsPanel : CanvasLayer
                 row.AddChild(spin);
                 break;
             case SettingType.Choice:
-                var options = new OptionButton { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+                var options = Loc.Verbatim(new OptionButton { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill });
                 foreach (var option in setting.Options ?? [])
                     options.AddItem(option);
                 options.Selected = Math.Max(0, setting.Options?.IndexOf(value.GetString()!) ?? 0);
@@ -120,7 +120,7 @@ public partial class PartSettingsPanel : CanvasLayer
                 var edit = new LineEdit
                 {
                     Text = string.Join(", ", value.EnumerateArray().Select(e => e.GetDouble().ToString(CultureInfo.InvariantCulture))),
-                    PlaceholderText = $"up to {setting.MaxCount} numbers: 0, 45, 90",
+                    PlaceholderText = Loc.T("up to {0} numbers: 0, 45, 90", setting.MaxCount),
                     SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
                 };
                 edit.TextSubmitted += text =>
@@ -130,7 +130,7 @@ public partial class PartSettingsPanel : CanvasLayer
                     {
                         if (!double.TryParse(entry, NumberStyles.Float, CultureInfo.InvariantCulture, out var n))
                         {
-                            _status.Text = $"'{entry}' is not a number.";
+                            _status.Text = Loc.T("'{0}' is not a number.", entry);
                             return;
                         }
                         numbers.Add(n);

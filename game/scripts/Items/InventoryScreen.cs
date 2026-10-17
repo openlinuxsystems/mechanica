@@ -72,7 +72,7 @@ public partial class InventoryScreen : CanvasLayer
 
         var other = new VBoxContainer();
         _otherPanel = other;
-        _otherTitle = new Label();
+        _otherTitle = Loc.Verbatim(new Label());
         other.AddChild(_otherTitle);
         _otherGrid = new GridContainer { Columns = Columns };
         other.AddChild(_otherGrid);
@@ -156,7 +156,7 @@ public partial class InventoryScreen : CanvasLayer
         _otherPanel.Visible = _open is not null;
         if (_open is null)
             return;
-        _otherTitle.Text = view is null ? "Opening…" : ItemName(view.Part!) + (view.Blocked ? " (full: take the output)" : "");
+        _otherTitle.Text = view is null ? Loc.T("Opening…") : view.Blocked ? Loc.T("{0} (full: take the output)", ItemName(view.Part!)) : ItemName(view.Part!);
         Fill(_otherGrid, _open, view, view?.SlotCount ?? 0);
         FillStation(view);
     }
@@ -170,12 +170,13 @@ public partial class InventoryScreen : CanvasLayer
             var slot = i;
             var stack = view?.At(i);
             var held = _held is { } h && h.Where == where && h.Slot == i;
-            var button = new Button
+            // Item names are the mods' own text.
+            var button = Loc.Verbatim(new Button
             {
                 Text = stack is null ? "" : $"{Short(ItemName(stack.Item))}\n{stack.Count}",
                 TooltipText = stack is null ? "" : $"{ItemName(stack.Item)} × {stack.Count}",
                 CustomMinimumSize = new Vector2(64, 52),
-            };
+            });
             if (held)
                 button.AddThemeStyleboxOverride("normal", MechanicaTheme.SelectedSlot());
             button.GuiInput += e => OnSlotInput(e, where, slot, stack);
@@ -195,7 +196,7 @@ public partial class InventoryScreen : CanvasLayer
             var index = i;
             var row = new HBoxContainer();
             var done = job.Time > 0 ? job.Progress / job.Time : 1f;
-            row.AddChild(new Label { Text = $"{RecipeName(job.Recipe)} × {job.Count}", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill });
+            row.AddChild(Loc.Verbatim(new Label { Text = $"{RecipeName(job.Recipe)} × {job.Count}", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill }));
             row.AddChild(new ProgressBar { Value = done * 100, CustomMinimumSize = new Vector2(100, 0), ShowPercentage = false });
             var cancel = new Button { Text = "Cancel" };
             cancel.Pressed += () => Send(InventoryActions.CancelCraft, new CancelCraftArgs(_open!.Creation!.Value, _open.Part!.Value, index));
@@ -207,11 +208,11 @@ public partial class InventoryScreen : CanvasLayer
             var row = new HBoxContainer();
             var inputs = string.Join(", ", recipe.Inputs.Select(a => $"{a.Count} {ItemName(a.Item)}"));
             var outputs = string.Join(", ", recipe.Outputs.Select(a => $"{a.Count} {ItemName(a.Item)}"));
-            row.AddChild(new Label
+            row.AddChild(Loc.Verbatim(new Label
             {
-                Text = $"{outputs}  ←  {inputs}  ({recipe.Time / (view.Speed ?? 1f):0.#} s)",
+                Text = Loc.T("{0}  ←  {1}  ({2} s)", outputs, inputs, $"{recipe.Time / (view.Speed ?? 1f):0.#}"),
                 SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            });
+            }));
             var count = new SpinBox { MinValue = 1, MaxValue = Inventory.Settings!.MaxCraftCount, Value = 1 };
             row.AddChild(count);
             var craft = new Button { Text = "Craft", Disabled = Inventory.Own is not { } own || !recipe.Inputs.All(a => own.Count(a.Item) >= a.Count) };
