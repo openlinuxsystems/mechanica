@@ -88,6 +88,10 @@ public static class DiagnosticCodes
     public const string WorldGenInvalid = "MD0601";
     public const string WorldGenMissing = "MD0602";
     public const string PoiInvalid = "MD0603";
+
+    // 07xx: recipes and inventories
+    public const string RecipeInvalid = "MD0701";
+    public const string DuplicateRecipe = "MD0702";
 }
 
 /// <summary>Collects diagnostics for one file, filling in the file name.</summary>
