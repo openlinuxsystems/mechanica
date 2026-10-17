@@ -17,6 +17,7 @@ public partial class CompassTest : StagedTest
 {
     private Main _main = null!;
     private CompassHud _compass = null!;
+    private int _closedAt;
 
     protected override string Tag => "compass";
 
@@ -94,18 +95,24 @@ public partial class CompassTest : StagedTest
         Add("the bar hides under the inventory", frame =>
         {
             var inventory = _main.GetNode<Items.InventoryScreen>("InventoryScreen");
+            // Stages tick on physics frames and the HUD on idle frames, which a slow frame can run several of at
+            // once, so each step waits (a bounded number of ticks) for the bar to catch up.
             if (frame == 0)
             {
                 inventory.Show(null);
+                _closedAt = -1;
                 return false;
             }
-            if (frame == 2)
+            if (_closedAt < 0)
             {
+                if (_compass.Bar.Visible && frame < 60)
+                    return false;
                 Check(!_compass.Bar.Visible, "hidden while the inventory is open");
                 inventory.Hide();
+                _closedAt = frame;
                 return false;
             }
-            if (frame < 4)
+            if (!_compass.Bar.Visible && frame < _closedAt + 60)
                 return false;
             Check(_compass.Bar.Visible, "back when it closes");
             return true;
@@ -117,7 +124,7 @@ public partial class CompassTest : StagedTest
                 GameSettings.Apply(GameSettings.Current with { Interface = GameSettings.Current.Interface with { ShowCompass = false } });
                 return false;
             }
-            if (frame < 2)
+            if ((_compass.Bar.Visible || _compass.WorldMarkerOf("ahead") is not null) && frame < 60)
                 return false;
             Check(!_compass.Bar.Visible && _compass.WorldMarkerOf("ahead") is null, "the bar and its world diamonds are hidden");
             GameSettings.Apply(new());

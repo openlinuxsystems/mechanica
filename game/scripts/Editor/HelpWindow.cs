@@ -37,9 +37,7 @@ public partial class HelpWindow : ToolWindow
     private float _drawnWidth;
 
     /// <summary>The docs folder for this run.</summary>
-    public static string DocsRoot => OS.HasFeature("template")
-        ? Path.Combine(Path.GetDirectoryName(OS.GetExecutablePath())!, "docs")
-        : Path.GetFullPath(ProjectSettings.GlobalizePath("res://../docs"));
+    public static string DocsRoot => Mods.ModPaths.ShippedFolder("docs");
 
     /// <summary>File name of the doc shown, or null.</summary>
     public string? Current { get; private set; }

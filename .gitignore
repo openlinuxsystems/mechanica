@@ -7,7 +7,6 @@ TestResults/
 # Godot
 .godot/
 *.old
-/game/export_presets.cfg
 /build/
 
 # Local toolchain downloads (tools/install-godot.sh)
