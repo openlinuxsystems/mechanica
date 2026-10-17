@@ -132,6 +132,9 @@ public partial class Main : Node3D
     /// <summary>The Logic Visualizer (F7, and while the Connect Tool is in hand).</summary>
     public LogicOverlay LogicOverlay { get; private set; } = null!;
 
+    /// <summary>The aero force overlay (F9): the pushes part scripts make, as arrows.</summary>
+    public ForceOverlay ForceOverlay { get; private set; } = null!;
+
     /// <summary>The Creation Inspector (F8).</summary>
     public CreationInspector Inspector { get; private set; } = null!;
 
@@ -286,6 +289,8 @@ public partial class Main : Node3D
         Logic.RegisterActions(Actions.Dispatcher);
         LogicOverlay = new LogicOverlay { Creations = Creations, Players = PlayerSync, Actions = Actions, ReadDeviceInput = ReadDeviceInput, Linking = () => Tools?.Connector.Active == true };
         AddChild(LogicOverlay);
+        ForceOverlay = new ForceOverlay { Creations = Creations, Players = PlayerSync, Actions = Actions, ReadDeviceInput = ReadDeviceInput };
+        AddChild(ForceOverlay);
         Inspector = new CreationInspector { Name = "Inspector", Players = PlayerSync, Actions = Actions, ReadDeviceInput = ReadDeviceInput };
         AddChild(Inspector);
         Recorder = new RecordReplay { Name = "Recorder", Session = Session, Actions = Actions };

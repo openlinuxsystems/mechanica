@@ -121,6 +121,21 @@ public sealed record JointState(int Part, int Other, ConnectionType Type, int Bo
 public sealed record CreationState(
     int Id, int AuthorityPeer, bool Simulated, IReadOnlyList<int> Parts, IReadOnlyList<BodyState> Bodies, IReadOnlyList<JointState> Joints);
 
+/// <summary>Arguments of <c>GetForces</c>.</summary>
+/// <param name="Creation">Creation whose pushes to read.</param>
+public sealed record GetForcesArgs(int Creation);
+
+/// <summary>
+/// One push the world applied in its last physics step, as <c>GetForces</c> returns it and the aero force
+/// overlay draws it.
+/// </summary>
+/// <param name="Part">The part that pushed (a thruster, a wing), or null for a Body's shared push.</param>
+/// <param name="Body">The Body pushed.</param>
+/// <param name="Force">World force in N.</param>
+/// <param name="At">World point the force acts at, in m; null when it acts through the centre of mass.</param>
+/// <param name="Torque">World torque in N·m on top of the force's own twist about the centre of mass (a rotor's counter-torque).</param>
+public sealed record PushState(int? Part, int Body, Vec3 Force, Vec3? At, Vec3 Torque);
+
 /// <summary>One entry in the value of <c>ListCreations</c>.</summary>
 /// <param name="Id">Creation id.</param>
 /// <param name="Parts">Number of parts.</param>
@@ -142,9 +157,14 @@ public interface IMotionWorld
     /// <summary>
     /// Pushes Body <paramref name="body"/> through its centre of mass for <paramref name="duration"/> seconds
     /// (null: one step), replacing any earlier push on it from the same <paramref name="part"/> (null: the
-    /// Body's shared push).
+    /// Body's shared push). <paramref name="torque"/> already holds the twist of a force off the centre of
+    /// mass; <paramref name="at"/> and <paramref name="ownTorque"/> (the torque asked for on top of it) only
+    /// say where the force acts, for <see cref="PushesOn"/>.
     /// </summary>
-    void ApplyForce(Creation creation, int body, Vector3 force, Vector3 torque, float? duration, int? part);
+    void ApplyForce(Creation creation, int body, Vector3 force, Vector3 torque, float? duration, int? part, Vector3? at, Vector3 ownTorque);
+
+    /// <summary>The pushes applied to a Creation in the last physics step, for <c>GetForces</c>. Default: none.</summary>
+    IReadOnlyList<PushState> PushesOn(Creation creation) => [];
 
     /// <summary>Sets or (with a <see cref="JointMotor.IsFree"/> motor) clears the motor of a bearing or piston joint.</summary>
     void SetJointMotor(Creation creation, JointLink joint, JointMotor motor);
@@ -160,7 +180,7 @@ public interface IMotionWorld
 /// <item><c>ApplyForce</c>: pushes a Body with a force and torque for a while.</item>
 /// <item><c>SetBearingTarget</c>: drives a bearing's motor at a target speed or to an angle, or frees it.</item>
 /// <item><c>SetPistonTarget</c>: moves a piston to a length and holds it, or frees it.</item>
-/// <item><c>GetCreation</c> and <c>ListCreations</c>: read-only queries of Creation state.</item>
+/// <item><c>GetCreation</c>, <c>ListCreations</c> and <c>GetForces</c>: read-only queries of Creation state and of the pushes on it.</item>
 /// </list>
 /// Players don't call the motion actions directly: they drive through seats and controllers (chunk 10),
 /// whose scripts, bots and external agents do. Only the Creation's authority peer may move it (D5);
@@ -183,7 +203,10 @@ public sealed class MotionActions(MotionSettings settings, IMotionWorld world)
     /// <summary>Action name for listing Creations.</summary>
     public const string ListCreations = "ListCreations";
 
-    /// <summary>Registers all five actions.</summary>
+    /// <summary>Action name for reading the pushes on a Creation (the aero force overlay's query).</summary>
+    public const string GetForces = "GetForces";
+
+    /// <summary>Registers all six actions.</summary>
     public void Register(ActionDispatcher dispatcher)
     {
         dispatcher.Register<ApplyForceArgs>(ApplyForce, ValidateForce, ApplyForceNow);
@@ -195,6 +218,10 @@ public sealed class MotionActions(MotionSettings settings, IMotionWorld world)
             readOnly: true);
         dispatcher.Register<NoArgs>(ListCreations, (_, _) => null,
             (_, _) => Value(world.AllCreations.OrderBy(c => c.Id).Select(Summarize).ToList()),
+            readOnly: true);
+        dispatcher.Register<GetForcesArgs>(GetForces,
+            (_, args) => world.FindCreation(args.Creation) is null ? $"There is no creation {args.Creation}." : null,
+            (_, args) => Value(world.PushesOn(world.FindCreation(args.Creation)!)),
             readOnly: true);
     }
 
@@ -252,11 +279,12 @@ public sealed class MotionActions(MotionSettings settings, IMotionWorld world)
     {
         var creation = world.FindCreation(args.Creation)!;
         var force = args.Force.ToNumerics();
-        var torque = (args.Torque ?? Vec3.Zero).ToNumerics();
+        var own = (args.Torque ?? Vec3.Zero).ToNumerics();
+        var torque = own;
         // A force off the centre of mass is the same force through it plus the twist of its lever arm.
         if (args.At is { } at)
             torque += Vector3.Cross(at.ToNumerics() - CentreOfMass(creation, args.Body), force);
-        world.ApplyForce(creation, args.Body, force, torque, args.Duration, args.Part);
+        world.ApplyForce(creation, args.Body, force, torque, args.Duration, args.Part, args.At?.ToNumerics(), own);
         return null;
     }
 

@@ -1,0 +1,23 @@
+{
+  "id": "rotor",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal",
+      "count": 5
+    },
+    {
+      "item": "component_kit",
+      "count": 3
+    }
+  ],
+  "outputs": [
+    {
+      "item": "rotor",
+      "count": 1
+    }
+  ],
+  "time": 8
+}

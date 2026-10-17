@@ -1,0 +1,26 @@
+{
+  "id": "new_thruster",
+  "name": "New Thruster",
+  "description": "Pushes its creation toward its base while it runs. Link a switch or a seat to it for the power.",
+  "category": "interactive",
+  "mass": 4,
+  "durability": 4,
+  "friction": 0.4,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.125, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "logic": { "inputs": 4, "outputs": 10 },
+  "settings": [
+    { "id": "control", "name": "Control", "type": "choice", "options": ["link", "w_s", "a_d", "space_shift"], "default": "link" },
+    { "id": "invert", "name": "Invert", "type": "toggle", "default": false }
+  ]
+}

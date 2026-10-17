@@ -117,7 +117,7 @@ internal sealed class ItemRig : IDisposable
 
         public bool IsLive(int id) => f.World.Creations.ContainsKey(id);
 
-        public void ApplyForce(Creation creation, int body, Vector3 force, Vector3 torque, float? duration, int? part)
+        public void ApplyForce(Creation creation, int body, Vector3 force, Vector3 torque, float? duration, int? part, Vector3? at, Vector3 ownTorque)
         {
         }
 

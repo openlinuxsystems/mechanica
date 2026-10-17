@@ -140,8 +140,14 @@ internal sealed class ScriptRig : IDisposable
 
         public bool IsLive(int id) => Creations.ContainsKey(id) && !Parked.Contains(id);
 
-        public void ApplyForce(Creation creation, int body, Vector3 force, Vector3 torque, float? duration, int? part) =>
+        public void ApplyForce(Creation creation, int body, Vector3 force, Vector3 torque, float? duration, int? part, Vector3? at, Vector3 ownTorque)
+        {
             Pushes.Add((creation.Id, body, force, torque, part));
+            Applied.Add((part, force, at, ownTorque));
+        }
+
+        /// <summary>Every push as the world got it: the part, the force, where it acts and the torque asked for on top.</summary>
+        public List<(int? Part, Vector3 Force, Vector3? At, Vector3 Torque)> Applied { get; } = [];
 
         public List<JointMotor> JointMotors { get; } = [];
 

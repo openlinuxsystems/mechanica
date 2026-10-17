@@ -1,0 +1,82 @@
+{
+  "id": "rotor",
+  "name": "Rotor",
+  "description": "A powered propeller that pulls its creation away from its base and twists it the other way from its spin. Pair clockwise and counter-clockwise rotors (R) to cancel the twist.",
+  "category": "interactive",
+  "mass": 5,
+  "durability": 4,
+  "friction": 0.4,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "stack_size": 10,
+  "sound_material": "metal",
+  "size": [3, 1, 3],
+  "mesh": "meshes/rotor.glb",
+  "visual": {
+    "color": "#3f4a55",
+    "roughness": 0.5,
+    "metallic": 0.6
+  },
+  "collision": {
+    "shape": "cylinder",
+    "radius": 0.36,
+    "height": 0.08,
+    "offset": [0, 0.07, 0]
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.125, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "script": "scripts/rotor.lua",
+  "sounds": {
+    "spin_up": "rotor_spin_up",
+    "loop": "rotor_loop",
+    "spin_down": "rotor_spin_down"
+  },
+  "logic": {
+    "inputs": 4,
+    "outputs": 10
+  },
+  "settings": [
+    {
+      "id": "control",
+      "name": "Control",
+      "type": "choice",
+      "options": [
+        "link",
+        "w_s",
+        "a_d",
+        "space_shift"
+      ],
+      "default": "link"
+    },
+    {
+      "id": "invert",
+      "name": "Invert",
+      "type": "toggle",
+      "default": false
+    },
+    {
+      "id": "spin",
+      "name": "Spin",
+      "type": "choice",
+      "options": [
+        "clockwise",
+        "counterclockwise"
+      ],
+      "default": "clockwise"
+    }
+  ],
+  "properties": {
+    "thrust": 150,
+    "counter_torque": 40,
+    "spool_rate": 0.8,
+    "lever_rate": 0.5,
+    "inflow_speed": 10,
+    "max_inflow_gain": 1.3
+  }
+}

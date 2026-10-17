@@ -133,20 +133,10 @@ public sealed partial class ScriptRuntime : ILogicHost
             var instance = PartInstance();
             return Seats?.Occupant(instance.Creation, instance.Part) is { } peer ? DynValue.NewNumber(peer) : DynValue.Nil;
         });
-        Fn(part, "occupant_input", _ =>
-        {
-            var instance = PartInstance();
-            if (Seats?.Occupant(instance.Creation, instance.Part) is not { } peer || OccupantInput?.Invoke(peer) is not { } input)
-                return DynValue.Nil;
-            var table = new Table(script);
-            table.Set("x", DynValue.NewNumber(input.MoveX));
-            table.Set("z", DynValue.NewNumber(input.MoveZ));
-            table.Set("jump", DynValue.NewBoolean(input.Jump));
-            table.Set("sprint", DynValue.NewBoolean(input.Sprint));
-            table.Set("yaw", DynValue.NewNumber(input.Yaw));
-            table.Set("pitch", DynValue.NewNumber(input.Pitch));
-            return DynValue.NewTable(table);
-        });
+        Fn(part, "occupant_input", _ => OccupantTable(script, PartInstance().Creation, PartInstance().Part));
+        // Another seat of the same Creation: a control surface or rotor reads the pilot of the seat linked to it.
+        Fn(creation, "occupant_input", args => OccupantTable(script, PartInstance().Creation, (int)LuaValues.Number(args[0], "creation.occupant_input", 1)));
+
 
         Fn(creation, "count", args =>
         {
@@ -177,6 +167,21 @@ public sealed partial class ScriptRuntime : ILogicHost
         });
 
         Fn(world, "creative", _ => DynValue.NewBoolean(Creative));
+    }
+
+    // A seated player's input as {x, z, jump, sprint, yaw, pitch}, or nil when the seat is empty.
+    private DynValue OccupantTable(Script script, int creationId, int partId)
+    {
+        if (Seats?.Occupant(creationId, partId) is not { } peer || OccupantInput?.Invoke(peer) is not { } input)
+            return DynValue.Nil;
+        var table = new Table(script);
+        table.Set("x", DynValue.NewNumber(input.MoveX));
+        table.Set("z", DynValue.NewNumber(input.MoveZ));
+        table.Set("jump", DynValue.NewBoolean(input.Jump));
+        table.Set("sprint", DynValue.NewBoolean(input.Sprint));
+        table.Set("yaw", DynValue.NewNumber(input.Yaw));
+        table.Set("pitch", DynValue.NewNumber(input.Pitch));
+        return DynValue.NewTable(table);
     }
 
     // The world direction a joint turns about or slides along, for creation.joint().axis.

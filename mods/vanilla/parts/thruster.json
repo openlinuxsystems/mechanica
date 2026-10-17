@@ -1,0 +1,64 @@
+{
+  "id": "thruster",
+  "name": "Thruster",
+  "description": "A jet that pushes its creation toward its base. Link a switch or a seat to it, or pick a pilot control with the Connect Tool (R). Burns gasoline from the creation's gas containers.",
+  "category": "interactive",
+  "mass": 4,
+  "durability": 4,
+  "friction": 0.4,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "stack_size": 10,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/thruster.glb",
+  "visual": {
+    "color": "#5b6470",
+    "roughness": 0.4,
+    "metallic": 0.8
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.125, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "script": "scripts/thruster.lua",
+  "sounds": {
+    "ignite": "thruster_ignite",
+    "loop": "thruster_loop",
+    "cut": "thruster_cut"
+  },
+  "logic": {
+    "inputs": 4,
+    "outputs": 10
+  },
+  "settings": [
+    {
+      "id": "control",
+      "name": "Control",
+      "type": "choice",
+      "options": [
+        "link",
+        "w_s",
+        "a_d",
+        "space_shift"
+      ],
+      "default": "link"
+    },
+    {
+      "id": "invert",
+      "name": "Invert",
+      "type": "toggle",
+      "default": false
+    }
+  ],
+  "properties": {
+    "thrust": 200,
+    "lever_rate": 0.5,
+    "fuel": "gasoline",
+    "fuel_time": 112
+  }
+}
