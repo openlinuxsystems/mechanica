@@ -1,0 +1,17 @@
+{
+  "id": "hover",
+  "name": "Test Hover Thruster",
+  "category": "interactive",
+  "mass": 2,
+  "durability": 3,
+  "friction": 0.6,
+  "buoyancy": 0.6,
+  "flammable": false,
+  "size": [1, 1, 1],
+  "script": "scripts/hover.lua",
+  "properties": {
+    "height": 3,
+    "stiffness": 4,
+    "damping": 3
+  }
+}

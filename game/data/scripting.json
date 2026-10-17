@@ -1,0 +1,9 @@
+{
+  // Limits of the Lua host (src/Mechanica.Scripting). Loaded by game/scripts/Scripting/ScriptSync.cs.
+  "instruction_budget": 1000000,
+  "reload_poll_seconds": 0.5,
+  "max_string_length": 1000000,
+  "max_ray_length": 500,
+  "max_overlap_radius": 25,
+  "max_messages": 500
+}

@@ -12,7 +12,14 @@ namespace Mechanica.Core.Motion;
 /// <param name="Body">Index of the Body in <see cref="Creations.Creation.Bodies"/>.</param>
 /// <param name="Torque">World-space torque in N·m.</param>
 /// <param name="Duration">How long to keep pushing, in s. Null means one physics step. A later call on the same Body replaces it.</param>
-public sealed record ApplyForceArgs(int Creation, Vec3 Force, int Body = 0, Vec3? Torque = null, float? Duration = null);
+/// <param name="At">World point the force acts at, in m. Null pushes through the centre of mass; any other point also twists the Body.</param>
+/// <param name="Part">
+/// The part doing the pushing (a thruster, a wing). Pushes from different parts of one Body add up, and a
+/// later call from the same part replaces only that part's push. The part must be in <paramref name="Body"/>.
+/// Null is one shared push per Body, as above.
+/// </param>
+public sealed record ApplyForceArgs(int Creation, Vec3 Force, int Body = 0, Vec3? Torque = null, float? Duration = null,
+    Vec3? At = null, int? Part = null);
 
 /// <summary>Arguments of <c>SetBearingTarget</c>.</summary>
 /// <param name="Creation">Creation holding the bearing.</param>
@@ -76,8 +83,12 @@ public interface IMotionWorld
     /// <summary>True when the Creation is live in this peer's physics world (not parked).</summary>
     bool IsLive(int id);
 
-    /// <summary>Pushes Body <paramref name="body"/> for <paramref name="duration"/> seconds (null: one step), replacing any earlier push on it.</summary>
-    void ApplyForce(Creation creation, int body, Vector3 force, Vector3 torque, float? duration);
+    /// <summary>
+    /// Pushes Body <paramref name="body"/> through its centre of mass for <paramref name="duration"/> seconds
+    /// (null: one step), replacing any earlier push on it from the same <paramref name="part"/> (null: the
+    /// Body's shared push).
+    /// </summary>
+    void ApplyForce(Creation creation, int body, Vector3 force, Vector3 torque, float? duration, int? part);
 
     /// <summary>Sets or (with a null velocity) clears the motor of the bearing joint <paramref name="joint"/>.</summary>
     void SetBearingTarget(Creation creation, JointLink joint, float? velocity, float maxTorque);
@@ -147,6 +158,21 @@ public sealed class MotionActions(MotionSettings settings, IMotionWorld world)
             return refusal;
         if (args.Body < 0 || args.Body >= creation!.Bodies.Count)
             return $"Creation {args.Creation} has no body {args.Body} (it has {creation!.Bodies.Count}).";
+        if (args.Part is { } part)
+        {
+            if (creation.FindPart(part) is null)
+                return $"Creation {args.Creation} has no part {part}.";
+            if (creation.BodyIndexOf(part) != args.Body)
+                return $"Part {part} is in body {creation.BodyIndexOf(part)}, not body {args.Body}.";
+        }
+        if (args.At is { } at)
+        {
+            if (!float.IsFinite(at.X) || !float.IsFinite(at.Y) || !float.IsFinite(at.Z))
+                return "at must be finite.";
+            var lever = (at.ToNumerics() - CentreOfMass(creation, args.Body)).Length();
+            if (lever > settings.MaxLeverArm)
+                return $"at is {lever:0.#} m from the body's centre of mass; the most allowed is {settings.MaxLeverArm:0.#} m.";
+        }
         return CheckVector(args.Force, "force", settings.MaxForce, "N")
             ?? (args.Torque is { } torque ? CheckVector(torque, "torque", settings.MaxTorque, "N·m") : null)
             ?? (args.Duration is { } d && (!float.IsFinite(d) || d <= 0f || d > settings.MaxDuration)
@@ -156,10 +182,19 @@ public sealed class MotionActions(MotionSettings settings, IMotionWorld world)
 
     private JsonElement? ApplyForceNow(ActionCaller caller, ApplyForceArgs args)
     {
-        world.ApplyForce(world.FindCreation(args.Creation)!, args.Body, args.Force.ToNumerics(),
-            (args.Torque ?? Vec3.Zero).ToNumerics(), args.Duration);
+        var creation = world.FindCreation(args.Creation)!;
+        var force = args.Force.ToNumerics();
+        var torque = (args.Torque ?? Vec3.Zero).ToNumerics();
+        // A force off the centre of mass is the same force through it plus the twist of its lever arm.
+        if (args.At is { } at)
+            torque += Vector3.Cross(at.ToNumerics() - CentreOfMass(creation, args.Body), force);
+        world.ApplyForce(creation, args.Body, force, torque, args.Duration, args.Part);
         return null;
     }
+
+    /// <summary>World position of a Body's centre of mass at its current pose.</summary>
+    public static Vector3 CentreOfMass(Creation creation, int body) =>
+        creation.BodyPose(body).Apply(creation.Bodies[body].CentreOfMass.ToNumerics());
 
     private string? ValidateBearing(ActionCaller caller, SetBearingTargetArgs args)
     {

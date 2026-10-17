@@ -7,7 +7,7 @@ written by the chunk that builds the feature it covers.
 |-----|------------|
 | [Getting Started](getting-started.md) | Part Editor v1 |
 | [Part Data Schema Reference](part-data-schema.md) | Part Editor v1 |
-| Lua API Reference | MoonSharp host |
+| [Lua API Reference](lua-api.md) | MoonSharp host |
 | Socket and Joint Guide | Joint primitives |
 | Logic and Power Tutorial | Signal/logic bus |
 | Aero Tutorial | Aero/propulsion |

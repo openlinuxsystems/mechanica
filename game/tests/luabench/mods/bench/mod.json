@@ -1,0 +1,6 @@
+{
+  "id": "bench",
+  "name": "Lua benchmark",
+  "version": "1.0.0",
+  "description": "A wing part whose lift and drag are computed in Lua, for the D2 performance benchmark."
+}

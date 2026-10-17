@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- D2 Lua benchmark without Godot: the cost of the Lua side alone. The Godot scene game/tests/luabench measures it with Jolt. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Mechanica.Scripting/Mechanica.Scripting.csproj" />
+  </ItemGroup>
+</Project>

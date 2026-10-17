@@ -13,6 +13,7 @@ using Mechanica.Game.Motion;
 using Mechanica.Game.Net;
 using Mechanica.Game.Player;
 using Mechanica.Game.Remote;
+using Mechanica.Game.Scripting;
 using Mechanica.Game.Sound;
 using Mechanica.Game.World;
 
@@ -22,8 +23,8 @@ namespace Mechanica.Game;
 /// Game world and session root. It builds the networking nodes (<see cref="Session"/>,
 /// <see cref="PlayerSync"/>, <see cref="CreationSync"/>, <see cref="Actions"/>), the streamed world (<see cref="Streamer"/>,
 /// <see cref="Creations"/>), building (<see cref="Build"/>, the local player's <see cref="Tools"/>), the
-/// motion primitives (<see cref="Motion"/>), sound (<see cref="Sounds"/>) and the host's external AI endpoint
-/// and record/replay (<see cref="Ai"/>, <see cref="Recorder"/>). It starts offline, hosting or joining from
+/// motion primitives (<see cref="Motion"/>), part scripts (<see cref="Scripts"/>), sound (<see cref="Sounds"/>) and the host's external
+/// AI endpoint and record/replay (<see cref="Ai"/>, <see cref="Recorder"/>). It starts offline, hosting or joining from
 /// <see cref="Options"/>, and drives whichever player belongs to this peer from the keyboard and mouse.
 /// Every peer runs the same scene, so node paths (and with them RPC routes) match everywhere.
 /// </summary>
@@ -98,6 +99,9 @@ public partial class Main : Node3D
 
     /// <summary>Forces, torques and bearing motors for scripts, bots and external agents.</summary>
     public MotionSync Motion { get; private set; } = null!;
+
+    /// <summary>The host's Lua part scripts.</summary>
+    public ScriptSync Scripts { get; private set; } = null!;
 
     /// <summary>Record/replay of the host's Action API calls.</summary>
     public RecordReplay Recorder { get; private set; } = null!;
@@ -194,6 +198,8 @@ public partial class Main : Node3D
         Motion = new MotionSync { Name = "Motion", Session = Session, Creations = Creations };
         AddChild(Motion);
         Motion.RegisterActions(Actions.Dispatcher);
+        Scripts = new ScriptSync { Name = "Scripts", Session = Session, Creations = Creations, Motion = Motion, Actions = Actions, Mods = mods };
+        AddChild(Scripts);
         Recorder = new RecordReplay { Name = "Recorder", Session = Session, Actions = Actions };
         AddChild(Recorder);
         Ai = new AiEndpoint { Name = "Ai", Session = Session, Actions = Actions, Log = Recorder };
@@ -252,6 +258,7 @@ public partial class Main : Node3D
         Build.SetContent(mods);
         SoundEvents = LoadSounds(mods);
         Sounds.SetRegistry(SoundEvents);
+        Scripts.SetContent(mods);
         Hammer?.ReloadParts();
     }
 
