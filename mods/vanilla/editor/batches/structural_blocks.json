@@ -12,6 +12,7 @@
         "friction": 0.5,
         "buoyancy": 0.6,
         "flammable": true,
+        "stack_size": 100,
         "sound_material": "wood",
         "size": [1, 1, 1],
         "visual": {
@@ -44,6 +45,7 @@
         "friction": 0.4,
         "buoyancy": 0.1,
         "flammable": false,
+        "stack_size": 100,
         "sound_material": "metal",
         "size": [1, 1, 1],
         "visual": {
@@ -52,7 +54,21 @@
           "metallic": 0.8
         }
       },
-      "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }]
+      "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }],
+      "recipes": [
+        {
+          "id": "metal_block",
+          "stations": ["fabricator"],
+          "inputs": [
+            { "item": "scrap_metal", "count": 2 },
+            { "item": "component_kit", "count": 1 }
+          ],
+          "outputs": [
+            { "item": "metal_block", "count": 4 }
+          ],
+          "time": 2
+        }
+      ]
     },
     {
       "file": "parts/blocks/metal_wedge.json",
@@ -63,7 +79,21 @@
         "mass": 4
       },
       "model": [{ "kind": "wedge", "size": [0.25, 0.25, 0.25] }],
-      "collision_from_model": true
+      "collision_from_model": true,
+      "recipes": [
+        {
+          "id": "metal_wedge",
+          "stations": ["fabricator"],
+          "inputs": [
+            { "item": "scrap_metal", "count": 2 },
+            { "item": "component_kit", "count": 1 }
+          ],
+          "outputs": [
+            { "item": "metal_wedge", "count": 4 }
+          ],
+          "time": 2
+        }
+      ]
     },
     {
       "file": "parts/blocks/concrete_block.json",
@@ -76,6 +106,7 @@
         "friction": 0.6,
         "buoyancy": 0,
         "flammable": false,
+        "stack_size": 100,
         "sound_material": "concrete",
         "size": [1, 1, 1],
         "visual": {
@@ -108,6 +139,7 @@
         "friction": 0.3,
         "buoyancy": 0.4,
         "flammable": false,
+        "stack_size": 100,
         "sound_material": "glass",
         "size": [1, 1, 1],
         "visual": {
@@ -141,6 +173,7 @@
         "friction": 0.5,
         "buoyancy": 0.5,
         "flammable": true,
+        "stack_size": 100,
         "sound_material": "scrap",
         "size": [1, 1, 1],
         "visual": {
@@ -149,7 +182,20 @@
           "metallic": 0
         }
       },
-      "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }]
+      "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }],
+      "recipes": [
+        {
+          "id": "scrap_wood_block",
+          "stations": ["fabricator", "mini_fabricator"],
+          "inputs": [
+            { "item": "scrap_wood", "count": 1 }
+          ],
+          "outputs": [
+            { "item": "scrap_wood_block", "count": 4 }
+          ],
+          "time": 2
+        }
+      ]
     },
     {
       "file": "parts/blocks/scrap_wood_wedge.json",
@@ -160,7 +206,20 @@
         "mass": 1.5
       },
       "model": [{ "kind": "wedge", "size": [0.25, 0.25, 0.25] }],
-      "collision_from_model": true
+      "collision_from_model": true,
+      "recipes": [
+        {
+          "id": "scrap_wood_wedge",
+          "stations": ["fabricator", "mini_fabricator"],
+          "inputs": [
+            { "item": "scrap_wood", "count": 1 }
+          ],
+          "outputs": [
+            { "item": "scrap_wood_wedge", "count": 4 }
+          ],
+          "time": 2
+        }
+      ]
     },
     {
       "file": "parts/blocks/scrap_metal_block.json",
@@ -173,6 +232,7 @@
         "friction": 0.4,
         "buoyancy": 0.1,
         "flammable": false,
+        "stack_size": 100,
         "sound_material": "scrap",
         "size": [1, 1, 1],
         "visual": {
@@ -181,7 +241,20 @@
           "metallic": 0.6
         }
       },
-      "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }]
+      "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }],
+      "recipes": [
+        {
+          "id": "scrap_metal_block",
+          "stations": ["fabricator", "mini_fabricator"],
+          "inputs": [
+            { "item": "scrap_metal", "count": 1 }
+          ],
+          "outputs": [
+            { "item": "scrap_metal_block", "count": 4 }
+          ],
+          "time": 2
+        }
+      ]
     },
     {
       "file": "parts/blocks/scrap_metal_wedge.json",
@@ -192,7 +265,20 @@
         "mass": 3
       },
       "model": [{ "kind": "wedge", "size": [0.25, 0.25, 0.25] }],
-      "collision_from_model": true
+      "collision_from_model": true,
+      "recipes": [
+        {
+          "id": "scrap_metal_wedge",
+          "stations": ["fabricator", "mini_fabricator"],
+          "inputs": [
+            { "item": "scrap_metal", "count": 1 }
+          ],
+          "outputs": [
+            { "item": "scrap_metal_wedge", "count": 4 }
+          ],
+          "time": 2
+        }
+      ]
     },
     {
       "file": "parts/blocks/barrier_block.json",
@@ -205,6 +291,7 @@
         "friction": 0.5,
         "buoyancy": 0.3,
         "flammable": true,
+        "stack_size": 100,
         "sound_material": "plastic",
         "size": [1, 1, 1],
         "visual": {
@@ -237,6 +324,7 @@
         "friction": 0.4,
         "buoyancy": 0.2,
         "flammable": false,
+        "stack_size": 100,
         "sound_material": "tile",
         "size": [1, 1, 1],
         "visual": {
@@ -269,6 +357,7 @@
         "friction": 0.6,
         "buoyancy": 0,
         "flammable": false,
+        "stack_size": 100,
         "sound_material": "concrete",
         "size": [1, 1, 1],
         "visual": {
@@ -301,6 +390,7 @@
         "friction": 0.6,
         "buoyancy": 0.8,
         "flammable": true,
+        "stack_size": 100,
         "sound_material": "cardboard",
         "size": [1, 1, 1],
         "visual": {
@@ -333,6 +423,7 @@
         "friction": 0.3,
         "buoyancy": 0.1,
         "flammable": false,
+        "stack_size": 100,
         "sound_material": "metal",
         "size": [1, 1, 1],
         "visual": {
@@ -365,6 +456,7 @@
         "friction": 0.3,
         "buoyancy": 0.4,
         "flammable": false,
+        "stack_size": 100,
         "sound_material": "glass",
         "size": [1, 1, 1],
         "visual": {
@@ -398,6 +490,7 @@
         "friction": 0.3,
         "buoyancy": 0.2,
         "flammable": false,
+        "stack_size": 100,
         "sound_material": "glass",
         "size": [1, 1, 1],
         "visual": {
@@ -431,6 +524,7 @@
         "friction": 0.3,
         "buoyancy": 0.3,
         "flammable": false,
+        "stack_size": 100,
         "sound_material": "metal",
         "size": [1, 1, 1],
         "visual": {
@@ -463,6 +557,7 @@
         "friction": 0.5,
         "buoyancy": 0.1,
         "flammable": false,
+        "stack_size": 100,
         "sound_material": "metal",
         "size": [1, 1, 1],
         "visual": {
@@ -495,6 +590,7 @@
         "friction": 0.7,
         "buoyancy": 0.7,
         "flammable": true,
+        "stack_size": 100,
         "sound_material": "fabric",
         "size": [1, 1, 1],
         "visual": {
@@ -527,6 +623,7 @@
         "friction": 0.5,
         "buoyancy": 0.1,
         "flammable": false,
+        "stack_size": 100,
         "sound_material": "concrete",
         "size": [1, 1, 1],
         "visual": {
@@ -559,6 +656,7 @@
         "friction": 0.8,
         "buoyancy": 0.5,
         "flammable": true,
+        "stack_size": 100,
         "sound_material": "fabric",
         "size": [1, 1, 1],
         "visual": {
@@ -591,6 +689,7 @@
         "friction": 0.6,
         "buoyancy": 0.9,
         "flammable": true,
+        "stack_size": 100,
         "sound_material": "fabric",
         "size": [1, 1, 1],
         "visual": {
@@ -624,6 +723,7 @@
         "friction": 0.7,
         "buoyancy": 0.1,
         "flammable": false,
+        "stack_size": 100,
         "sound_material": "metal",
         "size": [1, 1, 1],
         "visual": {

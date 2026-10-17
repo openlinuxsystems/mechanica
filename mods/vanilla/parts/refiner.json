@@ -1,0 +1,39 @@
+{
+  "id": "refiner",
+  "name": "Refiner",
+  "description": "Refines raw materials such as crude oil.",
+  "category": "station",
+  "mass": 20,
+  "durability": 10,
+  "friction": 0.5,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "sound_material": "metal",
+  "size": [4, 6, 4],
+  "mesh": "meshes/refiner.glb",
+  "visual": {
+    "color": "#5a7a8c",
+    "paintable": true
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.75, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "sounds": {
+    "start": "refiner_start",
+    "work": "refiner_work",
+    "complete": "refiner_complete",
+    "place": "place_metal"
+  },
+  "inventory": {
+    "slots": 6
+  },
+  "crafting": {
+    "speed": 1,
+    "queue_size": 8
+  }
+}

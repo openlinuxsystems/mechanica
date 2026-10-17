@@ -1,0 +1,32 @@
+{
+  "id": "fridge",
+  "name": "Fridge",
+  "category": "container",
+  "mass": 40,
+  "durability": 10,
+  "friction": 0.5,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "sound_material": "metal",
+  "size": [4, 7, 3],
+  "mesh": "meshes/fridge.glb",
+  "visual": {
+    "color": "#e8e8e0",
+    "paintable": true
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.875, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "sounds": {
+    "open": "container_open",
+    "place": "place_metal"
+  },
+  "inventory": {
+    "slots": 30
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "id": "chemical_container",
+  "name": "Chemical Container",
+  "category": "container",
+  "mass": 6,
+  "durability": 6,
+  "friction": 0.5,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "sound_material": "plastic",
+  "size": [2, 3, 2],
+  "mesh": "meshes/chemical_container.glb",
+  "visual": {
+    "color": "#6a3a9a",
+    "paintable": true
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.375, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "sounds": {
+    "open": "container_open",
+    "place": "place_plastic"
+  },
+  "inventory": {
+    "slots": 5,
+    "accepts": [
+      "crude_oil"
+    ]
+  }
+}

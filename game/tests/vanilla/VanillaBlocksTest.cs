@@ -9,8 +9,8 @@ namespace Mechanica.Game.Tests;
 
 /// <summary>
 /// Headless test for chunk 6, vanilla's structural blocks and wedges. Re-runs the Part Editor batch that
-/// authors them into a scratch copy of the mod and checks every file it writes (part, editor source and
-/// baked mesh) is byte-for-byte what is checked in, so the shipped blocks are the editor's output (D3).
+/// authors them into a scratch copy of the mod and checks every file it writes (part, editor source,
+/// baked mesh and recipe) is byte-for-byte what is checked in, so the shipped blocks are the editor's output (D3).
 /// Then, in the Test Sandbox with a host and a local client (D10), the client spawns every block and
 /// wedge through the Action API; the host validates them, all of them land on the ground on both
 /// instances, and glass is see-through while the path light glows. Exits 0 on success.
@@ -42,22 +42,27 @@ public partial class VanillaBlocksTest : StagedTest
                 var root = ProjectSettings.GlobalizePath("user://tests/vanilla_mods");
                 if (Directory.Exists(root))
                     Directory.Delete(root, recursive: true);
+                // A copy of vanilla without what the batch makes; the rest (resources, stations) its recipes need.
                 _scratchMod = Path.Combine(root, "vanilla");
-                Directory.CreateDirectory(Path.Combine(_scratchMod, "editor", "batches"));
-                File.Copy(Path.Combine(VanillaDir, "mod.json"), Path.Combine(_scratchMod, "mod.json"));
-                File.Copy(Path.Combine(VanillaDir, BatchFile), Path.Combine(_scratchMod, BatchFile));
+                foreach (var file in Directory.GetFiles(VanillaDir, "*", SearchOption.AllDirectories))
+                {
+                    var relative = Path.GetRelativePath(VanillaDir, file).Replace('\\', '/');
+                    if (IsBatchOutput(relative))
+                        continue;
+                    Directory.CreateDirectory(Path.GetDirectoryName(Path.Combine(_scratchMod, relative))!);
+                    File.Copy(file, Path.Combine(_scratchMod, relative));
+                }
                 _batch = PartBatchRunner.RunAsync(this, Path.Combine(_scratchMod, BatchFile));
             }
             if (_batch is not { IsCompleted: true })
                 return false;
             var result = _batch.Result;
-            Check(result.Succeeded && result.Exports.Count == 40, $"the batch exports 40 parts ({string.Join("; ", result.Diagnostics)})");
+            Check(result.Succeeded && result.Exports.Count == 46, $"the batch exports 40 parts and 6 recipes ({string.Join("; ", result.Diagnostics)})");
             var made = Directory.GetFiles(_scratchMod, "*", SearchOption.AllDirectories)
                 .Select(f => Path.GetRelativePath(_scratchMod, f).Replace('\\', '/'))
-                .Where(f => f.StartsWith("parts/", StringComparison.Ordinal) || f.StartsWith("meshes/", StringComparison.Ordinal)
-                    || f.StartsWith("editor/parts/", StringComparison.Ordinal))
+                .Where(IsBatchOutput)
                 .Order(StringComparer.Ordinal).ToList();
-            Check(made.Count == 120, $"it writes a part, an editor source and a mesh for each ({made.Count} files)");
+            Check(made.Count == 126, $"it writes a part, an editor source and a mesh for each, and the recipes ({made.Count} files)");
             var differing = made.Where(f => !File.Exists(Path.Combine(VanillaDir, f))
                 || !File.ReadAllBytes(Path.Combine(VanillaDir, f)).AsSpan().SequenceEqual(File.ReadAllBytes(Path.Combine(_scratchMod, f)))).ToList();
             Check(differing.Count == 0, $"every file matches mods/vanilla (differing: {string.Join(", ", differing)}); re-run tools/author-vanilla.sh");
@@ -128,6 +133,13 @@ public partial class VanillaBlocksTest : StagedTest
             return true;
         });
     }
+
+    // Blocks and wedges live in blocks/ folders; their recipes are named after them.
+    private static bool IsBatchOutput(string relative) =>
+        relative.StartsWith("parts/blocks/", StringComparison.Ordinal) || relative.StartsWith("meshes/blocks/", StringComparison.Ordinal)
+        || relative.StartsWith("editor/parts/blocks/", StringComparison.Ordinal)
+        || (relative.StartsWith("recipes/", StringComparison.Ordinal) && (relative.EndsWith("_block.json", StringComparison.Ordinal)
+            || relative.EndsWith("_wedge.json", StringComparison.Ordinal)));
 
     private static int Count(SandboxScreen.Instance instance) => instance.Main.Creations.All.Count();
 }

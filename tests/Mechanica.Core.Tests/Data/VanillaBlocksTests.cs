@@ -1,6 +1,7 @@
 using Mechanica.Core.Creations;
 using Mechanica.Core.Data;
 using Mechanica.Core.Editor;
+using Mechanica.Core.Items;
 
 namespace Mechanica.Core.Tests.Data;
 
@@ -67,6 +68,7 @@ public class VanillaBlocksTests
             Assert.False(string.IsNullOrWhiteSpace(part.Name));
             Assert.False(string.IsNullOrWhiteSpace(part.Description));
             Assert.Null(part.Sockets);
+            Assert.Equal(100, part.StackSize);
             Assert.NotNull(part.Mesh);
             Assert.True(File.Exists(Path.Combine(TestMods.RepoRoot, "mods", "vanilla", part.Mesh)), $"{part.Id}'s mesh {part.Mesh} exists");
         }
@@ -118,6 +120,24 @@ public class VanillaBlocksTests
         }
     }
 
+    [Theory]
+    [InlineData("scrap_wood", "scrap_wood:1", "fabricator,mini_fabricator")]
+    [InlineData("scrap_metal", "scrap_metal:1", "fabricator,mini_fabricator")]
+    [InlineData("metal", "scrap_metal:2,component_kit:1", "fabricator")]
+    public void SpecBlockRecipesMakeFourOfTheBlockOrWedge(string material, string inputs, string stations)
+    {
+        var book = RecipeBook.Load(Vanilla.Value);
+        Assert.Empty(book.Diagnostics);
+        foreach (var id in new[] { $"{material}_block", $"{material}_wedge" })
+        {
+            var recipe = book.Find(id) ?? throw new Xunit.Sdk.XunitException($"no recipe makes {id}");
+            Assert.Equal(inputs, string.Join(",", recipe.Inputs.Select(i => $"{i.Item[8..]}:{i.Count}")));
+            Assert.Equal(stations, string.Join(",", recipe.Stations.Select(s => s[8..])));
+            var output = Assert.Single(recipe.Outputs);
+            Assert.Equal(($"vanilla:{id}", 4), (output.Item, output.Count));
+        }
+    }
+
     [Fact]
     public void PartFilesAreThePartEditorBatchOutput()
     {
@@ -131,6 +151,8 @@ public class VanillaBlocksTests
 
         Assert.Empty(diagnostics);
         Assert.Equal(40, documents!.Count);
+        foreach (var recipe in batch!.Parts!.SelectMany(e => e.Recipes ?? []))
+            Assert.Equal(DataJson.Write(recipe), File.ReadAllText(Path.Combine(mod, RecipeExporter.TargetFile(recipe.Id!))));
         foreach (var document in documents)
         {
             Assert.False(document.IsDirty, $"{document.RelativeFile} differs from the batch; re-run it with tools/author-vanilla.sh");

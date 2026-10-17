@@ -8,6 +8,7 @@
   "friction": 0.3,
   "buoyancy": 0.4,
   "flammable": false,
+  "stack_size": 100,
   "sound_material": "glass",
   "size": [1, 1, 1],
   "mesh": "meshes/blocks/path_light_block.glb",

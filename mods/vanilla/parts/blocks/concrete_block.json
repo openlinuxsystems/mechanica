@@ -8,6 +8,7 @@
   "friction": 0.6,
   "buoyancy": 0,
   "flammable": false,
+  "stack_size": 100,
   "sound_material": "concrete",
   "size": [1, 1, 1],
   "mesh": "meshes/blocks/concrete_block.glb",

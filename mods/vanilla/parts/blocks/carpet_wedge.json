@@ -8,6 +8,7 @@
   "friction": 0.8,
   "buoyancy": 0.5,
   "flammable": true,
+  "stack_size": 100,
   "sound_material": "fabric",
   "size": [1, 1, 1],
   "mesh": "meshes/blocks/carpet_wedge.glb",

@@ -1,0 +1,32 @@
+{
+  "id": "file_cabinet",
+  "name": "File Cabinet",
+  "category": "container",
+  "mass": 20,
+  "durability": 8,
+  "friction": 0.5,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "sound_material": "metal",
+  "size": [2, 5, 3],
+  "mesh": "meshes/file_cabinet.glb",
+  "visual": {
+    "color": "#7a7a72",
+    "paintable": true
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.625, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "sounds": {
+    "open": "container_open",
+    "place": "place_metal"
+  },
+  "inventory": {
+    "slots": 10
+  }
+}

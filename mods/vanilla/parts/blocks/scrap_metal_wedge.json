@@ -8,6 +8,7 @@
   "friction": 0.4,
   "buoyancy": 0.1,
   "flammable": false,
+  "stack_size": 100,
   "sound_material": "scrap",
   "size": [1, 1, 1],
   "mesh": "meshes/blocks/scrap_metal_wedge.glb",

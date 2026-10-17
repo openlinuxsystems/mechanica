@@ -1,0 +1,11 @@
+{
+  "format_version": 1,
+  "id": "items_test",
+  "name": "Items Test Parts",
+  "version": "0.1.0",
+  "description": "Fixture mod for the headless inventory and crafting test.",
+  "authors": [
+    "Mechanica"
+  ],
+  "dependencies": []
+}

@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Mechanica.Core.Data;
+using Mechanica.Core.Items;
 
 namespace Mechanica.Core.Editor;
 
@@ -32,6 +33,9 @@ public sealed record PartBatchEntry
     /// <summary>When true, the collision shape is the convex hull of the part's own baked model.</summary>
     public bool? CollisionFromModel { get; init; }
 
+    /// <summary>Recipes that make this part, saved with the editor's recipe exporter to <c>recipes/&lt;id&gt;.json</c>.</summary>
+    public List<RecipeDefinition>? Recipes { get; init; }
+
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
@@ -39,7 +43,8 @@ public sealed record PartBatchEntry
 
 /// <summary>
 /// A Part Editor batch: a list of part edits that the editor runs one after another exactly as if a
-/// modder made each part by hand (new part from a template, set its properties, add model pieces, export).
+/// modder made each part by hand (new part from a template, set its properties, add model pieces, export,
+/// then save its recipes from the Recipes tab).
 /// It is how a mod authors many similar parts, such as vanilla's blocks and wedges, without hand-writing
 /// part files (D3). A batch lives in its mod at <c>editor/batches/*.json</c>; the game never reads it.
 /// Running it again updates the parts it made, so the batch is the source of truth for them.
@@ -87,6 +92,7 @@ public sealed record PartBatch
 
         var modId = Path.GetFileName(Path.GetFullPath(modDirectory));
         var made = new Dictionary<string, PartDefinition>(StringComparer.Ordinal);
+        var recipeIds = new HashSet<string>(StringComparer.Ordinal);
         var documents = new List<PartDocument>();
         var entries = batch.Parts ?? [];
         if (entries.Count == 0)
@@ -101,6 +107,14 @@ public sealed record PartBatch
             var id = PartId(entry.File, $"{path}.file", sink);
             if (id is not null && made.ContainsKey(id))
                 sink.Error(DiagnosticCodes.BatchInvalid, $"{path}.file", $"part '{id}' is already made earlier in this batch.");
+            for (var r = 0; r < (entry.Recipes?.Count ?? 0); r++)
+            {
+                var recipeId = entry.Recipes![r].Id;
+                if (!Identifiers.IsValid(recipeId))
+                    sink.Error(DiagnosticCodes.BatchInvalid, $"{path}.recipes[{r}].id", "a recipe needs a lowercase snake_case id; it names its file.");
+                else if (!recipeIds.Add(recipeId))
+                    sink.Error(DiagnosticCodes.BatchInvalid, $"{path}.recipes[{r}].id", $"recipe '{recipeId}' is already in this batch.");
+            }
             var start = Start(entry, made, template, path, sink);
             if (start is null || id is null || sink.ErrorCount > errors)
                 continue;
@@ -147,6 +161,22 @@ public sealed record PartBatch
             documents.Add(Document(modDirectory, entry.File!, definition, source, diagnostics));
         }
         return sink.ErrorCount > 0 ? null : documents;
+    }
+
+    /// <summary>
+    /// Saves every recipe in the batch into the mod at <paramref name="modDirectory"/> with the editor's
+    /// <see cref="RecipeExporter"/>, after the parts are exported. A recipe already in the mod under the
+    /// same id is replaced. <paramref name="catalog"/> resolves item and station ids; <paramref name="parts"/>
+    /// (the batch's prepared parts) count as known even if the catalog was loaded before they existed.
+    /// </summary>
+    public static IReadOnlyList<ExportResult> ExportRecipes(PartBatch batch, string modDirectory, IPartCatalog catalog,
+        IEnumerable<PartDocument> parts)
+    {
+        var modId = Path.GetFileName(Path.GetFullPath(modDirectory));
+        var extra = parts.Where(d => d.Definition.Id is not null)
+            .ToDictionary(d => $"{modId}:{d.Definition.Id}", d => d.Definition, StringComparer.Ordinal);
+        return [.. (batch.Parts ?? []).SelectMany(e => e.Recipes ?? []).Select(recipe =>
+            RecipeExporter.Export(modDirectory, recipe, catalog, extra, RecipeExporter.TargetFile(recipe.Id ?? "")))];
     }
 
     // An existing part file is opened so the batch edits it in place; otherwise a new part starts there.

@@ -1,5 +1,6 @@
 using Mechanica.Core.Data;
 using Mechanica.Core.Editor;
+using Mechanica.Core.Items;
 using Mechanica.Core.Tests.Data;
 
 namespace Mechanica.Core.Tests.Editor;
@@ -119,6 +120,49 @@ public class PartBatchTests
         Assert.Empty(diagnostics);
         var visual = documents![1].Definition.Visual!;
         Assert.Equal(("#102030", 0.5f, "#ffffff", (float?)null, 0f), (visual.Color, visual.Opacity, visual.Emission, visual.Roughness, visual.Metallic));
+    }
+
+    [Fact]
+    public void RecipesAreSavedWithTheRecipeExporterAndReplacedOnARerun()
+    {
+        using var mods = new TestMods().Mod("m")
+            .Part("m", "ore.json", """{ "id": "ore", "name": "Ore", "category": "resource", "stack_size": 50 }""")
+            .Part("m", "bench.json", TestMods.Block("bench", """{ "category": "station", "inventory": { "slots": 2 }, "crafting": { "speed": 1 } }"""));
+        var mod = Path.Combine(mods.Root, "m");
+        const string json = """
+            { "parts": [{
+              "file": "parts/blocks/ore_block.json", "template": "block", "set": { "name": "Ore Block" },
+              "recipes": [{ "id": "ore_block", "stations": ["m:bench"], "inputs": [{ "item": "m:ore", "count": 1 }],
+                            "outputs": [{ "item": "m:ore_block", "count": 4 }], "time": 2 }]
+            }] }
+            """;
+
+        for (var run = 0; run < 2; run++)
+        {
+            var batch = PartBatch.Read(run == 0 ? json : json.Replace("\"count\": 4", "\"count\": 8"), "batch.json", [])!;
+            var documents = PartBatch.Prepare(batch, mod, Templates, "batch.json", [])!;
+            // On the first run the catalog is loaded before the batch's parts exist; they still count as known.
+            var catalog = mods.Load();
+            ExportAll(documents);
+            var results = PartBatch.ExportRecipes(batch, mod, catalog, documents);
+            Assert.True(Assert.Single(results).Succeeded, string.Join("\n", results[0].Diagnostics));
+        }
+
+        var book = RecipeBook.Load(mods.Load());
+        Assert.Empty(book.Diagnostics);
+        Assert.Equal(("m:ore_block", 8), (book.Find("m:ore_block")!.Outputs[0].Item, book.Find("m:ore_block")!.Outputs[0].Count));
+    }
+
+    [Fact]
+    public void RecipesNeedUniqueIds()
+    {
+        using var mods = new TestMods().Mod("m");
+        var (documents, diagnostics) = Prepare(Path.Combine(mods.Root, "m"), """
+            { "parts": [{ "file": "parts/a.json", "template": "block", "set": { "name": "A" }, "recipes": [{ "id": "a" }, { "id": "a" }, {}] }] }
+            """);
+
+        Assert.Null(documents);
+        Assert.Equal(["$.parts[0].recipes[1].id", "$.parts[0].recipes[2].id"], diagnostics.Select(d => d.JsonPath));
     }
 
     [Theory]

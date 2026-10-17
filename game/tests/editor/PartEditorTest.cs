@@ -2,6 +2,7 @@ using Godot;
 using Mechanica.Core.Creations;
 using Mechanica.Core.Data;
 using Mechanica.Core.Editor;
+using Mechanica.Core.Items;
 using Mechanica.Game.Creations;
 using Mechanica.Game.Editor;
 
@@ -138,6 +139,28 @@ public partial class PartEditorTest : Node3D
         Check(ModLoader.LoadAll(modsRoot).Parts.Keys.Order().SequenceEqual([$"{Mod}:cube_prop", $"{Mod}:ring_block"]),
             "the mod has exactly the exported parts");
 
+        // A station and a recipe for it, saved from the Recipes tab.
+        Check(screen.NewPart(Mod, "work_bench", "Work Bench", "block") is null, "a station part starts");
+        screen.Document!.Apply("Make a station", d => d with { Inventory = new() { Slots = 4 }, Crafting = new() { Speed = 1 } });
+        result = await screen.ExportAsync();
+        Check(result is { Succeeded: true }, "a part with an inventory and crafting exports");
+        Check(screen.OpenPart(Path.Combine(modDir, "parts", "cube_prop.json")) is null && screen.Recipes.Current is null,
+            "a part with no recipes shows none");
+        Check(screen.Recipes.NewRecipe([$"{Mod}:work_bench"]) is null && screen.Recipes.Current!.Id == "cube_prop",
+            "a new recipe makes one of the open part");
+        screen.Recipes.Edit(r => r with { Inputs = [new RecipeItem { Item = $"{Mod}:nothing", Count = 2 }] });
+        Check(screen.Recipes.Save() is { Succeeded: false } && screen.ProblemsText.Contains("nothing"),
+            "a recipe with an unknown input is refused");
+        screen.Recipes.Edit(r => r with { Inputs = [new RecipeItem { Item = $"{Mod}:ring_block", Count = 2 }] });
+        Check(screen.Recipes.Save() is { Succeeded: true } && File.Exists(Path.Combine(modDir, "recipes", "cube_prop.json"))
+            && !screen.Recipes.IsDirty, "the recipe saves into the mod");
+        Check(screen.OpenPart(Path.Combine(modDir, "parts", "cube_prop.json")) is null && screen.Recipes.Recipes.Count == 1,
+            "reopening the part lists its recipe");
+        var book = RecipeBook.Load(ModLoader.LoadAll(modsRoot));
+        Check(!book.HasErrors && book.Find($"{Mod}:cube_prop")?.RunsAt($"{Mod}:work_bench") == true,
+            "the saved recipe loads in the game");
+        Check(screen.Recipes.DeleteCurrent() && screen.Recipes.Recipes.Count == 0, "deleting the recipe removes its file");
+
         // A batch makes several parts, baked and exported the same way.
         var batchFile = Path.Combine(modDir, "editor", "batches", "pair.json");
         Directory.CreateDirectory(Path.GetDirectoryName(batchFile)!);
@@ -150,7 +173,7 @@ public partial class PartEditorTest : Node3D
             ] }
             """);
         var batch = await screen.RunBatchAsync(batchFile);
-        Check(batch is { Succeeded: true, Exports.Count: 2 } && screen.ProblemsText.Contains("exported 2 parts"),
+        Check(batch is { Succeeded: true, Exports.Count: 2 } && screen.ProblemsText.Contains("exported 2 parts and recipes"),
             $"Run batch exports both parts ({string.Join("; ", batch.Diagnostics)})");
         Check(screen.Document?.Definition is { Id: "pair_wedge", Collision.Shape: CollisionShape.Convex } && !screen.Document.IsDirty,
             "the last part it made is open and saved");

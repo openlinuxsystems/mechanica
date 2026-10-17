@@ -8,6 +8,7 @@
   "friction": 0.7,
   "buoyancy": 0.7,
   "flammable": true,
+  "stack_size": 100,
   "sound_material": "fabric",
   "size": [1, 1, 1],
   "mesh": "meshes/blocks/insulation_block.glb",

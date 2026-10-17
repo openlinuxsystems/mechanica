@@ -48,7 +48,7 @@ CI (`.github/workflows/ci.yml`) runs the same three steps. Keep it green.
 - Content is a mod: `mods/<mod_id>/` holds `mod.json`, `parts/*.json`, `scripts/*.lua`,
   `meshes/*.glb|.gltf`, `textures/*.png`, `sounds/*.ogg|.wav`, `world/worldgen.json` (world
   generation rules; the last mod in load order wins) and `pois/*.json` (POI prefabs; see
-  `docs/world-generation.md`). Paths in data are relative to the mod
+  `docs/world-generation.md`) and `recipes/*.json` (crafting recipes; see `docs/part-data-schema.md`). Paths in data are relative to the mod
   root (`other_mod:path` for another mod). No `res://` paths or Godot-imported formats in mod data.
   Reject `..` and absolute paths.
 - Mod tools are in-game modes and ship in exported builds; no Godot editor plugins.

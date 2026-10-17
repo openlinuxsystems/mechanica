@@ -7,15 +7,16 @@ using FileAccess = Godot.FileAccess;
 namespace Mechanica.Game.Editor;
 
 /// <summary>What <see cref="PartBatchRunner.RunAsync"/> did.</summary>
-/// <param name="Succeeded">True when the batch was valid and every part exported.</param>
-/// <param name="Exports">One result per part that was exported or tried, in batch order.</param>
+/// <param name="Succeeded">True when the batch was valid and every part and recipe exported.</param>
+/// <param name="Exports">One result per part, then per recipe, that was exported or tried, in batch order.</param>
 /// <param name="Diagnostics">Every problem: the batch's own, then each export's.</param>
 public sealed record BatchRunResult(bool Succeeded, IReadOnlyList<ExportResult> Exports, IReadOnlyList<DataDiagnostic> Diagnostics);
 
 /// <summary>
 /// Runs a Part Editor batch (<see cref="PartBatch"/>): each entry becomes a part document that is baked
 /// with the editor's model builder and written by the editor's exporter, exactly as the Export button
-/// does. The editor's "Run batch…" button and the <c>--part-batch file</c> command line both use it.
+/// does; its recipes are then saved with the recipe exporter, as the Recipes tab does. The editor's
+/// "Run batch…" button and the <c>--part-batch file</c> command line both use it.
 /// </summary>
 public static class PartBatchRunner
 {
@@ -48,6 +49,13 @@ public static class PartBatchRunner
                 ? await ModelBuilder.BakeAsync(parent, document.Source, path => assets.LoadMeshes(path, document.ModId))
                 : null;
             var result = PartExporter.Export(document, baked);
+            exports.Add(result);
+            diagnostics.AddRange(result.Diagnostics);
+        }
+        // Recipes go last, like saving them from the Recipes tab once their parts exist.
+        var content = ModLoader.LoadAll(Path.GetDirectoryName(modDirectory)!);
+        foreach (var result in PartBatch.ExportRecipes(batch!, modDirectory, content, documents))
+        {
             exports.Add(result);
             diagnostics.AddRange(result.Diagnostics);
         }

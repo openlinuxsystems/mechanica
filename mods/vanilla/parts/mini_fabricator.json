@@ -1,0 +1,39 @@
+{
+  "id": "mini_fabricator",
+  "name": "Mini Fabricator",
+  "description": "A small, slow Fabricator.",
+  "category": "station",
+  "mass": 10,
+  "durability": 8,
+  "friction": 0.5,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "sound_material": "metal",
+  "size": [3, 3, 3],
+  "mesh": "meshes/mini_fabricator.glb",
+  "visual": {
+    "color": "#c8a040",
+    "paintable": true
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.375, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "sounds": {
+    "start": "fabricator_start",
+    "work": "fabricator_work",
+    "complete": "fabricator_complete",
+    "place": "place_metal"
+  },
+  "inventory": {
+    "slots": 4
+  },
+  "crafting": {
+    "speed": 0.5,
+    "queue_size": 4
+  }
+}

@@ -177,11 +177,14 @@ Each entry is one part, made exactly as you would by hand:
 | `set` | Part keys to change. Objects such as `visual` merge key by key, other values replace, and `null` removes a key. |
 | `model` | Model pieces, as in the editor source (see the [schema reference](part-data-schema.md#the-editor-source-file)). |
 | `collision_from_model` | `true` makes the collision shape the convex hull of the part's own baked model. |
+| `recipes` | Recipes that make the part, as in a `recipes/*.json` file. Each is saved to `recipes/<id>.json` after the parts. |
 
 Press **Run batch…** and pick the file. The editor makes every part, bakes its model and exports it
-with the same checks as **Export**, then opens the last one. Problems are listed with the entry they
-come from, and nothing is written unless the whole batch is valid. Running a batch again updates the
-parts it made, so keep the batch as the place you edit them.
+with the same checks as **Export**, saves the recipes as the **Recipes** tab would, then opens the last
+part. Problems are listed with the entry they come from. A mistake in the batch itself (a missing
+template, a bad file name) stops it before anything is written; a part or recipe that fails its own
+checks is skipped and the rest are still written. Running a batch again updates the parts and recipes
+it made, so keep the batch as the place you edit them.
 
 A batch can also run without opening the game window:
 
@@ -189,7 +192,7 @@ A batch can also run without opening the game window:
 godot --headless --path game -- --part-batch mods/my_mod/editor/batches/blocks.json
 ```
 
-It prints every problem and exits with 0 when every part exported. Vanilla's blocks and wedges are
+It prints every problem and exits with 0 when every part and recipe exported. Vanilla's blocks and wedges are
 made this way from `mods/vanilla/editor/batches/structural_blocks.json` (`tools/author-vanilla.sh`).
 
 ## Where to go next

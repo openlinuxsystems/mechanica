@@ -69,6 +69,9 @@ public partial class PartEditorScreen : Control
     /// <summary>The part being edited, or null before one is opened.</summary>
     public PartDocument? Document { get; private set; }
 
+    /// <summary>The Recipes tab: recipes in the part's mod that make the part.</summary>
+    public RecipePanel Recipes { get; private set; } = null!;
+
     /// <summary>The 3D preview.</summary>
     public PartPreview Preview => _preview;
 
@@ -264,8 +267,8 @@ public partial class PartEditorScreen : Control
             OpenPart(last);
         var made = result.Exports.Count(e => e.Succeeded);
         ShowProblems(result.Diagnostics, result.Succeeded
-            ? $"Batch {Path.GetFileName(file)} exported {made} parts."
-            : $"Batch {Path.GetFileName(file)} failed; {made} of {result.Exports.Count} parts exported.");
+            ? $"Batch {Path.GetFileName(file)} exported {made} parts and recipes."
+            : $"Batch {Path.GetFileName(file)} failed; {made} of {result.Exports.Count} parts and recipes exported.");
         return result;
     }
 
@@ -341,6 +344,8 @@ public partial class PartEditorScreen : Control
 
         _lookGrid = AddTab("Look");
         _behaviourGrid = AddTab("Behaviour");
+        Recipes = new RecipePanel { Name = "RecipePanel", Editor = this, SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        AddTabBox("Recipes").AddChild(Recipes);
     }
 
     private void BuildDialogs()
@@ -417,6 +422,7 @@ public partial class PartEditorScreen : Control
         _openDialog.CurrentDir = document.ModDirectory;
         _preview.Frame(document.Definition.Size ?? GridSize.One);
         Refresh(rebuildInspector: true);
+        Recipes.Reload();
     }
 
     private void OnDocumentChanged()
@@ -514,6 +520,8 @@ public partial class PartEditorScreen : Control
             _partGrid.AddGridSize("Size", d.Size ?? GridSize.One, v => Set("Resize", x => x with { Size = v }));
         }
         AddAssetField(_partGrid, "Icon", d.Icon, AssetKind.Texture, v => Set("Set icon", x => x with { Icon = v }));
+        if (d.IsPlaceable)
+            AddStorageFields(d);
 
         // Model: the selected piece.
         if (_selectedPiece >= 0)
@@ -652,6 +660,36 @@ public partial class PartEditorScreen : Control
         });
     }
 
+    // Inventory and crafting station fields (chunk 18). Turning either on or off rebuilds the inspector.
+    private void AddStorageFields(PartDefinition d)
+    {
+        _partGrid.AddHeading("Storage and crafting");
+        _partGrid.AddNumber("Inventory slots", d.Inventory?.Slots, 1, 256, 1, v =>
+        {
+            if ((v is null) != (Document?.Definition.Inventory is null))
+                Document?.Apply(v is null ? "Remove inventory" : "Add inventory", x => x with { Inventory = v is null ? null : new InventoryDefinition { Slots = (int)v } });
+            else if (v is not null)
+                Set("Set inventory slots", x => x with { Inventory = x.Inventory! with { Slots = (int)v } });
+        }, optional: true, fallback: 10);
+        if (d.Inventory is { } inventory)
+        {
+            _partGrid.AddText("Accepts", inventory.Accepts is { } accepts ? string.Join(", ", accepts) : null,
+                v => Set("Set accepted items", x => x with { Inventory = x.Inventory! with { Accepts = SplitIds(v) } }), "any item, or ids: gasoline, crude_oil");
+        }
+        _partGrid.AddBool("Crafting station", d.Crafting is not null,
+            v => Document?.Apply(v == true ? "Make crafting station" : "Remove crafting", x => x with { Crafting = v == true ? x.Crafting ?? new CraftingDefinition() : null }));
+        if (d.Crafting is { } crafting)
+        {
+            _partGrid.AddNumber("Crafting speed", crafting.Speed, 0.01, 100, 0.05,
+                v => Set("Set crafting speed", x => x with { Crafting = x.Crafting! with { Speed = (float?)v } }), optional: true, fallback: 1, suffix: "×");
+            _partGrid.AddNumber("Queue size", crafting.QueueSize, 1, 64, 1,
+                v => Set("Set queue size", x => x with { Crafting = x.Crafting! with { QueueSize = (int?)v } }), optional: true, fallback: 1);
+        }
+    }
+
+    private static List<string>? SplitIds(string? text) =>
+        text?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) is { Length: > 0 } ids ? [.. ids] : null;
+
     // ---- Edits ----
 
     private void Set(string label, Func<PartDefinition, PartDefinition> change) => Edit(() => Document?.Apply(label, change));
@@ -758,7 +796,8 @@ public partial class PartEditorScreen : Control
 
     // ---- Output ----
 
-    private void ShowProblems(IReadOnlyList<DataDiagnostic> diagnostics, string? headline)
+    /// <summary>Lists problems in the problems pane under an optional headline.</summary>
+    internal void ShowProblems(IReadOnlyList<DataDiagnostic> diagnostics, string? headline)
     {
         var lines = new List<string>();
         if (headline is not null)

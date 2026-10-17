@@ -8,6 +8,7 @@
   "friction": 0.6,
   "buoyancy": 0.8,
   "flammable": true,
+  "stack_size": 100,
   "sound_material": "cardboard",
   "size": [1, 1, 1],
   "mesh": "meshes/blocks/cardboard_wedge.glb",
