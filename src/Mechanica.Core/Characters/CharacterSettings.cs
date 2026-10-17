@@ -51,6 +51,12 @@ public sealed record CharacterSettings
     /// <summary>Fade out of a gesture at its end.</summary>
     public float GestureFadeOut { get; init; } = 0.12f;
 
+    /// <summary>
+    /// How long a gesture clip plays, in seconds, by clip name, when that is not its authored length (the
+    /// Sledgehammer swing takes 0.4 s, UI spec §10). The clip is sped up or slowed to fit.
+    /// </summary>
+    public Dictionary<string, float> GestureSeconds { get; init; } = [];
+
     /// <summary>Time off the ground before a player who didn't jump starts to fall (stepping off a kerb doesn't).</summary>
     public float AirGrace { get; init; } = 0.15f;
 
@@ -136,6 +142,8 @@ public sealed record CharacterSettings
         Positive(HoldFade, "hold_fade");
         Positive(GestureFadeIn, "gesture_fade_in");
         Positive(GestureFadeOut, "gesture_fade_out");
+        foreach (var (clip, seconds) in GestureSeconds)
+            Positive(seconds, $"gesture_seconds.{clip}");
         NonNegative(AirGrace, "air_grace");
         Positive(JumpDetectSpeed, "jump_detect_speed");
         NonNegative(LandMinSpeed, "land_min_speed");

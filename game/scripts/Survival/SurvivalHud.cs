@@ -59,6 +59,9 @@ public partial class SurvivalHud : CanvasLayer
     /// <summary>True while the world tooltip shows, which then carries the Use hint. Optional.</summary>
     public Func<bool> TooltipShowing { get; init; } = () => false;
 
+    /// <summary>What the tool in hand does with Use (E), ahead of the rest (the Lift's blueprint menu), or null.</summary>
+    public Func<(string Label, Action Run)?> ToolInteraction { get; init; } = () => null;
+
     /// <summary>The health bar.</summary>
     public ProgressBar HealthBar => _health;
 
@@ -167,6 +170,8 @@ public partial class SurvivalHud : CanvasLayer
             return null;
         if (Logic is not null && player.Seated)
             return (Loc.T("stand up"), () => Request(LogicActions.LeaveSeat, new NoArgs()));
+        if (ToolInteraction() is { } tool)
+            return tool;
         if (HandTool.PartHit(HandTool.Cast(player, settings.Reach)) is { } aimed)
         {
             var creation = aimed.Node.Creation;

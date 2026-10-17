@@ -9,8 +9,8 @@ namespace Mechanica.Game.Tests;
 
 /// <summary>
 /// Windows keep their own mouse input in a running world (UI spec §13). Wheel turns and clicks anywhere over
-/// the in-game menu, Options (every tab, scrolled past both ends), the save screen, the inventory and a
-/// confirm dialog never reach the game behind them (nor over the hotbar while the inventory is open), nor do clicks on the screen around a window opened from
+/// the in-game menu, Options (every tab, scrolled past both ends), the save screen, the inventory, the Lift's
+/// blueprint menu, the Paint Tool's colour picker and a confirm dialog never reach the game behind them (nor over the hotbar while the inventory is open), nor do clicks on the screen around a window opened from
 /// the menu, where a wheel changes the hotbar and a click takes the
 /// mouse back and closes the menu. The windows are still open afterwards.
 /// </summary>
@@ -157,6 +157,32 @@ public partial class WindowsTest : StagedTest
             Check(inventory.IsOpen, "the inventory is still open");
             inventory.Hide();
             return Clean("the inventory");
+        });
+        Add("the Lift's blueprint menu keeps them", frame =>
+        {
+            var menu = _main.Blueprints!;
+            if (frame == 0)
+            {
+                menu.Open();
+                return false;
+            }
+            Scrub(menu.Window);
+            Check(menu.IsOpen, "the blueprint menu is still open");
+            menu.Close();
+            return Clean("the blueprint menu");
+        });
+        Add("the Paint Tool's colour picker keeps them", frame =>
+        {
+            var picker = _main.Tools!.Paint.Picker;
+            if (frame == 0)
+            {
+                picker.Open(0);
+                return false;
+            }
+            Scrub(picker.Ring, wheels: 4);
+            Check(picker.IsOpen, "the picker is still open");
+            picker.Close();
+            return Clean("the colour picker");
         });
         Add("the character choice keeps them", _ =>
         {

@@ -12,11 +12,14 @@ using Instance = Mechanica.Game.Tests.NetTestHarness.Instance;
 namespace Mechanica.Game.Tests;
 
 /// <summary>
-/// The Lift, Weld Tool, Paint Tool and Sledgehammer, host plus clients (chunk 15, D10). A client builds
-/// a three-block bar and a lone block, paints the bar, picks it up with its Lift, raises and turns it,
-/// lets it drop, welds the lone block onto it and smashes a block off it with the Sledgehammer. The
-/// host's graphs, paint and Lifts must match on each client, a late joiner gets the Lifts, and a player
-/// who leaves takes their Lift with them. Uses the building fixture mod in <c>tests/building/mods</c>.
+/// The Lift, Weld Tool, Paint Tool and Sledgehammer, host plus clients (chunk 15, D10, UI spec PR 11). A client builds
+/// a three-block bar and a lone block, paints the bar (a click, then a drag over all three; the Q picker chooses the
+/// colour by direction or number key), picks it up with its Lift, raises and turns it, saves it as a blueprint from the
+/// Lift's menu, holds right click to take the Lift away (a short hold does nothing), loads the blueprint onto a new Lift
+/// and deletes it after a confirmation, drag-welds the lone block onto the bar (outline, weld plane square, seam), smashes
+/// a block off it with the Sledgehammer and blocks with it. The host's graphs, paint and Lifts must match on each client,
+/// a late joiner gets the Lifts, and a player who leaves takes their Lift with them. Uses the building fixture mod in
+/// <c>tests/building/mods</c>.
 /// </summary>
 public partial class ToolsTest : StagedTest
 {
@@ -34,6 +37,9 @@ public partial class ToolsTest : StagedTest
     private int _lone;
     private float _ground;
     private int _sent;
+    private BlueprintMenu _menu = null!;
+    private string _blueprints = null!;
+    private int _loaded;
 
     protected override string Tag => "tools";
 
@@ -128,6 +134,53 @@ public partial class ToolsTest : StagedTest
             Check(_results[0].Ok && _client.Main.Creations.Find(_bar)!.FindPart(2)!.Color is null, $"the paint is gone ({_results[0]})");
             return true;
         });
+        Add("the colour picker opens round the cursor and picks by direction", _ =>
+        {
+            var picker = Tools.Paint.Picker;
+            picker.Open(Tools.Paint.ColorIndex);
+            Check(picker.IsOpen, "Q opens the picker");
+            var count = _client.Main.Build.Settings!.Paint.Palette.Count;
+            var at = Core.Ui.RadialMenu.Position(4, count, picker.Radius);
+            Check(picker.PointAt(picker.Centre + new Vector2(at.X, at.Y)) == 4, $"pointing at the fifth swatch highlights it ({picker.Hovered})");
+            picker.Choose(picker.Hovered);
+            Check(!picker.IsOpen && Tools.Paint.ColorIndex == 4, $"left click takes it and closes ({Tools.Paint.ColorIndex})");
+            picker.Open(Tools.Paint.ColorIndex);
+            picker._Input(Key(Core.Input.InputActions.Hotbar(3)));
+            Check(!picker.IsOpen && Tools.Paint.ColorIndex == 2, $"the third number key takes the third colour ({Tools.Paint.ColorIndex})");
+            picker.Open(Tools.Paint.ColorIndex);
+            picker._Input(Key(Core.Input.InputActions.Pause));
+            Check(!picker.IsOpen && Tools.Paint.ColorIndex == 2, "Esc closes it with no change");
+            picker.Open(Tools.Paint.ColorIndex);
+            picker._Input(Key(Core.Input.InputActions.Rotate));
+            Check(!picker.IsOpen, "and so does a second Q");
+            while (Tools.Paint.Color != Red)
+                Tools.Paint.Cycle(1);
+            return true;
+        });
+        Add("aim at the bar's first block", frame => LookAt(_client, PartCentre(_client, _bar, 1), frame));
+        Add("a drag starts on it", _ =>
+        {
+            _results.Clear();
+            Tools.Paint.BeginStroke();
+            Check(Tools.Paint.Stroke is { Count: 1 }, $"the first block is in the drag ({Tools.Paint.Stroke?.Count})");
+            return true;
+        });
+        Add("the drag passes over the second block", frame => LookAt(_client, PartCentre(_client, _bar, 2), frame));
+        Add("and the third", frame => LookAt(_client, PartCentre(_client, _bar, 3), frame));
+        Add("letting go paints all three on every peer", frame =>
+        {
+            if (frame == 0)
+            {
+                Check(Tools.Paint.Stroke is { Count: 3 }, $"the drag covered three blocks ({Tools.Paint.Stroke?.Count})");
+                Tools.Paint.EndStroke();
+                Check(Tools.Paint.Stroke is null, "letting go ends the drag");
+            }
+            var bar = _host.Main.Creations.Find(_bar)!;
+            if (bar.Parts.Any(p => p.Color != Red) || !SameEverywhere())
+                return false;
+            Check(_client.Main.Creations.Find(_bar)!.Parts.All(p => p.Color == Red), "the client shows all three red");
+            return true;
+        });
     }
 
     private void AddLift()
@@ -184,18 +237,115 @@ public partial class ToolsTest : StagedTest
             Check(Mathf.IsEqualApprox(box.Max.Z - box.Min.Z, 0.75f, 1e-3f), $"the bar now runs along z ({box.Min} – {box.Max})");
             return true;
         });
-        Add("taking the Lift away drops the bar", frame =>
+        Add("look at the bar on the Lift", frame => LookAt(_client, PartCentre(_client, _bar, 2), frame));
+        Add("Use on the Lift opens the blueprint menu and saves the bar", _ =>
+        {
+            Check(Tools.Lift.AimsAtOwnLift() && Tools.Lift.Interaction is not null, "Use (E) on the Lift offers the blueprints");
+            _blueprints = Path.Combine(OS.GetUserDataDir(), "test-blueprints-" + Guid.NewGuid().ToString("N"));
+            _menu = new BlueprintMenu
+            {
+                Name = "BlueprintMenu", Lift = () => Tools.Lift,
+                Store = new Core.Saves.BlueprintStore(_blueprints, _client.Main.Build.Settings!.Lift.MaxBlueprints),
+            };
+            AddChild(_menu);
+            Tools.Lift.OpenBlueprints = _menu.Open;
+            Tools.Lift.Interaction!.Value.Run();
+            Check(_menu.IsOpen && _menu.Listed.Count == 0, "the menu opens, empty");
+            Check(_menu.Save("Test bar") is null, "saving a new name asks nothing");
+            Check(_menu.Listed is [{ Name: "Test bar", Parts: 3, Error: null }], $"the bar is listed ({string.Join(", ", _menu.Listed)})");
+            var dialog = _menu.Save("test bar");
+            Check(dialog is not null && Ui.ConfirmDialog.Current == dialog, "saving over it asks first");
+            dialog!.Confirm();
+            Check(_menu.Listed.Count == 1, "and replaces it");
+            // A picture beside it (drawn offscreen in the real game) shows in the row and loads fast.
+            var image = Image.CreateEmpty(64, 36, false, Image.Format.Rgba8);
+            image.Fill(Ui.UiTokens.Blue);
+            image.SavePng(Core.Saves.BlueprintStore.ThumbnailFor(_menu.Listed[0].Path));
+            _menu.Refresh();
+            Check(_menu.Listed[0].Thumbnail is not null && FindChild<TextureRect>(_menu, "Thumbnail") is not null, "the row shows the picture");
+            Check(_menu.LastRefreshSeconds < 0.5, $"the list and pictures load in under 0.5 s ({_menu.LastRefreshSeconds:F3} s)");
+            _menu.Close();
+            return true;
+        });
+        Add("a short right-click hold leaves the Lift", frame =>
+        {
+            if (frame == 0)
+            {
+                Check(Tools.Lift.PressRemove(), "right click starts the hold");
+                return false;
+            }
+            if (frame < 5)
+                return false;
+            Check(Tools.Lift.Progress is > 0f and < 1f, $"the ring fills ({Tools.Lift.Progress})");
+            Tools.Lift.ReleaseRemove();
+            Check(Tools.Lift.Progress is null && _client.Main.Build.Lifts.ContainsKey(_client.Peer), "letting go early keeps the Lift");
+            return true;
+        });
+        Add("holding right click takes the Lift away and drops the bar", frame =>
         {
             if (frame == 0)
             {
                 _results.Clear();
-                Check(Tools.Lift.Remove(_results.Add), "the Lift sends RemoveLift");
+                Check(Tools.Lift.PressRemove(), "right click starts the hold");
             }
-            if (_results.Count == 0 || _client.Main.Build.Lifts.Count != 0 || frame < 60)
+            if (_client.Main.Build.Lifts.Count != 0 || frame < 60)
                 return false;
-            Check(_results[0].Ok, $"the host takes it away ({_results[0]})");
+            Check(!Tools.Lift.Removing, "the hold ended");
             Check(!_host.Main.Creations.Find(_bar)!.OnLift && !Body(_host, _bar).Freeze, "the host simulates the bar again");
             Check(Bottom(_host, _bar) < _ground + 0.1f, $"it falls to the ground (bottom {Bottom(_host, _bar):F3})");
+            return true;
+        });
+        Add("the blueprint loads onto a new Lift on every peer", frame =>
+        {
+            if (frame == 0)
+            {
+                _results.Clear();
+                Request(ToolActions.PlaceLift, new PlaceLiftArgs(new Vec3(_barAt.X + 0.25f, _ground, _barAt.Z - 2.5f)));
+                return false;
+            }
+            if (frame == 1)
+                return false;
+            if (_results.Count == 1 && _client.Main.Build.Lifts.ContainsKey(_client.Peer) && _sent != -1)
+            {
+                Check(_results[0].Ok, $"a new Lift goes down ({_results[0]})");
+                _sent = -1;
+                _menu.Open();
+                _menu.Select(0);
+                Check(_menu.Load(_results.Add), "Load sends the blueprint");
+            }
+            if (_results.Count < 2 || _client.Main.Build.Lifts[_client.Peer].State.Creation is not { } id || !SameEverywhere())
+                return false;
+            Check(_results[1].Ok, $"the host builds it ({_results[1]})");
+            _loaded = id;
+            var loaded = _host.Main.Creations.Find(id)!;
+            Check(loaded.OnLift && loaded.Parts.Count == 3 && loaded.Parts.All(p => p.Color == Red), "a red three-block bar stands on the Lift");
+            Check(_client.Main.Creations.Find(id)?.OnLift == true, "the client shows it on the Lift");
+            Check(!_menu.IsOpen, "the menu closes once it loads");
+            return true;
+        });
+        Add("a blueprint is deleted only after the confirmation", _ =>
+        {
+            _menu.Open();
+            _menu.Select(0);
+            var path = _menu.Listed[0].Path;
+            var dialog = _menu.Delete();
+            Check(dialog is not null && File.Exists(path), "Delete asks first and keeps the file meanwhile");
+            dialog!.Confirm();
+            Check(_menu.Listed.Count == 0 && !File.Exists(path) && !File.Exists(Core.Saves.BlueprintStore.ThumbnailFor(path)), "confirming deletes it and its picture");
+            _menu.Close();
+            return true;
+        });
+        Add("the loaded copy goes away with its Lift", frame =>
+        {
+            if (frame == 0)
+            {
+                _results.Clear();
+                Request(ToolActions.RemoveLift, new NoArgs());
+                _host.Main.Build.Removed(_loaded);
+            }
+            if (_results.Count == 0 || _client.Main.Build.Lifts.Count != 0 || _client.Main.Creations.Find(_loaded) is not null || !SameEverywhere())
+                return false;
+            Directory.Delete(_blueprints, recursive: true);
             return true;
         });
     }
@@ -203,21 +353,35 @@ public partial class ToolsTest : StagedTest
     private void AddWeld()
     {
         Add("aim at the lone block", frame => LookAt(_client, PartCentre(_client, _lone, 1), frame));
-        Add("the Weld Tool selects it", frame =>
+        Add("a click selects it with a blue outline", frame =>
         {
-            Tools.Use(Tools.Weld);
-            Check(Tools.Weld.Select() && Tools.Weld.Selected is { } s && s.Creation == _lone, $"the lone block is selected ({Tools.Weld.Selected})");
+            if (frame == 0)
+            {
+                Tools.Use(Tools.Weld);
+                Tools.Weld.Press();
+                Check(Tools.Weld.Selected is { } s && s.Creation == _lone && Tools.Weld.Dragging, $"pressing selects the lone block and starts a drag ({Tools.Weld.Selected})");
+                Check(!Tools.Weld.Release(), "letting go on the same part welds nothing");
+                return false;
+            }
+            Check(Tools.Weld.Selected is { } kept && kept.Creation == _lone && !Tools.Weld.Dragging, "the selection stays for a second click");
+            Check(Tools.Weld.Outline.Visible && Tools.Weld.Outline.GetChildCount() > 0, "the selected block has an outline");
+            Tools.Weld.Deselect();
+            Tools.Weld.UpdateAim();
+            Check(!Tools.Weld.Outline.Visible, "right click drops it and its outline");
+            Tools.Weld.Press();
+            Check(Tools.Weld.Dragging, "pressing again starts a drag from it");
             return true;
         });
-        Add("aim at the top of the bar", frame => LookAt(_client, PartCentre(_client, _bar, 1) + new Vector3(0, 0.125f, 0), frame));
-        Add("the Weld Tool welds the block on top", frame =>
+        Add("drag to the top of the bar", frame => LookAt(_client, PartCentre(_client, _bar, 1) + new Vector3(0, 0.125f, 0), frame));
+        Add("letting go there welds the block on top", frame =>
         {
             if (frame == 0)
             {
                 _results.Clear();
                 Tools.Weld.UpdateAim();
                 Check(Tools.Weld.Aim is { } aim && aim.Creation.Id == _bar, $"it aims at the bar ({Tools.Weld.Aim})");
-                Check(Tools.Weld.Weld(_results.Add), "the Weld Tool sends Weld");
+                Check(Tools.Weld.Plane.Visible && Tools.Weld.Joining is { Faces.Count: > 0 }, "a blue square marks the weld plane");
+                Check(Tools.Weld.Release(_results.Add), "letting go sends Weld");
             }
             if (_results.Count == 0 || !SameEverywhere())
                 return false;
@@ -228,6 +392,7 @@ public partial class ToolsTest : StagedTest
             var welded = bar.Parts.Last();
             Check(bar.PartAt(welded.Cell - new GridCell(0, 1, 0)) is not null, $"the block sits on top of the bar ({welded.Cell})");
             Check(Tools.Weld.Selected is null, "the selection clears");
+            Check(Tools.Weld.LastSeam is { Faces.Count: > 0 } && Tools.Weld.GetChildren().OfType<WeldSeamGlow>().Any(), "a seam glows where they joined");
             return true;
         });
         Wait("the bar settles", 30);
@@ -263,6 +428,24 @@ public partial class ToolsTest : StagedTest
             Check(_host.Main.Creations.Find(_bar)!.Parts.Count == 3, "the bar is back to three blocks");
             return true;
         });
+        Add("holding right click blocks on the host", frame =>
+        {
+            if (frame == 0)
+            {
+                _results.Clear();
+                Tools.Sledge.Block(true, _results.Add);
+                return false;
+            }
+            if (_results.Count == 0)
+                return false;
+            Check(_results[0].Ok && _host.Main.Build.Tools!.Blocking.Contains(_client.Peer), "the host knows the player blocks");
+            Check(_host.Main.Build.Tools!.DamageScale(_client.Peer, "sledge") < 1f, "a hit would do less");
+            _results.Clear();
+            Tools.Use(Tools.Hammer);
+            Check(!Tools.Sledge.Blocking, "putting the Sledgehammer away stops the block");
+            return true;
+        });
+        Add("and the host hears the block end", _ => !_host.Main.Build.Tools!.Blocking.Contains(_client.Peer));
     }
 
     private void AddLateJoinAndLeave()
@@ -303,6 +486,17 @@ public partial class ToolsTest : StagedTest
     }
 
     private void Request<TArgs>(string action, TArgs args) => _client.Main.Actions.Request(action, args, _results.Add);
+
+    private static InputEvent Key(string action)
+    {
+        var e = Player.GameInput.ToEvent(Player.GameInput.Keymap.Get(action)!.Value)!;
+        if (e is InputEventKey key)
+            key.Pressed = true;
+        return e;
+    }
+
+    private static T? FindChild<T>(Node root, string name) where T : Node =>
+        root.FindChild(name, recursive: true, owned: false) as T;
 
     private static int Value(ActionResult result, string name) => result.Value!.Value.GetProperty(name).GetInt32();
 

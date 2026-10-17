@@ -111,6 +111,12 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     /// <summary>A player took damage: peer, health lost, cause (<c>fall</c>, <c>weapon</c>, <c>sledge</c>, ...).</summary>
     public event Action<int, float, string>? Hurt;
 
+    /// <summary>
+    /// What damage of a cause a player takes is multiplied by (a Sledgehammer block, <see cref="Building.ToolActions.DamageScale"/>);
+    /// null takes it all.
+    /// </summary>
+    public Func<int, string, float>? DamageScale { get; set; }
+
     /// <summary>Registers every survival action.</summary>
     public void Register(ActionDispatcher dispatcher)
     {
@@ -202,6 +208,9 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
             return v.Health;
         if (cause == "bot")
             amount *= Rules.BotDamage;
+        amount *= DamageScale?.Invoke(peer, cause) ?? 1f;
+        if (amount <= 0)
+            return v.Health;
         var lost = Math.Min(v.Health, amount);
         v.Health -= lost;
         Hurt?.Invoke(peer, lost, cause);
@@ -836,6 +845,21 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     /// <inheritdoc/>
     public string? CheckPlace(ActionCaller caller, string part) =>
         !Pays(caller) || inventories.PlayerInventory(caller.Peer).Count(part) > 0 ? null : $"You have no {NameOf(part)} to place.";
+
+    /// <inheritdoc/>
+    public string? CheckPlaceAll(ActionCaller caller, IReadOnlyDictionary<string, int> parts)
+    {
+        if (!Pays(caller))
+            return null;
+        var inventory = inventories.PlayerInventory(caller.Peer);
+        foreach (var (part, count) in parts.OrderBy(p => p.Key, StringComparer.Ordinal))
+        {
+            var have = inventory.Count(part);
+            if (have < count)
+                return $"You need {count} {NameOf(part)} and have {have}.";
+        }
+        return null;
+    }
 
     /// <inheritdoc/>
     public void Placed(ActionCaller caller, string part)

@@ -78,6 +78,12 @@ public partial class Main : Node3D
     /// <summary>Where the player profile lives.</summary>
     public const string ProfilePath = "user://profile.json";
 
+    /// <summary>The folder blueprints are saved in. Null uses <c>user://blueprints</c>; tests set their own.</summary>
+    public string? BlueprintFolder { get; set; }
+
+    /// <summary>The Lift's blueprint menu, when reading device input.</summary>
+    public BlueprintMenu? Blueprints { get; private set; }
+
     /// <summary>False in automated tests: nothing reads devices, the test sets the player's input itself.</summary>
     public bool ReadDeviceInput { get; set; } = true;
 
@@ -364,6 +370,8 @@ public partial class Main : Node3D
         AddChild(Build);
         Build.RegisterActions(Actions.Dispatcher);
         Build.Tools!.Targets = Survival.Actions;
+        // A player blocking with the Sledgehammer takes less from hits.
+        Survival.Actions!.DamageScale = Build.Tools.DamageScale;
         AddChild(Inventory);
         AddChild(Survival);
         Bots = new BotSync
@@ -495,6 +503,7 @@ public partial class Main : Node3D
             {
                 Name = "SurvivalHud", Survival = Survival, Actions = Actions, Players = PlayerSync, Catalog = mods, Logic = Logic, Quests = Quests,
                 Containers = inventory, PartSettings = PartSettings, TooltipShowing = () => worldHud?.TooltipShowing == true,
+                ToolInteraction = () => Tools?.Current.Interaction,
             };
             AddChild(survivalHud);
             worldHud = new Ui.WorldHud
@@ -521,6 +530,14 @@ public partial class Main : Node3D
             };
             AddChild(pause);
             AddChild(PartSettings);
+            var snapshots = new Ui.CreationSnapshots { Name = "CreationSnapshots", Assets = Assets };
+            AddChild(snapshots);
+            Blueprints = new BlueprintMenu
+            {
+                Name = "BlueprintMenu", Snapshots = snapshots, Lift = () => Tools?.Lift,
+                Store = new Core.Saves.BlueprintStore(BlueprintFolder ?? ProjectSettings.GlobalizePath("user://blueprints"), Build.Settings!.Lift.MaxBlueprints),
+            };
+            AddChild(Blueprints);
             AddChild(new RaidBanner { Name = "RaidBanner", Bots = Bots });
             AddChild(new Ui.Nameplates { Name = "Nameplates", Players = PlayerSync });
             AddChild(new Mechanica.Game.Chat.ChatPanel { Name = "ChatPanel", Chat = Chat, Actions = Actions });
@@ -843,6 +860,7 @@ public partial class Main : Node3D
         AddChild(Tools);
         Tools.Connector.SettingsRequested += (creation, part) => PartSettings?.Open(creation, part);
         Tools.Connector.SignalOf = LogicOverlay.SignalOf;
+        Tools.Lift.OpenBlueprints = () => Blueprints?.Open();
     }
 
     private void OnPlayerDespawning(PlayerController player)

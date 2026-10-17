@@ -83,6 +83,17 @@ public class ActionDispatcherTests
     }
 
     [Fact]
+    public void AnActionCanTakeLongerArgs()
+    {
+        _dispatcher.Register<MoveArgs>("LongMove", (_, _) => null, (_, a) => JsonSerializer.SerializeToElement(a.Label!.Length), maxArgsLength: 3 * ActionJson.MaxArgsLength);
+        var json = $$"""{"distance": 1, "label": "{{new string('x', 2 * ActionJson.MaxArgsLength)}}"}""";
+
+        Assert.True(_dispatcher.Dispatch(Client, "LongMove", json).Ok);
+        Assert.Equal(ActionErrors.BadArgs, _dispatcher.Dispatch(Client, "Move", json).Code);
+        Assert.Equal(3 * ActionJson.MaxArgsLength, _dispatcher.MaxArgsOf("LongMove"));
+    }
+
+    [Fact]
     public void DeeplyNestedArgsAreRejected()
     {
         var json = """{"distance": 1, "label": """ + new string('[', 100) + new string(']', 100) + "}";

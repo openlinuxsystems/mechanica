@@ -11,15 +11,17 @@ using Mechanica.Game.Ui;
 namespace Mechanica.Game.Building;
 
 /// <summary>
-/// The Lift in the local player's hand. Aimed at the ground it shows where the platform would go and
+/// The Lift in the local player's hand (UI spec §2, §8). Aimed at the ground it shows where the platform would go and
 /// <see cref="Place"/> puts the player's Lift there (carrying whatever it holds); aimed at a Creation,
-/// <see cref="Place"/> slides the Lift under it and picks it up. Keys: left click places or picks up,
-/// mouse wheel raises and lowers, R turns the held Creation, right click takes the Lift away. Every
-/// change is a <see cref="ToolActions"/> request; the host decides.
+/// <see cref="Place"/> slides the Lift under it and picks it up. Keys: left click places or picks up, the arrow keys
+/// raise and lower, Q turns the held Creation, holding right click takes the Lift away (a ring fills round the
+/// crosshair), and Use (E) aimed at the Lift opens the blueprint menu (<see cref="BlueprintMenu"/>), which saves what the
+/// Lift holds or loads a saved Creation onto it. Every change is a <see cref="ToolActions"/> request; the host decides.
 /// </summary>
 public partial class LiftTool : HandTool
 {
     private MeshInstance3D _preview = null!;
+    private double? _removeFrom;
 
     /// <summary>What the Lift would do now.</summary>
     /// <param name="Position">Where the middle of the platform's base would go.</param>
@@ -41,6 +43,15 @@ public partial class LiftTool : HandTool
     /// <summary>This player's Lift as this peer last saw it, or null.</summary>
     public LiftState? Own => Build.Lifts.TryGetValue(Player.PeerId, out var lift) ? lift.State : null;
 
+    /// <summary>The Creation this player's Lift holds, as this peer shows it, or null.</summary>
+    public Creation? Held => Own?.Creation is { } id ? Build.Creations.Find(id) : null;
+
+    /// <summary>Opens the blueprint menu; Use (E) on the Lift calls it. Set by the game.</summary>
+    public Action? OpenBlueprints { get; set; }
+
+    /// <summary>True while right click is held to take the Lift away.</summary>
+    public bool Removing => _removeFrom is not null;
+
     public override void _Ready()
     {
         var size = Build.Settings!.Lift;
@@ -57,8 +68,73 @@ public partial class LiftTool : HandTool
 
     public override void _PhysicsProcess(double delta)
     {
-        if (Active)
-            UpdateAim();
+        if (!Active)
+            return;
+        UpdateAim();
+        // A release the tool never heard (the mouse freed for a window) ends the hold without removing.
+        if (ReadDeviceInput && Input.MouseMode != Input.MouseModeEnum.Captured)
+            _removeFrom = null;
+        if (_removeFrom is { } from && HammerTool.Now - from >= Build.Settings!.Lift.RemoveHoldSeconds)
+        {
+            _removeFrom = null;
+            Remove();
+        }
+    }
+
+    /// <summary>Right click pressed: starts the hold that takes the Lift away. False without a Lift.</summary>
+    public bool PressRemove()
+    {
+        if (Own is null)
+            return false;
+        _removeFrom = HammerTool.Now;
+        return true;
+    }
+
+    /// <summary>Right click let go: a hold too short to take the Lift away ends without doing anything.</summary>
+    public void ReleaseRemove() => _removeFrom = null;
+
+    /// <inheritdoc/>
+    public override float? Progress => _removeFrom is { } from
+        ? (float)Math.Clamp((HammerTool.Now - from) / Math.Max(1e-6, Build.Settings!.Lift.RemoveHoldSeconds), 0, 1)
+        : null;
+
+    /// <summary>
+    /// What Use (E) does with the Lift in hand: aimed at this player's Lift, or what it holds, it opens the blueprint
+    /// menu. Null otherwise.
+    /// </summary>
+    public override (string Label, Action Run)? Interaction =>
+        Active && OpenBlueprints is { } open && AimsAtOwnLift() ? (Loc.T("open blueprints"), open) : null;
+
+    /// <summary>Saves what the Lift holds to <paramref name="store"/> as <paramref name="name"/>. The path, or null when it holds nothing.</summary>
+    public string? SaveBlueprint(Core.Saves.BlueprintStore store, string name) =>
+        Held is { } creation ? store.Write(creation, name, DateTimeOffset.Now) : null;
+
+    /// <summary>Asks the host to build a blueprint on the empty Lift. False when the text is not JSON or too long to send.</summary>
+    public bool LoadBlueprint(string json, Action<ActionResult>? done = null)
+    {
+        if (json.Length > Build.Settings!.Lift.BlueprintMaxBytes)
+            return false;
+        System.Text.Json.JsonElement blueprint;
+        try
+        {
+            using var document = System.Text.Json.JsonDocument.Parse(json, new System.Text.Json.JsonDocumentOptions { CommentHandling = System.Text.Json.JsonCommentHandling.Skip, AllowTrailingCommas = true });
+            blueprint = document.RootElement.Clone();
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return false;
+        }
+        Send(ToolActions.LoadBlueprint, new LoadBlueprintArgs(blueprint), done);
+        return true;
+    }
+
+    /// <summary>True when the crosshair is on this player's Lift or the Creation it holds.</summary>
+    public bool AimsAtOwnLift()
+    {
+        var hit = CastRay();
+        if (hit?.Collider is LiftBody body)
+            return body.State.Owner == Player.PeerId;
+        return Own?.Creation is { } held && hit?.Node?.Creation.Id == held;
     }
 
     /// <summary>Casts the aim ray now and moves the preview.</summary>
@@ -118,8 +194,8 @@ public partial class LiftTool : HandTool
     public override string HudText()
     {
         var lift = Own is { } own ? own.Creation is { } c ? Loc.T("level {0}, holding creation {1}", own.Level, c) : Loc.T("level {0}", own.Level) : Loc.T("not placed");
-        return Loc.T("Lift ({0})   {1} place / pick up  {2}/{3} raise/lower  {4} turn  {5} take away", lift, Key(InputActions.Primary), Key(InputActions.LiftUp), Key(InputActions.LiftDown),
-            Key(InputActions.Rotate), Key(InputActions.Secondary)) + Status;
+        return Loc.T("Lift ({0})   {1} place / pick up  {2}/{3} raise/lower  {4} turn  hold {5} take away  {6} on the Lift: blueprints", lift, Key(InputActions.Primary), Key(InputActions.LiftUp), Key(InputActions.LiftDown),
+            Key(InputActions.Rotate), Key(InputActions.Secondary), Key(InputActions.Interact)) + Status;
     }
 
     /// <inheritdoc/>
@@ -128,7 +204,13 @@ public partial class LiftTool : HandTool
         if (Pressed(@event, InputActions.Primary))
             Place();
         else if (Pressed(@event, InputActions.Secondary))
-            Remove();
+            PressRemove();
+        else if (Released(@event, InputActions.Secondary))
+        {
+            if (_removeFrom is null)
+                return false;
+            ReleaseRemove();
+        }
         else if (Pressed(@event, InputActions.LiftUp))
             Raise(1);
         else if (Pressed(@event, InputActions.LiftDown))
@@ -146,7 +228,12 @@ public partial class LiftTool : HandTool
     }
 
     /// <inheritdoc/>
-    protected override void OnActiveChanged() => _preview.Visible = Active && Aim is { Creation: null };
+    protected override void OnActiveChanged()
+    {
+        _preview.Visible = Active && Aim is { Creation: null };
+        if (!Active)
+            _removeFrom = null;
+    }
 
     /// <inheritdoc/>
     public override Core.Ui.CrosshairState Crosshair => Aim is null ? Core.Ui.CrosshairState.Default : Core.Ui.CrosshairState.Valid;

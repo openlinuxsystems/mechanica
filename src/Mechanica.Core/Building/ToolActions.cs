@@ -65,6 +65,14 @@ public sealed record PaintArgs(int Creation, IReadOnlyList<int> Parts, string? C
 /// <param name="Bot">Id of the bot hit.</param>
 public sealed record SledgeArgs(int? Creation = null, int? Part = null, int? Player = null, string? Object = null, int? Bot = null);
 
+/// <summary>Arguments of <c>LoadBlueprint</c>: a blueprint file's JSON (<see cref="Creations.Blueprint"/>), loaded onto the caller's empty Lift.</summary>
+/// <param name="Blueprint">The blueprint.</param>
+public sealed record LoadBlueprintArgs(JsonElement Blueprint);
+
+/// <summary>Arguments of <c>Block</c>: the caller starts or stops blocking with the Sledgehammer.</summary>
+/// <param name="On">True while right click is held.</param>
+public sealed record BlockArgs(bool On);
+
 /// <summary>Value of a successful Lift action: the caller's Lift as it is now (absent after <c>RemoveLift</c>).</summary>
 /// <param name="Position">Middle of the platform's base.</param>
 /// <param name="Level">Platform level.</param>
@@ -157,18 +165,21 @@ public interface IToolWorld : IBuildWorld
 /// <item><c>PlaceLift</c>, <c>SetLiftLevel</c>, <c>TurnLift</c>, <c>RemoveLift</c>: each player's Lift. A
 /// Creation on a Lift stands upright and still on the platform (<see cref="Seat"/>), and drops when the
 /// Lift lets go. No stamina cost (D12).</item>
+/// <item><c>LoadBlueprint</c>: builds a saved Creation on the caller's empty Lift (UI spec §9), paid for part by
+/// part in Survival. A Creation whose storage holds items cannot be picked up (<see cref="LiftSettings.RefuseStoredItems"/>).</item>
 /// <item><c>Weld</c>: moves one Creation onto another and merges them, every touching face rigid (D7).
 /// <c>WeldParts</c>: welds two touching parts of different Bodies of one Creation, merging the Bodies.</item>
 /// <item><c>Paint</c>: colours parts, or takes the paint off.</item>
 /// <item><c>Sledge</c>: a Sledgehammer hit, which pushes the Body and damages the part until it breaks off;
-/// with <see cref="Targets"/> it can also hit players and world objects.</item>
+/// with <see cref="Targets"/> it can also hit players and world objects. <c>Block</c>: holding right click with it
+/// blocks, and <see cref="DamageScale"/> says how much of a hit a blocking player takes.</item>
 /// </list>
 /// Player callers must be within <see cref="BuildSettings.Reach"/> of what they act on. Each action plays its
 /// tool's sound where it happened (chunk 16): <c>lift_place</c>, <c>lift_raise</c>/<c>lift_lower</c> at the
 /// Lift; <c>weld_complete</c> where the weld joins; <c>paint_spray</c>/<c>paint_erase</c> on the first part;
 /// <c>smash_hit</c> plus the part's impact sound, or <c>smash_break</c> plus its break sound.
 /// </summary>
-public sealed class ToolActions(BuildSettings settings, IToolWorld world)
+public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartCatalog? catalog = null)
 {
     /// <summary>Action name for placing, moving or loading the caller's Lift.</summary>
     public const string PlaceLift = "PlaceLift";
@@ -194,15 +205,31 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world)
     /// <summary>Action name for a Sledgehammer hit.</summary>
     public const string Sledge = "Sledge";
 
+    /// <summary>Action name for loading a blueprint onto the caller's Lift.</summary>
+    public const string LoadBlueprint = "LoadBlueprint";
+
+    /// <summary>Action name for starting or stopping a block.</summary>
+    public const string Block = "Block";
+
+    /// <summary>The refusal for picking up a Creation whose storage holds items (UI spec §9).</summary>
+    public const string StoredItemsRefusal = "Cannot lift with attached resources.";
+
     // Share of the swing time the host insists on between one player's hits: swings the client spaced
     // correctly can arrive closer together after network jitter.
     private const double SwingJitter = 0.8;
 
     private readonly SortedDictionary<int, LiftState> _lifts = [];
     private readonly Dictionary<int, double> _lastSwing = [];
+    private readonly HashSet<int> _blocking = [];
 
     /// <summary>Players and world objects a Sledgehammer can hit; null hits parts only.</summary>
     public IStrikeTargets? Targets { get; set; }
+
+    /// <summary>What building costs (Survival pays for a loaded blueprint's parts). Null is free.</summary>
+    public IBuildCosts? Costs { get; set; }
+
+    /// <summary>The players blocking now.</summary>
+    public IReadOnlyCollection<int> Blocking => _blocking;
 
     /// <summary>Every Lift, by owner.</summary>
     public IReadOnlyCollection<LiftState> Lifts => _lifts.Values;
@@ -221,10 +248,23 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world)
         dispatcher.Register<WeldPartsArgs>(WeldParts, ValidateWeldParts, ApplyWeldParts);
         dispatcher.Register<PaintArgs>(Paint, ValidatePaint, ApplyPaint);
         dispatcher.Register<SledgeArgs>(Sledge, ValidateSledge, ApplySledge);
+        dispatcher.Register<LoadBlueprintArgs>(LoadBlueprint, ValidateLoadBlueprint, ApplyLoadBlueprint, maxArgsLength: settings.Lift.BlueprintMaxBytes);
+        dispatcher.Register<BlockArgs>(Block, ValidateBlock, ApplyBlock);
     }
 
     /// <summary>Forgets a peer that left (its Lift is removed through <c>RemoveLift</c> first).</summary>
-    public void Forget(int peer) => _lastSwing.Remove(peer);
+    public void Forget(int peer)
+    {
+        _lastSwing.Remove(peer);
+        _blocking.Remove(peer);
+    }
+
+    /// <summary>
+    /// What damage of <paramref name="cause"/> that <paramref name="peer"/> takes is multiplied by: the block's share
+    /// while they block a cause it stops, else 1.
+    /// </summary>
+    public float DamageScale(int peer, string cause) =>
+        _blocking.Contains(peer) && settings.Sledge.BlockCauses.Contains(cause) ? settings.Sledge.BlockDamageScale : 1f;
 
     /// <summary>
     /// Where a Creation's Bodies go on a platform whose top middle is <paramref name="platformTop"/>: the
@@ -278,6 +318,8 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world)
                 return $"Creation {id} is on another player's lift.";
             if (CheckReach(caller, CreationBounds.World(carried)) is { } tooFar)
                 return tooFar;
+            if (settings.Lift.RefuseStoredItems && LiftOf(caller.Peer)?.Creation != id && carried.Parts.Any(p => carried.HoldsItems(p.Id)))
+                return StoredItemsRefusal;
         }
         return CheckLift(lift, carried, 0);
     }
@@ -337,6 +379,53 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world)
         world.LiftChanged(caller.Peer, null);
         return null;
     }
+
+    private string? ValidateLoadBlueprint(ActionCaller caller, LoadBlueprintArgs args)
+    {
+        if (LiftOf(caller.Peer) is not { } lift)
+            return "You have no lift to load a blueprint onto.";
+        if (Held(lift) is not null)
+            return "Your lift already holds a creation.";
+        if (ReadBlueprint(args, 0, out var error) is not { } creation)
+            return error;
+        if (creation.Parts.Count > settings.MaxPartsPerCreation)
+            return $"The blueprint has more parts than a creation may ({creation.Parts.Count}; at most {settings.MaxPartsPerCreation}).";
+        if (CheckReach(caller, lift.Position.ToNumerics()) is { } far)
+            return far;
+        if (Costs?.CheckPlaceAll(caller, PartCounts(creation)) is { } unpaid)
+            return unpaid;
+        return CheckLift(lift with { Creation = creation.Id }, creation, 0);
+    }
+
+    private JsonElement? ApplyLoadBlueprint(ActionCaller caller, LoadBlueprintArgs args)
+    {
+        var creation = ReadBlueprint(args, world.NextCreationId(), out var error) ?? throw new InvalidOperationException(error);
+        world.Added(creation);
+        foreach (var part in creation.Parts)
+            Costs?.Placed(caller, part.Part);
+        var lift = LiftOf(caller.Peer)! with { Creation = creation.Id };
+        world.PlaySound("lift_place", Identifiers.VanillaModId, PlatformTop(lift));
+        return Commit(lift, creation, 0);
+    }
+
+    private Creation? ReadBlueprint(LoadBlueprintArgs args, int id, out string? error)
+    {
+        error = null;
+        if (catalog is null)
+        {
+            error = "Blueprints cannot be loaded here.";
+            return null;
+        }
+        var diagnostics = new List<DataDiagnostic>();
+        if (args.Blueprint.ValueKind == JsonValueKind.Object && Blueprint.Read(args.Blueprint.GetRawText(), catalog, id, "blueprint", diagnostics) is { } creation)
+            return creation;
+        var first = diagnostics.FirstOrDefault(d => d.Severity == DiagnosticSeverity.Error);
+        error = first is null ? "That is not a blueprint." : $"The blueprint does not load: {first.Message}";
+        return null;
+    }
+
+    private static Dictionary<string, int> PartCounts(Creation creation) =>
+        creation.Parts.GroupBy(p => p.Part).ToDictionary(g => g.Key, g => g.Count(), StringComparer.Ordinal);
 
     // The caller's Lift as PlaceLift would leave it, and the Creation it would hold.
     private LiftState PlannedLift(int peer, PlaceLiftArgs args, out Creation? carried)
@@ -584,6 +673,18 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world)
         BuildActions.PlayPartSound(world, creation, partId, PartSounds.Impact, null);
         creation.SetPartDamage(partId, total);
         return new SledgeResult(false, full - total, false, []);
+    }
+
+    private string? ValidateBlock(ActionCaller caller, BlockArgs args) =>
+        args.On && world.EyeOf(caller.Peer) is null ? "You have no player to block with." : null;
+
+    private JsonElement? ApplyBlock(ActionCaller caller, BlockArgs args)
+    {
+        if (args.On)
+            _blocking.Add(caller.Peer);
+        else
+            _blocking.Remove(caller.Peer);
+        return null;
     }
 
     // ---- Shared ----

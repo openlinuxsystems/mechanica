@@ -108,6 +108,9 @@ public abstract partial class HandTool : Node
     /// </summary>
     public virtual (object Key, string Title, string Body)? HoverTip => null;
 
+    /// <summary>What Use (E) does with this tool in hand ahead of anything else (the Lift's blueprint menu), or null.</summary>
+    public virtual (string Label, Action Run)? Interaction => null;
+
     /// <summary>The sound the player hears when the host refuses one of this tool's requests.</summary>
     protected virtual string RefusalSound => "ui_error";
 
@@ -174,6 +177,9 @@ public abstract partial class HandTool : Node
 
     /// <summary>True for a fresh press of one of <paramref name="action"/>'s bindings (see <see cref="InputActions"/>).</summary>
     protected static bool Pressed(InputEvent @event, string action) => GameInput.Pressed(@event, action);
+
+    /// <summary>True when <paramref name="event"/> lets go of <paramref name="action"/>.</summary>
+    protected static bool Released(InputEvent @event, string action) => GameInput.Released(@event, action);
 
     /// <summary>The player's key for <paramref name="action"/>, in brackets for a HUD hint.</summary>
     protected static string Key(string action) => $"[{GameInput.Label(action)}]";
