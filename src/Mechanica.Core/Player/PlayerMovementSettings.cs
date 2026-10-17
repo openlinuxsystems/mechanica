@@ -104,6 +104,12 @@ public sealed record PlayerMovementSettings
     /// <summary>Upward speed per metre the player is below their float depth, 1/s.</summary>
     public float Buoyancy { get; init; } = 3f;
 
+    /// <summary>
+    /// How high the feet rise above the water surface when a swimmer jumps at the surface, in metres. It is the
+    /// tallest edge a player can climb out onto from deep water, so no pond with a bank that low is a trap.
+    /// </summary>
+    public float SwimLeapHeight { get; init; } = 0.6f;
+
     /// <summary>What walking speed is multiplied by when wading in water shallower than <see cref="SwimDepth"/>.</summary>
     public float WadeSpeedScale { get; init; } = 0.7f;
 
@@ -147,6 +153,7 @@ public sealed record PlayerMovementSettings
         Positive(SwimVerticalSpeed, "swim_vertical_speed");
         Positive(SwimAcceleration, "swim_acceleration");
         Positive(Buoyancy, "buoyancy");
+        NonNegative(SwimLeapHeight, "swim_leap_height");
         if (!float.IsFinite(FloatDepth) || FloatDepth < SwimDepth || FloatDepth >= EyeHeight)
             throw new FormatException($"float_depth must be from swim_depth up to below eye_height, so a floating player swims with their head out (got {FloatDepth}).");
         if (!float.IsFinite(WadeSpeedScale) || WadeSpeedScale is <= 0f or > 1f)

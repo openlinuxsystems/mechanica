@@ -8,6 +8,9 @@ internal static class WorldGenValidator
 {
     private const string Code = DiagnosticCodes.WorldGenInvalid;
 
+    // Steepest ground a player can walk up (the controller's 45° floor angle), as rise over run.
+    private const float MaxBasinSlope = 1f;
+
     public static void Validate(WorldGenDefinition definition, DiagnosticSink sink)
     {
         KnownKeys.WarnUnknown(definition.Extra, "$", sink, typeof(WorldGenDefinition));
@@ -159,6 +162,10 @@ internal static class WorldGenValidator
                 else
                     offset = new Vector2(at[0], at[1]);
             }
+            // A basin's bank is steepest halfway through the blend (smoothstep: 1.5 × depth / blend). Steeper than
+            // the 45° a player can walk up, a basin below sea level is a pond nobody can climb out of.
+            if (op.Op == TerrainOpKind.Basin && op.Depth > 0f && !(1.5f * op.Depth <= MaxBasinSlope * op.Blend))
+                sink.Error(code, $"{path}.blend", $"a basin {op.Depth} m deep needs a blend of at least {1.5f * op.Depth / MaxBasinSlope:0.##} m, or its bank is too steep to climb out of (got {op.Blend}).");
             // Shaping must stay inside the footprint, or it would reach under a neighbouring POI.
             if (offset.Length() + op.Radius + op.Blend > prefab.Radius + 1e-3f)
                 sink.Error(code, path, $"reaches {offset.Length() + op.Radius + op.Blend:0.##} m from the centre, past the POI radius ({prefab.Radius}).");
