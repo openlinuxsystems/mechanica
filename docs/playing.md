@@ -49,7 +49,9 @@ stops getting your input.
   is simulated out to 128 m, and past that the land and its rocks and trees are drawn as scenery you
   can't touch, fading into fog at the view distance.
 - **Audio**: master, music, sound effects and interface volume, mute all, and the output device.
-- **Gameplay**: mouse sensitivity, invert Y, field of view, auto-save (off, or every 5, 10 or 15
+- **Gameplay**: mouse sensitivity, invert Y, field of view, tutorial hints (a short tip at the top of
+  the screen the first time you start, pick up each tool or open each screen; **Show tips again** brings
+  back the ones you have seen; the tips are in `game/data/tutorial.json`), auto-save (off, or every 5, 10 or 15
   minutes while you host), the most players a world you host takes, and your player name.
 - **Interface**: show or hide the tool bar and key hints.
 

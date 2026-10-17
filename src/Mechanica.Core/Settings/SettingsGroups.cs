@@ -191,6 +191,12 @@ public sealed record GameplaySettings
     /// <summary>Most players a world this player hosts takes.</summary>
     public int MaxPlayers { get; init; } = Net.NetProtocol.DefaultMaxPlayers;
 
+    /// <summary>Shows a short tip the first time each tool or screen is used.</summary>
+    public bool ShowTutorialHints { get; init; } = true;
+
+    /// <summary>The tips already shown, by id, so each shows once.</summary>
+    public SortedSet<string>? SeenHints { get; init; }
+
     /// <summary>The auto-save choices offered.</summary>
     public static readonly IReadOnlyList<int> AutoSaveChoices = [0, 5, 10, 15];
 

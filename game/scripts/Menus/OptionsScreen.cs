@@ -178,7 +178,7 @@ public partial class OptionsScreen : ToolWindow
     {
         if (_revert is not null)
             _revert.Cancel();
-        GameSettings.Save(_draft);
+        GameSettings.Save(WithSeen(_draft));
         var profile = Main.UserProfile(_name.Text, ProfilePath);
         _name.Text = profile.Name;
     }
@@ -187,21 +187,21 @@ public partial class OptionsScreen : ToolWindow
     public void ApplyWindow()
     {
         _revertTo = GameSettings.Current.Graphics;
-        GameSettings.Apply(_draft);
+        GameSettings.Apply(WithSeen(_draft));
         GameSettings.ApplyWindow();
         _revertLeft = RevertSeconds;
         _revert = ConfirmDialog.Ask(this, "Display settings", $"Keep these display settings? They go back in {RevertSeconds:0} seconds.",
             "Keep", () =>
             {
                 _revert = null;
-                GameSettings.Save(_draft);
+                GameSettings.Save(WithSeen(_draft));
                 UpdateApply();
             },
             () =>
             {
                 _revert = null;
                 _draft = _draft with { Graphics = _draft.Graphics with { Resolution = _revertTo.Resolution, DisplayMode = _revertTo.DisplayMode, VSync = _revertTo.VSync } };
-                GameSettings.Apply(_draft);
+                GameSettings.Apply(WithSeen(_draft));
                 GameSettings.ApplyWindow();
                 RebuildPage("Graphics", BuildGraphics);
                 UpdateApply();
@@ -271,7 +271,7 @@ public partial class OptionsScreen : ToolWindow
     private void KeymapChanged()
     {
         _draft = _draft.WithKeymap(_keymap);
-        GameSettings.Apply(_draft);
+        GameSettings.Apply(WithSeen(_draft));
         RefreshBindings();
     }
 
@@ -390,6 +390,16 @@ public partial class OptionsScreen : ToolWindow
         Slider(page, "Mouse sensitivity", _draft.MouseSensitivity * 1000, 0.2f, 20f, 0.1f, v => Live(_draft with { MouseSensitivity = v / 1000 }), v => $"{v:0.0}");
         Toggle(page, "Invert Y", _draft.InvertY, v => Live(_draft with { InvertY = v }));
         Slider(page, "Field of view", _draft.FieldOfView, UserSettings.MinFieldOfView, UserSettings.MaxFieldOfView, 1, v => Live(_draft with { FieldOfView = v }), v => $"{v:0}°");
+        page.AddChild(new Label { Text = "Help", ThemeTypeVariation = "TitleLabel" });
+        Toggle(page, "Show tutorial hints", _draft.Gameplay.ShowTutorialHints, v => Live(_draft with { Gameplay = _draft.Gameplay with { ShowTutorialHints = v } }),
+            "A short tip the first time you start, pick up each tool or open each screen.");
+        var again = new Button { Name = "Show tips again", Text = "Show tips again", Disabled = (GameSettings.Current.Gameplay.SeenHints?.Count ?? 0) == 0 };
+        again.Pressed += () => ConfirmDialog.Ask(this, "Show tips again", "Show every tutorial tip again as you play?", "Show again", () =>
+        {
+            GameSettings.Save(GameSettings.Current with { Gameplay = GameSettings.Current.Gameplay with { SeenHints = null } });
+            again.Disabled = true;
+        }, destructive: false);
+        Row(page, "Tips already seen", "Tips show once each. This brings them all back.").AddChild(again);
         page.AddChild(new Label { Text = "Saving", ThemeTypeVariation = "TitleLabel" });
         var choices = GameplaySettings.AutoSaveChoices;
         Option(page, "Auto-save", [.. choices.Select(m => m == 0 ? "Off" : $"Every {m} min")], choices.ToList().IndexOf(_draft.Gameplay.AutoSaveMinutes),
@@ -414,8 +424,11 @@ public partial class OptionsScreen : ToolWindow
     private void Live(UserSettings settings)
     {
         _draft = settings.Clamped();
-        GameSettings.Apply(_draft with { Graphics = _draft.Graphics with { Resolution = WindowApplied.Resolution, DisplayMode = WindowApplied.DisplayMode, VSync = WindowApplied.VSync } });
+        GameSettings.Apply(WithSeen(_draft) with { Graphics = _draft.Graphics with { Resolution = WindowApplied.Resolution, DisplayMode = WindowApplied.DisplayMode, VSync = WindowApplied.VSync } });
     }
+
+    // Tips seen while Options is open (it can be opened over the world) are kept, not undone by the draft.
+    private static UserSettings WithSeen(UserSettings s) => s with { Gameplay = s.Gameplay with { SeenHints = GameSettings.Current.Gameplay.SeenHints } };
 
     private void AskReset()
     {
