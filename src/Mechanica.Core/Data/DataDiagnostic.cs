@@ -99,6 +99,12 @@ public static class DiagnosticCodes
     public const string SoundDuplicate = "MD0802";
     public const string SoundOverrideConflict = "MD0803";
     public const string SoundUnknown = "MD0804";
+
+    // 09xx: bots and raids
+    public const string BotInvalid = "MD0901";
+    public const string DuplicateBot = "MD0902";
+    public const string RaidInvalid = "MD0903";
+    public const string BotBehaviorUnknownNode = "MD0904";
 }
 
 /// <summary>Collects diagnostics for one file, filling in the file name.</summary>

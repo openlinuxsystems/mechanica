@@ -62,7 +62,8 @@ public sealed record PaintArgs(int Creation, IReadOnlyList<int> Parts, string? C
 /// <param name="Part">The part hit.</param>
 /// <param name="Player">Peer of the player hit.</param>
 /// <param name="Object">Id of the world object hit (<c>"3.10.-4"</c>).</param>
-public sealed record SledgeArgs(int? Creation = null, int? Part = null, int? Player = null, string? Object = null);
+/// <param name="Bot">Id of the bot hit.</param>
+public sealed record SledgeArgs(int? Creation = null, int? Part = null, int? Player = null, string? Object = null, int? Bot = null);
 
 /// <summary>Value of a successful Lift action: the caller's Lift as it is now (absent after <c>RemoveLift</c>).</summary>
 /// <param name="Position">Middle of the platform's base.</param>
@@ -106,6 +107,12 @@ public interface IStrikeTargets
 
     /// <summary>Takes <paramref name="damage"/> health from a world object. Returns the health left (0 when it broke).</summary>
     float StrikeObject(string id, float damage);
+
+    /// <summary>Middle of a living bot, or null when there is none with that id.</summary>
+    Vector3? BotCentre(int bot);
+
+    /// <summary>Takes <paramref name="damage"/> health from a bot (a melee hit). Returns the health left (0 when it died).</summary>
+    float StrikeBot(int bot, float damage);
 }
 
 /// <summary>What the tool actions need from the world beyond building. The host's game layer implements it.</summary>
@@ -497,9 +504,12 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world)
 
     private string? CheckSledgeTarget(ActionCaller caller, SledgeArgs args)
     {
-        var targets = (args.Creation is not null || args.Part is not null ? 1 : 0) + (args.Player is not null ? 1 : 0) + (args.Object is not null ? 1 : 0);
+        var targets = (args.Creation is not null || args.Part is not null ? 1 : 0) + (args.Player is not null ? 1 : 0) + (args.Object is not null ? 1 : 0)
+            + (args.Bot is not null ? 1 : 0);
         if (targets != 1)
-            return "Hit one thing: a creation and part, a player or an object.";
+            return "Hit one thing: a creation and part, a player, an object or a bot.";
+        if (args.Bot is { } bot)
+            return Targets?.BotCentre(bot) is { } botCentre ? CheckReach(caller, botCentre) : $"There is no bot {bot} to hit.";
         if (args.Player is { } peer)
         {
             if (Targets?.PlayerCentre(peer) is not { } centre)
@@ -526,6 +536,12 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world)
         {
             world.PlaySound("smash_hit", Identifiers.VanillaModId, Targets!.PlayerCentre(peer)!.Value);
             return Value(new SledgeResult(false, Targets.StrikePlayer(caller, peer, settings.Sledge.PlayerDamage), false, []));
+        }
+        if (args.Bot is { } bot)
+        {
+            world.PlaySound("smash_hit", Identifiers.VanillaModId, Targets!.BotCentre(bot)!.Value);
+            var health = Targets.StrikeBot(bot, settings.Sledge.PlayerDamage);
+            return Value(new SledgeResult(health <= 0, health, false, []));
         }
         if (args.Object is { } id)
         {

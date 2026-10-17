@@ -96,6 +96,30 @@ public static class DataJson
         }).ToList(),
     });
 
+    /// <summary>Serializes a bot definition in canonical form.</summary>
+    public static string Write(Bots.BotDefinition bot) => Serialize(bot with
+    {
+        Extra = Sorted(bot.Extra),
+        Size = bot.Size is null ? null : bot.Size with { Extra = Sorted(bot.Size.Extra) },
+        Attacks = bot.Attacks?.Select(a => a with
+        {
+            Extra = Sorted(a.Extra),
+            DamageOverTime = a.DamageOverTime is null ? null : a.DamageOverTime with { Extra = Sorted(a.DamageOverTime.Extra) },
+        }).ToList(),
+        Drops = bot.Drops?.Select(d => d with { Extra = Sorted(d.Extra) }).ToList(),
+    });
+
+    /// <summary>Serializes a raid table in canonical form.</summary>
+    public static string Write(Bots.RaidTableDefinition raids) => Serialize(raids with
+    {
+        Extra = Sorted(raids.Extra),
+        Levels = raids.Levels?.Select(l => l with
+        {
+            Extra = Sorted(l.Extra),
+            Bots = l.Bots?.Select(b => b with { Extra = Sorted(b.Extra) }).ToList(),
+        }).ToList(),
+    });
+
     private static string Serialize<T>(T value) => JsonSerializer.Serialize(value, WriteOptions) + "\n";
 
     private static Dictionary<string, JsonElement>? Sorted(Dictionary<string, JsonElement>? extra) =>

@@ -48,8 +48,8 @@ end
 
 Limits live in `game/data/scripting.json`: `instruction_budget` (per hook call),
 `reload_poll_seconds`, `max_string_length`, `max_ray_length`, `max_overlap_radius`,
-`max_messages`, `max_projectiles` and `max_projectile_lifetime`. The motion limits (largest force,
-torque, bearing speed and piston force) are in
+`max_messages`, `max_loops_per_part`, `max_projectiles` and `max_projectile_lifetime`. The motion
+limits (largest force, torque, bearing speed and piston force) are in
 `game/data/motion.json`.
 
 ## Hot reload
@@ -181,25 +181,58 @@ The Creation the part belongs to.
 | `world.raycast(from, to)` | The first thing on the segment from `from` to `to`, skipping the script's own Creation: `{position, normal, distance, creation?, part?}`, or `nil`. A ray may be at most `max_ray_length` m long. |
 | `world.overlap_sphere(centre, radius)` | Everything a sphere touches, skipping the script's own Creation: a list of `{creation?, part?}` (both missing for the ground). `radius` is at most `max_overlap_radius` m. |
 
+## `sound`
+
+Sound events come from the mods' sound banks (`sounds/*.json`, edited with the Part Editor's Sound
+Event Binder). An id without a mod (`"rotor_loop"`) is one of the part's own mod; another mod's is
+written `vanilla:thruster_loop`. Sounds are played by the host and heard by every player in earshot.
+A loop's parameters are the ones its event declares, each with its own range (`thruster_loop` has
+`thrust`, from 0 to 1).
+
+| Function | Returns |
+|----------|---------|
+| `sound.play(id, at?)` | Plays a one-shot at the part's centre (an item script: its holder's eyes), or at the world point `at`. Returns `true`, or `false` and the reason. |
+| `sound.start(id, parameters?)` | Starts a looping event that follows the part, with optional starting parameter values (`{thrust = 0.5}`). Returns its handle, or `nil` and the reason. A part runs at most `max_loops_per_part` loops. |
+| `sound.set_parameter(handle, name, value)` | Sets a parameter of one of the part's loops, which bends its pitch and volume as the event says. Changes reach clients up to 20 times a second. Returns `true`, or `false` and the reason. |
+| `sound.stop(handle)` | Stops one of the part's loops. Returns `true`, or `false` and the reason. |
+
+A part's loops keep playing across hot reloads, so keep their handles in `state`. They stop when
+the part is removed or its script stops on an error. Item scripts play one-shots only.
+
+```lua
+function on_create()
+  sound.play("vanilla:thruster_ignite")
+  state.hum = sound.start("vanilla:thruster_loop", {thrust = 0})
+end
+
+function on_update(dt)
+  -- Louder and higher the faster the part goes, full at 20 m/s.
+  local speed = part.velocity():length()
+  if state.hum then sound.set_parameter(state.hum, "thrust", math.min(speed / 20, 1)) end
+end
+```
+
 ## Item scripts
 
-Items (anything not placeable: food, weapons) can name a `script` too (chunk 20b, D2). The item's
-behaviour lives there, and its numbers in its `properties`. The vanilla ones are
-`mods/vanilla/scripts/food.lua` and `mods/vanilla/scripts/potato_gun.lua`.
+Items (anything not placeable: food, weapons, seeds, the water bucket) can name a `script` too
+(chunk 20b, D2). The item's behaviour lives there, and its numbers in its `properties`. The vanilla
+ones are `food.lua`, `potato_gun.lua`, `seed.lua` and `watering.lua` in `mods/vanilla/scripts/`.
 
 - **One instance per player and item type.** Each player gets their own copy of the script, with its
   own `state`, the first time they take one in hand or use one. It is dropped when they leave.
 - **Uses go through the Action API.** The Item tool (and bots or agents) call
-  `UseItem {slot, direction?}`. The host checks the slot holds a scripted item, that `direction` is
-  close to where the player looks (`aim_tolerance` in `survival.json`), then runs `can_use` and, if
-  that allows it, `on_use`. `EquipItem {slot?}` says what is in hand. A dead player's uses are refused.
+  `UseItem {slot, direction?, creation?, part?}`. The host checks the slot holds a scripted item, that
+  `direction` is close to where the player looks (`aim_tolerance` in `survival.json`) and that the
+  part exists, then runs `can_use` and, if that allows it, `on_use`. Both get `target`:
+  `{from, direction, creation?, part?}`, where `creation` and `part` are what the Item tool's crosshair
+  points at within reach. `EquipItem {slot?}` says what is in hand. A dead player's uses are refused.
 - **`can_use` and the script's setup only read.** Functions that change the world (`item.consume`,
-  `holder.heal`, `inventory.take` and the `combat` ones that deal damage or launch) raise an error
-  there.
+  `holder.heal`, `inventory.take`, `farm.plant`, `farm.water` and the `combat` ones that deal damage
+  or launch) raise an error there.
 - **Damage follows the world's rules.** In Creative nothing hurts players; with `pvp` off a shot
   can't hurt another player, but a player's own splash still hurts them.
 - `part` and `creation` functions don't work in an item script; `world` and `log` do. The `item`,
-  `holder`, `inventory` and `combat` libraries only work in an item script.
+  `holder`, `inventory`, `combat` and `farm` libraries only work in an item script.
 
 ```lua
 -- Food: eating one heals properties.health.
@@ -248,8 +281,8 @@ The holder's inventory. Item ids may be bare (`potato`, in the item's own mod) o
 
 ### `combat`
 
-Hits are tables `{kind, position, player?, creation?, part?, object?}`; `kind` is `player`, `part`,
-`object` (a tree, rock or bush) or `ground`. What damage did comes back with `damage` added. These
+Hits are tables `{kind, position, player?, creation?, part?, object?, bot?}`; `kind` is `player`, `part`,
+`object` (a tree, rock or bush), `bot` or `ground`. What damage did comes back with `damage` added. These
 are the same primitives bots use (chunk 21).
 
 | Function | Returns |
@@ -260,6 +293,20 @@ are the same primitives bots use (chunk 21).
 | `combat.splash(at, radius, damage, impulse?)` | Hurts every player, part and world object within `radius` m of `at`, falling off from `damage` at the centre to 0 at the edge, and pushes parts away with up to `impulse` N·s. A list of hits. `radius` is at most `max_overlap_radius`. |
 | `combat.pellets(direction, count, spread)` | `count` (at most 64) unit directions: the first along `direction`, the rest evenly round a cone of `spread` degrees. No randomness, so every replay agrees. |
 | `combat.projectile(from, velocity, options?)` | Launches a projectile from `from` at `velocity` m/s. `options`: `gravity` (a `vec3`, default `world.gravity()`), `lifetime` (s, default and at most `max_projectile_lifetime`), `data` (passed to `on_hit`). It flies on the host, every client draws it along its arc, and `on_hit` runs where it lands; it deals no damage by itself. Returns its id, or `false` and the reason when `max_projectiles` are already in flight. |
+
+### `farm`
+
+Soil parts (chunk 20). A soil table is `{seed?, crop?, stage, ripe, water, capacity}`: the planted
+seed and its crop (qualified ids), the growth stage (0 to 4, 4 is `ripe`) and the seconds of water it
+holds of its `capacity`. Each function checks the part is soil within the holder's `reach`, and
+returns `nil` and the reason when it can't act. Crops grow, and are harvested, by the host (`Harvest`);
+the seed's own `seed` section sets what grows and how fast.
+
+| Function | Returns |
+|----------|---------|
+| `farm.soil(creation, part)` | The soil table. |
+| `farm.plant(creation, part, seed?)` | Plants `seed` (an item with a `seed` section; default this item) in empty soil and returns the soil table. It takes nothing from the inventory: use `item.consume`. |
+| `farm.water(creation, part, seconds)` | Adds `seconds` of water, up to `capacity`, and returns the soil table. Takes nothing from the inventory either. |
 
 ## `vec3`
 

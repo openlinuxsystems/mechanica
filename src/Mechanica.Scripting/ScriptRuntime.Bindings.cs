@@ -159,6 +159,75 @@ public sealed partial class ScriptRuntime
         });
         globals.Set("world", DynValue.NewTable(world));
 
+        var sound = new Table(script);
+        Fn(sound, "play", args =>
+        {
+            var id = args.AsType(0, "sound.play", DataType.String).String;
+            var instance = Current();
+            Vector3 at;
+            if (args.Count > 1 && !args[1].IsNil())
+                at = LuaValues.ToVector(args[1], "sound.play", 2);
+            else if (instance.IsItem)
+            {
+                // An item sounds at its holder's head.
+                if (_survival?.World.EyeOf(instance.Holder!.Value) is not { } eye)
+                    return Refused(instance, "the holder is gone");
+                at = eye;
+            }
+            else if (Here() is { } h)
+                at = h.State.Position;
+            else
+                return Refused(instance, "the part is gone");
+            return Sound.Play(id, ModOf(instance), at) is { } error ? Refused(instance, error) : DynValue.True;
+        });
+        Fn(sound, "start", args =>
+        {
+            var id = args.AsType(0, "sound.start", DataType.String).String;
+            var instance = Current();
+            if (instance.IsItem)
+                return NoHandle(instance, "sound loops only work in part scripts; an item plays one-shots");
+            if (Here() is null)
+                return NoHandle(instance, "the part is gone");
+            if (instance.Loops.Count >= _settings.MaxLoopsPerPart)
+                return NoHandle(instance, $"a part may run at most {_settings.MaxLoopsPerPart} sound loops");
+            Dictionary<string, float>? parameters = null;
+            if (args.Count > 1 && !args[1].IsNil())
+            {
+                parameters = [];
+                foreach (var pair in args.AsType(1, "sound.start", DataType.Table).Table.Pairs)
+                {
+                    if (pair.Key.Type != DataType.String)
+                        throw new ScriptRuntimeException("sound.start: parameter names must be strings");
+                    parameters[pair.Key.String] = LuaValues.Number(pair.Value, "sound.start", 2);
+                }
+            }
+            var handle = Sound.StartLoop(id, ModOf(instance), instance.Creation, instance.Part, parameters, out var error);
+            if (handle == 0)
+                return NoHandle(instance, error ?? "refused");
+            instance.Loops.Add(handle);
+            return DynValue.NewNumber(handle);
+        });
+        Fn(sound, "set_parameter", args =>
+        {
+            var instance = Current();
+            var handle = (int)LuaValues.Number(args[0], "sound.set_parameter", 1);
+            var name = args.AsType(1, "sound.set_parameter", DataType.String).String;
+            var value = LuaValues.Number(args[2], "sound.set_parameter", 3);
+            if (!instance.Loops.Contains(handle))
+                return Refused(instance, $"the part runs no sound loop {handle}");
+            return Sound.SetLoopParameter(handle, name, value) is { } error ? Refused(instance, error) : DynValue.True;
+        });
+        Fn(sound, "stop", args =>
+        {
+            var instance = Current();
+            var handle = (int)LuaValues.Number(args[0], "sound.stop", 1);
+            if (!instance.Loops.Remove(handle))
+                return Refused(instance, $"the part runs no sound loop {handle}");
+            Sound.StopLoop(handle);
+            return DynValue.True;
+        });
+        globals.Set("sound", DynValue.NewTable(sound));
+
         AddLogicLibrary(script, part, creation, world, Vec);
         AddItemLibraries(context);
 
@@ -285,6 +354,14 @@ public sealed partial class ScriptRuntime
             Post(ScriptMessageKind.Warning, instance.File.File.Key, instance.IsItem ? null : instance.Creation, instance.IsItem ? null : instance.Part, reason);
         return DynValue.NewTuple(DynValue.False, DynValue.NewString(reason));
     }
+
+    // nil and the reason, for calls that return a value when they work.
+    private DynValue NoHandle(Instance instance, string reason) =>
+        DynValue.NewTuple(DynValue.Nil, Refused(instance, reason).Tuple[1]);
+
+    // Unqualified sound ids belong to the part's own mod.
+    private static string ModOf(Instance instance) =>
+        instance.PartType.IndexOf(':') is var colon and > 0 ? instance.PartType[..colon] : Identifiers.VanillaModId;
 
     private static Vec3 ToVec(Vector3 v) => new(v.X, v.Y, v.Z);
 }

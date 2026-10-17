@@ -14,7 +14,7 @@ namespace Mechanica.Scripting;
 // Held items (chunk 20b, D2): an item (not a placeable part) whose definition names a script runs it while a player holds and
 // uses it. Each player gets their own instance per item type, with its own state, made the first time
 // they equip or use one. The host's UseItem and EquipItem actions call the hooks; the item, holder,
-// inventory and combat libraries act for the holding player.
+// inventory, combat and farm libraries act for the holding player.
 public sealed partial class ScriptRuntime
 {
     /// <summary>Action name for using the item in a slot (<see cref="UseItemArgs"/>).</summary>
@@ -87,12 +87,16 @@ public sealed partial class ScriptRuntime
                 && AngleDegrees(look, direction.Value) > _survival.Settings.AimTolerance)
                 return "That is not where you are aiming.";
         }
+        if ((args.Creation is null) != (args.Part is null))
+            return "creation and part go together.";
+        if (args.Creation is { } creationId && _survival.World.FindCreation(creationId)?.FindPart(args.Part!.Value) is null)
+            return $"There is no part {args.Part} in creation {creationId}.";
         var instance = ItemInstance(caller, id!, args.Slot);
         if (instance?.Fault is { } fault)
             return $"The {definition!.Name ?? id}'s script is stopped: {fault}";
         if (instance is null)
             return $"The {definition!.Name ?? id} has no script to run.";
-        var values = CallItem(instance, Hooks.CanUse, ItemPhase.Checking, Target(instance, eye.Value, direction ?? _survival.World.LookOf(caller.Peer)));
+        var values = CallItem(instance, Hooks.CanUse, ItemPhase.Checking, Target(instance, eye.Value, direction ?? _survival.World.LookOf(caller.Peer), args));
         if (values is null)
             return $"The {definition!.Name ?? id}'s script is stopped: {instance.Fault}";
         return values.Length > 0 && values[0].Type == DataType.String ? values[0].String
@@ -107,7 +111,7 @@ public sealed partial class ScriptRuntime
         var instance = ItemInstance(caller, id, args.Slot)!;
         var eye = _survival!.World.EyeOf(caller.Peer)!.Value;
         var direction = args.Direction is { } d ? Vector3.Normalize(d.ToNumerics()) : _survival.World.LookOf(caller.Peer);
-        var values = CallItem(instance, Hooks.OnUse, ItemPhase.Acting, Target(instance, eye, direction))
+        var values = CallItem(instance, Hooks.OnUse, ItemPhase.Acting, Target(instance, eye, direction, args))
             ?? throw new InvalidOperationException($"the {instance.PartType} script failed: {instance.Fault}");
         if (values.Length == 0 || values[0].IsNil())
             return null;
@@ -212,12 +216,18 @@ public sealed partial class ScriptRuntime
         }
     }
 
-    private DynValue Target(Instance instance, Vector3 eye, Vector3? direction)
+    // What on_use and can_use are aimed at: {from, direction, creation?, part?}.
+    private DynValue Target(Instance instance, Vector3 eye, Vector3? direction, UseItemArgs args)
     {
         var script = instance.File.Context.Script;
         var target = new Table(script);
         target.Set("from", LuaValues.Vector(script, instance.File.Context.Vec3Meta, eye));
         target.Set("direction", LuaValues.Vector(script, instance.File.Context.Vec3Meta, direction ?? -Vector3.UnitZ));
+        if (args is { Creation: { } creation, Part: { } part })
+        {
+            target.Set("creation", DynValue.NewNumber(creation));
+            target.Set("part", DynValue.NewNumber(part));
+        }
         return DynValue.NewTable(target);
     }
 
@@ -399,6 +409,55 @@ public sealed partial class ScriptRuntime
             return DynValue.NewNumber(view.Id);
         });
         globals.Set("combat", DynValue.NewTable(combat));
+
+        var farm = new Table(script);
+        Fn(farm, "soil", args =>
+        {
+            var instance = ItemNow();
+            var (creation, part) = SoilArgs(args, "farm.soil");
+            return _survival!.CheckSoil(instance.Caller, creation, part) is { } bad ? NilBecause(bad)
+                : SoilTable(script, _survival.SoilViewOf(_survival.World.FindCreation(creation)!, part));
+        });
+        Fn(farm, "plant", args =>
+        {
+            var instance = Acting("farm.plant");
+            var (creation, part) = SoilArgs(args, "farm.plant");
+            var seed = args.Count > 2 && !args[2].IsNil() ? ItemId(instance, args.AsType(2, "farm.plant", DataType.String).String) : instance.PartType;
+            return _survival!.CheckPlant(instance.Caller, creation, part, seed) is { } bad ? NilBecause(bad)
+                : SoilTable(script, _survival.PlantSeed(instance.Caller, creation, part, seed));
+        });
+        Fn(farm, "water", args =>
+        {
+            var instance = Acting("farm.water");
+            var (creation, part) = SoilArgs(args, "farm.water");
+            var seconds = LuaValues.Number(args[2], "farm.water", 3);
+            if (!(seconds > 0f) || !float.IsFinite(seconds))
+                throw new ScriptRuntimeException("farm.water: seconds must be more than 0");
+            return _survival!.CheckWater(instance.Caller, creation, part) is { } bad ? NilBecause(bad)
+                : SoilTable(script, _survival.WaterSoil(instance.Caller, creation, part, seconds));
+        });
+        globals.Set("farm", DynValue.NewTable(farm));
+    }
+
+    private static (int Creation, int Part) SoilArgs(CallbackArguments args, string function) =>
+        ((int)LuaValues.Number(args[0], function, 1), (int)LuaValues.Number(args[1], function, 2));
+
+    // nil plus why, the way farm functions refuse.
+    private static DynValue NilBecause(string reason) => DynValue.NewTuple(DynValue.Nil, DynValue.NewString(reason));
+
+    // A soil part as scripts see it: {seed?, crop?, stage, ripe, water, capacity}.
+    private static DynValue SoilTable(Script script, SoilView view)
+    {
+        var table = new Table(script);
+        if (view.Seed is { } seed)
+            table.Set("seed", DynValue.NewString(seed));
+        if (view.Crop is { } crop)
+            table.Set("crop", DynValue.NewString(crop));
+        table.Set("stage", DynValue.NewNumber(view.Stage));
+        table.Set("ripe", DynValue.NewBoolean(view.Ripe));
+        table.Set("water", DynValue.NewNumber(view.Water));
+        table.Set("capacity", DynValue.NewNumber(view.Capacity));
+        return DynValue.NewTable(table);
     }
 
     private Instance ItemNow()
@@ -444,11 +503,11 @@ public sealed partial class ScriptRuntime
         return (from, Vector3.Normalize(direction), range);
     }
 
-    // What a ray hit, as scripts see it: {kind, position, distance?, player?, creation?, part?, object?}.
+    // What a ray hit, as scripts see it: {kind, position, distance?, player?, creation?, part?, object?, bot?}.
     private static DynValue HitTable(LuaContext context, RayHit hit, Vector3? from)
     {
         var table = new Table(context.Script);
-        table.Set("kind", DynValue.NewString(hit.Player is not null ? "player" : hit.Creation is not null && hit.Part is not null ? "part"
+        table.Set("kind", DynValue.NewString(hit.Bot is not null ? "bot" : hit.Player is not null ? "player" : hit.Creation is not null && hit.Part is not null ? "part"
             : hit.Object is not null ? "object" : "ground"));
         table.Set("position", LuaValues.Vector(context.Script, context.Vec3Meta, hit.Point));
         if (from is { } start)
@@ -461,6 +520,8 @@ public sealed partial class ScriptRuntime
             table.Set("part", DynValue.NewNumber(part));
         if (hit.Object is { } id)
             table.Set("object", DynValue.NewString(id.ToString()));
+        if (hit.Bot is { } bot)
+            table.Set("bot", DynValue.NewNumber(bot));
         return DynValue.NewTable(table);
     }
 
@@ -469,7 +530,7 @@ public sealed partial class ScriptRuntime
         var position = LuaValues.ToVector(table.Get("position"), function, 1);
         static int? Int(DynValue v) => v.Type == DataType.Number ? (int)v.Number : null;
         WorldObjectId? id = table.Get("object") is { Type: DataType.String } text && WorldObjectId.TryParse(text.String, out var parsed) ? parsed : null;
-        return new RayHit(position, Int(table.Get("player")), Int(table.Get("creation")), Int(table.Get("part")), id);
+        return new RayHit(position, Int(table.Get("player")), Int(table.Get("creation")), Int(table.Get("part")), id, Int(table.Get("bot")));
     }
 
     // What a hit did: the hit table plus the damage dealt.
@@ -487,6 +548,8 @@ public sealed partial class ScriptRuntime
             table.Set("part", DynValue.NewNumber(part));
         if (view.Object is { } id)
             table.Set("object", DynValue.NewString(id));
+        if (view.Bot is { } bot)
+            table.Set("bot", DynValue.NewNumber(bot));
         return DynValue.NewTable(table);
     }
 

@@ -62,6 +62,9 @@ public sealed partial class ScriptRuntime
         public int Version { get; set; }
         public HashSet<string> Warned { get; } = new(StringComparer.Ordinal);
 
+        // Sound loops the part started; they end with the part or when its script stops.
+        public HashSet<int> Loops { get; } = [];
+
         // Held items (chunk 20b): the peer holding the item, the slot it was last used from and who acts.
         public int? Holder { get; init; }
         public int Slot { get; set; }
@@ -152,6 +155,9 @@ public sealed partial class ScriptRuntime
 
     /// <summary>Raised for every print, warning and error, as it happens.</summary>
     public event Action<ScriptMessage>? Message;
+
+    /// <summary>The sound primitives behind the <c>sound</c> table. Set before parts start.</summary>
+    public IScriptSound Sound { get; set; } = new NoSound();
 
     /// <summary>Recent messages, oldest first (at most <see cref="ScriptSettings.MaxMessages"/>).</summary>
     public IReadOnlyList<ScriptMessage> Messages => [.. _messages];
@@ -439,8 +445,16 @@ public sealed partial class ScriptRuntime
     {
         if (instance.Fault is null && instance.Created)
             CallHook(instance, Hooks.OnDestroy);
+        StopLoops(instance);
         _instances.Remove((instance.Creation, instance.Part));
         Signals.Forget(instance.Creation, instance.Part);
+    }
+
+    private void StopLoops(Instance instance)
+    {
+        foreach (var handle in instance.Loops)
+            Sound.StopLoop(handle);
+        instance.Loops.Clear();
     }
 
     // Calls a hook if the script defines it. Null when the call failed (the instance is then stopped).
@@ -481,6 +495,7 @@ public sealed partial class ScriptRuntime
     private void Stop(Instance instance, string fault)
     {
         instance.Fault = fault;
+        StopLoops(instance);
         if (!instance.IsItem)
             Signals.SetOutput(instance.Creation, instance.Part, 0f);
         if (instance.IsItem)

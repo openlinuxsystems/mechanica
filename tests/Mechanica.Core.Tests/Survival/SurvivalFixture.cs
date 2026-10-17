@@ -34,13 +34,13 @@ internal sealed class SurvivalFixture
     {
         Catalog = new PartCatalog()
             .Add(Seed, new PartDefinition { Id = "seed", Name = "Seed", Category = PartCategory.Consumable, StackSize = 20,
-                Seed = new SeedDefinition { Crop = Crop, GrowTime = 40, Yield = 2, Seeds = 1, Value = 3 } })
+                Seed = new SeedDefinition { Crop = Crop, GrowTime = 40, Yield = 2, Seeds = 1, Value = 3 }, Script = "scripts/seed.lua" })
             .Add(Crop, new PartDefinition { Id = "crop", Name = "Crop", Category = PartCategory.Consumable, StackSize = 20,
                 Script = "scripts/food.lua", Properties = new JsonObject { ["health"] = 30 } })
             .Add(Bucket, new PartDefinition { Id = "bucket", Name = "Bucket", Category = PartCategory.Consumable, StackSize = 5,
-                Watering = new WateringDefinition { Seconds = 30 } })
+                Script = "scripts/watering.lua", Properties = new JsonObject { ["seconds"] = 30 } })
             .Add(Scrap, new PartDefinition { Id = "scrap", Name = "Scrap", Category = PartCategory.Resource, StackSize = 50 })
-            // Weapons run the vanilla potato gun script (chunk 20b); the Scripting tests use them.
+            // Seeds, the bucket, food and weapons run vanilla item scripts (chunk 20b); the Scripting tests use them.
             .Add(Blaster, new PartDefinition { Id = "blaster", Name = "Blaster", Category = PartCategory.Weapon, Script = Gun,
                 Properties = new JsonObject { ["damage"] = 20, ["interval"] = 1, ["range"] = 50, ["ammo"] = "crop", ["impulse"] = 5 } })
             .Add(Scattergun, new PartDefinition { Id = "scatter", Name = "Scattergun", Category = PartCategory.Weapon, Script = Gun,

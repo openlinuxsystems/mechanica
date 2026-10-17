@@ -367,7 +367,6 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
                 sink.Error(Code, $"$.{key}", $"only placeable parts can have {key}.");
         }
         ItemOnly(part.Seed, "seed");
-        ItemOnly(part.Watering, "watering");
         PartOnly(part.Soil, "soil");
         PartOnly(part.RespawnPoint == true ? true : null, "respawn_point");
         if (part.Seed is { } seed)
@@ -381,11 +380,6 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
                 sink.Error(Code, "$.seed.seeds", "seeds must be 0 or more.");
             RequireNonNegative(seed.Value, "$.seed.value", "value", false, "a seed", sink);
             KnownKeys.WarnUnknown(seed.Extra, "$.seed", sink, typeof(SeedDefinition));
-        }
-        if (part.Watering is { } watering)
-        {
-            RequirePositive(watering.Seconds, "$.watering.seconds", "seconds", true, "watering", sink);
-            KnownKeys.WarnUnknown(watering.Extra, "$.watering", sink, typeof(WateringDefinition));
         }
         if (part.Soil is { } soil)
         {

@@ -50,6 +50,12 @@ public partial class NetTestHarness : Node
     /// <summary>The port the host listens on, once started.</summary>
     public int Port { get; private set; }
 
+    /// <summary>Bot types every instance uses; null loads the mods' own.</summary>
+    public Mechanica.Core.Bots.BotBook? BotTypes { get; set; }
+
+    /// <summary>The raid table every instance uses; null loads the mods' own.</summary>
+    public Mechanica.Core.Bots.RaidTable? RaidTable { get; set; }
+
     /// <summary>Running instances, host first.</summary>
     public IReadOnlyList<Instance> Instances => _instances;
 
@@ -106,6 +112,8 @@ public partial class NetTestHarness : Node
         main.Content = content; // null: the manifest of the mods below
         main.Mods = mods; // null: load the real enabled mods, like the game does
         main.WorldGen = WorldGen; // null: the world data of those mods
+        main.BotTypes = BotTypes; // null: the bots of those mods
+        main.RaidTable = RaidTable; // null: the raid table of those mods
         viewport.AddChild(main);
         var instance = new Instance(name, viewport, main);
         _instances.Add(instance);
