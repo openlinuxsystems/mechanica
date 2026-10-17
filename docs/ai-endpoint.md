@@ -115,7 +115,7 @@ After `mechanica.subscribe`, the host pushes JSON-RPC notifications (no `id`) on
 | `seats` | someone sat down or stood up: `seat`, `seated` |
 | `projectiles` | `kind` `launched` or `landed` |
 | `mods` | from the mod tools, `kind` `validated` or `reloaded` with the `mods.validate` or `mods.reload` result as `result`; from packages, `action` `installed` (`id`, `version`, `change`) or `uninstalled` (`id`) |
-| `reports` | reserved for AI reports |
+| `reports` | an agent filed a note, recommendation or bug report: its summary (see [AI reports](ai-reports.md)) |
 
 A connection that falls more than 4096 notifications behind loses the oldest and then receives one
 `events_dropped` notification with the `count` it missed.
@@ -145,6 +145,13 @@ inventory, health and position back. One connection plays one player, and two ca
 Closing the socket removes the player like `mechanica.leave`. The host's limits are in
 `game/data/agents.json` (`max_agents`, `max_input_ticks`, `name_suffix`); agents also take player slots,
 so a full world refuses them.
+
+## Notes, recommendations and bug reports
+
+`reports.note`, `reports.recommend`, `reports.bug`, `reports.list`, `reports.get`, `reports.delete` and
+`reports.screenshot` let an agent write down what it finds, with the game's context, a replay of the calls
+that led up to a bug and a screenshot filled in by the host. See
+[AI Notes, Recommendations and Bug Reports](ai-reports.md).
 
 ## Adding methods (for game code)
 
