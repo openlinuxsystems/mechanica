@@ -1,6 +1,7 @@
 using System.Numerics;
 using System.Text.Json;
 using Mechanica.Core.Actions;
+using Mechanica.Core.Building;
 using Mechanica.Core.Creations;
 using Mechanica.Core.Data;
 using Mechanica.Core.Motion;
@@ -228,6 +229,35 @@ public class MotionActionsTests
         var described = _dispatcher.Dispatch(Agent, MotionActions.GetCreation, """{ "creation": 7 }""").Value!.Value.GetProperty("joints")[0];
         Assert.Equal(0.3f, described.GetProperty("position").GetSingle());
         Assert.Equal("rotational", result.Value!.Value.GetProperty("joints")[0].GetProperty("type").GetString());
+    }
+
+    [Fact]
+    public void GetCreationDescribesEveryPartsPlacementPaintAndHealth()
+    {
+        var actions = new MotionActions(new MotionSettings(), _world) { Sledge = new SledgeSettings { HealthPerDurability = 10 } };
+        var dispatcher = new ActionDispatcher();
+        actions.Register(dispatcher);
+        var catalog = new PartCatalog().Add("test:crate", new PartDefinition
+        {
+            Id = "crate", Name = "Crate", Category = PartCategory.Block, Mass = 4, Size = GridSize.One, Durability = 2,
+        });
+        var crate = new Creation(9, catalog);
+        var id = crate.Place("test:crate", new GridCell(2, 0, 0)).Id;
+        crate.SetAllBodyPoses(new Pose(new Vector3(1, 2, 3), Quaternion.Identity));
+        crate.SetPartColor(id, "#ff0000");
+        crate.SetPartDamage(id, 3);
+        _world.Creations[9] = crate;
+
+        var state = dispatcher.Dispatch(Agent, MotionActions.GetCreation, """{ "creation": 9 }""").Value!.Value.Deserialize<CreationState>(ActionJson.Options)!;
+
+        var part = Assert.Single(state.PartStates);
+        Assert.Equal((id, "test:crate", new GridCell(2, 0, 0), GridRotation.Identity, 0), (part.Id, part.Part, part.Cell, part.Rotation, part.Body));
+        Assert.Equal(("#ff0000", 3f, 17f, 20f), (part.Color, part.Damage, part.Health!.Value, part.MaxHealth!.Value));
+        Assert.Null(part.Fire);
+        // Cell 2 of the 0.25 m grid is centred 0.5 m along x, moved by the body pose (1, 2, 3).
+        Assert.Equal(new Vec3(1.5f, 2f, 3f), part.Centre);
+        Assert.Equal(new GridCell(0, 1, 0), _dispatcher.Dispatch(Agent, MotionActions.GetCreation, """{ "creation": 7 }""").Value!.Value
+            .Deserialize<CreationState>(ActionJson.Options)!.PartStates.Single(p => p.Id == _bearing).Cell);
     }
 
     [Fact]
