@@ -1,8 +1,11 @@
--- Potato guns and thrown splash weapons (chunk 20b). A shot is one or more hitscan pellets from the
--- holder's eyes; with a radius it bursts where it hits (or at the end of its range) and hurts everything
--- near. The numbers are the item's properties:
---   damage, interval (s), range (m), ammo (item id, optional), pellets (default 1),
---   spread (degrees, default 0), radius (m, optional), impulse (N·s, default 0).
+-- Potato guns and thrown splash weapons (chunk 20b). A shot is one or more pellets from the holder's
+-- eyes. Without a speed each pellet is a hitscan ray; with a radius it bursts where the ray hits (or at
+-- the end of its range) and hurts everything near. With a speed each pellet is lobbed (D14): a projectile
+-- that arcs under gravity and bursts where it lands, or when its fuse runs out. The numbers are the
+-- item's properties:
+--   damage, interval (s), range (m, hitscan), speed (m/s, lobbed), fuse (s, lobbed, optional),
+--   ammo (item id, optional), pellets (default 1), spread (degrees, default 0), radius (m, optional),
+--   impulse (N·s, default 0).
 
 -- Share of the interval the host insists on between shots (network jitter).
 local JITTER = 0.8
@@ -23,7 +26,15 @@ function on_use(target)
   end
   local hits = {}
   local damage, range, impulse = properties.damage, properties.range, properties.impulse or 0
-  for _, direction in ipairs(combat.pellets(target.direction, properties.pellets or 1, properties.spread or 0)) do
+  local directions = combat.pellets(target.direction, properties.pellets or 1, properties.spread or 0)
+  if properties.speed then
+    local shots = {}
+    for _, direction in ipairs(directions) do
+      shots[#shots + 1] = combat.projectile(target.from, direction * properties.speed, { lifetime = properties.fuse })
+    end
+    return { projectiles = shots }
+  end
+  for _, direction in ipairs(directions) do
     if properties.radius then
       local hit = combat.cast(target.from, direction, range)
       local at = hit and hit.position or target.from + direction * range
@@ -35,4 +46,14 @@ function on_use(target)
     end
   end
   return { hits = hits }
+end
+
+-- A lobbed shot landed (or its fuse ran out): it bursts there, or hits what it struck.
+function on_hit(landing)
+  local damage, impulse = properties.damage, properties.impulse or 0
+  if properties.radius then
+    combat.splash(landing.position, properties.radius, damage, impulse)
+  elseif landing.hit then
+    combat.hit(landing.hit, damage)
+  end
 end

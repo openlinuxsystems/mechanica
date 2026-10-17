@@ -242,6 +242,29 @@ public sealed class ItemScriptTests : IDisposable
     }
 
     [Fact]
+    public void ALobbedShotFliesThenBurstsWhereItLandsOrWhenItsFuseRunsOut()
+    {
+        // The Popper's way (D14): thrown at 10 m/s, bursting after 0.5 s in the air (about 5 m ahead).
+        var popper = _rig.AddItem("popper", Gun, new JsonObject { ["damage"] = 40, ["interval"] = 1, ["speed"] = 10, ["fuse"] = 0.5,
+            ["ammo"] = "popper", ["radius"] = 3 }, PartCategory.Weapon);
+        F.Pockets(Me).Add(popper, 2);
+        F.World.Feet[3] = new Vector3(0, 0, -2); // under where it bursts
+
+        var thrown = _rig.Used(Me, F.SlotOf(Me, popper), Ahead)["projectiles"]!.AsArray();
+        var id = Assert.Single(thrown)!.GetValue<int>();
+        Assert.Equal(1, F.Pockets(Me).Count(popper));
+        Assert.Equal(100f, F.Survival.View(You.Peer)!.Health); // nothing is hurt until it lands
+        F.Survival.Tick(0.25f);
+        Assert.Contains(F.Survival.Projectiles, p => p.Id == id);
+        F.Survival.Tick(0.25f);
+
+        Assert.Empty(F.Survival.Projectiles);
+        Assert.InRange(F.Survival.View(You.Peer)!.Health, 1f, 99f);
+        Assert.Equal(100f, F.Survival.View(Me.Peer)!.Health); // 5 m back: out of the burst
+        Assert.DoesNotContain(_rig.Messages, m => m.Kind == ScriptMessageKind.Error);
+    }
+
+    [Fact]
     public void ProjectilesAreCappedAndTheirLifetimeChecked()
     {
         using var rig = new ItemRig(settings: new ScriptSettings { MaxProjectiles = 1, MaxProjectileLifetime = 2 });

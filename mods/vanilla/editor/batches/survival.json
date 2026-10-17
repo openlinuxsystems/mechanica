@@ -283,7 +283,7 @@
         "properties": {
           "damage": 60,
           "interval": 1.5,
-          "range": 50,
+          "speed": 30,
           "ammo": "potato",
           "radius": 3,
           "impulse": 400
@@ -332,7 +332,8 @@
         "properties": {
           "damage": 50,
           "interval": 1,
-          "range": 15,
+          "speed": 14,
+          "fuse": 1.5,
           "ammo": "popper",
           "radius": 2.5,
           "impulse": 300

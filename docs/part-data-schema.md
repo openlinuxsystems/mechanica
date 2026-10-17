@@ -87,7 +87,7 @@ you; this page is the reference for what each key means, so you can read, review
 | `inventory` | object | no | Item storage. Placeable parts only. See [inventory and crafting](#inventory-and-crafting). |
 | `crafting` | object | no | Makes the part a crafting station. Needs `inventory`. See [inventory and crafting](#inventory-and-crafting). |
 | `soil`, `respawn_point` | object, bool | no | Farming soil and respawn beds. Placeable parts only. See [survival](#survival). |
-| `seed`, `watering` | object | no | Farming items. Items only. See [survival](#survival). |
+| `seed` | object | no | What a seed grows into. Items only. See [survival](#survival). |
 | `properties` | object | no | Free-form numbers and settings that only the part's Lua script reads (torque, thrust, range). Key order is kept. |
 
 "Placeable" means the categories that exist in the world on the build grid: `block`, `interactive`,
@@ -195,20 +195,24 @@ fall out as a pile of items on the ground.
 Farming and respawn beds in the survival loop. These are built-in primitives, configured here rather
 than in Lua. Numbers are SI: health points, seconds, metres, N·s. See also [Survival](survival.md).
 
-Food and weapons are item scripts (chunk 20b): a `script` plus its numbers in `properties`. The
-vanilla scripts read these properties:
+Food, weapons, seeds and the water bucket are item scripts (chunk 20b): a `script` plus its numbers
+in `properties`. The vanilla scripts read these properties:
 
 | Script | Property | Meaning |
 |--------|----------|---------|
 | `scripts/food.lua` | `health` | Health one eaten item gives back. |
 | `scripts/potato_gun.lua` | `damage` | Damage per hit, or at the centre of a splash. |
 | | `interval` (s) | Shortest time between shots. |
-| | `range` (m) | How far a shot reaches. |
+| | `range` (m) | How far a hitscan shot reaches. |
+| | `speed` (m/s) | Lobs each shot (D14): a projectile thrown at this speed that arcs under gravity and lands (or bursts, with `radius`) where it hits. Replaces `range`. |
+| | `fuse` (s) | A lobbed shot bursts after this long if it has not hit anything. Default and at most `max_projectile_lifetime`. |
 | | `ammo` | Item used up per shot (it can be the weapon itself, like a Popper). Omitted means none. |
 | | `pellets` | Shots per trigger pull, spread evenly round a cone (at most 64). Default 1. |
 | | `spread` (°) | Half-angle of that cone, under 90. Default 0. |
 | | `radius` (m) | Makes it a splash weapon: damage falls off to 0 at this distance from where it hits (or the end of its range). |
 | | `impulse` (N·s) | Push given to the Body it hits (splash: at the centre). Default 0. |
+| `scripts/seed.lua` | (none) | Plants the seed in the soil aimed at. Its `seed` section (below) says what grows. |
+| `scripts/watering.lua` | `seconds` (s) | Seconds of water one use adds to the soil aimed at. The item is used up. |
 
 ```json
 "script": "scripts/potato_gun.lua",
@@ -222,7 +226,6 @@ vanilla scripts read these properties:
 | `seed.yield` | integer ≥ 1 | Crop items a harvest gives. Default 1. |
 | `seed.seeds` | integer ≥ 0 | Seeds a harvest gives back. Default 0. |
 | `seed.value` | number ≥ 0 | How much a planted crop draws raids (chunk 21). Default 1. |
-| `watering.seconds` | number > 0 (s) | Seconds of water one item adds to soil. Required. |
 | `soil.capacity` | number > 0 (s) | Most seconds of water the soil holds. Required. |
 | `soil.growth` | number > 0 | Growth speed multiplier for crops on it. Default 1. |
 | `respawn_point` | bool | Players can sleep in it (F) to respawn there. |
