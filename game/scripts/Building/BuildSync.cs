@@ -12,11 +12,12 @@ namespace Mechanica.Game.Building;
 /// <summary>
 /// Building over the network (D10). On the host it is the <see cref="IBuildWorld"/> behind the
 /// <c>PlacePart</c>/<c>RemovePart</c> actions: it answers reach and clearance questions from the live
-/// scene, rebuilds Creation nodes after each graph change and sends the changed Creation to every
-/// client. A late joiner gets every Creation when it becomes ready. Clients only mirror what arrives.
+/// scene and applies each graph change to the host's <see cref="CreationWorld"/>.
 /// <para>
-/// Each update carries the whole Creation as save JSON (graph plus Body poses), which keeps clients
-/// exact without a delta format. Moving bodies between changes is physics state sync's job (chunk 4b).
+/// Clients get the result from <see cref="CreationSync"/>: a changed graph bumps
+/// <see cref="Creation.Revision"/>, so every peer near the Creation is sent it whole again (save JSON,
+/// graph plus Body poses and velocities), and a removed one is forgotten. Late joiners and interest
+/// management come with it.
 /// </para>
 /// </summary>
 public partial class BuildSync : Node, IBuildWorld
@@ -48,15 +49,10 @@ public partial class BuildSync : Node, IBuildWorld
     public override void _Ready()
     {
         Settings ??= LoadSettings();
-        Session.PeerReady += SendAllTo;
         Session.StateChanged += OnStateChanged;
     }
 
-    public override void _ExitTree()
-    {
-        Session.PeerReady -= SendAllTo;
-        Session.StateChanged -= OnStateChanged;
-    }
+    public override void _ExitTree() => Session.StateChanged -= OnStateChanged;
 
     /// <summary>Registers <c>PlacePart</c> and <c>RemovePart</c>.</summary>
     public void RegisterActions(Core.Actions.ActionDispatcher dispatcher)
@@ -119,70 +115,13 @@ public partial class BuildSync : Node, IBuildWorld
     }
 
     /// <inheritdoc/>
-    public void Added(Creation creation)
-    {
-        Creations.Add(creation, Assets);
-        Broadcast(creation);
-    }
+    public void Added(Creation creation) => Creations.Add(creation, Assets);
 
     /// <inheritdoc/>
-    public void Changed(Creation creation)
-    {
-        Creations.Rebuild(creation.Id);
-        Broadcast(creation);
-    }
+    public void Changed(Creation creation) => Creations.Rebuild(creation.Id);
 
     /// <inheritdoc/>
-    public void Removed(int creationId)
-    {
-        Creations.Remove(creationId);
-        foreach (var peer in Session.ReadyPeers)
-            RpcId(peer, MethodName.ClientRemoveCreation, creationId);
-    }
-
-    /// <summary>Host → client: a Creation as it is now (save JSON).</summary>
-    [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-    private void ClientSetCreation(string json)
-    {
-        if (Session.IsHost)
-            return;
-        var diagnostics = new List<DataDiagnostic>();
-        if (CreationJson.Read(json, Catalog, "host", diagnostics) is not { } creation)
-        {
-            GD.PushError($"[build] the host sent a Creation this client cannot read: {string.Join("; ", diagnostics)}");
-            return;
-        }
-        Creations.Replace(creation, Assets);
-    }
-
-    /// <summary>Host → client: a Creation is gone.</summary>
-    [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-    private void ClientRemoveCreation(int id)
-    {
-        if (!Session.IsHost)
-            Creations.Remove(id);
-    }
-
-    private void Broadcast(Creation creation)
-    {
-        if (Session.ReadyPeers.Count == 0)
-            return;
-        var json = Write(creation);
-        foreach (var peer in Session.ReadyPeers)
-            RpcId(peer, MethodName.ClientSetCreation, json);
-    }
-
-    private void SendAllTo(int peer)
-    {
-        foreach (var creation in Creations.All)
-            RpcId(peer, MethodName.ClientSetCreation, Write(creation));
-    }
-
-    private string Write(Creation creation)
-    {
-        Creations.NodeOf(creation.Id)?.SyncToCreation();
-        return CreationJson.Write(creation);
-    }
+    public void Removed(int creationId) => Creations.Remove(creationId);
 
     private void OnStateChanged(NetSession.SessionState state)
     {

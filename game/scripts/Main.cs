@@ -13,7 +13,7 @@ namespace Mechanica.Game;
 
 /// <summary>
 /// Flat test world and session root. It builds the networking nodes (<see cref="Session"/>,
-/// <see cref="PlayerSync"/>, <see cref="Actions"/>), the streamed world (<see cref="Streamer"/>,
+/// <see cref="PlayerSync"/>, <see cref="CreationSync"/>, <see cref="Actions"/>), the streamed world (<see cref="Streamer"/>,
 /// <see cref="Creations"/>) and building (<see cref="Build"/>, the local player's <see cref="Hammer"/>),
 /// starts offline, hosting or joining from <see cref="Options"/>, and drives whichever player belongs
 /// to this peer from the keyboard and mouse.
@@ -41,6 +41,9 @@ public partial class Main : Node3D
     /// </summary>
     public ModLoadResult? Mods { get; set; }
 
+    /// <summary>Meshes and shapes for the parts in <see cref="Mods"/>.</summary>
+    public PartAssets Assets { get; private set; } = null!;
+
     /// <summary>Connection state and handshake.</summary>
     public NetSession Session { get; private set; } = null!;
 
@@ -52,6 +55,9 @@ public partial class Main : Node3D
 
     /// <summary>Every Creation in the world, live or parked.</summary>
     public CreationWorld Creations { get; private set; } = null!;
+
+    /// <summary>Creation state sync: interest, full syncs and body snapshots.</summary>
+    public CreationSync CreationSync { get; private set; } = null!;
 
     /// <summary>Chunk streaming: the ground, and which Creations are simulated.</summary>
     public WorldStreamer Streamer { get; private set; } = null!;
@@ -71,6 +77,7 @@ public partial class Main : Node3D
         Options ??= ReadCommandLine();
         var mods = Mods ??= LoadMods();
         var content = Content ??= ContentManifest.From(mods);
+        Assets = new PartAssets(mods);
 
         Session = new NetSession { Name = "Session", Content = content };
         AddChild(Session);
@@ -98,6 +105,16 @@ public partial class Main : Node3D
         PlayerSync.PlayerSpawned += OnPlayerSpawned;
         PlayerSync.PlayerDespawning += OnPlayerDespawning;
         AddChild(PlayerSync);
+        CreationSync = new CreationSync
+        {
+            Name = "CreationSync",
+            Session = Session,
+            PlayerSync = PlayerSync,
+            Creations = Creations,
+            Catalog = mods,
+            Assets = Assets,
+        };
+        AddChild(CreationSync);
         Actions = new ActionGateway { Name = "Actions", Session = Session };
         AddChild(Actions);
         PlayerSync.RegisterActions(Actions.Dispatcher);
@@ -108,7 +125,7 @@ public partial class Main : Node3D
             Players = PlayerSync,
             Creations = Creations,
             Catalog = mods,
-            Assets = new PartAssets(mods),
+            Assets = Assets,
         };
         AddChild(Build);
         Build.RegisterActions(Actions.Dispatcher);
@@ -187,8 +204,8 @@ public partial class Main : Node3D
     }
 
     /// <summary>
-    /// Loose rigid props only simulate where the world is simulated (the host). On clients they are
-    /// frozen until state sync (chunk 4b) drives them.
+    /// Loose rigid props only simulate where the world is simulated (the host). They are test-world
+    /// fixtures, not Creations, so state sync does not cover them and they stay frozen on clients.
     /// </summary>
     private void SetPropsSimulated(bool simulated)
     {
