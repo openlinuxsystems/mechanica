@@ -114,7 +114,7 @@ public sealed class AgentPlayers(AgentSettings settings)
     public const int FirstPeer = 0x7F000000;
 
     private readonly Dictionary<int, AgentPlayer> _agents = [];
-    /// <summary>Action name for steering an agent's own player.</summary>
+    /// <summary>Action name: moves an agent's own player and turns its view.</summary>
     public const string SetPlayerInput = "SetPlayerInput";
 
     private readonly record struct Held(PlayerInput Input, bool KeepYaw, bool KeepPitch, int Ticks);
