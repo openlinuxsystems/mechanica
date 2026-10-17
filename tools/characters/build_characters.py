@@ -671,6 +671,7 @@ PALETTE = {
     "tool_orange": ("#d8762a", 0.45, 0.0),
     "tool_blue": ("#3a78b8", 0.45, 0.0),
     "lining": ("#3a3f2c", 0.95, 0.0),
+    "void": ("#060505", 1.0, 1.0),          # the inside of a cut sleeve: no light comes back from it
     "default": ("#808080", 0.5, 0.0),
 }
 
@@ -1151,7 +1152,7 @@ def hair_cap_mesh(bvh_head, female, thick, mat, n_az=48, n_rows=12):
             hit = project(bvh_head, o + d * 0.3, -d, 0.0)
             top = smoothstep(0.03, 0.11, hit[2] - HEAD_C[2])
             if female:
-                t = thick * (0.7 + 0.5 * top * sstep(0, 2.5, abs(ps)))
+                t = thick * (0.7 + 0.6 * top)
             else:
                 t = thick * (0.55 + 0.45 * top)
             off = 0.0006 + t * sstep(0.0, 0.35, u) ** 0.7
@@ -1161,9 +1162,11 @@ def hair_cap_mesh(bvh_head, female, thick, mat, n_az=48, n_rows=12):
 
 
 def hair_lock(bvh, root, direction, length, width, thick, lift, mat, steps=7, sink=0.003, bend=None,
-              taper=0.62, skin_bvh=None):
+              taper=0.62, skin_bvh=None, arch=0.0, segs=8, root_w=1.0):
     """A soft lock of hair: a flat, rounded ribbon that follows the surface under it (bvh) from root along
-    `direction`, lifting off it toward the tip. bend(u) -> extra direction added along the way."""
+    `direction`, lifting off it toward the tip (lift) and, with arch, standing off it along the middle the way
+    a lock of full hair does. bend(u) -> extra direction added along the way. root_w < 1 narrows the lock where it
+    leaves the scalp, so it grows out of the hair under it instead of starting blunt."""
     o = HEAD_C + np.array([0.0, 0.0, -0.01])
     d = norm(direction)
     p = np.asarray(root, float)
@@ -1173,7 +1176,7 @@ def hair_lock(bvh, root, direction, length, width, thick, lift, mat, steps=7, si
         radial = norm(p - o)
         hit = project(bvh, o + radial * 0.3, -radial, 0.0)
         nrm = norm(hit - o)
-        off = -sink + (sink + thick * 0.6 + 0.0008) * sstep(0.0, 0.25, u) + lift * u * u
+        off = -sink + (sink + thick * 0.6 + 0.0008) * sstep(0.0, 0.25, u) + lift * u * u + arch * math.sin(math.pi * u)
         q = hit + nrm * off
         if skin_bvh is not None:
             # keep clear of the face: never closer than a few mm to the skin under it
@@ -1193,9 +1196,38 @@ def hair_lock(bvh, root, direction, length, width, thick, lift, mat, steps=7, si
         u = i / steps
         a = norm(nv - np.dot(nv, t) * t)
         b = np.cross(t, a)
-        k = 1.0 - taper * u ** 1.6
-        rings.append(dict(c=q, a=a, b=b, rx=thick * (1.0 - 0.45 * u), ry=width * 0.5 * k, e=2.3))
-    return loft(rings, 8, True, True, mat, True, 0.002, 0.004)
+        k = (1.0 - taper * u ** 1.6) * (root_w + (1.0 - root_w) * sstep(0.0, 0.3, u))
+        rings.append(dict(c=q, a=a, b=b, rx=thick * (1.0 - 0.45 * u) * (root_w + (1.0 - root_w) * sstep(0.0, 0.3, u)),
+                          ry=width * 0.5 * k, e=2.3))
+    return loft(rings, segs, True, True, mat, True, 0.002, 0.004)
+
+
+# Height of the goggle strap above HEAD_C at the front and at the back (it runs between them around the head).
+GOGGLE_Z = {True: (0.078, 0.035), False: (0.072, 0.03)}
+STRAP_HALF = 0.011            # half the strap's height (goggles: strap width)
+STRAP_INNER = 0.0012          # how far the inside of the strap stands off the hair cap
+
+
+def tuck_under_strap(part, capbvh, female, half=STRAP_HALF + 0.003, fade=0.01):
+    """Press the hair where the goggle strap crosses it down onto the cap, under the strap, fading back to its
+    own shape above and below, so locks pass under the strap instead of through it."""
+    front_z, back_z = GOGGLE_Z[female]
+    rel = part.v - HEAD_C
+    ps = np.arctan2(rel[:, 0], -rel[:, 1])
+    zs = back_z + (front_z - back_z) * (0.5 + 0.5 * np.cos(ps))
+    w = 1.0 - smoothstep(half, half + fade, np.abs(rel[:, 2] - zs))
+    for i in np.nonzero(w > 0)[0]:
+        horiz = np.array([rel[i, 0], rel[i, 1], 0.0])
+        r = np.linalg.norm(horiz)
+        if r < 1e-6:
+            continue
+        dirv = horiz / r
+        o = np.array([HEAD_C[0], HEAD_C[1], part.v[i, 2]])
+        hit = project(capbvh, o + dirv * 0.3, -dirv, 0.0)
+        limit = np.linalg.norm((hit - o)[:2]) + STRAP_INNER
+        if r > limit:
+            part.v[i, :2] = HEAD_C[:2] + dirv[:2] * (r - w[i] * (r - limit))
+    return part
 
 
 def hair_cap_and_tufts(grid, bvh_head, female, hair_mat, seed):
@@ -1205,7 +1237,7 @@ def hair_cap_and_tufts(grid, bvh_head, female, hair_mat, seed):
     ap = np.abs(psi)
     hl = hairline(ap, female)
     mask = smoothstep(hl - 0.006, hl + 0.022, zr)
-    thick = 0.02 if not female else 0.009
+    thick = 0.02 if not female else 0.012
     cap = hair_cap_mesh(bvh_head, female, thick, hair_mat)
     parts = [cap]
     # the outer surface: hair cap over the skull (a ray below the cap's edge must land on the skin, not
@@ -1260,6 +1292,22 @@ def hair_cap_and_tufts(grid, bvh_head, female, hair_mat, seed):
             back = ap_ > 1.4 and zrel < 0.09
             parts.append(hair_lock(capbvh, root, d, length, width, 0.0065 if not back else 0.005, lift, hair_mat,
                                    bend=bend, taper=0.55 if not back else 0.8))
+        # the back below the strap: short locks in staggered rows, each overlapping the one under it, so the
+        # back reads as layered hair down to the nape
+        for zrel, n, k0 in ((0.088, 8, 0.0), (0.062, 9, 0.5), (0.014, 10, 0.0), (-0.016, 10, 0.5),
+                            (-0.044, 9, 0.0)):
+            for k in range(n):
+                ps = math.pi + (k + k0 - (n - 1) / 2) * 0.25 + rng.uniform(-0.1, 0.1)
+                zr_ = zrel + rng.uniform(-0.007, 0.007)
+                if zr_ < float(hairline(abs(ps), False)) + 0.014:
+                    continue
+                root = root_at(ps, zr_)
+                d = np.array([0.2 * math.sin(ps), 0.2, -1.0]) + np.array([rng.uniform(-0.3, 0.3), 0.0, 0.0])
+                parts.append(hair_lock(capbvh, root, d, rng.uniform(0.04, 0.056), rng.uniform(0.016, 0.026),
+                                       0.0045, rng.uniform(0.0, 0.002), hair_mat, steps=7, sink=0.002,
+                                       taper=rng.uniform(0.45, 0.65), root_w=0.5))
+        for p in parts[1:]:
+            tuck_under_strap(p, capbvh, False)
     else:
         skin_bvh = bvh_head
         # fringe: strands from under the goggle strap, swept down and to the sides across the forehead
@@ -1284,19 +1332,74 @@ def hair_cap_and_tufts(grid, bvh_head, female, hair_mat, seed):
                     return np.array([0.05 * s, 0.45, 0.15]) * u
                 parts.append(hair_lock(bvh_head, root, d, length, width, 0.0035, 0.006, hair_mat, steps=8,
                                        sink=-0.003, bend=bend, taper=0.8, skin_bvh=skin_bvh))
-        # pulled-back hair: flat locks from the hairline over the crown toward the nape, so the cap reads as
-        # combed hair rather than a helmet
-        for zrel, n_az, ps_max in ((0.1, 7, 1.6), (0.07, 10, 2.5), (0.035, 10, 2.7)):
+        # the rest is pulled back to the bun at the nape: full locks of varied length and width that leave the
+        # hairline and the side parting, stand off the cap along their middle (volume) and leave gaps between them
+        # where the darker cap shows as depth, so it reads as hair, not a helmet
+        bun = HEAD_C + np.array([0.0, 0.09, -0.062])
+        part_ps = 0.3                                  # the parting, on her left
+        rows = (  # zrel, locks, half span (rad), length range, width range, thickness, arch
+            (0.093, 10, 1.3, (0.15, 0.19), (0.018, 0.03), 0.0075, 0.009),
+            (0.108, 6, 0.75, (0.13, 0.17), (0.018, 0.028), 0.007, 0.008),
+            (0.072, 12, 2.25, (0.085, 0.115), (0.018, 0.028), 0.0065, 0.006),
+            (0.045, 14, 2.9, (0.07, 0.095), (0.016, 0.026), 0.006, 0.0045),
+            (0.015, 13, 3.05, (0.055, 0.075), (0.016, 0.024), 0.0055, 0.003),
+        )
+        for zrel, n_az, ps_max, (l0, l1), (w0, w1), th, arch in rows:
             for k in range(n_az):
-                ps = -ps_max + 2 * ps_max * (k + 0.5) / n_az + rng.uniform(-0.08, 0.08)
-                zr_ = zrel + rng.uniform(-0.005, 0.005)
-                if zr_ < float(hairline(abs(ps), True)) + 0.01:
+                ps = -ps_max + 2 * ps_max * (k + 0.5) / n_az + rng.uniform(-0.1, 0.1)
+                zr_ = zrel + rng.uniform(-0.006, 0.006)
+                if zr_ < float(hairline(abs(ps), True)) + 0.012:
                     continue
                 root = root_at(ps, zr_)
-                tgt = HEAD_C + np.array([0.0, 0.09, -0.07])
-                d = norm(tgt - root) + np.array([rng.uniform(-0.1, 0.1), 0.0, 0.0])
-                parts.append(hair_lock(capbvh, root, d, rng.uniform(0.06, 0.085), rng.uniform(0.03, 0.04), 0.004,
-                                       0.0015, hair_mat, steps=8, sink=0.002, taper=0.7))
+                # away from the parting near it, then round toward the bun
+                away = math.copysign(1.0, ps - part_ps) * math.exp(-((ps - part_ps) / 0.55) ** 2)
+                d = norm(bun - root) + np.array([0.55 * away, 0.0, 0.25 * away * away]) + \
+                    np.array([rng.uniform(-0.12, 0.12), 0.0, rng.uniform(-0.05, 0.1)])
+
+                def bend(u, r=root):
+                    return norm(bun - r) * 0.5 * u
+                length = rng.uniform(l0, l1)
+                parts.append(hair_lock(capbvh, root, d, length, rng.uniform(w0, w1),
+                                       th * rng.uniform(0.85, 1.15), rng.uniform(0.0, 0.004), hair_mat,
+                                       steps=max(10, int(length / 0.011)), sink=0.002, bend=bend,
+                                       taper=rng.uniform(0.65, 0.85), arch=arch * rng.uniform(0.4, 1.0), root_w=0.55))
+        # the crown and the back of the head: locks from the crown down over the back to the bun
+        for zrel, n, spread, (l0, l1), k0 in ((0.104, 11, 0.27, (0.08, 0.105), 0.0),
+                                               (0.08, 10, 0.27, (0.06, 0.08), 0.5)):
+            for k in range(n):
+                ps = math.pi + (k + k0 - (n - 1) / 2) * spread + rng.uniform(-0.07, 0.07)
+                root = root_at(ps, zrel + rng.uniform(-0.005, 0.005))
+                d = norm(bun - root) + np.array([rng.uniform(-0.2, 0.2), 0.0, 0.0])
+
+                def bend(u, r=root):
+                    return norm(bun - r) * 0.5 * u
+                parts.append(hair_lock(capbvh, root, d, rng.uniform(l0, l1), rng.uniform(0.013, 0.022),
+                                       0.0065 * rng.uniform(0.85, 1.15), rng.uniform(0.0, 0.003), hair_mat, steps=10,
+                                       sink=0.003, bend=bend, taper=rng.uniform(0.65, 0.85),
+                                       arch=0.008 * rng.uniform(0.4, 1.0), root_w=0.4))
+        # the nape: short locks swept up into the bun
+        for k in range(9):
+            ps = math.pi + (k - 4) * 0.28 + rng.uniform(-0.08, 0.08)
+            zr_ = -0.055 + rng.uniform(-0.01, 0.01) + 0.02 * abs(k - 4) / 4
+            root = root_at(ps, zr_)
+            d = norm(bun - root) + np.array([rng.uniform(-0.15, 0.15), 0.0, 0.0])
+            parts.append(hair_lock(capbvh, root, d, rng.uniform(0.035, 0.05), rng.uniform(0.016, 0.024), 0.005,
+                                   0.0015, hair_mat, steps=7, sink=0.002, taper=0.8, arch=0.0015, root_w=0.5))
+        # flyaway strands: thin wisps off the crown and the parting that lift clear of the rest
+        for k in range(8):
+            ps = rng.uniform(-1.6, 1.8)
+            zr_ = rng.uniform(0.085, 0.105)
+            root = root_at(ps, zr_)
+            sx = rng.choice((-1.0, 1.0))
+            d = norm(bun - root) + np.array([sx * rng.uniform(0.3, 0.7), 0.0, rng.uniform(0.2, 0.5)])
+
+            def bend(u, s=sx):
+                return np.array([0.5 * s, 0.3, -0.8]) * u
+            parts.append(hair_lock(capbvh, root, d, rng.uniform(0.045, 0.07), rng.uniform(0.004, 0.006), 0.0018,
+                                   rng.uniform(0.004, 0.009), hair_mat, steps=8, sink=0.001, bend=bend, taper=0.85,
+                                   arch=rng.uniform(0.003, 0.006), segs=6))
+        for p in parts[1:]:
+            tuck_under_strap(p, capbvh, True)
     for p in parts:
         p.skin("head")
     return parts, mask
@@ -1393,13 +1496,105 @@ def arm_point(s, outward=0.0, forward=0.0):
     return c + out * outward + fwd * forward, t, out, fwd
 
 
-def sleeve_lining(radius, s=1.15):
-    """A dark disc closing the sleeve just past the elbow, riding the forearm. Hidden inside the sleeve on the
-    full body; in first person, where the arms are cut from the mesh at the elbow, it keeps the open end of the
-    sleeve from showing as a hollow tube."""
-    c, t, out, fwd = arm_point(s)
-    disc = soft_box(c, (radius, radius, 0.0025), axes=(out, fwd, t), e=2.2, e2=6, segs=18, rings=3, mat="lining")
-    return disc.skin("forearm_l")
+# The bones first-person arms are cut from (CharacterRig.ArmBones in src/Mechanica.Core/Characters).
+FIRST_PERSON_ARM_BONES = {f"{b}_{s}" for b in ("forearm", "hand", "fingers", "thumb") for s in ("l", "r")}
+
+
+def _export_triangles(part):
+    """The triangles of `part` as the glTF export writes them (Blender's own split of each quad)."""
+    me = bpy.data.meshes.new("_tmp_tris")
+    me.from_pydata(part.v.tolist(), [], part.f)
+    me.validate(clean_customdata=False)
+    me.update()
+    me.calc_loop_triangles()
+    tris = np.zeros(len(me.loop_triangles) * 3, dtype=np.int64)
+    me.loop_triangles.foreach_get("vertices", tris)
+    polys = np.zeros(len(me.loop_triangles), dtype=np.int64)
+    me.loop_triangles.foreach_get("polygon_index", polys)
+    bpy.data.meshes.remove(me)
+    return tris.reshape(-1, 3), polys
+
+
+def _settle_arm_ties(parts, margin=0.025):
+    """Tip vertices whose strongest arm and body bones weigh the same (a ring right on the elbow) to the body, so
+    the cut cannot fall either way after the export rounds the weights."""
+    for p in parts:
+        if p.w is None:
+            continue
+        n = len(p.v)
+        body = [b for b in p.w if b not in FIRST_PERSON_ARM_BONES]
+        limb = [b for b in p.w if b in FIRST_PERSON_ARM_BONES]
+        if not body or not limb:
+            continue
+        wb = np.stack([np.asarray(p.w[b], float) * np.ones(n) for b in body], axis=1)
+        wa = np.stack([np.asarray(p.w[b], float) * np.ones(n) for b in limb], axis=1)
+        tie = np.abs(wb.max(axis=1) - wa.max(axis=1)) < margin
+        if tie.any():
+            best = wb.argmax(axis=1)
+            for j, b in enumerate(body):
+                sel = tie & (best == j)
+                if sel.any():
+                    p.w[b] = np.asarray(p.w[b], float) * np.ones(n)
+                    p.w[b][sel] += margin
+
+
+def arm_cut_caps(parts, depth=0.014, hem_width=0.0035):
+    """Dark caps closing the sleeves where first-person arms are cut from the body.
+
+    The game keeps the triangles whose three corners follow an arm bone most (CharacterRig.ArmTriangles), so a
+    sleeve crossing the elbow is cut there into an open tube. This finds the edge of that cut exactly (on the
+    triangles the export writes) and closes each opening with a narrow hem of the sleeve's own cloth turned in
+    (`hem_width`), so the edge reads as fabric with a thickness, and inside it a shallow funnel of `void` (a black,
+    unlit-looking material) sunk `depth` toward the hand. Its rim reuses the cut edge's own positions and weights,
+    so it moves with the sleeve and leaves no gap; on the full body it sits inside the sleeve and is never seen."""
+    _settle_arm_ties(parts)
+    part = merge(parts)
+    names, W = finalize_weights(part.w, len(part.v))
+    arm = np.isin(np.array(names)[W.argmax(axis=1)], sorted(FIRST_PERSON_ARM_BONES))
+    tris, polys = _export_triangles(part)
+    kept = arm[tris].all(axis=1)
+    # directed edges of kept triangles that border a dropped triangle of the same input part
+    owner = {}
+    for k, (t, poly) in enumerate(zip(tris, polys)):
+        for a, b in ((t[0], t[1]), (t[1], t[2]), (t[2], t[0])):
+            owner.setdefault((min(a, b), max(a, b)), []).append((k, a, b, part.pid[poly]))
+    nxt = {}
+    owner_face = {}
+    for users in owner.values():
+        if len(users) != 2 or users[0][3] != users[1][3] or kept[users[0][0]] == kept[users[1][0]]:
+            continue
+        k, a, b, _ = users[0] if kept[users[0][0]] else users[1]
+        nxt[b] = a                                       # the cap runs the shared edge the other way round
+        owner_face[b] = k
+    caps = []
+    done = set()
+    for start in sorted(nxt):
+        if start in done:
+            continue
+        loop = [start]
+        while nxt.get(loop[-1]) is not None and nxt[loop[-1]] != start and len(loop) <= len(nxt):
+            loop.append(nxt[loop[-1]])
+        done.update(loop)
+        if len(loop) < 3 or nxt.get(loop[-1]) != start:
+            continue
+        idx = np.array(loop)
+        rim = part.v[idx]
+        side = "l" if rim[:, 0].mean() > 0 else "r"
+        toward_hand = norm(bone_tail(f"forearm_{side}") - bone_head(f"forearm_{side}"))
+        mid = rim.mean(axis=0)
+        # a hem: the cloth's own thickness turned in at the edge, then the black inside
+        hem = rim + (mid - rim) * (hem_width / np.linalg.norm(mid - rim, axis=1))[:, None] + toward_hand * 0.002
+        centre = mid + toward_hand * depth
+        n = len(idx)
+        verts = np.vstack([rim, hem, hem, centre])
+        faces = [(i, (i + 1) % n, n + (i + 1) % n, n + i) for i in range(n)]
+        faces += [(2 * n + i, 2 * n + (i + 1) % n, 3 * n) for i in range(n)]
+        cloth = part.m[polys[owner_face[loop[0]]]]
+        cap = Part(verts, faces, [cloth] * n + ["void"] * n, smooth=False)
+        w = np.vstack([W[idx], W[idx], W[idx], W[idx].mean(axis=0)])
+        cap.w = {b: w[:, j] for j, b in enumerate(names) if w[:, j].any()}
+        caps.append(cap)
+    return caps
 
 
 def hand_local(along, across, palm):
@@ -1602,7 +1797,7 @@ def build_male():
     parts += hair
     parts += beard_parts(hgrid, "hair_m")
     gbvh = make_bvh(merge([hp[0]] + hair[:1]))
-    parts += goggles(gbvh, 0.072, 0.03, "leather_dark", "goggle_dark", "lens_orange", "metal_dark")
+    parts += goggles(gbvh, *GOGGLE_Z[False], "leather_dark", "goggle_dark", "lens_orange", "metal_dark")
     parts.append(neck_part(0.056, 0.058, "skin_m"))
 
     # --- jacket torso -----------------------------------------------------------------------------
@@ -1630,7 +1825,6 @@ def build_male():
                         (0.85, 0.056, 0.054), (1.0, 0.054, 0.053), (1.13, 0.0535, 0.0525), (1.35, 0.053, 0.051), (1.7, 0.049, 0.048),
                         (1.86, 0.046, 0.045)], "jacket_olive"))
     left.append(sleeve([(1.80, 0.0495, 0.0485), (1.88, 0.0505, 0.0495), (1.97, 0.047, 0.046)], "jacket_olive_dark"))
-    left.append(sleeve_lining(0.05))
     c, t, out, fwd = arm_point(0.42)
     band = ring_band(c, 0.0625, 0.0605, 0.017, 0.004, "orange", 22,
                      axes=(fwd, norm(np.cross(t, fwd)), t))
@@ -1801,7 +1995,8 @@ PROP_ATLAS = 1024
 def assemble_character(name, textured=True):
     """Build armature + one skinned, textured mesh for a character in the current scene."""
     arm = build_armature("Armature")
-    part = merge(CHARACTERS[name]())
+    parts = CHARACTERS[name]()
+    part = merge(parts + arm_cut_caps(parts))
     ob = build_mesh_object(name, part, arm)
     if textured:
         stats = texture_mesh(name, ob, part)
@@ -1927,7 +2122,7 @@ def build_female():
                           "neck": smoothstep(1.46, 1.52, v[:, 2]) * (1 - smoothstep(1.53, 1.58, v[:, 2])),
                           "chest": 1 - smoothstep(1.46, 1.52, v[:, 2])})
     parts += br
-    parts += goggles(capbvh, 0.078, 0.035, "leather_mid", "brass", "lens_blue", "brass", tilt=1.1, cup_r=0.02)
+    parts += goggles(capbvh, *GOGGLE_Z[True], "leather_mid", "brass", "lens_blue", "brass", tilt=1.1, cup_r=0.02)
     parts.append(neck_part(0.047, 0.05, "skin_f"))
 
     # --- torso: open denim jacket over shirt and overall bib ----------------------------------------
@@ -1974,7 +2169,6 @@ def build_female():
                        "denim_light"))
     left.append(sleeve([(1.4, 0.04, 0.038), (1.6, 0.039, 0.036), (1.8, 0.033, 0.03), (1.95, 0.03, 0.027)],
                        "skin_f"))
-    left.append(sleeve_lining(0.043))
     left += glove("glove_brown", "glove_brown", "glove_brown", "glove_brown",
                   [(-0.05, 0.039, 0.03), (-0.02, 0.04, 0.029), (0.02, 0.037, 0.024), (0.028, 0.034, 0.021)],
                   accent_mat="orange", fingerless=False, female=True)
