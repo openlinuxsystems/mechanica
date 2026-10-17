@@ -34,6 +34,9 @@ public partial class PauseMenu : CanvasLayer
     /// <summary>The world's saves; null hides saving and loading.</summary>
     public Saves.SaveSync? Saves { get; init; }
 
+    /// <summary>The AI reports folder; null hides AI Reports.</summary>
+    public Core.Reports.ReportStore? Reports { get; init; }
+
     /// <summary>The LAN beacon, to say whether the world is listed; optional.</summary>
     public LanBeacon? Lan { get; init; }
 
@@ -91,6 +94,8 @@ public partial class PauseMenu : CanvasLayer
 
         column.AddChild(new HSeparator());
         AddButton(column, "Options…", () => OpenOptions());
+        if (Reports is not null)
+            AddButton(column, "AI reports…", () => OpenReports());
         Loc.Live(AddButton(column, "", () => OpenHelp()), b => b.Text = Loc.T("Handbook ({0})", GameInput.Label(InputActions.Handbook)));
         AddButton(column, "Quit to main menu", () => LoadingScreen.Transition(this, "Returning to menu…", () => GetTree().ChangeSceneToFile(MainMenu.MenuScene)));
         AddButton(column, "Quit game", () => GetTree().Quit());
@@ -230,6 +235,26 @@ public partial class PauseMenu : CanvasLayer
         var holder = UiInput.KeepMouse(new CenterContainer());
         holder.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
         var screen = new OptionsScreen { World = World() };
+        screen.CloseRequested += () =>
+        {
+            holder.QueueFree();
+            _saveScreen = null;
+            _panel.Visible = true;
+        };
+        holder.AddChild(screen);
+        AddChild(holder);
+        _saveScreen = holder;
+        _panel.Visible = false;
+        return screen;
+    }
+
+    /// <summary>Opens AI Reports in place of the menu; closing it comes back here.</summary>
+    public Remote.AiReportsWindow OpenReports()
+    {
+        _saveScreen?.QueueFree();
+        var holder = UiInput.KeepMouse(new CenterContainer());
+        holder.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+        var screen = new Remote.AiReportsWindow { Store = Reports! };
         screen.CloseRequested += () =>
         {
             holder.QueueFree();

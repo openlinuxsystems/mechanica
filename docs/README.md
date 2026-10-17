@@ -16,6 +16,7 @@ written by the chunk that builds the feature it covers.
 | [Bot Tutorial](bot-tutorial.md) | Bot behaviour runtime |
 | [Example bot mod](../examples/mods/example_bots) | Bot behaviour runtime |
 | [External AI Endpoint and Record/Replay](ai-endpoint.md) | External AI endpoint |
+| [AI Notes, Recommendations and Bug Reports](ai-reports.md) | AI reports, the AI Reports window |
 
 Other references:
 

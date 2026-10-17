@@ -9,7 +9,7 @@ namespace Mechanica.Game.Tests;
 
 /// <summary>
 /// Windows keep their own mouse input in a running world (UI spec §13). Wheel turns and clicks anywhere over
-/// the in-game menu, Options (every tab, scrolled past both ends), the save screen, the inventory, the Fabricator screen, the upgrade dialog, the Logbook, the Lift's
+/// the in-game menu, Options (every tab, scrolled past both ends), the save screen, AI Reports, the inventory, the Fabricator screen, the upgrade dialog, the Logbook, the Lift's
 /// blueprint menu, the Paint Tool's colour picker, a part's menu and a confirm dialog never reach the game behind them (nor over the hotbar while the inventory is open), nor do clicks on the screen around a window opened from
 /// the menu, where a wheel changes the hotbar and a click takes the
 /// mouse back and closes the menu. The windows are still open afterwards.
@@ -20,6 +20,7 @@ public partial class WindowsTest : StagedTest
     private Main _main = null!;
     private PauseMenu _menu = null!;
     private (int Creation, int Part) _station;
+    private ulong _chatFrame;
 
     protected override string Tag => "windows";
 
@@ -100,6 +101,22 @@ public partial class WindowsTest : StagedTest
             _menu.Close();
             return Clean("the save screen");
         });
+        Add("AI Reports keeps them", frame =>
+        {
+            if (frame == 0)
+            {
+                _menu.Open();
+                _main.Reports.Reporter.Note("Test agent", new Core.Reports.NoteParams("Something to read"));
+                _menu.OpenReports();
+                return false;
+            }
+            var reports = Find<Remote.AiReportsWindow>(_menu);
+            Check(reports.Listed.Count >= 1, "the window lists the note");
+            Scrub(reports);
+            Check(_menu.IsOpen && IsInstanceValid(reports), "the menu and AI Reports are still open");
+            _menu.Close();
+            return Clean("AI Reports");
+        });
         Add("chat sends a line and keeps the mouse", frame =>
         {
             var chat = _main.GetNode<Chat.ChatPanel>("ChatPanel");
@@ -136,9 +153,11 @@ public partial class WindowsTest : StagedTest
                 Settings.GameSettings.Apply(Settings.GameSettings.Current with { Interface = Settings.GameSettings.Current.Interface with { ChatOpacity = 0.25f } });
                 chat.Open();
                 chat.Send("again");
+                _chatFrame = Engine.GetProcessFrames();
                 return false;
             }
-            if ((frame < 3 || chat.Shown.LastOrDefault()?.EndsWith("again") != true) && frame < 120)
+            // The panel draws its background in _Process, which can lag several physics ticks behind on a busy machine.
+            if ((Engine.GetProcessFrames() < _chatFrame + 2 || chat.Shown.LastOrDefault()?.EndsWith("again") != true) && frame < 120)
                 return false;
             Check(Mathf.IsEqualApprox(chat.BackgroundAlpha, 0.25f), $"a recent line shows on a 25% background ({chat.BackgroundAlpha})");
             Settings.GameSettings.Apply(new());
