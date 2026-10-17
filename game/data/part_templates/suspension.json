@@ -1,0 +1,34 @@
+{
+  "id": "new_suspension",
+  "name": "New Suspension",
+  "description": "Mounts on a chassis side. A wheel bearing on its outer face rides up and down on a spring.",
+  "category": "interactive",
+  "mass": 5,
+  "durability": 4,
+  "friction": 0.4,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [-0.125, 0, 0],
+      "normal": [-1, 0, 0]
+    },
+    {
+      "id": "mount",
+      "type": "spring",
+      "position": [0.125, 0, 0],
+      "normal": [1, 0, 0],
+      "joint": {
+        "axis": [0, 1, 0],
+        "min": -0.1,
+        "max": 0.1,
+        "stiffness": 10000,
+        "damping": 800
+      }
+    }
+  ]
+}

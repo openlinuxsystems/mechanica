@@ -97,6 +97,12 @@ public sealed record PartDefinition
     /// <summary>Mass in kg.</summary>
     public float? Mass { get; init; }
 
+    /// <summary>
+    /// Centre of mass relative to the part centre, in metres in the part's frame. Omitted means the
+    /// part centre. It must lie within the footprint.
+    /// </summary>
+    public Vec3? CentreOfMass { get; init; }
+
     /// <summary>Durability rating; part HP derives from it (D13).</summary>
     public int? Durability { get; init; }
 
@@ -362,6 +368,55 @@ public sealed record SocketDefinition
 
     /// <summary>Outward unit direction the socket faces.</summary>
     public Vec3? Normal { get; init; }
+
+    /// <summary>
+    /// How the joint at a rotational, linear or spring socket moves: its axis, travel and spring. Omitted
+    /// means the defaults (see <see cref="JointDefinition"/>); structural sockets have none.
+    /// </summary>
+    public JointDefinition? Joint { get; init; }
+
+    /// <summary>Keys this build does not know.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>
+/// The joint a rotational, linear or spring socket makes (D7). All values are in the part's own frame
+/// and in SI units. The joint's zero is the pose the two sides were built in on the grid.
+/// </summary>
+public sealed record JointDefinition
+{
+    /// <summary>Longest travel (max − min) a linear or spring joint may have, in m.</summary>
+    public const float MaxTravel = 16f;
+
+    /// <summary>
+    /// Unit grid direction the joint turns about (rotational) or slides along (linear, spring), in the
+    /// part's frame. Omitted means the socket's normal: a bearing turns about its rotor face, a piston
+    /// pushes out of its face. A suspension that carries a wheel on its side slides at right angles to it.
+    /// </summary>
+    public Vec3? Axis { get; init; }
+
+    /// <summary>
+    /// Lowest joint position: an angle in rad (rotational) or a distance along the axis in m (linear,
+    /// spring). A rotational joint with neither limit spins freely. Omitted on a linear joint means 0
+    /// (fully retracted); a spring needs both limits.
+    /// </summary>
+    public float? Min { get; init; }
+
+    /// <summary>Highest joint position, in rad or m. Required for linear and spring joints.</summary>
+    public float? Max { get; init; }
+
+    /// <summary>Spring rate in N/m (spring joints only, required).</summary>
+    public float? Stiffness { get; init; }
+
+    /// <summary>Damping in N·s/m (spring joints only). Omitted means 0, an undamped spring.</summary>
+    public float? Damping { get; init; }
+
+    /// <summary>
+    /// Linear and spring joints only: draws a rod of this radius (m), in the part's colour, from the
+    /// anchor to where the far side is now, so an extended piston shows its shaft. Omitted draws none.
+    /// </summary>
+    public float? ShaftRadius { get; init; }
 
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]

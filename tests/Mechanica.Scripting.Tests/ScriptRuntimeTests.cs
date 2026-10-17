@@ -255,6 +255,41 @@ public sealed class ScriptRuntimeTests : IDisposable
     }
 
     [Fact]
+    public void ScriptsServoBearingsAndPistonsAndReadTheirJoints()
+    {
+        _rig.Write("scripts/bearing.lua", "function on_create() assert(part.set_bearing_angle(0.5, 2)) end");
+        _rig.Write("scripts/piston.lua", """
+            function on_create()
+              assert(part.set_piston(0.6, 0.5, 900))
+              local ok, why = part.set_piston(2)
+              state.refused = why
+              local j = part.joint()
+              state.joint = { j.type, j.position, j.min, j.max, j.locked }
+              state.none = creation.joint(1) == nil
+            end
+            function on_update(dt) state.freed = part.set_piston(nil) end
+            """);
+        var creation = _rig.AddCreation(1, Bearing, Block, Piston, Block);
+        var bearing = PartOf(creation, Bearing);
+        var piston = PartOf(creation, Piston);
+        _rig.World.Positions[piston] = 0.25f;
+
+        _rig.Runtime.Update(0.1f);
+
+        Assert.Empty(_rig.Errors);
+        var motors = _rig.World.JointMotors;
+        Assert.Equal(new Mechanica.Core.Motion.JointMotor(2f, 200f, 0.5f), motors[0]);
+        Assert.Equal(new Mechanica.Core.Motion.JointMotor(0.5f, 900f, 0.6f), motors[1]);
+        Assert.True(motors[^1].IsFree);
+        var state = _rig.Runtime.ExportState(1, piston)!;
+        Assert.Contains("length must be from 0 to 1 m", state["refused"]!.GetValue<string>());
+        Assert.Equal("""["linear",0.25,0,1,false]""", state["joint"]!.ToJsonString());
+        Assert.True(state["none"]!.GetValue<bool>());
+        Assert.True(state["freed"]!.GetValue<bool>());
+        _ = bearing;
+    }
+
+    [Fact]
     public void PartsComeAndGoWithTheGraph()
     {
         _rig.Write("scripts/thruster.lua", "function on_destroy() print('destroyed ' .. part.id() .. ' ' .. tostring(part.position())) end");

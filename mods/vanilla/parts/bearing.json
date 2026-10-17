@@ -1,0 +1,44 @@
+{
+  "id": "bearing",
+  "name": "Bearing",
+  "description": "A free-turning hinge. Wheels and arms go on its rotor; engines and seats drive it.",
+  "category": "interactive",
+  "mass": 3,
+  "durability": 4,
+  "friction": 0.4,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/bearing.glb",
+  "visual": {
+    "color": "#c9a23a",
+    "roughness": 0.45,
+    "metallic": 0.7
+  },
+  "collision": {
+    "shape": "cylinder",
+    "radius": 0.115,
+    "height": 0.25
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.125, 0],
+      "normal": [0, -1, 0]
+    },
+    {
+      "id": "rotor",
+      "type": "rotational",
+      "position": [0, 0.125, 0],
+      "normal": [0, 1, 0]
+    }
+  ],
+  "sounds": {
+    "start": "bearing_start",
+    "spin_loop": "bearing_spin_loop",
+    "stop": "bearing_stop"
+  }
+}
