@@ -72,6 +72,7 @@ public sealed record QuestStep
 /// <item><c>crops</c>: <see cref="Count"/> crops are planted in the world at once.</item>
 /// <item><c>raid</c>: <see cref="Count"/> raids end.</item>
 /// <item><c>choose</c>: a player picks one of the step's <see cref="QuestStep.Choices"/>.</item>
+/// <item><c>extinguish</c>: players put out <see cref="Count"/> of the fires burning at a <see cref="Poi"/>'s <see cref="Marker"/> markers (default <c>fire</c>).</item>
 /// </list>
 /// </summary>
 public sealed record QuestObjective
@@ -79,10 +80,10 @@ public sealed record QuestObjective
     /// <summary>The rule (see the type summary).</summary>
     public string? Type { get; init; }
 
-    /// <summary>POI id (this mod's, or <c>mod:id</c>) for <c>reach</c> and <c>interact</c>.</summary>
+    /// <summary>POI id (this mod's, or <c>mod:id</c>) for <c>reach</c>, <c>interact</c> and <c>extinguish</c>.</summary>
     public string? Poi { get; init; }
 
-    /// <summary>Marker type for <c>interact</c> (<c>fire</c>, <c>item</c>, <c>npc</c>, ...).</summary>
+    /// <summary>Marker type for <c>interact</c> (<c>item</c>, <c>npc</c>, ...) and <c>extinguish</c> (default <c>fire</c>).</summary>
     public string? Marker { get; init; }
 
     /// <summary>Marker ref an <c>interact</c> marker must have, or null for any.</summary>

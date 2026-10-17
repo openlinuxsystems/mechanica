@@ -1,0 +1,20 @@
+{
+  // Fire (D13), SI units. Loaded by game/scripts/Fire/FireSync.cs; see src/Mechanica.Core/Fire/FireSettings.cs.
+  // A fire's strength runs from 0 (out) to 1. How much water puts one out is the watering item's and the
+  // water cannon's own data (douse in their properties).
+  "tick": 0.25,
+  // Strength a fire gains per second, and what a part that just caught starts at.
+  "grow": 0.08,
+  "ignite": 0.2,
+  // A burning part this strong sets its flammable neighbours alight.
+  "spread_at": 0.6,
+  // Health per second a full-strength fire takes off its part and off a player standing in it.
+  "part_damage": 4,
+  "player_damage": 10,
+  "player_radius": 1.2,
+  // Fires at POI markers of this type are lit when a world is made, and light flammable parts this close.
+  "site_marker": "fire",
+  "site_radius": 1.5,
+  "sound": "burn_wood",
+  "max_fires": 512
+}

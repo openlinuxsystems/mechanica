@@ -56,6 +56,9 @@ public interface IQuestWorld
 
     /// <summary>Speed (m/s) of the Creation the player is seated in, or null when they are not seated.</summary>
     float? SeatedSpeed(int peer);
+
+    /// <summary>How many fires at markers of type <paramref name="marker"/> of a placed <paramref name="poi"/> are out.</summary>
+    int FiresOut(string poi, string marker);
 }
 
 /// <summary>Arguments of <c>ChooseQuestOption</c>.</summary>
@@ -77,7 +80,7 @@ public sealed record QuestDialogue(string Quest, IReadOnlyList<DialogueLine> Lin
 /// <summary>
 /// The host's quest runtime (chunk 24). Quests start once their requirements are done and advance step by
 /// step from what players do: Action API calls (<see cref="Record"/>), raids ending (<see cref="RaidEnded"/>),
-/// what <see cref="Tick"/> sees (players near POIs, items held, crops planted, distance driven), and the
+/// what <see cref="Tick"/> sees (players near POIs, items held, crops planted, distance driven, fires put out), and the
 /// quest actions it registers: <c>QuestInteract</c> (use the nearest quest marker in reach),
 /// <c>ChooseQuestOption</c> and <c>GetQuests</c>. Progress is shared by every player; finishing a quest gives
 /// each player in the session its items, sets its flags and reveals its POIs.
@@ -144,6 +147,13 @@ public sealed class QuestTracker(QuestBook book, IQuestWorld world, QuestState? 
                 case QuestObjectiveKind.HaveItem:
                     if (world.Peers.Any(p => world.CountItem(p, step.Target!) >= step.Count))
                         Advance(quest);
+                    break;
+                case QuestObjectiveKind.Extinguish:
+                    var outs = world.FiresOut(step.Poi!, step.Marker!);
+                    if (outs >= step.Count)
+                        Advance(quest);
+                    else if (outs != progress.Count)
+                        Set(quest, progress with { Count = outs });
                     break;
                 case QuestObjectiveKind.Crops:
                     var crops = world.PlantedCrops();

@@ -4,11 +4,10 @@
   "steps": [
     {
       "id": "extinguish_fires",
-      "text": "Put out the three fires at the crash site.",
+      "text": "Put out the three fires at the crash site with water.",
       "objective": {
-        "type": "interact",
+        "type": "extinguish",
         "poi": "crash_site",
-        "marker": "fire",
         "count": 3
       },
       "dialogue": [

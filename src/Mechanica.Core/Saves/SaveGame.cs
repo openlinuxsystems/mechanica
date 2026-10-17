@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Mechanica.Core.Creations;
 using Mechanica.Core.Data;
+using Mechanica.Core.Fire;
 using Mechanica.Core.Net;
 using Mechanica.Core.Quests;
 using Mechanica.Core.Survival;
@@ -45,8 +46,8 @@ public sealed record SavedScriptState(int Creation, int Part, JsonObject State);
 /// <summary>
 /// A saved world (D8: JSON): the seed and game mode it was made with, the mods it ran, destroyed world
 /// objects, every Creation in <see cref="CreationJson"/> form (parts, pose, velocity, settings, inventories,
-/// crafting and soil), part script state, and every player the host has seen by profile id. The host
-/// writes it; clients get the loaded world through normal late-join sync.
+/// crafting, soil and fire), part script state, fires at POI markers, the story, and every player the host
+/// has seen by profile id. The host writes it; clients get the loaded world through normal late-join sync.
 /// </summary>
 public sealed record SaveGame
 {
@@ -94,6 +95,12 @@ public sealed record SaveGame
 
     /// <summary>The story: quest progress, flags and revealed POIs. Null in a save from before quests.</summary>
     public QuestState? Quests { get; init; }
+
+    /// <summary>
+    /// Fires at POI markers (the crash site's), out ones at strength 0; null in a save from before fire, whose
+    /// sites are lit afresh. Burning parts are saved on their parts in <see cref="Creations"/>.
+    /// </summary>
+    public IReadOnlyList<SavedSiteFire>? Fires { get; init; }
 
     /// <summary>Keys this build does not know, kept as they are.</summary>
     public Dictionary<string, JsonElement>? Extra { get; init; }
@@ -151,6 +158,8 @@ public sealed record SaveGame
                 Inventory = p.Inventory.Count == 0 ? null : [.. p.Inventory.OrderBy(s => s.Slot).Select(s => new SlotData { Slot = s.Slot, Item = s.Item, Count = s.Count })],
             })],
             Quests = Quests?.ToElement(),
+            Fires = Fires is null ? null : [.. Fires.OrderBy(f => f.Site).ThenBy(f => f.Marker)
+                .Select(f => new FireData { Site = f.Site, Marker = f.Marker, Strength = f.Strength })],
             Extra = Extra?.OrderBy(kv => kv.Key, StringComparer.Ordinal).ToDictionary(kv => kv.Key, kv => kv.Value),
         };
         return JsonSerializer.Serialize(data, DataJson.WriteOptions) + "\n";
@@ -262,6 +271,21 @@ public sealed record SaveGame
                 sink.Error(invalid, "$.quests", "quests must be an object with quests, flags and revealed.");
         }
 
+        List<SavedSiteFire>? fires = null;
+        if (data.Fires is { } fireData)
+        {
+            fires = [];
+            foreach (var (f, i) in fireData.Select((f, i) => (f, i)))
+            {
+                if (f?.Site is not { } site || f.Marker is not { } marker || f.Strength is not { } strength)
+                    sink.Error(invalid, $"$.fires[{i}]", "a fire needs site, marker and strength.");
+                else if (!(float.IsFinite(strength) && strength is >= 0 and <= 1))
+                    sink.Error(invalid, $"$.fires[{i}].strength", "strength must be 0 to 1.");
+                else
+                    fires.Add(new SavedSiteFire(site, marker, strength));
+            }
+        }
+
         if (sink.ErrorCount > 0)
             return null;
         return new SaveGame
@@ -279,6 +303,7 @@ public sealed record SaveGame
             Scripts = scripts,
             Players = players,
             Quests = quests,
+            Fires = fires,
             Extra = data.Extra,
         };
     }
@@ -305,6 +330,7 @@ public sealed record SaveGame
         public List<ScriptData>? Scripts { get; init; }
         public List<PlayerData>? Players { get; init; }
         public JsonElement? Quests { get; init; }
+        public List<FireData>? Fires { get; init; }
 
         [System.Text.Json.Serialization.JsonExtensionData]
         public Dictionary<string, JsonElement>? Extra { get; init; }
@@ -340,6 +366,13 @@ public sealed record SaveGame
     {
         public int? Creation { get; init; }
         public int? Part { get; init; }
+    }
+
+    private sealed record FireData
+    {
+        public int? Site { get; init; }
+        public int? Marker { get; init; }
+        public float? Strength { get; init; }
     }
 
     private sealed record SlotData

@@ -91,12 +91,17 @@ public partial class HotbarSync : Node
             Callable.From(() => Welcome(player.PeerId)).CallDeferred();
     }
 
-    private void Fetch() =>
+    private void Fetch()
+    {
+        // The instance may have left the tree (a session stopped) before the deferred call ran.
+        if (!IsInsideTree())
+            return;
         Actions.Request(HotbarActions.GetHotbar, new NoArgs(), result =>
         {
             if (result is { Ok: true, Value: { } value } && value.Deserialize<HotbarSlots>(ActionJson.Options) is { } view)
                 SetOwn(view.Slots);
         });
+    }
 
     // Host → newcomer: its slots, saved ones included.
     private void Welcome(int peer)

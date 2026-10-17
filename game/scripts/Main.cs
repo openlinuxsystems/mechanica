@@ -21,6 +21,7 @@ using Mechanica.Game.Mods;
 using Mechanica.Game.Motion;
 using Mechanica.Game.Net;
 using Mechanica.Game.Player;
+using Mechanica.Game.Fire;
 using Mechanica.Game.Quests;
 using Mechanica.Game.Remote;
 using Mechanica.Game.Saves;
@@ -151,6 +152,9 @@ public partial class Main : Node3D
 
     /// <summary>The UDP port the LAN beacon listens on; tests use their own.</summary>
     public int LanPort { get; set; } = NetProtocol.LanPort;
+
+    /// <summary>Fire and its sync to clients (D13).</summary>
+    public FireSync Fire { get; private set; } = null!;
 
     /// <summary>Quests and their sync to clients (chunk 24).</summary>
     public QuestSync Quests { get; private set; } = null!;
@@ -394,6 +398,10 @@ public partial class Main : Node3D
         Motion.RegisterActions(Actions.Dispatcher);
         Scripts = new ScriptSync { Name = "Scripts", Session = Session, Creations = Creations, Motion = Motion, Actions = Actions, Sounds = Sounds, Mods = mods, Survival = Survival };
         AddChild(Scripts);
+        Fire = new FireSync { Name = "Fire", Session = Session, Creations = Creations, Survival = Survival, World = Streamer, Scripts = Scripts, Sounds = Sounds };
+        Fire.RegisterActions(Actions.Dispatcher);
+        Scripts.Runtime.Fire = Fire.Actions;
+        AddChild(Fire);
         Logic = new LogicSync
         {
             Name = "Logic", Session = Session, Players = PlayerSync, Creations = Creations, Build = Build, Scripts = Scripts,
@@ -419,6 +427,7 @@ public partial class Main : Node3D
             Inventory = Inventory,
             Logic = Logic,
             Bots = Bots,
+            Fire = Fire,
             Book = quests,
         };
         Quests.RegisterActions(Actions.Dispatcher);
@@ -453,6 +462,7 @@ public partial class Main : Node3D
             Characters = Characters.Choices,
             Hotbars = Hotbar.Bars,
             Quests = Quests,
+            Fire = Fire,
             Name = "Saves",
             Session = Session,
             Players = PlayerSync,
