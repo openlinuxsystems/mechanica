@@ -27,6 +27,7 @@ public partial class CharacterTest : StagedTest
     private CharacterModel? _watched;
     private bool _swung;
     private string? _refused;
+    private ulong _drawnFrame;
     private Func<float>? _seaLevel;
 
     protected override string Tag => "characters";
@@ -88,8 +89,10 @@ public partial class CharacterTest : StagedTest
             if (frame == 0)
             {
                 player.ThirdPerson = false;
-                return false;
+                _drawnFrame = Engine.GetProcessFrames() + 2;
             }
+            if (Engine.GetProcessFrames() < _drawnFrame)
+                return false;
             if (!Check(player.Arms is CharacterModel { FirstPerson: true }, "the host's player has first-person arms"))
                 return true;
             var arms = (CharacterModel)player.Arms!;
@@ -104,7 +107,10 @@ public partial class CharacterTest : StagedTest
         Add("in third person the arms hide", frame =>
         {
             var player = _host.Main.LocalPlayer!;
-            if (frame < 2)
+            // The arms follow the view in _Process; stages step on physics frames, which can run several to one drawn frame.
+            if (frame == 0)
+                _drawnFrame = Engine.GetProcessFrames() + 2;
+            if (Engine.GetProcessFrames() < _drawnFrame)
                 return false;
             var hidden = !player.Arms!.Visible;
             player.ThirdPerson = false;
