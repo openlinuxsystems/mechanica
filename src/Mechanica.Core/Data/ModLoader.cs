@@ -155,6 +155,9 @@ public static class ModLoader
     /// <summary>Folder inside a mod that holds replacements for other mods' parts, one subfolder per mod id.</summary>
     public const string OverridesFolder = "overrides";
 
+    /// <summary>Folder inside <c>overrides/&lt;mod_id&gt;/</c> for replacements of that mod's recipes.</summary>
+    public const string RecipeOverridesFolder = "recipes";
+
     /// <summary>Loads every mod folder directly inside <paramref name="modsRoot"/>.</summary>
     public static ModLoadResult LoadAll(string modsRoot) => Load(modsRoot, null);
 
@@ -498,7 +501,9 @@ public static class ModLoader
                 errors += sink.ErrorCount;
                 continue;
             }
-            foreach (var file in JsonFiles(dir, targetDir))
+            // overrides/<mod>/recipes/ holds recipe overrides, which the RecipeBook reads.
+            var recipesDir = Path.Combine(targetDir, RecipeOverridesFolder) + Path.DirectorySeparatorChar;
+            foreach (var file in JsonFiles(dir, targetDir).Where(f => !f.StartsWith(recipesDir, StringComparison.Ordinal)))
             {
                 var sink = new DiagnosticSink(Display(dir, Path.GetRelativePath(dir, file)), diagnostics);
                 var part = ReadFile<PartDefinition>(file, sink);

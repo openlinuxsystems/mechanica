@@ -83,20 +83,20 @@ public sealed class RecipeBook
         return All.Where(r => r.Outputs.Any(o => o.Item == item));
     }
 
-    /// <summary>Loads the recipes of the mods in <paramref name="content"/>.</summary>
+    /// <summary>
+    /// Loads the recipes of the mods in <paramref name="content"/>. Each mod's own <c>recipes/</c> come
+    /// first, then its <c>overrides/&lt;mod_id&gt;/recipes/</c>, which replace that mod's recipes of the
+    /// same id, so the override of the mod latest in load order wins.
+    /// </summary>
     public static RecipeBook Load(ModLoadResult content)
     {
         var diagnostics = new List<DataDiagnostic>();
         var recipes = new Dictionary<string, Recipe>(StringComparer.Ordinal);
+        // Which mod's override replaced each recipe, to warn when two unrelated mods replace one.
+        var overriddenBy = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var mod in content.Mods)
         {
-            var folder = Path.Combine(mod.Directory, Folder);
-            if (!Directory.Exists(folder))
-                continue;
-            var files = Directory.GetFiles(folder, "*.json", SearchOption.AllDirectories)
-                .Select(f => (Path: f, Relative: Path.GetRelativePath(mod.Directory, f).Replace('\\', '/')))
-                .OrderBy(f => f.Relative, StringComparer.Ordinal);
-            foreach (var (path, relative) in files)
+            foreach (var (path, relative) in Files(mod.Directory, Path.Combine(mod.Directory, Folder)))
             {
                 var sink = new DiagnosticSink($"{mod.Id}/{relative}", diagnostics);
                 if (Read(path, sink) is not { } definition)
@@ -107,9 +107,77 @@ public sealed class RecipeBook
                 else if (recipe is not null && sink.ErrorCount == 0)
                     recipes.Add(recipe.QualifiedId, recipe);
             }
+            LoadOverrides(mod, content, recipes, overriddenBy, diagnostics);
         }
         return new RecipeBook(recipes.Values, diagnostics);
     }
+
+    // The mod loader has already refused overrides/<target>/ unless the target is a dependency, so it is
+    // loaded and its recipes are in the table.
+    private static void LoadOverrides(LoadedMod mod, ModLoadResult content, Dictionary<string, Recipe> recipes,
+        Dictionary<string, string> overriddenBy, List<DataDiagnostic> diagnostics)
+    {
+        var overridesDir = Path.Combine(mod.Directory, ModLoader.OverridesFolder);
+        if (!Directory.Exists(overridesDir))
+            return;
+        var own = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var targetDir in Directory.GetDirectories(overridesDir).Order(StringComparer.Ordinal))
+        {
+            var targetId = Path.GetFileName(targetDir);
+            foreach (var (path, relative) in Files(mod.Directory, Path.Combine(targetDir, ModLoader.RecipeOverridesFolder)))
+            {
+                var sink = new DiagnosticSink($"{mod.Id}/{relative}", diagnostics);
+                if (Read(path, sink) is not { } definition)
+                    continue;
+                var recipe = Check(definition, targetId, content, sink);
+                if (recipe is null || sink.ErrorCount > 0)
+                    continue;
+                var id = recipe.QualifiedId;
+                if (!recipes.ContainsKey(id))
+                {
+                    sink.Error(DiagnosticCodes.RecipeOverrideUnknown, "$.id", $"mod '{targetId}' has no recipe '{definition.Id}' to override.");
+                    continue;
+                }
+                if (!own.Add(id))
+                {
+                    sink.Error(DiagnosticCodes.DuplicateRecipe, "$.id", $"'{id}' is overridden twice in this mod.");
+                    continue;
+                }
+                if (overriddenBy.TryGetValue(id, out var previous) && !DependsOn(mod.Id, previous, content))
+                    sink.Warning(DiagnosticCodes.RecipeOverrideConflict, "$.id",
+                        $"mods '{previous}' and '{mod.Id}' both override recipe '{id}'; '{mod.Id}' loads later and wins. "
+                        + "Change the load order in the Mod Manager to pick the other.");
+                overriddenBy[id] = mod.Id;
+                recipes[id] = recipe;
+            }
+        }
+    }
+
+    // True when modId depends on otherId, directly or through other mods.
+    private static bool DependsOn(string modId, string otherId, ModLoadResult content)
+    {
+        var mods = content.Mods.ToDictionary(m => m.Id, StringComparer.Ordinal);
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var stack = new Stack<string>([modId]);
+        while (stack.TryPop(out var id))
+        {
+            foreach (var dep in mods.GetValueOrDefault(id)?.Manifest.Dependencies ?? [])
+            {
+                if (dep.Id == otherId)
+                    return true;
+                if (seen.Add(dep.Id!))
+                    stack.Push(dep.Id!);
+            }
+        }
+        return false;
+    }
+
+    // Every *.json under folder, with its mod-relative path, sorted so all machines read files in the same order.
+    private static IEnumerable<(string Path, string Relative)> Files(string modDir, string folder) => Directory.Exists(folder)
+        ? Directory.GetFiles(folder, "*.json", SearchOption.AllDirectories)
+            .Select(f => (Path: f, Relative: Path.GetRelativePath(modDir, f).Replace('\\', '/')))
+            .OrderBy(f => f.Relative, StringComparer.Ordinal)
+        : [];
 
     /// <summary>Builds a book from recipes in code (tests, tools). Throws on any error.</summary>
     /// <exception cref="FormatException">A recipe has errors.</exception>
