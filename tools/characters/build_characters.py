@@ -33,6 +33,10 @@ import numpy as np
 from mathutils import Matrix, Vector
 from mathutils.bvhtree import BVHTree
 
+sys.dont_write_bytecode = True                      # no __pycache__ next to the script
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import character_textures as ct  # noqa: E402
+
 REPO = Path(__file__).resolve().parents[2]
 OUT_DIR = REPO / "mods" / "vanilla" / "meshes" / "characters"
 FPS = 30
@@ -161,8 +165,17 @@ def grip_point(side):
 # Mesh parts
 # =====================================================================================================
 
+# Per-vertex surface attributes the texture baker reads (see character_textures.py). Each is (n, width);
+# parts that do not set one get NaN there.
+#   box:  a soft box / ellipsoid in its own frame: (x/hx, y/hy, z/hz, hx, hy, hz, e)
+#   loft: a loft or strap: (distance along it in m, cos theta, sin theta, across in -1..1)
+ATTR_WIDTH = {"box": 7, "loft": 4}
+
+
 class Part:
-    """A chunk of geometry with per-face material names, a smooth flag and (later) bone weights."""
+    """A chunk of geometry with per-face material names, a smooth flag and (later) bone weights.
+
+    a holds optional per-vertex surface attributes (ATTR_WIDTH), g an optional per-face texture group."""
 
     def __init__(self, verts, faces, mat, smooth=True):
         self.v = np.asarray(verts, float).reshape(-1, 3)
@@ -170,11 +183,27 @@ class Part:
         self.m = [mat] * len(self.f) if isinstance(mat, str) else list(mat)
         self.s = [smooth] * len(self.f) if isinstance(smooth, bool) else list(smooth)
         self.w: dict[str, np.ndarray] | None = None
+        self.a: dict[str, np.ndarray] = {}
+        self.g: list | None = None
+        self.t: str | None = None
 
     def copy(self):
         p = Part(self.v.copy(), list(self.f), list(self.m), list(self.s))
         p.w = None if self.w is None else {k: v.copy() for k, v in self.w.items()}
+        p.a = {k: v.copy() for k, v in self.a.items()}
+        p.g = None if self.g is None else list(self.g)
+        p.t = self.t
         return p
+
+    def tagged(self, name):
+        """Name the kind of part for the texture baker's seams (torso, sleeve, leg, pelvis)."""
+        self.t = name
+        return self
+
+    def group(self, name):
+        """Put every face of this part in texture group `name` (else the group follows the bones)."""
+        self.g = [name] * len(self.f)
+        return self
 
     def mirrored(self):
         """Mirror across the YZ plane (left <-> right), fixing winding and swapping _l/_r weights."""
@@ -223,22 +252,34 @@ def swap_side(name):
 
 
 def merge(parts):
-    verts, faces, mats, smooth = [], [], [], []
+    """One part from many. Faces remember which input part they came from (out.pid)."""
+    verts, faces, mats, smooth, groups, pid, tags = [], [], [], [], [], [], []
     weights: dict[str, list] = {}
     off = 0
     n_total = sum(len(p.v) for p in parts)
-    for p in parts:
+    attrs = {k: np.full((n_total, w), np.nan) for k, w in ATTR_WIDTH.items()
+             if any(k in p.a for p in parts)}
+    for k_part, p in enumerate(parts):
         verts.append(p.v)
         faces.extend(tuple(i + off for i in f) for f in p.f)
         mats.extend(p.m)
         smooth.extend(p.s)
+        groups.extend(p.g if p.g is not None else [None] * len(p.f))
+        pid.extend([k_part] * len(p.f))
+        tags.extend(getattr(p, "tag", None) or [p.t] * len(p.f))
         if p.w is not None:
             for k, w in p.w.items():
                 arr = weights.setdefault(k, np.zeros(n_total))
                 arr[off:off + len(p.v)] += w
+        for k, a in p.a.items():
+            attrs[k][off:off + len(p.v)] = a
         off += len(p.v)
     out = Part(np.vstack(verts) if verts else np.zeros((0, 3)), faces, mats, smooth)
     out.w = {k: np.asarray(v) for k, v in weights.items()} if weights else None
+    out.a = attrs
+    out.g = groups
+    out.pid = pid
+    out.tag = tags
     return out
 
 
@@ -289,6 +330,12 @@ def loft(rings, segs=16, cap0=True, cap1=True, mat="default", smooth=True, bulge
     n = len(rings)
     thetas = theta0 + np.linspace(0, 2 * math.pi, segs, endpoint=False) if closed else \
         theta0 + np.linspace(0, 2 * math.pi, segs)
+    cs = [np.asarray(r["c"], float) for r in rings]
+    along = np.concatenate([[0.0], np.cumsum([np.linalg.norm(cs[i + 1] - cs[i]) for i in range(n - 1)])])
+    lat = []
+    for i, r in enumerate(rings):
+        for th in thetas:
+            lat.append((along[i], math.cos(th), math.sin(th), _se(math.sin(th), r.get("e", 2.0))))
     for r in rings:
         c, a, b = (np.asarray(r[k], float) for k in ("c", "a", "b"))
         e = r.get("e", 2.0)
@@ -323,7 +370,15 @@ def loft(rings, segs=16, cap0=True, cap1=True, mat="default", smooth=True, bulge
         ci = len(verts) - 1
         for j in range(segs):
             faces.append((ci, base + j, base + (j + 1) % segs))
-    return Part(verts, faces, mat, smooth)
+    p = Part(verts, faces, mat, smooth)
+    lat = np.asarray(lat, float)
+    caps = len(verts) - len(lat)
+    if caps:
+        ends = [np.array([along[0], 1.0, 0.0, 0.0])] * (1 if (closed and cap0) else 0) + \
+            [np.array([along[-1], 1.0, 0.0, 0.0])] * (1 if (closed and cap1) else 0)
+        lat = np.vstack([lat] + [e[None] for e in ends])
+    p.a["loft"] = lat
+    return p
 
 
 def frames_along(points, ref):
@@ -373,6 +428,10 @@ def soft_box(center, half, axes=None, e=4.0, e2=4.0, segs=16, rings=10, mat="def
         z = u * hz
         rl.append(dict(c=np.asarray(center) + ax[2] * z, a=ax[0], b=ax[1], rx=hx * k, ry=hy * k, e=e))
     p = loft(rl, segs, True, True, mat, smooth)
+    del p.a["loft"]
+    loc = (p.v - np.asarray(center, float)) @ ax.T
+    h = np.array([hx, hy, hz], float)
+    p.a["box"] = np.hstack([loc / h, np.tile(np.append(h, e), (len(p.v), 1))])
     return p
 
 
@@ -402,7 +461,11 @@ def box(center, half, axes=None, mat="default"):
             for sx in (-1, 1):
                 vs.append(c + ax[0] * sx * half[0] + ax[1] * sy * half[1] + ax[2] * sz * half[2])
     faces = [(0, 2, 3, 1), (4, 5, 7, 6), (0, 1, 5, 4), (2, 6, 7, 3), (0, 4, 6, 2), (1, 3, 7, 5)]
-    return Part(vs, faces, mat, smooth=False)
+    p = Part(vs, faces, mat, smooth=False)
+    loc = (p.v - c) @ ax.T
+    h = np.asarray(half, float)
+    p.a["box"] = np.hstack([loc / h, np.tile(np.append(h, 20.0), (len(p.v), 1))])
+    return p
 
 
 def c_ring(center, r_out, r_in, thickness, a0, a1, frame, segs=14, mat="metal"):
@@ -576,16 +639,16 @@ PALETTE = {
     "sole": ("#2b2724", 0.85, 0.0),
     "lace": ("#2a2420", 0.8, 0.0),
     # male outfit
-    "jacket_olive": ("#5a6238", 0.85, 0.0),
-    "jacket_olive_dark": ("#454b2c", 0.9, 0.0),
-    "trouser_olive": ("#4e5532", 0.9, 0.0),
-    "backpack_olive": ("#3d4430", 0.85, 0.0),
+    "jacket_olive": ("#585d3a", 0.85, 0.0),
+    "jacket_olive_dark": ("#45482e", 0.9, 0.0),
+    "trouser_olive": ("#4d5033", 0.9, 0.0),
+    "backpack_olive": ("#40432f", 0.85, 0.0),
     "glove_dark": ("#2e2b28", 0.7, 0.0),
     "boot_tan": ("#8a5a33", 0.6, 0.0),
     "goggle_dark": ("#2a2a2a", 0.5, 0.3),
     "lens_orange": ("#e8862a", 0.08, 0.0),
     # female outfit
-    "denim": ("#41608a", 0.85, 0.0),
+    "denim": ("#44628a", 0.85, 0.0),
     "denim_light": ("#5d7ca6", 0.85, 0.0),
     "denim_dark": ("#34507a", 0.85, 0.0),
     "shirt": ("#7a8470", 0.9, 0.0),
@@ -605,6 +668,9 @@ PALETTE = {
     "screen": ("#1e3a4a", 0.2, 0.0),
     "water": ("#4a90b8", 0.05, 0.0),
     "potato": ("#a8834e", 0.8, 0.0),
+    "tool_orange": ("#d8762a", 0.45, 0.0),
+    "tool_blue": ("#3a78b8", 0.45, 0.0),
+    "lining": ("#3a3f2c", 0.95, 0.0),
     "default": ("#808080", 0.5, 0.0),
 }
 
@@ -775,6 +841,8 @@ def compact(part):
     p = Part(part.v[used], [tuple(remap[i] for i in f) for f in part.f], part.m, part.s)
     if part.w is not None:
         p.w = {k: v[used] for k, v in part.w.items()}
+    p.a = {k: v[used] for k, v in part.a.items()}
+    p.g = part.g
     return p
 
 
@@ -1092,51 +1160,143 @@ def hair_cap_mesh(bvh_head, female, thick, mat, n_az=48, n_rows=12):
     return grid_part(grid, False, True, mat, bulge1=0.004)
 
 
+def hair_lock(bvh, root, direction, length, width, thick, lift, mat, steps=7, sink=0.003, bend=None,
+              taper=0.62, skin_bvh=None):
+    """A soft lock of hair: a flat, rounded ribbon that follows the surface under it (bvh) from root along
+    `direction`, lifting off it toward the tip. bend(u) -> extra direction added along the way."""
+    o = HEAD_C + np.array([0.0, 0.0, -0.01])
+    d = norm(direction)
+    p = np.asarray(root, float)
+    pts, nrms = [], []
+    for k in range(steps + 1):
+        u = k / steps
+        radial = norm(p - o)
+        hit = project(bvh, o + radial * 0.3, -radial, 0.0)
+        nrm = norm(hit - o)
+        off = -sink + (sink + thick * 0.6 + 0.0008) * sstep(0.0, 0.25, u) + lift * u * u
+        q = hit + nrm * off
+        if skin_bvh is not None:
+            # keep clear of the face: never closer than a few mm to the skin under it
+            sk = project(skin_bvh, o + norm(q - o) * 0.3, -norm(q - o), 0.0)
+            gap = np.dot(q - sk, norm(q - o))
+            if gap < thick * 0.6 + 0.0025:
+                q = q + norm(q - o) * (thick * 0.6 + 0.0025 - gap)
+        pts.append(q)
+        nrms.append(nrm)
+        dd = d + (bend(u) if bend else 0.0)
+        dt = norm(dd - np.dot(dd, nrm) * nrm)
+        p = hit + dt * (length / steps)
+        d = norm(dd)
+    fr = frames_along(pts, nrms[0])
+    rings = []
+    for i, (q, (t, _, _), nv) in enumerate(zip(pts, fr, nrms)):
+        u = i / steps
+        a = norm(nv - np.dot(nv, t) * t)
+        b = np.cross(t, a)
+        k = 1.0 - taper * u ** 1.6
+        rings.append(dict(c=q, a=a, b=b, rx=thick * (1.0 - 0.45 * u), ry=width * 0.5 * k, e=2.3))
+    return loft(rings, 8, True, True, mat, True, 0.002, 0.004)
+
+
 def hair_cap_and_tufts(grid, bvh_head, female, hair_mat, seed):
-    """Short messy hair (male) or a smooth pulled-back cap (female) over the head grid."""
+    """Soft, messy swept-up hair of overlapping locks (male) or a smooth pulled-back cap with a fringe and
+    face-framing strands (female) over the head grid."""
     psi, zr = azimuth(grid)
     ap = np.abs(psi)
     hl = hairline(ap, female)
     mask = smoothstep(hl - 0.006, hl + 0.022, zr)
-    thick = 0.016 if not female else 0.009
+    thick = 0.02 if not female else 0.009
     cap = hair_cap_mesh(bvh_head, female, thick, hair_mat)
     parts = [cap]
-    capbvh = make_bvh(cap)
+    # the outer surface: hair cap over the skull (a ray below the cap's edge must land on the skin, not
+    # on the inside of the cap's far side)
+    capbvh = make_bvh(merge([cap, grid_part(grid, True, True, hair_mat)]))
+    rng = random.Random(seed)
+    o = HEAD_C + np.array([0.0, 0.0, -0.01])
+
+    def root_at(ps, zrel):
+        dirv = np.array([math.sin(ps), -math.cos(ps), 0.0])
+        el = math.asin(max(-0.9, min(0.97, zrel / 0.115)))
+        d = dirv * math.cos(el) + np.array([0.0, 0.0, math.sin(el)])
+        return project(capbvh, o + d * 0.3, -d, 0.0)
+
     if not female:
-        rng = random.Random(seed)
-        n = 0
-        tries = 0
-        while n < 38 and tries < 4000:
-            tries += 1
-            i = rng.randrange(grid.shape[0])
-            j = rng.randrange(grid.shape[1])
-            if mask[i, j] < 0.9 or zr[i, j] < 0.03 or abs(psi[i, j]) > 2.3:
+        # rows of locks from the crown outward; front locks sweep up and back with a lean to one side,
+        # the top flows back, the sides and the back lie down toward the neck
+        locks = []
+        for zrel, n_az, ps_max in ((0.114, 4, 1.0), (0.104, 8, 2.2), (0.092, 12, 2.7), (0.078, 14, 3.0),
+                                   (0.062, 15, 3.0), (0.045, 13, 3.0), (0.028, 12, 3.0), (0.012, 8, 3.0)):
+            for k in range(n_az):
+                ps = -ps_max + 2 * ps_max * (k + 0.5) / n_az + rng.uniform(-0.12, 0.12)
+                locks.append((ps, zrel + rng.uniform(-0.006, 0.006)))
+        for ps, zrel in locks:
+            ap_ = abs(ps)
+            if zrel < float(hairline(ap_, False)) + 0.012:
                 continue
-            p0 = grid[i, j]
-            radial = norm(p0 - (HEAD_C + np.array([0, 0, -0.01])))
-            z = zr[i, j]
-            ps = psi[i, j]
-            fwd = abs(ps) < 0.75 and z > 0.045
-            side_dir = np.array([math.copysign(1.0, p0[0]), 0.0, 0.0])
-            if fwd:
-                flow = np.array([0.0, -0.25, 1.0]) + side_dir * 0.3
-            elif z > 0.075:
-                flow = np.array([0.0, 0.8, 0.45]) + side_dir * 0.5
-            else:
-                flow = np.array([0.0, 0.5, -0.9]) + side_dir * 0.1
-            jit = np.array([rng.uniform(-1, 1), rng.uniform(-1, 1), rng.uniform(-1, 1)]) * 0.3
-            d = norm(radial * (0.55 if fwd else 0.3) + norm(flow) + jit)
-            length = (0.03 if z > 0.07 else 0.022) * rng.uniform(0.8, 1.2)
-            if fwd:
-                length *= 1.2
-            base = project(capbvh, p0 + radial * 0.06, -radial, 0.0) - radial * 0.008
-            w0 = rng.uniform(0.018, 0.026)
-            pts, rad = [], []
-            for k, u in enumerate(np.linspace(0, 1, 4)):
-                pts.append(base + d * length * u + radial * (0.004 * u))
-                rad.append((max(0.001, w0 * 0.4 * (1 - u) ** 0.8), max(0.0015, w0 * (1 - u * 0.92) ** 0.7)))
-            parts.append(tube(pts, rad, 6, radial, hair_mat, cap=True))
-            n += 1
+            if ap_ > 2.0 and zrel < 0.07:
+                continue                               # the nape stays short: the cap's own strands show
+            root = root_at(ps, zrel)
+            sx = math.copysign(1.0, ps) if ap_ > 0.05 else 1.0
+            side = np.array([sx, 0.0, 0.0])
+            jit = np.array([rng.uniform(-1, 1), rng.uniform(-1, 1), rng.uniform(-1, 1)]) * 0.22
+            if ap_ < 0.95 and zrel > 0.06:            # front: swept up and back, leaning to the left
+                d = np.array([0.35, 0.55, 0.8]) + side * 0.15 + jit
+                length, lift, width = rng.uniform(0.05, 0.066), rng.uniform(0.006, 0.012), rng.uniform(0.034, 0.042)
+
+                def bend(u, s=sx):
+                    return np.array([0.1 * s, 0.25, -0.25]) * u
+            elif zrel > 0.09:                          # crown: back and out
+                d = np.array([0.25 * sx, 1.0, 0.0]) + jit
+                length, lift, width = rng.uniform(0.045, 0.06), rng.uniform(0.004, 0.009), rng.uniform(0.034, 0.042)
+                bend = None
+            elif ap_ < 2.1:                            # sides: back and down past the ears
+                d = np.array([0.1 * sx, 0.75, -0.65]) + jit
+                length, lift, width = rng.uniform(0.032, 0.045), rng.uniform(0.002, 0.005), rng.uniform(0.03, 0.038)
+                bend = None
+            else:                                      # back: down toward the neck
+                d = np.array([0.15 * sx, 0.15, -1.0]) + jit
+                length, lift, width = rng.uniform(0.03, 0.04), rng.uniform(0.0, 0.002), rng.uniform(0.03, 0.038)
+                bend = None
+            back = ap_ > 1.4 and zrel < 0.09
+            parts.append(hair_lock(capbvh, root, d, length, width, 0.0065 if not back else 0.005, lift, hair_mat,
+                                   bend=bend, taper=0.55 if not back else 0.8))
+    else:
+        skin_bvh = bvh_head
+        # fringe: strands from under the goggle strap, swept down and to the sides across the forehead
+        for ps, length, width, sweep in ((-0.5, 0.05, 0.022, -0.8), (-0.3, 0.056, 0.024, -0.6),
+                                         (-0.12, 0.05, 0.022, -0.35), (0.06, 0.054, 0.024, 0.5),
+                                         (0.24, 0.058, 0.024, 0.7), (0.44, 0.05, 0.022, 0.9)):
+            ps += rng.uniform(-0.04, 0.04)
+            root = root_at(ps, 0.074)
+            d = np.array([sweep * 0.55, 0.0, -1.0])
+
+            def bend(u, s=sweep):
+                return np.array([s * 0.5, 0.0, 0.25]) * u
+            parts.append(hair_lock(bvh_head, root, d, length, width, 0.004, 0.003, hair_mat, steps=7, sink=-0.002,
+                                   bend=bend, taper=0.75, skin_bvh=skin_bvh))
+        # loose strands framing the face, in front of the ears down to the jaw
+        for sx in (1.0, -1.0):
+            for ps, zrel, length, width in ((1.0, 0.045, 0.1, 0.014), (1.16, 0.04, 0.085, 0.012)):
+                root = root_at(sx * ps, zrel)
+                d = np.array([0.08 * sx, -0.25, -1.0])
+
+                def bend(u, s=sx):
+                    return np.array([0.05 * s, 0.45, 0.15]) * u
+                parts.append(hair_lock(bvh_head, root, d, length, width, 0.0035, 0.006, hair_mat, steps=8,
+                                       sink=-0.003, bend=bend, taper=0.8, skin_bvh=skin_bvh))
+        # pulled-back hair: flat locks from the hairline over the crown toward the nape, so the cap reads as
+        # combed hair rather than a helmet
+        for zrel, n_az, ps_max in ((0.1, 7, 1.6), (0.07, 10, 2.5), (0.035, 10, 2.7)):
+            for k in range(n_az):
+                ps = -ps_max + 2 * ps_max * (k + 0.5) / n_az + rng.uniform(-0.08, 0.08)
+                zr_ = zrel + rng.uniform(-0.005, 0.005)
+                if zr_ < float(hairline(abs(ps), True)) + 0.01:
+                    continue
+                root = root_at(ps, zr_)
+                tgt = HEAD_C + np.array([0.0, 0.09, -0.07])
+                d = norm(tgt - root) + np.array([rng.uniform(-0.1, 0.1), 0.0, 0.0])
+                parts.append(hair_lock(capbvh, root, d, rng.uniform(0.06, 0.085), rng.uniform(0.03, 0.04), 0.004,
+                                       0.0015, hair_mat, steps=8, sink=0.002, taper=0.7))
     for p in parts:
         p.skin("head")
     return parts, mask
@@ -1216,7 +1376,7 @@ def arm_chain_points(side="l"):
 
 def sleeve(keys, mat, segs=18):
     rings = limb_rings(arm_chain_points("l"), keys, (0, -1, 0))
-    p = loft(rings, segs, True, True, mat, True, 0.01, 0.0)
+    p = loft(rings, segs, True, True, mat, True, 0.01, 0.0).tagged("sleeve")
     return p.skin(chain_weights(["shoulder_l", "upper_arm_l", "forearm_l", "hand_l"], start=bone_head("shoulder_l"),
                                 blends=[0.08, 0.08, 0.05]))
 
@@ -1231,6 +1391,15 @@ def arm_point(s, outward=0.0, forward=0.0):
     out = norm(np.cross((0, -1, 0), t))
     fwd = norm(np.cross(t, out))
     return c + out * outward + fwd * forward, t, out, fwd
+
+
+def sleeve_lining(radius, s=1.15):
+    """A dark disc closing the sleeve just past the elbow, riding the forearm. Hidden inside the sleeve on the
+    full body; in first person, where the arms are cut from the mesh at the elbow, it keeps the open end of the
+    sleeve from showing as a hollow tube."""
+    c, t, out, fwd = arm_point(s)
+    disc = soft_box(c, (radius, radius, 0.0025), axes=(out, fwd, t), e=2.2, e2=6, segs=18, rings=3, mat="lining")
+    return disc.skin("forearm_l")
 
 
 def hand_local(along, across, palm):
@@ -1308,7 +1477,7 @@ def leg_point(s, outward=0.0, forward=0.0):
 
 def trouser_leg(keys, mat, segs=16):
     rings = limb_rings(leg_chain_points("l"), keys, (0, -1, 0))
-    p = loft(rings, segs, True, True, mat, True)
+    p = loft(rings, segs, True, True, mat, True).tagged("leg")
     return p.skin(leg_weights("l"))
 
 
@@ -1373,7 +1542,8 @@ def both_sides(parts):
 
 
 def front_point(bvh, x, z, off=0.0):
-    return project(bvh, (x, -0.6, z), (0, 1, 0), -off)
+    """The front of a surface at (x, z), pushed off it toward the viewer by off."""
+    return project(bvh, (x, -0.6, z), (0, 1, 0), off)
 
 
 def patch(bvh, p, d, half, mat, up=(0, 0, 1), e=5.0, lift=0.0):
@@ -1437,7 +1607,7 @@ def build_male():
 
     # --- jacket torso -----------------------------------------------------------------------------
     torso, tgrid = grid_loft(jacket_torso_keys(), 22, 36, mat="jacket_olive", ef=2.3, eb=2.5)
-    torso.skin(torso_weights)
+    torso.skin(torso_weights).tagged("torso")
     parts.append(torso)
     tbvh = make_bvh(torso)
     parts += collar(0.012, 1.455, 0.088, 0.074, 0.072, 0.32, "jacket_olive", "orange")
@@ -1457,9 +1627,10 @@ def build_male():
     # --- sleeves, arm bands, shoulder patch, gloves ----------------------------------------------
     left = []
     left.append(sleeve([(-0.18, 0.04, 0.04), (-0.03, 0.052, 0.05), (0.25, 0.06, 0.058), (0.55, 0.06, 0.058),
-                        (0.85, 0.056, 0.054), (1.0, 0.054, 0.053), (1.35, 0.053, 0.051), (1.7, 0.049, 0.048),
+                        (0.85, 0.056, 0.054), (1.0, 0.054, 0.053), (1.13, 0.0535, 0.0525), (1.35, 0.053, 0.051), (1.7, 0.049, 0.048),
                         (1.86, 0.046, 0.045)], "jacket_olive"))
     left.append(sleeve([(1.80, 0.0495, 0.0485), (1.88, 0.0505, 0.0495), (1.97, 0.047, 0.046)], "jacket_olive_dark"))
+    left.append(sleeve_lining(0.05))
     c, t, out, fwd = arm_point(0.42)
     band = ring_band(c, 0.0625, 0.0605, 0.017, 0.004, "orange", 22,
                      axes=(fwd, norm(np.cross(t, fwd)), t))
@@ -1492,7 +1663,7 @@ def build_male():
     pel, _ = grid_loft([(0.84, 0.15, -0.1, 0.11, 0.005), (0.9, 0.168, -0.112, 0.12, 0.0),
                         (0.96, 0.172, -0.116, 0.121, 0.0), (1.03, 0.168, -0.118, 0.118, 0.0)], 8, 36,
                        mat="trouser_olive", ef=2.3, eb=2.3)
-    parts.append(pel.skin(pelvis_weights))
+    parts.append(pel.skin(pelvis_weights).tagged("pelvis"))
     belt, _ = grid_loft([(0.982, 0.18, -0.131, 0.13, 0.0), (1.036, 0.18, -0.131, 0.13, 0.0)], 2, 40,
                         mat="leather_dark", ef=3, eb=3)
     parts.append(belt.skin("hips"))
@@ -1561,6 +1732,19 @@ def male_backpack():
         # side compression strap
         bp.append(box((sx * 0.215, 0.235, 1.17), (0.003, 0.05, 0.012), mat="orange"))
     bp.append(box((0, 0.35, 1.115), (0.15, 0.003, 0.012), mat="orange"))
+    for sx in (1, -1):
+        # the lid straps continue down the front pocket to a second buckle
+        bp.append(box((sx * 0.07, 0.349, 1.17), (0.012, 0.003, 0.045), mat="orange"))
+        bp.append(box((sx * 0.07, 0.353, 1.145), (0.016, 0.004, 0.011), mat="metal"))
+        # D-rings at the top corners of the side pockets
+        bp.append(ring_band((sx * 0.214, 0.235, 1.262), 0.012, 0.009, 0.002, 0.0022, "metal_dark", 12,
+                            axes=((0, 1, 0), (0, 0, 1), (1, 0, 0))))
+    # webbing rows across the lower back panel and a hanging loop under the pack
+    for zz in (1.08, 1.1):
+        bp.append(box((0, 0.319, zz), (0.14, 0.002, 0.004), mat="jacket_olive_dark"))
+    loop = [np.array([-0.06, 0.262, 1.066]), np.array([-0.04, 0.272, 1.02]), np.array([0.0, 0.276, 1.005]),
+            np.array([0.04, 0.272, 1.02]), np.array([0.06, 0.262, 1.066])]
+    bp.append(tube(loop, 0.0055, 8, (0, 1, 0), "leather_dark"))
     # top handle
     hp = [np.array([-0.05, 0.236, 1.48]), np.array([-0.03, 0.236, 1.505]), np.array([0.03, 0.236, 1.505]),
           np.array([0.05, 0.236, 1.48])]
@@ -1580,7 +1764,7 @@ def male_backpack():
         bp.append(box((sx * 0.222, 0.24, 1.3), (0.004, 0.03, 0.01), mat="orange"))
     for p in bp:
         p.v += np.array([0.0, -0.038, 0.0])   # snug against the jacket
-        p.skin("chest")
+        p.skin("chest").group("gear")
     return bp
 
 
@@ -1608,12 +1792,38 @@ def wrench(center, up, face_normal_hint, length, jaw, mat):
 CHARACTERS = {"scrapper_male": lambda: build_male(), "scrapper_female": lambda: build_female()}
 
 
-def assemble_character(name):
-    """Build armature + one skinned mesh for a character in the current scene."""
+# texture style and noise seed per character; atlas size per texture group (see character_textures.py)
+CHARACTER_STYLE = {"scrapper_male": ("male", 7), "scrapper_female": ("female", 11)}
+ATLASES = {"head": 1024, "torso": 1024, "arms": 1024, "legs": 1024, "feet": 512, "gear": 1024}
+PROP_ATLAS = 1024
+
+
+def assemble_character(name, textured=True):
+    """Build armature + one skinned, textured mesh for a character in the current scene."""
     arm = build_armature("Armature")
     part = merge(CHARACTERS[name]())
     ob = build_mesh_object(name, part, arm)
+    if textured:
+        stats = texture_mesh(name, ob, part)
+        for g, (size, texel_mm, cov) in stats.items():
+            print(f"  {name} atlas {g}: {size}px, {texel_mm:.2f} mm/texel, {cov * 100:.0f}% covered")
     return arm, ob, part
+
+
+def mesh_material_names(part):
+    names = []
+    for m in part.m:
+        if m not in names:
+            names.append(m)
+    return names
+
+
+def texture_mesh(name, ob, part):
+    bnames, W = finalize_weights(part.w, len(part.v))
+    dominant = [bnames[i] for i in np.argmax(W, axis=1)]
+    style, seed = CHARACTER_STYLE[name]
+    bones = {b: bone_head(b) for b in BONE_NAMES}
+    return ct.texture_character(ob, part, mesh_material_names(part), PALETTE, style, seed, ATLASES, bones, dominant)
 
 
 def select_only(objs):
@@ -1633,7 +1843,8 @@ def export_glb(path, objs, animations=False):
         export_animation_mode="ACTIONS", export_force_sampling=False, export_frame_step=1,
         export_optimize_animation_size=False, export_optimize_animation_keep_anim_armature=False,
         export_anim_slide_to_zero=False, export_morph=False, export_draco_mesh_compression_enable=False,
-        export_image_format="AUTO", export_extras=False, export_cameras=False, export_lights=False)
+        export_tangents=True, export_image_format="JPEG", export_jpeg_quality=88, export_image_quality=88,
+        export_extras=False, export_cameras=False, export_lights=False)
 
 
 _FEMALE_TORSO_KEYS = [(0.995, 0.158, -0.112, 0.112, 0.0), (1.06, 0.152, -0.112, 0.11, 0.0),
@@ -1662,7 +1873,7 @@ def opening_thetas(n_front, n_rest, ef):
     return fn
 
 
-def braid(start, ctrl, mat, tie_mat, n_lobes=11):
+def braid(start, ctrl, mat, tie_mat, n_lobes=11, size=1.0, tuft=0.05):
     """A thick three-strand braid: alternating tilted lobes along a curve."""
     pts = [np.asarray(start, float)] + [np.asarray(c, float) for c in ctrl]
     fine = [catmull([(i, p) for i, p in enumerate(pts)], u) for u in np.linspace(0, len(pts) - 1, 60)]
@@ -1678,7 +1889,7 @@ def braid(start, ctrl, mat, tie_mat, n_lobes=11):
         if np.linalg.norm(side) < 0.5:
             side = np.array([1.0, 0, 0])
         out = np.cross(side, t)
-        taper = 1.0 - 0.45 * (k / n_lobes)
+        taper = size * (1.0 - 0.4 * (k / n_lobes))
         ang = 0.55 if k % 2 == 0 else -0.55
         ax_t = t * math.cos(ang) + side * math.sin(ang)
         ax_s = np.cross(out, ax_t)
@@ -1690,7 +1901,7 @@ def braid(start, ctrl, mat, tie_mat, n_lobes=11):
     c, t = fine[i], norm(fine[-1] - fine[-5])
     a = norm(np.cross(t, (1, 0, 0)))
     parts.append(ring_band(c, 0.0105, 0.0105, 0.006, 0.003, tie_mat, 12, axes=(a, np.cross(t, a), t)))
-    tip = [c, c + t * 0.025, c + t * 0.05]
+    tip = [c, c + t * tuft * 0.5, c + t * tuft]
     parts.append(tube(tip, [(0.011, 0.009), (0.012, 0.01), (0.002, 0.002)], 8, (0, 1, 0), mat))
     return parts
 
@@ -1703,16 +1914,18 @@ def build_female():
     hair, _ = hair_cap_and_tufts(hgrid, hbvh, True, "hair_f", seed=11)
     parts += hair
     capbvh = make_bvh(merge([hp[0]] + hair[:1]))
-    bun = HEAD_C + np.array([0.0, 0.098, -0.045])
-    parts.append(ellipsoid(bun, (0.03, 0.02, 0.028), segs=12, rings=8, mat="hair_f").skin("head"))
-    br = braid(bun + np.array([0, 0.006, -0.01]),
-               [bun + np.array([-0.004, 0.024, -0.06]), np.array([-0.008, 0.15, 1.47]),
-                np.array([-0.012, 0.158, 1.42]), np.array([-0.014, 0.16, 1.385])], "hair_f", "leather_dark",
-               n_lobes=9)
+    # hair gathered at the nape into one long braid hanging down the back, past the shoulder blades, to just
+    # above the open top of the backpack. Below the neck it rides the chest bone like the backpack does,
+    # so the two never meet in any clip.
+    bun = HEAD_C + np.array([0.0, 0.088, -0.06])
+    parts.append(ellipsoid(bun, (0.028, 0.022, 0.03), segs=12, rings=8, mat="hair_f").skin("head"))
+    br = braid(bun + np.array([0, 0.008, -0.012]),
+               [np.array([0.004, 0.122, 1.52]), np.array([0.01, 0.138, 1.46]), np.array([0.014, 0.146, 1.40]),
+                np.array([0.016, 0.148, 1.36])], "hair_f", "leather_dark", n_lobes=12, size=1.15, tuft=0.035)
     for p in br:
-        p.skin(lambda v: {"head": smoothstep(1.5, 1.57, v[:, 2]),
-                          "neck": smoothstep(1.43, 1.5, v[:, 2]) * (1 - smoothstep(1.5, 1.57, v[:, 2])),
-                          "chest": 1 - smoothstep(1.43, 1.5, v[:, 2])})
+        p.skin(lambda v: {"head": smoothstep(1.53, 1.58, v[:, 2]),
+                          "neck": smoothstep(1.46, 1.52, v[:, 2]) * (1 - smoothstep(1.53, 1.58, v[:, 2])),
+                          "chest": 1 - smoothstep(1.46, 1.52, v[:, 2])})
     parts += br
     parts += goggles(capbvh, 0.078, 0.035, "leather_mid", "brass", "lens_blue", "brass", tilt=1.1, cup_r=0.02)
     parts.append(neck_part(0.047, 0.05, "skin_f"))
@@ -1728,7 +1941,7 @@ def build_female():
             return "shirt" if z > 1.325 else "canvas"
         return None
     assign_mats(torso, zone)
-    parts.append(torso.skin(torso_weights))
+    parts.append(torso.skin(torso_weights).tagged("torso"))
     tbvh = make_bvh(torso)
     parts += collar(0.012, 1.45, 0.06, 0.07, 0.068, 0.55, "denim", None, flare=0.7, thickness=0.005)
     parts += collar(0.014, 1.47, 0.055, 0.056, 0.058, 0.32, "shirt", None, flare=0.2, thickness=0.004)
@@ -1755,12 +1968,13 @@ def build_female():
     # --- arms: denim sleeves rolled to the forearm, gloves ------------------------------------------
     left = []
     left.append(sleeve([(-0.18, 0.038, 0.038), (-0.03, 0.047, 0.045), (0.25, 0.051, 0.049), (0.55, 0.05, 0.048),
-                        (0.85, 0.048, 0.046), (1.0, 0.047, 0.046), (1.3, 0.047, 0.045), (1.45, 0.046, 0.044)],
+                        (0.85, 0.048, 0.046), (1.0, 0.047, 0.046), (1.13, 0.047, 0.0455), (1.3, 0.047, 0.045), (1.45, 0.046, 0.044)],
                        "denim"))
     left.append(sleeve([(1.36, 0.05, 0.048), (1.42, 0.054, 0.052), (1.5, 0.054, 0.052), (1.56, 0.049, 0.047)],
                        "denim_light"))
     left.append(sleeve([(1.4, 0.04, 0.038), (1.6, 0.039, 0.036), (1.8, 0.033, 0.03), (1.95, 0.03, 0.027)],
                        "skin_f"))
+    left.append(sleeve_lining(0.043))
     left += glove("glove_brown", "glove_brown", "glove_brown", "glove_brown",
                   [(-0.05, 0.039, 0.03), (-0.02, 0.04, 0.029), (0.02, 0.037, 0.024), (0.028, 0.034, 0.021)],
                   accent_mat="orange", fingerless=False, female=True)
@@ -1777,7 +1991,7 @@ def build_female():
     pel, _ = grid_loft([(0.84, 0.165, -0.105, 0.12, 0.005), (0.9, 0.183, -0.112, 0.129, 0.0),
                         (0.96, 0.185, -0.114, 0.127, 0.0), (1.02, 0.166, -0.112, 0.116, 0.0),
                         (1.06, 0.152, -0.11, 0.11, 0.0)], 9, 36, mat="canvas", ef=2.3, eb=2.3)
-    parts.append(pel.skin(pelvis_weights))
+    parts.append(pel.skin(pelvis_weights).tagged("pelvis"))
     pb = make_bvh(pel)
     for sx in (1, -1):
         parts.append(patch(pb, (sx * 0.155, 0, 0.985), (-sx, 0.15, 0), (0.008, 0.003, 0.008), "brass").skin("hips"))
@@ -1838,14 +2052,16 @@ def female_backpack():
     # tools in the open top
     bp += wrench((0.085, 0.2, 1.39), (0.25, 0.0, 1.0), (0, 1, 0), 0.2, 0.02, "metal")
     bp += wrench((0.03, 0.22, 1.4), (0.08, 0.05, 1.0), (0, 1, 0), 0.24, 0.022, "metal")
-    bp += screwdriver((-0.04, 0.2, 1.3), (-0.08, 0.02, 1.0), "orange")
-    bp += screwdriver((-0.075, 0.215, 1.3), (-0.2, 0.05, 1.0), "blue")
-    bp += screwdriver((-0.01, 0.185, 1.3), (0.04, -0.05, 1.0), "blue")
-    bp += screwdriver((0.12, 0.23, 1.3), (0.2, 0.1, 1.0), "orange")
+    bp += screwdriver((-0.045, 0.2, 1.3), (-0.08, 0.02, 1.0), "tool_orange")
+    bp += screwdriver((-0.08, 0.215, 1.3), (-0.2, 0.05, 1.0), "tool_blue")
+    bp += screwdriver((0.0, 0.24, 1.3), (0.03, 0.04, 1.0), "tool_blue")
+    bp += screwdriver((0.12, 0.23, 1.3), (0.2, 0.1, 1.0), "tool_orange")
+    # the open top: dark lining inside the rim, with the tools standing in it
+    bp.append(soft_box(c + (0, 0.004, 0.141), (0.126, 0.058, 0.004), e=5, e2=5, segs=24, rings=4, mat="lining"))
     bp.append(cylinder((-0.11, 0.21, 1.3), (-0.12, 0.215, 1.47), 0.009, 10, "metal_dark", bevel=0.002))
     for p in bp:
-        p.v += np.array([0.0, -0.016, 0.0])   # snug against the jacket
-        p.skin("chest")
+        p.v += np.array([0.0, -0.016, -0.065])   # snug against the jacket, low on the back as on the sheet
+        p.skin("chest").group("gear")
     return bp
 
 
@@ -2262,10 +2478,14 @@ def _hips_curve(T, v, duty, base, bob, running, sp, op, cy, lift, shape, hf, tf)
     return fn
 
 
+WALK_T = 0.9       # walk cycle (s): 1.35 m per cycle at 1.5 m/s; steps short enough that the hips dip < 4 cm
+
+
 def clip_walk(t):
-    return locomotion(t, 1.0, 1.5, 0.56, hips_base=-0.03, bob=0.015, lift=0.1, strike_pitch=10, off_pitch=62,
-                      lean=3, arm_swing=18, elbow=16, elbow_extra=12, fingers=20, hips_yaw=6, chest_yaw=8,
-                      center_y=0.08, heel_frac=0.12, toe_frac=0.55)
+    # strike_pitch < 0: toes up at heel strike, which keeps the front leg's reach (and the hips) high
+    return locomotion(t, WALK_T, 1.5, 0.52, hips_base=-0.025, bob=0.006, lift=0.09, strike_pitch=-12, off_pitch=62,
+                      lean=3, arm_swing=16, elbow=16, elbow_extra=10, fingers=20, hips_yaw=5, chest_yaw=7,
+                      center_y=0.09, heel_frac=0.12, toe_frac=0.6)
 
 
 def clip_jog(t):
@@ -2803,7 +3023,7 @@ def clip_hurt(t):
 # name: (function, duration seconds, loops, upper_body_only)
 CLIPS = {
     "idle": (clip_idle, 3.0, True, False),
-    "walk": (clip_walk, 1.0, True, False),
+    "walk": (clip_walk, WALK_T, True, False),
     "jog": (clip_jog, 0.72, True, False),
     "run": (clip_run, 0.6, True, False),
     "crouch_idle": (clip_crouch_idle, 2.0, True, False),
@@ -3071,10 +3291,14 @@ def export_animations():
 
 def export_props():
     reset_scene()
-    objs = []
+    objs, parts = [], []
     for name in PROPS:
         ob, part = build_prop(name)
         objs.append(ob)
+        parts.append(part)
+    stats = ct.texture_props(objs, parts, [mesh_material_names(p) for p in parts], PALETTE, PROP_ATLAS, seed=5)
+    for g, (size, texel_mm, cov) in stats.items():
+        print(f"  hand_tools atlas: {size}px, {texel_mm:.2f} mm/texel, {cov * 100:.0f}% covered")
     path = OUT_DIR / "hand_tools.glb"
     export_glb(path, objs, animations=False)
     print(f"{path.name}: {len(objs)} props")
