@@ -43,6 +43,7 @@ public partial class NetSession : Node
 
     private readonly HashSet<int> _readyPeers = [];
     private readonly Dictionary<int, PlayerProfile> _profiles = [];
+    private readonly Dictionary<int, ContentManifest> _contents = [];
     private int _maxPlayers = NetProtocol.DefaultMaxPlayers;
     private string? _refusal;
     private string _password = "";
@@ -141,6 +142,7 @@ public partial class NetSession : Node
         CloseSocket();
         _readyPeers.Clear();
         _profiles.Clear();
+        _contents.Clear();
         State = SessionState.Offline;
     }
 
@@ -204,6 +206,7 @@ public partial class NetSession : Node
         CloseSocket();
         _readyPeers.Clear();
         _profiles.Clear();
+        _contents.Clear();
         // Back to hosting its own (loaded) world.
         if (State == SessionState.Connecting || State == SessionState.Connected)
             HostStage = LoadStage.Entering;
@@ -257,6 +260,7 @@ public partial class NetSession : Node
         }
         _readyPeers.Add(peer);
         _profiles[peer] = profile;
+        _contents[peer] = content;
         RpcId(peer, MethodName.Welcome, NetProtocol.Version);
         RpcId(peer, MethodName.HostLoading, (int)HostStage, Profile.Name);
         GD.Print($"[net] peer {peer} ({profile.Name}) joined");
@@ -312,6 +316,24 @@ public partial class NetSession : Node
         GetTree().CreateTimer(0.25).Timeout += () => Kick(peer);
     }
 
+    /// <summary>
+    /// Host: drops every joined client whose content (as sent on join) no longer matches <see cref="Content"/>,
+    /// telling it why, after the host reloaded its mods. Returns the peers dropped.
+    /// </summary>
+    public IReadOnlyList<int> RecheckContent()
+    {
+        var dropped = new List<int>();
+        foreach (var peer in _readyPeers.ToList())
+        {
+            if (_contents.TryGetValue(peer, out var content) && ContentManifest.Differences(Content, content) is { Count: > 0 } differences)
+            {
+                Refuse(peer, $"The host reloaded its mods and yours no longer match: {string.Join("; ", differences)}.");
+                dropped.Add(peer);
+            }
+        }
+        return dropped;
+    }
+
     private void Kick(int peer)
     {
         if (IsInstanceValid(this) && State == SessionState.Hosting && Multiplayer.GetPeers().Contains(peer))
@@ -339,6 +361,7 @@ public partial class NetSession : Node
             GD.Print($"[net] peer {peer} left");
             PeerLeft?.Invoke(peer);
             _profiles.Remove(peer);
+            _contents.Remove(peer);
         }
     }
 

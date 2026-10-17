@@ -87,6 +87,8 @@ public class LaunchOptionsTests
             (options.AiPort, options.AiBind, options.AiToken, options.RecordPath, options.ReplayPath));
         Assert.Equal((5000, "0.0.0.0"), (Parse("--ai", "5000", "--ai-bind", "0.0.0.0").AiPort, Parse("--ai-bind", "0.0.0.0").AiBind));
         Assert.Null(Parse("--host").AiPort);
+        Assert.True(Parse("--host", "--ai", "--ai-allow-reload-with-clients").AiAllowReloadWithClients);
+        Assert.False(Parse("--host", "--ai").AiAllowReloadWithClients);
     }
 
     [Fact]

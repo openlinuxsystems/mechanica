@@ -291,10 +291,7 @@ public partial class Main : Node3D
         var characters = CharacterBook ??= LoadCharacters(mods);
         // World data, recipes, bots, raids and quests are part of the content check on join: every peer regenerates
         // the world from the first, shows the recipes in its station screens and the bots the host sends.
-        var content = Content ??= ContentManifest.From(mods) with
-        {
-            Fingerprint = $"{mods.Fingerprint}+{world.Fingerprint}+{recipes.Fingerprint}+{bots.Fingerprint}+{raids.Fingerprint}+{quests.Fingerprint}+{characters.Fingerprint}",
-        };
+        var content = Content ??= Core.ModTools.GameContent.ManifestOf(mods, world, recipes, bots, raids, quests, characters);
         Assets = new PartAssets(mods);
 
         Session = new NetSession { Name = "Session", Content = content, Profile = profile };
@@ -692,20 +689,22 @@ public partial class Main : Node3D
     }
 
     /// <summary>
-    /// Switches to newly loaded mods, as the Test Sandbox does after the Part Editor exports. Clients
-    /// already connected stay; the next client to join is checked against the new mods.
+    /// Switches to newly loaded mods, as the Test Sandbox does after the Part Editor exports: parts, sounds,
+    /// part scripts and bot types. World generation, recipes, raids, quests and characters stay as the world
+    /// started with them until a new world. Clients already connected stay; the next client to join is checked
+    /// against the content now running.
     /// </summary>
     public void ReloadMods(ModLoadResult mods)
     {
         Mods = mods;
-        Content = ContentManifest.From(mods);
+        BotTypes = LoadBots(mods);
+        Content = Core.ModTools.GameContent.ManifestOf(mods, WorldGen!, Recipes!, BotTypes, RaidTable!, QuestBook!, CharacterBook!);
         Session.Content = Content;
         Assets.SetContent(mods);
         Build.SetContent(mods);
         SoundEvents = LoadSounds(mods);
         Sounds.SetRegistry(SoundEvents);
         Scripts.SetContent(mods);
-        BotTypes = LoadBots(mods);
         Bots.SetContent(mods, BotTypes);
         Hammer?.ReloadParts();
     }

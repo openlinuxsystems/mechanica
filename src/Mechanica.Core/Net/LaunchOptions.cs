@@ -19,7 +19,7 @@ public enum SessionMode
 /// <summary>
 /// Session settings from the command line (the user arguments after <c>--</c>):
 /// <c>--host [port]</c>, <c>--join address[:port]</c>, <c>--max-players n</c>, <c>--seed n</c>, <c>--creative</c> or <c>--survival</c> and <c>--easy</c>; on the host also the
-/// external AI endpoint (<c>--ai [port]</c>, <c>--ai-bind address</c>, <c>--ai-token token</c>) and
+/// external AI endpoint (<c>--ai [port]</c>, <c>--ai-bind address</c>, <c>--ai-token token</c>, <c>--ai-allow-reload-with-clients</c>) and
 /// record/replay of Action API calls (<c>--record file</c>, <c>--replay file</c>) and a saved world to load
 /// (<c>--load file</c>); on any instance the player's name (<c>--name name</c>) and the world's password (<c>--password text</c>).
 /// </summary>
@@ -54,6 +54,12 @@ public sealed record LaunchOptions
     /// the game also reads it from the <c>MECHANICA_AI_TOKEN</c> environment variable.
     /// </summary>
     public string? AiToken { get; init; }
+
+    /// <summary>
+    /// Whether the AI endpoint's <c>mods.reload</c> may run while clients are joined (<c>--ai-allow-reload-with-clients</c>);
+    /// clients whose mods then differ are dropped. Off by default, so a reload never desyncs a client.
+    /// </summary>
+    public bool AiAllowReloadWithClients { get; init; }
 
     /// <summary>File to write the host's Action API calls to when the game quits, or null.</summary>
     public string? RecordPath { get; init; }
@@ -156,6 +162,9 @@ public sealed record LaunchOptions
                         return Fail($"--max-players needs a number from 1 to {NetProtocol.MaxPlayersLimit}.", out error);
                     result = result with { MaxPlayers = max };
                     i++;
+                    break;
+                case "--ai-allow-reload-with-clients":
+                    result = result with { AiAllowReloadWithClients = true };
                     break;
                 case "--creative":
                     result = result with { GameMode = Survival.GameMode.Creative };

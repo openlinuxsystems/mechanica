@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Mechanica.Core.ModTools;
 using MoonSharp.Interpreter;
 
 namespace Mechanica.Scripting.Editor;
@@ -34,6 +35,10 @@ public static partial class LuaSyntax
             return error.Line > lines ? error with { Line = lines, Column = 0 } : error;
         }
     }
+
+    /// <summary><see cref="Check"/> in the shape the mod tools' validation takes.</summary>
+    public static ScriptProblem? Problem(string source) =>
+        Check(source) is { } error ? new ScriptProblem(error.Line, error.Column, error.Message) : null;
 
     /// <summary>
     /// Splits a MoonSharp message such as <c>mod:scripts/x.lua:(3,4-9): unexpected symbol</c> into its

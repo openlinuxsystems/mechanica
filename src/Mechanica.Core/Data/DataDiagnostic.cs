@@ -117,6 +117,9 @@ public static class DiagnosticCodes
     // 12xx: player characters
     public const string CharacterInvalid = "MD1201";
     public const string DuplicateCharacter = "MD1202";
+
+    // 13xx: Lua scripts
+    public const string ScriptSyntax = "MD1301";
 }
 
 /// <summary>Collects diagnostics for one file, filling in the file name.</summary>
