@@ -386,6 +386,13 @@
         "soil": {
           "capacity": 300,
           "growth": 1
+        },
+        "sounds": {
+          "use": "pickup_produce"
+        },
+        "script": "scripts/soil.lua",
+        "properties": {
+          "interval": 0.5
         }
       },
       "model": [

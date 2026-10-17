@@ -30,7 +30,7 @@ public sealed partial class ScriptRuntime : ILogicHost
     public bool Creative { get; set; }
 
     /// <inheritdoc/>
-    public string? CheckActivate(Creation creation, int part)
+    public string? CheckActivate(ActionCaller caller, Creation creation, int part)
     {
         Reconcile();
         if (!_instances.TryGetValue((creation.Id, part), out var instance) || instance.Env is null)
@@ -38,12 +38,35 @@ public sealed partial class ScriptRuntime : ILogicHost
         if (instance.Fault is { } fault)
             return $"Its script is stopped: {fault}";
         var hook = instance.Env.RawGet(Hooks.OnActivate);
-        return hook is { Type: DataType.Function } ? null : $"{creation.DefinitionOf(part).Name ?? instance.PartType} has nothing to use.";
+        if (hook is not { Type: DataType.Function })
+            return $"{creation.DefinitionOf(part).Name ?? instance.PartType} has nothing to use.";
+        // can_activate(peer) may refuse with a reason; like an item's can_use it only reads.
+        var previous = _phase;
+        _phase = ItemPhase.Checking;
+        DynValue[]? values;
+        try
+        {
+            values = CallHook(instance, Hooks.CanActivate, DynValue.NewNumber(caller.Peer));
+        }
+        finally
+        {
+            _phase = previous;
+        }
+        if (values is null)
+            return $"Its script is stopped: {instance.Fault}";
+        return values.Length > 0 && values[0].Type == DataType.String ? values[0].String
+            : values.Length > 0 && values[0].Type == DataType.Boolean && !values[0].Boolean ? $"You cannot use the {creation.DefinitionOf(part).Name ?? instance.PartType} now."
+            : null;
     }
 
     /// <inheritdoc/>
-    public void Activate(ActionCaller caller, Creation creation, int part) =>
-        Invoke(creation.Id, part, Hooks.OnActivate, (double)caller.Peer);
+    public JsonElement? Activate(ActionCaller caller, Creation creation, int part)
+    {
+        var result = Invoke(creation.Id, part, Hooks.OnActivate, (double)caller.Peer);
+        if (!result.Ok)
+            throw new InvalidOperationException(result.Error);
+        return result.Values.Count > 0 && result.Values[0] is { } value ? JsonSerializer.SerializeToElement(value) : null;
+    }
 
     /// <inheritdoc/>
     public void Seated(SeatAssignment seat, bool entered) =>

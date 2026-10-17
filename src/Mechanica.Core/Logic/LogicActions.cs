@@ -81,11 +81,14 @@ public interface ILogicHost
     /// <summary>The logic and power bus the scripts drive.</summary>
     SignalBus Signals { get; }
 
-    /// <summary>Null when a player can use the part now (its script handles <c>on_activate</c>), or why not. Changes nothing.</summary>
-    string? CheckActivate(Creation creation, int part);
+    /// <summary>
+    /// Null when <paramref name="caller"/> can use the part now (its script handles <c>on_activate</c>, and its
+    /// <c>can_activate(peer)</c>, if it has one, allows it), or why not. Changes nothing.
+    /// </summary>
+    string? CheckActivate(ActionCaller caller, Creation creation, int part);
 
-    /// <summary>Calls the part's <c>on_activate(peer)</c>.</summary>
-    void Activate(ActionCaller caller, Creation creation, int part);
+    /// <summary>Calls the part's <c>on_activate(peer)</c> and returns what it returned (plain data), if anything.</summary>
+    JsonElement? Activate(ActionCaller caller, Creation creation, int part);
 
     /// <summary>A player sat down in (<paramref name="entered"/>) or stood up from a seat: calls its script's <c>on_enter</c> or <c>on_leave</c>.</summary>
     void Seated(SeatAssignment seat, bool entered);
@@ -100,7 +103,8 @@ public interface ILogicHost
 /// <item><c>ConnectParts</c> / <c>DisconnectParts</c>: the Connect Tool adds or takes away a logic link
 /// (<see cref="Creation.CheckLink"/>).</item>
 /// <item><c>ConfigurePart</c>: changes a placed part's settings (<see cref="PartSettings"/>).</item>
-/// <item><c>ActivatePart</c>: a player uses a part (a button or switch), which calls its script's <c>on_activate</c>.</item>
+/// <item><c>ActivatePart</c>: a player uses a part (a button, a switch, soil with a ripe crop), which calls its script's
+/// <c>can_activate</c> and <c>on_activate</c>; what <c>on_activate</c> returns is the action's value.</item>
 /// <item><c>EnterSeat</c> / <c>LeaveSeat</c>: a player sits in a seat part or stands up (<see cref="SeatRegistry"/>).</item>
 /// <item><c>InspectCreation</c>: reads a Creation's parts, Bodies, joints, links, signals and scripts (a query).</item>
 /// </list>
@@ -259,15 +263,14 @@ public sealed class LogicActions(BuildSettings settings, IBuildWorld world, ILog
             return $"There is no creation {args.Creation}.";
         if (creation.FindPart(args.Part) is null)
             return $"Creation {args.Creation} has no part {args.Part}.";
-        return host.CheckActivate(creation, args.Part) ?? CheckReach(caller, creation, args.Part);
+        return host.CheckActivate(caller, creation, args.Part) ?? CheckReach(caller, creation, args.Part);
     }
 
     private JsonElement? ApplyActivate(ActionCaller caller, LogicPartArgs args)
     {
         var creation = world.FindCreation(args.Creation)!;
         PlayPartSound(creation, args.Part, "use", "logic_activate");
-        host.Activate(caller, creation, args.Part);
-        return null;
+        return host.Activate(caller, creation, args.Part);
     }
 
     private string? ValidateEnter(ActionCaller caller, LogicPartArgs args)

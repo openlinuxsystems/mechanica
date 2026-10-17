@@ -98,6 +98,8 @@ public partial class SaveSync : Node
     {
         var diagnostics = new List<DataDiagnostic>();
         WorldName = save.Name;
+        // The scripts' clock carries on from the save, so the times they stored (a soil's last growth) still hold.
+        Scripts.Runtime.Time = save.Time;
         foreach (var creation in save.ReadCreations(Catalog, save.Name, diagnostics))
         {
             if (Creations.Find(creation.Id) is null)
@@ -139,6 +141,7 @@ public partial class SaveSync : Node
             SavedAt = DateTimeOffset.UtcNow,
             Mode = Survival.Mode,
             Seed = World.Seed,
+            Time = runtime.Time,
             Mods = content.Mods,
             Fingerprint = content.Fingerprint,
             Destroyed = [.. World.State.Destroyed],

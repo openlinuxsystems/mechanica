@@ -512,9 +512,7 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
             {
                 if (soil.Seed is null || creation.FindPart(part) is null)
                     continue;
-                var seed = SeedOf(soil.Seed);
-                list.Add(new CropTarget(creation.Id, part, PartCentre(creation, part), seed?.Value ?? 1f,
-                    soil.StageFor(seed?.GrowTime ?? 0) >= SoilState.Stages));
+                list.Add(new CropTarget(creation.Id, part, PartCentre(creation, part), SeedOf(soil.Seed)?.Value ?? 1f, soil.Ripe));
             }
         }
         _crops = (survivalWorld.Now, key, list);

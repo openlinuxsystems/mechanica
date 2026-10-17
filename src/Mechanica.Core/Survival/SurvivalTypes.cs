@@ -7,10 +7,10 @@ using Mechanica.Core.World;
 
 namespace Mechanica.Core.Survival;
 
-/// <summary>Arguments of the soil actions (<c>Plant</c>, <c>Water</c>, <c>Harvest</c>) and <c>SetSpawn</c>.</summary>
+/// <summary>Arguments of <c>SetSpawn</c>: one part of a Creation.</summary>
 /// <param name="Creation">Creation holding the part.</param>
-/// <param name="Part">The soil (or bed) part.</param>
-/// <param name="Slot">The caller's slot holding the seed or water; <c>Harvest</c> and <c>SetSpawn</c> ignore it.</param>
+/// <param name="Part">The bed part.</param>
+/// <param name="Slot">Unused; kept so older callers that send it still parse.</param>
 public sealed record PartUseArgs(int Creation, int Part, int Slot = 0);
 
 /// <summary>Arguments of <c>CollectWater</c>: fill a bucket where the caller aims at water.</summary>
@@ -49,7 +49,7 @@ public sealed record VitalsView(int Peer, float Health, float MaxHealth, bool De
 /// <param name="Part">The soil part.</param>
 /// <param name="Seed">Qualified id of the planted seed, or null (left out of the JSON, so it defaults).</param>
 /// <param name="Crop">Qualified id of the item it yields, or null.</param>
-/// <param name="Stage">Growth stage, 0 to <see cref="SoilState.Stages"/> (ripe).</param>
+/// <param name="Stage">Growth stage, 0 to <see cref="SoilState.Stages"/> (ripe), as the soil's script last set it.</param>
 /// <param name="Water">Seconds of water left.</param>
 /// <param name="Capacity">Most seconds of water the soil holds.</param>
 public sealed record SoilView(int Creation, int Part, string? Seed = null, string? Crop = null, int Stage = 0, float Water = 0, float Capacity = 0)
@@ -92,10 +92,6 @@ public sealed record ProjectileView(int Id, int Owner, Vec3 From, Vec3 Velocity,
 /// <param name="Point">Where it ended, in world metres.</param>
 /// <param name="Hit">What it hit, or null when its lifetime ran out.</param>
 public sealed record ProjectileLanding(int Id, int Owner, Vector3 Point, RayHit? Hit);
-
-/// <summary>Value of a successful <c>Harvest</c>.</summary>
-/// <param name="Items">What went into the caller's inventory.</param>
-public sealed record HarvestResult(IReadOnlyList<ItemAmount> Items);
 
 /// <summary>Value of a successful <c>PickUp</c>.</summary>
 /// <param name="Taken">How many items the caller took.</param>

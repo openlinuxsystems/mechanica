@@ -132,8 +132,9 @@ public class SurvivalActionsTests
 
     // ---- Farming ----
 
+    // How crops grow and are harvested is the soil's Lua script (Mechanica.Scripting.Tests.SoilScriptTests).
     [Fact]
-    public void ACropGrowsOnlyWhileWateredAndIsHarvestedRipe()
+    public void SeedsAndWaterGoInThroughHostPrimitives()
     {
         var soil = _f.Add(Soil, new Vector3(0, 0, 1));
         var survival = _f.Survival;
@@ -144,9 +145,10 @@ public class SurvivalActionsTests
         Assert.Equal(new SoilView(soil, 1, Seed, Crop, 0, 0, 60), survival.PlantSeed(Me, soil, 1, Seed));
         Assert.Equal("Something is already growing there.", survival.CheckPlant(Me, soil, 1, Seed));
         Assert.Equal(2, _f.Pockets(Me).Count(Seed)); // the seed's script uses one up, not the primitive
+        Assert.Equal(3f, survival.CropValue());
 
         survival.Tick(100);
-        Assert.Equal(0, View(soil).Stage); // dry soil: nothing grows
+        Assert.Equal(0f, _f.World.FindCreation(soil)!.SoilOf(1)!.Grown); // C# grows nothing
 
         Assert.Throws<ArgumentOutOfRangeException>(() => survival.WaterSoil(Me, soil, 1, 0));
         Assert.Equal(30f, survival.WaterSoil(Me, soil, 1, 30).Water);
@@ -154,21 +156,12 @@ public class SurvivalActionsTests
         Assert.Equal("The soil is already full of water.", survival.CheckWater(Me, soil, 1));
         Assert.Throws<InvalidOperationException>(() => survival.WaterSoil(Me, soil, 1, 30));
 
-        survival.Tick(10); // growth 2: 20 of 40 s
-        Assert.Equal(2, View(soil).Stage);
-        Assert.Equal(50f, View(soil).Water);
-        Assert.Equal("The Crop is not ripe yet.", _f.Refused(Me, SurvivalActions.Harvest, new { creation = soil, part = 1 }));
-        Assert.Equal(3f, survival.CropValue());
-
-        survival.Tick(100); // ripe after 10 more s; the rest of the water stays
+        // What the soil's script stores is what players, raids and GetSoil see.
+        _f.World.FindCreation(soil)!.SoilOf(1)!.Set(grown: 40, water: 40, stage: SoilState.Stages);
         Assert.True(View(soil).Ripe);
-        Assert.Equal(40f, View(soil).Water);
-        var harvest = _f.Ok<HarvestResult>(Me, SurvivalActions.Harvest, new { creation = soil, part = 1 });
-        Assert.Equal([new ItemAmount(Crop, 2), new ItemAmount(Seed, 1)], harvest.Items);
-        Assert.Equal(3, _f.Pockets(Me).Count(Seed)); // 2 + 1 back
-        Assert.Null(View(soil).Seed);
-        Assert.Equal(0f, survival.CropValue());
-        Assert.Equal("Nothing is growing there.", _f.Refused(Me, SurvivalActions.Harvest, new { creation = soil, part = 1 }));
+        Assert.Equal(new SoilView(soil, 1, Seed, Crop, SoilState.Stages, 40, 60),
+            _f.Ok<SoilView>(Me, SurvivalActions.GetSoil, new { creation = soil, part = 1 }));
+        Assert.False(_f.Dispatch(Me, "Harvest", new { creation = soil, part = 1 }).Ok); // harvesting is ActivatePart now
     }
 
     [Fact]
@@ -182,17 +175,6 @@ public class SurvivalActionsTests
         Assert.Equal("The Block is not soil.", _f.Survival.CheckSoil(Me, block, 1));
         Assert.Equal("There is no part 1 in creation 99.", _f.Survival.CheckWater(Me, 99, 1));
         Assert.Equal("Unknown item 'test:nothing'.", _f.Survival.CheckPlant(Me, _f.Add(Soil, new Vector3(0, 0, 1)), 1, "test:nothing"));
-    }
-
-    [Fact]
-    public void AHarvestNeedsRoom()
-    {
-        var soil = _f.Add(Soil, new Vector3(0, 0, 1));
-        _f.Survival.PlantSeed(Me, soil, 1, Seed);
-        _f.World.FindCreation(soil)!.SoilOf(1)!.Load(Seed, 40, 0);
-        foreach (var slot in Enumerable.Range(0, 4))
-            _f.Pockets(Me).SetSlot(slot, new ItemStack(Scrap, 50));
-        Assert.Equal("Make room in your inventory first.", _f.Refused(Me, SurvivalActions.Harvest, new { creation = soil, part = 1 }));
     }
 
     [Fact]
@@ -215,12 +197,13 @@ public class SurvivalActionsTests
     {
         var soil = _f.Add(Soil, new Vector3(0, 0, 1));
         var creation = _f.World.FindCreation(soil)!;
-        creation.SoilOf(1)!.Load(Seed, 12.5f, 20);
+        creation.SoilOf(1)!.Load(Seed, 12.5f, 20, 1, 1234.5);
 
         var json = CreationJson.Write(creation);
         Assert.Contains("\"soil\": {", json);
         var read = CreationJson.Read(json, _f.Catalog, "test", [])!;
-        Assert.Equal((Seed, 12.5f, 20f), (read.SoilOf(1)!.Seed, read.SoilOf(1)!.Grown, read.SoilOf(1)!.Water));
+        var loaded = read.SoilOf(1)!;
+        Assert.Equal((Seed, 12.5f, 20f, 1, 1234.5), (loaded.Seed, loaded.Grown, loaded.Water, loaded.Stage, loaded.Updated));
         Assert.Equal(json, CreationJson.Write(read));
 
         Assert.Null(creation.SoilOf(99));

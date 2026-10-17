@@ -20,8 +20,9 @@ namespace Mechanica.Core.Survival;
 /// combat primitives here: <see cref="Hitscan"/>, <see cref="Hit"/>, <see cref="Splash"/>, <see cref="Launch"/>
 /// (projectiles) and <see cref="Heal"/>.</item>
 /// <item>Farming: seeds and the water bucket are Lua item scripts (chunk 20b) that plant and water soil
-/// through <see cref="PlantSeed"/> and <see cref="WaterSoil"/>. Buckets come from <c>CollectWater</c>, crops
-/// grow only while their soil is watered, and <c>Harvest</c> picks them once ripe.</item>
+/// through <see cref="PlantSeed"/> and <see cref="WaterSoil"/>. Buckets come from <c>CollectWater</c>. How
+/// crops grow and are harvested is the soil part's own Lua script (D2: growth in <c>on_update</c>, the harvest
+/// in <c>on_activate</c> through <c>ActivatePart</c>); C# only keeps the <see cref="SoilState"/> it decides.</item>
 /// <item>Items on the ground: <c>DropItems</c>, <c>PickUp</c>. Broken containers, broken world objects and
 /// dead players leave piles too.</item>
 /// <item><c>SetSpawn</c> picks the bed a player respawns at. <c>GetVitals</c> and <c>GetSoil</c> are queries.</item>
@@ -33,9 +34,6 @@ namespace Mechanica.Core.Survival;
 public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings settings, InventoryActions inventories, ISurvivalWorld world)
     : IBuildCosts, IStrikeTargets
 {
-    /// <summary>Action name for harvesting a ripe crop.</summary>
-    public const string Harvest = "Harvest";
-
     /// <summary>Action name for filling a bucket at water.</summary>
     public const string CollectWater = "CollectWater";
 
@@ -110,7 +108,6 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     /// <summary>Registers every survival action.</summary>
     public void Register(ActionDispatcher dispatcher)
     {
-        dispatcher.Register<PartUseArgs>(Harvest, ValidateHarvest, ApplyHarvest);
         dispatcher.Register<CollectWaterArgs>(CollectWater, ValidateCollectWater, ApplyCollectWater);
         dispatcher.Register<PartUseArgs>(SetSpawn, ValidateSetSpawn, ApplySetSpawn);
         dispatcher.Register<DropItemsArgs>(DropItems, ValidateDrop, ApplyDrop);
@@ -630,7 +627,7 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
             return bad;
         if (catalog.FindDefinition(seed) is not { } item)
             return $"Unknown item '{seed}'.";
-        if (item.Seed?.Crop is not { } crop || catalog.FindDefinition(crop) is null)
+        if (CropOf(Identifiers.Qualify(seed), item.Seed) is not { } crop || catalog.FindDefinition(crop) is null)
             return $"{item.Name ?? seed} cannot be planted.";
         return world.FindCreation(creationId)!.SoilOf(partId)!.Seed is not null ? "Something is already growing there." : null;
     }
@@ -672,41 +669,6 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         return SoilViewOf(creation, partId);
     }
 
-    private string? ValidateHarvest(ActionCaller caller, PartUseArgs args)
-    {
-        if (CheckSoilUse(caller, args, out var soil, out _) is { } bad)
-            return bad;
-        if (soil!.Seed is not { } seedId || catalog.FindDefinition(seedId)?.Seed is not { } seed)
-            return "Nothing is growing there.";
-        if (soil.StageFor(seed.GrowTime ?? 0) < SoilState.Stages)
-            return $"The {NameOf(seed.Crop!)} is not ripe yet.";
-        return inventories.PlayerInventory(caller.Peer).CanAddAll(HarvestOf(seedId, seed)) ? null : "Make room in your inventory first.";
-    }
-
-    private JsonElement? ApplyHarvest(ActionCaller caller, PartUseArgs args)
-    {
-        var soil = world.FindCreation(args.Creation)!.SoilOf(args.Part)!;
-        var items = HarvestOf(soil.Seed!, catalog.FindDefinition(soil.Seed!)!.Seed!);
-        inventories.PlayerInventory(caller.Peer).TryAddAll(items);
-        soil.Clear();
-        return Value(new HarvestResult(items));
-    }
-
-    private static List<ItemAmount> HarvestOf(string seedId, SeedDefinition seed)
-    {
-        var items = new List<ItemAmount> { new(Identifiers.Qualify(seed.Crop!), seed.Yield ?? 1) };
-        if (seed.Seeds is > 0)
-            items.Add(new ItemAmount(seedId, seed.Seeds.Value));
-        return items;
-    }
-
-    private string? CheckSoilUse(ActionCaller caller, PartUseArgs args, out SoilState? soil, out PartDefinition? definition)
-    {
-        if (FindSoil(args.Creation, args.Part, out soil, out definition) is { } bad)
-            return bad;
-        return CheckReach(caller, PartCentre(world.FindCreation(args.Creation)!, args.Part));
-    }
-
     private string? FindSoil(int creationId, int partId, out SoilState? soil, out PartDefinition? definition)
     {
         soil = null;
@@ -722,11 +684,14 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     public SoilView SoilViewOf(Creation creation, int partId)
     {
         var soil = creation.SoilOf(partId)!;
-        var seed = soil.Seed is { } id ? catalog.FindDefinition(id)?.Seed : null;
-        var crop = seed?.Crop is { } c ? Identifiers.Qualify(c) : null;
-        return new SoilView(creation.Id, partId, soil.Seed, crop, soil.StageFor(seed?.GrowTime ?? 0), soil.Water,
+        var crop = soil.Seed is { } id ? CropOf(id, catalog.FindDefinition(id)?.Seed) : null;
+        return new SoilView(creation.Id, partId, soil.Seed, crop, soil.Stage, soil.Water,
             creation.DefinitionOf(partId).Soil?.Capacity ?? 0);
     }
+
+    // The qualified item a seed grows into: a bare id is in the seed's own mod.
+    private static string? CropOf(string seedId, SeedDefinition? seed) =>
+        seed?.Crop is { } crop ? Identifiers.Qualify(crop, seedId.Split(':')[0]) : null;
 
     /// <summary>
     /// What every planted crop is worth, summed (each seed's <c>value</c>). Chunk 21 scales raids by it.
@@ -883,20 +848,12 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     // ---- Ticking ----
 
     /// <summary>
-    /// Grows every watered crop, moves projectiles and clears piles that have lain too long. The host calls
-    /// it every physics tick.
+    /// Moves projectiles and clears piles that have lain too long. The host calls it every physics tick.
+    /// (Crops grow in the soil part's script.)
     /// </summary>
     public void Tick(float seconds)
     {
         StepProjectiles(seconds);
-        foreach (var creation in world.AllCreations)
-        {
-            foreach (var (part, soil) in creation.ActiveSoil.ToList())
-            {
-                var growTime = soil.Seed is { } seed ? catalog.FindDefinition(seed)?.Seed?.GrowTime ?? 0 : 0;
-                soil.Tick(seconds, creation.DefinitionOf(part).Soil?.Growth ?? 1f, growTime);
-            }
-        }
         foreach (var expired in _drops.Values.Where(d => d.Expires <= world.Now).Select(d => d.Id).ToList())
             RemoveDrop(expired);
     }

@@ -4,7 +4,7 @@ namespace Mechanica.Scripting;
 /// <param name="Name">What a script writes: <c>part.apply_force</c>, <c>on_update</c>, <c>state</c>.</param>
 /// <param name="Signature">How it is called, e.g. <c>part.apply_force(force, at?)</c>.</param>
 /// <param name="Summary">One line on what it does.</param>
-/// <param name="Group">Section: Hooks, Globals, part, creation, world, sound, item, holder, inventory, combat, farm or vec3.</param>
+/// <param name="Group">Section: Hooks, Globals, part, creation, world, sound, soil, player, item, holder, inventory, combat, farm or vec3.</param>
 public sealed record LuaApiEntry(string Name, string Signature, string Summary, string Group);
 
 /// <summary>
@@ -20,7 +20,8 @@ public static class LuaApi
         new("on_update", "function on_update(dt)", "Runs every physics step (dt seconds) while the Creation is simulated.", "Hooks"),
         new("on_reload", "function on_reload()", "Runs after a hot reload instead of on_create; state is kept.", "Hooks"),
         new("on_destroy", "function on_destroy()", "Runs when the part is removed or its Creation goes away.", "Hooks"),
-        new("on_activate", "function on_activate(peer)", "A player used the part (ActivatePart: F on a button or switch).", "Hooks"),
+        new("on_activate", "function on_activate(peer)", "A player used the part (ActivatePart: F on a button, a switch, ripe soil); the return value is the action's result.", "Hooks"),
+        new("can_activate", "function can_activate(peer)", "Return nil to let the player use the part, or the reason ActivatePart is refused. May not change the world.", "Hooks"),
         new("on_power", "function on_power(amount)", "The sum of the part's logic inputs changed; amount is the new sum.", "Hooks"),
         new("on_collision", "function on_collision(other, impulse)", "The part's Body began touching something; other has creation and part when it is a Creation.", "Hooks"),
         new("get_outputs", "function get_outputs()", "Called once per step; returns the part's logic output (a number or boolean), like part.set_output.", "Hooks"),
@@ -77,16 +78,24 @@ public static class LuaApi
         new("creation.take", "creation.take(item, count?)", "Takes up to count (default 1) of an item from the Creation's containers; returns how many it took.", "creation"),
 
         new("world.gravity", "world.gravity()", "Gravity acceleration, in m/s².", "world"),
-        new("world.time", "world.time()", "Seconds simulated since the scripts started.", "world"),
+        new("world.time", "world.time()", "Seconds the world has been simulated; carries on across saves.", "world"),
         new("world.tick", "world.tick()", "Physics steps since the scripts started.", "world"),
         new("world.raycast", "world.raycast(from, to)", "First thing on the segment, skipping the script's own Creation: {position, normal, distance, creation?, part?} or nil.", "world"),
         new("world.creative", "world.creative()", "True in Creative, where engines need no fuel.", "world"),
         new("world.overlap_sphere", "world.overlap_sphere(centre, radius)", "Everything a sphere touches, skipping the script's own Creation: a list of {creation?, part?}.", "world"),
+        new("world.item", "world.item(id, key?)", "An item's or part's data as in its JSON (or just its key section, e.g. \"seed\"), or nil for an unknown id.", "world"),
 
         new("sound.play", "sound.play(id, at?)", "Plays a one-shot sound event at the part (or a world point) for everyone in earshot; returns true or false, reason.", "sound"),
         new("sound.start", "sound.start(id, parameters?)", "Starts a looping sound event that follows the part; returns its handle, or nil, reason.", "sound"),
         new("sound.set_parameter", "sound.set_parameter(handle, name, value)", "Bends one of the part's loops (pitch, volume or the event's own parameters); returns true or false, reason.", "sound"),
         new("sound.stop", "sound.stop(handle)", "Stops one of the part's loops; returns true or false, reason.", "sound"),
+
+        new("soil.get", "soil.get()", "This soil part's stored state: {seed?, grown, water, stage, stages, updated?}.", "soil"),
+        new("soil.set", "soil.set(values)", "Stores any of grown, water, stage and updated ({grown = 12, stage = 1}); the soil script decides growth.", "soil"),
+        new("soil.clear", "soil.clear()", "Takes the crop out of this soil, leaving its water.", "soil"),
+
+        new("player.can_give", "player.can_give(peer, items)", "True when every {item, count} in items fits in the player's inventory, or false and why.", "player"),
+        new("player.give", "player.give(peer, items)", "Puts every {item, count} in the player's inventory, or nothing when they don't all fit; true, or false and why.", "player"),
 
         new("item.id", "item.id()", "The held item's qualified id, e.g. vanilla:potato_blaster.", "item"),
         new("item.name", "item.name(id?)", "The held item's display name, or another item's.", "item"),

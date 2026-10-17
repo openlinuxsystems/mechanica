@@ -49,7 +49,9 @@ internal sealed class SurvivalFixture
                 Properties = new JsonObject { ["damage"] = 40, ["interval"] = 1, ["range"] = 10, ["ammo"] = "bomb", ["radius"] = 4 } })
             .Add(Block, Placeable("block", PartCategory.Block) with { Durability = 2 })
             .Add(Chest, Placeable("chest", PartCategory.Container) with { Inventory = new InventoryDefinition { Slots = 4 } })
-            .Add(Soil, Placeable("soil", PartCategory.Decor) with { Soil = new SoilDefinition { Capacity = 60, Growth = 2 } })
+            // Soil runs the vanilla soil script (crops grow and are harvested in Lua); the Core tests run no scripts.
+            .Add(Soil, Placeable("soil", PartCategory.Decor) with { Soil = new SoilDefinition { Capacity = 60, Growth = 2 },
+                Script = "scripts/soil.lua", Properties = new JsonObject { ["interval"] = 0.5 } })
             .Add(Bed, Placeable("bed", PartCategory.Decor) with { RespawnPoint = true });
         Settings = settings ?? new SurvivalSettings
         {

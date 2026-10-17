@@ -38,6 +38,7 @@ public sealed partial class ScriptRuntime
     private readonly Queue<ScriptMessage> _messages = new();
     private IScriptSource _source;
     private Instance? _current;
+    private double _time;
 
     private sealed class FileEntry(ScriptFile file, LuaContext context)
     {
@@ -98,6 +99,9 @@ public sealed partial class ScriptRuntime
 
         /// <summary><c>on_activate(peer)</c>: a player used the part.</summary>
         public const string OnActivate = "on_activate";
+
+        /// <summary><c>can_activate(peer)</c>: may the player use the part now? Nil to allow, or the reason it can't. Changes nothing.</summary>
+        public const string CanActivate = "can_activate";
 
         /// <summary><c>on_power(amount)</c>: the part's power or logic input changed.</summary>
         public const string OnPower = "on_power";
@@ -165,8 +169,17 @@ public sealed partial class ScriptRuntime
     /// <summary>Steps run so far.</summary>
     public long Tick { get; private set; }
 
-    /// <summary>Seconds simulated so far (the sum of every step's dt).</summary>
-    public double Time { get; private set; }
+    /// <summary>
+    /// Seconds simulated so far (the sum of every step's dt): the scripts' <c>world.time()</c>. A loaded world sets
+    /// it to the time it was saved at (<c>SaveGame.Time</c>), so the clock carries on across saves and times
+    /// scripts stored (the soil's last growth) stay meaningful.
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">Set to a negative or non-finite value.</exception>
+    public double Time
+    {
+        get => _time;
+        set => _time = double.IsFinite(value) && value >= 0 ? value : throw new ArgumentOutOfRangeException(nameof(value), "time must be 0 or more seconds.");
+    }
 
     /// <summary>Every part script, by creation then part.</summary>
     public IReadOnlyList<ScriptInstanceInfo> Instances =>
@@ -200,7 +213,7 @@ public sealed partial class ScriptRuntime
     public void Update(float dt)
     {
         Tick++;
-        Time += dt;
+        _time += dt;
         Reconcile();
         ReconcileItems();
         DeliverSignals();

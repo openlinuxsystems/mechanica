@@ -237,6 +237,7 @@ in `properties`. The vanilla scripts read these properties:
 | | `impulse` (N·s) | Push given to the Body it hits (splash: at the centre). Default 0. |
 | `scripts/seed.lua` | (none) | Plants the seed in the soil aimed at. Its `seed` section (below) says what grows. |
 | `scripts/watering.lua` | `seconds` (s) | Seconds of water one use adds to the soil aimed at. The item is used up. |
+| `scripts/soil.lua` (a part) | `interval` (s) | How often the soil works out its crop's growth while its Creation is live. Growth is exact whatever it is (it comes from the world clock); it only bounds how late a new stage shows. The soil also grows, from the clock, the time its Creation was parked. F on a ripe crop (`ActivatePart`) harvests it. |
 
 ```json
 "script": "scripts/potato_gun.lua",
@@ -249,6 +250,9 @@ in `properties`. The vanilla scripts read these properties:
 | `seed.grow_time` | number > 0 (s) | Seconds of watered growth until ripe. Required. |
 | `seed.yield` | integer ≥ 1 | Crop items a harvest gives. Default 1. |
 | `seed.seeds` | integer ≥ 0 | Seeds a harvest gives back. Default 0. |
+
+The soil's script (vanilla `scripts/soil.lua`) reads these through `world.item(seed, "seed")`, so another
+soil script may treat them differently. A bare `crop` id is in the seed's own mod.
 | `seed.value` | number ≥ 0 | How much a planted crop draws raids (chunk 21). Default 1. |
 | `soil.capacity` | number > 0 (s) | Most seconds of water the soil holds. Required. |
 | `soil.growth` | number > 0 | Growth speed multiplier for crops on it. Default 1. |

@@ -87,7 +87,8 @@ template becomes the part's name.
 | `on_update(dt)` | Every physics step (`dt` seconds, 1/60 by default) while the Creation is simulated. A parked Creation (no player near) is not updated. |
 | `on_reload()` | After a hot reload, instead of `on_create`. `state` is kept. |
 | `on_destroy()` | When the part is removed or its Creation goes away. Part functions return `nil` here once the part is gone. |
-| `on_activate(peer)` | A player used the part: they pressed F on it (the `ActivatePart` action). Buttons and switches use it. |
+| `on_activate(peer)` | A player used the part: they pressed F on it (the `ActivatePart` action). Buttons, switches and soil (harvest) use it. What it returns (plain data) is the action's result. |
+| `can_activate(peer)` | Before every `on_activate`. Return `nil` to allow it, or a string: the reason `ActivatePart` is refused. Like an item's `can_use` it only reads: `soil.set`, `soil.clear` and `player.give` raise an error there. |
 | `on_power(amount)` | The sum of the part's logic inputs changed; `amount` is the new sum. It also runs when the script (re)starts with a non-zero input. See the [Logic and Power Tutorial](logic-power-tutorial.md). |
 | `on_collision(other, impulse)` | The part's Body began touching something. `other` is a table with `creation` and `part` when it is a Creation, empty for the ground; `impulse` is in N·s. |
 | `get_outputs()` | Called once per step after `on_update`; what it returns (a number, or a boolean as 1 or 0) is the part's logic output, as if it called `part.set_output`. |
@@ -181,11 +182,37 @@ The Creation the part belongs to.
 | Function | Returns |
 |----------|---------|
 | `world.gravity()` | Gravity acceleration, in m/s² (a `vec3`). |
-| `world.time()` | Seconds simulated since the scripts started. |
+| `world.time()` | Seconds the world has been simulated. Saves keep it, so the clock carries on when a world loads and times kept in `state` or on soil stay meaningful. |
 | `world.tick()` | Physics steps since the scripts started. |
 | `world.creative()` | `true` in Creative, where engines run without fuel. |
 | `world.raycast(from, to)` | The first thing on the segment from `from` to `to`, skipping the script's own Creation: `{position, normal, distance, creation?, part?}`, or `nil`. A ray may be at most `max_ray_length` m long. |
 | `world.overlap_sphere(centre, radius)` | Everything a sphere touches, skipping the script's own Creation: a list of `{creation?, part?}` (both missing for the ground). `radius` is at most `max_overlap_radius` m. |
+| `world.item(id, key?)` | An item's or part's data as written in its JSON (snake_case keys), or only its `key` section (`world.item(seed, "seed")` is `{crop, grow_time, yield, seeds, value}`), or `nil` for an unknown id. Bare ids are in the script's mod. Works in part and item scripts. |
+
+## `soil`
+
+The soil part the script runs on (chunk 20). The host only stores what the script decides; the vanilla
+`soil.lua` grows crops from the world clock and harvests them in `on_activate`. A soil function on a part
+without a `soil` section raises an error.
+
+| Function | Returns |
+|----------|---------|
+| `soil.get()` | `{seed?, grown, water, stage, stages, updated?}`: the planted seed (qualified id), seconds of growth done, seconds of water left, the growth stage (0 to `stages`, which is 4; `stages` is ripe), and the `world.time()` growth was last worked out at (missing until the script first sets it). `nil` once the part is gone. |
+| `soil.set(values)` | Stores any of `grown`, `water`, `stage` and `updated` (`soil.set{grown = 12, stage = 1, updated = world.time()}`); what is left out stays. `grown` and `stage` only apply with something planted; water is kept to the soil's `capacity`. A new stage or the soil running dry is sent to clients. |
+| `soil.clear()` | Takes the crop out (a harvest), leaving the water. |
+
+A parked Creation runs no `on_update`, so soil works growth out from the time since `updated` whenever it
+runs; the crop it gets is the same as growing step by step.
+
+## `player`
+
+Any player's inventory, from part and item scripts. Items are lists of `{item, count}` (`count` default 1;
+bare ids are in the script's mod).
+
+| Function | Returns |
+|----------|---------|
+| `player.can_give(peer, items)` | `true` when every item fits in the player's inventory at once, or `false` and why. |
+| `player.give(peer, items)` | Puts every item in the player's inventory, or nothing when they don't all fit: `true`, or `false` and why. |
 
 ## `sound`
 
@@ -309,8 +336,8 @@ are the same primitives bots use (chunk 21).
 Soil parts (chunk 20). A soil table is `{seed?, crop?, stage, ripe, water, capacity}`: the planted
 seed and its crop (qualified ids), the growth stage (0 to 4, 4 is `ripe`) and the seconds of water it
 holds of its `capacity`. Each function checks the part is soil within the holder's `reach`, and
-returns `nil` and the reason when it can't act. Crops grow, and are harvested, by the host (`Harvest`);
-the seed's own `seed` section sets what grows and how fast.
+returns `nil` and the reason when it can't act. Crops grow, and are harvested (`ActivatePart`), by the
+soil part's own script ([`soil`](#soil)); the seed's `seed` section sets what grows and how fast.
 
 | Function | Returns |
 |----------|---------|
