@@ -13,15 +13,6 @@ sky = SubResource("Sky_res")
 ambient_light_source = 3
 tonemap_mode = 2
 
-[sub_resource type="BoxShape3D" id="Ground_shape"]
-size = Vector3(256, 1, 256)
-
-[sub_resource type="PlaneMesh" id="Ground_mesh"]
-size = Vector2(256, 256)
-
-[sub_resource type="StandardMaterial3D" id="Ground_mat"]
-albedo_color = Color(0.36, 0.45, 0.32, 1)
-
 [sub_resource type="BoxShape3D" id="Step25cm_shape"]
 size = Vector3(2, 0.25, 2)
 
@@ -124,16 +115,6 @@ shadow_enabled = true
 
 [node name="SpawnPoint" type="Marker3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 4)
-
-[node name="Ground" type="StaticBody3D" parent="."]
-
-[node name="Shape" type="CollisionShape3D" parent="Ground"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
-shape = SubResource("Ground_shape")
-
-[node name="Mesh" type="MeshInstance3D" parent="Ground"]
-mesh = SubResource("Ground_mesh")
-surface_material_override/0 = SubResource("Ground_mat")
 
 [node name="Step25cm" type="StaticBody3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 0.125, -8)

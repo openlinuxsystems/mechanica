@@ -76,7 +76,8 @@ public partial class BuildSync : Node, IBuildWorld
     /// <inheritdoc/>
     public Creation? FindCreation(int id)
     {
-        // Validation measures reach from where the bodies are now, not where they were last saved.
+        // Validation measures reach from where the bodies are now, not where they were last saved
+        // (a parked Creation's poses were written back when it parked).
         Creations.NodeOf(id)?.SyncToCreation();
         return Creations.Find(id);
     }
@@ -86,7 +87,12 @@ public partial class BuildSync : Node, IBuildWorld
         Players.Players.TryGetValue(peer, out var player) ? player.Head.GlobalPosition.ToNumerics() : null;
 
     /// <inheritdoc/>
-    public int NextCreationId() => _nextCreationId++;
+    public int NextCreationId()
+    {
+        // Creations can also arrive from elsewhere (a save, a test), so never reuse an id in the world.
+        _nextCreationId = Math.Max(_nextCreationId, (Creations.All.LastOrDefault()?.Id ?? 0) + 1);
+        return _nextCreationId++;
+    }
 
     /// <inheritdoc/>
     public string? CheckClear(Creation? target, PartDefinition definition, GridCell cell, GridRotation rotation, Pose pose)
@@ -122,7 +128,7 @@ public partial class BuildSync : Node, IBuildWorld
     /// <inheritdoc/>
     public void Changed(Creation creation)
     {
-        Creations.NodeOf(creation.Id)!.Rebuild();
+        Creations.Rebuild(creation.Id);
         Broadcast(creation);
     }
 
