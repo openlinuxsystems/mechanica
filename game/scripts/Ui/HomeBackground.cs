@@ -22,7 +22,7 @@ public partial class HomeBackground : Control
     public override void _Ready()
     {
         MouseFilter = MouseFilterEnum.Ignore;
-        SetAnchorsPreset(LayoutPreset.FullRect);
+        SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
     }
 
     public override void _Process(double delta)

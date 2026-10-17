@@ -76,7 +76,7 @@ public partial class MainMenu : Control
             return;
         }
         Input.MouseMode = Input.MouseModeEnum.Visible;
-        SetAnchorsPreset(LayoutPreset.FullRect);
+        SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         AddChild(new HomeBackground { Name = "Background" });
         AddChild(new MenuMusic { Name = "Music" });
         var layout = new MarginContainer { Name = "Home" };

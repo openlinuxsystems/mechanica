@@ -85,7 +85,7 @@ public partial class SaveScreen : ToolWindow
         for (var i = 0; i < _saves.Count; i++)
             _rows.AddChild(Row(i));
         if (_saves.Count == 0)
-            _rows.AddChild(new Label { Text = "No saved worlds yet.", ThemeTypeVariation = "SecondaryLabel" });
+            _rows.AddChild(Loc.Verbatim(new Label { Text = Loc.T("No saved worlds yet."), ThemeTypeVariation = "SecondaryLabel" }));
     }
 
     /// <summary>Saves the world under the name in the box (host only).</summary>

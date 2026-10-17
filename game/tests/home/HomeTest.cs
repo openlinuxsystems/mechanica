@@ -46,6 +46,8 @@ public partial class HomeTest : StagedTest
                 "Continue names the newest world and when it was played");
             Check(_menu.FindChild("Version", true, false) is Label { Text: var v } && v.Contains(MechanicaInfo.Version), "the version is along the bottom");
             Check(_menu.FindChild("ModTools", true, false) is not null, "the mod tools sit beside the buttons");
+            var backdrop = _menu.GetNode<Control>("Background");
+            Check(backdrop.Size == GetViewport().GetVisibleRect().Size, $"the backdrop fills the screen ({backdrop.Size}, menu {_menu.Size})");
             return true;
         });
         Add("Continue starts the newest world", _ =>
