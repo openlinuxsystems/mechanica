@@ -38,6 +38,9 @@ public partial class NetTestHarness : Node
     /// <summary>World seed of the host, fixed so runs repeat.</summary>
     public long Seed { get; set; } = 1234;
 
+    /// <summary>Runs on each new instance's <see cref="Main"/> before it enters the tree, for settings a test needs from the start.</summary>
+    public Action<Main>? Setup { get; set; }
+
     /// <summary>World generation for every instance started from now on; null loads the mods' rules, like the game.</summary>
     public Mechanica.Core.World.WorldGenData? WorldGen { get; set; }
 
@@ -125,6 +128,7 @@ public partial class NetTestHarness : Node
         main.Profile = Mechanica.Core.Saves.PlayerProfile.Fixed(name);
         if (options.Mode != SessionMode.Join)
             main.Save = Save;
+        Setup?.Invoke(main);
         viewport.AddChild(main);
         var instance = new Instance(name, viewport, main);
         _instances.Add(instance);

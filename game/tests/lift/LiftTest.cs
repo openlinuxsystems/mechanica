@@ -176,7 +176,7 @@ public partial class LiftTest : StagedTest
                 }
                 if (!Both(out var host, out var client) || client.State.Level != level || host.Moving || client.Moving || frame < 30)
                     return false;
-                Check(_worstRide < 0.03f, $"the player's feet stay on the deck ({_worstRide:F3} m at worst)");
+                Check(_worstRide < 0.01f, $"the player's feet stay on the deck ({_worstRide:F3} m at worst)");
                 Check(_offDeck < 6, $"and the player never leaves the floor ({_offDeck} frames off it)");
                 return true;
             });
@@ -221,7 +221,7 @@ public partial class LiftTest : StagedTest
                 Check(_heldStops == 0, $"held, the column runs on without stopping at each level ({_heldStops} stops)");
                 Check(_slowest >= Settings.RaiseSpeed * 0.99f && _slowest < float.MaxValue, $"at an even speed ({_slowest:F3} m/s at slowest)");
                 Check(Math.Abs(_heldTo - stopAt) <= 1 && lift.State.Level == _heldTo, $"let go, it stops at the next level ({_heldTo})");
-                Check(_worstRide < 0.03f, $"and the player rides it the whole way ({_worstRide:F3} m at worst)");
+                Check(_worstRide < 0.01f, $"and the player rides it the whole way ({_worstRide:F3} m at worst)");
                 return true;
             });
         }
