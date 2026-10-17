@@ -65,11 +65,13 @@ These are the generic motion primitives (decision D2). Part scripts call the sam
 | Action | Arguments | Notes |
 |--------|-----------|-------|
 | `ListCreations` | none | `[{id, parts, position}]` |
-| `GetCreation` | `creation` | parts, bodies (`index`, `parts`, `mass`, `position`, `rotation` `[x,y,z,w]`, `forward`, `up`, velocities) and joints (`part`, `other`, `type`, `locked`) |
+| `GetCreation` | `creation` | parts, bodies (`index`, `parts`, `mass`, `position`, `rotation` `[x,y,z,w]`, `forward`, `up`, velocities) and joints (`part`, `other`, `type`, `locked`, `position` in rad or m, `min`, `max`) |
 | `ApplyForce` | `creation`, `force` (N, world), optional `body` (default 0), `torque` (N·m), `duration` (s, default one physics step), `at` (world point, m; default the centre of mass), `part` (the pushing part, in `body`) | a later call on the same body replaces the push; with `part`, pushes from different parts add up and a later call replaces only that part's push. An `at` off the centre of mass also twists the body (at most `max_lever_arm` m away). It ends early if the Creation is rebuilt |
-| `SetBearingTarget` | `creation`, `part` (the bearing), `velocity` (rad/s about the rotor normal, or `null` to free it), optional `max_torque` (N·m) | the motor stays on until changed |
+| `SetBearingTarget` | `creation`, `part` (the bearing), `velocity` (rad/s about the bearing's axis, or `null` to free it), optional `max_torque` (N·m) and `angle` (rad) | the motor stays on until changed. With `angle` the bearing turns to that angle (from where it was built, within ±π and its limits) at up to `velocity` rad/s (default `default_bearing_speed`) and holds it |
+| `SetPistonTarget` | `creation`, `part` (the piston), `length` (m of extension, within the joint's `min`–`max`, or `null` to free it), optional `speed` (m/s) and `max_force` (N) | moves to the length and holds it until changed |
 
-Limits (largest force, torque, push duration, bearing speed and torque) are data in
+Limits (largest force, torque, push duration, bearing speed and torque, piston speed and force, and
+how hard targets are chased, `servo_gain`) are data in
 `game/data/motion.json`. A Creation that is parked because nobody is near it can't be moved.
 
 `PlacePart` and `RemovePart` build and take apart Creations as described in the building docs. The

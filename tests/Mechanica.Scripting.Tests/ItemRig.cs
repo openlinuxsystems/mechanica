@@ -114,8 +114,10 @@ internal sealed class ItemRig : IDisposable
         {
         }
 
-        public void SetBearingTarget(Creation creation, JointLink joint, float? velocity, float maxTorque)
+        public void SetJointMotor(Creation creation, JointLink joint, JointMotor motor)
         {
         }
+
+        public float? JointPosition(Creation creation, JointLink joint) => null;
     }
 }

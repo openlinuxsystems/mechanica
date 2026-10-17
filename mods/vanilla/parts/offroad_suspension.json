@@ -1,0 +1,45 @@
+{
+  "id": "offroad_suspension",
+  "name": "Off-Road Suspension",
+  "description": "A soft spring with long travel for rough ground. Mounts like the sport suspension.",
+  "category": "interactive",
+  "mass": 6,
+  "durability": 6,
+  "friction": 0.4,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/offroad_suspension.glb",
+  "visual": {
+    "color": "#d68910",
+    "roughness": 0.6,
+    "metallic": 0.4
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [-0.125, 0, 0],
+      "normal": [-1, 0, 0]
+    },
+    {
+      "id": "mount",
+      "type": "spring",
+      "position": [0.125, 0, 0],
+      "normal": [1, 0, 0],
+      "joint": {
+        "axis": [0, 1, 0],
+        "min": -0.2,
+        "max": 0.2,
+        "stiffness": 9000,
+        "damping": 700
+      }
+    }
+  ],
+  "sounds": {
+    "compress": "suspension_compress",
+    "extend": "suspension_extend"
+  }
+}

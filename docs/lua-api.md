@@ -48,7 +48,8 @@ end
 
 Limits live in `game/data/scripting.json`: `instruction_budget` (per hook call),
 `reload_poll_seconds`, `max_string_length`, `max_ray_length`, `max_overlap_radius`,
-`max_messages`, `max_loops_per_part`, `max_projectiles` and `max_projectile_lifetime`. The motion limits (largest force, torque and bearing speed) are in
+`max_messages`, `max_loops_per_part`, `max_projectiles` and `max_projectile_lifetime`. The motion
+limits (largest force, torque, bearing speed and piston force) are in
 `game/data/motion.json`.
 
 ## Hot reload
@@ -133,10 +134,15 @@ placed.
 | `part.apply_force(force, at?)` | Pushes the part's Body with a world force in N for this step. Without `at` it pushes through the centre of mass; with a world point `at` (for example `part.position()`) it also twists the Body. Calls in one step add up. Returns `true`, or `false` and the reason. |
 | `part.apply_torque(torque)` | Twists the part's Body with a world torque in N·m for this step. Adds up with the part's other pushes. Returns `true`, or `false` and the reason. |
 | `part.set_bearing(velocity, max_torque?)` | For a bearing: drives its motor at `velocity` rad/s about the rotor normal, with at most `max_torque` N·m (default from `motion.json`). `nil` frees the bearing. The target stays until changed. Returns `true`, or `false` and the reason. |
+| `part.set_bearing_angle(angle, speed?, max_torque?)` | For a bearing: turns it to `angle` rad and holds it there (steering, doors, arms). The angle is measured from where the bearing was built, right-handed about its axis, within ±π (and within the joint's `min`/`max` when it has limits). It moves at up to `speed` rad/s (default `default_bearing_speed`) and slows down as it arrives; a free bearing takes the short way round. Returns `true`, or `false` and the reason. |
+| `part.set_piston(length, speed?, max_force?)` | For a piston: moves it to `length` m of extension (between its joint's `min` and `max`) at up to `speed` m/s with at most `max_force` N (defaults from `motion.json`), and holds it there against loads. `nil` frees the piston so it slides between its stops. Returns `true`, or `false` and the reason. |
+| `part.joint()` | The joint this part owns (a bearing's rotor, a piston's head, a suspension's mount) as `{type, other, position, min, max, locked}`, or `nil`. `type` is `rotational`, `linear` or `spring`; `other` is the part on the far side; `position` is where it is now (rad or m from where it was built); `min` and `max` are missing on a free-spinning bearing. |
 
 Pushes last one physics step, so a script that keeps pushing calls `apply_force` every
 `on_update`. They go through the `ApplyForce` action with the part's id, so pushes from different
-parts of one Body add up. Bearings go through `SetBearingTarget`.
+parts of one Body add up. Bearings go through `SetBearingTarget` and pistons through `SetPistonTarget`.
+Joint targets stay until changed, so set them once (in `on_create` or when an input changes), not
+every step. See the [Socket and Joint Guide](socket-joint-guide.md) for how joints are defined.
 
 ## `creation`
 
@@ -148,6 +154,9 @@ The Creation the part belongs to.
 | `creation.mass()` | Total mass of the Creation, in kg. |
 | `creation.parts()` | A list of the Creation's parts, each `{id, type}`. |
 | `creation.set_bearing(part_id, velocity, max_torque?)` | Like `part.set_bearing`, for another bearing of the same Creation (an engine driving wheels). Returns `true`, or `false` and the reason. |
+| `creation.set_bearing_angle(part_id, angle, speed?, max_torque?)` | Like `part.set_bearing_angle`, for another bearing of the same Creation (a seat steering the front wheels). |
+| `creation.set_piston(part_id, length, speed?, max_force?)` | Like `part.set_piston`, for another piston of the same Creation (a controller moving several). |
+| `creation.joint(part_id)` | Like `part.joint()`, for another part of the same Creation. |
 
 ## `world`
 

@@ -138,6 +138,78 @@ public class MotionActionsTests
     }
 
     [Fact]
+    public void SetBearingTargetCanHoldAnAngle()
+    {
+        Assert.True(_dispatcher.Dispatch(Agent, MotionActions.SetBearingTarget, $$"""{ "creation": 7, "part": {{_bearing}}, "angle": 1.2, "velocity": -2 }""").Ok);
+        Assert.True(_dispatcher.Dispatch(Agent, MotionActions.SetBearingTarget, $$"""{ "creation": 7, "part": {{_bearing}}, "angle": -0.5 }""").Ok);
+
+        Assert.Equal([new JointMotor(2f, 20f, 1.2f), new JointMotor(3f, 20f, -0.5f)], _world.JointMotors);
+    }
+
+    [Theory]
+    [InlineData("\"angle\": 4", "within ±π")]
+    [InlineData("\"angle\": 1, \"velocity\": 0", "can't be 0")]
+    public void SetBearingTargetValidatesAngles(string rest, string reason)
+    {
+        var result = _dispatcher.Dispatch(Agent, MotionActions.SetBearingTarget, $$"""{ "creation": 7, "part": {{_bearing}}, {{rest}} }""");
+
+        Assert.Contains(reason, result.Message);
+        Assert.Empty(_world.Motors);
+    }
+
+    [Fact]
+    public void SetPistonTargetMovesAndFreesThePiston()
+    {
+        var (dispatcher, world, piston) = PistonRig();
+
+        Assert.True(dispatcher.Dispatch(Agent, MotionActions.SetPistonTarget, $$"""{ "creation": 8, "part": {{piston}}, "length": 0.5 }""").Ok);
+        Assert.True(dispatcher.Dispatch(Agent, MotionActions.SetPistonTarget, $$"""{ "creation": 8, "part": {{piston}}, "length": 1, "speed": 2, "max_force": 100 }""").Ok);
+        Assert.True(dispatcher.Dispatch(Agent, MotionActions.SetPistonTarget, $$"""{ "creation": 8, "part": {{piston}}, "length": null }""").Ok);
+
+        Assert.Equal([new JointMotor(1f, 2000f, 0.5f), new JointMotor(2f, 100f, 1f), new JointMotor(null, 2000f)], world.JointMotors);
+        Assert.True(world.JointMotors[^1].IsFree);
+    }
+
+    [Theory]
+    [InlineData("\"length\": 1.5", "from 0 to 1 m")]
+    [InlineData("\"length\": -0.1", "from 0 to 1 m")]
+    [InlineData("\"length\": 0.5, \"speed\": 11", "at most 10 m/s")]
+    [InlineData("\"length\": 0.5, \"max_force\": 60000", "at most 50000 N")]
+    public void SetPistonTargetValidates(string rest, string reason)
+    {
+        var (dispatcher, world, piston) = PistonRig();
+
+        var result = dispatcher.Dispatch(Agent, MotionActions.SetPistonTarget, $$"""{ "creation": 8, "part": {{piston}}, {{rest}} }""");
+
+        Assert.Contains(reason, result.Message);
+        Assert.Empty(world.JointMotors);
+    }
+
+    [Fact]
+    public void SetPistonTargetNeedsAPiston()
+    {
+        var result = _dispatcher.Dispatch(Agent, MotionActions.SetPistonTarget, $$"""{ "creation": 7, "part": {{_bearing}}, "length": 0.5 }""");
+
+        Assert.Contains("not a piston", result.Message);
+    }
+
+    [Theory]
+    [InlineData(0.2f, 1.2f)]
+    [InlineData(0.95f, 0.5f)]
+    [InlineData(1.5f, -1.2f)]
+    public void JointMotorsSlowDownNearTheirTarget(float position, float expected) =>
+        Assert.Equal(expected, new JointMotor(1.2f, 10f, 1f).DriveVelocity(position, 10f), 3);
+
+    [Fact]
+    public void FreeHingesServoTheShortWayRound()
+    {
+        // From 3 rad to -3 rad is 0.28 rad forward across ±π, not 6 rad back.
+        Assert.Equal(MathF.Tau - 6f, new JointMotor(5f, 10f, -3f).DriveVelocity(3f, 1f, MathF.Tau), 3);
+        Assert.Equal(-5f, new JointMotor(5f, 10f, -3f).DriveVelocity(3f, 1f), 3);
+        Assert.Equal(-3f, new JointMotor(-3f, 10f).DriveVelocity(0.5f, 10f));
+    }
+
+    [Fact]
     public void GetCreationDescribesBodiesAndJoints()
     {
         var result = _dispatcher.Dispatch(Agent, MotionActions.GetCreation, """{ "creation": 7 }""");
@@ -151,6 +223,10 @@ public class MotionActionsTests
         Assert.Equal(new Vec3(1, 0, 0), state.Bodies[0].Forward);
         var joint = Assert.Single(state.Joints);
         Assert.Equal((_bearing, ConnectionType.Rotational, false), (joint.Part, joint.Type, joint.Locked));
+        Assert.Null(joint.Position);
+        _world.Positions[_bearing] = 0.3f;
+        var described = _dispatcher.Dispatch(Agent, MotionActions.GetCreation, """{ "creation": 7 }""").Value!.Value.GetProperty("joints")[0];
+        Assert.Equal(0.3f, described.GetProperty("position").GetSingle());
         Assert.Equal("rotational", result.Value!.Value.GetProperty("joints")[0].GetProperty("type").GetString());
     }
 
@@ -175,6 +251,32 @@ public class MotionActionsTests
         Assert.Throws<FormatException>(() => MotionSettings.FromJson("""{ "speed": 1 }"""));
     }
 
+    private static (ActionDispatcher, FakeWorld, int) PistonRig()
+    {
+        var world = new FakeWorld();
+        var dispatcher = new ActionDispatcher();
+        new MotionActions(new MotionSettings(), world).Register(dispatcher);
+        var catalog = Catalog().Add("test:long_piston", new PartDefinition
+        {
+            Id = "long_piston",
+            Name = "Piston",
+            Category = PartCategory.Interactive,
+            Mass = 4,
+            Size = GridSize.One,
+            Sockets =
+            [
+                new SocketDefinition { Id = "base", Type = SocketType.Structural, Position = new Vec3(0, -0.125f, 0), Normal = new Vec3(0, -1, 0) },
+                new SocketDefinition { Id = "head", Type = SocketType.Linear, Position = new Vec3(0, 0.125f, 0), Normal = new Vec3(0, 1, 0), Joint = new JointDefinition { Max = 1 } },
+            ],
+        });
+        var creation = new Creation(8, catalog);
+        creation.Place(Block, GridCell.Zero);
+        var piston = creation.Place("test:long_piston", new GridCell(0, 1, 0)).Id;
+        creation.Place(Block, new GridCell(0, 2, 0));
+        world.Creations[8] = creation;
+        return (dispatcher, world, piston);
+    }
+
     private sealed class FakeWorld : IMotionWorld
     {
         public Dictionary<int, Creation> Creations { get; } = [];
@@ -195,7 +297,17 @@ public class MotionActionsTests
             PushParts.Add(part);
         }
 
-        public void SetBearingTarget(Creation creation, JointLink joint, float? velocity, float maxTorque) =>
-            Motors.Add((joint.Connection.A, velocity, maxTorque));
+        public List<JointMotor> JointMotors { get; } = [];
+
+        public Dictionary<int, float> Positions { get; } = [];
+
+        public void SetJointMotor(Creation creation, JointLink joint, JointMotor motor)
+        {
+            Motors.Add((joint.Connection.A, motor.Velocity, motor.MaxEffort));
+            JointMotors.Add(motor);
+        }
+
+        public float? JointPosition(Creation creation, JointLink joint) =>
+            Positions.TryGetValue(joint.Connection.A, out var p) ? p : null;
     }
 }

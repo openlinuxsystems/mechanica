@@ -10,15 +10,18 @@ namespace Mechanica.Game.Motion;
 
 /// <summary>
 /// The host's <see cref="IMotionWorld"/> behind <c>ApplyForce</c>, <c>SetBearingTarget</c>,
-/// <c>GetCreation</c> and <c>ListCreations</c>. Pushes and bearing motors are kept here and applied to
-/// the live Jolt bodies and hinges every physics step, so they survive a Creation being rebuilt
-/// (a bearing keeps its motor; a push ends when the graph changes, since Body indices may shift).
+/// <c>SetPistonTarget</c>, <c>GetCreation</c> and <c>ListCreations</c>. Pushes and joint motors are kept here and applied to
+/// the live Jolt bodies and joints every physics step, so they survive a Creation being rebuilt
+/// (a bearing or piston keeps its motor, and a target angle or length is steered toward each step; a push ends when the graph changes, since Body indices may shift).
 /// Clients see the motion through <see cref="CreationSync"/> snapshots.
 /// </summary>
 public partial class MotionSync : Node, IMotionWorld
 {
     /// <summary>Where the motion limits are read from.</summary>
     public const string SettingsPath = "res://data/motion.json";
+
+    // Godot hinge motors turn B about the hinge's Z the other way from a right-handed angle.
+    private const float HingeMotorSign = -1f;
 
     // Part -1 is a Body's shared push (calls without a part).
     private readonly Dictionary<(int Creation, int Body, int Part), Push> _pushes = [];
@@ -30,9 +33,10 @@ public partial class MotionSync : Node, IMotionWorld
         public int StepsLeft { get; set; }
     }
 
-    private sealed record Motor(Connection Joint, float Velocity, float MaxTorque)
+    private sealed record Motor(Connection Joint, JointMotor Drive)
     {
-        public HingeJoint3D? Applied { get; set; }
+        public Joint3D? Applied { get; set; }
+        public float AppliedVelocity { get; set; } = float.NaN;
     }
 
     /// <summary>Session, to act only on the host. Set before adding to the tree.</summary>
@@ -98,17 +102,20 @@ public partial class MotionSync : Node, IMotionWorld
     }
 
     /// <inheritdoc/>
-    public void SetBearingTarget(Creation creation, JointLink joint, float? velocity, float maxTorque)
+    public void SetJointMotor(Creation creation, JointLink joint, JointMotor motor)
     {
         var key = (creation.Id, joint.Connection.A);
-        if (_motors.Remove(key, out var old) && old.Applied is { } hinge && IsInstanceValid(hinge))
-            hinge.SetFlag(HingeJoint3D.Flag.EnableMotor, false);
-        if (velocity is { } v)
-            _motors[key] = new Motor(joint.Connection, v, maxTorque);
-        // A freed bearing should start turning (or stop) now, not when something else wakes it.
+        if (_motors.Remove(key, out var old) && old.Applied is { } applied && IsInstanceValid(applied))
+            EnableMotor(applied, false);
+        if (!motor.IsFree)
+            _motors[key] = new Motor(joint.Connection, motor);
+        // A freed joint should start moving (or stop) now, not when something else wakes it.
         if (Creations.NodeOf(creation.Id) is { } node)
             Wake(node, joint.BodyA, joint.BodyB);
     }
+
+    /// <inheritdoc/>
+    public float? JointPosition(Creation creation, JointLink joint) => Creations.NodeOf(creation.Id)?.JointPosition(joint);
 
     public override void _PhysicsProcess(double delta)
     {
@@ -140,23 +147,46 @@ public partial class MotionSync : Node, IMotionWorld
                 continue;
             }
             // Parked: keep the target for when it comes back.
-            if (Creations.NodeOf(key.Creation) is not { } node || node.JointOf(motor.Joint) is not HingeJoint3D hinge)
+            // The motor belongs to the part, so it carries over to whatever the part's joint holds now.
+            if (Creations.NodeOf(key.Creation) is not { } node
+                || creation.Joints.FirstOrDefault(j => j.Connection.A == key.Part && j.Connection.Type == motor.Joint.Type) is not { } link
+                || node.JointOf(link.Connection) is not { } joint)
                 continue;
-            if (motor.Applied != hinge)
+            var frame = node.FrameOf(joint);
+            var velocity = motor.Drive.Target is null
+                ? motor.Drive.Velocity ?? 0f
+                : motor.Drive.DriveVelocity(node.JointPosition(link) ?? 0f, Settings!.ServoGain, frame.SpinsFreely ? MathF.Tau : null);
+            if (motor.Applied != joint)
             {
-                hinge.SetFlag(HingeJoint3D.Flag.EnableMotor, true);
-                hinge.SetParam(HingeJoint3D.Param.MotorTargetVelocity, motor.Velocity);
+                EnableMotor(joint, true);
                 // Godot's hinge takes an impulse per step; Jolt turns it back into a torque limit.
-                hinge.SetParam(HingeJoint3D.Param.MotorMaxImpulse, motor.MaxTorque * (float)delta);
-                motor.Applied = hinge;
+                if (joint is HingeJoint3D hinge)
+                    hinge.SetParam(HingeJoint3D.Param.MotorMaxImpulse, motor.Drive.MaxEffort * (float)delta);
+                else if (joint is Generic6DofJoint3D slider)
+                    slider.SetParamX(Generic6DofJoint3D.Param.LinearMotorForceLimit, motor.Drive.MaxEffort);
+                motor.Applied = joint;
+                motor.AppliedVelocity = float.NaN;
             }
-            if (motor.Velocity != 0f)
+            if (velocity != motor.AppliedVelocity)
             {
-                var link = creation.Joints.FirstOrDefault(j => j.Connection == motor.Joint);
-                if (link is not null)
-                    Wake(node, link.BodyA, link.BodyB);
+                if (joint is HingeJoint3D hinge)
+                    hinge.SetParam(HingeJoint3D.Param.MotorTargetVelocity, velocity * HingeMotorSign);
+                else if (joint is Generic6DofJoint3D slider)
+                    slider.SetParamX(Generic6DofJoint3D.Param.LinearMotorTargetVelocity, velocity);
+                motor.AppliedVelocity = velocity;
             }
+            // A motor holding a target keeps its bodies awake so the hold reacts to loads.
+            if (velocity != 0f || motor.Drive.Target is not null)
+                Wake(node, link.BodyA, link.BodyB);
         }
+    }
+
+    private static void EnableMotor(Joint3D joint, bool on)
+    {
+        if (joint is HingeJoint3D hinge)
+            hinge.SetFlag(HingeJoint3D.Flag.EnableMotor, on);
+        else if (joint is Generic6DofJoint3D slider)
+            slider.SetFlagX(Generic6DofJoint3D.Flag.EnableLinearMotor, on);
     }
 
     private static void Wake(CreationNode node, int a, int b)

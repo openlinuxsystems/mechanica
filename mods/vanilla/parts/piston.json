@@ -1,0 +1,48 @@
+{
+  "id": "piston",
+  "name": "Piston",
+  "description": "Pushes whatever is on its head up to 1 m out while its input is on, and pulls it back when it is off.",
+  "category": "interactive",
+  "mass": 4,
+  "durability": 4,
+  "friction": 0.4,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/piston.glb",
+  "visual": {
+    "color": "#7d8792",
+    "roughness": 0.4,
+    "metallic": 0.8
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.125, 0],
+      "normal": [0, -1, 0]
+    },
+    {
+      "id": "head",
+      "type": "linear",
+      "position": [0, 0.125, 0],
+      "normal": [0, 1, 0],
+      "joint": {
+        "max": 1,
+        "shaft_radius": 0.04
+      }
+    }
+  ],
+  "script": "scripts/piston.lua",
+  "sounds": {
+    "extend": "piston_extend",
+    "retract": "piston_retract",
+    "stall": "piston_stall"
+  },
+  "properties": {
+    "speed": 1,
+    "force": 5000
+  }
+}

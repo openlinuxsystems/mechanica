@@ -49,7 +49,7 @@ public partial class PartEditorTest : Node3D
         AddChild(screen);
         await Frames(1);
 
-        Check(PartEditorScreen.TemplateNames.SequenceEqual(["block", "decor", "interactive", "item"]),
+        Check(PartEditorScreen.TemplateNames.SequenceEqual(["bearing", "block", "decor", "interactive", "item", "piston", "suspension"]),
             $"templates are listed ({string.Join(", ", PartEditorScreen.TemplateNames)})");
         Check(screen.NewPart(Mod, "Bad Id", "x", "block") is not null, "a bad part id is refused");
         Check(screen.NewPart(Mod, "holed_block", "Holed Block", "block") is null, "a new block starts from the template");
@@ -133,13 +133,29 @@ public partial class PartEditorTest : Node3D
         result = await screen.ExportAsync();
         Check(result is { Succeeded: false }, "export refuses the part while the socket is off the footprint");
 
+        // A joint part: the suspension template has a spring socket whose axis, travel and spring show in the preview.
+        Check(screen.NewPart(Mod, "shock", "Shock", "suspension") is null, "a suspension part starts");
+        screen.SelectSocket(1);
+        Check(screen.Preview.FindChild("Joint_mount", true, false) is not null && screen.Preview.FindChild("CentreOfMass", true, false) is not null,
+            "the preview draws the spring's travel and the centre of mass");
+        Check(screen.Preview.Contacts.Any(c => c is { Connection: ConnectionType.Spring, Socket: "mount" }), "the mount face previews a spring joint");
+        screen.Document!.SetSocket(1, screen.Document.Definition.Sockets![1] with { Joint = screen.Document.Definition.Sockets[1].Joint! with { Stiffness = null } });
+        Check(screen.ProblemsText.Contains("stiffness"), "a spring without a stiffness is a problem");
+        screen.Document.Undo();
+        screen.Document.Apply("Move centre of mass", d => d with { CentreOfMass = new Vec3(0, -0.05f, 0) });
+        result = await screen.ExportAsync();
+        Check(result is { Succeeded: true }, "the suspension exports");
+        var shock = ModLoader.LoadAll(modsRoot).FindDefinition($"{Mod}:shock")!;
+        Check(shock.Sockets![1].Joint is { Stiffness: 10000, Axis: { Y: 1 } } && shock.CentreOfMass == new Vec3(0, -0.05f, 0),
+            "its joint and centre of mass are in the exported file");
+
         // Rename an exported part.
         Check(screen.OpenPart(Path.Combine(modDir, "parts", "holed_block.json")) is null, "reopen for rename");
         screen.Document!.Apply("Rename", d => d with { Id = "ring_block" });
         result = await screen.ExportAsync();
         Check(result is { Succeeded: true } && !File.Exists(Path.Combine(modDir, "parts", "holed_block.json"))
             && File.Exists(Path.Combine(modDir, "meshes", "ring_block.glb")), "renaming moves the part and re-bakes its mesh");
-        Check(ModLoader.LoadAll(modsRoot).Parts.Keys.Order().SequenceEqual([$"{Mod}:cube_prop", $"{Mod}:ring_block"]),
+        Check(ModLoader.LoadAll(modsRoot).Parts.Keys.Order().SequenceEqual([$"{Mod}:cube_prop", $"{Mod}:ring_block", $"{Mod}:shock"]),
             "the mod has exactly the exported parts");
 
         // A station and a recipe for it, saved from the Recipes tab.

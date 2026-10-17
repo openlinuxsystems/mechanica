@@ -94,6 +94,15 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
             sink.Error(Code, "$.size", $"size (in 0.25 m grid cells, like [1, 1, 1]) is required for {what}.");
         }
 
+        if (part.CentreOfMass is { } com)
+        {
+            var extent = (part.Size ?? GridSize.One).Metres;
+            if (!float.IsFinite(com.X) || !float.IsFinite(com.Y) || !float.IsFinite(com.Z))
+                sink.Error(Code, "$.centre_of_mass", "centre_of_mass must be finite.");
+            else if (MathF.Abs(com.X) > extent.X / 2 + Epsilon || MathF.Abs(com.Y) > extent.Y / 2 + Epsilon || MathF.Abs(com.Z) > extent.Z / 2 + Epsilon)
+                sink.Error(Code, "$.centre_of_mass", $"centre_of_mass {com} is outside the part's {part.Size ?? GridSize.One} footprint.");
+        }
+
         CheckAsset(part.Mesh, "$.mesh", AssetKind.Mesh, sink);
         CheckAsset(part.Icon, "$.icon", AssetKind.Texture, sink);
         CheckAsset(part.Script, "$.script", AssetKind.Script, sink);
@@ -216,9 +225,95 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
                 sink.Error(Code, $"{path}.normal", "socket normal (a unit direction like [0, 1, 0]) is required.");
             else if (MathF.Abs(n.Length - 1) > 1e-3f)
                 sink.Error(Code, $"{path}.normal", $"socket normal {n} must have length 1.");
+            if (s.Joint is { } joint)
+                ValidateJoint(joint, s.Type, $"{path}.joint", sink);
+            else if (s.Type == SocketType.Spring)
+                sink.Error(Code, $"{path}.joint", "a spring socket needs a joint with min, max and stiffness.");
+            else if (s.Type == SocketType.Linear)
+                sink.Error(Code, $"{path}.joint", "a linear socket needs a joint with max (its travel in m).");
             KnownKeys.WarnUnknown(s.Extra, path, sink, typeof(SocketDefinition));
         }
     }
+
+    private static void ValidateJoint(JointDefinition j, SocketType? type, string path, DiagnosticSink sink)
+    {
+        KnownKeys.WarnUnknown(j.Extra, path, sink, typeof(JointDefinition));
+        if (type is null)
+            return;
+        if (type == SocketType.Structural)
+        {
+            sink.Error(Code, path, "only rotational, linear and spring sockets have a joint.");
+            return;
+        }
+        if (j.Axis is { } axis && !IsGridDirection(axis))
+            sink.Error(Code, $"{path}.axis", $"axis {axis} must be a grid direction like [0, 1, 0].");
+        if (j.ShaftRadius is { } shaft && (!float.IsFinite(shaft) || shaft <= 0 || shaft > 1))
+            sink.Error(Code, $"{path}.shaft_radius", "shaft_radius must be more than 0 and at most 1 m.");
+        else if (j.ShaftRadius is not null && type == SocketType.Rotational)
+            sink.Error(Code, $"{path}.shaft_radius", "only linear and spring joints draw a shaft.");
+        foreach (var (value, key) in new[] { (j.Min, "min"), (j.Max, "max"), (j.Stiffness, "stiffness"), (j.Damping, "damping") })
+        {
+            if (value is { } v && !float.IsFinite(v))
+                sink.Error(Code, $"{path}.{key}", $"{key} must be a finite number.");
+        }
+        if (type != SocketType.Spring)
+        {
+            if (j.Stiffness is not null)
+                sink.Error(Code, $"{path}.stiffness", "only spring joints have a stiffness.");
+            if (j.Damping is not null)
+                sink.Error(Code, $"{path}.damping", "only spring joints have damping.");
+        }
+        switch (type)
+        {
+            case SocketType.Rotational:
+                if ((j.Min is null) != (j.Max is null))
+                    sink.Error(Code, j.Min is null ? $"{path}.min" : $"{path}.max", "a rotational joint has both min and max (a limited hinge) or neither (it spins freely).");
+                else if (j.Min is { } lo && j.Max is { } hi)
+                {
+                    if (lo < -MathF.PI - Epsilon || hi > MathF.PI + Epsilon)
+                        sink.Error(Code, $"{path}.min", $"hinge limits must be within ±π rad (±180°); got {JsonNumbers.Format(lo)} to {JsonNumbers.Format(hi)}.");
+                    else if (lo >= hi)
+                        sink.Error(Code, $"{path}.max", "max must be more than min.");
+                    else if (lo > Epsilon || hi < -Epsilon)
+                        sink.Error(Code, $"{path}.min", "a hinge's range must include 0, the angle it is built at.");
+                }
+                break;
+            case SocketType.Linear:
+                if (j.Max is not { } max)
+                    sink.Error(Code, $"{path}.max", "max (how far the joint extends, in m) is required for a linear joint.");
+                else
+                    CheckTravel(j.Min ?? 0f, max, path, sink);
+                break;
+            case SocketType.Spring:
+                if (j.Min is not { } min)
+                    sink.Error(Code, $"{path}.min", "min (how far the spring compresses, in m, 0 or less) is required for a spring joint.");
+                if (j.Max is not { } top)
+                    sink.Error(Code, $"{path}.max", "max (how far the spring extends, in m, 0 or more) is required for a spring joint.");
+                if (j.Min is { } a && j.Max is { } b)
+                    CheckTravel(a, b, path, sink);
+                if (j.Stiffness is not { } k)
+                    sink.Error(Code, $"{path}.stiffness", "stiffness (N/m) is required for a spring joint.");
+                else if (k <= 0)
+                    sink.Error(Code, $"{path}.stiffness", "stiffness must be more than 0.");
+                if (j.Damping is < 0)
+                    sink.Error(Code, $"{path}.damping", "damping must be 0 or more.");
+                break;
+        }
+    }
+
+    private static void CheckTravel(float min, float max, string path, DiagnosticSink sink)
+    {
+        if (min >= max)
+            sink.Error(Code, $"{path}.max", "max must be more than min.");
+        else if (min > Epsilon || max < -Epsilon)
+            sink.Error(Code, $"{path}.min", "the travel must include 0, the position the joint is built at.");
+        else if (max - min > JointDefinition.MaxTravel)
+            sink.Error(Code, $"{path}.max", $"travel is {JsonNumbers.Format(max - min)} m; the most allowed is {JsonNumbers.Format(JointDefinition.MaxTravel)} m.");
+    }
+
+    private static bool IsGridDirection(Vec3 v) =>
+        new[] { MathF.Abs(v.X), MathF.Abs(v.Y), MathF.Abs(v.Z) } is var a
+        && a.Count(c => MathF.Abs(c - 1f) < 1e-3f) == 1 && a.Count(c => c < 1e-3f) == 2;
 
     private static void ValidateStorage(PartDefinition part, bool placeable, DiagnosticSink sink)
     {
