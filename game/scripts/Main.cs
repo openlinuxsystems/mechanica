@@ -34,8 +34,8 @@ public partial class Main : Node3D
     public bool ReadDeviceInput { get; set; } = true;
 
     /// <summary>
-    /// Mods this instance runs, checked against the host on join. Null loads the enabled mods
-    /// (<see cref="ModPaths.LoadContent"/>) when the scene starts; tests may set it directly.
+    /// Mods this instance runs, checked against the host on join. Null uses the manifest of
+    /// <see cref="Mods"/>; tests may set it directly.
     /// </summary>
     public ContentManifest? Content { get; set; }
 
@@ -138,7 +138,7 @@ public partial class Main : Node3D
             Session = Session,
             PlayerSync = PlayerSync,
             Creations = Creations,
-            Catalog = mods,
+            Catalog = new LoadedParts(this),
             Assets = Assets,
         };
         AddChild(CreationSync);
@@ -199,6 +199,26 @@ public partial class Main : Node3D
             if (Ai.Listen(port, options.AiBind, token) is { } aiError)
                 GD.PushError($"[ai] {aiError}");
         }
+    }
+
+    /// <summary>
+    /// Switches to newly loaded mods, as the Test Sandbox does after the Part Editor exports. Clients
+    /// already connected stay; the next client to join is checked against the new mods.
+    /// </summary>
+    public void ReloadMods(ModLoadResult mods)
+    {
+        Mods = mods;
+        Content = ContentManifest.From(mods);
+        Session.Content = Content;
+        Assets.SetContent(mods);
+        Build.SetContent(mods);
+        Hammer?.ReloadParts();
+    }
+
+    // The current Mods, so readers keep working after ReloadMods swaps them.
+    private sealed class LoadedParts(Main main) : IPartCatalog
+    {
+        public PartDefinition? FindDefinition(string id) => main.Mods!.FindDefinition(id);
     }
 
     private static ModLoadResult LoadMods()

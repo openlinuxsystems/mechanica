@@ -256,7 +256,8 @@ public partial class SyncTest : StagedTest
 
     /// <summary>
     /// Checks a client against what a lossless client would show at its render tick: the host's states at
-    /// the snapshot ticks either side, blended as <see cref="BodyTrack"/> does.
+    /// the snapshot ticks either side, blended as <see cref="BodyTrack"/> does. Ticks where the client has
+    /// not received the later snapshot yet are skipped.
     /// </summary>
     private void Compare(Instance client)
     {
@@ -269,6 +270,10 @@ public partial class SyncTest : StagedTest
         var before = (uint)Math.Floor(tick / interval) * interval;
         var after = before + interval;
         if (before < first || !_history.TryGetValue(before, out var a) || !_history.TryGetValue(after, out var b))
+            return;
+        // Without the later snapshot the client is extrapolating, which a lossless client never does. That
+        // happens when a frame stalls in this one-process test (a client starting up) and holds up delivery.
+        if (client.Main.CreationSync.Tick < after)
             return;
         var t = (float)((tick - before) / interval);
         var (position, angle, samples) = _errors.GetValueOrDefault(client);
