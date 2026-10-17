@@ -1,0 +1,23 @@
+{
+  "id": "diamond_plate_wedge",
+  "name": "Diamond Plate Wedge",
+  "description": "Diamond Plate block cut on the diagonal. Same material, half the mass.",
+  "category": "block",
+  "mass": 4.5,
+  "durability": 7,
+  "friction": 0.7,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/diamond_plate_wedge.glb",
+  "visual": {
+    "color": "#b8bcc0",
+    "roughness": 0.3,
+    "metallic": 0.9
+  },
+  "collision": {
+    "shape": "convex",
+    "mesh": "meshes/blocks/diamond_plate_wedge.glb"
+  }
+}

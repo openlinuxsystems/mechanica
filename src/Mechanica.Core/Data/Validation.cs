@@ -122,6 +122,9 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
             sink.Error(Code, $"{p}.roughness", "roughness must be between 0 and 1.");
         if (v.Metallic is { } m && !(m >= 0 && m <= 1))
             sink.Error(Code, $"{p}.metallic", "metallic must be between 0 and 1.");
+        if (v.Opacity is { } o && !(o >= 0 && o <= 1))
+            sink.Error(Code, $"{p}.opacity", "opacity must be between 0 and 1.");
+        CheckColor(v.Emission, $"{p}.emission", sink);
         CheckAsset(v.Texture, $"{p}.texture", AssetKind.Texture, sink);
         var ids = new HashSet<string>();
         for (var i = 0; i < (v.Variants?.Count ?? 0); i++)

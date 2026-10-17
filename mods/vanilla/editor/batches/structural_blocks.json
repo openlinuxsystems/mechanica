@@ -1,0 +1,649 @@
+{
+  "format_version": 1,
+  "parts": [
+    {
+      "file": "parts/blocks/wood_block.json",
+      "template": "block",
+      "set": {
+        "name": "Wood Block",
+        "description": "Basic early building block.",
+        "mass": 4,
+        "durability": 3,
+        "friction": 0.5,
+        "buoyancy": 0.6,
+        "flammable": true,
+        "sound_material": "wood",
+        "size": [1, 1, 1],
+        "visual": {
+          "color": "#b5824a",
+          "roughness": 0.8,
+          "metallic": 0
+        }
+      },
+      "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }]
+    },
+    {
+      "file": "parts/blocks/wood_wedge.json",
+      "base": "wood_block",
+      "set": {
+        "name": "Wood Wedge",
+        "description": "Wood block cut on the diagonal. Same material, half the mass.",
+        "mass": 2
+      },
+      "model": [{ "kind": "wedge", "size": [0.25, 0.25, 0.25] }],
+      "collision_from_model": true
+    },
+    {
+      "file": "parts/blocks/metal_block.json",
+      "template": "block",
+      "set": {
+        "name": "Metal Block",
+        "description": "Standard chassis block.",
+        "mass": 8,
+        "durability": 6,
+        "friction": 0.4,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "metal",
+        "size": [1, 1, 1],
+        "visual": {
+          "color": "#9aa0a8",
+          "roughness": 0.4,
+          "metallic": 0.8
+        }
+      },
+      "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }]
+    },
+    {
+      "file": "parts/blocks/metal_wedge.json",
+      "base": "metal_block",
+      "set": {
+        "name": "Metal Wedge",
+        "description": "Metal block cut on the diagonal. Same material, half the mass.",
+        "mass": 4
+      },
+      "model": [{ "kind": "wedge", "size": [0.25, 0.25, 0.25] }],
+      "collision_from_model": true
+    },
+    {
+      "file": "parts/blocks/concrete_block.json",
+      "template": "block",
+      "set": {
+        "name": "Concrete Block",
+        "description": "Heavy block for solid bases.",
+        "mass": 10,
+        "durability": 8,
+        "friction": 0.6,
+        "buoyancy": 0,
+        "flammable": false,
+        "sound_material": "concrete",
+        "size": [1, 1, 1],
+        "visual": {
+          "color": "#a9a9a3",
+          "roughness": 0.95,
+          "metallic": 0
+        }
+      },
+      "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }]
+    },
+    {
+      "file": "parts/blocks/concrete_wedge.json",
+      "base": "concrete_block",
+      "set": {
+        "name": "Concrete Wedge",
+        "description": "Concrete block cut on the diagonal. Same material, half the mass.",
+        "mass": 5
+      },
+      "model": [{ "kind": "wedge", "size": [0.25, 0.25, 0.25] }],
+      "collision_from_model": true
+    },
+    {
+      "file": "parts/blocks/glass_block.json",
+      "template": "block",
+      "set": {
+        "name": "Glass Block",
+        "description": "Transparent and fragile.",
+        "mass": 3,
+        "durability": 1,
+        "friction": 0.3,
+        "buoyancy": 0.4,
+        "flammable": false,
+        "sound_material": "glass",
+        "size": [1, 1, 1],
+        "visual": {
+          "color": "#bfe3f0",
+          "roughness": 0.05,
+          "metallic": 0,
+          "opacity": 0.35
+        }
+      },
+      "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }]
+    },
+    {
+      "file": "parts/blocks/glass_wedge.json",
+      "base": "glass_block",
+      "set": {
+        "name": "Glass Wedge",
+        "description": "Glass block cut on the diagonal. Same material, half the mass.",
+        "mass": 1.5
+      },
+      "model": [{ "kind": "wedge", "size": [0.25, 0.25, 0.25] }],
+      "collision_from_model": true
+    },
+    {
+      "file": "parts/blocks/scrap_wood_block.json",
+      "template": "block",
+      "set": {
+        "name": "Scrap Wood Block",
+        "description": "Rough early survival block.",
+        "mass": 3,
+        "durability": 2,
+        "friction": 0.5,
+        "buoyancy": 0.5,
+        "flammable": true,
+        "sound_material": "scrap",
+        "size": [1, 1, 1],
+        "visual": {
+          "color": "#8a6b45",
+          "roughness": 0.9,
+          "metallic": 0
+        }
+      },
+      "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }]
+    },
+    {
+      "file": "parts/blocks/scrap_wood_wedge.json",
+      "base": "scrap_wood_block",
+      "set": {
+        "name": "Scrap Wood Wedge",
+        "description": "Scrap Wood block cut on the diagonal. Same material, half the mass.",
+        "mass": 1.5
+      },
+      "model": [{ "kind": "wedge", "size": [0.25, 0.25, 0.25] }],
+      "collision_from_model": true
+    },
+    {
+      "file": "parts/blocks/scrap_metal_block.json",
+      "template": "block",
+      "set": {
+        "name": "Scrap Metal Block",
+        "description": "Rough early survival metal.",
+        "mass": 6,
+        "durability": 4,
+        "friction": 0.4,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "scrap",
+        "size": [1, 1, 1],
+        "visual": {
+          "color": "#7c7466",
+          "roughness": 0.6,
+          "metallic": 0.6
+        }
+      },
+      "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }]
+    },
+    {
+      "file": "parts/blocks/scrap_metal_wedge.json",
+      "base": "scrap_metal_block",
+      "set": {
+        "name": "Scrap Metal Wedge",
+        "description": "Scrap Metal block cut on the diagonal. Same material, half the mass.",
+        "mass": 3
+      },
+      "model": [{ "kind": "wedge", "size": [0.25, 0.25, 0.25] }],
+      "collision_from_model": true
+    },
+    {
+      "file": "parts/blocks/barrier_block.json",
+      "template": "block",
+      "set": {
+        "name": "Barrier Block",
+        "description": "Lightweight plastic block.",
+        "mass": 5,
+        "durability": 4,
+        "friction": 0.5,
+        "buoyancy": 0.3,
+        "flammable": true,
+        "sound_material": "plastic",
+        "size": [1, 1, 1],
+        "visual": {
+          "color": "#e0b020",
+          "roughness": 0.5,
+          "metallic": 0
+        }
+      },
+      "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }]
+    },
+    {
+      "file": "parts/blocks/barrier_wedge.json",
+      "base": "barrier_block",
+      "set": {
+        "name": "Barrier Wedge",
+        "description": "Barrier block cut on the diagonal. Same material, half the mass.",
+        "mass": 2.5
+      },
+      "model": [{ "kind": "wedge", "size": [0.25, 0.25, 0.25] }],
+      "collision_from_model": true
+    },
+    {
+      "file": "parts/blocks/tile_block.json",
+      "template": "block",
+      "set": {
+        "name": "Tile Block",
+        "description": "Decorative and structural.",
+        "mass": 7,
+        "durability": 4,
+        "friction": 0.4,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "sound_material": "tile",
+        "size": [1, 1, 1],
+        "visual": {
+          "color": "#d8d4c8",
+          "roughness": 0.3,
+          "metallic": 0
+        }
+      },
+      "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }]
+    },
+    {
+      "file": "parts/blocks/tile_wedge.json",
+      "base": "tile_block",
+      "set": {
+        "name": "Tile Wedge",
+        "description": "Tile block cut on the diagonal. Same material, half the mass.",
+        "mass": 3.5
+      },
+      "model": [{ "kind": "wedge", "size": [0.25, 0.25, 0.25] }],
+      "collision_from_model": true
+    },
+    {
+      "file": "parts/blocks/brick_block.json",
+      "template": "block",
+      "set": {
+        "name": "Brick Block",
+        "description": "Heavy masonry for walls.",
+        "mass": 9,
+        "durability": 6,
+        "friction": 0.6,
+        "buoyancy": 0,
+        "flammable": false,
+        "sound_material": "concrete",
+        "size": [1, 1, 1],
+        "visual": {
+          "color": "#9c4a33",
+          "roughness": 0.9,
+          "metallic": 0
+        }
+      },
+      "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }]
+    },
+    {
+      "file": "parts/blocks/brick_wedge.json",
+      "base": "brick_block",
+      "set": {
+        "name": "Brick Wedge",
+        "description": "Brick block cut on the diagonal. Same material, half the mass.",
+        "mass": 4.5
+      },
+      "model": [{ "kind": "wedge", "size": [0.25, 0.25, 0.25] }],
+      "collision_from_model": true
+    },
+    {
+      "file": "parts/blocks/cardboard_block.json",
+      "template": "block",
+      "set": {
+        "name": "Cardboard Block",
+        "description": "Very light and fragile; it floats.",
+        "mass": 1,
+        "durability": 1,
+        "friction": 0.6,
+        "buoyancy": 0.8,
+        "flammable": true,
+        "sound_material": "cardboard",
+        "size": [1, 1, 1],
+        "visual": {
+          "color": "#b89566",
+          "roughness": 0.95,
+          "metallic": 0
+        }
+      },
+      "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }]
+    },
+    {
+      "file": "parts/blocks/cardboard_wedge.json",
+      "base": "cardboard_block",
+      "set": {
+        "name": "Cardboard Wedge",
+        "description": "Cardboard block cut on the diagonal. Same material, half the mass.",
+        "mass": 0.5
+      },
+      "model": [{ "kind": "wedge", "size": [0.25, 0.25, 0.25] }],
+      "collision_from_model": true
+    },
+    {
+      "file": "parts/blocks/hull_plate_block.json",
+      "template": "block",
+      "set": {
+        "name": "Hull Plate Block",
+        "description": "Tough plating salvaged from the colony ship.",
+        "mass": 7,
+        "durability": 7,
+        "friction": 0.3,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "metal",
+        "size": [1, 1, 1],
+        "visual": {
+          "color": "#c8ccd2",
+          "roughness": 0.35,
+          "metallic": 0.85
+        }
+      },
+      "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }]
+    },
+    {
+      "file": "parts/blocks/hull_plate_wedge.json",
+      "base": "hull_plate_block",
+      "set": {
+        "name": "Hull Plate Wedge",
+        "description": "Hull Plate block cut on the diagonal. Same material, half the mass.",
+        "mass": 3.5
+      },
+      "model": [{ "kind": "wedge", "size": [0.25, 0.25, 0.25] }],
+      "collision_from_model": true
+    },
+    {
+      "file": "parts/blocks/path_light_block.json",
+      "template": "block",
+      "set": {
+        "name": "Path Light Block",
+        "description": "Glowing glass block for marking paths.",
+        "mass": 3,
+        "durability": 1,
+        "friction": 0.3,
+        "buoyancy": 0.4,
+        "flammable": false,
+        "sound_material": "glass",
+        "size": [1, 1, 1],
+        "visual": {
+          "color": "#fff2c0",
+          "roughness": 0.2,
+          "metallic": 0,
+          "emission": "#ffd870"
+        }
+      },
+      "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }]
+    },
+    {
+      "file": "parts/blocks/path_light_wedge.json",
+      "base": "path_light_block",
+      "set": {
+        "name": "Path Light Wedge",
+        "description": "Path Light block cut on the diagonal. Same material, half the mass.",
+        "mass": 1.5
+      },
+      "model": [{ "kind": "wedge", "size": [0.25, 0.25, 0.25] }],
+      "collision_from_model": true
+    },
+    {
+      "file": "parts/blocks/armored_glass_block.json",
+      "template": "block",
+      "set": {
+        "name": "Armored Glass Block",
+        "description": "Tough see-through block.",
+        "mass": 6,
+        "durability": 5,
+        "friction": 0.3,
+        "buoyancy": 0.2,
+        "flammable": false,
+        "sound_material": "glass",
+        "size": [1, 1, 1],
+        "visual": {
+          "color": "#9fc8d8",
+          "roughness": 0.1,
+          "metallic": 0,
+          "opacity": 0.55
+        }
+      },
+      "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }]
+    },
+    {
+      "file": "parts/blocks/armored_glass_wedge.json",
+      "base": "armored_glass_block",
+      "set": {
+        "name": "Armored Glass Wedge",
+        "description": "Armored Glass block cut on the diagonal. Same material, half the mass.",
+        "mass": 3
+      },
+      "model": [{ "kind": "wedge", "size": [0.25, 0.25, 0.25] }],
+      "collision_from_model": true
+    },
+    {
+      "file": "parts/blocks/aluminum_block.json",
+      "template": "block",
+      "set": {
+        "name": "Aluminum Block",
+        "description": "Light metal for aircraft.",
+        "mass": 4,
+        "durability": 4,
+        "friction": 0.3,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "sound_material": "metal",
+        "size": [1, 1, 1],
+        "visual": {
+          "color": "#d0d4d8",
+          "roughness": 0.3,
+          "metallic": 0.9
+        }
+      },
+      "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }]
+    },
+    {
+      "file": "parts/blocks/aluminum_wedge.json",
+      "base": "aluminum_block",
+      "set": {
+        "name": "Aluminum Wedge",
+        "description": "Aluminum block cut on the diagonal. Same material, half the mass.",
+        "mass": 2
+      },
+      "model": [{ "kind": "wedge", "size": [0.25, 0.25, 0.25] }],
+      "collision_from_model": true
+    },
+    {
+      "file": "parts/blocks/rusted_metal_block.json",
+      "template": "block",
+      "set": {
+        "name": "Rusted Metal Block",
+        "description": "Weathered metal, weaker than new.",
+        "mass": 7,
+        "durability": 4,
+        "friction": 0.5,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "metal",
+        "size": [1, 1, 1],
+        "visual": {
+          "color": "#8a5a3a",
+          "roughness": 0.8,
+          "metallic": 0.4
+        }
+      },
+      "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }]
+    },
+    {
+      "file": "parts/blocks/rusted_metal_wedge.json",
+      "base": "rusted_metal_block",
+      "set": {
+        "name": "Rusted Metal Wedge",
+        "description": "Rusted Metal block cut on the diagonal. Same material, half the mass.",
+        "mass": 3.5
+      },
+      "model": [{ "kind": "wedge", "size": [0.25, 0.25, 0.25] }],
+      "collision_from_model": true
+    },
+    {
+      "file": "parts/blocks/insulation_block.json",
+      "template": "block",
+      "set": {
+        "name": "Insulation Block",
+        "description": "Soft, light filler.",
+        "mass": 1,
+        "durability": 1,
+        "friction": 0.7,
+        "buoyancy": 0.7,
+        "flammable": true,
+        "sound_material": "fabric",
+        "size": [1, 1, 1],
+        "visual": {
+          "color": "#f0a8a0",
+          "roughness": 1,
+          "metallic": 0
+        }
+      },
+      "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }]
+    },
+    {
+      "file": "parts/blocks/insulation_wedge.json",
+      "base": "insulation_block",
+      "set": {
+        "name": "Insulation Wedge",
+        "description": "Insulation block cut on the diagonal. Same material, half the mass.",
+        "mass": 0.5
+      },
+      "model": [{ "kind": "wedge", "size": [0.25, 0.25, 0.25] }],
+      "collision_from_model": true
+    },
+    {
+      "file": "parts/blocks/plaster_block.json",
+      "template": "block",
+      "set": {
+        "name": "Plaster Block",
+        "description": "Smooth interior wall block.",
+        "mass": 6,
+        "durability": 2,
+        "friction": 0.5,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "concrete",
+        "size": [1, 1, 1],
+        "visual": {
+          "color": "#ece8e0",
+          "roughness": 0.9,
+          "metallic": 0
+        }
+      },
+      "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }]
+    },
+    {
+      "file": "parts/blocks/plaster_wedge.json",
+      "base": "plaster_block",
+      "set": {
+        "name": "Plaster Wedge",
+        "description": "Plaster block cut on the diagonal. Same material, half the mass.",
+        "mass": 3
+      },
+      "model": [{ "kind": "wedge", "size": [0.25, 0.25, 0.25] }],
+      "collision_from_model": true
+    },
+    {
+      "file": "parts/blocks/carpet_block.json",
+      "template": "block",
+      "set": {
+        "name": "Carpet Block",
+        "description": "Soft flooring with good grip.",
+        "mass": 2,
+        "durability": 1,
+        "friction": 0.8,
+        "buoyancy": 0.5,
+        "flammable": true,
+        "sound_material": "fabric",
+        "size": [1, 1, 1],
+        "visual": {
+          "color": "#7a3040",
+          "roughness": 1,
+          "metallic": 0
+        }
+      },
+      "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }]
+    },
+    {
+      "file": "parts/blocks/carpet_wedge.json",
+      "base": "carpet_block",
+      "set": {
+        "name": "Carpet Wedge",
+        "description": "Carpet block cut on the diagonal. Same material, half the mass.",
+        "mass": 1
+      },
+      "model": [{ "kind": "wedge", "size": [0.25, 0.25, 0.25] }],
+      "collision_from_model": true
+    },
+    {
+      "file": "parts/blocks/net_block.json",
+      "template": "block",
+      "set": {
+        "name": "Net Block",
+        "description": "See-through rope netting.",
+        "mass": 1,
+        "durability": 1,
+        "friction": 0.6,
+        "buoyancy": 0.9,
+        "flammable": true,
+        "sound_material": "fabric",
+        "size": [1, 1, 1],
+        "visual": {
+          "color": "#c8c0a8",
+          "roughness": 0.9,
+          "metallic": 0,
+          "opacity": 0.5
+        }
+      },
+      "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }]
+    },
+    {
+      "file": "parts/blocks/net_wedge.json",
+      "base": "net_block",
+      "set": {
+        "name": "Net Wedge",
+        "description": "Net block cut on the diagonal. Same material, half the mass.",
+        "mass": 0.5
+      },
+      "model": [{ "kind": "wedge", "size": [0.25, 0.25, 0.25] }],
+      "collision_from_model": true
+    },
+    {
+      "file": "parts/blocks/diamond_plate_block.json",
+      "template": "block",
+      "set": {
+        "name": "Diamond Plate Block",
+        "description": "Grippy, tough metal plating.",
+        "mass": 9,
+        "durability": 7,
+        "friction": 0.7,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "metal",
+        "size": [1, 1, 1],
+        "visual": {
+          "color": "#b8bcc0",
+          "roughness": 0.3,
+          "metallic": 0.9
+        }
+      },
+      "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }]
+    },
+    {
+      "file": "parts/blocks/diamond_plate_wedge.json",
+      "base": "diamond_plate_block",
+      "set": {
+        "name": "Diamond Plate Wedge",
+        "description": "Diamond Plate block cut on the diagonal. Same material, half the mass.",
+        "mass": 4.5
+      },
+      "model": [{ "kind": "wedge", "size": [0.25, 0.25, 0.25] }],
+      "collision_from_model": true
+    }
+  ]
+}

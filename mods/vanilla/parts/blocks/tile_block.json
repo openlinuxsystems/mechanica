@@ -1,0 +1,19 @@
+{
+  "id": "tile_block",
+  "name": "Tile Block",
+  "description": "Decorative and structural.",
+  "category": "block",
+  "mass": 7,
+  "durability": 4,
+  "friction": 0.4,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "sound_material": "tile",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/tile_block.glb",
+  "visual": {
+    "color": "#d8d4c8",
+    "roughness": 0.3,
+    "metallic": 0
+  }
+}

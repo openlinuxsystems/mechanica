@@ -1,0 +1,19 @@
+{
+  "id": "insulation_block",
+  "name": "Insulation Block",
+  "description": "Soft, light filler.",
+  "category": "block",
+  "mass": 1,
+  "durability": 1,
+  "friction": 0.7,
+  "buoyancy": 0.7,
+  "flammable": true,
+  "sound_material": "fabric",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/insulation_block.glb",
+  "visual": {
+    "color": "#f0a8a0",
+    "roughness": 1,
+    "metallic": 0
+  }
+}

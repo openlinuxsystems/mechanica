@@ -1,0 +1,23 @@
+{
+  "id": "rusted_metal_wedge",
+  "name": "Rusted Metal Wedge",
+  "description": "Rusted Metal block cut on the diagonal. Same material, half the mass.",
+  "category": "block",
+  "mass": 3.5,
+  "durability": 4,
+  "friction": 0.5,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/rusted_metal_wedge.glb",
+  "visual": {
+    "color": "#8a5a3a",
+    "roughness": 0.8,
+    "metallic": 0.4
+  },
+  "collision": {
+    "shape": "convex",
+    "mesh": "meshes/blocks/rusted_metal_wedge.glb"
+  }
+}

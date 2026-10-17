@@ -193,6 +193,12 @@ public sealed record VisualDefinition
     /// <summary>Metalness, 0 to 1.</summary>
     public float? Metallic { get; init; }
 
+    /// <summary>How opaque the surface is, 0 (invisible) to 1 (solid). Omitted means 1. Below 1 the part is drawn see-through.</summary>
+    public float? Opacity { get; init; }
+
+    /// <summary>Glow colour, <c>"#rrggbb"</c>, added on top of the lit surface. Omitted means none. It lights nothing else.</summary>
+    public string? Emission { get; init; }
+
     /// <summary>Albedo texture (<c>.png</c>), relative to the mod root or <c>other_mod:path</c>.</summary>
     public string? Texture { get; init; }
 

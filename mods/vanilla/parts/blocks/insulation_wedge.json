@@ -1,0 +1,23 @@
+{
+  "id": "insulation_wedge",
+  "name": "Insulation Wedge",
+  "description": "Insulation block cut on the diagonal. Same material, half the mass.",
+  "category": "block",
+  "mass": 0.5,
+  "durability": 1,
+  "friction": 0.7,
+  "buoyancy": 0.7,
+  "flammable": true,
+  "sound_material": "fabric",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/insulation_wedge.glb",
+  "visual": {
+    "color": "#f0a8a0",
+    "roughness": 1,
+    "metallic": 0
+  },
+  "collision": {
+    "shape": "convex",
+    "mesh": "meshes/blocks/insulation_wedge.glb"
+  }
+}

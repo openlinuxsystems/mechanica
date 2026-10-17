@@ -1,0 +1,19 @@
+{
+  "id": "diamond_plate_block",
+  "name": "Diamond Plate Block",
+  "description": "Grippy, tough metal plating.",
+  "category": "block",
+  "mass": 9,
+  "durability": 7,
+  "friction": 0.7,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/diamond_plate_block.glb",
+  "visual": {
+    "color": "#b8bcc0",
+    "roughness": 0.3,
+    "metallic": 0.9
+  }
+}

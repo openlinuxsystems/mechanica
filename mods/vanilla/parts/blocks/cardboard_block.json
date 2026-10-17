@@ -1,0 +1,19 @@
+{
+  "id": "cardboard_block",
+  "name": "Cardboard Block",
+  "description": "Very light and fragile; it floats.",
+  "category": "block",
+  "mass": 1,
+  "durability": 1,
+  "friction": 0.6,
+  "buoyancy": 0.8,
+  "flammable": true,
+  "sound_material": "cardboard",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/cardboard_block.glb",
+  "visual": {
+    "color": "#b89566",
+    "roughness": 0.95,
+    "metallic": 0
+  }
+}

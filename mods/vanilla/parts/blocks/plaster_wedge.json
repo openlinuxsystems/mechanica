@@ -1,0 +1,23 @@
+{
+  "id": "plaster_wedge",
+  "name": "Plaster Wedge",
+  "description": "Plaster block cut on the diagonal. Same material, half the mass.",
+  "category": "block",
+  "mass": 3,
+  "durability": 2,
+  "friction": 0.5,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "sound_material": "concrete",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/plaster_wedge.glb",
+  "visual": {
+    "color": "#ece8e0",
+    "roughness": 0.9,
+    "metallic": 0
+  },
+  "collision": {
+    "shape": "convex",
+    "mesh": "meshes/blocks/plaster_wedge.glb"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "id": "cardboard_wedge",
+  "name": "Cardboard Wedge",
+  "description": "Cardboard block cut on the diagonal. Same material, half the mass.",
+  "category": "block",
+  "mass": 0.5,
+  "durability": 1,
+  "friction": 0.6,
+  "buoyancy": 0.8,
+  "flammable": true,
+  "sound_material": "cardboard",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/cardboard_wedge.glb",
+  "visual": {
+    "color": "#b89566",
+    "roughness": 0.95,
+    "metallic": 0
+  },
+  "collision": {
+    "shape": "convex",
+    "mesh": "meshes/blocks/cardboard_wedge.glb"
+  }
+}

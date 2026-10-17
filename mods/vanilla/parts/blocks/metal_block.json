@@ -1,0 +1,19 @@
+{
+  "id": "metal_block",
+  "name": "Metal Block",
+  "description": "Standard chassis block.",
+  "category": "block",
+  "mass": 8,
+  "durability": 6,
+  "friction": 0.4,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/metal_block.glb",
+  "visual": {
+    "color": "#9aa0a8",
+    "roughness": 0.4,
+    "metallic": 0.8
+  }
+}

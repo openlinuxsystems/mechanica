@@ -1,0 +1,19 @@
+{
+  "id": "scrap_wood_block",
+  "name": "Scrap Wood Block",
+  "description": "Rough early survival block.",
+  "category": "block",
+  "mass": 3,
+  "durability": 2,
+  "friction": 0.5,
+  "buoyancy": 0.5,
+  "flammable": true,
+  "sound_material": "scrap",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/scrap_wood_block.glb",
+  "visual": {
+    "color": "#8a6b45",
+    "roughness": 0.9,
+    "metallic": 0
+  }
+}

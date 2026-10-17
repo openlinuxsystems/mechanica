@@ -1,0 +1,19 @@
+{
+  "id": "carpet_block",
+  "name": "Carpet Block",
+  "description": "Soft flooring with good grip.",
+  "category": "block",
+  "mass": 2,
+  "durability": 1,
+  "friction": 0.8,
+  "buoyancy": 0.5,
+  "flammable": true,
+  "sound_material": "fabric",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/carpet_block.glb",
+  "visual": {
+    "color": "#7a3040",
+    "roughness": 1,
+    "metallic": 0
+  }
+}

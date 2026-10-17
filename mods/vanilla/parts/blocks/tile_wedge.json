@@ -1,0 +1,23 @@
+{
+  "id": "tile_wedge",
+  "name": "Tile Wedge",
+  "description": "Tile block cut on the diagonal. Same material, half the mass.",
+  "category": "block",
+  "mass": 3.5,
+  "durability": 4,
+  "friction": 0.4,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "sound_material": "tile",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/tile_wedge.glb",
+  "visual": {
+    "color": "#d8d4c8",
+    "roughness": 0.3,
+    "metallic": 0
+  },
+  "collision": {
+    "shape": "convex",
+    "mesh": "meshes/blocks/tile_wedge.glb"
+  }
+}

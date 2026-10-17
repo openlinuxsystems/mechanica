@@ -1,0 +1,23 @@
+{
+  "id": "scrap_wood_wedge",
+  "name": "Scrap Wood Wedge",
+  "description": "Scrap Wood block cut on the diagonal. Same material, half the mass.",
+  "category": "block",
+  "mass": 1.5,
+  "durability": 2,
+  "friction": 0.5,
+  "buoyancy": 0.5,
+  "flammable": true,
+  "sound_material": "scrap",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/scrap_wood_wedge.glb",
+  "visual": {
+    "color": "#8a6b45",
+    "roughness": 0.9,
+    "metallic": 0
+  },
+  "collision": {
+    "shape": "convex",
+    "mesh": "meshes/blocks/scrap_wood_wedge.glb"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "id": "aluminum_wedge",
+  "name": "Aluminum Wedge",
+  "description": "Aluminum block cut on the diagonal. Same material, half the mass.",
+  "category": "block",
+  "mass": 2,
+  "durability": 4,
+  "friction": 0.3,
+  "buoyancy": 0.3,
+  "flammable": false,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/aluminum_wedge.glb",
+  "visual": {
+    "color": "#d0d4d8",
+    "roughness": 0.3,
+    "metallic": 0.9
+  },
+  "collision": {
+    "shape": "convex",
+    "mesh": "meshes/blocks/aluminum_wedge.glb"
+  }
+}

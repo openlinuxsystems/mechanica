@@ -1,0 +1,23 @@
+{
+  "id": "concrete_wedge",
+  "name": "Concrete Wedge",
+  "description": "Concrete block cut on the diagonal. Same material, half the mass.",
+  "category": "block",
+  "mass": 5,
+  "durability": 8,
+  "friction": 0.6,
+  "buoyancy": 0,
+  "flammable": false,
+  "sound_material": "concrete",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/concrete_wedge.glb",
+  "visual": {
+    "color": "#a9a9a3",
+    "roughness": 0.95,
+    "metallic": 0
+  },
+  "collision": {
+    "shape": "convex",
+    "mesh": "meshes/blocks/concrete_wedge.glb"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "id": "brick_wedge",
+  "name": "Brick Wedge",
+  "description": "Brick block cut on the diagonal. Same material, half the mass.",
+  "category": "block",
+  "mass": 4.5,
+  "durability": 6,
+  "friction": 0.6,
+  "buoyancy": 0,
+  "flammable": false,
+  "sound_material": "concrete",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/brick_wedge.glb",
+  "visual": {
+    "color": "#9c4a33",
+    "roughness": 0.9,
+    "metallic": 0
+  },
+  "collision": {
+    "shape": "convex",
+    "mesh": "meshes/blocks/brick_wedge.glb"
+  }
+}

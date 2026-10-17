@@ -1,0 +1,19 @@
+{
+  "id": "hull_plate_block",
+  "name": "Hull Plate Block",
+  "description": "Tough plating salvaged from the colony ship.",
+  "category": "block",
+  "mass": 7,
+  "durability": 7,
+  "friction": 0.3,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/hull_plate_block.glb",
+  "visual": {
+    "color": "#c8ccd2",
+    "roughness": 0.35,
+    "metallic": 0.85
+  }
+}

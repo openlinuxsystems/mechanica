@@ -1,0 +1,19 @@
+{
+  "id": "brick_block",
+  "name": "Brick Block",
+  "description": "Heavy masonry for walls.",
+  "category": "block",
+  "mass": 9,
+  "durability": 6,
+  "friction": 0.6,
+  "buoyancy": 0,
+  "flammable": false,
+  "sound_material": "concrete",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/brick_block.glb",
+  "visual": {
+    "color": "#9c4a33",
+    "roughness": 0.9,
+    "metallic": 0
+  }
+}

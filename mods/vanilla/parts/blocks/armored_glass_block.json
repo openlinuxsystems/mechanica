@@ -1,0 +1,20 @@
+{
+  "id": "armored_glass_block",
+  "name": "Armored Glass Block",
+  "description": "Tough see-through block.",
+  "category": "block",
+  "mass": 6,
+  "durability": 5,
+  "friction": 0.3,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "sound_material": "glass",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/armored_glass_block.glb",
+  "visual": {
+    "color": "#9fc8d8",
+    "roughness": 0.1,
+    "metallic": 0,
+    "opacity": 0.55
+  }
+}

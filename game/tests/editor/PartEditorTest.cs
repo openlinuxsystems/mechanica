@@ -137,6 +137,26 @@ public partial class PartEditorTest : Node3D
             && File.Exists(Path.Combine(modDir, "meshes", "ring_block.glb")), "renaming moves the part and re-bakes its mesh");
         Check(ModLoader.LoadAll(modsRoot).Parts.Keys.Order().SequenceEqual([$"{Mod}:cube_prop", $"{Mod}:ring_block"]),
             "the mod has exactly the exported parts");
+
+        // A batch makes several parts, baked and exported the same way.
+        var batchFile = Path.Combine(modDir, "editor", "batches", "pair.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(batchFile)!);
+        File.WriteAllText(batchFile, """
+            { "parts": [
+              { "file": "parts/pair/pair_block.json", "template": "block", "set": { "name": "Pair Block" },
+                "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }] },
+              { "file": "parts/pair/pair_wedge.json", "base": "pair_block", "set": { "name": "Pair Wedge", "mass": 1 },
+                "model": [{ "kind": "wedge", "size": [0.25, 0.25, 0.25] }], "collision_from_model": true }
+            ] }
+            """);
+        var batch = await screen.RunBatchAsync(batchFile);
+        Check(batch is { Succeeded: true, Exports.Count: 2 } && screen.ProblemsText.Contains("exported 2 parts"),
+            $"Run batch exports both parts ({string.Join("; ", batch.Diagnostics)})");
+        Check(screen.Document?.Definition is { Id: "pair_wedge", Collision.Shape: CollisionShape.Convex } && !screen.Document.IsDirty,
+            "the last part it made is open and saved");
+        content = ModLoader.LoadAll(modsRoot);
+        Check(!content.HasErrors && content.FindPart($"{Mod}:pair_wedge") is not null && File.Exists(Path.Combine(modDir, "meshes", "pair", "pair_wedge.glb")),
+            $"the batch's parts load with their baked meshes ({string.Join("; ", content.Diagnostics)})");
     }
 
     private async Task Frames(int count)
