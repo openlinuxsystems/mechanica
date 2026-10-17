@@ -107,7 +107,7 @@ public partial class CharacterModel : Node3D
             }
             _clips[name] = new Clip(animation, rotation, position);
         }
-        Animator = new CharacterAnimator(Assets.Settings, Assets.ClipLengths);
+        Animator = new CharacterAnimator(Assets.Settings, Assets.ClipLengths, FirstPerson);
 
         var hand = _skeleton.FindBone(CharacterRig.PropBone);
         if (hand >= 0)

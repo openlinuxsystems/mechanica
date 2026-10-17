@@ -324,6 +324,38 @@ public class ToolActionsTests
     }
 
     [Fact]
+    public void TheSledgehammerReachesItsOwnShorterDistance()
+    {
+        var id = Add(Car(durability: 5));
+        _world.Eyes[2] = new Vector3(0, 1.6f, 5);     // within the build reach (6 m), past the swing's 3 m
+
+        var far = Dispatch(ToolActions.Sledge, new { creation = id, part = 2 });
+
+        Assert.False(far.Ok);
+        Assert.Contains("the Sledgehammer reaches 3.0 m", far.Message);
+        _world.Eyes[2] = new Vector3(0, 1.6f, 2.5f);
+        Assert.True(Dispatch(ToolActions.Sledge, new { creation = id, part = 2 }).Ok);
+    }
+
+    [Fact]
+    public void KnockbackIsCappedSoLightBodiesDoNotFly()
+    {
+        var settings = _settings with { Sledge = new SledgeSettings { Impulse = 5000f, MaxKnockbackSpeed = 4f } };
+        var tools = new ToolActions(settings, _world);
+        var dispatcher = new ActionDispatcher();
+        tools.Register(dispatcher);
+        var id = Add(Car(durability: 5));
+        var mass = _world.Creations[id].Bodies[0].Mass;
+
+        Assert.True(dispatcher.Dispatch(Player, ToolActions.Sledge, JsonSerializer.Serialize(new { creation = id, part = 2 })).Ok);
+
+        Assert.Equal(12f, mass);
+        Assert.Equal(mass * 4f, Assert.Single(_world.Pushes).Length(), 1e-3f);
+        Assert.Equal(5000f, settings.Sledge.ImpulseFor(2000f));
+        Assert.Equal(0f, settings.Sledge.ImpulseFor(0f));
+    }
+
+    [Fact]
     public void BotsSwingWithoutCooldownOrReach()
     {
         var id = Add(Car(durability: 1));

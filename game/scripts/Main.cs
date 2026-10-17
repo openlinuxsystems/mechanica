@@ -302,6 +302,7 @@ public partial class Main : Node3D
         AddChild(JointOverlay);
         Sounds = new SoundSync { Name = "Sounds", Session = Session, Players = PlayerSync, Creations = Creations, Registry = SoundEvents ??= LoadSounds(mods) };
         AddChild(Sounds);
+        AddChild(new Building.SledgeImpacts { Name = "SledgeImpacts", Sounds = Sounds });
         // Before the players, so the spawn has ground on the first frame.
         Streamer = new WorldStreamer
         {

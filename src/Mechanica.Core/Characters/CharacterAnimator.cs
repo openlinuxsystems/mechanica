@@ -13,9 +13,11 @@ namespace Mechanica.Core.Characters;
 /// <param name="Prop">What is in hand.</param>
 /// <param name="Gesture">The newest gesture.</param>
 /// <param name="GestureCount">Counts gestures, so a repeat of the same one is still new.</param>
+/// <param name="Guard">Holding the Sledgehammer up to block.</param>
 public readonly record struct CharacterPose(
     Vector3 Velocity, float Yaw, float Pitch, bool OnFloor, bool Swimming = false, bool Crawl = false, bool Seated = false,
-    CharacterProp Prop = CharacterProp.None, CharacterGesture Gesture = CharacterGesture.None, byte GestureCount = 0);
+    CharacterProp Prop = CharacterProp.None, CharacterGesture Gesture = CharacterGesture.None, byte GestureCount = 0,
+    bool Guard = false);
 
 /// <summary>Something a character did this frame that makes a sound.</summary>
 public enum CharacterEvent
@@ -112,16 +114,24 @@ public sealed class CharacterAnimator
     private float _bodyTurn;
     private bool _backward;
 
-    /// <summary>Makes an animator for clips of the given lengths (seconds, by name). Missing clips are skipped.</summary>
-    public CharacterAnimator(CharacterSettings settings, IReadOnlyDictionary<string, float> clipLengths)
+    /// <summary>
+    /// Makes an animator for clips of the given lengths (seconds, by name). Missing clips are skipped. A
+    /// <paramref name="firstPerson"/> animator (the local player's own arms) plays a clip's first-person version
+    /// (<see cref="CharacterRig.FirstPersonSuffix"/>) where the set has one.
+    /// </summary>
+    public CharacterAnimator(CharacterSettings settings, IReadOnlyDictionary<string, float> clipLengths, bool firstPerson = false)
     {
         _settings = settings;
         _lengths = clipLengths;
+        FirstPerson = firstPerson;
         _ground = Blend("idle", "walk", "jog", "run");
         _crouch = Blend("crouch_idle", "crouch_walk");
         _swim = Blend("swim_idle", "swim");
         _modeWeights[(int)CharacterMode.Ground] = 1f;
     }
+
+    /// <summary>True when this animator poses the local player's first-person arms.</summary>
+    public bool FirstPerson { get; }
 
     /// <summary>The whole-body layer: weights add up to 1.</summary>
     public IReadOnlyList<ClipWeight> Body => _body;
@@ -162,12 +172,16 @@ public sealed class CharacterAnimator
     /// </summary>
     public void Play(CharacterGesture gesture)
     {
-        if (CharacterRig.GestureClip(CharacterRig.Sanitize(gesture)) is { } clip && _lengths.ContainsKey(clip))
+        if (Version(CharacterRig.GestureClip(CharacterRig.Sanitize(gesture))) is { } clip && _lengths.ContainsKey(clip))
         {
             _gesture = clip;
             _gestureTime = 0f;
         }
     }
+
+    // The first-person version of a clip when this animator has one to play, else the clip itself.
+    private string? Version(string? clip) =>
+        FirstPerson && clip is not null && _lengths.ContainsKey(clip + CharacterRig.FirstPersonSuffix) ? clip + CharacterRig.FirstPersonSuffix : clip;
 
     /// <summary>Advances by <paramref name="delta"/> seconds with this frame's <paramref name="pose"/>.</summary>
     public void Update(CharacterPose pose, float delta)
@@ -192,7 +206,7 @@ public sealed class CharacterAnimator
             Mode = Choose(pose);
             Array.Clear(_modeWeights);
             _modeWeights[(int)Mode] = 1f;
-            if (CharacterRig.HoldClip(_prop) is { } hold)
+            if (Version(CharacterRig.HoldClip(_prop, pose.Guard)) is { } hold)
                 _holds[hold] = 1f;
         }
 
@@ -251,7 +265,7 @@ public sealed class CharacterAnimator
         if (pose.GestureCount != _gestureCount)
         {
             _gestureCount = pose.GestureCount;
-            if (CharacterRig.GestureClip(CharacterRig.Sanitize(pose.Gesture)) is { } clip && _lengths.ContainsKey(clip))
+            if (Version(CharacterRig.GestureClip(CharacterRig.Sanitize(pose.Gesture))) is { } clip && _lengths.ContainsKey(clip))
             {
                 _gesture = clip;
                 _gestureTime = 0f;
@@ -348,7 +362,7 @@ public sealed class CharacterAnimator
     {
         // Hands are busy swimming; a seated player holds the controls.
         var free = Mode is not (CharacterMode.Swim or CharacterMode.Sit);
-        var want = free ? CharacterRig.HoldClip(_prop) : null;
+        var want = free ? Version(CharacterRig.HoldClip(_prop, pose.Guard)) : null;
         if (want is not null && _lengths.ContainsKey(want))
             _holds.TryAdd(want, 0f);
         foreach (var clip in _holds.Keys.ToList())
@@ -455,8 +469,13 @@ public sealed class CharacterAnimator
 
     private float SpeedOf(string clip) => _settings.ClipSpeeds.GetValueOrDefault(clip);
 
-    // How long a gesture plays: its own length unless the settings give it another.
-    private float GestureLength(string clip) => _settings.GestureSeconds.TryGetValue(clip, out var seconds) ? seconds : _lengths[clip];
+    // How long a gesture plays: its own length unless the settings give it another (a first-person version lasts as
+    // long as the clip it stands in for).
+    private float GestureLength(string clip)
+    {
+        var name = clip.EndsWith(CharacterRig.FirstPersonSuffix, StringComparison.Ordinal) ? clip[..^CharacterRig.FirstPersonSuffix.Length] : clip;
+        return _settings.GestureSeconds.TryGetValue(name, out var seconds) ? seconds : _lengths[clip];
+    }
 
     private void Add(string clip, float time, float weight) => AddTo(_body, clip, time, weight);
 

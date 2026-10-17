@@ -12,8 +12,9 @@ public class CharacterAnimatorTests
     {
         ["idle"] = 3f, ["walk"] = 1f, ["jog"] = 0.72f, ["run"] = 0.6f, ["crouch_idle"] = 2f, ["crouch_walk"] = 1.2f,
         ["jump"] = 0.3f, ["fall"] = 1f, ["land"] = 0.35f, ["swim_idle"] = 2f, ["swim"] = 1.2f, ["sit"] = 2f,
-        ["hold_tool"] = 2f, ["hold_heavy"] = 2f, ["hold_gun"] = 2f, ["hold_item"] = 2f,
-        ["hammer_swing"] = 0.35f, ["sledge_swing"] = 0.45f, ["tool_use"] = 0.3f, ["weld"] = 0.5f, ["paint_spray"] = 0.4f,
+        ["hold_tool"] = 2f, ["hold_heavy"] = 2f, ["hold_heavy_block"] = 2f, ["hold_gun"] = 2f, ["hold_item"] = 2f,
+        ["hold_heavy_fp"] = 2f, ["hold_heavy_block_fp"] = 2f, ["sledge_swing_fp"] = 1f,
+        ["hammer_swing"] = 0.35f, ["sledge_swing"] = 1f, ["tool_use"] = 0.3f, ["weld"] = 0.5f, ["paint_spray"] = 0.4f,
         ["fire_gun"] = 0.25f, ["eat"] = 1f, ["throw"] = 0.5f, ["plant"] = 0.8f, ["pour"] = 0.8f, ["interact"] = 0.4f, ["hurt"] = 0.3f,
     };
 
@@ -190,7 +191,7 @@ public class CharacterAnimatorTests
         var animator = Make();
         var pose = Standing() with { Prop = CharacterProp.Sledgehammer, Gesture = CharacterGesture.SledgeSwing, GestureCount = 1 };
         Run(animator, Standing() with { Prop = CharacterProp.Sledgehammer }, 0.2f);
-        Run(animator, pose, 0.6f);
+        Run(animator, pose, 1.1f);
         Assert.Null(animator.Gesture);
         Run(animator, pose with { GestureCount = 2 }, Dt);
         Assert.Equal("sledge_swing", animator.Gesture);
@@ -199,15 +200,53 @@ public class CharacterAnimatorTests
     [Fact]
     public void AGestureCanBeTimedToTheTool()
     {
-        // The sledge clip is 0.45 s long; the swing takes 0.4 s (UI spec §10), so the clip plays faster.
-        var animator = new CharacterAnimator(new CharacterSettings { GestureSeconds = new() { ["sledge_swing"] = 0.4f } }, Lengths);
+        // The sledge clip is 1 s long; a quicker swing setting plays it faster.
+        var animator = new CharacterAnimator(new CharacterSettings { GestureSeconds = new() { ["sledge_swing"] = 0.8f } }, Lengths);
         var pose = Standing() with { Prop = CharacterProp.Sledgehammer, Gesture = CharacterGesture.SledgeSwing, GestureCount = 1 };
         Run(animator, Standing() with { Prop = CharacterProp.Sledgehammer }, 0.2f);
-        Run(animator, pose, 0.2f);
-        // Started on the first of the frames, so 0.2 s less one frame in.
-        Assert.Equal((0.2f - Dt) * 0.45f / 0.4f, animator.Upper.Single(c => c.Clip == "sledge_swing").Time, 3);
-        Run(animator, pose, 0.21f);
+        Run(animator, pose, 0.4f);
+        // Started on the first of the frames, so 0.4 s less one frame in.
+        Assert.Equal((0.4f - Dt) * 1f / 0.8f, animator.Upper.Single(c => c.Clip == "sledge_swing").Time, 3);
+        Run(animator, pose, 0.45f);
         Assert.Null(animator.Gesture);
+    }
+
+    [Fact]
+    public void FirstPersonArmsPlayTheirOwnVersionsWhereThereAreSome()
+    {
+        var animator = new CharacterAnimator(new CharacterSettings { GestureSeconds = new() { ["sledge_swing"] = 0.8f } }, Lengths, firstPerson: true);
+        Run(animator, Standing() with { Prop = CharacterProp.Sledgehammer }, 0.5f);
+        Assert.Equal("hold_heavy_fp", Assert.Single(animator.Upper).Clip);
+
+        var pose = Standing() with { Prop = CharacterProp.Sledgehammer, Gesture = CharacterGesture.SledgeSwing, GestureCount = 1 };
+        Run(animator, pose, 0.4f);
+        Assert.Equal("sledge_swing_fp", animator.Gesture);
+        // Timed like the clip it stands in for.
+        Assert.Equal((0.4f - Dt) / 0.8f, animator.Upper.Single(c => c.Clip == "sledge_swing_fp").Time, 3);
+
+        // A tool without first-person clips plays the ordinary ones.
+        Run(animator, Standing() with { Prop = CharacterProp.Hammer }, 1f);
+        Assert.Equal("hold_tool", Assert.Single(animator.Upper).Clip);
+        var body = Make();
+        Run(body, Standing() with { Prop = CharacterProp.Sledgehammer }, 0.5f);
+        Assert.Equal("hold_heavy", Assert.Single(body.Upper).Clip);
+    }
+
+    [Fact]
+    public void HoldingRightClickRaisesTheSledgehammerToBlock()
+    {
+        var animator = Make();
+        var held = Standing() with { Prop = CharacterProp.Sledgehammer };
+        Run(animator, held, 0.5f);
+        Run(animator, held with { Guard = true }, 0.1f);
+        // Crossfading over the hold fade (0.2 s): half way after 0.1 s.
+        Assert.Equal(0.5f, animator.Upper.Single(c => c.Clip == "hold_heavy_block").Weight, 1);
+        Run(animator, held with { Guard = true }, 0.2f);
+        Assert.Equal("hold_heavy_block", Assert.Single(animator.Upper).Clip);
+        Run(animator, held, 0.3f);
+        Assert.Equal("hold_heavy", Assert.Single(animator.Upper).Clip);
+        // Blocking is a Sledgehammer pose only.
+        Assert.Equal("hold_tool", CharacterRig.HoldClip(CharacterProp.Hammer, guard: true));
     }
 
     [Fact]

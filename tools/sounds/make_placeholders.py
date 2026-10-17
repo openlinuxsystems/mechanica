@@ -270,6 +270,17 @@ def whoosh(rng, dur, lo=200, hi=3000, level=0.6):
     return edges(peak((a * (1 - ramp) + b * ramp) * env, level))
 
 
+def sledge_whoosh(rng, dur=0.66, peak_at=0.56, level=0.65):
+    """A long, low whoosh that builds through the wind-up and peaks as the head comes down, cut at the hit."""
+    t = np.linspace(0, dur, n_of(dur))
+    env = np.exp(-((t - peak_at) / 0.11) ** 2) + 0.12 * np.exp(-((t - 0.22) / 0.1) ** 2)
+    env *= np.clip((dur - t) / 0.03, 0, 1)
+    a = band(noise(rng, dur), 90, 700)
+    b = band(noise(rng, dur), 300, 2200)
+    sweep = np.clip((t - 0.3) / (peak_at - 0.3), 0, 1)
+    return edges(peak((a * (1 - 0.6 * sweep) + b * sweep * 0.8) * env, level))
+
+
 def crackle(rng, dur, rate=40, level=0.6):
     x = band(noise(rng, dur), 300, 3000) * 0.08
     for _ in range(int(rate * dur)):
@@ -508,8 +519,20 @@ ev("building", "weld_start", lambda rng: edges(crackle(rng, 0.4, 90, 0.6)), pitc
 ev("building", "weld_complete", lambda rng: edges(peak(mix(0.7, (crackle(rng, 0.3, 60, 0.5), 0), (hiss(rng, 0.4, 2000, 8000, 0.01, 0.3, 0.3), 0.1), (tone(1760, 0.5) * decay(0.5, 0.15) * 0.4, 0.25)), 0.75)), **TOOL)
 ev("building", "paint_spray", lambda rng: hiss(rng, 0.45, 2500, 9000, 0.02, 0.12, 0.55), variants=2, pitch_variation=0.05, **QUIET)
 ev("building", "paint_erase", lambda rng: hiss(rng, 0.35, 600, 3000, 0.04, 0.12, 0.5), pitch_variation=0.05, **QUIET)
-ev("building", "smash_hit", lambda rng: edges(peak(thud(rng, 0.4, 40, 1500, 0.06, 1.2), 0.9)), variants=2, pitch_variation=0.07, volume_variation_db=1.5, max_distance=40.0)
-ev("building", "smash_break", lambda rng: edges(peak(mix(0.7, (thud(rng, 0.4, 40, 1500, 0.06, 1.2), 0), (band(noise(rng, 0.6), 200, 5000) * decay(0.6, 0.15), 0.02)), 0.9)), pitch_variation=0.07, max_distance=45.0)
+# The Sledgehammer: a heavy whoosh that swells as the head comes over (the hit lands 0.6 s after the click,
+# sledge.strike_seconds), then a deep steel thump on what it hits, or a thump and a crunch when it breaks.
+ev("building", "sledgehammer_swing", lambda rng: sledge_whoosh(rng), variants=2, pitch_variation=0.06, volume_variation_db=1.5, max_distance=15.0)
+rev("building", "smash_hit", [
+    lambda: rec(take(f"{K}impactPlate_heavy_000", pitch=0.78), take(f"{K}impactPunch_heavy_000", 0.0, 0.9),
+                take(f"{K}impactMetal_heavy_000", 0.005, 0.45, pitch=0.7), level=0.9),
+    lambda: rec(take(f"{K}impactPlate_heavy_001", pitch=0.75), take(f"{K}impactPunch_medium_001", 0.0, 0.9, pitch=0.85),
+                take(f"{K}impactMetal_heavy_002", 0.005, 0.45, pitch=0.72), level=0.9),
+], loudness=-15.0, pitch_variation=0.07, volume_variation_db=1.5, max_distance=40.0)
+rev("building", "smash_break", [
+    lambda: rec(take(f"{K}impactPlate_heavy_000", pitch=0.72), take(f"{K}impactPunch_heavy_000", 0.0, 0.9),
+                take(f"{K}impactMining_002", 0.03, 0.8, pitch=0.8), take(f"{K}impactMining_004", 0.12, 0.6, pitch=0.9),
+                take(f"{K}impactMetal_light_003", 0.2, 0.3, pitch=0.8), level=0.9),
+], loudness=-14.0, pitch_variation=0.07, max_distance=45.0)
 
 # Engines and power
 ENGINE = dict(max_distance=60.0)

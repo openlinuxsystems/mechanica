@@ -173,6 +173,9 @@ public partial class PlayerController : CharacterBody3D
     /// </summary>
     public CharacterProp HeldProp { get; set; }
 
+    /// <summary>True while this player holds the Sledgehammer up to block; travels with the input like <see cref="HeldProp"/>.</summary>
+    public bool HeldGuard { get; set; }
+
     /// <summary>How the body stands after the last tick (or snapshot, for players this peer does not simulate).</summary>
     public BodyFlags Body { get; private set; } = BodyFlags.OnFloor;
 
@@ -189,7 +192,7 @@ public partial class PlayerController : CharacterBody3D
     public CharacterPose Pose => new(
         Velocity.ToNumerics(), Rotation.Y, _head.Rotation.X,
         Body.HasFlag(BodyFlags.OnFloor), Body.HasFlag(BodyFlags.Swimming), Body.HasFlag(BodyFlags.Crawl), Seated || Body.HasFlag(BodyFlags.Seated),
-        ShownProp, ShownGesture.Gesture, ShownGesture.Count);
+        ShownProp, ShownGesture.Gesture, ShownGesture.Count, Body.HasFlag(BodyFlags.Guard));
 
     /// <summary>
     /// Plays a gesture on this player (the local player's tools and items call it). Like <see cref="HeldProp"/> it
@@ -297,7 +300,7 @@ public partial class PlayerController : CharacterBody3D
     {
         if (!Simulated)
             return;
-        var input = Step(CurrentInput with { Prop = HeldProp, Gesture = _gesture, GestureCount = _gestureCount }, (float)delta);
+        var input = Step(CurrentInput with { Prop = HeldProp, Gesture = _gesture, GestureCount = _gestureCount, Guard = HeldGuard }, (float)delta);
         Stepped?.Invoke(input);
     }
 
@@ -336,7 +339,8 @@ public partial class PlayerController : CharacterBody3D
             PushRigidBodies(delta);
         Body = (IsOnFloor() ? BodyFlags.OnFloor : 0)
             | (PlayerMotor.IsSwimming(WaterDepth, Settings) ? BodyFlags.Swimming : 0)
-            | (_crouched ? BodyFlags.Crawl : 0);
+            | (_crouched ? BodyFlags.Crawl : 0)
+            | (input.Guard ? BodyFlags.Guard : 0);
         StepEyeHeight(delta);
         return input;
     }

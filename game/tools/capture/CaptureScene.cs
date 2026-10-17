@@ -38,7 +38,9 @@ public partial class CaptureScene : Node
         Shot("hammer", 40, () => { Player.HeldProp = CharacterProp.Hammer; Look(new Vector3(-1.6f, 1.2f, -2.2f)); });
         Shot("swing", 9, () => Player.Gesture(CharacterGesture.HammerSwing));
         Shot("sledge", 40, () => { Tool<Building.SledgeTool>(); Look(new Vector3(-1.6f, 1.2f, -2.2f)); });
-        Shot("weld", 40, () => Tool<Building.WeldTool>());
+        Shot("sledge_windup", 21, () => Player.Gesture(CharacterGesture.SledgeSwing));
+        Shot("sledge_block", 30, () => Player.HeldGuard = true);
+        Shot("weld", 40, () => { Player.HeldGuard = false; Tool<Building.WeldTool>(); });
         Shot("look_up", 40, () => { Tool<Building.HammerTool>(); Input(pitch: 0.9f); Look(new Vector3(-2.6f, 1.2f, -1.6f)); });
         Shot("look_down", 40, () => Input(pitch: -0.9f));
         Shot("crouch", 40, () => Input(crawl: true));
@@ -49,8 +51,10 @@ public partial class CaptureScene : Node
         Shot("first_person_swing", 9, () => Player.Gesture(CharacterGesture.HammerSwing));
         Shot("first_person_walk", 30, () => Input(z: 1));
         Shot("first_person_sledge", 30, () => { Input(); Tool<Building.SledgeTool>(); });
-        Shot("first_person_sledge_swing", 14, () => Player.Gesture(CharacterGesture.SledgeSwing));
-        Shot("first_person_weld", 30, () => Tool<Building.WeldTool>());
+        Shot("first_person_sledge_windup", 21, () => Player.Gesture(CharacterGesture.SledgeSwing));
+        Shot("first_person_sledge_swing", 40, () => Player.Gesture(CharacterGesture.SledgeSwing));
+        Shot("first_person_sledge_block", 30, () => Player.HeldGuard = true);
+        Shot("first_person_weld", 30, () => { Player.HeldGuard = false; Tool<Building.WeldTool>(); });
         Shot("first_person_paint", 30, () => Tool<Building.PaintTool>());
         Shot("first_person_lift", 30, () => Tool<Building.LiftTool>());
         Shot("first_person_connect", 30, () => Tool<Building.ConnectTool>());
