@@ -25,6 +25,8 @@ public partial class CreationNode : Node3D
     private readonly List<(MeshInstance3D Mesh, JointLink Link, JointFrame Frame)> _shafts = [];
     private readonly List<(int Part, Light3D Light, float Energy)> _lights = [];
     private readonly List<(int Part, Node3D Model, Vector3 Axis, Vector3 Pivot)> _animated = [];
+    private readonly List<(CreationBody Body, Node3D Visual, Transform3D Placed)> _visuals = [];
+    private Vector3 _visualOffset;
 
     /// <summary>The graph this node shows. Set before adding the node to the tree.</summary>
     public Creation Creation { get; init; } = null!;
@@ -85,6 +87,28 @@ public partial class CreationNode : Node3D
             var turn = axis.Y < -0.99f ? new Basis(Vector3.Right, Mathf.Pi) : new Basis(new Quaternion(Vector3.Up, axis));
             mesh.Transform = new Transform3D(turn * Basis.FromScale(new Vector3(1, length, 1)), frame.Anchor.ToGodot() + axis * (length / 2));
         }
+    }
+
+    /// <summary>
+    /// Shifts how every part is drawn by a world-space offset without moving its bodies, so a Creation held by a Lift
+    /// rides the platform as it eases between levels while its collision stays where the host put it. Zero when not held.
+    /// </summary>
+    public Vector3 VisualOffset
+    {
+        get => _visualOffset;
+        set
+        {
+            if (value == _visualOffset)
+                return;
+            _visualOffset = value;
+            ApplyVisualOffset();
+        }
+    }
+
+    private void ApplyVisualOffset()
+    {
+        foreach (var (body, visual, placed) in _visuals)
+            visual.Transform = new Transform3D(placed.Basis, placed.Origin + body.Transform.Basis.Inverse() * _visualOffset);
     }
 
     /// <summary>The light of each part with a <c>light</c> section, by part id (chunk 23).</summary>
@@ -185,6 +209,8 @@ public partial class CreationNode : Node3D
             if (!link.IsLocked && BuildJoint(link) is { } joint)
                 _joints.Add(joint);
         }
+        if (_visualOffset != Vector3.Zero)
+            ApplyVisualOffset();
     }
 
     private void Clear()
@@ -199,6 +225,7 @@ public partial class CreationNode : Node3D
         _shafts.Clear();
         _lights.Clear();
         _animated.Clear();
+        _visuals.Clear();
         _bodies.Clear();
     }
 
@@ -243,6 +270,7 @@ public partial class CreationNode : Node3D
             if (definition.Animation is { } animation)
                 _animated.Add((id, shown, (animation.Axis ?? new Vec3(0, 1, 0)).ToGodot().Normalized(), (animation.Pivot ?? Vec3.Zero).ToGodot()));
             node.AddChild(visual);
+            _visuals.Add((node, visual, placed));
             if (definition.Friction is { } f)
             {
                 var m = definition.Mass ?? 0f;

@@ -290,7 +290,7 @@ public partial class BuildSync : Node, IToolWorld, IPartCatalog
         }
         if (!_lifts.TryGetValue(owner, out var body))
         {
-            body = _lifts[owner] = new LiftBody { Name = $"Lift{owner}" };
+            body = _lifts[owner] = new LiftBody { Name = $"Lift{owner}", Assets = Assets, FindCreation = Creations.NodeOf, Sounds = Sounds };
             _liftRoot.AddChild(body);
         }
         body.Show(lift, Settings!.Lift);
