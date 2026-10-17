@@ -1,0 +1,22 @@
+{
+  "id": "potato_launcher",
+  "name": "Potato Launcher",
+  "description": "Lobs a potato that bursts on impact and hurts everything near it.",
+  "category": "weapon",
+  "mass": 4,
+  "stack_size": 1,
+  "visual": {
+    "color": "#4a5a40"
+  },
+  "sounds": {
+    "fire": "launcher_fire"
+  },
+  "weapon": {
+    "damage": 60,
+    "interval": 1.5,
+    "range": 50,
+    "ammo": "potato",
+    "radius": 3,
+    "impulse": 400
+  }
+}

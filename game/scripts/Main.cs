@@ -3,6 +3,7 @@ using Mechanica.Core;
 using Mechanica.Core.Data;
 using Mechanica.Core.Items;
 using Mechanica.Core.Net;
+using Mechanica.Core.Survival;
 using Mechanica.Core.World;
 using Mechanica.Game.Building;
 using Mechanica.Game.Creations;
@@ -13,6 +14,7 @@ using Mechanica.Game.Net;
 using Mechanica.Game.Player;
 using Mechanica.Game.Remote;
 using Mechanica.Game.Scripting;
+using Mechanica.Game.Survival;
 using Mechanica.Game.World;
 
 namespace Mechanica.Game;
@@ -32,6 +34,9 @@ public partial class Main : Node3D
 
     /// <summary>How to start. Null reads the command line (<c>-- --host 27460</c>, <c>-- --join host:port</c>).</summary>
     public LaunchOptions? Options { get; set; }
+
+    /// <summary>The game mode the main menu picked for the next world; it overrides the command line's.</summary>
+    public static GameMode? MenuGameMode { get; set; }
 
     /// <summary>False in automated tests: nothing reads devices, the test sets the player's input itself.</summary>
     public bool ReadDeviceInput { get; set; } = true;
@@ -87,6 +92,9 @@ public partial class Main : Node3D
     /// <summary>Inventories, containers and crafting, and their sync to clients.</summary>
     public InventorySync Inventory { get; private set; } = null!;
 
+    /// <summary>Health, food, farming, weapons, items on the ground and respawn (chunk 20), and their sync to clients.</summary>
+    public SurvivalSync Survival { get; private set; } = null!;
+
     /// <summary>Forces, torques and bearing motors for scripts, bots and external agents.</summary>
     public MotionSync Motion { get; private set; } = null!;
 
@@ -109,6 +117,8 @@ public partial class Main : Node3D
     {
         GD.Print($"{MechanicaInfo.GameName} started (physics: {ProjectSettings.GetSetting("physics/3d/physics_engine")})");
         Options ??= ReadCommandLine();
+        if (MenuGameMode is { } chosen)
+            Options = Options with { GameMode = chosen };
         var mods = Mods ??= LoadMods();
         var world = WorldGen ??= LoadWorldGen(mods);
         var recipes = Recipes ??= LoadRecipes(mods);
@@ -159,7 +169,6 @@ public partial class Main : Node3D
         AddChild(CreationSync);
         Actions = new ActionGateway { Name = "Actions", Session = Session };
         AddChild(Actions);
-        PlayerSync.RegisterActions(Actions.Dispatcher);
         Build = new BuildSync
         {
             Name = "Build",
@@ -169,8 +178,6 @@ public partial class Main : Node3D
             Catalog = mods,
             Assets = Assets,
         };
-        AddChild(Build);
-        Build.RegisterActions(Actions.Dispatcher);
         Inventory = new InventorySync
         {
             Name = "Inventory",
@@ -179,9 +186,29 @@ public partial class Main : Node3D
             Creations = Creations,
             Catalog = mods,
             Recipes = recipes,
+            // Making items from nothing is Creative's (D13).
+            Settings = InventorySync.LoadSettings() with { AllowGive = Options.GameMode == GameMode.Creative },
         };
-        AddChild(Inventory);
         Inventory.RegisterActions(Actions.Dispatcher);
+        Survival = new SurvivalSync
+        {
+            Name = "Survival",
+            Session = Session,
+            Players = PlayerSync,
+            Creations = Creations,
+            World = Streamer,
+            Build = Build,
+            Inventory = Inventory,
+            Catalog = new LoadedParts(this),
+            Mode = Options.GameMode,
+        };
+        // Before building's actions, so building is paid for in Survival.
+        Survival.RegisterActions(Actions.Dispatcher);
+        AddChild(Build);
+        Build.RegisterActions(Actions.Dispatcher);
+        Build.Tools!.Targets = Survival.Actions;
+        AddChild(Inventory);
+        AddChild(Survival);
         Motion = new MotionSync { Name = "Motion", Session = Session, Creations = Creations };
         AddChild(Motion);
         Motion.RegisterActions(Actions.Dispatcher);
@@ -199,6 +226,7 @@ public partial class Main : Node3D
         {
             AddChild(new ConnectPanel { Name = "ConnectPanel", Session = Session });
             AddChild(new InventoryScreen { Name = "InventoryScreen", Inventory = Inventory, Actions = Actions, Players = PlayerSync, Catalog = mods });
+            AddChild(new SurvivalHud { Name = "SurvivalHud", Survival = Survival, Actions = Actions, Players = PlayerSync, Catalog = mods });
         }
 
         Start(Options);
@@ -309,9 +337,18 @@ public partial class Main : Node3D
 
     private void AddTools(PlayerController player)
     {
-        if (Build is null || Tools is not null)
+        if (Build is null || Survival is null || Tools is not null)
             return;
-        Tools = new ToolBelt { Name = "Tools", Player = player, Actions = Actions, Build = Build, ReadDeviceInput = ReadDeviceInput };
+        Tools = new ToolBelt
+        {
+            Name = "Tools",
+            Player = player,
+            Actions = Actions,
+            Build = Build,
+            Inventory = Inventory,
+            Survival = Survival,
+            ReadDeviceInput = ReadDeviceInput,
+        };
         AddChild(Tools);
     }
 

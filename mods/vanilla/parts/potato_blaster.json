@@ -1,0 +1,22 @@
+{
+  "id": "potato_blaster",
+  "name": "Potato Blaster",
+  "description": "Fires potatoes quickly, one at a time.",
+  "category": "weapon",
+  "mass": 2,
+  "stack_size": 1,
+  "visual": {
+    "color": "#6a7a50"
+  },
+  "sounds": {
+    "fire": "blaster_fire",
+    "reload": "blaster_reload"
+  },
+  "weapon": {
+    "damage": 20,
+    "interval": 0.25,
+    "range": 60,
+    "ammo": "potato",
+    "impulse": 20
+  }
+}

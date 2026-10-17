@@ -1,0 +1,18 @@
+{
+  "id": "carrot",
+  "name": "Carrot",
+  "description": "Crunchy. Heals a little.",
+  "category": "consumable",
+  "mass": 0.2,
+  "stack_size": 20,
+  "visual": {
+    "color": "#e8781e"
+  },
+  "sounds": {
+    "pickup": "pickup_produce",
+    "eat": "eat_crunch"
+  },
+  "food": {
+    "health": 10
+  }
+}

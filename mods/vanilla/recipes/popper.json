@@ -1,0 +1,24 @@
+{
+  "id": "popper",
+  "stations": [
+    "fabricator",
+    "mini_fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "tomato",
+      "count": 2
+    },
+    {
+      "item": "gasoline",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "popper",
+      "count": 2
+    }
+  ],
+  "time": 6
+}

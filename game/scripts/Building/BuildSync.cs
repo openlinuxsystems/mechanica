@@ -56,6 +56,15 @@ public partial class BuildSync : Node, IToolWorld, IPartCatalog
     /// <summary>Building limits; null loads <see cref="SettingsPath"/>.</summary>
     public BuildSettings? Settings { get; set; }
 
+    /// <summary>What building costs (Survival pays with items). Set before <see cref="RegisterActions"/>.</summary>
+    public IBuildCosts? Costs { get; set; }
+
+    /// <summary>Raised on the host just before a part breaks off, so what it holds can fall out.</summary>
+    public event Action<Creation, int>? PartBreaking;
+
+    /// <summary>Raised on the host when a tool, a weapon or a script pushes a Body (so it is not taken for a crash).</summary>
+    public event Action<CreationBody>? BodyPushed;
+
     /// <summary>The tool actions, once registered (host-side Lift state lives here).</summary>
     public ToolActions? Tools { get; private set; }
 
@@ -98,7 +107,7 @@ public partial class BuildSync : Node, IToolWorld, IPartCatalog
     public void RegisterActions(ActionDispatcher dispatcher)
     {
         Settings ??= LoadSettings();
-        new BuildActions(this, Settings, this).Register(dispatcher);
+        new BuildActions(this, Settings, this) { Costs = Costs }.Register(dispatcher);
         Tools = new ToolActions(Settings, this);
         Tools.Register(dispatcher);
         _dispatcher = dispatcher;
@@ -216,8 +225,12 @@ public partial class BuildSync : Node, IToolWorld, IPartCatalog
             return;
         var body = node.Bodies[bodyIndex];
         body.Sleeping = false;
+        BodyPushed?.Invoke(body);
         body.ApplyImpulse(impulse.ToGodot(), point.ToGodot() - body.GlobalPosition);
     }
+
+    /// <inheritdoc/>
+    public void Breaking(Creation creation, int partId) => PartBreaking?.Invoke(creation, partId);
 
     /// <inheritdoc/>
     public void Added(Creation creation) => Creations.Add(creation, Assets);

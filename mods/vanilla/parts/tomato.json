@@ -1,0 +1,18 @@
+{
+  "id": "tomato",
+  "name": "Tomato",
+  "description": "Juicy. Heals more than a carrot.",
+  "category": "consumable",
+  "mass": 0.2,
+  "stack_size": 20,
+  "visual": {
+    "color": "#d23a2a"
+  },
+  "sounds": {
+    "pickup": "pickup_produce",
+    "eat": "eat_soft"
+  },
+  "food": {
+    "health": 15
+  }
+}

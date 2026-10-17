@@ -103,6 +103,7 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
             ValidateCollision(collision, sink);
         ValidateSockets(part, placeable, sink);
         ValidateStorage(part, placeable, sink);
+        ValidateSurvival(part, placeable, sink);
 
         foreach (var (key, sound) in part.Sounds ?? [])
         {
@@ -255,6 +256,74 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
             KnownKeys.WarnUnknown(crafting.Extra, p, sink, typeof(CraftingDefinition));
         }
     }
+
+    // Food, farming, weapons and respawn points (chunk 20).
+    private static void ValidateSurvival(PartDefinition part, bool placeable, DiagnosticSink sink)
+    {
+        void ItemOnly(object? section, string key)
+        {
+            if (section is not null && placeable)
+                sink.Error(Code, $"$.{key}", $"only items (not placeable parts) can have {key}.");
+        }
+        void PartOnly(object? section, string key)
+        {
+            if (section is not null && !placeable)
+                sink.Error(Code, $"$.{key}", $"only placeable parts can have {key}.");
+        }
+        ItemOnly(part.Food, "food");
+        ItemOnly(part.Seed, "seed");
+        ItemOnly(part.Watering, "watering");
+        ItemOnly(part.Weapon, "weapon");
+        PartOnly(part.Soil, "soil");
+        PartOnly(part.RespawnPoint == true ? true : null, "respawn_point");
+        if (part.Food is { } food)
+        {
+            RequirePositive(food.Health, "$.food.health", "health", true, "food", sink);
+            KnownKeys.WarnUnknown(food.Extra, "$.food", sink, typeof(FoodDefinition));
+        }
+        if (part.Seed is { } seed)
+        {
+            if (!IsItemRef(seed.Crop))
+                sink.Error(Code, "$.seed.crop", "crop (the item a ripe crop yields) is required: an item id or 'mod_id:item_id'.");
+            RequirePositive(seed.GrowTime, "$.seed.grow_time", "grow_time (s)", true, "a seed", sink);
+            if (seed.Yield is < 1)
+                sink.Error(Code, "$.seed.yield", "yield must be 1 or more.");
+            if (seed.Seeds is < 0)
+                sink.Error(Code, "$.seed.seeds", "seeds must be 0 or more.");
+            RequireNonNegative(seed.Value, "$.seed.value", "value", false, "a seed", sink);
+            KnownKeys.WarnUnknown(seed.Extra, "$.seed", sink, typeof(SeedDefinition));
+        }
+        if (part.Watering is { } watering)
+        {
+            RequirePositive(watering.Seconds, "$.watering.seconds", "seconds", true, "watering", sink);
+            KnownKeys.WarnUnknown(watering.Extra, "$.watering", sink, typeof(WateringDefinition));
+        }
+        if (part.Soil is { } soil)
+        {
+            RequirePositive(soil.Capacity, "$.soil.capacity", "capacity (s)", true, "soil", sink);
+            RequirePositive(soil.Growth, "$.soil.growth", "growth", false, "soil", sink);
+            KnownKeys.WarnUnknown(soil.Extra, "$.soil", sink, typeof(SoilDefinition));
+        }
+        if (part.Weapon is { } weapon)
+        {
+            const string p = "$.weapon";
+            RequirePositive(weapon.Damage, $"{p}.damage", "damage", true, "a weapon", sink);
+            RequirePositive(weapon.Interval, $"{p}.interval", "interval (s)", true, "a weapon", sink);
+            RequirePositive(weapon.Range, $"{p}.range", "range (m)", true, "a weapon", sink);
+            if (weapon.Ammo is not null && !IsItemRef(weapon.Ammo))
+                sink.Error(Code, $"{p}.ammo", $"'{weapon.Ammo}' must be an item id or 'mod_id:item_id'.");
+            if (weapon.Pellets is < 1 or > MaxPellets)
+                sink.Error(Code, $"{p}.pellets", $"pellets must be 1 to {MaxPellets}.");
+            if (weapon.Spread is { } spread && !(spread >= 0 && spread < 90))
+                sink.Error(Code, $"{p}.spread", "spread must be 0 or more and under 90 degrees.");
+            RequirePositive(weapon.Radius, $"{p}.radius", "radius (m)", false, "a weapon", sink);
+            RequireNonNegative(weapon.Impulse, $"{p}.impulse", "impulse (N·s)", false, "a weapon", sink);
+            KnownKeys.WarnUnknown(weapon.Extra, p, sink, typeof(WeaponDefinition));
+        }
+    }
+
+    /// <summary>Most pellets one shot may fire.</summary>
+    internal const int MaxPellets = 32;
 
     /// <summary>Most slots one inventory may have.</summary>
     internal const int MaxSlots = 256;
