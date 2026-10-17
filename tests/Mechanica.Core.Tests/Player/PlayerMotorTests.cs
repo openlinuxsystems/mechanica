@@ -173,11 +173,27 @@ public class PlayerMotorTests
     public void JumpAtTheSurfaceLeapsAndUnderwaterRises()
     {
         var jump = new PlayerInput(0, 0, 0, 0, true, false);
-        Assert.Equal(Settings.JumpSpeed, PlayerMotor.Step(Vector3.Zero, false, jump, Settings, Dt, waterDepth: Settings.FloatDepth).Y);
+        Assert.True(PlayerMotor.Step(Vector3.Zero, false, jump, Settings, Dt, waterDepth: Settings.FloatDepth).Y >= Settings.JumpSpeed);
         var velocity = Vector3.Zero;
         for (var t = 0f; t < 2f; t += Dt)
             velocity = PlayerMotor.Step(velocity, false, jump, Settings, Dt, waterDepth: Settings.FloatDepth + 3f);
         Assert.Equal(Settings.SwimVerticalSpeed, velocity.Y, 3);
+    }
+
+    [Fact]
+    public void ASwimmerHoldingJumpLeapsOutOntoAnEdgeAboveTheWater()
+    {
+        // A floating swimmer holds jump: the feet must clear swim_leap_height above the surface, so the pond's
+        // edge can never be a wall a player is stuck under.
+        var jump = new PlayerInput(0, 1, 0, 0, true, false);
+        var (depth, velocity, peak) = (Settings.FloatDepth, Vector3.Zero, float.NegativeInfinity);
+        for (var t = 0f; t < 3f; t += Dt)
+        {
+            velocity = PlayerMotor.Step(velocity, false, jump, Settings, Dt, waterDepth: depth);
+            depth -= velocity.Y * Dt;
+            peak = MathF.Max(peak, -depth);
+        }
+        Assert.InRange(peak, Settings.SwimLeapHeight - 0.05f, Settings.SwimLeapHeight + 0.15f);
     }
 
     [Theory]

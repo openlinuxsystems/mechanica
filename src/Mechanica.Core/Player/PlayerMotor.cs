@@ -92,7 +92,9 @@ public static class PlayerMotor
         float.IsFinite(waterDepth) && waterDepth >= settings.SwimDepth;
 
     // In deep water: no gravity, buoyancy holds the player at their float depth, jump rises and crouch dives.
-    // At the surface, jump leaps, so a swimmer can climb out onto a low edge.
+    // At the surface, jump leaps the feet to SwimLeapHeight above the water, so a swimmer can climb out onto an
+    // edge that high. The speed is the ballistic one from the current depth, so holding jump through the first
+    // ticks of the leap keeps the same peak.
     private static Vector3 Swim(Vector3 velocity, PlayerInput input, PlayerMovementSettings settings, float delta, float scale, float depth)
     {
         var speed = (input.Sprint ? settings.SwimSprintSpeed : settings.SwimSpeed) * scale;
@@ -101,13 +103,20 @@ public static class PlayerMotor
         var horizontal = MoveToward(new Vector3(velocity.X, 0f, velocity.Z), target, step);
 
         if (input.Jump && depth <= settings.FloatDepth + 0.1f)
-            return new Vector3(horizontal.X, settings.JumpSpeed, horizontal.Z);
+            return new Vector3(horizontal.X, LeapSpeed(depth, settings), horizontal.Z);
         var targetY = input.Jump ? settings.SwimVerticalSpeed
             : input.Crawl ? -settings.SwimVerticalSpeed
             : Math.Clamp((depth - settings.FloatDepth) * settings.Buoyancy, -settings.SwimVerticalSpeed, settings.SwimVerticalSpeed);
         var vertical = velocity.Y + Math.Clamp(targetY - velocity.Y, -step, step);
         return new Vector3(horizontal.X, vertical, horizontal.Z);
     }
+
+    /// <summary>
+    /// Upward speed of a jump at the water surface from feet <paramref name="depth"/> metres under it: enough to lift
+    /// the feet <see cref="PlayerMovementSettings.SwimLeapHeight"/> above the surface, and never less than a jump on land.
+    /// </summary>
+    public static float LeapSpeed(float depth, PlayerMovementSettings settings) =>
+        MathF.Max(settings.JumpSpeed, MathF.Sqrt(2f * settings.Gravity * MathF.Max(0f, depth + settings.SwimLeapHeight)));
 
     /// <summary>Moves <paramref name="from"/> toward <paramref name="to"/> by at most <paramref name="maxDelta"/>.</summary>
     public static Vector3 MoveToward(Vector3 from, Vector3 to, float maxDelta)

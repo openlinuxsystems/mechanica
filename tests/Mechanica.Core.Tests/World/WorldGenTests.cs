@@ -153,6 +153,15 @@ public class WorldGenTests
             for (var z = -20f; z <= 10f; z += 2f)
                 Assert.Equal(0f, gen.HeightAt(x, z));
         Assert.True(gen.HeightAt(30, 26) < gen.SeaLevel - 1f, "a pond sits next to the crash site");
+        // Its banks are gentle enough to walk out of (the player controller climbs up to 45°), so the first water a
+        // new player meets is never a trap.
+        for (var a = 0; a < 360; a += 10)
+            for (var r = 0f; r <= 22f; r += 0.5f)
+            {
+                var (sin, cos) = MathF.SinCos(a * MathF.PI / 180f);
+                float x = 30f + r * cos, z = 26f + r * sin;
+                Assert.True(gen.SlopeAt(x, z) < 0.7f, $"pond bank at ({x:0.#}, {z:0.#}) has slope {gen.SlopeAt(x, z):0.##}");
+            }
         Assert.Equal(3, crash.Poi.Prefab.Markers!.Count(m => m.Type == "fire"));
         Assert.Single(crash.Poi.Prefab.Markers!, m => m.Ref == "master_battery");
     }
@@ -269,6 +278,7 @@ public class WorldGenTests
     [InlineData("""{ "id": "p", "radius": 100, "placement": { "spacing": [100, 200], "biomes": ["a"] } }""", "$.placement.spacing")]
     [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0], "yaw": 45 } }""", "$.placement.yaw")]
     [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "terrain": [{ "op": "flatten", "radius": 8, "blend": 5 }] }""", "$.terrain[0]")]
+    [InlineData("""{ "id": "p", "radius": 20, "placement": { "fixed": [0, 0] }, "terrain": [{ "op": "basin", "radius": 4, "blend": 6, "depth": 7 }] }""", "$.terrain[0].blend")]
     [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "markers": [{ "type": "Bot" }] }""", "$.markers[0].type")]
     [InlineData("""{ "id": "P", "radius": 10, "placement": { "fixed": [0, 0] } }""", "$.id")]
     public void BadPoiGivesAClearErrorAndIsLeftOut(string json, string path)

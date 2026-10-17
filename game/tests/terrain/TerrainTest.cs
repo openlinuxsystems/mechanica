@@ -1,4 +1,5 @@
 using Godot;
+using Mechanica.Core.Player;
 using Mechanica.Core.World;
 using Mechanica.Game.World;
 using Instance = Mechanica.Game.Tests.NetTestHarness.Instance;
@@ -67,6 +68,35 @@ public partial class TerrainTest : StagedTest
                 var pond = world.Chunks[world.ChunkAt(new Vector3(30, 0, 26))];
                 Check(pond.Data.HasWater && pond.GetNodeOrNull("Water") is not null, $"{who}: the pond chunk shows water");
             }
+            return true;
+        });
+
+        Add("a player who falls into the pond swims out", frame =>
+        {
+            // Floating in the middle of the crash site's pond, the player heads for the spawn holding forward
+            // and jump. The banks must let them climb out rather than trap them in the water.
+            var onHost = _host.Main.PlayerSync.Players[_client.Peer];
+            var mine = _client.Main.LocalPlayer!;
+            var sea = HostWorld.Generator.SeaLevel;
+            var toSpawn = new Vector2(0 - 30, 4 - 26).Normalized();
+            var yaw = MathF.Atan2(-toSpawn.X, -toSpawn.Y);
+            if (frame == 0)
+            {
+                onHost.ApplyState(new Vector3(30, sea - onHost.Settings.FloatDepth, 26), Vector3.Zero, yaw, 0f);
+                return false;
+            }
+            if (frame < 60)
+            {
+                mine.CurrentInput = PlayerInput.None with { Yaw = yaw };
+                return false;
+            }
+            if (frame == 60)
+                Check(PlayerMotor.IsSwimming(onHost.WaterDepth, onHost.Settings), $"the player floats in the pond (feet {onHost.WaterDepth:F2} m under)");
+            var outOfWater = frame > 60 && onHost.IsOnFloor() && onHost.GlobalPosition.Y > sea + 0.3f;
+            mine.CurrentInput = outOfWater ? PlayerInput.None with { Yaw = yaw } : new PlayerInput(0, 1, yaw, 0, true, false);
+            if (!outOfWater)
+                return false;
+            Check(onHost.WaterDepth < 0f, $"the player stands on dry ground (y={onHost.GlobalPosition.Y:F2}, sea {sea})");
             return true;
         });
 
