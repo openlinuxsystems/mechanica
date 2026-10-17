@@ -145,6 +145,23 @@ public partial class FitTest : StagedTest
             _main.PartSettings!.Open(_fabricator.Creation, _fabricator.Part);
             _main.Inspector.Open(_fabricator.Creation);
         });
+        Add("an engine and a controller", frame =>
+        {
+            if (frame == 0)
+            {
+                _main.PartSettings!.Close();
+                _main.Inspector.Close();
+                foreach (var (part, x) in new[] { ("vanilla:gas_engine", -2f), ("vanilla:controller", 3f) })
+                {
+                    var at = _main.LocalPlayer!.GlobalPosition + new Vector3(x, 1, -3);
+                    _main.Actions.Request(Core.Actions.CreationActions.SpawnPart, new Core.Actions.SpawnPartArgs(part, [at.X, at.Y, at.Z]), r => Check(r.Ok, $"{part} spawns ({r.Message})"));
+                }
+                return false;
+            }
+            return Spawned("vanilla:gas_engine") is not null && Spawned("vanilla:controller") is not null;
+        });
+        World("an engine's menu", () => _main.PartSettings!.Open(Spawned("vanilla:gas_engine")!.Value.Creation, Spawned("vanilla:gas_engine")!.Value.Part));
+        World("a controller's menu", () => _main.PartSettings!.Open(Spawned("vanilla:controller")!.Value.Creation, Spawned("vanilla:controller")!.Value.Part));
         World("a confirm dialog", () =>
         {
             _main.PartSettings!.Close();
@@ -163,6 +180,12 @@ public partial class FitTest : StagedTest
             return true;
         });
     }
+
+    // The first part of a type in the world.
+    private (int Creation, int Part)? Spawned(string type) =>
+        _main.Creations.All.FirstOrDefault(c => c.Parts.Any(p => p.Part == type)) is { } creation
+            ? (creation.Id, creation.Parts.First(p => p.Part == type).Id)
+            : null;
 
     private PauseMenu Pause => _main.GetNode<PauseMenu>("PauseMenu");
 

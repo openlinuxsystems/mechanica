@@ -8,7 +8,7 @@
 -- properties.level_damping N·m per rad/s of rolling or pitching, at most properties.max_level_torque N·m.
 -- It never turns the Body about the vertical, so the pilot keeps the heading.
 -- Sounds: "ignite" when it starts, the "loop" while it runs (its "thrust" parameter follows the power)
--- and "cut" when it stops.
+-- and "cut" when it stops. Its "power" display (a glow under the jet) follows the power.
 
 local function clamp(v, lo, hi)
   return math.max(lo, math.min(hi, v))
@@ -85,6 +85,7 @@ end
 function on_update(dt)
   local power = clamp(command(dt), 0, 1)
   state.power = power
+  part.display("power", power)
   hum(power)
   if power == 0 then return end
   local d = part.to_world(vec3(0, -1, 0))

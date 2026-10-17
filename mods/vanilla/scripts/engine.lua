@@ -3,11 +3,16 @@
 -- car should drive. With no throttle it holds the wheels with properties.brake N·m.
 -- Properties: "speed" (rad/s at the top gear), "torque" (N·m), "brake" (N·m), "fuel" (item id) and
 -- "fuel_time" (seconds of full throttle per item). In Creative it needs no fuel.
--- Setting "gear" (1 to 5): each gear turns a fifth of the top speed.
+-- Setting "gear" (shown as Power, 1 to 5): each step turns a fifth of the top speed. Setting "on": with
+-- nothing linked into it, the engine runs forward at full throttle while it is on.
+-- Its menu shows "fuel" (how much of the current item is left, 0 to 1; full in Creative), "fuel_items"
+-- (items left in the Creation), "rpm" (the first wheel's speed) and "torque" (N·m it drives with). Its
+-- "running" display is on while it drives, and each wheel bearing's "drive" display turns with it.
 -- Sounds: "start" when it starts, the "loop" while it runs (its properties.loop_parameter follows the
 -- throttle), and "stop" when it runs out of fuel.
 
 local RESEND = 30
+local SHOW_EVERY = 10
 
 local function clamp(v)
   return math.max(-1, math.min(1, v))
@@ -62,6 +67,7 @@ local function drive(throttle)
       local key = tostring(id)
       if resend or sent[key] ~= velocity or state.torque ~= torque then
         creation.set_bearing(id, velocity, torque)
+        creation.display(id, "drive", velocity ~= 0 and velocity or nil)
         sent[key] = velocity
       end
     end
@@ -70,11 +76,13 @@ local function drive(throttle)
 end
 
 function on_create()
+  state.angles = {}
   state.sent = state.sent or {}
   state.fuel = state.fuel or 0
 end
 
 function on_reload()
+  state.angles = {}
   state.sent = {}
 end
 
@@ -97,8 +105,40 @@ local function hum(throttle, fueled)
   end
 end
 
+-- What the menu shows, every SHOW_EVERY steps: fuel, items left, wheel speed and torque.
+local function show(throttle, dt)
+  state.shown = (state.shown or 0) + dt
+  if world.tick() % SHOW_EVERY ~= 0 then
+    return
+  end
+  local elapsed = state.shown
+  state.shown = 0
+  part.display("running", throttle ~= 0)
+  part.display("fuel", world.creative() and 1 or math.max(0, math.min(1, (state.fuel or 0) / properties.fuel_time)))
+  part.display("fuel_items", creation.count(properties.fuel))
+  part.display("torque", throttle ~= 0 and properties.torque or 0)
+  local rpm = 0
+  for _, id in ipairs(part.links()) do
+    if direction(id) then
+      local joint = creation.joint(id)
+      local angle = joint and joint.position
+      local last = state.angles[tostring(id)]
+      if angle and last and elapsed > 0 then
+        local turned = (angle - last + math.pi) % (2 * math.pi) - math.pi
+        rpm = math.abs(turned) / elapsed * 60 / (2 * math.pi)
+      end
+      state.angles[tostring(id)] = angle
+      break
+    end
+  end
+  part.display("rpm", math.floor(rpm + 0.5))
+end
+
 function on_update(dt)
   local throttle = clamp(part.input())
+  if #part.inputs() == 0 then
+    throttle = part.setting("on") and 1 or 0
+  end
   local fueled = burn(throttle, dt)
   if not fueled then
     throttle = 0
@@ -106,6 +146,7 @@ function on_update(dt)
   state.throttle = throttle
   drive(throttle)
   hum(throttle, fueled)
+  show(throttle, dt)
 end
 
 function get_outputs()
@@ -116,6 +157,7 @@ function on_destroy()
   for _, id in ipairs(part.links() or {}) do
     if direction(id) then
       creation.set_bearing(id, nil)
+      creation.display(id, "drive", nil)
     end
   end
 end

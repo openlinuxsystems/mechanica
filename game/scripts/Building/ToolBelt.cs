@@ -93,6 +93,9 @@ public partial class ToolBelt : Node
     /// <summary>The hotbar at the bottom of the screen, or null without a HUD.</summary>
     public HotbarView? Bar => _bar;
 
+    /// <summary>True while a seat's creation hotbar takes this bar's place (<see cref="Logic.CreationHotbar"/>).</summary>
+    public bool CreationBarShown { get; set; }
+
     /// <summary>The tool a hotbar entry names, or null when it names an item or nothing.</summary>
     public HandTool? ToolFor(string? entry) => entry switch
     {
@@ -149,7 +152,7 @@ public partial class ToolBelt : Node
         Player.HeldProp = Current.Prop;
         if (_hud is null)
             return;
-        _bar!.Visible = GameSettings.Current.Interface.ShowHotbar;
+        _bar!.Visible = GameSettings.Current.Interface.ShowHotbar && !CreationBarShown;
         _hud.Visible = _bar.Visible && !HudRoot.IsCovered;
         if (_hud.Visible)
             _hud.Text = Current.HudText();

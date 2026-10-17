@@ -92,6 +92,7 @@ you; this page is the reference for what each key means, so you can read, review
 | `aim` | object | no | A weapon aims while right click is held. Items only. See [survival](#survival). |
 | `logic`, `settings`, `seat` | object, list, object | no | Logic bus links, player-set settings and seats. Placeable parts only. See [logic, settings and seats](#logic-settings-and-seats). |
 | `light`, `animation` | object, object | no | A light the script switches, and a model the script turns. Placeable parts only. See [light and animation](#light-and-animation). |
+| `menu`, `display` | object, object | no | What the part's menu shows and does, and what the part shows on itself. Placeable parts only. See [menu and display](#menu-and-display). |
 | `properties` | object | no | Free-form numbers and settings that only the part's Lua script reads (torque, thrust, range). Key order is kept. |
 | `upgrades` | list | no | Upgrade levels, in order. Placeable parts only. See [upgrades](#upgrades). |
 
@@ -306,7 +307,7 @@ script's job (D2). See the [Logic and Power Tutorial](logic-power-tutorial.md).
 | `logic.reverse` | setting id | One of the part's `toggle` settings that reverses which way it turns. Right click on its node with the Connect Tool flips it, a curved arrow by the node shows it, and scripts that drive the part read it as `joint.reversed`. Vanilla bearings use `"reverse"`. |
 | `seat` | object | Makes the part a seat a player sits in with E. Its script reads them with `part.occupant()` and `part.occupant_input()`. |
 | `seat.offset` | [x, y, z] (m) | Where the sitter's feet go, from the part's centre, in the part's frame. Inside the part's footprint. Default [0, 0, 0]. |
-| `settings` | list | Values a player sets on each placed part with the Connect Tool (R), in display order. The script reads them with `part.setting(id)`. |
+| `settings` | list | Values a player sets on each placed part in its menu (E on the part, or R with the Connect Tool), in display order. The script reads them with `part.setting(id)`. |
 
 Each setting:
 
@@ -314,11 +315,17 @@ Each setting:
 |-----|------|---------|
 | `id` | snake_case | Unique within the part. Required. |
 | `name` | string | Label in the settings panel. Default: the id. |
-| `type` | `number`, `choice`, `toggle` or `number_list` | Required. |
-| `min`, `max` | number | Range of a number, and of each entry of a number list. Required for both, with `min` ≤ `max`. |
+| `type` | `number`, `choice`, `toggle`, `number_list` or `sequence` | Required. A number shows a slider with a field, a choice a drop-down, a toggle a check box, and a sequence the frame editor. |
+| `min`, `max` | number | Range of a number, and of each entry of a number list or target of a sequence. Required for all three, with `min` ≤ `max`. |
 | `step` | number > 0 | Step of the settings panel's field. |
 | `options` | list of snake_case | The choices of a `choice`, distinct. Required for a choice. |
-| `max_count` | integer 1 to 64 | Most entries of a `number_list`. Required for a number list. |
+| `icons` | object | A choice's pictures: option → `.png`. The menu shows the picked one by the drop-down, and a cycle card shows it large. |
+| `presets` | list of `{name, value}` | Buttons by a number's slider that set it to `value` (an engine's Low, Medium and High). Each value fits the setting. |
+| `group` | string | Toggles with the same group sit side by side under that heading (a sensor's Detects: Players, Bots, Blocks, Creations). |
+| `hide_when_linked` | bool | While anything is linked into the part the setting gives way to "Driven by what is linked to it." (an engine's On toggle). |
+| `max_count` | integer 1 to 64 | Most entries of a `number_list`, or frames of a `sequence`. Required for both. |
+| `max_speed` | number > 0 | A sequence's fastest joint speed, in rad/s for bearings and m/s for pistons. Required for a sequence. |
+| `preview` | snake_case | A sequence's Play button sends the frames being edited to the script's `on_command` under this name, so it can run them before they are applied. |
 | `default` | value | The value a placed part starts with. It must fit the setting. Default: `min` (or 0), the first option, false, or an empty list. |
 
 ```json
@@ -328,6 +335,11 @@ Each setting:
   { "id": "mode", "name": "Mode", "type": "choice", "options": ["and", "or", "xor", "nand", "nor", "xnor"], "default": "and" }
 ]
 ```
+
+A `sequence` value is a list of frames. Each frame lists the bearings and pistons the part is linked to,
+`[{ "part": 4, "target": 45, "speed": 1.5 }]`: a bearing's target in degrees and a piston's in m of
+extension, with the speed it moves there. A frame may also be a single number, an angle for every linked
+bearing (how older controllers saved them).
 
 A saved creation keeps the settings a player changed on each part (`"settings": { "mode": "or" }`,
 only values that differ from the default) and its links as a top-level list:
@@ -339,13 +351,16 @@ The vanilla scripts read these properties:
 |--------|----------|---------|
 | `scripts/seat.lua` | `steer_angle` (°) | How far A and D turn the upright bearings the seat feeds. |
 | | `steer_speed` (rad/s), `steer_torque` (N·m) | How fast and how hard they turn. |
-| `scripts/engine.lua` | `speed` (rad/s) | Wheel bearing speed at full throttle in top gear (the `gear` setting, 1 to 5, gives a fifth each). |
+| `scripts/engine.lua` | `speed` (rad/s) | Wheel bearing speed at full throttle at full power (the `gear` setting, shown as Power 1 to 5, gives a fifth each). With nothing linked in, the `on` setting runs it at full throttle. |
 | | `torque`, `brake` (N·m) | Most torque while driving, and while holding the wheels with no throttle. |
 | | `fuel`, `fuel_time` (s) | Item burned from the creation's containers, and seconds of full throttle per item. Creative needs none. |
 | | `loop_parameter` | Parameter of the `loop` sound that follows the throttle (`load`, `speed`). |
-| `scripts/sensor.lua` | `interval` | Steps between looks (its `range` is a setting). |
+| `scripts/sensor.lua` | `interval` | Steps between looks (its `range` and what it detects are settings). |
+| | `cone` (°) | How far off its face its ring of rays looks, so it sees a narrow cone. Its menu preview uses the same angle. |
+| `scripts/timer.lua` | (the `mode` setting) | `once` passes its input on after the delay; `repeat` blinks its output every delay while the input is on. |
 | `scripts/button.lua` | `pulse` (s) | How long it stays on. |
-| `scripts/controller.lua` | `speed` (rad/s), `torque` (N·m) | How its bearings move between frames. |
+| `scripts/controller.lua` | `speed` (rad/s) | How fast bearings move to single-angle frames (a frame's joints carry their own speeds). |
+| | `torque` (N·m), `force` (N) | Most torque on its bearings and force on its pistons. |
 
 ### Aero parts
 
@@ -403,6 +418,59 @@ saw blades). It turns only the drawn model: collision and the Body stay put.
 |-----|------|----------|---------|
 | `axis` | `[x, y, z]` | no | What it turns about in the part's frame, default `[0, 1, 0]`. Not zero. |
 | `pivot` | `[x, y, z]` m | no | A point on the axis, from the part centre; within the footprint. Default the centre. |
+
+## menu and display
+
+`menu` shapes the part's menu (UI spec §12), the window E opens on a part with settings or readouts.
+Every key is optional.
+
+| Key | Type | Meaning |
+|-----|------|---------|
+| `use` | `open` or `cycle` | What E on the part does. `open` (default) opens the menu. `cycle` switches the `cycle` setting to its next option and shows a card with its icon and name for two seconds (a logic gate); R with the Connect Tool still opens the menu. |
+| `cycle` | setting id | The `choice` setting `cycle` steps through. Required for `cycle`. |
+| `readouts` | list | Values the script shows with `part.display`, at the top of the menu. |
+| `signals` | bool | Show a line with the part's input and output on the logic bus. |
+| `preview` | object | A see-through shape drawn on the part while its menu is open, sized by a setting (a sensor's cone). |
+| `apply` | bool | Changes wait for an Apply button (or closing the menu) instead of going to the host at once (a controller's frames). |
+
+Each readout:
+
+| Key | Type | Meaning |
+|-----|------|---------|
+| `id` | snake_case | The id the script passes to `part.display`. Required, unique. |
+| `name` | string | Label. Default: the id. |
+| `kind` | `bar`, `number` or `text` | A cyan bar from 0 to `max`, a number, or the script's text. Default `number`. |
+| `max` | number > 0 | A bar's full value. Default 1. |
+| `unit` | string | Shown after a number (`rpm`, `N·m`). |
+| `decimals` | integer 0 to 6 | Digits after the point. Default 0. |
+
+`preview` has `shape` (`ray`, `cone` or `sphere`, default `ray`), `range` (the number setting that sizes it, in
+m, required), `axis` (which way a ray or cone points in the part's frame, default `[0, 1, 0]`) and
+`angle` (a cone's half-angle in °, default 10).
+
+`display` is what the part shows on itself in the world, from values its script sets with
+`part.display` (or that a part linked to it sets with `creation.display`). Every peer draws it from the
+host's values.
+
+| Key | Type | Meaning |
+|-----|------|---------|
+| `status` | readout id | A small dot above the part while it has links and the Connect Tool is away: green while the value is not 0, gray while it is. |
+| `bar` | `{readout, offset, axis, length}` | A thin cyan bar along the part that fills from 0 to 1 with the value, shown while the Connect Tool is out (a piston's extension). `axis` defaults to `[0, 1, 0]`, `length` to 0.25 m. |
+| `glow` | `{readout, offset, direction, length}` | A faint blue particle glow whose strength follows the value from 0 to 1 (a thruster's exhaust). `direction` defaults to `[0, 1, 0]`, `length` to 0.5 m. |
+| `highlight` | `{readout, axis, offset, radius}` | A ring of cyan dashes turning about `axis` while the value is not 0, its sign giving the way round (a bearing an engine drives). `radius` defaults to 0.12 m. |
+| `press` | `{readout, axis, depth}` | Pushes the model in by `depth` m (default 0.02, at most 0.1) along `axis` (default `[0, -1, 0]`) while the value is not 0 (a switch). |
+
+Offsets are from the part centre in the part's frame, within its footprint; axes and directions are not zero.
+
+```json
+"settings": [{ "id": "range", "name": "Range (m)", "type": "number", "min": 1, "max": 20, "step": 0.25, "default": 4 }],
+"menu": {
+  "signals": true,
+  "readouts": [{ "id": "fuel", "name": "Fuel", "kind": "bar" }],
+  "preview": { "shape": "cone", "range": "range", "angle": 8 }
+},
+"display": { "status": "running" }
+```
 
 ## Recipes
 

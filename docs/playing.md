@@ -44,6 +44,23 @@ head out, Space rises and Ctrl dives. Shallower water slows you down.
 While a menu or the inventory is open, your character stands still, and a Creation you are driving
 stops getting your input.
 
+### Seats and part menus
+
+E on a seat sits you down: you glide into it, and the camera turns to face the way the seat faces. Ctrl
+switches between a chase view behind the creation and the view from the seat, and the camera turns with
+the creation. E stands you up beside the seat, in the first free spot to its left, right, front or back.
+A seat someone else sits in says "Seat occupied".
+
+While you sit, the switches and buttons the seat is linked to take the hotbar's place. 1 to 9 and 0 use
+one at once, the wheel picks a slot and Left click uses it, wherever the part is on the creation. A slot
+glows and pulses while its part is on.
+
+E on a part with settings opens its menu: sliders with a field for numbers (with preset buttons on some,
+like an engine's Low, Medium and High), drop-downs for choices, and what the part reports, such as an
+engine's fuel and speed. A sensor shows the cone it sees while its menu is open. A controller's frames
+take effect when you press Apply or close the menu, and Play previews them first. E on a logic gate
+switches it to the next mode and shows it for a moment; R with the Connect Tool opens its menu.
+
 ## The HUD
 
 - The **crosshair** is white, turns blue when a click or Use would do something where you aim (a valid

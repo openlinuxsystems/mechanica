@@ -1,7 +1,7 @@
 {
   "id": "timer",
   "name": "Timer",
-  "description": "Passes its input on after a delay you set (R with the Connect Tool).",
+  "description": "Passes its input on after a delay you set, once, or blinks on and off every delay while its input is on (E).",
   "category": "interactive",
   "mass": 1,
   "durability": 3,
@@ -42,6 +42,19 @@
       "max": 60,
       "step": 0.05,
       "default": 1
+    },
+    {
+      "id": "mode",
+      "name": "Trigger",
+      "type": "choice",
+      "options": [
+        "once",
+        "repeat"
+      ],
+      "default": "once"
     }
-  ]
+  ],
+  "menu": {
+    "signals": true
+  }
 }
