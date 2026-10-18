@@ -5,7 +5,8 @@ from the same seed and data, so only the seed and the list of destroyed objects 
 network or go into a save. Like all mod data, keys are `snake_case`, units are SI (metres), and
 comments and trailing commas are allowed.
 
-- `world/worldgen.json`: terrain, biomes and scattered objects. The last enabled mod in load order
+- `world/worldgen.json`: terrain, biomes, the map's layout (biome regions, rivers, the mandatory
+  structures' sites), the road network and scattered objects. The last enabled mod in load order
   that ships one replaces the others' completely.
 - `pois/*.json`: one POI prefab per file. Every enabled mod's POIs are used, under the id
   `mod_id:poi_id`.
@@ -14,23 +15,46 @@ Host and clients must have identical world data: it is part of the content check
 
 ## How a world is built
 
-1. **POIs** are laid out first. Fixed POIs go exactly where they say. Then each spaced kind, highest
-   `priority` first, gets one candidate per cell of a grid whose step is the middle of its `spacing`
-   range, jittered so that neighbours stay within the range. A candidate is used when it stands in one
-   of its `biomes`, on dry ground that is not too steep, and clear of every POI placed before it.
-2. **Biomes.** Inland ground is cut into jittered cells of `biome_cell_size`, each given a biome at
-   random by `weight`. Borders are bent by `biome_warp` and blended over `biome_blend`. The
-   `coast_biome` takes over within `coast_biome_width` of the world edge.
-3. **Height.** Each biome sets an average `height` and a `relief` that scales fractal noise. Near the
-   edge the land falls to `sea_floor` over `coast_width`, so the world is an island. Each POI then
-   applies its `terrain` ops.
-4. **Objects.** Each biome's `scatter` rules place trees, rocks and so on.
+The vanilla world follows the World Map design spec: about 12 × 9 km, a pine forest with lakes in the
+north-west, mountains along the north, autumn forest in the north-east, burned forest in the east, desert
+in the south-west, golden fields in the south, a big lake in the middle with rivers joining the lakes,
+and paved roads between the 50 mandatory structures. The layout is the same in every world; the seed
+shapes the ground, the borders, the meanders, the roads' exact course and the scattered POIs.
+
+1. **Biomes.** Inland ground is cut into jittered cells of `biome_cell_size`. With `regions`, each cell
+   takes the biome of the region nearest it for its size (borders bent by `region_warp`), or a patch of
+   one of the region's `mix` biomes; the cells round a site take the site's `biome`. Without regions each
+   cell is given a biome at random by `weight`. Borders are bent by `biome_warp` and blended over
+   `biome_blend`. The `coast_biome` takes over within `coast_biome_width` of the world edge.
+2. **Height.** Each biome sets an average `height` and a `relief` that scales fractal noise; `ridge`
+   turns it into sharp ridged noise (mountains) and `terrace` steps it into plateaus (desert). Near the
+   edge the land falls to `sea_floor` over `coast_width`, so the world is an island. `rivers` cut their
+   channels and valleys. Each POI then applies its `terrain` ops, and the roads cut and fill the ground
+   under them.
+3. **POIs.** Fixed POIs go exactly where they say. Then every site places its POI at its fixed
+   fraction of the world (moved at most its `jitter`, onto dry, level ground in its biome), drawing
+   from its pool when it has one. The road network is laid between the sites (see
+   [Roads](#roads)). Then each spaced kind, highest `priority` first, gets one candidate per cell of a
+   grid whose step is the middle of its `spacing` range, jittered so that neighbours stay within the
+   range. A candidate is used when it stands in one of its `biomes`, on dry ground that is not too
+   steep, `clearance` metres clear of every POI and road placed before it. Last, dirt tracks run to
+   the POIs that ask for one.
+4. **Objects.** Each biome's `scatter` rules place trees, rocks and so on (never on a road).
 5. **Ground.** Each biome's `ground` texture covers it, blending across biome borders; steep slopes take the
-   `slope_ground`, and POIs paint their own `ground` on top (see [Ground textures](#ground-textures)).
+   `slope_ground`, POIs paint their own `ground` on top (see [Ground textures](#ground-textures)), and road
+   shoulders and dirt tracks take the roads' grounds.
 6. **Flora.** Each biome's `flora` rules grow decorative grass, ground cover and bushes (see [Flora](#flora)).
 
-The world is a square of `world_size` (from `game/data/streaming.json`, 4096 m) centred on the origin,
-streamed in 64 m chunks. Height samples are `resolution` metres apart and must divide the chunk size.
+The world is `world_size` (east–west) by `world_depth` (north–south) metres (from
+`game/data/streaming.json`: 12,032 × 9,024 m, 188 × 141 cells of 64 m) centred on the origin, north
+towards −z, streamed in 64 m chunks. Height samples are `resolution` metres apart and must divide the
+chunk size.
+
+To see what a seed lays out, run the game with `--world-export DIR [SEED]`: it writes `manifest.json`
+(every POI with its coordinates, type, size, biome and road connection; every road and track as a
+graded centre line with its bridges; the rivers; the biome and water shares), `heightmap.png` (and the
+raw heights in `heightmap.f32`, little-endian floats row by row from the north-west), `biomes.png` and
+`overview.png` at 8 m a pixel, then quits.
 
 ## `world/worldgen.json`
 
@@ -92,6 +116,9 @@ streamed in 64 m chunks. Height samples are `resolution` metres apart and must d
 | `terrain.coast_wobble` | How far inland noise may pull the coastline, so the island is not a square. |
 | `terrain.noise_scale` | Wavelength of the largest hills. `octaves`, `lacunarity` and `gain` add finer detail. |
 | `terrain.biome_blend` | At most 0.18 × `biome_cell_size`. |
+| `terrain.region_warp` | How far, in metres, slow noise bends the borders between regions. |
+| `biomes[].ridge` | 0 to 1: how much of the relief is ridged noise, for sharp mountain crests. |
+| `biomes[].terrace` | Height in metres of the plateaus the ground is stepped into (the desert). 0: none. |
 | `terrain.max_scatter_slope` | Steepest ground (rise over run) objects stand on. |
 | `biomes[].weight` | Chance an inland cell is this biome. 0 means only where placed explicitly (the coast). |
 | `biomes[].ground` | Id of the ground texture (`grounds[]`) the biome is drawn with. Omitted: its plain `color`. |
@@ -184,6 +211,73 @@ plants of higher ones, and Low turns the wind off. At High, grass is drawn to 15
 bushes to 380 m; past `thin_share` of the distance grass and ground cover keep `thin_keep` of their plants,
 `thin_scale` times larger, so the far field stays full but cheap, and the ground texture carries on beyond.
 
+## The map's layout
+
+```json
+{
+  "regions": [
+    { "biome": "forest", "at": [-0.40, -0.25], "size": 1.3, "mix": [{ "biome": "meadow", "chance": 0.08 }] }
+  ],
+  "rivers": [
+    { "points": [[0.01, 0.07], [-0.03, 0.20], [-0.18, 0.58]], "width": [22.0, 34.0], "depth": 4.0 }
+  ],
+  "sites": [
+    { "id": "poi_36", "label": "POI-36", "poi": "crash_site", "at": [0.19, 0.38], "biome": "field", "pad_height": 6.0 },
+    { "id": "large_1", "pool": "large_slots", "at": [0.32, 0.18], "jitter": 140.0, "biome": "burned_forest" }
+  ],
+  "pools": [
+    { "id": "large_slots", "fill": [{ "poi": "warehouse", "count": 1 }, { "poi": "farmbot_scrapyard", "count": 4 }] }
+  ]
+}
+```
+
+Positions are `[x, z]` fractions of the world, −0.5 to 0.5 (x east, z south), so the layout keeps its
+shape at any world size.
+
+| Key | Meaning |
+|-----|---------|
+| `regions[]` | A point (`at`) that the biome cells nearest it, for its `size` (bigger reaches further), take the `biome` of. `mix` swaps a cell for another biome with that `chance`, for patches (woods in a meadow). |
+| `rivers[]` | A river's centre line through `points` (they may reach ±0.6, past the edge, so it runs out to sea), meandering up to `meander` metres by the seed. `width` is `[source, mouth]` in metres; the bed is `depth` metres under `sea_level`, so rivers and lakes fill with water at the sea's level. Its valley sides rise from the banks at `valley_slope` and steepen until they meet the land. |
+| `sites[]` | A mandatory structure (World Map spec §4): a POI prefab (`poi`) or one drawn from a `pool`, centred at `at`. `id` is permanent (design work refers to it) and `label` is the spec's name for it. `jitter` (metres) lets the seed move it onto dry, level ground in its `biome`; the cells round it keep that biome in every world. `pad_height` fixes its pad (the crash site's pond needs its pad 4 m over the sea); `yaw` turns it (a multiple of 90); `road` overrides the prefab's road link. |
+| `pools[]` | Prefabs (`fill`, each `count` times) shared out over the sites that name the pool, shuffled by the seed: the totals stay the same in every world. The counts must add up to the number of those sites. |
+
+The vanilla layout gives each of the spec's 50 structures its own prefab (`pois/poi_01.json` …
+`pois/poi_50.json`; POI-36 is `crash_site` and POI-37 the quests' `outpost`), so each can be designed on
+its own. Until then they are placeholders of the right footprint and height, written by
+`tools/author-poi-placeholders.py` (edit its table and re-run). Six extra large slots draw a warehouse or a
+Farmbot Scrapyard from the `large_slots` pool.
+
+## Roads
+
+```json
+{
+  "roads": {
+    "width": 10.0, "curb": 0.3, "shoulder": 1.5, "max_grade": 0.24, "cell": 32.0,
+    "bridge_clearance": 3.0, "bridge_cost": 6.0, "loop_factor": 1.7, "loop_reach": 2600.0, "max_loops": 14,
+    "links": [["poi_36", "poi_37"], ["poi_37", "poi_38"]],
+    "shoulder_ground": "dirt", "track_width": 4.0, "track_max_grade": 0.32, "track_reach": 650.0, "track_ground": "dirt"
+  }
+}
+```
+
+Every site whose link is `road` (the prefab's `road`, or the site's) is joined into one network: first
+the `links`, in order, then a minimum spanning tree over the rest, then up to `max_loops` loops between
+sites within `loop_reach` metres that the network makes go more than `loop_factor` times round. Routes
+are found over a grid of `cell` metres that prefers gentle ground, avoids other POIs and crosses water
+at `bridge_cost` times the price; deep lakes and the sea are never crossed. Each route is straightened,
+curved, and graded so it never climbs steeper than `max_grade` (0.24 is about 13.5°, spec §3: 12-15°);
+where it crosses water it becomes a bridge at least `bridge_clearance` metres over the surface. Where
+three or more routes meet there is a junction.
+
+Roads are `width` metres of asphalt with white edge lines, a double yellow centre line and stop lines
+at junctions, between concrete curbs `curb` metres wide, with `shoulder` metres of `shoulder_ground`
+either side. Bridges have a deck, parapets, piers, hazard posts and a caution sign at each end. The
+ground is cut and filled level with the road, and nothing is scattered on it.
+
+POIs whose link is `track` get a dirt track (`track_width` metres of `track_ground`, at most
+`track_max_grade`) to the nearest road or track: a site always gets one, a scattered POI only when a
+road is within `track_reach` metres.
+
 ## `pois/<id>.json`
 
 ```json
@@ -191,7 +285,9 @@ bushes to 380 m; past `thin_share` of the distance grass and ground cover keep `
   "id": "outpost",
   "name": "Workshop Outpost",
   "radius": 40.0,
-  "placement": { "spacing": [800.0, 1200.0], "biomes": ["meadow", "forest"], "priority": 50 },
+  "size": [16.0, 4.3, 16.0],
+  "road": "road",
+  "placement": {},
   "terrain": [{ "op": "flatten", "radius": 18.0, "blend": 20.0 }],
   "pieces": [{ "shape": "box", "size": [16.0, 0.3, 16.0], "at": [0.0, 0.15, 0.0], "color": "#a3a093" }],
   "markers": [{ "type": "item", "ref": "fabricator", "at": [0.0, 0.3, -5.0] }]
@@ -201,9 +297,12 @@ bushes to 380 m; past `thin_share` of the distance grass and ground cover keep `
 | Key | Meaning |
 |-----|---------|
 | `radius` | Footprint, including terrain blending. POIs never overlap, and nothing is scattered inside. |
-| `placement.fixed` | `[x, z]` of a single POI, with optional `pad_height` and `yaw` (a multiple of 90). Give this or `spacing`. |
+| `placement.fixed` | `[x, z]` of a single POI, with optional `pad_height` and `yaw` (a multiple of 90). Give this, `spacing`, or neither (`"placement": {}`): then only a site places it. |
 | `placement.spacing` | `[min, max]` metres between neighbours of this kind. `min` must be at least twice the radius. Needs `biomes`. A spaced POI is turned a random quarter turn. |
 | `placement.priority` | Higher kinds are placed first and win contested ground. |
+| `placement.clearance` | Metres a spaced POI's footprint keeps clear of every other POI's footprint and of the roads. |
+| `size` | The footprint as built, `[width, height, depth]` in metres, for the placement manifest and design work. |
+| `road` | What joins it to the roads: `road` (only where a site places it), `track` (a dirt track) or `none` (the default). |
 | `terrain[]` | `flatten` levels a disc to the pad height; `basin` sinks it `depth` metres below the pad (below `sea_level` it fills with water). A basin's `blend` must be at least 1.5 × `depth`, so its bank is no steeper than the 45° a player can walk up and a pond is never a trap. Full strength inside `radius`, fading over `blend`, centred at `at` (`[x, z]`). Must stay inside the POI radius. |
 | `pieces[]` | Static structure, as shapes. Positions are relative to the POI centre on its pad. |
 | `ground[]` | Ground painted on the footprint, in order, each over the ones before: `ground` (an id from `grounds[]`), full inside `radius` of `at` (`[x, z]`, default the centre) and fading over `blend`, with an edge pushed in and out by up to `noise` metres. Must stay inside the POI radius. |

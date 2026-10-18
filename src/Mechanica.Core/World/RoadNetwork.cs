@@ -160,6 +160,7 @@ public sealed partial class RoadNetwork
             return h;
         var key = Key(x, z);
         var best = 0f;
+        var nearest = float.PositiveInfinity;
         var target = h;
         var p = new Vector2(x, z);
         if (_segments.TryGetValue(key, out var near))
@@ -175,8 +176,9 @@ public sealed partial class RoadNetwork
                     continue;
                 var e = chain.Heights[i] + (chain.Heights[i + 1] - chain.Heights[i]) * t;
                 var k = 1f - Noise.SmoothStep(core, core + Blend(e, h), d);
-                if (k > best)
-                    (best, target) = (k, chain.Kind == RoadKind.Road ? e - 0.03f : e);
+                // Across the road's bed every nearby segment is at full strength: the nearest one gives the height.
+                if (k > best || (k == best && d < nearest))
+                    (best, target, nearest) = (k, chain.Kind == RoadKind.Road ? e - 0.03f : e, d);
             }
         }
         if (_junctions.TryGetValue(key, out var nodes))
@@ -186,7 +188,7 @@ public sealed partial class RoadNetwork
                 var node = _nodes[n];
                 var core = node.Radius + _def!.Curb + _def.Shoulder;
                 var k = 1f - Noise.SmoothStep(core, core + Blend(node.Height, h), Vector2.Distance(p, node.At));
-                if (k > best)
+                if (k > best || (k == best && k == 1f))
                     (best, target) = (k, node.Height - 0.03f);
             }
         }
