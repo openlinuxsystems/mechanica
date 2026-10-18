@@ -44,10 +44,10 @@ public class BuildSettingsTests
         var settings = BuildSettings.FromJson(File.ReadAllText(path));
         Assert.Equal(16, settings.Paint.Palette.Count);
         Assert.Equal(new ConnectSettings(), settings.Connect);
-        // The Sledgehammer (Chase's sledgehammer spec): a swing a second with the hit at the click, 3 m reach, 20 combat
+        // The Sledgehammer (Chase's sledgehammer spec): a swing every 0.6 s with the hit at the click, 3 m reach, 20 combat
         // damage and a 5000 N·s impulse; the shipped file and the defaults agree.
         Assert.Equal(new SledgeSettings(), settings.Sledge);
-        Assert.Equal(1.0f, settings.Sledge.SwingSeconds);
+        Assert.Equal(0.6f, settings.Sledge.SwingSeconds);
         Assert.Equal(0f, settings.Sledge.StrikeSeconds);
         Assert.Equal(20f, settings.Sledge.CombatDamage);
         Assert.Equal(5000f, settings.Sledge.Impulse);

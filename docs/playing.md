@@ -106,8 +106,8 @@ switches it to the next mode and shows it for a moment; R with the Connect Tool 
   mouse towards a colour and click, or press 1 to 0 for the first ten. Esc or Q again closes it.
 - **Sledgehammer.** Your main tool and only starting weapon: it is always on the hotbar (you can move it to
   another slot but never take it off, drop it or store it) and you keep it when you die. Left click swings it:
-  overhead, or sideways from the right or the left, at random. One swing a second, and the blow lands 0.6 s
-  after the click on whatever is under the crosshair within 3 m, the ground included (that only thuds and kicks
+  overhead, or sideways from the right or the left, at random. A swing every 0.6 s, and the blow lands the moment
+  you click, on whatever is under the crosshair within 3 m, the ground included (that only thuds and kicks
   up dust). Hold left click to keep swinging; you can walk, run and jump while you swing. Every hit pushes what
   it lands on along the swing (5000 N·s, but never faster than 4 m/s, so light things don't fly off): a part's
   body, a player or a bot, which also take 20 damage in Survival. It chips at trees and rocks (a rock node takes

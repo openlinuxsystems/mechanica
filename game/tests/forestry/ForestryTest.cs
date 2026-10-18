@@ -105,7 +105,7 @@ public partial class ForestryTest : StagedTest
         Add("the shaking settles", frame => frame > 10 && HostWorld.ChunkHolding(_tree.Id)!.Shaking == 0 && ClientWorld.ChunkHolding(_tree.Id)!.Shaking == 0);
         Add("the felled tree falls as Birch Logs on both peers", frame =>
         {
-            // One swing per sledge.swing_seconds (1 s), the first a second after the blow above.
+            // No faster than one swing per sledge.swing_seconds (0.6 s): a swing every 1.25 s.
             if (frame % 75 == 40 && !HostWorld.State.IsDestroyed(_tree.Id))
                 Swing(new SledgeArgs(Object: _tree.Id.ToString(), At: Trunk()));
             if (!HostWorld.State.IsDestroyed(_tree.Id) || !ClientWorld.State.IsDestroyed(_tree.Id))

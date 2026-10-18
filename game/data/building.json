@@ -64,11 +64,11 @@
     "fell_gap": 0.05
   },
   "sledge": {
-    // Chase's sledgehammer spec: one swing a second, the hit landing at the click (2026-10-18; was 0.6 s after it), 3 m
-    // from the head. The swing animation skips its wind-up to match (character.json gesture_start).
+    // Chase's sledgehammer spec: a swing every 0.6 s (the pace before the spec's 1 s, back at Chase's ask), the hit
+    // landing at the click (2026-10-18; was 0.6 s after it), 3 m from the head. The swing animation skips its wind-up to match (character.json gesture_start).
     "damage": 10,
     "health_per_durability": 10,
-    "swing_seconds": 1.0,
+    "swing_seconds": 0.6,
     "strike_seconds": 0,
     "reach": 3.0,
     // Knockback (N·s, mass × Δv) on whatever is hit, never faster than max_knockback_speed (m/s) for something light.
