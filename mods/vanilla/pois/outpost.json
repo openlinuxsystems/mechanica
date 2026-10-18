@@ -2,11 +2,10 @@
   "id": "outpost",
   "name": "Workshop Outpost",
   "radius": 40.0,
-  "placement": {
-    "spacing": [800.0, 1200.0],
-    "biomes": ["meadow", "forest", "ruin_field", "warehouse_district"],
-    "priority": 50
-  },
+  // A Mechanic Station: only the world layout's sites (worldgen.json) place it, each on the road network.
+  "size": [16.0, 4.3, 16.0],
+  "road": "road",
+  "placement": {},
   "terrain": [
     { "op": "flatten", "radius": 18.0, "blend": 20.0 }
   ],

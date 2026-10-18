@@ -52,6 +52,9 @@ public sealed record PoiInstance(int Index, LoadedPoi Poi, Vector2 Centre, float
     /// <summary>Turn about +Y in radians.</summary>
     public float Yaw => QuarterTurns * (MathF.PI / 2f);
 
+    /// <summary>The site (<see cref="SiteDefinition"/>) that placed this POI, or null for a fixed or spaced one.</summary>
+    public LoadedSite? Site { get; init; }
+
     /// <summary>Footprint radius.</summary>
     public float Radius => Poi.Prefab.Radius;
 
@@ -126,6 +129,9 @@ public sealed class TerrainChunkData
     /// sample, row by row. They sum to at most 1; the rest is the plain biome colour. Empty when the world has no grounds.
     /// </summary>
     public float[] Grounds { get; init; } = [];
+
+    /// <summary>Road surfaces, curbs, junctions and bridges in the chunk, in chunk-local metres (empty when there are none).</summary>
+    public RoadMesh Roads { get; init; } = RoadMesh.Empty;
 
     /// <summary>Which chunk.</summary>
     public ChunkCoord Coord { get; }

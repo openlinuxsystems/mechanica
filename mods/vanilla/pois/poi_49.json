@@ -1,0 +1,19 @@
+{
+  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed on its own.
+  // Written by tools/author-poi-placeholders.py; edit the table there and re-run.
+  "id": "poi_49",
+  "name": "POI-49 Oil Pool",
+  "radius": 60.0,
+  "size": [36.0, 1.0, 36.0],
+  "road": "none",
+  "placement": {},
+  "terrain": [
+    { "op": "flatten", "radius": 40.0, "blend": 20.0 },
+    { "op": "basin", "at": [0.0, 0.0], "radius": 16.0, "blend": 4.0, "depth": 1.5 }
+  ],
+  "ground": [{ "ground": "sand", "radius": 32.0, "blend": 10.0, "noise": 4.0 }],
+  "pieces": [
+    { "shape": "box", "size": [30.0, 0.4, 30.0], "at": [0.0, -0.6, 0.0], "color": "#1d1a17" },
+    { "shape": "cylinder", "radius": 1.5, "height": 4.0, "at": [18.0, 2.0, 0.0], "color": "#4a4f55" }
+  ]
+}

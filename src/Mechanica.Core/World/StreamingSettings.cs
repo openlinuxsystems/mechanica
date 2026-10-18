@@ -21,8 +21,17 @@ public sealed record StreamingSettings
     /// <summary>Side of a square chunk in metres.</summary>
     public float ChunkSize { get; init; } = 64f;
 
-    /// <summary>Side of the square world in metres, centred on the origin. Chunks outside it never load.</summary>
+    /// <summary>
+    /// The world's east–west extent in metres (the side of a square world), centred on the origin. Chunks outside it never load.
+    /// </summary>
     public float WorldSize { get; init; } = 4096f;
+
+    /// <summary>The world's north–south extent in metres, centred on the origin. Omitted: the same as <see cref="WorldSize"/>.</summary>
+    public float? WorldDepth { get; init; }
+
+    /// <summary>The world's north–south extent: <see cref="WorldDepth"/>, or <see cref="WorldSize"/> when that is omitted.</summary>
+    [JsonIgnore]
+    public float Depth => WorldDepth ?? WorldSize;
 
     /// <summary>Chunks within this many metres (x/z, square) of a player stay loaded.</summary>
     public float PlayerLoadDistance { get; init; } = 128f;
@@ -91,6 +100,7 @@ public sealed record StreamingSettings
     {
         Positive(ChunkSize, "chunk_size");
         Positive(WorldSize, "world_size");
+        Positive(Depth, "world_depth");
         NonNegative(PlayerLoadDistance, "player_load_distance");
         NonNegative(PlayerNearDistance, "player_near_distance");
         NonNegative(CreationBuffer, "creation_buffer");
@@ -106,6 +116,8 @@ public sealed record StreamingSettings
             throw new FormatException($"max_unattended_chunks must be zero or positive (got {MaxUnattendedChunks}).");
         if (WorldSize < ChunkSize)
             throw new FormatException($"world_size ({WorldSize}) must be at least chunk_size ({ChunkSize}).");
+        if (Depth < ChunkSize)
+            throw new FormatException($"world_depth ({Depth}) must be at least chunk_size ({ChunkSize}).");
     }
 
     private static void Positive(float value, string name)

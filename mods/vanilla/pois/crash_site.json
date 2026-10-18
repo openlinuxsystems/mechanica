@@ -2,11 +2,10 @@
   "id": "crash_site",
   "name": "Crash Site",
   "radius": 80.0,
-  "placement": {
-    "fixed": [0.0, 0.0],
-    "pad_height": 0.0,
-    "yaw": 0.0
-  },
+  // The start (World Map spec §1): site poi_36 in worldgen.json places it in the southeast, its road heading north.
+  "size": [30.0, 8.0, 40.0],
+  "road": "road",
+  "placement": {},
   "terrain": [
     { "op": "flatten", "radius": 40.0, "blend": 38.0 },
     { "op": "flatten", "at": [30.0, 26.0], "radius": 18.0, "blend": 12.0 },

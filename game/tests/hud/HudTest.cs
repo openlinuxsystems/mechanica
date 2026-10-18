@@ -75,7 +75,7 @@ public partial class HudTest : StagedTest
             if (frame == 0)
             {
                 var me = Me.GlobalPosition;
-                var at = new Vector3(Mathf.Snapped(me.X, 0.25f) - 0.25f, 0.125f, Mathf.Snapped(me.Z, 0.25f) - 2.5f);
+                var at = new Vector3(Mathf.Snapped(me.X, 0.25f) - 0.25f, me.Y + 0.125f, Mathf.Snapped(me.Z, 0.25f) - 2.5f);
                 Request(BuildActions.PlacePart, new PlacePartArgs(Block, GridCell.Zero, Position: at.ToNumerics().ToVec3()));
                 Request(BuildActions.PlacePart, new PlacePartArgs(Switch, GridCell.Zero, Position: (at + new Vector3(1.5f, 0, 0)).ToNumerics().ToVec3()));
             }

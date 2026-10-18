@@ -1,0 +1,56 @@
+{
+  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed on its own.
+  // Written by tools/author-poi-placeholders.py; edit the table there and re-run.
+  "id": "poi_19",
+  "name": "POI-19 Warehouse",
+  "radius": 68.0,
+  "size": [55.0, 16.3, 40.0],
+  "road": "road",
+  "placement": {},
+  "terrain": [
+    { "op": "flatten", "radius": 48.0, "blend": 20.0 }
+  ],
+  "ground": [{ "ground": "lot", "radius": 40.0, "blend": 10.0, "noise": 4.0 }],
+  "pieces": [
+    { "shape": "box", "size": [55.0, 0.3, 40.0], "at": [0.0, 0.15, 0.0], "color": "#a3a093" },
+    { "shape": "box", "size": [55.0, 0.3, 32.0], "at": [0.0, 4.15, -4.0], "color": "#a3a093" },
+    { "shape": "box", "size": [55.0, 0.3, 32.0], "at": [0.0, 8.15, -4.0], "color": "#a3a093" },
+    { "shape": "box", "size": [55.8, 0.3, 40.8], "at": [0.0, 12.15, 0.0], "color": "#4a4f55" },
+    { "shape": "box", "size": [55.0, 12.0, 0.4], "at": [0.0, 6.0, -20.0], "color": "#7d858c" },
+    { "shape": "box", "size": [0.4, 12.0, 40.0], "at": [-27.5, 6.0, 0.0], "color": "#7d858c" },
+    { "shape": "box", "size": [0.4, 12.0, 40.0], "at": [27.5, 6.0, 0.0], "color": "#7d858c" },
+    { "shape": "box", "size": [24.5, 12.0, 0.4], "at": [-15.25, 6.0, 20.0], "color": "#7d858c" },
+    { "shape": "box", "size": [24.5, 12.0, 0.4], "at": [15.25, 6.0, 20.0], "color": "#7d858c" },
+    { "shape": "box", "size": [6.0, 8.0, 0.4], "at": [0.0, 8.0, 20.0], "color": "#7d858c" },
+    { "shape": "box", "size": [1.0, 0.5, 3.0], "at": [-26.0, 0.25, 17.0], "color": "#8c5a3c" },
+    { "shape": "box", "size": [1.0, 1.0, 3.0], "at": [-25.0, 0.5, 17.0], "color": "#8c5a3c" },
+    { "shape": "box", "size": [1.0, 1.5, 3.0], "at": [-24.0, 0.75, 17.0], "color": "#8c5a3c" },
+    { "shape": "box", "size": [1.0, 2.0, 3.0], "at": [-23.0, 1.0, 17.0], "color": "#8c5a3c" },
+    { "shape": "box", "size": [1.0, 2.5, 3.0], "at": [-22.0, 1.25, 17.0], "color": "#8c5a3c" },
+    { "shape": "box", "size": [1.0, 3.0, 3.0], "at": [-21.0, 1.5, 17.0], "color": "#8c5a3c" },
+    { "shape": "box", "size": [1.0, 3.5, 3.0], "at": [-20.0, 1.75, 17.0], "color": "#8c5a3c" },
+    { "shape": "box", "size": [1.0, 4.0, 3.0], "at": [-19.0, 2.0, 17.0], "color": "#8c5a3c" },
+    { "shape": "box", "size": [1.0, 0.5, 3.0], "at": [26.0, 4.25, 17.0], "color": "#8c5a3c" },
+    { "shape": "box", "size": [1.0, 1.0, 3.0], "at": [25.0, 4.5, 17.0], "color": "#8c5a3c" },
+    { "shape": "box", "size": [1.0, 1.5, 3.0], "at": [24.0, 4.75, 17.0], "color": "#8c5a3c" },
+    { "shape": "box", "size": [1.0, 2.0, 3.0], "at": [23.0, 5.0, 17.0], "color": "#8c5a3c" },
+    { "shape": "box", "size": [1.0, 2.5, 3.0], "at": [22.0, 5.25, 17.0], "color": "#8c5a3c" },
+    { "shape": "box", "size": [1.0, 3.0, 3.0], "at": [21.0, 5.5, 17.0], "color": "#8c5a3c" },
+    { "shape": "box", "size": [1.0, 3.5, 3.0], "at": [20.0, 5.75, 17.0], "color": "#8c5a3c" },
+    { "shape": "box", "size": [1.0, 4.0, 3.0], "at": [19.0, 6.0, 17.0], "color": "#8c5a3c" },
+    { "shape": "cylinder", "radius": 3.0, "height": 4.0, "at": [-13.75, 14.3, -10.0], "color": "#e0b52c" },
+    { "shape": "cylinder", "radius": 3.0, "height": 4.0, "at": [13.75, 14.3, -10.0], "color": "#e0b52c" },
+    { "shape": "box", "size": [27.5, 0.8, 0.8], "at": [0.0, 12.8, -10.0], "color": "#3f6fa8" }
+  ],
+  "markers": [
+    { "type": "door", "ref": "warehouse_key", "at": [0.0, 0.0, 20.0] },
+    { "type": "bot", "ref": "spooler_blue", "at": [0.0, 0.3, -10.0] },
+    { "type": "bot", "ref": "spooler_green", "at": [-4.0, 4.3, -10.0] },
+    { "type": "bot", "ref": "spooler_yellow", "at": [0.0, 8.3, -10.0] },
+    { "type": "item", "ref": "warehouse_key", "at": [23.5, 8.3, -16.0] },
+    { "type": "item", "ref": "metal_crate", "at": [-23.5, 0.3, -16.0] },
+    { "type": "item", "ref": "metal_crate", "at": [23.5, 4.3, -16.0] },
+    { "type": "item", "ref": "wooden_crate", "at": [-23.5, 8.3, -16.0] },
+    { "type": "item", "ref": "warehouse_key_sign", "at": [0.0, 0.0, 24.0] }
+  ]
+}

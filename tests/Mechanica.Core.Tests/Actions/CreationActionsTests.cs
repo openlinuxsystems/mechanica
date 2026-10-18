@@ -10,7 +10,7 @@ public class CreationActionsTests
     [Theory]
     [InlineData("test:block", new[] { 0f, 1f }, 0, "position must be")]
     [InlineData("test:block", new[] { float.NaN, 1f, 0f }, 0, "finite")]
-    [InlineData("test:block", new[] { 3000f, 1f, 0f }, 0, "from the world centre")]
+    [InlineData("test:block", new[] { 9000f, 1f, 0f }, 0, "from the world centre")]
     [InlineData("test:block", new[] { 0f, 5000f, 0f }, 0, "height must be")]
     [InlineData("test:nope", new[] { 0f, 1f, 0f }, 0, "no part 'test:nope'")]
     [InlineData("test:ore", new[] { 0f, 1f, 0f }, 0, "inventory item")]

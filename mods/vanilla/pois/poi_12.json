@@ -1,0 +1,20 @@
+{
+  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed on its own.
+  // Written by tools/author-poi-placeholders.py; edit the table there and re-run.
+  "id": "poi_12",
+  "name": "POI-12 Autumn Forest Camp",
+  "radius": 48.0,
+  "size": [20.0, 3.0, 20.0],
+  "road": "track",
+  "placement": {},
+  "terrain": [
+    { "op": "flatten", "radius": 28.0, "blend": 20.0 }
+  ],
+  "flora": "meadow",
+  "pieces": [
+    { "shape": "box", "size": [3.0, 2.4, 4.0], "at": [-5.0, 1.2, -4.0], "yaw": 20.0, "color": "#5f8a4a" },
+    { "shape": "box", "size": [3.0, 2.4, 4.0], "at": [5.0, 1.2, -3.0], "yaw": -15.0, "color": "#5f8a4a" },
+    { "shape": "box", "size": [4.0, 2.8, 5.0], "at": [0.0, 1.4, 6.0], "color": "#8a6a4a" },
+    { "shape": "cylinder", "radius": 1.0, "height": 0.4, "at": [0.0, 0.2, 0.0], "color": "#3a3430" }
+  ]
+}

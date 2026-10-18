@@ -176,7 +176,8 @@ public sealed record PeerView(int Peer, string Name);
 /// <param name="Time">The host's clock, in s (what drop expiry and cooldowns count in).</param>
 /// <param name="Tick">The host's physics tick.</param>
 /// <param name="TickRate">Physics ticks per second.</param>
-/// <param name="WorldSize">Side of the square world, in m, centred on the origin.</param>
+/// <param name="WorldSize">The world's east–west extent, in m, centred on the origin.</param>
+/// <param name="WorldDepth">The world's north–south extent, in m, centred on the origin.</param>
 /// <param name="SeaLevel">Water surface height, in m.</param>
 /// <param name="Spawn">Where new players appear, or null.</param>
 /// <param name="Players">Players in the session.</param>
@@ -185,8 +186,8 @@ public sealed record PeerView(int Peer, string Name);
 /// <param name="Pois">How many POIs the world has.</param>
 /// <param name="RevealedPois">Qualified ids of the POIs the story has revealed.</param>
 public sealed record WorldView(
-    long Seed, string SeedText, GameMode Mode, Difficulty Difficulty, bool FriendlyFire, double Time, long Tick, int TickRate, float WorldSize, float SeaLevel,
-    Vec3? Spawn, IReadOnlyList<PeerView> Players, int Creations, int Drops, int Pois, IReadOnlyList<string> RevealedPois);
+    long Seed, string SeedText, GameMode Mode, Difficulty Difficulty, bool FriendlyFire, double Time, long Tick, int TickRate, float WorldSize,
+    float WorldDepth, float SeaLevel, Vec3? Spawn, IReadOnlyList<PeerView> Players, int Creations, int Drops, int Pois, IReadOnlyList<string> RevealedPois);
 
 /// <summary>What the perception actions read from the world. The host's game layer implements it.</summary>
 public interface IPerceptionWorld
