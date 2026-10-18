@@ -56,6 +56,11 @@
     "max_parts_per_action": 256,
     "drag_flush_seconds": 0.1
   },
+  // Loose parts a rock cube or chunk falls apart into (chunks, rods) are thrown out this fast (m/s), so they tumble apart.
+  "breaking": {
+    "spread_speed": 1.5,
+    "lift_speed": 1.5
+  },
   "sledge": {
     "damage": 10,
     "health_per_durability": 10,

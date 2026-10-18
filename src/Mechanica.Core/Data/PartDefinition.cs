@@ -223,6 +223,31 @@ public sealed record PartDefinition
     /// </summary>
     public DisplayDefinition? Display { get; init; }
 
+    /// <summary>
+    /// Makes the part a loose physics object rather than something built (rock chunks, resource rods): it always
+    /// stands alone as a Creation of its own, is never anchored to the ground, and nothing is built onto it, welded to it
+    /// or set into it. A loose part can be picked up into the inventory and set down again like any other part.
+    /// </summary>
+    public bool? Loose { get; init; }
+
+    /// <summary>
+    /// Loose parts this part falls apart into when its health runs out (a rock chunk into rods), each its own
+    /// Creation thrown a little apart, instead of simply going. Placeable parts only.
+    /// </summary>
+    public World.BreakDefinition? BreaksInto { get; init; }
+
+    /// <summary>
+    /// Items holding Use (E) on the part with the Refine Tool turns it into, straight into the inventory, as
+    /// with a tree (UI spec §9, §10): a Stone Rod into 20 Scrap Stone Blocks. Loose parts only.
+    /// </summary>
+    public List<Items.RecipeItem>? Refine { get; init; }
+
+    /// <summary>
+    /// Damage one Sledgehammer hit does to this part instead of the sledge's own part damage (a rock chunk
+    /// breaks under fewer hits than a block). Placeable parts only.
+    /// </summary>
+    public float? SledgeDamage { get; init; }
+
     /// <summary>Free-form, part-specific data for the Lua script. Key order is kept as written.</summary>
     public JsonObject? Properties { get; init; }
 
@@ -233,7 +258,7 @@ public sealed record PartDefinition
     /// <summary>True for categories that exist in the world on the build grid.</summary>
     [JsonIgnore]
     public bool IsPlaceable => Category is PartCategory.Block or PartCategory.Interactive or PartCategory.Container
-        or PartCategory.Station or PartCategory.Light or PartCategory.Decor;
+        or PartCategory.Station or PartCategory.Light or PartCategory.Decor || Loose == true;
 }
 
 /// <summary>The item storage of a placeable part. Inventory is a C# primitive (D2), configured here.</summary>

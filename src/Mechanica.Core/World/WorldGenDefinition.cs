@@ -192,6 +192,139 @@ public sealed record WorldObjectDefinition
     /// </summary>
     public bool Refine { get; init; }
 
+    /// <summary>
+    /// What may damage the object (<see cref="DamageKinds"/>: <c>sledge</c>, <c>drill</c>, <c>saw</c>, <c>weapon</c>,
+    /// <c>explosion</c>, <c>bot</c>). Anything else does nothing to it. Omitted means everything does. A rock outcrop
+    /// takes only <c>drill</c>: hand tools bounce off it.
+    /// </summary>
+    public List<string>? DamageFrom { get; init; }
+
+    /// <summary>
+    /// Loose physics parts (rock chunks) the object falls apart into when its health runs out, each its own Creation
+    /// thrown a little apart. Given with or instead of <see cref="Drops"/>.
+    /// </summary>
+    public BreakDefinition? BreaksInto { get; init; }
+
+    /// <summary>
+    /// Makes each scattered spot of this object a rock outcrop: a connected cluster of cubes stacked on a grid in
+    /// stepped columns, each cube an object of its own (<see cref="WorldObjectId.Piece"/>) with this definition's
+    /// collider, look and health. The cube is 1 m before <see cref="Scale"/>, which is shared by the whole cluster.
+    /// </summary>
+    public OutcropDefinition? Outcrop { get; init; }
+
+    /// <summary>
+    /// A model (<c>.glb</c>/<c>.gltf</c>, a mod path) the object is drawn with instead of <see cref="Pieces"/>,
+    /// centred <see cref="MeshDefinition.At"/> above the ground point.
+    /// </summary>
+    public MeshDefinition? Mesh { get; init; }
+
+    /// <summary>Steepest ground (rise over run) this object stands on, below the terrain's <c>max_scatter_slope</c>. Omitted: that.</summary>
+    public float? MaxSlope { get; init; }
+
+    /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+
+    /// <summary>True when damage of <paramref name="kind"/> (<see cref="DamageKinds"/>) can hurt the object.</summary>
+    public bool TakesDamageFrom(string kind) => DamageFrom is null || DamageFrom.Contains(kind);
+}
+
+/// <summary>What deals damage, for <see cref="WorldObjectDefinition.DamageFrom"/>.</summary>
+public static class DamageKinds
+{
+    /// <summary>A Sledgehammer swing.</summary>
+    public const string Sledge = "sledge";
+
+    /// <summary>A spinning drill part.</summary>
+    public const string Drill = "drill";
+
+    /// <summary>A spinning saw blade part.</summary>
+    public const string Saw = "saw";
+
+    /// <summary>A shot, a thrown or mounted weapon, any other script hit.</summary>
+    public const string Weapon = "weapon";
+
+    /// <summary>A blast's splash.</summary>
+    public const string Explosion = "explosion";
+
+    /// <summary>A bot's attack.</summary>
+    public const string Bot = "bot";
+
+    /// <summary>Every kind.</summary>
+    public static readonly IReadOnlyList<string> All = [Sledge, Drill, Saw, Weapon, Explosion, Bot];
+}
+
+/// <summary>A model a world object is drawn with.</summary>
+public sealed record MeshDefinition
+{
+    /// <summary>Mod path of the model (<c>meshes/world/rock_cube.glb</c>, or <c>other_mod:path</c>).</summary>
+    public string? File { get; init; }
+
+    /// <summary>Where the model's origin goes, relative to the object's ground point (before scale).</summary>
+    public Vec3 At { get; init; }
+
+    /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>How an outcrop's cubes are stacked (<see cref="WorldObjectDefinition.Outcrop"/>).</summary>
+public sealed record OutcropDefinition
+{
+    /// <summary>How many cubes, <c>[min, max]</c>.</summary>
+    public List<int>? Cubes { get; init; }
+
+    /// <summary>How many cubes high a column stands, <c>[min, max]</c>; the middle stands tallest.</summary>
+    public List<int>? Height { get; init; }
+
+    /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>Loose parts something falls apart into (<see cref="WorldObjectDefinition.BreaksInto"/>, <see cref="Data.PartDefinition.BreaksInto"/>).</summary>
+public sealed record BreakDefinition
+{
+    /// <summary>Most pieces one break may make.</summary>
+    public const int MaxCount = 16;
+
+    /// <summary>How many pieces (1 to <see cref="MaxCount"/>).</summary>
+    public int Count { get; init; } = 1;
+
+    /// <summary>What each piece may be: one is picked per piece by <see cref="BreakPiece.Weight"/>.</summary>
+    public List<BreakPiece>? Parts { get; init; }
+
+    /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+
+    /// <summary>The part a piece is, from <paramref name="roll"/> in [0, 1); null when there are no parts.</summary>
+    public string? Pick(float roll)
+    {
+        var parts = (Parts ?? []).Where(p => p.Part is not null && p.Weight > 0).ToList();
+        var total = parts.Sum(p => p.Weight);
+        if (total <= 0)
+            return null;
+        var at = roll * total;
+        foreach (var p in parts)
+        {
+            if (at < p.Weight)
+                return p.Part;
+            at -= p.Weight;
+        }
+        return parts[^1].Part;
+    }
+}
+
+/// <summary>One kind of piece a <see cref="BreakDefinition"/> may make.</summary>
+public sealed record BreakPiece
+{
+    /// <summary>Part id (a loose part: <see cref="Data.PartDefinition.Loose"/>).</summary>
+    public string? Part { get; init; }
+
+    /// <summary>Relative chance against the other pieces.</summary>
+    public float Weight { get; init; } = 1f;
+
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }

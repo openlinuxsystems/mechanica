@@ -99,6 +99,11 @@ streamed in 64 m chunks. Height samples are `resolution` metres apart and must d
 | `objects[].model` | A built-in flora model (see [Flora](#flora)) drawn instead of `pieces`, such as `bush_berry`. |
 | `objects[].solid` | `false` for an object players, bots and Creations walk and drive through, like the seed bush: its collider only catches the Sledgehammer's swing, so it still breaks for its drops. Default `true`. |
 | `objects[].refine` | `true` for a raw resource node (tree, rock node): holding Use (E) on it for `refine_seconds` (`game/data/survival.json`, 5.2 s, as in Scrap Mechanic) refines it, and its `drops` go straight into the inventory. Moving more than `refine_cancel_distance` (1.5 m) or letting go cancels. Default `false`. |
+| `objects[].damage_from` | Kinds of damage that hurt it: `sledge`, `drill`, `saw`, `weapon`, `explosion`, `bot`. Omitted: all of them. Rock outcrops take only `drill` (a drill part whose input is on). |
+| `objects[].breaks_into` | Loose parts (`count` and weighted `parts[]`, as a part's `breaks_into` in the [Part Data Schema](part-data-schema.md)) it shatters into when it breaks, as well as any `drops`. A rock-outcrop cube breaks into two chunks. |
+| `objects[].mesh` | A `.glb` or `.gltf` model (`file`, centred at `at`) drawn instead of `pieces`, scaled with the object. |
+| `objects[].max_slope` | Steepest ground it is scattered on (rise over run), if flatter than the world's own limit. |
+| `objects[].outcrop` | Makes the object a rock outcrop: a connected, stepped mass of `cubes` (`[min, max]`, at most 64) whole cubes, columns `height` (`[min, max]`, at most 8) cubes tall, the middle standing tallest. Each cube is one object `scale` metres on a side with its own id (`rule.cell_x.cell_z.cube`, the first cube `rule.cell_x.cell_z`), so breaking one leaves the rest. The base sits on the lowest ground under it, less `sink`. `footprint` is then the outcrop's radius. |
 
 Shapes (`collider`, `pieces`) are `box` (`size`), `sphere` (`radius`) or `cylinder` (`radius`,
 `height`, upright), centred at `at`, turned `yaw` degrees about +Y, coloured `#rrggbb`. They are

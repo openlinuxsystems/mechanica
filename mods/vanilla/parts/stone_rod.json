@@ -1,0 +1,26 @@
+{
+  "id": "stone_rod",
+  "name": "Stone Rod",
+  "description": "A bar of rough stone. Hold Use on it with the Refine Tool, or put it in a Refiner, for 20 Scrap Stone Blocks.",
+  "category": "resource",
+  "mass": 12,
+  "friction": 0.7,
+  "buoyancy": 0,
+  "flammable": false,
+  "stack_size": 10,
+  "sound_material": "concrete",
+  "size": [1, 1, 4],
+  "mesh": "meshes/items/stone_rod.glb",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.95,
+    "metallic": 0
+  },
+  "loose": true,
+  "refine": [
+    {
+      "item": "scrap_stone_block",
+      "count": 20
+    }
+  ]
+}

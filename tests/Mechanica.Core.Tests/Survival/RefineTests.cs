@@ -41,7 +41,7 @@ public class RefineTests
         foreach (var s in Enumerable.Range(0, 3))
             _f.Pockets(Me).SetSlot(s, new ItemStack(Crop, 20));
         _f.Ok(Me, SurvivalActions.StartRefine, Tree);
-        Assert.Equal(_tree, _f.Survival.RefiningOf(Me.Peer)!.Value.Object);
+        Assert.Equal(_tree.ToString(), _f.Survival.RefiningOf(Me.Peer)!.Value.Target);
         _f.World.Now += 0.5;
         Assert.Equal("Keep holding Use to refine it.", _f.Refused(Me, SurvivalActions.FinishRefine, Tree));
         _f.World.Now += 0.7;

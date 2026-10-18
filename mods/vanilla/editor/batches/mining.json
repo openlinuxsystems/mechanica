@@ -1,0 +1,109 @@
+{
+  // Mining (Boulder Mining spec): the chunks a drilled rock-outcrop cube breaks into, the Stone and Metal Rods
+  // the chunks break into, and the rods' refiner recipes. The outcrops themselves are world objects in
+  // world/worldgen.json. Models: tools/rocks/build_rocks.py. Re-run tools/author-vanilla.sh after editing.
+  "format_version": 1,
+  "parts": [
+    {
+      "file": "parts/stone_chunk.json",
+      "template": "item",
+      "set": {
+        "name": "Stone Chunk",
+        "description": "A broken piece of rock outcrop. Break it with a drill or the Sledgehammer for its Stone and Metal Rods.",
+        "category": "resource",
+        "loose": true,
+        "mass": 30,
+        "durability": 10,
+        "friction": 0.8,
+        "buoyancy": 0,
+        "flammable": false,
+        "stack_size": 4,
+        "sound_material": "concrete",
+        "size": [2, 2, 2],
+        "visual": { "color": "#ffffff", "roughness": 0.95, "metallic": 0 },
+        "collision": { "shape": "convex", "mesh": "meshes/items/stone_chunk.glb" },
+        "sledge_damage": 25,
+        "breaks_into": {
+          "count": 2,
+          "parts": [
+            { "part": "stone_rod", "weight": 7 },
+            { "part": "metal_rod", "weight": 3 }
+          ]
+        }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/stone_chunk.glb" }]
+    },
+    {
+      "file": "parts/metal_chunk.json",
+      "base": "stone_chunk",
+      "set": {
+        "name": "Metal-Rich Chunk",
+        "description": "A broken piece of a metal-rich outcrop, veined with ore. Break it with a drill or the Sledgehammer for mostly Metal Rods.",
+        "mass": 36,
+        "sound_material": "metal",
+        "collision": { "shape": "convex", "mesh": "meshes/items/metal_chunk.glb" },
+        "breaks_into": {
+          "count": 2,
+          "parts": [
+            { "part": "stone_rod", "weight": 3 },
+            { "part": "metal_rod", "weight": 7 }
+          ]
+        }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/metal_chunk.glb" }]
+    },
+    {
+      "file": "parts/stone_rod.json",
+      "template": "item",
+      "set": {
+        "name": "Stone Rod",
+        "description": "A bar of rough stone. Hold Use on it with the Refine Tool, or put it in a Refiner, for 20 Scrap Stone Blocks.",
+        "category": "resource",
+        "loose": true,
+        "mass": 12,
+        "friction": 0.7,
+        "buoyancy": 0,
+        "flammable": false,
+        "stack_size": 10,
+        "sound_material": "concrete",
+        "size": [1, 1, 4],
+        "visual": { "color": "#ffffff", "roughness": 0.95, "metallic": 0 },
+        "refine": [{ "item": "scrap_stone_block", "count": 20 }]
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/stone_rod.glb" }],
+      "recipes": [
+        {
+          "id": "stone_rod",
+          "stations": ["refiner"],
+          "inputs": [{ "item": "stone_rod", "count": 1 }],
+          "outputs": [{ "item": "scrap_stone_block", "count": 20 }],
+          "time": 5
+        }
+      ]
+    },
+    {
+      "file": "parts/metal_rod.json",
+      "base": "stone_rod",
+      "set": {
+        "name": "Metal Rod",
+        "description": "A bar of raw metal. Hold Use on it with the Refine Tool, or put it in a Refiner, for 20 Metal Blocks.",
+        "mass": 16,
+        "friction": 0.4,
+        "sound_material": "metal",
+        "visual": { "color": "#ffffff", "roughness": 0.35, "metallic": 0.9 },
+        "sounds": { "pickup": "pickup_metal", "drop": "drop_metal" },
+        "refine": [{ "item": "metal_block", "count": 20 }]
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/metal_rod.glb" }],
+      "recipes": [
+        {
+          "id": "metal_rod",
+          "stations": ["refiner"],
+          "inputs": [{ "item": "metal_rod", "count": 1 }],
+          "outputs": [{ "item": "metal_block", "count": 20 }],
+          "time": 5
+        }
+      ]
+    }
+  ]
+}

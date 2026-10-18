@@ -58,8 +58,9 @@ public sealed class WorldGenData
     public const string PoiFolder = "pois";
 
     private WorldGenData(WorldGenDefinition definition, IReadOnlyList<LoadedPoi> pois, IReadOnlyList<DataDiagnostic> diagnostics, string fingerprint,
-        Func<string, string?>? textureFile = null)
+        Func<string, AssetKind, string?>? assetFile = null)
     {
+        _assetFile = assetFile;
         Definition = definition;
         Terrain = definition.Terrain;
         Pois = pois;
@@ -87,11 +88,20 @@ public sealed class WorldGenData
         FloraRules = flora;
         FloraByBiome = [.. Biomes.Select(b => (IReadOnlyList<Flora>)[.. flora.Where(f => f.Biome == b.Index)])];
         CoastBiome = definition.CoastBiome is { } coast ? Biomes.First(b => b.Id == coast) : null;
-        Grounds = [.. (definition.Grounds ?? []).Select((g, i) => new Ground(i, g.Id!, textureFile?.Invoke(g.Texture!), g.Tile, g.Flora,
+        Grounds = [.. (definition.Grounds ?? []).Select((g, i) => new Ground(i, g.Id!, assetFile?.Invoke(g.Texture!, AssetKind.Texture), g.Tile, g.Flora,
             g.FloraTint is { } tint ? ParseColor(tint) : null))];
         BiomeGrounds = [.. (definition.Biomes ?? []).Select(b => b.Ground is { } id ? GroundIndex(id) : -1)];
         SlopeGround = definition.SlopeGround is { Ground: { } slope } ? GroundIndex(slope) : -1;
     }
+
+    private readonly Func<string, AssetKind, string?>? _assetFile;
+
+    /// <summary>
+    /// Full path of the model a world object is drawn with (<see cref="WorldObjectDefinition.Mesh"/>), or null when it has
+    /// none or the world was built without mods (tests).
+    /// </summary>
+    public string? MeshFileOf(WorldObjectDefinition definition) =>
+        definition.Mesh?.File is { } file ? _assetFile?.Invoke(file, AssetKind.Mesh) : null;
 
     /// <summary>Ground textures, in layer order.</summary>
     public IReadOnlyList<Ground> Grounds { get; }
@@ -130,6 +140,12 @@ public sealed class WorldGenData
 
     /// <summary>Every biome's scatter rules, in biome then file order.</summary>
     public IReadOnlyList<Scatter> ScatterRules { get; }
+
+    /// <summary>
+    /// Largest <see cref="WorldObjectDefinition.Footprint"/> any scatter rule's object has, scaled by its largest scale: how
+    /// far an object (an outcrop's cube) may stand from the ground point it is scattered by.
+    /// </summary>
+    public float MaxFootprint => ScatterRules.Count == 0 ? 0f : ScatterRules.Max(r => r.Object.Footprint * (r.Object.Scale is [_, var hi] ? hi : 1f));
 
     /// <summary>Every biome's flora rules, in biome then file order.</summary>
     public IReadOnlyList<Flora> FloraRules { get; }
@@ -209,12 +225,12 @@ public sealed class WorldGenData
                 pois.Add(new LoadedPoi(id, prefab, (prefab.Placement!.Biomes ?? []).Select(b => biomeIds.IndexOf(b)).ToHashSet()));
         }
         var folders = content.Mods.ToDictionary(m => m.Id, m => m.Directory);
-        string? TextureFile(string text) =>
-            AssetPath.TryParse(text, definitionMod, AssetKind.Texture, out var path, out _) && folders.TryGetValue(path.ModId, out var folder)
+        string? AssetFile(string text, AssetKind kind) =>
+            AssetPath.TryParse(text, definitionMod, kind, out var path, out _) && folders.TryGetValue(path.ModId, out var folder)
                 ? path.Resolve(folder)
                 : null;
         return new WorldGenData(definition, [.. pois.OrderBy(p => p.QualifiedId, StringComparer.Ordinal)], diagnostics, ComputeFingerprint(definition, pois),
-            TextureFile);
+            AssetFile);
     }
 
     /// <summary>Builds data from a definition alone (no POIs), validating it.</summary>

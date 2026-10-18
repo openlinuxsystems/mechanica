@@ -116,8 +116,11 @@ public interface IStrikeTargets
     /// <summary>Middle of a world object that can break, or null when there is none with that id.</summary>
     Vector3? ObjectCentre(string id);
 
-    /// <summary>Takes <paramref name="damage"/> health from a world object. Returns the health left (0 when it broke).</summary>
-    float StrikeObject(string id, float damage);
+    /// <summary>
+    /// Takes <paramref name="damage"/> health from a world object, if it takes damage of <paramref name="kind"/>
+    /// (<see cref="World.DamageKinds"/>). Returns the health left (0 when it broke).
+    /// </summary>
+    float StrikeObject(string id, float damage, string kind);
 
     /// <summary>Middle of a living bot, or null when there is none with that id.</summary>
     Vector3? BotCentre(int bot);
@@ -506,6 +509,8 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
         // Ground-only parts (soil) stay flat on the ground, so they never move onto another creation or take one on.
         if (new[] { source, target }.SelectMany(c => c.Parts.Select(p => c.DefinitionOf(p.Id))).FirstOrDefault(d => d.GroundOnly == true) is { } grounded)
             return $"{grounded.Name ?? "This part"} stays on the ground and cannot be welded.";
+        if (new[] { source, target }.SelectMany(c => c.Parts.Select(p => c.DefinitionOf(p.Id))).FirstOrDefault(d => d.Loose == true) is { } loose)
+            return $"A {loose.Name ?? "loose part"} cannot be welded to anything.";
         if (!target.CanMergeFrom(source, args.Rotation, args.Offset, weld: true, out var attachedTo, out var error))
             return Sentence(error);
         var pose = target.BodyPose(target.BodyIndexOf(attachedTo[0]));
@@ -677,14 +682,14 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
         if (args.Object is { } id)
         {
             var at = HitPoint(args, Targets!.ObjectCentre(id)!.Value);
-            var left = Targets.StrikeObject(id, settings.Sledge.ObjectDamage);
+            var left = Targets.StrikeObject(id, settings.Sledge.ObjectDamage, World.DamageKinds.Sledge);
             world.PlaySound(left <= 0 ? "smash_break" : "smash_hit", Identifiers.VanillaModId, at);
             return Value(new SledgeResult(left <= 0, left, left <= 0, []));
         }
         var creation = world.FindCreation(args.Creation!.Value)!;
         var centre = HitPoint(args, PartCentre(creation, args.Part!.Value));
         var body = creation.BodyIndexOf(args.Part.Value);
-        var result = DamagePart(creation, args.Part.Value, settings.Sledge.Damage);
+        var result = DamagePart(creation, args.Part.Value, creation.DefinitionOf(args.Part.Value).SledgeDamage ?? settings.Sledge.Damage);
         world.PlaySound(result.Broken ? "smash_break" : "smash_hit", Identifiers.VanillaModId, centre);
         if (!result.Broken && caller.Source == ActionSource.Player && world.EyeOf(caller.Peer) is { } eye && centre != eye)
         {
@@ -714,12 +719,60 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
         {
             BuildActions.PlayPartSound(world, creation, partId, PartSounds.Break, null);
             world.Breaking(creation, partId);
+            var breaks = creation.DefinitionOf(partId).BreaksInto;
+            var centre = PartCentre(creation, partId);
+            var size = creation.DefinitionOf(partId).Size is { } cells ? Math.Max(cells.X, Math.Max(cells.Y, cells.Z)) * MechanicaInfo.GridSize : MechanicaInfo.GridSize;
+            var seed = World.Noise.Hash((uint)creation.Id, partId, (int)(world.Now * 1000) & 0xFFFF);
             var removal = BuildActions.Remove(world, creation, partId);
+            // A rock chunk falls apart into rods where it was.
+            if (breaks is not null)
+                Shatter(breaks, centre, size * 0.5f, seed);
             return new SledgeResult(true, 0f, removal.Destroyed, removal.SplitOff);
         }
         BuildActions.PlayPartSound(world, creation, partId, PartSounds.Impact, null);
         creation.SetPartDamage(partId, total);
         return new SledgeResult(false, full - total, false, []);
+    }
+
+    /// <summary>Takes a part out of the world for every peer, as picking it up does, but gives it to no one (a refined rod).</summary>
+    public RemovePartResult RemovePart(Creation creation, int partId) => BuildActions.Remove(world, creation, partId);
+
+    /// <summary>
+    /// Something <paramref name="radius"/> m across at <paramref name="centre"/> fell apart: spawns its
+    /// <paramref name="breaks"/> pieces (loose parts, <see cref="PartDefinition.Loose"/>), each its own Creation, spread
+    /// round the middle and thrown out and up (<see cref="BreakSettings"/>). <paramref name="seed"/> picks what each
+    /// piece is and how it lies. Parts that are unknown or not loose are skipped. Returns the new Creations.
+    /// </summary>
+    public IReadOnlyList<Creation> Shatter(World.BreakDefinition breaks, Vector3 centre, float radius, uint seed)
+    {
+        var made = new List<Creation>();
+        if (catalog is null)
+            return made;
+        var count = Math.Clamp(breaks.Count, 1, World.BreakDefinition.MaxCount);
+        var turn = World.Noise.Unit(World.Noise.Hash(seed, 0, 0)) * MathF.Tau;
+        for (var i = 0; i < count; i++)
+        {
+            var part = breaks.Pick(World.Noise.Unit(World.Noise.Hash(seed, i, 1)));
+            if (part is null || catalog.FindDefinition(part) is not { Loose: true } definition)
+                continue;
+            // Evenly round the middle, a third of the way out, each lying at its own angle.
+            var angle = turn + MathF.Tau * i / count;
+            var outward = new Vector3(MathF.Cos(angle), 0, MathF.Sin(angle));
+            var at = centre + outward * (count > 1 ? radius * 0.35f : 0f) + new Vector3(0, (i % 2) * 0.1f, 0);
+            var rotation = Quaternion.CreateFromAxisAngle(Vector3.UnitY, angle + MathF.PI / 2f);
+            var creation = new Creation(world.NextCreationId(), catalog);
+            if (!creation.TryPlacePart(part, new GridCell(0, 0, 0), GridRotation.Identity, out var placed, out _))
+                continue;
+            var offset = PartGeometry.CentreMetres(definition, placed.Cell, placed.Rotation).ToNumerics();
+            creation.SetAllBodyPoses(new Pose(at - Vector3.Transform(offset, rotation), rotation));
+            world.Added(creation);
+            var velocity = outward * settings.Breaking.SpreadSpeed + new Vector3(0, settings.Breaking.LiftSpeed, 0);
+            var mass = creation.Bodies[0].Mass;
+            if (mass > 0 && velocity != Vector3.Zero)
+                world.Push(creation, 0, at, velocity * mass);
+            made.Add(creation);
+        }
+        return made;
     }
 
     private string? ValidateBlock(ActionCaller caller, BlockArgs args) =>

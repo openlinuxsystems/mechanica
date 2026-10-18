@@ -81,7 +81,7 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     private readonly SortedDictionary<int, Flight> _projectiles = [];
     private readonly Dictionary<int, double> _lastWater = [];
     // Refines being held, by peer: the node, when Use went down and where the player stood (per player, UI spec §10).
-    private readonly Dictionary<int, (WorldObjectId Object, double Started, Vector3 Feet)> _refining = [];
+    private readonly Dictionary<int, (string Target, double Started, Vector3 Feet)> _refining = [];
     private int _nextDrop = 1;
     private int _nextProjectile = 1;
 
@@ -423,9 +423,10 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     /// <summary>
     /// Deals <paramref name="damage"/> to what a ray hit: a player (when <paramref name="caller"/> may hurt
     /// them), a bot, a part (which may break off; otherwise its Body gets <paramref name="push"/>, in N·s) or a
-    /// world object. Returns what was hit and the damage dealt.
+    /// world object, which only takes it if it takes damage of <paramref name="kind"/> (<see cref="DamageKinds"/>: a
+    /// rock outcrop takes only a drill's). Returns what was hit and the damage dealt.
     /// </summary>
-    public ShotHitView Hit(ActionCaller caller, RayHit hit, float damage, Vector3 push)
+    public ShotHitView Hit(ActionCaller caller, RayHit hit, float damage, Vector3 push, string kind = DamageKinds.Weapon)
     {
         var point = hit.Point.ToVec3();
         if (!(damage >= 0) || !float.IsFinite(damage))
@@ -452,8 +453,9 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         }
         if (hit.Object is { } objectId)
         {
-            DamageObject(objectId, damage);
-            return new ShotHitView("object", point, damage, Object: objectId.ToString());
+            var dealt = world.FindObject(objectId) is { } placement && placement.Definition.TakesDamageFrom(kind) ? damage : 0f;
+            DamageObject(objectId, dealt, kind);
+            return new ShotHitView("object", point, dealt, Object: objectId.ToString());
         }
         return new ShotHitView("ground", point, 0);
     }
@@ -529,8 +531,8 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         }
         foreach (var placement in world.ObjectsNear(at, radius).ToList())
         {
-            var dealt = Falloff(Vector3.Distance(ObjectCentre(placement), at));
-            DamageObject(placement.Id, dealt);
+            var dealt = placement.Definition.TakesDamageFrom(DamageKinds.Explosion) ? Falloff(Vector3.Distance(ObjectCentre(placement), at)) : 0f;
+            DamageObject(placement.Id, dealt, DamageKinds.Explosion);
             hits.Add(new ShotHitView("object", ObjectCentre(placement).ToVec3(), dealt, Object: placement.Id.ToString()));
         }
         return hits;
@@ -615,21 +617,33 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     // ---- World objects ----
 
     /// <summary>
-    /// Takes <paramref name="damage"/> health from a world object with a <c>health</c>. At 0 it breaks for
-    /// every peer and leaves its <c>drops</c>. Returns the health left (0 when it broke, or for an object
-    /// that cannot break).
+    /// Takes <paramref name="damage"/> health from a world object with a <c>health</c>, when it takes damage of
+    /// <paramref name="kind"/> (<see cref="WorldObjectDefinition.DamageFrom"/>). At 0 it breaks for every peer, leaves
+    /// its <c>drops</c> and falls apart into its <c>breaks_into</c> loose parts (a rock cube into chunks). Returns the
+    /// health left (0 when it broke, or for an object that cannot break).
     /// </summary>
-    public float DamageObject(WorldObjectId id, float damage)
+    public float DamageObject(WorldObjectId id, float damage, string kind)
     {
         if (world.FindObject(id) is not { Definition.Health: { } full } placement)
             return 0f;
+        if (!placement.Definition.TakesDamageFrom(kind))
+            return full - world.AddObjectDamage(id, 0f);
         var total = world.AddObjectDamage(id, damage);
         if (total < full)
             return full - total;
         world.DestroyObject(id);
         AddDrop(placement.Position + new Vector3(0, 0.5f, 0), ObjectDrops(placement));
+        if (placement.Definition.BreaksInto is { } breaks)
+        {
+            var centre = ObjectCentre(placement);
+            world.PlaySound(BreakSound, Identifiers.VanillaModId, centre);
+            world.Shatter(breaks, centre, placement.Scale * 0.5f, Noise.Hash(id.ToString()));
+        }
         return 0f;
     }
+
+    /// <summary>The sound event a world object makes falling apart into loose parts (a rock cube cracking).</summary>
+    public const string BreakSound = "drill_break";
 
     // The items a world object leaves when it breaks or is refined.
     private List<ItemStack> ObjectDrops(WorldObjectPlacement placement) => [.. (placement.Definition.Drops ?? [])
@@ -666,7 +680,7 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         WorldObjectId.TryParse(id, out var parsed) && world.FindObject(parsed) is { Definition.Health: not null } placement ? ObjectCentre(placement) : null;
 
     /// <inheritdoc/>
-    public float StrikeObject(string id, float damage) => WorldObjectId.TryParse(id, out var parsed) ? DamageObject(parsed, damage) : 0f;
+    public float StrikeObject(string id, float damage, string kind) => WorldObjectId.TryParse(id, out var parsed) ? DamageObject(parsed, damage, kind) : 0f;
 
     /// <inheritdoc/>
     public Vector3? BotCentre(int bot) => Bots?.BotCentre(bot);
@@ -879,39 +893,60 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
 
     // ---- Refining (UI spec §9, §10) ----
 
-    /// <summary>The node a player is refining and when they started, or null.</summary>
-    public (WorldObjectId Object, double Started)? RefiningOf(int peer) =>
-        _refining.TryGetValue(peer, out var r) ? (r.Object, r.Started) : null;
+    /// <summary>
+    /// What a player is refining (<see cref="RefineArgs.Target"/>: a world object id, or <c>part:creation.part</c>) and
+    /// when they started, or null.
+    /// </summary>
+    public (string Target, double Started)? RefiningOf(int peer) =>
+        _refining.TryGetValue(peer, out var r) ? (r.Target, r.Started) : null;
 
-    // A node that still stands, can be refined and is in reach of the caller.
-    private string? CheckRefinable(ActionCaller caller, string id, out WorldObjectPlacement? placement)
+    // Something that can be refined and is in reach of the caller: a node that still stands, or a loose part with
+    // refine items. Gives what it turns into and where it is.
+    private string? CheckRefinable(ActionCaller caller, RefineArgs args, out List<ItemStack> items, out Vector3 at)
     {
-        placement = null;
-        if (!WorldObjectId.TryParse(id, out var parsed) || world.FindObject(parsed) is not { } found)
-            return $"There is nothing to refine there ({id}).";
-        if (!found.Definition.Refine)
-            return $"The {found.Definition.Id} cannot be refined.";
-        placement = found;
-        return CheckReach(caller, ObjectCentre(found));
+        items = [];
+        at = default;
+        if (args.Object is { } id)
+        {
+            if (args.Creation is not null || args.Part is not null)
+                return "Give either object or creation and part, not both.";
+            if (!WorldObjectId.TryParse(id, out var parsed) || world.FindObject(parsed) is not { } found)
+                return $"There is nothing to refine there ({id}).";
+            if (!found.Definition.Refine)
+                return $"The {found.Definition.Id} cannot be refined.";
+            items = ObjectDrops(found);
+            at = ObjectCentre(found);
+            return CheckReach(caller, at);
+        }
+        if (args.Creation is not { } creationId || args.Part is not { } partId)
+            return "Give the object, or the creation and part, to refine.";
+        if (world.FindCreation(creationId) is not { } creation || creation.FindPart(partId) is null)
+            return $"There is nothing to refine there (creation {creationId}, part {partId}).";
+        var definition = creation.DefinitionOf(partId);
+        if (definition.Loose != true || definition.Refine is not { Count: > 0 } refine)
+            return $"The {definition.Name ?? "part"} cannot be refined.";
+        items = [.. refine.Where(r => r.Item is not null && r.Count is > 0 && catalog.FindDefinition(r.Item) is not null)
+            .Select(r => new ItemStack(Identifiers.Qualify(r.Item!), r.Count!.Value))];
+        at = PartCentre(creation, partId);
+        return CheckReach(caller, at);
     }
 
     private string? ValidateStartRefine(ActionCaller caller, RefineArgs args) =>
-        world.FeetOf(caller.Peer) is null ? "You have no player to refine with." : CheckRefinable(caller, args.Object, out _);
+        world.FeetOf(caller.Peer) is null ? "You have no player to refine with." : CheckRefinable(caller, args, out _, out _);
 
     private JsonElement? ApplyStartRefine(ActionCaller caller, RefineArgs args)
     {
-        WorldObjectId.TryParse(args.Object, out var id);
-        _refining[caller.Peer] = (id, world.Now, world.FeetOf(caller.Peer)!.Value);
+        _refining[caller.Peer] = (args.Target, world.Now, world.FeetOf(caller.Peer)!.Value);
         return null;
     }
 
     private string? ValidateFinishRefine(ActionCaller caller, RefineArgs args)
     {
-        if (CheckRefinable(caller, args.Object, out var placement) is { } bad)
+        if (CheckRefinable(caller, args, out _, out _) is { } bad)
             return bad;
         if (caller.Source != ActionSource.Player)
             return null;
-        if (!_refining.TryGetValue(caller.Peer, out var held) || held.Object != placement!.Id)
+        if (!_refining.TryGetValue(caller.Peer, out var held) || held.Target != args.Target)
             return "Hold Use on it to refine it.";
         if (world.Now - held.Started < settings.RefineSeconds * IntervalJitter)
             return "Keep holding Use to refine it.";
@@ -923,24 +958,26 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     private JsonElement? ApplyFinishRefine(ActionCaller caller, RefineArgs args)
     {
         _refining.Remove(caller.Peer);
-        WorldObjectId.TryParse(args.Object, out var id);
-        var placement = world.FindObject(id)!;
-        world.DestroyObject(id);
-        world.PlaySound(RefineCompleteSound, Identifiers.VanillaModId, ObjectCentre(placement));
+        CheckRefinable(caller, args, out var items, out var at);
+        if (args.Object is { } text && WorldObjectId.TryParse(text, out var id))
+            world.DestroyObject(id);
+        else
+            world.RemovePart(world.FindCreation(args.Creation!.Value)!, args.Part!.Value);
+        world.PlaySound(RefineCompleteSound, Identifiers.VanillaModId, at);
         var pockets = inventories.PlayerInventory(caller.Peer);
         var left = new List<ItemStack>();
         var taken = 0;
-        foreach (var stack in ObjectDrops(placement))
+        foreach (var stack in items)
         {
             var added = pockets.Add(stack.Item, stack.Count);
             taken += added;
             if (added < stack.Count)
                 left.Add(stack with { Count = stack.Count - added });
         }
-        // What does not fit stays on the ground where the node stood.
-        AddDrop(placement.Position + new Vector3(0, 0.5f, 0), left);
+        // What does not fit stays on the ground where it was.
+        AddDrop(at, left);
         if (taken > 0)
-            PlayPickup(ObjectDrops(placement).First().Item, ObjectCentre(placement));
+            PlayPickup(items[0].Item, at);
         return Value(new RefineResult(taken, left.Sum(s => s.Count)));
     }
 

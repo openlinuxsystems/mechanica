@@ -195,6 +195,10 @@ internal sealed class BotRig : ISurvivalWorld, IInventoryWorld, IBotWorld, IRaid
     {
     }
 
+    public void RemovePart(Creation creation, int partId)
+    {
+    }
+
     public void Dispose()
     {
         try

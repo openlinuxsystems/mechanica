@@ -6,24 +6,29 @@ namespace Mechanica.Core.World;
 /// <summary>
 /// Stable id of a scattered world object: the scatter rule that placed it and the rule's grid cell. The
 /// same seed and world data always give the same ids, so destroyed objects can be saved and synced as ids.
-/// Written as <c>rule.x.z</c>.
+/// Written as <c>rule.x.z</c>, or <c>rule.x.z.piece</c> for the second and later cubes of a rock outcrop
+/// (<see cref="WorldObjectDefinition.Outcrop"/>), each of which is an object of its own.
 /// </summary>
-public readonly record struct WorldObjectId(int Rule, int CellX, int CellZ)
+public readonly record struct WorldObjectId(int Rule, int CellX, int CellZ, int Piece = 0)
 {
     /// <inheritdoc />
-    public override string ToString() => string.Create(CultureInfo.InvariantCulture, $"{Rule}.{CellX}.{CellZ}");
+    public override string ToString() => Piece == 0
+        ? string.Create(CultureInfo.InvariantCulture, $"{Rule}.{CellX}.{CellZ}")
+        : string.Create(CultureInfo.InvariantCulture, $"{Rule}.{CellX}.{CellZ}.{Piece}");
 
     /// <summary>Parses the <see cref="ToString"/> form.</summary>
     public static bool TryParse(string? text, out WorldObjectId id)
     {
         id = default;
         var parts = text?.Split('.');
-        if (parts is not { Length: 3 }
+        var piece = 0;
+        if (parts is not { Length: 3 or 4 }
             || !int.TryParse(parts[0], NumberStyles.None, CultureInfo.InvariantCulture, out var rule)
             || !int.TryParse(parts[1], NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var x)
-            || !int.TryParse(parts[2], NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var z))
+            || !int.TryParse(parts[2], NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var z)
+            || (parts.Length == 4 && (!int.TryParse(parts[3], NumberStyles.None, CultureInfo.InvariantCulture, out piece) || piece == 0)))
             return false;
-        id = new WorldObjectId(rule, x, z);
+        id = new WorldObjectId(rule, x, z, piece);
         return true;
     }
 }

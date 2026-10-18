@@ -1005,11 +1005,13 @@ Putting items on the ground. Arguments of DropItems: put items from a slot on th
 
 *action, play scope*
 
-Finishing a refine once Use has been held long enough. Arguments of StartRefine and FinishRefine: the resource node held Use on.
+Finishing a refine once Use has been held long enough. Arguments of StartRefine and FinishRefine: what Use is held on. Either a resource node (a tree) by Object, or a loose part that refines (a Stone Rod) by Creation and Part.
 
 | Param | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|
-| `object` | string | yes |  | Id of the world object ("3.10.-4"). |
+| `object` | string or null |  |  | Id of the world object ("3.10.-4"). |
+| `creation` | integer or null |  |  | Id of the loose part's Creation. |
+| `part` | integer or null |  |  | Id of the loose part in it. |
 
 ### `GetSoil`
 
@@ -1074,11 +1076,13 @@ Setting the bed to respawn at. Arguments of SetSpawn: one part of a Creation.
 
 *action, play scope*
 
-Starting to hold Use on a resource node to refine it. Arguments of StartRefine and FinishRefine: the resource node held Use on.
+Starting to hold Use on a resource node to refine it. Arguments of StartRefine and FinishRefine: what Use is held on. Either a resource node (a tree) by Object, or a loose part that refines (a Stone Rod) by Creation and Part.
 
 | Param | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|
-| `object` | string | yes |  | Id of the world object ("3.10.-4"). |
+| `object` | string or null |  |  | Id of the world object ("3.10.-4"). |
+| `creation` | integer or null |  |  | Id of the loose part's Creation. |
+| `part` | integer or null |  |  | Id of the loose part in it. |
 
 ## Using held items
 

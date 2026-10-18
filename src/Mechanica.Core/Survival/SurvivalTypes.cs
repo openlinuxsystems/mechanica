@@ -35,9 +35,18 @@ public sealed record DropItemsArgs(int Slot, int? Count = null, Vec3? At = null)
 /// <param name="Drop">The pile's id.</param>
 public sealed record PickUpArgs(int Drop);
 
-/// <summary>Arguments of <c>StartRefine</c> and <c>FinishRefine</c>: the resource node held Use on.</summary>
+/// <summary>
+/// Arguments of <c>StartRefine</c> and <c>FinishRefine</c>: what Use is held on. Either a resource node (a tree) by
+/// <paramref name="Object"/>, or a loose part that refines (a Stone Rod) by <paramref name="Creation"/> and <paramref name="Part"/>.
+/// </summary>
 /// <param name="Object">Id of the world object (<c>"3.10.-4"</c>).</param>
-public sealed record RefineArgs(string Object);
+/// <param name="Creation">Id of the loose part's Creation.</param>
+/// <param name="Part">Id of the loose part in it.</param>
+public sealed record RefineArgs(string? Object = null, int? Creation = null, int? Part = null)
+{
+    /// <summary>What is refined, as one key: the object id, or <c>part:creation.part</c>.</summary>
+    public string Target => Object ?? $"part:{Creation}.{Part}";
+}
 
 /// <summary>Value of a successful <c>FinishRefine</c>.</summary>
 /// <param name="Taken">Items that went into the inventory.</param>
@@ -205,4 +214,16 @@ public interface ISurvivalWorld
 
     /// <summary>Gives a Body an impulse (N·s) at a world point.</summary>
     void Push(Creation creation, int bodyIndex, Vector3 point, Vector3 impulse);
+
+    /// <summary>Takes a part out of the world for every peer (a refined rod), splitting or removing its Creation.</summary>
+    void RemovePart(Creation creation, int partId);
+
+    /// <summary>
+    /// Something <paramref name="radius"/> m across at <paramref name="centre"/> fell apart: spawns its
+    /// <paramref name="breaks"/> loose parts there, each its own Creation thrown a little apart
+    /// (<see cref="Building.ToolActions.Shatter"/>). <paramref name="seed"/> picks the pieces.
+    /// </summary>
+    void Shatter(BreakDefinition breaks, Vector3 centre, float radius, uint seed)
+    {
+    }
 }
