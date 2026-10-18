@@ -12,9 +12,9 @@ namespace Mechanica.Game.Building;
 /// <summary>
 /// The Sledgehammer in the local player's hand: every player's main tool, always on the hotbar (Chase's sledgehammer
 /// spec). Left click swings (<see cref="SledgeSettings.SwingSeconds"/>, one swing a second; holding it keeps swinging):
-/// the arms wind up and bring the head down, and <see cref="SledgeSettings.StrikeSeconds"/> after the click the hit lands
-/// on whatever is under the crosshair within <see cref="SledgeSettings.Reach"/>, the ground included, with a thud and a
-/// puff of dust where it lands. The host pushes what it hits along the swing (<see cref="SledgeSettings.Impulse"/>) and
+/// <see cref="SledgeSettings.StrikeSeconds"/> after the click (at the click, as shipped) the hit lands on whatever is
+/// under the crosshair within <see cref="SledgeSettings.Reach"/>, the ground included, with a thud and a puff of dust
+/// where it lands. The swing animation skips its wind-up and brings the head down a few frames after the click. The host pushes what it hits along the swing (<see cref="SledgeSettings.Impulse"/>) and
 /// takes health off the part, which breaks off at 0; in Survival it also hurts and knocks back the player or bot
 /// (<see cref="SledgeSettings.CombatDamage"/>), or chips at the tree or rock (its own gathering damage). A hit that lands
 /// shakes the camera a little. In Creative, holding right click raises the hammer across the chest to block (UI spec

@@ -321,6 +321,36 @@ public class CharacterAnimatorTests
     }
 
     [Fact]
+    public void AGestureStartSkipsTheStartOfItsClip()
+    {
+        // The sledge swing skips the first 30% of its clip (the wind-up) and plays the rest in 0.35 s.
+        var animator = new CharacterAnimator(new CharacterSettings
+        {
+            GestureSeconds = new() { ["sledge_swing"] = 0.35f },
+            GestureStart = new() { ["sledge_swing"] = 0.3f },
+        }, Lengths);
+        var count = (byte)Enumerable.Range(1, 20).First(c => CharacterRig.GestureClip(CharacterGesture.SledgeSwing, (byte)c) == "sledge_swing_back");
+        Run(animator, Standing() with { Prop = CharacterProp.Sledgehammer, GestureCount = (byte)(count - 1) }, 0.2f);
+        Run(animator, Standing() with { Prop = CharacterProp.Sledgehammer, Gesture = CharacterGesture.SledgeSwing, GestureCount = count }, Dt);
+        Assert.Equal(0.3f, animator.GestureTime, 3);
+        Run(animator, Standing() with { Prop = CharacterProp.Sledgehammer, Gesture = CharacterGesture.SledgeSwing, GestureCount = count }, 0.2f);
+        Assert.Equal(0.3f + 0.7f * 0.2f / 0.35f, animator.GestureTime, 3);
+        Run(animator, Standing() with { Prop = CharacterProp.Sledgehammer, Gesture = CharacterGesture.SledgeSwing, GestureCount = count }, 0.16f);
+        Assert.Null(animator.Gesture);
+    }
+
+    [Fact]
+    public void WithoutGestureSecondsTheSkippedPartIsNotWaitedOut()
+    {
+        var animator = new CharacterAnimator(new CharacterSettings { GestureStart = new() { ["sledge_swing"] = 0.5f } }, Lengths);
+        Run(animator, Standing() with { Prop = CharacterProp.Sledgehammer }, 0.2f);
+        Run(animator, Standing() with { Prop = CharacterProp.Sledgehammer, Gesture = CharacterGesture.SledgeSwing, GestureCount = 1 }, 0.25f);
+        Assert.Equal(0.5f + 0.25f - Dt, animator.GestureTime, 3);   // the rest plays at its own pace
+        Run(animator, Standing() with { Prop = CharacterProp.Sledgehammer, Gesture = CharacterGesture.SledgeSwing, GestureCount = 1 }, 0.27f);
+        Assert.Null(animator.Gesture);
+    }
+
+    [Fact]
     public void FirstPersonArmsPlayTheirOwnVersionsWhereThereAreSome()
     {
         var animator = new CharacterAnimator(new CharacterSettings { GestureSeconds = new() { ["sledge_swing"] = 0.8f } }, Lengths, firstPerson: true);

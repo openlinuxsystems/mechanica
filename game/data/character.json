@@ -17,9 +17,15 @@
   "hold_fade": 0.2,
   "gesture_fade_in": 0.06,
   "gesture_fade_out": 0.12,
-  // Gestures that play faster or slower than authored, in seconds (the sledge swing matches sledge.swing_seconds).
+  // Gestures that play faster or slower than authored, in seconds, from their gesture_start to the end.
   "gesture_seconds": {
-    "sledge_swing": 0.6
+    "sledge_swing": 0.42
+  },
+  // Where a gesture starts in its clip (0 to 1); the part before never plays. The sledge swing skips its wind-up and
+  // starts with the head already coming down: the hit lands at the click (sledge.strike_seconds 0) and the head meets
+  // it 0.07 s later, at the clip's impact (0.25 s into the 0.6 s clip).
+  "gesture_start": {
+    "sledge_swing": 0.3
   },
   "air_grace": 0.15,
   "jump_detect_speed": 1.5,

@@ -502,18 +502,18 @@ public partial class ToolsTest : StagedTest
             return true;
         });
         Add("look up at the sky", frame => Look(_client, 0f, 1.3f, frame) && !Tools.Sledge.Swinging);
-        Add("one swing at a time, landing after the wind-up", frame =>
+        Add("one swing at a time, the hit landing at the click", frame =>
         {
             if (frame == 0)
             {
                 _results.Clear();
                 Check(Tools.Sledge.Swing(_results.Add), "a fresh swing starts");
+                // Aimed at the sky, nothing is in reach: the swing lands on air there and then, with no wait for the host.
+                Check(_results.Count == 1, $"the hit lands at the click ({_results.Count} results)");
                 Check(!Tools.Sledge.Swing(), "a second click during the swing does nothing");
-                Check(_results.Count == 0, "nothing is hit at the click");
                 return false;
             }
-            // Aimed at the sky, nothing is in reach: the swing lands on air.
-            if (_results.Count == 0 || Tools.Sledge.Swinging)
+            if (Tools.Sledge.Swinging)
                 return false;
             Check(!_results[0].Ok && _results[0].Code == "miss", $"a swing at nothing misses ({_results[0]})");
             return true;
@@ -549,7 +549,7 @@ public partial class ToolsTest : StagedTest
                 Check(seen.Animator.Body.Any(c => c.Clip is "walk" or "jog" && c.Weight > 0.3f),
                     $"with the legs walking under it ({string.Join(", ", seen.Animator.Body.Select(c => $"{c.Clip} {c.Weight:0.00}"))})");
             }
-            // One swing a second, each landing 0.6 s in: by 1.75 s two have started and the second has landed.
+            // One swing a second, each landing at its click: by 1.75 s two have started and landed.
             if (frame < 105)
                 return false;
             Tools.Sledge.HoldingSwing = false;
