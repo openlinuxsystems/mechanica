@@ -55,7 +55,7 @@ public enum CharacterGesture : byte
     /// <summary>Two-handed Sledgehammer swing.</summary>
     SledgeSwing,
 
-    /// <summary>Pointing a tool (Lift, Connect Tool).</summary>
+    /// <summary>Pointing a tool (the Lift).</summary>
     ToolUse,
 
     /// <summary>Welding.</summary>
@@ -96,6 +96,12 @@ public enum CharacterGesture : byte
 
     /// <summary>Setting a full bucket down (Force Build).</summary>
     BucketPlaceFull,
+
+    /// <summary>The Connect Tool's click as a link is made or taken away: a flick of the wrist and a pulse of its lights.</summary>
+    ConnectClick,
+
+    /// <summary>The Connect Tool reversing a bearing: a twist of the wrist and its lights pulsing the other way.</summary>
+    ConnectReverse,
 }
 
 /// <summary>
@@ -193,6 +199,8 @@ public static class CharacterRig
         "hold_heavy_fp", "hold_heavy_block_fp", "sledge_swing_fp", "sledge_swing_side_fp", "sledge_swing_back_fp",
         "hold_refine", "refine_draw", "refine_stow", "hold_refine_fp", "refine_draw_fp", "refine_stow_fp",
         "hold_bucket_fp", "hold_bucket_full_fp", "bucket_fill_fp", "bucket_throw_fp", "bucket_place_fp", "bucket_place_full_fp",
+        "hold_connect", "hold_connect_aim", "connect_draw", "connect_stow", "connect_click", "connect_reverse",
+        "hold_connect_fp", "hold_connect_aim_fp", "connect_draw_fp", "connect_stow_fp", "connect_click_fp", "connect_reverse_fp",
     ];
 
     /// <summary>
@@ -214,13 +222,14 @@ public static class CharacterRig
     public static IEnumerable<string> Clips => FullBodyClips.Concat(UpperBodyClips);
 
     /// <summary>
-    /// The arm pose for holding <paramref name="prop"/>, or null for empty hands. <paramref name="guard"/> (right click
-    /// held with the Sledgehammer) raises it to block.
+    /// The arm pose for holding <paramref name="prop"/>, or null for empty hands. <paramref name="guard"/> raises the
+    /// tool: the Sledgehammer to block (right click held), the Connect Tool to aim at a node or drag a link.
     /// </summary>
     public static string? HoldClip(CharacterProp prop, bool guard = false) => prop switch
     {
         CharacterProp.None => null,
         CharacterProp.Sledgehammer => guard ? "hold_heavy_block" : "hold_heavy",
+        CharacterProp.ConnectTool => guard ? "hold_connect_aim" : "hold_connect",
         CharacterProp.PotatoBlaster => "hold_gun",
         CharacterProp.WaterBucket => "hold_bucket",
         CharacterProp.WaterBucketFull => "hold_bucket_full",
@@ -231,15 +240,26 @@ public static class CharacterRig
 
     /// <summary>
     /// The clip that brings <paramref name="prop"/> into the hand when it is taken, or null when it just appears: the
-    /// Refine Tool is drawn from the hip. Every peer plays it when it sees the prop change, so it costs no traffic.
+    /// Refine Tool and the Connect Tool are drawn from the hip. Every peer plays it when it sees the prop change, so it
+    /// costs no traffic.
     /// </summary>
-    public static string? DrawClip(CharacterProp prop) => prop == CharacterProp.RefineTool ? "refine_draw" : null;
+    public static string? DrawClip(CharacterProp prop) => prop switch
+    {
+        CharacterProp.RefineTool => "refine_draw",
+        CharacterProp.ConnectTool => "connect_draw",
+        _ => null,
+    };
 
     /// <summary>
-    /// The clip that puts <paramref name="prop"/> away when the hand takes something else, or null: the Refine Tool goes
-    /// back to the hip, still drawn until the clip ends.
+    /// The clip that puts <paramref name="prop"/> away when the hand takes something else, or null: the Refine Tool and
+    /// the Connect Tool go back to the hip, still drawn until the clip ends.
     /// </summary>
-    public static string? StowClip(CharacterProp prop) => prop == CharacterProp.RefineTool ? "refine_stow" : null;
+    public static string? StowClip(CharacterProp prop) => prop switch
+    {
+        CharacterProp.RefineTool => "refine_stow",
+        CharacterProp.ConnectTool => "connect_stow",
+        _ => null,
+    };
 
     /// <summary>The clip a gesture plays, or null for <see cref="CharacterGesture.None"/> and unknown values.</summary>
     public static string? GestureClip(CharacterGesture gesture) => gesture switch
@@ -259,6 +279,8 @@ public static class CharacterRig
         CharacterGesture.BucketThrow => "bucket_throw",
         CharacterGesture.BucketPlace => "bucket_place",
         CharacterGesture.BucketPlaceFull => "bucket_place_full",
+        CharacterGesture.ConnectClick => "connect_click",
+        CharacterGesture.ConnectReverse => "connect_reverse",
         _ => null,
     };
 
@@ -319,5 +341,5 @@ public static class CharacterRig
     public static CharacterProp Sanitize(CharacterProp prop) => prop <= CharacterProp.WaterBucketFull ? prop : CharacterProp.None;
 
     /// <summary><paramref name="gesture"/> when it is a known value, otherwise <see cref="CharacterGesture.None"/>.</summary>
-    public static CharacterGesture Sanitize(CharacterGesture gesture) => gesture <= CharacterGesture.BucketPlaceFull ? gesture : CharacterGesture.None;
+    public static CharacterGesture Sanitize(CharacterGesture gesture) => gesture <= CharacterGesture.ConnectReverse ? gesture : CharacterGesture.None;
 }

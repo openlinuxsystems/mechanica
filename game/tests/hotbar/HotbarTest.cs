@@ -123,7 +123,7 @@ public partial class HotbarTest : StagedTest
             Tools.Select(8);
             Check(Tools.Current == Tools.Item && Tools.Item.InHand?.Item == Carrot, $"the carrot is in hand ({Tools.Item.InHand?.Item})");
             Tools.Select(9);
-            Check(Tools.Current == Tools.Item && Tools.Item.InHand is null, "an empty slot leaves the hand empty");
+            Check(Tools.Current == Tools.Builder && Tools.Builder.Selected is null, "an empty slot leaves the hand empty");
             _results.Clear();
             return true;
         });

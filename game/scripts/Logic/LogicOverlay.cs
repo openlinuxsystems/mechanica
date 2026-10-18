@@ -20,7 +20,8 @@ namespace Mechanica.Game.Logic;
 /// core and a chevron every 40 px pointing from source to target; lines between the same two parts sit side by side.
 /// With the Connect Tool out every part with logic shows a node coloured by its kind (blue logic, cyan power, white
 /// with a blue ring for bearings, gray structural) that pulses cyan while its signal is on, grows under the
-/// crosshair and has a curved arrow when it can be reversed. While the tool drags a line, the preview follows the
+/// crosshair and has a curved arrow when something drives it and it can be reversed (a bearing linked to a seat, a
+/// controller or an engine). A part a seat or a controller is linked to shows its order number beside its node. While the tool drags a line, the preview follows the
 /// aim with a little slack, and nodes it cannot end on fade (§9). Links the host has not confirmed show at once and
 /// fade out red if it refuses them. Lines show while the tool is out or the visualizer is on (F7); otherwise a
 /// link flashes briefly when its source's signal changes. Signals are read with <c>InspectCreation</c> a few times
@@ -45,7 +46,7 @@ public partial class LogicOverlay : CanvasLayer
     private readonly record struct Line(Vector2 From, Vector2 To, Color Outer, Color Core, bool Chevrons, bool Bright);
 
     /// <summary>A node to draw.</summary>
-    private readonly record struct Dot(Vector2 At, float Radius, PortKind Kind, float Alpha, bool Pulse, bool Ring, bool? Reversed);
+    private readonly record struct Dot(Vector2 At, float Radius, PortKind Kind, float Alpha, bool Pulse, bool Ring, bool? Reversed, string? Numbers);
 
     /// <summary>One link on screen: where its ends are, lanes applied.</summary>
     public readonly record struct Segment(int Creation, LogicLink Link, Vector2 From, Vector2 To);
@@ -79,6 +80,9 @@ public partial class LogicOverlay : CanvasLayer
 
     /// <summary>Nodes drawn on the last frame (Creation, part, opacity), for tests.</summary>
     public IReadOnlyList<(int Creation, int Part, float Alpha)> DrawnNodes { get; private set; } = [];
+
+    /// <summary>Order numbers drawn on the last frame (Creation, part, text), for tests.</summary>
+    public IReadOnlyList<(int Creation, int Part, string Text)> DrawnNumbers { get; private set; } = [];
 
     /// <summary>Links flashing now because their signal changed with the lines hidden, for tests.</summary>
     public IReadOnlyCollection<(int Creation, LogicLink Link)> Flashing => _flash.Keys;
@@ -197,12 +201,14 @@ public partial class LogicOverlay : CanvasLayer
         _preview = null;
         var drawn = new List<(int, LogicLink, bool)>();
         var drawnNodes = new List<(int, int, float)>();
+        var drawnNumbers = new List<(int, int, string)>();
         var camera = Players.LocalPlayer?.Camera;
         var viewport = GetViewport();
         if (camera is null || viewport is null)
         {
             Drawn = [];
             DrawnNodes = [];
+            DrawnNumbers = [];
             return;
         }
         var look = Look;
@@ -248,6 +254,7 @@ public partial class LogicOverlay : CanvasLayer
         if (tool is null)
         {
             DrawnNodes = [];
+            DrawnNumbers = [];
             return;
         }
         var radius = look.NodePixels / 2 * scale;
@@ -260,11 +267,16 @@ public partial class LogicOverlay : CanvasLayer
             var hovered = tool.HoveredNode is { } h && h.Creation == node.Creation && h.Part == node.Part;
             var swept = tool.Swept.Any(n => n.Creation == node.Creation && n.Part == node.Part);
             var active = SignalOf(node.Creation, node.Part) != 0;
+            // A part linked to several seats or controllers shows each one's number, in part order of the sources.
+            var numbers = node.Numbers is { Count: > 0 } list ? string.Join(" ", list.Select(n => n.Number)) : null;
             _dots.Add(new Dot(camera.UnprojectPosition(node.Position), radius * (hovered || source ? look.HoverScale : 1f), node.Kind, alpha,
-                active, swept || source, node.Reversible ? tool.ShownReversed(node) : null));
+                active, swept || source, node.Reversible ? tool.ShownReversed(node) : null, numbers));
             drawnNodes.Add((node.Creation, node.Part, alpha));
+            if (numbers is not null)
+                drawnNumbers.Add((node.Creation, node.Part, numbers));
         }
         DrawnNodes = drawnNodes;
+        DrawnNumbers = drawnNumbers;
         if (tool.DragFrom is { } start && !camera.IsPositionBehind(start.Position))
         {
             var end = tool.DragEnd;
@@ -314,7 +326,20 @@ public partial class LogicOverlay : CanvasLayer
                 canvas.DrawArc(dot.At, dot.Radius + 3 * scale, 0, Mathf.Tau, 24, UiTokens.Cyan with { A = dot.Alpha }, 2 * scale, antialiased: true);
             if (dot.Reversed is { } reversed)
                 CurvedArrow(canvas, dot.At + new Vector2(dot.Radius + 6 * scale, -dot.Radius - 6 * scale), 5 * scale, reversed, UiTokens.Cyan with { A = dot.Alpha });
+            if (dot.Numbers is { } numbers)
+                Number(canvas, dot.At + new Vector2(dot.Radius + 4 * scale, dot.Radius + 4 * scale), numbers, scale, dot.Alpha);
         }
+    }
+
+    // An order number in a small dark tag below and right of a node.
+    private static void Number(Control canvas, Vector2 corner, string text, float scale, float alpha)
+    {
+        var font = canvas.GetThemeDefaultFont();
+        var size = Mathf.RoundToInt(13 * scale);
+        var extent = font.GetStringSize(text, HorizontalAlignment.Left, -1, size);
+        var pad = new Vector2(4, 1) * scale;
+        canvas.DrawRect(new Rect2(corner, extent + pad * 2), UiTokens.DeepNavy with { A = 0.8f * alpha });
+        canvas.DrawString(font, corner + pad + new Vector2(0, font.GetAscent(size)), text, HorizontalAlignment.Left, -1, size, UiTokens.Text with { A = alpha });
     }
 
     // A chevron at at, pointing along direction.

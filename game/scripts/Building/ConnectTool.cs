@@ -22,7 +22,10 @@ namespace Mechanica.Game.Building;
 /// Pressing on a line instead grabs its far end: letting go away from any node disconnects it, and on another node
 /// moves it there. Right click on a node that can be reversed (a bearing) flips which way it turns, and right click
 /// during a drag cancels it. Each change is a <c>ConnectParts</c>, <c>DisconnectParts</c> or <c>ConfigurePart</c>
-/// request; the line shows at once and fades out red if the host refuses it.
+/// request; the line shows at once and fades out red if the host refuses it. Others see the tool raised and aimed
+/// while it is over a node or dragging (<see cref="Raised"/>, sent as the guard flag), a click of the wrist and a
+/// pulse of its lights as a link is made or taken away, and a twist with the lights pulsing the other way as a
+/// bearing is reversed (<see cref="ConnectToolLights"/>).
 /// </summary>
 public partial class ConnectTool : HandTool
 {
@@ -51,14 +54,14 @@ public partial class ConnectTool : HandTool
     public override string ToolName => "Connect Tool";
 
     /// <inheritdoc/>
-    public override CharacterProp Prop => CharacterProp.ConnectTool;
+    public override CharacterProp Prop => Owns ? CharacterProp.ConnectTool : CharacterProp.None;
 
     /// <inheritdoc/>
-    protected override CharacterGesture GestureFor(InputEvent @event) =>
-        Pressed(@event, InputActions.Primary) ? UseGesture : CharacterGesture.None;
+    /// <remarks>The tool's gestures go out from <see cref="ReleaseDrag"/> and <see cref="Reverse"/> when they change something.</remarks>
+    protected override CharacterGesture GestureFor(InputEvent @event) => CharacterGesture.None;
 
     /// <inheritdoc/>
-    protected override CharacterGesture UseGesture => CharacterGesture.ToolUse;
+    protected override CharacterGesture UseGesture => CharacterGesture.ConnectClick;
 
     /// <inheritdoc/>
     protected override string RefusalSound => "connect_fail";
@@ -88,6 +91,12 @@ public partial class ConnectTool : HandTool
 
     /// <summary>True while a line is being dragged.</summary>
     public bool Dragging => DragFrom is not null;
+
+    /// <summary>True while the tool is held up and aimed: over a node, or dragging a line (or <see cref="KeepRaised"/>).</summary>
+    public bool Raised => Dragging || HoveredNode is not null || KeepRaised;
+
+    /// <summary>Holds the tool up and aimed whatever it is over, for capture renders.</summary>
+    public bool KeepRaised { get; set; }
 
     /// <summary>Bearings the drag passed over, linked too when it ends.</summary>
     public IReadOnlyList<ConnectionNode> Swept => _swept;
@@ -134,9 +143,19 @@ public partial class ConnectTool : HandTool
             || (p.Taken && Creations.Find(p.Creation) is var c && (c is null || c.Links.Contains(p.Link) == p.Adding)));
         if (!Active || Build.Settings is null)
             return;
+        if (!Owns)
+        {
+            CancelDrag();
+            _nodes.Clear();
+            HoveredNode = null;
+            HoveredLink = null;
+            Player.HeldGuard = false;
+            return;
+        }
         if (ReadDeviceInput && Input.MouseMode != Input.MouseModeEnum.Captured && Dragging)
             CancelDrag();
         UpdateHover();
+        Player.HeldGuard = Raised;
     }
 
     /// <summary>Re-reads the nodes in reach and what the crosshair is over. Runs every frame while the tool is out.</summary>
@@ -165,7 +184,7 @@ public partial class ConnectTool : HandTool
         }
         HoveredLink = hovered is null && !Dragging ? LinkUnderCrosshair() : null;
         // Bearings the drag passes over join it (§2: dragging over several bearings connects them all).
-        if (Dragging && Grabbed is null && hovered is { Kind: PortKind.Bearing } bearing && !_swept.Contains(bearing)
+        if (Dragging && Grabbed is null && hovered is { Kind: PortKind.Bearing } bearing && !_swept.Any(n => n.Creation == bearing.Creation && n.Part == bearing.Part)
             && Creations.Find(bearing.Creation)?.CheckLink(DragFrom!.Value.Part, bearing.Part) is null)
             _swept.Add(bearing);
     }
@@ -233,6 +252,7 @@ public partial class ConnectTool : HandTool
             Change(old, adding: false);
             if (target is { } to)
                 Change(new LogicLink(from.Part, to.Part), adding: true);
+            Player.Gesture(CharacterGesture.ConnectClick);
             return true;
         }
         var targets = swept.Select(n => n.Part).ToList();
@@ -247,6 +267,8 @@ public partial class ConnectTool : HandTool
                 continue;
             Change(link, adding: !linked);
         }
+        if (sent)
+            Player.Gesture(CharacterGesture.ConnectClick);
         return sent;
     }
 
@@ -258,7 +280,10 @@ public partial class ConnectTool : HandTool
         _swept.Clear();
     }
 
-    /// <summary>Flips which way the hovered node's part turns (a bearing). False when the hovered node has no direction.</summary>
+    /// <summary>
+    /// Flips which way the hovered node's part turns (a bearing something drives). False when the hovered node has no
+    /// direction to flip.
+    /// </summary>
     public bool Reverse(Action<ActionResult>? done = null)
     {
         UpdateHover();
@@ -268,6 +293,7 @@ public partial class ConnectTool : HandTool
         var flipped = !ShownReversed(node);
         _reversing[key] = flipped;
         PlayFeedback("logic_click", node.Position);
+        Player.Gesture(CharacterGesture.ConnectReverse);
         var settings = new Dictionary<string, JsonElement?> { [node.Definition.Logic!.Reverse!] = JsonSerializer.SerializeToElement(flipped) };
         Send(LogicActions.ConfigurePart, new ConfigurePartArgs(node.Creation, node.Part, settings), result =>
         {
@@ -325,6 +351,8 @@ public partial class ConnectTool : HandTool
     /// <inheritdoc/>
     public override string HudText()
     {
+        if (!Owns)
+            return Loc.T("Connect Tool: craft one at a Fabricator to wire parts");
         if (Grabbed is not null)
             return Loc.T("Connect Tool: let go on a node to move the link, away from one to disconnect  {0} cancel", Key(InputActions.Secondary)) + Status;
         if (Dragging)
@@ -336,6 +364,8 @@ public partial class ConnectTool : HandTool
     /// <inheritdoc/>
     protected override bool HandleInput(InputEvent @event)
     {
+        if (!Owns)
+            return false;
         if (Pressed(@event, InputActions.Primary))
             PressDrag();
         else if (Game.Player.GameInput.Released(@event, InputActions.Primary))
@@ -361,6 +391,7 @@ public partial class ConnectTool : HandTool
         HoveredNode = null;
         HoveredLink = null;
         _nodes.Clear();
+        Player.HeldGuard = false;
     }
 
     // The node in reach whose dot the screen centre is on, nearest first.

@@ -50,11 +50,11 @@ public partial class LogicSync : Node
     /// <summary>Raised on every peer when the seats change.</summary>
     public event Action? SeatsChanged;
 
-    /// <summary>Registers the logic actions (every peer registers; only the host runs them).</summary>
+    /// <summary>Registers the logic actions (every peer registers; only the host runs them). Call after <see cref="Survival.SurvivalSync.RegisterActions"/> so Survival asks for a crafted Connect Tool.</summary>
     public void RegisterActions(ActionDispatcher dispatcher)
     {
         Build.Settings ??= BuildSync.LoadSettings();
-        Actions = new LogicActions(Build.Settings, Build, Scripts.Runtime, Seats);
+        Actions = new LogicActions(Build.Settings, Build, Scripts.Runtime, Seats) { Costs = Build.Costs };
         Actions.Register(dispatcher);
         Actions.SeatChanged += (seat, entered) =>
         {

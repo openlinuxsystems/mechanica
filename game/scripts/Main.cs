@@ -248,6 +248,9 @@ public partial class Main : Node3D
     /// <summary>The Logic Visualizer (F7, and while the Connect Tool is in hand).</summary>
     public LogicOverlay LogicOverlay { get; private set; } = null!;
 
+    /// <summary>The Connect Tool's lights in every player's hand.</summary>
+    public ConnectToolLights ConnectLights { get; private set; } = null!;
+
     /// <summary>The aero force overlay (F9): the pushes part scripts make, as arrows.</summary>
     public ForceOverlay ForceOverlay { get; private set; } = null!;
 
@@ -439,6 +442,7 @@ public partial class Main : Node3D
         AddChild(Inventory);
         AddChild(Survival);
         AddChild(new RefineEffects { Name = "RefineEffects", Players = PlayerSync, Sounds = Sounds, Survival = Survival });
+        AddChild(ConnectLights = new ConnectToolLights { Name = "ConnectToolLights", Players = PlayerSync });
         Bots = new BotSync
         {
             Name = "Bots",

@@ -14,7 +14,7 @@ namespace Mechanica.Core.Survival;
 /// The survival loop (chunk 20) in the Action API, validated on the host like every other action:
 /// <list type="bullet">
 /// <item>Health is the only meter (D12). Damage comes from weapons, the Sledgehammer, falls and splash;
-/// at 0 a player dies, drops what they carry and may <c>Respawn</c> after a delay, at their bed or the
+/// at 0 a player dies, drops what they carry (except tools) and may <c>Respawn</c> after a delay, at their bed or the
 /// world spawn. In Creative nothing hurts a player.</item>
 /// <item>Weapons and food are Lua item scripts (chunk 20b, D2). They hurt and heal through the generic
 /// combat primitives here: <see cref="Hitscan"/>, <see cref="Hit"/>, <see cref="Splash"/>, <see cref="Launch"/>
@@ -284,9 +284,16 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         v.DiedAt = world.Now;
         if (!settings.DropInventoryOnDeath || world.FeetOf(peer) is not { } feet)
             return;
+        // Tools (the crafted Connect Tool) stay in their slots; everything else is dropped.
         var pockets = inventories.PlayerInventory(peer);
-        var items = pockets.Slots.Where(s => s is not null).Select(s => s!).ToList();
-        pockets.Clear();
+        var items = new List<ItemStack>();
+        for (var slot = 0; slot < pockets.Slots.Count; slot++)
+        {
+            if (pockets.Slots[slot] is not { } stack || catalog.FindDefinition(stack.Item)?.Category == PartCategory.Tool)
+                continue;
+            items.Add(stack);
+            pockets.SetSlot(slot, null);
+        }
         AddDrop(feet, items);
     }
 
@@ -1138,6 +1145,11 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         var pose = creation.BodyPose(creation.BodyIndexOf(partId));
         return pose.Apply(PartGeometry.CentreMetres(creation.DefinitionOf(partId), part.Cell, part.Rotation).ToNumerics());
     }
+
+    /// <inheritdoc/>
+    public string? CheckTool(ActionCaller caller, string tool) =>
+        !Pays(caller) || catalog.FindDefinition(tool) is not { Category: PartCategory.Tool } item || inventories.PlayerInventory(caller.Peer).Count(tool) > 0 ? null
+        : $"Craft a {item.Name ?? tool} at a Fabricator first.";
 
     private string NameOf(string item) => catalog.FindDefinition(item)?.Name ?? item;
 

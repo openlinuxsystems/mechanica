@@ -37,7 +37,7 @@ them. AI agents read it from `GetWorld` and `world.info` and set it with `world.
 
 - **Health** goes down from weapons, the Sledgehammer, splash, and falls faster than
   `fall.min_speed`. It comes back by eating. At 0 you die: everything you carry falls in a pile where
-  you stood, and you respawn at your bed, or at the world spawn if you have none (or it was broken).
+  you stood (tools you crafted, like the Connect Tool, stay with you), and you respawn at your bed, or at the world spawn if you have none (or it was broken).
 - **Farming:** place soil, plant a seed, and water it. A crop grows only while its soil holds water,
   using a second of water per second of growth, through four stages. Harvest it ripe (E) for its crop
   and usually a seed back. Crops keep growing while nobody is near (the soil catches up from the world

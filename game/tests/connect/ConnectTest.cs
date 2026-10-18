@@ -20,7 +20,7 @@ namespace Mechanica.Game.Tests;
 /// line before the host answers; while dragging, the other Creation's switch fades. A drag from the engine over one
 /// bearing to another links both. The line between switch and engine shows "Switch → Gas Engine" when hovered;
 /// grabbing it and letting go in the air disconnects it. A link the host refuses fades out red. Right click on a
-/// bearing reverses it on the host. With the tool put away, a link flashes when its source's signal changes.
+/// bearing an engine drives reverses it on the host. With the tool put away, a link flashes when its source's signal changes.
 /// </summary>
 public partial class ConnectTest : StagedTest
 {
@@ -94,7 +94,7 @@ public partial class ConnectTest : StagedTest
             Check(mine.SequenceEqual(new[] { _switch, _engine, _wheel, _wheel2, _gate }.Order()), $"the board's five logic parts have nodes ({string.Join(", ", mine)})");
             Check(Overlay.DrawnNodes.Any(n => n.Creation == Other), "and so does the lone switch");
             Check(Connector.Nodes.First(n => n.Part == _engine && n.Creation == Board).Kind == PortKind.Power, "the engine's node is power");
-            Check(Connector.Nodes.First(n => n.Part == _wheel && n.Creation == Board) is { Kind: PortKind.Bearing, Reversible: true }, "a bearing's is a reversible bearing node");
+            Check(Connector.Nodes.First(n => n.Part == _wheel && n.Creation == Board) is { Kind: PortKind.Bearing, Reversible: false }, "a bearing's is a bearing node, with no turn arrow while nothing drives it");
             return true;
         });
         Add("look at the switch", frame => LookAt(Centre(_switch), frame));
@@ -140,6 +140,11 @@ public partial class ConnectTest : StagedTest
         });
         Add("the host links the engine to both bearings", _ => Answered(2)
             && Check(HostBoard.Links.Contains(new LogicLink(_engine, _wheel)) && HostBoard.Links.Contains(new LogicLink(_engine, _wheel2)), "engine → both bearings"));
+        Add("the driven bearings show which way they turn", frame =>
+        {
+            Connector.UpdateHover();
+            return Connector.Nodes.Count(n => n.Creation == Board && n.Reversible) == 2 || (frame > 60 && Check(false, "both bearings have turn arrows on the client"));
+        });
         Add("look between the switch and the engine", frame => LookAt((Centre(_switch) + Centre(_engine)) / 2, frame));
         Add("the line between them is hovered, with its tooltip", frame =>
         {

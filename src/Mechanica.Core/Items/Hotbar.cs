@@ -5,8 +5,10 @@ using Mechanica.Core.Data;
 namespace Mechanica.Core.Items;
 
 /// <summary>
-/// The hand tools a hotbar slot can hold, by their catalog ids (CATALOG_IDS.md). They are not inventory items:
-/// every player always has them. Building needs no tool: a part in a slot places it, and an empty slot removes parts.
+/// The hand tools a hotbar slot can hold, by their catalog ids (CATALOG_IDS.md). Every player always has them, except
+/// that in Survival a tool that is also an item (a <c>tool</c> part, like the Connect Tool) is crafted first and carried
+/// (<see cref="Building.IBuildCosts.CheckTool"/>). Building needs no tool: a part in a slot places it, and an empty slot
+/// removes parts.
 /// </summary>
 public static class HotbarTools
 {

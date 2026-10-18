@@ -246,6 +246,47 @@ public partial class LogicTests
     }
 
     [Fact]
+    public void InSurvivalLinkingNeedsACraftedConnectTool()
+    {
+        var c = Row(Source, Lamp);
+        var costs = new ToolCosts();
+        var dispatcher = new ActionDispatcher();
+        new LogicActions(new BuildSettings { Reach = 4f }, _world, _host, _seats) { Costs = costs }.Register(dispatcher);
+        ActionResult Send(string action) => dispatcher.Dispatch(Player, action, JsonSerializer.Serialize(new LinkPartsArgs(1, 1, 2), ActionJson.Options));
+
+        Assert.Equal("Craft a Connect Tool at a Fabricator first.", Send(LogicActions.ConnectParts).Message);
+        Assert.Empty(c.Links);
+        costs.Carried = true;
+        Assert.True(Send(LogicActions.ConnectParts).Ok);
+        costs.Carried = false;
+        Assert.Equal("Craft a Connect Tool at a Fabricator first.", Send(LogicActions.DisconnectParts).Message);
+        Assert.Equal([new LogicLink(1, 2)], c.Links);
+        Assert.Equal([Mechanica.Core.Items.HotbarTools.Connect], costs.Asked.Distinct());
+    }
+
+    private sealed class ToolCosts : IBuildCosts
+    {
+        public bool Carried;
+        public readonly List<string> Asked = [];
+
+        public string? CheckPlace(ActionCaller caller, string part) => null;
+
+        public void Placed(ActionCaller caller, string part)
+        {
+        }
+
+        public void Removed(ActionCaller caller, string part, Vector3 at)
+        {
+        }
+
+        public string? CheckTool(ActionCaller caller, string tool)
+        {
+            Asked.Add(tool);
+            return Carried ? null : "Craft a Connect Tool at a Fabricator first.";
+        }
+    }
+
+    [Fact]
     public void ConfigurePartChecksEveryValueBeforeChangingAny()
     {
         var c = Row(Gate);

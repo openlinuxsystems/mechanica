@@ -692,6 +692,13 @@ PALETTE = {
     "tape_brown": ("#5a3e27", 0.86, 0.0),
     "hazard_band": ("#e2b322", 0.5, 0.05),
     "rust_sheet": ("#83401a", 0.8, 0.25),
+    # connect tool
+    "tool_gunmetal": ("#33363a", 0.46, 0.75),
+    "tool_bezel": ("#222326", 0.52, 0.6),
+    "tool_silver": ("#8c9096", 0.32, 1.0),
+    "panel_line": ("#141517", 0.7, 0.6),
+    "grip_chevron": ("#1d1e20", 0.8, 0.05),
+    "accent_orange": ("#e8670f", 0.42, 0.0),
     "void": ("#060505", 1.0, 1.0),          # the inside of a cut sleeve: no light comes back from it
     "default": ("#808080", 0.5, 0.0),
 }
@@ -4001,6 +4008,171 @@ def clip_refine_stow_fp(t):
     return oneshot([(0.0, ready), (0.12, lift), (REFINE_STOW_SECONDS, hip)], t, template=ready)
 
 
+# The Connect Tool, held like a pistol: drawn from a holster on the right hip into a forward point at chest height
+# (connect_draw, hold_connect), raised and aimed more deliberately while it is over a node or dragging a link
+# (hold_connect_aim, the guard flag), a flick of the wrist as a link is made or taken away (connect_click) and a roll
+# of it as a bearing is reversed (connect_reverse), then put back on the hip (connect_stow). Both loops sway and
+# breathe; the aim sways less. The fist is placed in model space with the probe along a direction and the top of the
+# housing toward an up hint.
+CONNECT_DRAW_SECONDS = 0.5
+CONNECT_STOW_SECONDS = 0.45
+CONNECT_CLICK_SECONDS = 0.25
+CONNECT_REVERSE_SECONDS = 0.3
+CONNECT_R = np.array([-0.16, -0.31, 1.08])           # fist in the hold: chest height, the probe forward and a little down
+CONNECT_PROBE = norm(np.array([0.08, -1.0, -0.22]))
+CONNECT_AIM_R = np.array([-0.11, -0.49, 1.32])        # raised: the arm out, the probe level at what the player looks at
+CONNECT_AIM_PROBE = norm(np.array([0.1, -1.0, 0.0]))
+CONNECT_HIP = np.array([-0.235, -0.04, 0.95])        # holstered on the right hip, the probe down, the grip back
+CONNECT_HIP_PROBE = norm(np.array([-0.06, 0.12, -1.0]))
+CONNECT_HIP_UP = np.array([0.15, 1.0, 0.0])
+
+
+def connect_arm(grip, probe, up=(0.0, 0.0, 1.0), roll=0.0, space="world", pole=(-0.6, 0.5, -1.0)):
+    """A fist on the Connect Tool's grip at grip, its probe along probe and the top of its housing toward up (rolled
+    by roll degrees about the probe)."""
+    probe = norm(np.asarray(probe, float))
+    top = np.asarray(up, float)
+    top = norm(top - np.dot(top, probe) * probe)
+    if roll:
+        r = math.radians(roll)
+        top = top * math.cos(r) + np.cross(probe, top) * math.sin(r)
+    rk = math.radians(CONNECT_RAKE)
+    d = probe * math.cos(rk) - top * math.sin(rk)     # the fingers (grip frame x)
+    w = probe * math.sin(rk) + top * math.cos(rk)     # the handle (grip frame y)
+    return arm_ik_from_grip("r", np.asarray(grip, float), d, w, pole=pole, space=space)
+
+
+def connect_key(grip, probe, up=(0.0, 0.0, 1.0), roll=0.0, t=0.0, amp=1.0, **body):
+    s = upper_base(t, 2.0, amp)
+    relaxed_left(s, 2 * math.pi * t / 2.0)
+    s["arm_r"] = connect_arm(grip, probe, up, roll)
+    s["fingers_r"], s["thumb_r"] = 92.0, 40.0
+    s.update(body)
+    return s
+
+
+def connect_sway(t, T, amp):
+    """A slow figure of eight of the fist and the probe, so the held tool is never quite still."""
+    ph = 2 * math.pi * t / T
+    return np.array([0.004 * math.sin(ph), 0.002 * math.sin(2 * ph), 0.005 * math.sin(ph + 0.6)]) * amp, \
+        np.array([0.015 * math.sin(ph + 0.4), 0.0, 0.02 * math.sin(2 * ph + 1.0)]) * amp
+
+
+def clip_hold_connect(t, T=2.0):
+    dp, da = connect_sway(t, T, 1.0)
+    return connect_key(CONNECT_R + dp, CONNECT_PROBE + da, t=t, chest=(2.0, 0.0, -2.0))
+
+
+AIM_BODY = dict(chest=(-2.0, 0.0, -6.0), spine=(-1.0, 0.0, -3.0), shoulder_r=(0.0, 0.0, 4.0))
+
+
+def clip_hold_connect_aim(t, T=2.0):
+    dp, da = connect_sway(t, T, 0.4)
+    return connect_key(CONNECT_AIM_R + dp, CONNECT_AIM_PROBE + da, t=t, amp=0.5, **AIM_BODY)
+
+
+def connect_hip_key(body=None):
+    return connect_key(CONNECT_HIP, CONNECT_HIP_PROBE, CONNECT_HIP_UP, **(body or {}))
+
+
+def clip_connect_draw(t):
+    ready = clip_hold_connect(0.0)
+    hip = connect_hip_key()
+    # out of the holster: the fist lifts and swings the probe up and round to the front
+    lift = connect_key(np.array([-0.24, -0.1, 1.02]), norm(np.array([-0.1, -0.5, -0.86])), (0.1, 0.9, 0.3),
+                       chest=(1.0, 0.0, -1.0))
+    swing = connect_key(np.array([-0.2, -0.24, 1.08]), norm(np.array([0.0, -0.95, -0.32])), chest=(2.0, 0.0, -2.0))
+    return oneshot([(0.0, hip), (0.16, lift), (0.32, swing), (CONNECT_DRAW_SECONDS, ready)], t, template=ready)
+
+
+def clip_connect_stow(t):
+    ready = clip_hold_connect(0.0)
+    hip = connect_hip_key()
+    lift = connect_key(np.array([-0.23, -0.12, 1.04]), norm(np.array([-0.1, -0.5, -0.86])), (0.1, 0.9, 0.3),
+                       chest=(1.0, 0.0, -1.0))
+    return oneshot([(0.0, ready), (0.15, lift), (0.32, hip), (CONNECT_STOW_SECONDS, hip)], t, template=ready)
+
+
+def connect_click_clip(t, aim_key, grip, probe):
+    """A flick: the probe jabs forward and dips as the trigger clicks, then settles back."""
+    ready = aim_key(grip, probe)
+    jab = aim_key(grip + probe * 0.018, norm(probe + np.array([0.0, 0.0, -0.1])))
+    return oneshot([(0.0, ready), (0.06, jab), (0.12, jab), (CONNECT_CLICK_SECONDS, ready)], t, template=ready)
+
+
+def connect_reverse_clip(t, aim_key, grip, probe):
+    """A roll of the wrist one way and back, as if turning the bearing round."""
+    ready = aim_key(grip, probe)
+    twist = aim_key(grip, probe, roll=-28.0)
+    back = aim_key(grip, probe, roll=8.0)
+    return oneshot([(0.0, ready), (0.09, twist), (0.2, back), (CONNECT_REVERSE_SECONDS, ready)], t, template=ready)
+
+
+def clip_connect_click(t):
+    return connect_click_clip(t, lambda g, p, roll=0.0: connect_key(g, p, roll=roll, amp=0.5, **AIM_BODY), CONNECT_AIM_R,
+                              CONNECT_AIM_PROBE)
+
+
+def clip_connect_reverse(t):
+    return connect_reverse_clip(t, lambda g, p, roll=0.0: connect_key(g, p, roll=roll, amp=0.5, **AIM_BODY),
+                                CONNECT_AIM_R, CONNECT_AIM_PROBE)
+
+
+# First person: the stooped body of the other first-person clips, the elbow out of the bottom right of the view, the
+# tool at the lower right with its probe toward the middle of the view (raised: further in and level with the
+# crosshair), and the holster below the bottom right.
+CONNECT_R_FP = np.array([-0.135, -0.4, 1.13])
+CONNECT_PROBE_FP = norm(np.array([0.17, -0.98, 0.1]))
+CONNECT_AIM_R_FP = np.array([-0.11, -0.44, 1.155])
+CONNECT_AIM_PROBE_FP = norm(np.array([0.1, -0.98, 0.16]))
+CONNECT_HIP_FP = np.array([-0.3, -0.26, 0.78])
+CONNECT_HIP_PROBE_FP = norm(np.array([-0.1, -0.3, -0.95]))
+
+
+def connect_key_fp(grip, probe, up=(0.0, 0.0, 1.0), roll=0.0, t=0.0):
+    s = upper_base(t, 2.0, amp=0.5)
+    s.update(relaxed_upper(18))
+    s.update({k: v for k, v in FP_BODY.items() if k != "space"})
+    s["arm_r"] = connect_arm(grip, probe, up, roll, pole=FP_POLES[0])
+    s["arm_l"] = dict(RELAXED_ARM, swing=15.0, down=45.0, elbow=40.0)
+    s["fingers_r"], s["thumb_r"] = 92.0, 40.0
+    return s
+
+
+def clip_hold_connect_fp(t, T=2.0):
+    dp, da = connect_sway(t, T, 0.6)
+    return connect_key_fp(CONNECT_R_FP + dp, CONNECT_PROBE_FP + da, t=t)
+
+
+def clip_hold_connect_aim_fp(t, T=2.0):
+    dp, da = connect_sway(t, T, 0.25)
+    return connect_key_fp(CONNECT_AIM_R_FP + dp, CONNECT_AIM_PROBE_FP + da, t=t)
+
+
+def clip_connect_draw_fp(t):
+    ready = clip_hold_connect_fp(0.0)
+    hip = connect_key_fp(CONNECT_HIP_FP, CONNECT_HIP_PROBE_FP, (0.1, 1.0, 0.0))
+    mid = connect_key_fp(np.array([-0.24, -0.33, 0.95]), norm(np.array([0.05, -0.7, -0.7])))
+    return oneshot([(0.0, hip), (0.22, mid), (CONNECT_DRAW_SECONDS, ready)], t, template=ready)
+
+
+def clip_connect_stow_fp(t):
+    ready = clip_hold_connect_fp(0.0)
+    hip = connect_key_fp(CONNECT_HIP_FP, CONNECT_HIP_PROBE_FP, (0.1, 1.0, 0.0))
+    mid = connect_key_fp(np.array([-0.24, -0.33, 0.95]), norm(np.array([0.05, -0.7, -0.7])))
+    return oneshot([(0.0, ready), (0.18, mid), (0.36, hip), (CONNECT_STOW_SECONDS, hip)], t, template=ready)
+
+
+def clip_connect_click_fp(t):
+    return connect_click_clip(t, lambda g, p, roll=0.0: connect_key_fp(g, p, roll=roll), CONNECT_AIM_R_FP,
+                              CONNECT_AIM_PROBE_FP)
+
+
+def clip_connect_reverse_fp(t):
+    return connect_reverse_clip(t, lambda g, p, roll=0.0: connect_key_fp(g, p, roll=roll), CONNECT_AIM_R_FP,
+                                CONNECT_AIM_PROBE_FP)
+
+
 # name: (function, duration seconds, loops, upper_body_only)
 CLIPS = {
     "idle": (clip_idle, 3.0, True, False),
@@ -4045,6 +4217,18 @@ CLIPS = {
     "hold_refine_fp": (clip_hold_refine_fp, REFINE_LOOP_SECONDS, True, True),
     "refine_draw_fp": (clip_refine_draw_fp, REFINE_DRAW_SECONDS, False, True),
     "refine_stow_fp": (clip_refine_stow_fp, REFINE_STOW_SECONDS, False, True),
+    "hold_connect": (clip_hold_connect, 2.0, True, True),
+    "hold_connect_aim": (clip_hold_connect_aim, 2.0, True, True),
+    "connect_draw": (clip_connect_draw, CONNECT_DRAW_SECONDS, False, True),
+    "connect_stow": (clip_connect_stow, CONNECT_STOW_SECONDS, False, True),
+    "connect_click": (clip_connect_click, CONNECT_CLICK_SECONDS, False, True),
+    "connect_reverse": (clip_connect_reverse, CONNECT_REVERSE_SECONDS, False, True),
+    "hold_connect_fp": (clip_hold_connect_fp, 2.0, True, True),
+    "hold_connect_aim_fp": (clip_hold_connect_aim_fp, 2.0, True, True),
+    "connect_draw_fp": (clip_connect_draw_fp, CONNECT_DRAW_SECONDS, False, True),
+    "connect_stow_fp": (clip_connect_stow_fp, CONNECT_STOW_SECONDS, False, True),
+    "connect_click_fp": (clip_connect_click_fp, CONNECT_CLICK_SECONDS, False, True),
+    "connect_reverse_fp": (clip_connect_reverse_fp, CONNECT_REVERSE_SECONDS, False, True),
 }
 
 # the prop each clip shows in the right hand (verification renders and the game's defaults)
@@ -4056,7 +4240,10 @@ CLIP_PROP = {"hold_tool": "lift_remote", "tool_use": "lift_remote", "weld": "wel
              "hold_gun": "potato_blaster", "fire_gun": "potato_blaster", "pour": "water_bucket",
              "hold_refine": "refine_tool", "refine_draw": "refine_tool", "refine_stow": "refine_tool",
              "hold_refine_fp": "refine_tool", "refine_draw_fp": "refine_tool", "refine_stow_fp": "refine_tool",
-             **{name: "water_bucket" for name in BUCKET_CLIPS}}
+             **{name: "water_bucket" for name in BUCKET_CLIPS},
+             **{c: "connect_tool" for c in ("hold_connect", "hold_connect_aim", "connect_draw", "connect_stow", "connect_click",
+                                            "connect_reverse", "hold_connect_fp", "hold_connect_aim_fp", "connect_draw_fp",
+                                            "connect_stow_fp", "connect_click_fp", "connect_reverse_fp")}}
 
 
 def clip_times(duration):
@@ -4234,20 +4421,246 @@ def prop_sledgehammer():
     return p
 
 
-def prop_connect_tool():
-    p = [soft_box((0.0, 0.02, 0.0), (0.022, 0.07, 0.017), axes=(X, Y, Z), e=6, e2=6, segs=14, rings=8,
-                  mat="paint_grey"),
-         soft_box((0.0, 0.07, 0.0), (0.024, 0.018, 0.019), axes=(X, Y, Z), e=6, e2=6, segs=14, rings=5, mat="orange"),
-         soft_box((0.019, 0.035, 0.0), (0.004, 0.022, 0.012), axes=(X, Y, Z), e=6, e2=6, segs=10, rings=5,
-                  mat="screen"),
-         cylinder((0.0, 0.088, 0), (0.0, 0.15, 0), 0.004, 8, "metal", ref=X),
-         cylinder((0.0, 0.15, 0), (0.0, 0.17, 0), 0.0015, 6, "metal", ref=X),
-         cylinder((0.0, -0.05, 0), (0.0, -0.065, 0), 0.008, 10, "rubber", ref=X)]
-    cable = [np.array([0.0, -0.06, 0]), np.array([0.0, -0.1, 0.0]), np.array([0.03, -0.17, 0.02]),
-             np.array([0.08, -0.2, 0.03]), np.array([0.12, -0.17, 0.03])]
-    p.append(tube(cable, 0.004, 8, Z, "blue"))
-    p.append(cylinder(cable[-1], cable[-1] + np.array([0.02, 0.03, 0]), 0.007, 10, "orange"))
+# The Connect Tool, built to its reference sheet: a pistol-grip probe about 18 cm long and 12 cm tall. A dark brushed
+# gunmetal housing 4 cm across with panel lines, a lens in its rear face, an orange ring at the back and a cyan and an
+# orange ring at the nose, a chamfered side display on the left (the side a right-handed holder sees), a recessed top
+# panel and small scanner fins at the back; a stepped nose cone, a slender silver probe and a hex sensor at its tip;
+# under it a raked grip of dark rubber with chevron ridges, finger bumps down the front and an orange hex on the butt.
+# It is modelled in a gun frame (u along the probe, v up from the barrel to the housing, w to the holder's right) with
+# the fist at the origin and the grip CONNECT_RAKE degrees back from upright, then turned into the grip frame (the
+# handle along y). Everything cyan lights up: it is a second node, connect_tool_glow, with an emissive material of its
+# own, so the game can pulse it (a drag, a click, a reversed bearing) without touching the atlas.
+CONNECT_RAKE = 14.0            # degrees the grip leans back from square to the probe
+CONNECT_BODY_V = 0.058         # the housing's axis above the fist (gun frame v)
+CONNECT_BODY_R = 0.02          # the housing's radius
+CONNECT_TIP_U = 0.161          # the front of the sensor (gun frame u)
+CONNECT_GLOW = "#2fd8ff"
+
+
+def _connect_rot():
+    r = math.radians(CONNECT_RAKE)
+    return np.array([[math.cos(r), -math.sin(r), 0.0], [math.sin(r), math.cos(r), 0.0], [0.0, 0.0, 1.0]])
+
+
+def connect_to_grip(p):
+    """A gun-frame point (or direction) in the grip frame."""
+    return _connect_rot() @ np.asarray(p, float)
+
+
+def connect_tip():
+    """The sensor's front in the grip frame (where a drag's glow and the click pulse come from)."""
+    return connect_to_grip((CONNECT_TIP_U, CONNECT_BODY_V, 0.0))
+
+
+def connect_probe_axis():
+    """Which way the probe points, in the grip frame."""
+    return connect_to_grip((1.0, 0.0, 0.0))
+
+
+def prism(outline, w0, w1, origin, ax_p, ax_q, ax_w, mat, smooth=False):
+    """A flat-sided plate: the 2D outline (counter-clockwise in p, q) pushed from w0 to w1 along ax_w."""
+    o, P, Q, W = (np.asarray(v, float) for v in (origin, ax_p, ax_q, ax_w))
+    w0, w1 = min(w0, w1), max(w0, w1)
+    area = sum(a[0] * b[1] - b[0] * a[1] for a, b in zip(outline, outline[1:] + outline[:1]))
+    if (area > 0) != (np.dot(np.cross(P, Q), W) > 0):
+        outline = outline[::-1]
+    n = len(outline)
+    verts = [o + P * x + Q * y + W * w for w in (w0, w1) for x, y in outline]
+    # convex outlines: caps as fans (glTF tangents need triangles and quads)
+    faces = [(0, k + 1, k) for k in range(1, n - 1)] + [(n, n + k, n + k + 1) for k in range(1, n - 1)]
+    faces += [(i, (i + 1) % n, n + (i + 1) % n, n + i) for i in range(n)]
+    return Part(verts, faces, mat, smooth)
+
+
+def chamfer_rect(hx, hy, c):
+    return [(hx - c, -hy), (hx, -hy + c), (hx, hy - c), (hx - c, hy), (-hx + c, hy), (-hx, hy - c), (-hx, -hy + c),
+            (-hx + c, -hy)]
+
+
+def hex_outline(r, rot=0.0):
+    return [(r * math.cos(rot + k * math.pi / 3), r * math.sin(rot + k * math.pi / 3)) for k in range(6)]
+
+
+def annulus(center, axis, r0, r1, mat, segs=28, ref=(0, 1, 0), smooth=True):
+    """A flat ring facing along axis."""
+    t = norm(axis)
+    a = norm(np.asarray(ref, float) - np.dot(ref, t) * t)
+    b = np.cross(t, a)
+    c = np.asarray(center, float)
+    th = np.linspace(0, 2 * math.pi, segs, endpoint=False)
+    verts = [c + (a * math.cos(x) + b * math.sin(x)) * r for r in (r0, r1) for x in th]
+    faces = [(i, (i + 1) % segs, segs + (i + 1) % segs, segs + i) for i in range(segs)]
+    return Part(verts, faces, mat, smooth)
+
+
+def _connect_parts():
+    U, V, W = X, Y, Z
+    R, H = CONNECT_BODY_R, CONNECT_BODY_V
+    on = lambda u, dv=0.0, w=0.0: np.array([u, H + dv, w])
+    p = []
+    # housing: a rounded rear cap, the main tube and a shoulder down into the nose
+    prof = [(-0.026, 0.0138), (-0.0256, 0.0172), (-0.0245, 0.019), (-0.0225, 0.0198), (-0.019, R), (0.071, R),
+            (0.0745, 0.0196), (0.0758, 0.0186)]
+    p.append(tube([on(u) for u, _ in prof], [r for _, r in prof], 40, V, "tool_gunmetal"))
+    # rear face: a bezel round a lens of dark glass
+    p.append(annulus(on(-0.0262), -U, 0.0109, 0.0136, "tool_bezel"))
+    p.append(ring_band(on(-0.0266), 0.0123, 0.0123, 0.0009, 0.0011, "tool_bezel", 32, axes=(V, W, U), e=2.0))
+    p.append(cylinder(on(-0.0255), on(-0.0262), 0.0089, 28, "screen", ref=V))
+    # rings and panel lines round the housing
+    p.append(cylinder(on(-0.0192), on(-0.0138), R + 0.0011, 40, "accent_orange", ref=V, bevel=0.0005))
+    for u in (-0.0115, 0.0105, 0.064):
+        p.append(cylinder(on(u - 0.00035), on(u + 0.00035), R + 0.00025, 40, "panel_line", ref=V))
+    # nose: a collar behind the cyan ring, the orange ring and a stepped cone down to the probe
+    p.append(cylinder(on(0.0752), on(0.0862), 0.017, 32, "tool_gunmetal", ref=V, bevel=0.0008))
+    p.append(cylinder(on(0.0797), on(0.0858), 0.0181, 32, "accent_orange", ref=V, bevel=0.0007))
+    cone = [(0.0855, 0.0158), (0.0885, 0.0152), (0.089, 0.0128), (0.0925, 0.0118), (0.093, 0.0094), (0.0965, 0.0086),
+            (0.097, 0.0062), (0.1005, 0.0056)]
+    p.append(tube([on(u) for u, _ in cone], [r for _, r in cone], 32, V, "tool_gunmetal"))
+    # the probe, a collar near its end and the hex sensor
+    p.append(cylinder(on(0.1), on(0.105), 0.0042, 18, "tool_silver", ref=V, bevel=0.0006))
+    p.append(cylinder(on(0.104), on(0.1505), 0.0025, 14, "tool_silver", ref=V))
+    p.append(cylinder(on(0.1405), on(0.1445), 0.0034, 14, "tool_bezel", ref=V, bevel=0.0005))
+    hexc = on(0.1545)
+    p.append(prism(hex_outline(0.0068), -0.0036, 0.0036, hexc, U, V, W, "tool_gunmetal"))
+    for sw in (-1, 1):
+        p.append(prism(hex_outline(0.0044), 0.0035 * sw, 0.0041 * sw, hexc, U, V, W, "accent_orange"))
+    # side display (left, -w): a chamfered bezel and its dark screen
+    disp = on(0.024)
+    p.append(prism(chamfer_rect(0.0252, 0.0126, 0.0045), -(R - 0.004), -(R + 0.0016), disp, U, V, W, "tool_bezel"))
+    p.append(prism(chamfer_rect(0.0198, 0.0091, 0.0028), -(R + 0.0015), -(R + 0.0019), disp, U, V, W, "screen"))
+    # the other side: a raised plate with two panel screws
+    p.append(prism(chamfer_rect(0.022, 0.0095, 0.003), R - 0.004, R + 0.0012, on(0.026), U, V, W, "tool_gunmetal"))
+    for du in (-0.017, 0.017):
+        p.append(cylinder(on(0.026 + du, 0.0, R + 0.0011), on(0.026 + du, 0.0, R + 0.0019), 0.0017, 10, "tool_silver",
+                          ref=U))
+    # top: a recessed panel, a smaller one at the back, and the frame of the status slot
+    p.append(prism(chamfer_rect(0.026, 0.0082, 0.002), R - 0.003, R + 0.0009, on(0.03), U, W, V, "tool_bezel"))
+    p.append(prism(chamfer_rect(0.0225, 0.0062, 0.0015), R + 0.0008, R + 0.0014, on(0.03), U, W, V, "tool_gunmetal"))
+    p.append(prism(chamfer_rect(0.0055, 0.0045, 0.001), R - 0.003, R + 0.0009, on(-0.009, 0.0, -0.0065), U, W, V,
+                   "tool_gunmetal"))
+    p.append(prism(chamfer_rect(0.0042, 0.0022, 0.0008), R - 0.003, R + 0.0011, on(0.0655), U, W, V, "tool_bezel"))
+    # scanner fins: three short blades on each side of the back
+    for sw in (-1, 1):
+        for k in range(3):
+            uu = -0.0075 + 0.0032 * k
+            p.append(prism(chamfer_rect(0.0009, 0.0062, 0.0006), 0.0, sw * 0.0032,
+                           on(uu, 0.0, 0.0) + W * sw * (R - 0.0012), U, V, W, "tool_bezel"))
+    # grip: raked back, wider at the top and the butt, finger bumps down the front (theta 0 is the front)
+    rk = math.radians(CONNECT_RAKE)
+    g = np.array([math.sin(rk), math.cos(rk), 0.0])
+    n = np.array([math.cos(rk), -math.sin(rk), 0.0])
+
+    def bumps(s):
+        def fn(th):
+            front = max(0.0, math.cos(th)) ** 3
+            ridge = 0.5 + 0.5 * math.cos(2 * math.pi * (s + 0.004) / 0.021)
+            return 1.0 + front * 0.075 * ridge * sstep(-0.045, -0.035, s) * sstep(0.03, 0.02, s)
+        return fn
+
+    gs = [(-0.053, 0.0170, 0.0124), (-0.0515, 0.0203, 0.0152), (-0.048, 0.0211, 0.0158), (-0.043, 0.0201, 0.0150),
+          (-0.036, 0.0187, 0.0141), (-0.02, 0.0181, 0.0138), (0.0, 0.0183, 0.0139), (0.016, 0.0189, 0.0142),
+          (0.03, 0.0199, 0.0147), (0.04, 0.0211, 0.0152), (0.052, 0.0215, 0.0154)]
+    fine = [s / 1000.0 for s in range(-53, 53, 3)]
+    rings = []
+    for s in fine:
+        k = np.searchsorted([x[0] for x in gs], s)
+        k = min(max(k, 1), len(gs) - 1)
+        (s0, a0, b0), (s1, a1, b1) = gs[k - 1], gs[k]
+        f = (s - s0) / (s1 - s0)
+        rings.append(dict(c=g * s, a=n, b=-W, rx=a0 + (a1 - a0) * f, ry=b0 + (b1 - b0) * f, e=2.7, fn=bumps(s)))
+    for r in rings:
+        r["a"], r["b"] = r["a"], -r["b"] if np.dot(np.cross(r["a"], r["b"]), g) < 0 else r["b"]
+    p.append(loft(rings, 36, True, True, "grip_chevron", True))
+    # the butt: a hard band round the bottom and an orange hex on its back
+    p.append(loft([dict(c=g * s, a=n, b=-W, rx=rx, ry=ry, e=2.7) for s, rx, ry in
+                   ((-0.0532, 0.0204, 0.0158), (-0.0526, 0.0214, 0.0166), (-0.0478, 0.0216, 0.0168), (-0.0472, 0.0206, 0.016))],
+                  36, True, True, "tool_bezel", True))
+    back = g * -0.044 - n * 0.0192
+    p.append(prism(hex_outline(0.0052, math.pi / 6), 0.0, -0.0014, back, W, g, n, "accent_orange"))
+    p.append(prism(hex_outline(0.0034, math.pi / 6), -0.0012, -0.0016, back, W, g, n, "grip_chevron"))
+    # trigger, just under the housing in front of the grip
+    trig = [np.array([0.0315, 0.0395, 0]), np.array([0.0328, 0.033, 0]), np.array([0.0312, 0.0265, 0]),
+            np.array([0.0275, 0.0222, 0])]
+    p.append(tube(trig, [(0.0036, 0.0021), (0.0034, 0.0021), (0.003, 0.002), (0.0024, 0.0018)], 10, W, "tool_silver"))
     return p
+
+
+def _connect_glow_parts():
+    """Everything on the tool that lights up cyan, in the gun frame."""
+    R, H = CONNECT_BODY_R, CONNECT_BODY_V
+    U, V, W = X, Y, Z
+    on = lambda u, dv=0.0, w=0.0: np.array([u, H + dv, w])
+    p = [annulus(on(-0.0264), -U, 0.0089, 0.0111, "glow"),
+         cylinder(on(0.0757), on(0.0797), 0.0191, 36, "glow", ref=V, bevel=0.0005),
+         prism(chamfer_rect(0.0034, 0.0014, 0.0006), R + 0.0005, R + 0.0013, on(0.0655), U, W, V, "glow"),
+         cylinder(on(CONNECT_TIP_U - 0.0024), on(CONNECT_TIP_U), 0.0019, 10, "glow", ref=V)]
+    # the display: two hex shields (a tick in the first) over a row of bars and a dashed line, on the left side
+    d = on(0.024)
+    w0, w1 = -(R + 0.00195), -(R + 0.0021)
+    for cx, cy, r in ((-0.0105, 0.0025, 0.0043), (0.0105, 0.0025, 0.0036)):
+        outer, inner = hex_outline(r, math.pi / 2), hex_outline(r - 0.0007, math.pi / 2)
+        for k in range(6):
+            a0, a1, b0, b1 = outer[k], outer[(k + 1) % 6], inner[k], inner[(k + 1) % 6]
+            quad = [(a0[0] + cx, a0[1] + cy), (a1[0] + cx, a1[1] + cy), (b1[0] + cx, b1[1] + cy), (b0[0] + cx, b0[1] + cy)]
+            p.append(prism(quad, w0, w1, d, U, V, W, "glow"))
+    tick = [(-0.0123, 0.0026), (-0.0108, 0.0012), (-0.0084, 0.0041)]
+    for a, b in zip(tick, tick[1:]):
+        mid, half = ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2), math.hypot(b[0] - a[0], b[1] - a[1]) / 2
+        ang = math.atan2(b[1] - a[1], b[0] - a[0])
+        ca, sa = math.cos(ang), math.sin(ang)
+        rect = [(x * ca - y * sa + mid[0], x * sa + y * ca + mid[1]) for x, y in
+                ((-half, -0.00035), (half, -0.00035), (half, 0.00035), (-half, 0.00035))]
+        p.append(prism(rect, w0, w1, d, U, V, W, "glow"))
+    for k in range(6):
+        x = -0.0165 + 0.0029 * k
+        p.append(prism([(x, -0.0068), (x + 0.0019, -0.0068), (x + 0.0019, -0.0052), (x, -0.0052)], w0, w1, d, U, V, W,
+                       "glow"))
+    for k in range(3):
+        x = 0.003 + 0.0047 * k
+        p.append(prism([(x, -0.0063), (x + 0.0032, -0.0063), (x + 0.0032, -0.0057), (x, -0.0057)], w0, w1, d, U, V, W,
+                       "glow"))
+    return p
+
+
+def _connect_turn(parts):
+    rot = _connect_rot()
+    for part in parts:
+        part.v = part.v @ rot.T
+    return parts
+
+
+def prop_connect_tool():
+    return _connect_turn(_connect_parts())
+
+
+def glow_material():
+    m = bpy.data.materials.get("M_connect_glow")
+    if m:
+        return m
+    m = bpy.data.materials.new("M_connect_glow")
+    m.use_nodes = True
+    bsdf = m.node_tree.nodes.get("Principled BSDF")
+    bsdf.inputs["Base Color"].default_value = srgb(CONNECT_GLOW)
+    bsdf.inputs["Roughness"].default_value = 0.3
+    bsdf.inputs["Emission Color"].default_value = srgb(CONNECT_GLOW)
+    bsdf.inputs["Emission Strength"].default_value = 1.0
+    return m
+
+
+def build_connect_glow(parent):
+    part = merge(_connect_turn(_connect_glow_parts()))
+    me = bpy.data.meshes.new("connect_tool_glow")
+    me.from_pydata(part.v.tolist(), [], part.f)
+    me.materials.append(glow_material())
+    me.polygons.foreach_set("use_smooth", [False] * len(part.f))
+    me.validate(clean_customdata=False)
+    me.update()
+    ob = bpy.data.objects.new("connect_tool_glow", me)
+    bpy.context.scene.collection.objects.link(ob)
+    ob.matrix_world = parent.matrix_world.copy()
+    ob.parent = parent
+    ob.matrix_parent_inverse = parent.matrix_world.inverted()
+    return ob
 
 
 def prop_potato_blaster():
@@ -4680,12 +5093,13 @@ def export_props():
         objs.append(ob)
         parts.append(part)
     # The Sledgehammer is 1.3 m long, so it has an atlas of its own rather than starving the small tools of texels; the
-    # Refine Tool has one too, since first person holds it close to the eye.
-    own = {name: [i for i, n in enumerate(PROPS) if n == name] for name in ("sledgehammer", "refine_tool")}
+    # Refine Tool and the Connect Tool have one each too, since first person holds them close to the eye.
+    own = {name: [i for i, n in enumerate(PROPS) if n == name] for name in ("sledgehammer", "refine_tool", "connect_tool")}
     shared = [i for i in range(len(objs)) if not any(i in idx for idx in own.values())]
     stats = {}
     for idx, group, material in ((shared, "props", "M_hand_tools"), (own["sledgehammer"], "sledgehammer", "M_sledgehammer"),
-                                 (own["refine_tool"], "refine_tool", "M_refine_tool")):
+                                 (own["refine_tool"], "refine_tool", "M_refine_tool"),
+                                 (own["connect_tool"], "connect_tool", "M_connect_tool")):
         stats.update(ct.texture_props([objs[i] for i in idx], [parts[i] for i in idx],
                                       [mesh_material_names(parts[i]) for i in idx], PALETTE, PROP_ATLAS, seed=5,
                                       group=group, material=material))
@@ -4705,8 +5119,10 @@ def export_props():
     for g, (size, texel_mm, cov) in stats.items():
         if g == "water_bucket":
             print(f"  {g} atlas: {size}px, {texel_mm:.2f} mm/texel, {cov * 100:.0f}% covered")
+    # the Connect Tool's lights are a child node with their own emissive material, outside every atlas
+    glow = build_connect_glow(objs[list(PROPS).index("connect_tool")])
     path = OUT_DIR / "hand_tools.glb"
-    export_glb(path, objs + [root] + bobjs + [wat], animations=False)
+    export_glb(path, objs + [glow] + [root] + bobjs + [wat], animations=False)
     print(f"{path.name}: {len(objs) + 1} props")
 
 
