@@ -347,7 +347,7 @@ public sealed record SledgeSettings
     public float HealthPerDurability { get; init; } = 10f;
 
     /// <summary>Shortest time between one player's hits, in seconds: one whole swing.</summary>
-    public float SwingSeconds { get; init; } = 1.0f;
+    public float SwingSeconds { get; init; } = 0.6f;
 
     /// <summary>Seconds from the click to the hit (0: the hit lands at the click, and the animation catches up).</summary>
     public float StrikeSeconds { get; init; }

@@ -485,12 +485,12 @@ public class SurvivalActionsTests
     }
 
     [Fact]
-    public void TheSwingTakesASecond()
+    public void TheSwingTakesSixTenthsOfASecond()
     {
         _f.Ok(Me, ToolActions.Sledge, new { player = You.Peer });
-        _f.World.Now += 0.5;
+        _f.World.Now += 0.3;
         Assert.Equal("The Sledgehammer is still swinging.", _f.Refused(Me, ToolActions.Sledge, new { player = You.Peer }));
-        _f.World.Now += 0.5;
+        _f.World.Now += 0.3;
         _f.Ok(Me, ToolActions.Sledge, new { player = You.Peer });
     }
 

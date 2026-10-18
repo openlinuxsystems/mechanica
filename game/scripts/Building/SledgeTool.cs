@@ -11,7 +11,7 @@ namespace Mechanica.Game.Building;
 
 /// <summary>
 /// The Sledgehammer in the local player's hand: every player's main tool, always on the hotbar (Chase's sledgehammer
-/// spec). Left click swings (<see cref="SledgeSettings.SwingSeconds"/>, one swing a second; holding it keeps swinging):
+/// spec). Left click swings (<see cref="SledgeSettings.SwingSeconds"/>, a swing every 0.6 s; holding it keeps swinging):
 /// <see cref="SledgeSettings.StrikeSeconds"/> after the click (at the click, as shipped) the hit lands on whatever is
 /// under the crosshair within <see cref="SledgeSettings.Reach"/>, the ground included, with a thud and a puff of dust
 /// where it lands. The swing animation skips its wind-up and brings the head down a few frames after the click. The host pushes what it hits along the swing (<see cref="SledgeSettings.Impulse"/>) and

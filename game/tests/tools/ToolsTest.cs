@@ -549,7 +549,7 @@ public partial class ToolsTest : StagedTest
                 Check(seen.Animator.Body.Any(c => c.Clip is "walk" or "jog" && c.Weight > 0.3f),
                     $"with the legs walking under it ({string.Join(", ", seen.Animator.Body.Select(c => $"{c.Clip} {c.Weight:0.00}"))})");
             }
-            // One swing a second, each landing at its click: by 1.75 s two have started and landed.
+            // A swing every 0.6 s, each landing at its click: by 1.75 s at least two have started and landed.
             if (frame < 105)
                 return false;
             Tools.Sledge.HoldingSwing = false;
