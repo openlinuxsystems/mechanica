@@ -90,7 +90,7 @@ public partial class HotbarView : HBoxContainer
             var key = GameInput.Label(InputActions.Hotbar(i + 1));
             var name = entry is null ? "" : Belt.ToolFor(entry) is { } tool ? Loc.T(tool.ToolName) : Belt.Build.Catalog.FindDefinition(entry)?.Name ?? entry;
             var count = entry is null ? null : Count(entry);
-            var missing = entry is not null && Belt.ToolFor(entry) is null && count is 0;
+            var missing = entry is not null && (Belt.ToolFor(entry) is { } held ? !held.Owns : count is 0);
             // A weapon shows its ammo in the count's place (UI spec §10).
             var badge = entry is null || Belt.ToolFor(entry) is not null ? null : Belt.Item.CounterFor(entry)?.Text;
             _slots[i].Show(entry, entry is null ? null : Belt.Icons?.For(entry), name, count, key, i == Belt.Selected, dim: missing, badge: badge);
@@ -115,7 +115,8 @@ public static class ItemInfo
     public static (string Title, string Body) Details(Core.Data.IPartCatalog catalog, string entry, int? count, HandTool? tool = null)
     {
         if (tool is not null)
-            return (Loc.T(tool.ToolName), Loc.T("A hand tool. Every player always has it."));
+            return (Loc.T(tool.ToolName), tool.Owned is null ? Loc.T("A hand tool. Every player always has it.")
+                : tool.Owns ? Loc.T("A hand tool. You keep it when you die.") : Loc.T("A hand tool. Craft it at a Fabricator."));
         var definition = catalog.FindDefinition(entry);
         var lines = new List<string>();
         if (definition?.Description is { Length: > 0 } description)

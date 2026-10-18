@@ -53,6 +53,15 @@ public abstract partial class HandTool : Node
     /// <summary>Display name.</summary>
     public abstract string ToolName { get; }
 
+    /// <summary>
+    /// Whether the player has this tool, or null when every player always has it. In Survival a tool that is also an
+    /// item (the Connect Tool) is crafted at a Fabricator first; the host refuses its requests until then.
+    /// </summary>
+    public Func<bool>? Owned { get; set; }
+
+    /// <summary>True when the player has this tool (<see cref="Owned"/>).</summary>
+    public bool Owns => Owned?.Invoke() ?? true;
+
     /// <summary>The host's answer to the last request, or null while waiting or before any.</summary>
     public ActionResult? LastResult { get; private set; }
 

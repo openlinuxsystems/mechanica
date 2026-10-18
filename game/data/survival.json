@@ -22,7 +22,8 @@
     { "item": "soil", "count": 8 },
     { "item": "water_bucket", "count": 2 },
     { "item": "carrot", "count": 3 },
-    { "item": "mini_fabricator", "count": 1 }
+    { "item": "mini_fabricator", "count": 1 },
+    { "item": "connect_tool", "count": 1 }
   ],
   // New Game's difficulty for Survival worlds (UI spec §14): multipliers on the normal numbers.
   "difficulties": {

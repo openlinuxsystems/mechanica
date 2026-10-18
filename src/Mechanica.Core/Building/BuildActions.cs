@@ -126,6 +126,13 @@ public interface IBuildCosts
 
     /// <summary>Gives back one <paramref name="part"/> that was just removed at world point <paramref name="at"/> (dropped there when it does not fit).</summary>
     void Removed(ActionCaller caller, string part, Vector3 at);
+
+    /// <summary>
+    /// Null when <paramref name="caller"/> may use the hand tool <paramref name="tool"/> (a qualified
+    /// <see cref="Items.HotbarTools"/> id), or why not. A tool that is also an item (one crafted at a Fabricator, like
+    /// the Connect Tool) must be carried; the others every player always has.
+    /// </summary>
+    string? CheckTool(ActionCaller caller, string tool) => null;
 }
 
 /// <summary>

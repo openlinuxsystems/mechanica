@@ -80,7 +80,7 @@ vanilla's build closes each opening with a black cap that shares the cut edge's 
 sleeve on the full body), so first person shows no hollow tube. A skin can do the same.
 
 A clip can have a first-person version, named `<clip>_fp` (`hold_heavy_fp`, `hold_heavy_block_fp`, the
-three `sledge_swing…_fp` and the Refine Tool's three). The arms play it instead of the shared clip when it exists: the
+three `sledge_swing…_fp`, the Refine Tool's three and the Connect Tool's six). The arms play it instead of the shared clip when it exists: the
 Sledgehammer is held low and swung closer to the camera there, so the head comes down through the middle of the view,
 and the Refine Tool's blade points at the crosshair. Everything else plays the same clip in both views.
 
@@ -95,8 +95,11 @@ display, or `xvfb-run` without one.
 The animation set is shared by every character: `idle`, `walk`, `jog`, `run`, `crouch_idle`, `crouch_walk`,
 `jump`, `fall`, `land`, `swim_idle`, `swim` and `sit` move the whole body; `hold_tool`, `hold_heavy`,
 `hold_heavy_block` (the Sledgehammer raised across the chest while right click blocks), `hold_gun`, `hold_item`,
-`hold_refine` (the Refine Tool scraping at a resource node, a stroke every 0.75 s) and the one-shot gestures (`hammer_swing`, `sledge_swing`, `tool_use`, `weld`,
-`paint_spray`, `fire_gun`, `eat`, `throw`, `plant`, `pour`, `interact`, `hurt`) move only the upper body
+`hold_refine` (the Refine Tool scraping at a resource node, a stroke every 0.75 s), `hold_connect` (the Connect Tool at
+chest height, tip forward, with a slow sway), `hold_connect_aim` (raised and aimed while a node is under the crosshair or a
+drag is on) and the one-shot gestures (`hammer_swing`, `sledge_swing`, `tool_use`, `weld`,
+`paint_spray`, `fire_gun`, `eat`, `throw`, `plant`, `pour`, `interact`, `hurt`, `connect_click` when a link is made or
+taken away, `connect_reverse` when a bearing is reversed) move only the upper body
 from the spine up, over whatever the legs are doing. Every peer works out each player's pose from what it
 already knows (speed, on the ground, swimming, crouching, seated, what is in hand), so animation costs no
 network traffic beyond a byte for the tool in hand and one for each swing. The Sledgehammer has three swings (`sledge_swing` overhead,
@@ -104,7 +107,9 @@ network traffic beyond a byte for the tool in hand and one for each swing. The S
 random from that swing count, never the same twice running, so every peer plays the same one. The Refine Tool, shown
 only while Use is held on a resource node, comes with a draw from the hip (`refine_draw`) and a stow back to it
 (`refine_stow`); every peer plays them when it sees that player's hand take or drop the tool, chips fly off the node at
-each stroke (sparks off metal) and the `refiner_*` sounds play, all from the same prop byte.
+each stroke (sparks off metal) and the `refiner_*` sounds play, all from the same prop byte. The Connect Tool draws from
+the hip (`connect_draw`, 0.5 s) and stows back to it (`connect_stow`, 0.45 s); its tip and display glow cyan, pulse while
+it is raised and flash for 0.2 s on each `connect_click` (a dip then a flash on `connect_reverse`).
 
 Timing lives in `game/data/character.json` (engine settings, not moddable): the speed each moving clip
 is authored at, where in a cycle the feet land, crossfade times, how far the body turns before the feet

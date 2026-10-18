@@ -220,6 +220,43 @@
       ]
     },
     {
+      "file": "parts/connect_tool.json",
+      "template": "item",
+      "set": {
+        "name": "Connect Tool",
+        "description": "Wires seats, controllers, engines, bearings and logic together. Kept when you die.",
+        "category": "tool",
+        "mass": 0.6,
+        "stack_size": 1,
+        "visual": {
+          "color": "#33363a"
+        }
+      },
+      "recipes": [
+        {
+          "id": "connect_tool",
+          "stations": ["fabricator", "mini_fabricator"],
+          "inputs": [
+            {
+              "item": "scrap_metal_block",
+              "count": 5
+            },
+            {
+              "item": "circuit_board",
+              "count": 2
+            }
+          ],
+          "outputs": [
+            {
+              "item": "connect_tool",
+              "count": 1
+            }
+          ],
+          "time": 5
+        }
+      ]
+    },
+    {
       "file": "parts/potato_scattergun.json",
       "template": "item",
       "set": {

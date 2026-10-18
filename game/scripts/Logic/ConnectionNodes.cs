@@ -1,6 +1,7 @@
 using Godot;
 using Mechanica.Core.Creations;
 using Mechanica.Core.Data;
+using Mechanica.Core.Logic;
 using Mechanica.Game.Creations;
 
 namespace Mechanica.Game.Logic;
@@ -13,13 +14,19 @@ namespace Mechanica.Game.Logic;
 /// <param name="Position">World position, as this peer shows the part.</param>
 /// <param name="Definition">The part's definition (its <see cref="PartDefinition.Logic"/> is set).</param>
 /// <param name="Reversed">True when the part's reverse setting is on.</param>
-public readonly record struct ConnectionNode(int Creation, int Part, Vector3 Position, PartDefinition Definition, bool Reversed)
+/// <param name="Driven">True when something that drives it (a seat, a controller, an engine) is linked to it.</param>
+/// <param name="Numbers">The order numbers seats and controllers linked to it give it (<see cref="ConnectionOrder"/>).</param>
+public readonly record struct ConnectionNode(int Creation, int Part, Vector3 Position, PartDefinition Definition, bool Reversed,
+    bool Driven = false, IReadOnlyList<(int Source, int Number)>? Numbers = null)
 {
     /// <summary>The node's kind (its colour).</summary>
     public PortKind Kind => Definition.Logic!.KindOrDefault;
 
-    /// <summary>True when right click reverses the part (it names a reverse setting).</summary>
-    public bool Reversible => Definition.Logic!.Reverse is not null;
+    /// <summary>
+    /// True when right click reverses the part: it names a reverse setting and something drives it (a bearing linked
+    /// to a seat, a controller or an engine), so it shows a turn arrow.
+    /// </summary>
+    public bool Reversible => Definition.Logic!.Reverse is not null && Driven;
 
     /// <summary>The part's display name.</summary>
     public string Name => Definition.Name ?? Definition.Id ?? "";
@@ -50,7 +57,8 @@ public static class ConnectionNodes
             var definition = creation.DefinitionOf(part.Id);
             if (definition.Logic is null || Centre(node, part.Id) is not { } at)
                 continue;
-            yield return new ConnectionNode(creation.Id, part.Id, at, definition, Core.Logic.PartSettings.Reversed(definition, part.Settings));
+            yield return new ConnectionNode(creation.Id, part.Id, at, definition, Core.Logic.PartSettings.Reversed(definition, part.Settings),
+                ConnectionOrder.ShowsDirection(creation, part.Id), ConnectionOrder.NumbersOf(creation, part.Id));
         }
     }
 

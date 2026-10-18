@@ -18,7 +18,7 @@ namespace Mechanica.Game.Tests;
 /// The survival loop, host plus client (chunk 20, D10), with the vanilla content on a flat world. The
 /// client starts with the starting items and pays for what it builds; it plants, waters and harvests a
 /// carrot, eats, shoots the host with a Potato Blaster (harmless until the host turns friendly fire on; seeds, water, food and weapons are Lua item scripts, chunk 20b),
-/// throws a Popper that arcs on both machines and bursts, falls, dies, drops its things, respawns, picks them back up, and respawns at a bed
+/// throws a Popper that arcs on both machines and bursts, falls, dies, drops its things (but not its Connect Tool), respawns, picks them back up, and respawns at a bed
 /// it slept in. Every step is checked on the host and on the client.
 /// </summary>
 public partial class SurvivalTest : StagedTest
@@ -30,6 +30,7 @@ public partial class SurvivalTest : StagedTest
     private const string Blaster = "vanilla:potato_blaster";
     private const string Potato = "vanilla:potato";
     private const string Popper = "vanilla:popper";
+    private const string Connector = "vanilla:connect_tool";
 
     private readonly List<ActionResult> _results = [];
     private NetTestHarness _harness = null!;
@@ -67,6 +68,7 @@ public partial class SurvivalTest : StagedTest
                 return false;
             Check(own is { Mode: GameMode.Survival, Dead: false } && own.Health == own.MaxHealth, $"full health in Survival ({own})");
             Check(Count(Seed) == 4 && Count(Bucket) == 2 && Count(Soil) == 8 && Count(Carrot) == 3, $"the starting items ({Items()})");
+            Check(Count(Connector) == 1 && _client.Main.Tools!.Connector.Owns, "a Connect Tool to wire with from the start");
             Check(_host.Main.Survival.Vitals.ContainsKey(Peer), "the host shows the client's health too");
             return true;
         });
@@ -280,10 +282,11 @@ public partial class SurvivalTest : StagedTest
                 _diedAt = Feet(_client);
                 HostSurvival.Damage(Peer, 500, "test");
             }
-            if (_client.Main.Survival.Own is not { Dead: true } || _client.Main.Survival.Drops.Count == 0 || !PlayerOn(_host).Dead || Items() != "")
+            if (_client.Main.Survival.Own is not { Dead: true } || _client.Main.Survival.Drops.Count == 0 || !PlayerOn(_host).Dead || Items() != $"{Connector} x1")
                 return false;
             Check(_client.Main.LocalPlayer!.Dead, "the client's own player is dead too");
             var drop = _client.Main.Survival.Drops.Values.Single();
+            Check(drop.Items.All(s => s.Item != Connector) && _client.Main.Tools!.Connector.Owns, "the Connect Tool stays with the player");
             Check(drop.Position.ToGodot().DistanceTo(_diedAt) < 1f && _client.Main.Survival.DropNodes.ContainsKey(drop.Id), "a pile lies where it died, on the client too");
             return true;
         });
