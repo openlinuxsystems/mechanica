@@ -252,7 +252,7 @@ Farmbot Scrapyard from the `large_slots` pool.
 ```json
 {
   "roads": {
-    "width": 10.0, "curb": 0.3, "shoulder": 1.5, "max_grade": 0.24, "cell": 32.0,
+    "width": 10.0, "curb": 0.0, "shoulder": 1.5, "max_grade": 0.24, "cell": 32.0,
     "bridge_clearance": 3.0, "bridge_cost": 6.0, "loop_factor": 1.7, "loop_reach": 2600.0, "max_loops": 14,
     "links": [["poi_36", "poi_37"], ["poi_37", "poi_38"]],
     "shoulder_ground": "dirt", "track_width": 4.0, "track_max_grade": 0.32, "track_reach": 650.0, "track_ground": "dirt"
@@ -270,9 +270,10 @@ where it crosses water it becomes a bridge at least `bridge_clearance` metres ov
 three or more routes meet there is a junction.
 
 Roads are `width` metres of asphalt with white edge lines, a double yellow centre line and stop lines
-at junctions, between concrete curbs `curb` metres wide, with `shoulder` metres of `shoulder_ground`
+at junctions, between concrete curbs `curb` metres wide (0, as in vanilla: no curbs), with `shoulder` metres of `shoulder_ground`
 either side. Bridges have a deck, parapets, piers, hazard posts and a caution sign at each end. The
-ground is cut and filled level with the road, and nothing is scattered on it.
+ground is cut and filled level with the road, and nothing is scattered or grows on it (no grass, flowers or bushes,
+even where the road crosses a POI that grows its own flora).
 
 POIs whose link is `track` get a dirt track (`track_width` metres of `track_ground`, at most
 `track_max_grade`) to the nearest road or track: a site always gets one, a scattered POI only when a

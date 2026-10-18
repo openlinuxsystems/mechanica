@@ -109,7 +109,7 @@ public sealed class RoadMesh
 
 /// <summary>
 /// Builds the road geometry for one chunk from the <see cref="RoadNetwork"/> (World Map spec §3 and the road references):
-/// asphalt ribbons with their markings, concrete curbs, junction plates, and bridges with a deck, parapets, piers, hazard
+/// asphalt ribbons with their markings, concrete curbs (where the roads have them), junction plates, and bridges with a deck, parapets, piers, hazard
 /// posts and caution signs. Pure, so every peer and the far scenery build the same roads.
 /// </summary>
 public static class RoadMesher
@@ -125,6 +125,9 @@ public static class RoadMesher
 
     /// <summary>Depth of a bridge deck under the road surface, in metres.</summary>
     public const float DeckDepth = 1.2f;
+
+    /// <summary>Metres the hazard posts on a bridge approach stand out from the asphalt's edge where there is no curb.</summary>
+    public const float PostInset = 0.3f;
 
     /// <summary>Metres between bridge piers.</summary>
     public const float PierSpacing = 14f;
@@ -209,6 +212,9 @@ public static class RoadMesher
             var outward = Vector3.Normalize(new Vector3((n0.X + n1.X) / 2f, 0f, (n0.Y + n1.Y) / 2f));
             if (!bridge)
             {
+                // No curb at all where its width is 0: the asphalt meets the shoulder.
+                if (def.Curb <= 0f)
+                    continue;
                 var (inner, outer, top) = (hw, hw + def.Curb, CurbHeight);
                 Wall(concrete, p0, p1, n0, n1, y0, y1, inner, outer, top, -0.3f, s0, s1, outward, origin);
             }
@@ -285,7 +291,7 @@ public static class RoadMesher
             var r = Right(t);
             foreach (var side in new[] { -1f, 1f })
             {
-                var at = p + r * side * (hw + def.Curb / 2f);
+                var at = p + r * side * (hw + MathF.Max(def.Curb, PostInset * 2f) / 2f);
                 if (inside(at))
                     surfaces[RoadMaterial.Hazard].Box(At(at, 0f, origin), new Vector3(r.X, 0, r.Y), new Vector3(t.X, 0, t.Y), 0.16f, 0.16f, y, y + 0.75f);
             }

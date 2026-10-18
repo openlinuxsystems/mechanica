@@ -265,7 +265,7 @@
   // with a grade limit, bridges over water; links are joined first, in order. Dirt tracks reach camps and small ruins.
   "roads": {
     "width": 10.0,
-    "curb": 0.3,
+    "curb": 0.0,
     "shoulder": 1.5,
     "max_grade": 0.24,
     "cell": 32.0,
