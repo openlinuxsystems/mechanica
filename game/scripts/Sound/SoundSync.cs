@@ -17,7 +17,7 @@ namespace Mechanica.Game.Sound;
 /// every change, parameters batched at <see cref="ParameterHz"/>, and a late joiner gets every loop
 /// running. A loop on a Creation stops when the Creation or the part is gone.
 /// <para>
-/// <see cref="PlayLocal"/> is for feedback only this player hears (a Hammer swing in their own hands, a UI
+/// <see cref="PlayLocal"/> is for feedback only this player hears (a Sledgehammer swing in their own hands, a UI
 /// click, a refusal) and never travels. These are the generic sound primitives the game, bots and the Lua
 /// API share (D2).
 /// </para>

@@ -10,14 +10,14 @@ using Instance = Mechanica.Game.Tests.NetTestHarness.Instance;
 namespace Mechanica.Game.Tests;
 
 /// <summary>
-/// The Hammer's gestures (UI spec PR 9), host plus a client. The ghost is blue where a block fits and red where it
+/// Building by hand: the gestures (UI spec PR 9), host plus a client. The ghost is blue where a block fits and red where it
 /// would not, and a click on a red ghost sends nothing. A click places on release and leaves a ghost until the host
 /// answers. Holding still enters alignment mode with arrows; dragging along the ground lays a row on the host in one
 /// request, and Q steps the drag's plane. A placement the host refuses fades out red. Holding right click fills the
 /// ring and removes the block only once it is full, letting go early cancels, and a right-click drag along the row
 /// removes the blocks it marks.
 /// </summary>
-public partial class HammerTest : StagedTest
+public partial class PlacingTest : StagedTest
 {
     private const string Block = "vanilla:aluminum_block";
 
@@ -34,13 +34,13 @@ public partial class HammerTest : StagedTest
     private int _row;
     private Vector3 _to;
 
-    protected override string Tag => "hammer";
+    protected override string Tag => "placing";
 
     protected override int StageTimeoutFrames => 900;
 
     private ToolBelt Tools => _client.Main.Tools!;
 
-    private HammerTool Hammer => Tools.Hammer;
+    private BuildTool Builder => Tools.Builder;
 
     private PlayerController Me => _client.Main.LocalPlayer!;
 
@@ -53,41 +53,41 @@ public partial class HammerTest : StagedTest
         _host = _harness.StartHost();
         _client = _harness.StartClient("Client");
 
-        Add("the client joins with the Hammer", _ =>
+        Add("the client joins with a block in hand", _ =>
         {
             if (_client.Main.PlayerSync.Players.Count != 2 || _client.Main.Tools is null || _host.Main.PlayerSync.Players.Count != 2)
                 return false;
-            Tools.Use(Hammer);
-            return Check(Hammer.Select(Block), "the block is placeable");
+            Tools.Use(Builder);
+            return Check(Builder.Select(Block), "the block is placeable");
         });
         Add("look at the ground ahead", frame => Look(0, -0.7f, frame));
         Add("the ghost is blue where the block fits, red where it would not", frame =>
         {
             if (frame == 0)
             {
-                Check(Hammer.Aim is not null && Hammer.PreviewValid, $"it fits ({Hammer.PreviewProblem})");
-                Check(Hammer.Crosshair == Core.Ui.CrosshairState.Valid, "the crosshair is blue");
-                Hammer.CanAfford = _ => false;
+                Check(Builder.Aim is not null && Builder.PreviewValid, $"it fits ({Builder.PreviewProblem})");
+                Check(Builder.Crosshair == Core.Ui.CrosshairState.Valid, "the crosshair is blue");
+                Builder.CanAfford = _ => false;
                 return false;
             }
             if (frame < 2)
                 return false;
-            Check(!Hammer.PreviewValid && Hammer.PreviewProblem is not null, "with none left it is red");
-            Check(Hammer.Crosshair == Core.Ui.CrosshairState.Default, "and the crosshair white");
-            Hammer.PressPlace();
-            Check(Hammer.ReleasePlace(_results.Add), "the click is taken");
-            Check(_results.Count == 0 && Hammer.LastResult is null && !PendingGhosts().Any(), "but nothing is sent");
-            Hammer.CanAfford = null;
+            Check(!Builder.PreviewValid && Builder.PreviewProblem is not null, "with none left it is red");
+            Check(Builder.Crosshair == Core.Ui.CrosshairState.Default, "and the crosshair white");
+            Builder.PressPlace();
+            Check(Builder.ReleasePlace(_results.Add), "the click is taken");
+            Check(_results.Count == 0 && Builder.LastResult is null && !PendingGhosts().Any(), "but nothing is sent");
+            Builder.CanAfford = null;
             return true;
         });
         Add("a click places on release and leaves a ghost until the host answers", frame =>
         {
             if (frame == 0)
             {
-                Hammer.UpdateAim();
-                Hammer.PressPlace();
-                Check(Hammer.PlacePhase == GesturePhase.Pressed && _results.Count == 0, "pressing alone sends nothing");
-                Hammer.ReleasePlace(_results.Add);
+                Builder.UpdateAim();
+                Builder.PressPlace();
+                Check(Builder.PlacePhase == GesturePhase.Pressed && _results.Count == 0, "pressing alone sends nothing");
+                Builder.ReleasePlace(_results.Add);
                 Check(PendingGhosts().Any(), "a ghost stays where the block goes");
                 return false;
             }
@@ -104,35 +104,35 @@ public partial class HammerTest : StagedTest
         {
             if (frame == 0)
             {
-                Hammer.PressPlace();
+                Builder.PressPlace();
                 return false;
             }
-            Hammer.UpdateAim();
-            if (Hammer.PlacePhase != GesturePhase.Holding)
-                return frame < 120 ? false : Check(false, $"alignment mode ({Hammer.PlacePhase})");
-            Check(Hammer.Arrows.Visible && Hammer.Arrows.GetChildCount() == 4, "four arrows show the ways a drag can grow");
-            Check(Hammer.Plane == 1, $"on the ground the drag spreads over the floor plane ({Hammer.Plane})");
-            Hammer.CyclePlane();
-            Check(Hammer.Plane == 2, "Q steps the plane");
-            Hammer.CyclePlane();
-            Hammer.CyclePlane();
+            Builder.UpdateAim();
+            if (Builder.PlacePhase != GesturePhase.Holding)
+                return frame < 120 ? false : Check(false, $"alignment mode ({Builder.PlacePhase})");
+            Check(Builder.Arrows.Visible && Builder.Arrows.GetChildCount() == 4, "four arrows show the ways a drag can grow");
+            Check(Builder.Plane == 1, $"on the ground the drag spreads over the floor plane ({Builder.Plane})");
+            Builder.CyclePlane();
+            Check(Builder.Plane == 2, "Q steps the plane");
+            Builder.CyclePlane();
+            Builder.CyclePlane();
             return true;
         });
         Add("dragging along the ground grows a row", frame =>
         {
             // Turn slowly, so the aim walks along the ground.
             Look(_yaw -= 0.02f, -0.7f, 0);
-            if (Hammer.PlacePhase != GesturePhase.Dragging || Hammer.DragCells.Count < 4)
-                return frame < 300 ? false : Check(false, $"a drag ({Hammer.PlacePhase}, {Hammer.DragCells.Count})");
-            Check(Hammer.DragCells.Select(c => c.Y).Distinct().Count() == 1, "all in one plane");
+            if (Builder.PlacePhase != GesturePhase.Dragging || Builder.DragCells.Count < 4)
+                return frame < 300 ? false : Check(false, $"a drag ({Builder.PlacePhase}, {Builder.DragCells.Count})");
+            Check(Builder.DragCells.Select(c => c.Y).Distinct().Count() == 1, "all in one plane");
             return true;
         });
         Add("letting go places the row in one request", frame =>
         {
             if (frame == 0)
             {
-                _parts = Hammer.DragCells.Count;
-                Check(Hammer.ReleasePlace(_results.Add), "the drag ends");
+                _parts = Builder.DragCells.Count;
+                Check(Builder.ReleasePlace(_results.Add), "the drag ends");
                 Check(PendingGhosts().Count() >= _parts, "every block has a ghost until the host answers");
                 return false;
             }
@@ -155,12 +155,12 @@ public partial class HammerTest : StagedTest
         {
             if (frame == 0)
             {
-                Hammer.UpdateAim();
+                Builder.UpdateAim();
                 // The host takes the block away just as the client places against it.
-                if (!Check(Hammer.Aim is { Creation: not null, HitPart: not null }, "aiming at a block"))
+                if (!Check(Builder.Aim is { Creation: not null, HitPart: not null }, "aiming at a block"))
                     return true;
-                var (target, part) = (Hammer.Aim!.Creation!.Id, Hammer.Aim.HitPart!.Value);
-                Hammer.Place(_results.Add);
+                var (target, part) = (Builder.Aim!.Creation!.Id, Builder.Aim.HitPart!.Value);
+                Builder.Place(_results.Add);
                 _ghost = PendingGhosts().LastOrDefault();
                 _host.Main.Actions.Request(BuildActions.RemovePart, new RemovePartArgs(target, part), _ => { });
                 return false;
@@ -183,15 +183,15 @@ public partial class HammerTest : StagedTest
             if (frame == 0)
             {
                 _parts = _host.Main.Creations.All.Sum(c => c.Parts.Count);
-                Hammer.PressRemove();
-                Check(Hammer.RemovePhase == GesturePhase.Pressed, "pressed on a block");
+                Builder.PressRemove();
+                Check(Builder.RemovePhase == GesturePhase.Pressed, "pressed on a block");
                 return false;
             }
-            if (Hammer.Progress is not { } progress || progress <= 0)
+            if (Builder.Progress is not { } progress || progress <= 0)
                 return frame < 30 ? false : Check(false, "the ring starts filling");
             Check(progress < 1, $"not full yet ({progress})");
-            Hammer.ReleaseRemove(_results.Add);
-            Check(Hammer.Progress is null, "the ring goes");
+            Builder.ReleaseRemove(_results.Add);
+            Check(Builder.Progress is null, "the ring goes");
             return true;
         });
         Wait("nothing comes off", 30);
@@ -200,14 +200,14 @@ public partial class HammerTest : StagedTest
             if (frame == 0)
             {
                 Check(_host.Main.Creations.All.Sum(c => c.Parts.Count) == _parts && _results.Count == 0, "the early release removed nothing");
-                Hammer.PressRemove();
+                Builder.PressRemove();
                 return false;
             }
-            _sawRing |= Hammer.Progress is > 0.5f and < 1f;
+            _sawRing |= Builder.Progress is > 0.5f and < 1f;
             if (_host.Main.Creations.All.Sum(c => c.Parts.Count) != _parts - 1)
                 return frame < 240 ? false : Check(false, "the block comes off");
             Check(_sawRing, "the ring filled on the way");
-            Hammer.ReleaseRemove();
+            Builder.ReleaseRemove();
             return true;
         });
         Add("a straight row stands ahead", frame =>
@@ -237,23 +237,23 @@ public partial class HammerTest : StagedTest
             if (frame == 0)
             {
                 _parts = _host.Main.Creations.All.Sum(c => c.Parts.Count);
-                Hammer.PressRemove();
-                Check(Hammer.RemovePhase == GesturePhase.Pressed, "pressed on the row's end");
+                Builder.PressRemove();
+                Check(Builder.RemovePhase == GesturePhase.Pressed, "pressed on the row's end");
                 return false;
             }
             // Sweep the aim along the row to its other end.
             LookAt(_from.Lerp(_to, Mathf.Min(1, frame / 40f)), 0);
-            if (Hammer.RemovePhase != GesturePhase.Dragging || Hammer.DragParts.Count < 3)
-                return frame < 240 ? false : Check(false, $"a removal drag ({Hammer.RemovePhase}, {Hammer.DragParts.Count})");
-            Check(Hammer.Progress is null, "a drag has no ring");
+            if (Builder.RemovePhase != GesturePhase.Dragging || Builder.DragParts.Count < 3)
+                return frame < 240 ? false : Check(false, $"a removal drag ({Builder.RemovePhase}, {Builder.DragParts.Count})");
+            Check(Builder.Progress is null, "a drag has no ring");
             return true;
         });
         Add("letting go removes the marked blocks", frame =>
         {
             if (frame == 0)
             {
-                _parts -= Hammer.DragParts.Count;
-                Hammer.ReleaseRemove(_results.Add);
+                _parts -= Builder.DragParts.Count;
+                Builder.ReleaseRemove(_results.Add);
                 return false;
             }
             if (_results.Count == 0)
@@ -264,7 +264,7 @@ public partial class HammerTest : StagedTest
         });
     }
 
-    private IEnumerable<PendingGhost> PendingGhosts() => Hammer.GetChildren().OfType<PendingGhost>().Where(g => !g.IsQueuedForDeletion());
+    private IEnumerable<PendingGhost> PendingGhosts() => Builder.GetChildren().OfType<PendingGhost>().Where(g => !g.IsQueuedForDeletion());
 
     private Vector3 PartCentre(int creation, int part) =>
         _client.Main.Creations.NodeOf(creation)!.Bodies[0].GlobalTransform * BuildActionsCentre(creation, part);

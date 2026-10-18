@@ -83,7 +83,7 @@ you; this page is the reference for what each key means, so you can read, review
 | `visual` | object | no | Colour, surface and colour variants. See [visual](#visual). |
 | `collision` | object | no | Collision shape. Omitted means a box filling `size`. See [collision](#collision). |
 | `sockets` | list | no | Attachment points. Placeable parts only. See [sockets](#sockets). |
-| `ground_only` | bool | no | The part goes only flat on the ground, like soil: upright, resting on the world itself, never tipped onto a side, set on a Creation or welded to one. The Hammer's tip key does nothing for it. Placeable parts only. Default false. |
+| `ground_only` | bool | no | The part goes only flat on the ground, like soil: upright, resting on the world itself, never tipped onto a side, set on a Creation or welded to one. The tip key does nothing for it. Placeable parts only. Default false. |
 | `script` | path | no | `.lua` behaviour script. A placed part runs it while it exists; an item (food, a weapon) runs it while a player holds and uses it. See the [Lua API Reference](lua-api.md). |
 | `sounds` | object | no | Sound events: local sound name → sound id (`"start": "engine_start"`). The game plays `place`, `remove`, `break` and `impact`; other names are for the script. A bare id is the part's own mod's event, else vanilla's; `mod_id:sound_id` names another mod's. See [Sound Events](sound-events.md#part-sounds). |
 | `inventory` | object | no | Item storage. Placeable parts only. See [inventory and crafting](#inventory-and-crafting). |

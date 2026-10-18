@@ -67,6 +67,9 @@ public partial class HotbarSync : Node
     {
         if (a == b)
             return;
+        // The Sledgehammer never leaves the bar, so the slot taking it is set first.
+        if (_own[a] == HotbarTools.Sledge)
+            (a, b) = (b, a);
         var (first, second) = (_own[a], _own[b]);
         Set(a, second, _ => Set(b, first, done));
     }

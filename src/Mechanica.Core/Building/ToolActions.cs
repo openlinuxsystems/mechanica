@@ -124,6 +124,22 @@ public interface IStrikeTargets
 
     /// <summary>Takes <paramref name="damage"/> health from a bot (a melee hit). Returns the health left (0 when it died).</summary>
     float StrikeBot(int bot, float damage);
+
+    /// <summary>The health a Sledgehammer hit takes from a world object (its <c>sledge_damage</c>), or null for the default.</summary>
+    float? SledgeDamageOf(string id) => null;
+
+    /// <summary>Sets a living player moving at <paramref name="velocity"/> (m/s) on top of their own movement: knockback.</summary>
+    void KnockPlayer(int peer, Vector3 velocity)
+    {
+    }
+
+    /// <summary>Sets a living bot moving at <paramref name="velocity"/> (m/s) on top of its own walk: knockback.</summary>
+    void KnockBot(int bot, Vector3 velocity)
+    {
+    }
+
+    /// <summary>Null when <paramref name="caller"/> may raise the Sledgehammer's block pose, or why not (it is Creative only).</summary>
+    string? CheckBlock(ActionCaller caller) => null;
 }
 
 /// <summary>What the tool actions need from the world beyond building. The host's game layer implements it.</summary>
@@ -163,7 +179,7 @@ public interface IToolWorld : IBuildWorld
 }
 
 /// <summary>
-/// The hand tools of the Action API besides the Hammer (<see cref="BuildActions"/>), validated on the host:
+/// The hand tools of the Action API besides building by hand (<see cref="BuildActions"/>), validated on the host:
 /// <list type="bullet">
 /// <item><c>PlaceLift</c>, <c>SetLiftLevel</c>, <c>TurnLift</c>, <c>RemoveLift</c>: each player's Lift. A
 /// Creation on a Lift stands upright and still on the platform (<see cref="Seat"/>), and drops when the
@@ -174,8 +190,9 @@ public interface IToolWorld : IBuildWorld
 /// <c>WeldParts</c>: welds two touching parts of different Bodies of one Creation, merging the Bodies.</item>
 /// <item><c>Paint</c>: colours parts, or takes the paint off.</item>
 /// <item><c>Sledge</c>: a Sledgehammer hit, which pushes the Body and damages the part until it breaks off;
-/// with <see cref="Targets"/> it can also hit players and world objects. <c>Block</c>: holding right click with it
-/// blocks, and <see cref="DamageScale"/> says how much of a hit a blocking player takes.</item>
+/// with <see cref="Targets"/> it can also hit players and bots (combat damage and knockback) and world objects
+/// (their own gathering damage). <c>Block</c>: holding right click with it in Creative raises a block pose that only
+/// shows; it changes no damage and no knockback.</item>
 /// </list>
 /// Player callers must be within <see cref="BuildSettings.Reach"/> of what they act on (the Sledgehammer: its own
 /// <see cref="SledgeSettings.Reach"/>). Each action plays its
@@ -265,13 +282,6 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
         _lastSwing.Remove(peer);
         _blocking.Remove(peer);
     }
-
-    /// <summary>
-    /// What damage of <paramref name="cause"/> that <paramref name="peer"/> takes is multiplied by: the block's share
-    /// while they block a cause it stops, else 1.
-    /// </summary>
-    public float DamageScale(int peer, string cause) =>
-        _blocking.Contains(peer) && settings.Sledge.BlockCauses.Contains(cause) ? settings.Sledge.BlockDamageScale : 1f;
 
     /// <summary>
     /// Where a Creation's Bodies go on a platform whose top middle is <paramref name="platformTop"/>: the
@@ -665,19 +675,26 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
         }
         if (args.Player is { } peer)
         {
-            world.PlaySound("smash_hit", Identifiers.VanillaModId, HitPoint(args, Targets!.PlayerCentre(peer)!.Value));
-            return Value(new SledgeResult(false, Targets.StrikePlayer(caller, peer, settings.Sledge.PlayerDamage), false, []));
+            var target = Targets!.PlayerCentre(peer)!.Value;
+            world.PlaySound("smash_hit", Identifiers.VanillaModId, HitPoint(args, target));
+            var left = Targets.StrikePlayer(caller, peer, settings.Sledge.CombatDamage);
+            if (left > 0 && Knockback(caller, target) is { } push)
+                Targets.KnockPlayer(peer, push);
+            return Value(new SledgeResult(false, left, false, []));
         }
         if (args.Bot is { } bot)
         {
-            world.PlaySound("smash_hit", Identifiers.VanillaModId, HitPoint(args, Targets!.BotCentre(bot)!.Value));
-            var health = Targets.StrikeBot(bot, settings.Sledge.PlayerDamage);
+            var target = Targets!.BotCentre(bot)!.Value;
+            world.PlaySound("smash_hit", Identifiers.VanillaModId, HitPoint(args, target));
+            var health = Targets.StrikeBot(bot, settings.Sledge.CombatDamage);
+            if (health > 0 && Knockback(caller, target) is { } push)
+                Targets.KnockBot(bot, push);
             return Value(new SledgeResult(health <= 0, health, false, []));
         }
         if (args.Object is { } id)
         {
             var at = HitPoint(args, Targets!.ObjectCentre(id)!.Value);
-            var left = Targets.StrikeObject(id, settings.Sledge.ObjectDamage);
+            var left = Targets.StrikeObject(id, Targets.SledgeDamageOf(id) ?? settings.Sledge.ObjectDamage);
             world.PlaySound(left <= 0 ? "smash_break" : "smash_hit", Identifiers.VanillaModId, at);
             return Value(new SledgeResult(left <= 0, left, left <= 0, []));
         }
@@ -723,7 +740,18 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
     }
 
     private string? ValidateBlock(ActionCaller caller, BlockArgs args) =>
-        args.On && world.EyeOf(caller.Peer) is null ? "You have no player to block with." : null;
+        !args.On ? null
+        : world.EyeOf(caller.Peer) is null ? "You have no player to block with."
+        : Targets?.CheckBlock(caller);
+
+    // The speed a player's hit sets a character moving at (m/s), along the swing from their eye; null when there is none.
+    private Vector3? Knockback(ActionCaller caller, Vector3 target)
+    {
+        if (caller.Source != ActionSource.Player || world.EyeOf(caller.Peer) is not { } eye)
+            return null;
+        var push = settings.Sledge.KnockbackFor(target - eye);
+        return push == Vector3.Zero ? null : push;
+    }
 
     private JsonElement? ApplyBlock(ActionCaller caller, BlockArgs args)
     {

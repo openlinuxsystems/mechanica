@@ -19,12 +19,12 @@ These are the default keys. Every one can be changed in Options, Controls.
 | Mouse | Look. Click the world to take the mouse back after a menu. |
 | X / C | Zoom the camera in or out a step (also Alt + scroll). You start in third person over the shoulder; all the way in is first person. |
 | V | Watch players: the camera follows another player, an AI player first, and shows what the AI is thinking. Left and right click go to the next and previous player, X and C zoom between their own view and behind them, and V or Esc gives your view back. You stand still meanwhile. |
-| 1 to 9, 0 | Pick a hotbar slot. It starts with the Hammer, Lift, Weld, Paint, Sledgehammer and Connect Tool. |
-| Left click | Create, attack or place: the Hammer places a part when you let go, the Sledgehammer swings. With the Hammer, hold still to lock the ghost (arrows show the ways it can grow), then drag to lay a grid of up to 16 by 16 parts; Q steps the grid's plane while you drag. Hold and drag with the Paint Tool to paint every part you pass over, or with the Weld Tool from one part to another to weld them. |
-| Right click | Remove or pick up: hold it on a part with the Hammer until the ring round the crosshair fills (wood is quickest, metal slower); let go early to stop. Drag with it held to remove the parts of one body across a face. Hold it with the Lift to take the Lift away, with the Sledgehammer to block, and with the Paint Tool to take paint off (drag for more). Right click on items lying on the ground picks them up at once, whatever is in hand. With a weapon in hand, hold it to aim: the view zooms in a little and the crosshair tightens. |
+| 1 to 9, 0 | Pick a hotbar slot. It starts with the Sledgehammer (in hand), Lift, Weld, Paint and Connect Tool. |
+| Left click | Create, attack or place: with a part in hand it goes down when you let go, the Sledgehammer swings. With a part in hand, hold still to lock the ghost (arrows show the ways it can grow), then drag to lay a grid of up to 16 by 16 parts; Q steps the grid's plane while you drag. Hold and drag with the Paint Tool to paint every part you pass over, or with the Weld Tool from one part to another to weld them. |
+| Right click | Remove or pick up: hold it on a part with a part or nothing in hand until the ring round the crosshair fills (wood is quickest, metal slower); let go early to stop. Drag with it held to remove the parts of one body across a face. Hold it with the Lift to take the Lift away, with the Sledgehammer to block (Creative only), and with the Paint Tool to take paint off (drag for more). Right click on items lying on the ground picks them up at once, whatever is in hand. With a weapon in hand, hold it to aim: the view zooms in a little and the crosshair tightens. |
 | Scroll | Previous or next hotbar slot |
-| Q / Shift + Q | Turn the part (Hammer, Weld, Lift). With the Paint Tool, Q opens the colour picker and Shift + Q picks the previous colour. |
-| T | Hammer and Weld: tip the part over |
+| Q / Shift + Q | Turn the part (a part in hand, Weld, Lift). With the Paint Tool, Q opens the colour picker and Shift + Q picks the previous colour. |
+| T | A part in hand and Weld: tip the part over |
 | Up / Down arrows | Raise or lower the Lift |
 | G | Drop one of the item in hand |
 | F (hold) | Force build: hold it and left click to put the item in hand (food, a bucket, a glowstick) where you aim, where it stays. Also hold it while dragging a stack out of the inventory to drop it. |
@@ -65,14 +65,14 @@ switches it to the next mode and shows it for a moment; R with the Connect Tool 
 ## The HUD
 
 - The **crosshair** is white, turns blue when a click or Use would do something where you aim (a valid
-  place for the Hammer's part, something to use), and pulses cyan over a connection node when you hold the
+  place for the part in hand, something to use), and pulses cyan over a connection node when you hold the
   Connect Tool (see the [Logic and Power Tutorial](logic-power-tutorial.md) for dragging links).
 - Aim at a part for a moment and a **tooltip** shows its name, what it is and what Use does. Parts you can
   use, sit in, open or set up add a line with their signal (on or off), how many connections they have and
   their durability.
 - **Health** is the blue bar at the top left (Survival). The quest log is at the top right, the compass at
   the top, the tool bar at the bottom and chat at the bottom left.
-- The Hammer's **ghost** is blue where the part fits and red where it would not (something in the way, out of
+- A part in hand shows a **ghost** that is blue where the part fits and red where it would not (something in the way, out of
   reach, or none left in Survival). A part you place shows straight away; if the host turns it down, it fades out
   red.
 - **Tips** show at the bottom of the screen, above the hotbar; hold Use (**E**) to dismiss one early.
@@ -104,22 +104,26 @@ switches it to the next mode and shows it for a moment; R with the Connect Tool 
 - **Paint Tool.** Left click paints a part; hold and drag to paint every part you pass over (up to 256 at a
   time). Right click (or drag) takes the paint off. **Q** opens the colour picker round the cursor: move the
   mouse towards a colour and click, or press 1 to 0 for the first ten. Esc or Q again closes it.
-- **Sledgehammer.** Left click swings it: overhead, or sideways from the right or the left, at random. A swing
-  takes 0.6 s and the blow lands 0.25 s after the click on whatever is under the crosshair within 3 m, the
-  ground and rocks included (those only thud and kick up dust). Hold left click to keep swinging; you can walk,
-  run and jump while you swing. The hit knocks a part's body back
-  (about 5000 N·s, but never faster than 4 m/s, so light parts don't fly off), throws dust, chips and sparks and
-  gives the camera a small jolt. Hold right click to raise the hammer across your chest and block: hits from other
-  players' Sledgehammers and from bots do a quarter of their damage while you block. In Creative nothing takes
-  damage, so there the block is only the pose. Timing, reach and knockback are the `sledge` section of
-  `game/data/building.json`.
+- **Sledgehammer.** Your main tool and only starting weapon: it is always on the hotbar (you can move it to
+  another slot but never take it off, drop it or store it) and you keep it when you die. Left click swings it:
+  overhead, or sideways from the right or the left, at random. One swing a second, and the blow lands 0.6 s
+  after the click on whatever is under the crosshair within 3 m, the ground included (that only thuds and kicks
+  up dust). Hold left click to keep swinging; you can walk, run and jump while you swing. Every hit pushes what
+  it lands on along the swing (5000 N·s, but never faster than 4 m/s, so light things don't fly off): a part's
+  body, a player or a bot, which also take 20 damage in Survival. It chips at trees and rocks (a rock node takes
+  25 a hit) until they break into what they drop, and wears parts down until they break off. It throws dust,
+  chips and sparks and gives the camera a small jolt. In Creative, hold right click to raise the hammer across
+  your chest: a block pose others see, which changes no damage and no knockback. Survival has no block. Timing,
+  reach, damage and knockback are the `sledge` section of `game/data/building.json`; each world object's own
+  hit damage is its `sledge_damage` in `worldgen.json`.
 
 ## Hotbar and inventory
 
 The **hotbar** is the row of ten slots at the bottom of the screen. Each slot holds a tool, a part or an
 item, and shows its picture, how many you carry (Survival) and its key. Pick a slot with **1** to **0** or
 the scroll wheel; the slot picked has a bright cyan border. A tool slot puts that tool in hand, a part slot
-puts the Hammer in hand ready to place that part, and any other item (food, seeds, a weapon) goes in hand.
+puts that part in hand ready to place, an empty slot leaves your hand empty (it still removes parts), and any
+other item (food, seeds, a weapon) goes in hand. The Sledgehammer never leaves the bar.
 In Survival, something you pick up for the first time goes in the first empty slot. Your hotbar is saved
 with the world. A weapon's slot shows its ammo instead: the rounds loaded out of its magazine (the Potato
 Blaster holds 15, the Scattergun 4), or the potatoes you carry for one that does not reload. With it in hand,

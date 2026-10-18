@@ -14,7 +14,7 @@ public static class PartSounds
     /// <summary>Played where the part is placed.</summary>
     public const string Place = "place";
 
-    /// <summary>Played where the Hammer takes the part off.</summary>
+    /// <summary>Played where the part is taken off by hand.</summary>
     public const string Remove = "remove";
 
     /// <summary>Played where the part breaks (a Sledgehammer, later damage).</summary>

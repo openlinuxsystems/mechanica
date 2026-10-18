@@ -95,10 +95,10 @@ display, or `xvfb-run` without one.
 
 The animation set is shared by every character: `idle`, `walk`, `jog`, `run`, `crouch_idle`, `crouch_walk`,
 `jump`, `fall`, `land`, `swim_idle`, `swim` and `sit` move the whole body; `hold_tool`, `hold_heavy`,
-`hold_heavy_block` (the Sledgehammer raised across the chest while right click blocks), `hold_gun`, `hold_item`,
+`hold_heavy_block` (the Sledgehammer raised across the chest while right click blocks, in Creative), `hold_gun`, `hold_item`,
 `hold_refine` (the Refine Tool scraping at a resource node, a stroke every 0.75 s), `hold_connect` (the Connect Tool at
 chest height, tip forward, with a slow sway), `hold_connect_aim` (raised and aimed while a node is under the crosshair or a
-drag is on) and the one-shot gestures (`hammer_swing`, `sledge_swing`, `tool_use`, `weld`,
+drag is on) and the one-shot gestures (`sledge_swing`, `tool_use`, `weld`,
 `paint_spray`, `fire_gun`, `eat`, `throw`, `plant`, `pour`, `interact`, `hurt`, `connect_click` when a link is made or
 taken away, `connect_reverse` when a bearing is reversed) move only the upper body
 from the spine up, over whatever the legs are doing. Every peer works out each player's pose from what it

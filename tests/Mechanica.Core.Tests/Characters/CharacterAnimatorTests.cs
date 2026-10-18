@@ -15,7 +15,7 @@ public class CharacterAnimatorTests
         ["hold_tool"] = 2f, ["hold_heavy"] = 2f, ["hold_heavy_block"] = 2f, ["hold_gun"] = 2f, ["hold_item"] = 2f,
         ["hold_heavy_fp"] = 2f, ["hold_heavy_block_fp"] = 2f, ["sledge_swing_fp"] = 1f,
         ["sledge_swing_side"] = 1f, ["sledge_swing_back"] = 1f, ["sledge_swing_side_fp"] = 1f, ["sledge_swing_back_fp"] = 1f,
-        ["hammer_swing"] = 0.35f, ["sledge_swing"] = 1f, ["tool_use"] = 0.3f, ["weld"] = 0.5f, ["paint_spray"] = 0.4f,
+        ["sledge_swing"] = 1f, ["tool_use"] = 0.3f, ["weld"] = 0.5f, ["paint_spray"] = 0.4f,
         ["fire_gun"] = 0.25f, ["eat"] = 1f, ["throw"] = 0.5f, ["plant"] = 0.8f, ["pour"] = 0.8f, ["interact"] = 0.4f, ["hurt"] = 0.3f,
         ["hold_bucket"] = 2f, ["hold_bucket_full"] = 2f, ["bucket_fill"] = 1.1f, ["bucket_throw"] = 0.9f, ["bucket_place"] = 0.8f, ["bucket_place_full"] = 0.8f,
         ["hold_refine"] = 0.75f, ["refine_draw"] = 0.4f, ["refine_stow"] = 0.35f,
@@ -152,7 +152,7 @@ public class CharacterAnimatorTests
     }
 
     [Theory]
-    [InlineData(CharacterProp.Hammer, "hold_tool")]
+    [InlineData(CharacterProp.LiftRemote, "hold_tool")]
     [InlineData(CharacterProp.Sledgehammer, "hold_heavy")]
     [InlineData(CharacterProp.PotatoBlaster, "hold_gun")]
     [InlineData(CharacterProp.Item, "hold_item")]
@@ -195,7 +195,7 @@ public class CharacterAnimatorTests
     {
         var animator = Make();
         Run(animator, Standing(), 0.2f);
-        var events = Run(animator, Standing() with { Prop = CharacterProp.Hammer }, Dt * 2);
+        var events = Run(animator, Standing() with { Prop = CharacterProp.LiftRemote }, Dt * 2);
         Assert.Equal(1, events.Count(e => e == CharacterEvent.Equip));
         Assert.InRange(animator.UpperWeight, 0.01f, 0.5f);
     }
@@ -206,8 +206,8 @@ public class CharacterAnimatorTests
     public void TheRefineToolIsDrawnFromTheHipAndPutBack(bool firstPerson, string draw, string stow)
     {
         var animator = new CharacterAnimator(new CharacterSettings(), Lengths, firstPerson);
-        var hammer = Standing() with { Prop = CharacterProp.Hammer };
-        Run(animator, hammer, 0.5f);
+        var remote = Standing() with { Prop = CharacterProp.LiftRemote };
+        Run(animator, remote, 0.5f);
         Run(animator, Standing() with { Prop = CharacterProp.RefineTool }, Dt);
         Assert.Equal(draw, animator.Gesture);
         Assert.Equal(CharacterProp.RefineTool, animator.Prop);
@@ -215,14 +215,14 @@ public class CharacterAnimatorTests
         Assert.Null(animator.Gesture);
         Assert.Contains(animator.Upper, c => c.Clip == (firstPerson ? "hold_refine_fp" : "hold_refine") && c.Weight > 0.99f);
 
-        // Letting go puts it away: still drawn until the stow ends, then the hammer is back.
-        Run(animator, hammer, Dt);
+        // Letting go puts it away: still drawn until the stow ends, then the remote is back.
+        Run(animator, remote, Dt);
         Assert.Equal(stow, animator.Gesture);
         Assert.Equal(CharacterProp.RefineTool, animator.Prop);
         Assert.True(animator.ShowProp);
-        Run(animator, hammer, 0.4f);
+        Run(animator, remote, 0.4f);
         Assert.Null(animator.Gesture);
-        Assert.Equal(CharacterProp.Hammer, animator.Prop);
+        Assert.Equal(CharacterProp.LiftRemote, animator.Prop);
     }
 
     [Fact]
@@ -242,12 +242,12 @@ public class CharacterAnimatorTests
     public void AGestureOverridesTheHoldAndEnds()
     {
         var animator = Make();
-        var holding = Standing() with { Prop = CharacterProp.Hammer };
+        var holding = Standing() with { Prop = CharacterProp.LiftRemote };
         Run(animator, holding, 0.5f);
-        Run(animator, holding with { Gesture = CharacterGesture.HammerSwing, GestureCount = 1 }, 0.15f);
-        Assert.Equal("hammer_swing", animator.Gesture);
-        Assert.True(animator.Upper.Single(c => c.Clip == "hammer_swing").Weight > 0.9f);
-        Run(animator, holding with { Gesture = CharacterGesture.HammerSwing, GestureCount = 1 }, 0.4f);
+        Run(animator, holding with { Gesture = CharacterGesture.ToolUse, GestureCount = 1 }, 0.15f);
+        Assert.Equal("tool_use", animator.Gesture);
+        Assert.True(animator.Upper.Single(c => c.Clip == "tool_use").Weight > 0.9f);
+        Run(animator, holding with { Gesture = CharacterGesture.ToolUse, GestureCount = 1 }, 0.4f);
         Assert.Null(animator.Gesture);
         Assert.Equal("hold_tool", Assert.Single(animator.Upper).Clip);
     }
@@ -290,7 +290,7 @@ public class CharacterAnimatorTests
         Assert.Contains(swings.Zip(swings.Skip(1), swings.Skip(2)), t => t.First == t.Third);
         Assert.Contains(swings.Zip(swings.Skip(1), swings.Skip(2)), t => t.First != t.Third);
         // Other gestures have one clip.
-        Assert.Equal("hammer_swing", CharacterRig.GestureClip(CharacterGesture.HammerSwing, 7));
+        Assert.Equal("tool_use", CharacterRig.GestureClip(CharacterGesture.ToolUse, 7));
         Assert.Equal("sledge_swing", CharacterRig.GestureOf("sledge_swing_back"));
         Assert.Equal("weld", CharacterRig.GestureOf("weld"));
     }
@@ -334,7 +334,7 @@ public class CharacterAnimatorTests
         Assert.Equal((0.4f - Dt) / 0.8f, animator.Upper.Single(c => c.Clip == CharacterRig.GestureClip(CharacterGesture.SledgeSwing, 1) + "_fp").Time, 3);
 
         // A tool without first-person clips plays the ordinary ones.
-        Run(animator, Standing() with { Prop = CharacterProp.Hammer }, 1f);
+        Run(animator, Standing() with { Prop = CharacterProp.LiftRemote }, 1f);
         Assert.Equal("hold_tool", Assert.Single(animator.Upper).Clip);
         var body = Make();
         Run(body, Standing() with { Prop = CharacterProp.Sledgehammer }, 0.5f);
@@ -355,14 +355,14 @@ public class CharacterAnimatorTests
         Run(animator, held, 0.3f);
         Assert.Equal("hold_heavy", Assert.Single(animator.Upper).Clip);
         // Blocking is a Sledgehammer pose only.
-        Assert.Equal("hold_tool", CharacterRig.HoldClip(CharacterProp.Hammer, guard: true));
+        Assert.Equal("hold_tool", CharacterRig.HoldClip(CharacterProp.LiftRemote, guard: true));
     }
 
     [Fact]
     public void HandsAreFreeWhileSwimming()
     {
         var animator = Make();
-        Run(animator, new CharacterPose(Vector3.Zero, 0, 0, OnFloor: false, Swimming: true, Prop: CharacterProp.Hammer), 1f);
+        Run(animator, new CharacterPose(Vector3.Zero, 0, 0, OnFloor: false, Swimming: true, Prop: CharacterProp.LiftRemote), 1f);
         Assert.Equal(0f, animator.UpperWeight);
         Assert.False(animator.ShowProp);
     }
@@ -404,7 +404,7 @@ public class CharacterAnimatorTests
     {
         var animator = new CharacterAnimator(new CharacterSettings(), new Dictionary<string, float> { ["idle"] = 2f });
         for (var i = 0; i < 60; i++)
-            animator.Update(new CharacterPose(new Vector3(0, 0, -4), 0, 0, true, Prop: CharacterProp.Hammer, Gesture: CharacterGesture.HammerSwing, GestureCount: 1), Dt);
+            animator.Update(new CharacterPose(new Vector3(0, 0, -4), 0, 0, true, Prop: CharacterProp.LiftRemote, Gesture: CharacterGesture.ToolUse, GestureCount: 1), Dt);
         Assert.Equal("idle", Assert.Single(animator.Body).Clip);
         Assert.Empty(animator.Upper);
     }

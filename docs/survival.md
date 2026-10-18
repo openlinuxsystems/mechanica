@@ -102,7 +102,9 @@ their item's properties.
   on the soil (seed, growth, water, stage and when growth was last worked out): that is what is saved, sent
   to clients and read by bots and raids. Vanilla's items and soil are authored by the Part Editor batch
   `mods/vanilla/editor/batches/survival.json`.
-- `game/data/building.json`: `sledge.player_damage` and `sledge.object_damage`.
+- `game/data/building.json`: `sledge.combat_damage` (players and bots), `sledge.object_damage` (world objects
+  without their own) and the knockback (`impulse`, `max_knockback_speed`, `character_mass`, `knockback_lift`,
+  `knockback_drag`). A world object's own hit damage is its `sledge_damage` in `worldgen.json`.
 
 ## Action API
 

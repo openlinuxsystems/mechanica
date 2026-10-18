@@ -7,7 +7,7 @@ namespace Mechanica.Game.Building;
 /// <summary>
 /// What a tool shows the moment its player acts, before the host answers (UI spec §9, multiplayer prediction): a
 /// copy of the preview left where the part goes. When the host takes the request the copy goes as the real part
-/// arrives; when it refuses, the copy turns red and fades out over <see cref="Core.Building.HammerSettings.RollbackSeconds"/>.
+/// arrives; when it refuses, the copy turns red and fades out over <see cref="Core.Building.PlacementSettings.RollbackSeconds"/>.
 /// </summary>
 public partial class PendingGhost : Node3D
 {

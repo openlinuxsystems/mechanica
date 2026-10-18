@@ -121,6 +121,18 @@ public partial class PlayerSync : Node
         return true;
     }
 
+    /// <summary>
+    /// Host side: adds <paramref name="velocity"/> (m/s) to a player's movement once, a knockback. A client's own
+    /// prediction is corrected by the next snapshot. Returns false if the peer has no player.
+    /// </summary>
+    public bool HostKnock(int peer, Vector3 velocity)
+    {
+        if (!Session.IsHost || !_players.TryGetValue(peer, out var player))
+            return false;
+        player.Knock(velocity);
+        return true;
+    }
+
     public override void _PhysicsProcess(double delta)
     {
         if (Session.IsHost)

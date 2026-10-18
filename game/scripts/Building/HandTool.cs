@@ -9,7 +9,7 @@ using Mechanica.Game.Player;
 namespace Mechanica.Game.Building;
 
 /// <summary>
-/// Base of the local player's hand tools (Hammer, Lift, Weld Tool, Paint Tool, Sledgehammer). A tool
+/// Base of the local player's hand tools (building by hand, Lift, Weld Tool, Paint Tool, Sledgehammer). A tool
 /// aims with a ray from the player's camera out to <see cref="Core.Building.BuildSettings.Reach"/> and
 /// sends its requests through the Action API, so the host decides and nothing changes locally until it
 /// answers. Only the <see cref="Active"/> tool reads keys and the mouse and shows its preview;

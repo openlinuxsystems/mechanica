@@ -59,6 +59,10 @@ internal static class WorldGenValidator
                 sink.Error(Code, $"{path}.scale", "scale must be [min, max] with 0 < min <= max.");
             if (o.Health is { } health && !(health > 0 && float.IsFinite(health)))
                 sink.Error(Code, $"{path}.health", "health must be greater than 0.");
+            if (o.SledgeDamage is { } sledge && !(sledge > 0 && float.IsFinite(sledge)))
+                sink.Error(Code, $"{path}.sledge_damage", "sledge_damage must be greater than 0.");
+            if (o.SledgeDamage is not null && o.Health is null)
+                sink.Warning(Code, $"{path}.sledge_damage", "sledge_damage does nothing: the object has no health, so it cannot break.");
             if (o.Model is { } model && FloraModels.Find(model) is null)
                 sink.Error(Code, $"{path}.model", $"'{model}' is not a built-in flora model ({string.Join(", ", FloraModels.All.Select(m => m.Id))}).");
             if (o.Drops is { Count: > 0 } && o.Health is null)

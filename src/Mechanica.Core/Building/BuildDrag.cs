@@ -5,9 +5,9 @@ using Mechanica.Core.Data;
 namespace Mechanica.Core.Building;
 
 /// <summary>
-/// The area a Hammer drag covers (UI spec §2, §8, §10): a rectangle of cells in one grid plane, from the cell the
+/// The area a building drag covers (UI spec §2, §8, §10): a rectangle of cells in one grid plane, from the cell the
 /// drag started on towards the cell under the aim, stepping by the part's size and at most
-/// <see cref="HammerSettings.DragMaxPerAxis"/> parts along each side. The plane is named by its normal axis
+/// <see cref="PlacementSettings.DragMaxPerAxis"/> parts along each side. The plane is named by its normal axis
 /// (0 = X, 1 = Y, 2 = Z); Q steps it through the three.
 /// </summary>
 public static class BuildDrag

@@ -166,7 +166,7 @@ points.
 
 A wheel is a part with one structural socket, its hub, and a cylinder collision along its local Y. Put
 it on a bearing's rotor by the hub and it turns with the bearing. Its `friction` is its grip. The vanilla
-wheels are 3 × 1 × 3 cells (the Big Wheel 5 × 2 × 5); the Hammer centres a wide part on the face you aim
+wheels are 3 × 1 × 3 cells (the Big Wheel 5 × 2 × 5); placing centres a wide part on the face you aim
 at.
 
 ### Directions

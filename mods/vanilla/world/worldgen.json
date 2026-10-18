@@ -156,6 +156,8 @@
       "scale": [0.9, 1.2],
       "sink": 0.2,
       "health": 40.0,
+      // Stone: 25 a Sledgehammer hit (Chase's sledgehammer spec gathering table).
+      "sledge_damage": 25.0,
       "drops": [{ "item": "scrap_metal", "count": 4 }],
       "refine": true
     },

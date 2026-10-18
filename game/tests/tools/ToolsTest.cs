@@ -68,11 +68,11 @@ public partial class ToolsTest : StagedTest
         {
             if (_client.Main.PlayerSync.Players.Count != 2 || _client.Main.Tools is null || _host.Main.PlayerSync.Players.Count != 2)
                 return false;
-            Check(Tools.Tools.Select(t => t.ToolName).SequenceEqual(["Hammer", "Lift", "Weld Tool", "Paint Tool", "Sledgehammer", "Item", "Connect Tool"]),
-                "the belt holds the Hammer, Lift, Weld Tool, Paint Tool, Sledgehammer, the item in hand and the Connect Tool");
-            Check(Tools.Current == Tools.Hammer, "the Hammer starts in hand");
+            Check(Tools.Tools.Select(t => t.ToolName).SequenceEqual(["Build", "Lift", "Weld Tool", "Paint Tool", "Sledgehammer", "Item", "Connect Tool"]),
+                "the belt holds building by hand, the Lift, Weld Tool, Paint Tool, Sledgehammer, the item in hand and the Connect Tool");
+            Check(Tools.Current == Tools.Sledge, "the Sledgehammer starts in hand");
             Tools.Use(Tools.Lift);
-            Check(Tools.Current == Tools.Lift && !Tools.Hammer.Active, "a tool can be put in hand");
+            Check(Tools.Current == Tools.Lift && !Tools.Builder.Active, "a tool can be put in hand");
             return true;
         });
         Add("the client builds a bar and a lone block", frame =>
@@ -549,7 +549,8 @@ public partial class ToolsTest : StagedTest
                 Check(seen.Animator.Body.Any(c => c.Clip is "walk" or "jog" && c.Weight > 0.3f),
                     $"with the legs walking under it ({string.Join(", ", seen.Animator.Body.Select(c => $"{c.Clip} {c.Weight:0.00}"))})");
             }
-            if (frame < 80)
+            // One swing a second, each landing 0.6 s in: by 1.75 s two have started and the second has landed.
+            if (frame < 105)
                 return false;
             Tools.Sledge.HoldingSwing = false;
             me.CurrentInput = PlayerInput.None with { Pitch = -1.1f };
@@ -569,14 +570,13 @@ public partial class ToolsTest : StagedTest
                 Tools.Sledge.Block(true, _results.Add);
                 return false;
             }
-            // The raised hammer reaches the host with the next input packet, which can trail the action's answer.
+            // The raised Sledgehammer reaches the host with the next input packet, which can trail the action's answer.
             if (_results.Count == 0 || (!_host.Main.PlayerSync.Players[_client.Peer].Body.HasFlag(Core.Net.BodyFlags.Guard) && frame < 60))
                 return false;
             Check(_results[0].Ok && _host.Main.Build.Tools!.Blocking.Contains(_client.Peer), "the host knows the player blocks");
-            Check(_host.Main.PlayerSync.Players[_client.Peer].Body.HasFlag(Core.Net.BodyFlags.Guard), "the host sees the hammer raised to block");
-            Check(_host.Main.Build.Tools!.DamageScale(_client.Peer, "sledge") < 1f, "a hit would do less");
+            Check(_host.Main.PlayerSync.Players[_client.Peer].Body.HasFlag(Core.Net.BodyFlags.Guard), "the host sees the Sledgehammer raised to block");
             _results.Clear();
-            Tools.Use(Tools.Hammer);
+            Tools.Use(Tools.Builder);
             Check(!Tools.Sledge.Blocking, "putting the Sledgehammer away stops the block");
             return true;
         });

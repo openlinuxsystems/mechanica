@@ -78,8 +78,6 @@ public partial class CaptureScene : Node
         }
         Shot("front", 60, () => Look(new Vector3(0, 1.0f, -3.2f)));
         Shot("side", 10, () => Look(new Vector3(-3.2f, 1.0f, 0)));
-        Shot("hammer", 40, () => { Player.HeldProp = CharacterProp.Hammer; Look(new Vector3(-1.6f, 1.2f, -2.2f)); });
-        Shot("swing", 9, () => Player.Gesture(CharacterGesture.HammerSwing));
         Shot("sledge", 40, () => { Tool<Building.SledgeTool>(); Look(new Vector3(-1.6f, 1.2f, -2.2f)); });
         Shot("sledge_windup", 21, () => Player.Gesture(CharacterGesture.SledgeSwing));
         Shot("sledge_block", 30, () => Player.HeldGuard = true);
@@ -99,15 +97,14 @@ public partial class CaptureScene : Node
         Shot("connect_click", 3, () => Player.Gesture(CharacterGesture.ConnectClick));
         Shot("connect_reverse", 5, () => Player.Gesture(CharacterGesture.ConnectReverse));
         Shot("connect_side", 20, () => Look(new Vector3(-1.4f, 1.3f, -0.15f), 1.15f));
-        Shot("connect_stow", 7, () => { Connector.KeepRaised = false; Tool<Building.HammerTool>(); });
-        Shot("look_up", 40, () => { Tool<Building.HammerTool>(); Input(pitch: 0.9f); Look(new Vector3(-2.6f, 1.2f, -1.6f)); });
+        Shot("connect_stow", 7, () => { Connector.KeepRaised = false; Tool<Building.WeldTool>(); });
+        Shot("look_up", 40, () => { Tool<Building.WeldTool>(); Input(pitch: 0.9f); Look(new Vector3(-2.6f, 1.2f, -1.6f)); });
         Shot("look_down", 40, () => Input(pitch: -0.9f));
         Shot("crouch", 40, () => Input(crawl: true));
         Shot("walk", 23, () => { Input(z: 1); });
         Shot("run", 23, () => { Input(z: 1, sprint: true); });
         Shot("first_person", 40, () => { Input(); Player.MakeCameraCurrent(); });
         Shot("first_person_up", 30, () => Input(pitch: 0.6f));
-        Shot("first_person_swing", 9, () => Player.Gesture(CharacterGesture.HammerSwing));
         Shot("first_person_walk", 30, () => Input(z: 1));
         Shot("first_person_sledge", 30, () => { Input(); Tool<Building.SledgeTool>(); });
         Shot("first_person_sledge_windup", 21, () => Player.Gesture(CharacterGesture.SledgeSwing));
@@ -125,7 +122,7 @@ public partial class CaptureScene : Node
         Shot("first_person_connect_aim", 30, () => Connector.KeepRaised = true);
         Shot("first_person_connect_click", 3, () => Player.Gesture(CharacterGesture.ConnectClick));
         Shot("first_person_connect_reverse", 5, () => Player.Gesture(CharacterGesture.ConnectReverse));
-        Shot("first_person_connect_stow", 7, () => { Connector.KeepRaised = false; Tool<Building.HammerTool>(); });
+        Shot("first_person_connect_stow", 7, () => { Connector.KeepRaised = false; Tool<Building.WeldTool>(); });
         Shot("first_person_refine_draw", 8, () => Player.ActionProp = CharacterProp.RefineTool);
         Shot("first_person_refine", 40, () => { });
         Shot("first_person_refine_bite", 9, () => { });

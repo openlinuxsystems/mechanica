@@ -121,6 +121,11 @@ public interface IBotTargets
     /// health left (0 when it died).
     /// </summary>
     float DamageBot(int bot, float damage, string cause, bool melee);
+
+    /// <summary>Sets a living bot moving at <paramref name="velocity"/> (m/s) on top of its own walk: knockback.</summary>
+    void Knock(int bot, Vector3 velocity)
+    {
+    }
 }
 
 /// <summary>What the bot actions need from the host's world beyond survival's. The game implements it.</summary>
