@@ -15,6 +15,7 @@ Needs Python 3 with numpy, and ffmpeg built with libvorbis.
 
     tools/sounds/make_placeholders.py            # regenerate everything
     tools/sounds/make_placeholders.py --check    # list the events without writing
+    tools/sounds/make_placeholders.py --only trees  # regenerate one group, leaving the others as they are
 """
 
 import json
@@ -776,9 +777,36 @@ for i, (a, b, bpm) in enumerate(STATIONS, 1):
     ev("music", f"radio_loop_{i:02d}", music_loop([chord(a), chord(b)], bpm, i % 2 == 0), loop=round(bars * 4 * 60.0 / bpm, 3),
        bus="music", spatial=True, min_distance=2.0, max_distance=25.0, volume_db=-4.0)
 
+# ---- Trees (Tree Harvesting spec) ----------------------------------------------------------------
+# Each tree type knocks and falls in its own voice: the same wood recordings pitched to its size (the small Birch
+# high and dry, the big Pine low). A fall is the trunk cracking, the canopy rushing down and the thud as it lands.
+TREES = {"birch": 1.22, "leafy": 1.0, "spruce": 1.08, "pine": 0.78}
+
+
+def tree_hit(p, n):
+    return lambda: rec(take(f"{K}impactWood_heavy_{n % 2:03d}", pitch=p), take(f"{K}impactWood_medium_{n:03d}", 0.01, 0.7, pitch=p * 0.9),
+                       take(f"{K}impactPlank_medium_{(n + 1) % 2:03d}", 0.03, 0.5, pitch=p), level=MAT_HIT)
+
+
+def tree_fall(p, n):
+    return lambda: rec(take(f"{K}impactWood_heavy_{n:03d}", 0, 1.0, pitch=p * 0.9), take(f"{K}impactPlank_medium_{n:03d}", 0.05, 0.8, pitch=p * 0.8),
+                       take(f"{K}impactPlank_medium_{1 - n:03d}", 0.16, 0.7, pitch=p * 0.7), take(f"{K}impactWood_light_{2 + n:03d}", 0.32, 0.5, pitch=p * 0.6),
+                       take(f"{K}footstep_grass_{n:03d}", 1.15, 0.6, pitch=0.7), take(f"{K}footstep_grass_{2 + n:03d}", 1.3, 0.6, pitch=0.65),
+                       take(f"{K}impactWood_heavy_{1 - n:03d}", 1.55, 1.0, pitch=p * 0.55, lowpass=1500),
+                       take(f"{K}impactSoft_heavy_{n:03d}", 1.55, 0.9, lowpass=500),
+                       take(f"{K}impactWood_medium_{n:03d}", 1.8, 0.5, pitch=p * 0.5, lowpass=1200), level=0.85, tail=0.25)
+
+
+for tree, pitch in TREES.items():
+    rev("trees", f"{tree}_hit", [tree_hit(pitch, n) for n in range(3)], pitch_variation=0.05, volume_variation_db=1.5, max_distance=40.0,
+        max_instances=4, cooldown=0.05)
+    rev("trees", f"{tree}_fall", [tree_fall(pitch, n) for n in range(2)], pitch_variation=0.04, max_distance=80.0)
+
+
 # ---- Output ------------------------------------------------------------------------------------
 
-GROUP_ORDER = ["materials", "building", "engines", "joints", "flight", "logic", "part_tools", "stations", "items", "bots", "player", "ui", "ambient", "music"]
+GROUP_ORDER = ["materials", "building", "engines", "joints", "flight", "logic", "part_tools", "stations", "items", "bots", "player", "ui", "ambient", "music",
+               "trees"]
 KEY_ORDER = ["id", "description", "clips", "bus", "loop", "volume_db", "pitch", "volume_variation_db", "pitch_variation", "spatial",
              "min_distance", "max_distance", "rolloff", "parameters", "max_instances", "cooldown"]
 PARAM_ORDER = ["name", "min", "max", "default", "pitch", "volume_db"]
@@ -881,10 +909,19 @@ def main():
         return
     if shutil.which("ffmpeg") is None:
         sys.exit("ffmpeg (with libvorbis) is needed to write the loops.")
-    if os.path.isdir(SOUNDS):
+    # --only GROUP rewrites one group's clips and file and leaves the rest as they are.
+    only = sys.argv[sys.argv.index("--only") + 1] if "--only" in sys.argv else None
+    groups = [only] if only else GROUP_ORDER
+    if only and only not in GROUP_ORDER:
+        sys.exit(f"no group '{only}' ({', '.join(GROUP_ORDER)})")
+    if only:
+        shutil.rmtree(os.path.join(SOUNDS, only), ignore_errors=True)
+    elif os.path.isdir(SOUNDS):
         shutil.rmtree(SOUNDS)
-    banks = {g: [] for g in GROUP_ORDER}
+    banks = {g: [] for g in groups}
     for group, sid, recipe, opts, variants, is_loop, length in EVENTS:
+        if group not in banks:
+            continue
         folder = os.path.join(SOUNDS, group)
         os.makedirs(folder, exist_ok=True)
         clips = []
@@ -918,10 +955,10 @@ def main():
         if "parameters" in opts:
             entry["parameters"] = [ordered({"name": p["name"], **{k: v for k, v in p.items() if k != "name"}}, PARAM_ORDER) for p in opts["parameters"]]
         banks[group].append(ordered(entry, KEY_ORDER))
-    for group in GROUP_ORDER:
+    for group in groups:
         with open(os.path.join(SOUNDS, f"{group}.json"), "w", encoding="utf-8", newline="\n") as f:
             f.write(to_json({"events": banks[group]}) + "\n")
-    print(f"wrote {len(EVENTS)} events in {len(GROUP_ORDER)} files to {os.path.relpath(SOUNDS, ROOT)}")
+    print(f"wrote {sum(len(b) for b in banks.values())} events in {len(groups)} files to {os.path.relpath(SOUNDS, ROOT)}")
 
 
 if __name__ == "__main__":

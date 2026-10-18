@@ -1,0 +1,30 @@
+{
+  "id": "wood_rod",
+  "name": "Wood Rod",
+  "description": "A hewn bar of wood. Hold Use on it with the Refine Tool, or put it in a Refiner, for 20 Scrap Wood Blocks.",
+  "category": "resource",
+  "mass": 8,
+  "friction": 0.7,
+  "buoyancy": 0.6,
+  "flammable": true,
+  "stack_size": 10,
+  "sound_material": "wood",
+  "size": [1, 1, 4],
+  "mesh": "meshes/items/wood_rod.glb",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.9,
+    "metallic": 0
+  },
+  "sounds": {
+    "pickup": "pickup_wood",
+    "drop": "drop_wood"
+  },
+  "loose": true,
+  "refine": [
+    {
+      "item": "scrap_wood_block",
+      "count": 20
+    }
+  ]
+}

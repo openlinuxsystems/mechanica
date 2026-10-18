@@ -88,6 +88,9 @@ public partial class WorldStreamer : Node3D
     /// <summary>How far scenery reaches, in m; null follows the player's graphics settings.</summary>
     public float? ViewDistance { get; set; }
 
+    /// <summary>Shakes, chips and falling leaves on world objects that are hit (every peer draws its own).</summary>
+    public ObjectEffects Effects { get; private set; } = null!;
+
     /// <summary>Seconds of each tick spent building scenery.</summary>
     public const double SceneryBudget = 0.002;
 
@@ -122,6 +125,8 @@ public partial class WorldStreamer : Node3D
         AddChild(Ground);
         _sceneryRoot = new Node3D { Name = "Scenery" };
         AddChild(_sceneryRoot);
+        Effects = new ObjectEffects { Name = "ObjectEffects", Streamer = this };
+        AddChild(Effects);
         State = InitialState is { } loaded && loaded.Seed == Seed ? loaded : new WorldState(Seed);
         Generator = new WorldGenerator(WorldGen, Seed, Settings.WorldSize);
         Streamer = new ChunkStreamer(Settings);
@@ -263,6 +268,31 @@ public partial class WorldStreamer : Node3D
             Rpc(MethodName.ObjectDestroyed, id.ToString());
         return true;
     }
+
+    /// <summary>
+    /// Host side: damage reached a scattered object at <paramref name="at"/> (<paramref name="broke"/>: the blow that broke
+    /// or felled it). Every peer, this one included, shakes it and throws its chips and leaves (<see cref="ObjectEffects"/>).
+    /// </summary>
+    public void ObjectHit(WorldObjectId id, Vector3 at, bool broke)
+    {
+        if (!Session.IsHost)
+            return;
+        Effects.Struck(id, at, broke);
+        if (Session.State == NetSession.SessionState.Hosting)
+            Rpc(MethodName.ObjectStruck, id.ToString(), at, broke);
+    }
+
+    /// <summary>Host → clients: an object was hit (cosmetic).</summary>
+    [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Unreliable)]
+    private void ObjectStruck(string id, Vector3 at, bool broke)
+    {
+        if (!Session.IsHost && WorldObjectId.TryParse(id, out var parsed))
+            Effects.Struck(parsed, at, broke);
+    }
+
+    /// <summary>The loaded or scenery chunk that generated <paramref name="id"/>, or null.</summary>
+    public TerrainChunk? ChunkHolding(WorldObjectId id) =>
+        _chunks.Values.Concat(_scenery.Values).FirstOrDefault(c => c.Holds(id));
 
     private void SendWorld(int peer) => RpcId(peer, MethodName.ReceiveWorld, State.ToJson());
 

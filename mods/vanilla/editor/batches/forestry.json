@@ -1,0 +1,88 @@
+{
+  // Forestry (Tree Harvesting spec): the log segments a felled tree falls into, the Wood Rods the logs break into,
+  // and the rod's refiner recipe. The trees themselves are world objects in world/worldgen.json. Models:
+  // tools/trees/build_trees.py. Re-run tools/author-vanilla.sh after editing.
+  "format_version": 1,
+  "parts": [
+    {
+      "file": "parts/wood_log.json",
+      "template": "item",
+      "set": {
+        "name": "Log",
+        "description": "A length of a felled Leafy or Spruce trunk. Break it with the Sledgehammer or a spinning Saw Blade for its Wood Rods.",
+        "category": "resource",
+        "loose": true,
+        "mass": 60,
+        "durability": 8,
+        "friction": 0.7,
+        "buoyancy": 0.6,
+        "flammable": true,
+        "stack_size": 4,
+        "sound_material": "wood",
+        "size": [2, 2, 6],
+        "visual": { "color": "#ffffff", "roughness": 0.9, "metallic": 0 },
+        "collision": { "shape": "convex", "mesh": "meshes/items/wood_log.glb" },
+        "sounds": { "pickup": "pickup_wood", "drop": "drop_wood" },
+        "sledge_damage": 25,
+        "breaks_into": { "count": 2, "parts": [{ "part": "wood_rod" }] }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/wood_log.glb" }]
+    },
+    {
+      "file": "parts/birch_log.json",
+      "base": "wood_log",
+      "set": {
+        "name": "Birch Log",
+        "description": "A length of a felled Birch, white with black marks. Break it with the Sledgehammer or a spinning Saw Blade for its Wood Rods.",
+        "mass": 20,
+        "durability": 5,
+        "size": [1, 1, 6],
+        "collision": { "shape": "convex", "mesh": "meshes/items/birch_log.glb" }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/birch_log.glb" }]
+    },
+    {
+      "file": "parts/pine_log.json",
+      "base": "wood_log",
+      "set": {
+        "name": "Pine Log",
+        "description": "A thick length of a felled Pine. Hand tools work on it once the tree is down: break it with the Sledgehammer or a spinning Saw Blade for its Wood Rods.",
+        "mass": 110,
+        "durability": 12,
+        "size": [3, 3, 5],
+        "collision": { "shape": "convex", "mesh": "meshes/items/pine_log.glb" }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/pine_log.glb" }]
+    },
+    {
+      "file": "parts/wood_rod.json",
+      "template": "item",
+      "set": {
+        "name": "Wood Rod",
+        "description": "A hewn bar of wood. Hold Use on it with the Refine Tool, or put it in a Refiner, for 20 Scrap Wood Blocks.",
+        "category": "resource",
+        "loose": true,
+        "mass": 8,
+        "friction": 0.7,
+        "buoyancy": 0.6,
+        "flammable": true,
+        "stack_size": 10,
+        "sound_material": "wood",
+        "size": [1, 1, 4],
+        "visual": { "color": "#ffffff", "roughness": 0.9, "metallic": 0 },
+        "sounds": { "pickup": "pickup_wood", "drop": "drop_wood" },
+        "refine": [{ "item": "scrap_wood_block", "count": 20 }]
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/wood_rod.glb" }],
+      "recipes": [
+        {
+          "id": "wood_rod",
+          "stations": ["refiner"],
+          "inputs": [{ "item": "wood_rod", "count": 1 }],
+          "outputs": [{ "item": "scrap_wood_block", "count": 20 }],
+          "time": 5
+        }
+      ]
+    }
+  ]
+}

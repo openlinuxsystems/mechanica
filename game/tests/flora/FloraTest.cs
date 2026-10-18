@@ -208,8 +208,9 @@ public partial class FloraTest : StagedTest
                 _host.Main.PlayerSync.HostTeleport(_client.Peer, _start, _yaw);
                 return false;
             }
-            // Stand 1.6 m short of the bush, looking down at it.
-            var pitch = -0.45f;
+            // Stand 1.6 m short of the bush, looking down at the middle of its collider (bushes vary in size).
+            var middle = _bush.Position.ToGodot() + new Vector3(0, _bush.Definition.Collider!.At.Y * _bush.Scale, 0);
+            var pitch = frame < 60 ? -0.45f : Mathf.Atan2(middle.Y - mine.AimOrigin.Y, Flat(middle - mine.AimOrigin).Length());
             mine.CurrentInput = PlayerInput.None with { Yaw = _yaw, Pitch = pitch };
             if (frame < 60)
                 return false;

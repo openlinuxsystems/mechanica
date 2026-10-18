@@ -1,0 +1,92 @@
+{
+  "events": [
+    {
+      "id": "birch_hit",
+      "clips": [
+        "sounds/trees/birch_hit.ogg",
+        "sounds/trees/birch_hit_2.ogg",
+        "sounds/trees/birch_hit_3.ogg"
+      ],
+      "volume_variation_db": 1.5,
+      "pitch_variation": 0.05,
+      "max_distance": 40,
+      "max_instances": 4,
+      "cooldown": 0.05
+    },
+    {
+      "id": "birch_fall",
+      "clips": [
+        "sounds/trees/birch_fall.ogg",
+        "sounds/trees/birch_fall_2.ogg"
+      ],
+      "pitch_variation": 0.04,
+      "max_distance": 80
+    },
+    {
+      "id": "leafy_hit",
+      "clips": [
+        "sounds/trees/leafy_hit.ogg",
+        "sounds/trees/leafy_hit_2.ogg",
+        "sounds/trees/leafy_hit_3.ogg"
+      ],
+      "volume_variation_db": 1.5,
+      "pitch_variation": 0.05,
+      "max_distance": 40,
+      "max_instances": 4,
+      "cooldown": 0.05
+    },
+    {
+      "id": "leafy_fall",
+      "clips": [
+        "sounds/trees/leafy_fall.ogg",
+        "sounds/trees/leafy_fall_2.ogg"
+      ],
+      "pitch_variation": 0.04,
+      "max_distance": 80
+    },
+    {
+      "id": "spruce_hit",
+      "clips": [
+        "sounds/trees/spruce_hit.ogg",
+        "sounds/trees/spruce_hit_2.ogg",
+        "sounds/trees/spruce_hit_3.ogg"
+      ],
+      "volume_variation_db": 1.5,
+      "pitch_variation": 0.05,
+      "max_distance": 40,
+      "max_instances": 4,
+      "cooldown": 0.05
+    },
+    {
+      "id": "spruce_fall",
+      "clips": [
+        "sounds/trees/spruce_fall.ogg",
+        "sounds/trees/spruce_fall_2.ogg"
+      ],
+      "pitch_variation": 0.04,
+      "max_distance": 80
+    },
+    {
+      "id": "pine_hit",
+      "clips": [
+        "sounds/trees/pine_hit.ogg",
+        "sounds/trees/pine_hit_2.ogg",
+        "sounds/trees/pine_hit_3.ogg"
+      ],
+      "volume_variation_db": 1.5,
+      "pitch_variation": 0.05,
+      "max_distance": 40,
+      "max_instances": 4,
+      "cooldown": 0.05
+    },
+    {
+      "id": "pine_fall",
+      "clips": [
+        "sounds/trees/pine_fall.ogg",
+        "sounds/trees/pine_fall_2.ogg"
+      ],
+      "pitch_variation": 0.04,
+      "max_distance": 80
+    }
+  ]
+}

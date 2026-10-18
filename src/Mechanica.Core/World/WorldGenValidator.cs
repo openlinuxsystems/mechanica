@@ -83,6 +83,33 @@ internal static class WorldGenValidator
                 KnownKeys.WarnUnknown(mesh.Extra, $"{path}.mesh", sink, typeof(MeshDefinition));
                 if (!AssetPath.TryParse(mesh.File, "mod", AssetKind.Mesh, out _, out var error))
                     sink.Error(Code, $"{path}.mesh.file", error);
+                if (mesh.Lod is not null && !AssetPath.TryParse(mesh.Lod, "mod", AssetKind.Mesh, out _, out var lodError))
+                    sink.Error(Code, $"{path}.mesh.lod", lodError);
+                Positive(mesh.LodDistance, $"{path}.mesh.lod_distance", sink);
+            }
+            if (o.Fell is { } fell)
+            {
+                KnownKeys.WarnUnknown(fell.Extra, $"{path}.fell", sink, typeof(FellDefinition));
+                Positive(fell.Height, $"{path}.fell.height", sink);
+                NonNegative(fell.Spin, $"{path}.fell.spin", sink);
+                if (o.BreaksInto is null)
+                    sink.Warning(Code, $"{path}.fell", "nothing falls: the object has no breaks_into.");
+            }
+            foreach (var (key, sound) in o.Sounds ?? [])
+            {
+                if (!ObjectSounds.All.Contains(key))
+                    sink.Error(Code, $"{path}.sounds.{key}", $"'{key}' is not an object sound ({string.Join(", ", ObjectSounds.All)}).");
+                if (!PartValidator.IsItemRef(sound))
+                    sink.Error(Code, $"{path}.sounds.{key}", "a sound must be an event id or 'mod_id:event_id'.");
+            }
+            if (o.Debris is { } debris)
+            {
+                KnownKeys.WarnUnknown(debris.Extra, $"{path}.debris", sink, typeof(DebrisDefinition));
+                for (var c = 0; c < (debris.Chips?.Count ?? 0); c++)
+                    Color(debris.Chips![c], $"{path}.debris.chips[{c}]", sink);
+                for (var c = 0; c < (debris.Leaves?.Count ?? 0); c++)
+                    Color(debris.Leaves![c], $"{path}.debris.leaves[{c}]", sink);
+                NonNegative(debris.CanopyRadius, $"{path}.debris.canopy_radius", sink);
             }
             if (o.MaxSlope is { } maxSlope && !(maxSlope >= 0 && float.IsFinite(maxSlope)))
                 sink.Error(Code, $"{path}.max_slope", "max_slope must be 0 or more.");
@@ -344,6 +371,8 @@ internal static class WorldGenValidator
         KnownKeys.WarnUnknown(breaks.Extra, path, sink, typeof(BreakDefinition));
         if (breaks.Count is < 1 or > BreakDefinition.MaxCount)
             sink.Error(code, $"{path}.count", $"count must be 1 to {BreakDefinition.MaxCount} (got {breaks.Count}).");
+        if (breaks.CountMax is { } most && (most < breaks.Count || most > BreakDefinition.MaxCount))
+            sink.Error(code, $"{path}.count_max", $"count_max must be count ({breaks.Count}) to {BreakDefinition.MaxCount} (got {most}).");
         if (breaks.Parts is not { Count: > 0 })
             sink.Error(code, $"{path}.parts", "parts needs at least one part.");
         for (var p = 0; p < (breaks.Parts?.Count ?? 0); p++)

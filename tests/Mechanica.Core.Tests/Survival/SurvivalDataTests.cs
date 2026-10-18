@@ -122,8 +122,43 @@ public class SurvivalDataTests
     {
         var data = WorldGenData.Load(ModLoader.LoadAll(Path.Combine(TestMods.RepoRoot, "mods")));
         Assert.DoesNotContain(data.Diagnostics, d => d.Severity == DiagnosticSeverity.Error);
-        Assert.Contains(data.Objects["tree"].Drops!, d => d.Item == "scrap_wood");
         Assert.Contains(data.Objects["rock_node"].Drops!, d => d.Item == "scrap_metal");
+    }
+
+    [Theory]
+    // Tree Harvesting spec §4.3: log segments and Wood Rods per tree, each rod 20 Scrap Wood Blocks.
+    [InlineData("birch_tree", "birch_log", 2, 3, 3, 6)]
+    [InlineData("leafy_tree", "wood_log", 4, 6, 8, 12)]
+    [InlineData("spruce_tree", "wood_log", 4, 6, 8, 12)]
+    [InlineData("pine_tree", "pine_log", 8, 12, 16, 24)]
+    public void VanillaTreesFellIntoLogsThatBreakIntoWoodRods(string tree, string log, int fewestLogs, int mostLogs, int fewestRods, int mostRods)
+    {
+        var mods = ModLoader.LoadAll(Path.Combine(TestMods.RepoRoot, "mods"));
+        var data = WorldGenData.Load(mods);
+        Assert.DoesNotContain(data.Diagnostics, d => d.Severity == DiagnosticSeverity.Error);
+        var o = data.Objects[tree];
+        Assert.NotNull(o.Fell);
+        Assert.False(o.Refine);
+        var breaks = o.BreaksInto!;
+        Assert.Equal(log, Assert.Single(breaks.Parts!).Part);
+        Assert.Equal(fewestLogs, breaks.CountFor(0f));
+        Assert.Equal(mostLogs, breaks.CountFor(0.999f));
+        var logPart = mods.FindDefinition(log)!;
+        Assert.True(logPart.Loose);
+        Assert.Equal("wood_rod", Assert.Single(logPart.BreaksInto!.Parts!).Part);
+        Assert.InRange(fewestLogs * logPart.BreaksInto.CountFor(0f), fewestRods, mostRods);
+        Assert.InRange(mostLogs * logPart.BreaksInto.CountFor(0.999f), fewestRods, mostRods);
+        var rod = mods.FindDefinition("wood_rod")!;
+        Assert.Equal(("vanilla:scrap_wood_block", 20), (Identifiers.Qualify(Assert.Single(rod.Refine!).Item!), rod.Refine![0].Count));
+        // Its own knock and fall, and a model with a far version, all shipped.
+        foreach (var sound in o.Sounds!.Values)
+            Assert.True(File.Exists(Path.Combine(TestMods.RepoRoot, "mods", "vanilla", "sounds", "trees", sound + ".ogg")), sound);
+        Assert.True(File.Exists(data.MeshFileOf(o)), tree);
+        Assert.True(File.Exists(data.LodFileOf(o)), tree);
+        // Only a spinning saw cuts a standing Pine; the others take the Sledgehammer too.
+        Assert.True(o.TakesDamageFrom(DamageKinds.Saw));
+        Assert.Equal(tree != "pine_tree", o.TakesDamageFrom(DamageKinds.Sledge));
+        Assert.False(o.TakesDamageFrom(DamageKinds.Drill));
     }
 
     [Fact]

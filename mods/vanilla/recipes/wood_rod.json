@@ -1,0 +1,19 @@
+{
+  "id": "wood_rod",
+  "stations": [
+    "refiner"
+  ],
+  "inputs": [
+    {
+      "item": "wood_rod",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "scrap_wood_block",
+      "count": 20
+    }
+  ],
+  "time": 5
+}

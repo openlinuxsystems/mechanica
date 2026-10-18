@@ -439,6 +439,9 @@ public sealed record BreakSettings
     /// <summary>Upward speed each piece starts with, m/s.</summary>
     public float LiftSpeed { get; init; } = 1.5f;
 
+    /// <summary>Metres left between a felled tree's log segments stacked up its trunk, and under the lowest.</summary>
+    public float FellGap { get; init; } = 0.05f;
+
     /// <summary>Throws <see cref="FormatException"/> naming the first out-of-range value.</summary>
     public void Validate()
     {
@@ -446,5 +449,7 @@ public sealed record BreakSettings
             throw new FormatException($"breaking.spread_speed must be 0 to 20 (got {SpreadSpeed}).");
         if (!float.IsFinite(LiftSpeed) || LiftSpeed is < 0f or > 20f)
             throw new FormatException($"breaking.lift_speed must be 0 to 20 (got {LiftSpeed}).");
+        if (!float.IsFinite(FellGap) || FellGap is < 0f or > 1f)
+            throw new FormatException($"breaking.fell_gap must be 0 to 1 (got {FellGap}).");
     }
 }

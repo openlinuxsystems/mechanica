@@ -56,10 +56,12 @@
     "max_parts_per_action": 256,
     "drag_flush_seconds": 0.1
   },
-  // Loose parts a rock cube or chunk falls apart into (chunks, rods) are thrown out this fast (m/s), so they tumble apart.
+  // Loose parts a rock cube or chunk falls apart into (chunks, rods) are thrown out this fast (m/s), so they tumble apart;
+  // a felled tree's log segments are stacked up its trunk fell_gap metres apart.
   "breaking": {
     "spread_speed": 1.5,
-    "lift_speed": 1.5
+    "lift_speed": 1.5,
+    "fell_gap": 0.05
   },
   "sledge": {
     // Chase's sledgehammer spec: one swing a second, the hit landing at the click (2026-10-18; was 0.6 s after it), 3 m

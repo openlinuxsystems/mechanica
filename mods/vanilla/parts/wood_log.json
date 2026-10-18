@@ -1,0 +1,39 @@
+{
+  "id": "wood_log",
+  "name": "Log",
+  "description": "A length of a felled Leafy or Spruce trunk. Break it with the Sledgehammer or a spinning Saw Blade for its Wood Rods.",
+  "category": "resource",
+  "mass": 60,
+  "durability": 8,
+  "friction": 0.7,
+  "buoyancy": 0.6,
+  "flammable": true,
+  "stack_size": 4,
+  "sound_material": "wood",
+  "size": [2, 2, 6],
+  "mesh": "meshes/items/wood_log.glb",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.9,
+    "metallic": 0
+  },
+  "collision": {
+    "shape": "convex",
+    "mesh": "meshes/items/wood_log.glb"
+  },
+  "sounds": {
+    "pickup": "pickup_wood",
+    "drop": "drop_wood"
+  },
+  "loose": true,
+  "breaks_into": {
+    "count": 2,
+    "parts": [
+      {
+        "part": "wood_rod",
+        "weight": 1
+      }
+    ]
+  },
+  "sledge_damage": 25
+}

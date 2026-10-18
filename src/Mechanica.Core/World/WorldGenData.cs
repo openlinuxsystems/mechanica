@@ -103,6 +103,10 @@ public sealed class WorldGenData
     public string? MeshFileOf(WorldObjectDefinition definition) =>
         definition.Mesh?.File is { } file ? _assetFile?.Invoke(file, AssetKind.Mesh) : null;
 
+    /// <summary>Full path of the far model a world object is drawn with past its LOD distance (<see cref="MeshDefinition.Lod"/>), or null.</summary>
+    public string? LodFileOf(WorldObjectDefinition definition) =>
+        definition.Mesh?.Lod is { } file ? _assetFile?.Invoke(file, AssetKind.Mesh) : null;
+
     /// <summary>Ground textures, in layer order.</summary>
     public IReadOnlyList<Ground> Grounds { get; }
 

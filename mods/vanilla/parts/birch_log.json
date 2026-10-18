@@ -1,0 +1,39 @@
+{
+  "id": "birch_log",
+  "name": "Birch Log",
+  "description": "A length of a felled Birch, white with black marks. Break it with the Sledgehammer or a spinning Saw Blade for its Wood Rods.",
+  "category": "resource",
+  "mass": 20,
+  "durability": 5,
+  "friction": 0.7,
+  "buoyancy": 0.6,
+  "flammable": true,
+  "stack_size": 4,
+  "sound_material": "wood",
+  "size": [1, 1, 6],
+  "mesh": "meshes/items/birch_log.glb",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.9,
+    "metallic": 0
+  },
+  "collision": {
+    "shape": "convex",
+    "mesh": "meshes/items/birch_log.glb"
+  },
+  "sounds": {
+    "pickup": "pickup_wood",
+    "drop": "drop_wood"
+  },
+  "loose": true,
+  "breaks_into": {
+    "count": 2,
+    "parts": [
+      {
+        "part": "wood_rod",
+        "weight": 1
+      }
+    ]
+  },
+  "sledge_damage": 25
+}

@@ -227,12 +227,74 @@ public sealed record WorldObjectDefinition
     /// <summary>Steepest ground (rise over run) this object stands on, below the terrain's <c>max_scatter_slope</c>. Omitted: that.</summary>
     public float? MaxSlope { get; init; }
 
+    /// <summary>
+    /// Makes the object fall like a tree when its health runs out: its <see cref="BreaksInto"/> pieces (log segments) are
+    /// stacked up the trunk instead of thrown apart, and tip over together away from the blow that felled it.
+    /// </summary>
+    public FellDefinition? Fell { get; init; }
+
+    /// <summary>
+    /// Sound events the object makes itself (<c>hit</c> when damage reaches it, <c>break</c> when it breaks or falls),
+    /// instead of the tool's own (the Sledgehammer's <c>smash_hit</c>, a cracking rock's <c>drill_break</c>).
+    /// </summary>
+    public Dictionary<string, string>? Sounds { get; init; }
+
+    /// <summary>What flies off the object when it is hit and when it breaks: wood chips, falling leaves.</summary>
+    public DebrisDefinition? Debris { get; init; }
+
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
 
     /// <summary>True when damage of <paramref name="kind"/> (<see cref="DamageKinds"/>) can hurt the object.</summary>
     public bool TakesDamageFrom(string kind) => DamageFrom is null || DamageFrom.Contains(kind);
+}
+
+/// <summary>Sound keys of <see cref="WorldObjectDefinition.Sounds"/>.</summary>
+public static class ObjectSounds
+{
+    /// <summary>Damage reached the object (a sledge blow, a saw's bite).</summary>
+    public const string Hit = "hit";
+
+    /// <summary>The object broke, or a tree started to fall.</summary>
+    public const string Break = "break";
+
+    /// <summary>Every key.</summary>
+    public static readonly IReadOnlyList<string> All = [Hit, Break];
+}
+
+/// <summary>How a felled tree falls (<see cref="WorldObjectDefinition.Fell"/>).</summary>
+public sealed record FellDefinition
+{
+    /// <summary>Height of the trunk in metres (before the object's scale) that the log segments are stacked up.</summary>
+    public float Height { get; init; } = 6f;
+
+    /// <summary>How fast the trunk starts to tip over, in rad/s about its foot.</summary>
+    public float Spin { get; init; } = 0.6f;
+
+    /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>Cosmetic bits a world object throws off (<see cref="WorldObjectDefinition.Debris"/>), drawn by every peer.</summary>
+public sealed record DebrisDefinition
+{
+    /// <summary>Colours (<c>#rrggbb</c>) of the chips that fly from where the object is hit.</summary>
+    public List<string>? Chips { get; init; }
+
+    /// <summary>Colours (<c>#rrggbb</c>) of the leaves that fall from its canopy when it is hit, and in a burst when it breaks.</summary>
+    public List<string>? Leaves { get; init; }
+
+    /// <summary>Middle of the canopy, relative to the ground point (before scale).</summary>
+    public Vec3 Canopy { get; init; }
+
+    /// <summary>Radius of the canopy in metres (before scale) that leaves fall from.</summary>
+    public float CanopyRadius { get; init; } = 2f;
+
+    /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
 }
 
 /// <summary>What deals damage, for <see cref="WorldObjectDefinition.DamageFrom"/>.</summary>
@@ -269,6 +331,15 @@ public sealed record MeshDefinition
     /// <summary>Where the model's origin goes, relative to the object's ground point (before scale).</summary>
     public Vec3 At { get; init; }
 
+    /// <summary>
+    /// A simpler model (mod path) drawn instead past <see cref="LodDistance"/>, and always in far scenery. Omitted: the
+    /// full model at every distance.
+    /// </summary>
+    public string? Lod { get; init; }
+
+    /// <summary>Metres from the camera past which <see cref="Lod"/> is drawn instead of the full model.</summary>
+    public float LodDistance { get; init; } = 60f;
+
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
@@ -294,8 +365,11 @@ public sealed record BreakDefinition
     /// <summary>Most pieces one break may make.</summary>
     public const int MaxCount = 16;
 
-    /// <summary>How many pieces (1 to <see cref="MaxCount"/>).</summary>
+    /// <summary>How many pieces (1 to <see cref="MaxCount"/>); the least when <see cref="CountMax"/> is given.</summary>
     public int Count { get; init; } = 1;
+
+    /// <summary>The most pieces, when the number varies (<see cref="Count"/> to this, evenly). Omitted: always <see cref="Count"/>.</summary>
+    public int? CountMax { get; init; }
 
     /// <summary>What each piece may be: one is picked per piece by <see cref="BreakPiece.Weight"/>.</summary>
     public List<BreakPiece>? Parts { get; init; }
@@ -303,6 +377,14 @@ public sealed record BreakDefinition
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
+
+    /// <summary>How many pieces one break makes, from <paramref name="roll"/> in [0, 1), clamped to 1..<see cref="MaxCount"/>.</summary>
+    public int CountFor(float roll)
+    {
+        var low = Math.Clamp(Count, 1, MaxCount);
+        var high = Math.Clamp(CountMax ?? low, low, MaxCount);
+        return Math.Min(high, low + (int)(Math.Clamp(roll, 0f, 1f) * (high - low + 1)));
+    }
 
     /// <summary>The part a piece is, from <paramref name="roll"/> in [0, 1); null when there are no parts.</summary>
     public string? Pick(float roll)
