@@ -438,6 +438,7 @@
         "stack_size": 20,
         "sound_material": "fabric",
         "size": [4, 1, 4],
+        "ground_only": true,
         "visual": {
           "color": "#5a3f28",
           "roughness": 1,

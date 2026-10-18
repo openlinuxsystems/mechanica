@@ -225,6 +225,23 @@ public class ToolActionsTests
         Assert.Equal(merged.BodyPose(0), merged.BodyPose(1));
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void SoilCannotBeWelded(bool soilMoves)
+    {
+        var soil = Add(Single(Soil, new Vector3(0, 0.125f, 0)));
+        var block = Add(Single(Block, new Vector3(2, 0.125f, 0)));
+
+        var result = soilMoves
+            ? Dispatch(ToolActions.Weld, new { source = soil, target = block, offset = new[] { 0, 1, 0 } })
+            : Dispatch(ToolActions.Weld, new { source = block, target = soil, offset = new[] { 0, 1, 0 } });
+
+        Assert.False(result.Ok);
+        Assert.Contains("stays on the ground", result.Message);
+        Assert.Equal(2, _world.Creations.Count);
+    }
+
     [Fact]
     public void WeldRequestsAreChecked()
     {
