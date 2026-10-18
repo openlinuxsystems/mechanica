@@ -48,6 +48,75 @@ public static class UiPalette
     /// <summary>Success and "running" states.</summary>
     public const string Success = "#4CD07D";
 
+    /// <summary>Behind a full-screen station window, dims the world (UI spec §0); drawn at <see cref="ScrimOpacity"/>.</summary>
+    public const string Scrim = "#0A1220";
+
+    /// <summary>Opacity of <see cref="Scrim"/>.</summary>
+    public const float ScrimOpacity = 0.45f;
+
+    /// <summary>Window headers and inactive tabs (§0 design language).</summary>
+    public const string Chrome = "#1E2F48";
+
+    /// <summary>Buttons and fields on <see cref="Chrome"/>.</summary>
+    public const string Chrome2 = "#263A57";
+
+    /// <summary>The few hairlines left: field edges and chip outlines.</summary>
+    public const string ChromeLine = "#34507A";
+
+    /// <summary>The browsing surface: grids, lists and the active tab.</summary>
+    public const string Surface = "#4B9BE6";
+
+    /// <summary>Bands on the surface: the queue strip, drawers and scroll tracks.</summary>
+    public const string SurfaceDeep = "#3A86D2";
+
+    /// <summary>Item and recipe tiles, and hotbar slots.</summary>
+    public const string Tile = "#6CB2EE";
+
+    /// <summary>A hovered tile.</summary>
+    public const string TileHover = "#86C1F4";
+
+    /// <summary>The selected tile and the current hotbar slot (with a white ring).</summary>
+    public const string TileSelected = "#9ACDF7";
+
+    /// <summary>Detail cards, dialogs and tooltips.</summary>
+    public const string Card = "#22344F";
+
+    /// <summary>Panels inside a card: stats, material tiles and fields.</summary>
+    public const string Inset = "#2B4060";
+
+    /// <summary>Text and numbers on <see cref="Surface"/> and <see cref="Tile"/> (white never sits on them).</summary>
+    public const string Ink = "#0E2340";
+
+    /// <summary>Secondary text on <see cref="Chrome"/> and <see cref="Card"/>.</summary>
+    public const string TextMuted = "#B7C7DC";
+
+    /// <summary>Primary buttons, progress, focus, filled pips and the level pill.</summary>
+    public const string Accent = "#38C8FF";
+
+    /// <summary>Text on <see cref="Accent"/>.</summary>
+    public const string AccentInk = "#0B1E33";
+
+    /// <summary>Text for "enough" and running states on a card.</summary>
+    public const string SuccessText = "#5EE08A";
+
+    /// <summary>Fill for finished, ready items (the queue strip's ready cell).</summary>
+    public const string SuccessFill = "#7FE0A6";
+
+    /// <summary>Text for short and refused states on a card.</summary>
+    public const string ErrorText = "#FF7A7A";
+
+    /// <summary>Dots and rings for short and refused states.</summary>
+    public const string ErrorMark = "#E5484D";
+
+    /// <summary>Empty stat pips.</summary>
+    public const string PipOff = "#3A5070";
+
+    /// <summary>A disabled primary button's flat fill.</summary>
+    public const string DisabledFill = PipOff;
+
+    /// <summary>A disabled primary button's text.</summary>
+    public const string DisabledText = "#8EA3BF";
+
     /// <summary>Rigid (welded) connections in previews and gizmos: green, like success.</summary>
     public const string JointRigid = Success;
 
@@ -162,6 +231,27 @@ public static class UiPalette
         [nameof(Error)] = Error,
         [nameof(Warning)] = Warning,
         [nameof(Success)] = Success,
+        [nameof(Scrim)] = Scrim,
+        [nameof(Chrome)] = Chrome,
+        [nameof(Chrome2)] = Chrome2,
+        [nameof(ChromeLine)] = ChromeLine,
+        [nameof(Surface)] = Surface,
+        [nameof(SurfaceDeep)] = SurfaceDeep,
+        [nameof(Tile)] = Tile,
+        [nameof(TileHover)] = TileHover,
+        [nameof(TileSelected)] = TileSelected,
+        [nameof(Card)] = Card,
+        [nameof(Inset)] = Inset,
+        [nameof(Ink)] = Ink,
+        [nameof(TextMuted)] = TextMuted,
+        [nameof(Accent)] = Accent,
+        [nameof(AccentInk)] = AccentInk,
+        [nameof(SuccessText)] = SuccessText,
+        [nameof(SuccessFill)] = SuccessFill,
+        [nameof(ErrorText)] = ErrorText,
+        [nameof(ErrorMark)] = ErrorMark,
+        [nameof(PipOff)] = PipOff,
+        [nameof(DisabledText)] = DisabledText,
     };
 
     /// <summary>Every overlay, gizmo and preview colour (mod tools and debug views), for tests and the style guide.</summary>
@@ -226,6 +316,19 @@ public static class UiPalette
         if (hue < 0)
             hue += 360f;
         return hue is >= 10f and <= 50f;
+    }
+
+    /// <summary>The WCAG contrast ratio between two <c>#RRGGBB</c> colours (1 to 21).</summary>
+    public static float Contrast(string a, string b)
+    {
+        static float Luminance(string hex)
+        {
+            var (r, g, bl) = Parse(hex);
+            static float Linear(float c) => c <= 0.03928f ? c / 12.92f : MathF.Pow((c + 0.055f) / 1.055f, 2.4f);
+            return 0.2126f * Linear(r) + 0.7152f * Linear(g) + 0.0722f * Linear(bl);
+        }
+        var (la, lb) = (Luminance(a), Luminance(b));
+        return (MathF.Max(la, lb) + 0.05f) / (MathF.Min(la, lb) + 0.05f);
     }
 
     /// <summary>Clamps a UI scale to the supported range.</summary>
