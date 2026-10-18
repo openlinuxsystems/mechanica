@@ -72,7 +72,8 @@ public partial class VanillaJointsTest : StagedTest
                 .Select(f => Path.GetRelativePath(_scratchMod, f).Replace('\\', '/'))
                 .Where(IsBatchOutput)
                 .Order(StringComparer.Ordinal).ToList();
-            Check(made.Count == 16, $"it writes a part, an editor source, a mesh and a recipe for each ({made.Count} files)");
+            // The bearing's model is a file made elsewhere (tools/bearing_engine), so it gets no generated mesh.
+            Check(made.Count == 15, $"it writes a part, an editor source, a mesh (but the bearing's) and a recipe for each ({made.Count} files)");
             var differing = made.Where(f => !File.Exists(Path.Combine(VanillaDir, f))
                 || !File.ReadAllBytes(Path.Combine(VanillaDir, f)).AsSpan().SequenceEqual(File.ReadAllBytes(Path.Combine(_scratchMod, f)))).ToList();
             Check(differing.Count == 0, $"every file matches mods/vanilla (differing: {string.Join(", ", differing)}); re-run tools/author-vanilla.sh");
