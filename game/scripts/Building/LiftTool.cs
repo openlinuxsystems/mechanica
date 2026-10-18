@@ -125,7 +125,7 @@ public partial class LiftTool : HandTool
             // Looking away from the Lift ends the hold, like letting go.
             if (!AimsAtOwnLift())
                 _removeFrom = null;
-            else if (HammerTool.Now - from >= Build.Settings!.Lift.RemoveHoldSeconds)
+            else if (BuildTool.Now - from >= Build.Settings!.Lift.RemoveHoldSeconds)
             {
                 _removeFrom = null;
                 Remove();
@@ -142,7 +142,7 @@ public partial class LiftTool : HandTool
     {
         if (Own is null || !AimsAtOwnLift())
             return false;
-        _removeFrom = HammerTool.Now;
+        _removeFrom = BuildTool.Now;
         return true;
     }
 
@@ -199,7 +199,7 @@ public partial class LiftTool : HandTool
 
     /// <inheritdoc/>
     public override float? Progress => _removeFrom is { } from
-        ? (float)Math.Clamp((HammerTool.Now - from) / Math.Max(1e-6, Build.Settings!.Lift.RemoveHoldSeconds), 0, 1)
+        ? (float)Math.Clamp((BuildTool.Now - from) / Math.Max(1e-6, Build.Settings!.Lift.RemoveHoldSeconds), 0, 1)
         : null;
 
     /// <summary>
@@ -260,7 +260,7 @@ public partial class LiftTool : HandTool
         Send(ToolActions.PlaceLift, new PlaceLiftArgs(aim.Position, aim.Creation), result =>
         {
             if (ghost is not null && IsInstanceValid(ghost))
-                ghost.Resolve(result, Build.Settings!.Hammer.RollbackSeconds);
+                ghost.Resolve(result, Build.Settings!.Placement.RollbackSeconds);
             done?.Invoke(result);
         });
         return true;

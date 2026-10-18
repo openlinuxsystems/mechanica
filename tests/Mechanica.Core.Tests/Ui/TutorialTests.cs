@@ -12,13 +12,13 @@ public class TutorialTests
     {
         var tutorial = Tutorial.Parse("""
             {"hints": [
-              {"id": "a", "trigger": "tool:hammer", "text": "first"},
-              {"id": "b", "trigger": "tool:hammer", "text": "second"},
+              {"id": "a", "trigger": "tool:build", "text": "first"},
+              {"id": "b", "trigger": "tool:build", "text": "second"},
             ]}
             """);
-        Assert.Equal("a", tutorial.Next("tool:hammer", new HashSet<string>())!.Id);
-        Assert.Equal("b", tutorial.Next("tool:hammer", new HashSet<string> { "a" })!.Id);
-        Assert.Null(tutorial.Next("tool:hammer", new HashSet<string> { "a", "b" }));
+        Assert.Equal("a", tutorial.Next("tool:build", new HashSet<string>())!.Id);
+        Assert.Equal("b", tutorial.Next("tool:build", new HashSet<string> { "a" })!.Id);
+        Assert.Null(tutorial.Next("tool:build", new HashSet<string> { "a", "b" }));
         Assert.Null(tutorial.Next("tool:lift", new HashSet<string>()));
     }
 

@@ -180,6 +180,11 @@ public interface ISurvivalWorld
     /// <summary>Moves a player's feet to <paramref name="feet"/>, at rest.</summary>
     void Teleport(int peer, Vector3 feet);
 
+    /// <summary>Adds <paramref name="velocity"/> (m/s) to a player's own movement once: a knockback.</summary>
+    void Knock(int peer, Vector3 velocity)
+    {
+    }
+
     /// <summary>The first thing a ray hits within <paramref name="range"/> metres, ignoring <paramref name="ignorePlayer"/>; null for nothing.</summary>
     RayHit? Cast(Vector3 from, Vector3 direction, float range, int ignorePlayer);
 

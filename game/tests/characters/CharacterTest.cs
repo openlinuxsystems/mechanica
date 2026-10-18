@@ -139,17 +139,17 @@ public partial class CharacterTest : StagedTest
             return Check(steps.Zip(steps.Skip(1)).All(p => p.First != p.Second), "feet alternate");
         });
 
-        Add("a held hammer shows in the hand and a swing plays on another peer", frame =>
+        Add("a held Weld Tool shows in the hand and a weld plays on another peer", frame =>
         {
             var player = _host.Main.LocalPlayer!;
-            player.HeldProp = CharacterProp.Hammer;
+            player.HeldProp = CharacterProp.WeldTool;
             if (frame == 10)
-                player.Gesture(CharacterGesture.HammerSwing);
+                player.Gesture(CharacterGesture.Weld);
             var model = (CharacterModel)_a.Main.PlayerSync.Players[_host.Peer].Character!;
-            _swung |= model.Animator.Gesture == CharacterRig.GestureClip(CharacterGesture.HammerSwing);
-            if (!_swung || model.PropNode?.Name != "hammer")
+            _swung |= model.Animator.Gesture == CharacterRig.GestureClip(CharacterGesture.Weld);
+            if (!_swung || model.PropNode?.Name != "weld_tool")
                 return false;
-            Check(model.PropNode.GetParent() is BoneAttachment3D { BoneName: "hand_r" }, "the hammer rides the right hand");
+            Check(model.PropNode.GetParent() is BoneAttachment3D { BoneName: "hand_r" }, "the Weld Tool rides the right hand");
             return true;
         });
         Add("putting the tool away empties the hand", _ =>

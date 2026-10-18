@@ -152,12 +152,6 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     /// <summary>A player took damage: peer, health lost, cause (<c>fall</c>, <c>weapon</c>, <c>sledge</c>, ...).</summary>
     public event Action<int, float, string>? Hurt;
 
-    /// <summary>
-    /// What damage of a cause a player takes is multiplied by (a Sledgehammer block, <see cref="Building.ToolActions.DamageScale"/>);
-    /// null takes it all.
-    /// </summary>
-    public Func<int, string, float>? DamageScale { get; set; }
-
     /// <summary>Registers every survival action.</summary>
     public void Register(ActionDispatcher dispatcher)
     {
@@ -264,7 +258,6 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
             return v.Health;
         if (cause == "bot")
             amount *= Rules.BotDamage;
-        amount *= DamageScale?.Invoke(peer, cause) ?? 1f;
         if (amount <= 0)
             return v.Health;
         var lost = Math.Min(v.Health, amount);
@@ -687,6 +680,23 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
 
     /// <inheritdoc/>
     public float StrikeBot(int bot, float damage) => Bots?.DamageBot(bot, damage, "sledge", melee: true) ?? 0f;
+
+    /// <inheritdoc/>
+    public float? SledgeDamageOf(string id) =>
+        WorldObjectId.TryParse(id, out var parsed) ? world.FindObject(parsed)?.Definition.SledgeDamage : null;
+
+    /// <inheritdoc/>
+    public void KnockPlayer(int peer, Vector3 velocity)
+    {
+        if (!IsDead(peer) && _vitals.ContainsKey(peer))
+            world.Knock(peer, velocity);
+    }
+
+    /// <inheritdoc/>
+    public void KnockBot(int bot, Vector3 velocity) => Bots?.Knock(bot, velocity);
+
+    /// <inheritdoc/>
+    public string? CheckBlock(ActionCaller caller) => Mode == GameMode.Creative ? null : "Blocking with the Sledgehammer is only in Creative.";
 
     // ---- Impacts ----
 

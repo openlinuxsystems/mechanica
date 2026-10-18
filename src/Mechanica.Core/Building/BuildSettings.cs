@@ -1,3 +1,4 @@
+using System.Numerics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Mechanica.Core.Data;
@@ -5,7 +6,7 @@ using Mechanica.Core.Data;
 namespace Mechanica.Core.Building;
 
 /// <summary>
-/// Limits for building by hand (Hammer placement and removal), in SI units. The game loads the values
+/// Limits for building by hand (placing and removing parts), in SI units. The game loads the values
 /// from JSON (balance numbers live in data); the defaults here only fill fields the file leaves out.
 /// </summary>
 public sealed record BuildSettings
@@ -36,8 +37,8 @@ public sealed record BuildSettings
     /// </summary>
     public float AnchorMargin { get; init; } = 0.05f;
 
-    /// <summary>The Hammer's timings and drags.</summary>
-    public HammerSettings Hammer { get; init; } = new();
+    /// <summary>Timings and drags for placing and removing parts by hand.</summary>
+    public PlacementSettings Placement { get; init; } = new();
 
     /// <summary>The Connect Tool's nodes, lines, drag and tooltips.</summary>
     public ConnectSettings Connect { get; init; } = new();
@@ -87,7 +88,7 @@ public sealed record BuildSettings
             throw new FormatException($"clearance_scale must be in (0, 1] (got {ClearanceScale}).");
         if (!float.IsFinite(AnchorMargin) || AnchorMargin is <= 0f or > 0.5f)
             throw new FormatException($"anchor_margin must be in (0, 0.5] m (got {AnchorMargin}).");
-        Hammer.Validate();
+        Placement.Validate();
         Connect.Validate();
         Weld.Validate();
         Lift.Validate();
@@ -104,12 +105,12 @@ public sealed record BuildSettings
 }
 
 /// <summary>
-/// The Hammer's timings (UI spec §8, §9): holding the left button still for <see cref="AlignHoldSeconds"/> enters
+/// Timings for placing and removing parts by hand (UI spec §8, §9): holding the left button still for <see cref="AlignHoldSeconds"/> enters
 /// alignment mode, moving for <see cref="DragSeconds"/> while held starts a drag, and holding the right button on a
 /// part removes it after <see cref="RemoveSeconds"/>, or the time its <c>sound_material</c> has in
 /// <see cref="RemoveSecondsByMaterial"/>. A drag covers at most <see cref="DragMaxPerAxis"/> parts along each side.
 /// </summary>
-public sealed record HammerSettings
+public sealed record PlacementSettings
 {
     // One shared default, so settings that keep it compare equal.
     private static readonly IReadOnlyDictionary<string, double> NoMaterials = new Dictionary<string, double>();
@@ -143,17 +144,17 @@ public sealed record HammerSettings
     public void Validate()
     {
         if (!double.IsFinite(AlignHoldSeconds) || AlignHoldSeconds < 0)
-            throw new FormatException($"hammer.align_hold_seconds must be 0 or more (got {AlignHoldSeconds}).");
+            throw new FormatException($"placement.align_hold_seconds must be 0 or more (got {AlignHoldSeconds}).");
         if (!double.IsFinite(DragSeconds) || DragSeconds < 0)
-            throw new FormatException($"hammer.drag_seconds must be 0 or more (got {DragSeconds}).");
+            throw new FormatException($"placement.drag_seconds must be 0 or more (got {DragSeconds}).");
         if (DragMaxPerAxis is < 1 or > 64)
-            throw new FormatException($"hammer.drag_max_per_axis must be 1 to 64 (got {DragMaxPerAxis}).");
+            throw new FormatException($"placement.drag_max_per_axis must be 1 to 64 (got {DragMaxPerAxis}).");
         if (!double.IsFinite(RemoveSeconds) || RemoveSeconds < 0)
-            throw new FormatException($"hammer.remove_seconds must be 0 or more (got {RemoveSeconds}).");
+            throw new FormatException($"placement.remove_seconds must be 0 or more (got {RemoveSeconds}).");
         if (RemoveSecondsByMaterial.FirstOrDefault(p => !double.IsFinite(p.Value) || p.Value < 0) is { Key: { } bad } entry)
-            throw new FormatException($"hammer.remove_seconds_by_material.{bad} must be 0 or more (got {entry.Value}).");
+            throw new FormatException($"placement.remove_seconds_by_material.{bad} must be 0 or more (got {entry.Value}).");
         if (!double.IsFinite(RollbackSeconds) || RollbackSeconds < 0)
-            throw new FormatException($"hammer.rollback_seconds must be 0 or more (got {RollbackSeconds}).");
+            throw new FormatException($"placement.rollback_seconds must be 0 or more (got {RollbackSeconds}).");
     }
 }
 
@@ -328,13 +329,14 @@ public sealed record PaintSettings
 }
 
 /// <summary>
-/// The Sledgehammer. A part's health is its <c>durability</c> times <see cref="HealthPerDurability"/>
-/// (D13); each hit takes <see cref="Damage"/> and pushes the Body, and a part at 0 health breaks off.
-/// A swing takes <see cref="SwingSeconds"/> and lands <see cref="StrikeSeconds"/> after the click, on what is
-/// within <see cref="Reach"/> under the crosshair.
-/// Parts without a durability cannot be broken. Hits on players and world objects take
-/// <see cref="PlayerDamage"/> and <see cref="ObjectDamage"/> instead. Holding right click blocks (UI spec §9):
-/// damage of a <see cref="BlockCauses"/> kind the blocking player takes is multiplied by <see cref="BlockDamageScale"/>.
+/// The Sledgehammer, every player's main tool (Chase's sledgehammer spec). A part's health is its <c>durability</c> times
+/// <see cref="HealthPerDurability"/> (D13); each hit takes <see cref="Damage"/>. A swing takes <see cref="SwingSeconds"/>
+/// and lands <see cref="StrikeSeconds"/> after the click (at it, as shipped), on what is within <see cref="Reach"/> of the head.
+/// Every hit pushes what it lands on along the swing with <see cref="Impulse"/>: a Body by mass × Δv, a player or bot as
+/// a body of <see cref="CharacterMass"/>, never faster than <see cref="MaxKnockbackSpeed"/>. Players and bots take
+/// <see cref="CombatDamage"/>; trees, rocks and other world objects take their own <c>sledge_damage</c>, or
+/// <see cref="ObjectDamage"/> when they have none. Parts without a durability cannot be broken. Holding right click in
+/// Creative raises a block pose that does nothing else.
 /// </summary>
 public sealed record SledgeSettings
 {
@@ -345,22 +347,31 @@ public sealed record SledgeSettings
     public float HealthPerDurability { get; init; } = 10f;
 
     /// <summary>Shortest time between one player's hits, in seconds: one whole swing.</summary>
-    public float SwingSeconds { get; init; } = 0.6f;
+    public float SwingSeconds { get; init; } = 1.0f;
 
-    /// <summary>Seconds from the click to the hit, when the head comes down at the end of the strike.</summary>
-    public float StrikeSeconds { get; init; } = 0.25f;
+    /// <summary>Seconds from the click to the hit (0: the hit lands at the click, and the animation catches up).</summary>
+    public float StrikeSeconds { get; init; }
 
-    /// <summary>How far from the eye a swing reaches, in metres.</summary>
+    /// <summary>How far a swing reaches, in metres.</summary>
     public float Reach { get; init; } = 3.0f;
 
-    /// <summary>Impulse a hit gives the Body it lands on, in N·s, along the swing.</summary>
+    /// <summary>Impulse a hit gives what it lands on, in N·s, along the swing.</summary>
     public float Impulse { get; init; } = 5000f;
 
     /// <summary>
-    /// Fastest a hit sets a Body moving, in m/s: a light Body gets less than <see cref="Impulse"/>, so a hit knocks a
+    /// Fastest a hit sets anything moving, in m/s: a light Body gets less than <see cref="Impulse"/>, so a hit knocks a
     /// heavy Creation about without throwing a single block across the map.
     /// </summary>
     public float MaxKnockbackSpeed { get; init; } = 4.0f;
+
+    /// <summary>The mass a player or bot counts as when a hit knocks it back, in kg.</summary>
+    public float CharacterMass { get; init; } = 80f;
+
+    /// <summary>Upward speed a knocked-back player or bot gets on top of the push, in m/s, so it leaves the ground.</summary>
+    public float KnockbackLift { get; init; } = 2.5f;
+
+    /// <summary>How fast a knocked-back bot slows to its own walk again, in m/s².</summary>
+    public float KnockbackDrag { get; init; } = 8f;
 
     /// <summary>How far the swinging player's camera jolts when a hit lands, in metres (0: no shake).</summary>
     public float ShakeMetres { get; init; } = 0.03f;
@@ -371,20 +382,21 @@ public sealed record SledgeSettings
     /// <summary>The impulse a hit gives a Body of <paramref name="mass"/> kg, in N·s.</summary>
     public float ImpulseFor(float mass) => float.IsFinite(mass) && mass > 0f ? MathF.Min(Impulse, mass * MaxKnockbackSpeed) : 0f;
 
-    /// <summary>Health one hit takes from a player (Survival, chunk 20).</summary>
-    public float PlayerDamage { get; init; } = 15f;
+    /// <summary>The speed a hit along <paramref name="direction"/> gives a player or bot, lift included, in m/s.</summary>
+    public Vector3 KnockbackFor(Vector3 direction)
+    {
+        var flat = new Vector3(direction.X, 0f, direction.Z);
+        if (!(flat.LengthSquared() > 1e-8f) || !float.IsFinite(flat.LengthSquared()))
+            return Vector3.Zero;
+        var speed = ImpulseFor(CharacterMass) / CharacterMass;
+        return Vector3.Normalize(flat) * speed + new Vector3(0f, speed > 0f ? KnockbackLift : 0f, 0f);
+    }
 
-    /// <summary>Health one hit takes from a tree, rock or other world object that can break (chunk 20).</summary>
+    /// <summary>Health one hit takes from a player or bot (combat damage).</summary>
+    public float CombatDamage { get; init; } = 20f;
+
+    /// <summary>Health one hit takes from a tree, rock or other world object that has no <c>sledge_damage</c> of its own.</summary>
     public float ObjectDamage { get; init; } = 10f;
-
-    /// <summary>What damage a blocking player takes is multiplied by, 0 to 1.</summary>
-    public float BlockDamageScale { get; init; } = 0.25f;
-
-    /// <summary>The damage causes a block stops (<c>"sledge"</c> hits, <c>"bot"</c> attacks).</summary>
-    public IReadOnlyList<string> BlockCauses { get; init; } = DefaultBlockCauses;
-
-    // One shared default, so settings that keep it compare equal.
-    private static readonly IReadOnlyList<string> DefaultBlockCauses = ["sledge", "bot"];
 
     /// <summary>Full health of a part with <paramref name="durability"/>, or null when it cannot break.</summary>
     public float? HealthOf(int? durability) => durability is > 0 ? durability.Value * HealthPerDurability : null;
@@ -403,13 +415,15 @@ public sealed record SledgeSettings
             throw new FormatException($"sledge.impulse must be 0 or more (got {Impulse}).");
         if (!float.IsFinite(MaxKnockbackSpeed) || MaxKnockbackSpeed < 0f)
             throw new FormatException($"sledge.max_knockback_speed must be 0 or more (got {MaxKnockbackSpeed}).");
+        BuildSettings.Positive(CharacterMass, "sledge.character_mass");
+        if (!float.IsFinite(KnockbackLift) || KnockbackLift < 0f)
+            throw new FormatException($"sledge.knockback_lift must be 0 or more (got {KnockbackLift}).");
+        BuildSettings.Positive(KnockbackDrag, "sledge.knockback_drag");
         if (!float.IsFinite(ShakeMetres) || ShakeMetres is < 0f or > 0.5f)
             throw new FormatException($"sledge.shake_metres must be 0 to 0.5 (got {ShakeMetres}).");
         BuildSettings.Positive(ShakeSeconds, "sledge.shake_seconds");
-        BuildSettings.Positive(PlayerDamage, "sledge.player_damage");
+        BuildSettings.Positive(CombatDamage, "sledge.combat_damage");
         BuildSettings.Positive(ObjectDamage, "sledge.object_damage");
-        if (!float.IsFinite(BlockDamageScale) || BlockDamageScale is < 0f or > 1f)
-            throw new FormatException($"sledge.block_damage_scale must be 0 to 1 (got {BlockDamageScale}).");
     }
 }
 

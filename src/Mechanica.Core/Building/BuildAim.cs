@@ -5,7 +5,7 @@ using Mechanica.Core.Data;
 namespace Mechanica.Core.Building;
 
 /// <summary>
-/// Grid maths behind the Hammer: which cell and face a ray hit, where a part goes against that face,
+/// Grid maths behind building by hand: which cell and face a ray hit, where a part goes against that face,
 /// and how it is oriented. Positions are metres in a Creation's grid frame unless a name says otherwise.
 /// <para>
 /// Orientation works like Scrap Mechanic: the part's local +Y points out of the face it is placed on

@@ -109,14 +109,15 @@ public partial class SoundTest : StagedTest
             var me = _client.Main.LocalPlayer!.GlobalPosition;
             return LookAt(_client, new Vector3(me.X, 0.02f, me.Z - 2f), frame);
         });
-        Add("the Hammer places a wood plank, heard on both peers", frame =>
+        Add("the client places a wood plank, heard on both peers", frame =>
         {
             if (frame == 0)
             {
                 Clear();
-                Check(Tools.Hammer.Select(Plank), "the Hammer holds the plank");
-                Tools.Hammer.UpdateAim();
-                Check(Tools.Hammer.Place(_results.Add), $"the Hammer sends PlacePart ({Tools.Hammer.Aim})");
+                Check(Tools.Builder.Select(Plank), "the plank is in hand");
+                Tools.Use(Tools.Builder);
+                Tools.Builder.UpdateAim();
+                Check(Tools.Builder.Place(_results.Add), $"placing sends PlacePart ({Tools.Builder.Aim})");
             }
             if (_results.Count == 0 || !Heard(_client, "vanilla:place_wood"))
                 return false;
@@ -126,7 +127,6 @@ public partial class SoundTest : StagedTest
             var at = _heard[_client].First(h => h.Id == "vanilla:place_wood").At;
             var centre = PartCentre(_host, _creation, 1);
             Check(at.DistanceTo(centre) < 0.01f, $"where the plank is ({at} vs {centre})");
-            Check(Heard(_client, "vanilla:hammer_swing") && !Heard(_host, "vanilla:hammer_swing"), "only the client hears its own swing");
             return true;
         });
         Add("the client sees the plank", _ => _client.Main.Creations.NodeOf(_creation) is not null);

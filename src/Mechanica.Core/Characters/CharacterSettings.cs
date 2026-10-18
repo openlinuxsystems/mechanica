@@ -57,6 +57,13 @@ public sealed record CharacterSettings
     /// </summary>
     public Dictionary<string, float> GestureSeconds { get; init; } = [];
 
+    /// <summary>
+    /// Where a gesture starts in its clip, as a fraction of the clip (0 to under 1), by clip name; the part before it
+    /// never plays. The Sledgehammer swing starts on the way down, so the head meets what it hits straight after the
+    /// click (the hit lands at the click, sledge.strike_seconds). <see cref="GestureSeconds"/> is how long the rest takes.
+    /// </summary>
+    public Dictionary<string, float> GestureStart { get; init; } = [];
+
     /// <summary>Time off the ground before a player who didn't jump starts to fall (stepping off a kerb doesn't).</summary>
     public float AirGrace { get; init; } = 0.15f;
 
@@ -147,6 +154,9 @@ public sealed record CharacterSettings
         Positive(GestureFadeOut, "gesture_fade_out");
         foreach (var (clip, seconds) in GestureSeconds)
             Positive(seconds, $"gesture_seconds.{clip}");
+        foreach (var (clip, start) in GestureStart)
+            if (!float.IsFinite(start) || start < 0f || start >= 1f)
+                throw new FormatException($"gesture_start.{clip} must be 0 to under 1 (got {start}).");
         NonNegative(AirGrace, "air_grace");
         Positive(JumpDetectSpeed, "jump_detect_speed");
         NonNegative(LandMinSpeed, "land_min_speed");

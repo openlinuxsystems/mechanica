@@ -84,6 +84,9 @@ public partial class BotSync : Node3D, IBotWorld, IRaidWorld
     /// <summary>Engine limits; null loads <see cref="SettingsPath"/>.</summary>
     public BotSettings? Settings { get; set; }
 
+    /// <summary>How fast a knocked-back bot slows to its own walk, in m/s² (<c>sledge.knockback_drag</c>).</summary>
+    public float KnockbackDrag { get; init; } = new Core.Building.SledgeSettings().KnockbackDrag;
+
     /// <summary>The bot actions, once registered (host).</summary>
     public BotActions? Bots { get; private set; }
 
@@ -240,7 +243,10 @@ public partial class BotSync : Node3D, IBotWorld, IRaidWorld
                 continue;
             }
             body.Fall = body.IsOnFloor() ? 0f : body.Fall - gravity * dt;
-            body.Velocity = new Vector3(bot.Desired.X, body.Fall, bot.Desired.Z);
+            // A Sledgehammer's knockback rides on top of the walk: its lift once, its push slowing away.
+            var knock = bot.TakeKnock(KnockbackDrag, dt);
+            body.Fall += knock.Y;
+            body.Velocity = new Vector3(bot.Desired.X + knock.X, body.Fall, bot.Desired.Z + knock.Z);
             body.Rotation = new Vector3(0, Mathf.DegToRad(bot.Yaw), 0);
             body.MoveAndSlide();
             var feet = body.GlobalPosition;

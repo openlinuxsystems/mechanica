@@ -127,7 +127,7 @@ public class ToolGestureTests
     [Fact]
     public void RemovalTakesTheMaterialsTime()
     {
-        var settings = BuildSettings.FromJson(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "game", "data", "building.json"))).Hammer;
+        var settings = BuildSettings.FromJson(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "game", "data", "building.json"))).Placement;
         Assert.Equal(0.4, settings.RemoveSecondsFor("wood"));
         Assert.Equal(0.7, settings.RemoveSecondsFor("metal"));
         Assert.Equal(0.9, settings.RemoveSecondsFor("concrete"));

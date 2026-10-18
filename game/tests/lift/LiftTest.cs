@@ -57,7 +57,7 @@ public partial class LiftTest : StagedTest
             var deployed = Footprint(meshes.Select(m => m.Transform * m.GetAabb()));
             Check(deployed > Settings.PlatformSize * 1.3f, $"the ghost stands with its outriggers out ({deployed:F2} m across)");
             var models = new Ui.ToolIconModels(_client.Main.Characters.Assets, _client.Main.Assets, Settings);
-            Check(models.For(Core.Items.HotbarTools.Hammer) is null, "a tool with no model draws as its initials");
+            Check(models.For(Core.Items.HotbarTools.Paint) is null, "a tool with no model draws as its initials");
             foreach (var tool in new[] { Core.Items.HotbarTools.Sledge, Core.Items.HotbarTools.Lift })
             {
                 var model = models.For(tool);
@@ -208,7 +208,7 @@ public partial class LiftTest : StagedTest
         }
         foreach (var (direction, stopAt, way) in new[] { (1, 6, "up"), (-1, 2, "down") })
         {
-            Add($"with the Hammer in hand, holding the arrow key on the deck drives the Lift {way} smoothly", frame =>
+            Add($"with another tool in hand, holding the arrow key on the deck drives the Lift {way} smoothly", frame =>
             {
                 var tool = _client.Main.Tools!.Lift;
                 var lift = _client.Main.Build.Lifts[_client.Peer];

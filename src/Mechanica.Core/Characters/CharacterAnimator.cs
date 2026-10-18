@@ -175,7 +175,7 @@ public sealed class CharacterAnimator
     public string? Gesture => _gesture;
 
     /// <summary>How far into its clip <see cref="Gesture"/> is, in the clip's own seconds (it may play faster or slower).</summary>
-    public float GestureTime => _gesture is null ? 0f : _gestureTime * _lengths[_gesture] / GestureLength(_gesture);
+    public float GestureTime => _gesture is null ? 0f : ClipTime(_gesture, _gestureTime);
 
     /// <summary>How much <see cref="Gesture"/> shows over the hold pose, 0 to 1 (it fades in and out).</summary>
     public float GestureWeight { get; private set; }
@@ -415,7 +415,7 @@ public sealed class CharacterAnimator
         foreach (var (clip, weight) in _holds)
             AddTo(_upper, clip, _clock, weight * scale);
         if (_gesture is not null)
-            AddTo(_upper, _gesture, _gestureTime * _lengths[_gesture] / GestureLength(_gesture), gesture);
+            AddTo(_upper, _gesture, ClipTime(_gesture, _gestureTime), gesture);
         UpperWeight = Math.Clamp(held * (1f - gesture) + gesture, 0f, 1f);
         GestureWeight = gesture;
     }
@@ -503,11 +503,22 @@ public sealed class CharacterAnimator
     // variant lasts as long as the clip it stands in for).
     private static bool IsBucket(CharacterProp prop) => prop is CharacterProp.WaterBucket or CharacterProp.WaterBucketFull;
 
-    private float GestureLength(string clip)
+    private float GestureLength(string clip) =>
+        _settings.GestureSeconds.TryGetValue(GestureName(clip), out var seconds) ? seconds : _lengths[clip] * (1f - GestureStart(clip));
+
+    // Where a gesture starts in its clip, as a fraction of it (a first-person version or a variant starts where the clip it
+    // stands in for does).
+    private float GestureStart(string clip) => _settings.GestureStart.GetValueOrDefault(GestureName(clip));
+
+    // How far into its clip a gesture is after playing for time seconds, in the clip's own seconds.
+    private float ClipTime(string clip, float time)
     {
-        var name = CharacterRig.GestureOf(clip.EndsWith(CharacterRig.FirstPersonSuffix, StringComparison.Ordinal) ? clip[..^CharacterRig.FirstPersonSuffix.Length] : clip);
-        return _settings.GestureSeconds.TryGetValue(name, out var seconds) ? seconds : _lengths[clip];
+        var start = GestureStart(clip);
+        return _lengths[clip] * (start + (1f - start) * time / GestureLength(clip));
     }
+
+    private static string GestureName(string clip) =>
+        CharacterRig.GestureOf(clip.EndsWith(CharacterRig.FirstPersonSuffix, StringComparison.Ordinal) ? clip[..^CharacterRig.FirstPersonSuffix.Length] : clip);
 
     private void Add(string clip, float time, float weight) => AddTo(_body, clip, time, weight);
 

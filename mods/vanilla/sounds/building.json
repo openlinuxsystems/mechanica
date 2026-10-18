@@ -25,16 +25,6 @@
       "max_distance": 30
     },
     {
-      "id": "hammer_swing",
-      "clips": [
-        "sounds/building/hammer_swing.ogg",
-        "sounds/building/hammer_swing_2.ogg"
-      ],
-      "volume_variation_db": 2,
-      "pitch_variation": 0.1,
-      "max_distance": 15
-    },
-    {
       "id": "lift_place",
       "clips": [
         "sounds/building/lift_place.ogg"

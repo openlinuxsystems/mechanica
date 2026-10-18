@@ -6,7 +6,7 @@ namespace Mechanica.Core.Ui;
 
 /// <summary>One tutorial tip: shown once, the first time its trigger happens.</summary>
 /// <param name="Id">Stable id, remembered once seen.</param>
-/// <param name="Trigger">What shows it: <c>start</c>, <c>tool:hammer</c>, <c>screen:inventory</c>, ….</param>
+/// <param name="Trigger">What shows it: <c>start</c>, <c>tool:build</c>, <c>screen:inventory</c>, ….</param>
 /// <param name="Text">The tip. <c>{action_id}</c> becomes that action's key, so tips follow the player's bindings.</param>
 public sealed record TutorialHint(string Id, string Trigger, string Text);
 

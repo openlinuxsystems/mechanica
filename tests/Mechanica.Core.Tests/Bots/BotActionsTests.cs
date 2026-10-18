@@ -170,9 +170,20 @@ public sealed class BotActionsTests
         var grunt = _f.Spawn(BotFixture.Grunt, new Vector3(0, 0, 1.5f));
         var tank = _f.Spawn(BotFixture.Tank, new Vector3(1, 0, 2));
         var result = S.Ok<SledgeResult>(Me, ToolActions.Sledge, new SledgeArgs(Bot: grunt));
-        Assert.Equal(45, result.Health);
+        Assert.Equal(40, result.Health);
+        // The hit knocks it back along the swing, with a little lift, and the push slows away.
+        var knock = _f.Bots.Bots[grunt].Knock;
+        Assert.Equal(new SledgeSettings().MaxKnockbackSpeed, new Vector3(knock.X, 0, knock.Z).Length(), 3);
+        var away = _f.Bots.Bots[grunt].Position - S.World.Feet[Me.Peer];
+        Assert.True(knock.Y > 0 && Vector3.Dot(knock with { Y = 0 }, away with { Y = 0 }) > 0, $"up and away ({knock})");
+        Assert.Equal(knock, _f.Bots.Bots[grunt].TakeKnock(8f, 0.25f));
+        Assert.Equal(2f, _f.Bots.Bots[grunt].Knock.Length(), 3);
+        Assert.Equal(0f, _f.Bots.Bots[grunt].Knock.Y);
+        _f.Bots.Bots[grunt].TakeKnock(8f, 1f);
+        Assert.Equal(Vector3.Zero, _f.Bots.Bots[grunt].Knock);
         S.World.Now += 5;
         Assert.Equal(1500, S.Ok<SledgeResult>(Me, ToolActions.Sledge, new SledgeArgs(Bot: tank)).Health);
+        Assert.Equal(Vector3.Zero, _f.Bots.Bots[tank].Knock);
         Assert.Contains("no bot", S.Refused(Me, ToolActions.Sledge, new SledgeArgs(Bot: 99)));
     }
 

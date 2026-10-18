@@ -10,15 +10,15 @@ using Mechanica.Game.World;
 namespace Mechanica.Game.Building;
 
 /// <summary>
-/// The Sledgehammer in the local player's hand. Left click swings (<see cref="SledgeSettings.SwingSeconds"/>, one swing
-/// at a time; holding it keeps swinging): the arms wind up and bring the head down, and
-/// <see cref="SledgeSettings.StrikeSeconds"/> after the click the hit lands on whatever is under the crosshair within
-/// <see cref="SledgeSettings.Reach"/>, the ground included, with a thud and a puff of dust where it lands. The host pushes the Body
-/// it hits and takes health off the part, which breaks off at 0 (<see cref="SledgeSettings"/>); in Survival it also hurts
-/// the player or bot, or chips at the tree or rock, it hits. A hit that lands shakes the camera a little. Holding right
-/// click blocks (UI spec §9): the hammer comes up across the chest, everyone sees it, and while held, hits of the kinds
-/// <see cref="SledgeSettings.BlockCauses"/> names take only <see cref="SledgeSettings.BlockDamageScale"/> of their damage.
-/// Creative has no damage, so there the block is only a pose.
+/// The Sledgehammer in the local player's hand: every player's main tool, always on the hotbar (Chase's sledgehammer
+/// spec). Left click swings (<see cref="SledgeSettings.SwingSeconds"/>, one swing a second; holding it keeps swinging):
+/// <see cref="SledgeSettings.StrikeSeconds"/> after the click (at the click, as shipped) the hit lands on whatever is
+/// under the crosshair within <see cref="SledgeSettings.Reach"/>, the ground included, with a thud and a puff of dust
+/// where it lands. The swing animation skips its wind-up and brings the head down a few frames after the click. The host pushes what it hits along the swing (<see cref="SledgeSettings.Impulse"/>) and
+/// takes health off the part, which breaks off at 0; in Survival it also hurts and knocks back the player or bot
+/// (<see cref="SledgeSettings.CombatDamage"/>), or chips at the tree or rock (its own gathering damage). A hit that lands
+/// shakes the camera a little. In Creative, holding right click raises the hammer across the chest to block (UI spec
+/// §10): everyone sees it, and it does nothing else. Survival has no block.
 /// </summary>
 public partial class SledgeTool : HandTool
 {
@@ -35,6 +35,9 @@ public partial class SledgeTool : HandTool
 
     /// <summary>True while right click is held to block (as this peer asked; the host keeps the real state).</summary>
     public bool Blocking { get; private set; }
+
+    /// <summary>Whether this player may raise the block pose (Creative only); null always may.</summary>
+    public Func<bool>? CanBlock { get; set; }
 
     /// <summary>True from a swing's click until it is over and the next can start.</summary>
     public bool Swinging => Now - _swingStart < Build.Settings!.Sledge.SwingSeconds;
@@ -74,10 +77,10 @@ public partial class SledgeTool : HandTool
             Player.Camera.HOffset = Player.Camera.VOffset = 0;
     }
 
-    /// <summary>Starts (or stops) blocking.</summary>
+    /// <summary>Starts (or stops) blocking. Starting does nothing where blocking is not allowed (Survival).</summary>
     public void Block(bool on, Action<ActionResult>? done = null)
     {
-        if (Blocking == on)
+        if (Blocking == on || (on && CanBlock?.Invoke() == false))
             return;
         Blocking = on;
         Player.HeldGuard = on;
@@ -161,7 +164,9 @@ public partial class SledgeTool : HandTool
         var health = LastResult is { Ok: true, Value: { } value } && value.TryGetProperty("health", out var h) && h.ValueKind == System.Text.Json.JsonValueKind.Number
             ? " " + Loc.T("(part health {0})", $"{h.GetSingle():0}")
             : "";
-        return (Blocking ? Loc.T("Sledgehammer{0}   blocking", health) : Loc.T("Sledgehammer{0}   {1} swing  hold {2} block", health, Key(InputActions.Primary), Key(InputActions.Secondary))) + Status;
+        return (Blocking ? Loc.T("Sledgehammer{0}   blocking", health)
+            : CanBlock?.Invoke() == false ? Loc.T("Sledgehammer{0}   {1} swing", health, Key(InputActions.Primary))
+            : Loc.T("Sledgehammer{0}   {1} swing  hold {2} block", health, Key(InputActions.Primary), Key(InputActions.Secondary))) + Status;
     }
 
     /// <inheritdoc/>
@@ -177,7 +182,7 @@ public partial class SledgeTool : HandTool
         }
         else if (Released(@event, InputActions.Primary))
             HoldingSwing = false;
-        else if (Pressed(@event, InputActions.Secondary))
+        else if (Pressed(@event, InputActions.Secondary) && CanBlock?.Invoke() != false)
             Block(true);
         else if (Released(@event, InputActions.Secondary) && Blocking)
             Block(false);

@@ -44,11 +44,13 @@ public class BuildSettingsTests
         var settings = BuildSettings.FromJson(File.ReadAllText(path));
         Assert.Equal(16, settings.Paint.Palette.Count);
         Assert.Equal(new ConnectSettings(), settings.Connect);
-        // The Sledgehammer: a swing every 0.6 s with the hit 0.25 s in (Chase asked for Scrap Mechanic's pace), 3 m
-        // reach; the shipped file and the defaults agree.
-        Assert.Equal(new SledgeSettings(), settings.Sledge with { BlockCauses = new SledgeSettings().BlockCauses });
-        Assert.Equal(0.6f, settings.Sledge.SwingSeconds);
-        Assert.Equal(0.25f, settings.Sledge.StrikeSeconds);
+        // The Sledgehammer (Chase's sledgehammer spec): a swing a second with the hit at the click, 3 m reach, 20 combat
+        // damage and a 5000 N·s impulse; the shipped file and the defaults agree.
+        Assert.Equal(new SledgeSettings(), settings.Sledge);
+        Assert.Equal(1.0f, settings.Sledge.SwingSeconds);
+        Assert.Equal(0f, settings.Sledge.StrikeSeconds);
+        Assert.Equal(20f, settings.Sledge.CombatDamage);
+        Assert.Equal(5000f, settings.Sledge.Impulse);
         Assert.Equal(3.0f, settings.Sledge.Reach);
         Assert.Equal(50, settings.Lift.MaxBlueprints);
         Assert.True(settings.Lift.RefuseStoredItems);
@@ -73,15 +75,15 @@ public class BuildSettingsTests
     [InlineData("""{"sledge": {"max_knockback_speed": -1}}""", "sledge.max_knockback_speed")]
     [InlineData("""{"sledge": {"shake_metres": 1}}""", "sledge.shake_metres")]
     [InlineData("""{"lift": {"height": 1}}""", "height")]
-    [InlineData("""{"hammer": {"drag_max_per_axis": 0}}""", "hammer.drag_max_per_axis")]
-    [InlineData("""{"hammer": {"remove_seconds_by_material": {"wood": -1}}}""", "remove_seconds_by_material.wood")]
+    [InlineData("""{"placement": {"drag_max_per_axis": 0}}""", "placement.drag_max_per_axis")]
+    [InlineData("""{"placement": {"remove_seconds_by_material": {"wood": -1}}}""", "remove_seconds_by_material.wood")]
     [InlineData("""{"connect": {"node_pixels": 2}}""", "connect.node_pixels")]
     [InlineData("""{"weld": {"seam_seconds": -1}}""", "weld.seam_seconds")]
     [InlineData("""{"lift": {"max_blueprints": 0}}""", "lift.max_blueprints")]
     [InlineData("""{"lift": {"blueprint_max_bytes": 10}}""", "lift.blueprint_max_bytes")]
     [InlineData("""{"lift": {"remove_hold_seconds": -1}}""", "lift.remove_hold_seconds")]
     [InlineData("""{"paint": {"drag_flush_seconds": -1}}""", "paint.drag_flush_seconds")]
-    [InlineData("""{"sledge": {"block_damage_scale": 2}}""", "sledge.block_damage_scale")]
+    [InlineData("""{"sledge": {"character_mass": 0}}""", "sledge.character_mass")]
     [InlineData("""{"connect": {"invalid_alpha": 2}}""", "connect.invalid_alpha")]
     [InlineData("""{"connect": {"snap_metres": 0}}""", "connect.snap_metres")]
     [InlineData("""{"connect": {"flash_seconds": -1}}""", "connect.flash_seconds")]

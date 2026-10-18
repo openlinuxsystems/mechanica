@@ -62,7 +62,7 @@ public partial class TutorialTest : StagedTest
         {
             if (_hints.Showing?.Id is null or "start")
                 return false;
-            Check(_hints.Showing.Id == "hammer", $"the Hammer's tip follows ({_hints.Showing.Id})");
+            Check(_hints.Showing.Id == "sledge", $"the Sledgehammer's tip follows ({_hints.Showing.Id})");
             Check(Seen.Contains("start"), "the start tip is remembered as seen");
             return true;
         });
@@ -72,13 +72,13 @@ public partial class TutorialTest : StagedTest
                 _main.Tools!.Use(_main.Tools.Lift);
             if (!Until(_hints.Showing?.Id == "lift", frame, "the Lift's tip shows"))
                 return false;
-            Check(Seen.Contains("hammer"), "the Hammer's tip is seen");
+            Check(Seen.Contains("sledge"), "the Sledgehammer's tip is seen");
             return true;
         });
         Add("each shows once", frame =>
         {
             if (frame == 0)
-                _main.Tools!.Use(_main.Tools.Hammer);
+                _main.Tools!.Use(_main.Tools.Sledge);
             if (frame < 60)
                 return false;
             Check(_hints.Showing is null, $"no tip comes back ({_hints.Showing?.Id})");

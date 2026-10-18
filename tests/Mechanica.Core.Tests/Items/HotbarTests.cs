@@ -21,8 +21,9 @@ public class HotbarTests
     {
         var bar = Read(Player).Slots;
         Assert.Equal(10, bar.Count);
-        Assert.Equal(HotbarTools.All, bar.Take(6));
-        Assert.All(bar.Skip(6), Assert.Null);
+        Assert.Equal(HotbarTools.All, bar.Take(5));
+        Assert.Equal(HotbarTools.Sledge, bar[0]);
+        Assert.All(bar.Skip(5), Assert.Null);
         Assert.Null(_hotbar.SavedOf(Player.Peer));
     }
 
@@ -38,12 +39,12 @@ public class HotbarTests
     public void SlotsTakeToolsAndItemsAndEmpty()
     {
         Assert.True(_dispatcher.Dispatch(Player, HotbarActions.SetHotbarSlot, new SetHotbarSlotArgs(6, ItemParts.Block)).Ok);
-        Assert.True(_dispatcher.Dispatch(Player, HotbarActions.SetHotbarSlot, new SetHotbarSlotArgs(0, null)).Ok);
-        Assert.True(_dispatcher.Dispatch(Player, HotbarActions.SetHotbarSlot, new SetHotbarSlotArgs(9, "hammer")).Ok);
+        Assert.True(_dispatcher.Dispatch(Player, HotbarActions.SetHotbarSlot, new SetHotbarSlotArgs(1, null)).Ok);
+        Assert.True(_dispatcher.Dispatch(Player, HotbarActions.SetHotbarSlot, new SetHotbarSlotArgs(9, "lift")).Ok);
         var bar = Read(Player).Slots;
         Assert.Equal(ItemParts.Block, bar[6]);
-        Assert.Null(bar[0]);
-        Assert.Equal(HotbarTools.Hammer, bar[9]);
+        Assert.Null(bar[1]);
+        Assert.Equal(HotbarTools.Lift, bar[9]);
         Assert.Equal(bar, _hotbar.SavedOf(Player.Peer));
         // Each player has their own.
         Assert.Equal(HotbarActions.Default, Read(ActionCaller.HostPlayer).Slots);
@@ -60,12 +61,32 @@ public class HotbarTests
     public void OnlyPlayersHaveOne() =>
         Assert.False(_dispatcher.Dispatch(new ActionCaller(2, ActionSource.Bot), HotbarActions.SetHotbarSlot, new SetHotbarSlotArgs(0, null)).Ok);
 
+    [Theory]
+    [InlineData(0, null)]
+    [InlineData(0, "test:block")]
+    [InlineData(0, "lift")]
+    public void TheSledgehammerNeverLeavesTheBar(int slot, string? entry) =>
+        Assert.Equal("The Sledgehammer always stays on the hotbar; move it to another slot instead.",
+            _dispatcher.Dispatch(Player, HotbarActions.SetHotbarSlot, new SetHotbarSlotArgs(slot, entry)).Message);
+
+    [Fact]
+    public void TheSledgehammerMovesByCopyingItFirst()
+    {
+        // A swap as the hotbar does it: the Sledgehammer goes in its new slot first, then the old slot takes the other entry.
+        Assert.True(_dispatcher.Dispatch(Player, HotbarActions.SetHotbarSlot, new SetHotbarSlotArgs(7, "sledgehammer")).Ok);
+        Assert.True(_dispatcher.Dispatch(Player, HotbarActions.SetHotbarSlot, new SetHotbarSlotArgs(0, null)).Ok);
+        var bar = Read(Player).Slots;
+        Assert.Null(bar[0]);
+        Assert.Equal(HotbarTools.Sledge, bar[7]);
+        Assert.False(_dispatcher.Dispatch(Player, HotbarActions.SetHotbarSlot, new SetHotbarSlotArgs(7, null)).Ok);
+    }
+
     [Fact]
     public void RestoringDropsWhatThisWorldNoLongerHas()
     {
-        _hotbar.Restore(Player.Peer, ["test:block", "gone:item", null, "lift"]);
+        _hotbar.Restore(Player.Peer, ["test:block", "gone:item", null, "lift", "sledgehammer"]);
         var bar = _hotbar.SlotsOf(Player.Peer);
-        Assert.Equal(["test:block", null, null, HotbarTools.Lift, null, null, null, null, null, null], bar);
+        Assert.Equal(["test:block", null, null, HotbarTools.Lift, HotbarTools.Sledge, null, null, null, null, null], bar);
         _hotbar.Restore(Player.Peer, null);
         Assert.Equal(HotbarActions.Default, _hotbar.SlotsOf(Player.Peer));
     }
@@ -83,6 +104,20 @@ public class HotbarTests
         Assert.True(InventoryTabs.Shows(tab, category));
         Assert.True(InventoryTabs.Shows(InventoryTab.All, category));
         Assert.False(InventoryTabs.Shows(tab == InventoryTab.Blocks ? InventoryTab.Tools : InventoryTab.Blocks, category));
+    }
+
+    [Fact]
+    public void AnOldSavesHammerComesBackAsTheSledgehammer()
+    {
+        // Worlds saved before the Hammer was taken out still name it; the slot empties and the Sledgehammer, missing from
+        // that bar, takes the first empty slot.
+        _hotbar.Restore(Player.Peer, ["vanilla:hammer", "lift", "weld_tool", "paint_tool", "test:block", "connect_tool"]);
+        Assert.Equal([HotbarTools.Sledge, HotbarTools.Lift, HotbarTools.Weld, HotbarTools.Paint, "test:block", HotbarTools.Connect, null, null, null, null],
+            _hotbar.SlotsOf(Player.Peer));
+        // A full bar without it gives up its first slot.
+        _hotbar.Restore(Player.Peer, Enumerable.Repeat<string?>("test:block", 10).ToList());
+        Assert.Equal(HotbarTools.Sledge, _hotbar.SlotsOf(Player.Peer)[0]);
+        Assert.Single(_hotbar.SlotsOf(Player.Peer), e => e == HotbarTools.Sledge);
     }
 
     [Fact]
