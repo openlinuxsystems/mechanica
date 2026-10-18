@@ -462,6 +462,19 @@ public partial class ToolsTest : StagedTest
             return true;
         });
         Add("drag to the top of the bar", frame => LookAt(_client, PartCentre(_client, _bar, 1) + new Vector3(0, 0.125f, 0), frame));
+        Add("a block built on the ground stays put, so the weld shows red until it is knocked loose", frame =>
+        {
+            if (frame == 0)
+            {
+                Tools.Weld.UpdateAim();
+                Check(_client.Main.Creations.Find(_lone)!.IsGrounded && Tools.Weld.Problem is { } why && why.Contains("built on the ground", StringComparison.Ordinal)
+                    && !Tools.Weld.CanWeld && Tools.Weld.Plane.MaterialOverride == WeldTool.InvalidPlaneMaterial,
+                    $"the lone block was built on the ground, so welding it onto the bar is red ({Tools.Weld.Problem})");
+                _host.Main.Creations.Find(_lone)!.ClearAnchors();
+                _host.Main.Build.Moved(_host.Main.Creations.Find(_lone)!);
+            }
+            return !_client.Main.Creations.Find(_lone)!.IsGrounded && Tools.Weld.Dragging;
+        });
         Add("letting go there welds the block on top", frame =>
         {
             if (frame == 0)
@@ -470,6 +483,20 @@ public partial class ToolsTest : StagedTest
                 Tools.Weld.UpdateAim();
                 Check(Tools.Weld.Aim is { } aim && aim.Creation.Id == _bar, $"it aims at the bar ({Tools.Weld.Aim})");
                 Check(Tools.Weld.Plane.Visible && Tools.Weld.Joining is { Faces.Count: > 0 }, "a blue square marks the weld plane");
+                Check(Tools.Weld.CanWeld && Tools.Weld.Problem is null && Tools.Weld.Plane.MaterialOverride == WeldTool.PlaneMaterial,
+                    $"the weld would be taken: the square is blue ({Tools.Weld.Problem})");
+                Check(Tools.Weld.GetNode<Node3D>("Preview").GetChildren().OfType<GeometryInstance3D>().All(m => m.MaterialOverride == WeldTool.ValidMaterial),
+                    "and the moved block's copy is green");
+                Check(_client.Main.LocalPlayer!.HeldGuard, "the tool is held up while a part is selected");
+                // A weld the host would refuse shows red: here, without a Weld Tool to carry.
+                var owned = Tools.Weld.Owned;
+                Tools.Weld.Owned = () => false;
+                Tools.Weld.UpdateAim();
+                Check(Tools.Weld.Problem is not null && !Tools.Weld.CanWeld && Tools.Weld.Plane.MaterialOverride == WeldTool.InvalidPlaneMaterial
+                    && Tools.Weld.GetNode<Node3D>("Preview").GetChildren().OfType<GeometryInstance3D>().All(m => m.MaterialOverride == BuildTool.InvalidMaterial),
+                    $"a weld that would be refused turns the square and the copy red ({Tools.Weld.Problem})");
+                Tools.Weld.Owned = owned;
+                Tools.Weld.UpdateAim();
                 Check(Tools.Weld.Release(_results.Add), "letting go sends Weld");
             }
             if (_results.Count == 0 || !SameEverywhere())
@@ -485,6 +512,7 @@ public partial class ToolsTest : StagedTest
             return true;
         });
         Wait("the bar settles", 30);
+        Add("with nothing selected the tool is lowered", _ => !_client.Main.LocalPlayer!.HeldGuard);
     }
 
     private void AddSledge()

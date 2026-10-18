@@ -32,6 +32,7 @@ public partial class MiningTest : StagedTest
     private string _block = "";
     private int _swings;
     private int _refines;
+    private int _misses;
     private List<Vector3> _rest = [];
     private double _lastSwing = double.NegativeInfinity;
 
@@ -147,11 +148,8 @@ public partial class MiningTest : StagedTest
             if (frame % 60 == 0)
             {
                 _rod = rod.Id;
-                var angle = attempt % 8 * Mathf.Pi / 4f;
-                var spot = Centre(_host, rod) + new Vector3(Mathf.Cos(angle) * 1.6f, 0, Mathf.Sin(angle) * 1.6f);
-                if (!BareGround(_host, spot, out var ground))
+                if (!StandBeside(rod, attempt))
                     return false;
-                _host.Main.PlayerSync.HostTeleport(Peer, ground + new Vector3(0, 0.2f, 0));
             }
             if (frame % 60 >= 30 && _client.Main.Creations.Find(_rod) is { } seen)
                 LookAt(_client, Centre(_client, seen));
@@ -167,6 +165,8 @@ public partial class MiningTest : StagedTest
         {
             // Use is held from the first frame. A refine the HUD let go of early (the player nudged off by a late
             // snapshot) is started again, as a player would by pressing Use again.
+            // A nudge can also leave the player where the crosshair no longer finds the rod; after a second of that, step
+            // to the next spot round it, as the stage before does.
             _holding = true;
             if (frame % 30 == 0 && _hud.RefiningTarget is null && Count(_block) < 20 && _client.Main.Creations.Find(_rod) is { } target)
             {
@@ -176,10 +176,15 @@ public partial class MiningTest : StagedTest
                     _rod = aimed.Node.Creation.Id;
                     _block = Identifiers.Qualify(aimed.Node.Creation.DefinitionOf(aimed.Part)!.Refine![0].Item!, "vanilla");
                     _refines++;
+                    _misses = 0;
                 }
+                else if (++_misses % 2 == 0 && _host.Main.Creations.Find(_rod) is { } rod)
+                    StandBeside(rod, _misses / 2);
             }
             if (Count(_block) < 20 || _client.Main.Creations.Find(_rod) is not null || _host.Main.Creations.Find(_rod) is not null)
-                return frame > 2400 && Fail($"the rod was never refined ({Count(_block)} {_block}, {_refines} refines started)");
+                return frame > 2400 && Fail($"the rod was never refined ({Count(_block)} {_block}, {_refines} refines started; refining {_hud.RefiningTarget}, "
+                    + $"rod on host {_host.Main.Creations.Find(_rod) is not null}, on client {_client.Main.Creations.Find(_rod) is not null}, settled {Settled()}, "
+                    + $"aimed {_hud.AimedRefinable()?.Node.Creation.Id}, feet {Feet(_client)})");
             Check(Count(_block) == 20, $"20 {_block} ({Count(_block)})");
             _holding = false;
             return true;
@@ -226,6 +231,17 @@ public partial class MiningTest : StagedTest
         who.Main.Creations.NodeOf(creation.Id)?.PartNode(creation.Parts.First().Id)?.GlobalPosition ?? Vector3.Zero;
 
     // Whether nothing but the ground itself is under a spot (no rod, chunk or cube to stand on), and where the ground is.
+    // Teleports the client to the attempt'th of eight spots round the rod, on bare ground (not on a rod or a cube).
+    private bool StandBeside(Core.Creations.Creation rod, int attempt)
+    {
+        var angle = attempt % 8 * Mathf.Pi / 4f;
+        var spot = Centre(_host, rod) + new Vector3(Mathf.Cos(angle) * 1.6f, 0, Mathf.Sin(angle) * 1.6f);
+        if (!BareGround(_host, spot, out var ground))
+            return false;
+        _host.Main.PlayerSync.HostTeleport(Peer, ground + new Vector3(0, 0.2f, 0));
+        return true;
+    }
+
     private static bool BareGround(Instance who, Vector3 spot, out Vector3 ground)
     {
         var height = who.Main.Streamer.Generator.HeightAt(spot.X, spot.Z);

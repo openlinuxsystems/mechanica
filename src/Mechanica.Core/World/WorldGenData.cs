@@ -8,7 +8,29 @@ using Mechanica.Core.Data;
 namespace Mechanica.Core.World;
 
 /// <summary>A biome ready for generation, with its index in <see cref="WorldGenData.Biomes"/>.</summary>
-public sealed record Biome(int Index, string Id, string Name, float Weight, float Height, float Relief, Vector3 Color);
+public sealed record Biome(int Index, string Id, string Name, float Weight, float Height, float Relief, Vector3 Color)
+{
+    /// <summary>Share of the relief that is ridged noise (<see cref="BiomeDefinition.Ridge"/>).</summary>
+    public float Ridge { get; init; }
+
+    /// <summary>Height of the terrace steps, or 0 (<see cref="BiomeDefinition.Terrace"/>).</summary>
+    public float Terrace { get; init; }
+}
+
+/// <summary>A site (<see cref="SiteDefinition"/>) ready for placement, with its prefab or pool resolved.</summary>
+/// <param name="Index">Place in <see cref="WorldGenData.Sites"/>.</param>
+/// <param name="Definition">The data.</param>
+/// <param name="Poi">The prefab placed here, or null when it comes from <see cref="Pool"/>.</param>
+/// <param name="Pool">The pool the prefab is drawn from, or null.</param>
+/// <param name="Biome">Index of the biome the site is meant to stand in, or -1.</param>
+public sealed record LoadedSite(int Index, SiteDefinition Definition, LoadedPoi? Poi, LoadedPool? Pool, int Biome)
+{
+    /// <summary>The site's id.</summary>
+    public string Id => Definition.Id!;
+}
+
+/// <summary>A pool (<see cref="PoolDefinition"/>) ready for drawing: one prefab per site that uses it, in data order.</summary>
+public sealed record LoadedPool(string Id, IReadOnlyList<LoadedPoi> Entries);
 
 /// <summary>A scatter rule ready for generation. <see cref="Index"/> is its place among every biome's rules, and part of each object's id.</summary>
 public sealed record Scatter(int Index, int Biome, WorldObjectDefinition Object, float Spacing, float Chance);
@@ -58,7 +80,7 @@ public sealed class WorldGenData
     public const string PoiFolder = "pois";
 
     private WorldGenData(WorldGenDefinition definition, IReadOnlyList<LoadedPoi> pois, IReadOnlyList<DataDiagnostic> diagnostics, string fingerprint,
-        Func<string, AssetKind, string?>? assetFile = null)
+        Func<string, AssetKind, string?>? assetFile = null, IReadOnlyList<LoadedSite>? sites = null)
     {
         _assetFile = assetFile;
         Definition = definition;
@@ -66,7 +88,11 @@ public sealed class WorldGenData
         Pois = pois;
         Diagnostics = diagnostics;
         Fingerprint = fingerprint;
-        Biomes = [.. (definition.Biomes ?? []).Select((b, i) => new Biome(i, b.Id!, b.Name ?? b.Id!, b.Weight, b.Height, b.Relief, ParseColor(b.Color)))];
+        Biomes = [.. (definition.Biomes ?? []).Select((b, i) => new Biome(i, b.Id!, b.Name ?? b.Id!, b.Weight, b.Height, b.Relief, ParseColor(b.Color))
+        {
+            Ridge = b.Ridge,
+            Terrace = b.Terrace,
+        })];
         Objects = (definition.Objects ?? []).ToDictionary(o => o.Id!);
         var scatter = new List<Scatter>();
         foreach (var biome in definition.Biomes ?? [])
@@ -92,7 +118,19 @@ public sealed class WorldGenData
             g.FloraTint is { } tint ? ParseColor(tint) : null))];
         BiomeGrounds = [.. (definition.Biomes ?? []).Select(b => b.Ground is { } id ? GroundIndex(id) : -1)];
         SlopeGround = definition.SlopeGround is { Ground: { } slope } ? GroundIndex(slope) : -1;
+        ShoulderGround = definition.Roads?.ShoulderGround is { } shoulder ? GroundIndex(shoulder) : -1;
+        TrackGround = definition.Roads?.TrackGround is { } track ? GroundIndex(track) : -1;
+        Sites = sites ?? [];
     }
+
+    /// <summary>The ground layer painted on road shoulders, or -1.</summary>
+    public int ShoulderGround { get; }
+
+    /// <summary>The ground layer dirt tracks are painted with, or -1.</summary>
+    public int TrackGround { get; }
+
+    /// <summary>The world's mandatory structures, in file order, with their prefabs or pools resolved.</summary>
+    public IReadOnlyList<LoadedSite> Sites { get; }
 
     private readonly Func<string, AssetKind, string?>? _assetFile;
 
@@ -233,8 +271,49 @@ public sealed class WorldGenData
             AssetPath.TryParse(text, definitionMod, kind, out var path, out _) && folders.TryGetValue(path.ModId, out var folder)
                 ? path.Resolve(folder)
                 : null;
+        var sites = ResolveSites(definition, definitionMod, pois, new DiagnosticSink($"{definitionMod}/{DefinitionFile}", diagnostics));
         return new WorldGenData(definition, [.. pois.OrderBy(p => p.QualifiedId, StringComparer.Ordinal)], diagnostics, ComputeFingerprint(definition, pois),
-            AssetFile);
+            AssetFile, sites);
+    }
+
+    // Sites name prefabs that live in their own files, so they are checked once every POI has loaded. A site whose prefab
+    // is missing (or failed to load) is left out.
+    private static List<LoadedSite> ResolveSites(WorldGenDefinition definition, string definitionMod, IReadOnlyList<LoadedPoi> pois, DiagnosticSink sink)
+    {
+        LoadedPoi? Find(string? id) => id is null ? null : pois.FirstOrDefault(p => p.QualifiedId == (id.Contains(':') ? id : $"{definitionMod}:{id}"));
+        var pools = new Dictionary<string, LoadedPool>();
+        for (var i = 0; i < (definition.Pools?.Count ?? 0); i++)
+        {
+            var pool = definition.Pools![i];
+            var entries = new List<LoadedPoi>();
+            for (var e = 0; e < (pool.Fill?.Count ?? 0); e++)
+            {
+                var entry = pool.Fill![e];
+                if (Find(entry.Poi) is { } poi)
+                    entries.AddRange(Enumerable.Repeat(poi, Math.Max(0, entry.Count)));
+                else
+                    sink.Error(DiagnosticCodes.WorldGenInvalid, $"$.pools[{i}].fill[{e}].poi", $"'{entry.Poi}' is not a POI that loaded.");
+            }
+            pools[pool.Id!] = new LoadedPool(pool.Id!, entries);
+        }
+        var biomeIds = (definition.Biomes ?? []).Select(b => b.Id).ToList();
+        var sites = new List<LoadedSite>();
+        for (var i = 0; i < (definition.Sites?.Count ?? 0); i++)
+        {
+            var site = definition.Sites![i];
+            var biome = site.Biome is { } b ? biomeIds.IndexOf(b) : -1;
+            if (site.Pool is { } poolId)
+            {
+                if (pools.TryGetValue(poolId, out var pool) && pool.Entries.Count == definition.Sites.Count(s => s.Pool == poolId))
+                    sites.Add(new LoadedSite(sites.Count, site, null, pool, biome));
+                continue;
+            }
+            if (Find(site.Poi) is { } poi)
+                sites.Add(new LoadedSite(sites.Count, site, poi, null, biome));
+            else
+                sink.Error(DiagnosticCodes.WorldGenInvalid, $"$.sites[{i}].poi", $"'{site.Poi}' is not a POI that loaded.");
+        }
+        return sites;
     }
 
     /// <summary>Builds data from a definition alone (no POIs), validating it.</summary>

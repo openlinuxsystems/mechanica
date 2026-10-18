@@ -214,7 +214,7 @@ public partial class PlacingTest : StagedTest
         {
             if (frame == 0)
             {
-                var at = Me.GlobalPosition + new Vector3(-0.5f, 0.125f - Me.GlobalPosition.Y, -2.5f);
+                var at = Me.GlobalPosition + new Vector3(-0.5f, 0.125f, -2.5f);
                 var cells = Enumerable.Range(0, 5).Select(x => new Core.Creations.GridCell(x, 0, 0)).ToList();
                 _client.Main.Actions.Request(BuildActions.PlaceParts, new PlacePartsArgs(Block, cells, Position: at.ToNumerics().ToVec3()), _results.Add);
                 return false;

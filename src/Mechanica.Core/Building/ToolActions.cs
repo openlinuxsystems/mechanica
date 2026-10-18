@@ -2,6 +2,7 @@ using System.Numerics;
 using System.Text.Json;
 using Mechanica.Core.Actions;
 using Mechanica.Core.Creations;
+using Mechanica.Core.Items;
 using Mechanica.Core.Data;
 using Mechanica.Core.Sound;
 using Mechanica.Core.World;
@@ -522,6 +523,8 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
 
     private string? ValidateWeld(ActionCaller caller, WeldArgs args)
     {
+        if (Costs?.CheckTool(caller, HotbarTools.Weld) is { } tool)
+            return tool;
         if (args.Source == args.Target)
             return "A creation cannot be welded to itself; weld two of its parts with WeldParts.";
         if (world.FindCreation(args.Source) is not { } source)
@@ -530,6 +533,9 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
             return $"There is no creation {args.Target}.";
         if (source.AuthorityPeer != target.AuthorityPeer)
             return $"Creations {source.Id} and {target.Id} are simulated by different players.";
+        // What is built on the ground stays put: select the loose creation first and weld it to this one.
+        if (source.IsGrounded)
+            return $"Creation {source.Id} is built on the ground and cannot move; select the loose creation first and weld it to this one.";
         if (source.Parts.Count + target.Parts.Count > settings.MaxPartsPerCreation)
             return $"Together they would have more parts than allowed ({settings.MaxPartsPerCreation}).";
         // Ground-only parts (soil) stay flat on the ground, so they never move onto another creation or take one on.
@@ -571,6 +577,8 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
 
     private string? ValidateWeldParts(ActionCaller caller, WeldPartsArgs args)
     {
+        if (Costs?.CheckTool(caller, HotbarTools.Weld) is { } tool)
+            return tool;
         if (world.FindCreation(args.Creation) is not { } creation)
             return $"There is no creation {args.Creation}.";
         if (!creation.CanWeldParts(args.A, args.B, out var error))

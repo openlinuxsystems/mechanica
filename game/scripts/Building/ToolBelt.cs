@@ -125,6 +125,7 @@ public partial class ToolBelt : Node
         // The Sledgehammer's block is a Creative pose only.
         Sledge.CanBlock = () => Survival.Own?.Mode != Core.Survival.GameMode.Survival;
         Connector.Owned = () => Owns(HotbarTools.Connect);
+        Weld.Owned = () => Owns(HotbarTools.Weld);
         Paint.Owned = () => Owns(HotbarTools.Paint);
         // In Survival each stroke takes Paint Ammo, so the counter shows what is carried.
         Paint.AmmoCount = () => Survival.Own?.Mode != Core.Survival.GameMode.Survival || Build.Settings!.Paint.Ammo is not { } ammo ? null

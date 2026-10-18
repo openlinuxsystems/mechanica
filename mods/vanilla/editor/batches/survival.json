@@ -306,6 +306,43 @@
       ]
     },
     {
+      "file": "parts/weld_tool.json",
+      "template": "item",
+      "set": {
+        "name": "Weld Tool",
+        "description": "Welds a loose creation or part onto another so they become one rigid body; weld to a block built on the ground to fix a creation in place. Kept when you die.",
+        "category": "tool",
+        "mass": 0.9,
+        "stack_size": 1,
+        "visual": {
+          "color": "#2e3033"
+        }
+      },
+      "recipes": [
+        {
+          "id": "weld_tool",
+          "stations": ["fabricator"],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 10
+            },
+            {
+              "item": "component_kit",
+              "count": 2
+            }
+          ],
+          "outputs": [
+            {
+              "item": "weld_tool",
+              "count": 1
+            }
+          ],
+          "time": 30
+        }
+      ]
+    },
+    {
       "file": "parts/paint_tool.json",
       "template": "item",
       "set": {

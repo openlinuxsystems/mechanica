@@ -12,7 +12,7 @@ namespace Mechanica.Game.Tools;
 
 /// <summary>
 /// Renders the player character in a running world to PNGs: standing, holding and swinging tools, looking up and down,
-/// crouching, moving, refining (the Refine Tool drawn, worked and put away), the Connect Tool drawn, raised, clicked and put away, the Paint Tool drawn, spraying, taking paint off, reloaded and put away, and in first person with each tool. For checking how a character or skin looks in game; run
+/// crouching, moving, refining (the Refine Tool drawn, worked and put away), the Connect Tool drawn, raised, clicked and put away, the Weld Tool drawn, raised, welding (its arms clamped, sparks) and put away, the Paint Tool drawn, spraying, taking paint off, reloaded and put away, and in first person with each tool. For checking how a character or skin looks in game; run
 /// <c>tools/capture-characters.sh</c>, which uses a virtual display and the compatibility renderer. Given <c>lift</c> instead
 /// of a character it puts the player's Lift down and captures its deploy, a raise and full extension (<c>tools/capture-lift.sh</c>).
 /// Given <c>flora</c> it takes the player to a meadow and captures the grass, ground cover and bushes: wide and close, at every
@@ -26,6 +26,8 @@ namespace Mechanica.Game.Tools;
 /// chunk into rods (<c>tools/capture-rocks.sh</c>).
 /// Given <c>soil</c> it carries a Soil Bag, tips it out, spills a mound and shows a row of mounds dry, lightly watered,
 /// fully wet and drying (<c>tools/capture-soil.sh</c>).
+/// Given <c>knockout_bag</c> it knocks the player out and captures the knockout bag their items drop in from the reference
+/// sheet's views, with its label and next to the respawned player (<c>tools/capture-knockout-bag.sh</c>).
 /// </summary>
 public partial class CaptureScene : Node
 {
@@ -49,7 +51,8 @@ public partial class CaptureScene : Node
         var blocks = args.Length > 1 && args[1] == "blocks";
         var rocks = args.Length > 1 && args[1] == "rocks";
         var soil = args.Length > 1 && args[1] == "soil";
-        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks && !soil ? args[1] : "scrapper_male";
+        var bag = args.Length > 1 && args[1] == "knockout_bag";
+        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks && !soil && !bag ? args[1] : "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
         // Building the block wall needs Creative: free parts and no build reach.
         _main.Options = LaunchOptions.Offline with { Seed = 7, GameMode = blocks || soil ? Core.Survival.GameMode.Creative : LaunchOptions.Offline.GameMode };
@@ -92,12 +95,24 @@ public partial class CaptureScene : Node
             SoilShots();
             return;
         }
+        if (bag)
+        {
+            KnockoutBagShots();
+            return;
+        }
         Shot("front", 60, () => Look(new Vector3(0, 1.0f, -3.2f)));
         Shot("side", 10, () => Look(new Vector3(-3.2f, 1.0f, 0)));
         Shot("sledge", 40, () => { Tool<Building.SledgeTool>(); Look(new Vector3(-1.6f, 1.2f, -2.2f)); });
         Shot("sledge_windup", 21, () => Player.Gesture(CharacterGesture.SledgeSwing));
         Shot("sledge_block", 30, () => Player.HeldGuard = true);
-        Shot("weld", 40, () => { Player.HeldGuard = false; Tool<Building.WeldTool>(); });
+        Shot("weld_draw", 8, () => { Player.HeldGuard = false; Tool<Building.WeldTool>(); Look(new Vector3(-0.85f, 1.45f, -1.25f), 1.15f); });
+        Shot("weld", 40, () => { });
+        Shot("weld_aim", 30, () => Welder.KeepRaised = true);
+        Shot("weld_push", 2, () => Player.Gesture(CharacterGesture.Weld));
+        Shot("weld_clamp", 2, () => { });
+        Shot("weld_sparks", 4, () => _main.WeldEffects.Burst(Player.GlobalPosition + Player.GlobalTransform.Basis * new Vector3(-0.15f, 1.3f, -0.75f)));
+        Shot("weld_side", 20, () => Look(new Vector3(-1.4f, 1.3f, -0.15f), 1.15f));
+        Shot("weld_stow", 7, () => { Welder.KeepRaised = false; Tool<Building.SledgeTool>(); });
         Shot("refine_draw", 8, () => { Player.ActionProp = CharacterProp.RefineTool; Look(new Vector3(-2.2f, 1.2f, -1.8f)); });
         Shot("refine", 40, () => { });
         Shot("refine_bite", 9, () => { });
@@ -134,7 +149,12 @@ public partial class CaptureScene : Node
         Shot("first_person_sledge_windup", 21, () => Player.Gesture(CharacterGesture.SledgeSwing));
         Shot("first_person_sledge_swing", 40, () => Player.Gesture(CharacterGesture.SledgeSwing));
         Shot("first_person_sledge_block", 30, () => Player.HeldGuard = true);
-        Shot("first_person_weld", 30, () => { Player.HeldGuard = false; Tool<Building.WeldTool>(); });
+        Shot("first_person_weld_draw", 8, () => { Player.HeldGuard = false; Input(); Player.MakeCameraCurrent(); Tool<Building.WeldTool>(); });
+        Shot("first_person_weld", 30, () => { });
+        Shot("first_person_weld_aim", 30, () => Welder.KeepRaised = true);
+        Shot("first_person_weld_push", 2, () => Player.Gesture(CharacterGesture.Weld));
+        Shot("first_person_weld_clamp", 2, () => { });
+        Shot("first_person_weld_stow", 7, () => { Welder.KeepRaised = false; Tool<Building.SledgeTool>(); });
         Shot("first_person_bucket_empty", 30, () => { Player.HeldGuard = false; Hold(CharacterProp.WaterBucket); Input(); Player.MakeCameraCurrent(); });
         Shot("first_person_bucket_fill", 22, () => Player.Gesture(CharacterGesture.BucketFill));
         Shot("first_person_bucket_full", 80, () => Hold(CharacterProp.WaterBucketFull));
@@ -162,6 +182,8 @@ public partial class CaptureScene : Node
     private PlayerController Player => _main.LocalPlayer!;
 
     private Building.ConnectTool Connector => _main.Tools!.Connector;
+
+    private Building.WeldTool Welder => _main.Tools!.Weld;
 
     private Building.PaintTool Painter => _main.Tools!.Paint;
 
@@ -531,6 +553,53 @@ public partial class CaptureScene : Node
             _camera.GlobalPosition = feet + new Vector3(-0.2f, 1.0f, -1.7f);
             _camera.LookAt(feet + new Vector3(0f, 0f, -3f));
         });
+    }
+
+    private void KnockoutBagShots()
+    {
+        var spawn = Vector3.Zero;
+        var at = Vector3.Zero;
+        Label3D? label = null;
+        void View(Vector3 offset, float height = 0.2f)
+        {
+            _follow = null;
+            _camera.MakeCurrent();
+            _camera.GlobalPosition = at + offset;
+            _camera.LookAt(at + Vector3.Up * height);
+        }
+        Shot("knockout_bag_00_wait", 60, () => { });
+        Shot("knockout_bag_00_walk", 10, () =>
+        {
+            // Away from the spawn point, so the respawned player stands beside the bag rather than on it.
+            spawn = Player.GlobalPosition;
+            Player.GlobalPosition = Ground(spawn + new Vector3(2.5f, 0f, 0f)) + Vector3.Up * 0.1f;
+        });
+        Shot("knockout_bag_01_knocked_out", 30, () =>
+        {
+            _main.Survival.Actions!.Damage(Player.PeerId, 1000, "capture");
+            Look(new Vector3(-1.6f, 1.4f, -2.2f), 0.4f);
+        });
+        Shot("knockout_bag_02_front", 10, () =>
+        {
+            var drop = _main.Survival.DropNodes.Values.First(d => d.Drop!.KnockedOut);
+            at = drop.GlobalPosition;
+            GD.Print($"[capture] knockout bag at {at}: {drop.Text.Replace('\n', ',')}");
+            label = drop.GetNode<Label3D>("Label");
+            label.Visible = false; // the turnaround shows the bag alone; the label comes back for its own shot
+            View(new Vector3(0f, 0.3f, 1.25f));
+        });
+        Shot("knockout_bag_03_right", 10, () => View(new Vector3(1.25f, 0.3f, 0f)));
+        Shot("knockout_bag_04_left", 10, () => View(new Vector3(-1.25f, 0.3f, 0f)));
+        Shot("knockout_bag_05_back", 10, () => View(new Vector3(0f, 0.3f, -1.25f)));
+        Shot("knockout_bag_06_top", 10, () => View(new Vector3(0f, 1.3f, 0.3f), 0.1f));
+        Shot("knockout_bag_07_three_quarter", 10, () => View(new Vector3(0.85f, 0.7f, 0.95f)));
+        Shot("knockout_bag_08_label", 10, () => { label!.Visible = true; View(new Vector3(0.6f, 1.1f, 2.4f), 0.5f); });
+        Shot("knockout_bag_09_respawned", 30, () =>
+        {
+            _main.Actions.Request(Core.Survival.SurvivalActions.Respawn, new Core.Actions.NoArgs(), r => GD.Print($"[capture] respawn: {r.Ok} {r.Message}"));
+            Player.GlobalPosition = Ground(at + new Vector3(0.9f, 0f, 0.4f)) + Vector3.Up * 0.1f;
+        });
+        Shot("knockout_bag_10_with_player", 20, () => View(new Vector3(-1.2f, 1.3f, 2.8f), 0.6f));
     }
 
     // Frames the loose parts matching a test from the side away from the outcrop's middle.

@@ -254,6 +254,9 @@ public partial class Main : Node3D
     /// <summary>The Connect Tool's lights in every player's hand.</summary>
     public ConnectToolLights ConnectLights { get; private set; } = null!;
 
+    /// <summary>The Weld Tool's arms, tip and glow in every player's hand, and the sparks of every weld.</summary>
+    public WeldEffects WeldEffects { get; private set; } = null!;
+
     /// <summary>Every player's Paint Tool colour, tank and mist.</summary>
     public PaintToolLook PaintLook { get; private set; } = null!;
 
@@ -451,6 +454,7 @@ public partial class Main : Node3D
         SoilLooks = new SoilLooks { Name = "SoilLooks", Creations = Creations, Survival = Survival, Sounds = Sounds, Catalog = Survival.Catalog };
         AddChild(SoilLooks);
         AddChild(ConnectLights = new ConnectToolLights { Name = "ConnectToolLights", Players = PlayerSync });
+        AddChild(WeldEffects = new WeldEffects { Name = "WeldEffects", Players = PlayerSync, Sounds = Sounds });
         Bots = new BotSync
         {
             Name = "Bots",
@@ -534,7 +538,7 @@ public partial class Main : Node3D
         MapMarkers = new MapMarkerSync
         {
             Name = "MapMarkers", Session = Session, Players = PlayerSync, Actions = Actions,
-            Markers = new Core.Ui.MapMarkers(LogbookSettings, Streamer.Settings!.WorldSize),
+            Markers = new Core.Ui.MapMarkers(LogbookSettings, Streamer.Settings!.WorldSize, Streamer.Settings.Depth),
         };
         MapMarkers.RegisterActions(Actions.Dispatcher);
         AddChild(MapMarkers);

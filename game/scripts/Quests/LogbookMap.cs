@@ -88,7 +88,7 @@ public partial class LogbookMap : Control
         var world = World();
         if (world is null || !IsVisibleInTree())
             return;
-        View ??= new MapView(world.WorldSize, Settings.MinMetresPerPixel);
+        View ??= new MapView(world.WorldSize, world.WorldDepth, Settings.MinMetresPerPixel);
         if (!View.Placed && Size.X > 0 && Size.Y > 0)
             View.Fit(Size.ToNumerics());
         if (world != _drawnWorld)
@@ -97,15 +97,16 @@ public partial class LogbookMap : Control
             _drawnWorld = world;
             _base = null;
             _detail = null;
-            var resolution = Settings.MapResolution;
-            var half = world.WorldSize / 2;
-            _baseJob = Task.Run(() => WorldMap.Render(world, new(-half, -half), world.WorldSize / resolution, resolution, resolution, Settings.ContourInterval));
+            // The whole world, its longer side map_resolution pixels.
+            var mpp = BaseMetresPerPixel(world);
+            var (w, h) = (BaseWidth(world), BaseHeight(world));
+            _baseJob = Task.Run(() => WorldMap.Render(world, new(-world.WorldSize / 2, -world.WorldDepth / 2), mpp, w, h, Settings.ContourInterval));
         }
         if (_baseJob is { IsCompleted: true } job)
         {
             _baseJob = null;
             if (job.IsCompletedSuccessfully)
-                _base = Texture(job.Result, Settings.MapResolution, Settings.MapResolution);
+                _base = Texture(job.Result, BaseWidth(_drawnWorld!), BaseHeight(_drawnWorld!));
         }
         _still += delta;
         UpdateDetail(world);
@@ -173,7 +174,7 @@ public partial class LogbookMap : Control
                 if (MarkAt(right.Position) is { Kind: LogbookMarkKind.Own } own)
                     RemoveRequested?.Invoke(own.Waypoint.Id);
                 else if (World() is { } world && View.ToWorld(right.Position.ToNumerics(), Size.ToNumerics()) is var ground
-                         && MathF.Abs(ground.X) <= world.WorldSize / 2 && MathF.Abs(ground.Y) <= world.WorldSize / 2)
+                         && world.InWorld(ground.X, ground.Y))
                     MarkRequested?.Invoke(new Vector3(ground.X, world.HeightAt(ground.X, ground.Y), ground.Y));
                 AcceptEvent();
                 break;
@@ -207,9 +208,8 @@ public partial class LogbookMap : Control
             DrawCentred(Loc.T("Drawing the map…"), Size / 2, UiTokens.TextSecondary);
             return;
         }
-        var half = world.WorldSize / 2;
         if (_base is { } texture)
-            DrawTextureRect(texture, WorldRect(new(-half, -half), new Vector2(world.WorldSize, world.WorldSize)), false);
+            DrawTextureRect(texture, WorldRect(new(-world.WorldSize / 2, -world.WorldDepth / 2), new Vector2(world.WorldSize, world.WorldDepth)), false);
         else
             DrawCentred(Loc.T("Drawing the map…"), Size / 2, UiTokens.TextSecondary);
         // The sharper picture of the last settled view, where it still shows.
@@ -267,7 +267,7 @@ public partial class LogbookMap : Control
         if (_detailJob is not null || View is not { Placed: true } view || _still < Settings.DetailDelaySeconds || Size.X < 1 || Size.Y < 1)
             return;
         // Only worth it when the view is sharper than the whole-world picture.
-        if (view.MetresPerPixel * 1.5f > world.WorldSize / Settings.MapResolution)
+        if (view.MetresPerPixel * 1.5f > BaseMetresPerPixel(world))
             return;
         var scale = Math.Min(1f, Settings.DetailResolution / Math.Max(Size.X, Size.Y));
         var (w, h) = (Math.Max(1, (int)(Size.X * scale)), Math.Max(1, (int)(Size.Y * scale)));
@@ -322,6 +322,12 @@ public partial class LogbookMap : Control
         var size = _font.GetStringSize(text, HorizontalAlignment.Left, -1, 15);
         DrawString(_font, at - size / 2, text, HorizontalAlignment.Left, -1, 15, colour);
     }
+
+    private float BaseMetresPerPixel(WorldGenerator world) => MathF.Max(world.WorldSize, world.WorldDepth) / Settings.MapResolution;
+
+    private int BaseWidth(WorldGenerator world) => Math.Max(1, (int)MathF.Round(world.WorldSize / BaseMetresPerPixel(world)));
+
+    private int BaseHeight(WorldGenerator world) => Math.Max(1, (int)MathF.Round(world.WorldDepth / BaseMetresPerPixel(world)));
 
     private static ImageTexture Texture(byte[] rgb, int w, int h) => ImageTexture.CreateFromImage(Image.CreateFromData(w, h, false, Image.Format.Rgb8, rgb));
 }

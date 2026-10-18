@@ -1,0 +1,19 @@
+{
+  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed on its own.
+  // Written by tools/author-poi-placeholders.py; edit the table there and re-run.
+  "id": "poi_04",
+  "name": "POI-04 Farmer Shack",
+  "radius": 42.0,
+  "size": [12.0, 5.0, 10.0],
+  "road": "track",
+  "placement": {},
+  "terrain": [
+    { "op": "flatten", "radius": 22.0, "blend": 20.0 }
+  ],
+  "flora": "meadow",
+  "pieces": [
+    { "shape": "box", "size": [20.0, 0.3, 18.0], "at": [0.0, 0.15, 0.0], "color": "#a3a093" },
+    { "shape": "box", "size": [12.0, 5.0, 10.0], "at": [0.0, 2.8, 0.0], "color": "#8c5a3c" },
+    { "shape": "box", "size": [5.0, 2.5, 4.0], "at": [10.0, 1.25, 4.0], "color": "#d8b85a" }
+  ]
+}

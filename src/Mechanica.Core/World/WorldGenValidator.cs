@@ -198,6 +198,164 @@ internal static class WorldGenValidator
             sink.Error(Code, "$.biomes", "at least one inland biome needs a weight above 0.");
         if (definition.CoastBiome is { } coast && !biomeIds.Contains(coast))
             sink.Error(Code, "$.coast_biome", $"'{coast}' is not one of the biomes.");
+        for (var i = 0; i < biomes.Count; i++)
+        {
+            if (!(biomes[i].Ridge is >= 0f and <= 1f))
+                sink.Error(Code, $"$.biomes[{i}].ridge", $"ridge must be 0 to 1 (got {biomes[i].Ridge}).");
+            NonNegative(biomes[i].Terrace, $"$.biomes[{i}].terrace", sink);
+        }
+        NonNegative(t.RegionWarp, "$.terrain.region_warp", sink);
+        Layout(definition, biomeIds, groundIds, sink);
+    }
+
+    // Regions, rivers, roads, sites and pools: the world map's fixed layout (World Map spec).
+    private static void Layout(WorldGenDefinition definition, HashSet<string> biomeIds, HashSet<string> groundIds, DiagnosticSink sink)
+    {
+        for (var i = 0; i < (definition.Regions?.Count ?? 0); i++)
+        {
+            var r = definition.Regions![i];
+            var path = $"$.regions[{i}]";
+            KnownKeys.WarnUnknown(r.Extra, path, sink, typeof(RegionDefinition));
+            BiomeRef(r.Biome, biomeIds, $"{path}.biome", sink);
+            Fraction(r.At, $"{path}.at", sink);
+            Positive(r.Size, $"{path}.size", sink);
+            var total = 0f;
+            for (var m = 0; m < (r.Mix?.Count ?? 0); m++)
+            {
+                var mix = r.Mix![m];
+                KnownKeys.WarnUnknown(mix.Extra, $"{path}.mix[{m}]", sink, typeof(RegionMix));
+                BiomeRef(mix.Biome, biomeIds, $"{path}.mix[{m}].biome", sink);
+                if (!(mix.Chance is >= 0f and <= 1f))
+                    sink.Error(Code, $"{path}.mix[{m}].chance", $"chance must be 0 to 1 (got {mix.Chance}).");
+                total += mix.Chance;
+            }
+            if (total > 1f + 1e-4f)
+                sink.Error(Code, $"{path}.mix", $"the chances add up to {total}, over 1.");
+        }
+        for (var i = 0; i < (definition.Rivers?.Count ?? 0); i++)
+        {
+            var r = definition.Rivers![i];
+            var path = $"$.rivers[{i}]";
+            KnownKeys.WarnUnknown(r.Extra, path, sink, typeof(RiverDefinition));
+            if (r.Points is not { Count: >= 2 } points)
+                sink.Error(Code, $"{path}.points", "a river needs at least two points.");
+            else
+            {
+                for (var k = 0; k < points.Count; k++)
+                    Fraction(points[k], $"{path}.points[{k}]", sink, 0.6f);
+            }
+            if (r.Width is not { Count: 2 } width || !(width[0] > 0f) || !(width[1] > 0f) || !float.IsFinite(width[0] + width[1]))
+                sink.Error(Code, $"{path}.width", "width must be [source, mouth], both above 0.");
+            Positive(r.Depth, $"{path}.depth", sink);
+            NonNegative(r.Meander, $"{path}.meander", sink);
+            if (!(r.ValleySlope is > 0f and <= 1f))
+                sink.Error(Code, $"{path}.valley_slope", $"valley_slope must be above 0 and at most 1 (got {r.ValleySlope}).");
+        }
+
+        var siteIds = new HashSet<string>();
+        var pools = definition.Pools ?? [];
+        var poolIds = new HashSet<string>();
+        for (var i = 0; i < pools.Count; i++)
+        {
+            var pool = pools[i];
+            var path = $"$.pools[{i}]";
+            KnownKeys.WarnUnknown(pool.Extra, path, sink, typeof(PoolDefinition));
+            if (!Identifiers.IsValid(pool.Id))
+                sink.Error(Code, $"{path}.id", $"pool id '{pool.Id}' must be lowercase snake_case.");
+            else if (!poolIds.Add(pool.Id))
+                sink.Error(Code, $"{path}.id", $"pool '{pool.Id}' is defined twice.");
+            if (pool.Fill is not { Count: > 0 })
+                sink.Error(Code, $"{path}.fill", "a pool needs at least one entry.");
+            for (var e = 0; e < (pool.Fill?.Count ?? 0); e++)
+            {
+                KnownKeys.WarnUnknown(pool.Fill![e].Extra, $"{path}.fill[{e}]", sink, typeof(PoolEntry));
+                if (!PoiRef(pool.Fill[e].Poi))
+                    sink.Error(Code, $"{path}.fill[{e}].poi", $"'{pool.Fill[e].Poi}' is not a POI id (id or mod_id:id).");
+                if (pool.Fill[e].Count < 1)
+                    sink.Error(Code, $"{path}.fill[{e}].count", "count must be 1 or more.");
+            }
+            var used = definition.Sites?.Count(s => s.Pool == pool.Id) ?? 0;
+            var filled = pool.Fill?.Sum(f => Math.Max(0, f.Count)) ?? 0;
+            if (pool.Id is not null && used != filled)
+                sink.Error(Code, $"{path}.fill", $"the pool holds {filled} prefabs but {used} sites draw from it; they must match.");
+        }
+        for (var i = 0; i < (definition.Sites?.Count ?? 0); i++)
+        {
+            var site = definition.Sites![i];
+            var path = $"$.sites[{i}]";
+            KnownKeys.WarnUnknown(site.Extra, path, sink, typeof(SiteDefinition));
+            if (!Identifiers.IsValid(site.Id))
+                sink.Error(Code, $"{path}.id", $"site id '{site.Id}' must be lowercase snake_case.");
+            else if (!siteIds.Add(site.Id))
+                sink.Error(Code, $"{path}.id", $"site '{site.Id}' is defined twice.");
+            if ((site.Poi is null) == (site.Pool is null))
+                sink.Error(Code, path, "give exactly one of poi or pool.");
+            if (site.Poi is not null && !PoiRef(site.Poi))
+                sink.Error(Code, $"{path}.poi", $"'{site.Poi}' is not a POI id (id or mod_id:id).");
+            if (site.Pool is { } pool && !poolIds.Contains(pool))
+                sink.Error(Code, $"{path}.pool", $"'{pool}' is not one of the pools.");
+            Fraction(site.At, $"{path}.at", sink);
+            NonNegative(site.Jitter, $"{path}.jitter", sink);
+            if (site.Biome is not null)
+                BiomeRef(site.Biome, biomeIds, $"{path}.biome", sink);
+            if (site.Yaw % 90f != 0f)
+                sink.Error(Code, $"{path}.yaw", $"yaw must be a multiple of 90 (got {site.Yaw}).");
+            if (site.PadHeight is { } pad && !float.IsFinite(pad))
+                sink.Error(Code, $"{path}.pad_height", "pad_height must be a number.");
+            if (site.Road is { } road && !RoadLinks.All.Contains(road))
+                sink.Error(Code, $"{path}.road", $"'{road}' is not a road link ({string.Join(", ", RoadLinks.All)}).");
+        }
+
+        if (definition.Roads is { } roads)
+        {
+            const string path = "$.roads";
+            KnownKeys.WarnUnknown(roads.Extra, path, sink, typeof(RoadsDefinition));
+            Positive(roads.Width, $"{path}.width", sink);
+            NonNegative(roads.Curb, $"{path}.curb", sink);
+            NonNegative(roads.Shoulder, $"{path}.shoulder", sink);
+            if (!(roads.MaxGrade is > 0f and <= 1f))
+                sink.Error(Code, $"{path}.max_grade", $"max_grade must be above 0 and at most 1 (got {roads.MaxGrade}).");
+            if (!(roads.TrackMaxGrade is > 0f and <= 1f))
+                sink.Error(Code, $"{path}.track_max_grade", $"track_max_grade must be above 0 and at most 1 (got {roads.TrackMaxGrade}).");
+            // Finer than this and the routing grid outgrows a 12 km world; coarser and roads cut corners off hills.
+            if (!(roads.Cell is >= 8f and <= 128f))
+                sink.Error(Code, $"{path}.cell", $"cell must be 8 to 128 metres (got {roads.Cell}).");
+            NonNegative(roads.BridgeClearance, $"{path}.bridge_clearance", sink);
+            if (!(roads.BridgeCost >= 1f) || !float.IsFinite(roads.BridgeCost))
+                sink.Error(Code, $"{path}.bridge_cost", $"bridge_cost must be 1 or more (got {roads.BridgeCost}).");
+            if (!(roads.LoopFactor >= 1f) || !float.IsFinite(roads.LoopFactor))
+                sink.Error(Code, $"{path}.loop_factor", $"loop_factor must be 1 or more (got {roads.LoopFactor}).");
+            NonNegative(roads.LoopReach, $"{path}.loop_reach", sink);
+            if (roads.MaxLoops < 0)
+                sink.Error(Code, $"{path}.max_loops", "max_loops must be 0 or more.");
+            Positive(roads.TrackWidth, $"{path}.track_width", sink);
+            NonNegative(roads.TrackReach, $"{path}.track_reach", sink);
+            if (roads.ShoulderGround is not null)
+                GroundRef(roads.ShoulderGround, groundIds, $"{path}.shoulder_ground", sink, Code);
+            if (roads.TrackGround is not null)
+                GroundRef(roads.TrackGround, groundIds, $"{path}.track_ground", sink, Code);
+            for (var i = 0; i < (roads.Links?.Count ?? 0); i++)
+            {
+                var link = roads.Links![i];
+                if (link is not { Count: 2 } || !link.All(siteIds.Contains))
+                    sink.Error(Code, $"{path}.links[{i}]", "a link is a pair of site ids.");
+            }
+        }
+    }
+
+    private static bool PoiRef(string? id) => id is not null && id.Split(':') is { Length: 1 or 2 } parts && parts.All(Identifiers.IsValid);
+
+    private static void BiomeRef(string? id, HashSet<string> biomeIds, string path, DiagnosticSink sink)
+    {
+        if (id is null || !biomeIds.Contains(id))
+            sink.Error(Code, path, $"'{id}' is not one of the biomes.");
+    }
+
+    // [x, z] as fractions of the world, -0.5 (west, north) to 0.5 (east, south); rivers may reach a little past the edge.
+    private static void Fraction(List<float>? at, string path, DiagnosticSink sink, float reach = 0.5f)
+    {
+        if (at is not { Count: 2 } || !at.All(v => v >= -reach && v <= reach))
+            sink.Error(Code, path, $"must be [x, z], each from -{reach} to {reach} (fractions of the world).");
     }
 
     public static void Validate(PoiPrefab prefab, IReadOnlyList<string> biomeIds, DiagnosticSink sink, IReadOnlyCollection<string> groundIds)
@@ -214,8 +372,8 @@ internal static class WorldGenValidator
         else
         {
             KnownKeys.WarnUnknown(placement.Extra, "$.placement", sink, typeof(PoiPlacement));
-            if ((placement.Fixed is null) == (placement.Spacing is null))
-                sink.Error(code, "$.placement", "give exactly one of fixed or spacing.");
+            if (placement.Fixed is not null && placement.Spacing is not null)
+                sink.Error(code, "$.placement", "give at most one of fixed or spacing (neither: only sites place it).");
             if (placement.Fixed is { } at && (at.Count != 2 || !at.All(float.IsFinite)))
                 sink.Error(code, "$.placement.fixed", "fixed must be [x, z].");
             if (placement.Yaw % 90f != 0f)
@@ -229,6 +387,7 @@ internal static class WorldGenValidator
                 if (placement.Biomes is not { Count: > 0 })
                     sink.Error(code, "$.placement.biomes", "a spaced POI needs at least one biome.");
             }
+            NonNegative(placement.Clearance, "$.placement.clearance", sink, code);
             for (var i = 0; i < (placement.Biomes?.Count ?? 0); i++)
             {
                 if (!biomeIds.Contains(placement.Biomes![i]))
@@ -282,6 +441,10 @@ internal static class WorldGenValidator
             if (offset.Length() + paint.Radius + paint.Blend > prefab.Radius + 1e-3f)
                 sink.Error(code, path, $"reaches {offset.Length() + paint.Radius + paint.Blend:0.##} m from the centre, past the POI radius ({prefab.Radius}).");
         }
+        if (prefab.Road is { } road && !RoadLinks.All.Contains(road))
+            sink.Error(code, "$.road", $"'{road}' is not a road link ({string.Join(", ", RoadLinks.All)}).");
+        if (prefab.Size is { } size && !(size.X > 0f && size.Y > 0f && size.Z > 0f))
+            sink.Error(code, "$.size", "size must be [width, height, depth], each above 0.");
         if (prefab.Flora is { } flora && !biomeIds.Contains(flora))
             sink.Error(code, "$.flora", $"'{flora}' is not a biome in the world generation rules.");
         for (var i = 0; i < (prefab.Pieces?.Count ?? 0); i++)

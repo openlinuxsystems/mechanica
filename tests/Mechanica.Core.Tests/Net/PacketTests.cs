@@ -22,6 +22,7 @@ public class InputPacketTests
         var settings = new PlayerMovementSettings();
         Assert.True(new PlayerInput(0, 0, 0, 0, false, false, Prop: CharacterProp.Sledgehammer, Guard: true).Sanitized(settings).Guard);
         Assert.True(new PlayerInput(0, 0, 0, 0, false, false, Prop: CharacterProp.ConnectTool, Guard: true).Sanitized(settings).Guard);
+        Assert.True(new PlayerInput(0, 0, 0, 0, false, false, Prop: CharacterProp.WeldTool, Guard: true).Sanitized(settings).Guard);
         Assert.True(new PlayerInput(0, 0, 0, 0, false, false, Prop: CharacterProp.PaintTool, Guard: true).Sanitized(settings).Guard);
         Assert.False(new PlayerInput(0, 0, 0, 0, false, false, Prop: CharacterProp.LiftRemote, Guard: true).Sanitized(settings).Guard);
     }

@@ -711,6 +711,8 @@ PALETTE = {
     "panel_line": ("#141517", 0.7, 0.6),
     "grip_chevron": ("#1d1e20", 0.8, 0.05),
     "accent_orange": ("#e8670f", 0.42, 0.0),
+    # weld tool
+    "grip_hex": ("#1e1f21", 0.82, 0.0),
     # paint tool
     "paint_teal": ("#2d6870", 0.62, 0.05),
     "paint_dark": ("#3b3e42", 0.55, 0.1),
@@ -3125,27 +3127,6 @@ def clip_tool_use(t):
     return oneshot([(0.0, h), (0.12, push), (0.18, push), (0.3, h)], t)
 
 
-def clip_weld(t):
-    h = hold_tool_static()
-    aim = with_right_arm(h, arm_r=tool_arm(TOOL_GRIP + np.array([0.0, -0.1, 0.04]), d=(0.05, -0.97, 0.05),
-                                           w=(0.1, 0.0, 1.0)), chest=(4.0, 0, 2.0))
-    keys = [(0.0, h), (0.1, aim)]
-    for i, tt in enumerate((0.16, 0.22, 0.28, 0.34)):
-        j = np.array([0.004 * (-1) ** i, 0.0, 0.004 * (-1) ** (i // 2)])
-        keys.append((tt, with_right_arm(aim, arm_r=tool_arm(TOOL_GRIP + np.array([0.0, -0.1, 0.04]) + j,
-                                                             d=(0.05, -0.97, 0.05), w=(0.1, 0.0, 1.0)))))
-    keys += [(0.4, aim), (0.5, h)]
-    return oneshot(keys, t)
-
-
-def clip_paint_spray(t):
-    h = hold_tool_static()
-    def aim(x):
-        return with_right_arm(h, arm_r=tool_arm(TOOL_GRIP + np.array([x, -0.08, 0.06]), d=(x * 1.5, -0.97, 0.05),
-                                                w=(0.1, 0.0, 1.0)), chest=(3.0, 0, -x * 40))
-    return oneshot([(0.0, h), (0.08, aim(-0.08)), (0.3, aim(0.1)), (0.4, h)], t)
-
-
 # The Sledgehammer, built to its reference sheet: 1.3 m long, a 38 mm steel shaft with a 280 mm knurled rubber grip
 # and one yellow safety band, and a 280 x 140 x 110 mm head of stacked, bolted steel plates. The right fist sits on
 # the bare shaft just above the band (the origin) and the left fist on the grip SLEDGE_SPACING below it.
@@ -4191,6 +4172,134 @@ def clip_connect_reverse_fp(t):
                                 CONNECT_AIM_PROBE_FP)
 
 
+# The Weld Tool, held like the Connect Tool: drawn from the right hip into a forward hold at chest height (weld_draw,
+# hold_weld), raised and aimed level while a part is selected (hold_weld_aim, the guard flag), pushed in a little and
+# held steady while a weld registers (weld: the clamping arms close and the tip spins and glows, moved by the game),
+# then put back on the hip (weld_stow). Both loops sway and breathe; the aim sways less.
+WELD_DRAW_SECONDS = 0.5
+WELD_STOW_SECONDS = 0.45
+WELD_SECONDS = 0.6
+WELD_R = np.array([-0.16, -0.32, 1.08])
+WELD_DIR = norm(np.array([0.08, -1.0, -0.2]))
+WELD_AIM_R = np.array([-0.11, -0.47, 1.3])
+WELD_AIM_DIR = norm(np.array([0.1, -1.0, 0.0]))
+
+
+def weld_arm(grip, tip, up=(0.0, 0.0, 1.0), roll=0.0, space="world", pole=(-0.6, 0.5, -1.0)):
+    """A fist on the Weld Tool's grip at grip, its tip along tip and the top of its housing toward up."""
+    tip = norm(np.asarray(tip, float))
+    top = np.asarray(up, float)
+    top = norm(top - np.dot(top, tip) * tip)
+    if roll:
+        r = math.radians(roll)
+        top = top * math.cos(r) + np.cross(tip, top) * math.sin(r)
+    rk = math.radians(WELD_RAKE)
+    d = tip * math.cos(rk) - top * math.sin(rk)
+    w = tip * math.sin(rk) + top * math.cos(rk)
+    return arm_ik_from_grip("r", np.asarray(grip, float), d, w, pole=pole, space=space)
+
+
+def weld_key(grip, tip, up=(0.0, 0.0, 1.0), roll=0.0, t=0.0, amp=1.0, **body):
+    s = upper_base(t, 2.0, amp)
+    relaxed_left(s, 2 * math.pi * t / 2.0)
+    s["arm_r"] = weld_arm(grip, tip, up, roll)
+    s["fingers_r"], s["thumb_r"] = 92.0, 40.0
+    s.update(body)
+    return s
+
+
+def clip_hold_weld(t, T=2.0):
+    dp, da = connect_sway(t, T, 1.0)
+    return weld_key(WELD_R + dp, WELD_DIR + da, t=t, chest=(2.0, 0.0, -2.0))
+
+
+def clip_hold_weld_aim(t, T=2.0):
+    dp, da = connect_sway(t, T, 0.4)
+    return weld_key(WELD_AIM_R + dp, WELD_AIM_DIR + da, t=t, amp=0.5, **AIM_BODY)
+
+
+def weld_hip_key():
+    return weld_key(CONNECT_HIP, CONNECT_HIP_PROBE, CONNECT_HIP_UP)
+
+
+def clip_weld_draw(t):
+    ready = clip_hold_weld(0.0)
+    lift = weld_key(np.array([-0.24, -0.1, 1.02]), norm(np.array([-0.1, -0.5, -0.86])), (0.1, 0.9, 0.3),
+                    chest=(1.0, 0.0, -1.0))
+    swing = weld_key(np.array([-0.2, -0.25, 1.08]), norm(np.array([0.0, -0.95, -0.3])), chest=(2.0, 0.0, -2.0))
+    return oneshot([(0.0, weld_hip_key()), (0.16, lift), (0.32, swing), (WELD_DRAW_SECONDS, ready)], t, template=ready)
+
+
+def clip_weld_stow(t):
+    ready = clip_hold_weld(0.0)
+    hip = weld_hip_key()
+    lift = weld_key(np.array([-0.23, -0.12, 1.04]), norm(np.array([-0.1, -0.5, -0.86])), (0.1, 0.9, 0.3),
+                    chest=(1.0, 0.0, -1.0))
+    return oneshot([(0.0, ready), (0.15, lift), (0.32, hip), (WELD_STOW_SECONDS, hip)], t, template=ready)
+
+
+def weld_press_clip(t, aim_key, grip, tip):
+    """The weld: the tool pushed in against the seam and held there, trembling a little as the arms clamp, then eased
+    back."""
+    ready = aim_key(grip, tip)
+    keys = [(0.0, ready), (0.08, aim_key(grip + tip * 0.03, norm(tip + np.array([0.0, 0.0, -0.04]))))]
+    for k, tt in enumerate((0.16, 0.24, 0.32, 0.4)):
+        j = np.array([0.0025 * (-1) ** k, 0.0, 0.0025 * (-1) ** (k // 2)])
+        keys.append((tt, aim_key(grip + tip * 0.03 + j, norm(tip + np.array([0.0, 0.0, -0.04])))))
+    keys.append((WELD_SECONDS, ready))
+    return oneshot(keys, t, template=ready)
+
+
+def clip_weld(t):
+    return weld_press_clip(t, lambda g, p: weld_key(g, p, amp=0.5, **AIM_BODY), WELD_AIM_R, WELD_AIM_DIR)
+
+
+# First person: as the Connect Tool's, the tool at the lower right with its tip toward the middle of the view (raised:
+# further in and level with the crosshair).
+WELD_R_FP = np.array([-0.14, -0.39, 1.12])
+WELD_DIR_FP = norm(np.array([0.17, -0.98, 0.1]))
+WELD_AIM_R_FP = np.array([-0.115, -0.43, 1.145])
+WELD_AIM_DIR_FP = norm(np.array([0.1, -0.98, 0.16]))
+
+
+def weld_key_fp(grip, tip, up=(0.0, 0.0, 1.0), roll=0.0, t=0.0):
+    s = upper_base(t, 2.0, amp=0.5)
+    s.update(relaxed_upper(18))
+    s.update({k: v for k, v in FP_BODY.items() if k != "space"})
+    s["arm_r"] = weld_arm(grip, tip, up, roll, pole=FP_POLES[0])
+    s["arm_l"] = dict(RELAXED_ARM, swing=15.0, down=45.0, elbow=40.0)
+    s["fingers_r"], s["thumb_r"] = 92.0, 40.0
+    return s
+
+
+def clip_hold_weld_fp(t, T=2.0):
+    dp, da = connect_sway(t, T, 0.6)
+    return weld_key_fp(WELD_R_FP + dp, WELD_DIR_FP + da, t=t)
+
+
+def clip_hold_weld_aim_fp(t, T=2.0):
+    dp, da = connect_sway(t, T, 0.25)
+    return weld_key_fp(WELD_AIM_R_FP + dp, WELD_AIM_DIR_FP + da, t=t)
+
+
+def clip_weld_draw_fp(t):
+    ready = clip_hold_weld_fp(0.0)
+    hip = weld_key_fp(CONNECT_HIP_FP, CONNECT_HIP_PROBE_FP, (0.1, 1.0, 0.0))
+    mid = weld_key_fp(np.array([-0.24, -0.33, 0.95]), norm(np.array([0.05, -0.7, -0.7])))
+    return oneshot([(0.0, hip), (0.22, mid), (WELD_DRAW_SECONDS, ready)], t, template=ready)
+
+
+def clip_weld_stow_fp(t):
+    ready = clip_hold_weld_fp(0.0)
+    hip = weld_key_fp(CONNECT_HIP_FP, CONNECT_HIP_PROBE_FP, (0.1, 1.0, 0.0))
+    mid = weld_key_fp(np.array([-0.24, -0.33, 0.95]), norm(np.array([0.05, -0.7, -0.7])))
+    return oneshot([(0.0, ready), (0.18, mid), (0.36, hip), (WELD_STOW_SECONDS, hip)], t, template=ready)
+
+
+def clip_weld_fp(t):
+    return weld_press_clip(t, lambda g, p: weld_key_fp(g, p), WELD_AIM_R_FP, WELD_AIM_DIR_FP)
+
+
 # The Paint Tool, held like a heavy pistol in the right hand: brought up from the right thigh with a short swing
 # (paint_draw, hold_paint), raised and steadied with the nozzles level at what the player looks at while the trigger is
 # held (hold_paint_aim, the guard flag), with a fine buzz from the pump, a kick of the nozzles as a stroke starts
@@ -4558,7 +4667,6 @@ CLIPS = {
     "sledge_swing_side_fp": (clip_sledge_swing_side_fp, SWING_SECONDS, False, True),
     "sledge_swing_back_fp": (clip_sledge_swing_back_fp, SWING_SECONDS, False, True),
     "tool_use": (clip_tool_use, 0.3, False, True),
-    "weld": (clip_weld, 0.5, False, True),
     "paint_spray": (clip_paint_spray, PAINT_SPRAY_SECONDS, False, True),
     "fire_gun": (clip_fire_gun, 0.25, False, True),
     "eat": (clip_eat, 1.0, False, True),
@@ -4586,6 +4694,16 @@ CLIPS = {
     "connect_stow_fp": (clip_connect_stow_fp, CONNECT_STOW_SECONDS, False, True),
     "connect_click_fp": (clip_connect_click_fp, CONNECT_CLICK_SECONDS, False, True),
     "connect_reverse_fp": (clip_connect_reverse_fp, CONNECT_REVERSE_SECONDS, False, True),
+    "hold_weld": (clip_hold_weld, 2.0, True, True),
+    "hold_weld_aim": (clip_hold_weld_aim, 2.0, True, True),
+    "weld_draw": (clip_weld_draw, WELD_DRAW_SECONDS, False, True),
+    "weld_stow": (clip_weld_stow, WELD_STOW_SECONDS, False, True),
+    "weld": (clip_weld, WELD_SECONDS, False, True),
+    "hold_weld_fp": (clip_hold_weld_fp, 2.0, True, True),
+    "hold_weld_aim_fp": (clip_hold_weld_aim_fp, 2.0, True, True),
+    "weld_draw_fp": (clip_weld_draw_fp, WELD_DRAW_SECONDS, False, True),
+    "weld_stow_fp": (clip_weld_stow_fp, WELD_STOW_SECONDS, False, True),
+    "weld_fp": (clip_weld_fp, WELD_SECONDS, False, True),
     "hold_paint": (clip_hold_paint, 2.0, True, True),
     "hold_paint_aim": (clip_hold_paint_aim, 2.0, True, True),
     "paint_draw": (clip_paint_draw, PAINT_DRAW_SECONDS, False, True),
@@ -4608,7 +4726,9 @@ CLIPS = {
 }
 
 # the prop each clip shows in the right hand (verification renders and the game's defaults)
-CLIP_PROP = {"hold_tool": "lift_remote", "tool_use": "lift_remote", "weld": "weld_tool",
+CLIP_PROP = {"hold_tool": "lift_remote", "tool_use": "lift_remote",
+             **{c: "weld_tool" for c in ("hold_weld", "hold_weld_aim", "weld_draw", "weld_stow", "weld", "hold_weld_fp",
+                                         "hold_weld_aim_fp", "weld_draw_fp", "weld_stow_fp", "weld_fp")},
              "paint_spray": "paint_tool", "hold_heavy": "sledgehammer", "sledge_swing": "sledgehammer",
              "hold_heavy_block": "sledgehammer", "hold_heavy_fp": "sledgehammer", "hold_heavy_block_fp": "sledgehammer",
              "sledge_swing_fp": "sledgehammer", "sledge_swing_side": "sledgehammer", "sledge_swing_back": "sledgehammer",
@@ -4717,22 +4837,6 @@ def prop_lift_remote():
         p.append(cylinder((0.014, yy, 0.0), (0.026, yy, 0.0), 0.006, 10, m, ref=Y))
     p.append(cylinder((-0.01, 0.11, -0.006), (-0.035, 0.24, -0.01), 0.0025, 8, "metal"))
     p.append(ellipsoid((-0.035, 0.243, -0.01), (0.006, 0.006, 0.006), segs=10, rings=6, mat="orange"))
-    return p
-
-
-def prop_weld_tool():
-    p = [cylinder((-0.004, -0.06, 0), (0.0, 0.05, 0), 0.017, 12, "rubber", ref=X, bevel=0.004),
-         soft_box((0.03, 0.078, 0), (0.07, 0.024, 0.022), axes=(X, Y, Z), e=5, e2=5, segs=14, rings=7,
-                  mat="paint_grey"),
-         soft_box((0.0, 0.081, 0.0), (0.03, 0.027, 0.025), axes=(X, Y, Z), e=5, e2=5, segs=12, rings=5,
-                  mat="blue"),
-         cylinder((0.1, 0.078, 0), (0.17, 0.07, 0), 0.012, 12, "metal", ref=Y),
-         cylinder((0.17, 0.07, 0), (0.235, 0.05, 0), 0.0085, 10, "orange_dark", ref=Y),
-         cylinder((0.235, 0.05, 0), (0.25, 0.045, 0), 0.006, 8, "metal_dark", ref=Y),
-         box((0.03, 0.035, 0.0), (0.005, 0.012, 0.007), mat="orange")]
-    hose = [np.array([-0.03, 0.06, 0]), np.array([-0.07, 0.03, 0]), np.array([-0.08, -0.05, 0.01]),
-            np.array([-0.07, -0.16, 0.02])]
-    p.append(tube(hose, 0.008, 8, Z, "rubber"))
     return p
 
 
@@ -5326,6 +5430,308 @@ def build_connect_glow(parent):
     return ob
 
 
+# The Weld Tool, built to its reference sheet: a pistol-grip welder about 22 cm long. A dark, slightly boxy housing
+# 5.4 cm across, an octagonal back plate with vent slots and an orange tab, an orange band round the back, slotted
+# vents down both sides of the back, a raised vent panel along the top and a silver side panel with an orange stripe
+# and two slots on each side; at the front a broad silver collar with four bolts, stepped dark rings and ribs, a blue
+# ring that glows and a pointed silver welding tip with three flutes, which spins while a weld registers. On each side
+# of the collar an articulated clamping arm (an orange link out and down to an elbow, a dark link down to a claw)
+# hangs open, as on the sheet, and swings forward and in round the tip as a weld registers. Under it a raked grip of
+# rubber with a moulded hex pattern, an orange band round the butt and a yellow trigger. It is modelled in the gun frame
+# of the Connect Tool (u along the tip, v up, w to the holder's right) with the fist at the origin and the grip
+# WELD_RAKE degrees back from upright, then turned into the grip frame. The tip and the two arms are child nodes
+# (weld_tool_tip, weld_tool_arm_l, weld_tool_arm_r) whose origins are their pivots, so the game turns them; the blue
+# ring is another, weld_tool_glow, with an emissive material of its own.
+WELD_RAKE = 12.0               # degrees the grip leans back from square to the tip
+WELD_BODY_V = 0.066            # the housing's axis above the fist (gun frame v)
+WELD_BODY_R = 0.027            # the housing's half height
+WELD_BODY_HW = 0.0265          # and its half width
+WELD_TIP_U0 = 0.109            # where the spinning tip starts (gun frame u)
+WELD_TIP_U = 0.166             # its point
+WELD_GLOW = "#3aa8ff"
+# The arms: the pivot on the side of the housing, the elbow and the claw, open as on the sheet (gun frame, the left
+# arm; the right one mirrors in w), and where the claw goes when they close round the tip.
+WELD_ARM_PIVOT = np.array([0.05, WELD_BODY_V - 0.004, -(WELD_BODY_HW + 0.004)])
+WELD_ARM_ELBOW = np.array([0.064, WELD_BODY_V - 0.02, -0.052])
+WELD_ARM_CLAW = np.array([0.074, WELD_BODY_V - 0.058, -0.045])
+WELD_ARM_CLOSED = np.array([0.112, WELD_BODY_V - 0.022, -0.02])
+
+
+def _weld_rot():
+    r = math.radians(WELD_RAKE)
+    return np.array([[math.cos(r), -math.sin(r), 0.0], [math.sin(r), math.cos(r), 0.0], [0.0, 0.0, 1.0]])
+
+
+def weld_to_grip(p):
+    """A gun-frame point (or direction) in the grip frame."""
+    return _weld_rot() @ np.asarray(p, float)
+
+
+def weld_tip():
+    """The welding tip's point in the grip frame (where the sparks start)."""
+    return weld_to_grip((WELD_TIP_U, WELD_BODY_V, 0.0))
+
+
+def weld_tip_axis():
+    """Which way the tip points, in the grip frame."""
+    return weld_to_grip((1.0, 0.0, 0.0))
+
+
+def weld_arm_close(side):
+    """The closing turn of one arm about its pivot, in the gun frame: (unit axis, degrees). side -1 left, +1 right."""
+    m = np.array([1.0, 1.0, -side])
+    a = (WELD_ARM_CLAW - WELD_ARM_PIVOT) * m
+    b = (WELD_ARM_CLOSED - WELD_ARM_PIVOT) * m
+    axis = norm(np.cross(a, b))
+    ang = math.degrees(math.acos(np.clip(np.dot(norm(a), norm(b)), -1.0, 1.0)))
+    return axis, ang
+
+
+def _weld_housing():
+    U, V, W = X, Y, Z
+    H = WELD_BODY_V
+    on = lambda u, dv=0.0, w=0.0: np.array([u, H + dv, w])
+    p = []
+    # the housing: a slightly squared tube, rounded into the back plate and the collar
+    prof = [(-0.047, 0.84), (-0.0462, 0.93), (-0.0445, 0.98), (-0.042, 1.0), (0.056, 1.0), (0.0585, 0.97)]
+    p.append(loft([dict(c=on(u), a=V, b=W, rx=WELD_BODY_R * k, ry=WELD_BODY_HW * k, e=2.9) for u, k in prof], 44,
+                  True, True, "tool_gunmetal"))
+    # back: an orange band, then an octagonal plate with three vent slots and an orange tab under them
+    p.append(loft([dict(c=on(u), a=V, b=W, rx=WELD_BODY_R + 0.0014, ry=WELD_BODY_HW + 0.0014, e=2.9) for u in
+                   (-0.046, -0.0455, -0.0385, -0.038)], 44, True, True, "accent_orange"))
+    oct_ = [(0.0245 * math.cos(math.pi / 8 + k * math.pi / 4), 0.0245 * math.sin(math.pi / 8 + k * math.pi / 4))
+            for k in range(8)]
+    p.append(prism(oct_, 0.0, -0.0042, on(-0.0465), V, W, U, "tool_bezel"))
+    for k in range(3):
+        p.append(prism(chamfer_rect(0.0012, 0.0062, 0.0005), 0.0, -0.0004, on(-0.0507, 0.0062 - 0.006 * k + 0.0015),
+                       V, W, U, "panel_line"))
+    p.append(prism(chamfer_rect(0.0024, 0.0048, 0.0008), 0.0, -0.0006, on(-0.0507, -0.0138), V, W, U, "accent_orange"))
+    # panel lines round the housing
+    for u in (-0.0005, 0.0505):
+        p.append(loft([dict(c=on(u + d), a=V, b=W, rx=WELD_BODY_R + 0.0002, ry=WELD_BODY_HW + 0.0002, e=2.9)
+                       for d in (-0.0004, 0.0004)], 44, True, True, "panel_line"))
+    # top: a raised vent panel with six slots across it, an orange edge at its back
+    top = on(0.017, WELD_BODY_R - 0.001)
+    p.append(prism(chamfer_rect(0.026, 0.0135, 0.003), 0.0, 0.0034, top, U, W, V, "tool_bezel"))
+    for k in range(6):
+        p.append(prism(chamfer_rect(0.0013, 0.0092, 0.0005), 0.0032, 0.0036, top + U * (-0.0175 + 0.007 * k), U, W, V,
+                       "panel_line"))
+    p.append(prism(chamfer_rect(0.0016, 0.0135, 0.0006), 0.0, 0.0036, top + U * -0.0272, U, W, V, "accent_orange"))
+    for sw in (-1, 1):
+        side = lambda u, dv, out=0.0: on(u, dv, sw * (WELD_BODY_HW - 0.001 + out))
+        # slotted vents down the back of each side
+        p.append(prism(chamfer_rect(0.012, 0.0125, 0.0025), 0.0, sw * 0.0022, side(-0.024, 0.0005), U, V, W,
+                       "tool_bezel"))
+        for k in range(5):
+            p.append(prism(chamfer_rect(0.0095, 0.0009, 0.0004), sw * 0.0021, sw * 0.0025,
+                           side(-0.024, 0.0095 - 0.0045 * k), U, V, W, "panel_line"))
+        # the silver side panel with its orange stripe above and two slots, and a bolt at each end
+        p.append(prism(chamfer_rect(0.0225, 0.0078, 0.002), 0.0, sw * 0.0024, side(0.025, -0.0055), U, V, W,
+                       "tool_silver"))
+        p.append(prism(chamfer_rect(0.0225, 0.0018, 0.0008), 0.0, sw * 0.0026, side(0.025, 0.0055), U, V, W,
+                       "accent_orange"))
+        for du in (0.012, 0.016):
+            p.append(prism(chamfer_rect(0.0008, 0.0042, 0.0003), sw * 0.0023, sw * 0.0027, side(0.025 + du, -0.0055),
+                           U, V, W, "panel_line"))
+        for du in (-0.0185,):
+            p.append(cylinder(side(0.025 + du, -0.0055, 0.0023), side(0.025 + du, -0.0055, 0.0034), 0.0019, 10,
+                              "bolt_steel", ref=U))
+        # the arm's mounting boss with a bolt through it
+        piv = WELD_ARM_PIVOT * np.array([1.0, 1.0, -sw])
+        p.append(cylinder(piv - W * sw * 0.0045, piv + W * sw * 0.0005, 0.0068, 16, "tool_bezel", ref=U, bevel=0.0008))
+    # the collar: broad and silver with four bolts on its face, then stepped dark rings, ribs and a silver ring
+    p.append(cylinder(on(0.0565), on(0.0745), 0.0302, 44, "tool_silver", ref=V, bevel=0.0015))
+    for k in range(4):
+        a = math.pi / 4 + k * math.pi / 2
+        p.append(cylinder(on(0.0742, 0.0232 * math.sin(a), 0.0232 * math.cos(a)),
+                          on(0.0758, 0.0232 * math.sin(a), 0.0232 * math.cos(a)), 0.0021, 10, "bolt_steel", ref=V))
+    p.append(cylinder(on(0.074), on(0.0845), 0.0255, 40, "tool_bezel", ref=V, bevel=0.001))
+    for k in range(4):
+        u0 = 0.0845 + 0.003 * k
+        p.append(cylinder(on(u0), on(u0 + 0.003), 0.0212 if k % 2 == 0 else 0.0196, 36, "tool_gunmetal", ref=V,
+                          bevel=0.0005))
+    p.append(cylinder(on(0.0965), on(0.1045), 0.0182, 36, "tool_silver", ref=V, bevel=0.0008))
+    p.append(cylinder(on(0.1045), on(0.1092), 0.0162, 32, "tool_bezel", ref=V, bevel=0.0005))
+    return p
+
+
+def _weld_grip():
+    W = Z
+    rk = math.radians(WELD_RAKE)
+    g = np.array([math.sin(rk), math.cos(rk), 0.0])
+    n = np.array([math.cos(rk), -math.sin(rk), 0.0])
+    # (along the handle, front-back half size, side half size): flared at the butt, a waist for the palm, wider again
+    # where it meets the housing
+    gs = [(-0.05, 0.0195, 0.015), (-0.048, 0.0232, 0.0178), (-0.0445, 0.0242, 0.0184), (-0.039, 0.0232, 0.0176),
+          (-0.03, 0.0216, 0.0165), (-0.015, 0.0208, 0.0159), (0.0, 0.021, 0.016), (0.018, 0.0217, 0.0164),
+          (0.032, 0.0226, 0.0168), (0.045, 0.0236, 0.0174), (0.056, 0.024, 0.0176)]
+    fine = [s / 1000.0 for s in range(-50, 57, 3)]
+
+    def bumps(s):
+        def fn(th):
+            front = max(0.0, math.cos(th)) ** 3
+            ridge = 0.5 + 0.5 * math.cos(2 * math.pi * (s + 0.006) / 0.022)
+            return 1.0 + front * 0.06 * ridge * sstep(-0.04, -0.03, s) * sstep(0.03, 0.02, s)
+        return fn
+
+    rings = []
+    for s in fine:
+        k = min(max(int(np.searchsorted([x[0] for x in gs], s)), 1), len(gs) - 1)
+        (s0, a0, b0), (s1, a1, b1) = gs[k - 1], gs[k]
+        f = (s - s0) / (s1 - s0)
+        rings.append(dict(c=g * s, a=n, b=-W, rx=a0 + (a1 - a0) * f, ry=b0 + (b1 - b0) * f, e=2.7, fn=bumps(s)))
+    for r in rings:
+        r["b"] = -r["b"] if np.dot(np.cross(r["a"], r["b"]), g) < 0 else r["b"]
+    p = [loft(rings, 36, True, True, "grip_hex", True)]
+    # the butt: a dark base and an orange band round it
+    band = [(-0.0512, 0.0198, 0.0154), (-0.0506, 0.0246, 0.0188), (-0.0445, 0.0252, 0.0192), (-0.0435, 0.0246, 0.0188)]
+    p.append(loft([dict(c=g * s, a=n, b=-W, rx=rx, ry=ry, e=2.7) for s, rx, ry in band], 36, True, True,
+                  "accent_orange", True))
+    p.append(loft([dict(c=g * s, a=n, b=-W, rx=rx, ry=ry, e=2.7) for s, rx, ry in
+                   ((-0.0548, 0.0182, 0.0136), (-0.0542, 0.0224, 0.017), (-0.0512, 0.0228, 0.0174))],
+                  36, True, True, "tool_bezel", True))
+    # the yellow trigger, just under the housing in front of the grip
+    trig = [np.array([0.0352, 0.0405, 0]), np.array([0.0372, 0.0335, 0]), np.array([0.0358, 0.0262, 0]),
+            np.array([0.0312, 0.0212, 0])]
+    p.append(tube(trig, [(0.0042, 0.0034), (0.004, 0.0034), (0.0035, 0.0032), (0.0028, 0.0028)], 12, W,
+                  "paint_yellow"))
+    return p
+
+
+def _weld_tip_parts():
+    """The spinning tip, about its own start (gun frame u from 0)."""
+    U, V, W = X, Y, Z
+    L = WELD_TIP_U - WELD_TIP_U0
+    prof = [(0.0, 0.0148), (0.004, 0.0148), (0.0055, 0.0138), (0.016, 0.0112), (L - 0.006, 0.0022), (L - 0.0015, 0.0008),
+            (L, 0.0002)]
+    p = [tube([U * u for u, _ in prof], [r for _, r in prof], 32, V, "tool_silver")]
+    # three flutes down the cone, so the spin shows
+    for k in range(3):
+        a = k * 2 * math.pi / 3
+        rad = V * math.sin(a) + W * math.cos(a)
+        tng = np.cross(U, rad)
+        for (u0, r0), (u1, r1) in zip(prof[2:4], prof[3:5]):
+            c0, c1 = U * u0 + rad * (r0 - 0.0002), U * u1 + rad * (r1 - 0.0002)
+            mid, d = (c0 + c1) / 2, c1 - c0
+            ln = np.linalg.norm(d)
+            ax = d / ln
+            out = norm(np.cross(tng, ax))
+            hw = 0.0016 * (r0 + r1) / 0.024
+            p.append(prism(chamfer_rect(ln / 2, hw, 0.0002), -0.0004, 0.0003, mid, ax, tng, out, "panel_line"))
+    return p
+
+
+def _weld_arm_parts(side):
+    """One clamping arm about its pivot (gun frame, side -1 left, +1 right)."""
+    W = Z
+    m = np.array([1.0, 1.0, -side])
+    piv, elb, claw = WELD_ARM_PIVOT * m, WELD_ARM_ELBOW * m, WELD_ARM_CLAW * m
+    wo = W * side                                     # outward
+    p = []
+
+    def link(a, b, width, thick, mat, off=0.0):
+        d = b - a
+        ln = np.linalg.norm(d)
+        ax = d / ln
+        across = norm(np.cross(ax, wo))
+        out = np.cross(across, ax)
+        if np.dot(out, wo) < 0:
+            out = -out
+        mid = (a + b) / 2 + out * off
+        return prism(chamfer_rect(ln / 2 + width / 2, width / 2, width * 0.35), -thick / 2, thick / 2, mid, ax, across,
+                     out, mat)
+
+    # outer orange link and an inner dark one behind it, pinned at the pivot and the elbow
+    p.append(link(piv, elb, 0.0142, 0.0044, "accent_orange", 0.0034))
+    p.append(link(piv, elb, 0.0112, 0.0036, "tool_bezel", -0.0006))
+    p.append(link(elb, claw, 0.0124, 0.0048, "tool_bezel", 0.0008))
+    p.append(link(elb + (claw - elb) * 0.5, claw, 0.0132, 0.0034, "accent_orange", 0.0042))
+    for at, r in ((piv, 0.0056), (elb, 0.006)):
+        p.append(cylinder(at - wo * 0.0028, at + wo * 0.0052, r, 14, "tool_bezel", ref=X, bevel=0.0006))
+        p.append(cylinder(at + wo * 0.005, at + wo * 0.0064, r * 0.55, 10, "bolt_steel", ref=X))
+    # the claw: a pad turned in towards the tip, with a roller pin through it
+    inward = -wo
+    p.append(soft_box(claw + inward * 0.004 + Y * -0.0015, (0.0078, 0.0072, 0.006), axes=(X, Y, W), e=5, e2=5,
+                      segs=12, rings=6, mat="tool_bezel"))
+    p.append(cylinder(claw - X * 0.0066, claw + X * 0.0066, 0.0032, 12, "tool_silver", ref=Y))
+    p.append(cylinder(claw + wo * 0.0012, claw + wo * 0.0036, 0.0024, 10, "bolt_steel", ref=X))
+    for part in p:
+        part.v = part.v - piv
+    return p
+
+
+def _weld_glow_parts():
+    """The blue ring at the base of the tip, in the gun frame."""
+    on = lambda u: np.array([u, WELD_BODY_V, 0.0])
+    return [cylinder(on(0.1052), on(0.1086), 0.0171, 36, "glow", ref=Y, bevel=0.0004)]
+
+
+def _weld_turn(parts, origin=None):
+    rot = _weld_rot()
+    for part in parts:
+        part.v = part.v @ rot.T
+    return parts
+
+
+def prop_weld_tool():
+    return _weld_turn(_weld_housing() + _weld_grip())
+
+
+def weld_glow_material():
+    m = bpy.data.materials.get("M_weld_glow")
+    if m:
+        return m
+    m = bpy.data.materials.new("M_weld_glow")
+    m.use_nodes = True
+    bsdf = m.node_tree.nodes.get("Principled BSDF")
+    bsdf.inputs["Base Color"].default_value = srgb(WELD_GLOW)
+    bsdf.inputs["Roughness"].default_value = 0.3
+    bsdf.inputs["Emission Color"].default_value = srgb(WELD_GLOW)
+    bsdf.inputs["Emission Strength"].default_value = 1.0
+    return m
+
+
+def _child_object(name, part, parent, at_gun, material=None):
+    """A child of `parent` (the prop, in the grip frame) with its origin at the gun-frame point at_gun."""
+    if material is None:
+        ob = build_mesh_object(name, part)
+    else:
+        me = bpy.data.meshes.new(name)
+        me.from_pydata(part.v.tolist(), [], part.f)
+        me.materials.append(material)
+        me.polygons.foreach_set("use_smooth", [False] * len(part.f))
+        me.validate(clean_customdata=False)
+        me.update()
+        ob = bpy.data.objects.new(name, me)
+        bpy.context.scene.collection.objects.link(ob)
+    ob.matrix_world = parent.matrix_world @ Matrix.Translation(Vector(weld_to_grip(at_gun)))
+    ob.parent = parent
+    ob.matrix_parent_inverse = parent.matrix_world.inverted()
+    return ob
+
+
+def build_weld_children(parent):
+    """The Weld Tool's moving parts and its glow, as children of its prop: (objects, parts) to texture, and the glow."""
+    objs, parts = [], []
+    tip = merge(_weld_turn(_weld_tip_parts()))
+    objs.append(_child_object("weld_tool_tip", tip, parent, (WELD_TIP_U0, WELD_BODY_V, 0.0)))
+    parts.append(tip)
+    for name, side in (("weld_tool_arm_l", -1), ("weld_tool_arm_r", 1)):
+        arm = merge(_weld_turn(_weld_arm_parts(side)))
+        objs.append(_child_object(name, arm, parent, WELD_ARM_PIVOT * np.array([1.0, 1.0, -side])))
+        parts.append(arm)
+    glow = merge(_weld_turn(_weld_glow_parts()))
+    glow.v = glow.v - weld_to_grip((0.0, 0.0, 0.0))
+    glow_ob = _child_object("weld_tool_glow", glow, parent, (0.0, 0.0, 0.0), weld_glow_material())
+    for side in (-1, 1):
+        axis, ang = weld_arm_close(side)
+        print(f"  weld arm {side:+d}: pivot {weld_to_grip(WELD_ARM_PIVOT * np.array([1.0, 1.0, -side])).round(4)}, "
+              f"closes {ang:.1f} deg about {weld_to_grip(axis).round(4)} (grip frame)")
+    print(f"  weld tip: start {weld_to_grip((WELD_TIP_U0, WELD_BODY_V, 0.0)).round(4)}, point {weld_tip().round(4)}, "
+          f"axis {weld_tip_axis().round(4)}")
+    return objs, parts, glow_ob
+
+
 def prop_potato_blaster():
     p = [cylinder((-0.006, -0.065, 0), (0.0, 0.045, 0), 0.019, 12, "rubber", ref=X, bevel=0.004),
          cylinder((-0.17, 0.08, 0), (0.06, 0.08, 0), 0.047, 18, "paint_olive", ref=Y, bevel=0.008),
@@ -5768,10 +6174,17 @@ def export_props():
         ob, part = build_prop(name)
         objs.append(ob)
         parts.append(part)
+    # The Weld Tool's tip and clamping arms are child objects the game turns; they share its atlas.
+    n_props = len(objs)
+    weld_objs, weld_parts, weld_glow = build_weld_children(objs[list(PROPS).index("weld_tool")])
+    objs += weld_objs
+    parts += weld_parts
     # The Sledgehammer is 1.3 m long, so it has an atlas of its own rather than starving the small tools of texels; the
-    # Refine Tool and the Connect Tool have one each too, since first person holds them close to the eye.
+    # Refine Tool, the Connect Tool, the Weld Tool and the Paint Tool have one each too, since first person holds them close
+    # to the eye.
     own = {name: [i for i, n in enumerate(PROPS) if n == name]
-           for name in ("sledgehammer", "refine_tool", "connect_tool", "paint_tool")}
+           for name in ("sledgehammer", "refine_tool", "connect_tool", "weld_tool", "paint_tool")}
+    own["weld_tool"] += list(range(n_props, len(objs)))
     shared = [i for i in range(len(objs)) if not any(i in idx for idx in own.values())]
     # The Paint Tool's tank is an object of its own (the reload twists it off), sharing the tool's atlas.
     paint = objs[list(PROPS).index("paint_tool")]
@@ -5783,6 +6196,7 @@ def export_props():
     for idx, group, material in ((shared, "props", "M_hand_tools"), (own["sledgehammer"], "sledgehammer", "M_sledgehammer"),
                                  (own["refine_tool"], "refine_tool", "M_refine_tool"),
                                  (own["connect_tool"], "connect_tool", "M_connect_tool"),
+                                 (own["weld_tool"], "weld_tool", "M_weld_tool"),
                                  (own["paint_tool"], "paint_tool", "M_paint_tool")):
         stats.update(ct.texture_props([objs[i] for i in idx], [parts[i] for i in idx],
                                       [mesh_material_names(parts[i]) for i in idx], PALETTE, PROP_ATLAS, seed=5,
@@ -5814,8 +6228,9 @@ def export_props():
     # the Paint Tool's tubes, nozzles, glass and paint: plain materials the game tints to the chosen colour
     paint_children = build_paint_children(paint, tank)
     path = OUT_DIR / "hand_tools.glb"
-    export_glb(path, objs + [glow] + paint_children + [root] + bobjs + [wat] + [bag_root] + bag_objs, animations=False)
-    print(f"{path.name}: {len(PROPS) + 2} props")
+    export_glb(path, objs + [glow, weld_glow] + paint_children + [root] + bobjs + [wat] + [bag_root] + bag_objs,
+               animations=False)
+    print(f"{path.name}: {n_props + 2} props")
 
 
 def export_bucket_items():

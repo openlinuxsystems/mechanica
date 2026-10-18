@@ -9,6 +9,8 @@
   "drop_lifetime": 900,
   "max_drops": 256,
   "drop_inventory_on_death": true,
+  // The drawstring bag a knocked-out player's items lie in (tools/knockout_bag/build_knockout_bag.py).
+  "knockout_bag": "vanilla:meshes/knockout_bag.glb",
   "aim_tolerance": 25,
   // Filling an empty bucket at water turns it into a full one in the same slot.
   "bucket_item": "water_bucket",

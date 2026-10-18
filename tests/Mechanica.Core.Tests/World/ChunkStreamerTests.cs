@@ -32,6 +32,17 @@ public class ChunkStreamerTests
     }
 
     [Fact]
+    public void AWorldCanBeWiderThanItIsDeep()
+    {
+        var streamer = new ChunkStreamer(Settings with { WorldSize = 1024f, WorldDepth = 512f });
+        Assert.True(streamer.InWorld(new ChunkCoord(7, 3)));
+        Assert.True(streamer.InWorld(new ChunkCoord(-8, -4)));
+        Assert.False(streamer.InWorld(new ChunkCoord(7, 4)));
+        Assert.False(streamer.InWorld(new ChunkCoord(0, -5)));
+        Assert.False(streamer.InWorld(new ChunkCoord(8, 0)));
+    }
+
+    [Fact]
     public void NothingLoadsPastTheWorldEdge()
     {
         var streamer = new ChunkStreamer(Settings);

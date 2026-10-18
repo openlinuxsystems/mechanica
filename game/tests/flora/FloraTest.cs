@@ -163,10 +163,12 @@ public partial class FloraTest : StagedTest
         Add("find a seed bush on open ground", _ =>
         {
             var gen = _host.Main.Streamer.Generator;
-            _bush = gen.ObjectsIn(-300, -300, 300, 300)
+            // Near the spawn, where the world's chunks are already in.
+            var home = gen.Spawn ?? default;
+            _bush = gen.ObjectsIn(home.X - 300, home.Z - 300, home.X + 300, home.Z + 300)
                 .Where(o => o.Definition.Id == "bush" && gen.SlopeAt(o.Position.X, o.Position.Z) < 0.2f)
                 .Where(o => !gen.ObjectsIn(o.Position.X - 8, o.Position.Z - 8, o.Position.X + 8, o.Position.Z + 8).Any(n => n.Id != o.Id))
-                .OrderBy(o => o.Position.Length())
+                .OrderBy(o => (o.Position - home).Length())
                 .First();
             Check(!_bush.Definition.Solid && _bush.Definition.Model == "bush_berry", $"bush {_bush.Id} is a walk-through berry bush at {_bush.Position}");
             // Start 3 m short of it, facing across it.

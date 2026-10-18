@@ -1,0 +1,21 @@
+{
+  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed on its own.
+  // Written by tools/author-poi-placeholders.py; edit the table there and re-run.
+  "id": "poi_50",
+  "name": "POI-50 Scrap City Garage",
+  "radius": 70.0,
+  "size": [60.0, 12.0, 40.0],
+  "road": "road",
+  "placement": {},
+  "terrain": [
+    { "op": "flatten", "radius": 50.0, "blend": 20.0 }
+  ],
+  "ground": [{ "ground": "lot", "radius": 42.0, "blend": 10.0, "noise": 4.0 }],
+  "pieces": [
+    { "shape": "box", "size": [68.0, 0.3, 48.0], "at": [0.0, 0.15, 0.0], "color": "#a3a093" },
+    { "shape": "box", "size": [60.0, 12.0, 40.0], "at": [0.0, 6.3, 0.0], "color": "#7d858c" },
+    { "shape": "box", "size": [16.0, 8.0, 0.4], "at": [-12.0, 4.3, 20.2], "color": "#4a4f55" },
+    { "shape": "box", "size": [16.0, 8.0, 0.4], "at": [12.0, 4.3, 20.2], "color": "#4a4f55" },
+    { "shape": "cylinder", "radius": 3.0, "height": 6.0, "at": [20.0, 15.3, -10.0], "color": "#e0b52c" }
+  ]
+}

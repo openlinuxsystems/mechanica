@@ -1,0 +1,22 @@
+{
+  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed on its own.
+  // Written by tools/author-poi-placeholders.py; edit the table there and re-run.
+  "id": "poi_09",
+  "name": "POI-09 Mountain Lookout",
+  "radius": 41.0,
+  "size": [10.0, 14.0, 10.0],
+  "road": "track",
+  "placement": {},
+  "terrain": [
+    { "op": "flatten", "radius": 21.0, "blend": 20.0 }
+  ],
+  "flora": "mountain",
+  "pieces": [
+    { "shape": "box", "size": [14.0, 0.3, 14.0], "at": [0.0, 0.15, 0.0], "color": "#9c988c" },
+    { "shape": "cylinder", "radius": 0.4, "height": 12.0, "at": [-4.0, 6.3, -4.0], "color": "#7d858c" },
+    { "shape": "cylinder", "radius": 0.4, "height": 12.0, "at": [-4.0, 6.3, 4.0], "color": "#7d858c" },
+    { "shape": "cylinder", "radius": 0.4, "height": 12.0, "at": [4.0, 6.3, -4.0], "color": "#7d858c" },
+    { "shape": "cylinder", "radius": 0.4, "height": 12.0, "at": [4.0, 6.3, 4.0], "color": "#7d858c" },
+    { "shape": "box", "size": [10.0, 2.5, 10.0], "at": [0.0, 13.5, 0.0], "color": "#9c988c" }
+  ]
+}

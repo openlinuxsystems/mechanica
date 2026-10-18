@@ -1,24 +1,26 @@
 {
-  // World generation rules (chunk 19, D11). SI units. POI layouts are in pois/*.json.
-  // See src/Mechanica.Core/World/WorldGenDefinition.cs for every key.
+  // World generation rules (chunk 19, D11; World Map spec). SI units. POI layouts are in pois/*.json.
+  // See src/Mechanica.Core/World/WorldGenDefinition.cs and WorldLayoutDefinition.cs for every key, and
+  // docs/world-generation.md for how they fit together. North is -z, east is +x.
   "terrain": {
     "resolution": 1.0,
-    "sea_level": -4.0,
-    "sea_floor": -24.0,
+    "sea_level": 2.0,
+    "sea_floor": -20.0,
     "coast_width": 160.0,
     "coast_biome_width": 240.0,
     "coast_wobble": 140.0,
-    "noise_scale": 420.0,
+    "noise_scale": 520.0,
     "octaves": 5,
     "lacunarity": 2.0,
     "gain": 0.5,
-    "biome_cell_size": 760.0,
-    "biome_blend": 80.0,
-    "biome_warp": 160.0,
+    "biome_cell_size": 440.0,
+    "biome_blend": 78.0,
+    "biome_warp": 220.0,
+    "region_warp": 420.0,
     "max_scatter_slope": 0.7
   },
   "coast_biome": "coastal",
-  // Ground textures (at most 8) that biomes, steep slopes and POIs paint the terrain with; see docs/world-generation.md.
+  // Ground textures (at most 8) that biomes, steep slopes, POIs and roads paint the terrain with; see docs/world-generation.md.
   "grounds": [
     { "id": "grass", "texture": "textures/terrain/grass.png", "tile": 4.0 },
     { "id": "forest_floor", "texture": "textures/terrain/forest_floor.png", "tile": 4.0 },
@@ -26,16 +28,18 @@
     { "id": "rock", "texture": "textures/terrain/rock.png", "tile": 5.0 },
     { "id": "sand", "texture": "textures/terrain/sand.png", "tile": 4.0 },
     { "id": "lot", "texture": "textures/terrain/lot.png", "tile": 5.0 },
-    { "id": "burnt", "texture": "textures/terrain/burnt.png", "tile": 4.0, "flora": false, "flora_tint": "#5c4d24" }
+    { "id": "burnt", "texture": "textures/terrain/burnt.png", "tile": 4.0, "flora": false, "flora_tint": "#5c4d24" },
+    { "id": "dirt", "texture": "textures/terrain/dirt.png", "tile": 4.0 }
   ],
   "slope_ground": { "ground": "rock", "from": 0.7, "to": 1.1 },
+  // World Map spec §2. Shares come from the regions below; the coast is the ring of sand round the sea.
   "biomes": [
     {
       "id": "meadow",
       "name": "Meadow",
       "weight": 3.0,
-      "height": 6.0,
-      "relief": 8.0,
+      "height": 14.0,
+      "relief": 10.0,
       "color": "#4f8a30",
       "ground": "grass",
       "scatter": [
@@ -58,8 +62,8 @@
       "id": "forest",
       "name": "Forest",
       "weight": 3.0,
-      "height": 12.0,
-      "relief": 20.0,
+      "height": 22.0,
+      "relief": 22.0,
       "color": "#3f6d3a",
       "ground": "forest_floor",
       "scatter": [
@@ -79,50 +83,126 @@
       ]
     },
     {
-      "id": "ruin_field",
-      "name": "Ruin Field",
-      "weight": 2.0,
-      "height": 5.0,
-      "relief": 5.0,
-      "color": "#8b8a68",
+      "id": "field",
+      "name": "Field",
+      "weight": 1.0,
+      "height": 10.0,
+      "relief": 3.0,
+      "color": "#c9b046",
       "ground": "dry_grass",
       "scatter": [
-        { "object": "rock_outcrop", "spacing": 50.0, "chance": 0.35 },
-        { "object": "metal_outcrop", "spacing": 120.0, "chance": 0.25 },
-        { "object": "rock_node", "spacing": 20.0, "chance": 0.35 },
-        { "object": "boulder", "spacing": 34.0, "chance": 0.25 },
-        { "object": "small_rock", "spacing": 12.0, "chance": 0.2 },
-        { "object": "bush", "spacing": 20.0, "chance": 0.1 }
+        { "object": "birch_tree", "spacing": 90.0, "chance": 0.2 },
+        { "object": "small_rock", "spacing": 30.0, "chance": 0.1 },
+        { "object": "rock_node", "spacing": 60.0, "chance": 0.15 },
+        { "object": "bush", "spacing": 30.0, "chance": 0.1 }
       ],
       "flora": [
-        { "kind": "grass", "density": 1.0, "coverage": 0.5, "patch_size": 12.0, "scale": [0.7, 1.2], "colors": ["#a3bf3c", "#b6c443", "#8fb53a"] },
-        { "kind": "ground_cover", "density": 0.12, "coverage": 0.35, "patch_size": 8.0, "models": ["sprouts", "flowers_yellow"], "colors": ["#9cbc3e"] },
-        { "kind": "bush", "density": 0.005, "coverage": 0.5, "patch_size": 40.0, "scale": [0.7, 1.1], "models": ["bush_spiky", "bush_low"], "colors": ["#88ad3a", "#7aa83c"] }
+        { "kind": "grass", "density": 2.6, "coverage": 0.9, "patch_size": 24.0, "scale": [1.0, 1.5], "models": ["grass_tall", "grass_tipped"], "colors": ["#e0c04a", "#d4b03e", "#e8cc5a", "#c9a83a"] },
+        { "kind": "ground_cover", "density": 0.15, "coverage": 0.4, "patch_size": 10.0, "models": ["sprouts", "flowers_yellow"], "colors": ["#c8b444"] }
       ]
     },
     {
-      "id": "warehouse_district",
-      "name": "Warehouse District",
-      "weight": 2.0,
-      "height": 4.0,
-      "relief": 2.0,
-      "color": "#7f8288",
-      "ground": "lot",
+      "id": "desert",
+      "name": "Desert",
+      "weight": 1.0,
+      "height": 18.0,
+      "relief": 14.0,
+      "terrace": 6.0,
+      "color": "#dcc07a",
+      "ground": "sand",
       "scatter": [
-        { "object": "small_rock", "spacing": 20.0, "chance": 0.1 },
-        { "object": "bush", "spacing": 26.0, "chance": 0.08 }
+        { "object": "cactus", "spacing": 26.0, "chance": 0.3 },
+        { "object": "rock_outcrop", "spacing": 70.0, "chance": 0.3 },
+        { "object": "metal_outcrop", "spacing": 110.0, "chance": 0.3 },
+        { "object": "boulder", "spacing": 50.0, "chance": 0.2 },
+        { "object": "small_rock", "spacing": 20.0, "chance": 0.15 }
       ],
       "flora": [
-        { "kind": "grass", "density": 0.5, "coverage": 0.3, "patch_size": 8.0, "scale": [0.7, 1.1], "models": ["grass_short", "grass_tipped", "grass_mixed"], "colors": ["#a8bd42", "#93b43c"] },
-        { "kind": "bush", "density": 0.002, "coverage": 0.4, "patch_size": 30.0, "scale": [0.6, 1.0], "models": ["bush_spiky", "bush_low"], "colors": ["#86a83c"] }
+        { "kind": "grass", "density": 0.25, "coverage": 0.25, "patch_size": 10.0, "scale": [0.6, 1.0], "models": ["grass_short", "grass_tipped"], "colors": ["#c4b45a", "#b0a64e"] },
+        { "kind": "bush", "density": 0.002, "coverage": 0.3, "patch_size": 40.0, "scale": [0.5, 0.9], "models": ["bush_spiky"], "colors": ["#9aa04a"] }
+      ]
+    },
+    {
+      "id": "autumn_forest",
+      "name": "Autumn Forest",
+      "weight": 1.0,
+      "height": 20.0,
+      "relief": 18.0,
+      "color": "#c8642a",
+      "ground": "forest_floor",
+      "scatter": [
+        { "object": "autumn_leafy_tree", "spacing": 11.0, "chance": 0.5 },
+        { "object": "birch_tree", "spacing": 14.0, "chance": 0.35 },
+        { "object": "spruce_tree", "spacing": 30.0, "chance": 0.15 },
+        { "object": "fallen_log", "spacing": 22.0, "chance": 0.2 },
+        { "object": "large_rock", "spacing": 34.0, "chance": 0.15 },
+        { "object": "bush", "spacing": 12.0, "chance": 0.2 }
+      ],
+      "flora": [
+        { "kind": "grass", "density": 1.2, "coverage": 0.6, "patch_size": 10.0, "scale": [0.8, 1.3], "colors": ["#b8a03a", "#c88a32", "#a6a23c"] },
+        { "kind": "ground_cover", "density": 0.5, "coverage": 0.65, "patch_size": 8.0, "scale": [0.8, 1.3], "models": ["clover", "sprouts", "flowers_white"], "colors": ["#c87a2e", "#d89a36", "#b0a03a"] },
+        { "kind": "bush", "density": 0.02, "coverage": 0.6, "patch_size": 30.0, "scale": [0.8, 1.3],
+          "models": ["bush_round", "bush_low", "bush_lumpy"], "colors": ["#d0742a", "#c4542a", "#b8a03a"] }
+      ]
+    },
+    {
+      "id": "burned_forest",
+      "name": "Burned Forest",
+      "weight": 1.0,
+      "height": 14.0,
+      "relief": 14.0,
+      "color": "#4a403a",
+      "ground": "burnt",
+      "scatter": [
+        { "object": "burnt_tree", "spacing": 12.0, "chance": 0.5 },
+        { "object": "fallen_log", "spacing": 26.0, "chance": 0.2 },
+        { "object": "rock_node", "spacing": 30.0, "chance": 0.25 },
+        { "object": "metal_outcrop", "spacing": 120.0, "chance": 0.25 },
+        { "object": "boulder", "spacing": 50.0, "chance": 0.2 }
+      ],
+      "flora": [
+        { "kind": "grass", "density": 0.3, "coverage": 0.3, "patch_size": 10.0, "scale": [0.6, 1.0], "models": ["grass_short", "grass_tipped"], "colors": ["#6a5a2c", "#5c4d24"] }
+      ]
+    },
+    {
+      "id": "lake",
+      "name": "Lake",
+      "weight": 1.0,
+      "height": -14.0,
+      "relief": 4.0,
+      "color": "#3a7fb8",
+      "ground": "sand",
+      "scatter": [
+        { "object": "small_rock", "spacing": 24.0, "chance": 0.15 }
+      ]
+    },
+    {
+      "id": "mountain",
+      "name": "Mountain",
+      "weight": 0.5,
+      "height": 95.0,
+      "relief": 105.0,
+      "ridge": 0.8,
+      "color": "#8a8780",
+      "ground": "rock",
+      "scatter": [
+        { "object": "spruce_tree", "spacing": 22.0, "chance": 0.25 },
+        { "object": "pine_tree", "spacing": 40.0, "chance": 0.2 },
+        { "object": "rock_outcrop", "spacing": 40.0, "chance": 0.35 },
+        { "object": "metal_outcrop", "spacing": 80.0, "chance": 0.3 },
+        { "object": "boulder", "spacing": 30.0, "chance": 0.3 },
+        { "object": "large_rock", "spacing": 24.0, "chance": 0.25 }
+      ],
+      "flora": [
+        { "kind": "grass", "density": 0.6, "coverage": 0.4, "patch_size": 10.0, "scale": [0.6, 1.1], "models": ["grass_short", "grass_tipped"], "colors": ["#8aa04a", "#7a9444"] }
       ]
     },
     {
       "id": "coastal",
       "name": "Coastal",
       "weight": 0.0,
-      "height": 0.0,
-      "relief": 4.0,
+      "height": 3.0,
+      "relief": 3.0,
       "color": "#d9c890",
       "ground": "sand",
       "scatter": [
@@ -136,6 +216,140 @@
         { "kind": "bush", "density": 0.002, "coverage": 0.4, "patch_size": 40.0, "scale": [0.6, 1.0], "models": ["bush_spiky"], "colors": ["#8db04a"] }
       ]
     }
+  ],
+  // The map's fixed layout (World Map spec §2): each biome cell takes the region nearest it for its size, so these
+  // points draw the same map in every world while the seed shapes the ground, the borders and the patches (mix).
+  // At is [x, z] as fractions of the world: x east, z south, -0.5 to 0.5.
+  "regions": [
+    { "biome": "forest", "at": [-0.40, -0.25], "size": 1.3, "mix": [{ "biome": "meadow", "chance": 0.08 }] },
+    { "biome": "forest", "at": [-0.42, -0.02], "size": 1.15 },
+    { "biome": "forest", "at": [-0.24, -0.44], "size": 1.0 },
+    { "biome": "forest", "at": [-0.26, -0.10], "size": 0.85 },
+    { "biome": "forest", "at": [0.02, -0.30], "size": 0.6 },
+    { "biome": "forest", "at": [0.25, 0.0], "size": 0.65 },
+    { "biome": "lake", "at": [-0.30, -0.35], "size": 0.45 },
+    { "biome": "lake", "at": [-0.19, -0.30], "size": 0.35 },
+    { "biome": "mountain", "at": [-0.06, -0.43], "size": 1.1 },
+    { "biome": "mountain", "at": [0.11, -0.44], "size": 0.9 },
+    { "biome": "autumn_forest", "at": [0.31, -0.37], "size": 0.62, "mix": [{ "biome": "meadow", "chance": 0.06 }] },
+    { "biome": "autumn_forest", "at": [0.44, -0.24], "size": 0.6 },
+    { "biome": "burned_forest", "at": [0.43, 0.10], "size": 0.62 },
+    { "biome": "burned_forest", "at": [0.42, 0.35], "size": 0.55 },
+    { "biome": "desert", "at": [-0.39, 0.18], "size": 1.0 },
+    { "biome": "desert", "at": [-0.30, 0.39], "size": 0.95 },
+    { "biome": "lake", "at": [-0.03, -0.01], "size": 0.5 },
+    { "biome": "lake", "at": [0.05, -0.01], "size": 0.5 },
+    { "biome": "lake", "at": [0.01, 0.06], "size": 0.45 },
+    { "biome": "lake", "at": [0.28, -0.08], "size": 0.3 },
+    { "biome": "meadow", "at": [-0.15, -0.17], "size": 1.0, "mix": [{ "biome": "forest", "chance": 0.12 }] },
+    { "biome": "meadow", "at": [0.08, -0.20], "size": 1.0, "mix": [{ "biome": "forest", "chance": 0.1 }] },
+    { "biome": "meadow", "at": [-0.14, 0.14], "size": 0.9, "mix": [{ "biome": "forest", "chance": 0.12 }] },
+    { "biome": "meadow", "at": [-0.10, 0.37], "size": 0.8 },
+    { "biome": "meadow", "at": [0.18, -0.12], "size": 0.95, "mix": [{ "biome": "forest", "chance": 0.1 }] },
+    { "biome": "meadow", "at": [0.25, 0.22], "size": 0.8 },
+    { "biome": "field", "at": [0.10, 0.15], "size": 0.8 },
+    { "biome": "field", "at": [0.14, 0.37], "size": 0.8 },
+    { "biome": "autumn_forest", "at": [0.0, 0.41], "size": 0.4 },
+    { "biome": "forest", "at": [0.33, 0.20], "size": 0.6 },
+    { "biome": "meadow", "at": [-0.22, 0.24], "size": 0.6 }
+  ],
+  // Rivers (World Map spec §2: they connect the major lakes): a centre line through these points, meandering by the seed,
+  // that cuts a channel and a valley into the ground. Points may reach past the world's edge so a river runs out to sea.
+  "rivers": [
+    { "points": [[-0.05, -0.31], [-0.04, -0.24], [-0.01, -0.10], [0.0, -0.03]], "width": [10.0, 22.0], "depth": 3.5 },
+    { "points": [[-0.20, -0.30], [-0.16, -0.18], [-0.09, -0.08], [-0.03, -0.01]], "width": [14.0, 22.0], "depth": 3.5 },
+    { "points": [[0.01, 0.07], [-0.03, 0.20], [-0.14, 0.32], [-0.17, 0.46], [-0.18, 0.58]], "width": [22.0, 34.0], "depth": 4.0 },
+    { "points": [[0.06, 0.0], [0.20, -0.12], [0.34, -0.12], [0.48, -0.16], [0.58, -0.18]], "width": [16.0, 30.0], "depth": 4.0 }
+  ],
+  // Paved roads (World Map spec §3): a minimum spanning tree over every road-linked site plus loops, routed over a grid
+  // with a grade limit, bridges over water; links are joined first, in order. Dirt tracks reach camps and small ruins.
+  "roads": {
+    "width": 10.0,
+    "curb": 0.3,
+    "shoulder": 1.5,
+    "max_grade": 0.24,
+    "cell": 32.0,
+    "bridge_clearance": 3.0,
+    "bridge_cost": 6.0,
+    "loop_factor": 1.7,
+    "loop_reach": 2600.0,
+    "max_loops": 14,
+    "links": [["poi_36", "poi_37"], ["poi_37", "poi_38"], ["poi_38", "poi_39"], ["poi_39", "poi_20"]],
+    "shoulder_ground": "dirt",
+    "track_width": 4.0,
+    "track_max_grade": 0.32,
+    "track_reach": 650.0,
+    "track_ground": "dirt"
+  },
+  // The 50 mandatory structures (World Map spec §4) at the same place in every world, and the extra large slots.
+  // Ids are permanent: later design work refers to them, and each structure has its own prefab (pois/poi_NN.json, written
+  // by tools/author-poi-placeholders.py) to design on its own. Jitter lets the seed move a site onto dry, level ground.
+  "sites": [
+    { "id": "poi_01", "label": "POI-01", "poi": "poi_01", "at": [-0.33, -0.15], "jitter": 120.0, "biome": "forest" },
+    { "id": "poi_02", "label": "POI-02", "poi": "poi_02", "at": [-0.25, -0.26], "jitter": 100.0, "biome": "forest" },
+    { "id": "poi_03", "label": "POI-03", "poi": "poi_03", "at": [-0.35, -0.38], "jitter": 120.0, "biome": "forest" },
+    { "id": "poi_04", "label": "POI-04", "poi": "poi_04", "at": [-0.20, -0.38], "jitter": 120.0, "biome": "forest" },
+    { "id": "poi_05", "label": "POI-05", "poi": "poi_05", "at": [-0.27, -0.18], "jitter": 100.0, "biome": "forest" },
+    { "id": "poi_06", "label": "POI-06", "poi": "poi_06", "at": [-0.17, -0.21], "jitter": 120.0, "biome": "meadow" },
+    { "id": "poi_07", "label": "POI-07", "poi": "poi_07", "at": [-0.10, -0.26], "jitter": 120.0, "biome": "meadow" },
+    { "id": "poi_08", "label": "POI-08", "poi": "poi_08", "at": [0.03, -0.22], "jitter": 120.0, "biome": "meadow" },
+    { "id": "poi_09", "label": "POI-09", "poi": "poi_09", "at": [-0.08, -0.36], "jitter": 140.0, "biome": "mountain" },
+    { "id": "poi_10", "label": "POI-10", "poi": "poi_10", "at": [0.08, -0.40], "jitter": 140.0, "biome": "mountain" },
+    { "id": "poi_11", "label": "POI-11", "poi": "poi_11", "at": [-0.07, -0.12], "jitter": 120.0, "biome": "meadow" },
+    { "id": "poi_12", "label": "POI-12", "poi": "poi_12", "at": [0.30, -0.40], "jitter": 140.0, "biome": "autumn_forest" },
+    { "id": "poi_13", "label": "POI-13", "poi": "poi_13", "at": [0.10, -0.20], "jitter": 100.0, "biome": "meadow" },
+    { "id": "poi_14", "label": "POI-14", "poi": "poi_14", "at": [0.22, -0.24], "jitter": 120.0, "biome": "autumn_forest" },
+    { "id": "poi_15", "label": "POI-15", "poi": "poi_15", "at": [0.24, -0.16], "jitter": 120.0, "biome": "autumn_forest" },
+    { "id": "poi_16", "label": "POI-16", "poi": "poi_16", "at": [0.42, -0.38], "jitter": 140.0, "biome": "autumn_forest" },
+    { "id": "poi_17", "label": "POI-17", "poi": "poi_17", "at": [-0.28, -0.05], "jitter": 120.0, "biome": "forest" },
+    { "id": "poi_18", "label": "POI-18", "poi": "poi_18", "at": [-0.19, -0.06], "jitter": 100.0, "biome": "meadow" },
+    { "id": "poi_19", "label": "POI-19", "poi": "poi_19", "at": [-0.12, 0.06], "jitter": 120.0, "biome": "meadow" },
+    { "id": "poi_20", "label": "POI-20", "poi": "poi_20", "at": [0.04, -0.33], "jitter": 140.0, "biome": "mountain" },
+    { "id": "poi_21", "label": "POI-21", "poi": "poi_21", "at": [0.18, 0.02], "jitter": 120.0, "biome": "meadow" },
+    { "id": "poi_22", "label": "POI-22", "poi": "poi_22", "at": [0.34, -0.24], "jitter": 140.0, "biome": "autumn_forest" },
+    { "id": "poi_23", "label": "POI-23", "poi": "poi_23", "at": [0.30, -0.03], "jitter": 140.0, "biome": "meadow" },
+    { "id": "poi_24", "label": "POI-24", "poi": "poi_24", "at": [0.12, -0.08], "jitter": 120.0, "biome": "meadow" },
+    { "id": "poi_25", "label": "POI-25", "poi": "poi_25", "at": [0.03, 0.24], "jitter": 100.0, "biome": "field" },
+    { "id": "poi_26", "label": "POI-26", "poi": "poi_26", "at": [0.11, 0.12], "jitter": 100.0, "biome": "field" },
+    { "id": "poi_27", "label": "POI-27", "poi": "poi_27", "at": [-0.36, 0.20], "jitter": 140.0, "biome": "desert" },
+    { "id": "poi_28", "label": "POI-28", "poi": "poi_28", "at": [0.12, 0.30], "jitter": 120.0, "biome": "field" },
+    { "id": "poi_29", "label": "POI-29", "poi": "poi_29", "at": [-0.14, -0.03], "jitter": 120.0, "biome": "meadow" },
+    { "id": "poi_30", "label": "POI-30", "poi": "poi_30", "at": [-0.07, 0.24], "jitter": 140.0, "biome": "meadow" },
+    { "id": "poi_31", "label": "POI-31", "poi": "poi_31", "at": [0.24, 0.30], "jitter": 120.0, "biome": "meadow" },
+    { "id": "poi_32", "label": "POI-32", "poi": "poi_32", "at": [0.40, 0.04], "jitter": 140.0, "biome": "burned_forest" },
+    { "id": "poi_33", "label": "POI-33", "poi": "poi_33", "at": [-0.40, 0.34], "jitter": 140.0, "biome": "desert" },
+    { "id": "poi_34", "label": "POI-34", "poi": "poi_34", "at": [-0.01, 0.15], "jitter": 120.0, "biome": "field" },
+    { "id": "poi_35", "label": "POI-35", "poi": "poi_35", "at": [0.34, 0.42], "jitter": 120.0, "biome": "burned_forest" },
+    // The start: the crash site's pond fills because its pad stands 4 m above the sea.
+    { "id": "poi_36", "label": "POI-36", "poi": "crash_site", "at": [0.19, 0.38], "biome": "field", "pad_height": 6.0 },
+    { "id": "poi_37", "label": "POI-37", "poi": "outpost", "at": [0.21, 0.24], "jitter": 80.0, "biome": "meadow" },
+    { "id": "poi_38", "label": "POI-38", "poi": "poi_38", "at": [0.14, 0.21], "jitter": 100.0, "biome": "field" },
+    { "id": "poi_39", "label": "POI-39", "poi": "poi_39", "at": [0.05, 0.10], "jitter": 100.0, "biome": "field" },
+    { "id": "poi_40", "label": "POI-40", "poi": "poi_40", "at": [-0.06, 0.38], "jitter": 100.0, "biome": "meadow" },
+    { "id": "poi_41", "label": "POI-41", "poi": "poi_41", "at": [-0.22, 0.08], "jitter": 140.0, "biome": "meadow" },
+    { "id": "poi_42", "label": "POI-42", "poi": "poi_42", "at": [0.06, 0.32], "jitter": 120.0, "biome": "field" },
+    { "id": "poi_43", "label": "POI-43", "poi": "poi_43", "at": [-0.30, 0.05], "jitter": 140.0, "biome": "desert" },
+    { "id": "poi_44", "label": "POI-44", "poi": "poi_44", "at": [-0.14, -0.31], "jitter": 120.0, "biome": "meadow" },
+    { "id": "poi_45", "label": "POI-45", "poi": "poi_45", "at": [-0.25, 0.30], "jitter": 120.0, "biome": "desert" },
+    { "id": "poi_46", "label": "POI-46", "poi": "poi_46", "at": [-0.42, -0.28], "jitter": 120.0, "biome": "forest" },
+    { "id": "poi_47", "label": "POI-47", "poi": "poi_47", "at": [0.42, 0.22], "jitter": 120.0, "biome": "burned_forest" },
+    { "id": "poi_48", "label": "POI-48", "poi": "poi_48", "at": [0.28, 0.08], "jitter": 160.0, "biome": "burned_forest" },
+    { "id": "poi_49", "label": "POI-49", "poi": "poi_49", "at": [-0.32, 0.42], "jitter": 160.0, "biome": "desert" },
+    { "id": "poi_50", "label": "POI-50", "poi": "poi_50", "at": [0.30, 0.34], "jitter": 120.0, "biome": "burned_forest" },
+    // Extra large slots (World Map spec §1: 18-20 in all): warehouse or Farmbot Scrapyard by the seed.
+    { "id": "large_1", "pool": "large_slots", "at": [0.32, 0.18], "jitter": 140.0, "biome": "burned_forest" },
+    { "id": "large_2", "pool": "large_slots", "at": [0.44, 0.06], "jitter": 140.0, "biome": "burned_forest" },
+    { "id": "large_3", "pool": "large_slots", "at": [0.44, 0.38], "jitter": 140.0, "biome": "burned_forest" },
+    { "id": "large_4", "pool": "large_slots", "at": [0.36, -0.08], "jitter": 140.0, "biome": "burned_forest" },
+    { "id": "large_5", "pool": "large_slots", "at": [-0.20, 0.42], "jitter": 140.0, "biome": "desert" },
+    { "id": "large_6", "pool": "large_slots", "at": [-0.40, 0.08], "jitter": 140.0, "biome": "desert" },
+    // The story's late goal (quests/final_decision.json), far from the start in the northeast.
+    { "id": "ai_core", "poi": "ai_core_facility", "at": [0.44, -0.12], "jitter": 140.0, "biome": "autumn_forest" }
+  ],
+  // The extra large slots share these out by the seed, so totals stay the same (World Map spec §4: with the ten numbered ones,
+  // 12 warehouses of 2, 3 and 4 floors and 6 Farmbot Scrapyards).
+  "pools": [
+    { "id": "large_slots", "fill": [{ "poi": "warehouse_small", "count": 1 }, { "poi": "warehouse", "count": 1 }, { "poi": "farmbot_scrapyard", "count": 4 }] }
   ],
   // Destructible objects (D11): placeholder primitives until meshes are authored, a model (mesh, with an optional far lod), or a
   // built-in flora model.
@@ -309,6 +523,57 @@
       "sink": 0.1,
       "health": 30.0,
       "drops": [{ "item": "scrap_wood", "count": 3 }]
+    },
+    // World Map spec §2: autumn trees keep the Leafy Tree's wood; burnt trees are bare, charred and give little.
+    // Models derived from the Leafy Tree by tools/trees/derive_variants.py.
+    {
+      "id": "autumn_leafy_tree",
+      "collider": { "shape": "cylinder", "radius": 0.42, "height": 4.6, "at": [0.0, 2.3, 0.0] },
+      "pieces": [
+        { "shape": "cylinder", "radius": 0.4, "height": 5.0, "at": [0.0, 2.5, 0.0], "color": "#7b4f2c" },
+        { "shape": "sphere", "radius": 3.0, "at": [0.0, 6.3, 0.0], "color": "#e2611b" }
+      ],
+      "mesh": { "file": "meshes/world/autumn_leafy_tree.glb", "lod": "meshes/world/autumn_leafy_tree_lod.glb", "lod_distance": 100.0 },
+      "footprint": 3.2,
+      "scale": [0.85, 1.2],
+      "sink": 0.3,
+      "health": 80.0,
+      "damage_from": ["sledge", "saw", "explosion"],
+      "breaks_into": { "count": 4, "count_max": 6, "parts": [{ "part": "wood_log" }] },
+      "fell": { "height": 7.0, "spin": 0.55 },
+      "sounds": { "hit": "leafy_hit", "break": "leafy_fall" },
+      "debris": { "chips": ["#8a5a33", "#d9a466"], "leaves": ["#f29a1d", "#e2611b", "#c2401c"], "canopy": [0.0, 6.4, 0.0], "canopy_radius": 2.8 }
+    },
+    {
+      "id": "burnt_tree",
+      "collider": { "shape": "cylinder", "radius": 0.42, "height": 4.6, "at": [0.0, 2.3, 0.0] },
+      "pieces": [{ "shape": "cylinder", "radius": 0.4, "height": 5.0, "at": [0.0, 2.5, 0.0], "color": "#2a2522" }],
+      "mesh": { "file": "meshes/world/burnt_tree.glb", "lod": "meshes/world/burnt_tree_lod.glb", "lod_distance": 100.0 },
+      "footprint": 2.0,
+      "scale": [0.8, 1.15],
+      "sink": 0.3,
+      "health": 40.0,
+      "damage_from": ["sledge", "saw", "explosion"],
+      "breaks_into": { "count": 2, "count_max": 3, "parts": [{ "part": "wood_log" }] },
+      "fell": { "height": 6.0, "spin": 0.6 },
+      "sounds": { "hit": "leafy_hit", "break": "leafy_fall" },
+      "debris": { "chips": ["#2a2522", "#4a3a30"] }
+    },
+    {
+      "id": "cactus",
+      "collider": { "shape": "cylinder", "radius": 0.45, "height": 3.6, "at": [0.0, 1.8, 0.0] },
+      "pieces": [
+        { "shape": "cylinder", "radius": 0.45, "height": 3.6, "at": [0.0, 1.8, 0.0], "color": "#5c8f3a" },
+        { "shape": "cylinder", "radius": 0.28, "height": 1.4, "at": [0.75, 2.0, 0.0], "color": "#5c8f3a" },
+        { "shape": "box", "size": [0.8, 0.4, 0.4], "at": [0.4, 1.4, 0.0], "color": "#5c8f3a" },
+        { "shape": "cylinder", "radius": 0.24, "height": 1.0, "at": [-0.65, 2.4, 0.0], "color": "#5c8f3a" },
+        { "shape": "box", "size": [0.7, 0.35, 0.35], "at": [-0.35, 2.0, 0.0], "color": "#5c8f3a" }
+      ],
+      "footprint": 1.6,
+      "scale": [0.7, 1.3],
+      "sink": 0.2,
+      "health": 20.0,
+      "damage_from": ["sledge", "saw", "explosion"]
     }
   ]
 }

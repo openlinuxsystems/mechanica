@@ -1,0 +1,23 @@
+{
+  "id": "weld_tool",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 10
+    },
+    {
+      "item": "component_kit",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "weld_tool",
+      "count": 1
+    }
+  ],
+  "time": 30
+}
