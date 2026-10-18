@@ -220,7 +220,8 @@ remove it. Your markers are saved with the world; you can have up to 20. The map
 
 The **minimap** in the top right corner shows the land round you, north up, with you as the cyan arrow in the
 middle. Your current missions' goals are pulsing blue diamonds and your own pins are blue diamonds with their
-labels; one that is out of range waits on the edge in its direction. Options, Interface, Show minimap turns it off.
+labels; one that is out of range waits on the edge in its direction. After you die, your knockout bag is a small
+blue diamond too (and a diamond on the compass) until you pick it up. Options, Interface, Show minimap turns it off.
 
 Press **M** for the **full map**, and M, Esc or its X to close it. It works like the Logbook's map (drag, scroll,
 **−**, **+**, **Whole map**, **Find me**) and shows the same goals, named, and your pins. Click one to make it the
