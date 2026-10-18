@@ -62,6 +62,35 @@ public class SurvivalActionsTests
     }
 
     [Fact]
+    public void ACraftedToolStaysInItsSlotWhenThePlayerDies()
+    {
+        _f.Pockets(Me).Add(Scrap, 7);
+        _f.Pockets(Me).Add(Connector, 1);
+        var slot = _f.SlotOf(Me, Connector);
+
+        _f.Survival.Damage(Me.Peer, 1000, "test");
+
+        Assert.Equal(new ItemStack(Connector, 1), _f.Pockets(Me).Slots[slot]);
+        Assert.Equal(1, _f.Pockets(Me).Slots.Count(s => s is not null));
+        Assert.Equal([new ItemStack(Seed, 2), new ItemStack(Scrap, 7)], Assert.Single(_f.Survival.Drops.Values).Items);
+    }
+
+    [Fact]
+    public void ACraftedToolMustBeCarriedInSurvivalOnly()
+    {
+        IBuildCosts costs = _f.Survival;
+        Assert.Equal("Craft a Connect Tool at a Fabricator first.", costs.CheckTool(Me, Connector));
+        Assert.Null(costs.CheckTool(Me, HotbarTools.Weld)); // every player always has the others
+        Assert.Null(costs.CheckTool(new ActionCaller(Me.Peer, ActionSource.Script), Connector));
+
+        _f.Pockets(Me).Add(Connector, 1);
+        Assert.Null(costs.CheckTool(Me, Connector));
+
+        IBuildCosts creative = new SurvivalFixture(mode: GameMode.Creative).Survival;
+        Assert.Null(creative.CheckTool(You, Connector));
+    }
+
+    [Fact]
     public void TheDeadCanOnlyRespawnAndOnlyAfterTheDelay()
     {
         _f.Survival.Damage(Me.Peer, 1000, "test");

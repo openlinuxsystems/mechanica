@@ -12,7 +12,7 @@ namespace Mechanica.Game.Tools;
 
 /// <summary>
 /// Renders the player character in a running world to PNGs: standing, holding and swinging tools, looking up and down,
-/// crouching, moving, refining (the Refine Tool drawn, worked and put away), and in first person with each tool. For checking how a character or skin looks in game; run
+/// crouching, moving, refining (the Refine Tool drawn, worked and put away), the Connect Tool drawn, raised, clicked and put away, and in first person with each tool. For checking how a character or skin looks in game; run
 /// <c>tools/capture-characters.sh</c>, which uses a virtual display and the compatibility renderer. Given <c>lift</c> instead
 /// of a character it puts the player's Lift down and captures its deploy, a raise and full extension (<c>tools/capture-lift.sh</c>).
 /// Given <c>flora</c> it takes the player to a meadow and captures the grass, ground cover and bushes: wide and close, at every
@@ -93,6 +93,13 @@ public partial class CaptureScene : Node
         Shot("bucket_full", 80, () => Hold(CharacterProp.WaterBucketFull));
         Shot("bucket_throw_windup", 14, () => Player.Gesture(CharacterGesture.BucketThrow));
         Shot("bucket_throw", 30, () => Player.Gesture(CharacterGesture.BucketThrow));
+        Shot("connect_draw", 8, () => { Tool<Building.ConnectTool>(); Look(new Vector3(-0.85f, 1.45f, -1.25f), 1.15f); });
+        Shot("connect", 40, () => { });
+        Shot("connect_aim", 30, () => Connector.KeepRaised = true);
+        Shot("connect_click", 3, () => Player.Gesture(CharacterGesture.ConnectClick));
+        Shot("connect_reverse", 5, () => Player.Gesture(CharacterGesture.ConnectReverse));
+        Shot("connect_side", 20, () => Look(new Vector3(-1.4f, 1.3f, -0.15f), 1.15f));
+        Shot("connect_stow", 7, () => { Connector.KeepRaised = false; Tool<Building.HammerTool>(); });
         Shot("look_up", 40, () => { Tool<Building.HammerTool>(); Input(pitch: 0.9f); Look(new Vector3(-2.6f, 1.2f, -1.6f)); });
         Shot("look_down", 40, () => Input(pitch: -0.9f));
         Shot("crouch", 40, () => Input(crawl: true));
@@ -113,7 +120,12 @@ public partial class CaptureScene : Node
         Shot("first_person_bucket_throw", 30, () => Player.Gesture(CharacterGesture.BucketThrow));
         Shot("first_person_paint", 30, () => Tool<Building.PaintTool>());
         Shot("first_person_lift", 30, () => Tool<Building.LiftTool>());
-        Shot("first_person_connect", 30, () => Tool<Building.ConnectTool>());
+        Shot("first_person_connect_draw", 8, () => { Input(); Player.MakeCameraCurrent(); Tool<Building.ConnectTool>(); });
+        Shot("first_person_connect", 30, () => { });
+        Shot("first_person_connect_aim", 30, () => Connector.KeepRaised = true);
+        Shot("first_person_connect_click", 3, () => Player.Gesture(CharacterGesture.ConnectClick));
+        Shot("first_person_connect_reverse", 5, () => Player.Gesture(CharacterGesture.ConnectReverse));
+        Shot("first_person_connect_stow", 7, () => { Connector.KeepRaised = false; Tool<Building.HammerTool>(); });
         Shot("first_person_refine_draw", 8, () => Player.ActionProp = CharacterProp.RefineTool);
         Shot("first_person_refine", 40, () => { });
         Shot("first_person_refine_bite", 9, () => { });
@@ -122,6 +134,8 @@ public partial class CaptureScene : Node
     }
 
     private PlayerController Player => _main.LocalPlayer!;
+
+    private Building.ConnectTool Connector => _main.Tools!.Connector;
 
     private Vector3 _liftAt;
 
@@ -528,12 +542,15 @@ public partial class CaptureScene : Node
         Player.CurrentInput = new PlayerInput(0, z, Player.CurrentInput.Yaw, pitch, false, sprint, crawl);
 
     // Puts the capture camera at an offset from the player's feet, in the player's frame, looking at its chest.
-    private void Look(Vector3 offset)
+    private void Look(Vector3 offset, float height = 1.0f)
     {
         Player.ThirdPerson = true; // shows the player's own body
         _camera.MakeCurrent();
         _follow = offset;
+        _followHeight = height;
     }
+
+    private float _followHeight = 1.0f;
 
     private Vector3? _follow;
 
@@ -546,7 +563,7 @@ public partial class CaptureScene : Node
         {
             var basis = Player.GlobalTransform.Basis;
             _camera.GlobalPosition = Player.GlobalPosition + basis * offset;
-            _camera.LookAt(Player.GlobalPosition + Vector3.Up * 1.0f);
+            _camera.LookAt(Player.GlobalPosition + Vector3.Up * _followHeight);
         }
         if (_shot is null)
         {

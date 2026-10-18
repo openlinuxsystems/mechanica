@@ -122,6 +122,7 @@ public partial class ToolBelt : Node
         Hammer.Active = true;
         // In Survival a part is placed from the inventory, so the ghost turns red with none left.
         Hammer.CanAfford = part => Survival.Own?.Mode != Core.Survival.GameMode.Survival || Inventory.Own?.Count(part) > 0;
+        Connector.Owned = () => Owns(HotbarTools.Connect);
         if (Hotbar is not null)
             Hotbar.OwnChanged += OnSlotsChanged;
         Inventory.ViewChanged += OnInventoryChanged;
@@ -261,6 +262,14 @@ public partial class ToolBelt : Node
         Use(Item);
         _lastHand = Item.InHand;
     }
+
+    /// <summary>
+    /// True when the player has <paramref name="tool"/>: always in Creative, and for a tool every player always has.
+    /// In Survival a tool that is also an item (one crafted at a Fabricator) has to be carried.
+    /// </summary>
+    public bool Owns(string tool) =>
+        Survival.Own?.Mode != Core.Survival.GameMode.Survival || Build.Catalog.FindDefinition(tool) is not { Category: Core.Data.PartCategory.Tool }
+        || Inventory.Own?.Count(tool) > 0;
 
     private void OnSlotsChanged() => Apply();
 

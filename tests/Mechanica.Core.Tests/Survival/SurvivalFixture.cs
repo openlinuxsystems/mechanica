@@ -28,6 +28,7 @@ internal sealed class SurvivalFixture
     public const string Plank = "test:plank";
     public const string Chest = "test:chest";
     public const string Scrap = "test:scrap";
+    public const string Connector = HotbarTools.Connect;
     public const string Gun = "scripts/potato_gun.lua";
 
     public static readonly ActionCaller Me = new(2, ActionSource.Player);
@@ -47,6 +48,8 @@ internal sealed class SurvivalFixture
             .Add(EmptyBucket, new PartDefinition { Id = "empty_bucket", Name = "Pail", Category = PartCategory.Consumable, StackSize = 3,
                 Script = "scripts/bucket.lua" })
             .Add(Scrap, new PartDefinition { Id = "scrap", Name = "Scrap", Category = PartCategory.Resource, StackSize = 50 })
+            // A hand tool that is also an item: crafted, kept on death.
+            .Add(Connector, new PartDefinition { Id = "connect_tool", Name = "Connect Tool", Category = PartCategory.Tool })
             // Seeds, the bucket, food and weapons run vanilla item scripts (chunk 20b); the Scripting tests use them.
             .Add(Blaster, new PartDefinition { Id = "blaster", Name = "Blaster", Category = PartCategory.Weapon, Script = Gun,
                 Properties = new JsonObject { ["damage"] = 20, ["interval"] = 1, ["range"] = 50, ["ammo"] = "crop", ["impulse"] = 5 } })

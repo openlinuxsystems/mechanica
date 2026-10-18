@@ -124,6 +124,8 @@ KINDS = {
     "bucket_teal": "plastic", "bucket_inner": "plastic", "bucket_band": "plastic", "bucket_orange": "plastic",
     "bucket_wire": "metal", "bucket_pin": "metal", "bucket_water": "water",
     "pipe_steel": "metal", "plate_steel": "metal", "tape_brown": "tape", "hazard_band": "hazard", "rust_sheet": "rust",
+    "tool_gunmetal": "metal", "tool_bezel": "metal", "tool_silver": "metal", "panel_line": "metal",
+    "grip_chevron": "chevron", "accent_orange": "painted",
 }
 
 THREAD = {
@@ -257,6 +259,18 @@ def pattern(c, kind, nz):
             h = np.where(down, h - 0.0012 * (~lug), h)
             g = np.where(down, g - 0.6 * (~lug), g)
         return 0.95 + 0.06 * g, h, 0.03 * g, None
+    if kind == "chevron":
+        # moulded rubber grip (the Connect Tool's): stacked chevrons pointing up the handle (y) on the sides and the
+        # back, inside a plain border; the front, with its finger bumps, is left smooth
+        g = nz[0].fbm(P * 500.0, 2)
+        side = np.abs(c.N[:, 2]) >= np.abs(c.N[:, 0])
+        across = np.where(side, P[:, 0], P[:, 2])
+        s = ((P[:, 1] + 0.6 * np.abs(across)) / 0.0062) % 1.0
+        ridge = sstep(0.0, 0.16, s) * sstep(0.6, 0.42, s)
+        inside = np.where(side, sstep(0.0142, 0.0118, np.abs(across)), sstep(0.0098, 0.0076, np.abs(across)) * (c.N[:, 0] < -0.3))
+        inside = inside * sstep(-0.0435, -0.039, P[:, 1]) * sstep(0.032, 0.027, P[:, 1])
+        ridge = ridge * inside
+        return 0.9 + 0.16 * ridge + 0.05 * g, 0.0004 * ridge - 0.00012 * inside, 0.08 * (1 - ridge) * inside, None
     if kind == "knurl":
         # diamond knurling on a round grip: lofts know their angle and the distance along them
         g = nz[0].fbm(P * 500.0, 2)

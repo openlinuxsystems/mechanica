@@ -1,0 +1,11 @@
+{
+  "id": "connect_tool",
+  "name": "Connect Tool",
+  "description": "Wires seats, controllers, engines, bearings and logic together. Kept when you die.",
+  "category": "tool",
+  "mass": 0.6,
+  "stack_size": 1,
+  "visual": {
+    "color": "#33363a"
+  }
+}

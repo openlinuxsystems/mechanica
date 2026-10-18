@@ -4,6 +4,7 @@ using Mechanica.Core.Actions;
 using Mechanica.Core.Building;
 using Mechanica.Core.Creations;
 using Mechanica.Core.Data;
+using Mechanica.Core.Items;
 
 namespace Mechanica.Core.Logic;
 
@@ -175,6 +176,12 @@ public sealed class LogicActions(BuildSettings settings, IBuildWorld world, ILog
     /// <summary>Action name: describe a Creation (read-only).</summary>
     public const string InspectCreation = "InspectCreation";
 
+    /// <summary>
+    /// What Survival asks of a player (<see cref="IBuildCosts.CheckTool"/>): linking and unlinking need a Connect Tool
+    /// in their inventory. Null (Creative) needs none.
+    /// </summary>
+    public IBuildCosts? Costs { get; init; }
+
     /// <summary>Who sits where.</summary>
     public SeatRegistry Seats => seats;
 
@@ -235,6 +242,8 @@ public sealed class LogicActions(BuildSettings settings, IBuildWorld world, ILog
 
     private string? ValidateConnect(ActionCaller caller, LinkPartsArgs args)
     {
+        if (Costs?.CheckTool(caller, HotbarTools.Connect) is { } tool)
+            return tool;
         if (world.FindCreation(args.Creation) is not { } creation)
             return $"There is no creation {args.Creation}.";
         if (creation.CheckLink(args.From, args.To) is { } error)
@@ -253,6 +262,8 @@ public sealed class LogicActions(BuildSettings settings, IBuildWorld world, ILog
 
     private string? ValidateDisconnect(ActionCaller caller, LinkPartsArgs args)
     {
+        if (Costs?.CheckTool(caller, HotbarTools.Connect) is { } tool)
+            return tool;
         if (world.FindCreation(args.Creation) is not { } creation)
             return $"There is no creation {args.Creation}.";
         if (!creation.Links.Contains(new LogicLink(args.From, args.To)))
