@@ -87,6 +87,11 @@ public sealed record GraphicsSettings
     /// <summary>Effects quality (glow, ambient occlusion).</summary>
     public Quality Effects { get; init; } = Quality.High;
 
+    /// <summary>
+    /// Water quality (<see cref="World.WaterSettings"/>): Low, Medium or High. Ultra draws High, so the Ultra preset sets High.
+    /// </summary>
+    public Quality Water { get; init; } = Quality.High;
+
     /// <summary>Waits for the display's refresh.</summary>
     public bool VSync { get; init; } = true;
 
@@ -126,6 +131,7 @@ public sealed record GraphicsSettings
         return this with
         {
             Preset = preset, ViewDistance = distance, Shadows = preset, Antialiasing = preset, Textures = preset, Effects = preset,
+            Water = preset == Quality.Ultra ? Quality.High : preset,
         };
     }
 
@@ -151,6 +157,7 @@ public sealed record GraphicsSettings
         Antialiasing = Antialiasing == Quality.Custom ? Quality.High : Antialiasing,
         Textures = Textures == Quality.Custom ? Quality.High : Textures,
         Effects = Effects == Quality.Custom ? Quality.High : Effects,
+        Water = Water is Quality.Low or Quality.Medium ? Water : Quality.High,
         Grass = Enum.IsDefined(Grass) ? Grass : FoliageLevel.High,
         GroundCover = Enum.IsDefined(GroundCover) ? GroundCover : FoliageLevel.High,
         Bushes = Enum.IsDefined(Bushes) ? Bushes : FoliageLevel.High,

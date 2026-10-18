@@ -10,7 +10,7 @@ namespace Mechanica.Game.World;
 /// added to the streamer's one shared <see cref="Ground"/> body. Every chunk's height map is a shape of
 /// that one body, so Jolt's internal edge removal sees across chunk borders and wheels roll over them
 /// smoothly; with a body per chunk they bumped on the edge of the chunk they were leaving.</item>
-/// <item>a sea surface where the ground dips below sea level (visual only until water exists);</item>
+/// <item>a water surface where the ground dips below sea level, drawn with <see cref="WaterSurface.Material"/> (cosmetic: it drives no physics);</item>
 /// <item><see cref="Objects"/>: one static body holding a collider per scattered object that is not
 /// destroyed, drawn with one <see cref="MultiMesh"/> per object piece or flora model. Objects that are not
 /// <see cref="WorldObjectDefinition.Solid"/> (bushes) put their collider in <see cref="Brush"/> instead, an area
@@ -23,13 +23,6 @@ namespace Mechanica.Game.World;
 public partial class TerrainChunk : Node3D
 {
     private static readonly StandardMaterial3D GroundMaterial = new() { VertexColorUseAsAlbedo = true, VertexColorIsSrgb = true, Roughness = 0.95f };
-    private static readonly StandardMaterial3D WaterMaterial = new()
-    {
-        AlbedoColor = new Color(0.17f, 0.36f, 0.62f, 0.75f),
-        Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
-        Roughness = 0.1f,
-    };
-    private static readonly Dictionary<float, PlaneMesh> WaterMeshes = [];
     private static readonly Dictionary<ShapeDefinition, Mesh> PieceMeshes = [];
     private static readonly Dictionary<string, StandardMaterial3D> Materials = [];
 
@@ -205,13 +198,11 @@ public partial class TerrainChunk : Node3D
 
         if (Data.HasWater)
         {
-            if (!WaterMeshes.TryGetValue(Data.Size, out var water))
-                WaterMeshes[Data.Size] = water = new PlaneMesh { Size = new Vector2(Data.Size, Data.Size) };
             AddChild(new MeshInstance3D
             {
                 Name = "Water",
-                Mesh = water,
-                MaterialOverride = WaterMaterial,
+                Mesh = WaterSurface.MeshFor(Data.Size, Scenery),
+                MaterialOverride = WaterSurface.Material,
                 Position = new Vector3(Data.Size / 2f, Data.SeaLevel, Data.Size / 2f),
                 CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
             });
