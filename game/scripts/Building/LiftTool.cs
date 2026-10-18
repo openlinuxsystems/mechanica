@@ -153,8 +153,7 @@ public partial class LiftTool : HandTool
     public bool PressRaise(int direction)
     {
         _raiseHeld = Math.Sign(direction);
-        _raisePending = Raise(_raiseHeld, _ => _raisePending = false);
-        return _raisePending;
+        return RequestNextLevel();
     }
 
     /// <summary>The arrow key let go: the column stops at the level it is going to.</summary>
@@ -179,10 +178,21 @@ public partial class LiftTool : HandTool
         if (!Build.Lifts.TryGetValue(Player.PeerId, out var body) || !body.Deployed || body.State.Level != lift.Level
             || Math.Abs(settings.TopAt(lift.Level) - body.ShownTop) > settings.LevelHeight * 0.9f)
             return;
-        _raisePending = Raise(_raiseHeld, _ => _raisePending = false);
+        RequestNextLevel();
     }
 
     private bool _raisePending;
+
+    // Asks for the next level in the held direction. Pending until the host answers, which on the host itself is
+    // before Raise returns, so the flag is set first and never left on by a reply that already came.
+    private bool RequestNextLevel()
+    {
+        _raisePending = true;
+        if (Raise(_raiseHeld, _ => _raisePending = false))
+            return true;
+        _raisePending = false;
+        return false;
+    }
 
     /// <summary>Right click let go: a hold too short to take the Lift away ends without doing anything.</summary>
     public void ReleaseRemove() => _removeFrom = null;
