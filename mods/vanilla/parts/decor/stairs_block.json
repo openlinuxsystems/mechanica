@@ -13,9 +13,10 @@
   "size": [4, 4, 4],
   "mesh": "meshes/decor/stairs_block.glb",
   "visual": {
-    "color": "#9a9890",
+    "color": "#d4d4d4",
     "roughness": 0.7,
-    "metallic": 0
+    "metallic": 0,
+    "texture": "textures/blocks/concrete.png"
   },
   "collision": {
     "shape": "convex",

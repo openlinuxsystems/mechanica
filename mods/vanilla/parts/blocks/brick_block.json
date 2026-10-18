@@ -13,8 +13,9 @@
   "size": [1, 1, 1],
   "mesh": "meshes/blocks/brick_block.glb",
   "visual": {
-    "color": "#9c4a33",
+    "color": "#ffffff",
     "roughness": 0.9,
-    "metallic": 0
+    "metallic": 0,
+    "texture": "textures/blocks/brick.png"
   }
 }

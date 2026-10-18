@@ -13,9 +13,10 @@
   "size": [1, 1, 1],
   "mesh": "meshes/blocks/hull_plate_wedge.glb",
   "visual": {
-    "color": "#c8ccd2",
+    "color": "#c4c4c4",
     "roughness": 0.35,
-    "metallic": 0.85
+    "metallic": 0.85,
+    "texture": "textures/blocks/hull_plate.png"
   },
   "collision": {
     "shape": "convex",
