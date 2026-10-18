@@ -255,7 +255,8 @@ end
 
 Items (anything not placeable: food, weapons, seeds, the water bucket) can name a `script` too
 (chunk 20b, D2). The item's behaviour lives there, and its numbers in its `properties`. The vanilla
-ones are `food.lua`, `potato_gun.lua`, `seed.lua` and `watering.lua` in `mods/vanilla/scripts/`.
+ones are `food.lua`, `potato_gun.lua`, `seed.lua`, `bucket.lua` (the empty water bucket) and `watering.lua` (the full
+one) in `mods/vanilla/scripts/`.
 
 - **One instance per player and item type.** Each player gets their own copy of the script, with its
   own `state`, the first time they take one in hand or use one. It is dropped when they leave.
@@ -267,7 +268,7 @@ ones are `food.lua`, `potato_gun.lua`, `seed.lua` and `watering.lua` in `mods/va
   points at within reach, and `aiming`, true while the player holds right click to aim (`AimItem {on}`).
   `EquipItem {slot?}` says what is in hand. `ReloadItem {slot}` runs `can_reload_item`, then `on_reload_item`.
   A dead player's uses are refused.
-- **`can_use`, `can_reload_item` and the script's setup only read.** Functions that change the world (`item.consume`, `item.counter`,
+- **`can_use`, `can_reload_item` and the script's setup only read.** Functions that change the world (`item.consume`, `item.replace`, `item.counter`,
   `holder.heal`, `inventory.take`, `farm.plant`, `farm.water`, `fire.douse`, `fire.ignite` and the `combat` ones that deal damage
   or launch) raise an error there.
 - **Damage follows the world's rules.** In Creative nothing hurts players; with friendly fire off
@@ -298,6 +299,7 @@ end
 | `item.slot()` | The inventory slot the item is used from. |
 | `item.count()` | How many of the item that slot holds. |
 | `item.consume(count?)` | Uses up `count` (default 1) of the item from its slot. `true`, or `false` when the slot holds fewer. |
+| `item.replace(id)` | Turns one of the item into the item `id` (bare ids are in the item's own mod). The last one in its slot becomes `id` where it is, so it stays in the player's hand (the full water bucket emptying); one of several goes into the inventory. `true`, or `false` when there is no room. |
 | `item.counter({value?, max?, ammo?, busy?})` | Sets what the holder's hotbar slot and HUD counter show for the item (UI spec §10): `value` (rounds loaded) out of `max`, the `ammo` item they carry (counted from their inventory), and `busy` seconds while it reloads. Only the holder is sent it. |
 | `item.sound(key)` | The sound id the item binds to `key` in its `sounds` (`fire`, `reload`), for `sound.play`; `nil` when unbound. |
 
@@ -340,14 +342,15 @@ are the same primitives bots use (chunk 21).
 | `combat.hitscan(from, direction, range, damage, impulse?)` | `combat.cast` then `combat.hit`, pushing along the ray with `impulse` N·s. The hit, or `nil` when nothing is in range. |
 | `combat.splash(at, radius, damage, impulse?)` | Hurts every player, part and world object within `radius` m of `at`, falling off from `damage` at the centre to 0 at the edge, and pushes parts away with up to `impulse` N·s. A list of hits. `radius` is at most `max_overlap_radius`. |
 | `combat.pellets(direction, count, spread)` | `count` (at most 64) unit directions: the first along `direction`, the rest evenly round a cone of `spread` degrees. No randomness, so every replay agrees. |
-| `combat.projectile(from, velocity, options?)` | Launches a projectile from `from` at `velocity` m/s. `options`: `gravity` (a `vec3`, default `world.gravity()`), `lifetime` (s, default and at most `max_projectile_lifetime`), `data` (passed to `on_hit`). It flies on the host, every client draws it along its arc, and `on_hit` runs where it lands; it deals no damage by itself. Returns its id, or `false` and the reason when `max_projectiles` are already in flight. |
+| `combat.projectile(from, velocity, options?)` | Launches a projectile from `from` at `velocity` m/s. `options`: `gravity` (a `vec3`, default `world.gravity()`), `lifetime` (s, default and at most `max_projectile_lifetime`), `data` (passed to `on_hit`), `look` (how clients draw it: `"water"` is a blob of water that splashes where it lands; default a plain ball). It flies on the host, every client draws it along its arc, and `on_hit` runs where it lands; it deals no damage by itself. Returns its id, or `false` and the reason when `max_projectiles` are already in flight. |
 
 ### `farm`
 
 Soil parts (chunk 20). A soil table is `{seed?, crop?, stage, ripe, water, capacity}`: the planted
 seed and its crop (qualified ids), the growth stage (0 to 4, 4 is `ripe`) and the seconds of water it
 holds of its `capacity`. Each function checks the part is soil within the holder's `reach`, and
-returns `nil` and the reason when it can't act. Crops grow, and are harvested (`ActivatePart`), by the
+returns `nil` and the reason when it can't act; in `on_hit`, `farm.water` reaches wherever the item's projectile
+landed. Crops grow, and are harvested (`ActivatePart`), by the
 soil part's own script ([`soil`](#soil)); the seed's `seed` section sets what grows and how fast.
 
 | Function | Returns |
@@ -355,6 +358,7 @@ soil part's own script ([`soil`](#soil)); the seed's `seed` section sets what gr
 | `farm.soil(creation, part)` | The soil table. |
 | `farm.plant(creation, part, seed?)` | Plants `seed` (an item with a `seed` section; default this item) in empty soil and returns the soil table. It takes nothing from the inventory: use `item.consume`. |
 | `farm.water(creation, part, seconds)` | Adds `seconds` of water, up to `capacity`, and returns the soil table. Takes nothing from the inventory either. |
+| `farm.near(position, radius)` | Soil parts within `radius` m of `position` (at most `max_overlap_radius`), nearest first: a list of `{creation, part}`, for watering where a splash lands. |
 
 ## `fire`
 
@@ -363,8 +367,9 @@ catch from a fire next to them, grow, take damage until they break off and set t
 alight; how fast is `game/data/fire.json` (see [Survival](survival.md#fire)). Scripts decide what puts fires
 out or starts them. A fire table is `{id, position, strength, creation?, part?}`: `strength` runs from 0
 (out) to 1, and burning parts have `creation` and `part`. Part and item scripts can both use the library; in
-an item script `douse` and `ignite` only reach as far as the holder's `reach` (plus `radius`), and like
-every function that changes the world they raise an error in `can_use`.
+an item script `douse` and `ignite` only reach as far as the holder's `reach` (plus `radius`), except that `douse`
+reaches wherever the item's projectile landed in `on_hit` (thrown water), and like every function that changes
+the world they raise an error in `can_use`.
 
 | Function | Returns |
 |----------|---------|
@@ -374,13 +379,14 @@ every function that changes the world they raise an error in `can_use`.
 | `fire.strength(creation, part)` | How strongly a part burns, 0 when it does not. |
 
 ```lua
--- A water bucket aimed at a fire: put out what is there.
+-- A full water bucket: throw the water, empty the bucket, and put out what it lands on.
 function on_use(target)
-  local fires = fire.near(target.from + target.direction * 3, 1.5)
-  if #fires > 0 then
-    item.consume(1)
-    return { fires = fire.douse(fires[1].position, 1.5, 1) }
-  end
+  combat.projectile(holder.eye(), (target.direction + vec3(0, 0.35, 0)):normalized() * 7, { look = "water" })
+  item.replace("water_bucket")
+end
+
+function on_hit(landing)
+  return { fires = fire.douse(landing.position, 1.2, 1) }
 end
 ```
 

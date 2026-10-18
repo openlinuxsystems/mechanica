@@ -27,6 +27,7 @@ public partial class CharacterModel : Node3D
     private BoneAttachment3D? _hand;
     private Node3D? _prop;
     private CharacterProp _propShown;
+    private HeldBucket? _bucket;
     private Quaternion[] _rotations = [];
     private Vector3[] _positions = [];
     private Quaternion[] _upperRotations = [];
@@ -145,7 +146,14 @@ public partial class CharacterModel : Node3D
             Position = new Vector3(0, Animator.Lift, 0) + (Player?.ShownLocalOffset ?? Vector3.Zero);
         }
         Pose();
-        ShowProp(Animator.ShowProp && Player is not null ? Player.ShownProp : CharacterProp.None);
+        ShowProp(Animator.ShowProp && Player is not null ? Animator.Prop : CharacterProp.None);
+        _bucket?.Update(HeldBucket.Target(Assets.Settings.Bucket, _propShown, Animator), (float)delta, PlayFill);
+    }
+
+    private void PlayFill()
+    {
+        if (Sounds is not null && Player is not null && _prop is not null)
+            Sounds.PlayLocal(Character.Sound(CharacterSounds.BucketFill), Character.ModId, _prop.GlobalPosition);
     }
 
     /// <summary>Applies the animator's current blend to the skeleton (called every visible frame).</summary>
@@ -213,7 +221,12 @@ public partial class CharacterModel : Node3D
     {
         if (prop == _propShown || _hand is null)
             return;
+        // The empty and the full bucket are one model: filling or emptying it keeps the bucket in hand.
+        var same = _prop is not null && CharacterRig.PropNode(prop) is { } node && node == CharacterRig.PropNode(_propShown);
         _propShown = prop;
+        if (same)
+            return;
+        _bucket = null;
         _prop?.QueueFree();
         _prop = null;
         if (Assets.Prop(prop) is not { } made)
@@ -224,6 +237,7 @@ public partial class CharacterModel : Node3D
         made.Node.Transform = hand.AffineInverse() * skeletonInModel.AffineInverse() * made.Grip;
         _prop = made.Node;
         _hand.AddChild(_prop);
+        _bucket = HeldBucket.Find(_prop, Assets.Settings.Bucket);
     }
 
     private void PlaySound(CharacterEvent e)

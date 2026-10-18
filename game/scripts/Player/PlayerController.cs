@@ -253,6 +253,12 @@ public partial class PlayerController : CharacterBody3D
     /// </summary>
     public CharacterProp HeldProp { get; set; }
 
+    /// <summary>
+    /// A prop shown instead of <see cref="HeldProp"/> while an action needs its own in hand (the Refine Tool while Use
+    /// is held on a resource node), or null. It travels with the input like <see cref="HeldProp"/>.
+    /// </summary>
+    public CharacterProp? ActionProp { get; set; }
+
     /// <summary>True while this player holds the Sledgehammer up to block; travels with the input like <see cref="HeldProp"/>.</summary>
     public bool HeldGuard { get; set; }
 
@@ -380,7 +386,7 @@ public partial class PlayerController : CharacterBody3D
     {
         if (!Simulated)
             return;
-        var input = Step(CurrentInput with { Prop = HeldProp, Gesture = _gesture, GestureCount = _gestureCount, Guard = HeldGuard }, (float)delta);
+        var input = Step(CurrentInput with { Prop = ActionProp ?? HeldProp, Gesture = _gesture, GestureCount = _gestureCount, Guard = HeldGuard }, (float)delta);
         Stepped?.Invoke(input);
     }
 

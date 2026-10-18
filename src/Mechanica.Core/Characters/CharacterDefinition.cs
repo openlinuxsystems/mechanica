@@ -72,6 +72,9 @@ public static class CharacterSounds
     /// <summary>Taking a different tool or item in hand.</summary>
     public const string ToolEquip = "tool_equip";
 
+    /// <summary>Water pouring into a bucket being filled.</summary>
+    public const string BucketFill = "bucket_fill";
+
     /// <summary>Every name and the event it plays by default.</summary>
     public static IReadOnlyDictionary<string, string> Defaults { get; } = new Dictionary<string, string>(StringComparer.Ordinal)
     {
@@ -86,6 +89,7 @@ public static class CharacterSounds
         [WaterEnter] = "water_enter",
         [WaterExit] = "water_exit",
         [ToolEquip] = "tool_equip",
+        [BucketFill] = "bucket_fill",
     };
 
     /// <summary>Every local sound name.</summary>

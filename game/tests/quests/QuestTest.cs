@@ -65,7 +65,7 @@ public partial class QuestTest : StagedTest
                 if (frame == 0)
                 {
                     _asked = false;
-                    _host.Main.Inventory.Items!.PlayerInventory(_client.Peer).Add("vanilla:water_bucket", 1);
+                    _host.Main.Inventory.Items!.PlayerInventory(_client.Peer).Add("vanilla:water_bucket_full", 1);
                     _host.Main.PlayerSync.HostTeleport(_client.Peer, new Vector3(at.X + 2.5f, at.Y, at.Z));
                 }
                 // Keep looking at it while the teleport settles, so the aim the host checks matches.
@@ -77,7 +77,7 @@ public partial class QuestTest : StagedTest
                 {
                     Check(ClientQuests.Prompt() is not { Marker: "fire" }, "E does nothing to a fire");
                     var aim = (at - _client.Main.LocalPlayer!.Head.GlobalPosition).Normalized();
-                    var slot = _client.Main.Inventory.Own!.Items.First(s => s.Item == "vanilla:water_bucket").Slot;
+                    var slot = _client.Main.Inventory.Own!.Items.First(s => s.Item == "vanilla:water_bucket_full").Slot;
                     AskOnce(ScriptRuntime.UseItem, new UseItemArgs(slot, new Vec3(aim.X, aim.Y, aim.Z)));
                 }
                 if (_results.Count <= fire)

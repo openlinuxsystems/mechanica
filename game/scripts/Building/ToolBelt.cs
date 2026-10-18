@@ -26,6 +26,8 @@ public partial class ToolBelt : Node
     private Label? _ammo;
     private HotbarView? _bar;
     private int _selected;
+    // The item in hand and the inventory slot it was in, as of the last inventory change.
+    private SlotView? _lastHand;
 
     /// <summary>The player whose tools these are. Set before adding to the tree.</summary>
     public PlayerController Player { get; init; } = null!;
@@ -257,16 +259,34 @@ public partial class ToolBelt : Node
         }
         Item.Choose(entry);
         Use(Item);
+        _lastHand = Item.InHand;
     }
 
     private void OnSlotsChanged() => Apply();
 
-    // Survival: an item the player gets for the first time goes in the first empty slot, once.
+    // Survival: an item the player gets for the first time goes in the first empty slot, once. The item in hand turning
+    // into another where it lies (a bucket filled or emptied) stays in hand, in the same hotbar slot.
     private void OnInventoryChanged(Core.Items.InventoryView view)
     {
         if (Hotbar is null || view.Inventory != InventoryRef.OfPlayer(Inventory.Session.LocalPeer) || Survival.Own?.Mode != Core.Survival.GameMode.Survival)
             return;
         var slots = Slots.ToList();
+        if (Item.Active && _lastHand is { } hand && slots[_selected] == hand.Item && view.Items.All(s => s.Item != hand.Item)
+            && view.Items.FirstOrDefault(s => s.Slot == hand.Slot) is { } now && now.Item != hand.Item
+            && Build.Catalog.FindDefinition(now.Item) is { Script: not null, IsPlaceable: false })
+        {
+            _seenItems.Add(now.Item);
+            var elsewhere = slots.IndexOf(now.Item);
+            if (elsewhere >= 0)
+                Select(elsewhere);
+            else
+            {
+                slots[_selected] = now.Item;
+                Hotbar.Set(_selected, now.Item);
+                Item.Choose(now.Item);
+            }
+        }
+        _lastHand = Item.Active ? Item.InHand : null;
         foreach (var item in view.Items.Select(s => s.Item).Distinct())
         {
             if (!_seenItems.Add(item) || slots.Contains(item) || Build.Catalog.FindDefinition(item) is not { } d || !(d.IsPlaceable || d.Script is not null))

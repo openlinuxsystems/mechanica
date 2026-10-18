@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://tests/bucket/BucketTest.cs" id="1_bucket"]
+
+[node name="BucketTest" type="Node"]
+script = ExtResource("1_bucket")

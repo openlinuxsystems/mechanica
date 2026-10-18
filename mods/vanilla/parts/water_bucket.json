@@ -1,19 +1,13 @@
 {
   "id": "water_bucket",
   "name": "Water Bucket",
-  "description": "Fill it at water, then water soil or put out a fire with it.",
+  "description": "Fill it at water, then throw the water on soil or a fire.",
   "category": "consumable",
-  "mass": 4,
-  "stack_size": 5,
-  "visual": {
-    "color": "#3a7ad0"
-  },
-  "script": "scripts/watering.lua",
-  "sounds": {},
-  "properties": {
-    "seconds": 150,
-    "douse": 1,
-    "range": 6,
-    "splash": 1.2
+  "mass": 1.2,
+  "stack_size": 1,
+  "mesh": "meshes/items/water_bucket.glb",
+  "script": "scripts/bucket.lua",
+  "sounds": {
+    "fill": "bucket_fill"
   }
 }
