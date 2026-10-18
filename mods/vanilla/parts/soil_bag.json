@@ -1,0 +1,30 @@
+{
+  "id": "soil_bag",
+  "name": "Soil Bag",
+  "description": "Place it on flat ground to spill a soil mound to plant seeds in. Hold Force build to set the bag down instead.",
+  "category": "interactive",
+  "mass": 20,
+  "durability": 2,
+  "friction": 0.8,
+  "buoyancy": 0.3,
+  "flammable": true,
+  "stack_size": 10,
+  "sound_material": "fabric",
+  "size": [5, 1, 3],
+  "mesh": "meshes/items/soil_bag.glb",
+  "icon": "textures/items/soil_bag_icon.png",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.92,
+    "metallic": 0
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.125, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "ground_part": "soil"
+}

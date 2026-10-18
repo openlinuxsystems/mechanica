@@ -1,5 +1,5 @@
 {
-  "id": "soil",
+  "id": "soil_bag",
   "stations": [
     "fabricator",
     "mini_fabricator"
@@ -12,7 +12,7 @@
   ],
   "outputs": [
     {
-      "item": "soil",
+      "item": "soil_bag",
       "count": 2
     }
   ],

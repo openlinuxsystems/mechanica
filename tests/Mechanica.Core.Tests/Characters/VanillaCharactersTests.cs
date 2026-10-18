@@ -78,6 +78,8 @@ public class VanillaCharactersTests
         Assert.Equal(CharacterProp.WaterBucketFull, settings.PoseFor("vanilla:water_bucket_full", "consumable").Prop);
         Assert.Equal(CharacterGesture.BucketThrow, settings.PoseFor("vanilla:water_bucket_full", "consumable").Gesture);
         Assert.Equal(CharacterGesture.Plant, settings.PoseFor("carrot_seed", "consumable").Gesture);
+        Assert.Equal(CharacterProp.SoilBag, settings.PoseFor("vanilla:soil_bag", "interactive").Prop);
+        Assert.Equal(CharacterGesture.BagSpill, settings.PoseFor("vanilla:soil_bag", "interactive").Gesture);
         Assert.Equal(CharacterGesture.Eat, settings.PoseFor("vanilla:carrot", "consumable").Gesture);
         Assert.Equal(CharacterGesture.FireGun, settings.PoseFor("vanilla:potato_scattergun", "weapon").Gesture);
         Assert.Equal(ItemPose.Default, settings.PoseFor("some_mod:thing", null));

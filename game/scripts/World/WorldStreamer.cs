@@ -58,6 +58,9 @@ public partial class WorldStreamer : Node3D
     /// <summary>The one static body that holds every loaded chunk's ground shape (see <see cref="TerrainChunk"/>).</summary>
     public StaticBody3D Ground { get; private set; } = null!;
 
+    /// <summary>The name of <see cref="Ground"/>, the terrain's body: what a Soil Bag spills a soil mound onto.</summary>
+    public const string GroundName = "Ground";
+
     /// <summary>The streaming logic, once started.</summary>
     public ChunkStreamer Streamer { get; private set; } = null!;
 
@@ -121,7 +124,7 @@ public partial class WorldStreamer : Node3D
     {
         ProcessPhysicsPriority = -200;
         Settings ??= LoadDefaultSettings();
-        Ground = new StaticBody3D { Name = "Ground" };
+        Ground = new StaticBody3D { Name = GroundName };
         AddChild(Ground);
         _sceneryRoot = new Node3D { Name = "Scenery" };
         AddChild(_sceneryRoot);

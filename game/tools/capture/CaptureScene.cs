@@ -24,6 +24,8 @@ namespace Mechanica.Game.Tools;
 /// the motion and the view from under the surface (<c>tools/capture-water.sh</c>).
 /// Given <c>rocks</c> it finds a stone and a metal-rich rock outcrop and captures them, then breaks a cube into chunks and a
 /// chunk into rods (<c>tools/capture-rocks.sh</c>).
+/// Given <c>soil</c> it carries a Soil Bag, tips it out, spills a mound and shows a row of mounds dry, lightly watered,
+/// fully wet and drying (<c>tools/capture-soil.sh</c>).
 /// </summary>
 public partial class CaptureScene : Node
 {
@@ -46,10 +48,11 @@ public partial class CaptureScene : Node
         var water = args.Length > 1 && args[1] == "water";
         var blocks = args.Length > 1 && args[1] == "blocks";
         var rocks = args.Length > 1 && args[1] == "rocks";
-        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks ? args[1] : "scrapper_male";
+        var soil = args.Length > 1 && args[1] == "soil";
+        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks && !soil ? args[1] : "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
         // Building the block wall needs Creative: free parts and no build reach.
-        _main.Options = LaunchOptions.Offline with { Seed = 7, GameMode = blocks ? Core.Survival.GameMode.Creative : LaunchOptions.Offline.GameMode };
+        _main.Options = LaunchOptions.Offline with { Seed = 7, GameMode = blocks || soil ? Core.Survival.GameMode.Creative : LaunchOptions.Offline.GameMode };
         _main.ReadDeviceInput = icons;
         AddChild(_main);
         _camera = new Camera3D { Fov = 40 };
@@ -82,6 +85,11 @@ public partial class CaptureScene : Node
         if (rocks)
         {
             RockShots();
+            return;
+        }
+        if (soil)
+        {
+            SoilShots();
             return;
         }
         Shot("front", 60, () => Look(new Vector3(0, 1.0f, -3.2f)));
@@ -442,6 +450,65 @@ public partial class CaptureScene : Node
         });
         Shot("rocks_12_rods", 30, () => ViewLoose(c => c.Refine is not null, 3.2f));
         Shot("rocks_13_rods_close", 30, () => ViewLoose(c => c.Refine is not null, 2.0f));
+    }
+
+    // A Soil Bag carried, lifted and tipped out, a mound spilling out of it, and mounds in each of their four looks.
+    private void SoilShots()
+    {
+        const string soil = "vanilla:soil";
+        var feet = Vector3.Zero;
+        void PlaceMound(float x, float z) => _main.Actions.Request(Core.Building.BuildActions.PlacePart,
+            new Core.Building.PlacePartArgs(soil, Core.Creations.GridCell.Zero, Position: Core.Creations.Vec3Numerics.ToVec3((feet + new Vector3(x, 0.125f, z)).ToNumerics())), r => GD.Print($"[capture] mound: {r.Ok} {r.Message}"));
+        Shot("soil_00_wait", 60, () => { });
+        Shot("soil_01_bag_lift", 3, () => { Hold(CharacterProp.SoilBag); Look(new Vector3(-1.7f, 1.3f, -2.3f)); });
+        Shot("soil_02_bag_hold", 40, () => { });
+        Shot("soil_03_bag_side", 20, () => Look(new Vector3(-2.6f, 1.2f, 0.3f)));
+        Shot("soil_04_bag_spill", 14, () => { Look(new Vector3(-1.7f, 1.3f, -2.3f)); Player.Gesture(CharacterGesture.BagSpill); });
+        Shot("soil_05_bag_shake", 10, () => { });
+        Shot("soil_06_first_person", 40, () => { Input(); Player.MakeCameraCurrent(); });
+        Shot("soil_07_spill_start", 12, () =>
+        {
+            feet = Player.GlobalPosition;
+            Look(new Vector3(-1.6f, 1.6f, -3.2f), 0.4f);
+            PlaceMound(0f, -1.5f);
+        });
+        Shot("soil_08_spill_tip", 10, () => { });
+        Shot("soil_09_spill_settle", 12, () => { });
+        Shot("soil_10_spilled", 30, () => { });
+        Shot("soil_11_row", 60, () =>
+        {
+            Hold(CharacterProp.None);
+            foreach (var x in new[] { -1.5f, -0.5f, 0.5f, 1.5f })
+                PlaceMound(x, -3f);
+        });
+        Shot("soil_12_states", 300, () =>
+        {
+            Engine.TimeScale = 1.0;
+            var host = _main.Survival.Actions!;
+            var mounds = _main.Creations.All.Where(c => c.Parts.Count == 1 && c.Parts.First().Part == soil)
+                .Select(c => (Creation: c, Part: c.Parts.First().Id, At: c.BodyPose(0).Position))
+                .Where(m => m.At.Z < feet.Z - 2.5f).OrderBy(m => m.At.X).ToList();
+            GD.Print($"[capture] {mounds.Count} mounds in the row");
+            var definition = _main.Build.Catalog.FindDefinition(soil)!.Soil!;
+            var wetAt = Core.Survival.SoilState.WetAt(definition);
+            var looks = new (float Water, float Then)[] { (0, 0), (60, 60), (300, 300), (300, 100) };
+            for (var i = 0; i < mounds.Count && i < looks.Length; i++)
+            {
+                var state = mounds[i].Creation.SoilOf(mounds[i].Part)!;
+                if (looks[i].Water > 0)
+                    state.AddWater(looks[i].Water, definition.Capacity ?? 0, wetAt);
+                state.Set(water: looks[i].Then, wetAt: wetAt);
+            }
+            _follow = null;
+            _camera.MakeCurrent();
+            _camera.GlobalPosition = feet + new Vector3(0f, 1.9f, -0.6f);
+            _camera.LookAt(feet + new Vector3(0f, 0f, -3f));
+        });
+        Shot("soil_13_states_close", 30, () =>
+        {
+            _camera.GlobalPosition = feet + new Vector3(-0.2f, 1.0f, -1.7f);
+            _camera.LookAt(feet + new Vector3(0f, 0f, -3f));
+        });
     }
 
     // Frames the loose parts matching a test from the side away from the outcrop's middle.

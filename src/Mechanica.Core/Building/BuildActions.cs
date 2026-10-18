@@ -85,6 +85,13 @@ public interface IBuildWorld
     /// </summary>
     bool RestsOnWorld(Creation? target, PartDefinition definition, GridCell cell, GridRotation rotation, Pose pose) => false;
 
+    /// <summary>
+    /// How steep the ground is under a footprint centred on <paramref name="centre"/> reaching <paramref name="reach"/>
+    /// metres along each world axis, in degrees from level, or null when there is no ground to measure (and then no
+    /// part is refused for its slope). Only the world's own ground counts, as for <see cref="RestsOnWorld"/>.
+    /// </summary>
+    float? GroundSlope(Vector3 centre, float reach) => null;
+
     /// <summary>A new Creation now exists (placed on the ground, or split off).</summary>
     void Added(Creation creation);
 
@@ -285,6 +292,7 @@ public sealed class BuildActions(IPartCatalog catalog, BuildSettings settings, I
         var centre = pose.Apply(PartGeometry.CentreMetres(definition, args.Cell, args.Rotation).ToNumerics());
         return CheckReach(caller, centre)
             ?? BuildAim.GroundOnlyProblem(definition, target, args.Rotation, pose, () => world.RestsOnWorld(target, definition, args.Cell, args.Rotation, pose))
+            ?? BuildAim.SlopeProblem(definition, () => world.GroundSlope(centre, BuildAim.SlopeReach(definition)))
             ?? world.CheckClear(target, definition, args.Cell, args.Rotation, pose)
             ?? Costs?.CheckPlace(caller, Identifiers.Qualify(args.Part));
     }

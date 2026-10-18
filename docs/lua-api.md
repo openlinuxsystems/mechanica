@@ -203,7 +203,7 @@ without a `soil` section raises an error.
 
 | Function | Returns |
 |----------|---------|
-| `soil.get()` | `{seed?, grown, water, stage, stages, updated?}`: the planted seed (qualified id), seconds of growth done, seconds of water left, the growth stage (0 to `stages`, which is 4; `stages` is ripe), and the `world.time()` growth was last worked out at (missing until the script first sets it). `nil` once the part is gone. |
+| `soil.get()` | `{seed?, grown, water, stage, stages, updated?, soaked}`: the planted seed (qualified id), seconds of growth done, seconds of water left, the growth stage (0 to `stages`, which is 4; `stages` is ripe), the `world.time()` growth was last worked out at (missing until the script first sets it), and whether the soil has been fully wet since it was last dry (it then looks drying rather than lightly watered). `nil` once the part is gone. |
 | `soil.set(values)` | Stores any of `grown`, `water`, `stage` and `updated` (`soil.set{grown = 12, stage = 1, updated = world.time()}`); what is left out stays. `grown` and `stage` only apply with something planted; water is kept to the soil's `capacity`. A new stage or the soil running dry is sent to clients. |
 | `soil.clear()` | Takes the crop out (a harvest), leaving the water. |
 

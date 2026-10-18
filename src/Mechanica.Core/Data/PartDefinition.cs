@@ -170,6 +170,27 @@ public sealed record PartDefinition
     public bool? GroundOnly { get; init; }
 
     /// <summary>
+    /// Steepest ground, in degrees from level, a ground-only part may be set on (soil: 17, as in Scrap Mechanic).
+    /// Omitted allows any slope the part rests on. Ground-only parts only.
+    /// </summary>
+    public float? MaxSlope { get; init; }
+
+    /// <summary>
+    /// The part this item sets down when it is placed on the ground (the world itself, not a Creation), one for one, as
+    /// a Soil Bag spills into a soil mound. Holding Force build sets down the item's own part instead, and so does
+    /// placing it on a Creation. The part named must be ground-only and say this item in its <see cref="PlacedFrom"/>.
+    /// Placeable parts only.
+    /// </summary>
+    public string? GroundPart { get; init; }
+
+    /// <summary>
+    /// The item this part is placed from and comes back as when it is picked up (a soil mound is placed from, and picked
+    /// up as, a Soil Bag). Such a part is never an item of its own: it is not listed in Creative or on the hotbar.
+    /// Placeable parts only.
+    /// </summary>
+    public string? PlacedFrom { get; init; }
+
+    /// <summary>
     /// Makes the part a node of the logic and power bus (chunk 10): how many Connect Tool links may come in
     /// and go out. Placeable parts only.
     /// </summary>
@@ -254,6 +275,13 @@ public sealed record PartDefinition
     /// <summary>Keys this build does not know. Kept so a round-trip never loses data.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
+
+    /// <summary>
+    /// False for a part that is only ever placed from another item (<see cref="PlacedFrom"/>): it has no stack of its
+    /// own in an inventory, the hotbar or the Creative list.
+    /// </summary>
+    [JsonIgnore]
+    public bool IsItem => PlacedFrom is null;
 
     /// <summary>True for categories that exist in the world on the build grid.</summary>
     [JsonIgnore]
@@ -355,6 +383,18 @@ public sealed record SoilDefinition
 
     /// <summary>Speed multiplier on growth (1 grows a crop in its <c>grow_time</c>). Omitted means 1.</summary>
     public float? Growth { get; init; }
+
+    /// <summary>
+    /// Seconds full soil takes to dry out with nothing planted in it, as in Scrap Mechanic, where watered soil left
+    /// empty dries in about a day. Water drains at <c>capacity / dry_time</c> per second. Omitted never dries.
+    /// </summary>
+    public float? DryTime { get; init; }
+
+    /// <summary>
+    /// Share of <see cref="Capacity"/> (0 to 1) at which the soil looks fully wet (<see cref="Survival.SoilWetness.Wet"/>).
+    /// Omitted means 0.5.
+    /// </summary>
+    public float? WetLevel { get; init; }
 
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]

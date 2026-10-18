@@ -319,6 +319,21 @@ public class BuildActionsTests
         Assert.Empty(_world.Creations);
     }
 
+    [Theory]
+    [InlineData(10f, true)]
+    [InlineData(17f, true)]
+    [InlineData(25f, false)]
+    public void SoilGoesOnlyOnGroundNoSteeperThanItsMaxSlope(float slope, bool ok)
+    {
+        _world.Ground = 0f;
+        _world.Slope = slope;
+        var result = Place(new { part = Soil, cell = new[] { 0, 0, 0 }, position = new[] { 0f, 0.125f, 0 } });
+
+        Assert.Equal(ok, result.Ok);
+        if (!ok)
+            Assert.Equal("The ground is too steep for Soil (25°; at most 17°).", result.Message);
+    }
+
     [Fact]
     public void SoilCannotFloatOffTheGround()
     {
@@ -493,6 +508,11 @@ public class BuildActionsTests
 
         // Height of flat ground, or null for a world without any.
         public float? Ground { get; set; }
+
+        // How steep the ground is, in degrees, or null when unknown.
+        public float? Slope { get; set; }
+
+        public float? GroundSlope(Vector3 centre, float reach) => Slope;
 
         public Creation? FindCreation(int id) => Creations.GetValueOrDefault(id);
 

@@ -62,6 +62,44 @@ public sealed class SoilScriptTests : IDisposable
     }
 
     [Fact]
+    public void EmptyWateredSoilDriesOutWatchedThroughItsFourLooks()
+    {
+        // Full (60 s) soil dries in 100 s with nothing planted, and looks wet from 30 s of water up.
+        F.Catalog.Add("test:drying_soil", F.Catalog.FindDefinition(Soil)! with
+        {
+            Id = "drying_soil", Soil = new SoilDefinition { Capacity = 60, Growth = 2, DryTime = 100, WetLevel = 0.5f },
+        });
+        var soil = F.Add("test:drying_soil", new Vector3(0, 0, 1));
+        _rig.Runtime.Update(1);
+        Assert.Equal(SoilWetness.Dry, View(soil).Wetness);
+
+        F.Survival.WaterSoil(Me, soil, 1, 20);
+        Assert.Equal(SoilWetness.Watered, View(soil).Wetness);
+        F.Survival.WaterSoil(Me, soil, 1, 40);
+        Assert.Equal((60f, SoilWetness.Wet), (View(soil).Water, View(soil).Wetness));
+
+        _rig.Runtime.Update(20); // 12 s of water gone
+        Assert.Equal((48f, SoilWetness.Wet), (View(soil).Water, View(soil).Wetness));
+        var revision = State(soil).Revision;
+        _rig.Runtime.Update(35); // 21 more: under the wet level, on its way down
+        Assert.Equal(27f, View(soil).Water, 3);
+        Assert.Equal(SoilWetness.Drying, View(soil).Wetness);
+        Assert.NotEqual(revision, State(soil).Revision); // clients are sent the new look
+
+        _rig.Runtime.Update(100);
+        Assert.Equal((0f, SoilWetness.Dry, false), (View(soil).Water, View(soil).Wetness, State(soil).Soaked));
+        Assert.True(State(soil).IsEmpty);
+
+        // Planted soil keeps its water for the crop instead of drying.
+        F.Survival.WaterSoil(Me, soil, 1, 10);
+        F.Survival.PlantSeed(Me, soil, 1, Seed);
+        _rig.Runtime.Update(100);
+        Assert.Equal(0f, View(soil).Water); // all of it went on growing (speed 2: 20 of 40 s)
+        Assert.Equal(20f, State(soil).Grown);
+        Assert.DoesNotContain(_rig.Messages, m => m.Kind != ScriptMessageKind.Print);
+    }
+
+    [Fact]
     public void AParkedCropCatchesUpWhenItsCreationRunsAgain()
     {
         var parked = F.Add(Soil, new Vector3(0, 0, 1));

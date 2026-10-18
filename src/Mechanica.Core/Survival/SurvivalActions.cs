@@ -859,7 +859,8 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         if (CheckWater(caller, creationId, partId) is { } bad)
             throw new InvalidOperationException(bad);
         var creation = world.FindCreation(creationId)!;
-        creation.SoilOf(partId)!.AddWater(seconds, creation.DefinitionOf(partId).Soil!.Capacity ?? 0);
+        var soil = creation.DefinitionOf(partId).Soil!;
+        creation.SoilOf(partId)!.AddWater(seconds, soil.Capacity ?? 0, SoilState.WetAt(soil));
         return SoilViewOf(creation, partId);
     }
 
@@ -879,8 +880,9 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     {
         var soil = creation.SoilOf(partId)!;
         var crop = soil.Seed is { } id ? CropOf(id, catalog.FindDefinition(id)?.Seed) : null;
-        return new SoilView(creation.Id, partId, soil.Seed, crop, soil.Stage, soil.Water,
-            creation.DefinitionOf(partId).Soil?.Capacity ?? 0);
+        var definition = creation.DefinitionOf(partId).Soil;
+        return new SoilView(creation.Id, partId, soil.Seed, crop, soil.Stage, soil.Water, definition?.Capacity ?? 0,
+            soil.Wetness(SoilState.WetAt(definition)));
     }
 
     // The qualified item a seed grows into: a bare id is in the seed's own mod.
@@ -1157,7 +1159,8 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
 
     /// <inheritdoc/>
     public string? CheckPlace(ActionCaller caller, string part) =>
-        !Pays(caller) || inventories.PlayerInventory(caller.Peer).Count(part) > 0 ? null : $"You have no {NameOf(part)} to place.";
+        !Pays(caller) || PayingItem(inventories.PlayerInventory(caller.Peer), part) is not null ? null
+        : $"You have no {NameOf(PartItems.ItemFor(catalog, part))} to place.";
 
     /// <inheritdoc/>
     public string? CheckPlaceAll(ActionCaller caller, IReadOnlyDictionary<string, int> parts)
@@ -1165,11 +1168,12 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         if (!Pays(caller))
             return null;
         var inventory = inventories.PlayerInventory(caller.Peer);
-        foreach (var (part, count) in parts.OrderBy(p => p.Key, StringComparer.Ordinal))
+        var items = parts.GroupBy(p => PartItems.ItemFor(catalog, p.Key)).ToDictionary(g => g.Key, g => g.Sum(p => p.Value));
+        foreach (var (item, count) in items.OrderBy(p => p.Key, StringComparer.Ordinal))
         {
-            var have = inventory.Count(part);
+            var have = inventory.Count(item);
             if (have < count)
-                return $"You need {count} {NameOf(part)} and have {have}.";
+                return $"You need {count} {NameOf(item)} and have {have}.";
         }
         return null;
     }
@@ -1177,15 +1181,27 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     /// <inheritdoc/>
     public void Placed(ActionCaller caller, string part)
     {
-        if (Pays(caller))
-            inventories.PlayerInventory(caller.Peer).Remove(part, 1);
+        if (Pays(caller) && inventories.PlayerInventory(caller.Peer) is var inventory && PayingItem(inventory, part) is { } item)
+            inventory.Remove(item, 1);
     }
 
     /// <inheritdoc/>
     public void Removed(ActionCaller caller, string part, Vector3 at)
     {
-        if (Pays(caller) && inventories.PlayerInventory(caller.Peer).Add(part, 1) == 0)
-            AddDrop(at, [new ItemStack(part, 1)]);
+        var item = PartItems.ItemFor(catalog, part);
+        if (Pays(caller) && inventories.PlayerInventory(caller.Peer).Add(item, 1) == 0)
+            AddDrop(at, [new ItemStack(item, 1)]);
+    }
+
+    // The item placing part uses up: the one it is placed from (a Soil Bag for a soil mound), or the part itself when a
+    // player still carries it from before it had one (soil from an older save). Null when they have neither.
+    private string? PayingItem(Inventory inventory, string part)
+    {
+        var item = PartItems.ItemFor(catalog, part);
+        if (inventory.Count(item) > 0)
+            return item;
+        var own = Identifiers.Qualify(part);
+        return own != item && inventory.Count(own) > 0 ? own : null;
     }
 
     private bool Pays(ActionCaller caller) => Mode == GameMode.Survival && caller.Source == ActionSource.Player;

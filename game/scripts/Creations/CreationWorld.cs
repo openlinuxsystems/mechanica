@@ -29,6 +29,9 @@ public partial class CreationWorld : Node3D
     /// <summary>Every Creation, by ascending id.</summary>
     public IEnumerable<Creation> All => _entries.Values.Select(e => e.Creation);
 
+    /// <summary>The node of every live Creation, by ascending id.</summary>
+    public IEnumerable<CreationNode> Nodes => _entries.Values.Select(e => e.Node).OfType<CreationNode>();
+
     /// <summary>How many Creations there are, live or parked.</summary>
     public int Count => _entries.Count;
 

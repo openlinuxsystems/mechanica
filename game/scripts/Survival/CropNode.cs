@@ -46,17 +46,27 @@ public partial class CropNode : Node3D
     public void Follow(CreationNode? node, int partId)
     {
         var creation = node?.Creation;
-        if (creation?.FindPart(partId) is not { } part || creation.BodyIndexOf(partId) is var index && node!.Bodies.FirstOrDefault(b => b.BodyIndex == index) is not { } body)
+        if (creation?.FindPart(partId) is not { } part || node!.PartNode(partId) is not { } partNode)
         {
             Visible = false;
             return;
         }
-        var definition = creation.DefinitionOf(partId);
-        var size = definition.Size ?? GridSize.One;
-        var turned = part.Rotation.Apply(new GridCell(size.X, size.Y, size.Z));
-        var top = PartGeometry.CentreMetres(definition, part.Cell, part.Rotation).ToGodot()
-            + new Vector3(0, Math.Abs(turned.Y) * MechanicaInfo.GridSize / 2, 0);
-        GlobalTransform = body.GlobalTransform * new Transform3D(Basis.Identity, top);
+        GlobalTransform = partNode.GlobalTransform * new Transform3D(Basis.Identity, new Vector3(0, TopOf(partNode, creation, part), 0));
         Visible = true;
+    }
+
+    // The top of the part's model above its centre (a mound is lower than its cell), or the top of its cell.
+    private static float TopOf(Node3D partNode, Creation creation, PartInstance part)
+    {
+        var top = float.NegativeInfinity;
+        if (partNode.GetNodeOrNull<Node3D>("Model") is { } model)
+        {
+            foreach (var mesh in model.GetChildren().OfType<MeshInstance3D>())
+                top = Math.Max(top, (mesh.Transform * mesh.GetAabb()).End.Y);
+        }
+        if (float.IsFinite(top))
+            return top;
+        var size = creation.DefinitionOf(part.Id).Size ?? GridSize.One;
+        return Math.Abs(part.Rotation.Apply(new GridCell(size.X, size.Y, size.Z)).Y) * MechanicaInfo.GridSize / 2;
     }
 }

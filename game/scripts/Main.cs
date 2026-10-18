@@ -233,6 +233,9 @@ public partial class Main : Node3D
     /// <summary>Health, food, farming, weapons, items on the ground and respawn (chunk 20), and their sync to clients.</summary>
     public SurvivalSync Survival { get; private set; } = null!;
 
+    /// <summary>How soil mounds look: wet or dry, and spilled out of a bag.</summary>
+    public SoilLooks SoilLooks { get; private set; } = null!;
+
     /// <summary>Forces, torques and bearing motors for scripts, bots and external agents.</summary>
     public MotionSync Motion { get; private set; } = null!;
 
@@ -442,6 +445,8 @@ public partial class Main : Node3D
         AddChild(Inventory);
         AddChild(Survival);
         AddChild(new RefineEffects { Name = "RefineEffects", Players = PlayerSync, Sounds = Sounds, Survival = Survival });
+        SoilLooks = new SoilLooks { Name = "SoilLooks", Creations = Creations, Survival = Survival, Sounds = Sounds, Catalog = Survival.Catalog };
+        AddChild(SoilLooks);
         AddChild(ConnectLights = new ConnectToolLights { Name = "ConnectToolLights", Players = PlayerSync });
         Bots = new BotSync
         {
@@ -625,7 +630,7 @@ public partial class Main : Node3D
             {
                 Name = "InventoryScreen", Inventory = Inventory, Actions = Actions, Players = PlayerSync, Catalog = mods, Hotbar = Hotbar, Icons = Icons, Sounds = Sounds,
                 Mode = () => Survival.Own?.Mode, Creations = Creations, Upgrades = Upgrades,
-                AllItems = () => HotbarTools.All.Concat(Build.Catalog.Parts.Where(p => p.Value.Definition.Category is not null).Select(p => p.Key)),
+                AllItems = () => HotbarTools.All.Concat(Build.Catalog.Parts.Where(p => p.Value.Definition is { Category: not null, IsItem: true }).Select(p => p.Key)),
             };
             AddChild(inventory);
             AddChild(Upgrades);

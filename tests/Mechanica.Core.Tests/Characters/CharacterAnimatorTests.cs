@@ -20,6 +20,7 @@ public class CharacterAnimatorTests
         ["hold_bucket"] = 2f, ["hold_bucket_full"] = 2f, ["bucket_fill"] = 1.1f, ["bucket_throw"] = 0.9f, ["bucket_place"] = 0.8f, ["bucket_place_full"] = 0.8f,
         ["hold_refine"] = 0.75f, ["refine_draw"] = 0.4f, ["refine_stow"] = 0.35f,
         ["hold_refine_fp"] = 0.75f, ["refine_draw_fp"] = 0.4f, ["refine_stow_fp"] = 0.35f,
+        ["hold_bag"] = 2f, ["bag_spill"] = 0.8f, ["bag_lift"] = 0.4f, ["bag_lower"] = 0.35f,
     };
 
     private static CharacterAnimator Make() => new(new CharacterSettings(), Lengths);
@@ -159,6 +160,7 @@ public class CharacterAnimatorTests
     [InlineData(CharacterProp.WaterBucket, "hold_bucket")]
     [InlineData(CharacterProp.WaterBucketFull, "hold_bucket_full")]
     [InlineData(CharacterProp.RefineTool, "hold_refine")]
+    [InlineData(CharacterProp.SoilBag, "hold_bag")]
     public void HoldingSomethingPosesTheArms(CharacterProp prop, string clip)
     {
         var animator = Make();

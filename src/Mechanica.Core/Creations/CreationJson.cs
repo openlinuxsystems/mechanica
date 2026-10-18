@@ -37,7 +37,8 @@ namespace Mechanica.Core.Creations;
 /// or station part also stores its <c>inventory</c> (filled slots: <c>{ "slot": 0, "item": "vanilla:scrap_metal",
 /// "count": 12 }</c>) and its <c>crafting</c> orders (<c>{ "recipe": "vanilla:chest", "count": 2, "progress": 1.5 }</c>),
 /// each written only when not empty. A soil part stores what grows on it (<c>"soil": { "seed": "vanilla:carrot_seed",
-/// "grown": 30, "water": 120 }</c>, seconds), written only when something is planted or it holds water.
+/// "grown": 30, "water": 120 }</c>, seconds, and <c>"soaked": true</c> once it has been fully wet since it was last
+/// dry), written only when something is planted or it holds water.
 /// </summary>
 public static class CreationJson
 {
@@ -77,6 +78,7 @@ public static class CreationJson
                         Water = soil.Water > 0 ? soil.Water : null,
                         Stage = soil.Seed is null || soil.Stage == 0 ? null : soil.Stage,
                         Updated = soil.Updated,
+                        Soaked = soil.Soaked ? true : null,
                     }
                     : null,
                 Extra = Sorted(p.Extra),
@@ -357,7 +359,8 @@ public static class CreationJson
         else if (soil.Updated is { } updated && !(double.IsFinite(updated) && updated >= 0))
             sink.Error(invalid, $"{path}.soil.updated", "updated must be 0 or more seconds.");
         else
-            state.Load(soil.Seed is null ? null : Identifiers.Qualify(soil.Seed), soil.Grown ?? 0, soil.Water ?? 0, soil.Stage ?? 0, soil.Updated);
+            state.Load(soil.Seed is null ? null : Identifiers.Qualify(soil.Seed), soil.Grown ?? 0, soil.Water ?? 0, soil.Stage ?? 0, soil.Updated,
+                soil.Soaked == true);
     }
 
     private static bool IsFinite(Vec3 v) => float.IsFinite(v.X) && float.IsFinite(v.Y) && float.IsFinite(v.Z);
@@ -486,6 +489,8 @@ public static class CreationJson
         public int? Stage { get; init; }
 
         public double? Updated { get; init; }
+
+        public bool? Soaked { get; init; }
     }
 
     internal sealed record ConnectionData

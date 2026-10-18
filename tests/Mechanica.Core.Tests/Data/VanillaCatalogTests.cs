@@ -32,7 +32,7 @@ public class VanillaCatalogTests
         "carrot", "potato", "tomato", "water_bucket", "glowstick", "popper", "potato_blaster", "potato_scattergun",
         "potato_launcher",
         // World / farming parts
-        "soil",
+        "soil_bag",
         // Decorative props
         "stop_sign", "caution_sign", "danger_sign", "warehouse_key_sign", "direction_arrow_left", "direction_arrow_right",
         "direction_arrow_straight", "outpost_sign", "no_entry_sign", "speed_limit_sign",

@@ -111,7 +111,7 @@ public partial class ToolBelt : Node
 
     public override void _Ready()
     {
-        Builder = Add(new BuildTool { Name = "Build", Player = Player, Actions = Actions, Build = Build, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput });
+        Builder = Add(new BuildTool { Name = "Build", Player = Player, Actions = Actions, Build = Build, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput, Characters = Characters });
         Lift = Add(new LiftTool { Name = "Lift", Player = Player, Actions = Actions, Build = Build, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput });
         Weld = Add(new WeldTool { Name = "Weld", Player = Player, Actions = Actions, Build = Build, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput });
         Paint = Add(new PaintTool { Name = "Paint", Player = Player, Actions = Actions, Build = Build, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput });

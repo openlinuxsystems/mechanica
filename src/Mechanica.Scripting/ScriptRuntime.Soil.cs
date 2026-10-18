@@ -53,6 +53,7 @@ public sealed partial class ScriptRuntime
             table.Set("water", DynValue.NewNumber(state.Water));
             table.Set("stage", DynValue.NewNumber(state.Stage));
             table.Set("stages", DynValue.NewNumber(SoilState.Stages));
+            table.Set("soaked", DynValue.NewBoolean(state.Soaked));
             if (state.Updated is { } updated)
                 table.Set("updated", DynValue.NewNumber(updated));
             return DynValue.NewTable(table);
@@ -74,11 +75,12 @@ public sealed partial class ScriptRuntime
             if (stage is { } s && s != MathF.Floor(s))
                 throw new ScriptRuntimeException("soil.set: stage must be a whole number");
             // Never more water than the soil holds (its capacity may have shrunk with a mod update).
+            var definition = creation.DefinitionOf(PartInstance().Part).Soil;
             if (water is { } w)
-                water = Math.Min(w, creation.DefinitionOf(PartInstance().Part).Soil?.Capacity ?? 0);
+                water = Math.Min(w, definition?.Capacity ?? 0);
             try
             {
-                state.Set(grown, water, stage is { } st ? (int)st : null, updated);
+                state.Set(grown, water, stage is { } st ? (int)st : null, updated, SoilState.WetAt(definition));
             }
             catch (ArgumentOutOfRangeException e)
             {
