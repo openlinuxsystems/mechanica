@@ -230,7 +230,10 @@ public sealed class WorldGenerator
                     if (!Candidate(rule, ix, iz, out var spot) || spot.X < x0 || spot.X >= x1 || spot.Y < z0 || spot.Y >= z1)
                         continue;
                     if (Fits(rule, spot) && !Crowded(rule, spot))
-                        yield return Place(rule, ix, iz, spot);
+                    {
+                        foreach (var placement in Place(rule, ix, iz, spot))
+                            yield return placement;
+                    }
                 }
             }
         }
@@ -244,18 +247,53 @@ public sealed class WorldGenerator
         var rule = Data.ScatterRules[id.Rule];
         if (!Candidate(rule, id.CellX, id.CellZ, out var spot) || !Fits(rule, spot) || Crowded(rule, spot))
             return null;
-        return Place(rule, id.CellX, id.CellZ, spot);
+        return Place(rule, id.CellX, id.CellZ, spot).FirstOrDefault(p => p.Id.Piece == id.Piece);
     }
 
-    private WorldObjectPlacement Place(Scatter rule, int ix, int iz, Vector2 spot)
+    // The object a scatter spot holds: one, or every cube of a rock outcrop.
+    private IEnumerable<WorldObjectPlacement> Place(Scatter rule, int ix, int iz, Vector2 spot)
     {
         var o = rule.Object;
         var salt = Noise.Hash(_scatterSalt ^ (uint)rule.Index, ix, iz, 3);
         var scale = o.Scale is [var lo, var hi] ? lo + (hi - lo) * Noise.Unit(Noise.Mix(salt)) : 1f;
         var yaw = Noise.Unit(salt) * 2f * MathF.PI;
-        var y = HeightAt(spot.X, spot.Y) - o.Sink * scale;
-        return new WorldObjectPlacement(new WorldObjectId(rule.Index, ix, iz), o, new Vector3(spot.X, y, spot.Y), yaw, scale);
+        if (o.Outcrop is not { } outcrop)
+        {
+            var y = HeightAt(spot.X, spot.Y) - o.Sink * scale;
+            yield return new WorldObjectPlacement(new WorldObjectId(rule.Index, ix, iz), o, new Vector3(spot.X, y, spot.Y), yaw, scale);
+            yield break;
+        }
+        // An outcrop: whole cubes on a grid turned by the outcrop's yaw, stood on the lowest ground under its
+        // footprint (sunk by sink) so no cube floats on a slope.
+        var cubes = OutcropLayout.Cubes(outcrop, Noise.Mix(salt ^ 0x5EEDu));
+        var turn = Quaternion.CreateFromAxisAngle(Vector3.UnitY, yaw);
+        var centre = new Vector2((float)cubes.Average(c => c.X), (float)cubes.Average(c => c.Z));
+        Vector2 Ground(OutcropCube c, float dx, float dz)
+        {
+            var local = Vector3.Transform(new Vector3((c.X - centre.X + dx) * scale, 0, (c.Z - centre.Y + dz) * scale), turn);
+            return new Vector2(spot.X + local.X, spot.Y + local.Z);
+        }
+        var floor = float.MaxValue;
+        foreach (var c in cubes.Where(c => c.Y == 0))
+        {
+            foreach (var (dx, dz) in Corners)
+            {
+                var g = Ground(c, dx, dz);
+                floor = MathF.Min(floor, HeightAt(g.X, g.Y));
+            }
+        }
+        var baseY = floor - o.Sink * scale;
+        for (var k = 0; k < cubes.Count; k++)
+        {
+            var c = cubes[k];
+            var g = Ground(c, 0, 0);
+            yield return new WorldObjectPlacement(new WorldObjectId(rule.Index, ix, iz, k), o, new Vector3(g.X, baseY + c.Y * scale, g.Y),
+                yaw + c.Turn * MathF.PI / 2f, scale);
+        }
     }
+
+    // A cube's centre and its four bottom corners, in cubes from its centre.
+    private static readonly (float, float)[] Corners = [(0, 0), (-0.5f, -0.5f), (0.5f, -0.5f), (-0.5f, 0.5f), (0.5f, 0.5f)];
 
     // The scatter rule's spot in a cell, if the cell's dice roll keeps it.
     private bool Candidate(Scatter rule, int ix, int iz, out Vector2 spot)
@@ -278,7 +316,21 @@ public sealed class WorldGenerator
             return false;
         if (PoisAt(spot.X, spot.Y).Any())
             return false;
-        return HeightAt(spot.X, spot.Y) >= SeaLevel + 0.2f && SlopeAt(spot.X, spot.Y) <= _terrain.MaxScatterSlope;
+        if (HeightAt(spot.X, spot.Y) < SeaLevel + 0.2f || SlopeAt(spot.X, spot.Y) > MathF.Min(_terrain.MaxScatterSlope, rule.Object.MaxSlope ?? float.MaxValue))
+            return false;
+        // A rock outcrop spreads its cubes over its footprint, so the whole of it must suit, not just its middle.
+        if (rule.Object.Outcrop is not null)
+        {
+            var reach = rule.Object.Footprint * (rule.Object.Scale is [_, var hi] ? hi : 1f);
+            for (var a = 0; a < 8; a++)
+            {
+                var p = spot + new Vector2(MathF.Cos(a * MathF.PI / 4f), MathF.Sin(a * MathF.PI / 4f)) * reach;
+                if (MathF.Max(MathF.Abs(p.X), MathF.Abs(p.Y)) >= _half || SampleBiomes(p.X, p.Y).Biome != rule.Biome
+                    || PoisAt(p.X, p.Y).Any() || HeightAt(p.X, p.Y) < SeaLevel + 0.2f)
+                    return false;
+            }
+        }
+        return true;
     }
 
     // Whether an earlier rule's fitting candidate sits too close. Earlier rules win, so ids never depend on later rules.

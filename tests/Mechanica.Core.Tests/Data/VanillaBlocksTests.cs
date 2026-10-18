@@ -19,7 +19,7 @@ public class VanillaBlocksTests
     public static TheoryData<string, string> Catalog => new()
     {
         { "wood", "wood" }, { "metal", "metal" }, { "concrete", "concrete" }, { "glass", "glass" },
-        { "scrap_wood", "scrap" }, { "scrap_metal", "scrap" }, { "barrier", "plastic" }, { "tile", "tile" },
+        { "scrap_wood", "scrap" }, { "scrap_metal", "scrap" }, { "scrap_stone", "concrete" }, { "barrier", "plastic" }, { "tile", "tile" },
         { "brick", "concrete" }, { "net", "fabric" }, { "cardboard", "cardboard" }, { "hull_plate", "metal" },
         { "path_light", "glass" }, { "armored_glass", "glass" }, { "aluminum", "metal" }, { "rusted_metal", "metal" },
         { "insulation", "fabric" }, { "plaster", "concrete" }, { "carpet", "fabric" }, { "diamond_plate", "metal" },
@@ -139,7 +139,7 @@ public class VanillaBlocksTests
     }
 
     [Theory]
-    [InlineData("structural_blocks.json", 40)]
+    [InlineData("structural_blocks.json", 42)]
     [InlineData("survival.json", 16)]
     [InlineData("joints.json", 4)]
     [InlineData("lights_utility.json", 15)]

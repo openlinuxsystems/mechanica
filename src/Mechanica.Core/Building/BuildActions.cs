@@ -192,8 +192,8 @@ public sealed class BuildActions(IPartCatalog catalog, BuildSettings settings, I
         var first = ApplyPlace(caller, new PlacePartArgs(args.Part, args.Cells[0], args.Rotation, args.Creation, args.Position), sound: true)!.Value
             .Deserialize<PlacePartResult>(ActionJson.Options)!;
         var (done, skipped, reason) = (1, 0, (string?)null);
-        // Ground-only parts (soil) don't attach to each other: started on the ground, each one starts its own Creation.
-        var apart = args.Position is not null && catalog.FindDefinition(args.Part)?.GroundOnly == true;
+        // Ground-only parts (soil) and loose parts (rods) don't attach to each other: each one starts its own Creation.
+        var apart = args.Position is not null && catalog.FindDefinition(args.Part) is { } definition && (definition.GroundOnly == true || definition.Loose == true);
         foreach (var cell in args.Cells.Skip(1))
         {
             var one = apart
@@ -314,8 +314,9 @@ public sealed class BuildActions(IPartCatalog catalog, BuildSettings settings, I
             throw new InvalidOperationException(error);
         var start = new Pose(args.Position!.Value.ToNumerics(), Quaternion.Identity);
         creation.SetAllBodyPoses(start);
-        // Built on the ground, it is anchored there as in Scrap Mechanic: players can't kick it about.
-        if (world.RestsOnWorld(null, creation.DefinitionOf(placed.Id), args.Cell, args.Rotation, start))
+        // Built on the ground, it is anchored there as in Scrap Mechanic: players can't kick it about. A loose part
+        // (a rod set down) never is: it is a physics object.
+        if (creation.DefinitionOf(placed.Id).Loose != true && world.RestsOnWorld(null, creation.DefinitionOf(placed.Id), args.Cell, args.Rotation, start))
             creation.SetAnchored(placed.Id, true);
         world.Added(creation);
         PlayPlaced(world, creation, placed.Id);

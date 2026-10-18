@@ -722,19 +722,45 @@
       "kind": "action",
       "group": "survival",
       "scope": "play",
-      "description": "Finishing a refine once Use has been held long enough. Arguments of StartRefine and FinishRefine: the resource node held Use on.",
+      "description": "Finishing a refine once Use has been held long enough. Arguments of StartRefine and FinishRefine: what Use is held on. Either a resource node (a tree) by Object, or a loose part that refines (a Stone Rod) by Creation and Part.",
       "params": {
-        "description": "Arguments of StartRefine and FinishRefine: the resource node held Use on.",
+        "description": "Arguments of StartRefine and FinishRefine: what Use is held on. Either a resource node (a tree) by Object, or a loose part that refines (a Stone Rod) by Creation and Part.",
         "type": "object",
         "properties": {
           "object": {
             "description": "Id of the world object (\"3.10.-4\").",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "creation": {
+            "description": "Id of the loose part's Creation.",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "part": {
+            "description": "Id of the loose part in it.",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
-        "required": [
-          "object"
-        ],
         "additionalProperties": false
       }
     },
@@ -2669,19 +2695,45 @@
       "kind": "action",
       "group": "survival",
       "scope": "play",
-      "description": "Starting to hold Use on a resource node to refine it. Arguments of StartRefine and FinishRefine: the resource node held Use on.",
+      "description": "Starting to hold Use on a resource node to refine it. Arguments of StartRefine and FinishRefine: what Use is held on. Either a resource node (a tree) by Object, or a loose part that refines (a Stone Rod) by Creation and Part.",
       "params": {
-        "description": "Arguments of StartRefine and FinishRefine: the resource node held Use on.",
+        "description": "Arguments of StartRefine and FinishRefine: what Use is held on. Either a resource node (a tree) by Object, or a loose part that refines (a Stone Rod) by Creation and Part.",
         "type": "object",
         "properties": {
           "object": {
             "description": "Id of the world object (\"3.10.-4\").",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "creation": {
+            "description": "Id of the loose part's Creation.",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "part": {
+            "description": "Id of the loose part in it.",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
-        "required": [
-          "object"
-        ],
         "additionalProperties": false
       }
     },

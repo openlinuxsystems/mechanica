@@ -1,0 +1,19 @@
+{
+  "id": "stone_rod",
+  "stations": [
+    "refiner"
+  ],
+  "inputs": [
+    {
+      "item": "stone_rod",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "scrap_stone_block",
+      "count": 20
+    }
+  ],
+  "time": 5
+}

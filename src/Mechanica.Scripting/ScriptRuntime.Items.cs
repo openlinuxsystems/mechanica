@@ -474,7 +474,8 @@ public sealed partial class ScriptRuntime
             var hit = ToRayHit(args.AsType(0, "combat.hit", DataType.Table).Table, "combat.hit");
             var damage = LuaValues.Number(args[1], "combat.hit", 2);
             var push = args.Count > 2 && !args[2].IsNil() ? LuaValues.ToVector(args[2], "combat.hit", 3) : Vector3.Zero;
-            return ViewTable(context, _survival!.Hit(caller, hit, damage, push));
+            var kind = DamageKind(args, 3, "combat.hit");
+            return ViewTable(context, _survival!.Hit(caller, hit, damage, push, kind));
         });
         Fn(combat, "hitscan", args =>
         {
@@ -721,4 +722,14 @@ public sealed partial class ScriptRuntime
 
     private static float AngleDegrees(Vector3 a, Vector3 b) =>
         MathF.Acos(Math.Clamp(Vector3.Dot(Vector3.Normalize(a), Vector3.Normalize(b)), -1f, 1f)) * 180f / MathF.PI;
+
+    // The optional damage kind a hit names (a drill's "drill"): what world objects take it (World.DamageKinds).
+    private static string DamageKind(CallbackArguments args, int index, string fn)
+    {
+        if (args.Count <= index || args[index].IsNil())
+            return Mechanica.Core.World.DamageKinds.Weapon;
+        if (args[index].Type != DataType.String || !Mechanica.Core.World.DamageKinds.All.Contains(args[index].String))
+            throw new ScriptRuntimeException($"{fn}: argument {index + 1} must be a damage kind ({string.Join(", ", Mechanica.Core.World.DamageKinds.All)})");
+        return args[index].String;
+    }
 }

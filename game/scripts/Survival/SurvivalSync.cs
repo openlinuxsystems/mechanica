@@ -322,7 +322,9 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
 
     /// <inheritdoc/>
     public IEnumerable<WorldObjectPlacement> ObjectsNear(System.Numerics.Vector3 point, float radius) =>
-        World.Generator.ObjectsIn(point.X - radius, point.Z - radius, point.X + radius, point.Z + radius)
+        // Widened by the largest footprint: an outcrop's cubes stand away from its ground point, which is what ObjectsIn looks at.
+        World.Generator.ObjectsIn(point.X - radius - World.Generator.Data.MaxFootprint, point.Z - radius - World.Generator.Data.MaxFootprint,
+                point.X + radius + World.Generator.Data.MaxFootprint, point.Z + radius + World.Generator.Data.MaxFootprint)
             .Where(o => !World.State.IsDestroyed(o.Id) && System.Numerics.Vector3.Distance(o.Position, point) <= radius);
 
     /// <inheritdoc/>
@@ -340,6 +342,12 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
     /// <inheritdoc/>
     public void Push(Creation creation, int bodyIndex, System.Numerics.Vector3 point, System.Numerics.Vector3 impulse) =>
         Build.Push(creation, bodyIndex, point, impulse);
+
+    /// <inheritdoc/>
+    public void RemovePart(Creation creation, int partId) => Build.Tools!.RemovePart(creation, partId);
+
+    /// <inheritdoc/>
+    public void Shatter(BreakDefinition breaks, System.Numerics.Vector3 centre, float radius, uint seed) => Build.Tools!.Shatter(breaks, centre, radius, seed);
 
     // Slowed players move slower: the host from its own state, a client from the vitals it was sent.
     private void UpdateSpeedScales()

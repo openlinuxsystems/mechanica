@@ -338,7 +338,7 @@ are the same primitives bots use (chunk 21).
 | Function | Returns |
 |----------|---------|
 | `combat.cast(from, direction, range)` | The first thing a ray hits within `range` m, skipping the holder, with its `distance`; or `nil`. `range` is at most `max_ray_length`. |
-| `combat.hit(hit, damage, push?)` | Deals `damage` to what a cast hit. A part's Body also gets `push` (a `vec3` impulse, N·s) unless the part broke off. Returns the hit with `damage` dealt. |
+| `combat.hit(hit, damage, push?, kind?)` | Deals `damage` to what a cast hit. A part's Body also gets `push` (a `vec3` impulse, N·s) unless the part broke off. `kind` is the damage kind (`drill`, `saw`, `weapon` (the default), `sledge`, `explosion`, `bot`): a world object with `damage_from` takes only the kinds it lists, so only a drill (`kind = "drill"`) breaks a rock outcrop. Returns the hit with `damage` dealt. |
 | `combat.hitscan(from, direction, range, damage, impulse?)` | `combat.cast` then `combat.hit`, pushing along the ray with `impulse` N·s. The hit, or `nil` when nothing is in range. |
 | `combat.splash(at, radius, damage, impulse?)` | Hurts every player, part and world object within `radius` m of `at`, falling off from `damage` at the centre to 0 at the edge, and pushes parts away with up to `impulse` N·s. A list of hits. `radius` is at most `max_overlap_radius`. |
 | `combat.pellets(direction, count, spread)` | `count` (at most 64) unit directions: the first along `direction`, the rest evenly round a cone of `spread` degrees. No randomness, so every replay agrees. |

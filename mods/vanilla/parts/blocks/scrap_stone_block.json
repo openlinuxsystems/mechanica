@@ -1,0 +1,21 @@
+{
+  "id": "scrap_stone_block",
+  "name": "Scrap Stone Block",
+  "description": "Rough stone refined from a Stone Rod. Heavy and sturdy.",
+  "category": "block",
+  "mass": 9,
+  "durability": 7,
+  "friction": 0.7,
+  "buoyancy": 0,
+  "flammable": false,
+  "stack_size": 100,
+  "sound_material": "concrete",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/scrap_stone_block.glb",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.95,
+    "metallic": 0,
+    "texture": "textures/blocks/scrap_stone.png"
+  }
+}

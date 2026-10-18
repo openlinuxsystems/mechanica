@@ -25,6 +25,8 @@ public partial class TerrainChunk : Node3D
     private static readonly StandardMaterial3D GroundMaterial = new() { VertexColorUseAsAlbedo = true, VertexColorIsSrgb = true, Roughness = 0.95f };
     private static readonly Dictionary<ShapeDefinition, Mesh> PieceMeshes = [];
     private static readonly Dictionary<string, StandardMaterial3D> Materials = [];
+    // Models world objects are drawn with (rock outcrop cubes), by file; null when one failed to load.
+    private static readonly Dictionary<string, Creations.PartMesh?> ObjectMeshes = [];
 
     private readonly Dictionary<ulong, WorldObjectId> _objectShapes = [];
 
@@ -36,6 +38,9 @@ public partial class TerrainChunk : Node3D
 
     /// <summary>The world's textured ground (<see cref="World.GroundMaterial"/>); null draws the plain biome colours.</summary>
     public Material? Textured { get; init; }
+
+    /// <summary>The world's generation data, which finds objects' model files; null draws every object from its pieces.</summary>
+    public WorldGenData? WorldGen { get; init; }
 
     /// <summary>The static body every loaded chunk's ground shape belongs to, a sibling of this node. Set before adding to the tree.</summary>
     public StaticBody3D Ground { get; init; } = null!;
@@ -228,6 +233,7 @@ public partial class TerrainChunk : Node3D
         var origin = Position;
         var transforms = new Dictionary<(WorldObjectDefinition, int), List<Transform3D>>();
         var models = new Dictionary<WorldObjectDefinition, List<Transform3D>>();
+        var meshes = new Dictionary<WorldObjectDefinition, (Creations.PartMesh Mesh, List<Transform3D> List)>();
         foreach (var o in LiveObjects)
         {
             var placed = new Transform3D(new Basis(Vector3.Up, o.Yaw).Scaled(new Vector3(o.Scale, o.Scale, o.Scale)), o.Position.ToGodot() - origin);
@@ -250,6 +256,13 @@ public partial class TerrainChunk : Node3D
                 placements.Add(placed);
                 continue;
             }
+            if (MeshOf(o.Definition) is { } mesh)
+            {
+                if (!meshes.TryGetValue(o.Definition, out var drawn))
+                    meshes[o.Definition] = drawn = (mesh, []);
+                drawn.List.Add(placed * new Transform3D(Basis.Identity, o.Definition.Mesh!.At.ToGodot()) * mesh.Transform);
+                continue;
+            }
             var pieces = o.Definition.Pieces ?? [];
             for (var p = 0; p < pieces.Count; p++)
             {
@@ -265,6 +278,13 @@ public partial class TerrainChunk : Node3D
             for (var i = 0; i < list.Count; i++)
                 multi.SetInstanceTransform(i, list[i]);
             Objects.AddChild(new MultiMeshInstance3D { Name = $"{definition.Id}_{piece}", Multimesh = multi, MaterialOverride = MaterialOf(shape.Color) });
+        }
+        foreach (var (definition, (mesh, list)) in meshes)
+        {
+            var multi = new MultiMesh { TransformFormat = MultiMesh.TransformFormatEnum.Transform3D, Mesh = mesh.Mesh, InstanceCount = list.Count };
+            for (var i = 0; i < list.Count; i++)
+                multi.SetInstanceTransform(i, list[i]);
+            Objects.AddChild(new MultiMeshInstance3D { Name = $"{definition.Id}_mesh", Multimesh = multi });
         }
         foreach (var (definition, list) in models)
         {
@@ -320,6 +340,16 @@ public partial class TerrainChunk : Node3D
         foreach (var piece in o.Definition.Pieces ?? [])
             root.AddChild(new MeshInstance3D { Mesh = MeshOf(piece), MaterialOverride = material, Transform = Local(piece), CastShadow = GeometryInstance3D.ShadowCastingSetting.Off });
         return root;
+    }
+
+    // The model an object is drawn with, loaded once per file; null when it has none or it failed to load (pieces are drawn).
+    private Creations.PartMesh? MeshOf(WorldObjectDefinition definition)
+    {
+        if (WorldGen?.MeshFileOf(definition) is not { } file)
+            return null;
+        if (!ObjectMeshes.TryGetValue(file, out var mesh))
+            ObjectMeshes[file] = mesh = Creations.PartAssets.ReadGltf(file, definition.Mesh!.File!)?.FirstOrDefault();
+        return mesh;
     }
 
     // Leaf colour of world objects drawn with a flora model (the harvestable bush).

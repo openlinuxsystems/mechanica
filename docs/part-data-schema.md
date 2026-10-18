@@ -71,7 +71,7 @@ you; this page is the reference for what each key means, so you can read, review
 | `category` | enum | always | See [Categories](#categories). |
 | `mass` | number > 0 | placeable | Mass in kg. A Body's mass is the sum of its parts. |
 | `centre_of_mass` | `[x, y, z]` m | no | Where the part's mass sits, from the part centre in the part's frame. Omitted means the part centre. Must lie within the footprint. A Body's centre of mass is its parts' mass-weighted mean. |
-| `durability` | integer ≥ 1 | placeable | Toughness rating; the part's HP derives from it. |
+| `durability` | integer ≥ 1 | placeable | Toughness rating; the part's HP derives from it. A `loose` part may leave it out, and then nothing breaks it (a Stone Rod). |
 | `friction` | number ≥ 0 | placeable | Surface friction coefficient. A Body uses its parts' mass-weighted mean. |
 | `buoyancy` | number ≥ 0 | placeable | Buoyant force factor: force = buoyancy × displaced volume. |
 | `flammable` | bool | placeable | Whether fire can ignite and spread through it ([Fire](survival.md#fire)). |
@@ -84,6 +84,10 @@ you; this page is the reference for what each key means, so you can read, review
 | `collision` | object | no | Collision shape. Omitted means a box filling `size`. See [collision](#collision). |
 | `sockets` | list | no | Attachment points. Placeable parts only. See [sockets](#sockets). |
 | `ground_only` | bool | no | The part goes only flat on the ground, like soil: upright, resting on the world itself, never tipped onto a side, set on a Creation or welded to one. The tip key does nothing for it. Placeable parts only. Default false. |
+| `loose` | bool | no | A loose physics item lying in the world on its own, like a Stone Chunk or a Stone Rod: set down it is its own unanchored Creation, and nothing is built onto it or welded to it. Makes a `resource` part placeable. Not with `ground_only`. Default false. |
+| `breaks_into` | object | no | Loose parts the part shatters into when it breaks (a chunk into rods): `count` pieces (1 to 16), each picked from `parts[]` (`part`, `weight`, default 1) by weight, thrown out by `breaking` in `game/data/building.json`. Placeable parts only. |
+| `sledge_damage` | number ≥ 0 | no | Damage one Sledgehammer swing does to the part, instead of `sledge.damage` in `game/data/building.json`. Placeable parts only. |
+| `refine` | list | no | Items (`item`, `count` ≥ 1) a `loose` part refines into when a player holds Use on it with the Refine Tool for `refine_seconds` (`game/data/survival.json`). The part is used up. Loose parts only. |
 | `script` | path | no | `.lua` behaviour script. A placed part runs it while it exists; an item (food, a weapon) runs it while a player holds and uses it. See the [Lua API Reference](lua-api.md). |
 | `sounds` | object | no | Sound events: local sound name → sound id (`"start": "engine_start"`). The game plays `place`, `remove`, `break` and `impact`; other names are for the script. A bare id is the part's own mod's event, else vanilla's; `mod_id:sound_id` names another mod's. See [Sound Events](sound-events.md#part-sounds). |
 | `inventory` | object | no | Item storage. Placeable parts only. See [inventory and crafting](#inventory-and-crafting). |

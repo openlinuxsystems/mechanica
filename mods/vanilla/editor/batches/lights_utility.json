@@ -470,6 +470,7 @@
         "logic": { "inputs": 1 },
         "animation": { "axis": [0, 1, 0] },
         "properties": {
+          "kind": "saw",
           "damage": 15,
           "interval": 0.25,
           "reach": 0.12,
@@ -506,7 +507,7 @@
       "template": "interactive",
       "set": {
         "name": "Drill",
-        "description": "Bores into whatever is at its tip while its input is on, and breaks rocks for their scrap faster than a sledgehammer.",
+        "description": "Bores into whatever is at its tip while its input is on. The only tool that breaks rock outcrops for their stone and metal.",
         "mass": 6,
         "durability": 6,
         "stack_size": 10,
@@ -518,6 +519,7 @@
         "logic": { "inputs": 1 },
         "animation": { "axis": [0, 0, -1] },
         "properties": {
+          "kind": "drill",
           "damage": 25,
           "interval": 0.3,
           "reach": 0.15,

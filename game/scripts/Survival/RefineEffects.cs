@@ -129,10 +129,15 @@ public partial class RefineEffects : Node3D
             && Survival.FindObject(id) is { Definition.Refine: true } found
             ? (found, hit.Point)
             : ((WorldObjectPlacement, Vector3)?)null;
-        var at = node?.Item2 ?? model.PropNode?.ToGlobal(new Vector3(0.035f, 0f, -0.17f)) ?? player.GlobalPosition;
+        // Or a loose part that refines (a rod): chips of its own material.
+        var rod = node is null && HandTool.Cast(player, reach) is { } partHit && HandTool.PartHit(partHit) is { } aimed
+            && aimed.Node.Creation.DefinitionOf(aimed.Part) is { Loose: true, Refine.Count: > 0 } refinable
+            ? (refinable, partHit.Point)
+            : ((Core.Data.PartDefinition, Vector3)?)null;
+        var at = node?.Item2 ?? rod?.Item2 ?? model.PropNode?.ToGlobal(new Vector3(0.035f, 0f, -0.17f)) ?? player.GlobalPosition;
         var colour = node?.Item1.Definition.Pieces?.FirstOrDefault()?.Color is { } hex && Color.HtmlIsValid(hex) ? Color.FromHtml(hex) : new Color(0.45f, 0.42f, 0.38f);
         var metal = node?.Item1.Definition.Drops?.Any(d => d.Item is { } item
-            && Survival.Catalog.FindDefinition(item)?.SoundMaterial == "metal") == true;
+            && Survival.Catalog.FindDefinition(item)?.SoundMaterial == "metal") == true || rod?.Item1.SoundMaterial == "metal";
         Bursts++;
         var root = new Node3D { Name = "Chips", Position = at };
         AddChild(root);

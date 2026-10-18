@@ -1,7 +1,7 @@
 {
   "id": "drill",
   "name": "Drill",
-  "description": "Bores into whatever is at its tip while its input is on, and breaks rocks for their scrap faster than a sledgehammer.",
+  "description": "Bores into whatever is at its tip while its input is on. The only tool that breaks rock outcrops for their stone and metal.",
   "category": "interactive",
   "mass": 6,
   "durability": 6,
@@ -37,6 +37,7 @@
     "axis": [0, 0, -1]
   },
   "properties": {
+    "kind": "drill",
     "damage": 25,
     "interval": 0.3,
     "reach": 0.15,

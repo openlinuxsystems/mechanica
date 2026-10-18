@@ -120,12 +120,21 @@ public static class BuildAim
 
     /// <summary>
     /// The part of <see cref="GroundOnlyProblem"/> that needs no pose: null unless a ground-only part would join a
-    /// Creation built of anything else.
+    /// Creation built of anything else, or a loose part (<see cref="PartDefinition.Loose"/>) would join a Creation or
+    /// take a part on.
     /// </summary>
-    public static string? JoinProblem(PartDefinition definition, Creation? target) =>
-        definition.GroundOnly == true && target is not null && target.Parts.Any(p => target.DefinitionOf(p.Id).GroundOnly != true)
+    public static string? JoinProblem(PartDefinition definition, Creation? target)
+    {
+        if (target is null)
+            return null;
+        if (definition.Loose == true)
+            return $"{definition.Name ?? "This part"} is set down on its own, not on a creation.";
+        if (target.Parts.Select(p => target.DefinitionOf(p.Id)).FirstOrDefault(d => d.Loose == true) is { } loose)
+            return $"Nothing can be built onto a {loose.Name ?? "loose part"}.";
+        return definition.GroundOnly == true && target.Parts.Any(p => target.DefinitionOf(p.Id).GroundOnly != true)
             ? $"{definition.Name ?? "This part"} goes only on the ground, not on a creation."
             : null;
+    }
 
     /// <summary>The player's adjustment as a ground-only part takes it: its turns about +Y, never a tip.</summary>
     public static GridRotation Upright(PartDefinition definition, GridRotation adjust) =>

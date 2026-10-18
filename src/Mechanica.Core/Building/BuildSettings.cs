@@ -55,6 +55,9 @@ public sealed record BuildSettings
     /// <summary>The Sledgehammer.</summary>
     public SledgeSettings Sledge { get; init; } = new();
 
+    /// <summary>How things fall apart into loose parts (a rock cube into chunks, a chunk into rods).</summary>
+    public BreakSettings Breaking { get; init; } = new();
+
     /// <summary>Parses settings from JSON and validates them.</summary>
     /// <exception cref="FormatException">The JSON is malformed or a value is out of range.</exception>
     public static BuildSettings FromJson(string json)
@@ -91,6 +94,7 @@ public sealed record BuildSettings
         Lift.Validate();
         Paint.Validate();
         Sledge.Validate();
+        Breaking.Validate();
     }
 
     internal static void Positive(float value, string name)
@@ -420,5 +424,27 @@ public sealed record SledgeSettings
         BuildSettings.Positive(ShakeSeconds, "sledge.shake_seconds");
         BuildSettings.Positive(CombatDamage, "sledge.combat_damage");
         BuildSettings.Positive(ObjectDamage, "sledge.object_damage");
+    }
+}
+
+/// <summary>
+/// How things fall apart into loose parts (<see cref="World.BreakDefinition"/>): each piece is thrown out from the middle
+/// at <see cref="SpreadSpeed"/> and up at <see cref="LiftSpeed"/>, so the pieces tumble apart rather than stack.
+/// </summary>
+public sealed record BreakSettings
+{
+    /// <summary>Outward speed each piece starts with, m/s.</summary>
+    public float SpreadSpeed { get; init; } = 1.5f;
+
+    /// <summary>Upward speed each piece starts with, m/s.</summary>
+    public float LiftSpeed { get; init; } = 1.5f;
+
+    /// <summary>Throws <see cref="FormatException"/> naming the first out-of-range value.</summary>
+    public void Validate()
+    {
+        if (!float.IsFinite(SpreadSpeed) || SpreadSpeed is < 0f or > 20f)
+            throw new FormatException($"breaking.spread_speed must be 0 to 20 (got {SpreadSpeed}).");
+        if (!float.IsFinite(LiftSpeed) || LiftSpeed is < 0f or > 20f)
+            throw new FormatException($"breaking.lift_speed must be 0 to 20 (got {LiftSpeed}).");
     }
 }

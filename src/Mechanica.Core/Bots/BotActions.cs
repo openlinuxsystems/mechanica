@@ -376,7 +376,7 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
             }
             else if (args.Object is { } id)
             {
-                survival.StrikeObject(id, attack.ObjectDamage);
+                survival.StrikeObject(id, attack.ObjectDamage, DamageKinds.Bot);
                 hits.Add(new ShotHitView("object", point.ToVec3(), attack.ObjectDamage, Object: id));
             }
             else if (attack.HitsParts)
@@ -403,13 +403,13 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
         }
         if (attack.ObjectDamage > 0)
         {
-            foreach (var placement in survivalWorld.ObjectsNear(at, attack.Radius).Where(o => o.Definition.Health is not null).ToList())
+            foreach (var placement in survivalWorld.ObjectsNear(at, attack.Radius).Where(o => o.Definition.Health is not null && o.Definition.TakesDamageFrom(DamageKinds.Bot)).ToList())
             {
                 var centre = ObjectCentre(placement);
                 var damage = Falloff(attack.ObjectDamage, Math.Max(0, Vector3.Distance(centre, at) - ObjectRadius(placement)));
                 if (damage <= 0)
                     continue;
-                survival.StrikeObject(placement.Id.ToString(), damage);
+                survival.StrikeObject(placement.Id.ToString(), damage, DamageKinds.Bot);
                 hits.Add(new ShotHitView("object", centre.ToVec3(), damage, Object: placement.Id.ToString()));
             }
         }
@@ -549,12 +549,12 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
     private SeedDefinition? SeedOf(string seed) => survival.Catalog.FindDefinition(seed)?.Seed;
 
     /// <summary>
-    /// World objects a bot can break (those with health) within <paramref name="range"/> of
+    /// World objects a bot can break (those with health that bots can damage) within <paramref name="range"/> of
     /// <paramref name="point"/>, measured to their edge, nearest first.
     /// </summary>
     public IReadOnlyList<(string Id, Vector3 Centre, float Distance)> ObjectsNear(Vector3 point, float range) =>
         [.. survivalWorld.ObjectsNear(point, range + MaxObjectRadius)
-            .Where(o => o.Definition.Health is not null)
+            .Where(o => o.Definition.Health is not null && o.Definition.TakesDamageFrom(DamageKinds.Bot))
             .Select(o => (Id: o.Id.ToString(), Centre: ObjectCentre(o), Distance: Math.Max(0, Vector3.Distance(ObjectCentre(o), point) - ObjectRadius(o))))
             .Where(o => o.Distance <= range)
             .OrderBy(o => o.Distance).ThenBy(o => o.Id, StringComparer.Ordinal)];

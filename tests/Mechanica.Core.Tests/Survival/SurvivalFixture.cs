@@ -224,6 +224,10 @@ internal sealed class SurvivalFixture
 
         public void Push(Creation creation, int bodyIndex, Vector3 point, Vector3 impulse) => Pushes.Add(impulse);
 
+        public void RemovePart(Creation creation, int partId) => Tools.RemovePart(creation, partId);
+
+        public void Shatter(BreakDefinition breaks, Vector3 centre, float radius, uint seed) => Tools.Shatter(breaks, centre, radius, seed);
+
         // A part's shape reaches the sphere when its centre is within the radius plus half a block.
         public IEnumerable<(int Creation, int Part)> PartsNear(Vector3 point, float radius) =>
             [.. Creations.Values.SelectMany(c => c.Parts.Select(p => (Creation: c, Part: p)))

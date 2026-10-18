@@ -3,6 +3,7 @@
 -- and world objects such as trees and rocks, for properties.damage each. Its edge is a list of rays in
 -- the part's frame, properties.edge = { {from = {x, y, z}, direction = {x, y, z}}, ... }, each starting
 -- just outside the part so it never cuts its own creation. Its model spins at properties.spin rad/s.
+-- properties.kind ("drill" or "saw") is the damage kind it deals: only a spinning drill breaks rock outcrops.
 
 local loop
 
@@ -37,7 +38,7 @@ function on_update(dt)
     local direction = part.to_world(vec3(ray.direction[1], ray.direction[2], ray.direction[3]))
     local hit = combat.cast(from, direction, properties.reach)
     if hit then
-      combat.hit(hit, properties.damage)
+      combat.hit(hit, properties.damage, nil, properties.kind)
       cut = true
     end
   end

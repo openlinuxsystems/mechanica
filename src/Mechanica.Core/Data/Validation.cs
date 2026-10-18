@@ -73,7 +73,8 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
         RequirePositive(part.Mass, "$.mass", "mass (kg)", placeable, what, sink);
         if (part.Durability is { } durability && durability < 1)
             sink.Error(Code, "$.durability", "durability must be 1 or more.");
-        else if (placeable && part.Durability is null)
+        // A loose part with no durability (a rod) cannot break; anything built needs one.
+        else if (placeable && part.Loose != true && part.Durability is null)
             sink.Error(Code, "$.durability", $"durability is required for {what}.");
         RequireNonNegative(part.Friction, "$.friction", "friction", placeable, what, sink);
         RequireNonNegative(part.Buoyancy, "$.buoyancy", "buoyancy", placeable, what, sink);
@@ -439,6 +440,28 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
         PartOnly(part.Soil, "soil");
         PartOnly(part.RespawnPoint == true ? true : null, "respawn_point");
         PartOnly(part.GroundOnly == true ? true : null, "ground_only");
+        PartOnly(part.BreaksInto, "breaks_into");
+        PartOnly(part.SledgeDamage, "sledge_damage");
+        if (part.BreaksInto is { } breaks)
+            World.WorldGenValidator.Break(breaks, "$.breaks_into", sink, Code);
+        if (part.SledgeDamage is { } sledge && !(sledge >= 0 && float.IsFinite(sledge)))
+            sink.Error(Code, "$.sledge_damage", "sledge_damage must be 0 or more.");
+        if (part.Loose == true && part.GroundOnly == true)
+            sink.Error(Code, "$.loose", "a loose part cannot also be ground_only.");
+        if (part.Refine is { } refine)
+        {
+            if (part.Loose != true)
+                sink.Error(Code, "$.refine", "only loose parts can be refined by hand.");
+            if (refine.Count == 0)
+                sink.Error(Code, "$.refine", "refine needs at least one item.");
+            for (var r = 0; r < refine.Count; r++)
+            {
+                if (!IsItemRef(refine[r].Item))
+                    sink.Error(Code, $"$.refine[{r}].item", "item must be an item id or 'mod_id:item_id'.");
+                if (refine[r].Count is not >= 1)
+                    sink.Error(Code, $"$.refine[{r}].count", "count must be 1 or more.");
+            }
+        }
         if (part.Seed is { } seed)
         {
             if (!IsItemRef(seed.Crop))

@@ -25,8 +25,9 @@ namespace Mechanica.Game.Survival;
 /// the nearest pile of items.
 /// <para>
 /// Also the survival interactions of UI spec §9 and §10: right click on a pile of items picks it up at once, with any
-/// tool. A resource node (a tree, a rock node) under the crosshair gets a blue outline; holding Use on it fills the
-/// ring round the crosshair over <see cref="SurvivalSettings.RefineSeconds"/> and refines it into the inventory.
+/// tool. A resource node (a tree, a rock node) or a loose part that refines (a Stone Rod) under the crosshair gets a blue
+/// outline; holding Use on it fills the ring round the crosshair over <see cref="SurvivalSettings.RefineSeconds"/> and
+/// refines it into the inventory.
 /// Letting go, moving more than <see cref="SurvivalSettings.RefineCancelDistance"/>, opening a window or the game
 /// losing focus cancels it. The host checks the hold (<c>StartRefine</c>, <c>FinishRefine</c>).
 /// </para>
@@ -42,8 +43,10 @@ public partial class SurvivalHud : CanvasLayer
     private Label _status = null!;
     private Node3D? _outline;
     private WorldObjectId? _outlined;
-    // The refine being held: the node, when Use went down (this peer's clock) and where the player stood.
-    private (WorldObjectId Id, double Started, Vector3 Feet)? _refine;
+    private Node3D? _partOutline;
+    private (int Creation, int Part)? _outlinedPart;
+    // The refine being held: what (a node or a rod), its name, when Use went down (this peer's clock) and where the player stood.
+    private (RefineArgs Target, string Name, double Started, Vector3 Feet)? _refine;
 
     // Blue, unshaded and drawn from the inside, slightly grown, so it reads as an outline round the node.
     private static readonly StandardMaterial3D OutlineMaterial = new()
@@ -97,8 +100,11 @@ public partial class SurvivalHud : CanvasLayer
     /// <summary>The health bar.</summary>
     public ProgressBar HealthBar => _health;
 
-    /// <summary>The node being refined, or null.</summary>
-    public WorldObjectId? Refining => _refine?.Id;
+    /// <summary>The node being refined, or null (also while a rod is).</summary>
+    public WorldObjectId? Refining => _refine?.Target.Object is { } id && WorldObjectId.TryParse(id, out var parsed) ? parsed : null;
+
+    /// <summary>What is being refined (a node or a rod), or null.</summary>
+    public RefineArgs? RefiningTarget => _refine?.Target;
 
     /// <summary>How far the refine being held has got, 0 to 1 (the ring round the crosshair), or null when none is.</summary>
     public float? RefineProgress => _refine is { } r && Survival.Settings is { } settings
@@ -107,6 +113,9 @@ public partial class SurvivalHud : CanvasLayer
 
     /// <summary>The resource node shown with the blue outline, or null.</summary>
     public WorldObjectId? Outlined => _outlined;
+
+    /// <summary>The loose part (a rod) shown with the blue outline, or null.</summary>
+    public (int Creation, int Part)? OutlinedPart => _outlinedPart;
 
     public override void _Ready()
     {
@@ -166,10 +175,13 @@ public partial class SurvivalHud : CanvasLayer
             _deathText.Text = wait > 0 ? Loc.T("You died.\nRespawn in {0} s", $"{Math.Ceiling(wait):0}") : Loc.T("You died.\n[{0}] respawn at {1}", GameInput.Label(InputActions.Interact), where);
         }
         UpdateRefine();
-        UpdateOutline(own is not { Dead: true } && Playing() ? AimedNode() : null);
+        var alive = own is not { Dead: true } && Playing();
+        var node = alive ? AimedNode() : null;
+        UpdateOutline(node);
+        UpdatePartOutline(alive && node is null ? AimedRefinable() : null);
         var hints = new List<string>();
         if (_refine is { } refining)
-            hints.Add(Loc.T("Refining the {0}…", NodeName(Survival.FindObject(refining.Id))));
+            hints.Add(Loc.T("Refining the {0}…", refining.Name));
         else if (own is not { Dead: true } && Interaction() is { } what)
             hints.Add($"[{GameInput.Label(InputActions.Interact)}] {what.Label}");
         else if (own is not { Dead: true } && Notice() is { } notice)
@@ -232,13 +244,32 @@ public partial class SurvivalHud : CanvasLayer
         return Survival.FindObject(id) is { Definition.Refine: true } node ? node : null;
     }
 
+    /// <summary>
+    /// The loose part under the crosshair within reach that refines by hand (<see cref="PartDefinition.Refine"/>: a Stone Rod),
+    /// as its Creation and part, or null.
+    /// </summary>
+    public (Creations.CreationNode Node, int Part)? AimedRefinable()
+    {
+        if (Players.LocalPlayer is not { } player || Survival.Settings is not { } settings)
+            return null;
+        return HandTool.PartHit(HandTool.Cast(player, settings.Reach)) is { } aimed
+            && aimed.Node.Creation.DefinitionOf(aimed.Part) is { Loose: true, Refine.Count: > 0 }
+            ? (aimed.Node, aimed.Part)
+            : null;
+    }
+
     /// <summary>Starts holding Use on <paramref name="node"/> to refine it.</summary>
-    public void BeginRefine(WorldObjectPlacement node)
+    public void BeginRefine(WorldObjectPlacement node) => BeginRefine(new RefineArgs(node.Id.ToString()), NodeName(node));
+
+    /// <summary>Starts holding Use on a loose part (a rod) to refine it.</summary>
+    public void BeginRefine(int creation, int part, string name) => BeginRefine(new RefineArgs(Creation: creation, Part: part), name);
+
+    private void BeginRefine(RefineArgs target, string name)
     {
         if (Players.LocalPlayer is not { } player)
             return;
-        _refine = (node.Id, Survival.Now, player.GlobalPosition);
-        Request(SurvivalActions.StartRefine, new RefineArgs(node.Id.ToString()));
+        _refine = (target, name, Survival.Now, player.GlobalPosition);
+        Request(SurvivalActions.StartRefine, target);
         // The Refine Tool is drawn from the hip and worked against the node until the refine ends (every peer sees it).
         player.ActionProp = Core.Characters.CharacterProp.RefineTool;
     }
@@ -269,7 +300,7 @@ public partial class SurvivalHud : CanvasLayer
             return;
         _refine = null;
         PutAwayRefineTool();
-        Request(SurvivalActions.FinishRefine, new RefineArgs(r.Id.ToString()));
+        Request(SurvivalActions.FinishRefine, r.Target);
     }
 
     private void PutAwayRefineTool()
@@ -290,6 +321,32 @@ public partial class SurvivalHud : CanvasLayer
             return;
         _outline = TerrainChunk.Shell(node, OutlineMaterial);
         Survival.AddChild(_outline);
+    }
+
+    // The blue outline round the loose part (a rod) under the crosshair: copies of its meshes, carried with it.
+    private void UpdatePartOutline((Creations.CreationNode Node, int Part)? aimed)
+    {
+        var key = aimed is { } a ? (a.Node.Creation.Id, a.Part) : ((int, int)?)null;
+        if (key == _outlinedPart && (_partOutline is null || IsInstanceValid(_partOutline)))
+            return;
+        if (_partOutline is not null && IsInstanceValid(_partOutline))
+            _partOutline.QueueFree();
+        _partOutline = null;
+        _outlinedPart = key;
+        if (aimed is not { } hit || hit.Node.PartNode(hit.Part) is not { } partNode)
+            return;
+        _partOutline = new Node3D { Name = "Shell" };
+        foreach (var mesh in partNode.FindChildren("*", nameof(MeshInstance3D), owned: false).OfType<MeshInstance3D>())
+        {
+            _partOutline.AddChild(new MeshInstance3D
+            {
+                Mesh = mesh.Mesh,
+                MaterialOverride = OutlineMaterial,
+                Transform = partNode.GlobalTransform.AffineInverse() * mesh.GlobalTransform,
+                CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+            });
+        }
+        partNode.AddChild(_partOutline);
     }
 
     private static string NodeName(WorldObjectPlacement? node) => (node?.Definition.Id ?? "node").Replace('_', ' ');
@@ -370,6 +427,12 @@ public partial class SurvivalHud : CanvasLayer
             return (QuestLabel(quest), () => Request(QuestTracker.QuestInteract, new NoArgs()));
         if (AimedNode() is { } node)
             return (Loc.T("hold to refine the {0}", NodeName(node)), () => BeginRefine(node));
+        if (AimedRefinable() is { } rod)
+        {
+            var name = rod.Node.Creation.DefinitionOf(rod.Part).Name ?? Loc.T("part");
+            var (creationId, partId) = (rod.Node.Creation.Id, rod.Part);
+            return (Loc.T("hold to refine the {0}", name), () => BeginRefine(creationId, partId, name));
+        }
         var feet = player.GlobalPosition;
         var nearest = Survival.Drops.Values
             .Select(d => (Drop: d, Distance: d.Position.ToGodot().DistanceTo(feet)))

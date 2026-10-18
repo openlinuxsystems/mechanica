@@ -67,6 +67,33 @@ internal static class WorldGenValidator
                 sink.Error(Code, $"{path}.model", $"'{model}' is not a built-in flora model ({string.Join(", ", FloraModels.All.Select(m => m.Id))}).");
             if (o.Drops is { Count: > 0 } && o.Health is null)
                 sink.Warning(Code, $"{path}.drops", "drops are never left: the object has no health, so it cannot break.");
+            for (var k = 0; k < (o.DamageFrom?.Count ?? 0); k++)
+            {
+                if (!DamageKinds.All.Contains(o.DamageFrom![k]))
+                    sink.Error(Code, $"{path}.damage_from[{k}]", $"'{o.DamageFrom[k]}' is not a damage kind ({string.Join(", ", DamageKinds.All)}).");
+            }
+            if (o.BreaksInto is { } breaks)
+            {
+                Break(breaks, $"{path}.breaks_into", sink, Code);
+                if (o.Health is null)
+                    sink.Warning(Code, $"{path}.breaks_into", "the object never breaks into anything: it has no health.");
+            }
+            if (o.Mesh is { } mesh)
+            {
+                KnownKeys.WarnUnknown(mesh.Extra, $"{path}.mesh", sink, typeof(MeshDefinition));
+                if (!AssetPath.TryParse(mesh.File, "mod", AssetKind.Mesh, out _, out var error))
+                    sink.Error(Code, $"{path}.mesh.file", error);
+            }
+            if (o.MaxSlope is { } maxSlope && !(maxSlope >= 0 && float.IsFinite(maxSlope)))
+                sink.Error(Code, $"{path}.max_slope", "max_slope must be 0 or more.");
+            if (o.Outcrop is { } outcrop)
+            {
+                KnownKeys.WarnUnknown(outcrop.Extra, $"{path}.outcrop", sink, typeof(OutcropDefinition));
+                if (outcrop.Cubes is not { Count: 2 } cubes || cubes[0] < 1 || cubes[1] < cubes[0] || cubes[1] > OutcropLayout.MaxCubes)
+                    sink.Error(Code, $"{path}.outcrop.cubes", $"cubes must be [min, max] with 1 <= min <= max <= {OutcropLayout.MaxCubes}.");
+                if (outcrop.Height is not { Count: 2 } height || height[0] < 1 || height[1] < height[0] || height[1] > OutcropLayout.MaxHeight)
+                    sink.Error(Code, $"{path}.outcrop.height", $"height must be [min, max] with 1 <= min <= max <= {OutcropLayout.MaxHeight}.");
+            }
             for (var d = 0; d < (o.Drops?.Count ?? 0); d++)
             {
                 var drop = o.Drops![d];
@@ -309,6 +336,25 @@ internal static class WorldGenValidator
     {
         if (color is not null && !WorldGenData.TryParseColor(color, out _))
             sink.Error(code, path, $"'{color}' is not a colour; use #rrggbb.");
+    }
+
+    /// <summary>Checks a <see cref="BreakDefinition"/> (an object's or a part's <c>breaks_into</c>).</summary>
+    internal static void Break(BreakDefinition breaks, string path, DiagnosticSink sink, string code)
+    {
+        KnownKeys.WarnUnknown(breaks.Extra, path, sink, typeof(BreakDefinition));
+        if (breaks.Count is < 1 or > BreakDefinition.MaxCount)
+            sink.Error(code, $"{path}.count", $"count must be 1 to {BreakDefinition.MaxCount} (got {breaks.Count}).");
+        if (breaks.Parts is not { Count: > 0 })
+            sink.Error(code, $"{path}.parts", "parts needs at least one part.");
+        for (var p = 0; p < (breaks.Parts?.Count ?? 0); p++)
+        {
+            var piece = breaks.Parts![p];
+            KnownKeys.WarnUnknown(piece.Extra, $"{path}.parts[{p}]", sink, typeof(BreakPiece));
+            if (!PartValidator.IsItemRef(piece.Part))
+                sink.Error(code, $"{path}.parts[{p}].part", "part must be a part id or 'mod_id:part_id'.");
+            if (!(piece.Weight > 0 && float.IsFinite(piece.Weight)))
+                sink.Error(code, $"{path}.parts[{p}].weight", "weight must be greater than 0.");
+        }
     }
 
     private static void Positive(float value, string path, DiagnosticSink sink)

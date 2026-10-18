@@ -77,6 +77,11 @@ public class SurvivalDataTests
     [InlineData("""{ "id": "c", "name": "C", "category": "consumable", "seed": { "crop": "carrot", "grow_time": 0 } }""", "$.seed.grow_time", "greater than 0")]
     [InlineData("""{ "id": "s", "name": "S", "category": "resource", "soil": { "capacity": 10 } }""", "$.soil", "only placeable parts")]
     [InlineData("""{ "id": "s", "name": "S", "category": "resource", "respawn_point": true }""", "$.respawn_point", "only placeable parts")]
+    [InlineData("""{ "id": "r", "name": "R", "category": "resource", "refine": [{ "item": "block", "count": 20 }] }""", "$.refine", "only loose parts")]
+    [InlineData("""{ "id": "r", "name": "R", "category": "resource", "breaks_into": { "parts": [{ "part": "rod" }] } }""", "$.breaks_into", "only placeable parts")]
+    [InlineData("""{ "id": "r", "name": "R", "category": "resource", "loose": true, "mass": 5, "friction": 0.5, "buoyancy": 0, "flammable": false, "size": [1, 1, 4], "refine": [{ "item": "block", "count": 0 }] }""", "$.refine[0].count", "1 or more")]
+    [InlineData("""{ "id": "r", "name": "R", "category": "resource", "loose": true, "mass": 5, "friction": 0.5, "buoyancy": 0, "flammable": false, "size": [1, 1, 4], "sledge_damage": -1 }""", "$.sledge_damage", "0 or more")]
+    [InlineData("""{ "id": "r", "name": "R", "category": "resource", "loose": true, "mass": 5, "friction": 0.5, "buoyancy": 0, "flammable": false, "size": [1, 1, 4], "breaks_into": { "count": 99, "parts": [{ "part": "rod" }] } }""", "$.breaks_into.count", "1 to 16")]
     public void SurvivalSectionsAreChecked(string json, string path, string message)
     {
         using var mods = new TestMods().Mod("m");
@@ -98,6 +103,14 @@ public class SurvivalDataTests
     [InlineData("""{ "biomes": [{ "id": "a" }], "objects": [{ "id": "tree", "collider": { "shape": "sphere", "radius": 1 }, "health": 0 }] }""", "$.objects[0].health")]
     [InlineData("""{ "biomes": [{ "id": "a" }], "objects": [{ "id": "tree", "collider": { "shape": "sphere", "radius": 1 }, "health": 5, "drops": [{ "item": "Bad Id" }] }] }""", "$.objects[0].drops[0].item")]
     [InlineData("""{ "biomes": [{ "id": "a" }], "objects": [{ "id": "tree", "collider": { "shape": "sphere", "radius": 1 }, "health": 5, "drops": [{ "item": "wood", "count": 0 }] }] }""", "$.objects[0].drops[0].count")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "objects": [{ "id": "rock", "collider": { "shape": "sphere", "radius": 1 }, "health": 5, "damage_from": ["hammer"] }] }""", "$.objects[0].damage_from[0]")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "objects": [{ "id": "rock", "collider": { "shape": "sphere", "radius": 1 }, "health": 5, "breaks_into": { "count": 0, "parts": [{ "part": "chunk" }] } }] }""", "$.objects[0].breaks_into.count")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "objects": [{ "id": "rock", "collider": { "shape": "sphere", "radius": 1 }, "health": 5, "breaks_into": { "count": 1 } }] }""", "$.objects[0].breaks_into.parts")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "objects": [{ "id": "rock", "collider": { "shape": "sphere", "radius": 1 }, "health": 5, "breaks_into": { "parts": [{ "part": "chunk", "weight": 0 }] } }] }""", "$.objects[0].breaks_into.parts[0].weight")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "objects": [{ "id": "rock", "collider": { "shape": "box", "size": [1, 1, 1] }, "outcrop": { "cubes": [8, 4], "height": [1, 3] } }] }""", "$.objects[0].outcrop.cubes")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "objects": [{ "id": "rock", "collider": { "shape": "box", "size": [1, 1, 1] }, "outcrop": { "cubes": [4, 8], "height": [0, 3] } }] }""", "$.objects[0].outcrop.height")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "objects": [{ "id": "rock", "collider": { "shape": "box", "size": [1, 1, 1] }, "mesh": { "file": "../rock.glb" } }] }""", "$.objects[0].mesh.file")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "objects": [{ "id": "rock", "collider": { "shape": "box", "size": [1, 1, 1] }, "max_slope": -1 }] }""", "$.objects[0].max_slope")]
     public void BreakableWorldObjectsAreChecked(string json, string path)
     {
         using var mods = new TestMods().Mod("vanilla").File("vanilla", WorldGenData.DefinitionFile, json);

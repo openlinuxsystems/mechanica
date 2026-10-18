@@ -1,0 +1,30 @@
+{
+  "id": "metal_rod",
+  "name": "Metal Rod",
+  "description": "A bar of raw metal. Hold Use on it with the Refine Tool, or put it in a Refiner, for 20 Metal Blocks.",
+  "category": "resource",
+  "mass": 16,
+  "friction": 0.4,
+  "buoyancy": 0,
+  "flammable": false,
+  "stack_size": 10,
+  "sound_material": "metal",
+  "size": [1, 1, 4],
+  "mesh": "meshes/items/metal_rod.glb",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.35,
+    "metallic": 0.9
+  },
+  "sounds": {
+    "pickup": "pickup_metal",
+    "drop": "drop_metal"
+  },
+  "loose": true,
+  "refine": [
+    {
+      "item": "metal_block",
+      "count": 20
+    }
+  ]
+}

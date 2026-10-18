@@ -1,0 +1,39 @@
+{
+  "id": "stone_chunk",
+  "name": "Stone Chunk",
+  "description": "A broken piece of rock outcrop. Break it with a drill or the Sledgehammer for its Stone and Metal Rods.",
+  "category": "resource",
+  "mass": 30,
+  "durability": 10,
+  "friction": 0.8,
+  "buoyancy": 0,
+  "flammable": false,
+  "stack_size": 4,
+  "sound_material": "concrete",
+  "size": [2, 2, 2],
+  "mesh": "meshes/items/stone_chunk.glb",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.95,
+    "metallic": 0
+  },
+  "collision": {
+    "shape": "convex",
+    "mesh": "meshes/items/stone_chunk.glb"
+  },
+  "loose": true,
+  "breaks_into": {
+    "count": 2,
+    "parts": [
+      {
+        "part": "stone_rod",
+        "weight": 7
+      },
+      {
+        "part": "metal_rod",
+        "weight": 3
+      }
+    ]
+  },
+  "sledge_damage": 25
+}

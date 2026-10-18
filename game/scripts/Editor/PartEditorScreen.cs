@@ -816,8 +816,20 @@ public partial class PartEditorScreen : Control
         _partGrid.AddHeading("Survival");
         void Toggle(string what, bool on, Func<PartDefinition, PartDefinition> add, Func<PartDefinition, PartDefinition> remove) =>
             Document?.Apply(on ? $"Add {what}" : $"Remove {what}", x => on ? add(x) : remove(x));
+        // A loose physics object (a rock chunk, a resource rod): a resource that lies in the world on its own.
+        if (d.Category == PartCategory.Resource || d.Loose == true)
+            _partGrid.AddBool("Loose", d.Loose, v => Set("Set loose", x => x with { Loose = v == true ? true : null }), optional: true);
         if (d.IsPlaceable)
         {
+            _partGrid.AddNumber("Sledge damage", d.SledgeDamage, 0, 1e4, 1, v => Set("Set sledge damage", x => x with { SledgeDamage = (float?)v }), optional: true);
+            _partGrid.AddNumber("Breaks into (count)", d.BreaksInto?.Count, 1, Core.World.BreakDefinition.MaxCount, 1,
+                v => Set("Set break count", x => x with { BreaksInto = v is { } n ? (x.BreaksInto ?? new Core.World.BreakDefinition()) with { Count = (int)n } : null }), optional: true);
+            _partGrid.AddText("Breaks into (parts)", d.BreaksInto is { } breaks ? string.Join(", ", (breaks.Parts ?? []).Select(p => $"{p.Part} {p.Weight}")) : null,
+                v => Set("Set break parts", x => x with { BreaksInto = string.IsNullOrWhiteSpace(v) ? null : (x.BreaksInto ?? new Core.World.BreakDefinition()) with { Parts = ParsePieces(v) } }),
+                "stone_rod 7, metal_rod 3");
+            if (d.Loose == true)
+                _partGrid.AddText("Refines into", d.Refine is { } refine ? string.Join(", ", refine.Select(r => $"{r.Item} {r.Count}")) : null,
+                    v => Set("Set refine", x => x with { Refine = string.IsNullOrWhiteSpace(v) ? null : ParseItems(v) }), "scrap_stone_block 20");
             _partGrid.AddBool("Soil", d.Soil is not null, v => Toggle("soil", v == true,
                 x => x with { Soil = x.Soil ?? new SoilDefinition { Capacity = 300 } }, x => x with { Soil = null }));
             if (d.Soil is { } soil)
@@ -1174,4 +1186,14 @@ public partial class PartEditorScreen : Control
     }
 
     private static string Escape(string text) => text.Replace("[", "[lb]");
+
+    // "stone_rod 7, metal_rod 3": the pieces something breaks into, each with its weight (1 when left out).
+    private static List<Core.World.BreakPiece> ParsePieces(string text) => [.. text.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        .Select(e => e.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+        .Select(w => new Core.World.BreakPiece { Part = w[0], Weight = w.Length > 1 && float.TryParse(w[1], System.Globalization.CultureInfo.InvariantCulture, out var n) ? n : 1f })];
+
+    // "scrap_stone_block 20": items with their counts (1 when left out).
+    private static List<Core.Items.RecipeItem> ParseItems(string text) => [.. text.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        .Select(e => e.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+        .Select(w => new Core.Items.RecipeItem { Item = w[0], Count = w.Length > 1 && int.TryParse(w[1], System.Globalization.CultureInfo.InvariantCulture, out var n) ? n : 1 })];
 }
