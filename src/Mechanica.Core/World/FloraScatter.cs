@@ -45,9 +45,14 @@ public static class FloraScatter
             for (var i = 0; i < n - 1; i++)
             {
                 var k = j * n + i;
-                if (chunk.Covered[k] || chunk.Covered[k + 1] || chunk.Covered[k + n] || chunk.Covered[k + n + 1])
+                // Prototype: plants grow round the crash site, outside its burnt middle, and come out charred near it.
+                var burn = chunk.Grounds.Length > 0 ? chunk.Grounds[k * TerrainChunkData.GroundLayers + 6] : 0f;
+                if ((chunk.Covered[k] || chunk.Covered[k + 1] || chunk.Covered[k + n] || chunk.Covered[k + n + 1])
+                    && (burn > 0.45f || !generator.PoisAt(ox + i * res, oz + j * res).All(p => p.Poi.Prefab.Id == "crash_site")))
                     continue;
-                var rules = data.FloraByBiome[chunk.Biomes[k]];
+                var crash = burn > 0f || (chunk.Covered[k] && generator.PoisAt(ox + i * res, oz + j * res).Any(p => p.Poi.Prefab.Id == "crash_site"));
+                var meadow = data.Biomes.FirstOrDefault(b => b.Id == "meadow");
+                var rules = data.FloraByBiome[crash && meadow is not null ? meadow.Index : chunk.Biomes[k]];
                 if (rules.Count == 0)
                     continue;
                 float x0 = ox + i * res, z0 = oz + j * res;
@@ -80,6 +85,7 @@ public static class FloraScatter
                         var pick = Noise.Mix(h + 2);
                         var model = rule.Models[(int)(pick % (uint)rule.Models.Count)];
                         var tint = rule.Colors[(int)(Noise.Mix(pick) % (uint)rule.Colors.Count)] * (0.92f + 0.16f * Noise.Unit(Noise.Mix(h + 3)));
+                        tint = Vector3.Lerp(tint, new Vector3(0.36f, 0.30f, 0.14f), MathF.Min(1f, burn * 2.4f));
                         var scale = rule.MinScale + (rule.MaxScale - rule.MinScale) * Noise.Unit(Noise.Mix(h + 4));
                         var yaw = Noise.Unit(Noise.Mix(h + 5)) * 2f * MathF.PI;
                         plants.Add(new FloraInstance(model, new Vector3(x, height, z), ground, yaw, scale, Vector3.Clamp(tint, Vector3.Zero, Vector3.One), rank));

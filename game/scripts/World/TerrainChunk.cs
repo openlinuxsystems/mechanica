@@ -141,6 +141,8 @@ public partial class TerrainChunk : Node3D
         var vertices = new Vector3[m * m];
         var normals = new Vector3[m * m];
         var colors = new Color[m * m];
+        var custom0 = new float[m * m * 4];
+        var custom1 = new float[m * m * 4];
         for (var j = 0; j < m; j++)
         {
             for (var i = 0; i < m; i++)
@@ -151,6 +153,14 @@ public partial class TerrainChunk : Node3D
                 normals[v] = Data.Normals[k].ToGodot();
                 var c = Data.Colors[k];
                 colors[v] = new Color(c.X, c.Y, c.Z);
+                if (Data.Grounds.Length > 0)
+                {
+                    for (var l = 0; l < 4; l++)
+                    {
+                        custom0[v * 4 + l] = Data.Grounds[k * TerrainChunkData.GroundLayers + l];
+                        custom1[v * 4 + l] = Data.Grounds[k * TerrainChunkData.GroundLayers + 4 + l];
+                    }
+                }
             }
         }
         n = m;
@@ -176,9 +186,13 @@ public partial class TerrainChunk : Node3D
         arrays[(int)Mesh.ArrayType.Normal] = normals;
         arrays[(int)Mesh.ArrayType.Color] = colors;
         arrays[(int)Mesh.ArrayType.Index] = indices;
+        arrays[(int)Mesh.ArrayType.Custom0] = custom0;
+        arrays[(int)Mesh.ArrayType.Custom1] = custom1;
         var mesh = new ArrayMesh();
-        mesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, arrays);
-        AddChild(new MeshInstance3D { Name = "Mesh", Mesh = mesh, MaterialOverride = GroundMaterial });
+        var format = (Mesh.ArrayFormat)((int)Mesh.ArrayCustomFormat.RgbaFloat << (int)Mesh.ArrayFormat.FormatCustom0Shift)
+            | (Mesh.ArrayFormat)((int)Mesh.ArrayCustomFormat.RgbaFloat << (int)Mesh.ArrayFormat.FormatCustom1Shift);
+        mesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, arrays, flags: format);
+        AddChild(new MeshInstance3D { Name = "Mesh", Mesh = mesh, MaterialOverride = Data.Grounds.Length > 0 ? World.GroundMaterial.Get() : GroundMaterial });
 
         if (Data.HasWater)
         {

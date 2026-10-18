@@ -130,12 +130,16 @@ public sealed class WorldGenerator
         var colors = new Vector3[n * n];
         var biomes = new int[n * n];
         var covered = new bool[n * n];
+        var grounds = new float[n * n * TerrainChunkData.GroundLayers];
+        var crash = _pois.FirstOrDefault(p => p.Poi.Prefab.Id == "crash_site")?.ToWorld(new Vector3(0f, 0f, 20f));
         Parallel.For(0, m, j =>
         {
+            Span<float> weights = stackalloc float[Data.Biomes.Count];
             for (var i = 0; i < m; i++)
             {
                 float x = ox + (i - 1) * res, z = oz + (j - 1) * res;
-                var sample = SampleBiomes(x, z);
+                weights.Clear();
+                var sample = SampleBiomes(x, z, weights);
                 var h = ApplyPois(x, z, RawHeight(x, z, sample));
                 bordered[j * m + i] = h;
                 if (i >= 1 && i <= n && j >= 1 && j <= n)
@@ -144,6 +148,21 @@ public sealed class WorldGenerator
                     colors[(j - 1) * n + i - 1] = sample.Color;
                     biomes[(j - 1) * n + i - 1] = sample.Biome;
                     covered[(j - 1) * n + i - 1] = PoisAt(x, z).Any();
+                    var g = ((j - 1) * n + i - 1) * TerrainChunkData.GroundLayers;
+                    for (var b = 0; b < weights.Length; b++)
+                        grounds[g + ProtoLayer(Data.Biomes[b].Id)] += weights[b];
+                    if (crash is { } c)
+                    {
+                        var d = MathF.Sqrt((x - c.X) * (x - c.X) + (z - c.Z) * (z - c.Z));
+                        d += 9f * Noise.Fractal(x / 9f, z / 9f, 77, 3, 2f, 0.5f);
+                        // Burnt middle, then a ring of meadow round the wreck that fades into the biome.
+                        var burn = 1f - Noise.SmoothStep(16f, 34f, d);
+                        var green = (1f - Noise.SmoothStep(58f, 80f, d)) * (1f - burn);
+                        for (var l = 0; l < TerrainChunkData.GroundLayers; l++)
+                            grounds[g + l] *= 1f - burn - green;
+                        grounds[g + 6] += burn;
+                        grounds[g] += green;
+                    }
                 }
             }
         });
@@ -179,7 +198,7 @@ public sealed class WorldGenerator
                     markers.Add(new PoiMarkerPlacement(poi, marker, at, poi.Yaw + Radians(marker.Yaw)));
             }
         }
-        return new TerrainChunkData(coord, chunkSize, res, n, heights, normals, colors, biomes, covered, SeaLevel, objects, pieces, markers);
+        return new TerrainChunkData(coord, chunkSize, res, n, heights, normals, colors, biomes, covered, SeaLevel, objects, pieces, markers) { Grounds = grounds };
     }
 
     /// <summary>Scattered objects whose ground point lies in [x0, x1) × [z0, z1), in rule then cell order.</summary>
@@ -276,7 +295,17 @@ public sealed class WorldGenerator
         public int Biome;
     }
 
-    private BiomeSample SampleBiomes(float x, float z)
+    // Prototype: ground texture layer per biome id (grass, forest, ruin, rock, sand, concrete, scorched).
+    private static int ProtoLayer(string id) => id switch
+    {
+        "forest" => 1,
+        "ruin_field" => 2,
+        "coastal" => 4,
+        "warehouse_district" => 5,
+        _ => 0,
+    };
+
+    private BiomeSample SampleBiomes(float x, float z, Span<float> weights = default)
     {
         var t = _terrain;
         var size = t.BiomeCellSize;
@@ -311,6 +340,8 @@ public sealed class WorldGenerator
             if (w <= 0f)
                 continue;
             var b = Data.Biomes[biome[k]];
+            if (!weights.IsEmpty)
+                weights[biome[k]] += w;
             result.Height += w * b.Height;
             result.Relief += w * b.Relief;
             result.Color += w * b.Color;
@@ -319,6 +350,8 @@ public sealed class WorldGenerator
         result.Height /= total;
         result.Relief /= total;
         result.Color /= total;
+        for (var k = 0; k < weights.Length; k++)
+            weights[k] /= total;
 
         if (Data.CoastBiome is { } coast && t.CoastBiomeWidth > 0f)
         {
@@ -328,6 +361,10 @@ public sealed class WorldGenerator
                 result.Height += (coast.Height - result.Height) * k;
                 result.Relief += (coast.Relief - result.Relief) * k;
                 result.Color += (coast.Color - result.Color) * k;
+                for (var b = 0; b < weights.Length; b++)
+                    weights[b] *= 1f - k;
+                if (!weights.IsEmpty)
+                    weights[coast.Index] += k;
                 if (k > 0.5f)
                     result.Biome = coast.Index;
             }

@@ -104,7 +104,7 @@ public partial class FloraField : Node3D
         var reach = Kinds.Max(k => settings.Distance(k, _levels[k]));
         foreach (var (coord, patch) in _patches.ToList())
         {
-            if (!World.Chunks.TryGetValue(coord, out var chunk) || chunk != patch.Chunk || RectDistance(chunk, viewer) > reach + 16f)
+            if (!Ground(coord, out var chunk) || chunk != patch.Chunk || RectDistance(chunk, viewer) > reach + 16f)
             {
                 patch.Node.QueueFree();
                 _patches.Remove(coord);
@@ -112,7 +112,7 @@ public partial class FloraField : Node3D
         }
         if (reach <= 0f)
             return 0;
-        foreach (var (coord, chunk) in World.Chunks)
+        foreach (var (coord, chunk) in World.Chunks.Concat(World.Scenery))
         {
             if (!_patches.ContainsKey(coord) && RectDistance(chunk, viewer) <= reach)
             {
@@ -166,6 +166,10 @@ public partial class FloraField : Node3D
         return waiting;
     }
 
+    // A loaded chunk, or failing that scenery, at a coordinate.
+    private bool Ground(ChunkCoord coord, out TerrainChunk chunk) =>
+        World.Chunks.TryGetValue(coord, out chunk!) || World.Scenery.TryGetValue(coord, out chunk!);
+
     // A node holding the kind's meshes, or null when none of its plants are drawn at this level.
     private (Node3D? Node, int Count) Build(Patch patch, FloraKind kind, FoliageLevel level, List<FloraInstance> plants)
     {
@@ -181,15 +185,42 @@ public partial class FloraField : Node3D
         var root = new Node3D { Name = kind.ToString() };
         var tilt = kind == FloraKind.Bush ? 0.3f : 0.6f;
         var count = 0;
+        // Prototype: past the thin distance, grass and ground cover keep a share of their plants, scaled up to cover the gaps.
+        var thin = kind != FloraKind.Bush;
+        var thinAt = thin ? distance * 0.38f + half : end;
         foreach (var group in plants.Where(p => p.Rank < keep).GroupBy(p => p.Model))
         {
             var list = group.ToList();
+            var buffer = Buffer(list, centre, tilt, 1f);
+            var (full, lod) = FloraMaterials.Meshes(group.Key);
+            root.AddChild(Instance($"{group.Key.Id}_near", full, buffer, list.Count, kind, 0f, Mathf.Min(lodAt, thinAt)));
+            if (thinAt > lodAt)
+                root.AddChild(Instance($"{group.Key.Id}_far", lod, buffer, list.Count, kind, lodAt, thinAt));
+            if (thin)
+            {
+                var sparse = list.Where(p => p.Rank < keep * 0.3f).ToList();
+                if (sparse.Count > 0)
+                    root.AddChild(Instance($"{group.Key.Id}_thin", lod, Buffer(sparse, centre, tilt, 1.55f), sparse.Count, kind, thinAt, end));
+            }
+            count += list.Count;
+        }
+        if (count == 0)
+        {
+            root.Free();
+            return (null, 0);
+        }
+        patch.Node.AddChild(root);
+        return (root, count);
+    }
+
+    private static float[] Buffer(List<FloraInstance> list, Vector3 centre, float tilt, float grow)
+    {
             var buffer = new float[list.Count * Stride];
             for (var i = 0; i < list.Count; i++)
             {
                 var plant = list[i];
                 var up = Vector3.Up.Lerp(plant.Normal.ToGodot(), tilt).Normalized();
-                var basis = new Basis(new Quaternion(Vector3.Up, up)) * new Basis(Vector3.Up, plant.Yaw).Scaled(Vector3.One * plant.Scale);
+                var basis = new Basis(new Quaternion(Vector3.Up, up)) * new Basis(Vector3.Up, plant.Yaw).Scaled(Vector3.One * plant.Scale * grow);
                 var origin = plant.Position.ToGodot() - centre;
                 var tint = new Color(plant.Tint.X, plant.Tint.Y, plant.Tint.Z).SrgbToLinear();
                 var o = i * Stride;
@@ -200,18 +231,7 @@ public partial class FloraField : Node3D
                 (buffer[o + 12], buffer[o + 13], buffer[o + 14], buffer[o + 15]) = (1f, 1f, 1f, 1f);
                 (buffer[o + 16], buffer[o + 17], buffer[o + 18], buffer[o + 19]) = (tint.R, tint.G, tint.B, plant.Yaw / Mathf.Tau);
             }
-            var (full, lod) = FloraMaterials.Meshes(group.Key);
-            root.AddChild(Instance($"{group.Key.Id}_near", full, buffer, list.Count, kind, 0f, lodAt));
-            root.AddChild(Instance($"{group.Key.Id}_far", lod, buffer, list.Count, kind, lodAt, end));
-            count += list.Count;
-        }
-        if (count == 0)
-        {
-            root.Free();
-            return (null, 0);
-        }
-        patch.Node.AddChild(root);
-        return (root, count);
+            return buffer;
     }
 
     private static MultiMeshInstance3D Instance(string name, Mesh mesh, float[] buffer, int count, FloraKind kind, float begin, float end)

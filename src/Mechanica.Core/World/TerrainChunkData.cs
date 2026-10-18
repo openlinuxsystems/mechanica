@@ -113,6 +113,12 @@ public sealed class TerrainChunkData
         MaxHeight = heights.Max();
     }
 
+    /// <summary>Ground texture layers per sample (prototype).</summary>
+    public const int GroundLayers = 8;
+
+    /// <summary>Ground texture weights, <see cref="GroundLayers"/> per sample (prototype).</summary>
+    public float[] Grounds { get; init; } = [];
+
     /// <summary>Which chunk.</summary>
     public ChunkCoord Coord { get; }
 
