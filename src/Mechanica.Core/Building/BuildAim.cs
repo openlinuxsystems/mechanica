@@ -22,6 +22,9 @@ public static class BuildAim
     /// <summary>A quarter turn about +X (local +Y goes to +Z).</summary>
     public static GridRotation QuarterTurnX { get; } = GridRotation.FromAxes(new GridCell(1, 0, 0), new GridCell(0, 0, 1));
 
+    // The least cosine between a ground-only part's up and straight up: a grid tilted more than about 8° is not flat.
+    private const float UprightCosine = 0.99f;
+
     // How far behind the hit point to look for the hit cell, in metres: surfaces sit on cell borders.
     private const float Inset = 0.01f;
 
@@ -97,6 +100,36 @@ public static class BuildAim
 
     /// <summary>The adjustment tipped a further quarter turn over the sideways axis.</summary>
     public static GridRotation Tip(GridRotation adjust) => GridRotation.Combine(adjust, QuarterTurnX);
+
+    /// <summary>
+    /// Null when a part may go at <paramref name="rotation"/> in a grid frame placed at <paramref name="pose"/>, joining
+    /// <paramref name="target"/> (null for a new Creation), or why not. A ground-only part
+    /// (<see cref="PartDefinition.GroundOnly"/>, like soil) must stand upright, its local +Y along a grid +Y that points
+    /// straight up in the world; <paramref name="restsOnWorld"/> must say it sits on the world itself; and it joins
+    /// only a Creation of ground-only parts (a row of soil), never one built of anything else. Other parts always may.
+    /// </summary>
+    public static string? GroundOnlyProblem(PartDefinition definition, Creation? target, GridRotation rotation, Pose pose, Func<bool> restsOnWorld)
+    {
+        if (definition.GroundOnly != true)
+            return null;
+        if (JoinProblem(definition, target) is { } join)
+            return join;
+        var upright = rotation.YAxis == new GridCell(0, 1, 0) && Vector3.Transform(Vector3.UnitY, pose.Rotation).Y >= UprightCosine;
+        return upright && restsOnWorld() ? null : $"{definition.Name ?? "This part"} goes only flat on the ground.";
+    }
+
+    /// <summary>
+    /// The part of <see cref="GroundOnlyProblem"/> that needs no pose: null unless a ground-only part would join a
+    /// Creation built of anything else.
+    /// </summary>
+    public static string? JoinProblem(PartDefinition definition, Creation? target) =>
+        definition.GroundOnly == true && target is not null && target.Parts.Any(p => target.DefinitionOf(p.Id).GroundOnly != true)
+            ? $"{definition.Name ?? "This part"} goes only on the ground, not on a creation."
+            : null;
+
+    /// <summary>The player's adjustment as a ground-only part takes it: its turns about +Y, never a tip.</summary>
+    public static GridRotation Upright(PartDefinition definition, GridRotation adjust) =>
+        definition.GroundOnly == true && adjust.YAxis != new GridCell(0, 1, 0) ? GridRotation.Identity : adjust;
 
     /// <summary>A world position snapped to the 0.25 m grid on every axis.</summary>
     public static Vector3 Snap(Vector3 world) => CellAt(world).Metres.ToNumerics();

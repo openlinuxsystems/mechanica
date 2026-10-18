@@ -16,10 +16,11 @@ public class BuildActionsTests
 
     private readonly FakeWorld _world = new();
     private readonly ActionDispatcher _dispatcher = new();
+    private readonly PartCatalog _catalog;
 
     public BuildActionsTests()
     {
-        var catalog = Catalog().Add(Plank, new PartDefinition
+        var catalog = _catalog = Catalog().Add(Plank, new PartDefinition
         {
             Id = "plank",
             Name = "Plank",
@@ -294,6 +295,80 @@ public class BuildActionsTests
     }
 
     [Fact]
+    public void SoilGoesFlatOnTheGround()
+    {
+        _world.Ground = 0f;
+        var result = Place(new { part = Soil, cell = new[] { 0, 0, 0 }, position = new[] { 0f, 0.125f, 0 } });
+
+        Assert.True(result.Ok, result.ToString());
+        Assert.True(Assert.Single(_world.Creations.Values).IsGrounded);
+    }
+
+    [Theory]
+    [InlineData("+x+z")]
+    [InlineData("+x-z")]
+    [InlineData("+y-x")]
+    [InlineData("+x-y")]
+    public void SoilCannotBeTurnedOntoItsSide(string rotation)
+    {
+        _world.Ground = 0f;
+        var result = Place(new { part = Soil, cell = new[] { 0, 0, 0 }, rotation, position = new[] { 0f, 0.5f, 0 } });
+
+        Assert.False(result.Ok);
+        Assert.Contains("only flat on the ground", result.Message);
+        Assert.Empty(_world.Creations);
+    }
+
+    [Fact]
+    public void SoilCannotFloatOffTheGround()
+    {
+        _world.Ground = 0f;
+        var result = Place(new { part = Soil, cell = new[] { 0, 0, 0 }, position = new[] { 0f, 1.5f, 0 } });
+
+        Assert.False(result.Ok);
+        Assert.Contains("only flat on the ground", result.Message);
+    }
+
+    [Fact]
+    public void SoilCannotGoOnACreation()
+    {
+        _world.Ground = 0f;
+        var id = Start(Block);
+        var result = Place(new { part = Soil, creation = id, cell = new[] { 0, 1, 0 } });
+
+        Assert.False(result.Ok);
+        Assert.Contains("not on a creation", result.Message);
+        Assert.Single(_world.Creations[id].Parts);
+    }
+
+    [Fact]
+    public void ABatchOfSoilGoesDownInARowOnTheGround()
+    {
+        _world.Ground = 0f;
+        var dispatcher = Batch();
+        var cells = new GridCell[] { new(0, 0, 0), new(1, 0, 0), new(2, 0, 0) };
+        var result = dispatcher.Dispatch(Player, BuildActions.PlaceParts, new PlacePartsArgs(Soil, cells, Position: new Vec3(0, 0.125f, 0)));
+
+        Assert.True(result.Ok, result.ToString());
+        // Soil doesn't attach to soil, so each one is its own Creation, side by side on the ground.
+        Assert.Equal(3, _world.Creations.Count);
+        Assert.Equal([0f, 0.25f, 0.5f], _world.Creations.Values.Select(c => c.BodyPose(0).Position.X).Order());
+        Assert.All(_world.Creations.Values, c => Assert.True(c.IsGrounded));
+    }
+
+    [Fact]
+    public void ABatchOfSoilCannotStackUpwards()
+    {
+        _world.Ground = 0f;
+        var dispatcher = Batch();
+        var cells = new GridCell[] { new(0, 0, 0), new(0, 1, 0) };
+        var result = dispatcher.Dispatch(Player, BuildActions.PlaceParts, new PlacePartsArgs(Soil, cells, Position: new Vec3(0, 0.125f, 0)));
+
+        Assert.True(result.Ok, result.ToString());
+        Assert.Equal(1, _world.Creations.Values.Sum(c => c.Parts.Count));
+    }
+
+    [Fact]
     public void APartPlacedOnTheGroundIsAnchoredThere()
     {
         _world.Ground = 0f;
@@ -377,8 +452,7 @@ public class BuildActionsTests
     private ActionDispatcher Batch()
     {
         var dispatcher = new ActionDispatcher();
-        var catalog = Catalog();
-        new BuildActions(catalog, new BuildSettings { Reach = 10f }, _world).Register(dispatcher);
+        new BuildActions(_catalog, new BuildSettings { Reach = 10f }, _world).Register(dispatcher);
         return dispatcher;
     }
 

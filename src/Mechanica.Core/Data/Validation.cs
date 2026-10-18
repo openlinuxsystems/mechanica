@@ -438,6 +438,7 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
         }
         PartOnly(part.Soil, "soil");
         PartOnly(part.RespawnPoint == true ? true : null, "respawn_point");
+        PartOnly(part.GroundOnly == true ? true : null, "ground_only");
         if (part.Seed is { } seed)
         {
             if (!IsItemRef(seed.Crop))
