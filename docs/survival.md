@@ -49,8 +49,14 @@ them. AI agents read it from `GetWorld` and `world.info` and set it with `world.
   A Body that stops suddenly (a crash) damages the parts on the side that hit, more for weaker parts.
 - **Piles** of items on the ground last `drop_lifetime` seconds.
 - **Fire:** see [Fire](#fire).
+- **Raids:** the host checks the planted crops every minute. Once they are worth the first level of the
+  raid table (`raids/raids.json`; vanilla's is 10, a carrot or potato counts 1 and a tomato 1.5), the raid
+  horn sounds and the level's bots arrive round the biggest patch to go for the crops. Bigger farms and
+  more players bring bigger raids; after one there is a cooldown before the next.
+- **Guards:** POIs (the warehouse, ruins, outposts) are guarded by the bots their data places. They appear
+  when a player comes near, leave when everyone has gone, and a killed guard is replaced after a while.
 
-Creative turns damage off, makes building free and lets `GiveItems` make items from nothing.
+Creative turns damage off, makes building free, has no raids or guards, and lets `GiveItems` make items from nothing.
 
 ## Fire
 

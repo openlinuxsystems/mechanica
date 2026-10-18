@@ -36,6 +36,15 @@ public sealed record BotSettings
     /// <summary>How far from the world centre a bot may be spawned, in m.</summary>
     public float MaxSpawnDistance { get; init; } = 2048f;
 
+    /// <summary>A POI's guards (its <c>bot</c> markers) appear when a living player comes this close, in m.</summary>
+    public float GuardWakeDistance { get; init; } = 64f;
+
+    /// <summary>A POI's guards leave when no living player is this close, in m; at least <see cref="GuardWakeDistance"/>.</summary>
+    public float GuardSleepDistance { get; init; } = 96f;
+
+    /// <summary>Seconds after a guard dies before its post can field another.</summary>
+    public float GuardRespawn { get; init; } = 1200f;
+
     /// <summary>Parses settings from JSON and validates them.</summary>
     /// <exception cref="FormatException">The JSON is malformed or a value is out of range.</exception>
     public static BotSettings FromJson(string json)
@@ -65,6 +74,11 @@ public sealed record BotSettings
         NonNegative(RangeTolerance, "range_tolerance");
         NonNegative(PlayerRadius, "player_radius");
         Positive(MaxSpawnDistance, "max_spawn_distance");
+        Positive(GuardWakeDistance, "guard_wake_distance");
+        Positive(GuardSleepDistance, "guard_sleep_distance");
+        NonNegative(GuardRespawn, "guard_respawn");
+        if (GuardSleepDistance < GuardWakeDistance)
+            throw new FormatException($"guard_sleep_distance must be at least guard_wake_distance (got {GuardSleepDistance} < {GuardWakeDistance}).");
     }
 
     private static void Positive(float value, string name)
