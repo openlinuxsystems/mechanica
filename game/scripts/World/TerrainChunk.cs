@@ -79,6 +79,9 @@ public partial class TerrainChunk : Node3D
     /// <summary>The body holding POI structure pieces.</summary>
     public StaticBody3D Structures { get; private set; } = null!;
 
+    /// <summary>Roads and bridges in the chunk (World Map spec §3); null when there are none.</summary>
+    public StaticBody3D? Roads { get; private set; }
+
     /// <summary>POI markers, one <see cref="Marker3D"/> each, with <c>type</c>, <c>ref</c> and <c>poi</c> metadata.</summary>
     public Node3D Markers { get; private set; } = null!;
 
@@ -97,6 +100,7 @@ public partial class TerrainChunk : Node3D
         AddChild(Brush);
         BuildObjects();
         BuildStructures();
+        BuildRoads();
         SetProcess(false);
     }
 
@@ -407,6 +411,34 @@ public partial class TerrainChunk : Node3D
             node.SetMeta("poi", marker.Poi.Poi.QualifiedId);
             Markers.AddChild(node, forceReadableName: true);
         }
+    }
+
+    // Roads, bridges and their furniture (World Map spec §3): one surface per material, colliding except signs and poles.
+    private void BuildRoads()
+    {
+        if (Data.Roads.IsEmpty)
+            return;
+        var width = WorldGen?.Definition.Roads?.Width ?? 10f;
+        var mesh = new ArrayMesh();
+        var faces = new List<Vector3>();
+        foreach (var surface in Data.Roads.Surfaces)
+        {
+            var arrays = new Godot.Collections.Array();
+            arrays.Resize((int)Mesh.ArrayType.Max);
+            arrays[(int)Mesh.ArrayType.Vertex] = surface.Vertices.Select(v => v.ToGodot()).ToArray();
+            arrays[(int)Mesh.ArrayType.Normal] = surface.Normals.Select(v => v.ToGodot()).ToArray();
+            arrays[(int)Mesh.ArrayType.TexUV] = surface.Uv.Select(v => new Vector2(v.X, v.Y)).ToArray();
+            arrays[(int)Mesh.ArrayType.TexUV2] = surface.Uv2.Select(v => new Vector2(v.X, v.Y)).ToArray();
+            mesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, arrays);
+            mesh.SurfaceSetMaterial(mesh.GetSurfaceCount() - 1, RoadMaterials.For(surface.Material, width));
+            if (surface.Solid)
+                faces.AddRange(surface.Vertices.Select(v => v.ToGodot()));
+        }
+        Roads = new StaticBody3D { Name = "Roads" };
+        AddChild(Roads);
+        Roads.AddChild(new MeshInstance3D { Name = "Mesh", Mesh = mesh });
+        if (!Scenery && faces.Count > 0)
+            Roads.AddChild(new CollisionShape3D { Shape = new ConcavePolygonShape3D { Data = [.. faces], BackfaceCollision = true } });
     }
 
     /// <summary>

@@ -3,12 +3,9 @@
   "name": "AI Core Facility",
   "radius": 70,
   "placement": {
-    "fixed": [
-      -900,
-      1100
-    ],
     "yaw": 0,
-    "priority": 0
+    "priority": 0,
+    "clearance": 0
   },
   "terrain": [
     {
@@ -87,5 +84,7 @@
       "at": [0, 0.4, 12],
       "yaw": 0
     }
-  ]
+  ],
+  "road": "road",
+  "size": [30, 10.4, 30]
 }

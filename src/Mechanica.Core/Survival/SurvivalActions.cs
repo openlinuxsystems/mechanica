@@ -294,7 +294,7 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
             items.Add(stack);
             pockets.SetSlot(slot, null);
         }
-        AddDrop(feet, items);
+        AddDrop(feet, items, knockedOut: true);
     }
 
     // ---- Respawn and beds ----
@@ -1124,16 +1124,17 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     /// <summary>
     /// Puts a pile of items on the ground below <paramref name="at"/>, or exactly at it when <paramref name="placed"/>
     /// (Force Build: it then never expires). Returns it, or null when there was nothing to drop. Past
-    /// <see cref="SurvivalSettings.MaxDrops"/> piles the oldest goes.
+    /// <see cref="SurvivalSettings.MaxDrops"/> piles the oldest goes. <paramref name="knockedOut"/> marks what a
+    /// knocked-out player dropped (<see cref="ItemDrop.KnockedOut"/>).
     /// </summary>
-    public ItemDrop? AddDrop(Vector3 at, IReadOnlyList<ItemStack> items, bool placed = false)
+    public ItemDrop? AddDrop(Vector3 at, IReadOnlyList<ItemStack> items, bool placed = false, bool knockedOut = false)
     {
         var kept = items.Where(s => s.Count > 0).ToList();
         if (kept.Count == 0)
             return null;
         while (_drops.Count >= settings.MaxDrops)
             RemoveDrop(_drops.Keys.First());
-        var drop = new ItemDrop(_nextDrop++, (placed ? at : world.GroundBelow(at)).ToVec3(), kept, world.Now + settings.DropLifetime, placed);
+        var drop = new ItemDrop(_nextDrop++, (placed ? at : world.GroundBelow(at)).ToVec3(), kept, world.Now + settings.DropLifetime, placed, knockedOut);
         _drops[drop.Id] = drop;
         DropChanged?.Invoke(drop);
         return drop;

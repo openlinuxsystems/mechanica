@@ -58,6 +58,7 @@ public class SurvivalActionsTests
         var drop = Assert.Single(_f.Survival.Drops.Values);
         Assert.Equal(new Vec3(0, 0, 3), drop.Position);
         Assert.Equal([new ItemStack(Seed, 2), new ItemStack(Scrap, 7)], drop.Items);
+        Assert.True(drop.KnockedOut); // shown as the knockout bag
         Assert.Equal(0f, _f.Survival.Damage(Me.Peer, 10, "test")); // the dead take no more
     }
 
@@ -519,6 +520,7 @@ public class SurvivalActionsTests
         var dropped = _f.Ok<DropItemsResult>(Me, SurvivalActions.DropItems, new { slot, count = 10 });
         Assert.Equal(20, _f.Pockets(Me).Count(Scrap));
         Assert.Equal(new Vec3(0, 0, 2), _f.Survival.Drops[dropped.Drop].Position); // 1 m ahead (-z) on the ground
+        Assert.False(_f.Survival.Drops[dropped.Drop].KnockedOut);
 
         Assert.StartsWith("That is 4.0 m away", _f.Refused(You, SurvivalActions.PickUp, new { drop = dropped.Drop }));
         _f.World.Feet[3] = new Vector3(0, 0, 2);

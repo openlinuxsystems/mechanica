@@ -30,8 +30,14 @@ public sealed record MapMarkerList(IReadOnlyList<MapMarker> Markers);
 /// validates: inside the world, at most <see cref="LogbookSettings.MaxMarkers"/> per player, names cut to
 /// <see cref="LogbookSettings.MarkerNameLength"/>. They are saved with the world under the player's profile.
 /// </summary>
-public sealed class MapMarkers(LogbookSettings settings, float worldSize)
+public sealed class MapMarkers(LogbookSettings settings, float worldSize, float worldDepth)
 {
+    /// <summary>Markers for a square world <paramref name="worldSize"/> metres on a side.</summary>
+    public MapMarkers(LogbookSettings settings, float worldSize)
+        : this(settings, worldSize, worldSize)
+    {
+    }
+
     /// <summary>Marks a place on the caller's map.</summary>
     public const string AddMapMarker = "AddMapMarker";
 
@@ -118,7 +124,7 @@ public sealed class MapMarkers(LogbookSettings settings, float worldSize)
     }
 
     private bool Inside(float x, float y, float z) =>
-        float.IsFinite(x) && float.IsFinite(y) && float.IsFinite(z) && MathF.Abs(x) <= worldSize / 2 && MathF.Abs(z) <= worldSize / 2;
+        float.IsFinite(x) && float.IsFinite(y) && float.IsFinite(z) && MathF.Abs(x) <= worldSize / 2 && MathF.Abs(z) <= worldDepth / 2;
 
     private string Clean(string? name)
     {

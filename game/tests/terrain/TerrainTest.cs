@@ -28,6 +28,11 @@ public partial class TerrainTest : StagedTest
 
     private WorldStreamer ClientWorld => _client.Main.Streamer;
 
+    // The start: the spawn, wreck and pond are laid out round it.
+    private PoiInstance Crash => HostWorld.Generator.Pois.First(p => p.Poi.Prefab.Id == "crash_site");
+
+    private Vector3 Pond => Crash.ToWorld(new System.Numerics.Vector3(30, 0, 26)).ToGodot();
+
     public override void _Ready()
     {
         _harness = new NetTestHarness { Name = "Harness", Seed = 20261017 };
@@ -39,19 +44,20 @@ public partial class TerrainTest : StagedTest
         Wait("players settle", 30);
         Add("the client regenerates the host's world", _ =>
         {
-            Check(HostWorld.WorldGen.Pois.Count == 6 && !HostWorld.WorldGen.HasErrors, "the vanilla world rules and POIs load");
+            Check(HostWorld.WorldGen.Pois.Count >= 50 && !HostWorld.WorldGen.HasErrors, "the vanilla world rules and POIs load");
             Check(ClientWorld.State.Seed == 20261017 && ClientWorld.Generator.Seed == HostWorld.Generator.Seed, "the client uses the host's seed");
             Check(ClientWorld.Generator.Pois.Select(p => p.Centre).SequenceEqual(HostWorld.Generator.Pois.Select(p => p.Centre)), "both peers lay out the same POIs");
-            var origin = new ChunkCoord(0, 0);
-            var (host, client) = (HostWorld.Chunks[origin], ClientWorld.Chunks[origin]);
-            Check(host.Data.Heights.SequenceEqual(client.Data.Heights), "chunk (0, 0) has the same heights on both peers");
+            var home = HostWorld.ChunkAt(Pond);
+            var (host, client) = (HostWorld.Chunks[home], ClientWorld.Chunks[home]);
+            Check(host.Data.Heights.SequenceEqual(client.Data.Heights), $"chunk {home} at the start has the same heights on both peers");
             var shape = host.GroundShape.Shape as HeightMapShape3D;
             Check(shape is not null && shape.MapData.SequenceEqual(host.Data.Heights), "the ground collides as a height map of those heights");
-            Check(_host.Main.GetNode<Node3D>("SpawnPoint").GlobalPosition.IsEqualApprox(new Vector3(0, 0, 4)), "players spawn at the crash site's spawn marker");
+            var spawn = Crash.ToWorld(new System.Numerics.Vector3(0, 0, 4)).ToGodot();
+            Check(_host.Main.GetNode<Node3D>("SpawnPoint").GlobalPosition.IsEqualApprox(spawn), $"players spawn at the crash site's spawn marker ({spawn})");
             foreach (var instance in new[] { _host, _client })
             {
-                var y = instance.Main.LocalPlayer!.GlobalPosition.Y;
-                Check(y is > -0.05f and < 0.1f, $"{instance} player stands on the crash site pad (y={y:F3})");
+                var y = instance.Main.LocalPlayer!.GlobalPosition.Y - Crash.PadHeight;
+                Check(y is > -0.05f and < 0.1f, $"{instance} player stands on the crash site pad ({y:F3} m over it)");
             }
             return true;
         });
@@ -65,7 +71,7 @@ public partial class TerrainTest : StagedTest
                 Check(markers.Any(m => (string)m.GetMeta("ref") == "master_battery"), $"{who}: a master battery marker");
                 var wreck = world.Chunks.Values.Sum(c => c.Structures.GetChildren().OfType<CollisionShape3D>().Count());
                 Check(wreck >= 6, $"{who}: the wreck's pieces collide ({wreck})");
-                var pond = world.Chunks[world.ChunkAt(new Vector3(30, 0, 26))];
+                var pond = world.Chunks[world.ChunkAt(Pond)];
                 Check(pond.Data.HasWater && pond.GetNodeOrNull("Water") is not null, $"{who}: the pond chunk shows water");
             }
             return true;
@@ -78,11 +84,12 @@ public partial class TerrainTest : StagedTest
             var onHost = _host.Main.PlayerSync.Players[_client.Peer];
             var mine = _client.Main.LocalPlayer!;
             var sea = HostWorld.Generator.SeaLevel;
-            var toSpawn = new Vector2(0 - 30, 4 - 26).Normalized();
+            var spawn = Crash.ToWorld(new System.Numerics.Vector3(0, 0, 4)).ToGodot();
+            var toSpawn = new Vector2(spawn.X - Pond.X, spawn.Z - Pond.Z).Normalized();
             var yaw = MathF.Atan2(-toSpawn.X, -toSpawn.Y);
             if (frame == 0)
             {
-                onHost.ApplyState(new Vector3(30, sea - onHost.Settings.FloatDepth, 26), Vector3.Zero, yaw, 0f);
+                onHost.ApplyState(new Vector3(Pond.X, sea - onHost.Settings.FloatDepth, Pond.Z), Vector3.Zero, yaw, 0f);
                 return false;
             }
             if (frame < 60)
@@ -103,10 +110,13 @@ public partial class TerrainTest : StagedTest
         Add("find a wooded hillside", _ =>
         {
             var gen = HostWorld.Generator;
-            for (var z = 300f; z < 1700f && _tree is null; z += 23f)
+            var home = Crash.Centre;
+            for (var z = home.Y - 1500f; z < home.Y + 1500f && _tree is null; z += 23f)
             {
-                for (var x = 300f; x < 1700f && _tree is null; x += 23f)
+                for (var x = home.X - 1500f; x < home.X + 1500f && _tree is null; x += 23f)
                 {
+                    if (!gen.InWorld(x, z))
+                        continue;
                     var slope = gen.SlopeAt(x, z);
                     if (slope is < 0.12f or > 0.5f || gen.HeightAt(x, z) < gen.SeaLevel + 1f || gen.Pois.Any(p => System.Numerics.Vector2.Distance(p.Centre, new(x, z)) < p.Radius + 20f))
                         continue;

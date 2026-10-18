@@ -51,6 +51,17 @@ public class LogbookTests
     }
 
     [Fact]
+    public void AWideWorldFitsByItsLongerSide()
+    {
+        var view = new MapView(12000, 9000, 0.25f);
+        var size = new Vector2(800, 800);
+        view.Fit(size);
+        Assert.Equal(12000f / 800f, view.MetresPerPixel, 3);
+        view.Pan(new Vector2(-100000, -100000));
+        Assert.Equal(new Vector2(6000, 4500), view.Centre);
+    }
+
+    [Fact]
     public void ZoomKeepsTheGroundUnderTheCursorAndStaysInItsLimits()
     {
         var view = new MapView(4096, 0.25f);

@@ -131,7 +131,7 @@ public partial class WorldStreamer : Node3D
         Effects = new ObjectEffects { Name = "ObjectEffects", Streamer = this };
         AddChild(Effects);
         State = InitialState is { } loaded && loaded.Seed == Seed ? loaded : new WorldState(Seed);
-        Generator = new WorldGenerator(WorldGen, Seed, Settings.WorldSize);
+        Generator = new WorldGenerator(WorldGen, Seed, Settings.WorldSize, Settings.Depth);
         Streamer = new ChunkStreamer(Settings);
         Creations.Removed += Streamer.Forget;
         Session.PeerReady += SendWorld;
@@ -319,7 +319,7 @@ public partial class WorldStreamer : Node3D
         if (state.Seed != Generator.Seed)
         {
             // A new world: drop every chunk and stream again from scratch.
-            Generator = new WorldGenerator(WorldGen, state.Seed, Streamer.Settings.WorldSize);
+            Generator = new WorldGenerator(WorldGen, state.Seed, Streamer.Settings.WorldSize, Streamer.Settings.Depth);
             foreach (var node in _chunks.Values)
             {
                 RemoveChild(node);

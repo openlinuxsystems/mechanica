@@ -531,7 +531,7 @@ public partial class Main : Node3D
         MapMarkers = new MapMarkerSync
         {
             Name = "MapMarkers", Session = Session, Players = PlayerSync, Actions = Actions,
-            Markers = new Core.Ui.MapMarkers(LogbookSettings, Streamer.Settings!.WorldSize),
+            Markers = new Core.Ui.MapMarkers(LogbookSettings, Streamer.Settings!.WorldSize, Streamer.Settings.Depth),
         };
         MapMarkers.RegisterActions(Actions.Dispatcher);
         AddChild(MapMarkers);

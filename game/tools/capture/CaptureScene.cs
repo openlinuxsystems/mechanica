@@ -26,6 +26,8 @@ namespace Mechanica.Game.Tools;
 /// chunk into rods (<c>tools/capture-rocks.sh</c>).
 /// Given <c>soil</c> it carries a Soil Bag, tips it out, spills a mound and shows a row of mounds dry, lightly watered,
 /// fully wet and drying (<c>tools/capture-soil.sh</c>).
+/// Given <c>knockout_bag</c> it knocks the player out and captures the knockout bag their items drop in from the reference
+/// sheet's views, with its label and next to the respawned player (<c>tools/capture-knockout-bag.sh</c>).
 /// </summary>
 public partial class CaptureScene : Node
 {
@@ -49,7 +51,8 @@ public partial class CaptureScene : Node
         var blocks = args.Length > 1 && args[1] == "blocks";
         var rocks = args.Length > 1 && args[1] == "rocks";
         var soil = args.Length > 1 && args[1] == "soil";
-        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks && !soil ? args[1] : "scrapper_male";
+        var bag = args.Length > 1 && args[1] == "knockout_bag";
+        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks && !soil && !bag ? args[1] : "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
         // Building the block wall needs Creative: free parts and no build reach.
         _main.Options = LaunchOptions.Offline with { Seed = 7, GameMode = blocks || soil ? Core.Survival.GameMode.Creative : LaunchOptions.Offline.GameMode };
@@ -90,6 +93,11 @@ public partial class CaptureScene : Node
         if (soil)
         {
             SoilShots();
+            return;
+        }
+        if (bag)
+        {
+            KnockoutBagShots();
             return;
         }
         Shot("front", 60, () => Look(new Vector3(0, 1.0f, -3.2f)));
@@ -523,6 +531,53 @@ public partial class CaptureScene : Node
             _camera.GlobalPosition = feet + new Vector3(-0.2f, 1.0f, -1.7f);
             _camera.LookAt(feet + new Vector3(0f, 0f, -3f));
         });
+    }
+
+    private void KnockoutBagShots()
+    {
+        var spawn = Vector3.Zero;
+        var at = Vector3.Zero;
+        Label3D? label = null;
+        void View(Vector3 offset, float height = 0.2f)
+        {
+            _follow = null;
+            _camera.MakeCurrent();
+            _camera.GlobalPosition = at + offset;
+            _camera.LookAt(at + Vector3.Up * height);
+        }
+        Shot("knockout_bag_00_wait", 60, () => { });
+        Shot("knockout_bag_00_walk", 10, () =>
+        {
+            // Away from the spawn point, so the respawned player stands beside the bag rather than on it.
+            spawn = Player.GlobalPosition;
+            Player.GlobalPosition = Ground(spawn + new Vector3(2.5f, 0f, 0f)) + Vector3.Up * 0.1f;
+        });
+        Shot("knockout_bag_01_knocked_out", 30, () =>
+        {
+            _main.Survival.Actions!.Damage(Player.PeerId, 1000, "capture");
+            Look(new Vector3(-1.6f, 1.4f, -2.2f), 0.4f);
+        });
+        Shot("knockout_bag_02_front", 10, () =>
+        {
+            var drop = _main.Survival.DropNodes.Values.First(d => d.Drop!.KnockedOut);
+            at = drop.GlobalPosition;
+            GD.Print($"[capture] knockout bag at {at}: {drop.Text.Replace('\n', ',')}");
+            label = drop.GetNode<Label3D>("Label");
+            label.Visible = false; // the turnaround shows the bag alone; the label comes back for its own shot
+            View(new Vector3(0f, 0.3f, 1.25f));
+        });
+        Shot("knockout_bag_03_right", 10, () => View(new Vector3(1.25f, 0.3f, 0f)));
+        Shot("knockout_bag_04_left", 10, () => View(new Vector3(-1.25f, 0.3f, 0f)));
+        Shot("knockout_bag_05_back", 10, () => View(new Vector3(0f, 0.3f, -1.25f)));
+        Shot("knockout_bag_06_top", 10, () => View(new Vector3(0f, 1.3f, 0.3f), 0.1f));
+        Shot("knockout_bag_07_three_quarter", 10, () => View(new Vector3(0.85f, 0.7f, 0.95f)));
+        Shot("knockout_bag_08_label", 10, () => { label!.Visible = true; View(new Vector3(0.6f, 1.1f, 2.4f), 0.5f); });
+        Shot("knockout_bag_09_respawned", 30, () =>
+        {
+            _main.Actions.Request(Core.Survival.SurvivalActions.Respawn, new Core.Actions.NoArgs(), r => GD.Print($"[capture] respawn: {r.Ok} {r.Message}"));
+            Player.GlobalPosition = Ground(at + new Vector3(0.9f, 0f, 0.4f)) + Vector3.Up * 0.1f;
+        });
+        Shot("knockout_bag_10_with_player", 20, () => View(new Vector3(-1.2f, 1.3f, 2.8f), 0.6f));
     }
 
     // Frames the loose parts matching a test from the side away from the outcrop's middle.
