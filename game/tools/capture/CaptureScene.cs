@@ -216,6 +216,61 @@ public partial class CaptureScene : Node
             _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, _meadow + new Vector3(-6f, 0.3f, 3f), 0f);
             View(new Vector3(0.3f, 2.1f, 4.6f), new Vector3(0.3f, 0.2f, -0.6f));
         });
+        Shot("ground_00_reset", 10, () =>
+        {
+            GetNodeOrNull("Models")?.QueueFree();
+            GameSettings.Apply(GameSettings.Current with { Graphics = GameSettings.Current.Graphics with { Grass = FoliageLevel.High, GroundCover = FoliageLevel.High, Bushes = FoliageLevel.High } });
+            _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, _meadow + Vector3.Up * 0.3f, 0f);
+        });
+        GroundShots();
+    }
+
+    // Ground review shots: the textured ground in each biome, the meadow to the horizon and the crash site.
+    private void GroundShots()
+    {
+        WorldGenerator gen() => _main.Streamer.Generator;
+        Shot("ground_30_meadow_eye", 30, () => { _main.Flora.BuildAll(); View(new Vector3(-2.5f, 1.7f, 2.5f), new Vector3(30f, 0.5f, -60f)); });
+        Shot("ground_31_meadow_high", 30, () => View(new Vector3(-20f, 14f, 20f), new Vector3(20f, 0f, -30f)));
+        foreach (var biome in new[] { "forest", "ruin_field", "warehouse_district", "coastal" })
+        {
+            Shot($"ground_00_go_{biome}", 300, () =>
+            {
+                var g = gen();
+                var spot = Find(p => new[] { (0f, 0f), (25f, 0f), (-25f, 0f), (0f, 25f), (0f, -25f) }.All(d => g.BiomeAt(p.X + d.Item1, p.Y + d.Item2).Id == biome)
+                    && g.SlopeAt(p.X, p.Y) < 0.2f && !g.PoisAt(p.X, p.Y).Any());
+                Go(spot);
+            });
+            Shot($"ground_32_{biome}", 30, () => { _main.Flora.BuildAll(); View(new Vector3(-4f, 2.6f, 4f), new Vector3(10f, 0f, -18f)); });
+        }
+        Shot("ground_00_go_crash", 300, () => Go(gen().Pois.First(p => p.Poi.Prefab.Id == "crash_site").ToWorld(new System.Numerics.Vector3(0f, 0f, 4f)).ToGodot()));
+        Shot("ground_40_crash_spawn", 30, () => { _main.Flora.BuildAll(); View(new Vector3(-2f, 1.8f, -6f), new Vector3(0f, 1f, 18f)); });
+        Shot("ground_41_crash_high", 30, () => View(new Vector3(-30f, 26f, -24f), new Vector3(0f, 0f, 18f)));
+        Shot("ground_42_crash_edge", 30, () => View(new Vector3(-26f, 2.5f, 2f), new Vector3(0f, 0.5f, 20f)));
+        Shot("ground_43_crash_from_meadow", 30, () => View(new Vector3(-50f, 4f, -30f), new Vector3(0f, 0f, 18f)));
+    }
+
+    private Vector3 Find(Func<Vector2, bool> ok)
+    {
+        var gen = _main.Streamer.Generator;
+        for (var r = 100f; r < 2000f; r += 40f)
+        {
+            for (var a = 0f; a < Mathf.Tau; a += 0.25f)
+            {
+                var (x, z) = (r * Mathf.Cos(a), r * Mathf.Sin(a));
+                if (ok(new Vector2(x, z)) && !gen.ObjectsIn(x - 4, z - 4, x + 4, z + 4).Any())
+                    return new Vector3(x, gen.HeightAt(x, z), z);
+            }
+        }
+        return _meadow;
+    }
+
+    private void Go(Vector3 spot)
+    {
+        GD.Print($"[capture] go {spot}");
+        _meadow = spot;
+        _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, spot + Vector3.Up * 0.3f, 0f);
+        _camera.MakeCurrent();
+        _camera.GlobalPosition = spot + new Vector3(0, 30, 0);
     }
 
     // The plant of a kind nearest the meadow spot, from the flora drawn there.

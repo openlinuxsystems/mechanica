@@ -133,11 +133,13 @@ public sealed record StoryBatch
             .Where(o => System.IO.File.Exists(Path.Combine(o, ModLoader.ManifestFileName)) && !names.Contains(Path.GetFileName(o)))).ToList();
 
         var results = new List<ExportResult>();
-        var biomes = WorldGenData.Load(ModLoader.Load(folders)).Biomes.Select(b => b.Id).ToList();
+        var loaded = WorldGenData.Load(ModLoader.Load(folders));
+        var biomes = loaded.Biomes.Select(b => b.Id).ToList();
+        var grounds = loaded.Grounds.Select(g => g.Id).ToList();
         foreach (var (id, file, poi) in pois)
         {
             var found = new List<DataDiagnostic>();
-            WorldGenValidator.Validate(poi, biomes, new DiagnosticSink(file, found));
+            WorldGenValidator.Validate(poi, biomes, new DiagnosticSink(file, found), grounds);
             results.Add(Write(modDirectory, file, $"{modId}:{id}", DataJson.Write(poi), found));
         }
         var content = ModLoader.Load(folders);

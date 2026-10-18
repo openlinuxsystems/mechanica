@@ -23,6 +23,12 @@ public sealed record WorldGenDefinition
     /// <summary>Destructible objects that biomes scatter on the ground (trees, rocks, ...).</summary>
     public List<WorldObjectDefinition>? Objects { get; init; }
 
+    /// <summary>Ground textures (at most <see cref="GroundDefinition.MaxGrounds"/>) that biomes, slopes and POIs paint the terrain with.</summary>
+    public List<GroundDefinition>? Grounds { get; init; }
+
+    /// <summary>The ground that steep slopes take over with (rock), whatever the biome.</summary>
+    public SlopeGroundDefinition? SlopeGround { get; init; }
+
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
@@ -96,8 +102,11 @@ public sealed record BiomeDefinition
     /// <summary>How far the ground rises and falls around <see cref="Height"/>, in metres.</summary>
     public float Relief { get; init; }
 
-    /// <summary>Ground colour, <c>#rrggbb</c>.</summary>
+    /// <summary>Ground colour, <c>#rrggbb</c>: the map, and the ground itself where no <see cref="Ground"/> texture is set.</summary>
     public string? Color { get; init; }
+
+    /// <summary>Id of the <see cref="GroundDefinition"/> this biome's ground is drawn with. Omitted: plain <see cref="Color"/>.</summary>
+    public string? Ground { get; init; }
 
     /// <summary>Objects scattered on this biome's ground.</summary>
     public List<ScatterRule>? Scatter { get; init; }
@@ -245,6 +254,78 @@ public sealed record ShapeDefinition
 }
 
 /// <summary>
+/// A ground texture the terrain is painted with (<c>grounds[]</c>): grass, forest floor, sand, rock, burnt earth... Biomes,
+/// steep slopes and POIs pick grounds by id, and neighbouring grounds blend.
+/// </summary>
+public sealed record GroundDefinition
+{
+    /// <summary>Most grounds one world can use: the shader blends this many texture layers.</summary>
+    public const int MaxGrounds = 8;
+
+    /// <summary>Id, unique in the file (lowercase snake_case).</summary>
+    public string? Id { get; init; }
+
+    /// <summary>Tileable <c>.png</c>, relative to the mod root (<c>other_mod:path</c> for another mod's). Square; drawn at 512 px.</summary>
+    public string? Texture { get; init; }
+
+    /// <summary>Metres of ground one repeat of the texture covers.</summary>
+    public float Tile { get; init; } = 4f;
+
+    /// <summary>False for ground nothing grows on (burnt earth, concrete): flora skips where it covers most of the ground.</summary>
+    public bool Flora { get; init; } = true;
+
+    /// <summary>Tint, <c>#rrggbb</c>, that plants growing on or next to this ground take (charred grass by burnt earth).</summary>
+    public string? FloraTint { get; init; }
+
+    /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>Steep ground's own texture (<c>slope_ground</c>): it fades in from <see cref="From"/> to <see cref="To"/>.</summary>
+public sealed record SlopeGroundDefinition
+{
+    /// <summary>Id of the <see cref="GroundDefinition"/>.</summary>
+    public string? Ground { get; init; }
+
+    /// <summary>Slope (rise over run) where it starts to show.</summary>
+    public float From { get; init; } = 0.7f;
+
+    /// <summary>Slope where it covers the ground fully.</summary>
+    public float To { get; init; } = 1.1f;
+
+    /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>
+/// A disc of ground a POI paints (<c>ground[]</c>), full inside <see cref="Radius"/> and fading out over <see cref="Blend"/>,
+/// with a ragged edge <see cref="Noise"/> metres deep. Later paints go over earlier ones.
+/// </summary>
+public sealed record GroundPaint
+{
+    /// <summary>Id of the <see cref="GroundDefinition"/>.</summary>
+    public string? Ground { get; init; }
+
+    /// <summary>Centre <c>[x, z]</c>, relative to the POI. Omitted means the POI centre.</summary>
+    public List<float>? At { get; init; }
+
+    /// <summary>Full-strength radius in metres.</summary>
+    public float Radius { get; init; }
+
+    /// <summary>Metres over which it fades out.</summary>
+    public float Blend { get; init; }
+
+    /// <summary>How far, in metres, noise pushes the edge in and out.</summary>
+    public float Noise { get; init; }
+
+    /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>
 /// A point of interest, loaded from <c>pois/*.json</c> in a mod (§21.3): where it may be placed, how it
 /// shapes the ground, its static structure, and markers that later systems fill (loot, bots, fires, the
 /// player spawn). Positions are relative to the POI centre on its flattened pad, before the POI's turn.
@@ -271,6 +352,15 @@ public sealed record PoiPrefab
 
     /// <summary>Named points for later systems.</summary>
     public List<PoiMarker>? Markers { get; init; }
+
+    /// <summary>Ground painted on the footprint, in order (<see cref="GroundPaint"/>).</summary>
+    public List<GroundPaint>? Ground { get; init; }
+
+    /// <summary>
+    /// Id of a biome whose flora grows on the footprint, except on grounds without <see cref="GroundDefinition.Flora"/>.
+    /// Omitted: nothing grows inside the POI.
+    /// </summary>
+    public string? Flora { get; init; }
 
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]

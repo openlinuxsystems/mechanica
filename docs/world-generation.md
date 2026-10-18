@@ -25,7 +25,9 @@ Host and clients must have identical world data: it is part of the content check
    edge the land falls to `sea_floor` over `coast_width`, so the world is an island. Each POI then
    applies its `terrain` ops.
 4. **Objects.** Each biome's `scatter` rules place trees, rocks and so on.
-5. **Flora.** Each biome's `flora` rules grow decorative grass, ground cover and bushes (see [Flora](#flora)).
+5. **Ground.** Each biome's `ground` texture covers it, blending across biome borders; steep slopes take the
+   `slope_ground`, and POIs paint their own `ground` on top (see [Ground textures](#ground-textures)).
+6. **Flora.** Each biome's `flora` rules grow decorative grass, ground cover and bushes (see [Flora](#flora)).
 
 The world is a square of `world_size` (from `game/data/streaming.json`, 4096 m) centred on the origin,
 streamed in 64 m chunks. Height samples are `resolution` metres apart and must divide the chunk size.
@@ -89,6 +91,7 @@ streamed in 64 m chunks. Height samples are `resolution` metres apart and must d
 | `terrain.biome_blend` | At most 0.18 × `biome_cell_size`. |
 | `terrain.max_scatter_slope` | Steepest ground (rise over run) objects stand on. |
 | `biomes[].weight` | Chance an inland cell is this biome. 0 means only where placed explicitly (the coast). |
+| `biomes[].ground` | Id of the ground texture (`grounds[]`) the biome is drawn with. Omitted: its plain `color`. |
 | `biomes[].scatter[]` | `spacing` is the side of the rule's grid cells; each cell holds at most one object, kept with probability `chance`. |
 | `objects[]` | Destructible world objects. Use catalog ids (`tree`, `rock_node`, `boulder`, ...). `footprint` is the radius other scattered objects keep clear of; `sink` lowers the object into the ground. |
 | `objects[].health` | Damage the object takes before it breaks (Sledgehammer, weapons, splash). Omitted means it cannot be broken. Damage is not saved: a part-felled tree is whole again after a restart. |
@@ -104,13 +107,29 @@ placeholders until meshes are authored.
 Scattered objects keep stable ids (`rule.cell_x.cell_z`), which is how a destroyed tree stays destroyed.
 Adding, removing or reordering scatter rules changes those ids, so do it before a world is saved.
 
+### Ground textures
+
+`grounds[]` lists up to 8 tileable ground textures; biomes, steep slopes and POIs pick them by id, and
+neighbouring grounds blend. The vanilla ones are painted in the flora's style (`tools/author-ground-textures.py`
+redraws them).
+
+| Key | Meaning |
+|-----|---------|
+| `grounds[].id` | Id (lowercase snake_case). |
+| `grounds[].texture` | Tileable square `.png` relative to the mod root (`other_mod:path` for another mod's), drawn at 512 px. |
+| `grounds[].tile` | Metres of ground one repeat covers (0.25 to 256). Default 4. A copy 3.7 times larger is mixed in so the repeat doesn't show from afar. |
+| `grounds[].flora` | `false` for ground nothing grows on (burnt earth): flora skips samples it covers by more than 45%. Default `true`. |
+| `grounds[].flora_tint` | `#rrggbb` that plants on or next to it take, fully where it covers 40% of the ground (charred grass at the crash site). |
+| `slope_ground` | `ground` (an id), `from` and `to` (slopes, rise over run, default 0.7 and 1.1): steep ground fades to it between them, whatever the biome. |
+
 ### Flora
 
 `biomes[].flora[]` grows decorative plants: tufts of grass, ground cover (clover and small flowers) and
 leafy bushes, drawn with GPU instancing round the camera. Flora is decor only. It has no collider, so
 players, bots and Creations pass through it (and it bends out of their way); it is never saved or synced,
 because every peer grows the same plants from the seed. Plants keep off water, ground steeper than
-`max_slope`, POI footprints, and (bushes) scattered objects.
+`max_slope`, bare ground (`grounds[].flora: false`), POI footprints (unless the POI names its own `flora`), and
+(bushes) scattered objects.
 
 | Key | Meaning |
 |-----|---------|
@@ -132,7 +151,9 @@ The models are built in code: grass `grass_short`, `grass_tall`, `grass_wide`, `
 How much is drawn, how far and how much it sways in the wind is the player's choice (Options, Graphics,
 Foliage density: Off, Low, Medium, High, Very high, for grass, ground cover and bushes apart), tuned in
 `game/data/flora.json`, which ships with the build and is not moddable. Lower levels draw a subset of the
-plants of higher ones, and Low turns the wind off.
+plants of higher ones, and Low turns the wind off. At High, grass is drawn to 150 m, ground cover to 80 m and
+bushes to 380 m; past `thin_share` of the distance grass and ground cover keep `thin_keep` of their plants,
+`thin_scale` times larger, so the far field stays full but cheap, and the ground texture carries on beyond.
 
 ## `pois/<id>.json`
 
@@ -156,6 +177,8 @@ plants of higher ones, and Low turns the wind off.
 | `placement.priority` | Higher kinds are placed first and win contested ground. |
 | `terrain[]` | `flatten` levels a disc to the pad height; `basin` sinks it `depth` metres below the pad (below `sea_level` it fills with water). A basin's `blend` must be at least 1.5 × `depth`, so its bank is no steeper than the 45° a player can walk up and a pond is never a trap. Full strength inside `radius`, fading over `blend`, centred at `at` (`[x, z]`). Must stay inside the POI radius. |
 | `pieces[]` | Static structure, as shapes. Positions are relative to the POI centre on its pad. |
+| `ground[]` | Ground painted on the footprint, in order, each over the ones before: `ground` (an id from `grounds[]`), full inside `radius` of `at` (`[x, z]`, default the centre) and fading over `blend`, with an edge pushed in and out by up to `noise` metres. Must stay inside the POI radius. |
+| `flora` | Id of a biome whose flora grows on the footprint (outside bare ground). Omitted: nothing grows inside the POI. The crash site burns its middle and grows a meadow round it. |
 | `markers[]` | Points for other systems: `type` (`spawn`, `item`, `bot`, `fire`, `door`, `npc`, `core`, ...) and an optional `ref` (a catalog id, or a character id for `npc`). The first `spawn` marker of a fixed POI is where players start. [Quests](quests.md) point at markers. |
 
 The pad height of a spaced POI is the natural ground height at its centre.
