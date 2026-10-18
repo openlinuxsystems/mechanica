@@ -15,7 +15,7 @@
         "visual": { "color": "#3d4f66", "roughness": 0.6, "metallic": 0.3 },
         "sounds": { "enter": "seat_enter", "exit": "seat_exit" },
         "seat": { "offset": [0, -0.1, 0] },
-        "properties": { "steer_angle": 30, "steer_speed": 2.5, "steer_torque": 1500 }
+        "properties": { "steer_angle": 27, "steer_speed": 2.5, "steer_torque": 1500 }
       },
       "model": [
         { "kind": "box", "size": [0.5, 0.14, 0.48], "position": [0, -0.18, 0] },
@@ -182,21 +182,41 @@
       "file": "parts/scrap_gas_engine.json",
       "base": "gas_engine",
       "set": {
-        "logic": { "inputs": 4, "outputs": 10, "kind": "power" },
+        "logic": { "inputs": 4, "outputs": 2, "kind": "power" },
         "name": "Scrap Gas Engine",
-        "description": "A weaker gas engine from scrap. It burns gasoline faster.",
+        "description": "A rattly starter engine from scrap. Switch it on, then it turns up to two wheel bearings linked to it, with a seat's throttle as its input. Burns gasoline faster than a Gas Engine.",
         "mass": 10,
-        "durability": 4,
+        "durability": 2,
+        "flammable": true,
+        "stack_size": 5,
         "sound_material": "scrap",
-        "visual": { "color": "#8c5a3c", "roughness": 0.85, "metallic": 0.3 },
-        "properties": { "speed": 15, "torque": 80, "brake": 60, "fuel": "gasoline", "fuel_time": 25, "loop_parameter": "load" }
+        "icon": "textures/items/scrap_gas_engine_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
+        "sounds": { "start": "engine_start", "loop": "engine_idle", "stop": "engine_sputter", "sputter": "engine_sputter", "rev": "engine_rev" },
+        "settings": [
+          {
+            "id": "gear", "name": "Power", "type": "number", "min": 1, "max": 4, "step": 1, "default": 2,
+            "presets": [{ "name": "Low", "value": 1 }, { "name": "Medium", "value": 2 }, { "name": "High", "value": 4 }]
+          },
+          { "id": "on", "name": "On", "type": "toggle", "default": false }
+        ],
+        "display": {
+          "status": "running",
+          "clips": { "readout": "clip", "scrub": [{ "readout": "lever", "clip": "lever" }] },
+          "effects": [
+            { "readout": "smoke", "kind": "smoke", "offset": [-0.15, 0.248, 0.165] },
+            { "readout": "smoke", "kind": "smoke", "offset": [-0.075, 0.248, 0.165] },
+            { "readout": "sparks", "kind": "sparks", "offset": [-0.11, 0.248, 0.165] },
+            { "readout": "oil", "kind": "drops", "offset": [0.1, -0.24, -0.24], "direction": [0, -1, 0] }
+          ]
+        },
+        "properties": {
+          "speed": 15, "torque": 80, "brake": 60, "fuel": "gasoline", "fuel_time": 25, "loop_parameter": "load",
+          "gears": 4, "ignition": true, "start_time": 1.0, "false_start": 0.3, "false_start_time": 0.7, "stop_time": 0.8,
+          "gear_time": 0.45, "uneven": 0.12, "backfire": 0.08, "hard_gear": 3, "smoke": 0.8
+        }
       },
-      "model": [
-        { "kind": "box", "size": [0.46, 0.08, 0.46], "position": [0, -0.21, 0] },
-        { "kind": "box", "size": [0.4, 0.28, 0.36], "position": [0, -0.03, 0.03] },
-        { "kind": "cylinder", "radius": 0.06, "height": 0.16, "position": [0, 0.17, 0.06] },
-        { "kind": "box", "size": [0.12, 0.12, 0.08], "position": [0, -0.03, -0.19] }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/scrap_gas_engine.glb" }],
       "recipes": [
         {
           "id": "scrap_gas_engine",

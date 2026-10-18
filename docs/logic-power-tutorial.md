@@ -103,7 +103,7 @@ Settings are changed with E on the part; properties are fixed in the part's data
 |------|--------|----------|------------|
 | Driver's Seat, Scrap Driver's Seat | The driver's throttle, -1 to 1 | | `steer_angle` (°), `steer_speed` (rad/s), `steer_torque` (N·m) |
 | Passenger Seat, Scrap Seat | (none) | | |
-| Gas Engine, Scrap Gas Engine, Electric Engine | Its throttle while it runs | `gear` (Power) 1 to 5, `on` (with nothing linked in) | `speed` (rad/s at full power), `torque` and `brake` (N·m), `fuel` (item), `fuel_time` (s per item), `loop_parameter` |
+| Gas Engine, Scrap Gas Engine, Electric Engine | Its throttle while it runs | `gear` (Power) 1 to `gears` (4 on the Scrap Gas Engine, 5 otherwise), `on` (with nothing linked in; the Scrap Gas Engine always needs it) | `speed` (rad/s at full power), `torque` and `brake` (N·m), `fuel` (item), `fuel_time` (s per item), `loop_parameter`, and the Scrap Gas Engine's `ignition` timings |
 | Logic Gate | 1 or 0 | `mode`: and, or, xor, nand, nor, xnor | |
 | Timer | Its input, `delay` seconds later; or on and off every `delay` while its input is on | `delay` (s), `mode` (once, repeat) | |
 | Sensor | 1 while something it detects is within `range` of its face | `range` (1 to 20 m), `players`, `bots`, `blocks`, `creations` | `interval` (steps between checks), `cone` (°) |

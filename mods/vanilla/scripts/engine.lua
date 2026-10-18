@@ -3,13 +3,22 @@
 -- car should drive. With no throttle it holds the wheels with properties.brake N·m.
 -- Properties: "speed" (rad/s at the top gear), "torque" (N·m), "brake" (N·m), "fuel" (item id) and
 -- "fuel_time" (seconds of full throttle per item). In Creative it needs no fuel.
--- Setting "gear" (shown as Power, 1 to 5): each step turns a fifth of the top speed. Setting "on": with
+-- Setting "gear" (shown as Power, 1 to properties.gears, default 5): each step turns that share of the top speed. Setting "on": with
 -- nothing linked into it, the engine runs forward at full throttle while it is on.
 -- Its menu shows "fuel" (how much of the current item is left, 0 to 1; full in Creative), "fuel_items"
 -- (items left in the Creation), "rpm" (the first wheel's speed) and "torque" (N·m it drives with). Its
 -- "running" display is on while it drives, and each wheel bearing's "drive" display turns with it.
 -- Sounds: "start" when it starts, the "loop" while it runs (its properties.loop_parameter follows the
 -- throttle), and "stop" when it runs out of fuel.
+--
+-- With properties.ignition the engine has to be switched on (the "on" setting, also when linked): it cranks for
+-- properties.start_time s (now and then a false start of properties.false_start_time s first, at the
+-- properties.false_start chance), then idles and drives while its input asks; switched off or out of fuel it winds
+-- down for properties.stop_time s. Its speed wobbles by properties.uneven of itself, it backfires now and then
+-- (properties.backfire a second) and a power change rattles it for properties.gear_time s. It shows what it does
+-- for its model: "clip" (off_loop, false_start, start, run_loop, run_hard_loop from properties.hard_gear up, gear,
+-- stop), "lever" (the power setting, 0 to 1), "smoke", "sparks" and "oil" (0 to 1). Sounds "sputter" (false
+-- starts, backfires) and "rev" (power changes) when bound.
 
 local RESEND = 30
 local SHOW_EVERY = 10
@@ -54,7 +63,7 @@ end
 
 local function drive(throttle)
   local gear = part.setting("gear") or 1
-  local speed = throttle * properties.speed * gear / 5
+  local speed = throttle * properties.speed * gear / (properties.gears or 5)
   local resend = world.tick() % RESEND == 0
   local sent = state.sent
   for _, id in ipairs(part.links()) do
@@ -79,6 +88,10 @@ function on_create()
   state.angles = {}
   state.sent = state.sent or {}
   state.fuel = state.fuel or 0
+  if properties.ignition then
+    state.phase = "off"
+    part.display("clip", "off_loop")
+  end
 end
 
 function on_reload()
@@ -134,7 +147,163 @@ local function show(throttle, dt)
   part.display("rpm", math.floor(rpm + 0.5))
 end
 
+-- A repeatable 0..1 number for this engine at this step (no randomness, so every replay agrees).
+local function roll(salt)
+  local x = (world.tick() * 7919 + part.id() * 104729 + salt * 1299709) % 2147483647
+  x = (x * 48271) % 2147483647
+  return x / 2147483647
+end
+
+local function play(key)
+  if part.sound(key) then sound.play(part.sound(key)) end
+end
+
+local function clip(name)
+  state.clips = (state.clips or 0) + 1
+  part.display("clip", name .. "#" .. state.clips)
+end
+
+-- 1 for `seconds` from now, then fading over as long again: a puff.
+local function pulse(key, seconds)
+  state.pulses = state.pulses or {}
+  state.pulses[key] = seconds
+end
+
+local function pulsed(key, dt)
+  local left = state.pulses and state.pulses[key]
+  if not left then return 0 end
+  left = left - dt
+  state.pulses[key] = left > -0.3 and left or nil
+  return left > 0 and 1 or math.max(0, 1 + left / 0.3)
+end
+
+local function fuel_left()
+  return world.creative() or (state.fuel or 0) > 0 or creation.count(properties.fuel) > 0
+end
+
+local function release()
+  for _, id in ipairs(part.links()) do
+    if direction(id) and state.sent[tostring(id)] ~= nil then
+      creation.set_bearing(id, nil)
+      creation.display(id, "drive", nil)
+      state.sent[tostring(id)] = nil
+    end
+  end
+end
+
+local function stop_hum()
+  if state.hum then
+    sound.stop(state.hum)
+    state.hum = nil
+  end
+end
+
+-- The ignition engine's steps: off, starting (with a false start first now and then), running, stopping.
+local function ignition(dt)
+  local on = part.setting("on") and true or false
+  local gear = part.setting("gear") or 1
+  local top = properties.gears or 5
+  part.display("lever", top > 1 and (gear - 1) / (top - 1) or 0)
+  state.timer = (state.timer or 0) - dt
+  local phase = state.phase or "off"
+  local throttle = 0
+  if phase == "off" then
+    if on and not state.failed then
+      if not fuel_left() then
+        state.phase, state.timer, state.failed = "false", properties.false_start_time, true
+        clip("false_start")
+        play("sputter")
+        pulse("smoke", 0.2)
+      elseif roll(1) < (properties.false_start or 0) and not state.tried then
+        state.phase, state.timer, state.tried = "false", properties.false_start_time, true
+        clip("false_start")
+        play("sputter")
+        pulse("smoke", 0.2)
+      else
+        state.phase, state.timer = "starting", properties.start_time
+        clip("start")
+        play("start")
+        pulse("smoke", 0.4)
+        pulse("oil", 0.3)
+      end
+    elseif not on then
+      state.failed, state.tried = nil, nil
+    end
+  elseif phase == "false" then
+    if state.timer <= 0 then
+      state.phase = "off"
+      clip("off_loop")
+    end
+  elseif phase == "starting" then
+    if not on then
+      state.phase, state.timer = "stopping", properties.stop_time
+      clip("stop")
+    elseif state.timer <= 0 then
+      state.phase, state.gear = "running", gear
+      clip(gear >= (properties.hard_gear or top + 1) and "run_hard_loop" or "run_loop")
+      if part.sound("loop") then state.hum = sound.start(part.sound("loop")) end
+    end
+  elseif phase == "running" then
+    throttle = clamp(part.input())
+    if #part.inputs() == 0 then
+      throttle = 1
+    end
+    if not burn(throttle, dt) or not on then
+      throttle = 0
+      state.phase, state.timer = "stopping", properties.stop_time
+      clip("stop")
+      stop_hum()
+      play("stop")
+      pulse("smoke", 0.3)
+      pulse("oil", 0.4)
+    elseif gear ~= state.gear then
+      state.gear, state.timer = gear, properties.gear_time
+      clip("gear")
+      play("rev")
+      pulse("smoke", properties.gear_time)
+      state.after_gear = true
+    elseif state.after_gear and state.timer <= 0 then
+      state.after_gear = nil
+      clip(gear >= (properties.hard_gear or top + 1) and "run_hard_loop" or "run_loop")
+    elseif roll(2) < (properties.backfire or 0) * dt then
+      play("sputter")
+      pulse("sparks", 0.2)
+      pulse("smoke", 0.15)
+    end
+  elseif phase == "stopping" then
+    if state.timer <= 0 then
+      state.phase = "off"
+      clip("off_loop")
+    end
+  end
+  local running = state.phase == "running"
+  if running then
+    -- uneven speed: the throttle wobbles a little, settled every few steps so the bearings are not resent each one
+    if world.tick() % 6 == 0 then
+      state.wobble = 1 + (properties.uneven or 0) * (roll(3) * 2 - 1)
+    end
+    drive(throttle * (state.wobble or 1))
+    if state.hum and properties.loop_parameter then
+      sound.set_parameter(state.hum, properties.loop_parameter, math.abs(throttle))
+    end
+  else
+    stop_hum()
+    release()
+  end
+  state.throttle = running and throttle or 0
+  local power = running and (0.3 + 0.7 * math.abs(throttle) * gear / top) or 0
+  part.display("smoke", math.max(power * (properties.smoke or 1), pulsed("smoke", dt)))
+  part.display("sparks", math.max(running and math.abs(throttle) * gear / top > 0.7 and 0.3 or 0, pulsed("sparks", dt)))
+  part.display("oil", math.max(0.15, pulsed("oil", dt)))
+  show(state.throttle, dt)
+  part.display("running", running)
+end
+
 function on_update(dt)
+  if properties.ignition then
+    ignition(dt)
+    return
+  end
   local throttle = clamp(part.input())
   if #part.inputs() == 0 then
     throttle = part.setting("on") and 1 or 0

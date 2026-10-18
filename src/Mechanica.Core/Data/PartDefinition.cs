@@ -700,6 +700,86 @@ public sealed record DisplayDefinition
     /// <summary>The model pushed in while a readout is not 0 (a switch that is on, a button held down).</summary>
     public PressDefinition? Press { get; init; }
 
+    /// <summary>The model's own glTF clips, played by a text readout and scrubbed by number readouts (an engine starting).</summary>
+    public ClipsDefinition? Clips { get; init; }
+
+    /// <summary>Particle effects whose strength follows a readout from 0 to 1 (exhaust smoke, sparks, oil drips).</summary>
+    public IReadOnlyList<EffectDefinition>? Effects { get; init; }
+
+    /// <summary>Keys this build does not know.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>Which of a part model's glTF clips play: the model is shown as its whole glTF scene, with its animations.</summary>
+public sealed record ClipsDefinition
+{
+    /// <summary>Most clips a part may scrub.</summary>
+    public const int MaxScrubs = 4;
+
+    /// <summary>
+    /// The text readout naming the clip to play. A new value starts that clip from the beginning; anything after a
+    /// <c>#</c> is ignored, so <c>gear#2</c> after <c>gear#1</c> plays <c>gear</c> again. A clip whose name ends in
+    /// <c>_loop</c> repeats; any other holds its last frame.
+    /// </summary>
+    public string? Readout { get; init; }
+
+    /// <summary>Clips held at a point set by a number readout instead of played (a lever's position).</summary>
+    public IReadOnlyList<ScrubDefinition>? Scrub { get; init; }
+
+    /// <summary>Keys this build does not know.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>A clip held at the point a readout sets.</summary>
+public sealed record ScrubDefinition
+{
+    /// <summary>The number readout: 0 is the clip's start, 1 its end.</summary>
+    public string? Readout { get; init; }
+
+    /// <summary>The clip's name in the model. It should move nodes the played clips leave alone.</summary>
+    public string? Clip { get; init; }
+
+    /// <summary>Keys this build does not know.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>What a particle effect looks like.</summary>
+public enum EffectKind
+{
+    /// <summary>Soft puffs that rise and spread (exhaust).</summary>
+    Smoke,
+
+    /// <summary>Small bright sparks thrown out that fall.</summary>
+    Sparks,
+
+    /// <summary>Drops that fall (oil, water).</summary>
+    Drops,
+}
+
+/// <summary>A particle effect on a part.</summary>
+public sealed record EffectDefinition
+{
+    /// <summary>Most effects one part may have.</summary>
+    public const int MaxPerPart = 8;
+
+    /// <summary>The readout (0 to 1) that sets its strength; 0 stops it.</summary>
+    public string? Readout { get; init; }
+
+    /// <summary>What it looks like.</summary>
+    public EffectKind? Kind { get; init; }
+
+    /// <summary>Where it comes from, relative to the part centre in m in the part's frame. Omitted means the centre.</summary>
+    public Vec3? Offset { get; init; }
+
+    /// <summary>Which way it leaves, in the part's frame. Omitted means +Y.</summary>
+    public Vec3? Direction { get; init; }
+
+    /// <summary>Its colour as <c>"#rrggbb"</c>. Omitted means the kind's own (dark smoke, yellow sparks, black drops).</summary>
+    public string? Color { get; init; }
+
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
