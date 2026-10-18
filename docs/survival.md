@@ -15,6 +15,16 @@ keeps it in its save. Easy changes these, as multipliers in `game/data/survival.
 | `raid_budget` | 0.6 | How many bots a raid sends |
 | `raid_cooldown` | 1.5 | The wait after a raid before the next |
 
+## Friendly fire
+
+Off by default: players can't hurt each other. New Game has a **Friendly fire** box for a Survival world
+(`--friendly-fire` on the command line), and the host can turn it on or off later in Options, Gameplay
+(clients see it there but can't change it; `SetFriendlyFire {on}` is refused for anyone but the host). The
+world keeps it in its save. With it off no weapon, splash or Sledgehammer swing of a player hurts another
+player, and neither does an external AI or a player-built machine (part scripts such as the mounted
+blaster or the cutter). Bots, falls and fire still hurt players, and a player's own splash still hurts
+them. AI agents read it from `GetWorld` and `world.info` and set it with `world.friendly_fire`.
+
 ## Playing
 
 | Key | What it does |
@@ -70,7 +80,7 @@ their item's properties.
 
 ## Data
 
-- `game/data/survival.json`: health, respawn delay, PvP, reach, starting items, fall and impact
+- `game/data/survival.json`: health, respawn delay, reach, starting items, fall and impact
   damage, piles. Unknown keys are refused.
 - Items and parts: `seed`, `soil` and `respawn_point` in part data
   ([Part Data Schema](part-data-schema.md#survival)). Food, weapons, seeds and the water bucket are
@@ -101,7 +111,7 @@ their item's properties.
 
 A dead player's other actions are refused. Item scripts hurt and heal through the same host-side
 primitives bots use (`SurvivalActions.Hit`, `Hitscan`, `Splash`, `Launch` for projectiles, `Heal`,
-`Damage`), so the PvP and Creative rules apply to them the same way. Projectiles fly on the host;
+`Damage`), so the friendly fire and Creative rules apply to them the same way. Projectiles fly on the host;
 every client is sent each launch and draws it along its arc until the host says it landed. The Potato
 Launcher and Popper lob theirs (D14): `speed` in their properties sets the throw, and they burst
 (`radius`) where they land; the Popper also bursts when its `fuse` runs out.

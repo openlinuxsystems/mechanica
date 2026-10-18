@@ -2,7 +2,7 @@
 
 <!-- Generated from mechanica.describe by tools/ai/gen-docs.sh. Do not edit by hand. -->
 
-Protocol version 2. 164 methods: 57 actions (change the world), 29 queries (only read it) and 78 endpoint methods. Every one is a JSON-RPC method of the same name whose `params` are the named arguments below (snake_case). `describe.json` beside this file is the same data as JSON Schemas, ready to become an AI's tool list. Scopes: `observe` reads, `play` acts as a player, `admin` is for debug powers ([ai-endpoint.md](../ai-endpoint.md#scopes)).
+Protocol version 2. 166 methods: 58 actions (change the world), 29 queries (only read it) and 79 endpoint methods. Every one is a JSON-RPC method of the same name whose `params` are the named arguments below (snake_case). `describe.json` beside this file is the same data as JSON Schemas, ready to become an AI's tool list. Scopes: `observe` reads, `play` acts as a player, `admin` is for debug powers ([ai-endpoint.md](../ai-endpoint.md#scopes)).
 
 ## Contents
 
@@ -20,9 +20,9 @@ Protocol version 2. 164 methods: 57 actions (change the world), 29 queries (only
 - [Map markers](#map-markers) (3)
 - [Motion and physics primitives](#motion-and-physics-primitives) (6)
 - [Quests](#quests) (3)
-- [Survival](#survival) (10)
+- [Survival](#survival) (11)
 - [Using held items](#using-held-items) (4)
-- [World](#world) (8)
+- [World](#world) (9)
 - [Editors (editor.*)](#editors-editor) (30)
 - [Lua tools (lua.*)](#lua-tools-lua) (3)
 - [Mod packages (package.*)](#mod-packages-package) (6)
@@ -1047,6 +1047,16 @@ Respawning (dead players), or going back to the spawn spot (living ones).
 
 No params.
 
+### `SetFriendlyFire`
+
+*action, admin scope*
+
+Turning friendly fire on or off (the host only). Arguments of SetFriendlyFire: let players hurt each other in this world, or stop them. The host only.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `on` | boolean | yes |  | True to let players hurt each other. |
+
 ### `SetSpawn`
 
 *action, play scope*
@@ -1116,11 +1126,21 @@ Using the item in a slot (UseItemArgs). Arguments of UseItem: use the item in a 
 
 ## World
 
+### `world.friendly_fire`
+
+*method, admin scope*
+
+Let players hurt each other (on: true) or stop them (on: false). With it off no player, AI or player-built machine hurts a player; bots still do. Every player is told. Returns the status.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `on` | boolean | yes |  | True to let players hurt each other, false to stop them. |
+
 ### `world.info`
 
 *method, admin scope*
 
-The running world: name, seed, mode, difficulty, the save it came from, world time, tick, time scale, paused, joined players, and whether a world change is under way.
+The running world: name, seed, mode, difficulty, friendly fire, the save it came from, world time, tick, time scale, paused, joined players, and whether a world change is under way.
 
 No params.
 
@@ -1147,7 +1167,7 @@ Load a saved world by name or file name. Answers at once; the world loads after,
 
 *method, admin scope*
 
-Start a new world (name, seed, mode, difficulty, character). Answers at once with what it will be; the world starts after.
+Start a new world (name, seed, mode, difficulty, character, friendly_fire, off by default). Answers at once with what it will be; the world starts after.
 
 | Param | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|
@@ -1157,6 +1177,7 @@ Start a new world (name, seed, mode, difficulty, character). Answers at once wit
 | `difficulty` | one of "easy", "normal" |  | `"normal"` | Difficulty. |
 | `character` | string or null |  |  | The host player's character (qualified id). |
 | `disconnect_clients` | boolean |  | `false` | True to go ahead although players are joined. |
+| `friendly_fire` | boolean |  | `false` | True to let players hurt each other (off by default). |
 
 ### `world.pause`
 
@@ -1172,7 +1193,7 @@ Pause or resume the world. The endpoint keeps answering while paused. Returns th
 
 *method, admin scope*
 
-Start the running world again from nothing: the same name, seed, mode and difficulty, nothing built. For a clean test world.
+Start the running world again from nothing: the same name, seed, mode, difficulty and friendly fire, nothing built. For a clean test world.
 
 | Param | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|

@@ -7,7 +7,7 @@ public sealed class WorldControlTests : IDisposable
 {
     private sealed class FakeHost(SaveStore store) : IWorldHost
     {
-        public WorldStatus Status { get; set; } = new("Home", 42, GameMode.Creative, Difficulty.Easy, null, 12.5, 750, 1, false, 0, false);
+        public WorldStatus Status { get; set; } = new("Home", 42, GameMode.Creative, Difficulty.Easy, false, null, 12.5, 750, 1, false, 0, false);
 
         public SaveStore Store => store;
 
@@ -32,6 +32,8 @@ public sealed class WorldControlTests : IDisposable
         }
 
         public void SetPaused(bool paused) => Status = Status with { Paused = paused };
+
+        public void SetFriendlyFire(bool on) => Status = Status with { FriendlyFire = on };
     }
 
     private readonly string _folder = Path.Combine(Path.GetTempPath(), "mechanica-worlds-" + Guid.NewGuid().ToString("N"));
@@ -126,6 +128,7 @@ public sealed class WorldControlTests : IDisposable
         Assert.Equal(new WorldSpec("Fresh", 777, GameMode.Creative, Difficulty.Normal, null), random);
         Assert.Equal(new WorldSpec("Fixed", 1234, GameMode.Survival, Difficulty.Easy, "vanilla:scrapper_male"), fixedSeed);
         Assert.Equal(WorldRefusal.BadParams, Refused(() => _control.New(new NewWorldParams(Character: "scrapper"))).Refusal);
+        Assert.True(_control.New(new NewWorldParams("Brawl", FriendlyFire: true)).FriendlyFire);
     }
 
     [Fact]
@@ -133,6 +136,16 @@ public sealed class WorldControlTests : IDisposable
     {
         Assert.Equal(new WorldSpec("Home", 42, GameMode.Creative, Difficulty.Easy, null), _control.Reset(new ResetWorldParams()));
         Assert.StartsWith("start ", _host.Calls.Single());
+    }
+
+    [Fact]
+    public void FriendlyFireTogglesAndResetKeepsIt()
+    {
+        Assert.True(_control.SetFriendlyFire(new FriendlyFireParams(true)).FriendlyFire);
+        Assert.True(_control.Reset(new ResetWorldParams()).FriendlyFire);
+        Assert.False(_control.SetFriendlyFire(new FriendlyFireParams(false)).FriendlyFire);
+        _host.Status = _host.Status with { Changing = true };
+        Assert.Equal(WorldRefusal.Busy, Refused(() => _control.SetFriendlyFire(new FriendlyFireParams(true))).Refusal);
     }
 
     [Fact]
@@ -158,7 +171,7 @@ public sealed class WorldModuleTests : IDisposable
     private readonly Mechanica.Core.Remote.EndpointAccess _access =
         new Mechanica.Core.Remote.EndpointAccess().AddToken("watch", Mechanica.Core.Remote.AgentScope.Observe).AddToken("root", Mechanica.Core.Remote.EndpointAccess.All.ToArray());
     private readonly List<string> _calls = [];
-    private WorldStatus _status = new("Home", 42, GameMode.Creative, Difficulty.Normal, null, 0, 0, 1, false, 1, false);
+    private WorldStatus _status = new("Home", 42, GameMode.Creative, Difficulty.Normal, false, null, 0, 0, 1, false, 1, false);
 
     private sealed class Host(WorldModuleTests test) : IWorldHost
     {
@@ -175,6 +188,8 @@ public sealed class WorldModuleTests : IDisposable
         public void SetTimeScale(double scale) => test._status = test._status with { TimeScale = scale };
 
         public void SetPaused(bool paused) => test._status = test._status with { Paused = paused };
+
+        public void SetFriendlyFire(bool on) => test._status = test._status with { FriendlyFire = on };
     }
 
     public WorldModuleTests() => _log = new Mechanica.Core.Remote.ActionLog(_dispatcher, 60);
@@ -226,6 +241,9 @@ public sealed class WorldModuleTests : IDisposable
         Assert.Equal(Mechanica.Core.Remote.JsonRpcEndpoint.Codes.InvalidParams, Code(Send(endpoint, root, "world.time_scale", """{ "scale": 50 }""")));
         Assert.Equal(2, Send(endpoint, root, "world.time_scale", """{ "scale": 2 }""").GetProperty("result").GetProperty("time_scale").GetDouble());
         Assert.True(Send(endpoint, root, "world.pause", """{ "paused": true }""").GetProperty("result").GetProperty("paused").GetBoolean());
+        Assert.False(Send(endpoint, root, "world.info").GetProperty("result").GetProperty("friendly_fire").GetBoolean());
+        Assert.Equal(Mechanica.Core.Remote.JsonRpcEndpoint.Codes.Forbidden, Code(Send(endpoint, watcher, "world.friendly_fire", """{ "on": true }""")));
+        Assert.True(Send(endpoint, root, "world.friendly_fire", """{ "on": true }""").GetProperty("result").GetProperty("friendly_fire").GetBoolean());
         var spec = Send(endpoint, root, "world.new", """{ "name": "Flat", "mode": "creative", "disconnect_clients": true }""").GetProperty("result");
         Assert.Equal(5, spec.GetProperty("seed").GetInt64());
         _status = _status with { Changing = true };

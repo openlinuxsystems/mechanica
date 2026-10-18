@@ -7,5 +7,12 @@
   // Share of the screen kept clear around edge-anchored HUD elements.
   "safe_area": 0.02,
   "hint_dismiss_seconds": 0.6,
-  "crosshair_pulse_hz": 2.0
+  "crosshair_pulse_hz": 2.0,
+  // What fills all ten pips of each stat in a detail card (UI spec §0). Mass pips follow the logarithm of the mass.
+  "stat_pips": {
+    "mass_kg": 900,
+    "durability": 30,
+    "friction": 1.0,
+    "buoyancy": 1.0
+  }
 }

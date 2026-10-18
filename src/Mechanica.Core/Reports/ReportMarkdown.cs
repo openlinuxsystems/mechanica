@@ -71,7 +71,7 @@ public static class ReportMarkdown
         md.AppendLine("| | |").AppendLine("|---|---|");
         Row(md, "Version", $"{c.GameVersion} (protocol {c.ProtocolVersion})");
         Row(md, "World", c.World.Length > 0 ? $"{c.World}, seed {c.Seed}" : $"seed {c.Seed}");
-        Row(md, "Mode", c.Difficulty.Length > 0 ? $"{c.Mode}, {c.Difficulty}" : c.Mode);
+        Row(md, "Mode", (c.Difficulty.Length > 0 ? $"{c.Mode}, {c.Difficulty}" : c.Mode) + (c.FriendlyFire ? ", friendly fire" : ""));
         Row(md, "Mods", c.Mods.Count > 0 ? string.Join(", ", c.Mods) : "none");
         Row(md, "Content", $"`{c.ContentFingerprint}`");
         Row(md, "Players", c.Players.Count > 0
@@ -108,6 +108,8 @@ public static class ReportMarkdown
             flags.Append("--").Append(context.Mode).Append(' ');
         if (context.Difficulty == "easy")
             flags.Append("--easy ");
+        if (context.FriendlyFire)
+            flags.Append("--friendly-fire ");
         if (context.LoadedFrom is { } save)
             flags.Append("--load \"").Append(save).Append("\" ");
         return flags.ToString();

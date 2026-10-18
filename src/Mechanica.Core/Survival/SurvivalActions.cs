@@ -64,6 +64,9 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     /// <summary>Action name for finishing a refine once Use has been held long enough.</summary>
     public const string FinishRefine = "FinishRefine";
 
+    /// <summary>Action name for turning friendly fire on or off (the host only).</summary>
+    public const string SetFriendlyFire = "SetFriendlyFire";
+
     /// <summary>Sound key an item plays when it is picked up (<see cref="Sound.PartSounds"/>).</summary>
     public const string PickupSound = "pickup";
 
@@ -97,6 +100,27 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
 
     /// <summary>The multipliers of <see cref="Difficulty"/>.</summary>
     public DifficultySettings Rules => settings.For(Difficulty);
+
+    /// <summary>
+    /// Whether players can hurt each other (off by default): with it off no player, external AI or part script
+    /// (a player's mounted gun or cutter) hurts another player, by any weapon, splash or the Sledgehammer. Bots,
+    /// falls and fire still do, and a player's own splash still hurts them. The host picks it in New Game and
+    /// may change it later (<c>SetFriendlyFire</c>); every player is told.
+    /// </summary>
+    public bool FriendlyFire
+    {
+        get => _friendlyFire;
+        set
+        {
+            if (_friendlyFire == value)
+                return;
+            _friendlyFire = value;
+            foreach (var peer in _vitals.Keys.ToList())
+                VitalsChanged?.Invoke(peer);
+        }
+    }
+
+    private bool _friendlyFire;
 
     /// <summary>The numbers in use.</summary>
     public SurvivalSettings Settings => settings;
@@ -146,6 +170,13 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
             return null;
         });
         dispatcher.Register<RefineArgs>(FinishRefine, ValidateFinishRefine, ApplyFinishRefine);
+        dispatcher.Register<SetFriendlyFireArgs>(SetFriendlyFire,
+            (c, _) => c.Peer == Creation.HostPeer && c.Source is ActionSource.Player or ActionSource.External ? null : "Only the host can change friendly fire.",
+            (_, a) =>
+            {
+                FriendlyFire = a.On;
+                return null;
+            });
         dispatcher.Register<NoArgs>(GetVitals, (c, _) => _vitals.ContainsKey(c.Peer) ? null : "You have no player.",
             (c, _) => Value(View(c.Peer)), readOnly: true);
         dispatcher.Register<GetSoilArgs>(GetSoil, (caller, a) => FindSoil(a.Creation, a.Part, out _, out _),
@@ -195,7 +226,7 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         var wait = v.Dead ? Math.Max(0, settings.RespawnDelay - (float)(world.Now - v.DiedAt)) : 0f;
         var slowFor = (float)Math.Max(0, v.SlowUntil - world.Now);
         return new VitalsView(peer, v.Health, settings.MaxHealth, v.Dead, wait, BedOf(peer) is not null, Mode,
-            slowFor > 0 ? v.SlowFactor : 1f, slowFor, Difficulty);
+            slowFor > 0 ? v.SlowFactor : 1f, slowFor, Difficulty, FriendlyFire);
     }
 
     /// <summary>
@@ -441,7 +472,7 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     /// <summary>
     /// Splash: everything within <paramref name="radius"/> of <paramref name="at"/> takes damage falling off
     /// linearly from <paramref name="damage"/> at the centre to 0 at the edge. Players (the caller's own
-    /// player even with PvP off), bots, parts (pushed away from the centre with up to <paramref name="impulse"/>
+    /// player even with friendly fire off), bots, parts (pushed away from the centre with up to <paramref name="impulse"/>
     /// N·s) and world objects. Returns everything it reached.
     /// </summary>
     public IReadOnlyList<ShotHitView> Splash(ActionCaller caller, Vector3 at, float radius, float damage, float impulse)
@@ -456,8 +487,8 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         {
             if (PlayerCentre(peer) is not { } centre || Vector3.Distance(centre, at) is var d && d > radius)
                 continue;
-            // A shooter's own splash hurts them even with PvP off.
-            var dealt = peer == caller.Peer || CanHurt(caller, peer) ? Falloff(d) : 0f;
+            // A shooter's own splash hurts them even with friendly fire off.
+            var dealt = IsOwn(caller, peer) || CanHurt(caller, peer) ? Falloff(d) : 0f;
             if (dealt > 0)
                 Damage(peer, dealt, "explosion");
             hits.Add(new ShotHitView("player", centre.ToVec3(), dealt, Player: peer));
@@ -561,8 +592,13 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
             new(Id, Owner, From.ToVec3(), LaunchVelocity.ToVec3(), Gravity.ToVec3(), Lifetime, (float)Math.Max(0, now - Launched));
     }
 
+    // With friendly fire off only bots hurt players: players, external AIs and part scripts (players' machines) do not.
     private bool CanHurt(ActionCaller caller, int peer) =>
-        Mode == GameMode.Survival && (settings.Pvp || caller.Source != ActionSource.Player);
+        Mode == GameMode.Survival && (FriendlyFire || caller.Source == ActionSource.Bot);
+
+    // The caller's own player: a player's or an external AI's, never a script's or bot's (they act as the host's peer).
+    private static bool IsOwn(ActionCaller caller, int peer) =>
+        peer == caller.Peer && caller.Source is ActionSource.Player or ActionSource.External;
 
     // ---- World objects ----
 
@@ -607,7 +643,7 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     /// <inheritdoc/>
     public string? CheckStrikePlayer(ActionCaller caller, int peer) =>
         Mode == GameMode.Creative ? "Players cannot be hurt in Creative."
-        : !settings.Pvp && caller.Source == ActionSource.Player ? "Players cannot hurt each other in this world."
+        : !CanHurt(caller, peer) ? "Friendly fire is off in this world: players cannot hurt each other."
         : null;
 
     /// <inheritdoc/>

@@ -19,7 +19,7 @@ public enum SessionMode
 
 /// <summary>
 /// Session settings from the command line (the user arguments after <c>--</c>):
-/// <c>--host [port]</c>, <c>--join address[:port]</c>, <c>--max-players n</c>, <c>--seed n</c>, <c>--creative</c> or <c>--survival</c> and <c>--easy</c>; on the host also the
+/// <c>--host [port]</c>, <c>--join address[:port]</c>, <c>--max-players n</c>, <c>--seed n</c>, <c>--creative</c> or <c>--survival</c>, <c>--easy</c> and <c>--friendly-fire</c>; on the host also the
 /// external AI endpoint (<c>--ai [port]</c>, <c>--ai-bind address</c>, <c>--ai-token token</c>, <c>--ai-admin-token token</c>, <c>--ai-observe-token token</c>,
 /// <c>--ai-allow-reload-with-clients</c>) and
 /// record/replay of Action API calls (<c>--record file</c>, <c>--replay file</c>) and a saved world to load
@@ -107,6 +107,9 @@ public sealed record LaunchOptions
 
     /// <summary>How hard a new Survival world is (<c>--easy</c>); a loaded world keeps its own.</summary>
     public Survival.Difficulty Difficulty { get; init; } = Survival.Difficulty.Normal;
+
+    /// <summary>Whether players can hurt each other in a new world (<c>--friendly-fire</c>; off by default); a loaded world keeps its own.</summary>
+    public bool FriendlyFire { get; init; }
 
     /// <summary>A save file to load on the host instead of a new world (<c>--load file</c>), or null.</summary>
     public string? LoadPath { get; init; }
@@ -222,6 +225,9 @@ public sealed record LaunchOptions
                     break;
                 case "--easy":
                     result = result with { Difficulty = Survival.Difficulty.Easy };
+                    break;
+                case "--friendly-fire":
+                    result = result with { FriendlyFire = true };
                     break;
                 case "--seed":
                     if (next is null || !long.TryParse(next, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var seed))
