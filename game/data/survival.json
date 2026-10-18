@@ -10,7 +10,9 @@
   "max_drops": 256,
   "drop_inventory_on_death": true,
   "aim_tolerance": 25,
-  "water_item": "water_bucket",
+  // Filling an empty bucket at water turns it into a full one in the same slot.
+  "bucket_item": "water_bucket",
+  "water_item": "water_bucket_full",
   "water_seconds": 1,
   // Hold Use on a resource node (UI spec §9, §10): seconds to refine it, and how far you may move before it stops.
   "refine_seconds": 1.2,
@@ -20,7 +22,7 @@
     { "item": "carrot_seed", "count": 4 },
     { "item": "potato_seed", "count": 4 },
     { "item": "soil", "count": 8 },
-    { "item": "water_bucket", "count": 2 },
+    { "item": "water_bucket_full", "count": 2 },
     { "item": "carrot", "count": 3 },
     { "item": "mini_fabricator", "count": 1 }
   ],

@@ -150,22 +150,71 @@
       "template": "item",
       "set": {
         "name": "Water Bucket",
-        "description": "Fill it at water, then water soil or put out a fire with it.",
+        "description": "Fill it at water, then throw the water on soil or a fire.",
         "category": "consumable",
-        "mass": 4,
-        "stack_size": 5,
-        "visual": {
-          "color": "#3a7ad0"
+        "mass": 1.2,
+        "stack_size": 1,
+        "sounds": {
+          "fill": "bucket_fill"
         },
-        "sounds": {},
+        "script": "scripts/bucket.lua"
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/items/water_bucket.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "water_bucket",
+          "stations": ["fabricator", "mini_fabricator"],
+          "inputs": [
+            {
+              "item": "scrap_metal",
+              "count": 3
+            }
+          ],
+          "outputs": [
+            {
+              "item": "water_bucket",
+              "count": 1
+            }
+          ],
+          "time": 5
+        }
+      ]
+    },
+    {
+      "file": "parts/water_bucket_full.json",
+      "template": "item",
+      "set": {
+        "name": "Water Bucket (Full)",
+        "description": "Throw the water on soil to water it, or on a fire to put it out.",
+        "category": "consumable",
+        "mass": 11.5,
+        "stack_size": 1,
+        "sounds": {
+          "throw": "bucket_throw",
+          "splash": "water_splash"
+        },
         "script": "scripts/watering.lua",
         "properties": {
           "seconds": 150,
           "douse": 1,
-          "range": 6,
-          "splash": 1.2
+          "splash": 1.2,
+          "range": 8,
+          "throw_speed": 7,
+          "throw_up": 0.35,
+          "empty": "water_bucket"
         }
-      }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/items/water_bucket_full.glb"
+        }
+      ]
     },
     {
       "file": "parts/potato_blaster.json",

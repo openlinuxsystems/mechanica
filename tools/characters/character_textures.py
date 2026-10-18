@@ -121,6 +121,8 @@ KINDS = {
     "blue": "painted", "handle_wood": "wood",
     "gunmetal": "metal", "steel_shaft": "metal", "bolt_steel": "metal", "paint_yellow": "painted",
     "grip_rubber": "knurl", "potato": "plain", "default": "plain",
+    "bucket_teal": "plastic", "bucket_inner": "plastic", "bucket_band": "plastic", "bucket_orange": "plastic",
+    "bucket_wire": "metal", "bucket_pin": "metal", "bucket_water": "water",
 }
 
 THREAD = {

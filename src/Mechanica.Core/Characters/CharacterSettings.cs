@@ -97,6 +97,9 @@ public sealed record CharacterSettings
         return ItemPoses.GetValueOrDefault(bare) ?? (category is null ? null : CategoryPoses.GetValueOrDefault(category)) ?? ItemPose.Default;
     }
 
+    /// <summary>The water bucket in hand: its shape, and how each bucket clip moves it (<see cref="BucketRig"/>).</summary>
+    public BucketSettings Bucket { get; init; } = new();
+
     /// <summary>Share of the look pitch the neck and head follow (0 to 1).</summary>
     public float HeadPitchShare { get; init; } = 0.6f;
 
@@ -158,6 +161,7 @@ public sealed record CharacterSettings
             throw new FormatException($"seated_offset must be from -2 to 2 metres (got {SeatedOffset}).");
         if (!float.IsFinite(HeadPitchShare) || HeadPitchShare is < 0f or > 1f)
             throw new FormatException($"head_pitch_share must be from 0 to 1 (got {HeadPitchShare}).");
+        Bucket.Validate();
         if (FirstPersonOffset is not { Length: 3 } || FirstPersonOffset.Any(v => !float.IsFinite(v) || MathF.Abs(v) > 3f))
             throw new FormatException("first_person_offset must be three numbers from -3 to 3 metres.");
         if (!float.IsFinite(FirstPersonPitchDegrees) || MathF.Abs(FirstPersonPitchDegrees) > 60f)
@@ -173,7 +177,7 @@ public sealed record CharacterSettings
         }
     }
 
-    private static void Positive(float value, string name)
+    internal static void Positive(float value, string name)
     {
         if (!float.IsFinite(value) || value <= 0f)
             throw new FormatException($"{name} must be a positive number (got {value}).");
@@ -197,4 +201,80 @@ public sealed record ItemPose
 
     /// <summary>The gesture played when it is used.</summary>
     public CharacterGesture Gesture { get; init; }
+}
+
+/// <summary>
+/// The water bucket in hand (<c>bucket</c> in <c>character.json</c>). Lengths are metres in the bucket's own frame: origin
+/// in the middle of its base, +Z up its axis, the handle hinged on the X axis, the front (the droplet) towards -Y. The
+/// model and the clips that follow these numbers are built by <c>tools/characters/build_characters.py</c>.
+/// </summary>
+public sealed record BucketSettings
+{
+    /// <summary>Height of the handle's hinges.</summary>
+    public float HingeHeight { get; init; } = 0.244f;
+
+    /// <summary>From the hinges to the middle of the handle's grip.</summary>
+    public float HandleLength { get; init; } = 0.21f;
+
+    /// <summary>How far the handle falls forward from upright when nothing holds it up (an empty bucket), in degrees.</summary>
+    public float HandleLoweredDegrees { get; init; } = 136f;
+
+    /// <summary>Where the fist holds the back of the rim of an empty bucket.</summary>
+    public float[] RimGrip { get; init; } = [0f, 0.152f, 0.282f];
+
+    /// <summary>Height of the inside's floor.</summary>
+    public float FloorHeight { get; init; } = 0.024f;
+
+    /// <summary>Height of the water's surface when full.</summary>
+    public float WaterHeight { get; init; } = 0.215f;
+
+    /// <summary>The inside's radius at the floor.</summary>
+    public float InnerRadiusFloor { get; init; } = 0.112f;
+
+    /// <summary>The inside's radius at the rim.</summary>
+    public float InnerRadiusRim { get; init; } = 0.138f;
+
+    /// <summary>Height of the rim.</summary>
+    public float RimHeight { get; init; } = 0.288f;
+
+    /// <summary>
+    /// When, in seconds into a bucket gesture, its effect happens (the water leaving, the bucket touching down), by
+    /// clip name; the action is sent then, so the world changes in step with the arms.
+    /// </summary>
+    public Dictionary<string, float> ReleaseSeconds { get; init; } = [];
+
+    /// <summary>
+    /// Each bucket clip's keys, by clip name: [seconds, grip, tilt degrees, water]. Grip 0 holds the rim, 1 the handle;
+    /// tilt swings the bucket forward about its hinges while the hand keeps the handle; water 0 is empty, 1 full.
+    /// Smoothstep-eased between keys.
+    /// </summary>
+    public Dictionary<string, float[][]> Motion { get; init; } = [];
+
+    /// <summary>Throws <see cref="FormatException"/> naming the first out-of-range value.</summary>
+    public void Validate()
+    {
+        CharacterSettings.Positive(HingeHeight, "bucket.hinge_height");
+        CharacterSettings.Positive(HandleLength, "bucket.handle_length");
+        if (!float.IsFinite(HandleLoweredDegrees) || HandleLoweredDegrees is < 0f or > 180f)
+            throw new FormatException($"bucket.handle_lowered_degrees must be from 0 to 180 (got {HandleLoweredDegrees}).");
+        if (RimGrip is not { Length: 3 } || RimGrip.Any(v => !float.IsFinite(v) || MathF.Abs(v) > 1f))
+            throw new FormatException("bucket.rim_grip must be three numbers from -1 to 1 metres.");
+        CharacterSettings.Positive(InnerRadiusFloor, "bucket.inner_radius_floor");
+        CharacterSettings.Positive(InnerRadiusRim, "bucket.inner_radius_rim");
+        if (!float.IsFinite(FloorHeight) || FloorHeight < 0f || !(WaterHeight > FloorHeight) || !(RimHeight >= WaterHeight) || RimHeight > 1f)
+            throw new FormatException("bucket heights must rise from floor_height to water_height to rim_height (at most 1 m).");
+        foreach (var (clip, seconds) in ReleaseSeconds)
+            CharacterSettings.Positive(seconds, $"bucket.release_seconds.{clip}");
+        foreach (var (clip, keys) in Motion)
+        {
+            if (keys is not { Length: > 0 })
+                throw new FormatException($"bucket.motion.{clip} needs at least one key.");
+            for (var i = 0; i < keys.Length; i++)
+            {
+                if (keys[i] is not { Length: 4 } key || key.Any(v => !float.IsFinite(v)) || key[1] is < 0f or > 1f || key[3] is < 0f or > 1f
+                    || MathF.Abs(key[2]) > 180f || key[0] < 0f || (i > 0 && key[0] <= keys[i - 1][0]))
+                    throw new FormatException($"bucket.motion.{clip} key {i} must be [rising seconds, grip 0-1, tilt -180-180, water 0-1].");
+            }
+        }
+    }
 }

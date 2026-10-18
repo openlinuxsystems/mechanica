@@ -420,6 +420,7 @@ public partial class Main : Node3D
             Build = Build,
             Inventory = Inventory,
             Catalog = new LoadedParts(this),
+            Assets = Assets,
             Mode = Options.GameMode,
             Difficulty = Options.Difficulty,
             FriendlyFire = Options.FriendlyFire,

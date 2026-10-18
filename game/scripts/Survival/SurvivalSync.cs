@@ -62,6 +62,9 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
     /// <summary>The Creations this peer shows. Set before adding to the tree.</summary>
     public CreationWorld Creations { get; init; } = null!;
 
+    /// <summary>Part models, for items lying on the ground that have one (a bucket put down). Null shows crates.</summary>
+    public PartAssets? Assets { get; init; }
+
     /// <summary>The streamed world: ground, water and world objects. Set before adding to the tree.</summary>
     public WorldStreamer World { get; init; } = null!;
 
@@ -532,7 +535,7 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
             node = _dropNodes[drop.Id] = new DropPile { Name = $"Drop{drop.Id}" };
             AddChild(node);
         }
-        node.Show(drop, Catalog);
+        node.Show(drop, Catalog, Assets);
     }
 
     /// <summary>Host → client: a pile of items is gone.</summary>
@@ -554,12 +557,9 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
         if (Read<ProjectileView>(json) is not { } view)
             return;
         HideProjectile(view.Id);
-        var node = new MeshInstance3D
-        {
-            Name = $"Projectile{view.Id}",
-            Mesh = new SphereMesh { Radius = 0.08f, Height = 0.16f },
-            Position = view.From.ToGodot(),
-        };
+        var node = view.Look == ProjectileView.Water ? WaterEffects.Blob() : new MeshInstance3D { Mesh = new SphereMesh { Radius = 0.08f, Height = 0.16f } };
+        node.Name = $"Projectile{view.Id}";
+        node.Position = view.From.ToGodot();
         _projectiles[view.Id] = (view, Now, node);
         AddChild(node);
     }
@@ -570,6 +570,8 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
     {
         if (_projectiles.Remove(id, out var shown))
         {
+            if (shown.View.Look == ProjectileView.Water)
+                WaterEffects.Splash(this, shown.Node.Position);
             RemoveChild(shown.Node);
             shown.Node.QueueFree();
         }

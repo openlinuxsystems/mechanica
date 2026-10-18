@@ -1,0 +1,23 @@
+{
+  "id": "water_bucket_full",
+  "name": "Water Bucket (Full)",
+  "description": "Throw the water on soil to water it, or on a fire to put it out.",
+  "category": "consumable",
+  "mass": 11.5,
+  "stack_size": 1,
+  "mesh": "meshes/items/water_bucket_full.glb",
+  "script": "scripts/watering.lua",
+  "sounds": {
+    "throw": "bucket_throw",
+    "splash": "water_splash"
+  },
+  "properties": {
+    "seconds": 150,
+    "douse": 1,
+    "splash": 1.2,
+    "range": 8,
+    "throw_speed": 7,
+    "throw_up": 0.35,
+    "empty": "water_bucket"
+  }
+}
