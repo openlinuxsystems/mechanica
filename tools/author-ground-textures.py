@@ -202,7 +202,15 @@ b = b * (1 - 0.8 * crack[..., None]) + hexc('#c4501e')[None, None] * (glow * 0.5
 b = dots(b, r, 350, ['#141210', '#5c534a', '#7d756c'], radius=(1.2, 3), shade=0.6)
 b = strokes(b, r, 900, ['#1a1714', '#33281d', '#4a3a26'], width=1.1, length=(0.008, 0.02))
 out['burnt'] = b
+
+r = np.random.default_rng(9)
+# Dirt: packed brown earth and gravel, for road shoulders and dirt tracks (World Map spec §3).
+n = stretch(pnoise(4, r, 4, 0.55))
+t = bands(n, ['#6a4f36', '#76593c', '#7f6243', '#8a6b49'])
+t = dots(t, r, 2200, ['#9c958a', '#7d776e', '#b2aca0', '#5e5850'], radius=(1.0, 2.6), shade=0.6)
+t = strokes(t, r, 260, ['#7a9a3a', '#8aa83e'], width=1.0, length=(0.006, 0.014))
+out['dirt'] = t
 # Albedo levels, so the ground sits under the brighter flora in the game's light.
-dim = {'grass': 0.8, 'forest_floor': 0.92, 'dry_grass': 0.74, 'rock': 0.82, 'sand': 0.74, 'lot': 1.0, 'burnt': 1.0}
+dim = {'grass': 0.8, 'forest_floor': 0.92, 'dry_grass': 0.74, 'rock': 0.82, 'sand': 0.74, 'lot': 1.0, 'burnt': 1.0, 'dirt': 0.85}
 for nme, img in out.items():
     save(nme, img * dim[nme])

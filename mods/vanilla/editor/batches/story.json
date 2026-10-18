@@ -8,7 +8,9 @@
       "poi": {
         "name": "Faction Outpost",
         "radius": 36.0,
-        "placement": { "spacing": [1100.0, 1500.0], "biomes": ["meadow", "forest", "ruin_field"], "priority": 45 },
+        "placement": { "spacing": [1100.0, 1500.0], "biomes": ["meadow", "forest", "field", "autumn_forest"], "priority": 45, "clearance": 128.0 },
+        "size": [14.0, 8.0, 14.0],
+        "road": "track",
         "terrain": [{ "op": "flatten", "radius": 18.0, "blend": 16.0 }],
         "pieces": [
           { "shape": "box", "size": [14.0, 0.3, 14.0], "at": [0.0, 0.15, 0.0], "color": "#6f6a5e" },
@@ -31,7 +33,9 @@
       "poi": {
         "name": "AI Core Facility",
         "radius": 70.0,
-        "placement": { "fixed": [-900.0, 1100.0] },
+        "placement": {},
+        "size": [30.0, 10.4, 30.0],
+        "road": "road",
         "terrain": [{ "op": "flatten", "radius": 36.0, "blend": 30.0 }],
         "pieces": [
           { "shape": "box", "size": [30.0, 0.4, 30.0], "at": [0.0, 0.2, 0.0], "color": "#8d949a" },

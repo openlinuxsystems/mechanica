@@ -29,6 +29,24 @@ public sealed record WorldGenDefinition
     /// <summary>The ground that steep slopes take over with (rock), whatever the biome.</summary>
     public SlopeGroundDefinition? SlopeGround { get; init; }
 
+    /// <summary>
+    /// The world map's broad layout: each biome cell takes the biome of the nearest region. Omitted: every inland cell
+    /// picks a biome at random by <see cref="BiomeDefinition.Weight"/>.
+    /// </summary>
+    public List<RegionDefinition>? Regions { get; init; }
+
+    /// <summary>Rivers cut through the land.</summary>
+    public List<RiverDefinition>? Rivers { get; init; }
+
+    /// <summary>The road network between the <see cref="Sites"/> (and dirt tracks to camps). Omitted: no roads.</summary>
+    public RoadsDefinition? Roads { get; init; }
+
+    /// <summary>The world's mandatory structures, at the same place in every world.</summary>
+    public List<SiteDefinition>? Sites { get; init; }
+
+    /// <summary>Prefab pools that sites draw from, shuffled per seed.</summary>
+    public List<PoolDefinition>? Pools { get; init; }
+
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
@@ -79,6 +97,9 @@ public sealed record TerrainDefinition
     /// <summary>Steepest ground (rise over run) that scattered objects stand on.</summary>
     public float MaxScatterSlope { get; init; } = 0.7f;
 
+    /// <summary>How far, in metres, slow noise bends the borders between <see cref="WorldGenDefinition.Regions"/>.</summary>
+    public float RegionWarp { get; init; } = 400f;
+
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
@@ -101,6 +122,15 @@ public sealed record BiomeDefinition
 
     /// <summary>How far the ground rises and falls around <see cref="Height"/>, in metres.</summary>
     public float Relief { get; init; }
+
+    /// <summary>
+    /// 0 to 1: how much of the relief is ridged noise, sharp crests between rounded valleys (mountains), rather than
+    /// rolling hills.
+    /// </summary>
+    public float Ridge { get; init; }
+
+    /// <summary>Height in metres of the steps the ground is terraced into (desert plateaus). 0: no terraces.</summary>
+    public float Terrace { get; init; }
 
     /// <summary>Ground colour, <c>#rrggbb</c>: the map, and the ground itself where no <see cref="Ground"/> texture is set.</summary>
     public string? Color { get; init; }
@@ -583,6 +613,15 @@ public sealed record PoiPrefab
     /// </summary>
     public string? Flora { get; init; }
 
+    /// <summary>
+    /// What connects the POI to the road network (<see cref="RoadLinks"/>): <c>road</c> (only where a site places it),
+    /// <c>track</c> (a dirt track to the nearest road, when one is near) or <c>none</c> (the default).
+    /// </summary>
+    public string? Road { get; init; }
+
+    /// <summary>Footprint as built, <c>[width, height, depth]</c> in metres: for the placement manifest and later design work.</summary>
+    public Vec3? Size { get; init; }
+
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
@@ -591,6 +630,7 @@ public sealed record PoiPrefab
 /// <summary>
 /// Placement rules. Either <see cref="Fixed"/> (one POI at that spot) or <see cref="Spacing"/>: one
 /// candidate per cell of a grid whose step is the middle of the range, jittered so neighbours stay within it.
+/// With neither, the POI goes only where a site (<see cref="SiteDefinition"/>) places it.
 /// </summary>
 public sealed record PoiPlacement
 {
@@ -611,6 +651,9 @@ public sealed record PoiPlacement
 
     /// <summary>Higher goes first and wins contested ground.</summary>
     public int Priority { get; init; }
+
+    /// <summary>Metres a spaced POI's footprint keeps clear of every other POI's footprint and of roads.</summary>
+    public float Clearance { get; init; }
 
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]

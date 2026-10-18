@@ -1,0 +1,22 @@
+{
+  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed.
+  // Written by tools/author-poi-placeholders.py; edit the table there and re-run.
+  "id": "silo_cluster",
+  "name": "Silo Cluster",
+  "radius": 55.0,
+  "size": [30.0, 18.0, 30.0],
+  "road": "road",
+  "placement": {},
+  "terrain": [
+    { "op": "flatten", "radius": 35.0, "blend": 20.0 }
+  ],
+  "ground": [{ "ground": "lot", "radius": 27.0, "blend": 10.0, "noise": 4.0 }],
+  "pieces": [
+    { "shape": "box", "size": [38.0, 0.3, 38.0], "at": [0.0, 0.15, 0.0], "color": "#a3a093" },
+    { "shape": "cylinder", "radius": 4.0, "height": 18.0, "at": [8.0, 9.0, 0.0], "color": "#e0b52c" },
+    { "shape": "cylinder", "radius": 4.0, "height": 18.0, "at": [4.898587196589413e-16, 9.0, 8.0], "color": "#e0b52c" },
+    { "shape": "cylinder", "radius": 4.0, "height": 18.0, "at": [-8.0, 9.0, 9.797174393178826e-16], "color": "#e0b52c" },
+    { "shape": "cylinder", "radius": 4.0, "height": 18.0, "at": [-1.4695761589768238e-15, 9.0, -8.0], "color": "#e0b52c" },
+    { "shape": "box", "size": [10.0, 6.0, 8.0], "at": [-10.0, 3.3, 12.0], "color": "#7d858c" }
+  ]
+}

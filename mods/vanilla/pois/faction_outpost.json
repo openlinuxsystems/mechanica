@@ -11,9 +11,11 @@
     "biomes": [
       "meadow",
       "forest",
-      "ruin_field"
+      "field",
+      "autumn_forest"
     ],
-    "priority": 45
+    "priority": 45,
+    "clearance": 128
   },
   "terrain": [
     {
@@ -26,29 +28,61 @@
   "pieces": [
     {
       "shape": "box",
-      "size": [14, 0.3, 14],
-      "at": [0, 0.15, 0],
+      "size": [
+        14,
+        0.3,
+        14
+      ],
+      "at": [
+        0,
+        0.15,
+        0
+      ],
       "yaw": 0,
       "color": "#6f6a5e"
     },
     {
       "shape": "box",
-      "size": [0.4, 3, 14],
-      "at": [-6.8, 1.5, 0],
+      "size": [
+        0.4,
+        3,
+        14
+      ],
+      "at": [
+        -6.8,
+        1.5,
+        0
+      ],
       "yaw": 0,
       "color": "#5b4a3a"
     },
     {
       "shape": "box",
-      "size": [0.4, 3, 14],
-      "at": [6.8, 1.5, 0],
+      "size": [
+        0.4,
+        3,
+        14
+      ],
+      "at": [
+        6.8,
+        1.5,
+        0
+      ],
       "yaw": 0,
       "color": "#5b4a3a"
     },
     {
       "shape": "box",
-      "size": [14, 3, 0.4],
-      "at": [0, 1.5, -6.8],
+      "size": [
+        14,
+        3,
+        0.4
+      ],
+      "at": [
+        0,
+        1.5,
+        -6.8
+      ],
       "yaw": 0,
       "color": "#5b4a3a"
     },
@@ -56,14 +90,26 @@
       "shape": "cylinder",
       "radius": 0.2,
       "height": 8,
-      "at": [5, 4, 5],
+      "at": [
+        5,
+        4,
+        5
+      ],
       "yaw": 0,
       "color": "#4a4f55"
     },
     {
       "shape": "box",
-      "size": [2, 1.2, 0.1],
-      "at": [5, 7.2, 5.6],
+      "size": [
+        2,
+        1.2,
+        0.1
+      ],
+      "at": [
+        5,
+        7.2,
+        5.6
+      ],
       "yaw": 0,
       "color": "#b5452f"
     }
@@ -72,26 +118,48 @@
     {
       "type": "npc",
       "ref": "faction_envoy",
-      "at": [0, 0.3, -3],
+      "at": [
+        0,
+        0.3,
+        -3
+      ],
       "yaw": 0
     },
     {
       "type": "bot",
       "ref": "scuttler_green",
-      "at": [-4, 0.3, 3],
+      "at": [
+        -4,
+        0.3,
+        3
+      ],
       "yaw": 0
     },
     {
       "type": "bot",
       "ref": "scuttler_green",
-      "at": [4, 0.3, 3],
+      "at": [
+        4,
+        0.3,
+        3
+      ],
       "yaw": 0
     },
     {
       "type": "item",
       "ref": "chest",
-      "at": [-5, 0.3, -5],
+      "at": [
+        -5,
+        0.3,
+        -5
+      ],
       "yaw": 0
     }
+  ],
+  "road": "track",
+  "size": [
+    14,
+    8,
+    14
   ]
 }

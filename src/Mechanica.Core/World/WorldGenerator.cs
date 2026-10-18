@@ -18,11 +18,14 @@ namespace Mechanica.Core.World;
 /// A candidate must be in an allowed biome, on dry and not too steep ground, and clear of placed POIs.
 /// Each POI then flattens its pad and applies its other terrain ops.</item>
 /// <item><b>Objects.</b> Each biome scatter rule puts at most one candidate in every cell of its own grid.
-/// A candidate is kept by chance when it is in that biome, dry, not too steep, outside every POI and clear
-/// of earlier rules' candidates, which keeps object ids (<see cref="WorldObjectId"/>) stable.</item>
+/// A candidate is kept by chance when it is in that biome, dry, not too steep, outside every POI, off the roads and
+/// clear of earlier rules' candidates, which keeps object ids (<see cref="WorldObjectId"/>) stable.</item>
 /// </list>
+/// The World Map spec adds a fixed layout on top: <see cref="WorldGenDefinition.Regions"/> decide which biome the cells
+/// take, <see cref="WorldGenDefinition.Rivers"/> cut channels, <see cref="WorldGenDefinition.Sites"/> put the mandatory
+/// structures at the same place in every world, and <see cref="Roads"/> connect them before the spaced POIs fill in.
 /// </summary>
-public sealed class WorldGenerator
+public sealed partial class WorldGenerator
 {
     private const float PoiBucket = 128f;
     private const int PoiAttempts = 8;
@@ -31,7 +34,8 @@ public sealed class WorldGenerator
     private const float PaintNoiseScale = 9f;
 
     private readonly TerrainDefinition _terrain;
-    private readonly float _half;
+    private readonly float _halfX;
+    private readonly float _halfZ;
     private readonly uint _heightSalt;
     private readonly uint _cellSalt;
     private readonly uint _biomeSalt;
@@ -45,19 +49,33 @@ public sealed class WorldGenerator
     private readonly List<PoiInstance> _pois = [];
     private readonly Dictionary<(int, int), List<PoiInstance>> _poiBuckets = [];
 
-    /// <summary>Lays out the world's POIs; terrain and objects are generated on demand.</summary>
+    /// <summary>Lays out a square world's POIs; terrain and objects are generated on demand.</summary>
     /// <param name="data">Rules and prefabs.</param>
     /// <param name="seed">World seed.</param>
     /// <param name="worldSize">Side of the square world in metres, centred on the origin.</param>
     public WorldGenerator(WorldGenData data, long seed, float worldSize)
+        : this(data, seed, worldSize, worldSize)
+    {
+    }
+
+    /// <summary>Lays out the world's POIs and roads; terrain and objects are generated on demand.</summary>
+    /// <param name="data">Rules and prefabs.</param>
+    /// <param name="seed">World seed.</param>
+    /// <param name="worldSize">East-west extent of the world in metres, centred on the origin.</param>
+    /// <param name="worldDepth">North-south extent of the world in metres, centred on the origin.</param>
+    public WorldGenerator(WorldGenData data, long seed, float worldSize, float worldDepth)
     {
         if (!(worldSize > 0f))
             throw new ArgumentOutOfRangeException(nameof(worldSize), worldSize, "World size must be positive.");
+        if (!(worldDepth > 0f))
+            throw new ArgumentOutOfRangeException(nameof(worldDepth), worldDepth, "World depth must be positive.");
         Data = data;
         Seed = seed;
         WorldSize = worldSize;
+        WorldDepth = worldDepth;
         _terrain = data.Terrain;
-        _half = worldSize / 2f;
+        _halfX = worldSize / 2f;
+        _halfZ = worldDepth / 2f;
         _heightSalt = Noise.Salt(seed, 1);
         _cellSalt = Noise.Salt(seed, 2);
         _biomeSalt = Noise.Salt(seed, 3);
@@ -68,9 +86,18 @@ public sealed class WorldGenerator
         _paintSalt = Noise.Salt(seed, 9);
         _inland = [.. data.Biomes.Where(b => b.Weight > 0f && b != data.CoastBiome)];
         _inlandWeight = _inland.Sum(b => b.Weight);
-        LayOutPois();
+        BuildRegions();
+        BuildRivers();
+        LayOutFixedPois();
+        LayOutSites();
+        Roads = data.Definition.Roads is { } roads ? RoadNetwork.Build(this, roads) : RoadNetwork.Empty;
+        LayOutSpacedPois();
+        Roads.AddTracks(this);
         Spawn = FindSpawn();
     }
+
+    /// <summary>The roads and dirt tracks (empty when the rules have none).</summary>
+    public RoadNetwork Roads { get; }
 
     /// <summary>Rules and prefabs in use.</summary>
     public WorldGenData Data { get; }
@@ -78,8 +105,14 @@ public sealed class WorldGenerator
     /// <summary>World seed.</summary>
     public long Seed { get; }
 
-    /// <summary>Side of the square world in metres.</summary>
+    /// <summary>East-west extent of the world in metres (x).</summary>
     public float WorldSize { get; }
+
+    /// <summary>North-south extent of the world in metres (z).</summary>
+    public float WorldDepth { get; }
+
+    /// <summary>True when a world position lies inside the world's rectangle.</summary>
+    public bool InWorld(float x, float z) => MathF.Abs(x) < _halfX && MathF.Abs(z) < _halfZ;
 
     /// <summary>Height of the sea surface.</summary>
     public float SeaLevel => _terrain.SeaLevel;
@@ -90,12 +123,15 @@ public sealed class WorldGenerator
     /// <summary>Where players start: the first <c>spawn</c> marker of a fixed POI, or null when no fixed POI has one.</summary>
     public Vector3? Spawn { get; }
 
-    /// <summary>Ground height at a world position, POI shaping included.</summary>
+    /// <summary>Ground height at a world position, POI and road shaping included.</summary>
     public float HeightAt(float x, float z)
     {
         var sample = SampleBiomes(x, z);
-        return ApplyPois(x, z, RawHeight(x, z, sample));
+        return Roads.Shape(x, z, ApplyPois(x, z, RawHeight(x, z, sample)));
     }
+
+    /// <summary>Ground height before roads cut and fill it: what the road router plans on.</summary>
+    internal float GroundBeforeRoads(float x, float z) => ApplyPois(x, z, RawHeight(x, z));
 
     /// <summary>The biome that dominates a world position.</summary>
     public Biome BiomeAt(float x, float z) => Data.Biomes[SampleBiomes(x, z).Biome];
@@ -145,14 +181,14 @@ public sealed class WorldGenerator
                 float x = ox + (i - 1) * res, z = oz + (j - 1) * res;
                 weights.Clear();
                 var sample = SampleBiomes(x, z, weights);
-                var h = ApplyPois(x, z, RawHeight(x, z, sample));
+                var h = Roads.Shape(x, z, ApplyPois(x, z, RawHeight(x, z, sample)));
                 bordered[j * m + i] = h;
                 if (i >= 1 && i <= n && j >= 1 && j <= n)
                 {
                     heights[(j - 1) * n + i - 1] = h;
                     colors[(j - 1) * n + i - 1] = sample.Color;
                     biomes[(j - 1) * n + i - 1] = sample.Biome;
-                    covered[(j - 1) * n + i - 1] = PoisAt(x, z).Any();
+                    covered[(j - 1) * n + i - 1] = PoisAt(x, z).Any() || Roads.Covers(x, z);
                     if (grounds.Length > 0)
                     {
                         var g = ((j - 1) * n + i - 1) * layers;
@@ -199,7 +235,11 @@ public sealed class WorldGenerator
                     markers.Add(new PoiMarkerPlacement(poi, marker, at, poi.Yaw + Radians(marker.Yaw)));
             }
         }
-        return new TerrainChunkData(coord, chunkSize, res, n, heights, normals, colors, biomes, covered, SeaLevel, objects, pieces, markers) { Grounds = grounds };
+        return new TerrainChunkData(coord, chunkSize, res, n, heights, normals, colors, biomes, covered, SeaLevel, objects, pieces, markers)
+        {
+            Grounds = grounds,
+            Roads = RoadMesher.Build(this, ox, oz, x1, z1),
+        };
     }
 
     /// <summary>Every marker of <paramref name="type"/> in every placed POI, in POI then marker order.</summary>
@@ -310,11 +350,11 @@ public sealed class WorldGenerator
     // Whether the ground at a spot suits the rule, ignoring other objects.
     private bool Fits(Scatter rule, Vector2 spot)
     {
-        if (MathF.Max(MathF.Abs(spot.X), MathF.Abs(spot.Y)) >= _half)
+        if (!InWorld(spot.X, spot.Y))
             return false;
         if (SampleBiomes(spot.X, spot.Y).Biome != rule.Biome)
             return false;
-        if (PoisAt(spot.X, spot.Y).Any())
+        if (PoisAt(spot.X, spot.Y).Any() || Roads.Near(spot.X, spot.Y, rule.Object.Footprint + 1f))
             return false;
         if (HeightAt(spot.X, spot.Y) < SeaLevel + 0.2f || SlopeAt(spot.X, spot.Y) > MathF.Min(_terrain.MaxScatterSlope, rule.Object.MaxSlope ?? float.MaxValue))
             return false;
@@ -325,8 +365,8 @@ public sealed class WorldGenerator
             for (var a = 0; a < 8; a++)
             {
                 var p = spot + new Vector2(MathF.Cos(a * MathF.PI / 4f), MathF.Sin(a * MathF.PI / 4f)) * reach;
-                if (MathF.Max(MathF.Abs(p.X), MathF.Abs(p.Y)) >= _half || SampleBiomes(p.X, p.Y).Biome != rule.Biome
-                    || PoisAt(p.X, p.Y).Any() || HeightAt(p.X, p.Y) < SeaLevel + 0.2f)
+                if (!InWorld(p.X, p.Y) || SampleBiomes(p.X, p.Y).Biome != rule.Biome
+                    || PoisAt(p.X, p.Y).Any() || Roads.Near(p.X, p.Y, 1f) || HeightAt(p.X, p.Y) < SeaLevel + 0.2f)
                     return false;
             }
         }
@@ -357,6 +397,9 @@ public sealed class WorldGenerator
     {
         public float Height;
         public float Relief;
+        public float Ridge;
+        public float TerraceStep;
+        public float TerraceWeight;
         public Vector3 Color;
         public int Biome;
     }
@@ -395,6 +438,13 @@ public sealed class WorldGenerator
                     if (paint.Noise > 0f)
                         d += paint.Noise * Noise.Fractal(x / PaintNoiseScale, z / PaintNoiseScale, salt, 3, 2f, 0.5f);
                     Over(grounds, g, ground, 1f - Noise.SmoothStep(paint.Radius, paint.Radius + paint.Blend, d));
+                }
+                if (Roads.Paint(x, z, out var shoulder, out var track))
+                {
+                    if (Data.ShoulderGround >= 0)
+                        Over(grounds, g, Data.ShoulderGround, shoulder);
+                    if (Data.TrackGround >= 0)
+                        Over(grounds, g, Data.TrackGround, track);
                 }
             }
         }
@@ -449,11 +499,21 @@ public sealed class WorldGenerator
                 weights[biome[k]] += w;
             result.Height += w * b.Height;
             result.Relief += w * b.Relief;
+            result.Ridge += w * b.Ridge;
             result.Color += w * b.Color;
+            if (b.Terrace > 0f)
+            {
+                result.TerraceStep += w * b.Terrace;
+                result.TerraceWeight += w;
+            }
             total += w;
         }
+        if (result.TerraceWeight > 0f)
+            result.TerraceStep /= result.TerraceWeight;
         result.Height /= total;
         result.Relief /= total;
+        result.Ridge /= total;
+        result.TerraceWeight /= total;
         result.Color /= total;
         for (var k = 0; k < weights.Length; k++)
             weights[k] /= total;
@@ -465,6 +525,8 @@ public sealed class WorldGenerator
             {
                 result.Height += (coast.Height - result.Height) * k;
                 result.Relief += (coast.Relief - result.Relief) * k;
+                result.Ridge += (coast.Ridge - result.Ridge) * k;
+                result.TerraceWeight *= 1f - k;
                 result.Color += (coast.Color - result.Color) * k;
                 for (var b = 0; b < weights.Length; b++)
                     weights[b] *= 1f - k;
@@ -480,7 +542,7 @@ public sealed class WorldGenerator
     // Metres to the world edge, pulled in by up to the coast wobble so the coastline meanders; the sea floor is reached at 0.
     private float EdgeDistance(float x, float z)
     {
-        var edge = _half - MathF.Max(MathF.Abs(x), MathF.Abs(z));
+        var edge = MathF.Min(_halfX - MathF.Abs(x), _halfZ - MathF.Abs(z));
         var t = _terrain;
         if (t.CoastWobble > 0f)
             edge -= t.CoastWobble * (0.5f + 0.5f * Noise.Fractal(x / t.NoiseScale, z / t.NoiseScale, _coastSalt, 3, 2f, 0.5f));
@@ -489,6 +551,8 @@ public sealed class WorldGenerator
 
     private int CellBiome(int ix, int iz)
     {
+        if (_regions.Length > 0)
+            return RegionBiome(ix, iz);
         var roll = Noise.Unit(Noise.Hash(_biomeSalt, ix, iz)) * _inlandWeight;
         foreach (var b in _inland)
         {
@@ -502,10 +566,37 @@ public sealed class WorldGenerator
     private float RawHeight(float x, float z, in BiomeSample sample)
     {
         var t = _terrain;
-        var h = sample.Height + sample.Relief * Noise.Fractal(x / t.NoiseScale, z / t.NoiseScale, _heightSalt, t.Octaves, t.Lacunarity, t.Gain);
+        float u = x / t.NoiseScale, v = z / t.NoiseScale;
+        var relief = Noise.Fractal(u, v, _heightSalt, t.Octaves, t.Lacunarity, t.Gain);
+        if (sample.Ridge > 0f)
+            relief += (Ridged(u, v, _heightSalt ^ 0x51D6Eu, t.Octaves, t.Lacunarity, t.Gain) - relief) * sample.Ridge;
+        var h = sample.Height + sample.Relief * relief;
+        if (sample.TerraceWeight > 0f && sample.TerraceStep > 0f)
+        {
+            // Plateaus: the ground keeps level for most of each step, then climbs to the next.
+            var steps = (h - t.SeaLevel) / sample.TerraceStep;
+            var floor = MathF.Floor(steps);
+            var terraced = t.SeaLevel + sample.TerraceStep * (floor + Noise.SmoothStep(0.6f, 1f, steps - floor));
+            h += (terraced - h) * sample.TerraceWeight;
+        }
         if (t.CoastWidth > 0f)
             h = t.SeaFloor + (h - t.SeaFloor) * Noise.SmoothStep(0f, t.CoastWidth, EdgeDistance(x, z));
-        return h;
+        return MathF.Min(h, RiverSurface(x, z));
+    }
+
+    // Ridged fractal noise mapped to [-1, 1]: sharp crests where the gradient noise crosses zero.
+    private static float Ridged(float x, float z, uint salt, int octaves, float lacunarity, float gain)
+    {
+        float sum = 0f, norm = 0f, amplitude = 1f, frequency = 1f;
+        for (var i = 0; i < octaves; i++)
+        {
+            var r = 1f - MathF.Abs(Noise.Gradient(x * frequency, z * frequency, Noise.Mix(salt + (uint)i)));
+            sum += amplitude * r * r;
+            norm += amplitude;
+            amplitude *= gain;
+            frequency *= lacunarity;
+        }
+        return 2f * sum / norm - 1f;
     }
 
     private float RawHeight(float x, float z) => RawHeight(x, z, SampleBiomes(x, z));
@@ -537,24 +628,73 @@ public sealed class WorldGenerator
     private IEnumerable<PoiInstance> PoisOverlapping(float x0, float z0, float x1, float z1) =>
         _pois.Where(p => p.Centre.X + p.Radius >= x0 && p.Centre.X - p.Radius < x1 && p.Centre.Y + p.Radius >= z0 && p.Centre.Y - p.Radius < z1);
 
-    private void LayOutPois()
+    // Prefabs with a fixed position (in metres) go first, exactly where they say.
+    private void LayOutFixedPois()
+    {
+        foreach (var poi in Data.Pois.Where(p => p.Prefab.Placement!.Fixed is not null).OrderBy(p => p.QualifiedId, StringComparer.Ordinal))
+        {
+            var placement = poi.Prefab.Placement!;
+            if (placement.Fixed is not [var fx, var fz])
+                continue;
+            if (MathF.Abs(fx) + poi.Prefab.Radius > _halfX || MathF.Abs(fz) + poi.Prefab.Radius > _halfZ)
+                continue;
+            Add(poi, new Vector2(fx, fz), placement.PadHeight ?? RawHeight(fx, fz), QuarterTurns(placement.Yaw));
+        }
+    }
+
+    // The mandatory structures (World Map spec §4): each at its fixed fraction of the world, moved at most its jitter
+    // when the seed finds dry, level enough ground there, and given a prefab from its pool when it has one.
+    private void LayOutSites()
+    {
+        var drawn = new Dictionary<string, Queue<LoadedPoi>>();
+        foreach (var pool in Data.Sites.Select(s => s.Pool).OfType<LoadedPool>().DistinctBy(p => p.Id))
+        {
+            var entries = pool.Entries.ToArray();
+            var salt = _poiSalt ^ Noise.Hash("pool:" + pool.Id);
+            for (var k = entries.Length - 1; k > 0; k--)
+            {
+                var j = (int)(Noise.Hash(salt, k, 0) % (uint)(k + 1));
+                (entries[k], entries[j]) = (entries[j], entries[k]);
+            }
+            drawn[pool.Id] = new Queue<LoadedPoi>(entries);
+        }
+        foreach (var site in Data.Sites)
+        {
+            var poi = site.Poi ?? drawn[site.Pool!.Id].Dequeue();
+            var def = site.Definition;
+            var centre = new Vector2(def.At![0] * WorldSize, def.At[1] * WorldDepth);
+            if (def.Jitter > 0f)
+            {
+                var salt = _poiSalt ^ Noise.Hash("site:" + site.Id);
+                // The given spot first, then random ones within the jitter: dry, level enough, in the site's biome and clear.
+                for (var attempt = 0; attempt < PoiAttempts; attempt++)
+                {
+                    var spot = attempt == 0 ? centre : centre + def.Jitter * new Vector2(
+                        2f * Noise.Unit(Noise.Hash(salt, attempt, 0)) - 1f,
+                        2f * Noise.Unit(Noise.Hash(salt, attempt, 1)) - 1f);
+                    if (DryAndLevel(spot, poi.Prefab.Radius, out _) && (site.Biome < 0 || SampleBiomes(spot.X, spot.Y).Biome == site.Biome)
+                        && !_pois.Any(p => Vector2.Distance(p.Centre, spot) < p.Radius + poi.Prefab.Radius))
+                    {
+                        centre = spot;
+                        break;
+                    }
+                }
+            }
+            var pad = def.PadHeight ?? MathF.Max(RawHeight(centre.X, centre.Y), SeaLevel + SitePadAboveSea);
+            Add(poi, centre, pad, QuarterTurns(def.Yaw), site);
+        }
+    }
+
+    // Spaced kinds, highest priority first, fill the land the sites and roads leave.
+    private void LayOutSpacedPois()
     {
         var ordered = Data.Pois
-            .OrderBy(p => p.Prefab.Placement!.Fixed is null)
-            .ThenByDescending(p => p.Prefab.Placement!.Priority)
+            .Where(p => p.Prefab.Placement!.Spacing is not null)
+            .OrderByDescending(p => p.Prefab.Placement!.Priority)
             .ThenBy(p => p.QualifiedId, StringComparer.Ordinal);
         foreach (var poi in ordered)
         {
             var placement = poi.Prefab.Placement!;
-            if (placement.Fixed is [var fx, var fz])
-            {
-                var centre = new Vector2(fx, fz);
-                if (MathF.Max(MathF.Abs(fx), MathF.Abs(fz)) + poi.Prefab.Radius > _half)
-                    continue;
-                var quarter = (((int)(placement.Yaw / 90f) % 4) + 4) % 4;
-                Add(poi, centre, placement.PadHeight ?? RawHeight(fx, fz), quarter);
-                continue;
-            }
             if (placement.Spacing is not [var min, var max])
                 continue;
             // Neighbouring cells' spots are step ± 2·jitter apart along an axis: at least min, and at most
@@ -563,10 +703,10 @@ public sealed class WorldGenerator
             var jitter = 0.225f * (max - min);
             var salt = _poiSalt ^ Noise.Hash(poi.QualifiedId);
             var offset = new Vector2(Noise.Unit(Noise.Hash(salt, 0, 0, 1)), Noise.Unit(Noise.Hash(salt, 0, 0, 2))) * step;
-            var first = (int)MathF.Floor((-_half - offset.X) / step);
-            var last = (int)MathF.Ceiling((_half - offset.X) / step);
-            var firstZ = (int)MathF.Floor((-_half - offset.Y) / step);
-            var lastZ = (int)MathF.Ceiling((_half - offset.Y) / step);
+            var first = (int)MathF.Floor((-_halfX - offset.X) / step);
+            var last = (int)MathF.Ceiling((_halfX - offset.X) / step);
+            var firstZ = (int)MathF.Floor((-_halfZ - offset.Y) / step);
+            var lastZ = (int)MathF.Ceiling((_halfZ - offset.Y) / step);
             for (var j = firstZ; j <= lastZ; j++)
             {
                 for (var i = first; i <= last; i++)
@@ -587,16 +727,31 @@ public sealed class WorldGenerator
         }
     }
 
+    // A site's pad never sits lower than this above the sea, so a structure by a lake stands on its bank.
+    private const float SitePadAboveSea = 1.5f;
+
+    private static int QuarterTurns(float yaw) => (((int)(yaw / 90f) % 4) + 4) % 4;
+
     private bool SiteFits(LoadedPoi poi, Vector2 spot, out float pad)
     {
         pad = 0f;
         var radius = poi.Prefab.Radius;
-        if (MathF.Max(MathF.Abs(spot.X), MathF.Abs(spot.Y)) + radius > _half)
+        var clearance = poi.Prefab.Placement!.Clearance;
+        if (MathF.Abs(spot.X) + radius > _halfX || MathF.Abs(spot.Y) + radius > _halfZ)
             return false;
-        if (_pois.Any(p => Vector2.Distance(p.Centre, spot) < p.Radius + radius))
+        if (_pois.Any(p => Vector2.Distance(p.Centre, spot) < p.Radius + radius + clearance))
             return false;
         if (!poi.Biomes.Contains(SampleBiomes(spot.X, spot.Y).Biome))
             return false;
+        if (Roads.Near(spot.X, spot.Y, radius + clearance))
+            return false;
+        return DryAndLevel(spot, radius, out pad);
+    }
+
+    // Dry at the centre and all round the rim, and not so far above or below the centre that the pad becomes a cliff.
+    private bool DryAndLevel(Vector2 spot, float radius, out float pad)
+    {
+        pad = 0f;
         var centre = RawHeight(spot.X, spot.Y);
         if (centre < SeaLevel + 0.5f)
             return false;
@@ -612,9 +767,9 @@ public sealed class WorldGenerator
         return true;
     }
 
-    private void Add(LoadedPoi poi, Vector2 centre, float pad, int quarterTurns)
+    private void Add(LoadedPoi poi, Vector2 centre, float pad, int quarterTurns, LoadedSite? site = null)
     {
-        var instance = new PoiInstance(_pois.Count, poi, centre, pad, quarterTurns);
+        var instance = new PoiInstance(_pois.Count, poi, centre, pad, quarterTurns) { Site = site };
         _pois.Add(instance);
         var r = instance.Radius;
         for (var bz = (int)MathF.Floor((centre.Y - r) / PoiBucket); bz <= (int)MathF.Floor((centre.Y + r) / PoiBucket); bz++)
@@ -630,7 +785,7 @@ public sealed class WorldGenerator
 
     private Vector3? FindSpawn()
     {
-        foreach (var poi in _pois.Where(p => p.Poi.Prefab.Placement!.Fixed is not null))
+        foreach (var poi in _pois.Where(p => p.Site is not null || p.Poi.Prefab.Placement!.Fixed is not null))
         {
             if (poi.Poi.Prefab.Markers?.FirstOrDefault(m => m.Type == "spawn") is { } marker)
                 return poi.ToWorld(ToVector(marker.At));

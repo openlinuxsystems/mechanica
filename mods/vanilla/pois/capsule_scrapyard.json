@@ -1,0 +1,28 @@
+{
+  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed.
+  // Written by tools/author-poi-placeholders.py; edit the table there and re-run.
+  "id": "capsule_scrapyard",
+  "name": "Capsule Scrapyard",
+  "radius": 66.0,
+  "size": [50.0, 6.0, 40.0],
+  "road": "track",
+  "placement": {},
+  "terrain": [
+    { "op": "flatten", "radius": 46.0, "blend": 20.0 }
+  ],
+  "ground": [{ "ground": "lot", "radius": 38.0, "blend": 10.0, "noise": 4.0 }],
+  "pieces": [
+    { "shape": "box", "size": [54.0, 0.3, 44.0], "at": [0.0, 0.15, 0.0], "color": "#a3a093" },
+    { "shape": "cylinder", "radius": 2.5, "height": 5.0, "at": [-16.0, 2.8, -10.0], "color": "#c9d2d8" },
+    { "shape": "cylinder", "radius": 2.5, "height": 5.0, "at": [-16.0, 2.8, 10.0], "color": "#c9d2d8" },
+    { "shape": "cylinder", "radius": 2.5, "height": 5.0, "at": [-8.0, 2.8, -10.0], "color": "#c9d2d8" },
+    { "shape": "cylinder", "radius": 2.5, "height": 5.0, "at": [-8.0, 2.8, 10.0], "color": "#c9d2d8" },
+    { "shape": "cylinder", "radius": 2.5, "height": 5.0, "at": [0.0, 2.8, -10.0], "color": "#c9d2d8" },
+    { "shape": "cylinder", "radius": 2.5, "height": 5.0, "at": [0.0, 2.8, 10.0], "color": "#c9d2d8" },
+    { "shape": "cylinder", "radius": 2.5, "height": 5.0, "at": [8.0, 2.8, -10.0], "color": "#c9d2d8" },
+    { "shape": "cylinder", "radius": 2.5, "height": 5.0, "at": [8.0, 2.8, 10.0], "color": "#c9d2d8" },
+    { "shape": "cylinder", "radius": 2.5, "height": 5.0, "at": [16.0, 2.8, -10.0], "color": "#c9d2d8" },
+    { "shape": "cylinder", "radius": 2.5, "height": 5.0, "at": [16.0, 2.8, 10.0], "color": "#c9d2d8" },
+    { "shape": "box", "size": [50.0, 2.0, 0.4], "at": [0.0, 1.3, -20.0], "color": "#7d858c" }
+  ]
+}
