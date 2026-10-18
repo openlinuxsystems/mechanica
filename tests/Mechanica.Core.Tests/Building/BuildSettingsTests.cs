@@ -42,7 +42,12 @@ public class BuildSettingsTests
     {
         var path = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "game", "data", "building.json");
         var settings = BuildSettings.FromJson(File.ReadAllText(path));
-        Assert.Equal(16, settings.Paint.Palette.Count);
+        // The Paint Tool (Chase's paint tool spec): 10 base colours in 4 shades, one Paint Ammo per stroke.
+        Assert.Equal(40, settings.Paint.Palette.Count);
+        Assert.Equal(4, settings.Paint.Shades);
+        Assert.Equal(10, settings.Paint.Hues);
+        Assert.Equal("paint_ammo", settings.Paint.Ammo);
+        Assert.Equal(1, settings.Paint.AmmoPerStroke);
         Assert.Equal(new ConnectSettings(), settings.Connect);
         // The Sledgehammer (Chase's sledgehammer spec): a swing every 0.6 s with the hit at the click, 3 m reach, 20 combat
         // damage and a 5000 N·s impulse; the shipped file and the defaults agree.

@@ -257,6 +257,9 @@ public partial class Main : Node3D
     /// <summary>The Weld Tool's arms, tip and glow in every player's hand, and the sparks of every weld.</summary>
     public WeldEffects WeldEffects { get; private set; } = null!;
 
+    /// <summary>Every player's Paint Tool colour, tank and mist.</summary>
+    public PaintToolLook PaintLook { get; private set; } = null!;
+
     /// <summary>The aero force overlay (F9): the pushes part scripts make, as arrows.</summary>
     public ForceOverlay ForceOverlay { get; private set; } = null!;
 
@@ -525,6 +528,10 @@ public partial class Main : Node3D
             ReadDeviceInput = ReadDeviceInput,
         };
         Characters.RegisterActions(Actions.Dispatcher);
+        AddChild(PaintLook = new PaintToolLook
+        {
+            Name = "PaintToolLook", Players = PlayerSync, Palette = Build.Settings!.Paint.Palette, Settings = Characters.Assets.Settings.PaintTool,
+        });
         Hotbar = new HotbarSync { Name = "Hotbar", Session = Session, Players = PlayerSync, Actions = Actions, Bars = new HotbarActions(mods) };
         Hotbar.RegisterActions(Actions.Dispatcher);
         AddChild(Hotbar);

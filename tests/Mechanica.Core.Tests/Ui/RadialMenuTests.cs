@@ -16,6 +16,18 @@ public class RadialMenuTests
     public void TheMousePicksTheItemInItsDirection(float x, float y, int item) =>
         Assert.Equal(item, RadialMenu.Pick(new Vector2(x, y), 4, 20));
 
+    [Theory]
+    [InlineData(0, -45, 0)]       // straight up, innermost ring
+    [InlineData(0, -75, 1)]
+    [InlineData(0, -130, 3)]      // beyond the last ring stays on it
+    [InlineData(100, 0, 3 * 4 + 3)]
+    [InlineData(0, 55, 6 * 4 + 0)]
+    public void TheMousePicksASpokeByDirectionAndARingByDistance(float x, float y, int cell) =>
+        Assert.Equal(cell, RadialMenu.PickCell(new Vector2(x, y), 12, 4, 40, 20));
+
+    [Fact]
+    public void InsideTheRingsPicksNoCell() => Assert.Equal(-1, RadialMenu.PickCell(new Vector2(10, -10), 10, 4, 40, 20));
+
     [Fact]
     public void TheMiddleAndAnEmptyMenuPickNothing()
     {

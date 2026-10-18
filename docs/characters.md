@@ -117,6 +117,13 @@ draws from the hip (`weld_draw`) and stows back to it (`weld_stow`); during `wel
 (`weld_tool_arm_l`, `weld_tool_arm_r`) close round its tip, the tip (`weld_tool_tip`) spins and its blue ring
 (`weld_tool_glow`) brightens (`WeldMotion`), and blue sparks ride on the host's `weld_complete` sound.
 `tools/characters/render_weld_tool.py OUT_DIR` renders its prop like its reference sheet, arms open and closed.
+The Paint Tool is
+held like a pistol (`hold_paint`), raised and aimed while a drag is on (`hold_paint_aim`, from the guard byte), drawn from
+the hip (`paint_draw`) and stowed back (`paint_stow`); `paint_spray` is the click's kick and `paint_reload` (the
+`PaintReload` gesture, R) brings the tool round so the left hand twists the tank off and back on. The tank is a node of its
+own (`paint_tool_tank`) that every peer turns with the clip (`paint_tool.tank` in `game/data/character.json`), and the
+nozzles, tubes and paint (`paint_tool_tint`, `paint_tool_paint`) take the player's colour from one more byte, as does the
+mist from the nozzles.
 
 Timing lives in `game/data/character.json` (engine settings, not moddable): the speed each moving clip
 is authored at, where in a cycle the feet land, crossfade times, how far the body turns before the feet
