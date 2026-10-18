@@ -13,8 +13,9 @@
   "size": [1, 1, 1],
   "mesh": "meshes/blocks/concrete_block.glb",
   "visual": {
-    "color": "#a9a9a3",
+    "color": "#d4d4d4",
     "roughness": 0.95,
-    "metallic": 0
+    "metallic": 0,
+    "texture": "textures/blocks/concrete.png"
   }
 }

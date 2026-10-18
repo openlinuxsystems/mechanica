@@ -13,9 +13,10 @@
   "size": [1, 1, 1],
   "mesh": "meshes/blocks/wood_wedge.glb",
   "visual": {
-    "color": "#b5824a",
+    "color": "#ffffff",
     "roughness": 0.8,
-    "metallic": 0
+    "metallic": 0,
+    "texture": "textures/blocks/wood.png"
   },
   "collision": {
     "shape": "convex",

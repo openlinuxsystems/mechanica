@@ -13,9 +13,10 @@
   "size": [1, 1, 1],
   "mesh": "meshes/blocks/insulation_wedge.glb",
   "visual": {
-    "color": "#f0a8a0",
+    "color": "#c8c8c8",
     "roughness": 1,
-    "metallic": 0
+    "metallic": 0,
+    "texture": "textures/blocks/insulation.png"
   },
   "collision": {
     "shape": "convex",

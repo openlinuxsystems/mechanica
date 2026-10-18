@@ -13,10 +13,12 @@
   "size": [1, 1, 1],
   "mesh": "meshes/blocks/path_light_block.glb",
   "visual": {
-    "color": "#fff2c0",
+    "color": "#ffffff",
     "roughness": 0.2,
     "metallic": 0,
-    "emission": "#ffd870"
+    "emission": "#ffd870",
+    "texture": "textures/blocks/path_light.png",
+    "emission_texture": "textures/blocks/path_light_glow.png"
   },
   "script": "scripts/light.lua",
   "light": {

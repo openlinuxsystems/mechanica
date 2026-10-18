@@ -148,6 +148,9 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
             sink.Error(Code, $"{p}.opacity", "opacity must be between 0 and 1.");
         CheckColor(v.Emission, $"{p}.emission", sink);
         CheckAsset(v.Texture, $"{p}.texture", AssetKind.Texture, sink);
+        CheckAsset(v.EmissionTexture, $"{p}.emission_texture", AssetKind.Texture, sink);
+        if (v.EmissionTexture is not null && v.Emission is null)
+            sink.Error(Code, $"{p}.emission_texture", "emission_texture needs an emission colour to glow with.");
         var ids = new HashSet<string>();
         for (var i = 0; i < (v.Variants?.Count ?? 0); i++)
         {
