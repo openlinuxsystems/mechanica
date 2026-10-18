@@ -239,7 +239,8 @@ public partial class SurvivalHud : CanvasLayer
             return;
         _refine = (node.Id, Survival.Now, player.GlobalPosition);
         Request(SurvivalActions.StartRefine, new RefineArgs(node.Id.ToString()));
-        player.Gesture(Core.Characters.CharacterGesture.Interact);
+        // The Refine Tool is drawn from the hip and worked against the node until the refine ends (every peer sees it).
+        player.ActionProp = Core.Characters.CharacterProp.RefineTool;
     }
 
     /// <summary>Stops a refine being held before it finished.</summary>
@@ -248,6 +249,7 @@ public partial class SurvivalHud : CanvasLayer
         if (_refine is null)
             return;
         _refine = null;
+        PutAwayRefineTool();
         Request(SurvivalActions.CancelRefine, new NoArgs());
     }
 
@@ -266,7 +268,14 @@ public partial class SurvivalHud : CanvasLayer
         if (Survival.Now - r.Started < settings.RefineSeconds)
             return;
         _refine = null;
+        PutAwayRefineTool();
         Request(SurvivalActions.FinishRefine, new RefineArgs(r.Id.ToString()));
+    }
+
+    private void PutAwayRefineTool()
+    {
+        if (Players.LocalPlayer is { } player)
+            player.ActionProp = null;
     }
 
     // The blue outline round the resource node under the crosshair (UI spec §10).

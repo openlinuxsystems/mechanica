@@ -1,5 +1,6 @@
 using Godot;
 using Mechanica.Core.Actions;
+using Mechanica.Core.Characters;
 using Mechanica.Core.Data;
 using Mechanica.Core.Player;
 using Mechanica.Core.Survival;
@@ -13,7 +14,8 @@ namespace Mechanica.Game.Tests;
 /// UI spec §9 and §10 survival interactions and weapons, host plus client, on a flat world with trees: the client's
 /// Potato Blaster comes loaded and shows its rounds and the potatoes carried, aims with right click (zoom, host knows),
 /// fires, reloads with R (the ring fills), places a carrot with Force Build where it aims, picks it up with right click,
-/// and holds Use on a tree to refine it into the inventory (letting go early cancels). Each step is checked on both machines.
+/// and holds Use on a tree to refine it into the inventory (letting go early cancels), the Refine Tool in hand meanwhile.
+/// Each step is checked on both machines.
 /// </summary>
 public partial class WeaponsTest : StagedTest
 {
@@ -197,10 +199,12 @@ public partial class WeaponsTest : StagedTest
             if (frame == 20)
             {
                 Check(_hud.RefineProgress is > 0 and < 1, $"the ring fills ({_hud.RefineProgress})");
+                Check(ShownProp(_client) == CharacterProp.RefineTool, $"the Refine Tool is in hand ({ShownProp(_client)})");
+                Check(ShownProp(_host) == CharacterProp.RefineTool, $"the host sees it in hand ({ShownProp(_host)})");
                 _holding = false;
             }
             return frame > 30 && _hud.Refining is null && _host.Main.Survival.Actions!.RefiningOf(Peer) is null
-                && !_host.Main.Streamer.State.IsDestroyed(_tree!.Id);
+                && !_host.Main.Streamer.State.IsDestroyed(_tree!.Id) && ShownProp(_host) != CharacterProp.RefineTool;
         });
         Stage("holding Use refines the tree into the inventory", frame =>
         {
@@ -209,12 +213,14 @@ public partial class WeaponsTest : StagedTest
                 _holding = true;
                 _hud.Interact();
             }
-            if (frame == 40)
+            var seconds = _client.Main.Survival.Settings!.RefineSeconds;
+            if (frame == (int)(seconds * 30))
                 _midway = _hud.RefineProgress;
             if (Count(Wood) < 6 || !_client.Main.Streamer.State.IsDestroyed(_tree!.Id))
                 return false;
             Check(_midway is > 0.3f and < 1, $"the ring was part full half way ({_midway})");
-            Check(frame >= 60, $"it took the 1.2 s hold ({frame} frames)");
+            Check(frame >= seconds * 50, $"it took the {seconds} s hold ({frame} frames)");
+            Check(ShownProp(_client) != CharacterProp.RefineTool, "the Refine Tool is put away");
             Check(_hud.Refining is null && _hud.RefineProgress is null, "the ring is gone");
             Check(_host.Main.Streamer.State.IsDestroyed(_tree.Id), "the tree is gone on the host too");
             _holding = false;
@@ -230,6 +236,9 @@ public partial class WeaponsTest : StagedTest
     });
 
     private int Count(string item) => _client.Main.Inventory.Own?.Items.Where(s => s.Item == item).Sum(s => s.Count) ?? 0;
+
+    // What the client's player holds, as the given machine sees it.
+    private CharacterProp ShownProp(Instance who) => who.Main.PlayerSync.Players[Peer].ShownProp;
 
     private static Vector3 Feet(Instance who) => who.Main.LocalPlayer!.GlobalPosition;
 

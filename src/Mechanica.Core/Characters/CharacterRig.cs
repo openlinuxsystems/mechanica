@@ -35,6 +35,12 @@ public enum CharacterProp : byte
 
     /// <summary>Any other item (food, seeds, a part to place): held up, with no prop drawn.</summary>
     Item,
+
+    /// <summary>
+    /// The Refine Tool: never in the inventory or on the hotbar, it is drawn from the hip while Use is held on a
+    /// resource node, worked against it and put away again.
+    /// </summary>
+    RefineTool,
 }
 
 /// <summary>
@@ -175,6 +181,7 @@ public static class CharacterRig
         "interact", "hurt",
         "sledge_swing_side", "sledge_swing_back",
         "hold_heavy_fp", "hold_heavy_block_fp", "sledge_swing_fp", "sledge_swing_side_fp", "sledge_swing_back_fp",
+        "hold_refine", "refine_draw", "refine_stow", "hold_refine_fp", "refine_draw_fp", "refine_stow_fp",
     ];
 
     /// <summary>
@@ -205,8 +212,21 @@ public static class CharacterRig
         CharacterProp.Sledgehammer => guard ? "hold_heavy_block" : "hold_heavy",
         CharacterProp.PotatoBlaster => "hold_gun",
         CharacterProp.WaterBucket or CharacterProp.Item => "hold_item",
+        CharacterProp.RefineTool => "hold_refine",
         _ => "hold_tool",
     };
+
+    /// <summary>
+    /// The clip that brings <paramref name="prop"/> into the hand when it is taken, or null when it just appears: the
+    /// Refine Tool is drawn from the hip. Every peer plays it when it sees the prop change, so it costs no traffic.
+    /// </summary>
+    public static string? DrawClip(CharacterProp prop) => prop == CharacterProp.RefineTool ? "refine_draw" : null;
+
+    /// <summary>
+    /// The clip that puts <paramref name="prop"/> away when the hand takes something else, or null: the Refine Tool goes
+    /// back to the hip, still drawn until the clip ends.
+    /// </summary>
+    public static string? StowClip(CharacterProp prop) => prop == CharacterProp.RefineTool ? "refine_stow" : null;
 
     /// <summary>The clip a gesture plays, or null for <see cref="CharacterGesture.None"/> and unknown values.</summary>
     public static string? GestureClip(CharacterGesture gesture) => gesture switch
@@ -276,11 +296,12 @@ public static class CharacterRig
         CharacterProp.ConnectTool => "connect_tool",
         CharacterProp.PotatoBlaster => "potato_blaster",
         CharacterProp.WaterBucket => "water_bucket",
+        CharacterProp.RefineTool => "refine_tool",
         _ => null,
     };
 
     /// <summary><paramref name="prop"/> when it is a known value, otherwise <see cref="CharacterProp.None"/>.</summary>
-    public static CharacterProp Sanitize(CharacterProp prop) => prop <= CharacterProp.Item ? prop : CharacterProp.None;
+    public static CharacterProp Sanitize(CharacterProp prop) => prop <= CharacterProp.RefineTool ? prop : CharacterProp.None;
 
     /// <summary><paramref name="gesture"/> when it is a known value, otherwise <see cref="CharacterGesture.None"/>.</summary>
     public static CharacterGesture Sanitize(CharacterGesture gesture) => gesture <= CharacterGesture.Hurt ? gesture : CharacterGesture.None;

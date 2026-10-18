@@ -29,7 +29,7 @@ These are the default keys. Every one can be changed in Options, Controls.
 | G | Drop one of the item in hand |
 | F (hold) | Force build: hold it and left click to put the item in hand (food, a bucket, a glowstick) where you aim, where it stays. Also hold it while dragging a stack out of the inventory to drop it. |
 | R | Reload the weapon in hand |
-| E | Use. Hold it on a tree or rock node (they get a blue outline) until the ring fills to refine it: what it gives goes straight into your inventory. Letting go or walking away stops it. Also: open the blueprint menu (the Lift in hand, aimed at your Lift), open a container or station, pick up items, harvest, sleep in a bed, sit in or leave a seat, use a part, change a part's settings, use a quest marker, talk, respawn after dying |
+| E | Use. Hold it on a tree or rock node (they get a blue outline) until the ring fills (5.2 s) to refine it: you draw the Refine Tool and scrape at it, and what it gives goes straight into your inventory. Letting go or walking away stops it. The Refine Tool is not an item: it is never in your inventory or on the hotbar. Also: open the blueprint menu (the Lift in hand, aimed at your Lift), open a container or station, pick up items, harvest, sleep in a bed, sit in or leave a seat, use a part, change a part's settings, use a quest marker, talk, respawn after dying |
 | I or Tab | Inventory |
 | U | Upgrade the part you are aiming at (a station), or the station whose screen is open |
 | L | Logbook: your quests, the map and your markers; you pick an answer here when a quest asks you to decide |
