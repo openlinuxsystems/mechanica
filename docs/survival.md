@@ -90,6 +90,10 @@ their item's properties.
 
 - `game/data/survival.json`: health, respawn delay, reach, starting items, fall and impact
   damage, piles, and the empty and full water buckets (`bucket_item`, `water_item`). Unknown keys are refused.
+- The Paint Tool (`paint_tool`, a tool: 10 Scrap Metal Blocks, 5 Glass Blocks and 2 Component Kits, 30 s) has to be
+  crafted before it paints, and each stroke takes `ammo_per_stroke` of `ammo` (`paint_ammo`, 10 from 2 tomatoes in 3 s)
+  from the painter: a click, or a whole drag (`PaintArgs.stroke`, up to `max_parts_per_action` parts and while no gap is
+  longer than `stroke_seconds`). Taking paint off is free. These are `paint` in `game/data/building.json`.
 - The water bucket has two items: the empty `water_bucket` (the one the Fabricator makes) and the full
   `water_bucket_full`. Filling one at water (`CollectWater`) or throwing its water (`watering.lua`, with
   `item.replace`) swaps one for the other in the same slot, so it stays in hand. How it moves in the hand

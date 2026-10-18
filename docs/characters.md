@@ -111,7 +111,13 @@ only while Use is held on a resource node, comes with a draw from the hip (`refi
 (`refine_stow`); every peer plays them when it sees that player's hand take or drop the tool, chips fly off the node at
 each stroke (sparks off metal) and the `refiner_*` sounds play, all from the same prop byte. The Connect Tool draws from
 the hip (`connect_draw`, 0.5 s) and stows back to it (`connect_stow`, 0.45 s); its tip and display glow cyan, pulse while
-it is raised and flash for 0.2 s on each `connect_click` (a dip then a flash on `connect_reverse`).
+it is raised and flash for 0.2 s on each `connect_click` (a dip then a flash on `connect_reverse`). The Paint Tool is
+held like a pistol (`hold_paint`), raised and aimed while a drag is on (`hold_paint_aim`, from the guard byte), drawn from
+the hip (`paint_draw`) and stowed back (`paint_stow`); `paint_spray` is the click's kick and `paint_reload` (the
+`PaintReload` gesture, R) brings the tool round so the left hand twists the tank off and back on. The tank is a node of its
+own (`paint_tool_tank`) that every peer turns with the clip (`paint_tool.tank` in `game/data/character.json`), and the
+nozzles, tubes and paint (`paint_tool_tint`, `paint_tool_paint`) take the player's colour from one more byte, as does the
+mist from the nozzles.
 
 Timing lives in `game/data/character.json` (engine settings, not moddable): the speed each moving clip
 is authored at, where in a cycle the feet land, crossfade times, how far the body turns before the feet

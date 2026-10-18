@@ -254,6 +254,9 @@ public partial class Main : Node3D
     /// <summary>The Connect Tool's lights in every player's hand.</summary>
     public ConnectToolLights ConnectLights { get; private set; } = null!;
 
+    /// <summary>Every player's Paint Tool colour, tank and mist.</summary>
+    public PaintToolLook PaintLook { get; private set; } = null!;
+
     /// <summary>The aero force overlay (F9): the pushes part scripts make, as arrows.</summary>
     public ForceOverlay ForceOverlay { get; private set; } = null!;
 
@@ -521,6 +524,10 @@ public partial class Main : Node3D
             ReadDeviceInput = ReadDeviceInput,
         };
         Characters.RegisterActions(Actions.Dispatcher);
+        AddChild(PaintLook = new PaintToolLook
+        {
+            Name = "PaintToolLook", Players = PlayerSync, Palette = Build.Settings!.Paint.Palette, Settings = Characters.Assets.Settings.PaintTool,
+        });
         Hotbar = new HotbarSync { Name = "Hotbar", Session = Session, Players = PlayerSync, Actions = Actions, Bars = new HotbarActions(mods) };
         Hotbar.RegisterActions(Actions.Dispatcher);
         AddChild(Hotbar);

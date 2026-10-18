@@ -140,6 +140,17 @@ public interface IBuildCosts
     /// the Connect Tool) must be carried; the others every player always has.
     /// </summary>
     string? CheckTool(ActionCaller caller, string tool) => null;
+
+    /// <summary>
+    /// Null when <paramref name="caller"/> has <paramref name="count"/> of <paramref name="item"/> (a qualified id) to use
+    /// up, as a Paint Tool stroke uses Paint Ammo, or why not.
+    /// </summary>
+    string? CheckSpend(ActionCaller caller, string item, int count) => null;
+
+    /// <summary>Takes <paramref name="count"/> of <paramref name="item"/> (a qualified id) that <paramref name="caller"/> just used up.</summary>
+    void Spend(ActionCaller caller, string item, int count)
+    {
+    }
 }
 
 /// <summary>

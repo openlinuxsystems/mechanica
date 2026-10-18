@@ -13,13 +13,16 @@ public class InputPacketTests
         new(8, new PlayerInput(0f, 1f, -3f, 0.4f, false, true)),
         new(9, new PlayerInput(0f, 0f, 0f, 0f, false, false, Crawl: true, CharacterProp.Sledgehammer, CharacterGesture.SledgeSwing, 200)),
         new(10, new PlayerInput(0f, 0f, 0f, 0f, false, false, Prop: CharacterProp.Sledgehammer, Guard: true)),
+        new(11, new PlayerInput(0f, 0f, 0f, 0f, false, false, Prop: CharacterProp.PaintTool, Guard: true, Tint: 25 | CharacterRig.TintErase)),
     ];
 
     [Fact]
-    public void OnlyTheSledgehammerCanGuard()
+    public void OnlyToolsWithARaisedPoseCanGuard()
     {
         var settings = new PlayerMovementSettings();
         Assert.True(new PlayerInput(0, 0, 0, 0, false, false, Prop: CharacterProp.Sledgehammer, Guard: true).Sanitized(settings).Guard);
+        Assert.True(new PlayerInput(0, 0, 0, 0, false, false, Prop: CharacterProp.ConnectTool, Guard: true).Sanitized(settings).Guard);
+        Assert.True(new PlayerInput(0, 0, 0, 0, false, false, Prop: CharacterProp.PaintTool, Guard: true).Sanitized(settings).Guard);
         Assert.False(new PlayerInput(0, 0, 0, 0, false, false, Prop: CharacterProp.LiftRemote, Guard: true).Sanitized(settings).Guard);
     }
 
@@ -72,6 +75,7 @@ public class WorldSnapshotTests
         new PlayerState(987654, 42, new Vector3(-4, 0, 9), Vector3.Zero, -3f, 1f),
         new PlayerState(5, 7, Vector3.One, Vector3.UnitY, 0f, 0f, BodyFlags.Swimming | BodyFlags.Crawl, CharacterProp.WaterBucket, CharacterGesture.Pour, 255),
         new PlayerState(6, 8, Vector3.One, Vector3.Zero, 0f, 0f, BodyFlags.OnFloor | BodyFlags.Guard, CharacterProp.Sledgehammer),
+        new PlayerState(7, 9, Vector3.One, Vector3.Zero, 0f, 0f, BodyFlags.Guard, CharacterProp.PaintTool, CharacterGesture.PaintReload, 3, 13),
     ]);
 
     [Fact]
@@ -108,7 +112,7 @@ public class WorldSnapshotTests
     public void RejectsUnknownBodyFlags()
     {
         var bytes = Sample.Encode();
-        bytes[^4] = 0x80;
+        bytes[^5] = 0x80; // the last entry's body flags (then prop, gesture, count and tint)
         Assert.Null(WorldSnapshot.Decode(bytes));
     }
 }

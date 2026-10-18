@@ -12,7 +12,8 @@ namespace Mechanica.Game.Ui;
 /// <summary>
 /// The models <see cref="ItemIcons"/> draws tools from, so their hotbar and inventory pictures always match the models
 /// used in game: the Sledgehammer's hand prop, turned to lie across the picture, the Connect Tool's hand prop on its
-/// side with its lit display towards the camera, and the Lift's own model put down (as its <c>deploy</c> clip starts:
+/// side with its lit display towards the camera, the Paint Tool's hand prop on its side with its nozzles up and to the
+/// left (tinted the default colour), and the Lift's own model put down (as its <c>deploy</c> clip starts:
 /// folded, the way it is carried). The same picture serves the hotbar and the Fabricator. Other tools have none and draw as
 /// their initials.
 /// </summary>
@@ -25,7 +26,11 @@ public sealed class ToolIconModels(CharacterAssets characters, PartAssets parts,
     // The Connect Tool's probe runs along its prop's X axis raked up (towards -Z) by ConnectRake degrees, its display
     // faces -Y. Turned so the display faces the camera and the probe points up and to the left, the grip below.
     private const float ConnectRake = 14f;
-    private static readonly Basis ConnectSide = Side();
+    private static readonly Basis ConnectSide = Side(ConnectRake, 0.45f);
+
+    // The Paint Tool is built the same way (PAINT_RAKE in tools/characters/build_characters.py), its nozzles along X.
+    private const float PaintRake = 15f;
+    private static readonly Basis PaintSide = Side(PaintRake, 0.3f);
 
     private static Basis Diagonal()
     {
@@ -37,14 +42,14 @@ public sealed class ToolIconModels(CharacterAssets characters, PartAssets parts,
         return new Basis(across, z.Cross(across), z);
     }
 
-    private static Basis Side()
+    private static Basis Side(float rakeDegrees, float lift)
     {
         var forward = -ItemIcons.ViewFrom.Normalized();
         var right = forward.Cross(Vector3.Up).Normalized();
         var up = right.Cross(forward);
         var facing = -forward;
-        var probe = (-right + 0.45f * up).Normalized();
-        var rake = Mathf.DegToRad(ConnectRake);
+        var probe = (-right + lift * up).Normalized();
+        var rake = Mathf.DegToRad(rakeDegrees);
         var x = Mathf.Cos(rake) * probe - Mathf.Sin(rake) * probe.Cross(facing);
         var top = x.Cross(facing);
         return new Basis(x, -facing, -top).Orthonormalized();
@@ -56,6 +61,7 @@ public sealed class ToolIconModels(CharacterAssets characters, PartAssets parts,
         HotbarTools.Sledge => Prop(CharacterProp.Sledgehammer, SledgeTilt, "Sledgehammer"),
         HotbarTools.Lift => Lift(),
         HotbarTools.Connect => Prop(CharacterProp.ConnectTool, ConnectSide, "ConnectTool"),
+        HotbarTools.Paint => Prop(CharacterProp.PaintTool, PaintSide, "PaintTool"),
         _ => null,
     };
 

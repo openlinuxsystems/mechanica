@@ -1255,6 +1255,18 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         !Pays(caller) || catalog.FindDefinition(tool) is not { Category: PartCategory.Tool } item || inventories.PlayerInventory(caller.Peer).Count(tool) > 0 ? null
         : $"Craft a {item.Name ?? tool} at a Fabricator first.";
 
+    /// <inheritdoc/>
+    public string? CheckSpend(ActionCaller caller, string item, int count) =>
+        !Pays(caller) || count <= 0 || inventories.PlayerInventory(caller.Peer).Count(item) >= count ? null
+        : $"You have no {NameOf(item)}. Craft some at a Fabricator.";
+
+    /// <inheritdoc/>
+    public void Spend(ActionCaller caller, string item, int count)
+    {
+        if (Pays(caller) && count > 0)
+            inventories.PlayerInventory(caller.Peer).Remove(item, count);
+    }
+
     private string NameOf(string item) => catalog.FindDefinition(item)?.Name ?? item;
 
     private static JsonElement Value<T>(T value) => JsonSerializer.SerializeToElement(value, ActionJson.Options);

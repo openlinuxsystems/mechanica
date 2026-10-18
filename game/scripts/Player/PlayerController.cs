@@ -260,8 +260,20 @@ public partial class PlayerController : CharacterBody3D
     /// </summary>
     public CharacterProp? ActionProp { get; set; }
 
-    /// <summary>True while this player holds the Sledgehammer up to block; travels with the input like <see cref="HeldProp"/>.</summary>
+    /// <summary>
+    /// True while this player holds the tool in hand raised (the Sledgehammer up to block, the Connect Tool over a node,
+    /// the Paint Tool spraying); travels with the input like <see cref="HeldProp"/>.
+    /// </summary>
     public bool HeldGuard { get; set; }
+
+    /// <summary>
+    /// The Paint Tool's colour, as a palette index, with <see cref="CharacterRig.TintErase"/> set while it takes paint off;
+    /// travels with the input like <see cref="HeldProp"/>, so every peer tints the tool and its mist alike.
+    /// </summary>
+    public byte HeldTint { get; set; }
+
+    /// <summary>The Paint Tool colour shown after the last tick or snapshot (<see cref="HeldTint"/>).</summary>
+    public byte ShownTint { get; private set; }
 
     /// <summary>How the body stands after the last tick (or snapshot, for players this peer does not simulate).</summary>
     public BodyFlags Body { get; private set; } = BodyFlags.OnFloor;
@@ -387,7 +399,7 @@ public partial class PlayerController : CharacterBody3D
     {
         if (!Simulated)
             return;
-        var input = Step(CurrentInput with { Prop = ActionProp ?? HeldProp, Gesture = _gesture, GestureCount = _gestureCount, Guard = HeldGuard }, (float)delta);
+        var input = Step(CurrentInput with { Prop = ActionProp ?? HeldProp, Gesture = _gesture, GestureCount = _gestureCount, Guard = HeldGuard, Tint = HeldTint }, (float)delta);
         Stepped?.Invoke(input);
     }
 
@@ -402,6 +414,7 @@ public partial class PlayerController : CharacterBody3D
         ApplyLook(input.Yaw, input.Pitch);
         ShownProp = input.Prop;
         ShownGesture = (input.Gesture, input.GestureCount);
+        ShownTint = input.Tint;
         if (_dead)
             return input;
         if (_seat is not null)
@@ -464,8 +477,9 @@ public partial class PlayerController : CharacterBody3D
     }
 
     /// <summary>Shows how a player this peer does not simulate stands and what they hold, from a host snapshot.</summary>
-    public void ApplyBody(BodyFlags body, CharacterProp prop, CharacterGesture gesture, byte gestureCount)
+    public void ApplyBody(BodyFlags body, CharacterProp prop, CharacterGesture gesture, byte gestureCount, byte tint = 0)
     {
+        ShownTint = tint;
         Body = body;
         SetCrouched(body.HasFlag(BodyFlags.Crawl));
         StepEyeHeight((float)GetPhysicsProcessDeltaTime());
