@@ -226,4 +226,21 @@ public interface ISurvivalWorld
     void Shatter(BreakDefinition breaks, Vector3 centre, float radius, uint seed)
     {
     }
+
+    /// <summary>
+    /// A tree was felled: spawns its <paramref name="breaks"/> loose parts (log segments) stacked upright from
+    /// <paramref name="foot"/> up a trunk <paramref name="height"/> m tall, all tipping over along
+    /// <paramref name="direction"/> at <paramref name="spin"/> rad/s (<see cref="Building.ToolActions.Fell"/>).
+    /// </summary>
+    void Fell(BreakDefinition breaks, Vector3 foot, float height, Vector3 direction, float spin, uint seed)
+    {
+    }
+
+    /// <summary>
+    /// Damage reached a world object at <paramref name="at"/> (cosmetic, for every peer: the tree shakes, chips and leaves
+    /// fly). <paramref name="broke"/> is true for the blow that broke or felled it.
+    /// </summary>
+    void ObjectHit(WorldObjectId id, Vector3 at, bool broke)
+    {
+    }
 }

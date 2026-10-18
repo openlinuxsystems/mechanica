@@ -29,6 +29,16 @@ public partial class TerrainChunk : Node3D
     private static readonly Dictionary<string, Creations.PartMesh?> ObjectMeshes = [];
 
     private readonly Dictionary<ulong, WorldObjectId> _objectShapes = [];
+    // Model-drawn objects close up, for shaking: their MultiMesh, instance and resting transform, and their ground point.
+    private readonly Dictionary<WorldObjectId, (MultiMesh Multi, int Index, Transform3D Resting, Vector3 Foot)> _drawn = [];
+    // Objects shaking now: the axis they lean about and when the shake started.
+    private readonly Dictionary<WorldObjectId, (Vector3 Axis, double Started)> _shaking = [];
+
+    /// <summary>Seconds a hit object shakes for.</summary>
+    public const double ShakeSeconds = 0.45;
+
+    /// <summary>Largest lean of a shaking object, in radians.</summary>
+    public const float ShakeAngle = 0.035f;
 
     /// <summary>The generated chunk. Set before adding to the tree.</summary>
     public TerrainChunkData Data { get; init; } = null!;
@@ -87,6 +97,7 @@ public partial class TerrainChunk : Node3D
         AddChild(Brush);
         BuildObjects();
         BuildStructures();
+        SetProcess(false);
     }
 
     // The ground shape lives on the shared body, so it goes when the chunk does.
@@ -127,7 +138,51 @@ public partial class TerrainChunk : Node3D
             child.QueueFree();
         }
         _objectShapes.Clear();
+        _drawn.Clear();
+        _shaking.Clear();
         BuildObjects();
+    }
+
+    /// <summary>Objects shaking now (a hit tree), for tests.</summary>
+    public int Shaking => _shaking.Count;
+
+    /// <summary>
+    /// Shakes a model-drawn object (a tree) that was hit at <paramref name="at"/> (world space): it leans away from the
+    /// blow and sways back over <see cref="ShakeSeconds"/>. Returns false when this chunk draws no such object close up.
+    /// </summary>
+    public bool Shake(WorldObjectId id, Vector3 at)
+    {
+        if (!_drawn.TryGetValue(id, out var drawn))
+            return false;
+        var away = drawn.Foot + Position - at;
+        away.Y = 0;
+        var axis = away.LengthSquared() > 1e-6f ? Vector3.Up.Cross(away.Normalized()) : Vector3.Right;
+        _shaking[id] = (axis, Time.GetTicksMsec() / 1000.0);
+        SetProcess(true);
+        return true;
+    }
+
+    public override void _Process(double delta)
+    {
+        var now = Time.GetTicksMsec() / 1000.0;
+        foreach (var (id, shake) in _shaking.ToList())
+        {
+            var drawn = _drawn[id];
+            var t = (now - shake.Started) / ShakeSeconds;
+            if (t >= 1)
+            {
+                drawn.Multi.SetInstanceTransform(drawn.Index, drawn.Resting);
+                _shaking.Remove(id);
+                continue;
+            }
+            // A damped sway about the foot, leaning away from the blow first.
+            var angle = ShakeAngle * (float)(Math.Sin(t * Math.PI * 4) * (1 - t));
+            var lean = new Transform3D(new Basis(shake.Axis, angle), Vector3.Zero);
+            var about = new Transform3D(Basis.Identity, drawn.Foot) * lean * new Transform3D(Basis.Identity, -drawn.Foot);
+            drawn.Multi.SetInstanceTransform(drawn.Index, about * drawn.Resting);
+        }
+        if (_shaking.Count == 0)
+            SetProcess(false);
     }
 
     private void BuildGround()
@@ -233,7 +288,8 @@ public partial class TerrainChunk : Node3D
         var origin = Position;
         var transforms = new Dictionary<(WorldObjectDefinition, int), List<Transform3D>>();
         var models = new Dictionary<WorldObjectDefinition, List<Transform3D>>();
-        var meshes = new Dictionary<WorldObjectDefinition, (Creations.PartMesh Mesh, List<Transform3D> List)>();
+        var meshes = new Dictionary<WorldObjectDefinition, (Creations.PartMesh Mesh, List<Transform3D> List, List<WorldObjectPlacement> Objects)>();
+        var lods = new Dictionary<WorldObjectDefinition, (Creations.PartMesh Mesh, List<Transform3D> List)>();
         foreach (var o in LiveObjects)
         {
             var placed = new Transform3D(new Basis(Vector3.Up, o.Yaw).Scaled(new Vector3(o.Scale, o.Scale, o.Scale)), o.Position.ToGodot() - origin);
@@ -256,13 +312,24 @@ public partial class TerrainChunk : Node3D
                 placements.Add(placed);
                 continue;
             }
-            if (MeshOf(o.Definition) is { } mesh)
+            var lod = LodOf(o.Definition);
+            if (lod is not null)
+            {
+                if (!lods.TryGetValue(o.Definition, out var far))
+                    lods[o.Definition] = far = (lod, []);
+                far.List.Add(placed * new Transform3D(Basis.Identity, o.Definition.Mesh!.At.ToGodot()) * lod.Transform);
+            }
+            // Far scenery draws only the far model, when there is one.
+            if ((lod is null || !Scenery) && MeshOf(o.Definition) is { } mesh)
             {
                 if (!meshes.TryGetValue(o.Definition, out var drawn))
-                    meshes[o.Definition] = drawn = (mesh, []);
+                    meshes[o.Definition] = drawn = (mesh, [], []);
                 drawn.List.Add(placed * new Transform3D(Basis.Identity, o.Definition.Mesh!.At.ToGodot()) * mesh.Transform);
+                drawn.Objects.Add(o);
                 continue;
             }
+            if (lod is not null)
+                continue;
             var pieces = o.Definition.Pieces ?? [];
             for (var p = 0; p < pieces.Count; p++)
             {
@@ -279,12 +346,29 @@ public partial class TerrainChunk : Node3D
                 multi.SetInstanceTransform(i, list[i]);
             Objects.AddChild(new MultiMeshInstance3D { Name = $"{definition.Id}_{piece}", Multimesh = multi, MaterialOverride = MaterialOf(shape.Color) });
         }
-        foreach (var (definition, (mesh, list)) in meshes)
+        foreach (var (definition, (mesh, list, placements)) in meshes)
+        {
+            var multi = new MultiMesh { TransformFormat = MultiMesh.TransformFormatEnum.Transform3D, Mesh = mesh.Mesh, InstanceCount = list.Count };
+            for (var i = 0; i < list.Count; i++)
+            {
+                multi.SetInstanceTransform(i, list[i]);
+                _drawn[placements[i].Id] = (multi, i, list[i], placements[i].Position.ToGodot() - origin);
+            }
+            // With a far model, the full one gives way to it past the LOD distance (judged from the chunk's middle).
+            var near = lods.ContainsKey(definition) ? definition.Mesh!.LodDistance : 0f;
+            Objects.AddChild(new MultiMeshInstance3D { Name = $"{definition.Id}_mesh", Multimesh = multi, VisibilityRangeEnd = near });
+        }
+        foreach (var (definition, (mesh, list)) in lods)
         {
             var multi = new MultiMesh { TransformFormat = MultiMesh.TransformFormatEnum.Transform3D, Mesh = mesh.Mesh, InstanceCount = list.Count };
             for (var i = 0; i < list.Count; i++)
                 multi.SetInstanceTransform(i, list[i]);
-            Objects.AddChild(new MultiMeshInstance3D { Name = $"{definition.Id}_mesh", Multimesh = multi });
+            Objects.AddChild(new MultiMeshInstance3D
+            {
+                Name = $"{definition.Id}_lod",
+                Multimesh = multi,
+                VisibilityRangeBegin = Scenery ? 0f : definition.Mesh!.LodDistance,
+            });
         }
         foreach (var (definition, list) in models)
         {
@@ -349,6 +433,16 @@ public partial class TerrainChunk : Node3D
             return null;
         if (!ObjectMeshes.TryGetValue(file, out var mesh))
             ObjectMeshes[file] = mesh = Creations.PartAssets.ReadGltf(file, definition.Mesh!.File!)?.FirstOrDefault();
+        return mesh;
+    }
+
+    // The far model an object is drawn with past its LOD distance, loaded once per file; null when it has none.
+    private Creations.PartMesh? LodOf(WorldObjectDefinition definition)
+    {
+        if (WorldGen?.LodFileOf(definition) is not { } file)
+            return null;
+        if (!ObjectMeshes.TryGetValue(file, out var mesh))
+            ObjectMeshes[file] = mesh = Creations.PartAssets.ReadGltf(file, definition.Mesh!.Lod!)?.FirstOrDefault();
         return mesh;
     }
 

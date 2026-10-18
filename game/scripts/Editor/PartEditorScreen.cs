@@ -824,6 +824,9 @@ public partial class PartEditorScreen : Control
             _partGrid.AddNumber("Sledge damage", d.SledgeDamage, 0, 1e4, 1, v => Set("Set sledge damage", x => x with { SledgeDamage = (float?)v }), optional: true);
             _partGrid.AddNumber("Breaks into (count)", d.BreaksInto?.Count, 1, Core.World.BreakDefinition.MaxCount, 1,
                 v => Set("Set break count", x => x with { BreaksInto = v is { } n ? (x.BreaksInto ?? new Core.World.BreakDefinition()) with { Count = (int)n } : null }), optional: true);
+            if (d.BreaksInto is not null)
+                _partGrid.AddNumber("Breaks into (most)", d.BreaksInto.CountMax, 1, Core.World.BreakDefinition.MaxCount, 1,
+                    v => Set("Set most break pieces", x => x with { BreaksInto = (x.BreaksInto ?? new Core.World.BreakDefinition()) with { CountMax = v is { } n ? (int)n : null } }), optional: true);
             _partGrid.AddText("Breaks into (parts)", d.BreaksInto is { } breaks ? string.Join(", ", (breaks.Parts ?? []).Select(p => $"{p.Part} {p.Weight}")) : null,
                 v => Set("Set break parts", x => x with { BreaksInto = string.IsNullOrWhiteSpace(v) ? null : (x.BreaksInto ?? new Core.World.BreakDefinition()) with { Parts = ParsePieces(v) } }),
                 "stone_rod 7, metal_rod 3");

@@ -458,7 +458,7 @@
       "template": "interactive",
       "set": {
         "name": "Saw Blade",
-        "description": "A spinning disc that cuts whatever its rim touches while its input is on: trees, bots, other creations. Mount it on a bearing to swing it.",
+        "description": "A spinning disc that cuts whatever its rim touches once its input has run it up to speed: trees of every size (the only tool that fells a Pine), logs, bots, other creations. Mount it on a bearing to swing it.",
         "mass": 4,
         "durability": 5,
         "stack_size": 10,
@@ -475,6 +475,8 @@
           "interval": 0.25,
           "reach": 0.12,
           "spin": 30,
+          "spin_up": 0.6,
+          "min_spin": 22,
           "edge": [
             { "from": [0.38, 0, 0], "direction": [1, 0, 0] },
             { "from": [-0.38, 0, 0], "direction": [-1, 0, 0] },

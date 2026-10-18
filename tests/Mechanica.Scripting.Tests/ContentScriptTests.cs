@@ -180,20 +180,30 @@ public sealed class ContentScriptTests : IDisposable
         Assert.Empty(_sound.Loops);
 
         Activate(creation, power);
-        Steps(31);
+        // It spins up over properties.spin_up (0.6 s) and cuts nothing below properties.min_spin.
+        Steps(12);
         Assert.Equal("saw_spin", Assert.Single(_sound.Loops.Values).Sound);
+        Assert.InRange(_runtime.Animations.Speed(creation.Id, saw), 1f, 21f);
+        Assert.Empty(_f.World.Casts);
+        Steps(20);
+        Assert.InRange(_runtime.Animations.Speed(creation.Id, saw), 22f, 30f);
+        _f.World.Casts.Clear();
+        Steps(31);
         // Every 0.25 s it casts its eight rim rays, each starting outside the blade.
         Assert.InRange(_f.World.Casts.Count, 16, 24);
         Assert.All(_f.World.Casts, c => Assert.True(Vector3.Distance(c.From, new Vector3(0, 0.25f, 0)) > 0.37f, $"{c.From} is past the rim"));
         Assert.Equal(0.12f, _f.World.LastRange, 3);
-        Assert.InRange(hits, 2, 3);
+        Assert.InRange(hits, 2, 5);
         Assert.Equal(15f * hits, target.PartDamage(target.Parts.First().Id), 3);
         Assert.Contains(_sound.Played, p => p.Sound == "saw_cut");
         Assert.Equal(1f, Assert.Single(_sound.Loops.Values).Parameters["load"]);
         Assert.Equal(30f, _runtime.Animations.Speed(creation.Id, saw));
 
+        // Switched off, it runs down as fast as it spun up.
         Activate(creation, power);
         Steps(2);
+        Assert.Single(_sound.Loops);
+        Steps(40);
         Assert.Empty(_sound.Loops);
         Assert.Equal(0f, _runtime.Animations.Speed(creation.Id, saw));
         NoErrors();

@@ -41,7 +41,8 @@
       "scatter": [
         { "object": "rock_outcrop", "spacing": 60.0, "chance": 0.3 },
         { "object": "metal_outcrop", "spacing": 150.0, "chance": 0.2 },
-        { "object": "tree", "spacing": 30.0, "chance": 0.25 },
+        { "object": "birch_tree", "spacing": 24.0, "chance": 0.3 },
+        { "object": "leafy_tree", "spacing": 48.0, "chance": 0.15 },
         { "object": "boulder", "spacing": 60.0, "chance": 0.2 },
         { "object": "bush", "spacing": 14.0, "chance": 0.2 },
         { "object": "small_rock", "spacing": 18.0, "chance": 0.15 }
@@ -62,7 +63,10 @@
       "color": "#3f6d3a",
       "ground": "forest_floor",
       "scatter": [
-        { "object": "tree", "spacing": 7.0, "chance": 0.6 },
+        { "object": "pine_tree", "spacing": 20.0, "chance": 0.35 },
+        { "object": "leafy_tree", "spacing": 11.0, "chance": 0.45 },
+        { "object": "spruce_tree", "spacing": 12.0, "chance": 0.4 },
+        { "object": "birch_tree", "spacing": 18.0, "chance": 0.15 },
         { "object": "large_rock", "spacing": 30.0, "chance": 0.15 },
         { "object": "fallen_log", "spacing": 22.0, "chance": 0.2 },
         { "object": "bush", "spacing": 9.0, "chance": 0.25 }
@@ -133,7 +137,8 @@
       ]
     }
   ],
-  // Destructible objects (D11): placeholder primitives until meshes are authored, a model (mesh), or a built-in flora model.
+  // Destructible objects (D11): placeholder primitives until meshes are authored, a model (mesh, with an optional far lod), or a
+  // built-in flora model.
   // Objects with a health break under sledge hits and weapons (chunk 20) and leave their drops on the ground; damage_from
   // limits what hurts them. Outcrops (Boulder Mining spec) stack 1 m cubes that only a spinning drill breaks, each into
   // chunks (parts/stone_chunk.json, parts/metal_chunk.json) that break into Stone and Metal Rods.
@@ -166,19 +171,82 @@
       "damage_from": ["drill"],
       "breaks_into": { "count": 2, "parts": [{ "part": "metal_chunk" }] }
     },
+    // Trees (Tree Harvesting spec): Birch is small, Leafy and Spruce medium, Pine large. A felled tree tips over as its
+    // log segments (parts/*_log.json), which break into Wood Rods (parts/wood_rod.json) that refine into Scrap Wood Blocks.
+    // Only a spinning Saw Blade cuts a standing Pine. Trees do not grow back. Models: tools/trees/build_trees.py.
     {
-      "id": "tree",
-      "collider": { "shape": "cylinder", "radius": 0.35, "height": 9.0, "at": [0.0, 4.5, 0.0] },
+      "id": "birch_tree",
+      "collider": { "shape": "cylinder", "radius": 0.2, "height": 7.2, "at": [0.0, 3.6, 0.0] },
       "pieces": [
-        { "shape": "cylinder", "radius": 0.35, "height": 9.0, "at": [0.0, 4.5, 0.0], "color": "#6b4a2e" },
-        { "shape": "sphere", "radius": 2.6, "at": [0.0, 8.0, 0.0], "color": "#2f5e2a" }
+        { "shape": "cylinder", "radius": 0.18, "height": 7.2, "at": [0.0, 3.6, 0.0], "color": "#ece9e1" },
+        { "shape": "sphere", "radius": 1.9, "at": [0.0, 6.0, 0.0], "color": "#f0b414" }
       ],
-      "footprint": 1.5,
-      "scale": [0.8, 1.25],
+      "mesh": { "file": "meshes/world/birch_tree.glb", "lod": "meshes/world/birch_tree_lod.glb", "lod_distance": 100.0 },
+      "footprint": 1.8,
+      "scale": [0.85, 1.2],
       "sink": 0.3,
-      "health": 60.0,
-      "drops": [{ "item": "scrap_wood", "count": 6 }],
-      "refine": true
+      "health": 40.0,
+      "damage_from": ["sledge", "saw", "explosion"],
+      "breaks_into": { "count": 2, "count_max": 3, "parts": [{ "part": "birch_log" }] },
+      "fell": { "height": 6.0, "spin": 0.7 },
+      "sounds": { "hit": "birch_hit", "break": "birch_fall" },
+      "debris": { "chips": ["#efece4", "#d9a466"], "leaves": ["#f4c414", "#eba413", "#f08c12"], "canopy": [0.0, 5.8, 0.0], "canopy_radius": 1.8 }
+    },
+    {
+      "id": "leafy_tree",
+      "collider": { "shape": "cylinder", "radius": 0.42, "height": 4.6, "at": [0.0, 2.3, 0.0] },
+      "pieces": [
+        { "shape": "cylinder", "radius": 0.4, "height": 5.0, "at": [0.0, 2.5, 0.0], "color": "#7b4f2c" },
+        { "shape": "sphere", "radius": 3.0, "at": [0.0, 6.3, 0.0], "color": "#72bd2b" }
+      ],
+      "mesh": { "file": "meshes/world/leafy_tree.glb", "lod": "meshes/world/leafy_tree_lod.glb", "lod_distance": 100.0 },
+      "footprint": 3.2,
+      "scale": [0.85, 1.2],
+      "sink": 0.3,
+      "health": 80.0,
+      "damage_from": ["sledge", "saw", "explosion"],
+      "breaks_into": { "count": 4, "count_max": 6, "parts": [{ "part": "wood_log" }] },
+      "fell": { "height": 7.0, "spin": 0.55 },
+      "sounds": { "hit": "leafy_hit", "break": "leafy_fall" },
+      "debris": { "chips": ["#8a5a33", "#d9a466"], "leaves": ["#8fd033", "#72bd2b", "#58a027"], "canopy": [0.0, 6.4, 0.0], "canopy_radius": 2.8 }
+    },
+    {
+      "id": "spruce_tree",
+      "collider": { "shape": "cylinder", "radius": 0.3, "height": 11.0, "at": [0.0, 5.5, 0.0] },
+      "pieces": [
+        { "shape": "cylinder", "radius": 0.25, "height": 11.0, "at": [0.0, 5.5, 0.0], "color": "#6d4326" },
+        { "shape": "cylinder", "radius": 2.2, "height": 8.0, "at": [0.0, 6.0, 0.0], "color": "#678f3b" }
+      ],
+      "mesh": { "file": "meshes/world/spruce_tree.glb", "lod": "meshes/world/spruce_tree_lod.glb", "lod_distance": 100.0 },
+      "footprint": 2.6,
+      "scale": [0.85, 1.2],
+      "sink": 0.3,
+      "health": 80.0,
+      "damage_from": ["sledge", "saw", "explosion"],
+      "breaks_into": { "count": 4, "count_max": 6, "parts": [{ "part": "wood_log" }] },
+      "fell": { "height": 8.0, "spin": 0.5 },
+      "sounds": { "hit": "spruce_hit", "break": "spruce_fall" },
+      "debris": { "chips": ["#7a4a28", "#d9a466"], "leaves": ["#79a646", "#678f3b", "#577d32"], "canopy": [0.0, 5.5, 0.0], "canopy_radius": 1.8 }
+    },
+    {
+      "id": "pine_tree",
+      // Saw only: hand tools do nothing to a standing Pine (the logs it falls into take the Sledgehammer).
+      "collider": { "shape": "cylinder", "radius": 0.65, "height": 12.0, "at": [0.0, 6.0, 0.0] },
+      "pieces": [
+        { "shape": "cylinder", "radius": 0.6, "height": 12.0, "at": [0.0, 6.0, 0.0], "color": "#734a2a" },
+        { "shape": "cylinder", "radius": 3.4, "height": 8.0, "at": [0.0, 8.0, 0.0], "color": "#5a873c" }
+      ],
+      "mesh": { "file": "meshes/world/pine_tree.glb", "lod": "meshes/world/pine_tree_lod.glb", "lod_distance": 100.0 },
+      "footprint": 4.0,
+      "scale": [0.9, 1.2],
+      "sink": 0.4,
+      "max_slope": 0.5,
+      "health": 220.0,
+      "damage_from": ["saw"],
+      "breaks_into": { "count": 8, "count_max": 12, "parts": [{ "part": "pine_log" }] },
+      "fell": { "height": 12.0, "spin": 0.4 },
+      "sounds": { "hit": "pine_hit", "break": "pine_fall" },
+      "debris": { "chips": ["#734a2a", "#d9a466"], "leaves": ["#6c9a48", "#5a873c", "#4b7433"], "canopy": [0.0, 7.5, 0.0], "canopy_radius": 2.8 }
     },
     {
       "id": "rock_node",

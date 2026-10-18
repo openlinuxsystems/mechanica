@@ -61,7 +61,7 @@ streamed in 64 m chunks. Height samples are `resolution` metres apart and must d
       "height": 12.0,
       "relief": 20.0,
       "color": "#3f6d3a",
-      "scatter": [{ "object": "tree", "spacing": 7.0, "chance": 0.6 }],
+      "scatter": [{ "object": "spruce_tree", "spacing": 12.0, "chance": 0.4 }],
       "flora": [
         { "kind": "grass", "density": 1.2, "coverage": 0.6, "patch_size": 10.0, "scale": [0.8, 1.4], "colors": ["#5fae36", "#6fba3c"] },
         { "kind": "bush", "density": 0.03, "coverage": 0.7, "patch_size": 30.0, "models": ["bush_round", "bush_low"] }
@@ -70,15 +70,18 @@ streamed in 64 m chunks. Height samples are `resolution` metres apart and must d
   ],
   "objects": [
     {
-      "id": "tree",
-      "collider": { "shape": "cylinder", "radius": 0.35, "height": 9.0, "at": [0.0, 4.5, 0.0] },
-      "pieces": [{ "shape": "sphere", "radius": 2.6, "at": [0.0, 8.0, 0.0], "color": "#2f5e2a" }],
-      "footprint": 1.5,
-      "scale": [0.8, 1.25],
+      "id": "spruce_tree",
+      "mesh": { "file": "meshes/world/spruce_tree.glb", "lod": "meshes/world/spruce_tree_lod.glb", "lod_distance": 100 },
+      "collider": { "shape": "cylinder", "radius": 0.3, "height": 11.0, "at": [0.0, 5.5, 0.0] },
+      "footprint": 2.6,
+      "scale": [0.85, 1.2],
       "sink": 0.3,
-      "health": 60,
-      "drops": [{ "item": "scrap_wood", "count": 6 }],
-      "refine": true
+      "health": 80,
+      "damage_from": ["sledge", "saw", "explosion"],
+      "breaks_into": { "count": 4, "count_max": 6, "parts": [{ "part": "wood_log" }] },
+      "fell": { "height": 8.0, "spin": 0.5 },
+      "sounds": { "hit": "spruce_hit", "break": "spruce_fall" },
+      "debris": { "chips": ["#7a4a28", "#d9a466"], "leaves": ["#79a646", "#678f3b", "#577d32"], "canopy": [0.0, 5.5, 0.0], "canopy_radius": 1.8 }
     }
   ]
 }
@@ -93,15 +96,18 @@ streamed in 64 m chunks. Height samples are `resolution` metres apart and must d
 | `biomes[].weight` | Chance an inland cell is this biome. 0 means only where placed explicitly (the coast). |
 | `biomes[].ground` | Id of the ground texture (`grounds[]`) the biome is drawn with. Omitted: its plain `color`. |
 | `biomes[].scatter[]` | `spacing` is the side of the rule's grid cells; each cell holds at most one object, kept with probability `chance`. |
-| `objects[]` | Destructible world objects. Use catalog ids (`tree`, `rock_node`, `boulder`, ...). `footprint` is the radius other scattered objects keep clear of; `sink` lowers the object into the ground. |
+| `objects[]` | Destructible world objects. Use catalog ids (`birch_tree`, `rock_node`, `boulder`, ...). `footprint` is the radius other scattered objects keep clear of; `sink` lowers the object into the ground. |
 | `objects[].health` | Damage the object takes before it breaks (Sledgehammer, weapons, splash). Omitted means it cannot be broken. Damage is not saved: a part-felled tree is whole again after a restart. |
 | `objects[].drops[]` | Items (`item`, `count`, default 1) left on the ground as a pile when it breaks. |
 | `objects[].model` | A built-in flora model (see [Flora](#flora)) drawn instead of `pieces`, such as `bush_berry`. |
 | `objects[].solid` | `false` for an object players, bots and Creations walk and drive through, like the seed bush: its collider only catches the Sledgehammer's swing, so it still breaks for its drops. Default `true`. |
 | `objects[].refine` | `true` for a raw resource node (tree, rock node): holding Use (E) on it for `refine_seconds` (`game/data/survival.json`, 5.2 s, as in Scrap Mechanic) refines it, and its `drops` go straight into the inventory. Moving more than `refine_cancel_distance` (1.5 m) or letting go cancels. Default `false`. |
 | `objects[].damage_from` | Kinds of damage that hurt it: `sledge`, `drill`, `saw`, `weapon`, `explosion`, `bot`. Omitted: all of them. Rock outcrops take only `drill` (a drill part whose input is on). |
-| `objects[].breaks_into` | Loose parts (`count` and weighted `parts[]`, as a part's `breaks_into` in the [Part Data Schema](part-data-schema.md)) it shatters into when it breaks, as well as any `drops`. A rock-outcrop cube breaks into two chunks. |
-| `objects[].mesh` | A `.glb` or `.gltf` model (`file`, centred at `at`) drawn instead of `pieces`, scaled with the object. |
+| `objects[].breaks_into` | Loose parts (`count` and weighted `parts[]`, as a part's `breaks_into` in the [Part Data Schema](part-data-schema.md)) it shatters into when it breaks, as well as any `drops`. `count_max` (at least `count`) makes the number vary per object, from `count` to `count_max`, picked from the seed. A rock-outcrop cube breaks into two chunks. |
+| `objects[].fell` | Makes a broken object fall like a tree instead of shattering: its `breaks_into` pieces stand end to end up the trunk from the ground to `height` metres (scaled with the object), the lowest `breaking.fell_gap` (`game/data/building.json`) clear of the ground, and topple away from the blow, the side it was hit from (a seeded direction when there is none), turning at `spin` rad/s about the foot as one trunk would. Needs `breaks_into`. |
+| `objects[].sounds` | Sound events the object plays: `hit` for a blow that does not break it, `break` when it breaks (for a tree, its fall). Omitted: the tool's own sounds. |
+| `objects[].debris` | What flies off when it is hit (cosmetic, drawn by every peer): `chips` (`#rrggbb` colours) from the point hit, and `leaves` from a sphere of `canopy_radius` metres round `canopy`, a few per hit and a shower when it falls. A tree drawn close up also shakes when it is hit. |
+| `objects[].mesh` | A `.glb` or `.gltf` model (`file`, centred at `at`) drawn instead of `pieces`, scaled with the object. `lod` is a simpler model drawn instead beyond `lod_distance` metres (default 60) and in the distant scenery. |
 | `objects[].max_slope` | Steepest ground it is scattered on (rise over run), if flatter than the world's own limit. |
 | `objects[].outcrop` | Makes the object a rock outcrop: a connected, stepped mass of `cubes` (`[min, max]`, at most 64) whole cubes, columns `height` (`[min, max]`, at most 8) cubes tall, the middle standing tallest. Each cube is one object `scale` metres on a side with its own id (`rule.cell_x.cell_z.cube`, the first cube `rule.cell_x.cell_z`), so breaking one leaves the rest. The base sits on the lowest ground under it, less `sink`. `footprint` is then the outcrop's radius. |
 
@@ -109,7 +115,24 @@ Shapes (`collider`, `pieces`) are `box` (`size`), `sphere` (`radius`) or `cylind
 `height`, upright), centred at `at`, turned `yaw` degrees about +Y, coloured `#rrggbb`. They are
 placeholders until meshes are authored.
 
-Scattered objects keep stable ids (`rule.cell_x.cell_z`), which is how a destroyed tree stays destroyed.
+Scattered objects keep stable ids (`rule.cell_x.cell_z`), which is how a destroyed tree stays destroyed (trees never grow back).
+
+### Trees
+
+The vanilla trees (Tree Harvesting spec) are four objects with models from `tools/trees/build_trees.py`, which also
+builds the logs and the Wood Rod (`--render DIR` draws a review sheet). Felled, each falls into loose log parts
+(`mods/vanilla/editor/batches/forestry.json`); a log breaks into 2 Wood Rods with the Sledgehammer or a Saw Blade,
+and a rod refines into 20 Scrap Wood Blocks.
+
+| Tree | Grows in | Health | Hurt by | Logs | Rods |
+|------|----------|--------|---------|------|------|
+| Birch (`birch_tree`) | meadows, forest edges | 40 | sledge, saw, explosion | 2 to 3 Birch Logs | 4 to 6 |
+| Leafy (`leafy_tree`) | forests, meadow copses | 80 | sledge, saw, explosion | 4 to 6 Logs | 8 to 12 |
+| Spruce (`spruce_tree`) | forests | 80 | sledge, saw, explosion | 4 to 6 Logs | 8 to 12 |
+| Pine (`pine_tree`) | forests, hills | 220 | saw only | 8 to 12 Pine Logs | 16 to 24 |
+
+A Saw Blade cuts only once its input has spun it up (`spin_up`, `min_spin` in its part), so a saw that has just
+been switched on does not bite.
 Adding, removing or reordering scatter rules changes those ids, so do it before a world is saved.
 
 ### Ground textures

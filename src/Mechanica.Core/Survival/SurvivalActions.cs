@@ -454,7 +454,9 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         if (hit.Object is { } objectId)
         {
             var dealt = world.FindObject(objectId) is { } placement && placement.Definition.TakesDamageFrom(kind) ? damage : 0f;
-            DamageObject(objectId, dealt, kind);
+            // The blow comes from behind the hit point along the push, or straight in at it (a saw's bite).
+            var from = push != Vector3.Zero && float.IsFinite(push.LengthSquared()) ? hit.Point - Vector3.Normalize(push) : hit.Point;
+            DamageObject(objectId, dealt, kind, hit.Point, from);
             return new ShotHitView("object", point, dealt, Object: objectId.ToString());
         }
         return new ShotHitView("ground", point, 0);
@@ -532,7 +534,7 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         foreach (var placement in world.ObjectsNear(at, radius).ToList())
         {
             var dealt = placement.Definition.TakesDamageFrom(DamageKinds.Explosion) ? Falloff(Vector3.Distance(ObjectCentre(placement), at)) : 0f;
-            DamageObject(placement.Id, dealt, DamageKinds.Explosion);
+            DamageObject(placement.Id, dealt, DamageKinds.Explosion, ObjectCentre(placement), at);
             hits.Add(new ShotHitView("object", ObjectCentre(placement).ToVec3(), dealt, Object: placement.Id.ToString()));
         }
         return hits;
@@ -619,31 +621,75 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     /// <summary>
     /// Takes <paramref name="damage"/> health from a world object with a <c>health</c>, when it takes damage of
     /// <paramref name="kind"/> (<see cref="WorldObjectDefinition.DamageFrom"/>). At 0 it breaks for every peer, leaves
-    /// its <c>drops</c> and falls apart into its <c>breaks_into</c> loose parts (a rock cube into chunks). Returns the
+    /// its <c>drops</c> and falls apart into its <c>breaks_into</c> loose parts (a rock cube into chunks), or, with
+    /// <c>fell</c>, falls as a tree: the log segments stacked up its trunk tip over away from <paramref name="from"/>, where
+    /// the blow came from. <paramref name="at"/> is where it landed (the object's middle when omitted). Returns the
     /// health left (0 when it broke, or for an object that cannot break).
     /// </summary>
-    public float DamageObject(WorldObjectId id, float damage, string kind)
+    public float DamageObject(WorldObjectId id, float damage, string kind, Vector3? at = null, Vector3? from = null)
     {
         if (world.FindObject(id) is not { Definition.Health: { } full } placement)
             return 0f;
         if (!placement.Definition.TakesDamageFrom(kind))
             return full - world.AddObjectDamage(id, 0f);
+        var definition = placement.Definition;
+        var centre = ObjectCentre(placement);
+        var where = at ?? centre;
         var total = world.AddObjectDamage(id, damage);
         if (total < full)
-            return full - total;
-        world.DestroyObject(id);
-        AddDrop(placement.Position + new Vector3(0, 0.5f, 0), ObjectDrops(placement));
-        if (placement.Definition.BreaksInto is { } breaks)
         {
-            var centre = ObjectCentre(placement);
-            world.PlaySound(BreakSound, Identifiers.VanillaModId, centre);
-            world.Shatter(breaks, centre, placement.Scale * 0.5f, Noise.Hash(id.ToString()));
+            if (damage > 0)
+            {
+                world.ObjectHit(id, where, broke: false);
+                if (ObjectSound(definition, ObjectSounds.Hit) is { } hitSound)
+                    world.PlaySound(hitSound, Identifiers.VanillaModId, where);
+            }
+            return full - total;
+        }
+        world.DestroyObject(id);
+        world.ObjectHit(id, where, broke: true);
+        AddDrop(placement.Position + new Vector3(0, 0.5f, 0), ObjectDrops(placement));
+        if (definition.BreaksInto is { } breaks)
+        {
+            world.PlaySound(ObjectSound(definition, ObjectSounds.Break) ?? BreakSound, Identifiers.VanillaModId, centre);
+            var seed = Noise.Hash(id.ToString());
+            if (definition.Fell is { } fell)
+            {
+                var foot = placement.Position + new Vector3(0, definition.Sink * placement.Scale, 0);
+                world.Fell(breaks, foot, fell.Height * placement.Scale, FallDirection(placement, from ?? where, seed), fell.Spin, seed);
+            }
+            else
+            {
+                world.Shatter(breaks, centre, placement.Scale * 0.5f, seed);
+            }
+        }
+        else if (ObjectSound(definition, ObjectSounds.Break) is { } breakSound)
+        {
+            world.PlaySound(breakSound, Identifiers.VanillaModId, centre);
         }
         return 0f;
     }
 
     /// <summary>The sound event a world object makes falling apart into loose parts (a rock cube cracking).</summary>
     public const string BreakSound = "drill_break";
+
+    /// <summary>A world object's own sound event for <paramref name="key"/> (<see cref="ObjectSounds"/>), or null.</summary>
+    public static string? ObjectSound(WorldObjectDefinition definition, string key) =>
+        definition.Sounds?.GetValueOrDefault(key) is { Length: > 0 } sound ? sound : null;
+
+    /// <summary>
+    /// Which way a felled tree falls: level, away from <paramref name="from"/> (where the blow came from). A blow from
+    /// straight above or below picks a way from <paramref name="seed"/>.
+    /// </summary>
+    public static Vector3 FallDirection(WorldObjectPlacement placement, Vector3 from, uint seed)
+    {
+        var away = placement.Position - from;
+        away.Y = 0;
+        if (away.LengthSquared() > 1e-6f)
+            return Vector3.Normalize(away);
+        var angle = Noise.Unit(Noise.Hash(seed, 7, 7)) * MathF.Tau;
+        return new Vector3(MathF.Cos(angle), 0, MathF.Sin(angle));
+    }
 
     // The items a world object leaves when it breaks or is refined.
     private List<ItemStack> ObjectDrops(WorldObjectPlacement placement) => [.. (placement.Definition.Drops ?? [])
@@ -680,7 +726,12 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         WorldObjectId.TryParse(id, out var parsed) && world.FindObject(parsed) is { Definition.Health: not null } placement ? ObjectCentre(placement) : null;
 
     /// <inheritdoc/>
-    public float StrikeObject(string id, float damage, string kind) => WorldObjectId.TryParse(id, out var parsed) ? DamageObject(parsed, damage, kind) : 0f;
+    public float StrikeObject(string id, float damage, string kind, Vector3? at = null, Vector3? from = null) =>
+        WorldObjectId.TryParse(id, out var parsed) ? DamageObject(parsed, damage, kind, at, from) : 0f;
+
+    /// <inheritdoc/>
+    public string? ObjectSound(string id, string key) =>
+        WorldObjectId.TryParse(id, out var parsed) && world.FindObject(parsed) is { } placement ? ObjectSound(placement.Definition, key) : null;
 
     /// <inheritdoc/>
     public Vector3? BotCentre(int bot) => Bots?.BotCentre(bot);

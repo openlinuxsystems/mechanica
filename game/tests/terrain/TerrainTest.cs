@@ -113,7 +113,7 @@ public partial class TerrainTest : StagedTest
                     var near = gen.ObjectsIn(x - 30, z - 30, x + 30, z + 30).ToList();
                     if (near.Any(o => Flat(o.Position).DistanceTo(new Vector2(x, z)) < 4f))
                         continue;
-                    if (near.FirstOrDefault(o => o.Definition.Id == "tree" && Flat(o.Position).DistanceTo(new Vector2(x, z)) > 6f) is { } tree)
+                    if (near.FirstOrDefault(o => o.Definition.Id?.EndsWith("_tree") == true && Flat(o.Position).DistanceTo(new Vector2(x, z)) > 6f) is { } tree)
                     {
                         _hillside = new Vector3(x, gen.HeightAt(x, z), z);
                         _tree = tree;

@@ -346,6 +346,13 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
     /// <inheritdoc/>
     public void Shatter(BreakDefinition breaks, System.Numerics.Vector3 centre, float radius, uint seed) => Build.Tools!.Shatter(breaks, centre, radius, seed);
 
+    /// <inheritdoc/>
+    public void Fell(BreakDefinition breaks, System.Numerics.Vector3 foot, float height, System.Numerics.Vector3 direction, float spin, uint seed) =>
+        Build.Tools!.Fell(breaks, foot, height, direction, spin, seed);
+
+    /// <inheritdoc/>
+    public void ObjectHit(WorldObjectId id, System.Numerics.Vector3 at, bool broke) => World.ObjectHit(id, at.ToGodot(), broke);
+
     // Slowed players move slower: the host from its own state, a client from the vitals it was sent.
     private void UpdateSpeedScales()
     {

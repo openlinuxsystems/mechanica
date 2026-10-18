@@ -118,9 +118,16 @@ public interface IStrikeTargets
 
     /// <summary>
     /// Takes <paramref name="damage"/> health from a world object, if it takes damage of <paramref name="kind"/>
-    /// (<see cref="World.DamageKinds"/>). Returns the health left (0 when it broke).
+    /// (<see cref="World.DamageKinds"/>), hit at <paramref name="at"/> by a blow from <paramref name="from"/> (a felled
+    /// tree falls away from it). Returns the health left (0 when it broke).
     /// </summary>
-    float StrikeObject(string id, float damage, string kind);
+    float StrikeObject(string id, float damage, string kind, Vector3? at = null, Vector3? from = null);
+
+    /// <summary>
+    /// The world object's own sound event for <paramref name="key"/> (<see cref="World.ObjectSounds"/>: a tree's knock),
+    /// played instead of the tool's, or null.
+    /// </summary>
+    string? ObjectSound(string id, string key) => null;
 
     /// <summary>Middle of a living bot, or null when there is none with that id.</summary>
     Vector3? BotCentre(int bot);
@@ -682,8 +689,11 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
         if (args.Object is { } id)
         {
             var at = HitPoint(args, Targets!.ObjectCentre(id)!.Value);
-            var left = Targets.StrikeObject(id, settings.Sledge.ObjectDamage, World.DamageKinds.Sledge);
-            world.PlaySound(left <= 0 ? "smash_break" : "smash_hit", Identifiers.VanillaModId, at);
+            var own = Targets.ObjectSound(id, World.ObjectSounds.Hit) is not null;
+            var left = Targets.StrikeObject(id, settings.Sledge.ObjectDamage, World.DamageKinds.Sledge, at, world.EyeOf(caller.Peer) ?? at);
+            // An object with its own sounds (a tree's knock and fall) makes them itself.
+            if (!own)
+                world.PlaySound(left <= 0 ? "smash_break" : "smash_hit", Identifiers.VanillaModId, at);
             return Value(new SledgeResult(left <= 0, left, left <= 0, []));
         }
         var creation = world.FindCreation(args.Creation!.Value)!;
@@ -748,7 +758,7 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
         var made = new List<Creation>();
         if (catalog is null)
             return made;
-        var count = Math.Clamp(breaks.Count, 1, World.BreakDefinition.MaxCount);
+        var count = breaks.CountFor(World.Noise.Unit(World.Noise.Hash(seed, 2, 2)));
         var turn = World.Noise.Unit(World.Noise.Hash(seed, 0, 0)) * MathF.Tau;
         for (var i = 0; i < count; i++)
         {
@@ -770,6 +780,59 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
             var mass = creation.Bodies[0].Mass;
             if (mass > 0 && velocity != Vector3.Zero)
                 world.Push(creation, 0, at, velocity * mass);
+            made.Add(creation);
+        }
+        return made;
+    }
+
+    /// <summary>
+    /// A tree was felled: spawns its <paramref name="breaks"/> pieces (loose log segments), each its own Creation, stood
+    /// on end one above the other from <paramref name="foot"/> up a trunk <paramref name="height"/> m tall, and sets them
+    /// all tipping over along <paramref name="direction"/> (level) as one trunk turning at <paramref name="spin"/> rad/s
+    /// about its foot: each piece moves at that rate times its height and turns with it. <paramref name="seed"/> picks how
+    /// many pieces there are and what each is. Returns the new Creations, lowest first.
+    /// </summary>
+    public IReadOnlyList<Creation> Fell(World.BreakDefinition breaks, Vector3 foot, float height, Vector3 direction, float spin, uint seed)
+    {
+        var made = new List<Creation>();
+        if (catalog is null)
+            return made;
+        var count = breaks.CountFor(World.Noise.Unit(World.Noise.Hash(seed, 2, 2)));
+        var fall = new Vector3(direction.X, 0, direction.Z);
+        fall = fall.LengthSquared() > 1e-6f ? Vector3.Normalize(fall) : Vector3.UnitX;
+        // Pieces go up the trunk in even steps, never closer than end to end.
+        var cursor = foot.Y + settings.Breaking.FellGap;
+        var step = height / count;
+        for (var i = 0; i < count; i++)
+        {
+            var part = breaks.Pick(World.Noise.Unit(World.Noise.Hash(seed, i, 1)));
+            if (part is null || catalog.FindDefinition(part) is not { Loose: true } definition)
+                continue;
+            var cells = definition.Size ?? GridSize.One;
+            var dims = new Vector3(cells.X, cells.Y, cells.Z) * MechanicaInfo.GridSize;
+            // Stand the piece's longest side up, turned a little about it.
+            var upright = dims.Z >= dims.X && dims.Z >= dims.Y ? Quaternion.CreateFromAxisAngle(Vector3.UnitX, -MathF.PI / 2f)
+                : dims.X > dims.Y ? Quaternion.CreateFromAxisAngle(Vector3.UnitZ, MathF.PI / 2f)
+                : Quaternion.Identity;
+            var length = MathF.Max(dims.X, MathF.Max(dims.Y, dims.Z));
+            var thickness = MathF.Min(dims.X, MathF.Min(dims.Y, dims.Z));
+            var rotation = Quaternion.CreateFromAxisAngle(Vector3.UnitY, World.Noise.Unit(World.Noise.Hash(seed, i, 3)) * MathF.Tau) * upright;
+            var at = new Vector3(foot.X, cursor + length / 2f, foot.Z);
+            cursor += MathF.Max(length + settings.Breaking.FellGap, step);
+            var creation = new Creation(world.NextCreationId(), catalog);
+            if (!creation.TryPlacePart(part, new GridCell(0, 0, 0), GridRotation.Identity, out var placed, out _))
+                continue;
+            var offset = PartGeometry.CentreMetres(definition, placed.Cell, placed.Rotation).ToNumerics();
+            creation.SetAllBodyPoses(new Pose(at - Vector3.Transform(offset, rotation), rotation));
+            world.Added(creation);
+            var mass = creation.Bodies[0].Mass;
+            var rise = at.Y - foot.Y;
+            if (mass > 0 && spin > 0 && rise > 0)
+            {
+                // Moving at spin × rise, pushed far enough above its middle to turn at spin too (a rod's inertia).
+                var lever = MathF.Min(length / 2f, (3f * thickness * thickness / 4f + length * length) / (12f * rise));
+                world.Push(creation, 0, at + Vector3.UnitY * lever, fall * (spin * rise * mass));
+            }
             made.Add(creation);
         }
         return made;

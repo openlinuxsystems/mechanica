@@ -1,0 +1,39 @@
+{
+  "id": "pine_log",
+  "name": "Pine Log",
+  "description": "A thick length of a felled Pine. Hand tools work on it once the tree is down: break it with the Sledgehammer or a spinning Saw Blade for its Wood Rods.",
+  "category": "resource",
+  "mass": 110,
+  "durability": 12,
+  "friction": 0.7,
+  "buoyancy": 0.6,
+  "flammable": true,
+  "stack_size": 4,
+  "sound_material": "wood",
+  "size": [3, 3, 5],
+  "mesh": "meshes/items/pine_log.glb",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.9,
+    "metallic": 0
+  },
+  "collision": {
+    "shape": "convex",
+    "mesh": "meshes/items/pine_log.glb"
+  },
+  "sounds": {
+    "pickup": "pickup_wood",
+    "drop": "drop_wood"
+  },
+  "loose": true,
+  "breaks_into": {
+    "count": 2,
+    "parts": [
+      {
+        "part": "wood_rod",
+        "weight": 1
+      }
+    ]
+  },
+  "sledge_damage": 25
+}

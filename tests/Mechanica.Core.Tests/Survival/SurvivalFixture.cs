@@ -171,6 +171,8 @@ internal sealed class SurvivalFixture
         public Func<Vector3, Vector3, RayHit?> Ray { get; set; } = (_, _) => null;
         public float LastRange { get; private set; }
         public List<Vector3> Pushes { get; } = [];
+        public List<Vector3> PushPoints { get; } = [];
+        public List<(WorldObjectId Id, Vector3 At, bool Broke)> ObjectHits { get; } = [];
         public List<(int Peer, Vector3 Feet)> Teleports { get; } = [];
         public Vector3 Spawn { get; set; } = new(10, 0, 10);
         public float WaterLevel { get; set; } = -1;
@@ -220,11 +222,20 @@ internal sealed class SurvivalFixture
 
         public SledgeResult DamagePart(Creation creation, int partId, float damage) => Tools.DamagePart(creation, partId, damage);
 
-        public void Push(Creation creation, int bodyIndex, Vector3 point, Vector3 impulse) => Pushes.Add(impulse);
+        public void Push(Creation creation, int bodyIndex, Vector3 point, Vector3 impulse)
+        {
+            Pushes.Add(impulse);
+            PushPoints.Add(point);
+        }
 
         public void RemovePart(Creation creation, int partId) => Tools.RemovePart(creation, partId);
 
         public void Shatter(BreakDefinition breaks, Vector3 centre, float radius, uint seed) => Tools.Shatter(breaks, centre, radius, seed);
+
+        public void Fell(BreakDefinition breaks, Vector3 foot, float height, Vector3 direction, float spin, uint seed) =>
+            Tools.Fell(breaks, foot, height, direction, spin, seed);
+
+        public void ObjectHit(WorldObjectId id, Vector3 at, bool broke) => ObjectHits.Add((id, at, broke));
 
         // A part's shape reaches the sphere when its centre is within the radius plus half a block.
         public IEnumerable<(int Creation, int Part)> PartsNear(Vector3 point, float radius) =>

@@ -79,7 +79,7 @@ public class FloraTests
         // The harvestable bush is drawn as the berry bush and is walk-through; decorative bushes leave its model alone.
         Assert.Equal("bush_berry", data.Objects["bush"].Model);
         Assert.False(data.Objects["bush"].Solid);
-        Assert.True(data.Objects["tree"].Solid);
+        Assert.True(data.Objects["pine_tree"].Solid);
         Assert.DoesNotContain(data.FloraRules, f => f.Models.Any(m => m.Id == "bush_berry"));
     }
 
