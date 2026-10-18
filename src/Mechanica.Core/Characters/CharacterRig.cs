@@ -61,7 +61,7 @@ public enum CharacterGesture : byte
     /// <summary>Pointing a tool (the Lift).</summary>
     ToolUse,
 
-    /// <summary>Welding.</summary>
+    /// <summary>The Weld Tool welding: pushed in and held while its clamping arms close and its tip spins and glows.</summary>
     Weld,
 
     /// <summary>Spraying paint.</summary>
@@ -207,6 +207,8 @@ public static class CharacterRig
         "hold_bucket_fp", "hold_bucket_full_fp", "bucket_fill_fp", "bucket_throw_fp", "bucket_place_fp", "bucket_place_full_fp",
         "hold_connect", "hold_connect_aim", "connect_draw", "connect_stow", "connect_click", "connect_reverse",
         "hold_connect_fp", "hold_connect_aim_fp", "connect_draw_fp", "connect_stow_fp", "connect_click_fp", "connect_reverse_fp",
+        "hold_weld", "hold_weld_aim", "weld_draw", "weld_stow", "hold_weld_fp", "hold_weld_aim_fp", "weld_draw_fp",
+        "weld_stow_fp", "weld_fp",
         "hold_bag", "bag_spill", "bag_lift", "bag_lower", "hold_bag_fp", "bag_spill_fp", "bag_lift_fp", "bag_lower_fp",
     ];
 
@@ -230,13 +232,15 @@ public static class CharacterRig
 
     /// <summary>
     /// The arm pose for holding <paramref name="prop"/>, or null for empty hands. <paramref name="guard"/> raises the
-    /// tool: the Sledgehammer to block (right click held), the Connect Tool to aim at a node or drag a link.
+    /// tool: the Sledgehammer to block (right click held), the Connect Tool to aim at a node or drag a link, the Weld Tool
+    /// to aim while a part is selected.
     /// </summary>
     public static string? HoldClip(CharacterProp prop, bool guard = false) => prop switch
     {
         CharacterProp.None => null,
         CharacterProp.Sledgehammer => guard ? "hold_heavy_block" : "hold_heavy",
         CharacterProp.ConnectTool => guard ? "hold_connect_aim" : "hold_connect",
+        CharacterProp.WeldTool => guard ? "hold_weld_aim" : "hold_weld",
         CharacterProp.PotatoBlaster => "hold_gun",
         CharacterProp.WaterBucket => "hold_bucket",
         CharacterProp.WaterBucketFull => "hold_bucket_full",
@@ -248,25 +252,27 @@ public static class CharacterRig
 
     /// <summary>
     /// The clip that brings <paramref name="prop"/> into the hand when it is taken, or null when it just appears: the
-    /// Refine Tool and the Connect Tool are drawn from the hip, and a Soil Bag is lifted up from low down. Every peer plays it when it sees the prop change, so it
+    /// Refine Tool, the Connect Tool and the Weld Tool are drawn from the hip, and a Soil Bag is lifted up from low down. Every peer plays it when it sees the prop change, so it
     /// costs no traffic.
     /// </summary>
     public static string? DrawClip(CharacterProp prop) => prop switch
     {
         CharacterProp.RefineTool => "refine_draw",
         CharacterProp.ConnectTool => "connect_draw",
+        CharacterProp.WeldTool => "weld_draw",
         CharacterProp.SoilBag => "bag_lift",
         _ => null,
     };
 
     /// <summary>
-    /// The clip that puts <paramref name="prop"/> away when the hand takes something else, or null: the Refine Tool and
-    /// the Connect Tool go back to the hip and a Soil Bag is lowered, still drawn until the clip ends.
+    /// The clip that puts <paramref name="prop"/> away when the hand takes something else, or null: the Refine Tool, the
+    /// Connect Tool and the Weld Tool go back to the hip and a Soil Bag is lowered, still drawn until the clip ends.
     /// </summary>
     public static string? StowClip(CharacterProp prop) => prop switch
     {
         CharacterProp.RefineTool => "refine_stow",
         CharacterProp.ConnectTool => "connect_stow",
+        CharacterProp.WeldTool => "weld_stow",
         CharacterProp.SoilBag => "bag_lower",
         _ => null,
     };

@@ -16,7 +16,12 @@ namespace Mechanica.Game.Building;
 /// the weld plane, and a second click sends <c>Weld</c>: the host moves it there and merges the two, every touching face
 /// rigid. Aimed at another part of the same Creation, the second click sends <c>WeldParts</c>, welding the two Bodies
 /// together (locking a bearing, say). Holding left click on the first part and letting go on the second does the
-/// same as two clicks. After a weld a blue seam glows on the faces it joined and fades. Right click drops the selection.
+/// same as two clicks. The see-through copy is green where the host would take the weld and red where it would refuse
+/// it (not touching, overlapping, in the way, out of reach, or a creation built on the ground selected to move), and
+/// the square turns red with it. What is built on the ground stays put, so a creation is welded to the ground by
+/// welding it to a block built there. After a weld a blue seam glows on the faces it joined and fades, and the tool's
+/// clamping arms close and its tip spins (<see cref="WeldEffects"/>). Right click drops the selection. While a part is
+/// selected the tool is held up and aimed (the guard flag).
 /// </summary>
 public partial class WeldTool : HandTool
 {
@@ -49,6 +54,25 @@ public partial class WeldTool : HandTool
         NoDepthTest = true,
     };
 
+    /// <summary>The weld plane square where the host would refuse the weld.</summary>
+    public static readonly StandardMaterial3D InvalidPlaneMaterial = new()
+    {
+        AlbedoColor = UiTokens.Error with { A = 0.45f },
+        Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
+        ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
+        CullMode = BaseMaterial3D.CullModeEnum.Disabled,
+        NoDepthTest = true,
+    };
+
+    /// <summary>The see-through copy of the moved Creation where the weld would be taken.</summary>
+    public static readonly StandardMaterial3D ValidMaterial = new()
+    {
+        AlbedoColor = UiTokens.Success with { A = 0.35f },
+        Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
+        ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
+        NoDepthTest = true,
+    };
+
     /// <summary>The part the weld starts from.</summary>
     /// <param name="Creation">Its Creation, which <c>Weld</c> moves.</param>
     /// <param name="Part">The part.</param>
@@ -77,8 +101,8 @@ public partial class WeldTool : HandTool
     public override CharacterProp Prop => CharacterProp.WeldTool;
 
     /// <inheritdoc/>
-    protected override CharacterGesture GestureFor(InputEvent @event) =>
-        Pressed(@event, Core.Input.InputActions.Primary) ? UseGesture : CharacterGesture.None;
+    // A click only selects or aims; the weld gesture plays as a weld is sent (Weld).
+    protected override CharacterGesture GestureFor(InputEvent @event) => CharacterGesture.None;
 
     /// <inheritdoc/>
     protected override CharacterGesture UseGesture => CharacterGesture.Weld;
@@ -104,6 +128,18 @@ public partial class WeldTool : HandTool
     /// <summary>True while left click is held after selecting: letting go on another part welds.</summary>
     public bool Dragging => _dragFrom is not null;
 
+    /// <summary>Holds the tool up as if a part were selected (the capture tool's poses).</summary>
+    public bool KeepRaised { get; set; }
+
+    /// <summary>
+    /// Why the host would refuse to weld the selection to what the crosshair is on now (the same checks it makes), or
+    /// null when it would take it or nothing is aimed at. The preview and the square turn red while this is set.
+    /// </summary>
+    public string? Problem { get; private set; }
+
+    /// <summary>True when a click now would weld and the host would take it: the copy and the square show valid.</summary>
+    public bool CanWeld => Selected is not null && Aim?.Part is not null && Problem is null && Joining is { Faces.Count: > 0 };
+
     public override void _Ready()
     {
         _preview = new Node3D { Name = "Preview", TopLevel = true, Visible = false };
@@ -123,6 +159,7 @@ public partial class WeldTool : HandTool
     {
         if (!Active)
             return;
+        Player.HeldGuard = Selected is not null || KeepRaised;
         // A release the tool never heard (the mouse freed for a window) ends the drag without welding.
         if (ReadDeviceInput && Input.MouseMode != Input.MouseModeEnum.Captured)
             _dragFrom = null;
@@ -192,6 +229,7 @@ public partial class WeldTool : HandTool
         if (aim.Creation.Id == selected.Creation && aim.Part is null)
             return false;
         PlayFeedback("weld_start");
+        Player.Gesture(CharacterGesture.Weld);
         var seam = Joining;
         if (aim.Creation.Id == selected.Creation)
         {
@@ -222,7 +260,9 @@ public partial class WeldTool : HandTool
         Aim = Cast();
         UpdateOutline();
         Joining = Join();
+        Problem = Check();
         _plane.Visible = Active && Joining is { Faces.Count: > 0 };
+        _plane.MaterialOverride = Problem is null ? PlaneMaterial : InvalidPlaneMaterial;
         if (_plane.Visible)
             PlaceSquare(_plane, Joining!.Frame, Joining.Faces[0]);
         var source = Selected is { } sel && Aim is not null && Aim.Creation.Id != sel.Creation ? Build.Creations.Find(sel.Creation) : null;
@@ -232,6 +272,44 @@ public partial class WeldTool : HandTool
         if (_previewOf != source.Id)
             BuildPreview(source);
         _preview.GlobalTransform = Aim!.Preview;
+        var look = Problem is null ? ValidMaterial : BuildTool.InvalidMaterial;
+        foreach (var mesh in _preview.GetChildren().OfType<GeometryInstance3D>())
+            mesh.MaterialOverride = look;
+    }
+
+    // The checks the host makes on Weld and WeldParts, so the preview turns red where a weld would be refused.
+    private string? Check()
+    {
+        if (Selected is not { } selected || Aim is not { Part: { } part } aim || Build.Creations.Find(selected.Creation) is not { } source)
+            return null;
+        if (!Owns)
+            return Loc.T("Craft a {0} at a Fabricator first", Loc.T(ToolName));
+        if (aim.Creation.Id == selected.Creation)
+            return part == selected.Part ? null : !source.CanWeldParts(selected.Part, part, out _) ? Loc.T("These parts do not touch")
+                : Eye.DistanceTo(aim.Frame * PartGeometry.CentreMetres(source.DefinitionOf(part), source.FindPart(part)!.Cell, source.FindPart(part)!.Rotation).ToGodot()) > Build.Settings!.Reach
+                    ? Loc.T("Too far away") : null;
+        var target = aim.Creation;
+        if (source.IsGrounded)
+            return Loc.T("This creation is built on the ground; select the loose one first");
+        if (source.AuthorityPeer != target.AuthorityPeer)
+            return Loc.T("Another player is driving one of these");
+        if (source.Parts.Count + target.Parts.Count > Build.Settings!.MaxPartsPerCreation)
+            return Loc.T("Together they would have more parts than allowed");
+        if (new[] { source, target }.SelectMany(c => c.Parts.Select(p => c.DefinitionOf(p.Id))).FirstOrDefault(d => d.GroundOnly == true || d.Loose == true) is { } stuck)
+            return Loc.T("{0} cannot be welded", stuck.Name ?? stuck.Id);
+        if (!target.CanMergeFrom(source, aim.Rotation, aim.Offset, weld: true, out _, out _))
+            return Joining is { Faces.Count: > 0 } ? Loc.T("It would overlap") : Loc.T("Not touching");
+        if (Eye.DistanceTo(aim.Preview.Origin) > Build.Settings.Reach)
+            return Loc.T("Too far away");
+        var pose = aim.Frame.ToPose();
+        foreach (var p in source.Parts)
+        {
+            var cell = aim.Rotation.Apply(p.Cell) + aim.Offset;
+            var rotation = GridRotation.Combine(p.Rotation, aim.Rotation);
+            if (Build.CheckPartClear(source.DefinitionOf(p.Id), cell, rotation, pose, [source.Id, target.Id], null) is { } blocked)
+                return blocked;
+        }
+        return null;
     }
 
     /// <summary>Puts a grid-face square at <paramref name="face"/>, just off the surface so it is not hidden in it.</summary>
@@ -247,12 +325,13 @@ public partial class WeldTool : HandTool
     public override string HudText()
     {
         var state = Selected is { } s ? Loc.T("part {0} of creation {1} selected", s.Part, s.Creation) : Loc.T("nothing selected");
-        return Loc.T("Weld Tool ({0})   {1} select / weld (or drag between parts)  {2} turn  {3} tip  {4} clear", state, Key(InputActions.Primary), Key(InputActions.Rotate), Key(InputActions.Tip), Key(InputActions.Secondary)) + Status;
+        var problem = Problem is { } why ? "\n" + why : "";
+        return Loc.T("Weld Tool ({0})   {1} select / weld (or drag between parts)  {2} turn  {3} tip  {4} clear", state, Key(InputActions.Primary), Key(InputActions.Rotate), Key(InputActions.Tip), Key(InputActions.Secondary)) + problem + Status;
     }
 
     /// <inheritdoc/>
     public override Core.Ui.CrosshairState Crosshair => Aim?.Part is null ? Core.Ui.CrosshairState.Default
-        : Selected is null || Joining is { Faces.Count: > 0 } ? Core.Ui.CrosshairState.Valid : Core.Ui.CrosshairState.Default;
+        : Selected is null || CanWeld ? Core.Ui.CrosshairState.Valid : Core.Ui.CrosshairState.Default;
 
     /// <inheritdoc/>
     protected override bool HandleInput(InputEvent @event)
@@ -284,6 +363,7 @@ public partial class WeldTool : HandTool
             return;
         _preview.Visible = _outline.Visible = _plane.Visible = false;
         _dragFrom = null;
+        Player.HeldGuard = false;
     }
 
     private Action<ActionResult> Done(Action<ActionResult>? done, Seam? seam) => result =>

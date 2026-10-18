@@ -98,7 +98,8 @@ The animation set is shared by every character: `idle`, `walk`, `jog`, `run`, `c
 `hold_heavy_block` (the Sledgehammer raised across the chest while right click blocks, in Creative), `hold_gun`, `hold_item`,
 `hold_refine` (the Refine Tool scraping at a resource node, a stroke every 0.75 s), `hold_connect` (the Connect Tool at
 chest height, tip forward, with a slow sway), `hold_connect_aim` (raised and aimed while a node is under the crosshair or a
-drag is on) and the one-shot gestures (`sledge_swing`, `tool_use`, `weld`,
+drag is on), `hold_weld` and `hold_weld_aim` (the Weld Tool held, and raised while a part is selected) and the one-shot
+gestures (`sledge_swing`, `tool_use`, `weld` (the Weld Tool pushed in and held while a weld registers),
 `paint_spray`, `fire_gun`, `eat`, `throw`, `plant`, `pour`, `interact`, `hurt`, `connect_click` when a link is made or
 taken away, `connect_reverse` when a bearing is reversed) move only the upper body
 from the spine up, over whatever the legs are doing. Every peer works out each player's pose from what it
@@ -111,7 +112,11 @@ only while Use is held on a resource node, comes with a draw from the hip (`refi
 (`refine_stow`); every peer plays them when it sees that player's hand take or drop the tool, chips fly off the node at
 each stroke (sparks off metal) and the `refiner_*` sounds play, all from the same prop byte. The Connect Tool draws from
 the hip (`connect_draw`, 0.5 s) and stows back to it (`connect_stow`, 0.45 s); its tip and display glow cyan, pulse while
-it is raised and flash for 0.2 s on each `connect_click` (a dip then a flash on `connect_reverse`).
+it is raised and flash for 0.2 s on each `connect_click` (a dip then a flash on `connect_reverse`). The Weld Tool
+draws from the hip (`weld_draw`) and stows back to it (`weld_stow`); during `weld` its clamping arms
+(`weld_tool_arm_l`, `weld_tool_arm_r`) close round its tip, the tip (`weld_tool_tip`) spins and its blue ring
+(`weld_tool_glow`) brightens (`WeldMotion`), and blue sparks ride on the host's `weld_complete` sound.
+`tools/characters/render_weld_tool.py OUT_DIR` renders its prop like its reference sheet, arms open and closed.
 
 Timing lives in `game/data/character.json` (engine settings, not moddable): the speed each moving clip
 is authored at, where in a cycle the feet land, crossfade times, how far the body turns before the feet
