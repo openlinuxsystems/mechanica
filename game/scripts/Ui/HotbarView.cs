@@ -8,12 +8,15 @@ namespace Mechanica.Game.Ui;
 
 /// <summary>
 /// The hotbar at the bottom centre of the screen (UI spec §3, §8, §11): ten slots with each one's picture, how many
-/// the player carries (none for tools, or in Creative) and its key. The slot picked has the bright cyan border and
-/// pulses as it is picked. Slots take 48 to 72 pixels by the screen's height. While the inventory is open, items
+/// the player carries (none for tools, or in Creative) and its key. Slots are the design language's <c>Tile</c> blue;
+/// the slot picked is <c>TileSelected</c> with a white ring and pulses as it is picked. Slots take 48 to 72 pixels by the screen's height. While the inventory is open, items
 /// dragged onto a slot go in it, slots drag onto each other to swap, and a slot dragged off the bar empties it.
 /// </summary>
 public partial class HotbarView : HBoxContainer
 {
+    /// <summary>Pixels between slots.</summary>
+    public const int Gap = 6;
+
     private readonly List<ItemSlot> _slots = [];
 
     /// <summary>The tools and slots shown. Set before adding to the tree.</summary>
@@ -27,13 +30,15 @@ public partial class HotbarView : HBoxContainer
 
     public override void _Ready()
     {
-        AddThemeConstantOverride("separation", 4);
+        AddThemeConstantOverride("separation", Gap);
+        // The design language's tiles (UI spec §0, §3): Tile blue, the current slot TileSelected with a white ring.
+        Theme = StationTheme.Theme;
         // While the mouse is free (the inventory open), clicks between slots stay off the game too.
         UiInput.KeepMouse(this);
         for (var i = 0; i < HotbarActions.SlotCount; i++)
         {
             var index = i;
-            var slot = new ItemSlot { Name = $"Slot{i + 1}", CustomMinimumSize = new Vector2(SlotSize, SlotSize) };
+            var slot = new ItemSlot { Name = $"Slot{i + 1}", CustomMinimumSize = new Vector2(SlotSize, SlotSize), Tiled = true };
             slot.DragSource = () => Belt.Slots[index] is { } entry ? new ItemDrag { Entry = entry, HotbarSlot = index } : null;
             slot.CanDrop = drag => Belt.Hotbar is not null && (drag.HotbarSlot is not null || Accepts(drag.Entry));
             slot.Dropped = drag =>
@@ -70,7 +75,7 @@ public partial class HotbarView : HBoxContainer
         foreach (var slot in _slots)
             slot.CustomMinimumSize = new Vector2(SlotSize, SlotSize);
         ResetSize();
-        var width = SlotSize * HotbarActions.SlotCount + 4 * (HotbarActions.SlotCount - 1);
+        var width = SlotSize * HotbarActions.SlotCount + Gap * (HotbarActions.SlotCount - 1);
         Position = new Vector2((screen.X - width) / 2, screen.Y - margin.Y - SlotSize);
     }
 

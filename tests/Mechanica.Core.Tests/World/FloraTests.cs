@@ -104,7 +104,8 @@ public class FloraTests
                     Assert.InRange(plant.Position.Z, oz, oz + ChunkSize);
                     Assert.True(plant.Position.Y >= a.SeaLevel, "nothing grows under the sea");
                     Assert.Equal(a.HeightAt(plant.Position.X, plant.Position.Z), plant.Position.Y, 0.35f);
-                    Assert.Empty(a.PoisAt(plant.Position.X, plant.Position.Z));
+                    // Inside a POI only the flora it names grows (the crash site's meadow), never on its bare burnt middle.
+                    Assert.All(a.PoisAt(plant.Position.X, plant.Position.Z), p => Assert.NotNull(p.Poi.Prefab.Flora));
                     Assert.InRange(plant.Rank, 0f, 1f);
                 }
                 total += grass.Count;
@@ -179,6 +180,10 @@ public class FloraTests
         Assert.True(settings.Distance(FloraKind.Grass, FoliageLevel.Low) < settings.Distance(FloraKind.Grass, FoliageLevel.VeryHigh));
         Assert.True(settings.Distance(FloraKind.Bush) > settings.Distance(FloraKind.Grass));
         Assert.Equal(0f, settings.Low.Wind);
+        // Far grass thins out to a few larger tufts, after the near full meshes.
+        Assert.InRange(settings.ThinKeep, 0.1f, 0.6f);
+        Assert.True(settings.ThinScale > 1f);
+        Assert.True(settings.ThinShare > settings.LodShare);
     }
 
     [Theory]
@@ -186,6 +191,8 @@ public class FloraTests
     [InlineData("""{ "low": { "density": -1 } }""", "low.density")]
     [InlineData("""{ "wind_direction": [0, 0] }""", "wind_direction")]
     [InlineData("""{ "grass_distanse": 10 }""", "grass_distanse")]
+    [InlineData("""{ "thin_keep": 2 }""", "thin_keep")]
+    [InlineData("""{ "thin_scale": 0 }""", "thin_scale")]
     public void BadFloraSettingsAreRejected(string json, string message)
     {
         var e = Assert.Throws<FormatException>(() => FloraSettings.FromJson(json));

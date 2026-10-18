@@ -261,6 +261,15 @@ public class WorldGenTests
     [InlineData("""{ "biomes": [{ "id": "a" }], "coast_biome": "sea" }""", "$.coast_biome")]
     [InlineData("""{ "biomes": [{ "id": "a" }], "objects": [{ "id": "tree", "collider": { "shape": "sphere" } }] }""", "$.objects[0].collider.radius")]
     [InlineData("""{ "biomes": [{ "id": "a", "weight": 0 }] }""", "$.biomes")]
+    [InlineData("""{ "biomes": [{ "id": "a", "ground": "grass" }] }""", "$.biomes[0].ground")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "grounds": [{ "id": "grass", "texture": "../grass.png" }] }""", "$.grounds[0].texture")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "grounds": [{ "id": "grass", "texture": "textures/grass.jpg" }] }""", "$.grounds[0].texture")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "grounds": [{ "id": "grass", "texture": "g.png", "tile": 0 }] }""", "$.grounds[0].tile")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "grounds": [{ "id": "grass", "texture": "g.png", "flora_tint": "brown" }] }""", "$.grounds[0].flora_tint")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "grounds": [{ "id": "g", "texture": "g.png" }, { "id": "g", "texture": "g.png" }] }""", "$.grounds[1].id")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "grounds": [{ "id": "g", "texture": "g.png" }], "slope_ground": { "ground": "rock" } }""", "$.slope_ground.ground")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "grounds": [{ "id": "g", "texture": "g.png" }], "slope_ground": { "ground": "g", "from": 1, "to": 0.5 } }""", "$.slope_ground")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "grounds": [{ "id": "a1", "texture": "g.png" }, { "id": "a2", "texture": "g.png" }, { "id": "a3", "texture": "g.png" }, { "id": "a4", "texture": "g.png" }, { "id": "a5", "texture": "g.png" }, { "id": "a6", "texture": "g.png" }, { "id": "a7", "texture": "g.png" }, { "id": "a8", "texture": "g.png" }, { "id": "a9", "texture": "g.png" }] }""", "$.grounds")]
     public void BadWorldGenDataGivesAClearError(string json, string path)
     {
         using var mods = new TestMods().Mod("vanilla").File("vanilla", WorldGenData.DefinitionFile, json);
@@ -281,10 +290,13 @@ public class WorldGenTests
     [InlineData("""{ "id": "p", "radius": 20, "placement": { "fixed": [0, 0] }, "terrain": [{ "op": "basin", "radius": 4, "blend": 6, "depth": 7 }] }""", "$.terrain[0].blend")]
     [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "markers": [{ "type": "Bot" }] }""", "$.markers[0].type")]
     [InlineData("""{ "id": "P", "radius": 10, "placement": { "fixed": [0, 0] } }""", "$.id")]
+    [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "ground": [{ "ground": "sand", "radius": 4 }] }""", "$.ground[0].ground")]
+    [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "ground": [{ "ground": "burnt", "radius": 8, "blend": 4 }] }""", "$.ground[0]")]
+    [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "flora": "jungle" }""", "$.flora")]
     public void BadPoiGivesAClearErrorAndIsLeftOut(string json, string path)
     {
         using var mods = new TestMods().Mod("vanilla")
-            .File("vanilla", WorldGenData.DefinitionFile, """{ "biomes": [{ "id": "a" }] }""")
+            .File("vanilla", WorldGenData.DefinitionFile, """{ "biomes": [{ "id": "a" }], "grounds": [{ "id": "burnt", "texture": "b.png" }] }""")
             .File("vanilla", "pois/p.json", json);
         var data = WorldGenData.Load(mods.Load());
         Assert.Contains(data.Diagnostics, d => d.Code == DiagnosticCodes.PoiInvalid && d.JsonPath == path);

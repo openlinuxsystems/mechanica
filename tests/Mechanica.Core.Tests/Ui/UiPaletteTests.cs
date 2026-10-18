@@ -38,6 +38,22 @@ public class UiPaletteTests
         }
     }
 
+    [Theory]
+    [InlineData(UiPalette.Ink, UiPalette.Surface, 4.5f)]
+    [InlineData(UiPalette.Ink, UiPalette.Tile, 4.5f)]
+    [InlineData(UiPalette.Ink, UiPalette.TileSelected, 4.5f)]
+    [InlineData(UiPalette.Text, UiPalette.Chrome, 4.5f)]
+    [InlineData(UiPalette.TextMuted, UiPalette.Card, 4.5f)]
+    [InlineData(UiPalette.TextMuted, UiPalette.Inset, 4.5f)]
+    [InlineData(UiPalette.AccentInk, UiPalette.Accent, 4.5f)]
+    [InlineData(UiPalette.ErrorText, UiPalette.Card, 4.5f)]
+    [InlineData(UiPalette.SuccessText, UiPalette.Card, 4.5f)]
+    public void DesignLanguageTextIsReadable(string text, string background, float least) =>
+        Assert.True(UiPalette.Contrast(text, background) >= least, $"{text} on {background}: {UiPalette.Contrast(text, background):0.0}:1");
+
+    [Fact]
+    public void WhiteNeverSitsOnTheSurface() => Assert.True(UiPalette.Contrast(UiPalette.Text, UiPalette.Surface) < 4.5f);
+
     [Fact]
     public void JointColoursCanBeToldApart()
     {

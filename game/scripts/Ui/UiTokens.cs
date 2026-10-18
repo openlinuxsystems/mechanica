@@ -48,6 +48,72 @@ public static class UiTokens
     /// <summary>Success and running states.</summary>
     public static readonly Color Success = From(UiPalette.Success);
 
+    /// <summary>Behind a station window, dimming the world (at its opacity).</summary>
+    public static readonly Color Scrim = From(UiPalette.Scrim, UiPalette.ScrimOpacity);
+
+    /// <summary>Window headers and inactive tabs.</summary>
+    public static readonly Color Chrome = From(UiPalette.Chrome);
+
+    /// <summary>Buttons and fields on chrome.</summary>
+    public static readonly Color Chrome2 = From(UiPalette.Chrome2);
+
+    /// <summary>Hairlines: field edges and chip outlines.</summary>
+    public static readonly Color ChromeLine = From(UiPalette.ChromeLine);
+
+    /// <summary>The browsing surface: grids and the active tab.</summary>
+    public static readonly Color Surface = From(UiPalette.Surface);
+
+    /// <summary>Bands on the surface: the queue strip and drawers.</summary>
+    public static readonly Color SurfaceDeep = From(UiPalette.SurfaceDeep);
+
+    /// <summary>Item and recipe tiles, hotbar slots.</summary>
+    public static readonly Color Tile = From(UiPalette.Tile);
+
+    /// <summary>A hovered tile.</summary>
+    public static readonly Color TileHover = From(UiPalette.TileHover);
+
+    /// <summary>The selected tile and current hotbar slot.</summary>
+    public static readonly Color TileSelected = From(UiPalette.TileSelected);
+
+    /// <summary>Detail cards and dialogs.</summary>
+    public static readonly Color Card = From(UiPalette.Card);
+
+    /// <summary>Panels inside a card.</summary>
+    public static readonly Color Inset = From(UiPalette.Inset);
+
+    /// <summary>Text on the surface and tiles.</summary>
+    public static readonly Color Ink = From(UiPalette.Ink);
+
+    /// <summary>Secondary text on chrome and cards.</summary>
+    public static readonly Color TextMuted = From(UiPalette.TextMuted);
+
+    /// <summary>Primary buttons, progress, focus and filled pips.</summary>
+    public static readonly Color Accent = From(UiPalette.Accent);
+
+    /// <summary>Text on the accent.</summary>
+    public static readonly Color AccentInk = From(UiPalette.AccentInk);
+
+    /// <summary>Enough and running text on a card.</summary>
+    public static readonly Color SuccessText = From(UiPalette.SuccessText);
+
+    /// <summary>Ready items in the queue strip.</summary>
+    public static readonly Color SuccessFill = From(UiPalette.SuccessFill);
+
+    /// <summary>Short and refused text on a card.</summary>
+    public static readonly Color ErrorText = From(UiPalette.ErrorText);
+
+    /// <summary>Dots and rings for short and refused states.</summary>
+    public static readonly Color ErrorMark = From(UiPalette.ErrorMark);
+
+    /// <summary>Empty stat pips.</summary>
+    public static readonly Color PipOff = From(UiPalette.PipOff);
+
+    /// <summary>A disabled primary button's fill.</summary>
+    public static readonly Color DisabledFill = From(UiPalette.DisabledFill);
+
+    /// <summary>A disabled primary button's text.</summary>
+    public static readonly Color DisabledText = From(UiPalette.DisabledText);
+
     /// <summary>Rigid (welded) connections.</summary>
     public static readonly Color JointRigid = From(UiPalette.JointRigid);
 

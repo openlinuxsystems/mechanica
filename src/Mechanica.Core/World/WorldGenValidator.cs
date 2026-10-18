@@ -74,6 +74,34 @@ internal static class WorldGenValidator
             }
         }
 
+        var groundIds = new HashSet<string>();
+        var grounds = definition.Grounds ?? [];
+        if (grounds.Count > GroundDefinition.MaxGrounds)
+            sink.Error(Code, "$.grounds", $"at most {GroundDefinition.MaxGrounds} grounds (got {grounds.Count}).");
+        for (var i = 0; i < grounds.Count; i++)
+        {
+            var g = grounds[i];
+            var path = $"$.grounds[{i}]";
+            KnownKeys.WarnUnknown(g.Extra, path, sink, typeof(GroundDefinition));
+            if (!Identifiers.IsValid(g.Id))
+                sink.Error(Code, $"{path}.id", $"ground id '{g.Id}' must be lowercase snake_case.");
+            else if (!groundIds.Add(g.Id))
+                sink.Error(Code, $"{path}.id", $"ground '{g.Id}' is defined twice.");
+            if (!AssetPath.TryParse(g.Texture, "mod", AssetKind.Texture, out _, out var error))
+                sink.Error(Code, $"{path}.texture", error);
+            if (!(g.Tile is >= 0.25f and <= 256f))
+                sink.Error(Code, $"{path}.tile", $"tile must be 0.25 to 256 metres (got {g.Tile}).");
+            if (g.FloraTint is not null)
+                Color(g.FloraTint, $"{path}.flora_tint", sink);
+        }
+        if (definition.SlopeGround is { } slope)
+        {
+            KnownKeys.WarnUnknown(slope.Extra, "$.slope_ground", sink, typeof(SlopeGroundDefinition));
+            GroundRef(slope.Ground, groundIds, "$.slope_ground.ground", sink, Code);
+            if (!(slope.From >= 0f && slope.To > slope.From && float.IsFinite(slope.To)))
+                sink.Error(Code, "$.slope_ground", $"slopes must satisfy 0 <= from < to (got {slope.From}, {slope.To}).");
+        }
+
         var biomeIds = new HashSet<string>();
         var biomes = definition.Biomes ?? [];
         if (biomes.Count == 0)
@@ -92,6 +120,8 @@ internal static class WorldGenValidator
             if (!float.IsFinite(b.Height))
                 sink.Error(Code, $"{path}.height", "height must be a number.");
             Color(b.Color, $"{path}.color", sink);
+            if (b.Ground is not null)
+                GroundRef(b.Ground, groundIds, $"{path}.ground", sink, Code);
             for (var r = 0; r < (b.Scatter?.Count ?? 0); r++)
             {
                 var rule = b.Scatter![r];
@@ -112,7 +142,7 @@ internal static class WorldGenValidator
             sink.Error(Code, "$.coast_biome", $"'{coast}' is not one of the biomes.");
     }
 
-    public static void Validate(PoiPrefab prefab, IReadOnlyList<string> biomeIds, DiagnosticSink sink)
+    public static void Validate(PoiPrefab prefab, IReadOnlyList<string> biomeIds, DiagnosticSink sink, IReadOnlyCollection<string> groundIds)
     {
         const string code = DiagnosticCodes.PoiInvalid;
         KnownKeys.WarnUnknown(prefab.Extra, "$", sink, typeof(PoiPrefab));
@@ -174,6 +204,28 @@ internal static class WorldGenValidator
             if (offset.Length() + op.Radius + op.Blend > prefab.Radius + 1e-3f)
                 sink.Error(code, path, $"reaches {offset.Length() + op.Radius + op.Blend:0.##} m from the centre, past the POI radius ({prefab.Radius}).");
         }
+        for (var i = 0; i < (prefab.Ground?.Count ?? 0); i++)
+        {
+            var paint = prefab.Ground![i];
+            var path = $"$.ground[{i}]";
+            KnownKeys.WarnUnknown(paint.Extra, path, sink, typeof(GroundPaint));
+            GroundRef(paint.Ground, groundIds, $"{path}.ground", sink, code);
+            NonNegative(paint.Radius, $"{path}.radius", sink, code);
+            NonNegative(paint.Blend, $"{path}.blend", sink, code);
+            NonNegative(paint.Noise, $"{path}.noise", sink, code);
+            var offset = Vector2.Zero;
+            if (paint.At is { } at)
+            {
+                if (at.Count != 2 || !at.All(float.IsFinite))
+                    sink.Error(code, $"{path}.at", "at must be [x, z].");
+                else
+                    offset = new Vector2(at[0], at[1]);
+            }
+            if (offset.Length() + paint.Radius + paint.Blend > prefab.Radius + 1e-3f)
+                sink.Error(code, path, $"reaches {offset.Length() + paint.Radius + paint.Blend:0.##} m from the centre, past the POI radius ({prefab.Radius}).");
+        }
+        if (prefab.Flora is { } flora && !biomeIds.Contains(flora))
+            sink.Error(code, "$.flora", $"'{flora}' is not a biome in the world generation rules.");
         for (var i = 0; i < (prefab.Pieces?.Count ?? 0); i++)
             Shape(prefab.Pieces![i], $"$.pieces[{i}]", sink, code);
         for (var i = 0; i < (prefab.Markers?.Count ?? 0); i++)
@@ -186,6 +238,12 @@ internal static class WorldGenValidator
             if (marker.Ref is { } reference && !reference.Split(':').All(Identifiers.IsValid))
                 sink.Error(code, $"{path}.ref", $"'{reference}' is not an id (id or mod_id:id).");
         }
+    }
+
+    private static void GroundRef(string? id, IReadOnlyCollection<string> groundIds, string path, DiagnosticSink sink, string code)
+    {
+        if (id is null || !groundIds.Contains(id))
+            sink.Error(code, path, $"'{id}' is not one of the grounds in the world generation rules.");
     }
 
     private static void Flora(FloraRule rule, string path, DiagnosticSink sink)

@@ -113,6 +113,15 @@ public sealed class TerrainChunkData
         MaxHeight = heights.Max();
     }
 
+    /// <summary>Ground layers per sample in <see cref="Grounds"/>: <see cref="GroundDefinition.MaxGrounds"/>.</summary>
+    public const int GroundLayers = GroundDefinition.MaxGrounds;
+
+    /// <summary>
+    /// How much of each ground (<see cref="WorldGenData.Grounds"/>) covers each sample, <see cref="GroundLayers"/> weights per
+    /// sample, row by row. They sum to at most 1; the rest is the plain biome colour. Empty when the world has no grounds.
+    /// </summary>
+    public float[] Grounds { get; init; } = [];
+
     /// <summary>Which chunk.</summary>
     public ChunkCoord Coord { get; }
 

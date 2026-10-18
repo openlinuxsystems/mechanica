@@ -12,6 +12,11 @@
     { "op": "flatten", "at": [30.0, 26.0], "radius": 18.0, "blend": 12.0 },
     { "op": "basin", "at": [30.0, 26.0], "radius": 4.0, "blend": 14.0, "depth": 6.0 }
   ],
+  "ground": [
+    { "ground": "grass", "radius": 50.0, "blend": 28.0, "noise": 9.0 },
+    { "ground": "burnt", "at": [0.0, 20.0], "radius": 16.0, "blend": 18.0, "noise": 9.0 }
+  ],
+  "flora": "meadow",
   "pieces": [
     { "shape": "box", "size": [8.0, 4.0, 16.0], "at": [0.0, 2.0, 22.0], "yaw": 12.0, "color": "#9aa3ab" },
     { "shape": "box", "size": [6.0, 2.5, 6.0], "at": [1.5, 5.2, 19.0], "yaw": 12.0, "color": "#9aa3ab" },
