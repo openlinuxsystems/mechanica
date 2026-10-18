@@ -41,6 +41,9 @@ public partial class MapHud : CanvasLayer, IHudLayer
     /// <summary>The compass, whose primary waypoint a click on a pin sets; null for none.</summary>
     public CompassHud? Compass { get; set; }
 
+    /// <summary>The player's own knockout bags, pinned like places a quest revealed.</summary>
+    public Func<IEnumerable<Waypoint>> KnockoutBags { get; init; } = () => [];
+
     /// <summary>The full map.</summary>
     public MapWindow Window => _window;
 
@@ -136,7 +139,7 @@ public partial class MapHud : CanvasLayer, IHudLayer
         Input.MouseMode = Input.MouseModeEnum.Captured;
     }
 
-    /// <summary>The pins both maps show: the current missions' goals and the player's own pins.</summary>
+    /// <summary>The pins both maps show: the current missions' goals, the player's knockout bags and their own pins.</summary>
     public IReadOnlyList<(Waypoint Waypoint, LogbookMarkKind Kind)> Pins()
     {
         if (Players.LocalPlayer is not { } me)
@@ -144,6 +147,7 @@ public partial class MapHud : CanvasLayer, IHudLayer
         var pins = Quests.Waypoints(me.GlobalPosition.ToNumerics())
             .Where(w => w.Id.StartsWith("quest:", StringComparison.Ordinal))
             .Select(w => (w, LogbookMarkKind.Quest)).ToList();
+        pins.AddRange(KnockoutBags().Select(w => (w, LogbookMarkKind.Place)));
         pins.AddRange((Markers?.Own ?? []).Select(m => (m.ToWaypoint(), LogbookMarkKind.Own)));
         return pins;
     }

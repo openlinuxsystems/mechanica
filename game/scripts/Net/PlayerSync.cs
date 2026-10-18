@@ -238,7 +238,8 @@ public partial class PlayerSync : Node
         p.Body,
         p.ShownProp,
         p.ShownGesture.Gesture,
-        p.ShownGesture.Count))]);
+        p.ShownGesture.Count,
+        p.ShownTint))]);
 
     private void ClientTick(float delta)
     {
@@ -263,7 +264,7 @@ public partial class PlayerSync : Node
             if (buffer.Sample(renderTick) is { } s && _players.TryGetValue(peer, out var player))
             {
                 player.ApplyState(s.Position.ToGodot(), s.Velocity.ToGodot(), s.Yaw, s.Pitch);
-                player.ApplyBody(s.Body, s.Prop, s.Gesture, s.GestureCount);
+                player.ApplyBody(s.Body, s.Prop, s.Gesture, s.GestureCount, s.Tint);
             }
         }
     }

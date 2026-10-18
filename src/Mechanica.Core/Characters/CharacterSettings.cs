@@ -107,6 +107,9 @@ public sealed record CharacterSettings
     /// <summary>The water bucket in hand: its shape, and how each bucket clip moves it (<see cref="BucketRig"/>).</summary>
     public BucketSettings Bucket { get; init; } = new();
 
+    /// <summary>The Paint Tool in hand: how its tank moves in the reload (<see cref="PaintToolRig"/>).</summary>
+    public PaintToolSettings PaintTool { get; init; } = new();
+
     /// <summary>Share of the look pitch the neck and head follow (0 to 1).</summary>
     public float HeadPitchShare { get; init; } = 0.6f;
 
@@ -172,6 +175,7 @@ public sealed record CharacterSettings
         if (!float.IsFinite(HeadPitchShare) || HeadPitchShare is < 0f or > 1f)
             throw new FormatException($"head_pitch_share must be from 0 to 1 (got {HeadPitchShare}).");
         Bucket.Validate();
+        PaintTool.Validate();
         if (FirstPersonOffset is not { Length: 3 } || FirstPersonOffset.Any(v => !float.IsFinite(v) || MathF.Abs(v) > 3f))
             throw new FormatException("first_person_offset must be three numbers from -3 to 3 metres.");
         if (!float.IsFinite(FirstPersonPitchDegrees) || MathF.Abs(FirstPersonPitchDegrees) > 60f)
@@ -284,6 +288,40 @@ public sealed record BucketSettings
                 if (keys[i] is not { Length: 4 } key || key.Any(v => !float.IsFinite(v)) || key[1] is < 0f or > 1f || key[3] is < 0f or > 1f
                     || MathF.Abs(key[2]) > 180f || key[0] < 0f || (i > 0 && key[0] <= keys[i - 1][0]))
                     throw new FormatException($"bucket.motion.{clip} key {i} must be [rising seconds, grip 0-1, tilt -180-180, water 0-1].");
+            }
+        }
+    }
+}
+
+/// <summary>
+/// The Paint Tool in hand (<c>paint_tool</c> in <c>character.json</c>): how long its reload takes, and how its tank moves
+/// in each clip that moves it. The model and the clips that follow these numbers are built by
+/// <c>tools/characters/build_characters.py</c>.
+/// </summary>
+public sealed record PaintToolSettings
+{
+    /// <summary>Seconds the reload (R) takes; the tool sprays again once it is over.</summary>
+    public float ReloadSeconds { get; init; } = 1.4f;
+
+    /// <summary>
+    /// Each clip's tank keys, by clip name: [seconds, twist degrees, pull metres]. The tank turns about its axis (negative
+    /// unscrews it, seen from behind) and slides back out of its collar. Smoothstep-eased between keys.
+    /// </summary>
+    public Dictionary<string, float[][]> Tank { get; init; } = [];
+
+    /// <summary>Throws <see cref="FormatException"/> naming the first out-of-range value.</summary>
+    public void Validate()
+    {
+        CharacterSettings.Positive(ReloadSeconds, "paint_tool.reload_seconds");
+        foreach (var (clip, keys) in Tank)
+        {
+            if (keys is not { Length: > 0 })
+                throw new FormatException($"paint_tool.tank.{clip} needs at least one key.");
+            for (var i = 0; i < keys.Length; i++)
+            {
+                if (keys[i] is not { Length: 3 } key || key.Any(v => !float.IsFinite(v)) || MathF.Abs(key[1]) > 360f || key[2] is < 0f or > 0.2f
+                    || key[0] < 0f || (i > 0 && key[0] <= keys[i - 1][0]))
+                    throw new FormatException($"paint_tool.tank.{clip} key {i} must be [rising seconds, twist -360-360, pull 0-0.2].");
             }
         }
     }

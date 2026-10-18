@@ -347,6 +347,46 @@ public class ToolActionsTests
     }
 
     [Fact]
+    public void EachStrokePaysItsAmmoOnceAndTakingPaintOffIsFree()
+    {
+        var settings = _settings with { Paint = new PaintSettings { MaxPartsPerAction = 3, Ammo = "paint_ammo", AmmoPerStroke = 1, StrokeSeconds = 1 } };
+        var tools = new ToolActions(settings, _world);
+        var dispatcher = new ActionDispatcher();
+        tools.Register(dispatcher);
+        var costs = new FakeCosts { Carried = 2 };
+        tools.Costs = costs;
+        var id = Add(Car());
+        ActionResult Paint(int[] parts, int? stroke, string? color = "#d03030") =>
+            dispatcher.Dispatch(Player, ToolActions.Paint, JsonSerializer.SerializeToElement(new { creation = id, parts, color, stroke }));
+
+        // A stroke pays on its first Paint; the rest of its drag is free while it keeps coming and stays under the limit.
+        Assert.True(Paint([1], 7).Ok);
+        Assert.Equal(1, costs.Carried);
+        _world.Now += 0.5;
+        Assert.True(Paint([2], 7).Ok);
+        Assert.Equal(1, costs.Carried);
+        // The limit: a fourth part would make the stroke cover more than three, so it pays again.
+        Assert.True(Paint([1, 2, 3], 7).Ok);
+        Assert.Equal(0, costs.Carried);
+        // Out of ammo: a new stroke is refused, taking paint off is not.
+        var refused = Paint([1], 8);
+        Assert.False(refused.Ok);
+        Assert.Contains("Paint Ammo", refused.Message);
+        Assert.True(Paint([1], 8, color: null).Ok);
+        Assert.Equal(0, costs.Carried);
+        // A long gap ends a stroke, even under the same number.
+        costs.Carried = 5;
+        Assert.True(Paint([2], 9).Ok);
+        _world.Now += 2;
+        Assert.True(Paint([3], 9).Ok);
+        Assert.Equal(3, costs.Carried);
+        // Without a Paint Tool the host refuses both.
+        costs.Tool = false;
+        Assert.Contains("Paint Tool", Paint([1], 10).Message);
+        Assert.Contains("Paint Tool", Paint([1], 10, color: null).Message);
+    }
+
+    [Fact]
     public void PaintRequestsAreChecked()
     {
         var catalog = Catalog().Add("test:glass", new PartDefinition
@@ -601,6 +641,30 @@ public class ToolActionsTests
 
     private ActionResult Dispatch(string action, object args) =>
         _dispatcher.Dispatch(Player, action, JsonSerializer.Serialize(args));
+
+    private sealed class FakeCosts : IBuildCosts
+    {
+        public int Carried { get; set; }
+
+        public bool Tool { get; set; } = true;
+
+        public string? CheckPlace(ActionCaller caller, string part) => null;
+
+        public void Placed(ActionCaller caller, string part)
+        {
+        }
+
+        public void Removed(ActionCaller caller, string part, Vector3 at)
+        {
+        }
+
+        public string? CheckTool(ActionCaller caller, string tool) => Tool ? null : "Craft a Paint Tool at a Fabricator first.";
+
+        public string? CheckSpend(ActionCaller caller, string item, int count) =>
+            item == "vanilla:paint_ammo" && Carried >= count ? null : "You have no Paint Ammo. Craft some at a Fabricator.";
+
+        public void Spend(ActionCaller caller, string item, int count) => Carried -= count;
+    }
 
     private sealed class FakeWorld : IToolWorld
     {

@@ -28,7 +28,7 @@ These are the default keys. Every one can be changed in Options, Controls.
 | Up / Down arrows | Raise or lower the Lift |
 | G | Drop one of the item in hand |
 | F (hold) | Force build: hold it and left click to put the item in hand (food, a bucket, a glowstick) where you aim, where it stays. Also hold it while dragging a stack out of the inventory to drop it. |
-| R | Reload the weapon in hand |
+| R | Reload the weapon in hand, or the Paint Tool's tank |
 | E | Use. Hold it on a tree or rock node (they get a blue outline) until the ring fills (5.2 s) to refine it: you draw the Refine Tool and scrape at it, and what it gives goes straight into your inventory. Letting go or walking away stops it. The Refine Tool is not an item: it is never in your inventory or on the hotbar. Also: open the blueprint menu (the Lift in hand, aimed at your Lift), open a container or station, pick up items, harvest, sleep in a bed, sit in or leave a seat, use a part, change a part's settings, use a quest marker, talk, respawn after dying |
 | I or Tab | Inventory |
 | U | Upgrade the part you are aiming at (a station), or the station whose screen is open |
@@ -109,8 +109,12 @@ switches it to the next mode and shows it for a moment; R with the Connect Tool 
   to weld touching parts on different bearings or to put back a piece that fell off. In Survival the Weld Tool is
   crafted at a Fabricator (10 Metal Blocks and 2 Component Kits, 30 s) and you keep it when you die.
 - **Paint Tool.** Left click paints a part; hold and drag to paint every part you pass over (up to 256 at a
-  time). Right click (or drag) takes the paint off. **Q** opens the colour picker round the cursor: move the
-  mouse towards a colour and click, or press 1 to 0 for the first ten. Esc or Q again closes it.
+  time). Right click (or drag) takes the paint off. **Q** opens the colour picker round the cursor: 10 base
+  colours round a ring, each in 4 shades from light (inside) to dark (outside). Move the mouse onto a colour
+  and click, or press 1 to 0 for a base colour in the shade you have now. Esc or Q again closes it. The tool's
+  nozzles, tubes and tank show the chosen colour, and it sprays a mist of it (a pale puff when taking paint off)
+  that everyone sees. **R** twists the tank off and back on; it can't spray meanwhile. In Survival the Paint Tool
+  is crafted at a Fabricator, and each stroke (a click, or one drag) uses one Paint Ammo; taking paint off is free.
 - **Sledgehammer.** Your main tool and only starting weapon: it is always on the hotbar (you can move it to
   another slot but never take it off, drop it or store it) and you keep it when you die. Left click swings it:
   overhead, or sideways from the right or the left, at random. A swing every 0.6 s, and the blow lands the moment
@@ -220,7 +224,8 @@ remove it. Your markers are saved with the world; you can have up to 20. The map
 
 The **minimap** in the top right corner shows the land round you, north up, with you as the cyan arrow in the
 middle. Your current missions' goals are pulsing blue diamonds and your own pins are blue diamonds with their
-labels; one that is out of range waits on the edge in its direction. Options, Interface, Show minimap turns it off.
+labels; one that is out of range waits on the edge in its direction. After you die, your knockout bag is a small
+blue diamond too (and a diamond on the compass) until you pick it up. Options, Interface, Show minimap turns it off.
 
 Press **M** for the **full map**, and M, Esc or its X to close it. It works like the Logbook's map (drag, scroll,
 **−**, **+**, **Whole map**, **Find me**) and shows the same goals, named, and your pins. Click one to make it the

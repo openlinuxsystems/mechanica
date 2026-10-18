@@ -303,6 +303,7 @@ public sealed class AgentPlayers(AgentSettings settings)
             Gesture = last.Gesture,
             GestureCount = last.GestureCount,
             Guard = last.Guard,
+            Tint = last.Tint,
         };
         if (!_inputs.TryGetValue(peer, out var held))
             return carried;

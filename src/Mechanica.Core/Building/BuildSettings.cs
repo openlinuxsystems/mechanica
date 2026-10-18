@@ -299,14 +299,39 @@ public sealed record LiftSettings
     }
 }
 
-/// <summary>The Paint Tool.</summary>
+/// <summary>
+/// The Paint Tool. Its palette is <see cref="Palette"/>.Count / <see cref="Shades"/> base colours, each in
+/// <see cref="Shades"/> shades from light to dark, listed colour by colour. In Survival each stroke (one press and drag,
+/// however many parts it covers) uses <see cref="AmmoPerStroke"/> of <see cref="Ammo"/>; taking paint off is free.
+/// </summary>
 public sealed record PaintSettings
 {
     // One shared default, so settings that keep it compare equal.
     private static readonly IReadOnlyList<string> DefaultPalette = ["#e8e8e8", "#3a3a3a", "#d03030", "#e8a020", "#f0d830", "#40a040", "#3070d0", "#8040b0"];
 
-    /// <summary>Colours the tool offers, <c>"#rrggbb"</c>, in display order. The host accepts any colour.</summary>
+    /// <summary>Colours the tool offers, <c>"#rrggbb"</c>, base colour by base colour, each light to dark. The host accepts any colour.</summary>
     public IReadOnlyList<string> Palette { get; init; } = DefaultPalette;
+
+    /// <summary>Shades of each base colour in <see cref="Palette"/>.</summary>
+    public int Shades { get; init; } = 1;
+
+    /// <summary>The palette index the tool starts with.</summary>
+    public int DefaultColor { get; init; }
+
+    /// <summary>The item a stroke uses in Survival (a qualified or vanilla id), or null when painting is free.</summary>
+    public string? Ammo { get; init; }
+
+    /// <summary>How many of <see cref="Ammo"/> one stroke uses.</summary>
+    public int AmmoPerStroke { get; init; } = 1;
+
+    /// <summary>
+    /// How long a paid stroke stays open on the host between two of its Paint requests, in seconds; a longer gap starts a
+    /// new stroke, which pays again.
+    /// </summary>
+    public double StrokeSeconds { get; init; } = 1.0;
+
+    /// <summary>How many base colours the palette has.</summary>
+    public int Hues => Palette.Count / Math.Max(1, Shades);
 
     /// <summary>Most parts one Paint action may colour, and one drag may cover.</summary>
     public int MaxPartsPerAction { get; init; } = 256;
@@ -325,6 +350,18 @@ public sealed record PaintSettings
             throw new FormatException($"paint.max_parts_per_action must be at least 1 (got {MaxPartsPerAction}).");
         if (!double.IsFinite(DragFlushSeconds) || DragFlushSeconds < 0)
             throw new FormatException($"paint.drag_flush_seconds must be 0 or more (got {DragFlushSeconds}).");
+        if (Shades < 1 || Palette.Count % Shades != 0)
+            throw new FormatException($"paint.shades must divide the palette's {Palette.Count} colours (got {Shades}).");
+        if (Palette.Count > 128)
+            throw new FormatException($"paint.palette has at most 128 colours (got {Palette.Count}).");
+        if (DefaultColor < 0 || DefaultColor >= Palette.Count)
+            throw new FormatException($"paint.default_color must be a palette index, 0 to {Palette.Count - 1} (got {DefaultColor}).");
+        if (Ammo is { } ammo && (ammo.Count(c => c == ':') > 1 || !ammo.Split(':').All(Identifiers.IsValid)))
+            throw new FormatException($"paint.ammo \"{ammo}\" is not an item id.");
+        if (AmmoPerStroke < 0)
+            throw new FormatException($"paint.ammo_per_stroke must be 0 or more (got {AmmoPerStroke}).");
+        if (!double.IsFinite(StrokeSeconds) || StrokeSeconds <= 0)
+            throw new FormatException($"paint.stroke_seconds must be more than 0 (got {StrokeSeconds}).");
     }
 }
 
