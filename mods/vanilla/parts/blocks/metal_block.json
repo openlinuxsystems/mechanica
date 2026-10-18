@@ -13,8 +13,9 @@
   "size": [1, 1, 1],
   "mesh": "meshes/blocks/metal_block.glb",
   "visual": {
-    "color": "#9aa0a8",
+    "color": "#ffffff",
     "roughness": 0.4,
-    "metallic": 0.8
+    "metallic": 0.8,
+    "texture": "textures/blocks/metal.png"
   }
 }

@@ -16,7 +16,8 @@
         "sound_material": "wood",
         "size": [1, 1, 1],
         "visual": {
-          "color": "#b5824a",
+          "color": "#ffffff",
+          "texture": "textures/blocks/wood.png",
           "roughness": 0.8,
           "metallic": 0
         }
@@ -49,7 +50,8 @@
         "sound_material": "metal",
         "size": [1, 1, 1],
         "visual": {
-          "color": "#9aa0a8",
+          "color": "#ffffff",
+          "texture": "textures/blocks/metal.png",
           "roughness": 0.4,
           "metallic": 0.8
         }
@@ -110,7 +112,8 @@
         "sound_material": "concrete",
         "size": [1, 1, 1],
         "visual": {
-          "color": "#a9a9a3",
+          "color": "#d4d4d4",
+          "texture": "textures/blocks/concrete.png",
           "roughness": 0.95,
           "metallic": 0
         }
@@ -143,10 +146,11 @@
         "sound_material": "glass",
         "size": [1, 1, 1],
         "visual": {
-          "color": "#bfe3f0",
+          "color": "#ffffff",
+          "texture": "textures/blocks/glass.png",
           "roughness": 0.05,
           "metallic": 0,
-          "opacity": 0.35
+          "opacity": 0.5
         }
       },
       "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }]
@@ -177,7 +181,8 @@
         "sound_material": "scrap",
         "size": [1, 1, 1],
         "visual": {
-          "color": "#8a6b45",
+          "color": "#ffffff",
+          "texture": "textures/blocks/scrap_wood.png",
           "roughness": 0.9,
           "metallic": 0
         }
@@ -236,7 +241,8 @@
         "sound_material": "scrap",
         "size": [1, 1, 1],
         "visual": {
-          "color": "#7c7466",
+          "color": "#ffffff",
+          "texture": "textures/blocks/scrap_metal.png",
           "roughness": 0.6,
           "metallic": 0.6
         }
@@ -295,7 +301,8 @@
         "sound_material": "plastic",
         "size": [1, 1, 1],
         "visual": {
-          "color": "#e0b020",
+          "color": "#ffffff",
+          "texture": "textures/blocks/barrier.png",
           "roughness": 0.5,
           "metallic": 0
         }
@@ -328,7 +335,8 @@
         "sound_material": "tile",
         "size": [1, 1, 1],
         "visual": {
-          "color": "#d8d4c8",
+          "color": "#bcbcbc",
+          "texture": "textures/blocks/tile.png",
           "roughness": 0.3,
           "metallic": 0
         }
@@ -361,7 +369,8 @@
         "sound_material": "concrete",
         "size": [1, 1, 1],
         "visual": {
-          "color": "#9c4a33",
+          "color": "#ffffff",
+          "texture": "textures/blocks/brick.png",
           "roughness": 0.9,
           "metallic": 0
         }
@@ -394,7 +403,8 @@
         "sound_material": "cardboard",
         "size": [1, 1, 1],
         "visual": {
-          "color": "#b89566",
+          "color": "#ffffff",
+          "texture": "textures/blocks/cardboard.png",
           "roughness": 0.95,
           "metallic": 0
         }
@@ -427,7 +437,8 @@
         "sound_material": "metal",
         "size": [1, 1, 1],
         "visual": {
-          "color": "#c8ccd2",
+          "color": "#c4c4c4",
+          "texture": "textures/blocks/hull_plate.png",
           "roughness": 0.35,
           "metallic": 0.85
         }
@@ -460,10 +471,12 @@
         "sound_material": "glass",
         "size": [1, 1, 1],
         "visual": {
-          "color": "#fff2c0",
+          "color": "#ffffff",
+          "texture": "textures/blocks/path_light.png",
           "roughness": 0.2,
           "metallic": 0,
-          "emission": "#ffd870"
+          "emission": "#ffd870",
+          "emission_texture": "textures/blocks/path_light_glow.png"
         },
         "script": "scripts/light.lua",
         "light": { "kind": "omni", "color": "#ffd870", "energy": 0.8, "range": 4 }
@@ -496,10 +509,11 @@
         "sound_material": "glass",
         "size": [1, 1, 1],
         "visual": {
-          "color": "#9fc8d8",
+          "color": "#ffffff",
+          "texture": "textures/blocks/armored_glass.png",
           "roughness": 0.1,
           "metallic": 0,
-          "opacity": 0.55
+          "opacity": 0.85
         }
       },
       "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }]
@@ -530,7 +544,8 @@
         "sound_material": "metal",
         "size": [1, 1, 1],
         "visual": {
-          "color": "#d0d4d8",
+          "color": "#c9c9c9",
+          "texture": "textures/blocks/aluminum.png",
           "roughness": 0.3,
           "metallic": 0.9
         }
@@ -563,7 +578,8 @@
         "sound_material": "metal",
         "size": [1, 1, 1],
         "visual": {
-          "color": "#8a5a3a",
+          "color": "#ffffff",
+          "texture": "textures/blocks/rusted_metal.png",
           "roughness": 0.8,
           "metallic": 0.4
         }
@@ -596,7 +612,8 @@
         "sound_material": "fabric",
         "size": [1, 1, 1],
         "visual": {
-          "color": "#f0a8a0",
+          "color": "#c8c8c8",
+          "texture": "textures/blocks/insulation.png",
           "roughness": 1,
           "metallic": 0
         }
@@ -629,7 +646,8 @@
         "sound_material": "concrete",
         "size": [1, 1, 1],
         "visual": {
-          "color": "#ece8e0",
+          "color": "#b8b8b8",
+          "texture": "textures/blocks/plaster.png",
           "roughness": 0.9,
           "metallic": 0
         }
@@ -662,7 +680,8 @@
         "sound_material": "fabric",
         "size": [1, 1, 1],
         "visual": {
-          "color": "#7a3040",
+          "color": "#ffffff",
+          "texture": "textures/blocks/carpet.png",
           "roughness": 1,
           "metallic": 0
         }
@@ -695,10 +714,10 @@
         "sound_material": "fabric",
         "size": [1, 1, 1],
         "visual": {
-          "color": "#c8c0a8",
+          "color": "#ffffff",
+          "texture": "textures/blocks/net.png",
           "roughness": 0.9,
-          "metallic": 0,
-          "opacity": 0.5
+          "metallic": 0
         }
       },
       "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }]
@@ -729,7 +748,8 @@
         "sound_material": "metal",
         "size": [1, 1, 1],
         "visual": {
-          "color": "#b8bcc0",
+          "color": "#ffffff",
+          "texture": "textures/blocks/diamond_plate.png",
           "roughness": 0.3,
           "metallic": 0.9
         }

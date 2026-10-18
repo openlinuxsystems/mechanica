@@ -233,7 +233,8 @@ public sealed class PartAssets
     /// <summary>
     /// A copy of <paramref name="original"/> (or a plain white material) adjusted by <paramref name="visual"/>:
     /// albedo multiplied by its colour, roughness, metalness and texture replaced where given, alpha
-    /// scaled by its opacity and its glow colour emitted.
+    /// scaled by its opacity and its glow colour emitted (through its glow texture when given). A texture with
+    /// alpha on an opaque part cuts holes where its alpha is under half.
     /// </summary>
     public BaseMaterial3D VisualMaterial(VisualDefinition visual, string? modId, Material? original = null)
     {
@@ -244,17 +245,32 @@ public sealed class PartAssets
             material.Roughness = roughness;
         if (visual.Metallic is { } metallic)
             material.Metallic = metallic;
+        var cutOut = false;
         if (visual.Texture is { } path && modId is not null && LoadTexture(path, modId) is { } texture)
+        {
             material.AlbedoTexture = texture;
+            cutOut = texture.HasAlpha();
+        }
         if (visual.Opacity is { } opacity && opacity < 1)
         {
             material.Transparency = BaseMaterial3D.TransparencyEnum.Alpha;
             material.AlbedoColor = material.AlbedoColor with { A = material.AlbedoColor.A * opacity };
         }
+        else if (cutOut)
+        {
+            material.Transparency = BaseMaterial3D.TransparencyEnum.AlphaScissor;
+            material.AlphaScissorThreshold = 0.5f;
+            material.CullMode = BaseMaterial3D.CullModeEnum.Disabled;
+        }
         if (HexColor.TryParse(visual.Emission, out var glow))
         {
             material.EmissionEnabled = true;
             material.Emission = new Color(glow.R, glow.G, glow.B);
+            if (visual.EmissionTexture is { } glowPath && modId is not null && LoadTexture(glowPath, modId) is { } glowMap)
+            {
+                material.EmissionTexture = glowMap;
+                material.EmissionOperator = BaseMaterial3D.EmissionOperatorEnum.Multiply;
+            }
         }
         return material;
     }
@@ -303,6 +319,9 @@ public sealed class PartAssets
             GD.PushWarning($"[creations] texture '{asset}' did not load.");
             return null;
         }
+        // Mipmaps keep tiled surfaces from shimmering at a distance.
+        if (!image.HasMipmaps())
+            image.GenerateMipmaps();
         return ImageTexture.CreateFromImage(image);
     }
 

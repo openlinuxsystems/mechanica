@@ -845,6 +845,12 @@ public sealed record VisualDefinition
     /// <summary>Albedo texture (<c>.png</c>), relative to the mod root or <c>other_mod:path</c>.</summary>
     public string? Texture { get; init; }
 
+    /// <summary>
+    /// Glow map (<c>.png</c>), relative to the mod root or <c>other_mod:path</c>: the glow colour shines only where it is
+    /// bright, so a light can glow in its strips and not its frame. Needs <see cref="Emission"/>.
+    /// </summary>
+    public string? EmissionTexture { get; init; }
+
     /// <summary>Whether the Paint Tool can recolour the part. Omitted means true.</summary>
     public bool? Paintable { get; init; }
 
