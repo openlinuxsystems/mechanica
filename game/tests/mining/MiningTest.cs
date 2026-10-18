@@ -30,8 +30,15 @@ public partial class MiningTest : StagedTest
     private WorldObjectPlacement _cube = null!;
     private int _rod;
     private string _block = "";
+    private int _swings;
+    private int _refines;
+    private List<Vector3> _rest = [];
+    private double _lastSwing = double.NegativeInfinity;
 
     protected override string Tag => "mining";
+
+    // Walking round the rods and the 5.2 s refine take longer than the default.
+    protected override int StageTimeoutFrames => 3000;
 
     private int Peer => _client.Peer;
 
@@ -87,8 +94,8 @@ public partial class MiningTest : StagedTest
         });
         Stage("the Sledgehammer does nothing to an intact cube", frame =>
         {
-            if (frame % 30 == 0 && frame <= 60)
-                _client.Main.Actions.Request(ToolActions.Sledge, new SledgeArgs(Object: _cube.Id.ToString(), At: At(_cube.Position)), _results.Add);
+            if (_swings < 3 && SwingReady())
+                Swing(new SledgeArgs(Object: _cube.Id.ToString(), At: At(_cube.Position)));
             if (_results.Count < 3)
                 return false;
             Check(_results.All(r => r.Ok), $"the swings land ({string.Join("; ", _results)})");
@@ -107,44 +114,72 @@ public partial class MiningTest : StagedTest
         });
         Stage("the client's Sledgehammer breaks the chunks into rods", frame =>
         {
-            if (frame % 20 == 0 && Loose(_host, Chunk).FirstOrDefault() is { } chunk)
+            if (SwingReady() && Loose(_host, Chunk).FirstOrDefault() is { } chunk)
             {
                 _host.Main.PlayerSync.HostTeleport(Peer, Centre(_host, chunk) + new Vector3(1.5f, 1, 0));
-                _client.Main.Actions.Request(ToolActions.Sledge, new SledgeArgs(chunk.Id, chunk.Parts.First().Id), _results.Add);
+                Swing(new SledgeArgs(chunk.Id, chunk.Parts.First().Id));
             }
             if (Loose(_host, Chunk).Count > 0 || Rods(_client).Count < 4 || Rods(_host).Count < 4)
-                return frame > 1800 && Fail($"the chunks never broke ({Loose(_host, Chunk).Count} left, {Rods(_client).Count} rods; {string.Join("; ", _results.Where(r => !r.Ok))})");
+                return _swings > 40 && SwingReady() && Fail($"the chunks never broke ({Loose(_host, Chunk).Count} left, {Rods(_client).Count} rods; {string.Join("; ", _results.Where(r => !r.Ok))})");
             Check(Rods(_host).Count == 4, $"two chunks of two rods are four rods ({Rods(_host).Count})");
             return true;
         });
+        Stage("the rods come to rest", frame =>
+        {
+            // A rod still rolling off the outcrop would leave the player's reach mid-refine.
+            if (frame % 30 != 0)
+                return false;
+            var now = Rods(_host).Select(c => Centre(_host, c)).ToList();
+            var still = _rest.Count == now.Count && now.Zip(_rest).All(p => p.First.DistanceTo(p.Second) < 0.01f);
+            _rest = now;
+            return still;
+        });
         Stage("a rod under the crosshair offers a refine", frame =>
         {
-            var rod = Rods(_host).OrderBy(c => c.Id).First();
-            if (frame == 0)
+            // Rods land every which way, some against the outcrop or each other, so walk round each in turn until the
+            // crosshair finds one: every 60 frames the next of eight spots round it on bare ground (not on a rod or a cube),
+            // then the next rod.
+            var rods = Rods(_host).OrderBy(c => c.Id).ToList();
+            var attempt = frame / 60;
+            if (attempt >= rods.Count * 8)
+                return Fail("no rod is ever under the crosshair");
+            var rod = rods[attempt / 8];
+            if (frame % 60 == 0)
             {
                 _rod = rod.Id;
-                _block = Identifiers.Qualify(rod.DefinitionOf(rod.Parts.First().Id)!.Refine![0].Item!, "vanilla");
-                _host.Main.PlayerSync.HostTeleport(Peer, Centre(_host, rod) + new Vector3(1.6f, 0.5f, 0));
+                var angle = attempt % 8 * Mathf.Pi / 4f;
+                var spot = Centre(_host, rod) + new Vector3(Mathf.Cos(angle) * 1.6f, 0, Mathf.Sin(angle) * 1.6f);
+                if (!BareGround(_host, spot, out var ground))
+                    return false;
+                _host.Main.PlayerSync.HostTeleport(Peer, ground + new Vector3(0, 0.2f, 0));
             }
-            if (frame >= 30)
-                LookAt(_client, Centre(_client, _client.Main.Creations.Find(_rod)!));
-            if (frame < 45 || _hud.AimedRefinable()?.Node.Creation.Id != _rod)
-                return frame > 400 && Fail("the rod is never under the crosshair");
+            if (frame % 60 >= 30 && _client.Main.Creations.Find(_rod) is { } seen)
+                LookAt(_client, Centre(_client, seen));
+            // The client's prediction settles onto the teleport over a few snapshots; aim only once it has.
+            if (frame % 60 < 45 || !Settled() || _hud.AimedRefinable()?.Node.Creation.Id != _rod)
+                return false;
+            _block = Identifiers.Qualify(rod.DefinitionOf(rod.Parts.First().Id)!.Refine![0].Item!, "vanilla");
             var name = rod.DefinitionOf(rod.Parts.First().Id)!.Name;
             Check(_hud.Interaction()?.Label == $"hold to refine the {name}", $"Use offers to refine it ({_hud.Interaction()?.Label})");
             return true;
         });
         Stage("holding Use refines the rod into 20 blocks, the rod gone on both machines", frame =>
         {
-            if (frame == 0)
+            // Use is held from the first frame. A refine the HUD let go of early (the player nudged off by a late
+            // snapshot) is started again, as a player would by pressing Use again.
+            _holding = true;
+            if (frame % 30 == 0 && _hud.RefiningTarget is null && Count(_block) < 20 && _client.Main.Creations.Find(_rod) is { } target)
             {
-                _holding = true;
-                Check(_hud.Interact(), "Use starts the refine");
+                LookAt(_client, Centre(_client, target));
+                if (Settled() && _hud.AimedRefinable() is { } aimed && _hud.Interact())
+                {
+                    _rod = aimed.Node.Creation.Id;
+                    _block = Identifiers.Qualify(aimed.Node.Creation.DefinitionOf(aimed.Part)!.Refine![0].Item!, "vanilla");
+                    _refines++;
+                }
             }
-            if (frame > 0 && frame < 60)
-                LookAt(_client, Centre(_client, _client.Main.Creations.Find(_rod)!));
             if (Count(_block) < 20 || _client.Main.Creations.Find(_rod) is not null || _host.Main.Creations.Find(_rod) is not null)
-                return frame > 900 && Fail($"the rod was never refined ({Count(_block)} {_block})");
+                return frame > 2400 && Fail($"the rod was never refined ({Count(_block)} {_block}, {_refines} refines started)");
             Check(Count(_block) == 20, $"20 {_block} ({Count(_block)})");
             _holding = false;
             return true;
@@ -154,9 +189,24 @@ public partial class MiningTest : StagedTest
     private void Stage(string name, Func<int, bool> tick) => Add(name, frame =>
     {
         if (frame == 0)
+        {
             _results.Clear();
+            _swings = 0;
+        }
         return tick(frame);
     });
+
+    // The host refuses a swing sooner than swing_seconds of real time after the last, so the next one waits for the
+    // last one's answer and for the swing to finish, however fast frames come.
+    private bool SwingReady() =>
+        _results.Count == _swings && Time.GetTicksMsec() / 1000.0 - _lastSwing > _host.Main.Build.Settings!.Sledge.SwingSeconds + 0.1;
+
+    private void Swing(SledgeArgs args)
+    {
+        _swings++;
+        _lastSwing = Time.GetTicksMsec() / 1000.0;
+        _client.Main.Actions.Request(ToolActions.Sledge, args, _results.Add);
+    }
 
     private bool Fail(string message)
     {
@@ -174,6 +224,19 @@ public partial class MiningTest : StagedTest
 
     private static Vector3 Centre(Instance who, Core.Creations.Creation creation) =>
         who.Main.Creations.NodeOf(creation.Id)?.PartNode(creation.Parts.First().Id)?.GlobalPosition ?? Vector3.Zero;
+
+    // Whether nothing but the ground itself is under a spot (no rod, chunk or cube to stand on), and where the ground is.
+    private static bool BareGround(Instance who, Vector3 spot, out Vector3 ground)
+    {
+        var height = who.Main.Streamer.Generator.HeightAt(spot.X, spot.Z);
+        ground = new Vector3(spot.X, height, spot.Z);
+        var query = PhysicsRayQueryParameters3D.Create(ground + new Vector3(0, 4, 0), ground - new Vector3(0, 1, 0));
+        var hit = who.Main.GetWorld3D().DirectSpaceState.IntersectRay(query);
+        return hit.Count > 0 && Mathf.Abs(hit["position"].AsVector3().Y - height) < 0.15f;
+    }
+
+    // Whether the client's own player stands where the host has it.
+    private bool Settled() => _host.Main.PlayerSync.Players[Peer].GlobalPosition.DistanceTo(Feet(_client)) < 0.1f;
 
     private static bool TerrainCollides(Instance who, Vector3 point, WorldObjectId id)
     {
