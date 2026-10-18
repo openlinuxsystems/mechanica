@@ -9,9 +9,10 @@ using Instance = Mechanica.Game.Tests.NetTestHarness.Instance;
 namespace Mechanica.Game.Tests;
 
 /// <summary>
-/// The hotbar and the inventory (UI spec PR 8), host plus a client. The client's bar starts with the six tools;
-/// picking a slot puts its tool in hand, a part slot puts the Hammer in hand with that part, and a food slot puts
-/// the food in hand. Slots are set and swapped through the host, which keeps the same bar and refuses an unknown
+/// The hotbar and the inventory (UI spec PR 8), host plus a client. The client's bar starts with the five tools,
+/// the Sledgehammer first and in hand; picking a slot puts its tool in hand, a part slot puts that part in hand to
+/// build with, an empty slot empties the hand, and a food slot puts the food in hand. The Sledgehammer can be moved
+/// but never taken off the bar. Slots are set and swapped through the host, which keeps the same bar and refuses an unknown
 /// item. On the client's own inventory window: tabs filter the grid and the Creative list, a listed part dropped on
 /// the bar fills the slot, a bar slot dropped on the inventory empties it, a stack right-clicked picks up half (Shift
 /// one) and a click puts it down, a dragged stack moves, a stack's tooltip names it and its stack, and in Survival a
@@ -48,16 +49,19 @@ public partial class HotbarTest : StagedTest
         _host = _harness.StartHost();
         _client = _harness.StartClient("Client");
 
-        Add("the client joins with the six tools on its bar", _ =>
+        Add("the client joins with the five tools on its bar", _ =>
         {
             if (_client.Main.PlayerSync.Players.Count != 2 || _client.Main.Tools is null || Bar.Own.Count != HotbarActions.SlotCount)
                 return false;
             Check(Bar.Own.SequenceEqual(HotbarActions.Default), $"the default bar ({string.Join(", ", Bar.Own)})");
-            Check(Tools.Selected == 0 && Tools.Current == Tools.Hammer, "slot 1 holds the Hammer, in hand");
+            Check(Tools.Selected == 0 && Tools.Current == Tools.Sledge, "slot 1 holds the Sledgehammer, in hand");
             Tools.Select(1);
             Check(Tools.Current == Tools.Lift, "slot 2 puts the Lift in hand");
+            Tools.Select(4);
+            Check(Tools.Current == Tools.Connector, "slot 5 puts the Connect Tool in hand");
             Tools.Select(5);
-            Check(Tools.Current == Tools.Connector, "slot 6 puts the Connect Tool in hand");
+            Check(Tools.Current == Tools.Builder && Tools.Builder.Selected is null && Tools.Builder.Prop == Core.Characters.CharacterProp.None,
+                $"an empty slot empties the hand, which only removes parts ({Tools.Builder.Selected})");
             return true;
         });
         Add("a part goes in a slot through the host", frame =>
@@ -69,7 +73,7 @@ public partial class HotbarTest : StagedTest
             Check(_results[0].Ok, $"the host takes it ({_results[0].Message})");
             Check(Bar.Own[6] == Block && HostBar[6] == Block, "client and host both have the block in slot 7");
             Tools.Select(6);
-            Check(Tools.Current == Tools.Hammer && Tools.Hammer.Selected == Block, $"slot 7 puts the Hammer in hand with the block ({Tools.Hammer.Selected})");
+            Check(Tools.Current == Tools.Builder && Tools.Builder.Selected == Block, $"slot 7 puts the block in hand ({Tools.Builder.Selected})");
             _results.Clear();
             return true;
         });
@@ -84,13 +88,24 @@ public partial class HotbarTest : StagedTest
             _results.Clear();
             return true;
         });
+        Add("the Sledgehammer cannot be taken off the bar", frame =>
+        {
+            if (frame == 0)
+                Bar.Set(0, null, _results.Add);
+            if (_results.Count == 0)
+                return false;
+            Check(!_results[0].Ok, "the host refuses to empty its slot");
+            Check(Bar.Own[0] == HotbarTools.Sledge && HostBar[0] == HotbarTools.Sledge, "it stays in slot 1");
+            _results.Clear();
+            return true;
+        });
         Add("two slots swap", frame =>
         {
             if (frame == 0)
                 Bar.Swap(0, 6, _results.Add);
             if (_results.Count == 0 || Bar.Own[0] != Block)
                 return frame < 300 ? false : Check(false, "the swap arrives");
-            Check(Bar.Own[6] == HotbarTools.Hammer && HostBar[0] == Block && HostBar[6] == HotbarTools.Hammer, "client and host agree");
+            Check(Bar.Own[6] == HotbarTools.Sledge && HostBar[0] == Block && HostBar[6] == HotbarTools.Sledge, "client and host agree, the Sledgehammer moved");
             _results.Clear();
             return true;
         });

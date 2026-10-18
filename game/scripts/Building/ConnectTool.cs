@@ -130,7 +130,7 @@ public partial class ConnectTool : HandTool
                 pending.Refused = refused + delta;
         }
         // A taken link goes once the Creation shows it; a refused one once it has faded; any after the timeout.
-        _pending.RemoveAll(p => p.Refused > Build.Settings!.Hammer.RollbackSeconds || p.Age > PendingGhost.TimeoutSeconds
+        _pending.RemoveAll(p => p.Refused > Build.Settings!.Placement.RollbackSeconds || p.Age > PendingGhost.TimeoutSeconds
             || (p.Taken && Creations.Find(p.Creation) is var c && (c is null || c.Links.Contains(p.Link) == p.Adding)));
         if (!Active || Build.Settings is null)
             return;

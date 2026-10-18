@@ -11,7 +11,7 @@ public enum GesturePhase
     /// <summary>Just pressed: a release now is a click.</summary>
     Pressed,
 
-    /// <summary>Held past the hold time without moving to another cell: the Hammer's alignment mode.</summary>
+    /// <summary>Held past the hold time without moving to another cell: building's alignment mode.</summary>
     Holding,
 
     /// <summary>Moved to other cells for long enough while held: a drag over an area.</summary>
@@ -34,7 +34,7 @@ public enum GestureEnd
 /// <summary>
 /// The press, hold, drag and release of one mouse button over grid cells, timed by the caller's clock (UI spec §9):
 /// held still for <see cref="HoldSeconds"/> it is holding, moved off its first cell for
-/// <see cref="DragSeconds"/> it is dragging, and a release says which it was. The Hammer uses it for alignment and
+/// <see cref="DragSeconds"/> it is dragging, and a release says which it was. Building by hand uses it for alignment and
 /// drag placement with the left button and for timed and drag removal with the right.
 /// </summary>
 public sealed class ToolGesture(double holdSeconds, double dragSeconds)

@@ -406,7 +406,7 @@ public class SurvivalActionsTests
     public void TheSledgehammerHitsPlayersAndBreaksWorldObjects()
     {
         _f.Ok(Me, ToolActions.Sledge, new { player = You.Peer });
-        Assert.Equal(85f, _f.Survival.View(You.Peer)!.Health);
+        Assert.Equal(80f, _f.Survival.View(You.Peer)!.Health);
         Assert.Equal("You cannot hit yourself.", _f.Refused(Me, ToolActions.Sledge, new { player = Me.Peer }));
         Assert.Equal("Hit one thing: a creation and part, a player, an object or a bot.",
             _f.Refused(Me, ToolActions.Sledge, new { player = You.Peer, @object = "1.2.3" }));
@@ -425,6 +425,44 @@ public class SurvivalActionsTests
         Assert.True(_f.World.State.IsDestroyed(rock));
         var drop = Assert.Single(_f.Survival.Drops.Values);
         Assert.Equal([new ItemStack(Scrap, 2)], drop.Items);
+    }
+
+    [Fact]
+    public void AHitKnocksThePlayerBackAlongTheSwing()
+    {
+        // Me stands at the origin looking at You, 3 m in front: 5000 N·s on an 80 kg body is far past the 4 m/s cap.
+        _f.Ok(Me, ToolActions.Sledge, new { player = You.Peer });
+        var (peer, velocity) = Assert.Single(_f.World.Knocks);
+        Assert.Equal(You.Peer, peer);
+        var sledge = new SledgeSettings();
+        var flat = new Vector3(velocity.X, 0, velocity.Z);
+        Assert.Equal(sledge.MaxKnockbackSpeed, flat.Length(), 3);
+        Assert.Equal(sledge.KnockbackLift, velocity.Y, 3);
+        var away = Vector3.Normalize(new Vector3(_f.World.Feet[You.Peer].X - _f.World.Feet[Me.Peer].X, 0, _f.World.Feet[You.Peer].Z - _f.World.Feet[Me.Peer].Z));
+        Assert.True(Vector3.Dot(Vector3.Normalize(flat), away) > 0.99f, $"pushed away from the swing ({flat})");
+    }
+
+    [Fact]
+    public void EachWorldObjectTakesItsOwnGatheringDamage()
+    {
+        // Stone takes 25 a hit (Chase's sledgehammer spec); an object without sledge_damage takes sledge.object_damage.
+        var stone = new WorldObjectId(2, 0, 0);
+        _f.World.Objects[stone] = new WorldObjectPlacement(stone, new WorldObjectDefinition { Id = "rock_node", Health = 100, SledgeDamage = 25 }, new Vector3(0, 0, 2), 0, 1);
+        var log = new WorldObjectId(4, 0, 0);
+        _f.World.Objects[log] = new WorldObjectPlacement(log, new WorldObjectDefinition { Id = "fallen_log", Health = 100 }, new Vector3(0, 0, 2), 0, 1);
+        Assert.Equal(75f, _f.Ok<SledgeResult>(Me, ToolActions.Sledge, new { @object = "2.0.0" }).Health);
+        _f.World.Now += 1;
+        Assert.Equal(100f - new SledgeSettings().ObjectDamage, _f.Ok<SledgeResult>(Me, ToolActions.Sledge, new { @object = "4.0.0" }).Health);
+    }
+
+    [Fact]
+    public void TheSwingTakesASecond()
+    {
+        _f.Ok(Me, ToolActions.Sledge, new { player = You.Peer });
+        _f.World.Now += 0.5;
+        Assert.Equal("The Sledgehammer is still swinging.", _f.Refused(Me, ToolActions.Sledge, new { player = You.Peer }));
+        _f.World.Now += 0.5;
+        _f.Ok(Me, ToolActions.Sledge, new { player = You.Peer });
     }
 
     [Fact]

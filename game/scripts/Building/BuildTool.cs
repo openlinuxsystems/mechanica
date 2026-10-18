@@ -13,7 +13,8 @@ using Mechanica.Game.Ui;
 namespace Mechanica.Game.Building;
 
 /// <summary>
-/// Building by hand for the local player. Every physics frame while in hand it casts a ray from the
+/// Building by hand for the local player: no tool, just the part picked on the hotbar (<see cref="ToolBelt"/>), held up
+/// in the hand. Every physics frame while in hand it casts a ray from the
 /// camera and works out where the selected part would go (<see cref="BuildAim"/>), showing a see-through
 /// ghost there: blue when it would fit, red when it would not (checked here, the same way the host checks).
 /// Requests go through the Action API, so the host decides; a placed part's ghost stays until the host answers
@@ -26,10 +27,11 @@ namespace Mechanica.Game.Building;
 /// the plane (XY, XZ, YZ) while dragging. Holding right click on a part fills a ring round the crosshair and removes
 /// it when full (0.4 to 0.9 s by material); letting go early cancels. Dragging with right click held marks the parts
 /// of that body in the face's plane and removes them on release. Otherwise Q turns the part about the face
-/// (Shift+Q back) and T tips it over. The part comes from the hotbar slot picked (<see cref="ToolBelt"/>).
+/// (Shift+Q back) and T tips it over. With an empty hotbar slot picked there is no part to place, and the hand only
+/// removes parts (<see cref="Clear"/>).
 /// </para>
 /// </summary>
-public partial class HammerTool : HandTool
+public partial class BuildTool : HandTool
 {
     /// <summary>The see-through look of tool previews.</summary>
     public static readonly StandardMaterial3D PreviewMaterial = new()
@@ -65,6 +67,7 @@ public partial class HammerTool : HandTool
     private (CreationNode Node, int Part, int Body, GridCell Face, Transform3D Frame)? _removing;
     private bool _removed;
     private bool _previewValid;
+    private bool _emptyHand;
 
     /// <summary>What the ray currently points at.</summary>
     /// <param name="Creation">The Creation hit, or null for the ground and other world objects.</param>
@@ -79,18 +82,18 @@ public partial class HammerTool : HandTool
         GridCell Face = default, Transform3D Frame = default);
 
     /// <inheritdoc/>
-    public override string ToolName => "Hammer";
+    public override string ToolName => "Build";
 
     /// <inheritdoc/>
-    public override CharacterProp Prop => CharacterProp.Hammer;
+    public override CharacterProp Prop => Selected is null ? CharacterProp.None : CharacterProp.Item;
 
     /// <inheritdoc/>
-    protected override CharacterGesture UseGesture => CharacterGesture.HammerSwing;
+    protected override CharacterGesture UseGesture => CharacterGesture.Interact;
 
     /// <summary>Placeable parts to pick from, by qualified id.</summary>
     public IReadOnlyList<string> Parts => _parts;
 
-    /// <summary>The part <see cref="Place"/> puts down, or null when no mod has a placeable part.</summary>
+    /// <summary>The part <see cref="Place"/> puts down, or null with an empty hand (or when no mod has a placeable part).</summary>
     public string? Selected { get; private set; }
 
     /// <summary>The player's turn and tip on top of the automatic orientation.</summary>
@@ -129,7 +132,7 @@ public partial class HammerTool : HandTool
     /// <summary>The time the gestures run on, in seconds.</summary>
     public static double Now => Time.GetTicksUsec() / 1e6;
 
-    private HammerSettings Timing => Build.Settings!.Hammer;
+    private PlacementSettings Timing => Build.Settings!.Placement;
 
     public override void _Ready()
     {
@@ -145,7 +148,10 @@ public partial class HammerTool : HandTool
 
     public override void _ExitTree() => HudRoot.FocusLost -= CancelGestures;
 
-    /// <summary>Re-reads the placeable parts from the catalog, after mods are reloaded. Keeps the selection if it still exists.</summary>
+    /// <summary>
+    /// Re-reads the placeable parts from the catalog, after mods are reloaded. Keeps the selection if it still exists,
+    /// and an empty hand empty.
+    /// </summary>
     public void ReloadParts()
     {
         _parts.Clear();
@@ -153,7 +159,7 @@ public partial class HammerTool : HandTool
             .Where(p => p.Value.Definition.IsPlaceable)
             .Select(p => p.Key)
             .Order(StringComparer.Ordinal));
-        if (Selected is null || !_parts.Contains(Selected))
+        if (!_emptyHand && (Selected is null || !_parts.Contains(Selected)))
             Selected = _parts.FirstOrDefault();
         _previewPart = null;
     }
@@ -214,7 +220,17 @@ public partial class HammerTool : HandTool
         if (!_parts.Contains(part))
             return false;
         Selected = part;
+        _emptyHand = false;
         return true;
+    }
+
+    /// <summary>Empties the hand: nothing to place, and right click still removes parts.</summary>
+    public void Clear()
+    {
+        CancelGestures();
+        Selected = null;
+        _emptyHand = true;
+        _previewPart = null;
     }
 
     /// <summary>Selects the next (or previous) placeable part.</summary>
@@ -224,6 +240,7 @@ public partial class HammerTool : HandTool
             return;
         var index = Selected is null ? 0 : _parts.IndexOf(Selected);
         Selected = _parts[((index + step) % _parts.Count + _parts.Count) % _parts.Count];
+        _emptyHand = false;
     }
 
     /// <summary>Turns the part a quarter turn about the face it goes on; while a drag is held, Q steps its plane instead.</summary>
@@ -328,7 +345,6 @@ public partial class HammerTool : HandTool
             return false;
         if (end == GestureEnd.Drag && removing is { } r && _dragParts.Count > 0)
         {
-            PlayFeedback("hammer_swing");
             Send(BuildActions.RemoveParts, new RemovePartsArgs(r.Node.Creation.Id, [.. _dragParts]), done);
         }
         _dragParts.Clear();
@@ -360,7 +376,6 @@ public partial class HammerTool : HandTool
     {
         if (Selected is null)
             return false;
-        PlayFeedback("hammer_swing");
         var ghost = PendingGhost.Leave(this, _preview);
         ghost.GlobalTransform = aim.Preview;
         Send(BuildActions.PlacePart, new PlacePartArgs(Selected, aim.Cell, aim.Rotation, aim.Creation?.Id, aim.Position), result =>
@@ -376,7 +391,6 @@ public partial class HammerTool : HandTool
     {
         if (Selected is not { } part || Build.Catalog.FindDefinition(part) is not { } definition)
             return;
-        PlayFeedback("hammer_swing");
         var ghosts = cells.Select(cell =>
         {
             var ghost = PendingGhost.Leave(this, _preview);
@@ -396,7 +410,6 @@ public partial class HammerTool : HandTool
     {
         if (Aim is not { Creation: { } creation, HitPart: { } part })
             return false;
-        PlayFeedback("hammer_swing");
         Send(BuildActions.RemovePart, new RemovePartArgs(creation.Id, part), done);
         return true;
     }
@@ -499,7 +512,6 @@ public partial class HammerTool : HandTool
         {
             // One removal per press: hold again for the next part (no queue).
             _removed = true;
-            PlayFeedback("hammer_swing");
             Send(BuildActions.RemovePart, new RemovePartArgs(r.Node.Creation.Id, start.Id), null);
         }
         ShowMarks();
@@ -653,17 +665,17 @@ public partial class HammerTool : HandTool
     /// <inheritdoc/>
     public override string HudText()
     {
+        if (_remove.Phase == GesturePhase.Dragging)
+            return Loc.T("Remove {0} parts   let go to remove", _dragParts.Count);
         if (Selected is null)
-            return Loc.T("Hammer: no placeable parts are loaded");
+            return (_parts.Count == 0 && !_emptyHand ? Loc.T("No placeable parts are loaded") : Loc.T("Empty hand   {0} hold on a part to remove it", Key(InputActions.Secondary))) + Status;
         var name = Build.Catalog.FindDefinition(Selected)?.Name ?? Selected;
         if (_place.Phase == GesturePhase.Dragging)
-            return Loc.T("Hammer: {0} × {1} on the {2} plane   {3} next plane  let go to place", name, _dragCells.Count, BuildDrag.PlaneName(_plane), Key(InputActions.Rotate));
+            return Loc.T("{0} × {1} on the {2} plane   {3} next plane  let go to place", name, _dragCells.Count, BuildDrag.PlaneName(_plane), Key(InputActions.Rotate));
         if (_place.Phase == GesturePhase.Holding)
-            return Loc.T("Hammer: {0}   drag to place a grid on the {1} plane   {2} next plane", name, BuildDrag.PlaneName(_plane), Key(InputActions.Rotate));
-        if (_remove.Phase == GesturePhase.Dragging)
-            return Loc.T("Hammer: remove {0} parts   let go to remove", _dragParts.Count);
+            return Loc.T("{0}   drag to place a grid on the {1} plane   {2} next plane", name, BuildDrag.PlaneName(_plane), Key(InputActions.Rotate));
         var problem = !_previewValid && PreviewProblem is { Length: > 0 } p && Aim is not null ? $"\n{p}" : "";
-        return Loc.T("Hammer: {0}   {1} turn  {2} tip  {3} place (hold to drag)  {4} hold to remove", name,
+        return Loc.T("{0}   {1} turn  {2} tip  {3} place (hold to drag)  {4} hold to remove", name,
             Key(InputActions.Rotate), Key(InputActions.Tip), Key(InputActions.Primary), Key(InputActions.Secondary)) + (Status.Length > 0 ? Status : problem);
     }
 }

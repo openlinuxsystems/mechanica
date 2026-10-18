@@ -103,7 +103,7 @@ plays these names:
 | Name | When | Without a binding |
 |------|------|-------------------|
 | `place` | The part is placed. | `place_<sound_material>`, else `part_attach` |
-| `remove` | The Hammer takes it off. | `remove_block` for blocks, else `part_detach` |
+| `remove` | It is taken off by hand. | `remove_block` for blocks, else `part_detach` |
 | `impact` | A Sledgehammer hits it without breaking it. | `impact_<sound_material>` |
 | `break` | It breaks. | `break_<sound_material>` |
 | `start` | A crafting station begins working its queue. | nothing |
@@ -129,7 +129,7 @@ order wins and the loader warns (MD0803).
 
 The host decides every sound that comes from the world (placing, smashing, breaking, a part's loop)
 and sends it only to players within `max_distance` plus 5 m. Feedback for one player's own hand (the
-Hammer's swing, the Weld Tool's spark, a refused action, UI clicks) plays on that player's machine and
+Sledgehammer's swing, the Weld Tool's spark, a refused action, UI clicks) plays on that player's machine and
 is never sent. Loops belong to the host: it starts them on a point or a part, sends parameter changes
 20 times a second, stops them when the part goes, and gives every running loop to a player who joins.
 

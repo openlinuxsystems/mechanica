@@ -6,13 +6,10 @@ namespace Mechanica.Core.Items;
 
 /// <summary>
 /// The hand tools a hotbar slot can hold, by their catalog ids (CATALOG_IDS.md). They are not inventory items:
-/// every player always has them.
+/// every player always has them. Building needs no tool: a part in a slot places it, and an empty slot removes parts.
 /// </summary>
 public static class HotbarTools
 {
-    /// <summary>The Hammer: removes parts (a part in a slot places it).</summary>
-    public const string Hammer = "vanilla:hammer";
-
     /// <summary>The Lift.</summary>
     public const string Lift = "vanilla:lift";
 
@@ -22,14 +19,14 @@ public static class HotbarTools
     /// <summary>The Paint Tool.</summary>
     public const string Paint = "vanilla:paint_tool";
 
-    /// <summary>The Sledgehammer.</summary>
+    /// <summary>The Sledgehammer: the main tool, always on the hotbar (it can be moved but never taken off).</summary>
     public const string Sledge = "vanilla:sledgehammer";
 
     /// <summary>The Connect Tool.</summary>
     public const string Connect = "vanilla:connect_tool";
 
     /// <summary>Every tool, in the order a new hotbar holds them.</summary>
-    public static IReadOnlyList<string> All { get; } = [Hammer, Lift, Weld, Paint, Sledge, Connect];
+    public static IReadOnlyList<string> All { get; } = [Sledge, Lift, Weld, Paint, Connect];
 
     /// <summary>True when <paramref name="id"/> names a tool (a bare id means vanilla).</summary>
     public static bool IsTool(string? id) => id is not null && All.Contains(Identifiers.Qualify(id));
@@ -49,7 +46,8 @@ public sealed record HotbarSlots(IReadOnlyList<string?> Slots);
 /// a tool or an item id; it holds no items itself, so what a slot can do is still decided against the player's
 /// inventory when they use it. Slots change only through <c>SetHotbarSlot</c>, are saved with the world under the
 /// player's profile and come back when they return. A player who has never changed theirs has
-/// <see cref="Default"/>: the tools in key order.
+/// <see cref="Default"/>: the tools in key order. The Sledgehammer never leaves the bar: a change that would take its
+/// last copy off is refused, and a saved bar without one gets it back.
 /// </summary>
 public sealed class HotbarActions(IPartCatalog catalog)
 {
@@ -64,8 +62,8 @@ public sealed class HotbarActions(IPartCatalog catalog)
 
     private readonly Dictionary<int, string?[]> _bars = [];
 
-    /// <summary>A new player's hotbar: the six tools, then four empty slots.</summary>
-    public static IReadOnlyList<string?> Default { get; } = [.. HotbarTools.All, null, null, null, null];
+    /// <summary>A new player's hotbar: the five tools, the Sledgehammer first, then five empty slots.</summary>
+    public static IReadOnlyList<string?> Default { get; } = [.. HotbarTools.All, null, null, null, null, null];
 
     /// <summary>A player's hotbar changed: peer and the slots now.</summary>
     public event Action<int, IReadOnlyList<string?>>? Changed;
@@ -92,7 +90,8 @@ public sealed class HotbarActions(IPartCatalog catalog)
 
     /// <summary>
     /// Host: gives a player back the slots saved for them. Entries this world no longer knows (an item whose mod
-    /// is gone) come back empty; a missing list is the default.
+    /// is gone, the Hammer of older saves) come back empty; a missing list is the default. A bar saved without the
+    /// Sledgehammer gets it in the first empty slot (or the first slot when none is empty).
     /// </summary>
     public void Restore(int peer, IReadOnlyList<string?>? saved)
     {
@@ -104,6 +103,8 @@ public sealed class HotbarActions(IPartCatalog catalog)
         var bar = new string?[SlotCount];
         for (var i = 0; i < SlotCount && i < saved.Count; i++)
             bar[i] = Known(saved[i]) ? Identifiers.Qualify(saved[i]!) : null;
+        if (!bar.Contains(HotbarTools.Sledge))
+            bar[Math.Max(0, Array.IndexOf(bar, null))] = HotbarTools.Sledge;
         _bars[peer] = bar;
         Changed?.Invoke(peer, bar);
     }
@@ -128,6 +129,10 @@ public sealed class HotbarActions(IPartCatalog catalog)
             return $"Hotbar slots are 0 to {SlotCount - 1}.";
         if (args.Entry is { } entry && !Known(entry))
             return $"There is no tool or item '{entry}'.";
+        var bar = SlotsOf(caller.Peer);
+        if (bar[args.Slot] == HotbarTools.Sledge && (args.Entry is null || Identifiers.Qualify(args.Entry) != HotbarTools.Sledge)
+            && bar.Count(e => e == HotbarTools.Sledge) == 1)
+            return "The Sledgehammer always stays on the hotbar; move it to another slot instead.";
         return null;
     }
 

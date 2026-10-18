@@ -78,8 +78,6 @@ public partial class CaptureScene : Node
         }
         Shot("front", 60, () => Look(new Vector3(0, 1.0f, -3.2f)));
         Shot("side", 10, () => Look(new Vector3(-3.2f, 1.0f, 0)));
-        Shot("hammer", 40, () => { Player.HeldProp = CharacterProp.Hammer; Look(new Vector3(-1.6f, 1.2f, -2.2f)); });
-        Shot("swing", 9, () => Player.Gesture(CharacterGesture.HammerSwing));
         Shot("sledge", 40, () => { Tool<Building.SledgeTool>(); Look(new Vector3(-1.6f, 1.2f, -2.2f)); });
         Shot("sledge_windup", 21, () => Player.Gesture(CharacterGesture.SledgeSwing));
         Shot("sledge_block", 30, () => Player.HeldGuard = true);
@@ -93,14 +91,13 @@ public partial class CaptureScene : Node
         Shot("bucket_full", 80, () => Hold(CharacterProp.WaterBucketFull));
         Shot("bucket_throw_windup", 14, () => Player.Gesture(CharacterGesture.BucketThrow));
         Shot("bucket_throw", 30, () => Player.Gesture(CharacterGesture.BucketThrow));
-        Shot("look_up", 40, () => { Tool<Building.HammerTool>(); Input(pitch: 0.9f); Look(new Vector3(-2.6f, 1.2f, -1.6f)); });
+        Shot("look_up", 40, () => { Tool<Building.WeldTool>(); Input(pitch: 0.9f); Look(new Vector3(-2.6f, 1.2f, -1.6f)); });
         Shot("look_down", 40, () => Input(pitch: -0.9f));
         Shot("crouch", 40, () => Input(crawl: true));
         Shot("walk", 23, () => { Input(z: 1); });
         Shot("run", 23, () => { Input(z: 1, sprint: true); });
         Shot("first_person", 40, () => { Input(); Player.MakeCameraCurrent(); });
         Shot("first_person_up", 30, () => Input(pitch: 0.6f));
-        Shot("first_person_swing", 9, () => Player.Gesture(CharacterGesture.HammerSwing));
         Shot("first_person_walk", 30, () => Input(z: 1));
         Shot("first_person_sledge", 30, () => { Input(); Tool<Building.SledgeTool>(); });
         Shot("first_person_sledge_windup", 21, () => Player.Gesture(CharacterGesture.SledgeSwing));

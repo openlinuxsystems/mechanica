@@ -480,7 +480,7 @@ Placing. Arguments of PlacePart. Give Creation to attach to an existing Creation
 
 *action, play scope*
 
-Placing a drag's worth of parts. Arguments of PlaceParts: one part at each of Cells, all in one grid frame (a Hammer drag, UI spec §2). With Position the first cell starts a new Creation there and the rest attach to it.
+Placing a drag's worth of parts. Arguments of PlaceParts: one part at each of Cells, all in one grid frame (a building drag, UI spec §2). With Position the first cell starts a new Creation there and the rest attach to it.
 
 | Param | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|
@@ -513,7 +513,7 @@ Removing. Arguments of RemovePart.
 
 *action, play scope*
 
-Removing a drag's worth of parts. Arguments of RemoveParts: parts of one Body of a Creation (a Hammer drag, UI spec §8).
+Removing a drag's worth of parts. Arguments of RemoveParts: parts of one Body of a Creation (a building drag, UI spec §8).
 
 | Param | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|

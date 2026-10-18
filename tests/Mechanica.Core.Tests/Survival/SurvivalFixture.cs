@@ -78,7 +78,6 @@ internal sealed class SurvivalFixture
         Survival = new SurvivalActions(Catalog, Settings, Inventories, World) { Mode = mode, FriendlyFire = friendlyFire };
         Tools.Targets = Survival;
         Tools.Costs = Survival;
-        Survival.DamageScale = Tools.DamageScale;
         World.Survival = Survival;
         Fire = new FireActions(new FireSettings(), Survival, World);
         Inventories.Register(Dispatcher);
@@ -169,6 +168,7 @@ internal sealed class SurvivalFixture
         public float LastRange { get; private set; }
         public List<Vector3> Pushes { get; } = [];
         public List<(int Peer, Vector3 Feet)> Teleports { get; } = [];
+        public List<(int Peer, Vector3 Velocity)> Knocks { get; } = [];
         public Vector3 Spawn { get; set; } = new(10, 0, 10);
         public float WaterLevel { get; set; } = -1;
         public double Now { get; set; } = 1000;
@@ -191,6 +191,8 @@ internal sealed class SurvivalFixture
             Feet[peer] = feet;
             Teleports.Add((peer, feet));
         }
+
+        public void Knock(int peer, Vector3 velocity) => Knocks.Add((peer, velocity));
 
         public RayHit? Cast(Vector3 from, Vector3 direction, float range, int ignorePlayer)
         {

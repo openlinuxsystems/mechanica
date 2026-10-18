@@ -40,6 +40,26 @@ public sealed class BotState
     /// <summary>The horizontal velocity it asked to walk at, in m/s.</summary>
     public Vector3 Desired { get; internal set; }
 
+    /// <summary>
+    /// Velocity a hit gave it on top of its walk, in m/s (a Sledgehammer's knockback). The game moves it by this and
+    /// slows it back to zero (<see cref="TakeKnock"/>).
+    /// </summary>
+    public Vector3 Knock { get; internal set; }
+
+    /// <summary>
+    /// The knockback to move by this tick: its vertical part once (the game adds it to the fall), its horizontal part
+    /// slowing by <paramref name="drag"/> m/s² over <paramref name="dt"/> seconds.
+    /// </summary>
+    public Vector3 TakeKnock(float drag, float dt)
+    {
+        var knock = Knock;
+        var flat = new Vector3(knock.X, 0, knock.Z);
+        var speed = flat.Length();
+        var left = MathF.Max(0, speed - drag * dt);
+        Knock = speed > 1e-6f && left > 0 ? flat * (left / speed) : Vector3.Zero;
+        return knock;
+    }
+
     /// <summary>Health now.</summary>
     public float Health { get; internal set; }
 
@@ -435,6 +455,13 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
     }
 
     // ---- IBotTargets ----
+
+    /// <inheritdoc/>
+    public void Knock(int bot, Vector3 velocity)
+    {
+        if (_bots.TryGetValue(bot, out var b) && !b.Dead && !b.Type.MeleeImmune && float.IsFinite(velocity.LengthSquared()))
+            b.Knock += velocity;
+    }
 
     /// <inheritdoc/>
     public Vector3? BotCentre(int bot) => _bots.TryGetValue(bot, out var b) && !b.Dead ? b.Centre : null;

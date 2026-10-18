@@ -9,9 +9,6 @@ public enum CharacterProp : byte
     /// <summary>Empty hands.</summary>
     None,
 
-    /// <summary>The Hammer.</summary>
-    Hammer,
-
     /// <summary>The Lift's remote.</summary>
     LiftRemote,
 
@@ -54,9 +51,6 @@ public enum CharacterGesture : byte
 {
     /// <summary>Nothing.</summary>
     None,
-
-    /// <summary>Hammer strike (placing and removing parts).</summary>
-    HammerSwing,
 
     /// <summary>Two-handed Sledgehammer swing.</summary>
     SledgeSwing,
@@ -123,7 +117,7 @@ public static class CharacterRig
 
     /// <summary>
     /// Bones the upper-body layer (hold poses and gestures) moves. Everything else follows the locomotion, so
-    /// a player can walk while swinging a hammer. Extra bones under these (a braid) count as upper body too.
+    /// a player can walk while swinging the Sledgehammer. Extra bones under these (a braid) count as upper body too.
     /// </summary>
     public static IReadOnlySet<string> UpperBodyBones { get; } = new HashSet<string>(StringComparer.Ordinal)
     {
@@ -192,7 +186,7 @@ public static class CharacterRig
     public static IReadOnlyList<string> UpperBodyClips { get; } =
     [
         "hold_tool", "hold_heavy", "hold_heavy_block", "hold_gun", "hold_item",
-        "hammer_swing", "sledge_swing", "tool_use", "weld", "paint_spray", "fire_gun", "eat", "throw", "plant", "pour",
+        "sledge_swing", "tool_use", "weld", "paint_spray", "fire_gun", "eat", "throw", "plant", "pour",
         "interact", "hurt",
         "hold_bucket", "hold_bucket_full", "bucket_fill", "bucket_throw", "bucket_place", "bucket_place_full",
         "sledge_swing_side", "sledge_swing_back",
@@ -250,7 +244,6 @@ public static class CharacterRig
     /// <summary>The clip a gesture plays, or null for <see cref="CharacterGesture.None"/> and unknown values.</summary>
     public static string? GestureClip(CharacterGesture gesture) => gesture switch
     {
-        CharacterGesture.HammerSwing => "hammer_swing",
         CharacterGesture.SledgeSwing => "sledge_swing",
         CharacterGesture.ToolUse => "tool_use",
         CharacterGesture.Weld => "weld",
@@ -311,7 +304,6 @@ public static class CharacterRig
     /// </summary>
     public static string? PropNode(CharacterProp prop) => prop switch
     {
-        CharacterProp.Hammer => "hammer",
         CharacterProp.LiftRemote => "lift_remote",
         CharacterProp.WeldTool => "weld_tool",
         CharacterProp.PaintTool => "paint_tool",

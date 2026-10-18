@@ -256,6 +256,9 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
     public void Teleport(int peer, System.Numerics.Vector3 feet) => Players.HostTeleport(peer, feet.ToGodot());
 
     /// <inheritdoc/>
+    public void Knock(int peer, System.Numerics.Vector3 velocity) => Players.HostKnock(peer, velocity.ToGodot());
+
+    /// <inheritdoc/>
     public RayHit? Cast(System.Numerics.Vector3 from, System.Numerics.Vector3 direction, float range, int ignorePlayer)
     {
         var start = from.ToGodot();

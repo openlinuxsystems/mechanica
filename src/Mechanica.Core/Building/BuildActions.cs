@@ -25,7 +25,7 @@ public sealed record PlacePartArgs(string Part, GridCell Cell, GridRotation Rota
 public sealed record RemovePartArgs(int Creation, int Part);
 
 /// <summary>
-/// Arguments of <c>PlaceParts</c>: one part at each of <see cref="Cells"/>, all in one grid frame (a Hammer drag,
+/// Arguments of <c>PlaceParts</c>: one part at each of <see cref="Cells"/>, all in one grid frame (a building drag,
 /// UI spec §2). With <see cref="Position"/> the first cell starts a new Creation there and the rest attach to it.
 /// </summary>
 /// <param name="Part">Part id, <c>mod_id:part_id</c>.</param>
@@ -35,7 +35,7 @@ public sealed record RemovePartArgs(int Creation, int Part);
 /// <param name="Position">World position in metres of a new Creation's grid origin.</param>
 public sealed record PlacePartsArgs(string Part, IReadOnlyList<GridCell> Cells, GridRotation Rotation = default, int? Creation = null, Vec3? Position = null);
 
-/// <summary>Arguments of <c>RemoveParts</c>: parts of one Body of a Creation (a Hammer drag, UI spec §8).</summary>
+/// <summary>Arguments of <c>RemoveParts</c>: parts of one Body of a Creation (a building drag, UI spec §8).</summary>
 /// <param name="Creation">Creation holding the parts.</param>
 /// <param name="Parts">Part ids, all on the same Body.</param>
 public sealed record RemovePartsArgs(int Creation, IReadOnlyList<int> Parts);
@@ -173,8 +173,8 @@ public sealed class BuildActions(IPartCatalog catalog, BuildSettings settings, I
     {
         if (args.Cells is not { Count: > 0 } cells)
             return "Give at least one cell.";
-        if (cells.Count > settings.Hammer.MaxPartsPerAction)
-            return $"At most {settings.Hammer.MaxPartsPerAction} parts go down at once.";
+        if (cells.Count > settings.Placement.MaxPartsPerAction)
+            return $"At most {settings.Placement.MaxPartsPerAction} parts go down at once.";
         if (cells.Distinct().Count() != cells.Count)
             return "A cell is given twice.";
         return ValidatePlace(caller, new PlacePartArgs(args.Part, cells[0], args.Rotation, args.Creation, args.Position));
@@ -204,8 +204,8 @@ public sealed class BuildActions(IPartCatalog catalog, BuildSettings settings, I
     {
         if (args.Parts is not { Count: > 0 } parts)
             return "Give at least one part.";
-        if (parts.Count > settings.Hammer.MaxPartsPerAction)
-            return $"At most {settings.Hammer.MaxPartsPerAction} parts come off at once.";
+        if (parts.Count > settings.Placement.MaxPartsPerAction)
+            return $"At most {settings.Placement.MaxPartsPerAction} parts come off at once.";
         if (ValidateRemove(caller, new RemovePartArgs(args.Creation, parts[0])) is { } error)
             return error;
         var creation = world.FindCreation(args.Creation)!;

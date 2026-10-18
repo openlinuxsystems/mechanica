@@ -59,7 +59,7 @@ public partial class PaintTool : HandTool
             return;
         }
         AddAimed();
-        if (HammerTool.Now - _flushedAt >= Build.Settings!.Paint.DragFlushSeconds)
+        if (BuildTool.Now - _flushedAt >= Build.Settings!.Paint.DragFlushSeconds)
             Flush();
     }
 
@@ -105,7 +105,7 @@ public partial class PaintTool : HandTool
     /// <summary>Sends what the drag has passed over since the last send.</summary>
     public void Flush(Action<ActionResult>? done = null)
     {
-        _flushedAt = HammerTool.Now;
+        _flushedAt = BuildTool.Now;
         if (_stroke is null)
             return;
         foreach (var (creation, parts) in _stroke.TakePending())

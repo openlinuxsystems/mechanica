@@ -12,7 +12,7 @@ using Mechanica.Game.Player;
 namespace Mechanica.Game.Building;
 
 /// <summary>
-/// Building over the network (D10). On the host it is the <see cref="IToolWorld"/> behind the Hammer's
+/// Building over the network (D10). On the host it is the <see cref="IToolWorld"/> behind building's
 /// <c>PlacePart</c>/<c>RemovePart</c> and the other hand tools' actions (<see cref="ToolActions"/>): it
 /// answers reach and clearance questions from the live scene and applies each change to the host's
 /// <see cref="CreationWorld"/>. It also shows every player's Lift and sends Lift changes to every

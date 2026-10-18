@@ -182,6 +182,12 @@ public sealed record WorldObjectDefinition
     /// </summary>
     public float? Health { get; init; }
 
+    /// <summary>
+    /// Health one Sledgehammer hit takes from the object: its gathering damage (stone 25, quartz 20 in Chase's
+    /// sledgehammer spec). Omitted means <c>sledge.object_damage</c> from <c>game/data/building.json</c>.
+    /// </summary>
+    public float? SledgeDamage { get; init; }
+
     /// <summary>Items the object leaves on the ground when it breaks.</summary>
     public List<ObjectDrop>? Drops { get; init; }
 

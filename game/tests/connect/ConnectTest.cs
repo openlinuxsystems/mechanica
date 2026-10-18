@@ -78,12 +78,12 @@ public partial class ConnectTest : StagedTest
         {
             if (frame == 0)
             {
-                Tools.Use(Tools.Hammer);
+                Tools.Use(Tools.Builder);
                 return false;
             }
             if (frame == 2)
             {
-                Check(Overlay.DrawnNodes.Count == 0, "no nodes with the Hammer out");
+                Check(Overlay.DrawnNodes.Count == 0, "no nodes with a part in hand");
                 Tools.Use(Connector);
                 return false;
             }
@@ -207,7 +207,7 @@ public partial class ConnectTest : StagedTest
         {
             if (frame == 0)
             {
-                Tools.Use(Tools.Hammer);
+                Tools.Use(Tools.Builder);
                 Request(LogicActions.ConnectParts, new LinkPartsArgs(Board, _switch, _engine));
                 return false;
             }

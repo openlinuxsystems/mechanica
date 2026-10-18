@@ -48,7 +48,7 @@ public class BucketRigTests
         Assert.Equal(BucketRig.Motion(settings, "bucket_throw", 0.36f), mid);
         Assert.Equal(BucketState.Empty, BucketRig.Motion(settings, "bucket_throw", 5f));
         Assert.Equal(BucketState.Full, BucketRig.Motion(settings, "bucket_fill", 5f));
-        Assert.Null(BucketRig.Motion(settings, "hammer_swing", 0.1f));
+        Assert.Null(BucketRig.Motion(settings, "tool_use", 0.1f));
     }
 
     [Fact]

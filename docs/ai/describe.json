@@ -1832,9 +1832,9 @@
       "kind": "action",
       "group": "building",
       "scope": "play",
-      "description": "Placing a drag's worth of parts. Arguments of PlaceParts: one part at each of Cells, all in one grid frame (a Hammer drag, UI spec §2). With Position the first cell starts a new Creation there and the rest attach to it.",
+      "description": "Placing a drag's worth of parts. Arguments of PlaceParts: one part at each of Cells, all in one grid frame (a building drag, UI spec §2). With Position the first cell starts a new Creation there and the rest attach to it.",
       "params": {
-        "description": "Arguments of PlaceParts: one part at each of Cells, all in one grid frame (a Hammer drag, UI spec §2). With Position the first cell starts a new Creation there and the rest attach to it.",
+        "description": "Arguments of PlaceParts: one part at each of Cells, all in one grid frame (a building drag, UI spec §2). With Position the first cell starts a new Creation there and the rest attach to it.",
         "type": "object",
         "properties": {
           "part": {
@@ -2055,9 +2055,9 @@
       "kind": "action",
       "group": "building",
       "scope": "play",
-      "description": "Removing a drag's worth of parts. Arguments of RemoveParts: parts of one Body of a Creation (a Hammer drag, UI spec §8).",
+      "description": "Removing a drag's worth of parts. Arguments of RemoveParts: parts of one Body of a Creation (a building drag, UI spec §8).",
       "params": {
-        "description": "Arguments of RemoveParts: parts of one Body of a Creation (a Hammer drag, UI spec §8).",
+        "description": "Arguments of RemoveParts: parts of one Body of a Creation (a building drag, UI spec §8).",
         "type": "object",
         "properties": {
           "creation": {

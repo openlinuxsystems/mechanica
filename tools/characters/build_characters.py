@@ -3094,15 +3094,6 @@ def with_right_arm(base, **kw):
     return s
 
 
-def clip_hammer_swing(t):
-    h = hold_tool_static()
-    up = with_right_arm(h, arm_r=tool_arm(np.array([-0.19, -0.2, 1.42]), d=(0.0, -0.4, 1.0), w=(0.0, 0.85, 0.5)),
-                        chest=(-4.0, 0, -6.0), spine=(-2.0, 0, -3.0))
-    hit = with_right_arm(h, arm_r=tool_arm(np.array([-0.15, -0.46, 1.12]), d=(0.0, -0.6, -0.8), w=(0.0, -0.85, 0.3)),
-                         chest=(8.0, 0, 4.0), spine=(4.0, 0, 2.0))
-    return oneshot([(0.0, h), (0.13, up), (0.21, hit), (0.35, h)], t)
-
-
 def clip_tool_use(t):
     h = hold_tool_static()
     push = with_right_arm(h, arm_r=tool_arm(TOOL_GRIP + np.array([0.01, -0.13, 0.03])), chest=(3.0, 0, 2.0),
@@ -4031,7 +4022,6 @@ CLIPS = {
     "hold_heavy_block_fp": (clip_hold_heavy_block_fp, 2.0, True, True),
     "hold_gun": (clip_hold_gun, 2.0, True, True),
     "hold_item": (clip_hold_item, 2.0, True, True),
-    "hammer_swing": (clip_hammer_swing, 0.35, False, True),
     "sledge_swing": (clip_sledge_swing, SWING_SECONDS, False, True),
     "sledge_swing_side": (clip_sledge_swing_side, SWING_SECONDS, False, True),
     "sledge_swing_back": (clip_sledge_swing_back, SWING_SECONDS, False, True),
@@ -4058,7 +4048,7 @@ CLIPS = {
 }
 
 # the prop each clip shows in the right hand (verification renders and the game's defaults)
-CLIP_PROP = {"hold_tool": "hammer", "hammer_swing": "hammer", "tool_use": "lift_remote", "weld": "weld_tool",
+CLIP_PROP = {"hold_tool": "lift_remote", "tool_use": "lift_remote", "weld": "weld_tool",
              "paint_spray": "paint_tool", "hold_heavy": "sledgehammer", "sledge_swing": "sledgehammer",
              "hold_heavy_block": "sledgehammer", "hold_heavy_fp": "sledgehammer", "hold_heavy_block_fp": "sledgehammer",
              "sledge_swing_fp": "sledgehammer", "sledge_swing_side": "sledgehammer", "sledge_swing_back": "sledgehammer",
@@ -4146,21 +4136,6 @@ def grip_frame_matrix(side="r"):
 
 
 X, Y, Z = np.eye(3)
-
-
-def prop_hammer():
-    p = [cylinder((0, -0.095, 0), (0, 0.2, 0), 0.014, 12, "handle_wood", ref=X, bevel=0.003),
-         cylinder((0, -0.1, 0), (0, 0.045, 0), 0.017, 12, "rubber", ref=X, bevel=0.004),
-         soft_box((0.012, 0.215, 0), (0.06, 0.022, 0.02), axes=(X, Y, Z), e=8, e2=8, segs=12, rings=6,
-                  mat="metal_dark"),
-         cylinder((0.07, 0.215, 0), (0.085, 0.215, 0), 0.02, 12, "metal", ref=Y, bevel=0.003)]
-    claw = [np.array([-0.045, 0.215, 0]), np.array([-0.07, 0.205, 0]), np.array([-0.09, 0.185, 0]),
-            np.array([-0.098, 0.165, 0])]
-    for dz in (-0.008, 0.008):
-        p.append(tube([c + np.array([0, 0, dz]) for c in claw], [(0.011, 0.006), (0.009, 0.005), (0.007, 0.004),
-                                                                  (0.003, 0.002)], 8, Z, "metal_dark"))
-    p.append(box((0, 0.11, 0.0), (0.016, 0.006, 0.0145), mat="orange"))
-    return p
 
 
 def prop_lift_remote():
@@ -4664,7 +4639,7 @@ def prop_refine_tool():
     return p
 
 
-PROPS = {"hammer": prop_hammer, "lift_remote": prop_lift_remote, "weld_tool": prop_weld_tool,
+PROPS = {"lift_remote": prop_lift_remote, "weld_tool": prop_weld_tool,
          "paint_tool": prop_paint_tool, "sledgehammer": prop_sledgehammer, "connect_tool": prop_connect_tool,
          "potato_blaster": prop_potato_blaster, "refine_tool": prop_refine_tool}
 

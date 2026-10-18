@@ -247,30 +247,27 @@ public sealed class BlueprintTests : IDisposable
     // ---- Blocking ----
 
     [Fact]
-    public void BlockingTakesMostOfASledgeHit()
+    public void BlockingIsCreativeOnly()
     {
-        _f.Ok(You, ToolActions.Block, new { on = true });
-        _f.Ok(Me, ToolActions.Sledge, new { player = You.Peer });
-        Assert.Equal(100f - 15f * 0.25f, _f.Survival.View(You.Peer)!.Health, 3);
-        Assert.Contains(You.Peer, _f.Tools.Blocking);
-
+        // The spec: no block in Survival, so a hit always lands in full.
+        Assert.Equal("Blocking with the Sledgehammer is only in Creative.", _f.Refused(You, ToolActions.Block, new { on = true }));
+        Assert.Empty(_f.Tools.Blocking);
         _f.Ok(You, ToolActions.Block, new { on = false });
-        _f.World.Now += 1;
         _f.Ok(Me, ToolActions.Sledge, new { player = You.Peer });
-        Assert.Equal(100f - 15f * 1.25f, _f.Survival.View(You.Peer)!.Health, 3);
+        Assert.Equal(100f - 20f, _f.Survival.View(You.Peer)!.Health, 3);
     }
 
     [Fact]
-    public void BlockingOnlyStopsTheCausesItNames()
+    public void ACreativeBlockIsOnlyAPose()
     {
-        _f.Ok(Me, ToolActions.Block, new { on = true });
-
-        Assert.Equal(0.25f, _f.Tools.DamageScale(Me.Peer, "bot"));
-        Assert.Equal(1f, _f.Tools.DamageScale(Me.Peer, "fall"));
-        Assert.Equal(1f, _f.Tools.DamageScale(You.Peer, "sledge"));
-
-        _f.Tools.Forget(Me.Peer);
-        Assert.Empty(_f.Tools.Blocking);
+        var creative = new SurvivalFixture(mode: GameMode.Creative);
+        creative.Ok(Me, ToolActions.Block, new { on = true });
+        Assert.Contains(Me.Peer, creative.Tools.Blocking);
+        creative.Ok(Me, ToolActions.Block, new { on = false });
+        Assert.Empty(creative.Tools.Blocking);
+        creative.Ok(Me, ToolActions.Block, new { on = true });
+        creative.Tools.Forget(Me.Peer);
+        Assert.Empty(creative.Tools.Blocking);
     }
 
     [Fact]
