@@ -10,7 +10,8 @@ namespace Mechanica.Game.Creations;
 /// above it (green while its readout is on, gray while off) when it has links and the Connect Tool is put away; a thin
 /// cyan bar along it that fills with its readout while the Connect Tool is out; a faint blue particle glow whose
 /// strength (size and brightness) follows its readout; a highlight turning about its joint while its readout is not 0; and its model pushed
-/// in while its readout is on. Every part of it is drawn from <see cref="PartReadouts"/>, the same on every peer.
+/// in while its readout is on; and clips of its own mesh played as readouts change (<see cref="DisplayDefinition.Clips"/>).
+/// Every part of it is drawn from <see cref="PartReadouts"/>, the same on every peer.
 /// </summary>
 public sealed class PartDisplayVisual
 {
@@ -33,6 +34,10 @@ public sealed class PartDisplayVisual
     private readonly CpuParticles3D? _glow;
     private readonly Node3D? _highlight;
     private float _pressed;
+    private readonly AnimationPlayer? _clips;
+    private readonly List<(Node3D Node, Transform3D Made)> _rest = [];
+    private bool[]? _clipOn;
+    private string? _oneShot;
 
     /// <summary>The part.</summary>
     public int Part { get; }
@@ -58,8 +63,14 @@ public sealed class PartDisplayVisual
     /// <summary>How far in the model is pushed, 0 to 1.</summary>
     public float Pressed => _pressed;
 
-    /// <summary>Builds the visuals under <paramref name="part"/> (the placed part's node) for <paramref name="definition"/>.</summary>
-    public PartDisplayVisual(int creation, int partId, PartDefinition definition, Node3D part, Node3D model)
+    /// <summary>The clip the model plays now, or null while it rests (for tests).</summary>
+    public string? Clip => _clips is { } player && player.IsPlaying() ? player.CurrentAnimation : null;
+
+    /// <summary>
+    /// Builds the visuals under <paramref name="part"/> (the placed part's node) for <paramref name="definition"/>.
+    /// <paramref name="scene"/> is the part's mesh scene when it plays clips (<see cref="PartAssets.AnimatedModelFor"/>).
+    /// </summary>
+    public PartDisplayVisual(int creation, int partId, PartDefinition definition, Node3D part, Node3D model, Node3D? scene = null)
     {
         _creation = creation;
         Part = partId;
@@ -137,6 +148,11 @@ public sealed class PartDisplayVisual
             pivot.AddChild(_highlight);
             part.AddChild(pivot);
         }
+        if (_display.Clips is { Count: > 0 } && scene is not null && PartAssets.FindPlayer(scene) is { } player)
+        {
+            _clips = player;
+            Remember(scene);
+        }
     }
 
     /// <summary>Shows the part as <paramref name="readouts"/> say, <paramref name="delta"/> seconds after the last time.</summary>
@@ -185,6 +201,67 @@ public sealed class PartDisplayVisual
             var push = Direction(press.Axis, Vector3.Down) * (press.Depth ?? 0.02f) * _pressed;
             _model.Position = (animated ? _model.Position : Vector3.Zero) + push;
         }
+        if (_clips is not null)
+            PlayClips(Value);
+    }
+
+    // One clip at a time: a one-shot (on or off) as its readout changes, otherwise the loop of the last entry that is on.
+    private void PlayClips(Func<string?, float> value)
+    {
+        var clips = _display.Clips!;
+        var player = _clips!;
+        var first = _clipOn is null;
+        _clipOn ??= new bool[clips.Count];
+        for (var i = 0; i < clips.Count; i++)
+        {
+            var on = value(clips[i].Readout) != 0;
+            if (on == _clipOn[i])
+                continue;
+            _clipOn[i] = on;
+            // A part that comes into view already on just loops; it did not just change.
+            if (!first && (on ? clips[i].On : clips[i].Off) is { } shot && player.HasAnimation(shot))
+            {
+                Play(player, shot, loop: false);
+                _oneShot = shot;
+            }
+        }
+        if (_oneShot is not null && player.IsPlaying() && player.CurrentAnimation == _oneShot)
+            return;
+        _oneShot = null;
+        string? loop = null;
+        for (var i = clips.Count - 1; i >= 0 && loop is null; i--)
+        {
+            if (_clipOn[i] && clips[i].Loop is { } name && player.HasAnimation(name))
+                loop = name;
+        }
+        if (loop is not null)
+        {
+            if (!player.IsPlaying() || player.CurrentAnimation != loop)
+                Play(player, loop, loop: true);
+        }
+        else if (player.IsPlaying() || player.CurrentAnimation != "")
+        {
+            // Nothing to show: back to the model as it was made.
+            player.Stop();
+            foreach (var (node, made) in _rest)
+                node.Transform = made;
+        }
+    }
+
+    private static void Play(AnimationPlayer player, string clip, bool loop)
+    {
+        player.GetAnimation(clip).LoopMode = loop ? Animation.LoopModeEnum.Linear : Animation.LoopModeEnum.None;
+        player.Stop();
+        player.Play(clip);
+    }
+
+    // Every node's transform as the file has it, to rest on when no clip plays.
+    private void Remember(Node node)
+    {
+        if (node is Node3D n)
+            _rest.Add((n, n.Transform));
+        foreach (var child in node.GetChildren())
+            Remember(child);
     }
 
     private static Vector3 Direction(Vec3? v, Vector3 fallback) => v is { } d ? d.ToGodot().Normalized() : fallback;

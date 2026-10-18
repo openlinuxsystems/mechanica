@@ -53,8 +53,8 @@ the creation. E stands you up beside the seat, in the first free spot to its lef
 A seat someone else sits in says "Seat occupied".
 
 While you sit, the switches and buttons the seat is linked to take the hotbar's place. 1 to 9 and 0 use
-one at once, the wheel picks a slot and Left click uses it, wherever the part is on the creation. A slot
-glows and pulses while its part is on.
+one at once, Left click uses the first and Right click the second, wherever the part is on the creation. A
+slot glows and pulses while its part is on.
 
 E on a part with settings opens its menu: sliders with a field for numbers (with preset buttons on some,
 like an engine's Low, Medium and High), drop-downs for choices, and what the part reports, such as an

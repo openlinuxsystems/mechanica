@@ -303,8 +303,15 @@ public partial class CreationNode : Node3D
             // The meshes and light hang off a model node, which an animated part's script turns.
             var shown = new Node3D { Name = "Model" };
             visual.AddChild(shown);
-            foreach (var mesh in model.Meshes)
-                shown.AddChild(mesh.Instantiate());
+            // A part whose display plays clips shows its whole mesh scene, so its clips can move its pieces.
+            var scene = definition.Display?.Clips is { Count: > 0 } ? Assets.AnimatedModelFor(part.Part, definition, part.Color) : null;
+            if (scene is not null)
+                shown.AddChild(scene);
+            else
+            {
+                foreach (var mesh in model.Meshes)
+                    shown.AddChild(mesh.Instantiate());
+            }
             if (definition.Light is { } light)
             {
                 var lamp = BuildLight(light);
@@ -316,7 +323,7 @@ public partial class CreationNode : Node3D
             if (definition.Soil is not null)
                 _soils.Add(id);
             if (definition.Display is not null)
-                _displays.Add(new PartDisplayVisual(Creation.Id, id, definition, visual, shown));
+                _displays.Add(new PartDisplayVisual(Creation.Id, id, definition, visual, shown, scene));
             _partNodes[id] = visual;
             node.AddChild(visual);
             _visuals.Add((node, visual, placed));

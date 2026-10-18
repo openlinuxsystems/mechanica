@@ -200,6 +200,15 @@ public sealed partial class ScriptRuntime : ILogicHost
             return Readouts.Text(instance.Creation, instance.Part, id) is { } text ? DynValue.NewString(text)
                 : Readouts.Number(instance.Creation, instance.Part, id) is { } n ? DynValue.NewNumber(n) : DynValue.Nil;
         });
+        // Another part of the same Creation (a seat asking whether the engines run): read only, so any part will do.
+        Fn(creation, "displayed", args =>
+        {
+            var instance = PartInstance();
+            var target = (int)LuaValues.Number(args[0], "creation.displayed", 1);
+            var id = args.AsType(1, "creation.displayed", DataType.String).String;
+            return Readouts.Text(instance.Creation, target, id) is { } text ? DynValue.NewString(text)
+                : Readouts.Number(instance.Creation, target, id) is { } n ? DynValue.NewNumber(n) : DynValue.Nil;
+        });
         // A part this one is linked to (an engine's wheel bearings): its highlight follows what drives it.
         Fn(creation, "display", args =>
         {

@@ -12,8 +12,8 @@ namespace Mechanica.Game.Logic;
 /// <summary>
 /// The creation hotbar (UI spec §8, §10): while the local player sits in a seat linked to switches or buttons
 /// (<see cref="SeatHotbar"/>), those parts take the hotbar's place at the bottom centre, one slot each with its picture,
-/// name and key. Keys 1 to 9 and 0 use a slot's part at once; the wheel picks a slot and Left Click uses the picked
-/// one; with the mouse free a click on a slot uses it. A slot glows and pulses while its part is on. The host lets a
+/// name and key. Keys 1 to 9 and 0 use a slot's part at once, Left Click uses the first slot's and Right Click the
+/// second's; with the mouse free a click on a slot uses it. A slot glows and pulses while its part is on. The host lets a
 /// seated player use the parts on their seat's bar from anywhere on the Creation.
 /// </summary>
 public partial class CreationHotbar : CanvasLayer
@@ -25,7 +25,6 @@ public partial class CreationHotbar : CanvasLayer
     private readonly Dictionary<int, double> _pulses = [];
     private HBoxContainer _bar = null!;
     private Label _status = null!;
-    private int _picked;
 
     /// <summary>Seats. Set before adding to the tree.</summary>
     public LogicSync Logic { get; init; } = null!;
@@ -63,9 +62,6 @@ public partial class CreationHotbar : CanvasLayer
     /// <summary>The slot controls, left to right.</summary>
     public IReadOnlyList<ItemSlot> SlotViews => _slots;
 
-    /// <summary>The slot the wheel picked (0 based).</summary>
-    public int Picked => _picked;
-
     public override void _Ready()
     {
         Name = "CreationHotbar";
@@ -82,7 +78,7 @@ public partial class CreationHotbar : CanvasLayer
             var index = i;
             var slot = new ItemSlot { Name = $"Slot{i + 1}", Tiled = true };
             slot.Details = () => index < Parts.Count && Seat is { } seat && Creations.Find(seat.Creation) is { } c
-                ? (c.DefinitionOf(Parts[index]).Name ?? c.FindPart(Parts[index])!.Part, Loc.T("Linked to your seat. [{0}] to {1} it.", GameInput.Label(InputActions.Hotbar(index + 1)), c.DefinitionOf(Parts[index]).Logic?.Use ?? ""))
+                ? (c.DefinitionOf(Parts[index]).Name ?? c.FindPart(Parts[index])!.Part, Loc.T("Linked to your seat. [{0}] to {1} it.", Key(index), c.DefinitionOf(Parts[index]).Logic?.Use ?? ""))
                 : null;
             slot.GuiInput += e =>
             {
@@ -101,12 +97,10 @@ public partial class CreationHotbar : CanvasLayer
             return;
         if (Enumerable.Range(1, InputActions.HotbarSlots).FirstOrDefault(s => GameInput.Pressed(@event, InputActions.Hotbar(s))) is var key and > 0)
             Use(key - 1);
-        else if (GameInput.Pressed(@event, InputActions.HotbarNext))
-            _picked = (_picked + 1) % Parts.Count;
-        else if (GameInput.Pressed(@event, InputActions.HotbarPrevious))
-            _picked = (_picked + Parts.Count - 1) % Parts.Count;
         else if (GameInput.Pressed(@event, InputActions.Primary))
-            Use(_picked);
+            Use(0);
+        else if (GameInput.Pressed(@event, InputActions.Secondary) && Parts.Count > 1)
+            Use(1);
         else
             return;
         GetViewport().SetInputAsHandled();
@@ -117,7 +111,6 @@ public partial class CreationHotbar : CanvasLayer
     {
         if (Seat is not { } seat || slot < 0 || slot >= Parts.Count)
             return false;
-        _picked = slot;
         _slots[slot].Pulse();
         Actions.Request(LogicActions.ActivatePart, new LogicPartArgs(seat.Creation, Parts[slot]),
             result => _status.Text = result.Ok ? "" : result.Message ?? "");
@@ -150,7 +143,7 @@ public partial class CreationHotbar : CanvasLayer
             var part = Parts[i];
             var type = creation.FindPart(part)!.Part;
             var on = Signals.SignalOf(creation.Id, part) != 0;
-            slot.Show(type, Icons?.For(type), creation.DefinitionOf(part).Name ?? type, null, GameInput.Label(InputActions.Hotbar(i + 1)), i == _picked);
+            slot.Show(type, Icons?.For(type), creation.DefinitionOf(part).Name ?? type, null, GameInput.Label(InputActions.Hotbar(i + 1)));
             slot.SelfModulate = on ? UiTokens.Cyan.Lightened(0.4f) : Colors.White;
             // A part that is on pulses its slot, every PulseEvery seconds.
             if (on && (_pulses[part] = _pulses.GetValueOrDefault(part) - delta) <= 0)
@@ -165,6 +158,14 @@ public partial class CreationHotbar : CanvasLayer
         }
     }
 
+    // A slot's keys for its tooltip: its number, and the mouse button that also uses it (the first two slots).
+    private static string Key(int slot) => slot switch
+    {
+        0 => $"{GameInput.Label(InputActions.Hotbar(1))} / {GameInput.Label(InputActions.Primary)}",
+        1 => $"{GameInput.Label(InputActions.Hotbar(2))} / {GameInput.Label(InputActions.Secondary)}",
+        _ => GameInput.Label(InputActions.Hotbar(slot + 1)),
+    };
+
     /// <summary>True when the part in slot <paramref name="slot"/> is on, as this peer last read the bus.</summary>
     public bool IsOn(int slot) => Seat is { } seat && slot < Parts.Count && Signals.SignalOf(seat.Creation, Parts[slot]) != 0;
 
@@ -176,7 +177,6 @@ public partial class CreationHotbar : CanvasLayer
         if (!parts.SequenceEqual(Parts))
         {
             Parts = parts;
-            _picked = 0;
             _pulses.Clear();
         }
     }

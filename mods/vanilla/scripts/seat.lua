@@ -2,8 +2,12 @@
 -- Linked bearings that turn about an upright axis steer: A/D turns them up to properties.steer_angle
 -- degrees, at properties.steer_speed rad/s with at most properties.steer_torque N·m. When the seat is empty
 -- the output is 0 and the wheels straighten. A steering bearing's "drive" display turns while it steers.
+-- Its "seated" display is 1 while someone sits in it, and "rattle" is 1 while they do and an engine of the
+-- Creation shows "running" (a seat whose model has clips sags, settles and rattles with them). A seat that binds a
+-- "creak" sound creaks now and then while someone sits in it, twice as often while an engine runs.
 
 local RESEND = 30
+local ENGINE_EVERY = 10
 
 local function steering(id, up)
   local joint = creation.joint(id)
@@ -36,13 +40,53 @@ local function steer(x)
   end
 end
 
+-- True when any part of the Creation shows its "running" display (an engine that drives).
+local function engines_running()
+  for _, p in ipairs(creation.parts()) do
+    local running = creation.displayed(p.id, "running")
+    if running and running ~= 0 then
+      return true
+    end
+  end
+  return false
+end
+
+-- Seconds to the next creak: 6 to 12, varied by the seat and the count so far, halved while the engines run.
+local function creak_gap()
+  state.creaks = (state.creaks or 0) + 1
+  local spread = ((part.id() * 7919 + state.creaks * 104729) % 100) / 100
+  return (6 + 6 * spread) * (state.engines and 0.5 or 1)
+end
+
+local function creak()
+  local id = part.sound("creak")
+  if not id then
+    return
+  end
+  if not state.next_creak then
+    state.next_creak = world.time() + creak_gap()
+  elseif world.time() >= state.next_creak then
+    sound.play(id)
+    state.next_creak = world.time() + creak_gap()
+  end
+end
+
+local function show(id, on)
+  if state.shown[id] ~= on then
+    part.display(id, on)
+    state.shown[id] = on
+  end
+end
+
 function on_create()
   state.steer = state.steer or {}
+  state.shown = {}
   state.throttle = 0
 end
 
 function on_reload()
   state.steer = {}
+  state.shown = {}
 end
 
 function on_update(dt)
@@ -53,6 +97,18 @@ function on_update(dt)
   end
   state.throttle = math.max(-1, math.min(1, z))
   steer(math.max(-1, math.min(1, x)))
+  local seated = part.occupant() ~= nil
+  show("seated", seated)
+  if not seated then
+    state.engines = false
+    state.next_creak = nil
+  else
+    if world.tick() % ENGINE_EVERY == 0 then
+      state.engines = engines_running()
+    end
+    creak()
+  end
+  show("rattle", seated and state.engines == true)
 end
 
 function get_outputs()

@@ -79,6 +79,7 @@ public static class LuaApi
         new("creation.set_piston", "creation.set_piston(part_id, length, speed?, max_force?)", "Moves another piston of the same Creation to a length, or frees it with nil; returns true or false, reason.", "creation"),
         new("creation.joint", "creation.joint(part_id)", "The joint another part of the Creation owns, like part.joint(), or nil.", "creation"),
         new("creation.display", "creation.display(part_id, id, value)", "Like part.display(), for a part this one's output is linked to (an engine turning its wheel bearings' highlight).", "creation"),
+        new("creation.displayed", "creation.displayed(part_id, id)", "Like part.displayed(), for any part of the same Creation (a seat checking whether an engine is running), or nil.", "creation"),
         new("creation.occupant_input", "creation.occupant_input(part_id)", "Like part.occupant_input(), for another seat of the same Creation (the pilot of a seat linked to this part), or nil.", "creation"),
         new("creation.count", "creation.count(item)", "How many of an item the Creation's containers hold (fuel in gas containers, charge in batteries).", "creation"),
         new("creation.take", "creation.take(item, count?)", "Takes up to count (default 1) of an item from the Creation's containers; returns how many it took.", "creation"),

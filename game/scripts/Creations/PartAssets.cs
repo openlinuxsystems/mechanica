@@ -132,6 +132,57 @@ public sealed class PartAssets
         return template?.Duplicate() as Node3D;
     }
 
+    /// <summary>
+    /// A new copy of a placed part's whole mesh scene (its nodes and <see cref="AnimationPlayer"/>), for a part whose
+    /// display plays clips (<see cref="DisplayDefinition.Clips"/>). Each mesh shows the same materials as
+    /// <see cref="ModelFor"/> gives it (its visual and <paramref name="paint"/>). Null when the part has no mesh, it does
+    /// not load, or it has no animations.
+    /// </summary>
+    public Node3D? AnimatedModelFor(string qualifiedId, PartDefinition definition, string? paint = null)
+    {
+        var modId = _content?.FindPart(qualifiedId)?.ModId;
+        if (definition.Mesh is not { } path || modId is null || InstantiateScene(path, modId) is not { } scene)
+            return null;
+        var instances = new List<MeshInstance3D>();
+        Gather(scene, instances);
+        var meshes = ModelFor(qualifiedId, definition, paint).Meshes;
+        if (FindPlayer(scene) is null || meshes.Count != instances.Count)
+        {
+            scene.Free();
+            return null;
+        }
+        // Gather walks the scene in the order ReadGltf collected it, so the i-th instance is the i-th mesh.
+        for (var i = 0; i < instances.Count; i++)
+        {
+            for (var s = 0; s < (meshes[i].SurfaceMaterials?.Count ?? 0); s++)
+                instances[i].SetSurfaceOverrideMaterial(s, meshes[i].SurfaceMaterials![s]);
+        }
+        // The root's own transform is the file's placement, not part of the model (as ReadGltf reads it).
+        scene.Transform = Transform3D.Identity;
+        return scene;
+    }
+
+    /// <summary>The first <see cref="AnimationPlayer"/> at or under <paramref name="node"/>, or null.</summary>
+    public static AnimationPlayer? FindPlayer(Node node)
+    {
+        if (node is AnimationPlayer player)
+            return player;
+        foreach (var child in node.GetChildren())
+        {
+            if (FindPlayer(child) is { } found)
+                return found;
+        }
+        return null;
+    }
+
+    private static void Gather(Node node, List<MeshInstance3D> instances)
+    {
+        if (node is MeshInstance3D { Mesh: not null } instance)
+            instances.Add(instance);
+        foreach (var child in node.GetChildren())
+            Gather(child, instances);
+    }
+
     /// <summary>Uses newly loaded <paramref name="content"/> from now on and forgets everything cached.</summary>
     public void SetContent(ModLoadResult content)
     {

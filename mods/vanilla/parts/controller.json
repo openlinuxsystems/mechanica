@@ -1,7 +1,7 @@
 {
   "id": "controller",
   "name": "Controller",
-  "description": "While its input is on, steps the bearings and pistons it is linked to through up to 10 frames you set (E).",
+  "description": "While its input is on, steps the bearings and pistons it is linked to through up to 10 frames you set (E). Linked from a seat, W starts it and S stops it.",
   "category": "interactive",
   "mass": 1,
   "durability": 3,

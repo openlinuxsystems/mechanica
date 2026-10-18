@@ -700,6 +700,13 @@ public sealed record DisplayDefinition
     /// <summary>The model pushed in while a readout is not 0 (a switch that is on, a button held down).</summary>
     public PressDefinition? Press { get; init; }
 
+    /// <summary>
+    /// Animation clips in the part's glTF mesh that play as readouts change (a seat that sags when someone sits and
+    /// rattles while the engines run). The model shows one clip at a time: a one-shot while it plays, otherwise the
+    /// loop of the last entry whose readout is not 0.
+    /// </summary>
+    public List<ClipDefinition>? Clips { get; init; }
+
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
@@ -776,6 +783,26 @@ public sealed record PressDefinition
 
     /// <summary>How far it moves, in m (more than 0, at most 0.1). Omitted means 0.02.</summary>
     public float? Depth { get; init; }
+
+    /// <summary>Keys this build does not know.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>Clips of the part's own glTF mesh that follow one readout (see <see cref="DisplayDefinition.Clips"/>).</summary>
+public sealed record ClipDefinition
+{
+    /// <summary>The readout the clips follow.</summary>
+    public string? Readout { get; init; }
+
+    /// <summary>The clip played once when the readout turns from 0 to anything else (someone sits down).</summary>
+    public string? On { get; init; }
+
+    /// <summary>The clip played once when the readout goes back to 0 (they stand up).</summary>
+    public string? Off { get; init; }
+
+    /// <summary>The clip looped while the readout is not 0 and no one-shot plays.</summary>
+    public string? Loop { get; init; }
 
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]

@@ -56,6 +56,7 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
 {
     private const string Code = DiagnosticCodes.PartInvalid;
     private const float Epsilon = 1e-4f;
+    private const int MaxClipName = 64;
 
     public void Validate(PartDefinition part, DiagnosticSink sink)
     {
@@ -621,6 +622,24 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
             if (press.Depth is { } depth && !(depth > 0 && depth <= 0.1f))
                 sink.Error(Code, $"{p}.press.depth", "depth must be more than 0 and at most 0.1 m.");
             KnownKeys.WarnUnknown(press.Extra, $"{p}.press", sink, typeof(PressDefinition));
+        }
+        if (display.Clips is { } clips)
+        {
+            if (part.Mesh is null)
+                sink.Error(Code, $"{p}.clips", "clips play animations of the part's mesh, so the part needs a mesh.");
+            for (var i = 0; i < clips.Count; i++)
+            {
+                var path = $"{p}.clips[{i}]";
+                Readout(clips[i].Readout, path);
+                if (clips[i].On is null && clips[i].Off is null && clips[i].Loop is null)
+                    sink.Error(Code, path, "a clip entry names at least one of on, off and loop.");
+                foreach (var (name, key) in new[] { (clips[i].On, "on"), (clips[i].Off, "off"), (clips[i].Loop, "loop") })
+                {
+                    if (name is not null && (name.Length is 0 or > MaxClipName || name.Any(char.IsControl)))
+                        sink.Error(Code, $"{path}.{key}", $"{key} names a clip in the mesh (1 to {MaxClipName} characters).");
+                }
+                KnownKeys.WarnUnknown(clips[i].Extra, path, sink, typeof(ClipDefinition));
+            }
         }
         KnownKeys.WarnUnknown(display.Extra, p, sink, typeof(DisplayDefinition));
     }
