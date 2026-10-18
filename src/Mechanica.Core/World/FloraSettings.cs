@@ -45,16 +45,28 @@ public sealed record FloraSettings
     public FoliageLevelSettings VeryHigh { get; init; } = new() { Density = 1.6f, Distance = 1.35f };
 
     /// <summary>Metres grass is drawn at the High level.</summary>
-    public float GrassDistance { get; init; } = 55f;
+    public float GrassDistance { get; init; } = 150f;
 
     /// <summary>Metres ground cover is drawn at the High level.</summary>
-    public float GroundCoverDistance { get; init; } = 35f;
+    public float GroundCoverDistance { get; init; } = 80f;
 
     /// <summary>Metres bushes are drawn at the High level.</summary>
-    public float BushDistance { get; init; } = 140f;
+    public float BushDistance { get; init; } = 380f;
 
     /// <summary>Share of the draw distance past which a chunk's plants use their far mesh (half the blades, coarser lumps).</summary>
-    public float LodShare { get; init; } = 0.45f;
+    public float LodShare { get; init; } = 0.2f;
+
+    /// <summary>
+    /// Share of the draw distance past which grass and ground cover thin out: a chunk farther away draws only
+    /// <see cref="ThinKeep"/> of its plants, <see cref="ThinScale"/> times larger, so the far field stays full but cheap.
+    /// </summary>
+    public float ThinShare { get; init; } = 0.38f;
+
+    /// <summary>Share of plants a thinned chunk keeps.</summary>
+    public float ThinKeep { get; init; } = 0.3f;
+
+    /// <summary>How much larger a thinned chunk's plants are drawn.</summary>
+    public float ThinScale { get; init; } = 1.55f;
 
     /// <summary>Share of the draw distance, at the far end, over which plants thin out and sink away instead of popping.</summary>
     public float FadeShare { get; init; } = 0.4f;
@@ -150,6 +162,9 @@ public sealed record FloraSettings
         Range(BushDistance, 0f, 1000f, "bush_distance");
         Range(LodShare, 0f, 1f, "lod_share");
         Range(FadeShare, 0f, 1f, "fade_share");
+        Range(ThinShare, 0f, 1f, "thin_share");
+        Range(ThinKeep, 0f, 1f, "thin_keep");
+        Range(ThinScale, 0.1f, 10f, "thin_scale");
         Range(WindStrength, 0f, 10f, "wind_strength");
         Range(WindSpeed, 0f, 100f, "wind_speed");
         Range(BushSway, 0f, 10f, "bush_sway");

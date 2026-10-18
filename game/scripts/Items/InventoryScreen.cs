@@ -171,6 +171,9 @@ public partial class InventoryScreen : CanvasLayer
 
     public override void _Process(double delta)
     {
+        // The scrim fades with the window and goes when it closes.
+        _scrimLayer.Visible = StationMode && _root.Visible;
+        _scrim.Modulate = _root.Modulate;
         if (_root.Visible)
             Layout();
     }
@@ -191,10 +194,14 @@ public partial class InventoryScreen : CanvasLayer
     public override void _Input(InputEvent @event)
     {
         // Tab (the inventory key's default alternate) would otherwise move focus between the screen's controls before
-        // the screen heard it, so an open screen closes on its key here, ahead of the controls.
+        // the screen heard it, so an open screen handles its key here, ahead of the controls. At a station it opens and
+        // closes the Storage drawer; Esc, E and X close the screen.
         if (IsOpen && GameInput.Pressed(@event, InputActions.Inventory) && !GameInput.Typing(GetViewport()))
         {
-            Hide();
+            if (StationMode)
+                ToggleStorage();
+            else
+                Hide();
             GetViewport().SetInputAsHandled();
         }
     }
@@ -502,7 +509,7 @@ public partial class InventoryScreen : CanvasLayer
     private string RecipeName(string id) => Inventory.Recipes.Find(id)?.Name ?? id;
 
     // One grid of slots, kept between refreshes so a drag in progress keeps its source and the scroll stays put.
-    private sealed class SlotGrid(int columns = Columns, int size = 60)
+    private sealed class SlotGrid(int columns = Columns, int size = 60, bool tiled = false)
     {
         private readonly List<ItemSlot> _slots = [];
         private readonly List<(int Slot, SlotView? Stack, string? Item)> _shown = [];
@@ -512,15 +519,22 @@ public partial class InventoryScreen : CanvasLayer
 
         public IReadOnlyList<ItemSlot> Slots => _slots;
 
-        public Control Build(string name, int rows, InventoryScreen screen)
+        /// <summary>The grid itself, for changing its column count.</summary>
+        public GridContainer Grid => _grid;
+
+        // A grid of rows × columns slots in its own scroll area, or with scroll false just the grid (it grows).
+        public Control Build(string name, int rows, InventoryScreen screen, bool scroll = true)
         {
             _screen = screen;
+            var gap = tiled ? 8 : 4;
             _grid = new GridContainer { Name = name, Columns = columns };
-            _grid.AddThemeConstantOverride("h_separation", 4);
-            _grid.AddThemeConstantOverride("v_separation", 4);
-            var scroll = new ScrollContainer { Name = name + "Scroll", HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled, CustomMinimumSize = new Vector2(columns * size + (columns - 1) * 4 + 12, rows * size + (rows - 1) * 4) };
-            scroll.AddChild(_grid);
-            return scroll;
+            _grid.AddThemeConstantOverride("h_separation", gap);
+            _grid.AddThemeConstantOverride("v_separation", gap);
+            if (!scroll)
+                return _grid;
+            var area = new ScrollContainer { Name = name + "Scroll", HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled, CustomMinimumSize = new Vector2(columns * size + (columns - 1) * 4 + 12, rows * size + (rows - 1) * 4) };
+            area.AddChild(_grid);
+            return area;
         }
 
         public void Fill(InventoryRef where, IReadOnlyList<(int Slot, SlotView? Stack)> shown)
@@ -556,7 +570,7 @@ public partial class InventoryScreen : CanvasLayer
 
         private ItemSlot Make(int index)
         {
-            var view = new ItemSlot { Name = $"Slot{index}", CustomMinimumSize = new Vector2(size, size) };
+            var view = new ItemSlot { Name = $"Slot{index}", CustomMinimumSize = new Vector2(size, size), Tiled = tiled };
             view.DragSource = () => index < _shown.Count && _shown[index].Item is { } item
                 ? new ItemDrag { Entry = item, From = _where, FromSlot = _shown[index].Slot, Count = _where is null ? null : HeldCount(index) }
                 : null;

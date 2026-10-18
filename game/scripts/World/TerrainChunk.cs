@@ -6,7 +6,7 @@ namespace Mechanica.Game.World;
 /// <summary>
 /// One streamed chunk of generated ground (chunk 19, D11), built from a Core <see cref="TerrainChunkData"/>:
 /// <list type="bullet">
-/// <item>the ground: a vertex-coloured mesh, and a <see cref="HeightMapShape3D"/> (<see cref="GroundShape"/>)
+/// <item>the ground: a mesh painted with the world's ground textures (or plain biome colours), and a <see cref="HeightMapShape3D"/> (<see cref="GroundShape"/>)
 /// added to the streamer's one shared <see cref="Ground"/> body. Every chunk's height map is a shape of
 /// that one body, so Jolt's internal edge removal sees across chunk borders and wheels roll over them
 /// smoothly; with a body per chunk they bumped on the edge of the chunk they were leaving.</item>
@@ -40,6 +40,9 @@ public partial class TerrainChunk : Node3D
 
     /// <summary>Which objects are destroyed. Set before adding to the tree; call <see cref="RefreshObjects"/> after changing it.</summary>
     public WorldState State { get; set; } = null!;
+
+    /// <summary>The world's textured ground (<see cref="World.GroundMaterial"/>); null draws the plain biome colours.</summary>
+    public Material? Textured { get; init; }
 
     /// <summary>The static body every loaded chunk's ground shape belongs to, a sibling of this node. Set before adding to the tree.</summary>
     public StaticBody3D Ground { get; init; } = null!;
@@ -141,6 +144,10 @@ public partial class TerrainChunk : Node3D
         var vertices = new Vector3[m * m];
         var normals = new Vector3[m * m];
         var colors = new Color[m * m];
+        // Ground weights, four layers per custom channel. Floats: the Compatibility renderer reads 8-bit custom channels unnormalised.
+        var textured = Data.Grounds.Length > 0 && Textured is not null;
+        var custom0 = textured ? new float[m * m * 4] : [];
+        var custom1 = textured ? new float[m * m * 4] : [];
         for (var j = 0; j < m; j++)
         {
             for (var i = 0; i < m; i++)
@@ -151,6 +158,14 @@ public partial class TerrainChunk : Node3D
                 normals[v] = Data.Normals[k].ToGodot();
                 var c = Data.Colors[k];
                 colors[v] = new Color(c.X, c.Y, c.Z);
+                if (textured)
+                {
+                    for (var l = 0; l < 4; l++)
+                    {
+                        custom0[v * 4 + l] = Data.Grounds[k * TerrainChunkData.GroundLayers + l];
+                        custom1[v * 4 + l] = Data.Grounds[k * TerrainChunkData.GroundLayers + 4 + l];
+                    }
+                }
             }
         }
         n = m;
@@ -176,9 +191,17 @@ public partial class TerrainChunk : Node3D
         arrays[(int)Mesh.ArrayType.Normal] = normals;
         arrays[(int)Mesh.ArrayType.Color] = colors;
         arrays[(int)Mesh.ArrayType.Index] = indices;
+        var format = (Mesh.ArrayFormat)0;
+        if (textured)
+        {
+            arrays[(int)Mesh.ArrayType.Custom0] = custom0;
+            arrays[(int)Mesh.ArrayType.Custom1] = custom1;
+            format = (Mesh.ArrayFormat)((int)Mesh.ArrayCustomFormat.RgbaFloat << (int)Mesh.ArrayFormat.FormatCustom0Shift)
+                | (Mesh.ArrayFormat)((int)Mesh.ArrayCustomFormat.RgbaFloat << (int)Mesh.ArrayFormat.FormatCustom1Shift);
+        }
         var mesh = new ArrayMesh();
-        mesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, arrays);
-        AddChild(new MeshInstance3D { Name = "Mesh", Mesh = mesh, MaterialOverride = GroundMaterial });
+        mesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, arrays, flags: format);
+        AddChild(new MeshInstance3D { Name = "Mesh", Mesh = mesh, MaterialOverride = textured ? Textured : GroundMaterial });
 
         if (Data.HasWater)
         {

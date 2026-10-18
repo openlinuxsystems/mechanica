@@ -13,9 +13,9 @@ namespace Mechanica.Game.Tests;
 /// <summary>
 /// The Fabricator screen, linked storage and upgrades (UI spec PR 12), host plus a client in Survival. The host builds a
 /// wooden floor with a Fabricator, a chest beside it (linked) and a chest at the far end (not linked). On the client's
-/// screen the Fabricator opens in three 30/40/30 columns with the linked chest on the right; search and the category
+/// screen the Fabricator opens as a main window and a detail card (UI spec §8), with the linked chest in the Storage drawer; search and the category
 /// filters narrow the recipes; the preview counts the player's and the linked chest's scrap together and shows a short
-/// input in red with Craft off; crafting takes the chest's scrap first, the queue shows a cyan bar with its percentage
+/// input in red with Craft off and a reason; crafting takes the chest's scrap first, the queue shows a cyan bar with its percentage
 /// and time left, and the finished chest lands in the linked chest while the output flashes. The upgrade dialog shows
 /// the level, the Component Kit cost (red while short) and what changes; confirming raises the level on the host and
 /// the screen. The client draws a pipe to the linked chest only, and closing the screen stops watching the chest.
@@ -70,7 +70,7 @@ public partial class FabricatorTest : StagedTest
             Check(StorageLinks.Of(HostWorkshop, _fabricator).SequenceEqual([_near]), $"only the near chest is linked ({string.Join(", ", StorageLinks.Of(HostWorkshop, _fabricator))})");
             return true;
         });
-        Add("the client's screen opens the Fabricator in three columns", frame =>
+        Add("the client's screen opens the Fabricator window and card", frame =>
         {
             if (frame == 0)
             {
@@ -92,14 +92,20 @@ public partial class FabricatorTest : StagedTest
                 _screen.Show(FabricatorRef);
             if (!_screen.StationMode || _client.Main.Inventory.Shown.GetValueOrDefault(NearRef) is not { } chest || chest.Count(Metal) != 2 || frame < 10)
                 return false;
-            var columns = _screen.StationColumnsShown.Select(c => c.Size.X).ToList();
-            var total = columns.Sum();
-            Check(columns.Count == 3 && Near(columns[0] / total, 0.3f) && Near(columns[1] / total, 0.4f) && Near(columns[2] / total, 0.3f),
-                $"30/40/30 ({string.Join(", ", columns.Select(w => $"{w / total:0.00}"))})");
-            Check(_screen.LinkedShown.SequenceEqual([NearRef]), "the linked chest is on the right");
-            Check(_screen.LinkedSlots(NearRef).Any(s => s.Entry == Metal && s.Count == 2), "its scrap shows");
+            var (main, card) = (_screen.StationPanels[0].GetGlobalRect(), _screen.StationPanels[1].GetGlobalRect());
+            var narrow = GetViewport().GetVisibleRect().Size.X < 1280;
+            Check(Mathf.IsEqualApprox(card.Size.X, narrow ? 280 : 302) && main.Size.X > 2 * card.Size.X, $"the main window and the card ({main.Size.X}, {card.Size.X})");
+            Check(Mathf.Abs(card.Position.X - main.End.X - 12) < 1 && Mathf.Abs(card.Size.Y - main.Size.Y) < 1, "the card sits 12 px right of the window, as tall");
+            Check(_screen.QueueCells == 8 && _screen.QueueRows.Count == 0, $"the queue strip shows the queue's 8 empty cells ({_screen.QueueCells})");
+            Check(_screen.TabsShown.Contains(InventoryTab.All) && _screen.TabsShown.Count < Enum.GetValues<InventoryTab>().Length, $"tabs without recipes are hidden ({string.Join(", ", _screen.TabsShown)})");
+            Check(_screen.RecipeRows.All(r => !r.IsNew), "nothing is NEW the first time a station is opened");
+            if (!_screen.StorageOpen)
+                _screen.ToggleStorage();
+            Check(_screen.StorageOpen, "the Storage button opens the drawer");
+            Check(_screen.LinkedShown.SequenceEqual([NearRef]), "the linked chest is in the drawer");
+            Check(_screen.LinkedSlots(NearRef).Any(s => s.Entry == Metal && s.Count == 2 && s.IsVisibleInTree()), "its scrap shows");
             Check(_screen.StationOwnSlots.Any(s => s.Entry == Wood), "and the player's inventory under it");
-            Check(_screen.StationLevel == "Level 0 of 3", $"the station's level ({_screen.StationLevel})");
+            Check(_screen.StationLevel == "Level 0 / 3", $"the station's level ({_screen.StationLevel})");
             return true;
         });
         Add("search and filters narrow the recipes", _ =>
@@ -121,7 +127,7 @@ public partial class FabricatorTest : StagedTest
         {
             var rows = _screen.RecipeRows;
             Check(rows.Any(r => !r.CanMake) && rows.Any(r => r.CanMake), $"some recipes are short and some are not ({rows.Count(r => !r.CanMake)} of {rows.Count} short)");
-            Check(rows.All(r => r.FullText), "every recipe's text is drawn at full strength");
+            Check(_screen.RecipeRows.Count == rows.Count, "every recipe has a tile");
             var shortOne = rows.First(r => !r.CanMake).Recipe;
             _screen.Choose(shortOne);
             Check(_screen.ChosenRecipe == shortOne && _screen.CraftButton.Disabled, $"a short recipe can still be chosen ({shortOne}), with Craft off");
@@ -135,10 +141,12 @@ public partial class FabricatorTest : StagedTest
             Check(inputs.Any(i => i.Missing && i.Text.StartsWith("8 / 12")), $"12 scrap wood is short in red ({Lines(inputs)})");
             Check(inputs.Any(i => !i.Missing && i.Text.StartsWith("4 / 6")) == false && inputs.Any(i => i.Missing && i.Text.StartsWith("4 / 6")), $"6 scrap metal is short too ({Lines(inputs)})");
             Check(_screen.CraftButton.Disabled, "Craft is off");
+            Check(_screen.Reason.StartsWith("Needs"), $"and says why ({_screen.Reason})");
+            Check(_screen.StatRowsShown.Select(r => r.Name).SequenceEqual(["Mass", "Durability", "Friction", "Buoyancy"]), $"the chest's stats ({string.Join(", ", _screen.StatRowsShown)})");
             _screen.SetQuantity(2);
             inputs = _screen.PreviewInputs;
             Check(inputs.All(i => !i.Missing) && inputs.Any(i => i.Text.StartsWith("4 / 4")), $"two chests' worth counts the chest's scrap ({Lines(inputs)})");
-            Check(!_screen.CraftButton.Disabled, "Craft is on");
+            Check(!_screen.CraftButton.Disabled && _screen.Reason == "", "Craft is on, with no reason");
             return true;
         });
         Add("crafting takes the chest's scrap first and shows the queue", frame =>
@@ -195,7 +203,7 @@ public partial class FabricatorTest : StagedTest
                     _upgrades.Upgrade(_results.Add);
                 return false;
             }
-            if (_screen.StationLevel != "Level 1 of 3" || _upgrades.LevelText != "Fabricator: level 1 of 3")
+            if (_screen.StationLevel != "Level 1 / 3" || _upgrades.LevelText != "Fabricator: level 1 of 3")
                 return false;
             Check(_results[0].Ok, $"the host upgrades it ({_results[0].Message})");
             Check(HostWorkshop.LevelOf(_fabricator) == 1 && HostWorkshop.InventoryOf(_fabricator)!.SlotCount == 12, "the host's Fabricator is level 1 with 12 slots");

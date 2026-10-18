@@ -7,9 +7,10 @@ using FileAccess = Godot.FileAccess;
 namespace Mechanica.Game.World;
 
 /// <summary>
-/// Draws decorative flora (grass, ground cover, bushes) on the loaded chunks round the camera, GPU-instanced: per chunk,
-/// kind and model one <see cref="MultiMesh"/> with the full mesh for near chunks and one with the far mesh beyond
-/// <see cref="FloraSettings.LodShare"/> of the draw distance. Plants are grown off the main thread
+/// Draws decorative flora (grass, ground cover, bushes) on the loaded chunks and scenery round the camera, GPU-instanced:
+/// per chunk, kind and model one <see cref="MultiMesh"/> with the full mesh for near chunks, one with the far mesh beyond
+/// <see cref="FloraSettings.LodShare"/> of the draw distance and, for grass and ground cover past
+/// <see cref="FloraSettings.ThinShare"/>, one with a larger few of the plants. Plants are grown off the main thread
 /// (<see cref="FloraScatter"/>, at the densest level) and drawn at the player's Foliage density level for each kind
 /// (Options, Graphics), which sets how many of them are drawn, how far, and how much they sway; changing a level rebuilds
 /// the chunks from the plants already grown. Flora has no colliders: everything walks and drives through it, and it bends
@@ -104,7 +105,7 @@ public partial class FloraField : Node3D
         var reach = Kinds.Max(k => settings.Distance(k, _levels[k]));
         foreach (var (coord, patch) in _patches.ToList())
         {
-            if (!World.Chunks.TryGetValue(coord, out var chunk) || chunk != patch.Chunk || RectDistance(chunk, viewer) > reach + 16f)
+            if (!Ground(coord, out var chunk) || chunk != patch.Chunk || RectDistance(chunk, viewer) > reach + 16f)
             {
                 patch.Node.QueueFree();
                 _patches.Remove(coord);
@@ -112,7 +113,7 @@ public partial class FloraField : Node3D
         }
         if (reach <= 0f)
             return 0;
-        foreach (var (coord, chunk) in World.Chunks)
+        foreach (var (coord, chunk) in World.Chunks.Concat(World.Scenery))
         {
             if (!_patches.ContainsKey(coord) && RectDistance(chunk, viewer) <= reach)
             {
@@ -166,6 +167,10 @@ public partial class FloraField : Node3D
         return waiting;
     }
 
+    // A loaded chunk, or failing that scenery, at a coordinate.
+    private bool Ground(ChunkCoord coord, out TerrainChunk chunk) =>
+        World.Chunks.TryGetValue(coord, out chunk!) || World.Scenery.TryGetValue(coord, out chunk!);
+
     // A node holding the kind's meshes, or null when none of its plants are drawn at this level.
     private (Node3D? Node, int Count) Build(Patch patch, FloraKind kind, FoliageLevel level, List<FloraInstance> plants)
     {
@@ -181,28 +186,23 @@ public partial class FloraField : Node3D
         var root = new Node3D { Name = kind.ToString() };
         var tilt = kind == FloraKind.Bush ? 0.3f : 0.6f;
         var count = 0;
+        // Past the thin distance, grass and ground cover keep a share of their plants, drawn larger to cover the gaps.
+        var thin = kind != FloraKind.Bush;
+        var thinAt = thin ? distance * settings.ThinShare + half : end;
         foreach (var group in plants.Where(p => p.Rank < keep).GroupBy(p => p.Model))
         {
             var list = group.ToList();
-            var buffer = new float[list.Count * Stride];
-            for (var i = 0; i < list.Count; i++)
-            {
-                var plant = list[i];
-                var up = Vector3.Up.Lerp(plant.Normal.ToGodot(), tilt).Normalized();
-                var basis = new Basis(new Quaternion(Vector3.Up, up)) * new Basis(Vector3.Up, plant.Yaw).Scaled(Vector3.One * plant.Scale);
-                var origin = plant.Position.ToGodot() - centre;
-                var tint = new Color(plant.Tint.X, plant.Tint.Y, plant.Tint.Z).SrgbToLinear();
-                var o = i * Stride;
-                // MultiMesh buffer layout: the 3×4 transform row by row, the colour (white), then the custom data.
-                (buffer[o], buffer[o + 1], buffer[o + 2], buffer[o + 3]) = (basis.Column0.X, basis.Column1.X, basis.Column2.X, origin.X);
-                (buffer[o + 4], buffer[o + 5], buffer[o + 6], buffer[o + 7]) = (basis.Column0.Y, basis.Column1.Y, basis.Column2.Y, origin.Y);
-                (buffer[o + 8], buffer[o + 9], buffer[o + 10], buffer[o + 11]) = (basis.Column0.Z, basis.Column1.Z, basis.Column2.Z, origin.Z);
-                (buffer[o + 12], buffer[o + 13], buffer[o + 14], buffer[o + 15]) = (1f, 1f, 1f, 1f);
-                (buffer[o + 16], buffer[o + 17], buffer[o + 18], buffer[o + 19]) = (tint.R, tint.G, tint.B, plant.Yaw / Mathf.Tau);
-            }
+            var buffer = Buffer(list, centre, tilt, 1f);
             var (full, lod) = FloraMaterials.Meshes(group.Key);
-            root.AddChild(Instance($"{group.Key.Id}_near", full, buffer, list.Count, kind, 0f, lodAt));
-            root.AddChild(Instance($"{group.Key.Id}_far", lod, buffer, list.Count, kind, lodAt, end));
+            root.AddChild(Instance($"{group.Key.Id}_near", full, buffer, list.Count, kind, 0f, Mathf.Min(lodAt, thinAt)));
+            if (thinAt > lodAt)
+                root.AddChild(Instance($"{group.Key.Id}_far", lod, buffer, list.Count, kind, lodAt, thinAt));
+            if (thin)
+            {
+                var sparse = list.Where(p => p.Rank < keep * settings.ThinKeep).ToList();
+                if (sparse.Count > 0)
+                    root.AddChild(Instance($"{group.Key.Id}_thin", lod, Buffer(sparse, centre, tilt, settings.ThinScale), sparse.Count, kind, thinAt, end));
+            }
             count += list.Count;
         }
         if (count == 0)
@@ -212,6 +212,28 @@ public partial class FloraField : Node3D
         }
         patch.Node.AddChild(root);
         return (root, count);
+    }
+
+    // MultiMesh data for plants, relative to the patch centre and scaled by grow.
+    private static float[] Buffer(List<FloraInstance> list, Vector3 centre, float tilt, float grow)
+    {
+        var buffer = new float[list.Count * Stride];
+        for (var i = 0; i < list.Count; i++)
+        {
+            var plant = list[i];
+            var up = Vector3.Up.Lerp(plant.Normal.ToGodot(), tilt).Normalized();
+            var basis = new Basis(new Quaternion(Vector3.Up, up)) * new Basis(Vector3.Up, plant.Yaw).Scaled(Vector3.One * plant.Scale * grow);
+            var origin = plant.Position.ToGodot() - centre;
+            var tint = new Color(plant.Tint.X, plant.Tint.Y, plant.Tint.Z).SrgbToLinear();
+            var o = i * Stride;
+            // MultiMesh buffer layout: the 3×4 transform row by row, the colour (white), then the custom data.
+            (buffer[o], buffer[o + 1], buffer[o + 2], buffer[o + 3]) = (basis.Column0.X, basis.Column1.X, basis.Column2.X, origin.X);
+            (buffer[o + 4], buffer[o + 5], buffer[o + 6], buffer[o + 7]) = (basis.Column0.Y, basis.Column1.Y, basis.Column2.Y, origin.Y);
+            (buffer[o + 8], buffer[o + 9], buffer[o + 10], buffer[o + 11]) = (basis.Column0.Z, basis.Column1.Z, basis.Column2.Z, origin.Z);
+            (buffer[o + 12], buffer[o + 13], buffer[o + 14], buffer[o + 15]) = (1f, 1f, 1f, 1f);
+            (buffer[o + 16], buffer[o + 17], buffer[o + 18], buffer[o + 19]) = (tint.R, tint.G, tint.B, plant.Yaw / Mathf.Tau);
+        }
+        return buffer;
     }
 
     private static MultiMeshInstance3D Instance(string name, Mesh mesh, float[] buffer, int count, FloraKind kind, float begin, float end)

@@ -4,7 +4,114 @@ Every menu, HUD element and mod tool in Mechanica uses one blue industrial look.
 anyone adding a screen to the game or a mod tool. It covers the palette, the theme, the shared
 building blocks and the rules each new menu follows.
 
-## Palette
+The look is moving to a lighter design language (UI spec §0), first used by the Fabricator and the hotbar. New
+screens use it, and older screens move to it one at a time. Until a screen moves it keeps the original palette and
+`MechanicaTheme` described further down.
+
+## Design language
+
+A light blue browsing surface with picture tiles, dark chrome headers and dark detail cards, over a dimmed world.
+The Fabricator (UI spec §8) is the reference screen; the mockups are `ui_redesign/proposed_fabricator.png` and
+`proposed_fabricator_storage.png` in the project files.
+
+### Palette
+
+| Token | Colour | Use |
+|-------|--------|-----|
+| Scrim | `#0A1220` at 45% opacity | behind any full-screen menu, dims the world (not the hotbar) |
+| Chrome | `#1E2F48` | window headers, the tab row, inactive tabs |
+| Chrome 2 | `#263A57` | buttons and fields on chrome |
+| Chrome line | `#34507A` | the few hairlines left: field edges, chips, secondary buttons |
+| Surface | `#4B9BE6` | the browsing surface: grids, lists, the active tab |
+| Surface deep | `#3A86D2` | bands on the surface: the queue strip, drawers |
+| Tile | `#6CB2EE` | item and recipe tiles, hotbar slots |
+| Tile hover | `#86C1F4` | a hovered tile |
+| Tile selected | `#9ACDF7` with a white 3 px ring | the selected tile, the current hotbar slot |
+| Card | `#22344F` | detail cards, dialogs, tooltips |
+| Inset | `#2B4060` | panels inside a card: stats, material tiles, the stepper |
+| Ink | `#0E2340` | text and numbers on Surface and Tile; the outline round item pictures |
+| Text muted | `#B7C7DC` | secondary text on chrome and cards |
+| Accent | `#38C8FF` | primary buttons, progress, focus, filled pips, the level pill, NEW tags |
+| Accent ink | `#0B1E33` | text on Accent |
+| Success text | `#5EE08A` | ready, enough, running (the linked storage dot) |
+| Success fill | `#7FE0A6` | finished items waiting in the queue strip |
+| Error text | `#FF7A7A` | short counts, reasons an action is off |
+| Error mark | `#E5484D` | "can't make yet" dots, the ring round a short material |
+| Pip off | `#3A5070` | unfilled stat pips; also the disabled primary button's fill |
+| Disabled text | `#8EA3BF` | text on a disabled primary button |
+
+White (`#FFFFFF`) is the text on chrome and cards and the selected ring, and warnings stay the pale yellow below.
+
+- White text never sits on Surface or Tile: use Ink. Core tests check every text pairing reaches 4.5:1 contrast.
+- Panels are opaque. The scrim does the dimming, and nothing from the world shows through a panel.
+- Colour is never the only signal: a state that uses colour also gets a dot, ring, icon or text.
+
+### Type
+
+The game bundles Barlow and Barlow Condensed (SIL OFL, `game/fonts`, loaded by `UiFonts`).
+
+| Role | Face | Size at 1280×720 | Variation | Use |
+|------|------|------------------|-----------|-----|
+| Display | Barlow Condensed Bold, uppercase, +3 px tracking | 30 | `DisplayLabel` | window titles |
+| Heading | Barlow Condensed Bold | 24 | `HeadingLabel` | item names in cards |
+| Section | Barlow Condensed Bold, uppercase, +2 px tracking | 13 | `SectionLabel`, `InkSectionLabel` | MATERIALS, QUEUE, INVENTORY |
+| Body | Barlow Regular / SemiBold | 15 / 13 | default, `MutedLabel`, `InkLabel` | labels, descriptions |
+| Numeric | Barlow Condensed Bold | 15 | `NumericLabel`, `InkNumericLabel` | counts, have / need, timers |
+
+### Shape and depth
+
+- A 4 px grid: window padding 16, gaps between tiles 8, gaps between sections 12.
+- Corners: 14 for windows and cards, 8 for inner panels and tiles, 10 for buttons, round for pills.
+- Depth comes from fill, a soft shadow under windows (0 10 18 at 35% black) and a 3 px darker bottom edge on tiles and
+  primary buttons. Borders are the exception: only fields, focus rings and the selected ring have them.
+- Item pictures (`ItemIcons.Finish`, `IconFinish`) are cropped to the item, scaled so its largest side fills 80% of
+  the tile, and get a 2 px Ink outline and a soft contact shadow so pale parts still read on a light tile.
+
+### The station theme
+
+`game/scripts/Ui/StationTheme.cs` builds the design language as a theme. A screen that uses it sets
+`Theme = StationTheme.Theme` on its root; everything under that root inherits it. Pick a variation, never a colour.
+
+| Variation | Base | Use |
+|-----------|------|-----|
+| `MainWindow`, `Header`, `TabStrip`, `SurfacePanel` | PanelContainer | the parts of a station window |
+| `Drawer`, `QueueBand` | PanelContainer | bands on the surface |
+| `CardPanel`, `InsetPanel` | PanelContainer | a detail card and the panels in it |
+| `Pill`, `WarningPill`, `KeyCap` | PanelContainer | level pill and NEW tag, warnings, key hints |
+| `PrimaryButton` | Button | the main action (Accent; a flat slate fill when off, never just an outline) |
+| plain `Button` | Button | secondary actions on chrome (Chrome 2, white text, hairline) |
+| `CloseButton`, `StepperButton`, `StationTab`, `RecipeTile` | Button | the X, − and +, category tabs, recipe tiles |
+| `StepperField` | LineEdit | the number in a quantity stepper |
+
+Hover is one step lighter and pressed one step darker. Scrollbars are 8 px and white. Tooltips are a Card panel.
+
+### Components
+
+`game/scripts/Ui/StationControls.cs` holds the small controls screens share:
+
+- **`KeyButton`**: a button with a key cap after its label ("Upgrade U"). Set `Key` from `GameInput.Label`, so it
+  follows the player's bindings.
+- **`QuantityStepper`**: − 1 +, Shift+click for ±10, and the number can be typed.
+- **`PipBar`**: a stat's 10 pips. `ItemStats.Rows` turns a part's mass, durability, friction and buoyancy into pips and
+  SI values; the pip scale is `stat_pips` in `game/data/hud.json`.
+- **`QueueCell`**: a chevron cell of a progress strip, filled by its state, with progress in Accent.
+- **`ItemSlot` with `Tiled`**: an item tile in Tile blue with Ink counts. The hotbar and the Storage drawer use it.
+
+A reason line (Error text) sits under any action that is off and says why, for example "Needs 1 more Scrap Metal."
+
+### Layout
+
+- A station window is a main window (header, tabs, tile grid, progress strip) and a 302 px detail card 12 px to its
+  right: 886 + 302 at 1280×720, 596 tall, centred above the hotbar, which stays visible and undimmed. Wider windows
+  give the grid more columns; below 1280 the card narrows to 280 px.
+- Tiles are 76 px with 8 px gaps and show a picture only; the name is in the tooltip and the card.
+- There is no always-visible inventory column. A drawer slides over the left half of the grid when it is needed.
+- The hotbar's slots are Tile blue with Ink numbers and counts, 6 px apart. The current slot is Tile selected with the
+  white 3 px ring, exactly like a selected recipe.
+
+## Original palette
+
+Screens that have not moved to the design language yet use these colours and `MechanicaTheme`.
 
 | Name | Colour | Use |
 |------|--------|-----|
@@ -112,15 +219,16 @@ are a navy panel with a blue border and show after 0.25 s.
 - **`ConfirmDialog.Ask(owner, title, message, confirmText, onConfirm, onCancel, destructive)`** dims
   the screen and asks. Esc or Cancel says no. Use it before deleting, overwriting, resetting or
   discarding changes.
-- **`MechanicaTheme.SelectedSlot()`** returns the bright cyan border for a selected slot or item.
+- **`MechanicaTheme.SelectedSlot()`** returns the bright cyan border for a selected slot or item on a screen that
+  has not moved to the design language.
 
 ## Layout
 
 - The UI is laid out for 1280×720 and the window stretches it (`canvas_items`), so it scales cleanly
   up to 4K. The window can't be made smaller than 1280×720. The UI scale setting (75% to 150%) applies
   on top of that.
-- Use containers and anchors, never fixed positions. Multi-panel screens keep balanced proportions,
-  for example 30/40/30 for list, preview and inventory.
+- Use containers and anchors, never fixed positions. Station screens follow the design language layout above.
+  Mod tools keep balanced proportions, for example 30/40/30 for list, preview and properties.
 - Click targets are at least 32×32 px at 1080p.
 - Keep the user's place: scroll position, selection and open tab survive closing, reopening and
   resizing.
@@ -179,7 +287,7 @@ right.
 ## Rules for new menus
 
 1. A clear title bar with an X at the top right (`ToolWindow`).
-2. Primary actions at the bottom or right: cyan when enabled, grey when disabled.
+2. Primary actions at the bottom or right: cyan when enabled, a flat slate fill with a reason line when disabled.
 3. The key that opens a menu also closes it, and Esc always closes it and returns to play.
 4. Every button has a tooltip with its name and a short description.
 5. Destructive actions ask first (`ConfirmDialog`).
