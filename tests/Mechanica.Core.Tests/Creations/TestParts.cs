@@ -13,6 +13,7 @@ internal static class TestParts
     public const string Piston = "test:piston";
     public const string Ore = "test:ore";
     public const string SocketedBlock = "test:socketed_block";
+    public const string Soil = "test:soil";
 
     public static PartCatalog Catalog() => new PartCatalog()
         // No sockets: attaches on every face.
@@ -32,6 +33,9 @@ internal static class TestParts
         // A block attaches on every face even when it lists sockets.
         .Add(SocketedBlock, Part(PartCategory.Block, mass: 4, size: GridSize.One,
             Socket("top", SocketType.Structural, new Vec3(0, 0.125f, 0), new Vec3(0, 1, 0))))
+        // Ground-only, like farm soil: upright on the ground, never on a Creation.
+        .Add(Soil, Part(PartCategory.Interactive, mass: 20, size: GridSize.One,
+            Socket("base", SocketType.Structural, new Vec3(0, -0.125f, 0), new Vec3(0, -1, 0))) with { Name = "Soil", GroundOnly = true })
         .Add(Ore, new PartDefinition { Id = "ore", Name = "Ore", Category = PartCategory.Resource });
 
     /// <summary>Places a part or fails the test.</summary>

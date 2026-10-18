@@ -265,8 +265,13 @@ public partial class BuildTool : HandTool
             _adjust = BuildAim.Turn(_adjust);
     }
 
-    /// <summary>Tips the part a quarter turn over, for wedges and other parts with a top.</summary>
-    public void Tip() => _adjust = BuildAim.Tip(_adjust);
+    /// <summary>Tips the part a quarter turn over, for wedges and other parts with a top. Ground-only parts (soil) never tip.</summary>
+    public void Tip()
+    {
+        if (Selected is { } part && Build.Catalog.FindDefinition(part)?.GroundOnly == true)
+            return;
+        _adjust = BuildAim.Tip(_adjust);
+    }
 
     /// <summary>Steps the drag plane: XY, XZ, YZ (UI spec §8).</summary>
     public void CyclePlane() => _plane = BuildDrag.NextPlane(_plane);
@@ -463,6 +468,9 @@ public partial class BuildTool : HandTool
         {
             pose = new Pose(aim.Position!.Value.ToNumerics(), System.Numerics.Quaternion.Identity);
         }
+        if (BuildAim.GroundOnlyProblem(definition, aim.Creation, aim.Rotation, pose,
+                () => Build.RestsOnWorld(aim.Creation, definition, aim.Cell, aim.Rotation, pose)) is not null)
+            return Loc.T("{0} goes only flat on the ground", definition.Name ?? part);
         return Build.CheckClear(aim.Creation, definition, aim.Cell, aim.Rotation, pose);
     }
 
@@ -618,13 +626,14 @@ public partial class BuildTool : HandTool
         if (CastRay() is not { } hit)
             return null;
         var (point, normal, from) = (hit.Point, hit.Normal, Eye);
+        var adjust = BuildAim.Upright(definition, _adjust);
 
         if (hit is { Body: { } body, Node: { } node })
         {
             var frame = body.GlobalTransform;
             var toGrid = frame.AffineInverse();
             var (cell, face) = BuildAim.FromHit((toGrid * point).ToNumerics(), (toGrid.Basis * normal).ToNumerics());
-            var rotation = BuildAim.Orient(face, (toGrid.Basis * (from - point)).ToNumerics(), _adjust);
+            var rotation = BuildAim.Orient(face, (toGrid.Basis * (from - point)).ToNumerics(), adjust);
             var origin = BuildAim.Anchor(definition, rotation, cell + face, face);
             return new Target(node.Creation, origin, rotation, null, node.Creation.PartAt(cell)?.Id,
                 frame * PartFrame(definition, origin, rotation), face, frame);
@@ -636,7 +645,7 @@ public partial class BuildTool : HandTool
         var snapped = BuildAim.Snap(start.ToNumerics()).ToGodot();
         var across = Vector3.One - worldFace.ToGodot().Abs();
         var position = snapped * across + start * worldFace.ToGodot().Abs();
-        var turned = BuildAim.Orient(worldFace, (from - point).ToNumerics(), _adjust);
+        var turned = BuildAim.Orient(worldFace, (from - point).ToNumerics(), adjust);
         var anchor = BuildAim.Anchor(definition, turned, GridCell.Zero, worldFace);
         return new Target(null, anchor, turned, position.ToNumerics().ToVec3(), null,
             new Transform3D(Basis.Identity, position) * PartFrame(definition, anchor, turned), worldFace, new Transform3D(Basis.Identity, position));
@@ -675,6 +684,9 @@ public partial class BuildTool : HandTool
         if (_place.Phase == GesturePhase.Holding)
             return Loc.T("{0}   drag to place a grid on the {1} plane   {2} next plane", name, BuildDrag.PlaneName(_plane), Key(InputActions.Rotate));
         var problem = !_previewValid && PreviewProblem is { Length: > 0 } p && Aim is not null ? $"\n{p}" : "";
+        if (Build.Catalog.FindDefinition(Selected)?.GroundOnly == true)
+            return Loc.T("{0}   {1} turn  {2} place (hold to drag)  {3} hold to remove", name,
+                Key(InputActions.Rotate), Key(InputActions.Primary), Key(InputActions.Secondary)) + (Status.Length > 0 ? Status : problem);
         return Loc.T("{0}   {1} turn  {2} tip  {3} place (hold to drag)  {4} hold to remove", name,
             Key(InputActions.Rotate), Key(InputActions.Tip), Key(InputActions.Primary), Key(InputActions.Secondary)) + (Status.Length > 0 ? Status : problem);
     }

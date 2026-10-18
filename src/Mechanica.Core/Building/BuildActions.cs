@@ -192,9 +192,13 @@ public sealed class BuildActions(IPartCatalog catalog, BuildSettings settings, I
         var first = ApplyPlace(caller, new PlacePartArgs(args.Part, args.Cells[0], args.Rotation, args.Creation, args.Position), sound: true)!.Value
             .Deserialize<PlacePartResult>(ActionJson.Options)!;
         var (done, skipped, reason) = (1, 0, (string?)null);
+        // Ground-only parts (soil) don't attach to each other: started on the ground, each one starts its own Creation.
+        var apart = args.Position is not null && catalog.FindDefinition(args.Part)?.GroundOnly == true;
         foreach (var cell in args.Cells.Skip(1))
         {
-            var one = new PlacePartArgs(args.Part, cell, args.Rotation, first.Creation);
+            var one = apart
+                ? new PlacePartArgs(args.Part, args.Cells[0], args.Rotation, Position: (args.Position!.Value.ToNumerics() + (cell - args.Cells[0]).Metres.ToNumerics()).ToVec3())
+                : new PlacePartArgs(args.Part, cell, args.Rotation, first.Creation);
             if (ValidatePlace(caller, one) is { } error)
             {
                 skipped++;
@@ -264,6 +268,8 @@ public sealed class BuildActions(IPartCatalog catalog, BuildSettings settings, I
                 return $"There is no creation {id}.";
             if (target.Parts.Count >= settings.MaxPartsPerCreation)
                 return $"Creation {id} already has the most parts allowed ({settings.MaxPartsPerCreation}).";
+            if (BuildAim.JoinProblem(definition, target) is { } join)
+                return join;
             if (!target.CanPlacePart(args.Part, args.Cell, args.Rotation, out var attachedTo, out var error))
                 return Sentence(error);
             pose = target.BodyPose(target.BodyIndexOf(attachedTo[0]));
@@ -278,6 +284,7 @@ public sealed class BuildActions(IPartCatalog catalog, BuildSettings settings, I
 
         var centre = pose.Apply(PartGeometry.CentreMetres(definition, args.Cell, args.Rotation).ToNumerics());
         return CheckReach(caller, centre)
+            ?? BuildAim.GroundOnlyProblem(definition, target, args.Rotation, pose, () => world.RestsOnWorld(target, definition, args.Cell, args.Rotation, pose))
             ?? world.CheckClear(target, definition, args.Cell, args.Rotation, pose)
             ?? Costs?.CheckPlace(caller, Identifiers.Qualify(args.Part));
     }

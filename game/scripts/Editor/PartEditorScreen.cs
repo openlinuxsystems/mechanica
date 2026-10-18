@@ -809,8 +809,8 @@ public partial class PartEditorScreen : Control
         });
     }
 
-    // Survival fields (chunk 20): seeds and water on items; soil and beds on parts. Weapons and food are
-    // item scripts (Behaviour: Script and Properties). Turning a section on or off rebuilds the inspector.
+    // Survival fields (chunk 20): seeds and water on items; soil, beds and ground-only placement on parts. Weapons
+    // and food are item scripts (Behaviour: Script and Properties). Turning a section on or off rebuilds the inspector.
     private void AddSurvivalFields(PartDefinition d)
     {
         _partGrid.AddHeading("Survival");
@@ -828,6 +828,7 @@ public partial class PartEditorScreen : Control
                     v => Set("Set growth speed", x => x with { Soil = x.Soil! with { Growth = (float?)v } }), optional: true, fallback: 1, suffix: "×");
             }
             _partGrid.AddBool("Respawn point", d.RespawnPoint, v => Set("Set respawn point", x => x with { RespawnPoint = v == true ? true : null }), optional: true);
+            _partGrid.AddBool("Ground only", d.GroundOnly, v => Set("Set ground only", x => x with { GroundOnly = v == true ? true : null }), optional: true);
             return;
         }
         _partGrid.AddBool("Seed", d.Seed is not null, v => Toggle("seed", v == true,

@@ -33,6 +33,7 @@
     "capacity": 300,
     "growth": 1
   },
+  "ground_only": true,
   "properties": {
     "interval": 0.5
   }

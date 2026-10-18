@@ -513,6 +513,9 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
             return $"Creations {source.Id} and {target.Id} are simulated by different players.";
         if (source.Parts.Count + target.Parts.Count > settings.MaxPartsPerCreation)
             return $"Together they would have more parts than allowed ({settings.MaxPartsPerCreation}).";
+        // Ground-only parts (soil) stay flat on the ground, so they never move onto another creation or take one on.
+        if (new[] { source, target }.SelectMany(c => c.Parts.Select(p => c.DefinitionOf(p.Id))).FirstOrDefault(d => d.GroundOnly == true) is { } grounded)
+            return $"{grounded.Name ?? "This part"} stays on the ground and cannot be welded.";
         if (!target.CanMergeFrom(source, args.Rotation, args.Offset, weld: true, out var attachedTo, out var error))
             return Sentence(error);
         var pose = target.BodyPose(target.BodyIndexOf(attachedTo[0]));

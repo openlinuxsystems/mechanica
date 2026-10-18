@@ -164,6 +164,12 @@ public sealed record PartDefinition
     public bool? RespawnPoint { get; init; }
 
     /// <summary>
+    /// Makes a placeable part go only flat on the ground, as Scrap Mechanic's soil does: upright (its local +Y
+    /// straight up), resting on the world itself, never tipped onto a side or set on a Creation.
+    /// </summary>
+    public bool? GroundOnly { get; init; }
+
+    /// <summary>
     /// Makes the part a node of the logic and power bus (chunk 10): how many Connect Tool links may come in
     /// and go out. Placeable parts only.
     /// </summary>
