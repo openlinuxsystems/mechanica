@@ -13,7 +13,8 @@ namespace Mechanica.Game.Ui;
 /// The models <see cref="ItemIcons"/> draws tools from, so their hotbar and inventory pictures always match the models
 /// used in game: the Sledgehammer's hand prop, turned to lie across the picture, the Connect Tool's hand prop on its
 /// side with its lit display towards the camera, the Weld Tool's the same way with its silver side panel and open
-/// clamping arms towards the camera, and the Lift's own model put down (as its <c>deploy</c> clip starts:
+/// clamping arms towards the camera, the Paint Tool's hand prop on its side with its nozzles up and to the left (tinted
+/// the default colour), and the Lift's own model put down (as its <c>deploy</c> clip starts:
 /// folded, the way it is carried). The same picture serves the hotbar and the Fabricator. Other tools have none and draw as
 /// their initials.
 /// </summary>
@@ -32,6 +33,10 @@ public sealed class ToolIconModels(CharacterAssets characters, PartAssets parts,
     private const float WeldRake = 12f;
     private static readonly Basis WeldSide = Side(WeldRake);
 
+    // The Paint Tool too (PAINT_RAKE in tools/characters/build_characters.py), its nozzles along X, pointing up less.
+    private const float PaintRake = 15f;
+    private static readonly Basis PaintSide = Side(PaintRake, 0.3f);
+
     private static Basis Diagonal()
     {
         var forward = -ItemIcons.ViewFrom.Normalized();
@@ -42,13 +47,13 @@ public sealed class ToolIconModels(CharacterAssets characters, PartAssets parts,
         return new Basis(across, z.Cross(across), z);
     }
 
-    private static Basis Side(float rakeDegrees)
+    private static Basis Side(float rakeDegrees, float lift = 0.45f)
     {
         var forward = -ItemIcons.ViewFrom.Normalized();
         var right = forward.Cross(Vector3.Up).Normalized();
         var up = right.Cross(forward);
         var facing = -forward;
-        var probe = (-right + 0.45f * up).Normalized();
+        var probe = (-right + lift * up).Normalized();
         var rake = Mathf.DegToRad(rakeDegrees);
         var x = Mathf.Cos(rake) * probe - Mathf.Sin(rake) * probe.Cross(facing);
         var top = x.Cross(facing);
@@ -62,6 +67,7 @@ public sealed class ToolIconModels(CharacterAssets characters, PartAssets parts,
         HotbarTools.Lift => Lift(),
         HotbarTools.Connect => Prop(CharacterProp.ConnectTool, ConnectSide, "ConnectTool"),
         HotbarTools.Weld => Prop(CharacterProp.WeldTool, WeldSide, "WeldTool"),
+        HotbarTools.Paint => Prop(CharacterProp.PaintTool, PaintSide, "PaintTool"),
         _ => null,
     };
 

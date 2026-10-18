@@ -15,8 +15,10 @@ namespace Mechanica.Core.Net;
 /// <param name="Prop">What the player holds.</param>
 /// <param name="Gesture">The player's newest gesture.</param>
 /// <param name="GestureCount">Counts the player's gestures.</param>
+/// <param name="Tint">The Paint Tool's colour (<see cref="Player.PlayerInput.Tint"/>).</param>
 public readonly record struct PlayerState(int Peer, uint AckSequence, Vector3 Position, Vector3 Velocity, float Yaw, float Pitch,
-    BodyFlags Body = BodyFlags.None, CharacterProp Prop = CharacterProp.None, CharacterGesture Gesture = CharacterGesture.None, byte GestureCount = 0);
+    BodyFlags Body = BodyFlags.None, CharacterProp Prop = CharacterProp.None, CharacterGesture Gesture = CharacterGesture.None, byte GestureCount = 0,
+    byte Tint = 0);
 
 /// <summary>How a player's body is, as the host sees it, so clients animate other players the same way.</summary>
 [Flags]
@@ -37,7 +39,7 @@ public enum BodyFlags : byte
     /// <summary>In a seat.</summary>
     Seated = 8,
 
-    /// <summary>Holding the Sledgehammer up to block.</summary>
+    /// <summary>The tool in hand raised: the Sledgehammer up to block, the Connect Tool aimed, the Paint Tool spraying.</summary>
     Guard = 16,
 
     /// <summary>Every flag.</summary>
@@ -52,7 +54,7 @@ public sealed record WorldSnapshot(uint Tick, IReadOnlyList<PlayerState> Players
     /// <summary>Most players a snapshot may carry.</summary>
     public const int MaxPlayers = 64;
 
-    private const int EntrySize = 4 + 4 + 12 + 12 + 4 + 4 + 4;
+    private const int EntrySize = 4 + 4 + 12 + 12 + 4 + 4 + 5;
 
     /// <summary>The binary form sent host → clients.</summary>
     public byte[] Encode()
@@ -75,6 +77,7 @@ public sealed record WorldSnapshot(uint Tick, IReadOnlyList<PlayerState> Players
             span[41] = (byte)p.Prop;
             span[42] = (byte)p.Gesture;
             span[43] = p.GestureCount;
+            span[44] = p.Tint;
             span = span[EntrySize..];
         }
         return bytes;
@@ -103,7 +106,8 @@ public sealed record WorldSnapshot(uint Tick, IReadOnlyList<PlayerState> Players
                 (BodyFlags)span[40],
                 CharacterRig.Sanitize((CharacterProp)span[41]),
                 CharacterRig.Sanitize((CharacterGesture)span[42]),
-                span[43]);
+                span[43],
+                span[44]);
             if (((byte)state.Body & ~(byte)BodyFlags.All) != 0)
                 return null;
             if (state.Peer < 1 || !IsFinite(state.Position) || !IsFinite(state.Velocity)

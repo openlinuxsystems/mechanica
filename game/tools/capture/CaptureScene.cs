@@ -12,7 +12,7 @@ namespace Mechanica.Game.Tools;
 
 /// <summary>
 /// Renders the player character in a running world to PNGs: standing, holding and swinging tools, looking up and down,
-/// crouching, moving, refining (the Refine Tool drawn, worked and put away), the Connect Tool drawn, raised, clicked and put away, the Weld Tool drawn, raised, welding (its arms clamped, sparks) and put away, and in first person with each tool. For checking how a character or skin looks in game; run
+/// crouching, moving, refining (the Refine Tool drawn, worked and put away), the Connect Tool drawn, raised, clicked and put away, the Weld Tool drawn, raised, welding (its arms clamped, sparks) and put away, the Paint Tool drawn, spraying, taking paint off, reloaded and put away, and in first person with each tool. For checking how a character or skin looks in game; run
 /// <c>tools/capture-characters.sh</c>, which uses a virtual display and the compatibility renderer. Given <c>lift</c> instead
 /// of a character it puts the player's Lift down and captures its deploy, a raise and full extension (<c>tools/capture-lift.sh</c>).
 /// Given <c>flora</c> it takes the player to a meadow and captures the grass, ground cover and bushes: wide and close, at every
@@ -138,6 +138,14 @@ public partial class CaptureScene : Node
         Shot("connect_reverse", 5, () => Player.Gesture(CharacterGesture.ConnectReverse));
         Shot("connect_side", 20, () => Look(new Vector3(-1.4f, 1.3f, -0.15f), 1.15f));
         Shot("connect_stow", 7, () => { Connector.KeepRaised = false; Tool<Building.WeldTool>(); });
+        Shot("paint_draw", 9, () => { GivePaintTool(); Tool<Building.PaintTool>(); Look(new Vector3(-0.85f, 1.45f, -1.25f), 1.15f); });
+        Shot("paint", 40, () => { });
+        Shot("paint_spray", 24, () => { Painter.Choose(13); Painter.KeepSpraying = true; });
+        Shot("paint_erase", 24, () => Painter.KeepErasing = true);
+        Shot("paint_side", 20, () => { Painter.KeepSpraying = Painter.KeepErasing = false; Painter.Choose(25); Look(new Vector3(-1.4f, 1.3f, -0.15f), 1.15f); });
+        Shot("paint_reload_off", 32, () => Painter.Reload());
+        Shot("paint_reload_on", 30, () => { });
+        Shot("paint_stow", 8, () => Tool<Building.WeldTool>());
         Shot("look_up", 40, () => { Tool<Building.WeldTool>(); Input(pitch: 0.9f); Look(new Vector3(-2.6f, 1.2f, -1.6f)); });
         Shot("look_down", 40, () => Input(pitch: -0.9f));
         Shot("crouch", 40, () => Input(crawl: true));
@@ -160,7 +168,12 @@ public partial class CaptureScene : Node
         Shot("first_person_bucket_fill", 22, () => Player.Gesture(CharacterGesture.BucketFill));
         Shot("first_person_bucket_full", 80, () => Hold(CharacterProp.WaterBucketFull));
         Shot("first_person_bucket_throw", 30, () => Player.Gesture(CharacterGesture.BucketThrow));
-        Shot("first_person_paint", 30, () => Tool<Building.PaintTool>());
+        Shot("first_person_paint_draw", 9, () => { GivePaintTool(); Input(); Player.MakeCameraCurrent(); Tool<Building.PaintTool>(); });
+        Shot("first_person_paint", 30, () => { });
+        Shot("first_person_paint_spray", 24, () => { Painter.Choose(1); Painter.KeepSpraying = true; });
+        Shot("first_person_paint_erase", 24, () => Painter.KeepErasing = true);
+        Shot("first_person_paint_reload", 32, () => { Painter.KeepSpraying = Painter.KeepErasing = false; Painter.Choose(25); Painter.Reload(); });
+        Shot("first_person_paint_stow", 30, () => Tool<Building.LiftTool>());
         Shot("first_person_lift", 30, () => Tool<Building.LiftTool>());
         Shot("first_person_connect_draw", 8, () => { Input(); Player.MakeCameraCurrent(); Tool<Building.ConnectTool>(); });
         Shot("first_person_connect", 30, () => { });
@@ -180,6 +193,15 @@ public partial class CaptureScene : Node
     private Building.ConnectTool Connector => _main.Tools!.Connector;
 
     private Building.WeldTool Welder => _main.Tools!.Weld;
+
+    private Building.PaintTool Painter => _main.Tools!.Paint;
+
+    // In Survival the Paint Tool is crafted before it is held; the captures hand one over.
+    private void GivePaintTool()
+    {
+        if (!Painter.Owns)
+            _main.Inventory.Items!.PlayerInventory(_main.Session.LocalPeer).Add(Core.Items.HotbarTools.Paint, 1);
+    }
 
     private Vector3 _liftAt;
 

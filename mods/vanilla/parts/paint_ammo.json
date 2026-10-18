@@ -1,0 +1,11 @@
+{
+  "id": "paint_ammo",
+  "name": "Paint Ammo",
+  "description": "A cartridge of paint for the Paint Tool. Each stroke of paint uses one.",
+  "category": "resource",
+  "mass": 0.1,
+  "stack_size": 100,
+  "visual": {
+    "color": "#3874dc"
+  }
+}

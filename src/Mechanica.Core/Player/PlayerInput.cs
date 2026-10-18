@@ -16,7 +16,14 @@ namespace Mechanica.Core.Player;
 /// <param name="Prop">What the player holds, for how others see them. It does not change movement.</param>
 /// <param name="Gesture">The player's newest tool or item gesture, for how others see them.</param>
 /// <param name="GestureCount">Goes up by one with every gesture, so a repeat is still seen as new.</param>
-/// <param name="Guard">Right click is held to block with the Sledgehammer, for how others see them.</param>
+/// <param name="Guard">
+/// The tool in hand is raised, for how others see them: the Sledgehammer held up to block, the Connect Tool aimed at a
+/// node, the Paint Tool spraying (<see cref="CharacterRig.CanGuard"/>).
+/// </param>
+/// <param name="Tint">
+/// The Paint Tool's colour, for how others see its tubes and its spray: the palette index, plus
+/// <see cref="CharacterRig.TintErase"/> while it takes paint off.
+/// </param>
 public readonly record struct PlayerInput(
     float MoveX,
     float MoveZ,
@@ -28,7 +35,8 @@ public readonly record struct PlayerInput(
     CharacterProp Prop = CharacterProp.None,
     CharacterGesture Gesture = CharacterGesture.None,
     byte GestureCount = 0,
-    bool Guard = false)
+    bool Guard = false,
+    byte Tint = 0)
 {
     /// <summary>No movement, looking straight ahead.</summary>
     public static PlayerInput None => default;
@@ -60,7 +68,7 @@ public readonly record struct PlayerInput(
             Pitch = Math.Clamp(Finite(Pitch), -maxPitch, maxPitch),
             Prop = CharacterRig.Sanitize(Prop),
             Gesture = CharacterRig.Sanitize(Gesture),
-            Guard = Guard && CharacterRig.Sanitize(Prop) == CharacterProp.Sledgehammer,
+            Guard = Guard && CharacterRig.CanGuard(CharacterRig.Sanitize(Prop)),
         };
     }
 

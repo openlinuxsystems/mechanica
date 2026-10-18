@@ -1,0 +1,20 @@
+{
+  "id": "paint_ammo",
+  "stations": [
+    "fabricator",
+    "mini_fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "tomato",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "paint_ammo",
+      "count": 10
+    }
+  ],
+  "time": 3
+}

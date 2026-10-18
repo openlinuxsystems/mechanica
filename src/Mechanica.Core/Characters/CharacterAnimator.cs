@@ -13,7 +13,7 @@ namespace Mechanica.Core.Characters;
 /// <param name="Prop">What is in hand.</param>
 /// <param name="Gesture">The newest gesture.</param>
 /// <param name="GestureCount">Counts gestures, so a repeat of the same one is still new.</param>
-/// <param name="Guard">Holding the Sledgehammer up to block.</param>
+/// <param name="Guard">The tool in hand raised (<see cref="CharacterRig.CanGuard"/>).</param>
 public readonly record struct CharacterPose(
     Vector3 Velocity, float Yaw, float Pitch, bool OnFloor, bool Swimming = false, bool Crawl = false, bool Seated = false,
     CharacterProp Prop = CharacterProp.None, CharacterGesture Gesture = CharacterGesture.None, byte GestureCount = 0,

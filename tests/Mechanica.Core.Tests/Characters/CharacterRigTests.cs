@@ -60,11 +60,31 @@ public class CharacterRigTests
     }
 
     [Fact]
+    public void ThePaintToolAimsWhileSprayingAndTwistsItsTankToReload()
+    {
+        Assert.Equal("paint_tool", CharacterRig.PropNode(CharacterProp.PaintTool));
+        Assert.Equal("hold_paint", CharacterRig.HoldClip(CharacterProp.PaintTool));
+        Assert.Equal("hold_paint_aim", CharacterRig.HoldClip(CharacterProp.PaintTool, guard: true));
+        Assert.Equal("paint_draw", CharacterRig.DrawClip(CharacterProp.PaintTool));
+        Assert.Equal("paint_stow", CharacterRig.StowClip(CharacterProp.PaintTool));
+        Assert.Equal("paint_reload", CharacterRig.GestureClip(CharacterGesture.PaintReload));
+        Assert.True(CharacterRig.CanGuard(CharacterProp.PaintTool));
+        Assert.False(CharacterRig.CanGuard(CharacterProp.WaterBucket));
+        foreach (var clip in new[] { "hold_paint", "hold_paint_aim", "paint_draw", "paint_stow", "paint_reload" })
+        {
+            Assert.Contains(clip, CharacterRig.UpperBodyClips);
+            Assert.Contains(clip + CharacterRig.FirstPersonSuffix, CharacterRig.UpperBodyClips);
+        }
+        Assert.False(CharacterAnimator.IsOneShot("hold_paint_aim"));
+        Assert.True(CharacterAnimator.IsOneShot("paint_reload"));
+    }
+
+    [Fact]
     public void TheSoilBagIsCarriedInBothHandsLiftedUpAndTippedOut()
     {
         Assert.Equal(CharacterProp.SoilBag, CharacterRig.Sanitize(CharacterProp.SoilBag));
         Assert.Equal(CharacterGesture.BagSpill, CharacterRig.Sanitize(CharacterGesture.BagSpill));
-        Assert.Equal(CharacterGesture.None, CharacterRig.Sanitize((CharacterGesture)(CharacterGesture.BagSpill + 1)));
+        Assert.Equal(CharacterGesture.None, CharacterRig.Sanitize((CharacterGesture)(CharacterGesture.PaintReload + 1)));
         Assert.Equal("soil_bag", CharacterRig.PropNode(CharacterProp.SoilBag));
         Assert.Equal("hold_bag", CharacterRig.HoldClip(CharacterProp.SoilBag));
         Assert.Equal("bag_lift", CharacterRig.DrawClip(CharacterProp.SoilBag));

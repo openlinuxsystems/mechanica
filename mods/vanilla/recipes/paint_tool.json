@@ -1,0 +1,28 @@
+{
+  "id": "paint_tool",
+  "stations": [
+    "fabricator",
+    "mini_fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal_block",
+      "count": 10
+    },
+    {
+      "item": "glass_block",
+      "count": 5
+    },
+    {
+      "item": "component_kit",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "paint_tool",
+      "count": 1
+    }
+  ],
+  "time": 30
+}

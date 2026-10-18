@@ -98,6 +98,10 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
     /// <summary>This peer's own health as last sent, or null before it arrives.</summary>
     public VitalsView? Own => _vitals.GetValueOrDefault(Session.LocalPeer);
 
+    /// <summary>Waypoints at the knockout bags this peer's player left behind, for the compass and maps.</summary>
+    public IEnumerable<Core.Ui.Waypoint> OwnKnockoutBags() =>
+        KnockoutBags.WaypointsFor(_drops.Values, Session.LocalPeer, Ui.Loc.T("Knockout bag"));
+
     /// <summary>Seconds until this peer's dead player may respawn, counting down since the view arrived.</summary>
     public float OwnRespawnIn => Own is { Dead: true } own
         ? Math.Max(0f, own.RespawnIn - (float)(Now - _vitalsAt.GetValueOrDefault(Session.LocalPeer)))
