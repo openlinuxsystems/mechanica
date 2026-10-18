@@ -18,7 +18,8 @@ namespace Mechanica.Game.Tools;
 /// Given <c>flora</c> it takes the player to a meadow and captures the grass, ground cover and bushes: wide and close, at every
 /// Foliage density level, a player in a bush, and every flora model in a row (<c>tools/capture-flora.sh</c>).
 /// Given <c>icons</c> it saves the item picture of every tool and a few parts, then the HUD with the hotbar and the Lift's
-/// placement ghost (<c>tools/capture-icons.sh</c>).
+/// placement ghost (<c>tools/capture-icons.sh</c>). Given <c>blocks</c> it builds a wall of every block material with its wedge,
+/// the Ramp and Stairs, and see-through blocks in front of solid ones (<c>tools/capture-blocks.sh</c>).
 /// </summary>
 public partial class CaptureScene : Node
 {
@@ -38,9 +39,11 @@ public partial class CaptureScene : Node
         var lift = args.Length > 1 && args[1] == "lift";
         var flora = args.Length > 1 && args[1] == "flora";
         var icons = args.Length > 1 && args[1] == "icons";
-        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons ? args[1] : "scrapper_male";
+        var blocks = args.Length > 1 && args[1] == "blocks";
+        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !blocks ? args[1] : "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
-        _main.Options = LaunchOptions.Offline with { Seed = 7 };
+        // Building the block wall needs Creative: free parts and no build reach.
+        _main.Options = LaunchOptions.Offline with { Seed = 7, GameMode = blocks ? Core.Survival.GameMode.Creative : LaunchOptions.Offline.GameMode };
         _main.ReadDeviceInput = icons;
         AddChild(_main);
         _camera = new Camera3D { Fov = 40 };
@@ -58,6 +61,11 @@ public partial class CaptureScene : Node
         if (icons)
         {
             IconShots();
+            return;
+        }
+        if (blocks)
+        {
+            BlockShots();
             return;
         }
         Shot("front", 60, () => Look(new Vector3(0, 1.0f, -3.2f)));
@@ -321,6 +329,73 @@ public partial class CaptureScene : Node
     }
 
     private Vector3 Ground(Vector3 at) => new(at.X, _main.Streamer.Generator.HeightAt(at.X, at.Z), at.Z);
+
+    private static readonly string[] BlockMaterials =
+    [
+        "wood", "scrap_wood", "cardboard", "brick", "concrete", "plaster", "tile", "carpet", "insulation", "barrier",
+        "metal", "scrap_metal", "rusted_metal", "aluminum", "diamond_plate", "hull_plate", "glass", "armored_glass", "net", "path_light",
+    ];
+
+    // A 3 by 3 panel of each block material with wedges in front, in two rows of ten, built through the Action API.
+    private void BlockShots()
+    {
+        Engine.TimeScale = 1.0;
+        Shot("blocks_00_wait", 60, () => { });
+        Shot("blocks_00_go", 240, () =>
+        {
+            var g = _main.Streamer.Generator;
+            Go(Find(p => new[] { (0f, 0f), (12f, 0f), (-12f, 0f), (0f, 12f), (0f, -12f) }.All(d => g.BiomeAt(p.X + d.Item1, p.Y + d.Item2).Id == "meadow")
+                && g.SlopeAt(p.X, p.Y) < 0.08f && !g.PoisAt(p.X, p.Y).Any()));
+            GameSettings.Apply(GameSettings.Current with { Graphics = GameSettings.Current.Graphics with { Grass = FoliageLevel.Off, GroundCover = FoliageLevel.Off, Bushes = FoliageLevel.Off } });
+            _main.Flora.BuildAll();
+        });
+        Shot("blocks_00_build", 120, () =>
+        {
+            var panel = new List<Core.Creations.GridCell>();
+            for (var x = 0; x < 3; x++)
+                for (var y = 0; y < 3; y++)
+                    panel.Add(new(x, y, 0));
+            for (var i = 0; i < BlockMaterials.Length; i++)
+            {
+                var at = Ground(_meadow + new Vector3(-9.5f + (i % 10) * 2f, 0, i < 10 ? -3f : 0f)) + Vector3.Up * 0.16f;
+                // One path light, as on a path: a panel of them lights itself up.
+                Place($"vanilla:{BlockMaterials[i]}_block", BlockMaterials[i] == "path_light" ? [new(1, 0, 0)] : panel, at);
+                Place($"vanilla:{BlockMaterials[i]}_wedge", [new(0, 0, 0)], at + new Vector3(0f, 0f, 0.6f));
+                Place($"vanilla:{BlockMaterials[i]}_wedge", [new(0, 0, 0), new(1, 0, 0)], at + new Vector3(0.375f, 0f, 0.6f));
+            }
+            var decor = Ground(_meadow + new Vector3(-2f, 0, 4f)) + Vector3.Up * 0.55f;
+            Place("vanilla:ramp_block", [new(0, 0, 0)], decor);
+            Place("vanilla:stairs_block", [new(0, 0, 0)], decor + new Vector3(2f, 0, 0));
+            // See-through blocks in front of brick, so the brick shows through.
+            var back = Ground(_meadow + new Vector3(6f, 0, 4f)) + Vector3.Up * 0.16f;
+            var wall = new List<Core.Creations.GridCell>();
+            for (var x = 0; x < 9; x++)
+                for (var y = 0; y < 4; y++)
+                    wall.Add(new(x, y, 0));
+            Place("vanilla:brick_block", wall, back);
+            foreach (var (material, dx) in new[] { ("glass", 0f), ("armored_glass", 0.75f), ("net", 1.5f) })
+                Place($"vanilla:{material}_block", panel, back + new Vector3(dx, 0, 0.75f));
+            _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, Ground(_meadow + new Vector3(-14f, 0, 10f)) + Vector3.Up * 0.3f, 0f);
+        });
+        Shot("blocks_01_row_back", 30, () => View(new Vector3(-6.5f, 1.4f, 0.6f), new Vector3(-6.5f, 0.4f, -3f)));
+        Shot("blocks_02_row_back_right", 30, () => View(new Vector3(3.5f, 1.4f, 0.6f), new Vector3(3.5f, 0.4f, -3f)));
+        Shot("blocks_03_row_front", 30, () => View(new Vector3(-6.5f, 1.4f, 3.6f), new Vector3(-6.5f, 0.4f, 0f)));
+        Shot("blocks_04_row_front_right", 30, () => View(new Vector3(3.5f, 1.4f, 3.6f), new Vector3(3.5f, 0.4f, 0f)));
+        Shot("blocks_05_overview", 30, () => View(new Vector3(-1f, 6f, 9f), new Vector3(-1f, 0f, -1.5f)));
+        Shot("blocks_06_ramp_stairs", 30, () => View(new Vector3(-0.5f, 2.6f, 9.5f), new Vector3(-0.5f, 0.4f, 4.3f)));
+        Shot("blocks_07_see_through", 30, () => View(new Vector3(7.2f, 1.2f, 7.2f), new Vector3(7.2f, 0.4f, 4.5f)));
+        Shot("blocks_08_close", 30, () => View(new Vector3(-8.6f, 0.9f, 1.6f), new Vector3(-8.6f, 0.4f, 0f)));
+        Shot("blocks_09_close_metals", 30, () => View(new Vector3(-4.6f, 1.3f, 2.4f), new Vector3(-4.6f, 0.4f, 0f)));
+        Shot("blocks_10_close_path_light", 30, () => View(new Vector3(9.4f, 0.9f, 1.8f), new Vector3(8.9f, 0.4f, 0f)));
+    }
+
+    // Build reach holds in Creative too, so the player steps up to each spot first.
+    private void Place(string part, IReadOnlyList<Core.Creations.GridCell> cells, Vector3 at)
+    {
+        _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, at + new Vector3(0.4f, 0.3f, 2f), 0f);
+        _main.Actions.Request(Core.Building.BuildActions.PlaceParts, new Core.Building.PlacePartsArgs(part, cells, default, null, new Core.Data.Vec3(at.X, at.Y, at.Z)),
+            r => GD.Print($"[capture] place {part}: {r}"));
+    }
 
     private static readonly string[] IconItems = [.. Core.Items.HotbarTools.All, "vanilla:gas_engine", "vanilla:wheel", "vanilla:chest", "vanilla:water_bucket", "vanilla:water_bucket_full"];
 

@@ -124,10 +124,16 @@ public partial class VanillaBlocksTest : StagedTest
             BaseMaterial3D Material(string id) =>
                 (BaseMaterial3D)assets.ModelFor(id, _content.FindDefinition(id)!).Meshes[0].SurfaceMaterials![0]!;
             var glass = Material("vanilla:glass_block");
-            Check(glass.Transparency == BaseMaterial3D.TransparencyEnum.Alpha && Mathf.IsEqualApprox(glass.AlbedoColor.A, 0.35f),
-                $"glass is drawn at 35% opacity (alpha {glass.AlbedoColor.A})");
-            Check(Material("vanilla:metal_block").Transparency == BaseMaterial3D.TransparencyEnum.Disabled, "metal is opaque");
-            Check(Material("vanilla:path_light_block").EmissionEnabled, "the path light block glows");
+            Check(glass.Transparency == BaseMaterial3D.TransparencyEnum.Alpha && Mathf.IsEqualApprox(glass.AlbedoColor.A, 0.5f),
+                $"glass is drawn at 50% opacity (alpha {glass.AlbedoColor.A})");
+            var metal = Material("vanilla:metal_block");
+            Check(metal.Transparency == BaseMaterial3D.TransparencyEnum.Disabled, "metal is opaque");
+            Check(metal.AlbedoTexture is not null && metal.AlbedoColor.R > 0.99f, "metal is textured and untinted");
+            var net = Material("vanilla:net_block");
+            Check(net.Transparency == BaseMaterial3D.TransparencyEnum.AlphaScissor, $"the net's gaps are cut out ({net.Transparency})");
+            var pathLight = Material("vanilla:path_light_block");
+            Check(pathLight.EmissionEnabled && pathLight.EmissionTexture is not null && pathLight.EmissionOperator == BaseMaterial3D.EmissionOperatorEnum.Multiply,
+                "the path light block glows only where its glow map is bright");
             Check(!assets.ModelFor("vanilla:wood_wedge", _content.FindDefinition("vanilla:wood_wedge")!).IsPlaceholder,
                 "wedges use their baked mesh");
             return true;

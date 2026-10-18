@@ -123,7 +123,8 @@ you; this page is the reference for what each key means, so you can read, review
 | `metallic` | 0–1 | 0 is plastic or wood, 1 is bare metal. |
 | `opacity` | 0–1 | How solid it looks. Omitted means 1; lower values are see-through, like glass. Physics is unaffected. |
 | `emission` | `"#rrggbb"` | Glow colour added on top of the lit surface. It does not light other things. |
-| `texture` | path | `.png` albedo texture, replacing the mesh's own. |
+| `texture` | path | `.png` albedo texture, replacing the mesh's own. Its alpha makes the part see-through where it is low: blended with `opacity` below 1, cut out (holes) otherwise. Vanilla box and wedge models map one repeat to each 0.25 m grid cell. |
+| `emission_texture` | path | `.png` glow map: `emission` shines only where it is bright (black does not glow). Needs `emission`. |
 | `paintable` | bool | Whether the Paint Tool can recolour it. Omitted means true. |
 | `variants` | list | Named colour choices: `{ "id": "black", "name": "Black", "color": "#202020" }`. Ids are unique in the part. |
 

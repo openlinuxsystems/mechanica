@@ -13,9 +13,10 @@
   "size": [1, 1, 1],
   "mesh": "meshes/blocks/rusted_metal_wedge.glb",
   "visual": {
-    "color": "#8a5a3a",
+    "color": "#ffffff",
     "roughness": 0.8,
-    "metallic": 0.4
+    "metallic": 0.4,
+    "texture": "textures/blocks/rusted_metal.png"
   },
   "collision": {
     "shape": "convex",

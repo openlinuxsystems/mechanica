@@ -13,8 +13,9 @@
   "size": [1, 1, 1],
   "mesh": "meshes/blocks/plaster_block.glb",
   "visual": {
-    "color": "#ece8e0",
+    "color": "#b8b8b8",
     "roughness": 0.9,
-    "metallic": 0
+    "metallic": 0,
+    "texture": "textures/blocks/plaster.png"
   }
 }

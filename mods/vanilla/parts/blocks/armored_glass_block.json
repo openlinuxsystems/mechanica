@@ -13,9 +13,10 @@
   "size": [1, 1, 1],
   "mesh": "meshes/blocks/armored_glass_block.glb",
   "visual": {
-    "color": "#9fc8d8",
+    "color": "#ffffff",
     "roughness": 0.1,
     "metallic": 0,
-    "opacity": 0.55
+    "opacity": 0.85,
+    "texture": "textures/blocks/armored_glass.png"
   }
 }

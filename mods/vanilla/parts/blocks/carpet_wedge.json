@@ -13,9 +13,10 @@
   "size": [1, 1, 1],
   "mesh": "meshes/blocks/carpet_wedge.glb",
   "visual": {
-    "color": "#7a3040",
+    "color": "#ffffff",
     "roughness": 1,
-    "metallic": 0
+    "metallic": 0,
+    "texture": "textures/blocks/carpet.png"
   },
   "collision": {
     "shape": "convex",
