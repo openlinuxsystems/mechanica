@@ -8,6 +8,7 @@ namespace Mechanica.Core.Saves;
 /// <param name="Seed">World seed.</param>
 /// <param name="Mode">Game mode.</param>
 /// <param name="Difficulty">Difficulty.</param>
+/// <param name="FriendlyFire">Whether players can hurt each other.</param>
 /// <param name="LoadedFrom">The save file it was loaded from, or null for a new world.</param>
 /// <param name="WorldTime">Seconds the world has run.</param>
 /// <param name="Tick">Current physics tick.</param>
@@ -15,7 +16,7 @@ namespace Mechanica.Core.Saves;
 /// <param name="Paused">True while the world is paused.</param>
 /// <param name="Clients">Other players joined.</param>
 /// <param name="Changing">True while a load or new world is under way.</param>
-public sealed record WorldStatus(string Name, long Seed, GameMode Mode, Difficulty Difficulty, string? LoadedFrom, double WorldTime, long Tick,
+public sealed record WorldStatus(string Name, long Seed, GameMode Mode, Difficulty Difficulty, bool FriendlyFire, string? LoadedFrom, double WorldTime, long Tick,
     double TimeScale, bool Paused, int Clients, bool Changing);
 
 /// <summary>A new world to start.</summary>
@@ -24,7 +25,8 @@ public sealed record WorldStatus(string Name, long Seed, GameMode Mode, Difficul
 /// <param name="Mode">Game mode.</param>
 /// <param name="Difficulty">Difficulty.</param>
 /// <param name="Character">The host player's character (qualified id), or null for the default.</param>
-public sealed record WorldSpec(string Name, long Seed, GameMode Mode, Difficulty Difficulty, string? Character);
+/// <param name="FriendlyFire">Whether players can hurt each other.</param>
+public sealed record WorldSpec(string Name, long Seed, GameMode Mode, Difficulty Difficulty, string? Character, bool FriendlyFire = false);
 
 /// <summary>A saved world as <c>world.list</c> shows it.</summary>
 /// <param name="Name">The world's name.</param>
@@ -64,6 +66,9 @@ public interface IWorldHost
 
     /// <summary>Pauses or resumes the world.</summary>
     void SetPaused(bool paused);
+
+    /// <summary>Lets players hurt each other, or stops them.</summary>
+    void SetFriendlyFire(bool on);
 }
 
 /// <summary>Arguments of <c>world.info</c> and <c>world.list</c> (none).</summary>
@@ -85,8 +90,9 @@ public sealed record LoadWorldParams(string Name, bool DisconnectClients = false
 /// <param name="Difficulty">Difficulty.</param>
 /// <param name="Character">The host player's character (qualified id).</param>
 /// <param name="DisconnectClients">True to go ahead although players are joined.</param>
+/// <param name="FriendlyFire">True to let players hurt each other (off by default).</param>
 public sealed record NewWorldParams(string Name = "World", long? Seed = null, GameMode Mode = GameMode.Survival, Difficulty Difficulty = Difficulty.Normal,
-    string? Character = null, bool DisconnectClients = false);
+    string? Character = null, bool DisconnectClients = false, bool FriendlyFire = false);
 
 /// <summary>Arguments of <c>world.reset</c>.</summary>
 /// <param name="DisconnectClients">True to go ahead although players are joined.</param>
@@ -99,6 +105,10 @@ public sealed record TimeScaleParams(double Scale);
 /// <summary>Arguments of <c>world.pause</c>.</summary>
 /// <param name="Paused">True to pause, false to resume.</param>
 public sealed record PauseParams(bool Paused);
+
+/// <summary>Arguments of <c>world.friendly_fire</c>.</summary>
+/// <param name="On">True to let players hurt each other, false to stop them.</param>
+public sealed record FriendlyFireParams(bool On);
 
 /// <summary>Why a <see cref="WorldControl"/> call was refused.</summary>
 public enum WorldRefusal
@@ -182,18 +192,18 @@ public sealed class WorldControl(IWorldHost host, Func<long>? randomSeed = null)
         if (p.Character is { } character && (character.Length > 128 || !character.Contains(':')))
             throw new WorldControlException(WorldRefusal.BadParams, "character is a qualified id such as vanilla:scrapper_female.");
         CheckChange(p.DisconnectClients);
-        var spec = new WorldSpec(name, p.Seed ?? _randomSeed(), p.Mode, p.Difficulty, p.Character);
+        var spec = new WorldSpec(name, p.Seed ?? _randomSeed(), p.Mode, p.Difficulty, p.Character, p.FriendlyFire);
         host.Start(spec);
         return spec;
     }
 
-    /// <summary>Starts the running world again from nothing: the same name, seed, mode and difficulty, no save.</summary>
+    /// <summary>Starts the running world again from nothing: the same name, seed, mode, difficulty and friendly fire, no save.</summary>
     /// <exception cref="WorldControlException">Players are joined, or a world change is under way.</exception>
     public WorldSpec Reset(ResetWorldParams p)
     {
         CheckChange(p.DisconnectClients);
         var status = host.Status;
-        var spec = new WorldSpec(status.Name, status.Seed, status.Mode, status.Difficulty, null);
+        var spec = new WorldSpec(status.Name, status.Seed, status.Mode, status.Difficulty, null, status.FriendlyFire);
         host.Start(spec);
         return spec;
     }
@@ -212,6 +222,16 @@ public sealed class WorldControl(IWorldHost host, Func<long>? randomSeed = null)
     public WorldStatus SetPaused(PauseParams p)
     {
         host.SetPaused(p.Paused);
+        return host.Status;
+    }
+
+    /// <summary>Lets players hurt each other, or stops them; returns the status.</summary>
+    /// <exception cref="WorldControlException">A world change is under way.</exception>
+    public WorldStatus SetFriendlyFire(FriendlyFireParams p)
+    {
+        if (host.Status.Changing)
+            throw new WorldControlException(WorldRefusal.Busy, "The world is changing; set friendly fire once it has loaded.");
+        host.SetFriendlyFire(p.On);
         return host.Status;
     }
 

@@ -172,6 +172,7 @@ public sealed record PeerView(int Peer, string Name);
 /// <param name="SeedText">The seed as text, for callers whose numbers can't hold 64 bits exactly (JavaScript).</param>
 /// <param name="Mode">Game mode.</param>
 /// <param name="Difficulty">Difficulty.</param>
+/// <param name="FriendlyFire">Whether players can hurt each other.</param>
 /// <param name="Time">The host's clock, in s (what drop expiry and cooldowns count in).</param>
 /// <param name="Tick">The host's physics tick.</param>
 /// <param name="TickRate">Physics ticks per second.</param>
@@ -184,7 +185,7 @@ public sealed record PeerView(int Peer, string Name);
 /// <param name="Pois">How many POIs the world has.</param>
 /// <param name="RevealedPois">Qualified ids of the POIs the story has revealed.</param>
 public sealed record WorldView(
-    long Seed, string SeedText, GameMode Mode, Difficulty Difficulty, double Time, long Tick, int TickRate, float WorldSize, float SeaLevel,
+    long Seed, string SeedText, GameMode Mode, Difficulty Difficulty, bool FriendlyFire, double Time, long Tick, int TickRate, float WorldSize, float SeaLevel,
     Vec3? Spawn, IReadOnlyList<PeerView> Players, int Creations, int Drops, int Pois, IReadOnlyList<string> RevealedPois);
 
 /// <summary>What the perception actions read from the world. The host's game layer implements it.</summary>
@@ -204,6 +205,9 @@ public interface IPerceptionWorld
 
     /// <summary>The world's difficulty.</summary>
     Difficulty Difficulty { get; }
+
+    /// <summary>Whether players can hurt each other.</summary>
+    bool FriendlyFire { get; }
 
     /// <summary>The world generator, or null before the world is made.</summary>
     WorldGenerator? Generator { get; }

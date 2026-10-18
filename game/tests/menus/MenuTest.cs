@@ -191,7 +191,14 @@ public partial class MenuTest : StagedTest
             screen.SetMode(GameMode.Survival);
             screen.SetDifficulty(Difficulty.Easy);
             screen.Start();
-            Check(Main.MenuOptions is { GameMode: GameMode.Survival, Difficulty: Difficulty.Easy }, $"Survival can be Easy ({Main.MenuOptions})");
+            Check(Main.MenuOptions is { GameMode: GameMode.Survival, Difficulty: Difficulty.Easy, FriendlyFire: false }, $"Survival can be Easy ({Main.MenuOptions})");
+            screen.FriendlyFire.ButtonPressed = true;
+            screen.Start();
+            Check(Main.MenuOptions is { FriendlyFire: true }, $"friendly fire is off unless ticked ({Main.MenuOptions})");
+            screen.SetMode(GameMode.Creative);
+            screen.Start();
+            Check(screen.FriendlyFire.Disabled && Main.MenuOptions is { FriendlyFire: false }, "Creative has no friendly fire");
+            screen.SetMode(GameMode.Survival);
             screen.WorldName.Text = "";
             Main.MenuOptions = null;
             screen.Start();

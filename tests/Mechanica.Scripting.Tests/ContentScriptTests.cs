@@ -317,6 +317,30 @@ public sealed class ContentScriptTests : IDisposable
         NoErrors();
     }
 
+    [Fact]
+    public void AMountedBlasterHurtsPlayersOnlyWithFriendlyFireOn()
+    {
+        var creation = Board();
+        var gun = Place(creation, "vanilla:potato_blaster_mounted", new GridCell(0, 1, 0));
+        var chest = Place(creation, "vanilla:chest", new GridCell(-4, 1, -4));
+        creation.InventoryOf(chest)!.Add("vanilla:potato", 2);
+        _f.World.Ray = (from, direction) => new RayHit(from + direction * 5, Player: SurvivalFixture.You.Peer);
+        _f.Survival.FriendlyFire = false;
+        Steps(1);
+        Activate(creation, gun);
+        Steps(1);
+        Assert.Single(_f.World.Casts);
+        Assert.Equal(100f, _f.Survival.View(SurvivalFixture.You.Peer)!.Health);
+
+        _f.Survival.FriendlyFire = true;
+        Steps(30);
+        Activate(creation, gun);
+        Steps(1);
+        Assert.Equal(2, _f.World.Casts.Count);
+        Assert.True(_f.Survival.View(SurvivalFixture.You.Peer)!.Health < 100f);
+        NoErrors();
+    }
+
     // A 9 x 9 metal plate to build on, centred on the origin.
     private Creation Board()
     {

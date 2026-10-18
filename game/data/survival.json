@@ -4,7 +4,6 @@
   "max_health": 100,
   "respawn_delay": 5,
   "low_health": 0.25,
-  "pvp": true,
   "reach": 7.5,
   "pickup_reach": 3,
   "drop_lifetime": 900,

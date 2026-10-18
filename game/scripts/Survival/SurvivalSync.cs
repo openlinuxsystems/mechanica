@@ -80,6 +80,9 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
     /// <summary>How hard the world is when this peer hosts it.</summary>
     public Difficulty Difficulty { get; init; } = Difficulty.Normal;
 
+    /// <summary>Whether players can hurt each other when this peer hosts the world (the host may change it later).</summary>
+    public bool FriendlyFire { get; init; }
+
     /// <summary>The numbers; null loads <see cref="SettingsPath"/>.</summary>
     public SurvivalSettings? Settings { get; set; }
 
@@ -179,7 +182,7 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
     public void RegisterActions(ActionDispatcher dispatcher)
     {
         Settings ??= LoadSettings();
-        Actions = new SurvivalActions(Catalog, Settings, Inventory.Items!, this) { Mode = Mode, Difficulty = Difficulty };
+        Actions = new SurvivalActions(Catalog, Settings, Inventory.Items!, this) { Mode = Mode, Difficulty = Difficulty, FriendlyFire = FriendlyFire };
         Actions.Register(dispatcher);
         dispatcher.Gate = Actions.Gate;
         Actions.VitalsChanged += OnVitalsChanged;

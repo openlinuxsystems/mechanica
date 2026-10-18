@@ -67,6 +67,9 @@ public sealed record SaveGame
     /// <summary>How hard the world is; missing in older saves (Normal).</summary>
     public Difficulty Difficulty { get; init; } = Difficulty.Normal;
 
+    /// <summary>Whether players can hurt each other; missing (off) in older saves and when off.</summary>
+    public bool FriendlyFire { get; init; }
+
     /// <summary>World generation seed.</summary>
     public long Seed { get; init; }
 
@@ -138,6 +141,7 @@ public sealed record SaveGame
             SavedAt = SavedAt,
             Mode = Mode,
             Difficulty = Difficulty == Difficulty.Normal ? null : Difficulty,
+            FriendlyFire = FriendlyFire ? true : null,
             Seed = Seed,
             Time = Time > 0 ? Time : null,
             Mods = [.. Mods.Select(m => new ModData { Id = m.Id, Version = m.Version })],
@@ -305,6 +309,7 @@ public sealed record SaveGame
             SavedAt = data.SavedAt ?? DateTimeOffset.MinValue,
             Mode = data.Mode!.Value,
             Difficulty = data.Difficulty ?? Difficulty.Normal,
+            FriendlyFire = data.FriendlyFire ?? false,
             Seed = data.Seed!.Value,
             Time = data.Time ?? 0,
             Mods = [.. (data.Mods ?? []).Where(m => m?.Id is not null).Select(m => new ModStamp(m.Id!, m.Version ?? ""))],
@@ -332,6 +337,7 @@ public sealed record SaveGame
         public DateTimeOffset? SavedAt { get; init; }
         public GameMode? Mode { get; init; }
         public Difficulty? Difficulty { get; init; }
+        public bool? FriendlyFire { get; init; }
         public long? Seed { get; init; }
         public double? Time { get; init; }
         public List<ModData>? Mods { get; init; }

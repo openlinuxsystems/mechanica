@@ -32,7 +32,8 @@ internal sealed class SurvivalFixture
     public static readonly ActionCaller Me = new(2, ActionSource.Player);
     public static readonly ActionCaller You = new(3, ActionSource.Player);
 
-    public SurvivalFixture(SurvivalSettings? settings = null, GameMode mode = GameMode.Survival)
+    // Friendly fire is on here so the combat tests can hit one player with another; worlds start with it off.
+    public SurvivalFixture(SurvivalSettings? settings = null, GameMode mode = GameMode.Survival, bool friendlyFire = true)
     {
         Catalog = new PartCatalog()
             .Add(Seed, new PartDefinition { Id = "seed", Name = "Seed", Category = PartCategory.Consumable, StackSize = 20,
@@ -70,7 +71,7 @@ internal sealed class SurvivalFixture
             new InventorySettings { Reach = 5, PlayerSlots = 4, AllowGive = true }, World);
         Tools = new ToolActions(new BuildSettings(), World, Catalog);
         World.Tools = Tools;
-        Survival = new SurvivalActions(Catalog, Settings, Inventories, World) { Mode = mode };
+        Survival = new SurvivalActions(Catalog, Settings, Inventories, World) { Mode = mode, FriendlyFire = friendlyFire };
         Tools.Targets = Survival;
         Tools.Costs = Survival;
         Survival.DamageScale = Tools.DamageScale;

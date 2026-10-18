@@ -160,14 +160,15 @@ All `world.*` methods need the `admin` scope.
 
 | Method | Params | Result |
 |--------|--------|--------|
-| `world.info` | none | `name`, `seed`, `mode`, `difficulty`, `loaded_from` (the save file, or absent), `world_time`, `tick`, `time_scale`, `paused`, `clients` (other players joined), `changing` |
+| `world.info` | none | `name`, `seed`, `mode`, `difficulty`, `friendly_fire`, `loaded_from` (the save file, or absent), `world_time`, `tick`, `time_scale`, `paused`, `clients` (other players joined), `changing` |
 | `world.save` | `name` (optional; the world's own name) | `name`, `file`, `path` |
 | `world.list` | none | saved worlds, newest first: `name`, `file`, `saved_at`, `mode`, `play_seconds`, and `error` for a save that doesn't load |
 | `world.load` | `name` (the save's name or file name), `disconnect_clients` | the save's listing |
-| `world.new` | `name` (`World`), `seed` (random), `mode` (`survival`), `difficulty` (`normal`), `character`, `disconnect_clients` | what the world will be: `name`, `seed`, `mode`, `difficulty` |
-| `world.reset` | `disconnect_clients` | the same; the running world started again with the same name, seed, mode and difficulty and nothing built |
+| `world.new` | `name` (`World`), `seed` (random), `mode` (`survival`), `difficulty` (`normal`), `character`, `friendly_fire` (`false`), `disconnect_clients` | what the world will be: `name`, `seed`, `mode`, `difficulty`, `character`, `friendly_fire` |
+| `world.reset` | `disconnect_clients` | the same; the running world started again with the same name, seed, mode, difficulty and friendly fire and nothing built |
 | `world.time_scale` | `scale` (0.05 to 10; 1 is real time) | the status |
 | `world.pause` | `paused` | the status |
+| `world.friendly_fire` | `on` | the status; every player is told (also the admin action `SetFriendlyFire {on}`) |
 
 `world.load`, `world.new` and `world.reset` answer at once and the world changes after. Your connection,
 its token and its subscriptions carry over to the new world, on the same address. Subscribe to `world`
@@ -225,7 +226,7 @@ them. "The caller" is the player the call is made for; with no player, pass the 
 
 | Action | Arguments | Value |
 |--------|-----------|-------|
-| `GetWorld` | none | `seed` (and `seed_text`, exact for JavaScript), `mode`, `difficulty`, `time` (host clock, s), `tick`, `tick_rate`, `world_size`, `sea_level`, `spawn`, `players` `[{peer, name}]`, counts of `creations`, `drops`, `pois`, and `revealed_pois` |
+| `GetWorld` | none | `seed` (and `seed_text`, exact for JavaScript), `mode`, `difficulty`, `friendly_fire`, `time` (host clock, s), `tick`, `tick_rate`, `world_size`, `sea_level`, `spawn`, `players` `[{peer, name}]`, counts of `creations`, `drops`, `pois`, and `revealed_pois` |
 | `GetPlayers` | none | every player as below |
 | `GetPlayer` | optional `peer` (default the caller) | `peer`, `name`, `character`, `position` (feet), `eye`, `look` (unit vector), `yaw` and `pitch` (rad; yaw 0 looks along −z, turning left is positive), `velocity`, `on_floor`, `swimming`, `crouched`, `seat` `{creation, part}`, `held` (tool in hand: `hammer`, `lift_remote`, `sledgehammer`, …), `held_item` (scripted item), `lift` `{owner, position, level, creation}`, `health`, `max_health`, `dead` |
 | `Raycast` | optional `from` (default the caller's eyes), `direction` (default where the caller looks), `range` (m, default 100, at most 1000), `ignore_player` (default the caller when casting from their eyes) | `{hit: false}` or `hit`, `kind` (`player`, `part`, `object`, `bot`, `ground`), `point`, `distance`, and `player`, `creation` + `part` + `part_type`, `object` + `object_type`, or `bot` |

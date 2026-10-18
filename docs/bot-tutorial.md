@@ -73,8 +73,8 @@ An attack:
 | `hits_parts` | bool | true | Whether it can hurt crops and parts. |
 | `sound` | sound id | `<family>_attack` | Sound event it plays. |
 
-Damage goes through the same host primitives as weapons (`SurvivalActions`), so Creative and the PvP
-setting apply to bots too: in Creative nothing is hurt.
+Damage goes through the same host primitives as weapons (`SurvivalActions`), so Creative applies to bots
+too: in Creative nothing is hurt. Friendly fire doesn't stop bots; they hurt players either way.
 
 ## 3. The behaviour tree
 

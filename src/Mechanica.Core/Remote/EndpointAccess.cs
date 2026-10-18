@@ -61,11 +61,11 @@ public static class AgentPermissions
 {
     /// <summary>
     /// Actions only an Admin connection may call: debug spawning and wiping, driving bots, starting raids
-    /// and giving items. Everything else that changes state needs Play, and queries need Observe.
+    /// and giving items, and world rules (friendly fire). Everything else that changes state needs Play, and queries need Observe.
     /// </summary>
     public static readonly IReadOnlySet<string> AdminActions = new HashSet<string>(StringComparer.Ordinal)
     {
-        "SpawnPart", "ClearCreations", "SpawnBot", "DespawnBot", "MoveBot", "BotAttack", "StartRaid", "GiveItems",
+        "SpawnPart", "ClearCreations", "SpawnBot", "DespawnBot", "MoveBot", "BotAttack", "StartRaid", "GiveItems", "SetFriendlyFire",
     };
 
     /// <summary>The scope <paramref name="action"/> needs.</summary>

@@ -43,8 +43,8 @@ public partial class PauseMenu : CanvasLayer
     /// <summary>The help page for what the player is doing now (<c>quests.md</c>, ...).</summary>
     public Func<string> HelpTopic { get; init; } = () => "playing.md";
 
-    /// <summary>The world's game mode and difficulty, for Options to show, or null before they are known.</summary>
-    public Func<(Core.Survival.GameMode Mode, Core.Survival.Difficulty Difficulty)?> World { get; init; } = () => null;
+    /// <summary>The world's rules, for Options to show (and the host to change), or null before they are known.</summary>
+    public Func<WorldRules?> World { get; init; } = () => null;
 
     /// <summary>True while the menu is shown.</summary>
     public bool IsOpen => _root.Visible;
