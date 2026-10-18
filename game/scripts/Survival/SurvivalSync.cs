@@ -553,7 +553,7 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
             node = _dropNodes[drop.Id] = new DropPile { Name = $"Drop{drop.Id}" };
             AddChild(node);
         }
-        node.Show(drop, Catalog, Assets);
+        node.Show(drop, Catalog, Assets, Settings?.KnockoutBag);
     }
 
     /// <summary>Host → client: a pile of items is gone.</summary>

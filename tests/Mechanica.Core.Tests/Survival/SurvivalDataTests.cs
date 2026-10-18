@@ -14,6 +14,8 @@ public class SurvivalDataTests
         var settings = SurvivalSettings.FromJson(File.ReadAllText(Path.Combine(TestMods.RepoRoot, "game", "data", "survival.json")));
         Assert.Equal(100f, settings.MaxHealth);
         Assert.NotEmpty(settings.StartingItems);
+        Assert.True(File.Exists(Path.Combine(TestMods.RepoRoot, "mods", "vanilla", "meshes", "knockout_bag.glb")), settings.KnockoutBag);
+        Assert.Equal("vanilla:meshes/knockout_bag.glb", settings.KnockoutBag);
     }
 
     [Theory]
@@ -24,6 +26,8 @@ public class SurvivalDataTests
     [InlineData("""{ "fall": { "min_speed": -1 } }""", "fall.min_speed")]
     [InlineData("""{ "impact": { "min_speed": 0 } }""", "impact.min_speed")]
     [InlineData("""{ "stamina": 5 }""", "stamina")]
+    [InlineData("""{ "knockout_bag": "../bag.glb" }""", "knockout_bag")]
+    [InlineData("""{ "knockout_bag": "" }""", "knockout_bag")]
     public void BadSettingsAreRefused(string json, string named)
     {
         var e = Assert.Throws<FormatException>(() => SurvivalSettings.FromJson(json));
