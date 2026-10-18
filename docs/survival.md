@@ -36,8 +36,8 @@ them. AI agents read it from `GetWorld` and `world.info` and set it with `world.
 | E (dead) | Respawn, once the respawn delay is over. |
 
 - **Health** goes down from weapons, the Sledgehammer, splash, and falls faster than
-  `fall.min_speed`. It comes back by eating. At 0 you die: everything you carry falls in a pile where
-  you stood (tools you crafted, like the Connect Tool, stay with you), and you respawn at your bed, or at the world spawn if you have none (or it was broken).
+  `fall.min_speed`. It comes back by eating. At 0 you die: everything you carry falls where
+  you stood in the knockout bag, a yellow canvas drawstring bag (tools you crafted, like the Connect Tool, stay with you), and you respawn at your bed, or at the world spawn if you have none (or it was broken).
 - **Farming:** aim a Soil Bag at the ground (no steeper than 17°) to spill out a 3×3 soil mound (with Force build held,
   or aimed anywhere but the terrain, the bag itself is set down; picking a mound up gives the bag back). Plant a seed
   and water it. Soil looks dry, lightly watered, fully wet or drying, and empty soil dries out in about a game day. A crop grows only while its soil holds water,
@@ -89,7 +89,8 @@ their item's properties.
 ## Data
 
 - `game/data/survival.json`: health, respawn delay, reach, starting items, fall and impact
-  damage, piles, and the empty and full water buckets (`bucket_item`, `water_item`). Unknown keys are refused.
+  damage, piles, the knockout bag's model (`knockout_bag`, built by `tools/knockout_bag/build_knockout_bag.py`), and
+  the empty and full water buckets (`bucket_item`, `water_item`). Unknown keys are refused.
 - The water bucket has two items: the empty `water_bucket` (the one the Fabricator makes) and the full
   `water_bucket_full`. Filling one at water (`CollectWater`) or throwing its water (`watering.lua`, with
   `item.replace`) swaps one for the other in the same slot, so it stays in hand. How it moves in the hand

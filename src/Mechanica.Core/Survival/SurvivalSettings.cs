@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Mechanica.Core.Data;
 
 namespace Mechanica.Core.Survival;
 
@@ -89,6 +90,12 @@ public sealed record SurvivalSettings
     /// <summary>Whether a dead player's inventory falls where they died.</summary>
     public bool DropInventoryOnDeath { get; init; } = true;
 
+    /// <summary>
+    /// The model a knocked-out player's items lie in (<see cref="ItemDrop.KnockedOut"/>): a mod path
+    /// (<c>mod:path</c>, relative to the mod root).
+    /// </summary>
+    public string KnockoutBag { get; init; } = "vanilla:meshes/knockout_bag.glb";
+
     /// <summary>Most degrees a shot may point away from where the host sees the shooter looking (network lag).</summary>
     public float AimTolerance { get; init; } = 25f;
 
@@ -154,6 +161,8 @@ public sealed record SurvivalSettings
         Positive(DropLifetime, "drop_lifetime");
         if (MaxDrops < 1)
             throw new FormatException($"max_drops must be 1 or more (got {MaxDrops}).");
+        if (!AssetPath.TryParse(KnockoutBag, Identifiers.VanillaModId, AssetKind.Mesh, out _, out var bagError))
+            throw new FormatException($"knockout_bag: {bagError}");
         if (!(AimTolerance is > 0f and <= 180f))
             throw new FormatException($"aim_tolerance must be more than 0 and at most 180 degrees (got {AimTolerance}).");
         if (!Data.Identifiers.IsValid(WaterItem.Split(':')[^1]))
