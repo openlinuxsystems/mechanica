@@ -174,6 +174,12 @@ public sealed class CharacterAnimator
     /// <summary>The gesture playing, or null.</summary>
     public string? Gesture => _gesture;
 
+    /// <summary>How far into its clip <see cref="Gesture"/> is, in the clip's own seconds (it may play faster or slower).</summary>
+    public float GestureTime => _gesture is null ? 0f : _gestureTime * _lengths[_gesture] / GestureLength(_gesture);
+
+    /// <summary>How much <see cref="Gesture"/> shows over the hold pose, 0 to 1 (it fades in and out).</summary>
+    public float GestureWeight { get; private set; }
+
     /// <summary>
     /// Starts <paramref name="gesture"/> now, outside the replicated gesture count: for things every peer sees
     /// for itself, such as flinching when a player's health drops.
@@ -268,7 +274,8 @@ public sealed class CharacterAnimator
             var old = _prop;
             _prop = prop;
             _stowing = CharacterProp.None;
-            if (prop != CharacterProp.None)
+            // Filling or emptying the bucket changes the prop, but nothing was taken in hand.
+            if (prop != CharacterProp.None && !(IsBucket(prop) && IsBucket(old)))
                 _events.Add(CharacterEvent.Equip);
             // A prop with a draw or stow clip (the Refine Tool) plays it as a gesture; the new prop's draw comes first.
             if (Version(CharacterRig.DrawClip(prop)) is { } draw && _lengths.ContainsKey(draw))
@@ -410,6 +417,7 @@ public sealed class CharacterAnimator
         if (_gesture is not null)
             AddTo(_upper, _gesture, _gestureTime * _lengths[_gesture] / GestureLength(_gesture), gesture);
         UpperWeight = Math.Clamp(held * (1f - gesture) + gesture, 0f, 1f);
+        GestureWeight = gesture;
     }
 
     // Moves a cycle's phase on by distance: at a clip's own speed it plays at its own pace.
@@ -493,6 +501,8 @@ public sealed class CharacterAnimator
 
     // How long a gesture plays: its own length unless the settings give it another (a first-person version or a
     // variant lasts as long as the clip it stands in for).
+    private static bool IsBucket(CharacterProp prop) => prop is CharacterProp.WaterBucket or CharacterProp.WaterBucketFull;
+
     private float GestureLength(string clip)
     {
         var name = CharacterRig.GestureOf(clip.EndsWith(CharacterRig.FirstPersonSuffix, StringComparison.Ordinal) ? clip[..^CharacterRig.FirstPersonSuffix.Length] : clip);

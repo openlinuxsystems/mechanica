@@ -35,6 +35,8 @@ public sealed partial class ScriptRuntime
     private readonly SortedDictionary<(int Peer, string Item), Instance> _items = [];
     private readonly Dictionary<int, (string Item, int Slot)> _held = [];
     private readonly Dictionary<int, (int Peer, string Item, DynValue Data)> _flights = [];
+    // True while on_hit runs for a landed projectile (see Reaching).
+    private bool _landing;
     private readonly HashSet<int> _aiming = [];
     private IPartCatalog? _catalog;
     private SurvivalActions? _survival;
@@ -324,7 +326,15 @@ public sealed partial class ScriptRuntime
         if (landing.Hit is { } hit)
             table.Set("hit", HitTable(instance.File.Context, hit, null));
         table.Set("data", flight.Data);
-        CallItem(instance, Hooks.OnHit, ItemPhase.Acting, DynValue.NewTable(table));
+        _landing = true;
+        try
+        {
+            CallItem(instance, Hooks.OnHit, ItemPhase.Acting, DynValue.NewTable(table));
+        }
+        finally
+        {
+            _landing = false;
+        }
     }
 
     // ---- Libraries ----
@@ -358,6 +368,27 @@ public sealed partial class ScriptRuntime
             if (pockets[instance.Slot] is not { } stack || Identifiers.Qualify(stack.Item) != instance.PartType || stack.Count < count)
                 return DynValue.False;
             pockets.SetSlot(instance.Slot, stack.Count > count ? stack with { Count = stack.Count - count } : null);
+            return DynValue.True;
+        });
+        Fn(item, "replace", args =>
+        {
+            var instance = Acting("item.replace");
+            var id = ItemId(instance, args.AsType(0, "item.replace", DataType.String).String);
+            if (_catalog!.FindDefinition(id) is null)
+                throw new ScriptRuntimeException($"item.replace: unknown item '{id}'");
+            var pockets = Pockets(instance);
+            if (pockets[instance.Slot] is not { } stack || Identifiers.Qualify(stack.Item) != instance.PartType)
+                return DynValue.False;
+            // The last one turns into the new item where it is (a bucket stays in its hotbar slot); one of several makes room.
+            if (stack.Count == 1)
+            {
+                pockets.SetSlot(instance.Slot, new ItemStack(id, 1));
+                return DynValue.True;
+            }
+            if (pockets.SpaceFor(id) < 1)
+                return DynValue.False;
+            pockets.SetSlot(instance.Slot, stack with { Count = stack.Count - 1 });
+            pockets.Add(id, 1);
             return DynValue.True;
         });
         Fn(item, "counter", args =>
@@ -499,8 +530,11 @@ public sealed partial class ScriptRuntime
                 throw new ScriptRuntimeException($"combat.projectile: lifetime must be more than 0 and at most {_settings.MaxProjectileLifetime:0.#} s");
             if (_flights.Count >= _settings.MaxProjectiles)
                 return Refused(instance, $"there are already {_settings.MaxProjectiles} projectiles in flight");
+            var look = options?.Get("look") is { Type: DataType.String } k ? k.String : null;
+            if ((look is null && options?.Get("look") is { } bad && !bad.IsNil()) || (look is not null && !ProjectileView.Looks.Contains(look)))
+                throw new ScriptRuntimeException($"combat.projectile: look must be one of {string.Join(", ", ProjectileView.Looks)}");
             var data = options?.Get("data") ?? DynValue.Nil;
-            var view = _survival!.Launch(instance.Holder!.Value, from, velocity, gravity, lifetime);
+            var view = _survival!.Launch(instance.Holder!.Value, from, velocity, gravity, lifetime, look);
             _flights[view.Id] = (instance.Holder!.Value, instance.PartType, data);
             return DynValue.NewNumber(view.Id);
         });
@@ -525,12 +559,31 @@ public sealed partial class ScriptRuntime
         Fn(farm, "water", args =>
         {
             var (_, caller, _) = Combatant("farm.water", acting: true);
+            caller = Reaching(caller);
             var (creation, part) = SoilArgs(args, "farm.water");
             var seconds = LuaValues.Number(args[2], "farm.water", 3);
             if (!(seconds > 0f) || !float.IsFinite(seconds))
                 throw new ScriptRuntimeException("farm.water: seconds must be more than 0");
             return _survival!.CheckWater(caller, creation, part) is { } bad ? NilBecause(bad)
                 : SoilTable(script, _survival.WaterSoil(caller, creation, part, seconds));
+        });
+        Fn(farm, "near", args =>
+        {
+            Combatant("farm.near", acting: false);
+            var at = LuaValues.ToVector(args[0], "farm.near", 1);
+            var radius = LuaValues.Number(args[1], "farm.near", 2);
+            if (!(radius > 0f) || radius > _settings.MaxOverlapRadius)
+                throw new ScriptRuntimeException($"farm.near: radius must be more than 0 and at most {_settings.MaxOverlapRadius:0.#} m");
+            var list = new Table(script);
+            var index = 1;
+            foreach (var (creation, part) in _survival!.SoilNear(at, radius))
+            {
+                var entry = new Table(script);
+                entry.Set("creation", DynValue.NewNumber(creation));
+                entry.Set("part", DynValue.NewNumber(part));
+                list.Set(index++, DynValue.NewTable(entry));
+            }
+            return DynValue.NewTable(list);
         });
         globals.Set("farm", DynValue.NewTable(farm));
     }
@@ -558,6 +611,9 @@ public sealed partial class ScriptRuntime
 
     // Who acts for a combat or farm function that part scripts may call too: an item acts for its holder
     // (and its rays skip them), a part as the host's scripts (skipping no player; 0 is never a peer).
+    // Where a projectile lands the host decided, not the player: water from it reaches past the holder's reach.
+    private ActionCaller Reaching(ActionCaller caller) => _landing ? caller with { Source = ActionSource.Script } : caller;
+
     private (Instance Instance, ActionCaller Caller, int Ignore) Combatant(string function, bool acting)
     {
         if (_current is { IsItem: false } part)

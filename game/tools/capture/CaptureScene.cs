@@ -72,6 +72,11 @@ public partial class CaptureScene : Node
         Shot("refine", 40, () => { });
         Shot("refine_bite", 9, () => { });
         Shot("refine_stow", 7, () => Player.ActionProp = null);
+        Shot("bucket_empty", 40, () => { Player.HeldGuard = false; Hold(CharacterProp.WaterBucket); Look(new Vector3(-1.6f, 1.2f, -2.2f)); });
+        Shot("bucket_fill", 22, () => Player.Gesture(CharacterGesture.BucketFill));
+        Shot("bucket_full", 80, () => Hold(CharacterProp.WaterBucketFull));
+        Shot("bucket_throw_windup", 14, () => Player.Gesture(CharacterGesture.BucketThrow));
+        Shot("bucket_throw", 30, () => Player.Gesture(CharacterGesture.BucketThrow));
         Shot("look_up", 40, () => { Tool<Building.HammerTool>(); Input(pitch: 0.9f); Look(new Vector3(-2.6f, 1.2f, -1.6f)); });
         Shot("look_down", 40, () => Input(pitch: -0.9f));
         Shot("crouch", 40, () => Input(crawl: true));
@@ -86,6 +91,10 @@ public partial class CaptureScene : Node
         Shot("first_person_sledge_swing", 40, () => Player.Gesture(CharacterGesture.SledgeSwing));
         Shot("first_person_sledge_block", 30, () => Player.HeldGuard = true);
         Shot("first_person_weld", 30, () => { Player.HeldGuard = false; Tool<Building.WeldTool>(); });
+        Shot("first_person_bucket_empty", 30, () => { Player.HeldGuard = false; Hold(CharacterProp.WaterBucket); Input(); Player.MakeCameraCurrent(); });
+        Shot("first_person_bucket_fill", 22, () => Player.Gesture(CharacterGesture.BucketFill));
+        Shot("first_person_bucket_full", 80, () => Hold(CharacterProp.WaterBucketFull));
+        Shot("first_person_bucket_throw", 30, () => Player.Gesture(CharacterGesture.BucketThrow));
         Shot("first_person_paint", 30, () => Tool<Building.PaintTool>());
         Shot("first_person_lift", 30, () => Tool<Building.LiftTool>());
         Shot("first_person_connect", 30, () => Tool<Building.ConnectTool>());
@@ -313,7 +322,7 @@ public partial class CaptureScene : Node
 
     private Vector3 Ground(Vector3 at) => new(at.X, _main.Streamer.Generator.HeightAt(at.X, at.Z), at.Z);
 
-    private static readonly string[] IconItems = [.. Core.Items.HotbarTools.All, "vanilla:gas_engine", "vanilla:wheel", "vanilla:chest"];
+    private static readonly string[] IconItems = [.. Core.Items.HotbarTools.All, "vanilla:gas_engine", "vanilla:wheel", "vanilla:chest", "vanilla:water_bucket", "vanilla:water_bucket_full"];
 
     // Each picture is saved as it becomes ready; the last shot is the HUD, with the hotbar showing the tools.
     private void IconShots()
@@ -362,7 +371,18 @@ public partial class CaptureScene : Node
         _camera.LookAt(_liftAt + Vector3.Up * height);
     }
 
-    private void Tool<T>() where T : Building.HandTool => _main.Tools!.Use(_main.Tools.Tools.OfType<T>().First());
+    private void Tool<T>() where T : Building.HandTool
+    {
+        _main.Tools!.SetProcess(true);
+        _main.Tools.Use(_main.Tools.Tools.OfType<T>().First());
+    }
+
+    // Puts a prop in the player's hand without an item behind it: the tool belt, which shows its own tool, stops for it.
+    private void Hold(CharacterProp prop)
+    {
+        _main.Tools!.SetProcess(false);
+        Player.HeldProp = prop;
+    }
 
     // CAPTURE_ONLY=text keeps the shots whose names contain it (and the setup shots, named *_00_*).
     private void Shot(string name, int frames, Action setup)

@@ -108,6 +108,7 @@ public static class LuaApi
         new("item.slot", "item.slot()", "The inventory slot the item is used from.", "item"),
         new("item.count", "item.count()", "How many of the item that slot holds.", "item"),
         new("item.consume", "item.consume(count?)", "Uses up count (default 1) of the item from its slot; true, or false when there aren't enough.", "item"),
+        new("item.replace", "item.replace(id)", "Turns one of the item into another item, in the same slot when it was the last one (a bucket filled or emptied); true, or false when there is no room.", "item"),
         new("item.counter", "item.counter({value?, max?, ammo?, busy?})", "What the holder's hotbar slot and HUD counter show for the item: value (rounds loaded) out of max, the ammo item carried, and busy seconds (a reload).", "item"),
         new("item.sound", "item.sound(key)", "The sound id the item binds to key in its sounds (fire, reload), for sound.play; nil when unbound.", "item"),
 
@@ -128,11 +129,12 @@ public static class LuaApi
         new("combat.hitscan", "combat.hitscan(from, direction, range, damage, impulse?)", "A cast plus a hit along the ray; returns the hit with damage dealt, or nil.", "combat"),
         new("combat.splash", "combat.splash(at, radius, damage, impulse?)", "Damage falling off to 0 at radius m around at, for players, parts and world objects; returns a list of hits.", "combat"),
         new("combat.pellets", "combat.pellets(direction, count, spread)", "count directions: the first along direction, the rest evenly round a cone of spread degrees.", "combat"),
-        new("combat.projectile", "combat.projectile(from, velocity, options?)", "Launches a projectile ({gravity?, lifetime?, data?}); on_hit runs where it lands. Returns its id.", "combat"),
+        new("combat.projectile", "combat.projectile(from, velocity, options?)", "Launches a projectile ({gravity?, lifetime?, data?, look?}; look \"water\" draws thrown water); on_hit runs where it lands. Returns its id.", "combat"),
 
         new("farm.soil", "farm.soil(creation, part)", "A soil part in the holder's reach: {seed?, crop?, stage, ripe, water, capacity}, or nil and why.", "farm"),
         new("farm.plant", "farm.plant(creation, part, seed?)", "Plants seed (default: this item) in empty soil in reach; returns the soil, or nil and why. Takes no items.", "farm"),
         new("farm.water", "farm.water(creation, part, seconds)", "Adds seconds of water to soil in reach, up to its capacity; returns the soil, or nil and why. Takes no items.", "farm"),
+        new("farm.near", "farm.near(position, radius)", "Soil parts within radius m of position, nearest first: a list of {creation, part}.", "farm"),
 
         new("fire.near", "fire.near(position, radius)", "Fires burning within radius m of position, nearest first: a list of {id, position, strength, creation?, part?}.", "fire"),
         new("fire.douse", "fire.douse(position, radius, amount)", "Water: every fire within radius m loses amount strength (out at 0); returns the fires it reached, or nil and why.", "fire"),
