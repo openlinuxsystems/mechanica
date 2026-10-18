@@ -43,6 +43,7 @@ public static class InputActions
     public const string Upgrade = "upgrade";
     public const string Inventory = "inventory";
     public const string Logbook = "logbook";
+    public const string Map = "map";
     public const string Rotate = "rotate";
     public const string RotateBack = "rotate_back";
     public const string Tip = "tip";
@@ -116,6 +117,7 @@ public static class InputActions
             new(Spectate, "Watch players", camera, "V"),
             new(Inventory, "Inventory", menus, "I", "Tab"),
             new(Logbook, "Logbook", menus, "L"),
+            new(Map, "Map", menus, "M"),
             new(Handbook, "Handbook", menus, "H", "F1"),
             new(PagePrevious, "Handbook: previous page", menus, "Left", "Pageup"),
             new(PageNext, "Handbook: next page", menus, "Right", "Pagedown"),

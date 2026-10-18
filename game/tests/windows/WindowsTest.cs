@@ -9,7 +9,7 @@ namespace Mechanica.Game.Tests;
 
 /// <summary>
 /// Windows keep their own mouse input in a running world (UI spec §13). Wheel turns and clicks anywhere over
-/// the in-game menu, Options (every tab, scrolled past both ends), the save screen, AI Reports, the inventory, the Fabricator screen, the upgrade dialog, the Logbook, the Lift's
+/// the in-game menu, Options (every tab, scrolled past both ends), the save screen, AI Reports, the inventory, the Fabricator screen, the upgrade dialog, the Logbook, the full map, the Lift's
 /// blueprint menu, the Paint Tool's colour picker, a part's menu and a confirm dialog never reach the game behind them (nor over the hotbar while the inventory is open), nor do clicks on the screen around a window opened from
 /// the menu, where a wheel changes the hotbar and a click takes the
 /// mouse back and closes the menu. The windows are still open afterwards. Esc closes each of them, the window opened
@@ -255,6 +255,21 @@ public partial class WindowsTest : StagedTest
             log.Close();
             return Clean("the Logbook");
         });
+        Add("the full map keeps them", frame =>
+        {
+            var maps = _main.GetNode<Quests.MapHud>("MapHud");
+            if (frame == 0)
+            {
+                maps.Open();
+                return false;
+            }
+            // The map takes the wheel (zoom) and right clicks (pins) itself; none reach the game.
+            Scrub(maps.Window);
+            Check(maps.IsOpen, "the full map is still open");
+            maps.Window.CancelPin();
+            maps.Close();
+            return Clean("the full map");
+        });
         Add("the Lift's blueprint menu keeps them", frame =>
         {
             var menu = _main.Blueprints!;
@@ -298,6 +313,7 @@ public partial class WindowsTest : StagedTest
         EscCloses("the inventory", () => _main.GetNode<Items.InventoryScreen>("InventoryScreen").Show(null), () => _main.GetNode<Items.InventoryScreen>("InventoryScreen").IsOpen);
         EscCloses("the Fabricator screen", () => _main.GetNode<Items.InventoryScreen>("InventoryScreen").Show(Core.Items.InventoryRef.OfPart(_station.Creation, _station.Part)), () => _main.GetNode<Items.InventoryScreen>("InventoryScreen").IsOpen);
         EscCloses("the Logbook", () => _main.GetNode<Quests.QuestHud>("QuestHud").Open(), () => _main.GetNode<Quests.QuestHud>("QuestHud").IsOpen);
+        EscCloses("the full map", () => _main.GetNode<Quests.MapHud>("MapHud").Open(), () => _main.GetNode<Quests.MapHud>("MapHud").IsOpen);
         EscCloses("the blueprint menu", () => _main.Blueprints!.Open(), () => _main.Blueprints!.IsOpen);
         EscCloses("the colour picker", () => _main.Tools!.Paint.Picker.Open(0), () => _main.Tools!.Paint.Picker.IsOpen);
         EscCloses("a part's menu", () => _main.PartSettings!.Open(_station.Creation, _engine), () => _main.PartSettings!.IsOpen);

@@ -660,6 +660,11 @@ public partial class Main : Node3D
                 Markers = MapMarkers, MapSettings = LogbookSettings, World = () => Streamer.Generator,
             };
             AddChild(questLog);
+            var maps = new MapHud
+            {
+                Name = "MapHud", Quests = Quests, Players = PlayerSync, Markers = MapMarkers, Settings = LogbookSettings, World = () => Streamer.Generator,
+            };
+            AddChild(maps);
             AddChild(new Ui.TutorialHints
             {
                 Name = "TutorialHints",
@@ -678,7 +683,7 @@ public partial class Main : Node3D
                     : null,
             };
             AddChild(pause);
-            hudRoot.Covered = () => inventory.IsOpen || pause.IsOpen || questLog.IsOpen || Ui.ToolWindow.Topmost is not null || Characters.Window is not null;
+            hudRoot.Covered = () => inventory.IsOpen || pause.IsOpen || questLog.IsOpen || maps.IsOpen || Ui.ToolWindow.Topmost is not null || Characters.Window is not null;
             AddChild(PartSettings);
             SeatCamera = new SeatCamera { Logic = Logic, Players = PlayerSync, Turn = yaw => _input?.Turn(yaw) };
             AddChild(SeatCamera);
@@ -707,6 +712,7 @@ public partial class Main : Node3D
             };
             AddChild(compass);
             questLog.Compass = compass;
+            maps.Compass = compass;
         }
 
         if (_loadingScreen is not null)
