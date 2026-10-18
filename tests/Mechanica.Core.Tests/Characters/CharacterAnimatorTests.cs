@@ -15,12 +15,14 @@ public class CharacterAnimatorTests
         ["hold_tool"] = 2f, ["hold_heavy"] = 2f, ["hold_heavy_block"] = 2f, ["hold_gun"] = 2f, ["hold_item"] = 2f,
         ["hold_heavy_fp"] = 2f, ["hold_heavy_block_fp"] = 2f, ["sledge_swing_fp"] = 1f,
         ["sledge_swing_side"] = 1f, ["sledge_swing_back"] = 1f, ["sledge_swing_side_fp"] = 1f, ["sledge_swing_back_fp"] = 1f,
-        ["sledge_swing"] = 1f, ["tool_use"] = 0.3f, ["weld"] = 0.5f, ["paint_spray"] = 0.4f,
+        ["sledge_swing"] = 1f, ["tool_use"] = 0.3f, ["weld"] = 0.6f, ["paint_spray"] = 0.4f,
         ["fire_gun"] = 0.25f, ["eat"] = 1f, ["throw"] = 0.5f, ["plant"] = 0.8f, ["pour"] = 0.8f, ["interact"] = 0.4f, ["hurt"] = 0.3f,
         ["hold_bucket"] = 2f, ["hold_bucket_full"] = 2f, ["bucket_fill"] = 1.1f, ["bucket_throw"] = 0.9f, ["bucket_place"] = 0.8f, ["bucket_place_full"] = 0.8f,
         ["hold_refine"] = 0.75f, ["refine_draw"] = 0.4f, ["refine_stow"] = 0.35f,
         ["hold_refine_fp"] = 0.75f, ["refine_draw_fp"] = 0.4f, ["refine_stow_fp"] = 0.35f,
         ["hold_bag"] = 2f, ["bag_spill"] = 0.8f, ["bag_lift"] = 0.4f, ["bag_lower"] = 0.35f,
+        ["hold_weld"] = 2f, ["hold_weld_aim"] = 2f, ["weld_draw"] = 0.5f, ["weld_stow"] = 0.45f,
+        ["hold_weld_fp"] = 2f, ["hold_weld_aim_fp"] = 2f, ["weld_draw_fp"] = 0.5f, ["weld_stow_fp"] = 0.45f, ["weld_fp"] = 0.6f,
     };
 
     private static CharacterAnimator Make() => new(new CharacterSettings(), Lengths);
@@ -161,6 +163,7 @@ public class CharacterAnimatorTests
     [InlineData(CharacterProp.WaterBucketFull, "hold_bucket_full")]
     [InlineData(CharacterProp.RefineTool, "hold_refine")]
     [InlineData(CharacterProp.SoilBag, "hold_bag")]
+    [InlineData(CharacterProp.WeldTool, "hold_weld")]
     public void HoldingSomethingPosesTheArms(CharacterProp prop, string clip)
     {
         var animator = Make();
@@ -388,6 +391,23 @@ public class CharacterAnimatorTests
         Assert.Equal("hold_heavy", Assert.Single(animator.Upper).Clip);
         // Blocking is a Sledgehammer pose only.
         Assert.Equal("hold_tool", CharacterRig.HoldClip(CharacterProp.LiftRemote, guard: true));
+    }
+
+    [Theory]
+    [InlineData(false, "weld_draw", "hold_weld_aim", "weld")]
+    [InlineData(true, "weld_draw_fp", "hold_weld_aim_fp", "weld_fp")]
+    public void TheWeldToolIsDrawnRaisedWhileAPartIsSelectedAndPushedInToWeld(bool firstPerson, string draw, string aim, string weld)
+    {
+        var animator = new CharacterAnimator(new CharacterSettings(), Lengths, firstPerson);
+        var held = Standing() with { Prop = CharacterProp.WeldTool };
+        Run(animator, Standing() with { Prop = CharacterProp.LiftRemote }, 0.5f);
+        Run(animator, held, Dt);
+        Assert.Equal(draw, animator.Gesture);
+        Run(animator, held with { Guard = true }, 0.8f);
+        Assert.Contains(animator.Upper, c => c.Clip == aim && c.Weight > 0.99f);
+        animator.Update(held with { Guard = true, Gesture = CharacterGesture.Weld, GestureCount = 1 }, Dt);
+        Assert.Equal(weld, animator.Gesture);
+        Assert.Equal("weld_stow", CharacterRig.StowClip(CharacterProp.WeldTool));
     }
 
     [Fact]

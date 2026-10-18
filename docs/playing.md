@@ -99,8 +99,14 @@ switches it to the next mode and shows it for a moment; R with the Connect Tool 
 - **Weld Tool.** Click a part to select it (it gets a blue outline), then click a part of another Creation to
   move the first one there and weld them, or a touching part of the same Creation to weld the two bodies
   together. Or hold left click on the first part and let go on the second. A blue square shows where they will
-  join, a see-through copy shows where a moved Creation goes (Q and T turn it), and a blue seam glows on the
-  joined faces for a moment afterwards. Right click drops the selection.
+  join, a see-through copy shows where a moved Creation goes (Q and T turn it): green where the weld will take,
+  red where it would be refused (the parts do not touch, it would overlap or hit something, it is out of reach).
+  While a part is selected you hold the tool up. On a weld its clamping arms close round its tip, the tip spins,
+  blue sparks fly at the joint and a blue seam glows on the joined faces for a moment afterwards. Right click drops
+  the selection. What is built on the ground stays put: select the loose Creation first and weld it to a block
+  built on the ground to fix it in place (fewer moving bodies, less physics work). The drag works on a Lift too,
+  to weld touching parts on different bearings or to put back a piece that fell off. In Survival the Weld Tool is
+  crafted at a Fabricator (10 Metal Blocks and 2 Component Kits, 30 s) and you keep it when you die.
 - **Paint Tool.** Left click paints a part; hold and drag to paint every part you pass over (up to 256 at a
   time). Right click (or drag) takes the paint off. **Q** opens the colour picker round the cursor: move the
   mouse towards a colour and click, or press 1 to 0 for the first ten. Esc or Q again closes it.

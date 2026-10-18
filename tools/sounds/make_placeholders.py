@@ -553,8 +553,27 @@ ev("building", "lift_lower", lambda rng: lift_move(rng, up=False), **TOOL)
 ev("building", "connect_success", lambda rng: beeps([880, 1320]), **QUIET)
 ev("building", "connect_fail", lambda rng: beeps([440, 330], wave_fn=square, level=0.5), **QUIET)
 ev("building", "disconnect", lambda rng: beeps([990, 660], step=0.06), **QUIET)
-ev("building", "weld_start", lambda rng: edges(crackle(rng, 0.4, 90, 0.6)), pitch_variation=0.05, **TOOL)
-ev("building", "weld_complete", lambda rng: edges(peak(mix(0.7, (crackle(rng, 0.3, 60, 0.5), 0), (hiss(rng, 0.4, 2000, 8000, 0.01, 0.3, 0.3), 0.1), (tone(1760, 0.5) * decay(0.5, 0.15) * 0.4, 0.25)), 0.75)), **TOOL)
+def weld_whir(rng, dur, f0=140.0, f1=420.0, level=0.5):
+    """The Weld Tool's short mechanical whir: its tip spinning up (a gliding saw-ish motor tone with gear grit) and the
+    clamping arms closing, easing in and out."""
+    t = t_of(dur)
+    env = np.minimum(1.0, t / 0.05) * np.minimum(1.0, (dur - t) / 0.12)
+    motor = 0.6 * glide(f0, f1, dur) + 0.3 * glide(f0 * 2.01, f1 * 2.01, dur) + 0.15 * glide(f0 * 3.02, f1 * 3.02, dur)
+    grit = band(noise(rng, dur), 900, 3500) * (0.5 + 0.5 * np.sign(np.sin(2 * np.pi * np.cumsum(f0 * 3 * (f1 / f0) ** (t / dur)) / SR)))
+    return (motor + 0.25 * grit) * env * level
+
+
+def weld_snap(rng, level=0.8):
+    """The weld taking: a hard metallic snap with a short ring."""
+    return hit(rng, 0.35, 1200, 9000, 0.012, partials=((2350, 0.35), (3720, 0.2), (5100, 0.12)), ptau=0.06) * level
+
+
+ev("building", "weld_start", lambda rng: edges(peak(mix(0.45, (weld_whir(rng, 0.42), 0), (crackle(rng, 0.25, 80, 0.35), 0.12)), 0.7)),
+   pitch_variation=0.05, **TOOL)
+ev("building", "weld_complete", lambda rng: edges(peak(mix(0.8, (weld_whir(rng, 0.5, 260, 180, 0.35), 0),
+                                                            (weld_snap(rng), 0.04),
+                                                            (crackle(rng, 0.45, 70, 0.55), 0.05),
+                                                            (hiss(rng, 0.5, 2500, 9000, 0.005, 0.35, 0.35), 0.06)), 0.8)), **TOOL)
 ev("building", "paint_spray", lambda rng: hiss(rng, 0.45, 2500, 9000, 0.02, 0.12, 0.55), variants=2, pitch_variation=0.05, **QUIET)
 ev("building", "paint_erase", lambda rng: hiss(rng, 0.35, 600, 3000, 0.04, 0.12, 0.5), pitch_variation=0.05, **QUIET)
 # The Sledgehammer: a heavy whoosh that swells as the head comes over (the hit lands 0.6 s after the click,

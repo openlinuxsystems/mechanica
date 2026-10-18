@@ -125,6 +125,7 @@ public partial class ToolBelt : Node
         // The Sledgehammer's block is a Creative pose only.
         Sledge.CanBlock = () => Survival.Own?.Mode != Core.Survival.GameMode.Survival;
         Connector.Owned = () => Owns(HotbarTools.Connect);
+        Weld.Owned = () => Owns(HotbarTools.Weld);
         if (Hotbar is not null)
             Hotbar.OwnChanged += OnSlotsChanged;
         Inventory.ViewChanged += OnInventoryChanged;
