@@ -106,31 +106,25 @@ public partial class PaintToolLook : Node
     private static CharacterModel? Shown(PlayerController player) =>
         player.Arms is CharacterModel { Visible: true } arms && arms.PropNode is not null ? arms : player.Character as CharacterModel;
 
-    // Paint is a fine fast cone of droplets; taking paint off is a slower, wider puff of pale mist.
+    // Paint is a fine fast cone of droplets; taking paint off is a slower, wider puff of pale mist. The shape changes only
+    // when the mode does: setting a particle system's properties restarts what it has in the air.
     private static void Spray(Look look, bool on, Color colour)
     {
         var mist = look.Mist;
-        if (look.Erasing)
+        var tint = look.Erasing ? EraseMist : colour with { A = 0.9f };
+        if (look.MistErasing != look.Erasing)
         {
-            mist.Color = EraseMist;
-            mist.InitialVelocityMin = 0.6f;
-            mist.InitialVelocityMax = 1.2f;
-            mist.Spread = 28f;
-            mist.ScaleAmountMin = 1.6f;
-            mist.ScaleAmountMax = 2.6f;
-            mist.Amount = 24;
+            look.MistErasing = look.Erasing;
+            mist.InitialVelocityMin = look.Erasing ? 0.6f : 2.2f;
+            mist.InitialVelocityMax = look.Erasing ? 1.2f : 3.4f;
+            mist.Spread = look.Erasing ? 28f : 9f;
+            mist.ScaleAmountMin = look.Erasing ? 1.8f : 0.7f;
+            mist.ScaleAmountMax = look.Erasing ? 2.8f : 1.2f;
         }
-        else
-        {
-            mist.Color = colour with { A = 0.85f };
-            mist.InitialVelocityMin = 2.2f;
-            mist.InitialVelocityMax = 3.4f;
-            mist.Spread = 9f;
-            mist.ScaleAmountMin = 0.6f;
-            mist.ScaleAmountMax = 1.1f;
-            mist.Amount = 64;
-        }
-        mist.Emitting = on;
+        if (mist.Color != tint)
+            mist.Color = tint;
+        if (mist.Emitting != on)
+            mist.Emitting = on;
     }
 
     // Gives a prop's tint and paint materials of their own (so one player's colour is not everyone's) and a mist at the nozzles.
@@ -146,7 +140,7 @@ public partial class PaintToolLook : Node
             Name = "PaintMist",
             Position = Tip,
             Emitting = false,
-            Amount = 64,
+            Amount = 48,
             Lifetime = 0.45,
             LocalCoords = false,
             Direction = Axis,
@@ -155,14 +149,17 @@ public partial class PaintToolLook : Node
             DampingMax = 3f,
             EmissionShape = CpuParticles3D.EmissionShapeEnum.Sphere,
             EmissionSphereRadius = 0.02f,
-            Mesh = new QuadMesh
+            // Round droplets: a few-sided ball reads as a spray at any angle and needs no texture.
+            Mesh = new SphereMesh
             {
-                Size = new Vector2(0.03f, 0.03f),
+                Radius = 0.012f,
+                Height = 0.024f,
+                RadialSegments = 6,
+                Rings = 3,
                 Material = new StandardMaterial3D
                 {
                     ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
                     Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
-                    BillboardMode = BaseMaterial3D.BillboardModeEnum.Particles,
                     VertexColorUseAsAlbedo = true,
                 },
             },
@@ -194,6 +191,8 @@ public partial class PaintToolLook : Node
         public CpuParticles3D Mist { get; } = mist;
 
         public bool Erasing { get; set; }
+
+        public bool? MistErasing { get; set; }
 
         public float Twist { get; set; }
     }
