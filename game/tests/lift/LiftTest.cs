@@ -11,7 +11,8 @@ namespace Mechanica.Game.Tests;
 /// the model and play its deploy: the outriggers swing out until the feet stand on the ground, the column rises from its
 /// transport height to the resting 2 units, the lights flash and hold. Raising eases the column up level by level the same
 /// way on both peers, the deck and its collision follow the extend clip exactly (to 22 units at the top), and coming to
-/// rest at the top or bottom plays the end-stop clunk.
+/// rest at the top or bottom plays the end-stop clunk. On the host's own Lift (its requests answered before they return)
+/// a tap of an arrow key moves one level and holding it runs the column on smoothly, as the client sees it too.
 /// </summary>
 public partial class LiftTest : StagedTest
 {
@@ -30,6 +31,7 @@ public partial class LiftTest : StagedTest
     private int _heldStops;
     private bool _heldMoved;
     private float _slowest;
+    private float _clientSlowest;
     private int _corrections;
 
     protected override string Tag => "lift";
@@ -248,6 +250,86 @@ public partial class LiftTest : StagedTest
                 return true;
             });
         }
+        // The host plays too: its requests are answered before they return, and a held arrow key must still run on.
+        Add("the host puts its own Lift down", frame =>
+        {
+            var tool = _host.Main.Tools!.Lift;
+            if (frame == 0)
+            {
+                var me = _host.Main.LocalPlayer!.GlobalPosition;
+                var from = me + new Vector3(2.5f, 2, 0);
+                var hit = _host.Main.LocalPlayer.GetWorld3D().DirectSpaceState.IntersectRay(PhysicsRayQueryParameters3D.Create(from, from + Vector3.Down * 10));
+                var at = hit.Count > 0 ? hit["position"].AsVector3() : me + new Vector3(2.5f, 0, 0);
+                _results.Clear();
+                _host.Main.Actions.Request(ToolActions.PlaceLift, new PlaceLiftArgs(new Core.Data.Vec3(at.X, at.Y, at.Z)), _results.Add);
+                Check(_results.Count == 1 && _results[0].Ok, $"the host places its Lift ({string.Join(", ", _results)})");
+                tool.Active = true;
+            }
+            return HostLifts(out var host, out var client) && host.Deployed && client.Deployed;
+        });
+        Add("a tap of the arrow key on the host moves one level", frame =>
+        {
+            var tool = _host.Main.Tools!.Lift;
+            if (frame == 0)
+            {
+                Check(tool.PressRaise(1), "the host's arrow key raises its Lift");
+                tool.ReleaseRaise();
+                return false;
+            }
+            if (!HostLifts(out var host, out var client) || frame < 10 || host.Moving || client.Moving || client.State.Level != host.State.Level)
+                return false;
+            Check(host.State.Level == 1, $"a tap is one level ({host.State.Level})");
+            Check(Mathf.IsEqualApprox(client.ShownTop, Settings.TopAt(1), 1e-4f), $"and the client shows it there ({client.ShownTop:F3})");
+            return true;
+        });
+        Add("holding the arrow key on the host runs its Lift up smoothly, the same on the client", frame =>
+        {
+            var tool = _host.Main.Tools!.Lift;
+            if (!HostLifts(out var host, out var client))
+                return false;
+            if (frame == 0)
+            {
+                Check(tool.PressRaise(1) && tool.RaiseHeld, "the host's arrow key raises and holds");
+                _heldStops = 0;
+                _heldMoved = false;
+                _slowest = float.MaxValue;
+                _clientSlowest = float.MaxValue;
+                return false;
+            }
+            if (tool.RaiseHeld)
+            {
+                if (host.Moving)
+                    _heldMoved = true;
+                else if (_heldMoved)
+                    _heldStops++;
+                if (_slowest < float.MaxValue || Math.Abs(host.Speed) >= Settings.RaiseSpeed * 0.99f)
+                    _slowest = Math.Min(_slowest, Math.Abs(host.Speed));
+                if (_clientSlowest < float.MaxValue || Math.Abs(client.Speed) >= Settings.RaiseSpeed * 0.99f)
+                    _clientSlowest = Math.Min(_clientSlowest, Math.Abs(client.Speed));
+                if (frame >= 600)
+                    Check(false, $"held, the host's Lift keeps going (stuck at level {host.State.Level})");
+                if (host.State.Level < 8)
+                    return false;
+                tool.ReleaseRaise();
+                _heldTo = host.State.Level;
+                return false;
+            }
+            if (host.Moving || client.Moving || client.State.Level != host.State.Level)
+                return false;
+            Check(_heldStops == 0, $"held, the column runs on without stopping at each level ({_heldStops} stops)");
+            Check(_slowest >= Settings.RaiseSpeed * 0.99f && _slowest < float.MaxValue, $"at an even speed ({_slowest:F3} m/s at slowest)");
+            Check(_clientSlowest >= Settings.RaiseSpeed * 0.99f && _clientSlowest < float.MaxValue, $"and the client sees it go just as smoothly ({_clientSlowest:F3} m/s at slowest)");
+            Check(Math.Abs(_heldTo - 8) <= 1 && host.State.Level == _heldTo, $"let go, it stops at the next level ({_heldTo}, {host.State.Level})");
+            Check(Mathf.IsEqualApprox(client.ShownTop, Settings.TopAt(host.State.Level), 1e-4f), $"where the client shows it too ({client.ShownTop:F3})");
+            return true;
+        });
+    }
+
+    private bool HostLifts(out LiftBody host, out LiftBody client)
+    {
+        _host.Main.Build.Lifts.TryGetValue(_host.Peer, out host!);
+        _client.Main.Build.Lifts.TryGetValue(_host.Peer, out client!);
+        return host is not null && client is not null;
     }
 
     private void Request<TArgs>(string action, TArgs args) => _client.Main.Actions.Request(action, args, _results.Add);
