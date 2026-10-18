@@ -1,7 +1,8 @@
 """Build the harvestable trees, their log segments and the Wood Rod (Tree Harvesting spec).
 
-What it builds (procedurally, from scratch: no .blend inputs, no downloads), stylised low-poly with flat-shaded facets
-and plain colour materials, matching the spec's reference images:
+What it builds (procedurally, from scratch: no .blend inputs, no downloads), stylised low-poly with plain colour
+materials, matching the spec's reference images. Rounded surfaces (trunks, canopies, logs) are smooth-shaded and only
+hard edges (log ends, needle blades, pine plates) stay crisp (``SMOOTH_ANGLE``):
 
 * ``mods/vanilla/meshes/world/birch_tree.glb`` - small Birch: thin white trunk with black bark marks, thin brown
   branches, drooping clusters of yellow-orange faceted blobs. About 8 m tall.
@@ -38,11 +39,14 @@ import sys
 from pathlib import Path
 
 import bpy  # noqa: I001  (bpy first)
+import bmesh
 import numpy as np
 
 sys.dont_write_bytecode = True
 
 REPO = Path(__file__).resolve().parents[2]
+# Neighbouring faces meeting at less than this are shaded as one smooth surface; sharper edges stay hard.
+SMOOTH_ANGLE = math.radians(62)
 WORLD = REPO / "mods" / "vanilla" / "meshes" / "world"
 ITEMS = REPO / "mods" / "vanilla" / "meshes" / "items"
 
@@ -65,7 +69,6 @@ PALETTE = {
     "birch_leaf_a": ("#f4c414", 0.75),
     "birch_leaf_b": ("#eba413", 0.75),
     "birch_leaf_c": ("#f08c12", 0.75),
-    "birch_leaf_d": ("#7f9b26", 0.8),
     "bark": ("#7b4f2c", 0.9),
     "bark_dark": ("#64401f", 0.9),
     "leafy_a": ("#8fd033", 0.75),
@@ -207,7 +210,7 @@ def icosphere(subdiv):
 
 def blob(m, mats, centre, radii, rng, *, subdiv=1, jitter=0.12, droop=0.0):
     """A faceted lump: an icosphere scaled to `radii`, its vertices pushed in and out; the lower half pulled down by
-    `droop` (a hanging birch cluster). Faces take colours from `mats` by height and a little chance."""
+    `droop` (a hanging birch cluster). It takes one colour from `mats`."""
     verts, faces = icosphere(subdiv)
     centre = np.asarray(centre, float)
     out = []
@@ -216,12 +219,10 @@ def blob(m, mats, centre, radii, rng, *, subdiv=1, jitter=0.12, droop=0.0):
         if droop and p[2] < 0:
             q[2] *= 1 + droop * (-p[2])
         out.append(centre + q)
+    # One colour per lump: the light shades it, so a hard colour seam across it would only look jagged.
+    mat = mats[int(rng.integers(0, len(mats)))]
     for f in faces:
-        z = sum(verts[i][2] for i in f) / 3
-        shade = 0 if z > 0.35 else (1 if z > -0.35 else 2)
-        if rng.random() < 0.18:
-            shade = min(len(mats) - 1, shade + 1)
-        m.add([out[i] for i in f], [(0, 1, 2)], mats[min(shade, len(mats) - 1)])
+        m.add([out[i] for i in f], [(0, 1, 2)], mat)
 
 
 def blade(m, mat, root, direction, length, width, droop, rng, ridge=0.12):
@@ -271,19 +272,18 @@ def mark(m, mat, centre_axis_z, radius, angle, width, height):
 def birch(lod=False):
     rng = np.random.default_rng(11)
     m = Mesh()
-    bark, shade_m, dark, twig = material("birch_bark"), material("birch_shade"), material("birch_mark"), material("twig")
-    leaves = [material("birch_leaf_a"), material("birch_leaf_b"), material("birch_leaf_c"), material("birch_leaf_d")]
+    bark, dark, twig = material("birch_bark"), material("birch_mark"), material("twig")
+    leaves = [material("birch_leaf_a"), material("birch_leaf_b"), material("birch_leaf_c")]
     height = 7.2
-    sides = 5 if lod else 7
+    sides = 7 if lod else 10
     radii = [0.32, 0.2, 0.17, 0.15, 0.13, 0.11, 0.09, 0.07] if not lod else [0.3, 0.16, 0.12, 0.07]
-    tube(m, bark, (0, 0, -0.4), (0, 0, 1), height + 0.4, radii, sides, rng, jitter=0.0 if lod else 0.06,
-         side_mats=None if lod else [bark, bark, shade_m])
+    tube(m, bark, (0, 0, -0.4), (0, 0, 1), height + 0.4, radii, sides, rng, jitter=0.0 if lod else 0.03)
     if lod:
         for k in range(7):
             a = 2 * math.pi * k / 7
             r = 1.4 if k % 2 else 1.0
-            blob(m, leaves[:3], (r * math.cos(a), r * math.sin(a), 5.0 - 0.3 * (k % 2)), (0.95, 0.95, 1.45), rng, subdiv=0)
-        blob(m, leaves[:3], (0, 0, 6.6), (1.2, 1.2, 1.0), rng, subdiv=0)
+            blob(m, leaves, (r * math.cos(a), r * math.sin(a), 5.0 - 0.3 * (k % 2)), (0.95, 0.95, 1.45), rng, subdiv=1, jitter=0.05)
+        blob(m, leaves, (0, 0, 6.6), (1.2, 1.2, 1.0), rng, subdiv=1, jitter=0.05)
         return m
     # Black marks up the trunk.
     def trunk_radius(z):
@@ -303,7 +303,7 @@ def birch(lod=False):
         d = np.array([math.cos(a), math.sin(a), 0.55 + 0.06 * k])
         length = reach * math.sqrt(1 + d[2] ** 2)
         start = np.array([0, 0, z0])
-        tube(m, twig, start, d, length, [0.05, 0.02], 5, rng, cap_top=True)
+        tube(m, twig, start, d, length, [0.05, 0.02], 6, rng, cap_top=True)
         tips.append(start + d / np.linalg.norm(d) * length)
     for tip in tips:
         # A hanging chain of blobs under each branch tip, longer lower down.
@@ -312,14 +312,14 @@ def birch(lod=False):
             out = 1.0 + 0.06 * i
             c = np.array([tip[0] * out, tip[1] * out, tip[2] - 0.45 * i + 0.25])
             size = 0.5 - 0.05 * i
-            blob(m, leaves, c, (size, size, size * 1.15), rng, droop=0.35)
+            blob(m, leaves, c, (size, size, size * 1.15), rng, jitter=0.07, droop=0.35)
     # Crown and fill.
     for _ in range(18):
         a = rng.uniform(0, 2 * math.pi)
         r = rng.uniform(0.0, 1.3)
         z = rng.uniform(5.4, 7.8)
         s = rng.uniform(0.42, 0.6)
-        blob(m, leaves, (r * math.cos(a), r * math.sin(a), z), (s, s, s * 1.1), rng, droop=0.25)
+        blob(m, leaves, (r * math.cos(a), r * math.sin(a), z), (s, s, s * 1.1), rng, jitter=0.07, droop=0.25)
     return m
 
 
@@ -328,18 +328,18 @@ def roots(m, mat, rng, count, radius, height, spread):
         a = 2 * math.pi * k / count + rng.uniform(-0.2, 0.2)
         d = np.array([math.cos(a) * spread, math.sin(a) * spread, -1.0])
         start = np.array([0, 0, height])
-        tube(m, mat, start, d, math.sqrt(spread ** 2 + 1) * height * 1.05, [radius, radius * 0.75, radius * 0.25], 5, rng,
-             jitter=0.08, cap_top=True)
+        tube(m, mat, start, d, math.sqrt(spread ** 2 + 1) * height * 1.05, [radius, radius * 0.75, radius * 0.25], 7, rng,
+             jitter=0.04, cap_top=True)
 
 
 def leafy(lod=False):
     rng = np.random.default_rng(23)
     m = Mesh()
-    bark, bark2 = material("bark"), material("bark_dark")
+    bark = material("bark")
     greens = [material("leafy_a"), material("leafy_b"), material("leafy_c")]
-    sides = 5 if lod else 8
+    sides = 7 if lod else 11
     tube(m, bark, (0, 0, -0.4), (0, 0, 1), 4.0, [0.5, 0.4, 0.34, 0.3, 0.27] if not lod else [0.45, 0.3, 0.27], sides, rng,
-         jitter=0.0 if lod else 0.07, twist=0.12, side_mats=None if lod else [bark, bark2])
+         jitter=0.0 if lod else 0.03)
     if not lod:
         roots(m, bark, rng, 5, 0.32, 0.8, 1.1)
     # Forked branches up into the canopy.
@@ -350,10 +350,10 @@ def leafy(lod=False):
         start = np.array([0, 0, 3.2 + rng.uniform(-0.25, 0.3)])
         length = 2.4 + rng.uniform(-0.3, 0.3)
         if not lod:
-            tube(m, bark, start, d, length, [0.2, 0.13, 0.08], 5, rng, jitter=0.05)
+            tube(m, bark, start, d, length, [0.2, 0.13, 0.08], 7, rng, jitter=0.03)
         ends.append(start + d / np.linalg.norm(d) * length)
     if not lod:
-        tube(m, bark, (0, 0, 3.4), (0.05, 0.0, 1), 2.8, [0.24, 0.14, 0.08], 6, rng, jitter=0.05)
+        tube(m, bark, (0, 0, 3.4), (0.05, 0.0, 1), 2.8, [0.24, 0.14, 0.08], 7, rng, jitter=0.03)
     # Canopy: big faceted blobs over a dome.
     centres = [np.array([0, 0, 7.4])]
     centres += [e + np.array([0, 0, 0.6]) for e in ends]
@@ -365,7 +365,7 @@ def leafy(lod=False):
         centres.append(np.array([1.3 * math.cos(a), 1.3 * math.sin(a), 7.0]))
     for c in centres:
         s = rng.uniform(1.05, 1.35)
-        blob(m, greens, c, (s, s, s * 0.85), rng, subdiv=0 if lod else 2, jitter=0.06 if not lod else 0.0)
+        blob(m, greens, c, (s, s, s * 0.85), rng, subdiv=1 if lod else 2, jitter=0.05 if not lod else 0.0)
     return m
 
 
@@ -375,12 +375,12 @@ def spruce(lod=False):
     bark = material("spruce_bark")
     greens = [material("spruce_a"), material("spruce_b"), material("spruce_c")]
     height = 11.0
-    tube(m, bark, (0, 0, -0.4), (0, 0, 1), height + 0.2, [0.3, 0.22, 0.17, 0.12, 0.08, 0.05], 5 if lod else 7, rng,
-         jitter=0.0 if lod else 0.05)
+    tube(m, bark, (0, 0, -0.4), (0, 0, 1), height + 0.2, [0.3, 0.22, 0.17, 0.12, 0.08, 0.05], 7 if lod else 10, rng,
+         jitter=0.0 if lod else 0.03)
     if lod:
         # Stacked cones.
         for i, (z, r) in enumerate([(1.4, 2.6), (3.6, 2.1), (5.8, 1.6), (7.8, 1.1), (9.6, 0.6)]):
-            tube(m, greens[i % 3], (0, 0, z), (0, 0, 1), 2.6, [r, 0.05], 6, rng, cap_bottom=True)
+            tube(m, greens[i % 3], (0, 0, z), (0, 0, 1), 2.6, [r, 0.05], 9, rng, cap_bottom=True)
         return m
     tiers = 13
     for t in range(tiers):
@@ -402,11 +402,11 @@ def pine(lod=False):
     m = Mesh()
     bark = material("pine_bark")
     greens = [material("pine_a"), material("pine_b"), material("pine_c")]
-    tube(m, bark, (0, 0, -0.5), (0, 0, 1), 12.0, [0.72, 0.55, 0.47, 0.4, 0.3, 0.2, 0.1], 6 if lod else 9, rng,
-         jitter=0.0 if lod else 0.08, twist=0.1)
+    tube(m, bark, (0, 0, -0.5), (0, 0, 1), 12.0, [0.72, 0.55, 0.47, 0.4, 0.3, 0.2, 0.1], 8 if lod else 12, rng,
+         jitter=0.0 if lod else 0.03)
     if lod:
         for i, (z, r) in enumerate([(3.6, 3.4), (5.6, 2.8), (7.6, 2.1), (9.4, 1.5), (11.0, 0.9)]):
-            tube(m, greens[i % 3], (0, 0, z), (0, 0, 1), 2.4, [r, 0.08], 7, rng, cap_bottom=True)
+            tube(m, greens[i % 3], (0, 0, z), (0, 0, 1), 2.4, [r, 0.08], 10, rng, cap_bottom=True)
         return m
     roots(m, bark, rng, 7, 0.38, 1.1, 1.3)
     tiers = 8
@@ -429,12 +429,12 @@ def pine(lod=False):
 def log(radius, length, bark_mats, seed, marks=False):
     rng = np.random.default_rng(seed)
     m = Mesh()
-    sides = 8
+    sides = 12
     rings = 4
-    radii = [radius * (1 + rng.uniform(-0.05, 0.05)) for _ in range(rings)]
+    radii = [radius * (1 + rng.uniform(-0.03, 0.03)) for _ in range(rings)]
     end, ring = material("end_grain"), material("end_ring")
-    tube(m, bark_mats[0], (0, -length / 2, 0), (0, 1, 0), length, radii, sides, rng, jitter=0.05,
-         side_mats=bark_mats, cap_top=False, cap_bottom=False)
+    tube(m, bark_mats[0], (0, -length / 2, 0), (0, 1, 0), length, radii, sides, rng, jitter=0.02,
+         cap_top=False, cap_bottom=False)
     # End grain: an inner ring and a fan of facets, slightly hollowed, at each end.
     axis, u, v = frame((0, 1, 0))
     for sign, r_end in ((-1, radii[0]), (1, radii[-1])):
@@ -466,9 +466,9 @@ def log(radius, length, bark_mats, seed, marks=False):
 def wood_rod():
     rng = np.random.default_rng(71)
     m = Mesh()
-    wood, dark, end = material("rod_wood"), material("rod_dark"), material("end_grain")
-    tube(m, wood, (0, -0.49, 0), (0, 1, 0), 0.98, [0.13, 0.135, 0.128, 0.132], 6, rng, jitter=0.06, twist=0.04,
-         side_mats=[wood, dark, wood], cap_top=True, cap_bottom=True, top_mat=end, bottom_mat=end)
+    wood, end = material("rod_wood"), material("end_grain")
+    tube(m, wood, (0, -0.49, 0), (0, 1, 0), 0.98, [0.13, 0.135, 0.128, 0.132], 10, rng, jitter=0.03,
+         cap_top=True, cap_bottom=True, top_mat=end, bottom_mat=end)
     return m
 
 
@@ -492,7 +492,14 @@ def to_object(name, m):
     for mat in mats:
         me.materials.append(mat)
     me.polygons.foreach_set("material_index", [mats.index(mat) for mat in m.mats])
-    me.shade_flat()
+    # Faces are added with their own corners: weld shared corners so rounded surfaces can shade smoothly.
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-5)
+    bm.to_mesh(me)
+    bm.free()
+    me.shade_smooth()
+    me.set_sharp_from_angle(angle=SMOOTH_ANGLE)
     me.update()
     ob = bpy.data.objects.new(name, me)
     bpy.context.scene.collection.objects.link(ob)
