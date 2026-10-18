@@ -462,6 +462,8 @@ public partial class OptionsScreen : ToolWindow
         Toggle(page, "Show the tool bar and key hints", _draft.Interface.ShowHotbar, v => Live(_draft with { Interface = _draft.Interface with { ShowHotbar = v } }));
         Toggle(page, "Show compass", _draft.Interface.ShowCompass, v => Live(_draft with { Interface = _draft.Interface with { ShowCompass = v } }),
             "The compass bar at the top of the screen, with quest goals and places you've found.");
+        Toggle(page, "Show minimap", _draft.Interface.ShowMinimap, v => Live(_draft with { Interface = _draft.Interface with { ShowMinimap = v } }),
+            "The small map in the top right corner, with your mission goals and your own pins. M opens the full map either way.");
         Toggle(page, "Show player names", _draft.Interface.ShowPlayerNames, v => Live(_draft with { Interface = _draft.Interface with { ShowPlayerNames = v } }),
             "Other players' names over their heads.");
         var modes = Enum.GetValues<ColorBlindMode>();

@@ -140,6 +140,10 @@ public partial class QuestHud : CanvasLayer, IHudLayer
         {
             NextLine();
         }
+        // Under the minimap while it shows.
+        var top = MapHud.MinimapBottom > 0 ? MapHud.MinimapBottom + 8 : (int)HudRoot.Margin(GetViewport()).X;
+        if (!Mathf.IsEqualApprox(_log.Position.Y, top))
+            _log.Position = new Vector2(_log.Position.X, top);
         // Distances to revealed POIs change as the player moves.
         if (Engine.GetProcessFrames() % 30 == 0)
             Refresh();
