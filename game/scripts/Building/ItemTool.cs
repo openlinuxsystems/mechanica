@@ -35,6 +35,8 @@ public partial class ItemTool : HandTool
     // The scripted item the host was last told is in hand: (item, slot), or null for none.
     private (string Item, int Slot)? _equipped;
     private bool _aiming;
+    // When a bucket gesture under way lets the next click start (ms).
+    private ulong _busyUntil;
 
     /// <summary>Inventories, for what the player carries. Set before adding to the tree.</summary>
     public InventorySync Inventory { get; init; } = null!;
@@ -52,8 +54,7 @@ public partial class ItemTool : HandTool
     public override CharacterProp Prop => PoseInHand?.Prop ?? CharacterProp.None;
 
     /// <inheritdoc/>
-    protected override CharacterGesture GestureFor(InputEvent @event) =>
-        Pressed(@event, InputActions.Primary) ? PoseInHand?.Gesture ?? CharacterGesture.None : CharacterGesture.None;
+    protected override CharacterGesture GestureFor(InputEvent @event) => CharacterGesture.None; // Click plays its own
 
     // How the item in hand looks, or null with nothing usable in hand.
     private ItemPose? PoseInHand
@@ -99,10 +100,9 @@ public partial class ItemTool : HandTool
         var reach = Survival.Settings!.Reach;
         var hit = Cast(Player, reach);
         var aimed = PartHit(hit);
-        var water = Identifiers.Qualify(Survival.Settings.WaterItem);
-        if ((item is null || hand!.Item == water && aimed is null) && WaterAimed(hit, reach) is { } sea)
+        if (hand is not null && hand.Item == EmptyBucket && WaterAimed(hit, reach) is { } sea)
         {
-            Send(SurvivalActions.CollectWater, new CollectWaterArgs(new Vec3(sea.X, sea.Y, sea.Z)), done);
+            Send(SurvivalActions.CollectWater, new CollectWaterArgs(new Vec3(sea.X, sea.Y, sea.Z), hand.Slot), done);
             return true;
         }
         if (item is null || !IsScripted(item))
@@ -205,12 +205,7 @@ public partial class ItemTool : HandTool
     protected override bool HandleInput(InputEvent @event)
     {
         if (Pressed(@event, InputActions.Primary))
-        {
-            if (Input.IsActionPressed(InputActions.ForceBuild))
-                PlaceOne();
-            else
-                Use();
-        }
+            Click(Input.IsActionPressed(InputActions.ForceBuild));
         else if (Pressed(@event, InputActions.Drop))
             DropOne();
         else if (Pressed(@event, InputActions.Reload))
@@ -222,6 +217,28 @@ public partial class ItemTool : HandTool
         else
             return false;
         return true;
+    }
+
+    /// <summary>
+    /// A left click: uses the item in hand, or with <paramref name="place"/> (Force Build held) puts one down, and plays
+    /// the arm movement that goes with it. A water bucket's fill, throw or put-down happens at the moment in its clip
+    /// where it does (<see cref="BucketSettings.ReleaseSeconds"/>), and no other click starts until the clip is over.
+    /// </summary>
+    public void Click(bool place)
+    {
+        if (Time.GetTicksMsec() < _busyUntil)
+            return; // the bucket is still swinging from the last one
+        if (BucketGesture(place) is var bucket and not CharacterGesture.None)
+        {
+            Player.Gesture(bucket);
+            AfterRelease(bucket, place ? () => PlaceOne() : () => Use());
+            return;
+        }
+        Player.Gesture(PoseInHand?.Gesture ?? CharacterGesture.None);
+        if (place)
+            PlaceOne();
+        else
+            Use();
     }
 
     /// <summary>Lets go of right click: stops aiming, and fires first when the item fires on release.</summary>
@@ -251,6 +268,48 @@ public partial class ItemTool : HandTool
             return;
         _equipped = want;
         Actions.Request(ScriptRuntime.EquipItem, new EquipItemArgs(want?.Slot), _ => { });
+    }
+
+    // The empty and the full water bucket (qualified ids).
+    private string EmptyBucket => Identifiers.Qualify(Survival.Settings!.BucketItem);
+
+    private string FullBucket => Identifiers.Qualify(Survival.Settings!.WaterItem);
+
+    // The bucket gesture a click plays: filling an empty bucket aimed at water, throwing a full one, or setting either
+    // down (Force Build); None for anything else.
+    private CharacterGesture BucketGesture(bool place)
+    {
+        if (InHand is not { } hand || Characters is null)
+            return CharacterGesture.None;
+        if (hand.Item == FullBucket)
+            return place ? CharacterGesture.BucketPlaceFull : CharacterGesture.BucketThrow;
+        if (hand.Item != EmptyBucket)
+            return CharacterGesture.None;
+        if (place)
+            return CharacterGesture.BucketPlace;
+        var reach = Survival.Settings!.Reach;
+        return WaterAimed(Cast(Player, reach), reach) is null ? CharacterGesture.None : CharacterGesture.BucketFill;
+    }
+
+    // Does what a bucket gesture does at the moment in the clip it happens (release_seconds), if the same bucket is
+    // still in hand then; no other click starts until the clip is over.
+    private void AfterRelease(CharacterGesture gesture, Action act)
+    {
+        var clip = CharacterRig.GestureClip(gesture)!;
+        var bucket = Characters!.Bucket;
+        _busyUntil = Time.GetTicksMsec() + (ulong)(BucketRig.Length(bucket, clip) * 1000f);
+        var item = InHand?.Item;
+        var release = bucket.ReleaseSeconds.GetValueOrDefault(clip);
+        if (release <= 0f)
+        {
+            act();
+            return;
+        }
+        GetTree().CreateTimer(release).Timeout += () =>
+        {
+            if (IsInsideTree() && Active && InHand?.Item == item)
+                act();
+        };
     }
 
     // A held item whose behaviour is its Lua script (a placeable part's script runs once it is placed).

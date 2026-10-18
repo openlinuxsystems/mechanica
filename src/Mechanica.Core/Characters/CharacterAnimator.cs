@@ -108,6 +108,7 @@ public sealed class CharacterAnimator
     private bool _wasOnFloor = true;
     private bool _wasSwimming;
     private CharacterProp _prop;
+    private CharacterProp _stowing;
     private byte _gestureCount;
     private string? _gesture;
     private float _gestureTime;
@@ -157,6 +158,13 @@ public sealed class CharacterAnimator
     /// <summary>Whether the prop in hand is drawn (not while swimming or seated).</summary>
     public bool ShowProp { get; private set; }
 
+    /// <summary>
+    /// The prop to draw: the one in hand, or one still being put away (<see cref="CharacterRig.StowClip"/>) until its
+    /// clip ends.
+    /// </summary>
+    public CharacterProp Prop =>
+        _stowing != CharacterProp.None && _gesture is { } gesture && gesture == Version(CharacterRig.StowClip(_stowing)) ? _stowing : _prop;
+
     /// <summary>How far the body has faded into <paramref name="mode"/>, 0 to 1.</summary>
     public float Weight(CharacterMode mode) => _modeWeights[(int)mode];
 
@@ -165,6 +173,12 @@ public sealed class CharacterAnimator
 
     /// <summary>The gesture playing, or null.</summary>
     public string? Gesture => _gesture;
+
+    /// <summary>How far into its clip <see cref="Gesture"/> is, in the clip's own seconds (it may play faster or slower).</summary>
+    public float GestureTime => _gesture is null ? 0f : _gestureTime * _lengths[_gesture] / GestureLength(_gesture);
+
+    /// <summary>How much <see cref="Gesture"/> shows over the hold pose, 0 to 1 (it fades in and out).</summary>
+    public float GestureWeight { get; private set; }
 
     /// <summary>
     /// Starts <paramref name="gesture"/> now, outside the replicated gesture count: for things every peer sees
@@ -220,7 +234,7 @@ public sealed class CharacterAnimator
         HeadPitch = float.IsFinite(pose.Pitch) ? pose.Pitch * _settings.HeadPitchShare : 0f;
         BuildBody(pose, horizontal, delta);
         BuildUpper(pose, delta);
-        ShowProp = _prop != CharacterProp.None && _modeWeights[(int)CharacterMode.Swim] < 0.5f && _modeWeights[(int)CharacterMode.Sit] < 0.5f;
+        ShowProp = Prop != CharacterProp.None && _modeWeights[(int)CharacterMode.Swim] < 0.5f && _modeWeights[(int)CharacterMode.Sit] < 0.5f;
     }
 
     // Jumps, landings, water and the item in hand.
@@ -257,9 +271,24 @@ public sealed class CharacterAnimator
         var prop = CharacterRig.Sanitize(pose.Prop);
         if (prop != _prop)
         {
+            var old = _prop;
             _prop = prop;
-            if (prop != CharacterProp.None)
+            _stowing = CharacterProp.None;
+            // Filling or emptying the bucket changes the prop, but nothing was taken in hand.
+            if (prop != CharacterProp.None && !(IsBucket(prop) && IsBucket(old)))
                 _events.Add(CharacterEvent.Equip);
+            // A prop with a draw or stow clip (the Refine Tool) plays it as a gesture; the new prop's draw comes first.
+            if (Version(CharacterRig.DrawClip(prop)) is { } draw && _lengths.ContainsKey(draw))
+            {
+                _gesture = draw;
+                _gestureTime = 0f;
+            }
+            else if (Version(CharacterRig.StowClip(old)) is { } stow && _lengths.ContainsKey(stow))
+            {
+                _gesture = stow;
+                _gestureTime = 0f;
+                _stowing = old;
+            }
         }
 
         if (pose.GestureCount != _gestureCount)
@@ -388,6 +417,7 @@ public sealed class CharacterAnimator
         if (_gesture is not null)
             AddTo(_upper, _gesture, _gestureTime * _lengths[_gesture] / GestureLength(_gesture), gesture);
         UpperWeight = Math.Clamp(held * (1f - gesture) + gesture, 0f, 1f);
+        GestureWeight = gesture;
     }
 
     // Moves a cycle's phase on by distance: at a clip's own speed it plays at its own pace.
@@ -471,6 +501,8 @@ public sealed class CharacterAnimator
 
     // How long a gesture plays: its own length unless the settings give it another (a first-person version or a
     // variant lasts as long as the clip it stands in for).
+    private static bool IsBucket(CharacterProp prop) => prop is CharacterProp.WaterBucket or CharacterProp.WaterBucketFull;
+
     private float GestureLength(string clip)
     {
         var name = CharacterRig.GestureOf(clip.EndsWith(CharacterRig.FirstPersonSuffix, StringComparison.Ordinal) ? clip[..^CharacterRig.FirstPersonSuffix.Length] : clip);

@@ -18,8 +18,8 @@ namespace Mechanica.Game.Bots;
 
 /// <summary>
 /// Bots and raids over the network (chunk 21, D10). On the host it owns the <see cref="BotActions"/>, the
-/// <see cref="RaidDirector"/> and the Lua <see cref="BotRuntime"/>: brains think, ask the Action API to
-/// walk and attack, and this node walks each bot's <see cref="BotBody"/> as asked (with gravity, and the
+/// <see cref="RaidDirector"/>, the <see cref="PoiGuards"/> and the Lua <see cref="BotRuntime"/>: brains think,
+/// ask the Action API to walk and attack, and this node walks each bot's <see cref="BotBody"/> as asked (with gravity, and the
 /// world's ground under it where no terrain is loaded yet). It is the <see cref="IBotWorld"/> and
 /// <see cref="IRaidWorld"/> behind them.
 /// <para>
@@ -89,6 +89,9 @@ public partial class BotSync : Node3D, IBotWorld, IRaidWorld
 
     /// <summary>The raid director, once registered (host).</summary>
     public RaidDirector? Raids { get; private set; }
+
+    /// <summary>The POIs' guards, once the world is up (host).</summary>
+    public PoiGuards? Guards { get; private set; }
 
     /// <summary>Bot brains, once the node is ready (host).</summary>
     public BotRuntime? Runtime { get; private set; }
@@ -196,6 +199,10 @@ public partial class BotSync : Node3D, IBotWorld, IRaidWorld
         Walk(dt);
         Bots.Tick(dt);
         Raids!.Tick();
+        // The world's POIs are placed when the streamer is ready, which may come after this node registers.
+        if (Guards is null && World.Generator is { } world)
+            Guards = new PoiGuards(PoiGuards.PostsOf(world), Bots, Survival.Actions!);
+        Guards?.Tick();
         if (++_tick % PoseInterval == 0)
             SendPoses();
     }

@@ -30,7 +30,7 @@ them. AI agents read it from `GetWorld` and `world.info` and set it with `world.
 | Key | What it does |
 |-----|--------------|
 | 6 | Take the item in hand (the sixth tool). Q and E choose among the usable items you carry. |
-| Left click (item in hand) | Use it (all Lua item scripts): eat food, fire a weapon, plant a seed in the soil you aim at or water it, or throw a bucket of water on the fire you aim at. With a bucket or nothing usable in hand, aiming at the sea fills a bucket. |
+| Left click (item in hand) | Use it (all Lua item scripts): eat food, fire a weapon, plant a seed in the soil you aim at or water it, or throw the water out of a full bucket. With an empty water bucket in hand, aiming at water fills it. |
 | G (item in hand) | Drop one of the item on the ground. |
 | E | Harvest the ripe crop you aim at, sleep in the bed you aim at (you respawn there), or pick up the nearest pile of items. |
 | E (dead) | Respawn, once the respawn delay is over. |
@@ -49,8 +49,14 @@ them. AI agents read it from `GetWorld` and `world.info` and set it with `world.
   A Body that stops suddenly (a crash) damages the parts on the side that hit, more for weaker parts.
 - **Piles** of items on the ground last `drop_lifetime` seconds.
 - **Fire:** see [Fire](#fire).
+- **Raids:** the host checks the planted crops every minute. Once they are worth the first level of the
+  raid table (`raids/raids.json`; vanilla's is 10, a carrot or potato counts 1 and a tomato 1.5), the raid
+  horn sounds and the level's bots arrive round the biggest patch to go for the crops. Bigger farms and
+  more players bring bigger raids; after one there is a cooldown before the next.
+- **Guards:** POIs (the warehouse, ruins, outposts) are guarded by the bots their data places. They appear
+  when a player comes near, leave when everyone has gone, and a killed guard is replaced after a while.
 
-Creative turns damage off, makes building free and lets `GiveItems` make items from nothing.
+Creative turns damage off, makes building free, has no raids or guards, and lets `GiveItems` make items from nothing.
 
 ## Fire
 
@@ -64,10 +70,10 @@ Fire (D13) burns in Survival and Creative alike, on the host, and every player s
   up to `part_damage` health a second (less while the fire is weak) until it breaks off, and once it burns
   at `spread_at` it sets every flammable part attached to it alight. Players standing within `player_radius`
   of a fire take up to `player_damage` a second (nothing in Creative). A part under water goes out.
-- **Putting it out.** Aim a water bucket at a fire and use it: every fire within its `splash` of the first
-  fire along your aim loses its `douse` strength (vanilla's bucket puts a fire out in one go) and the bucket
-  is used up. A water cannon's jet takes its own `douse` off every fire along it, so a few shots put one
-  out. Fill buckets at any water, such as the pond by the crash site.
+- **Putting it out.** Throw a full water bucket at a fire: the water flies in a lob, and every fire within
+  its `splash` of where it lands loses its `douse` strength (vanilla's bucket puts a fire out in one go). The
+  bucket comes back empty. A water cannon's jet takes its own `douse` off every fire along it, so a few shots
+  put one out. Fill empty buckets at any water, such as the pond by the crash site.
 - **Saved** with the world: fires at POI markers by marker (an out one stays out), and a burning part's
   strength on the part.
 
@@ -81,10 +87,14 @@ their item's properties.
 ## Data
 
 - `game/data/survival.json`: health, respawn delay, reach, starting items, fall and impact
-  damage, piles. Unknown keys are refused.
+  damage, piles, and the empty and full water buckets (`bucket_item`, `water_item`). Unknown keys are refused.
+- The water bucket has two items: the empty `water_bucket` (the one the Fabricator makes) and the full
+  `water_bucket_full`. Filling one at water (`CollectWater`) or throwing its water (`watering.lua`, with
+  `item.replace`) swaps one for the other in the same slot, so it stays in hand. How it moves in the hand
+  is `bucket` in `game/data/character.json`.
 - Items and parts: `seed`, `soil` and `respawn_point` in part data
   ([Part Data Schema](part-data-schema.md#survival)). Food, weapons, seeds and the water bucket are
-  item scripts (`food.lua`, `potato_gun.lua`, `seed.lua` and `watering.lua` in `mods/vanilla/scripts/`)
+  item scripts (`food.lua`, `potato_gun.lua`, `seed.lua`, `bucket.lua` and `watering.lua` in `mods/vanilla/scripts/`)
   with their numbers in `properties`; see [Item scripts](lua-api.md#item-scripts). Soil is a part script,
   `soil.lua` (D2): its `on_update` grows the crop and its `can_activate` / `on_activate` harvest it. A seed's
   `seed` section says what it grows into and how fast, and the soil's `soil` section how much water it holds
@@ -101,7 +111,7 @@ their item's properties.
 | `UseItem` | `slot`, `direction?`, `creation?`, `part?` | Runs the item's script: eat, fire, plant, water. `direction` (from the caller's eyes) must be within `aim_tolerance` degrees of where they look; omitted means where they look. `creation` and `part` name the part it is used on (the soil a seed goes in, which must be in reach). The script's `can_use` may refuse it; what `on_use` returns is the result (the hitscan potato guns return `{hits}`, the Launcher and Popper `{projectiles}`, food `{health}`, seeds and water the soil). |
 | `EquipItem` | `slot?` | Says which scripted item is in hand (its `on_equip` and `on_unequip`); no slot empties the hand. |
 | `ActivatePart` | `creation`, `part` | On a soil part in reach with a ripe crop: harvests it (the soil script's `can_activate` and `on_activate`). Refused with "not ripe yet", "Nothing is growing there." or "Make room in your inventory first."; the result is `{items: [{item, count}]}`. (It replaced the `Harvest` action.) |
-| `CollectWater` | `point` | A point on the sea in reach; adds one `water_item`. |
+| `CollectWater` | `point`, `slot?` | A point on water in reach; turns one empty `bucket_item` (the one in `slot`, or the first) into a full `water_item`, in the same slot when it was the last. Returns `{slot}`, where the full bucket is. |
 | `SetSpawn` | `creation`, `part` | A `respawn_point` part in reach. |
 | `DropItems` | `slot`, `count` | `count` omitted drops the stack. |
 | `PickUp` | `drop` | A pile within `pickup_reach`. |

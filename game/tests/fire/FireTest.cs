@@ -16,13 +16,14 @@ namespace Mechanica.Game.Tests;
 /// <summary>
 /// Fire with a host plus a client (D13, D10), on the vanilla world. The crash site's three fires burn on both
 /// machines, with flames and the burning sound; a wooden block the client places in one catches, and its fire
-/// shows on the client too; a bucket of water the client throws puts that fire (and the block) out on both,
+/// shows on the client too; a bucket of water the client throws lands on that fire and puts it (and the block) out on both,
 /// which counts for the first quest. A save keeps the put-out fire out: a host loading it and a client joining
 /// that host see two fires.
 /// </summary>
 public partial class FireTest : StagedTest
 {
-    private const string Bucket = "vanilla:water_bucket";
+    private const string Bucket = "vanilla:water_bucket_full";
+    private const string EmptyBucket = "vanilla:water_bucket";
     private const string Wood = "vanilla:wood_block";
     private const string GettingStarted = "vanilla:getting_started";
 
@@ -103,7 +104,7 @@ public partial class FireTest : StagedTest
                 return false;
             Check(ClientFire.Fires.Values.All(f => f.Part is null), "the block went out with it");
             Check(HostFire.Loops.Count == 2, $"its sound stopped ({HostFire.Loops.Count})");
-            Check(_client.Main.Inventory.Own!.Count(Bucket) == 0, "the bucket is used up");
+            Check(_client.Main.Inventory.Own!.Count(Bucket) == 0 && _client.Main.Inventory.Own.Count(EmptyBucket) == 1, "the bucket comes back empty");
             return _client.Main.Quests.State.Of(GettingStarted) is { Step: 0, Count: 1 };
         });
         Add("a save keeps the fire out", frame =>

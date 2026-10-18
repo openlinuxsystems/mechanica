@@ -13,9 +13,14 @@ namespace Mechanica.Core.Survival;
 /// <param name="Slot">Unused; kept so older callers that send it still parse.</param>
 public sealed record PartUseArgs(int Creation, int Part, int Slot = 0);
 
-/// <summary>Arguments of <c>CollectWater</c>: fill a bucket where the caller aims at water.</summary>
+/// <summary>Arguments of <c>CollectWater</c>: fill an empty bucket where the caller aims at water.</summary>
 /// <param name="Point">The water point aimed at, in world metres.</param>
-public sealed record CollectWaterArgs(Vec3 Point);
+/// <param name="Slot">The inventory slot holding the empty bucket to fill (the one in hand); null fills the first one.</param>
+public sealed record CollectWaterArgs(Vec3 Point, int? Slot = null);
+
+/// <summary>Result of <c>CollectWater</c>.</summary>
+/// <param name="Slot">The slot the full bucket is in.</param>
+public sealed record CollectWaterResult(int Slot);
 
 /// <summary>Arguments of <c>DropItems</c>: put items from a slot on the ground in front of the caller.</summary>
 /// <param name="Slot">The slot.</param>
@@ -104,7 +109,15 @@ public sealed record ShotHitView(string Kind, Vec3 Point, float Damage, int? Pla
 /// <param name="Gravity">Its constant acceleration, in m/s².</param>
 /// <param name="Lifetime">Seconds it flies before it ends where it is.</param>
 /// <param name="Age">Seconds it had flown when this view was made. Its position is From + Velocity·t + ½·Gravity·t².</param>
-public sealed record ProjectileView(int Id, int Owner, Vec3 From, Vec3 Velocity, Vec3 Gravity, float Lifetime, float Age);
+/// <param name="Look">How it is drawn: <see cref="ProjectileView.Water"/> for a splash of water, null for a plain ball.</param>
+public sealed record ProjectileView(int Id, int Owner, Vec3 From, Vec3 Velocity, Vec3 Gravity, float Lifetime, float Age, string? Look = null)
+{
+    /// <summary>The <see cref="Look"/> of thrown water: a blob that bursts into a splash where it lands.</summary>
+    public const string Water = "water";
+
+    /// <summary>Every <see cref="Look"/> clients know how to draw.</summary>
+    public static IReadOnlySet<string> Looks { get; } = new HashSet<string>(StringComparer.Ordinal) { Water };
+}
 
 /// <summary>Where a projectile's flight ended.</summary>
 /// <param name="Id">Projectile id.</param>

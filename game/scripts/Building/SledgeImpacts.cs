@@ -54,7 +54,8 @@ public partial class SledgeImpacts : Node3D
         GetTree().CreateTimer(Lifetime + 0.2f).Timeout += root.QueueFree;
     }
 
-    private static CpuParticles3D Emitter(int amount, float life, Vector2 speed, float gravity, float spread, Mesh mesh, Color colour,
+    /// <summary>A one-shot burst of particles (shared with <see cref="Survival.RefineEffects"/>).</summary>
+    internal static CpuParticles3D Emitter(int amount, float life, Vector2 speed, float gravity, float spread, Mesh mesh, Color colour,
         bool grow = false, bool glow = false)
     {
         var material = new StandardMaterial3D
@@ -101,7 +102,7 @@ public partial class SledgeImpacts : Node3D
         return p;
     }
 
-    private static QuadMesh Quad(float size) => new() { Size = new Vector2(size, size) };
+    internal static QuadMesh Quad(float size) => new() { Size = new Vector2(size, size) };
 
-    private static BoxMesh Box(float size) => new() { Size = new Vector3(size, size * 0.6f, size) };
+    internal static BoxMesh Box(float size) => new() { Size = new Vector3(size, size * 0.6f, size) };
 }
