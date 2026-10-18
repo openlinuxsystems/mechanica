@@ -841,9 +841,18 @@ public partial class PartEditorScreen : Control
                     v => Set("Set water capacity", x => x with { Soil = x.Soil! with { Capacity = (float?)v } }), optional: true, suffix: "s");
                 _partGrid.AddNumber("Growth speed", soil.Growth, 0.01, 100, 0.05,
                     v => Set("Set growth speed", x => x with { Soil = x.Soil! with { Growth = (float?)v } }), optional: true, fallback: 1, suffix: "×");
+                _partGrid.AddNumber("Dries in", soil.DryTime, 1, 1e6, 60,
+                    v => Set("Set drying time", x => x with { Soil = x.Soil! with { DryTime = (float?)v } }), optional: true, suffix: "s");
+                _partGrid.AddNumber("Looks wet from", soil.WetLevel, 0.01, 1, 0.05,
+                    v => Set("Set wet level", x => x with { Soil = x.Soil! with { WetLevel = (float?)v } }), optional: true, fallback: 0.5, suffix: "× capacity");
             }
             _partGrid.AddBool("Respawn point", d.RespawnPoint, v => Set("Set respawn point", x => x with { RespawnPoint = v == true ? true : null }), optional: true);
             _partGrid.AddBool("Ground only", d.GroundOnly, v => Set("Set ground only", x => x with { GroundOnly = v == true ? true : null }), optional: true);
+            if (d.GroundOnly == true)
+                _partGrid.AddNumber("Steepest ground", d.MaxSlope, 0, 90, 1, v => Set("Set steepest ground", x => x with { MaxSlope = (float?)v }), optional: true, suffix: "°");
+            // A Soil Bag sets a soil mound down on the ground; the mound is placed from, and picked up as, the bag.
+            _partGrid.AddText("On the ground places", d.GroundPart, v => Set("Set ground part", x => x with { GroundPart = string.IsNullOrWhiteSpace(v) ? null : v.Trim() }), "part id: soil");
+            _partGrid.AddText("Placed from item", d.PlacedFrom, v => Set("Set placed from", x => x with { PlacedFrom = string.IsNullOrWhiteSpace(v) ? null : v.Trim() }), "item id: soil_bag");
             return;
         }
         _partGrid.AddBool("Seed", d.Seed is not null, v => Toggle("seed", v == true,

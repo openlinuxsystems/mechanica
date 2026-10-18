@@ -85,7 +85,9 @@ public sealed record SetFriendlyFireArgs(bool On);
 /// <param name="Stage">Growth stage, 0 to <see cref="SoilState.Stages"/> (ripe), as the soil's script last set it.</param>
 /// <param name="Water">Seconds of water left.</param>
 /// <param name="Capacity">Most seconds of water the soil holds.</param>
-public sealed record SoilView(int Creation, int Part, string? Seed = null, string? Crop = null, int Stage = 0, float Water = 0, float Capacity = 0)
+/// <param name="Wetness">How wet the soil looks: dry, watered, wet or drying.</param>
+public sealed record SoilView(int Creation, int Part, string? Seed = null, string? Crop = null, int Stage = 0, float Water = 0, float Capacity = 0,
+    SoilWetness Wetness = SoilWetness.Dry)
 {
     /// <summary>True when the crop can be harvested.</summary>
     public bool Ripe => Seed is not null && Stage >= SoilState.Stages;

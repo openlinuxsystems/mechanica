@@ -27,6 +27,7 @@ public partial class CreationNode : Node3D
     private readonly List<(int Part, Light3D Light, float Energy)> _lights = [];
     private readonly List<(int Part, Node3D Model, Vector3 Axis, Vector3 Pivot)> _animated = [];
     private readonly List<PartDisplayVisual> _displays = [];
+    private readonly List<int> _soils = [];
     private readonly Dictionary<int, Node3D> _partNodes = [];
     private readonly List<(CreationBody Body, Node3D Visual, Transform3D Placed)> _visuals = [];
     private Vector3 _visualOffset;
@@ -172,6 +173,9 @@ public partial class CreationNode : Node3D
         }
     }
 
+    /// <summary>The soil parts, whose look follows how wet they are (<see cref="Survival.SoilLooks"/>).</summary>
+    public IReadOnlyList<int> SoilParts => _soils;
+
     /// <summary>A placed part's node (its frame in the world), or null when this Creation has no such part.</summary>
     public Node3D? PartNode(int part) => _partNodes.GetValueOrDefault(part);
 
@@ -262,6 +266,7 @@ public partial class CreationNode : Node3D
         _lights.Clear();
         _animated.Clear();
         _displays.Clear();
+        _soils.Clear();
         _partNodes.Clear();
         _visuals.Clear();
         _pipes.Clear();
@@ -308,6 +313,8 @@ public partial class CreationNode : Node3D
             }
             if (definition.Animation is { } animation)
                 _animated.Add((id, shown, (animation.Axis ?? new Vec3(0, 1, 0)).ToGodot().Normalized(), (animation.Pivot ?? Vec3.Zero).ToGodot()));
+            if (definition.Soil is not null)
+                _soils.Add(id);
             if (definition.Display is not null)
                 _displays.Add(new PartDisplayVisual(Creation.Id, id, definition, visual, shown));
             _partNodes[id] = visual;

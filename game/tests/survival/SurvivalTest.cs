@@ -28,6 +28,7 @@ public partial class SurvivalTest : StagedTest
     private const string Bucket = "vanilla:water_bucket_full";
     private const string EmptyBucket = "vanilla:water_bucket";
     private const string Soil = "vanilla:soil";
+    private const string Bag = "vanilla:soil_bag";
     private const string Blaster = "vanilla:potato_blaster";
     private const string Potato = "vanilla:potato";
     private const string Popper = "vanilla:popper";
@@ -69,7 +70,7 @@ public partial class SurvivalTest : StagedTest
                 || !_client.Main.Survival.Vitals.ContainsKey(1) || _client.Main.LocalPlayer is not { } player || !player.IsOnFloor())
                 return false;
             Check(own is { Mode: GameMode.Survival, Dead: false } && own.Health == own.MaxHealth, $"full health in Survival ({own})");
-            Check(Count(Seed) == 4 && Count(Bucket) == 2 && Count(Soil) == 8 && Count(Carrot) == 3, $"the starting items ({Items()})");
+            Check(Count(Seed) == 4 && Count(Bucket) == 2 && Count(Bag) == 8 && Count(Carrot) == 3, $"the starting items ({Items()})");
             Check(Count(Connector) == 1 && _client.Main.Tools!.Connector.Owns, "a Connect Tool to wire with from the start");
             Check(_host.Main.Survival.Vitals.ContainsKey(Peer), "the host shows the client's health too");
             return true;
@@ -83,14 +84,14 @@ public partial class SurvivalTest : StagedTest
             Check(!_results[0].Ok && _results[0].Message!.Contains("Creative"), $"GiveItems is refused ({_results[0]})");
             return true;
         });
-        Stage("the client pays for the soil it places", frame =>
+        Stage("the client pays for the soil it places with a Soil Bag", frame =>
         {
             if (frame == 0)
             {
                 _soilAt = Feet(_client) + new Vector3(0, 0.125f, -2);
                 Request(BuildActions.PlacePart, new PlacePartArgs(Soil, GridCell.Zero, Position: _soilAt.ToNumerics().ToVec3()));
             }
-            if (_results.Count == 0 || Count(Soil) != 7)
+            if (_results.Count == 0 || Count(Bag) != 7)
                 return false;
             Check(_results[0].Ok, $"the soil is placed ({_results[0]})");
             var placed = Value<PlacePartResult>(_results[0]);
@@ -123,6 +124,13 @@ public partial class SurvivalTest : StagedTest
             Check(!soil.Ripe && _client.Main.Survival.CropNodes.ContainsKey((_soil, _soilPart)), "the client shows a young crop");
             return true;
         });
+        Stage("the watered soil looks fully wet on the client", frame =>
+        {
+            var view = _client.Main.Survival.Soil.GetValueOrDefault((_soil, _soilPart));
+            if (_client.Main.SoilLooks.LookOf(_soil, _soilPart) is not { Wet: >= 1f } look)
+                return frame < 600 ? false : Check(false, $"the mound darkens ({view}; {_client.Main.SoilLooks.LookOf(_soil, _soilPart)})");
+            return Check(view?.Wetness == SoilWetness.Wet && look.Drying == 0, $"fully wet ({view?.Wetness}, {look})");
+        });
         Stage("an unripe crop cannot be harvested", frame =>
         {
             if (frame == 0)
@@ -143,9 +151,11 @@ public partial class SurvivalTest : StagedTest
             var crop = _client.Main.Survival.CropNodes[(_soil, _soilPart)];
             var node = _client.Main.Creations.NodeOf(_soil)!;
             var part = node.Creation.FindPart(_soilPart)!;
-            var top = node.Bodies[0].GlobalTransform * (PartGeometry.CentreMetres(node.Creation.DefinitionOf(_soilPart), part.Cell, part.Rotation).ToGodot()
-                + new Vector3(0, 0.125f, 0));
-            Check(crop.Visible && crop.GlobalPosition.DistanceTo(top) < 0.05f, $"the crop stands on top of the soil ({crop.GlobalPosition} vs {top})");
+            // The mound is about half its cell's height: the crop stands on its top, near the cell's middle.
+            var centre = node.Bodies[0].GlobalTransform * PartGeometry.CentreMetres(node.Creation.DefinitionOf(_soilPart), part.Cell, part.Rotation).ToGodot();
+            var above = crop.GlobalPosition - centre;
+            Check(crop.Visible && new Vector2(above.X, above.Z).Length() < 0.05f && above.Y > -0.03f && above.Y < 0.06f,
+                $"the crop stands on top of the soil ({crop.GlobalPosition} vs the cell's middle {centre})");
             return true;
         });
         Stage("the client harvests carrots and a seed", frame =>

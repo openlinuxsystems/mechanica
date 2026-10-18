@@ -85,16 +85,42 @@ public partial class BuildTool : HandTool
     public override string ToolName => "Build";
 
     /// <inheritdoc/>
-    public override CharacterProp Prop => Selected is null ? CharacterProp.None : CharacterProp.Item;
+    public override CharacterProp Prop => Selected is null ? CharacterProp.None : PoseInHand.Prop;
 
     /// <inheritdoc/>
     protected override CharacterGesture UseGesture => CharacterGesture.Interact;
 
+    /// <inheritdoc/>
+    protected override CharacterGesture GestureFor(InputEvent @event) =>
+        // An item that sets another part down on the ground (a Soil Bag) gestures as it is placed, not on the press.
+        Selected is { } item && PartItems.GroundPartFor(Build.Catalog, item) is not null && Pressed(@event, InputActions.Primary)
+            ? CharacterGesture.None
+            : base.GestureFor(@event);
+
+    /// <summary>How items look in hand (a Soil Bag is carried in both arms); null holds every part as a plain item.</summary>
+    public Core.Characters.CharacterSettings? Characters { get; init; }
+
+    private Core.Characters.ItemPose PoseInHand => Selected is { } item && Characters is { } characters
+        ? characters.PoseFor(item, Build.Catalog.FindDefinition(item)?.Category is { } c ? System.Text.Json.JsonNamingPolicy.SnakeCaseLower.ConvertName(c.ToString()) : null)
+        : Core.Characters.ItemPose.Default;
+
     /// <summary>Placeable parts to pick from, by qualified id.</summary>
     public IReadOnlyList<string> Parts => _parts;
 
-    /// <summary>The part <see cref="Place"/> puts down, or null with an empty hand (or when no mod has a placeable part).</summary>
+    /// <summary>The item picked in hand, or null with an empty hand (or when no mod has a placeable part).</summary>
     public string? Selected { get; private set; }
+
+    /// <summary>
+    /// The part <see cref="Place"/> puts down: the selected item's ground part (<see cref="PartDefinition.GroundPart"/>:
+    /// a soil mound for a Soil Bag) when it aims at the ground and Force build is not held, otherwise the item itself.
+    /// It stays put while a placing gesture is held or dragged.
+    /// </summary>
+    public string? Placing { get; private set; }
+
+    /// <summary>Holds Force build down in tests (true) or lets go (false); null reads the key.</summary>
+    public bool? ForceBuild { get; set; }
+
+    private bool ForceHeld => ForceBuild ?? (ReadDeviceInput && Input.IsActionPressed(InputActions.ForceBuild));
 
     /// <summary>The player's turn and tip on top of the automatic orientation.</summary>
     public GridRotation Adjust => _adjust;
@@ -156,7 +182,7 @@ public partial class BuildTool : HandTool
     {
         _parts.Clear();
         _parts.AddRange(Build.Catalog.Parts
-            .Where(p => p.Value.Definition.IsPlaceable)
+            .Where(p => p.Value.Definition.IsPlaceable && p.Value.Definition.IsItem)
             .Select(p => p.Key)
             .Order(StringComparer.Ordinal));
         if (!_emptyHand && (Selected is null || !_parts.Contains(Selected)))
@@ -268,7 +294,7 @@ public partial class BuildTool : HandTool
     /// <summary>Tips the part a quarter turn over, for wedges and other parts with a top. Ground-only parts (soil) never tip.</summary>
     public void Tip()
     {
-        if (Selected is { } part && Build.Catalog.FindDefinition(part)?.GroundOnly == true)
+        if (Placing is { } part && Build.Catalog.FindDefinition(part)?.GroundOnly == true)
             return;
         _adjust = BuildAim.Tip(_adjust);
     }
@@ -379,11 +405,12 @@ public partial class BuildTool : HandTool
 
     private bool PlaceAt(Target aim, Action<ActionResult>? done)
     {
-        if (Selected is null)
+        if (Placing is not { } part)
             return false;
         var ghost = PendingGhost.Leave(this, _preview);
         ghost.GlobalTransform = aim.Preview;
-        Send(BuildActions.PlacePart, new PlacePartArgs(Selected, aim.Cell, aim.Rotation, aim.Creation?.Id, aim.Position), result =>
+        PlayPlaceGesture();
+        Send(BuildActions.PlacePart, new PlacePartArgs(part, aim.Cell, aim.Rotation, aim.Creation?.Id, aim.Position), result =>
         {
             if (IsInstanceValid(ghost))
                 ghost.Resolve(result, Timing.RollbackSeconds);
@@ -394,7 +421,7 @@ public partial class BuildTool : HandTool
 
     private void PlaceMany(Target anchor, IReadOnlyList<GridCell> cells, Action<ActionResult>? done)
     {
-        if (Selected is not { } part || Build.Catalog.FindDefinition(part) is not { } definition)
+        if (Placing is not { } part || Build.Catalog.FindDefinition(part) is not { } definition)
             return;
         var ghosts = cells.Select(cell =>
         {
@@ -402,12 +429,23 @@ public partial class BuildTool : HandTool
             ghost.GlobalTransform = anchor.Frame * PartFrame(definition, cell, anchor.Rotation);
             return ghost;
         }).ToList();
+        PlayPlaceGesture();
         Send(BuildActions.PlaceParts, new PlacePartsArgs(part, cells, anchor.Rotation, anchor.Creation?.Id, anchor.Position), result =>
         {
             foreach (var ghost in ghosts.Where(IsInstanceValid))
                 ghost.Resolve(result, Timing.RollbackSeconds);
             done?.Invoke(result);
         });
+    }
+
+    // An item that sets another part down gestures as it does: its own use gesture (the Soil Bag tipped out) for the ground
+    // part, the plain use gesture for the item itself (the bag put down with Force build).
+    private void PlayPlaceGesture()
+    {
+        if (Selected is not { } item || PartItems.GroundPartFor(Build.Catalog, item) is null)
+            return;
+        var gesture = Placing != item && PoseInHand.Gesture != CharacterGesture.None ? PoseInHand.Gesture : UseGesture;
+        Player.Gesture(gesture);
     }
 
     /// <summary>Asks the host to remove the part under the crosshair at once. False when no part is aimed at.</summary>
@@ -426,7 +464,9 @@ public partial class BuildTool : HandTool
     /// <summary>Casts the aim ray now and moves the preview.</summary>
     public void UpdateAim()
     {
-        Aim = Selected is { } selected && Build.Catalog.FindDefinition(selected) is { } definition
+        if (_place.Phase is not (GesturePhase.Holding or GesturePhase.Dragging))
+            Placing = PlacingFor(Selected);
+        Aim = Placing is { } placing && Build.Catalog.FindDefinition(placing) is { } definition
             ? Cast(definition)
             : null;
         // Aligning and dragging lock the ghost to the cell the button went down on.
@@ -438,8 +478,8 @@ public partial class BuildTool : HandTool
             PreviewProblem = null;
             return;
         }
-        if (_previewPart != Selected)
-            BuildPreview(Selected!, Build.Catalog.FindDefinition(Selected!)!);
+        if (_previewPart != Placing)
+            BuildPreview(Placing!, Build.Catalog.FindDefinition(Placing!)!);
         _preview.GlobalTransform = shown.Preview;
         PreviewProblem = Check(shown);
         _previewValid = PreviewProblem is null;
@@ -449,11 +489,11 @@ public partial class BuildTool : HandTool
     // The same checks the host makes, so the ghost turns red where a placement would be refused.
     private string? Check(Target aim)
     {
-        if (Selected is not { } part || Build.Catalog.FindDefinition(part) is not { } definition)
+        if (Placing is not { } part || Build.Catalog.FindDefinition(part) is not { } definition)
             return "no part";
         if (Eye.DistanceTo(aim.Preview.Origin) > Build.Settings!.Reach)
             return Loc.T("Too far away");
-        if (CanAfford?.Invoke(part) == false)
+        if (Selected is { } item && CanAfford?.Invoke(item) == false)
             return Loc.T("You have none left");
         Pose pose;
         if (aim.Creation is { } creation)
@@ -471,13 +511,16 @@ public partial class BuildTool : HandTool
         if (BuildAim.GroundOnlyProblem(definition, aim.Creation, aim.Rotation, pose,
                 () => Build.RestsOnWorld(aim.Creation, definition, aim.Cell, aim.Rotation, pose)) is not null)
             return Loc.T("{0} goes only flat on the ground", definition.Name ?? part);
+        var centre = pose.Apply(PartGeometry.CentreMetres(definition, aim.Cell, aim.Rotation).ToNumerics());
+        if (BuildAim.SlopeProblem(definition, () => Build.GroundSlope(centre, BuildAim.SlopeReach(definition))) is not null)
+            return Loc.T("The ground is too steep for {0}", definition.Name ?? part);
         return Build.CheckClear(aim.Creation, definition, aim.Cell, aim.Rotation, pose);
     }
 
     // Alignment shows arrows; a drag grows the grid from the anchor towards where the aim meets the plane.
     private void UpdatePlacing()
     {
-        if (!_place.Down || _anchor is not { } anchor || Selected is not { } part || Build.Catalog.FindDefinition(part) is not { } definition)
+        if (!_place.Down || _anchor is not { } anchor || Placing is not { } part || Build.Catalog.FindDefinition(part) is not { } definition)
             return;
         // On the plane of the surface the ghost sits on, the aim meets that surface; Q's other planes cut through the ghost.
         var cell = _plane == BuildDrag.AxisOf(anchor.Face) ? AimOnPlane(anchor.Frame, anchor.Cell, _plane, -anchor.Face) : AimOnPlane(anchor.Frame, anchor.Cell, _plane);
@@ -539,7 +582,7 @@ public partial class BuildTool : HandTool
 
     private void ShowGhosts()
     {
-        if (_ghosts.Count > 0 && _ghosts[0].GetMeta("part", "").AsString() != (Selected ?? ""))
+        if (_ghosts.Count > 0 && _ghosts[0].GetMeta("part", "").AsString() != (Placing ?? ""))
         {
             foreach (var ghost in _ghosts)
                 ghost.QueueFree();
@@ -549,13 +592,13 @@ public partial class BuildTool : HandTool
         while (_ghosts.Count < count)
         {
             var ghost = new Node3D { Name = "DragGhost", TopLevel = true };
-            ghost.SetMeta("part", Selected ?? "");
+            ghost.SetMeta("part", Placing ?? "");
             foreach (var mesh in _preview.GetChildren().OfType<MeshInstance3D>())
                 ghost.AddChild(new MeshInstance3D { Mesh = mesh.Mesh, Transform = mesh.Transform, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off });
             AddChild(ghost);
             _ghosts.Add(ghost);
         }
-        var definition = Selected is { } part ? Build.Catalog.FindDefinition(part) : null;
+        var definition = Placing is { } part ? Build.Catalog.FindDefinition(part) : null;
         for (var i = 0; i < _ghosts.Count; i++)
         {
             var ghost = _ghosts[i];
@@ -621,6 +664,14 @@ public partial class BuildTool : HandTool
             mesh.MaterialOverride = material;
     }
 
+    // The item itself, or its ground part when it aims at the ground (the world's own terrain) without Force build.
+    private string? PlacingFor(string? item)
+    {
+        if (item is null || PartItems.GroundPartFor(Build.Catalog, item) is not { } ground || Build.Catalog.FindDefinition(ground) is null || ForceHeld)
+            return item;
+        return CastRay() is { Collider: StaticBody3D { Name: var name } and not LiftBody } && name == World.WorldStreamer.GroundName ? ground : item;
+    }
+
     private Target? Cast(PartDefinition definition)
     {
         if (CastRay() is not { } hit)
@@ -684,7 +735,10 @@ public partial class BuildTool : HandTool
         if (_place.Phase == GesturePhase.Holding)
             return Loc.T("{0}   drag to place a grid on the {1} plane   {2} next plane", name, BuildDrag.PlaneName(_plane), Key(InputActions.Rotate));
         var problem = !_previewValid && PreviewProblem is { Length: > 0 } p && Aim is not null ? $"\n{p}" : "";
-        if (Build.Catalog.FindDefinition(Selected)?.GroundOnly == true)
+        if (PartItems.GroundPartFor(Build.Catalog, Selected) is { } ground && Placing == ground)
+            return Loc.T("{0}   {1} turn  {2} spill  hold {3} set the bag down  {4} hold to remove", name,
+                Key(InputActions.Rotate), Key(InputActions.Primary), Key(InputActions.ForceBuild), Key(InputActions.Secondary)) + (Status.Length > 0 ? Status : problem);
+        if (Build.Catalog.FindDefinition(Placing ?? Selected)?.GroundOnly == true)
             return Loc.T("{0}   {1} turn  {2} place (hold to drag)  {3} hold to remove", name,
                 Key(InputActions.Rotate), Key(InputActions.Primary), Key(InputActions.Secondary)) + (Status.Length > 0 ? Status : problem);
         return Loc.T("{0}   {1} turn  {2} tip  {3} place (hold to drag)  {4} hold to remove", name,

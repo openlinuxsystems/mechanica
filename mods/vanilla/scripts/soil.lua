@@ -1,7 +1,9 @@
 -- Soil (chunk 20, D2): grows the crop planted in it and hands it to the player who harvests it (Use).
 -- A crop grows only while the soil holds water, using one second of water per second of growth, at the
--- soil's soil.growth speed, through soil.get().stages stages; it is ripe after its seed's grow_time. The
--- host stores the result (seed, grown, water, stage) on the soil, where clients, bots and saves see it.
+-- soil's soil.growth speed, through soil.get().stages stages; it is ripe after its seed's grow_time. With nothing
+-- planted the soil dries out instead, as in Scrap Mechanic: full soil is dry after soil.dry_time seconds. The host
+-- stores the result (seed, grown, water, stage) on the soil, where clients, bots and saves see it, and works out from
+-- the water how wet the soil looks (dry, watered, wet or drying).
 --
 -- Growth is worked out from the world clock (world.time(), which carries on across saves) since the soil
 -- was last brought up to date (its `updated` stamp), not step by step. A parked Creation (no player near)
@@ -21,6 +23,12 @@ end
 -- grown, water and stage of soil `s` once it has grown until `now`. Changes nothing.
 local function grown_by(s, now)
   if not s.seed then
+    -- Nothing planted: the water dries out, full soil in soil.dry_time seconds (none set: it keeps).
+    local data = world.item(part.type(), "soil") or {}
+    local elapsed = math.max(0, now - (s.updated or now))
+    if s.water > 0 and data.dry_time and data.dry_time > 0 then
+      return s.grown, math.max(0, s.water - elapsed * (data.capacity or 0) / data.dry_time), 0
+    end
     return s.grown, s.water, 0
   end
   local seed = world.item(s.seed, "seed")

@@ -21,7 +21,7 @@
   "starting_items": [
     { "item": "carrot_seed", "count": 4 },
     { "item": "potato_seed", "count": 4 },
-    { "item": "soil", "count": 8 },
+    { "item": "soil_bag", "count": 8 },
     { "item": "water_bucket_full", "count": 2 },
     { "item": "carrot", "count": 3 },
     { "item": "mini_fabricator", "count": 1 },

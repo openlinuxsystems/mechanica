@@ -35,7 +35,7 @@ internal static class TestParts
             Socket("top", SocketType.Structural, new Vec3(0, 0.125f, 0), new Vec3(0, 1, 0))))
         // Ground-only, like farm soil: upright on the ground, never on a Creation.
         .Add(Soil, Part(PartCategory.Interactive, mass: 20, size: GridSize.One,
-            Socket("base", SocketType.Structural, new Vec3(0, -0.125f, 0), new Vec3(0, -1, 0))) with { Name = "Soil", GroundOnly = true })
+            Socket("base", SocketType.Structural, new Vec3(0, -0.125f, 0), new Vec3(0, -1, 0))) with { Name = "Soil", GroundOnly = true, MaxSlope = 17 })
         .Add(Ore, new PartDefinition { Id = "ore", Name = "Ore", Category = PartCategory.Resource });
 
     /// <summary>Places a part or fails the test.</summary>

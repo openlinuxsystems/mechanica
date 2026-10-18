@@ -84,6 +84,9 @@ you; this page is the reference for what each key means, so you can read, review
 | `collision` | object | no | Collision shape. Omitted means a box filling `size`. See [collision](#collision). |
 | `sockets` | list | no | Attachment points. Placeable parts only. See [sockets](#sockets). |
 | `ground_only` | bool | no | The part goes only flat on the ground, like soil: upright, resting on the world itself, never tipped onto a side, set on a Creation or welded to one. The tip key does nothing for it. Placeable parts only. Default false. |
+| `max_slope` | number 0–90 (degrees) | no | With `ground_only`: the steepest ground the part may be placed on, measured across its footprint (soil: 17). Steeper ground is refused with "The ground is too steep". Default: any slope. |
+| `ground_part` | id | no | An item that sets another part down when aimed at the terrain: a Soil Bag makes a soil mound. Aimed anywhere else, or with Force build held, the item places itself. A bare id is in this part's mod. Not with `placed_from`. |
+| `placed_from` | id | no | The item this part is placed from and picked up as (soil's `soil_bag`): placing it uses one up, removing it gives one back, and the part itself is never an item (it is hidden from the hotbar and Creative). A bare id is in this part's mod. Not with `ground_part`. |
 | `loose` | bool | no | A loose physics item lying in the world on its own, like a Stone Chunk or a Stone Rod: set down it is its own unanchored Creation, and nothing is built onto it or welded to it. Makes a `resource` part placeable. Not with `ground_only`. Default false. |
 | `breaks_into` | object | no | Loose parts the part shatters into when it breaks (a chunk into rods, a log into Wood Rods): `count` pieces (1 to 16; with `count_max`, a seeded number from `count` to `count_max`), each picked from `parts[]` (`part`, `weight`, default 1) by weight, thrown out by `breaking` in `game/data/building.json`. Placeable parts only. |
 | `sledge_damage` | number ≥ 0 | no | Damage one Sledgehammer swing does to the part, instead of `sledge.damage` in `game/data/building.json`. Placeable parts only. |
@@ -290,6 +293,8 @@ soil script may treat them differently. A bare `crop` id is in the seed's own mo
 | `seed.value` | number ≥ 0 | How much a planted crop draws raids (chunk 21). Default 1. |
 | `soil.capacity` | number > 0 (s) | Most seconds of water the soil holds. Required. |
 | `soil.growth` | number > 0 | Growth speed multiplier for crops on it. Default 1. |
+| `soil.dry_time` | number > 0 (s) | Seconds full soil with nothing planted takes to dry out completely (vanilla 1440, about a game day). Read by `soil.lua`; omitted, empty soil keeps its water. |
+| `soil.wet_level` | number in (0, 1] | Share of `capacity` from which the soil looks fully wet. Below it, watered soil looks lightly watered, or drying once it has been fully wet. Default 0.5. |
 | `respawn_point` | bool | Players can sleep in it (E) to respawn there. |
 | `aim.zoom` | number 0.2 to 1 | While right click is held the field of view is multiplied by this (a slight zoom) and the crosshair tightens. Default 0.85. The script sees `target.aiming`. |
 | `aim.fire_on_release` | bool | Fire when right click is let go, as well as on left click while aiming. Default false. |

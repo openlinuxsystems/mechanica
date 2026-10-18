@@ -10,14 +10,16 @@ using Instance = Mechanica.Game.Tests.NetTestHarness.Instance;
 namespace Mechanica.Game.Tests;
 
 /// <summary>
-/// Soil goes only flat on the ground, like Scrap Mechanic's, host plus a client. The build ghost stands upright on
-/// the ground, the tip key leaves it so and the HUD offers no tip; placed, the host has it upright and anchored. A
-/// sideways request sent straight to the host is refused, and aimed at the top of a block the ghost is red and a click
-/// sends nothing.
+/// A Soil Bag makes a soil mound flat on the ground, like Scrap Mechanic's, host plus a client. Aimed at the ground the
+/// build ghost is the mound, upright, the tip key leaves it so and the HUD offers no tip; with Force build held it is the
+/// bag itself. Placed, the host has the mound upright and anchored, and the client sees it spill out of the bag and
+/// starts it dry. A sideways mound sent straight to the host is refused, and aimed at the top of a block the ghost is
+/// the bag, which sets down there.
 /// </summary>
 public partial class SoilTest : StagedTest
 {
     private const string Soil = "vanilla:soil";
+    private const string Bag = "vanilla:soil_bag";
     private const string Block = "vanilla:aluminum_block";
     private static readonly GridCell Up = new(0, 1, 0);
 
@@ -26,6 +28,8 @@ public partial class SoilTest : StagedTest
     private Instance _host = null!;
     private Instance _client = null!;
     private int _block;
+    private int _mound;
+    private bool _sent;
 
     protected override string Tag => "soil";
 
@@ -42,12 +46,14 @@ public partial class SoilTest : StagedTest
         _host = _harness.StartHost();
         _client = _harness.StartClient("Client");
 
-        Add("the client joins with soil in hand", _ =>
+        Add("the client joins with a Soil Bag in hand", _ =>
         {
             if (_client.Main.PlayerSync.Players.Count != 2 || _client.Main.Tools is null || _host.Main.PlayerSync.Players.Count != 2)
                 return false;
             Tools.Use(Builder);
-            return Check(Builder.Select(Soil), "soil is placeable");
+            Check(!Builder.Parts.Contains(Soil), "the mound is not an item to pick");
+            Check(Builder.Select(Bag), "the bag is placeable");
+            return Check(Builder.Prop == Core.Characters.CharacterProp.SoilBag, $"carried in both hands ({Builder.Prop})");
         });
         Add("look at the ground ahead", frame => Look(0, -0.7f, frame));
         Add("the ghost stands upright on the ground and will not tip", frame =>
@@ -55,6 +61,7 @@ public partial class SoilTest : StagedTest
             Builder.UpdateAim();
             if (Builder.Aim is not { } aim)
                 return frame < 60 ? false : Check(false, "aiming at the ground");
+            Check(Builder.Placing == Soil, $"the ghost is the mound ({Builder.Placing})");
             Check(aim.Rotation.YAxis == Up && Builder.PreviewValid, $"upright and blue ({aim.Rotation}, {Builder.PreviewProblem})");
             Check(!Builder.HudText().Contains(" tip"), $"the HUD offers no tip ({Builder.HudText()})");
             Builder.Tip();
@@ -63,6 +70,11 @@ public partial class SoilTest : StagedTest
             Builder.Turn();
             Builder.UpdateAim();
             Check(Builder.Aim!.Rotation.YAxis == Up, $"turning keeps it flat ({Builder.Aim.Rotation})");
+            Builder.ForceBuild = true;
+            Builder.UpdateAim();
+            Check(Builder.Placing == Bag, $"with Force build it is the bag ({Builder.Placing})");
+            Builder.ForceBuild = false;
+            Builder.UpdateAim();
             return true;
         });
         Add("a click places it flat on the host", frame =>
@@ -81,6 +93,16 @@ public partial class SoilTest : StagedTest
             var creation = _host.Main.Creations.Find(id);
             Check(creation?.Parts.Count == 1 && creation.Parts.First().Rotation.YAxis == Up, "the host has it upright");
             Check(creation?.IsGrounded == true, "anchored to the ground");
+            Check(creation?.Parts.First().Part == Soil, $"it is a mound ({creation?.Parts.First().Part})");
+            _mound = id;
+            return true;
+        });
+        Add("the client sees it spill out of the bag, dry", frame =>
+        {
+            if (_client.Main.SoilLooks.LookOf(_mound, _client.Main.Creations.Find(_mound)?.Parts.First().Id ?? -1) is not { } look)
+                return frame < 120 ? false : Check(false, "the client shows the mound");
+            Check(_client.Main.SoilLooks.Spills == 1, $"spilled once ({_client.Main.SoilLooks.Spills})");
+            Check(look.Wet == 0 && look.Drying == 0, $"dry ({look})");
             return true;
         });
         Add("the host refuses soil on its side", frame =>
@@ -119,15 +141,21 @@ public partial class SoilTest : StagedTest
             var body = _client.Main.Creations.NodeOf(_block)?.Bodies[0];
             return body is not null && LookAt(body.GlobalPosition + new Vector3(0, 0.12f, 0), frame);
         });
-        Add("on the block the ghost is red and a click sends nothing", frame =>
+        Add("on the block the ghost is the bag, and it sets down there", frame =>
         {
-            Builder.UpdateAim();
-            if (Builder.Aim is not { Creation: not null })
-                return frame < 60 ? false : Check(false, "aiming at the block");
-            Check(!Builder.PreviewValid && Builder.PreviewProblem?.Contains("flat on the ground") == true, $"red ({Builder.PreviewProblem})");
-            Builder.PressPlace();
-            Builder.ReleasePlace(_results.Add);
-            Check(_results.Count == 0 && _host.Main.Creations.Find(_block)?.Parts.Count == 1, "nothing is sent");
+            if (!_sent)
+            {
+                Builder.UpdateAim();
+                if (Builder.Aim is not { Creation: not null })
+                    return frame < 60 ? false : Check(false, "aiming at the block");
+                Check(Builder.Placing == Bag && Builder.PreviewValid, $"the bag, blue ({Builder.Placing}, {Builder.PreviewProblem})");
+                _sent = Builder.Place(_results.Add);
+                return !_sent && Check(false, "the bag is sent");
+            }
+            if (_results.Count == 0)
+                return frame < 180 ? false : Check(false, "the host answers");
+            Check(_results[0].Ok, $"placed ({_results[0].Message})");
+            Check(_host.Main.Creations.Find(_block)?.Parts.Any(p => p.Part == Bag) == true, "the bag is on the block");
             return true;
         });
     }

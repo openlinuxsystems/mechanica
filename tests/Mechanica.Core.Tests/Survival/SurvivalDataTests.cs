@@ -191,7 +191,7 @@ public class SurvivalDataTests
         Assert.Contains("vanilla:carrot", mods.FindDefinition("fridge")!.Inventory!.Accepts!.Select(a => Identifiers.Qualify(a)));
         var recipes = RecipeBook.Load(mods);
         Assert.Empty(recipes.Diagnostics);
-        foreach (var made in new[] { "soil", "respawn_bed", "potato_blaster", "potato_scattergun", "potato_launcher", "popper" })
+        foreach (var made in new[] { "soil_bag", "respawn_bed", "potato_blaster", "potato_scattergun", "potato_launcher", "popper" })
             Assert.Contains(recipes.All, r => r.Outputs.Any(o => o.Item == $"vanilla:{made}"));
     }
 }

@@ -73,6 +73,13 @@ public class PartValidationTests
     [InlineData("""{ "light": { "range": 5, "kind": "spot", "angle": 90 } }""", "$.light.angle", "under 90 degrees")]
     [InlineData("""{ "light": { "range": 5, "offset": [0, 0.2, 0] } }""", "$.light.offset", "outside the part's [1, 1, 1] footprint")]
     [InlineData("""{ "light": { "range": 5, "direction": [0, 0, 0] } }""", "$.light.direction", "non-zero")]
+    [InlineData("""{ "max_slope": 20 }""", "$.max_slope", "only ground_only parts")]
+    [InlineData("""{ "ground_only": true, "max_slope": 95 }""", "$.max_slope", "0 to 90 degrees")]
+    [InlineData("""{ "ground_part": "Soil Mound" }""", "$.ground_part", "part id")]
+    [InlineData("""{ "placed_from": "bag!" }""", "$.placed_from", "item id")]
+    [InlineData("""{ "ground_part": "mound", "placed_from": "bag" }""", "$.ground_part", "cannot set down a ground_part")]
+    [InlineData("""{ "soil": { "capacity": 60, "dry_time": 0 } }""", "$.soil.dry_time", "greater than 0")]
+    [InlineData("""{ "soil": { "capacity": 60, "wet_level": 1.5 } }""", "$.soil.wet_level", "at most 1")]
     [InlineData("""{ "animation": { "axis": [0, 0, 0] } }""", "$.animation.axis", "non-zero")]
     [InlineData("""{ "animation": { "pivot": [0.3, 0, 0] } }""", "$.animation.pivot", "outside the part's [1, 1, 1] footprint")]
     public void BadValuesGiveClearErrors(string overrides, string path, string messagePart)

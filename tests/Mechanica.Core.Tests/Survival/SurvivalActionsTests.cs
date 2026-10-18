@@ -188,7 +188,7 @@ public class SurvivalActionsTests
         // What the soil's script stores is what players, raids and GetSoil see.
         _f.World.FindCreation(soil)!.SoilOf(1)!.Set(grown: 40, water: 40, stage: SoilState.Stages);
         Assert.True(View(soil).Ripe);
-        Assert.Equal(new SoilView(soil, 1, Seed, Crop, SoilState.Stages, 40, 60),
+        Assert.Equal(new SoilView(soil, 1, Seed, Crop, SoilState.Stages, 40, 60, SoilWetness.Wet),
             _f.Ok<SoilView>(Me, SurvivalActions.GetSoil, new { creation = soil, part = 1 }));
         Assert.False(_f.Dispatch(Me, "Harvest", new { creation = soil, part = 1 }).Ok); // harvesting is ActivatePart now
     }
@@ -563,6 +563,33 @@ public class SurvivalActionsTests
 
         _f.Ok(Me, BuildActions.RemovePart, new { creation = placed.Creation, part = placed.Part });
         Assert.Equal(1, _f.Pockets(Me).Count(Block));
+    }
+
+    [Fact]
+    public void APartPlacedFromAnotherItemUsesItUpAndGivesItBack()
+    {
+        // A mound is placed from a bag (a bare id is the mound's own mod) and is picked up as one.
+        _f.Catalog.Add("test:bag", _f.Catalog.FindDefinition(Block)! with { Id = "bag", Name = "Bag", GroundPart = "mound" });
+        _f.Catalog.Add("test:mound", _f.Catalog.FindDefinition(Block)! with { Id = "mound", Name = "Mound", PlacedFrom = "bag" });
+        Assert.Equal("test:mound", PartItems.GroundPartFor(_f.Catalog, "test:bag"));
+        Assert.Equal("test:bag", PartItems.ItemFor(_f.Catalog, "test:mound"));
+        Assert.Equal("test:block", PartItems.ItemFor(_f.Catalog, "test:block"));
+        Assert.False(_f.Catalog.FindDefinition("test:mound")!.IsItem);
+
+        var mound = new { part = "test:mound", cell = new[] { 0, 0, 0 }, position = new Vec3(0, 0, 1) };
+        Assert.Equal("You have no Bag to place.", _f.Refused(Me, BuildActions.PlacePart, mound));
+        _f.Pockets(Me).Add("test:bag", 1);
+        var placed = _f.Ok<PlacePartResult>(Me, BuildActions.PlacePart, mound);
+        Assert.Equal(0, _f.Pockets(Me).Count("test:bag"));
+
+        _f.Ok(Me, BuildActions.RemovePart, new { creation = placed.Creation, part = placed.Part });
+        Assert.Equal((1, 0), (_f.Pockets(Me).Count("test:bag"), _f.Pockets(Me).Count("test:mound")));
+
+        // A mound still carried from before it was placed from a bag is used up too.
+        _f.Pockets(Me).Remove("test:bag", 1);
+        _f.Pockets(Me).Add("test:mound", 1);
+        _f.Ok<PlacePartResult>(Me, BuildActions.PlacePart, mound with { position = new Vec3(3, 0, 1) });
+        Assert.Equal(0, _f.Pockets(Me).Count("test:mound"));
     }
 
     [Fact]

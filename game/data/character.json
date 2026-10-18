@@ -46,7 +46,8 @@
     "glowstick": { "prop": "item", "gesture": "throw" },
     "carrot_seed": { "prop": "item", "gesture": "plant" },
     "potato_seed": { "prop": "item", "gesture": "plant" },
-    "tomato_seed": { "prop": "item", "gesture": "plant" }
+    "tomato_seed": { "prop": "item", "gesture": "plant" },
+    "soil_bag": { "prop": "soil_bag", "gesture": "bag_spill" }
   },
   "category_poses": {
     "consumable": { "prop": "item", "gesture": "eat" },

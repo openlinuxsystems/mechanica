@@ -43,7 +43,7 @@ public class CharacterRigTests
     public void TheRefineToolIsAPropWithItsOwnDrawWorkAndStowClips()
     {
         Assert.Equal(CharacterProp.RefineTool, CharacterRig.Sanitize(CharacterProp.RefineTool));
-        Assert.Equal(CharacterProp.None, CharacterRig.Sanitize((CharacterProp)(CharacterProp.WaterBucketFull + 1)));
+        Assert.Equal(CharacterProp.None, CharacterRig.Sanitize((CharacterProp)(CharacterProp.SoilBag + 1)));
         Assert.Equal("refine_tool", CharacterRig.PropNode(CharacterProp.RefineTool));
         Assert.Equal("hold_refine", CharacterRig.HoldClip(CharacterProp.RefineTool));
         Assert.Equal("refine_draw", CharacterRig.DrawClip(CharacterProp.RefineTool));
@@ -57,5 +57,23 @@ public class CharacterRigTests
         }
         Assert.False(CharacterAnimator.IsOneShot("hold_refine"));
         Assert.True(CharacterAnimator.IsOneShot("refine_draw"));
+    }
+
+    [Fact]
+    public void TheSoilBagIsCarriedInBothHandsLiftedUpAndTippedOut()
+    {
+        Assert.Equal(CharacterProp.SoilBag, CharacterRig.Sanitize(CharacterProp.SoilBag));
+        Assert.Equal(CharacterGesture.BagSpill, CharacterRig.Sanitize(CharacterGesture.BagSpill));
+        Assert.Equal(CharacterGesture.None, CharacterRig.Sanitize((CharacterGesture)(CharacterGesture.BagSpill + 1)));
+        Assert.Equal("soil_bag", CharacterRig.PropNode(CharacterProp.SoilBag));
+        Assert.Equal("hold_bag", CharacterRig.HoldClip(CharacterProp.SoilBag));
+        Assert.Equal("bag_lift", CharacterRig.DrawClip(CharacterProp.SoilBag));
+        Assert.Equal("bag_lower", CharacterRig.StowClip(CharacterProp.SoilBag));
+        Assert.Equal("bag_spill", CharacterRig.GestureClip(CharacterGesture.BagSpill));
+        foreach (var clip in new[] { "hold_bag", "bag_spill", "bag_lift", "bag_lower" })
+        {
+            Assert.Contains(clip, CharacterRig.UpperBodyClips);
+            Assert.Contains(clip + CharacterRig.FirstPersonSuffix, CharacterRig.UpperBodyClips);
+        }
     }
 }

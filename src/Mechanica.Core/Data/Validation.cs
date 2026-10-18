@@ -448,6 +448,21 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
             sink.Error(Code, "$.sledge_damage", "sledge_damage must be 0 or more.");
         if (part.Loose == true && part.GroundOnly == true)
             sink.Error(Code, "$.loose", "a loose part cannot also be ground_only.");
+        PartOnly(part.GroundPart, "ground_part");
+        PartOnly(part.PlacedFrom, "placed_from");
+        if (part.MaxSlope is { } slope)
+        {
+            if (part.GroundOnly != true)
+                sink.Error(Code, "$.max_slope", "only ground_only parts can have max_slope.");
+            if (!(slope is >= 0 and <= 90))
+                sink.Error(Code, "$.max_slope", $"max_slope must be 0 to 90 degrees (got {slope}).");
+        }
+        if (part.GroundPart is { } groundPart && !IsItemRef(groundPart))
+            sink.Error(Code, "$.ground_part", "ground_part must be a part id or 'mod_id:part_id'.");
+        if (part.PlacedFrom is { } from && !IsItemRef(from))
+            sink.Error(Code, "$.placed_from", "placed_from must be an item id or 'mod_id:item_id'.");
+        if (part.GroundPart is not null && part.PlacedFrom is not null)
+            sink.Error(Code, "$.ground_part", "a part placed from another item cannot set down a ground_part of its own.");
         if (part.Refine is { } refine)
         {
             if (part.Loose != true)
@@ -478,6 +493,9 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
         {
             RequirePositive(soil.Capacity, "$.soil.capacity", "capacity (s)", true, "soil", sink);
             RequirePositive(soil.Growth, "$.soil.growth", "growth", false, "soil", sink);
+            RequirePositive(soil.DryTime, "$.soil.dry_time", "dry_time (s)", false, "soil", sink);
+            if (soil.WetLevel is { } wet && !(wet > 0 && wet <= 1))
+                sink.Error(Code, "$.soil.wet_level", $"wet_level must be more than 0 and at most 1 (got {wet}).");
             KnownKeys.WarnUnknown(soil.Extra, "$.soil", sink, typeof(SoilDefinition));
         }
     }

@@ -119,6 +119,24 @@ public static class BuildAim
     }
 
     /// <summary>
+    /// Null unless <paramref name="definition"/> has a <see cref="PartDefinition.MaxSlope"/> and the ground under it
+    /// (<paramref name="slope"/>, degrees from level, null when unknown) is steeper; then why it is refused.
+    /// </summary>
+    public static string? SlopeProblem(PartDefinition definition, Func<float?> slope)
+    {
+        if (definition.GroundOnly != true || definition.MaxSlope is not { } max || slope() is not { } degrees || degrees <= max)
+            return null;
+        return $"The ground is too steep for {definition.Name ?? "this part"} ({degrees:F0}°; at most {max:F0}°).";
+    }
+
+    /// <summary>How far from its centre the ground under a part is measured for <see cref="SlopeProblem"/>: its smaller half-width across.</summary>
+    public static float SlopeReach(PartDefinition definition)
+    {
+        var size = (definition.Size ?? GridSize.One).Metres;
+        return MathF.Min(size.X, size.Z) / 2;
+    }
+
+    /// <summary>
     /// The part of <see cref="GroundOnlyProblem"/> that needs no pose: null unless a ground-only part would join a
     /// Creation built of anything else, or a loose part (<see cref="PartDefinition.Loose"/>) would join a Creation or
     /// take a part on.

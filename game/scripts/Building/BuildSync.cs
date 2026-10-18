@@ -177,6 +177,33 @@ public partial class BuildSync : Node, IToolWorld, IPartCatalog
     }
 
     /// <inheritdoc/>
+    public float? GroundSlope(System.Numerics.Vector3 centre, float reach)
+    {
+        // The terrain's height either side of the centre along each axis gives its gradient there.
+        float? Height(float dx, float dz)
+        {
+            var from = new Vector3(centre.X + dx, centre.Y + 1.5f, centre.Z + dz);
+            var query = PhysicsRayQueryParameters3D.Create(from, from + Vector3.Down * 3f);
+            var exclude = new Godot.Collections.Array<Rid>();
+            for (var tries = 0; tries < 6; tries++)
+            {
+                query.Exclude = exclude;
+                var hit = GetViewport().FindWorld3D().DirectSpaceState.IntersectRay(query);
+                if (hit.Count == 0)
+                    return null;
+                if (hit["collider"].AsGodotObject() is StaticBody3D { Name: var name } && name == World.WorldStreamer.GroundName)
+                    return hit["position"].AsVector3().Y;
+                exclude.Add(hit["rid"].AsRid());
+            }
+            return null;
+        }
+        if (Height(reach, 0) is not { } east || Height(-reach, 0) is not { } west || Height(0, reach) is not { } south || Height(0, -reach) is not { } north)
+            return null;
+        var gradient = new Vector2((east - west) / (2 * reach), (south - north) / (2 * reach)).Length();
+        return Mathf.RadToDeg(MathF.Atan(gradient));
+    }
+
+    /// <inheritdoc/>
     public bool RestsOnWorld(Creation? target, PartDefinition definition, GridCell cell, GridRotation rotation, Pose pose)
     {
         // The part's box grown by a margin touches whatever it sits on or leans against.

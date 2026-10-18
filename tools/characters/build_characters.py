@@ -4175,6 +4175,99 @@ def clip_connect_reverse_fp(t):
 
 
 # name: (function, duration seconds, loops, upper_body_only)
+# The Soil Bag, carried flat in front of the belly in both hands, a fist round the middle of each short end (the bag is
+# the right hand's prop; the left hand holds the other end). Taking it lifts it up from low down (bag_lift), putting it
+# away lowers it again (bag_lower), and using it tips the far edge down and shakes the soil out (bag_spill). The bag
+# turns about its long axis, which runs through both fists, so the hands only roll and stay on its ends.
+BAG_SCALE = 0.5                                       # the held bag against the placed one
+BAG_HALF_LENGTH = 0.625 * BAG_SCALE
+BAG_GRIP_IN = 0.03                                    # how far in from each end the fist centres are
+BAG_HOLD = np.array([0.0, -0.36, 1.02])               # centre of the carried bag
+BAG_LOW = np.array([0.0, -0.26, 0.8])                 # where it comes up from and goes back down to
+BAG_SPILL = np.array([0.0, -0.48, 0.92])              # held out and down, tipped over the spot it spills on
+BAG_POLES = {"r": (-0.8, 0.4, -0.6), "l": (0.8, 0.4, -0.6)}
+LIFT_SECONDS = 0.4
+LOWER_SECONDS = 0.35
+SPILL_SECONDS = 0.8
+
+
+def bag_key(centre, tip=0.0, t=0.0, T=2.0, space="chest", **body):
+    """Both fists on the ends of a bag centred at `centre` and tipped `tip` degrees forward about its long axis."""
+    s = upper_base(t, T)
+    R = axis_rot((1.0, 0.0, 0.0), tip)
+    d, w = R @ np.array([0.0, -1.0, 0.0]), R @ np.array([0.0, 0.0, 1.0])
+    half = BAG_HALF_LENGTH - BAG_GRIP_IN
+    for side, x in (("r", -half), ("l", half)):
+        s[f"arm_{side}"] = arm_ik_from_grip(side, np.asarray(centre, float) + np.array([x, 0.0, 0.0]), d, w,
+                                            pole=BAG_POLES[side], space=space)
+        s[f"fingers_{side}"] = 85.0
+        s[f"thumb_{side}"] = 40.0
+    s.update(body)
+    return s
+
+
+def clip_hold_bag(t, T=2.0):
+    return bag_key(BAG_HOLD + np.array([0.0, 0.0, 0.005 * math.sin(2 * math.pi * t / T)]), t=t, T=T)
+
+
+def clip_bag_lift(t):
+    low = bag_key(BAG_LOW, tip=-8.0, spine=(14.0, 0, 0), chest=(8.0, 0, 0))
+    return oneshot([(0.0, low), (LIFT_SECONDS, bag_key(BAG_HOLD))], t, template=low)
+
+
+def clip_bag_lower(t):
+    low = bag_key(BAG_LOW, tip=-8.0, spine=(14.0, 0, 0), chest=(8.0, 0, 0))
+    return oneshot([(0.0, bag_key(BAG_HOLD)), (LOWER_SECONDS, low)], t, template=low)
+
+
+def clip_bag_spill(t):
+    hold = bag_key(BAG_HOLD)
+    lean = dict(spine=(12.0, 0, 0), chest=(10.0, 0, 0), neck=(-6.0, 0, 0), head=(-4.0, 0, 0))
+    tipped = bag_key(BAG_SPILL, tip=100.0, **lean)
+    shake_a = bag_key(BAG_SPILL + np.array([0.0, 0.0, 0.035]), tip=118.0, **lean)
+    shake_b = bag_key(BAG_SPILL, tip=96.0, **lean)
+    return oneshot([(0.0, hold), (0.2, tipped), (0.3, shake_a), (0.4, shake_b), (0.5, shake_a), (0.6, tipped),
+                    (SPILL_SECONDS, hold)], t, template=tipped)
+
+
+# First person: the same, with the stooped first-person torso (FP_BODY) so the elbows and the open sleeve ends hang
+# under the view, and the bag further out and lower, across the bottom of the view. Fists are placed in model space.
+BAG_HOLD_FP = np.array([0.0, -0.52, 1.0])
+BAG_LOW_FP = np.array([0.0, -0.42, 0.78])
+BAG_SPILL_FP = np.array([0.0, -0.6, 0.9])
+FP_STOOP = {k: v for k, v in FP_BODY.items() if k != "space"}
+
+
+def bag_key_fp(centre, tip=0.0, t=0.0, T=2.0):
+    s = bag_key(centre, tip, t=t, T=T, space="world", **FP_STOOP)
+    base = upper_base(t, T, 0.5)
+    s["shoulder_l"], s["shoulder_r"] = base["shoulder_l"], base["shoulder_r"]
+    return s
+
+
+def clip_hold_bag_fp(t, T=2.0):
+    return bag_key_fp(BAG_HOLD_FP + np.array([0.0, 0.0, 0.005 * math.sin(2 * math.pi * t / T)]), t=t, T=T)
+
+
+def clip_bag_lift_fp(t):
+    low = bag_key_fp(BAG_LOW_FP, tip=-8.0)
+    return oneshot([(0.0, low), (LIFT_SECONDS, bag_key_fp(BAG_HOLD_FP))], t, template=low)
+
+
+def clip_bag_lower_fp(t):
+    low = bag_key_fp(BAG_LOW_FP, tip=-8.0)
+    return oneshot([(0.0, bag_key_fp(BAG_HOLD_FP)), (LOWER_SECONDS, low)], t, template=low)
+
+
+def clip_bag_spill_fp(t):
+    hold = bag_key_fp(BAG_HOLD_FP)
+    tipped = bag_key_fp(BAG_SPILL_FP, tip=100.0)
+    shake_a = bag_key_fp(BAG_SPILL_FP + np.array([0.0, 0.0, 0.035]), tip=118.0)
+    shake_b = bag_key_fp(BAG_SPILL_FP, tip=96.0)
+    return oneshot([(0.0, hold), (0.2, tipped), (0.3, shake_a), (0.4, shake_b), (0.5, shake_a), (0.6, tipped),
+                    (SPILL_SECONDS, hold)], t, template=tipped)
+
+
 CLIPS = {
     "idle": (clip_idle, 3.0, True, False),
     "walk": (clip_walk, WALK_T, True, False),
@@ -4230,6 +4323,14 @@ CLIPS = {
     "connect_stow_fp": (clip_connect_stow_fp, CONNECT_STOW_SECONDS, False, True),
     "connect_click_fp": (clip_connect_click_fp, CONNECT_CLICK_SECONDS, False, True),
     "connect_reverse_fp": (clip_connect_reverse_fp, CONNECT_REVERSE_SECONDS, False, True),
+    "hold_bag": (clip_hold_bag, 2.0, True, True),
+    "bag_spill": (clip_bag_spill, SPILL_SECONDS, False, True),
+    "bag_lift": (clip_bag_lift, LIFT_SECONDS, False, True),
+    "bag_lower": (clip_bag_lower, LOWER_SECONDS, False, True),
+    "hold_bag_fp": (clip_hold_bag_fp, 2.0, True, True),
+    "bag_spill_fp": (clip_bag_spill_fp, SPILL_SECONDS, False, True),
+    "bag_lift_fp": (clip_bag_lift_fp, LIFT_SECONDS, False, True),
+    "bag_lower_fp": (clip_bag_lower_fp, LOWER_SECONDS, False, True),
 }
 
 # the prop each clip shows in the right hand (verification renders and the game's defaults)
@@ -4242,6 +4343,8 @@ CLIP_PROP = {"hold_tool": "lift_remote", "tool_use": "lift_remote", "weld": "wel
              "hold_refine": "refine_tool", "refine_draw": "refine_tool", "refine_stow": "refine_tool",
              "hold_refine_fp": "refine_tool", "refine_draw_fp": "refine_tool", "refine_stow_fp": "refine_tool",
              **{name: "water_bucket" for name in BUCKET_CLIPS},
+             **{name: "soil_bag" for name in ("hold_bag", "bag_spill", "bag_lift", "bag_lower", "hold_bag_fp",
+                                                        "bag_spill_fp", "bag_lift_fp", "bag_lower_fp")},
              **{c: "connect_tool" for c in ("hold_connect", "hold_connect_aim", "connect_draw", "connect_stow", "connect_click",
                                             "connect_reverse", "hold_connect_fp", "hold_connect_aim_fp", "connect_draw_fp",
                                             "connect_stow_fp", "connect_click_fp", "connect_reverse_fp")}}
@@ -5086,6 +5189,27 @@ def export_animations():
     print(f"{path.name}: {len(CLIPS)} clips")
 
 
+def soil_bag_objects(parent):
+    """The Soil Bag's meshes from its item model, parented to `parent` (the grip frame) where the hold puts them."""
+    before = set(bpy.data.objects)
+    bpy.ops.import_scene.gltf(filepath=str(ITEM_DIR / "soil_bag.glb"))
+    imported = [ob for ob in bpy.data.objects if ob not in before]
+    meshes = [ob for ob in imported if ob.type == "MESH"]
+    # bag x (long) -> grip z, bag y (across) -> grip x (forward), bag z (thickness) -> grip y (up)
+    place = Matrix(((0.0, 1.0, 0.0, 0.0), (0.0, 0.0, 1.0, 0.0), (1.0, 0.0, 0.0, -(BAG_HALF_LENGTH - BAG_GRIP_IN)),
+                    (0.0, 0.0, 0.0, 1.0))) @ Matrix.Scale(BAG_SCALE, 4)
+    for ob in meshes:
+        world = ob.matrix_world.copy()
+        ob.parent = parent
+        ob.matrix_parent_inverse = Matrix.Identity(4)
+        ob.matrix_basis = place @ world
+        ob.name = "soil_bag_mesh"
+    for ob in imported:
+        if ob.type != "MESH":
+            bpy.data.objects.remove(ob)
+    return meshes
+
+
 def export_props():
     reset_scene()
     objs, parts = [], []
@@ -5120,11 +5244,17 @@ def export_props():
     for g, (size, texel_mm, cov) in stats.items():
         if g == "water_bucket":
             print(f"  {g} atlas: {size}px, {texel_mm:.2f} mm/texel, {cov * 100:.0f}% covered")
+    # The Soil Bag: the placed bag's own model (tools/soil/build_soil.py) at half size, on an empty at the grip, lying
+    # flat with its long axis along the grip's z (towards the left fist) and its middle half a bag's length from the fist.
+    bag_root = bpy.data.objects.new("soil_bag", None)
+    bpy.context.scene.collection.objects.link(bag_root)
+    bag_root.matrix_world = grip_frame_matrix("r")
+    bag_objs = soil_bag_objects(bag_root)
     # the Connect Tool's lights are a child node with their own emissive material, outside every atlas
     glow = build_connect_glow(objs[list(PROPS).index("connect_tool")])
     path = OUT_DIR / "hand_tools.glb"
-    export_glb(path, objs + [glow] + [root] + bobjs + [wat], animations=False)
-    print(f"{path.name}: {len(objs) + 1} props")
+    export_glb(path, objs + [glow] + [root] + bobjs + [wat] + [bag_root] + bag_objs, animations=False)
+    print(f"{path.name}: {len(objs) + 2} props")
 
 
 def export_bucket_items():

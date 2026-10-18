@@ -139,7 +139,7 @@ public partial class HotbarTest : StagedTest
                 {
                     Name = "InventoryScreen", Inventory = _client.Main.Inventory, Actions = _client.Main.Actions, Players = _client.Main.PlayerSync,
                     Catalog = _client.Main.Build.Catalog, Hotbar = Bar, Mode = () => _mode,
-                    AllItems = () => HotbarTools.All.Concat(_client.Main.Build.Catalog.Parts.Where(p => p.Value.Definition.Category is not null).Select(p => p.Key)),
+                    AllItems = () => HotbarTools.All.Concat(_client.Main.Build.Catalog.Parts.Where(p => p.Value.Definition is { Category: not null, IsItem: true }).Select(p => p.Key)),
                 };
                 AddChild(_screen);
                 Tools.Select(6);

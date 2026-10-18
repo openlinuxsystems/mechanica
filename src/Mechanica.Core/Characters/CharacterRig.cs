@@ -41,6 +41,9 @@ public enum CharacterProp : byte
 
     /// <summary>A full water bucket, carried by its raised handle.</summary>
     WaterBucketFull,
+
+    /// <summary>A Soil Bag, carried flat in front in both hands, a fist round each end.</summary>
+    SoilBag,
 }
 
 /// <summary>
@@ -102,6 +105,9 @@ public enum CharacterGesture : byte
 
     /// <summary>The Connect Tool reversing a bearing: a twist of the wrist and its lights pulsing the other way.</summary>
     ConnectReverse,
+
+    /// <summary>Tipping a Soil Bag forward and shaking the soil out of it.</summary>
+    BagSpill,
 }
 
 /// <summary>
@@ -201,6 +207,7 @@ public static class CharacterRig
         "hold_bucket_fp", "hold_bucket_full_fp", "bucket_fill_fp", "bucket_throw_fp", "bucket_place_fp", "bucket_place_full_fp",
         "hold_connect", "hold_connect_aim", "connect_draw", "connect_stow", "connect_click", "connect_reverse",
         "hold_connect_fp", "hold_connect_aim_fp", "connect_draw_fp", "connect_stow_fp", "connect_click_fp", "connect_reverse_fp",
+        "hold_bag", "bag_spill", "bag_lift", "bag_lower", "hold_bag_fp", "bag_spill_fp", "bag_lift_fp", "bag_lower_fp",
     ];
 
     /// <summary>
@@ -235,29 +242,32 @@ public static class CharacterRig
         CharacterProp.WaterBucketFull => "hold_bucket_full",
         CharacterProp.Item => "hold_item",
         CharacterProp.RefineTool => "hold_refine",
+        CharacterProp.SoilBag => "hold_bag",
         _ => "hold_tool",
     };
 
     /// <summary>
     /// The clip that brings <paramref name="prop"/> into the hand when it is taken, or null when it just appears: the
-    /// Refine Tool and the Connect Tool are drawn from the hip. Every peer plays it when it sees the prop change, so it
+    /// Refine Tool and the Connect Tool are drawn from the hip, and a Soil Bag is lifted up from low down. Every peer plays it when it sees the prop change, so it
     /// costs no traffic.
     /// </summary>
     public static string? DrawClip(CharacterProp prop) => prop switch
     {
         CharacterProp.RefineTool => "refine_draw",
         CharacterProp.ConnectTool => "connect_draw",
+        CharacterProp.SoilBag => "bag_lift",
         _ => null,
     };
 
     /// <summary>
     /// The clip that puts <paramref name="prop"/> away when the hand takes something else, or null: the Refine Tool and
-    /// the Connect Tool go back to the hip, still drawn until the clip ends.
+    /// the Connect Tool go back to the hip and a Soil Bag is lowered, still drawn until the clip ends.
     /// </summary>
     public static string? StowClip(CharacterProp prop) => prop switch
     {
         CharacterProp.RefineTool => "refine_stow",
         CharacterProp.ConnectTool => "connect_stow",
+        CharacterProp.SoilBag => "bag_lower",
         _ => null,
     };
 
@@ -281,6 +291,7 @@ public static class CharacterRig
         CharacterGesture.BucketPlaceFull => "bucket_place_full",
         CharacterGesture.ConnectClick => "connect_click",
         CharacterGesture.ConnectReverse => "connect_reverse",
+        CharacterGesture.BagSpill => "bag_spill",
         _ => null,
     };
 
@@ -334,12 +345,13 @@ public static class CharacterRig
         CharacterProp.PotatoBlaster => "potato_blaster",
         CharacterProp.WaterBucket or CharacterProp.WaterBucketFull => "water_bucket",
         CharacterProp.RefineTool => "refine_tool",
+        CharacterProp.SoilBag => "soil_bag",
         _ => null,
     };
 
     /// <summary><paramref name="prop"/> when it is a known value, otherwise <see cref="CharacterProp.None"/>.</summary>
-    public static CharacterProp Sanitize(CharacterProp prop) => prop <= CharacterProp.WaterBucketFull ? prop : CharacterProp.None;
+    public static CharacterProp Sanitize(CharacterProp prop) => prop <= CharacterProp.SoilBag ? prop : CharacterProp.None;
 
     /// <summary><paramref name="gesture"/> when it is a known value, otherwise <see cref="CharacterGesture.None"/>.</summary>
-    public static CharacterGesture Sanitize(CharacterGesture gesture) => gesture <= CharacterGesture.ConnectReverse ? gesture : CharacterGesture.None;
+    public static CharacterGesture Sanitize(CharacterGesture gesture) => gesture <= CharacterGesture.BagSpill ? gesture : CharacterGesture.None;
 }
