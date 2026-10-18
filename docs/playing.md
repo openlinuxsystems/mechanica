@@ -33,11 +33,12 @@ These are the default keys. Every one can be changed in Options, Controls.
 | I or Tab | Inventory |
 | U | Upgrade the part you are aiming at (a station), or the station whose screen is open |
 | L | Logbook: your quests, the map and your markers; you pick an answer here when a quest asks you to decide |
+| M | The full map: your missions' goals and your labelled pins; right-click to drop a pin |
 | Esc | Menu: save, load, open your world to the LAN, Options, help, quit. Esc also closes any open window. |
 | H or F1 | Handbook |
 | Left / Right (or Page Up / Page Down) | Turn the Handbook's pages |
 | F7 / F8 / F9 | Logic Visualizer, Creation Inspector and force overlay |
-| Alt + Z | Hide the HUD (crosshair, tool bar, compass, tips, chat, quest log and names), and show it again |
+| Alt + Z | Hide the HUD (crosshair, tool bar, compass, minimap, tips, chat, quest log and names), and show it again |
 
 In water deeper than about chest height you swim: there is no ground to stand on, you float with your
 head out, Space rises and Ctrl dives. Shallower water slows you down.
@@ -70,7 +71,7 @@ switches it to the next mode and shows it for a moment; R with the Connect Tool 
 - Aim at a part for a moment and a **tooltip** shows its name, what it is and what Use does. Parts you can
   use, sit in, open or set up add a line with their signal (on or off), how many connections they have and
   their durability.
-- **Health** is the blue bar at the top left (Survival). The quest log is at the top right, the compass at
+- **Health** is the blue bar at the top left (Survival). The minimap is in the top right corner with the quest log under it, the compass at
   the top, the tool bar at the bottom and chat at the bottom left.
 - A part in hand shows a **ghost** that is blue where the part fits and red where it would not (something in the way, out of
   reach, or none left in Survival). A part you place shows straight away; if the host turns it down, it fades out
@@ -186,7 +187,7 @@ free in Creative.
   the screen the first time you start, pick up each tool or open each screen; **Show tips again** brings
   back the ones you have seen; the tips are in `game/data/tutorial.json`), auto-save (off, or every 5, 10 or 15
   minutes while you host), the most players a world you host takes, the server password for worlds you host, and your player name.
-- **Interface**: show or hide the tool bar and key hints, the compass, other players' names over their heads, how opaque the chat background is, and a
+- **Interface**: show or hide the tool bar and key hints, the compass, the minimap, other players' names over their heads, how opaque the chat background is, and a
   colour-blind filter (Protanopia, Deuteranopia or Tritanopia) that corrects colours on the whole screen
   so ones that look alike stay apart, and the **Language** of menus and the HUD. The game ships in English; a
   language file dropped into your `lang` folder (Options shows where) adds that language to the list. See
@@ -218,6 +219,18 @@ the compass and in the world like any waypoint. Right-click one of your markers 
 remove it. Your markers are saved with the world; you can have up to 20. The map keeps where you left it.
 
 ![The Logbook](images/logbook.png)
+
+## Map and minimap
+
+The **minimap** in the top right corner shows the land round you, north up, with you as the cyan arrow in the
+middle. Your current missions' goals are pulsing blue diamonds and your own pins are blue diamonds with their
+labels; one that is out of range waits on the edge in its direction. Options, Interface, Show minimap turns it off.
+
+Press **M** for the **full map**, and M, Esc or its X to close it. It works like the Logbook's map (drag, scroll,
+**−**, **+**, **Whole map**, **Find me**) and shows the same goals, named, and your pins. Click one to make it the
+compass's primary waypoint. Right-click open ground to drop a pin: type a label and press Enter or **Place pin**
+(left empty, it is numbered). Right-click one of your pins to remove it; the map asks first. Pins are your
+Logbook markers, so they show in the Logbook, on the compass and in the world too.
 
 ## Compass
 

@@ -179,6 +179,9 @@ How parts attach when they are placed touching each other:
 - A `rotational`, `linear` or `spring` socket meeting a structural face makes a joint of that kind
   between two Bodies. Two joint sockets never connect to each other.
 
+A mesh node in the part's model named after one of its joint sockets (the bearing's `rotor`) is drawn on the
+Body joined at that socket, so it turns or slides with what is attached there. Without a joined part it stays put.
+
 The Part Editor's connection preview shows the result on every face: green for rigid, blue for a
 joint, red where nothing attaches.
 
@@ -362,10 +365,14 @@ The vanilla scripts read these properties:
 |--------|----------|---------|
 | `scripts/seat.lua` | `steer_angle` (°) | How far A and D turn the upright bearings the seat feeds. |
 | | `steer_speed` (rad/s), `steer_torque` (N·m) | How fast and how hard they turn. |
-| `scripts/engine.lua` | `speed` (rad/s) | Wheel bearing speed at full throttle at full power (the `gear` setting, shown as Power 1 to 5, gives a fifth each). With nothing linked in, the `on` setting runs it at full throttle. |
+| `scripts/engine.lua` | `speed` (rad/s) | Wheel bearing speed at full throttle at full power. `gears` (default 5) is how many steps the `gear` setting (shown as Power) has, each giving that share. With nothing linked in, the `on` setting runs it at full throttle. |
 | | `torque`, `brake` (N·m) | Most torque while driving, and while holding the wheels with no throttle. |
 | | `fuel`, `fuel_time` (s) | Item burned from the creation's containers, and seconds of full throttle per item. Creative needs none. |
 | | `loop_parameter` | Parameter of the `loop` sound that follows the throttle (`load`, `speed`). |
+| | `ignition` | When true the engine has to be switched `on` even when linked, and shows `clip`, `lever`, `smoke`, `sparks` and `oil` for its model. |
+| | `start_time`, `stop_time`, `gear_time` (s) | How long it cranks, winds down, and rattles after a power change. |
+| | `false_start`, `false_start_time` (s) | The chance a start fails first, and how long the failed try lasts. It always fails with no fuel. |
+| | `uneven`, `backfire`, `hard_gear`, `smoke` | How much its speed wobbles (share of itself), backfires a second, the power from which it runs hard, and its smoke at full power (0 to 1). |
 | `scripts/sensor.lua` | `interval` | Steps between looks (its `range` and what it detects are settings). |
 | | `cone` (°) | How far off its face its ring of rays looks, so it sees a narrow cone. Its menu preview uses the same angle. |
 | `scripts/timer.lua` | (the `mode` setting) | `once` passes its input on after the delay; `repeat` blinks its output every delay while the input is on. |
@@ -470,6 +477,8 @@ host's values.
 | `glow` | `{readout, offset, direction, length}` | A faint blue particle glow whose strength follows the value from 0 to 1 (a thruster's exhaust). `direction` defaults to `[0, 1, 0]`, `length` to 0.5 m. |
 | `highlight` | `{readout, axis, offset, radius}` | A ring of cyan dashes turning about `axis` while the value is not 0, its sign giving the way round (a bearing an engine drives). `radius` defaults to 0.12 m. |
 | `press` | `{readout, axis, depth}` | Pushes the model in by `depth` m (default 0.02, at most 0.1) along `axis` (default `[0, -1, 0]`) while the value is not 0 (a switch). |
+| `clips` | `{readout, scrub}` | Plays the model's own glTF animations (the model must be a `mesh`). The `readout` is a text value naming the clip to play (text after a `#` is ignored, so `stop#3` restarts `stop`); clips whose names end in `_loop` loop. `scrub` (at most 4) is a list of `{readout, clip}`: that clip is held at the value (0 to 1) of its length, for a lever or a needle. |
+| `effects` | list of `{readout, kind, offset, direction, color}` | At most 8 particle effects whose strength follows the value from 0 to 1. `kind` is `smoke`, `sparks` or `drops`; `offset` lies inside the footprint, `direction` (default up) is where they go, `color` is optional. |
 
 Offsets are from the part centre in the part's frame, within its footprint; axes and directions are not zero.
 

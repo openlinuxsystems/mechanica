@@ -14,7 +14,7 @@ namespace Mechanica.Game.Tests;
 /// Languages (UI spec §16 Interface, Language). A language file dropped into the player's <c>lang</c> folder is
 /// listed in Options, and picking it changes the UI at once. Then, in the pseudo-locale made from every
 /// English key, every window is opened (main menu and each screen it opens, every Options tab, the mod tools,
-/// and in a world the HUD, in-game menu, inventory, logbook, chat and compass) and every piece of text on it
+/// and in a world the HUD, in-game menu, inventory, logbook, full map, chat and compass) and every piece of text on it
 /// must be pseudo text: anything still in English skipped the string tables. Run with <c>-- --collect</c> to
 /// walk the same windows in English and write <c>data/lang/en.json</c> from what they show.
 /// </summary>
@@ -186,9 +186,18 @@ public partial class LanguageTest : StagedTest
             _main.GetNode<Items.InventoryScreen>("InventoryScreen").Hide();
             _main.GetNode<Quests.QuestHud>("QuestHud").Open();
         });
-        World("chat", () =>
+        World("the full map, asking for a pin's label", () =>
         {
             _main.GetNode<Quests.QuestHud>("QuestHud").Close();
+            var maps = _main.GetNode<Quests.MapHud>("MapHud");
+            maps.Open();
+            maps.Window.AskLabel(_main.LocalPlayer!.GlobalPosition);
+        });
+        World("chat", () =>
+        {
+            var maps = _main.GetNode<Quests.MapHud>("MapHud");
+            maps.Window.CancelPin();
+            maps.Close();
             var chat = _main.GetNode<Chat.ChatPanel>("ChatPanel");
             chat.Open();
             chat.Send("hello");

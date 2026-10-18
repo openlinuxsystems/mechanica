@@ -180,7 +180,8 @@ public partial class LoadingTest : StagedTest
                 AddChild(_main);
                 return false;
             }
-            if (frame < 3)
+            // It fails at once, but how many physics frames "at once" is depends on the machine's load.
+            if (frame < 3 || (_main.LoadingScreen?.Failed != true && frame < 300))
                 return false;
             Check(_main.LoadingScreen?.Failed == true, $"the failure shows ({_main.Loading.Stage}, {_main.Session.State})");
             Check(_main.LoadingScreen?.ErrorText.Length > 0, $"with the reason ({_main.LoadingScreen?.ErrorText})");

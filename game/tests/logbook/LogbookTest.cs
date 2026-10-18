@@ -14,7 +14,8 @@ namespace Mechanica.Game.Tests;
 /// (active ones with their step) and the island's map on the right, drawn in blues. Dragging the map pans it, the
 /// wheel zooms about the cursor, and the view is kept when the Logbook closes and opens. A right click marks a place
 /// through the host; the marker shows in the list, on the compass and on the map, a click on it makes it the
-/// compass's primary waypoint, and its ✕ removes it. Markers are saved with the player and come back when they rejoin.
+/// compass's primary waypoint, and its ✕ removes it. A pin dropped with a label on the client's full map reaches the host
+/// with its label and shows on the client's minimap. Markers are saved with the player and come back when they rejoin.
 /// </summary>
 public partial class LogbookTest : StagedTest
 {
@@ -24,6 +25,7 @@ public partial class LogbookTest : StagedTest
     private Instance _client = null!;
     private QuestHud _hud = null!;
     private CompassHud _compass = null!;
+    private MapHud _maps = null!;
     private System.Numerics.Vector2 _centre;
     private float _zoom;
 
@@ -184,10 +186,41 @@ public partial class LogbookTest : StagedTest
             Check(Logbook.Marks().All(m => m.Waypoint.Id != "marker:1"), "the map drops it");
             return true;
         });
+        Add("the client's full map drops a labelled pin through the host, on its minimap too", frame =>
+        {
+            if (frame == 0)
+            {
+                _maps = new MapHud
+                {
+                    Quests = _client.Main.Quests, Players = _client.Main.PlayerSync, Markers = Markers, Settings = Main.LogbookSettings,
+                    World = () => _client.Main.Streamer.Generator, Compass = _compass,
+                };
+                AddChild(_maps);
+                _results.Clear();
+                _maps.Window.AskLabel(_client.Main.LocalPlayer!.GlobalPosition + new Vector3(30, 0, 30));
+                _maps.Window.LabelEdit.Text = "Camp ridge";
+                _maps.Window.PlacePin();
+                return false;
+            }
+            if (_results.Count > 0)
+                return Markers.Own.Count == 0 && HostMarkers.Count == 0;
+            if (Markers.Own.Count == 0 || !_maps.Minimap.Shown.Any(p => p.Waypoint.Name == "Camp ridge"))
+                return false;
+            Check(HostMarkers is [{ Name: "Camp ridge" }], $"the host has it with its label ({string.Join(", ", HostMarkers)})");
+            Check(_maps.Pins().Any(p => p.Kind == LogbookMarkKind.Own && p.Waypoint.Name == "Camp ridge"), "the full map shows it");
+            Check(_maps.Pins().Any(p => p.Kind == LogbookMarkKind.Quest), "and the client's current mission");
+            // Taken away again, so the save below holds only its own marker.
+            Markers.Remove(Markers.Own[0].Id, _results.Add);
+            return false;
+        });
         Add("a marker is saved with the player", frame =>
         {
             if (frame == 0)
+            {
+                _results.Clear();
                 Markers.Add(new Vector3(40, 3, -60), "Camp", _results.Add);
+                return false;
+            }
             if (_results.Count == 0)
                 return false;
             _results.Clear();
@@ -197,6 +230,7 @@ public partial class LogbookTest : StagedTest
             _hud.Close();
             _hud.QueueFree();
             _compass.QueueFree();
+            _maps.QueueFree();
             _harness.Stop(_client);
             return true;
         });
