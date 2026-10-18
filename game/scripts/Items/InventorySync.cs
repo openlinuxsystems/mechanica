@@ -92,6 +92,9 @@ public partial class InventorySync : Node, IInventoryWorld
         Sounds?.Emit(sound, ownerModId, position.ToGodot());
 
     /// <inheritdoc/>
+    public void Changed(Creation creation) => Creations.Rebuild(creation.Id);
+
+    /// <inheritdoc/>
     public void SetPartLoop(int creation, int partId, string? sound, string ownerModId)
     {
         if (Sounds is null)

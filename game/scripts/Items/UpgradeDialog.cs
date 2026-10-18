@@ -177,8 +177,9 @@ public partial class UpgradeDialog : CanvasLayer
         var (instance, written) = part;
         var top = PartUpgrades.MaxLevel(written);
         _shownLevel = instance.Level;
-        var name = written.Name ?? instance.Part;
-        _level.Text = Loc.T("{0}: level {1} of {2}", name, instance.Level, top);
+        var name = PartUpgrades.At(written, instance.Level).Name ?? instance.Part;
+        // Players count levels from 1 (the part as made is level 1), as the stations' screen does.
+        _level.Text = Loc.T("{0}: level {1} of {2}", name, instance.Level + 1, top + 1);
         foreach (var child in _cost.GetChildren().Concat(_changes.GetChildren()))
         {
             child.GetParent().RemoveChild(child);

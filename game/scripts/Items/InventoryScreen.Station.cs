@@ -497,7 +497,7 @@ public partial class InventoryScreen
         _art.Visible = _art.Texture is not null;
         _fullPill.Visible = view?.Blocked == true;
         _levelPill.Visible = view is { MaxLevel: > 0 };
-        _stationLevel.Text = view is null ? "" : Loc.T("Level {0} / {1}", view.Level, view.MaxLevel);
+        _stationLevel.Text = view is null ? "" : Loc.T("Level {0} / {1}", view.Level + 1, view.MaxLevel + 1);
         _upgrade.Visible = view is { MaxLevel: > 0 } && Upgrades is not null;
         _upgrade.Key = GameInput.Label(InputActions.Upgrade);
         _upgrade.Disabled = view is null || view.Level >= view.MaxLevel;

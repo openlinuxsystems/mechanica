@@ -236,11 +236,14 @@ fall out as a pile of items on the ground.
 Each entry is one level above the part as written (level 0). A player raises a part one level at a
 time with Upgrade (**U**) or from the station's screen; it is free in Creative and costs the entry's
 items in Survival. A placed part's level is saved with the Creation; blueprints keep only level 0.
+Picking up an upgraded part gives its own item, `mod_id:part_id@level` (`vanilla:gas_engine@2` is the Gas Engine
+two upgrades up): it shows that level's name and icon, stacks only with the same level, and places the part at that
+level again. Only the part as written (level 0) has a recipe.
 
 | Key | Type | Meaning |
 |-----|------|---------|
 | `cost` | list of `{ "item", "count" }` | What reaching this level costs in Survival. |
-| `set` | object | Keys merged over the part at this level, on top of the levels below. Only `crafting`, `inventory`, `logic` and `properties` can change; objects merge key by key. A level can't shrink `inventory.slots` or remove `crafting`. |
+| `set` | object | Keys merged over the part at this level, on top of the levels below. Only `name`, `description`, `durability`, `mesh`, `icon`, `settings`, `display`, `crafting`, `inventory`, `logic` and `properties` can change; objects merge key by key and lists are replaced. A level can't shrink `inventory.slots` or remove `crafting`. |
 
 At most 10 levels. The Part Editor lists them under Upgrades.
 
@@ -369,10 +372,11 @@ The vanilla scripts read these properties:
 | | `torque`, `brake` (N·m) | Most torque while driving, and while holding the wheels with no throttle. |
 | | `fuel`, `fuel_time` (s) | Item burned from the creation's containers, and seconds of full throttle per item. Creative needs none. |
 | | `loop_parameter` | Parameter of the `loop` sound that follows the throttle (`load`, `speed`). |
-| | `ignition` | When true the engine has to be switched `on` even when linked, and shows `clip`, `lever`, `smoke`, `sparks` and `oil` for its model. |
+| | `ignition` | When true the engine has to be switched `on` even when linked, and shows `clip`, `lever`, `heat`, `smoke`, `sparks` and `oil` for its model. |
 | | `start_time`, `stop_time`, `gear_time` (s) | How long it cranks, winds down, and rattles after a power change. |
+| | `heat_time` (s) | How long its `heat` display (how hard it works, 0 to 1, for glowing parts of its model) takes to rise or fall all the way. Default 0.4. |
 | | `false_start`, `false_start_time` (s) | The chance a start fails first, and how long the failed try lasts. It always fails with no fuel. |
-| | `uneven`, `backfire`, `hard_gear`, `smoke` | How much its speed wobbles (share of itself), backfires a second, the power from which it runs hard, and its smoke at full power (0 to 1). |
+| | `uneven`, `backfire`, `hard_gear`, `smoke` | How much its speed wobbles (share of itself), backfires a second, the power from which it runs hard, and its smoke at full power (0 to 1). Keep `speed` × (1 + `uneven`) at or under the 60 rad/s bearing limit. |
 | `scripts/sensor.lua` | `interval` | Steps between looks (its `range` and what it detects are settings). |
 | | `cone` (°) | How far off its face its ring of rays looks, so it sees a narrow cone. Its menu preview uses the same angle. |
 | `scripts/timer.lua` | (the `mode` setting) | `once` passes its input on after the delay; `repeat` blinks its output every delay while the input is on. |

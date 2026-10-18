@@ -17,8 +17,8 @@
 -- down for properties.stop_time s. Its speed wobbles by properties.uneven of itself, it backfires now and then
 -- (properties.backfire a second) and a power change rattles it for properties.gear_time s. It shows what it does
 -- for its model: "clip" (off_loop, false_start, start, run_loop, run_hard_loop from properties.hard_gear up, gear,
--- stop), "lever" (the power setting, 0 to 1), "smoke", "sparks" and "oil" (0 to 1). Sounds "sputter" (false
--- starts, backfires) and "rev" (power changes) when bound.
+-- stop), "lever" (the power setting, 0 to 1), "heat" (how hard it works, 0 to 1, easing over properties.heat_time s),
+-- "smoke", "sparks" and "oil" (0 to 1). Sounds "sputter" (false starts, backfires) and "rev" (power changes) when bound.
 
 local RESEND = 30
 local SHOW_EVERY = 10
@@ -292,6 +292,12 @@ local function ignition(dt)
   end
   state.throttle = running and throttle or 0
   local power = running and (0.3 + 0.7 * math.abs(throttle) * gear / top) or 0
+  -- heat follows the power setting (and a little the throttle), easing in and out, in steps of 0.05 so it syncs seldom
+  local want = running and (gear / top) * (0.6 + 0.4 * math.abs(throttle)) or 0
+  local step = dt / (properties.heat_time or 0.4)
+  local heat = state.heat or 0
+  state.heat = heat < want and math.min(want, heat + step) or math.max(want, heat - step)
+  part.display("heat", math.floor(state.heat * 20 + 0.5) / 20)
   part.display("smoke", math.max(power * (properties.smoke or 1), pulsed("smoke", dt)))
   part.display("sparks", math.max(running and math.abs(throttle) * gear / top > 0.7 and 0.3 or 0, pulsed("sparks", dt)))
   part.display("oil", math.max(0.15, pulsed("oil", dt)))

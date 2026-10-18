@@ -12,7 +12,10 @@ namespace Mechanica.Core.Building;
 /// <see cref="Cell"/> in its grid frame; or give <see cref="Position"/> to start a new Creation whose
 /// grid frame sits at that world position, aligned with the world axes.
 /// </summary>
-/// <param name="Part">Part id, <c>mod_id:part_id</c> (a bare id means vanilla).</param>
+/// <param name="Part">
+/// Part id, <c>mod_id:part_id</c> (a bare id means vanilla), or an upgraded part's item, <c>gas_engine@2</c>: the part
+/// goes down at that upgrade level.
+/// </param>
 /// <param name="Cell">Grid cell of the part's local origin cell.</param>
 /// <param name="Rotation">Orientation on the grid, like <c>"+x+y"</c>.</param>
 /// <param name="Creation">Creation to attach to.</param>
@@ -118,7 +121,11 @@ public interface IBuildWorld
 /// </summary>
 public interface IBuildCosts
 {
-    /// <summary>Null when <paramref name="caller"/> can pay for one <paramref name="part"/> (a qualified id), or why not.</summary>
+    /// <summary>
+    /// Null when <paramref name="caller"/> can pay for one <paramref name="part"/> (a qualified id; an upgraded part
+    /// carries its level, <c>vanilla:gas_engine@2</c>, see <see cref="PartUpgrades.ItemKey"/>), or why not. The same
+    /// goes for the ids <see cref="Placed"/> and <see cref="Removed"/> are given.
+    /// </summary>
     string? CheckPlace(ActionCaller caller, string part);
 
     /// <summary>Takes payment for one <paramref name="part"/> that was just placed.</summary>
@@ -277,7 +284,7 @@ public sealed class BuildActions(IPartCatalog catalog, BuildSettings settings, I
                 return $"Creation {id} already has the most parts allowed ({settings.MaxPartsPerCreation}).";
             if (BuildAim.JoinProblem(definition, target) is { } join)
                 return join;
-            if (!target.CanPlacePart(args.Part, args.Cell, args.Rotation, out var attachedTo, out var error))
+            if (!target.CanPlacePart(PartUpgrades.SplitItem(args.Part).Part, args.Cell, args.Rotation, out var attachedTo, out var error))
                 return Sentence(error);
             pose = target.BodyPose(target.BodyIndexOf(attachedTo[0]));
         }
@@ -301,11 +308,13 @@ public sealed class BuildActions(IPartCatalog catalog, BuildSettings settings, I
     {
         PartInstance? placed;
         string? error;
+        var (partId, level) = PartUpgrades.SplitItem(args.Part);
         if (args.Creation is { } id)
         {
             var target = world.FindCreation(id)!;
-            if (!target.TryPlacePart(args.Part, args.Cell, args.Rotation, out placed, out error))
+            if (!target.TryPlacePart(partId, args.Cell, args.Rotation, out placed, out error))
                 throw new InvalidOperationException(error);
+            target.SetLevel(placed.Id, level);
             // A part set down on the ground holds a grounded Creation there too, so it stays put when others come off.
             if (target.IsGrounded && world.RestsOnWorld(target, target.DefinitionOf(placed.Id), args.Cell, args.Rotation,
                     target.BodyPose(target.BodyIndexOf(placed.Id))))
@@ -313,13 +322,14 @@ public sealed class BuildActions(IPartCatalog catalog, BuildSettings settings, I
             world.Changed(target);
             if (sound)
                 PlayPlaced(world, target, placed.Id);
-            Costs?.Placed(caller, placed.Part);
+            Costs?.Placed(caller, PartUpgrades.ItemKey(placed.Part, level));
             return Value(new PlacePartResult(target.Id, placed.Id));
         }
 
         var creation = new Creation(world.NextCreationId(), catalog);
-        if (!creation.TryPlacePart(args.Part, args.Cell, args.Rotation, out placed, out error))
+        if (!creation.TryPlacePart(partId, args.Cell, args.Rotation, out placed, out error))
             throw new InvalidOperationException(error);
+        creation.SetLevel(placed.Id, level);
         var start = new Pose(args.Position!.Value.ToNumerics(), Quaternion.Identity);
         creation.SetAllBodyPoses(start);
         // Built on the ground, it is anchored there as in Scrap Mechanic: players can't kick it about. A loose part
@@ -328,7 +338,7 @@ public sealed class BuildActions(IPartCatalog catalog, BuildSettings settings, I
             creation.SetAnchored(placed.Id, true);
         world.Added(creation);
         PlayPlaced(world, creation, placed.Id);
-        Costs?.Placed(caller, placed.Part);
+        Costs?.Placed(caller, PartUpgrades.ItemKey(placed.Part, level));
         return Value(new PlacePartResult(creation.Id, placed.Id));
     }
 
@@ -355,7 +365,7 @@ public sealed class BuildActions(IPartCatalog catalog, BuildSettings settings, I
         var part = creation.FindPart(args.Part)!;
         var centre = PartCentre(creation, part.Id);
         var result = Remove(world, creation, args.Part);
-        Costs?.Removed(caller, part.Part, centre);
+        Costs?.Removed(caller, PartUpgrades.ItemKey(part.Part, part.Level), centre);
         return Value(result);
     }
 

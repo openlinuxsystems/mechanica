@@ -63,16 +63,18 @@ public sealed class PartAssets
     /// </summary>
     public PartModel ModelFor(string qualifiedId, PartDefinition definition, string? paint = null)
     {
+        // An upgrade level can bring its own mesh (PartUpgrades), so a part is kept once per mesh it shows.
+        var cacheKey = definition.Mesh is { } own ? $"{qualifiedId}|{own}" : qualifiedId;
         if (paint is not null)
         {
-            var key = $"{qualifiedId}|{paint}";
+            var key = $"{cacheKey}|{paint}";
             if (_models.TryGetValue(key, out var painted))
                 return painted;
             var plain = ModelFor(qualifiedId, definition);
             var color = HexColor.TryParse(paint, out var c) ? new Color(c.R, c.G, c.B) : Colors.White;
             return _models[key] = plain with { Meshes = [.. plain.Meshes.Select(m => Paint(m, color))] };
         }
-        if (_models.TryGetValue(qualifiedId, out var cached))
+        if (_models.TryGetValue(cacheKey, out var cached))
             return cached;
         var modId = _content?.FindPart(qualifiedId)?.ModId;
         var (shape, shapeTransform) = BuildShape(definition, modId);
@@ -82,7 +84,7 @@ public sealed class PartAssets
             : new PartModel([new PartMesh(PlaceholderMesh(definition, shape), shapeTransform)], shape, shapeTransform, IsPlaceholder: true);
         if (definition.Visual is { } visual)
             model = model with { Meshes = [.. model.Meshes.Select(m => ApplyVisual(m, visual, modId))] };
-        return _models[qualifiedId] = model;
+        return _models[cacheKey] = model;
     }
 
     /// <summary>
