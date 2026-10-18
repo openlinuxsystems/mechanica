@@ -327,7 +327,7 @@ public sealed record PaintSettings
 /// <summary>
 /// The Sledgehammer, every player's main tool (Chase's sledgehammer spec). A part's health is its <c>durability</c> times
 /// <see cref="HealthPerDurability"/> (D13); each hit takes <see cref="Damage"/>. A swing takes <see cref="SwingSeconds"/>
-/// and lands <see cref="StrikeSeconds"/> after the click, on what is within <see cref="Reach"/> of the head.
+/// and lands <see cref="StrikeSeconds"/> after the click (at it, as shipped), on what is within <see cref="Reach"/> of the head.
 /// Every hit pushes what it lands on along the swing with <see cref="Impulse"/>: a Body by mass × Δv, a player or bot as
 /// a body of <see cref="CharacterMass"/>, never faster than <see cref="MaxKnockbackSpeed"/>. Players and bots take
 /// <see cref="CombatDamage"/>; trees, rocks and other world objects take their own <c>sledge_damage</c>, or
@@ -345,8 +345,8 @@ public sealed record SledgeSettings
     /// <summary>Shortest time between one player's hits, in seconds: one whole swing.</summary>
     public float SwingSeconds { get; init; } = 1.0f;
 
-    /// <summary>Seconds from the click to the hit, when the head comes down at the end of the strike.</summary>
-    public float StrikeSeconds { get; init; } = 0.6f;
+    /// <summary>Seconds from the click to the hit (0: the hit lands at the click, and the animation catches up).</summary>
+    public float StrikeSeconds { get; init; }
 
     /// <summary>How far a swing reaches, in metres.</summary>
     public float Reach { get; init; } = 3.0f;

@@ -105,7 +105,8 @@ from the spine up, over whatever the legs are doing. Every peer works out each p
 already knows (speed, on the ground, swimming, crouching, seated, what is in hand), so animation costs no
 network traffic beyond a byte for the tool in hand and one for each swing. The Sledgehammer has three swings (`sledge_swing` overhead,
 `sledge_swing_side` from the right and `sledge_swing_back` from the left); which one a click plays is picked at
-random from that swing count, never the same twice running, so every peer plays the same one. The Refine Tool, shown
+random from that swing count, never the same twice running, so every peer plays the same one. The hit lands at the click, so
+each swing starts past its wind-up (`gesture_start` in `game/data/character.json`) with the head already coming down. The Refine Tool, shown
 only while Use is held on a resource node, comes with a draw from the hip (`refine_draw`) and a stow back to it
 (`refine_stow`); every peer plays them when it sees that player's hand take or drop the tool, chips fly off the node at
 each stroke (sparks off metal) and the `refiner_*` sounds play, all from the same prop byte. The Connect Tool draws from

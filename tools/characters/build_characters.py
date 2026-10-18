@@ -3189,8 +3189,9 @@ def heavy_ready():
 
 
 # Three swings, picked at random for each click (CharacterRig.GestureClip): overhead, a forehand sweep from the right
-# and a backhand from the left. Each lasts SWING_SECONDS (sledge.swing_seconds): a quick wind-up, the hit at
-# STRIKE_SECONDS (sledge.strike_seconds), then the recovery back to the ready pose. The overhead keys below were
+# and a backhand from the left. Each lasts SWING_SECONDS: a quick wind-up, the head meeting the hit at STRIKE_SECONDS,
+# then the recovery back to the ready pose. In game the hit lands at the click (sledge.strike_seconds 0), so the swing
+# starts past the wind-up (game/data/character.json gesture_start) and the head comes down a few frames later. The overhead keys below were
 # first laid out over 1 s and are squeezed onto that timing by swing_time.
 SWING_SECONDS = 0.6
 STRIKE_SECONDS = 0.25

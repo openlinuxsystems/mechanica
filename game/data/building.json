@@ -57,11 +57,12 @@
     "drag_flush_seconds": 0.1
   },
   "sledge": {
-    // Chase's sledgehammer spec: one swing a second, the hit landing 0.6 s after the click, 3 m from the head.
+    // Chase's sledgehammer spec: one swing a second, the hit landing at the click (2026-10-18; was 0.6 s after it), 3 m
+    // from the head. The swing animation skips its wind-up to match (character.json gesture_start).
     "damage": 10,
     "health_per_durability": 10,
     "swing_seconds": 1.0,
-    "strike_seconds": 0.6,
+    "strike_seconds": 0,
     "reach": 3.0,
     // Knockback (N·s, mass × Δv) on whatever is hit, never faster than max_knockback_speed (m/s) for something light.
     // Players and bots count as character_mass kg and get knockback_lift m/s upward; a bot slows by knockback_drag m/s².
