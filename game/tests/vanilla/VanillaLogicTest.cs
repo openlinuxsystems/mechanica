@@ -33,6 +33,9 @@ public partial class VanillaLogicTest : StagedTest
         "scrap_wheel", "wheel", "big_wheel", "logic_gate", "timer", "sensor", "switch", "button", "controller",
     ];
 
+    // The wheels point at their own modelled meshes (tools/wheels/build_wheels.py), so the batch bakes no mesh for them.
+    private static readonly string[] OwnMeshes = ["scrap_wheel", "wheel", "big_wheel"];
+
     private static readonly Vector3 CarAt = new(4, 1.0f, 8);
 
     private readonly List<ActionResult> _results = [];
@@ -81,7 +84,7 @@ public partial class VanillaLogicTest : StagedTest
                 .Select(f => Path.GetRelativePath(_scratchMod, f).Replace('\\', '/'))
                 .Where(IsBatchOutput)
                 .Order(StringComparer.Ordinal).ToList();
-            Check(made.Count == 4 * Outputs.Length, $"it writes a part, an editor source, a mesh and a recipe for each ({made.Count} files)");
+            Check(made.Count == 4 * Outputs.Length - OwnMeshes.Length, $"it writes a part, an editor source, a mesh (but for the wheels) and a recipe for each ({made.Count} files)");
             var differing = made.Where(f => !File.Exists(Path.Combine(VanillaDir, f))
                 || !File.ReadAllBytes(Path.Combine(VanillaDir, f)).AsSpan().SequenceEqual(File.ReadAllBytes(Path.Combine(_scratchMod, f)))).ToList();
             Check(differing.Count == 0, $"every file matches mods/vanilla (differing: {string.Join(", ", differing)}); re-run tools/author-vanilla.sh");
@@ -319,6 +322,6 @@ public partial class VanillaLogicTest : StagedTest
     }
 
     private static bool IsBatchOutput(string relative) =>
-        Outputs.Any(id => relative == $"parts/{id}.json" || relative == $"meshes/{id}.glb" || relative == $"editor/parts/{id}.json"
-            || relative == $"recipes/{id}.json");
+        Outputs.Any(id => relative == $"parts/{id}.json" || (relative == $"meshes/{id}.glb" && !OwnMeshes.Contains(id))
+            || relative == $"editor/parts/{id}.json" || relative == $"recipes/{id}.json");
 }

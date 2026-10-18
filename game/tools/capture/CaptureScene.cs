@@ -26,6 +26,8 @@ namespace Mechanica.Game.Tools;
 /// chunk into rods (<c>tools/capture-rocks.sh</c>).
 /// Given <c>soil</c> it carries a Soil Bag, tips it out, spills a mound and shows a row of mounds dry, lightly watered,
 /// fully wet and drying (<c>tools/capture-soil.sh</c>).
+/// Given <c>wheels</c> it sets three little cars down in a meadow, one on each wheel (Scrap Wheel, Wheel, Off Road
+/// Wheel), captures them wide and close, and shows the three wheels on the hotbar (<c>tools/capture-wheels.sh</c>).
 /// </summary>
 public partial class CaptureScene : Node
 {
@@ -49,11 +51,12 @@ public partial class CaptureScene : Node
         var blocks = args.Length > 1 && args[1] == "blocks";
         var rocks = args.Length > 1 && args[1] == "rocks";
         var soil = args.Length > 1 && args[1] == "soil";
-        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks && !soil ? args[1] : "scrapper_male";
+        var wheels = args.Length > 1 && args[1] == "wheels";
+        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks && !soil && !wheels ? args[1] : "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
         // Building the block wall needs Creative: free parts and no build reach.
-        _main.Options = LaunchOptions.Offline with { Seed = 7, GameMode = blocks || soil ? Core.Survival.GameMode.Creative : LaunchOptions.Offline.GameMode };
-        _main.ReadDeviceInput = icons;
+        _main.Options = LaunchOptions.Offline with { Seed = 7, GameMode = blocks || soil || wheels ? Core.Survival.GameMode.Creative : LaunchOptions.Offline.GameMode };
+        _main.ReadDeviceInput = icons || wheels;
         AddChild(_main);
         _camera = new Camera3D { Fov = 40 };
         AddChild(_camera);
@@ -90,6 +93,11 @@ public partial class CaptureScene : Node
         if (soil)
         {
             SoilShots();
+            return;
+        }
+        if (wheels)
+        {
+            WheelShots();
             return;
         }
         Shot("front", 60, () => Look(new Vector3(0, 1.0f, -3.2f)));
@@ -624,6 +632,80 @@ public partial class CaptureScene : Node
         _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, at + new Vector3(0.4f, 0.3f, 2f), 0f);
         _main.Actions.Request(Core.Building.BuildActions.PlaceParts, new Core.Building.PlacePartsArgs(part, cells, default, null, new Core.Data.Vec3(at.X, at.Y, at.Z)),
             r => GD.Print($"[capture] place {part}: {r}"));
+    }
+
+    // Three little cars in a meadow, one on each kind of wheel, then the wheels on the hotbar.
+    private void WheelShots()
+    {
+        Engine.TimeScale = 1.0;
+        var kinds = new[] { ("vanilla:scrap_wheel", 1, 4), ("vanilla:wheel", 1, 4), ("vanilla:big_wheel", 2, 6) };
+        var spots = new[] { -2.4f, 0f, 2.8f };
+        Shot("wheels_00_wait", 60, () => { });
+        Shot("wheels_00_go", 240, () =>
+        {
+            var g = _main.Streamer.Generator;
+            Go(Find(p => new[] { (0f, 0f), (12f, 0f), (-12f, 0f), (0f, 12f), (0f, -12f) }.All(d => g.BiomeAt(p.X + d.Item1, p.Y + d.Item2).Id == "meadow")
+                && g.SlopeAt(p.X, p.Y) < 0.06f && !g.PoisAt(p.X, p.Y).Any()));
+            GameSettings.Apply(GameSettings.Current with { Graphics = GameSettings.Current.Graphics with { Grass = FoliageLevel.Off, GroundCover = FoliageLevel.Off, Bushes = FoliageLevel.Off } });
+            _main.Flora.BuildAll();
+        });
+        // The player stands at the meadow spot: move them out of the way before the cars come down there.
+        Shot("wheels_00_step_aside", 30, () => _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, Ground(_meadow + new Vector3(0.4f, 0, 4.5f)) + Vector3.Up * 0.3f, 0f));
+        Shot("wheels_00_build", 240, () =>
+        {
+            for (var i = 0; i < kinds.Length; i++)
+                SpawnCar(9100 + i, kinds[i].Item1, kinds[i].Item2, kinds[i].Item3, Ground(_meadow + new Vector3(spots[i], 0, 0)) + Vector3.Up * (kinds[i].Item2 == 1 ? 1.0f : 1.6f));
+            for (var i = 0; i < kinds.Length; i++)
+                _main.Hotbar.Set(5 + i, kinds[i].Item1, r => GD.Print($"[capture] hotbar {r}"));
+        });
+        Shot("wheels_01_row", 30, () => View(new Vector3(-1.2f, 1.5f, 5.2f), new Vector3(0.3f, 0.35f, 0.6f)));
+        Shot("wheels_02_row_low", 20, () => View(new Vector3(-4.5f, 0.45f, 3.4f), new Vector3(0.6f, 0.4f, 0.6f)));
+        Shot("wheels_03_scrap", 20, () => View(new Vector3(spots[0] - 1.2f, 0.7f, 1.1f), new Vector3(spots[0] - 0.4f, 0.3f, 0f)));
+        Shot("wheels_04_wheel", 20, () => View(new Vector3(spots[1] - 1.2f, 0.7f, 1.1f), new Vector3(spots[1] - 0.4f, 0.3f, 0f)));
+        Shot("wheels_05_off_road", 20, () => View(new Vector3(spots[2] - 1.9f, 1.0f, 1.8f), new Vector3(spots[2] - 0.6f, 0.55f, 0f)));
+        Shot("wheels_06_tread", 20, () => View(new Vector3(spots[2] + 2.0f, 0.5f, -4.2f), new Vector3(spots[2] + 0.4f, 0.45f, -0.6f)));
+        Shot("wheels_07_hotbar", 60, () =>
+        {
+            // The mouse would set the look every tick; stop it, so the player looks at the cars with the Off Road Wheel picked.
+            foreach (var reader in _main.FindChildren("*", owned: false).OfType<LocalPlayerInput>())
+                reader.SetPhysicsProcess(false);
+            _main.Tools!.SetProcess(true);
+            _main.Tools.Select(7);
+            Input(pitch: -0.5f);
+            Player.MakeCameraCurrent();
+        });
+    }
+
+    // A metal chassis along Z (z 0..length) with a post down at each end and a bearing on each side of each post, a
+    // wheel of the given kind on each bearing (as VanillaLogicTest builds its car), dropped onto its wheels at `at`.
+    private void SpawnCar(int id, string wheel, int wide, int length, Vector3 at)
+    {
+        var car = new Core.Creations.Creation(id, _main.Build.Catalog);
+        Core.Creations.GridRotation Facing(Core.Creations.GridCell outward) =>
+            Core.Creations.GridRotation.FromAxes(new Core.Creations.GridCell(0, -outward.X - outward.Z, 0), outward);
+        void Put(string part, Core.Creations.GridCell cell, Core.Creations.GridRotation rotation = default)
+        {
+            if (!car.TryPlacePart(part, cell, rotation, out _, out var error))
+                GD.Print($"[capture] {part} at {cell}: {error}");
+        }
+        var half = wide == 1 ? 1 : 2;
+        for (var z = 0; z <= length; z++)
+            Put("vanilla:metal_block", new Core.Creations.GridCell(0, 0, z));
+        foreach (var z in new[] { 0, length })
+        {
+            Put("vanilla:metal_block", new Core.Creations.GridCell(0, -1, z));
+            Put("vanilla:metal_block", new Core.Creations.GridCell(0, -2, z));
+            foreach (var side in new[] { 1, -1 })
+            {
+                var outward = new Core.Creations.GridCell(side, 0, 0);
+                var bearing = new Core.Creations.GridCell(side, -2, z);
+                Put("vanilla:bearing", bearing, Facing(outward));
+                var rotation = Facing(outward);
+                Put(wheel, bearing + outward - rotation.Apply(new Core.Creations.GridCell(half, 0, half)), rotation);
+            }
+        }
+        car.SetAllBodyPoses(new Core.Creations.Pose(new System.Numerics.Vector3(at.X, at.Y, at.Z - length * 0.125f), System.Numerics.Quaternion.Identity));
+        _main.Creations.Add(car, _main.Assets);
     }
 
     private static readonly string[] IconItems = [.. Core.Items.HotbarTools.All, "vanilla:gas_engine", "vanilla:wheel", "vanilla:chest", "vanilla:water_bucket", "vanilla:water_bucket_full"];

@@ -256,21 +256,21 @@
       "file": "parts/scrap_wheel.json",
       "set": {
         "name": "Scrap Wheel",
-        "description": "A wheel from scrap. Put its hub on a bearing's rotor; an engine linked to the bearing turns it.",
+        "description": "Rubber chunks, planks and plates bolted round a hub. Grippy, but its lumpy rim bumps along. Put its hub on a bearing's rotor; an engine linked to the bearing turns it.",
         "mass": 6,
-        "durability": 5,
+        "durability": 3,
         "stack_size": 20,
-        "friction": 0.8,
+        "friction": 1.05,
+        "buoyancy": 0.5,
+        "flammable": true,
         "sound_material": "scrap",
         "size": [3, 1, 3],
+        "icon": "textures/items/scrap_wheel_icon.png",
         "sockets": [{ "id": "hub", "type": "structural", "position": [0, -0.125, 0], "normal": [0, -1, 0] }],
-        "collision": { "shape": "cylinder", "radius": 0.36, "height": 0.25 },
-        "visual": { "color": "#4a3f36", "roughness": 0.9, "metallic": 0.0 }
+        "collision": { "shape": "convex", "mesh": "meshes/scrap_wheel_collision.glb" },
+        "visual": { "color": "#ffffff" }
       },
-      "model": [
-        { "kind": "cylinder", "radius": 0.36, "height": 0.225, "position": [0, 0, 0] },
-        { "kind": "cylinder", "radius": 0.162, "height": 0.25, "position": [0, 0, 0] }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/scrap_wheel.glb" }],
       "recipes": [
         {
           "id": "scrap_wheel",
@@ -286,21 +286,21 @@
       "file": "parts/wheel.json",
       "set": {
         "name": "Wheel",
-        "description": "A rubber wheel with good grip. Put its hub on a bearing's rotor.",
+        "description": "A round rubber tyre on a yellow rim that rolls smoothly. Put its hub on a bearing's rotor.",
         "mass": 8,
         "durability": 5,
         "stack_size": 20,
         "friction": 1.0,
+        "buoyancy": 0.6,
+        "flammable": true,
         "sound_material": "plastic",
         "size": [3, 1, 3],
+        "icon": "textures/items/wheel_icon.png",
         "sockets": [{ "id": "hub", "type": "structural", "position": [0, -0.125, 0], "normal": [0, -1, 0] }],
         "collision": { "shape": "cylinder", "radius": 0.375, "height": 0.25 },
-        "visual": { "color": "#22252a", "roughness": 0.9, "metallic": 0.0 }
+        "visual": { "color": "#ffffff" }
       },
-      "model": [
-        { "kind": "cylinder", "radius": 0.375, "height": 0.225, "position": [0, 0, 0] },
-        { "kind": "cylinder", "radius": 0.16875, "height": 0.25, "position": [0, 0, 0] }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/wheel.glb" }],
       "recipes": [
         {
           "id": "wheel",
@@ -315,22 +315,22 @@
     {
       "file": "parts/big_wheel.json",
       "set": {
-        "name": "Big Wheel",
-        "description": "A large wheel for rough ground. Put its hub on a bearing's rotor.",
+        "name": "Off Road Wheel",
+        "description": "A big wheel with deep knobbly tread for rough ground: more clearance and more grip. Put its hub on a bearing's rotor.",
         "mass": 20,
-        "durability": 5,
+        "durability": 7,
         "stack_size": 20,
-        "friction": 1.0,
+        "friction": 1.15,
+        "buoyancy": 0.6,
+        "flammable": true,
         "sound_material": "plastic",
         "size": [5, 2, 5],
+        "icon": "textures/items/big_wheel_icon.png",
         "sockets": [{ "id": "hub", "type": "structural", "position": [0, -0.25, 0], "normal": [0, -1, 0] }],
         "collision": { "shape": "cylinder", "radius": 0.625, "height": 0.5 },
-        "visual": { "color": "#22252a", "roughness": 0.9, "metallic": 0.0 }
+        "visual": { "color": "#ffffff" }
       },
-      "model": [
-        { "kind": "cylinder", "radius": 0.625, "height": 0.45, "position": [0, 0, 0] },
-        { "kind": "cylinder", "radius": 0.28125, "height": 0.5, "position": [0, 0, 0] }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/big_wheel.glb" }],
       "recipes": [
         {
           "id": "big_wheel",
