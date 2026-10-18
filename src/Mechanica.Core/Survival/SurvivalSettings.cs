@@ -101,8 +101,8 @@ public sealed record SurvivalSettings
     /// <summary>Shortest time between one player's fills at water, in seconds.</summary>
     public float WaterSeconds { get; init; } = 1f;
 
-    /// <summary>Seconds Use (E) is held on a resource node (a tree, a rock node) to refine it (UI spec §9).</summary>
-    public float RefineSeconds { get; init; } = 1.2f;
+    /// <summary>Seconds Use (E) is held on a resource node (a tree, a rock node) to refine it (UI spec §9; Scrap Mechanic's hand-refine time).</summary>
+    public float RefineSeconds { get; init; } = 5.2f;
 
     /// <summary>How far, in metres, a player may move while refining before it is cancelled (UI spec §10).</summary>
     public float RefineCancelDistance { get; init; } = 1.5f;

@@ -434,6 +434,7 @@ public partial class Main : Node3D
         Survival.Actions!.DamageScale = Build.Tools.DamageScale;
         AddChild(Inventory);
         AddChild(Survival);
+        AddChild(new RefineEffects { Name = "RefineEffects", Players = PlayerSync, Sounds = Sounds, Survival = Survival });
         Bots = new BotSync
         {
             Name = "Bots",

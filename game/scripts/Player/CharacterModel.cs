@@ -146,7 +146,7 @@ public partial class CharacterModel : Node3D
             Position = new Vector3(0, Animator.Lift, 0) + (Player?.ShownLocalOffset ?? Vector3.Zero);
         }
         Pose();
-        ShowProp(Animator.ShowProp && Player is not null ? Player.ShownProp : CharacterProp.None);
+        ShowProp(Animator.ShowProp && Player is not null ? Animator.Prop : CharacterProp.None);
         _bucket?.Update(HeldBucket.Target(Assets.Settings.Bucket, _propShown, Animator), (float)delta, PlayFill);
     }
 

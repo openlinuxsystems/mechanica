@@ -50,7 +50,8 @@ public class RefineTests
         Assert.Equal(4, _f.Pockets(Me).Count("test:wood"));
         Assert.True(_f.World.State.IsDestroyed(_tree));
         Assert.Equal([new ItemStack("test:wood", 2)], Assert.Single(_f.Survival.Drops.Values).Items);
-        Assert.Equal("pickup_wood", Assert.Single(_f.World.Sounds).Sound);
+        // The Refine Tool's last stroke, then the wood going into the pockets.
+        Assert.Equal([("refiner_complete", "vanilla"), ("pickup_wood", "test")], _f.World.Sounds.Select(s => (s.Sound, s.Mod)));
         Assert.Null(_f.Survival.RefiningOf(Me.Peer));
         Assert.Contains("nothing to refine", _f.Refused(Me, SurvivalActions.FinishRefine, Tree));
     }

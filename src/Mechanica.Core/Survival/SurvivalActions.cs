@@ -67,6 +67,9 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     /// <summary>Action name for turning friendly fire on or off (the host only).</summary>
     public const string SetFriendlyFire = "SetFriendlyFire";
 
+    /// <summary>Vanilla sound played where a resource node is refined (the Refine Tool's last stroke).</summary>
+    public const string RefineCompleteSound = "refiner_complete";
+
     /// <summary>Sound key an item plays when it is picked up (<see cref="Sound.PartSounds"/>).</summary>
     public const string PickupSound = "pickup";
 
@@ -916,6 +919,7 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         WorldObjectId.TryParse(args.Object, out var id);
         var placement = world.FindObject(id)!;
         world.DestroyObject(id);
+        world.PlaySound(RefineCompleteSound, Identifiers.VanillaModId, ObjectCentre(placement));
         var pockets = inventories.PlayerInventory(caller.Peer);
         var left = new List<ItemStack>();
         var taken = 0;

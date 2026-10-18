@@ -18,6 +18,8 @@ public class CharacterAnimatorTests
         ["hammer_swing"] = 0.35f, ["sledge_swing"] = 1f, ["tool_use"] = 0.3f, ["weld"] = 0.5f, ["paint_spray"] = 0.4f,
         ["fire_gun"] = 0.25f, ["eat"] = 1f, ["throw"] = 0.5f, ["plant"] = 0.8f, ["pour"] = 0.8f, ["interact"] = 0.4f, ["hurt"] = 0.3f,
         ["hold_bucket"] = 2f, ["hold_bucket_full"] = 2f, ["bucket_fill"] = 1.1f, ["bucket_throw"] = 0.9f, ["bucket_place"] = 0.8f, ["bucket_place_full"] = 0.8f,
+        ["hold_refine"] = 0.75f, ["refine_draw"] = 0.4f, ["refine_stow"] = 0.35f,
+        ["hold_refine_fp"] = 0.75f, ["refine_draw_fp"] = 0.4f, ["refine_stow_fp"] = 0.35f,
     };
 
     private static CharacterAnimator Make() => new(new CharacterSettings(), Lengths);
@@ -156,6 +158,7 @@ public class CharacterAnimatorTests
     [InlineData(CharacterProp.Item, "hold_item")]
     [InlineData(CharacterProp.WaterBucket, "hold_bucket")]
     [InlineData(CharacterProp.WaterBucketFull, "hold_bucket_full")]
+    [InlineData(CharacterProp.RefineTool, "hold_refine")]
     public void HoldingSomethingPosesTheArms(CharacterProp prop, string clip)
     {
         var animator = Make();
@@ -195,6 +198,44 @@ public class CharacterAnimatorTests
         var events = Run(animator, Standing() with { Prop = CharacterProp.Hammer }, Dt * 2);
         Assert.Equal(1, events.Count(e => e == CharacterEvent.Equip));
         Assert.InRange(animator.UpperWeight, 0.01f, 0.5f);
+    }
+
+    [Theory]
+    [InlineData(false, "refine_draw", "refine_stow")]
+    [InlineData(true, "refine_draw_fp", "refine_stow_fp")]
+    public void TheRefineToolIsDrawnFromTheHipAndPutBack(bool firstPerson, string draw, string stow)
+    {
+        var animator = new CharacterAnimator(new CharacterSettings(), Lengths, firstPerson);
+        var hammer = Standing() with { Prop = CharacterProp.Hammer };
+        Run(animator, hammer, 0.5f);
+        Run(animator, Standing() with { Prop = CharacterProp.RefineTool }, Dt);
+        Assert.Equal(draw, animator.Gesture);
+        Assert.Equal(CharacterProp.RefineTool, animator.Prop);
+        Run(animator, Standing() with { Prop = CharacterProp.RefineTool }, 0.6f);
+        Assert.Null(animator.Gesture);
+        Assert.Contains(animator.Upper, c => c.Clip == (firstPerson ? "hold_refine_fp" : "hold_refine") && c.Weight > 0.99f);
+
+        // Letting go puts it away: still drawn until the stow ends, then the hammer is back.
+        Run(animator, hammer, Dt);
+        Assert.Equal(stow, animator.Gesture);
+        Assert.Equal(CharacterProp.RefineTool, animator.Prop);
+        Assert.True(animator.ShowProp);
+        Run(animator, hammer, 0.4f);
+        Assert.Null(animator.Gesture);
+        Assert.Equal(CharacterProp.Hammer, animator.Prop);
+    }
+
+    [Fact]
+    public void AGestureCutsTheStowShortAndTheToolGoes()
+    {
+        var animator = Make();
+        Run(animator, Standing() with { Prop = CharacterProp.RefineTool }, 1f);
+        Run(animator, Standing(), Dt);
+        Assert.Equal(CharacterProp.RefineTool, animator.Prop);
+        animator.Update(Standing() with { Gesture = CharacterGesture.Interact, GestureCount = 1 }, Dt);
+        Assert.Equal("interact", animator.Gesture);
+        Assert.Equal(CharacterProp.None, animator.Prop);
+        Assert.False(animator.ShowProp);
     }
 
     [Fact]

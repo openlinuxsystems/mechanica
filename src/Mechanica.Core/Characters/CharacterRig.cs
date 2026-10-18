@@ -36,6 +36,12 @@ public enum CharacterProp : byte
     /// <summary>Any other item (food, seeds, a part to place): held up, with no prop drawn.</summary>
     Item,
 
+    /// <summary>
+    /// The Refine Tool: never in the inventory or on the hotbar, it is drawn from the hip while Use is held on a
+    /// resource node, worked against it and put away again.
+    /// </summary>
+    RefineTool,
+
     /// <summary>A full water bucket, carried by its raised handle.</summary>
     WaterBucketFull,
 }
@@ -191,6 +197,7 @@ public static class CharacterRig
         "hold_bucket", "hold_bucket_full", "bucket_fill", "bucket_throw", "bucket_place", "bucket_place_full",
         "sledge_swing_side", "sledge_swing_back",
         "hold_heavy_fp", "hold_heavy_block_fp", "sledge_swing_fp", "sledge_swing_side_fp", "sledge_swing_back_fp",
+        "hold_refine", "refine_draw", "refine_stow", "hold_refine_fp", "refine_draw_fp", "refine_stow_fp",
         "hold_bucket_fp", "hold_bucket_full_fp", "bucket_fill_fp", "bucket_throw_fp", "bucket_place_fp", "bucket_place_full_fp",
     ];
 
@@ -224,8 +231,21 @@ public static class CharacterRig
         CharacterProp.WaterBucket => "hold_bucket",
         CharacterProp.WaterBucketFull => "hold_bucket_full",
         CharacterProp.Item => "hold_item",
+        CharacterProp.RefineTool => "hold_refine",
         _ => "hold_tool",
     };
+
+    /// <summary>
+    /// The clip that brings <paramref name="prop"/> into the hand when it is taken, or null when it just appears: the
+    /// Refine Tool is drawn from the hip. Every peer plays it when it sees the prop change, so it costs no traffic.
+    /// </summary>
+    public static string? DrawClip(CharacterProp prop) => prop == CharacterProp.RefineTool ? "refine_draw" : null;
+
+    /// <summary>
+    /// The clip that puts <paramref name="prop"/> away when the hand takes something else, or null: the Refine Tool goes
+    /// back to the hip, still drawn until the clip ends.
+    /// </summary>
+    public static string? StowClip(CharacterProp prop) => prop == CharacterProp.RefineTool ? "refine_stow" : null;
 
     /// <summary>The clip a gesture plays, or null for <see cref="CharacterGesture.None"/> and unknown values.</summary>
     public static string? GestureClip(CharacterGesture gesture) => gesture switch
@@ -299,6 +319,7 @@ public static class CharacterRig
         CharacterProp.ConnectTool => "connect_tool",
         CharacterProp.PotatoBlaster => "potato_blaster",
         CharacterProp.WaterBucket or CharacterProp.WaterBucketFull => "water_bucket",
+        CharacterProp.RefineTool => "refine_tool",
         _ => null,
     };
 

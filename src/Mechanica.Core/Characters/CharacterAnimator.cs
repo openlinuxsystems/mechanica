@@ -108,6 +108,7 @@ public sealed class CharacterAnimator
     private bool _wasOnFloor = true;
     private bool _wasSwimming;
     private CharacterProp _prop;
+    private CharacterProp _stowing;
     private byte _gestureCount;
     private string? _gesture;
     private float _gestureTime;
@@ -156,6 +157,13 @@ public sealed class CharacterAnimator
 
     /// <summary>Whether the prop in hand is drawn (not while swimming or seated).</summary>
     public bool ShowProp { get; private set; }
+
+    /// <summary>
+    /// The prop to draw: the one in hand, or one still being put away (<see cref="CharacterRig.StowClip"/>) until its
+    /// clip ends.
+    /// </summary>
+    public CharacterProp Prop =>
+        _stowing != CharacterProp.None && _gesture is { } gesture && gesture == Version(CharacterRig.StowClip(_stowing)) ? _stowing : _prop;
 
     /// <summary>How far the body has faded into <paramref name="mode"/>, 0 to 1.</summary>
     public float Weight(CharacterMode mode) => _modeWeights[(int)mode];
@@ -226,7 +234,7 @@ public sealed class CharacterAnimator
         HeadPitch = float.IsFinite(pose.Pitch) ? pose.Pitch * _settings.HeadPitchShare : 0f;
         BuildBody(pose, horizontal, delta);
         BuildUpper(pose, delta);
-        ShowProp = _prop != CharacterProp.None && _modeWeights[(int)CharacterMode.Swim] < 0.5f && _modeWeights[(int)CharacterMode.Sit] < 0.5f;
+        ShowProp = Prop != CharacterProp.None && _modeWeights[(int)CharacterMode.Swim] < 0.5f && _modeWeights[(int)CharacterMode.Sit] < 0.5f;
     }
 
     // Jumps, landings, water and the item in hand.
@@ -263,10 +271,24 @@ public sealed class CharacterAnimator
         var prop = CharacterRig.Sanitize(pose.Prop);
         if (prop != _prop)
         {
-            // Filling or emptying the bucket changes the prop, but nothing was taken in hand.
-            if (prop != CharacterProp.None && !(IsBucket(prop) && IsBucket(_prop)))
-                _events.Add(CharacterEvent.Equip);
+            var old = _prop;
             _prop = prop;
+            _stowing = CharacterProp.None;
+            // Filling or emptying the bucket changes the prop, but nothing was taken in hand.
+            if (prop != CharacterProp.None && !(IsBucket(prop) && IsBucket(old)))
+                _events.Add(CharacterEvent.Equip);
+            // A prop with a draw or stow clip (the Refine Tool) plays it as a gesture; the new prop's draw comes first.
+            if (Version(CharacterRig.DrawClip(prop)) is { } draw && _lengths.ContainsKey(draw))
+            {
+                _gesture = draw;
+                _gestureTime = 0f;
+            }
+            else if (Version(CharacterRig.StowClip(old)) is { } stow && _lengths.ContainsKey(stow))
+            {
+                _gesture = stow;
+                _gestureTime = 0f;
+                _stowing = old;
+            }
         }
 
         if (pose.GestureCount != _gestureCount)
