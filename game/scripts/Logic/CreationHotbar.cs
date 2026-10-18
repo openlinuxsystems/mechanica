@@ -71,7 +71,8 @@ public partial class CreationHotbar : CanvasLayer
         Name = "CreationHotbar";
         AddToGroup(HudRoot.Group);
         _bar = new HBoxContainer { Name = "Bar", Visible = false };
-        _bar.AddThemeConstantOverride("separation", 4);
+        _bar.AddThemeConstantOverride("separation", HotbarView.Gap);
+        _bar.Theme = StationTheme.Theme;
         UiInput.KeepMouse(_bar);
         AddChild(_bar);
         _status = new Label { Name = "Status", HorizontalAlignment = HorizontalAlignment.Center };
@@ -79,7 +80,7 @@ public partial class CreationHotbar : CanvasLayer
         for (var i = 0; i < SeatHotbar.Slots; i++)
         {
             var index = i;
-            var slot = new ItemSlot { Name = $"Slot{i + 1}" };
+            var slot = new ItemSlot { Name = $"Slot{i + 1}", Tiled = true };
             slot.Details = () => index < Parts.Count && Seat is { } seat && Creations.Find(seat.Creation) is { } c
                 ? (c.DefinitionOf(Parts[index]).Name ?? c.FindPart(Parts[index])!.Part, Loc.T("Linked to your seat. [{0}] to {1} it.", GameInput.Label(InputActions.Hotbar(index + 1)), c.DefinitionOf(Parts[index]).Logic?.Use ?? ""))
                 : null;
@@ -190,7 +191,7 @@ public partial class CreationHotbar : CanvasLayer
         foreach (var slot in _slots)
             slot.CustomMinimumSize = new Vector2(size, size);
         _bar.ResetSize();
-        var width = size * Parts.Count + 4 * (Parts.Count - 1);
+        var width = size * Parts.Count + HotbarView.Gap * (Parts.Count - 1);
         _bar.Position = new Vector2((screen.X - width) / 2, screen.Y - margin.Y - size);
         _status.Size = new Vector2(screen.X, 24);
         _status.Position = new Vector2(0, _bar.Position.Y - 30);

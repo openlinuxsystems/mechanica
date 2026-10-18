@@ -83,7 +83,7 @@ public partial class FloraTest : StagedTest
             Check(_high[FloraKind.Grass] > 5000, $"grass is dense ({_high[FloraKind.Grass]} tufts)");
             return true;
         });
-        Add("each patch draws its plants with the flora shader, near and far meshes", _ =>
+        Add("each patch draws its plants with the flora shader, near, far and thinned meshes", _ =>
         {
             foreach (var (coord, node) in _host.Main.Flora.Patches)
             {
@@ -100,12 +100,39 @@ public partial class FloraTest : StagedTest
                     Check(near.Zip(far).All(p => p.First.Multimesh.InstanceCount == p.Second.Multimesh.InstanceCount), $"{coord} {kind.Name}: both draw the same plants");
                     Check(meshes.All(m => m.CastShadow == (kind.Name == "Bush" ? GeometryInstance3D.ShadowCastingSetting.On : GeometryInstance3D.ShadowCastingSetting.Off)),
                         $"{coord} {kind.Name}: only bushes cast shadows");
+                    // Past the thin distance grass and ground cover draw a few of their plants, larger, out to the end.
+                    var thin = meshes.Where(m => m.Name.ToString().EndsWith("_thin", StringComparison.Ordinal)).ToList();
+                    Check(kind.Name == "Bush" ? thin.Count == 0 : thin.Count > 0, $"{coord} {kind.Name}: thinned far meshes only for grass and ground cover ({thin.Count})");
+                    foreach (var mesh in thin)
+                    {
+                        var model = mesh.Name.ToString()[..^"_thin".Length];
+                        var full = far.Single(m => m.Name == $"{model}_far");
+                        Check(mesh.VisibilityRangeBegin == full.VisibilityRangeEnd && mesh.VisibilityRangeEnd > mesh.VisibilityRangeBegin,
+                            $"{coord} {mesh.Name}: takes over where the far mesh ends");
+                        Check(mesh.Multimesh.InstanceCount < full.Multimesh.InstanceCount || full.Multimesh.InstanceCount < 4,
+                            $"{coord} {mesh.Name}: draws fewer plants ({mesh.Multimesh.InstanceCount} of {full.Multimesh.InstanceCount})");
+                    }
                     drawn += near.Sum(m => m.Multimesh.InstanceCount);
                 }
                 Check(drawn > 0 || node.GetChildCount() == 0, $"{coord}: a patch with meshes draws plants ({drawn})");
             }
             Check(_host.Main.Flora.Patches.Sum(p => p.Node.GetChildren().Sum(k => k.GetChildren().OfType<MultiMeshInstance3D>().Where(m => m.Name.ToString().EndsWith("_near", StringComparison.Ordinal)).Sum(m => m.Multimesh.InstanceCount)))
                 == _high.Values.Sum(), "the meshes draw every plant counted");
+            return true;
+        });
+        Add("the ground is painted with the world's ground textures", _ =>
+        {
+            foreach (var peer in new[] { _host, _client })
+            {
+                var chunk = peer.Main.Streamer.Chunks.Values.First();
+                var mesh = chunk.GetNode<MeshInstance3D>("Mesh");
+                Check(mesh.MaterialOverride == GroundMaterial.For(peer.Main.Streamer.Generator.Data) && mesh.MaterialOverride is ShaderMaterial,
+                    $"{chunk.Name}: drawn with the ground texture material");
+                var format = ((ArrayMesh)mesh.Mesh).SurfaceGetFormat(0);
+                Check((format & Mesh.ArrayFormat.FormatCustom0) != 0 && (format & Mesh.ArrayFormat.FormatCustom1) != 0, $"{chunk.Name}: carries ground weights");
+                var layers = (Texture2DArray)((ShaderMaterial)mesh.MaterialOverride).GetShaderParameter("grounds");
+                Check(layers.GetLayers() == Mechanica.Core.World.TerrainChunkData.GroundLayers, $"{layers.GetLayers()} texture layers");
+            }
             return true;
         });
         Add("foliage density levels change how much is drawn", _ =>

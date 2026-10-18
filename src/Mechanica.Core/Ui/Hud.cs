@@ -31,6 +31,9 @@ public sealed record HudSettings
     /// <summary>Gap in pixels between the crosshair and the hover tooltip.</summary>
     public float TooltipOffset { get; init; } = 24f;
 
+    /// <summary>What fills all ten pips of each stat in a detail card (UI spec §0 "Stat pips").</summary>
+    public StatPipScale StatPips { get; init; } = new();
+
     /// <summary>Reads <paramref name="json"/>; throws <see cref="FormatException"/> on bad data.</summary>
     public static HudSettings Parse(string json)
     {
@@ -47,6 +50,8 @@ public sealed record HudSettings
         if (settings.TooltipDelaySeconds < 0 || settings.TooltipFadeSeconds < 0 || settings.WindowFadeSeconds < 0 || settings.HintDismissSeconds <= 0
             || settings.CrosshairPulseHz <= 0 || settings.TooltipOffset < 0 || settings.SafeArea is < 0 or >= 0.25f)
             throw new FormatException("HUD times and offsets must not be negative, hint_dismiss_seconds and crosshair_pulse_hz must be above zero, and safe_area must be below 0.25.");
+        if (settings.StatPips is not { MassKg: > 0, Durability: > 0, Friction: > 0, Buoyancy: > 0 })
+            throw new FormatException("Every stat_pips scale must be above zero.");
         return settings;
     }
 

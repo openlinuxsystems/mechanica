@@ -25,7 +25,8 @@ public partial class ItemDrag : RefCounted
 /// <summary>
 /// One slot of the hotbar or the inventory: the item's picture (or its initials until there is one), its count
 /// and the key that picks it. A selected slot has the bright cyan border (§8) and pulses when it is picked
-/// (§9: 0.2 s). Slots drag and drop through the callbacks, and the tooltip shows the item's details.
+/// (§9: 0.2 s). Slots drag and drop through the callbacks, and the tooltip shows the item's details. <see cref="Tiled"/>
+/// slots take the design language's tile look instead (the hotbar and the Fabricator).
 /// </summary>
 public partial class ItemSlot : PanelContainer
 {
@@ -41,6 +42,8 @@ public partial class ItemSlot : PanelContainer
     private Tween? _pulse;
     private bool _selected;
     private bool _dragging;
+    private bool _tiled;
+    private bool _hovered;
 
     /// <summary>The tool or item shown, or null when empty.</summary>
     public string? Entry { get; private set; }
@@ -72,6 +75,37 @@ public partial class ItemSlot : PanelContainer
     /// <summary>The tooltip's title and lines, or null for none.</summary>
     public Func<(string Title, string Body)?>? Details { get; set; }
 
+    /// <summary>
+    /// True for the design language's tile look (UI spec §0): a <c>Tile</c> blue square, lighter under the mouse, and
+    /// <c>TileSelected</c> with a white ring when selected; the count and key are <c>Ink</c>. False keeps the old slot.
+    /// </summary>
+    public bool Tiled
+    {
+        get => _tiled;
+        set
+        {
+            _tiled = value;
+            foreach (var label in new[] { _count, _key, _initials })
+            {
+                if (value)
+                    label.AddThemeColorOverride("font_color", UiTokens.Ink);
+                else
+                    label.RemoveThemeColorOverride("font_color");
+            }
+            if (value)
+            {
+                _count.AddThemeFontOverride("font", UiFonts.CondensedBold);
+                _count.AddThemeFontSizeOverride("font_size", 15);
+                _key.AddThemeFontOverride("font", UiFonts.CondensedBold);
+                _key.AddThemeFontSizeOverride("font_size", 12);
+            }
+            Restyle();
+        }
+    }
+
+    /// <summary>True while the slot's box is the hovered tile.</summary>
+    public bool Hovered => _hovered;
+
     public ItemSlot()
     {
         MouseFilter = MouseFilterEnum.Stop;
@@ -87,7 +121,19 @@ public partial class ItemSlot : PanelContainer
         _key.AddThemeFontSizeOverride("font_size", 11);
         // Something to show the tooltip for; the custom tooltip below draws it.
         TooltipText = " ";
+        MouseEntered += () => SetHovered(true);
+        MouseExited += () => SetHovered(false);
     }
+
+    private void SetHovered(bool hovered)
+    {
+        _hovered = hovered;
+        if (_tiled)
+            Restyle();
+    }
+
+    private void Restyle() =>
+        AddThemeStyleboxOverride("panel", _tiled ? StationTheme.TileBox(_selected, _hovered) : _selected ? Picked : Normal);
 
     /// <summary>
     /// Shows <paramref name="entry"/> with its picture (null: initials of <paramref name="name"/>) and count; a
@@ -105,7 +151,7 @@ public partial class ItemSlot : PanelContainer
         if (selected == _selected)
             return;
         _selected = selected;
-        AddThemeStyleboxOverride("panel", selected ? Picked : Normal);
+        Restyle();
         if (selected)
             Pulse();
     }

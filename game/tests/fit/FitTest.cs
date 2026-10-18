@@ -8,8 +8,8 @@ namespace Mechanica.Game.Tests;
 /// <summary>
 /// Every screen fits the smallest window the UI is laid out for (UI spec §11: 1280×720, scaled up from there). The main
 /// menu and each screen it opens (every Options tab), the mod tools (every tab), and in a world the HUD, in-game menu,
-/// Options, saves, inventory (every tab), the Fabricator screen and upgrade dialog, logbook, chat, blueprint menu,
-/// colour picker, character choice, a part's settings, the Creation Inspector and a confirm dialog are opened in turn,
+/// Options, saves, inventory (every tab), the Fabricator screen, its Storage drawer and upgrade dialog, logbook, chat,
+/// blueprint menu, colour picker, character choice, a part's settings, the Creation Inspector and a confirm dialog are opened in turn,
 /// and nothing that shows may reach past the edge of the window, a screen meant to fill the window must fill it, and
 /// wrapped text must not be squeezed into a sliver. With <c>-- --shots</c> and a folder, and a real display (for example
 /// <c>xvfb-run</c> with <c>--rendering-driver opengl3</c>) each screen is also saved as a picture.
@@ -112,8 +112,10 @@ public partial class FitTest : StagedTest
             return true;
         });
         World("the Fabricator screen", () => Inventory.Show(Core.Items.InventoryRef.OfPart(_fabricator.Creation, _fabricator.Part)));
+        World("the Fabricator's Storage drawer", () => Inventory.ToggleStorage());
         World("the upgrade dialog", () =>
         {
+            Inventory.ToggleStorage();
             Inventory.Hide();
             _main.Upgrades!.Open(_fabricator);
         });
@@ -207,7 +209,9 @@ public partial class FitTest : StagedTest
     {
         if (frame == 0)
             open();
-        return frame >= 30 && Fits(name, _main, frame - 30);
+        // Pictures render a few a second, so screenshots wait for them.
+        var settle = Shots is null ? 30 : 240;
+        return frame >= settle && Fits(name, _main, frame - settle);
     });
 
     // Measures what shows, then every Options tab and every tab of each tab container, a few frames apart so each is

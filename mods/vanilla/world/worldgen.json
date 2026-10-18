@@ -18,6 +18,17 @@
     "max_scatter_slope": 0.7
   },
   "coast_biome": "coastal",
+  // Ground textures (at most 8) that biomes, steep slopes and POIs paint the terrain with; see docs/world-generation.md.
+  "grounds": [
+    { "id": "grass", "texture": "textures/terrain/grass.png", "tile": 4.0 },
+    { "id": "forest_floor", "texture": "textures/terrain/forest_floor.png", "tile": 4.0 },
+    { "id": "dry_grass", "texture": "textures/terrain/dry_grass.png", "tile": 4.0 },
+    { "id": "rock", "texture": "textures/terrain/rock.png", "tile": 5.0 },
+    { "id": "sand", "texture": "textures/terrain/sand.png", "tile": 4.0 },
+    { "id": "lot", "texture": "textures/terrain/lot.png", "tile": 5.0 },
+    { "id": "burnt", "texture": "textures/terrain/burnt.png", "tile": 4.0, "flora": false, "flora_tint": "#5c4d24" }
+  ],
+  "slope_ground": { "ground": "rock", "from": 0.7, "to": 1.1 },
   "biomes": [
     {
       "id": "meadow",
@@ -26,6 +37,7 @@
       "height": 6.0,
       "relief": 8.0,
       "color": "#4f8a30",
+      "ground": "grass",
       "scatter": [
         { "object": "tree", "spacing": 30.0, "chance": 0.25 },
         { "object": "boulder", "spacing": 60.0, "chance": 0.2 },
@@ -46,6 +58,7 @@
       "height": 12.0,
       "relief": 20.0,
       "color": "#3f6d3a",
+      "ground": "forest_floor",
       "scatter": [
         { "object": "tree", "spacing": 7.0, "chance": 0.6 },
         { "object": "large_rock", "spacing": 30.0, "chance": 0.15 },
@@ -66,6 +79,7 @@
       "height": 5.0,
       "relief": 5.0,
       "color": "#8b8a68",
+      "ground": "dry_grass",
       "scatter": [
         { "object": "rock_node", "spacing": 20.0, "chance": 0.35 },
         { "object": "boulder", "spacing": 34.0, "chance": 0.25 },
@@ -85,6 +99,7 @@
       "height": 4.0,
       "relief": 2.0,
       "color": "#7f8288",
+      "ground": "lot",
       "scatter": [
         { "object": "small_rock", "spacing": 20.0, "chance": 0.1 },
         { "object": "bush", "spacing": 26.0, "chance": 0.08 }
@@ -101,6 +116,7 @@
       "height": 0.0,
       "relief": 4.0,
       "color": "#d9c890",
+      "ground": "sand",
       "scatter": [
         { "object": "boulder", "spacing": 40.0, "chance": 0.2 },
         { "object": "small_rock", "spacing": 15.0, "chance": 0.15 },
