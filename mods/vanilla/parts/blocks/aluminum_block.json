@@ -13,8 +13,9 @@
   "size": [1, 1, 1],
   "mesh": "meshes/blocks/aluminum_block.glb",
   "visual": {
-    "color": "#d0d4d8",
+    "color": "#c9c9c9",
     "roughness": 0.3,
-    "metallic": 0.9
+    "metallic": 0.9,
+    "texture": "textures/blocks/aluminum.png"
   }
 }

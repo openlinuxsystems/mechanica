@@ -13,8 +13,9 @@
   "size": [1, 1, 1],
   "mesh": "meshes/blocks/tile_block.glb",
   "visual": {
-    "color": "#d8d4c8",
+    "color": "#bcbcbc",
     "roughness": 0.3,
-    "metallic": 0
+    "metallic": 0,
+    "texture": "textures/blocks/tile.png"
   }
 }

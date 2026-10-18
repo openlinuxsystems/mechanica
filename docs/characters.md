@@ -69,6 +69,7 @@ otherwise vanilla's.
 | `swim_stroke` | Each stroke while swimming. | `swim_stroke` |
 | `water_enter` / `water_exit` | Starting and stopping swimming. | `water_enter` / `water_exit` |
 | `tool_equip` | Taking a different tool or item in hand. | `tool_equip` |
+| `bucket_fill` | Water pouring into a water bucket being filled. | `bucket_fill` |
 
 ### First-person arms
 

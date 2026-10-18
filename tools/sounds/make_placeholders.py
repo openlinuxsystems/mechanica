@@ -688,6 +688,14 @@ ev("items", "scattergun_fire", lambda rng: edges(peak(mix(0.6, (boom(rng, 0.5, 0
 ev("items", "scattergun_pump", lambda rng: edges(peak(mix(0.5, (click(rng, 700, 0.15), 0), (click(rng, 1100, 0.15), 0.2)), 0.7)), **QUIET)
 ev("items", "launcher_fire", lambda rng: edges(peak(mix(0.9, (boom(rng, 0.6, 0.9), 0), (whoosh(rng, 0.6, 300, 4000), 0.1)), 0.9)), max_distance=80.0)
 ev("items", "popper_explode", lambda rng: boom(rng, 1.6), max_distance=150.0, rolloff="linear")
+# The water bucket: scooping it full, the water leaving it, and the water landing.
+rev("items", "bucket_fill", [lambda: rec(take(f"{W}splash_06", 0.0, 0.8, lowpass=2600), take(f"{W}splash_10", 0.22, 0.6, lowpass=1800), level=0.6)],
+    pitch_variation=0.06, max_distance=20.0, loudness=-19.0)
+rev("items", "bucket_throw", [lambda: rec(take(f"{W}splash_14", 0.0, 0.9, pitch=1.25), take(f"{W}splash_15", 0.06, 0.5, pitch=1.4, lowpass=3000), level=0.6)],
+    pitch_variation=0.08, max_distance=25.0, loudness=-18.0)
+rev("items", "water_splash", [lambda: rec(f"{W}splash_05", take(f"{W}splash_11", 0.05, 0.7), level=0.8),
+                              lambda: rec(f"{W}splash_09", take(f"{W}splash_01", 0.03, 0.6), level=0.8)],
+    pitch_variation=0.08, max_distance=35.0, loudness=-15.0)
 
 # Bots: each family has a voice; colour variants share their family's events.
 FAMILIES = {"scuttler": 520, "rakehand": 300, "spooler": 700, "thresher": 90, "grazer": 160}

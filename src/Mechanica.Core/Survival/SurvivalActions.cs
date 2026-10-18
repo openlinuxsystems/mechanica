@@ -543,11 +543,12 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     /// <paramref name="velocity"/> m/s, accelerated by <paramref name="gravity"/> m/s², until it hits
     /// something (never its owner's player) or <paramref name="lifetime"/> seconds pass. Flight is stepped
     /// on the host in <see cref="Tick"/>; <see cref="ProjectileLanded"/> says where it ended, and whoever
-    /// launched it decides what that does (a projectile deals no damage by itself).
+    /// launched it decides what that does (a projectile deals no damage by itself). <paramref name="look"/> says how
+    /// clients draw it (<see cref="ProjectileView.Look"/>).
     /// </summary>
-    public ProjectileView Launch(int owner, Vector3 from, Vector3 velocity, Vector3 gravity, float lifetime)
+    public ProjectileView Launch(int owner, Vector3 from, Vector3 velocity, Vector3 gravity, float lifetime, string? look = null)
     {
-        var flight = new Flight(_nextProjectile++, owner, from, velocity, gravity, lifetime, world.Now);
+        var flight = new Flight(_nextProjectile++, owner, from, velocity, gravity, lifetime, world.Now, look);
         _projectiles[flight.Id] = flight;
         var view = flight.View(world.Now);
         ProjectileLaunched?.Invoke(view);
@@ -585,8 +586,9 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         }
     }
 
-    private sealed class Flight(int id, int owner, Vector3 from, Vector3 velocity, Vector3 gravity, float lifetime, double launched)
+    private sealed class Flight(int id, int owner, Vector3 from, Vector3 velocity, Vector3 gravity, float lifetime, double launched, string? look)
     {
+        public string? Look { get; } = look;
         public int Id { get; } = id;
         public int Owner { get; } = owner;
         public Vector3 From { get; } = from;
@@ -599,7 +601,7 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         public float Age { get; set; }
 
         public ProjectileView View(double now) =>
-            new(Id, Owner, From.ToVec3(), LaunchVelocity.ToVec3(), Gravity.ToVec3(), Lifetime, (float)Math.Max(0, now - Launched));
+            new(Id, Owner, From.ToVec3(), LaunchVelocity.ToVec3(), Gravity.ToVec3(), Lifetime, (float)Math.Max(0, now - Launched), Look);
     }
 
     // With friendly fire off only bots hurt players: players, external AIs and part scripts (players' machines) do not.
@@ -739,6 +741,29 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         return SoilViewOf(creation, partId);
     }
 
+    /// <summary>
+    /// Soil parts whose centre is within <paramref name="radius"/> m of <paramref name="at"/>, nearest first, as
+    /// (creation, part): where a splash of water lands.
+    /// </summary>
+    public IReadOnlyList<(int Creation, int Part)> SoilNear(Vector3 at, float radius)
+    {
+        var found = new List<(int Creation, int Part, float Distance)>();
+        if (!(radius > 0) || !float.IsFinite(radius) || !float.IsFinite(at.LengthSquared()))
+            return [];
+        foreach (var creation in world.AllCreations.Select(c => c.Id).ToList().Select(world.FindCreation).OfType<Creation>())
+        {
+            foreach (var part in creation.Parts)
+            {
+                if (creation.DefinitionOf(part.Id).Soil is null)
+                    continue;
+                var d = Vector3.Distance(PartCentre(creation, part.Id), at);
+                if (d <= radius)
+                    found.Add((creation.Id, part.Id, d));
+            }
+        }
+        return [.. found.OrderBy(f => f.Distance).ThenBy(f => f.Creation).ThenBy(f => f.Part).Select(f => (f.Creation, f.Part))];
+    }
+
     /// <summary>Why <paramref name="caller"/> cannot water the soil part (also when it is full); null when they can.</summary>
     public string? CheckWater(ActionCaller caller, int creationId, int partId)
     {
@@ -801,21 +826,54 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         var point = args.Point.ToNumerics();
         if (!float.IsFinite(point.X) || !float.IsFinite(point.Y) || !float.IsFinite(point.Z))
             return "point must be finite.";
-        if (catalog.FindDefinition(settings.WaterItem) is null)
-            return $"There is no '{settings.WaterItem}' item to fill.";
+        if (catalog.FindDefinition(settings.WaterItem) is null || catalog.FindDefinition(settings.BucketItem) is null)
+            return $"There is no '{settings.BucketItem}' to fill.";
+        if (EmptyBucketSlot(caller.Peer, args.Slot) is null)
+        {
+            var name = catalog.FindDefinition(settings.BucketItem)?.Name ?? settings.BucketItem;
+            return args.Slot is null ? $"You need an empty {name} to fill." : $"That slot holds no empty {name}.";
+        }
         if (CheckReach(caller, point) is { } far)
             return far;
         if (!world.IsWater(point))
             return "There is no water there.";
         if (_lastWater.TryGetValue(caller.Peer, out var last) && world.Now - last < settings.WaterSeconds * IntervalJitter)
             return "You are still filling the last one.";
-        return inventories.PlayerInventory(caller.Peer).SpaceFor(settings.WaterItem) > 0 ? null : "Make room in your inventory first.";
+        var pockets = inventories.PlayerInventory(caller.Peer);
+        return pockets[EmptyBucketSlot(caller.Peer, args.Slot)!.Value]!.Count == 1 || pockets.SpaceFor(settings.WaterItem) > 0
+            ? null : "Make room in your inventory first.";
     }
 
+    // Fills the empty bucket in the slot: the last one in it turns full where it is, so it stays in hand.
     private JsonElement? ApplyCollectWater(ActionCaller caller, CollectWaterArgs args)
     {
         _lastWater[caller.Peer] = world.Now;
-        inventories.PlayerInventory(caller.Peer).Add(settings.WaterItem, 1);
+        var pockets = inventories.PlayerInventory(caller.Peer);
+        var slot = EmptyBucketSlot(caller.Peer, args.Slot)!.Value;
+        var stack = pockets[slot]!;
+        if (stack.Count == 1)
+            pockets.SetSlot(slot, new ItemStack(Identifiers.Qualify(settings.WaterItem), 1));
+        else
+        {
+            pockets.SetSlot(slot, stack with { Count = stack.Count - 1 });
+            pockets.Add(Identifiers.Qualify(settings.WaterItem), 1);
+        }
+        return Value(new CollectWaterResult(slot));
+    }
+
+    // The slot holding an empty bucket: the one asked for, or the first; null when there is none.
+    private int? EmptyBucketSlot(int peer, int? slot)
+    {
+        var pockets = inventories.PlayerInventory(peer);
+        var bucket = Identifiers.Qualify(settings.BucketItem);
+        bool Holds(int s) => s >= 0 && s < pockets.SlotCount && pockets[s] is { } stack && Identifiers.Qualify(stack.Item) == bucket;
+        if (slot is { } asked)
+            return Holds(asked) ? asked : null;
+        for (var s = 0; s < pockets.SlotCount; s++)
+        {
+            if (Holds(s))
+                return s;
+        }
         return null;
     }
 

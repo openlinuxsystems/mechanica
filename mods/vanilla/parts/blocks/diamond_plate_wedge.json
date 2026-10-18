@@ -13,9 +13,10 @@
   "size": [1, 1, 1],
   "mesh": "meshes/blocks/diamond_plate_wedge.glb",
   "visual": {
-    "color": "#b8bcc0",
+    "color": "#ffffff",
     "roughness": 0.3,
-    "metallic": 0.9
+    "metallic": 0.9,
+    "texture": "textures/blocks/diamond_plate.png"
   },
   "collision": {
     "shape": "convex",

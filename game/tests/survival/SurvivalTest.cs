@@ -25,7 +25,8 @@ public partial class SurvivalTest : StagedTest
 {
     private const string Seed = "vanilla:carrot_seed";
     private const string Carrot = "vanilla:carrot";
-    private const string Bucket = "vanilla:water_bucket";
+    private const string Bucket = "vanilla:water_bucket_full";
+    private const string EmptyBucket = "vanilla:water_bucket";
     private const string Soil = "vanilla:soil";
     private const string Blaster = "vanilla:potato_blaster";
     private const string Potato = "vanilla:potato";
@@ -33,6 +34,7 @@ public partial class SurvivalTest : StagedTest
     private const string Connector = "vanilla:connect_tool";
 
     private readonly List<ActionResult> _results = [];
+    private Vector3 _soilAt;
     private NetTestHarness _harness = null!;
     private Instance _host = null!;
     private Instance _client = null!;
@@ -84,7 +86,10 @@ public partial class SurvivalTest : StagedTest
         Stage("the client pays for the soil it places", frame =>
         {
             if (frame == 0)
-                Request(BuildActions.PlacePart, new PlacePartArgs(Soil, GridCell.Zero, Position: (Feet(_client) + new Vector3(0, 0.125f, -2)).ToNumerics().ToVec3()));
+            {
+                _soilAt = Feet(_client) + new Vector3(0, 0.125f, -2);
+                Request(BuildActions.PlacePart, new PlacePartArgs(Soil, GridCell.Zero, Position: _soilAt.ToNumerics().ToVec3()));
+            }
             if (_results.Count == 0 || Count(Soil) != 7)
                 return false;
             Check(_results[0].Ok, $"the soil is placed ({_results[0]})");
@@ -92,24 +97,29 @@ public partial class SurvivalTest : StagedTest
             (_soil, _soilPart) = (placed.Creation, placed.Part);
             return _client.Main.Creations.Find(_soil) is not null;
         });
-        Stage("the client plants a carrot seed and waters it twice", frame =>
+        Stage("the client plants a carrot seed and throws two buckets of water on it", frame =>
         {
+            var soilAt = _soilAt;
             if (frame == 0)
             {
+                LookAt(_client, soilAt);
                 Request(ScriptRuntime.UseItem, new UseItemArgs(SlotOf(Seed), Creation: _soil, Part: _soilPart));
-                Request(ScriptRuntime.UseItem, new UseItemArgs(SlotOf(Bucket), Creation: _soil, Part: _soilPart));
             }
-            if (frame == 30)
-                Request(ScriptRuntime.UseItem, new UseItemArgs(SlotOf(Bucket), Creation: _soil, Part: _soilPart));
+            // Thrown along where the player looks: the water lands on the soil a moment later.
+            if (frame is 10 or 60)
+            {
+                var aim = (soilAt - Eye(_client)).Normalized();
+                Request(ScriptRuntime.UseItem, new UseItemArgs(SlotOf(Bucket), new Vec3(aim.X, aim.Y, aim.Z)));
+            }
             if (_results.Count < 3 || _client.Main.Survival.Soil.GetValueOrDefault((_soil, _soilPart)) is not { Seed: not null } soil || soil.Water < 250)
-                return false;
-            Check(_results.All(r => r.Ok), $"planting and watering succeed ({string.Join("; ", _results)})");
+                return frame < 600 ? false : Check(false, $"the soil was watered ({string.Join("; ", _results)}; {Items()})");
+            Check(_results.All(r => r.Ok), $"planting and throwing succeed ({string.Join("; ", _results)})");
             var planted = System.Text.Json.Nodes.JsonNode.Parse(_results[0].Value!.Value.GetRawText())!;
             Check((string?)planted["seed"] == Seed && (string?)planted["crop"] == Carrot, $"the seed's script answers with the soil ({planted.ToJsonString()})");
             var host = HostSurvival.SoilViewOf(_host.Main.Creations.Find(_soil)!, _soilPart);
             // The host's water drains as the crop grows; the client sees it on the next stage.
             Check(host.Seed == soil.Seed && host.Water <= soil.Water + 0.01f && host.Water > 200, $"the host and client agree on the soil ({host} vs {soil})");
-            Check(Count(Seed) == 3 && Count(Bucket) == 0, $"a seed and both buckets are used ({Items()})");
+            Check(Count(Seed) == 3 && Count(Bucket) == 0 && Count(EmptyBucket) == 2, $"a seed is used and both buckets come back empty ({Items()})");
             Check(!soil.Ripe && _client.Main.Survival.CropNodes.ContainsKey((_soil, _soilPart)), "the client shows a young crop");
             return true;
         });
@@ -392,6 +402,7 @@ public partial class SurvivalTest : StagedTest
     private Player.PlayerController PlayerOn(Instance who) => who.Main.PlayerSync.Players[Peer];
 
     private static Vector3 Feet(Instance who) => who.Main.LocalPlayer!.GlobalPosition;
+
 
     private static Vector3 Eye(Instance who) => who.Main.LocalPlayer!.Head.GlobalPosition;
 

@@ -341,12 +341,9 @@ public sealed class ItemScriptTests : IDisposable
     {
         var soil = F.Add(Soil, new Vector3(0, 0, 1));
         var on = (soil, 1);
-        F.Pockets(Me).Add(Bucket, 3);
         var seed = F.SlotOf(Me, Seed);
-        var bucket = F.SlotOf(Me, Bucket);
 
         Assert.Equal("Aim at soil to plant the Seed.", _rig.Refused(Me, seed));
-        Assert.Equal("Aim at soil or a fire to use it.", _rig.Refused(Me, bucket));
         Assert.Equal("creation and part go together.", F.Dispatch(Me, ScriptRuntime.UseItem, new { slot = seed, creation = soil }).Message);
         Assert.Equal("There is no part 7 in creation " + soil + ".", _rig.Refused(Me, seed, on: (soil, 7)));
 
@@ -356,10 +353,7 @@ public sealed class ItemScriptTests : IDisposable
         Assert.Equal(1, F.Pockets(Me).Count(Seed));
         Assert.Equal("Something is already growing there.", _rig.Refused(Me, seed, on: on));
 
-        Assert.Equal(30.0, _rig.Used(Me, bucket, on: on)["water"]!.GetValue<double>());
-        Assert.Equal(60.0, _rig.Used(Me, bucket, on: on)["water"]!.GetValue<double>());
-        Assert.Equal("The soil is already full of water.", _rig.Refused(Me, bucket, on: on));
-        Assert.Equal(1, F.Pockets(Me).Count(Bucket));
+        F.Survival.WaterSoil(Me, soil, 1, 60);
 
         _rig.Runtime.Update(1); // the soil's script starts and stamps the soil
         _rig.Runtime.Update(20); // growth 2: ripe after 20 s
@@ -369,24 +363,85 @@ public sealed class ItemScriptTests : IDisposable
         Assert.DoesNotContain(_rig.Messages, m => m.Kind == ScriptMessageKind.Error);
     }
 
+    // Me stands at (0, 0, 3) with eyes 1.6 m up: thrown straight ahead, the water lands on the ground about 6 m out,
+    // past the 5 m reach (where it lands is the host's to say, so it still acts there).
+    private static readonly Vector3 Landing = new(0, 0, -3.05f);
+
+    // Flies every projectile in flight until it lands on the ground (y = 0).
+    private void Fly()
+    {
+        F.World.Ray = (from, direction) => direction.Y < 0 && from.Y / -direction.Y <= F.World.LastRange ? new RayHit(from + direction * (from.Y / -direction.Y)) : null;
+        for (var i = 0; i < 240 && F.Survival.Projectiles.Any(); i++)
+            F.Survival.Tick(1f / 60);
+        Assert.Empty(F.Survival.Projectiles);
+    }
+
     [Fact]
-    public void AWaterBucketPutsOutTheFireItIsAimedAt()
+    public void AThrownBucketWatersTheSoilWhereItLandsAndComesBackEmpty()
+    {
+        var soil = F.Add(Soil, Landing);
+        var dry = F.Add(Soil, new Vector3(0, 0, 1));
+        F.Pockets(Me).Add(Bucket, 1);
+        var slot = F.SlotOf(Me, Bucket);
+
+        var thrown = _rig.Used(Me, slot, Ahead);
+        Assert.True(thrown["thrown"]!.GetValue<int>() > 0);
+        var flight = Assert.Single(F.Survival.Projectiles);
+        Assert.Equal(ProjectileView.Water, flight.Look);
+        // The bucket empties as the water leaves it, and stays in the same slot.
+        Assert.Equal(EmptyBucket, F.Pockets(Me)[slot]!.Item);
+        Fly();
+
+        Assert.Equal(30f, F.World.FindCreation(soil)!.SoilOf(1)!.Water);
+        Assert.Equal(0f, F.World.FindCreation(dry)!.SoilOf(1)!.Water);
+        Assert.Equal("Aim at water to fill the bucket.", _rig.Refused(Me, slot, Ahead));
+        Assert.DoesNotContain(_rig.Messages, m => m.Kind == ScriptMessageKind.Error);
+    }
+
+    [Fact]
+    public void AThrownBucketLandsOnWhatItIsAimedAt()
+    {
+        var aimed = F.Add(Soil, new Vector3(0, 0, 0.5f));
+        var beyond = F.Add(Soil, Landing);
+        F.Pockets(Me).Add(Bucket, 1);
+        F.World.Ray = (_, _) => new RayHit(new Vector3(0, 0, 0.5f), Creation: aimed, Part: 1);
+
+        _rig.Used(Me, F.SlotOf(Me, Bucket), Ahead);
+        Fly();
+
+        Assert.Equal(30f, F.World.FindCreation(aimed)!.SoilOf(1)!.Water);
+        Assert.Equal(0f, F.World.FindCreation(beyond)!.SoilOf(1)!.Water);
+    }
+
+    [Fact]
+    public void AThrownBucketPutsOutTheFireItLandsOn()
     {
         F.Fire.LightSites([new Mechanica.Core.Quests.QuestSite(0, "test:camp", Vector3.Zero, 10,
-            [new Mechanica.Core.Quests.QuestMarker(0, "fire", null, new Vector3(0, 0, -1)), new Mechanica.Core.Quests.QuestMarker(1, "fire", null, new Vector3(0, 0, -12))])]);
-        F.Pockets(Me).Add(Bucket, 2);
-        var bucket = F.SlotOf(Me, Bucket);
-        // Me stands at (0, 0, 3) with eyes 1.6 m up: aim down at the near fire.
-        var down = new Vec3(0, -1.6f, -4);
+            [new Mechanica.Core.Quests.QuestMarker(0, "fire", null, Landing), new Mechanica.Core.Quests.QuestMarker(1, "fire", null, new Vector3(0, 0, -12))])]);
+        F.Pockets(Me).Add(Bucket, 1);
 
-        Assert.Equal("Aim at soil or a fire to use it.", _rig.Refused(Me, bucket, Ahead)); // over the near fire, short of the far one
-        var used = _rig.Used(Me, bucket, down);
-        Assert.Equal(0.0, used["fires"]![0]!["strength"]!.GetValue<double>());
+        _rig.Used(Me, F.SlotOf(Me, Bucket), Ahead);
+        Fly();
+
         Assert.Equal([0f, 1f], F.Fire.Fires().Select(f => f.Strength));
-        Assert.Equal(1, F.Pockets(Me).Count(Bucket));
         Assert.Equal(1, F.Fire.SitesOut("test:camp", "fire"));
-        Assert.Equal("Aim at soil or a fire to use it.", _rig.Refused(Me, bucket, down)); // it is out
+        Assert.Equal(0, F.Pockets(Me).Count(Bucket));
+        Assert.Equal(1, F.Pockets(Me).Count(EmptyBucket));
         Assert.DoesNotContain(_rig.Messages, m => m.Kind == ScriptMessageKind.Error);
+    }
+
+    [Fact]
+    public void ReplacingOneOfAStackMakesRoomForTheNewItem()
+    {
+        _rig.Write("scripts/swap.lua", "function on_use(target) return item.replace(\"crop\") end");
+        var swap = _rig.AddItem("swap", "scripts/swap.lua");
+        F.Pockets(Me).Add(swap, 2);
+        var slot = F.SlotOf(Me, swap);
+        Assert.True(_rig.Used(Me, slot).GetValue<bool>());
+        Assert.Equal((1, 1), (F.Pockets(Me).Count(swap), F.Pockets(Me).Count(Crop)));
+        Assert.True(_rig.Used(Me, slot).GetValue<bool>());
+        Assert.Equal((0, 2), (F.Pockets(Me).Count(swap), F.Pockets(Me).Count(Crop)));
+        Assert.Equal(Crop, F.Pockets(Me)[slot]!.Item);
     }
 
     [Fact]
@@ -425,9 +480,8 @@ public sealed class ItemScriptTests : IDisposable
     {
         var far = F.Add(Soil, new Vector3(0, 0, 30));
         var block = F.Add(Block, new Vector3(0, 0, 1));
-        F.Pockets(Me).Add(Bucket, 1);
         Assert.StartsWith("That is ", _rig.Refused(Me, F.SlotOf(Me, Seed), on: (far, 1)));
-        Assert.Equal("The Block is not soil.", _rig.Refused(Me, F.SlotOf(Me, Bucket), on: (block, 1)));
+        Assert.Equal("The Block is not soil.", _rig.Refused(Me, F.SlotOf(Me, Seed), on: (block, 1)));
         Assert.Equal(2, F.Pockets(Me).Count(Seed));
     }
 

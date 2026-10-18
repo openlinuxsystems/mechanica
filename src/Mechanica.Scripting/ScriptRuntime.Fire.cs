@@ -26,6 +26,7 @@ public sealed partial class ScriptRuntime
         {
             Changing("fire.douse");
             var (_, caller, _) = Combatant("fire.douse", acting: true);
+            caller = Reaching(caller);
             var at = LuaValues.ToVector(args[0], "fire.douse", 1);
             var radius = Radius(args, 1, "fire.douse");
             var amount = LuaValues.Number(args[2], "fire.douse", 3);

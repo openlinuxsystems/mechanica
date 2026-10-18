@@ -7,5 +7,10 @@
   "corpse_seconds": 3.0,
   "range_tolerance": 0.4,
   "player_radius": 0.4,
-  "max_spawn_distance": 2048.0
+  "max_spawn_distance": 2048.0,
+  // POI guards (the bot markers in pois/*.json): they appear when a player comes within the wake distance,
+  // leave when everyone is past the sleep distance, and a killed guard's post waits guard_respawn seconds.
+  "guard_wake_distance": 64.0,
+  "guard_sleep_distance": 96.0,
+  "guard_respawn": 1200.0
 }

@@ -63,6 +63,7 @@ public class PartValidationTests
     [InlineData("""{ "visual": { "opacity": 1.2 } }""", "$.visual.opacity", "between 0 and 1")]
     [InlineData("""{ "visual": { "emission": "#ffd8" } }""", "$.visual.emission", "hex text")]
     [InlineData("""{ "visual": { "texture": "textures/a.jpg" } }""", "$.visual.texture", ".png")]
+    [InlineData("""{ "visual": { "emission": "#ffd870", "emission_texture": "textures/a.jpg" } }""", "$.visual.emission_texture", ".png")]
     [InlineData("""{ "visual": { "variants": [{ "id": "red", "name": "Red", "color": "#ff00zz" }] } }""", "$.visual.variants[0].color", "hex text")]
     [InlineData("""{ "visual": { "variants": [{ "id": "red", "color": "#ff0000" }] } }""", "$.visual.variants[0].name", "name is required")]
     [InlineData("""{ "light": { "energy": 1 } }""", "$.light.range", "range (m) is required")]
@@ -80,6 +81,14 @@ public class PartValidationTests
 
         Assert.Equal(DiagnosticSeverity.Error, error.Severity);
         Assert.Contains(messagePart, error.Message);
+    }
+
+    [Fact]
+    public void GlowTextureNeedsAGlowColour()
+    {
+        var diagnostics = Check(TestMods.Block(overrides: """{ "visual": { "emission_texture": "textures/a.png" } }"""));
+
+        Assert.Contains(diagnostics, d => d.JsonPath == "$.visual.emission_texture" && d.Message.Contains("needs an emission colour"));
     }
 
     [Fact]

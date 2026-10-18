@@ -13,8 +13,9 @@
   "size": [1, 1, 1],
   "mesh": "meshes/blocks/scrap_metal_block.glb",
   "visual": {
-    "color": "#7c7466",
+    "color": "#ffffff",
     "roughness": 0.6,
-    "metallic": 0.6
+    "metallic": 0.6,
+    "texture": "textures/blocks/scrap_metal.png"
   }
 }

@@ -13,10 +13,11 @@
   "size": [1, 1, 1],
   "mesh": "meshes/blocks/glass_wedge.glb",
   "visual": {
-    "color": "#bfe3f0",
+    "color": "#ffffff",
     "roughness": 0.05,
     "metallic": 0,
-    "opacity": 0.35
+    "opacity": 0.5,
+    "texture": "textures/blocks/glass.png"
   },
   "collision": {
     "shape": "convex",

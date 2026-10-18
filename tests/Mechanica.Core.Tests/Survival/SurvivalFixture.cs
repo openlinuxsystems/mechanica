@@ -18,6 +18,7 @@ internal sealed class SurvivalFixture
     public const string Seed = "test:seed";
     public const string Crop = "test:crop";
     public const string Bucket = "test:bucket";
+    public const string EmptyBucket = "test:empty_bucket";
     public const string Soil = "test:soil";
     public const string Bed = "test:bed";
     public const string Blaster = "test:blaster";
@@ -41,8 +42,11 @@ internal sealed class SurvivalFixture
                 Seed = new SeedDefinition { Crop = Crop, GrowTime = 40, Yield = 2, Seeds = 1, Value = 3 }, Script = "scripts/seed.lua" })
             .Add(Crop, new PartDefinition { Id = "crop", Name = "Crop", Category = PartCategory.Consumable, StackSize = 20,
                 Script = "scripts/food.lua", Properties = new JsonObject { ["health"] = 30 } })
-            .Add(Bucket, new PartDefinition { Id = "bucket", Name = "Bucket", Category = PartCategory.Consumable, StackSize = 5,
-                Script = "scripts/watering.lua", Properties = new JsonObject { ["seconds"] = 30, ["douse"] = 1, ["range"] = 6, ["splash"] = 1.2 } })
+            .Add(Bucket, new PartDefinition { Id = "bucket", Name = "Bucket", Category = PartCategory.Consumable, StackSize = 1,
+                Script = "scripts/watering.lua", Properties = new JsonObject { ["seconds"] = 30, ["douse"] = 1, ["splash"] = 1.2, ["range"] = 8,
+                    ["throw_speed"] = 7, ["throw_up"] = 0.35, ["empty"] = "empty_bucket" } })
+            .Add(EmptyBucket, new PartDefinition { Id = "empty_bucket", Name = "Pail", Category = PartCategory.Consumable, StackSize = 3,
+                Script = "scripts/bucket.lua" })
             .Add(Scrap, new PartDefinition { Id = "scrap", Name = "Scrap", Category = PartCategory.Resource, StackSize = 50 })
             // A hand tool that is also an item: crafted, kept on death.
             .Add(Connector, new PartDefinition { Id = "connect_tool", Name = "Connect Tool", Category = PartCategory.Tool })

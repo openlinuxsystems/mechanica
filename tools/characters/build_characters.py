@@ -39,6 +39,7 @@ import character_textures as ct  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[2]
 OUT_DIR = REPO / "mods" / "vanilla" / "meshes" / "characters"
+ITEM_DIR = REPO / "mods" / "vanilla" / "meshes" / "items"
 FPS = 30
 
 
@@ -677,6 +678,14 @@ PALETTE = {
     "bolt_steel": ("#5c5e62", 0.38, 1.0),
     "paint_yellow": ("#e6b52a", 0.5, 0.05),
     "grip_rubber": ("#1d1d1e", 0.82, 0.0),
+    # water bucket
+    "bucket_teal": ("#4f8985", 0.7, 0.0),
+    "bucket_inner": ("#3e6f6c", 0.74, 0.0),
+    "bucket_band": ("#4e5357", 0.66, 0.0),
+    "bucket_orange": ("#e2662c", 0.55, 0.0),
+    "bucket_wire": ("#a3a6a8", 0.32, 1.0),
+    "bucket_pin": ("#5a5d61", 0.4, 1.0),
+    "bucket_water": ("#6aa6b8", 0.04, 0.0),
     # refine tool
     "pipe_steel": ("#525457", 0.5, 1.0),
     "plate_steel": ("#4a4c50", 0.5, 1.0),
@@ -2081,6 +2090,7 @@ CHARACTERS = {"scrapper_male": lambda: build_male(), "scrapper_female": lambda: 
 CHARACTER_STYLE = {"scrapper_male": ("male", 7), "scrapper_female": ("female", 11)}
 ATLASES = {"head": 1024, "torso": 1024, "arms": 1024, "legs": 1024, "feet": 512, "gear": 1024}
 PROP_ATLAS = 1024
+BUCKET_ATLAS = 1024
 
 
 def assemble_character(name, textured=True):
@@ -3527,6 +3537,59 @@ def clip_hurt(t):
     return oneshot([(0.0, r), (0.07, flinch), (0.14, flinch), (0.3, r)], t)
 
 
+# ------------------------------------------------------------------------------------------------
+# Water bucket clips
+# ------------------------------------------------------------------------------------------------
+# The bucket hangs from the right fist: by the back of its rim while it is empty (light, the handle hanging down in
+# front) and by its handle once it is full, the left hand steadying it. The right hand is keyed; the bucket follows it
+# through bucket_in_grip with the grip, tilt and water of the clip's curve in game/data/character.json (the game moves
+# the prop the same way, game/scripts/Player/BucketRig.cs), and the left hand is put on the bucket where it is in each
+# frame, so it never slips off. Keys are (time, right fist, fingers, thumb, torso); fingers and thumb are the right
+# hand's directions: fingers point down the bucket's axis, the thumb along its hinges (to the bucket's -X).
+
+def bucket_motion(clip, t):
+    """(grip, tilt degrees, water) of a bucket clip at time t: eased between its keys."""
+    keys = BUCKET["motion"].get(clip.removesuffix("_fp"))
+    if keys is None:
+        return (1.0, 0.0, 1.0) if clip.startswith("hold_bucket_full") else (0.0, 0.0, 0.0)
+    if t <= keys[0][0]:
+        return tuple(keys[0][1:])
+    for a, b in zip(keys, keys[1:]):
+        if t <= b[0]:
+            u = sstep(0.0, 1.0, (t - a[0]) / max(b[0] - a[0], 1e-9))
+            return tuple(x + (y - x) * u for x, y in zip(a[1:], b[1:]))
+    return tuple(keys[-1][1:])
+
+
+def grip_world(pose, side="r"):
+    """A solved pose's fist grip frame in model space (4x4: grip -> model)."""
+    d0, w0, _ = hand_frame(side)
+    W = pose.W[f"hand_{side}"]
+    d, w = W @ d0, W @ w0
+    M = np.eye(4)
+    M[:3, :3] = np.stack([d, w, np.cross(d, w)], axis=1)
+    M[:3, 3] = pose.point(f"hand_{side}", grip_point(side))
+    return M
+
+
+def bucket_world(pose, clip, t):
+    g, tilt, _ = bucket_motion(clip, t)
+    return grip_world(pose) @ bucket_in_grip(g, tilt)
+
+
+BUCKET_R_POLE = (-0.6, 0.5, -1.0)
+
+
+def bucket_key(fist, fingers, thumb, space="chest", pole=BUCKET_R_POLE, curl=95.0, **body):
+    s = upper_base(0.0)
+    relaxed_left(s)
+    s["arm_r"] = arm_ik_from_grip("r", np.asarray(fist, float), fingers, thumb, pole=pole, space=space)
+    s["fingers_r"] = curl
+    s["thumb_r"] = 45.0
+    s.update(body)
+    return s
+
+
 # The Refine Tool, which only shows while Use is held on a resource node: it is drawn from the right hip into a ready
 # grip (refine_draw), worked against the node in a loop (hold_refine), then put back at the hip (refine_stow). The
 # fist holds it like a knife, fingers down, so the teeth face the node and the blade points at it; each stroke shoves
@@ -3562,6 +3625,305 @@ def refine_key(grip, axis, brace=0.0, **body):
     s["fingers_l"], s["thumb_l"] = 28.0, 18.0
     s.update(body)
     return s
+
+
+def left_on_bucket(B, point, palm, fingers):
+    """Left arm IK (model space) with the palm on the bucket at `point`, facing `palm`, fingers along `fingers`
+    (all in the bucket's frame)."""
+    R = B[:3, :3]
+    p = B[:3, :3] @ np.asarray(point, float) + B[:3, 3]
+    n = norm(R @ np.asarray(palm, float))
+    d = norm(R @ np.asarray(fingers, float))
+    d = norm(d - np.dot(d, n) * n)
+    w = np.cross(n, d)
+    wrist = p - d * 0.055 - n * 0.022
+    return {"pos": tuple(wrist), "d": tuple(d), "w": tuple(w), "pole": (0.7, 0.4, -0.9), "space": "world"}
+
+
+def blend_arm(a, b, u):
+    """Blend two model-space IK arm targets."""
+    pa, pb = np.asarray(a["pos"]), np.asarray(b["pos"])
+    d = norm(np.asarray(a["d"]) * (1 - u) + np.asarray(b["d"]) * u)
+    w = np.asarray(a["w"]) * (1 - u) + np.asarray(b["w"]) * u
+    w = norm(w - np.dot(w, d) * d)
+    pole = norm(np.asarray(a["pole"]) * (1 - u) + np.asarray(b["pole"]) * u)
+    return {"pos": tuple(pa + (pb - pa) * u), "d": tuple(d), "w": tuple(w), "pole": tuple(pole), "space": "world"}
+
+
+def eased(keys, t):
+    """A value eased between (time, value) keys; values are numbers or vectors."""
+    if t <= keys[0][0]:
+        return np.asarray(keys[0][1], float)
+    for (ta, a), (tb, b) in zip(keys, keys[1:]):
+        if t <= tb:
+            u = sstep(0.0, 1.0, (t - ta) / max(tb - ta, 1e-9))
+            return np.asarray(a, float) + (np.asarray(b, float) - np.asarray(a, float)) * u
+    return np.asarray(keys[-1][1], float)
+
+
+# The left hand on the full bucket: flat on its left side under the top band, fingers down.
+LEFT_RIM = ((-0.148, -0.045, 0.2), (1.0, 0.25, 0.0), (0.0, 0.25, -1.0))
+# ... and low on the side under the front, cupping the bottom edge to heave it.
+LEFT_BASE = ((-0.115, -0.04, 0.012), (0.55, 0.15, 0.82), (0.25, 0.95, 0.0))
+
+
+def bucket_clip(clip, keys, t, left=None, template=None):
+    """A bucket clip at time t: the right arm and torso between `keys`, the left hand on the bucket by `left`, a list
+    of (time, weight, contact) where contact is (point, palm, fingers) in the bucket's frame (weight 0: relaxed)."""
+    s = oneshot(keys, t, template) if len(keys) > 1 else keys[0][1]
+    s = {k: (dict(v) if isinstance(v, dict) else v) for k, v in s.items()}
+    if not left:
+        return s
+    weight = float(eased([(k[0], k[1]) for k in left], t))
+    if weight <= 1e-4:
+        return s
+    pose = build_pose(s)
+    B = bucket_world(pose, clip, t)
+    point = eased([(k[0], k[2][0]) for k in left], t)
+    palm = eased([(k[0], k[2][1]) for k in left], t)
+    fingers = eased([(k[0], k[2][2]) for k in left], t)
+    target = left_on_bucket(B, point, palm, fingers)
+    d0, w0, _ = hand_frame("l")
+    W = pose.W["hand_l"]
+    relaxed = {"pos": tuple(pose.P["hand_l"]), "d": tuple(W @ d0), "w": tuple(W @ w0), "pole": (0.5, 0.6, -1.0),
+               "space": "world"}
+    s["arm_l"] = blend_arm(relaxed, target, weight)
+    s["fingers_l"] = 18.0 + 52.0 * weight
+    s["thumb_l"] = 10.0 + 30.0 * weight
+    return s
+
+
+# Third person. Empty: held in front by the back of the rim, elbow bent, the bucket in front of the right hip.
+B_EMPTY_FIST = np.array([-0.14, -0.48, 0.98])
+B_EMPTY = ((0.0, 0.1, -1.0), (1.0, 0.0, 0.0))
+# Full: carried by the handle in front of the belly, palm towards the body, the left hand on the rim.
+B_FULL_FIST = np.array([-0.02, -0.36, 1.1])
+B_FULL = ((0.0, 0.0, -1.0), (1.0, 0.0, 0.0))
+B_FULL_POLE = (-0.7, 0.3, -1.0)
+
+
+def clip_hold_bucket(t, T=2.0):
+    ph = 2 * math.pi * t / T
+    s = bucket_key(B_EMPTY_FIST + np.array([0.0, 0.0, 0.004 * math.sin(ph)]), *B_EMPTY)
+    base = upper_base(t, T)
+    for b in ("spine", "chest", "neck", "head", "shoulder_l", "shoulder_r"):
+        s[b] = base[b]
+    relaxed_left(s, ph)
+    return s
+
+
+def full_hold_key(t=0.0, T=2.0, fist=B_FULL_FIST, space="chest", **body):
+    ph = 2 * math.pi * t / T
+    s = bucket_key(fist + np.array([0.0, 0.0, 0.004 * math.sin(ph)]), *B_FULL, space=space, pole=B_FULL_POLE, **body)
+    if "spine" not in body:
+        base = upper_base(t, T, 0.8)
+        for b in ("spine", "chest", "neck", "head", "shoulder_l", "shoulder_r"):
+            s[b] = base[b]
+    return s
+
+
+def clip_hold_bucket_full(t, T=2.0):
+    return bucket_clip("hold_bucket_full", [(0.0, full_hold_key(t, T))], t, left=[(0.0, 1.0, LEFT_RIM)])
+
+
+def as_world(spec):
+    """A key with its right arm turned into a model-space target where that arm actually is: for starting and
+    ending a model-space clip on a chest-space hold pose."""
+    pose = build_pose(spec)
+    W = pose.W["hand_r"]
+    d0, w0, _ = hand_frame("r")
+    out = {k: (dict(v) if isinstance(v, dict) else v) for k, v in spec.items()}
+    out["arm_r"] = {"pos": tuple(pose.P["hand_r"]), "d": tuple(W @ d0), "w": tuple(W @ w0),
+                    "pole": tuple(spec["arm_r"]["pole"]) if "pole" in spec["arm_r"] else BUCKET_R_POLE, "space": "world"}
+    return out
+
+
+def lean(sp, ch=None, nk=None, hd=None, twist=0.0):
+    ch = sp * 0.6 if ch is None else ch
+    nk = -sp * 0.55 if nk is None else nk
+    hd = -sp * 0.4 if hd is None else hd
+    return dict(spine=(sp, 0, twist * 0.5), chest=(ch, 0, twist * 0.5), neck=(nk, 0, -twist * 0.3), head=(hd, 0, -twist * 0.2))
+
+
+def wkey(fist, fingers, thumb, pole=BUCKET_R_POLE, curl=95.0, **body):
+    return bucket_key(fist, fingers, thumb, space="world", pole=pole, curl=curl, **body)
+
+
+# Fill: a little swing back, then bow and swing the bucket forward and down mouth first, scoop it up as it fills,
+# lift it, and take it by the handle as it comes up (the handle swings up into the hand); the left hand steadies it.
+def bucket_fill_keys():
+    return [
+        (0.0, as_world(clip_hold_bucket(0.0))),
+        (0.16, wkey((-0.15, -0.42, 1.02), (0.0, -0.2, -1.0), (1.0, 0.0, 0.0), **lean(4))),
+        (0.34, wkey((-0.14, -0.6, 0.86), (0.0, -0.6, -0.8), (1.0, 0.0, 0.0), **lean(34))),
+        (0.46, wkey((-0.13, -0.66, 0.84), (0.0, -0.97, -0.25), (1.0, 0.0, 0.0), **lean(42))),
+        (0.6, wkey((-0.14, -0.52, 0.9), (0.0, -0.1, -1.0), (1.0, 0.0, 0.0), **lean(28))),
+        (0.8, wkey((-0.08, -0.42, 1.08), (0.0, 0.0, -1.0), (1.0, 0.0, 0.0), pole=B_FULL_POLE, **lean(8))),
+        (1.1, as_world(full_hold_key())),
+    ]
+
+
+BUCKET_FILL_LEFT = [(0.0, 0.0, None), (0.74, 0.0, None), (0.95, 1.0, None), (1.1, 1.0, None)]
+
+
+def clip_bucket_fill(t):
+    keys = bucket_fill_keys()
+    return bucket_clip("bucket_fill", keys, t, left=with_contact(BUCKET_FILL_LEFT, LEFT_RIM), template=keys[0][1])
+
+
+def with_contact(keys, contact):
+    return [(k[0], k[1], k[2] if k[2] is not None else contact) for k in keys]
+
+
+# Throw: drop the bucket back between the knees, heave it forward and up as the left hand lifts its bottom, so it
+# swings over on its hinges and the water flies out ahead, then let it fall back and take it by the rim again.
+def bucket_throw_keys():
+    return [
+        (0.0, as_world(full_hold_key())),
+        (0.2, wkey((-0.02, -0.28, 0.92), (0.0, 0.3, -1.0), (1.0, 0.0, 0.0), pole=B_FULL_POLE, **lean(18))),
+        (0.32, wkey((0.0, -0.44, 1.12), (0.0, -0.5, -0.85), (1.0, 0.0, 0.0), pole=B_FULL_POLE, **lean(2))),
+        (0.42, wkey((0.0, -0.48, 1.28), (0.0, -0.8, -0.6), (1.0, 0.0, 0.0), pole=B_FULL_POLE, **lean(-6))),
+        (0.54, wkey((-0.04, -0.48, 1.22), (0.0, -0.55, -0.8), (1.0, 0.0, 0.0), pole=B_FULL_POLE, **lean(-2))),
+        (0.7, wkey((-0.12, -0.46, 1.06), (0.0, -0.1, -1.0), (1.0, 0.0, 0.0), pole=BUCKET_R_POLE, **lean(2))),
+        (0.9, as_world(clip_hold_bucket(0.0))),
+    ]
+
+
+BUCKET_THROW_LEFT = [(0.0, 1.0, LEFT_RIM), (0.16, 1.0, LEFT_BASE), (0.44, 1.0, LEFT_BASE), (0.56, 0.0, LEFT_BASE),
+                     (0.9, 0.0, LEFT_BASE)]
+
+
+def clip_bucket_throw(t):
+    keys = bucket_throw_keys()
+    return bucket_clip("bucket_throw", keys, t, left=BUCKET_THROW_LEFT, template=keys[0][1])
+
+
+# Place: bow and set the bucket down in front, let go, and straighten up with the hand empty (the bucket stays there).
+def bucket_place_keys(full):
+    hold = as_world(full_hold_key() if full else clip_hold_bucket(0.0))
+    grip = B_FULL if full else B_EMPTY
+    pole = B_FULL_POLE if full else BUCKET_R_POLE
+    low = np.array([-0.06, -0.6, 0.98]) if full else np.array([-0.14, -0.6, 0.8])
+    down = wkey(low, *grip, pole=pole, **lean(44))
+    let_go = wkey(low + np.array([0.0, 0.05, 0.07]), *grip, pole=pole, curl=20.0, **lean(40))
+    relaxed = as_world(relaxed_ik_upper())
+    relaxed["arm_l"] = hold["arm_l"]
+    return [(0.0, hold), (0.42, down), (0.52, let_go), (0.8, relaxed)]
+
+
+def clip_bucket_place(t):
+    keys = bucket_place_keys(False)
+    return bucket_clip("bucket_place", keys, t, template=keys[0][1])
+
+
+PLACE_FULL_LEFT = [(0.0, 1.0, LEFT_RIM), (0.42, 1.0, LEFT_RIM), (0.56, 0.0, LEFT_RIM), (0.8, 0.0, LEFT_RIM)]
+
+
+def clip_bucket_place_full(t):
+    keys = bucket_place_keys(True)
+    return bucket_clip("bucket_place_full", keys, t, left=PLACE_FULL_LEFT, template=keys[0][1])
+
+
+# First person: the same clips posed for the camera (FP_EYE, FP_LOOK), the torso stooped as for the Sledgehammer so
+# the elbows stay out of the view. The empty bucket rides at the lower right with its rim and inside in view; the full
+# one is held up in front of the right half of the view so the water shows.
+FPB_EMPTY_FIST = np.array([-0.28, -0.46, 1.1])
+FPB_EMPTY = ((0.0, -0.35, -1.0), (1.0, 0.0, 0.0))
+FPB_FULL_FIST = np.array([-0.24, -0.48, 1.16])
+FPB_FULL = ((0.0, 0.2, -1.0), (1.0, 0.0, 0.0))
+FPB_POLE = (-0.5, 0.5, -1.0)
+
+
+def fp_key(fist, fingers, thumb, pole=FPB_POLE, curl=95.0):
+    s = bucket_key(fist, fingers, thumb, space="world", pole=pole, curl=curl, **{k: v for k, v in FP_BODY.items() if k != "space"})
+    return s
+
+
+# Where the free left fist hangs in first person: by the hip, below the view (the bent first-person spine would swing
+# a relaxed arm up in front of the camera).
+FPB_LEFT_FIST = (0.24, -0.1, 0.86)
+
+
+def clip_hold_bucket_fp(t, T=2.0):
+    ph = 2 * math.pi * t / T
+    s = fp_key(FPB_EMPTY_FIST + np.array([0.0, 0.0, 0.005 * math.sin(ph)]), *FPB_EMPTY)
+    s["arm_l"] = arm_ik_from_grip("l", np.array(FPB_LEFT_FIST), (0.0, 0.0, -1.0), (0.0, -1.0, 0.0), space="world")
+    base = upper_base(t, T, 0.5)
+    s["shoulder_l"], s["shoulder_r"] = base["shoulder_l"], base["shoulder_r"]
+    return s
+
+
+def clip_hold_bucket_full_fp(t, T=2.0):
+    ph = 2 * math.pi * t / T
+    s = fp_key(FPB_FULL_FIST + np.array([0.0, 0.0, 0.005 * math.sin(ph)]), *FPB_FULL)
+    s["arm_l"] = clip_hold_bucket_fp(0.0)["arm_l"]
+    return s
+
+
+def clip_bucket_fill_fp(t):
+    keys = [
+        (0.0, clip_hold_bucket_fp(0.0)),
+        (0.16, fp_key(np.array([-0.26, -0.41, 1.17]), (0.0, -0.2, -1.0), (1.0, 0.0, 0.0))),
+        (0.34, fp_key(np.array([-0.22, -0.57, 0.90]), (0.0, -0.6, -0.8), (1.0, 0.0, 0.0))),
+        (0.46, fp_key(np.array([-0.21, -0.61, 0.84]), (0.0, -0.97, -0.25), (1.0, 0.0, 0.0))),
+        (0.6, fp_key(np.array([-0.22, -0.51, 1.00]), (0.0, -0.1, -1.0), (1.0, 0.0, 0.0))),
+        (0.8, fp_key(np.array([-0.19, -0.47, 1.16]), (0.0, 0.1, -1.0), (1.0, 0.0, 0.0))),
+        (1.1, clip_hold_bucket_full_fp(0.0)),
+    ]
+    keys[-1] = (1.1, {k: v for k, v in keys[-1][1].items()})
+    keys[-1][1]["arm_l"] = keys[0][1]["arm_l"]
+    return bucket_clip("bucket_fill", keys, t, left=with_contact(BUCKET_FILL_LEFT, LEFT_RIM), template=keys[0][1])
+
+
+def clip_bucket_throw_fp(t):
+    hold = clip_hold_bucket_full_fp(0.0)
+    hold["arm_l"] = clip_hold_bucket_fp(0.0)["arm_l"]
+    keys = [
+        (0.0, hold),
+        (0.2, fp_key(np.array([-0.14, -0.41, 1.00]), (0.0, 0.35, -1.0), (1.0, 0.0, 0.0))),
+        (0.32, fp_key(np.array([-0.12, -0.51, 1.20]), (0.0, -0.45, -0.9), (1.0, 0.0, 0.0))),
+        (0.42, fp_key(np.array([-0.12, -0.55, 1.34]), (0.0, -0.8, -0.6), (1.0, 0.0, 0.0))),
+        (0.54, fp_key(np.array([-0.14, -0.53, 1.28]), (0.0, -0.6, -0.8), (1.0, 0.0, 0.0))),
+        (0.7, fp_key(np.array([-0.23, -0.47, 1.16]), (0.0, 0.1, -1.0), (1.0, 0.0, 0.0))),
+        (0.9, clip_hold_bucket_fp(0.0)),
+    ]
+    return bucket_clip("bucket_throw", keys, t, left=BUCKET_THROW_LEFT, template=keys[0][1])
+
+
+def fp_place_keys(full):
+    hold = clip_hold_bucket_full_fp(0.0) if full else clip_hold_bucket_fp(0.0)
+    hold = dict(hold)
+    hold["arm_l"] = clip_hold_bucket_fp(0.0)["arm_l"]
+    grip = FPB_FULL if full else FPB_EMPTY
+    low = np.array([-0.18, -0.56, 0.9])
+    down = fp_key(low, *grip)
+    let_go = fp_key(low + np.array([0.0, 0.04, 0.05]), *grip, curl=20.0)
+    away = fp_key(np.array([-0.32, -0.15, 0.76]), (0.0, -0.3, -1.0), (1.0, 0.0, 0.0), curl=30.0)
+    return [(0.0, hold), (0.42, down), (0.52, let_go), (0.8, away)]
+
+
+def clip_bucket_place_fp(t):
+    return bucket_clip("bucket_place", fp_place_keys(False), t)
+
+
+def clip_bucket_place_full_fp(t):
+    return bucket_clip("bucket_place_full", fp_place_keys(True), t, left=PLACE_FULL_LEFT)
+
+
+BUCKET_CLIPS = {
+    "hold_bucket": (clip_hold_bucket, 2.0, True, True),
+    "hold_bucket_full": (clip_hold_bucket_full, 2.0, True, True),
+    "bucket_fill": (clip_bucket_fill, 1.1, False, True),
+    "bucket_throw": (clip_bucket_throw, 0.9, False, True),
+    "bucket_place": (clip_bucket_place, 0.8, False, True),
+    "bucket_place_full": (clip_bucket_place_full, 0.8, False, True),
+    "hold_bucket_fp": (clip_hold_bucket_fp, 2.0, True, True),
+    "hold_bucket_full_fp": (clip_hold_bucket_full_fp, 2.0, True, True),
+    "bucket_fill_fp": (clip_bucket_fill_fp, 1.1, False, True),
+    "bucket_throw_fp": (clip_bucket_throw_fp, 0.9, False, True),
+    "bucket_place_fp": (clip_bucket_place_fp, 0.8, False, True),
+    "bucket_place_full_fp": (clip_bucket_place_full_fp, 0.8, False, True),
+}
 
 
 def refine_stroke(t, T, ready, axis, key, reach=0.065):
@@ -3858,6 +4220,7 @@ CLIPS = {
     "pour": (clip_pour, 0.8, False, True),
     "interact": (clip_interact, 0.4, False, True),
     "hurt": (clip_hurt, 0.3, False, True),
+    **BUCKET_CLIPS,
     "hold_refine": (clip_hold_refine, REFINE_LOOP_SECONDS, True, True),
     "refine_draw": (clip_refine_draw, REFINE_DRAW_SECONDS, False, True),
     "refine_stow": (clip_refine_stow, REFINE_STOW_SECONDS, False, True),
@@ -3887,6 +4250,7 @@ CLIP_PROP = {"hold_tool": "hammer", "hammer_swing": "hammer", "tool_use": "lift_
              "hold_gun": "potato_blaster", "fire_gun": "potato_blaster", "pour": "water_bucket",
              "hold_refine": "refine_tool", "refine_draw": "refine_tool", "refine_stow": "refine_tool",
              "hold_refine_fp": "refine_tool", "refine_draw_fp": "refine_tool", "refine_stow_fp": "refine_tool",
+             **{name: "water_bucket" for name in BUCKET_CLIPS},
              **{c: "connect_tool" for c in ("hold_connect", "hold_connect_aim", "connect_draw", "connect_stow", "connect_click",
                                             "connect_reverse", "hold_connect_fp", "hold_connect_aim_fp", "connect_draw_fp",
                                             "connect_stow_fp", "connect_click_fp", "connect_reverse_fp")}}
@@ -4339,26 +4703,237 @@ def prop_potato_blaster():
     return p
 
 
-def prop_water_bucket():
+# The water bucket, built to its reference sheets: a 30 cm tall, 30 cm wide matte teal plastic bucket tapering to the
+# base, an orange foot and rolled rim, dark grey bands round the base and under the rim, an embossed droplet with three
+# lines under it on the front, ridged grip panels on both sides, and a steel wire handle with a ribbed orange grip,
+# hinged on bosses in the top band. It is modelled in its own frame (Blender axes): origin in the middle of the base,
+# +Z up the axis, the front (the droplet) towards -Y and the handle's hinges on the X axis. The handle and the water
+# are objects of their own, so the game can swing the handle and fill the bucket (game/scripts/Player/BucketRig.cs);
+# the numbers both sides need are in game/data/character.json under "bucket".
+
+def read_json_with_comments(path):
+    import json
+    import re
+    text = re.sub(r"^\s*//.*$", "", Path(path).read_text(), flags=re.M)
+    text = re.sub(r",\s*([}\]])", r"\1", text)
+    return json.loads(text)
+
+
+BUCKET = read_json_with_comments(REPO / "game" / "data" / "character.json")["bucket"]
+BUCKET_HINGE = BUCKET["hinge_height"]
+BUCKET_HANDLE = BUCKET["handle_length"]
+BUCKET_LOWERED = BUCKET["handle_lowered_degrees"]
+BUCKET_SEGS = 48
+
+
+def bucket_wall_radius(z):
+    """Outer radius of the teal wall at height z: it tapers from the top band down to the base."""
+    return 0.1255 + (0.1405 - 0.1255) * (z - 0.07) / (0.235 - 0.07)
+
+
+def lathe(profile, mat, segs=BUCKET_SEGS, cap0=False, cap1=False, smooth=True):
+    """Turns a (z, r) profile about the Z axis. Faces point to the left of the profile's direction (outward while it
+    climbs, inward when it comes back down the inside)."""
+    rings = [dict(c=(0.0, 0.0, z), a=X, b=Y, rx=r, ry=r) for z, r in profile]
+    return loft(rings, segs, cap0, cap1, mat, smooth)
+
+
+def on_wall(phi, z, out=0.0):
+    """A point on the outside of the teal wall at angle phi (0 = +X, -pi/2 = the front) and height z, out metres proud."""
+    r = bucket_wall_radius(z) + out
+    return np.array([r * math.cos(phi), r * math.sin(phi), z])
+
+
+def wall_axes(phi):
+    """(along the wall round the bucket, up the wall, out of the wall) at angle phi, following the taper."""
+    slope = (0.1405 - 0.1255) / (0.235 - 0.07)
+    out = norm(np.array([math.cos(phi), math.sin(phi), -slope]))
+    tangent = np.array([-math.sin(phi), math.cos(phi), 0.0])
+    up = np.cross(out, tangent)
+    return tangent, up, out
+
+
+def wall_bar(phi, z, half_w, half_h, proud, mat, rounding=6.0):
+    """A rounded bar lying on the wall (a grip ridge or an embossed line), its middle at (phi, z)."""
+    t, u, o = wall_axes(phi)
+    c = on_wall(phi, z, proud * 0.5 - 0.001)
+    return soft_box(c, (half_w, half_h, proud * 0.5 + 0.001), axes=(t, u, o), e=rounding, e2=rounding, segs=14, rings=6,
+                    mat=mat)
+
+
+def droplet_outline(phi, zc, size):
+    """An embossed droplet: a raised round cord tracing a teardrop, its round end at height zc."""
+    r = bucket_wall_radius(zc)
+    pts = []
+    n = 40
+    for k in range(n + 1):
+        a = 2 * math.pi * k / n
+        # teardrop: x = sin(a) * sin(a/2)^m, y = -cos(a), the point up
+        u = size * 0.62 * math.sin(a) * math.sin(a / 2) ** 1.2
+        v = size * (0.5 - 0.5 * math.cos(a)) * 1.0
+        pts.append(on_wall(phi + u / r, zc - size * 0.42 + v * 1.25, 0.0012))
+    loop = pts[:-1] + [pts[0]]
+    return tube(loop, [(0.0022, 0.0016)] * len(loop), 8, norm(np.array([math.cos(phi), math.sin(phi), 0.0])),
+                "bucket_teal", cap=False)
+
+
+def bucket_body():
     p = []
-    rings = []
-    for xx, r in ((0.13, 0.105), (0.135, 0.108), (0.33, 0.088)):
-        rings.append(dict(c=(xx, 0, 0), a=Y, b=Z, rx=r, ry=r, e=2.0))
-    # tangent = Y x Z = X: rings go from the rim (near the hand) to the bottom
-    p.append(loft(rings, 24, False, True, "paint_grey", True))
-    inner = [dict(c=(0.335, 0, 0), a=Y, b=Z, rx=0.085, ry=0.085), dict(c=(0.14, 0, 0), a=Y, b=Z, rx=0.1, ry=0.1)]
-    p.append(loft(inner, 24, False, False, "metal_dark", True))
-    p.append(ring_band((0.132, 0, 0), 0.108, 0.108, 0.006, 0.004, "metal", 24, axes=(Y, Z, X)))
-    p.append(ring_band((0.24, 0, 0), 0.1, 0.1, 0.008, 0.003, "orange", 24, axes=(Y, Z, X)))
-    p.append(loft([dict(c=(0.16, 0, 0), a=Y, b=Z, rx=0.096, ry=0.096), dict(c=(0.162, 0, 0), a=Y, b=Z, rx=0.096,
-                                                                                 ry=0.096)],
-                  24, True, True, "water", True))
-    bail = [np.array([0.138, -0.107, 0]), np.array([0.07, -0.08, 0]), np.array([0.01, -0.035, 0]),
-            np.array([-0.004, 0.0, 0]), np.array([0.01, 0.035, 0]), np.array([0.07, 0.08, 0]),
-            np.array([0.138, 0.107, 0])]
-    p.append(tube(bail, 0.0028, 6, Z, "metal"))
-    p.append(cylinder((-0.002, -0.035, 0), (-0.002, 0.035, 0), 0.011, 10, "rubber", ref=X))
+    # orange foot
+    p.append(lathe([(0.0, 0.0), (0.0, 0.112), (0.002, 0.121), (0.008, 0.126), (0.03, 0.128), (0.036, 0.1245)],
+                   "bucket_orange"))
+    # lower band
+    p.append(lathe([(0.033, 0.124), (0.037, 0.1315), (0.042, 0.1335), (0.072, 0.1345), (0.077, 0.1325), (0.08, 0.125)],
+                   "bucket_band"))
+    # teal wall, tapering
+    zs = np.linspace(0.074, 0.232, 9)
+    p.append(lathe([(z, bucket_wall_radius(z)) for z in zs], "bucket_teal"))
+    # top band, with a boss for each hinge
+    p.append(lathe([(0.226, 0.1395), (0.230, 0.1465), (0.235, 0.149), (0.257, 0.1505), (0.262, 0.1485),
+                    (0.264, 0.144)], "bucket_band"))
+    # rolled orange rim, over the lip and down the inside
+    p.append(lathe([(0.259, 0.1455), (0.263, 0.1525), (0.268, 0.1555), (0.288, 0.1565), (0.294, 0.1545),
+                    (0.2985, 0.1495), (0.2995, 0.1445), (0.297, 0.1405), (0.29, 0.1385), (0.282, 0.1378)],
+                   "bucket_orange"))
+    # the inside: wall and floor
+    inner = BUCKET["inner_radius_rim"]
+    floor = BUCKET["inner_radius_floor"]
+    fz = BUCKET["floor_height"]
+    prof = [(0.284, inner + 0.0004)]
+    for z in np.linspace(0.27, fz + 0.012, 8):
+        prof.append((z, floor + (inner - floor) * (z - fz) / (BUCKET["rim_height"] - fz)))
+    prof += [(fz + 0.004, floor - 0.003), (fz, floor - 0.012), (fz, 0.06), (fz, 0.0)]
+    p.append(lathe(prof, "bucket_inner"))
+    for sx in (-1, 1):
+        # hinge boss on the top band and the pin the handle turns on
+        p.append(bevel_box((sx * 0.1505, 0.0, 0.2445), (0.0075, 0.021, 0.0185), 0.0035, mat="bucket_band"))
+        p.append(cylinder((sx * 0.155, 0, BUCKET_HINGE), (sx * 0.1665, 0, BUCKET_HINGE), 0.0085, 16, "bucket_pin",
+                          ref=Y, bevel=0.0018))
+        # a tab on the rim above each hinge
+        p.append(bevel_box((sx * 0.1535, 0.0, 0.2785), (0.0055, 0.03, 0.0165), 0.004, mat="bucket_orange"))
+        # side grip panel with four ridges
+        phi = 0.0 if sx > 0 else math.pi
+        p.append(wall_bar(phi, 0.152, 0.03, 0.058, 0.004, "bucket_teal", rounding=8.0))
+        for z in (0.118, 0.141, 0.164, 0.187):
+            p.append(wall_bar(phi, z, 0.022, 0.0055, 0.0085, "bucket_teal"))
+    # front: an embossed droplet with three lines under it
+    front = -math.pi / 2
+    p.append(droplet_outline(front, 0.168, 0.05))
+    for z, w in ((0.112, 0.03), (0.099, 0.024), (0.086, 0.018)):
+        p.append(wall_bar(front, z, w, 0.0024, 0.0036, "bucket_teal", rounding=4.0))
     return p
+
+
+def bucket_handle():
+    """The wire handle in its own frame: origin on the hinge axis, X along it, raised along +Z."""
+    L = BUCKET_HANDLE
+    half = []
+    for x, z in ((0.1675, 0.0), (0.1675, 0.012), (0.165, 0.03), (0.158, 0.075), (0.142, 0.13), (0.118, 0.175),
+                 (0.095, 0.2), (0.075, L - 0.002), (0.058, L)):
+        half.append(np.array([x, 0.0, z]))
+    wire = [np.array([-p[0], 0, p[2]]) for p in half] + [np.array([p[0], 0, p[2]]) for p in reversed(half)]
+    # the wire's ends hook through the pins: start along the axis inside them
+    wire = [np.array([-0.158, 0.0, 0.0])] + wire + [np.array([0.158, 0.0, 0.0])]
+    p = [tube(wire, 0.0031, 10, Y, "bucket_wire")]
+    # ribbed orange grip sleeve on the top bar
+    p.append(cylinder((-0.056, 0, L), (0.056, 0, L), 0.0125, 18, "bucket_orange", ref=Y, bevel=0.004))
+    for x in np.linspace(-0.04, 0.04, 6):
+        p.append(ring_band((x, 0, L), 0.0128, 0.0128, 0.0028, 0.0016, "bucket_orange", 18, axes=(Y, Z, X)))
+    return p
+
+
+def bucket_water_disc():
+    """A unit disc for the water's surface (the game sizes it to the inside at the water's height)."""
+    segs = BUCKET_SEGS
+    v = [np.array([0.0, 0.0, 0.0])]
+    for k in range(segs):
+        a = 2 * math.pi * k / segs
+        v.append(np.array([math.cos(a), math.sin(a), 0.0]))
+    f = [(0, 1 + k, 1 + (k + 1) % segs) for k in range(segs)]
+    return Part(v, f, "bucket_water", True)
+
+
+def inner_radius_at(z):
+    zf, zr = BUCKET["floor_height"], BUCKET["rim_height"]
+    return BUCKET["inner_radius_floor"] + (BUCKET["inner_radius_rim"] - BUCKET["inner_radius_floor"]) * (z - zf) / (zr - zf)
+
+
+def rot_x(deg):
+    return axis_rot(np.array([1.0, 0.0, 0.0]), deg)
+
+
+def bucket_in_grip(grip, tilt):
+    """The bucket's frame in the grip frame of the hand holding it (4x4, bucket -> grip): grip 0 holds the back of the
+    rim, 1 the handle; tilt (degrees) swings the mouth towards the bucket's back (+Y) about its hinges, the handle
+    staying in the hand. Matches BucketRig.cs."""
+    R0 = np.array([[0.0, 0.0, -1.0], [-1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])    # columns: bucket X, Y, Z in grip axes
+    o_rim = -R0 @ np.asarray(BUCKET["rim_grip"], float)
+    o_handle = -R0 @ np.array([0.0, 0.0, BUCKET_HINGE + BUCKET_HANDLE])
+    o = o_rim + (o_handle - o_rim) * grip
+    pivot = o + R0 @ np.array([0.0, 0.0, BUCKET_HINGE])
+    R = axis_rot(R0 @ np.array([1.0, 0.0, 0.0]), -tilt)
+    M = np.eye(4)
+    M[:3, :3] = R @ R0
+    M[:3, 3] = pivot + R @ (o - pivot)
+    return M
+
+
+def handle_angle(grip, tilt):
+    """The handle's angle from upright in the bucket's frame (degrees about +X: positive falls to the front, -Y)."""
+    return BUCKET_LOWERED * (1.0 - sstep(0.0, 1.0, grip)) + tilt
+
+
+def to_matrix(M):
+    return Matrix([list(r) for r in M])
+
+
+def build_bucket_objects(name, handle_deg, water, parent_matrix=None):
+    """The bucket as three objects: `name` (the body), `name`_handle and `name`_water (both children of the body).
+    water: 0 (none) to 1 (full). Returns ([objects], [parts], body)."""
+    body_part = merge(bucket_body())
+    body = build_mesh_object(name, body_part)
+    if parent_matrix is not None:
+        body.matrix_world = parent_matrix
+    handle_part = merge(bucket_handle())
+    handle = build_mesh_object(name + "_handle", handle_part)
+    handle.parent = body
+    handle.matrix_parent_inverse = Matrix.Identity(4)
+    Mh = np.eye(4)
+    Mh[:3, :3] = rot_x(handle_deg)
+    Mh[:3, 3] = (0.0, 0.0, BUCKET_HINGE)
+    handle.matrix_basis = to_matrix(Mh)
+    objs, parts = [body, handle], [body_part, handle_part]
+    water_part = bucket_water_disc()
+    wat = build_mesh_object(name + "_water", water_part)
+    wat.parent = body
+    wat.matrix_parent_inverse = Matrix.Identity(4)
+    z = BUCKET["floor_height"] + (BUCKET["water_height"] - BUCKET["floor_height"]) * max(water, 1e-3)
+    r = inner_radius_at(z) + 0.001
+    wat.matrix_basis = Matrix.LocRotScale(Vector((0, 0, z)), None, Vector((r, r, 1.0)))
+    wat.hide_render = water <= 0.0
+    return objs, parts, body, wat
+
+
+def water_material():
+    m = bpy.data.materials.new("M_bucket_water")
+    m.use_nodes = True
+    bsdf = m.node_tree.nodes.get("Principled BSDF")
+    col, rough, _ = PALETTE["bucket_water"]
+    bsdf.inputs["Base Color"].default_value = srgb(col)
+    bsdf.inputs["Roughness"].default_value = rough
+    bsdf.inputs["Alpha"].default_value = 0.78
+    m.blend_method = "BLEND" if hasattr(m, "blend_method") else m.blend_method
+    if hasattr(m, "surface_render_method"):
+        m.surface_render_method = "BLENDED"
+    return m
+
+
+def texture_bucket(objs, parts, wat, group):
+    stats = ct.texture_props(objs, parts, [mesh_material_names(p) for p in parts], PALETTE, BUCKET_ATLAS, seed=9,
+                             group=group, material="M_water_bucket")
+    wat.data.materials.clear()
+    wat.data.materials.append(water_material())
+    return stats
 
 
 # The Refine Tool, built to its reference sheet: a scrap scraper about 35 cm long that is never in the inventory and
@@ -4504,8 +5079,7 @@ def prop_refine_tool():
 
 PROPS = {"hammer": prop_hammer, "lift_remote": prop_lift_remote, "weld_tool": prop_weld_tool,
          "paint_tool": prop_paint_tool, "sledgehammer": prop_sledgehammer, "connect_tool": prop_connect_tool,
-         "potato_blaster": prop_potato_blaster, "water_bucket": prop_water_bucket,
-         "refine_tool": prop_refine_tool}
+         "potato_blaster": prop_potato_blaster, "refine_tool": prop_refine_tool}
 
 
 def build_prop(name):
@@ -4556,15 +5130,41 @@ def export_props():
                                       group=group, material=material))
     for g, (size, texel_mm, cov) in stats.items():
         print(f"  {g} atlas: {size}px, {texel_mm:.2f} mm/texel, {cov * 100:.0f}% covered")
+    # The water bucket: an empty at the grip with the body under it (as the full bucket hangs from the hand), and the
+    # handle and the water under the body, all moved by the game. It has an atlas of its own too.
+    root = bpy.data.objects.new("water_bucket", None)
+    bpy.context.scene.collection.objects.link(root)
+    root.matrix_world = grip_frame_matrix("r")
+    bobjs, bparts, body, wat = build_bucket_objects("water_bucket_body", handle_angle(1.0, 0.0), 1.0)
+    body.parent = root
+    body.matrix_parent_inverse = Matrix.Identity(4)
+    body.matrix_basis = to_matrix(bucket_in_grip(1.0, 0.0))
+    wat.hide_render = False
+    stats.update(texture_bucket(bobjs, bparts, wat, "water_bucket"))
+    for g, (size, texel_mm, cov) in stats.items():
+        if g == "water_bucket":
+            print(f"  {g} atlas: {size}px, {texel_mm:.2f} mm/texel, {cov * 100:.0f}% covered")
     # the Connect Tool's lights are a child node with their own emissive material, outside every atlas
     glow = build_connect_glow(objs[list(PROPS).index("connect_tool")])
     path = OUT_DIR / "hand_tools.glb"
-    export_glb(path, objs + [glow], animations=False)
-    print(f"{path.name}: {len(objs)} props")
+    export_glb(path, objs + [glow] + [root] + bobjs + [wat], animations=False)
+    print(f"{path.name}: {len(objs) + 1} props")
+
+
+def export_bucket_items():
+    """The empty and full water buckets as items (their pictures, and the bucket put down): handle down and dry, or
+    handle up with the water in."""
+    for name, full in (("water_bucket", False), ("water_bucket_full", True)):
+        reset_scene()
+        objs, parts, body, wat = build_bucket_objects(name, handle_angle(1.0 if full else 0.0, 0.0), 1.0 if full else 0.0)
+        texture_bucket(objs, parts, wat, name)
+        path = ITEM_DIR / f"{name}.glb"
+        export_glb(path, objs + ([wat] if full else []), animations=False)
+        print(f"{path.name}: {sum(tri_count(p) for p in parts)} triangles")
 
 
 def main(argv):
-    what = set(argv) or {"characters", "animations", "props"}
+    what = set(argv) or {"characters", "animations", "props", "items"}
     if "characters" in what:
         for name in CHARACTERS:
             export_character(name)
@@ -4572,6 +5172,8 @@ def main(argv):
         export_animations()
     if "props" in what:
         export_props()
+    if "items" in what:
+        export_bucket_items()
 
 
 if __name__ == "__main__":

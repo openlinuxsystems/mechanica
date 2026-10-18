@@ -13,9 +13,10 @@
   "size": [1, 1, 1],
   "mesh": "meshes/blocks/scrap_wood_wedge.glb",
   "visual": {
-    "color": "#8a6b45",
+    "color": "#ffffff",
     "roughness": 0.9,
-    "metallic": 0
+    "metallic": 0,
+    "texture": "textures/blocks/scrap_wood.png"
   },
   "collision": {
     "shape": "convex",

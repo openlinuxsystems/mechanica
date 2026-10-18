@@ -13,9 +13,9 @@
   "size": [1, 1, 1],
   "mesh": "meshes/blocks/net_block.glb",
   "visual": {
-    "color": "#c8c0a8",
+    "color": "#ffffff",
     "roughness": 0.9,
     "metallic": 0,
-    "opacity": 0.5
+    "texture": "textures/blocks/net.png"
   }
 }
