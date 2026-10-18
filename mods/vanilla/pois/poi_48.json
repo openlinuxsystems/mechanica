@@ -1,8 +1,8 @@
 {
-  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed.
+  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed on its own.
   // Written by tools/author-poi-placeholders.py; edit the table there and re-run.
-  "id": "chemical_lake",
-  "name": "Chemical Lake",
+  "id": "poi_48",
+  "name": "POI-48 Chemical Lake",
   "radius": 71.0,
   "size": [52.0, 2.0, 52.0],
   "road": "track",

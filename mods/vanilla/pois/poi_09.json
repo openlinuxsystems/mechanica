@@ -1,8 +1,8 @@
 {
-  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed.
+  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed on its own.
   // Written by tools/author-poi-placeholders.py; edit the table there and re-run.
-  "id": "mountain_lookout",
-  "name": "Mountain Lookout",
+  "id": "poi_09",
+  "name": "POI-09 Mountain Lookout",
   "radius": 41.0,
   "size": [10.0, 14.0, 10.0],
   "road": "track",

@@ -1,8 +1,8 @@
 {
-  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed.
+  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed on its own.
   // Written by tools/author-poi-placeholders.py; edit the table there and re-run.
-  "id": "scrap_city_garage",
-  "name": "Scrap City Garage",
+  "id": "poi_50",
+  "name": "POI-50 Scrap City Garage",
   "radius": 70.0,
   "size": [60.0, 12.0, 40.0],
   "road": "road",

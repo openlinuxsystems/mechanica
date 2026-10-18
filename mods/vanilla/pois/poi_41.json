@@ -1,8 +1,8 @@
 {
-  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed.
+  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed on its own.
   // Written by tools/author-poi-placeholders.py; edit the table there and re-run.
-  "id": "capsule_scrapyard",
-  "name": "Capsule Scrapyard",
+  "id": "poi_41",
+  "name": "POI-41 Capsule Scrapyard",
   "radius": 66.0,
   "size": [50.0, 6.0, 40.0],
   "road": "track",

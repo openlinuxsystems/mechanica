@@ -1,8 +1,8 @@
 {
-  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed.
+  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed on its own.
   // Written by tools/author-poi-placeholders.py; edit the table there and re-run.
-  "id": "oil_pool",
-  "name": "Oil Pool",
+  "id": "poi_49",
+  "name": "POI-49 Oil Pool",
   "radius": 60.0,
   "size": [36.0, 1.0, 36.0],
   "road": "none",

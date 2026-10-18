@@ -1,8 +1,8 @@
 {
-  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed.
+  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed on its own.
   // Written by tools/author-poi-placeholders.py; edit the table there and re-run.
-  "id": "haymaze",
-  "name": "Haymaze",
+  "id": "poi_42",
+  "name": "POI-42 Haymaze",
   "radius": 77.0,
   "size": [60.0, 3.0, 60.0],
   "road": "road",

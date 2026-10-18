@@ -1,8 +1,8 @@
 {
-  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed.
+  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed on its own.
   // Written by tools/author-poi-placeholders.py; edit the table there and re-run.
-  "id": "packing_station_vegetable",
-  "name": "Packing Station (Vegetable)",
+  "id": "poi_25",
+  "name": "POI-25 Packing Station",
   "radius": 56.0,
   "size": [36.0, 8.0, 24.0],
   "road": "road",

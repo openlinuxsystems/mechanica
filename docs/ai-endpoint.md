@@ -226,7 +226,7 @@ them. "The caller" is the player the call is made for; with no player, pass the 
 
 | Action | Arguments | Value |
 |--------|-----------|-------|
-| `GetWorld` | none | `seed` (and `seed_text`, exact for JavaScript), `mode`, `difficulty`, `friendly_fire`, `time` (host clock, s), `tick`, `tick_rate`, `world_size`, `sea_level`, `spawn`, `players` `[{peer, name}]`, counts of `creations`, `drops`, `pois`, and `revealed_pois` |
+| `GetWorld` | none | `seed` (and `seed_text`, exact for JavaScript), `mode`, `difficulty`, `friendly_fire`, `time` (host clock, s), `tick`, `tick_rate`, `world_size` (east–west, m), `world_depth` (north–south, m), `sea_level`, `spawn`, `players` `[{peer, name}]`, counts of `creations`, `drops`, `pois`, and `revealed_pois` |
 | `GetPlayers` | none | every player as below |
 | `GetPlayer` | optional `peer` (default the caller) | `peer`, `name`, `character`, `position` (feet), `eye`, `look` (unit vector), `yaw` and `pitch` (rad; yaw 0 looks along −z, turning left is positive), `velocity`, `on_floor`, `swimming`, `crouched`, `seat` `{creation, part}`, `held` (tool in hand: `hammer`, `lift_remote`, `sledgehammer`, …), `held_item` (scripted item), `lift` `{owner, position, level, creation}`, `health`, `max_health`, `dead` |
 | `Raycast` | optional `from` (default the caller's eyes), `direction` (default where the caller looks), `range` (m, default 100, at most 1000), `ignore_player` (default the caller when casting from their eyes) | `{hit: false}` or `hit`, `kind` (`player`, `part`, `object`, `bot`, `ground`), `point`, `distance`, and `player`, `creation` + `part` + `part_type`, `object` + `object_type`, or `bot` |

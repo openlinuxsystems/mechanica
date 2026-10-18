@@ -1,8 +1,8 @@
 {
-  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed.
+  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed on its own.
   // Written by tools/author-poi-placeholders.py; edit the table there and re-run.
-  "id": "campsite",
-  "name": "Campsite",
+  "id": "poi_30",
+  "name": "POI-30 Camp",
   "radius": 48.0,
   "size": [20.0, 3.0, 20.0],
   "road": "track",

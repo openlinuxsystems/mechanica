@@ -1,5 +1,5 @@
 {
-  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed.
+  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed on its own.
   // Written by tools/author-poi-placeholders.py; edit the table there and re-run.
   "id": "warehouse_large",
   "name": "Large Warehouse (4 floors)",

@@ -97,13 +97,14 @@ def placeholder(w, d, h, color, extra=()):
     return [box([w + 8, 0.3, d + 8], [0, 0.15, 0], PAD), volume(w, d, h, color, y=0.3), *extra]
 
 
-# id, name, [width, height, depth], road link, pieces, markers, extra keys
-POIS = []
+# Structure types by id: name, [width, height, depth], road link, pieces, markers and the rest. Each of the spec's 50
+# structures gets its own prefab (pois/poi_NN.json) made from its type, so each can be designed on its own later.
+TYPES = {}
 
 
 def add(poi_id, name, size, road, pieces, markers=None, flora=None, ground="lot", basin=None, spacing=None):
-    POIS.append(dict(id=poi_id, name=name, size=size, road=road, pieces=pieces, markers=markers or [], flora=flora,
-                     ground=ground, basin=basin, spacing=spacing))
+    TYPES[poi_id] = dict(id=poi_id, name=name, size=size, road=road, pieces=pieces, markers=markers or [], flora=flora,
+                         ground=ground, basin=basin, spacing=spacing)
 
 
 for floors, poi_id, name, (w, d) in [(2, "warehouse_small", "Warehouse (2 floors)", (40, 30)),
@@ -112,6 +113,13 @@ for floors, poi_id, name, (w, d) in [(2, "warehouse_small", "Warehouse (2 floors
     pieces, markers, h = warehouse(floors, w, d)
     add(poi_id, name, [w, h + 4.3, d], "road", pieces, markers)
 
+# The Workshop Outpost's layout (pois/outpost.json), so every Mechanic Station has its fabricator, dispenser and bed.
+add("mechanic_station", "Mechanic Station", [16, 4.3, 16], "road",
+    [box([16, 0.3, 16], [0, 0.15, 0], PAD), box([16, 4, 0.4], [0, 2, -7.8], METAL), box([0.4, 4, 10], [-7.8, 2, -3], METAL),
+     box([0.4, 4, 10], [7.8, 2, -3], METAL), box([16.4, 0.3, 10.4], [0, 4.15, -3], ROOF)],
+    [{"type": "item", "ref": "fabricator", "at": [0.0, 0.3, -5.0]}, {"type": "item", "ref": "dispenser", "at": [5.0, 0.3, -6.0]},
+     {"type": "item", "ref": "respawn_bed", "at": [-5.0, 0.3, -6.0]}, {"type": "item", "ref": "chest", "at": [-5.0, 0.3, 3.0]},
+     {"type": "item", "ref": "outpost_sign", "at": [0.0, 0.0, 9.0]}])
 add("small_ruin", "Small Ruin", [14, 5, 12], "track", placeholder(14, 12, 5, RUIN), flora="meadow", ground=None)
 add("farmer_shack", "Farmer Shack", [12, 5, 10], "track",
     placeholder(12, 10, 5, WOOD, [box([5, 2.5, 4], [10, 1.25, 4], HAY)]), flora="meadow", ground=None)
@@ -200,7 +208,7 @@ def write(poi):
         b = poi["basin"]
         terrain.append({"op": "basin", "at": [float(v) for v in b["at"]], "radius": float(b["radius"]), "blend": 4.0, "depth": b["depth"]})
     lines = ["{",
-             "  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed.",
+             "  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed on its own.",
              "  // Written by tools/author-poi-placeholders.py; edit the table there and re-run.",
              f'  "id": {inline(poi["id"])},',
              f'  "name": {inline(poi["name"])},',
@@ -227,6 +235,34 @@ def write(poi):
     with open(os.path.join(OUT, poi["id"] + ".json"), "w", encoding="utf-8", newline="\n") as f:
         f.write(text)
 
+
+# The spec's 50 structures (World Map spec §4): number, type, name. POI-36 (crash_site) and POI-37 (outpost, the quests'
+# Workshop Outpost) keep their hand-made prefabs. Warehouse floors are fixed per structure (12 warehouses with the large slots).
+SITES = [
+    (1, "small_ruin", "Forest Outpost"), (2, "mechanic_station", "Mechanic Station"), (3, "warehouse", "Warehouse"),
+    (4, "farmer_shack", "Farmer Shack"), (5, "packing_station_vegetable", "Packing Station"), (6, "silo_cluster", "Silo Cluster"),
+    (7, "ruin", "Ruin"), (8, "warehouse", "Warehouse"), (9, "mountain_lookout", "Mountain Lookout"), (10, "campsite", "Campsite"),
+    (11, "small_ruin", "Small Ruin"), (12, "campsite", "Autumn Forest Camp"), (13, "mechanic_station", "Mechanic Station"),
+    (14, "growlab", "Growlab"), (15, "warehouse_small", "Warehouse"), (16, "ruin", "Ruin"), (17, "small_ruin", "Shack"),
+    (18, "packing_station_fruit", "Packing Station"), (19, "warehouse", "Warehouse"), (20, "farmers_hideout", "Farmers Hideout"),
+    (21, "warehouse_large", "Large Warehouse"), (22, "ruin", "Autumn Ruin"), (23, "chemical_lake_facility", "Chemical Lake Facility"),
+    (24, "warehouse_large", "Large Warehouse"), (25, "packing_station_vegetable", "Packing Station"), (26, "silo_district", "Silo District"),
+    (27, "warehouse_small", "Desert Warehouse"), (28, "warehouse_small", "Field Warehouse"), (29, "ruin", "Ruin"),
+    (30, "campsite", "Camp"), (31, "warehouse", "Warehouse"), (32, "farmbot_scrapyard", "Burnt Forest Scrapyard"),
+    (33, "ruin", "Desert Ruin"), (34, "small_ruin", "Small Ruin"), (35, "warehouse_large", "Large Warehouse"),
+    (38, "packing_station_vegetable", "Packing Station (Vegetable)"), (39, "packing_station_fruit", "Packing Station (Fruit)"),
+    (40, "ruin_city", "Ruin City"), (41, "capsule_scrapyard", "Capsule Scrapyard"), (42, "haymaze", "Haymaze"),
+    (43, "large_camp", "Large Camp"), (44, "growlab", "Growlab (Meadow)"), (45, "growlab", "Growlab (Desert)"),
+    (46, "growlab", "Growlab (Forest)"), (47, "growlab", "Growlab (Burned Forest)"), (48, "chemical_lake", "Chemical Lake"),
+    (49, "oil_pool", "Oil Pool"), (50, "scrap_city_garage", "Scrap City Garage"),
+]
+
+# Types the extra large slots draw by seed (worldgen.json pools) keep a prefab of their own.
+POOLED = ["warehouse_small", "warehouse", "warehouse_large", "farmbot_scrapyard"]
+
+POIS = [TYPES[t] for t in POOLED]
+for number, type_id, name in SITES:
+    POIS.append(dict(TYPES[type_id], id=f"poi_{number:02d}", name=f"POI-{number:02d} {name}"))
 
 os.makedirs(OUT, exist_ok=True)
 for poi in POIS:

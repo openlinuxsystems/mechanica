@@ -71,6 +71,11 @@ public partial class MainMenu : Control
             _ = RunBatch(at + 1 < args.Length ? args[at + 1] : null);
             return;
         }
+        if (Array.IndexOf(args, World.WorldExportRunner.Flag) is var exportAt and >= 0)
+        {
+            RunWorldExport(args, exportAt);
+            return;
+        }
         if (LaunchOptions.TryParse(OS.GetCmdlineUserArgs(), out var options, out _) && (options.Mode != SessionMode.Offline || options.SelfTest))
         {
             Callable.From(() => GetTree().ChangeSceneToFile(WorldScene)).CallDeferred();
@@ -274,6 +279,26 @@ public partial class MainMenu : Control
         }
         var result = await PartBatchRunner.RunAsync(this, file);
         Report(result, file, "parts and recipes");
+    }
+
+    // --world-export DIR [SEED]: writes the world's manifest and maps (seed 1 when none is given) and quits.
+    private void RunWorldExport(string[] args, int at)
+    {
+        if (at + 1 >= args.Length || args[at + 1].StartsWith("--", StringComparison.Ordinal))
+        {
+            GD.PrintErr($"[world-export] {World.WorldExportRunner.Flag} needs a folder.");
+            GetTree().Quit(2);
+            return;
+        }
+        var seed = 1L;
+        if (at + 2 < args.Length && !args[at + 2].StartsWith("--", StringComparison.Ordinal)
+            && !long.TryParse(args[at + 2], System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out seed))
+        {
+            GD.PrintErr($"[world-export] '{args[at + 2]}' is not a seed (a whole number).");
+            GetTree().Quit(2);
+            return;
+        }
+        GetTree().Quit(World.WorldExportRunner.Run(Path.GetFullPath(args[at + 1]), seed) ? 0 : 1);
     }
 
     private void Report(BatchRunResult result, string file, string what)

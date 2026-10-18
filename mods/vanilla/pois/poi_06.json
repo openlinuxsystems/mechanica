@@ -1,8 +1,8 @@
 {
-  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed.
+  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed on its own.
   // Written by tools/author-poi-placeholders.py; edit the table there and re-run.
-  "id": "silo_cluster",
-  "name": "Silo Cluster",
+  "id": "poi_06",
+  "name": "POI-06 Silo Cluster",
   "radius": 55.0,
   "size": [30.0, 18.0, 30.0],
   "road": "road",

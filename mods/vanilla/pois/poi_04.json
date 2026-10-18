@@ -1,8 +1,8 @@
 {
-  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed.
+  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed on its own.
   // Written by tools/author-poi-placeholders.py; edit the table there and re-run.
-  "id": "farmer_shack",
-  "name": "Farmer Shack",
+  "id": "poi_04",
+  "name": "POI-04 Farmer Shack",
   "radius": 42.0,
   "size": [12.0, 5.0, 10.0],
   "road": "track",
