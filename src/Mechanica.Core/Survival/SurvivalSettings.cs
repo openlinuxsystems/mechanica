@@ -92,8 +92,11 @@ public sealed record SurvivalSettings
     /// <summary>Most degrees a shot may point away from where the host sees the shooter looking (network lag).</summary>
     public float AimTolerance { get; init; } = 25f;
 
-    /// <summary>The item filling a bucket at water gives.</summary>
-    public string WaterItem { get; init; } = "water_bucket";
+    /// <summary>The empty bucket <c>CollectWater</c> fills.</summary>
+    public string BucketItem { get; init; } = "water_bucket";
+
+    /// <summary>The full bucket filling one at water turns it into (in the same slot).</summary>
+    public string WaterItem { get; init; } = "water_bucket_full";
 
     /// <summary>Shortest time between one player's fills at water, in seconds.</summary>
     public float WaterSeconds { get; init; } = 1f;
@@ -155,6 +158,8 @@ public sealed record SurvivalSettings
             throw new FormatException($"aim_tolerance must be more than 0 and at most 180 degrees (got {AimTolerance}).");
         if (!Data.Identifiers.IsValid(WaterItem.Split(':')[^1]))
             throw new FormatException($"water_item '{WaterItem}' is not an item id.");
+        if (!Data.Identifiers.IsValid(BucketItem.Split(':')[^1]) || BucketItem == WaterItem)
+            throw new FormatException($"bucket_item '{BucketItem}' must be an item id other than water_item.");
         NonNegative(WaterSeconds, "water_seconds");
         Positive(RefineSeconds, "refine_seconds");
         Positive(RefineCancelDistance, "refine_cancel_distance");

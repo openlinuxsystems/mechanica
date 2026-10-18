@@ -148,6 +148,31 @@
       ],
       "max_distance": 150,
       "rolloff": "linear"
+    },
+    {
+      "id": "bucket_fill",
+      "clips": [
+        "sounds/items/bucket_fill.ogg"
+      ],
+      "pitch_variation": 0.06,
+      "max_distance": 20
+    },
+    {
+      "id": "bucket_throw",
+      "clips": [
+        "sounds/items/bucket_throw.ogg"
+      ],
+      "pitch_variation": 0.08,
+      "max_distance": 25
+    },
+    {
+      "id": "water_splash",
+      "clips": [
+        "sounds/items/water_splash.ogg",
+        "sounds/items/water_splash_2.ogg"
+      ],
+      "pitch_variation": 0.08,
+      "max_distance": 35
     }
   ]
 }

@@ -17,6 +17,7 @@ public class CharacterAnimatorTests
         ["sledge_swing_side"] = 1f, ["sledge_swing_back"] = 1f, ["sledge_swing_side_fp"] = 1f, ["sledge_swing_back_fp"] = 1f,
         ["hammer_swing"] = 0.35f, ["sledge_swing"] = 1f, ["tool_use"] = 0.3f, ["weld"] = 0.5f, ["paint_spray"] = 0.4f,
         ["fire_gun"] = 0.25f, ["eat"] = 1f, ["throw"] = 0.5f, ["plant"] = 0.8f, ["pour"] = 0.8f, ["interact"] = 0.4f, ["hurt"] = 0.3f,
+        ["hold_bucket"] = 2f, ["hold_bucket_full"] = 2f, ["bucket_fill"] = 1.1f, ["bucket_throw"] = 0.9f, ["bucket_place"] = 0.8f, ["bucket_place_full"] = 0.8f,
         ["hold_refine"] = 0.75f, ["refine_draw"] = 0.4f, ["refine_stow"] = 0.35f,
         ["hold_refine_fp"] = 0.75f, ["refine_draw_fp"] = 0.4f, ["refine_stow_fp"] = 0.35f,
     };
@@ -155,6 +156,8 @@ public class CharacterAnimatorTests
     [InlineData(CharacterProp.Sledgehammer, "hold_heavy")]
     [InlineData(CharacterProp.PotatoBlaster, "hold_gun")]
     [InlineData(CharacterProp.Item, "hold_item")]
+    [InlineData(CharacterProp.WaterBucket, "hold_bucket")]
+    [InlineData(CharacterProp.WaterBucketFull, "hold_bucket_full")]
     [InlineData(CharacterProp.RefineTool, "hold_refine")]
     public void HoldingSomethingPosesTheArms(CharacterProp prop, string clip)
     {
@@ -163,6 +166,28 @@ public class CharacterAnimatorTests
         Assert.Equal(clip, Assert.Single(animator.Upper).Clip);
         Assert.Equal(1f, animator.UpperWeight, 3);
         Assert.True(animator.ShowProp);
+    }
+
+    [Fact]
+    public void FillingTheBucketIsNotTakingSomethingInHand()
+    {
+        var animator = Make();
+        Run(animator, Standing() with { Prop = CharacterProp.WaterBucket }, 0.5f);
+        var events = Run(animator, Standing() with { Prop = CharacterProp.WaterBucketFull }, 0.5f);
+        Assert.DoesNotContain(CharacterEvent.Equip, events);
+    }
+
+    [Fact]
+    public void AGestureReportsHowFarInAndHowMuchItShows()
+    {
+        var animator = Make();
+        var pose = Standing() with { Prop = CharacterProp.WaterBucketFull };
+        Run(animator, pose, 0.5f);
+        Assert.Equal(0f, animator.GestureWeight);
+        Run(animator, pose with { Gesture = CharacterGesture.BucketThrow, GestureCount = 1 }, 0.3f);
+        Assert.Equal("bucket_throw", animator.Gesture);
+        Assert.InRange(animator.GestureTime, 0.25f, 0.31f);
+        Assert.Equal(1f, animator.GestureWeight, 3);
     }
 
     [Fact]

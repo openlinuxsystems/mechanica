@@ -180,16 +180,39 @@ public class SurvivalActionsTests
     [Fact]
     public void BucketsFillAtWater()
     {
-        var settings = new SurvivalSettings { WaterItem = Bucket, Reach = 5, WaterSeconds = 1 };
+        var settings = new SurvivalSettings { BucketItem = EmptyBucket, WaterItem = Bucket, Reach = 5, WaterSeconds = 1 };
         var f = new SurvivalFixture(settings);
-        Assert.Equal("There is no water there.", f.Refused(Me, SurvivalActions.CollectWater, new { point = new Vec3(0, 0, 1) }));
+        Assert.Equal("You need an empty Pail to fill.", f.Refused(Me, SurvivalActions.CollectWater, new { point = new Vec3(0, 0, 1) }));
+        f.Pockets(Me).Add(EmptyBucket, 2);
+        var slot = f.SlotOf(Me, EmptyBucket);
+        Assert.Equal("There is no water there.", f.Refused(Me, SurvivalActions.CollectWater, new { point = new Vec3(0, 0, 1), slot }));
         f.World.WaterLevel = 0.5f;
-        f.Ok(Me, SurvivalActions.CollectWater, new { point = new Vec3(0, 0, 1) });
-        Assert.Equal("You are still filling the last one.", f.Refused(Me, SurvivalActions.CollectWater, new { point = new Vec3(0, 0, 1) }));
+        Assert.Equal("That slot holds no empty Pail.", f.Refused(Me, SurvivalActions.CollectWater, new { point = new Vec3(0, 0, 1), slot = slot + 1 }));
+
+        // One of two: the full one goes elsewhere.
+        var result = f.Dispatch(Me, SurvivalActions.CollectWater, new { point = new Vec3(0, 0, 1), slot });
+        Assert.True(result.Ok, result.Message);
+        Assert.Equal((1, 1), (f.Pockets(Me).Count(EmptyBucket), f.Pockets(Me).Count(Bucket)));
+        Assert.Equal("You are still filling the last one.", f.Refused(Me, SurvivalActions.CollectWater, new { point = new Vec3(0, 0, 1), slot }));
         f.World.Now += 1;
-        f.Ok(Me, SurvivalActions.CollectWater, new { point = new Vec3(0, 0, 1) });
-        Assert.Equal(2, f.Pockets(Me).Count(Bucket));
+        // The last one turns full where it is, so it stays in hand.
+        f.Ok(Me, SurvivalActions.CollectWater, new { point = new Vec3(0, 0, 1), slot });
+        Assert.Equal(Bucket, f.Pockets(Me)[slot]!.Item);
+        Assert.Equal((0, 2), (f.Pockets(Me).Count(EmptyBucket), f.Pockets(Me).Count(Bucket)));
+        f.World.Now += 1;
+        f.Pockets(Me).Add(EmptyBucket, 1);
         Assert.StartsWith("That is ", f.Refused(Me, SurvivalActions.CollectWater, new { point = new Vec3(0, 0, 40) }));
+    }
+
+    [Fact]
+    public void SoilNearAPointIsFoundNearestFirst()
+    {
+        var near = _f.Add(Soil, new Vector3(0, 0, 1));
+        var further = _f.Add(Soil, new Vector3(0, 0, 2));
+        _f.Add(Soil, new Vector3(0, 0, 9));
+        _f.Add(Block, new Vector3(0, 0, 0.5f));
+        Assert.Equal([(near, 1), (further, 1)], _f.Survival.SoilNear(new Vector3(0, 0, 0.8f), 1.5f));
+        Assert.Empty(_f.Survival.SoilNear(new Vector3(0, 0, 0.8f), 0f));
     }
 
     [Fact]

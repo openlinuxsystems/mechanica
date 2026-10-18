@@ -31,7 +31,8 @@
   "seated_offset": 0.0,
   // How items look in hand (prop, and the gesture using one plays), by item id, then by part category.
   "item_poses": {
-    "water_bucket": { "prop": "water_bucket", "gesture": "pour" },
+    "water_bucket": { "prop": "water_bucket", "gesture": "bucket_fill" },
+    "water_bucket_full": { "prop": "water_bucket_full", "gesture": "bucket_throw" },
     "potato_blaster": { "prop": "potato_blaster", "gesture": "fire_gun" },
     "potato_scattergun": { "prop": "potato_blaster", "gesture": "fire_gun" },
     "potato_launcher": { "prop": "potato_blaster", "gesture": "fire_gun" },
@@ -44,6 +45,39 @@
   "category_poses": {
     "consumable": { "prop": "item", "gesture": "eat" },
     "weapon": { "prop": "item", "gesture": "throw" }
+  },
+  // The water bucket in hand (game/scripts/Player/BucketRig.cs; the model and clips are tools/characters/build_characters.py).
+  // Lengths in m in the bucket's own frame: origin in the middle of its base, +Z up its axis, the handle hinged on the X axis.
+  "bucket": {
+    "hinge_height": 0.244,
+    // From the hinges to the middle of the handle's grip.
+    "handle_length": 0.21,
+    // How far the handle falls forward from upright when nothing holds it up (an empty bucket).
+    "handle_lowered_degrees": 136,
+    // Where the fist holds the back of the rim of an empty bucket.
+    "rim_grip": [0.0, 0.152, 0.282],
+    // The water: the inside's floor, the surface when full, and the inside's radius at the floor and the rim.
+    "floor_height": 0.024,
+    "water_height": 0.215,
+    "inner_radius_floor": 0.112,
+    "inner_radius_rim": 0.138,
+    "rim_height": 0.288,
+    // Gestures whose effect waits for the moment in the clip it happens: the bucket dipping in, the water leaving, the
+    // bucket touching down.
+    "release_seconds": {
+      "bucket_fill": 0.44,
+      "bucket_throw": 0.36,
+      "bucket_place": 0.42,
+      "bucket_place_full": 0.42
+    },
+    // Each bucket clip's [seconds, grip, tilt degrees, water]: grip 0 holds the rim, 1 the handle; tilt swings the bucket
+    // forward about its hinges while the hand keeps the handle; water 0 is empty, 1 full. Eased between keys.
+    "motion": {
+      "bucket_fill": [[0, 0, 0, 0], [0.34, 0, 0, 0], [0.44, 0, 0, 0.2], [0.6, 0, 0, 0.9], [0.66, 0, 0, 1], [0.72, 0, 0, 1], [0.9, 1, 0, 1], [1.1, 1, 0, 1]],
+      "bucket_throw": [[0, 1, 0, 1], [0.2, 1, -14, 1], [0.32, 1, 55, 1], [0.4, 1, 100, 0.45], [0.48, 1, 112, 0], [0.58, 1, 60, 0], [0.68, 1, 8, 0], [0.76, 0.5, 0, 0], [0.84, 0, 0, 0], [0.9, 0, 0, 0]],
+      "bucket_place": [[0, 0, 0, 0], [0.8, 0, 0, 0]],
+      "bucket_place_full": [[0, 1, 0, 1], [0.8, 1, 0, 1]]
+    }
   },
   "head_pitch_share": 0.6,
   // First-person arms: where the arms-only model stands from the camera (right, up, back, in metres) and how far it tips forward.

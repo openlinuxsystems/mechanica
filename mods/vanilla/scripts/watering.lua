@@ -1,52 +1,46 @@
--- Watering (chunk 20b): pouring the item on soil gives it properties.seconds of water, up to what the
--- soil holds, and uses the item up. Aimed at a fire (D13) it puts that out instead: every fire within
--- properties.splash metres of the first fire along the aim, up to properties.range metres away, loses
--- properties.douse strength (1 puts a fire out).
+-- The full water bucket (chunk 20b, D13): using it throws the water in a lob that lands where the player aims
+-- (up to properties.range metres away; further, or at nothing, it is a plain throw at properties.throw_speed),
+-- and the bucket turns back into properties.empty in the same slot. Where the water lands, every fire within
+-- properties.splash metres loses properties.douse strength (1 puts a fire out) and every soil part within
+-- properties.splash metres gets properties.seconds of water, up to what it holds.
 
--- Burning fires within properties.splash metres of the aim, nearest first.
-local function fires_in_aim(target)
-  local found = {}
-  for _, f in ipairs(fire.near(target.from, properties.range + properties.splash)) do
-    local to = f.position - target.from
-    local along = to:dot(target.direction)
-    if along > 0 and along <= properties.range + properties.splash
-        and (to - target.direction * along):length() <= properties.splash then
-      found[#found + 1] = f
-    end
+-- The launch velocity that lands the water on what the player aims at, or a plain lob along the aim.
+local function throw_velocity(target, from)
+  local aimed = combat.cast(target.from, target.direction, properties.range)
+  if aimed then
+    local to = aimed.position - from
+    local seconds = math.min(math.max(to:length() / properties.throw_speed, 0.2), 1.2)
+    return to / seconds - world.gravity() * (0.5 * seconds)
   end
-  return found
-end
-
-function can_use(target)
-  if #fires_in_aim(target) > 0 then
-    return nil
-  end
-  if not target.part then
-    return "Aim at soil or a fire to use it."
-  end
-  local soil, why = farm.soil(target.creation, target.part)
-  if not soil then
-    return why
-  end
-  if soil.water >= soil.capacity then
-    return "The soil is already full of water."
-  end
+  return (target.direction + vec3(0, properties.throw_up, 0)):normalized() * properties.throw_speed
 end
 
 function on_use(target)
-  local fires = fires_in_aim(target)
-  if #fires > 0 then
-    local doused, why = fire.douse(fires[1].position, properties.splash, properties.douse)
-    if not doused then
-      error(why)
-    end
-    item.consume(1)
-    return { fires = doused }
-  end
-  local soil, why = farm.water(target.creation, target.part, properties.seconds)
-  if not soil then
+  local from = target.from + target.direction * 0.4
+  local velocity = throw_velocity(target, from)
+  local id, why = combat.projectile(from, velocity, { look = "water", lifetime = 3 })
+  if not id then
     error(why)
   end
-  item.consume(1)
-  return soil
+  item.replace(properties.empty)
+  local throw = item.sound("throw")
+  if throw then
+    sound.play(throw, from)
+  end
+  return { thrown = id }
+end
+
+function on_hit(landing)
+  local splash = item.sound("splash")
+  if splash then
+    sound.play(splash, landing.position)
+  end
+  local doused = fire.douse(landing.position, properties.splash, properties.douse)
+  local watered = 0
+  for _, soil in ipairs(farm.near(landing.position, properties.splash)) do
+    if farm.water(soil.creation, soil.part, properties.seconds) then
+      watered = watered + 1
+    end
+  end
+  return { fires = doused, watered = watered }
 end

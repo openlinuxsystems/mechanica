@@ -30,7 +30,7 @@ public enum CharacterProp : byte
     /// <summary>A potato weapon, aimed with both hands.</summary>
     PotatoBlaster,
 
-    /// <summary>A water bucket.</summary>
+    /// <summary>An empty water bucket, held by the rim with its handle lowered.</summary>
     WaterBucket,
 
     /// <summary>Any other item (food, seeds, a part to place): held up, with no prop drawn.</summary>
@@ -41,6 +41,9 @@ public enum CharacterProp : byte
     /// resource node, worked against it and put away again.
     /// </summary>
     RefineTool,
+
+    /// <summary>A full water bucket, carried by its raised handle.</summary>
+    WaterBucketFull,
 }
 
 /// <summary>
@@ -87,6 +90,18 @@ public enum CharacterGesture : byte
 
     /// <summary>Flinching from a hit.</summary>
     Hurt,
+
+    /// <summary>Dipping an empty bucket into water and lifting it out full.</summary>
+    BucketFill,
+
+    /// <summary>Throwing the water out of a full bucket.</summary>
+    BucketThrow,
+
+    /// <summary>Setting an empty bucket down (Force Build).</summary>
+    BucketPlace,
+
+    /// <summary>Setting a full bucket down (Force Build).</summary>
+    BucketPlaceFull,
 }
 
 /// <summary>
@@ -179,9 +194,11 @@ public static class CharacterRig
         "hold_tool", "hold_heavy", "hold_heavy_block", "hold_gun", "hold_item",
         "hammer_swing", "sledge_swing", "tool_use", "weld", "paint_spray", "fire_gun", "eat", "throw", "plant", "pour",
         "interact", "hurt",
+        "hold_bucket", "hold_bucket_full", "bucket_fill", "bucket_throw", "bucket_place", "bucket_place_full",
         "sledge_swing_side", "sledge_swing_back",
         "hold_heavy_fp", "hold_heavy_block_fp", "sledge_swing_fp", "sledge_swing_side_fp", "sledge_swing_back_fp",
         "hold_refine", "refine_draw", "refine_stow", "hold_refine_fp", "refine_draw_fp", "refine_stow_fp",
+        "hold_bucket_fp", "hold_bucket_full_fp", "bucket_fill_fp", "bucket_throw_fp", "bucket_place_fp", "bucket_place_full_fp",
     ];
 
     /// <summary>
@@ -211,7 +228,9 @@ public static class CharacterRig
         CharacterProp.None => null,
         CharacterProp.Sledgehammer => guard ? "hold_heavy_block" : "hold_heavy",
         CharacterProp.PotatoBlaster => "hold_gun",
-        CharacterProp.WaterBucket or CharacterProp.Item => "hold_item",
+        CharacterProp.WaterBucket => "hold_bucket",
+        CharacterProp.WaterBucketFull => "hold_bucket_full",
+        CharacterProp.Item => "hold_item",
         CharacterProp.RefineTool => "hold_refine",
         _ => "hold_tool",
     };
@@ -243,6 +262,10 @@ public static class CharacterRig
         CharacterGesture.Pour => "pour",
         CharacterGesture.Interact => "interact",
         CharacterGesture.Hurt => "hurt",
+        CharacterGesture.BucketFill => "bucket_fill",
+        CharacterGesture.BucketThrow => "bucket_throw",
+        CharacterGesture.BucketPlace => "bucket_place",
+        CharacterGesture.BucketPlaceFull => "bucket_place_full",
         _ => null,
     };
 
@@ -295,14 +318,14 @@ public static class CharacterRig
         CharacterProp.Sledgehammer => "sledgehammer",
         CharacterProp.ConnectTool => "connect_tool",
         CharacterProp.PotatoBlaster => "potato_blaster",
-        CharacterProp.WaterBucket => "water_bucket",
+        CharacterProp.WaterBucket or CharacterProp.WaterBucketFull => "water_bucket",
         CharacterProp.RefineTool => "refine_tool",
         _ => null,
     };
 
     /// <summary><paramref name="prop"/> when it is a known value, otherwise <see cref="CharacterProp.None"/>.</summary>
-    public static CharacterProp Sanitize(CharacterProp prop) => prop <= CharacterProp.RefineTool ? prop : CharacterProp.None;
+    public static CharacterProp Sanitize(CharacterProp prop) => prop <= CharacterProp.WaterBucketFull ? prop : CharacterProp.None;
 
     /// <summary><paramref name="gesture"/> when it is a known value, otherwise <see cref="CharacterGesture.None"/>.</summary>
-    public static CharacterGesture Sanitize(CharacterGesture gesture) => gesture <= CharacterGesture.Hurt ? gesture : CharacterGesture.None;
+    public static CharacterGesture Sanitize(CharacterGesture gesture) => gesture <= CharacterGesture.BucketPlaceFull ? gesture : CharacterGesture.None;
 }
