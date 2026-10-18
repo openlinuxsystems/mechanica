@@ -667,6 +667,7 @@ public partial class Main : Node3D
             var maps = new MapHud
             {
                 Name = "MapHud", Quests = Quests, Players = PlayerSync, Markers = MapMarkers, Settings = LogbookSettings, World = () => Streamer.Generator,
+                KnockoutBags = Survival.OwnKnockoutBags,
             };
             AddChild(maps);
             AddChild(new Ui.TutorialHints
@@ -711,7 +712,9 @@ public partial class Main : Node3D
             var compass = new Ui.CompassHud
             {
                 Name = "Compass", Players = PlayerSync,
-                Waypoints = () => LocalPlayer is { } me ? [.. Quests.Waypoints(me.GlobalPosition.ToNumerics()), .. MapMarkers.Own.Select(m => m.ToWaypoint())] : [],
+                Waypoints = () => LocalPlayer is { } me
+                    ? [.. Quests.Waypoints(me.GlobalPosition.ToNumerics()), .. Survival.OwnKnockoutBags(), .. MapMarkers.Own.Select(m => m.ToWaypoint())]
+                    : [],
                 Covered = () => Ui.HudRoot.IsCovered,
             };
             AddChild(compass);
