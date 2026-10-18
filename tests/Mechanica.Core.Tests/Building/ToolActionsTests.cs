@@ -266,6 +266,53 @@ public class ToolActionsTests
     }
 
     [Fact]
+    public void WeldingToABlockBuiltOnTheGroundGroundsTheCreation()
+    {
+        var ground = Add(Single(Block, new Vector3(0, 0.125f, 0)));
+        _world.Creations[ground].SetAnchored(_world.Creations[ground].Parts.First().Id, true);
+        var loose = Add(Single(Block, new Vector3(0, 2, 0)));
+
+        // What is built on the ground never moves onto something else.
+        var refused = Dispatch(ToolActions.Weld, new { source = ground, target = loose, offset = new[] { 0, 1, 0 } });
+        Assert.False(refused.Ok);
+        Assert.Contains("built on the ground", refused.Message);
+
+        Assert.True(Dispatch(ToolActions.Weld, new { source = loose, target = ground, offset = new[] { 0, 1, 0 } }).Ok);
+        var merged = _world.Creations[ground];
+        Assert.Equal(2, merged.Parts.Count);
+        Assert.True(merged.IsGrounded);
+        Assert.True(merged.IsBodyAnchored(0));
+    }
+
+    [Fact]
+    public void WeldingNeedsTheWeldToolWhenItMustBeCarried()
+    {
+        var target = Add(Car());
+        var source = Add(Single(Block, new Vector3(0, 2, 0)));
+        _tools.Costs = new NoTools();
+
+        Assert.Equal("Craft a Weld Tool first.", Dispatch(ToolActions.Weld, new { source, target, offset = new[] { 0, 1, 0 } }).Message);
+        Assert.Equal("Craft a Weld Tool first.", Dispatch(ToolActions.WeldParts, new { creation = target, a = 3, b = 2 }).Message);
+        Assert.Equal(2, _world.Creations.Count);
+    }
+
+    // Costs that are free but refuse the Weld Tool.
+    private sealed class NoTools : IBuildCosts
+    {
+        public string? CheckPlace(ActionCaller caller, string part) => null;
+
+        public void Placed(ActionCaller caller, string part)
+        {
+        }
+
+        public void Removed(ActionCaller caller, string part, Vector3 at)
+        {
+        }
+
+        public string? CheckTool(ActionCaller caller, string tool) => tool == Core.Items.HotbarTools.Weld ? "Craft a Weld Tool first." : null;
+    }
+
+    [Fact]
     public void WeldPartsLocksABearing()
     {
         var id = Add(i => Tower(i, new Vector3(0, 0.125f, 0)));

@@ -2,6 +2,7 @@ using Godot;
 using Mechanica.Core.Characters;
 using Mechanica.Core.Net;
 using Mechanica.Core.Player;
+using Mechanica.Game.Building;
 using Mechanica.Game.Player;
 using Instance = Mechanica.Game.Tests.NetTestHarness.Instance;
 
@@ -26,6 +27,9 @@ public partial class CharacterTest : StagedTest
     private readonly List<CharacterEvent> _events = [];
     private CharacterModel? _watched;
     private bool _swung;
+    private float _weldClosed;
+    private bool _armTurned;
+    private Basis? _armOpen;
     private string? _refused;
     private ulong _drawnFrame;
     private Func<float>? _seaLevel;
@@ -147,11 +151,26 @@ public partial class CharacterTest : StagedTest
                 player.Gesture(CharacterGesture.Weld);
             var model = (CharacterModel)_a.Main.PlayerSync.Players[_host.Peer].Character!;
             _swung |= model.Animator.Gesture == CharacterRig.GestureClip(CharacterGesture.Weld);
-            if (!_swung || model.PropNode?.Name != "weld_tool")
+            // The arms close round the spinning tip as the weld registers, on the peer watching.
+            var closed = _a.Main.WeldEffects.ClosedOf(_host.Peer) ?? 0f;
+            _weldClosed = Math.Max(_weldClosed, closed);
+            if (model.PropNode?.FindChild(WeldEffects.ArmLeft, owned: false) is Node3D arm)
+            {
+                if (closed == 0f && _armOpen is null)
+                    _armOpen = arm.Transform.Basis;
+                else if (closed > 0.5f && _armOpen is { } open)
+                    _armTurned |= !arm.Transform.Basis.IsEqualApprox(open);
+            }
+            if ((!_swung || _weldClosed < 0.5f || model.PropNode?.Name != "weld_tool") && frame < 120)
                 return false;
-            Check(model.PropNode.GetParent() is BoneAttachment3D { BoneName: "hand_r" }, "the Weld Tool rides the right hand");
+            Check(_swung && model.PropNode?.GetParent() is BoneAttachment3D { BoneName: "hand_r" }, "the Weld Tool rides the right hand");
+            Check(_weldClosed > 0.5f && _armTurned, $"its clamping arms close round the tip ({_weldClosed:F2})");
+            Check((_a.Main.WeldEffects.TipTurnsOf(_host.Peer) ?? 0f) > 0f, "and its tip spins");
+            Check(model.PropNode!.FindChild(WeldEffects.GlowNode, owned: false) is MeshInstance3D && model.PropNode.FindChild(WeldEffects.TipNode, owned: false) is Node3D,
+                "it has its glowing ring and its tip");
             return true;
         });
+        Add("the arms open again once the weld is done", frame => frame > 5 && _a.Main.WeldEffects.ClosedOf(_host.Peer) is 0f);
         Add("putting the tool away empties the hand", _ =>
         {
             _host.Main.LocalPlayer!.HeldProp = CharacterProp.None;

@@ -81,7 +81,7 @@ public class SurvivalActionsTests
     {
         IBuildCosts costs = _f.Survival;
         Assert.Equal("Craft a Connect Tool at a Fabricator first.", costs.CheckTool(Me, Connector));
-        Assert.Null(costs.CheckTool(Me, HotbarTools.Weld)); // every player always has the others
+        Assert.Null(costs.CheckTool(Me, HotbarTools.Paint)); // every player always has the others
         Assert.Null(costs.CheckTool(new ActionCaller(Me.Peer, ActionSource.Script), Connector));
 
         _f.Pockets(Me).Add(Connector, 1);
