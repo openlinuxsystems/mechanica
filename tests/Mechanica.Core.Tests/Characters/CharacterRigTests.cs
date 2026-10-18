@@ -38,4 +38,24 @@ public class CharacterRigTests
         Assert.Contains(CharacterRig.PropBone, CharacterRig.ArmBones);
         Assert.DoesNotContain("upper_arm_r", CharacterRig.ArmBones);
     }
+
+    [Fact]
+    public void TheRefineToolIsAPropWithItsOwnDrawWorkAndStowClips()
+    {
+        Assert.Equal(CharacterProp.RefineTool, CharacterRig.Sanitize(CharacterProp.RefineTool));
+        Assert.Equal(CharacterProp.None, CharacterRig.Sanitize((CharacterProp)(CharacterProp.RefineTool + 1)));
+        Assert.Equal("refine_tool", CharacterRig.PropNode(CharacterProp.RefineTool));
+        Assert.Equal("hold_refine", CharacterRig.HoldClip(CharacterProp.RefineTool));
+        Assert.Equal("refine_draw", CharacterRig.DrawClip(CharacterProp.RefineTool));
+        Assert.Equal("refine_stow", CharacterRig.StowClip(CharacterProp.RefineTool));
+        Assert.Null(CharacterRig.DrawClip(CharacterProp.Hammer));
+        Assert.Null(CharacterRig.StowClip(CharacterProp.Sledgehammer));
+        foreach (var clip in new[] { "hold_refine", "refine_draw", "refine_stow" })
+        {
+            Assert.Contains(clip, CharacterRig.UpperBodyClips);
+            Assert.Contains(clip + CharacterRig.FirstPersonSuffix, CharacterRig.UpperBodyClips);
+        }
+        Assert.False(CharacterAnimator.IsOneShot("hold_refine"));
+        Assert.True(CharacterAnimator.IsOneShot("refine_draw"));
+    }
 }

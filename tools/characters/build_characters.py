@@ -677,6 +677,12 @@ PALETTE = {
     "bolt_steel": ("#5c5e62", 0.38, 1.0),
     "paint_yellow": ("#e6b52a", 0.5, 0.05),
     "grip_rubber": ("#1d1d1e", 0.82, 0.0),
+    # refine tool
+    "pipe_steel": ("#525457", 0.5, 1.0),
+    "plate_steel": ("#4a4c50", 0.5, 1.0),
+    "tape_brown": ("#5a3e27", 0.86, 0.0),
+    "hazard_band": ("#e2b322", 0.5, 0.05),
+    "rust_sheet": ("#83401a", 0.8, 0.25),
     "void": ("#060505", 1.0, 1.0),          # the inside of a cut sleeve: no light comes back from it
     "default": ("#808080", 0.5, 0.0),
 }
@@ -3514,6 +3520,134 @@ def clip_hurt(t):
     return oneshot([(0.0, r), (0.07, flinch), (0.14, flinch), (0.3, r)], t)
 
 
+# The Refine Tool, which only shows while Use is held on a resource node: it is drawn from the right hip into a ready
+# grip (refine_draw), worked against the node in a loop (hold_refine), then put back at the hip (refine_stow). The
+# fist holds it like a knife, fingers down, so the teeth face the node and the blade points at it; each stroke shoves
+# it forward and down along the blade with the body behind it (the teeth biting), then draws it back lifted clear.
+REFINE_LOOP_SECONDS = 0.75
+REFINE_DRAW_SECONDS = 0.4
+REFINE_STOW_SECONDS = 0.35
+REFINE_R = np.array([-0.15, -0.47, 1.1])            # right fist in the ready grip, reaching out in front
+REFINE_AXIS = norm(np.array([0.12, -0.9, -0.42]))   # the blade: forward, a little in, down toward the node
+REFINE_HIP = np.array([-0.24, -0.06, 0.93])         # right fist at the hip, the blade hanging down and back
+REFINE_HIP_AXIS = norm(np.array([-0.05, 0.25, -1.0]))
+
+
+def refine_arm(grip, axis, side="r", space="world", pole=(-0.6, 0.5, -1.0)):
+    """A fist on the Refine Tool's handle at grip, the blade along axis, the fingers (and teeth) turned down."""
+    axis = norm(np.asarray(axis, float))
+    d = np.array([0.0, -0.25, -1.0]) if abs(axis[2]) < 0.9 else np.array([0.0, -1.0, 0.0])
+    d = norm(d - np.dot(d, axis) * axis)
+    return arm_ik_from_grip(side, np.asarray(grip, float), d, axis, pole=pole, space=space)
+
+
+# The fist is placed in model space, so the blade keeps its aim while the body leans into each stroke. The free hand
+# braces forward, as if steadying the work (third person).
+REFINE_BRACE = {"down": 40.0, "swing": 38.0, "yaw": -14.0, "elbow": 52.0, "wrist": -10.0, "twist": 20.0}
+
+
+def refine_key(grip, axis, brace=0.0, **body):
+    s = upper_base(0.0)
+    s.update(relaxed_upper(18))
+    s["arm_r"] = refine_arm(grip, axis)
+    s["arm_l"] = {k: v + (brace * (6.0 if k in ("swing", "elbow") else 0.0)) for k, v in REFINE_BRACE.items()}
+    s["fingers_r"], s["thumb_r"] = 95.0, 45.0
+    s["fingers_l"], s["thumb_l"] = 28.0, 18.0
+    s.update(body)
+    return s
+
+
+def refine_stroke(t, T, ready, axis, key, reach=0.065):
+    """One stroke a loop: a shove forward and down along the blade (the first 45%) and a lifted draw back."""
+    ph = (t / T) % 1.0
+    down = norm(np.array([0.0, 0.0, -1.0]) - np.dot((0.0, 0.0, -1.0), axis) * axis)
+    if ph < 0.45:
+        s = sstep(0.0, 0.45, ph)
+        along, lift = -reach + 2 * reach * s, -0.012 * math.sin(math.pi * s)
+    else:
+        s = sstep(0.45, 1.0, ph)
+        along, lift = reach - 2 * reach * s, 0.022 * math.sin(math.pi * s)
+    grip = np.asarray(ready) + axis * along - down * lift
+    # the blade dips as it bites and rises on the way back
+    tilt = norm(axis + down * (0.12 * along / reach))
+    push = along / reach
+    return key(grip, tilt, push, chest=(12.0 + 4.0 * push, 0.0, 5.0 * push), spine=(7.0 + 3.0 * push, 0.0, 2.5 * push),
+               neck=(-6.0, 0.0, -2.0), head=(-5.0, 0.0, -2.0), shoulder_r=(0.0, 0.0, 3.0 * push))
+
+
+def clip_hold_refine(t):
+    return refine_stroke(t, REFINE_LOOP_SECONDS, REFINE_R, REFINE_AXIS, refine_key)
+
+
+def refine_hip_key():
+    return refine_key(REFINE_HIP, REFINE_HIP_AXIS, chest=(0.0, 0.0, 0.0), spine=(0.0, 0.0, 0.0), neck=(0.0, 0.0, 0.0),
+                      head=(0.0, 0.0, 0.0), shoulder_r=(0.0, 0.0, 0.0),
+                      arm_l=dict(RELAXED_ARM), fingers_l=18.0, thumb_l=10.0)
+
+
+def clip_refine_draw(t):
+    ready = clip_hold_refine(0.0)
+    hip = refine_hip_key()
+    mid = refine_key((REFINE_HIP + REFINE_R) / 2 + np.array([-0.04, 0.0, 0.06]),
+                     norm(REFINE_HIP_AXIS + REFINE_AXIS * 1.6 + np.array([-0.3, 0.0, 0.0])),
+                     chest=(4.0, 0.0, -3.0), spine=(2.0, 0.0, -2.0), neck=(-3.0, 0.0, 0.0), head=(-3.0, 0.0, 0.0),
+                     shoulder_r=(0.0, 0.0, 0.0))
+    return oneshot([(0.0, hip), (0.16, mid), (REFINE_DRAW_SECONDS, ready)], t, template=ready)
+
+
+def clip_refine_stow(t):
+    ready = clip_hold_refine(0.0)
+    hip = refine_hip_key()
+    lift = refine_key(REFINE_R + np.array([-0.05, 0.06, 0.05]), norm(REFINE_AXIS + np.array([-0.3, 0.6, 0.6])),
+                      chest=(4.0, 0.0, -2.0), spine=(2.0, 0.0, -1.0), neck=(-3.0, 0.0, 0.0), head=(-3.0, 0.0, 0.0),
+                      shoulder_r=(0.0, 0.0, 0.0))
+    return oneshot([(0.0, ready), (0.14, lift), (REFINE_STOW_SECONDS, hip)], t, template=ready)
+
+
+# First person: the stooped body and folded arm of the Sledgehammer's first-person clips, so the elbow stays out to the
+# lower right of the view and only the fist and the tool come into it. The blade reaches in toward the middle of the
+# view, its teeth on whatever the crosshair is on. Fists are placed in model space (see first_person_offset).
+REFINE_R_FP = np.array([-0.17, -0.389, 1.086])
+REFINE_AXIS_FP = norm(np.array([0.458, -0.761, 0.459]))
+REFINE_HIP_FP = np.array([-0.3, -0.26, 0.776])       # below the bottom right of the view
+REFINE_HIP_AXIS_FP = norm(np.array([-0.111, -0.581, -0.806]))
+
+
+def refine_key_fp(grip, axis, push=0.0, **body):
+    s = upper_base(0.0, amp=0.5)
+    s.update(relaxed_upper(18))
+    s.update({k: v for k, v in FP_BODY.items() if k != "space"})
+    s["arm_r"] = refine_arm(grip, axis, pole=FP_POLES[0])
+    # the free hand hangs down to the left, out of the view
+    s["arm_l"] = dict(RELAXED_ARM, swing=15.0, down=45.0, elbow=40.0)
+    s["fingers_r"], s["thumb_r"] = 95.0, 45.0
+    for k in ("chest", "spine", "neck", "head", "shoulder_r"):
+        if k in body:
+            base = s.get(k, (0.0, 0.0, 0.0))
+            s[k] = tuple(a + b for a, b in zip(base, body[k]))
+    return s
+
+
+def clip_hold_refine_fp(t):
+    def key(grip, axis, push, chest, spine, neck, head, shoulder_r):
+        return refine_key_fp(grip, axis, push, chest=(2.0 * push, 0.0, 2.0 * push), shoulder_r=shoulder_r)
+    return refine_stroke(t, REFINE_LOOP_SECONDS, REFINE_R_FP, REFINE_AXIS_FP, key, reach=0.045)
+
+
+def clip_refine_draw_fp(t):
+    ready = clip_hold_refine_fp(0.0)
+    hip = refine_key_fp(REFINE_HIP_FP, REFINE_HIP_AXIS_FP)
+    mid = refine_key_fp(np.array([-0.24, -0.374, 0.938]), norm(np.array([0.286, -0.948, 0.138])))
+    return oneshot([(0.0, hip), (0.18, mid), (REFINE_DRAW_SECONDS, ready)], t, template=ready)
+
+
+def clip_refine_stow_fp(t):
+    ready = clip_hold_refine_fp(0.0)
+    hip = refine_key_fp(REFINE_HIP_FP, REFINE_HIP_AXIS_FP)
+    lift = refine_key_fp(np.array([-0.19, -0.362, 1.111]), norm(np.array([0.32, -0.63, 0.707])))
+    return oneshot([(0.0, ready), (0.12, lift), (REFINE_STOW_SECONDS, hip)], t, template=ready)
+
+
 # name: (function, duration seconds, loops, upper_body_only)
 CLIPS = {
     "idle": (clip_idle, 3.0, True, False),
@@ -3552,6 +3686,12 @@ CLIPS = {
     "pour": (clip_pour, 0.8, False, True),
     "interact": (clip_interact, 0.4, False, True),
     "hurt": (clip_hurt, 0.3, False, True),
+    "hold_refine": (clip_hold_refine, REFINE_LOOP_SECONDS, True, True),
+    "refine_draw": (clip_refine_draw, REFINE_DRAW_SECONDS, False, True),
+    "refine_stow": (clip_refine_stow, REFINE_STOW_SECONDS, False, True),
+    "hold_refine_fp": (clip_hold_refine_fp, REFINE_LOOP_SECONDS, True, True),
+    "refine_draw_fp": (clip_refine_draw_fp, REFINE_DRAW_SECONDS, False, True),
+    "refine_stow_fp": (clip_refine_stow_fp, REFINE_STOW_SECONDS, False, True),
 }
 
 # the prop each clip shows in the right hand (verification renders and the game's defaults)
@@ -3560,7 +3700,9 @@ CLIP_PROP = {"hold_tool": "hammer", "hammer_swing": "hammer", "tool_use": "lift_
              "hold_heavy_block": "sledgehammer", "hold_heavy_fp": "sledgehammer", "hold_heavy_block_fp": "sledgehammer",
              "sledge_swing_fp": "sledgehammer", "sledge_swing_side": "sledgehammer", "sledge_swing_back": "sledgehammer",
              "sledge_swing_side_fp": "sledgehammer", "sledge_swing_back_fp": "sledgehammer",
-             "hold_gun": "potato_blaster", "fire_gun": "potato_blaster", "pour": "water_bucket"}
+             "hold_gun": "potato_blaster", "fire_gun": "potato_blaster", "pour": "water_bucket",
+             "hold_refine": "refine_tool", "refine_draw": "refine_tool", "refine_stow": "refine_tool",
+             "hold_refine_fp": "refine_tool", "refine_draw_fp": "refine_tool", "refine_stow_fp": "refine_tool"}
 
 
 def clip_times(duration):
@@ -3806,9 +3948,151 @@ def prop_water_bucket():
     return p
 
 
+# The Refine Tool, built to its reference sheet: a scrap scraper about 35 cm long that is never in the inventory and
+# only shows in hand while refining. A 13 cm handle of welded grey pipe and riveted plates, its grip wrapped in brown
+# tape with a yellow-and-black hazard band at the butt, and a 19.5 x 7.5 cm blade cut from rusty sheet: a jagged spine,
+# a serrated scraping edge, a pointed tip and lightening holes. The fist sits on the tape (the origin); the blade runs
+# up the handle axis (y) with its teeth on the finger side (x), so a fist with the fingers down holds it edge down.
+REFINE_BLADE_Y = 0.098                 # where the blade leaves the collar (grip frame y)
+REFINE_TIP_Y = 0.293                   # its point
+REFINE_PIPE_R = 0.0225                 # the steel pipe of the handle
+REFINE_HALF_T = 0.00175                # half the sheet's thickness
+
+
+def _refine_spine(u, length):
+    """x of the blade's spine (the back, -x) at u along the blade: straight, then curving into the point."""
+    s = max(0.0, (u - 0.085) / (length - 0.085))
+    return -0.03 + 0.032 * s ** 1.7
+
+
+def _refine_edge(u, length):
+    """x of the serrated edge's tooth roots at u along the blade, from the barbed shoulder to the point."""
+    s = (u - 0.03) / (length - 0.03)
+    return 0.002 + 0.041 * (1.0 - s) ** 0.85
+
+
+def refine_blade_loops(seed=23):
+    """The blade's outline (counter-clockwise seen from +z) and its holes (clockwise), as (x, y) points."""
+    rnd = random.Random(seed)
+    length = REFINE_TIP_Y - REFINE_BLADE_Y
+    y0 = REFINE_BLADE_Y - 0.022        # the tang, hidden in the collar
+    out = [(0.018, y0), (0.022, REFINE_BLADE_Y - 0.004), (0.025, REFINE_BLADE_Y + 0.008),
+           (0.03, REFINE_BLADE_Y + 0.012), (0.047, REFINE_BLADE_Y + 0.026)]
+    # serrated edge: saw teeth leaning toward the handle, deepest near the shoulder, worn smaller toward the point
+    teeth = 12
+    u0, u1 = 0.034, length - 0.018
+    for k in range(teeth):
+        ua = u0 + (u1 - u0) * k / teeth
+        ub = u0 + (u1 - u0) * (k + 1) / teeth
+        depth = (0.0075 - 0.003 * k / teeth) * (0.85 + 0.3 * rnd.random())
+        out.append((_refine_edge(ua, length), REFINE_BLADE_Y + ua))
+        up = ua + (ub - ua) * 0.32
+        out.append((_refine_edge(up, length) + depth, REFINE_BLADE_Y + up + 0.0008))
+    out.append((_refine_edge(u1, length), REFINE_BLADE_Y + u1))
+    out.append((0.002, REFINE_TIP_Y))
+    # the spine back to the collar, chipped and uneven
+    n = 26
+    for k in range(1, n + 1):
+        u = length * (1.0 - k / n)
+        x = _refine_spine(u, length)
+        if 0 < k < n:
+            x += (rnd.random() - 0.5) * 0.0011 - (0.0016 if rnd.random() < 0.1 else 0.0)
+        out.append((x, REFINE_BLADE_Y + u))
+    out += [(-0.03, REFINE_BLADE_Y - 0.008), (-0.022, y0)]
+    # lightening holes: round, oval and one slot, drilled in a loose cluster
+    holes = []
+    for u, v, rx, ry, e in ((0.032, -0.012, 0.0052, 0.0052, 2.0), (0.05, 0.008, 0.0062, 0.0055, 2.0),
+                            (0.058, -0.016, 0.0045, 0.0045, 2.0), (0.075, -0.003, 0.014, 0.0042, 3.5),
+                            (0.093, 0.014, 0.005, 0.0045, 2.0), (0.098, -0.016, 0.0042, 0.0042, 2.0),
+                            (0.118, 0.0, 0.0055, 0.0048, 2.0), (0.138, -0.013, 0.0038, 0.0038, 2.0),
+                            (0.143, 0.009, 0.0036, 0.0034, 2.0), (0.162, -0.003, 0.003, 0.003, 2.0)):
+        segs = 18 if e > 2.0 else 12
+        holes.append([(v + _se(math.cos(th), e) * ry, REFINE_BLADE_Y + u + _se(math.sin(th), e) * rx)
+                      for th in np.linspace(0, 2 * math.pi, segs, endpoint=False)])
+    return _wound(out, 1), [_wound(h, -1) for h in holes]
+
+
+def _wound(loop, sign):
+    """loop turned counter-clockwise (sign 1) or clockwise (sign -1), seen from +z."""
+    area = sum(a[0] * b[1] - b[0] * a[1] for a, b in zip(loop, loop[1:] + loop[:1]))
+    return loop if area * sign > 0 else loop[::-1]
+
+
+def refine_blade():
+    """The blade: the outline and its holes filled front and back, with side walls round every loop."""
+    from mathutils.geometry import tessellate_polygon
+    outer, holes = refine_blade_loops()
+    loops = [outer] + holes
+    ct.SHEET_OUTLINES["rust_sheet"] = loops
+    t = REFINE_HALF_T
+
+    def warp(x, y):
+        # a flattened sheet is never quite flat: a slight twist toward the point and a dent or two
+        s = (y - REFINE_BLADE_Y) / (REFINE_TIP_Y - REFINE_BLADE_Y)
+        return 0.0035 * max(0.0, s) ** 2 * (x / 0.04) + 0.0008 * math.sin(x * 160.0 + y * 90.0) * max(0.0, s)
+
+    flat = [p for loop in loops for p in loop]
+    tris = tessellate_polygon([[Vector((x, y, 0.0)) for x, y in loop] for loop in loops])
+    verts = [(x, y, warp(x, y) + t) for x, y in flat] + [(x, y, warp(x, y) - t) for x, y in flat]
+    nf = len(flat)
+    faces = []
+    for a, b, c in tris:
+        (ax, ay), (bx, by), (cx, cy) = flat[a], flat[b], flat[c]
+        if (bx - ax) * (cy - ay) - (by - ay) * (cx - ax) < 0:     # keep the front face pointing +z
+            b, c = c, b
+        faces.append((a, b, c))
+        faces.append((c + nf, b + nf, a + nf))
+    off = 0
+    for loop in loops:
+        m = len(loop)
+        for i in range(m):
+            j = (i + 1) % m
+            faces.append((off + i + nf, off + j + nf, off + j, off + i))
+        off += m
+    return Part(verts, faces, "rust_sheet", smooth=False)
+
+
+def prop_refine_tool():
+    r = REFINE_PIPE_R
+    p = [
+        # butt: a capped end, the hazard band, a thin ring, then the tape-wrapped grip
+        cylinder((0, -0.07, 0), (0, -0.056, 0), 0.0215, 24, "pipe_steel", ref=X, bevel=0.0035),
+        cylinder((0, -0.0575, 0), (0, -0.0385, 0), 0.0207, 28, "hazard_band", ref=X, bevel=0.0008),
+        cylinder((0, -0.04, 0), (0, -0.034, 0), 0.0214, 24, "pipe_steel", ref=X, bevel=0.0012),
+        tube([(0, -0.0355, 0), (0, -0.034, 0), (0, -0.018, 0), (0, 0.004, 0), (0, 0.022, 0), (0, 0.034, 0),
+              (0, 0.0355, 0)], [0.0186, 0.0204, 0.0207, 0.0203, 0.0208, 0.0204, 0.0186], 28, X, "tape_brown"),
+        # the welded pipe body with its clamp ring by the grip
+        cylinder((0, 0.03, 0), (0, 0.104, 0), r, 28, "pipe_steel", ref=X, bevel=0.0025),
+        cylinder((0, 0.033, 0), (0, 0.042, 0), r + 0.0016, 28, "pipe_steel", ref=X, bevel=0.0012),
+        # strap round the front of the pipe with a bolted lug on the spine side
+        cylinder((0, 0.083, 0), (0, 0.091, 0), r + 0.0018, 28, "plate_steel", ref=X, bevel=0.001),
+        bevel_box((-r - 0.0035, 0.087, 0), (0.0045, 0.0045, 0.009), 0.0015, mat="plate_steel"),
+        # the collar that grips the blade's tang, and the cheek plates riveted through it
+        bevel_box((0.003, 0.1015, 0), (0.0255, 0.008, 0.0095), 0.0022, mat="plate_steel"),
+    ]
+    p.extend(hex_bolt((-r - 0.008, 0.087, 0), (-1, 0, 0), (0, 0, 1), r=0.0042, height=0.003))
+    for sz in (-1, 1):
+        # a bent plate on each face of the pipe, a rivet in each corner
+        p.append(bevel_box((0.0, 0.064, sz * (r + 0.0012)), (0.0145, 0.016, 0.0024), 0.0012, mat="plate_steel"))
+        for xx in (-0.009, 0.009):
+            for yy in (0.053, 0.075):
+                p.append(rivet((xx, yy, sz * (r + 0.0036)), (0, 0, sz), r=0.0024))
+        p.append(bevel_box((0.006, 0.113, sz * (REFINE_HALF_T + 0.0019)), (0.019, 0.0105, 0.0019), 0.0009,
+                           mat="plate_steel"))
+        for xx in (-0.006, 0.017):
+            p.append(rivet((xx, 0.114, sz * (REFINE_HALF_T + 0.0038)), (0, 0, sz), r=0.0028))
+    # a plate along the spine side of the pipe, held by two rivets
+    p.append(bevel_box((-r - 0.0012, 0.06, 0), (0.0024, 0.017, 0.0105), 0.0011, mat="plate_steel"))
+    for yy in (0.049, 0.071):
+        p.append(rivet((-r - 0.0036, yy, 0), (-1, 0, 0), r=0.0024))
+    p.append(refine_blade())
+    return p
+
+
 PROPS = {"hammer": prop_hammer, "lift_remote": prop_lift_remote, "weld_tool": prop_weld_tool,
          "paint_tool": prop_paint_tool, "sledgehammer": prop_sledgehammer, "connect_tool": prop_connect_tool,
-         "potato_blaster": prop_potato_blaster, "water_bucket": prop_water_bucket}
+         "potato_blaster": prop_potato_blaster, "water_bucket": prop_water_bucket,
+         "refine_tool": prop_refine_tool}
 
 
 def build_prop(name):
@@ -3846,11 +4130,13 @@ def export_props():
         ob, part = build_prop(name)
         objs.append(ob)
         parts.append(part)
-    # The Sledgehammer is 1.3 m long, so it has an atlas of its own rather than starving the small tools of texels.
-    own = [i for i, name in enumerate(PROPS) if name == "sledgehammer"]
-    shared = [i for i in range(len(objs)) if i not in own]
+    # The Sledgehammer is 1.3 m long, so it has an atlas of its own rather than starving the small tools of texels; the
+    # Refine Tool has one too, since first person holds it close to the eye.
+    own = {name: [i for i, n in enumerate(PROPS) if n == name] for name in ("sledgehammer", "refine_tool")}
+    shared = [i for i in range(len(objs)) if not any(i in idx for idx in own.values())]
     stats = {}
-    for idx, group, material in ((shared, "props", "M_hand_tools"), (own, "sledgehammer", "M_sledgehammer")):
+    for idx, group, material in ((shared, "props", "M_hand_tools"), (own["sledgehammer"], "sledgehammer", "M_sledgehammer"),
+                                 (own["refine_tool"], "refine_tool", "M_refine_tool")):
         stats.update(ct.texture_props([objs[i] for i in idx], [parts[i] for i in idx],
                                       [mesh_material_names(parts[i]) for i in idx], PALETTE, PROP_ATLAS, seed=5,
                                       group=group, material=material))

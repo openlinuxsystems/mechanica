@@ -121,6 +121,7 @@ KINDS = {
     "blue": "painted", "handle_wood": "wood",
     "gunmetal": "metal", "steel_shaft": "metal", "bolt_steel": "metal", "paint_yellow": "painted",
     "grip_rubber": "knurl", "potato": "plain", "default": "plain",
+    "pipe_steel": "metal", "plate_steel": "metal", "tape_brown": "tape", "hazard_band": "hazard", "rust_sheet": "rust",
 }
 
 THREAD = {
@@ -137,6 +138,25 @@ SOFT = ("canvas", "denim", "knit", "webbing", "leather")
 DUST = hexrgb("#7d6a52")
 MUD = hexrgb("#4a3b2b")
 BARE_METAL = hexrgb("#a7a6a0")
+
+
+# Flat sheets cut to an outline in the x-y plane of their part (the Refine Tool's blade), by material name: lists of
+# (x, y) loops. A sheet has no vertices inside its faces, so its worn edges come from the distance to these outlines.
+SHEET_OUTLINES: dict[str, list] = {}
+
+
+def outline_distance(xy, loops, chunk=32768):
+    """Distance in the plane from each point of xy (n, 2) to the nearest edge of the loops."""
+    a = np.array([p for loop in loops for p in loop], float)
+    b = np.array([p for loop in loops for p in loop[1:] + loop[:1]], float)
+    ab = b - a
+    ll = np.maximum(np.sum(ab * ab, axis=1), 1e-12)
+    out = np.empty(len(xy))
+    for i in range(0, len(xy), chunk):
+        p = xy[i:i + chunk, None, :]
+        t = np.clip(np.sum((p - a) * ab, axis=2) / ll, 0.0, 1.0)
+        out[i:i + chunk] = np.sqrt(np.min(np.sum((p - a - t[..., None] * ab) ** 2, axis=2), axis=1))
+    return out
 
 
 class Ctx:
@@ -248,6 +268,31 @@ def pattern(c, kind, nz):
         b = np.abs(np.sin(math.pi * (arc - along) / period))
         ridge = np.where(ok, sstep(0.25, 0.7, np.minimum(a, b)), 0.5)
         return 0.82 + 0.22 * ridge + 0.05 * g, 0.00028 * ridge, 0.06 * (1 - ridge), None
+    if kind in ("tape", "hazard"):
+        # wound round a loft: tape in overlapping turns, the hazard band in diagonal yellow and black stripes
+        fib = nz[0].fbm(P * 900.0, 2)
+        if c.loft is None:
+            return 0.95 + 0.05 * fib, zero, zero, None
+        ok = ~np.isnan(c.loft[:, 0])
+        along = np.nan_to_num(c.loft[:, 0])
+        turn = np.arctan2(np.nan_to_num(c.loft[:, 2]), np.nan_to_num(c.loft[:, 1])) / (2 * math.pi)
+        if kind == "hazard":
+            s = (along / 0.0095 + turn * 6.0) % 1.0
+            black = np.where(ok, sstep(0.46, 0.5, s) * sstep(1.0, 0.96, s), 0.0)
+            return (1.0 - 0.91 * black) * (0.97 + 0.04 * fib), 0.00002 * fib, 0.12 * black, None
+        s = (along / 0.0068 + turn) % 1.0
+        lap = np.where(ok, sstep(0.14, 0.0, s), 0.0)
+        ridge = np.where(ok, sstep(0.0, 0.2, s) * (0.7 + 0.3 * np.sin(math.pi * s)), 0.5)
+        fray = sstep(0.3, 0.7, nz[1](P * np.array([300.0, 2500.0, 300.0])))
+        return 0.88 + 0.14 * ridge - 0.3 * lap + 0.06 * fib - 0.05 * fray, 0.00025 * ridge, 0.05 * lap, None
+    if kind == "rust":
+        # rusted sheet: blotchy orange and brown, pitted, flaking
+        blot = nz[0].fbm(P * 45.0, 4)
+        pits = sstep(0.5, 0.85, 0.5 + 0.5 * nz[1].fbm(P * 260.0, 2))
+        flake = nz[2].fbm(P * 140.0, 3)
+        mult = 0.88 + 0.24 * blot - 0.22 * pits + 0.06 * flake
+        shift = np.outer(0.07 * blot, np.array([1.0, 0.45, 0.05])) - np.outer(0.05 * sstep(0.0, -0.5, blot), np.ones(3))
+        return mult, -0.00014 * pits + 0.00006 * flake, 0.1 * pits, shift
     if kind == "cord":
         tw = tri_pattern(c, lambda u, v: np.sin(math.pi * (u + v) / max(0.0022, 3.0 * TEXEL[0])) ** 2)
         return 0.9 + 0.15 * tw, 0.00015 * tw, zero, None
@@ -580,11 +625,12 @@ def shade(c, palette):
     edge_d = np.minimum(np.nan_to_num(c.border, nan=np.inf, posinf=np.inf), box_edge)
     wear = np.clip(sstep(28.0, 110.0, cvx) + sstep(0.0035, 0.0, edge_d), 0, 1)
     wn = 0.5 + 0.5 * Noise(31 + c.seed).fbm(P * 140.0, 3)
-    wear = np.clip(wear * (0.35 + 1.1 * wn) - 0.2, 0, 1)
+    wear = np.clip(wear * (0.35 + 1.1 * wn) - 0.2, 0, 1) * (kind != "rust")
     fab = np.isin(kind, FABRIC)
     lth = kind == "leather"
     met = np.isin(kind, ("metal", "brass"))
-    paint = np.isin(kind, ("painted",))
+    paint = np.isin(kind, ("painted", "hazard"))
+    rusty = kind == "rust"
     # fabric frays lighter and dustier at edges
     worn_fab = alb * 1.18 + 0.05
     worn_fab = mix(worn_fab, np.repeat(luma(worn_fab)[:, None], 3, 1), 0.3)
@@ -596,6 +642,17 @@ def shade(c, palette):
     # metal: bright, polished edges and grime in the cavities
     alb = np.where(met[:, None], mix(alb, alb * 1.35 + 0.08, wear), alb)
     rough = np.where(met, rough - 0.18 * wear + 0.25 * cav, rough)
+    # rusted sheet is ground back to bright steel along its cut edges and teeth
+    if rusty.any():
+        edge = np.full(n, np.inf)
+        for nm, loops in SHEET_OUTLINES.items():
+            m = rusty & (matname == nm)
+            if m.any():
+                edge[m] = outline_distance(P[m][:, :2], loops)
+        ground = np.clip(sstep(0.0028, 0.0, edge) * (0.55 + 0.9 * wn) - 0.1, 0, 1) * rusty
+        alb = mix(alb, BARE_METAL * (0.75 + 0.2 * wn)[:, None], ground * 0.85)
+        metal = metal + (1 - metal) * ground
+        rough = rough - 0.35 * ground
     # paint chips to bare metal at the edges
     chip = np.clip((wear - 0.25) * 3.0, 0, 1) * paint
     alb = mix(alb, BARE_METAL * (0.85 + 0.15 * wn)[:, None], chip)
@@ -603,7 +660,7 @@ def shade(c, palette):
     rough = np.where(paint, rough * (1 - chip) + 0.35 * chip, rough)
     # rust and tarnish
     rust_n = Noise(41 + c.seed).fbm(P * 90.0, 3)
-    rust = sstep(0.25, 0.55, rust_n) * (0.4 + 0.6 * cav) * np.isin(matname, ("metal_dark",)) * met
+    rust = sstep(0.25, 0.55, rust_n) * (0.4 + 0.6 * cav) * np.isin(matname, ("metal_dark", "pipe_steel", "plate_steel")) * met
     alb = mix(alb, hexrgb("#6b3d22"), rust * 0.75)
     metal = np.where(met, metal * (1 - rust), metal)
     rough = rough + 0.4 * rust

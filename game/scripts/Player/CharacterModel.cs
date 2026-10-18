@@ -145,7 +145,7 @@ public partial class CharacterModel : Node3D
             Position = new Vector3(0, Animator.Lift, 0) + (Player?.ShownLocalOffset ?? Vector3.Zero);
         }
         Pose();
-        ShowProp(Animator.ShowProp && Player is not null ? Player.ShownProp : CharacterProp.None);
+        ShowProp(Animator.ShowProp && Player is not null ? Animator.Prop : CharacterProp.None);
     }
 
     /// <summary>Applies the animator's current blend to the skeleton (called every visible frame).</summary>

@@ -12,7 +12,7 @@ namespace Mechanica.Game.Tools;
 
 /// <summary>
 /// Renders the player character in a running world to PNGs: standing, holding and swinging tools, looking up and down,
-/// crouching, moving, and in first person with each tool. For checking how a character or skin looks in game; run
+/// crouching, moving, refining (the Refine Tool drawn, worked and put away), and in first person with each tool. For checking how a character or skin looks in game; run
 /// <c>tools/capture-characters.sh</c>, which uses a virtual display and the compatibility renderer. Given <c>lift</c> instead
 /// of a character it puts the player's Lift down and captures its deploy, a raise and full extension (<c>tools/capture-lift.sh</c>).
 /// Given <c>flora</c> it takes the player to a meadow and captures the grass, ground cover and bushes: wide and close, at every
@@ -68,6 +68,10 @@ public partial class CaptureScene : Node
         Shot("sledge_windup", 21, () => Player.Gesture(CharacterGesture.SledgeSwing));
         Shot("sledge_block", 30, () => Player.HeldGuard = true);
         Shot("weld", 40, () => { Player.HeldGuard = false; Tool<Building.WeldTool>(); });
+        Shot("refine_draw", 8, () => { Player.ActionProp = CharacterProp.RefineTool; Look(new Vector3(-2.2f, 1.2f, -1.8f)); });
+        Shot("refine", 40, () => { });
+        Shot("refine_bite", 9, () => { });
+        Shot("refine_stow", 7, () => Player.ActionProp = null);
         Shot("look_up", 40, () => { Tool<Building.HammerTool>(); Input(pitch: 0.9f); Look(new Vector3(-2.6f, 1.2f, -1.6f)); });
         Shot("look_down", 40, () => Input(pitch: -0.9f));
         Shot("crouch", 40, () => Input(crawl: true));
@@ -85,6 +89,10 @@ public partial class CaptureScene : Node
         Shot("first_person_paint", 30, () => Tool<Building.PaintTool>());
         Shot("first_person_lift", 30, () => Tool<Building.LiftTool>());
         Shot("first_person_connect", 30, () => Tool<Building.ConnectTool>());
+        Shot("first_person_refine_draw", 8, () => Player.ActionProp = CharacterProp.RefineTool);
+        Shot("first_person_refine", 40, () => { });
+        Shot("first_person_refine_bite", 9, () => { });
+        Shot("first_person_refine_stow", 7, () => Player.ActionProp = null);
         Shot("first_person_crouch", 30, () => Input(crawl: true));
     }
 
