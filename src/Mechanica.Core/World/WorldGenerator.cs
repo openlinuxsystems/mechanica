@@ -202,6 +202,19 @@ public sealed class WorldGenerator
         return new TerrainChunkData(coord, chunkSize, res, n, heights, normals, colors, biomes, covered, SeaLevel, objects, pieces, markers) { Grounds = grounds };
     }
 
+    /// <summary>Every marker of <paramref name="type"/> in every placed POI, in POI then marker order.</summary>
+    public IEnumerable<PoiMarkerPlacement> MarkersOfType(string type)
+    {
+        foreach (var poi in _pois)
+        {
+            foreach (var marker in poi.Poi.Prefab.Markers ?? [])
+            {
+                if (marker.Type == type)
+                    yield return new PoiMarkerPlacement(poi, marker, poi.ToWorld(ToVector(marker.At)), poi.Yaw + Radians(marker.Yaw));
+            }
+        }
+    }
+
     /// <summary>Scattered objects whose ground point lies in [x0, x1) × [z0, z1), in rule then cell order.</summary>
     public IEnumerable<WorldObjectPlacement> ObjectsIn(float x0, float z0, float x1, float z1)
     {
