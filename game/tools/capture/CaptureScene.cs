@@ -225,7 +225,7 @@ public partial class CaptureScene : Node
         GroundShots();
     }
 
-    // Prototype review shots: the textured ground in each biome, on a slope, and the crash site.
+    // Ground review shots: the textured ground in each biome, the meadow to the horizon and the crash site.
     private void GroundShots()
     {
         WorldGenerator gen() => _main.Streamer.Generator;
@@ -242,8 +242,6 @@ public partial class CaptureScene : Node
             });
             Shot($"ground_32_{biome}", 30, () => { _main.Flora.BuildAll(); View(new Vector3(-4f, 2.6f, 4f), new Vector3(10f, 0f, -18f)); });
         }
-        Shot("ground_00_go_slope", 300, () => Go(Find(p => gen().SlopeAt(p.X, p.Y) is > 0.4f and < 1.6f && gen().HeightAt(p.X, p.Y) > gen().SeaLevel + 2f && !gen().PoisAt(p.X, p.Y).Any())));
-        Shot("ground_33_slope", 30, () => { _main.Flora.BuildAll(); View(new Vector3(-10f, 6f, 10f), new Vector3(0f, 0f, 0f)); });
         Shot("ground_00_go_crash", 300, () => Go(gen().Pois.First(p => p.Poi.Prefab.Id == "crash_site").ToWorld(new System.Numerics.Vector3(0f, 0f, 4f)).ToGodot()));
         Shot("ground_40_crash_spawn", 30, () => { _main.Flora.BuildAll(); View(new Vector3(-2f, 1.8f, -6f), new Vector3(0f, 1f, 18f)); });
         Shot("ground_41_crash_high", 30, () => View(new Vector3(-30f, 26f, -24f), new Vector3(0f, 0f, 18f)));

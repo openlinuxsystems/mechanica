@@ -206,7 +206,7 @@ public partial class WorldStreamer : Node3D
     private void Build(ChunkCoord chunk)
     {
         _pending.Remove(chunk);
-        var node = new TerrainChunk { Data = Generator.GenerateChunk(chunk, Streamer.Settings.ChunkSize), State = State, Ground = Ground };
+        var node = new TerrainChunk { Data = Generator.GenerateChunk(chunk, Streamer.Settings.ChunkSize), State = State, Ground = Ground, Textured = GroundMaterial.For(Generator.Data) };
         AddChild(node);
         _chunks[chunk] = node;
     }
@@ -233,7 +233,7 @@ public partial class WorldStreamer : Node3D
         {
             if (_scenery.ContainsKey(chunk))
                 continue;
-            var node = new TerrainChunk { Data = Generator.GenerateChunk(chunk, Streamer.Settings.ChunkSize), State = State, Ground = Ground, Scenery = true };
+            var node = new TerrainChunk { Data = Generator.GenerateChunk(chunk, Streamer.Settings.ChunkSize), State = State, Ground = Ground, Scenery = true, Textured = GroundMaterial.For(Generator.Data) };
             _sceneryRoot.AddChild(node);
             _scenery[chunk] = node;
             if (System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalSeconds >= SceneryBudget)

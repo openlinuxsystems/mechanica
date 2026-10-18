@@ -45,14 +45,24 @@ public static class FloraScatter
             for (var i = 0; i < n - 1; i++)
             {
                 var k = j * n + i;
-                // Prototype: plants grow round the crash site, outside its burnt middle, and come out charred near it.
-                var burn = chunk.Grounds.Length > 0 ? chunk.Grounds[k * TerrainChunkData.GroundLayers + 6] : 0f;
-                if ((chunk.Covered[k] || chunk.Covered[k + 1] || chunk.Covered[k + n] || chunk.Covered[k + n + 1])
-                    && (burn > 0.45f || !generator.PoisAt(ox + i * res, oz + j * res).All(p => p.Poi.Prefab.Id == "crash_site")))
+                var (bare, tint) = GroundAt(data, chunk, k);
+                if (bare > BareShare)
                     continue;
-                var crash = burn > 0f || (chunk.Covered[k] && generator.PoisAt(ox + i * res, oz + j * res).Any(p => p.Poi.Prefab.Id == "crash_site"));
-                var meadow = data.Biomes.FirstOrDefault(b => b.Id == "meadow");
-                var rules = data.FloraByBiome[crash && meadow is not null ? meadow.Index : chunk.Biomes[k]];
+                var biome = chunk.Biomes[k];
+                // Inside a POI only the biome it names grows, and only if it names one.
+                if (chunk.Covered[k] || chunk.Covered[k + 1] || chunk.Covered[k + n] || chunk.Covered[k + n + 1])
+                {
+                    biome = -1;
+                    foreach (var poi in generator.PoisAt(ox + i * res, oz + j * res))
+                    {
+                        biome = poi.Poi.Prefab.Flora is { } id ? data.Biomes.First(b => b.Id == id).Index : -1;
+                        if (biome < 0)
+                            break;
+                    }
+                    if (biome < 0)
+                        continue;
+                }
+                var rules = data.FloraByBiome[biome];
                 if (rules.Count == 0)
                     continue;
                 float x0 = ox + i * res, z0 = oz + j * res;
@@ -84,16 +94,40 @@ public static class FloraScatter
                         var ground = Vector3.Normalize(Vector3.Lerp(Vector3.Lerp(chunk.Normals[k], chunk.Normals[k + 1], u), Vector3.Lerp(chunk.Normals[k + n], chunk.Normals[k + n + 1], u), v));
                         var pick = Noise.Mix(h + 2);
                         var model = rule.Models[(int)(pick % (uint)rule.Models.Count)];
-                        var tint = rule.Colors[(int)(Noise.Mix(pick) % (uint)rule.Colors.Count)] * (0.92f + 0.16f * Noise.Unit(Noise.Mix(h + 3)));
-                        tint = Vector3.Lerp(tint, new Vector3(0.36f, 0.30f, 0.14f), MathF.Min(1f, burn * 2.4f));
+                        var colour = rule.Colors[(int)(Noise.Mix(pick) % (uint)rule.Colors.Count)] * (0.92f + 0.16f * Noise.Unit(Noise.Mix(h + 3)));
+                        if (tint is { } charred)
+                            colour = Vector3.Lerp(colour, charred.Colour, charred.Share);
                         var scale = rule.MinScale + (rule.MaxScale - rule.MinScale) * Noise.Unit(Noise.Mix(h + 4));
                         var yaw = Noise.Unit(Noise.Mix(h + 5)) * 2f * MathF.PI;
-                        plants.Add(new FloraInstance(model, new Vector3(x, height, z), ground, yaw, scale, Vector3.Clamp(tint, Vector3.Zero, Vector3.One), rank));
+                        plants.Add(new FloraInstance(model, new Vector3(x, height, z), ground, yaw, scale, Vector3.Clamp(colour, Vector3.Zero, Vector3.One), rank));
                     }
                 }
             }
         }
         return plants;
+    }
+
+    // Plants skip ground that is more than this share bare (grounds without flora), and take a ground's flora tint fully
+    // where it covers this share or more.
+    private const float BareShare = 0.45f;
+    private const float TintShare = 0.4f;
+
+    // How much of a sample is bare ground, and the strongest flora tint of the grounds there (with its share, 0..1).
+    private static (float Bare, (Vector3 Colour, float Share)? Tint) GroundAt(WorldGenData data, TerrainChunkData chunk, int k)
+    {
+        if (chunk.Grounds.Length == 0)
+            return (0f, null);
+        var bare = 0f;
+        (Vector3 Colour, float Share)? tint = null;
+        foreach (var ground in data.Grounds)
+        {
+            var w = chunk.Grounds[k * TerrainChunkData.GroundLayers + ground.Index];
+            if (!ground.Flora)
+                bare += w;
+            if (ground.FloraTint is { } colour && w > 0f && (tint is null || w / TintShare > tint.Value.Share))
+                tint = (colour, MathF.Min(1f, w / TintShare));
+        }
+        return (bare, tint);
     }
 
     /// <summary>How full (0..1) a rule's patch is at a world position: 1 everywhere at full coverage, otherwise noise patches.</summary>

@@ -28,6 +28,15 @@ public sealed record Scatter(int Index, int Biome, WorldObjectDefinition Object,
 public sealed record Flora(int Index, int Biome, FloraKind Kind, float Density, float Coverage, float PatchSize, float MinScale, float MaxScale,
     IReadOnlyList<FloraModel> Models, IReadOnlyList<Vector3> Colors, float MaxSlope);
 
+/// <summary>A ground texture ready for drawing, with its layer index in <see cref="WorldGenData.Grounds"/>.</summary>
+/// <param name="Index">Texture layer.</param>
+/// <param name="Id">Id from the data.</param>
+/// <param name="TextureFile">Full path of the <c>.png</c>; null when the world was built without mods (tests).</param>
+/// <param name="Tile">Metres one repeat of the texture covers.</param>
+/// <param name="Flora">Whether flora grows on it.</param>
+/// <param name="FloraTint">Tint plants on or next to it take, if any (0..1 RGB).</param>
+public sealed record Ground(int Index, string Id, string? TextureFile, float Tile, bool Flora, Vector3? FloraTint);
+
 /// <summary>A POI prefab that loaded cleanly.</summary>
 /// <param name="QualifiedId">Game-wide id, <c>mod_id:poi_id</c>.</param>
 /// <param name="Prefab">The validated data.</param>
@@ -48,7 +57,8 @@ public sealed class WorldGenData
     /// <summary>Where a mod keeps its POI prefabs.</summary>
     public const string PoiFolder = "pois";
 
-    private WorldGenData(WorldGenDefinition definition, IReadOnlyList<LoadedPoi> pois, IReadOnlyList<DataDiagnostic> diagnostics, string fingerprint)
+    private WorldGenData(WorldGenDefinition definition, IReadOnlyList<LoadedPoi> pois, IReadOnlyList<DataDiagnostic> diagnostics, string fingerprint,
+        Func<string, string?>? textureFile = null)
     {
         Definition = definition;
         Terrain = definition.Terrain;
@@ -77,6 +87,30 @@ public sealed class WorldGenData
         FloraRules = flora;
         FloraByBiome = [.. Biomes.Select(b => (IReadOnlyList<Flora>)[.. flora.Where(f => f.Biome == b.Index)])];
         CoastBiome = definition.CoastBiome is { } coast ? Biomes.First(b => b.Id == coast) : null;
+        Grounds = [.. (definition.Grounds ?? []).Select((g, i) => new Ground(i, g.Id!, textureFile?.Invoke(g.Texture!), g.Tile, g.Flora,
+            g.FloraTint is { } tint ? ParseColor(tint) : null))];
+        BiomeGrounds = [.. (definition.Biomes ?? []).Select(b => b.Ground is { } id ? GroundIndex(id) : -1)];
+        SlopeGround = definition.SlopeGround is { Ground: { } slope } ? GroundIndex(slope) : -1;
+    }
+
+    /// <summary>Ground textures, in layer order.</summary>
+    public IReadOnlyList<Ground> Grounds { get; }
+
+    /// <summary>Each biome's ground layer, or -1 for a biome drawn in its plain colour.</summary>
+    public IReadOnlyList<int> BiomeGrounds { get; }
+
+    /// <summary>The ground layer steep slopes take, or -1 for none.</summary>
+    public int SlopeGround { get; }
+
+    /// <summary>The layer of a ground id, or -1.</summary>
+    public int GroundIndex(string id)
+    {
+        for (var i = 0; i < Grounds.Count; i++)
+        {
+            if (Grounds[i].Id == id)
+                return i;
+        }
+        return -1;
     }
 
     /// <summary>The rules in use.</summary>
@@ -127,6 +161,7 @@ public sealed class WorldGenData
     {
         var diagnostics = new List<DataDiagnostic>();
         WorldGenDefinition? definition = null;
+        var definitionMod = "";
         var prefabs = new List<(string ModId, string File, PoiPrefab Prefab)>();
         foreach (var mod in content.Mods)
         {
@@ -139,7 +174,7 @@ public sealed class WorldGenData
                 {
                     WorldGenValidator.Validate(read, sink);
                     if (sink.ErrorCount == 0)
-                        definition = read;
+                        (definition, definitionMod) = (read, mod.Id);
                 }
             }
             var folder = Path.Combine(mod.Directory, PoiFolder);
@@ -162,17 +197,24 @@ public sealed class WorldGenData
 
         var pois = new List<LoadedPoi>();
         var biomeIds = (definition.Biomes ?? []).Select(b => b.Id!).ToList();
+        var groundIds = (definition.Grounds ?? []).Select(g => g.Id!).ToList();
         foreach (var (modId, file, prefab) in prefabs)
         {
             var sink = new DiagnosticSink(file, diagnostics);
-            WorldGenValidator.Validate(prefab, biomeIds, sink);
+            WorldGenValidator.Validate(prefab, biomeIds, sink, groundIds);
             var id = $"{modId}:{prefab.Id}";
             if (pois.Any(p => p.QualifiedId == id))
                 sink.Error(DiagnosticCodes.PoiInvalid, "$.id", $"POI '{id}' is defined twice.");
             if (sink.ErrorCount == 0)
                 pois.Add(new LoadedPoi(id, prefab, (prefab.Placement!.Biomes ?? []).Select(b => biomeIds.IndexOf(b)).ToHashSet()));
         }
-        return new WorldGenData(definition, [.. pois.OrderBy(p => p.QualifiedId, StringComparer.Ordinal)], diagnostics, ComputeFingerprint(definition, pois));
+        var folders = content.Mods.ToDictionary(m => m.Id, m => m.Directory);
+        string? TextureFile(string text) =>
+            AssetPath.TryParse(text, definitionMod, AssetKind.Texture, out var path, out _) && folders.TryGetValue(path.ModId, out var folder)
+                ? path.Resolve(folder)
+                : null;
+        return new WorldGenData(definition, [.. pois.OrderBy(p => p.QualifiedId, StringComparer.Ordinal)], diagnostics, ComputeFingerprint(definition, pois),
+            TextureFile);
     }
 
     /// <summary>Builds data from a definition alone (no POIs), validating it.</summary>

@@ -27,6 +27,9 @@ public sealed class WorldGenerator
     private const float PoiBucket = 128f;
     private const int PoiAttempts = 8;
 
+    // Wavelength in metres of the noise that rags the edge of a POI's painted ground.
+    private const float PaintNoiseScale = 9f;
+
     private readonly TerrainDefinition _terrain;
     private readonly float _half;
     private readonly uint _heightSalt;
@@ -36,6 +39,7 @@ public sealed class WorldGenerator
     private readonly uint _scatterSalt;
     private readonly uint _warpSalt;
     private readonly uint _coastSalt;
+    private readonly uint _paintSalt;
     private readonly Biome[] _inland;
     private readonly float _inlandWeight;
     private readonly List<PoiInstance> _pois = [];
@@ -61,6 +65,7 @@ public sealed class WorldGenerator
         _scatterSalt = Noise.Salt(seed, 5);
         _warpSalt = Noise.Salt(seed, 6);
         _coastSalt = Noise.Salt(seed, 7);
+        _paintSalt = Noise.Salt(seed, 9);
         _inland = [.. data.Biomes.Where(b => b.Weight > 0f && b != data.CoastBiome)];
         _inlandWeight = _inland.Sum(b => b.Weight);
         LayOutPois();
@@ -130,8 +135,8 @@ public sealed class WorldGenerator
         var colors = new Vector3[n * n];
         var biomes = new int[n * n];
         var covered = new bool[n * n];
-        var grounds = new float[n * n * TerrainChunkData.GroundLayers];
-        var crash = _pois.FirstOrDefault(p => p.Poi.Prefab.Id == "crash_site")?.ToWorld(new Vector3(0f, 0f, 20f));
+        var layers = TerrainChunkData.GroundLayers;
+        var grounds = Data.Grounds.Count > 0 ? new float[n * n * layers] : [];
         Parallel.For(0, m, j =>
         {
             Span<float> weights = stackalloc float[Data.Biomes.Count];
@@ -148,20 +153,14 @@ public sealed class WorldGenerator
                     colors[(j - 1) * n + i - 1] = sample.Color;
                     biomes[(j - 1) * n + i - 1] = sample.Biome;
                     covered[(j - 1) * n + i - 1] = PoisAt(x, z).Any();
-                    var g = ((j - 1) * n + i - 1) * TerrainChunkData.GroundLayers;
-                    for (var b = 0; b < weights.Length; b++)
-                        grounds[g + ProtoLayer(Data.Biomes[b].Id)] += weights[b];
-                    if (crash is { } c)
+                    if (grounds.Length > 0)
                     {
-                        var d = MathF.Sqrt((x - c.X) * (x - c.X) + (z - c.Z) * (z - c.Z));
-                        d += 9f * Noise.Fractal(x / 9f, z / 9f, 77, 3, 2f, 0.5f);
-                        // Burnt middle, then a ring of meadow round the wreck that fades into the biome.
-                        var burn = 1f - Noise.SmoothStep(16f, 34f, d);
-                        var green = (1f - Noise.SmoothStep(58f, 80f, d)) * (1f - burn);
-                        for (var l = 0; l < TerrainChunkData.GroundLayers; l++)
-                            grounds[g + l] *= 1f - burn - green;
-                        grounds[g + 6] += burn;
-                        grounds[g] += green;
+                        var g = ((j - 1) * n + i - 1) * layers;
+                        for (var b = 0; b < weights.Length; b++)
+                        {
+                            if (Data.BiomeGrounds[b] >= 0)
+                                grounds[g + Data.BiomeGrounds[b]] += weights[b];
+                        }
                     }
                 }
             }
@@ -178,6 +177,8 @@ public sealed class WorldGenerator
         }
 
         float x1 = ox + chunkSize, z1 = oz + chunkSize;
+        if (grounds.Length > 0)
+            PaintGrounds(grounds, normals, n, res, ox, oz, x1, z1);
         var objects = ObjectsIn(ox, oz, x1, z1).ToList();
         var pieces = new List<PoiPiecePlacement>();
         var markers = new List<PoiMarkerPlacement>();
@@ -295,15 +296,54 @@ public sealed class WorldGenerator
         public int Biome;
     }
 
-    // Prototype: ground texture layer per biome id (grass, forest, ruin, rock, sand, concrete, scorched).
-    private static int ProtoLayer(string id) => id switch
+    // Steep slopes take the slope ground, then POIs paint theirs over the top, in order.
+    private void PaintGrounds(float[] grounds, Vector3[] normals, int n, float res, float ox, float oz, float x1, float z1)
     {
-        "forest" => 1,
-        "ruin_field" => 2,
-        "coastal" => 4,
-        "warehouse_district" => 5,
-        _ => 0,
-    };
+        var layers = TerrainChunkData.GroundLayers;
+        var slope = Data.Definition.SlopeGround;
+        var paints = new List<(int Ground, Vector3 At, GroundPaint Paint, uint Salt)>();
+        foreach (var poi in PoisOverlapping(ox, oz, x1, z1))
+        {
+            for (var k = 0; k < (poi.Poi.Prefab.Ground?.Count ?? 0); k++)
+            {
+                var paint = poi.Poi.Prefab.Ground![k];
+                var at = paint.At is [var px, var pz] ? new Vector3(px, 0f, pz) : Vector3.Zero;
+                paints.Add((Data.GroundIndex(paint.Ground!), poi.ToWorld(at), paint, Noise.Hash(_paintSalt, poi.Index, k, 0)));
+            }
+        }
+        for (var j = 0; j < n; j++)
+        {
+            for (var i = 0; i < n; i++)
+            {
+                var k = j * n + i;
+                var g = k * layers;
+                if (Data.SlopeGround >= 0 && slope is not null)
+                {
+                    var up = normals[k].Y;
+                    var steep = MathF.Sqrt(MathF.Max(0f, 1f - up * up)) / MathF.Max(up, 1e-3f);
+                    Over(grounds, g, Data.SlopeGround, Noise.SmoothStep(slope.From, slope.To, steep));
+                }
+                float x = ox + i * res, z = oz + j * res;
+                foreach (var (ground, at, paint, salt) in paints)
+                {
+                    var d = MathF.Sqrt((x - at.X) * (x - at.X) + (z - at.Z) * (z - at.Z));
+                    if (paint.Noise > 0f)
+                        d += paint.Noise * Noise.Fractal(x / PaintNoiseScale, z / PaintNoiseScale, salt, 3, 2f, 0.5f);
+                    Over(grounds, g, ground, 1f - Noise.SmoothStep(paint.Radius, paint.Radius + paint.Blend, d));
+                }
+            }
+        }
+    }
+
+    // Lays a ground over a sample's others with a weight: the others shrink to make room.
+    private static void Over(float[] grounds, int at, int ground, float weight)
+    {
+        if (weight <= 0f)
+            return;
+        for (var l = 0; l < TerrainChunkData.GroundLayers; l++)
+            grounds[at + l] *= 1f - weight;
+        grounds[at + ground] += weight;
+    }
 
     private BiomeSample SampleBiomes(float x, float z, Span<float> weights = default)
     {
