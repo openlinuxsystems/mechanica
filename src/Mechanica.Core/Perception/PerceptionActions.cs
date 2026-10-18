@@ -257,7 +257,7 @@ public sealed class PerceptionActions(IPerceptionWorld world)
     public WorldView Describe()
     {
         var generator = world.Generator!;
-        return new WorldView(generator.Seed, generator.Seed.ToString(CultureInfo.InvariantCulture), world.Mode, world.Difficulty, world.Now,
+        return new WorldView(generator.Seed, generator.Seed.ToString(CultureInfo.InvariantCulture), world.Mode, world.Difficulty, world.FriendlyFire, world.Now,
             world.Tick, world.TickRate, generator.WorldSize, generator.SeaLevel, generator.Spawn?.ToVec3(),
             [.. world.Players.OrderBy(p => p.Peer).Select(p => new PeerView(p.Peer, p.Name))], world.CreationCount, world.Drops.Count,
             generator.Pois.Count, [.. world.RevealedPois.Order(StringComparer.Ordinal)]);

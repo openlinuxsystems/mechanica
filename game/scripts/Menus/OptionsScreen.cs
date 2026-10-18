@@ -46,8 +46,8 @@ public partial class OptionsScreen : ToolWindow
     /// <summary>The profile file for the player's name; null uses <see cref="Main.ProfilePath"/>.</summary>
     public string? ProfileFile { get; init; }
 
-    /// <summary>The world's game mode and difficulty when opened over a world (shown, not changed, on Gameplay); null from the main menu.</summary>
-    public (GameMode Mode, Difficulty Difficulty)? World { get; init; }
+    /// <summary>The world's rules when opened over a world (shown on Gameplay; the host may change friendly fire); null from the main menu.</summary>
+    public WorldRules? World { get; init; }
 
     /// <summary>The settings as edited so far.</summary>
     public UserSettings Draft => _draft;
@@ -411,6 +411,14 @@ public partial class OptionsScreen : ToolWindow
             var difficulty = world.Mode == GameMode.Creative ? "None (Creative)" : world.Difficulty.ToString();
             Row(page, "Difficulty", "Chosen when the world was made, in New Game; it stays with the world.")
                 .AddChild(new Label { Name = "WorldDifficulty", Text = difficulty, ThemeTypeVariation = "SecondaryLabel" });
+            var friendlyFire = new CheckButton
+            {
+                Name = "WorldFriendlyFire", ButtonPressed = world.FriendlyFire, Disabled = world.SetFriendlyFire is null || world.Mode == GameMode.Creative,
+            };
+            if (world.SetFriendlyFire is { } set)
+                friendlyFire.Toggled += on => set(on);
+            Row(page, "Friendly fire", "Let players hurt each other with weapons and the Sledgehammer. Bots hurt players either way. Only the host can change it.")
+                .AddChild(friendlyFire);
         }
         page.AddChild(new Label { Text = "Camera", ThemeTypeVariation = "TitleLabel" });
         Slider(page, "Mouse sensitivity", _draft.MouseSensitivity * 1000, 0.2f, 20f, 0.1f, v => Live(_draft with { MouseSensitivity = v / 1000 }), v => $"{v:0.0}");
@@ -566,3 +574,10 @@ public partial class OptionsScreen : ToolWindow
         row.AddChild(shown);
     }
 }
+
+/// <summary>A world's rules as Options shows them.</summary>
+/// <param name="Mode">Game mode.</param>
+/// <param name="Difficulty">Difficulty.</param>
+/// <param name="FriendlyFire">Whether players can hurt each other.</param>
+/// <param name="SetFriendlyFire">Turns friendly fire on or off; null where it can't be changed (a joined client).</param>
+public sealed record WorldRules(GameMode Mode, Difficulty Difficulty, bool FriendlyFire, Action<bool>? SetFriendlyFire);

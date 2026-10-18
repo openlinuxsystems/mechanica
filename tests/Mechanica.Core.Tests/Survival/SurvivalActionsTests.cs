@@ -29,7 +29,7 @@ public class SurvivalActionsTests
     public void PlayersJoinAtFullHealthWithTheStartingItems()
     {
         var vitals = _f.Ok<VitalsView>(Me, SurvivalActions.GetVitals, new { });
-        Assert.Equal(new VitalsView(Me.Peer, 100, 100, false, 0, false, GameMode.Survival), vitals);
+        Assert.Equal(new VitalsView(Me.Peer, 100, 100, false, 0, false, GameMode.Survival, FriendlyFire: true), vitals);
         Assert.Equal(2, _f.Pockets(Me).Count(Seed));
     }
 
@@ -73,7 +73,7 @@ public class SurvivalActionsTests
         _f.Ok(Me, SurvivalActions.Respawn, new { });
 
         Assert.Equal((2, new Vector3(10, 0, 10)), _f.World.Teleports[^1]);
-        Assert.Equal(new VitalsView(2, 100, 100, false, 0, false, GameMode.Survival), _f.Survival.View(Me.Peer));
+        Assert.Equal(new VitalsView(2, 100, 100, false, 0, false, GameMode.Survival, FriendlyFire: true), _f.Survival.View(Me.Peer));
     }
 
     [Fact]
@@ -234,17 +234,57 @@ public class SurvivalActionsTests
     }
 
     [Fact]
-    public void WithPvpOffHitsDoNotHurtPlayers()
+    public void WithFriendlyFireOffNoPlayerHurtsAnother()
     {
-        var f = new SurvivalFixture(new SurvivalSettings { Pvp = false });
-        var hit = f.Survival.Hit(Me, new RayHit(Vector3.Zero, Player: You.Peer), 20, Vector3.Zero);
-        Assert.Equal(0f, hit.Damage);
+        var f = new SurvivalFixture(friendlyFire: false);
+        // Players, external AIs and part scripts (a player's mounted gun) all count as players.
+        foreach (var source in new[] { ActionSource.Player, ActionSource.External, ActionSource.Script })
+        {
+            var hit = f.Survival.Hit(new ActionCaller(Me.Peer, source), new RayHit(Vector3.Zero, Player: You.Peer), 20, Vector3.Zero);
+            Assert.Equal(0f, hit.Damage);
+        }
+        f.World.Feet[3] = new Vector3(0, 0, -6f);
+        Assert.Equal(0f, f.Survival.Splash(Me, new Vector3(0, 0.8f, -6), 4, 40, 0).Single(h => h.Player == You.Peer).Damage);
         Assert.Equal(100f, f.Survival.View(You.Peer)!.Health);
-        // Bots (chunk 21) hurt players whatever PvP says.
+        // Bots (chunk 21) hurt players whatever friendly fire says.
         f.Survival.Hit(new ActionCaller(You.Peer, ActionSource.Bot), new RayHit(Vector3.Zero, Player: Me.Peer), 20, Vector3.Zero);
         Assert.Equal(80f, f.Survival.View(Me.Peer)!.Health);
-        Assert.Equal("Players cannot hurt each other in this world.",
+        Assert.Equal("Friendly fire is off in this world: players cannot hurt each other.",
             f.Refused(Me, ToolActions.Sledge, new { player = You.Peer }));
+        Assert.False(f.Survival.View(You.Peer)!.FriendlyFire);
+    }
+
+    [Fact]
+    public void OnlyTheHostTurnsFriendlyFireOnAndEveryPlayerIsTold()
+    {
+        var f = new SurvivalFixture(friendlyFire: false);
+        var host = new ActionCaller(Mechanica.Core.Creations.Creation.HostPeer, ActionSource.Player);
+        var told = new List<int>();
+        f.Survival.VitalsChanged += told.Add;
+
+        Assert.Equal("Only the host can change friendly fire.", f.Refused(Me, SurvivalActions.SetFriendlyFire, new { on = true }));
+        Assert.Equal("Only the host can change friendly fire.",
+            f.Refused(new ActionCaller(Mechanica.Core.Creations.Creation.HostPeer, ActionSource.Script), SurvivalActions.SetFriendlyFire, new { on = true }));
+        Assert.True(f.Dispatcher.Dispatch(host, SurvivalActions.SetFriendlyFire, """{ "on": true }""").Ok);
+
+        Assert.True(f.Survival.FriendlyFire);
+        Assert.Equal(f.Survival.Players.ToList(), told);
+        Assert.True(f.Survival.View(You.Peer)!.FriendlyFire);
+        Assert.Equal(20f, f.Survival.Hit(Me, new RayHit(Vector3.Zero, Player: You.Peer), 20, Vector3.Zero).Damage);
+        Assert.Null(f.Survival.CheckStrikePlayer(Me, You.Peer));
+    }
+
+    [Fact]
+    public void APartScriptsSplashDoesNotHurtTheHostAsItsOwn()
+    {
+        var f = new SurvivalFixture(friendlyFire: false);
+        var host = Mechanica.Core.Creations.Creation.HostPeer;
+        f.Survival.Join(host);
+        f.World.Feet[host] = new Vector3(0, 0, -6f);
+        f.World.Feet[Me.Peer] = new Vector3(0, 0, 6f);
+        Assert.Equal(0f, f.Survival.Splash(new ActionCaller(host, ActionSource.Script), new Vector3(0, 0.8f, -6), 4, 40, 0).Single(h => h.Player == host).Damage);
+        // A player's own splash still hurts them.
+        Assert.True(f.Survival.Splash(Me, new Vector3(0, 0.8f, 6), 4, 40, 0).Single(h => h.Player == Me.Peer).Damage > 0);
     }
 
     [Fact]

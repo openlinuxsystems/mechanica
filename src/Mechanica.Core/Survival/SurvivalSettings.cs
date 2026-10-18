@@ -74,9 +74,6 @@ public sealed record SurvivalSettings
     /// <summary>Share of full health below which the HUD warns (and <c>heartbeat_low</c> plays, with chunk 16).</summary>
     public float LowHealth { get; init; } = 0.25f;
 
-    /// <summary>Whether players can hurt each other with weapons and the Sledgehammer.</summary>
-    public bool Pvp { get; init; } = true;
-
     /// <summary>How far from a player's eyes soil, beds and water can be used, in metres.</summary>
     public float Reach { get; init; } = 7.5f;
 

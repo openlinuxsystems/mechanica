@@ -1,4 +1,5 @@
 using Godot;
+using Mechanica.Core.Actions;
 using Mechanica.Core.Saves;
 using Mechanica.Game.Saves;
 
@@ -22,6 +23,7 @@ public sealed class WorldSession(Main main) : IWorldHost
         main.Streamer.Seed,
         main.Options!.GameMode,
         main.Options.Difficulty,
+        main.Survival.Actions?.FriendlyFire ?? main.Options.FriendlyFire,
         main.Save is null ? null : main.Options.LoadPath,
         main.Scripts.Runtime.Time,
         main.Recorder.Log.CurrentTick,
@@ -54,7 +56,7 @@ public sealed class WorldSession(Main main) : IWorldHost
     public void Start(WorldSpec spec)
     {
         Main.MenuSave = null;
-        Main.MenuOptions = Carried() with { Seed = spec.Seed, GameMode = spec.Mode, Difficulty = spec.Difficulty, LoadPath = null };
+        Main.MenuOptions = Carried() with { Seed = spec.Seed, GameMode = spec.Mode, Difficulty = spec.Difficulty, FriendlyFire = spec.FriendlyFire, LoadPath = null };
         Main.MenuWorldName = spec.Name;
         Main.MenuCharacter = spec.Character;
         Replace();
@@ -65,6 +67,11 @@ public sealed class WorldSession(Main main) : IWorldHost
 
     /// <inheritdoc/>
     public void SetPaused(bool paused) => main.GetTree().Paused = paused;
+
+    /// <inheritdoc/>
+    public void SetFriendlyFire(bool on) =>
+        main.Actions.Dispatcher.Dispatch(new ActionCaller(main.Session.LocalPeer, ActionSource.External), Core.Survival.SurvivalActions.SetFriendlyFire,
+            new Core.Survival.SetFriendlyFireArgs(on));
 
     /// <summary>Called by the new world each frame until it has entered: then the change is over and agents hear so.</summary>
     public void Entered()

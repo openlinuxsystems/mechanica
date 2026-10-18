@@ -17,7 +17,7 @@ namespace Mechanica.Game.Tests;
 /// <summary>
 /// The survival loop, host plus client (chunk 20, D10), with the vanilla content on a flat world. The
 /// client starts with the starting items and pays for what it builds; it plants, waters and harvests a
-/// carrot, eats, shoots the host with a Potato Blaster (seeds, water, food and weapons are Lua item scripts, chunk 20b),
+/// carrot, eats, shoots the host with a Potato Blaster (harmless until the host turns friendly fire on; seeds, water, food and weapons are Lua item scripts, chunk 20b),
 /// throws a Popper that arcs on both machines and bursts, falls, dies, drops its things, respawns, picks them back up, and respawns at a bed
 /// it slept in. Every step is checked on the host and on the client.
 /// </summary>
@@ -178,10 +178,11 @@ public partial class SurvivalTest : StagedTest
                 Check(item.InHand?.Item == Carrot && item.Use(_results.Add), "the Item tool eats the carrot in hand");
             return _results.Count > 0 && _client.Main.Survival.Own!.Health == 80 && Count(Carrot) == 3;
         });
-        Stage("the client shoots the host with a Potato Blaster", frame =>
+        Stage("with friendly fire off the client's shot does not hurt the host", frame =>
         {
             if (frame == 0)
             {
+                Check(_client.Main.Survival.Own is { FriendlyFire: false } && !HostSurvival.FriendlyFire, "friendly fire starts off");
                 var pockets = _host.Main.Inventory.Items!.PlayerInventory(Peer);
                 pockets.Add(Blaster, 1);
                 pockets.Add(Potato, 5);
@@ -192,7 +193,36 @@ public partial class SurvivalTest : StagedTest
                 var aim = (Eye(_host) - Eye(_client)).Normalized();
                 Request(ScriptRuntime.UseItem, new UseItemArgs(SlotOf(Blaster), new Vec3(aim.X, aim.Y, aim.Z)));
             }
-            if (_results.Count == 0 || _client.Main.Survival.Vitals[1].Health != 80 || Count(Potato) != 4)
+            if (_results.Count == 0 || Count(Potato) != 4)
+                return false;
+            var hits = System.Text.Json.Nodes.JsonNode.Parse(_results[0].Value!.Value.GetRawText())!["hits"]!.AsArray();
+            Check(hits.Count == 1 && hits[0]!["player"]!.GetValue<int>() == 1 && hits[0]!["damage"]!.GetValue<double>() == 0,
+                $"the shot reaches the host but deals nothing ({_results[0]})");
+            Check(_client.Main.Survival.Vitals[1].Health == 100 && HostSurvival.HealthOf(1) == 100, "the host keeps full health");
+            return true;
+        });
+        Stage("only the host turns friendly fire on, and the client is told", frame =>
+        {
+            if (frame == 0)
+                Request(SurvivalActions.SetFriendlyFire, new SetFriendlyFireArgs(true));
+            if (frame == 1)
+                _host.Main.Actions.Request(SurvivalActions.SetFriendlyFire, new SetFriendlyFireArgs(true), _results.Add);
+            if (_results.Count < 2 || _client.Main.Survival.Own is not { FriendlyFire: true })
+                return false;
+            Check(_results.Count(r => !r.Ok && r.Message!.Contains("Only the host")) == 1, $"a client cannot change it ({string.Join("; ", _results)})");
+            Check(_results.Count(r => r.Ok) == 1 && HostSurvival.FriendlyFire, "the host can");
+            return true;
+        });
+        Stage("the client shoots the host with a Potato Blaster", frame =>
+        {
+            if (frame == 0)
+                LookAt(_client, Eye(_host));
+            if (frame == 20)
+            {
+                var aim = (Eye(_host) - Eye(_client)).Normalized();
+                Request(ScriptRuntime.UseItem, new UseItemArgs(SlotOf(Blaster), new Vec3(aim.X, aim.Y, aim.Z)));
+            }
+            if (_results.Count == 0 || _client.Main.Survival.Vitals[1].Health != 80 || Count(Potato) != 3)
                 return false;
             var hits = System.Text.Json.Nodes.JsonNode.Parse(_results[0].Value!.Value.GetRawText())!["hits"]!.AsArray();
             Check(hits.Count == 1 && hits[0]!["kind"]!.GetValue<string>() == "player" && hits[0]!["player"]!.GetValue<int>() == 1

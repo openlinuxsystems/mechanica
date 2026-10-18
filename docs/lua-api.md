@@ -270,8 +270,8 @@ ones are `food.lua`, `potato_gun.lua`, `seed.lua` and `watering.lua` in `mods/va
 - **`can_use`, `can_reload_item` and the script's setup only read.** Functions that change the world (`item.consume`, `item.counter`,
   `holder.heal`, `inventory.take`, `farm.plant`, `farm.water`, `fire.douse`, `fire.ignite` and the `combat` ones that deal damage
   or launch) raise an error there.
-- **Damage follows the world's rules.** In Creative nothing hurts players; with `pvp` off a shot
-  can't hurt another player, but a player's own splash still hurts them.
+- **Damage follows the world's rules.** In Creative nothing hurts players; with friendly fire off
+  (the default) no shot, splash or part script hurts a player, but a player's own splash still hurts them.
 - `part` and `creation` functions don't work in an item script; `world` and `log` do. The `item`,
   `holder`, `inventory`, `combat` and `farm` libraries only work in an item script.
 

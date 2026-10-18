@@ -35,6 +35,9 @@ public sealed class PerceptionWorld(Main main) : IPerceptionWorld, IGameCatalog
     public Difficulty Difficulty => main.Survival.Difficulty;
 
     /// <inheritdoc/>
+    public bool FriendlyFire => main.Survival.Actions?.FriendlyFire ?? main.Survival.FriendlyFire;
+
+    /// <inheritdoc/>
     public WorldGenerator? Generator => main.Streamer.Generator;
 
     /// <inheritdoc/>
