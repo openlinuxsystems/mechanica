@@ -1,6 +1,7 @@
 using Godot;
 using Mechanica.Core.Data;
 using Mechanica.Core.Items;
+using Mechanica.Core.Ui;
 using Mechanica.Game.Creations;
 
 namespace Mechanica.Game.Ui;
@@ -9,7 +10,7 @@ namespace Mechanica.Game.Ui;
 /// Pictures of items for the hotbar and inventory (UI spec §3). A part with its own <c>icon</c> PNG uses it; any
 /// other item is drawn once from its model, three-quarter view on a clear background, in an offscreen viewport, one
 /// item a frame, and kept. Until a picture is ready (and with no display, where nothing renders) <see cref="For"/>
-/// returns null and callers show the item's initials. Tools with a model (<see cref="ToolModel"/>) are drawn from it the
+/// returns null and callers show the item's initials. Every picture is cropped, framed and outlined by <see cref="Finish"/>. Tools with a model (<see cref="ToolModel"/>) are drawn from it the
 /// same way; the rest draw as their initials.
 /// </summary>
 public partial class ItemIcons : Node
@@ -76,7 +77,7 @@ public partial class ItemIcons : Node
         else if (Catalog.FindDefinition(id) is not { } definition)
             return _icons[id] = null;
         else if (Assets.IconFor(id, definition) is { } own)
-            return _icons[id] = own;
+            return _icons[id] = own.GetImage() is { } picture && !picture.IsEmpty() ? ImageTexture.CreateFromImage(Finish(picture)) : own;
         if (!CanRender)
             return _icons[id] = null;
         if (!_queue.Contains(id) && _rendering != id)
@@ -94,7 +95,7 @@ public partial class ItemIcons : Node
             if (--_wait > 0)
                 return;
             var image = _viewport.GetTexture().GetImage();
-            _icons[id] = image is null || image.IsEmpty() ? null : ImageTexture.CreateFromImage(image);
+            _icons[id] = image is null || image.IsEmpty() || image.GetUsedRect().Size == Vector2I.Zero ? null : ImageTexture.CreateFromImage(Finish(image));
             _rendering = null;
             _viewport.RenderTargetUpdateMode = SubViewport.UpdateMode.Disabled;
             IconReady?.Invoke(id);
@@ -165,6 +166,27 @@ public partial class ItemIcons : Node
             bounds = bounds is { } b ? b.Merge(box) : box;
         }
         return bounds;
+    }
+
+    /// <summary>
+    /// A picture as tiles show it (UI spec §0): cropped to the item, scaled so its largest side fills
+    /// <see cref="IconFinish.Fill"/> of a <see cref="Size"/> square, centred, with the ink outline and contact shadow.
+    /// </summary>
+    public static Image Finish(Image source)
+    {
+        var image = (Image)source.Duplicate();
+        if (image.IsCompressed())
+            image.Decompress();
+        image.Convert(Image.Format.Rgba8);
+        var used = image.GetUsedRect();
+        if (used.Size.X <= 0 || used.Size.Y <= 0)
+            return image;
+        var item = image.GetRegion(used);
+        var scale = Size * IconFinish.Fill / Mathf.Max(used.Size.X, used.Size.Y);
+        item.Resize(Mathf.Max(1, Mathf.RoundToInt(used.Size.X * scale)), Mathf.Max(1, Mathf.RoundToInt(used.Size.Y * scale)), Image.Interpolation.Lanczos);
+        var framed = Image.CreateEmpty(Size, Size, false, Image.Format.Rgba8);
+        framed.BlitRect(item, new Rect2I(Vector2I.Zero, item.GetSize()), (new Vector2I(Size, Size) - item.GetSize()) / 2);
+        return Image.CreateFromData(Size, Size, false, Image.Format.Rgba8, IconFinish.Apply(framed.GetData(), Size));
     }
 
     /// <summary>Short text standing in for a picture: the initials of <paramref name="name"/>.</summary>
