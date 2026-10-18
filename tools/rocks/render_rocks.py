@@ -196,7 +196,7 @@ def render_all(models, out: Path, build):
     put("metal_chunk", (2.4, -0.9, 0.2), 2.1)
     put("stone_chunk", (-0.7, -0.4, 0.2), 4.0)
     put("stone_rod", (-0.6, -1.3, 0.11), 1.2)
-    put("metal_rod", (2.5, -1.4, 0.11), 0.35)
+    put("metal_rod", (-0.8, -1.9, 0.11), 1.2)
     cam = camera("Outcrop", (5.2, -6.0, 3.6), (0.7, 0.9, 0.9), lens=42)
     render(cam, out / "rocks_outcrop.png", 1600, 1000)
     for ob in placed:

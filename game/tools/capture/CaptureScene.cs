@@ -22,6 +22,8 @@ namespace Mechanica.Game.Tools;
 /// the Ramp and Stairs, and see-through blocks in front of solid ones (<c>tools/capture-blocks.sh</c>).
 /// Given <c>water</c> it finds a shore and captures the sea: wide and close, at every Water quality level, a run of frames for
 /// the motion and the view from under the surface (<c>tools/capture-water.sh</c>).
+/// Given <c>rocks</c> it finds a stone and a metal-rich rock outcrop and captures them, then breaks a cube into chunks and a
+/// chunk into rods (<c>tools/capture-rocks.sh</c>).
 /// </summary>
 public partial class CaptureScene : Node
 {
@@ -43,7 +45,8 @@ public partial class CaptureScene : Node
         var icons = args.Length > 1 && args[1] == "icons";
         var water = args.Length > 1 && args[1] == "water";
         var blocks = args.Length > 1 && args[1] == "blocks";
-        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks ? args[1] : "scrapper_male";
+        var rocks = args.Length > 1 && args[1] == "rocks";
+        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks ? args[1] : "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
         // Building the block wall needs Creative: free parts and no build reach.
         _main.Options = LaunchOptions.Offline with { Seed = 7, GameMode = blocks ? Core.Survival.GameMode.Creative : LaunchOptions.Offline.GameMode };
@@ -74,6 +77,11 @@ public partial class CaptureScene : Node
         if (blocks)
         {
             BlockShots();
+            return;
+        }
+        if (rocks)
+        {
+            RockShots();
             return;
         }
         Shot("front", 60, () => Look(new Vector3(0, 1.0f, -3.2f)));
@@ -370,6 +378,92 @@ public partial class CaptureScene : Node
     }
 
     // The plant of a kind nearest the meadow spot, from the flora drawn there.
+    private void RockShots()
+    {
+        Engine.TimeScale = 1.0;
+        List<WorldObjectPlacement> Outcrop(string id)
+        {
+            var gen = _main.Streamer.Generator;
+            var all = gen.ObjectsIn(-1500, -1500, 1500, 1500).Where(o => o.Definition.Id == id).ToList();
+            // The biggest outcrop of the first few, for a good look.
+            return all.GroupBy(o => o.Id with { Piece = 0 }).Take(12).OrderByDescending(g => g.Count()).First().ToList();
+        }
+        Vector3 Middle(List<WorldObjectPlacement> cubes) => new(cubes.Average(o => o.Position.X), cubes.Min(o => o.Position.Y), cubes.Average(o => o.Position.Z));
+        var stone = new List<WorldObjectPlacement>();
+        Shot("rocks_00_wait", 60, () => { });
+        Shot("rocks_00_go", 240, () =>
+        {
+            stone = Outcrop("rock_outcrop");
+            _meadow = Middle(stone);
+            GD.Print($"[capture] outcrop of {stone.Count} at {_meadow}");
+            _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, _meadow + new Vector3(-5f, 2f, 5f), 0f);
+            _camera.MakeCurrent();
+            _camera.GlobalPosition = _meadow + new Vector3(0, 30, 0);
+        });
+        Shot("rocks_01_outcrop", 30, () => { _main.Flora.BuildAll(); ViewAt(_meadow, new Vector3(-7f, 3.5f, 7f), 1.2f); });
+        Shot("rocks_02_outcrop_other_side", 30, () => ViewAt(_meadow, new Vector3(7.5f, 2.5f, -6f), 1.2f));
+        Shot("rocks_03_outcrop_close", 30, () => ViewAt(_meadow, new Vector3(-3.2f, 1.6f, 3.2f), 1.0f));
+        Shot("rocks_04_with_player", 60, () =>
+        {
+            Player.ThirdPerson = true;
+            _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, _meadow + new Vector3(-3.5f, 1f, 2.5f), 0f);
+            ViewAt(_meadow, new Vector3(-8f, 3f, 6f), 1.2f);
+        });
+        var metal = new List<WorldObjectPlacement>();
+        Shot("rocks_05_metal_go", 240, () =>
+        {
+            metal = Outcrop("metal_outcrop");
+            _meadow = Middle(metal);
+            _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, _meadow + new Vector3(-5f, 2f, 5f), 0f);
+        });
+        Shot("rocks_06_metal_outcrop", 30, () => { _main.Flora.BuildAll(); ViewAt(_meadow, new Vector3(-6f, 3f, 6f), 1.0f); });
+        Shot("rocks_07_metal_close", 30, () => ViewAt(_meadow, new Vector3(-2.8f, 1.4f, 2.8f), 0.9f));
+        WorldObjectPlacement? cube = null;
+        Shot("rocks_08_back", 240, () =>
+        {
+            _meadow = Middle(stone);
+            _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, _meadow + new Vector3(-5f, 2f, 5f), 0f);
+        });
+        Shot("rocks_09_cube_drilled", 90, () =>
+        {
+            // Break a ground cube on the outcrop's edge as a drill would; its two chunks fall out onto the grass.
+            var middle = _meadow with { Y = 0 };
+            cube = stone.Where(o => o.Position.Y - _meadow.Y < 0.01f).OrderByDescending(o => (o.Position.ToGodot() with { Y = 0 }).DistanceTo(middle)).First();
+            _main.Survival.Actions!.StrikeObject(cube.Id.ToString(), 10000, DamageKinds.Drill);
+            ViewAt(cube.Position.ToGodot(), ((cube.Position.ToGodot() - _meadow) with { Y = 0 }).Normalized() * 4f + new Vector3(0, 2.4f, 0), 0.5f);
+        });
+        Shot("rocks_10_chunks", 60, () => ViewLoose(c => c.BreaksInto is not null, 2.4f));
+        Shot("rocks_11_rods", 90, () =>
+        {
+            // Break every chunk into rods, as the Sledgehammer would.
+            foreach (var chunk in _main.Creations.All.Where(c => c.Parts.Count == 1 && c.DefinitionOf(c.Parts.First().Id)?.BreaksInto is not null).ToList())
+            {
+                var part = chunk.Parts.First().Id;
+                for (var i = 0; i < 20 && _main.Creations.Find(chunk.Id) is not null; i++)
+                    _main.Build.Tools!.DamagePart(chunk, part, 25);
+            }
+        });
+        Shot("rocks_12_rods", 30, () => ViewLoose(c => c.Refine is not null, 3.2f));
+        Shot("rocks_13_rods_close", 30, () => ViewLoose(c => c.Refine is not null, 2.0f));
+    }
+
+    // Frames the loose parts matching a test from the side away from the outcrop's middle.
+    private void ViewLoose(Func<Core.Data.PartDefinition, bool> which, float distance)
+    {
+        var at = _main.Creations.All.Where(c => c.Parts.Count == 1 && c.DefinitionOf(c.Parts.First().Id) is { } d && which(d))
+            .Select(c => _main.Creations.NodeOf(c.Id)?.PartNode(c.Parts.First().Id)?.GlobalPosition).OfType<Vector3>().ToList();
+        if (at.Count == 0)
+            return;
+        var centre = at.Aggregate(Vector3.Zero, (a, b) => a + b) / at.Count;
+        var away = (centre - _meadow) with { Y = 0 };
+        away = away.LengthSquared() < 1e-4f ? Vector3.Back : away.Normalized();
+        var side = away.Cross(Vector3.Up);
+        _follow = null;
+        _camera.MakeCurrent();
+        _camera.GlobalPosition = centre + (away + side * 0.5f).Normalized() * distance + Vector3.Up * distance * 0.6f;
+        _camera.LookAt(centre);
+    }
+
     private Vector3 NearestFlora(FloraKind kind)
     {
         var world = _main.Streamer;
