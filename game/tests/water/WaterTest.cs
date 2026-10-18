@@ -41,7 +41,7 @@ public partial class WaterTest : StagedTest
             {
                 var gen = _host.Main.Streamer.Generator;
                 var dir = new Vector3(1, 0, 0);
-                for (var t = 0f; t < 3000f; t += 2f)
+                for (var t = 0f; t < 6100f; t += 2f)
                 {
                     var p = dir * t;
                     if (gen.HeightAt(p.X, p.Z) > gen.SeaLevel + 0.2f)
