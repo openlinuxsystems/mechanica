@@ -343,6 +343,8 @@ public partial class OptionsScreen : ToolWindow
         Option(_custom, "Anti-aliasing", levels, (int)g.Antialiasing, i => SetGraphics(x => x with { Antialiasing = (Quality)i }));
         Option(_custom, "Textures", levels, (int)g.Textures, i => SetGraphics(x => x with { Textures = (Quality)i }));
         Option(_custom, "Effects", levels, (int)g.Effects, i => SetGraphics(x => x with { Effects = (Quality)i }));
+        Option(_custom, "Water", ["Low", "Medium", "High"], (int)g.Water, i => SetGraphics(x => x with { Water = (Quality)i }),
+            "Ripple layers, waves and shore foam on lakes and the sea.");
         page.AddChild(new Label { Text = "Foliage density", ThemeTypeVariation = "TitleLabel" });
         string[] foliage = ["Off", "Low", "Medium", "High", "Very high"];
         Option(page, "Grass", foliage, (int)g.Grass, i => SetGraphics(x => x with { Grass = (FoliageLevel)i }), "How much grass is drawn, and how far. Lower it for a faster frame rate.");

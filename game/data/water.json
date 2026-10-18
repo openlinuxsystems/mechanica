@@ -1,0 +1,29 @@
+{
+  // How lakes and the sea look and move: one shared surface, cosmetic and client-side only. Engine settings: not
+  // moddable. Each Water quality level (Options, Graphics) sets the ripple layers, the share of wave height and foam,
+  // and whether the water reads the depth under it (darker when deep, foam at the shore).
+  // Loaded by game/scripts/World/WaterSurface.cs; see src/Mechanica.Core/World/WaterSettings.cs.
+  "low": { "layers": 1, "waves": 0.0, "foam": 0.0, "depth": false },
+  "medium": { "layers": 2, "waves": 0.5, "foam": 0.6, "depth": true },
+  "high": { "layers": 3, "waves": 1.0, "foam": 1.0, "depth": true },
+  "shallow_color": "#22B2DC",
+  "deep_color": "#0A7DB4",
+  "underwater_color": "#0A6E8C",
+  "depth_fade": 3.0,
+  "transparency": 0.65,
+  "normal_strength": 0.5,
+  "ripple_size": 8.0,
+  "scroll_primary": 0.12,
+  "scroll_secondary": 0.07,
+  "wave_amplitude": 0.08,
+  "wave_frequency": 0.15,
+  "wave_speed": 0.25,
+  "foam_intensity": 0.4,
+  "foam_width": 0.35,
+  "roughness": 0.05,
+  // Past lod_start metres from the camera the ripples calm and the waves flatten, reaching lod_ripples and flat at lod_end.
+  "lod_start": 48.0,
+  "lod_end": 112.0,
+  "lod_ripples": 0.35,
+  "mesh_spacing": 1.0
+}

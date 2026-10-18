@@ -20,6 +20,8 @@ namespace Mechanica.Game.Tools;
 /// Given <c>icons</c> it saves the item picture of every tool and a few parts, then the HUD with the hotbar and the Lift's
 /// placement ghost (<c>tools/capture-icons.sh</c>). Given <c>blocks</c> it builds a wall of every block material with its wedge,
 /// the Ramp and Stairs, and see-through blocks in front of solid ones (<c>tools/capture-blocks.sh</c>).
+/// Given <c>water</c> it finds a shore and captures the sea: wide and close, at every Water quality level, a run of frames for
+/// the motion and the view from under the surface (<c>tools/capture-water.sh</c>).
 /// </summary>
 public partial class CaptureScene : Node
 {
@@ -39,8 +41,9 @@ public partial class CaptureScene : Node
         var lift = args.Length > 1 && args[1] == "lift";
         var flora = args.Length > 1 && args[1] == "flora";
         var icons = args.Length > 1 && args[1] == "icons";
+        var water = args.Length > 1 && args[1] == "water";
         var blocks = args.Length > 1 && args[1] == "blocks";
-        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !blocks ? args[1] : "scrapper_male";
+        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks ? args[1] : "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
         // Building the block wall needs Creative: free parts and no build reach.
         _main.Options = LaunchOptions.Offline with { Seed = 7, GameMode = blocks ? Core.Survival.GameMode.Creative : LaunchOptions.Offline.GameMode };
@@ -61,6 +64,11 @@ public partial class CaptureScene : Node
         if (icons)
         {
             IconShots();
+            return;
+        }
+        if (water)
+        {
+            WaterShots(quick: args.Length > 2 && args[2] == "quick");
             return;
         }
         if (blocks)
@@ -286,6 +294,55 @@ public partial class CaptureScene : Node
         Shot("ground_41_crash_high", 30, () => View(new Vector3(-30f, 26f, -24f), new Vector3(0f, 0f, 18f)));
         Shot("ground_42_crash_edge", 30, () => View(new Vector3(-26f, 2.5f, 2f), new Vector3(0f, 0.5f, 20f)));
         Shot("ground_43_crash_from_meadow", 30, () => View(new Vector3(-50f, 4f, -30f), new Vector3(0f, 0f, 18f)));
+    }
+
+    // Water review shots: a shore with the sun across the water, every Water quality level, a run of frames for the
+    // motion and the view from under the surface.
+    private void WaterShots(bool quick)
+    {
+        // Towards the sun, so its glints show on the water as they do in the reference.
+        var toSun = new Vector3(0.5f, 0f, 0.866f);
+        Vector3 shore = default;
+        float sea() => _main.Streamer.Generator.SeaLevel;
+        void view(Vector3 from, Vector3 to)
+        {
+            _follow = null;
+            _camera.MakeCurrent();
+            var side = toSun.Cross(Vector3.Up);
+            _camera.GlobalPosition = new Vector3(shore.X, sea(), shore.Z) + toSun * from.Z + side * from.X + Vector3.Up * from.Y;
+            _camera.LookAt(new Vector3(shore.X, sea(), shore.Z) + toSun * to.Z + side * to.X + Vector3.Up * to.Y);
+        }
+        void quality(Quality q) => GameSettings.Apply(GameSettings.Current with { Graphics = GameSettings.Current.Graphics with { Preset = Quality.Custom, Water = q } });
+        Shot("water_00_wait", 60, () => { });
+        Shot("water_00_go", 300, () =>
+        {
+            var g = _main.Streamer.Generator;
+            var level = g.SeaLevel;
+            // Walk out towards the sun until the sea; the shore is the last dry ground before 45 m of open water.
+            for (var t = 0f; t < 3000f; t += 2f)
+            {
+                var p = toSun * t;
+                if (g.HeightAt(p.X, p.Z) > level + 0.2f)
+                    shore = new Vector3(p.X, g.HeightAt(p.X, p.Z), p.Z);
+                else if (shore != default && Enumerable.Range(1, 9).All(i => g.HeightAt(p.X + toSun.X * i * 5f, p.Z + toSun.Z * i * 5f) < level - 1f))
+                    break;
+            }
+            Go(shore);
+            _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, shore - toSun * 6f + Vector3.Up * 0.3f, 0f);
+        });
+        Shot("water_01_shore", 40, () => { quality(Quality.High); _main.Flora.BuildAll(); view(new Vector3(-2f, 5f, -4f), new Vector3(0f, 0f, 14f)); });
+        Shot("water_03_wide", 30, () => view(new Vector3(-18f, 22f, -16f), new Vector3(0f, 0f, 22f)));
+        Shot("water_04_waterline", 30, () => view(new Vector3(-1.5f, 1.2f, 3f), new Vector3(1.5f, 0f, 8f)));
+        Shot("water_02_eye_level", 30, () => view(new Vector3(0f, 1.7f, -1f), new Vector3(0f, 0.2f, 30f)));
+        if (quick)
+            return;
+        Shot("water_05_across", 30, () => view(new Vector3(6f, 3f, 30f), new Vector3(0f, 0f, 0f)));
+        foreach (var q in new[] { Quality.Low, Quality.Medium, Quality.High })
+            Shot($"water_10_level_{(int)q}_{q}", 30, () => { quality(q); view(new Vector3(-2f, 5f, -4f), new Vector3(0f, 0f, 14f)); });
+        for (var i = 0; i < 16; i++)
+            Shot($"water_20_motion_{i:00}", 3, () => view(new Vector3(-1f, 3.5f, -1f), new Vector3(0f, 0f, 10f)));
+        Shot("water_30_underwater", 30, () => view(new Vector3(0f, -1.2f, 18f), new Vector3(0f, -0.8f, 40f)));
+        Shot("water_31_up_from_under", 30, () => view(new Vector3(0f, -1.5f, 18f), new Vector3(0f, 2f, 24f)));
     }
 
     private Vector3 Find(Func<Vector2, bool> ok)
