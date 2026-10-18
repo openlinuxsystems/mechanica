@@ -105,7 +105,8 @@ public partial class ForestryTest : StagedTest
         Add("the shaking settles", frame => frame > 10 && HostWorld.ChunkHolding(_tree.Id)!.Shaking == 0 && ClientWorld.ChunkHolding(_tree.Id)!.Shaking == 0);
         Add("the felled tree falls as Birch Logs on both peers", frame =>
         {
-            if (frame % 45 == 0 && !HostWorld.State.IsDestroyed(_tree.Id))
+            // One swing per sledge.swing_seconds (1 s), the first a second after the blow above.
+            if (frame % 75 == 40 && !HostWorld.State.IsDestroyed(_tree.Id))
                 Swing(new SledgeArgs(Object: _tree.Id.ToString(), At: Trunk()));
             if (!HostWorld.State.IsDestroyed(_tree.Id) || !ClientWorld.State.IsDestroyed(_tree.Id))
                 return frame > 1000 ? Fail($"the tree never fell ({string.Join("; ", _results)})") : false;
@@ -140,11 +141,12 @@ public partial class ForestryTest : StagedTest
             var hostLog = _host.Main.Creations.Find(_log);
             if (frame == 0)
             {
+                _results.Clear();
                 var at = Body(_host, _log).GlobalPosition;
                 _host.Main.PlayerSync.HostTeleport(_client.Peer, new Vector3(at.X, HostWorld.Generator.HeightAt(at.X, at.Z + 1.2f) + 0.3f, at.Z + 1.2f), 0f);
                 return false;
             }
-            if (frame > 60 && frame % 45 == 0 && hostLog is not null)
+            if (frame >= 75 && frame % 75 == 0 && hostLog is not null)
             {
                 var at = Body(_host, _log).GlobalPosition;
                 Swing(new SledgeArgs(Creation: _log, Part: hostLog.Parts.First().Id, At: new Core.Data.Vec3(at.X, at.Y, at.Z)));
