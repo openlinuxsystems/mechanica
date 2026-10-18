@@ -111,7 +111,7 @@ def render_all(rig, out: Path, build):
     strips = []
     cam = rl.camera("Clip", (2.2, 1.0, 0.9), (0, -0.2, -0.05), lens=50)
     for clip, times in (("enter", (0.0, 0.05, 0.1, 0.2, 0.4, 0.8)), ("exit", (0.0, 0.06, 0.12, 0.25, 0.45, 0.7)),
-                        ("seated_rattle", (0.0, 0.03, 0.07, 0.1, 0.13, 0.17))):
+                        ("seated_rattle_loop", (0.0, 0.03, 0.07, 0.1, 0.13, 0.17))):
         frames = []
         for t in times:
             build.pose(rig, clip, t)
@@ -150,7 +150,7 @@ def render_all(rig, out: Path, build):
     for clip, frames in strips:
         d.text((980, y - 34), {"enter": "ENTER (0.8 s): cushions sink, frame rattles, pallet creaks",
                                "exit": "EXIT (0.7 s): cushions spring back, last rattle",
-                               "seated_rattle": "SEATED WITH AN ENGINE RUNNING (2 s loop): low rattle"}[clip], fill=INK, font=head_f)
+                               "seated_rattle_loop": "SEATED WITH AN ENGINE RUNNING (2 s loop): low rattle"}[clip], fill=INK, font=head_f)
         for i, (t, p) in enumerate(frames):
             im = Image.open(p).convert("RGB").resize((300, 225), Image.LANCZOS)
             sheet.paste(im, (980 + i * 305, y))

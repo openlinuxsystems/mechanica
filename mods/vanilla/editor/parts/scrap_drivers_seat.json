@@ -3,7 +3,7 @@
   "model": [
     {
       "kind": "mesh",
-      "mesh": "meshes/scrap_drivers_seat.glb"
+      "mesh": "meshes/parts/scrap_drivers_seat.glb"
     }
   ]
 }

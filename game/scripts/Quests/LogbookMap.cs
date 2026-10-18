@@ -56,6 +56,9 @@ public partial class LogbookMap : Control
     /// <summary>The local player's feet and compass heading in degrees, or null. Set before adding to the tree.</summary>
     public Func<(Vector3 Feet, float Heading)?> Player { get; init; } = () => null;
 
+    /// <summary>True to name quest goals on the map too, not only the player's own markers and the primary waypoint.</summary>
+    public bool LabelQuests { get; init; }
+
     /// <summary>Where the map looks; kept for as long as the map lives.</summary>
     public MapView? View { get; private set; }
 
@@ -218,35 +221,56 @@ public partial class LogbookMap : Control
         DrawScale(view);
 
         var primary = Primary();
-        var time = Time.GetTicksMsec() / 1000f;
-        var pulse = 0.6f + 0.4f * Mathf.Sin(time * Mathf.Tau);
+        var pulse = Pulse();
         foreach (var (waypoint, kind) in Marks().OrderBy(m => m.Waypoint.Id == primary))
         {
             var at = ScreenOf(waypoint.Position.ToGodot());
             var isPrimary = waypoint.Id == primary;
-            var r = isPrimary ? 9f : kind == LogbookMarkKind.Place ? 5f : 7f;
-            var colour = isPrimary ? UiTokens.Cyan with { A = pulse }
-                : kind == LogbookMarkKind.Quest ? UiTokens.Blue.Lightened(0.3f * pulse)
-                : UiTokens.Blue;
-            if (isPrimary || kind == LogbookMarkKind.Quest)
-                r *= 0.9f + 0.2f * pulse;
-            Vector2[] diamond = [at + new Vector2(0, -r - 2), at + new Vector2(r + 2, 0), at + new Vector2(0, r + 2), at + new Vector2(-r - 2, 0)];
-            DrawColoredPolygon(diamond, UiTokens.DeepNavy);
-            DrawColoredPolygon([at + new Vector2(0, -r), at + new Vector2(r, 0), at + new Vector2(0, r), at + new Vector2(-r, 0)], colour);
-            if (kind == LogbookMarkKind.Own || isPrimary)
+            var r = DrawPin(this, at, kind, isPrimary, pulse);
+            if (kind == LogbookMarkKind.Own || isPrimary || (LabelQuests && kind == LogbookMarkKind.Quest))
                 DrawLabel(waypoint.Name, at + new Vector2(r + 6, 5));
         }
 
         if (Player() is { } me)
-        {
-            // The player: a cyan arrow pointing the way they face (heading 0 is north, up the map).
-            var at = ScreenOf(me.Feet);
-            var turn = Mathf.DegToRad(me.Heading);
-            Vector2 Rotate(Vector2 v) => v.Rotated(turn);
-            Vector2[] arrow = [at + Rotate(new(0, -10)), at + Rotate(new(7, 8)), at + Rotate(new(0, 4)), at + Rotate(new(-7, 8))];
-            DrawColoredPolygon([.. arrow.Select(p => at + (p - at) * 1.3f)], UiTokens.DeepNavy);
-            DrawColoredPolygon(arrow, UiTokens.Cyan);
-        }
+            DrawPlayer(this, ScreenOf(me.Feet), me.Heading);
+    }
+
+    /// <summary>0.2 to 1 and back once a second, for the pulsing quest goals.</summary>
+    public static float Pulse() => 0.6f + 0.4f * Mathf.Sin(Time.GetTicksMsec() / 1000f * Mathf.Tau);
+
+    /// <summary>
+    /// Draws a map pin at <paramref name="at"/> on <paramref name="canvas"/>: a diamond with a navy rim, cyan and pulsing
+    /// for the primary waypoint, pulsing blue for a quest goal, blue otherwise (smaller for a place found). Returns its radius.
+    /// </summary>
+    public static float DrawPin(CanvasItem canvas, Vector2 at, LogbookMarkKind kind, bool primary, float pulse, float scale = 1f)
+    {
+        var r = (primary ? 9f : kind == LogbookMarkKind.Place ? 5f : 7f) * scale;
+        var colour = primary ? UiTokens.Cyan with { A = pulse }
+            : kind == LogbookMarkKind.Quest ? UiTokens.Blue.Lightened(0.3f * pulse)
+            : UiTokens.Blue;
+        if (primary || kind == LogbookMarkKind.Quest)
+            r *= 0.9f + 0.2f * pulse;
+        Vector2[] diamond = [at + new Vector2(0, -r - 2), at + new Vector2(r + 2, 0), at + new Vector2(0, r + 2), at + new Vector2(-r - 2, 0)];
+        canvas.DrawColoredPolygon(diamond, UiTokens.DeepNavy);
+        canvas.DrawColoredPolygon([at + new Vector2(0, -r), at + new Vector2(r, 0), at + new Vector2(0, r), at + new Vector2(-r, 0)], colour);
+        return r;
+    }
+
+    /// <summary>Draws the player: a cyan arrow pointing the way they face (heading 0 is north, up the map).</summary>
+    public static void DrawPlayer(CanvasItem canvas, Vector2 at, float heading)
+    {
+        var turn = Mathf.DegToRad(heading);
+        Vector2 Rotate(Vector2 v) => v.Rotated(turn);
+        Vector2[] arrow = [at + Rotate(new(0, -10)), at + Rotate(new(7, 8)), at + Rotate(new(0, 4)), at + Rotate(new(-7, 8))];
+        canvas.DrawColoredPolygon([.. arrow.Select(p => at + (p - at) * 1.3f)], UiTokens.DeepNavy);
+        canvas.DrawColoredPolygon(arrow, UiTokens.Cyan);
+    }
+
+    /// <summary>Draws <paramref name="text"/> in white with a navy outline, readable over any part of the map.</summary>
+    public static void DrawLabel(CanvasItem canvas, Font font, string text, Vector2 at, int size = 13)
+    {
+        canvas.DrawStringOutline(font, at, text, HorizontalAlignment.Left, -1, size, 4, UiTokens.DeepNavy);
+        canvas.DrawString(font, at, text, HorizontalAlignment.Left, -1, size, UiTokens.Text);
     }
 
     // Asks for a sharper picture once the view has held still.
@@ -311,11 +335,7 @@ public partial class LogbookMap : Control
         DrawLabel(metres >= 1000 ? Loc.T("{0} km", metres / 1000) : Loc.T("{0} m", metres), from + new Vector2(0, -8));
     }
 
-    private void DrawLabel(string text, Vector2 at)
-    {
-        DrawStringOutline(_font, at, text, HorizontalAlignment.Left, -1, 13, 4, UiTokens.DeepNavy);
-        DrawString(_font, at, text, HorizontalAlignment.Left, -1, 13, UiTokens.Text);
-    }
+    private void DrawLabel(string text, Vector2 at) => DrawLabel(this, _font, text, at);
 
     private void DrawCentred(string text, Vector2 at, Color colour)
     {

@@ -38,6 +38,9 @@ public sealed record LogbookSettings
     /// <summary>Longest marker name, in characters.</summary>
     public int MarkerNameLength { get; init; } = 32;
 
+    /// <summary>The minimap's zoom, in metres per screen pixel.</summary>
+    public float MinimapMetresPerPixel { get; init; } = 2f;
+
     /// <summary>Reads <paramref name="json"/>; throws <see cref="FormatException"/> on bad data.</summary>
     public static LogbookSettings Parse(string json)
     {
@@ -58,6 +61,8 @@ public sealed record LogbookSettings
             throw new FormatException("min_metres_per_pixel, contour_interval and pick_radius must be above zero, zoom_step above 1 and detail_delay_seconds 0 or more.");
         if (settings.MaxMarkers < 1 || settings.MarkerNameLength < 1)
             throw new FormatException("max_markers and marker_name_length must be at least 1.");
+        if (!(settings.MinimapMetresPerPixel > 0) || !float.IsFinite(settings.MinimapMetresPerPixel))
+            throw new FormatException("minimap_metres_per_pixel must be above zero.");
         return settings;
     }
 }

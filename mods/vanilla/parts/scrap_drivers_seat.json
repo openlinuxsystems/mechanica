@@ -11,7 +11,7 @@
   "stack_size": 5,
   "sound_material": "scrap",
   "size": [4, 4, 6],
-  "mesh": "meshes/scrap_drivers_seat.glb",
+  "mesh": "meshes/parts/scrap_drivers_seat.glb",
   "icon": "textures/items/scrap_drivers_seat_icon.png",
   "visual": {
     "color": "#ffffff",
@@ -39,18 +39,9 @@
     "offset": [0, -0.355, 0.4]
   },
   "display": {
-    "clips": [
-      {
-        "readout": "seated",
-        "on": "enter",
-        "off": "exit",
-        "loop": "seated"
-      },
-      {
-        "readout": "rattle",
-        "loop": "seated_rattle"
-      }
-    ]
+    "clips": {
+      "readout": "clip"
+    }
   },
   "properties": {
     "steer_angle": 22,

@@ -30,6 +30,7 @@ public class LogbookTests
     [InlineData("""{ "map_resolution": 4 }""", "map_resolution")]
     [InlineData("""{ "max_markers": 0 }""", "max_markers")]
     [InlineData("""{ "pick_radius": 0 }""", "pick_radius")]
+    [InlineData("""{ "minimap_metres_per_pixel": 0 }""", "minimap_metres_per_pixel")]
     public void BadSettingsSayWhatIsWrong(string json, string field) =>
         Assert.Contains(field, Assert.Throws<FormatException>(() => LogbookSettings.Parse(json)).Message);
 

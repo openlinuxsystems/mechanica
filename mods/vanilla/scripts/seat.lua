@@ -3,11 +3,14 @@
 -- degrees, at properties.steer_speed rad/s with at most properties.steer_torque N·m. When the seat is empty
 -- the output is 0 and the wheels straighten. A steering bearing's "drive" display turns while it steers.
 -- Its "seated" display is 1 while someone sits in it, and "rattle" is 1 while they do and an engine of the
--- Creation shows "running" (a seat whose model has clips sags, settles and rattles with them). A seat that binds a
+-- Creation shows "running". Its "clip" display names the model clip to play (part data display.clips): "enter" as
+-- someone sits, then "seated_loop", or "seated_rattle_loop" while an engine runs, and "exit" as they get up; a model
+-- without those clips ignores it. ENTER_TIME is how long "enter" plays before the loop takes over. A seat that binds a
 -- "creak" sound creaks now and then while someone sits in it, twice as often while an engine runs.
 
 local RESEND = 30
 local ENGINE_EVERY = 10
+local ENTER_TIME = 0.8
 
 local function steering(id, up)
   local joint = creation.joint(id)
@@ -78,6 +81,28 @@ local function show(id, on)
   end
 end
 
+-- Plays a model clip; the count after "#" restarts a clip shown again.
+local function clip(name)
+  state.clips = (state.clips or 0) + 1
+  state.clip = name
+  part.display("clip", name .. "#" .. state.clips)
+end
+
+local function clips(seated)
+  local was = state.shown.seated
+  if seated and not was then
+    clip("enter")
+    state.settled = world.time() + ENTER_TIME
+  elseif was and not seated then
+    clip("exit")
+  elseif seated and world.time() >= state.settled then
+    local loop = state.engines and "seated_rattle_loop" or "seated_loop"
+    if state.clip ~= loop then
+      clip(loop)
+    end
+  end
+end
+
 function on_create()
   state.steer = state.steer or {}
   state.shown = {}
@@ -98,6 +123,7 @@ function on_update(dt)
   state.throttle = math.max(-1, math.min(1, z))
   steer(math.max(-1, math.min(1, x)))
   local seated = part.occupant() ~= nil
+  clips(seated)
   show("seated", seated)
   if not seated then
     state.engines = false

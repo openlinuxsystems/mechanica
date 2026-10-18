@@ -2,22 +2,8 @@
   "format_version": 1,
   "model": [
     {
-      "kind": "cylinder",
-      "radius": 0.115,
-      "height": 0.1,
-      "position": [0, -0.075, 0]
-    },
-    {
-      "kind": "cylinder",
-      "radius": 0.07,
-      "height": 0.06,
-      "position": [0, 0, 0]
-    },
-    {
-      "kind": "cylinder",
-      "radius": 0.105,
-      "height": 0.09,
-      "position": [0, 0.08, 0]
+      "kind": "mesh",
+      "mesh": "meshes/parts/bearing.glb"
     }
   ]
 }

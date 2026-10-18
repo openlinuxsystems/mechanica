@@ -248,6 +248,8 @@ public partial class CreationNode : Node3D
         {
             if (!link.IsLocked && BuildJoint(link) is { } joint)
                 _joints.Add(joint);
+            if (!link.IsLocked)
+                MoveJointMeshes(link);
         }
         if (_visualOffset != Vector3.Zero)
             ApplyVisualOffset();
@@ -303,9 +305,8 @@ public partial class CreationNode : Node3D
             // The meshes and light hang off a model node, which an animated part's script turns.
             var shown = new Node3D { Name = "Model" };
             visual.AddChild(shown);
-            // A part whose display plays clips shows its whole mesh scene, so its clips can move its pieces.
-            var scene = definition.Display?.Clips is { Count: > 0 } ? Assets.AnimatedModelFor(part.Part, definition, part.Color) : null;
-            if (scene is not null)
+            // A part that plays its own clips shows its whole glTF scene; any other, its meshes.
+            if (definition.Display?.Clips is not null && Assets.SceneFor(part.Part, definition, part.Color) is { } scene)
                 shown.AddChild(scene);
             else
             {
@@ -323,7 +324,7 @@ public partial class CreationNode : Node3D
             if (definition.Soil is not null)
                 _soils.Add(id);
             if (definition.Display is not null)
-                _displays.Add(new PartDisplayVisual(Creation.Id, id, definition, visual, shown, scene));
+                _displays.Add(new PartDisplayVisual(Creation.Id, id, definition, visual, shown));
             _partNodes[id] = visual;
             node.AddChild(visual);
             _visuals.Add((node, visual, placed));
@@ -395,6 +396,27 @@ public partial class CreationNode : Node3D
         var up = MathF.Abs(forward.Dot(Vector3.Up)) > 0.99f ? Vector3.Back : Vector3.Up;
         lamp.Transform = new Transform3D(Basis.LookingAt(forward, up), at);
         return lamp;
+    }
+
+    // The joint part's meshes named after its joint socket (a bearing's turning half) go onto the body on the socket's
+    // far side, where they stay as they are now, so they turn with what is attached there.
+    private void MoveJointMeshes(JointLink link)
+    {
+        var c = link.Connection;
+        if (c.ASocket is not { } socket || !_partNodes.TryGetValue(c.A, out var visual) || visual.GetNodeOrNull<Node3D>("Model") is not { } model)
+            return;
+        var a = _bodies[link.BodyA];
+        var b = _bodies[link.BodyB];
+        foreach (var mesh in model.GetChildren().OfType<MeshInstance3D>().Where(m => m.Name == socket).ToList())
+        {
+            var placed = b.Transform.AffineInverse() * a.Transform * visual.Transform * model.Transform * mesh.Transform;
+            model.RemoveChild(mesh);
+            var holder = new Node3D { Name = $"Part{c.A}{socket}", Transform = placed };
+            mesh.Transform = Transform3D.Identity;
+            holder.AddChild(mesh);
+            b.AddChild(holder);
+            _visuals.Add((b, holder, placed));
+        }
     }
 
     private static string JointName(Connection c) => $"Joint{c.A}_{c.B}";

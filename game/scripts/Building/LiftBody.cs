@@ -141,7 +141,7 @@ public partial class LiftBody : StaticBody3D
         }
         _model.Name = "Model";
         AddChild(_model);
-        if (PartAssets.FindPlayer(_model) is { } player)
+        if (FindPlayer(_model) is { } player)
         {
             _deploy = player.HasAnimation("deploy") ? player.GetAnimation("deploy") : null;
             _extend = player.HasAnimation("extend") ? player.GetAnimation("extend") : null;
@@ -154,6 +154,19 @@ public partial class LiftBody : StaticBody3D
         if (_columnDrive is null)
             _deploy = null;
         CollectLights(_model);
+    }
+
+    /// <summary>The first <see cref="AnimationPlayer"/> at or under <paramref name="node"/>, or null.</summary>
+    public static AnimationPlayer? FindPlayer(Node node)
+    {
+        if (node is AnimationPlayer player)
+            return player;
+        foreach (var child in node.GetChildren())
+        {
+            if (FindPlayer(child) is { } found)
+                return found;
+        }
+        return null;
     }
 
     // Each Lift gets its own copy of the light material, so its lights flash on their own.
@@ -268,7 +281,7 @@ public partial class LiftBody : StaticBody3D
     {
         if (assets.InstantiateScene(settings.Model, Identifiers.VanillaModId) is not { } model)
             return null;
-        if (PartAssets.FindPlayer(model) is { } player)
+        if (FindPlayer(model) is { } player)
         {
             if (player.HasAnimation("deploy") && player.GetAnimation("deploy") is { } deploy)
                 PoseAt(model, deploy, deployed ? deploy.Length : 0);

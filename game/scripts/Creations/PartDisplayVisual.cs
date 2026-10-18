@@ -10,8 +10,8 @@ namespace Mechanica.Game.Creations;
 /// above it (green while its readout is on, gray while off) when it has links and the Connect Tool is put away; a thin
 /// cyan bar along it that fills with its readout while the Connect Tool is out; a faint blue particle glow whose
 /// strength (size and brightness) follows its readout; a highlight turning about its joint while its readout is not 0; and its model pushed
-/// in while its readout is on; and clips of its own mesh played as readouts change (<see cref="DisplayDefinition.Clips"/>).
-/// Every part of it is drawn from <see cref="PartReadouts"/>, the same on every peer.
+/// in while its readout is on; the clips of its model that its readouts name, and particle effects (smoke, sparks, drops)
+/// whose strength follows a readout. Every part of it is drawn from <see cref="PartReadouts"/>, the same on every peer.
 /// </summary>
 public sealed class PartDisplayVisual
 {
@@ -33,11 +33,11 @@ public sealed class PartDisplayVisual
     private readonly MeshInstance3D? _barFill;
     private readonly CpuParticles3D? _glow;
     private readonly Node3D? _highlight;
+    private readonly AnimationPlayer? _player;
+    private readonly List<(ScrubDefinition Scrub, AnimationPlayer Player, Animation Clip)> _scrubs = [];
+    private readonly List<(EffectDefinition Effect, CpuParticles3D Particles, Color Colour)> _effects = [];
+    private string? _clipValue;
     private float _pressed;
-    private readonly AnimationPlayer? _clips;
-    private readonly List<(Node3D Node, Transform3D Made)> _rest = [];
-    private bool[]? _clipOn;
-    private string? _oneShot;
 
     /// <summary>The part.</summary>
     public int Part { get; }
@@ -63,14 +63,17 @@ public sealed class PartDisplayVisual
     /// <summary>How far in the model is pushed, 0 to 1.</summary>
     public float Pressed => _pressed;
 
-    /// <summary>The clip the model plays now, or null while it rests (for tests).</summary>
-    public string? Clip => _clips is { } player && player.IsPlaying() ? player.CurrentAnimation : null;
+    /// <summary>The clip the model plays now, or null when none was named.</summary>
+    public string? Clip { get; private set; }
 
-    /// <summary>
-    /// Builds the visuals under <paramref name="part"/> (the placed part's node) for <paramref name="definition"/>.
-    /// <paramref name="scene"/> is the part's mesh scene when it plays clips (<see cref="PartAssets.AnimatedModelFor"/>).
-    /// </summary>
-    public PartDisplayVisual(int creation, int partId, PartDefinition definition, Node3D part, Node3D model, Node3D? scene = null)
+    /// <summary>The model's player, when the part plays clips (for tests).</summary>
+    public AnimationPlayer? Player => _player;
+
+    /// <summary>Each effect's particles, in <see cref="DisplayDefinition.Effects"/> order.</summary>
+    public IReadOnlyList<CpuParticles3D> Effects => [.. _effects.Select(e => e.Particles)];
+
+    /// <summary>Builds the visuals under <paramref name="part"/> (the placed part's node) for <paramref name="definition"/>.</summary>
+    public PartDisplayVisual(int creation, int partId, PartDefinition definition, Node3D part, Node3D model)
     {
         _creation = creation;
         Part = partId;
@@ -148,11 +151,83 @@ public sealed class PartDisplayVisual
             pivot.AddChild(_highlight);
             part.AddChild(pivot);
         }
-        if (_display.Clips is { Count: > 0 } && scene is not null && PartAssets.FindPlayer(scene) is { } player)
+        if (_display.Clips is { } clips && model.FindChildren("*", nameof(AnimationPlayer), owned: false).OfType<AnimationPlayer>().FirstOrDefault() is { } player)
         {
-            _clips = player;
-            Remember(scene);
+            _player = player;
+            foreach (var name in player.GetAnimationList())
+            {
+                if (name.EndsWith("_loop", StringComparison.Ordinal))
+                    player.GetAnimation(name).LoopMode = Animation.LoopModeEnum.Linear;
+            }
+            // Each scrubbed clip gets a player of its own beside the model's, so it holds alongside the played clip.
+            foreach (var scrub in clips.Scrub ?? [])
+            {
+                if (scrub.Clip is not { } name || !player.HasAnimation(name))
+                    continue;
+                var library = new AnimationLibrary();
+                library.AddAnimation(name, player.GetAnimation(name));
+                var own = new AnimationPlayer { Name = $"Scrub{_scrubs.Count}", RootNode = player.RootNode };
+                own.AddAnimationLibrary("", library);
+                player.GetParent().AddChild(own);
+                _scrubs.Add((scrub, own, player.GetAnimation(name)));
+            }
         }
+        foreach (var effect in _display.Effects ?? [])
+        {
+            var particles = Effect(effect, out var colour);
+            part.AddChild(particles);
+            _effects.Add((effect, particles, colour));
+        }
+    }
+
+    // The particles of one effect, stopped; Apply starts them and sets their strength.
+    private static CpuParticles3D Effect(EffectDefinition effect, out Color colour)
+    {
+        var kind = effect.Kind ?? EffectKind.Smoke;
+        colour = HexColor.TryParse(effect.Color, out var c) ? new Color(c.R, c.G, c.B)
+            : kind switch { EffectKind.Sparks => new Color(1f, 0.82f, 0.45f), EffectKind.Drops => new Color(0.06f, 0.05f, 0.04f), _ => new Color(0.17f, 0.16f, 0.15f) };
+        var particles = new CpuParticles3D
+        {
+            Name = $"Effect{kind}", Emitting = false, LocalCoords = false,
+            Position = (effect.Offset ?? Vec3.Zero).ToGodot(), Direction = Direction(effect.Direction, Vector3.Up),
+            Color = colour,
+        };
+        var additive = kind == EffectKind.Sparks;
+        float size;
+        switch (kind)
+        {
+            case EffectKind.Sparks:
+                (particles.Amount, particles.Lifetime, particles.Spread) = (14, 0.35, 55);
+                (particles.InitialVelocityMin, particles.InitialVelocityMax, particles.Gravity) = (1f, 2.2f, new Vector3(0, -9.8f, 0));
+                size = 0.018f;
+                break;
+            case EffectKind.Drops:
+                (particles.Amount, particles.Lifetime, particles.Spread) = (6, 0.7, 8);
+                (particles.InitialVelocityMin, particles.InitialVelocityMax, particles.Gravity) = (0.05f, 0.25f, new Vector3(0, -9.8f, 0));
+                size = 0.014f;
+                break;
+            default:
+                (particles.Amount, particles.Lifetime, particles.Spread) = (28, 1.4, 14);
+                (particles.InitialVelocityMin, particles.InitialVelocityMax, particles.Gravity) = (0.35f, 0.7f, new Vector3(0, 0.35f, 0));
+                particles.DampingMin = particles.DampingMax = 0.4f;
+                particles.ScaleAmountCurve = new Curve();
+                particles.ScaleAmountCurve.AddPoint(new Vector2(0, 0.35f));
+                particles.ScaleAmountCurve.AddPoint(new Vector2(1, 1f));
+                size = 0.12f;
+                break;
+        }
+        particles.Mesh = new QuadMesh
+        {
+            Size = new Vector2(size, size),
+            Material = new StandardMaterial3D
+            {
+                ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
+                BlendMode = additive ? BaseMaterial3D.BlendModeEnum.Add : BaseMaterial3D.BlendModeEnum.Mix,
+                Transparency = BaseMaterial3D.TransparencyEnum.Alpha, BillboardMode = BaseMaterial3D.BillboardModeEnum.Particles,
+                VertexColorUseAsAlbedo = true, AlbedoTexture = Dot(),
+            },
+        };
+        return particles;
     }
 
     /// <summary>Shows the part as <paramref name="readouts"/> say, <paramref name="delta"/> seconds after the last time.</summary>
@@ -194,6 +269,38 @@ public sealed class PartDisplayVisual
             if (on)
                 _highlight.RotateY(HighlightSpin * Math.Sign(Value(_display.Highlight.Readout)) * (float)delta);
         }
+        if (_player is not null)
+        {
+            var value = readouts.Text(_creation, Part, _display.Clips!.Readout!);
+            if (value != _clipValue)
+            {
+                _clipValue = value;
+                var name = value?.Split('#')[0];
+                if (name is not null && _player.HasAnimation(name))
+                {
+                    Clip = name;
+                    _player.Stop();
+                    _player.Play(name);
+                }
+            }
+            foreach (var (scrub, player, clip) in _scrubs)
+            {
+                var at = Math.Clamp(Value(scrub.Readout), 0f, 1f) * (float)clip.Length;
+                if (player.CurrentAnimation != scrub.Clip!)
+                    player.Play(scrub.Clip!);
+                player.Pause();
+                player.Seek(at, update: true);
+            }
+        }
+        foreach (var (effect, particles, colour) in _effects)
+        {
+            var power = Math.Clamp(Value(effect.Readout), 0f, 1f);
+            particles.Emitting = power > 0.01f;
+            particles.SpeedScale = 0.6 + 0.6 * power;
+            particles.ScaleAmountMin = 0.5f + 0.4f * power;
+            particles.ScaleAmountMax = 0.7f + 0.6f * power;
+            particles.Color = colour with { A = effect.Kind == EffectKind.Sparks ? 1f : 0.3f + 0.5f * power };
+        }
         if (_display.Press is { } press)
         {
             var target = Value(press.Readout) != 0 ? 1f : 0f;
@@ -201,67 +308,6 @@ public sealed class PartDisplayVisual
             var push = Direction(press.Axis, Vector3.Down) * (press.Depth ?? 0.02f) * _pressed;
             _model.Position = (animated ? _model.Position : Vector3.Zero) + push;
         }
-        if (_clips is not null)
-            PlayClips(Value);
-    }
-
-    // One clip at a time: a one-shot (on or off) as its readout changes, otherwise the loop of the last entry that is on.
-    private void PlayClips(Func<string?, float> value)
-    {
-        var clips = _display.Clips!;
-        var player = _clips!;
-        var first = _clipOn is null;
-        _clipOn ??= new bool[clips.Count];
-        for (var i = 0; i < clips.Count; i++)
-        {
-            var on = value(clips[i].Readout) != 0;
-            if (on == _clipOn[i])
-                continue;
-            _clipOn[i] = on;
-            // A part that comes into view already on just loops; it did not just change.
-            if (!first && (on ? clips[i].On : clips[i].Off) is { } shot && player.HasAnimation(shot))
-            {
-                Play(player, shot, loop: false);
-                _oneShot = shot;
-            }
-        }
-        if (_oneShot is not null && player.IsPlaying() && player.CurrentAnimation == _oneShot)
-            return;
-        _oneShot = null;
-        string? loop = null;
-        for (var i = clips.Count - 1; i >= 0 && loop is null; i--)
-        {
-            if (_clipOn[i] && clips[i].Loop is { } name && player.HasAnimation(name))
-                loop = name;
-        }
-        if (loop is not null)
-        {
-            if (!player.IsPlaying() || player.CurrentAnimation != loop)
-                Play(player, loop, loop: true);
-        }
-        else if (player.IsPlaying() || player.CurrentAnimation != "")
-        {
-            // Nothing to show: back to the model as it was made.
-            player.Stop();
-            foreach (var (node, made) in _rest)
-                node.Transform = made;
-        }
-    }
-
-    private static void Play(AnimationPlayer player, string clip, bool loop)
-    {
-        player.GetAnimation(clip).LoopMode = loop ? Animation.LoopModeEnum.Linear : Animation.LoopModeEnum.None;
-        player.Stop();
-        player.Play(clip);
-    }
-
-    // Every node's transform as the file has it, to rest on when no clip plays.
-    private void Remember(Node node)
-    {
-        if (node is Node3D n)
-            _rest.Add((n, n.Transform));
-        foreach (var child in node.GetChildren())
-            Remember(child);
     }
 
     private static Vector3 Direction(Vec3? v, Vector3 fallback) => v is { } d ? d.ToGodot().Normalized() : fallback;

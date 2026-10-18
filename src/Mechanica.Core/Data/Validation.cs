@@ -56,7 +56,6 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
 {
     private const string Code = DiagnosticCodes.PartInvalid;
     private const float Epsilon = 1e-4f;
-    private const int MaxClipName = 64;
 
     public void Validate(PartDefinition part, DiagnosticSink sink)
     {
@@ -626,20 +625,35 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
         if (display.Clips is { } clips)
         {
             if (part.Mesh is null)
-                sink.Error(Code, $"{p}.clips", "clips play animations of the part's mesh, so the part needs a mesh.");
-            for (var i = 0; i < clips.Count; i++)
+                sink.Error(Code, $"{p}.clips", "clips play the part's own model, so the part needs a mesh.");
+            Readout(clips.Readout, $"{p}.clips");
+            if (clips.Scrub?.Count > ClipsDefinition.MaxScrubs)
+                sink.Error(Code, $"{p}.clips.scrub", $"a part scrubs at most {ClipsDefinition.MaxScrubs} clips.");
+            for (var i = 0; i < (clips.Scrub?.Count ?? 0); i++)
             {
-                var path = $"{p}.clips[{i}]";
-                Readout(clips[i].Readout, path);
-                if (clips[i].On is null && clips[i].Off is null && clips[i].Loop is null)
-                    sink.Error(Code, path, "a clip entry names at least one of on, off and loop.");
-                foreach (var (name, key) in new[] { (clips[i].On, "on"), (clips[i].Off, "off"), (clips[i].Loop, "loop") })
-                {
-                    if (name is not null && (name.Length is 0 or > MaxClipName || name.Any(char.IsControl)))
-                        sink.Error(Code, $"{path}.{key}", $"{key} names a clip in the mesh (1 to {MaxClipName} characters).");
-                }
-                KnownKeys.WarnUnknown(clips[i].Extra, path, sink, typeof(ClipDefinition));
+                var scrub = clips.Scrub![i];
+                Readout(scrub.Readout, $"{p}.clips.scrub[{i}]");
+                if (string.IsNullOrWhiteSpace(scrub.Clip) || scrub.Clip.Length > 64)
+                    sink.Error(Code, $"{p}.clips.scrub[{i}].clip", "clip must name one of the model's clips (1 to 64 characters).");
+                KnownKeys.WarnUnknown(scrub.Extra, $"{p}.clips.scrub[{i}]", sink, typeof(ScrubDefinition));
             }
+            KnownKeys.WarnUnknown(clips.Extra, $"{p}.clips", sink, typeof(ClipsDefinition));
+        }
+        if (display.Effects?.Count > EffectDefinition.MaxPerPart)
+            sink.Error(Code, $"{p}.effects", $"a part has at most {EffectDefinition.MaxPerPart} effects.");
+        for (var i = 0; i < (display.Effects?.Count ?? 0); i++)
+        {
+            var effect = display.Effects![i];
+            var path = $"{p}.effects[{i}]";
+            Readout(effect.Readout, path);
+            if (effect.Kind is null)
+                sink.Error(Code, $"{path}.kind", $"kind is required: one of {EnumList<EffectKind>()}.");
+            if (!Inside(effect.Offset))
+                sink.Error(Code, $"{path}.offset", "the effect's offset is outside the part's footprint.");
+            if (effect.Direction is { } d && !NonZero(d))
+                sink.Error(Code, $"{path}.direction", "direction must be a non-zero vector.");
+            CheckColor(effect.Color, $"{path}.color", sink);
+            KnownKeys.WarnUnknown(effect.Extra, path, sink, typeof(EffectDefinition));
         }
         KnownKeys.WarnUnknown(display.Extra, p, sink, typeof(DisplayDefinition));
     }

@@ -2,27 +2,27 @@
 
 What it builds (procedurally, from scratch: no .blend inputs, no downloads):
 
-* ``mods/vanilla/meshes/scrap_drivers_seat.glb`` - the seat, 4 x 4 x 6 blocks (1.0 m wide, 1.0 m high, 1.5 m deep),
+* ``mods/vanilla/meshes/parts/scrap_drivers_seat.glb`` - the seat, 4 x 4 x 6 blocks (1.0 m wide, 1.0 m high, 1.5 m deep),
   centred on its origin, facing glTF -Z (the game's forward). A low wooden pallet with light metal corner caps and
   strips; an open frame of bent, lightly rusted gray-brown pipe round the seat and up the back; a puffy olive-tan
   canvas seat pan and backrest with piped seams and a few clean, stitched patches; and in front a crude steering
   wheel of light pipe on a leaning pipe column with a collar, bolted to the pallet on a plate. A small junction box
   with two brass terminals on the pallet is where links plug in. The frame leans a little and the wheel sits a little
   crooked, as built from scrap.
-* Four glTF clips, played by the game from the seat script's "seated" and "rattle" displays (part data
-  ``display.clips``):
+* Four glTF clips, played by the game from the seat script's "clip" display (part data ``display.clips``; names
+  ending in ``_loop`` repeat, the others hold their last frame):
 
   - ``enter`` (0.8 s, once): the cushions sink 1.4 cm (pan) and 1 cm (back) under the driver, the frame rattles and
     dies away, and the pallet creaks down half a centimetre and settles back.
-  - ``seated`` (2 s loop): the cushions stay sunk and breathe a little with the driver.
-  - ``seated_rattle`` (2 s loop, while an engine runs): the same, plus a low rattle of the frame (1 to 3 mm) and a
+  - ``seated_loop`` (2 s): the cushions stay sunk and breathe a little with the driver.
+  - ``seated_rattle_loop`` (2 s, while an engine runs): the same, plus a low rattle of the frame (1 to 3 mm) and a
     fast shiver in the canvas.
   - ``exit`` (0.7 s, once): the cushions spring back, a last rattle, and the pallet creaks.
 
   The nodes the clips move: ``Base`` (the pallet), ``Frame`` (pipe, wheel and column, a child of Base), ``SeatPan``
   and ``Backrest`` (children of Frame). Their rest transforms are the empty seat.
 * ``mods/vanilla/textures/items/scrap_drivers_seat_icon.png`` - the seat's picture for the hotbar, the inventory,
-  the creation hotbar and the Fabricator, 256 x 256 on a clear background, front three-quarter view.
+  the creation hotbar and the Fabricator, 256 x 256 on a clear background, seen from the right and above so the wheel face shows.
 
 Units are metres; in Blender Z is up and the front (the wheel) faces +Y, which the exporter turns into glTF -Z.
 
@@ -59,7 +59,7 @@ import seat_textures as st  # noqa: E402
 from build_lift import Geo, box, cylinder, dome, hexnut, sweep  # noqa: E402
 
 REPO = HERE.parents[1]
-OUT = REPO / "mods" / "vanilla" / "meshes" / "scrap_drivers_seat.glb"
+OUT = REPO / "mods" / "vanilla" / "meshes" / "parts" / "scrap_drivers_seat.glb"
 ICON = REPO / "mods" / "vanilla" / "textures" / "items" / "scrap_drivers_seat_icon.png"
 FPS = 60
 
@@ -567,10 +567,10 @@ def pose(rig, clip, t):
         bump = math.sin(math.pi * min(max(t - 0.03, 0) / 0.42, 1)) * math.exp(-max(t - 0.03, 0) / 0.3)
         base_z = -0.005 * bump
         base_x = 0.002 * bump
-    elif clip in ("seated", "seated_rattle"):
+    elif clip in ("seated_loop", "seated_rattle_loop"):
         pan_scale = 1 - PAN_SINK / (2 * PAN_HALF[2]) * (1 + 0.12 * breath)
         back_scale = 1 - BACK_SINK / (2 * BACK_HALF[1]) * (1 + 0.15 * math.sin(2 * math.pi * t / 2.0 + 0.4))
-        if clip == "seated_rattle":
+        if clip == "seated_rattle_loop":
             # 9, 13 and 7.5 Hz: whole numbers of cycles in the 2 s loop, so it loops seamlessly
             rx, ry, rz = shake(t, math.radians(0.22), 3, (9.0, 13.0, 7.5))
             fr_rot = [rx, ry, rz * 0.6]
@@ -595,7 +595,7 @@ def pose(rig, clip, t):
     back.scale = Vector((1, back_scale, 1))
 
 
-CLIPS = {"enter": 0.8, "seated": 2.0, "seated_rattle": 2.0, "exit": 0.7}
+CLIPS = {"enter": 0.8, "seated_loop": 2.0, "seated_rattle_loop": 2.0, "exit": 0.7}
 
 
 def bake(rig):
@@ -651,11 +651,19 @@ def export(path):
 # =====================================================================================================
 
 def render_icon(path):
-    """The seat alone, front three-quarter (the wheel toward the viewer), on a clear background."""
+    """The seat alone, from the right and above with the wheel face showing, on a clear background."""
     sc = bpy.context.scene
     hidden = [o for o in sc.objects if o.name.startswith("RenderOnly")]
     for o in hidden:
         o.hide_render = True
+    # the baked clips' NLA tracks would pose the seat; the icon shows it at rest
+    muted = [t for o in sc.objects if o.animation_data for t in o.animation_data.nla_tracks if not t.mute]
+    for t in muted:
+        t.mute = True
+    for o in sc.objects:
+        if o.animation_data:
+            o.animation_data.action = None
+    sc.frame_set(0)
     sc.render.engine = "CYCLES"
     sc.cycles.device = "CPU"
     sc.cycles.samples = 96
@@ -683,7 +691,8 @@ def render_icon(path):
     cam.type = "ORTHO"
     cam.ortho_scale = 2.05
     cob = bpy.data.objects.new("IconCam", cam)
-    view = Vector((2.0, 1.7, 1.45)).normalized()      # front right, from above
+    # from the right, a little behind and above: the wheel faces the driver, so from the front it is seen edge-on
+    view = Vector((2.2, -0.4, 1.7)).normalized()
     cob.location = view * 8 + Vector((0, 0, -0.02))
     cob.rotation_euler = (-view).to_track_quat("-Z", "Y").to_euler()
     sc.collection.objects.link(cob)
@@ -711,6 +720,8 @@ def render_icon(path):
         bpy.data.objects.remove(ob)
     for o in hidden:
         o.hide_render = False
+    for t in muted:
+        t.mute = False
     return path
 
 

@@ -5,14 +5,17 @@ namespace Mechanica.Game.Creations;
 
 /// <summary>
 /// One mesh of a part's model, placed relative to the part centre. <see cref="SurfaceMaterials"/>, when
-/// set, overrides each surface's material (from the part's <c>visual</c> data).
+/// set, overrides each surface's material (from the part's <c>visual</c> data). <see cref="Name"/> is its node's name
+/// in the file: a mesh named after one of the part's joint sockets moves with the part joined there.
 /// </summary>
-public sealed record PartMesh(Mesh Mesh, Transform3D Transform, IReadOnlyList<Material?>? SurfaceMaterials = null)
+public sealed record PartMesh(Mesh Mesh, Transform3D Transform, IReadOnlyList<Material?>? SurfaceMaterials = null, string? Name = null)
 {
     /// <summary>A mesh instance showing this mesh with its overrides.</summary>
     public MeshInstance3D Instantiate()
     {
         var instance = new MeshInstance3D { Mesh = Mesh, Transform = Transform };
+        if (Name is not null)
+            instance.Name = Name;
         for (var i = 0; i < (SurfaceMaterials?.Count ?? 0); i++)
             instance.SetSurfaceOverrideMaterial(i, SurfaceMaterials![i]);
         return instance;
@@ -133,54 +136,29 @@ public sealed class PartAssets
     }
 
     /// <summary>
-    /// A new copy of a placed part's whole mesh scene (its nodes and <see cref="AnimationPlayer"/>), for a part whose
-    /// display plays clips (<see cref="DisplayDefinition.Clips"/>). Each mesh shows the same materials as
-    /// <see cref="ModelFor"/> gives it (its visual and <paramref name="paint"/>). Null when the part has no mesh, it does
-    /// not load, or it has no animations.
+    /// A new copy of a part's whole model scene (nodes and its <see cref="AnimationPlayer"/>), for a part that plays its
+    /// clips (<see cref="ClipsDefinition"/>), with its <c>visual</c> data and <paramref name="paint"/> applied as
+    /// <see cref="ModelFor"/> applies them. Its root sits at the part centre. Null when the part has no mesh or it fails to load.
     /// </summary>
-    public Node3D? AnimatedModelFor(string qualifiedId, PartDefinition definition, string? paint = null)
+    public Node3D? SceneFor(string qualifiedId, PartDefinition definition, string? paint = null)
     {
-        var modId = _content?.FindPart(qualifiedId)?.ModId;
-        if (definition.Mesh is not { } path || modId is null || InstantiateScene(path, modId) is not { } scene)
+        if (definition.Mesh is not { } mesh || _content?.FindPart(qualifiedId)?.ModId is not { } modId || InstantiateScene(mesh, modId) is not { } scene)
             return null;
-        var instances = new List<MeshInstance3D>();
-        Gather(scene, instances);
-        var meshes = ModelFor(qualifiedId, definition, paint).Meshes;
-        if (FindPlayer(scene) is null || meshes.Count != instances.Count)
-        {
-            scene.Free();
-            return null;
-        }
-        // Gather walks the scene in the order ReadGltf collected it, so the i-th instance is the i-th mesh.
-        for (var i = 0; i < instances.Count; i++)
-        {
-            for (var s = 0; s < (meshes[i].SurfaceMaterials?.Count ?? 0); s++)
-                instances[i].SetSurfaceOverrideMaterial(s, meshes[i].SurfaceMaterials![s]);
-        }
-        // The root's own transform is the file's placement, not part of the model (as ReadGltf reads it).
         scene.Transform = Transform3D.Identity;
-        return scene;
-    }
-
-    /// <summary>The first <see cref="AnimationPlayer"/> at or under <paramref name="node"/>, or null.</summary>
-    public static AnimationPlayer? FindPlayer(Node node)
-    {
-        if (node is AnimationPlayer player)
-            return player;
-        foreach (var child in node.GetChildren())
+        var color = paint is not null && HexColor.TryParse(paint, out var c) ? new Color(c.R, c.G, c.B) : (Color?)null;
+        foreach (var node in scene.FindChildren("*", nameof(MeshInstance3D), owned: false).OfType<MeshInstance3D>())
         {
-            if (FindPlayer(child) is { } found)
-                return found;
+            if (node.Mesh is null)
+                continue;
+            var part = new PartMesh(node.Mesh, Transform3D.Identity);
+            if (definition.Visual is { } visual)
+                part = ApplyVisual(part, visual, modId);
+            if (color is { } painted)
+                part = Paint(part, painted);
+            for (var i = 0; i < (part.SurfaceMaterials?.Count ?? 0); i++)
+                node.SetSurfaceOverrideMaterial(i, part.SurfaceMaterials![i]);
         }
-        return null;
-    }
-
-    private static void Gather(Node node, List<MeshInstance3D> instances)
-    {
-        if (node is MeshInstance3D { Mesh: not null } instance)
-            instances.Add(instance);
-        foreach (var child in node.GetChildren())
-            Gather(child, instances);
+        return scene;
     }
 
     /// <summary>Uses newly loaded <paramref name="content"/> from now on and forgets everything cached.</summary>
@@ -223,7 +201,7 @@ public sealed class PartAssets
         // The root's own transform is the file's placement, not part of the model.
         var transform = node is Node3D n3 && node.GetParent() is not null ? parent * n3.Transform : parent;
         if (node is MeshInstance3D { Mesh: { } mesh })
-            meshes.Add(new PartMesh(mesh, transform));
+            meshes.Add(new PartMesh(mesh, transform, Name: node.Name));
         foreach (var child in node.GetChildren())
             Collect(child, transform, meshes);
     }
