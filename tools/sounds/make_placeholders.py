@@ -547,7 +547,6 @@ rev("materials", "impact_soft", series("impactSoft_medium", (3, 4), level=0.6), 
 ev("building", "part_attach", lambda rng: edges(peak(mix(0.3, (click(rng, 1800), 0), (thud(rng, 0.25, 80, 1200, 0.03, 0.8), 0.02)), 0.7)), pitch_variation=0.05, **TOOL)
 ev("building", "part_detach", lambda rng: edges(peak(mix(0.3, (glide(900, 300, 0.12) * decay(0.12, 0.04), 0), (click(rng, 1200), 0.05)), 0.7)), pitch_variation=0.05, **TOOL)
 ev("building", "remove_block", lambda rng: edges(peak(mix(0.35, (glide(600, 180, 0.15) * decay(0.15, 0.05), 0), (thud(rng, 0.3, 60, 900, 0.04), 0.03)), 0.75)), pitch_variation=0.06, **TOOL)
-ev("building", "hammer_swing", lambda rng: whoosh(rng, 0.22, 300, 4000, 0.5), variants=2, pitch_variation=0.1, volume_variation_db=2.0, max_distance=15.0)
 ev("building", "lift_place", lambda rng: lift_deploy(rng), **TOOL)
 ev("building", "lift_raise", lambda rng: lift_move(rng, up=True), **TOOL)
 ev("building", "lift_lower", lambda rng: lift_move(rng, up=False), **TOOL)

@@ -83,7 +83,7 @@ you; this page is the reference for what each key means, so you can read, review
 | `visual` | object | no | Colour, surface and colour variants. See [visual](#visual). |
 | `collision` | object | no | Collision shape. Omitted means a box filling `size`. See [collision](#collision). |
 | `sockets` | list | no | Attachment points. Placeable parts only. See [sockets](#sockets). |
-| `ground_only` | bool | no | The part goes only flat on the ground, like soil: upright, resting on the world itself, never tipped onto a side, set on a Creation or welded to one. The Hammer's tip key does nothing for it. Placeable parts only. Default false. |
+| `ground_only` | bool | no | The part goes only flat on the ground, like soil: upright, resting on the world itself, never tipped onto a side, set on a Creation or welded to one. The tip key does nothing for it. Placeable parts only. Default false. |
 | `loose` | bool | no | A loose physics item lying in the world on its own, like a Stone Chunk or a Stone Rod: set down it is its own unanchored Creation, and nothing is built onto it or welded to it. Makes a `resource` part placeable. Not with `ground_only`. Default false. |
 | `breaks_into` | object | no | Loose parts the part shatters into when it breaks (a chunk into rods, a log into Wood Rods): `count` pieces (1 to 16; with `count_max`, a seeded number from `count` to `count_max`), each picked from `parts[]` (`part`, `weight`, default 1) by weight, thrown out by `breaking` in `game/data/building.json`. Placeable parts only. |
 | `sledge_damage` | number ≥ 0 | no | Damage one Sledgehammer swing does to the part, instead of `sledge.damage` in `game/data/building.json`. Placeable parts only. |

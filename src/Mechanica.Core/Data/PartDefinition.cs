@@ -31,7 +31,7 @@ public enum PartCategory
     /// <summary>An inventory item that is used up: food, seeds, fuel.</summary>
     Consumable,
 
-    /// <summary>A handheld tool (Lift, Hammer, Connect Tool...).</summary>
+    /// <summary>A handheld tool (Lift, Sledgehammer, Connect Tool...).</summary>
     Tool,
 
     /// <summary>A handheld weapon.</summary>

@@ -94,9 +94,9 @@ public partial class HudTest : StagedTest
         Add("look at the ground beside them", frame => Look(0, -0.9f, frame));
         Add("the crosshair is blue with a placement and white with nothing to do", _ =>
         {
-            Tools.Use(Tools.Hammer);
-            Tools.Hammer.UpdateAim();
-            Check(Tools.Hammer.Aim is not null && _hud.State == CrosshairState.Valid, $"the Hammer's placement turns it blue ({_hud.State})");
+            Tools.Use(Tools.Builder);
+            Tools.Builder.UpdateAim();
+            Check(Tools.Builder.Aim is not null && _hud.State == CrosshairState.Valid, $"a placement turns it blue ({_hud.State})");
             Check(_hud.CrosshairControl is CrosshairView { Colour: var c } && c.IsEqualApprox(UiTokens.Blue), "the cross is drawn blue");
             Tools.Use(Tools.Connector);
             return true;
@@ -158,7 +158,7 @@ public partial class HudTest : StagedTest
             Check(_hud.TooltipText.StartsWith("Switch\n"), $"its name ({_hud.TooltipText})");
             Check(_hud.TooltipText.Contains("0 connections") && _hud.TooltipText.Contains("Durability 100%"), $"connections and durability ({_hud.TooltipText})");
             Check(_hud.TooltipText.Contains("Logic connection"), $"and its connection kind ({_hud.TooltipText})");
-            Tools.Use(Tools.Hammer);
+            Tools.Use(Tools.Builder);
             return true;
         });
         Add("with Use on offer the tooltip says what it does", frame =>

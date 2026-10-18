@@ -12,7 +12,7 @@ namespace Mechanica.Game.Building;
 /// <summary>
 /// The Weld Tool in the local player's hand (D7, UI spec §2, §8). The first click selects a part, and with it the
 /// Creation to move; the part shows a blue outline. Aimed at another Creation, a see-through copy of the selected one
-/// shows where it would go against the face under the crosshair (turned like the Hammer, Q and T), a blue square marks
+/// shows where it would go against the face under the crosshair (turned as when building, Q and T), a blue square marks
 /// the weld plane, and a second click sends <c>Weld</c>: the host moves it there and merges the two, every touching face
 /// rigid. Aimed at another part of the same Creation, the second click sends <c>WeldParts</c>, welding the two Bodies
 /// together (locking a bearing, say). Holding left click on the first part and letting go on the second does the
@@ -207,7 +207,7 @@ public partial class WeldTool : HandTool
             Send(ToolActions.Weld, new WeldArgs(selected.Creation, aim.Creation.Id, aim.Offset, aim.Rotation), result =>
             {
                 if (ghost is not null && IsInstanceValid(ghost))
-                    ghost.Resolve(result, Build.Settings!.Hammer.RollbackSeconds);
+                    ghost.Resolve(result, Build.Settings!.Placement.RollbackSeconds);
                 finish(result);
             });
         }
@@ -380,7 +380,7 @@ public partial class WeldTool : HandTool
             {
                 var instance = mesh.Instantiate();
                 instance.Transform = placed * instance.Transform;
-                instance.MaterialOverride = HammerTool.PreviewMaterial;
+                instance.MaterialOverride = BuildTool.PreviewMaterial;
                 instance.CastShadow = GeometryInstance3D.ShadowCastingSetting.Off;
                 _preview.AddChild(instance);
             }

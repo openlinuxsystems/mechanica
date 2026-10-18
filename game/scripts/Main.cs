@@ -299,8 +299,8 @@ public partial class Main : Node3D
     /// </summary>
     public string? ReportsFolder { get; set; }
 
-    /// <summary>The local player's Hammer, once the player has spawned.</summary>
-    public HammerTool? Hammer => Tools?.Hammer;
+    /// <summary>The local player's building by hand, once the player has spawned.</summary>
+    public BuildTool? Builder => Tools?.Builder;
 
     /// <summary>This peer's own player, once spawned.</summary>
     public PlayerController? LocalPlayer => PlayerSync.LocalPlayer;
@@ -439,8 +439,6 @@ public partial class Main : Node3D
         AddChild(Build);
         Build.RegisterActions(Actions.Dispatcher);
         Build.Tools!.Targets = Survival.Actions;
-        // A player blocking with the Sledgehammer takes less from hits.
-        Survival.Actions!.DamageScale = Build.Tools.DamageScale;
         AddChild(Inventory);
         AddChild(Survival);
         AddChild(new RefineEffects { Name = "RefineEffects", Players = PlayerSync, Sounds = Sounds, Survival = Survival });
@@ -452,6 +450,7 @@ public partial class Main : Node3D
             Players = PlayerSync,
             Survival = Survival,
             World = Streamer,
+            KnockbackDrag = Build.Settings!.Sledge.KnockbackDrag,
             Actions = Actions,
             Sounds = Sounds,
             Mods = mods,
@@ -834,7 +833,7 @@ public partial class Main : Node3D
         Sounds.SetRegistry(SoundEvents);
         Scripts.SetContent(mods);
         Bots.SetContent(mods, BotTypes);
-        Hammer?.ReloadParts();
+        Builder?.ReloadParts();
     }
 
     // The current Mods, so readers keep working after ReloadMods swaps them.

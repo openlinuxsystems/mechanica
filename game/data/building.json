@@ -5,8 +5,8 @@
   "clearance_scale": 0.9,
   // A part built within this many metres of the ground is anchored there and stays put.
   "anchor_margin": 0.05,
-  // Hammer timings (UI spec §8, §9): hold to align, move to drag, hold right click to remove.
-  "hammer": {
+  // Placing and removing parts (UI spec §8, §9): hold to align, move to drag, hold right click to remove.
+  "placement": {
     "align_hold_seconds": 0.15,
     "drag_seconds": 0.1,
     "drag_max_per_axis": 16,
@@ -64,21 +64,24 @@
     "fell_gap": 0.05
   },
   "sledge": {
+    // Chase's sledgehammer spec: one swing a second, the hit landing at the click (2026-10-18; was 0.6 s after it), 3 m
+    // from the head. The swing animation skips its wind-up to match (character.json gesture_start).
     "damage": 10,
     "health_per_durability": 10,
-    // A quick swing (about Scrap Mechanic's pace): wind-up, the hit strike_seconds after the click, then recovery.
-    "swing_seconds": 0.6,
-    "strike_seconds": 0.25,
+    "swing_seconds": 1.0,
+    "strike_seconds": 0,
     "reach": 3.0,
-    // Knockback on the Body hit (N·s), but never faster than max_knockback_speed (m/s) for a light Body.
+    // Knockback (N·s, mass × Δv) on whatever is hit, never faster than max_knockback_speed (m/s) for something light.
+    // Players and bots count as character_mass kg and get knockback_lift m/s upward; a bot slows by knockback_drag m/s².
     "impulse": 5000,
     "max_knockback_speed": 4.0,
+    "character_mass": 80,
+    "knockback_lift": 2.5,
+    "knockback_drag": 8,
     "shake_metres": 0.03,
     "shake_seconds": 0.2,
-    "player_damage": 15,
-    "object_damage": 10,
-    // Hold right click to block (UI spec §9): these causes do this share of their damage.
-    "block_damage_scale": 0.25,
-    "block_causes": ["sledge", "bot"]
+    // Combat damage to players and bots; world objects take their own sledge_damage (worldgen.json), else object_damage.
+    "combat_damage": 20,
+    "object_damage": 10
   }
 }

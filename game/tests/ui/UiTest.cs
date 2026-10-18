@@ -157,7 +157,7 @@ public partial class UiTest : StagedTest
                 Check(!UiTokens.IsOrange(Editor.PartPreview.SocketColor(type)), $"the {type?.ToString() ?? "rigid"} socket colour is not orange");
             foreach (var type in Enum.GetValues<ConnectionType>())
                 Check(!UiTokens.IsOrange(Creations.JointGizmo.ColorOf(type)), $"the {type} joint colour is not orange");
-            Check(!UiTokens.IsOrange(Building.HammerTool.PreviewMaterial.AlbedoColor), "the tool ghost is not orange");
+            Check(!UiTokens.IsOrange(Building.BuildTool.PreviewMaterial.AlbedoColor), "the tool ghost is not orange");
             return true;
         });
         Add("the main menu has no orange", frame =>

@@ -215,7 +215,7 @@ public partial class LogicOverlay : CanvasLayer
         var scale = PixelScale(viewport);
         var tool = Tool;
         var all = ShowingAll;
-        var rollback = Build.Settings?.Hammer.RollbackSeconds ?? 0.4;
+        var rollback = Build.Settings?.Placement.RollbackSeconds ?? 0.4;
         var pending = tool?.Pending ?? Connector?.Invoke()?.Pending ?? [];
         var removing = pending.Where(p => !p.Adding && p.Refused is null).Select(p => (p.Creation, p.Link)).ToHashSet();
         float Flash((int, LogicLink) key) => _flash.TryGetValue(key, out var left) ? (float)(left / Math.Max(look.FlashSeconds, 1e-3)) : 0f;

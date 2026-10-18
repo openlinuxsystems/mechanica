@@ -11,7 +11,7 @@ using Instance = Mechanica.Game.Tests.NetTestHarness.Instance;
 namespace Mechanica.Game.Tests;
 
 /// <summary>
-/// Building by hand, host plus clients (chunk 7, D10). A client aims its Hammer at the ground and at a
+/// Building by hand, host plus clients (chunk 7, D10). A client aims the part in its hand at the ground and at a
 /// Creation, places blocks on every face and a tipped, turned wedge, removes parts (splitting the
 /// Creation), and gets clear refusals for bad requests. Every graph the host has must match on each
 /// client, including a late joiner. Uses the fixture mod in <c>tests/building/mods</c>.
@@ -42,25 +42,26 @@ public partial class BuildTest : StagedTest
         _host = _harness.StartHost(mods: _mods);
         _client = _harness.StartClient("Client", mods: _mods);
 
-        Add("the client joins with a Hammer", _ =>
+        Add("the client joins with a part in hand", _ =>
         {
-            if (_client.Main.PlayerSync.Players.Count != 2 || _client.Main.Hammer is null || _host.Main.PlayerSync.Players.Count != 2)
+            if (_client.Main.PlayerSync.Players.Count != 2 || _client.Main.Builder is null || _host.Main.PlayerSync.Players.Count != 2)
                 return false;
             Check(!_mods.HasErrors, $"fixture mod loads ({string.Join("; ", _mods.Diagnostics)})");
-            var parts = _client.Main.Hammer.Parts;
-            Check(parts.SequenceEqual([Block, $"{Mod}:plank", Wedge]), $"the Hammer offers the placeable parts only ({string.Join(", ", parts)})");
-            Check(_client.Main.Hammer.Player == _client.Main.LocalPlayer, "the Hammer aims with the client's own player");
+            var parts = _client.Main.Builder.Parts;
+            Check(parts.SequenceEqual([Block, $"{Mod}:plank", Wedge]), $"building offers the placeable parts only ({string.Join(", ", parts)})");
+            Check(_client.Main.Builder.Player == _client.Main.LocalPlayer, "building aims with the client's own player");
+            _client.Main.Tools!.Use(_client.Main.Builder);
             return true;
         });
         Add("look down at the ground", frame => Look(_client, 0f, -0.6f, frame));
-        Add("the client places a block on the ground with the Hammer", frame =>
+        Add("the client places a block on the ground by hand", frame =>
         {
-            var hammer = _client.Main.Hammer!;
+            var builder = _client.Main.Builder!;
             if (frame == 0)
             {
-                hammer.UpdateAim();
-                Check(hammer.Aim is { Creation: null, Position: not null }, $"aiming at the ground starts a new creation ({hammer.Aim})");
-                Check(hammer.Place(_results.Add), "the Hammer sends PlacePart");
+                builder.UpdateAim();
+                Check(builder.Aim is { Creation: null, Position: not null }, $"aiming at the ground starts a new creation ({builder.Aim})");
+                Check(builder.Place(_results.Add), "placing sends PlacePart");
             }
             if (_results.Count == 0 || _client.Main.Creations.Count == 0)
                 return false;
@@ -99,27 +100,27 @@ public partial class BuildTest : StagedTest
         });
         Add("the client puts a tipped, turned wedge on top", frame =>
         {
-            var hammer = _client.Main.Hammer!;
+            var builder = _client.Main.Builder!;
             if (frame == 0)
             {
                 _results.Clear();
-                Check(hammer.Select(Wedge), "the wedge can be selected");
-                hammer.Tip();
-                hammer.Turn();
-                hammer.UpdateAim();
-                var aim = hammer.Aim;
+                Check(builder.Select(Wedge), "the wedge can be selected");
+                builder.Tip();
+                builder.Turn();
+                builder.UpdateAim();
+                var aim = builder.Aim;
                 Check(aim is { Creation: not null } && aim.Creation.Id == _creation && aim.HitPart == _top,
-                    $"the Hammer sees the top block ({aim})");
+                    $"the aim finds the top block ({aim})");
                 Check(aim!.Cell == Up + Up, $"the wedge goes above it ({aim.Cell})");
                 Check(aim.Rotation.YAxis != Up, $"tipping turns its top away from the face ({aim.Rotation})");
-                hammer.Place(_results.Add);
+                builder.Place(_results.Add);
             }
             if (_results.Count == 0 || !SameEverywhere())
                 return false;
             Check(_results[0].Ok, $"the wedge is placed ({_results[0]})");
             var part = _results[0].Value!.Value.GetProperty("part").GetInt32();
             var placed = _host.Main.Creations.Find(_creation)!.FindPart(part)!;
-            Check(placed.Rotation == hammer.Aim!.Rotation && placed.Part == Wedge, $"with the Hammer's rotation ({placed.Rotation})");
+            Check(placed.Rotation == builder.Aim!.Rotation && placed.Part == Wedge, $"with the aimed rotation ({placed.Rotation})");
             var shape = Body(_client, _creation).GetNode<CollisionShape3D>($"Shape{part}");
             Check(shape.Shape is ConvexPolygonShape3D && shape.Transform.Basis.IsEqualApprox(placed.Rotation.ToBasis()),
                 "the client shows the wedge's collision turned the same way");
@@ -193,15 +194,15 @@ public partial class BuildTest : StagedTest
             _creation = near.Id;
             return LookAt(_client, Centre(_client, near.Id) + new Vector3(0, 0.125f, 0), frame);
         });
-        Add("the Hammer removes a whole one-block creation", frame =>
+        Add("removing by hand takes a whole one-block creation", frame =>
         {
             if (frame == 0)
             {
                 _results.Clear();
-                var hammer = _client.Main.Hammer!;
-                hammer.UpdateAim();
-                Check(hammer.Aim?.Creation?.Id == _creation && hammer.Aim.HitPart is not null, $"the Hammer aims at the block ({hammer.Aim})");
-                Check(hammer.Remove(_results.Add), "the Hammer sends RemovePart");
+                var builder = _client.Main.Builder!;
+                builder.UpdateAim();
+                Check(builder.Aim?.Creation?.Id == _creation && builder.Aim.HitPart is not null, $"the aim is on the block ({builder.Aim})");
+                Check(builder.Remove(_results.Add), "removing sends RemovePart");
             }
             if (_results.Count == 0 || !SameEverywhere())
                 return false;

@@ -98,6 +98,7 @@ streamed in 64 m chunks. Height samples are `resolution` metres apart and must d
 | `biomes[].scatter[]` | `spacing` is the side of the rule's grid cells; each cell holds at most one object, kept with probability `chance`. |
 | `objects[]` | Destructible world objects. Use catalog ids (`birch_tree`, `rock_node`, `boulder`, ...). `footprint` is the radius other scattered objects keep clear of; `sink` lowers the object into the ground. |
 | `objects[].health` | Damage the object takes before it breaks (Sledgehammer, weapons, splash). Omitted means it cannot be broken. Damage is not saved: a part-felled tree is whole again after a restart. |
+| `objects[].sledge_damage` | Damage one Sledgehammer hit does to it: its gathering damage (a rock node, stone, takes 25). Omitted means `sledge.object_damage` from `game/data/building.json`. |
 | `objects[].drops[]` | Items (`item`, `count`, default 1) left on the ground as a pile when it breaks. |
 | `objects[].model` | A built-in flora model (see [Flora](#flora)) drawn instead of `pieces`, such as `bush_berry`. |
 | `objects[].solid` | `false` for an object players, bots and Creations walk and drive through, like the seed bush: its collider only catches the Sledgehammer's swing, so it still breaks for its drops. Default `true`. |

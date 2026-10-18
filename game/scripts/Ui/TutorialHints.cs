@@ -171,7 +171,7 @@ public partial class TutorialHints : CanvasLayer, IHudLayer
     }
 
     /// <summary>
-    /// Queues the next unseen tip for <paramref name="trigger"/> (<c>start</c>, <c>tool:hammer</c>,
+    /// Queues the next unseen tip for <paramref name="trigger"/> (<c>start</c>, <c>tool:build</c>,
     /// <c>screen:inventory</c>, …), if any; nothing happens while tips are off. Called every frame for what
     /// the player is doing, so tips Options shows again come back as the player plays.
     /// </summary>

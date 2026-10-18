@@ -164,7 +164,7 @@ the Part Editor, the Test Sandbox and the world.
 | Torque arrow | `#A47CF3` | torques in the force overlay |
 | Preview background | `#1A2332` | the background of 3D previews |
 
-Tool previews (the hammer's ghost) are cyan at 35% opacity.
+Tool previews (a placed part's ghost) are cyan at 35% opacity.
 
 Connection lines (the Connect Tool, UI spec §12) are 3 px blue with a 1 px cyan core and a chevron every 40 px
 pointing from source to target. Nodes are 14 px, grow 20% under the crosshair and pulse cyan every 0.8 s while

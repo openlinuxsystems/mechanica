@@ -10,7 +10,7 @@ using Instance = Mechanica.Game.Tests.NetTestHarness.Instance;
 namespace Mechanica.Game.Tests;
 
 /// <summary>
-/// Soil goes only flat on the ground, like Scrap Mechanic's, host plus a client. The Hammer's ghost stands upright on
+/// Soil goes only flat on the ground, like Scrap Mechanic's, host plus a client. The build ghost stands upright on
 /// the ground, the tip key leaves it so and the HUD offers no tip; placed, the host has it upright and anchored. A
 /// sideways request sent straight to the host is refused, and aimed at the top of a block the ghost is red and a click
 /// sends nothing.
@@ -31,7 +31,7 @@ public partial class SoilTest : StagedTest
 
     private ToolBelt Tools => _client.Main.Tools!;
 
-    private HammerTool Hammer => Tools.Hammer;
+    private BuildTool Builder => Tools.Builder;
 
     private PlayerController Me => _client.Main.LocalPlayer!;
 
@@ -42,35 +42,35 @@ public partial class SoilTest : StagedTest
         _host = _harness.StartHost();
         _client = _harness.StartClient("Client");
 
-        Add("the client joins with the Hammer and soil", _ =>
+        Add("the client joins with soil in hand", _ =>
         {
             if (_client.Main.PlayerSync.Players.Count != 2 || _client.Main.Tools is null || _host.Main.PlayerSync.Players.Count != 2)
                 return false;
-            Tools.Use(Hammer);
-            return Check(Hammer.Select(Soil), "soil is placeable");
+            Tools.Use(Builder);
+            return Check(Builder.Select(Soil), "soil is placeable");
         });
         Add("look at the ground ahead", frame => Look(0, -0.7f, frame));
         Add("the ghost stands upright on the ground and will not tip", frame =>
         {
-            Hammer.UpdateAim();
-            if (Hammer.Aim is not { } aim)
+            Builder.UpdateAim();
+            if (Builder.Aim is not { } aim)
                 return frame < 60 ? false : Check(false, "aiming at the ground");
-            Check(aim.Rotation.YAxis == Up && Hammer.PreviewValid, $"upright and blue ({aim.Rotation}, {Hammer.PreviewProblem})");
-            Check(!Hammer.HudText().Contains(" tip"), $"the HUD offers no tip ({Hammer.HudText()})");
-            Hammer.Tip();
-            Hammer.UpdateAim();
-            Check(Hammer.Aim!.Rotation.YAxis == Up && Hammer.PreviewValid, $"the tip key leaves it upright ({Hammer.Aim.Rotation})");
-            Hammer.Turn();
-            Hammer.UpdateAim();
-            Check(Hammer.Aim!.Rotation.YAxis == Up, $"turning keeps it flat ({Hammer.Aim.Rotation})");
+            Check(aim.Rotation.YAxis == Up && Builder.PreviewValid, $"upright and blue ({aim.Rotation}, {Builder.PreviewProblem})");
+            Check(!Builder.HudText().Contains(" tip"), $"the HUD offers no tip ({Builder.HudText()})");
+            Builder.Tip();
+            Builder.UpdateAim();
+            Check(Builder.Aim!.Rotation.YAxis == Up && Builder.PreviewValid, $"the tip key leaves it upright ({Builder.Aim.Rotation})");
+            Builder.Turn();
+            Builder.UpdateAim();
+            Check(Builder.Aim!.Rotation.YAxis == Up, $"turning keeps it flat ({Builder.Aim.Rotation})");
             return true;
         });
         Add("a click places it flat on the host", frame =>
         {
             if (frame == 0)
             {
-                Hammer.UpdateAim();
-                Hammer.Place(_results.Add);
+                Builder.UpdateAim();
+                Builder.Place(_results.Add);
                 return false;
             }
             if (_results.Count == 0)
@@ -121,12 +121,12 @@ public partial class SoilTest : StagedTest
         });
         Add("on the block the ghost is red and a click sends nothing", frame =>
         {
-            Hammer.UpdateAim();
-            if (Hammer.Aim is not { Creation: not null })
+            Builder.UpdateAim();
+            if (Builder.Aim is not { Creation: not null })
                 return frame < 60 ? false : Check(false, "aiming at the block");
-            Check(!Hammer.PreviewValid && Hammer.PreviewProblem?.Contains("flat on the ground") == true, $"red ({Hammer.PreviewProblem})");
-            Hammer.PressPlace();
-            Hammer.ReleasePlace(_results.Add);
+            Check(!Builder.PreviewValid && Builder.PreviewProblem?.Contains("flat on the ground") == true, $"red ({Builder.PreviewProblem})");
+            Builder.PressPlace();
+            Builder.ReleasePlace(_results.Add);
             Check(_results.Count == 0 && _host.Main.Creations.Find(_block)?.Parts.Count == 1, "nothing is sent");
             return true;
         });

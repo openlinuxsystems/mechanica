@@ -13,9 +13,9 @@ namespace Mechanica.Game.Building;
 /// <summary>
 /// The local player's hand tools and the hotbar that picks them (UI spec §3). Each of the ten hotbar slots
 /// (<see cref="HotbarSync"/>) holds a tool, an item or nothing; keys 1 to 9 and 0 pick a slot and the wheel steps
-/// along the bar. A tool slot puts that tool in hand. A placeable part puts the Hammer in hand with that part to
-/// place, and any other item goes in hand as the item (<see cref="ItemTool"/>); an empty slot leaves the hand
-/// empty. In Survival, items the player gets fill empty slots. The bar sits at the bottom centre inside the safe
+/// along the bar. A tool slot puts that tool in hand. A placeable part goes in hand to build with
+/// (<see cref="BuildTool"/>), and any other item goes in hand as the item (<see cref="ItemTool"/>); an empty slot leaves
+/// the hand empty, which still removes parts. The Sledgehammer, the main tool, starts in hand. In Survival, items the player gets fill empty slots. The bar sits at the bottom centre inside the safe
 /// area with the tool's keys above it; the crosshair is <see cref="Ui.WorldHud"/>'s.
 /// </summary>
 public partial class ToolBelt : Node
@@ -59,8 +59,8 @@ public partial class ToolBelt : Node
     /// <summary>False in automated tests: keys and mouse do nothing and no HUD is shown.</summary>
     public bool ReadDeviceInput { get; init; } = true;
 
-    /// <summary>The Hammer.</summary>
-    public HammerTool Hammer { get; private set; } = null!;
+    /// <summary>Building by hand: placing the part in hand, and removing parts.</summary>
+    public BuildTool Builder { get; private set; } = null!;
 
     /// <summary>The Lift.</summary>
     public LiftTool Lift { get; private set; } = null!;
@@ -101,7 +101,6 @@ public partial class ToolBelt : Node
     /// <summary>The tool a hotbar entry names, or null when it names an item or nothing.</summary>
     public HandTool? ToolFor(string? entry) => entry switch
     {
-        HotbarTools.Hammer => Hammer,
         HotbarTools.Lift => Lift,
         HotbarTools.Weld => Weld,
         HotbarTools.Paint => Paint,
@@ -112,16 +111,19 @@ public partial class ToolBelt : Node
 
     public override void _Ready()
     {
-        Hammer = Add(new HammerTool { Name = "Hammer", Player = Player, Actions = Actions, Build = Build, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput });
+        Builder = Add(new BuildTool { Name = "Build", Player = Player, Actions = Actions, Build = Build, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput });
         Lift = Add(new LiftTool { Name = "Lift", Player = Player, Actions = Actions, Build = Build, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput });
         Weld = Add(new WeldTool { Name = "Weld", Player = Player, Actions = Actions, Build = Build, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput });
         Paint = Add(new PaintTool { Name = "Paint", Player = Player, Actions = Actions, Build = Build, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput });
         Sledge = Add(new SledgeTool { Name = "Sledge", Player = Player, Actions = Actions, Build = Build, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput });
         Item = Add(new ItemTool { Name = "Item", Player = Player, Actions = Actions, Build = Build, Inventory = Inventory, Survival = Survival, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput, Characters = Characters });
         Connector = Add(new ConnectTool { Name = "Connect", Player = Player, Actions = Actions, Build = Build, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput });
-        Hammer.Active = true;
+        // The first slot (the Sledgehammer on a new bar) is in hand until the hotbar says otherwise.
+        Use(ToolFor(Slots[0]) ?? Sledge);
         // In Survival a part is placed from the inventory, so the ghost turns red with none left.
-        Hammer.CanAfford = part => Survival.Own?.Mode != Core.Survival.GameMode.Survival || Inventory.Own?.Count(part) > 0;
+        Builder.CanAfford = part => Survival.Own?.Mode != Core.Survival.GameMode.Survival || Inventory.Own?.Count(part) > 0;
+        // The Sledgehammer's block is a Creative pose only.
+        Sledge.CanBlock = () => Survival.Own?.Mode != Core.Survival.GameMode.Survival;
         Connector.Owned = () => Owns(HotbarTools.Connect);
         if (Hotbar is not null)
             Hotbar.OwnChanged += OnSlotsChanged;
@@ -253,9 +255,17 @@ public partial class ToolBelt : Node
             Use(tool);
             return;
         }
-        if (entry is not null && Build.Catalog.FindDefinition(entry) is { IsPlaceable: true } && Hammer.Select(entry))
+        if (entry is not null && Build.Catalog.FindDefinition(entry) is { IsPlaceable: true } && Builder.Select(entry))
         {
-            Use(Hammer);
+            Use(Builder);
+            return;
+        }
+        if (entry is null)
+        {
+            Builder.Clear();
+            Use(Builder);
+            Item.Choose(null);
+            _lastHand = null;
             return;
         }
         Item.Choose(entry);

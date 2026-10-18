@@ -31,6 +31,20 @@ public class VanillaCharactersTests
     }
 
     [Fact]
+    public void TheSledgeSwingMeetsItsHitStraightAfterTheClick()
+    {
+        // The hit lands at the click (building.json sledge.strike_seconds 0); every swing clip is authored with its impact
+        // 0.25 s into 0.6 s (tools/characters/build_characters.py), and the swing starts past its wind-up so the head
+        // comes down on it within a few frames.
+        var settings = Settings();
+        var start = settings.GestureStart["sledge_swing"];
+        var seconds = settings.GestureSeconds["sledge_swing"];
+        Assert.InRange(start, 0.2f, 0.25f / 0.6f);
+        var toImpact = (0.25f / 0.6f - start) / (1f - start) * seconds;
+        Assert.InRange(toImpact, 0.03f, 0.1f);
+    }
+
+    [Fact]
     public void TheAnimationSetHasEveryClipAndUpperBodyClipsLeaveTheLegsAlone()
     {
         Assert.True(AssetPath.TryParse(Settings().Animations, "vanilla", AssetKind.Mesh, out var asset, out var error), error);

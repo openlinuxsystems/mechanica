@@ -39,6 +39,7 @@ public partial class PlayerController : CharacterBody3D
     private double _transitionLeft;
     private double _sinceSeatChange = double.MaxValue;
     private Vector3 _lastShown;
+    private Vector3 _knock;
 
     /// <summary>Peer that controls this player (1 is the host).</summary>
     public int PeerId { get; init; } = 1;
@@ -417,6 +418,9 @@ public partial class PlayerController : CharacterBody3D
         // Kept down under a low ceiling, the player moves at crouching speed whatever it holds.
         var move = swimming ? input : input with { Crawl = _crouched };
         var velocity = PlayerMotor.Step(Velocity.ToNumerics(), wasOnFloor, move, Settings, delta, SpeedScale, depth);
+        // A knockback lands once, after the walk, so its lift takes the player off the floor.
+        velocity += _knock.ToNumerics();
+        _knock = Vector3.Zero;
         Velocity = velocity.ToGodot();
         MoveAndSlide();
         if (!wasOnFloor && IsOnFloor() && velocity.Y < 0)
@@ -429,6 +433,16 @@ public partial class PlayerController : CharacterBody3D
             | (input.Guard ? BodyFlags.Guard : 0);
         StepEyeHeight(delta);
         return input;
+    }
+
+    /// <summary>
+    /// Adds <paramref name="velocity"/> (m/s) to the player's movement on its next step: a knockback (a Sledgehammer
+    /// hit). A seated or dead player ignores it.
+    /// </summary>
+    public void Knock(Vector3 velocity)
+    {
+        if (!_dead && _seat is null && velocity.IsFinite())
+            _knock += velocity;
     }
 
     /// <summary>Puts a seated player's feet on its seat. False when it sits nowhere (or the seat is gone).</summary>

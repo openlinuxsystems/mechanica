@@ -12,7 +12,7 @@ internal static class CatalogSounds
         "break_concrete", "impact_concrete", "place_glass", "break_glass", "impact_glass", "place_scrap", "break_scrap",
         "impact_scrap", "place_plastic", "break_plastic", "impact_plastic", "place_tile", "break_tile", "impact_tile",
         "place_cardboard", "break_cardboard", "impact_cardboard", "place_fabric", "break_fabric", "impact_fabric",
-        "burn_wood", "vehicle_crash", "impact_soft", "part_attach", "part_detach", "remove_block", "hammer_swing",
+        "burn_wood", "vehicle_crash", "impact_soft", "part_attach", "part_detach", "remove_block",
         "lift_place", "lift_raise", "lift_lower", "connect_success", "connect_fail", "disconnect", "weld_start",
         "weld_complete", "paint_spray", "paint_erase", "smash_hit", "smash_break", "sledgehammer_swing", "engine_start", "engine_idle",
         "engine_rev", "engine_sputter", "electric_start", "electric_whirr", "battery_insert", "battery_drain",
