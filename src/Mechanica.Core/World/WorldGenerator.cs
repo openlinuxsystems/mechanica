@@ -655,8 +655,8 @@ public sealed partial class WorldGenerator
     }
 
     // Sizes, in metres, of the patches a border mixes flora in and the groves it thins objects in.
-    private const float PatchSize = 7f;
-    private const float GroveSize = 18f;
+    private const float PatchSize = 22f;
+    private const float GroveSize = 35f;
 
     /// <summary>
     /// A biome's share (0..1) of how a world position looks: its ground, flora and objects. 1 inside the biome, 0 away
@@ -683,10 +683,18 @@ public sealed partial class WorldGenerator
         return dominant;
     }
 
-    // Smooth noise spread evenly over 0..1 (the logistic curve flattens the noise's bell), the same at a position on
-    // every peer and in every chunk.
-    private static float EdgeRoll(float x, float z, uint salt, float size) =>
-        MathF.Min(0.999f, 1f / (1f + MathF.Exp(-8f * Noise.Fractal(x / size, z / size, salt, 2, 2.1f, 0.5f))));
+    // A roll spread evenly over 0..1, the same at a position on every peer and in every chunk: half smooth noise of the
+    // given size (the logistic curve flattens its bell), half a dice roll per spot, so patches and groves have soft,
+    // scattered edges and one biome thins out gradually among the other.
+    private static float EdgeRoll(float x, float z, uint salt, float size)
+    {
+        var smooth = 1f / (1f + MathF.Exp(-8f * Noise.Fractal(x / size, z / size, salt, 2, 2.1f, 0.5f)));
+        var dice = Noise.Unit(Noise.Hash(Noise.Mix(salt), (int)MathF.Floor(x * 4f), (int)MathF.Floor(z * 4f)));
+        // The sum of two even rolls peaks in the middle; its own curve spreads it evenly again.
+        var sum = 0.5f * (smooth + dice);
+        var even = sum < 0.5f ? 2f * sum * sum : 1f - 2f * (1f - sum) * (1f - sum);
+        return MathF.Min(0.999f, even);
+    }
 
     // Metres to the world edge, pulled in by up to the coast wobble so the coastline meanders; the sea floor is reached at 0.
     private float EdgeDistance(float x, float z)

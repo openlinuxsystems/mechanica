@@ -14,9 +14,10 @@
     "lacunarity": 2.0,
     "gain": 0.5,
     "biome_cell_size": 440.0,
-    "biome_blend": 200.0,
+    "biome_blend": 320.0,
     "biome_warp": 220.0,
-    "biome_edge_noise": 50.0,
+    "biome_edge_noise": 150.0,
+    "biome_edge_scale": 70.0,
     "region_warp": 420.0,
     "max_scatter_slope": 0.7,
     // Two layers of relief over the biomes' own, after Scrap Mechanic's overworld: broad hills a kilometre across, and
