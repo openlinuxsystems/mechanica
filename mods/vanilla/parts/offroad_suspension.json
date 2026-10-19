@@ -1,33 +1,32 @@
 {
   "id": "offroad_suspension",
-  "name": "Off-Road Suspension",
-  "description": "A soft spring with long travel for rough ground. Put it on a chassis side and a wheel bearing on its face.",
+  "name": "Off-Road Suspension 1",
+  "description": "A soft spring with long travel for rough ground. Put it on a chassis side and a wheel bearing on its face. Upgrade it in place with Component Kits (U) for a stiffer spring that settles faster.",
   "category": "interactive",
   "mass": 6,
-  "durability": 6,
+  "durability": 5,
   "friction": 0.4,
   "buoyancy": 0.2,
   "flammable": false,
-  "stack_size": 20,
+  "stack_size": 5,
   "sound_material": "metal",
-  "size": [1, 1, 1],
-  "mesh": "meshes/offroad_suspension.glb",
+  "size": [3, 1, 1],
+  "mesh": "meshes/parts/offroad_suspension_1.glb",
+  "icon": "textures/items/offroad_suspension_1_icon.png",
   "visual": {
-    "color": "#d68910",
-    "roughness": 0.6,
-    "metallic": 0.4
+    "color": "#ffffff"
   },
   "sockets": [
     {
       "id": "base",
       "type": "structural",
-      "position": [-0.125, 0, 0],
+      "position": [-0.375, 0, 0],
       "normal": [-1, 0, 0]
     },
     {
       "id": "mount",
       "type": "spring",
-      "position": [0.125, 0, 0],
+      "position": [0.375, 0, 0],
       "normal": [1, 0, 0],
       "joint": {
         "axis": [0, 1, 0],
@@ -41,5 +40,227 @@
   "sounds": {
     "compress": "suspension_compress",
     "extend": "suspension_extend"
-  }
+  },
+  "upgrades": [
+    {
+      "cost": [
+        {
+          "item": "component_kit",
+          "count": 1
+        }
+      ],
+      "set": {
+        "name": "Off-Road Suspension 2",
+        "durability": 6,
+        "mesh": "meshes/parts/offroad_suspension_2.glb",
+        "icon": "textures/items/offroad_suspension_2_icon.png",
+        "sockets": [
+          {
+            "id": "base",
+            "type": "structural",
+            "position": [
+              -0.375,
+              0,
+              0
+            ],
+            "normal": [
+              -1,
+              0,
+              0
+            ]
+          },
+          {
+            "id": "mount",
+            "type": "spring",
+            "position": [
+              0.375,
+              0,
+              0
+            ],
+            "normal": [
+              1,
+              0,
+              0
+            ],
+            "joint": {
+              "axis": [
+                0,
+                1,
+                0
+              ],
+              "min": -0.2,
+              "max": 0.2,
+              "stiffness": 15750,
+              "damping": 950
+            }
+          }
+        ]
+      }
+    },
+    {
+      "cost": [
+        {
+          "item": "component_kit",
+          "count": 2
+        }
+      ],
+      "set": {
+        "name": "Off-Road Suspension 3",
+        "durability": 7,
+        "mesh": "meshes/parts/offroad_suspension_3.glb",
+        "icon": "textures/items/offroad_suspension_3_icon.png",
+        "sockets": [
+          {
+            "id": "base",
+            "type": "structural",
+            "position": [
+              -0.375,
+              0,
+              0
+            ],
+            "normal": [
+              -1,
+              0,
+              0
+            ]
+          },
+          {
+            "id": "mount",
+            "type": "spring",
+            "position": [
+              0.375,
+              0,
+              0
+            ],
+            "normal": [
+              1,
+              0,
+              0
+            ],
+            "joint": {
+              "axis": [
+                0,
+                1,
+                0
+              ],
+              "min": -0.2,
+              "max": 0.2,
+              "stiffness": 22500,
+              "damping": 1200
+            }
+          }
+        ]
+      }
+    },
+    {
+      "cost": [
+        {
+          "item": "component_kit",
+          "count": 4
+        }
+      ],
+      "set": {
+        "name": "Off-Road Suspension 4",
+        "durability": 8,
+        "mesh": "meshes/parts/offroad_suspension_4.glb",
+        "icon": "textures/items/offroad_suspension_4_icon.png",
+        "sockets": [
+          {
+            "id": "base",
+            "type": "structural",
+            "position": [
+              -0.375,
+              0,
+              0
+            ],
+            "normal": [
+              -1,
+              0,
+              0
+            ]
+          },
+          {
+            "id": "mount",
+            "type": "spring",
+            "position": [
+              0.375,
+              0,
+              0
+            ],
+            "normal": [
+              1,
+              0,
+              0
+            ],
+            "joint": {
+              "axis": [
+                0,
+                1,
+                0
+              ],
+              "min": -0.2,
+              "max": 0.2,
+              "stiffness": 29250,
+              "damping": 1450
+            }
+          }
+        ]
+      }
+    },
+    {
+      "cost": [
+        {
+          "item": "component_kit",
+          "count": 8
+        }
+      ],
+      "set": {
+        "name": "Off-Road Suspension 5",
+        "durability": 9,
+        "mesh": "meshes/parts/offroad_suspension_5.glb",
+        "icon": "textures/items/offroad_suspension_5_icon.png",
+        "sockets": [
+          {
+            "id": "base",
+            "type": "structural",
+            "position": [
+              -0.375,
+              0,
+              0
+            ],
+            "normal": [
+              -1,
+              0,
+              0
+            ]
+          },
+          {
+            "id": "mount",
+            "type": "spring",
+            "position": [
+              0.375,
+              0,
+              0
+            ],
+            "normal": [
+              1,
+              0,
+              0
+            ],
+            "joint": {
+              "axis": [
+                0,
+                1,
+                0
+              ],
+              "min": -0.2,
+              "max": 0.2,
+              "stiffness": 45000,
+              "damping": 1900
+            }
+          }
+        ]
+      }
+    }
+  ]
 }
