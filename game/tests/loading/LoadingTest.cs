@@ -107,9 +107,11 @@ public partial class LoadingTest : StagedTest
                 _main.LoadingScreen!.ReturnRequested += () => _returned = true;
                 return false;
             }
-            if (frame < 3)
-                return false;
+            // The screen shows the failure on its next idle frame, and a slow first frame can run several physics
+            // frames before that, so wait for it rather than for a frame count.
             var screen = _main.LoadingScreen!;
+            if (!screen.Failed && frame < 300)
+                return false;
             Check(screen.Failed, "the failure shows");
             Check(screen.ErrorText.Contains("loading-test-broken.json"), $"the error names the save ({screen.ErrorText})");
             Check(screen.BarColour.R > screen.BarColour.B && screen.BarColour.R > screen.BarColour.G, $"the bar is red ({screen.BarColour})");
