@@ -34,6 +34,11 @@
       "item": "glue",
       "chance": 0.4,
       "count": 1
+    },
+    {
+      "item": "drill",
+      "chance": 0.04,
+      "count": 1
     }
   ],
   "behavior": {
@@ -55,7 +60,7 @@
             "children": [
               {
                 "type": "hesitate",
-                "part": "vanilla:saw_blade",
+                "part": "vanilla:saw_blade,vanilla:drill",
                 "range": 4,
                 "min_speed": 9,
                 "seconds": 2.5
@@ -91,7 +96,7 @@
             "children": [
               {
                 "type": "hesitate",
-                "part": "vanilla:saw_blade",
+                "part": "vanilla:saw_blade,vanilla:drill",
                 "range": 4,
                 "min_speed": 9,
                 "seconds": 2.5

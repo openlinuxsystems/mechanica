@@ -35,8 +35,8 @@ public partial class VanillaLogicTest : StagedTest
     ];
 
     // Parts whose model is a file made elsewhere (tools/bearing_engine, tools/gas_engine, tools/electric_engine,
-    // tools/scrap_seat, tools/wheels, tools/switch).
-    private static readonly string[] Authored = ["electric_engine", "gas_engine", "scrap_drivers_seat", "scrap_seat", "scrap_gas_engine", "scrap_wheel", "wheel", "big_wheel", "switch"];
+    // tools/scrap_seat, tools/wheels, tools/switch, tools/button).
+    private static readonly string[] Authored = ["electric_engine", "gas_engine", "scrap_drivers_seat", "scrap_seat", "scrap_gas_engine", "scrap_wheel", "wheel", "big_wheel", "switch", "button"];
 
     private static readonly Vector3 CarAt = new(4, 1.0f, 8);
 
@@ -47,7 +47,7 @@ public partial class VanillaLogicTest : StagedTest
     private ModLoadResult _mods = null!;
     private Instance _host = null!;
     private Instance _client = null!;
-    private int _seat, _engine, _steering, _switch, _piston, _scrapEngine, _scrapBearing;
+    private int _seat, _engine, _steering, _switch, _button, _piston, _scrapEngine, _scrapBearing;
     private readonly HashSet<string> _clientClips = [];
     private readonly List<int> _wheels = [];
     private Vector3 _start;
@@ -88,7 +88,7 @@ public partial class VanillaLogicTest : StagedTest
                 .Where(IsBatchOutput)
                 .Order(StringComparer.Ordinal).ToList();
             // Parts whose model is a file made elsewhere (tools/bearing_engine, tools/gas_engine, tools/scrap_seat,
-            // tools/wheels) get no generated mesh.
+            // tools/wheels, tools/button) get no generated mesh.
             Check(made.Count == 4 * Outputs.Length - Authored.Length, $"it writes a part, an editor source, a mesh (unless authored) and a recipe for each ({made.Count} files)");
             var differing = made.Where(f => !File.Exists(Path.Combine(VanillaDir, f))
                 || !File.ReadAllBytes(Path.Combine(VanillaDir, f)).AsSpan().SequenceEqual(File.ReadAllBytes(Path.Combine(_scratchMod, f)))).ToList();
@@ -273,6 +273,29 @@ public partial class VanillaLogicTest : StagedTest
             _results.Clear();
             return true;
         });
+        Add("the client holds the button down: it is on, pressed in on both peers, until they let go", frame =>
+        {
+            if (frame == 0)
+                Request(LogicActions.ActivatePart, new LogicPartArgs(LiftId, _button));
+            if (frame == 90)
+            {
+                Check(_results.Count == 1 && _results[0].Ok, $"pressing the button succeeds ({string.Join("; ", _results)})");
+                Check(_host.Main.Scripts.Runtime.Signals.Output(LiftId, _button) == 1f, "it stays on while held, long after a press");
+                foreach (var (instance, who) in new[] { (_host, "host"), (_client, "client") })
+                    Check(Button(instance)?.Clip == "press", $"the {who} plays its press clip ({Button(instance)?.Clip})");
+                var face = _client.Main.Creations.NodeOf(LiftId)!.FindChildren("Face", nameof(Node3D), true, false).OfType<Node3D>().FirstOrDefault();
+                Check(face is not null && face.Position.Y < -0.02f, $"the client's push face is down ({face?.Position})");
+                Request(LogicActions.ReleasePart, new LogicPartArgs(LiftId, _button));
+            }
+            if (frame < 150)
+                return false;
+            Check(_results.Count == 2 && _results[1].Ok, $"letting go succeeds ({string.Join("; ", _results)})");
+            Check(_host.Main.Scripts.Runtime.Signals.Output(LiftId, _button) == 0f, "it is off once let go");
+            Check(Button(_client)?.Clip == "release", $"the client plays its release clip ({Button(_client)?.Clip})");
+            Check(_host.Main.Logic.Actions!.Holds.Any() == false, "the host holds nothing for the client");
+            _results.Clear();
+            return true;
+        });
         Add("the host spawns a scrap engine; it rests with its off clip on both peers", frame =>
         {
             if (frame == 0)
@@ -324,6 +347,9 @@ public partial class VanillaLogicTest : StagedTest
             return true;
         });
     }
+
+    private PartDisplayVisual? Button(Instance instance) =>
+        instance.Main.Creations.NodeOf(LiftId)?.Displays.FirstOrDefault(d => d.Part == _button);
 
     private PartDisplayVisual? Scrap(Instance instance) =>
         instance.Main.Creations.NodeOf(ScrapId)?.Displays.FirstOrDefault(d => d.Part == _scrapEngine);
@@ -381,6 +407,8 @@ public partial class VanillaLogicTest : StagedTest
         Place(lift, "vanilla:metal_block", GridCell.Zero);
         Place(lift, "vanilla:metal_block", new GridCell(1, 0, 0));
         _switch = Place(lift, "vanilla:switch", new GridCell(1, 1, 0));
+        Place(lift, "vanilla:metal_block", new GridCell(1, 0, 1));
+        _button = Place(lift, "vanilla:button", new GridCell(1, 1, 1));
         _piston = Place(lift, "vanilla:piston", new GridCell(0, 1, 0));
         Place(lift, "vanilla:metal_block", new GridCell(0, 2, 0));
         lift.SetAllBodyPoses(new Pose(new System.Numerics.Vector3(-4, 0.2f, 4), System.Numerics.Quaternion.Identity));
