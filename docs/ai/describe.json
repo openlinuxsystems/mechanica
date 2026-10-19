@@ -1811,7 +1811,7 @@
         "type": "object",
         "properties": {
           "part": {
-            "description": "Part id, mod_id:part_id (a bare id means vanilla).",
+            "description": "Part id, mod_id:part_id (a bare id means vanilla), or an upgraded part's item, gas_engine@2: the part goes down at that upgrade level.",
             "type": "string"
           },
           "cell": {

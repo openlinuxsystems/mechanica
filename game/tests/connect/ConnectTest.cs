@@ -18,7 +18,7 @@ namespace Mechanica.Game.Tests;
 /// The Connect Tool's nodes, drag and lines (UI spec PR 10), host plus a client on vanilla parts. With the tool out
 /// every part with logic shows a node of its kind. Dragging from the switch to the engine links them, showing the
 /// line before the host answers; while dragging, the other Creation's switch fades. A drag from the engine over one
-/// bearing to another links both. The line between switch and engine shows "Switch → Gas Engine" when hovered;
+/// bearing to another links both. The line between switch and engine shows "Switch → Gas Engine 1" when hovered;
 /// grabbing it and letting go in the air disconnects it. A link the host refuses fades out red. Right click on a
 /// bearing an engine drives reverses it on the host. With the tool put away, a link flashes when its source's signal changes.
 /// </summary>
@@ -154,7 +154,7 @@ public partial class ConnectTest : StagedTest
             if (Connector.HoveredLink is null && frame < 30)
                 return false;
             Check(Connector.HoveredLink == (Board, new LogicLink(_switch, _engine)), $"the switch's line is hovered ({Connector.HoveredLink})");
-            Check(Connector.HoverTip is { Title: "Switch → Gas Engine" } tip && tip.Body.StartsWith("Signal:"), $"the tooltip names both ends and the signal ({Connector.HoverTip?.Title} | {Connector.HoverTip?.Body})");
+            Check(Connector.HoverTip is { Title: "Switch → Gas Engine 1" } tip && tip.Body.StartsWith("Signal:"), $"the tooltip names both ends and the signal ({Connector.HoverTip?.Title} | {Connector.HoverTip?.Body})");
             Check(Overlay.Drawn.Count(d => d.Creation == Board) == 3, "three lines are drawn");
             Check(Connector.PressDrag() && Connector.Grabbed is not null, "pressing on the line grabs its end");
             return true;

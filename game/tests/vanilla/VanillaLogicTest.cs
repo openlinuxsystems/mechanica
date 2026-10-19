@@ -34,7 +34,7 @@ public partial class VanillaLogicTest : StagedTest
         "scrap_wheel", "wheel", "big_wheel", "logic_gate", "timer", "sensor", "switch", "button", "controller",
     ];
 
-    private static readonly string[] Authored = ["scrap_drivers_seat", "scrap_gas_engine"];
+    private static readonly string[] Authored = ["gas_engine", "scrap_drivers_seat", "scrap_gas_engine"];
 
     private static readonly Vector3 CarAt = new(4, 1.0f, 8);
 
@@ -85,7 +85,8 @@ public partial class VanillaLogicTest : StagedTest
                 .Select(f => Path.GetRelativePath(_scratchMod, f).Replace('\\', '/'))
                 .Where(IsBatchOutput)
                 .Order(StringComparer.Ordinal).ToList();
-            // Parts whose model is a file made elsewhere (tools/bearing_engine, tools/scrap_seat) get no generated mesh.
+            // Parts whose model is a file made elsewhere (tools/bearing_engine, tools/gas_engine, tools/scrap_seat) get no
+            // generated mesh.
             Check(made.Count == 4 * Outputs.Length - Authored.Length, $"it writes a part, an editor source, a mesh (unless authored) and a recipe for each ({made.Count} files)");
             var differing = made.Where(f => !File.Exists(Path.Combine(VanillaDir, f))
                 || !File.ReadAllBytes(Path.Combine(VanillaDir, f)).AsSpan().SequenceEqual(File.ReadAllBytes(Path.Combine(_scratchMod, f)))).ToList();
@@ -340,9 +341,9 @@ public partial class VanillaLogicTest : StagedTest
         _host.Main.Creations.Add(rig, _host.Main.Assets);
     }
 
-    // The car of LogicScriptTests: a metal chassis along Z (z 0..4) with a driver's seat and a gas engine on
-    // top facing -Z, so the front is z 0: the front wheels hang off an axle under a steering bearing there, the rear
-    // wheels off a post at z 4.
+    // The car of LogicScriptTests: a metal chassis along Z (z 0..4) with a driver's seat and an electric engine (it
+    // drives four wheels and needs no switching on) on top facing -Z, so the front is z 0: the front wheels hang off an
+    // axle under a steering bearing there, the rear wheels off a post at z 4.
     private void SpawnCar()
     {
         var car = new Creation(CarId, _mods);
@@ -350,7 +351,7 @@ public partial class VanillaLogicTest : StagedTest
         for (var z = 1; z <= 4; z++)
             Place(car, "vanilla:metal_block", new GridCell(0, 0, z));
         _seat = Place(car, "vanilla:drivers_seat", new GridCell(0, 1, 1));
-        _engine = Place(car, "vanilla:gas_engine", new GridCell(0, 1, 3));
+        _engine = Place(car, "vanilla:electric_engine", new GridCell(0, 1, 3));
         Place(car, "vanilla:metal_block", new GridCell(0, -1, 4));
         Place(car, "vanilla:metal_block", new GridCell(0, -2, 4));
         _steering = Place(car, "vanilla:bearing", new GridCell(0, -1, 0), Facing(new GridCell(0, -1, 0)));
