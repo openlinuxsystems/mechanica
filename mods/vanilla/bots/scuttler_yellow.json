@@ -11,7 +11,19 @@
     "radius": 0.45,
     "height": 1.1
   },
-  "color": "#e0c030",
+  "color": "#e6b31e",
+  "model": {
+    "mesh": "meshes/bots/scuttler_yellow.glb",
+    "attacks": {
+      "stomp": [
+        "stomp"
+      ]
+    },
+    "clip_speeds": {
+      "patrol": 1.16,
+      "chase": 3.75
+    }
+  },
   "raid_cost": 4,
   "attacks": [
     {
