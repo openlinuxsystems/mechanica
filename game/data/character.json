@@ -35,6 +35,25 @@
   "max_body_turn_degrees": 60.0,
   "body_turn_rate": 540.0,
   "seated_offset": 0.0,
+  // Sitting (src/Mechanica.Core/Characters/CharacterSettings.cs SeatRideSettings). The legs blend the chair pose (sit) with the
+  // low-seat pose (sit_low) so the hips land clip_hips above the feet's floor, hips_above_cushion over the seat's cushion. The
+  // hips bob and the upper body sways on springs that each change in the seat's velocity pushes (times the seat's bounce):
+  // a bump throws the hips, braking tips the body forward, a turn leans it out. Sitting down sinks in at settle_speed.
+  "seat": {
+    // From tools/characters/build_characters.py (SIT_HIPS, SIT_LOW_HIPS measured on the rig).
+    "clip_hips": { "sit": 0.53, "sit_low": 0.308 },
+    "hips_above_cushion": 0.14,
+    "bob_stiffness": 160,
+    "bob_damping": 11,
+    "bob_gain": 0.5,
+    "max_bob": 0.06,
+    "lean_stiffness": 70,
+    "lean_damping": 9,
+    "lean_gain": 0.4,
+    "max_lean_degrees": 12,
+    "settle_speed": 0.35,
+    "max_impulse": 8
+  },
   // How items look in hand (prop, and the gesture using one plays), by item id, then by part category.
   "item_poses": {
     "water_bucket": { "prop": "water_bucket", "gesture": "bucket_fill" },

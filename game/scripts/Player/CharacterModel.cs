@@ -22,6 +22,9 @@ public partial class CharacterModel : Node3D
     private Quaternion[] _restRotation = [];
     private Vector3[] _restPosition = [];
     private Vector3[] _pitchAxis = [];
+    private Vector3[] _rollAxis = [];
+    private int _spine = -1;
+    private int _chest = -1;
     private int _neck = -1;
     private int _head = -1;
     private BoneAttachment3D? _hand;
@@ -77,6 +80,7 @@ public partial class CharacterModel : Node3D
         _restRotation = new Quaternion[count];
         _restPosition = new Vector3[count];
         _pitchAxis = new Vector3[count];
+        _rollAxis = new Vector3[count];
         _rotations = new Quaternion[count];
         _positions = new Vector3[count];
         _upperRotations = new Quaternion[count];
@@ -88,8 +92,11 @@ public partial class CharacterModel : Node3D
             _upper[b] = IsUpper(b);
             // The look pitch turns about the model's sideways axis, expressed in the bone's own frame.
             _pitchAxis[b] = (_skeleton.GetBoneGlobalRest(b).Basis.Inverse() * Vector3.Right).Normalized();
+            _rollAxis[b] = (_skeleton.GetBoneGlobalRest(b).Basis.Inverse() * Vector3.Back).Normalized();
         }
         _neck = _skeleton.FindBone("neck");
+        _spine = _skeleton.FindBone("spine");
+        _chest = _skeleton.FindBone("chest");
         _head = _skeleton.FindBone("head");
 
         foreach (var (name, animation) in Assets.Clips)
@@ -142,7 +149,9 @@ public partial class CharacterModel : Node3D
         }
         else
         {
-            Rotation = new Vector3(0, Animator.BodyTurn, 0);
+            // A seated body faces the seat's front, whichever way its player looks.
+            var turn = Player?.SeatYaw is { } seatYaw ? Mathf.Wrap(seatYaw - Player.Rotation.Y, -Mathf.Pi, Mathf.Pi) : Animator.BodyTurn;
+            Rotation = new Vector3(0, turn, 0);
             Position = new Vector3(0, Animator.Lift, 0) + (Player?.ShownLocalOffset ?? Vector3.Zero);
         }
         Pose();
@@ -175,6 +184,16 @@ public partial class CharacterModel : Node3D
         {
             if (bone >= 0)
                 _rotations[bone] = (_rotations[bone] * new Quaternion(_pitchAxis[bone], pitch)).Normalized();
+        }
+        // A seated body sways with the ride, half in the spine and half in the chest.
+        var lean = Animator.SeatLean;
+        if (lean != System.Numerics.Vector2.Zero)
+        {
+            foreach (var bone in new[] { _spine, _chest })
+            {
+                if (bone >= 0)
+                    _rotations[bone] = (_rotations[bone] * new Quaternion(_pitchAxis[bone], lean.X / 2f) * new Quaternion(_rollAxis[bone], lean.Y / 2f)).Normalized();
+            }
         }
         for (var b = 0; b < count; b++)
         {

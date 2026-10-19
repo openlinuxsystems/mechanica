@@ -325,7 +325,10 @@ script's job (D2). See the [Logic and Power Tutorial](logic-power-tutorial.md).
 | `logic.accepts` | list of kinds | The kinds of part whose links may end here, such as `["power"]` for a wheel bearing only engines turn. The Connect Tool grays out other targets and the host refuses them. Default: any kind but `structural`. |
 | `logic.reverse` | setting id | One of the part's `toggle` settings that reverses which way it turns. Right click on its node with the Connect Tool flips it, a curved arrow by the node shows it, and scripts that drive the part read it as `joint.reversed`. Vanilla bearings use `"reverse"`. |
 | `seat` | object | Makes the part a seat a player sits in with E. Its script reads them with `part.occupant()` and `part.occupant_input()`. |
-| `seat.offset` | [x, y, z] (m) | Where the sitter's feet go, from the part's centre, in the part's frame. Inside the part's footprint. Default [0, 0, 0]. |
+| `seat.offset` | [x, y, z] (m) | Where the sitter's feet go, from the part's centre, in the part's frame. Inside the part's footprint. Default [0, 0, 0]. With a `seat.cushion` only its height counts: the floor the feet rest on. |
+| `seat.cushion` | [x, y, z] (m) | The point on the cushion the sitter's bottom rests on, under the hips, from the part's centre in the part's frame. Inside the footprint and above the feet's floor (the offset's height, or the part's bottom). The player sits there and its legs fit the height: a chair-height cushion (0.39 m above the floor) bends the knees under it, a lower one stretches the legs out in front. Without it the hips go 0.53 m above the offset. |
+| `seat.hands` | `wheel` or `free` | What the sitter's hands do: hold a wheel in front of the chest, or rest on the thighs as a passenger. Default `wheel` on a seat with logic outputs, else `free`. |
+| `seat.bounce` | number, 0 to 4 | How much the sitter bounces and sways with the ride: the hips bob and the upper body sways with each change in the seat's own motion (bumps, braking, turns), so a smooth road barely shows. 0 is rigid, 1 a padded seat. Sitting down also sinks the body in and lets it settle. Default 1. |
 | `settings` | list | Values a player sets on each placed part in its menu (E on the part, or R with the Connect Tool), in display order. The script reads them with `part.setting(id)`. |
 
 Each setting:
