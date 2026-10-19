@@ -461,6 +461,59 @@
       ]
     },
     {
+      "file": "parts/chemical.json",
+      "template": "item",
+      "set": {
+        "name": "Chemical",
+        "description": "Glowing green chemical from a chemical pool. Dip an empty Water Bucket in one to collect it.",
+        "category": "resource",
+        "mass": 1,
+        "stack_size": 20,
+        "visual": {
+          "color": "#7ee03c"
+        },
+        "sounds": {
+          "pickup": "pickup_fuel"
+        }
+      }
+    },
+    {
+      "file": "parts/battery_pack.json",
+      "template": "item",
+      "set": {
+        "name": "Battery Pack",
+        "category": "resource",
+        "mass": 1,
+        "stack_size": 10,
+        "sounds": {
+          "pickup": "pickup_battery"
+        }
+      },
+      "recipes": [
+        {
+          "id": "battery_pack",
+          "stations": ["fabricator"],
+          "inputs": [
+            {
+              "item": "scrap_metal",
+              "count": 1
+            },
+            {
+              "item": "chemical",
+              "count": 1
+            }
+          ],
+          "outputs": [
+            {
+              "item": "battery_pack",
+              "count": 1
+            }
+          ],
+          "time": 4
+        }
+      ]
+    },
+    {
       "file": "parts/potato_scattergun.json",
       "template": "item",
       "set": {

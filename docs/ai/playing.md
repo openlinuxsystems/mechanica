@@ -75,6 +75,9 @@ Queries never change anything, cost nothing in game terms, and work even while y
 - Health is the only meter. Eat with `UseItem` on food. Watch `hurt` and `vitals` events.
 - Gather: break trees and rocks with the Sledgehammer (`Sledge` on an object id from `GetObjects`),
   refine resource nodes with `StartRefine` then `FinishRefine`, and `PickUp` piles from `GetDrops`.
+- Oil and chemicals: `Harvest` an oil geyser (`GetObjects` with type `oil_geyser`, in desert and burned
+  forest oil ponds) for Crude Oil; it wells up again an hour later. `CollectWater` with an empty bucket
+  aimed into a chemical pool gives a Chemical. Standing in a chemical pool hurts.
 - Farm: place soil, plant a seed with `UseItem` on the soil part, keep it watered (`CollectWater` at
   water, then use the bucket), and harvest ripe crops with `ActivatePart` on the soil.
 - Sleep in a bed with `SetSpawn` so you respawn there. When you die, everything you carried drops where

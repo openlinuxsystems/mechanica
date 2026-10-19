@@ -269,8 +269,11 @@ public class WorldGenTests
             var flatten = poi.Poi.Prefab.Terrain!.First(t => t.Op == TerrainOpKind.Flatten);
             for (var a = 0; a < 8; a++)
             {
-                var p = poi.ToWorld(new Vector2(a % 3 - 1, a / 3 - 1) * flatten.Radius * 0.6f);
-                if (!gen.Roads.Near(p.X, p.Y, 2f))
+                var local = new Vector2(a % 3 - 1, a / 3 - 1) * flatten.Radius * 0.6f;
+                var p = poi.ToWorld(local);
+                var inBasin = poi.Poi.Prefab.Terrain!.Any(t => t.Op == TerrainOpKind.Basin
+                    && Vector2.Distance(local, t.At is [var bx, var bz] ? new Vector2(bx, bz) : Vector2.Zero) < t.Radius + t.Blend);
+                if (!inBasin && !gen.Roads.Near(p.X, p.Y, 2f))
                     Assert.Equal(poi.PadHeight, gen.HeightAt(p.X, p.Y), 3);
             }
         }
@@ -280,7 +283,7 @@ public class WorldGenTests
     public void ObjectsStayOnDryGroundOutsidePoisInTheirBiome()
     {
         var gen = Vanilla.Value;
-        var objects = gen.ObjectsIn(-1024, -1024, 1024, 1024).ToList();
+        var objects = gen.ObjectsIn(-1024, -1024, 1024, 1024).Where(o => !o.Id.IsPoi).ToList();
         Assert.NotEmpty(objects);
         foreach (var o in objects)
         {
@@ -334,6 +337,120 @@ public class WorldGenTests
         Assert.Throws<FormatException>(() => WorldState.FromJson("""{ "destroyed": [] }"""));
     }
 
+    [Fact]
+    public void RegrowingObjectsComeBackAtTheirTimeAndTheirTimesSave()
+    {
+        var state = new WorldState(5);
+        var geyser = WorldObjectId.ForPoi(12, 3);
+        Assert.True(state.Destroy(geyser, regrowAt: 4600));
+        state.Destroy(new WorldObjectId(1, 2, 3));
+        Assert.Empty(state.RegrownBy(4599));
+        Assert.Equal([geyser], state.RegrownBy(4600));
+
+        var json = state.ToJson();
+        Assert.Contains("\"regrow\": {\n    \"poi.12.3\": 4600\n  }", json);
+        var back = WorldState.FromJson(json);
+        Assert.Equal(4600, back.Regrowing[geyser]);
+        Assert.Equal(json, back.ToJson());
+
+        Assert.True(back.Restore(geyser));
+        Assert.False(back.IsDestroyed(geyser));
+        Assert.Empty(back.Regrowing);
+        Assert.False(back.Restore(geyser));
+        Assert.DoesNotContain("regrow", back.ToJson());
+        Assert.Throws<FormatException>(() => WorldState.FromJson("""{ "seed": 1, "destroyed": [], "regrow": { "poi.1.1": 5 } }"""));
+    }
+
+    [Theory]
+    [InlineData("poi.7.2", -1, 7, 2)]
+    [InlineData("3.-10.4", 3, -10, 4)]
+    public void WorldObjectIdsRoundTrip(string text, int rule, int x, int z)
+    {
+        Assert.True(WorldObjectId.TryParse(text, out var id));
+        Assert.Equal(new WorldObjectId(rule, x, z), id);
+        Assert.Equal(text, id.ToString());
+    }
+
+    [Theory]
+    [InlineData("poi.-1.2")]
+    [InlineData("poi.1.2.3")]
+    [InlineData("poi.a.2")]
+    [InlineData("-1.7.2")]
+    public void BadWorldObjectIdsDoNotParse(string text) => Assert.False(WorldObjectId.TryParse(text, out _));
+
+    [Fact]
+    public void OilPondsAndChemicalPoolsFillTheWorldWithGeysersAndPools()
+    {
+        var gen = Vanilla.Value;
+        var ponds = gen.Pois.Where(p => p.Poi.Prefab.Id == "oil_pond").ToList();
+        var pools = gen.Pois.Where(p => p.Poi.Prefab.Pools?.Any(l => l.Liquid == "chemical") == true).ToList();
+        // Abundant (World POI plan): a pond every kilometre or so of desert and burned forest, chemicals in every region.
+        Assert.True(ponds.Count >= 15, $"oil ponds ({ponds.Count})");
+        Assert.True(pools.Count >= 12, $"chemical pools ({pools.Count})");
+        Assert.Contains(pools, p => p.Poi.Prefab.Id == "poi_48");
+        Assert.Contains(pools, p => p.Poi.Prefab.Id == "poi_23");
+
+        var geysers = gen.Pois.SelectMany(p => (p.Poi.Prefab.Markers ?? []).Select((m, k) => (Poi: p, Marker: m, Index: k)))
+            .Where(m => m.Marker.Type == "object").ToList();
+        Assert.True(geysers.Count >= 60, $"oil geysers ({geysers.Count})");
+        foreach (var (poi, marker, index) in geysers.Take(40))
+        {
+            var id = WorldObjectId.ForPoi(poi.Index, index);
+            var found = gen.Find(id)!;
+            Assert.Equal("oil_geyser", found.Definition.Id);
+            Assert.True(found.Definition.Harvest);
+            // It stands on the ground beside its pond, not in the oil, and its chunk draws it.
+            Assert.Equal(gen.HeightAt(found.Position.X, found.Position.Z) - found.Definition.Sink * found.Scale, found.Position.Y, 3);
+            Assert.Null(gen.LiquidAt(found.Position + new System.Numerics.Vector3(0, 0.2f, 0)));
+            Assert.Contains(gen.ObjectsIn(found.Position.X - 1, found.Position.Z - 1, found.Position.X + 1, found.Position.Z + 1), o => o.Id == id);
+        }
+        Assert.Null(gen.Find(WorldObjectId.ForPoi(ponds[0].Index, 99)));
+        Assert.Null(gen.Find(WorldObjectId.ForPoi(gen.Pois.Count, 0)));
+
+        // A pool's liquid lies in its basin: under the surface over the middle, not above it or past its edge.
+        var pond = pools.First(p => p.Poi.Prefab.Id == "poi_48");
+        var surface = pond.PadHeight + pond.Poi.Prefab.Pools![0].Level;
+        Assert.True(gen.HeightAt(pond.Centre.X, pond.Centre.Y) < surface - 0.3f);
+        Assert.Equal("chemical", gen.LiquidAt(new System.Numerics.Vector3(pond.Centre.X, surface - 0.2f, pond.Centre.Y))!.Liquid.Id);
+        Assert.Null(gen.LiquidAt(new System.Numerics.Vector3(pond.Centre.X, surface + 0.2f, pond.Centre.Y)));
+        Assert.Null(gen.LiquidAt(new System.Numerics.Vector3(pond.Centre.X + 40f, surface - 0.2f, pond.Centre.Y)));
+        var chunk = gen.GenerateChunk(ChunkCoord.At(pond.Centre.X, pond.Centre.Y, 64f), 64f);
+        Assert.Contains(chunk.Pools, p => p.Poi == pond);
+    }
+
+    [Fact]
+    public void PoolShoresWanderWithTheirBasin()
+    {
+        var gen = Vanilla.Value;
+        var shapes = new List<float[]>();
+        foreach (var poi in gen.Pois.Where(p => p.Poi.Prefab.Id is "chemical_pool" or "oil_pond").Take(4))
+        {
+            var pool = gen.PoolsAt(poi.Centre.X, poi.Centre.Y).Single();
+            // Walk out from the middle in 24 directions to where the liquid ends: the shore.
+            var shore = new float[24];
+            for (var a = 0; a < shore.Length; a++)
+            {
+                var direction = new System.Numerics.Vector2(MathF.Cos(a * MathF.Tau / shore.Length), MathF.Sin(a * MathF.Tau / shore.Length));
+                var r = 0f;
+                while (r < pool.Radius && gen.LiquidAt(Point(poi.Centre + direction * (r + 0.25f), pool.Centre.Y - 0.05f)) is not null)
+                    r += 0.25f;
+                shore[a] = r;
+                // The surface reaches past the shore, where the ground stands above it: no liquid there.
+                Assert.True(r < pool.Radius - 0.5f, $"{poi.Poi.Prefab.Id} shore {r} m reaches the surface's edge ({pool.Radius} m)");
+                Assert.Null(gen.LiquidAt(Point(poi.Centre + direction * (r + 1f), pool.Centre.Y - 0.05f)));
+            }
+            // Not a circle: the shore wanders in and out by well over a metre.
+            Assert.True(shore.Max() - shore.Min() > 0.25f * shore.Average(), $"{poi.Poi.Prefab.Id} shore {string.Join(", ", shore)}");
+            shapes.Add(shore);
+        }
+        // Each pond its own shape.
+        Assert.Equal(4, shapes.Count);
+        Assert.NotEqual(shapes[0], shapes[1]);
+        Assert.NotEqual(shapes[2], shapes[3]);
+
+        System.Numerics.Vector3 Point(System.Numerics.Vector2 at, float y) => new(at.X, y, at.Y);
+    }
+
     [Theory]
     [InlineData("""{ "biomes": [] }""", "$.biomes")]
     [InlineData("""{ "terrain": { "resolution": 0 }, "biomes": [{ "id": "a" }] }""", "$.terrain.resolution")]
@@ -356,6 +473,19 @@ public class WorldGenTests
     [InlineData("""{ "biomes": [{ "id": "a" }], "grounds": [{ "id": "grass", "texture": "g.png", "flora_tint": "brown" }] }""", "$.grounds[0].flora_tint")]
     [InlineData("""{ "biomes": [{ "id": "a" }], "grounds": [{ "id": "g", "texture": "g.png" }, { "id": "g", "texture": "g.png" }] }""", "$.grounds[1].id")]
     [InlineData("""{ "biomes": [{ "id": "a" }], "grounds": [{ "id": "g", "texture": "g.png" }], "slope_ground": { "ground": "rock" } }""", "$.slope_ground.ground")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "liquids": [{ "id": "goo", "roughness": 2 }] }""", "$.liquids[0].roughness")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "liquids": [{ "id": "goo", "color": "green" }] }""", "$.liquids[0].color")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "liquids": [{ "id": "goo", "sheen": 2 }] }""", "$.liquids[0].sheen")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "liquids": [{ "id": "goo", "bubbles": -1 }] }""", "$.liquids[0].bubbles")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "liquids": [{ "id": "goo", "ripple_size": 0 }] }""", "$.liquids[0].ripple_size")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "liquids": [{ "id": "goo", "flow": -1 }] }""", "$.liquids[0].flow")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "liquids": [{ "id": "goo", "ripples": 1.5 }] }""", "$.liquids[0].ripples")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "liquids": [{ "id": "goo", "edge_color": "scum" }] }""", "$.liquids[0].edge_color")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "liquids": [{ "id": "goo" }, { "id": "goo" }] }""", "$.liquids[1].id")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "liquids": [{ "id": "goo", "collect": { "item": "goo", "count": 0 } }] }""", "$.liquids[0].collect.count")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "objects": [{ "id": "g", "collider": { "shape": "sphere", "radius": 1 }, "regrow": 0 }] }""", "$.objects[0].regrow")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "objects": [{ "id": "g", "collider": { "shape": "sphere", "radius": 1 }, "harvest": true, "refine": true }] }""", "$.objects[0].harvest")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "objects": [{ "id": "g", "collider": { "shape": "sphere", "radius": 1 }, "drops": [{ "item": "x", "count": 3, "count_max": 2 }] }] }""", "$.objects[0].drops[0].count_max")]
     [InlineData("""{ "biomes": [{ "id": "a" }], "grounds": [{ "id": "g", "texture": "g.png" }], "slope_ground": { "ground": "g", "from": 1, "to": 0.5 } }""", "$.slope_ground")]
     [InlineData("""{ "biomes": [{ "id": "a" }], "grounds": [{ "id": "a1", "texture": "g.png" }, { "id": "a2", "texture": "g.png" }, { "id": "a3", "texture": "g.png" }, { "id": "a4", "texture": "g.png" }, { "id": "a5", "texture": "g.png" }, { "id": "a6", "texture": "g.png" }, { "id": "a7", "texture": "g.png" }, { "id": "a8", "texture": "g.png" }, { "id": "a9", "texture": "g.png" }] }""", "$.grounds")]
     public void BadWorldGenDataGivesAClearError(string json, string path)
@@ -381,10 +511,21 @@ public class WorldGenTests
     [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "ground": [{ "ground": "sand", "radius": 4 }] }""", "$.ground[0].ground")]
     [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "ground": [{ "ground": "burnt", "radius": 8, "blend": 4 }] }""", "$.ground[0]")]
     [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "flora": "jungle" }""", "$.flora")]
+    [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "markers": [{ "type": "object", "ref": "tree" }] }""", "$.markers[0].ref")]
+    [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "markers": [{ "type": "object" }] }""", "$.markers[0].ref")]
+    [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "terrain": [{ "op": "basin", "radius": 2, "blend": 3, "depth": 1, "wobble": 0.6 }] }""", "$.terrain[0].wobble")]
+    [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "terrain": [{ "op": "basin", "radius": 4, "blend": 4, "depth": 1, "wobble": 0.4 }] }""", "$.terrain[0]")]
+    [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "terrain": [{ "op": "basin", "radius": 2, "blend": 2, "depth": 1, "wobble": 0.4 }] }""", "$.terrain[0].blend")]
+    [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "pools": [{ "liquid": "oil", "radius": 4 }] }""", "$.pools[0].liquid")]
+    [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "pools": [{ "liquid": "goo", "radius": 0 }] }""", "$.pools[0].radius")]
+    [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "pools": [{ "liquid": "goo", "at": [6, 0], "radius": 5 }] }""", "$.pools[0]")]
     public void BadPoiGivesAClearErrorAndIsLeftOut(string json, string path)
     {
         using var mods = new TestMods().Mod("vanilla")
-            .File("vanilla", WorldGenData.DefinitionFile, """{ "biomes": [{ "id": "a" }], "grounds": [{ "id": "burnt", "texture": "b.png" }] }""")
+            .File("vanilla", WorldGenData.DefinitionFile, """
+                { "biomes": [{ "id": "a" }], "grounds": [{ "id": "burnt", "texture": "b.png" }], "liquids": [{ "id": "goo" }],
+                  "objects": [{ "id": "geyser", "collider": { "shape": "sphere", "radius": 1 } }] }
+                """)
             .File("vanilla", "pois/p.json", json);
         var data = WorldGenData.Load(mods.Load());
         Assert.Contains(data.Diagnostics, d => d.Code == DiagnosticCodes.PoiInvalid && d.JsonPath == path);

@@ -401,6 +401,17 @@ public partial class TerrainChunk : Node3D
                 Structures.AddChild(new CollisionShape3D { Shape = MakeShape(piece.Shape, 1f), Transform = transform });
             Structures.AddChild(new MeshInstance3D { Mesh = MeshOf(piece.Shape), MaterialOverride = MaterialOf(piece.Shape.Color), Transform = transform });
         }
+        foreach (var pool in Data.Pools)
+        {
+            AddChild(new MeshInstance3D
+            {
+                Name = $"Pool_{pool.Pool.Liquid}",
+                Mesh = PoolMesh(pool.Radius),
+                MaterialOverride = LiquidSurface.MaterialFor(pool.Liquid),
+                Position = pool.Centre.ToGodot() - origin,
+                CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+            }, forceReadableName: true);
+        }
         Markers = new Node3D { Name = "Markers" };
         AddChild(Markers);
         foreach (var marker in Data.Markers.Where(_ => !Scenery))
@@ -502,6 +513,15 @@ public partial class TerrainChunk : Node3D
             _ => new CylinderMesh { TopRadius = shape.Radius!.Value, BottomRadius = shape.Radius!.Value, Height = shape.Height!.Value, RadialSegments = 10, Rings = 1 },
         };
         PieceMeshes[shape] = mesh;
+        return mesh;
+    }
+
+    // A pool's flat round surface (cosmetic: players wade in and the host judges what is in the liquid).
+    private static Mesh PoolMesh(float radius)
+    {
+        var key = new ShapeDefinition { Shape = PrimitiveShape.Cylinder, Radius = radius, Height = 0f };
+        if (!PieceMeshes.TryGetValue(key, out var mesh))
+            PieceMeshes[key] = mesh = new CylinderMesh { TopRadius = radius, BottomRadius = radius, Height = 0.001f, RadialSegments = 48, Rings = 1, CapBottom = false };
         return mesh;
     }
 

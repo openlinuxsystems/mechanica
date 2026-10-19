@@ -321,6 +321,9 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
     }
 
     /// <inheritdoc/>
+    public PoiPoolPlacement? LiquidAt(System.Numerics.Vector3 point) => World.Generator.LiquidAt(point);
+
+    /// <inheritdoc/>
     public WorldObjectPlacement? FindObject(WorldObjectId id) =>
         World.State.IsDestroyed(id) ? null : World.Generator.Find(id);
 

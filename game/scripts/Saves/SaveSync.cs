@@ -181,6 +181,7 @@ public partial class SaveSync : Node
             Mods = content.Mods,
             Fingerprint = content.Fingerprint,
             Destroyed = [.. World.State.Destroyed],
+            Regrow = World.State.Regrowing.ToDictionary(),
             Creations = [.. Creations.All.OrderBy(c => c.Id).Select(c => { Creations.NodeOf(c.Id)?.SyncToCreation(); return Core.Creations.CreationJson.Write(c); })],
             Scripts = scripts,
             Players = [.. Roster.All],

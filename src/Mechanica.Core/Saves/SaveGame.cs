@@ -88,6 +88,9 @@ public sealed record SaveGame
     /// <summary>World objects (trees, rocks) that were destroyed.</summary>
     public IReadOnlyList<WorldObjectId> Destroyed { get; init; } = [];
 
+    /// <summary>Destroyed objects that will stand again (an oil geyser), with the world time (<see cref="Time"/>'s clock) when.</summary>
+    public IReadOnlyDictionary<WorldObjectId, double> Regrow { get; init; } = new Dictionary<WorldObjectId, double>();
+
     /// <summary>Each Creation as <see cref="CreationJson"/> text.</summary>
     public IReadOnlyList<string> Creations { get; init; } = [];
 
@@ -147,6 +150,7 @@ public sealed record SaveGame
             Mods = [.. Mods.Select(m => new ModData { Id = m.Id, Version = m.Version })],
             Fingerprint = Fingerprint,
             Destroyed = Destroyed.Count == 0 ? null : [.. Destroyed.Select(d => d.ToString()).Order(StringComparer.Ordinal)],
+            Regrow = Regrow.Count == 0 ? null : new SortedDictionary<string, double>(Regrow.ToDictionary(r => r.Key.ToString(), r => r.Value), StringComparer.Ordinal),
             Creations = [.. Creations.Select(c => JsonDocument.Parse(c).RootElement.Clone())],
             Scripts = Scripts.Count == 0 ? null : [.. Scripts.OrderBy(s => s.Creation).ThenBy(s => s.Part)
                 .Select(s => new ScriptData { Creation = s.Creation, Part = s.Part, State = JsonSerializer.SerializeToElement(s.State) })],
@@ -202,6 +206,16 @@ public sealed record SaveGame
                 destroyed.Add(id);
             else
                 sink.Error(invalid, $"$.destroyed[{i}]", $"'{text}' is not a world object id.");
+        }
+        var regrow = new Dictionary<WorldObjectId, double>();
+        foreach (var (text, at) in data.Regrow ?? [])
+        {
+            if (!WorldObjectId.TryParse(text, out var id) || !destroyed.Contains(id))
+                sink.Error(invalid, $"$.regrow.{text}", $"'{text}' is not a destroyed world object.");
+            else if (!double.IsFinite(at))
+                sink.Error(invalid, $"$.regrow.{text}", "the regrow time must be a number.");
+            else
+                regrow[id] = at;
         }
 
         var creations = new List<string>();
@@ -315,6 +329,7 @@ public sealed record SaveGame
             Mods = [.. (data.Mods ?? []).Where(m => m?.Id is not null).Select(m => new ModStamp(m.Id!, m.Version ?? ""))],
             Fingerprint = data.Fingerprint ?? "",
             Destroyed = destroyed,
+            Regrow = regrow,
             Creations = creations,
             Scripts = scripts,
             Players = players,
@@ -343,6 +358,7 @@ public sealed record SaveGame
         public List<ModData>? Mods { get; init; }
         public string? Fingerprint { get; init; }
         public List<string>? Destroyed { get; init; }
+        public SortedDictionary<string, double>? Regrow { get; init; }
         public List<JsonElement>? Creations { get; init; }
         public List<ScriptData>? Scripts { get; init; }
         public List<PlayerData>? Players { get; init; }

@@ -7,12 +7,25 @@ namespace Mechanica.Core.World;
 /// Stable id of a scattered world object: the scatter rule that placed it and the rule's grid cell. The
 /// same seed and world data always give the same ids, so destroyed objects can be saved and synced as ids.
 /// Written as <c>rule.x.z</c>, or <c>rule.x.z.piece</c> for the second and later cubes of a rock outcrop
-/// (<see cref="WorldObjectDefinition.Outcrop"/>), each of which is an object of its own.
+/// (<see cref="WorldObjectDefinition.Outcrop"/>), each of which is an object of its own. An object a POI's
+/// <c>object</c> marker places (<see cref="ForPoi"/>) is <c>poi.index.marker</c>: its POI's place in
+/// <see cref="WorldGenerator.Pois"/> and the marker's in the prefab.
 /// </summary>
 public readonly record struct WorldObjectId(int Rule, int CellX, int CellZ, int Piece = 0)
 {
+    /// <summary><see cref="Rule"/> of an object a POI marker places.</summary>
+    public const int PoiRule = -1;
+
+    /// <summary>The id of the object marker <paramref name="marker"/> of POI <paramref name="poi"/> places.</summary>
+    public static WorldObjectId ForPoi(int poi, int marker) => new(PoiRule, poi, marker);
+
+    /// <summary>True for an object a POI marker placed rather than a scatter rule.</summary>
+    public bool IsPoi => Rule == PoiRule;
+
     /// <inheritdoc />
-    public override string ToString() => Piece == 0
+    public override string ToString() => IsPoi
+        ? string.Create(CultureInfo.InvariantCulture, $"poi.{CellX}.{CellZ}")
+        : Piece == 0
         ? string.Create(CultureInfo.InvariantCulture, $"{Rule}.{CellX}.{CellZ}")
         : string.Create(CultureInfo.InvariantCulture, $"{Rule}.{CellX}.{CellZ}.{Piece}");
 
@@ -22,6 +35,14 @@ public readonly record struct WorldObjectId(int Rule, int CellX, int CellZ, int 
         id = default;
         var parts = text?.Split('.');
         var piece = 0;
+        if (parts is [ "poi", var poiText, var markerText ])
+        {
+            if (!int.TryParse(poiText, NumberStyles.None, CultureInfo.InvariantCulture, out var poi)
+                || !int.TryParse(markerText, NumberStyles.None, CultureInfo.InvariantCulture, out var marker))
+                return false;
+            id = ForPoi(poi, marker);
+            return true;
+        }
         if (parts is not { Length: 3 or 4 }
             || !int.TryParse(parts[0], NumberStyles.None, CultureInfo.InvariantCulture, out var rule)
             || !int.TryParse(parts[1], NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var x)
@@ -94,6 +115,24 @@ public sealed record PoiPiecePlacement(PoiInstance Poi, int Piece, ShapeDefiniti
 /// <param name="Yaw">Turn about +Y in radians.</param>
 public sealed record PoiMarkerPlacement(PoiInstance Poi, PoiMarker Marker, Vector3 Position, float Yaw);
 
+/// <summary>A pool of liquid in a POI, in world space.</summary>
+/// <param name="Poi">The POI it belongs to.</param>
+/// <param name="Pool">The pool data.</param>
+/// <param name="Liquid">What it holds.</param>
+/// <param name="Centre">World centre of its surface.</param>
+public sealed record PoiPoolPlacement(PoiInstance Poi, LiquidPool Pool, LiquidDefinition Liquid, Vector3 Centre)
+{
+    /// <summary>Radius of the surface.</summary>
+    public float Radius => Pool.Radius;
+
+    /// <summary>
+    /// True when <paramref name="point"/> is under the surface and over its disc. The liquid is only where the ground is
+    /// lower too (<see cref="WorldGenerator.LiquidAt"/>).
+    /// </summary>
+    public bool Holds(Vector3 point) =>
+        point.Y <= Centre.Y && Vector2.DistanceSquared(new Vector2(point.X, point.Z), new Vector2(Centre.X, Centre.Z)) <= Radius * Radius;
+}
+
 /// <summary>
 /// One generated chunk: a square grid of <see cref="Samples"/> × <see cref="Samples"/> heights spaced
 /// <see cref="Resolution"/> metres apart, covering the chunk edge to edge so neighbours share their border
@@ -130,6 +169,9 @@ public sealed class TerrainChunkData
     /// sample, row by row. They sum to at most 1; the rest is the plain biome colour. Empty when the world has no grounds.
     /// </summary>
     public float[] Grounds { get; init; } = [];
+
+    /// <summary>Liquid pools whose centre is in the chunk.</summary>
+    public IReadOnlyList<PoiPoolPlacement> Pools { get; init; } = [];
 
     /// <summary>Road surfaces, curbs, junctions and bridges in the chunk, in chunk-local metres (empty when there are none).</summary>
     public RoadMesh Roads { get; init; } = RoadMesh.Empty;

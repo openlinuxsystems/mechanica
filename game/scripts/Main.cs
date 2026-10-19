@@ -489,6 +489,7 @@ public partial class Main : Node3D
         Motion.RegisterActions(Actions.Dispatcher);
         Scripts = new ScriptSync { Name = "Scripts", Session = Session, Creations = Creations, Motion = Motion, Actions = Actions, Sounds = Sounds, Mods = mods, Survival = Survival };
         AddChild(Scripts);
+        Streamer.Clock = () => Scripts.Runtime.Time;
         Fire = new FireSync { Name = "Fire", Session = Session, Creations = Creations, Survival = Survival, World = Streamer, Scripts = Scripts, Sounds = Sounds };
         Fire.RegisterActions(Actions.Dispatcher);
         Scripts.Runtime.Fire = Fire.Actions;
@@ -983,7 +984,7 @@ public partial class Main : Node3D
     {
         var state = new WorldState(save.Seed);
         foreach (var id in save.Destroyed)
-            state.Destroy(id);
+            state.Destroy(id, save.Regrow.TryGetValue(id, out var at) ? at : null);
         return state;
     }
 

@@ -1,0 +1,14 @@
+{
+  "id": "chemical",
+  "name": "Chemical",
+  "description": "Glowing green chemical from a chemical pool. Dip an empty Water Bucket in one to collect it.",
+  "category": "resource",
+  "mass": 1,
+  "stack_size": 20,
+  "visual": {
+    "color": "#7ee03c"
+  },
+  "sounds": {
+    "pickup": "pickup_fuel"
+  }
+}
