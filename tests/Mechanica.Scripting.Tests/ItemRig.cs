@@ -32,6 +32,9 @@ internal sealed class ItemRig : IDisposable
 
     public List<ScriptMessage> Messages { get; } = [];
 
+    /// <summary>Mod scripts of the test mod that run for the world (<c>scripts/x.lua</c>, relative to <see cref="Root"/>).</summary>
+    public List<string> ModScripts { get; } = [];
+
     /// <summary>Creations that are parked (not live), so their parts get no <c>on_update</c>.</summary>
     public HashSet<int> Parked { get; } = [];
 
@@ -110,6 +113,8 @@ internal sealed class ItemRig : IDisposable
             var path = File.Exists(own) ? own : Path.Combine(VanillaRoot, script);
             return new ScriptFile($"test:{script}", "test", path);
         }
+
+        public IReadOnlyList<ScriptFile> WorldScripts => [.. rig.ModScripts.Select(s => new ScriptFile($"test:{s}", "test", Path.Combine(rig.Root, s)))];
     }
 
     // Item scripts move nothing; the runtime still wants a motion world for part scripts.
