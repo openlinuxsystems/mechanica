@@ -98,6 +98,7 @@ you; this page is the reference for what each key means, so you can read, review
 | `soil`, `respawn_point` | object, bool | no | Farming soil and respawn beds. Placeable parts only. See [survival](#survival). |
 | `seed` | object | no | What a seed grows into. Items only. See [survival](#survival). |
 | `aim` | object | no | A weapon aims while right click is held. Items only. See [survival](#survival). |
+| `held` | object | no | The model a player holds in the right hand while the item is selected, seen by every player. Items only. See [held](#held). |
 | `logic`, `settings`, `seat` | object, list, object | no | Logic bus links, player-set settings and seats. Placeable parts only. See [logic, settings and seats](#logic-settings-and-seats). |
 | `light`, `animation` | object, object | no | A light the script switches, and a model the script turns. Placeable parts only. See [light and animation](#light-and-animation). |
 | `menu`, `display` | object, object | no | What the part's menu shows and does, and what the part shows on itself. Placeable parts only. See [menu and display](#menu-and-display). |
@@ -316,6 +317,22 @@ soil script may treat them differently. A bare `crop` id is in the seed's own mo
 
 ```json
 "seed": { "crop": "carrot", "grow_time": 240, "yield": 2, "seeds": 1 }
+```
+
+## held
+
+Without `held`, an item in hand shows nothing (vanilla's tools have their own rig props). With it, the player holding the
+item carries a model in the right hand, and every other player sees it too.
+
+| Key | Type | Meaning |
+|---|---|---|
+| `held.mesh` | mesh path | The model (`.glb`/`.gltf`, relative to the mod; `other_mod:path` for another mod's). Default: the item's `mesh`. One of the two is required. |
+| `held.offset` | [x, y, z] m, each -0.5 to 0.5 | Moves the model from the palm, in the hand's frame. Default [0, 0, 0]. |
+| `held.rotation` | [x, y, z] degrees | Turns the model in the hand (X, then Y, then Z). Default [0, 0, 0]. |
+| `held.scale` | number, more than 0 to 4 | Scales the model. Default 1. |
+
+```json
+"held": { "mesh": "meshes/torch_held.glb", "offset": [0, 0.05, 0], "rotation": [0, 90, 0], "scale": 0.8 }
 ```
 
 ## logic, settings and seats

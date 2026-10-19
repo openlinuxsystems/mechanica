@@ -28,6 +28,8 @@ public partial class CharacterModel : Node3D
     private int _neck = -1;
     private int _head = -1;
     private BoneAttachment3D? _hand;
+    private Node3D? _held;
+    private ushort _heldShown;
     private Node3D? _prop;
     private CharacterProp _propShown;
     private HeldBucket? _bucket;
@@ -64,6 +66,9 @@ public partial class CharacterModel : Node3D
 
     /// <summary>The prop node in hand, or null.</summary>
     public Node3D? PropNode => _prop;
+
+    /// <summary>The modded held model in the right hand (an item's <c>held</c> section), or null.</summary>
+    public Node3D? HeldNode => _held;
 
     /// <summary>Raised for every body event, after its sound plays (tests listen).</summary>
     public event Action<CharacterEvent>? Event;
@@ -156,6 +161,7 @@ public partial class CharacterModel : Node3D
         }
         Pose();
         ShowProp(Animator.ShowProp && Player is not null ? Animator.Prop : CharacterProp.None);
+        ShowHeld(_propShown == CharacterProp.Item && Player is not null ? Player.ShownHeld : (ushort)0);
         _bucket?.Update(HeldBucket.Target(Assets.Settings.Bucket, _propShown, Animator), (float)delta, PlayFill);
     }
 
@@ -257,6 +263,18 @@ public partial class CharacterModel : Node3D
         _prop = made.Node;
         _hand.AddChild(_prop);
         _bucket = HeldBucket.Find(_prop, Assets.Settings.Bucket);
+    }
+
+    // A held item's own model (its part data's held section) in the right hand, while the plain item pose is shown.
+    private void ShowHeld(ushort item)
+    {
+        if (item == _heldShown || _hand is null)
+            return;
+        _heldShown = item;
+        _held?.QueueFree();
+        _held = item == 0 ? null : Assets.HeldModel?.Invoke(item);
+        if (_held is not null)
+            _hand.AddChild(_held);
     }
 
     private void PlaySound(CharacterEvent e)

@@ -275,6 +275,15 @@ public partial class PlayerController : CharacterBody3D
     /// <summary>The Paint Tool colour shown after the last tick or snapshot (<see cref="HeldTint"/>).</summary>
     public byte ShownTint { get; private set; }
 
+    /// <summary>
+    /// The item in hand that has a held model, by its number (<see cref="Core.Characters.HeldItems"/>), 0 for none;
+    /// travels with the input like <see cref="HeldProp"/>, so every peer draws it.
+    /// </summary>
+    public ushort HeldItem { get; set; }
+
+    /// <summary>The held model shown after the last tick or snapshot (<see cref="HeldItem"/>).</summary>
+    public ushort ShownHeld { get; private set; }
+
     /// <summary>How the body stands after the last tick (or snapshot, for players this peer does not simulate).</summary>
     public BodyFlags Body { get; private set; } = BodyFlags.OnFloor;
 
@@ -408,7 +417,7 @@ public partial class PlayerController : CharacterBody3D
     {
         if (!Simulated)
             return;
-        var input = Step(CurrentInput with { Prop = ActionProp ?? HeldProp, Gesture = _gesture, GestureCount = _gestureCount, Guard = HeldGuard, Tint = HeldTint }, (float)delta);
+        var input = Step(CurrentInput with { Prop = ActionProp ?? HeldProp, Gesture = _gesture, GestureCount = _gestureCount, Guard = HeldGuard, Tint = HeldTint, Held = HeldItem }, (float)delta);
         Stepped?.Invoke(input);
     }
 
@@ -424,6 +433,7 @@ public partial class PlayerController : CharacterBody3D
         ShownProp = input.Prop;
         ShownGesture = (input.Gesture, input.GestureCount);
         ShownTint = input.Tint;
+        ShownHeld = input.Held;
         if (_dead)
             return input;
         if (_seat is not null)
@@ -486,9 +496,10 @@ public partial class PlayerController : CharacterBody3D
     }
 
     /// <summary>Shows how a player this peer does not simulate stands and what they hold, from a host snapshot.</summary>
-    public void ApplyBody(BodyFlags body, CharacterProp prop, CharacterGesture gesture, byte gestureCount, byte tint = 0)
+    public void ApplyBody(BodyFlags body, CharacterProp prop, CharacterGesture gesture, byte gestureCount, byte tint = 0, ushort held = 0)
     {
         ShownTint = tint;
+        ShownHeld = held;
         Body = body;
         SetCrouched(body.HasFlag(BodyFlags.Crawl));
         StepEyeHeight((float)GetPhysicsProcessDeltaTime());

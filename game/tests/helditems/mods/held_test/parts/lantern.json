@@ -1,0 +1,7 @@
+{
+  "id": "lantern",
+  "name": "Lantern",
+  "category": "tool",
+  "stack_size": 1,
+  "held": { "mesh": "vanilla:meshes/barrel.glb", "offset": [0, 0.1, 0], "rotation": [0, 90, 0], "scale": 0.25 }
+}

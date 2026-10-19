@@ -1,0 +1,9 @@
+{
+  "id": "held_test",
+  "name": "Held Test",
+  "version": "1.0.0",
+  "format_version": 1,
+  "dependencies": [
+    { "id": "vanilla" }
+  ]
+}

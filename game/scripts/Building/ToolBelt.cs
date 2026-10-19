@@ -50,6 +50,9 @@ public partial class ToolBelt : Node
     /// <summary>How items look in hand; null shows every item the same way.</summary>
     public Core.Characters.CharacterSettings? Characters { get; init; }
 
+    /// <summary>The items with a held model, numbered for the network; null draws no held models.</summary>
+    public Func<Core.Characters.HeldItems>? HeldNumbers { get; init; }
+
     /// <summary>The hotbar's slots; null holds every tool in key order and never changes.</summary>
     public HotbarSync? Hotbar { get; init; }
 
@@ -160,6 +163,7 @@ public partial class ToolBelt : Node
     {
         // What others see in the player's hand.
         Player.HeldProp = Current.Prop;
+        Player.HeldItem = Current == Item && Item.InHand is { } hand && HeldNumbers is { } held ? held().IndexOf(hand.Item) : (ushort)0;
         if (_hud is null)
             return;
         _bar!.Visible = GameSettings.Current.Interface.ShowHotbar && !CreationBarShown;

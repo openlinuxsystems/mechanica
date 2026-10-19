@@ -86,6 +86,7 @@ public static class DataJson
         Settings = part.Settings?.Select(s => s with { Extra = Sorted(s.Extra) }).ToList(),
         Seat = part.Seat is null ? null : part.Seat with { Extra = Sorted(part.Seat.Extra) },
         Aim = part.Aim is null ? null : part.Aim with { Extra = Sorted(part.Aim.Extra) },
+        Held = part.Held is null ? null : part.Held with { Extra = Sorted(part.Held.Extra) },
         Light = part.Light is null ? null : part.Light with { Extra = Sorted(part.Light.Extra) },
         Animation = part.Animation is null ? null : part.Animation with { Extra = Sorted(part.Animation.Extra) },
         Upgrades = part.Upgrades?.Select(u => u with { Extra = Sorted(u.Extra), Cost = u.Cost?.Select(c => c with { Extra = Sorted(c.Extra) }).ToList() }).ToList(),

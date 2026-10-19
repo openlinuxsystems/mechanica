@@ -138,6 +138,29 @@ public partial class Main : Node3D
     /// <summary>Meshes and shapes for the parts in <see cref="Mods"/>.</summary>
     public PartAssets Assets { get; private set; } = null!;
 
+    /// <summary>The items of <see cref="Mods"/> with a held model, numbered as players' inputs and snapshots carry them.</summary>
+    public HeldItems HeldItems { get; private set; } = HeldItems.Empty;
+
+    /// <summary>
+    /// The model of the held item numbered <paramref name="index"/> (<see cref="HeldItems"/>), placed in the hand's frame by
+    /// its <c>held</c> offset, rotation and scale; null for none.
+    /// </summary>
+    public Node3D? HeldModel(ushort index)
+    {
+        if (HeldItems.IdOf(index) is not { } id || Mods?.Parts.GetValueOrDefault(id) is not { Definition.Held: { } held } part)
+            return null;
+        var model = held.Mesh is { } mesh ? Assets.InstantiateScene(mesh, part.ModId) : Assets.SceneFor(id, part.Definition);
+        if (model is null)
+            return null;
+        var turn = held.Rotation ?? default;
+        var root = new Node3D { Name = "Held" };
+        root.Transform = new Transform3D(
+            Basis.FromEuler(new Vector3(Mathf.DegToRad(turn.X), Mathf.DegToRad(turn.Y), Mathf.DegToRad(turn.Z)), EulerOrder.Xyz).Scaled(Vector3.One * (held.Scale ?? 1f)),
+            held.Offset is { } o ? new Vector3(o.X, o.Y, o.Z) : Vector3.Zero);
+        root.AddChild(model);
+        return root;
+    }
+
     /// <summary>
     /// World generation rules. Null loads them from <see cref="Mods"/> when the scene starts; tests may set
     /// <see cref="WorldGenData.Flat"/>.
@@ -361,6 +384,7 @@ public partial class Main : Node3D
         // the world from the first, shows the recipes in its station screens and the bots the host sends.
         var content = Content ??= Core.ModTools.GameContent.ManifestOf(mods, world, recipes, bots, raids, quests, characters);
         Assets = new PartAssets(mods);
+        HeldItems = HeldItemsOf(mods);
 
         Session = new NetSession { Name = "Session", Content = content, Profile = profile };
         AddChild(Session);
@@ -538,7 +562,7 @@ public partial class Main : Node3D
             Name = "Characters",
             Session = Session,
             Players = PlayerSync,
-            Assets = new CharacterAssets(mods),
+            Assets = new CharacterAssets(mods) { HeldModel = HeldModel },
             Sounds = Sounds,
             Actions = Actions,
             Choices = new CharacterActions(characters),
@@ -868,6 +892,9 @@ public partial class Main : Node3D
     /// started with them until a new world. Clients already connected stay; the next client to join is checked
     /// against the content now running.
     /// </summary>
+    private static HeldItems HeldItemsOf(ModLoadResult mods) =>
+        new(mods.Parts.Select(p => KeyValuePair.Create(p.Key, p.Value.Definition)));
+
     public void ReloadMods(ModLoadResult mods)
     {
         Mods = mods;
@@ -875,6 +902,7 @@ public partial class Main : Node3D
         Content = Core.ModTools.GameContent.ManifestOf(mods, WorldGen!, Recipes!, BotTypes, RaidTable!, QuestBook!, CharacterBook!);
         Session.Content = Content;
         Assets.SetContent(mods);
+        HeldItems = HeldItemsOf(mods);
         Build.SetContent(mods);
         SoundEvents = LoadSounds(mods);
         Sounds.SetRegistry(SoundEvents);
@@ -1110,6 +1138,7 @@ public partial class Main : Node3D
             Survival = Survival,
             Sounds = Sounds,
             Characters = Characters?.Assets.Settings,
+            HeldNumbers = () => HeldItems,
             Hotbar = Hotbar,
             Icons = Icons,
             ReadDeviceInput = ReadDeviceInput,
