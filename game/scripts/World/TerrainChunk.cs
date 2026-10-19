@@ -117,10 +117,23 @@ public partial class TerrainChunk : Node3D
         SetProcess(false);
     }
 
+    /// <summary>
+    /// Leaves the chunk drawn but out of the simulation: its ground shape goes and its object colliders leave the
+    /// physics space. The streamer keeps an unloaded chunk this way until scenery replaces it.
+    /// </summary>
+    public void Retire()
+    {
+        ProcessMode = ProcessModeEnum.Disabled;
+        if (!IsInstanceValid(GroundShape) || GroundShape.IsQueuedForDeletion())
+            return;
+        GroundShape.GetParent()?.RemoveChild(GroundShape);
+        GroundShape.QueueFree();
+    }
+
     // The ground shape lives on the shared body, so it goes when the chunk does.
     public override void _ExitTree()
     {
-        if (!IsInstanceValid(GroundShape))
+        if (!IsInstanceValid(GroundShape) || GroundShape.IsQueuedForDeletion())
             return;
         GroundShape.GetParent()?.RemoveChild(GroundShape);
         GroundShape.QueueFree();
@@ -217,13 +230,18 @@ public partial class TerrainChunk : Node3D
         // Scenery skips every other sample when the grid allows it: far away, half the triangles look the same.
         var step = Scenery && (n - 1) % 2 == 0 ? 2 : 1;
         var m = (n - 1) / step + 1;
-        var vertices = new Vector3[m * m];
-        var normals = new Vector3[m * m];
-        var colors = new Color[m * m];
+        // A skirt hangs from each edge (four rows of m vertices under the border), so the seams between chunks
+        // never show the sky: not where scenery's coarser edge meets a simulated chunk's, nor in the hairline
+        // gaps rounding leaves between two chunks drawn with different transforms.
+        var grid = m * m;
+        var count = grid + 4 * m;
+        var vertices = new Vector3[count];
+        var normals = new Vector3[count];
+        var colors = new Color[count];
         // Ground weights, four layers per custom channel. Floats: the Compatibility renderer reads 8-bit custom channels unnormalised.
         var textured = Data.Grounds.Length > 0 && Textured is not null;
-        var custom0 = textured ? new float[m * m * 4] : [];
-        var custom1 = textured ? new float[m * m * 4] : [];
+        var custom0 = textured ? new float[count * 4] : [];
+        var custom1 = textured ? new float[count * 4] : [];
         for (var j = 0; j < m; j++)
         {
             for (var i = 0; i < m; i++)
@@ -244,8 +262,26 @@ public partial class TerrainChunk : Node3D
                 }
             }
         }
+        var depth = SkirtDepth();
+        // Bottom, top, left and right edges, each as a run of grid vertices.
+        var edges = new Func<int, int>[] { i => i, i => (m - 1) * m + i, j => j * m, j => j * m + m - 1 };
+        for (var e = 0; e < 4; e++)
+        {
+            for (var i = 0; i < m; i++)
+            {
+                int from = edges[e](i), to = grid + e * m + i;
+                vertices[to] = vertices[from] - new Vector3(0, depth, 0);
+                normals[to] = normals[from];
+                colors[to] = colors[from];
+                if (textured)
+                {
+                    System.Array.Copy(custom0, from * 4, custom0, to * 4, 4);
+                    System.Array.Copy(custom1, from * 4, custom1, to * 4, 4);
+                }
+            }
+        }
         n = m;
-        var indices = new int[(n - 1) * (n - 1) * 6];
+        var indices = new int[(n - 1) * (n - 1) * 6 + 4 * (m - 1) * 12];
         var t = 0;
         for (var j = 0; j < n - 1; j++)
         {
@@ -259,6 +295,20 @@ public partial class TerrainChunk : Node3D
                 indices[t++] = b;
                 indices[t++] = d;
                 indices[t++] = c;
+            }
+        }
+        // Skirt quads face both ways: a seam is seen from either side.
+        for (var e = 0; e < 4; e++)
+        {
+            for (var i = 0; i < m - 1; i++)
+            {
+                int a = edges[e](i), b = edges[e](i + 1), c = grid + e * m + i, d = c + 1;
+                foreach (var (p, q, r) in new[] { (a, b, c), (b, d, c), (a, c, b), (b, c, d) })
+                {
+                    indices[t++] = p;
+                    indices[t++] = q;
+                    indices[t++] = r;
+                }
             }
         }
         var arrays = new Godot.Collections.Array();
@@ -290,6 +340,26 @@ public partial class TerrainChunk : Node3D
                 CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
             });
         }
+    }
+
+    // How far the skirts hang: past the most a border sample stands off the line scenery draws through its
+    // neighbours (scenery keeps every other border sample), and at least half a metre.
+    private float SkirtDepth()
+    {
+        var n = Data.Samples;
+        var most = 0f;
+        for (var i = 1; i < n - 1; i += 2)
+        {
+            foreach (var (h, a, b) in new[]
+            {
+                (Data.HeightAt(i, 0), Data.HeightAt(i - 1, 0), Data.HeightAt(i + 1, 0)),
+                (Data.HeightAt(i, n - 1), Data.HeightAt(i - 1, n - 1), Data.HeightAt(i + 1, n - 1)),
+                (Data.HeightAt(0, i), Data.HeightAt(0, i - 1), Data.HeightAt(0, i + 1)),
+                (Data.HeightAt(n - 1, i), Data.HeightAt(n - 1, i - 1), Data.HeightAt(n - 1, i + 1)),
+            })
+                most = MathF.Max(most, MathF.Abs(h - (a + b) / 2f));
+        }
+        return most + 0.5f;
     }
 
     private void BuildGroundShape(int n, float res)
