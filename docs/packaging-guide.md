@@ -31,6 +31,7 @@ mods/
     raids/raids.patch.json  additions and changes to it that stack across mods
     quests/             quests and dialogue (*.json), see quests.md
     characters/         player characters and skins (*.json), see characters.md
+    rules/              game rules: survival.patch.json, fire.patch.json, building.patch.json (see Game rules)
 ```
 
 Rules the loader enforces:
@@ -209,6 +210,29 @@ Saved Creations with a removed part fail to load that part.
 When two mods change the same entry without one depending on the other, the later one in the load order
 wins and the Mod Manager shows a warning (`MD1502`). Changing an entry that doesn't exist, or was removed
 by an earlier mod, is an error (`MD1501`); removing one that isn't there is a warning.
+
+### Game rules
+
+The game's balance numbers ship with the build in `game/data/`, and a mod changes them with a merge patch in
+`rules/`. Patches from several mods stack in load order, so the last mod wins per key; lists with `id` keys merge
+like `worldgen.patch.json`, other lists (like `starting_items`) are replaced whole.
+
+```json
+// rules/survival.patch.json: a harder start
+{ "max_health": 60, "respawn_delay": 15, "starting_items": [{ "item": "carrot", "count": 2 }],
+  "difficulties": { "normal": { "bot_damage": 1.5, "raid_budget": 1.4, "raid_cooldown": 0.7 } } }
+```
+
+| File | Patches | Rules (everything else is locked) |
+|------|---------|-----------------------------------|
+| `rules/survival.patch.json` | `game/data/survival.json` | Health, respawn, drops on death, refining, buckets, starting items, the easy and normal difficulties' multipliers, fall and impact damage. Locked: `max_drops`, `aim_tolerance`. |
+| `rules/fire.patch.json` | `game/data/fire.json` | How fires grow, spread and hurt. Locked: `tick`, `max_fires`. |
+| `rules/building.patch.json` | `game/data/building.json` | `paint` (palette and ammo), `sledge`, `breaking`, `lift`. |
+
+A patch that changes a locked key is an error and the mod is not loaded (`MD1602`); a file with another name in
+`rules/` is ignored with a warning (`MD1601`). A patch whose result is invalid (a negative health) is left out when
+the world starts, with an error in the log (`MD1603`), and the rules before it still apply. Rules apply when a world
+starts or joins, and host and clients check they run the same files.
 
 ## 7. Load order and the Mod Manager
 
