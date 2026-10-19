@@ -49,7 +49,9 @@ public partial class ForestryTest : StagedTest
         {
             var gen = HostWorld.Generator;
             _tree = gen.ObjectsIn(-600, -600, 600, 600)
-                .Where(o => o.Definition.Id == "birch_tree" && gen.SlopeAt(o.Position.X, o.Position.Z) < 0.15f && !gen.PoisAt(o.Position.X, o.Position.Z).Any())
+                .Where(o => o.Definition.Id == "birch_tree" && !gen.PoisAt(o.Position.X, o.Position.Z).Any())
+                // Gentle all round, so the logs settle where they land instead of rolling down a hill.
+                .Where(o => new[] { (0f, 0f), (7f, 0f), (-7f, 0f), (0f, 7f), (0f, -7f) }.All(d => gen.SlopeAt(o.Position.X + d.Item1, o.Position.Z + d.Item2) < 0.15f))
                 .Where(o => !gen.ObjectsIn(o.Position.X - 9, o.Position.Z - 9, o.Position.X + 9, o.Position.Z + 9).Any(n => n.Id != o.Id))
                 .OrderBy(o => o.Position.Length())
                 .First();
