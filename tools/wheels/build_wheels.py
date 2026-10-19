@@ -1,5 +1,4 @@
-"""Build the Scrap Wheel, the Wheel and the Off Road Wheel, their icons and the Scrap Wheel's lumpy collision hull
-(Wheel Design Spec, 2026-10-18).
+"""Build the Scrap Wheel, the Wheel and the Off Road Wheel and their icons (Wheel Design Spec, 2026-10-18).
 
 What it builds (procedurally, from scratch: no .blend inputs, no downloads):
 
@@ -7,8 +6,8 @@ What it builds (procedurally, from scratch: no .blend inputs, no downloads):
   chunky, uneven black rubber blocks with gaps and a flattened spot, weathered wood planks nailed round both faces at
   odd angles and across the tread, rusty plates and straps bolted on at random, and a rust-orange octagonal hub plate
   with mismatched hex bolts round a dark octagonal axle collar.
-* ``mods/vanilla/meshes/scrap_wheel_collision.glb`` - its collision: a 13-sided prism whose corners sit at slightly
-  different radii (0.35 to 0.372 m), so the wheel thumps as it rolls. The part wraps it in a convex hull.
+  It collides as a plain cylinder: a lumpy convex hull (as the spec suggests) cost so much speed that a plane on
+  Scrap Wheels could not take off (VanillaAeroTest).
 * ``mods/vanilla/meshes/wheel.glb`` - the Wheel, 3 x 1 x 3 blocks: a round black tyre with two staggered rows of
   rectangular tread blocks and a clean groove round the middle, a thick bright yellow rim with five heavy spokes and
   a silver-grey hub with a bolt circle round the axle hole.
@@ -502,21 +501,6 @@ def build_scrap_wheel():
     return w.finish()
 
 
-def build_scrap_collision():
-    """A 13-sided prism, corners at slightly different radii: convex, but not round."""
-    R, H = SMALL
-    rng = np.random.default_rng(99)
-    radii = rng.uniform(0.35, 0.372, 13)
-    poly = [(radii[i] * math.cos(TAU * i / 13), radii[i] * math.sin(TAU * i / 13)) for i in range(13)]
-    v, f = prism(poly, -H, H)
-    me = bpy.data.meshes.new("SM_Wheel_Scrap_Collision")
-    me.from_pydata(v, [], f)
-    me.validate()
-    ob = bpy.data.objects.new(me.name, me)
-    bpy.context.scene.collection.objects.link(ob)
-    return ob
-
-
 # =====================================================================================================
 # Pictures
 # =====================================================================================================
@@ -631,14 +615,12 @@ def render_sheet(ob, label, out):
 def main():
     br.reset_scene()
     wheels = {"scrap_wheel": build_scrap_wheel(), "wheel": build_wheel(), "big_wheel": build_off_road_wheel()}
-    collision = build_scrap_collision()
-    for name, ob in [*wheels.items(), ("scrap_wheel_collision", collision)]:
+    for name, ob in wheels.items():
         path = MESHES / f"{name}.glb"
         br.export(ob, path)
         i = br.glb_info(path)
         print(f"wrote {path.relative_to(REPO)} ({i['kib']:.0f} KiB, {i['tris']} triangles, {i['images']} images, "
               f"{i['materials']} materials) bounds {np.round(i['min'], 4).tolist()} .. {np.round(i['max'], 4).tolist()}")
-    collision.hide_render = True
     for name, ob in wheels.items():
         icon = render_icon(ob, ICONS / f"{name}_icon.png")
         print(f"wrote {icon.relative_to(REPO)}")

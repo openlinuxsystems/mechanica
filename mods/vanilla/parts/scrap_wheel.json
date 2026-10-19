@@ -1,7 +1,7 @@
 {
   "id": "scrap_wheel",
   "name": "Scrap Wheel",
-  "description": "Rubber chunks, planks and plates bolted round a hub. Grippy, but its lumpy rim bumps along. Put its hub on a bearing's rotor; an engine linked to the bearing turns it.",
+  "description": "Rubber chunks, planks and plates bolted round a hub. Grippy, if not pretty. Put its hub on a bearing's rotor; an engine linked to the bearing turns it.",
   "category": "interactive",
   "mass": 6,
   "durability": 3,
@@ -17,10 +17,9 @@
     "color": "#ffffff"
   },
   "collision": {
-    "shape": "convex",
-    "radius": 0.375,
-    "height": 0.25,
-    "mesh": "meshes/scrap_wheel_collision.glb"
+    "shape": "cylinder",
+    "radius": 0.36,
+    "height": 0.25
   },
   "sockets": [
     {

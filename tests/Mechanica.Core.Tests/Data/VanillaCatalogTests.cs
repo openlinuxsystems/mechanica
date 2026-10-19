@@ -141,7 +141,7 @@ public class VanillaCatalogTests
     public void WheelsHaveTheirNameModelAndIcon(string id, string name, int across, int wide)
     {
         // The Wheel Design Spec: Scrap Wheel and Wheel are 3 x 1 x 3 blocks, the Off Road Wheel (id big_wheel,
-        // once the Big Wheel) 5 x 2 x 5; each has its own model and hotbar picture, and only the Scrap Wheel is lumpy.
+        // once the Big Wheel) 5 x 2 x 5; each has its own model and hotbar picture and rolls on a cylinder.
         var part = Part(id);
         var mod = Path.Combine(TestMods.RepoRoot, "mods", "vanilla");
 
@@ -149,10 +149,7 @@ public class VanillaCatalogTests
         Assert.Equal(new GridSize(across, wide, across), part.Size);
         Assert.Equal($"meshes/{id}.glb", part.Mesh);
         Assert.True(part.Icon is not null && File.Exists(Path.Combine(mod, part.Icon)), $"{id} has an icon");
-        if (id == "scrap_wheel")
-            Assert.True(part.Collision is { Shape: CollisionShape.Convex, Mesh: { } hull } && File.Exists(Path.Combine(mod, hull)), "the Scrap Wheel rolls on its lumpy hull");
-        else
-            Assert.Equal(CollisionShape.Cylinder, part.Collision?.Shape);
+        Assert.Equal(CollisionShape.Cylinder, part.Collision?.Shape);
     }
 
     // Items that bots, world objects, harvests and POIs hand out, the Survival starting kit, and the item
