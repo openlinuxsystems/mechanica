@@ -283,6 +283,9 @@ public sealed class BotActionsTests
         Assert.Equal(10f, spinning.Speed, 3);
         Assert.Empty(_f.Bots.SpinningNear(at, 6, 12));
         Assert.Empty(_f.Bots.SpinningNear(at, 1, 4));
+        // Asked for one part type, only a part of that type on the turning side counts.
+        Assert.Equal(rotor, Assert.Single(_f.Bots.SpinningNear(at, 6, 4, Creations.TestParts.Block)).Part);
+        Assert.Empty(_f.Bots.SpinningNear(at, 6, 4, "vanilla:saw_blade"));
 
         // Turning together (the whole Creation tumbling) is not spinning.
         creation.SetBodyVelocity(link.BodyA, new BodyVelocity(Vector3.Zero, new Vector3(0, 10, 0)));

@@ -252,4 +252,13 @@ public interface ISurvivalWorld
     void ObjectHit(WorldObjectId id, Vector3 at, bool broke)
     {
     }
+
+    /// <summary>
+    /// A cutting tool (a saw blade, a drill) bit into a part or a bot at <paramref name="at"/> (cosmetic, for every peer):
+    /// chips fly off wood, sparks off metal. <paramref name="material"/> is what was cut, as a sound material
+    /// (<c>wood</c>, <c>metal</c>, ...); a bot is <c>metal</c>.
+    /// </summary>
+    void Impact(Vector3 at, string material)
+    {
+    }
 }

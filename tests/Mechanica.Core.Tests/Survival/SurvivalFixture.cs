@@ -172,6 +172,8 @@ internal sealed class SurvivalFixture
         public List<Vector3> Pushes { get; } = [];
         public List<Vector3> PushPoints { get; } = [];
         public List<(WorldObjectId Id, Vector3 At, bool Broke)> ObjectHits { get; } = [];
+
+        public List<(Vector3 At, string Material)> Impacts { get; } = [];
         public List<(int Peer, Vector3 Feet)> Teleports { get; } = [];
         public List<(int Peer, Vector3 Velocity)> Knocks { get; } = [];
         public Vector3 Spawn { get; set; } = new(10, 0, 10);
@@ -238,6 +240,8 @@ internal sealed class SurvivalFixture
             Tools.Fell(breaks, foot, height, direction, spin, seed);
 
         public void ObjectHit(WorldObjectId id, Vector3 at, bool broke) => ObjectHits.Add((id, at, broke));
+
+        public void Impact(Vector3 at, string material) => Impacts.Add((at, material));
 
         // A part's shape reaches the sphere when its centre is within the radius plus half a block.
         public IEnumerable<(int Creation, int Part)> PartsNear(Vector3 point, float radius) =>

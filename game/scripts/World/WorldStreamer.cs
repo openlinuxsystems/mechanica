@@ -293,6 +293,24 @@ public partial class WorldStreamer : Node3D
             Effects.Struck(parsed, at, broke);
     }
 
+    /// <summary>Shows a cutting tool's bite into <paramref name="material"/> at <paramref name="at"/> on every peer (host only).</summary>
+    public void Impact(Vector3 at, string material)
+    {
+        if (!Session.IsHost)
+            return;
+        Effects.Bite(at, material);
+        if (Session.State == NetSession.SessionState.Hosting)
+            Rpc(MethodName.ImpactShown, at, material);
+    }
+
+    /// <summary>Host → clients: a cutting tool bit into something (cosmetic).</summary>
+    [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Unreliable)]
+    private void ImpactShown(Vector3 at, string material)
+    {
+        if (!Session.IsHost)
+            Effects.Bite(at, material);
+    }
+
     /// <summary>The loaded or scenery chunk that generated <paramref name="id"/>, or null.</summary>
     public TerrainChunk? ChunkHolding(WorldObjectId id) =>
         _chunks.Values.Concat(_scenery.Values).FirstOrDefault(c => c.Holds(id));

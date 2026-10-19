@@ -125,7 +125,7 @@ public static class LuaApi
         new("inventory.count", "inventory.count(item)", "How many of an item the holder carries (bare ids are in the item's mod).", "inventory"),
         new("inventory.take", "inventory.take(item, count?)", "Takes count (default 1) of an item from the holder; true, or false when they carry too few.", "inventory"),
 
-        new("combat.cast", "combat.cast(from, direction, range)", "The first thing a ray hits, skipping the holder: {kind, position, distance, player?, creation?, part?, object?} or nil.", "combat"),
+        new("combat.cast", "combat.cast(from, direction, range)", "The first thing a ray hits, skipping the holder: {kind, position, distance, player?, creation?, part?, object?, bot?, type?} or nil; type is a part's qualified type or a world object's kind (birch_tree).", "combat"),
         new("combat.hit", "combat.hit(hit, damage, push?, kind?)", "Deals damage to what a cast hit, pushing a part's Body with push N·s; kind (drill, saw, weapon...) says what world objects take it (a rock outcrop takes only drill). Returns the hit with damage dealt.", "combat"),
         new("combat.hitscan", "combat.hitscan(from, direction, range, damage, impulse?)", "A cast plus a hit along the ray; returns the hit with damage dealt, or nil.", "combat"),
         new("combat.splash", "combat.splash(at, radius, damage, impulse?)", "Damage falling off to 0 at radius m around at, for players, parts and world objects; returns a list of hits.", "combat"),

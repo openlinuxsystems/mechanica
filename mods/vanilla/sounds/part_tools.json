@@ -9,6 +9,17 @@
       "max_distance": 40,
       "parameters": [
         {
+          "name": "speed",
+          "pitch": [
+            0.55,
+            1.25
+          ],
+          "volume_db": [
+            -14,
+            0
+          ]
+        },
+        {
           "name": "load",
           "pitch": [
             1,
