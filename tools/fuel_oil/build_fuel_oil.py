@@ -3,10 +3,9 @@
 What it builds (procedurally, from scratch: no .blend inputs, no downloads):
 
 * ``mods/vanilla/meshes/items/gasoline.glb`` - the Gas Tank, a 2 x 2 x 2 block item (0.5 m cube centred on the origin,
-  front -Y, Z up). A rounded jerrycan in gas-can red over a gunmetal base skirt, with gunmetal corner guards held by
-  copper rivets, an X pressing on each side, a gunmetal label plate on the front (flame and GASOLINE), a teal level
-  strip behind glass on the right side, a three-post carrying handle on top and a copper screw cap on a tilted spout at
-  the front left corner.
+  front -Y, Z up): a classic red jerrycan, long along X and slim along Y, with a welded seam flange round its outline,
+  X pressings on both big faces, a three-loop handle along the top, a tilted spout with a cam-lock cap and lever at the
+  -X end, a small flame plate on the front and a teal level strip behind glass on the +X end.
 * ``mods/vanilla/meshes/items/crude_oil.glb`` - the Oil Canister, a 2 x 2 x 2 block item: a squat oily gunmetal drum with
   rolled rims, two copper hoops, two lifting lugs on the shoulder, a big red screw cap on a copper collar in the
   middle of the lid, a front window onto the dark oil and a teal droplet and CRUDE OIL stencil, drips running down.
@@ -53,13 +52,14 @@ HALF = 0.25                  # the item's half size: 2 x 2 x 2 blocks
 FLOOR = -HALF
 
 # ---- Gas tank (metres) -----------------------------------------------------------------------------------------------
-TANK_HALF = (0.212, 0.19, 0.19)      # the red body (the handle and cap fill the rest of the cube)
-TANK_Z = FLOOR + 0.012 + TANK_HALF[2]
+TANK_HALF = (0.205, 0.115, 0.2)      # the red can: long along X, slim along Y (the handle and spout fill the rest)
+TANK_Z = FLOOR + 0.004 + TANK_HALF[2]
 TANK_TOP = TANK_Z + TANK_HALF[2]
-STRIP_Y = -0.085                     # the level strip's centre along Y on the +X side
-STRIP_Z0, STRIP_Z1 = TANK_Z - 0.13, TANK_Z + 0.12
-SPOUT_BASE = Vector((-0.115, -0.1, TANK_TOP - 0.01))
-SPOUT_AXIS = Vector((-0.32, -0.45, 1.0)).normalized()
+STRIP_Y = 0.0                        # the level strip on the +X end, centred
+STRIP_Z0, STRIP_Z1 = TANK_Z - 0.14, TANK_Z + 0.12
+HANDLE_X = (-0.07, 0.17)             # the handle's end posts along X
+SPOUT_BASE = Vector((-0.15, 0.0, TANK_TOP - 0.008))
+SPOUT_AXIS = Vector((-0.55, 0.0, 1.0)).normalized()
 
 # ---- Oil canister (metres) -------------------------------------------------------------------------------------------
 DRUM_R = 0.214
@@ -97,7 +97,7 @@ def make_materials():
         "liquid": pt.plain("fo_liquid", "#0e8577", 0.2, 0.0, emission="#13b5a2", strength=1.2),
         "oil": pt.plain("fo_oil", "#3a200c", 0.05, 0.0),
         "oil_sheen": pt.plain("fo_oil_sheen", "#8a5a26", 0.04, 0.2),
-        "red": lt.textured("fo_red", half(lt.paint_surface(501, "#c0261c", "#4a4d52")), normal_strength=0.8),
+        "red": lt.textured("fo_red", half(lt.paint_surface(501, "#b01a12", "#4a4d52")), normal_strength=0.8),
         "red_dark": lt.textured("fo_red_dark", half(lt.paint_surface(503, "#8e1a14", "#3c3f43")), normal_strength=0.8),
         "gun": lt.textured("fo_gun", half(lt.metal_surface(505, "#55585d", 0.46, 0.75, wear=0.5, edge_light=0.3)), normal_strength=0.7),
         "gun_dark": lt.textured("fo_gun_dark", half(lt.metal_surface(507, "#3f4246", 0.52, 0.72, wear=0.7, edge_light=0.25)), normal_strength=0.7),
@@ -230,37 +230,69 @@ def rivet(g, p, n, r=0.0075, mat="copper"):
 # Gas tank
 # =====================================================================================================
 
+def rrect_slab(g, hw, hh, r, y0, y1, mat, zc, segs=6):
+    """A rounded rectangle in the XZ plane (half sizes hw, hh, corner radius r, centred on (0, zc)), extruded y0..y1."""
+    pts = []
+    for cx, cz, a0 in ((hw - r, hh - r, 0.0), (-(hw - r), hh - r, 0.5), (-(hw - r), -(hh - r), 1.0), (hw - r, -(hh - r), 1.5)):
+        for k in range(segs + 1):
+            a = math.pi * (a0 + 0.5 * k / segs)
+            pts.append((cx + r * math.cos(a), zc + cz + r * math.sin(a)))
+    n = len(pts)
+    verts = [(x, y0, z) for x, z in pts] + [(x, y1, z) for x, z in pts]
+    faces = [(i, (i + 1) % n, n + (i + 1) % n, n + i) for i in range(n)]
+    faces += [tuple(range(n)), tuple(n + i for i in reversed(range(n)))]
+    return g.add(verts, faces, mat)
+
+
 def build_tank():
+    """A classic jerrycan: the red welded can with its seam flange, X pressings, the three-loop handle and the spout."""
     g = Geo()
     hx, hy, hz = TANK_HALF
-    # the red body, well rounded, on a gunmetal base skirt
-    box(g, (0, 0, TANK_Z), TANK_HALF, "red", bevel=0.055)
-    box(g, (0, 0, FLOOR + 0.022), (hx + 0.008, hy + 0.008, 0.022), "gun_dark", bevel=0.016)
-    # a gunmetal seam band round the middle, as a welded can has
-    box(g, (0, 0, TANK_Z + 0.06), (hx + 0.004, hy + 0.004, 0.012), "gun", bevel=0.008)
-    # corner guards on the eight corners, each held by three copper rivets
-    for sx in (-1, 1):
-        for sy in (-1, 1):
-            for sz in (-1, 1):
-                c = (sx * (hx - 0.022), sy * (hy - 0.022), TANK_Z + sz * (hz - 0.024))
-                box(g, c, (0.04, 0.04, 0.036), "gun", bevel=0.018)
-                o = 0.041
-                rivet(g, (c[0] + sx * o, c[1] - sy * 0.008, c[2] - sz * 0.004), (sx, 0, 0))
-                rivet(g, (c[0] - sx * 0.008, c[1] + sy * o, c[2] - sz * 0.004), (0, sy, 0))
-                rivet(g, (c[0] - sx * 0.008, c[1] - sy * 0.008, c[2] + sz * 0.037), (0, 0, sz))
-    # X pressings on both sides: a raised panel with two crossing ribs
-    for sx in (-1, 1):
-        x = sx * (hx + 0.004)
-        py, pz = (hy - 0.07, hz - 0.075)
-        y0 = 0.035 if sx > 0 else 0.0          # the +X side leaves room for the level strip at the front
-        box(g, (x, y0, TANK_Z - 0.012), (0.006, py - abs(y0) + 0.0, pz), "red_dark", bevel=0.012)
-        ang = math.atan2(2 * pz, 2 * (py - abs(y0)))
+    box(g, (0, 0, TANK_Z), TANK_HALF, "red", bevel=0.034)
+    # the welded seam flange all round the can's outline, halfway through its depth
+    rrect_slab(g, hx + 0.007, hz + 0.007, 0.04, -0.005, 0.005, "red_dark", TANK_Z)
+    # the X pressings on both big faces: a raised bead inset from the edge and the two crossing ribs
+    for sy in (-1, 1):
+        y = sy * hy
+        ix, iz = hx - 0.04, hz - 0.045
+        for (cx, cz, half_) in ((0, iz, (ix, 0.006, 0.008)), (0, -iz, (ix, 0.006, 0.008)),
+                                (ix, 0, (0.008, 0.006, iz)), (-ix, 0, (0.008, 0.006, iz))):
+            box(g, (cx, y, TANK_Z + cz), half_, "red", bevel=0.005)
+        ang = math.atan2(2 * iz, 2 * ix)
+        length = math.hypot(ix, iz) - 0.012
         for s in (-1, 1):
-            rot = Matrix.Rotation(s * ang, 3, "X")
-            length = math.hypot(2 * pz, 2 * (py - abs(y0))) / 2 - 0.02
-            box(g, (x + sx * 0.007, y0, TANK_Z - 0.012), (0.006, length, 0.012), "red", bevel=0.005, rot=rot)
-        rivet(g, (x + sx * 0.013, y0, TANK_Z - 0.012), (sx, 0, 0), r=0.009)
-    # the level strip on the +X side: a gunmetal frame, a dark well, glass; the teal column is its own node
+            box(g, (0, y, TANK_Z), (length, 0.008, 0.016), "red", bevel=0.007, rot=Matrix.Rotation(s * ang, 3, "Y"))
+        cylinder(g, (0, y, TANK_Z), (0, y + sy * 0.009, TANK_Z), 0.022, "red", segs=20)
+    # the three-loop carrying handle along the top, offset away from the spout
+    hz0 = TANK_TOP
+    x0, x1 = HANDLE_X
+    cylinder(g, (x0 - 0.012, 0, hz0 + 0.06), (x1 + 0.012, 0, hz0 + 0.06), 0.015, "red", segs=16)
+    for k in range(4):
+        x = x0 + (x1 - x0) * k / 3
+        box(g, (x, 0, hz0 + 0.028), (0.011, 0.018, 0.034), "red", bevel=0.008)
+    for k in range(3):
+        xa = x0 + (x1 - x0) * k / 3 + 0.02
+        xb = x0 + (x1 - x0) * (k + 1) / 3 - 0.02
+        cylinder(g, (xa, 0, hz0 + 0.06), (xb, 0, hz0 + 0.06), 0.0175, "gun_dark", segs=16)
+    # the spout at the far end: a neck tilted outward, the cam-lock cap and its lever folded back over the top
+    b, n = SPOUT_BASE, SPOUT_AXIS
+    box(g, (b.x + 0.01, 0, TANK_TOP + 0.004), (0.05, 0.05, 0.008), "red_dark", bevel=0.006)
+    cylinder(g, b - n * 0.02, b + n * 0.042, 0.031, "red", segs=24)
+    cylinder(g, b + n * 0.036, b + n * 0.046, 0.036, "gun", segs=24)
+    cylinder(g, b + n * 0.046, b + n * 0.072, 0.038, "gun_dark", segs=24)
+    dome(g, b + n * 0.072, n, 0.03, "gun_dark", segs=16, height=0.01)
+    hinge = Vector((b.x + 0.055, 0, TANK_TOP + 0.03))
+    cylinder(g, hinge + Vector((0, -0.03, 0)), hinge + Vector((0, 0.03, 0)), 0.008, "copper", segs=12)
+    box(g, (hinge.x - 0.012, 0, hinge.z + 0.006), (0.02, 0.024, 0.01), "gun", bevel=0.004)
+    sweep(g, [b + n * 0.06 + Vector((0.03, 0, 0)), hinge + Vector((-0.004, 0, 0.012))], 0.009, "gun", segs=10)
+    for sy in (-1, 1):
+        box(g, (hinge.x, sy * 0.034, TANK_TOP + 0.014), (0.012, 0.004, 0.016), "gun", bevel=0.002)
+    # a small air-breather screw on the spout's shoulder and a flame decal under the handle on the front
+    cylinder(g, (b.x + 0.005, -0.06, TANK_TOP - 0.004), (b.x + 0.005, -0.06, TANK_TOP + 0.01), 0.011, "copper", segs=16)
+    y = -hy - 0.0062
+    lw, lh, lz = 0.044, 0.033, TANK_Z + hz - 0.072
+    bl.quad(g, [(-lw, y, lz - lh), (lw, y, lz - lh), (lw, y, lz + lh), (-lw, y, lz + lh)], "fuel_label")
+    # the level strip on the +X end: a gunmetal frame, a dark well, glass; the teal column is its own node
     x = hx + 0.006
     zc, zh = (STRIP_Z0 + STRIP_Z1) / 2, (STRIP_Z1 - STRIP_Z0) / 2
     box(g, (x, STRIP_Y, zc), (0.01, 0.034, zh + 0.02), "gun", bevel=0.008)
@@ -271,41 +303,6 @@ def build_tank():
     box(g, (x + 0.0125, STRIP_Y, zc), (0.0008, 0.02, zh), "glass")
     for z in (STRIP_Z0 - 0.012, STRIP_Z1 + 0.012):
         rivet(g, (x + 0.01, STRIP_Y, z), (1, 0, 0), r=0.006)
-    # the front label plate (flame and GASOLINE) in a gunmetal frame, low on the front
-    y = -(hy + 0.004)
-    lw, lh, lz = 0.12, 0.09, TANK_Z - 0.058
-    box(g, (0, y + 0.002, lz), (lw + 0.016, 0.006, lh + 0.016), "gun", bevel=0.008)
-    bl.quad(g, [(-lw, y - 0.0045, lz - lh), (lw, y - 0.0045, lz - lh), (lw, y - 0.0045, lz + lh), (-lw, y - 0.0045, lz + lh)],
-            "fuel_label")
-    for sx in (-1, 1):
-        for sz in (-1, 1):
-            rivet(g, (sx * (lw + 0.008), y - 0.004, lz + sz * (lh + 0.008)), (0, -1, 0), r=0.006)
-    # the carrying handle: three gunmetal posts and a bar along X, a copper grip over the middle
-    hy0 = 0.075
-    for px in (-0.12, 0.0, 0.12):
-        box(g, (px, hy0, TANK_TOP + 0.022), (0.014, 0.022, 0.032), "gun", bevel=0.008)
-    cylinder(g, (-0.145, hy0, TANK_TOP + 0.058), (0.145, hy0, TANK_TOP + 0.058), 0.016, "gun", segs=16)
-    for x0, x1 in ((-0.105, -0.016), (0.016, 0.105)):
-        cylinder(g, (x0, hy0, TANK_TOP + 0.058), (x1, hy0, TANK_TOP + 0.058), 0.02, "copper", segs=16)
-        for k in range(1, 4):
-            xr = x0 + (x1 - x0) * k / 4
-            cylinder(g, (xr - 0.003, hy0, TANK_TOP + 0.058), (xr + 0.003, hy0, TANK_TOP + 0.058), 0.022, "gun_dark", segs=16)
-    # the spout: a gunmetal neck tilted to the front left, a copper collar and the knurled copper screw cap
-    b, n = SPOUT_BASE, SPOUT_AXIS
-    cylinder(g, b - n * 0.03, b + n * 0.04, 0.042, "gun", segs=24)
-    cylinder(g, b + n * 0.04, b + n * 0.05, 0.05, "copper", segs=24)
-    cylinder(g, b + n * 0.05, b + n * 0.088, 0.047, "copper", segs=24)
-    for k in range(12):
-        a = 2 * math.pi * k / 12
-        u, w = bl.frame_of(n)
-        d = (u * math.cos(a) + w * math.sin(a)) * 0.047
-        box(g, tuple(b + n * 0.069 + d), (0.005, 0.005, 0.017), "copper",
-            rot=n.to_track_quat("Z", "Y").to_matrix() @ Matrix.Rotation(a, 3, "Z"))
-    cylinder(g, b + n * 0.088, b + n * 0.094, 0.036, "gun_dark", segs=24)
-    dome(g, b + n * 0.094, n, 0.012, "copper", segs=12)
-    # a tether from the cap to the body
-    sweep(g, [b + n * 0.06 + Vector((0.05, 0.0, 0.0)), Vector((-0.04, -0.12, TANK_TOP + 0.03)), Vector((0.0, -0.13, TANK_TOP + 0.004))],
-          0.004, "gun_dark", segs=8)
     return g
 
 

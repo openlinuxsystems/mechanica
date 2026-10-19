@@ -141,8 +141,8 @@ def render_all(tank, drum, out: Path, build):
                 rl.dim_line(dd, (px + a[0] * sc, py + a[1] * sc), (px + b[0] * sc, py + b[1] * sc), "50 cm", F(18), vertical=True)
         y += 56 + 660 + 60
     notes = [
-        "Gas Tank: red jerrycan with gunmetal corner guards and base skirt, copper rivets, X pressings on the sides, flame plate",
-        "on the front, teal level strip on the right side (drops as fuel is used), three-post handle and a tilted copper screw cap.",
+        "Gas Tank: a classic red jerrycan with a welded seam flange, X pressings on both faces, a three-loop handle, a tilted",
+        "spout with a cam-lock cap at one end, a small flame plate on the front and a teal level strip on the +X end (drops as fuel is used).",
         "Oil Canister: squat oily drum (rolled rims, two copper hoops, drips), red screw cap with a turn arrow on a copper collar,",
         "lifting lugs, a window onto the dark oil on the right side and a teal droplet + CRUDE OIL stencil.",
     ]
