@@ -184,11 +184,12 @@ public sealed partial class RoadNetwork
         if (_chains.Count == 0)
             return h;
         var key = Key(x, z);
-        var best = 0f;
         var p = new Vector2(x, z);
         // Where segments and junctions overlap, each pulls towards its own height by its strength and nearness, so the
-        // ground never steps where one takes over from another.
-        float weights = 0f, sum = 0f;
+        // ground never steps where one takes over from another. Roads and their junctions shape the ground first; tracks
+        // then shape what the roads leave, and never the roads' own beds: a track that runs in beside a road, lower than
+        // it, would otherwise pull the ground out from under the asphalt's edge.
+        Pull road = default, track = default;
         if (_segments.TryGetValue(key, out var near))
         {
             foreach (var (c, i) in near)
@@ -205,9 +206,10 @@ public sealed partial class RoadNetwork
                 if (k <= 0f)
                     continue;
                 var w = MathF.Pow(k, 8f) / MathF.Pow(1f + d, 4f);
-                weights += w;
-                sum += w * (chain.Kind == RoadKind.Road ? e - 0.03f : e);
-                best = MathF.Max(best, k);
+                if (chain.Kind == RoadKind.Road)
+                    road.Add(w, e - 0.03f, k);
+                else
+                    track.Add(w, e, k);
             }
         }
         if (_junctions.TryGetValue(key, out var nodes))
@@ -221,13 +223,29 @@ public sealed partial class RoadNetwork
                 if (k <= 0f)
                     continue;
                 // Measured from the plate's rim, so the plate outweighs the roads that end on it.
-                var w = MathF.Pow(k, 8f) / MathF.Pow(1f + MathF.Max(0f, d - node.Radius), 4f);
-                weights += w;
-                sum += w * (node.Height - 0.03f);
-                best = MathF.Max(best, k);
+                road.Add(MathF.Pow(k, 8f) / MathF.Pow(1f + MathF.Max(0f, d - node.Radius), 4f), node.Height - 0.03f, k);
             }
         }
-        return weights > 0f ? h + (sum / weights - h) * best : h;
+        var shaped = road.Apply(h, 1f);
+        return track.Apply(shaped, 1f - road.Best);
+    }
+
+    // The heights that shape the ground at a point, weighted, and the strongest pull among them (0..1).
+    private struct Pull
+    {
+        private float _weights, _sum;
+
+        public float Best { get; private set; }
+
+        public void Add(float weight, float height, float strength)
+        {
+            _weights += weight;
+            _sum += weight * height;
+            Best = MathF.Max(Best, strength);
+        }
+
+        // The ground h pulled towards the weighted height by the strongest pull, scaled by `share`.
+        public readonly float Apply(float h, float share) => _weights > 0f ? h + (_sum / _weights - h) * Best * share : h;
     }
 
     // A taller cut or fill blends out further, so its banks stay walkable.

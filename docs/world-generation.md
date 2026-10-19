@@ -342,8 +342,9 @@ line and has no stop lines. (A junction where more than four roads meet keeps a 
 
 Roads are `width` metres of asphalt with white edge lines, a double yellow centre line and stop lines
 at junctions, between concrete curbs `curb` metres wide (0, as in vanilla: no curbs), with `shoulder` metres of `shoulder_ground`
-either side. Bridges have a deck, parapets, piers, hazard posts and a caution sign at each end. The
-ground is cut and filled level with the road, and nothing is scattered or grows on it (no grass, flowers or bushes,
+either side. Without curbs the asphalt's sides, its ends at POIs and the junction plates' rims slope down under the
+shoulder, so wheels roll on and off anywhere. Bridges have a deck, parapets, piers, hazard posts and a caution sign at each end. The
+ground is cut and filled level with the road (a track running in beside a road never pulls the road's own bed down), and nothing is scattered or grows on it (no grass, flowers or bushes,
 even where the road crosses a POI that grows its own flora).
 
 POIs whose link is `track` get a dirt track (`track_width` metres of `track_ground`, at most
