@@ -72,7 +72,7 @@ switches it to the next mode and shows it for a moment; R with the Connect Tool 
 - Aim at a part for a moment and a **tooltip** shows its name, what it is and what Use does. Parts you can
   use, sit in, open or set up add a line with their signal (on or off), how many connections they have and
   their durability.
-- **Health** is the blue bar at the top left (Survival). The compass is along the top, the quest log in the top right corner, the minimap in
+- **Health** is the green bar at the top left (Survival). The compass is along the top, the quest log in the top right corner, the minimap in
   the bottom right corner, the tool bar at the bottom and chat at the bottom left.
 - A part in hand shows a **ghost** that is blue where the part fits and red where it would not (something in the way, out of
   reach, or none left in Survival). A part you place shows straight away; if the host turns it down, it fades out

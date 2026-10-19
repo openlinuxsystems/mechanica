@@ -35,7 +35,7 @@ namespace Mechanica.Game.Survival;
 /// </summary>
 public partial class SurvivalHud : CanvasLayer
 {
-    private readonly StyleBoxFlat _fill = MechanicaTheme.Box(UiTokens.Blue, margin: 0);
+    private readonly ShadedBox _fill = new();
     private ProgressBar _health = null!;
     private Label _healthText = null!;
     private Label _hint = null!;
@@ -128,12 +128,20 @@ public partial class SurvivalHud : CanvasLayer
     public override void _Ready()
     {
         _health = new ProgressBar { Name = "Health", CustomMinimumSize = new Vector2(240, 18), ShowPercentage = false, MaxValue = 100 };
-        // The theme's bar fills cyan; health is blue (§6).
+        // The theme's bar fills cyan; health is green with a faint shade, so it reads as slightly raised.
         _health.AddThemeStyleboxOverride("fill", _fill);
         AddChild(_health);
         Layout();
         GetViewport().SizeChanged += Layout;
-        _healthText = new Label { Name = "HealthText", HorizontalAlignment = HorizontalAlignment.Center };
+        // Small enough to fit the bar, centred both ways, with a dark outline so it reads on the green.
+        _healthText = new Label
+        {
+            Name = "HealthText", HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
+            GrowVertical = Control.GrowDirection.Both,
+        };
+        _healthText.AddThemeFontSizeOverride("font_size", 13);
+        _healthText.AddThemeConstantOverride("outline_size", 3);
+        _healthText.AddThemeColorOverride("font_outline_color", UiTokens.DeepNavy);
         _health.AddChild(_healthText);
         _healthText.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
         _hint = new Label { Name = "Hint", HorizontalAlignment = HorizontalAlignment.Center };
@@ -201,7 +209,12 @@ public partial class SurvivalHud : CanvasLayer
         {
             _health.MaxValue = own.MaxHealth;
             _health.Value = own.Health;
-            _fill.BgColor = own.Health <= own.MaxHealth * (Survival.Settings?.LowHealth ?? 0) ? UiTokens.Error : UiTokens.Blue;
+            var fill = own.Health <= own.MaxHealth * (Survival.Settings?.LowHealth ?? 0) ? UiTokens.Error : UiTokens.Health;
+            if (_fill.Fill != fill)
+            {
+                _fill.Fill = fill;
+                _health.QueueRedraw();
+            }
             _healthText.Text = $"{own.Health:0} / {own.MaxHealth:0}";
         }
         _deathScreen.Visible = own?.Dead == true;
