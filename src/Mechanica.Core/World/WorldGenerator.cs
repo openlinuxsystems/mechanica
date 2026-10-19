@@ -335,6 +335,8 @@ public sealed partial class WorldGenerator
 
     private IEnumerable<WorldObjectPlacement> ScatteredIn(float x0, float z0, float x1, float z1)
     {
+        // A perched rule's spot takes a search, and every later rule's spots nearby ask for it again.
+        var perched = new Dictionary<(int Rule, int X, int Z), Vector2>();
         foreach (var rule in Data.ScatterRules)
         {
             var s = rule.Spacing;
@@ -344,9 +346,9 @@ public sealed partial class WorldGenerator
             {
                 for (var ix = ix0; ix <= ix1; ix++)
                 {
-                    if (!Candidate(rule, ix, iz, out var spot) || spot.X < x0 || spot.X >= x1 || spot.Y < z0 || spot.Y >= z1)
+                    if (!Candidate(rule, ix, iz, out var spot, perched) || spot.X < x0 || spot.X >= x1 || spot.Y < z0 || spot.Y >= z1)
                         continue;
-                    if (Fits(rule, spot) && !Crowded(rule, spot))
+                    if (Fits(rule, spot) && !Crowded(rule, spot, perched))
                     {
                         foreach (var placement in Place(rule, ix, iz, spot))
                             yield return placement;
@@ -423,12 +425,22 @@ public sealed partial class WorldGenerator
     private int BlockVariants(string id) => 1 + (Data.Objects.GetValueOrDefault(id)?.Mesh?.Variants?.Count ?? 0);
 
     // The scatter rule's spot in a cell, if the cell's dice roll keeps it.
-    private bool Candidate(Scatter rule, int ix, int iz, out Vector2 spot)
+    private bool Candidate(Scatter rule, int ix, int iz, out Vector2 spot, Dictionary<(int Rule, int X, int Z), Vector2>? perched = null)
     {
         spot = default;
         var salt = _scatterSalt ^ (uint)rule.Index;
         if (Noise.Unit(Noise.Hash(salt, ix, iz, 0)) >= rule.Chance)
             return false;
+        if (rule.Perch is not null && perched is not null)
+        {
+            if (!perched.TryGetValue((rule.Index, ix, iz), out var known))
+            {
+                Candidate(rule, ix, iz, out var found);
+                perched[(rule.Index, ix, iz)] = known = found;
+            }
+            spot = known;
+            return true;
+        }
         var s = rule.Spacing;
         spot = new Vector2((ix + 0.1f + 0.8f * Noise.Unit(Noise.Hash(salt, ix, iz, 1))) * s, (iz + 0.1f + 0.8f * Noise.Unit(Noise.Hash(salt, ix, iz, 2))) * s);
         // A perched find looks round its cell for a cliff top or ledge, since most of the land is easy slopes.
@@ -493,7 +505,7 @@ public sealed partial class WorldGenerator
     }
 
     // Whether an earlier rule's fitting candidate sits too close. Earlier rules win, so ids never depend on later rules.
-    private bool Crowded(Scatter rule, Vector2 spot)
+    private bool Crowded(Scatter rule, Vector2 spot, Dictionary<(int Rule, int X, int Z), Vector2>? perched = null)
     {
         for (var r = 0; r < rule.Index; r++)
         {
@@ -504,7 +516,7 @@ public sealed partial class WorldGenerator
             {
                 for (var ix = (int)MathF.Floor((spot.X - reach) / s); ix <= (int)MathF.Floor((spot.X + reach) / s); ix++)
                 {
-                    if (Candidate(other, ix, iz, out var near) && Vector2.Distance(near, spot) < reach && Fits(other, near))
+                    if (Candidate(other, ix, iz, out var near, perched) && Vector2.Distance(near, spot) < reach && Fits(other, near))
                         return true;
                 }
             }
