@@ -906,6 +906,9 @@ public sealed partial class WorldGenerator
                 for (var i = first; i <= last; i++)
                 {
                     var cell = offset + new Vector2(i + 0.5f, j + 0.5f) * step;
+                    // Most cells have no water anywhere near, and a coarse look says so for far fewer samples.
+                    if (placement.Shore is { } shore && !WaterWithin(cell, jitter + poi.Prefab.Radius + shore))
+                        continue;
                     for (var attempt = 0; attempt < attempts; attempt++)
                     {
                         var spot = cell + jitter * new Vector2(
@@ -979,7 +982,23 @@ public sealed partial class WorldGenerator
         return best;
     }
 
-    private const int ShoreAttempts = 40;
+    private const int ShoreAttempts = 24;
+
+    // Any open water in the square of half-size half round centre, sampled every WaterGrid metres.
+    private bool WaterWithin(Vector2 centre, float half)
+    {
+        for (var dz = -half; dz <= half; dz += WaterGrid)
+        {
+            for (var dx = -half; dx <= half; dx += WaterGrid)
+            {
+                if (RawHeight(centre.X + dx, centre.Y + dz) < SeaLevel)
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    private const float WaterGrid = 24f;
 
     // Open water within reach of the footprint's edge somewhere round it.
     private bool NearWater(Vector2 spot, float radius, float reach)
