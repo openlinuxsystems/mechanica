@@ -712,25 +712,25 @@
       "template": "logic",
       "set": {
         "name": "Switch",
-        "description": "Use it to turn it on, and again to turn it off.",
-        "stack_size": 20,
+        "description": "Use it to turn it on, and again to turn it off. Its light shows red while off and teal while on.",
+        "stack_size": 10,
+        "buoyancy": 0.2,
+        "sound_material": "metal",
         "script": "scripts/switch.lua",
-        "visual": { "color": "#b0473a", "roughness": 0.5, "metallic": 0.2 },
+        "icon": "textures/items/switch_icon.png",
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
         "logic": { "inputs": 1, "outputs": 10, "use": "toggle" },
         "sounds": { "use": "switch_toggle" },
-        "display": { "press": { "readout": "on", "depth": 0.015 } }
+        "display": { "clips": { "readout": "pose" } }
       },
-      "model": [
-        { "kind": "box", "size": [0.25, 0.08, 0.25], "position": [0, -0.085, 0] },
-        { "kind": "box", "size": [0.06, 0.1, 0.12], "position": [0, -0.0, 0], "rotation": [20, 0, 0] }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/switch.glb" }],
       "recipes": [
         {
           "id": "switch",
           "stations": ["fabricator", "mini_fabricator"],
-          "inputs": [{ "item": "scrap_metal", "count": 1 }, { "item": "component_kit", "count": 1 }],
+          "inputs": [{ "item": "metal_block", "count": 1 }, { "item": "circuit_board", "count": 1 }],
           "outputs": [{ "item": "switch", "count": 1 }],
-          "time": 2
+          "time": 5
         }
       ]
     },
