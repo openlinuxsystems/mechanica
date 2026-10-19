@@ -280,6 +280,16 @@ public class ModLoaderTests
         using var mods = new TestMods().Mod("m").Part("m", "a.json", TestMods.Block());
         var before = mods.Load().Fingerprint;
         mods.Part("m", "a.json", TestMods.Block(overrides: """{ "durability": 4 }"""));
-        Assert.NotEqual(before, mods.Load().Fingerprint);
+        var changed = mods.Load().Fingerprint;
+        Assert.NotEqual(before, changed);
+        // Any other data or script counts too (a bot, a recipe, a rule, a mod script); a model only changes looks.
+        mods.File("m", "bots/grazer.json", "{}");
+        var withBot = mods.Load().Fingerprint;
+        Assert.NotEqual(changed, withBot);
+        mods.File("m", "scripts/rules.lua", "-- x");
+        Assert.NotEqual(withBot, mods.Load().Fingerprint);
+        var withScript = mods.Load().Fingerprint;
+        mods.File("m", "meshes/x.glb", "glTF");
+        Assert.Equal(withScript, mods.Load().Fingerprint);
     }
 }
