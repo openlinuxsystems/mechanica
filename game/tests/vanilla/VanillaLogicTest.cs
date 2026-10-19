@@ -364,6 +364,8 @@ public partial class VanillaLogicTest : StagedTest
                 Place(rig, "vanilla:metal_block", new GridCell(x, 0, z));
         }
         _scrapEngine = Place(rig, "vanilla:scrap_gas_engine", new GridCell(0, 1, 0));
+        // Engines are on by default and this one has no controls, so it starts switched off for the test to switch on.
+        rig.SetPartSettings(_scrapEngine, new Dictionary<string, JsonElement> { ["on"] = JsonSerializer.SerializeToElement(false) });
         var outward = new GridCell(1, 0, 0);
         _scrapBearing = Place(rig, "vanilla:bearing", new GridCell(2, 0, 0), Facing(outward));
         rig.SetAllBodyPoses(new Pose(new System.Numerics.Vector3(-4, 0.2f, -4), System.Numerics.Quaternion.Identity));

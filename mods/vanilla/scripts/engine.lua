@@ -1,21 +1,26 @@
 -- Engine: turns the wheel bearings its output is linked to. Its input is a throttle from -1 (back) to 1
 -- (forward), usually a driver's seat. Wheels roll toward the engine's front, so place it facing the way the
 -- car should drive. With no throttle it holds the wheels with properties.brake N·m.
+-- Its controls decide when it runs. With none linked into it, it runs forward at full throttle (an engine is on by
+-- default). A linked driver's seat runs it only while someone sits in it, with their W/S as the throttle: getting up
+-- stops it. A passenger seat (one that shows "passenger") never does.
+-- Any other control (a switch, a button, a logic gate) runs it while its signal is not 0. Removing or destroying the
+-- controls leaves it with none, so it runs on its own again (also when the driver was still sitting in the seat).
 -- Properties: "speed" (rad/s at the top gear), "torque" (N·m), "brake" (N·m), "fuel" (item id) and
 -- "fuel_time" (seconds of full throttle per item). In Creative it needs no fuel. It burns fuel from the containers
 -- linked into it with the Connect Tool (gas containers), or from every container of the Creation when none is.
--- Setting "gear" (shown as Power, 1 to properties.gears, default 5): each step turns that share of the top speed. Setting "on": with
--- nothing linked into it, the engine runs forward at full throttle while it is on.
+-- Setting "gear" (shown as Power, 1 to properties.gears, default 5): each step turns that share of the top speed, and 0
+-- stops it. Setting "on": switched off it never runs, whatever its controls do (an engine without the setting is on).
 -- Its menu shows "fuel" (how much of the current item is left, 0 to 1; full in Creative), "fuel_items"
 -- (items left in the containers it burns from), "rpm" (the first wheel's speed) and "torque" (N·m it drives with). Its
 -- "running" display is on while it drives, and each wheel bearing's "drive" display turns with it.
 -- Sounds: "start" when it starts, the "loop" while it runs (its properties.loop_parameter follows the
 -- throttle), and "stop" when it runs out of fuel.
 --
--- With properties.ignition the engine has to be switched on (the "on" setting, also when linked): it cranks for
+-- With properties.ignition the engine starts when it is to run (switched on and its controls let it): it cranks for
 -- properties.start_time s (now and then a false start of properties.false_start_time s first, at the
--- properties.false_start chance), then idles and drives while its input asks; switched off or out of fuel it winds
--- down for properties.stop_time s. Its speed wobbles by properties.uneven of itself, it backfires now and then
+-- properties.false_start chance), then idles and drives while its input asks; switched off, left by its driver or out
+-- of fuel it winds down for properties.stop_time s. Its speed wobbles by properties.uneven of itself, it backfires now and then
 -- (properties.backfire a second) and a power change rattles it for properties.gear_time s. It shows what it does
 -- for its model: "clip" (off_loop, false_start, start, run_loop, run_hard_loop from properties.hard_gear up, gear,
 -- stop), "lever" (the power setting, 0 to 1), "heat" (how hard it works, 0 to 1, easing over properties.heat_time s),
@@ -58,13 +63,36 @@ local function tanks()
   return ids
 end
 
--- How many links into the engine are controls (a seat, a switch) rather than its tanks.
-local function controls()
-  local n = 0
+-- Whether the engine's controls let it run, and the throttle they ask for. With no control linked into it (only
+-- tanks, or nothing) it runs at full throttle. A driver's seat lets it run while someone sits in it, a passenger seat
+-- never; any other control while its signal is not 0.
+local function controlled()
+  local any, engaged, throttle = false, false, 0
   for _, input in ipairs(part.inputs()) do
-    if not input.storage then n = n + 1 end
+    if not input.storage then
+      any = true
+      throttle = throttle + input.value
+      if input.seat then
+        local passenger = creation.displayed(input.part, "passenger")
+        engaged = engaged or (input.occupied and (passenger == nil or passenger == 0))
+      elseif input.value ~= 0 then
+        engaged = true
+      end
+    end
   end
-  return n
+  if not any then
+    return true, 1
+  end
+  return engaged, clamp(throttle)
+end
+
+-- The "on" setting; an engine without it is on.
+local function switched_on()
+  local on = part.setting("on")
+  if on == nil then
+    return true
+  end
+  return on and true or false
 end
 
 -- Burns fuel for dt seconds at this throttle; false when the engine is out of fuel.
@@ -122,8 +150,16 @@ function on_reload()
   state.sent = {}
 end
 
--- Starts the running loop on the first throttle, follows the throttle with it, and stops it on empty.
-local function hum(throttle, fueled)
+-- Starts the running loop on the first throttle, follows the throttle with it, and stops it on empty or when the
+-- engine stops running.
+local function hum(throttle, fueled, active)
+  if not active then
+    if state.hum then
+      sound.stop(state.hum)
+      state.hum = nil
+    end
+    return
+  end
   if not fueled then
     if state.hum then
       sound.stop(state.hum)
@@ -223,8 +259,10 @@ end
 
 -- The ignition engine's steps: off, starting (with a false start first now and then), running, stopping.
 local function ignition(dt)
-  local on = part.setting("on") and true or false
   local gear = part.setting("gear") or 1
+  local engaged, asked = controlled()
+  -- whether it is to run: switched on, its power above 0 and its controls letting it
+  local on = switched_on() and gear > 0 and engaged
   local top = properties.gears or 5
   part.display("lever", top > 1 and (gear - 1) / (top - 1) or 0)
   state.timer = (state.timer or 0) - dt
@@ -267,10 +305,7 @@ local function ignition(dt)
       if part.sound("loop") then state.hum = sound.start(part.sound("loop")) end
     end
   elseif phase == "running" then
-    throttle = clamp(part.input())
-    if controls() == 0 then
-      throttle = 1
-    end
+    throttle = asked
     if not burn(throttle, dt) or not on then
       throttle = 0
       state.phase, state.timer = "stopping", properties.stop_time
@@ -333,17 +368,22 @@ function on_update(dt)
     ignition(dt)
     return
   end
-  local throttle = clamp(part.input())
-  if controls() == 0 then
-    throttle = part.setting("on") and 1 or 0
+  local engaged, throttle = controlled()
+  local active = engaged and switched_on() and (part.setting("gear") or 1) > 0
+  if not active then
+    throttle = 0
   end
   local fueled = burn(throttle, dt)
   if not fueled then
     throttle = 0
   end
   state.throttle = throttle
-  drive(throttle)
-  hum(throttle, fueled)
+  if active then
+    drive(throttle)
+  else
+    release()
+  end
+  hum(throttle, fueled, active)
   show(throttle, dt)
 end
 

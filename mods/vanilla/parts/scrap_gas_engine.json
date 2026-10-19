@@ -1,7 +1,7 @@
 {
   "id": "scrap_gas_engine",
   "name": "Scrap Gas Engine",
-  "description": "A rattly starter engine from scrap. Switch it on, then it turns up to two wheel bearings linked to it, with a seat's throttle as its input. Burns gasoline faster than a Gas Engine.",
+  "description": "A rattly starter engine from scrap. It turns up to two wheel bearings linked to it, with a seat's throttle as its input: it runs while someone sits in a linked seat, and on its own with no seat or switch linked. Burns gasoline faster than a Gas Engine.",
   "category": "interactive",
   "mass": 10,
   "durability": 2,
@@ -65,7 +65,7 @@
       "id": "on",
       "name": "On",
       "type": "toggle",
-      "default": false
+      "default": true
     }
   ],
   "menu": {

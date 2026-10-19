@@ -163,6 +163,12 @@ public sealed partial class ScriptRuntime : ILogicHost
                         entry.Set("type", DynValue.NewString(Identifiers.Qualify(source.Part)));
                         // A container linked in (a gas container feeding an engine) rather than a control.
                         entry.Set("storage", DynValue.NewBoolean(h.Creation.InventoryOf(from) is not null));
+                        // A seat linked in (a driver's seat to an engine), and whether someone sits in it.
+                        if (h.Creation.DefinitionOf(from).Seat is not null)
+                        {
+                            entry.Set("seat", DynValue.True);
+                            entry.Set("occupied", DynValue.NewBoolean(Seats?.Occupant(h.Creation.Id, from) is not null));
+                        }
                     }
                     list.Set(index++, DynValue.NewTable(entry));
                 }
