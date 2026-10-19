@@ -83,6 +83,12 @@ A gas engine burns one gasoline from the creation's gas containers for every 40 
 container again. The Electric Engine draws battery packs from batteries the same way, and its upgrades go further on each pack. The Creation
 Inspector shows an engine's input, so you can tell an empty tank from a broken wire.
 
+To choose which tanks feed which engine, drag from a gas container's node to the engine's with the Connect
+Tool: an engine (or thruster) with gas containers linked into it burns only from those, and one with none
+linked burns from any in the creation. The gauges on the container's sides show how full it is (each tick is
+one of its five slots), and you can pick it up (hold right click on it) while it still holds fuel: the gasoline goes
+into your inventory with it.
+
 ## A switch and a piston
 
 1. Put a switch and a piston on a block, and something on the piston's head.
@@ -107,7 +113,7 @@ Settings are changed with E on the part; properties are fixed in the part's data
 | Logic Gate | 1 or 0 | `mode`: and, or, xor, nand, nor, xnor | |
 | Timer | Its input, `delay` seconds later; or on and off every `delay` while its input is on | `delay` (s), `mode` (once, repeat) | |
 | Sensor | 1 while something it detects is within `range` of its face | `range` (1 to 20 m), `players`, `bots`, `blocks`, `creations` | `interval` (steps between checks), `cone` (°) |
-| Switch | 1 while on; E toggles it | | |
+| Switch | 1 while on; E toggles it. Its rocker tips over and its light shows red while off, teal while on | | |
 | Button | 1 while someone holds it down: E, or its key while seated | | |
 | Controller | 1 while it runs | `frames` (up to 10), `frame_time` (s), `loop` | `speed` (rad/s), `torque` (N·m), `force` (N) |
 

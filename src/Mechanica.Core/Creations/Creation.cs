@@ -293,6 +293,13 @@ public sealed class Creation
     public bool HoldsItems(int partId) =>
         _inventories.GetValueOrDefault(partId) is { IsEmpty: false } || _crafting.GetValueOrDefault(partId) is { IsEmpty: false };
 
+    /// <summary>
+    /// True when the part may be picked up, or lifted, with what it holds (<see cref="InventoryDefinition.CarryContents"/>):
+    /// it has no crafting orders and its definition allows it.
+    /// </summary>
+    public bool CarriesContents(int partId) =>
+        DefinitionOf(partId).Inventory?.CarryContents == true && _crafting.GetValueOrDefault(partId) is not { IsEmpty: false };
+
     /// <summary>Stations with orders, by part id.</summary>
     public IEnumerable<(int PartId, CraftingQueue Queue)> ActiveCrafting =>
         _crafting.Where(kv => !kv.Value.IsEmpty).OrderBy(kv => kv.Key).Select(kv => (kv.Key, kv.Value));

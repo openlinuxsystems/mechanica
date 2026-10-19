@@ -91,7 +91,8 @@ switches it to the next mode and shows it for a moment; R with the Connect Tool 
   (the deck at 22 units, 5.5 m); hold an arrow and the column runs smoothly until you let go, stopping at the next
   unit. Standing on the deck you ride it, and the arrow keys drive it whatever you have in hand. Q turns what it holds. Aim at the Lift (or
   what it holds) and hold right click until the ring fills to pick the Lift back up; what it held drops. A Creation whose chests or tanks hold items cannot be
-  lifted ("Cannot lift with attached resources."): empty it first.
+  lifted ("Cannot lift with attached resources."): empty it first. Gas containers are the exception: they can be lifted, and
+  picked up, while they hold fuel.
 - **Blueprints.** With the Lift in hand, aim at your Lift and press **E**. The menu lists your newest 50
   blueprints with a picture of each. Type a name and **Save** to keep what the Lift holds (saving over a name
   asks first); choose one and **Load** to build it on your empty Lift. In Survival loading takes the parts
