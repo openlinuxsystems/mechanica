@@ -309,7 +309,8 @@ public sealed partial class RoadNetwork
             {
                 foreach (var atStart in new[] { true, false }.Where(s => (s ? from : to) == j))
                 {
-                    var near = atStart ? points[2] : points[^3];
+                    // A little way out down the road (a road trimmed short at a POI may have only two points).
+                    var near = atStart ? points[Math.Min(2, points.Count - 1)] : points[Math.Max(0, points.Count - 3)];
                     open |= 1 << Enumerable.Range(0, 4).MaxBy(k => Vector2.Dot(node.Arm(k), near - node.At));
                     var other = _nodes[atStart ? to : from];
                     if (other.Kind == RoadNodeKind.Junction)

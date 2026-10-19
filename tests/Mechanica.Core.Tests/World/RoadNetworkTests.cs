@@ -161,6 +161,21 @@ public class RoadNetworkTests
     }
 
     [Fact]
+    public void WorldsBuiltAtOnceLayTheSameRoads()
+    {
+        // Host and client build their worlds in one process in the tests, at the same time: every build of a seed is the same.
+        var data = Vanilla.Value.Data;
+        var worlds = new WorldGenerator[4];
+        Parallel.For(0, worlds.Length, k => worlds[k] = new WorldGenerator(data, 1234, 12032f, 9024f));
+        foreach (var world in worlds)
+        {
+            Assert.Equal(Vanilla.Value.Roads.Chains.SelectMany(c => c.Points), world.Roads.Chains.SelectMany(c => c.Points));
+            Assert.Equal(Vanilla.Value.Roads.Chains.SelectMany(c => c.Heights), world.Roads.Chains.SelectMany(c => c.Heights));
+            Assert.Equal(Vanilla.Value.Roads.Nodes, world.Roads.Nodes);
+        }
+    }
+
+    [Fact]
     public void RoadsOnLandHaveNoCurbsAndNothingGrowsOnThem()
     {
         var gen = Vanilla.Value;
