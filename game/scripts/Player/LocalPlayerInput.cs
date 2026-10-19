@@ -103,7 +103,9 @@ public partial class LocalPlayerInput : Node
     {
         // A menu or panel has the mouse: keys belong to it, so the player doesn't walk or drive.
         var playing = Input.MouseMode == Input.MouseModeEnum.Captured && !Suspended();
-        var move = playing
+        // Knocked off their feet, the player can look about but not move until they are up again.
+        var down = Target.Character is CharacterModel { Animator.Grounded: true } || Target.Arms is CharacterModel { Animator.Grounded: true };
+        var move = playing && !down
             ? Input.GetVector(MoveLeft, MoveRight, MoveBack, MoveForward)
             : Vector2.Zero;
         Target.CurrentInput = new PlayerInput(
@@ -111,7 +113,7 @@ public partial class LocalPlayerInput : Node
             move.Y,
             _yaw,
             _pitch,
-            playing && Input.IsActionPressed(Jump),
+            playing && !down && Input.IsActionPressed(Jump),
             playing && Input.IsActionPressed(Sprint),
             playing && Input.IsActionPressed(Crawl));
     }

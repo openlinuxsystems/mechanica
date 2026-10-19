@@ -68,7 +68,10 @@ public partial class CharacterSync : Node
         Players.PlayerDespawning += OnDespawning;
         Session.StateChanged += OnStateChanged;
         if (Survival is not null)
+        {
             Survival.VitalsChanged += OnVitals;
+            Survival.PlayerHit += OnHit;
+        }
         foreach (var player in Players.Players.Values)
             OnSpawned(player);
         if (Session.IsHost)
@@ -82,17 +85,36 @@ public partial class CharacterSync : Node
         Players.PlayerDespawning -= OnDespawning;
         Session.StateChanged -= OnStateChanged;
         if (Survival is not null)
+        {
             Survival.VitalsChanged -= OnVitals;
+            Survival.PlayerHit -= OnHit;
+        }
         Assets.Dispose();
     }
 
-    // Every peer sees every player's health, so each one makes a hurt player flinch on its own.
+    // Every peer sees every player's health, so each one makes a hurt player flinch on its own. A blow plays its own
+    // reaction (OnHit), which the flinch doesn't cut short.
     private void OnVitals(Core.Survival.VitalsView view)
     {
         var hurt = _health.TryGetValue(view.Peer, out var before) && view.Health < before - 0.01f && !view.Dead;
         _health[view.Peer] = view.Health;
         if (hurt && Players.Players.TryGetValue(view.Peer, out var player) && player.Character is CharacterModel model)
             model.Animator.Play(CharacterGesture.Hurt);
+    }
+
+    // A blow rocked a player: their body and first-person arms react, turned away from where it came from, and the
+    // local player's camera takes the jolt.
+    private void OnHit(Core.Survival.PlayerHitView hit)
+    {
+        if (!Players.Players.TryGetValue(hit.Peer, out var player))
+            return;
+        float? from = null;
+        if (hit.From is { } at && at.ToGodot() - player.GlobalPosition is var d && d.X * d.X + d.Z * d.Z > 1e-4f)
+            from = Mathf.Wrap(Mathf.Atan2(-d.X, -d.Z) - player.Rotation.Y, -Mathf.Pi, Mathf.Pi);
+        foreach (var model in new[] { player.Character as CharacterModel, player.Arms as CharacterModel })
+            model?.Animator.React(hit.Reaction, from);
+        if (hit.Peer == Session.LocalPeer)
+            player.Jolt(hit.Reaction, from);
     }
 
     /// <summary>The character a player is drawn as now.</summary>

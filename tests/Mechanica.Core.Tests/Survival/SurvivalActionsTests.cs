@@ -2,6 +2,7 @@ using System.Numerics;
 using System.Text.Json.Nodes;
 using Mechanica.Core.Actions;
 using Mechanica.Core.Building;
+using Mechanica.Core.Characters;
 using Mechanica.Core.Creations;
 using Mechanica.Core.Data;
 using Mechanica.Core.Items;
@@ -41,6 +42,33 @@ public class SurvivalActionsTests
         Assert.Equal(0, f.Pockets(Me).Count(Seed));
         Assert.Equal(100f, f.Survival.Damage(Me.Peer, 500, "test"));
         Assert.False(f.Survival.IsDead(Me.Peer));
+    }
+
+    [Fact]
+    public void BlowsRockThePlayerByHowHardTheyHit()
+    {
+        var hits = new List<PlayerHitView>();
+        _f.Survival.PlayerHit += hits.Add;
+        _f.Survival.Damage(Me.Peer, 10, "weapon", new Vector3(1, 1, 3));
+        _f.Survival.Damage(Me.Peer, 30, "explosion");
+        _f.Survival.Damage(Me.Peer, 10, "fall");
+        _f.Survival.Damage(Me.Peer, 0.5f, "bot");
+        Assert.Equal([new PlayerHitView(Me.Peer, HitReaction.Light, new Vec3(1, 1, 3)), new PlayerHitView(Me.Peer, HitReaction.Heavy, null)], hits);
+        // A blow that kills plays the death, not a reaction.
+        _f.Survival.Damage(Me.Peer, 60, "sledge");
+        Assert.Equal(2, hits.Count);
+    }
+
+    [Fact]
+    public void HitSettingsSortBlowsAndRejectBadThresholds()
+    {
+        var hits = new HitSettings();
+        Assert.Equal(HitReaction.None, hits.ReactionTo("bot", 0.5f));
+        Assert.Equal(HitReaction.Light, hits.ReactionTo("bot", 5f));
+        Assert.Equal(HitReaction.Heavy, hits.ReactionTo("sledge", 25f));
+        Assert.Equal(HitReaction.Knockdown, hits.ReactionTo("explosion", 80f));
+        Assert.Equal(HitReaction.None, hits.ReactionTo("fire", 80f));
+        Assert.Throws<FormatException>(() => (hits with { Heavy = 60f }).Validate());
     }
 
     [Fact]

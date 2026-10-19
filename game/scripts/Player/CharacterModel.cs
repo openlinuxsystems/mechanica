@@ -23,6 +23,7 @@ public partial class CharacterModel : Node3D
     private Vector3[] _restPosition = [];
     private Vector3[] _pitchAxis = [];
     private Vector3[] _rollAxis = [];
+    private Vector3[] _yawAxis = [];
     private int _spine = -1;
     private int _chest = -1;
     private int _neck = -1;
@@ -35,6 +36,10 @@ public partial class CharacterModel : Node3D
     private Quaternion[] _rotations = [];
     private Vector3[] _positions = [];
     private Quaternion[] _upperRotations = [];
+    private Quaternion[] _bodyRotations = [];
+    private int[] _freeArm = [];
+    private Quaternion[] _legRotations = [];
+    private Vector3[] _legPositions = [];
 
     /// <summary>The player this draws, or null for a preview that stands idle (the character picker).</summary>
     public PlayerController? Player { get; init; }
@@ -82,9 +87,13 @@ public partial class CharacterModel : Node3D
         _restPosition = new Vector3[count];
         _pitchAxis = new Vector3[count];
         _rollAxis = new Vector3[count];
+        _yawAxis = new Vector3[count];
+        _legRotations = new Quaternion[count];
+        _legPositions = new Vector3[count];
         _rotations = new Quaternion[count];
         _positions = new Vector3[count];
         _upperRotations = new Quaternion[count];
+        _bodyRotations = new Quaternion[count];
         for (var b = 0; b < count; b++)
         {
             var rest = _skeleton.GetBoneRest(b);
@@ -94,11 +103,13 @@ public partial class CharacterModel : Node3D
             // The look pitch turns about the model's sideways axis, expressed in the bone's own frame.
             _pitchAxis[b] = (_skeleton.GetBoneGlobalRest(b).Basis.Inverse() * Vector3.Right).Normalized();
             _rollAxis[b] = (_skeleton.GetBoneGlobalRest(b).Basis.Inverse() * Vector3.Back).Normalized();
+            _yawAxis[b] = (_skeleton.GetBoneGlobalRest(b).Basis.Inverse() * Vector3.Up).Normalized();
         }
         _neck = _skeleton.FindBone("neck");
         _spine = _skeleton.FindBone("spine");
         _chest = _skeleton.FindBone("chest");
         _head = _skeleton.FindBone("head");
+        _freeArm = new[] { "shoulder_l", "upper_arm_l", "forearm_l", "hand_l" }.Select(_skeleton.FindBone).Where(b => b >= 0).ToArray();
         // The eyes in the rest pose, kept in the head bone's frame.
         if (_head >= 0)
         {
@@ -152,7 +163,7 @@ public partial class CharacterModel : Node3D
             Position = new Vector3(offset[0], offset[1], offset[2]);
             Rotation = new Vector3(-Mathf.DegToRad(Assets.Settings.FirstPersonPitchDegrees), 0, 0);
         }
-        // Seen from inside its own head (or dead) the body is hidden; it still makes its sounds.
+        // Seen from inside its own head the body is hidden; it still makes its sounds.
         else if (Player is { BodyVisible: false })
         {
             return;
@@ -195,13 +206,65 @@ public partial class CharacterModel : Node3D
         Blend(Animator.Body, _rotations, _positions, withPositions: true);
         if (Animator.UpperWeight > 0f && Animator.Upper.Count > 0)
         {
+            Array.Copy(_rotations, _bodyRotations, count);
             Blend(Animator.Upper, _upperRotations, null, withPositions: false);
             for (var b = 0; b < count; b++)
             {
                 if (_upper[b])
                     _rotations[b] = _rotations[b].Slerp(_upperRotations[b], Animator.UpperWeight);
             }
+            // Moving with something in hand: the stride's own sway of the spine goes back on over the hold, and a free left
+            // arm swings as it would empty-handed.
+            if (Animator.Carry > 0f && !FirstPerson)
+            {
+                foreach (var bone in new[] { _spine, _chest, _neck, _head })
+                {
+                    if (bone >= 0)
+                        _rotations[bone] = (_rotations[bone] * Quaternion.Identity.Slerp(_restRotation[bone].Inverse() * _bodyRotations[bone], Animator.Carry)).Normalized();
+                }
+                if (Animator.FreeArm > 0f)
+                {
+                    foreach (var bone in _freeArm)
+                        _rotations[bone] = _rotations[bone].Slerp(_bodyRotations[bone], Animator.Carry * Animator.FreeArm);
+                }
+            }
         }
+        // A swing steps into the blow and a knockdown throws the legs about: their own hips and legs, standing.
+        if (Animator.LegsWeight > 0f && Animator.Legs.Count > 0)
+        {
+            Blend(Animator.Legs, _legRotations, _legPositions, withPositions: true);
+            var w = Animator.LegsWeight;
+            for (var b = 0; b < count; b++)
+            {
+                if (_upper[b])
+                    continue;
+                _rotations[b] = _rotations[b].Slerp(_legRotations[b], w);
+                _positions[b] = _positions[b].Lerp(_legPositions[b], w);
+            }
+        }
+        if (!FirstPerson)
+        {
+            // The chest and head face the look while the feet point elsewhere, shared out up the spine.
+            var shares = Assets.Settings.Motion.TwistShares;
+            var twist = Animator.Twist;
+            var bones = new[] { _spine, _chest, _neck, _head };
+            for (var i = 0; i < bones.Length; i++)
+            {
+                if (bones[i] >= 0 && twist != 0f)
+                    _rotations[bones[i]] = (_rotations[bones[i]] * new Quaternion(_yawAxis[bones[i]], twist * shares[i])).Normalized();
+            }
+            // Leaning into speeding up and turning, in the spine and chest; the neck takes some back to keep the head level.
+            var tilt = Animator.Lean;
+            if (tilt != System.Numerics.Vector2.Zero)
+            {
+                foreach (var (bone, share) in new[] { (_spine, 0.55f), (_chest, 0.45f), (_neck, -0.3f) })
+                {
+                    if (bone >= 0)
+                        _rotations[bone] = (_rotations[bone] * new Quaternion(_pitchAxis[bone], tilt.X * share) * new Quaternion(_rollAxis[bone], -tilt.Y * share)).Normalized();
+                }
+            }
+        }
+
         var pitch = FirstPerson ? 0f : -Animator.HeadPitch / 2f;
         foreach (var bone in new[] { _neck, _head })
         {

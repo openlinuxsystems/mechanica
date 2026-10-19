@@ -3,6 +3,7 @@ using System.Text.Json;
 using Mechanica.Core.Actions;
 using Mechanica.Core.Bots;
 using Mechanica.Core.Building;
+using Mechanica.Core.Characters;
 using Mechanica.Core.Creations;
 using Mechanica.Core.Data;
 using Mechanica.Core.Items;
@@ -162,6 +163,9 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     /// <summary>A player took damage: peer, health lost, cause (<c>fall</c>, <c>weapon</c>, <c>sledge</c>, ...).</summary>
     public event Action<int, float, string>? Hurt;
 
+    /// <summary>A blow rocked a player who lived through it (<see cref="HitSettings"/>): how hard, and where it came from.</summary>
+    public event Action<PlayerHitView>? PlayerHit;
+
     /// <summary>Registers every survival action.</summary>
     public void Register(ActionDispatcher dispatcher)
     {
@@ -260,9 +264,11 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
 
     /// <summary>
     /// Takes <paramref name="amount"/> health from a player (nothing in Creative or when dead). At 0 they
-    /// die. Returns the health left. Bots (chunk 21) hurt players through this.
+    /// die. Returns the health left. Bots (chunk 21) hurt players through this. A blow (<see cref="HitSettings.Causes"/>)
+    /// they live through raises <see cref="PlayerHit"/>, with <paramref name="reaction"/> or the one its damage earns, and
+    /// <paramref name="from"/>, where it came from, so they flinch away from it.
     /// </summary>
-    public float Damage(int peer, float amount, string cause)
+    public float Damage(int peer, float amount, string cause, Vector3? from = null, HitReaction? reaction = null)
     {
         if (!_vitals.TryGetValue(peer, out var v))
             return 0f;
@@ -277,6 +283,8 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         Hurt?.Invoke(peer, lost, cause);
         if (v.Health <= 0)
             Die(peer, v);
+        else if ((reaction ?? settings.Hits.ReactionTo(cause, lost)) is var kind and not HitReaction.None)
+            PlayerHit?.Invoke(new PlayerHitView(peer, kind, from?.ToVec3()));
         VitalsChanged?.Invoke(peer);
         return v.Health;
     }
@@ -449,7 +457,7 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         {
             var dealt = CanHurt(caller, peer) ? damage : 0f;
             if (dealt > 0)
-                Damage(peer, dealt, "weapon");
+                Damage(peer, dealt, "weapon", PlayerCentre(caller.Peer));
             return new ShotHitView("player", point, dealt, Player: peer);
         }
         if (hit.Creation is { } id && hit.Part is { } part && world.FindCreation(id) is { } creation && creation.FindPart(part) is not null)
@@ -515,7 +523,7 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
             // A shooter's own splash hurts them even with friendly fire off.
             var dealt = IsOwn(caller, peer) || CanHurt(caller, peer) ? Falloff(d) : 0f;
             if (dealt > 0)
-                Damage(peer, dealt, "explosion");
+                Damage(peer, dealt, "explosion", at);
             hits.Add(new ShotHitView("player", centre.ToVec3(), dealt, Player: peer));
         }
         foreach (var (bot, centre) in Bots?.BotsNear(at, radius) ?? [])
@@ -559,11 +567,11 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     /// something (never its owner's player) or <paramref name="lifetime"/> seconds pass. Flight is stepped
     /// on the host in <see cref="Tick"/>; <see cref="ProjectileLanded"/> says where it ended, and whoever
     /// launched it decides what that does (a projectile deals no damage by itself). <paramref name="look"/> says how
-    /// clients draw it (<see cref="ProjectileView.Look"/>).
+    /// clients draw it (<see cref="ProjectileView.Look"/>), and <paramref name="size"/> how big (<see cref="ProjectileView.Size"/>).
     /// </summary>
-    public ProjectileView Launch(int owner, Vector3 from, Vector3 velocity, Vector3 gravity, float lifetime, string? look = null)
+    public ProjectileView Launch(int owner, Vector3 from, Vector3 velocity, Vector3 gravity, float lifetime, string? look = null, float? size = null)
     {
-        var flight = new Flight(_nextProjectile++, owner, from, velocity, gravity, lifetime, world.Now, look);
+        var flight = new Flight(_nextProjectile++, owner, from, velocity, gravity, lifetime, world.Now, look, size);
         _projectiles[flight.Id] = flight;
         var view = flight.View(world.Now);
         ProjectileLaunched?.Invoke(view);
@@ -601,9 +609,10 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         }
     }
 
-    private sealed class Flight(int id, int owner, Vector3 from, Vector3 velocity, Vector3 gravity, float lifetime, double launched, string? look)
+    private sealed class Flight(int id, int owner, Vector3 from, Vector3 velocity, Vector3 gravity, float lifetime, double launched, string? look, float? size)
     {
         public string? Look { get; } = look;
+        public float? Size { get; } = size;
         public int Id { get; } = id;
         public int Owner { get; } = owner;
         public Vector3 From { get; } = from;
@@ -616,7 +625,7 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         public float Age { get; set; }
 
         public ProjectileView View(double now) =>
-            new(Id, Owner, From.ToVec3(), LaunchVelocity.ToVec3(), Gravity.ToVec3(), Lifetime, (float)Math.Max(0, now - Launched), Look);
+            new(Id, Owner, From.ToVec3(), LaunchVelocity.ToVec3(), Gravity.ToVec3(), Lifetime, (float)Math.Max(0, now - Launched), Look, Size);
     }
 
     // With friendly fire off only bots hurt players: players, external AIs and part scripts (players' machines) do not.
@@ -730,7 +739,7 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         : null;
 
     /// <inheritdoc/>
-    public float StrikePlayer(ActionCaller caller, int peer, float damage) => Damage(peer, damage, "sledge");
+    public float StrikePlayer(ActionCaller caller, int peer, float damage) => Damage(peer, damage, "sledge", PlayerCentre(caller.Peer));
 
     /// <inheritdoc/>
     public Vector3? ObjectCentre(string id) =>

@@ -23,6 +23,9 @@ public class CharacterAnimatorTests
         ["hold_bag"] = 2f, ["bag_spill"] = 0.8f, ["bag_lift"] = 0.4f, ["bag_lower"] = 0.35f,
         ["hold_weld"] = 2f, ["hold_weld_aim"] = 2f, ["weld_draw"] = 0.5f, ["weld_stow"] = 0.45f,
         ["hold_weld_fp"] = 2f, ["hold_weld_aim_fp"] = 2f, ["weld_draw_fp"] = 0.5f, ["weld_stow_fp"] = 0.45f, ["weld_fp"] = 0.6f,
+        ["turn_l"] = 0.7f, ["turn_r"] = 0.7f, ["jump_run"] = 0.5f, ["land_hard"] = 1f, ["idle_look"] = 4f, ["idle_stretch"] = 3.6f,
+        ["hit_front"] = 0.5f, ["hit_back"] = 0.5f, ["hit_left"] = 0.5f, ["hit_right"] = 0.5f, ["hit_heavy"] = 1f,
+        ["knockdown"] = 1.1f, ["get_up"] = 1.3f, ["death"] = 1.6f, ["downed"] = 2f,
     };
 
     private static CharacterAnimator Make() => new(new CharacterSettings(), Lengths);
@@ -469,5 +472,120 @@ public class CharacterAnimatorTests
         animator.Play(CharacterGesture.Hurt);
         Run(animator, Standing(), Dt);
         Assert.Equal("hurt", animator.Gesture);
+    }
+
+    [Theory]
+    [InlineData(0f, "hit_front")]
+    [InlineData(1.5f, "hit_left")]
+    [InlineData(-1.5f, "hit_right")]
+    [InlineData(3f, "hit_back")]
+    public void ALightHitFlinchesAwayFromWhereItCameFrom(float from, string clip)
+    {
+        var animator = Make();
+        Run(animator, Standing(), 0.1f);
+        animator.React(HitReaction.Light, from);
+        Run(animator, Standing(), Dt);
+        Assert.Equal(clip, animator.Gesture);
+        Assert.False(animator.Grounded);
+        // A flinch on its health dropping doesn't cut it short.
+        animator.Play(CharacterGesture.Hurt);
+        Assert.Equal(clip, animator.Gesture);
+    }
+
+    [Fact]
+    public void AKnockdownLiesAMomentThenGetsUp()
+    {
+        var animator = Make();
+        Run(animator, Standing(), 0.1f);
+        animator.React(HitReaction.Knockdown, 0f);
+        Run(animator, Standing(), Dt);
+        Assert.Equal("knockdown", animator.Gesture);
+        Assert.True(animator.Grounded);
+        // Down, it takes no other hit or gesture.
+        animator.React(HitReaction.Light, 0f);
+        Assert.Equal("knockdown", animator.Gesture);
+        Run(animator, Standing(), 1.1f + 0.6f + 0.1f);
+        Assert.Equal("get_up", animator.Gesture);
+        Run(animator, Standing(), 1.4f);
+        Assert.Null(animator.Gesture);
+        Assert.False(animator.Grounded);
+    }
+
+    [Fact]
+    public void ASeatedPlayerOnlyFlinches()
+    {
+        var animator = Make();
+        var seated = Standing() with { Seated = true };
+        Run(animator, seated, 0.1f);
+        animator.React(HitReaction.Knockdown, 0f);
+        Run(animator, seated, Dt);
+        Assert.Equal("hit_front", animator.Gesture);
+    }
+
+    [Fact]
+    public void DyingFallsAndStaysDownUntilRespawn()
+    {
+        var animator = Make();
+        Run(animator, Standing(), 0.1f);
+        Run(animator, Standing() with { Dead = true }, Dt);
+        Assert.Equal("death", animator.Gesture);
+        Run(animator, Standing() with { Dead = true }, 3f);
+        Assert.Equal("downed", animator.Gesture);
+        Assert.True(animator.Grounded);
+        Run(animator, Standing(), Dt);
+        Assert.False(animator.Grounded);
+    }
+
+    [Fact]
+    public void JoiningWhileDeadStartsDown()
+    {
+        var animator = Make();
+        Run(animator, Standing() with { Dead = true }, Dt);
+        Assert.Equal("downed", animator.Gesture);
+    }
+
+    [Fact]
+    public void StandingTheFeetStayPutUntilTheLookTurnsFarThenStepRound()
+    {
+        var animator = Make();
+        Run(animator, Standing(), 0.2f);
+        // A look 40° to the left: the upper body twists toward it, the feet stay.
+        Run(animator, Standing(yaw: 0.7f), 0.2f);
+        Assert.Null(animator.TurnClip);
+        Assert.True(animator.Twist > 0.3f);
+        // Further than turn_in_place_degrees: the feet step round to the left.
+        Run(animator, Standing(yaw: 1.2f), Dt * 2);
+        Assert.Equal("turn_l", animator.TurnClip);
+        Run(animator, Standing(yaw: 1.2f), 1.5f);
+        Assert.Null(animator.TurnClip);
+    }
+
+    [Fact]
+    public void SwingsUseTheLegsStandingButNotRunning()
+    {
+        var animator = Make();
+        var swing = Standing() with { Prop = CharacterProp.Sledgehammer, Gesture = CharacterGesture.SledgeSwing, GestureCount = 1 };
+        Run(animator, swing with { GestureCount = 0 }, 0.3f);
+        Run(animator, swing, 0.15f);
+        Assert.True(animator.LegsWeight > 0.5f);
+
+        var running = Make();
+        var run = Standing(vz: -7f) with { Prop = CharacterProp.Sledgehammer, Gesture = CharacterGesture.SledgeSwing };
+        Run(running, run with { GestureCount = 0 }, 0.5f);
+        Run(running, run with { GestureCount = 1 }, 0.15f);
+        Assert.True(running.LegsWeight < 0.05f);
+    }
+
+    [Fact]
+    public void WalkingWithAToolTheStrideStillSwaysTheTorsoAndTheFreeArm()
+    {
+        var animator = Make();
+        var holding = Standing() with { Prop = CharacterProp.LiftRemote };
+        Run(animator, holding, 0.5f);
+        Assert.Equal(0f, animator.Carry);
+        Run(animator, Standing(vz: -1.5f) with { Prop = CharacterProp.LiftRemote }, 0.8f);
+        Assert.True(animator.Carry > 0.7f);
+        var free = CharacterRig.FreeArmHolds.Contains(CharacterRig.HoldClip(CharacterProp.LiftRemote, false)!);
+        Assert.Equal(free ? 1f : 0f, animator.FreeArm, 3);
     }
 }

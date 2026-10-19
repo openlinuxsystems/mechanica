@@ -368,7 +368,7 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
             var point = TargetPoint(args, out _)!.Value;
             bot.Yaw = YawOf(point - bot.Position) is var yaw && float.IsFinite(yaw) ? yaw : bot.Yaw;
             if (args.Player is { } peer)
-                hits.Add(HurtPlayer(peer, attack, attack.Damage, point));
+                hits.Add(HurtPlayer(bot, peer, attack, attack.Damage, point));
             else if (args.Target is { } other)
             {
                 DamageBot(other, attack.Damage, "bot", attack.Kind == BotAttackKind.Melee);
@@ -399,7 +399,7 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
                 continue;
             var distance = Math.Max(0, Vector3.Distance(centre, at) - settings.PlayerRadius);
             if (distance <= attack.Radius)
-                hits.Add(HurtPlayer(peer, attack, Falloff(attack.Damage, distance), centre));
+                hits.Add(HurtPlayer(bot, peer, attack, Falloff(attack.Damage, distance), centre));
         }
         if (attack.ObjectDamage > 0)
         {
@@ -428,10 +428,10 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
         }
     }
 
-    private ShotHitView HurtPlayer(int peer, BotAttack attack, float damage, Vector3 point)
+    private ShotHitView HurtPlayer(BotState bot, int peer, BotAttack attack, float damage, Vector3 point)
     {
         if (damage > 0)
-            survival.Damage(peer, damage, "bot");
+            survival.Damage(peer, damage, "bot", bot.Centre);
         if (attack.DamagePerSecond > 0 && survival.Mode == GameMode.Survival)
             _lasting.Add((peer, attack.DamagePerSecond, survivalWorld.Now + attack.DamageSeconds));
         if (attack.Slows)

@@ -32,6 +32,9 @@ public sealed partial class ScriptRuntime
     // Most pellets one combat.pellets call may make.
     private const int MaxPellets = 64;
 
+    // Largest a projectile's look may be drawn (combat.projectile size), in metres.
+    private const float MaxProjectileSize = 10f;
+
     private readonly SortedDictionary<(int Peer, string Item), Instance> _items = [];
     private readonly Dictionary<int, (string Item, int Slot)> _held = [];
     // Projectiles scripts launched: the item, part or mod script that hears on_hit, and its data.
@@ -569,8 +572,11 @@ public sealed partial class ScriptRuntime
             var look = options?.Get("look") is { Type: DataType.String } k ? k.String : null;
             if ((look is null && options?.Get("look") is { } bad && !bad.IsNil()) || (look is not null && !ProjectileView.Looks.Contains(look)))
                 throw new ScriptRuntimeException($"combat.projectile: look must be one of {string.Join(", ", ProjectileView.Looks)}");
+            float? size = options?.Get("size") is { } z && !z.IsNil() ? LuaValues.Number(z, "combat.projectile (size)", 3) : null;
+            if (size is { } sz && !(sz is > 0f and <= MaxProjectileSize))
+                throw new ScriptRuntimeException($"combat.projectile: size must be more than 0 and at most {MaxProjectileSize:0} m");
             var data = options?.Get("data") ?? DynValue.Nil;
-            var view = _survival!.Launch(ignore, from, velocity, gravity, lifetime, look);
+            var view = _survival!.Launch(ignore, from, velocity, gravity, lifetime, look, size);
             _flights[view.Id] = (instance, data);
             return DynValue.NewNumber(view.Id);
         });
