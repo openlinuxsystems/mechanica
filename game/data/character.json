@@ -117,5 +117,8 @@
   "head_pitch_share": 0.6,
   // First-person arms: where the arms-only model stands from the camera (right, up, back, in metres) and how far it tips forward.
   "first_person_offset": [0.0, -1.24, 0.14],
-  "first_person_pitch_degrees": 14
+  "first_person_pitch_degrees": 14,
+  // Where the eyes are in the rest pose (right, up, back, in metres from the feet; tools/characters/build_characters.py
+  // HEAD_C and EYE_Z). The seat's interior camera looks from here, with the seated body's head hidden.
+  "eyes": [0.0, 1.637, -0.08]
 }
