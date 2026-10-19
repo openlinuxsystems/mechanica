@@ -300,6 +300,38 @@ public class WorldGenTests
     }
 
     [Fact]
+    public void SmallFindsAreScatteredOverTheLand()
+    {
+        var gen = Vanilla.Value;
+        // World POI plan (2026-10-19): about 400 small finds a world, mostly loot crates, then wrecks and chests.
+        var counts = new Dictionary<string, int>();
+        foreach (var rule in gen.Data.ScatterRules.Where(r => r.Object.Id is "loot_crate" or "loot_chest" or "scrap_wreck"))
+        {
+            var s = rule.Spacing;
+            for (var iz = (int)MathF.Floor(-VanillaDepth / 2 / s); iz <= (int)MathF.Floor(VanillaDepth / 2 / s); iz++)
+            {
+                for (var ix = (int)MathF.Floor(-VanillaSize / 2 / s); ix <= (int)MathF.Floor(VanillaSize / 2 / s); ix++)
+                {
+                    if (gen.Find(new WorldObjectId(rule.Index, ix, iz)) is not { } find)
+                        continue;
+                    counts[find.Definition.Id!] = counts.GetValueOrDefault(find.Definition.Id!) + 1;
+                    Assert.Empty(gen.PoisAt(find.Position.X, find.Position.Z));
+                    Assert.False(gen.Roads.Covers(find.Position.X, find.Position.Z), $"{find.Definition.Id} on a road at {find.Position}");
+                }
+            }
+        }
+        foreach (var (id, fewest, most) in new[] { ("loot_crate", 180, 340), ("loot_chest", 35, 90), ("scrap_wreck", 55, 120) })
+            Assert.True(counts.GetValueOrDefault(id) >= fewest && counts.GetValueOrDefault(id) <= most, $"{id}: {counts.GetValueOrDefault(id)}");
+        Assert.True(counts.Values.Sum() is >= 330 and <= 500, string.Join(" ", counts));
+
+        // A crate and a wreck break for their drops; a chest opens with Use.
+        var objects = gen.Data.Objects;
+        Assert.True(objects["loot_crate"].Health > 0 && objects["scrap_wreck"].Health > objects["loot_crate"].Health);
+        Assert.True(objects["loot_chest"].Harvest);
+        Assert.All(new[] { "loot_crate", "loot_chest", "scrap_wreck" }, id => Assert.Contains(objects[id].Drops!, d => d.Item == "component_kit"));
+    }
+
+    [Fact]
     public void FlatWorldIsFlatAndEmpty()
     {
         var gen = new WorldGenerator(WorldGenData.Flat, 5, WorldSize);
