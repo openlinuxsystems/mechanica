@@ -1,8 +1,7 @@
 {
   "id": "traffic_cone",
   "stations": [
-    "fabricator",
-    "mini_fabricator"
+    "fabricator"
   ],
   "inputs": [
     {

@@ -2,7 +2,7 @@
   "id": "switch",
   "stations": [
     "fabricator",
-    "mini_fabricator"
+    "portable_fabricator"
   ],
   "inputs": [
     {

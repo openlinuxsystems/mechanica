@@ -31,6 +31,9 @@ namespace Mechanica.Game.Tools;
 /// Given <c>scrap_seat</c> it puts down a Scrap Driver's Seat on a slab with a gas engine, a switch and a button linked to
 /// it, sits the player in it (the enter clip, then seated), runs the engine (the rattle), shows the seated driver from
 /// the sides, saves the seat's item picture and stands up again (<c>tools/capture-scrap-seat.sh</c>).
+/// Given <c>portable_fabricator</c> it puts down a Portable Fabricator, captures it from the reference sheet's views and idle,
+/// then crafts a Connect Tool on it (the start, craft and complete clips) and saves its item picture
+/// (<c>tools/capture-portable-fabricator.sh</c>).
 /// Given <c>trees</c> it finds a clear example of every tree type and captures it with the player beside it and close up,
 /// then a forest, an autumn and a burned forest wide, and a felled tree's logs (<c>tools/capture-trees.sh</c>).
 /// </summary>
@@ -60,10 +63,11 @@ public partial class CaptureScene : Node
         var seat = args.Length > 1 && args[1] == "scrap_seat";
         var trees = args.Length > 1 && args[1] == "trees";
         var seats = args.Length > 1 && args[1] == "seats";
-        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats ? args[1] : "scrapper_male";
+        var portable = args.Length > 1 && args[1] == "portable_fabricator";
+        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats && !portable ? args[1] : "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
         // Building the block wall needs Creative: free parts and no build reach.
-        _main.Options = LaunchOptions.Offline with { Seed = 7, GameMode = blocks || soil ? Core.Survival.GameMode.Creative : LaunchOptions.Offline.GameMode };
+        _main.Options = LaunchOptions.Offline with { Seed = 7, GameMode = blocks || soil || portable ? Core.Survival.GameMode.Creative : LaunchOptions.Offline.GameMode };
         _main.ReadDeviceInput = icons;
         AddChild(_main);
         _camera = new Camera3D { Fov = 40 };
@@ -121,6 +125,11 @@ public partial class CaptureScene : Node
         if (seats)
         {
             SeatsShots();
+            return;
+        }
+        if (portable)
+        {
+            PortableFabricatorShots();
             return;
         }
         Shot("front", 60, () => Look(new Vector3(0, 1.0f, -3.2f)));
@@ -978,6 +987,88 @@ public partial class CaptureScene : Node
             LookAtSeat(new Vector3(1.9f, 1.2f, -1.9f), 0.4f);
         });
         Shot("scrap_seat_13_empty", 60, () => { });
+    }
+
+    private const int FabricatorCreation = 9002;
+    private int _fabricator;
+    private Transform3D _fabricatorAt;
+
+    // A Portable Fabricator on the ground in front of the player, idle, then crafting a Connect Tool through the real
+    // Craft action, so its clips follow the station's work as they do in play.
+    private void PortableFabricatorShots()
+    {
+        Engine.TimeScale = 1.0;
+        Shot("portable_fabricator_00_wait", 60, () => { });
+        Shot("portable_fabricator_01_placed", 90, () =>
+        {
+            var from = Player.GlobalPosition + Player.GlobalTransform.Basis * new Vector3(0, 3, -2.2f);
+            var hit = Player.GetWorld3D().DirectSpaceState.IntersectRay(PhysicsRayQueryParameters3D.Create(from, from + Vector3.Down * 12));
+            var at = hit.Count > 0 ? hit["position"].AsVector3() : Player.GlobalPosition;
+            var creation = new Core.Creations.Creation(FabricatorCreation, _main.Mods!);
+            if (!creation.TryPlacePart("vanilla:portable_fabricator", new Core.Creations.GridCell(0, 0, 0), Core.Creations.GridRotation.Identity, out var placed, out var error))
+                throw new InvalidOperationException(error);
+            _fabricator = placed.Id;
+            // Face the player: the model's front is -Z.
+            var yaw = Player.GlobalRotation.Y + Mathf.Pi;
+            var rotation = System.Numerics.Quaternion.CreateFromAxisAngle(System.Numerics.Vector3.UnitY, yaw);
+            creation.SetAllBodyPoses(new Core.Creations.Pose(new System.Numerics.Vector3(at.X, at.Y + 0.05f, at.Z), rotation));
+            _main.Creations.Add(creation, _main.Assets);
+            _fabricatorAt = new Transform3D(new Basis(Vector3.Up, yaw), at);
+            LookAtFabricator(new Vector3(-1.6f, 1.3f, -2.1f));
+        });
+        Shot("portable_fabricator_02_front", 8, () => LookAtFabricator(new Vector3(0, 0.45f, -1.7f)));
+        Shot("portable_fabricator_03_side", 8, () => LookAtFabricator(new Vector3(-2.2f, 0.45f, 0)));
+        Shot("portable_fabricator_04_top", 8, () => LookAtFabricator(new Vector3(0, 2.6f, -0.3f)));
+        Shot("portable_fabricator_05_back", 8, () => LookAtFabricator(new Vector3(1.6f, 1.2f, 2.1f)));
+        Shot("portable_fabricator_06_with_player", 8, () =>
+        {
+            Player.ThirdPerson = true;
+            _camera.MakeCurrent();
+            _follow = null;
+            _camera.GlobalPosition = Player.GlobalPosition + Player.GlobalTransform.Basis * new Vector3(-3.2f, 1.8f, 0.6f);
+            _camera.LookAt(Player.GlobalPosition.Lerp(_fabricatorAt.Origin, 0.5f) + Vector3.Up * 0.6f);
+        });
+        Shot("portable_fabricator_07_idle", 20, () => LookAtFabricator(new Vector3(-0.9f, 1.0f, -1.3f), 0.45f));
+        Shot("portable_fabricator_08_start", 4, () =>
+        {
+            void Give(string item, int count) =>
+                _main.Actions.Request(Core.Items.InventoryActions.GiveItems, new Core.Items.GiveItemsArgs(item, count), r => GD.Print($"[capture] give {item}: {r}"));
+            Give("vanilla:scrap_metal_block", 5);
+            Give("vanilla:circuit_board", 2);
+            _main.Actions.Request(Core.Items.InventoryActions.Craft,
+                new Core.Items.CraftArgs(FabricatorCreation, _fabricator, "vanilla:connect_tool", 1), r => GD.Print($"[capture] craft: {r}"));
+        });
+        Shot("portable_fabricator_09_start", 10, () => { });
+        Shot("portable_fabricator_10_crafting", 40, () => { });
+        Shot("portable_fabricator_11_crafting", 23, () => { });
+        Shot("portable_fabricator_12_crafting_wide", 8, () => LookAtFabricator(new Vector3(-1.6f, 1.3f, -2.1f)));
+        Shot("portable_fabricator_13_crafting_close", 11, () => LookAtFabricator(new Vector3(-0.9f, 1.0f, -1.3f), 0.45f));
+        // The Connect Tool takes 5 s at speed 0.5: the complete clip starts about 10 s after the craft.
+        Shot("portable_fabricator_14_complete", 516, () => { });
+        Shot("portable_fabricator_15_complete", 30, () => { });
+        Shot("portable_fabricator_16_idle_again", 60, () => { });
+        Shot("portable_fabricator_17_icon", 240, () =>
+        {
+            _main.Icons!.For("vanilla:portable_fabricator");
+            _iconTick = () =>
+            {
+                if (_main.Icons.For("vanilla:portable_fabricator") is not { } texture)
+                    return;
+                var path = $"{_out}/icon_vanilla_portable_fabricator.png";
+                texture.GetImage().SavePng(path);
+                GD.Print($"[capture] {path}");
+                _iconTick = null;
+            };
+        });
+    }
+
+    private void LookAtFabricator(Vector3 offset, float height = 0.3f)
+    {
+        Player.ThirdPerson = true;
+        _camera.MakeCurrent();
+        _follow = null;
+        _camera.GlobalPosition = _fabricatorAt * offset;
+        _camera.LookAt(_fabricatorAt * (Vector3.Up * height));
     }
 
     private static readonly string[] SeatParts = ["drivers_seat", "passenger_seat", "scrap_drivers_seat", "scrap_seat"];

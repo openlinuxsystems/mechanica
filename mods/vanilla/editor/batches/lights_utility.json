@@ -278,7 +278,7 @@
       "recipes": [
         {
           "id": "glowstick",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_wood", "count": 1 }, { "item": "crude_oil", "count": 1 }],
           "outputs": [{ "item": "glowstick", "count": 1 }],
           "time": 2
@@ -330,7 +330,7 @@
       "recipes": [
         {
           "id": "radio",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator"],
           "inputs": [
             { "item": "scrap_wood", "count": 2 },
             { "item": "component_kit", "count": 1 },
@@ -410,7 +410,7 @@
       "recipes": [
         {
           "id": "horn",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 1 }, { "item": "component_kit", "count": 1 }],
           "outputs": [{ "item": "horn", "count": 1 }],
           "time": 3

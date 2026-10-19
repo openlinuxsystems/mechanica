@@ -1,8 +1,7 @@
 {
   "id": "ibeam_short",
   "stations": [
-    "fabricator",
-    "mini_fabricator"
+    "fabricator"
   ],
   "inputs": [
     {

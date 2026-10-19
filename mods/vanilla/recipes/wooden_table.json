@@ -1,8 +1,7 @@
 {
   "id": "wooden_table",
   "stations": [
-    "fabricator",
-    "mini_fabricator"
+    "fabricator"
   ],
   "inputs": [
     {

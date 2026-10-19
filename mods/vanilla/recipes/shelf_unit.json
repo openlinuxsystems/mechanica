@@ -1,8 +1,7 @@
 {
   "id": "shelf_unit",
   "stations": [
-    "fabricator",
-    "mini_fabricator"
+    "fabricator"
   ],
   "inputs": [
     {

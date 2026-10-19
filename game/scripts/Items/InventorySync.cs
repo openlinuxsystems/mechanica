@@ -57,6 +57,9 @@ public partial class InventorySync : Node, IInventoryWorld
     /// <summary>Where stations' crafting sounds play; null plays none.</summary>
     public Sound.SoundSync? Sounds { get; init; }
 
+    /// <summary>The host's part readouts, where stations name the clips they play; null sets none.</summary>
+    public Func<Core.Logic.PartReadouts?>? Readouts { get; init; }
+
     /// <summary>Limits; null loads <see cref="SettingsPath"/>.</summary>
     public InventorySettings? Settings { get; set; }
 
@@ -93,6 +96,17 @@ public partial class InventorySync : Node, IInventoryWorld
 
     /// <inheritdoc/>
     public void Changed(Creation creation) => Creations.Rebuild(creation.Id);
+
+    /// <inheritdoc/>
+    public void SetReadout(int creation, int partId, string id, string? text)
+    {
+        if (Readouts?.Invoke() is not { } readouts)
+            return;
+        if (text is null)
+            readouts.Clear(creation, partId, id);
+        else
+            readouts.Set(creation, partId, id, text);
+    }
 
     /// <inheritdoc/>
     public void SetPartLoop(int creation, int partId, string? sound, string ownerModId)

@@ -65,7 +65,7 @@
       "recipes": [
         {
           "id": "scrap_drivers_seat",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator"],
           "inputs": [
             { "item": "scrap_metal", "count": 3 },
             { "item": "scrap_wood", "count": 2 },
@@ -97,7 +97,7 @@
       "recipes": [
         {
           "id": "passenger_seat",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 3 }, { "item": "component_kit", "count": 1 }],
           "outputs": [{ "item": "passenger_seat", "count": 1 }],
           "time": 5
@@ -133,7 +133,7 @@
       "recipes": [
         {
           "id": "scrap_seat",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_wood", "count": 3 }, { "item": "scrap_metal", "count": 1 }],
           "outputs": [{ "item": "scrap_seat", "count": 1 }],
           "time": 4
@@ -342,7 +342,7 @@
       "recipes": [
         {
           "id": "scrap_gas_engine",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 5 }, { "item": "component_kit", "count": 1 }],
           "outputs": [{ "item": "scrap_gas_engine", "count": 1 }],
           "time": 8
@@ -516,7 +516,7 @@
       "recipes": [
         {
           "id": "scrap_wheel",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator", "portable_fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 2 }, { "item": "scrap_wood", "count": 2 }],
           "outputs": [{ "item": "scrap_wheel", "count": 1 }],
           "time": 4
@@ -546,7 +546,7 @@
       "recipes": [
         {
           "id": "wheel",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 3 }, { "item": "component_kit", "count": 1 }],
           "outputs": [{ "item": "wheel", "count": 1 }],
           "time": 5
@@ -576,7 +576,7 @@
       "recipes": [
         {
           "id": "big_wheel",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 6 }, { "item": "component_kit", "count": 2 }],
           "outputs": [{ "item": "big_wheel", "count": 1 }],
           "time": 8
@@ -619,7 +619,7 @@
       "recipes": [
         {
           "id": "logic_gate",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator"],
           "inputs": [{ "item": "component_kit", "count": 1 }, { "item": "circuit_board", "count": 1 }],
           "outputs": [{ "item": "logic_gate", "count": 1 }],
           "time": 3
@@ -657,7 +657,7 @@
       "recipes": [
         {
           "id": "timer",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator"],
           "inputs": [{ "item": "component_kit", "count": 1 }, { "item": "circuit_board", "count": 1 }],
           "outputs": [{ "item": "timer", "count": 1 }],
           "time": 3
@@ -700,7 +700,7 @@
       "recipes": [
         {
           "id": "sensor",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator"],
           "inputs": [{ "item": "component_kit", "count": 1 }, { "item": "circuit_board", "count": 2 }],
           "outputs": [{ "item": "sensor", "count": 1 }],
           "time": 4
@@ -727,7 +727,7 @@
       "recipes": [
         {
           "id": "switch",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator", "portable_fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 1 }, { "item": "component_kit", "count": 1 }],
           "outputs": [{ "item": "switch", "count": 1 }],
           "time": 2
@@ -755,7 +755,7 @@
       "recipes": [
         {
           "id": "button",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 1 }, { "item": "component_kit", "count": 1 }],
           "outputs": [{ "item": "button", "count": 1 }],
           "time": 2
@@ -807,7 +807,7 @@
       "recipes": [
         {
           "id": "controller",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator"],
           "inputs": [{ "item": "component_kit", "count": 2 }, { "item": "circuit_board", "count": 2 }],
           "outputs": [{ "item": "controller", "count": 1 }],
           "time": 6

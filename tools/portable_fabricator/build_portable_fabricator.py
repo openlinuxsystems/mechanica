@@ -13,14 +13,16 @@ What it builds (procedurally, from scratch: no .blend inputs, no downloads):
   The moving pieces are their own nodes under ``Body`` (which settles and hums): the arm's ``ArmBase`` (turns about Z),
   ``ArmUpper``, ``ArmFore`` and ``ArmWrist`` (each pitches about its own Y), and the ``Glow*`` lights, which are shown
   by scaling their meshes up from inside their housings. glTF clips (the game plays them from the part's ``clip``
-  readout; see docs/part-data-schema.md):
+  ``station`` readout; see docs/part-data-schema.md):
 
   - ``idle_loop`` (3 s): the arm folded, the panel's indicator pulsing slowly, everything else dark.
   - ``start`` (0.8 s): the panel's frame flashes, the screen lights, the arm unfolds over the pad.
   - ``craft_loop`` (2 s): the arm works the pad in a small pattern with its tip sparking, a scan line sweeps the
     screen, the pad and the side strips flicker and the case hums.
   - ``complete`` (1.2 s): a bright flash on the panel and the pad, then the arm folds away and the lights go back to idle.
-  - ``place`` (0.5 s): a soft settle when it is put down.
+
+  The part's ``crafting.clips`` names them, so the station plays start then craft_loop when it begins work and complete
+  when it stops; ``display.clips.idle`` plays idle_loop the rest of the time.
 
 * ``mods/vanilla/textures/items/portable_fabricator_icon.png`` - the hotbar, inventory and Fabricator picture, 256 x 256
   on a clear background, three-quarter from the front right, the arm raised over the pad.
@@ -191,13 +193,13 @@ def make_materials():
         "spark": pt.plain("pf_spark", "#ffffff", 0.2, 0.0, emission="#d8fffb", strength=12.0),
         "panel": emissive_decal("pf_panel", panel_face(), 0.12),
         "mark": lt.decal("pf_mark", side_mark(), rough=0.5),
-        "gun": lt.textured("pf_gun", half(lt.metal_surface(501, "#4c5057", 0.42, 0.75, wear=0.25, edge_light=0.25)),
+        "gun": lt.textured("pf_gun", half(lt.metal_surface(501, "#40444a", 0.42, 0.75, wear=0.25, edge_light=0.25)),
                            normal_strength=0.25),
-        "gun_dark": lt.textured("pf_gun_dark", half(lt.metal_surface(503, "#2f3237", 0.48, 0.72, wear=0.2,
+        "gun_dark": lt.textured("pf_gun_dark", half(lt.metal_surface(503, "#272a2e", 0.48, 0.72, wear=0.2,
                                                                      edge_light=0.2)), normal_strength=0.25),
         "steel_dark": lt.textured("pf_steel_dark", half(lt.metal_surface(505, "#5d6166", 0.36, 0.86, wear=0.3,
                                                                          edge_light=0.25)), normal_strength=0.4),
-        "copper": lt.textured("pf_copper", half(lt.metal_surface(507, "#b06a3c", 0.32, 0.95, wear=0.3, edge_light=0.3)),
+        "copper": lt.textured("pf_copper", half(lt.metal_surface(507, "#9c5c35", 0.32, 0.95, wear=0.3, edge_light=0.3)),
                               normal_strength=0.3),
         "rubber": lt.textured("pf_rubber", half(lt.rubber_surface(509)), normal_strength=1.5),
     }
@@ -262,7 +264,7 @@ def build_sides():
         # the big side plate (octagonal: a box with heavy bevels) and its mark
         box(g, (face + sx * 0.004, -0.02, MID_Z), (0.006, 0.17, 0.15), "gun", bevel=0.005)
         box(g, (face + sx * 0.0105, -0.02, MID_Z), (0.0012, 0.15, 0.13), "gun_dark")
-        mx = face + sx * 0.0119
+        mx = face + sx * 0.0125
         ys, zs = (-0.02 - 0.04, -0.02 + 0.04), (MID_Z - 0.04, MID_Z + 0.04)
         y0, y1 = (ys[1], ys[0]) if sx > 0 else ys
         quad(g, [(mx, y0, zs[0]), (mx, y1, zs[0]), (mx, y1, zs[1]), (mx, y0, zs[1])], "mark")
@@ -288,8 +290,8 @@ def build_front():
     y = FRONT
     px, pz, hw, hh = PANEL
     box(g, (px, y + 0.006, pz), (hw + 0.022, 0.007, hh + 0.022), "gun", bevel=0.008)
-    box(g, (px, y + 0.0128, pz), (hw + 0.004, 0.0008, hh + 0.004), "hole")
-    fy = y + 0.0138
+    box(g, (px, y + 0.0125, pz), (hw + 0.004, 0.0005, hh + 0.004), "hole")
+    fy = y + 0.0145                                                   # 1.5 mm proud of the hole: no depth fighting
     quad(g, [(px + hw, fy, pz - hh), (px - hw, fy, pz - hh), (px - hw, fy, pz + hh), (px + hw, fy, pz + hh)], "panel")
     for x, z in ((px + hw + 0.011, pz + hh + 0.011), (px - hw - 0.011, pz + hh + 0.011),
                  (px + hw + 0.011, pz - hh - 0.011), (px - hw - 0.011, pz - hh - 0.011)):
@@ -438,22 +440,22 @@ def build_fabricator(mats):
     upper = rig["upper"] = bl.make_object("ArmUpper", build_upper(), mats, base, (0, 0, SHOULDER_H - TURRET_H + 0.006))
     fore = rig["fore"] = bl.make_object("ArmFore", build_fore(), mats, upper, (UPPER, FOLD_OFFSET, 0))
     wrist = rig["wrist"] = bl.make_object("ArmWrist", build_wrist(), mats, fore, (FORE, 0, 0))
-    fy = FRONT + 0.0138
+    fy = FRONT + 0.0145
     sx, sz, sw, sh = SCREEN
     px, pz, hw, hh = PANEL
     cx, cy, pw, pd = PAD
     rig["lamp"] = bl.make_object("GlowLamp", glow_disc(0.0098, (0, 1, 0), "glow", depth=0.001), mats, body,
                                  (LAMP_AT[0], fy + 0.0048, LAMP_AT[1]))
-    rig["screen"] = bl.make_object("GlowScreen", glow_box((sw - 0.002, 0.0004, sh - 0.002), "glow_soft"), mats, body,
+    rig["screen"] = bl.make_object("GlowScreen", glow_box((sw - 0.002, 0.0008, sh - 0.002), "glow_soft"), mats, body,
                                    (sx, fy + 0.0128, sz))
     rig["scan"] = bl.make_object("GlowScan", glow_box((sw - 0.004, 0.0006, 0.0025), "glow"), mats, body,
-                                 (sx, fy + 0.0134, sz))
+                                 (sx, fy + 0.0142, sz))
     frame = Geo()
     e = 0.009
-    for c, half in (((0, 0, hh + e), (hw + e, 0.0006, 0.0026)), ((0, 0, -hh - e), (hw + e, 0.0006, 0.0026)),
-                    ((hw + e, 0, 0), (0.0026, 0.0006, hh + e)), ((-hw - e, 0, 0), (0.0026, 0.0006, hh + e))):
+    for c, half in (((0, 0, hh + e), (hw + e, 0.0011, 0.0026)), ((0, 0, -hh - e), (hw + e, 0.0011, 0.0026)),
+                    ((hw + e, 0, 0), (0.0026, 0.0011, hh + e)), ((-hw - e, 0, 0), (0.0026, 0.0011, hh + e))):
         box(frame, c, half, "glow")
-    rig["frame"] = bl.make_object("GlowFrame", frame, mats, body, (px, FRONT + 0.0128, pz))
+    rig["frame"] = bl.make_object("GlowFrame", frame, mats, body, (px, FRONT + 0.0126, pz))
     rig["flash"] = bl.make_object("GlowFlash", glow_box((sw - 0.002, 0.0008, sh - 0.002), "spark"), mats, body,
                                   (sx, fy + 0.0118, sz))
     rig["pad"] = bl.make_object("GlowPad", glow_box((pw - 0.004, pd - 0.004, 0.0004), "glow_soft"), mats, body,
@@ -629,15 +631,6 @@ def clip_complete(length=1.2):
     return length, pose
 
 
-def clip_place(length=0.5):
-    def pose(t):
-        p = rest_pose()
-        drop = 0.012 * math.exp(-t / 0.06) * math.cos(t * 2 * math.pi / 0.22) if t < 0.45 else 0.0
-        p["body"] = ((0, 0, max(0.0, drop)), (0, 0, 0))
-        return p
-    return length, pose
-
-
 # =====================================================================================================
 # Bake
 # =====================================================================================================
@@ -647,8 +640,7 @@ def clip_objects(rig):
             rig["frame"], rig["flash"], rig["pad"], rig["strips"], rig["spark"]]
 
 
-CLIPS = {"idle_loop": clip_idle, "start": clip_start, "craft_loop": clip_craft, "complete": clip_complete,
-         "place": clip_place}
+CLIPS = {"idle_loop": clip_idle, "start": clip_start, "craft_loop": clip_craft, "complete": clip_complete}
 
 
 def pose_at(name, t):

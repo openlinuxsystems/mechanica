@@ -66,7 +66,7 @@
       "recipes": [
         {
           "id": "chemical_container",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 2 }, { "item": "component_kit", "count": 1 }],
           "outputs": [{ "item": "chemical_container", "count": 1 }],
           "time": 4
@@ -99,7 +99,7 @@
       "recipes": [
         {
           "id": "locker",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 5 }],
           "outputs": [{ "item": "locker", "count": 1 }],
           "time": 5
@@ -132,7 +132,7 @@
       "recipes": [
         {
           "id": "file_cabinet",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 4 }],
           "outputs": [{ "item": "file_cabinet", "count": 1 }],
           "time": 4
@@ -165,7 +165,7 @@
       "recipes": [
         {
           "id": "tool_cabinet",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 4 }, { "item": "component_kit", "count": 1 }],
           "outputs": [{ "item": "tool_cabinet", "count": 1 }],
           "time": 4
@@ -198,7 +198,7 @@
       "recipes": [
         {
           "id": "barrel",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 3 }],
           "outputs": [{ "item": "barrel", "count": 1 }],
           "time": 3
@@ -249,7 +249,8 @@
       ]
     },
     // The Fabricators (UI spec §4): chests within link_range feed and take what they make, and Upgrade (U) raises
-    // their speed, queue and slots for Component Kits. The Mini Fabricator works one order at a time.
+    // their speed, queue and slots for Component Kits. The Portable Fabricator (not upgradable) works one craft at a time
+    // from its short recipe list, and its arm and lights follow its work (crafting.clips).
     {
       "file": "parts/fabricator.json",
       "template": "interactive",
@@ -292,21 +293,26 @@
       "model": [{ "kind": "mesh", "mesh": "meshes/fabricator.glb" }]
     },
     {
-      "file": "parts/mini_fabricator.json",
+      "file": "parts/portable_fabricator.json",
       "template": "interactive",
       "set": {
-        "name": "Mini Fabricator",
-        "description": "A small, slow Fabricator that works one order at a time.",
+        "name": "Portable Fabricator",
+        "description": "A carry-along FAB-1 that works one craft at a time from a short recipe list: basic blocks, bearings, switches, scrap wheels, gasoline from crude oil and the Connect Tool. Put it on a vehicle for repairs far from base.",
         "category": "station",
-        "mass": 10,
-        "durability": 8,
+        "mass": 8,
+        "durability": 6,
         "friction": 0.5,
-        "buoyancy": 0.2,
+        "buoyancy": 0.5,
         "flammable": false,
+        "stack_size": 5,
         "sound_material": "metal",
-        "size": [3, 3, 3],
-        "visual": { "color": "#c8a040", "paintable": true },
-        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
+        "size": [4, 3, 3],
+        "icon": "textures/items/portable_fabricator_icon.png",
+        "visual": { "color": "#ffffff", "roughness": 0.5, "metallic": 0.6 },
+        "sockets": [
+          { "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] },
+          { "id": "back", "type": "structural", "position": [0, 0, 0.375], "normal": [0, 0, 1] }
+        ],
         "sounds": {
           "start": "fabricator_start",
           "work": "fabricator_work",
@@ -314,19 +320,24 @@
           "place": "place_metal"
         },
         "inventory": { "slots": 4 },
-        "crafting": { "speed": 0.5, "queue_size": 1, "link_range": 0.5 },
-        "upgrades": [
-          {
-            "cost": [{ "item": "component_kit", "count": 2 }],
-            "set": { "crafting": { "speed": 0.75 }, "inventory": { "slots": 6 } }
-          },
-          {
-            "cost": [{ "item": "component_kit", "count": 4 }],
-            "set": { "crafting": { "speed": 1 }, "inventory": { "slots": 8 } }
-          }
-        ]
+        "crafting": {
+          "speed": 0.5,
+          "queue_size": 1,
+          "link_range": 0.5,
+          "clips": { "start": "start", "work": "craft_loop", "complete": "complete" }
+        },
+        "display": { "clips": { "readout": "station", "idle": "idle_loop" } }
       },
-      "model": [{ "kind": "mesh", "mesh": "meshes/mini_fabricator.glb" }]
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/portable_fabricator.glb" }],
+      "recipes": [
+        {
+          "id": "portable_fabricator",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "scrap_metal", "count": 40 }, { "item": "circuit_board", "count": 2 }],
+          "outputs": [{ "item": "portable_fabricator", "count": 1 }],
+          "time": 30
+        }
+      ]
     }
   ]
 }

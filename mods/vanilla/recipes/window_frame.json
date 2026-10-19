@@ -1,8 +1,7 @@
 {
   "id": "window_frame",
   "stations": [
-    "fabricator",
-    "mini_fabricator"
+    "fabricator"
   ],
   "inputs": [
     {

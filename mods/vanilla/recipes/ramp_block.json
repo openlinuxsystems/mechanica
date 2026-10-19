@@ -1,8 +1,7 @@
 {
   "id": "ramp_block",
   "stations": [
-    "fabricator",
-    "mini_fabricator"
+    "fabricator"
   ],
   "inputs": [
     {

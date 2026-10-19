@@ -121,8 +121,8 @@ public class VanillaBlocksTests
     }
 
     [Theory]
-    [InlineData("scrap_wood", "scrap_wood:1", "fabricator,mini_fabricator")]
-    [InlineData("scrap_metal", "scrap_metal:1", "fabricator,mini_fabricator")]
+    [InlineData("scrap_wood", "scrap_wood:1", "fabricator,portable_fabricator")]
+    [InlineData("scrap_metal", "scrap_metal:1", "fabricator,portable_fabricator")]
     [InlineData("metal", "scrap_metal:2,component_kit:1", "fabricator")]
     public void SpecBlockRecipesMakeFourOfTheBlockOrWedge(string material, string inputs, string stations)
     {
