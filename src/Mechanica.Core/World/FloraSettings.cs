@@ -77,7 +77,7 @@ public sealed record FloraSettings
     /// </summary>
     public float BlendShare { get; init; } = 0.06f;
 
-    /// <summary>Seconds a chunk's plants take to grow in when they are first drawn, so plants built late never pop.</summary>
+    /// <summary>Seconds a chunk's plants take to rise out of the ground when they are first drawn, so plants built late never pop.</summary>
     public float AppearTime { get; init; } = 0.8f;
 
     /// <summary>How far a grass tip sways in the wind, in metres per metre of height.</summary>

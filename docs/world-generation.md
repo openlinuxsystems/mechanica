@@ -278,8 +278,8 @@ plants of higher ones, and Low turns the wind off. At High, grass is drawn to 22
 bushes to 460 m (never past the view distance); past `thin_share` of the distance grass and ground cover keep
 `thin_keep` of their plants, `thin_scale` times larger, so the far field stays full but cheap, and the ground texture
 carries on beyond. Nothing pops in: plants sink away over the last `fade_share` of the distance, a chunk's near, far
-and thinned meshes cross-fade over `blend_share` of it where they hand over, and a chunk's plants grow in over
-`appear_time` seconds when first drawn.
+and thinned meshes cross-fade over `blend_share` of it where they hand over, and a chunk's plants rise out of the
+ground over `appear_time` seconds when first drawn.
 
 ## The map's layout
 

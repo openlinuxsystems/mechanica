@@ -16,7 +16,7 @@ namespace Mechanica.Game.World;
 /// the chunks from the plants already grown. Flora has no colliders: everything walks and drives through it, and it bends
 /// out of the way of the players, bots and vehicles nearest the camera.
 /// <para>Nothing pops: plants sink away towards the end of each kind's distance (never past the view distance, where
-/// the ground ends), the meshes of a chunk cross-fade where they hand over, a chunk's plants grow in when first drawn,
+/// the ground ends), the meshes of a chunk cross-fade where they hand over, a chunk's plants rise out of the ground when first drawn,
 /// and when a chunk's ground changes (scenery turning into a loaded chunk) its old plants stay until the new ones are
 /// built.</para>
 /// </summary>
@@ -29,7 +29,7 @@ public partial class FloraField : Node3D
 
     private readonly Dictionary<ChunkCoord, Patch> _patches = [];
     private readonly Dictionary<FloraKind, FoliageLevel> _levels = [];
-    private readonly List<(Node3D Node, double Age)> _appearing = [];
+    private readonly List<(Node3D Node, float Depth, double Age)> _appearing = [];
     private float _view = -1f;
 
     /// <summary>The world whose loaded chunks grow flora. Set before adding to the tree.</summary>
@@ -199,7 +199,7 @@ public partial class FloraField : Node3D
                 {
                     patch.Kinds[kind] = node;
                     if (fresh && !wait && settings.AppearTime > 0f)
-                        StartAppearing(node);
+                        StartAppearing(node, kind);
                 }
                 patch.Drawn[kind] = count;
                 patch.Built[kind] = level;
@@ -219,13 +219,17 @@ public partial class FloraField : Node3D
     // Metres a kind is drawn at its level: no farther than the view distance, so plants have sunk away where the ground ends.
     private float Reach(FloraKind kind) => Mathf.Min(Settings!.Distance(kind, _levels[kind]), _view);
 
-    // Grows a newly built kind's plants in from nothing over the appear time.
-    private void StartAppearing(Node3D node)
+    // Raises a newly built kind's plants out of the ground over the appear time. Moving the kind's node costs nothing
+    // per plant (a per-mesh shader parameter would use up the renderer's instance-parameter buffer).
+    private void StartAppearing(Node3D node, FloraKind kind)
     {
-        foreach (var mesh in node.GetChildren().OfType<MultiMeshInstance3D>())
-            mesh.SetInstanceShaderParameter(FloraMaterials.Appear, 0f);
-        _appearing.Add((node, 0.0));
+        var depth = kind == FloraKind.Bush ? BushSink : PlantSink;
+        node.Position = new Vector3(0f, -depth, 0f);
+        _appearing.Add((node, depth, 0.0));
     }
+
+    // Metres plants start below the ground when they appear: deeper than the tallest bush or tuft.
+    private const float BushSink = 2.5f, PlantSink = 1f;
 
     private void Appear(double delta)
     {
@@ -234,19 +238,15 @@ public partial class FloraField : Node3D
         var time = Settings!.AppearTime;
         for (var i = _appearing.Count - 1; i >= 0; i--)
         {
-            var (node, age) = _appearing[i];
+            var (node, depth, age) = _appearing[i];
             age += delta;
             var done = !IsInstanceValid(node) || node.IsQueuedForDeletion() || age >= time;
             if (IsInstanceValid(node))
-            {
-                var share = done ? 1f : (float)(age / time);
-                foreach (var mesh in node.GetChildren().OfType<MultiMeshInstance3D>())
-                    mesh.SetInstanceShaderParameter(FloraMaterials.Appear, share);
-            }
+                node.Position = new Vector3(0f, done ? 0f : -depth * (1f - Mathf.SmoothStep(0f, 1f, (float)(age / time))), 0f);
             if (done)
                 _appearing.RemoveAt(i);
             else
-                _appearing[i] = (node, age);
+                _appearing[i] = (node, depth, age);
         }
     }
 
