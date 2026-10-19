@@ -135,7 +135,17 @@
       "file": "bots/scuttler_blue.json",
       "base": "scuttler_green",
       "set": {
-        "model": null,
+        "model": {
+          "mesh": "meshes/bots/scuttler_blue.glb",
+          "attacks": {
+            "whip": null,
+            "drill": ["drill_ram"]
+          },
+          "clip_speeds": {
+            "patrol": 0.93,
+            "chase": 3.0
+          }
+        },
         "name": "Blue Scuttler",
         "description": "Charges with a drill, and is even faster in water.",
         "water_speed": 7,
@@ -260,7 +270,17 @@
       "file": "bots/scuttler_yellow.json",
       "base": "scuttler_green",
       "set": {
-        "model": null,
+        "model": {
+          "mesh": "meshes/bots/scuttler_yellow.glb",
+          "attacks": {
+            "whip": null,
+            "stomp": ["stomp"]
+          },
+          "clip_speeds": {
+            "patrol": 1.16,
+            "chase": 3.75
+          }
+        },
         "name": "Yellow Scuttler",
         "description": "Heavier. Stomps the ground, hurting everything around it.",
         "health": 80,
@@ -269,7 +289,7 @@
           "radius": 0.45,
           "height": 1.1
         },
-        "color": "#e0c030",
+        "color": "#e6b31e",
         "raid_cost": 4,
         "attacks": [
           {
@@ -377,7 +397,17 @@
       "file": "bots/scuttler_red.json",
       "base": "scuttler_green",
       "set": {
-        "model": null,
+        "model": {
+          "mesh": "meshes/bots/scuttler_red.glb",
+          "attacks": {
+            "whip": null,
+            "explode": ["detonate"]
+          },
+          "clip_speeds": {
+            "patrol": 0.93,
+            "chase": 3.0
+          }
+        },
         "name": "Red Scuttler",
         "description": "Runs at you and blows itself up.",
         "health": 40,
@@ -486,7 +516,17 @@
       "file": "bots/scuttler_seed.json",
       "base": "scuttler_green",
       "set": {
-        "model": null,
+        "model": {
+          "mesh": "meshes/bots/scuttler_seed.glb",
+          "attacks": {
+            "whip": null,
+            "nip": ["claw_snap"]
+          },
+          "clip_speeds": {
+            "patrol": 0.79,
+            "chase": 2.55
+          }
+        },
         "name": "Seed Scuttler",
         "description": "A weak scuttler that carries seeds it has stolen.",
         "health": 30,
