@@ -61,8 +61,9 @@ you also need a gas container with gasoline in it; in Creative engines run witho
 6. **Power.** Aim at the engine and press E. Low (1) is slow and easy to control; High (5) is the top
    speed (`speed` in the engine's data). Each step is a fifth of it. The menu also shows the fuel left,
    the gasoline in the tanks, the wheel speed in rpm and the torque.
-7. **Drive.** Look at the seat and press E. W and S are the throttle, A and D steer. With no throttle
-   the engine holds the wheels (its `brake`), so the car does not roll away. E stands you up.
+7. **Drive.** Look at the seat and press E. Sitting down starts the engine; W and S are the throttle, A and
+   D steer. With no throttle the engine holds the wheels (its `brake`), so the car does not roll away. E
+   stands you up, and getting up stops the engine.
 
 If the car drives backwards, the engine faces the wrong way: turn it round. If one wheel turns against
 the others, right click its bearing's node with the Connect Tool to reverse it. If it steers the wrong way,
@@ -73,8 +74,10 @@ engine to the steering bearing does nothing.
 While the engine runs, a green dot above it shows it is on (gray when it is off), and a cyan ring turns on
 each wheel bearing it drives. With the Connect Tool out a piston shows a bar of how far out it is.
 
-An engine with nothing linked into it has an **On** toggle in its menu: on, it drives at full throttle.
-Link the seat back in and the toggle gives way to the seat.
+An engine is on by default: with no seat, switch or button linked into it, it drives at full throttle on its own.
+Linked to a driver's seat it runs only while someone sits in it (a passenger seat never starts it); linked to a
+switch or button, while that is on. If the seat is removed or destroyed, even with you still in it, the engine
+has no control left and goes back to running on its own. Its **On** toggle stops it whatever its controls do.
 
 ### Fuel
 

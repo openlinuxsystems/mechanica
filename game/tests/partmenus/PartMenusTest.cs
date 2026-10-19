@@ -177,7 +177,7 @@ public partial class PartMenusTest : StagedTest
                 Check(_panel.Rows.FindChild("Presets", true, false) is Control { } presets && presets.GetChildCount() == 3, "Power has Low, Medium and High");
                 return false;
             }
-            return HostBoard.FindPart(_engine)!.Settings?.ContainsKey("on") == true || (frame > 200 && Check(false, "the host turns it on"));
+            return HostBoard.FindPart(_engine)!.Settings?.GetValueOrDefault("on").ValueKind != JsonValueKind.False || (frame > 200 && Check(false, "the host turns it on"));
         });
         Add("the engine's menu shows its fuel and speed, its dot turns green and its bearing's highlight turns", frame =>
         {
@@ -298,6 +298,8 @@ public partial class PartMenusTest : StagedTest
         _sensor = Place(board, "vanilla:sensor", new GridCell(6, 1, 0), up);
         Link(board, _seat, _switch);
         Link(board, _engine, _wheel);
+        // Engines are on by default; this one starts off so its menu's On toggle can start it.
+        board.SetPartSettings(_engine, new Dictionary<string, JsonElement> { ["on"] = JsonSerializer.SerializeToElement(false) });
         Link(board, _controller, _arm);
         Link(board, _controller, _piston);
         board.SetAllBodyPoses(new Pose(new System.Numerics.Vector3(0, 0.15f, -0.6f), System.Numerics.Quaternion.Identity));
