@@ -52,6 +52,12 @@ public partial class WorldStreamer : Node3D
     /// <summary>Host: destroyed objects to start with (a loaded save); used only when its seed is <see cref="Seed"/>.</summary>
     public WorldState? InitialState { get; init; }
 
+    /// <summary>
+    /// Host: the world clock destroyed objects regrow by (<see cref="WorldObjectDefinition.Regrow"/>): the scripts' clock,
+    /// which saves carry on. Null: nothing regrows.
+    /// </summary>
+    public Func<double>? Clock { get; set; }
+
     /// <summary>Tuning; null reads <see cref="DefaultSettingsPath"/> when the node starts.</summary>
     public StreamingSettings? Settings { get; set; }
 
@@ -163,6 +169,7 @@ public partial class WorldStreamer : Node3D
             ? Creations.All.Where(c => c.AuthorityPeer == local).Select(c => Creations.Sample(c.Id)).ToList()
             : [];
 
+        RegrowDue();
         var update = Streamer.Update(delta, players, samples);
         foreach (var id in update.Park)
             Creations.Park(id);
@@ -264,12 +271,36 @@ public partial class WorldStreamer : Node3D
     /// </summary>
     public bool DestroyObject(WorldObjectId id)
     {
-        if (!Session.IsHost || Generator.Find(id) is null || !State.Destroy(id))
+        if (!Session.IsHost || Generator.Find(id) is not { } found
+            || !State.Destroy(id, found.Definition.Regrow is { } regrow && Clock is { } clock ? clock() + regrow : null))
             return false;
         RefreshChunkHolding(id);
         if (Session.State == NetSession.SessionState.Hosting)
             Rpc(MethodName.ObjectDestroyed, id.ToString());
         return true;
+    }
+
+    // Host: stands every object whose regrow time has come again, for every peer.
+    private void RegrowDue()
+    {
+        if (!Session.IsHost || Clock is not { } clock || State.Regrowing.Count == 0)
+            return;
+        foreach (var id in State.RegrownBy(clock()))
+        {
+            State.Restore(id);
+            RefreshChunkHolding(id);
+            if (Session.State == NetSession.SessionState.Hosting)
+                Rpc(MethodName.ObjectRestored, id.ToString());
+        }
+    }
+
+    /// <summary>Host → clients: a destroyed object regrew.</summary>
+    [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void ObjectRestored(string id)
+    {
+        if (Session.IsHost || !WorldObjectId.TryParse(id, out var parsed) || !State.Restore(parsed))
+            return;
+        RefreshChunkHolding(parsed);
     }
 
     /// <summary>

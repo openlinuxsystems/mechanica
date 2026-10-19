@@ -2,7 +2,7 @@
 
 <!-- Generated from mechanica.describe by tools/ai/gen-docs.sh. Do not edit by hand. -->
 
-Protocol version 2. 167 methods: 59 actions (change the world), 29 queries (only read it) and 79 endpoint methods. Every one is a JSON-RPC method of the same name whose `params` are the named arguments below (snake_case). `describe.json` beside this file is the same data as JSON Schemas, ready to become an AI's tool list. Scopes: `observe` reads, `play` acts as a player, `admin` is for debug powers ([ai-endpoint.md](../ai-endpoint.md#scopes)).
+Protocol version 2. 168 methods: 60 actions (change the world), 29 queries (only read it) and 79 endpoint methods. Every one is a JSON-RPC method of the same name whose `params` are the named arguments below (snake_case). `describe.json` beside this file is the same data as JSON Schemas, ready to become an AI's tool list. Scopes: `observe` reads, `play` acts as a player, `admin` is for debug powers ([ai-endpoint.md](../ai-endpoint.md#scopes)).
 
 ## Contents
 
@@ -20,7 +20,7 @@ Protocol version 2. 167 methods: 59 actions (change the world), 29 queries (only
 - [Map markers](#map-markers) (3)
 - [Motion and physics primitives](#motion-and-physics-primitives) (6)
 - [Quests](#quests) (3)
-- [Survival](#survival) (11)
+- [Survival](#survival) (12)
 - [Using held items](#using-held-items) (4)
 - [World](#world) (9)
 - [Editors (editor.*)](#editors-editor) (30)
@@ -1043,6 +1043,16 @@ Reading what grows on a soil part. Arguments of GetSoil.
 Reading the caller's health.
 
 No params.
+
+### `Harvest`
+
+*action, play scope*
+
+Gathering a world object by hand with Use (an oil geyser). Arguments of Harvest: gather what a world object gives by hand (an oil geyser's crude oil).
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `object` | string | yes |  | Id of the world object ("poi.7.2"). |
 
 ### `PickUp`
 

@@ -64,6 +64,12 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     /// <summary>Action name for finishing a refine once Use has been held long enough.</summary>
     public const string FinishRefine = "FinishRefine";
 
+    /// <summary>Action name for gathering a world object by hand with Use (an oil geyser).</summary>
+    public const string Harvest = "Harvest";
+
+    // Seconds between the hurts of a liquid that hurts (a chemical pool, LiquidDefinition.Damage) a player stands in.
+    private const float SoakSeconds = 0.5f;
+
     /// <summary>Action name for turning friendly fire on or off (the host only).</summary>
     public const string SetFriendlyFire = "SetFriendlyFire";
 
@@ -82,6 +88,10 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     private readonly Dictionary<int, double> _lastWater = [];
     // Refines being held, by peer: the node, when Use went down and where the player stood (per player, UI spec §10).
     private readonly Dictionary<int, (string Target, double Started, Vector3 Feet)> _refining = [];
+    // Seconds each player has stood in a liquid that hurts since that last hurt them (hurt in steps, not every tick).
+    private readonly Dictionary<int, (string Liquid, float Seconds)> _soaking = [];
+    // Picks counts of drops that give a range (count to count_max).
+    private readonly Random _rolls = new(20261019);
     private int _nextDrop = 1;
     private int _nextProjectile = 1;
 
@@ -167,6 +177,7 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
             return null;
         });
         dispatcher.Register<RefineArgs>(FinishRefine, ValidateFinishRefine, ApplyFinishRefine);
+        dispatcher.Register<HarvestArgs>(Harvest, ValidateHarvest, ApplyHarvest);
         dispatcher.Register<SetFriendlyFireArgs>(SetFriendlyFire,
             (c, _) => c.Peer == Creation.HostPeer && c.Source is ActionSource.Player or ActionSource.External ? null : "Only the host can change friendly fire.",
             (_, a) =>
@@ -210,6 +221,7 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         _vitals.Remove(peer);
         _lastWater.Remove(peer);
         _refining.Remove(peer);
+        _soaking.Remove(peer);
     }
 
     /// <summary>True while <paramref name="peer"/>'s player is dead.</summary>
@@ -693,7 +705,7 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     // The items a world object leaves when it breaks or is refined.
     private List<ItemStack> ObjectDrops(WorldObjectPlacement placement) => [.. (placement.Definition.Drops ?? [])
         .Where(d => d.Item is not null && catalog.FindDefinition(d.Item) is not null)
-        .Select(d => new ItemStack(Identifiers.Qualify(d.Item!), d.Count))];
+        .Select(d => new ItemStack(Identifiers.Qualify(d.Item!), d.CountMax is { } most && most > d.Count ? _rolls.Next(d.Count, most + 1) : d.Count))];
 
     // Plays an item's pickup sound where it was taken, if it binds one.
     private void PlayPickup(string item, Vector3 at)
@@ -918,6 +930,14 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         }
         if (CheckReach(caller, point) is { } far)
             return far;
+        if (world.LiquidAt(point) is { } pool)
+        {
+            if (pool.Liquid.Collect is not { Item: { } item } collect || catalog.FindDefinition(item) is null)
+                return "A bucket cannot hold that.";
+            if (_lastWater.TryGetValue(caller.Peer, out var lastDip) && world.Now - lastDip < settings.WaterSeconds * IntervalJitter)
+                return "You are still filling the last one.";
+            return inventories.PlayerInventory(caller.Peer).SpaceFor(item) >= collect.Count ? null : "Make room in your inventory first.";
+        }
         if (!world.IsWater(point))
             return "There is no water there.";
         if (_lastWater.TryGetValue(caller.Peer, out var last) && world.Now - last < settings.WaterSeconds * IntervalJitter)
@@ -928,11 +948,18 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     }
 
     // Fills the empty bucket in the slot: the last one in it turns full where it is, so it stays in hand.
+    // A pool of a liquid that can be collected (a chemical pool) gives its items and the bucket stays empty.
     private JsonElement? ApplyCollectWater(ActionCaller caller, CollectWaterArgs args)
     {
         _lastWater[caller.Peer] = world.Now;
         var pockets = inventories.PlayerInventory(caller.Peer);
         var slot = EmptyBucketSlot(caller.Peer, args.Slot)!.Value;
+        if (world.LiquidAt(args.Point.ToNumerics()) is { Liquid.Collect: { } collect })
+        {
+            pockets.Add(Identifiers.Qualify(collect.Item!), collect.Count);
+            PlayPickup(collect.Item!, args.Point.ToNumerics());
+            return Value(new CollectWaterResult(slot));
+        }
         var stack = pockets[slot]!;
         if (stack.Count == 1)
             pockets.SetSlot(slot, new ItemStack(Identifiers.Qualify(settings.WaterItem), 1));
@@ -1048,6 +1075,68 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         if (taken > 0)
             PlayPickup(items[0].Item, at);
         return Value(new RefineResult(taken, left.Sum(s => s.Count)));
+    }
+
+    // ---- Harvesting by hand ----
+
+    private string? ValidateHarvest(ActionCaller caller, HarvestArgs args)
+    {
+        if (world.FeetOf(caller.Peer) is null)
+            return "You have no player to harvest with.";
+        if (!WorldObjectId.TryParse(args.Object, out var id) || world.FindObject(id) is not { } found)
+            return $"There is nothing to harvest there ({args.Object}).";
+        if (!found.Definition.Harvest)
+            return $"The {found.Definition.Id} cannot be harvested by hand.";
+        return CheckReach(caller, ObjectCentre(found));
+    }
+
+    // Takes the object's drops into the inventory (what does not fit is left where it stood) and uses it up until it regrows.
+    private JsonElement? ApplyHarvest(ActionCaller caller, HarvestArgs args)
+    {
+        WorldObjectId.TryParse(args.Object, out var id);
+        var found = world.FindObject(id)!;
+        var at = ObjectCentre(found);
+        var items = ObjectDrops(found);
+        world.DestroyObject(id);
+        var pockets = inventories.PlayerInventory(caller.Peer);
+        var left = new List<ItemStack>();
+        var taken = 0;
+        foreach (var stack in items)
+        {
+            var added = pockets.Add(stack.Item, stack.Count);
+            taken += added;
+            if (added < stack.Count)
+                left.Add(stack with { Count = stack.Count - added });
+        }
+        AddDrop(at, left);
+        if (items.Count > 0)
+            PlayPickup(items[0].Item, at);
+        return Value(new HarvestResult(taken, left.Sum(s => s.Count)));
+    }
+
+    // ---- Liquids ----
+
+    // Hurts every living player standing in a liquid that hurts (a chemical pool), every half second they stay in it.
+    private void SoakPlayers(float seconds)
+    {
+        foreach (var peer in _vitals.Keys)
+        {
+            var feet = world.FeetOf(peer);
+            if (_vitals[peer].Dead || feet is null || world.LiquidAt(feet.Value + new Vector3(0, 0.1f, 0)) is not { Liquid: { Damage: > 0 } liquid })
+            {
+                _soaking.Remove(peer);
+                continue;
+            }
+            var soak = _soaking.TryGetValue(peer, out var was) && was.Liquid == liquid.Id ? was.Seconds + seconds : seconds;
+            if (soak < SoakSeconds)
+            {
+                _soaking[peer] = (liquid.Id!, soak);
+                continue;
+            }
+            // The cause is the liquid's id (chemical).
+            _soaking[peer] = (liquid.Id!, 0f);
+            Damage(peer, liquid.Damage * soak, liquid.Id!);
+        }
     }
 
     // ---- Items on the ground ----
@@ -1230,12 +1319,14 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     // ---- Ticking ----
 
     /// <summary>
-    /// Moves projectiles and clears piles that have lain too long. The host calls it every physics tick.
+    /// Moves projectiles, hurts players standing in a liquid that hurts and clears piles that have lain too long. The host
+    /// calls it every physics tick.
     /// (Crops grow in the soil part's script.)
     /// </summary>
     public void Tick(float seconds)
     {
         StepProjectiles(seconds);
+        SoakPlayers(seconds);
         foreach (var expired in _drops.Values.Where(d => !d.Placed && d.Expires <= world.Now).Select(d => d.Id).ToList())
             RemoveDrop(expired);
     }

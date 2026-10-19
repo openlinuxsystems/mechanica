@@ -214,6 +214,10 @@ internal sealed class SurvivalFixture
 
         public bool IsWater(Vector3 point) => point.Y <= WaterLevel;
 
+        public List<PoiPoolPlacement> Pools { get; } = [];
+
+        public PoiPoolPlacement? LiquidAt(Vector3 point) => Pools.FirstOrDefault(p => p.Holds(point));
+
         public WorldObjectPlacement? FindObject(WorldObjectId id) =>
             Objects.TryGetValue(id, out var o) && !State.IsDestroyed(id) ? o : null;
 

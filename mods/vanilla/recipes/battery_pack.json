@@ -1,0 +1,23 @@
+{
+  "id": "battery_pack",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal",
+      "count": 1
+    },
+    {
+      "item": "chemical",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "battery_pack",
+      "count": 1
+    }
+  ],
+  "time": 4
+}

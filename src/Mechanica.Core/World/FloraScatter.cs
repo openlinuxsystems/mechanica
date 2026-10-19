@@ -89,7 +89,7 @@ public static class FloraScatter
                         var x = x0 + u * res;
                         var z = z0 + v * res;
                         var height = Lerp(Lerp(chunk.Heights[k], chunk.Heights[k + 1], u), Lerp(chunk.Heights[k + n], chunk.Heights[k + n + 1], u), v);
-                        if (height < chunk.SeaLevel + 0.15f || (covered && generator.Roads.Covers(x, z)))
+                        if (height < chunk.SeaLevel + 0.15f || (covered && (generator.Roads.Covers(x, z) || generator.LiquidAt(new Vector3(x, height, z)) is not null)))
                             continue;
                         if (kind == FloraKind.Bush && NearObject(chunk, x, z))
                             continue;

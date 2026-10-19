@@ -48,6 +48,15 @@ public sealed record RefineArgs(string? Object = null, int? Creation = null, int
     public string Target => Object ?? $"part:{Creation}.{Part}";
 }
 
+/// <summary>Arguments of <c>Harvest</c>: gather what a world object gives by hand (an oil geyser's crude oil).</summary>
+/// <param name="Object">Id of the world object (<c>"poi.7.2"</c>).</param>
+public sealed record HarvestArgs(string Object);
+
+/// <summary>Value of a successful <c>Harvest</c>.</summary>
+/// <param name="Taken">Items that went into the inventory.</param>
+/// <param name="Left">Items that did not fit and were left on the ground where the object stood.</param>
+public sealed record HarvestResult(int Taken, int Left);
+
 /// <summary>Value of a successful <c>FinishRefine</c>.</summary>
 /// <param name="Taken">Items that went into the inventory.</param>
 /// <param name="Left">Items that did not fit and were left on the ground where the node stood.</param>
@@ -197,6 +206,9 @@ public interface ISurvivalWorld
 
     /// <summary>True when <paramref name="point"/> is in water.</summary>
     bool IsWater(Vector3 point);
+
+    /// <summary>The POI pool of liquid (a chemical pool) <paramref name="point"/> is in, or null.</summary>
+    PoiPoolPlacement? LiquidAt(Vector3 point) => null;
 
     /// <summary>A world object that still stands, or null.</summary>
     WorldObjectPlacement? FindObject(WorldObjectId id);

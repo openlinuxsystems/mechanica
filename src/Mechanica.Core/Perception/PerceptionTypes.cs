@@ -112,7 +112,7 @@ public sealed record TerrainSamples(float SeaLevel, IReadOnlyList<TerrainSample>
 public sealed record GetObjectsArgs(Vec3? Center = null, float Radius = 32f, string? Type = null, int Limit = 100);
 
 /// <summary>A world object (tree, rock, boulder) that still stands.</summary>
-/// <param name="Id">Its id, as <c>Sledge</c>, <c>StartRefine</c> and <c>FinishRefine</c> take it.</param>
+/// <param name="Id">Its id, as <c>Sledge</c>, <c>StartRefine</c>, <c>FinishRefine</c> and <c>Harvest</c> take it.</param>
 /// <param name="Type">Object type id.</param>
 /// <param name="Position">World position of its ground point, in m.</param>
 /// <param name="Yaw">Turn about +y in radians.</param>
@@ -121,10 +121,11 @@ public sealed record GetObjectsArgs(Vec3? Center = null, float Radius = 32f, str
 /// <param name="Health">Health left, or null when it can't be broken by hits.</param>
 /// <param name="MaxHealth">Full health, or null when it can't be broken by hits.</param>
 /// <param name="Refine">True for a resource node that holding Use refines (<c>StartRefine</c>).</param>
-/// <param name="Drops">What it leaves when broken or refined.</param>
+/// <param name="Drops">What it leaves when broken, refined or harvested.</param>
+/// <param name="Harvest">True for something pressing Use gathers by hand (<c>Harvest</c>: an oil geyser).</param>
 public sealed record WorldObjectView(
     string Id, string Type, Vec3 Position, float Yaw, float Scale, float Distance, float? Health, float? MaxHealth, bool Refine,
-    IReadOnlyList<ItemAmount> Drops);
+    IReadOnlyList<ItemAmount> Drops, bool Harvest = false);
 
 /// <summary>Arguments of <c>GetDrops</c>.</summary>
 /// <param name="Center">World point to search around; null is the caller's feet (or every pile with no radius).</param>

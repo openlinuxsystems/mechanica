@@ -211,7 +211,7 @@ public sealed class PerceptionActions(IPerceptionWorld world)
             var full = o.Definition.Health;
             var drops = (o.Definition.Drops ?? []).Where(d => d.Item is not null).Select(d => new ItemAmount(Identifiers.Qualify(d.Item!), d.Count)).ToList();
             found.Add(new WorldObjectView(o.Id.ToString(), o.Definition.Id!, o.Position.ToVec3(), o.Yaw, o.Scale, distance,
-                full is { } f ? MathF.Max(0f, f - (world.State?.DamageOf(o.Id) ?? 0f)) : null, full, o.Definition.Refine, drops));
+                full is { } f ? MathF.Max(0f, f - (world.State?.DamageOf(o.Id) ?? 0f)) : null, full, o.Definition.Refine, drops, o.Definition.Harvest));
         }
         return [.. found.OrderBy(o => o.Distance).ThenBy(o => o.Id, StringComparer.Ordinal).Take(args.Limit)];
     }

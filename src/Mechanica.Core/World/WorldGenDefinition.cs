@@ -47,6 +47,9 @@ public sealed record WorldGenDefinition
     /// <summary>Prefab pools that sites draw from, shuffled per seed.</summary>
     public List<PoolDefinition>? Pools { get; init; }
 
+    /// <summary>Liquids that POI pools hold (<see cref="PoiPrefab.Pools"/>): chemicals, oil.</summary>
+    public List<LiquidDefinition>? Liquids { get; init; }
+
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
@@ -347,6 +350,18 @@ public sealed record WorldObjectDefinition
     /// <summary>What flies off the object when it is hit and when it breaks: wood chips, falling leaves.</summary>
     public DebrisDefinition? Debris { get; init; }
 
+    /// <summary>
+    /// True for something gathered by hand (an oil geyser): pressing Use (E) on it puts its <see cref="Drops"/> straight
+    /// into the player's inventory and the object is used up, until it <see cref="Regrow"/>s.
+    /// </summary>
+    public bool Harvest { get; init; }
+
+    /// <summary>
+    /// Seconds of world time after the object is destroyed (broken, refined or harvested) until it stands again, full.
+    /// Omitted: it stays gone.
+    /// </summary>
+    public float? Regrow { get; init; }
+
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
@@ -609,6 +624,79 @@ public sealed record ObjectDrop
     /// <summary>How many (1 or more).</summary>
     public int Count { get; init; } = 1;
 
+    /// <summary>The most there may be: each time, a random count from <see cref="Count"/> to this. Omitted: always <see cref="Count"/>.</summary>
+    public int? CountMax { get; init; }
+
+    /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>
+/// A liquid POI pools hold (<c>liquids[]</c>): its look, what it does to a player standing in it, and what an empty bucket
+/// dipped in it collects.
+/// </summary>
+public sealed record LiquidDefinition
+{
+    /// <summary>Id, unique in the file (lowercase snake_case), from CATALOG_IDS.md.</summary>
+    public string? Id { get; init; }
+
+    /// <summary>Surface colour, <c>#rrggbb</c>.</summary>
+    public string? Color { get; init; }
+
+    /// <summary>How brightly the surface glows in its own colour: 0 for none.</summary>
+    public float Glow { get; init; }
+
+    /// <summary>Surface roughness, 0 (mirror) to 1 (matte).</summary>
+    public float Roughness { get; init; } = 0.1f;
+
+    /// <summary>Size of the surface ripples in metres.</summary>
+    public float RippleSize { get; init; } = 4f;
+
+    /// <summary>How deep the ripples look, 0 (a still mirror) to 1.</summary>
+    public float Ripples { get; init; } = 0.6f;
+
+    /// <summary>How fast the ripples and swirls drift, in metres per second: low for a thick liquid.</summary>
+    public float Flow { get; init; } = 0.05f;
+
+    /// <summary>Strength of the rainbow film that drifts over the surface, 0 to 1 (an oil slick).</summary>
+    public float Sheen { get; init; }
+
+    /// <summary>How much the surface bubbles, 0 to 1.</summary>
+    public float Bubbles { get; init; }
+
+    /// <summary>Colour of the scum or crust along the shore, <c>#rrggbb</c>. Omitted: none.</summary>
+    public string? EdgeColor { get; init; }
+
+    /// <summary>Health a player standing in it loses per second.</summary>
+    public float Damage { get; init; }
+
+    /// <summary>What an empty bucket dipped in it collects; the bucket stays empty. Omitted: nothing.</summary>
+    public ObjectDrop? Collect { get; init; }
+
+    /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>A round pool of a <see cref="LiquidDefinition"/> in a POI (<c>pools[]</c>), usually laid in a basin.</summary>
+public sealed record LiquidPool
+{
+    /// <summary>Id of the <see cref="LiquidDefinition"/>.</summary>
+    public string? Liquid { get; init; }
+
+    /// <summary>Centre <c>[x, z]</c>, relative to the POI. Omitted means the POI centre.</summary>
+    public List<float>? At { get; init; }
+
+    /// <summary>
+    /// Radius of the surface in metres. The liquid fills the part of that disc where the ground is lower than the
+    /// surface, so its shore follows the basin; make it reach past the basin's edge.
+    /// </summary>
+    public float Radius { get; init; }
+
+    /// <summary>Height of the surface above the POI's pad, in metres (below 0 in a basin).</summary>
+    public float Level { get; init; }
+
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
@@ -753,8 +841,14 @@ public sealed record PoiPrefab
     /// <summary>Static structure pieces (placeholder geometry until blocks and blueprints exist).</summary>
     public List<ShapeDefinition>? Pieces { get; init; }
 
-    /// <summary>Named points for later systems.</summary>
+    /// <summary>
+    /// Named points for later systems. An <c>object</c> marker places the world object <see cref="PoiMarker.Ref"/> names
+    /// (an oil geyser) there, with an id of its own (<see cref="WorldObjectId.ForPoi"/>).
+    /// </summary>
     public List<PoiMarker>? Markers { get; init; }
+
+    /// <summary>Pools of liquid (<see cref="LiquidPool"/>).</summary>
+    public List<LiquidPool>? Pools { get; init; }
 
     /// <summary>Ground painted on the footprint, in order (<see cref="GroundPaint"/>).</summary>
     public List<GroundPaint>? Ground { get; init; }
@@ -840,6 +934,12 @@ public sealed record TerrainOp
     /// <summary>Basin depth below the pad, in metres.</summary>
     public float Depth { get; init; }
 
+    /// <summary>
+    /// How far the edge wanders in and out, as a fraction of the radius (0 to 0.5): 0 is a disc, 0.3 a pond with
+    /// natural lobes. Each POI gets its own shape. Omitted: 0.
+    /// </summary>
+    public float? Wobble { get; init; }
+
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
@@ -852,6 +952,9 @@ public sealed record TerrainOp
 /// </summary>
 public sealed record PoiMarker
 {
+    /// <summary>Marker type that places a world object (<see cref="Ref"/> is its id).</summary>
+    public const string ObjectType = "object";
+
     /// <summary>Marker kind (lowercase snake_case).</summary>
     public string? Type { get; init; }
 

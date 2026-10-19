@@ -24,7 +24,8 @@ namespace Mechanica.Game.Building;
 /// points, with the part under it when that is in reach (the soil a seed is planted in). Its Lua decides
 /// what that does on the host. While this tool is out, <c>EquipItem</c> tells the host which scripted
 /// item is in hand (its <c>on_equip</c> and <c>on_unequip</c>).</item>
-/// <item>Aimed at the sea with water in hand or nothing usable: <c>CollectWater</c> fills a bucket.</item>
+/// <item>Aimed at the sea with water in hand or nothing usable: <c>CollectWater</c> fills a bucket. Aimed at a POI's pool
+/// of liquid that can be collected (a chemical pool), it collects that instead.</item>
 /// </list>
 /// The host decides every one; nothing changes here until it answers.
 /// </summary>
@@ -318,7 +319,8 @@ public partial class ItemTool : HandTool
     private bool IsUsable(string id) =>
         Survival.Catalog.FindDefinition(id) is { } d && IsScripted(d);
 
-    // Where the aim ray meets the sea within reach, when nothing solid is in the way first.
+    // Where the aim ray meets the sea, or a POI's pool of liquid (a chemical pool), within reach, when nothing solid is in
+    // the way first.
     private Vector3? WaterAimed(RayHit? hit, float reach)
     {
         var generator = Survival.World.Generator;
@@ -326,6 +328,16 @@ public partial class ItemTool : HandTool
         var direction = -Player.Camera.GlobalBasis.Z;
         if (direction.Y >= -1e-3f)
             return null;
+        foreach (var pool in generator.PoolsAt(from.X, from.Z))
+        {
+            var reached = (pool.Centre.Y - from.Y) / direction.Y;
+            if (reached < 0 || reached > reach || (hit is { } blocked && blocked.Point.DistanceTo(from) < reached - 0.05f && blocked.Point.Y > pool.Centre.Y))
+                continue;
+            // Just under the surface, so the host finds the point in the liquid.
+            var surface = from + direction * reached - new Vector3(0, 0.02f, 0);
+            if (generator.LiquidAt(surface.ToNumerics()) is not null)
+                return surface;
+        }
         var t = (generator.SeaLevel - from.Y) / direction.Y;
         if (t < 0 || t > reach || (hit is { } h && h.Point.DistanceTo(from) < t - 0.05f && h.Point.Y > generator.SeaLevel))
             return null;
