@@ -190,6 +190,31 @@ public partial class LogicTests
     }
 
     [Fact]
+    public void ACreationIsActiveWhileAnySignalOnItIsNotZero()
+    {
+        var c = Row(Source, Gate);
+        c.TryLink(1, 2, out _);
+        var bus = new SignalBus();
+        Assert.False(bus.IsActive(1));
+        bus.SetOutput(1, 1, 1);
+        bus.SetOutput(1, 1, 2);
+        Assert.True(bus.IsActive(1));
+        Assert.False(bus.IsActive(2));
+        bus.Step([c]);
+        bus.SetOutput(1, 1, 0);
+        // The gate is still given the old signal until the next step.
+        Assert.True(bus.IsActive(1));
+        bus.Step([c]);
+        Assert.False(bus.IsActive(1));
+        bus.SetOutput(1, 2, 1);
+        bus.Forget(1, 2);
+        Assert.False(bus.IsActive(1));
+        bus.SetOutput(1, 1, 1);
+        bus.Clear();
+        Assert.False(bus.IsActive(1));
+    }
+
+    [Fact]
     public void ASignalTakesOneStepPerLinkAndInputsAddUp()
     {
         var c = Row(Source, Source, Gate, Lamp);

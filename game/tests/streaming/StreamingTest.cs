@@ -72,6 +72,30 @@ public partial class StreamingTest : StagedTest
         AddVehicleStages();
         AddPlaneStages();
         AddParkStages();
+        AddEdgeStages();
+    }
+
+    // Past the world's edge there is no ground to load; the edge walls must hold anything thrown at them.
+    private void AddEdgeStages()
+    {
+        RigidBody3D? crate = null;
+        Add("a crate thrown at the world's edge stays inside it", frame =>
+        {
+            var edge = HostWorld.Streamer.Settings.WorldSize / 2f;
+            if (frame == 0)
+            {
+                crate = new RigidBody3D { Name = "EdgeCrate", Mass = 50f, CanSleep = false, LinearVelocity = new Vector3(40, 0, 0) };
+                crate.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = Vector3.One } });
+                HostWorld.AddChild(crate);
+                crate.GlobalPosition = new Vector3(edge - 10f, 20f, 0);
+                return false;
+            }
+            if (frame < 90)
+                return false;
+            Check(crate!.GlobalPosition.X < edge && crate.GlobalPosition.X > edge - 40f, $"the crate is inside the edge at x={crate.GlobalPosition.X:F2} (edge {edge})");
+            crate.QueueFree();
+            return true;
+        });
     }
 
     private void AddVehicleStages()

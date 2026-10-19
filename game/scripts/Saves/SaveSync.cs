@@ -1,4 +1,5 @@
 using Godot;
+using Mechanica.Core.Creations;
 using Mechanica.Core.Data;
 using Mechanica.Core.Net;
 using Mechanica.Core.Saves;
@@ -134,7 +135,13 @@ public partial class SaveSync : Node
         Scripts.Runtime.Time = save.Time;
         foreach (var creation in save.ReadCreations(Catalog, save.Name, diagnostics))
         {
-            if (Creations.Find(creation.Id) is null)
+            if (Creations.Find(creation.Id) is not null)
+                continue;
+            // A still Creation with no logic starts parked: the streamer brings it back when a player comes near, so
+            // loading does not build the ground under every Creation in the world at once.
+            if (Resting(creation))
+                Creations.AddParked(creation, Assets);
+            else
                 Creations.Add(creation, Assets);
         }
         foreach (var script in save.Scripts)
@@ -290,4 +297,18 @@ public partial class SaveSync : Node
 
     private static DataDiagnostic Warning(string file, string message) =>
         new(DiagnosticSeverity.Warning, DiagnosticCodes.SaveInvalid, file, null, null, message);
+
+    private bool Resting(Creation creation)
+    {
+        if (creation.Links.Count > 0 || World.Streamer is not { } streamer)
+            return false;
+        var settings = streamer.Settings;
+        for (var i = 0; i < creation.Bodies.Count; i++)
+        {
+            var velocity = creation.GetBodyVelocity(i);
+            if (velocity.Linear.Length() > settings.SleepLinearSpeed || velocity.Angular.Length() > settings.SleepAngularSpeed)
+                return false;
+        }
+        return true;
+    }
 }
