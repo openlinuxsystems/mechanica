@@ -181,6 +181,8 @@ How parts attach when they are placed touching each other:
 
 A mesh node in the part's model named after one of its joint sockets (the bearing's `rotor`) is drawn on the
 Body joined at that socket, so it turns or slides with what is attached there. Without a joined part it stays put.
+A mesh node named after the socket plus `Flex` (the sport suspension's `mountFlex`: its coil and damper) stays on the
+part but is skewed each frame along the joint's axis, so its end at the socket follows the joint and its far end stays.
 
 The Part Editor's connection preview shows the result on every face: green for rigid, blue for a
 joint, red where nothing attaches.
@@ -243,7 +245,7 @@ level again. Only the part as written (level 0) has a recipe.
 | Key | Type | Meaning |
 |-----|------|---------|
 | `cost` | list of `{ "item", "count" }` | What reaching this level costs in Survival. |
-| `set` | object | Keys merged over the part at this level, on top of the levels below. Only `name`, `description`, `durability`, `mesh`, `icon`, `settings`, `display`, `crafting`, `inventory`, `logic` and `properties` can change; objects merge key by key and lists are replaced. A level can't shrink `inventory.slots` or remove `crafting`. |
+| `set` | object | Keys merged over the part at this level, on top of the levels below. Only `name`, `description`, `durability`, `mesh`, `icon`, `sockets`, `settings`, `display`, `crafting`, `inventory`, `logic` and `properties` can change; objects merge key by key and lists are replaced. A level can't shrink `inventory.slots` or remove `crafting`, and its `sockets` must list the same sockets (ids, types, positions and normals) with only their `joint` changed, such as a suspension's stiffer spring. |
 
 At most 10 levels. The Part Editor lists them under Upgrades.
 

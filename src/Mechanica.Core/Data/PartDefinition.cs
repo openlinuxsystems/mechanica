@@ -329,8 +329,9 @@ public sealed record CraftingDefinition
 /// <summary>
 /// One upgrade level of a placed part. <see cref="Set"/> holds part keys to change, merged like a Part Editor batch's
 /// <c>set</c> (objects key by key, other values replace) on top of the part and every level before it. Only
-/// <c>name</c>, <c>description</c>, <c>durability</c>, <c>mesh</c>, <c>icon</c>, <c>settings</c>, <c>display</c>, <c>crafting</c>,
-/// <c>inventory</c>, <c>logic</c> and <c>properties</c> may change, and an inventory never shrinks.
+/// <c>name</c>, <c>description</c>, <c>durability</c>, <c>mesh</c>, <c>icon</c>, <c>sockets</c> (only their joints),
+/// <c>settings</c>, <c>display</c>, <c>crafting</c>, <c>inventory</c>, <c>logic</c> and <c>properties</c> may change, and an
+/// inventory never shrinks.
 /// <code>
 /// "upgrades": [
 ///   { "cost": [ { "item": "component_kit", "count": 2 } ], "set": { "crafting": { "speed": 1.25 }, "inventory": { "slots": 12 } } }
@@ -341,7 +342,7 @@ public sealed record UpgradeDefinition
 {
     /// <summary>Part keys a level may change.</summary>
     public static readonly IReadOnlyList<string> Changeable =
-        ["name", "description", "durability", "mesh", "icon", "settings", "display", "crafting", "inventory", "logic", "properties"];
+        ["name", "description", "durability", "mesh", "icon", "sockets", "settings", "display", "crafting", "inventory", "logic", "properties"];
 
     /// <summary>Items the level takes from the player's inventory in Survival. Omitted means free.</summary>
     public List<Items.RecipeItem>? Cost { get; init; }

@@ -457,7 +457,32 @@ public class CraftingTests
         Assert.Same(PartUpgrades.At(forge, 2), PartUpgrades.At(forge, 9));
         var bad = forge with { Upgrades = [new UpgradeDefinition { Set = (System.Text.Json.Nodes.JsonObject)System.Text.Json.Nodes.JsonNode.Parse("""{ "size": [2, 2, 2] }""")! }] };
         Assert.Null(PartUpgrades.Apply(bad, 1, out var error));
-        Assert.Equal("an upgrade can change only name, description, durability, mesh, icon, settings, display, crafting, inventory, logic, properties, not 'size'.", error);
+        Assert.Equal("an upgrade can change only name, description, durability, mesh, icon, sockets, settings, display, crafting, inventory, logic, properties, not 'size'.", error);
+    }
+
+    [Fact]
+    public void ALevelCanRetuneASpringButNotMoveOrRenameASocket()
+    {
+        static SocketDefinition Spring(float stiffness, float x = 0.125f, string id = "mount") => new()
+        {
+            Id = id, Type = SocketType.Spring, Position = new Vec3(x, 0, 0), Normal = new Vec3(1, 0, 0),
+            Joint = new JointDefinition { Axis = new Vec3(0, 1, 0), Min = -0.08f, Max = 0.08f, Stiffness = stiffness, Damping = 1500 },
+        };
+        static UpgradeDefinition Level(SocketDefinition socket) => new()
+        {
+            Set = new System.Text.Json.Nodes.JsonObject { ["sockets"] = System.Text.Json.JsonSerializer.SerializeToNode(new[] { socket }, DataJson.WriteOptions) },
+        };
+        var spring = new PartDefinition { Id = "spring", Sockets = [Spring(25000)] };
+
+        var stiffer = PartUpgrades.Apply(spring with { Upgrades = [Level(Spring(40000))] }, 1, out var error);
+        Assert.Null(error);
+        Assert.Equal(40000f, stiffer!.Sockets![0].Joint!.Stiffness);
+        Assert.Contains(new UpgradeChange("Stiffness", "25000 N/m", "40000 N/m"), PartUpgrades.Changes(spring, stiffer));
+        foreach (var moved in new[] { Spring(40000, x: 0.25f), Spring(40000, id: "wheel") })
+        {
+            Assert.Null(PartUpgrades.Apply(spring with { Upgrades = [Level(moved)] }, 1, out error));
+            Assert.Equal("an upgrade can change only a socket's joint (a suspension's spring), not which sockets the part has or where they are.", error);
+        }
     }
 
     [Theory]

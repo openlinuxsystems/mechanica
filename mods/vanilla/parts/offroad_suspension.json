@@ -1,7 +1,7 @@
 {
   "id": "offroad_suspension",
   "name": "Off-Road Suspension",
-  "description": "A soft spring with long travel for rough ground. Mounts like the sport suspension.",
+  "description": "A soft spring with long travel for rough ground. Put it on a chassis side and a wheel bearing on its face.",
   "category": "interactive",
   "mass": 6,
   "durability": 6,

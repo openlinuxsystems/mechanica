@@ -95,20 +95,42 @@ public static class PartUpgrades
             }
             Merge(json, set);
         }
+        PartDefinition upgraded;
         try
         {
-            return DataJson.Read<PartDefinition>(json.ToJsonString()) ?? throw new JsonException("the part is null.");
+            upgraded = DataJson.Read<PartDefinition>(json.ToJsonString()) ?? throw new JsonException("the part is null.");
         }
         catch (JsonException e)
         {
             error = $"the upgraded part does not read: {e.Message}";
             return null;
         }
+        if (!SameSocketsApartFromJoints(part.Sockets, upgraded.Sockets))
+        {
+            error = "an upgrade can change only a socket's joint (a suspension's spring), not which sockets the part has or where they are.";
+            return null;
+        }
+        return upgraded;
+    }
+
+    // A placed part keeps its connections through an upgrade, so its sockets keep their ids, types and places.
+    private static bool SameSocketsApartFromJoints(List<SocketDefinition>? a, List<SocketDefinition>? b)
+    {
+        if ((a?.Count ?? 0) != (b?.Count ?? 0))
+            return false;
+        for (var i = 0; i < (a?.Count ?? 0); i++)
+        {
+            var (x, y) = (a![i], b![i]);
+            if (x.Id != y.Id || x.Type != y.Type || x.Position != y.Position || x.Normal != y.Normal)
+                return false;
+        }
+        return true;
     }
 
     /// <summary>
     /// What changes from <paramref name="from"/> to <paramref name="to"/> (two levels of one part), for the upgrade dialog:
-    /// crafting speed, queue and link range, slots, logic inputs and outputs, then each changed script property. Labels
+    /// crafting speed, queue and link range, slots, durability, spring stiffness and damping, logic inputs and outputs, then
+    /// each changed script property. Labels
     /// are English UI text; values are as shown (<c>1.25×</c>, <c>12</c>, <c>1 m</c>).
     /// </summary>
     public static IReadOnlyList<UpgradeChange> Changes(PartDefinition from, PartDefinition to)
@@ -125,6 +147,12 @@ public static class PartUpgrades
         Add("Link range", from.Crafting?.LinkRange, to.Crafting?.LinkRange, " m");
         Add("Slots", from.Inventory?.Slots, to.Inventory?.Slots);
         Add("Durability", from.Durability, to.Durability);
+        foreach (var socket in to.Sockets ?? [])
+        {
+            var before = from.Sockets?.FirstOrDefault(s => s.Id == socket.Id)?.Joint;
+            Add("Stiffness", before?.Stiffness, socket.Joint?.Stiffness, " N/m");
+            Add("Damping", before?.Damping, socket.Joint?.Damping, " N·s/m");
+        }
         Add("Inputs", from.Logic?.Inputs, to.Logic?.Inputs);
         Add("Outputs", from.Logic?.Outputs, to.Logic?.Outputs);
         foreach (var key in (to.Properties?.Select(kv => kv.Key) ?? []).Union(from.Properties?.Select(kv => kv.Key) ?? []))
