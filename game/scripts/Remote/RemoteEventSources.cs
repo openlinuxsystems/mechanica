@@ -7,8 +7,8 @@ namespace Mechanica.Game.Remote;
 
 /// <summary>
 /// Connects the host's systems to the AI endpoint's <see cref="RemoteEvents"/> topics: damage and vitals,
-/// dialogue and quests, raids and bots, drops, chat, fire, seats, projectiles and script messages. Every
-/// payload is built only when an agent listens to its topic.
+/// dialogue and quests, raids and bots, drops, chat, fire, seats, projectiles, players and script messages. Every
+/// payload is built only when an agent or a script listens to its topic.
 /// </summary>
 public static class RemoteEventSources
 {
@@ -59,6 +59,12 @@ public static class RemoteEventSources
             logic.SeatChanged += (seat, seated) => events.Publish("seats", () => new { seat, seated });
 
         main.Scripts.Runtime.Message += message => PublishMessage(events, "script", message);
+        main.PlayerSync.PlayerSpawned += player => events.Publish("players", () => new { kind = "joined", peer = player.PeerId, name = player.DisplayName });
+        main.PlayerSync.PlayerLeaving += player => events.Publish("players", () => new { kind = "left", peer = player.PeerId, name = player.DisplayName });
+
+        // Mod and part scripts hear the topics they listen to (events.listen) as on_event, on the host.
+        var runtime = main.Scripts.Runtime;
+        events.Listen(topic => main.Session.IsHost && runtime.Listens(topic), runtime.RaiseEvent);
     }
 
     private static void PublishMessage(RemoteEvents events, string source, ScriptMessage message) =>

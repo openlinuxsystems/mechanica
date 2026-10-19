@@ -37,11 +37,13 @@ public sealed class RemoteEvents
         ["projectiles"] = "A projectile was launched or landed.",
         ["mods"] = "Mod content was validated or reloaded.",
         ["reports"] = "An agent filed a note, recommendation or bug report.",
+        ["players"] = "A player joined or left the world: kind (joined, left), peer, name.",
         ["world"] = "The world was saved, or a load, new world or reset finished: kind (saved, loaded), plus the world.info status.",
         ["events_dropped"] = "Sent automatically when a subscriber fell behind and notifications were dropped: count.",
     };
 
     private readonly List<Subscriber> _subscribers = [];
+    private readonly List<Listener> _listeners = [];
 
     /// <summary>The current physics tick, stamped on each notification. Null stamps 0.</summary>
     public Func<long>? Clock { get; set; }
@@ -52,8 +54,24 @@ public sealed class RemoteEvents
         foreach (var subscriber in _subscribers)
             if (subscriber.Topics.Contains(topic))
                 return true;
+        foreach (var listener in _listeners)
+            if (listener.Wants(topic))
+                return true;
         return false;
     }
+
+    /// <summary>
+    /// Hands the host's own code every event of a topic <paramref name="wants"/> accepts, with its payload as
+    /// <see cref="Publish(string, object?)"/> serializes it (mod scripts' <c>on_event</c>). Dispose the result to stop.
+    /// </summary>
+    public IDisposable Listen(Func<string, bool> wants, Action<string, JsonElement> deliver)
+    {
+        var listener = new Listener(wants, deliver);
+        _listeners.Add(listener);
+        return new Unsubscribe(() => _listeners.Remove(listener));
+    }
+
+    private sealed record Listener(Func<string, bool> Wants, Action<string, JsonElement> Deliver);
 
     /// <summary>Pushes <paramref name="data"/> (serialized snake_case) to every subscriber of <paramref name="topic"/>.</summary>
     public void Publish(string topic, object? data)
@@ -69,10 +87,13 @@ public sealed class RemoteEvents
         {
             payload = JsonSerializer.SerializeToElement(new { error = $"Unserializable event: {e.Message}" });
         }
-        var text = Notification(topic, Clock?.Invoke() ?? 0, payload);
+        foreach (var listener in _listeners.ToArray())
+            if (listener.Wants(topic))
+                listener.Deliver(topic, payload);
+        string? text = null;
         foreach (var subscriber in _subscribers)
             if (subscriber.Topics.Contains(topic))
-                subscriber.Enqueue(text);
+                subscriber.Enqueue(text ??= Notification(topic, Clock?.Invoke() ?? 0, payload));
     }
 
     /// <summary>Publishes a lazily built payload; <paramref name="data"/> runs only when someone listens.</summary>

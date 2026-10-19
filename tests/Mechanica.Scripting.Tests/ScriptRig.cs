@@ -58,6 +58,9 @@ internal sealed class ScriptRig : IDisposable
 
     public List<ScriptMessage> Messages { get; } = [];
 
+    /// <summary>Mod scripts that run for the whole world, as <c>mod:scripts/x.lua</c>, in order.</summary>
+    public List<string> ModScripts { get; } = [];
+
     public IEnumerable<ScriptMessage> Errors => Messages.Where(m => m.Kind == ScriptMessageKind.Error);
 
     public IEnumerable<string> Prints => Messages.Where(m => m.Kind == ScriptMessageKind.Print).Select(m => m.Text);
@@ -124,6 +127,21 @@ internal sealed class ScriptRig : IDisposable
                 return null;
             var mod = qualified.Split(':')[0];
             return new ScriptFile($"{mod}:{script}", mod, Path.Combine(rig.Root, mod, script));
+        }
+
+        public IReadOnlyList<ScriptFile> WorldScripts => [.. rig.ModScripts.Select(key => File(key)!)];
+
+        // "test" may use its own scripts and those of "lib", which it depends on.
+        public ScriptFile? FindModule(string modId, string path)
+        {
+            var file = File(path.Contains(':') ? path : $"{modId}:{path}");
+            return file is not null && (file.ModId == modId || file.ModId == "lib") && System.IO.File.Exists(file.FullPath) ? file : null;
+        }
+
+        private ScriptFile? File(string key)
+        {
+            var colon = key.IndexOf(':');
+            return colon < 1 ? null : new ScriptFile(key, key[..colon], Path.Combine(rig.Root, key[..colon], key[(colon + 1)..]));
         }
     }
 

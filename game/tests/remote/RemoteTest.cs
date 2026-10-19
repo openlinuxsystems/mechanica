@@ -85,6 +85,15 @@ public partial class RemoteTest : StagedTest
             Check(_watcher.Connect(_host.Main.Ai.Port) == Error.Ok, "an observe-only agent starts connecting");
             return true;
         });
+        Add("the fixture's mod script hears the client join, on the host only", _ =>
+        {
+            const string Script = "drive_test:scripts/visitors.lua";
+            if (!_host.Main.Scripts.Runtime.ExportModStates().TryGetValue(Script, out var state) || state["joined"] is null)
+                return false;
+            Check(_host.Main.Scripts.Runtime.ModScripts.Single() == (Script, null), "the mod script runs on the host");
+            Check(_client.Main.Scripts.Runtime.ModScripts.Count == 0, "and not on the client");
+            return true;
+        });
         Add("the agent connects", _ => Pump() && _agent.IsOpen && _watcher.IsOpen);
         Add("calls before mechanica.auth are refused", frame =>
         {

@@ -97,6 +97,9 @@ public sealed record SaveGame
     /// <summary>Part script state tables.</summary>
     public IReadOnlyList<SavedScriptState> Scripts { get; init; } = [];
 
+    /// <summary>Mod scripts' <c>state</c> (<c>mod.json</c> <c>scripts</c>), by qualified script path.</summary>
+    public IReadOnlyDictionary<string, JsonObject> ModScripts { get; init; } = new Dictionary<string, JsonObject>();
+
     /// <summary>Players by profile id, sorted by id.</summary>
     public IReadOnlyList<SavedPlayer> Players { get; init; } = [];
 
@@ -154,6 +157,8 @@ public sealed record SaveGame
             Creations = [.. Creations.Select(DataJson.Element)],
             Scripts = Scripts.Count == 0 ? null : [.. Scripts.OrderBy(s => s.Creation).ThenBy(s => s.Part)
                 .Select(s => new ScriptData { Creation = s.Creation, Part = s.Part, State = JsonSerializer.SerializeToElement(s.State) })],
+            ModScripts = ModScripts.Count == 0 ? null
+                : new SortedDictionary<string, JsonElement>(ModScripts.ToDictionary(m => m.Key, m => JsonSerializer.SerializeToElement(m.Value)), StringComparer.Ordinal),
             Players = [.. Players.OrderBy(p => p.Id, StringComparer.Ordinal).Select(p => new PlayerData
             {
                 Id = p.Id,
@@ -239,6 +244,15 @@ public sealed record SaveGame
                 sink.Error(invalid, $"$.scripts[{i}]", "a script state needs creation, part and a state object.");
             else
                 scripts.Add(new SavedScriptState(creation, part, JsonNode.Parse(state.GetRawText())!.AsObject()));
+        }
+
+        var modScripts = new Dictionary<string, JsonObject>(StringComparer.Ordinal);
+        foreach (var (key, state) in data.ModScripts ?? [])
+        {
+            if (state.ValueKind != JsonValueKind.Object)
+                sink.Error(invalid, $"$.mod_scripts.{key}", "a mod script's state must be an object.");
+            else
+                modScripts[key] = JsonNode.Parse(state.GetRawText())!.AsObject();
         }
 
         var players = new List<SavedPlayer>();
@@ -332,6 +346,7 @@ public sealed record SaveGame
             Regrow = regrow,
             Creations = creations,
             Scripts = scripts,
+            ModScripts = modScripts,
             Players = players,
             Quests = quests,
             Fires = fires,
@@ -361,6 +376,7 @@ public sealed record SaveGame
         public SortedDictionary<string, double>? Regrow { get; init; }
         public List<JsonElement>? Creations { get; init; }
         public List<ScriptData>? Scripts { get; init; }
+        public SortedDictionary<string, JsonElement>? ModScripts { get; init; }
         public List<PlayerData>? Players { get; init; }
         public JsonElement? Quests { get; init; }
         public List<FireData>? Fires { get; init; }

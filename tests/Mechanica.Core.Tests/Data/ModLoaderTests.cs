@@ -50,6 +50,24 @@ public class ModLoaderTests
     }
 
     [Fact]
+    public void ModScriptsMustExistAndBeListedOnce()
+    {
+        using var mods = new TestMods()
+            .File("rules", "mod.json", """{ "id": "rules", "name": "Rules", "version": "1.0.0", "scripts": ["scripts/main.lua"] }""")
+            .File("rules", "scripts/main.lua", "-- rules")
+            .File("broken", "mod.json", """{ "id": "broken", "name": "Broken", "version": "1.0.0", "scripts": ["scripts/gone.lua", "../x.lua", "scripts/a.lua", "scripts/a.lua"] }""")
+            .File("broken", "scripts/a.lua", "-- a");
+
+        var result = mods.Load();
+
+        Assert.Equal(["rules"], result.Mods.Select(m => m.Id));
+        Assert.Equal(["scripts/main.lua"], result.Mods[0].Manifest.Scripts);
+        Assert.Contains(result.Diagnostics, d => d.Code == DiagnosticCodes.AssetMissing && d.JsonPath == "$.scripts[0]");
+        Assert.Contains(result.Diagnostics, d => d.Code == DiagnosticCodes.AssetPathInvalid && d.JsonPath == "$.scripts[1]");
+        Assert.Contains(result.Diagnostics, d => d.Code == DiagnosticCodes.ManifestInvalid && d.JsonPath == "$.scripts[3]");
+    }
+
+    [Fact]
     public void FindPartTreatsBareIdsAsVanilla()
     {
         using var mods = new TestMods().Mod("vanilla").Part("vanilla", "b.json", TestMods.Block("wood_block"));

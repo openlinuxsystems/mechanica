@@ -503,6 +503,16 @@ public static class ModLoader
             id => id == modId ? dir : loaded.GetValueOrDefault(id)?.Directory);
         var errors = 0;
 
+        var manifestSink = new DiagnosticSink(Display(dir, ManifestFileName), diagnostics);
+        var scripts = new HashSet<string>(StringComparer.Ordinal);
+        for (var i = 0; i < (manifest.Scripts?.Count ?? 0); i++)
+        {
+            validator.CheckAsset(manifest.Scripts![i], $"$.scripts[{i}]", AssetKind.Script, manifestSink);
+            if (!scripts.Add(manifest.Scripts[i]))
+                manifestSink.Error(DiagnosticCodes.ManifestInvalid, $"$.scripts[{i}]", $"'{manifest.Scripts[i]}' is listed twice.");
+        }
+        errors += manifestSink.ErrorCount;
+
         var parts = new Dictionary<string, LoadedPart>(StringComparer.Ordinal);
         foreach (var file in JsonFiles(dir, Path.Combine(dir, PartsFolder)))
         {

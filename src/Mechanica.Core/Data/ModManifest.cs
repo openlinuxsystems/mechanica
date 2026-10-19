@@ -39,6 +39,12 @@ public sealed record ModManifest
     /// </summary>
     public List<ModDependency>? Conflicts { get; init; }
 
+    /// <summary>
+    /// Mod scripts (<c>scripts/*.lua</c>, or <c>other_mod:scripts/x.lua</c>) that run on the host for the whole world,
+    /// in this order, after the mods load: game rules, events and timers that belong to no part (docs/lua-api.md).
+    /// </summary>
+    public List<string>? Scripts { get; init; }
+
     /// <summary>Keys this build does not know. Kept so a round-trip never loses data.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }

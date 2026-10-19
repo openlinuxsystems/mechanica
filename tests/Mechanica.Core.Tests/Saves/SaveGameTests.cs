@@ -36,6 +36,7 @@ public class SaveGameTests
             Regrow = new Dictionary<WorldObjectId, double> { [WorldObjectId.ForPoi(7, 2)] = 7200.5 },
             Creations = [CreationJson.Write(chest)],
             Scripts = [new SavedScriptState(3, 1, new JsonObject { ["count"] = 2 })],
+            ModScripts = new Dictionary<string, JsonObject> { ["test:scripts/rules.lua"] = new() { ["visits"] = 3 } },
             Players = [new SavedPlayer(Ada, "Ada", [new SavedSlot(2, Wood, 5)], 80f, new Vec3(4, 0, 5), 1.5f, new SavedPart(3, 1), "vanilla:scrapper_female",
                 ["vanilla:sledgehammer", null, "test:chest"], [new Mechanica.Core.Ui.MapMarker("marker:2", "Scrap pile", 12.5f, 3f, -40f)])],
         };
@@ -55,6 +56,7 @@ public class SaveGameTests
         Assert.Equal(GameMode.Creative, read.Mode);
         Assert.Equal(-42, read.Seed);
         Assert.Equal(3600.25, read.Time); // the scripts' clock carries on from here
+        Assert.Equal(3, read.ModScripts["test:scripts/rules.lua"]["visits"]!.GetValue<int>());
         Assert.Equal([new WorldObjectId(1, 2, 3), WorldObjectId.ForPoi(7, 2)], read.Destroyed);
         Assert.Equal(7200.5, read.Regrow[WorldObjectId.ForPoi(7, 2)]); // the geyser wells up again then
         var player = read.Player(Ada)!;

@@ -41,7 +41,8 @@ end
   API as players, bots and external agents, and return `true`, or `false` and the reason. The first
   time each reason comes up it is also logged as a warning.
 - **Sandbox.** There is no `io`, no `os` beyond the clock (`os.time`, `os.clock`, `os.date`), no
-  `load`, `loadstring`, `dofile` or `require`, and `string.rep` can't build huge strings. A script can
+  `load`, `loadstring` or `dofile` (`require` loads only this mod's scripts and its dependencies'), and
+  `string.rep` can't build huge strings. A script can
   only move its own Creation. `json.parse(text)` turns JSON into a table and `json.serialize(table)`
   turns a table of plain data into JSON text.
 - **Hooks may not yield.** `coroutine.wrap` and `coroutine.create` work inside a hook, but
@@ -49,7 +50,7 @@ end
 
 Limits live in `game/data/scripting.json`: `instruction_budget` (per hook call),
 `reload_poll_seconds`, `max_string_length`, `max_ray_length`, `max_overlap_radius`,
-`max_messages`, `max_loops_per_part`, `max_projectiles` and `max_projectile_lifetime`. The motion
+`max_messages`, `max_loops_per_part`, `max_projectiles`, `max_projectile_lifetime` and `max_queued_events`. The motion
 limits (largest force, torque, bearing speed and piston force) are in
 `game/data/motion.json`.
 
@@ -97,6 +98,7 @@ template becomes the part's name.
 | `get_outputs()` | Called once per step after `on_update`; what it returns (a number, or a boolean as 1 or 0) is the part's logic output, as if it called `part.set_output`. |
 | `on_enter(peer)` | A player sat down in the part (a part with `seat`). |
 | `on_leave(peer)` | The player sitting in the part stood up (or the seat is going away). |
+| `on_event(topic, data)` | An event the script listens to happened (`events.listen`, see [Mod scripts](#mod-scripts)). `data` is the event's table. Mod scripts have it too. |
 
 Held items have their own hooks (see [Item scripts](#item-scripts)):
 
@@ -117,6 +119,7 @@ Held items have their own hooks (see [Item scripts](#item-scripts)):
 | `state` | Table that survives hot reloads. |
 | `properties` | The part's `properties` object from its JSON, as a table. |
 | `log(...)` | Writes a line to the editor console and the game log. `print` does the same. |
+| `require(path)` | Runs another Lua file of this mod (`scripts/lib/util.lua`) or of a mod it depends on (`other_mod:scripts/util.lua`) once and returns what it returns, so scripts can share code. See [Sharing code](#sharing-code-with-require). |
 
 ## `part`
 
@@ -217,7 +220,7 @@ runs; the crop it gets is the same as growing step by step.
 
 ## `player`
 
-Any player's inventory, from part and item scripts. Items are lists of `{item, count}` (`count` default 1;
+Any player's inventory, from part, item and mod scripts. Items are lists of `{item, count}` (`count` default 1;
 bare ids are in the script's mod).
 
 | Function | Returns |
@@ -393,6 +396,77 @@ end
 function on_hit(landing)
   return { fires = fire.douse(landing.position, 1.2, 1) }
 end
+```
+
+## Mod scripts
+
+Behaviour that belongs to no part (game rules, a welcome message, a timer, a custom event) goes in a mod
+script. List it in `mod.json` and it runs on the host for the whole world, after the mods load and in load
+order:
+
+```json
+{ "id": "welcome", "name": "Welcome", "version": "1.0.0", "dependencies": [{ "id": "vanilla" }],
+  "scripts": ["scripts/rules.lua"] }
+```
+
+A mod script is like a part script without a part: it has `state` (saved with the world), the hooks
+`on_create`, `on_update(dt)`, `on_reload`, `on_destroy` and `on_event`, and every library that does not need a part
+(`world`, `player`, `sound.play` with a position, `combat`, `farm`, `fire`, `events`, `actions`, `require`). `part.*` and
+`creation.*` raise an error there. It acts as the host, and it stops on an error like any script until it is
+fixed and reloaded. Clients run no scripts; they see what the host does.
+
+```lua
+-- Greet every player who joins, and count them.
+events.listen("players")
+
+function on_event(topic, data)
+  if data.kind == "joined" then
+    state.visits = (state.visits or 0) + 1
+    player.give(data.peer, { { item = "vanilla:component_kit", count = 1 } })
+    print("Welcome, " .. data.name .. " (visitor " .. state.visits .. ")")
+  end
+end
+```
+
+### `events`
+
+Events are the same topics the [AI endpoint](ai/reference.md) streams (every one except script messages).
+Listening is per script: call `events.listen` at the top level or in `on_create`; a reload starts with no topics.
+Events wait until the start of the next step and arrive in order, at most `max_queued_events` of them.
+
+| Function | Returns |
+|----------|---------|
+| `events.listen(topic)` | Hears `topic` as `on_event(topic, data)`. Part scripts may listen too. An unknown topic is an error. |
+| `events.unlisten(topic)` | Stops hearing it; true when the script listened to it. |
+| `events.topics()` | Every topic: `actions` (players' and agents' actions, not scripts'), `bots`, `chat`, `dialogue`, `drop`, `fire`, `hurt`, `players` (`{kind = "joined"/"left", peer, name}`), `projectiles`, `quest`, `raid`, `seats`, `vitals`, `world` and the rest. |
+
+### `actions`
+
+Any state change a player or agent can make, a mod script can make too, through the same validated Action API
+([AI reference](ai/reference.md) lists every action and its arguments). Arguments are a table in the action's
+snake_case JSON form.
+
+| Function | Returns |
+|----------|---------|
+| `actions.call(name, args?)` | Runs the action as the host: `true` and its value, or `false` and the reason (logged once). Mod scripts may call every action except the ones that move a Creation (`ApplyForce`, `SetBearingTarget`, `SetPistonTarget`); part and item scripts may call only actions that read (`GetPlayers`, `GetInventory`, `ListCreations`, …). |
+| `actions.list()` | The names `actions.call` accepts. |
+
+### Sharing code with `require`
+
+`require(path)` runs a file once per mod and hands every script that asks the same result, usually a table of
+functions. The file runs in its own environment over the mod's libraries, so it has no `state` or `properties`
+of its own; pass what it needs as arguments. A mod reaches its own files and those of the mods in its
+`dependencies` (`"vanilla:scripts/lib/x.lua"`). A changed file loads again the next time it is required, so
+reload the script that requires it.
+
+```lua
+-- scripts/lib/maths.lua
+local M = {}
+function M.clamp(x, lo, hi) return math.max(lo, math.min(hi, x)) end
+return M
+
+-- scripts/thruster.lua
+local maths = require("scripts/lib/maths.lua")
 ```
 
 ## `vec3`
