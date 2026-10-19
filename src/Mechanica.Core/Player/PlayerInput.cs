@@ -24,6 +24,7 @@ namespace Mechanica.Core.Player;
 /// The Paint Tool's colour, for how others see its tubes and its spray: the palette index, plus
 /// <see cref="CharacterRig.TintErase"/> while it takes paint off.
 /// </param>
+/// <param name="Held">The item in hand that has a held model (<see cref="HeldItems"/>), for how others see them; 0 for none.</param>
 public readonly record struct PlayerInput(
     float MoveX,
     float MoveZ,
@@ -36,7 +37,8 @@ public readonly record struct PlayerInput(
     CharacterGesture Gesture = CharacterGesture.None,
     byte GestureCount = 0,
     bool Guard = false,
-    byte Tint = 0)
+    byte Tint = 0,
+    ushort Held = 0)
 {
     /// <summary>No movement, looking straight ahead.</summary>
     public static PlayerInput None => default;

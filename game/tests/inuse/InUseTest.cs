@@ -62,7 +62,14 @@ public partial class InUseTest : StagedTest
             }
             return _client.Main.Creations.Find(_workshop) is { } seen && seen.Parts.Count == _host.Main.Creations.Find(_workshop)!.Parts.Count;
         });
-        Wait("the floor settles", 30);
+        // At rest on the host and caught up on the client, so the icon and the chest are read at the same place.
+        Add("the floor settles", frame =>
+        {
+            var host = _host.Main.Creations.NodeOf(_workshop)!.Bodies[0];
+            var client = _client.Main.Creations.NodeOf(_workshop)!.Bodies[0];
+            return frame >= 30 && host.LinearVelocity.Length() < 0.01f && host.AngularVelocity.Length() < 0.01f
+                && client.GlobalPosition.DistanceTo(host.GlobalPosition) < 0.005f;
+        });
         Add("nobody uses anything, so nothing is marked", _ =>
         {
             Check(!_hostMarks.Shown.Any() && !_clientMarks.Shown.Any(), "no icons");

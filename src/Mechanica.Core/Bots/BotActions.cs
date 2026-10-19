@@ -496,7 +496,7 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
         var random = new Random(unchecked(Seed * 31 + bot.Id * 7919));
         var items = bot.Type.Drops
             .Where(d => random.NextSingle() < d.Chance)
-            .Select(d => new ItemStack(d.Item, d.Count))
+            .Select(d => new ItemStack(d.Item, d.CountMax > d.Count ? random.Next(d.Count, d.CountMax + 1) : d.Count))
             .ToList();
         survival.AddDrop(bot.Centre, items);
         Changed?.Invoke(bot);

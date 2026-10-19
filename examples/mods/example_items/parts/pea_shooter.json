@@ -1,0 +1,35 @@
+{
+  "id": "pea_shooter",
+  "name": "Pea Shooter",
+  "description": "Fires dried peas in an arc. Holds 12; Reload refills it from the peas you carry.",
+  "category": "weapon",
+  "mass": 1.5,
+  "stack_size": 1,
+  "visual": {
+    "color": "#5a7a3a"
+  },
+  "script": "scripts/pea_shooter.lua",
+  "sounds": {
+    "fire": "vanilla:blaster_fire",
+    "reload": "vanilla:blaster_reload"
+  },
+  "aim": {
+    "zoom": 0.7
+  },
+  "held": {
+    "mesh": "vanilla:meshes/decor/small_pipe_short.glb",
+    "offset": [0, 0.02, -0.08],
+    "scale": 0.6
+  },
+  "properties": {
+    "ammo": "dried_pea",
+    "damage": 8,
+    "push": 4,
+    "interval": 0.3,
+    "speed": 40,
+    "aimed_speed": 60,
+    "lifetime": 3,
+    "magazine": 12,
+    "reload": 1.2
+  }
+}

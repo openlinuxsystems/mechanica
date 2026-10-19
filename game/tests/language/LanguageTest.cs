@@ -66,7 +66,7 @@ public partial class LanguageTest : StagedTest
             var picker = Walk(options2).OfType<OptionButton>().First(o => o.Name == "Language");
             var items = Enumerable.Range(0, picker.ItemCount).Select(i => picker.GetItemText(i)).ToList();
             Check(items.Contains("Pseudo") && items[0] == "English", $"the Language list has English and Pseudo ({string.Join(", ", items)})");
-            Check(!picker.CanAutoTranslate(), "language names show as written");
+            Check(!Loc.Translated(picker), "language names show as written");
             if (_collect)
             {
                 _menu.CloseAll();
@@ -92,6 +92,7 @@ public partial class LanguageTest : StagedTest
         });
         Screen("the Bot Behavior Editor", () => _menu.OpenBotEditor(), tabs: true);
         Screen("the Recipe Editor", () => _menu.OpenRecipeEditor());
+        Screen("the Sound Editor", () => _menu.OpenSoundEditor());
         Screen("the Test Sandbox", () => _menu.OpenSandbox(), tabs: true);
         Screen("the Mod Manager", () => _menu.OpenModManager(), dialogs: true);
         Add("the loading screen, loading and failed", frame =>
@@ -372,7 +373,7 @@ public partial class LanguageTest : StagedTest
                 continue;
             foreach (var text in Texts(node))
             {
-                if (!text.Any(char.IsLetter) || !node.CanAutoTranslate() || _keyLabels.Contains(text) || NotText().IsMatch(text))
+                if (!text.Any(char.IsLetter) || !Loc.Translated(node) || _keyLabels.Contains(text) || NotText().IsMatch(text))
                     continue;
                 if (_collect)
                 {

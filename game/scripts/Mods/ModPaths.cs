@@ -35,4 +35,7 @@ public static class ModPaths
 
     /// <summary>Loads the content this run uses: the mods the saved profile enables, in its load order.</summary>
     public static ModLoadResult LoadContent() => ModLoader.LoadWithProfile(ModsRoot, ProfilePath);
+
+    /// <summary>The folders of the mods the saved profile enables, without loading them.</summary>
+    public static IReadOnlyList<string> EnabledDirectories() => ModLoader.EnabledDirectories(ModsRoot, ProfilePath);
 }

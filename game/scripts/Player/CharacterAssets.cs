@@ -36,6 +36,9 @@ public sealed class CharacterAssets : IDisposable
     /// <summary>Animation tuning.</summary>
     public CharacterSettings Settings { get; }
 
+    /// <summary>Makes the model of a held item by its number (<see cref="Core.Characters.HeldItems"/>), in the hand's frame; null for none.</summary>
+    public Func<ushort, Node3D?>? HeldModel { get; init; }
+
     /// <summary>Loads <see cref="DefaultSettingsPath"/>, failing loudly on bad data.</summary>
     public static CharacterSettings LoadDefaultSettings()
     {

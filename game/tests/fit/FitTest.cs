@@ -59,6 +59,7 @@ public partial class FitTest : StagedTest
         Screen("Help", () => _menu.Help.Open("playing.md"));
         Screen("the Bot Behavior Editor", () => _menu.OpenBotEditor());
         Screen("the Recipe Editor", () => _menu.OpenRecipeEditor());
+        Screen("the Sound Editor", () => _menu.OpenSoundEditor());
         Screen("the Test Sandbox", () => _menu.OpenSandbox());
         Screen("the Mod Manager", () => _menu.OpenModManager());
         Add("the Part Editor", frame =>

@@ -14,6 +14,7 @@ public class InputPacketTests
         new(9, new PlayerInput(0f, 0f, 0f, 0f, false, false, Crawl: true, CharacterProp.Sledgehammer, CharacterGesture.SledgeSwing, 200)),
         new(10, new PlayerInput(0f, 0f, 0f, 0f, false, false, Prop: CharacterProp.Sledgehammer, Guard: true)),
         new(11, new PlayerInput(0f, 0f, 0f, 0f, false, false, Prop: CharacterProp.PaintTool, Guard: true, Tint: 25 | CharacterRig.TintErase)),
+        new(12, new PlayerInput(0f, 0f, 0f, 0f, false, false, Prop: CharacterProp.Item, Held: 513)),
     ];
 
     [Fact]
@@ -77,6 +78,7 @@ public class WorldSnapshotTests
         new PlayerState(5, 7, Vector3.One, Vector3.UnitY, 0f, 0f, BodyFlags.Swimming | BodyFlags.Crawl, CharacterProp.WaterBucket, CharacterGesture.Pour, 255),
         new PlayerState(6, 8, Vector3.One, Vector3.Zero, 0f, 0f, BodyFlags.OnFloor | BodyFlags.Guard, CharacterProp.Sledgehammer),
         new PlayerState(7, 9, Vector3.One, Vector3.Zero, 0f, 0f, BodyFlags.Guard, CharacterProp.PaintTool, CharacterGesture.PaintReload, 3, 13),
+        new PlayerState(8, 10, Vector3.One, Vector3.Zero, 0f, 0f, BodyFlags.OnFloor, CharacterProp.Item, Held: 65535),
     ]);
 
     [Fact]
@@ -113,7 +115,7 @@ public class WorldSnapshotTests
     public void RejectsUnknownBodyFlags()
     {
         var bytes = Sample.Encode();
-        bytes[^5] = 0x80; // the last entry's body flags (then prop, gesture, count and tint)
+        bytes[^7] = 0x80; // the last entry's body flags (then prop, gesture, count, tint and the held item's two bytes)
         Assert.Null(WorldSnapshot.Decode(bytes));
     }
 }

@@ -392,6 +392,33 @@ public sealed class ItemScriptTests : IDisposable
         Assert.Equal(12, _rig.Used(Me, mine).GetValue<int>());
     }
 
+    [Fact]
+    public void EachPlayersItemStateIsSavedAndComesBack()
+    {
+        _rig.Write("scripts/counter.lua", "n_at_setup = state.n; function on_use(target) state.n = (state.n or 0) + 1; return state.n end");
+        var counter = _rig.AddItem("counter", "scripts/counter.lua");
+        F.Pockets(Me).Add(counter, 1);
+        F.Pockets(You).Add(counter, 1);
+        var mine = F.SlotOf(Me, counter);
+        _rig.Used(Me, mine);
+        _rig.Used(Me, mine);
+        Assert.Empty(_rig.Runtime.ExportItemStates(You.Peer));
+        var saved = _rig.Runtime.ExportItemStates(Me.Peer);
+        Assert.Equal(2, saved[counter]["n"]!.GetValue<double>());
+
+        // The player comes back as another peer: the state waits for their first use, and is there before setup.
+        _rig.Runtime.ImportItemStates(You.Peer, saved);
+        Assert.Equal(2, _rig.Runtime.ExportItemStates(You.Peer)[counter]["n"]!.GetValue<double>());
+        Assert.Equal(3, _rig.Used(You, F.SlotOf(You, counter)).GetValue<int>());
+
+        // A script already running takes it at once; forgetting a peer drops what was waiting.
+        _rig.Runtime.ImportItemStates(Me.Peer, new Dictionary<string, JsonObject> { [counter] = new() { ["n"] = 40 } });
+        Assert.Equal(41, _rig.Used(Me, mine).GetValue<int>());
+        _rig.Runtime.ImportItemStates(99, saved);
+        _rig.Runtime.ForgetItemStates(99);
+        Assert.Empty(_rig.Runtime.ExportItemStates(99));
+    }
+
     // ---- Farming (mods/vanilla/scripts/seed.lua and watering.lua) ----
 
     [Fact]

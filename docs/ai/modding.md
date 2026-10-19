@@ -16,7 +16,11 @@ Read these human docs for the formats; they are the source of truth:
 
 Rules every mod follows: units are SI; data is JSON (comments and trailing commas are fine);
 paths in data are relative to the mod root (`other_mod:path` for another mod's file), never absolute and
-never with `..`; ids are qualified `mod_id:id` (a bare id means vanilla); balance numbers live in data.
+never with `..`; balance numbers live in data. Game-wide ids are `mod_id:id`. A bare id means different
+things in two places: in Action API arguments (everything you send, including `actions.call` from a mod script)
+it means vanilla (`wheel` is `vanilla:wheel`), but in a mod's own data files it means that file's mod (a part in
+`my_mod` naming `seat` means `my_mod:seat`; sound ids fall back to vanilla's). Write another mod's ids in full.
+The whole rule is in [Ids and namespacing](../part-data-schema.md#ids-and-namespacing).
 
 ## Reading what is loaded
 
