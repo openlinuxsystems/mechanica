@@ -55,6 +55,15 @@ public class VanillaBotsTests
     }
 
     [Fact]
+    public void TheBlueScuttlerSwimsAndTheYellowAndRedOnesShowTheirBlasts()
+    {
+        Assert.Equal(["vanilla:scuttler_blue"], Book.Value.All.Where(b => b.SwimDepth is not null).Select(b => b.QualifiedId));
+        Assert.Equal(["vanilla:scuttler_blue"], Book.Value.All.Where(b => b.Wild is { Water: true }).Select(b => b.QualifiedId));
+        Assert.Equal(BotEffects.Shockwave, Book.Value.FindBot("scuttler_yellow")!.Model!.Effects["stomp"]);
+        Assert.Equal(BotEffects.Explosion, Book.Value.FindBot("scuttler_red")!.Model!.Effects["explode"]);
+    }
+
+    [Fact]
     public void BotsUseTheSpecNumbers()
     {
         // §11.6 and §21.2: health, damage, speed and the main drop's chance.
@@ -197,6 +206,8 @@ public class VanillaBotsTests
     [InlineData("""{ "mesh": "meshes/x.glb", "attacks": { "whip": [] } }""", "$.model.attacks.whip", "list one or more clip names.")]
     [InlineData("""{ "mesh": "meshes/x.glb", "eye_calm": "green" }""", "$.model.eye_calm", "eye_calm 'green' must be \"#rrggbb\".")]
     [InlineData("""{ "mesh": "meshes/x.glb", "clip_speeds": { "patrol": 0 } }""", "$.model.clip_speeds.patrol", "clip speed 0 must be above 0 m/s.")]
+    [InlineData("""{ "mesh": "meshes/x.glb", "effects": { "bite": "explosion" } }""", "$.model.effects.bite", "the bot has no attack 'bite' (use an attack id or \"death\").")]
+    [InlineData("""{ "mesh": "meshes/x.glb", "effects": { "whip": "lightning" } }""", "$.model.effects.whip", "effect 'lightning' must be one of: explosion, shockwave.")]
     public void BadModelsAreReported(string model, string path, string? message)
     {
         var bot = ModelBot(model);
@@ -206,10 +217,30 @@ public class VanillaBotsTests
         Assert.Contains(diagnostics, d => d.JsonPath == path && (message is null || d.Message == message));
     }
 
+    [Theory]
+    [InlineData("""{ "count": 2 }""", "$.wild.habitat", "habitat (water or land) is required.")]
+    [InlineData("""{ "habitat": "air", "count": 2 }""", "$.wild.habitat", "habitat 'air' must be water or land.")]
+    [InlineData("""{ "habitat": "water" }""", "$.wild.count", "count (how many near each player) is required.")]
+    [InlineData("""{ "habitat": "water", "count": 0 }""", "$.wild.count", "count must be 1 or more.")]
+    [InlineData("""{ "habitat": "water", "count": 1, "min_distance": 50, "max_distance": 40 }""", "$.wild.max_distance", "max_distance (40) must be more than min_distance (50).")]
+    [InlineData("""{ "habitat": "land", "count": 1, "despawn_distance": 60 }""", "$.wild.despawn_distance", "despawn_distance (60) must be more than max_distance (70).")]
+    public void BadWildSpawnsAreReported(string wild, string path, string message)
+    {
+        var bot = ModelBot(null) with
+        {
+            Wild = System.Text.Json.JsonSerializer.Deserialize<BotWildDefinition>(wild,
+                new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.SnakeCaseLower }),
+        };
+
+        var diagnostics = BotBook.Validate(bot, "test", null, Vanilla.Value, "test/bots/whipper.json");
+
+        Assert.Contains(diagnostics, d => d.JsonPath == path && d.Message == message);
+    }
+
     [Fact]
     public void AModelFillsInItsClipsAndEyeColours()
     {
-        var book = BotBook.From(Vanilla.Value, ("test", ModelBot("""{ "mesh": "meshes/bots/whipper.glb", "attacks": { "whip": ["slam", "sweep"] }, "clip_speeds": { "chase": 2 }, "eye_engaged": "#FF0000" }""")));
+        var book = BotBook.From(Vanilla.Value, ("test", ModelBot("""{ "mesh": "meshes/bots/whipper.glb", "attacks": { "whip": ["slam", "sweep"] }, "clip_speeds": { "chase": 2 }, "eye_engaged": "#FF0000", "effects": { "whip": "shockwave", "death": "explosion" } }""")));
 
         var model = book.FindBot("test:whipper")!.Model!;
 
@@ -218,6 +249,7 @@ public class VanillaBotsTests
         Assert.Equal(["poke"], model.Attacks["poke"]);
         Assert.Equal(2f, model.ClipSpeeds["chase"]);
         Assert.Equal((BotBook.DefaultEyeCalm, "#ff0000"), (model.EyeCalm, model.EyeEngaged));
+        Assert.Equal((BotEffects.Shockwave, BotEffects.Explosion), (model.Effects["whip"], model.Effects[BotEffects.Death]));
         Assert.Null(BotBook.From(Vanilla.Value, ("test", ModelBot(null))).FindBot("test:whipper")!.Model);
     }
 

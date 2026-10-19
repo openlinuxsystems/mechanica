@@ -98,7 +98,10 @@ public sealed class BotState
         LastUse.TryGetValue(attack.Id, out var last) ? (float)Math.Max(0, last + attack.Interval - now) : 0f;
 
     /// <summary>The view clients are sent.</summary>
-    public BotView View => new(Id, Type.QualifiedId, Position.ToVec3(), Yaw, Health, Type.Health, Dead, Raid, Engaged);
+    public BotView View => new(Id, Type.QualifiedId, Position.ToVec3(), Yaw, Health, Type.Health, Dead, Raid, Engaged, Swimming);
+
+    /// <summary>Whether it is swimming: a swimmer (<see cref="Bot.SwimDepth"/>) in water.</summary>
+    public bool Swimming => InWater && Type.SwimDepth is not null;
 }
 
 /// <summary>
@@ -286,8 +289,12 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
     /// <summary>Where the game moved a bot this tick, and whether it is in water.</summary>
     public void Moved(int id, Vector3 feet, bool inWater)
     {
-        if (_bots.TryGetValue(id, out var bot))
-            (bot.Position, bot.InWater) = (feet, inWater);
+        if (!_bots.TryGetValue(id, out var bot))
+            return;
+        var swimming = bot.Swimming;
+        (bot.Position, bot.InWater) = (feet, inWater);
+        if (bot.Swimming != swimming && !bot.Dead)
+            Changed?.Invoke(bot);
     }
 
     /// <summary>

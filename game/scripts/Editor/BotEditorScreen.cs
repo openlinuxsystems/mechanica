@@ -527,6 +527,7 @@ public partial class BotEditorScreen : Control
         _botGrid.AddNumber("Health", Num(j, "health"), 1, 100000, 1, v => d.Set("health", Value(v)));
         _botGrid.AddNumber("Speed", Num(j, "speed"), 0, 50, 0.1, v => d.Set("speed", Value(v)), suffix: " m/s");
         _botGrid.AddNumber("Water speed", Num(j, "water_speed"), 0, 50, 0.1, v => d.Set("water_speed", Value(v)), optional: true, suffix: " m/s");
+        _botGrid.AddNumber("Swim depth", Num(j, "swim_depth"), 0.05, 50, 0.05, v => d.Set("swim_depth", Value(v)), optional: true, suffix: " m");
         _botGrid.AddNumber("Sight", Num(j, "sight"), 0, 500, 1, v => d.Set("sight", Value(v)), optional: true, fallback: 30, suffix: " m");
         _botGrid.AddNumber("Radius", Num(j["size"], "radius"), 0.05, 10, 0.05, v => SetSize(d, "radius", v), optional: true, fallback: 0.4, suffix: " m");
         _botGrid.AddNumber("Height", Num(j["size"], "height"), 0.1, 20, 0.05, v => SetSize(d, "height", v), optional: true, fallback: 1.2, suffix: " m");
@@ -539,6 +540,7 @@ public partial class BotEditorScreen : Control
         _botGrid.AddJson("Attacks", Pretty(j["attacks"]), text => SetJson(d, "attacks", text));
         _botGrid.AddJson("Drops", Pretty(j["drops"]), text => SetJson(d, "drops", text));
         _botGrid.AddJson("Properties", Pretty(j["properties"]), text => SetJson(d, "properties", text));
+        _botGrid.AddJson("Wild", Pretty(j["wild"]), text => SetJson(d, "wild", text));
         _botGrid.AddHeading("Model and animation");
         _botGrid.AddJson("Model", Pretty(j["model"]), text => SetJson(d, "model", text));
     }

@@ -193,6 +193,8 @@ public class FloraTests
     [InlineData("""{ "grass_distanse": 10 }""", "grass_distanse")]
     [InlineData("""{ "thin_keep": 2 }""", "thin_keep")]
     [InlineData("""{ "thin_scale": 0 }""", "thin_scale")]
+    [InlineData("""{ "blend_share": 0.8 }""", "blend_share")]
+    [InlineData("""{ "appear_time": -1 }""", "appear_time")]
     public void BadFloraSettingsAreRejected(string json, string message)
     {
         var e = Assert.Throws<FormatException>(() => FloraSettings.FromJson(json));
