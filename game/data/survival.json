@@ -46,11 +46,5 @@
   "fall": {
     "min_speed": 11,
     "damage_per_speed": 8
-  },
-  "impact": {
-    "min_speed": 8,
-    "speed_per_durability": 1,
-    "damage_per_speed": 5,
-    "depth": 0.2
   }
 }

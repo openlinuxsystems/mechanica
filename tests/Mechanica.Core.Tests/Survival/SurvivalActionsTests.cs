@@ -744,27 +744,6 @@ public class SurvivalActionsTests
         Assert.Equal(0, f.Pockets(Me).Count(Block));
     }
 
-    // ---- Impacts ----
-
-    [Fact]
-    public void ACrashDamagesTheLeadingParts()
-    {
-        var creation = new Creation(_f.World.NextCreationId(), _f.Catalog);
-        Assert.True(creation.TryPlacePart(Block, new GridCell(0, 0, 0), default, out _, out _));
-        Assert.True(creation.TryPlacePart(Block, new GridCell(0, 1, 0), default, out _, out _));
-        creation.SetAllBodyPoses(Pose.Identity);
-        _f.World.Added(creation);
-
-        Assert.Empty(_f.Survival.Impact(creation, 0, new Vector3(0, 7, 0))); // under impact.min_speed
-        Assert.Empty(_f.Survival.Impact(creation, 0, new Vector3(0, 10, 0))); // under 8 + durability 2
-        Assert.Equal([1], _f.Survival.Impact(creation, 0, new Vector3(0, 12, 0))); // pushed up: the bottom part hit
-        Assert.Equal(10f, creation.PartDamage(1));
-        Assert.Equal(0f, creation.PartDamage(2));
-
-        var creative = new SurvivalFixture(mode: GameMode.Creative);
-        Assert.Empty(creative.Survival.Impact(creation, 0, new Vector3(0, 50, 0)));
-    }
-
     private SoilView View(int creation) => _f.Survival.SoilViewOf(_f.World.FindCreation(creation)!, 1);
 
     private sealed class Vector3Comparer(float tolerance) : IEqualityComparer<Vector3>
