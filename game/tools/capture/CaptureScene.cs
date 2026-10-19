@@ -63,11 +63,14 @@ public partial class CaptureScene : Node
         var trees = args.Length > 1 && args[1] == "trees";
         var seats = args.Length > 1 && args[1] == "seats";
         var wheels = args.Length > 1 && args[1] == "wheels";
-        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats && !wheels ? args[1] : "scrapper_male";
+        var debugCar = args.Length > 1 && args[1] == "debug_car";
+        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats && !wheels && !debugCar
+            ? args[1] : "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
         // Building the block wall needs Creative: free parts and no build reach.
         _main.Options = LaunchOptions.Offline with { Seed = 7, GameMode = blocks || soil || wheels ? Core.Survival.GameMode.Creative : LaunchOptions.Offline.GameMode };
         _main.ReadDeviceInput = icons || wheels;
+        _main.DebugCar = debugCar;
         AddChild(_main);
         _camera = new Camera3D { Fov = 40 };
         AddChild(_camera);
@@ -129,6 +132,11 @@ public partial class CaptureScene : Node
         if (wheels)
         {
             WheelShots();
+            return;
+        }
+        if (debugCar)
+        {
+            DebugCarShots();
             return;
         }
         Shot("front", 60, () => Look(new Vector3(0, 1.0f, -3.2f)));
@@ -977,6 +985,72 @@ public partial class CaptureScene : Node
         _main.Creations.Add(car, _main.Assets);
     }
 
+    private (Vector3 From, Vector3 To)? _carView;
+
+    // The debug scrap car a new debug world gets (Main.DebugCar): around it, the player beside it, then sitting in it,
+    // driving off on W and turning on D (tools/capture-debug-car.sh). Views are in the car's frame: x across its 1.5 m
+    // deck, y up, z from its front (0) to its back (3 m); it faces -Z.
+    private void DebugCarShots()
+    {
+        Engine.TimeScale = 1.0;
+        var middle = new Vector3(0.625f, 0.4f, 1.375f);
+        void Car(Vector3 from, Vector3? to = null)
+        {
+            _follow = null;
+            _camera.MakeCurrent();
+            _carView = (from, to ?? middle);
+        }
+        void Report(string what)
+        {
+            var id = _main.DebugCarId!.Value;
+            var creation = _main.Creations.Find(id)!;
+            var container = creation.Parts.First(p => p.Part == "vanilla:gas_container").Id;
+            var chassis = _main.Creations.NodeOf(id)!.Bodies[0];
+            GD.Print($"[capture] car {what}: at {chassis.GlobalPosition}, up {chassis.GlobalBasis.Y}, speed {chassis.LinearVelocity.Length():F2} m/s, "
+                + $"gasoline {creation.InventoryOf(container)!.Count("vanilla:gasoline")}");
+        }
+        Shot("debug_car_00_wait", 240, () => GameSettings.Apply(GameSettings.Current with
+        {
+            Graphics = GameSettings.Current.Graphics with { Grass = FoliageLevel.Off, GroundCover = FoliageLevel.Off },
+        }));
+        Shot("debug_car_01_front", 60, () => { Report("settled"); Car(new Vector3(3.6f, 2.0f, -3.2f)); });
+        Shot("debug_car_02_side", 60, () => Car(new Vector3(5.2f, 1.2f, 1.4f)));
+        Shot("debug_car_03_rear", 60, () => Car(new Vector3(-2.8f, 2.4f, 6.0f)));
+        Shot("debug_car_04_top", 60, () => Car(new Vector3(0.625f, 6.5f, 2.6f), new Vector3(0.625f, 0f, 1.4f)));
+        Shot("debug_car_05_axle", 60, () => Car(new Vector3(2.6f, 0.15f, -2.4f), new Vector3(0.6f, -0.4f, 0.4f)));
+        Shot("debug_car_06_spawn", 60, () => Car(new Vector3(-5f, 3.2f, 16f), new Vector3(-1f, 0.4f, 3.5f)));
+        Shot("debug_car_07_sit", 120, () =>
+        {
+            var id = _main.DebugCarId!.Value;
+            var seat = _main.Creations.Find(id)!.Parts.First(p => p.Part == "vanilla:scrap_drivers_seat").Id;
+            // The player walks up to the car's left side first: seats are in reach from there.
+            _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, _main.Creations.NodeOf(id)!.Bodies[0].GlobalTransform * new Vector3(-1.2f, 0f, 1.5f), 0f);
+            Player.ThirdPerson = true; // shows the driver
+            _main.Actions.Request(Core.Logic.LogicActions.EnterSeat, new Core.Logic.LogicPartArgs(id, seat), r => GD.Print($"[capture] sit: {r}"));
+            Car(new Vector3(3.2f, 2.0f, -2.6f));
+        });
+        Shot("debug_car_08_seated_side", 60, () => Car(new Vector3(4.0f, 1.4f, 2.0f)));
+        Shot("debug_car_09_drive", 300, () =>
+        {
+            Report("before W");
+            Player.CurrentInput = new PlayerInput(0, 1, Player.CurrentInput.Yaw, 0, false, false);
+            Car(new Vector3(2.5f, 2.6f, 8.5f));
+        });
+        Shot("debug_car_10_turn", 180, () =>
+        {
+            Report("after 5 s of W");
+            Player.CurrentInput = new PlayerInput(1, 1, Player.CurrentInput.Yaw, 0, false, false);
+            Car(new Vector3(-3.5f, 3.0f, 7.5f));
+        });
+        Shot("debug_car_11_stop", 120, () =>
+        {
+            Report("after 3 s of W and D");
+            Player.CurrentInput = new PlayerInput(0, 0, Player.CurrentInput.Yaw, 0, false, false);
+            Car(new Vector3(5.5f, 3.0f, -2.5f));
+        });
+        Shot("debug_car_12_done", 2, () => Report("stopped"));
+    }
+
     private static readonly string[] IconItems = [.. Core.Items.HotbarTools.All, "vanilla:gas_engine", "vanilla:wheel", "vanilla:chest", "vanilla:water_bucket", "vanilla:water_bucket_full"];
 
     // Each picture is saved as it becomes ready; the last shot is the HUD, with the hotbar showing the tools.
@@ -1196,6 +1270,12 @@ public partial class CaptureScene : Node
         if (_main.LocalPlayer is null || _main.Characters.LocalNeedsChoice || Player.Character is null)
             return;
         _iconTick?.Invoke();
+        if (_carView is { } car && _main.DebugCarId is { } carId && _main.Creations.NodeOf(carId) is { } carNode)
+        {
+            var chassis = carNode.Bodies[0].GlobalTransform;
+            _camera.GlobalPosition = chassis * car.From;
+            _camera.LookAt(chassis * car.To);
+        }
         if (_follow is { } offset)
         {
             var basis = Player.GlobalTransform.Basis;
