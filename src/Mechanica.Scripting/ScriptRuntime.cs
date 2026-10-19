@@ -82,6 +82,10 @@ public sealed partial class ScriptRuntime
         // Event topics the script listens to (events.listen).
         public HashSet<string> Topics { get; } = new(StringComparer.Ordinal);
 
+        // Timers the script started (timer.after, timer.every); a fresh start or a stop drops them.
+        public List<Timer> Timers { get; set; } = [];
+        public int LastTimer { get; set; }
+
         // Placed parts: not items or mod scripts.
         public bool IsPart => !IsItem && !IsWorld;
 
@@ -268,6 +272,7 @@ public sealed partial class ScriptRuntime
         _stepping.AddRange(_worlds);
         foreach (var instance in _stepping)
         {
+            FireTimers(instance, dt);
             if (instance.Fault is null)
                 CallHook(instance, Hooks.OnUpdate, arg);
         }
@@ -275,7 +280,10 @@ public sealed partial class ScriptRuntime
         _stepping.AddRange(_instances.Values);
         foreach (var instance in _stepping)
         {
-            if (instance.Fault is null && _motion.IsLive(instance.Creation))
+            if (instance.Fault is not null || !_motion.IsLive(instance.Creation))
+                continue;
+            FireTimers(instance, dt);
+            if (instance.Fault is null)
                 CallHook(instance, Hooks.OnUpdate, arg);
         }
         CollectOutputs();
@@ -511,6 +519,7 @@ public sealed partial class ScriptRuntime
         instance.Warned.Clear();
         // The top level listens again (events.listen), so a reload drops topics the new code no longer wants.
         instance.Topics.Clear();
+        instance.Timers = [];
         instance.Version = entry.Version;
         if (Run(instance, entry.Factory, "loading", DynValue.NewTable(env)) is null)
             return;
@@ -586,6 +595,7 @@ public sealed partial class ScriptRuntime
     private void Stop(Instance instance, string fault)
     {
         instance.Fault = fault;
+        instance.Timers = [];
         StopLoops(instance);
         if (instance.IsPart)
         {

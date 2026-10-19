@@ -47,6 +47,9 @@ public sealed record ScriptSettings
     /// <summary>Most events waiting for scripts' <c>on_event</c> between steps; the oldest are dropped past it.</summary>
     public int MaxQueuedEvents { get; init; } = 1024;
 
+    /// <summary>Most timers one script may run at once (<c>timer.after</c>, <c>timer.every</c>).</summary>
+    public int MaxTimersPerScript { get; init; } = 64;
+
     /// <summary>Longest a projectile may fly, in s (and how long it flies when a script doesn't say).</summary>
     public float MaxProjectileLifetime { get; init; } = 10f;
 
@@ -90,6 +93,8 @@ public sealed record ScriptSettings
             throw new FormatException($"max_projectiles must be 0 or more (got {MaxProjectiles}).");
         if (MaxQueuedEvents < 1)
             throw new FormatException($"max_queued_events must be positive (got {MaxQueuedEvents}).");
+        if (MaxTimersPerScript < 0)
+            throw new FormatException($"max_timers_per_script must be 0 or more (got {MaxTimersPerScript}).");
         if (!float.IsFinite(MaxProjectileLifetime) || MaxProjectileLifetime <= 0f)
             throw new FormatException($"max_projectile_lifetime must be a positive number (got {MaxProjectileLifetime}).");
     }

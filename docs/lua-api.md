@@ -50,7 +50,7 @@ end
 
 Limits live in `game/data/scripting.json`: `instruction_budget` (per hook call),
 `reload_poll_seconds`, `max_string_length`, `max_ray_length`, `max_overlap_radius`,
-`max_messages`, `max_loops_per_part`, `max_projectiles`, `max_projectile_lifetime` and `max_queued_events`. The motion
+`max_messages`, `max_loops_per_part`, `max_projectiles`, `max_projectile_lifetime`, `max_queued_events` and `max_timers_per_script`. The motion
 limits (largest force, torque, bearing speed and piston force) are in
 `game/data/motion.json`.
 
@@ -467,6 +467,32 @@ return M
 
 -- scripts/thruster.lua
 local maths = require("scripts/lib/maths.lua")
+```
+
+## `timer`
+
+Mod and part scripts can ask to be called later instead of counting seconds in `on_update`. Timers count game
+time: they fire at the start of a step, before `on_update`, and a part's timers wait while its Creation is not
+simulated. A reload or a stopped script ends its timers (they are not saved), so start them again in `on_create`.
+A script runs at most `max_timers_per_script` at once.
+
+| Function | Returns |
+|----------|---------|
+| `timer.after(seconds, fn)` | Calls `fn(id)` once, `seconds` from now (0 means the next step); returns the timer's id. |
+| `timer.every(seconds, fn)` | Calls `fn(id)` every `seconds` (more than 0, at most once a step) until cancelled; returns the id. |
+| `timer.cancel(id)` | Stops the timer; true when it was still waiting. |
+| `timer.count()` | How many of this script's timers are waiting. |
+
+```lua
+function on_create()
+  state.minutes = state.minutes or 0
+  timer.every(60, function(id)
+    state.minutes = state.minutes + 1
+    print(state.minutes .. " minutes played")
+    if state.minutes >= 10 then timer.cancel(id) end
+  end)
+  timer.after(5, function() print("five seconds in") end)
+end
 ```
 
 ## `vec3`

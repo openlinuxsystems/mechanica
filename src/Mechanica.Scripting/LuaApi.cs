@@ -4,7 +4,7 @@ namespace Mechanica.Scripting;
 /// <param name="Name">What a script writes: <c>part.apply_force</c>, <c>on_update</c>, <c>state</c>.</param>
 /// <param name="Signature">How it is called, e.g. <c>part.apply_force(force, at?)</c>.</param>
 /// <param name="Summary">One line on what it does.</param>
-/// <param name="Group">Section: Hooks, Globals, part, creation, world, sound, soil, player, item, holder, inventory, combat, farm, fire, events, actions or vec3.</param>
+/// <param name="Group">Section: Hooks, Globals, part, creation, world, sound, soil, player, item, holder, inventory, combat, farm, fire, events, actions, timer or vec3.</param>
 public sealed record LuaApiEntry(string Name, string Signature, string Summary, string Group);
 
 /// <summary>
@@ -158,6 +158,11 @@ public static class LuaApi
 
         new("actions.call", "actions.call(name, args?)", "Calls an Action API action as the host (mod scripts; part and item scripts only actions that read): true and its value, or false and why.", "actions"),
         new("actions.list", "actions.list()", "The names of the actions actions.call can call.", "actions"),
+
+        new("timer.after", "timer.after(seconds, fn)", "Mod and part scripts: calls fn(id) once after seconds of game time; returns the timer's id.", "timer"),
+        new("timer.every", "timer.every(seconds, fn)", "Mod and part scripts: calls fn(id) every seconds of game time (at most once a step) until cancelled; returns the id.", "timer"),
+        new("timer.cancel", "timer.cancel(id)", "Stops a timer; true when it was still waiting.", "timer"),
+        new("timer.count", "timer.count()", "How many of this script's timers are waiting.", "timer"),
 
         new("vec3", "vec3(x, y, z)", "A vector with x, y, z. Supports + - * / unary minus, == and tostring.", "vec3"),
         new("vec3.dot", "a:dot(b)", "Dot product.", "vec3"),
