@@ -247,9 +247,9 @@
         "properties": {
           "seconds": 150,
           "douse": 1,
-          "splash": 1.2,
-          "range": 8,
-          "throw_speed": 7,
+          "splash": 2.5,
+          "range": 14,
+          "throw_speed": 11,
           "throw_up": 0.35,
           "empty": "water_bucket"
         }

@@ -35,6 +35,35 @@
   "max_body_turn_degrees": 60.0,
   "body_turn_rate": 540.0,
   "seated_offset": 0.0,
+  // How the body moves under the clips (CharacterSettings.cs MotionSettings): the feet stay planted while the look
+  // turns, up to turn_in_place_degrees, then step round (turn_l, turn_r); the upper body twists toward the look over the
+  // spine, chest, neck and head (twist_shares); the body leans into speeding up, slowing and turning on a spring; a
+  // jump at run_jump_speed or faster is a leap; swings and throws use the legs while standing (below gesture_legs_speed);
+  // after standing still a while the fidgets play in turn; hit reactions fade in fast and a knockdown lies a moment;
+  // moving with something in hand, hold_carry of the stride's spine sway (and a free left arm's swing) still shows.
+  "motion": {
+    "turn_in_place_degrees": 55,
+    "max_twist_degrees": 95,
+    "moving_twist_share": 0.8,
+    "twist_shares": [0.3, 0.35, 0.15, 0.2],
+    "blend_seconds": 0.12,
+    "lean_per_acceleration": 1.2,
+    "max_lean_degrees": 11,
+    "run_lean_degrees": 7,
+    "run_lean_speeds": [4, 7],
+    "lean_stiffness": 90,
+    "lean_damping": 13,
+    "run_jump_speed": 3,
+    "gesture_legs_speed": 1.2,
+    "fidgets": ["idle_look", "idle_stretch"],
+    "fidget_after": [9, 15, 12],
+    "fidget_fade": 0.5,
+    "reaction_fade_in": 0.04,
+    "reaction_fade_out": 0.2,
+    "lie_seconds": 0.6,
+    "hold_carry": 0.8,
+    "carry_full_speed": 1
+  },
   // Sitting (src/Mechanica.Core/Characters/CharacterSettings.cs SeatRideSettings). The legs blend the chair pose (sit) with the
   // low-seat pose (sit_low) so the hips land clip_hips above the feet's floor, hips_above_cushion over the seat's cushion. The
   // hips bob and the upper body sways on springs that each change in the seat's velocity pushes (times the seat's bounce):

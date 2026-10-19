@@ -85,6 +85,12 @@ public sealed record CharacterSettings
     /// <summary>How fast the body turns, in degrees per second.</summary>
     public float BodyTurnRate { get; init; } = 540f;
 
+    /// <summary>
+    /// How the body moves beyond its clips: turning on the spot, leaning into speeding up and turning, idle fidgets,
+    /// hit reactions (<see cref="MotionSettings"/>).
+    /// </summary>
+    public MotionSettings Motion { get; init; } = new();
+
     /// <summary>How far the model moves up from the seat point while sitting, in metres (negative is down).</summary>
     public float SeatedOffset { get; init; } = 0f;
 
@@ -185,6 +191,7 @@ public sealed record CharacterSettings
             throw new FormatException($"head_pitch_share must be from 0 to 1 (got {HeadPitchShare}).");
         Bucket.Validate();
         PaintTool.Validate();
+        Motion.Validate();
         Seat.Validate();
         if (FirstPersonOffset is not { Length: 3 } || FirstPersonOffset.Any(v => !float.IsFinite(v) || MathF.Abs(v) > 3f))
             throw new FormatException("first_person_offset must be three numbers from -3 to 3 metres.");
@@ -213,6 +220,125 @@ public sealed record CharacterSettings
     {
         if (!float.IsFinite(value) || value < 0f)
             throw new FormatException($"{name} must be zero or positive (got {value}).");
+    }
+}
+
+/// <summary>
+/// How the body moves beyond its clips (<c>motion</c> in <c>character.json</c>). Angles are degrees, times seconds.
+/// </summary>
+public sealed record MotionSettings
+{
+    /// <summary>
+    /// How far the look may turn from where the feet point, standing, before they step round to follow it
+    /// (<c>turn_l</c>, <c>turn_r</c>). Meanwhile the chest, neck and head take the turn.
+    /// </summary>
+    public float TurnInPlaceDegrees { get; init; } = 55f;
+
+    /// <summary>The furthest the upper body turns from the feet; a look that turns faster drags the feet round.</summary>
+    public float MaxTwistDegrees { get; init; } = 95f;
+
+    /// <summary>How much of the body's turn toward a sideways move the upper body undoes, so it keeps facing the look (0 to 1).</summary>
+    public float MovingTwistShare { get; init; } = 0.8f;
+
+    /// <summary>
+    /// The upper body's turn from the feet, shared out from the spine to the head (four numbers adding up to about 1),
+    /// so the chest and the tool in hand face where the player looks.
+    /// </summary>
+    public float[] TwistShares { get; init; } = [0.3f, 0.35f, 0.15f, 0.2f];
+
+    /// <summary>
+    /// How long the speed that picks the moving clips takes to catch up with the real one, so starting and stopping blend
+    /// rather than snap.
+    /// </summary>
+    public float BlendSeconds { get; init; } = 0.12f;
+
+    /// <summary>Lean into speeding up, slowing down and turning, in degrees per m/s² of acceleration.</summary>
+    public float LeanPerAcceleration { get; init; } = 1.2f;
+
+    /// <summary>The furthest lean.</summary>
+    public float MaxLeanDegrees { get; init; } = 11f;
+
+    /// <summary>How far forward the body leans into a run at full sprint, on top of the clips' own lean.</summary>
+    public float RunLeanDegrees { get; init; } = 7f;
+
+    /// <summary>Ground speeds (m/s) between which the run lean builds: none at the first, all of it at the second.</summary>
+    public float[] RunLeanSpeeds { get; init; } = [4f, 7f];
+
+    /// <summary>The lean's spring: how stiff it is (1/s²) and how fast it settles (1/s); a little overshoot reads as weight.</summary>
+    public float LeanStiffness { get; init; } = 90f;
+
+    /// <summary>The lean's damping (1/s).</summary>
+    public float LeanDamping { get; init; } = 13f;
+
+    /// <summary>Speed at take-off from which a jump is a running leap (<c>jump_run</c>).</summary>
+    public float RunJumpSpeed { get; init; } = 3f;
+
+    /// <summary>
+    /// Speed at which a gesture's legs (<see cref="CharacterRig.LegGestures"/>) have given way to the walking legs.
+    /// </summary>
+    public float GestureLegsSpeed { get; init; } = 1.2f;
+
+    /// <summary>The idle fidgets played in turn after standing still a while (whole-body clips).</summary>
+    public string[] Fidgets { get; init; } = ["idle_look", "idle_stretch"];
+
+    /// <summary>Seconds of standing still before each fidget in turn (it repeats).</summary>
+    public float[] FidgetAfter { get; init; } = [9f, 15f, 12f];
+
+    /// <summary>Fade into and out of a fidget.</summary>
+    public float FidgetFade { get; init; } = 0.5f;
+
+    /// <summary>Fade into a hit reaction.</summary>
+    public float ReactionFadeIn { get; init; } = 0.04f;
+
+    /// <summary>Fade out of a hit reaction at its end.</summary>
+    public float ReactionFadeOut { get; init; } = 0.2f;
+
+    /// <summary>How long a knocked-down player lies on the ground before getting up.</summary>
+    public float LieSeconds { get; init; } = 0.6f;
+
+    /// <summary>
+    /// How much of the stride's own spine sway (and a free left arm's swing) shows under a hold clip while moving, 0 to 1,
+    /// so a player carrying a tool still walks like one rather than gliding with a frozen torso.
+    /// </summary>
+    public float HoldCarry { get; init; } = 0.8f;
+
+    /// <summary>Speed (m/s) from which all of <see cref="HoldCarry"/> shows; slower, less.</summary>
+    public float CarryFullSpeed { get; init; } = 1f;
+
+    /// <summary>Throws <see cref="FormatException"/> naming the first out-of-range value.</summary>
+    public void Validate()
+    {
+        Degrees(TurnInPlaceDegrees, 5f, 170f, "motion.turn_in_place_degrees");
+        Degrees(MaxTwistDegrees, TurnInPlaceDegrees, 179f, "motion.max_twist_degrees");
+        Degrees(MovingTwistShare, 0f, 1f, "motion.moving_twist_share");
+        if (TwistShares is not { Length: 4 } || TwistShares.Any(v => !float.IsFinite(v) || v < 0f) || TwistShares.Sum() is < 0.5f or > 1.5f)
+            throw new FormatException("motion.twist_shares must be four shares (spine, chest, neck, head) adding up to about 1.");
+        CharacterSettings.Positive(BlendSeconds, "motion.blend_seconds");
+        CharacterSettings.NonNegative(LeanPerAcceleration, "motion.lean_per_acceleration");
+        Degrees(MaxLeanDegrees, 0f, 45f, "motion.max_lean_degrees");
+        Degrees(RunLeanDegrees, 0f, 30f, "motion.run_lean_degrees");
+        if (RunLeanSpeeds is not { Length: 2 } || !float.IsFinite(RunLeanSpeeds[0]) || !(RunLeanSpeeds[1] > RunLeanSpeeds[0]) || !float.IsFinite(RunLeanSpeeds[1]))
+            throw new FormatException("motion.run_lean_speeds must be two rising speeds.");
+        CharacterSettings.Positive(LeanStiffness, "motion.lean_stiffness");
+        CharacterSettings.Positive(LeanDamping, "motion.lean_damping");
+        CharacterSettings.Positive(RunJumpSpeed, "motion.run_jump_speed");
+        CharacterSettings.Positive(GestureLegsSpeed, "motion.gesture_legs_speed");
+        if (Fidgets is null || Fidgets.Any(string.IsNullOrWhiteSpace))
+            throw new FormatException("motion.fidgets must be clip names.");
+        if (FidgetAfter is not { Length: > 0 } || FidgetAfter.Any(v => !float.IsFinite(v) || v < 1f))
+            throw new FormatException("motion.fidget_after must be one or more times of at least 1 second.");
+        CharacterSettings.Positive(FidgetFade, "motion.fidget_fade");
+        CharacterSettings.Positive(ReactionFadeIn, "motion.reaction_fade_in");
+        CharacterSettings.Positive(ReactionFadeOut, "motion.reaction_fade_out");
+        CharacterSettings.NonNegative(LieSeconds, "motion.lie_seconds");
+        Degrees(HoldCarry, 0f, 1f, "motion.hold_carry");
+        CharacterSettings.Positive(CarryFullSpeed, "motion.carry_full_speed");
+    }
+
+    private static void Degrees(float value, float min, float max, string name)
+    {
+        if (!float.IsFinite(value) || value < min || value > max)
+            throw new FormatException($"{name} must be from {min} to {max} (got {value}).");
     }
 }
 

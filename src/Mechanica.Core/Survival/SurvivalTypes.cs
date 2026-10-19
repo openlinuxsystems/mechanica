@@ -1,5 +1,6 @@
 using System.Numerics;
 using Mechanica.Core.Building;
+using Mechanica.Core.Characters;
 using Mechanica.Core.Creations;
 using Mechanica.Core.Data;
 using Mechanica.Core.Items;
@@ -123,6 +124,9 @@ public sealed record ItemDrop(int Id, Vec3 Position, IReadOnlyList<ItemStack> It
 /// <param name="Bot">The bot hit.</param>
 public sealed record ShotHitView(string Kind, Vec3 Point, float Damage, int? Player = null, int? Creation = null, int? Part = null, string? Object = null, int? Bot = null);
 
+/// <summary>A blow a player lived through: who, how hard it rocked them, and where it came from (null: nowhere in particular).</summary>
+public sealed record PlayerHitView(int Peer, HitReaction Reaction, Vec3? From);
+
 /// <summary>A projectile in flight, as clients are sent it to draw (<see cref="SurvivalActions.Launch"/>).</summary>
 /// <param name="Id">Projectile id.</param>
 /// <param name="Owner">Peer whose player launched it.</param>
@@ -132,7 +136,8 @@ public sealed record ShotHitView(string Kind, Vec3 Point, float Damage, int? Pla
 /// <param name="Lifetime">Seconds it flies before it ends where it is.</param>
 /// <param name="Age">Seconds it had flown when this view was made. Its position is From + Velocity·t + ½·Gravity·t².</param>
 /// <param name="Look">How it is drawn: <see cref="ProjectileView.Water"/> for a splash of water, null for a plain ball.</param>
-public sealed record ProjectileView(int Id, int Owner, Vec3 From, Vec3 Velocity, Vec3 Gravity, float Lifetime, float Age, string? Look = null)
+/// <param name="Size">How big its look is drawn, in metres: for water, the radius its splash spreads over. Null: the look's own size.</param>
+public sealed record ProjectileView(int Id, int Owner, Vec3 From, Vec3 Velocity, Vec3 Gravity, float Lifetime, float Age, string? Look = null, float? Size = null)
 {
     /// <summary>The <see cref="Look"/> of thrown water: a blob that bursts into a splash where it lands.</summary>
     public const string Water = "water";
@@ -212,6 +217,9 @@ public interface ISurvivalWorld
 
     /// <summary>A world object that still stands, or null.</summary>
     WorldObjectPlacement? FindObject(WorldObjectId id);
+
+    /// <summary>A loot table of the world's generation rules (<c>loot_tables</c> in worldgen.json), or null.</summary>
+    LootTableDefinition? FindLootTable(string id) => null;
 
     /// <summary>World objects that still stand within <paramref name="radius"/> of <paramref name="point"/>.</summary>
     IEnumerable<WorldObjectPlacement> ObjectsNear(Vector3 point, float radius);

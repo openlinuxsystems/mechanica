@@ -141,7 +141,7 @@ public static class LuaApi
         new("combat.hitscan", "combat.hitscan(from, direction, range, damage, impulse?)", "A cast plus a hit along the ray; returns the hit with damage dealt, or nil.", "combat"),
         new("combat.splash", "combat.splash(at, radius, damage, impulse?)", "Damage falling off to 0 at radius m around at, for players, parts and world objects; returns a list of hits.", "combat"),
         new("combat.pellets", "combat.pellets(direction, count, spread)", "count directions: the first along direction, the rest evenly round a cone of spread degrees.", "combat"),
-        new("combat.projectile", "combat.projectile(from, velocity, options?)", "Launches a projectile ({gravity?, lifetime?, data?, look?}; look \"water\" draws thrown water); on_hit runs where it lands. Returns its id.", "combat"),
+        new("combat.projectile", "combat.projectile(from, velocity, options?)", "Launches a projectile ({gravity?, lifetime?, data?, look?, size?}; look \"water\" draws thrown water, size is how big it is drawn in metres, for water the radius its splash spreads over); on_hit runs where it lands. Returns its id.", "combat"),
 
         new("farm.soil", "farm.soil(creation, part)", "A soil part in the holder's reach: {seed?, crop?, stage, ripe, water, capacity}, or nil and why.", "farm"),
         new("farm.plant", "farm.plant(creation, part, seed?)", "Plants seed (default: this item) in empty soil in reach; returns the soil, or nil and why. Takes no items.", "farm"),

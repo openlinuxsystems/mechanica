@@ -29,11 +29,19 @@ public partial class TerrainChunk : Node3D
     private static readonly Dictionary<string, Creations.PartMesh?> ObjectMeshes = [];
 
     /// <summary>Forgets the world objects' models, so a new world reads its mods' files afresh.</summary>
-    public static void ClearModels() => ObjectMeshes.Clear();
+    public static void ClearModels()
+    {
+        ObjectMeshes.Clear();
+        AnimatedObject.ClearModels();
+    }
 
     private readonly Dictionary<ulong, WorldObjectId> _objectShapes = [];
     // Model-drawn objects close up, for shaking: their MultiMesh, instance and resting transform, and their ground point.
     private readonly Dictionary<WorldObjectId, (MultiMesh Multi, int Index, Transform3D Resting, Vector3 Foot)> _drawn = [];
+    // Objects drawn as their own animated model (the Bloom Pods).
+    private readonly Dictionary<WorldObjectId, AnimatedObject> _animated = [];
+    // True while the chunk first builds its objects, when animated ones play their appear clip.
+    private bool _appearing;
     // Objects shaking now: the axis they lean about and when the shake started.
     private readonly Dictionary<WorldObjectId, (Vector3 Axis, double Started)> _shaking = [];
 
@@ -101,7 +109,9 @@ public partial class TerrainChunk : Node3D
         AddChild(Objects);
         Brush = new Area3D { Name = "Brush", Monitoring = false };
         AddChild(Brush);
+        _appearing = true;
         BuildObjects();
+        _appearing = false;
         BuildStructures();
         BuildRoads();
         SetProcess(false);
@@ -146,9 +156,13 @@ public partial class TerrainChunk : Node3D
         }
         _objectShapes.Clear();
         _drawn.Clear();
+        _animated.Clear();
         _shaking.Clear();
         BuildObjects();
     }
+
+    /// <summary>The animated model drawing <paramref name="id"/> in this chunk, or null.</summary>
+    public AnimatedObject? Animated(WorldObjectId id) => _animated.GetValueOrDefault(id);
 
     /// <summary>Objects shaking now (a hit tree), for tests.</summary>
     public int Shaking => _shaking.Count;
@@ -159,6 +173,8 @@ public partial class TerrainChunk : Node3D
     /// </summary>
     public bool Shake(WorldObjectId id, Vector3 at)
     {
+        if (_animated.TryGetValue(id, out var animated))
+            return animated.Hit();
         if (!_drawn.TryGetValue(id, out var drawn))
             return false;
         var away = drawn.Foot + Position - at;
@@ -311,6 +327,14 @@ public partial class TerrainChunk : Node3D
                 };
                 (o.Definition.Solid ? (Node)Objects : Brush).AddChild(shape);
                 _objectShapes[shape.GetInstanceId()] = o.Id;
+            }
+            // An animated model (a Bloom Pod) is its own scene, so it can play its clips and give off its glow.
+            if (o.Definition.Mesh?.Clips is not null && WorldGen?.MeshFileOf(o.Definition) is { } file
+                && AnimatedObject.Create(file, o, placed, _appearing, !Scenery) is { } animated)
+            {
+                Objects.AddChild(animated);
+                _animated[o.Id] = animated;
+                continue;
             }
             if (FloraModels.Find(o.Definition.Model) is not null)
             {

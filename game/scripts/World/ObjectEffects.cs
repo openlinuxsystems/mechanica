@@ -35,6 +35,9 @@ public partial class ObjectEffects : Node3D
     /// <summary>Bursts of chips or leaves started so far (tests).</summary>
     public int Bursts { get; private set; }
 
+    /// <summary>Broken animated objects (Bloom Pods) left playing their break so far (tests).</summary>
+    public int Wrecks { get; private set; }
+
     /// <summary>Hits shown so far (tests).</summary>
     public int Hits { get; private set; }
 
@@ -49,6 +52,12 @@ public partial class ObjectEffects : Node3D
         Hits++;
         if (!broke)
             Streamer.ChunkHolding(id)?.Shake(id, at);
+        else if (placement.Definition.Mesh?.Clips?.Break is not null && Streamer.ChunkHolding(id) is not null
+            && Streamer.Generator.Data.MeshFileOf(placement.Definition) is { } file && AnimatedObject.Wreck(file, placement) is { } wreck)
+        {
+            AddChild(wreck);
+            Wrecks++;
+        }
         if (placement.Definition.Debris is not { } debris)
             return;
         if (Colours(debris.Chips) is { } chips)
