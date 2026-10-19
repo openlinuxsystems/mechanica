@@ -53,6 +53,17 @@ public partial class CreationWorld : Node3D
         return Spawn(entry);
     }
 
+    /// <summary>
+    /// Adds a Creation parked: kept where its poses put it but out of the physics world, until the streamer resumes it
+    /// (a still Creation loaded from a save, so loading does not build the ground under every Creation at once).
+    /// </summary>
+    public void AddParked(Creation creation, PartAssets assets)
+    {
+        if (_entries.ContainsKey(creation.Id))
+            throw new ArgumentException($"Creation {creation.Id} is already in the world.", nameof(creation));
+        _entries[creation.Id] = new Entry(creation, assets);
+    }
+
     /// <summary>Adds a Creation, or swaps out the one with the same id (a client mirroring the host).</summary>
     public CreationNode Replace(Creation creation, PartAssets assets)
     {

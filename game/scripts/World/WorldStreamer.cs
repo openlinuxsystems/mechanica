@@ -40,6 +40,12 @@ public partial class WorldStreamer : Node3D
     /// <summary>Creations to force-load, park and resume. Set before adding to the tree.</summary>
     public CreationWorld Creations { get; init; } = null!;
 
+    /// <summary>
+    /// Host: true while a Creation's logic is doing something (<see cref="Core.Logic.SignalBus.IsActive"/>), which keeps
+    /// it running when it stands still (a cart waiting at a station on a timer); null holds none awake.
+    /// </summary>
+    public Func<int, bool>? HoldsAwake { get; init; }
+
     /// <summary>Streamed around while there is no player yet, so the spawn has ground.</summary>
     public Func<Vector3> SpawnPoint { get; init; } = () => Vector3.Zero;
 
@@ -141,6 +147,7 @@ public partial class WorldStreamer : Node3D
         FloraMaterials.ClearModels();
         Ground = new StaticBody3D { Name = GroundName };
         AddChild(Ground);
+        AddWorldEdge();
         _sceneryRoot = new Node3D { Name = "Scenery" };
         AddChild(_sceneryRoot);
         Effects = new ObjectEffects { Name = "ObjectEffects", Streamer = this };
@@ -151,6 +158,29 @@ public partial class WorldStreamer : Node3D
         Creations.Removed += Streamer.Forget;
         Session.PeerReady += SendWorld;
         Step(0f);
+    }
+
+    /// <summary>Thickness of the walls that hold everything inside the world, in m.</summary>
+    public const float EdgeThickness = 16f;
+
+    /// <summary>Height of those walls, in m, centred on sea level: far above anything that flies.</summary>
+    public const float EdgeHeight = 20000f;
+
+    // Invisible walls just outside the world's four edges, on the ground body: past the edge there is no ground to
+    // load, so a boat or a plane carrying on would fall forever.
+    private void AddWorldEdge()
+    {
+        var (halfX, halfZ) = (Settings!.WorldSize / 2f, Settings.Depth / 2f);
+        var t = EdgeThickness;
+        (string Name, Vector3 Size, Vector3 At)[] walls =
+        [
+            ("EdgeEast", new Vector3(t, EdgeHeight, 2 * (halfZ + t)), new Vector3(halfX + t / 2, 0, 0)),
+            ("EdgeWest", new Vector3(t, EdgeHeight, 2 * (halfZ + t)), new Vector3(-halfX - t / 2, 0, 0)),
+            ("EdgeSouth", new Vector3(2 * (halfX + t), EdgeHeight, t), new Vector3(0, 0, halfZ + t / 2)),
+            ("EdgeNorth", new Vector3(2 * (halfX + t), EdgeHeight, t), new Vector3(0, 0, -halfZ - t / 2)),
+        ];
+        foreach (var (name, size, at) in walls)
+            Ground.AddChild(new CollisionShape3D { Name = name, Shape = new BoxShape3D { Size = size }, Position = at });
     }
 
     public override void _ExitTree()
@@ -175,8 +205,15 @@ public partial class WorldStreamer : Node3D
         if (players.Count == 0)
             players.Add(SpawnPoint().ToNumerics());
         var samples = StreamsCreations
-            ? Creations.All.Where(c => c.AuthorityPeer == local).Select(c => Creations.Sample(c.Id)).ToList()
+            ? Creations.All.Where(c => c.AuthorityPeer == local).Select(c => Creations.Sample(c.Id) with { HoldAwake = HoldsAwake?.Invoke(c.Id) == true }).ToList()
             : [];
+        // A Creation that starts parked (a still one from a save) is tracked where it stands, so it resumes when a player
+        // comes near.
+        foreach (var sample in samples)
+        {
+            if (!Streamer.IsTracked(sample.Id) && Creations.IsParked(sample.Id) && Creations.Find(sample.Id) is { } parked)
+                Streamer.RegisterParked(sample.Id, CreationBounds.World(parked));
+        }
 
         RegrowDue();
         var update = Streamer.Update(delta, players, samples);
@@ -196,7 +233,11 @@ public partial class WorldStreamer : Node3D
             Revision++;
         BuildPending(players, samples);
         foreach (var id in update.Resume)
+        {
+            // Its ground may still be waiting in the queue: build it now, so the Creation never comes back over a hole.
+            BuildUnder(Streamer.BoundsOf(id));
             Creations.Resume(id);
+        }
         foreach (var id in update.FellAsleep)
             Creations.Sleep(id);
         UpdateScenery();
@@ -227,6 +268,15 @@ public partial class WorldStreamer : Node3D
             if (System.Diagnostics.Stopwatch.GetElapsedTime(started) >= budget)
                 break;
         }
+    }
+
+    private void BuildUnder(WorldBounds? bounds)
+    {
+        if (bounds is not { } box || _pending.Count == 0)
+            return;
+        var settings = Streamer.Settings;
+        foreach (var chunk in Streamer.ChunksOf(box.Expand(settings.CreationBuffer + settings.GroundMargin)).Where(_pending.Contains).ToList())
+            Build(chunk);
     }
 
     private void Build(ChunkCoord chunk)

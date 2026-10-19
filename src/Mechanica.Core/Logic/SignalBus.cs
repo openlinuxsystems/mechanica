@@ -12,6 +12,8 @@ namespace Mechanica.Core.Logic;
 public sealed class SignalBus
 {
     private readonly Dictionary<(int Creation, int Part), float> _outputs = [];
+    // How many non-zero outputs each Creation has.
+    private readonly Dictionary<int, int> _outputCounts = [];
     private readonly Dictionary<(int Creation, int Part), float> _inputs = [];
     // The parts of each Creation with a non-zero input, so a step only visits Creations with logic.
     private readonly Dictionary<int, HashSet<int>> _given = [];
@@ -27,9 +29,27 @@ public sealed class SignalBus
     public void SetOutput(int creation, int part, float value)
     {
         if (!float.IsFinite(value) || value == 0f)
-            _outputs.Remove((creation, part));
+            RemoveOutput((creation, part));
+        else if (_outputs.TryAdd((creation, part), value))
+            _outputCounts[creation] = _outputCounts.GetValueOrDefault(creation) + 1;
         else
             _outputs[(creation, part)] = value;
+    }
+
+    /// <summary>
+    /// True while any part of a Creation puts out or is given a non-zero signal: its logic is doing something (a
+    /// switch left on, a sensor seeing, an engine powered), so the world keeps it running even when it stands still.
+    /// </summary>
+    public bool IsActive(int creation) => _outputCounts.ContainsKey(creation) || _given.ContainsKey(creation);
+
+    private void RemoveOutput((int Creation, int Part) key)
+    {
+        if (!_outputs.Remove(key))
+            return;
+        if (_outputCounts[key.Creation] == 1)
+            _outputCounts.Remove(key.Creation);
+        else
+            _outputCounts[key.Creation]--;
     }
 
     /// <summary>The input a part was last given by <see cref="Step"/> (0 before any).</summary>
@@ -112,7 +132,7 @@ public sealed class SignalBus
     /// <summary>Forgets a part's output and input (it was removed, or its script stopped).</summary>
     public void Forget(int creation, int part)
     {
-        _outputs.Remove((creation, part));
+        RemoveOutput((creation, part));
         RemoveInput((creation, part));
     }
 
@@ -123,6 +143,7 @@ public sealed class SignalBus
     public void Clear()
     {
         _outputs.Clear();
+        _outputCounts.Clear();
         _inputs.Clear();
         _given.Clear();
     }

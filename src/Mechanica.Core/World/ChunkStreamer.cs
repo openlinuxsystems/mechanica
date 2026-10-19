@@ -7,7 +7,7 @@ namespace Mechanica.Core.World;
 /// <param name="Bounds">World box of every Body (<see cref="CreationBounds"/>). Ignored while the Creation is parked.</param>
 /// <param name="LinearSpeed">Fastest Body speed in m/s.</param>
 /// <param name="AngularSpeed">Fastest Body turn rate in rad/s.</param>
-/// <param name="HoldAwake">True while something keeps the Creation running whatever its motion (a seated driver, power; later chunks).</param>
+/// <param name="HoldAwake">True while something keeps the Creation running whatever its motion (its logic is doing something: <see cref="Logic.SignalBus.IsActive"/>).</param>
 public readonly record struct CreationSample(int Id, WorldBounds Bounds, float LinearSpeed, float AngularSpeed, bool HoldAwake = false);
 
 /// <summary>
@@ -44,7 +44,8 @@ public sealed record StreamingUpdate(
 /// before a chunk it touches unloads, and resumes when a player comes near.</item>
 /// <item>Sleep budget: at most <see cref="StreamingSettings.MaxUnattendedCreations"/> awake unattended
 /// Creations, force-loading at most <see cref="StreamingSettings.MaxUnattendedChunks"/> extra chunks, keep
-/// running; the ones farthest from any player park until the budget frees up or a player comes near.</item>
+/// running, moving ones first; the rest, farthest from any player first, park until the budget frees up or a
+/// player comes near.</item>
 /// <item>A chunk nothing needs unloads after <see cref="StreamingSettings.UnloadDelay"/>, so crossing back
 /// and forth over a border does not churn.</item>
 /// </list>
@@ -64,6 +65,7 @@ public sealed class ChunkStreamer
         public bool Asleep;
         public bool Parked;
         public bool HoldAwake;
+        public bool Moving;
     }
 
     /// <summary>Starts with nothing loaded.</summary>
@@ -94,6 +96,12 @@ public sealed class ChunkStreamer
 
     /// <summary>True when the Creation is tracked and parked.</summary>
     public bool IsParked(int creationId) => _creations.TryGetValue(creationId, out var t) && t.Parked;
+
+    /// <summary>True when the Creation is tracked.</summary>
+    public bool IsTracked(int creationId) => _creations.ContainsKey(creationId);
+
+    /// <summary>A tracked Creation's last box (where it was parked, for a parked one), or null.</summary>
+    public WorldBounds? BoundsOf(int creationId) => _creations.TryGetValue(creationId, out var t) ? t.Bounds : null;
 
     /// <summary>True when the Creation is tracked and asleep.</summary>
     public bool IsAsleep(int creationId) => _creations.TryGetValue(creationId, out var t) && t.Asleep;
@@ -129,12 +137,14 @@ public sealed class ChunkStreamer
             if (t.Parked)
                 continue;
             t.Bounds = sample.Bounds;
-            var still = !sample.HoldAwake && sample.LinearSpeed <= s.SleepLinearSpeed && sample.AngularSpeed <= s.SleepAngularSpeed;
+            t.Moving = sample.LinearSpeed > s.SleepLinearSpeed || sample.AngularSpeed > s.SleepAngularSpeed;
+            var still = !sample.HoldAwake && !t.Moving;
             t.Idle = still ? t.Idle + dt : 0f;
         }
         foreach (var (id, t) in _creations)
         {
-            if (!t.Parked && !sampled.Contains(id))
+            // A parked Creation that was moving stays awake to resume when there is room; a still one dozes off.
+            if (t.Parked ? !t.Moving : !sampled.Contains(id))
                 t.Idle += dt;
             if (t.HoldAwake)
                 t.Idle = 0f;
@@ -164,7 +174,8 @@ public sealed class ChunkStreamer
         }
         var overBudget = new HashSet<int>();
         int keptUnattended = 0, extraChunks = 0;
-        foreach (var (id, _) in candidates.OrderBy(c => c.Distance).ThenBy(c => c.Id))
+        // Moving Creations come first, so ones only held awake (a lamp left on) never freeze one on its way.
+        foreach (var (id, _) in candidates.OrderBy(c => _creations[c.Id].Moving ? 0 : 1).ThenBy(c => c.Distance).ThenBy(c => c.Id))
         {
             var extra = ForceLoaded(_creations[id]).Where(c => !desired.Contains(c)).ToList();
             if (keptUnattended < s.MaxUnattendedCreations && extraChunks + extra.Count <= s.MaxUnattendedChunks)

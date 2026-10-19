@@ -34,7 +34,8 @@ shapes the ground, the borders, the meanders, the roads' exact course and the sc
    `cliffs`, plateaus in 8 m steps with short rock faces that climb towards the middle of the island. Both
    lie flat by the coast, rivers and biomes whose `hills` is 0 (lakes), rising to full height over
    `shore_ramp`, and round sites with a fixed `pad_height` over `pad_ramp`. Near the
-   edge the land falls to `sea_floor` over `coast_width`, so the world is an island. `rivers` cut their
+   edge the land falls to `sea_floor` over `coast_width`, so the world is an island; invisible walls just past
+   the edge keep players and Creations from leaving it. `rivers` cut their
    channels and valleys. Each POI then applies its `terrain` ops, and the roads cut and fill the ground
    under them.
 3. **POIs.** Fixed POIs go exactly where they say. Then every site places its POI at its fixed

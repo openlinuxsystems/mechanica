@@ -417,6 +417,7 @@ public partial class Main : Node3D
             Session = Session,
             PlayerSync = PlayerSync,
             Creations = Creations,
+            HoldsAwake = id => Scripts?.Runtime.Signals.IsActive(id) == true,
             SpawnPoint = () => GetNodeOrNull<Node3D>("SpawnPoint")?.GlobalPosition ?? Vector3.Zero,
             WorldGen = WorldGen!,
             Seed = Options.Seed ?? (long)(((ulong)GD.Randi() << 32) | GD.Randi()),
