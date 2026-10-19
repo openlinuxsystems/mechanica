@@ -424,9 +424,13 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         var point = hit.Point.ToVec3();
         if (!(damage >= 0) || !float.IsFinite(damage))
             damage = 0;
+        // A cutting tool's bite shows chips or sparks where it cut (trees show their own, through ObjectHit).
+        var cutting = kind is DamageKinds.Saw or DamageKinds.Drill && damage > 0;
         if (hit.Bot is { } bot)
         {
             Bots?.DamageBot(bot, damage, "weapon", melee: false);
+            if (cutting)
+                world.Impact(hit.Point, "metal");
             return new ShotHitView("bot", point, damage, Bot: bot);
         }
         if (hit.Player is { } peer)
@@ -439,6 +443,8 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         if (hit.Creation is { } id && hit.Part is { } part && world.FindCreation(id) is { } creation && creation.FindPart(part) is not null)
         {
             var body = creation.BodyIndexOf(part);
+            if (cutting)
+                world.Impact(hit.Point, creation.DefinitionOf(part).SoundMaterial ?? "metal");
             var result = world.DamagePart(creation, part, damage);
             if (!result.Broken && push != Vector3.Zero && float.IsFinite(push.LengthSquared()))
                 world.Push(creation, body, hit.Point, push);

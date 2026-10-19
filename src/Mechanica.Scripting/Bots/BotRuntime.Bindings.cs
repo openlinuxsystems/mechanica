@@ -185,9 +185,10 @@ public sealed partial class BotRuntime
             var brain = Current();
             var range = LuaValues.OptionalNumber(args[0], "world.spinning", 1) ?? brain.Bot.Type.Sight;
             var minSpeed = LuaValues.OptionalNumber(args[1], "world.spinning", 2) ?? 4f;
+            var only = args.Count > 2 && !args[2].IsNil() ? args.AsType(2, "world.spinning", DataType.String).String : null;
             var list = new Table(script);
             var index = 1;
-            foreach (var (creation, part, centre, speed, distance) in _bots.SpinningNear(brain.Bot.Centre, range, minSpeed))
+            foreach (var (creation, part, centre, speed, distance) in _bots.SpinningNear(brain.Bot.Centre, range, minSpeed, only))
             {
                 var entry = new Table(script);
                 entry.Set("creation", DynValue.NewNumber(creation));

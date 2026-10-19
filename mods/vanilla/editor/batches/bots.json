@@ -53,6 +53,18 @@
                   "range": 12
                 },
                 {
+                  "type": "invert",
+                  "children": [
+                    {
+                      "type": "hesitate",
+                      "part": "vanilla:saw_blade",
+                      "range": 4,
+                      "min_speed": 9,
+                      "seconds": 2.5
+                    }
+                  ]
+                },
+                {
                   "type": "chase",
                   "attack": "whip",
                   "speed": 1
@@ -71,6 +83,18 @@
                 },
                 {
                   "type": "find_crop"
+                },
+                {
+                  "type": "invert",
+                  "children": [
+                    {
+                      "type": "hesitate",
+                      "part": "vanilla:saw_blade",
+                      "range": 4,
+                      "min_speed": 9,
+                      "seconds": 2.5
+                    }
+                  ]
                 },
                 {
                   "type": "chase",
@@ -144,6 +168,18 @@
                   "function": "charge"
                 },
                 {
+                  "type": "invert",
+                  "children": [
+                    {
+                      "type": "hesitate",
+                      "part": "vanilla:saw_blade",
+                      "range": 4,
+                      "min_speed": 9,
+                      "seconds": 2.5
+                    }
+                  ]
+                },
+                {
                   "type": "chase",
                   "attack": "drill",
                   "speed": 1
@@ -166,6 +202,18 @@
                 {
                   "type": "call",
                   "function": "charge"
+                },
+                {
+                  "type": "invert",
+                  "children": [
+                    {
+                      "type": "hesitate",
+                      "part": "vanilla:saw_blade",
+                      "range": 4,
+                      "min_speed": 9,
+                      "seconds": 2.5
+                    }
+                  ]
                 },
                 {
                   "type": "chase",
@@ -240,6 +288,18 @@
                   "range": 12
                 },
                 {
+                  "type": "invert",
+                  "children": [
+                    {
+                      "type": "hesitate",
+                      "part": "vanilla:saw_blade",
+                      "range": 4,
+                      "min_speed": 9,
+                      "seconds": 2.5
+                    }
+                  ]
+                },
+                {
                   "type": "chase",
                   "attack": "stomp",
                   "speed": 1
@@ -258,6 +318,18 @@
                 },
                 {
                   "type": "find_crop"
+                },
+                {
+                  "type": "invert",
+                  "children": [
+                    {
+                      "type": "hesitate",
+                      "part": "vanilla:saw_blade",
+                      "range": 4,
+                      "min_speed": 9,
+                      "seconds": 2.5
+                    }
+                  ]
                 },
                 {
                   "type": "chase",
@@ -324,6 +396,18 @@
                   "range": 12
                 },
                 {
+                  "type": "invert",
+                  "children": [
+                    {
+                      "type": "hesitate",
+                      "part": "vanilla:saw_blade",
+                      "range": 4,
+                      "min_speed": 9,
+                      "seconds": 2.5
+                    }
+                  ]
+                },
+                {
                   "type": "chase",
                   "attack": "explode",
                   "speed": 1
@@ -342,6 +426,18 @@
                 },
                 {
                   "type": "find_crop"
+                },
+                {
+                  "type": "invert",
+                  "children": [
+                    {
+                      "type": "hesitate",
+                      "part": "vanilla:saw_blade",
+                      "range": 4,
+                      "min_speed": 9,
+                      "seconds": 2.5
+                    }
+                  ]
                 },
                 {
                   "type": "chase",
@@ -419,6 +515,18 @@
                   "range": 6
                 },
                 {
+                  "type": "invert",
+                  "children": [
+                    {
+                      "type": "hesitate",
+                      "part": "vanilla:saw_blade",
+                      "range": 4,
+                      "min_speed": 9,
+                      "seconds": 2.5
+                    }
+                  ]
+                },
+                {
                   "type": "chase",
                   "attack": "nip",
                   "speed": 1
@@ -437,6 +545,18 @@
                 },
                 {
                   "type": "find_crop"
+                },
+                {
+                  "type": "invert",
+                  "children": [
+                    {
+                      "type": "hesitate",
+                      "part": "vanilla:saw_blade",
+                      "range": 4,
+                      "min_speed": 9,
+                      "seconds": 2.5
+                    }
+                  ]
                 },
                 {
                   "type": "chase",

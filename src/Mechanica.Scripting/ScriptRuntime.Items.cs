@@ -466,7 +466,16 @@ public sealed partial class ScriptRuntime
         {
             var (_, _, ignore) = Combatant("combat.cast", acting: false);
             var (from, direction, range) = Ray(args, "combat.cast");
-            return _survival!.Cast(from, direction, range, ignore) is { } hit ? HitTable(context, hit, from) : DynValue.Nil;
+            if (_survival!.Cast(from, direction, range, ignore) is not { } hit)
+                return DynValue.Nil;
+            var table = HitTable(context, hit, from);
+            // What it hit: a part's qualified type, or a world object's kind (birch_tree), so a tool can bite each its own way.
+            var type = hit.Creation is { } c && hit.Part is { } p && _survival.World.FindCreation(c)?.FindPart(p) is { } instance
+                ? Identifiers.Qualify(instance.Part)
+                : hit.Object is { } id ? _survival.World.FindObject(id)?.Definition.Id : null;
+            if (type is not null)
+                table.Table.Set("type", DynValue.NewString(type));
+            return table;
         });
         Fn(combat, "hit", args =>
         {
