@@ -27,7 +27,10 @@ shapes the ground, the borders, the meanders, the roads' exact course and the sc
    takes the biome of the region nearest it for its size (borders bent by `region_warp`), or a patch of
    one of the region's `mix` biomes; the cells round a site take the site's `biome`. Without regions each
    cell is given a biome at random by `weight`. Borders are bent by `biome_warp` and blended over
-   `biome_blend`. The `coast_biome` takes over within `coast_biome_width` of the world edge.
+   `biome_blend`: height eases evenly from one biome to the next, while the ground textures, flora and
+   scattered objects of both biomes reach into each other in tongues and patches (`biome_edge_noise`,
+   `biome_edge_scale`), thinning out the further they reach, so no border is a line. The `coast_biome`
+   takes over within `coast_biome_width` of the world edge.
 2. **Height.** Each biome sets an average `height` and a `relief` that scales fractal noise; `ridge`
    turns it into sharp ridged noise (mountains) and `terrace` steps it into plateaus (desert). Over that
    come two layers of relief after Scrap Mechanic's overworld: broad `hills` a kilometre or so across, and
@@ -118,6 +121,7 @@ change (usually `vanilla`). Every patch applies in load order on top of the last
     "biome_cell_size": 760.0,
     "biome_blend": 80.0,
     "biome_warp": 160.0,
+    "biome_edge_noise": 30.0,
     "max_scatter_slope": 0.7
   },
   "coast_biome": "coastal",
@@ -159,7 +163,9 @@ change (usually `vanilla`). Every patch applies in load order on top of the last
 |-----|---------|
 | `terrain.coast_wobble` | How far inland noise may pull the coastline, so the island is not a square. |
 | `terrain.noise_scale` | Wavelength of the largest hills. `octaves`, `lacunarity` and `gain` add finer detail. |
-| `terrain.biome_blend` | At most 0.18 × `biome_cell_size`. |
+| `terrain.biome_blend` | Metres over which neighbouring biomes blend. At most 1.1 × `biome_cell_size`; so is `terrain.hills.shore_ramp`. |
+| `terrain.biome_edge_noise` | Metres by which noise pulls each biome's edge back across the blend, so the biomes' grounds, flora and objects mix in tongues and patches. 0 fades evenly; at most 0.6 × `biome_blend`. |
+| `terrain.biome_edge_scale` | Size in metres of those tongues (default 24). |
 | `terrain.region_warp` | How far, in metres, slow noise bends the borders between regions. |
 | `biomes[].ridge` | 0 to 1: how much of the relief is ridged noise, for sharp mountain crests. |
 | `biomes[].terrace` | Height in metres of the plateaus the ground is stepped into (the desert). 0: none. |

@@ -11,6 +11,9 @@ internal static class WorldGenValidator
     // Steepest ground a player can walk up (the controller's 45° floor angle), as rise over run.
     private const float MaxBasinSlope = 1f;
 
+    // How far, in cell sizes, the biome blend and shore ramp may reach: the 5×5 cells round a point hold every cell that close.
+    private const float MaxBlendCells = 1.1f;
+
     public static void Validate(WorldGenDefinition definition, DiagnosticSink sink)
     {
         KnownKeys.WarnUnknown(definition.Extra, "$", sink, typeof(WorldGenDefinition));
@@ -32,9 +35,14 @@ internal static class WorldGenValidator
             sink.Error(Code, "$.terrain.gain", $"gain must be greater than 0 and at most 1 (got {t.Gain}).");
         Positive(t.BiomeCellSize, "$.terrain.biome_cell_size", sink);
         NonNegative(t.BiomeBlend, "$.terrain.biome_blend", sink);
-        // Blending only looks at the 3×3 neighbouring cells; a wider blend would reach past them.
-        if (t.BiomeBlend > 0.18f * t.BiomeCellSize)
-            sink.Error(Code, "$.terrain.biome_blend", $"biome_blend ({t.BiomeBlend}) must be at most 0.18 × biome_cell_size ({0.18f * t.BiomeCellSize}).");
+        // Blending looks at the 5×5 neighbouring cells at most; a wider blend would reach past them.
+        if (t.BiomeBlend > MaxBlendCells * t.BiomeCellSize)
+            sink.Error(Code, "$.terrain.biome_blend", $"biome_blend ({t.BiomeBlend}) must be at most {MaxBlendCells} × biome_cell_size ({MaxBlendCells * t.BiomeCellSize}).");
+        NonNegative(t.BiomeEdgeNoise, "$.terrain.biome_edge_noise", sink);
+        Positive(t.BiomeEdgeScale, "$.terrain.biome_edge_scale", sink);
+        // The noise pulls a biome's edge back by up to its amount; more than this could leave a sample with no biome at all.
+        if (t.BiomeEdgeNoise > 0.6f * t.BiomeBlend)
+            sink.Error(Code, "$.terrain.biome_edge_noise", $"biome_edge_noise ({t.BiomeEdgeNoise}) must be at most 0.6 × biome_blend ({0.6f * t.BiomeBlend}).");
         NonNegative(t.MaxScatterSlope, "$.terrain.max_scatter_slope", sink);
 
         foreach (var (id, table) in definition.LootTables ?? [])
@@ -312,6 +320,9 @@ internal static class WorldGenValidator
                 sink.Error(Code, "$.terrain.hills.gain", $"gain must be greater than 0 and at most 1 (got {hills.Gain}).");
             Positive(hills.Contrast, "$.terrain.hills.contrast", sink);
             NonNegative(hills.ShoreRamp, "$.terrain.hills.shore_ramp", sink);
+            // Flat biomes hold their neighbours' hills down over the ramp, which looks at the same cells as the blend.
+            if (hills.ShoreRamp > MaxBlendCells * t.BiomeCellSize)
+                sink.Error(Code, "$.terrain.hills.shore_ramp", $"shore_ramp ({hills.ShoreRamp}) must be at most {MaxBlendCells} × biome_cell_size ({MaxBlendCells * t.BiomeCellSize}).");
             NonNegative(hills.PadRamp, "$.terrain.hills.pad_ramp", sink);
         }
         if (t.Cliffs is { } cliffs)

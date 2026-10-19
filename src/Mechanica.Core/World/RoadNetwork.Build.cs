@@ -246,18 +246,30 @@ public sealed partial class RoadNetwork
 
         // Each junction turns to fit the ways that meet there and gives each its own arm at right angles to the others.
         var arms = new Dictionary<(int Way, bool AtStart), Vector2>();
+        var dropped = new HashSet<int>();
         foreach (var j in junctionNode)
         {
             var meeting = new List<(int Way, bool AtStart)>();
             for (var w = 0; w < ways.Count; w++)
             {
+                if (dropped.Contains(w))
+                    continue;
                 if (ways[w].From == j)
                     meeting.Add((w, true));
                 if (ways[w].To == j)
                     meeting.Add((w, false));
             }
-            if (meeting.Count is 0 or > 4)
+            if (meeting.Count == 0)
                 continue;
+            if (meeting.Count > 4)
+            {
+                // A crossroads takes four roads at most: keep those that lead to a POI, then the shortest, and drop the
+                // rest (links between junctions the network can do without; the plate closes their arms).
+                foreach (var extra in meeting.OrderByDescending(m => (m.AtStart ? ways[m.Way].ToPoi : ways[m.Way].FromPoi) is not null)
+                    .ThenBy(m => ways[m.Way].Cells.Count).ThenBy(m => m.Way).Skip(4).ToList())
+                    dropped.Add(extra.Way);
+                meeting.RemoveAll(m => dropped.Contains(m.Way));
+            }
             var node = _nodes[j];
             var away = meeting.Select(m => Away(grid, ways[m.Way].Cells, m.AtStart, node.At, cluster)).ToList();
             var (heading, slots) = Square(away);
@@ -268,6 +280,8 @@ public sealed partial class RoadNetwork
         var roads = new List<(List<Vector2> Points, int From, int To, PoiInstance? FromPoi, PoiInstance? ToPoi)>();
         for (var w = 0; w < ways.Count; w++)
         {
+            if (dropped.Contains(w))
+                continue;
             var (cells, from, to, fromPoi, toPoi) = ways[w];
             var points = Lay(def, grid, cells, from, to, fromPoi, toPoi, cluster,
                 arms.TryGetValue((w, true), out var fromArm) ? fromArm : null, arms.TryGetValue((w, false), out var toArm) ? toArm : null);
@@ -624,6 +638,49 @@ public sealed partial class RoadNetwork
     /// Runs dirt tracks (World Map spec §3, secondary roads) from every POI that asks for one to the nearest road or track
     /// within <see cref="RoadsDefinition.TrackReach"/>, once the spaced POIs are placed.
     /// </summary>
+    // The first POI but its own whose ground a track comes onto, with its half width to spare, looked at every 2 m.
+    private static PoiInstance? OverPoi(WorldGenerator gen, List<Vector2> points, PoiInstance own, float halfWidth)
+    {
+        for (var k = 1; k < points.Count; k++)
+        {
+            var steps = Math.Max(1, (int)MathF.Ceiling(Vector2.Distance(points[k - 1], points[k]) / 2f));
+            for (var s = 0; s <= steps; s++)
+            {
+                var p = Vector2.Lerp(points[k - 1], points[k], (float)s / steps);
+                if (gen.PoisNear(p.X, p.Y).FirstOrDefault(o => o != own && Vector2.Distance(p, o.Centre) < o.Radius + halfWidth) is { } hit)
+                    return hit;
+            }
+        }
+        return null;
+    }
+
+    // A track from a POI to the nearest road or track the grid can route to, as its points and where it joins; null when none.
+    private (List<Vector2> Points, RoadHit Join)? PlanTrack(WorldGenerator gen, Grid grid, RoadsDefinition def, PoiInstance poi, bool[] goal, float limit)
+    {
+        var cells = grid.Route(grid.CellOf(poi.Centre), -1, poi.Index, -1, def.TrackMaxGrade, 0f, goal, 1f, limit);
+        if (cells is null || cells.Count < 2)
+            return null;
+        // The track meets the road (or track) at the nearest point of its centre line to the last cell.
+        var last = grid.Centre(cells[^1]);
+        if (Nearest(last.X, last.Y, MaxBlend) is not { } join)
+            return null;
+        var line = cells.Take(cells.Count - 1).Select(grid.Centre).Append(join.Point).ToList();
+        // It meets at a right angle, from the side it comes from.
+        var along = join.Chain.Points[join.Segment + 1] - join.Chain.Points[join.Segment];
+        var side = along.LengthSquared() > 1e-6f ? Vector2.Normalize(new Vector2(-along.Y, along.X)) : Vector2.UnitX;
+        if (Vector2.Dot(side, (line.Count > 1 ? line[^2] : grid.Centre(cells[0])) - join.Point) < 0f)
+            side = -side;
+        var simple = Simplify(grid, line, [poi.Index], def.TrackMaxGrade, allowWater: false);
+        var squared = Squared(simple, null, side, join.Chain.Width / 2f + 1f);
+        // Unless that would take it over another POI's ground: then it joins as it comes.
+        var clear = Enumerable.Range(1, squared.Count - 1).All(k => grid.Clear(squared[k - 1], squared[k], [poi.Index], def.TrackMaxGrade * 1.5f, false));
+        var points = Curve(clear ? squared : simple);
+        // A rounded corner that clips another POI's ground joins as it comes instead.
+        if (clear && OverPoi(gen, points, poi, def.TrackWidth / 2f) is not null)
+            points = Curve(simple);
+        return (points, join);
+    }
+
     internal void AddTracks(WorldGenerator gen)
     {
         if (_def is not { } def || _grid is not { } grid)
@@ -645,24 +702,21 @@ public sealed partial class RoadNetwork
             if (poi.Site is null && !near[grid.CellOf(poi.Centre)])
                 continue;
             var limit = def.TrackReach * (poi.Site is null ? 3f : 12f);
-            var cells = grid.Route(grid.CellOf(poi.Centre), -1, poi.Index, -1, def.TrackMaxGrade, 0f, goal, 1f, limit);
-            if (cells is null || cells.Count < 2)
+            // The grid only knows each POI by its cells, so a track can still clip the edge of another POI's ground:
+            // then that POI's whole disc is closed to tracks and the route is planned again.
+            (List<Vector2> Points, RoadHit Join)? planned = null;
+            for (var attempt = 0; attempt < 4 && planned is null; attempt++)
+            {
+                if (PlanTrack(gen, grid, def, poi, goal, limit) is not { } plan)
+                    break;
+                if (OverPoi(gen, plan.Points, poi, def.TrackWidth / 2f) is { } clipped)
+                    grid.Block(clipped, def.TrackWidth / 2f + 1f);
+                else
+                    planned = plan;
+            }
+            if (planned is not { } found)
                 continue;
-            // The track meets the road (or track) at the nearest point of its centre line to the last cell.
-            var last = grid.Centre(cells[^1]);
-            if (Nearest(last.X, last.Y, MaxBlend) is not { } join)
-                continue;
-            var line = cells.Take(cells.Count - 1).Select(grid.Centre).Append(join.Point).ToList();
-            // It meets at a right angle, from the side it comes from.
-            var along = join.Chain.Points[join.Segment + 1] - join.Chain.Points[join.Segment];
-            var side = along.LengthSquared() > 1e-6f ? Vector2.Normalize(new Vector2(-along.Y, along.X)) : Vector2.UnitX;
-            if (Vector2.Dot(side, (line.Count > 1 ? line[^2] : grid.Centre(cells[0])) - join.Point) < 0f)
-                side = -side;
-            var simple = Simplify(grid, line, [poi.Index], def.TrackMaxGrade, allowWater: false);
-            var squared = Squared(simple, null, side, join.Chain.Width / 2f + 1f);
-            // Unless that would take it over another POI's ground: then it joins as it comes.
-            var clear = Enumerable.Range(1, squared.Count - 1).All(k => grid.Clear(squared[k - 1], squared[k], [poi.Index], def.TrackMaxGrade * 1.5f, false));
-            var points = Curve(clear ? squared : simple);
+            var (points, join) = found;
             if (!Trim(points, poi, atStart: true))
                 continue;
             var (heights, bridge) = Profile(gen, points, poi.PadHeight, join.Height, def.TrackMaxGrade, 1f, bridges: true);
@@ -768,6 +822,24 @@ public sealed partial class RoadNetwork
 
         // Index of the POI whose footprint covers a cell, or -1.
         public int Owner(int cell) => _owner[cell];
+
+        // Closes every cell a POI's disc (widened by a margin) touches, not only those whose centre it covers.
+        public void Block(PoiInstance poi, float margin)
+        {
+            var reach = poi.Radius + margin;
+            var (i0, j0) = Coords(CellOf(poi.Centre - new Vector2(reach)));
+            var (i1, j1) = Coords(CellOf(poi.Centre + new Vector2(reach)));
+            for (var j = j0; j <= j1; j++)
+            {
+                for (var i = i0; i <= i1; i++)
+                {
+                    var cell = j * _nx + i;
+                    var nearest = Vector2.Clamp(poi.Centre, Centre(cell) - new Vector2(_cell / 2f), Centre(cell) + new Vector2(_cell / 2f));
+                    if (_owner[cell] < 0 && Vector2.Distance(nearest, poi.Centre) < reach)
+                        _owner[cell] = poi.Index;
+                }
+            }
+        }
 
         // Which cells lie within reach (metres, along the grid) of a marked cell.
         public bool[] Proximity(bool[] marked, float reach)
