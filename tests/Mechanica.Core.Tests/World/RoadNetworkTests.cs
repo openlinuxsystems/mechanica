@@ -311,10 +311,10 @@ public class RoadNetworkTests
         Assert.True(crossed > 100, $"crossed {crossed} edges");
     }
 
-    // True where another road passes within two road widths, or this one doubles back within its width (a hairpin).
+    // True where another road, or this one further along (a switchback's other leg), passes within two road widths.
     private static bool Crowded(RoadNetwork roads, RoadChain chain, int i) =>
         roads.Chains.Where(c => c.Kind == RoadKind.Road).Any(c => c.Points.Where((q, k) =>
-            c != chain ? Vector2.Distance(q, chain.Points[i]) < 2f * chain.Width : Math.Abs(k - i) > 2 && Vector2.Distance(q, chain.Points[i]) < chain.Width).Any());
+            (c != chain || MathF.Abs(c.Along[k] - chain.Along[i]) > 3f * chain.Width) && Vector2.Distance(q, chain.Points[i]) < 2f * chain.Width).Any());
 
     // Height of the ground at chunk-local x/z, between its samples as the height map collides.
     private static float Ground(TerrainChunkData chunk, float x, float z)
