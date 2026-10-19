@@ -17,7 +17,7 @@ identical face. For example::
     sys.path.insert(0, str(ROOT / "tools" / "io_port"))
     import build_io_port as io
     mats = io.materials()
-    io.mount(machine_root, "out", (0, -0.625, 0.5), (0, -1, 0), mats)
+    io.mount(machine_root, "out", (0, -1.0, 0.625), (0, -1, 0), mats)
 
 How to run (Blender as a Python module, no Blender UI needed):
 
@@ -50,6 +50,7 @@ COLLAR_R = 0.175             # raised collar
 TEAL_RING = (0.106, 0.138)
 LIP_R = 0.106
 BORE_R = 0.088
+LIP_OUT = 0.067             # the collar lip's face, measured from the plate's back
 SAMPLES = int(os.environ.get("IO_SAMPLES", "64"))
 
 GUNMETAL = (0.06, 0.064, 0.07)
@@ -266,7 +267,7 @@ def build(mode="both", name="IOPort", mats=None):
     annulus(f"{name}_collarSeat", COLLAR_R + 0.006, COLLAR_R + 0.012, zf - 0.001, zf + 0.0003, m["groove"], root)
     annulus(f"{name}_collar", TEAL_RING[1] - 0.002, COLLAR_R, zf - 0.001, zf + 0.014, m["collar"], root, bevel=0.003)
     annulus(f"{name}_tealRing", TEAL_RING[0], TEAL_RING[1], zf - 0.001, zf + 0.012, m["teal"], root, bevel=0.0015)
-    annulus(f"{name}_lip", BORE_R, LIP_R + 0.001, zf - 0.001, zf + 0.017, m["collar"], root, bevel=0.003)
+    annulus(f"{name}_lip", BORE_R, LIP_R + 0.001, zf - 0.001, LIP_OUT, m["collar"], root, bevel=0.003)
     annulus(f"{name}_boreWall", BORE_R - 0.003, BORE_R + 0.0005, 0.008, zf + 0.016, m["bore"], root)
     cylinder(f"{name}_boreFloor", BORE_R, 0.006, 0.009, m["bore"], root)
 
@@ -293,13 +294,17 @@ def build(mode="both", name="IOPort", mats=None):
 
 
 def mount(parent, mode, center, normal, mats=None, name=None):
-    """Put a port of the given mode on a machine: its face centre at center, looking along normal (a grid axis).
+    """Put a port of the given mode on a machine, looking along normal (a grid axis).
 
-    The plate's back sits on center, so the face stands DEPTH proud of the machine's surface."""
+    center is the port's centre on the machine's footprint boundary. The collar's face lands exactly there, so
+    nothing pokes outside the footprint and two machines' ports meet on the grid. The plate's face sits 17 mm
+    inside the boundary and its back LIP_OUT inside, so the machine's wall behind the plate must be set in by at
+    least LIP_OUT - DEPTH."""
     root = build(mode, name or f"IOPort_{mode}", mats)
     root.parent = parent
-    root.location = center
-    root.rotation_euler = Vector((0, 0, 1)).rotation_difference(Vector(normal).normalized()).to_euler()
+    n = Vector(normal).normalized()
+    root.location = Vector(center) - n * LIP_OUT
+    root.rotation_euler = Vector((0, 0, 1)).rotation_difference(n).to_euler()
     return root
 
 
@@ -346,8 +351,8 @@ def render_review(out: Path):
     sc.collection.objects.link(mroot)
     mroot.location = (0, 0, 0)
     _machine_box(mats, mroot)
-    mount(mroot, "out", (0, -0.625, 0.5), (0, -1, 0), mats, "MOut")
-    mount(mroot, "in", (0.625, 0, 0.5), (1, 0, 0), mats, "MIn")
+    mount(mroot, "out", (0, -0.625 - LIP_OUT, 0.5), (0, -1, 0), mats, "MOut")
+    mount(mroot, "in", (0.625 + LIP_OUT, 0, 0.5), (1, 0, 0), mats, "MIn")
     group("mounted", mroot)
 
     shots = {}
