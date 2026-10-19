@@ -1,8 +1,7 @@
 {
   "id": "stairs_block",
   "stations": [
-    "fabricator",
-    "mini_fabricator"
+    "fabricator"
   ],
   "inputs": [
     {

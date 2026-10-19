@@ -1,8 +1,7 @@
 {
   "id": "wheel",
   "stations": [
-    "fabricator",
-    "mini_fabricator"
+    "fabricator"
   ],
   "inputs": [
     {

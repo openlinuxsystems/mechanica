@@ -1,8 +1,7 @@
 {
   "id": "passenger_seat",
   "stations": [
-    "fabricator",
-    "mini_fabricator"
+    "fabricator"
   ],
   "inputs": [
     {

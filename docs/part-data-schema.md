@@ -224,6 +224,7 @@ rather than in Lua.
 | `crafting.speed` | number > 0 | Multiplier on recipe times: 2 crafts twice as fast. Default 1. |
 | `crafting.queue_size` | integer 1–64 | Most orders waiting at once. Default 1. |
 | `crafting.link_range` | number 0–8 (m) | Containers on the same Creation within this distance of the station (surface to surface) are its linked storage. Omitted or 0 links none. |
+| `crafting.clips` | `{start, work, complete}` | Model clips that follow the station's work. The host writes them to the text readout `station`, so the part needs `display.clips` with `"readout": "station"`: `start` then `work` (name it `…_loop`) when it begins working, `complete` when its queue is done or its output is full. Each is optional. |
 
 Each slot holds one stack of one item, up to that item's `stack_size`. A station runs every recipe that
 lists its part id in `stations`: when an order is queued its inputs come from the station's linked
@@ -495,7 +496,7 @@ host's values.
 | `glow` | `{readout, offset, direction, length}` | A faint blue particle glow whose strength follows the value from 0 to 1 (a thruster's exhaust). `direction` defaults to `[0, 1, 0]`, `length` to 0.5 m. |
 | `highlight` | `{readout, axis, offset, radius}` | A ring of cyan dashes turning about `axis` while the value is not 0, its sign giving the way round (a bearing an engine drives). `radius` defaults to 0.12 m. |
 | `press` | `{readout, axis, depth}` | Pushes the model in by `depth` m (default 0.02, at most 0.1) along `axis` (default `[0, -1, 0]`) while the value is not 0 (a button). |
-| `clips` | `{readout, scrub}` | Plays the model's own glTF animations (the model must be a `mesh`). The `readout` is a text value naming the clip to play (text after a `#` is ignored, so `stop#3` restarts `stop`); clips whose names end in `_loop` loop. `scrub` (at most 4) is a list of `{readout, clip}`: that clip is held at the value (0 to 1) of its length, for a lever or a needle. |
+| `clips` | `{readout, scrub, idle}` | Plays the model's own glTF animations (the model must be a `mesh`). The `readout` is a text value naming the clip to play (text after a `#` is ignored, so `stop#3` restarts `stop`; `start>run_loop` plays `start` and then `run_loop`); clips whose names end in `_loop` loop. `idle` names a clip played while the readout has no value and after a clip that does not loop has finished (a station's idle glow). `scrub` (at most 4) is a list of `{readout, clip}`: that clip is held at the value (0 to 1) of its length, for a lever or a needle. |
 | `effects` | list of `{readout, kind, offset, direction, color}` | At most 8 particle effects whose strength follows the value from 0 to 1. `kind` is `smoke`, `sparks` or `drops`; `offset` lies inside the footprint, `direction` (default up) is where they go, `color` is optional. |
 
 Offsets are from the part centre in the part's frame, within its footprint; axes and directions are not zero.
@@ -518,7 +519,7 @@ writes them.
 ```json
 {
   "id": "chest",
-  "stations": ["fabricator", "mini_fabricator"],
+  "stations": ["fabricator", "portable_fabricator"],
   "inputs": [
     { "item": "scrap_wood", "count": 4 },
     { "item": "scrap_metal", "count": 2 }

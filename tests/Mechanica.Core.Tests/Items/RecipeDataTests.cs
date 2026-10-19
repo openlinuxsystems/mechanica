@@ -231,6 +231,19 @@ public class RecipeDataTests : IDisposable
     }
 
     [Fact]
+    public void ThePortableFabricatorMakesOnlyItsShortList()
+    {
+        var content = ModLoader.LoadAll(Path.Combine(TestMods.RepoRoot, "mods"));
+        var book = RecipeBook.Load(content);
+
+        var made = book.All.Where(r => r.RunsAt("portable_fabricator")).Select(r => r.QualifiedId[8..]).Order(StringComparer.Ordinal);
+        Assert.Equal(["bearing", "connect_tool", "gasoline", "scrap_metal_block", "scrap_metal_wedge", "scrap_wheel",
+            "scrap_wood_block", "scrap_wood_wedge", "switch"], made);
+        var self = book.Find("portable_fabricator")!;
+        Assert.True(self.RunsAt("fabricator") && !self.RunsAt("portable_fabricator"));
+    }
+
+    [Fact]
     public void VanillaRecipesLoadAndCraftAChest()
     {
         var content = ModLoader.LoadAll(Path.Combine(TestMods.RepoRoot, "mods"));
@@ -238,7 +251,7 @@ public class RecipeDataTests : IDisposable
 
         Assert.Empty(book.Diagnostics);
         var chest = book.Find("chest")!;
-        Assert.True(chest.RunsAt("fabricator") && chest.RunsAt("mini_fabricator"));
+        Assert.True(chest.RunsAt("fabricator") && !chest.RunsAt("portable_fabricator"));
         Assert.True(book.Find("gasoline")!.RunsAt("refiner"));
 
         var player = new Inventory(content, 30);

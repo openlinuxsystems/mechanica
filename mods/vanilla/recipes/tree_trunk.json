@@ -1,8 +1,7 @@
 {
   "id": "tree_trunk",
   "stations": [
-    "fabricator",
-    "mini_fabricator"
+    "fabricator"
   ],
   "inputs": [
     {

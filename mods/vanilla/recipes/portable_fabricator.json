@@ -1,0 +1,23 @@
+{
+  "id": "portable_fabricator",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal",
+      "count": 40
+    },
+    {
+      "item": "circuit_board",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "portable_fabricator",
+      "count": 1
+    }
+  ],
+  "time": 30
+}

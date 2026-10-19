@@ -1,8 +1,7 @@
 {
   "id": "gas_container",
   "stations": [
-    "fabricator",
-    "mini_fabricator"
+    "fabricator"
   ],
   "inputs": [
     {

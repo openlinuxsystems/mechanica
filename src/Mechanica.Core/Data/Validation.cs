@@ -365,8 +365,24 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
                 sink.Error(Code, $"{p}.queue_size", $"queue_size must be 1 to {MaxQueue}.");
             if (crafting.LinkRange is { } range && !(range >= 0 && range <= MaxLinkRange))
                 sink.Error(Code, $"{p}.link_range", $"link_range must be 0 to {MaxLinkRange} m.");
+            if (crafting.Clips is { } stationClips)
+            {
+                ClipName(stationClips.Start, $"{p}.clips.start", sink);
+                ClipName(stationClips.Work, $"{p}.clips.work", sink);
+                ClipName(stationClips.Complete, $"{p}.clips.complete", sink);
+                if (part.Display?.Clips?.Readout != CraftingDefinition.ClipReadout)
+                    sink.Error(Code, $"{p}.clips", $"a station's clips play through display.clips with readout '{CraftingDefinition.ClipReadout}'.");
+                KnownKeys.WarnUnknown(stationClips.Extra, $"{p}.clips", sink, typeof(StationClipsDefinition));
+            }
             KnownKeys.WarnUnknown(crafting.Extra, p, sink, typeof(CraftingDefinition));
         }
+    }
+
+    // A clip a station or a display names: optional, 1 to 64 characters, without the readout's '#' and '>' marks.
+    private static void ClipName(string? clip, string path, DiagnosticSink sink)
+    {
+        if (clip is not null && (string.IsNullOrWhiteSpace(clip) || clip.Length > 64 || clip.Contains('#') || clip.Contains('>')))
+            sink.Error(Code, path, "a clip must name one of the model's clips (1 to 64 characters, no '#' or '>').");
     }
 
     // Upgrade levels (UI spec §4): each level's cost and the part it makes, which must still be a valid part.
@@ -637,6 +653,7 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
                     sink.Error(Code, $"{p}.clips.scrub[{i}].clip", "clip must name one of the model's clips (1 to 64 characters).");
                 KnownKeys.WarnUnknown(scrub.Extra, $"{p}.clips.scrub[{i}]", sink, typeof(ScrubDefinition));
             }
+            ClipName(clips.Idle, $"{p}.clips.idle", sink);
             KnownKeys.WarnUnknown(clips.Extra, $"{p}.clips", sink, typeof(ClipsDefinition));
         }
         if (display.Effects?.Count > EffectDefinition.MaxPerPart)

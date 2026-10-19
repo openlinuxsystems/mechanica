@@ -169,6 +169,14 @@ public interface IInventoryWorld
     {
     }
 
+    /// <summary>
+    /// Sets the text readout <paramref name="id"/> on a part, or takes it away when <paramref name="text"/> is null (the
+    /// clip a station plays as it works; <see cref="CraftingDefinition.Clips"/>).
+    /// </summary>
+    void SetReadout(int creation, int partId, string id, string? text)
+    {
+    }
+
     /// <summary>A part of <paramref name="creation"/> changed in a way every peer must draw again (an upgrade to a new model).</summary>
     void Changed(Creation creation)
     {
@@ -197,6 +205,9 @@ public sealed class InventoryActions(IPartCatalog catalog, RecipeBook recipes, I
 {
     // Stations whose work loop is playing.
     private HashSet<(int Creation, int Part)> _working = [];
+
+    // Makes every clip readout a station writes new, so the same clip plays again.
+    private int _clipCount;
 
     /// <summary>Action name for moving items.</summary>
     public const string MoveItems = "MoveItems";
@@ -351,12 +362,27 @@ public sealed class InventoryActions(IPartCatalog catalog, RecipeBook recipes, I
                     world.PlaySound(start, owner, BuildActions.PartCentre(creation, part));
                 if (PartSounds.For(definition, PartSounds.Work) is { } work)
                     world.SetPartLoop(creation.Id, part, work, owner);
+                if (definition.Crafting?.Clips is { } clips && StartClips(clips) is { } begin)
+                    world.SetReadout(creation.Id, part, CraftingDefinition.ClipReadout, $"{begin}#{++_clipCount}");
             }
         }
         foreach (var (creation, part) in _working.Where(w => !working.Contains(w)))
+        {
             world.SetPartLoop(creation, part, null, Identifiers.VanillaModId);
+            if (world.FindCreation(creation) is { } found && found.FindPart(part) is not null
+                && found.DefinitionOf(part).Crafting?.Clips is { } clips)
+                world.SetReadout(creation, part, CraftingDefinition.ClipReadout, clips.Complete is { } done ? $"{done}#{++_clipCount}" : null);
+        }
         _working = working;
     }
+
+    // What a station plays when it begins working: its start clip, then its work clip (the readout's "a>b").
+    private static string? StartClips(StationClipsDefinition clips) => (clips.Start, clips.Work) switch
+    {
+        ({ } start, { } work) => $"{start}>{work}",
+        ({ } start, null) => start,
+        (null, var work) => work,
+    };
 
     // ---- MoveItems ----
 
