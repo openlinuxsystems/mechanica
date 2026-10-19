@@ -386,7 +386,7 @@ public sealed class LogicScriptTests : IDisposable
     {
         var creation = Board();
         var seat = Place(creation, "vanilla:scrap_drivers_seat", new GridCell(-2, 1, -2));
-        var engine = Place(creation, "vanilla:gas_engine", new GridCell(2, 1, 0));
+        var engine = Place(creation, "vanilla:electric_engine", new GridCell(2, 1, 0));
         Link(creation, seat, engine);
         Steps(3);
         Assert.Equal(0f, _runtime.Readouts.Number(Car, seat, "seated"));

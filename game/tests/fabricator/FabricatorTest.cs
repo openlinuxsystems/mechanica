@@ -54,6 +54,8 @@ public partial class FabricatorTest : StagedTest
 
     public override void _Ready()
     {
+        // "Nothing is NEW the first time" needs a first time: forget what earlier runs saw at stations.
+        DirAccess.RemoveAbsolute(ProjectSettings.GlobalizePath("user://seen_recipes.json"));
         _harness = new NetTestHarness { Name = "Harness", GameMode = GameMode.Survival, WorldGen = WorldGenData.Flat };
         AddChild(_harness);
         _host = _harness.StartHost();
