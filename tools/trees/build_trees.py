@@ -334,8 +334,8 @@ def birch(lod=False):
             tube(m, "bark", limb, lerp_radii([0.06, 0.035, 0.015], len(limb)), 6, tile=0.8, around=1)
         clumps.append((limb[-1] + np.array([0, 0, 0.15]), 0.82 - 0.02 * k + rng.uniform(-0.08, 0.08)))
     for c, r in clumps:
-        leaf_clump(m, canopy, c, r, rng, 10 if lod else 32, size=1.1, lo=3.6, hi=8.6, droop=0.25, core_scale=0.55,
-                   core_subdiv=1)
+        leaf_clump(m, canopy, c, r, rng, 6 if lod else 32, size=1.1 if not lod else 1.3, lo=3.6, hi=8.6, droop=0.25,
+                   core_scale=0.55 if not lod else 0.7, core_subdiv=0 if lod else 1)
     return m
 
 
@@ -368,7 +368,8 @@ def leafy(lod=False, seed=23):
         a = 2 * math.pi * (k + 0.5) / 5 + rng.uniform(-0.2, 0.2)
         clumps.append((np.array([1.5 * math.cos(a), 1.5 * math.sin(a), 6.9 + rng.uniform(-0.2, 0.3)]), 1.25))
     for c, r in clumps:
-        leaf_clump(m, canopy, c, r, rng, 12 if lod else 40, size=0.95, lo=4.2, hi=8.9, core_scale=0.62)
+        leaf_clump(m, canopy, c, r, rng, 8 if lod else 40, size=0.95 if not lod else 1.15, lo=4.2, hi=8.9,
+                   core_scale=0.62 if not lod else 0.75, core_subdiv=0 if lod else 1)
     return m
 
 
