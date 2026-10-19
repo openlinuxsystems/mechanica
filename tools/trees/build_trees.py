@@ -1,191 +1,182 @@
-"""Build the harvestable trees, their log segments and the Wood Rod (Tree Harvesting spec).
+#!/usr/bin/env python3
+"""Build the harvestable trees, their log segments and the Wood Rod (Tree Harvesting spec; 2026-10-19 redesign).
 
-What it builds (procedurally, from scratch: no .blend inputs, no downloads), stylised low-poly with plain colour
-materials, matching the spec's reference images. Rounded surfaces (trunks, canopies, logs) are smooth-shaded and only
-hard edges (log ends, needle blades, pine plates) stay crisp (``SMOOTH_ANGLE``):
+Stylised to sit with the player characters and the textured blocks and rocks: smooth, gently curving trunks with
+painted bark, and soft canopies made of painted leaf-cluster cards round a solid core, shaded as one rounded mass.
+Everything is built procedurally from seeded random numbers (no .blend inputs, no downloads) and written straight
+to glTF with numpy and Pillow, so the build needs no Blender:
 
-* ``mods/vanilla/meshes/world/birch_tree.glb`` - small Birch: thin white trunk with black bark marks, thin brown
-  branches, drooping clusters of yellow-orange faceted blobs. About 8 m tall.
-* ``mods/vanilla/meshes/world/leafy_tree.glb`` - medium Leafy: brown trunk on a root flare that forks into branches
-  under a full rounded canopy of green faceted blobs. About 9 m tall.
-* ``mods/vanilla/meshes/world/spruce_tree.glb`` - medium Spruce: slim brown trunk, tall cone of drooping needle blades
-  in tiers. About 11 m tall.
-* ``mods/vanilla/meshes/world/pine_tree.glb`` - large Pine: thick trunk on a root flare, dense stacked skirts of
-  chunky green plates. About 13 m tall.
-* ``meshes/world/<tree>_lod.glb`` - a far version of each (a few hundred triangles), drawn past the LOD distance.
-* ``mods/vanilla/meshes/items/birch_log.glb``, ``wood_log.glb``, ``pine_log.glb`` - log segments: faceted octagonal
-  logs with light radial end grain, long axis along glTF Z.
+* ``mods/vanilla/meshes/world/birch_tree.glb`` - Birch: a slim, slightly bent white trunk with black dashes, thin
+  upswept limbs, an airy upright crown of golden leaf clumps. About 8 m tall.
+* ``leafy_tree.glb`` - Leafy: a stout trunk on a root flare that forks into four limbs under a broad, rounded crown of
+  green leaf clumps. About 9 m tall.
+* ``autumn_leafy_tree.glb`` - the Leafy tree in orange and red (Autumn Forest).
+* ``burnt_tree.glb`` - a charred snag: the Leafy trunk broken off, cracked black bark, bare crooked limbs (Burned
+  Forest).
+* ``spruce_tree.glb`` - Spruce: a slim straight trunk in a narrow cone of drooping, dark blue-green needle boughs that
+  reach almost to the ground. About 11 m tall.
+* ``pine_tree.glb`` - Pine: a big red-brown plated trunk, bare to about 4.5 m, then whorls of branches ending in
+  rounded, upturned needle clumps, broad at the bottom and narrowing to a crown. About 13 m tall.
+* ``meshes/world/<tree>_lod.glb`` - a far version of each (fewer cards, simpler trunk, smaller textures), drawn past
+  the LOD distance.
+* ``mods/vanilla/meshes/items/birch_log.glb``, ``wood_log.glb``, ``pine_log.glb`` - log segments in their tree's
+  bark with ringed end grain, long axis along glTF Z (sizes unchanged: they match the log parts' colliders).
 * ``mods/vanilla/meshes/items/wood_rod.glb`` - the Wood Rod: a rough hewn bar, 0.22 x 0.22 x 0.98 m, along glTF Z.
 
 Every tree stands with its ground point at the origin; the trunk goes into the ground a little below it so trees sit
-on slopes. Units are metres; in Blender Z is up and the exporter turns it into glTF's Y up.
+on slopes. Sizes keep to the colliders and fall heights in ``mods/vanilla/world/worldgen.json``. Materials: bark is a
+base colour plus normal map; foliage is an alpha-masked leaf atlas (four tiles from sunlit to shaded); each canopy
+core is a plain colour. Textures are painted by tree_textures.py and embedded in each file.
 
-How to run (Blender as a Python module, no Blender UI needed):
+How to run:  python3 tools/trees/build_trees.py    (needs numpy and pillow)
 
-    pip install bpy==5.2.2 numpy pillow
-    python tools/trees/build_trees.py                  # writes the .glb files
-    python tools/trees/build_trees.py --render OUT_DIR # also renders a review sheet and a small forest into OUT_DIR
-
-The outputs are committed; re-run this script after changing it and commit the result. The build is deterministic
-(seeded random numbers only), so running it twice gives the same files.
+The outputs are committed; re-run this script after changing it and commit the result. The build is deterministic,
+so running it twice gives the same files. ``tools/capture-trees.sh`` shows the result in game.
 """
 
 from __future__ import annotations
 
+import io
+import json
 import math
 import struct
-import json
 import sys
 from pathlib import Path
 
-import bpy  # noqa: I001  (bpy first)
-import bmesh
 import numpy as np
+from PIL import Image
 
 sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import tree_textures as tex  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[2]
-# Neighbouring faces meeting at less than this are shaded as one smooth surface; sharper edges stay hard.
-SMOOTH_ANGLE = math.radians(62)
 WORLD = REPO / "mods" / "vanilla" / "meshes" / "world"
 ITEMS = REPO / "mods" / "vanilla" / "meshes" / "items"
+UP = np.array([0.0, 0.0, 1.0])
+
+
+def unit(v):
+    v = np.asarray(v, float)
+    n = np.linalg.norm(v)
+    return v / n if n > 1e-12 else v
 
 
 # =====================================================================================================
-# Colours and materials
+# Geometry: primitives keyed by material
 # =====================================================================================================
 
-def srgb(hex_colour):
-    """#rrggbb as linear RGB (Blender colours are linear)."""
-    c = [int(hex_colour[i:i + 2], 16) / 255.0 for i in (1, 3, 5)]
-    return tuple(x / 12.92 if x <= 0.04045 else ((x + 0.055) / 1.055) ** 2.4 for x in c)
+class Model:
+    """Triangles grouped by material. Built Z up (``zup``) and written Y up, or built straight in glTF axes."""
 
+    def __init__(self, zup=True):
+        self.zup = zup
+        self.prims = {}
 
-PALETTE = {
-    "birch_bark": ("#ece9e1", 0.85),
-    "birch_shade": ("#c9c4ba", 0.85),
-    "birch_mark": ("#1d1c1b", 0.9),
-    "twig": ("#6b4528", 0.9),
-    "birch_leaf_a": ("#f4c414", 0.75),
-    "birch_leaf_b": ("#eba413", 0.75),
-    "birch_leaf_c": ("#f08c12", 0.75),
-    "bark": ("#7b4f2c", 0.9),
-    "bark_dark": ("#64401f", 0.9),
-    "leafy_a": ("#8fd033", 0.75),
-    "leafy_b": ("#72bd2b", 0.75),
-    "leafy_c": ("#58a027", 0.8),
-    "spruce_bark": ("#6d4326", 0.9),
-    "spruce_a": ("#79a646", 0.8),
-    "spruce_b": ("#678f3b", 0.8),
-    "spruce_c": ("#577d32", 0.8),
-    "pine_bark": ("#734a2a", 0.9),
-    "pine_a": ("#6c9a48", 0.8),
-    "pine_b": ("#5a873c", 0.8),
-    "pine_c": ("#4b7433", 0.8),
-    "end_grain": ("#d8a466", 0.85),
-    "end_ring": ("#c08848", 0.85),
-    "rod_wood": ("#c48b50", 0.85),
-    "rod_dark": ("#a8723e", 0.85),
-}
+    def prim(self, mat):
+        if mat not in self.prims:
+            self.prims[mat] = {"p": [], "n": [], "uv": [], "t": [], "i": []}
+        return self.prims[mat]
 
-_materials = {}
-
-
-def material(name):
-    if name not in _materials:
-        hex_colour, rough = PALETTE[name]
-        mat = bpy.data.materials.new(name)
-        mat.use_backface_culling = True
-        bsdf = mat.node_tree.nodes["Principled BSDF"]
-        bsdf.inputs["Base Color"].default_value = (*srgb(hex_colour), 1.0)
-        bsdf.inputs["Roughness"].default_value = rough
-        bsdf.inputs["Metallic"].default_value = 0.0
-        _materials[name] = mat
-    return _materials[name]
-
-
-# =====================================================================================================
-# Geometry builder
-# =====================================================================================================
-
-class Mesh:
-    """Triangles and quads with a material each, joined into one object at the end."""
-
-    def __init__(self):
-        self.verts = []
-        self.faces = []
-        self.mats = []
-
-    def add(self, verts, faces, mat):
-        base = len(self.verts)
-        self.verts.extend(tuple(float(c) for c in v) for v in verts)
-        for f in faces:
-            self.faces.append(tuple(base + i for i in f))
-            self.mats.append(mat)
+    def add(self, mat, pos, nrm, uv, tris, tan=None):
+        p = self.prim(mat)
+        base = len(p["p"])
+        p["p"].extend(np.asarray(pos, float))
+        p["n"].extend(unit(n) for n in nrm)
+        p["uv"].extend(np.asarray(uv, float))
+        if tan is not None:
+            p["t"].extend(np.asarray(tan, float))
+        p["i"].extend((base + a, base + b, base + c) for a, b, c in tris)
 
     def triangles(self):
-        return sum(len(f) - 2 for f in self.faces)
+        return sum(len(p["i"]) for p in self.prims.values())
 
 
-def frame(axis):
-    """Two unit vectors at right angles to `axis` (and each other)."""
-    axis = np.asarray(axis, float)
-    axis = axis / np.linalg.norm(axis)
-    helper = np.array([0.0, 0.0, 1.0]) if abs(axis[2]) < 0.9 else np.array([1.0, 0.0, 0.0])
-    u = np.cross(axis, helper)
-    u /= np.linalg.norm(u)
-    v = np.cross(axis, u)
-    return axis, u, v
+def frames(path):
+    """Parallel-transported (tangent, u, v) frames along a polyline."""
+    path = np.asarray(path, float)
+    out = []
+    t = unit(path[1] - path[0])
+    helper = np.array([1.0, 0.0, 0.0]) if abs(t[0]) < 0.9 else np.array([0.0, 1.0, 0.0])
+    u = unit(np.cross(t, helper))
+    for i in range(len(path)):
+        if i == 0:
+            t_new = unit(path[1] - path[0])
+        elif i == len(path) - 1:
+            t_new = unit(path[-1] - path[-2])
+        else:
+            t_new = unit(path[i + 1] - path[i - 1])
+        u = unit(u - t_new * np.dot(u, t_new))
+        out.append((t_new, u, np.cross(t_new, u)))
+    return out
 
 
-def tube(m, mat, base, axis, length, radii, sides, rng, *, jitter=0.0, twist=0.0, cap_top=True, cap_bottom=False,
-         top_mat=None, bottom_mat=None, side_mats=None, flare=None):
-    """A faceted tapered tube from `base` along `axis`. `radii` lists the radius at each ring (evenly spaced along the
-    length). `flare(k, ring)` may scale a ring's vertices one by one (roots). Caps are fans round a middle point."""
-    axis, u, v = frame(axis)
-    base = np.asarray(base, float)
-    rings = len(radii)
-    verts = []
-    for r_i, radius in enumerate(radii):
-        t = r_i / (rings - 1)
-        centre = base + axis * length * t
-        for k in range(sides):
-            a = 2 * math.pi * k / sides + twist * r_i
-            rad = radius * (1 + rng.uniform(-jitter, jitter))
+def tube(m, mat, path, radii, sides, *, tile=1.2, around=None, flare=None, tip=True, wobble=None):
+    """A smooth tube along `path` (one radius per point), with bark UVs: U wraps `around` times (default from the
+    girth, so texels stay square), V runs up `tile` metres a repeat. `flare(angle, i)` scales a ring point (roots);
+    `wobble(angle, i)` too (knots). A closing point caps the top when `tip`."""
+    path = np.asarray(path, float)
+    fr = frames(path)
+    girth = 2 * math.pi * max(radii[0], 0.02)
+    around = around or max(1, round(girth / tile))
+    lengths = np.concatenate([[0], np.cumsum(np.linalg.norm(np.diff(path, axis=0), axis=1))])
+    pos, nrm, uv, tan, tris = [], [], [], [], []
+    for i, (c, r, (t, u, v)) in enumerate(zip(path, radii, fr)):
+        # Taper tilts the surface normal toward the narrowing end.
+        j0, j1 = max(0, i - 1), min(len(path) - 1, i + 1)
+        slope = (radii[j1] - radii[j0]) / max(lengths[j1] - lengths[j0], 1e-6)
+        for k in range(sides + 1):
+            a = 2 * math.pi * k / sides
+            d = u * math.cos(a) + v * math.sin(a)
+            rr = r
             if flare is not None:
-                rad *= flare(k, r_i)
-            verts.append(centre + (u * math.cos(a) + v * math.sin(a)) * rad)
-    faces, mats = [], []
-    for r_i in range(rings - 1):
+                rr *= flare(a, i)
+            if wobble is not None:
+                rr *= wobble(a, i)
+            pos.append(c + d * rr)
+            nrm.append(unit(d - t * slope))
+            uv.append((around * k / sides, -lengths[i] / tile))
+            tan.append((*(-u * math.sin(a) + v * math.cos(a)), 1.0))
+    ring = sides + 1
+    for i in range(len(path) - 1):
         for k in range(sides):
-            a, b = r_i * sides + k, r_i * sides + (k + 1) % sides
-            faces.append((a, b, b + sides, a + sides))
-            mats.append(side_mats[(r_i + k) % len(side_mats)] if side_mats else mat)
-    for f, fm in zip(faces, mats):
-        m.add([verts[i] for i in f], [(0, 1, 2, 3)], fm)
-    if cap_top:
-        top = base + axis * (length + (radii[-1] * 0.15))
-        ring = verts[(rings - 1) * sides:]
-        for k in range(sides):
-            m.add([ring[k], ring[(k + 1) % sides], top], [(0, 1, 2)], top_mat or mat)
-    if cap_bottom:
-        bottom = base - axis * radii[0] * 0.08
-        ring = verts[:sides]
-        for k in range(sides):
-            m.add([ring[(k + 1) % sides], ring[k], bottom], [(0, 1, 2)], bottom_mat or mat)
+            a, b = i * ring + k, i * ring + k + 1
+            tris += [(a, b, b + ring), (a, b + ring, a + ring)]
+    if tip:
+        t = fr[-1][0]
+        top = len(pos)
+        pos.append(path[-1] + t * radii[-1] * 0.6)
+        nrm.append(t)
+        uv.append((around * 0.5, -(lengths[-1] + radii[-1]) / tile))
+        tan.append((*fr[-1][1], 1.0))
+        last = (len(path) - 1) * ring
+        tris += [(last + k, last + k + 1, top) for k in range(sides)]
+    m.add(mat, pos, nrm, uv, tris, tan)
 
 
-ICO_CACHE = {}
+def curve(start, direction, length, bend, segments, rng, sway=0.0):
+    """Points along a gently bending limb: `bend` pulls it toward world up (or down when negative) as it goes."""
+    p = np.asarray(start, float)
+    d = unit(direction)
+    pts = [p.copy()]
+    step = length / segments
+    side = unit(np.cross(d, UP)) if abs(d[2]) < 0.99 else np.array([1.0, 0, 0])
+    for s in range(segments):
+        d = unit(d + UP * bend / segments + side * rng.uniform(-sway, sway))
+        p = p + d * step
+        pts.append(p.copy())
+    return pts
+
+
+ICO = {}
 
 
 def icosphere(subdiv):
-    """Unit icosphere: vertices, triangles."""
-    if subdiv in ICO_CACHE:
-        return ICO_CACHE[subdiv]
+    if subdiv in ICO:
+        return ICO[subdiv]
     t = (1 + 5 ** 0.5) / 2
-    verts = [(-1, t, 0), (1, t, 0), (-1, -t, 0), (1, -t, 0), (0, -1, t), (0, 1, t), (0, -1, -t), (0, 1, -t),
-             (t, 0, -1), (t, 0, 1), (-t, 0, -1), (-t, 0, 1)]
-    verts = [np.array(v, float) / np.linalg.norm(v) for v in verts]
+    verts = [unit(v) for v in [(-1, t, 0), (1, t, 0), (-1, -t, 0), (1, -t, 0), (0, -1, t), (0, 1, t), (0, -1, -t),
+                               (0, 1, -t), (t, 0, -1), (t, 0, 1), (-t, 0, -1), (-t, 0, 1)]]
     faces = [(0, 11, 5), (0, 5, 1), (0, 1, 7), (0, 7, 10), (0, 10, 11), (1, 5, 9), (5, 11, 4), (11, 10, 2), (10, 7, 6),
              (7, 1, 8), (3, 9, 4), (3, 4, 2), (3, 2, 6), (3, 6, 8), (3, 8, 9), (4, 9, 5), (2, 4, 11), (6, 2, 10),
              (8, 6, 7), (9, 8, 1)]
@@ -195,8 +186,7 @@ def icosphere(subdiv):
         def mid(a, b):
             key = (min(a, b), max(a, b))
             if key not in cache:
-                p = verts[a] + verts[b]
-                verts.append(p / np.linalg.norm(p))
+                verts.append(unit(verts[a] + verts[b]))
                 cache[key] = len(verts) - 1
             return cache[key]
 
@@ -204,369 +194,587 @@ def icosphere(subdiv):
             ab, bc, ca = mid(a, b), mid(b, c), mid(c, a)
             new += [(a, ab, ca), (b, bc, ab), (c, ca, bc), (ab, bc, ca)]
         faces = new
-    ICO_CACHE[subdiv] = (np.array(verts), faces)
-    return ICO_CACHE[subdiv]
+    ICO[subdiv] = (np.array(verts), faces)
+    return ICO[subdiv]
 
 
-def blob(m, mats, centre, radii, rng, *, subdiv=1, jitter=0.12, droop=0.0):
-    """A faceted lump: an icosphere scaled to `radii`, its vertices pushed in and out; the lower half pulled down by
-    `droop` (a hanging birch cluster). It takes one colour from `mats`."""
+class Canopy:
+    """A crown's overall shape, for shading: a point's normal leans toward the outward direction from its middle, so
+    every clump and card shades as part of one rounded mass (the stylised soft look)."""
+
+    def __init__(self, centre, radii):
+        self.centre = np.asarray(centre, float)
+        self.radii = np.asarray(radii, float)
+
+    def normal(self, p, local, weight=0.65):
+        g = unit((np.asarray(p) - self.centre) / self.radii ** 2)
+        return unit(g * weight + unit(local) * (1 - weight))
+
+
+def core(m, mat, canopy, centre, radii, rng, subdiv=1, jitter=0.08):
+    """A solid clump inside the cards so the crown reads full and never see-through."""
     verts, faces = icosphere(subdiv)
     centre = np.asarray(centre, float)
-    out = []
-    for p in verts:
-        q = p * np.asarray(radii, float) * (1 + rng.uniform(-jitter, jitter))
-        if droop and p[2] < 0:
-            q[2] *= 1 + droop * (-p[2])
-        out.append(centre + q)
-    # One colour per lump: the light shades it, so a hard colour seam across it would only look jagged.
-    mat = mats[int(rng.integers(0, len(mats)))]
-    for f in faces:
-        m.add([out[i] for i in f], [(0, 1, 2)], mat)
+    pos, nrm = [], []
+    for v in verts:
+        p = centre + v * radii * (1 + rng.uniform(-jitter, jitter))
+        pos.append(p)
+        nrm.append(canopy.normal(p, v))
+    m.add(mat, pos, nrm, [(0.5, 0.5)] * len(pos), [(a, b, c) for a, b, c in faces])
 
 
-def blade(m, mat, root, direction, length, width, droop, rng, ridge=0.12):
-    """A spruce needle blade: a ridged, drooping leaf-shaped wedge from the trunk outwards."""
-    d = np.array([direction[0], direction[1], 0.0])
-    d /= np.linalg.norm(d)
-    side = np.array([-d[1], d[0], 0.0])
-    root = np.asarray(root, float)
-    tip = root + d * length + np.array([0, 0, -droop * length])
-    midp = root + d * length * 0.5 + np.array([0, 0, -droop * length * 0.42])
-    w = width * length * (1 + rng.uniform(-0.1, 0.1))
-    left, right = midp + side * w, midp - side * w
-    top = midp + np.array([0, 0, ridge * length])
-    bottom = midp - np.array([0, 0, 0.05 * length])
-    v = [root, tip, left, right, top, bottom]
-    m.add(v, [(0, 2, 4), (0, 4, 3), (2, 1, 4), (4, 1, 3), (0, 5, 2), (0, 3, 5), (2, 5, 1), (5, 3, 1)], mat)
+def card(m, mat, canopy, centre, normal, up, w, h, tone, *, flip_v=False, lean=0.0):
+    """A leaf-cluster card: a quad showing one atlas tile, written front and back (each one-sided) so it shades the
+    same from both sides. Its top edge points along `up`. `lean` bends the card's lower half back (curved cards)."""
+    n = unit(normal)
+    up = unit(np.asarray(up, float) - n * np.dot(up, n))
+    right = np.cross(up, n)
+    c = np.asarray(centre, float)
+    u0, v0, u1, v1 = tex.tile_uv(tone)
+    if flip_v:
+        v0, v1 = v1, v0
+    # Top and bottom rows; `lean` sets the bottom edge back a little so the card curves away from the eye.
+    rows = [(0.5, 0.0), (-0.5, lean)]
+    pos, uv = [], []
+    for y, back in rows:
+        for x in (-0.5, 0.5):
+            pos.append(c + right * x * w + up * y * h - n * back * h)
+            uv.append((u0 + (x + 0.5) * (u1 - u0), v0 + (0.5 - y) * (v1 - v0)))
+    nrm = [canopy.normal(p, n * 0.6 + unit(p - c) * 0.4 if np.linalg.norm(p - c) > 0 else n) for p in pos]
+    front = [(0, 2, 3), (0, 3, 1)]
+    back = [(a, c_, b) for a, b, c_ in front]
+    m.add(mat, pos, nrm, uv, front)
+    m.add(mat, pos, nrm, uv, back)
 
 
-def plate(m, mat, angle, half_width, inner, outer, z_inner, z_outer, thick):
-    """A pine skirt plate: a thick trapezoid from radius `inner` at height `z_inner` out to `outer` at `z_outer`,
-    `half_width` radians wide, with a short upturned lip, as in the reference's chunky layers."""
-    def at(r, a, z):
-        return np.array([r * math.cos(a), r * math.sin(a), z])
-    hw_in, hw_out = half_width * 0.75, half_width
-    top = [at(inner, angle - hw_in, z_inner), at(outer, angle - hw_out, z_outer), at(outer, angle + hw_out, z_outer),
-           at(inner, angle + hw_in, z_inner)]
-    lip = [at(outer * 1.04, angle - hw_out * 0.98, z_outer - thick), at(outer * 1.04, angle + hw_out * 0.98, z_outer - thick)]
-    bottom = [p - np.array([0, 0, thick]) for p in (top[0], top[3])]
-    v = top + lip + bottom
-    # top, front lip, underside, two sides
-    m.add(v, [(0, 1, 2, 3), (1, 4, 5, 2), (6, 7, 5, 4), (0, 6, 4, 1), (3, 2, 5, 7)], mat)
+def tone_for(height_frac, outward_z, rng):
+    """Atlas tile from how sunlit a card is: high and upward-facing cards light, low and downward ones dark."""
+    light = 0.5 * height_frac + 0.45 * (outward_z * 0.5 + 0.5) - 0.08 + rng.uniform(-0.15, 0.15)
+    return int(np.clip(3 - light * 4, 0, 3))
 
 
-def mark(m, mat, centre_axis_z, radius, angle, width, height):
-    """A black birch bark mark: a thin dash hugging the trunk."""
-    r = radius * 1.03
-    a0, a1 = angle - width / radius / 2, angle + width / radius / 2
-    z0, z1 = centre_axis_z - height / 2, centre_axis_z + height / 2
-    pts = [np.array([r * math.cos(a), r * math.sin(a), z]) for a, z in ((a0, centre_axis_z), (angle, z0), (a1, centre_axis_z), (angle, z1))]
-    m.add(pts, [(0, 1, 2, 3)], mat)
+def fibonacci(count, rng):
+    off = rng.uniform(0, 1)
+    pts = []
+    for i in range(count):
+        z = 1 - 2 * (i + 0.5) / count
+        r = math.sqrt(max(0, 1 - z * z))
+        a = math.pi * (3 - math.sqrt(5)) * i + off * 2 * math.pi
+        pts.append(np.array([r * math.cos(a), r * math.sin(a), z]))
+    return pts
+
+
+def leaf_clump(m, canopy, centre, radius, rng, cards, *, squash=0.85, size=1.05, lo=0.0, hi=1.0, droop=0.0,
+               core_mat="core", core_scale=0.72, core_subdiv=1, skip_below=-0.75):
+    """A broadleaf clump: a solid core and `cards` leaf cards round it, facing outward, their twigs toward the middle.
+    `lo`..`hi` is the crown's height range (for light and dark tiles)."""
+    centre = np.asarray(centre, float)
+    core(m, core_mat, canopy, centre, np.array([radius, radius, radius * squash]) * core_scale, rng, subdiv=core_subdiv)
+    for d in fibonacci(cards, rng):
+        if d[2] < skip_below:
+            continue
+        d = unit(d + rng.uniform(-0.2, 0.2, 3))
+        p = centre + d * radius * np.array([1, 1, squash]) * rng.uniform(0.66, 0.9)
+        n = unit(d + rng.uniform(-0.35, 0.35, 3))
+        up = unit(UP * (1 - droop) + d * 0.35 + rng.uniform(-0.3, 0.3, 3))
+        s = radius * size * rng.uniform(0.85, 1.15)
+        frac = (p[2] - lo) / max(hi - lo, 1e-6)
+        m_tone = tone_for(frac, d[2], rng)
+        card(m, "leaves", canopy, p, n, up, s, s, m_tone, lean=0.12)
 
 
 # =====================================================================================================
 # Trees (ground point at the origin, Z up)
 # =====================================================================================================
 
+def trunk_path(height, bottom, segments, rng, sway, lean=(0.0, 0.0)):
+    pts = []
+    phase = rng.uniform(0, 2 * math.pi)
+    for i in range(segments + 1):
+        t = i / segments
+        z = bottom + (height - bottom) * t
+        bend = sway * math.sin(t * math.pi * 1.4 + phase) * t
+        pts.append(np.array([lean[0] * t * t + bend, lean[1] * t * t + bend * 0.5, z]))
+    return pts
+
+
+def lerp_radii(profile, n):
+    xs = np.linspace(0, 1, len(profile))
+    return list(np.interp(np.linspace(0, 1, n), xs, profile))
+
+
+def roots_flare(count, amount, rings, rng):
+    phase = rng.uniform(0, 2 * math.pi)
+    def f(a, i):
+        if i >= rings:
+            return 1.0
+        k = (1 - i / rings) ** 2
+        return 1 + amount * k * max(0.0, math.cos(count * (a + phase))) ** 3 + 0.25 * amount * k
+    return f
+
+
 def birch(lod=False):
     rng = np.random.default_rng(11)
-    m = Mesh()
-    bark, dark, twig = material("birch_bark"), material("birch_mark"), material("twig")
-    leaves = [material("birch_leaf_a"), material("birch_leaf_b"), material("birch_leaf_c")]
-    height = 7.2
-    sides = 7 if lod else 10
-    radii = [0.32, 0.2, 0.17, 0.15, 0.13, 0.11, 0.09, 0.07] if not lod else [0.3, 0.16, 0.12, 0.07]
-    tube(m, bark, (0, 0, -0.4), (0, 0, 1), height + 0.4, radii, sides, rng, jitter=0.0 if lod else 0.03)
-    if lod:
-        for k in range(7):
-            a = 2 * math.pi * k / 7
-            r = 1.4 if k % 2 else 1.0
-            blob(m, leaves, (r * math.cos(a), r * math.sin(a), 5.0 - 0.3 * (k % 2)), (0.95, 0.95, 1.45), rng, subdiv=1, jitter=0.05)
-        blob(m, leaves, (0, 0, 6.6), (1.2, 1.2, 1.0), rng, subdiv=1, jitter=0.05)
-        return m
-    # Black marks up the trunk.
-    def trunk_radius(z):
-        f = min(max((z + 0.4) / (height + 0.4) * (len(radii) - 1), 0), len(radii) - 1.001)
-        i = int(f)
-        return radii[i] + (radii[i + 1] - radii[i]) * (f - i)
-    for z in np.arange(0.6, 6.0, 0.32):
-        for _ in range(int(rng.integers(1, 3))):
-            mark(m, dark, z + rng.uniform(-0.08, 0.08), trunk_radius(z) * 1.04, rng.uniform(0, 2 * math.pi),
-                 rng.uniform(0.09, 0.16), rng.uniform(0.05, 0.08))
-    # Branches out to drooping clusters, all the way round.
-    tips = []
-    for k in range(11):
-        a = 2 * math.pi * k * 0.381966 + rng.uniform(-0.2, 0.2)   # golden-angle spiral
-        z0 = 3.4 + 0.25 * k + rng.uniform(-0.2, 0.2)
-        reach = 1.9 - 0.09 * k + rng.uniform(-0.2, 0.2)
-        d = np.array([math.cos(a), math.sin(a), 0.55 + 0.06 * k])
-        length = reach * math.sqrt(1 + d[2] ** 2)
-        start = np.array([0, 0, z0])
-        tube(m, twig, start, d, length, [0.05, 0.02], 6, rng, cap_top=True)
-        tips.append(start + d / np.linalg.norm(d) * length)
-    for tip in tips:
-        # A hanging chain of blobs under each branch tip, longer lower down.
-        n = int(rng.integers(3, 5)) if tip[2] < 6.2 else 2
-        for i in range(n):
-            out = 1.0 + 0.06 * i
-            c = np.array([tip[0] * out, tip[1] * out, tip[2] - 0.45 * i + 0.25])
-            size = 0.5 - 0.05 * i
-            blob(m, leaves, c, (size, size, size * 1.15), rng, jitter=0.07, droop=0.35)
-    # Crown and fill.
-    for _ in range(18):
-        a = rng.uniform(0, 2 * math.pi)
-        r = rng.uniform(0.0, 1.3)
-        z = rng.uniform(5.4, 7.8)
-        s = rng.uniform(0.42, 0.6)
-        blob(m, leaves, (r * math.cos(a), r * math.sin(a), z), (s, s, s * 1.1), rng, jitter=0.07, droop=0.25)
+    m = Model()
+    height = 7.8
+    path = trunk_path(height, -0.4, 6 if lod else 14, rng, 0.18, lean=(0.25, 0.1))
+    tube(m, "bark", path, lerp_radii([0.24, 0.19, 0.16, 0.14, 0.12, 0.1, 0.07, 0.04], len(path)), 6 if lod else 12,
+         tile=1.0, flare=None if lod else roots_flare(4, 0.35, 3, rng))
+    canopy = Canopy((0.2, 0.05, 5.9), (1.9, 1.9, 2.4))
+    clumps = [(np.array([0.3, 0.1, 7.7]), 0.95)]
+    for k in range(8):
+        a = 2 * math.pi * k * 0.381966 + rng.uniform(-0.2, 0.2)
+        z0 = 3.4 + 0.42 * k + rng.uniform(-0.15, 0.15)
+        reach = 1.55 - 0.07 * k + rng.uniform(-0.15, 0.15)
+        d = np.array([math.cos(a), math.sin(a), 1.3 + 0.08 * k])
+        start = np.interp(z0, [p[2] for p in path], np.arange(len(path)))
+        base = path[int(start)] * (1 - start % 1) + path[min(int(start) + 1, len(path) - 1)] * (start % 1)
+        limb = curve(base, d, reach * 1.35, 0.25, 2 if lod else 4, rng, sway=0.15)
+        if not lod:
+            tube(m, "bark", limb, lerp_radii([0.06, 0.035, 0.015], len(limb)), 6, tile=0.8, around=1)
+        clumps.append((limb[-1] + np.array([0, 0, 0.15]), 0.82 - 0.02 * k + rng.uniform(-0.08, 0.08)))
+    for c, r in clumps:
+        leaf_clump(m, canopy, c, r, rng, 10 if lod else 32, size=1.1, lo=3.6, hi=8.6, droop=0.25, core_scale=0.55,
+                   core_subdiv=1)
     return m
 
 
-def roots(m, mat, rng, count, radius, height, spread):
-    for k in range(count):
-        a = 2 * math.pi * k / count + rng.uniform(-0.2, 0.2)
-        d = np.array([math.cos(a) * spread, math.sin(a) * spread, -1.0])
-        start = np.array([0, 0, height])
-        tube(m, mat, start, d, math.sqrt(spread ** 2 + 1) * height * 1.05, [radius, radius * 0.75, radius * 0.25], 7, rng,
-             jitter=0.04, cap_top=True)
-
-
-def leafy(lod=False):
-    rng = np.random.default_rng(23)
-    m = Mesh()
-    bark = material("bark")
-    greens = [material("leafy_a"), material("leafy_b"), material("leafy_c")]
-    sides = 7 if lod else 11
-    tube(m, bark, (0, 0, -0.4), (0, 0, 1), 4.0, [0.5, 0.4, 0.34, 0.3, 0.27] if not lod else [0.45, 0.3, 0.27], sides, rng,
-         jitter=0.0 if lod else 0.03)
-    if not lod:
-        roots(m, bark, rng, 5, 0.32, 0.8, 1.1)
-    # Forked branches up into the canopy.
-    ends = []
-    for k in range(5):
-        a = 2 * math.pi * k / 5 + rng.uniform(-0.2, 0.2)
-        d = np.array([math.cos(a) * 0.75, math.sin(a) * 0.75, 1.0])
-        start = np.array([0, 0, 3.2 + rng.uniform(-0.25, 0.3)])
-        length = 2.4 + rng.uniform(-0.3, 0.3)
+def leafy(lod=False, seed=23):
+    rng = np.random.default_rng(seed)
+    m = Model()
+    path = trunk_path(3.6, -0.4, 5 if lod else 10, rng, 0.08)
+    tube(m, "bark", path, lerp_radii([0.5, 0.42, 0.38, 0.36, 0.34], len(path)), 7 if lod else 14, tile=1.3,
+         flare=roots_flare(5, 0.9, 4 if not lod else 2, rng), tip=False)
+    canopy = Canopy((0.0, 0.0, 6.3), (3.0, 3.0, 2.3))
+    clumps = []
+    top = path[-1]
+    # Four limbs fork from the top of the trunk, each into a pair of clumps; a leader carries the crown's top.
+    for k in range(4):
+        a = 2 * math.pi * k / 4 + rng.uniform(-0.25, 0.25) + 0.4
+        d = np.array([math.cos(a) * 0.9, math.sin(a) * 0.9, 1.0])
+        limb = curve(top - np.array([0, 0, 0.3]), d, 2.5 + rng.uniform(-0.2, 0.2), 0.35, 2 if lod else 5, rng, sway=0.1)
+        tube(m, "bark", limb, lerp_radii([0.24, 0.17, 0.11, 0.06], len(limb)), 5 if lod else 9, tile=1.0)
+        mid = limb[len(limb) // 2]
+        side = unit(np.cross(d, UP))
+        twig = curve(mid, d * 0.6 + side * 0.8 + UP * 0.4, 1.3, 0.3, 2, rng)
         if not lod:
-            tube(m, bark, start, d, length, [0.2, 0.13, 0.08], 7, rng, jitter=0.03)
-        ends.append(start + d / np.linalg.norm(d) * length)
-    if not lod:
-        tube(m, bark, (0, 0, 3.4), (0.05, 0.0, 1), 2.8, [0.24, 0.14, 0.08], 7, rng, jitter=0.03)
-    # Canopy: big faceted blobs over a dome.
-    centres = [np.array([0, 0, 7.4])]
-    centres += [e + np.array([0, 0, 0.6]) for e in ends]
-    for k in range(7):
-        a = 2 * math.pi * (k + 0.5) / 7
-        centres.append(np.array([2.3 * math.cos(a), 2.3 * math.sin(a), 5.5 + 0.2 * (k % 2)]))
-    for k in range(6):
-        a = 2 * math.pi * k / 6 + 0.3
-        centres.append(np.array([1.3 * math.cos(a), 1.3 * math.sin(a), 7.0]))
-    for c in centres:
-        s = rng.uniform(1.05, 1.35)
-        blob(m, greens, c, (s, s, s * 0.85), rng, subdiv=1 if lod else 2, jitter=0.05 if not lod else 0.0)
+            tube(m, "bark", twig, lerp_radii([0.08, 0.04, 0.02], len(twig)), 6, tile=0.8, around=1)
+        clumps.append((limb[-1] + np.array([0, 0, 0.3]), 1.45 + rng.uniform(-0.1, 0.1)))
+        clumps.append((twig[-1] + np.array([0, 0, 0.1]), 1.15 + rng.uniform(-0.1, 0.1)))
+    leader = curve(top - np.array([0, 0, 0.2]), (0.05, -0.04, 1), 3.4, 0.0, 2 if lod else 4, rng, sway=0.05)
+    tube(m, "bark", leader, lerp_radii([0.22, 0.14, 0.06], len(leader)), 5 if lod else 9, tile=1.0)
+    clumps.append((leader[-1] + np.array([0, 0, 0.2]), 1.6))
+    for k in range(5):
+        a = 2 * math.pi * (k + 0.5) / 5 + rng.uniform(-0.2, 0.2)
+        clumps.append((np.array([1.5 * math.cos(a), 1.5 * math.sin(a), 6.9 + rng.uniform(-0.2, 0.3)]), 1.25))
+    for c, r in clumps:
+        leaf_clump(m, canopy, c, r, rng, 12 if lod else 40, size=0.95, lo=4.2, hi=8.9, core_scale=0.62)
+    return m
+
+
+def burnt(lod=False):
+    """A charred snag: the Leafy trunk snapped off at the top, with bare, crooked limbs."""
+    rng = np.random.default_rng(29)
+    m = Model()
+    path = trunk_path(5.1, -0.4, 5 if lod else 11, rng, 0.1)
+    radii = lerp_radii([0.48, 0.4, 0.36, 0.33, 0.29, 0.25], len(path))
+    # The snapped top: a jagged rim instead of a closed cap.
+    tube(m, "bark", path, radii, 7 if lod else 13, tile=1.2, flare=roots_flare(5, 0.85, 4 if not lod else 2, rng),
+         tip=False, wobble=None if lod else (lambda a, i: 1 + 0.05 * math.sin(a * 3 + i)))
+    rim_c = path[-1]
+    pos, nrm, uv, tris = [], [], [], []
+    for k in range(13):
+        a = 2 * math.pi * k / 13
+        d = np.array([math.cos(a), math.sin(a), 0])
+        pos += [rim_c + d * radii[-1], rim_c + d * radii[-1] * 0.4 + np.array([0, 0, rng.uniform(0.1, 0.7)])]
+        nrm += [d + UP * 0.3, d + UP]
+        uv += [(k / 13, 0), (k / 13, -0.3)]
+    for k in range(13):
+        a, b = 2 * k, 2 * ((k + 1) % 13)
+        tris += [(a, b, b + 1), (a, b + 1, a + 1)]
+    centre = len(pos)
+    pos.append(rim_c + np.array([0, 0, 0.35]))
+    nrm.append(UP)
+    uv.append((0.5, -0.2))
+    tris += [(2 * k + 1, 2 * ((k + 1) % 13) + 1, centre) for k in range(13)]
+    m.add("bark", pos, nrm, uv, tris, [(1, 0, 0, 1)] * len(pos))
+
+    def limb(start, d, length, radius, depth):
+        pts = curve(start, d, length, rng.uniform(-0.1, 0.4), 2 if lod else 4, rng, sway=0.35)
+        tube(m, "bark", pts, lerp_radii([radius, radius * 0.6, radius * 0.25], len(pts)), 4 if lod else 7, tile=0.9,
+             around=1)
+        if depth > 0 and not lod:
+            for _ in range(2):
+                j = int(rng.integers(1, len(pts) - 1))
+                nd = unit(unit(pts[j + 1] - pts[j]) + rng.uniform(-0.9, 0.9, 3) + UP * 0.3)
+                limb(pts[j], nd, length * 0.5, radius * 0.5, depth - 1)
+
+    for k in range(5):
+        a = 2 * math.pi * k / 5 + rng.uniform(-0.3, 0.3)
+        z = 2.8 + 0.45 * k
+        i = int(np.interp(z, [p[2] for p in path], np.arange(len(path))))
+        d = np.array([math.cos(a), math.sin(a), 0.6 + rng.uniform(0, 0.5)])
+        limb(path[i], d, 2.0 - 0.15 * k, 0.15, 2)
     return m
 
 
 def spruce(lod=False):
     rng = np.random.default_rng(37)
-    m = Mesh()
-    bark = material("spruce_bark")
-    greens = [material("spruce_a"), material("spruce_b"), material("spruce_c")]
-    height = 11.0
-    tube(m, bark, (0, 0, -0.4), (0, 0, 1), height + 0.2, [0.3, 0.22, 0.17, 0.12, 0.08, 0.05], 7 if lod else 10, rng,
-         jitter=0.0 if lod else 0.03)
-    if lod:
-        # Stacked cones.
-        for i, (z, r) in enumerate([(1.4, 2.6), (3.6, 2.1), (5.8, 1.6), (7.8, 1.1), (9.6, 0.6)]):
-            tube(m, greens[i % 3], (0, 0, z), (0, 0, 1), 2.6, [r, 0.05], 9, rng, cap_bottom=True)
-        return m
-    tiers = 13
-    for t in range(tiers):
-        f = t / (tiers - 1)
-        z = 1.9 + f * (height - 2.3)
-        length = 2.5 * (1 - f) + 0.55
-        count = 7 if f < 0.6 else (6 if f < 0.85 else 5)
+    m = Model()
+    height = 11.2
+    path = trunk_path(height, -0.4, 6 if lod else 12, rng, 0.02)
+    tube(m, "bark", path, lerp_radii([0.3, 0.24, 0.18, 0.13, 0.08, 0.04], len(path)), 6 if lod else 11, tile=0.9,
+         flare=None if lod else roots_flare(5, 0.4, 2, rng))
+    canopy = Canopy((0, 0, 5.6), (2.3, 2.3, 6.0))
+    # A dark cone inside the boughs so the tree reads solid between them.
+    cone_path = [np.array([0, 0, z]) for z in np.linspace(1.3, height + 0.2, 7 if lod else 12)]
+    cone_r = [max(0.05, 0.75 * (1 - (p[2] - 1.3) / (height - 1.1)) ** 1.05) for p in cone_path]
+    pos, nrm = [], []
+    tube_m = Model()
+    tube(tube_m, "core", cone_path, cone_r, 8 if lod else 12, tile=2.0)
+    for p, n in zip(tube_m.prims["core"]["p"], tube_m.prims["core"]["n"]):
+        pos.append(p)
+        nrm.append(canopy.normal(p, n + UP * 0.4))
+    m.add("core", pos, nrm, tube_m.prims["core"]["uv"], tube_m.prims["core"]["i"])
+    whorls = 10 if lod else 22
+    for w in range(whorls):
+        f = w / (whorls - 1)
+        z = 1.5 + f * (height - 1.9)
+        length = 2.25 * (1 - f) ** 0.95 + 0.4
+        count = (5 if lod else 8) if f < 0.7 else (4 if lod else 6)
         for k in range(count):
-            a = 2 * math.pi * k / count + (t % 2) * math.pi / count + rng.uniform(-0.15, 0.15)
-            root = np.array([0.12 * math.cos(a), 0.12 * math.sin(a), z + 0.35])
-            blade(m, greens[(t + k) % 3], root, (math.cos(a), math.sin(a)), length, 0.36, 0.55 + rng.uniform(-0.08, 0.08), rng)
-    # Leader on top.
-    tube(m, greens[0], (0, 0, height - 0.6), (0, 0, 1), 1.3, [0.32, 0.03], 5, rng, cap_bottom=True)
+            a = 2 * math.pi * k / count + (w % 2) * math.pi / count + rng.uniform(-0.2, 0.2)
+            out = np.array([math.cos(a), math.sin(a), 0.0])
+            droop = 0.45 + rng.uniform(-0.08, 0.08)
+            d = unit(out - UP * droop)
+            mid = np.array([0, 0, z]) + out * 0.15 + d * length * 0.5
+            frac = z / height
+            # A spray lying along the bough (seen from above and below), and one standing across it (seen side on).
+            flat_n = unit(UP + out * 0.35)
+            card(m, "leaves", canopy, mid, flat_n, -d, length * 1.0, length * 1.15, tone_for(frac, 0.6, rng),
+                 lean=-0.1)
+            if not lod or w % 2 == 0:
+                side = np.cross(UP, out)
+                card(m, "leaves", canopy, mid - UP * 0.05, side, -d, length * 0.75, length * 1.1, tone_for(frac, 0.0, rng))
+    # The leader: a little upright spray at the very top.
+    top = np.array([0, 0, height + 0.15])
+    for k in range(2):
+        a = k * math.pi / 2 + 0.3
+        card(m, "leaves", canopy, top, np.array([math.cos(a), math.sin(a), 0]), -UP, 0.55, 1.1, 0)
     return m
 
 
 def pine(lod=False):
     rng = np.random.default_rng(53)
-    m = Mesh()
-    bark = material("pine_bark")
-    greens = [material("pine_a"), material("pine_b"), material("pine_c")]
-    tube(m, bark, (0, 0, -0.5), (0, 0, 1), 12.0, [0.72, 0.55, 0.47, 0.4, 0.3, 0.2, 0.1], 8 if lod else 12, rng,
-         jitter=0.0 if lod else 0.03)
-    if lod:
-        for i, (z, r) in enumerate([(3.6, 3.4), (5.6, 2.8), (7.6, 2.1), (9.4, 1.5), (11.0, 0.9)]):
-            tube(m, greens[i % 3], (0, 0, z), (0, 0, 1), 2.4, [r, 0.08], 10, rng, cap_bottom=True)
-        return m
-    roots(m, bark, rng, 7, 0.38, 1.1, 1.3)
-    tiers = 8
-    for t in range(tiers):
-        f = t / (tiers - 1)
-        z = 4.6 + f * 7.0
-        outer = 3.4 * (1 - f) + 0.95
-        count = 9 if f < 0.5 else 7
+    m = Model()
+    height = 12.6
+    path = trunk_path(height, -0.5, 6 if lod else 14, rng, 0.12, lean=(0.15, -0.1))
+    tube(m, "bark", path, lerp_radii([0.66, 0.56, 0.5, 0.45, 0.39, 0.32, 0.24, 0.14, 0.06], len(path)), 8 if lod else 16,
+         tile=1.5, flare=roots_flare(6, 0.7, 4 if not lod else 2, rng))
+    canopy = Canopy((0, 0, 8.2), (3.4, 3.4, 4.4))
+    zs = [p[2] for p in path]
+
+    def at(z):
+        i = np.interp(z, zs, np.arange(len(path)))
+        a, f = int(i), i % 1
+        return path[a] * (1 - f) + path[min(a + 1, len(path) - 1)] * f
+
+    def tuft_clump(c, r):
+        core(m, "core", canopy, c, np.array([r, r, r * 0.42]) * 0.66, rng, subdiv=0 if lod else 1)
+        n = 5 if lod else 16
+        for d in fibonacci(n * 2, rng)[:n]:          # the upper half of the sphere only: tufts point up and out
+            d = unit(d + rng.uniform(-0.2, 0.2, 3))
+            p = c + d * np.array([r, r, r * 0.45]) * 0.72
+            nrm = unit(d * np.array([1, 1, 0.5]) + rng.uniform(-0.3, 0.3, 3))
+            up = unit(UP + d * 0.6)
+            s = r * rng.uniform(1.0, 1.3)
+            card(m, "leaves", canopy, p, nrm, up, s * 1.1, s, tone_for((p[2] - 4.5) / 8.5, d[2], rng), lean=0.1)
+
+    whorls = 7
+    for w in range(whorls):
+        f = w / (whorls - 1)
+        z = 4.6 + f * 6.4
+        length = 2.3 * (1 - f) + 0.6
+        count = (4 if lod else 6) if f < 0.5 else (3 if lod else 5)
         for k in range(count):
-            a = 2 * math.pi * k / count + (t % 2) * math.pi / count
-            plate(m, greens[(k + t) % 3], a, math.pi / count * 1.05, 0.2, outer, z + 0.35, z - 0.55 - 0.12 * outer, 0.24)
-    tube(m, greens[0], (0, 0, 11.2), (0, 0, 1), 1.6, [0.75, 0.05], 7, rng, cap_bottom=True)
+            a = 2 * math.pi * k / count + w * 0.9 + rng.uniform(-0.25, 0.25)
+            d = np.array([math.cos(a), math.sin(a), 0.25 + 0.2 * f])
+            branch = curve(at(z), d, length, 0.3, 2 if lod else 4, rng, sway=0.1)
+            if not lod or f < 0.5:
+                tube(m, "bark", branch, lerp_radii([0.15 * (1 - f * 0.5), 0.09, 0.04], len(branch)), 5 if lod else 7,
+                     tile=1.0, around=1)
+            r = 0.8 * (1 - f) + 0.55
+            tuft_clump(branch[-1] + np.array([0, 0, 0.15]), r)
+            if f < 0.2 and not lod:
+                tuft_clump(branch[len(branch) // 2] + np.array([0, 0, 0.25]), r * 0.75)
+    tuft_clump(at(height - 0.4) + np.array([0, 0, 0.3]), 1.0)
+    tuft_clump(at(height - 1.2) + np.array([0.4, 0.2, 0.0]), 0.85)
     return m
 
 
 # =====================================================================================================
-# Logs and the rod (long axis along Blender Y, so glTF Z; centred on the origin)
+# Logs and the rod (built straight in glTF axes: long axis along Z, centred on the origin)
 # =====================================================================================================
 
-def log(radius, length, bark_mats, seed, marks=False):
+def end_cap(m, mat, centre, axis, radius, sides, inset=0.0):
+    axis = unit(axis)
+    _, u, v = frames([np.zeros(3), axis])[0]
+    pos, nrm, uv = [np.asarray(centre) - axis * inset], [axis], [(0.5, 0.5)]
+    for k in range(sides + 1):
+        a = 2 * math.pi * k / sides
+        d = u * math.cos(a) + v * math.sin(a)
+        pos.append(np.asarray(centre) + d * radius)
+        nrm.append(axis)
+        uv.append((0.5 + 0.5 * math.cos(a), 0.5 - 0.5 * math.sin(a)))
+    tris = [(0, k + 1, k + 2) for k in range(sides)]
+    m.add(mat, pos, nrm, uv, tris)
+
+
+def log(radius, length, seed):
     rng = np.random.default_rng(seed)
-    m = Mesh()
-    sides = 12
-    rings = 4
-    radii = [radius * (1 + rng.uniform(-0.03, 0.03)) for _ in range(rings)]
-    end, ring = material("end_grain"), material("end_ring")
-    tube(m, bark_mats[0], (0, -length / 2, 0), (0, 1, 0), length, radii, sides, rng, jitter=0.02,
-         cap_top=False, cap_bottom=False)
-    # End grain: an inner ring and a fan of facets, slightly hollowed, at each end.
-    axis, u, v = frame((0, 1, 0))
-    for sign, r_end in ((-1, radii[0]), (1, radii[-1])):
-        y = sign * length / 2
-        outer = [np.array([0, y, 0]) + (u * math.cos(2 * math.pi * k / sides) + v * math.sin(2 * math.pi * k / sides)) * r_end
-                 for k in range(sides)]
-        inner = [np.array([0, y + sign * -0.01, 0]) + (p - np.array([0, y, 0])) * 0.78 for p in outer]
-        centre = np.array([0, y - sign * 0.025, 0])
-        for k in range(sides):
-            a, b = k, (k + 1) % sides
-            quad = [outer[a], outer[b], inner[b], inner[a]] if sign > 0 else [outer[b], outer[a], inner[a], inner[b]]
-            m.add(quad, [(0, 1, 2, 3)], ring)
-            tri = [inner[a], inner[b], centre] if sign > 0 else [inner[b], inner[a], centre]
-            m.add(tri, [(0, 1, 2)], end)
-    if marks:
-        dark = material("birch_mark")
-        for y in np.arange(-length / 2 + 0.15, length / 2 - 0.1, 0.3):
-            for _ in range(2):
-                a = rng.uniform(0, 2 * math.pi)
-                w = rng.uniform(0.07, 0.12)
-                r = radius * 1.06
-                a0, a1 = a - w / r / 2, a + w / r / 2
-                pts = [np.array([r * math.cos(a0), y, r * math.sin(a0)]), np.array([r * math.cos(a), y - 0.035, r * math.sin(a)]),
-                       np.array([r * math.cos(a1), y, r * math.sin(a1)]), np.array([r * math.cos(a), y + 0.035, r * math.sin(a)])]
-                m.add(pts, [(3, 2, 1, 0)], dark)
+    m = Model(zup=False)
+    sides = 16
+    path = [np.array([0, 0, z]) for z in np.linspace(-length / 2, length / 2, 5)]
+    radii = [radius * (1 + rng.uniform(-0.03, 0.03)) for _ in path]
+    tube(m, "bark", path, radii, sides, tile=1.0 if radius > 0.2 else 0.7, tip=False,
+         wobble=lambda a, i: 1 + 0.025 * math.sin(a * 5 + i * 1.7))
+    end_cap(m, "end", path[-1], (0, 0, 1), radii[-1] * 1.03, sides, inset=0.0)
+    end_cap(m, "end", path[0], (0, 0, -1), radii[0] * 1.03, sides, inset=0.0)
     return m
 
 
 def wood_rod():
     rng = np.random.default_rng(71)
-    m = Mesh()
-    wood, end = material("rod_wood"), material("end_grain")
-    tube(m, wood, (0, -0.49, 0), (0, 1, 0), 0.98, [0.13, 0.135, 0.128, 0.132], 10, rng, jitter=0.03,
-         cap_top=True, cap_bottom=True, top_mat=end, bottom_mat=end)
+    m = Model(zup=False)
+    path = [np.array([0, 0, z]) for z in np.linspace(-0.47, 0.47, 4)]
+    radii = [0.13, 0.135, 0.128, 0.132]
+    tube(m, "bark", path, radii, 10, tile=0.8, around=1, tip=False, wobble=lambda a, i: 1 + rng.uniform(-0.03, 0.03))
+    end_cap(m, "end", np.array([0, 0, 0.49]), (0, 0, 1), 0.12, 10)
+    end_cap(m, "end", np.array([0, 0, -0.49]), (0, 0, -1), 0.12, 10)
+    # Close the gap between the tube ends and the slightly set-out caps with a bevel ring.
+    for sign in (1, -1):
+        pos, nrm, uv, tris = [], [], [], []
+        for k in range(11):
+            a = 2 * math.pi * k / 10
+            d = np.array([math.cos(a), math.sin(a), 0])
+            pos += [d * radii[0 if sign < 0 else -1] + np.array([0, 0, 0.47 * sign]), d * 0.12 + np.array([0, 0, 0.49 * sign])]
+            nrm += [d + np.array([0, 0, 0.7 * sign])] * 2
+            uv += [(k / 10, 0), (k / 10, 0.03)]
+        for k in range(10):
+            a, b = 2 * k, 2 * k + 2
+            tris += [(a, b, b + 1), (a, b + 1, a + 1)] if sign > 0 else [(a, b + 1, b), (a, a + 1, b + 1)]
+        m.add("bark", pos, nrm, uv, tris, [(1, 0, 0, 1)] * len(pos))
     return m
 
 
 # =====================================================================================================
-# Export
+# Materials and textures
 # =====================================================================================================
 
-def reset_scene():
-    bpy.ops.wm.read_factory_settings(use_empty=True)
-    _materials.clear()
+def png(img, palette=False):
+    buf = io.BytesIO()
+    if palette:
+        img = img.quantize(colors=256, method=Image.Quantize.FASTOCTREE, dither=Image.Dither.NONE)
+    img.save(buf, format="PNG", optimize=True)
+    return buf.getvalue(), "image/png"
 
 
-def to_object(name, m):
-    me = bpy.data.meshes.new(name)
-    me.from_pydata(m.verts, [], m.faces)
-    me.validate(clean_customdata=False)
-    mats = []
-    for mat in m.mats:
-        if mat not in mats:
-            mats.append(mat)
-    for mat in mats:
-        me.materials.append(mat)
-    me.polygons.foreach_set("material_index", [mats.index(mat) for mat in m.mats])
-    # Faces are added with their own corners: weld shared corners so rounded surfaces can shade smoothly.
-    bm = bmesh.new()
-    bm.from_mesh(me)
-    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-5)
-    bm.to_mesh(me)
-    bm.free()
-    me.shade_smooth()
-    me.set_sharp_from_angle(angle=SMOOTH_ANGLE)
-    me.update()
-    ob = bpy.data.objects.new(name, me)
-    bpy.context.scene.collection.objects.link(ob)
-    return ob
+def jpeg(img):
+    buf = io.BytesIO()
+    img.convert("RGB").save(buf, format="JPEG", quality=90, optimize=True)
+    return buf.getvalue(), "image/jpeg"
 
 
-def export(ob, path):
+_cache = {}
+
+
+def cached(key, make):
+    if key not in _cache:
+        _cache[key] = make()
+    return _cache[key]
+
+
+def rgb_image(arr, size=None):
+    img = Image.fromarray(np.round(np.clip(arr, 0, 1) * 255).astype(np.uint8), "RGB")
+    return img.resize((size, size), Image.LANCZOS) if size else img
+
+
+def bark_material(kind, size):
+    albedo, normal = cached(("bark", kind), lambda: tex.bark(kind))
+    return {"color": jpeg(rgb_image(albedo, size)), "normal": jpeg(rgb_image(normal, size)), "rough": 0.95}
+
+
+def leaf_material(kind, size):
+    atlas = cached(("leaves", kind), lambda: tex.foliage(kind))
+    img = Image.fromarray(atlas, "RGBA")
+    if size != img.width:
+        img = img.resize((size, size), Image.LANCZOS)
+    return {"color": png(img, palette=True), "mask": True, "rough": 0.85}
+
+
+def plain(hex_colour, rough=0.9):
+    return {"factor": [*tex.hexrgb(hex_colour) ** 2.2, 1.0], "rough": rough}
+
+
+def end_material(kind):
+    return {"color": jpeg(rgb_image(cached(("end", kind), lambda: tex.end_grain(kind)))), "rough": 0.85}
+
+
+CORES = {"leafy": "#2f5c17", "autumn": "#9a3514", "birch": "#b0700c", "spruce": "#284a25", "pine": "#2a4719"}
+
+
+def tree_materials(bark, leaves, lod):
+    return {
+        "bark": bark_material(bark, 128 if lod else 512),
+        "leaves": leaf_material(leaves, 256 if lod else 1024),
+        "core": plain(CORES[leaves]),
+    }
+
+
+# =====================================================================================================
+# glTF writer
+# =====================================================================================================
+
+def write_glb(path, name, model, materials):
+    """One mesh (a primitive per material) in one node, with embedded images. Deterministic bytes."""
+    blob = bytearray()
+    views, accessors = [], []
+
+    def view(data, target=None):
+        while len(blob) % 4:
+            blob.append(0)
+        v = {"buffer": 0, "byteOffset": len(blob), "byteLength": len(data)}
+        if target:
+            v["target"] = target
+        blob.extend(data)
+        views.append(v)
+        return len(views) - 1
+
+    def accessor(arr, kind, component=5126, target=34962, minmax=False):
+        arr = np.ascontiguousarray(arr, dtype=np.float32 if component == 5126 else np.uint32)
+        a = {"bufferView": view(arr.tobytes(), target), "componentType": component, "count": int(arr.shape[0]), "type": kind}
+        if minmax:
+            a["min"] = [float(x) for x in arr.min(axis=0)]
+            a["max"] = [float(x) for x in arr.max(axis=0)]
+        accessors.append(a)
+        return len(accessors) - 1
+
+    def axes(v):
+        v = np.asarray(v, float)
+        return np.stack([v[:, 0], v[:, 2], -v[:, 1]], axis=1) if model.zup else v
+
+    images, textures, mats, prims = [], [], [], []
+
+    def texture(data):
+        images.append({"bufferView": view(data[0]), "mimeType": data[1]})
+        textures.append({"sampler": 0, "source": len(images) - 1})
+        return len(textures) - 1
+
+    for mat_name in sorted(model.prims):
+        spec = materials[mat_name]
+        pbr = {"metallicFactor": 0.0, "roughnessFactor": spec["rough"]}
+        mat = {"name": mat_name, "pbrMetallicRoughness": pbr}
+        if "factor" in spec:
+            pbr["baseColorFactor"] = [round(float(x), 5) for x in spec["factor"]]
+        if "color" in spec:
+            pbr["baseColorTexture"] = {"index": texture(spec["color"])}
+        if "normal" in spec:
+            mat["normalTexture"] = {"index": texture(spec["normal"])}
+        if spec.get("mask"):
+            mat["alphaMode"] = "MASK"
+            mat["alphaCutoff"] = 0.5
+        mats.append(mat)
+        p = model.prims[mat_name]
+        attrs = {
+            "POSITION": accessor(np.round(axes(p["p"]), 5), "VEC3", minmax=True),
+            "NORMAL": accessor(np.round(axes(p["n"]), 5), "VEC3"),
+            "TEXCOORD_0": accessor(np.round(np.asarray(p["uv"]), 5), "VEC2"),
+        }
+        if "normal" in spec and p["t"]:
+            t = np.asarray(p["t"], float)
+            t3 = axes(t[:, :3])
+            t3 = t3 - np.asarray(axes(p["n"])) * np.sum(t3 * axes(p["n"]), axis=1, keepdims=True)
+            t3 /= np.maximum(np.linalg.norm(t3, axis=1, keepdims=True), 1e-9)
+            attrs["TANGENT"] = accessor(np.round(np.concatenate([t3, t[:, 3:4]], axis=1), 5), "VEC4")
+        idx = accessor(np.asarray(p["i"], np.uint32).reshape(-1), "SCALAR", component=5125, target=34963)
+        prims.append({"attributes": attrs, "indices": idx, "material": len(mats) - 1})
+    doc = {
+        "asset": {"version": "2.0", "generator": "tools/trees/build_trees.py"},
+        "scene": 0,
+        "scenes": [{"nodes": [0]}],
+        "nodes": [{"name": name, "mesh": 0}],
+        "meshes": [{"name": name, "primitives": prims}],
+        "materials": mats,
+        "accessors": accessors,
+        "bufferViews": views,
+        "buffers": [{"byteLength": len(blob)}],
+    }
+    if images:
+        doc["images"] = images
+        doc["textures"] = textures
+        doc["samplers"] = [{"magFilter": 9729, "minFilter": 9987, "wrapS": 10497, "wrapT": 10497}]
+    while len(blob) % 4:
+        blob.append(0)
+    doc["buffers"][0]["byteLength"] = len(blob)
+    text = json.dumps(doc, separators=(",", ":")).encode()
+    text += b" " * (-len(text) % 4)
+    body = struct.pack("<I", len(text)) + b"JSON" + text + struct.pack("<I", len(blob)) + b"BIN\x00" + bytes(blob)
     path.parent.mkdir(parents=True, exist_ok=True)
-    bpy.ops.object.select_all(action="DESELECT")
-    ob.select_set(True)
-    bpy.context.view_layer.objects.active = ob
-    bpy.ops.export_scene.gltf(
-        filepath=str(path), export_format="GLB", use_selection=True, export_apply=True, export_yup=True,
-        export_animations=False, export_morph=False, export_skins=False, export_draco_mesh_compression_enable=False,
-        export_extras=False, export_cameras=False, export_lights=False)
+    path.write_bytes(b"glTF" + struct.pack("<II", 2, 12 + len(body)) + body)
 
 
-def glb_info(path):
-    data = path.read_bytes()
-    length = struct.unpack_from("<I", data, 12)[0]
-    doc = json.loads(data[20:20 + length])
-    acc = doc["accessors"]
-    tris = sum(acc[p["indices"]]["count"] // 3 for mesh in doc["meshes"] for p in mesh["primitives"])
-    pos = [acc[p["attributes"]["POSITION"]] for mesh in doc["meshes"] for p in mesh["primitives"]]
-    lo = np.min([a["min"] for a in pos], axis=0)
-    hi = np.max([a["max"] for a in pos], axis=0)
-    return tris, lo, hi
+# =====================================================================================================
+# The models
+# =====================================================================================================
+
+def tree(make, bark, leaves):
+    return lambda lod: (make(lod), tree_materials(bark, leaves, lod))
 
 
-MODELS = {
-    "birch_tree": (WORLD, lambda: birch()),
-    "birch_tree_lod": (WORLD, lambda: birch(lod=True)),
-    "leafy_tree": (WORLD, lambda: leafy()),
-    "leafy_tree_lod": (WORLD, lambda: leafy(lod=True)),
-    "spruce_tree": (WORLD, lambda: spruce()),
-    "spruce_tree_lod": (WORLD, lambda: spruce(lod=True)),
-    "pine_tree": (WORLD, lambda: pine()),
-    "pine_tree_lod": (WORLD, lambda: pine(lod=True)),
-    "birch_log": (ITEMS, lambda: log(0.12, 1.45, [material("birch_bark"), material("birch_bark"), material("birch_shade")], 3, marks=True)),
-    "wood_log": (ITEMS, lambda: log(0.235, 1.45, [material("bark"), material("bark_dark")], 5)),
-    "pine_log": (ITEMS, lambda: log(0.35, 1.2, [material("pine_bark"), material("bark_dark")], 7)),
-    "wood_rod": (ITEMS, wood_rod),
+TREES = {
+    "birch_tree": tree(birch, "birch", "birch"),
+    "leafy_tree": tree(leafy, "oak", "leafy"),
+    "autumn_leafy_tree": tree(leafy, "oak", "autumn"),
+    "burnt_tree": lambda lod: (burnt(lod), {"bark": bark_material("charred", 128 if lod else 512)}),
+    "spruce_tree": tree(spruce, "spruce", "spruce"),
+    "pine_tree": tree(pine, "pine", "pine"),
+}
+
+ITEM_MODELS = {
+    "birch_log": lambda: (log(0.12, 1.45, 3), {"bark": bark_material("birch", 256), "end": end_material("birch")}),
+    "wood_log": lambda: (log(0.235, 1.45, 5), {"bark": bark_material("oak", 256), "end": end_material("oak")}),
+    "pine_log": lambda: (log(0.35, 1.2, 7), {"bark": bark_material("pine", 256), "end": end_material("pine")}),
+    "wood_rod": lambda: (wood_rod(), {"bark": {**bark_material("oak", 128), "color": jpeg(rgb_image(
+        cached(("rod",), lambda: np.clip(tex.bark("oak")[0] * 1.55 + 0.08, 0, 1)), 128))}, "end": end_material("oak")}),
 }
 
 
-def build(names=None):
-    reset_scene()
-    built = {}
-    for name, (folder, make) in MODELS.items():
-        if names and name not in names:
-            continue
-        built[name] = (to_object(name, make()), folder / f"{name}.glb")
-    return built
+def report(path, model):
+    lo = np.min([np.min(p["p"], axis=0) for p in model.prims.values()], axis=0)
+    hi = np.max([np.max(p["p"], axis=0) for p in model.prims.values()], axis=0)
+    size = hi - lo
+    print(f"{path.relative_to(REPO)}: {model.triangles()} triangles, {size[0]:.2f} x {size[1]:.2f} x {size[2]:.2f} m, "
+          f"{path.stat().st_size // 1024} KiB")
 
 
 def main():
-    built = build()
-    for name, (ob, path) in built.items():
-        export(ob, path)
-        tris, lo, hi = glb_info(path)
-        size = hi - lo
-        print(f"{path.relative_to(REPO)}: {tris} triangles, {size[0]:.2f} x {size[1]:.2f} x {size[2]:.2f} m, {path.stat().st_size // 1024} KiB")
-    if "--render" in sys.argv:
-        out = Path(sys.argv[sys.argv.index("--render") + 1])
-        sys.path.insert(0, str(Path(__file__).resolve().parent))
-        import render_trees
-        render_trees.render(out, built)
+    only = set(sys.argv[1:])
+    for name, make in TREES.items():
+        for lod in (False, True):
+            full = f"{name}_lod" if lod else name
+            if only and name not in only and full not in only:
+                continue
+            model, mats = make(lod)
+            path = WORLD / f"{full}.glb"
+            write_glb(path, full, model, mats)
+            report(path, model)
+    for name, make in ITEM_MODELS.items():
+        if only and name not in only:
+            continue
+        model, mats = make()
+        path = ITEMS / f"{name}.glb"
+        write_glb(path, name, model, mats)
+        report(path, model)
 
 
 if __name__ == "__main__":
