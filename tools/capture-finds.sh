@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Renders the small finds (a loot crate, a chest and a scrap wreck) in a running world to PNGs,
+# Renders the small finds (a loot crate, the three Bloom Pods and a scrap wreck) in a running world to PNGs,
 # the nearest of each wide and close
 # (see game/tools/capture/CaptureScene.cs). Usage: tools/capture-finds.sh OUT_DIR
 # Needs a display; without one it uses xvfb-run. Uses $GODOT if set, otherwise the pinned build.

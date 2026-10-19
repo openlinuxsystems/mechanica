@@ -30,6 +30,7 @@ public partial class PlayerController : CharacterBody3D
     private Node3D? _character;
     private CollisionShape3D _shape = null!;
     private bool _dead;
+    private bool _deathCamera;
     private Node3D? _arms;
     private CharacterGesture _gesture;
     private byte _gestureCount;
@@ -40,6 +41,11 @@ public partial class PlayerController : CharacterBody3D
     private double _sinceSeatChange = double.MaxValue;
     private Vector3 _lastShown;
     private Vector3 _knock;
+    // The camera's jolt from a blow: a kick (pitch, roll in radians) springing back, and a shake fading out.
+    private Vector2 _kick;
+    private Vector2 _kickRate;
+    private float _shake;
+    private float _shakeTime;
 
     /// <summary>Peer that controls this player (1 is the host).</summary>
     public int PeerId { get; init; } = 1;
@@ -73,13 +79,27 @@ public partial class PlayerController : CharacterBody3D
     public event Action<float>? Landed;
 
     /// <summary>
-    /// A dead player (chunk 20) neither moves nor collides and is not drawn, until it respawns.
+    /// A dead player (chunk 20) neither moves nor collides until it respawns; its body lies where it fell. The local
+    /// player's camera pulls back to third person to see it, and returns to first person on respawn.
     /// </summary>
     public bool Dead
     {
         get => _dead;
         set
         {
+            if (value != _dead && Camera.Current)
+            {
+                if (value && !ThirdPerson)
+                {
+                    _deathCamera = true;
+                    ThirdPerson = true;
+                }
+                else if (!value && _deathCamera)
+                {
+                    _deathCamera = false;
+                    CameraDistance = 0f;
+                }
+            }
             _dead = value;
             Velocity = Vector3.Zero;
             _shape.SetDeferred(CollisionShape3D.PropertyName.Disabled, value || _seat is not null);
@@ -166,6 +186,45 @@ public partial class PlayerController : CharacterBody3D
         _head.Position = new Vector3(0, _eyeHeight, 0) + ShownLocalOffset;
         _bodyMesh.Position = _shape.Position + ShownLocalOffset;
         _lastShown = ShownPosition;
+        StepJolt((float)delta);
+    }
+
+    // How hard each reaction jolts the camera: kick (radians) and shake (radians at its peak).
+    private static (float Kick, float Shake) JoltOf(HitReaction reaction) => reaction switch
+    {
+        HitReaction.Light => (0.05f, 0.012f),
+        HitReaction.Heavy => (0.11f, 0.03f),
+        HitReaction.Knockdown => (0.16f, 0.05f),
+        _ => (0f, 0f),
+    };
+
+    /// <summary>
+    /// Jolts the camera with a blow (the local player's own): it kicks away from <paramref name="from"/> (radians from where the
+    /// player looks, positive to the left; null kicks straight back), springs back and shakes for a moment.
+    /// </summary>
+    public void Jolt(HitReaction reaction, float? from)
+    {
+        var (kick, shake) = JoltOf(reaction);
+        var angle = from ?? 0f;
+        // A blow from the front tips the head back (pitch up), from the side rolls it away.
+        _kickRate += new Vector2(Mathf.Cos(angle), -Mathf.Sin(angle)) * kick * 40f;
+        _shake = Mathf.Max(_shake, shake);
+        _shakeTime = 0f;
+    }
+
+    private void StepJolt(float delta)
+    {
+        if (_kick == Vector2.Zero && _kickRate == Vector2.Zero && _shake <= 0f)
+            return;
+        // A stiff, well damped spring: the kick peaks in a few hundredths of a second and settles in about a third.
+        _kickRate += (-_kick * 220f - _kickRate * 24f) * delta;
+        _kick += _kickRate * delta;
+        _shakeTime += delta;
+        _shake = Mathf.Max(0f, _shake - delta * 0.12f);
+        var shake = new Vector2(Mathf.Sin(_shakeTime * 61f), Mathf.Sin(_shakeTime * 47f + 1.3f)) * _shake;
+        if (_kick.LengthSquared() < 1e-8f && _kickRate.LengthSquared() < 1e-6f && _shake <= 0f)
+            _kick = _kickRate = shake = Vector2.Zero;
+        Camera.Rotation = new Vector3(_kick.X + shake.X, 0f, _kick.Y + shake.Y);
     }
 
     /// <summary>How far the drawn body is from the player's position, in its own frame (the character model adds it).</summary>
@@ -300,7 +359,7 @@ public partial class PlayerController : CharacterBody3D
     public CharacterPose Pose => new(
         Velocity.ToNumerics(), SeatYaw ?? Rotation.Y, _head.Rotation.X,
         Body.HasFlag(BodyFlags.OnFloor), Body.HasFlag(BodyFlags.Swimming), Body.HasFlag(BodyFlags.Crawl), Seated || Body.HasFlag(BodyFlags.Seated),
-        ShownProp, ShownGesture.Gesture, ShownGesture.Count, Body.HasFlag(BodyFlags.Guard), Seated ? SeatStyle : null);
+        ShownProp, ShownGesture.Gesture, ShownGesture.Count, Body.HasFlag(BodyFlags.Guard), Seated ? SeatStyle : null, _dead);
 
     /// <summary>How the seat the player sits in holds it (its legs, hands and bounce); set with <see cref="Seat"/>.</summary>
     public SeatStyle SeatStyle { get; set; } = SeatStyle.Default;
@@ -353,8 +412,8 @@ public partial class PlayerController : CharacterBody3D
         UpdateBodyVisibility();
     }
 
-    /// <summary>True when this player's body is drawn: alive, and not seen from inside its own head.</summary>
-    public bool BodyVisible => !_dead && (ThirdPerson || !Camera.Current);
+    /// <summary>True when this player's body is drawn: whenever it is not seen from inside its own head (a dead body lies where it fell).</summary>
+    public bool BodyVisible => ThirdPerson || !Camera.Current;
 
     /// <summary>
     /// True while the local player looks out of a seat's interior camera from its own eyes: the seated body is drawn
@@ -371,6 +430,13 @@ public partial class PlayerController : CharacterBody3D
     }
 
     private bool _headHidden;
+
+    // Edges lower than this are left to the capsule's own slide; the lift clears the edge by StepClearance.
+    private const float MinStep = 0.02f;
+    private const float StepClearance = 0.01f;
+    // How fast the camera catches up with a step up, in m/s.
+    private const float StepLagSpeed = 2.5f;
+    private float _stepLag;
 
     private void UpdateBodyVisibility()
     {
@@ -391,7 +457,8 @@ public partial class PlayerController : CharacterBody3D
     {
         Settings ??= LoadDefaultSettings();
         FloorMaxAngle = Mathf.DegToRad(45f);
-        FloorSnapLength = 0.2f;
+        // Walking off an edge one step high keeps the player on the floor, so stairs go down smoothly.
+        FloorSnapLength = Mathf.Max(0.2f, Settings.StepHeight);
 
         var capsuleCentre = new Vector3(0, Settings.Height / 2f, 0);
         _capsule = new CapsuleShape3D { Height = Settings.Height, Radius = Settings.Radius };
@@ -470,6 +537,8 @@ public partial class PlayerController : CharacterBody3D
         velocity += _knock.ToNumerics();
         _knock = Vector3.Zero;
         Velocity = velocity.ToGodot();
+        if (wasOnFloor && !swimming)
+            StepUp(delta);
         MoveAndSlide();
         if (!wasOnFloor && IsOnFloor() && velocity.Y < 0)
             Landed?.Invoke(-velocity.Y);
@@ -540,7 +609,50 @@ public partial class PlayerController : CharacterBody3D
     private void StepEyeHeight(float delta)
     {
         _eyeHeight = PlayerMotor.EyeHeight(_eyeHeight, _crouched, Settings, delta);
-        _head.Position = new Vector3(0, _eyeHeight, 0);
+        _stepLag = Mathf.MoveToward(_stepLag, 0f, StepLagSpeed * delta);
+        _head.Position = new Vector3(0, _eyeHeight - _stepLag, 0);
+    }
+
+    /// <summary>
+    /// Lifts the player onto an edge up to <see cref="PlayerMovementSettings.StepHeight"/> high that this tick's walk
+    /// runs into, so blocks, stairs and soil plots need no jump. It probes up, along the walk, then down, and steps only
+    /// onto a walkable top; a taller wall or a steep slope stops the player as before. The move itself is left to
+    /// <see cref="CharacterBody3D.MoveAndSlide"/>.
+    /// </summary>
+    private void StepUp(float delta)
+    {
+        var walk = new Vector3(Velocity.X, 0f, Velocity.Z) * delta;
+        var stepHeight = Settings.StepHeight;
+        if (stepHeight <= 0f || walk.LengthSquared() < 1e-8f)
+            return;
+        var floorY = Mathf.Cos(FloorMaxAngle);
+        var from = GlobalTransform;
+        var hit = new KinematicCollision3D();
+        // Nothing in the way, or a slope the slide walks up by itself.
+        if (!TestMove(from, walk, hit) || hit.GetNormal().Y >= floorY)
+            return;
+        var rise = TestMove(from, Vector3.Up * stepHeight, hit) ? hit.GetTravel().Y : stepHeight;
+        if (rise < MinStep)
+            return;
+        var raised = from.Translated(Vector3.Up * rise);
+        var ahead = TestMove(raised, walk, hit) ? hit.GetTravel() : walk;
+        if (ahead.LengthSquared() < 1e-8f)
+            return;
+        if (!TestMove(raised.Translated(ahead), Vector3.Down * rise, hit))
+            return;
+        var top = hit.GetPosition();
+        var lift = top.Y - from.Origin.Y;
+        if (lift < MinStep || lift > stepHeight)
+            return;
+        // The edge's top must be floor just past where the feet touch it, not a cliff face or another slope.
+        var past = top + walk.Normalized() * 0.05f;
+        var ray = PhysicsRayQueryParameters3D.Create(past + Vector3.Up * 0.05f, past + Vector3.Down * 0.1f, CollisionMask, [GetRid()]);
+        var ground = GetWorld3D().DirectSpaceState.IntersectRay(ray);
+        if (ground.Count == 0 || ground["normal"].AsVector3().Y < floorY)
+            return;
+        GlobalPosition += Vector3.Up * (lift + StepClearance);
+        // The camera eases up after the body instead of jumping a block.
+        _stepLag = Mathf.Min(_stepLag + lift + StepClearance, stepHeight);
     }
 
     // True when nothing is in the space a standing player would fill above the crouched capsule.

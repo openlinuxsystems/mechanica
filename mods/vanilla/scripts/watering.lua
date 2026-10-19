@@ -2,7 +2,7 @@
 -- (up to properties.range metres away; further, or at nothing, it is a plain throw at properties.throw_speed),
 -- and the bucket turns back into properties.empty in the same slot. Where the water lands, every fire within
 -- properties.splash metres loses properties.douse strength (1 puts a fire out) and every soil part within
--- properties.splash metres gets properties.seconds of water, up to what it holds.
+-- properties.splash metres gets properties.seconds of water, up to what it holds. The splash is drawn that big.
 
 -- The launch velocity that lands the water on what the player aims at, or a plain lob along the aim.
 local function throw_velocity(target, from)
@@ -18,7 +18,7 @@ end
 function on_use(target)
   local from = target.from + target.direction * 0.4
   local velocity = throw_velocity(target, from)
-  local id, why = combat.projectile(from, velocity, { look = "water", lifetime = 3 })
+  local id, why = combat.projectile(from, velocity, { look = "water", lifetime = 3, size = properties.splash })
   if not id then
     error(why)
   end

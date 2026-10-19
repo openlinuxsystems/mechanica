@@ -104,8 +104,9 @@ each change in the seat's own motion pushes springs that bob the hips and sway t
 braking tips it forward, a turn leans it out), scaled by the seat's `seat.bounce`, so a smooth road barely shows and rough
 ground throws the driver about. The springs are `seat` in `game/data/character.json`.
 
-The animation set is shared by every character: `idle`, `walk`, `jog`, `run`, `crouch_idle`, `crouch_walk`,
-`jump`, `fall`, `land`, `swim_idle`, `swim`, `sit` (a chair, hands on a wheel), `sit_low` (a low seat, legs out in
+The animation set is shared by every character: `idle`, `idle_look` and `idle_stretch` (fidgets), `turn_l` and `turn_r`
+(stepping round on the spot), `walk`, `jog`, `run`, `crouch_idle`, `crouch_walk`,
+`jump`, `jump_run` (a running leap), `fall`, `land`, `land_hard` (a long fall, a hand to the ground), `swim_idle`, `swim`, `sit` (a chair, hands on a wheel), `sit_low` (a low seat, legs out in
 front), `sit_ride` and `sit_ride_low` (the same with the hands resting on the thighs, for passengers) move the whole body; `hold_tool`, `hold_heavy`,
 `hold_heavy_block` (the Sledgehammer raised across the chest while right click blocks, in Creative), `hold_gun`, `hold_item`,
 `hold_refine` (the Refine Tool scraping at a resource node, a stroke every 0.75 s), `hold_connect` (the Connect Tool at
@@ -114,7 +115,17 @@ drag is on), `hold_weld` and `hold_weld_aim` (the Weld Tool held, and raised whi
 gestures (`sledge_swing`, `tool_use`, `weld` (the Weld Tool pushed in and held while a weld registers),
 `paint_spray`, `fire_gun`, `eat`, `throw`, `plant`, `pour`, `interact`, `hurt`, `connect_click` when a link is made or
 taken away, `connect_reverse` when a bearing is reversed) move only the upper body
-from the spine up, over whatever the legs are doing. Every peer works out each player's pose from what it
+from the spine up, over whatever the legs are doing. The swings and throws (`sledge_swing`, `sledge_swing_side`,
+`sledge_swing_back`, `throw`, `bucket_throw`) also key the hips and legs: standing still, the knees load and the hips drive
+the blow; walking or running, the legs keep moving and only the arms swing.
+
+Hit reactions play when a blow lands on a player who lives through it (a bot, a weapon, a Sledgehammer or a blast; see
+`hits` in `game/data/survival.json` for how much health makes which): `hit_front`, `hit_back`, `hit_left` and `hit_right`
+flinch away from where it came from, `hit_heavy` staggers back, and `knockdown` throws the player down, where they lie a
+moment and can't move, then `get_up`. A player who dies plays `death` and then lies in `downed` until they respawn; their
+camera pulls back to third person to see it. Each has an `_fp` version for the first-person arms. The host sends the blow to
+every peer (`PlayerHitView`), the local player's camera kicks away from it and shakes, and the screen's edge flashes red. A
+character set without the reaction clips plays `hurt` instead. Every peer works out each player's pose from what it
 already knows (speed, on the ground, swimming, crouching, seated, what is in hand), so animation costs no
 network traffic beyond a byte for the tool in hand and one for each swing. The Sledgehammer has three swings (`sledge_swing` overhead,
 `sledge_swing_side` from the right and `sledge_swing_back` from the left); which one a click plays is picked at
@@ -139,5 +150,12 @@ mist from the nozzles.
 
 Timing lives in `game/data/character.json` (engine settings, not moddable): the speed each moving clip
 is authored at, where in a cycle the feet land, crossfade times, how far the body turns before the feet
-follow, and which items are held how. A mod item gets the pose of its category (`consumable` eats,
+follow, and which items are held how. `motion` there sets how the body moves under the clips: how far the look turns before
+the feet step round, how the upper body twists toward the look, the lean into speeding up, slowing and turning, the forward lean of a run, how much a held tool settles the arms and torso
+into a carry while moving, the speed a jump becomes a leap, the idle fidgets, and how hit reactions fade. The build-up
+from a walk to a sprint and the ease back down are `sprint_acceleration` and `sprint_deceleration` in `game/data/player.json`.
+
+`python tools/characters/render_clips.py OUT_DIR clip ... [--view side|front|threeq|back]` renders clips straight from their
+code (with the bpy module installed), and `tools/capture-animations.sh OUT_DIR [character]` records each move in a running
+world as GIFs and MP4s (`CAPTURE_ONLY=walk,run_side` keeps matching moves). A mod item gets the pose of its category (`consumable` eats,
 `weapon` throws) unless it is listed in `item_poses`.

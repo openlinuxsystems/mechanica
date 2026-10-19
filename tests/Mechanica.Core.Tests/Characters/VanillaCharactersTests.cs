@@ -51,10 +51,14 @@ public class VanillaCharactersTests
         var summary = GltfSummary.Read(asset.Resolve(Path.Combine(TestMods.RepoRoot, "mods", asset.ModId)));
         foreach (var clip in CharacterRig.Clips)
             Assert.True(summary.Animation(clip) is { Duration: > 0 }, $"clip '{clip}' is missing or empty");
+        // Swings and throws put the legs into it (CharacterRig.LegGestures); every other upper-body clip leaves them alone.
         foreach (var clip in CharacterRig.UpperBodyClips)
         {
             var lower = summary.Animation(clip)!.Targets.Where(t => CharacterRig.Bones.Contains(t) && !CharacterRig.UpperBodyBones.Contains(t)).ToList();
-            Assert.True(lower.Count == 0, $"'{clip}' moves {string.Join(", ", lower)}");
+            if (CharacterRig.LegGestures.Contains(clip))
+                Assert.True(lower.Count > 0, $"'{clip}' should move the legs");
+            else
+                Assert.True(lower.Count == 0, $"'{clip}' moves {string.Join(", ", lower)}");
         }
     }
 

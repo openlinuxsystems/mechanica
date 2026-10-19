@@ -221,6 +221,10 @@ internal sealed class SurvivalFixture
         public WorldObjectPlacement? FindObject(WorldObjectId id) =>
             Objects.TryGetValue(id, out var o) && !State.IsDestroyed(id) ? o : null;
 
+        public Dictionary<string, LootTableDefinition> LootTables { get; } = [];
+
+        public LootTableDefinition? FindLootTable(string id) => LootTables.GetValueOrDefault(id);
+
         public IEnumerable<WorldObjectPlacement> ObjectsNear(Vector3 point, float radius) =>
             Objects.Values.Where(o => !State.IsDestroyed(o.Id) && Vector3.Distance(o.Position, point) <= radius);
 

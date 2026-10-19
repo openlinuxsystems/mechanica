@@ -26,6 +26,15 @@ public sealed record PlayerMovementSettings
     /// <summary>Horizontal acceleration on the ground in m/s².</summary>
     public float GroundAcceleration { get; init; } = 40f;
 
+    /// <summary>
+    /// On the ground, how fast speed builds above <see cref="WalkSpeed"/> toward a sprint, in m/s²: the player visibly
+    /// picks up pace over a few strides instead of snapping to a run. Turning keeps <see cref="GroundAcceleration"/>.
+    /// </summary>
+    public float SprintAcceleration { get; init; } = 9f;
+
+    /// <summary>On the ground, how fast speed drops while above <see cref="WalkSpeed"/>, in m/s²: a sprint eases off before it walks or stops.</summary>
+    public float SprintDeceleration { get; init; } = 14f;
+
     /// <summary>Horizontal acceleration in the air in m/s² (air control).</summary>
     public float AirAcceleration { get; init; } = 8f;
 
@@ -125,6 +134,13 @@ public sealed record PlayerMovementSettings
     /// </summary>
     public float SwimLeapHeight { get; init; } = 0.6f;
 
+    /// <summary>
+    /// The tallest edge the player walks or runs straight up without jumping, in metres: one block (0.25 m) with
+    /// room for uneven ground under it, so stairs and soil plots need no jump. It is also how far a player walking off
+    /// an edge is kept on the floor, so going down stairs does not fall a step at a time.
+    /// </summary>
+    public float StepHeight { get; init; } = 0.35f;
+
     /// <summary>What walking speed is multiplied by when wading in water shallower than <see cref="SwimDepth"/>.</summary>
     public float WadeSpeedScale { get; init; } = 0.7f;
 
@@ -154,6 +170,8 @@ public sealed record PlayerMovementSettings
         Positive(WalkSpeed, "walk_speed");
         Positive(SprintSpeed, "sprint_speed");
         Positive(GroundAcceleration, "ground_acceleration");
+        Positive(SprintAcceleration, "sprint_acceleration");
+        Positive(SprintDeceleration, "sprint_deceleration");
         NonNegative(AirAcceleration, "air_acceleration");
         NonNegative(JumpSpeed, "jump_speed");
         NonNegative(Gravity, "gravity");
@@ -169,6 +187,8 @@ public sealed record PlayerMovementSettings
         Positive(SwimAcceleration, "swim_acceleration");
         Positive(Buoyancy, "buoyancy");
         NonNegative(SwimLeapHeight, "swim_leap_height");
+        if (!float.IsFinite(StepHeight) || StepHeight < 0f || StepHeight >= CrouchHeight / 2f)
+            throw new FormatException($"step_height must be from 0 up to below half of crouch_height (got {StepHeight}).");
         if (!float.IsFinite(FloatDepth) || FloatDepth < SwimDepth || FloatDepth >= EyeHeight)
             throw new FormatException($"float_depth must be from swim_depth up to below eye_height, so a floating player swims with their head out (got {FloatDepth}).");
         if (!float.IsFinite(WadeSpeedScale) || WadeSpeedScale is <= 0f or > 1f)

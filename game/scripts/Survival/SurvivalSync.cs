@@ -48,7 +48,7 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
     // Host side: each Body's velocity last tick, and Bodies pushed since then (not crashes).
     private readonly Dictionary<ulong, Vector3> _lastVelocity = [];
     private readonly HashSet<ulong> _pushed = [];
-    private readonly Dictionary<int, (ProjectileView View, double ShownAt, MeshInstance3D Node)> _projectiles = [];
+    private readonly Dictionary<int, (ProjectileView View, double ShownAt, Node3D Node)> _projectiles = [];
     // This peer's own item counters (a weapon's rounds loaded), by item, with when each arrived.
     private readonly Dictionary<string, (Mechanica.Scripting.ItemCounterView View, double At)> _counters = [];
     private int _tick;
@@ -120,7 +120,7 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
     public IReadOnlyDictionary<(int Creation, int Part), CropNode> CropNodes => _cropNodes;
 
     /// <summary>The projectiles this peer shows in flight, by id (tests look at them).</summary>
-    public IReadOnlyDictionary<int, MeshInstance3D> ProjectileNodes => _projectiles.ToDictionary(p => p.Key, p => p.Value.Node);
+    public IReadOnlyDictionary<int, Node3D> ProjectileNodes => _projectiles.ToDictionary(p => p.Key, p => p.Value.Node);
 
     /// <summary>
     /// What this peer's own item shows on its hotbar slot and the HUD counter (a weapon's rounds loaded, UI spec §10),
@@ -146,6 +146,9 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
 
     /// <summary>Raised on this peer when a player's health arrives or changes.</summary>
     public event Action<VitalsView>? VitalsChanged;
+
+    /// <summary>Raised on this peer when a blow rocks a player who lives through it (they flinch, stagger or go down).</summary>
+    public event Action<PlayerHitView>? PlayerHit;
 
     /// <inheritdoc/>
     public double Now => Time.GetTicksMsec() / 1000.0;
@@ -195,6 +198,7 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
         Actions.DropChanged += OnDropChanged;
         Actions.DropRemoved += OnDropRemoved;
         Actions.ProjectileLaunched += view => Broadcast(MethodName.ShowProjectile, Json(view));
+        Actions.PlayerHit += view => Broadcast(MethodName.ShowHit, Json(view));
         Actions.ProjectileLanded += OnProjectileLanded;
         Build.Costs = Actions;
     }
@@ -325,6 +329,9 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
     /// <inheritdoc/>
     public WorldObjectPlacement? FindObject(WorldObjectId id) =>
         World.State.IsDestroyed(id) ? null : World.Generator.Find(id);
+
+    /// <inheritdoc/>
+    public LootTableDefinition? FindLootTable(string id) => World.Generator.Data.Definition.LootTables?.GetValueOrDefault(id);
 
     /// <inheritdoc/>
     public IEnumerable<WorldObjectPlacement> ObjectsNear(System.Numerics.Vector3 point, float radius) =>
@@ -542,6 +549,14 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
         VitalsChanged?.Invoke(view);
     }
 
+    /// <summary>Host → client: a blow rocked a player.</summary>
+    [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
+    private void ShowHit(string json)
+    {
+        if (Read<PlayerHitView>(json) is { } view)
+            PlayerHit?.Invoke(view);
+    }
+
     /// <summary>Host → the item's holder: what their item's counter shows.</summary>
     [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
     private void ShowCounter(string json)
@@ -584,7 +599,7 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
         if (Read<ProjectileView>(json) is not { } view)
             return;
         HideProjectile(view.Id);
-        var node = view.Look == ProjectileView.Water ? WaterEffects.Blob() : new MeshInstance3D { Mesh = new SphereMesh { Radius = 0.08f, Height = 0.16f } };
+        Node3D node = view.Look == ProjectileView.Water ? WaterEffects.Blob(view.Size ?? WaterEffects.DefaultRadius) : new MeshInstance3D { Mesh = new SphereMesh { Radius = 0.08f, Height = 0.16f } };
         node.Name = $"Projectile{view.Id}";
         node.Position = view.From.ToGodot();
         _projectiles[view.Id] = (view, Now, node);
@@ -598,7 +613,7 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
         if (_projectiles.Remove(id, out var shown))
         {
             if (shown.View.Look == ProjectileView.Water)
-                WaterEffects.Splash(this, shown.Node.Position);
+                WaterEffects.Splash(this, shown.Node.Position, shown.View.Size ?? WaterEffects.DefaultRadius);
             RemoveChild(shown.Node);
             shown.Node.QueueFree();
         }
