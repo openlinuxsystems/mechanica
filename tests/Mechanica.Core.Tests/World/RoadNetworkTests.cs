@@ -96,6 +96,36 @@ public class RoadNetworkTests
     }
 
     [Fact]
+    public void RoadsOnLandHaveNoCurbsAndNothingGrowsOnThem()
+    {
+        var gen = Vanilla.Value;
+        Assert.Equal(0f, gen.Roads.Definition!.Curb);
+        // The road out of the crash site, which grows its own meadow round it, and a stretch of road on open land.
+        var crash = gen.Pois.First(p => p.Poi.Prefab.Id == "crash_site");
+        var road = gen.Roads.Chains.Where(c => c.Kind == RoadKind.Road)
+            .OrderBy(c => c.Points.Min(p => Vector2.Distance(p, crash.Centre))).First();
+        var coords = road.Points.Where((p, i) => !road.Bridge[i]).Take(60)
+            .Select(p => new ChunkCoord((int)MathF.Floor(p.X / 64f), (int)MathF.Floor(p.Y / 64f))).Distinct().ToList();
+        var plants = 0;
+        foreach (var coord in coords)
+        {
+            var chunk = gen.GenerateChunk(coord, 64f);
+            // Only the asphalt: no concrete curbs off the bridges.
+            if (!chunk.Roads.Surfaces.Any(s => s.Material == RoadMaterial.Hazard))
+                Assert.DoesNotContain(chunk.Roads.Surfaces, s => s.Material == RoadMaterial.Concrete);
+            foreach (var kind in new[] { FloraKind.Grass, FloraKind.Bush })
+            {
+                foreach (var plant in FloraScatter.Grow(gen, chunk, kind, 1f))
+                {
+                    plants++;
+                    Assert.False(gen.Roads.Covers(plant.Position.X, plant.Position.Z), $"a {kind} grows on the road at {plant.Position}");
+                }
+            }
+        }
+        Assert.True(plants > 0, "flora grows beside the road");
+    }
+
+    [Fact]
     public void RoadMeshesFaceUpAndBridgesHaveTheirFurniture()
     {
         var gen = Vanilla.Value;

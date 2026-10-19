@@ -79,7 +79,7 @@ public sealed record RoadsDefinition
     /// <summary>Asphalt width in metres, edge line to edge line plus a little.</summary>
     public float Width { get; init; } = 10f;
 
-    /// <summary>Width of the concrete curb on each side, in metres.</summary>
+    /// <summary>Width of the concrete curb on each side, in metres; 0 for none.</summary>
     public float Curb { get; init; } = 0.3f;
 
     /// <summary>Metres of levelled gravel beyond each curb before the ground blends back.</summary>
