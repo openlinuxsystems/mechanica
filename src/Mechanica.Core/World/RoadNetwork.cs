@@ -30,9 +30,33 @@ public enum RoadNodeKind
 /// <param name="Kind">What it is.</param>
 /// <param name="At">World x/z.</param>
 /// <param name="Height">Height of the road surface there.</param>
-/// <param name="Radius">Radius of the junction plate (0 for an end or join).</param>
+/// <param name="Radius">
+/// Metres from a junction's centre to the mouth of each arm, where its plate ends and the stop lines are (0 for an end or join).
+/// </param>
 /// <param name="Poi">Index of the POI (<see cref="WorldGenerator.Pois"/>) an end serves, or -1.</param>
-public sealed record RoadNode(int Index, RoadNodeKind Kind, Vector2 At, float Height, float Radius, int Poi);
+/// <param name="Heading">Direction of a junction's first arm (radians from +x towards +z); the others are at right angles to it.</param>
+/// <param name="Arms">
+/// Which of a junction's four arms (bit k: <see cref="Heading"/> + k·90°) have a road: a T junction has three, a crossroads all
+/// four. 0 for a junction of more than four roads, whose plate is round.
+/// </param>
+public sealed record RoadNode(int Index, RoadNodeKind Kind, Vector2 At, float Height, float Radius, int Poi, float Heading = 0f, int Arms = 0)
+{
+    /// <summary>Unit direction of arm <paramref name="k"/> (0..3) of a junction.</summary>
+    public Vector2 Arm(int k)
+    {
+        var (s, c) = MathF.SinCos(Heading + k * MathF.PI / 2f);
+        return new Vector2(c, s);
+    }
+
+    /// <summary>The arm (0..3) of a junction that points most nearly at a point.</summary>
+    public int ArmToward(Vector2 p) => Enumerable.Range(0, 4).MaxBy(k => Vector2.Dot(Arm(k), p - At));
+
+    /// <summary>
+    /// The arm of a T junction (three arms) opposite the road that ends there, or -1: the two arms either side of it are
+    /// one road running straight through, which keeps its markings across the plate and has no stop lines.
+    /// </summary>
+    public int Side => System.Numerics.BitOperations.PopCount((uint)Arms) == 3 ? Enumerable.Range(0, 4).Single(k => (Arms & 1 << ((k + 2) & 3)) == 0) : -1;
+}
 
 /// <summary>
 /// One stretch of road between two <see cref="RoadNode"/>s: a centre line sampled every few metres with the height of the
@@ -127,6 +151,7 @@ public sealed partial class RoadNetwork
     private readonly Dictionary<int, RoadKind> _connected = [];
     private Dictionary<(int, int), List<(int Chain, int Segment)>> _segments = [];
     private Dictionary<(int, int), List<int>> _junctions = [];
+    private Dictionary<int, IReadOnlyList<Vector2>> _plates = [];
 
     private RoadNetwork(RoadsDefinition? def) => _def = def;
 
@@ -228,7 +253,7 @@ public sealed partial class RoadNetwork
             {
                 if (_segments.TryGetValue((i, j), out var near) && near.Any(s => Project(_chains[s.Chain], s.Segment, p).Distance < Core(_chains[s.Chain]) + margin))
                     return true;
-                if (_junctions.TryGetValue((i, j), out var nodes) && nodes.Any(n => Vector2.Distance(p, _nodes[n].At) < _nodes[n].Radius + margin))
+                if (_junctions.TryGetValue((i, j), out var nodes) && nodes.Any(n => OffPlate(_nodes[n], p) < margin))
                     return true;
             }
         }
@@ -252,7 +277,90 @@ public sealed partial class RoadNetwork
                     return true;
             }
         }
-        return _junctions.TryGetValue(key, out var nodes) && nodes.Any(n => Vector2.Distance(p, _nodes[n].At) < _nodes[n].Radius + _def!.Curb + _def.Shoulder + margin);
+        return _junctions.TryGetValue(key, out var nodes) && nodes.Any(n => OffPlate(_nodes[n], p) < _def!.Curb + _def.Shoulder + margin);
+    }
+
+    /// <summary>
+    /// The outline of a junction's plate, anticlockwise seen from above (+x towards +z), starting down its first arm: a square
+    /// the road's width across, each arm's mouth reaching out to <see cref="RoadNode.Radius"/>, and a rounded corner where two
+    /// arms meet. A round plate for a junction of more than four roads.
+    /// </summary>
+    public IReadOnlyList<Vector2> PlateOutline(RoadNode node) => _plates.TryGetValue(node.Index, out var outline) ? outline : Outline(node);
+
+    private List<Vector2> Outline(RoadNode node)
+    {
+        var outline = new List<Vector2>();
+        if (node.Arms == 0)
+        {
+            for (var k = 0; k < 28; k++)
+            {
+                var (sin, cos) = MathF.SinCos(2f * MathF.PI * k / 28);
+                outline.Add(node.At + new Vector2(cos, sin) * node.Radius);
+            }
+            return outline;
+        }
+        var hw = _def!.Width / 2f;
+        var e = node.Radius;
+        var f = e - hw;
+        bool Has(int k) => (node.Arms & 1 << (k & 3)) != 0;
+        for (var q = 0; q < 4; q++)
+        {
+            // In this quarter's frame, arm q runs along +u and arm q + 1 along +v.
+            var (u, v) = (node.Arm(q), node.Arm(q + 1));
+            void Add(float a, float b) => outline.Add(node.At + u * a + v * b);
+            var (here, next) = (Has(q), Has(q + 1));
+            if (here)
+            {
+                Add(e, 0f);
+                Add(e, hw);
+            }
+            else
+            {
+                Add(hw, 0f);
+            }
+            if (here && next)
+            {
+                // The kerb line rounds the corner about (hw + f, hw + f), from the side of arm q to the side of arm q + 1.
+                const int steps = 8;
+                for (var k = 1; k < steps; k++)
+                {
+                    var (sin, cos) = MathF.SinCos(-MathF.PI / 2f - MathF.PI / 2f * k / steps);
+                    Add(hw + f + f * cos, hw + f + f * sin);
+                }
+                Add(hw, e);
+            }
+            else if (next)
+            {
+                Add(hw, hw);
+                Add(hw, e);
+            }
+            else if (!here)
+            {
+                Add(hw, hw);
+            }
+        }
+        return outline;
+    }
+
+    /// <summary>Metres from a point to a junction's plate (0 inside it).</summary>
+    public float OffPlate(RoadNode node, Vector2 p)
+    {
+        // Points well inside the mouths' circle are on it or close; only nearby points need the outline.
+        if (Vector2.Distance(p, node.At) > node.Radius + MaxBlend + 1f)
+            return Vector2.Distance(p, node.At) - node.Radius;
+        var outline = PlateOutline(node);
+        var inside = false;
+        var best = float.PositiveInfinity;
+        for (int i = 0, j = outline.Count - 1; i < outline.Count; j = i++)
+        {
+            var (a, b) = (outline[j], outline[i]);
+            if ((a.Y > p.Y) != (b.Y > p.Y) && p.X < a.X + (p.Y - a.Y) * (b.X - a.X) / (b.Y - a.Y))
+                inside = !inside;
+            var ab = b - a;
+            var t = ab.LengthSquared() > 0f ? Math.Clamp(Vector2.Dot(p - a, ab) / ab.LengthSquared(), 0f, 1f) : 0f;
+            best = MathF.Min(best, Vector2.Distance(p, a + ab * t));
+        }
+        return inside ? 0f : best;
     }
 
     /// <summary>
@@ -261,9 +369,19 @@ public sealed partial class RoadNetwork
     public bool Paint(float x, float z, out float shoulder, out float track)
     {
         shoulder = track = 0f;
-        if (_chains.Count == 0 || !_segments.TryGetValue(Key(x, z), out var near))
+        if (_chains.Count == 0)
             return false;
+        var key = Key(x, z);
         var p = new Vector2(x, z);
+        if (_junctions.TryGetValue(key, out var nodes))
+        {
+            // Gravel round a junction's plate too, so its rounded corners have their shoulder.
+            var edge = _def!.Curb + _def.Shoulder;
+            foreach (var n in nodes)
+                shoulder = MathF.Max(shoulder, 1f - Noise.SmoothStep(edge - 0.2f, edge + 0.9f, OffPlate(_nodes[n], p)));
+        }
+        if (!_segments.TryGetValue(key, out var near))
+            return shoulder > 0f;
         foreach (var (c, i) in near)
         {
             var chain = _chains[c];
@@ -356,6 +474,7 @@ public sealed partial class RoadNetwork
         }
         _segments = segments;
         _junctions = junctions;
+        _plates = _nodes.Where(n => n.Kind == RoadNodeKind.Junction).ToDictionary(n => n.Index, n => (IReadOnlyList<Vector2>)Outline(n));
     }
 
     private void IndexChain(RoadChain chain, Dictionary<(int, int), List<(int, int)>> segments)

@@ -8,7 +8,8 @@ public enum RoadMaterial
     /// <summary>
     /// Asphalt with its markings drawn from the UVs: <c>uv.x</c> runs 0 (left edge) to 1 (right edge, seen along the road),
     /// <c>uv.y</c> is metres along it; <c>uv2</c> is metres to the junction plate at the start and at the end (stop lines),
-    /// large where the road does not end at a junction, and -1 on a junction plate (no markings).
+    /// large where the road does not end at a junction, and -1 on a junction plate (no markings); a T junction's plate carries
+    /// the markings of the road running through it (see <c>RoadMesher.Plate</c>).
     /// </summary>
     Asphalt,
 
@@ -161,7 +162,7 @@ public static class RoadMesher
         foreach (var node in roads.Nodes)
         {
             if (node.Kind == RoadNodeKind.Junction && Inside(node.At))
-                Plate(surfaces[RoadMaterial.Asphalt], node, origin);
+                Plate(surfaces[RoadMaterial.Asphalt], roads, node, def.Width, origin);
         }
         return new RoadMesh([.. surfaces.Values.Where(s => s.Vertices.Count > 0)]);
     }
@@ -180,6 +181,9 @@ public static class RoadMesher
 
     private static Vector3 At(Vector2 p, float y, Vector3 origin) => new(p.X - origin.X, y, p.Y - origin.Z);
 
+    // True when a road leaving a junction towards `toward` is one of the two arms of a T that run straight through.
+    private static bool Through(RoadNode node, Vector2 toward) => node.Side is var side and >= 0 && node.ArmToward(toward) != side;
+
     private static void Segment(Dictionary<RoadMaterial, RoadMeshSurface> surfaces, RoadChain chain, int i, RoadNode from, RoadNode to,
         RoadsDefinition def, Vector3 origin)
     {
@@ -189,9 +193,11 @@ public static class RoadMesher
         var (p0, p1) = (chain.Points[i], chain.Points[i + 1]);
         var (y0, y1) = (chain.Heights[i] + RoadNetwork.SurfaceLift, chain.Heights[i + 1] + RoadNetwork.SurfaceLift);
         var (s0, s1) = (chain.Along[i], chain.Along[i + 1]);
-        // Metres to the edge of the junction plate at each end, for the stop lines.
-        float Start(float s) => from.Kind == RoadNodeKind.Junction ? s - from.Radius : Far;
-        float End(float s) => to.Kind == RoadNodeKind.Junction ? chain.Length - s - to.Radius : Far;
+        // Metres to the edge of the junction plate at each end, for the stop lines (none for a road running through a T).
+        var stopStart = from.Kind == RoadNodeKind.Junction && !Through(from, chain.Points[Math.Min(2, chain.Points.Length - 1)]);
+        var stopEnd = to.Kind == RoadNodeKind.Junction && !Through(to, chain.Points[Math.Max(0, chain.Points.Length - 3)]);
+        float Start(float s) => stopStart ? s - from.Radius : Far;
+        float End(float s) => stopEnd ? chain.Length - s - to.Radius : Far;
         var up = Vector3.Normalize(Vector3.Cross(At(p1, y1, origin) - At(p0, y0, origin), At(p0 + r0, y0, origin) - At(p0, y0, origin)));
         if (up.Y < 0f)
             up = -up;
@@ -328,21 +334,32 @@ public static class RoadMesher
             chain.Heights[k] + (chain.Heights[k + 1] - chain.Heights[k]) * t + RoadNetwork.SurfaceLift);
     }
 
-    // A junction's plate: a flat disc of plain asphalt over the ends of the roads that meet there.
-    private static void Plate(RoadMeshSurface asphalt, RoadNode node, Vector3 origin)
+    // A junction's plate: flat asphalt over the ends of the roads that meet there, squared to their arms with rounded corners
+    // between them (RoadNetwork.PlateOutline). Plain, except across a T, where the road running through keeps its centre
+    // line and the edge line on the far side from the road that ends there: the plate's uv is then that road's (uv.x across
+    // it, 0 to 1 edge to edge; uv.y metres along) and uv2 is (-2, the side of the ending road: +1 where uv.x > 0.5).
+    private static void Plate(RoadMeshSurface asphalt, RoadNetwork roads, RoadNode node, float width, Vector3 origin)
     {
-        const int sides = 28;
         var y = node.Height + RoadNetwork.SurfaceLift + 0.012f;
         var centre = At(node.At, y, origin);
         var plain = new Vector2(-1f, -1f);
-        for (var k = 0; k < sides; k++)
+        Func<Vector2, Vector2> uv = p => p;
+        var marks = plain;
+        if (node.Side is var side and >= 0)
         {
-            var (s0, c0) = MathF.SinCos(2f * MathF.PI * k / sides);
-            var (s1, c1) = MathF.SinCos(2f * MathF.PI * (k + 1) / sides);
-            var a = centre + new Vector3(c0, 0, s0) * node.Radius;
-            var b = centre + new Vector3(c1, 0, s1) * node.Radius;
-            asphalt.Triangle(centre, a, b, Vector3.UnitY, new(node.At.X, node.At.Y), new(a.X + origin.X, a.Z + origin.Z), new(b.X + origin.X, b.Z + origin.Z),
-                plain, plain, plain);
+            var along = node.Arm(side + 1);
+            var right = Right(along);
+            uv = p => new Vector2(0.5f + Vector2.Dot(p - node.At, right) / width, Vector2.Dot(p - node.At, along));
+            marks = new Vector2(-2f, MathF.Sign(Vector2.Dot(node.Arm(side), right)));
+        }
+        var outline = roads.PlateOutline(node);
+        for (var k = 0; k < outline.Count; k++)
+        {
+            var (p, q) = (outline[k], outline[(k + 1) % outline.Count]);
+            // Corners along a straight edge make no triangle.
+            if (MathF.Abs((p.X - node.At.X) * (q.Y - node.At.Y) - (p.Y - node.At.Y) * (q.X - node.At.X)) < 1e-4f)
+                continue;
+            asphalt.Triangle(centre, At(p, y, origin), At(q, y, origin), Vector3.UnitY, uv(node.At), uv(p), uv(q), marks, marks, marks);
         }
     }
 }
