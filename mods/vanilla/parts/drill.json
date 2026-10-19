@@ -1,7 +1,7 @@
 {
   "id": "drill",
   "name": "Drill",
-  "description": "A fluted drill bit in a 3-block housing. Put it on a bearing and spin it fast enough (an engine, or a controller at full speed), then push its tip into a rock deposit: it is the only tool that breaks the rocks, and it grinds their boulders and chunks down too. It also chews through bots, parts and other creations. Scuttlers and Rakehands balk at a spinning one.",
+  "description": "A pointed steel bit held by four claw brackets on a round base. Put it on a bearing and spin it fast enough (an engine, or a controller at full speed), then push its tip into a rock deposit: it is the only tool that breaks the rocks, and it grinds their boulders and chunks down too. It also chews through bots, parts and other creations. Scuttlers and Rakehands balk at a spinning one.",
   "category": "interactive",
   "mass": 40,
   "durability": 7,

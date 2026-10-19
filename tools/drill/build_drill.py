@@ -1,15 +1,14 @@
-"""Build the Drill (design spec of 2026-10-18 and Chase's reference sheet).
+"""Build the Drill (Drill spec of 2026-10-18, after the Scrap Mechanic drill Chase pointed to).
 
 A 3x3x3-block part (0.75 m each way) with its axis on Blender +Z (glTF +Y, the part's up), the tip pointing up and
-the mounting face down: a chamfered gunmetal housing of bolted corner pillars and riveted side plates (a teal inset
-on two sides), a round collar with a teal bearing ring and a dark bore on the mounting face, and in front a teal ring
-round the base of the bit. The bit is a tapering dark-steel core wound with three turns of a copper helical flute
-that ends in a sharp steel point at the top of the envelope.
+the mounting face down: a squat, polished steel bit (a broad shouldered dome, a stepped cone and a faceted point) on a
+round base with an amber band, held by four steel claw brackets, one on each side, each with an amber-rimmed loop at
+its foot and amber edging along its top. The base's underside is the mounting face the bearing turns.
 
 What it writes: ``mods/vanilla/meshes/parts/drill.glb`` and ``mods/vanilla/textures/items/drill_icon.png`` (the item
 icon the hotbar, inventory and Fabricator show). The model has two nodes: ``Drill`` (everything rigid) and
-``BitGlow`` (an emissive teal ring in the bit's base ring). Its one clip, ``glow`` (1 s, scrubbed), grows the glow
-from nothing at 0 s to full at 1 s; the drill's ``spin`` readout (how close it is to drilling speed) drives it.
+``BitGlow`` (an emissive amber ring in the base band). Its one clip, ``glow`` (1 s, scrubbed), grows the glow from
+nothing at 0 s to full at 1 s; the drill's ``spin`` readout (how close it is to drilling speed) drives it.
 
 How to run (Blender as a Python module, no Blender UI needed):
 
@@ -45,66 +44,35 @@ SAMPLES = int(os.environ.get("DRILL_SAMPLES", "64"))
 FPS = 24
 
 HALF = 0.375            # half the envelope: 3 blocks each way
-Z_BACK = -HALF          # the mounting face
-Z_HOUSING_BACK = -0.325
-Z_HOUSING_FRONT = -0.06
+Z_BASE = -HALF          # the mounting face
+Z_BAND = -0.29          # the top of the base, where the amber band sits
+Z_BIT = -0.25           # where the bit's dome starts
 Z_TIP = HALF
-Z_BIT = -0.03           # where the bit leaves the base ring
-R_BIT_BASE = 0.2        # the core's radius at its base
-R_BIT_NECK = 0.075      # the core's radius where the point starts
-Z_NECK = 0.27
-FLUTE_TURNS = 2.75
-FLUTE_OUT = 0.032       # how far the flute stands off the core
-FLUTE_H = 0.058         # the flute's height along the axis
-CORNER = 0.19           # the corner pillars' width
-R_COLLAR, R_BORE = 0.2, 0.1
-R_TEAL_OUT, R_TEAL_IN = 0.295, 0.245   # the ring round the bit's base
+R_BASE = 0.31
+R_BAND = 0.3
+BRACKET_R = 0.37        # the brackets' outer faces
+BRACKET_W = 0.2         # their width round the bit
+BRACKET_T = 0.075       # their thickness
+BRACKET_TOP = 0.02      # the top of their inner edge
 OFF = 1e-4              # a scale that hides a glow
 
-GUNMETAL = (0.085, 0.09, 0.095)
-GUNMETAL_DARK = (0.045, 0.047, 0.05)
-STEEL = (0.16, 0.165, 0.17)
-COPPER = (0.50, 0.21, 0.11)
-TEAL = (0.015, 0.20, 0.22)
-GLOW = (0.1, 0.95, 1.0)
+STEEL = (0.56, 0.58, 0.62)
+STEEL_DARK = (0.16, 0.17, 0.19)
+AMBER = (0.62, 0.13, 0.0)
+HOLE = (0.03, 0.03, 0.035)
+GLOW = (1.0, 0.62, 0.12)
+
+# The bit's outline as (radius, z): a broad shoulder curving in to a step, a cone to a second step, then the point.
+BIT = ([(0.27, Z_BIT), (0.283, Z_BIT + 0.04), (0.285, Z_BIT + 0.09), (0.276, Z_BIT + 0.14), (0.258, Z_BIT + 0.19),
+        (0.232, Z_BIT + 0.235), (0.205, Z_BIT + 0.27)]
+       + [(0.186, Z_BIT + 0.27), (0.186, Z_BIT + 0.29)]
+       + [(0.178, Z_BIT + 0.31), (0.16, Z_BIT + 0.35), (0.142, Z_BIT + 0.39)]
+       + [(0.128, Z_BIT + 0.39), (0.128, Z_BIT + 0.405)])
+POINT_BASE = Z_BIT + 0.405
 
 
-def core_radius(z):
-    """The bit core's radius at height z, tapering from its base to the neck of the point."""
-    t = min(1.0, max(0.0, (z - Z_BIT) / (Z_NECK - Z_BIT)))
-    # a short straight shank, then a steady taper
-    t = max(0.0, (t - 0.18) / 0.82)
-    return R_BIT_BASE + (R_BIT_NECK - R_BIT_BASE) * t
-
-
-def helix(name, z0, z1, turns, mat, parent, phase=0.0, steps=360):
-    """A copper flute wound round the core from z0 to z1: a strap FLUTE_H wide lying on the cone and standing FLUTE_OUT
-    proud of it, narrowing towards the point."""
-    bm = bmesh.new()
-    rings = []
-    for i in range(steps + 1):
-        t = i / steps
-        z = z0 + (z1 - z0) * t
-        a = phase + 2 * math.pi * turns * t
-        out, h = FLUTE_OUT * (1.0 - 0.3 * t), FLUTE_H * (1.0 - 0.35 * t)
-        c, s = math.cos(a), math.sin(a)
-        # the strap follows the cone: each edge sits at the core's radius where it is, its outer face beveled off
-        lo, hi = core_radius(z - h / 2), core_radius(z + h / 2)
-        rings.append([bm.verts.new((rr * c, rr * s, z + dz)) for rr, dz in
-                      ((lo - 0.015, -h / 2), (lo + out * 0.6, -h / 2), (lo + out, -h / 2 + 0.012),
-                       (hi + out, h / 2 - 0.012), (hi + out * 0.6, h / 2), (hi - 0.015, h / 2))])
-    for i in range(steps):
-        a, b = rings[i], rings[i + 1]
-        for k in range(6):
-            bm.faces.new((a[k], a[(k + 1) % 6], b[(k + 1) % 6], b[k]))
-    bm.faces.new(rings[0][::-1])
-    bm.faces.new(rings[-1])
-    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
-    return sb._object(name, bm, mat, parent, smooth=False)
-
-
-def lathe(name, profile, mat, parent, segs=64, smooth=True):
-    """A solid of revolution about Z from (radius, z) points, closed at radius 0 ends."""
+def lathe(name, profile, mat, parent, segs=64, smooth=True, close_top=True):
+    """A solid of revolution about Z from (radius, z) points, closed at radius 0 ends (and capped at the top)."""
     bm = bmesh.new()
     rings = []
     for r, z in profile:
@@ -122,92 +90,112 @@ def lathe(name, profile, mat, parent, segs=64, smooth=True):
                 bm.faces.new((a[k], b[0], a[j]))
             else:
                 bm.faces.new((a[k], b[k], b[j], a[j]))
-    for end in (rings[0], rings[-1]):
+    for end in (rings[0], rings[-1]) if close_top else (rings[0],):
         if len(end) > 1:
             bm.faces.new(end)
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
     return sb._object(name, bm, mat, parent, smooth=smooth)
 
 
+def prism(name, outline, depth, mat, parent, frame, bevel=0.004):
+    """An outline in a plane (u, v points) pushed `depth` m along that plane's normal; frame = (origin, u, v, n)."""
+    o, u, v, n = (Vector(x) for x in frame)
+    bm = bmesh.new()
+    lo = [bm.verts.new(o + u * a + v * b) for a, b in outline]
+    hi = [bm.verts.new(o + u * a + v * b + n * depth) for a, b in outline]
+    bm.faces.new(lo[::-1])
+    bm.faces.new(hi)
+    for i in range(len(outline)):
+        j = (i + 1) % len(outline)
+        bm.faces.new((lo[i], lo[j], hi[j], hi[i]))
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    return sb._bevel(sb._object(name, bm, mat, parent), bevel)
+
+
+def rounded_rect(w, h, r, segs=4):
+    """A rounded rectangle w x h about the origin, corners of radius r."""
+    pts = []
+    for cx, cy, a0 in ((w / 2 - r, h / 2 - r, 0), (-w / 2 + r, h / 2 - r, 90), (-w / 2 + r, -h / 2 + r, 180), (w / 2 - r, -h / 2 + r, 270)):
+        for k in range(segs + 1):
+            a = math.radians(a0 + 90 * k / segs)
+            pts.append((cx + r * math.cos(a), cy + r * math.sin(a)))
+    return pts
+
+
+def loop(name, w, h, r, band, depth, frame, mat, parent):
+    """A flat rounded-rectangle ring `band` m wide, pushed `depth` m along the frame's normal."""
+    o, u, v, n = (Vector(x) for x in frame)
+    outer, inner = rounded_rect(w, h, r), rounded_rect(w - 2 * band, h - 2 * band, max(0.004, r - band))
+    bm = bmesh.new()
+    rows = [[bm.verts.new(o + u * a + v * b + n * d) for a, b in pts] for pts in (outer, inner) for d in (0, depth)]
+    (ol, oh), (il, ih) = (rows[0], rows[1]), (rows[2], rows[3])
+    m = len(outer)
+    for i in range(m):
+        j = (i + 1) % m
+        bm.faces.new((oh[i], oh[j], ih[j], ih[i]))
+        bm.faces.new((ol[j], ol[i], il[i], il[j]))
+        bm.faces.new((ol[i], ol[j], oh[j], oh[i]))
+        bm.faces.new((il[j], il[i], ih[i], ih[j]))
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    return sb._bevel(sb._object(name, bm, mat, parent), 0.003)
+
+
 def build(root_name="Drill"):
     root = bpy.data.objects.new(root_name, None)
     bpy.context.scene.collection.objects.link(root)
-    body = sp.metal("gunmetal", GUNMETAL, 0.42, wear=1.0)
-    dark = sp.metal("gunmetal_dark", GUNMETAL_DARK, 0.5, wear=0.6)
-    steel = sp.metal("steel", STEEL, 0.28, wear=0.5)
-    copper = sp.metal("copper", COPPER, 0.4, wear=0.8)
-    bolt = sp.metal("bolt", (0.32, 0.33, 0.35), 0.3)
-    teal = sp.metal("teal", TEAL, 0.32, metallic=0.6, coat=0.4)
-    bore = sp.plain("bore", (0.01, 0.01, 0.012), 0.6)
-    glow = sp.plain("glow", GLOW, 0.3, emission=GLOW, strength=6.0)
+    steel = sp.metal("steel", STEEL, 0.22, wear=0.5)
+    point = sp.metal("point", (0.66, 0.68, 0.72), 0.16, wear=0.3)
+    dark = sp.metal("steel_dark", STEEL_DARK, 0.35, wear=0.8)
+    amber = sp.metal("amber", AMBER, 0.45, metallic=0.0, coat=0.15)
+    claw = sp.metal("claw", (0.27, 0.29, 0.33), 0.32, wear=0.8)
+    hole = sp.plain("hole", HOLE, 0.7)
+    glow = sp.plain("glow", GLOW, 0.3, emission=GLOW, strength=5.0)
 
-    zc = (Z_HOUSING_BACK + Z_HOUSING_FRONT) / 2
-    length = Z_HOUSING_FRONT - Z_HOUSING_BACK
-    # the housing's core, set in from the pillars and plates
-    sb.box("HousingCore", (0.66, 0.66, length - 0.01), (0, 0, zc), 0, dark, root, bevel=0.01)
-    # corner pillars, split into a back and a front block by a panel line, a bolt on each end face
-    edge = HALF - CORNER / 2
-    for k in range(4):
-        sx, sy = (1, 1, -1, -1)[k], (1, -1, 1, -1)[k]
-        x, y = sx * edge, sy * edge
-        split = -0.2
-        sb.box("PillarBack", (CORNER, CORNER, split - Z_HOUSING_BACK - 0.004), (x, y, (Z_HOUSING_BACK + split) / 2 - 0.002),
-               0, body, root, bevel=0.012)
-        sb.box("PillarFront", (CORNER, CORNER, Z_HOUSING_FRONT + 0.015 - split - 0.004),
-               (x, y, (split + Z_HOUSING_FRONT + 0.015) / 2 + 0.002), 0, body, root, bevel=0.012)
-        sb.bolt("PillarBoltF", x + sx * 0.02, y + sy * 0.02, Z_HOUSING_FRONT + 0.015, 1, bolt, root, r=0.022)
-        sb.bolt("PillarBoltB", x + sx * 0.02, y + sy * 0.02, Z_HOUSING_BACK, -1, bolt, root, r=0.022)
-        # a rivet on each outer face of the front block
-        sb.box("PillarRivetX", (0.012, 0.03, 0.03), (x + sx * (CORNER / 2 + 0.004), y, -0.13), 0, bolt, root, bevel=0.004)
-        sb.box("PillarRivetY", (0.03, 0.012, 0.03), (x, y + sy * (CORNER / 2 + 0.004), -0.13), 0, bolt, root, bevel=0.004)
-    # side plates: a back and a front plate on each side between the pillars, the front one with a raised strip
+    # the base: a round plate with the mounting face underneath, a raised rim and the amber band above it
+    lathe("Base", [(0.0, Z_BASE + 0.012), (R_BASE - 0.01, Z_BASE + 0.012), (R_BASE, Z_BASE + 0.022), (R_BASE, Z_BAND - 0.035),
+                   (R_BASE - 0.012, Z_BAND - 0.03), (0.0, Z_BAND - 0.03)], dark, root, segs=96)
+    sb.ring("Band", R_BAND, R_BAND - 0.05, Z_BAND - 0.031, Z_BAND, amber, root, segs=96, bevel=0.003)
+    sb.ring("BandSeat", R_BAND - 0.04, 0.2, Z_BAND - 0.031, Z_BIT + 0.004, steel, root, segs=96, bevel=0.003)
+    # the mounting face: a collar round a dark bore, and a ring of bolts, for the bearing
+    sb.ring("Hub", 0.17, 0.075, Z_BASE, Z_BASE + 0.016, steel, root, segs=64, bevel=0.003)
+    sb.disc("HubBore", 0.075, Z_BASE + 0.006, Z_BASE + 0.012, hole, root, segs=40)
+    for k in range(8):
+        a = 2 * math.pi * (k + 0.5) / 8
+        sb.bolt("HubBolt", 0.23 * math.cos(a), 0.23 * math.sin(a), Z_BASE + 0.012, -1, steel, root, r=0.014)
+    for k in range(8):
+        a = 2 * math.pi * (k + 0.5) / 8
+        sb.bolt("BaseBolt", 0.27 * math.cos(a), 0.27 * math.sin(a), Z_BAND, 1, dark, root, r=0.013)
+    # the bit: a smooth shouldered dome and cone with two steps, and a faceted point
+    lathe("Bit", BIT, steel, root, segs=96)
+    lathe("Point", [(0.128, POINT_BASE - 0.002), (0.0, Z_TIP)], point, root, segs=10, smooth=False)
+    # shallow grooves round the shoulder, as on a turned part
+    for z, r in ((Z_BIT + 0.11, 0.284), (Z_BIT + 0.35, 0.16)):
+        sb.ring("Groove", r + 0.002, r - 0.01, z - 0.004, z + 0.004, dark, root, segs=96)
+    # four claw brackets, one on each side
     for k in range(4):
         a = k * math.pi / 2
         c, s = math.cos(a), math.sin(a)
-        span = 2 * edge - CORNER - 0.012
-        for z0, z1, name in ((Z_HOUSING_BACK + 0.01, -0.2, "PlateBack"), (-0.19, Z_HOUSING_FRONT - 0.005, "PlateFront")):
-            r = HALF - 0.03
-            sb.box(name, (0.05, span, z1 - z0), (r * c, r * s, (z0 + z1) / 2), a, body, root, bevel=0.008)
-        r = HALF - 0.004
-        sb.box("PlateStrip", (0.012, span * 0.62, 0.05), (r * c, r * s, -0.125), a, dark, root, bevel=0.004)
-        for o in (-1, 1):
-            sb.box("PlateRivet", (0.012, 0.026, 0.026), ((r + 0.002) * c - o * span * 0.38 * s, (r + 0.002) * s + o * span * 0.38 * c,
-                                                          -0.27), a, bolt, root, bevel=0.004)
-        if k % 2 == 0:
-            # a teal inset on the two sides: a round lens in a dark socket, on the back plate
-            ex = HALF + 0.002
-            ob = sb.disc("TealSocket", 0.06, 0, 0.012, dark, root, segs=32)
-            ob.rotation_euler = (0, math.radians(90), a)
-            ob.location = (ex * c - 0.006 * c, ex * s - 0.006 * s, -0.262)
-            ob = sb.disc("TealInset", 0.042, 0, 0.012, teal, root, segs=32)
-            ob.rotation_euler = (0, math.radians(90), a)
-            ob.location = (ex * c, ex * s, -0.262)
-    # the front face: a ring plate, the base ring with its teal band, and the bit's seat
-    sb.ring("FrontPlate", 0.335, 0.27, Z_HOUSING_FRONT - 0.01, Z_HOUSING_FRONT + 0.012, body, root, segs=96, bevel=0.004)
-    sb.ring("BaseRing", R_TEAL_OUT + 0.016, R_BIT_BASE - 0.02, Z_HOUSING_FRONT, Z_BIT, dark, root, segs=96, bevel=0.004)
-    sb.ring("BaseTeal", R_TEAL_OUT, R_TEAL_IN, Z_BIT - 0.004, Z_BIT + 0.026, teal, root, segs=96, bevel=0.003)
-    for k in range(8):
-        a = 2 * math.pi * (k + 0.5) / 8
-        sb.bolt("BaseBolt", 0.31 * math.cos(a), 0.31 * math.sin(a), Z_HOUSING_FRONT + 0.012, 1, bolt, root, r=0.012)
-    # the bit: the tapering core, the copper flute wound round it, and the steel point
-    profile = [(R_BIT_BASE - 0.02, Z_BIT - 0.01), (R_BIT_BASE, Z_BIT + 0.01)]
-    profile += [(core_radius(z), z) for z in (Z_BIT + (Z_NECK - Z_BIT) * i / 16 for i in range(1, 17))]
-    profile += [(R_BIT_NECK + 0.012, Z_NECK + 0.004), (0.0, Z_NECK + 0.006)]
-    lathe("BitCore", profile, steel, root, segs=64)
-    helix("Flute", Z_BIT + 0.03, Z_NECK - 0.01, FLUTE_TURNS, copper, root)
-    lathe("Point", [(R_BIT_NECK + 0.02, Z_NECK - 0.012), (R_BIT_NECK + 0.02, Z_NECK + 0.006), (0.0, Z_TIP)], steel, root,
-          segs=12, smooth=False)
-    # the mounting face: a back plate, the collar with its teal ring, and the dark bore
-    sb.box("BackPlate", (0.6, 0.6, 0.02), (0, 0, Z_HOUSING_BACK - 0.005), 0, dark, root, bevel=0.006)
-    sb.ring("Collar", R_COLLAR, R_BORE, Z_BACK + 0.004, Z_HOUSING_BACK, body, root, segs=96, bevel=0.005)
-    sb.ring("CollarTeal", R_COLLAR + 0.03, R_COLLAR + 0.002, Z_BACK + 0.02, Z_HOUSING_BACK, teal, root, segs=96, bevel=0.003)
-    sb.ring("BoreLip", R_BORE + 0.012, R_BORE - 0.012, Z_BACK, Z_BACK + 0.02, dark, root, segs=64)
-    sb.disc("Bore", R_BORE, Z_BACK + 0.03, Z_BACK + 0.032, bore, root, segs=40)
-    for k in range(6):
-        a = 2 * math.pi * k / 6
-        sb.bolt("CollarBolt", 0.15 * math.cos(a), 0.15 * math.sin(a), Z_BACK + 0.004, -1, bolt, root, r=0.012)
-    # the glow: a ring just proud of the teal band round the bit's base
-    glows = [sb.ring("BitGlow", R_TEAL_OUT - 0.008, R_TEAL_IN + 0.008, Z_BIT + 0.026, Z_BIT + 0.028, glow, root, segs=96)]
+        n, t, up = Vector((c, s, 0)), Vector((-s, c, 0)), Vector((0, 0, 1))
+        # the claw's side outline (radial distance in from the outer face, z), leaning in towards the bit at the top
+        side = [(0.0, Z_BASE + 0.005), (BRACKET_T + 0.03, Z_BASE + 0.005), (BRACKET_T + 0.03, Z_BAND - 0.02),
+                (BRACKET_T, Z_BAND), (BRACKET_T + 0.035, BRACKET_TOP - 0.03), (BRACKET_T + 0.035, BRACKET_TOP),
+                (0.05, BRACKET_TOP + 0.04), (0.012, BRACKET_TOP + 0.02), (0.0, -0.05)]
+        origin = n * BRACKET_R + t * (-BRACKET_W / 2)
+        prism("Bracket", [(-d, z) for d, z in side], BRACKET_W, claw, root, (origin, n, up, t), bevel=0.008)
+        # a darker plate down the middle of its outer face, and amber edging along its top
+        plate = [(-0.06, Z_BASE + 0.03), (0.06, Z_BASE + 0.03), (0.06, -0.08), (0.0, -0.045), (-0.06, -0.08)]
+        prism("BracketPlate", plate, 0.006, dark, root, (n * (BRACKET_R - 0.004), t, up, n), bevel=0.003)
+        for side_sign in (-1, 1):
+            # amber strips down each side of the claw's upper part
+            strip = [(-0.008, -0.2), (0.008, -0.2), (0.008, BRACKET_TOP - 0.01), (-0.008, BRACKET_TOP - 0.01)]
+            centre = n * (BRACKET_R - 0.05) + t * side_sign * (BRACKET_W / 2 + 0.0)
+            prism("BracketEdge", strip, 0.006, amber, root, (centre - t * side_sign * 0.003, n, up, t * side_sign), bevel=0.002)
+        # the amber-rimmed loop at its foot, a dark hole inside
+        foot = n * (BRACKET_R - 0.004) + up * (Z_BASE + 0.1)
+        loop("Loop", 0.16, 0.135, 0.035, 0.036, 0.018, (foot, t, up, n), amber, root)
+        prism("LoopHole", rounded_rect(0.09, 0.064, 0.01), 0.004, hole, root, (foot - n * 0.002, t, up, n), bevel=0.0)
+    # the glow: a ring just proud of the amber band
+    glows = [sb.ring("BitGlow", R_BAND - 0.006, R_BAND - 0.044, Z_BAND, Z_BAND + 0.002, glow, root, segs=96)]
     return root, glows
 
 
@@ -236,24 +224,24 @@ def render_review(out: Path, icons_only=False):
 
     shots = {}
     if not icons_only:
-        pose(True, OFF)
-        shots["front"] = (rl.render(rl.camera("front", (-4, 0, HALF), (0, 0, HALF), ortho=1.05), out / "drill_front.png", 900, 900),)
-        shots["back"] = (rl.render(rl.camera("back", (4, 0, HALF), (0, 0, HALF), ortho=1.05), out / "drill_back.png", 900, 900),)
+        pose(False, OFF)
+        shots["front"] = (rl.render(rl.camera("front", (0, 0, 4), (0, 0, HALF), ortho=1.05), out / "drill_tip_on.png", 900, 900),)
         cam = rl.camera("side", (0, -4, HALF), (0, 0, HALF), ortho=1.05)
         shots["side"] = (rl.render(cam, out / "drill_side.png", 900, 900), cam)
-        shots["top"] = (rl.render(rl.camera("top", (0, 0, 4), (0, 0, HALF), ortho=1.05), out / "drill_top.png", 900, 900),)
-        shots["tq"] = (rl.render(rl.camera("tq", (-1.5, -3.0, 1.6), (0, 0, HALF), ortho=1.35), out / "drill_three_quarter.png", 900, 800),)
+        shots["top"] = (rl.render(rl.camera("diag", (-2.83, -2.83, HALF), (0, 0, HALF), ortho=1.05), out / "drill_side_45.png", 900, 900),)
+        shots["tq"] = (rl.render(rl.camera("tq", (-1.6, -2.7, 2.0), (0, 0, HALF * 0.9), ortho=1.3), out / "drill_three_quarter.png", 900, 800),)
+        pose(True, OFF)
+        shots["back"] = (rl.render(rl.camera("back", (4, 0, HALF), (0, 0, HALF), ortho=1.05), out / "drill_back.png", 900, 900),)
         shots["rear_tq"] = (rl.render(rl.camera("rtq", (2.4, -2.4, 1.7), (0, 0, HALF), ortho=1.35), out / "drill_rear_three_quarter.png", 900, 800),)
-        pose(True, 1.0)
-        shots["glow"] = (rl.render(rl.camera("glow", (-2.6, -1.6, 1.2), (0, 0, HALF), ortho=1.3), out / "drill_at_speed.png", 900, 800),)
+        pose(False, 1.0)
+        shots["glow"] = (rl.render(rl.camera("glow", (-2.2, -2.2, 1.7), (0, 0, HALF * 0.9), ortho=1.3), out / "drill_at_speed.png", 900, 800),)
     ground.hide_render = True
     sc.render.film_transparent = True
     pose(False, OFF)
-    # the tip towards the viewer's lower left, the housing behind it, as on the reference sheet
-    root.rotation_mode = "QUATERNION"
-    root.rotation_quaternion = Vector((0, 0, 1)).rotation_difference(Vector((-0.88, -0.3, -0.36)).normalized())
+    # tip up, seen from above between two brackets, as the game's other part icons are
+    root.rotation_euler = (0, 0, math.radians(45))
     root.location = (0, 0, 0)
-    p = rl.render(rl.camera("icon", (0, -4, 0), (0, 0, 0), ortho=1.3), out / "drill_icon_raw.png", 512, 512)
+    p = rl.render(rl.camera("icon", (0, -3.4, 2.0), (0, 0, -0.02), ortho=1.2), out / "drill_icon_raw.png", 512, 512)
     im = Image.open(p).convert("RGBA")
     im = im.crop(im.getbbox())
     side = max(im.size)
@@ -270,10 +258,10 @@ def render_review(out: Path, icons_only=False):
     sheet = Image.new("RGB", (2860, 2120), (246, 246, 244))
     d = ImageDraw.Draw(sheet)
     d.text((60, 36), "DRILL (design review)", fill=INK, font=F(46, True))
-    d.text((60, 98), "3 x 3 x 3 blocks (75 cm each way). Gunmetal housing, copper helical flute on a steel bit, teal "
-           "rings; the round collar at the back is the mounting face the bearing turns.", fill=INK, font=F(24))
-    tiles = [("FRONT (TIP)", "front", (60, 170)), ("SIDE", "side", (720, 170)), ("TOP", "top", (1380, 170)),
-             ("BACK (MOUNTING FACE)", "back", (2040, 170))]
+    d.text((60, 98), "3 x 3 x 3 blocks (75 cm each way). A squat steel bit held by four claw brackets with amber trim; "
+           "the round base's underside is the mounting face the bearing turns.", fill=INK, font=F(24))
+    tiles = [("TIP-ON", "front", (60, 170)), ("SIDE", "side", (720, 170)), ("SIDE, 45 DEGREES", "top", (1380, 170)),
+             ("MOUNTING FACE", "back", (2040, 170))]
     w = 620
     for label, key, (x, y) in tiles:
         im = Image.open(shots[key][0]).convert("RGB").resize((w, w), Image.LANCZOS)
@@ -288,8 +276,8 @@ def render_review(out: Path, icons_only=False):
     b = rl.project(cam, (HALF + 0.03, 0, 2 * HALF), w, w)
     rl.dim_line(d, (720 + a[0] + 8, 170 + a[1]), (720 + b[0] + 8, 170 + b[1]), "75 cm", F(22), vertical=True)
     y = 850
-    for label, key, x in (("THREE-QUARTER", "tq", 60), ("REAR THREE-QUARTER", "rear_tq", 1000),
-                          ("AT DRILLING SPEED (base ring glow)", "glow", 1940)):
+    for label, key, x in (("THREE-QUARTER", "tq", 60), ("ON ITS SIDE, FROM BEHIND", "rear_tq", 1000),
+                          ("AT DRILLING SPEED (base band glow)", "glow", 1940)):
         im = Image.open(shots[key][0]).convert("RGB")
         im = im.resize((880, int(im.height * 880 / im.width)), Image.LANCZOS)
         sheet.paste(im, (x, y))
