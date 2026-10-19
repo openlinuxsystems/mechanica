@@ -424,6 +424,8 @@ public partial class Main : Node3D
             Catalog = mods,
             Assets = Assets,
             Sounds = Sounds,
+            // The engine's numbers with the mods' game rules on top (paint, sledge, breaking, Lift).
+            Settings = BuildSync.LoadSettings(mods),
         };
         Inventory = new InventorySync
         {
@@ -453,6 +455,7 @@ public partial class Main : Node3D
             Mode = Options.GameMode,
             Difficulty = Options.Difficulty,
             FriendlyFire = Options.FriendlyFire,
+            Settings = SurvivalSync.LoadSettings(mods),
         };
         // Before building's actions, so building is paid for in Survival.
         Survival.RegisterActions(Actions.Dispatcher);
@@ -490,7 +493,11 @@ public partial class Main : Node3D
         Scripts = new ScriptSync { Name = "Scripts", Session = Session, Creations = Creations, Motion = Motion, Actions = Actions, Sounds = Sounds, Mods = mods, Survival = Survival };
         AddChild(Scripts);
         Streamer.Clock = () => Scripts.Runtime.Time;
-        Fire = new FireSync { Name = "Fire", Session = Session, Creations = Creations, Survival = Survival, World = Streamer, Scripts = Scripts, Sounds = Sounds };
+        Fire = new FireSync
+        {
+            Name = "Fire", Session = Session, Creations = Creations, Survival = Survival, World = Streamer, Scripts = Scripts, Sounds = Sounds,
+            Settings = FireSync.LoadSettings(mods),
+        };
         Fire.RegisterActions(Actions.Dispatcher);
         Scripts.Runtime.Fire = Fire.Actions;
         AddChild(Fire);

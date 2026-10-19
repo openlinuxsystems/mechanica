@@ -50,15 +50,45 @@ public partial class ModManagerTest : Node
         var reopened = Open(profilePath);
         Check(reopened.Rows.SequenceEqual(screen.Rows), "reopening the screen restores the saved setup");
 
+        // New mod, Edit info and Check all content, on a copy of the fixture mods.
+        var copy = ProjectSettings.GlobalizePath("user://tests/mod_manager_mods");
+        if (Directory.Exists(copy))
+            Directory.Delete(copy, recursive: true);
+        CopyFolder(ProjectSettings.GlobalizePath("res://tests/mods/mods"), copy);
+        var toolsProfile = ProjectSettings.GlobalizePath("user://tests/mod_manager_tools_profile.json");
+        if (File.Exists(toolsProfile))
+            File.Delete(toolsProfile);
+        var tools = Open(toolsProfile, copy);
+        Check(tools.CreateMod("Bad Id", "Bad") is not null, "a bad mod id is refused");
+        Check(tools.CreateMod("tools_test", "Tools Test") is null && tools.SelectedId == "tools_test" && Row(tools, "tools_test").Status == "Loaded",
+            $"New mod makes an empty mod that loads ({string.Join(", ", tools.Rows)})");
+        Check(tools.EditInfo("tools_test", "Tools Test", "2.0.0", "A test mod", ["Ada"], ["vanilla", "lib"]).Count == 0, "Edit info saves");
+        var manifest = ModLoader.ParseJson<ModManifest>(File.ReadAllText(Path.Combine(copy, "tools_test", "mod.json")), "mod.json", [])!;
+        Check(manifest.Version == "2.0.0" && manifest.Authors![0] == "Ada" && manifest.Dependencies!.Select(d => d.Id).SequenceEqual(["vanilla", "lib"]),
+            "the new info is in mod.json");
+        Check(tools.EditInfo("tools_test", "Tools Test", "two", null, [], ["vanilla"]).Count > 0, "a bad version is refused");
+        var report = tools.ValidateAll();
+        Check(report.LoadedMods.Contains("tools_test") && tools.ProblemsText.Contains("error(s)") && tools.ProblemsText.Contains("[world]"),
+            $"Check all content lists every kind of problem ({report.Errors} errors)");
+
         GD.Print($"[mods] {(_failed ? "FAILED" : "OK")}");
         StagedTest.QuitCleanly(this, _failed ? 1 : 0);
     }
 
-    private ModManagerScreen Open(string profilePath)
+    private static void CopyFolder(string from, string to)
+    {
+        Directory.CreateDirectory(to);
+        foreach (var file in Directory.GetFiles(from))
+            File.Copy(file, Path.Combine(to, Path.GetFileName(file)));
+        foreach (var dir in Directory.GetDirectories(from))
+            CopyFolder(dir, Path.Combine(to, Path.GetFileName(dir)));
+    }
+
+    private ModManagerScreen Open(string profilePath, string? modsRoot = null)
     {
         var screen = new ModManagerScreen
         {
-            ModsRoot = ProjectSettings.GlobalizePath("res://tests/mods/mods"),
+            ModsRoot = modsRoot ?? ProjectSettings.GlobalizePath("res://tests/mods/mods"),
             ProfilePath = profilePath,
         };
         AddChild(screen);

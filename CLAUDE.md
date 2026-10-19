@@ -87,7 +87,8 @@ After adding, renaming or re-documenting an action or AI endpoint method, run `t
 - Never hard-code a key. Add the action to `src/Mechanica.Core/Input/InputActions.cs` (spec §1 default) and
   match it with `GameInput.Pressed`; HUD hints use `GameInput.Label` so they follow the player's bindings.
 - Engine settings (`game/data/*.json`: movement, streaming, build reach, sync) ship with the build and
-  are not moddable. Content goes in mods (decided in chunk 24).
+  are not moddable. Content goes in mods (decided in chunk 24). The gameplay keys of `survival.json`, `fire.json`
+  and `building.json` are game rules a mod patches with `rules/<name>.patch.json` (`ModRules`, which lists the locked keys).
 
 ## Code style
 
