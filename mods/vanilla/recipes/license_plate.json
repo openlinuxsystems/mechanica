@@ -1,8 +1,7 @@
 {
   "id": "license_plate",
   "stations": [
-    "fabricator",
-    "mini_fabricator"
+    "fabricator"
   ],
   "inputs": [
     {

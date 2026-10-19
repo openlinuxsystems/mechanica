@@ -1,8 +1,7 @@
 {
   "id": "warehouse_key_sign",
   "stations": [
-    "fabricator",
-    "mini_fabricator"
+    "fabricator"
   ],
   "inputs": [
     {

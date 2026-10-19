@@ -2,7 +2,7 @@
   "id": "scrap_metal_wedge",
   "stations": [
     "fabricator",
-    "mini_fabricator"
+    "portable_fabricator"
   ],
   "inputs": [
     {

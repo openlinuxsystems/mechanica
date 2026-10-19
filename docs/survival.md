@@ -46,7 +46,7 @@ them. AI agents read it from `GetWorld` and `world.info` and set it with `world.
   and usually a seed back. Crops keep growing while nobody is near (the soil catches up from the world
   clock when it next runs) and are saved with the soil's Creation.
 - **Building costs items.** Placing a part takes one from your inventory; removing it gives it back
-  (or drops it when your inventory is full). Craft parts at a Mini Fabricator or Fabricator.
+  (or drops it when your inventory is full). Craft parts at a Portable Fabricator (a short list) or a Fabricator.
 - **Breaking things:** a part breaks off at 0 health. A container that breaks spills what it held.
   Trees, rocks and bushes with `health` break into resources (`drops` in `world/worldgen.json`).
   A Body that stops suddenly (a crash) damages the parts on the side that hit, more for weaker parts.

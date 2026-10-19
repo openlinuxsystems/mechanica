@@ -3,7 +3,7 @@
   "model": [
     {
       "kind": "mesh",
-      "mesh": "meshes/mini_fabricator.glb"
+      "mesh": "meshes/parts/portable_fabricator.glb"
     }
   ]
 }

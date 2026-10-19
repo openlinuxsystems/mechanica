@@ -1,8 +1,7 @@
 {
   "id": "door_frame",
   "stations": [
-    "fabricator",
-    "mini_fabricator"
+    "fabricator"
   ],
   "inputs": [
     {
