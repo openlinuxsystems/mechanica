@@ -442,6 +442,8 @@ public sealed partial class WorldGenerator
             return false;
         if (HeightAt(spot.X, spot.Y) < SeaLevel + 0.2f || SlopeAt(spot.X, spot.Y) > MathF.Min(_terrain.MaxScatterSlope, rule.Object.MaxSlope ?? float.MaxValue))
             return false;
+        if (rule.Perch is { } perch && !Perched(spot, perch))
+            return false;
         // A rock outcrop spreads its cubes over its footprint, so the whole of it must suit, not just its middle.
         if (rule.Object.Outcrop is not null)
         {
@@ -455,6 +457,18 @@ public sealed partial class WorldGenerator
             }
         }
         return true;
+    }
+
+    // Whether a spot stands high above the ground round it (a cliff top, a ledge): rarer finds sit where they take a climb.
+    private bool Perched(Vector2 spot, PerchDefinition perch)
+    {
+        var lowest = float.MaxValue;
+        for (var a = 0; a < 8; a++)
+        {
+            var p = spot + new Vector2(MathF.Cos(a * MathF.PI / 4f), MathF.Sin(a * MathF.PI / 4f)) * perch.Within;
+            lowest = MathF.Min(lowest, HeightAt(p.X, p.Y));
+        }
+        return HeightAt(spot.X, spot.Y) - lowest >= perch.Rise;
     }
 
     // Whether an earlier rule's fitting candidate sits too close. Earlier rules win, so ids never depend on later rules.

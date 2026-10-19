@@ -34,6 +34,15 @@
     "easy": { "bot_damage": 0.5, "raid_budget": 0.6, "raid_cooldown": 1.5 },
     "normal": { "bot_damage": 1, "raid_budget": 1, "raid_cooldown": 1 }
   },
+  // How hard a blow rocks a player who lives through it, by the health it takes (SurvivalSettings.cs HitSettings): from
+  // light they flinch away from it, from heavy they stagger back, from knockdown they are thrown down and get up again.
+  // Only these causes are blows.
+  "hits": {
+    "light": 1,
+    "heavy": 25,
+    "knockdown": 50,
+    "causes": ["bot", "sledge", "weapon", "explosion"]
+  },
   "fall": {
     "min_speed": 11,
     "damage_per_speed": 8

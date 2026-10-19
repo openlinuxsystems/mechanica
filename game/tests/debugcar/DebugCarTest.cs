@@ -11,7 +11,7 @@ namespace Mechanica.Game.Tests;
 /// <summary>
 /// The debug scrap car, host plus a client: a new world with <see cref="Main.DebugCar"/> on gets the car by the spawn,
 /// wired and fuelled, and the client sees it; the client sits in it and backs it up on S (toward the spawn: the test steps
-/// of the Main scene stand in front of it), burning the Gas Container's gasoline. The client, which does not host, never spawns one of its own.
+/// of the Main scene stand in front of it), burning the Gas Container's gasoline, and up a 15° hill (gravity tilted). The client, which does not host, never spawns one of its own.
 /// </summary>
 public partial class DebugCarTest : StagedTest
 {
@@ -100,6 +100,25 @@ public partial class DebugCarTest : StagedTest
             var settings = Creations.DebugCarSpawner.LoadSettings();
             Check(HostCar.InventoryOf(Part("vanilla:gas_container"))!.Count(Gasoline) < settings.Gasoline, "the engine burns the Gas Container's gasoline");
             _client.Main.LocalPlayer.CurrentInput = new PlayerInput(0, 0, 0, 0, false, false);
+            return true;
+        });
+        Add("S backs the car up a 15° hill", frame =>
+        {
+            // Gravity tilted toward -Z puts the car on a 15° slope rising to the south, the way it backs up.
+            var space = Chassis.GetWorld3D().Space;
+            if (frame == 0)
+            {
+                var slope = Mathf.DegToRad(15f);
+                PhysicsServer3D.AreaSetParam(space, PhysicsServer3D.AreaParameter.GravityVector, new Vector3(0f, -Mathf.Cos(slope), -Mathf.Sin(slope)));
+                _start = Chassis.GlobalPosition;
+            }
+            _client.Main.LocalPlayer!.CurrentInput = new PlayerInput(0, -1, 0, 0, false, false);
+            if (frame < 240)
+                return false;
+            PhysicsServer3D.AreaSetParam(space, PhysicsServer3D.AreaParameter.GravityVector, Vector3.Down);
+            _client.Main.LocalPlayer.CurrentInput = new PlayerInput(0, 0, 0, 0, false, false);
+            var moved = Chassis.GlobalPosition - _start;
+            Check(moved.Z > 8f, $"the Scrap Gas Engine pulls the car up the hill ({moved}, {Chassis.LinearVelocity.Z:0.0} m/s at the end)");
             return true;
         });
     }

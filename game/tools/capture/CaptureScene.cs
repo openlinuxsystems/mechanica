@@ -83,7 +83,8 @@ public partial class CaptureScene : Node
         var small = args.Length > 1 && args[1] == "small_pois";
         var finds = args.Length > 1 && args[1] == "finds";
         var borders = args.Length > 1 && args[1] == "biomes";
-        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders ? args[1] : "scrapper_male";
+        var moves = args.Length > 1 && args[1] == "animations";
+        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !moves ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
         if (debugCar)
             Main.MenuCharacter = "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
@@ -203,6 +204,11 @@ public partial class CaptureScene : Node
         if (finds)
         {
             FindShots();
+            return;
+        }
+        if (moves)
+        {
+            AnimationShots();
             return;
         }
         Shot("front", 60, () => Look(new Vector3(0, 1.0f, -3.2f)));
@@ -668,17 +674,17 @@ public partial class CaptureScene : Node
     private Vector3 _away;
 
     // The nearest of each small spaced POI kind (World POI plan), wide and close.
-    // The small finds nearest the world's centre: a loot crate, a chest and a scrap wreck, wide and close.
+    // The small finds nearest the world's centre: a loot crate, the three Bloom Pods and a scrap wreck, wide and close.
     private void FindShots()
     {
         Engine.TimeScale = 1.0;
         var gen = _main.Streamer.Generator;
         Shot("finds_00_wait", 60, () => { });
-        foreach (var id in new[] { "loot_crate", "loot_chest", "scrap_wreck" })
+        foreach (var id in new[] { "loot_crate", "bloom_pod_green", "bloom_pod_purple", "bloom_pod_gold", "scrap_wreck" })
         {
             Shot($"finds_00_{id}_go", 240, () =>
             {
-                var find = gen.ObjectsIn(-1500f, -1500f, 1500f, 1500f).Where(o => o.Definition.Id == id).MinBy(o => new Vector2(o.Position.X, o.Position.Z).Length())!;
+                var find = gen.ObjectsIn(-3000f, -3000f, 3000f, 3000f).Where(o => o.Definition.Id == id).MinBy(o => new Vector2(o.Position.X, o.Position.Z).Length())!;
                 _meadow = new Vector3(find.Position.X, find.Position.Y, find.Position.Z);
                 _away = new Vector3(1f, 0f, 0.4f).Normalized();
                 GD.Print($"[capture] {id} at {_meadow}");
@@ -1822,10 +1828,12 @@ public partial class CaptureScene : Node
         Player.HeldProp = prop;
     }
 
-    // CAPTURE_ONLY=text keeps the shots whose names contain it (and the setup shots, named *_00_*).
+    // CAPTURE_ONLY=text keeps the shots whose names contain it, or any of several separated by commas (and the setup
+    // shots, named *_00_*).
     private void Shot(string name, int frames, Action setup)
     {
-        if (OS.GetEnvironment("CAPTURE_ONLY") is { Length: > 0 } only && !name.Contains(only, StringComparison.Ordinal) && !name.Contains("_00_", StringComparison.Ordinal))
+        if (OS.GetEnvironment("CAPTURE_ONLY") is { Length: > 0 } only && !only.Split(',').Any(o => name.Contains(o, StringComparison.Ordinal))
+            && !name.Contains("_00_", StringComparison.Ordinal))
             return;
         _shots.Enqueue((name, frames, setup));
     }
@@ -1875,6 +1883,11 @@ public partial class CaptureScene : Node
             next.Setup();
             if (next.Name.StartsWith("first_person"))
                 _follow = null;
+        }
+        if (_recording.TryGetValue(_shot.Value.Name, out var tick))
+        {
+            Record(_shot.Value, tick);
+            return;
         }
         _time += delta;
         if (_time < _shot.Value.Frames / 60.0)

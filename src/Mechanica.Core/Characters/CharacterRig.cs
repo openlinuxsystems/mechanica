@@ -113,6 +113,22 @@ public enum CharacterGesture : byte
     PaintReload,
 }
 
+/// <summary>How hard a hit throws a player about (<see cref="CharacterAnimator.React"/>).</summary>
+public enum HitReaction : byte
+{
+    /// <summary>No reaction (lasting damage such as fire).</summary>
+    None,
+
+    /// <summary>A flinch away from the blow: <c>hit_front</c>, <c>hit_back</c>, <c>hit_left</c> or <c>hit_right</c>.</summary>
+    Light,
+
+    /// <summary>Knocked back a couple of stumbling steps (<c>hit_heavy</c>).</summary>
+    Heavy,
+
+    /// <summary>Thrown off the feet onto the back, then getting up (<c>knockdown</c>, <c>get_up</c>); the player can't move meanwhile.</summary>
+    Knockdown,
+}
+
 /// <summary>
 /// The humanoid skeleton every player character shares, and the animation clips that drive it. A character
 /// (and later a skin) is only a mesh skinned to these bones, so every one moves the same way and they are
@@ -195,8 +211,60 @@ public static class CharacterRig
     public static IReadOnlyList<string> FullBodyClips { get; } =
     [
         "idle", "walk", "jog", "run", "crouch_idle", "crouch_walk", "jump", "fall", "land", "swim_idle", "swim", "sit",
-        "sit_low", "sit_ride", "sit_ride_low",
+        "sit_low", "sit_ride", "sit_ride_low", "idle_look", "idle_stretch", "turn_l", "turn_r", "jump_run", "land_hard",
     ];
+
+    /// <summary>
+    /// Whole-body clips the animator plays over everything else when a player is hit, knocked down or killed
+    /// (<see cref="CharacterAnimator.React"/>), each with a first-person version.
+    /// </summary>
+    public static IReadOnlyList<string> ReactionClips { get; } =
+    [
+        "hit_front", "hit_back", "hit_left", "hit_right", "hit_heavy", "knockdown", "get_up", "death", "downed",
+        "hit_front_fp", "hit_back_fp", "hit_left_fp", "hit_right_fp", "hit_heavy_fp", "knockdown_fp", "get_up_fp", "death_fp", "downed_fp",
+    ];
+
+    /// <summary>
+    /// Gestures and reactions whose clips move the hips and legs too: a Sledgehammer swing steps into the blow and a throw
+    /// winds up from the feet. Their legs show while the player stands; walking, the legs keep walking.
+    /// </summary>
+    public static IReadOnlySet<string> LegGestures { get; } = new HashSet<string>(StringComparer.Ordinal)
+    {
+        "sledge_swing", "sledge_swing_side", "sledge_swing_back", "throw", "bucket_throw",
+        "hit_front", "hit_back", "hit_left", "hit_right", "hit_heavy", "knockdown", "get_up", "death", "downed",
+    };
+
+    /// <summary>Hold clips that leave the left arm hanging free: walking, it swings with the stride.</summary>
+    public static IReadOnlySet<string> FreeArmHolds { get; } = new HashSet<string>(StringComparer.Ordinal)
+    {
+        "hold_tool", "hold_item", "hold_bucket", "hold_connect", "hold_connect_aim", "hold_weld", "hold_weld_aim", "hold_paint", "hold_paint_aim",
+    };
+
+    /// <summary>Reactions that take the whole body whatever it was doing: the player is on the ground and can't move.</summary>
+    public static IReadOnlySet<string> GroundingClips { get; } = new HashSet<string>(StringComparer.Ordinal)
+    {
+        "knockdown", "get_up", "death", "downed",
+    };
+
+    /// <summary>
+    /// The clip a hit plays: a light hit by where it came from (<paramref name="from"/>, radians from the body's front,
+    /// positive to its left; null when it came from nowhere in particular plays <c>hit_front</c>), a heavy one
+    /// <c>hit_heavy</c>, a knockdown <c>knockdown</c>; null for <see cref="HitReaction.None"/>.
+    /// </summary>
+    public static string? HitClip(HitReaction reaction, float? from = null) => reaction switch
+    {
+        HitReaction.Light => from is not { } a || !float.IsFinite(a) ? "hit_front" : MathF.Abs(Wrap(a)) switch
+        {
+            <= MathF.PI / 4f => "hit_front",
+            >= MathF.PI * 3f / 4f => "hit_back",
+            _ => Wrap(a) > 0f ? "hit_left" : "hit_right",
+        },
+        HitReaction.Heavy => "hit_heavy",
+        HitReaction.Knockdown => "knockdown",
+        _ => null,
+    };
+
+    private static float Wrap(float angle) => MathF.IEEERemainder(angle, MathF.Tau);
 
     /// <summary>Clips that move only <see cref="UpperBodyBones"/>.</summary>
     public static IReadOnlyList<string> UpperBodyClips { get; } =
@@ -234,7 +302,7 @@ public static class CharacterRig
     public const string FirstPersonSuffix = "_fp";
 
     /// <summary>Every clip the animation set must have.</summary>
-    public static IEnumerable<string> Clips => FullBodyClips.Concat(UpperBodyClips);
+    public static IEnumerable<string> Clips => FullBodyClips.Concat(UpperBodyClips).Concat(ReactionClips);
 
     /// <summary>
     /// The arm pose for holding <paramref name="prop"/>, or null for empty hands. <paramref name="guard"/> raises the

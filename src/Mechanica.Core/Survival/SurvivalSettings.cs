@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Mechanica.Core.Characters;
 using Mechanica.Core.Data;
 
 namespace Mechanica.Core.Survival;
@@ -117,6 +118,9 @@ public sealed record SurvivalSettings
     /// <summary>Items each player starts a Survival world with.</summary>
     public IReadOnlyList<ItemCount> StartingItems { get; init; } = [];
 
+    /// <summary>How hard a hit throws a player about, by the health it takes (<see cref="HitSettings"/>).</summary>
+    public HitSettings Hits { get; init; } = new();
+
     /// <summary>Fall damage.</summary>
     public FallSettings Fall { get; init; } = new();
 
@@ -178,6 +182,7 @@ public sealed record SurvivalSettings
                 throw new FormatException($"starting_items: count of '{start.Item}' must be 1 or more.");
         }
         Fall.Validate();
+        Hits.Validate();
         Impact.Validate();
         foreach (var (name, d) in Difficulties)
         {
@@ -197,6 +202,42 @@ public sealed record SurvivalSettings
     {
         if (!(value >= 0f) || !float.IsFinite(value))
             throw new FormatException($"{name} must be 0 or more (got {value}).");
+    }
+}
+
+/// <summary>
+/// How a blow throws the player it hurts about (<c>hits</c> in <c>survival.json</c>): by the health it takes. Lasting
+/// harm (fire, a fall, toxic water) makes no reaction.
+/// </summary>
+public sealed record HitSettings
+{
+    /// <summary>Health a blow must take to make the player flinch from it.</summary>
+    public float Light { get; init; } = 1f;
+
+    /// <summary>Health from which it knocks them back a couple of steps.</summary>
+    public float Heavy { get; init; } = 25f;
+
+    /// <summary>Health from which it throws them off their feet.</summary>
+    public float Knockdown { get; init; } = 50f;
+
+    /// <summary>The causes of harm that are blows (<see cref="SurvivalActions.Damage"/>'s cause); anything else makes no reaction.</summary>
+    public IReadOnlyList<string> Causes { get; init; } = ["bot", "sledge", "weapon", "explosion"];
+
+    /// <summary>The reaction to a blow of <paramref name="cause"/> taking <paramref name="damage"/> health.</summary>
+    public HitReaction ReactionTo(string cause, float damage) =>
+        !Causes.Contains(cause) || !(damage >= Light) ? HitReaction.None
+        : damage >= Knockdown ? HitReaction.Knockdown
+        : damage >= Heavy ? HitReaction.Heavy
+        : HitReaction.Light;
+
+    /// <summary>Throws <see cref="FormatException"/> naming the first out-of-range value.</summary>
+    public void Validate()
+    {
+        SurvivalSettings.Positive(Light, "hits.light");
+        if (!(Heavy >= Light) || !(Knockdown >= Heavy) || !float.IsFinite(Knockdown))
+            throw new FormatException($"hits must rise from light to heavy to knockdown (got {Light}, {Heavy}, {Knockdown}).");
+        if (Causes is null || Causes.Any(string.IsNullOrWhiteSpace))
+            throw new FormatException("hits.causes must be cause names.");
     }
 }
 

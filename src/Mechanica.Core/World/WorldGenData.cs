@@ -36,7 +36,7 @@ public sealed record LoadedSite(int Index, SiteDefinition Definition, LoadedPoi?
 public sealed record LoadedPool(string Id, IReadOnlyList<LoadedPoi> Entries);
 
 /// <summary>A scatter rule ready for generation. <see cref="Index"/> is its place among every biome's rules, and part of each object's id.</summary>
-public sealed record Scatter(int Index, int Biome, WorldObjectDefinition Object, float Spacing, float Chance);
+public sealed record Scatter(int Index, int Biome, WorldObjectDefinition Object, float Spacing, float Chance, PerchDefinition? Perch = null);
 
 /// <summary>A biome's flora rule ready for growing. <see cref="Index"/> is its place among every biome's flora rules.</summary>
 /// <param name="Index">Place among every biome's flora rules; salts its random numbers.</param>
@@ -102,7 +102,7 @@ public sealed class WorldGenData
         var scatter = new List<Scatter>();
         foreach (var biome in definition.Biomes ?? [])
             foreach (var rule in biome.Scatter ?? [])
-                scatter.Add(new Scatter(scatter.Count, Biomes.First(b => b.Id == biome.Id).Index, Objects[rule.Object!], rule.Spacing, rule.Chance));
+                scatter.Add(new Scatter(scatter.Count, Biomes.First(b => b.Id == biome.Id).Index, Objects[rule.Object!], rule.Spacing, rule.Chance, rule.Perch));
         ScatterRules = scatter;
         var flora = new List<Flora>();
         foreach (var biome in definition.Biomes ?? [])

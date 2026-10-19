@@ -50,7 +50,9 @@
       "ground": "grass",
       "scatter": [
         { "object": "loot_crate", "spacing": 400.0, "chance": 0.5 },
-        { "object": "loot_chest", "spacing": 640.0, "chance": 0.4 },
+        { "object": "bloom_pod_green", "spacing": 640.0, "chance": 0.4 },
+        { "object": "bloom_pod_purple", "spacing": 300.0, "chance": 1.0, "perch": { "rise": 6.0, "within": 10.0 } },
+        { "object": "bloom_pod_gold", "spacing": 420.0, "chance": 0.8, "perch": { "rise": 7.0, "within": 10.0 } },
         { "object": "scrap_wreck", "spacing": 540.0, "chance": 0.5 },
         { "object": "rock_outcrop", "spacing": 36.0, "chance": 0.45 },
         { "object": "metal_outcrop", "spacing": 80.0, "chance": 0.35 },
@@ -77,7 +79,9 @@
       "ground": "forest_floor",
       "scatter": [
         { "object": "loot_crate", "spacing": 400.0, "chance": 0.5 },
-        { "object": "loot_chest", "spacing": 640.0, "chance": 0.4 },
+        { "object": "bloom_pod_green", "spacing": 640.0, "chance": 0.4 },
+        { "object": "bloom_pod_purple", "spacing": 300.0, "chance": 1.0, "perch": { "rise": 6.0, "within": 10.0 } },
+        { "object": "bloom_pod_gold", "spacing": 420.0, "chance": 0.8, "perch": { "rise": 7.0, "within": 10.0 } },
         { "object": "pine_tree", "spacing": 20.0, "chance": 0.35 },
         { "object": "leafy_tree", "spacing": 11.0, "chance": 0.45 },
         { "object": "spruce_tree", "spacing": 12.0, "chance": 0.4 },
@@ -147,7 +151,9 @@
       "ground": "forest_floor",
       "scatter": [
         { "object": "loot_crate", "spacing": 400.0, "chance": 0.5 },
-        { "object": "loot_chest", "spacing": 640.0, "chance": 0.4 },
+        { "object": "bloom_pod_green", "spacing": 640.0, "chance": 0.4 },
+        { "object": "bloom_pod_purple", "spacing": 300.0, "chance": 1.0, "perch": { "rise": 6.0, "within": 10.0 } },
+        { "object": "bloom_pod_gold", "spacing": 420.0, "chance": 0.8, "perch": { "rise": 7.0, "within": 10.0 } },
         { "object": "autumn_leafy_tree", "spacing": 11.0, "chance": 0.5 },
         { "object": "birch_tree", "spacing": 14.0, "chance": 0.35 },
         { "object": "spruce_tree", "spacing": 30.0, "chance": 0.15 },
@@ -208,7 +214,9 @@
       "ground": "rock",
       "scatter": [
         { "object": "loot_crate", "spacing": 400.0, "chance": 0.5 },
-        { "object": "loot_chest", "spacing": 640.0, "chance": 0.4 },
+        { "object": "bloom_pod_green", "spacing": 640.0, "chance": 0.4 },
+        { "object": "bloom_pod_purple", "spacing": 300.0, "chance": 1.0, "perch": { "rise": 6.0, "within": 10.0 } },
+        { "object": "bloom_pod_gold", "spacing": 420.0, "chance": 0.8, "perch": { "rise": 7.0, "within": 10.0 } },
         { "object": "spruce_tree", "spacing": 22.0, "chance": 0.25 },
         { "object": "pine_tree", "spacing": 40.0, "chance": 0.2 },
         { "object": "rock_outcrop", "spacing": 28.0, "chance": 0.5 },
@@ -231,7 +239,9 @@
       "ground": "sand",
       "scatter": [
         { "object": "loot_crate", "spacing": 400.0, "chance": 0.5 },
-        { "object": "loot_chest", "spacing": 640.0, "chance": 0.4 },
+        { "object": "bloom_pod_green", "spacing": 640.0, "chance": 0.4 },
+        { "object": "bloom_pod_purple", "spacing": 300.0, "chance": 1.0, "perch": { "rise": 6.0, "within": 10.0 } },
+        { "object": "bloom_pod_gold", "spacing": 420.0, "chance": 0.8, "perch": { "rise": 7.0, "within": 10.0 } },
         { "object": "rock_outcrop", "spacing": 54.0, "chance": 0.3 },
         { "object": "boulder", "spacing": 40.0, "chance": 0.2 },
         { "object": "small_rock", "spacing": 15.0, "chance": 0.15 },
@@ -394,6 +404,46 @@
   // (parts/stone_chunk.json, parts/metal_chunk.json); a large one into three loose boulders (parts/stone_boulder.json,
   // parts/metal_boulder.json) that break into two chunks each. Chunks break into Stone and Metal Rods.
   // Models: tools/rocks/build_rocks.py.
+  // What Bloom Pods (and any object with "loot") pick from when they break: different entries, odds by weight.
+  "loot_tables": {
+    "common": {
+      "items": [
+        { "item": "scrap_metal", "count": 3, "count_max": 6, "weight": 4.0 },
+        { "item": "scrap_wood", "count": 3, "count_max": 6, "weight": 3.0 },
+        { "item": "component_kit", "count": 1, "count_max": 2, "weight": 4.0 },
+        { "item": "glue", "count": 1, "count_max": 2, "weight": 2.0 },
+        { "item": "gasoline", "count": 1, "count_max": 2, "weight": 2.0 },
+        { "item": "potato", "count": 3, "count_max": 6, "weight": 2.0 },
+        { "item": "carrot_seed", "count": 2, "count_max": 4, "weight": 1.0 },
+        { "item": "tomato_seed", "count": 2, "count_max": 4, "weight": 1.0 },
+        { "item": "glowstick", "count": 1, "count_max": 2, "weight": 1.0 },
+        { "item": "paint_ammo", "count": 5, "count_max": 10, "weight": 1.0 },
+        { "item": "circuit_board", "count": 1, "weight": 1.0 }
+      ]
+    },
+    "epic": {
+      "items": [
+        { "item": "component_kit", "count": 2, "count_max": 4, "weight": 4.0 },
+        { "item": "circuit_board", "count": 1, "count_max": 2, "weight": 4.0 },
+        { "item": "battery_pack", "count": 1, "count_max": 2, "weight": 3.0 },
+        { "item": "glue", "count": 2, "count_max": 4, "weight": 2.0 },
+        { "item": "gasoline", "count": 2, "count_max": 4, "weight": 2.0 },
+        { "item": "chemical", "count": 2, "count_max": 3, "weight": 2.0 },
+        { "item": "glowstick", "count": 2, "count_max": 4, "weight": 1.0 },
+        { "item": "popper", "count": 1, "weight": 1.0 }
+      ]
+    },
+    "legendary": {
+      "items": [
+        { "item": "circuit_board", "count": 2, "count_max": 4, "weight": 4.0 },
+        { "item": "battery_pack", "count": 2, "count_max": 3, "weight": 4.0 },
+        { "item": "component_kit", "count": 4, "count_max": 6, "weight": 3.0 },
+        { "item": "chemical", "count": 3, "count_max": 5, "weight": 2.0 },
+        { "item": "popper", "count": 1, "count_max": 2, "weight": 2.0 },
+        { "item": "potato_blaster", "count": 1, "weight": 1.0 }
+      ]
+    }
+  },
   "objects": [
     {
       // In oil ponds and the Oil Pool (pois/oil_pond.json, poi_49.json): press Use for 1 to 4 Crude Oil; it wells up again an
@@ -695,8 +745,9 @@
       "health": 20.0,
       "damage_from": ["sledge", "saw", "explosion"]
     },
-    // Small finds (World POI plan): about 400 loot crates, chests and wrecks scattered over the land, clear of POIs and
-    // roads. Break a crate or a wreck with the Sledgehammer for its drops; open a chest (Use) to take what is inside.
+    // Small finds (World POI plan): about 400 loot crates, Bloom Pods and wrecks scattered over the land, clear of POIs
+    // and roads. Break any of them with the Sledgehammer for its drops. Bloom Pods glow to catch the eye and roll their loot
+    // from loot_tables: green (Common) in the open, purple (Epic) and gold (Legendary) up on cliff tops and ledges.
     {
       "id": "loot_crate",
       "collider": { "shape": "box", "size": [1.0, 0.8, 0.8], "at": [0.0, 0.4, 0.0] },
@@ -714,20 +765,52 @@
       "drops": [{ "item": "scrap_wood", "count": 2, "count_max": 4 }, { "item": "component_kit", "count": 1 }]
     },
     {
-      "id": "loot_chest",
-      "collider": { "shape": "box", "size": [1.2, 0.8, 0.7], "at": [0.0, 0.4, 0.0] },
-      "pieces": [
-        { "shape": "box", "size": [1.2, 0.55, 0.7], "at": [0.0, 0.275, 0.0], "color": "#6d4a2c" },
-        { "shape": "box", "size": [1.22, 0.25, 0.72], "at": [0.0, 0.67, 0.0], "color": "#57391f" },
-        { "shape": "box", "size": [0.08, 0.82, 0.74], "at": [-0.4, 0.41, 0.0], "color": "#7d858c" },
-        { "shape": "box", "size": [0.08, 0.82, 0.74], "at": [0.4, 0.41, 0.0], "color": "#7d858c" },
-        { "shape": "box", "size": [0.16, 0.18, 0.06], "at": [0.0, 0.55, -0.37], "color": "#c9b037" }
-      ],
+      "id": "bloom_pod_green",
+      "collider": { "shape": "cylinder", "radius": 0.5, "height": 0.95, "at": [0.0, 0.475, 0.0] },
+      "mesh": {
+        "file": "meshes/world/bloom_pod_green.glb",
+        "clips": { "appear": "settle", "idle": "idle", "hit": "hit", "break": "break", "break_seconds": 5.0, "fade_seconds": 0.8 }
+      },
+      "glow": { "color": "#8dff5a", "energy": 1.4, "range": 5.0, "at": [0.0, 0.5, 0.0], "pulse": 2.4 },
       "footprint": 2.0,
-      "sink": 0.05,
+      "sink": 0.03,
       "max_slope": 0.4,
-      "harvest": true,
-      "drops": [{ "item": "scrap_metal", "count": 2, "count_max": 4 }, { "item": "component_kit", "count": 1, "count_max": 2 }, { "item": "circuit_board", "count": 1 }]
+      "health": 30.0,
+      "loot": { "table": "common", "picks": 1, "picks_max": 3 },
+      "sounds": { "hit": "impact_metal", "break": "break_glass" },
+      "debris": { "chips": ["#4cc72a", "#1c1d20", "#8dff5a"] }
+    },
+    {
+      "id": "bloom_pod_purple",
+      "collider": { "shape": "cylinder", "radius": 0.5, "height": 0.95, "at": [0.0, 0.475, 0.0] },
+      "mesh": {
+        "file": "meshes/world/bloom_pod_purple.glb",
+        "clips": { "appear": "settle", "idle": "idle", "hit": "hit", "break": "break", "break_seconds": 5.0, "fade_seconds": 0.8 }
+      },
+      "glow": { "color": "#d49bff", "energy": 1.8, "range": 5.0, "at": [0.0, 0.5, 0.0], "pulse": 2.4 },
+      "footprint": 2.0,
+      "sink": 0.03,
+      "max_slope": 0.4,
+      "health": 50.0,
+      "loot": { "table": "epic", "picks": 1, "picks_max": 3 },
+      "sounds": { "hit": "impact_metal", "break": "break_glass" },
+      "debris": { "chips": ["#8a4fe0", "#1c1d20", "#d49bff"] }
+    },
+    {
+      "id": "bloom_pod_gold",
+      "collider": { "shape": "cylinder", "radius": 0.5, "height": 0.95, "at": [0.0, 0.475, 0.0] },
+      "mesh": {
+        "file": "meshes/world/bloom_pod_gold.glb",
+        "clips": { "appear": "settle", "idle": "idle", "hit": "hit", "break": "break", "break_seconds": 5.0, "fade_seconds": 0.8 }
+      },
+      "glow": { "color": "#ffe680", "energy": 2.2, "range": 5.0, "at": [0.0, 0.5, 0.0], "pulse": 2.4 },
+      "footprint": 2.0,
+      "sink": 0.03,
+      "max_slope": 0.4,
+      "health": 80.0,
+      "loot": { "table": "legendary", "picks": 3 },
+      "sounds": { "hit": "impact_metal", "break": "break_glass" },
+      "debris": { "chips": ["#f2c230", "#1c1d20", "#ffe680"] }
     },
     {
       "id": "scrap_wreck",

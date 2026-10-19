@@ -45,6 +45,9 @@ internal static class WorldGenValidator
             sink.Error(Code, "$.terrain.biome_edge_noise", $"biome_edge_noise ({t.BiomeEdgeNoise}) must be at most 0.6 × biome_blend ({0.6f * t.BiomeBlend}).");
         NonNegative(t.MaxScatterSlope, "$.terrain.max_scatter_slope", sink);
 
+        foreach (var (id, table) in definition.LootTables ?? [])
+            LootTable(id, table, $"$.loot_tables.{id}", sink);
+
         var objectIds = new HashSet<string>();
         for (var i = 0; i < (definition.Objects?.Count ?? 0); i++)
         {
@@ -138,6 +141,39 @@ internal static class WorldGenValidator
                     sink.Error(Code, $"{path}.drops[{d}].count_max", $"count_max must be at least count ({drop.Count}).");
                 if (drop.Chance is { } chance && !(chance is >= 0f and <= 1f))
                     sink.Error(Code, $"{path}.drops[{d}].chance", "chance must be from 0 to 1.");
+            }
+            if (o.Loot is { } loot)
+            {
+                KnownKeys.WarnUnknown(loot.Extra, $"{path}.loot", sink, typeof(LootRoll));
+                if (loot.Table is null || definition.LootTables?.ContainsKey(loot.Table) != true)
+                    sink.Error(Code, $"{path}.loot.table", $"'{loot.Table}' is not one of the loot_tables in this file.");
+                if (loot.Picks < 1)
+                    sink.Error(Code, $"{path}.loot.picks", "picks must be 1 or more.");
+                if (loot.PicksMax is { } most && most < loot.Picks)
+                    sink.Error(Code, $"{path}.loot.picks_max", $"picks_max must be at least picks ({loot.Picks}).");
+                else if (loot.Table is { } tableId && definition.LootTables?.GetValueOrDefault(tableId)?.Items is { } entries
+                    && (loot.PicksMax ?? loot.Picks) > entries.Count)
+                    sink.Warning(Code, $"{path}.loot", $"the table '{tableId}' has only {entries.Count} entries, so at most that many are picked.");
+                if (o.Health is null)
+                    sink.Warning(Code, $"{path}.loot", "loot is never left: the object has no health, so it cannot break.");
+            }
+            if (o.Glow is { } glow)
+            {
+                KnownKeys.WarnUnknown(glow.Extra, $"{path}.glow", sink, typeof(ObjectGlow));
+                Color(glow.Color, $"{path}.glow.color", sink);
+                NonNegative(glow.Energy, $"{path}.glow.energy", sink);
+                Positive(glow.Range, $"{path}.glow.range", sink);
+                NonNegative(glow.Pulse, $"{path}.glow.pulse", sink);
+            }
+            if (o.Mesh?.Clips is { } clips)
+            {
+                KnownKeys.WarnUnknown(clips.Extra, $"{path}.mesh.clips", sink, typeof(ObjectClips));
+                Positive(clips.BreakSeconds, $"{path}.mesh.clips.break_seconds", sink);
+                NonNegative(clips.FadeSeconds, $"{path}.mesh.clips.fade_seconds", sink);
+                if (clips.FadeSeconds > clips.BreakSeconds)
+                    sink.Error(Code, $"{path}.mesh.clips.fade_seconds", $"fade_seconds must be at most break_seconds ({clips.BreakSeconds}).");
+                if (o.Mesh.Variants is { Count: > 0 } || o.Mesh.Lod is not null)
+                    sink.Warning(Code, $"{path}.mesh.clips", "an animated model draws only its file: variants and lod are not used.");
             }
             if (o.Harvest && o.Drops is not { Count: > 0 })
                 sink.Warning(Code, $"{path}.harvest", "harvesting gives nothing: the object has no drops.");
@@ -250,6 +286,12 @@ internal static class WorldGenValidator
                 Positive(rule.Spacing, $"{rulePath}.spacing", sink);
                 if (!(rule.Chance is >= 0f and <= 1f))
                     sink.Error(Code, $"{rulePath}.chance", $"chance must be 0 to 1 (got {rule.Chance}).");
+                if (rule.Perch is { } perch)
+                {
+                    KnownKeys.WarnUnknown(perch.Extra, $"{rulePath}.perch", sink, typeof(PerchDefinition));
+                    Positive(perch.Rise, $"{rulePath}.perch.rise", sink);
+                    Positive(perch.Within, $"{rulePath}.perch.within", sink);
+                }
             }
             for (var r = 0; r < (b.Flora?.Count ?? 0); r++)
                 Flora(b.Flora![r], $"{path}.flora[{r}]", sink);
@@ -721,6 +763,28 @@ internal static class WorldGenValidator
                 break;
         }
         Color(shape.Color, $"{path}.color", sink, code);
+    }
+
+    private static void LootTable(string id, LootTableDefinition table, string path, DiagnosticSink sink)
+    {
+        KnownKeys.WarnUnknown(table.Extra, path, sink, typeof(LootTableDefinition));
+        if (!Identifiers.IsValid(id))
+            sink.Error(Code, path, $"loot table id '{id}' must be lowercase snake_case.");
+        if (table.Items is not { Count: > 0 })
+            sink.Error(Code, $"{path}.items", "a loot table needs at least one item.");
+        for (var e = 0; e < (table.Items?.Count ?? 0); e++)
+        {
+            var entry = table.Items![e];
+            var at = $"{path}.items[{e}]";
+            KnownKeys.WarnUnknown(entry.Extra, at, sink, typeof(LootEntry));
+            if (!PartValidator.IsItemRef(entry.Item))
+                sink.Error(Code, $"{at}.item", "item must be an item id or 'mod_id:item_id'.");
+            if (entry.Count < 1)
+                sink.Error(Code, $"{at}.count", "count must be 1 or more.");
+            if (entry.CountMax is { } most && most < entry.Count)
+                sink.Error(Code, $"{at}.count_max", $"count_max must be at least count ({entry.Count}).");
+            Positive(entry.Weight, $"{at}.weight", sink);
+        }
     }
 
     private static void Color(string? color, string path, DiagnosticSink sink, string code = Code)

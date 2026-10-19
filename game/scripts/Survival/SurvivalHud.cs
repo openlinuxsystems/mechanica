@@ -1,5 +1,6 @@
 using Godot;
 using Mechanica.Core.Actions;
+using Mechanica.Core.Characters;
 using Mechanica.Core.Data;
 using Mechanica.Core.Input;
 using Mechanica.Core.Logic;
@@ -39,6 +40,9 @@ public partial class SurvivalHud : CanvasLayer
     private Label _healthText = null!;
     private Label _hint = null!;
     private ColorRect _deathScreen = null!;
+    private ColorRect _hitFlash = null!;
+    private ShaderMaterial _hitFlashMaterial = null!;
+    private float _flash;
     private Label _deathText = null!;
     private Label _status = null!;
     private Node3D? _outline;
@@ -139,6 +143,13 @@ public partial class SurvivalHud : CanvasLayer
         _status = new Label { Name = "Status", HorizontalAlignment = HorizontalAlignment.Center };
         AddChild(_status);
         _status.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.CenterBottom, Control.LayoutPresetMode.KeepSize, 80);
+        // A red glow round the screen's edge when a blow lands on the local player, fading in a moment.
+        _hitFlashMaterial = new ShaderMaterial { Shader = new Shader { Code = HitFlashShader } };
+        _hitFlashMaterial.SetShaderParameter("tint", UiTokens.Error);
+        _hitFlash = new ColorRect { Name = "HitFlash", Material = _hitFlashMaterial, Visible = false, MouseFilter = Control.MouseFilterEnum.Ignore };
+        AddChild(_hitFlash);
+        _hitFlash.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+        Survival.PlayerHit += OnHit;
         _deathScreen = new ColorRect { Name = "DeathScreen", Color = new Color(0.35f, 0f, 0f, 0.55f), Visible = false, MouseFilter = Control.MouseFilterEnum.Ignore };
         AddChild(_deathScreen);
         _deathScreen.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
@@ -147,7 +158,29 @@ public partial class SurvivalHud : CanvasLayer
         _deathText.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
     }
 
-    public override void _ExitTree() => GetViewport().SizeChanged -= Layout;
+    public override void _ExitTree()
+    {
+        GetViewport().SizeChanged -= Layout;
+        Survival.PlayerHit -= OnHit;
+    }
+
+    private const string HitFlashShader = """
+        shader_type canvas_item;
+        uniform vec4 tint : source_color;
+        uniform float strength = 0.0;
+        void fragment() {
+            vec2 d = (UV - 0.5) * 2.0;
+            float edge = smoothstep(0.55, 1.35, length(d * vec2(1.0, 0.85)));
+            COLOR = vec4(tint.rgb, tint.a * edge * strength);
+        }
+        """;
+
+    private void OnHit(PlayerHitView hit)
+    {
+        if (hit.Peer != Survival.Session.LocalPeer)
+            return;
+        _flash = Mathf.Max(_flash, hit.Reaction switch { HitReaction.Knockdown => 0.9f, HitReaction.Heavy => 0.7f, _ => 0.45f });
+    }
 
     // Top left, inside the safe area.
     private void Layout()
@@ -172,6 +205,9 @@ public partial class SurvivalHud : CanvasLayer
             _healthText.Text = $"{own.Health:0} / {own.MaxHealth:0}";
         }
         _deathScreen.Visible = own?.Dead == true;
+        _flash = Mathf.Max(0f, _flash - (float)delta * 1.8f);
+        _hitFlash.Visible = _flash > 0f && hud;
+        _hitFlashMaterial.SetShaderParameter("strength", _flash);
         if (own is { Dead: true })
         {
             var wait = Survival.OwnRespawnIn;
