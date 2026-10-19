@@ -22,6 +22,9 @@
     "clip_speeds": {
       "patrol": 1.16,
       "chase": 3.75
+    },
+    "effects": {
+      "stomp": "shockwave"
     }
   },
   "raid_cost": 4,

@@ -48,6 +48,12 @@ public sealed record BotDefinition
     /// <summary>Top speed in water, in m/s. Omitted means <see cref="Speed"/>.</summary>
     public float? WaterSpeed { get; init; }
 
+    /// <summary>
+    /// Swimmers: how far below the water's surface the middle of the bot swims, in m. A swimmer floats at that depth
+    /// instead of walking on the bottom, and its model plays <c>swim</c>. Omitted means it walks along the bottom.
+    /// </summary>
+    public float? SwimDepth { get; init; }
+
     /// <summary>How far the bot notices players and crops, in m.</summary>
     public float? Sight { get; init; }
 
@@ -56,6 +62,9 @@ public sealed record BotDefinition
 
     /// <summary>Base colour of the placeholder body, <c>"#rrggbb"</c>.</summary>
     public string? Color { get; init; }
+
+    /// <summary>Where it lives in the wild: the host spawns it near players there. Omitted means it only comes in raids and as a guard.</summary>
+    public BotWildDefinition? Wild { get; init; }
 
     /// <summary>Its animated model. Omitted means the placeholder capsule in <see cref="Color"/>.</summary>
     public BotModelDefinition? Model { get; init; }
@@ -88,6 +97,41 @@ public sealed record BotDefinition
     public JsonObject? Properties { get; init; }
 
     /// <summary>Keys this build does not know. Kept so a round-trip never loses data.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>
+/// Where a bot lives in the wild (docs/bot-tutorial.md, "Living in the wild"). In Survival the host keeps up to
+/// <see cref="Count"/> of it near each player, in its habitat, and takes away the ones every player has left behind.
+/// </summary>
+public sealed record BotWildDefinition
+{
+    /// <summary><c>water</c> (lakes and the sea) or <c>land</c>.</summary>
+    public string? Habitat { get; init; }
+
+    /// <summary>How many live near each player.</summary>
+    public int? Count { get; init; }
+
+    /// <summary>The nearest it appears to a player, in m.</summary>
+    public float? MinDistance { get; init; }
+
+    /// <summary>The farthest it appears from a player, in m.</summary>
+    public float? MaxDistance { get; init; }
+
+    /// <summary>It goes away when every player is farther than this, in m.</summary>
+    public float? DespawnDistance { get; init; }
+
+    /// <summary>Water: how deep the water must be where it appears, in m.</summary>
+    public float? MinDepth { get; init; }
+
+    /// <summary>How far round the spot must be its habitat too (so its wander stays there), in m.</summary>
+    public float? ClearRadius { get; init; }
+
+    /// <summary>Seconds between tries to spawn more.</summary>
+    public float? Interval { get; init; }
+
+    /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
 }
@@ -133,6 +177,13 @@ public sealed record BotModelDefinition
 
     /// <summary>Colour of its glowing materials while engaged, <c>"#rrggbb"</c>.</summary>
     public string? EyeEngaged { get; init; }
+
+    /// <summary>
+    /// Effects to show on every peer, by attack id (when the bot uses it) or <c>death</c> (when it dies):
+    /// <c>explosion</c> (fire, smoke, sparks and debris) or <c>shockwave</c> (a ring that ripples over the ground). Each
+    /// is as big as the attack's radius (a death's uses the bot's largest area attack, or its size).
+    /// </summary>
+    public Dictionary<string, string>? Effects { get; init; }
 
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]
