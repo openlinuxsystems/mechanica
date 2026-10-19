@@ -61,12 +61,24 @@ async function mcp() {
   check(!names.includes("mechanica__auth"), "MCP: but not mechanica.auth");
   const info = await tool("mechanica__info");
   check(info.value?.source === "player", `MCP: --name joined it as a player (${JSON.stringify(info.value?.source)})`);
-  const before = await tool("GetPlayer");
+  // A player that has only just joined may still be dropping onto the ground; walk once it stands.
+  let before = await tool("GetPlayer");
+  for (let look = 0; look < 40 && !before.value?.on_floor; look++) {
+    await tool("game_wait", { seconds: 0.25 });
+    before = await tool("GetPlayer");
+  }
   await tool("SetPlayerInput", { move_z: 1, yaw: 0, ticks: 45 });
   const waited = await tool("game_wait", { seconds: 1.2 });
   check(Array.isArray(waited.value?.events), "MCP: game_wait returns events");
-  const after = await tool("GetPlayer");
-  const moved = before.value.position[2] - after.value.position[2];
+  // The 45 ticks of input run on the game's clock, which a busy machine can run behind real time, so look again
+  // until the walk is done rather than only after a fixed wait.
+  let moved = 0;
+  for (let look = 0; look < 20; look++) {
+    const after = await tool("GetPlayer");
+    moved = before.value.position[2] - after.value.position[2];
+    if (moved > 0.8) break;
+    await tool("game_wait", { seconds: 0.5 });
+  }
   check(moved > 0.8, `MCP: the player walked down -z (${moved.toFixed(2)} m)`);
   const refused = await tool("SetPlayerInput", { move_z: 1, ticks: 100000 });
   check(refused.error === true && /ticks/.test(refused.value?.error?.message), `MCP: a refused call comes back as a tool error (${JSON.stringify(refused.value)})`);
