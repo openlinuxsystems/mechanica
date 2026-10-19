@@ -37,6 +37,8 @@ namespace Mechanica.Game.Tools;
 /// down, pushing out, fully out and pulling back (<c>tools/capture-piston.sh</c>).
 /// Given <c>wheels</c> it sets three little cars down in a meadow, one on each wheel (Scrap Wheel, Wheel, Off Road
 /// Wheel), captures them wide and close, and shows the three wheels on the hotbar (<c>tools/capture-wheels.sh</c>).
+/// Given <c>switch</c> it puts down switches off, on and on a wall, shows each state close up and toggles one
+/// (<c>tools/capture-switch.sh</c>).
 /// </summary>
 public partial class CaptureScene : Node
 {
@@ -66,7 +68,8 @@ public partial class CaptureScene : Node
         var seats = args.Length > 1 && args[1] == "seats";
         var piston = args.Length > 1 && args[1] == "piston";
         var wheels = args.Length > 1 && args[1] == "wheels";
-        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats && !piston && !wheels ? args[1] : "scrapper_male";
+        var toggle = args.Length > 1 && args[1] == "switch";
+        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats && !piston && !wheels && !toggle ? args[1] : "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
         // Building the block wall needs Creative: free parts and no build reach.
         _main.Options = LaunchOptions.Offline with { Seed = 7, GameMode = blocks || soil || wheels ? Core.Survival.GameMode.Creative : LaunchOptions.Offline.GameMode };
@@ -137,6 +140,11 @@ public partial class CaptureScene : Node
         if (wheels)
         {
             WheelShots();
+            return;
+        }
+        if (toggle)
+        {
+            SwitchShots();
             return;
         }
         Shot("front", 60, () => Look(new Vector3(0, 1.0f, -3.2f)));
@@ -1190,6 +1198,72 @@ public partial class CaptureScene : Node
     }
 
     // Puts the capture camera at an offset from the seat (at the driver's feet), in the seat's frame.
+    // Three switches on a slab of metal blocks in front of the player: one left off, one switched on, one on a wall; then
+    // close-ups of each state, and the first one toggled on and off again (tools/capture-switch.sh).
+    private void SwitchShots()
+    {
+        Engine.TimeScale = 1.0;
+        int off = 0, on = 0, wall = 0;
+        Node3D? Part(int part) => _main.Creations.NodeOf(SeatCreation)?.PartNode(part);
+        void Toggle(int part) =>
+            _main.Actions.Request(Core.Logic.LogicActions.ActivatePart, new Core.Logic.LogicPartArgs(SeatCreation, part), r => GD.Print($"[capture] toggle: {r}"));
+        void Near(int part, Vector3 offset, float distance)
+        {
+            if (Part(part) is not { } node)
+                return;
+            var t = node.GlobalTransform;
+            _follow = null;
+            _camera.MakeCurrent();
+            _camera.GlobalPosition = t.Origin + t.Basis * offset.Normalized() * distance;
+            _camera.LookAt(t.Origin + t.Basis * new Vector3(0, -0.09f, 0));
+        }
+        Shot("switch_00_wait", 60, () => { });
+        Shot("switch_01_placed", 60, () =>
+        {
+            var from = Player.GlobalPosition + Player.GlobalTransform.Basis * new Vector3(0, 3, -2.5f);
+            var hit = Player.GetWorld3D().DirectSpaceState.IntersectRay(PhysicsRayQueryParameters3D.Create(from, from + Vector3.Down * 12));
+            var at = hit.Count > 0 ? hit["position"].AsVector3() : Player.GlobalPosition;
+            var creation = new Core.Creations.Creation(SeatCreation, _main.Mods!);
+            int Put(string part, int x, int y, int z, Core.Creations.GridRotation rotation) =>
+                creation.TryPlacePart(part, new Core.Creations.GridCell(x, y, z), rotation, out var placed, out var error)
+                    ? placed.Id : throw new InvalidOperationException(error);
+            var up = Core.Creations.GridRotation.Identity;
+            for (var x = -2; x <= 2; x++)
+                for (var z = -1; z <= 1; z++)
+                    Put("vanilla:metal_block", x, 0, z, up);
+            Put("vanilla:metal_block", 0, 1, -1, up);
+            Put("vanilla:metal_block", 0, 2, -1, up);
+            off = Put("vanilla:switch", -1, 1, 0, up);
+            on = Put("vanilla:switch", 1, 1, 0, up);
+            wall = Put("vanilla:switch", 0, 2, 0, Core.Creations.GridRotation.FromAxes(new Core.Creations.GridCell(1, 0, 0), new Core.Creations.GridCell(0, 0, 1)));
+            creation.SetAllBodyPoses(new Core.Creations.Pose(new System.Numerics.Vector3(at.X, at.Y + 0.2f, at.Z), System.Numerics.Quaternion.Identity));
+            _main.Creations.Add(creation, _main.Assets);
+        });
+        Shot("switch_02_scene", 30, () =>
+        {
+            Toggle(on);
+            Toggle(wall);
+            Near(off, new Vector3(0.4f, 1.0f, 1.4f), 1.6f);
+        });
+        Shot("switch_03_off_three_quarter", 10, () => Near(off, new Vector3(0.9f, 0.9f, 1.1f), 0.55f));
+        Shot("switch_04_on_three_quarter", 10, () => Near(on, new Vector3(0.9f, 0.9f, 1.1f), 0.55f));
+        Shot("switch_05_off_front", 10, () => Near(off, new Vector3(0f, 0.25f, 1f), 0.5f));
+        Shot("switch_06_on_front", 10, () => Near(on, new Vector3(0f, 0.25f, 1f), 0.5f));
+        Shot("switch_07_off_top", 10, () => Near(off, new Vector3(0f, 1f, 0.05f), 0.5f));
+        Shot("switch_08_on_top", 10, () => Near(on, new Vector3(0f, 1f, 0.05f), 0.5f));
+        Shot("switch_09_wall", 10, () =>
+        {
+            if (Part(wall) is not { } node)
+                return;
+            _follow = null;
+            _camera.MakeCurrent();
+            _camera.GlobalPosition = node.GlobalPosition + new Vector3(0.45f, 0.3f, 0.75f);
+            _camera.LookAt(node.GlobalPosition + new Vector3(0, 0, -0.09f));
+        });
+        Shot("switch_10_toggled_on", 30, () => { Toggle(off); Near(off, new Vector3(0.9f, 0.9f, 1.1f), 0.55f); });
+        Shot("switch_11_toggled_off", 30, () => Toggle(off));
+    }
+
     private void LookAtSeat(Vector3 offset, float height)
     {
         if (_main.Logic.SeatTransform(SeatCreation, _seat) is not { } seat)

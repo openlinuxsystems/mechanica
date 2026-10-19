@@ -493,7 +493,7 @@ host's values.
 | `bar` | `{readout, offset, axis, length}` | A thin cyan bar along the part that fills from 0 to 1 with the value, shown while the Connect Tool is out (a piston's extension). `axis` defaults to `[0, 1, 0]`, `length` to 0.25 m. |
 | `glow` | `{readout, offset, direction, length}` | A faint blue particle glow whose strength follows the value from 0 to 1 (a thruster's exhaust). `direction` defaults to `[0, 1, 0]`, `length` to 0.5 m. |
 | `highlight` | `{readout, axis, offset, radius}` | A ring of cyan dashes turning about `axis` while the value is not 0, its sign giving the way round (a bearing an engine drives). `radius` defaults to 0.12 m. |
-| `press` | `{readout, axis, depth}` | Pushes the model in by `depth` m (default 0.02, at most 0.1) along `axis` (default `[0, -1, 0]`) while the value is not 0 (a switch). |
+| `press` | `{readout, axis, depth}` | Pushes the model in by `depth` m (default 0.02, at most 0.1) along `axis` (default `[0, -1, 0]`) while the value is not 0 (a button). |
 | `clips` | `{readout, scrub}` | Plays the model's own glTF animations (the model must be a `mesh`). The `readout` is a text value naming the clip to play (text after a `#` is ignored, so `stop#3` restarts `stop`); clips whose names end in `_loop` loop. `scrub` (at most 4) is a list of `{readout, clip}`: that clip is held at the value (0 to 1) of its length, for a lever or a needle. |
 | `effects` | list of `{readout, kind, offset, direction, color}` | At most 8 particle effects whose strength follows the value from 0 to 1. `kind` is `smoke`, `sparks` or `drops`; `offset` lies inside the footprint, `direction` (default up) is where they go, `color` is optional. |
 
