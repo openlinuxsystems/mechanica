@@ -42,6 +42,9 @@ namespace Mechanica.Game.Tools;
 /// Wheel), captures them wide and close, and shows the three wheels on the hotbar (<c>tools/capture-wheels.sh</c>).
 /// Given <c>switch</c> it puts down switches off, on and on a wall, shows each state close up and toggles one
 /// (<c>tools/capture-switch.sh</c>).
+/// Given <c>fabricator</c> it puts down a level 1 and a level 5 Fabricator, shows them from every side (the input port on
+/// the left, the output on the right), then has each craft: unfolding, welding and drilling with sparks, and folding back
+/// (<c>tools/capture-fabricator.sh</c>).
 /// </summary>
 public partial class CaptureScene : Node
 {
@@ -75,8 +78,9 @@ public partial class CaptureScene : Node
         var debugCar = args.Length > 1 && args[1] == "debug_car";
         var button = args.Length > 1 && args[1] == "button";
         var toggle = args.Length > 1 && args[1] == "switch";
+        var fabricator = args.Length > 1 && args[1] == "fabricator";
         var oil = args.Length > 1 && args[1] == "oil";
-        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !oil ? args[1] : "scrapper_male";
+        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil ? args[1] : "scrapper_male";
         if (debugCar)
             Main.MenuCharacter = "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
@@ -166,6 +170,11 @@ public partial class CaptureScene : Node
         if (toggle)
         {
             SwitchShots();
+            return;
+        }
+        if (fabricator)
+        {
+            FabricatorShots();
             return;
         }
         if (portable)
@@ -1566,6 +1575,74 @@ public partial class CaptureScene : Node
         });
         Shot("switch_10_toggled_on", 30, () => { Toggle(off); Near(off, new Vector3(0.9f, 0.9f, 1.1f), 0.55f); });
         Shot("switch_11_toggled_off", 30, () => Toggle(off));
+    }
+
+    private void FabricatorShots()
+    {
+        Engine.TimeScale = 1.0;
+        var recipes = _main.Recipes!;
+        int one = 0, five = 0;
+        Core.Creations.Creation? made = null;
+        Node3D? Part(int part) => _main.Creations.NodeOf(SeatCreation)?.PartNode(part);
+        void View(int part, Vector3 offset, float height = 1.0f, float x = 0)
+        {
+            if (Part(part) is not { } node)
+                return;
+            var t = node.GlobalTransform;
+            _follow = null;
+            _camera.MakeCurrent();
+            _camera.GlobalPosition = t.Origin + t.Basis * offset;
+            _camera.LookAt(t.Origin + t.Basis * new Vector3(x, height - 1.125f, -0.2f));
+        }
+        void Report(int part)
+        {
+            var r = _main.Scripts.Runtime.Readouts;
+            var q = made!.CraftingOf(part)!;
+            GD.Print($"[capture] fabricator {part}: clip={r.Text(SeatCreation, part, "clip")} weld={r.Number(SeatCreation, part, "weld")} jobs={q.Jobs.Count} finished={q.Finished}");
+            if (Part(part)?.FindChild("L_item", true, false) is Node3D item)
+                GD.Print($"[capture]   item scale {item.Scale.X:0.###}");
+        }
+        void Craft(int part, int count)
+        {
+            var recipe = recipes.ForStation("vanilla:fabricator").First();
+            made!.CraftingOf(part)!.Enqueue(new Core.Items.CraftJob(recipe.QualifiedId, count));
+        }
+        Shot("fabricator_00_wait", 60, () => { });
+        Shot("fabricator_01_placed", 60, () =>
+        {
+            var from = Player.GlobalPosition + Player.GlobalTransform.Basis * new Vector3(0, 4, -6f);
+            var hit = Player.GetWorld3D().DirectSpaceState.IntersectRay(PhysicsRayQueryParameters3D.Create(from, from + Vector3.Down * 16));
+            var at = hit.Count > 0 ? hit["position"].AsVector3() : Player.GlobalPosition;
+            var creation = made = new Core.Creations.Creation(SeatCreation, _main.Mods!);
+            int Put(string part, int x, int y, int z) =>
+                creation.TryPlacePart(part, new Core.Creations.GridCell(x, y, z), default, out var placed, out var error)
+                    ? placed.Id : throw new InvalidOperationException(error);
+            for (var x = -16; x <= 16; x++)
+                for (var z = -5; z <= 5; z++)
+                    Put("vanilla:metal_block", x, 0, z);
+            one = Put("vanilla:fabricator", -8, 1, 0);
+            five = Put("vanilla:fabricator", 8, 1, 0);
+            creation.SetLevel(five, 4);
+            creation.SetAllBodyPoses(new Core.Creations.Pose(new System.Numerics.Vector3(at.X, at.Y + 0.2f, at.Z), System.Numerics.Quaternion.Identity));
+            _main.Creations.Add(creation, _main.Assets);
+        });
+        Shot("fabricator_02_both", 30, () => View(one, new Vector3(2, 3.6f, -10.5f), 0.4f, 2));
+        Shot("fabricator_03_level1", 20, () => View(one, new Vector3(3.2f, 2.4f, -4.4f)));
+        Shot("fabricator_04_level1_front", 20, () => View(one, new Vector3(0, 1.2f, -5.2f)));
+        Shot("fabricator_05_level1_left_input", 20, () => View(one, new Vector3(3.6f, 0.9f, -1.6f), 0.7f));
+        Shot("fabricator_06_level1_right_output", 20, () => View(one, new Vector3(-3.6f, 0.9f, -1.6f), 0.7f));
+        Shot("fabricator_07_level1_back", 20, () => View(one, new Vector3(-2.2f, 2.0f, 4.6f)));
+        Shot("fabricator_08_level5", 20, () => View(five, new Vector3(3.2f, 2.4f, -4.4f)));
+        Shot("fabricator_09_level5_back", 20, () => View(five, new Vector3(2.2f, 2.0f, 4.6f)));
+        Shot("fabricator_10_level1_start", 20, () => { Craft(one, 2); Craft(five, 8); View(one, new Vector3(0.6f, 0.9f, -3.2f), 0.75f); });
+        Shot("fabricator_11_level1_working", 50, () => Report(one));
+        Shot("fabricator_12_level1_weld", 20, () => { Report(one); View(one, new Vector3(1.05f, -0.15f, -2.3f), 0.65f, 0.76f); });
+        Shot("fabricator_13_level1_weld_later", 30, () => Report(one));
+        Shot("fabricator_14_level1_drill", 20, () => View(one, new Vector3(-1.05f, -0.15f, -2.3f), 0.65f, -0.76f));
+        Shot("fabricator_15_level5_working", 20, () => { Report(five); View(five, new Vector3(1.05f, -0.15f, -2.3f), 0.65f, 0.76f); });
+        Shot("fabricator_16_level5_drill", 20, () => View(five, new Vector3(-1.05f, -0.15f, -2.3f), 0.65f, -0.76f));
+        Shot("fabricator_17_level1_later", 240, () => { Report(one); View(one, new Vector3(1.05f, -0.15f, -2.3f), 0.65f, 0.76f); });
+        Shot("fabricator_18_level1_done", 20, () => Report(one));
     }
 
     private void LookAtSeat(Vector3 offset, float height)

@@ -28,6 +28,9 @@ public sealed class CraftingQueue
     /// <summary>True when the first order's current craft is done but its outputs don't fit.</summary>
     public bool IsBlocked { get; private set; }
 
+    /// <summary>Crafts finished since the queue was made (not saved): a part script watches it to see a craft complete.</summary>
+    public int Finished { get; private set; }
+
     /// <summary>Adds an order at the end.</summary>
     public void Enqueue(CraftJob job)
     {
@@ -103,6 +106,7 @@ public sealed class CraftingQueue
             IsBlocked = false;
             work -= Math.Max(0, needed);
             finished++;
+            Finished++;
             if (job.Count == 1)
                 _jobs.RemoveAt(0);
             else

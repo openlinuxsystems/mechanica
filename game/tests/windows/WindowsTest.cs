@@ -386,7 +386,7 @@ public partial class WindowsTest : StagedTest
     {
         var build = _main.Build;
         var creation = new Core.Creations.Creation(build.NextCreationId(), build.Catalog);
-        for (var x = 0; x < 8; x++)
+        for (var x = -12; x < 16; x++)
         for (var z = 0; z < 8; z++)
             creation.TryPlacePart("vanilla:wood_block", new Core.Creations.GridCell(x, 0, z), default, out _, out _);
         Core.Creations.PartInstance? fabricator = null;
@@ -402,14 +402,16 @@ public partial class WindowsTest : StagedTest
         return (creation.Id, fabricator?.Id ?? 0);
     }
 
-    // A gas engine on the Fabricator's floor, for its menu.
+    // A gas engine on the Fabricator's floor, clear of its right side, for its menu.
     private int BuildEngine(int creationId)
     {
         var creation = _main.Creations.Find(creationId)!;
+        var cells = creation.CellsOf(_station.Part).ToList();
+        var right = cells.Count > 0 ? cells.Max(c => c.X) + 2 : 6;
         Core.Creations.PartInstance? engine = null;
         for (var z = 0; z < 8 && engine is null; z++)
         {
-            if (creation.TryPlacePart("vanilla:gas_engine", new Core.Creations.GridCell(6, 1, z), default, out var placed, out _))
+            if (creation.TryPlacePart("vanilla:gas_engine", new Core.Creations.GridCell(right, 1, z), default, out var placed, out _))
                 engine = placed;
         }
         Check(engine is not null, "the engine fits on the floor");

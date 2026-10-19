@@ -3,7 +3,7 @@
   "model": [
     {
       "kind": "mesh",
-      "mesh": "meshes/fabricator.glb"
+      "mesh": "meshes/parts/fabricator_1.glb"
     }
   ]
 }
