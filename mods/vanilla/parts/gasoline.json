@@ -1,10 +1,25 @@
 {
   "id": "gasoline",
   "name": "Gasoline",
+  "description": "A red can of fuel. Load it into a Gas Container: gas engines, the Scrap Gas Engine and thrusters burn it from their creation's containers. Flammable.",
   "category": "resource",
-  "mass": 1,
+  "mass": 20,
+  "durability": 2,
+  "friction": 0.4,
+  "buoyancy": 0.7,
+  "flammable": true,
   "stack_size": 20,
+  "sound_material": "plastic",
+  "size": [2, 2, 2],
+  "mesh": "meshes/items/gasoline.glb",
+  "icon": "textures/items/gasoline_icon.png",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.6,
+    "metallic": 0
+  },
   "sounds": {
     "pickup": "pickup_fuel"
-  }
+  },
+  "loose": true
 }
