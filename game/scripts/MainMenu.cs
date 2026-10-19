@@ -82,6 +82,8 @@ public partial class MainMenu : Control
             return;
         }
         Input.MouseMode = Input.MouseModeEnum.Visible;
+        // The enabled mods' language files: their translations of the menus, and languages they add to Options.
+        Loc.UseMods(ModPaths.EnabledDirectories());
         SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         AddChild(new HomeBackground { Name = "Background" });
         AddChild(new MenuMusic { Name = "Music" });

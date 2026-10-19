@@ -32,6 +32,7 @@ mods/
     quests/             quests and dialogue (*.json), see quests.md
     characters/         player characters and skins (*.json), see characters.md
     rules/              game rules: survival.patch.json, fire.patch.json, building.patch.json (see Game rules)
+    lang/               string tables (<code>.json) for the mod's text and the game's, see translating.md
 ```
 
 Rules the loader enforces:

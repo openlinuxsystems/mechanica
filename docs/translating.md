@@ -32,10 +32,39 @@ Put the file in the player's `lang` folder: `user://lang/` (on Linux
 Open Options, Interface, and pick it from **Language**; the UI changes at once. Files shipped with the game
 live in `game/data/lang/`; a file in the player's folder with the same code wins.
 
+## Translating a mod, or the game, in a mod
+
+A mod can ship language files too: `mods/<mod_id>/lang/<code>.json`, in the same format. Their keys are English
+text, either the mod's own (part, item, bot, character and quest names and descriptions, quest steps, dialogue,
+setting and readout names) or the game's (any key in `en.json`):
+
+```json
+{
+  "code": "fr",
+  "name": "Français",
+  "strings": {
+    "Car Wheel": "Roue de voiture",
+    "A wheel for fast cars.": "Une roue pour voitures rapides.",
+    "open the {0}": "ouvrir le {0}"
+  }
+}
+```
+
+- A mod's text is translated wherever it shows whole (a name on a label, a description, a dialogue line), and
+  when it is passed into the game's text (`open the {0}` with the part's name). Text built around it, such as
+  `Car Wheel x3`, translates the name too.
+- A mod's strings win over the game's for the same key, so a translation mod can fix or reword the game's text.
+  The player's own file in `user://lang/` still wins over both for the game's text.
+- A mod may add a language the game does not ship: it shows in Options, and the game's own text stays in English
+  there unless the mod (or the player's folder) translates it.
+- For a regional code, `pt-BR.json` builds on `pt.json`: the base file's strings first, the regional file's over
+  them. Later mods in load order win.
+- The files are read when the main menu opens (the enabled mods) and when a world loads (its mods). A file that
+  does not read is logged and left out.
+
 ## What is not translated
 
-- Text players and mods write: player names, chat, save names, part, item, bot and quest names and
-  descriptions, quest steps and dialogue. Mods ship in their author's language.
+- Text players write: player names, chat, save names. Mod text without a translation shows as its author wrote it.
 - The handbook pages (these docs), the Lua API list and the behaviour tree node help in the mod tools.
 - Messages the host sends: an Action refused by the host (for example "out of reach"), a refused join, and
   validation problems the mod tools list come from the shared rules code in English, because the host and

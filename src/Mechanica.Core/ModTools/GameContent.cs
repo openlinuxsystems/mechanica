@@ -70,8 +70,11 @@ public sealed class GameContent
     [
         .. Tag("mods", Mods.Diagnostics), .. Tag("sounds", Sounds.Diagnostics), .. Tag("world", World.Diagnostics),
         .. Tag("recipes", Recipes.Diagnostics), .. Tag("bots", Bots.Diagnostics), .. Tag("raids", Raids.Diagnostics),
-        .. Tag("quests", Quests.Diagnostics), .. Tag("characters", Characters.Diagnostics),
+        .. Tag("quests", Quests.Diagnostics), .. Tag("characters", Characters.Diagnostics), .. Tag("lang", LanguageDiagnostics),
     ];
+
+    /// <summary>Problems with the mods' language files (<see cref="Ui.ModLanguages"/>), which never stop a mod loading.</summary>
+    public IReadOnlyList<DataDiagnostic> LanguageDiagnostics { get; private init; } = [];
 
     /// <summary>Loads everything from already loaded mods.</summary>
     public static GameContent From(ModLoadResult mods)
@@ -79,8 +82,10 @@ public sealed class GameContent
         var world = WorldGenData.Load(mods);
         var recipes = RecipeBook.Load(mods);
         var bots = BotBook.Load(mods);
+        var languages = new List<DataDiagnostic>();
+        Ui.ModLanguages.Read(mods.Mods.Select(m => m.Directory), languages);
         return new GameContent(mods, SoundRegistry.Load(mods), world, recipes, bots, RaidTable.Load(mods, bots),
-            QuestBook.Load(mods, recipes, world), CharacterBook.Load(mods));
+            QuestBook.Load(mods, recipes, world), CharacterBook.Load(mods)) { LanguageDiagnostics = languages };
     }
 
     /// <summary>Loads everything from the mods <paramref name="profile"/> enables (null: every mod).</summary>

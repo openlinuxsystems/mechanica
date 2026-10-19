@@ -38,29 +38,27 @@ public partial class CharacterPicker : HBoxContainer
         foreach (var character in Book.All)
         {
             // Names and descriptions are mod content, shown as the mod wrote them.
-            var card = new Button
+            var card = Loc.Verbatim(new Button
             {
-                AutoTranslateMode = AutoTranslateModeEnum.Disabled,
                 Name = character.Definition.Id ?? character.QualifiedId,
                 ToggleMode = true,
                 ButtonGroup = _group,
                 TooltipText = character.Description,
                 CustomMinimumSize = new Vector2(PreviewSize.X + 16, PreviewSize.Y + 64),
-            };
+            });
             var column = new VBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
             card.AddChild(column);
             column.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect, LayoutPresetMode.Minsize, 8);
             if (Assets is not null)
                 column.AddChild(new CharacterPreview { Character = character, Assets = Assets, Size = PreviewSize, MouseFilter = MouseFilterEnum.Ignore });
-            column.AddChild(new Label { AutoTranslateMode = AutoTranslateModeEnum.Disabled, Text = character.Name, HorizontalAlignment = HorizontalAlignment.Center, ThemeTypeVariation = "TitleLabel", MouseFilter = MouseFilterEnum.Ignore });
+            column.AddChild(Loc.Verbatim(new Label { Text = character.Name, HorizontalAlignment = HorizontalAlignment.Center, ThemeTypeVariation = "TitleLabel", MouseFilter = MouseFilterEnum.Ignore }));
             if (character.Description.Length > 0)
             {
-                column.AddChild(new Label
+                column.AddChild(Loc.Verbatim(new Label
                 {
-                    AutoTranslateMode = AutoTranslateModeEnum.Disabled,
                     Text = character.Description, HorizontalAlignment = HorizontalAlignment.Center, ThemeTypeVariation = "SecondaryLabel",
                     AutowrapMode = TextServer.AutowrapMode.WordSmart, CustomMinimumSize = new Vector2(PreviewSize.X, 0), MouseFilter = MouseFilterEnum.Ignore,
-                });
+                }));
             }
             // A button does not grow with what is inside it, so the card follows its column (a long description wraps onto more lines).
             column.MinimumSizeChanged += () =>

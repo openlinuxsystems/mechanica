@@ -385,6 +385,7 @@ public partial class Main : Node3D
         var content = Content ??= Core.ModTools.GameContent.ManifestOf(mods, world, recipes, bots, raids, quests, characters);
         Assets = new PartAssets(mods);
         HeldItems = HeldItemsOf(mods);
+        Ui.Loc.UseMods(mods.Mods.Select(m => m.Directory));
 
         Session = new NetSession { Name = "Session", Content = content, Profile = profile };
         AddChild(Session);
@@ -903,6 +904,7 @@ public partial class Main : Node3D
         Session.Content = Content;
         Assets.SetContent(mods);
         HeldItems = HeldItemsOf(mods);
+        Ui.Loc.UseMods(mods.Mods.Select(m => m.Directory));
         Build.SetContent(mods);
         SoundEvents = LoadSounds(mods);
         Sounds.SetRegistry(SoundEvents);
