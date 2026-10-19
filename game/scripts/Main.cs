@@ -96,6 +96,16 @@ public partial class Main : Node3D
     public bool ReadDeviceInput { get; set; } = true;
 
     /// <summary>
+    /// Whether a new world gets the debug scrap car by the spawn (<see cref="DebugCarSpawner"/>) when this
+    /// instance hosts it. Null means only in a debug build, where this is the running scene (the real game, not a test
+    /// that adds the world under its own scene), and while <c>game/data/debug_car.json</c> has it enabled.
+    /// </summary>
+    public bool? DebugCar { get; set; }
+
+    /// <summary>The debug scrap car's id once it has been put down in this world, or null.</summary>
+    public int? DebugCarId { get; private set; }
+
+    /// <summary>
     /// Whether the loading screen covers the world while it loads (UI spec §15). Null shows it in the real game
     /// (settings that persist) when reading device input, and not in test scenes.
     /// </summary>
@@ -629,7 +639,10 @@ public partial class Main : Node3D
         Ai.Modules.Add(new WorldModule(new WorldControl(WorldSession)));
         // The offline player spawned with PlayerSync, before building existed.
         if (LocalPlayer is { } local)
+        {
             AddTools(local);
+            SpawnDebugCar();
+        }
         Session.StateChanged += state => SetPropsSimulated(state is NetSession.SessionState.Offline or NetSession.SessionState.Hosting);
         if (ReadDeviceInput)
         {
@@ -1057,10 +1070,23 @@ public partial class Main : Node3D
             return;
         player.MakeCameraCurrent();
         AddTools(player);
+        SpawnDebugCar();
         if (!ReadDeviceInput)
             return;
         _input = new LocalPlayerInput { Name = "LocalPlayerInput", Target = player, Suspended = () => Spectator.Watching };
         AddChild(_input);
+    }
+
+    // Once, on the host of a new world, when the debug car is wanted (see DebugCar).
+    private void SpawnDebugCar()
+    {
+        if (DebugCarId is not null || Save is not null || Build is null || Options?.Mode == SessionMode.Join || !Session.IsHost)
+            return;
+        var settings = DebugCarSpawner.LoadSettings();
+        if (!(DebugCar ?? (OS.IsDebugBuild() && GetTree().CurrentScene == this && settings.Enabled)))
+            return;
+        var spawn = GetNodeOrNull<Node3D>("SpawnPoint")?.GlobalPosition ?? Vector3.Zero;
+        DebugCarId = DebugCarSpawner.Spawn(this, spawn, settings).Id;
     }
 
     private void AddTools(PlayerController player)
