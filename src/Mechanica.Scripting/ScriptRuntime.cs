@@ -289,7 +289,7 @@ public sealed partial class ScriptRuntime
             if (instance.Fault is null)
                 CallHook(instance, Hooks.OnUpdate, arg);
         }
-        UpdateHeldItems(arg);
+        UpdateHeldItems(arg[0]);
         CollectOutputs();
         _stepping.Clear();
     }
