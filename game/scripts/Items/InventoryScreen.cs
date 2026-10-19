@@ -5,6 +5,7 @@ using Mechanica.Core.Data;
 using Mechanica.Core.Input;
 using Mechanica.Core.Items;
 using Mechanica.Core.Survival;
+using Mechanica.Game.Building;
 using Mechanica.Game.Creations;
 using Mechanica.Game.Net;
 using Mechanica.Game.Player;
@@ -308,20 +309,8 @@ public partial class InventoryScreen : CanvasLayer
     /// <summary>Any part under the crosshair, within reach (Upgrade, U, works on it), or null.</summary>
     public (int Creation, int Part)? AimedPart() => Aimed() is var (node, part) ? (node.Creation.Id, part) : null;
 
-    private (CreationNode Node, int Part)? Aimed()
-    {
-        if (Players.LocalPlayer is not { } player)
-            return null;
-        var from = player.AimOrigin;
-        var query = PhysicsRayQueryParameters3D.Create(from, from - player.Camera.GlobalBasis.Z * Inventory.Settings!.Reach);
-        query.Exclude = [player.GetRid()];
-        var hit = player.GetWorld3D().DirectSpaceState.IntersectRay(query);
-        if (hit.Count == 0 || hit["collider"].AsGodotObject() is not CreationBody body || body.GetParent() is not CreationNode node)
-            return null;
-        var toGrid = body.GlobalTransform.AffineInverse();
-        var (cell, _) = BuildAim.FromHit((toGrid * hit["position"].AsVector3()).ToNumerics(), (toGrid.Basis * hit["normal"].AsVector3()).ToNumerics());
-        return node.Creation.PartAt(cell) is { } part ? (node, part.Id) : null;
-    }
+    private (CreationNode Node, int Part)? Aimed() =>
+        Players.LocalPlayer is { } player ? HandTool.PartHit(HandTool.CastShown(player, Inventory.Settings!.Reach)) : null;
 
     private void Refresh()
     {

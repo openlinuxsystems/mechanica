@@ -130,6 +130,9 @@ public partial class WorldStreamer : Node3D
     {
         ProcessPhysicsPriority = -200;
         Settings ??= LoadDefaultSettings();
+        // A modder may have changed a model since the last world; meshes already shown keep their own copy.
+        TerrainChunk.ClearModels();
+        FloraMaterials.ClearModels();
         Ground = new StaticBody3D { Name = GroundName };
         AddChild(Ground);
         _sceneryRoot = new Node3D { Name = "Scenery" };

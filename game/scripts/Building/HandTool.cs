@@ -156,6 +156,34 @@ public abstract partial class HandTool : Node
             : new RayHit(hit["position"].AsVector3(), hit["normal"].AsVector3(), hit["collider"].AsGodotObject(), hit["shape"].AsInt32());
     }
 
+    // The display casts of this frame: the HUD, the crosshair, outlines and prompts all ask what the player aims at.
+    private static readonly AimCast?[] _aims = new AimCast?[8];
+    private static int _nextAim;
+
+    private readonly record struct AimCast(ulong Frame, ulong Player, float Reach, bool Brush, Vector3 From, Vector3 To, RayHit? Hit);
+
+    /// <summary>
+    /// <see cref="Cast"/> for what shows this frame (prompts, outlines, the crosshair): every display that asks the
+    /// same of the same aim in one frame shares one ray. A cast that acts on the world uses <see cref="Cast"/>.
+    /// </summary>
+    public static RayHit? CastShown(PlayerController player, float reach, bool brush = false)
+    {
+        var frame = Engine.GetProcessFrames() << 32 ^ Engine.GetPhysicsFrames();
+        var from = player.AimOrigin;
+        var to = from - player.Camera.GlobalBasis.Z * reach;
+        var id = player.GetInstanceId();
+        foreach (var aim in _aims)
+        {
+            if (aim is { } a && a.Frame == frame && a.Player == id && a.Reach == reach && a.Brush == brush && a.From == from && a.To == to
+                && (a.Hit is not { } hit || IsInstanceValid(hit.Collider)))
+                return a.Hit;
+        }
+        var cast = Cast(player, reach, brush);
+        _aims[_nextAim] = new AimCast(frame, id, reach, brush, from, to, cast);
+        _nextAim = (_nextAim + 1) % _aims.Length;
+        return cast;
+    }
+
     /// <summary>The part a ray hit (its Creation node and part id), or null when it hit no part.</summary>
     public static (CreationNode Node, int Part)? PartHit(RayHit? hit)
     {

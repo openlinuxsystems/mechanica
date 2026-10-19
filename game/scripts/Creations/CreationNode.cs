@@ -23,6 +23,7 @@ public partial class CreationNode : Node3D
     private readonly List<CreationBody> _bodies = [];
     private readonly List<Joint3D> _joints = [];
     private readonly Dictionary<Joint3D, JointFrame> _frames = [];
+    private readonly Dictionary<(int A, int B), Joint3D> _jointsByParts = [];
     private readonly List<(MeshInstance3D Mesh, JointLink Link, JointFrame Frame)> _shafts = [];
     private readonly List<Flex> _flexes = [];
 
@@ -67,7 +68,7 @@ public partial class CreationNode : Node3D
 
     /// <summary>The Jolt joint built for a joint edge, or null when it is locked or has none.</summary>
     public Joint3D? JointOf(Connection connection) =>
-        _joints.FirstOrDefault(j => j.Name == JointName(connection));
+        _jointsByParts.GetValueOrDefault((connection.A, connection.B));
 
     /// <summary>The joint data a built joint was made from (anchor, axis, limits, spring).</summary>
     public JointFrame FrameOf(Joint3D joint) => _frames[joint];
@@ -285,7 +286,10 @@ public partial class CreationNode : Node3D
         foreach (var link in Creation.Joints)
         {
             if (!link.IsLocked && BuildJoint(link) is { } joint)
+            {
                 _joints.Add(joint);
+                _jointsByParts.TryAdd((link.Connection.A, link.Connection.B), joint);
+            }
             if (!link.IsLocked)
                 MoveJointMeshes(link);
         }
@@ -301,6 +305,7 @@ public partial class CreationNode : Node3D
             node.QueueFree();
         }
         _joints.Clear();
+        _jointsByParts.Clear();
         _frames.Clear();
         _shafts.Clear();
         _flexes.Clear();

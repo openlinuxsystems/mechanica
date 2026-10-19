@@ -24,8 +24,12 @@ public sealed class Creation
     private readonly SortedDictionary<int, PartInstance> _parts = [];
     private readonly Dictionary<int, PartDefinition> _definitions = [];
     private readonly Dictionary<GridCell, int> _occupancy = [];
-    private readonly HashSet<Connection> _connections = [];
-    private readonly HashSet<LogicLink> _links = [];
+    private readonly EdgeSet<Connection> _connections = new(Connection.Order);
+    private readonly EdgeSet<LogicLink> _links = new(LogicLink.Order);
+    // LinksFrom and LinksTo, built from _links at _linksVersion.
+    private Dictionary<int, int[]>? _linksFrom;
+    private Dictionary<int, int[]>? _linksTo;
+    private int _linksVersion = -1;
     // World pose of each part's Body, stored on every member so poses survive splits and removals.
     private readonly Dictionary<int, Pose> _poses = [];
     // Health each part has lost (Sledgehammer hits); parts at full health have no entry.
@@ -134,16 +138,33 @@ public sealed class Creation
     public IReadOnlyCollection<PartInstance> Parts => _parts.Values;
 
     /// <summary>Edges in a stable order (by A, B, type, sockets).</summary>
-    public IReadOnlyList<Connection> Connections => [.. _connections.Order(Connection.Order)];
+    public IReadOnlyList<Connection> Connections => _connections.Sorted;
 
     /// <summary>Logic links (Connect Tool, chunk 10), by source then target.</summary>
-    public IReadOnlyList<LogicLink> Links => [.. _links.Order(LogicLink.Order)];
+    public IReadOnlyList<LogicLink> Links => _links.Sorted;
 
     /// <summary>The parts <paramref name="partId"/>'s output feeds, ascending.</summary>
-    public IReadOnlyList<int> LinksFrom(int partId) => [.. _links.Where(l => l.From == partId).Select(l => l.To).Order()];
+    public IReadOnlyList<int> LinksFrom(int partId)
+    {
+        IndexLinks();
+        return _linksFrom!.GetValueOrDefault(partId) ?? [];
+    }
 
     /// <summary>The parts feeding <paramref name="partId"/>'s inputs, ascending.</summary>
-    public IReadOnlyList<int> LinksTo(int partId) => [.. _links.Where(l => l.To == partId).Select(l => l.From).Order()];
+    public IReadOnlyList<int> LinksTo(int partId)
+    {
+        IndexLinks();
+        return _linksTo!.GetValueOrDefault(partId) ?? [];
+    }
+
+    private void IndexLinks()
+    {
+        if (_linksVersion == _links.Version && _linksFrom is not null)
+            return;
+        _linksFrom = _links.GroupBy(l => l.From).ToDictionary(g => g.Key, g => g.Select(l => l.To).Order().ToArray());
+        _linksTo = _links.GroupBy(l => l.To).ToDictionary(g => g.Key, g => g.Select(l => l.From).Order().ToArray());
+        _linksVersion = _links.Version;
+    }
 
     /// <summary>True when no parts are left.</summary>
     public bool IsEmpty => _parts.Count == 0;
@@ -153,6 +174,12 @@ public sealed class Creation
 
     /// <summary>Joint edges resolved to bodies, in <see cref="Connections"/> order.</summary>
     public IReadOnlyList<JointLink> Joints => GetLayout().Joints;
+
+    /// <summary>
+    /// The first joint (in <see cref="Joints"/> order) whose <see cref="Connection.A"/> side is <paramref name="partId"/>
+    /// (the part's own bearing, piston or suspension), or null.
+    /// </summary>
+    public JointLink? JointOf(int partId) => GetLayout().JointOfPart.GetValueOrDefault(partId);
 
     /// <summary>The part with this id, or null.</summary>
     public PartInstance? FindPart(int partId) => _parts.GetValueOrDefault(partId);
@@ -287,7 +314,8 @@ public sealed class Creation
 
     /// <summary>Soil parts with something planted or some water, by part id.</summary>
     public IEnumerable<(int PartId, SoilState Soil)> ActiveSoil =>
-        _soil.Where(kv => !kv.Value.IsEmpty).OrderBy(kv => kv.Key).Select(kv => (kv.Key, kv.Value));
+        // Ticked for every Creation every step, and most have no soil.
+        _soil.Count == 0 ? [] : _soil.Where(kv => !kv.Value.IsEmpty).OrderBy(kv => kv.Key).Select(kv => (kv.Key, kv.Value));
 
     /// <summary>True when a part holds items or has crafting orders.</summary>
     public bool HoldsItems(int partId) =>
@@ -302,7 +330,8 @@ public sealed class Creation
 
     /// <summary>Stations with orders, by part id.</summary>
     public IEnumerable<(int PartId, CraftingQueue Queue)> ActiveCrafting =>
-        _crafting.Where(kv => !kv.Value.IsEmpty).OrderBy(kv => kv.Key).Select(kv => (kv.Key, kv.Value));
+        // Ticked for every Creation every step, and most have no station.
+        _crafting.Count == 0 ? [] : _crafting.Where(kv => !kv.Value.IsEmpty).OrderBy(kv => kv.Key).Select(kv => (kv.Key, kv.Value));
 
     /// <summary>Paints a part (Paint Tool): <paramref name="color"/> is <c>"#rrggbb"</c>, or null for its own colour.</summary>
     /// <returns>True when the colour changed.</returns>
@@ -982,8 +1011,12 @@ public sealed class Creation
             .Where(c => c.Type != ConnectionType.Structural)
             .Select(c => new JointLink(c, bodyOfPart[c.A], bodyOfPart[c.B]))
             .ToList();
-        return new Layout(bodies, joints, bodyOfPart);
+        var jointOfPart = new Dictionary<int, JointLink>();
+        foreach (var joint in joints)
+            jointOfPart.TryAdd(joint.Connection.A, joint);
+        return new Layout(bodies, joints, bodyOfPart, jointOfPart);
     }
 
-    private sealed record Layout(IReadOnlyList<Body> Bodies, IReadOnlyList<JointLink> Joints, IReadOnlyDictionary<int, int> BodyOfPart);
+    private sealed record Layout(IReadOnlyList<Body> Bodies, IReadOnlyList<JointLink> Joints, IReadOnlyDictionary<int, int> BodyOfPart,
+        IReadOnlyDictionary<int, JointLink> JointOfPart);
 }

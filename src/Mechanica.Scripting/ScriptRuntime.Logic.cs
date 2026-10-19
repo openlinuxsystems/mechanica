@@ -117,7 +117,10 @@ public sealed partial class ScriptRuntime : ILogicHost
     // Parts that define get_outputs() set their output from what it returns, once per step.
     private void CollectOutputs()
     {
-        foreach (var instance in _instances.Values.ToList())
+        // on_update may have added or removed parts.
+        _stepping.Clear();
+        _stepping.AddRange(_instances.Values);
+        foreach (var instance in _stepping)
         {
             if (instance.Fault is not null || instance.Env?.RawGet(Hooks.GetOutputs) is not { Type: DataType.Function } || !_motion.IsLive(instance.Creation))
                 continue;
@@ -182,7 +185,15 @@ public sealed partial class ScriptRuntime : ILogicHost
             var id = args.AsType(0, "part.setting", DataType.String).String;
             if (Here() is not { } h || PartSettings.Value(h.Creation.DefinitionOf(h.Instance.Part), h.Creation.FindPart(h.Instance.Part)!.Settings, id) is not { } value)
                 return DynValue.Nil;
-            return LuaValues.FromJson(script, System.Text.Json.Nodes.JsonNode.Parse(value.GetRawText()));
+            // Scripts read their settings every step: plain values skip the JSON round trip.
+            return value.ValueKind switch
+            {
+                System.Text.Json.JsonValueKind.Number => DynValue.NewNumber(value.GetDouble()),
+                System.Text.Json.JsonValueKind.True => DynValue.True,
+                System.Text.Json.JsonValueKind.False => DynValue.False,
+                System.Text.Json.JsonValueKind.String => DynValue.NewString(value.GetString()),
+                _ => LuaValues.FromJson(script, System.Text.Json.Nodes.JsonNode.Parse(value.GetRawText())),
+            };
         });
         Fn(part, "sound", args =>
         {

@@ -174,12 +174,17 @@ public partial class ScriptSync : Node, IScriptPhysics, IScriptSound
             (collider as Player.PlayerController)?.PeerId, (collider as Bots.BotBody)?.BotId);
     }
 
+    // One sphere for every script's overlap query (they run at once); a new shape per call only goes when collected.
+    private readonly SphereShape3D _sphere = new();
+
     /// <inheritdoc/>
     public IReadOnlyList<ScriptOverlap> OverlapSphere(System.Numerics.Vector3 centre, float radius, int? ignoreCreation)
     {
+        if (_sphere.Radius != radius)
+            _sphere.Radius = radius;
         var query = new PhysicsShapeQueryParameters3D
         {
-            Shape = new SphereShape3D { Radius = radius },
+            Shape = _sphere,
             Transform = new Transform3D(Basis.Identity, centre.ToGodot()),
             Exclude = Exclusions(ignoreCreation),
         };
@@ -217,13 +222,17 @@ public partial class ScriptSync : Node, IScriptPhysics, IScriptSound
         return (node.Creation.Id, part);
     }
 
+    private readonly List<(int Creation, int Part)> _listening = [];
+
     // on_collision(other, impulse) for each scripted part whose Body began touching something this step.
     private void ReportCollisions()
     {
+        // Only parts whose script listens: contact monitoring costs Jolt work on every body it is on.
+        Runtime.Defining(ScriptRuntime.Hooks.OnCollision, _listening);
         var now = new Dictionary<ulong, HashSet<(ulong Other, int Shape)>>();
-        foreach (var info in Runtime.Instances)
+        foreach (var info in _listening)
         {
-            if (info.Fault is not null || Creations.NodeOf(info.Creation) is not { } node
+            if (Creations.NodeOf(info.Creation) is not { } node
                 || Creations.Find(info.Creation) is not { } creation || creation.FindPart(info.Part) is null)
                 continue;
             var index = creation.BodyIndexOf(info.Part);

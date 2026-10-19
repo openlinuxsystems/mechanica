@@ -48,11 +48,19 @@ public partial class KeyButton : Button
     public override void _Process(double delta)
     {
         // The label follows the button's colours (white, or ink while it is on).
-        var color = GetThemeColor(ButtonPressed ? "font_pressed_color" : "font_color");
-        _label.AddThemeColorOverride("font_color", Disabled ? GetThemeColor("font_disabled_color") : color);
-        _label.AddThemeFontOverride("font", GetThemeFont("font"));
-        _label.AddThemeFontSizeOverride("font_size", GetThemeFontSize("font_size"));
+        // Only on a change: each override re-themes the label and lays it out again.
+        var color = Disabled ? GetThemeColor("font_disabled_color") : GetThemeColor(ButtonPressed ? "font_pressed_color" : "font_color");
+        var font = GetThemeFont("font");
+        var size = GetThemeFontSize("font_size");
+        if ((color, font, size) == _shown)
+            return;
+        _shown = (color, font, size);
+        _label.AddThemeColorOverride("font_color", color);
+        _label.AddThemeFontOverride("font", font);
+        _label.AddThemeFontSizeOverride("font_size", size);
     }
+
+    private (Color, Font?, int) _shown;
 
     private void Fit() => CustomMinimumSize = new Vector2(_row.GetCombinedMinimumSize().X + 24, 32);
 }

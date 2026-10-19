@@ -15,6 +15,15 @@ namespace Mechanica.Game.Player;
 /// </summary>
 public partial class LocalPlayerInput : Node
 {
+    // Read every physics tick: one StringName per action rather than one per read.
+    private static readonly StringName MoveLeft = InputActions.MoveLeft;
+    private static readonly StringName MoveRight = InputActions.MoveRight;
+    private static readonly StringName MoveBack = InputActions.MoveBack;
+    private static readonly StringName MoveForward = InputActions.MoveForward;
+    private static readonly StringName Jump = InputActions.Jump;
+    private static readonly StringName Sprint = InputActions.Sprint;
+    private static readonly StringName Crawl = InputActions.Crawl;
+
     /// <summary>Radians of look per pixel of mouse motion.</summary>
     public float MouseSensitivity => GameSettings.Current.MouseSensitivity;
 
@@ -95,15 +104,15 @@ public partial class LocalPlayerInput : Node
         // A menu or panel has the mouse: keys belong to it, so the player doesn't walk or drive.
         var playing = Input.MouseMode == Input.MouseModeEnum.Captured && !Suspended();
         var move = playing
-            ? Input.GetVector(InputActions.MoveLeft, InputActions.MoveRight, InputActions.MoveBack, InputActions.MoveForward)
+            ? Input.GetVector(MoveLeft, MoveRight, MoveBack, MoveForward)
             : Vector2.Zero;
         Target.CurrentInput = new PlayerInput(
             move.X,
             move.Y,
             _yaw,
             _pitch,
-            playing && Input.IsActionPressed(InputActions.Jump),
-            playing && Input.IsActionPressed(InputActions.Sprint),
-            playing && Input.IsActionPressed(InputActions.Crawl));
+            playing && Input.IsActionPressed(Jump),
+            playing && Input.IsActionPressed(Sprint),
+            playing && Input.IsActionPressed(Crawl));
     }
 }

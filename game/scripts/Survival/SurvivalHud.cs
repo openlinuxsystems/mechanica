@@ -228,7 +228,7 @@ public partial class SurvivalHud : CanvasLayer
         var from = player.AimOrigin;
         var direction = -player.Camera.GlobalBasis.Z;
         // A pile behind a wall or a part is not aimed at.
-        var blocked = HandTool.Cast(player, settings.PickupReach) is { } hit ? hit.Point.DistanceTo(from) : settings.PickupReach;
+        var blocked = HandTool.CastShown(player, settings.PickupReach) is { } hit ? hit.Point.DistanceTo(from) : settings.PickupReach;
         return DropAim.Aimed(Survival.Drops.Values, from.ToNumerics(), direction.ToNumerics(), Math.Min(blocked + DropAim.Radius, settings.PickupReach));
     }
 
@@ -250,7 +250,7 @@ public partial class SurvivalHud : CanvasLayer
     {
         if (Players.LocalPlayer is not { } player || Survival.Settings is not { } settings)
             return null;
-        if (HandTool.Cast(player, settings.Reach, brush: true) is not { } hit || TerrainChunk.ObjectHit(hit.Collider, hit.Shape) is not { } id)
+        if (HandTool.CastShown(player, settings.Reach, brush: true) is not { } hit || TerrainChunk.ObjectHit(hit.Collider, hit.Shape) is not { } id)
             return null;
         return Survival.FindObject(id) is { } node && (node.Definition.Refine || node.Definition.Harvest) ? node : null;
     }
@@ -263,7 +263,7 @@ public partial class SurvivalHud : CanvasLayer
     {
         if (Players.LocalPlayer is not { } player || Survival.Settings is not { } settings)
             return null;
-        return HandTool.PartHit(HandTool.Cast(player, settings.Reach)) is { } aimed
+        return HandTool.PartHit(HandTool.CastShown(player, settings.Reach)) is { } aimed
             && aimed.Node.Creation.DefinitionOf(aimed.Part) is { Loose: true, Refine.Count: > 0 }
             ? (aimed.Node, aimed.Part)
             : null;
@@ -408,7 +408,7 @@ public partial class SurvivalHud : CanvasLayer
     public string? Notice()
     {
         if (Logic is null || Players.LocalPlayer is not { Seated: false } player || Survival.Settings is not { } settings
-            || HandTool.PartHit(HandTool.Cast(player, settings.Reach)) is not { } aimed)
+            || HandTool.PartHit(HandTool.CastShown(player, settings.Reach)) is not { } aimed)
             return null;
         var creation = aimed.Node.Creation;
         return creation.DefinitionOf(aimed.Part).Seat is not null && Logic.Seats.Occupant(creation.Id, aimed.Part) is { } other && other != player.PeerId
@@ -444,7 +444,7 @@ public partial class SurvivalHud : CanvasLayer
             return (Loc.T("stand up"), () => Request(LogicActions.LeaveSeat, new NoArgs()));
         if (ToolInteraction() is { } tool)
             return tool;
-        if (HandTool.PartHit(HandTool.Cast(player, settings.Reach)) is { } aimed)
+        if (HandTool.PartHit(HandTool.CastShown(player, settings.Reach)) is { } aimed)
         {
             var creation = aimed.Node.Creation;
             var definition = creation.DefinitionOf(aimed.Part);

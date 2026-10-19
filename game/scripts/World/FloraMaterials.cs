@@ -29,6 +29,9 @@ public static class FloraMaterials
 
     private static readonly Dictionary<FloraKind, ShaderMaterial> KindMaterials = [];
     private static readonly Dictionary<string, (ArrayMesh Full, ArrayMesh Lod)> ModelMeshes = [];
+
+    /// <summary>Forgets the flora models' meshes, so a new world builds them from its mods afresh.</summary>
+    public static void ClearModels() => ModelMeshes.Clear();
     private static bool _globals;
 
     /// <summary>The material for a kind of flora.</summary>
