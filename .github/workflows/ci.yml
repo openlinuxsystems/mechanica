@@ -19,13 +19,14 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-test:
-    name: Build, test and Godot smoke
+  # A pull request checks out the PR merged into main, so the merge commit's first parent is main.
+  scope:
+    name: Decide what the change needs
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 5
+    outputs:
+      build: ${{ steps.scope.outputs.build }}
     env:
-      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
-      DOTNET_NOLOGO: "1"
       # Files nothing in the build or the tests reads: root Markdown, agent notes and release-only packaging.
       # A pull request that changes only these passes without building. docs/ is not here: the game ships
       # and tests it.
@@ -35,7 +36,6 @@ jobs:
         with:
           fetch-depth: 2
 
-      # A pull request checks out the PR merged into main, so the merge commit's first parent is main.
       - name: Decide what the change needs
         id: scope
         run: |
@@ -49,8 +49,68 @@ jobs:
             echo "Only files outside the build changed; nothing to build or test."
           fi
 
+  unit:
+    name: Build and unit tests
+    needs: scope
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      DOTNET_NOLOGO: "1"
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
+      - name: AI bridge tests
+        run: node --test tools/ai/bridge/test/*.test.mjs
+
       - uses: actions/setup-dotnet@v5
-        if: steps.scope.outputs.build == 'true'
+        if: needs.scope.outputs.build == 'true'
+        with:
+          global-json-file: global.json
+
+      - uses: actions/cache@v4
+        if: needs.scope.outputs.build == 'true'
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ hashFiles('Directory.Packages.props', '**/*.csproj', 'global.json') }}
+          restore-keys: nuget-
+
+      - name: Restore
+        if: needs.scope.outputs.build == 'true'
+        run: dotnet restore Mechanica.sln
+
+      - name: Build
+        if: needs.scope.outputs.build == 'true'
+        run: dotnet build Mechanica.sln --no-restore -c Debug
+
+      - name: Unit tests
+        if: needs.scope.outputs.build == 'true'
+        run: dotnet test Mechanica.sln --no-build -c Debug --logger "console;verbosity=normal"
+
+  # The Godot test scenes run in shards on separate runners (tools/smoke.sh SMOKE_SHARD); together the
+  # shards run every scene. One runner took 16-31 minutes for all of them, close to the time limit.
+  godot:
+    name: Godot tests (${{ matrix.shard }}/3)
+    needs: scope
+    if: needs.scope.outputs.build == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      DOTNET_NOLOGO: "1"
+      SMOKE_SHARD: ${{ matrix.shard }}/3
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-dotnet@v5
         with:
           global-json-file: global.json
 
@@ -59,37 +119,41 @@ jobs:
           node-version: "22"
 
       - name: Read pinned versions
-        if: steps.scope.outputs.build == 'true'
         run: grep -E '^[A-Z_]+=' tools/versions.env >> "$GITHUB_ENV"
 
       - uses: actions/cache@v4
-        if: steps.scope.outputs.build == 'true'
         with:
           path: ~/.nuget/packages
           key: nuget-${{ hashFiles('Directory.Packages.props', '**/*.csproj', 'global.json') }}
           restore-keys: nuget-
 
       - uses: actions/cache@v4
-        if: steps.scope.outputs.build == 'true'
         with:
           path: .tools
           key: godot-${{ env.GODOT_VERSION }}-mono-linux-x86_64
 
       - name: Restore
-        if: steps.scope.outputs.build == 'true'
         run: dotnet restore Mechanica.sln
 
-      - name: Build
-        if: steps.scope.outputs.build == 'true'
-        run: dotnet build Mechanica.sln --no-restore -c Debug
-
-      - name: Unit tests
-        if: steps.scope.outputs.build == 'true'
-        run: dotnet test Mechanica.sln --no-build -c Debug --logger "console;verbosity=normal"
-
-      - name: AI bridge tests
-        run: node --test tools/ai/bridge/test/*.test.mjs
-
-      - name: Godot headless smoke test
-        if: steps.scope.outputs.build == 'true'
+      - name: Godot headless tests
         run: tools/smoke.sh
+
+  # The merge gate keeps its name: it passes only when the unit tests and every Godot shard passed
+  # (or the change needed no build).
+  build-test:
+    name: Build, test and Godot smoke
+    needs: [scope, unit, godot]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check every part passed
+        env:
+          BUILD: ${{ needs.scope.outputs.build }}
+          SCOPE: ${{ needs.scope.result }}
+          UNIT: ${{ needs.unit.result }}
+          GODOT: ${{ needs.godot.result }}
+        run: |
+          echo "scope=$SCOPE build=$BUILD unit=$UNIT godot=$GODOT"
+          [[ "$SCOPE" == success && "$UNIT" == success ]] || exit 1
+          [[ "$GODOT" == success || ( "$BUILD" == false && "$GODOT" == skipped ) ]] || exit 1
