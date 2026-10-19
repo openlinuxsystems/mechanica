@@ -1,60 +1,66 @@
 {
   "id": "drill",
   "name": "Drill",
-  "description": "Bores into whatever is at its tip while its input is on. The only tool that breaks rock outcrops for their stone and metal.",
+  "description": "A fluted steel bit with a faceted point, held by four hooked claws on a round base. Put it on a bearing and spin it fast enough (an engine, or a controller at full speed), then push its tip into a rock deposit: it is the only tool that breaks the rocks, and it grinds their boulders and chunks down too. It also chews through bots, parts and other creations. Scuttlers and Rakehands balk at a spinning one.",
   "category": "interactive",
-  "mass": 6,
-  "durability": 6,
-  "friction": 0.5,
-  "buoyancy": 0.2,
+  "mass": 40,
+  "durability": 7,
+  "friction": 0.2,
+  "buoyancy": 0.1,
   "flammable": false,
-  "stack_size": 10,
+  "stack_size": 5,
   "sound_material": "metal",
-  "size": [1, 1, 3],
-  "mesh": "meshes/drill.glb",
+  "size": [3, 3, 3],
+  "mesh": "meshes/parts/drill.glb",
+  "icon": "textures/items/drill_icon.png",
   "visual": {
-    "color": "#8a7a50",
-    "roughness": 0.4,
-    "metallic": 0.8
+    "color": "#ffffff"
+  },
+  "collision": {
+    "shape": "convex",
+    "mesh": "meshes/parts/drill.glb"
   },
   "sockets": [
     {
       "id": "base",
       "type": "structural",
-      "position": [0, 0, 0.375],
-      "normal": [0, 0, 1]
+      "position": [0, -0.375, 0],
+      "normal": [0, -1, 0]
     }
   ],
-  "script": "scripts/cutter.lua",
+  "script": "scripts/drill.lua",
   "sounds": {
     "spin": "drill_spin",
-    "hit": "drill_hit"
+    "hit": "drill_hit",
+    "bot": "impact_metal"
   },
-  "logic": {
-    "inputs": 1
-  },
-  "animation": {
-    "axis": [0, 0, -1]
+  "display": {
+    "clips": {
+      "readout": "clip",
+      "scrub": [
+        {
+          "readout": "spin",
+          "clip": "glow"
+        }
+      ]
+    }
   },
   "properties": {
     "kind": "drill",
     "damage": 25,
     "interval": 0.3,
-    "reach": 0.15,
-    "spin": 25,
-    "edge": [
-      {
-        "from": [
-          0,
-          0,
-          -0.39
-        ],
-        "direction": [
-          0,
-          0,
-          -1
-        ]
-      }
-    ]
+    "min_spin": 9,
+    "shake": 600,
+    "tip": {
+      "from": 0.27,
+      "reach": 0.2
+    },
+    "flank": {
+      "at": 0.08,
+      "from": 0.12,
+      "reach": 0.17,
+      "rays": 8,
+      "lean": 0.45
+    }
   }
 }

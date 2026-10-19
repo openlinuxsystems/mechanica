@@ -562,13 +562,17 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
     /// <summary>
     /// Parts spinning on a joint near <paramref name="point"/>: the far side of every unlocked rotational
     /// joint (a bearing's rotor, a wheel, a saw blade) turning faster than <paramref name="minSpeed"/> rad/s
-    /// against its base, within <paramref name="range"/>. Nearest first. With <paramref name="partType"/> (a part type,
-    /// qualified or not: a saw blade), only parts of that type on the turning side count, each at its own centre.
+    /// against its base, within <paramref name="range"/>. Nearest first. With <paramref name="partType"/> (part types,
+    /// qualified or not, separated by commas: a saw blade, a drill), only parts of those types on the turning side count,
+    /// each at its own centre.
     /// </summary>
     public IReadOnlyList<(int Creation, int Part, Vector3 Centre, float Speed, float Distance)> SpinningNear(Vector3 point, float range, float minSpeed,
         string? partType = null)
     {
-        var only = partType is null ? null : Identifiers.Qualify(partType);
+        var only = partType?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(t => Identifiers.Qualify(t)).ToHashSet(StringComparer.Ordinal);
+        if (only is { Count: 0 })
+            only = null;
         var list = new List<(int Creation, int Part, Vector3 Centre, float Speed, float Distance)>();
         foreach (var id in survivalWorld.AllCreations.Where(c => c.Joints.Any(j => !j.IsLocked)).Select(c => c.Id).ToList())
         {
@@ -582,8 +586,8 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
                     continue;
                 if (only is not null)
                 {
-                    // The nearest part of that type riding the turning Body.
-                    var match = creation.Parts.Where(p => Identifiers.Qualify(p.Part) == only && creation.BodyIndexOf(p.Id) == joint.BodyB)
+                    // The nearest part of those types riding the turning Body.
+                    var match = creation.Parts.Where(p => only.Contains(Identifiers.Qualify(p.Part)) && creation.BodyIndexOf(p.Id) == joint.BodyB)
                         .Select(p => p.Id).OrderBy(p => Vector3.Distance(PartCentre(creation, p), point)).ThenBy(p => p).Cast<int?>().FirstOrDefault();
                     if (match is not { } found)
                         continue;
