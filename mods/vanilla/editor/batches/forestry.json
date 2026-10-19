@@ -82,7 +82,8 @@
           "stations": ["refiner"],
           "inputs": [{ "item": "wood_rod", "count": 1 }],
           "outputs": [{ "item": "scrap_wood_block", "count": 20 }],
-          "time": 5
+          "time": 5,
+          "order": 2610
         }
       ]
     },
@@ -102,7 +103,8 @@
           "stations": ["refiner"],
           "inputs": [{ "item": "pine_rod", "count": 1 }],
           "outputs": [{ "item": "wood_block", "count": 20 }],
-          "time": 5
+          "time": 5,
+          "order": 2620
         }
       ]
     }

@@ -527,7 +527,8 @@ writes them.
   "outputs": [
     { "item": "chest", "count": 1 }
   ],
-  "time": 4
+  "time": 4,
+  "order": 1710
 }
 ```
 
@@ -539,10 +540,50 @@ writes them.
 | `inputs` | list of `{ item, count }` | always | Items used up. Each item once; add the counts together. |
 | `outputs` | list of `{ item, count }` | always | Items made. |
 | `time` | number ≥ 0 | always | Seconds for one craft at speed 1. |
+| `order` | whole number | no | Where it sits in a station's list (see Recipe order). Omitted puts it after every recipe that has one. |
 
 Item and station ids are `id` (vanilla) or `mod_id:id`, and must name parts that are loaded. A recipe
 with errors is left out and the rest still load. Host and clients compare their recipes when a client
 joins.
+
+### Recipe order
+
+A station lists its recipes by `order`, lowest first, then by name, so related items sit together
+(Scrap Wheel, Wheel, Off Road Wheel). The hundreds pick the group and the tens the place in it, cheapest
+or scrap tier first. A new recipe joins its group: take the next free ten after the item it belongs
+behind (or a number in between), and start a new group with the next free hundred. Mods use the same
+numbers to slot their recipes among vanilla's, for example `"order": 635` for a wheel that goes after the
+Off Road Wheel. Only level 1 of an upgradable part has a recipe, so a part's levels never take more than
+one place. Vanilla's groups:
+
+| Order | Group | Vanilla recipes, in order |
+|-------|-------|---------------------------|
+| 100 | Blocks | `scrap_wood_block`, `scrap_wood_wedge`, `scrap_metal_block`, `scrap_metal_wedge`, `metal_block`, `metal_wedge` |
+| 200 | Ramps, stairs and railings | `ramp_block`, `stairs_block`, `ladder`, `metal_railing` |
+| 300 | Beams and frames | `support_pillar`, `support_bracket`, `metal_column`, `ibeam_short`, `ibeam_long`, `door_frame`, `window_frame` |
+| 400 | Pipes | `small_pipe_short`, `small_pipe_long`, `small_pipe_corner`, `small_pipe_tee`, `small_pipe_cross`, `large_pipe_short`, `large_pipe_long`, `large_pipe_corner`, `large_pipe_tee` |
+| 500 | Seats and controls | `scrap_seat`, `scrap_drivers_seat`, `passenger_seat`, `drivers_seat`, `controller` |
+| 600 | Wheels | `scrap_wheel`, `wheel`, `big_wheel` |
+| 700 | Suspension | `sport_suspension`, `offroad_suspension` |
+| 800 | Engines | `scrap_gas_engine`, `gas_engine`, `electric_engine` |
+| 900 | Fuel and power | `gasoline`, `gas_container`, `battery`, `battery_pack` |
+| 1000 | Bearings and pistons | `bearing`, `piston` |
+| 1100 | Flight | `thruster`, `hover_jet`, `rotor`, `wing`, `control_surface` |
+| 1200 | Logic | `switch`, `button`, `logic_gate`, `timer`, `sensor` |
+| 1300 | Working parts | `drill`, `saw_blade`, `water_cannon`, `potato_blaster_mounted` |
+| 1400 | Sound | `horn`, `radio` |
+| 1500 | Vehicle body | `bumper_front`, `bumper_rear`, `mud_flap`, `exhaust_pipe`, `license_plate`, `roof_rack`, `antenna`, `windshield`, `side_window` |
+| 1600 | Lights | `glowstick`, `interior_light`, `headlight`, `spotlight`, `construction_light`, `warning_light`, `beacon`, `warehouse_spotlight` |
+| 1700 | Storage | `chest`, `barrel`, `locker`, `tool_cabinet`, `file_cabinet`, `fridge`, `chemical_container`, `dispenser` |
+| 1800 | Stations | `portable_fabricator`, `refiner`, `respawn_bed` |
+| 1900 | Farming | `soil_bag`, `water_bucket` |
+| 2000 | Furniture | `stool`, `chair`, `wooden_table`, `metal_table`, `shelf_unit`, `pallet` |
+| 2100 | Road signs | `stop_sign`, `caution_sign`, `danger_sign`, `no_entry_sign`, `speed_limit_sign`, `direction_arrow_left`, `direction_arrow_straight`, `direction_arrow_right` |
+| 2200 | Road and site | `traffic_cone`, `barrier_tape`, `outpost_sign`, `warehouse_key_sign` |
+| 2300 | Nature | `fallen_log`, `tree_trunk` |
+| 2400 | Tools | `connect_tool`, `weld_tool`, `paint_tool`, `paint_ammo` |
+| 2500 | Weapons | `potato_blaster`, `potato_scattergun`, `potato_launcher`, `popper` |
+| 2600 | Refined materials | `wood_rod`, `pine_rod`, `stone_rod`, `metal_rod` |
 
 ## The editor source file
 

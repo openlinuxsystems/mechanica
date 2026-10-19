@@ -14,7 +14,8 @@ namespace Mechanica.Core.Items;
 ///   "stations": ["fabricator", "portable_fabricator"],
 ///   "inputs": [ { "item": "scrap_wood", "count": 4 }, { "item": "scrap_metal", "count": 2 } ],
 ///   "outputs": [ { "item": "chest", "count": 1 } ],
-///   "time": 4
+///   "time": 4,
+///   "order": 1710
 /// }
 /// </code>
 /// </summary>
@@ -37,6 +38,14 @@ public sealed record RecipeDefinition
 
     /// <summary>Seconds one craft takes at speed 1 (0 or more).</summary>
     public float? Time { get; init; }
+
+    /// <summary>
+    /// Where the recipe sits in a station's list: lower first, then by name; recipes without one come last. The
+    /// hundreds pick the group (wheels, engines, signs, …) and the rest the place in it, basic or scrap tier first.
+    /// The groups are listed in <c>docs/part-data-schema.md</c> (Recipe order); give every new recipe one so it
+    /// lands in its group.
+    /// </summary>
+    public int? Order { get; init; }
 
     /// <summary>Keys this build does not know. Kept so a round-trip never loses data.</summary>
     [JsonExtensionData]

@@ -32,7 +32,8 @@
             { "item": "circuit_board", "count": 1 }
           ],
           "outputs": [{ "item": "drivers_seat", "count": 1 }],
-          "time": 8
+          "time": 8,
+          "order": 540
         }
       ]
     },
@@ -72,7 +73,8 @@
             { "item": "component_kit", "count": 1 }
           ],
           "outputs": [{ "item": "scrap_drivers_seat", "count": 1 }],
-          "time": 5
+          "time": 5,
+          "order": 520
         }
       ]
     },
@@ -100,7 +102,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 3 }, { "item": "component_kit", "count": 1 }],
           "outputs": [{ "item": "passenger_seat", "count": 1 }],
-          "time": 5
+          "time": 5,
+          "order": 530
         }
       ]
     },
@@ -136,7 +139,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_wood", "count": 3 }, { "item": "scrap_metal", "count": 1 }],
           "outputs": [{ "item": "scrap_seat", "count": 1 }],
-          "time": 4
+          "time": 4,
+          "order": 510
         }
       ]
     },
@@ -295,7 +299,8 @@
             { "item": "circuit_board", "count": 1 }
           ],
           "outputs": [{ "item": "gas_engine", "count": 1 }],
-          "time": 12
+          "time": 12,
+          "order": 820
         }
       ]
     },
@@ -345,7 +350,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 5 }, { "item": "component_kit", "count": 1 }],
           "outputs": [{ "item": "scrap_gas_engine", "count": 1 }],
-          "time": 8
+          "time": 8,
+          "order": 810
         }
       ]
     },
@@ -490,7 +496,8 @@
             { "item": "circuit_board", "count": 3 }
           ],
           "outputs": [{ "item": "electric_engine", "count": 1 }],
-          "time": 12
+          "time": 12,
+          "order": 830
         }
       ]
     },
@@ -519,7 +526,8 @@
           "stations": ["fabricator", "portable_fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 2 }, { "item": "scrap_wood", "count": 2 }],
           "outputs": [{ "item": "scrap_wheel", "count": 1 }],
-          "time": 4
+          "time": 4,
+          "order": 610
         }
       ],
       "template": "wheel"
@@ -549,7 +557,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 3 }, { "item": "component_kit", "count": 1 }],
           "outputs": [{ "item": "wheel", "count": 1 }],
-          "time": 5
+          "time": 5,
+          "order": 620
         }
       ],
       "template": "wheel"
@@ -579,7 +588,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 6 }, { "item": "component_kit", "count": 2 }],
           "outputs": [{ "item": "big_wheel", "count": 1 }],
-          "time": 8
+          "time": 8,
+          "order": 630
         }
       ],
       "template": "wheel"
@@ -622,7 +632,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "component_kit", "count": 1 }, { "item": "circuit_board", "count": 1 }],
           "outputs": [{ "item": "logic_gate", "count": 1 }],
-          "time": 3
+          "time": 3,
+          "order": 1230
         }
       ]
     },
@@ -660,7 +671,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "component_kit", "count": 1 }, { "item": "circuit_board", "count": 1 }],
           "outputs": [{ "item": "timer", "count": 1 }],
-          "time": 3
+          "time": 3,
+          "order": 1240
         }
       ]
     },
@@ -703,7 +715,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "component_kit", "count": 1 }, { "item": "circuit_board", "count": 2 }],
           "outputs": [{ "item": "sensor", "count": 1 }],
-          "time": 4
+          "time": 4,
+          "order": 1250
         }
       ]
     },
@@ -730,7 +743,8 @@
           "stations": ["fabricator", "portable_fabricator"],
           "inputs": [{ "item": "metal_block", "count": 1 }, { "item": "circuit_board", "count": 1 }],
           "outputs": [{ "item": "switch", "count": 1 }],
-          "time": 5
+          "time": 5,
+          "order": 1210
         }
       ]
     },
@@ -761,7 +775,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "metal_block", "count": 1 }, { "item": "circuit_board", "count": 1 }],
           "outputs": [{ "item": "button", "count": 1 }],
-          "time": 5
+          "time": 5,
+          "order": 1220
         }
       ]
     },
@@ -813,7 +828,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "component_kit", "count": 2 }, { "item": "circuit_board", "count": 2 }],
           "outputs": [{ "item": "controller", "count": 1 }],
-          "time": 6
+          "time": 6,
+          "order": 550
         }
       ]
     }

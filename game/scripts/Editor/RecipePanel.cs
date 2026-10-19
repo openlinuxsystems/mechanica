@@ -213,6 +213,7 @@ public partial class RecipePanel : VBoxContainer
             Stations = [.. (v ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)],
         }), "fabricator, portable_fabricator");
         _grid.AddNumber("Time", r.Time, 0, 3600, 0.5, v => Edit(x => x with { Time = (float?)v }), suffix: "s");
+        _grid.AddNumber("Order", r.Order, 0, 99999, 1, v => Edit(x => x with { Order = v is { } o ? (int)o : null }), optional: true);
         AddItemRows(_inputs, r.Inputs ?? [], list => Edit(x => x with { Inputs = list }, rebuild: true), list => Edit(x => x with { Inputs = list }));
         AddItemRows(_outputs, r.Outputs ?? [], list => Edit(x => x with { Outputs = list }, rebuild: true), list => Edit(x => x with { Outputs = list }));
     }

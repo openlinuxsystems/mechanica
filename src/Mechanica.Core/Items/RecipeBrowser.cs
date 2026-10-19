@@ -20,17 +20,25 @@ public static class RecipeBrowser
 {
     /// <summary>
     /// The recipes whose main output is under <paramref name="tab"/> and whose name or output names contain every word
-    /// of <paramref name="query"/> (any case), by name.
+    /// of <paramref name="query"/> (any case), in <see cref="Ordered"/> order.
     /// </summary>
     public static IReadOnlyList<Recipe> Filter(IEnumerable<Recipe> recipes, string? query, InventoryTab tab, IPartCatalog catalog)
     {
         var words = (query ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        return [.. recipes
+        return Ordered(recipes
             .Where(r => tab == InventoryTab.All || r.Outputs.Count > 0 && InventoryTabs.Of(catalog.FindDefinition(r.Outputs[0].Item)?.Category) == tab)
-            .Where(r => words.All(w => Text(r, catalog).Contains(w, StringComparison.CurrentCultureIgnoreCase)))
-            .OrderBy(r => r.Name, StringComparer.CurrentCultureIgnoreCase)
-            .ThenBy(r => r.QualifiedId, StringComparer.Ordinal)];
+            .Where(r => words.All(w => Text(r, catalog).Contains(w, StringComparison.CurrentCultureIgnoreCase))));
     }
+
+    /// <summary>
+    /// Recipes in station-list order: by <see cref="RecipeDefinition.Order"/> (so related items sit together), recipes
+    /// without one after the rest, then by name and id.
+    /// </summary>
+    public static IReadOnlyList<Recipe> Ordered(IEnumerable<Recipe> recipes) =>
+        [.. recipes
+            .OrderBy(r => r.Definition.Order ?? int.MaxValue)
+            .ThenBy(r => r.Name, StringComparer.CurrentCultureIgnoreCase)
+            .ThenBy(r => r.QualifiedId, StringComparer.Ordinal)];
 
     /// <summary>What <paramref name="count"/> crafts of <paramref name="recipe"/> need, against <paramref name="have"/> (item to count).</summary>
     public static IReadOnlyList<RecipeInput> Inputs(Recipe recipe, int count, Func<string, int> have) =>
