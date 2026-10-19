@@ -22,8 +22,8 @@ namespace Mechanica.Game.Tools;
 /// the Ramp and Stairs, and see-through blocks in front of solid ones (<c>tools/capture-blocks.sh</c>).
 /// Given <c>water</c> it finds a shore and captures the sea: wide and close, at every Water quality level, a run of frames for
 /// the motion and the view from under the surface (<c>tools/capture-water.sh</c>).
-/// Given <c>rocks</c> it finds a stone and a metal-rich rock outcrop and captures them, then breaks a cube into chunks and a
-/// chunk into rods (<c>tools/capture-rocks.sh</c>).
+/// Given <c>rocks</c> it finds stone and metal-rich rock deposits and captures them, then drills a large block into
+/// boulders, the boulders into chunks and the chunks into rods (<c>tools/capture-rocks.sh</c>).
 /// Given <c>soil</c> it carries a Soil Bag, tips it out, spills a mound and shows a row of mounds dry, lightly watered,
 /// fully wet and drying (<c>tools/capture-soil.sh</c>).
 /// Given <c>knockout_bag</c> it knocks the player out and captures the knockout bag their items drop in from the reference
@@ -445,71 +445,97 @@ public partial class CaptureScene : Node
     private void RockShots()
     {
         Engine.TimeScale = 1.0;
-        List<WorldObjectPlacement> Outcrop(string id)
-        {
-            var gen = _main.Streamer.Generator;
-            var all = gen.ObjectsIn(-1500, -1500, 1500, 1500).Where(o => o.Definition.Id == id).ToList();
-            // The biggest outcrop of the first few, for a good look.
-            return all.GroupBy(o => o.Id with { Piece = 0 }).Take(12).OrderByDescending(g => g.Count()).First().ToList();
-        }
-        Vector3 Middle(List<WorldObjectPlacement> cubes) => new(cubes.Average(o => o.Position.X), cubes.Min(o => o.Position.Y), cubes.Average(o => o.Position.Z));
+        var gen = _main.Streamer.Generator;
+        // Deposits scattered by the rule whose object is `id`, biggest first among the first few.
+        List<List<WorldObjectPlacement>> Deposits(string id) => gen.ObjectsIn(-1500, -1500, 1500, 1500)
+            .Where(o => gen.Data.ScatterRules[o.Id.Rule].Object.Id == id)
+            .GroupBy(o => o.Id with { Piece = 0 }).Take(24).OrderByDescending(g => g.Count()).Select(g => g.ToList()).ToList();
+        Vector3 Middle(List<WorldObjectPlacement> blocks) => new(blocks.Average(o => o.Position.X), blocks.Min(o => o.Position.Y), blocks.Average(o => o.Position.Z));
         var stone = new List<WorldObjectPlacement>();
+        var small = new List<WorldObjectPlacement>();
         Shot("rocks_00_wait", 60, () => { });
         Shot("rocks_00_go", 240, () =>
         {
-            stone = Outcrop("rock_outcrop");
+            var deposits = Deposits("rock_outcrop");
+            stone = deposits[0];
+            small = deposits[^1];
             _meadow = Middle(stone);
-            GD.Print($"[capture] outcrop of {stone.Count} at {_meadow}");
-            _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, _meadow + new Vector3(-5f, 2f, 5f), 0f);
+            GD.Print($"[capture] deposit of {stone.Count} blocks at {_meadow}");
+            _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, _meadow + new Vector3(-9f, 2f, 9f), 0f);
             _camera.MakeCurrent();
             _camera.GlobalPosition = _meadow + new Vector3(0, 30, 0);
         });
-        Shot("rocks_01_outcrop", 30, () => { _main.Flora.BuildAll(); ViewAt(_meadow, new Vector3(-7f, 3.5f, 7f), 1.2f); });
-        Shot("rocks_02_outcrop_other_side", 30, () => ViewAt(_meadow, new Vector3(7.5f, 2.5f, -6f), 1.2f));
-        Shot("rocks_03_outcrop_close", 30, () => ViewAt(_meadow, new Vector3(-3.2f, 1.6f, 3.2f), 1.0f));
+        Shot("rocks_01_deposit", 30, () => { _main.Flora.BuildAll(); ViewAt(_meadow, new Vector3(-14f, 7f, 14f), 1.5f); });
+        Shot("rocks_02_deposit_other_side", 30, () => ViewAt(_meadow, new Vector3(15f, 5f, -12f), 1.5f));
+        Shot("rocks_03_mound_close", 30, () =>
+        {
+            var mound = stone.Take(Math.Min(stone.Count, 12)).ToList();
+            var at = Middle(mound);
+            ViewAt(at, new Vector3(-4.5f, 2.2f, 4.5f), 1.2f);
+        });
         Shot("rocks_04_with_player", 60, () =>
         {
             Player.ThirdPerson = true;
-            _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, _meadow + new Vector3(-3.5f, 1f, 2.5f), 0f);
-            ViewAt(_meadow, new Vector3(-8f, 3f, 6f), 1.2f);
+            _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, _meadow + new Vector3(-6f, 1f, 5f), 0f);
+            ViewAt(_meadow, new Vector3(-12f, 4f, 10f), 1.2f);
         });
-        var metal = new List<WorldObjectPlacement>();
-        Shot("rocks_05_metal_go", 240, () =>
+        Shot("rocks_05_small_go", 240, () =>
         {
-            metal = Outcrop("metal_outcrop");
-            _meadow = Middle(metal);
+            _meadow = Middle(small);
+            GD.Print($"[capture] small deposit of {small.Count} blocks at {_meadow}");
             _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, _meadow + new Vector3(-5f, 2f, 5f), 0f);
         });
-        Shot("rocks_06_metal_outcrop", 30, () => { _main.Flora.BuildAll(); ViewAt(_meadow, new Vector3(-6f, 3f, 6f), 1.0f); });
-        Shot("rocks_07_metal_close", 30, () => ViewAt(_meadow, new Vector3(-2.8f, 1.4f, 2.8f), 0.9f));
-        WorldObjectPlacement? cube = null;
+        Shot("rocks_05_small_deposit", 30, () => { _main.Flora.BuildAll(); ViewAt(_meadow, new Vector3(-7f, 3.5f, 7f), 1.0f); });
+        var metal = new List<WorldObjectPlacement>();
+        Shot("rocks_06_metal_go", 240, () =>
+        {
+            metal = Deposits("metal_outcrop")[0];
+            _meadow = Middle(metal);
+            _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, _meadow + new Vector3(-6f, 2f, 6f), 0f);
+        });
+        Shot("rocks_06_metal_deposit", 30, () => { _main.Flora.BuildAll(); ViewAt(_meadow, new Vector3(-9f, 4f, 9f), 1.0f); });
+        Shot("rocks_07_metal_close", 30, () => ViewAt(_meadow, new Vector3(-4f, 1.8f, 4f), 0.9f));
         Shot("rocks_08_back", 240, () =>
         {
             _meadow = Middle(stone);
-            _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, _meadow + new Vector3(-5f, 2f, 5f), 0f);
+            _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, _meadow + new Vector3(-9f, 2f, 9f), 0f);
         });
-        Shot("rocks_09_cube_drilled", 90, () =>
+        Shot("rocks_09_large_drilled", 90, () =>
         {
-            // Break a ground cube on the outcrop's edge as a drill would; its two chunks fall out onto the grass.
+            // Break a large ground block on the deposit's edge as a drill would; its three boulders fall out onto the grass.
             var middle = _meadow with { Y = 0 };
-            cube = stone.Where(o => o.Position.Y - _meadow.Y < 0.01f).OrderByDescending(o => (o.Position.ToGodot() with { Y = 0 }).DistanceTo(middle)).First();
-            _main.Survival.Actions!.StrikeObject(cube.Id.ToString(), 10000, DamageKinds.Drill);
-            ViewAt(cube.Position.ToGodot(), ((cube.Position.ToGodot() - _meadow) with { Y = 0 }).Normalized() * 4f + new Vector3(0, 2.4f, 0), 0.5f);
+            var block = stone.Where(o => o.Definition.Id!.EndsWith("_large", StringComparison.Ordinal))
+                .DefaultIfEmpty(stone[0])
+                .OrderBy(o => o.Position.Y).ThenByDescending(o => (o.Position.ToGodot() with { Y = 0 }).DistanceTo(middle)).First();
+            _main.Survival.Actions!.StrikeObject(block.Id.ToString(), 10000, DamageKinds.Drill);
+            _meadow = block.Position.ToGodot();
+            ViewAt(_meadow, new Vector3(-3.5f, 2.6f, 3.5f), 0.6f);
         });
-        Shot("rocks_10_chunks", 60, () => ViewLoose(c => c.BreaksInto is not null, 2.4f));
-        Shot("rocks_11_rods", 90, () =>
+        Shot("rocks_10_boulders", 60, () => ViewLoose(c => c.Id!.EndsWith("_boulder", StringComparison.Ordinal), 3.6f));
+        Shot("rocks_11_chunks", 90, () =>
+        {
+            // Drill every boulder into chunks.
+            foreach (var boulder in LooseWith(d => d.Id!.EndsWith("_boulder", StringComparison.Ordinal)))
+                _main.Build.Tools!.DamagePart(boulder, boulder.Parts.First().Id, 10000);
+        });
+        Shot("rocks_12_chunks", 30, () => ViewLoose(c => c.Id!.EndsWith("_chunk", StringComparison.Ordinal), 3.0f));
+        Shot("rocks_13_rods", 90, () =>
         {
             // Break every chunk into rods, as the Sledgehammer would.
-            foreach (var chunk in _main.Creations.All.Where(c => c.Parts.Count == 1 && c.DefinitionOf(c.Parts.First().Id)?.BreaksInto is not null).ToList())
+            foreach (var chunk in LooseWith(d => d.Id!.EndsWith("_chunk", StringComparison.Ordinal)))
             {
                 var part = chunk.Parts.First().Id;
                 for (var i = 0; i < 20 && _main.Creations.Find(chunk.Id) is not null; i++)
                     _main.Build.Tools!.DamagePart(chunk, part, 25);
             }
         });
-        Shot("rocks_12_rods", 30, () => ViewLoose(c => c.Refine is not null, 3.2f));
-        Shot("rocks_13_rods_close", 30, () => ViewLoose(c => c.Refine is not null, 2.0f));
+        Shot("rocks_14_rods", 30, () => ViewLoose(c => c.Refine is not null, 3.6f));
+        Shot("rocks_15_rods_close", 30, () => ViewLoose(c => c.Refine is not null, 2.2f));
     }
+
+    // Loose single parts lying in the world whose definition matches.
+    private List<Core.Creations.Creation> LooseWith(Func<Core.Data.PartDefinition, bool> which) =>
+        [.. _main.Creations.All.Where(c => c.Parts.Count == 1 && c.DefinitionOf(c.Parts.First().Id) is { } d && which(d))];
 
     // A Soil Bag carried, lifted and tipped out, a mound spilling out of it, and mounds in each of their four looks.
     private void SoilShots()

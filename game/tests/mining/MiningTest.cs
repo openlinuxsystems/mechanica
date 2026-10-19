@@ -12,8 +12,8 @@ using Instance = Mechanica.Game.Tests.NetTestHarness.Instance;
 namespace Mechanica.Game.Tests;
 
 /// <summary>
-/// Boulder Mining spec, host plus client, on the vanilla world: a rock outcrop streams in as cubes drawn with their
-/// model; the client's Sledgehammer does nothing to a cube while a drill's damage breaks it into two loose Stone
+/// Boulder Mining spec, host plus client, on the vanilla world: a rock deposit streams in as blocks drawn with their
+/// models; the client's Sledgehammer does nothing to a medium block while a drill's damage breaks it into two loose Stone
 /// Chunks that both machines see; the client's Sledgehammer breaks the chunks into rods; and holding Use on a rod
 /// refines it into 20 blocks, the rod gone on both machines.
 /// </summary>
@@ -28,6 +28,7 @@ public partial class MiningTest : StagedTest
     private SurvivalHud _hud = null!;
     private bool _holding;
     private WorldObjectPlacement _cube = null!;
+    private Vector3 _middle;
     private int _rod;
     private string _block = "";
     private int _swings;
@@ -60,15 +61,29 @@ public partial class MiningTest : StagedTest
             if (_cube is null)
             {
                 var feet = player.GlobalPosition.ToNumerics();
-                // The nearest stone outcrop, and its ground cube farthest out from its middle, so the client stands clear of it.
-                var objects = _host.Main.Streamer.Generator.ObjectsIn(feet.X - 800, feet.Z - 800, feet.X + 800, feet.Z + 800)
-                    .Where(o => o.Definition.Id == "rock_outcrop").ToList();
-                var nearest = objects.OrderBy(o => System.Numerics.Vector3.Distance(o.Position, feet)).First().Id with { Piece = 0 };
-                var cubes = objects.Where(o => (o.Id with { Piece = 0 }) == nearest).ToList();
-                var middle = new Vector3(cubes.Average(o => o.Position.X), 0, cubes.Average(o => o.Position.Z));
-                var floor = cubes.Min(o => o.Position.Y);
-                _cube = cubes.Where(o => o.Position.Y - floor < 0.01f).OrderByDescending(o => Flat(o.Position.ToGodot() - middle).Length()).First();
-                var outward = (_cube.Position.ToGodot() - middle) with { Y = 0 };
+                // The nearest stone deposit with a medium block on the ground, and the outermost such block, so the client
+                // stands clear of the deposit.
+                var gen = _host.Main.Streamer.Generator;
+                var deposits = gen.ObjectsIn(feet.X - 800, feet.Z - 800, feet.X + 800, feet.Z + 800)
+                    .Where(o => gen.Data.ScatterRules[o.Id.Rule].Object.Id == "rock_outcrop")
+                    .GroupBy(o => o.Id with { Piece = 0 }).Select(g => g.ToList())
+                    .OrderBy(d => System.Numerics.Vector3.Distance(d[0].Position, feet));
+                foreach (var blocks in deposits)
+                {
+                    var middle = new Vector3(blocks.Average(o => o.Position.X), 0, blocks.Average(o => o.Position.Z));
+                    // On the ground: nothing of the deposit lower within reach under it.
+                    var grounded = blocks.Where(o => o.Definition.Id == "rock_outcrop"
+                        && !blocks.Any(b => b != o && b.Position.Y < o.Position.Y - 0.3f && Flat(b.Position.ToGodot() - o.Position.ToGodot()).Length() < 1.2f));
+                    if (grounded.OrderByDescending(o => Flat(o.Position.ToGodot() - middle).Length()).FirstOrDefault() is { } block)
+                    {
+                        _cube = block;
+                        _middle = middle;
+                        break;
+                    }
+                }
+                if (_cube is null)
+                    return false;
+                var outward = (_cube.Position.ToGodot() - _middle) with { Y = 0 };
                 outward = outward.LengthSquared() < 1e-4f ? Vector3.Right : outward.Normalized();
                 _host.Main.PlayerSync.HostTeleport(Peer, _cube.Position.ToGodot() + outward * (0.5f * _cube.Scale + 1.2f) + new Vector3(0, 1.5f, 0));
                 _hud = new SurvivalHud
@@ -88,7 +103,7 @@ public partial class MiningTest : StagedTest
             foreach (var who in new[] { _host, _client })
             {
                 var drawn = who.Main.Streamer.FindChildren("*", nameof(MultiMeshInstance3D), true, false).OfType<MultiMeshInstance3D>()
-                    .Any(m => m.Multimesh is { InstanceCount: > 0 } mm && mm.Mesh?.GetSurfaceCount() > 0 && m.Name == "rock_outcrop_mesh");
+                    .Any(m => m.Multimesh is { InstanceCount: > 0 } mm && mm.Mesh?.GetSurfaceCount() > 0 && m.Name.ToString().StartsWith("rock_outcrop_mesh", StringComparison.Ordinal));
                 Check(drawn, $"{who}: the cubes are a multimesh of the rock model");
             }
             return true;

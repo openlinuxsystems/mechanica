@@ -283,7 +283,11 @@ public class WorldGenTests
         foreach (var o in objects)
         {
             var rule = gen.Data.ScatterRules[o.Id.Rule];
-            Assert.Same(rule.Object, o.Definition);
+            // A rock deposit's blocks are its own object or the block objects its mounds are heaped from.
+            if (rule.Object.Outcrop is null)
+                Assert.Same(rule.Object, o.Definition);
+            else
+                Assert.Equal(PrimitiveShape.Box, o.Definition.Collider!.Shape);
             Assert.Equal(rule.Biome, gen.BiomeAt(o.Position.X, o.Position.Z).Index);
             Assert.Empty(gen.PoisAt(o.Position.X, o.Position.Z));
             Assert.True(gen.HeightAt(o.Position.X, o.Position.Z) > gen.SeaLevel);

@@ -360,36 +360,101 @@
   // Destructible objects (D11): placeholder primitives until meshes are authored, a model (mesh, with an optional far lod), or a
   // built-in flora model.
   // Objects with a health break under sledge hits and weapons (chunk 20) and leave their drops on the ground; damage_from
-  // limits what hurts them. Outcrops (Boulder Mining spec) stack 1 m cubes that only a spinning drill breaks, each into
-  // chunks (parts/stone_chunk.json, parts/metal_chunk.json) that break into Stone and Metal Rods.
+  // limits what hurts them. Rock outcrops are deposits: clusters of mounds heaped from chiselled blocks (small 0.6 m, medium
+  // 1 m and large 1.5 m) that only a spinning drill breaks. A small block breaks into one chunk and a medium one into two
+  // (parts/stone_chunk.json, parts/metal_chunk.json); a large one into three loose boulders (parts/stone_boulder.json,
+  // parts/metal_boulder.json) that break into two chunks each. Chunks break into Stone and Metal Rods.
+  // Models: tools/rocks/build_rocks.py.
   "objects": [
     {
       "id": "rock_outcrop",
-      "outcrop": { "cubes": [6, 20], "height": [1, 4] },
+      "outcrop": {
+        "deposits": [
+          { "weight": 4, "mounds": [1, 2], "spread": 3.0, "sizes": [{ "mound": "small", "weight": 2 }, { "mound": "medium", "weight": 1 }] },
+          { "weight": 3, "mounds": [3, 4], "spread": 5.0, "sizes": [{ "mound": "small", "weight": 2 }, { "mound": "medium", "weight": 2 }, { "mound": "large", "weight": 1 }] },
+          { "weight": 1.5, "mounds": [5, 7], "spread": 7.0, "sizes": [{ "mound": "small", "weight": 1 }, { "mound": "medium", "weight": 2 }, { "mound": "large", "weight": 2 }] }
+        ],
+        "mounds": {
+          "small": { "blocks": [4, 8], "kinds": [{ "object": "rock_outcrop_small", "weight": 3 }, { "object": "rock_outcrop", "weight": 3 }, { "object": "rock_outcrop_large", "weight": 1 }] },
+          "medium": { "blocks": [8, 14], "kinds": [{ "object": "rock_outcrop_small", "weight": 2 }, { "object": "rock_outcrop", "weight": 3 }, { "object": "rock_outcrop_large", "weight": 2 }] },
+          "large": { "blocks": [14, 24], "kinds": [{ "object": "rock_outcrop_small", "weight": 2 }, { "object": "rock_outcrop", "weight": 3 }, { "object": "rock_outcrop_large", "weight": 3 }] }
+        },
+        "rich_chance": 0.15,
+        "rich": { "rock_outcrop_small": "metal_outcrop_small", "rock_outcrop": "metal_outcrop", "rock_outcrop_large": "metal_outcrop_large" }
+      },
+      "footprint": 12.0,
+      "scale": [1.0, 1.1],
+      "max_slope": 0.3,
       "collider": { "shape": "box", "size": [1.0, 1.0, 1.0], "at": [0.0, 0.5, 0.0] },
       "pieces": [{ "shape": "box", "size": [1.0, 1.0, 1.0], "at": [0.0, 0.5, 0.0], "color": "#8f8a82" }],
-      "mesh": { "file": "meshes/world/rock_cube.glb", "at": [0.0, 0.5, 0.0] },
-      "footprint": 4.0,
-      "scale": [1.0, 1.2],
-      "sink": 0.15,
-      "max_slope": 0.3,
+      "mesh": { "file": "meshes/world/rock_medium_a.glb", "variants": ["meshes/world/rock_medium_b.glb"], "at": [0.0, 0.5, 0.0] },
+      "sink": 0.12,
       "health": 200.0,
       "damage_from": ["drill"],
       "breaks_into": { "count": 2, "parts": [{ "part": "stone_chunk" }] }
     },
     {
+      "id": "rock_outcrop_small",
+      "collider": { "shape": "box", "size": [0.65, 0.55, 0.6], "at": [0.0, 0.275, 0.0] },
+      "pieces": [{ "shape": "box", "size": [0.65, 0.55, 0.6], "at": [0.0, 0.275, 0.0], "color": "#8f8a82" }],
+      "mesh": { "file": "meshes/world/rock_small_a.glb", "variants": ["meshes/world/rock_small_b.glb"], "at": [0.0, 0.275, 0.0] },
+      "sink": 0.12,
+      "health": 110.0,
+      "damage_from": ["drill"],
+      "breaks_into": { "count": 1, "parts": [{ "part": "stone_chunk" }] }
+    },
+    {
+      "id": "rock_outcrop_large",
+      "collider": { "shape": "box", "size": [1.6, 1.25, 1.4], "at": [0.0, 0.625, 0.0] },
+      "pieces": [{ "shape": "box", "size": [1.6, 1.25, 1.4], "at": [0.0, 0.625, 0.0], "color": "#8f8a82" }],
+      "mesh": { "file": "meshes/world/rock_large_a.glb", "variants": ["meshes/world/rock_large_b.glb"], "at": [0.0, 0.625, 0.0] },
+      "sink": 0.12,
+      "health": 420.0,
+      "damage_from": ["drill"],
+      "breaks_into": { "count": 3, "parts": [{ "part": "stone_boulder" }] }
+    },
+    {
       "id": "metal_outcrop",
-      "outcrop": { "cubes": [5, 12], "height": [1, 3] },
+      "outcrop": {
+        "deposits": [
+          { "weight": 3, "mounds": [1, 1], "sizes": [{ "mound": "small", "weight": 2 }, { "mound": "medium", "weight": 1 }] },
+          { "weight": 1, "mounds": [2, 3], "spread": 4.0, "sizes": [{ "mound": "small", "weight": 1 }, { "mound": "medium", "weight": 1 }] }
+        ],
+        "mounds": {
+          "small": { "blocks": [4, 8], "kinds": [{ "object": "metal_outcrop_small", "weight": 3 }, { "object": "metal_outcrop", "weight": 3 }, { "object": "metal_outcrop_large", "weight": 1 }] },
+          "medium": { "blocks": [8, 14], "kinds": [{ "object": "metal_outcrop_small", "weight": 2 }, { "object": "metal_outcrop", "weight": 3 }, { "object": "metal_outcrop_large", "weight": 2 }] }
+        }
+      },
+      "footprint": 8.0,
+      "scale": [1.0, 1.1],
+      "max_slope": 0.3,
       "collider": { "shape": "box", "size": [1.0, 1.0, 1.0], "at": [0.0, 0.5, 0.0] },
       "pieces": [{ "shape": "box", "size": [1.0, 1.0, 1.0], "at": [0.0, 0.5, 0.0], "color": "#5f6670" }],
-      "mesh": { "file": "meshes/world/rock_cube_metal.glb", "at": [0.0, 0.5, 0.0] },
-      "footprint": 3.5,
-      "scale": [1.0, 1.15],
-      "sink": 0.15,
-      "max_slope": 0.3,
+      "mesh": { "file": "meshes/world/rock_metal_medium_a.glb", "variants": ["meshes/world/rock_metal_medium_b.glb"], "at": [0.0, 0.5, 0.0] },
+      "sink": 0.12,
       "health": 260.0,
       "damage_from": ["drill"],
       "breaks_into": { "count": 2, "parts": [{ "part": "metal_chunk" }] }
+    },
+    {
+      "id": "metal_outcrop_small",
+      "collider": { "shape": "box", "size": [0.65, 0.55, 0.6], "at": [0.0, 0.275, 0.0] },
+      "pieces": [{ "shape": "box", "size": [0.65, 0.55, 0.6], "at": [0.0, 0.275, 0.0], "color": "#5f6670" }],
+      "mesh": { "file": "meshes/world/rock_metal_small_a.glb", "variants": ["meshes/world/rock_metal_small_b.glb"], "at": [0.0, 0.275, 0.0] },
+      "sink": 0.12,
+      "health": 140.0,
+      "damage_from": ["drill"],
+      "breaks_into": { "count": 1, "parts": [{ "part": "metal_chunk" }] }
+    },
+    {
+      "id": "metal_outcrop_large",
+      "collider": { "shape": "box", "size": [1.6, 1.25, 1.4], "at": [0.0, 0.625, 0.0] },
+      "pieces": [{ "shape": "box", "size": [1.6, 1.25, 1.4], "at": [0.0, 0.625, 0.0], "color": "#5f6670" }],
+      "mesh": { "file": "meshes/world/rock_metal_large_a.glb", "variants": ["meshes/world/rock_metal_large_b.glb"], "at": [0.0, 0.625, 0.0] },
+      "sink": 0.12,
+      "health": 520.0,
+      "damage_from": ["drill"],
+      "breaks_into": { "count": 3, "parts": [{ "part": "metal_boulder" }] }
     },
     // Trees (Tree Harvesting spec): Birch is small, Leafy and Spruce medium, Pine large. A felled tree tips over as its
     // log segments (parts/*_log.json), which break into Wood Rods (parts/wood_rod.json) that refine into Scrap Wood Blocks.

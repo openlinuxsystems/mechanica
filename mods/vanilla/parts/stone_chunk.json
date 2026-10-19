@@ -1,7 +1,7 @@
 {
   "id": "stone_chunk",
   "name": "Stone Chunk",
-  "description": "A broken piece of rock outcrop. Break it with a drill or the Sledgehammer for its Stone and Metal Rods.",
+  "description": "A broken piece of a rock deposit. Break it with a drill or the Sledgehammer for its Stone and Metal Rods.",
   "category": "resource",
   "mass": 30,
   "durability": 10,

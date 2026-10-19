@@ -10,11 +10,12 @@ using static Mechanica.Core.Tests.Survival.SurvivalFixture;
 namespace Mechanica.Core.Tests.Survival;
 
 /// <summary>
-/// Boulder Mining spec: rock outcrop cubes that only a spinning drill breaks, into chunks (loose parts) that a drill or
-/// the Sledgehammer breaks into Stone and Metal Rods, which refine by hand into blocks.
+/// Boulder Mining spec: rock deposit blocks that only a spinning drill breaks, into boulders that only a drill breaks
+/// and chunks (loose parts) that a drill or the Sledgehammer breaks into Stone and Metal Rods, which refine by hand into blocks.
 /// </summary>
 public class MiningTests
 {
+    private const string Boulder = "test:stone_boulder";
     private const string Chunk = "test:stone_chunk";
     private const string StoneRod = "test:stone_rod";
     private const string MetalRod = "test:metal_rod";
@@ -42,6 +43,12 @@ public class MiningTests
                 Durability = 10,
                 SledgeDamage = 25,
                 BreaksInto = new BreakDefinition { Count = 2, Parts = [new BreakPiece { Part = StoneRod, Weight = 7 }, new BreakPiece { Part = MetalRod, Weight = 3 }] },
+            })
+            .Add(Boulder, Loose("stone_boulder", 4) with
+            {
+                Durability = 20,
+                SledgeDamage = 0,
+                BreaksInto = new BreakDefinition { Count = 2, Parts = [new BreakPiece { Part = Chunk }] },
             })
             .Add(StoneRod, Loose("stone_rod", 1) with { Size = new GridSize(1, 1, 4), Refine = [new RecipeItem { Item = StoneBlock, Count = 20 }] })
             .Add(MetalRod, Loose("metal_rod", 1) with { Size = new GridSize(1, 1, 4), Refine = [new RecipeItem { Item = Scrap, Count = 20 }] });
@@ -127,6 +134,27 @@ public class MiningTests
             _f.Survival.Hit(Me, at, 25, Vector3.Zero, DamageKinds.Drill);
         Assert.False(_f.World.Creations.ContainsKey(other));
         Assert.Equal(4, LooseOf(StoneRod).Count + LooseOf(MetalRod).Count);
+    }
+
+    [Fact]
+    public void ALargeBlocksBoulderShrugsOffTheSledgeAndADrillBreaksItIntoChunks()
+    {
+        var boulder = _f.Add(Boulder, new Vector3(0, 0, -1.5f));
+        for (var i = 0; i < 5; i++)
+        {
+            _f.World.Now += 1;
+            Assert.False(_f.Ok<SledgeResult>(Me, ToolActions.Sledge, new { creation = boulder, part = 1 }).Broken);
+        }
+        Assert.True(_f.World.Creations.ContainsKey(boulder));
+
+        // 200 health, like a medium block: eight drill bites of 25.
+        var at = new RayHit(new Vector3(0, 0.5f, -1.5f), Creation: boulder, Part: 1);
+        for (var i = 0; i < 7; i++)
+            _f.Survival.Hit(Me, at, 25, Vector3.Zero, DamageKinds.Drill);
+        Assert.True(_f.World.Creations.ContainsKey(boulder));
+        _f.Survival.Hit(Me, at, 25, Vector3.Zero, DamageKinds.Drill);
+        Assert.False(_f.World.Creations.ContainsKey(boulder));
+        Assert.Equal(2, LooseOf(Chunk).Count);
     }
 
     [Fact]
