@@ -216,6 +216,7 @@ rather than in Lua.
 |-----|------|---------|
 | `inventory.slots` | integer 1–256 | Number of item slots. Required when `inventory` is present. |
 | `inventory.accepts` | list of item ids | Only these items go in (`["gasoline"]` for a gas container). Omitted means any item. |
+| `inventory.carry_contents` | boolean | `true` lets a player pick the part up while it holds items (a gas container full of fuel): they go into the player's inventory with it, and what doesn't fit drops where it stood. A Lift may also carry a Creation whose only stored items are in such parts. Default `false`. |
 | `crafting.speed` | number > 0 | Multiplier on recipe times: 2 crafts twice as fast. Default 1. |
 | `crafting.queue_size` | integer 1–64 | Most orders waiting at once. Default 1. |
 | `crafting.link_range` | number 0–8 (m) | Containers on the same Creation within this distance of the station (surface to surface) are its linked storage. Omitted or 0 links none. |
@@ -224,8 +225,8 @@ Each slot holds one stack of one item, up to that item's `stack_size`. A station
 lists its part id in `stations`: when an order is queued its inputs come from the station's linked
 storage first, then the crafting player's inventory, and finished crafts land in linked storage first,
 then the station's own inventory, where any player in reach can take them. A linked container can be
-opened from the station's screen while the station is in reach. A container or station that holds items, or has orders queued, can't be picked up with the
-Hammer. Its contents are saved with the Creation; if it is broken (Sledgehammer, weapons, a crash) they
+opened from the station's screen while the station is in reach. A container or station that holds items, or has orders queued, can't be picked up
+(right click), unless it has `carry_contents`. Its contents are saved with the Creation; if it is broken (Sledgehammer, weapons, a crash) they
 fall out as a pile of items on the ground.
 
 ```json
@@ -487,7 +488,7 @@ host's values.
 | `bar` | `{readout, offset, axis, length}` | A thin cyan bar along the part that fills from 0 to 1 with the value, shown while the Connect Tool is out (a piston's extension). `axis` defaults to `[0, 1, 0]`, `length` to 0.25 m. |
 | `glow` | `{readout, offset, direction, length}` | A faint blue particle glow whose strength follows the value from 0 to 1 (a thruster's exhaust). `direction` defaults to `[0, 1, 0]`, `length` to 0.5 m. |
 | `highlight` | `{readout, axis, offset, radius}` | A ring of cyan dashes turning about `axis` while the value is not 0, its sign giving the way round (a bearing an engine drives). `radius` defaults to 0.12 m. |
-| `press` | `{readout, axis, depth}` | Pushes the model in by `depth` m (default 0.02, at most 0.1) along `axis` (default `[0, -1, 0]`) while the value is not 0 (a switch). |
+| `press` | `{readout, axis, depth}` | Pushes the model in by `depth` m (default 0.02, at most 0.1) along `axis` (default `[0, -1, 0]`) while the value is not 0 (a button). |
 | `clips` | `{readout, scrub}` | Plays the model's own glTF animations (the model must be a `mesh`). The `readout` is a text value naming the clip to play (text after a `#` is ignored, so `stop#3` restarts `stop`); clips whose names end in `_loop` loop. `scrub` (at most 4) is a list of `{readout, clip}`: that clip is held at the value (0 to 1) of its length, for a lever or a needle. |
 | `effects` | list of `{readout, kind, offset, direction, color}` | At most 8 particle effects whose strength follows the value from 0 to 1. `kind` is `smoke`, `sparks` or `drops`; `offset` lies inside the footprint, `direction` (default up) is where they go, `color` is optional. |
 

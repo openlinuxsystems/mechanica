@@ -34,7 +34,9 @@ public partial class VanillaLogicTest : StagedTest
         "scrap_wheel", "wheel", "big_wheel", "logic_gate", "timer", "sensor", "switch", "button", "controller",
     ];
 
-    private static readonly string[] Authored = ["electric_engine", "gas_engine", "scrap_drivers_seat", "scrap_seat", "scrap_gas_engine"];
+    // Parts whose model is a file made elsewhere (tools/bearing_engine, tools/gas_engine, tools/electric_engine,
+    // tools/scrap_seat, tools/wheels, tools/switch).
+    private static readonly string[] Authored = ["electric_engine", "gas_engine", "scrap_drivers_seat", "scrap_seat", "scrap_gas_engine", "scrap_wheel", "wheel", "big_wheel", "switch"];
 
     private static readonly Vector3 CarAt = new(4, 1.0f, 8);
 
@@ -85,8 +87,8 @@ public partial class VanillaLogicTest : StagedTest
                 .Select(f => Path.GetRelativePath(_scratchMod, f).Replace('\\', '/'))
                 .Where(IsBatchOutput)
                 .Order(StringComparer.Ordinal).ToList();
-            // Parts whose model is a file made elsewhere (tools/bearing_engine, tools/gas_engine, tools/scrap_seat) get no
-            // generated mesh.
+            // Parts whose model is a file made elsewhere (tools/bearing_engine, tools/gas_engine, tools/scrap_seat,
+            // tools/wheels) get no generated mesh.
             Check(made.Count == 4 * Outputs.Length - Authored.Length, $"it writes a part, an editor source, a mesh (unless authored) and a recipe for each ({made.Count} files)");
             var differing = made.Where(f => !File.Exists(Path.Combine(VanillaDir, f))
                 || !File.ReadAllBytes(Path.Combine(VanillaDir, f)).AsSpan().SequenceEqual(File.ReadAllBytes(Path.Combine(_scratchMod, f)))).ToList();
@@ -411,6 +413,6 @@ public partial class VanillaLogicTest : StagedTest
     }
 
     private static bool IsBatchOutput(string relative) =>
-        Outputs.Any(id => relative == $"parts/{id}.json" || relative == $"meshes/{id}.glb" || relative == $"editor/parts/{id}.json"
-            || relative == $"recipes/{id}.json");
+        Outputs.Any(id => relative == $"parts/{id}.json" || (relative == $"meshes/{id}.glb" && !Authored.Contains(id))
+            || relative == $"editor/parts/{id}.json" || relative == $"recipes/{id}.json");
 }

@@ -301,6 +301,13 @@ public sealed record InventoryDefinition
     /// </summary>
     public List<string>? Accepts { get; init; }
 
+    /// <summary>
+    /// True when a player may pick the part up while it holds items (a Gas Container full of fuel): what it holds goes
+    /// into their inventory with it, and what does not fit drops where it stood. A Lift may carry a Creation whose only
+    /// stored items are in such parts. Omitted means false: the part has to be emptied first.
+    /// </summary>
+    public bool? CarryContents { get; init; }
+
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
