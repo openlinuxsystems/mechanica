@@ -130,12 +130,14 @@ public class SurvivalDataTests
     }
 
     [Theory]
-    // Tree Harvesting spec §4.3: log segments and Wood Rods per tree, each rod 20 Scrap Wood Blocks.
-    [InlineData("birch_tree", "birch_log", 2, 3, 3, 6)]
-    [InlineData("leafy_tree", "wood_log", 4, 6, 8, 12)]
-    [InlineData("spruce_tree", "wood_log", 4, 6, 8, 12)]
-    [InlineData("pine_tree", "pine_log", 8, 12, 16, 24)]
-    public void VanillaTreesFellIntoLogsThatBreakIntoWoodRods(string tree, string log, int fewestLogs, int mostLogs, int fewestRods, int mostRods)
+    // Tree Harvesting spec §4.3: log segments and rods per tree, each rod 20 Scrap Wood Blocks; the Saw Blade spec's big
+    // tree (the Pine) gives Pine Rods, each 20 Wood Blocks.
+    [InlineData("birch_tree", "birch_log", 2, 3, 3, 6, "wood_rod", "scrap_wood_block")]
+    [InlineData("leafy_tree", "wood_log", 4, 6, 8, 12, "wood_rod", "scrap_wood_block")]
+    [InlineData("spruce_tree", "wood_log", 4, 6, 8, 12, "wood_rod", "scrap_wood_block")]
+    [InlineData("pine_tree", "pine_log", 8, 12, 16, 24, "pine_rod", "wood_block")]
+    public void VanillaTreesFellIntoLogsThatBreakIntoRods(string tree, string log, int fewestLogs, int mostLogs, int fewestRods, int mostRods,
+        string rodId, string block)
     {
         var mods = ModLoader.LoadAll(Path.Combine(TestMods.RepoRoot, "mods"));
         var data = WorldGenData.Load(mods);
@@ -149,11 +151,12 @@ public class SurvivalDataTests
         Assert.Equal(mostLogs, breaks.CountFor(0.999f));
         var logPart = mods.FindDefinition(log)!;
         Assert.True(logPart.Loose);
-        Assert.Equal("wood_rod", Assert.Single(logPart.BreaksInto!.Parts!).Part);
+        Assert.Equal(rodId, Assert.Single(logPart.BreaksInto!.Parts!).Part);
         Assert.InRange(fewestLogs * logPart.BreaksInto.CountFor(0f), fewestRods, mostRods);
         Assert.InRange(mostLogs * logPart.BreaksInto.CountFor(0.999f), fewestRods, mostRods);
-        var rod = mods.FindDefinition("wood_rod")!;
-        Assert.Equal(("vanilla:scrap_wood_block", 20), (Identifiers.Qualify(Assert.Single(rod.Refine!).Item!), rod.Refine![0].Count));
+        var rod = mods.FindDefinition(rodId)!;
+        Assert.True(rod.Loose);
+        Assert.Equal(($"vanilla:{block}", 20), (Identifiers.Qualify(Assert.Single(rod.Refine!).Item!), rod.Refine![0].Count));
         // Its own knock and fall, and a model with a far version, all shipped.
         foreach (var sound in o.Sounds!.Values)
             Assert.True(File.Exists(Path.Combine(TestMods.RepoRoot, "mods", "vanilla", "sounds", "trees", sound + ".ogg")), sound);

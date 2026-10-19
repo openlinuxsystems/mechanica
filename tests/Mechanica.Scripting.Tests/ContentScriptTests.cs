@@ -166,46 +166,62 @@ public sealed class ContentScriptTests : IDisposable
     }
 
     [Fact]
-    public void APoweredSawBladeCutsWhatItsRimTouches()
+    public void ASawBladeCutsWhatItsRimTouchesOnlyWhileItSpinsAtCuttingSpeed()
     {
         var target = Target();
         var creation = Board();
-        var saw = Place(creation, "vanilla:saw_blade", new GridCell(-1, 1, -1));
-        var power = Place(creation, "vanilla:switch", new GridCell(3, 1, 3));
-        Link(creation, power, saw);
+        var saw = Place(creation, "vanilla:saw_blade", new GridCell(-2, 1, -2));
+        var centre = PartKinematics.Of(creation, saw).Position;
         var hits = 0;
         _f.World.Ray = (from, direction) => direction.X > 0.99f ? Hits(target, from, ref hits) : null;
         Steps(30);
+        // It has no input: standing still it does nothing.
         Assert.Empty(_f.World.Casts);
         Assert.Empty(_sound.Loops);
 
-        Activate(creation, power);
-        // It spins up over properties.spin_up (0.6 s) and cuts nothing below properties.min_spin.
-        Steps(12);
+        // Turning slower than properties.min_spin (9 rad/s) it whirs and glows part way, but cuts nothing.
+        Spin(creation, saw, 5f);
+        Steps(30);
         Assert.Equal("saw_spin", Assert.Single(_sound.Loops.Values).Sound);
-        Assert.InRange(_runtime.Animations.Speed(creation.Id, saw), 1f, 21f);
+        Assert.Equal(0.5f, _runtime.Readouts.Number(creation.Id, saw, "spin")!.Value, 3);
         Assert.Empty(_f.World.Casts);
-        Steps(20);
-        Assert.InRange(_runtime.Animations.Speed(creation.Id, saw), 22f, 30f);
-        _f.World.Casts.Clear();
+
+        // At cutting speed (either way round), every 0.25 s it casts 16 rim rays and 8 rays out of each face, all from
+        // inside the disc, and bites the target once per turn however many rays find it.
+        Spin(creation, saw, -12f);
         Steps(31);
-        // Every 0.25 s it casts its eight rim rays, each starting outside the blade.
-        Assert.InRange(_f.World.Casts.Count, 16, 24);
-        Assert.All(_f.World.Casts, c => Assert.True(Vector3.Distance(c.From, new Vector3(0, 0.25f, 0)) > 0.37f, $"{c.From} is past the rim"));
-        Assert.Equal(0.12f, _f.World.LastRange, 3);
-        Assert.InRange(hits, 2, 5);
+        Assert.Equal(1f, _runtime.Readouts.Number(creation.Id, saw, "spin")!.Value, 3);
+        Assert.InRange(_f.World.Casts.Count, 64, 96);
+        Assert.Equal(0, _f.World.Casts.Count % 32);
+        Assert.All(_f.World.Casts, c => Assert.True(Vector3.Distance(c.From, centre) < 0.6f, $"{c.From} starts outside the disc"));
+        Assert.InRange(hits, 2, 3);
         Assert.Equal(15f * hits, target.PartDamage(target.Parts.First().Id), 3);
         Assert.Contains(_sound.Played, p => p.Sound == "saw_cut");
         Assert.Equal(1f, Assert.Single(_sound.Loops.Values).Parameters["load"]);
-        Assert.Equal(30f, _runtime.Animations.Speed(creation.Id, saw));
 
-        // Switched off, it runs down as fast as it spun up.
-        Activate(creation, power);
+        // Spun down, its whir stops.
+        Spin(creation, saw, 0f);
         Steps(2);
-        Assert.Single(_sound.Loops);
-        Steps(40);
         Assert.Empty(_sound.Loops);
-        Assert.Equal(0f, _runtime.Animations.Speed(creation.Id, saw));
+        NoErrors();
+    }
+
+    [Fact]
+    public void ASawBladeCutsALogFasterThanAPartAndNeverItsOwnCreation()
+    {
+        var log = Target("vanilla:pine_log");
+        var creation = Board();
+        var saw = Place(creation, "vanilla:saw_blade", new GridCell(-2, 1, -2));
+        var hits = 0;
+        // One rim ray finds the log, another a block of the saw's own creation.
+        _f.World.Ray = (from, direction) => direction.X > 0.99f ? Hits(log, from, ref hits)
+            : direction.Z > 0.99f ? new RayHit(from, Creation: creation.Id, Part: creation.Parts.First().Id) : null;
+        Spin(creation, saw, 12f);
+        Steps(10);
+        Assert.Equal(1, hits);
+        // properties.damage_to: a felled log takes 30 a bite, twice what a standing tree or another part takes.
+        Assert.Equal(30f, log.PartDamage(log.Parts.First().Id), 3);
+        Assert.Equal(0f, creation.PartDamage(creation.Parts.First().Id), 3);
         NoErrors();
     }
 
@@ -362,11 +378,11 @@ public sealed class ContentScriptTests : IDisposable
         return creation;
     }
 
-    // A lone metal block far away, for things to hit.
-    private Creation Target()
+    // A lone metal block (or another part) far away, for things to hit.
+    private Creation Target(string part = "vanilla:metal_block")
     {
         var creation = new Creation(_f.World.NextCreationId(), Vanilla);
-        Place(creation, "vanilla:metal_block", GridCell.Zero);
+        Place(creation, part, GridCell.Zero);
         creation.SetAllBodyPoses(new Pose(new Vector3(30, 0, 0), Quaternion.Identity));
         _f.World.Added(creation);
         return creation;
@@ -377,6 +393,10 @@ public sealed class ContentScriptTests : IDisposable
         hits++;
         return new RayHit(from, Creation: target.Id, Part: target.Parts.First().Id);
     }
+
+    // Spins the saw's Body about the world's up (the blade's axis as placed) at rad/s, as a bearing would.
+    private static void Spin(Creation creation, int part, float speed) =>
+        creation.SetBodyVelocity(creation.BodyIndexOf(part), new BodyVelocity(Vector3.Zero, new Vector3(0, speed, 0)));
 
     private static int Place(Creation creation, string part, GridCell cell, GridRotation rotation = default)
     {

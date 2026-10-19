@@ -1,6 +1,6 @@
--- Saw blades and drills (chunk 23). While its input is on, the part spins and, every properties.interval
--- seconds, cuts whatever is within properties.reach metres of its cutting edge: parts, bots, players
--- and world objects such as trees and rocks, for properties.damage each. Its edge is a list of rays in
+-- Drills (chunk 23; the Saw Blade spins on a bearing instead: scripts/saw_blade.lua). While its input is on,
+-- the part spins and, every properties.interval seconds, cuts whatever is within properties.reach metres of
+-- its cutting edge: parts, bots, players and world objects such as trees and rocks, for properties.damage each. Its edge is a list of rays in
 -- the part's frame, properties.edge = { {from = {x, y, z}, direction = {x, y, z}}, ... }, each starting
 -- just outside the part so it never cuts its own creation. Its model spins at properties.spin rad/s.
 -- properties.kind ("drill" or "saw") is the damage kind it deals: only a spinning drill breaks rock outcrops.
