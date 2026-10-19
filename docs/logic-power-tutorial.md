@@ -35,7 +35,7 @@ ends with what a modder needs to make new logic parts.
 | F7 | Turns the **Logic Visualizer** on or off: links show without the Connect Tool. Each link is a blue line with a cyan core (bright while the source is on) and chevrons pointing from the source to the part it feeds. With both off, a link flashes briefly when its signal changes. |
 | F8 | Opens the **Creation Inspector** for the creation under the crosshair: its mass, bodies, joints, links, and for each part its output, input, settings, who sits in it and whether its script runs or stopped on an error. |
 | F9 | Turns the **force overlay** on or off: an arrow for every push a part script makes, such as a thruster's thrust or a wing's lift (see the [Aero and Propulsion Tutorial](aero-tutorial.md)). |
-| E | Uses what you look at: sit in a seat, flip a switch, press a button. While seated, E stands you up. |
+| E | Uses what you look at: sit in a seat, flip a switch, hold a button down (it is on only while you hold E). While seated, E stands you up. |
 
 Every change goes to the host, which checks it (you must be within reach of both parts, and both ends
 must have a free link) and sends the result to everyone. The visualizer and the inspector read the
@@ -98,7 +98,7 @@ into your inventory with it.
 
 Put a **timer** between them (switch → timer → piston) and set its delay with E: the piston moves that
 many seconds after the switch. Set its Trigger to **repeat** and the piston pumps in and out every delay
-while the switch is on. Use a **button** instead of the switch for a short pulse, or a **logic
+while the switch is on. Use a **button** instead of the switch and the piston stays out only while you hold E on it, or a **logic
 gate** to need two switches at once.
 
 ## The vanilla logic parts
@@ -114,7 +114,7 @@ Settings are changed with E on the part; properties are fixed in the part's data
 | Timer | Its input, `delay` seconds later; or on and off every `delay` while its input is on | `delay` (s), `mode` (once, repeat) | |
 | Sensor | 1 while something it detects is within `range` of its face | `range` (1 to 20 m), `players`, `bots`, `blocks`, `creations` | `interval` (steps between checks), `cone` (°) |
 | Switch | 1 while on; E toggles it. Its rocker tips over and its light shows red while off, teal while on | | |
-| Button | 1 for `pulse` seconds after E | | `pulse` (s) |
+| Button | 1 while someone holds it down: E, or its key while seated | | |
 | Controller | 1 while it runs | `frames` (up to 10), `frame_time` (s), `loop` | `speed` (rad/s), `torque` (N·m), `force` (N) |
 
 The **controller** steps the bearings and pistons it is linked to through its frames while its input is
@@ -131,7 +131,7 @@ creations. Anything else in the way still blocks its view.
 
 Link a seat to switches and buttons and they go on your hotbar while you sit there, so you can work a
 crane or open a door from the driver's seat. Number keys use them, and Left and Right click use the first
-two. A controller linked from a seat starts on W and stops on S.
+two. A button stays pressed while you hold its key and lets go when you do. A controller linked from a seat starts on W and stops on S.
 
 A logic gate counts each input that is not 0 as on. With no inputs everything is off, so nand, nor and
 xnor are on. xor is on when an odd number of inputs are on.
@@ -161,6 +161,7 @@ The script reads its input and sets its output (see the [Lua API Reference](lua-
 | `part.links()` | The parts this part feeds (an engine's wheel bearings). |
 | `part.setting(id)` | The value of one of the part's settings. |
 | `on_activate(peer)` | A player pressed E on the part (give it `logic.use` so E offers it). |
+| `on_release(peer)` | A player let go of a part they held (give it `logic.hold` too, like the button). |
 | `part.occupant()`, `part.occupant_input()` | For a seat: who sits in it and what they press. |
 | `creation.take(item, count)` | Burns fuel from the creation's containers. |
 | `world.creative()` | True in Creative, where engines need no fuel. |

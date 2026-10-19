@@ -1,8 +1,7 @@
 {
   "id": "side_window",
   "stations": [
-    "fabricator",
-    "mini_fabricator"
+    "fabricator"
   ],
   "inputs": [
     {

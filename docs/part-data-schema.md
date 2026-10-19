@@ -220,6 +220,7 @@ rather than in Lua.
 | `crafting.speed` | number > 0 | Multiplier on recipe times: 2 crafts twice as fast. Default 1. |
 | `crafting.queue_size` | integer 1–64 | Most orders waiting at once. Default 1. |
 | `crafting.link_range` | number 0–8 (m) | Containers on the same Creation within this distance of the station (surface to surface) are its linked storage. Omitted or 0 links none. |
+| `crafting.clips` | `{start, work, complete}` | Model clips that follow the station's work. The host writes them to the text readout `station`, so the part needs `display.clips` with `"readout": "station"`: `start` then `work` (name it `…_loop`) when it begins working, `complete` when its queue is done or its output is full. Each is optional. |
 
 Each slot holds one stack of one item, up to that item's `stack_size`. A station runs every recipe that
 lists its part id in `stations`: when an order is queued its inputs come from the station's linked
@@ -323,6 +324,7 @@ script's job (D2). See the [Logic and Power Tutorial](logic-power-tutorial.md).
 | `logic.inputs` | integer 0 to 64 | Most links that may end at the part. Default 0: it takes none. |
 | `logic.outputs` | integer 0 to 64 | Most links that may start at the part. Default 0: it sends none. |
 | `logic.use` | string | What Use (E) says on the part (`"toggle"`, `"press"`); E calls the script's `on_activate`. Needs a `script`. Omitted means players cannot use it by hand. |
+| `logic.hold` | bool | `true` makes a use a hold (the button): the part stays used while the player holds E on it, or its key on their seat's bar, and the script's `on_release(peer)` runs when they let go (`ReleasePart`), stand up from that seat, die or leave. Needs `logic.use`. Omitted means a use is one press (a switch). |
 | `logic.kind` | `logic`, `power`, `bearing` or `structural` | The part's connection node with the Connect Tool (UI spec §12), which also names the links that start at it: blue for `logic` (switches, gates, seats, lights), cyan for `power` (engines, thrusters, rotors), white with a blue ring for `bearing` (bearings, pistons), light gray for `structural`. Default `logic`. |
 | `logic.accepts` | list of kinds | The kinds of part whose links may end here, such as `["power"]` for a wheel bearing only engines turn. The Connect Tool grays out other targets and the host refuses them. Default: any kind but `structural`. |
 | `logic.reverse` | setting id | One of the part's `toggle` settings that reverses which way it turns. Right click on its node with the Connect Tool flips it, a curved arrow by the node shows it, and scripts that drive the part read it as `joint.reversed`. Vanilla bearings use `"reverse"`. |
@@ -421,7 +423,7 @@ setting (`link`, `w_s`, `a_d` or `space_shift`) and the `invert` toggle.
 | `scripts/radio.lua` | (the `station` setting) | Plays the `station_N` sound loop; E turns it on and off. |
 | `scripts/beacon.lua` | `ping`, `flash` (s) | Seconds between pings, and how long each ping lights it fully. |
 | `scripts/horn.lua` | `honk` (s) | How long E sounds it; a linked input sounds it while above 0. |
-| `scripts/cutter.lua` | `edge`, `reach` (m), `interval` (s), `damage`, `spin` (rad/s) | Drill: the rays it cuts along (part frame), how far, how often, how hard, and its model's spin while its input is on. |
+| `scripts/drill.lua` | `min_spin` (rad/s), `interval` (s), `damage`, `damage_to` ({type = damage}), `tip` ({from, reach}), `flank` ({at, from, reach, rays, lean}), `shake` (N) | Drill: no input; while a bearing spins it at `min_spin` or more it bites what its tip and the flanks of its bit touch (the only tool that breaks rock deposits), and each bite shakes its Body sideways with `shake` N (more the faster it turns). Its `spin` readout (0 to 1 of `min_spin`) drives the base ring glow. |
 | `scripts/saw_blade.lua` | `min_spin` (rad/s), `interval` (s), `damage`, `damage_to` ({type = damage}), `rim` and `faces` ({from, reach, rays}) | Saw Blade: no input; while a bearing spins it at `min_spin` or more it bites what its rim and faces touch, `damage_to` per part type or world object kind (logs cut faster than standing trees). Its `spin` readout (0 to 1 of `min_spin`) drives the hub glow. |
 | `scripts/water_cannon.lua` | `muzzle`, `range` (m), `water` (s), `impulse` (N·s), `interval` (s) | Fires on a rising input or E: waters soil it hits, else pushes what it hits. |
 | `scripts/mounted_gun.lua` | `ammo`, `muzzle`, `range` (m), `damage`, `impulse` (N·s), `interval` (s) | Hitscan shots taking `ammo` from the creation's containers (none in Creative). |
@@ -489,7 +491,7 @@ host's values.
 | `glow` | `{readout, offset, direction, length}` | A faint blue particle glow whose strength follows the value from 0 to 1 (a thruster's exhaust). `direction` defaults to `[0, 1, 0]`, `length` to 0.5 m. |
 | `highlight` | `{readout, axis, offset, radius}` | A ring of cyan dashes turning about `axis` while the value is not 0, its sign giving the way round (a bearing an engine drives). `radius` defaults to 0.12 m. |
 | `press` | `{readout, axis, depth}` | Pushes the model in by `depth` m (default 0.02, at most 0.1) along `axis` (default `[0, -1, 0]`) while the value is not 0 (a button). |
-| `clips` | `{readout, scrub}` | Plays the model's own glTF animations (the model must be a `mesh`). The `readout` is a text value naming the clip to play (text after a `#` is ignored, so `stop#3` restarts `stop`); clips whose names end in `_loop` loop. `scrub` (at most 4) is a list of `{readout, clip}`: that clip is held at the value (0 to 1) of its length, for a lever or a needle. |
+| `clips` | `{readout, scrub, idle}` | Plays the model's own glTF animations (the model must be a `mesh`). The `readout` is a text value naming the clip to play (text after a `#` is ignored, so `stop#3` restarts `stop`; `start>run_loop` plays `start` and then `run_loop`); clips whose names end in `_loop` loop. `idle` names a clip played while the readout has no value and after a clip that does not loop has finished (a station's idle glow). `scrub` (at most 4) is a list of `{readout, clip}`: that clip is held at the value (0 to 1) of its length, for a lever or a needle. |
 | `effects` | list of `{readout, kind, offset, direction, color}` | At most 8 particle effects whose strength follows the value from 0 to 1. `kind` is `smoke`, `sparks` or `drops`; `offset` lies inside the footprint, `direction` (default up) is where they go, `color` is optional. |
 
 Offsets are from the part centre in the part's frame, within its footprint; axes and directions are not zero.
@@ -512,7 +514,7 @@ writes them.
 ```json
 {
   "id": "chest",
-  "stations": ["fabricator", "mini_fabricator"],
+  "stations": ["fabricator", "portable_fabricator"],
   "inputs": [
     { "item": "scrap_wood", "count": 4 },
     { "item": "scrap_metal", "count": 2 }

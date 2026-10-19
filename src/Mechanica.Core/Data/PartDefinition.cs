@@ -328,6 +328,32 @@ public sealed record CraftingDefinition
     /// </summary>
     public float? LinkRange { get; init; }
 
+    /// <summary>
+    /// The model's clips that follow the station's work, written to its <see cref="ClipReadout"/> readout (which its
+    /// <c>display.clips</c> plays): <c>start</c> then <c>work</c> when it begins working, <c>complete</c> when it stops.
+    /// </summary>
+    public StationClipsDefinition? Clips { get; init; }
+
+    /// <summary>The text readout a station with <see cref="Clips"/> names its clips in.</summary>
+    public const string ClipReadout = "station";
+
+    /// <summary>Keys this build does not know.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>Clips a crafting station plays as it works (a Portable Fabricator's arm). Each is optional.</summary>
+public sealed record StationClipsDefinition
+{
+    /// <summary>Played once when the station begins working, before <see cref="Work"/>.</summary>
+    public string? Start { get; init; }
+
+    /// <summary>Played while it works (name it <c>…_loop</c> so it repeats).</summary>
+    public string? Work { get; init; }
+
+    /// <summary>Played once when it stops: the queue is done or its output is full.</summary>
+    public string? Complete { get; init; }
+
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
@@ -428,6 +454,13 @@ public sealed record LogicDefinition
     /// <c>on_activate</c>. Omitted means players cannot use the part by hand.
     /// </summary>
     public string? Use { get; init; }
+
+    /// <summary>
+    /// True makes <see cref="Use"/> a hold (a button): the part stays used while the player holds the interact key, or
+    /// the part's key on their seat's bar, and its script's <c>on_release(peer)</c> runs when they let go, stand up or
+    /// leave. Needs <see cref="Use"/>. Omitted means a use is one press (a switch).
+    /// </summary>
+    public bool? Hold { get; init; }
 
     /// <summary>
     /// What kind of connection node the part shows with the Connect Tool (UI spec §12), which also names the kind of
@@ -729,13 +762,20 @@ public sealed record ClipsDefinition
 
     /// <summary>
     /// The text readout naming the clip to play. A new value starts that clip from the beginning; anything after a
-    /// <c>#</c> is ignored, so <c>gear#2</c> after <c>gear#1</c> plays <c>gear</c> again. A clip whose name ends in
-    /// <c>_loop</c> repeats; any other holds its last frame.
+    /// <c>#</c> is ignored, so <c>gear#2</c> after <c>gear#1</c> plays <c>gear</c> again. <c>start&gt;run_loop</c> plays
+    /// <c>start</c> and then <c>run_loop</c>. A clip whose name ends in <c>_loop</c> repeats; any other holds its last
+    /// frame (or goes on to <see cref="Idle"/>).
     /// </summary>
     public string? Readout { get; init; }
 
     /// <summary>Clips held at a point set by a number readout instead of played (a lever's position).</summary>
     public IReadOnlyList<ScrubDefinition>? Scrub { get; init; }
+
+    /// <summary>
+    /// The clip played while the readout has no value, and after a played clip that does not loop has finished (a
+    /// station's idle glow). Omitted holds the model's own pose, or a finished clip's last frame.
+    /// </summary>
+    public string? Idle { get; init; }
 
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]

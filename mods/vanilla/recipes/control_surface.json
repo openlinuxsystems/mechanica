@@ -1,8 +1,7 @@
 {
   "id": "control_surface",
   "stations": [
-    "fabricator",
-    "mini_fabricator"
+    "fabricator"
   ],
   "inputs": [
     {

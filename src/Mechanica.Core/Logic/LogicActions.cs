@@ -20,7 +20,7 @@ public sealed record LinkPartsArgs(int Creation, int From, int To);
 /// <param name="Settings">New values by setting id; null puts a setting back to its default. Settings not named keep their value.</param>
 public sealed record ConfigurePartArgs(int Creation, int Part, Dictionary<string, JsonElement?> Settings);
 
-/// <summary>Arguments of <c>ActivatePart</c> and <c>EnterSeat</c>: one part of a Creation.</summary>
+/// <summary>Arguments of <c>ActivatePart</c>, <c>ReleasePart</c> and <c>EnterSeat</c>: one part of a Creation.</summary>
 /// <param name="Creation">The Creation holding the part.</param>
 /// <param name="Part">The part.</param>
 public sealed record LogicPartArgs(int Creation, int Part);
@@ -99,6 +99,9 @@ public interface ILogicHost
     /// <summary>Calls the part's <c>on_activate(peer)</c> and returns what it returned (plain data), if anything.</summary>
     JsonElement? Activate(ActionCaller caller, Creation creation, int part);
 
+    /// <summary>Calls the part's <c>on_release(peer)</c>, if it has one: <paramref name="peer"/> let go of a part they held (<see cref="LogicDefinition.Hold"/>).</summary>
+    void Release(int peer, Creation creation, int part);
+
     /// <summary>A player sat down in (<paramref name="entered"/>) or stood up from a seat: calls its script's <c>on_enter</c> or <c>on_leave</c>.</summary>
     void Seated(SeatAssignment seat, bool entered);
 
@@ -137,7 +140,10 @@ public static class SeatHotbar
 /// (<see cref="Creation.CheckLink"/>).</item>
 /// <item><c>ConfigurePart</c>: changes a placed part's settings (<see cref="PartSettings"/>).</item>
 /// <item><c>ActivatePart</c>: a player uses a part (a button, a switch, soil with a ripe crop), which calls its script's
-/// <c>can_activate</c> and <c>on_activate</c>; what <c>on_activate</c> returns is the action's value.</item>
+/// <c>can_activate</c> and <c>on_activate</c>; what <c>on_activate</c> returns is the action's value. A part that is
+/// held (<see cref="LogicDefinition.Hold"/>, a button) stays held by that player until <c>ReleasePart</c>, which calls
+/// its <c>on_release</c>; the host lets go for them when they stand up from the seat they held it from, die or leave
+/// (<see cref="ReleaseHolds"/>).</item>
 /// <item><c>EnterSeat</c> / <c>LeaveSeat</c>: a player sits in a seat part or stands up (<see cref="SeatRegistry"/>).</item>
 /// <item><c>CommandPart</c>: a part's menu sends its script a command (a controller previews a sequence), which calls
 /// its <c>on_command(name, args, peer)</c>.</item>
@@ -161,6 +167,9 @@ public sealed class LogicActions(BuildSettings settings, IBuildWorld world, ILog
     /// <summary>Action name: use a part.</summary>
     public const string ActivatePart = "ActivatePart";
 
+    /// <summary>Action name: let go of a part the caller holds.</summary>
+    public const string ReleasePart = "ReleasePart";
+
     /// <summary>Action name: sit in a seat.</summary>
     public const string EnterSeat = "EnterSeat";
 
@@ -182,8 +191,13 @@ public sealed class LogicActions(BuildSettings settings, IBuildWorld world, ILog
     /// </summary>
     public IBuildCosts? Costs { get; init; }
 
+    private readonly Dictionary<(int Peer, int Creation, int Part), bool> _holds = [];
+
     /// <summary>Who sits where.</summary>
     public SeatRegistry Seats => seats;
+
+    /// <summary>The held parts (<see cref="LogicDefinition.Hold"/>): who holds which part of which Creation.</summary>
+    public IEnumerable<(int Peer, int Creation, int Part)> Holds => _holds.Keys;
 
     /// <summary>Raised after <c>EnterSeat</c> (true) or <c>LeaveSeat</c> (false) changed who sits where, so the game can move the player.</summary>
     public event Action<SeatAssignment, bool>? SeatChanged;
@@ -195,6 +209,7 @@ public sealed class LogicActions(BuildSettings settings, IBuildWorld world, ILog
         dispatcher.Register<LinkPartsArgs>(DisconnectParts, ValidateDisconnect, ApplyDisconnect);
         dispatcher.Register<ConfigurePartArgs>(ConfigurePart, ValidateConfigure, ApplyConfigure);
         dispatcher.Register<LogicPartArgs>(ActivatePart, ValidateActivate, ApplyActivate);
+        dispatcher.Register<LogicPartArgs>(ReleasePart, ValidateRelease, ApplyRelease);
         dispatcher.Register<LogicPartArgs>(EnterSeat, ValidateEnter, ApplyEnter);
         dispatcher.Register<NoArgs>(LeaveSeat, ValidateLeave, ApplyLeave);
         dispatcher.Register<PartCommandArgs>(CommandPart, ValidateCommand, ApplyCommand);
@@ -218,6 +233,27 @@ public sealed class LogicActions(BuildSettings settings, IBuildWorld world, ILog
             if (creation?.FindPart(seat.Part) is not null)
                 host.Seated(seat, entered: false);
             gone.Add(seat);
+        }
+        return gone;
+    }
+
+    /// <summary>
+    /// Lets go of every held part whose player may no longer hold it (<paramref name="canHold"/> false: they left or
+    /// died), who held it from a seat they no longer sit in, or that is gone. Returns how many were let go.
+    /// </summary>
+    public int ReleaseHolds(Func<int, bool> canHold)
+    {
+        var gone = 0;
+        foreach (var ((peer, creationId, part), fromSeat) in _holds.ToList())
+        {
+            var creation = world.FindCreation(creationId);
+            var there = creation?.FindPart(part) is not null;
+            if (there && canHold(peer) && (!fromSeat || SeatHotbar.Holds(seats, peer, creation!, part)))
+                continue;
+            _holds.Remove((peer, creationId, part));
+            if (there)
+                host.Release(peer, creation!, part);
+            gone++;
         }
         return gone;
     }
@@ -348,8 +384,36 @@ public sealed class LogicActions(BuildSettings settings, IBuildWorld world, ILog
     private JsonElement? ApplyActivate(ActionCaller caller, LogicPartArgs args)
     {
         var creation = world.FindCreation(args.Creation)!;
+        if (creation.DefinitionOf(args.Part).Logic?.Hold == true)
+        {
+            // Held already (a key repeat, or E and the seat key at once): one hold per player.
+            if (_holds.ContainsKey((caller.Peer, args.Creation, args.Part)))
+                return null;
+            _holds[(caller.Peer, args.Creation, args.Part)] = SeatHotbar.Holds(seats, caller.Peer, creation, args.Part);
+        }
         PlayPartSound(creation, args.Part, "use", "logic_activate");
         return host.Activate(caller, creation, args.Part);
+    }
+
+    private string? ValidateRelease(ActionCaller caller, LogicPartArgs args)
+    {
+        if (world.FindCreation(args.Creation) is not { } creation)
+            return $"There is no creation {args.Creation}.";
+        if (creation.FindPart(args.Part) is null)
+            return $"Creation {args.Creation} has no part {args.Part}.";
+        var definition = creation.DefinitionOf(args.Part);
+        if (definition.Logic?.Hold != true)
+            return $"{definition.Name ?? definition.Id} is not held; using it is one press.";
+        return _holds.ContainsKey((caller.Peer, args.Creation, args.Part)) ? null : $"You are not holding the {definition.Name ?? definition.Id}.";
+    }
+
+    private JsonElement? ApplyRelease(ActionCaller caller, LogicPartArgs args)
+    {
+        var creation = world.FindCreation(args.Creation)!;
+        _holds.Remove((caller.Peer, args.Creation, args.Part));
+        PlayPartSound(creation, args.Part, "release", null);
+        host.Release(caller.Peer, creation, args.Part);
+        return null;
     }
 
     private string? ValidateEnter(ActionCaller caller, LogicPartArgs args)
@@ -398,7 +462,7 @@ public sealed class LogicActions(BuildSettings settings, IBuildWorld world, ILog
         return null;
     }
 
-    private void PlayPartSound(Creation creation, int part, string key, string fallback) =>
+    private void PlayPartSound(Creation creation, int part, string key, string? fallback) =>
         BuildActions.PlayPartSound(world, creation, part, key, fallback);
 
     private string? CheckReach(ActionCaller caller, Creation creation, int part)

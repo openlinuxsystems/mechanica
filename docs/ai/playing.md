@@ -67,8 +67,8 @@ Queries never change anything, cost nothing in game terms, and work even while y
   rigid body. Drive bearings and pistons from seats and controllers like a player, through
   `EnterSeat`, `ActivatePart` and the part's menu (`CommandPart`). Motion primitives such as
   `ApplyForce` and `SetBearingTarget` belong to part scripts and are refused to players.
-- In Survival every part placed costs one from your inventory. Craft parts at a Mini Fabricator or
-  Fabricator with `Craft` (recipes from `ListRecipes`).
+- In Survival every part placed costs one from your inventory. Craft parts at a Fabricator, or a short
+  list of them at a Portable Fabricator, with `Craft` (recipes from `ListRecipes`).
 
 ## 5. Survive
 

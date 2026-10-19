@@ -24,7 +24,7 @@
       "recipes": [
         {
           "id": "bearing",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator", "portable_fabricator"],
           "inputs": [
             { "item": "scrap_metal", "count": 2 },
             { "item": "component_kit", "count": 1 }

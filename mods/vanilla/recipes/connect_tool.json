@@ -2,7 +2,7 @@
   "id": "connect_tool",
   "stations": [
     "fabricator",
-    "mini_fabricator"
+    "portable_fabricator"
   ],
   "inputs": [
     {

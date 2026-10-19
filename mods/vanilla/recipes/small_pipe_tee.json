@@ -1,8 +1,7 @@
 {
   "id": "small_pipe_tee",
   "stations": [
-    "fabricator",
-    "mini_fabricator"
+    "fabricator"
   ],
   "inputs": [
     {

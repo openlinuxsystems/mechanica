@@ -1,8 +1,7 @@
 {
   "id": "roof_rack",
   "stations": [
-    "fabricator",
-    "mini_fabricator"
+    "fabricator"
   ],
   "inputs": [
     {

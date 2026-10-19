@@ -1,8 +1,7 @@
 {
   "id": "battery_pack",
   "stations": [
-    "fabricator",
-    "mini_fabricator"
+    "fabricator"
   ],
   "inputs": [
     {

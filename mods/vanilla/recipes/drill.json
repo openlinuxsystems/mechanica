@@ -5,15 +5,11 @@
   ],
   "inputs": [
     {
-      "item": "scrap_metal",
-      "count": 5
+      "item": "metal_block",
+      "count": 20
     },
     {
       "item": "component_kit",
-      "count": 2
-    },
-    {
-      "item": "circuit_board",
       "count": 1
     }
   ],
@@ -23,5 +19,5 @@
       "count": 1
     }
   ],
-  "time": 8
+  "time": 60
 }

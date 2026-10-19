@@ -2,7 +2,7 @@
 
 <!-- Generated from mechanica.describe by tools/ai/gen-docs.sh. Do not edit by hand. -->
 
-Protocol version 2. 167 methods: 59 actions (change the world), 29 queries (only read it) and 79 endpoint methods. Every one is a JSON-RPC method of the same name whose `params` are the named arguments below (snake_case). `describe.json` beside this file is the same data as JSON Schemas, ready to become an AI's tool list. Scopes: `observe` reads, `play` acts as a player, `admin` is for debug powers ([ai-endpoint.md](../ai-endpoint.md#scopes)).
+Protocol version 2. 168 methods: 60 actions (change the world), 29 queries (only read it) and 79 endpoint methods. Every one is a JSON-RPC method of the same name whose `params` are the named arguments below (snake_case). `describe.json` beside this file is the same data as JSON Schemas, ready to become an AI's tool list. Scopes: `observe` reads, `play` acts as a player, `admin` is for debug powers ([ai-endpoint.md](../ai-endpoint.md#scopes)).
 
 ## Contents
 
@@ -16,7 +16,7 @@ Protocol version 2. 167 methods: 59 actions (change the world), 29 queries (only
 - [Debug and general](#debug-and-general) (2)
 - [Fire](#fire) (1)
 - [Items, inventories and crafting](#items-inventories-and-crafting) (8)
-- [Logic, seats and part menus](#logic-seats-and-part-menus) (8)
+- [Logic, seats and part menus](#logic-seats-and-part-menus) (9)
 - [Map markers](#map-markers) (3)
 - [Motion and physics primitives](#motion-and-physics-primitives) (6)
 - [Quests](#quests) (3)
@@ -748,7 +748,7 @@ Upgrading a part. Arguments of UpgradePart: raise a placed part one upgrade leve
 
 *action, play scope*
 
-Use a part. Arguments of ActivatePart and EnterSeat: one part of a Creation.
+Use a part. Arguments of ActivatePart, ReleasePart and EnterSeat: one part of a Creation.
 
 | Param | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|
@@ -808,7 +808,7 @@ Remove a logic link. Arguments of ConnectParts and DisconnectParts: a logic link
 
 *action, play scope*
 
-Sit in a seat. Arguments of ActivatePart and EnterSeat: one part of a Creation.
+Sit in a seat. Arguments of ActivatePart, ReleasePart and EnterSeat: one part of a Creation.
 
 | Param | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|
@@ -832,6 +832,17 @@ Describe a Creation (read-only). Arguments of InspectCreation.
 Stand up from the caller's seat.
 
 No params.
+
+### `ReleasePart`
+
+*action, play scope*
+
+Let go of a part the caller holds. Arguments of ActivatePart, ReleasePart and EnterSeat: one part of a Creation.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `creation` | integer | yes |  | The Creation holding the part. |
+| `part` | integer | yes |  | The part. |
 
 ## Map markers
 

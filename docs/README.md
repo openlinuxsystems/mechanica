@@ -30,6 +30,7 @@ Other references:
 - [Saves](saves.md)
 - [Quests and Dialogue](quests.md)
 - [Player Characters](characters.md): adding a character or skin
+- [IO Ports](io-ports.md): the standard input/output face machines carry for tubes
 
 ## Engine settings
 

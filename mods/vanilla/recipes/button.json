@@ -1,16 +1,15 @@
 {
   "id": "button",
   "stations": [
-    "fabricator",
-    "mini_fabricator"
+    "fabricator"
   ],
   "inputs": [
     {
-      "item": "scrap_metal",
+      "item": "metal_block",
       "count": 1
     },
     {
-      "item": "component_kit",
+      "item": "circuit_board",
       "count": 1
     }
   ],
@@ -20,5 +19,5 @@
       "count": 1
     }
   ],
-  "time": 2
+  "time": 5
 }

@@ -1,8 +1,7 @@
 {
   "id": "locker",
   "stations": [
-    "fabricator",
-    "mini_fabricator"
+    "fabricator"
   ],
   "inputs": [
     {
