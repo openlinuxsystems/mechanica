@@ -27,6 +27,7 @@ public partial class CharacterModel : Node3D
     private int _chest = -1;
     private int _neck = -1;
     private int _head = -1;
+    private Vector3 _eyeInHead;
     private BoneAttachment3D? _hand;
     private Node3D? _held;
     private ushort _heldShown;
@@ -103,6 +104,15 @@ public partial class CharacterModel : Node3D
         _spine = _skeleton.FindBone("spine");
         _chest = _skeleton.FindBone("chest");
         _head = _skeleton.FindBone("head");
+        // The eyes in the rest pose, kept in the head bone's frame.
+        if (_head >= 0)
+        {
+            var eyes = Assets.Settings.Eyes;
+            var skeletonHere = Transform3D.Identity;
+            for (Node3D? node = _skeleton; node is not null && node != this; node = node.GetParentNode3D())
+                skeletonHere = node.Transform * skeletonHere;
+            _eyeInHead = _skeleton.GetBoneGlobalRest(_head).AffineInverse() * skeletonHere.AffineInverse() * new Vector3(eyes[0], eyes[1], eyes[2]);
+        }
 
         foreach (var (name, animation) in Assets.Clips)
         {
@@ -171,6 +181,19 @@ public partial class CharacterModel : Node3D
             Sounds.PlayLocal(Character.Sound(CharacterSounds.BucketFill), Character.ModId, _prop.GlobalPosition);
     }
 
+    /// <summary>Where this body's eyes are now, in world space; null for a body without a head bone.</summary>
+    public Vector3? Eyes
+    {
+        get
+        {
+            if (_head < 0)
+                return null;
+            // Unscaled, so a hidden head still has its eyes where they were.
+            var head = _skeleton.GetBoneGlobalPose(_head);
+            return _skeleton.GlobalTransform * new Transform3D(head.Basis.Orthonormalized(), head.Origin) * _eyeInHead;
+        }
+    }
+
     /// <summary>Applies the animator's current blend to the skeleton (called every visible frame).</summary>
     public void Pose()
     {
@@ -206,6 +229,9 @@ public partial class CharacterModel : Node3D
             _skeleton.SetBonePoseRotation(b, _rotations[b]);
             _skeleton.SetBonePosePosition(b, _positions[b]);
         }
+        // Seen from its own eyes the head (and its hair) shrinks away, so the seated body can still be drawn.
+        if (_head >= 0)
+            _skeleton.SetBonePoseScale(_head, Player is { HeadHidden: true } ? Vector3.One * 0.001f : Vector3.One);
     }
 
     // Weighted blend of clips per bone; bones a clip does not move count as at rest.

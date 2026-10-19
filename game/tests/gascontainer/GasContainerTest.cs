@@ -148,6 +148,8 @@ public partial class GasContainerTest : StagedTest
             Check(false, $"the engine fits ({why})");
         _tank = tank?.Id ?? 0;
         _engine = engine?.Id ?? 0;
+        // Engines are on by default; this one starts off so the test can switch it on once the container is filled.
+        creation.SetPartSettings(_engine, new Dictionary<string, JsonElement> { ["on"] = JsonSerializer.SerializeToElement(false) });
         var feet = _host.Main.PlayerSync.Players[_client.Peer].GlobalPosition;
         creation.SetAllBodyPoses(new Pose((feet + new Vector3(-0.9f, 0.25f, -2.5f)).ToNumerics(), System.Numerics.Quaternion.Identity));
         _host.Main.Build.Added(creation);

@@ -1529,6 +1529,9 @@ public partial class CaptureScene : Node
     {
         Engine.TimeScale = 1.0;
         var seats = new Dictionary<string, int>();
+        // The capture main reads no devices, so it has no seat camera of its own.
+        if (_main.SeatCamera is null)
+            AddChild(new Mechanica.Game.Logic.SeatCamera { Logic = _main.Logic, Players = _main.PlayerSync, ReadDeviceInput = false });
         Shot("seats_00_wait", 60, () => { });
         Shot("seats_00_placed", 90, () =>
         {
@@ -1554,10 +1557,18 @@ public partial class CaptureScene : Node
         });
         foreach (var part in SeatParts)
         {
-            Shot($"seats_{part}_1_enter", 90, () =>
+            // Sitting down hands the view to the seat's interior camera: what the player sees from the seat.
+            Shot($"seats_{part}_1_view", 90, () =>
             {
                 _seat = seats[part];
+                Player.ThirdPerson = true; // the game's default view, which drew the seated head around the camera
+                Input(pitch: 0f);
                 _main.Actions.Request(Core.Logic.LogicActions.EnterSeat, new Core.Logic.LogicPartArgs(SeatCreation, _seat), r => GD.Print($"[capture] sit {part}: {r}"));
+            });
+            Shot($"seats_{part}_1_view_down", 30, () => Input(pitch: -0.6f));
+            Shot($"seats_{part}_1_enter", 2, () =>
+            {
+                Input(pitch: 0f);
                 LookAtSeat(new Vector3(2.2f, 0.9f, -1.6f), 0.6f);
             });
             Shot($"seats_{part}_2_side", 2, () => LookAtSeat(new Vector3(2.2f, 0.7f, 0f), 0.6f));

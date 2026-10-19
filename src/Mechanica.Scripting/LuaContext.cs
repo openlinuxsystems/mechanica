@@ -33,16 +33,15 @@ internal readonly record struct CallOutcome(CallStatus Status, DynValue[] Values
 internal sealed class LuaContext
 {
     // Loaded before any mod code, so the runner keeps the original library functions even if a
-    // script replaces them later.
+    // script replaces them later. The runner hands arguments and results straight through as varargs (no table per
+    // call), and its tail call keeps its stack flat however many calls it serves.
     private const string RunnerSource = """
-        local pack, unpack, yield = table.pack, table.unpack, coroutine.yield
+        local yield = coroutine.yield
         return function(marker)
-          return function(...)
-            local args = pack(...)
-            while true do
-              args = pack(yield(marker, args[1](unpack(args, 2, args.n))))
-            end
+          local function step(f, ...)
+            return step(yield(marker, f(...)))
           end
+          return step
         end
         """;
 
@@ -53,6 +52,7 @@ internal sealed class LuaContext
     private readonly DynValue _runnerFactory;
     private readonly DynValue _marker;
     private readonly int _budget;
+    private readonly List<DynValue[]?> _buffers = [];
     private DynValue? _runner;
     private int _depth;
 
@@ -105,7 +105,8 @@ internal sealed class LuaContext
         var nested = _depth > 0;
         var runner = nested ? Script.CreateCoroutine(_runnerFactory) : _runner ??= Script.CreateCoroutine(_runnerFactory);
         runner.Coroutine.AutoYieldCounter = _budget;
-        var resumeArgs = new DynValue[args.Length + 1];
+        // The outer call reuses one argument buffer per arity; a nested call needs its own.
+        var resumeArgs = nested ? new DynValue[args.Length + 1] : Buffer(args.Length + 1);
         resumeArgs[0] = function;
         Array.Copy(args, 0, resumeArgs, 1, args.Length);
         DynValue result;
@@ -128,6 +129,8 @@ internal sealed class LuaContext
         finally
         {
             _depth--;
+            if (!nested)
+                Array.Clear(resumeArgs);
         }
         if (result.Type == DataType.YieldRequest || runner.Coroutine.State == CoroutineState.ForceSuspended)
         {
@@ -140,7 +143,14 @@ internal sealed class LuaContext
             Drop(nested);
             return new CallOutcome(CallStatus.Yielded, [], "yielded out of a hook; use coroutine.wrap or coroutine.create inside the script instead");
         }
-        return new CallOutcome(CallStatus.Ok, values[1..], null);
+        return new CallOutcome(CallStatus.Ok, values.Length == 1 ? [] : values[1..], null);
+    }
+
+    private DynValue[] Buffer(int length)
+    {
+        while (_buffers.Count <= length)
+            _buffers.Add(null);
+        return _buffers[length] ??= new DynValue[length];
     }
 
     // A failed runner can't be resumed again; the shared one is rebuilt on the next call.

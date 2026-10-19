@@ -153,7 +153,7 @@ placed.
 | `part.set_output(value)` | Sets the part's output on the logic bus: a number, or a boolean (1 or 0). It stays until changed, and parts linked to this one see it next step. |
 | `part.output()` | The part's own output on the logic bus (0 until set). |
 | `part.input()` | The sum of the outputs of every part linked to this one. |
-| `part.inputs()` | Each part linked to this one as `{part, value, type, storage}`, by part id (a logic gate reads them one by one). `type` is the linked part's qualified id; `storage` is true when it is a container, such as a gas container linked to an engine to feed it. |
+| `part.inputs()` | Each part linked to this one as `{part, value, type, storage, seat, occupied}`, by part id (a logic gate reads them one by one). `type` is the linked part's qualified id; `storage` is true when it is a container, such as a gas container linked to an engine to feed it; `seat` is true for a seat (nil otherwise) and `occupied` while someone sits in it, so an engine runs only while its driver's seat is taken. |
 | `part.links()` | The ids of the parts this part's output is linked to (an engine finds its bearings here). |
 | `part.setting(id)` | The value of one of the part's settings: a number, a choice (string), a toggle (boolean), a number list (table) or a sequence (a table of frames, each a number or a list of `{part, target, speed}`); the default until a player changes it. `nil` for an unknown id. |
 | `part.sound(key)` | The sound id the part binds to `key` in its `sounds` (for `sound.play` and `sound.start`), or `nil`. Scripts play the part's own bindings this way, so the ids stay in data. |

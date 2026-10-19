@@ -149,7 +149,7 @@
       "template": "engine",
       "set": {
         "name": "Gas Engine 1",
-        "description": "Turns the wheel bearings it is linked to toward its front, with a seat's throttle as its input, once it is switched on. Burns gasoline from the creation's gas containers. Upgrade it in place with Component Kits (U) for more bearings, power steps, power and mileage.",
+        "description": "Turns the wheel bearings it is linked to toward its front, with a seat's throttle as its input: it runs while someone sits in a linked seat, and on its own with no seat or switch linked. Burns gasoline from the creation's gas containers. Upgrade it in place with Component Kits (U) for more bearings, power steps, power and mileage.",
         "mass": 12,
         "durability": 6,
         "stack_size": 5,
@@ -163,7 +163,7 @@
             "id": "gear", "name": "Power", "type": "number", "min": 1, "max": 5, "step": 1, "default": 3,
             "presets": [{ "name": "Low", "value": 1 }, { "name": "Medium", "value": 3 }, { "name": "High", "value": 5 }]
           },
-          { "id": "on", "name": "On", "type": "toggle", "default": false }
+          { "id": "on", "name": "On", "type": "toggle", "default": true }
         ],
         "menu": {
           "readouts": [
@@ -199,7 +199,7 @@
                   "id": "gear", "name": "Power", "type": "number", "min": 1, "max": 7, "step": 1, "default": 4,
                   "presets": [{ "name": "Low", "value": 1 }, { "name": "Medium", "value": 4 }, { "name": "High", "value": 7 }]
                 },
-                { "id": "on", "name": "On", "type": "toggle", "default": false }
+                { "id": "on", "name": "On", "type": "toggle", "default": true }
               ],
               "display": {
                 "effects": [
@@ -223,7 +223,7 @@
                   "id": "gear", "name": "Power", "type": "number", "min": 1, "max": 9, "step": 1, "default": 5,
                   "presets": [{ "name": "Low", "value": 1 }, { "name": "Medium", "value": 5 }, { "name": "High", "value": 9 }]
                 },
-                { "id": "on", "name": "On", "type": "toggle", "default": false }
+                { "id": "on", "name": "On", "type": "toggle", "default": true }
               ],
               "display": {
                 "effects": [
@@ -247,7 +247,7 @@
                   "id": "gear", "name": "Power", "type": "number", "min": 1, "max": 11, "step": 1, "default": 6,
                   "presets": [{ "name": "Low", "value": 1 }, { "name": "Medium", "value": 6 }, { "name": "High", "value": 11 }]
                 },
-                { "id": "on", "name": "On", "type": "toggle", "default": false }
+                { "id": "on", "name": "On", "type": "toggle", "default": true }
               ],
               "display": {
                 "effects": [
@@ -272,7 +272,7 @@
                   "id": "gear", "name": "Power", "type": "number", "min": 1, "max": 13, "step": 1, "default": 7,
                   "presets": [{ "name": "Low", "value": 1 }, { "name": "Medium", "value": 7 }, { "name": "High", "value": 13 }]
                 },
-                { "id": "on", "name": "On", "type": "toggle", "default": false }
+                { "id": "on", "name": "On", "type": "toggle", "default": true }
               ],
               "display": {
                 "effects": [
@@ -310,7 +310,7 @@
       "set": {
         "logic": { "inputs": 4, "outputs": 2, "kind": "power" },
         "name": "Scrap Gas Engine",
-        "description": "A rattly starter engine from scrap. Switch it on, then it turns up to two wheel bearings linked to it, with a seat's throttle as its input. Burns gasoline faster than a Gas Engine.",
+        "description": "A rattly starter engine from scrap. It turns up to two wheel bearings linked to it, with a seat's throttle as its input: it runs while someone sits in a linked seat, and on its own with no seat or switch linked. Burns gasoline faster than a Gas Engine.",
         "mass": 10,
         "durability": 2,
         "flammable": true,
@@ -325,7 +325,7 @@
             "id": "gear", "name": "Power", "type": "number", "min": 1, "max": 4, "step": 1, "default": 2,
             "presets": [{ "name": "Low", "value": 1 }, { "name": "Medium", "value": 2 }, { "name": "High", "value": 4 }]
           },
-          { "id": "on", "name": "On", "type": "toggle", "default": false }
+          { "id": "on", "name": "On", "type": "toggle", "default": true }
         ],
         "display": {
           "status": "running",
@@ -361,7 +361,7 @@
       "set": {
         "logic": { "inputs": 4, "outputs": 2, "kind": "power" },
         "name": "Electric Engine 1",
-        "description": "Turns the wheel bearings it is linked to toward its front, with a seat's throttle as its input, once it is switched on. Its slider sets the speed; it pulls hard at any speed. Draws battery packs from the creation's batteries. Upgrade it in place with Component Kits (U) for more bearings, speed settings and mileage.",
+        "description": "Turns the wheel bearings it is linked to toward its front, with a seat's throttle as its input: it runs while someone sits in a linked seat, and on its own with no seat or switch linked. Its slider sets the speed; it pulls hard at any speed. Draws battery packs from the creation's batteries. Upgrade it in place with Component Kits (U) for more bearings, speed settings and mileage.",
         "mass": 9,
         "durability": 6,
         "stack_size": 5,
@@ -372,7 +372,7 @@
             "id": "gear", "name": "Speed", "type": "number", "min": 1, "max": 5, "step": 1, "default": 3,
             "presets": [{ "name": "Low", "value": 1 }, { "name": "Medium", "value": 3 }, { "name": "High", "value": 5 }]
           },
-          { "id": "on", "name": "On", "type": "toggle", "default": false }
+          { "id": "on", "name": "On", "type": "toggle", "default": true }
         ],
         "display": {
           "status": "running",
@@ -407,7 +407,7 @@
                   "id": "gear", "name": "Speed", "type": "number", "min": 1, "max": 7, "step": 1, "default": 4,
                   "presets": [{ "name": "Low", "value": 1 }, { "name": "Medium", "value": 4 }, { "name": "High", "value": 7 }]
                 },
-                { "id": "on", "name": "On", "type": "toggle", "default": false }
+                { "id": "on", "name": "On", "type": "toggle", "default": true }
               ],
               "properties": { "speed": 28, "fuel_time": 135, "gears": 7, "hard_gear": 5 }
             }
@@ -425,7 +425,7 @@
                   "id": "gear", "name": "Speed", "type": "number", "min": 1, "max": 9, "step": 1, "default": 5,
                   "presets": [{ "name": "Low", "value": 1 }, { "name": "Medium", "value": 5 }, { "name": "High", "value": 9 }]
                 },
-                { "id": "on", "name": "On", "type": "toggle", "default": false }
+                { "id": "on", "name": "On", "type": "toggle", "default": true }
               ],
               "display": {
                 "effects": [
@@ -448,7 +448,7 @@
                   "id": "gear", "name": "Speed", "type": "number", "min": 1, "max": 11, "step": 1, "default": 6,
                   "presets": [{ "name": "Low", "value": 1 }, { "name": "Medium", "value": 6 }, { "name": "High", "value": 11 }]
                 },
-                { "id": "on", "name": "On", "type": "toggle", "default": false }
+                { "id": "on", "name": "On", "type": "toggle", "default": true }
               ],
               "display": {
                 "effects": [
@@ -471,7 +471,7 @@
                   "id": "gear", "name": "Speed", "type": "number", "min": 1, "max": 13, "step": 1, "default": 7,
                   "presets": [{ "name": "Low", "value": 1 }, { "name": "Medium", "value": 7 }, { "name": "High", "value": 13 }]
                 },
-                { "id": "on", "name": "On", "type": "toggle", "default": false }
+                { "id": "on", "name": "On", "type": "toggle", "default": true }
               ],
               "display": {
                 "effects": [

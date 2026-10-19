@@ -7,7 +7,7 @@ namespace Mechanica.Game.Logic;
 /// <summary>
 /// The local player's camera while they sit in a seat (UI spec §8, §9, §10). It locks to the seat: the view starts
 /// facing the seat's front and turns with the Creation, and the mouse still looks around. Ctrl (Seated camera)
-/// switches between the interior view, at the seated eye height, and an external chase camera behind and above the
+/// switches between the interior view, from the seated body's own eyes with its head hidden, and an external chase camera behind and above the
 /// seat that follows the view. Sitting down, standing up and switching glide over the seat transition
 /// (<see cref="Core.Player.PlayerMovementSettings.SeatTransitionSeconds"/>), and the chase camera catches up smoothly.
 /// Standing up gives the player's own camera back.
@@ -43,6 +43,8 @@ public partial class SeatCamera : Node3D
     public override void _Ready()
     {
         Name = "SeatCamera";
+        // After the bodies have posed this frame, so the interior view sits at the eyes they are drawn with.
+        ProcessPriority = 1;
         Camera = new Camera3D { Name = "Camera", Near = 0.05f, TopLevel = true };
         AddChild(Camera);
     }
@@ -74,6 +76,8 @@ public partial class SeatCamera : Node3D
                 _seated = false;
                 if (player is not null && Camera.Current)
                     player.Camera.MakeCurrent();
+                if (player is not null)
+                    player.HeadHidden = false;
             }
             return;
         }
@@ -110,8 +114,13 @@ public partial class SeatCamera : Node3D
         }
         else
         {
-            target = new Transform3D(look, at.Feet.Origin + up * settings.SeatedEyeHeight);
+            // From the seated body's own eyes, wherever this seat's cushion puts them.
+            var eyes = player.Character is CharacterModel { Eyes: { } e } ? e : at.Feet.Origin + up * settings.SeatedEyeHeight;
+            target = new Transform3D(look, eyes);
         }
+        var inside = !Chase && Camera.Current;
+        if (player.HeadHidden != inside)
+            player.HeadHidden = inside;
         if (_blend < 1)
         {
             _blend = Math.Min(1, _blend + delta / settings.SeatTransitionSeconds);

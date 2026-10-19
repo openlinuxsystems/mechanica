@@ -420,6 +420,26 @@ public sealed class ScriptRuntimeTests : IDisposable
     }
 
     [Fact]
+    public void HooksGetEveryArgumentAndGiveBackEveryValueCallAfterCall()
+    {
+        _rig.Write("scripts/thruster.lua", "function probe(...) local a, b, c = ... return select('#', ...), a, b, c, 'end' end");
+        var creation = _rig.AddCreation(1, Thruster);
+        var id = PartOf(creation, Thruster);
+        for (var i = 0; i < 3; i++)
+        {
+            // Holes and trailing nils count, as in a plain Lua call, on the first call and every one after.
+            var result = _rig.Runtime.Invoke(1, id, "probe", null, 2.0, null);
+            Assert.True(result.Ok);
+            Assert.Equal(3.0, result.Values[0]!.GetValue<double>());
+            Assert.Null(result.Values[1]);
+            Assert.Equal(2.0, result.Values[2]!.GetValue<double>());
+            Assert.Null(result.Values[3]);
+            Assert.Equal("end", result.Values[4]!.GetValue<string>());
+            Assert.Empty(_rig.Runtime.Invoke(1, id, "missing_hook").Values);
+        }
+    }
+
+    [Fact]
     public void StateRoundTripsThroughJson()
     {
         _rig.Write("scripts/thruster.lua", "function get_outputs() return state.list[2], state.nested.flag end function on_activate() state.f = print end");
