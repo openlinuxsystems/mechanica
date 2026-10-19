@@ -164,12 +164,7 @@ public partial class RecipePanel : VBoxContainer
         var extra = doc.Definition.Id is { } id
             ? new Dictionary<string, PartDefinition> { [$"{PartDerive.OwnerOf(doc)}:{id}"] = doc.Definition }
             : [];
-        var clean = Current with
-        {
-            Name = string.IsNullOrWhiteSpace(Current.Name) ? null : Current.Name,
-            Inputs = Current.Inputs?.Where(i => !string.IsNullOrWhiteSpace(i.Item)).ToList(),
-            Outputs = Current.Outputs?.Where(i => !string.IsNullOrWhiteSpace(i.Item)).ToList(),
-        };
+        var clean = RecipeFields.Clean(Current);
         var result = RecipeExporter.Export(doc.ModDirectory, clean, catalog, extra, _file, _overrideOf);
         var saved = RecipeExporter.TargetFile(clean.Id!, _overrideOf);
         Editor.ShowProblems(result.Diagnostics, result.Succeeded
@@ -241,36 +236,7 @@ public partial class RecipePanel : VBoxContainer
             Loc.Verbatim(_grid.AddHeading(Loc.T("New override of {0}:{1} (not saved)", _overrideOf, r.Id)));
         else
             Loc.Verbatim(_grid.AddHeading(_file));
-        _grid.AddText("Id", r.Id, v => Edit(x => x with { Id = v }), "snake_case");
-        _grid.AddText("Name", r.Name, v => Edit(x => x with { Name = v }), "the output's name");
-        _grid.AddText("Stations", string.Join(", ", r.Stations ?? []), v => Edit(x => x with
-        {
-            Stations = [.. (v ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)],
-        }), "fabricator, portable_fabricator");
-        _grid.AddNumber("Time", r.Time, 0, 3600, 0.5, v => Edit(x => x with { Time = (float?)v }), suffix: "s");
-        _grid.AddNumber("Order", r.Order, 0, 99999, 1, v => Edit(x => x with { Order = v is { } o ? (int)o : null }), optional: true);
-        AddItemRows(_inputs, r.Inputs ?? [], list => Edit(x => x with { Inputs = list }, rebuild: true), list => Edit(x => x with { Inputs = list }));
-        AddItemRows(_outputs, r.Outputs ?? [], list => Edit(x => x with { Outputs = list }, rebuild: true), list => Edit(x => x with { Outputs = list }));
-    }
-
-    // One row per item: id, count and a remove button. Removing redraws; typing does not.
-    private static void AddItemRows(VBoxContainer box, List<RecipeItem> items, Action<List<RecipeItem>> replace, Action<List<RecipeItem>> update)
-    {
-        for (var i = 0; i < items.Count; i++)
-        {
-            var index = i;
-            var row = new HBoxContainer();
-            var item = new LineEdit { Text = items[i].Item ?? "", PlaceholderText = "item id", SizeFlagsHorizontal = SizeFlags.ExpandFill };
-            item.TextChanged += text => update([.. items.Select((x, j) => j == index ? x with { Item = text.Trim() } : x)]);
-            row.AddChild(item);
-            var count = new SpinBox { MinValue = 1, MaxValue = 9999, Value = items[i].Count ?? 1 };
-            count.ValueChanged += v => update([.. items.Select((x, j) => j == index ? x with { Count = (int)v } : x)]);
-            row.AddChild(count);
-            var remove = new Button { Text = "×", TooltipText = "Remove" };
-            remove.Pressed += () => replace([.. items.Where((_, j) => j != index)]);
-            row.AddChild(remove);
-            box.AddChild(row);
-        }
+        RecipeFields.Add(_grid, _inputs, _outputs, r, (change, rebuild) => Edit(change, rebuild));
     }
 
     private static Button AddButton(Container parent, string text, Action pressed, string tooltip)

@@ -91,6 +91,7 @@ public partial class LanguageTest : StagedTest
             return _menu.Help;
         });
         Screen("the Bot Behavior Editor", () => _menu.OpenBotEditor(), tabs: true);
+        Screen("the Recipe Editor", () => _menu.OpenRecipeEditor());
         Screen("the Test Sandbox", () => _menu.OpenSandbox(), tabs: true);
         Screen("the Mod Manager", () => _menu.OpenModManager(), dialogs: true);
         Add("the loading screen, loading and failed", frame =>

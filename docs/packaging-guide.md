@@ -163,6 +163,13 @@ mods/cheap_chests/overrides/vanilla/recipes/chest.json   replaces the recipe van
 - When two mods override the same recipe, the later one in the load order wins with a warning
   (`MD0704`), unless one depends on the other.
 
+The **Recipe Editor** (main menu, Mod tools) does this without writing JSON. It lists every recipe of every installed
+mod, with which version wins in load order. Pick **Mod to edit**, then pick any recipe: **Override** starts your mod's
+version of it in `overrides/<mod_id>/recipes/`, **Copy to mod** starts a new recipe of your own from it, and
+**New recipe** starts a blank one. **Save recipe** checks it exactly as loading would and lists the problems; your
+mod's own recipes and overrides open for editing and **Delete** removes them after asking. Add the owner to your
+`dependencies` (Mod Manager, **Edit info…**) so the override loads.
+
 ### Overriding bots, quests, POIs and characters
 
 The same works for every other kind of content: put a complete file with the same id in the matching

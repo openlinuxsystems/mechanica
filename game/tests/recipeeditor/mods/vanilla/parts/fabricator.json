@@ -1,0 +1,1 @@
+{ "id": "fabricator", "name": "Fabricator", "category": "station", "mass": 60, "durability": 12, "friction": 0.5, "buoyancy": 0.2, "flammable": false, "size": [4, 4, 4], "inventory": { "slots": 4 }, "crafting": {} }
