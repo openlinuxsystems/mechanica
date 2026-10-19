@@ -12,6 +12,18 @@
     "height": 0.8
   },
   "color": "#9a7b4f",
+  "model": {
+    "mesh": "meshes/bots/scuttler_seed.glb",
+    "attacks": {
+      "nip": [
+        "claw_snap"
+      ]
+    },
+    "clip_speeds": {
+      "patrol": 0.79,
+      "chase": 2.55
+    }
+  },
   "attacks": [
     {
       "id": "nip",

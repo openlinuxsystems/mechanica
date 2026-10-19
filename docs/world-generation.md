@@ -31,7 +31,8 @@ shapes the ground, the borders, the meanders, the roads' exact course and the sc
 2. **Height.** Each biome sets an average `height` and a `relief` that scales fractal noise; `ridge`
    turns it into sharp ridged noise (mountains) and `terrace` steps it into plateaus (desert). Over that
    come two layers of relief after Scrap Mechanic's overworld: broad `hills` a kilometre or so across, and
-   `cliffs`, plateaus in 8 m steps with short rock faces that climb towards the middle of the island. Both
+   `cliffs`, plateaus in 8 m steps that climb towards the middle of the island. Most steps are slopes you
+   walk or drive up; only a `sheer` share of the island keeps short rock faces, tall cliffs where steps stack. Both
    lie flat by the coast, rivers and biomes whose `hills` is 0 (lakes), rising to full height over
    `shore_ramp`, and round sites with a fixed `pad_height` over `pad_ramp`. Near the
    edge the land falls to `sea_floor` over `coast_width`, so the world is an island; invisible walls just past
@@ -164,7 +165,7 @@ change (usually `vanilla`). Every patch applies in load order on top of the last
 | `biomes[].terrace` | Height in metres of the plateaus the ground is stepped into (the desert). 0: none. |
 | `terrain.max_scatter_slope` | Steepest ground (rise over run) objects stand on. |
 | `terrain.hills` | Broad hills under every inland biome: `height` (most they lift the ground), `scale` (wavelength in metres), `octaves`, `gain`, `contrast` (higher gives broader flat valleys and tops), `shore_ramp` (metres over which they rise from water and flat biomes) and `pad_ramp` (the same from a fixed pad's rim). Omitted: none. |
-| `terrain.cliffs` | Cliff terraces: up to `levels` plateaus `step` metres apart, from noise of wavelength `scale` stretched by `contrast`; each face takes about `face` metres of ground, and the plateaus rise to their full number over `inland` metres from the coast. They fade where the hills do. Omitted: none. |
+| `terrain.cliffs` | Cliff terraces: up to `levels` plateaus `step` metres apart, from noise of wavelength `scale` stretched by `contrast`; a sheer face takes about `face` metres of ground. Only the `sheer` share (0 to 1, default 1) of the island, picked by noise of wavelength `sheer_scale` (default 600), has sheer faces; elsewhere a face is a slope `gentle_face` metres wide (default 24) that players walk and drive up. The plateaus rise to their full number over `inland` metres from the coast. They fade where the hills do. Omitted: none. |
 | `biomes[].hills` | 0 to 1: share of the hills and cliffs the biome keeps (0 for lakes, which lie flat). Default 1. |
 | `biomes[].weight` | Chance an inland cell is this biome. 0 means only where placed explicitly (the coast). |
 | `biomes[].ground` | Id of the ground texture (`grounds[]`) the biome is drawn with. Omitted: its plain `color`. |

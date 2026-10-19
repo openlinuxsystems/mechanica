@@ -29,6 +29,9 @@ public partial class WorldStreamer : Node3D
     private readonly HashSet<ChunkCoord> _pending = [];
     private bool _received;
     private readonly Dictionary<ChunkCoord, TerrainChunk> _scenery = [];
+    // Unloaded chunks still drawn, without colliders, until their scenery is built: dropping them first leaves a hole
+    // the sky shows through for a few frames.
+    private readonly Dictionary<ChunkCoord, TerrainChunk> _retiring = [];
     private Node3D _sceneryRoot = null!;
 
     /// <summary>The session, for this peer's role. Set before adding to the tree.</summary>
@@ -93,6 +96,12 @@ public partial class WorldStreamer : Node3D
     /// never simulated. Not part of <see cref="Chunks"/>.
     /// </summary>
     public IReadOnlyDictionary<ChunkCoord, TerrainChunk> Scenery => _scenery;
+
+    /// <summary>
+    /// True when the ground of <paramref name="chunk"/> is drawn: simulated, scenery, or unloaded and still shown
+    /// until its scenery is built.
+    /// </summary>
+    public bool Draws(ChunkCoord chunk) => _chunks.ContainsKey(chunk) || _scenery.ContainsKey(chunk) || _retiring.ContainsKey(chunk);
 
     /// <summary>
     /// Counts changes to <see cref="Chunks"/>, <see cref="Scenery"/> and the chunks waiting to be built, so what is
@@ -227,8 +236,8 @@ public partial class WorldStreamer : Node3D
             _pending.Remove(chunk);
             if (_chunks.Remove(chunk, out var node))
             {
-                RemoveChild(node);
-                node.QueueFree();
+                node.Retire();
+                _retiring[chunk] = node;
             }
         }
         _pending.UnionWith(update.Load);
@@ -285,6 +294,7 @@ public partial class WorldStreamer : Node3D
     private void Build(ChunkCoord chunk)
     {
         _pending.Remove(chunk);
+        DropRetiring(chunk);
         var node = new TerrainChunk { Data = Generator.GenerateChunk(chunk, Streamer.Settings.ChunkSize), State = State, Ground = Ground, Textured = GroundMaterial.For(Generator.Data), WorldGen = Generator.Data };
         AddChild(node);
         _chunks[chunk] = node;
@@ -302,8 +312,9 @@ public partial class WorldStreamer : Node3D
         var key = (Revision, reach, DrawScenery);
         if (SceneryMissing == 0 && _sceneryKey == key && System.Numerics.Vector3.Distance(viewer, _sceneryViewer) < Streamer.Settings.ChunkSize / 4f)
             return;
-        var simulated = new HashSet<ChunkCoord>(Streamer.Loaded);
-        simulated.UnionWith(_pending);
+        // Scenery stays until the simulated chunk replacing it is built, so loading ground never opens a hole.
+        var simulated = new HashSet<ChunkCoord>(_chunks.Keys);
+        simulated.UnionWith(_pending.Where(c => !_scenery.ContainsKey(c)));
         IReadOnlyList<ChunkCoord> wanted = DrawScenery
             ? FarChunks.Wanted(viewer, reach, Streamer.Settings.ChunkSize, Streamer.InWorld, simulated)
             : [];
@@ -327,8 +338,18 @@ public partial class WorldStreamer : Node3D
             if (System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalSeconds >= SceneryBudget)
                 break;
         }
+        foreach (var chunk in _retiring.Keys.Where(c => _scenery.ContainsKey(c) || (!keep.Contains(c) && !_pending.Contains(c))).ToList())
+            DropRetiring(chunk);
         SceneryMissing = wanted.Count(c => !_scenery.ContainsKey(c));
         (_sceneryKey, _sceneryViewer) = ((Revision, reach, DrawScenery), viewer);
+    }
+
+    private void DropRetiring(ChunkCoord chunk)
+    {
+        if (!_retiring.Remove(chunk, out var node))
+            return;
+        RemoveChild(node);
+        node.QueueFree();
     }
 
     private (int Revision, float Reach, bool Draw) _sceneryKey = (-1, 0f, false);
@@ -456,6 +477,8 @@ public partial class WorldStreamer : Node3D
             foreach (var node in _scenery.Values)
                 node.QueueFree();
             _scenery.Clear();
+            foreach (var chunk in _retiring.Keys.ToList())
+                DropRetiring(chunk);
             Revision++;
             Creations.Removed -= Streamer.Forget;
             Streamer = new ChunkStreamer(Streamer.Settings);
@@ -463,7 +486,7 @@ public partial class WorldStreamer : Node3D
         }
         else
         {
-            foreach (var node in _chunks.Values.Concat(_scenery.Values))
+            foreach (var node in _chunks.Values.Concat(_scenery.Values).Concat(_retiring.Values))
             {
                 node.State = State;
                 node.RefreshObjects();
@@ -486,7 +509,7 @@ public partial class WorldStreamer : Node3D
 
     private void RefreshChunkHolding(WorldObjectId id)
     {
-        foreach (var node in _chunks.Values.Concat(_scenery.Values))
+        foreach (var node in _chunks.Values.Concat(_scenery.Values).Concat(_retiring.Values))
         {
             if (node.Holds(id))
                 node.RefreshObjects();

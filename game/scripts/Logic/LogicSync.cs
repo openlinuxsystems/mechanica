@@ -162,13 +162,6 @@ public partial class LogicSync : Node
         return feet + Vector3.Up * 0.75f;
     }
 
-    // The yaw of a seat's front (-Z), flattened onto the ground; null when it points straight up or down.
-    private static float? Facing(Basis basis)
-    {
-        var front = -basis.Z;
-        return new Vector2(front.X, front.Z).LengthSquared() > 1e-4f ? Mathf.Atan2(-front.X, -front.Z) : null;
-    }
-
     // Gives each seated player its seat, and takes it away from players who stood up.
     private void Attach()
     {
@@ -180,7 +173,7 @@ public partial class LogicSync : Node
                 {
                     player.SeatStyle = Creations.NodeOf(seat.Creation)?.Creation is { } creation && creation.FindPart(seat.Part) is not null
                         ? SeatStyle.For(creation.DefinitionOf(seat.Part)) : SeatStyle.Default;
-                    player.SeatFacing = () => SeatTransform(seat.Creation, seat.Part) is { } at ? Facing(at.Feet.Basis) : null;
+                    player.SeatFrame = () => SeatTransform(seat.Creation, seat.Part) is { } at ? at.Feet.Basis : null;
                     player.Seat = () => SeatPose(seat.Creation, seat.Part);
                 }
                 if (!player.Simulated)

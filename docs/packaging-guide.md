@@ -233,7 +233,7 @@ like `worldgen.patch.json`, other lists (like `starting_items`) are replaced who
 
 | File | Patches | Rules (everything else is locked) |
 |------|---------|-----------------------------------|
-| `rules/survival.patch.json` | `game/data/survival.json` | Health, respawn, drops on death, refining, buckets, starting items, the easy and normal difficulties' multipliers, fall and impact damage. Locked: `max_drops`, `aim_tolerance`. |
+| `rules/survival.patch.json` | `game/data/survival.json` | Health, respawn, drops on death, refining, buckets, starting items, the easy and normal difficulties' multipliers, fall damage. Locked: `max_drops`, `aim_tolerance`. |
 | `rules/fire.patch.json` | `game/data/fire.json` | How fires grow, spread and hurt. Locked: `tick`, `max_fires`. |
 | `rules/building.patch.json` | `game/data/building.json` | `paint` (palette and ammo), `sledge`, `breaking`, `lift`. |
 
@@ -278,10 +278,6 @@ The locked keys are listed after each table; a patch may not touch them, or anyt
 | `hits.heavy` | 25 | Health from which a blow staggers them back (`hit_heavy`). |
 | `hits.knockdown` | 50 | Health from which it throws them off their feet (`knockdown`, then `get_up`); they can't move while down. |
 | `hits.causes` | `["bot", "sledge", "weapon", "explosion"]` | The causes of harm that are blows; fire, falls and liquids make no reaction. |
-| `impact.min_speed` | 8 | Speed change (m/s, in one physics tick) a part of no durability survives in a crash. |
-| `impact.speed_per_durability` | 1 | Extra speed change a part survives per point of its durability. |
-| `impact.damage_per_speed` | 5 | Health a part loses per m/s of speed change above what it survives. |
-| `impact.depth` | 0.2 | How far behind the leading face a part may sit and still count as hit, in m. |
 
 Locked: `max_drops` (most piles of items on the ground at once) and `aim_tolerance` (how far a shot may point from
 where the host sees the shooter look, an allowance for network lag).

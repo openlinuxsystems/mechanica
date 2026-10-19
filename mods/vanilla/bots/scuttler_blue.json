@@ -12,6 +12,18 @@
     "height": 0.9
   },
   "color": "#3e7fd0",
+  "model": {
+    "mesh": "meshes/bots/scuttler_blue.glb",
+    "attacks": {
+      "drill": [
+        "drill_ram"
+      ]
+    },
+    "clip_speeds": {
+      "patrol": 0.93,
+      "chase": 3
+    }
+  },
   "raid_cost": 2,
   "attacks": [
     {
