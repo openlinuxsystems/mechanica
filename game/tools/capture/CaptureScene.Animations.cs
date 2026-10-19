@@ -65,7 +65,7 @@ public partial class CaptureScene
                 Player.Gesture(CharacterGesture.BucketThrow);
         });
         // The throw as it plays, the water flying out as the vanilla bucket throws it (watering.lua), splashing far ahead.
-        Move("bucket_splash", 90, new Vector3(7.5f, 3.2f, -3.5f), f =>
+        Move("bucket_splash", 100, new Vector3(5.5f, 2.6f, 4.5f), f =>
         {
             if (f == 0)
                 Hold(CharacterProp.WaterBucketFull);
@@ -74,7 +74,7 @@ public partial class CaptureScene
                 Player.Gesture(CharacterGesture.BucketThrow);
             if (f == 18)
                 Throw(12f, 2.5f);
-        }, look: new Vector3(0, 0.6f, -6f));
+        }, look: new Vector3(0, 0.8f, -6f));
         Move("hurt", 45, front, f =>
         {
             if (f == 0)
@@ -140,16 +140,36 @@ public partial class CaptureScene
             model?.Animator.React(reaction, from);
     }
 
-    // Throws water `distance` metres ahead along the look, as watering.lua does, drawn `size` metres across.
+    // Throws water `distance` metres ahead along the look as watering.lua does, drawn `size` metres across with the game's
+    // own water look. It flies here frame by frame rather than through the survival sync, which flies projectiles by the
+    // wall clock and so would race ahead of a capture's fixed frames.
     private void Throw(float distance, float size)
     {
-        var survival = _main.Survival.Actions!;
-        var forward = new System.Numerics.Vector3(-Mathf.Sin(_yaw), 0, -Mathf.Cos(_yaw));
-        var from = Player.GlobalPosition.ToNumerics() + new System.Numerics.Vector3(0, 1.3f, 0) + forward * 0.4f;
-        var gravity = new System.Numerics.Vector3(0, -9.8f, 0);
-        var to = Player.GlobalPosition.ToNumerics() + forward * distance - from;
-        var seconds = 1.1f;
-        survival.Launch(_main.Session.LocalPeer, from, to / seconds - gravity * (0.5f * seconds), gravity, 3f, Core.Survival.ProjectileView.Water, size);
+        var forward = new Vector3(-Mathf.Sin(_yaw), 0, -Mathf.Cos(_yaw));
+        var from = Player.GlobalPosition + Vector3.Up * 1.3f + forward * 0.4f;
+        var gravity = new Vector3(0, -9.8f, 0);
+        const float seconds = 1.1f;
+        var velocity = (Player.GlobalPosition + forward * distance - from) / seconds - gravity * (0.5f * seconds);
+        var water = Survival.WaterEffects.Blob(size);
+        AddChild(water);
+        water.GlobalPosition = from;
+        var ground = Player.GlobalPosition.Y;
+        var t = 0f;
+        Action? fly = null;
+        fly = () =>
+        {
+            t += 1f / 30f;
+            var at = from + velocity * t + gravity * (0.5f * t * t);
+            if (at.Y > ground || t < 0.2f)
+            {
+                water.GlobalPosition = at;
+                return;
+            }
+            GetTree().ProcessFrame -= fly;
+            Survival.WaterEffects.Splash(this, new Vector3(at.X, ground, at.Z), size);
+            water.QueueFree();
+        };
+        GetTree().ProcessFrame += fly;
     }
 
     private void Drive(float x = 0, float z = 0, bool sprint = false, bool crawl = false, bool jump = false) =>

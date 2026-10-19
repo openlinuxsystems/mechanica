@@ -95,10 +95,10 @@ public static class WaterEffects
         radius = Mathf.Clamp(radius, 0.3f, 10f);
         var reach = Mathf.Sqrt(radius / DefaultRadius);
         // The crown: thrown up high in the middle and falling back.
-        Burst(parent, at, Drops("Crown", amount: (int)(60 + 30 * radius), lifetime: 1.1, burst: true, speed: (2.5f * reach, 5.5f * reach),
-            spread: 32f, size: 0.045f));
+        Burst(parent, at, Drops("Crown", amount: (int)(90 + 50 * radius), lifetime: 1.2, burst: true, speed: (3f * reach, 6.5f * reach),
+            spread: 35f, size: 0.06f));
         // The sheet: sprayed out low and fast across the ground to the edge of the radius.
-        var sheet = Drops("Sheet", amount: (int)(90 + 50 * radius), lifetime: 0.9, burst: true, speed: (1.2f, 2.6f), spread: 80f, size: 0.035f);
+        var sheet = Drops("Sheet", amount: (int)(140 + 80 * radius), lifetime: 0.9, burst: true, speed: (1.5f, 3f), spread: 80f, size: 0.05f);
         sheet.EmissionShape = CpuParticles3D.EmissionShapeEnum.Sphere;
         sheet.EmissionSphereRadius = 0.25f;
         sheet.RadialAccelMin = 4.5f * radius;
@@ -106,7 +106,7 @@ public static class WaterEffects
         sheet.DampingMin = sheet.DampingMax = 1.5f;
         Burst(parent, at + Vector3.Up * 0.05f, sheet);
         // Droplets landing all over the patch a beat later.
-        var rain = Drops("Rain", amount: (int)(25 * radius), lifetime: 0.7, burst: true, speed: (0.5f, 1.5f), spread: 30f, size: 0.03f);
+        var rain = Drops("Rain", amount: (int)(40 * radius), lifetime: 0.7, burst: true, speed: (0.5f, 1.5f), spread: 30f, size: 0.04f);
         rain.EmissionShape = CpuParticles3D.EmissionShapeEnum.Sphere;
         rain.EmissionSphereRadius = radius * 0.8f;
         rain.Explosiveness = 0.5f;
@@ -115,7 +115,7 @@ public static class WaterEffects
         var mist = new CpuParticles3D
         {
             Name = "Mist",
-            Amount = (int)(10 + 6 * radius),
+            Amount = (int)(14 + 10 * radius),
             Lifetime = 1.4,
             Explosiveness = 0.9f,
             EmissionShape = CpuParticles3D.EmissionShapeEnum.Sphere,
@@ -131,7 +131,7 @@ public static class WaterEffects
             ScaleAmountMax = 1.3f * reach,
             ScaleAmountCurve = Grow(),
             ColorRamp = new Gradient { Colors = [new Color(0.85f, 0.92f, 1f, 0.55f), new Color(0.85f, 0.92f, 1f, 0f)], Offsets = [0f, 1f] },
-            Mesh = new QuadMesh { Size = new Vector2(0.7f, 0.7f) },
+            Mesh = new QuadMesh { Size = new Vector2(1.1f, 1.1f) },
             MaterialOverride = MistMaterial,
             CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
         };
