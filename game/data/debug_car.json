@@ -1,0 +1,14 @@
+{
+  // The debug scrap car (src/Mechanica.Core/Creations/DebugCar.cs, game/scripts/Creations/DebugCarSpawner.cs): a new world
+  // in a debug build (the editor, godot --path) gets a working scrap car by the player spawn. Release exports never do.
+  "enabled": true,
+  // Where its middle stands from the player spawn, in metres (x east, z south); its wheels go on the ground.
+  "offset": [4.0, 0.0, -8.0],
+  // Degrees it turns from facing north, counter-clockwise seen from above.
+  "yaw": 0.0,
+  // Gasoline in its Gas Container (25 s of full throttle each).
+  "gasoline": 40,
+  // The Scrap Gas Engine's power (1 to 4) and whether it starts switched on.
+  "gear": 4,
+  "engine_on": true
+}
