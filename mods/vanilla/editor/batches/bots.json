@@ -148,6 +148,16 @@
           }
         },
         "swim_depth": 0.6,
+        "wild": {
+          "habitat": "water",
+          "count": 2,
+          "min_distance": 25,
+          "max_distance": 60,
+          "despawn_distance": 100,
+          "min_depth": 2.5,
+          "clear_radius": 10,
+          "interval": 10
+        },
         "name": "Blue Scuttler",
         "description": "Charges with a drill, and is even faster in water.",
         "water_speed": 7,

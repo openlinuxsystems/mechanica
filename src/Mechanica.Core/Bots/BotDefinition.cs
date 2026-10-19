@@ -63,6 +63,9 @@ public sealed record BotDefinition
     /// <summary>Base colour of the placeholder body, <c>"#rrggbb"</c>.</summary>
     public string? Color { get; init; }
 
+    /// <summary>Where it lives in the wild: the host spawns it near players there. Omitted means it only comes in raids and as a guard.</summary>
+    public BotWildDefinition? Wild { get; init; }
+
     /// <summary>Its animated model. Omitted means the placeholder capsule in <see cref="Color"/>.</summary>
     public BotModelDefinition? Model { get; init; }
 
@@ -94,6 +97,41 @@ public sealed record BotDefinition
     public JsonObject? Properties { get; init; }
 
     /// <summary>Keys this build does not know. Kept so a round-trip never loses data.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>
+/// Where a bot lives in the wild (docs/bot-tutorial.md, "Living in the wild"). In Survival the host keeps up to
+/// <see cref="Count"/> of it near each player, in its habitat, and takes away the ones every player has left behind.
+/// </summary>
+public sealed record BotWildDefinition
+{
+    /// <summary><c>water</c> (lakes and the sea) or <c>land</c>.</summary>
+    public string? Habitat { get; init; }
+
+    /// <summary>How many live near each player.</summary>
+    public int? Count { get; init; }
+
+    /// <summary>The nearest it appears to a player, in m.</summary>
+    public float? MinDistance { get; init; }
+
+    /// <summary>The farthest it appears from a player, in m.</summary>
+    public float? MaxDistance { get; init; }
+
+    /// <summary>It goes away when every player is farther than this, in m.</summary>
+    public float? DespawnDistance { get; init; }
+
+    /// <summary>Water: how deep the water must be where it appears, in m.</summary>
+    public float? MinDepth { get; init; }
+
+    /// <summary>How far round the spot must be its habitat too (so its wander stays there), in m.</summary>
+    public float? ClearRadius { get; init; }
+
+    /// <summary>Seconds between tries to spawn more.</summary>
+    public float? Interval { get; init; }
+
+    /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
 }

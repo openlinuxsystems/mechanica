@@ -70,7 +70,7 @@ mod's raid table. The [Bot Tutorial](bot-tutorial.md) explains every field and n
 3. Edit it on the tabs:
    - **Bot**: **Name**, **Description**, **Family (sounds)**, **Health**, **Speed**, **Water speed**,
      **Swim depth**, **Sight**, **Radius**, **Height**, **Colour**, **Melee immune**, **Passive**, **Raid cost**, **Script**,
-     **Attacks and drops** and **Properties**.
+     **Attacks and drops**, **Properties** and **Wild**.
    - **Behavior**: the behaviour tree. Pick a node type from the palette and press **Add** to put it under the
      selected node; **Up**, **Down** and **Remove** rearrange it. Select a node to set its parameters, and
      **+ parameter** adds one your own leaf reads.

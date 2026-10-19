@@ -100,6 +100,9 @@ public partial class BotSync : Node3D, IBotWorld, IRaidWorld
     /// <summary>The POIs' guards, once the world is up (host).</summary>
     public PoiGuards? Guards { get; private set; }
 
+    /// <summary>Host only: the bots that live in the wild (the Blue Scuttlers in the water), once the world is ready.</summary>
+    public WildSpawns? Wild { get; private set; }
+
     /// <summary>Bot brains, once the node is ready (host).</summary>
     public BotRuntime? Runtime { get; private set; }
 
@@ -210,6 +213,9 @@ public partial class BotSync : Node3D, IBotWorld, IRaidWorld
         if (Guards is null && World.Generator is { } world)
             Guards = new PoiGuards(PoiGuards.PostsOf(world), Bots, Survival.Actions!);
         Guards?.Tick();
+        if (Wild is null && World.Generator is { } generator)
+            Wild = new WildSpawns(Book.All, Bots, Survival.Actions!, generator.SeaLevel, generator.HeightAt, (int)generator.Seed);
+        Wild?.Tick();
         if (++_tick % PoseInterval == 0)
             SendPoses();
     }

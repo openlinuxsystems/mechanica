@@ -58,6 +58,7 @@ public class VanillaBotsTests
     public void TheBlueScuttlerSwimsAndTheYellowAndRedOnesShowTheirBlasts()
     {
         Assert.Equal(["vanilla:scuttler_blue"], Book.Value.All.Where(b => b.SwimDepth is not null).Select(b => b.QualifiedId));
+        Assert.Equal(["vanilla:scuttler_blue"], Book.Value.All.Where(b => b.Wild is { Water: true }).Select(b => b.QualifiedId));
         Assert.Equal(BotEffects.Shockwave, Book.Value.FindBot("scuttler_yellow")!.Model!.Effects["stomp"]);
         Assert.Equal(BotEffects.Explosion, Book.Value.FindBot("scuttler_red")!.Model!.Effects["explode"]);
     }
@@ -214,6 +215,26 @@ public class VanillaBotsTests
         var diagnostics = BotBook.Validate(bot, "test", null, Vanilla.Value, "test/bots/whipper.json");
 
         Assert.Contains(diagnostics, d => d.JsonPath == path && (message is null || d.Message == message));
+    }
+
+    [Theory]
+    [InlineData("""{ "count": 2 }""", "$.wild.habitat", "habitat (water or land) is required.")]
+    [InlineData("""{ "habitat": "air", "count": 2 }""", "$.wild.habitat", "habitat 'air' must be water or land.")]
+    [InlineData("""{ "habitat": "water" }""", "$.wild.count", "count (how many near each player) is required.")]
+    [InlineData("""{ "habitat": "water", "count": 0 }""", "$.wild.count", "count must be 1 or more.")]
+    [InlineData("""{ "habitat": "water", "count": 1, "min_distance": 50, "max_distance": 40 }""", "$.wild.max_distance", "max_distance (40) must be more than min_distance (50).")]
+    [InlineData("""{ "habitat": "land", "count": 1, "despawn_distance": 60 }""", "$.wild.despawn_distance", "despawn_distance (60) must be more than max_distance (70).")]
+    public void BadWildSpawnsAreReported(string wild, string path, string message)
+    {
+        var bot = ModelBot(null) with
+        {
+            Wild = System.Text.Json.JsonSerializer.Deserialize<BotWildDefinition>(wild,
+                new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.SnakeCaseLower }),
+        };
+
+        var diagnostics = BotBook.Validate(bot, "test", null, Vanilla.Value, "test/bots/whipper.json");
+
+        Assert.Contains(diagnostics, d => d.JsonPath == path && d.Message == message);
     }
 
     [Fact]

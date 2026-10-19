@@ -13,6 +13,16 @@
     "height": 0.9
   },
   "color": "#3e7fd0",
+  "wild": {
+    "habitat": "water",
+    "count": 2,
+    "min_distance": 25,
+    "max_distance": 60,
+    "despawn_distance": 100,
+    "min_depth": 2.5,
+    "clear_radius": 10,
+    "interval": 10
+  },
   "model": {
     "mesh": "meshes/bots/scuttler_blue.glb",
     "attacks": {

@@ -540,6 +540,7 @@ public partial class BotEditorScreen : Control
         _botGrid.AddJson("Attacks", Pretty(j["attacks"]), text => SetJson(d, "attacks", text));
         _botGrid.AddJson("Drops", Pretty(j["drops"]), text => SetJson(d, "drops", text));
         _botGrid.AddJson("Properties", Pretty(j["properties"]), text => SetJson(d, "properties", text));
+        _botGrid.AddJson("Wild", Pretty(j["wild"]), text => SetJson(d, "wild", text));
         _botGrid.AddHeading("Model and animation");
         _botGrid.AddJson("Model", Pretty(j["model"]), text => SetJson(d, "model", text));
     }
