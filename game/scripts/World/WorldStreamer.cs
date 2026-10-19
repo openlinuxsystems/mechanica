@@ -133,6 +133,9 @@ public partial class WorldStreamer : Node3D
     /// <summary>Chunks waiting to be built around the players and force-loaded Creations.</summary>
     public int PendingChunks => _pending.Count;
 
+    /// <summary>True while a chunk is waiting to be built (its scenery is already gone).</summary>
+    public bool IsPending(ChunkCoord chunk) => _pending.Contains(chunk);
+
     /// <summary>Scenery chunks in view not built yet, as of the last step.</summary>
     public int SceneryMissing { get; private set; }
 
