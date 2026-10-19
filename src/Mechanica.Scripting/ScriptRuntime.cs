@@ -270,7 +270,7 @@ public sealed partial class ScriptRuntime
         ReconcileItems();
         DeliverEvents();
         DeliverSignals();
-        var arg = DynValue.NewNumber(dt);
+        DynValue[] arg = [DynValue.NewNumber(dt)];
         _stepping.Clear();
         _stepping.AddRange(_worlds);
         foreach (var instance in _stepping)
@@ -289,7 +289,7 @@ public sealed partial class ScriptRuntime
             if (instance.Fault is null)
                 CallHook(instance, Hooks.OnUpdate, arg);
         }
-        UpdateHeldItems(arg);
+        UpdateHeldItems(arg[0]);
         CollectOutputs();
         _stepping.Clear();
     }

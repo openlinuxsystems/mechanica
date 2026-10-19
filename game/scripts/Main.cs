@@ -508,7 +508,7 @@ public partial class Main : Node3D
         };
         AddChild(Logic);
         Logic.RegisterActions(Actions.Dispatcher);
-        Display = new PartDisplaySync { Name = "Display", Session = Session, Creations = Creations, Scripts = Scripts, ConnectToolOut = () => Tools?.Connector.Active == true };
+        Display = new PartDisplaySync { Name = "Display", Session = Session, Creations = Creations, Scripts = Scripts, InterestOf = peer => CreationSync.InterestOf(peer), ConnectToolOut = () => Tools?.Connector.Active == true };
         AddChild(Display);
         LogicOverlay = new LogicOverlay { Creations = Creations, Players = PlayerSync, Actions = Actions, Build = Build, ReadDeviceInput = ReadDeviceInput, Connector = () => Tools?.Connector };
         AddChild(LogicOverlay);

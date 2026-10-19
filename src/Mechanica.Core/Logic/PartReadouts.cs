@@ -12,7 +12,9 @@ public sealed record PartReadout(int Creation, int Part, string Id, float? Numbe
 /// What each part's script shows (UI spec §12): a fuel level, a speed, whether it runs. Scripts set values on the
 /// host with <c>part.display(id, value)</c>; the host sends them to every client, and every peer shows them in the
 /// part's menu (<see cref="Data.MenuDefinition.Readouts"/>) and on the part itself (<see cref="Data.DisplayDefinition"/>).
-/// A part with no value for an id shows nothing for it. <see cref="Revision"/> changes whenever a value does.
+/// A part with no value for an id shows nothing for it. <see cref="Revision"/> changes whenever a value does, and
+/// each Creation and part carries the revision it last changed at (<see cref="StampOf"/>), so the host sends each
+/// client only what changed near it (<see cref="ReadoutFeed"/>).
 /// </summary>
 public sealed class PartReadouts
 {
@@ -22,22 +24,34 @@ public sealed class PartReadouts
     /// <summary>Longest a text value may be.</summary>
     public const int MaxText = 64;
 
-    private readonly SortedDictionary<(int Creation, int Part), SortedDictionary<string, (float? Number, string? Text)>> _values = [];
+    private readonly Dictionary<int, CreationValues> _creations = [];
+
+    private sealed class CreationValues
+    {
+        public int Stamp;
+        public readonly SortedDictionary<int, PartValues> Parts = [];
+    }
+
+    private sealed class PartValues
+    {
+        public int Stamp;
+        public readonly SortedDictionary<string, (float? Number, string? Text)> Values = new(StringComparer.Ordinal);
+    }
 
     /// <summary>Goes up by one on every change.</summary>
     public int Revision { get; private set; }
 
     /// <summary>A part's number <paramref name="id"/>, or null when it shows none (or shows text).</summary>
     public float? Number(int creation, int part, string id) =>
-        _values.TryGetValue((creation, part), out var values) && values.TryGetValue(id, out var value) ? value.Number : null;
+        Find(creation, part) is { } values && values.Values.TryGetValue(id, out var value) ? value.Number : null;
 
     /// <summary>A part's text <paramref name="id"/>, or null when it shows none (or shows a number).</summary>
     public string? Text(int creation, int part, string id) =>
-        _values.TryGetValue((creation, part), out var values) && values.TryGetValue(id, out var value) ? value.Text : null;
+        Find(creation, part) is { } values && values.Values.TryGetValue(id, out var value) ? value.Text : null;
 
     /// <summary>True when the part shows something for <paramref name="id"/>.</summary>
     public bool Has(int creation, int part, string id) =>
-        _values.TryGetValue((creation, part), out var values) && values.ContainsKey(id);
+        Find(creation, part) is { } values && values.Values.ContainsKey(id);
 
     /// <summary>
     /// Sets a number (non-finite counts as 0). Null error when it was set; otherwise why not (too many values, a bad id).
@@ -52,48 +66,123 @@ public sealed class PartReadouts
     /// <summary>Takes one value away.</summary>
     public void Clear(int creation, int part, string id)
     {
-        if (_values.TryGetValue((creation, part), out var values) && values.Remove(id))
-        {
-            if (values.Count == 0)
-                _values.Remove((creation, part));
-            Revision++;
-        }
+        if (!_creations.TryGetValue(creation, out var values) || !values.Parts.TryGetValue(part, out var partValues)
+            || !partValues.Values.Remove(id))
+            return;
+        Revision++;
+        values.Stamp = partValues.Stamp = Revision;
+        if (partValues.Values.Count == 0)
+            RemovePart(creation, values, part);
     }
 
     /// <summary>Drops every value of a part (the part went away).</summary>
     public void Forget(int creation, int part)
     {
-        if (_values.Remove((creation, part)))
-            Revision++;
+        if (!_creations.TryGetValue(creation, out var values) || !values.Parts.ContainsKey(part))
+            return;
+        Revision++;
+        values.Stamp = Revision;
+        RemovePart(creation, values, part);
     }
 
     /// <summary>Drops the values of every part of <paramref name="creation"/> that <paramref name="keep"/> says is gone.</summary>
     public void Prune(int creation, Func<int, bool> keep)
     {
-        foreach (var key in _values.Keys.Where(k => k.Creation == creation && !keep(k.Part)).ToList())
+        if (!_creations.TryGetValue(creation, out var values))
+            return;
+        foreach (var part in values.Parts.Keys.Where(p => !keep(p)).ToList())
         {
-            _values.Remove(key);
             Revision++;
+            values.Stamp = Revision;
+            RemovePart(creation, values, part);
         }
     }
 
     /// <summary>Drops every value.</summary>
     public void Clear()
     {
-        if (_values.Count == 0)
+        if (_creations.Count == 0)
             return;
-        _values.Clear();
+        _creations.Clear();
         Revision++;
     }
 
     /// <summary>Every value, in creation, part and id order.</summary>
-    public IReadOnlyList<PartReadout> All =>
-        [.. _values.SelectMany(p => p.Value.Select(v => new PartReadout(p.Key.Creation, p.Key.Part, v.Key, v.Value.Number, v.Value.Text)))];
+    public IReadOnlyList<PartReadout> All
+    {
+        get
+        {
+            var all = new List<PartReadout>();
+            foreach (var creation in _creations.Keys.Order())
+            {
+                foreach (var part in _creations[creation].Parts.Keys)
+                    AddValuesOf(creation, part, all);
+            }
+            return all;
+        }
+    }
+
+    /// <summary>The revision a Creation's values last changed at; 0 when it shows nothing.</summary>
+    public int StampOf(int creation) => _creations.TryGetValue(creation, out var values) ? values.Stamp : 0;
+
+    /// <summary>The parts of a Creation that show something, in id order, with the revision each last changed at.</summary>
+    public IEnumerable<(int Part, int Stamp)> PartsOf(int creation)
+    {
+        if (!_creations.TryGetValue(creation, out var values))
+            yield break;
+        foreach (var (part, partValues) in values.Parts)
+            yield return (part, partValues.Stamp);
+    }
+
+    /// <summary>True when the part shows anything.</summary>
+    public bool Shows(int creation, int part) => Find(creation, part) is not null;
+
+    /// <summary>Adds every value of one part, in id order, to <paramref name="into"/>.</summary>
+    public void AddValuesOf(int creation, int part, List<PartReadout> into)
+    {
+        if (Find(creation, part) is not { } values)
+            return;
+        foreach (var (id, value) in values.Values)
+            into.Add(new PartReadout(creation, part, id, value.Number, value.Text));
+    }
 
     /// <summary>Replaces every value with the host's (a client's copy). Bad entries are skipped.</summary>
     public void Load(IEnumerable<PartReadout> readouts)
     {
-        _values.Clear();
+        _creations.Clear();
+        PutAll(readouts);
+        Revision++;
+    }
+
+    /// <summary>
+    /// Brings a client's copy up to date with what the host sent (<see cref="ReadoutFeed"/>): the listed Creations
+    /// and parts lose every value they had, then take the values sent. Bad entries are skipped.
+    /// </summary>
+    public void Apply(ReadoutChanges changes)
+    {
+        foreach (var creation in changes.Creations)
+            _creations.Remove(creation);
+        foreach (var part in changes.Parts)
+        {
+            if (_creations.TryGetValue(part.Creation, out var values))
+                RemovePart(part.Creation, values, part.Part);
+        }
+        PutAll(changes.Values);
+        Revision++;
+    }
+
+    private PartValues? Find(int creation, int part) =>
+        _creations.TryGetValue(creation, out var values) && values.Parts.TryGetValue(part, out var partValues) ? partValues : null;
+
+    private void RemovePart(int creation, CreationValues values, int part)
+    {
+        values.Parts.Remove(part);
+        if (values.Parts.Count == 0)
+            _creations.Remove(creation);
+    }
+
+    private void PutAll(IEnumerable<PartReadout> readouts)
+    {
         foreach (var readout in readouts)
         {
             if (readout.Number is { } n)
@@ -101,27 +190,34 @@ public sealed class PartReadouts
             else if (readout.Text is { } text)
                 Put(readout.Creation, readout.Part, readout.Id, (null, text.Length > MaxText ? text[..MaxText] : text), count: false);
         }
-        Revision++;
     }
 
     private string? Put(int creation, int part, string id, (float? Number, string? Text) value, bool count = true)
     {
         if (!Data.Identifiers.IsValid(id))
             return $"readout id '{id}' must be lowercase snake_case";
-        if (!_values.TryGetValue((creation, part), out var values))
-            _values[(creation, part)] = values = new SortedDictionary<string, (float?, string?)>(StringComparer.Ordinal);
-        if (values.TryGetValue(id, out var old))
+        var partValues = Find(creation, part);
+        if (partValues is not null && partValues.Values.TryGetValue(id, out var old))
         {
             if (old == value)
                 return null;
         }
-        else if (values.Count >= MaxPerPart)
+        else if (partValues is not null && partValues.Values.Count >= MaxPerPart)
         {
             return $"a part may show at most {MaxPerPart} values";
         }
-        values[id] = value;
+        if (partValues is null)
+        {
+            if (!_creations.TryGetValue(creation, out var values))
+                _creations[creation] = values = new CreationValues();
+            values.Parts[part] = partValues = new PartValues();
+        }
+        partValues.Values[id] = value;
         if (count)
+        {
             Revision++;
+            partValues.Stamp = _creations[creation].Stamp = Revision;
+        }
         return null;
     }
 }
