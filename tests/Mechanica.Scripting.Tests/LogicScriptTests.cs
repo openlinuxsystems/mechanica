@@ -89,6 +89,7 @@ public sealed class LogicScriptTests : IDisposable
         var toggle = Place(creation, "vanilla:switch", new GridCell(1, 1, 0));
         var press = Place(creation, "vanilla:button", new GridCell(-1, 1, 0));
         Steps(1);
+        Assert.Equal("off", _runtime.Readouts.Text(Car, toggle, "pose"));
         Activate(creation, toggle);
         Activate(creation, press);
         Steps(1);
@@ -97,10 +98,12 @@ public sealed class LogicScriptTests : IDisposable
         // properties.pulse is 0.5 s: 30 steps.
         Steps(31);
         Assert.Equal(1f, _runtime.Signals.Output(Car, toggle));
+        Assert.Equal("on", _runtime.Readouts.Text(Car, toggle, "pose"));
         Assert.Equal(0f, _runtime.Signals.Output(Car, press));
         Activate(creation, toggle);
         Steps(1);
         Assert.Equal(0f, _runtime.Signals.Output(Car, toggle));
+        Assert.Equal("off", _runtime.Readouts.Text(Car, toggle, "pose"));
     }
 
     [Fact]

@@ -107,7 +107,7 @@ Settings are changed with E on the part; properties are fixed in the part's data
 | Logic Gate | 1 or 0 | `mode`: and, or, xor, nand, nor, xnor | |
 | Timer | Its input, `delay` seconds later; or on and off every `delay` while its input is on | `delay` (s), `mode` (once, repeat) | |
 | Sensor | 1 while something it detects is within `range` of its face | `range` (1 to 20 m), `players`, `bots`, `blocks`, `creations` | `interval` (steps between checks), `cone` (°) |
-| Switch | 1 while on; E toggles it | | |
+| Switch | 1 while on; E toggles it. Its rocker tips over and its light shows red while off, teal while on | | |
 | Button | 1 for `pulse` seconds after E | | `pulse` (s) |
 | Controller | 1 while it runs | `frames` (up to 10), `frame_time` (s), `loop` | `speed` (rad/s), `torque` (N·m), `force` (N) |
 

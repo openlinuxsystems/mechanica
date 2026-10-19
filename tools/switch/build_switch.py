@@ -76,15 +76,16 @@ SNAP = 0.12                                      # seconds the rocker takes to s
 # =====================================================================================================
 
 def make_materials():
+    # the Button's gunmetal, teal, copper and glow (tools/button/build_button.py), so the two read as a pair
     return {
         "hole": pt.plain("sw_hole", "#0c0d0f", 0.9, 0.2),
         "lens": pt.plain("sw_lens", "#1a1c1f", 0.15, 0.0),
-        "teal": pt.plain("sw_teal", "#24807e", 0.38, 0.5),
-        "teal_glow": pt.plain("sw_teal_glow", "#14b8ac", 0.3, 0.0, emission="#10c8b8", strength=1.2),
+        "teal": pt.plain("sw_teal", "#2b8a92", 0.32, 0.35),
+        "teal_glow": pt.plain("sw_teal_glow", "#3fdcea", 0.3, 0.0, emission="#3fdcea", strength=1.4),
         "red_glow": pt.plain("sw_red_glow", "#d0241c", 0.3, 0.0, emission="#ff1a10", strength=1.2),
-        "gun": pt.plain("sw_gun", "#4b4e53", 0.42, 0.65),
+        "gun": pt.plain("sw_gun", "#4e5256", 0.46, 0.8),
         "gun_dark": pt.plain("sw_gun_dark", "#36383c", 0.5, 0.6),
-        "copper": pt.plain("sw_copper", "#c47645", 0.3, 0.95),
+        "copper": pt.plain("sw_copper", "#c27a4a", 0.28, 1.0),
     }
 
 

@@ -9,7 +9,7 @@
   "buoyancy": 0.2,
   "flammable": false,
   "stack_size": 10,
-  "sound_material": "plastic",
+  "sound_material": "metal",
   "size": [1, 1, 1],
   "mesh": "meshes/parts/switch.glb",
   "icon": "textures/items/switch_icon.png",
