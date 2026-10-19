@@ -50,7 +50,7 @@ through the [External AI Endpoint](ai-endpoint.md), or add the bot to your raid 
 | `passive` | bool | false | Never joins raids and never attacks first. |
 | `raid_cost` | integer | none | What one bot costs from a raid's budget. Omitted means it never raids. |
 | `attacks` | list | `[]` | Its attacks (below). |
-| `drops` | list | `[]` | `{item, chance, count}`; each is rolled on its own when it dies. |
+| `drops` | list | `[]` | `{item, chance, count, count_max}`; each is rolled on its own when it dies (`chance` 0 to 1, default 1), and drops a random count from `count` to `count_max` (default `count`). |
 | `behavior` | node | none | Its behaviour tree (section 3). |
 | `script` | path | none | Its Lua script, relative to the mod root. |
 | `properties` | object | `{}` | Free-form values its script reads as `properties`. |

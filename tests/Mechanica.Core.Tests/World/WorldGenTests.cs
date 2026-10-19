@@ -549,6 +549,7 @@ public class WorldGenTests
     [InlineData("""{ "biomes": [{ "id": "a" }], "objects": [{ "id": "g", "collider": { "shape": "sphere", "radius": 1 }, "regrow": 0 }] }""", "$.objects[0].regrow")]
     [InlineData("""{ "biomes": [{ "id": "a" }], "objects": [{ "id": "g", "collider": { "shape": "sphere", "radius": 1 }, "harvest": true, "refine": true }] }""", "$.objects[0].harvest")]
     [InlineData("""{ "biomes": [{ "id": "a" }], "objects": [{ "id": "g", "collider": { "shape": "sphere", "radius": 1 }, "drops": [{ "item": "x", "count": 3, "count_max": 2 }] }] }""", "$.objects[0].drops[0].count_max")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "objects": [{ "id": "g", "collider": { "shape": "sphere", "radius": 1 }, "drops": [{ "item": "x", "chance": 1.5 }] }] }""", "$.objects[0].drops[0].chance")]
     [InlineData("""{ "biomes": [{ "id": "a" }], "grounds": [{ "id": "g", "texture": "g.png" }], "slope_ground": { "ground": "g", "from": 1, "to": 0.5 } }""", "$.slope_ground")]
     [InlineData("""{ "biomes": [{ "id": "a" }], "grounds": [{ "id": "a1", "texture": "g.png" }, { "id": "a2", "texture": "g.png" }, { "id": "a3", "texture": "g.png" }, { "id": "a4", "texture": "g.png" }, { "id": "a5", "texture": "g.png" }, { "id": "a6", "texture": "g.png" }, { "id": "a7", "texture": "g.png" }, { "id": "a8", "texture": "g.png" }, { "id": "a9", "texture": "g.png" }] }""", "$.grounds")]
     public void BadWorldGenDataGivesAClearError(string json, string path)

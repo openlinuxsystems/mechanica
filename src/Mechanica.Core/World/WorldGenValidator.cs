@@ -128,6 +128,8 @@ internal static class WorldGenValidator
                     sink.Error(Code, $"{path}.drops[{d}].count", "count must be 1 or more.");
                 if (drop.CountMax is { } most && most < drop.Count)
                     sink.Error(Code, $"{path}.drops[{d}].count_max", $"count_max must be at least count ({drop.Count}).");
+                if (drop.Chance is { } chance && !(chance is >= 0f and <= 1f))
+                    sink.Error(Code, $"{path}.drops[{d}].chance", "chance must be from 0 to 1.");
             }
             if (o.Harvest && o.Drops is not { Count: > 0 })
                 sink.Warning(Code, $"{path}.harvest", "harvesting gives nothing: the object has no drops.");
