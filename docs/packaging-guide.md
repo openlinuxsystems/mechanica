@@ -274,6 +274,10 @@ The locked keys are listed after each table; a patch may not touch them, or anyt
 | `difficulties.normal.raid_cooldown` | 1 | |
 | `fall.min_speed` | 11 | Landing speed (m/s, straight down) that starts to hurt. |
 | `fall.damage_per_speed` | 8 | Health lost per m/s above `fall.min_speed`. |
+| `hits.light` | 1 | Health a blow must take for the player to flinch away from it (`hit_front`, `hit_back`, `hit_left`, `hit_right`). |
+| `hits.heavy` | 25 | Health from which a blow staggers them back (`hit_heavy`). |
+| `hits.knockdown` | 50 | Health from which it throws them off their feet (`knockdown`, then `get_up`); they can't move while down. |
+| `hits.causes` | `["bot", "sledge", "weapon", "explosion"]` | The causes of harm that are blows; fire, falls and liquids make no reaction. |
 | `impact.min_speed` | 8 | Speed change (m/s, in one physics tick) a part of no durability survives in a crash. |
 | `impact.speed_per_durability` | 1 | Extra speed change a part survives per point of its durability. |
 | `impact.damage_per_speed` | 5 | Health a part loses per m/s of speed change above what it survives. |
