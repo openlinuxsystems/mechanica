@@ -1,0 +1,9 @@
+{
+  "code": "eo",
+  "name": "Esperanto",
+  "strings": {
+    "Lantern": "Lanterno",
+    "New game": "Nova ludo",
+    "open the {0}": "malfermu la {0}"
+  }
+}

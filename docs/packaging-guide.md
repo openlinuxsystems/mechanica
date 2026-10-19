@@ -32,6 +32,7 @@ mods/
     quests/             quests and dialogue (*.json), see quests.md
     characters/         player characters and skins (*.json), see characters.md
     rules/              game rules: survival.patch.json, fire.patch.json, building.patch.json (see Game rules)
+    lang/               string tables (<code>.json) for the mod's text and the game's, see translating.md
 ```
 
 Rules the loader enforces:
@@ -241,6 +242,107 @@ A patch that changes a locked key is an error and the mod is not loaded (`MD1602
 the world starts, with an error in the log (`MD1603`), and the rules before it still apply. Rules apply when a world
 starts or joins, and host and clients check they run the same files.
 
+### Game rules reference
+
+Every key a rules patch may change, with the value the build ships and what it does. Keys inside an object
+are written with dots: `fall.min_speed` is `{ "fall": { "min_speed": ... } }` in the patch. Units are SI.
+The locked keys are listed after each table; a patch may not touch them, or anything inside them.
+
+#### `survival.json`
+
+| Key | Default | Meaning |
+|-----|---------|---------|
+| `max_health` | 100 | A player's full health. Health is the only survival meter. |
+| `respawn_delay` | 5 | Seconds a dead player waits before they may respawn. |
+| `low_health` | 0.25 | Share of full health below which the HUD warns and the low-health heartbeat plays. |
+| `reach` | 7.5 | How far from a player's eyes soil, beds and water can be used, in m. |
+| `pickup_reach` | 3 | How far from a player's eyes items on the ground can be picked up, in m. |
+| `drop_lifetime` | 900 | Seconds items lie on the ground before they are gone. |
+| `drop_inventory_on_death` | true | Whether a dead player's inventory falls where they died (in the knockout bag). |
+| `knockout_bag` | `vanilla:meshes/knockout_bag.glb` | The model a knocked-out player's items lie in (`mod:path`). |
+| `bucket_item` | `water_bucket` | The empty bucket `CollectWater` fills. |
+| `water_item` | `water_bucket_full` | The full bucket an empty one turns into at water, in the same slot. |
+| `water_seconds` | 1 | Shortest time between one player's fills at water, in s. |
+| `refine_seconds` | 5.2 | Seconds E is held on a resource node (a tree, a rock node) or a loose part to refine it. |
+| `refine_cancel_distance` | 1.5 | How far a player may move while refining before it stops, in m. |
+| `starting_items` | 4 Carrot Seeds, 4 Potato Seeds, 8 Soil Bags, 2 full Water Buckets, 3 Carrots, a Portable Fabricator, a Connect Tool | What each player starts a Survival world with: a list of `{item, count}`. A patch replaces the whole list. |
+| `difficulties.easy.bot_damage` | 0.5 | On Easy: multiplier on the damage bots do to players. |
+| `difficulties.easy.raid_budget` | 0.6 | On Easy: multiplier on a raid's budget (how many bots it sends). |
+| `difficulties.easy.raid_cooldown` | 1.5 | On Easy: multiplier on the wait after a raid before the next can start. |
+| `difficulties.normal.bot_damage` | 1 | The same three multipliers on Normal. |
+| `difficulties.normal.raid_budget` | 1 | |
+| `difficulties.normal.raid_cooldown` | 1 | |
+| `fall.min_speed` | 11 | Landing speed (m/s, straight down) that starts to hurt. |
+| `fall.damage_per_speed` | 8 | Health lost per m/s above `fall.min_speed`. |
+| `impact.min_speed` | 8 | Speed change (m/s, in one physics tick) a part of no durability survives in a crash. |
+| `impact.speed_per_durability` | 1 | Extra speed change a part survives per point of its durability. |
+| `impact.damage_per_speed` | 5 | Health a part loses per m/s of speed change above what it survives. |
+| `impact.depth` | 0.2 | How far behind the leading face a part may sit and still count as hit, in m. |
+
+Locked: `max_drops` (most piles of items on the ground at once) and `aim_tolerance` (how far a shot may point from
+where the host sees the shooter look, an allowance for network lag).
+
+#### `fire.json`
+
+| Key | Default | Meaning |
+|-----|---------|---------|
+| `grow` | 0.08 | Strength a fire gains per second, up to 1. |
+| `ignite` | 0.2 | Strength a part that just caught starts burning at. |
+| `spread_at` | 0.6 | Strength at which a burning part sets its flammable neighbours alight. |
+| `part_damage` | 4 | Health per second a full-strength fire takes off the part it burns (less while weaker). |
+| `player_damage` | 10 | Health per second a full-strength fire takes off a player standing in it (less while weaker). |
+| `player_radius` | 1.2 | How close to a fire a player's feet must be for it to burn them, in m. |
+| `site_marker` | `fire` | POI marker type where fires burn when a world is made (the crash site's). |
+| `site_radius` | 1.5 | How close to such a fire a flammable part catches, in m. |
+| `sound` | `burn_wood` | Looping sound event every fire plays, its intensity following the fire's strength (a bare id is vanilla's). |
+
+Locked: `tick` (seconds between the host's fire updates) and `max_fires` (most fires burning at once).
+
+#### `building.json`
+
+| Key | Default | Meaning |
+|-----|---------|---------|
+| `lift.platform_size` | 1.0 | Width and depth of the Lift's platform, in m. |
+| `lift.base_height` | 0.5 | Height of the platform's top above the ground at level 0, in m. |
+| `lift.level_height` | 0.25 | How far one level raises the platform, in m. |
+| `lift.max_level` | 20 | Highest level. |
+| `lift.model` | `vanilla:meshes/lift/lift.glb` | The Lift's model (`mod:path`); its `deploy` clip plays when it is put down and its `extend` clip follows the deck height. |
+| `lift.raise_speed` | 0.9 | Fastest the platform moves between levels, in m/s. |
+| `lift.raise_acceleration` | 4.0 | How quickly the platform speeds up and slows down, in m/s². |
+| `lift.end_stop_sound` | `impact_metal` | Sound event played when the platform comes to rest at level 0 or the top. |
+| `lift.remove_hold_seconds` | 0.5 | Seconds right click is held on the Lift before it is taken away. |
+| `lift.refuse_stored_items` | true | When true, a Creation whose storage holds items can't be picked up onto the Lift. |
+| `lift.max_blueprints` | 50 | Most blueprints the blueprint menu lists, newest first. |
+| `lift.blueprint_max_bytes` | 1048576 | Longest blueprint, in characters of JSON, that `LoadBlueprint` accepts. |
+| `paint.palette` | 40 colours | The colours the Paint Tool offers, `"#rrggbb"`, base colour by base colour, each from light to dark. The host accepts any colour. |
+| `paint.shades` | 4 | Shades of each base colour in the palette. |
+| `paint.default_color` | 25 | The palette index the tool starts with. |
+| `paint.max_parts_per_action` | 256 | Most parts one Paint action, or one drag, may colour. |
+| `paint.drag_flush_seconds` | 0.1 | While dragging, how often the parts passed over are sent to the host, in s. |
+| `paint.ammo` | `paint_ammo` | The item a stroke uses in Survival; leave it out (`null`) to make painting free. |
+| `paint.ammo_per_stroke` | 1 | How many of `paint.ammo` one stroke uses. |
+| `paint.stroke_seconds` | 1.0 | Longest gap between the parts of one stroke reaching the host, in s; a longer gap starts a new stroke, which pays again. |
+| `breaking.spread_speed` | 1.5 | Outward speed each loose piece starts with when something falls apart (a rock into chunks), in m/s. |
+| `breaking.lift_speed` | 1.5 | Upward speed each piece starts with, in m/s. |
+| `breaking.fell_gap` | 0.05 | Metres between a felled tree's log segments stacked up its trunk, and under the lowest. |
+| `sledge.damage` | 10 | Health one Sledgehammer hit takes from a part (unless the part has its own `sledge_damage`). |
+| `sledge.health_per_durability` | 10 | A part's full health per point of its `durability`. |
+| `sledge.swing_seconds` | 0.6 | Shortest time between one player's hits: one whole swing, in s. |
+| `sledge.strike_seconds` | 0 | Seconds from the click to the hit (0: the hit lands at the click). |
+| `sledge.reach` | 3.0 | How far a swing reaches, in m. |
+| `sledge.impulse` | 5000 | Impulse a hit gives what it lands on, along the swing, in N·s. |
+| `sledge.max_knockback_speed` | 4.0 | Fastest a hit sets anything moving, in m/s, so a light Body isn't thrown across the map. |
+| `sledge.character_mass` | 80 | The mass a player or bot counts as when a hit knocks it back, in kg. |
+| `sledge.knockback_lift` | 2.5 | Upward speed a knocked-back player or bot gets on top of the push, in m/s. |
+| `sledge.knockback_drag` | 8 | How fast a knocked-back bot slows to its own walk again, in m/s². |
+| `sledge.shake_metres` | 0.03 | How far the swinging player's camera jolts when a hit lands, in m (0: no shake). |
+| `sledge.shake_seconds` | 0.2 | How long that jolt takes to settle, in s. |
+| `sledge.combat_damage` | 20 | Health one hit takes from a player or bot. |
+| `sledge.object_damage` | 10 | Health one hit takes from a tree, rock or other world object without its own `sledge_damage`. |
+
+Locked: `reach`, `max_parts_per_creation`, `clearance_scale`, `anchor_margin`, `placement`, `connect` and `weld`
+(build reach, Creation size, placement timings, the Connect Tool's drawing and the Weld Tool's seam).
+
 ## 7. Load order and the Mod Manager
 
 Players manage mods in the in-game **Mod Manager** (under **Mod tools** on the main menu). It lists
@@ -253,11 +355,14 @@ every installed mod in load order and shows, for the setup on screen:
 - each mod's status (loaded, disabled, not loaded and why, overrides won or lost) and details.
 - every error, warning and conflict the setup would load with, before anything is saved.
 - **Export…**, **Install…** and **Uninstall** for mod packages (§9).
+- **Open mods folder** shows the `mods/` folder (next to the game) in your file manager, and **Rescan** looks
+  for new and changed mods in it, for example after you copied a mod in by hand. Rescan reloads the saved setup,
+  so if you changed the list without pressing **Apply** it asks before it drops those changes.
 - **New mod…** makes an empty mod (a `mod.json` that depends on vanilla, with `parts/` and `scripts/`) to fill
   with the Part Editor, Lua and data files. **Edit info…** changes the selected mod's name, version, description,
   authors and dependencies in its `mod.json`, keeping everything else.
 - **Check all content** loads every kind of content of the setup on screen the way a world starts (parts, sounds,
-  world generation, recipes, bots, raids, quests, characters) and compiles every Lua script, and lists each problem
+  world generation, recipes, bots, raids, quests, characters, languages) and compiles every Lua script, and lists each problem
   with the content area, file and line. The quick list under **Problems** only covers mods and parts.
 
 **Apply** saves the setup to `mods.json` in the user data folder (`user://mods.json`; on Linux

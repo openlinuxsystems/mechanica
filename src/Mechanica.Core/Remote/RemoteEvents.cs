@@ -26,7 +26,7 @@ public sealed class RemoteEvents
         ["messages"] = "Lua prints, warnings and errors from part, item and bot scripts, and host errors from agent calls: kind, source, script, creation, part, text.",
         ["hurt"] = "A player took damage: peer, amount, cause.",
         ["vitals"] = "A player's vitals changed (health, death, respawn): the GetVitals view.",
-        ["dialogue"] = "A quest character spoke: quest, speaker, text, choices.",
+        ["dialogue"] = "A quest character spoke: quest, lines (each with speaker and text).",
         ["quest"] = "Quest progress changed: the GetQuests state.",
         ["raid"] = "A raid started, advanced or ended: the GetRaid view.",
         ["bots"] = "A bot spawned, was removed or attacked: kind, bot, plus the attack or bot view.",

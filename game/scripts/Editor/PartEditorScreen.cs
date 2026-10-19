@@ -995,6 +995,19 @@ public partial class PartEditorScreen : Control
                 optional: true, fallback: AimDefinition.DefaultZoom, suffix: "×");
             _partGrid.AddBool("Fire on release", aim.FireOnRelease, v => Set("Set fire on release", x => x with { Aim = x.Aim! with { FireOnRelease = v == true ? true : null } }), optional: true);
         }
+        // The model a player holds in the right hand, seen by every player (docs/part-data-schema.md, held).
+        _partGrid.AddBool("Held model", d.Held is not null, v => Toggle("held", v == true, x => x with { Held = x.Held ?? new HeldDefinition() }, x => x with { Held = null }));
+        if (d.Held is { } held)
+        {
+            void SetHeld(string label, Func<HeldDefinition, HeldDefinition> change) => Set(label, x => x with { Held = change(x.Held!) });
+            AddAssetField(_partGrid, "Held mesh", held.Mesh, AssetKind.Mesh, v => SetHeld("Set held mesh", x => x with { Mesh = v }));
+            _partGrid.AddVector("Held offset (m)", held.Offset ?? Vec3.Zero, 0.01,
+                v => SetHeld("Move held model", x => x with { Offset = v == Vec3.Zero ? null : v }), -HeldDefinition.MaxOffset, HeldDefinition.MaxOffset);
+            _partGrid.AddVector("Held rotation (°)", held.Rotation ?? Vec3.Zero, 5,
+                v => SetHeld("Turn held model", x => x with { Rotation = v == Vec3.Zero ? null : v }), -360, 360);
+            _partGrid.AddNumber("Held scale", held.Scale, 0.01, HeldDefinition.MaxScale, 0.05, v => SetHeld("Scale held model", x => x with { Scale = (float?)v }),
+                optional: true, fallback: 1, suffix: "×");
+        }
     }
 
     // "logic, power" as node kinds; unknown words are dropped, and an empty list means the default (any kind).

@@ -1,0 +1,17 @@
+{
+  "id": "trail_mix",
+  "name": "Trail Mix",
+  "description": "Nuts and dried fruit. Eat it to heal 15 health.",
+  "category": "consumable",
+  "mass": 0.1,
+  "stack_size": 20,
+  "visual": {
+    "color": "#9a6b3c"
+  },
+  "script": "vanilla:scripts/food.lua",
+  "properties": {
+    "health": 15,
+    "welcome_gift": 3,
+    "snack_interval": 600
+  }
+}

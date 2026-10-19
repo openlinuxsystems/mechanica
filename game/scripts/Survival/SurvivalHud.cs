@@ -490,7 +490,7 @@ public partial class SurvivalHud : CanvasLayer
             .FirstOrDefault();
         if (nearest is null)
             return null;
-        var label = string.Join(", ", nearest.Items.Select(s => $"{Catalog.FindDefinition(s.Item)?.Name ?? s.Item} x{s.Count}"));
+        var label = string.Join(", ", nearest.Items.Select(s => $"{Loc.Mod(Catalog.FindDefinition(s.Item)?.Name ?? s.Item)} x{s.Count}"));
         return (Loc.T("pick up {0}", label), () => Request(SurvivalActions.PickUp, new PickUpArgs(nearest.Id)));
     }
 

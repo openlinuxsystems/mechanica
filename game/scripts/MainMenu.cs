@@ -82,6 +82,8 @@ public partial class MainMenu : Control
             return;
         }
         Input.MouseMode = Input.MouseModeEnum.Visible;
+        // The enabled mods' language files: their translations of the menus, and languages they add to Options.
+        Loc.UseMods(ModPaths.EnabledDirectories());
         SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         AddChild(new HomeBackground { Name = "Background" });
         AddChild(new MenuMusic { Name = "Music" });
@@ -123,12 +125,16 @@ public partial class MainMenu : Control
         AddButton(column, "Options", () => OpenOptions(), "Controls, graphics, audio and more");
         AddButton(column, "Credits", () => OpenCredits(), "Who made the game");
         _quit = AddButton(column, "Quit", () => GetTree().Quit(), "Close the game");
-        var tools = new VBoxContainer { Name = "ModTools", CustomMinimumSize = new Vector2(240, 0) };
-        columns.AddChild(tools);
-        tools.AddChild(new Label { Text = "Mod tools", ThemeTypeVariation = "TitleLabel", HorizontalAlignment = HorizontalAlignment.Center });
+        var toolColumn = new VBoxContainer { Name = "ModTools", CustomMinimumSize = new Vector2(400, 0) };
+        columns.AddChild(toolColumn);
+        toolColumn.AddChild(new Label { Text = "Mod tools", ThemeTypeVariation = "TitleLabel", HorizontalAlignment = HorizontalAlignment.Center });
+        // Two to a row, so the tools never stand taller than the main buttons in a small window.
+        var tools = new GridContainer { Name = "ToolButtons", Columns = 2 };
+        toolColumn.AddChild(tools);
         AddButton(tools, "Part Editor", () => GetTree().ChangeSceneToFile(PartEditorScene), "Make and edit parts");
         AddButton(tools, "Bot Behavior Editor", () => OpenBotEditor(), "Make bots and the raid table");
         AddButton(tools, "Recipe Editor", () => OpenRecipeEditor(), "Add, copy and override recipes of every mod");
+        AddButton(tools, "Sound Editor", () => OpenSoundEditor(), "Edit a mod's sound events without opening a part");
         AddButton(tools, "Test Sandbox", () => OpenSandbox(), "Try parts, bots and Creations");
         AddButton(tools, "Mod Manager", () => OpenModManager(), "Turn mods on and off and package them");
         rows.AddChild(BottomBar());
@@ -357,6 +363,15 @@ public partial class MainMenu : Control
         return screen;
     }
 
+    /// <summary>Opens the Sound Editor.</summary>
+    public SoundEditorScreen OpenSoundEditor()
+    {
+        var screen = new SoundEditorScreen { Name = "SoundEditor" };
+        screen.CloseRequested += () => Close(screen);
+        Open(screen);
+        return screen;
+    }
+
     /// <summary>Opens the Mod Manager.</summary>
     public Control OpenModManager()
     {
@@ -401,7 +416,7 @@ public partial class MainMenu : Control
 
     private static Button AddButton(Container parent, string text, Action pressed, string? tooltip = null)
     {
-        var button = new Button { Text = text, TooltipText = tooltip ?? "", CustomMinimumSize = new Vector2(0, 40) };
+        var button = new Button { Text = text, TooltipText = tooltip ?? "", CustomMinimumSize = new Vector2(0, 40), SizeFlagsHorizontal = SizeFlags.ExpandFill };
         button.Pressed += pressed;
         parent.AddChild(button);
         return button;

@@ -1,0 +1,24 @@
+{
+  "id": "pea_shooter",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_metal",
+      "count": 2
+    },
+    {
+      "item": "component_kit",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "example_items:pea_shooter",
+      "count": 1
+    }
+  ],
+  "time": 8,
+  "order": 2550
+}

@@ -98,6 +98,7 @@ you; this page is the reference for what each key means, so you can read, review
 | `soil`, `respawn_point` | object, bool | no | Farming soil and respawn beds. Placeable parts only. See [survival](#survival). |
 | `seed` | object | no | What a seed grows into. Items only. See [survival](#survival). |
 | `aim` | object | no | A weapon aims while right click is held. Items only. See [survival](#survival). |
+| `held` | object | no | The model a player holds in the right hand while the item is selected, seen by every player. Items only. See [held](#held). |
 | `logic`, `settings`, `seat` | object, list, object | no | Logic bus links, player-set settings and seats. Placeable parts only. See [logic, settings and seats](#logic-settings-and-seats). |
 | `light`, `animation` | object, object | no | A light the script switches, and a model the script turns. Placeable parts only. See [light and animation](#light-and-animation). |
 | `menu`, `display` | object, object | no | What the part's menu shows and does, and what the part shows on itself. Placeable parts only. See [menu and display](#menu-and-display). |
@@ -316,6 +317,22 @@ soil script may treat them differently. A bare `crop` id is in the seed's own mo
 
 ```json
 "seed": { "crop": "carrot", "grow_time": 240, "yield": 2, "seeds": 1 }
+```
+
+## held
+
+Without `held`, an item in hand shows nothing (vanilla's tools have their own rig props). With it, the player holding the
+item carries a model in the right hand, and every other player sees it too.
+
+| Key | Type | Meaning |
+|---|---|---|
+| `held.mesh` | mesh path | The model (`.glb`/`.gltf`, relative to the mod; `other_mod:path` for another mod's). Default: the item's `mesh`. One of the two is required. |
+| `held.offset` | [x, y, z] m, each -0.5 to 0.5 | Moves the model from the palm, in the hand's frame. Default [0, 0, 0]. |
+| `held.rotation` | [x, y, z] degrees | Turns the model in the hand (X, then Y, then Z). Default [0, 0, 0]. |
+| `held.scale` | number, more than 0 to 4 | Scales the model. Default 1. |
+
+```json
+"held": { "mesh": "meshes/torch_held.glb", "offset": [0, 0.05, 0], "rotation": [0, 90, 0], "scale": 0.8 }
 ```
 
 ## logic, settings and seats
@@ -614,6 +631,45 @@ On export, a model with a single untransformed `mesh` piece makes the part point
 file. Anything else is baked into one glTF file at `meshes/<path of the part file inside parts/>.glb`
 (for `parts/blocks/oak_block.json`, `meshes/blocks/oak_block.glb`).
 
+## Ids and namespacing
+
+Every entry (part, item, recipe, bot, quest, POI, character, sound event) has a game-wide id,
+`mod_id:id`: `vanilla:wheel`, `my_mod:sentry_drone`. Inside a file you usually write the short form, and
+where you write it decides which mod it means:
+
+| Where | Bare id (`wheel`) means | Another mod's |
+|-------|-------------------------|---------------|
+| Mod data files (`parts/`, `recipes/`, `bots/`, `quests/`, `pois/`, `characters/`, `raids/`) | The mod the file is in | `other_mod:id` |
+| A part's `sounds` and other sound event ids | The file's own mod's event if it has one, otherwise vanilla's | `other_mod:sound_id` |
+| Asset paths (`mesh`, `icon`, `script`, sound files) | A file in the file's own mod, relative to its root (`meshes/wheel.glb`) | `other_mod:meshes/wheel.glb` (that mod must be a dependency, `MD0303`) |
+| Lua functions that take item or part ids | The script's own mod | `other_mod:id` |
+| Action API arguments (from players, agents and `actions.call`) | Vanilla (`wheel` is `vanilla:wheel`) | `other_mod:id` |
+| `overrides/<other_mod>/` files and `remove.json` | The target mod's entry: `overrides/vanilla/wheel.json` keeps `"id": "wheel"` and replaces `vanilla:wheel` | — |
+| Ids inside an override or patch of another mod's bot, quest, POI or character | The owner's: the entry is checked as if it were in the target mod (asset paths still resolve in yours, below) | `other_mod:id` |
+| Bot ids in `raids/raids.patch.json` | Your mod | `other_mod:id` |
+
+When in doubt, and always in part and recipe overrides, write ids that point outside your own mod in full
+(`vanilla:component_kit`): a qualified id means the same thing everywhere.
+
+Asset paths never use `res://`, a URL, an absolute path, backslashes or `..`; any of those is an error (`MD0301`).
+In an override, relative asset paths resolve inside **your** mod, so write `vanilla:meshes/wheel.glb` to keep
+the original's mesh.
+
+The folders where a mod changes what another mod owns:
+
+| Path in your mod | What it does |
+|------------------|--------------|
+| `overrides/<other_mod>/<any name>.json` | Replaces that mod's part with the same `id`. |
+| `overrides/<other_mod>/recipes/**/*.json` | Replaces its recipe with the same `id`. |
+| `overrides/<other_mod>/bots/`, `quests/`, `pois/`, `characters/` | Replaces its bot, quest (by file name), POI or character. |
+| `overrides/<other_mod>/**/<id>.patch.json` | A merge patch on one entry, in any of the folders above. |
+| `overrides/<other_mod>/remove.json` | Takes entries out, by id under `parts`, `recipes`, `bots`, `quests`, `pois` and `characters`. |
+| `world/worldgen.patch.json`, `raids/raids.patch.json` | Adds to and changes the world generation rules and the raid table, stacking across mods. |
+| `rules/survival.patch.json`, `rules/fire.patch.json`, `rules/building.patch.json` | Changes the game rules (not the locked keys). |
+
+The other mod must be a dependency for overrides, patches and removals. The details are in the
+[Packaging Guide](packaging-guide.md#6-overriding-another-mods-parts).
+
 ## Overrides
 
 A mod can replace another mod's part by shipping a full part file at
@@ -627,20 +683,93 @@ dependency. A recipe is replaced the same way, with a full recipe file at
 Every problem the loader or editor reports has a stable code, a file, a JSON path and a message, for
 example `error MD0201: mods/my_mod/parts/a.json(4) $.mass: mass must be greater than 0.`
 
+Codes are grouped by area in ranges of 100. Every code the game uses is listed here; the topic docs explain
+the rules behind them. Problems are errors unless the table says "warning". A file with errors is left out
+(and a mod with errors is not loaded, `MD0110`); a warning is reported and the content still loads.
+
 | Code | Meaning |
 |------|---------|
-| MD0001–MD0003 | File unreadable, invalid JSON, unknown key (warning). |
-| MD01xx | `mod.json`, dependencies, load order and conflicts. |
+| **00xx** | **Files and JSON** |
+| MD0001 | A file can't be read. |
+| MD0002 | A file is not valid JSON (comments and trailing commas are allowed). |
+| MD0003 | A key this build does not know; it is kept and ignored (warning). |
+| **01xx** | **`mod.json`, dependencies and load order** (see the [Packaging Guide](packaging-guide.md#10-packaging-diagnostics)) |
+| MD0101 | A folder has no `mod.json`; it is skipped (warning). |
+| MD0102 | `mod.json` is invalid (missing id, name or version, a bad dependency or conflict entry). |
+| MD0103 | The mod id does not match the folder name. |
+| MD0104 | Two folders use the same mod id; the second is skipped. |
+| MD0105 | A dependency is not installed. |
+| MD0106 | A dependency is installed, but its version is outside the range. |
+| MD0107 | Dependency cycle. |
+| MD0108 | A dependency failed to load. |
+| MD0109 | `format_version` is newer than this build reads. |
+| MD0110 | The mod has errors in its files and was not loaded. |
+| MD0111 | A dependency is disabled in the Mod Manager. |
+| MD0112 | An enabled mod is listed under this mod's `conflicts`. |
+| MD0113 | `mods.json` (the Mod Manager's load order) is invalid. |
+| **02xx** | **Parts** |
 | MD0201 | A part value is missing or invalid. |
 | MD0202 | Two files in a mod define the same part id. |
-| MD0203–MD0205 | Override problems. |
-| MD0301–MD0303 | Asset path invalid, file missing, or another mod used without depending on it. |
-| MD04xx | Saved Creation problems. |
-| MD0501 | Editor source problem (a model piece). |
+| MD0203 | Overrides target a mod that is not a dependency. |
+| MD0204 | An override names a part the target mod does not have. |
+| MD0205 | Two mods override the same part; the later one wins (warning). |
+| **03xx** | **Asset paths** |
+| MD0301 | An asset path is invalid (absolute, `..`, `res://`, or the wrong file type). |
+| MD0302 | The file an asset path names is missing. |
+| MD0303 | An `other_mod:path` names a mod that is not a dependency. |
+| **04xx** | **Saved Creations** (blueprints and saves) |
+| MD0401 | A Creation value is missing or invalid. |
+| MD0402 | A Creation uses a part that no loaded mod defines. |
+| MD0403 | Two parts of a Creation overlap. |
+| MD0404 | A connection is listed twice or joins sockets that don't fit. |
+| MD0405 | The parts form more than one separate piece; a Creation must be connected. |
+| **05xx** | **Part Editor and batches** |
+| MD0501 | An editor source problem (a model piece). |
 | MD0502 | Export could not write to the mod folder. |
-| MD06xx | World generation and POI prefabs. See [World Generation](world-generation.md). |
+| MD0503 | A batch file is invalid (Part Editor, Bot Behavior Editor or [story batch](quests.md#story-batches)): a bad `file` name, a missing template, an unknown `format_version`. Nothing is written. |
+| **06xx** | **World generation and POIs** (see [World Generation](world-generation.md)) |
+| MD0601 | `world/worldgen.json` or a world patch is invalid, or names a POI that did not load. |
+| MD0602 | No enabled mod ships valid world generation rules; the world is flat. |
+| MD0603 | A POI prefab is invalid, or two files define the same POI id. |
+| **07xx** | **Recipes** (see [Recipes](#recipes)) |
 | MD0701 | A recipe value is missing or invalid. |
 | MD0702 | Two recipe files in a mod use the same id. |
 | MD0703 | A recipe override names a recipe the other mod does not have. |
 | MD0704 | Two mods override the same recipe (warning). |
-| MD08xx | Sound events. See [Sound Events](sound-events.md#error-codes). |
+| **08xx** | **Sound events** (see [Sound Events](sound-events.md#error-codes)) |
+| MD0801 | A sound event value is missing or invalid, or a file was left out because of its errors. |
+| MD0802 | Two events in a mod share an id. |
+| MD0803 | Two mods replace the same event (warning). |
+| MD0804 | A part names a sound event nobody registered (warning). |
+| **09xx** | **Bots and raids** (see the [Bot Tutorial](bot-tutorial.md)) |
+| MD0901 | A bot value is missing or invalid. |
+| MD0902 | Two files define the same bot id (or an export would overwrite another bot). |
+| MD0903 | The raid table (`raids/raids.json` or a raid patch) is invalid, or names an unknown bot or one without a `raid_cost`. |
+| MD0904 | A behaviour tree node is neither built in nor a function of the bot's script (warning). |
+| **10xx** | **Saves** (see [Saves](saves.md)) |
+| MD1001 | A save file is missing, unreadable or invalid. |
+| **11xx** | **Quests** (see [Quests and Dialogue](quests.md)) |
+| MD1101 | A quest value is missing or invalid (an unknown POI, item or required quest, a `requires` loop). |
+| **12xx** | **Player characters** (see [Characters](characters.md)) |
+| MD1201 | A character is invalid: its mesh is missing, not skinned or lacks a rig bone. |
+| MD1202 | Two files share a character id (warning). |
+| **13xx** | **Mod packages** (see the [Packaging Guide](packaging-guide.md#installing)) |
+| MD1301 | Not a mod package: unreadable zip, no `package.json`, invalid manifest, or vanilla. |
+| MD1302 | Unsafe path or symbolic link in the archive (or the mod, on export). |
+| MD1303 | The archive or a file is over the size limits, or looks like a zip bomb. |
+| MD1304 | A file's SHA-256 or size, or the package hash, does not match `package.json`. |
+| MD1305 | The archive's files and `package.json`'s `files` list differ. |
+| MD1306 | Needs a newer game, package format or AI protocol. |
+| MD1307 | A dependency is missing or the wrong version (error), or an installed mod needs another version (warning). |
+| MD1308 | Conflicts with an installed mod (warning). |
+| MD1309 | Export refused: the mod has errors. |
+| MD1310 | An installed mod's file was changed, removed or added since it was installed (warning). |
+| **14xx** | **Lua scripts** (see the [Lua API](lua-api.md)) |
+| MD1401 | A script does not compile (a Lua syntax error), found by the mod tools' check of every enabled mod. |
+| **15xx** | **Overrides, patches and removals** of bots, quests, POIs and characters, and `remove.json` (see the [Packaging Guide](packaging-guide.md#overriding-bots-quests-pois-and-characters)) |
+| MD1501 | An override, patch or removal names an entry that doesn't exist (an error; a warning for removals). |
+| MD1502 | Two mods change the same bot, quest, POI or character; the later one wins (warning). |
+| **16xx** | **Game rules** (`rules/*.patch.json`, see the [Packaging Guide](packaging-guide.md#game-rules)) |
+| MD1601 | A file in `rules/` is not a patch of a rules file; it is ignored (warning). |
+| MD1602 | A rules patch changes a locked key, or is not one JSON object; the mod is not loaded. |
+| MD1603 | A rules patch would make the settings invalid; it is left out when the world starts, and the rules before it still apply. |

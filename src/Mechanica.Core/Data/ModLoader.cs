@@ -220,6 +220,20 @@ public static class ModLoader
         return Load(scan, profile, diagnostics);
     }
 
+    /// <summary>
+    /// The folders of the mods the profile at <paramref name="profilePath"/> enables, in its order, without loading
+    /// them (dependencies do not reorder them). For what a mod adds before a world starts: the main menu's languages.
+    /// </summary>
+    public static IReadOnlyList<string> EnabledDirectories(string modsRoot, string profilePath)
+    {
+        var profile = ModProfile.Load(profilePath, []);
+        var scan = Scan(modsRoot);
+        var disabled = (profile?.Mods ?? []).Where(e => e.Id is not null && !e.IsEnabled && e.Id != Identifiers.VanillaModId)
+            .Select(e => e.Id!).ToHashSet(StringComparer.Ordinal);
+        var byId = scan.Mods.Where(m => !disabled.Contains(m.Id)).ToDictionary(m => m.Id, m => m.Directory, StringComparer.Ordinal);
+        return [.. PreferredOrder(scan.Mods.Select(m => m.Id), profile).Where(byId.ContainsKey).Select(id => byId[id])];
+    }
+
     /// <summary>Loads the given mod folders, all enabled.</summary>
     public static ModLoadResult Load(IEnumerable<string> modDirectories)
     {

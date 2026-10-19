@@ -16,11 +16,13 @@ namespace Mechanica.Game.Editor;
 /// material fallback shown when a name is unbound and a play button for each. The bottom half edits the
 /// mod's own sound events: clips imported into <c>sounds/</c>, bus, loop, variation, distance and loop
 /// parameters, previewed through a <see cref="SoundPlayer"/> before they are saved. Data logic lives in Core
-/// (<see cref="SoundBankDocument"/>, <see cref="SoundRegistry"/>, <see cref="PartSounds"/>).
+/// (<see cref="SoundBankDocument"/>, <see cref="SoundRegistry"/>, <see cref="PartSounds"/>). The Sound Editor on the main
+/// menu shows only the bottom half, for a mod's sound events without a part (<see cref="OpenMod"/>).
 /// </summary>
 public partial class SoundBinderPanel : VBoxContainer
 {
     private PropertyGrid _bindings = null!;
+    private VBoxContainer _partSection = null!;
     private LineEdit _newKey = null!;
     private Label _bankTitle = null!;
     private ItemList _events = null!;
@@ -67,12 +69,14 @@ public partial class SoundBinderPanel : VBoxContainer
         Player.Listener = () => Player.GlobalPosition;
         AddChild(Player);
 
-        AddChild(new Label { Text = "Part sounds", ThemeTypeVariation = "HeaderSmall" });
-        AddChild(Hint("Names the game plays (place, remove, break, impact) and names the part's script plays. Unbound material names fall back to the sound material's events."));
+        _partSection = new VBoxContainer { Name = "PartSounds" };
+        AddChild(_partSection);
+        _partSection.AddChild(new Label { Text = "Part sounds", ThemeTypeVariation = "HeaderSmall" });
+        _partSection.AddChild(Hint("Names the game plays (place, remove, break, impact) and names the part's script plays. Unbound material names fall back to the sound material's events."));
         _bindings = new PropertyGrid();
-        AddChild(_bindings);
+        _partSection.AddChild(_bindings);
         var add = new HBoxContainer();
-        AddChild(add);
+        _partSection.AddChild(add);
         _newKey = new LineEdit { PlaceholderText = "sound name, e.g. start", SizeFlagsHorizontal = SizeFlags.ExpandFill };
         add.AddChild(_newKey);
         AddButton(add, "+ Sound name", () =>
@@ -86,8 +90,8 @@ public partial class SoundBinderPanel : VBoxContainer
             _newKey.Text = "";
             AddKey(key);
         }, "Add a sound name this part can play, such as start or hit");
+        _partSection.AddChild(new HSeparator());
 
-        AddChild(new HSeparator());
         _bankTitle = new Label { Text = "Sound events", ThemeTypeVariation = "HeaderSmall" };
         AddChild(_bankTitle);
         _events = Loc.Verbatim(new ItemList { CustomMinimumSize = new Vector2(0, 120) });
@@ -131,6 +135,7 @@ public partial class SoundBinderPanel : VBoxContainer
     public void SetPart(PartDocument? part)
     {
         _part = part;
+        _partSection.Visible = true;
         _extraKeys.Clear();
         if (Bank is not null)
             Bank.Changed -= OnBankChanged;
@@ -148,6 +153,27 @@ public partial class SoundBinderPanel : VBoxContainer
         }
         RebuildBindings();
         RebuildBank();
+    }
+
+    /// <summary>
+    /// Opens a mod's sound bank without a part (the Sound Editor): <paramref name="relativeFile"/>, or the mod's first bank
+    /// file, or a new one. The part bindings are hidden. Returns the reason when the file cannot be read, or null.
+    /// </summary>
+    public string? OpenMod(string modDirectory, string? relativeFile = null)
+    {
+        SetPart(null);
+        _partSection.Visible = false;
+        var diagnostics = new List<DataDiagnostic>();
+        Bank = SoundBankDocument.Open(modDirectory, relativeFile ?? SoundBankDocument.Files(modDirectory).FirstOrDefault(), diagnostics);
+        if (Bank is null)
+        {
+            RebuildBank();
+            return string.Join("\n", diagnostics);
+        }
+        Bank.Changed += OnBankChanged;
+        _selected = Bank.Events.Count > 0 ? 0 : -1;
+        RebuildBank();
+        return null;
     }
 
     /// <summary>Redraws the binding rows from the part, after an edit, undo or redo.</summary>
@@ -186,7 +212,7 @@ public partial class SoundBinderPanel : VBoxContainer
     public string? NewEventFromClip(string file)
     {
         if (Bank is null)
-            return "Open or create a part first.";
+            return "Open a part or a mod first.";
         if (!AssetImporter.TryImport(file, Bank.ModDirectory, AssetKind.Sound, out var path, out var error))
             return error;
         var id = Path.GetFileNameWithoutExtension(path).ToLowerInvariant().Replace('-', '_').Replace(' ', '_');

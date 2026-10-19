@@ -51,7 +51,7 @@ through the [External AI Endpoint](ai-endpoint.md), or add the bot to your raid 
 | `passive` | bool | false | Never joins raids and never attacks first. |
 | `raid_cost` | integer | none | What one bot costs from a raid's budget. Omitted means it never raids. |
 | `attacks` | list | `[]` | Its attacks (below). |
-| `drops` | list | `[]` | `{item, chance, count}`; each is rolled on its own when it dies. |
+| `drops` | list | `[]` | `{item, chance, count, count_max}`; each is rolled on its own when it dies (`chance` 0 to 1, default 1), and drops a random count from `count` to `count_max` (default `count`). |
 | `behavior` | node | none | Its behaviour tree (section 3). |
 | `script` | path | none | Its Lua script, relative to the mod root. |
 | `properties` | object | `{}` | Free-form values its script reads as `properties`. |
@@ -76,6 +76,31 @@ An attack:
 
 Damage goes through the same host primitives as weapons (`SurvivalActions`), so Creative applies to bots
 too: in Creative nothing is hurt. Friendly fire doesn't stop bots; they hurt players either way.
+
+### Using the editor's Bot tab
+
+The **Bot** tab edits every key above. The top of the grid has a field for each simple key: **Id**, **Name**,
+**Description**, **Family (sounds)**, **Health**, **Speed**, **Water speed**, **Sight**, **Radius** and **Height**
+(the `size`), **Colour**, **Melee immune**, **Passive**, **Raid cost** and **Script**. Optional fields left empty
+take the default in the table.
+
+Under the heading **Attacks and drops** are three JSON boxes: **Attacks** (the `attacks` list), **Drops** (the
+`drops` list) and **Properties** (the `properties` object). Type the JSON, then click **Apply** under the box: the
+editor parses it and uses it, or shows the parse error beside the button and keeps what was there. An empty box
+removes the key. For example, a melee bite and a drop:
+
+```json
+[ { "id": "bite", "kind": "melee", "damage": 12, "range": 1.2, "interval": 1.5 } ]
+```
+
+```json
+[ { "item": "vanilla:component_kit", "chance": 0.25, "count": 1, "count_max": 2 } ]
+```
+
+Under **Model and animation**, the **Model** box takes the `model` object (below) the same way.
+
+**Export** checks the attacks and drops (a missing required key, a number out of range, an attack listed
+twice, a malformed item or sound id) and writes the file only when they pass.
 
 ### Models and animation
 
@@ -119,8 +144,7 @@ Glowing materials fade from `eye_calm` to `eye_engaged` and back, and go dark wh
 
 **Feet.** A node named `<leg>_Hip` with a descendant `<leg>_Foot` (an empty at the tip of the foot) is a leg. The
 game tilts the body to the ground under the feet, and turns each hip so a foot that is down in the clip stands on
-the ground, on slopes and on creations alike. Turning a hip should lift its foot about the axis across the leg,
-as an insect's or crab's does.
+the ground, on slopes and on creations alike.
 
 Vanilla's Green Scuttler is made by [`tools/scuttler/build_scuttler.py`](../tools/scuttler/build_scuttler.py), a
 Blender script you can copy for a rig of the same shape.
@@ -266,6 +290,11 @@ The built-in library is plain Lua over the same primitives (`src/Mechanica.Scrip
 so any built-in node can be read as an example. `behavior.target()` and `behavior.set_target(t)` read and
 set the target the built-in nodes share.
 
+`behavior.node(node, dt)` is internal: it is how a composite or decorator runs one child (a built-in leaf, or
+`bot.custom(node.type)` for a custom one), and it returns `"success"`, `"failure"` or `"running"`. You only need it
+when you write your own composite in `behavior.leaves` that runs the children in `node.children`; a plain leaf
+never calls it. Use `behavior.run(tree, dt)` to run a whole tree.
+
 ### bot.*
 
 The bot whose script is running:
@@ -290,6 +319,7 @@ The bot whose script is running:
 | `bot.reach(target)` | Distance from its body to the target's edge, or nil when the target is gone. |
 | `bot.alert()`, `bot.sound(id)` | Play its `_alert` sound, or any sound event, at the bot. `bot.alert()` also engages it. |
 | `bot.engage()` | Keep it engaged (fighting: its eye turns red) for `engaged_seconds` (`game/data/bots.json`). `find_player` calls it while it has a target; attacking and being hurt engage it too. |
+| `bot.custom(name)` | The script's global function `name`, the one a custom node of that `type` runs. An error when the script defines no such function. |
 
 A **target** is a table naming one thing: `{player = peer}`, `{creation = id, part = id}` (a part or a
 crop's soil), `{bot = id}`, or `{object = id}` (a world object, for attacks with `object_damage`).
@@ -353,8 +383,16 @@ a patch are your mod's:
 | `levels[].notes` | A note for the editor. |
 
 A bare bot id means the table's own mod; write `vanilla:rakehand` for another mod's. Every bot in a raid
-needs a `raid_cost`. Edit the table on the editor's **Raids** tab: it checks the JSON as you type and
-previews what each level sends for 1 to 4 players before you save.
+needs a `raid_cost`.
+
+Edit the table on the editor's **Raids** tab. The heading names the file (`raids/raids.json`) and reminds you
+that the last mod in load order that has one wins. The **Table** box holds the whole table as JSON; click
+**Apply** to use your edits (a parse error shows beside the button). Below it, the preview shows what a raid
+would send without starting one: set **Preview crop value** (the planted crop value, 0 to 100,000) and
+**Preview players** (1 to 16), and the line under them reads, for example, "Level 2, budget 9 for 2 player(s):
+3x vanilla:scuttler_green, 1x vanilla:rakehand", or "Crops worth 5 set off no raid.", or lists what to fix
+first when the table names an unknown bot or a bot without a `raid_cost`. **Save raid table** checks the table
+against the mods' bots and writes `raids/raids.json`; the status line says whether it was saved and why not.
 
 ## 6. Action API
 

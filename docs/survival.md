@@ -29,7 +29,7 @@ them. AI agents read it from `GetWorld` and `world.info` and set it with `world.
 
 | Key | What it does |
 |-----|--------------|
-| 6 | Take the item in hand (the sixth tool). Q and E choose among the usable items you carry. |
+| 1 to 9, 0 / scroll | Pick the hotbar slot holding the item; it goes in hand. |
 | Left click (item in hand) | Use it (all Lua item scripts): eat food, fire a weapon, plant a seed in the soil you aim at or water it, or throw the water out of a full bucket. With an empty water bucket in hand, aiming at water fills it. |
 | G (item in hand) | Drop one of the item on the ground. |
 | E | Harvest the ripe crop you aim at, sleep in the bed you aim at (you respawn there), or pick up the nearest pile of items. |
@@ -81,8 +81,9 @@ Fire (D13) burns in Survival and Creative alike, on the host, and every player s
   strength on the part.
 
 `game/data/fire.json` holds the numbers (`tick`, `grow`, `ignite`, `spread_at`, `part_damage`,
-`player_damage`, `player_radius`, `site_radius`, `site_marker`, `sound`, `max_fires`); like the other files
-in `game/data` it ships with the build and is not moddable. Each fire plays the `sound` loop (vanilla's
+`player_damage`, `player_radius`, `site_radius`, `site_marker`, `sound`, `max_fires`). It ships with the build,
+but its numbers are game rules: a mod changes them with `rules/fire.patch.json`, except `tick` and `max_fires`,
+which stay locked (see [Game rules](packaging-guide.md#game-rules)). Each fire plays the `sound` loop (vanilla's
 `burn_wood`), its `intensity` following the fire's strength. What puts fires out is Lua
 ([`fire`](lua-api.md#fire)): `watering.lua` and `water_cannon.lua` read `douse`, `splash` and `range` from
 their item's properties.
@@ -91,7 +92,9 @@ their item's properties.
 
 - `game/data/survival.json`: health, respawn delay, reach, starting items, fall and impact
   damage, piles, the knockout bag's model (`knockout_bag`, built by `tools/knockout_bag/build_knockout_bag.py`), and
-  the empty and full water buckets (`bucket_item`, `water_item`). Unknown keys are refused.
+  the empty and full water buckets (`bucket_item`, `water_item`). Unknown keys are refused. A mod changes these
+  rules with `rules/survival.patch.json`; only `max_drops` and `aim_tolerance` are locked (see
+  [Game rules](packaging-guide.md#game-rules)).
 - The Paint Tool (`paint_tool`, a tool: 10 Scrap Metal Blocks, 5 Glass Blocks and 2 Component Kits, 30 s) has to be
   crafted before it paints, and each stroke takes `ammo_per_stroke` of `ammo` (`paint_ammo`, 10 from 2 tomatoes in 3 s)
   from the painter: a click, or a whole drag (`PaintArgs.stroke`, up to `max_parts_per_action` parts and while no gap is
@@ -112,7 +115,9 @@ their item's properties.
   `mods/vanilla/editor/batches/survival.json`.
 - `game/data/building.json`: `sledge.combat_damage` (players and bots), `sledge.object_damage` (world objects
   without their own) and the knockback (`impulse`, `max_knockback_speed`, `character_mass`, `knockback_lift`,
-  `knockback_drag`). A world object's own hit damage is its `sledge_damage` in `worldgen.json`.
+  `knockback_drag`). A world object's own hit damage is its `sledge_damage` in `worldgen.json`. A mod changes
+  `sledge`, `paint`, `breaking` and `lift` with `rules/building.patch.json`; the other sections of `building.json`
+  are locked (see [Game rules](packaging-guide.md#game-rules)).
 
 ## Action API
 
@@ -120,7 +125,12 @@ their item's properties.
 |--------|-----------|-------|
 | `UseItem` | `slot`, `direction?`, `creation?`, `part?` | Runs the item's script: eat, fire, plant, water. `direction` (from the caller's eyes) must be within `aim_tolerance` degrees of where they look; omitted means where they look. `creation` and `part` name the part it is used on (the soil a seed goes in, which must be in reach). The script's `can_use` may refuse it; what `on_use` returns is the result (the hitscan potato guns return `{hits}`, the Launcher and Popper `{projectiles}`, food `{health}`, seeds and water the soil). |
 | `EquipItem` | `slot?` | Says which scripted item is in hand (its `on_equip` and `on_unequip`); no slot empties the hand. |
-| `ActivatePart` | `creation`, `part` | On a soil part in reach with a ripe crop: harvests it (the soil script's `can_activate` and `on_activate`). Refused with "not ripe yet", "Nothing is growing there." or "Make room in your inventory first."; the result is `{items: [{item, count}]}`. (It replaced the `Harvest` action.) |
+| `ActivatePart` | `creation`, `part` | On a soil part in reach with a ripe crop: harvests it (the soil script's `can_activate` and `on_activate`). Refused with "not ripe yet", "Nothing is growing there." or "Make room in your inventory first."; the result is `{items: [{item, count}]}`. (Crops used to use `Harvest`; that action now gathers world objects with `harvest: true`.) |
+| `Harvest` | `object` | A world object in reach whose kind has `harvest: true` in `worldgen.json` (an oil geyser): what it gives goes into the inventory. Returns `{taken, left}`; what did not fit is left on the ground. |
+| `StartRefine`, `FinishRefine`, `CancelRefine` | `object`, or `creation` and `part`; same; none | Holding E on a resource node (`object`, a tree or rock) or a loose part that refines (`creation`, `part`). `StartRefine` when E goes down, `FinishRefine` once it has been held long enough (refused if the player walked away), `CancelRefine` when it is let go early. `FinishRefine` returns `{taken, left}`. |
+| `AimItem` | `on` | Starts (`true`) or stops aiming the item in hand: right click held with a weapon. |
+| `ReloadItem` | `slot` | Reloads the item in the slot (its script's `on_reload_item`). |
+| `SetFriendlyFire` | `on` | Host only: turns friendly fire on or off. |
 | `CollectWater` | `point`, `slot?` | A point on water in reach; turns one empty `bucket_item` (the one in `slot`, or the first) into a full `water_item`, in the same slot when it was the last. Returns `{slot}`, where the full bucket is. |
 | `SetSpawn` | `creation`, `part` | A `respawn_point` part in reach. |
 | `DropItems` | `slot`, `count` | `count` omitted drops the stack. |

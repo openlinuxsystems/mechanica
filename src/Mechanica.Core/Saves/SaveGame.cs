@@ -30,8 +30,10 @@ public sealed record SavedSlot(int Slot, string Item, int Count);
 /// <param name="Character">The qualified id of the character they chose in this world, or null when they have not chosen.</param>
 /// <param name="Hotbar">What each of their ten hotbar slots holds (null entries are empty), or null for the default hotbar.</param>
 /// <param name="Markers">The places they marked on their Logbook map, or null for none.</param>
+/// <param name="ItemScripts">The <c>state</c> of their item scripts by qualified item id, or null for none.</param>
 public sealed record SavedPlayer(string Id, string Name, IReadOnlyList<SavedSlot> Inventory, float? Health = null, Vec3? Position = null, float Yaw = 0,
-    SavedPart? Bed = null, string? Character = null, IReadOnlyList<string?>? Hotbar = null, IReadOnlyList<Ui.MapMarker>? Markers = null);
+    SavedPart? Bed = null, string? Character = null, IReadOnlyList<string?>? Hotbar = null, IReadOnlyList<Ui.MapMarker>? Markers = null,
+    IReadOnlyDictionary<string, JsonObject>? ItemScripts = null);
 
 /// <summary>A part of a Creation, by id.</summary>
 /// <param name="Creation">Creation id.</param>
@@ -171,6 +173,9 @@ public sealed record SaveGame
                 Hotbar = p.Hotbar is { } bar ? [.. bar] : null,
                 Markers = p.Markers is { Count: > 0 } markers ? [.. markers.Select(m => new MarkerData { Id = m.Id, Name = m.Name, X = m.X, Y = m.Y, Z = m.Z })] : null,
                 Inventory = p.Inventory.Count == 0 ? null : [.. p.Inventory.OrderBy(s => s.Slot).Select(s => new SlotData { Slot = s.Slot, Item = s.Item, Count = s.Count })],
+                ItemScripts = p.ItemScripts is { Count: > 0 } items
+                    ? new SortedDictionary<string, JsonElement>(items.ToDictionary(i => i.Key, i => JsonSerializer.SerializeToElement(i.Value)), StringComparer.Ordinal)
+                    : null,
             })],
             Quests = Quests?.ToElement(),
             Fires = Fires is null ? null : [.. Fires.OrderBy(f => f.Site).ThenBy(f => f.Marker)
@@ -302,8 +307,16 @@ public sealed record SaveGame
                 else
                     markers.Add(new Ui.MapMarker(markerId, marker.Name ?? "", x, y, z));
             }
+            var itemScripts = new Dictionary<string, JsonObject>(StringComparer.Ordinal);
+            foreach (var (item, state) in p.ItemScripts ?? [])
+            {
+                if (state.ValueKind != JsonValueKind.Object || !IsQualifiedId(item))
+                    sink.Error(invalid, $"{path}.item_scripts.{item}", "an item script's state is an object under a qualified item id (mod_id:item_id).");
+                else
+                    itemScripts[item] = JsonNode.Parse(state.GetRawText())!.AsObject();
+            }
             players.Add(new SavedPlayer(p.Id!, PlayerProfile.CleanName(p.Name), slots, p.Health, p.Position, p.Yaw ?? 0, bed, p.Character, p.Hotbar,
-                markers.Count == 0 ? null : markers));
+                markers.Count == 0 ? null : markers, itemScripts.Count == 0 ? null : itemScripts));
         }
 
         QuestState? quests = null;
@@ -410,6 +423,7 @@ public sealed record SaveGame
         public List<string?>? Hotbar { get; init; }
         public List<MarkerData?>? Markers { get; init; }
         public List<SlotData>? Inventory { get; init; }
+        public SortedDictionary<string, JsonElement>? ItemScripts { get; init; }
     }
 
     private sealed record MarkerData

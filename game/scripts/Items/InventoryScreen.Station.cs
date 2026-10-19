@@ -951,7 +951,7 @@ public partial class InventoryScreen
             dot.BorderColor = UiTokens.Tile;
             _dot.AddThemeStyleboxOverride("panel", dot);
             AddChild(_dot);
-            _new.AddChild(new Label { Text = "New", ThemeTypeVariation = "PillLabel", Uppercase = true, MouseFilter = MouseFilterEnum.Ignore, AutoTranslateMode = AutoTranslateModeEnum.Always });
+            _new.AddChild(Loc.Game(new Label { Text = "New", ThemeTypeVariation = "PillLabel", Uppercase = true, MouseFilter = MouseFilterEnum.Ignore }));
             _new.Position = new Vector2(4, 4);
             AddChild(_new);
             Resized += () => _dot.Position = new Vector2(Size.X - 16, 6);
@@ -1046,6 +1046,6 @@ public partial class InventoryScreen
 
         public Label Note { get; } = Loc.Verbatim(new Label { ThemeTypeVariation = "InkLabel", MouseFilter = MouseFilterEnum.Ignore, ClipText = true });
 
-        public Button Cancel { get; } = new() { Text = "×", ThemeTypeVariation = "StepperButton", Visible = false, TooltipText = "Cancel the order and get its inputs back (or right-click it)", CustomMinimumSize = new Vector2(22, 22), AutoTranslateMode = AutoTranslateModeEnum.Always };
+        public Button Cancel { get; } = Loc.Game(new Button { Text = "×", ThemeTypeVariation = "StepperButton", Visible = false, TooltipText = "Cancel the order and get its inputs back (or right-click it)", CustomMinimumSize = new Vector2(22, 22) });
     }
 }

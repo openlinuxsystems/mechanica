@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://tests/modlang/ModLanguageTest.cs" id="1_modlang"]
+
+[node name="ModLanguageTest" type="Node"]
+script = ExtResource("1_modlang")

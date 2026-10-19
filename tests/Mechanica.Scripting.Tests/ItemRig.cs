@@ -115,6 +115,10 @@ internal sealed class ItemRig : IDisposable
         }
 
         public IReadOnlyList<ScriptFile> WorldScripts => [.. rig.ModScripts.Select(s => new ScriptFile($"test:{s}", "test", Path.Combine(rig.Root, s)))];
+
+        // require(path) of the test mod's own files.
+        public ScriptFile? FindModule(string modId, string path) =>
+            modId == "test" && !path.Contains(':') && File.Exists(Path.Combine(rig.Root, path)) ? new ScriptFile($"test:{path}", "test", Path.Combine(rig.Root, path)) : null;
     }
 
     // Item scripts move nothing; the runtime still wants a motion world for part scripts.

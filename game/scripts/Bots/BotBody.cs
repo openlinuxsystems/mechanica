@@ -53,15 +53,13 @@ public partial class BotBody : CharacterBody3D
             AddPlaceholder();
         _label = new Label3D
         {
-            // Names are the mods' own text.
-            AutoTranslateMode = AutoTranslateModeEnum.Disabled,
             Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
             Position = new Vector3(0, Type.Height + 0.35f, 0),
             FontSize = 48,
             PixelSize = 0.005f,
             Visible = false,
         };
-        AddChild(_label);
+        AddChild(Loc.Verbatim(_label)); // names are the mods' own text
         FloorSnapLength = 0.3f;
     }
 

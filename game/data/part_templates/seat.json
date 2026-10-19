@@ -1,7 +1,7 @@
 {
   "id": "new_seat",
   "name": "New Seat",
-  "description": "A seat a player sits in with F. Its output is the driver's throttle; link it to engines and steering bearings.",
+  "description": "A seat a player sits in with E (Use). Its output is the driver's throttle; link it to engines and steering bearings.",
   "category": "interactive",
   "mass": 5,
   "durability": 4,

@@ -15,7 +15,7 @@ These are the default keys. Every one can be changed in Options, Controls.
 | W A S D | Walk |
 | Space | Jump. In deep water, swim up; at the surface, jump out. |
 | Shift | Sprint (and swim faster) |
-| Ctrl | Crouch: move slowly and fit under gaps 1.2 m high (you stand up again once there is room). In deep water, dive. |
+| Ctrl | Crawl: move slowly and fit under gaps 1.2 m high (you stand up again once there is room). In deep water, dive. |
 | Mouse | Look. Click the world to take the mouse back after a menu. |
 | X / C | Zoom the camera in or out a step (also Alt + scroll). You start in third person over the shoulder; all the way in is first person. |
 | V | Watch players: the camera follows another player, an AI player first, and shows what the AI is thinking. Left and right click go to the next and previous player, X and C zoom between their own view and behind them, and V or Esc gives your view back. You stand still meanwhile. |
@@ -23,7 +23,7 @@ These are the default keys. Every one can be changed in Options, Controls.
 | Left click | Create, attack or place: with a part in hand it goes down when you let go, the Sledgehammer swings. With a part in hand, hold still to lock the ghost (arrows show the ways it can grow), then drag to lay a grid of up to 16 by 16 parts; Q steps the grid's plane while you drag. Hold and drag with the Paint Tool to paint every part you pass over, or with the Weld Tool from one part to another to weld them. |
 | Right click | Remove or pick up: hold it on a part with a part or nothing in hand until the ring round the crosshair fills (wood is quickest, metal slower); let go early to stop. Drag with it held to remove the parts of one body across a face. Hold it with the Lift to take the Lift away, with the Sledgehammer to block (Creative only), and with the Paint Tool to take paint off (drag for more). Right click on items lying on the ground picks them up at once, whatever is in hand. With a weapon in hand, hold it to aim: the view zooms in a little and the crosshair tightens. |
 | Scroll | Previous or next hotbar slot |
-| Q / Shift + Q | Turn the part (a part in hand, Weld, Lift). With the Paint Tool, Q opens the colour picker and Shift + Q picks the previous colour. |
+| Q / Shift + Q | Turn the part (a part in hand, Weld, Lift); Shift + scroll does the same. With the Paint Tool, Q opens the colour picker and Shift + Q picks the previous colour. |
 | T | A part in hand and Weld: tip the part over |
 | Up / Down arrows | Raise or lower the Lift |
 | G | Drop one of the item in hand |
@@ -37,6 +37,7 @@ These are the default keys. Every one can be changed in Options, Controls.
 | Esc | Menu: save, load, open your world to the LAN, Options, help, quit. Esc also closes any open window. |
 | H or F1 | Handbook |
 | Left / Right (or Page Up / Page Down) | Turn the Handbook's pages |
+| F6 | In the Test Sandbox: switch to the next local player |
 | F7 / F8 / F9 | Logic Visualizer, Creation Inspector and force overlay |
 | Alt + Z | Hide the HUD (crosshair, tool bar, compass, minimap, tips, chat, quest log and names), and show it again |
 
@@ -142,7 +143,7 @@ Blaster holds 15, the Scattergun 4), or the potatoes you carry for one that does
 the counter at the bottom right shows the rounds and the potatoes; when it is empty, **R** reloads it from
 the potatoes you carry (the ring round the crosshair fills while it does).
 
-The **inventory** (**I** or **B**) is a grid of six columns with tabs along the top: All, Blocks,
+The **inventory** (**I** or **Tab**) is a grid of six columns with tabs along the top: All, Blocks,
 Interactive, Tools, Resources and Consumables.
 
 - Drag a stack onto the hotbar to put it in a slot, onto another slot to move it, or onto the other side
@@ -265,8 +266,8 @@ password counts from the next player who joins. The password is sent unencrypted
 
 ## Saving
 
-Only the host saves. **Save game** in the menu writes the world, every player's inventory, health and
-bed, and the story, to a file named after the world. **Load game** in the main menu starts it again. See
+Only the host saves. **Save or load…** in the pause menu (Esc) writes the world, every player's inventory, health and
+bed, and the story, to a file named after the world. **Load Game** in the main menu starts it again. See
 [Saves](saves.md).
 
 ## More
