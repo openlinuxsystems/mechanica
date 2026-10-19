@@ -69,6 +69,13 @@ public sealed class PartDocument
         new(modDirectory, template with { Id = id, Name = name }, source ?? PartSource.Empty, null);
 
     /// <summary>
+    /// A new, unsaved document in the mod at <paramref name="modDirectory"/> that will export to
+    /// <paramref name="relativeFile"/> (or <c>parts/&lt;id&gt;.json</c> when null). Used by <see cref="PartDerive"/>.
+    /// </summary>
+    internal static PartDocument Derived(string modDirectory, PartDefinition definition, PartSource source, string? relativeFile) =>
+        new(modDirectory, definition, source, relativeFile);
+
+    /// <summary>
     /// Opens a part file inside a mod (under <c>parts/</c> or <c>overrides/</c>) together with its editor
     /// source when one exists. Returns null and fills <paramref name="diagnostics"/> when the file cannot be read.
     /// </summary>

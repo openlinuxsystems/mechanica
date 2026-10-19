@@ -74,6 +74,24 @@ public class RecipeExporterTests : IDisposable
     }
 
     [Fact]
+    public void AnOverrideIsWrittenUnderTheOwnersFolderWithItsId()
+    {
+        var recipe = Recipe() with { Outputs = [new RecipeItem { Item = "scrap_metal", Count = 2 }] };
+
+        var result = RecipeExporter.Export(ModDir, recipe, _catalog, overrideOf: "vanilla");
+
+        Assert.True(result.Succeeded, string.Join("\n", result.Diagnostics));
+        Assert.Equal("vanilla:gizmo", result.QualifiedId);
+        Assert.Equal("overrides/vanilla/recipes/gizmo.json", RecipeExporter.TargetFile("gizmo", "vanilla"));
+        Assert.True(File.Exists(Path.Combine(ModDir, "overrides", "vanilla", "recipes", "gizmo.json")));
+        Assert.Empty(RecipeExporter.ReadAll(ModDir, []));
+        var file = Assert.Single(RecipeExporter.ReadAll(ModDir, [], "vanilla"));
+        Assert.Single(RecipeExporter.Making([file], "vanilla", "scrap_metal"));
+        Assert.True(RecipeExporter.Delete(ModDir, file.RelativeFile));
+        Assert.Empty(RecipeExporter.ReadAll(ModDir, [], "vanilla"));
+    }
+
+    [Fact]
     public void DeleteOnlyTouchesRecipeFiles()
     {
         Assert.True(RecipeExporter.Export(ModDir, Recipe(), _catalog, Gizmo).Succeeded);

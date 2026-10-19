@@ -9,7 +9,8 @@ namespace Mechanica.Game.Editor;
 /// <summary>
 /// The Part Editor's Recipes tab (chunk 18): the recipes in the open part's mod that make the part. Pick
 /// one or start a new one, edit its stations, inputs, outputs and time, and save it into the mod's
-/// <c>recipes/</c> folder. A save is checked exactly as loading would (against the enabled mods plus the
+/// <c>recipes/</c> folder. For an override part (<c>overrides/&lt;owner&gt;/</c>) it also lists the mod's
+/// overrides of the owner's recipes, and a new recipe starts as an override of the owner's recipe for the part. A save is checked exactly as loading would (against the enabled mods plus the
 /// part being edited), and problems show in the editor's problems pane. All file and data logic lives in
 /// Core (<see cref="RecipeExporter"/>, <see cref="RecipeBook"/>).
 /// </summary>
@@ -23,6 +24,7 @@ public partial class RecipePanel : VBoxContainer
     private Button _delete = null!;
     private List<RecipeFile> _recipes = [];
     private string? _file;
+    private string? _overrideOf;
 
     /// <summary>The editor this panel belongs to. Set before adding to the tree.</summary>
     public PartEditorScreen Editor { get; init; } = null!;
@@ -40,7 +42,7 @@ public partial class RecipePanel : VBoxContainer
     {
         AddChild(new Label
         {
-            Text = "Recipes in this mod that make this part. Stations are parts with crafting turned on.",
+            Text = "Recipes in this mod that make this part. Stations are parts with crafting turned on. For an override part, a new recipe starts as an override of the original's recipe.",
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
         });
         _list = Loc.Verbatim(new ItemList { CustomMinimumSize = new Vector2(0, 100) });
@@ -68,38 +70,58 @@ public partial class RecipePanel : VBoxContainer
     public void Reload()
     {
         var diagnostics = new List<DataDiagnostic>();
-        _recipes = Editor.Document is { } doc && doc.Definition.Id is { } id
-            ? [.. RecipeExporter.Making(RecipeExporter.ReadAll(doc.ModDirectory, diagnostics), doc.ModId, id)]
-            : [];
+        _recipes = [];
+        if (Editor.Document is { } doc && doc.Definition.Id is { } id)
+        {
+            var owner = PartDerive.OwnerOf(doc);
+            _recipes.AddRange(RecipeExporter.Making(RecipeExporter.ReadAll(doc.ModDirectory, diagnostics), owner, id));
+            if (owner != doc.ModId)
+                _recipes.AddRange(RecipeExporter.Making(RecipeExporter.ReadAll(doc.ModDirectory, diagnostics, owner), owner, id));
+        }
         if (diagnostics.Count > 0)
             Editor.ShowProblems(diagnostics, "Some recipe files could not be read.");
         if (_recipes.Count > 0)
             Select(0);
         else
-            SetCurrent(null, null);
+            SetCurrent(null, null, null);
     }
 
     /// <summary>Edits the recipe at <paramref name="index"/> in <see cref="Recipes"/>.</summary>
     public void Select(int index)
     {
         if (index >= 0 && index < _recipes.Count)
-            SetCurrent(_recipes[index].Recipe, _recipes[index].RelativeFile);
+            SetCurrent(_recipes[index].Recipe, _recipes[index].RelativeFile, OverrideOf(_recipes[index].RelativeFile));
     }
 
     /// <summary>
     /// Starts a new recipe that makes one of the open part, run at <paramref name="stations"/> (default: the
-    /// Fabricator for vanilla parts, none otherwise). Returns an error, or null.
+    /// Fabricator). For an override part whose original mod has a recipe for it that this mod doesn't override
+    /// yet, the new recipe is an override of that recipe instead (same id, starting from its values). Returns an
+    /// error, or null.
     /// </summary>
     public string? NewRecipe(IReadOnlyList<string>? stations = null)
     {
         if (Editor.Document is not { Definition.Id: { } id } doc)
             return "Open or create a part first.";
+        var owner = PartDerive.OwnerOf(doc);
+        if (owner != doc.ModId && stations is null)
+        {
+            var overridden = RecipeExporter.ReadAll(doc.ModDirectory, [], owner).Select(f => f.Recipe.Id).ToHashSet();
+            var original = RecipeExporter.Making(RecipeExporter.ReadAll(Path.Combine(Editor.ModsRoot, owner), []), owner, id)
+                .FirstOrDefault(f => !overridden.Contains(f.Recipe.Id));
+            if (original is not null)
+            {
+                SetCurrent(original.Recipe, null, owner);
+                IsDirty = true;
+                return null;
+            }
+        }
         var taken = new HashSet<string>(RecipeExporter.ReadAll(doc.ModDirectory, []).Select(f => f.Recipe.Id ?? ""));
         var recipeId = id;
         for (var n = 2; taken.Contains(recipeId); n++)
             recipeId = $"{id}_{n}";
-        var output = doc.ModId == Identifiers.VanillaModId ? id : $"{doc.ModId}:{id}";
-        stations ??= doc.ModId == Identifiers.VanillaModId ? ["fabricator"] : [];
+        var output = owner == Identifiers.VanillaModId ? id : $"{owner}:{id}";
+        stations ??= ["fabricator"];
         SetCurrent(new RecipeDefinition
         {
             Id = recipeId,
@@ -107,9 +129,19 @@ public partial class RecipePanel : VBoxContainer
             Inputs = [],
             Outputs = [new RecipeItem { Item = output, Count = 1 }],
             Time = 1,
-        }, null);
+        }, null, null);
         IsDirty = true;
         return null;
+    }
+
+    /// <summary>The mod whose recipe <see cref="Current"/> overrides, or null for one of this mod's own recipes.</summary>
+    public string? OverrideOfCurrent => _overrideOf;
+
+    // overrides/<owner>/recipes/x.json -> owner.
+    private static string? OverrideOf(string relativeFile)
+    {
+        var parts = relativeFile.Split('/');
+        return parts.Length > 3 && parts[0] == ModLoader.OverridesFolder && parts[2] == ModLoader.RecipeOverridesFolder ? parts[1] : null;
     }
 
     /// <summary>Changes the recipe being edited. <paramref name="rebuild"/> redraws the fields.</summary>
@@ -130,7 +162,7 @@ public partial class RecipePanel : VBoxContainer
             return null;
         var catalog = ModLoader.LoadAll(Editor.ModsRoot);
         var extra = doc.Definition.Id is { } id
-            ? new Dictionary<string, PartDefinition> { [$"{doc.ModId}:{id}"] = doc.Definition }
+            ? new Dictionary<string, PartDefinition> { [$"{PartDerive.OwnerOf(doc)}:{id}"] = doc.Definition }
             : [];
         var clean = Current with
         {
@@ -138,19 +170,19 @@ public partial class RecipePanel : VBoxContainer
             Inputs = Current.Inputs?.Where(i => !string.IsNullOrWhiteSpace(i.Item)).ToList(),
             Outputs = Current.Outputs?.Where(i => !string.IsNullOrWhiteSpace(i.Item)).ToList(),
         };
-        var result = RecipeExporter.Export(doc.ModDirectory, clean, catalog, extra, _file);
+        var result = RecipeExporter.Export(doc.ModDirectory, clean, catalog, extra, _file, _overrideOf);
+        var saved = RecipeExporter.TargetFile(clean.Id!, _overrideOf);
         Editor.ShowProblems(result.Diagnostics, result.Succeeded
-            ? Loc.T("Saved recipe {0} to {1}.", result.QualifiedId, RecipeExporter.TargetFile(clean.Id!))
+            ? Loc.T("Saved recipe {0} to {1}.", result.QualifiedId, saved)
             : Loc.T("The recipe was not saved."));
         if (!result.Succeeded)
             return result;
-        var saved = RecipeExporter.TargetFile(clean.Id!);
         Reload();
         var index = _recipes.FindIndex(f => f.RelativeFile == saved);
         if (index >= 0)
             Select(index);
         else
-            SetCurrent(clean, saved); // a recipe that no longer makes this part stays open
+            SetCurrent(clean, saved, _overrideOf); // a recipe that no longer makes this part stays open
         return result;
     }
 
@@ -178,10 +210,11 @@ public partial class RecipePanel : VBoxContainer
             _list.DeselectAll();
     }
 
-    private void SetCurrent(RecipeDefinition? recipe, string? file)
+    private void SetCurrent(RecipeDefinition? recipe, string? file, string? overrideOf)
     {
         Current = recipe;
         _file = file;
+        _overrideOf = overrideOf;
         IsDirty = false;
         Rebuild();
     }
@@ -202,8 +235,10 @@ public partial class RecipePanel : VBoxContainer
         _delete.Disabled = _file is null;
         if (Current is not { } r)
             return;
-        if (_file is null)
+        if (_file is null && _overrideOf is null)
             _grid.AddHeading("New recipe (not saved)");
+        else if (_file is null)
+            Loc.Verbatim(_grid.AddHeading(Loc.T("New override of {0}:{1} (not saved)", _overrideOf, r.Id)));
         else
             Loc.Verbatim(_grid.AddHeading(_file));
         _grid.AddText("Id", r.Id, v => Edit(x => x with { Id = v }), "snake_case");

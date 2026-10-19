@@ -201,7 +201,60 @@ public partial class PartEditorTest : Node3D
         Check(!content.HasErrors && content.FindPart($"{Mod}:pair_wedge") is not null && File.Exists(Path.Combine(modDir, "meshes", "pair", "pair_wedge.glb")),
             $"the batch's parts load with their baked meshes ({string.Join("; ", content.Diagnostics)})");
 
+        await DeriveSteps(screen, modsRoot, modDir);
         await SoundSteps(screen, modsRoot, modDir);
+    }
+
+    // Override in my mod, Copy as new part, a script saved from an override, recipe overrides and a bot batch
+    // from the Part Editor's Run batch.
+    private async Task DeriveSteps(PartEditorScreen screen, string modsRoot, string modDir)
+    {
+        Directory.CreateDirectory(Path.Combine(modDir, "scripts"));
+        File.WriteAllText(Path.Combine(modDir, "scripts", "ring.lua"), "-- ring\n");
+        Check(screen.OpenPart(Path.Combine(modDir, "parts", "ring_block.json")) is null, "open the part to override");
+        screen.Document!.Apply("Script", d => d with { Script = "scripts/ring.lua" });
+        Check(await screen.ExportAsync() is { Succeeded: true }, "the original gets a script");
+        screen.Recipes.NewRecipe();
+        screen.Recipes.Edit(r => r with { Stations = [$"{Mod}:work_bench"], Inputs = [new RecipeItem { Item = $"{Mod}:pair_block", Count = 1 }] });
+        Check(screen.Recipes.Save() is { Succeeded: true }, "the original gets a recipe");
+
+        Check(screen.DerivePart(PartDeriveMode.Override, Mod) is not null, "a part can't override itself");
+        Check(screen.DerivePart(PartDeriveMode.Override, "derive_test") is null, "Override in my mod starts an override");
+        var over = screen.Document!;
+        Check(over is { ModId: "derive_test", RelativeFile: "overrides/editor_test/ring_block.json", IsDirty: true }
+            && over.Definition.Script == $"{Mod}:scripts/ring.lua", $"it keeps the id and points assets at the original ({over.RelativeFile}, {over.Definition.Script})");
+        var deriveDir = Path.Combine(modsRoot, "derive_test");
+        Check(File.ReadAllText(Path.Combine(deriveDir, "mod.json")).Contains($"\"{Mod}\""), "the original mod is added as a dependency");
+
+        screen.Lua.Code = "-- my ring\n";
+        var saved = screen.Lua.Save();
+        Check(saved.Written && File.ReadAllText(Path.Combine(modDir, "scripts", "ring.lua")) == "-- ring\n"
+            && File.ReadAllText(Path.Combine(deriveDir, "scripts", "ring.lua")) == "-- my ring\n" && over.Definition.Script == "scripts/ring.lua",
+            $"saving the script writes a copy into the mod, never the original ({saved.Message})");
+
+        Check(screen.Recipes.NewRecipe() is null && screen.Recipes.OverrideOfCurrent == Mod && screen.Recipes.Current?.Id == "ring_block",
+            "a new recipe for an override starts as an override of the original's recipe");
+        screen.Recipes.Edit(r => r with { Time = 9 });
+        Check(screen.Recipes.Save() is { Succeeded: true, QualifiedId: "editor_test:ring_block" }
+            && File.Exists(Path.Combine(deriveDir, "overrides", Mod, "recipes", "ring_block.json")), "the recipe override saves under overrides/");
+        var exported = await screen.ExportAsync();
+        Check(exported is { Succeeded: true, QualifiedId: "editor_test:ring_block" }, $"the override exports ({string.Join("; ", exported?.Diagnostics.Select(d => d.ToString()) ?? [])})");
+        var content = ModLoader.LoadAll(modsRoot);
+        var book = RecipeBook.Load(content);
+        Check(!content.HasErrors && content.FindDefinition($"{Mod}:ring_block")?.Script == "scripts/ring.lua" && book.Find($"{Mod}:ring_block")?.Time == 9,
+            $"the override and its recipe win when loaded ({string.Join("; ", content.Diagnostics)}{string.Join("; ", book.Diagnostics)})");
+
+        Check(screen.DerivePart(PartDeriveMode.Copy, "derive_test", "ring_copy", "Ring Copy") is null
+            && screen.Document is { RelativeFile: null, Definition.Id: "ring_copy" }, "Copy as new part starts a new part");
+        Check(await screen.ExportAsync() is { Succeeded: true, QualifiedId: "derive_test:ring_copy" }
+            && ModLoader.LoadAll(modsRoot).FindDefinition("derive_test:ring_copy")?.Name == "Ring Copy", "the copy exports and loads");
+
+        var botBatch = Path.Combine(deriveDir, "editor", "batches", "bots.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(botBatch)!);
+        File.WriteAllText(botBatch, """{ "bots": [{ "file": "bots/test_bot.json", "template": "melee" }] }""");
+        var bots = await screen.RunBatchAsync(botBatch);
+        Check(bots.Succeeded && File.Exists(Path.Combine(deriveDir, "bots", "test_bot.json")),
+            $"Run batch runs a Bot Behavior Editor batch too ({string.Join("; ", bots.Diagnostics)})");
     }
 
     // The Sound Event Binder: a new event from an imported clip, previewed, saved and bound to the block.

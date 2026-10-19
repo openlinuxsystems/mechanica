@@ -42,7 +42,8 @@ end
   time each reason comes up it is also logged as a warning.
 - **Sandbox.** There is no `io`, no `os` beyond the clock (`os.time`, `os.clock`, `os.date`), no
   `load`, `loadstring`, `dofile` or `require`, and `string.rep` can't build huge strings. A script can
-  only move its own Creation.
+  only move its own Creation. `json.parse(text)` turns JSON into a table and `json.serialize(table)`
+  turns a table of plain data into JSON text.
 - **Hooks may not yield.** `coroutine.wrap` and `coroutine.create` work inside a hook, but
   `coroutine.yield` straight out of a hook is an error.
 
@@ -87,7 +88,7 @@ template becomes the part's name.
 | `on_update(dt)` | Every physics step (`dt` seconds, 1/60 by default) while the Creation is simulated. A parked Creation (no player near) is not updated. |
 | `on_reload()` | After a hot reload, instead of `on_create`. `state` is kept. |
 | `on_destroy()` | When the part is removed or its Creation goes away. Part functions return `nil` here once the part is gone. |
-| `on_activate(peer)` | A player used the part: they pressed F on it (the `ActivatePart` action). Buttons, switches and soil (harvest) use it. What it returns (plain data) is the action's result. |
+| `on_activate(peer)` | A player used the part: they pressed E on it (the `ActivatePart` action). Buttons, switches and soil (harvest) use it. What it returns (plain data) is the action's result. |
 | `on_release(peer)` | A player let go of a part they held (`logic.hold`, the button): they let go of E or the part's key on their seat's bar, stood up, died or left (the `ReleasePart` action, or the host for them). Every `on_activate` of a held part is followed by one `on_release` for the same peer. |
 | `can_activate(peer)` | Before every `on_activate`. Return `nil` to allow it, or a string: the reason `ActivatePart` is refused. Like an item's `can_use` it only reads: `soil.set`, `soil.clear` and `player.give` raise an error there. |
 | `on_command(name, args, peer)` | A player sent the part a command from its menu (the `CommandPart` action). The only commands are the `preview` names of the part's `sequence` settings: a controller's Play button sends `{playing, frames}`, with `frames` checked like the setting before the script sees it. `peer` is who sent it. A part without this hook takes no commands. |
@@ -104,7 +105,7 @@ Held items have their own hooks (see [Item scripts](#item-scripts)):
 | `on_equip()` | The player took the item in hand. |
 | `on_unequip()` | The item left the player's hand: they took another item or tool, or died. |
 | `can_use(target)` | Before every use. Return `nil` to allow it, or a string: the reason the host refuses the use. It may read but not change the world. |
-| `on_use(target)` | The player used the item. `target` is `{from, direction}`: their eyes and where they aim. What it returns (plain data) is the `UseItem` action's result. |
+| `on_use(target)` | The player used the item. `target` is `{from, direction, aiming, creation?, part?}`: their eyes, where they aim, whether they hold right click to aim, and the Creation and part in reach under the crosshair. What it returns (plain data) is the `UseItem` action's result. |
 | `on_hit(landing)` | A projectile the item launched landed: `{id, position, hit?, data}`. `hit` is missing when its lifetime ran out. |
 | `can_reload_item()` | Before every reload. Return `nil` to allow it, or a string: the reason the host refuses it. It may read but not change the world. |
 | `on_reload_item()` | The player pressed Reload (R) with the item in hand (`ReloadItem`). An item that does not define it cannot be reloaded. |
