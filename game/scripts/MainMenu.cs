@@ -128,6 +128,7 @@ public partial class MainMenu : Control
         tools.AddChild(new Label { Text = "Mod tools", ThemeTypeVariation = "TitleLabel", HorizontalAlignment = HorizontalAlignment.Center });
         AddButton(tools, "Part Editor", () => GetTree().ChangeSceneToFile(PartEditorScene), "Make and edit parts");
         AddButton(tools, "Bot Behavior Editor", () => OpenBotEditor(), "Make bots and the raid table");
+        AddButton(tools, "Recipe Editor", () => OpenRecipeEditor(), "Add, copy and override recipes of every mod");
         AddButton(tools, "Test Sandbox", () => OpenSandbox(), "Try parts, bots and Creations");
         AddButton(tools, "Mod Manager", () => OpenModManager(), "Turn mods on and off and package them");
         rows.AddChild(BottomBar());
@@ -345,6 +346,15 @@ public partial class MainMenu : Control
         mode.CloseRequested += () => Close(mode);
         Open(mode);
         return mode;
+    }
+
+    /// <summary>Opens the Recipe Editor.</summary>
+    public RecipeEditorScreen OpenRecipeEditor()
+    {
+        var screen = new RecipeEditorScreen { Name = "RecipeEditor" };
+        screen.CloseRequested += () => Close(screen);
+        Open(screen);
+        return screen;
     }
 
     /// <summary>Opens the Mod Manager.</summary>

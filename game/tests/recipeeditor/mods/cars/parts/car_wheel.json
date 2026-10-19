@@ -1,0 +1,1 @@
+{ "id": "car_wheel", "name": "Car Wheel", "category": "block", "mass": 12, "durability": 4, "friction": 0.9, "buoyancy": 0.3, "flammable": false, "size": [2, 2, 1] }

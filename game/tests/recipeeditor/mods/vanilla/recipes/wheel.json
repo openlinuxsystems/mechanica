@@ -1,0 +1,1 @@
+{ "id": "wheel", "stations": ["fabricator"], "inputs": [{ "item": "scrap_metal", "count": 4 }], "outputs": [{ "item": "wheel", "count": 1 }], "time": 2, "order": 400 }
