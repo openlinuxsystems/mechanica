@@ -46,10 +46,15 @@ internal sealed class LuaContext
         end
         """;
 
+    // Calls into the same state from inside a call (a mod script's action reaching a part of the same mod) run on
+    // their own runner; this bounds how deep that goes.
+    private const int MaxDepth = 8;
+
     private readonly DynValue _runnerFactory;
     private readonly DynValue _marker;
     private readonly int _budget;
     private DynValue? _runner;
+    private int _depth;
 
     public LuaContext(string modId, ScriptSettings settings, Action<string> print)
     {
@@ -94,38 +99,54 @@ internal sealed class LuaContext
     /// <summary>Calls a Lua function under the instruction budget. Never throws for Lua errors.</summary>
     public CallOutcome Call(DynValue function, params DynValue[] args)
     {
-        var runner = _runner ??= Script.CreateCoroutine(_runnerFactory);
+        if (_depth >= MaxDepth)
+            return new CallOutcome(CallStatus.Error, [], $"scripts called back into this mod more than {MaxDepth} deep");
+        // The shared runner is busy while an outer call runs; a nested call gets a runner of its own.
+        var nested = _depth > 0;
+        var runner = nested ? Script.CreateCoroutine(_runnerFactory) : _runner ??= Script.CreateCoroutine(_runnerFactory);
         runner.Coroutine.AutoYieldCounter = _budget;
         var resumeArgs = new DynValue[args.Length + 1];
         resumeArgs[0] = function;
         Array.Copy(args, 0, resumeArgs, 1, args.Length);
         DynValue result;
+        _depth++;
         try
         {
             result = runner.Coroutine.Resume(resumeArgs);
         }
         catch (InterpreterException e)
         {
-            _runner = null;
+            Drop(nested);
             return new CallOutcome(CallStatus.Error, [], e.DecoratedMessage ?? e.Message);
         }
         catch (Exception e)
         {
             // A host function failed (a bug on the C# side); the runner died with it.
-            _runner = null;
+            Drop(nested);
             return new CallOutcome(CallStatus.Error, [], $"internal error in a host function: {e.GetType().Name}: {e.Message}");
+        }
+        finally
+        {
+            _depth--;
         }
         if (result.Type == DataType.YieldRequest || runner.Coroutine.State == CoroutineState.ForceSuspended)
         {
-            _runner = null;
+            Drop(nested);
             return new CallOutcome(CallStatus.OverBudget, [], $"ran more than {_budget} Lua instructions in one call and was stopped (an endless loop?)");
         }
         var values = result.Type == DataType.Tuple ? result.Tuple : [result];
         if (values.Length == 0 || !ReferenceEquals(values[0].Table, _marker.Table) || runner.Coroutine.State != CoroutineState.Suspended)
         {
-            _runner = null;
+            Drop(nested);
             return new CallOutcome(CallStatus.Yielded, [], "yielded out of a hook; use coroutine.wrap or coroutine.create inside the script instead");
         }
         return new CallOutcome(CallStatus.Ok, values[1..], null);
+    }
+
+    // A failed runner can't be resumed again; the shared one is rebuilt on the next call.
+    private void Drop(bool nested)
+    {
+        if (!nested)
+            _runner = null;
     }
 }

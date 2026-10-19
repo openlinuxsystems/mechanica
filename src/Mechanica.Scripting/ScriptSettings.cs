@@ -44,6 +44,9 @@ public sealed record ScriptSettings
     /// <summary>Most projectiles item scripts may have in flight at once (<c>combat.projectile</c>).</summary>
     public int MaxProjectiles { get; init; } = 128;
 
+    /// <summary>Most events waiting for scripts' <c>on_event</c> between steps; the oldest are dropped past it.</summary>
+    public int MaxQueuedEvents { get; init; } = 1024;
+
     /// <summary>Longest a projectile may fly, in s (and how long it flies when a script doesn't say).</summary>
     public float MaxProjectileLifetime { get; init; } = 10f;
 
@@ -85,6 +88,8 @@ public sealed record ScriptSettings
             throw new FormatException($"max_loops_per_part must not be negative (got {MaxLoopsPerPart}).");
         if (MaxProjectiles < 0)
             throw new FormatException($"max_projectiles must be 0 or more (got {MaxProjectiles}).");
+        if (MaxQueuedEvents < 1)
+            throw new FormatException($"max_queued_events must be positive (got {MaxQueuedEvents}).");
         if (!float.IsFinite(MaxProjectileLifetime) || MaxProjectileLifetime <= 0f)
             throw new FormatException($"max_projectile_lifetime must be a positive number (got {MaxProjectileLifetime}).");
     }

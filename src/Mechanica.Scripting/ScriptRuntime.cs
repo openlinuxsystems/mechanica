@@ -76,6 +76,15 @@ public sealed partial class ScriptRuntime
         public ActionCaller Caller { get; set; }
         public bool IsItem => Holder is not null;
 
+        // A mod script (mod.json "scripts"): no part, the whole world. PartType holds its qualified path.
+        public bool IsWorld { get; init; }
+
+        // Event topics the script listens to (events.listen).
+        public HashSet<string> Topics { get; } = new(StringComparer.Ordinal);
+
+        // Placed parts: not items or mod scripts.
+        public bool IsPart => !IsItem && !IsWorld;
+
         // Where the part is this step; bodies only move between steps.
         public (long Tick, int Revision, PartKinematics State)? Kinematics { get; set; }
 
@@ -148,6 +157,9 @@ public sealed partial class ScriptRuntime
 
         /// <summary><c>on_reload_item()</c>: the player pressed Reload (R) with the item in hand.</summary>
         public const string OnReloadItem = "on_reload_item";
+
+        /// <summary><c>on_event(topic, data)</c>: an event the script listens to (<c>events.listen</c>) happened. Mod and part scripts.</summary>
+        public const string OnEvent = "on_event";
     }
 
     /// <summary>Creates a runtime over the host's world.</summary>
@@ -230,24 +242,35 @@ public sealed partial class ScriptRuntime
             _source = value;
             _scriptOfType.Clear();
             _revisions.Clear();
+            _worldScripts = null;
         }
     }
 
     /// <summary>
     /// One physics step: brings the instances in line with the Creations (creating and destroying as
-    /// parts come and go), hands every part whose logic input changed its <c>on_power(amount)</c>, then
-    /// calls <c>on_update(dt)</c> on every running part of a live Creation, in creation and part order, and
-    /// last collects the outputs of parts that define <c>get_outputs()</c>. An output set this step reaches the
+    /// parts come and go) and the mod scripts in line with the mods, hands out the events scripts listen to
+    /// (<c>on_event</c>), hands every part whose logic input changed its <c>on_power(amount)</c>, then
+    /// calls <c>on_update(dt)</c> on every mod script in load order and every running part of a live Creation, in
+    /// creation and part order, and last collects the outputs of parts that define <c>get_outputs()</c>. An output set this step reaches the
     /// parts it is linked to next step (<see cref="SignalBus"/>).
     /// </summary>
     public void Update(float dt)
     {
         Tick++;
         _time += dt;
+        ReconcileWorld();
         Reconcile();
         ReconcileItems();
+        DeliverEvents();
         DeliverSignals();
         var arg = DynValue.NewNumber(dt);
+        _stepping.Clear();
+        _stepping.AddRange(_worlds);
+        foreach (var instance in _stepping)
+        {
+            if (instance.Fault is null)
+                CallHook(instance, Hooks.OnUpdate, arg);
+        }
         _stepping.Clear();
         _stepping.AddRange(_instances.Values);
         foreach (var instance in _stepping)
@@ -300,7 +323,7 @@ public sealed partial class ScriptRuntime
     {
         if (!_files.TryGetValue(script, out var entry))
             return new ScriptReloadResult(false, script, $"No part uses the script '{script}'.", 0);
-        var users = _instances.Values.Concat(_items.Values).Where(i => i.File == entry).ToList();
+        var users = _worlds.Concat(_instances.Values).Concat(_items.Values).Where(i => i.File == entry).ToList();
         if (!Compile(entry, keepOld: entry.Factory is not null))
             return new ScriptReloadResult(false, script, entry.Error, users.Count);
         foreach (var instance in users)
@@ -338,9 +361,10 @@ public sealed partial class ScriptRuntime
         return true;
     }
 
-    /// <summary>Destroys every instance (calling <c>on_destroy</c>) and forgets every script.</summary>
+    /// <summary>Destroys every instance and mod script (calling <c>on_destroy</c>) and forgets every script.</summary>
     public void Clear()
     {
+        ClearWorld();
         foreach (var instance in _instances.Values.ToList())
             Destroy(instance);
         ClearItems();
@@ -482,9 +506,11 @@ public sealed partial class ScriptRuntime
         instance.Env = env;
         instance.Fault = null;
         // A fresh start hears its input again as on_power, even if it has not changed.
-        if (!instance.IsItem)
+        if (instance.IsPart)
             Signals.ResetInput(instance.Creation, instance.Part);
         instance.Warned.Clear();
+        // The top level listens again (events.listen), so a reload drops topics the new code no longer wants.
+        instance.Topics.Clear();
         instance.Version = entry.Version;
         if (Run(instance, entry.Factory, "loading", DynValue.NewTable(env)) is null)
             return;
@@ -561,7 +587,7 @@ public sealed partial class ScriptRuntime
     {
         instance.Fault = fault;
         StopLoops(instance);
-        if (!instance.IsItem)
+        if (instance.IsPart)
         {
             Signals.SetOutput(instance.Creation, instance.Part, 0f);
             Lights.Set(instance.Creation, instance.Part, 0f);
@@ -569,6 +595,8 @@ public sealed partial class ScriptRuntime
         }
         if (instance.IsItem)
             Post(ScriptMessageKind.Error, instance.File.File.Key, null, null, $"{fault}; the {instance.PartType} script of player {instance.Holder} is stopped until it is reloaded");
+        else if (instance.IsWorld)
+            Post(ScriptMessageKind.Error, instance.File.File.Key, null, null, $"{fault}; the mod script is stopped until it is reloaded");
         else
             Post(ScriptMessageKind.Error, instance.File.File.Key, instance.Creation, instance.Part, $"{fault}; the part's script is stopped until it is reloaded");
     }
@@ -584,7 +612,7 @@ public sealed partial class ScriptRuntime
 
     private void Print(string text)
     {
-        if (_current is { IsItem: true } item)
+        if (_current is { IsPart: false } item)
             Post(ScriptMessageKind.Print, item.File.File.Key, null, null, text);
         else if (_current is { } instance)
             Post(ScriptMessageKind.Print, instance.File.File.Key, instance.Creation, instance.Part, text);

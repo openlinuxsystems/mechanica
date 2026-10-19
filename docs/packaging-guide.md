@@ -17,7 +17,7 @@ mods/
     overrides/          changes to other mods' content, one folder per mod id: part files, recipes/, bots/,
                         quests/, pois/, characters/, *.patch.json merge patches and remove.json
       vanilla/wheel.json
-    scripts/            Lua behaviour (*.lua)
+    scripts/            Lua behaviour (*.lua): part and item scripts, mod scripts listed in mod.json, require()d modules
     meshes/             glTF models (*.glb, *.gltf)
     textures/           icons and textures (*.png)
     sounds/             audio (*.ogg, *.wav)
@@ -71,6 +71,7 @@ Rules the loader enforces:
 | `authors` | no | List of names. |
 | `dependencies` | no | Mods that must be installed, enabled and loaded before this one. |
 | `conflicts` | no | Mods this one cannot run with. |
+| `scripts` | no | Mod scripts that run on the host for the whole world, in order: game rules, events, timers ([Lua API: Mod scripts](lua-api.md#mod-scripts)). Paths like `scripts/rules.lua`; each file must exist. |
 
 Unknown keys are kept but produce a warning, with a suggestion when they look like a typo.
 

@@ -4,7 +4,7 @@ namespace Mechanica.Scripting;
 /// <param name="Name">What a script writes: <c>part.apply_force</c>, <c>on_update</c>, <c>state</c>.</param>
 /// <param name="Signature">How it is called, e.g. <c>part.apply_force(force, at?)</c>.</param>
 /// <param name="Summary">One line on what it does.</param>
-/// <param name="Group">Section: Hooks, Globals, part, creation, world, sound, soil, player, item, holder, inventory, combat, farm, fire or vec3.</param>
+/// <param name="Group">Section: Hooks, Globals, part, creation, world, sound, soil, player, item, holder, inventory, combat, farm, fire, events, actions or vec3.</param>
 public sealed record LuaApiEntry(string Name, string Signature, string Summary, string Group);
 
 /// <summary>
@@ -37,9 +37,12 @@ public static class LuaApi
         new("can_reload_item", "function can_reload_item()", "Item scripts: return nil to allow a reload, or the reason it is refused. May not change the world.", "Hooks"),
         new("on_reload_item", "function on_reload_item()", "Item scripts: the player pressed Reload (R) with the item in hand (ReloadItem). An item without it cannot be reloaded.", "Hooks"),
 
+        new("on_event", "function on_event(topic, data)", "Mod and part scripts: an event the script listens to (events.listen) happened; data is the event's table.", "Hooks"),
+
         new("state", "state", "Table that survives hot reloads. Keep plain data in it.", "Globals"),
         new("properties", "properties", "The part's free-form properties from its JSON.", "Globals"),
         new("log", "log(...)", "Writes a line to the editor console and the game log (print does the same).", "Globals"),
+        new("require", "require(path)", "Runs a Lua file of this mod (scripts/x.lua) or of a mod it depends on (other_mod:scripts/x.lua) once and returns what it returns.", "Globals"),
 
         new("part.id", "part.id()", "The part's id within its Creation.", "part"),
         new("part.type", "part.type()", "The part's qualified type id, e.g. vanilla:thruster.", "part"),
@@ -148,6 +151,13 @@ public static class LuaApi
         new("fire.douse", "fire.douse(position, radius, amount)", "Water: every fire within radius m loses amount strength (out at 0); returns the fires it reached, or nil and why.", "fire"),
         new("fire.ignite", "fire.ignite(creation, part, strength?)", "Sets a flammable part alight; returns true, or false and why.", "fire"),
         new("fire.strength", "fire.strength(creation, part)", "How strongly a part burns, 0 (not on fire) to 1.", "fire"),
+
+        new("events.listen", "events.listen(topic)", "Hear a topic's events as on_event(topic, data): players, chat, raid, bots, actions, vitals, hurt, quest and more (events.topics()).", "events"),
+        new("events.unlisten", "events.unlisten(topic)", "Stop hearing a topic; true when the script listened to it.", "events"),
+        new("events.topics", "events.topics()", "Every topic events.listen accepts.", "events"),
+
+        new("actions.call", "actions.call(name, args?)", "Calls an Action API action as the host (mod scripts; part and item scripts only actions that read): true and its value, or false and why.", "actions"),
+        new("actions.list", "actions.list()", "The names of the actions actions.call can call.", "actions"),
 
         new("vec3", "vec3(x, y, z)", "A vector with x, y, z. Supports + - * / unary minus, == and tostring.", "vec3"),
         new("vec3.dot", "a:dot(b)", "Dot product.", "vec3"),

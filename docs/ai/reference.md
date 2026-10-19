@@ -1922,6 +1922,7 @@ Subscribe with `mechanica.subscribe {"topics": [...]}`; each arrives as a `mecha
 | `hurt` | A player took damage: peer, amount, cause. |
 | `messages` | Lua prints, warnings and errors from part, item and bot scripts, and host errors from agent calls: kind, source, script, creation, part, text. |
 | `mods` | Mod content was validated or reloaded. |
+| `players` | A player joined or left the world: kind (joined, left), peer, name. |
 | `projectiles` | A projectile was launched or landed. |
 | `quest` | Quest progress changed: the GetQuests state. |
 | `raid` | A raid started, advanced or ended: the GetRaid view. |

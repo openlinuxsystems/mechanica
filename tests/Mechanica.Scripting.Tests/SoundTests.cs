@@ -113,7 +113,7 @@ public sealed class SoundTests : IDisposable
 
         Assert.True(result["played"]!.GetValue<bool>());
         Assert.Null(result["loop"]);
-        Assert.Equal("sound loops only work in part scripts; an item plays one-shots", result["why"]!.GetValue<string>());
+        Assert.Equal("sound loops only work in part scripts; items and mod scripts play one-shots", result["why"]!.GetValue<string>());
         Assert.Equal(("honk", "test", new Vector3(0, 1.6f, 3)), Assert.Single(_sound.Played));
         Assert.Empty(_sound.Loops);
     }

@@ -113,8 +113,8 @@ public sealed class ModLoadResult : IPartCatalog
     public bool HasErrors => Diagnostics.Any(d => d.Severity == DiagnosticSeverity.Error);
 
     /// <summary>
-    /// SHA-256 (hex) of the canonical form of every loaded manifest, part and override, in load order.
-    /// Host and clients compare it on join to confirm they run the same content (D10).
+    /// SHA-256 (hex) of the canonical form of every loaded manifest, part and override, plus every other JSON and Lua
+    /// file of each mod, in load order. Host and clients compare it on join to confirm they run the same content (D10).
     /// </summary>
     public string Fingerprint { get; }
 
@@ -148,8 +148,29 @@ public sealed class ModLoadResult : IPartCatalog
                 hash.AppendData(Encoding.UTF8.GetBytes(part.QualifiedId));
                 hash.AppendData(Encoding.UTF8.GetBytes(DataJson.Write(part.Definition)));
             }
+            // Every other kind of content (recipes, bots, quests, world generation, rules) and every script is a data or
+            // Lua file, so host and client must have the same ones; meshes, textures and sounds only change looks.
+            foreach (var file in ContentFiles(mod.Directory))
+            {
+                hash.AppendData(Encoding.UTF8.GetBytes(Path.GetRelativePath(mod.Directory, file).Replace('\\', '/')));
+                hash.AppendData(File.ReadAllBytes(file));
+            }
         }
         return Convert.ToHexStringLower(hash.GetHashAndReset());
+    }
+
+    private static IEnumerable<string> ContentFiles(string directory)
+    {
+        try
+        {
+            return Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories)
+                .Where(f => f.EndsWith(".json", StringComparison.Ordinal) || f.EndsWith(".lua", StringComparison.Ordinal))
+                .OrderBy(f => Path.GetRelativePath(directory, f).Replace('\\', '/'), StringComparer.Ordinal).ToList();
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            return [];
+        }
     }
 }
 
@@ -502,6 +523,16 @@ public static class ModLoader
         var validator = new PartValidator(modId, deps,
             id => id == modId ? dir : loaded.GetValueOrDefault(id)?.Directory);
         var errors = 0;
+
+        var manifestSink = new DiagnosticSink(Display(dir, ManifestFileName), diagnostics);
+        var scripts = new HashSet<string>(StringComparer.Ordinal);
+        for (var i = 0; i < (manifest.Scripts?.Count ?? 0); i++)
+        {
+            validator.CheckAsset(manifest.Scripts![i], $"$.scripts[{i}]", AssetKind.Script, manifestSink);
+            if (!scripts.Add(manifest.Scripts[i]))
+                manifestSink.Error(DiagnosticCodes.ManifestInvalid, $"$.scripts[{i}]", $"'{manifest.Scripts[i]}' is listed twice.");
+        }
+        errors += manifestSink.ErrorCount;
 
         var parts = new Dictionary<string, LoadedPart>(StringComparer.Ordinal);
         foreach (var file in JsonFiles(dir, Path.Combine(dir, PartsFolder)))

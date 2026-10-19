@@ -50,6 +50,24 @@ public class ModLoaderTests
     }
 
     [Fact]
+    public void ModScriptsMustExistAndBeListedOnce()
+    {
+        using var mods = new TestMods()
+            .File("rules", "mod.json", """{ "id": "rules", "name": "Rules", "version": "1.0.0", "scripts": ["scripts/main.lua"] }""")
+            .File("rules", "scripts/main.lua", "-- rules")
+            .File("broken", "mod.json", """{ "id": "broken", "name": "Broken", "version": "1.0.0", "scripts": ["scripts/gone.lua", "../x.lua", "scripts/a.lua", "scripts/a.lua"] }""")
+            .File("broken", "scripts/a.lua", "-- a");
+
+        var result = mods.Load();
+
+        Assert.Equal(["rules"], result.Mods.Select(m => m.Id));
+        Assert.Equal(["scripts/main.lua"], result.Mods[0].Manifest.Scripts);
+        Assert.Contains(result.Diagnostics, d => d.Code == DiagnosticCodes.AssetMissing && d.JsonPath == "$.scripts[0]");
+        Assert.Contains(result.Diagnostics, d => d.Code == DiagnosticCodes.AssetPathInvalid && d.JsonPath == "$.scripts[1]");
+        Assert.Contains(result.Diagnostics, d => d.Code == DiagnosticCodes.ManifestInvalid && d.JsonPath == "$.scripts[3]");
+    }
+
+    [Fact]
     public void FindPartTreatsBareIdsAsVanilla()
     {
         using var mods = new TestMods().Mod("vanilla").Part("vanilla", "b.json", TestMods.Block("wood_block"));
@@ -262,6 +280,16 @@ public class ModLoaderTests
         using var mods = new TestMods().Mod("m").Part("m", "a.json", TestMods.Block());
         var before = mods.Load().Fingerprint;
         mods.Part("m", "a.json", TestMods.Block(overrides: """{ "durability": 4 }"""));
-        Assert.NotEqual(before, mods.Load().Fingerprint);
+        var changed = mods.Load().Fingerprint;
+        Assert.NotEqual(before, changed);
+        // Any other data or script counts too (a bot, a recipe, a rule, a mod script); a model only changes looks.
+        mods.File("m", "bots/grazer.json", "{}");
+        var withBot = mods.Load().Fingerprint;
+        Assert.NotEqual(changed, withBot);
+        mods.File("m", "scripts/rules.lua", "-- x");
+        Assert.NotEqual(withBot, mods.Load().Fingerprint);
+        var withScript = mods.Load().Fingerprint;
+        mods.File("m", "meshes/x.glb", "glTF");
+        Assert.Equal(withScript, mods.Load().Fingerprint);
     }
 }

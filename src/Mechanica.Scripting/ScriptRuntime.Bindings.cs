@@ -126,7 +126,7 @@ public sealed partial class ScriptRuntime
             var to = LuaValues.ToVector(args[1], "world.raycast", 2);
             if ((to - from).Length() > _settings.MaxRayLength)
                 throw new ScriptRuntimeException($"world.raycast: the ray is longer than {_settings.MaxRayLength:0.#} m");
-            if (_physics.Raycast(from, to, Current().IsItem ? null : Current().Creation) is not { } hit)
+            if (_physics.Raycast(from, to, Current().IsPart ? Current().Creation : null) is not { } hit)
                 return DynValue.Nil;
             var result = new Table(script);
             result.Set("position", Vec(hit.Position));
@@ -150,7 +150,7 @@ public sealed partial class ScriptRuntime
                 throw new ScriptRuntimeException($"world.overlap_sphere: radius must be more than 0 and at most {_settings.MaxOverlapRadius:0.#} m");
             var list = new Table(script);
             var index = 1;
-            foreach (var hit in _physics.OverlapSphere(centre, radius, Current().IsItem ? null : Current().Creation))
+            foreach (var hit in _physics.OverlapSphere(centre, radius, Current().IsPart ? Current().Creation : null))
             {
                 var entry = new Table(script);
                 if (hit.Creation is { } c)
@@ -182,6 +182,8 @@ public sealed partial class ScriptRuntime
                     return Refused(instance, "the holder is gone");
                 at = eye;
             }
+            else if (instance.IsWorld)
+                throw new ScriptRuntimeException("sound.play: a mod script must say where the sound plays");
             else if (Here() is { } h)
                 at = h.State.Position;
             else
@@ -192,8 +194,8 @@ public sealed partial class ScriptRuntime
         {
             var id = args.AsType(0, "sound.start", DataType.String).String;
             var instance = Current();
-            if (instance.IsItem)
-                return NoHandle(instance, "sound loops only work in part scripts; an item plays one-shots");
+            if (!instance.IsPart)
+                return NoHandle(instance, "sound loops only work in part scripts; items and mod scripts play one-shots");
             if (Here() is null)
                 return NoHandle(instance, "the part is gone");
             if (instance.Loops.Count >= _settings.MaxLoopsPerPart)
@@ -240,6 +242,7 @@ public sealed partial class ScriptRuntime
         AddItemLibraries(context);
         AddSoilLibraries(script, world);
         AddFireLibrary(context);
+        AddModLibraries(context);
 
         globals.Set("log", DynValue.NewCallback((_, args) =>
         {
@@ -256,7 +259,7 @@ public sealed partial class ScriptRuntime
         _current ?? throw new ScriptRuntimeException("this function only works inside a hook");
 
     private Instance PartInstance() =>
-        _current is { IsItem: false } instance ? instance : throw new ScriptRuntimeException("this function only works inside a part's hook");
+        _current is { IsPart: true } instance ? instance : throw new ScriptRuntimeException("this function only works inside a part's hook");
 
     // The running part, its Creation and where it is; null once the part is gone (in on_destroy).
     private (Instance Instance, Creation Creation, PartKinematics State)? Here()
@@ -365,7 +368,7 @@ public sealed partial class ScriptRuntime
         // Numbers (forces, distances) change from call to call; warn once per kind of refusal, or a script refused
         // every step would post a warning, and keep its text, every step.
         if (instance.Warned.Add(new string([.. reason.Where(c => !char.IsAsciiDigit(c))])))
-            Post(ScriptMessageKind.Warning, instance.File.File.Key, instance.IsItem ? null : instance.Creation, instance.IsItem ? null : instance.Part, reason);
+            Post(ScriptMessageKind.Warning, instance.File.File.Key, instance.IsPart ? instance.Creation : null, instance.IsPart ? instance.Part : null, reason);
         return DynValue.NewTuple(DynValue.False, DynValue.NewString(reason));
     }
 

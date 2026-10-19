@@ -142,6 +142,11 @@ public partial class SaveSync : Node
             if (Creations.Find(script.Creation) is not null && !Scripts.Runtime.ImportState(script.Creation, script.Part, script.State))
                 diagnostics.Add(Warning(save.Name, $"creation {script.Creation} part {script.Part} no longer runs a script; its state was dropped."));
         }
+        foreach (var (script, state) in save.ModScripts)
+        {
+            if (!Scripts.Runtime.ImportModState(script, state))
+                diagnostics.Add(Warning(save.Name, $"no mod runs the script {script} any more; its state was dropped."));
+        }
         if (save.Quests is { } quests && Quests is not null)
             Quests.Load(quests);
         if (save.Fires is { } fires)
@@ -184,6 +189,7 @@ public partial class SaveSync : Node
             Regrow = World.State.Regrowing.ToDictionary(),
             Creations = [.. Creations.All.OrderBy(c => c.Id).Select(c => { Creations.NodeOf(c.Id)?.SyncToCreation(); return Core.Creations.CreationJson.Write(c); })],
             Scripts = scripts,
+            ModScripts = runtime.ExportModStates(),
             Players = [.. Roster.All],
             Quests = Quests?.State,
             Fires = Fire?.Actions?.SaveSites(),
