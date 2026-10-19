@@ -364,11 +364,21 @@ public partial class PlayerController : CharacterBody3D
     /// <summary>How the seat the player sits in holds it (its legs, hands and bounce); set with <see cref="Seat"/>.</summary>
     public SeatStyle SeatStyle { get; set; } = SeatStyle.Default;
 
-    /// <summary>The yaw (radians, 0 faces -Z) of the seat's front this frame, or null; set with <see cref="Seat"/>.</summary>
-    public Func<float?>? SeatFacing { get; set; }
+    /// <summary>
+    /// The seat's frame this frame (the seated body faces its -Z and sits along its +Y), or null; set with
+    /// <see cref="Seat"/>.
+    /// </summary>
+    public Func<Basis?>? SeatFrame { get; set; }
 
-    /// <summary>Which way a seated body faces: the seat's front, whichever way the player looks. Null on foot.</summary>
-    public float? SeatYaw => Seated ? SeatFacing?.Invoke() : null;
+    /// <summary>
+    /// How a seated body is turned: the seat's whole frame, so it pitches and rolls with the Creation, whichever way
+    /// the player looks. Null on foot.
+    /// </summary>
+    public Basis? SeatBasis => Seated ? SeatFrame?.Invoke() : null;
+
+    /// <summary>Which way a seated body faces: the seat's front flattened onto the ground. Null on foot, or when the seat points straight up or down.</summary>
+    public float? SeatYaw => SeatBasis is { } basis && new Vector2(basis.Z.X, basis.Z.Z) is var front && front.LengthSquared() > 1e-4f
+        ? Mathf.Atan2(front.X, front.Y) : null;
 
     /// <summary>
     /// Plays a gesture on this player (the local player's tools and items call it). Like <see cref="HeldProp"/> it
