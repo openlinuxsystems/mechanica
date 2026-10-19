@@ -27,7 +27,11 @@ shapes the ground, the borders, the meanders, the roads' exact course and the sc
    cell is given a biome at random by `weight`. Borders are bent by `biome_warp` and blended over
    `biome_blend`. The `coast_biome` takes over within `coast_biome_width` of the world edge.
 2. **Height.** Each biome sets an average `height` and a `relief` that scales fractal noise; `ridge`
-   turns it into sharp ridged noise (mountains) and `terrace` steps it into plateaus (desert). Near the
+   turns it into sharp ridged noise (mountains) and `terrace` steps it into plateaus (desert). Over that
+   come two layers of relief after Scrap Mechanic's overworld: broad `hills` a kilometre or so across, and
+   `cliffs`, plateaus in 8 m steps with short rock faces that climb towards the middle of the island. Both
+   lie flat by the coast, rivers and biomes whose `hills` is 0 (lakes), rising to full height over
+   `shore_ramp`, and round sites with a fixed `pad_height` over `pad_ramp`. Near the
    edge the land falls to `sea_floor` over `coast_width`, so the world is an island. `rivers` cut their
    channels and valleys. Each POI then applies its `terrain` ops, and the roads cut and fill the ground
    under them.
@@ -120,6 +124,9 @@ raw heights in `heightmap.f32`, little-endian floats row by row from the north-w
 | `biomes[].ridge` | 0 to 1: how much of the relief is ridged noise, for sharp mountain crests. |
 | `biomes[].terrace` | Height in metres of the plateaus the ground is stepped into (the desert). 0: none. |
 | `terrain.max_scatter_slope` | Steepest ground (rise over run) objects stand on. |
+| `terrain.hills` | Broad hills under every inland biome: `height` (most they lift the ground), `scale` (wavelength in metres), `octaves`, `gain`, `contrast` (higher gives broader flat valleys and tops), `shore_ramp` (metres over which they rise from water and flat biomes) and `pad_ramp` (the same from a fixed pad's rim). Omitted: none. |
+| `terrain.cliffs` | Cliff terraces: up to `levels` plateaus `step` metres apart, from noise of wavelength `scale` stretched by `contrast`; each face takes about `face` metres of ground, and the plateaus rise to their full number over `inland` metres from the coast. They fade where the hills do. Omitted: none. |
+| `biomes[].hills` | 0 to 1: share of the hills and cliffs the biome keeps (0 for lakes, which lie flat). Default 1. |
 | `biomes[].weight` | Chance an inland cell is this biome. 0 means only where placed explicitly (the coast). |
 | `biomes[].ground` | Id of the ground texture (`grounds[]`) the biome is drawn with. Omitted: its plain `color`. |
 | `biomes[].scatter[]` | `spacing` is the side of the rule's grid cells; each cell holds at most one object, kept with probability `chance`. |

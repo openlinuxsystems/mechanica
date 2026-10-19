@@ -17,7 +17,11 @@
     "biome_blend": 78.0,
     "biome_warp": 220.0,
     "region_warp": 420.0,
-    "max_scatter_slope": 0.7
+    "max_scatter_slope": 0.7,
+    // Two layers of relief over the biomes' own, after Scrap Mechanic's overworld: broad hills a kilometre across, and
+    // plateaus in 8 m cliff steps that climb towards the middle of the island. Both lie flat by water.
+    "hills": { "height": 45.0, "scale": 1100.0, "octaves": 4, "gain": 0.5, "contrast": 2.0, "shore_ramp": 320.0, "pad_ramp": 160.0 },
+    "cliffs": { "step": 8.0, "levels": 4, "scale": 800.0, "contrast": 1.4, "face": 6.0, "inland": 1400.0 }
   },
   "coast_biome": "coastal",
   // Ground textures (at most 8) that biomes, steep slopes, POIs and roads paint the terrain with; see docs/world-generation.md.
@@ -170,6 +174,7 @@
       "weight": 1.0,
       "height": -14.0,
       "relief": 4.0,
+      "hills": 0.0,
       "color": "#3a7fb8",
       "ground": "sand",
       "scatter": [
@@ -180,7 +185,7 @@
       "id": "mountain",
       "name": "Mountain",
       "weight": 0.5,
-      "height": 95.0,
+      "height": 72.0,
       "relief": 105.0,
       "ridge": 0.8,
       "color": "#8a8780",
@@ -203,6 +208,7 @@
       "weight": 0.0,
       "height": 3.0,
       "relief": 3.0,
+      "hills": 0.2,
       "color": "#d9c890",
       "ground": "sand",
       "scatter": [

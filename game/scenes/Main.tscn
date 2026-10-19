@@ -3,6 +3,8 @@
 [ext_resource type="Script" path="res://scripts/Main.cs" id="1_main"]
 
 [sub_resource type="ProceduralSkyMaterial" id="Sky_mat"]
+ground_bottom_color = Color(0.6463, 0.6558, 0.6708, 1)
+ground_horizon_color = Color(0.6463, 0.6558, 0.6708, 1)
 
 [sub_resource type="Sky" id="Sky_res"]
 sky_material = SubResource("Sky_mat")

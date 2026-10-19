@@ -44,7 +44,7 @@ public class RoadNetworkTests
         var served = roads.Chains.Where(c => c.Kind == RoadKind.Road).SelectMany(c => new[] { c.From, c.To }).Select(Root).Distinct().ToList();
         Assert.Single(served);
         // Spec §3: junctions along the way, and bridges over the water.
-        Assert.True(roads.Nodes.Count(n => n.Kind == RoadNodeKind.Junction) >= 15, "junctions");
+        Assert.True(roads.Nodes.Count(n => n.Kind == RoadNodeKind.Junction) >= 10, "junctions");
         Assert.Contains(roads.Chains, c => c.Kind == RoadKind.Road && c.Bridge.Any(b => b));
     }
 

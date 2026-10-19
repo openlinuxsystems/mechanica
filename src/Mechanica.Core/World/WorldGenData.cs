@@ -15,6 +15,9 @@ public sealed record Biome(int Index, string Id, string Name, float Weight, floa
 
     /// <summary>Height of the terrace steps, or 0 (<see cref="BiomeDefinition.Terrace"/>).</summary>
     public float Terrace { get; init; }
+
+    /// <summary>Share of the hills and cliffs it keeps (<see cref="BiomeDefinition.Hills"/>).</summary>
+    public float Hills { get; init; } = 1f;
 }
 
 /// <summary>A site (<see cref="SiteDefinition"/>) ready for placement, with its prefab or pool resolved.</summary>
@@ -92,6 +95,7 @@ public sealed class WorldGenData
         {
             Ridge = b.Ridge,
             Terrace = b.Terrace,
+            Hills = b.Hills,
         })];
         Objects = (definition.Objects ?? []).ToDictionary(o => o.Id!);
         var scatter = new List<Scatter>();
