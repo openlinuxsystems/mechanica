@@ -170,4 +170,34 @@ public static class ModManifestFile
         DataJson.WriteFile(path, DataJson.Write(manifest with { Dependencies = [.. existing, .. added.Select(id => new ModDependency { Id = id })] }));
         return added;
     }
+
+    /// <summary>
+    /// Rewrites a mod's name, version, description, authors and dependency ids (the Mod Manager's Edit info), keeping
+    /// everything else in the file, including the version range of every dependency it still lists. Returns the
+    /// problems that stopped the write (empty when it was written).
+    /// </summary>
+    public static IReadOnlyList<DataDiagnostic> Update(string modDirectory, string name, string version, string? description,
+        IReadOnlyList<string> authors, IReadOnlyList<string> dependencies)
+    {
+        var path = Path.Combine(modDirectory, ModLoader.ManifestFileName);
+        var problems = new List<DataDiagnostic>();
+        var display = $"{Path.GetFileName(modDirectory)}/{ModLoader.ManifestFileName}";
+        var manifest = ModLoader.ParseJson<ModManifest>(File.ReadAllText(path), display, problems);
+        if (manifest is null)
+            return problems;
+        var old = manifest.Dependencies ?? [];
+        var updated = manifest with
+        {
+            Name = name.Trim(),
+            Version = version.Trim(),
+            Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim(),
+            Authors = authors.Count == 0 ? null : [.. authors],
+            Dependencies = [.. dependencies.Distinct(StringComparer.Ordinal).Select(id => old.FirstOrDefault(d => d.Id == id) ?? new ModDependency { Id = id })],
+        };
+        ManifestValidator.Validate(updated, new DiagnosticSink(display, problems));
+        if (problems.Any(p => p.Severity == DiagnosticSeverity.Error))
+            return [.. problems.Where(p => p.Severity == DiagnosticSeverity.Error)];
+        DataJson.WriteFile(path, DataJson.Write(updated));
+        return [];
+    }
 }

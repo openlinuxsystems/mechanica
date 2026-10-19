@@ -174,13 +174,12 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
         Build.BodyPushed -= OnBodyPushed;
     }
 
-    /// <summary>Reads <see cref="SettingsPath"/>, failing loudly on bad data.</summary>
-    public static SurvivalSettings LoadSettings()
-    {
-        using var file = FileAccess.Open(SettingsPath, FileAccess.ModeFlags.Read)
-            ?? throw new InvalidOperationException($"Cannot open {SettingsPath}: {FileAccess.GetOpenError()}");
-        return SurvivalSettings.FromJson(file.GetAsText());
-    }
+    /// <summary>
+    /// Reads <see cref="SettingsPath"/> with the game rules of <paramref name="mods"/> on top (their
+    /// <c>rules/survival.patch.json</c>), failing loudly on bad engine data.
+    /// </summary>
+    public static SurvivalSettings LoadSettings(Core.Data.ModLoadResult? mods = null) =>
+        Mechanica.Game.Mods.GameRules.Load(SettingsPath, "survival", mods, SurvivalSettings.FromJson);
 
     /// <summary>
     /// Registers the survival actions and makes dead players unable to act (<see cref="ActionDispatcher.Gate"/>).

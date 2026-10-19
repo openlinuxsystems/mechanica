@@ -31,6 +31,7 @@ mods/
     raids/raids.patch.json  additions and changes to it that stack across mods
     quests/             quests and dialogue (*.json), see quests.md
     characters/         player characters and skins (*.json), see characters.md
+    rules/              game rules: survival.patch.json, fire.patch.json, building.patch.json (see Game rules)
 ```
 
 Rules the loader enforces:
@@ -210,6 +211,29 @@ When two mods change the same entry without one depending on the other, the late
 wins and the Mod Manager shows a warning (`MD1502`). Changing an entry that doesn't exist, or was removed
 by an earlier mod, is an error (`MD1501`); removing one that isn't there is a warning.
 
+### Game rules
+
+The game's balance numbers ship with the build in `game/data/`, and a mod changes them with a merge patch in
+`rules/`. Patches from several mods stack in load order, so the last mod wins per key; lists with `id` keys merge
+like `worldgen.patch.json`, other lists (like `starting_items`) are replaced whole.
+
+```json
+// rules/survival.patch.json: a harder start
+{ "max_health": 60, "respawn_delay": 15, "starting_items": [{ "item": "carrot", "count": 2 }],
+  "difficulties": { "normal": { "bot_damage": 1.5, "raid_budget": 1.4, "raid_cooldown": 0.7 } } }
+```
+
+| File | Patches | Rules (everything else is locked) |
+|------|---------|-----------------------------------|
+| `rules/survival.patch.json` | `game/data/survival.json` | Health, respawn, drops on death, refining, buckets, starting items, the easy and normal difficulties' multipliers, fall and impact damage. Locked: `max_drops`, `aim_tolerance`. |
+| `rules/fire.patch.json` | `game/data/fire.json` | How fires grow, spread and hurt. Locked: `tick`, `max_fires`. |
+| `rules/building.patch.json` | `game/data/building.json` | `paint` (palette and ammo), `sledge`, `breaking`, `lift`. |
+
+A patch that changes a locked key is an error and the mod is not loaded (`MD1602`); a file with another name in
+`rules/` is ignored with a warning (`MD1601`). A patch whose result is invalid (a negative health) is left out when
+the world starts, with an error in the log (`MD1603`), and the rules before it still apply. Rules apply when a world
+starts or joins, and host and clients check they run the same files.
+
 ## 7. Load order and the Mod Manager
 
 Players manage mods in the in-game **Mod Manager** (under **Mod tools** on the main menu). It lists
@@ -222,6 +246,12 @@ every installed mod in load order and shows, for the setup on screen:
 - each mod's status (loaded, disabled, not loaded and why, overrides won or lost) and details.
 - every error, warning and conflict the setup would load with, before anything is saved.
 - **Export…**, **Install…** and **Uninstall** for mod packages (§9).
+- **New mod…** makes an empty mod (a `mod.json` that depends on vanilla, with `parts/` and `scripts/`) to fill
+  with the Part Editor, Lua and data files. **Edit info…** changes the selected mod's name, version, description,
+  authors and dependencies in its `mod.json`, keeping everything else.
+- **Check all content** loads every kind of content of the setup on screen the way a world starts (parts, sounds,
+  world generation, recipes, bots, raids, quests, characters) and compiles every Lua script, and lists each problem
+  with the content area, file and line. The quick list under **Problems** only covers mods and parts.
 
 **Apply** saves the setup to `mods.json` in the user data folder (`user://mods.json`; on Linux
 `~/.local/share/godot/app_userdata/Mechanica/`). The game reads it the next time it starts or hosts.

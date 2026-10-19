@@ -533,6 +533,7 @@ public static class ModLoader
                 manifestSink.Error(DiagnosticCodes.ManifestInvalid, $"$.scripts[{i}]", $"'{manifest.Scripts[i]}' is listed twice.");
         }
         errors += manifestSink.ErrorCount;
+        errors += ModRules.CheckFolder(modId, dir, diagnostics);
 
         var parts = new Dictionary<string, LoadedPart>(StringComparer.Ordinal);
         foreach (var file in JsonFiles(dir, Path.Combine(dir, PartsFolder)))
