@@ -1,0 +1,30 @@
+{
+  "id": "pine_rod",
+  "name": "Pine Rod",
+  "description": "A hewn bar of Pine heartwood, from the big trees only a Saw Blade fells. Hold Use on it with the Refine Tool, or put it in a Refiner, for 20 Wood Blocks.",
+  "category": "resource",
+  "mass": 8,
+  "friction": 0.7,
+  "buoyancy": 0.6,
+  "flammable": true,
+  "stack_size": 10,
+  "sound_material": "wood",
+  "size": [1, 1, 4],
+  "mesh": "meshes/items/wood_rod.glb",
+  "visual": {
+    "color": "#d6a98a",
+    "roughness": 0.85,
+    "metallic": 0
+  },
+  "sounds": {
+    "pickup": "pickup_wood",
+    "drop": "drop_wood"
+  },
+  "loose": true,
+  "refine": [
+    {
+      "item": "wood_block",
+      "count": 20
+    }
+  ]
+}

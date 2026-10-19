@@ -22,8 +22,8 @@ namespace Mechanica.Game.Tools;
 /// the Ramp and Stairs, and see-through blocks in front of solid ones (<c>tools/capture-blocks.sh</c>).
 /// Given <c>water</c> it finds a shore and captures the sea: wide and close, at every Water quality level, a run of frames for
 /// the motion and the view from under the surface (<c>tools/capture-water.sh</c>).
-/// Given <c>rocks</c> it finds a stone and a metal-rich rock outcrop and captures them, then breaks a cube into chunks and a
-/// chunk into rods (<c>tools/capture-rocks.sh</c>).
+/// Given <c>rocks</c> it finds stone and metal-rich rock deposits and captures them, then drills a large block into
+/// boulders, the boulders into chunks and the chunks into rods (<c>tools/capture-rocks.sh</c>).
 /// Given <c>soil</c> it carries a Soil Bag, tips it out, spills a mound and shows a row of mounds dry, lightly watered,
 /// fully wet and drying (<c>tools/capture-soil.sh</c>).
 /// Given <c>knockout_bag</c> it knocks the player out and captures the knockout bag their items drop in from the reference
@@ -33,6 +33,8 @@ namespace Mechanica.Game.Tools;
 /// the sides, saves the seat's item picture and stands up again (<c>tools/capture-scrap-seat.sh</c>).
 /// Given <c>trees</c> it finds a clear example of every tree type and captures it with the player beside it and close up,
 /// then a forest, an autumn and a burned forest wide, and a felled tree's logs (<c>tools/capture-trees.sh</c>).
+/// Given <c>wheels</c> it sets three little cars down in a meadow, one on each wheel (Scrap Wheel, Wheel, Off Road
+/// Wheel), captures them wide and close, and shows the three wheels on the hotbar (<c>tools/capture-wheels.sh</c>).
 /// </summary>
 public partial class CaptureScene : Node
 {
@@ -60,13 +62,14 @@ public partial class CaptureScene : Node
         var seat = args.Length > 1 && args[1] == "scrap_seat";
         var trees = args.Length > 1 && args[1] == "trees";
         var seats = args.Length > 1 && args[1] == "seats";
+        var wheels = args.Length > 1 && args[1] == "wheels";
         var button = args.Length > 1 && args[1] == "button";
-        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats && !button ? args[1] : "scrapper_male";
+        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats && !wheels && !button ? args[1] : "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
         // Building the block wall needs Creative: free parts and no build reach.
-        _main.Options = LaunchOptions.Offline with { Seed = 7, GameMode = blocks || soil ? Core.Survival.GameMode.Creative : LaunchOptions.Offline.GameMode };
+        _main.Options = LaunchOptions.Offline with { Seed = 7, GameMode = blocks || soil || wheels ? Core.Survival.GameMode.Creative : LaunchOptions.Offline.GameMode };
         // The button shots show the HUD (the creation hotbar), which only a main reading the devices builds.
-        _main.ReadDeviceInput = icons || button;
+        _main.ReadDeviceInput = icons || wheels || button;
         AddChild(_main);
         _camera = new Camera3D { Fov = 40 };
         AddChild(_camera);
@@ -128,6 +131,11 @@ public partial class CaptureScene : Node
         if (button)
         {
             ButtonShots();
+            return;
+        }
+        if (wheels)
+        {
+            WheelShots();
             return;
         }
         Shot("front", 60, () => Look(new Vector3(0, 1.0f, -3.2f)));
@@ -460,71 +468,97 @@ public partial class CaptureScene : Node
     private void RockShots()
     {
         Engine.TimeScale = 1.0;
-        List<WorldObjectPlacement> Outcrop(string id)
-        {
-            var gen = _main.Streamer.Generator;
-            var all = gen.ObjectsIn(-1500, -1500, 1500, 1500).Where(o => o.Definition.Id == id).ToList();
-            // The biggest outcrop of the first few, for a good look.
-            return all.GroupBy(o => o.Id with { Piece = 0 }).Take(12).OrderByDescending(g => g.Count()).First().ToList();
-        }
-        Vector3 Middle(List<WorldObjectPlacement> cubes) => new(cubes.Average(o => o.Position.X), cubes.Min(o => o.Position.Y), cubes.Average(o => o.Position.Z));
+        var gen = _main.Streamer.Generator;
+        // Deposits scattered by the rule whose object is `id`, biggest first among the first few.
+        List<List<WorldObjectPlacement>> Deposits(string id) => gen.ObjectsIn(-1500, -1500, 1500, 1500)
+            .Where(o => gen.Data.ScatterRules[o.Id.Rule].Object.Id == id)
+            .GroupBy(o => o.Id with { Piece = 0 }).Take(24).OrderByDescending(g => g.Count()).Select(g => g.ToList()).ToList();
+        Vector3 Middle(List<WorldObjectPlacement> blocks) => new(blocks.Average(o => o.Position.X), blocks.Min(o => o.Position.Y), blocks.Average(o => o.Position.Z));
         var stone = new List<WorldObjectPlacement>();
+        var small = new List<WorldObjectPlacement>();
         Shot("rocks_00_wait", 60, () => { });
         Shot("rocks_00_go", 240, () =>
         {
-            stone = Outcrop("rock_outcrop");
+            var deposits = Deposits("rock_outcrop");
+            stone = deposits[0];
+            small = deposits[^1];
             _meadow = Middle(stone);
-            GD.Print($"[capture] outcrop of {stone.Count} at {_meadow}");
-            _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, _meadow + new Vector3(-5f, 2f, 5f), 0f);
+            GD.Print($"[capture] deposit of {stone.Count} blocks at {_meadow}");
+            _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, _meadow + new Vector3(-9f, 2f, 9f), 0f);
             _camera.MakeCurrent();
             _camera.GlobalPosition = _meadow + new Vector3(0, 30, 0);
         });
-        Shot("rocks_01_outcrop", 30, () => { _main.Flora.BuildAll(); ViewAt(_meadow, new Vector3(-7f, 3.5f, 7f), 1.2f); });
-        Shot("rocks_02_outcrop_other_side", 30, () => ViewAt(_meadow, new Vector3(7.5f, 2.5f, -6f), 1.2f));
-        Shot("rocks_03_outcrop_close", 30, () => ViewAt(_meadow, new Vector3(-3.2f, 1.6f, 3.2f), 1.0f));
+        Shot("rocks_01_deposit", 30, () => { _main.Flora.BuildAll(); ViewAt(_meadow, new Vector3(-14f, 7f, 14f), 1.5f); });
+        Shot("rocks_02_deposit_other_side", 30, () => ViewAt(_meadow, new Vector3(15f, 5f, -12f), 1.5f));
+        Shot("rocks_03_mound_close", 30, () =>
+        {
+            var mound = stone.Take(Math.Min(stone.Count, 12)).ToList();
+            var at = Middle(mound);
+            ViewAt(at, new Vector3(-4.5f, 2.2f, 4.5f), 1.2f);
+        });
         Shot("rocks_04_with_player", 60, () =>
         {
             Player.ThirdPerson = true;
-            _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, _meadow + new Vector3(-3.5f, 1f, 2.5f), 0f);
-            ViewAt(_meadow, new Vector3(-8f, 3f, 6f), 1.2f);
+            _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, _meadow + new Vector3(-6f, 1f, 5f), 0f);
+            ViewAt(_meadow, new Vector3(-12f, 4f, 10f), 1.2f);
         });
-        var metal = new List<WorldObjectPlacement>();
-        Shot("rocks_05_metal_go", 240, () =>
+        Shot("rocks_05_small_go", 240, () =>
         {
-            metal = Outcrop("metal_outcrop");
-            _meadow = Middle(metal);
+            _meadow = Middle(small);
+            GD.Print($"[capture] small deposit of {small.Count} blocks at {_meadow}");
             _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, _meadow + new Vector3(-5f, 2f, 5f), 0f);
         });
-        Shot("rocks_06_metal_outcrop", 30, () => { _main.Flora.BuildAll(); ViewAt(_meadow, new Vector3(-6f, 3f, 6f), 1.0f); });
-        Shot("rocks_07_metal_close", 30, () => ViewAt(_meadow, new Vector3(-2.8f, 1.4f, 2.8f), 0.9f));
-        WorldObjectPlacement? cube = null;
+        Shot("rocks_05_small_deposit", 30, () => { _main.Flora.BuildAll(); ViewAt(_meadow, new Vector3(-7f, 3.5f, 7f), 1.0f); });
+        var metal = new List<WorldObjectPlacement>();
+        Shot("rocks_06_metal_go", 240, () =>
+        {
+            metal = Deposits("metal_outcrop")[0];
+            _meadow = Middle(metal);
+            _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, _meadow + new Vector3(-6f, 2f, 6f), 0f);
+        });
+        Shot("rocks_06_metal_deposit", 30, () => { _main.Flora.BuildAll(); ViewAt(_meadow, new Vector3(-9f, 4f, 9f), 1.0f); });
+        Shot("rocks_07_metal_close", 30, () => ViewAt(_meadow, new Vector3(-4f, 1.8f, 4f), 0.9f));
         Shot("rocks_08_back", 240, () =>
         {
             _meadow = Middle(stone);
-            _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, _meadow + new Vector3(-5f, 2f, 5f), 0f);
+            _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, _meadow + new Vector3(-9f, 2f, 9f), 0f);
         });
-        Shot("rocks_09_cube_drilled", 90, () =>
+        Shot("rocks_09_large_drilled", 90, () =>
         {
-            // Break a ground cube on the outcrop's edge as a drill would; its two chunks fall out onto the grass.
+            // Break a large ground block on the deposit's edge as a drill would; its three boulders fall out onto the grass.
             var middle = _meadow with { Y = 0 };
-            cube = stone.Where(o => o.Position.Y - _meadow.Y < 0.01f).OrderByDescending(o => (o.Position.ToGodot() with { Y = 0 }).DistanceTo(middle)).First();
-            _main.Survival.Actions!.StrikeObject(cube.Id.ToString(), 10000, DamageKinds.Drill);
-            ViewAt(cube.Position.ToGodot(), ((cube.Position.ToGodot() - _meadow) with { Y = 0 }).Normalized() * 4f + new Vector3(0, 2.4f, 0), 0.5f);
+            var block = stone.Where(o => o.Definition.Id!.EndsWith("_large", StringComparison.Ordinal))
+                .DefaultIfEmpty(stone[0])
+                .OrderBy(o => o.Position.Y).ThenByDescending(o => (o.Position.ToGodot() with { Y = 0 }).DistanceTo(middle)).First();
+            _main.Survival.Actions!.StrikeObject(block.Id.ToString(), 10000, DamageKinds.Drill);
+            _meadow = block.Position.ToGodot();
+            ViewAt(_meadow, new Vector3(-3.5f, 2.6f, 3.5f), 0.6f);
         });
-        Shot("rocks_10_chunks", 60, () => ViewLoose(c => c.BreaksInto is not null, 2.4f));
-        Shot("rocks_11_rods", 90, () =>
+        Shot("rocks_10_boulders", 60, () => ViewLoose(c => c.Id!.EndsWith("_boulder", StringComparison.Ordinal), 3.6f));
+        Shot("rocks_11_chunks", 90, () =>
+        {
+            // Drill every boulder into chunks.
+            foreach (var boulder in LooseWith(d => d.Id!.EndsWith("_boulder", StringComparison.Ordinal)))
+                _main.Build.Tools!.DamagePart(boulder, boulder.Parts.First().Id, 10000);
+        });
+        Shot("rocks_12_chunks", 30, () => ViewLoose(c => c.Id!.EndsWith("_chunk", StringComparison.Ordinal), 3.0f));
+        Shot("rocks_13_rods", 90, () =>
         {
             // Break every chunk into rods, as the Sledgehammer would.
-            foreach (var chunk in _main.Creations.All.Where(c => c.Parts.Count == 1 && c.DefinitionOf(c.Parts.First().Id)?.BreaksInto is not null).ToList())
+            foreach (var chunk in LooseWith(d => d.Id!.EndsWith("_chunk", StringComparison.Ordinal)))
             {
                 var part = chunk.Parts.First().Id;
                 for (var i = 0; i < 20 && _main.Creations.Find(chunk.Id) is not null; i++)
                     _main.Build.Tools!.DamagePart(chunk, part, 25);
             }
         });
-        Shot("rocks_12_rods", 30, () => ViewLoose(c => c.Refine is not null, 3.2f));
-        Shot("rocks_13_rods_close", 30, () => ViewLoose(c => c.Refine is not null, 2.0f));
+        Shot("rocks_14_rods", 30, () => ViewLoose(c => c.Refine is not null, 3.6f));
+        Shot("rocks_15_rods_close", 30, () => ViewLoose(c => c.Refine is not null, 2.2f));
     }
+
+    // Loose single parts lying in the world whose definition matches.
+    private List<Core.Creations.Creation> LooseWith(Func<Core.Data.PartDefinition, bool> which) =>
+        [.. _main.Creations.All.Where(c => c.Parts.Count == 1 && c.DefinitionOf(c.Parts.First().Id) is { } d && which(d))];
 
     private static readonly string[] TreeTypes = ["birch_tree", "leafy_tree", "spruce_tree", "pine_tree", "autumn_leafy_tree", "burnt_tree"];
 
@@ -876,6 +910,80 @@ public partial class CaptureScene : Node
             r => GD.Print($"[capture] place {part}: {r}"));
     }
 
+    // Three little cars in a meadow, one on each kind of wheel, then the wheels on the hotbar.
+    private void WheelShots()
+    {
+        Engine.TimeScale = 1.0;
+        var kinds = new[] { ("vanilla:scrap_wheel", 1, 4), ("vanilla:wheel", 1, 4), ("vanilla:big_wheel", 2, 6) };
+        var spots = new[] { -2.4f, 0f, 2.8f };
+        Shot("wheels_00_wait", 60, () => { });
+        Shot("wheels_00_go", 240, () =>
+        {
+            var g = _main.Streamer.Generator;
+            Go(Find(p => new[] { (0f, 0f), (12f, 0f), (-12f, 0f), (0f, 12f), (0f, -12f) }.All(d => g.BiomeAt(p.X + d.Item1, p.Y + d.Item2).Id == "meadow")
+                && g.SlopeAt(p.X, p.Y) < 0.06f && !g.PoisAt(p.X, p.Y).Any()));
+            GameSettings.Apply(GameSettings.Current with { Graphics = GameSettings.Current.Graphics with { Grass = FoliageLevel.Off, GroundCover = FoliageLevel.Off, Bushes = FoliageLevel.Off } });
+            _main.Flora.BuildAll();
+        });
+        // The player stands at the meadow spot: move them out of the way before the cars come down there.
+        Shot("wheels_00_step_aside", 30, () => _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, Ground(_meadow + new Vector3(0.4f, 0, 4.5f)) + Vector3.Up * 0.3f, 0f));
+        Shot("wheels_00_build", 240, () =>
+        {
+            for (var i = 0; i < kinds.Length; i++)
+                SpawnCar(9100 + i, kinds[i].Item1, kinds[i].Item2, kinds[i].Item3, Ground(_meadow + new Vector3(spots[i], 0, 0)) + Vector3.Up * (kinds[i].Item2 == 1 ? 1.0f : 1.6f));
+            for (var i = 0; i < kinds.Length; i++)
+                _main.Hotbar.Set(5 + i, kinds[i].Item1, r => GD.Print($"[capture] hotbar {r}"));
+        });
+        Shot("wheels_01_row", 30, () => View(new Vector3(-1.2f, 1.5f, 5.2f), new Vector3(0.3f, 0.35f, 0.6f)));
+        Shot("wheels_02_row_low", 20, () => View(new Vector3(-4.5f, 0.45f, 3.4f), new Vector3(0.6f, 0.4f, 0.6f)));
+        Shot("wheels_03_scrap", 20, () => View(new Vector3(spots[0] - 1.2f, 0.7f, 1.1f), new Vector3(spots[0] - 0.4f, 0.3f, 0f)));
+        Shot("wheels_04_wheel", 20, () => View(new Vector3(spots[1] - 1.2f, 0.7f, 1.1f), new Vector3(spots[1] - 0.4f, 0.3f, 0f)));
+        Shot("wheels_05_off_road", 20, () => View(new Vector3(spots[2] - 1.9f, 1.0f, 1.8f), new Vector3(spots[2] - 0.6f, 0.55f, 0f)));
+        Shot("wheels_06_tread", 20, () => View(new Vector3(spots[2] + 2.0f, 0.5f, -4.2f), new Vector3(spots[2] + 0.4f, 0.45f, -0.6f)));
+        Shot("wheels_07_hotbar", 60, () =>
+        {
+            // The mouse would set the look every tick; stop it, so the player looks at the cars with the Off Road Wheel picked.
+            foreach (var reader in _main.FindChildren("*", owned: false).OfType<LocalPlayerInput>())
+                reader.SetPhysicsProcess(false);
+            _main.Tools!.SetProcess(true);
+            _main.Tools.Select(7);
+            Input(pitch: -0.5f);
+            Player.MakeCameraCurrent();
+        });
+    }
+
+    // A metal chassis along Z (z 0..length) with a post down at each end and a bearing on each side of each post, a
+    // wheel of the given kind on each bearing (as VanillaLogicTest builds its car), dropped onto its wheels at `at`.
+    private void SpawnCar(int id, string wheel, int wide, int length, Vector3 at)
+    {
+        var car = new Core.Creations.Creation(id, _main.Build.Catalog);
+        Core.Creations.GridRotation Facing(Core.Creations.GridCell outward) =>
+            Core.Creations.GridRotation.FromAxes(new Core.Creations.GridCell(0, -outward.X - outward.Z, 0), outward);
+        void Put(string part, Core.Creations.GridCell cell, Core.Creations.GridRotation rotation = default)
+        {
+            if (!car.TryPlacePart(part, cell, rotation, out _, out var error))
+                GD.Print($"[capture] {part} at {cell}: {error}");
+        }
+        var half = wide == 1 ? 1 : 2;
+        for (var z = 0; z <= length; z++)
+            Put("vanilla:metal_block", new Core.Creations.GridCell(0, 0, z));
+        foreach (var z in new[] { 0, length })
+        {
+            Put("vanilla:metal_block", new Core.Creations.GridCell(0, -1, z));
+            Put("vanilla:metal_block", new Core.Creations.GridCell(0, -2, z));
+            foreach (var side in new[] { 1, -1 })
+            {
+                var outward = new Core.Creations.GridCell(side, 0, 0);
+                var bearing = new Core.Creations.GridCell(side, -2, z);
+                Put("vanilla:bearing", bearing, Facing(outward));
+                var rotation = Facing(outward);
+                Put(wheel, bearing + outward - rotation.Apply(new Core.Creations.GridCell(half, 0, half)), rotation);
+            }
+        }
+        car.SetAllBodyPoses(new Core.Creations.Pose(new System.Numerics.Vector3(at.X, at.Y, at.Z - length * 0.125f), System.Numerics.Quaternion.Identity));
+        _main.Creations.Add(car, _main.Assets);
+    }
+
     private static readonly string[] IconItems = [.. Core.Items.HotbarTools.All, "vanilla:gas_engine", "vanilla:wheel", "vanilla:chest", "vanilla:water_bucket", "vanilla:water_bucket_full"];
 
     // Each picture is saved as it becomes ready; the last shot is the HUD, with the hotbar showing the tools.
@@ -1068,7 +1176,7 @@ public partial class CaptureScene : Node
         _camera.LookAt(centre);
     }
 
-    private static readonly string[] SeatParts = ["drivers_seat", "passenger_seat", "scrap_seat", "scrap_drivers_seat"];
+    private static readonly string[] SeatParts = ["drivers_seat", "passenger_seat", "scrap_drivers_seat", "scrap_seat"];
 
     // Every vanilla seat side by side on one slab; the player sits in each in turn.
     private void SeatsShots()
@@ -1085,7 +1193,7 @@ public partial class CaptureScene : Node
             int Put(string part, int x, int y, int z) =>
                 creation.TryPlacePart(part, new Core.Creations.GridCell(x, y, z), Core.Creations.GridRotation.Identity, out var placed, out var error)
                     ? placed.Id : throw new InvalidOperationException(error);
-            for (var x = -8; x <= 8; x++)
+            for (var x = -8; x <= 10; x++)
                 for (var z = -2; z <= 3; z++)
                     Put("vanilla:metal_block", x, 0, z);
             var cell = -8;

@@ -360,6 +360,9 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
     /// <inheritdoc/>
     public void ObjectHit(WorldObjectId id, System.Numerics.Vector3 at, bool broke) => World.ObjectHit(id, at.ToGodot(), broke);
 
+    /// <inheritdoc/>
+    public void Impact(System.Numerics.Vector3 at, string material) => World.Impact(at.ToGodot(), material);
+
     // Slowed players move slower: the host from its own state, a client from the vitals it was sent.
     private void UpdateSpeedScales()
     {

@@ -218,7 +218,9 @@ function leaves.hesitate(node)
   local m = memory(node)
   local seconds = node.seconds or 2
   local now = world.time()
-  local spinning = world.spinning(node.range or 4, node.min_speed or 4)[1]
+  local part = node.part
+  if part == "" then part = nil end
+  local spinning = world.spinning(node.range or 4, node.min_speed or 4, part)[1]
   if spinning == nil then
     m.clear = m.clear or now
     if now - m.clear >= seconds then m.since = nil end

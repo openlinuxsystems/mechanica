@@ -140,10 +140,15 @@ public sealed class WorldGenData
 
     /// <summary>
     /// Full path of the model a world object is drawn with (<see cref="WorldObjectDefinition.Mesh"/>), or null when it has
-    /// none or the world was built without mods (tests).
+    /// none or the world was built without mods (tests). <paramref name="variant"/> picks one of
+    /// <see cref="MeshDefinition.Variants"/> (1 the first); 0, or one it does not have, is the main model.
     /// </summary>
-    public string? MeshFileOf(WorldObjectDefinition definition) =>
-        definition.Mesh?.File is { } file ? _assetFile?.Invoke(file, AssetKind.Mesh) : null;
+    public string? MeshFileOf(WorldObjectDefinition definition, int variant = 0) =>
+        ModelOf(definition, variant) is { } file ? _assetFile?.Invoke(file, AssetKind.Mesh) : null;
+
+    /// <summary>The mod path of the model <paramref name="variant"/> of an object (see <see cref="MeshFileOf"/>), or null.</summary>
+    public static string? ModelOf(WorldObjectDefinition definition, int variant = 0) =>
+        variant > 0 && definition.Mesh?.Variants is { } variants && variant <= variants.Count ? variants[variant - 1] : definition.Mesh?.File;
 
     /// <summary>Full path of the far model a world object is drawn with past its LOD distance (<see cref="MeshDefinition.Lod"/>), or null.</summary>
     public string? LodFileOf(WorldObjectDefinition definition) =>

@@ -51,6 +51,18 @@
             "function": "charge"
           },
           {
+            "type": "invert",
+            "children": [
+              {
+                "type": "hesitate",
+                "part": "vanilla:saw_blade",
+                "range": 4,
+                "min_speed": 9,
+                "seconds": 2.5
+              }
+            ]
+          },
+          {
             "type": "chase",
             "attack": "drill",
             "speed": 1
@@ -73,6 +85,18 @@
           {
             "type": "call",
             "function": "charge"
+          },
+          {
+            "type": "invert",
+            "children": [
+              {
+                "type": "hesitate",
+                "part": "vanilla:saw_blade",
+                "range": 4,
+                "min_speed": 9,
+                "seconds": 2.5
+              }
+            ]
           },
           {
             "type": "chase",
