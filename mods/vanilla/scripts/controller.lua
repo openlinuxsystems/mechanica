@@ -2,7 +2,9 @@
 -- "frames" setting (up to 10), one frame every "frame_time" seconds, and starts over when the "loop" setting
 -- is on. Each frame gives every joint a target (degrees for a bearing, the opposite on a reversed one; m of
 -- extension for a piston) and a speed (rad/s or m/s). An older frame that is a single angle turns every
--- linked bearing to it at properties.speed. When the input goes off it stops where it is. Its output is 1
+-- linked bearing to it at properties.speed. When the input goes off it stops where it is. Linked from a seat
+-- someone sits in, it latches instead: the driver's W (a positive input) starts it, S (a negative one) stops it,
+-- and letting go of both leaves it as it is. Its output is 1
 -- while it runs. It sends the current frame again every RESEND steps, so a piston it drives holds the
 -- controller's target rather than the one its own input gives it.
 -- The menu's Play button previews frames that are not applied yet: on_command("preview", {playing, frames})
@@ -53,8 +55,25 @@ function on_reload()
   state.assert = true
 end
 
+-- True when a seat linked into this one has a driver in it.
+local function driven()
+  for _, input in ipairs(part.inputs()) do
+    if creation.occupant_input(input.part) then return true end
+  end
+  return false
+end
+
 function on_power(amount)
   local running = amount ~= 0
+  if driven() then
+    if amount > 0 then
+      running = true
+    elseif amount < 0 then
+      running = false
+    else
+      running = state.running
+    end
+  end
   if running ~= state.running and not state.preview then
     play(running and "start" or "stop")
   end

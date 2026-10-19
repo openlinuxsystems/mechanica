@@ -25,6 +25,22 @@ public static class RadialMenu
         return (int)MathF.Floor((angle + step / 2) / step) % count;
     }
 
+    /// <summary>
+    /// Which cell of a menu of <paramref name="spokes"/> directions by <paramref name="rings"/> rings the mouse at
+    /// <paramref name="offset"/> points at, as <c>spoke * rings + ring</c> (the Paint Tool's base colours by their shades):
+    /// the spoke in its direction (as <see cref="Pick"/>), and the ring its distance falls in, rings
+    /// <paramref name="ringWidth"/> pixels wide from <paramref name="inner"/> outwards (beyond the last ring is the last).
+    /// -1 inside <paramref name="inner"/>.
+    /// </summary>
+    public static int PickCell(Vector2 offset, int spokes, int rings, float inner, float ringWidth)
+    {
+        var spoke = Pick(offset, spokes, inner);
+        if (rings <= 0 || ringWidth <= 0f || spoke < 0)
+            return -1;
+        var ring = Math.Clamp((int)MathF.Floor((offset.Length() - inner) / ringWidth), 0, rings - 1);
+        return spoke * rings + ring;
+    }
+
     /// <summary>Where item <paramref name="index"/> of <paramref name="count"/> sits, as an offset from the centre at <paramref name="radius"/>.</summary>
     public static Vector2 Position(int index, int count, float radius)
     {

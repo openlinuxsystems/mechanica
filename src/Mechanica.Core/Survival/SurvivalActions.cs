@@ -294,7 +294,7 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
             items.Add(stack);
             pockets.SetSlot(slot, null);
         }
-        AddDrop(feet, items, knockedOut: true);
+        AddDrop(feet, items, knockedOut: true, owner: peer);
     }
 
     // ---- Respawn and beds ----
@@ -1125,16 +1125,16 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     /// Puts a pile of items on the ground below <paramref name="at"/>, or exactly at it when <paramref name="placed"/>
     /// (Force Build: it then never expires). Returns it, or null when there was nothing to drop. Past
     /// <see cref="SurvivalSettings.MaxDrops"/> piles the oldest goes. <paramref name="knockedOut"/> marks what a
-    /// knocked-out player dropped (<see cref="ItemDrop.KnockedOut"/>).
+    /// knocked-out player dropped (<see cref="ItemDrop.KnockedOut"/>), and <paramref name="owner"/> whose it is.
     /// </summary>
-    public ItemDrop? AddDrop(Vector3 at, IReadOnlyList<ItemStack> items, bool placed = false, bool knockedOut = false)
+    public ItemDrop? AddDrop(Vector3 at, IReadOnlyList<ItemStack> items, bool placed = false, bool knockedOut = false, int? owner = null)
     {
         var kept = items.Where(s => s.Count > 0).ToList();
         if (kept.Count == 0)
             return null;
         while (_drops.Count >= settings.MaxDrops)
             RemoveDrop(_drops.Keys.First());
-        var drop = new ItemDrop(_nextDrop++, (placed ? at : world.GroundBelow(at)).ToVec3(), kept, world.Now + settings.DropLifetime, placed, knockedOut);
+        var drop = new ItemDrop(_nextDrop++, (placed ? at : world.GroundBelow(at)).ToVec3(), kept, world.Now + settings.DropLifetime, placed, knockedOut, owner);
         _drops[drop.Id] = drop;
         DropChanged?.Invoke(drop);
         return drop;
@@ -1255,6 +1255,18 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     public string? CheckTool(ActionCaller caller, string tool) =>
         !Pays(caller) || catalog.FindDefinition(tool) is not { Category: PartCategory.Tool } item || inventories.PlayerInventory(caller.Peer).Count(tool) > 0 ? null
         : $"Craft a {item.Name ?? tool} at a Fabricator first.";
+
+    /// <inheritdoc/>
+    public string? CheckSpend(ActionCaller caller, string item, int count) =>
+        !Pays(caller) || count <= 0 || inventories.PlayerInventory(caller.Peer).Count(item) >= count ? null
+        : $"You have no {NameOf(item)}. Craft some at a Fabricator.";
+
+    /// <inheritdoc/>
+    public void Spend(ActionCaller caller, string item, int count)
+    {
+        if (Pays(caller) && count > 0)
+            inventories.PlayerInventory(caller.Peer).Remove(item, count);
+    }
 
     private string NameOf(string item) => catalog.FindDefinition(item)?.Name ?? item;
 

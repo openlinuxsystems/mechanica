@@ -1,0 +1,11 @@
+{
+  "id": "paint_tool",
+  "name": "Paint Tool",
+  "description": "Sprays paint on parts: left drag paints, right drag takes paint off, Q picks a colour. Each stroke uses one Paint Ammo. Kept when you die.",
+  "category": "tool",
+  "mass": 1.1,
+  "stack_size": 1,
+  "visual": {
+    "color": "#2d6870"
+  }
+}

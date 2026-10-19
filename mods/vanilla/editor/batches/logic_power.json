@@ -41,18 +41,27 @@
       "base": "drivers_seat",
       "set": {
         "name": "Scrap Driver's Seat",
-        "description": "A driver's seat from scrap. It steers less far and more slowly.",
+        "description": "A makeshift seat on a pallet with a pipe steering wheel. Sit in it with E and drive: W and S are its output (link it to engines; a controller starts on W and stops on S, a thruster burns while you hold W), A and D steer the upright bearings it is linked to. Switches and buttons it is linked to go on your hotbar while you sit: 1 to 9 and 0 use them, Left and Right click the first two. It takes 4 links.",
         "mass": 5,
-        "durability": 3,
+        "durability": 2,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": true,
+        "stack_size": 5,
         "sound_material": "scrap",
-        "visual": { "color": "#7a5a3a", "roughness": 0.85, "metallic": 0.2 },
+        "size": [4, 4, 6],
+        "icon": "textures/items/scrap_drivers_seat_icon.png",
+        "visual": { "color": "#ffffff" },
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.5, 0], "normal": [0, -1, 0] }],
+        "logic": { "outputs": 4 },
+        "sounds": { "enter": "scrap_seat_enter", "exit": "scrap_seat_exit", "creak": "scrap_seat_creak" },
+        "seat": { "offset": [0, -0.355, 0.4] },
+        "display": {
+          "clips": { "readout": "clip" }
+        },
         "properties": { "steer_angle": 22, "steer_speed": 1.5, "steer_torque": 800 }
       },
-      "model": [
-        { "kind": "box", "size": [0.5, 0.14, 0.48], "position": [0, -0.18, 0] },
-        { "kind": "box", "size": [0.44, 0.08, 0.4], "position": [0, -0.07, -0.02] },
-        { "kind": "box", "size": [0.44, 0.4, 0.08], "position": [0, 0.05, 0.2] }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/scrap_drivers_seat.glb" }],
       "recipes": [
         {
           "id": "scrap_drivers_seat",
@@ -665,7 +674,7 @@
       "template": "logic",
       "set": {
         "name": "Controller",
-        "description": "While its input is on, steps the bearings and pistons it is linked to through up to 10 frames you set (E).",
+        "description": "While its input is on, steps the bearings and pistons it is linked to through up to 10 frames you set (E). Linked from a seat, W starts it and S stops it.",
         "stack_size": 20,
         "script": "scripts/controller.lua",
         "visual": { "color": "#6a5ab8", "roughness": 0.5, "metallic": 0.2 },

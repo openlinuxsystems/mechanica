@@ -57,8 +57,8 @@ public partial class LiftTest : StagedTest
             var deployed = Footprint(meshes.Select(m => m.Transform * m.GetAabb()));
             Check(deployed > Settings.PlatformSize * 1.3f, $"the ghost stands with its outriggers out ({deployed:F2} m across)");
             var models = new Ui.ToolIconModels(_client.Main.Characters.Assets, _client.Main.Assets, Settings);
-            Check(models.For(Core.Items.HotbarTools.Paint) is null, "a tool with no model draws as its initials");
-            foreach (var tool in new[] { Core.Items.HotbarTools.Sledge, Core.Items.HotbarTools.Lift })
+            Check(models.For("vanilla:no_such_tool") is null, "a tool with no model draws as its initials");
+            foreach (var tool in new[] { Core.Items.HotbarTools.Sledge, Core.Items.HotbarTools.Lift, Core.Items.HotbarTools.Paint })
             {
                 var model = models.For(tool);
                 Check(model is not null && model.FindChildren("*", nameof(MeshInstance3D), owned: false).Count > 0, $"the {tool} icon is drawn from its model");

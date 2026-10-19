@@ -179,6 +179,7 @@ The Creation the part belongs to.
 | `creation.set_piston(part_id, length, speed?, max_force?)` | Like `part.set_piston`, for another piston of the same Creation (a controller moving several). |
 | `creation.joint(part_id)` | Like `part.joint()`, for another part of the same Creation. |
 | `creation.display(part_id, id, value)` | Like `part.display`, for a part this one's output is linked to (an engine turns its wheel bearings' `drive` highlight). Any other part is refused. |
+| `creation.displayed(part_id, id)` | Like `part.displayed`, for any part of the same Creation (a seat checks whether an engine shows `running`), or `nil`. |
 | `creation.occupant_input(part_id)` | Like `part.occupant_input()`, for another seat of the same Creation: a control surface or rotor linked from a seat reads its pilot's controls this way. `nil` when that seat is empty. |
 | `creation.count(item)` | How many of an item the Creation's containers hold (gasoline in gas containers, battery packs in batteries). Bare ids are in the part's mod. |
 | `creation.take(item, count?)` | Takes up to `count` (default 1) of an item from the Creation's containers, in part order, and returns how many it took. Engines burn fuel this way. |

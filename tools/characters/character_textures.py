@@ -126,6 +126,7 @@ KINDS = {
     "pipe_steel": "metal", "plate_steel": "metal", "tape_brown": "tape", "hazard_band": "hazard", "rust_sheet": "rust",
     "tool_gunmetal": "metal", "tool_bezel": "metal", "tool_silver": "metal", "panel_line": "metal",
     "grip_chevron": "chevron", "accent_orange": "painted", "grip_hex": "hexgrip",
+    "paint_teal": "painted", "paint_dark": "plastic", "paint_face": "plastic", "paint_grip": "ribbed",
 }
 
 THREAD = {
@@ -294,6 +295,18 @@ def pattern(c, kind, nz):
         inside = np.where(side, 1.0, (c.N[:, 0] < -0.3) * 1.0) * sstep(-0.044, -0.04, b) * sstep(0.04, 0.035, b)
         groove = groove * inside
         return 0.95 - 0.22 * groove + 0.05 * g, -0.0003 * groove, 0.08 * groove, None
+    if kind == "ribbed":
+        # the Paint Tool's rubber grip: ribs across the handle round its back and sides (lofts know the distance along
+        # them and their angle, 0 at the front); the front, with its finger bumps, is left smooth
+        g = nz[0].fbm(P * 500.0, 2)
+        if c.loft is None:
+            return 0.95 + 0.05 * g, 0.00005 * g, 0.03 * g, None
+        ok = ~np.isnan(c.loft[:, 0])
+        along = np.nan_to_num(c.loft[:, 0])
+        back = sstep(0.55, 0.3, np.nan_to_num(c.loft[:, 1], nan=1.0))
+        s = (along / 0.0058) % 1.0
+        ridge = np.where(ok, sstep(0.0, 0.2, s) * sstep(0.72, 0.52, s) * back, 0.0)
+        return 0.88 + 0.18 * ridge + 0.05 * g, 0.00035 * ridge, 0.08 * (1 - ridge), None
     if kind == "knurl":
         # diamond knurling on a round grip: lofts know their angle and the distance along them
         g = nz[0].fbm(P * 500.0, 2)

@@ -13,8 +13,8 @@ ends with what a modder needs to make new logic parts.
   **input** is the sum of the outputs of every part linked to it.
 - A signal moves one link per physics step (1/60 s). A switch that feeds a timer that feeds a piston
   reaches the piston two steps after you flip it.
-- How many links a part takes and sends is in its data. A seat sends up to 10, an engine takes up to
-  4 and sends up to 10, a bearing or a piston takes up to 4.
+- How many links a part takes and sends is in its data. A seat sends up to 10 (the Scrap Driver's Seat
+  only 4), an engine takes up to 4 and sends up to 10, a bearing or a piston takes up to 4.
 - What a signal means is up to the part that receives it. An engine reads its input as a throttle, a
   piston pushes out while its input is not 0, and a logic gate counts every input that is not 0 as on.
 - Links are saved with the creation and copied with it. Taking a part off removes its links, and when
@@ -124,7 +124,8 @@ Detects toggles pick what turns it on: players, bots, blocks (the ground and the
 creations. Anything else in the way still blocks its view.
 
 Link a seat to switches and buttons and they go on your hotbar while you sit there, so you can work a
-crane or open a door from the driver's seat.
+crane or open a door from the driver's seat. Number keys use them, and Left and Right click use the first
+two. A controller linked from a seat starts on W and stops on S.
 
 A logic gate counts each input that is not 0 as on. With no inputs everything is off, so nand, nor and
 xnor are on. xor is on when an odd number of inputs are on.

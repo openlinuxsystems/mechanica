@@ -348,6 +348,85 @@ public sealed class LogicScriptTests : IDisposable
         Assert.Equal(-MathF.PI / 4, LastMotor(arm).Target!.Value, 4);
     }
 
+    [Fact]
+    public void AControllerLinkedFromASeatStartsOnWAndStopsOnS()
+    {
+        var creation = Board();
+        var seat = Place(creation, "vanilla:drivers_seat", new GridCell(-2, 1, 0));
+        var controller = Place(creation, "vanilla:controller", new GridCell(0, 1, 0));
+        var arm = Bearing(creation, new GridCell(3, 0, 0), new GridCell(1, 0, 0));
+        Place(creation, "vanilla:metal_block", new GridCell(4, 0, 0));
+        Link(creation, seat, controller);
+        Link(creation, controller, arm);
+        Configure(creation, controller, "frames", new[] { 0, 90 });
+        Configure(creation, controller, "frame_time", 0.5);
+        Configure(creation, controller, "loop", true);
+        _runtime.Seats!.Sit(Peer, Car, seat);
+        Steps(3);
+        Assert.Equal(0f, _runtime.Signals.Output(Car, controller));
+
+        // W starts it, and it keeps running after W is let go.
+        _input = new PlayerInput(0, 1, 0, 0, false, false);
+        Steps(3);
+        _input = new PlayerInput(0, 0, 0, 0, false, false);
+        Steps(40);
+        Assert.Equal(1f, _runtime.Signals.Output(Car, controller));
+        Assert.Equal(MathF.PI / 2, LastMotor(arm).Target!.Value, 4);
+
+        // S stops it, and it stays stopped after S is let go.
+        _input = new PlayerInput(0, -1, 0, 0, false, false);
+        Steps(3);
+        _input = new PlayerInput(0, 0, 0, 0, false, false);
+        Steps(40);
+        Assert.Equal(0f, _runtime.Signals.Output(Car, controller));
+    }
+
+    [Fact]
+    public void TheScrapSeatShowsItsDriverAndRattlesWhileAnEngineRuns()
+    {
+        var creation = Board();
+        var seat = Place(creation, "vanilla:scrap_drivers_seat", new GridCell(-2, 1, -2));
+        var engine = Place(creation, "vanilla:gas_engine", new GridCell(2, 1, 0));
+        Link(creation, seat, engine);
+        Steps(3);
+        Assert.Equal(0f, _runtime.Readouts.Number(Car, seat, "seated"));
+        Assert.Equal(0f, _runtime.Readouts.Number(Car, seat, "rattle"));
+
+        _runtime.Seats!.Sit(Peer, Car, seat);
+        _input = new PlayerInput(0, 0, 0, 0, false, false);
+        Steps(12);
+        Assert.Equal(1f, _runtime.Readouts.Number(Car, seat, "seated"));
+        Assert.Equal(0f, _runtime.Readouts.Number(Car, seat, "rattle"));
+        Assert.StartsWith("enter#", _runtime.Readouts.Text(Car, seat, "clip"));
+        Steps(48);
+        Assert.StartsWith("seated_loop#", _runtime.Readouts.Text(Car, seat, "clip"));
+
+        _input = new PlayerInput(0, 1, 0, 0, false, false);
+        Steps(24);
+        Assert.Equal(1f, _runtime.Readouts.Number(Car, engine, "running"));
+        Assert.Equal(1f, _runtime.Readouts.Number(Car, seat, "rattle"));
+        Assert.StartsWith("seated_rattle_loop#", _runtime.Readouts.Text(Car, seat, "clip"));
+
+        _runtime.Seats.Leave(Peer);
+        Steps(3);
+        Assert.StartsWith("exit#", _runtime.Readouts.Text(Car, seat, "clip"));
+        Assert.Equal(0f, _runtime.Readouts.Number(Car, seat, "seated"));
+        Assert.Equal(0f, _runtime.Readouts.Number(Car, seat, "rattle"));
+    }
+
+    [Fact]
+    public void TheScrapSeatTakesFourLinks()
+    {
+        var creation = Board();
+        var seat = Place(creation, "vanilla:scrap_drivers_seat", new GridCell(-2, 1, -2));
+        for (var x = 3; x < 8; x++)
+            Place(creation, "vanilla:metal_block", new GridCell(x, 0, 0));
+        for (var i = 0; i < 4; i++)
+            Link(creation, seat, Place(creation, "vanilla:switch", new GridCell(i + 3, 1, 0)));
+        var fifth = Place(creation, "vanilla:switch", new GridCell(7, 1, 0));
+        Assert.False(creation.TryLink(seat, fifth, out _));
+    }
+
     [Theory]
     [InlineData(null, "blocks")]
     [InlineData("player", "players")]

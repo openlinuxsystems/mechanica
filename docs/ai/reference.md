@@ -450,6 +450,7 @@ Painting parts. Arguments of Paint.
 | `creation` | integer | yes |  | The Creation holding the parts. |
 | `parts` | integer[] | yes |  | Part ids to paint, without repeats. |
 | `color` | string or null |  |  | "#rrggbb", or null to take the paint off. |
+| `stroke` | integer or null |  |  | Which stroke of the caller's this belongs to (any number the caller picks, new for each press of the button). In Survival a stroke pays AmmoPerStroke once, on its first Paint; the drag's later Paint requests with the same number are free while they keep coming (StrokeSeconds) and stay within MaxPartsPerAction parts. Without it every Paint pays. |
 
 ### `PlaceLift`
 

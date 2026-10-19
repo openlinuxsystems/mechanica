@@ -97,7 +97,9 @@ public partial class FabricatorTest : StagedTest
             Check(Mathf.IsEqualApprox(card.Size.X, narrow ? 280 : 302) && main.Size.X > 2 * card.Size.X, $"the main window and the card ({main.Size.X}, {card.Size.X})");
             Check(Mathf.Abs(card.Position.X - main.End.X - 12) < 1 && Mathf.Abs(card.Size.Y - main.Size.Y) < 1, "the card sits 12 px right of the window, as tall");
             Check(_screen.QueueCells == 8 && _screen.QueueRows.Count == 0, $"the queue strip shows the queue's 8 empty cells ({_screen.QueueCells})");
-            Check(_screen.TabsShown.Contains(InventoryTab.All) && _screen.TabsShown.Count < Enum.GetValues<InventoryTab>().Length, $"tabs without recipes are hidden ({string.Join(", ", _screen.TabsShown)})");
+            // A tab shows when the station has a recipe under it (All always does); one without recipes is hidden.
+            var withRecipes = Enum.GetValues<InventoryTab>().Where(t => _screen.ListedRecipes.Any(r => InventoryTabs.Shows(t, Category(r))));
+            Check(_screen.TabsShown.Contains(InventoryTab.All) && _screen.TabsShown.SequenceEqual(withRecipes), $"only tabs with recipes show ({string.Join(", ", _screen.TabsShown)})");
             Check(_screen.RecipeRows.All(r => !r.IsNew), "nothing is NEW the first time a station is opened");
             if (!_screen.StorageOpen)
                 _screen.ToggleStorage();

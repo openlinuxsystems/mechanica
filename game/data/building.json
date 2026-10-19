@@ -46,15 +46,29 @@
     "max_blueprints": 50,
     "blueprint_max_bytes": 1048576
   },
+  // Paint Tool (UI spec §2, §9): 10 base colours (red, orange, yellow, lime, green, cyan, blue, violet, magenta, grey),
+  // each in 4 shades from light to dark. In Survival each stroke (a press and its drag) uses ammo_per_stroke Paint Ammo;
+  // a stroke stays one stroke while its parts reach the host at most stroke_seconds apart. Taking paint off is free.
   "paint": {
     "palette": [
-      "#e8e8e8", "#9a9a9a", "#3a3a3a", "#141414",
-      "#d03030", "#e86820", "#f0d830", "#a0d040",
-      "#40a040", "#20a0a0", "#3070d0", "#203890",
-      "#8040b0", "#d050a0", "#8a5a30", "#e8c8a0"
+      "#f4a0a0", "#e03c3c", "#a82424", "#5c1414",
+      "#f8c49a", "#ee7a26", "#b45618", "#63300c",
+      "#faeca0", "#f2d22c", "#b89a14", "#62520a",
+      "#d6f2a0", "#9ed23a", "#6c9a20", "#3a5410",
+      "#a8e6b4", "#3eaa58", "#267a3c", "#13421f",
+      "#a4e6ea", "#26b0bc", "#187c86", "#0c4248",
+      "#a8c4f4", "#3874dc", "#2350a4", "#122a5a",
+      "#cab0f0", "#8650d0", "#5c3296", "#301a52",
+      "#f2b0dc", "#d84aa8", "#9c2c78", "#521640",
+      "#f2f2f2", "#a8a8a8", "#5c5c5c", "#181818"
     ],
+    "shades": 4,
+    "default_color": 25,
     "max_parts_per_action": 256,
-    "drag_flush_seconds": 0.1
+    "drag_flush_seconds": 0.1,
+    "ammo": "paint_ammo",
+    "ammo_per_stroke": 1,
+    "stroke_seconds": 1.0
   },
   // Loose parts a rock cube or chunk falls apart into (chunks, rods) are thrown out this fast (m/s), so they tumble apart;
   // a felled tree's log segments are stacked up its trunk fell_gap metres apart.
