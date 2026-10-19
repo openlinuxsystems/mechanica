@@ -58,7 +58,10 @@ public static class PlayerMotor
         var acceleration = onFloor ? settings.GroundAcceleration : settings.AirAcceleration;
 
         var horizontal = new Vector3(velocity.X, 0f, velocity.Z);
+        var before = horizontal.Length();
         horizontal = MoveToward(horizontal, target, acceleration * delta);
+        if (onFloor)
+            horizontal = RampAboveWalk(horizontal, before, settings.WalkSpeed * scale, settings, delta);
 
         var vertical = velocity.Y;
         if (onFloor)
@@ -67,6 +70,19 @@ public static class PlayerMotor
             vertical = MathF.Max(vertical - settings.Gravity * delta, -settings.MaxFallSpeed);
 
         return new Vector3(horizontal.X, vertical, horizontal.Z);
+    }
+
+    // Above walking speed the pace changes gently (sprint_acceleration up, sprint_deceleration down) while the direction
+    // still turns at the full ground acceleration.
+    private static Vector3 RampAboveWalk(Vector3 horizontal, float before, float walk, PlayerMovementSettings settings, float delta)
+    {
+        var after = horizontal.Length();
+        var limited = after;
+        if (after > before && after > walk)
+            limited = MathF.Min(after, MathF.Max(before, walk) + settings.SprintAcceleration * delta);
+        else if (after < before && before > walk)
+            limited = MathF.Max(after, MathF.Max(walk, before - settings.SprintDeceleration * delta));
+        return after > 1e-6f && limited != after ? horizontal * (limited / after) : horizontal;
     }
 
     /// <summary>

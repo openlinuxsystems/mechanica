@@ -3,6 +3,9 @@
   "walk_speed": 4.0,
   "sprint_speed": 7.0,
   "ground_acceleration": 40.0,
+  // Above walk_speed the pace builds and eases off more gently, so going from a walk to a sprint and back shows.
+  "sprint_acceleration": 9.0,
+  "sprint_deceleration": 14.0,
   "air_acceleration": 8.0,
   "jump_speed": 4.5,
   "gravity": 9.81,

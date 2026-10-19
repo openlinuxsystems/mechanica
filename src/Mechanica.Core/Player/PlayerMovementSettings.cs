@@ -26,6 +26,15 @@ public sealed record PlayerMovementSettings
     /// <summary>Horizontal acceleration on the ground in m/s².</summary>
     public float GroundAcceleration { get; init; } = 40f;
 
+    /// <summary>
+    /// On the ground, how fast speed builds above <see cref="WalkSpeed"/> toward a sprint, in m/s²: the player visibly
+    /// picks up pace over a few strides instead of snapping to a run. Turning keeps <see cref="GroundAcceleration"/>.
+    /// </summary>
+    public float SprintAcceleration { get; init; } = 9f;
+
+    /// <summary>On the ground, how fast speed drops while above <see cref="WalkSpeed"/>, in m/s²: a sprint eases off before it walks or stops.</summary>
+    public float SprintDeceleration { get; init; } = 14f;
+
     /// <summary>Horizontal acceleration in the air in m/s² (air control).</summary>
     public float AirAcceleration { get; init; } = 8f;
 
@@ -161,6 +170,8 @@ public sealed record PlayerMovementSettings
         Positive(WalkSpeed, "walk_speed");
         Positive(SprintSpeed, "sprint_speed");
         Positive(GroundAcceleration, "ground_acceleration");
+        Positive(SprintAcceleration, "sprint_acceleration");
+        Positive(SprintDeceleration, "sprint_deceleration");
         NonNegative(AirAcceleration, "air_acceleration");
         NonNegative(JumpSpeed, "jump_speed");
         NonNegative(Gravity, "gravity");

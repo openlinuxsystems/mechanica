@@ -2386,7 +2386,8 @@ def female_backpack():
 # A pose is a rotation Q[bone] per bone, expressed in ARMATURE axes and applied relative to the parent's
 # posed frame (so Q = identity everywhere is the rest pose), plus a vertical hips offset. The world
 # orientation of a bone is W[bone] = W[parent] @ Q[bone]. Converting to Blender's pose-bone basis:
-# basis = R_rest^T @ Q @ R_rest. Hips only ever move vertically (no root motion, no horizontal travel).
+# basis = R_rest^T @ Q @ R_rest. The hips sway a few centimetres (hips_x, hips_y, hips_z) but there is no root motion:
+# clips play in place and the game moves the body.
 
 I3 = np.eye(3)
 
@@ -2447,6 +2448,7 @@ class Pose:
     def __init__(self):
         self.Q = {b: I3.copy() for b in BONE_NAMES}
         self.hips_z = 0.0
+        self.hips_xy = (0.0, 0.0)
         self.W = {}
         self.P = {}
 
@@ -2459,8 +2461,12 @@ class Pose:
             self.W[name] = self.W[parent] @ self.Q[name]
             self.P[name] = self.P[parent] + self.W[parent] @ (bone_head(name) - bone_head(parent))
             if name == "hips":
-                self.P[name] = self.P[name] + np.array([0.0, 0.0, self.hips_z])
+                self.P[name] = self.P[name] + self.hips_offset()
         return self
+
+    def hips_offset(self):
+        """How far the hips are moved from rest (sideways, forward-back, up), in armature axes."""
+        return np.array([self.hips_xy[0], self.hips_xy[1], self.hips_z])
 
     def point(self, bone, rest_point):
         """World position of a rest-space point rigidly attached to `bone`."""
@@ -2506,7 +2512,7 @@ def two_bone_ik(pose, b1, b2, end, target, pole):
 # Pose specs
 # ------------------------------------------------------------------------------------------------
 # A spec is a dict of numbers / tuples / nested dicts, so key poses can be interpolated:
-#   hips_z, hips (euler), spine, chest, neck, head, shoulder_l/r (euler, degrees)
+#   hips_x, hips_y, hips_z (m), hips (euler), spine, chest, neck, head, shoulder_l/r (euler, degrees)
 #   arm_l/r: {"down", "swing", "yaw", "elbow", "wrist", "twist"}  (FK, degrees)
 #         or {"pos", "d", "w", "pole", "space"}                    (IK: wrist position, finger dir, thumb dir)
 #   fingers_l/r, thumb_l/r: curl in degrees
@@ -2566,6 +2572,7 @@ def interp_specs(keys, t, loop_period=None):
 def build_pose(spec):
     pose = Pose()
     pose.hips_z = spec.get("hips_z", 0.0)
+    pose.hips_xy = (spec.get("hips_x", 0.0), spec.get("hips_y", 0.0))
     for b in ("hips", "spine", "chest", "neck", "head"):
         if b in spec:
             pose.Q[b] = E(*spec[b])
@@ -2721,36 +2728,64 @@ def foot_cycle(phase, T, v, duty, lift, strike_pitch, off_pitch, center_y, side,
     return np.array([x, y, z]), th, False
 
 
+def _wave(ph, lag=0.0):
+    """cos of the cycle phase, lagging by `lag` of a cycle (follow-through: a part trails what drives it)."""
+    return math.cos(2 * math.pi * (ph - lag))
+
+
 def locomotion(t, T, v, duty, *, hips_base, bob, lift, strike_pitch=15.0, off_pitch=40.0, lean=4.0,
                arm_swing=20.0, elbow=18.0, elbow_extra=10.0, fingers=20.0, hips_yaw=5.0, chest_yaw=7.0,
                center_y=0.02, running=False, arm_down=None, head_comp=0.8, swing_shape=0.75,
-               heel_frac=0.15, toe_frac=0.4, knee_pole=(0, -1, 0)):
-    """Full-body locomotion spec at time t (seconds) for a cycle of period T at speed v."""
+               heel_frac=0.15, toe_frac=0.4, knee_pole=(0, -1, 0), sway=0.0, roll=0.0, bend=0.0, shoulder=0.0,
+               arm_cross=0.0, arm_lag=0.04, wrist_flop=6.0, pump=0.0, nod=0.0, bounce=0.0):
+    """Full-body locomotion spec at time t (seconds) for a cycle of period T at speed v.
+
+    Beyond the feet (foot_cycle) and the pelvis height (_hips_curve), the body moves like a body rather than a set of
+    hinges: the hips sway over the planted foot (sway, m) and drop on the swinging side (roll, degrees) while the spine
+    bends back against it (bend) so the shoulders stay level; the shoulders roll forward with their arm (shoulder); the
+    arms trail the legs by arm_lag of a cycle, the elbows bend on the way forward and the hands flop after them
+    (wrist_flop); in a run the arms cross in front (arm_cross) and pump (pump); the torso dips at each foot strike
+    (bounce) and the head, kept level and facing ahead, nods a beat behind it (nod)."""
     ph = (t / T) % 1.0
     c = math.cos(2 * math.pi * ph)
+    mid = duty / 2
     spec = {}
     feet = {}
     for side, off in (("l", 0.0), ("r", 0.5)):
         a, th, st = foot_cycle((ph - off) % 1.0, T, v, duty, lift, strike_pitch, off_pitch, center_y, side,
                                swing_shape, heel_frac, toe_frac)
         feet[side] = (a, th, st)
+    # over the left foot at the middle of its stance (+x is the body's left), over the right half a cycle later
+    over = _wave(ph, mid)
+    hips_x = sway * over
+    hips_roll = -roll * over          # the swinging side's hip drops
     hz = _hips_curve(T, v, duty, hips_base, bob, running, strike_pitch, off_pitch, center_y, lift, swing_shape,
-                     heel_frac, toe_frac)(ph)
+                     heel_frac, toe_frac, sway, roll)(ph)
+    # twice a cycle: the dip after each foot strike
+    dip = math.cos(4 * math.pi * (ph - mid - 0.04))
     spec["hips_z"] = hz
-    spec["hips"] = (lean * 0.35, 0.0, -hips_yaw * c)
-    spec["spine"] = (lean * 0.35, 0.0, (hips_yaw + chest_yaw) * c * 0.5)
-    spec["chest"] = (lean * 0.3, 0.0, (hips_yaw + chest_yaw) * c * 0.5)
-    spec["neck"] = (-lean * head_comp * 0.5, 0.0, -chest_yaw * c * 0.5)
-    spec["head"] = (-lean * head_comp * 0.5, 0.0, -chest_yaw * c * 0.5)
+    spec["hips_x"] = hips_x
+    spec["hips"] = (lean * 0.35 + bounce * 0.4 * dip, hips_roll, -hips_yaw * c)
+    twist = (hips_yaw + chest_yaw) * _wave(ph, 0.03) * 0.5
+    spec["spine"] = (lean * 0.35 + bounce * 0.3 * dip, -hips_roll * bend * 0.6, twist)
+    spec["chest"] = (lean * 0.3 + bounce * 0.3 * _wave(2 * ph, 2 * mid + 0.12), -hips_roll * bend * 0.4, twist)
+    # the head keeps facing ahead (it undoes the chest's turn) and nods a little after the dip
+    head_yaw = -(twist * 2 - hips_yaw * c) * 0.5
+    nodding = nod * math.cos(4 * math.pi * (ph - mid - 0.12))
+    spec["neck"] = (-lean * head_comp * 0.5 - bounce * 0.3 * dip + nodding * 0.4, hips_roll * (1 - bend) * 0.5, head_yaw)
+    spec["head"] = (-lean * head_comp * 0.5 - bounce * 0.2 * dip + nodding * 0.6, hips_roll * (1 - bend) * 0.5, head_yaw)
     for side in ("l", "r"):
         a, th, st = feet[side]
         spec[f"leg_{side}"] = {"ankle": tuple(a), "pitch": th, "pole": knee_pole, "toe": 1.0 if th > 0 else 0.0}
         sgn = -1.0 if side == "l" else 1.0
-        sw = sgn * c        # +1 = arm forward
+        sw = sgn * _wave(ph, arm_lag)                       # +1 = arm forward, a beat after the opposite leg
+        trail = sgn * _wave(ph, arm_lag + 0.1)              # what the forearm and hand do, later still
         down = RELAXED_ARM["down"] if arm_down is None else arm_down
-        spec[f"arm_{side}"] = {"down": down, "swing": arm_swing * sw + (6.0 if running else 2.0), "yaw": 0.0,
-                               "elbow": elbow + elbow_extra * max(0.0, sw), "wrist": 8.0, "twist": 0.0}
-        spec[f"fingers_{side}"] = fingers
+        spec[f"shoulder_{side}"] = (0.0, -pump * 0.15 * max(0.0, sw), -shoulder * sw)
+        spec[f"arm_{side}"] = {"down": down - arm_cross * 0.25 * sw, "swing": arm_swing * sw + (6.0 if running else 2.0),
+                               "yaw": -arm_cross * max(0.0, sw), "elbow": elbow + elbow_extra * max(0.0, trail) + pump * sw,
+                               "wrist": 8.0 + wrist_flop * trail, "twist": arm_cross * 0.3 * sw}
+        spec[f"fingers_{side}"] = fingers + 6.0 * max(0.0, trail)
         spec[f"thumb_{side}"] = fingers * 0.6
     return spec
 
@@ -2758,23 +2793,28 @@ def locomotion(t, T, v, duty, *, hips_base, bob, lift, strike_pitch=15.0, off_pi
 _HIPS_CACHE = {}
 
 
-def _hips_curve(T, v, duty, base, bob, running, sp, op, cy, lift, shape, hf, tf):
+def _hips_curve(T, v, duty, base, bob, running, sp, op, cy, lift, shape, hf, tf, sway=0.0, roll=0.0):
     """Pelvis height over the cycle: a bob (walk: peak at mid-stance, run: dip at mid-stance), limited so
-    every planted leg can reach its foot, then smoothed (periodic) so there are no kinks."""
-    key = (T, v, duty, base, bob, running, sp, op, cy, lift, shape, hf, tf)
+    every planted leg can reach its foot (with the hips swayed and rolled as locomotion moves them), then smoothed
+    (periodic) so there are no kinks."""
+    key = (T, v, duty, base, bob, running, sp, op, cy, lift, shape, hf, tf, sway, roll)
     if key in _HIPS_CACHE:
         return _HIPS_CACHE[key]
     n = 240
     phs = np.arange(n) / n
     zmax = np.full(n, 1.0)
+    mid = duty / 2
     for i, ph in enumerate(phs):
+        over = _wave(ph, mid)
         for side, off in (("l", 0.0), ("r", 0.5)):
             a, th, st = foot_cycle((ph - off) % 1.0, T, v, duty, lift, sp, op, cy, side, shape, hf, tf)
             hj = REST_HIP_JOINT[side]
-            dx, dy = a[0] - hj[0], a[1] - hj[1]
+            # the hip joint moves with the sway, and up or down with the roll
+            hx = hj[0] + sway * over
+            hzr = -side_sign(side) * abs(hj[0]) * math.sin(math.radians(roll * over))
+            dx, dy = a[0] - hx, a[1] - hj[1]
             reach = (LEG_LEN * (0.994 if st else 0.998)) ** 2 - dx * dx - dy * dy
-            zmax[i] = min(zmax[i], a[2] + math.sqrt(max(reach, 0.0)) - hj[2])
-    mid = duty / 2
+            zmax[i] = min(zmax[i], a[2] + math.sqrt(max(reach, 0.0)) - hj[2] - hzr)
     wave = np.cos(4 * math.pi * (phs - mid))
     nominal = base + (-bob * wave if running else bob * wave)
     raw = np.minimum(nominal, zmax - 0.004)
@@ -2797,27 +2837,38 @@ WALK_T = 0.9       # walk cycle (s): 1.35 m per cycle at 1.5 m/s; steps short en
 
 def clip_walk(t):
     # strike_pitch < 0: toes up at heel strike, which keeps the front leg's reach (and the hips) high
-    return locomotion(t, WALK_T, 1.5, 0.52, hips_base=-0.025, bob=0.006, lift=0.09, strike_pitch=-12, off_pitch=62,
-                      lean=3, arm_swing=16, elbow=16, elbow_extra=10, fingers=20, hips_yaw=5, chest_yaw=7,
-                      center_y=0.09, heel_frac=0.12, toe_frac=0.6)
+    return locomotion(t, WALK_T, 1.5, 0.52, hips_base=-0.03, bob=0.012, lift=0.1, strike_pitch=-14, off_pitch=62,
+                      lean=3, arm_swing=22, elbow=14, elbow_extra=16, fingers=18, hips_yaw=7, chest_yaw=9,
+                      center_y=0.09, heel_frac=0.12, toe_frac=0.6, sway=0.03, roll=5.0, bend=0.8, shoulder=5.0,
+                      arm_lag=0.05, wrist_flop=10.0, nod=2.0)
 
 
 def clip_jog(t):
-    return locomotion(t, 0.72, 4.0, 0.31, hips_base=-0.05, bob=0.022, lift=0.26, strike_pitch=6, off_pitch=62,
-                      lean=9, arm_swing=32, elbow=70, elbow_extra=15, fingers=55, hips_yaw=8, chest_yaw=10,
-                      center_y=0.09, running=True, arm_down=30, swing_shape=0.6, heel_frac=0.1, toe_frac=0.6)
+    return locomotion(t, 0.72, 4.0, 0.33, hips_base=-0.055, bob=0.03, lift=0.28, strike_pitch=8, off_pitch=64,
+                      lean=10, arm_swing=36, elbow=72, elbow_extra=14, fingers=52, hips_yaw=10, chest_yaw=12,
+                      center_y=0.08, running=True, arm_down=28, swing_shape=0.6, heel_frac=0.1, toe_frac=0.6,
+                      sway=0.022, roll=5.0, bend=0.7, shoulder=7.0, arm_cross=14.0, arm_lag=0.04, wrist_flop=8.0,
+                      pump=10.0, nod=3.0, bounce=5.0)
 
 
 def clip_run(t):
-    return locomotion(t, 0.6, 7.0, 0.23, hips_base=-0.06, bob=0.03, lift=0.45, strike_pitch=0, off_pitch=65,
-                      lean=16, arm_swing=48, elbow=85, elbow_extra=10, fingers=75, hips_yaw=10, chest_yaw=12,
-                      center_y=0.1, running=True, arm_down=28, swing_shape=0.5, heel_frac=0.05, toe_frac=0.7)
+    return locomotion(t, 0.6, 7.0, 0.25, hips_base=-0.07, bob=0.035, lift=0.5, strike_pitch=2, off_pitch=68,
+                      lean=17, arm_swing=55, elbow=88, elbow_extra=8, fingers=80, hips_yaw=13, chest_yaw=15,
+                      center_y=0.1, running=True, arm_down=26, swing_shape=0.5, heel_frac=0.05, toe_frac=0.7,
+                      sway=0.015, roll=4.0, bend=0.6, shoulder=10.0, arm_cross=18.0, arm_lag=0.03, wrist_flop=5.0,
+                      pump=14.0, nod=3.0, bounce=6.0)
 
 
 def clip_crouch_walk(t):
-    s = locomotion(t, 1.2, 1.5, 0.62, hips_base=-0.35, bob=0.012, lift=0.09, strike_pitch=8, off_pitch=35,
-                   lean=24, arm_swing=12, elbow=35, elbow_extra=10, fingers=35, hips_yaw=5, chest_yaw=6,
-                   center_y=0.02, head_comp=0.9, knee_pole=(0, -1, -0.2))
+    s = locomotion(t, 1.2, 1.5, 0.62, hips_base=-0.36, bob=0.016, lift=0.1, strike_pitch=8, off_pitch=38,
+                   lean=26, arm_swing=14, elbow=42, elbow_extra=14, fingers=35, hips_yaw=6, chest_yaw=8,
+                   center_y=0.02, head_comp=0.95, knee_pole=(0, -1, -0.2), sway=0.04, roll=4.0, bend=0.8,
+                   shoulder=6.0, arm_lag=0.06, wrist_flop=8.0, nod=2.0)
+    # sneaking: shoulders up and forward, the hands kept low in front
+    for side in ("l", "r"):
+        y, z = s[f"shoulder_{side}"][1], s[f"shoulder_{side}"][2]
+        s[f"shoulder_{side}"] = (0.0, y - 6.0, z - 4.0)
+        s[f"arm_{side}"]["swing"] += 16.0
     return s
 
 
@@ -2831,23 +2882,171 @@ def standing_legs(spec, hips_z=0.0, pitch=0.0, spread=0.0, front=0.0):
     return spec
 
 
-def clip_idle(t):
-    T = 3.0
-    ph = 2 * math.pi * t / T
-    br = math.sin(ph)               # one breath per loop
-    sh = math.sin(ph)               # weight shift
+IDLE_T = 6.0       # the idle loop: three breaths, a slow drift of the weight and a look around
+
+
+def idle_spec(t, T=IDLE_T, look=1.0):
+    """Standing at ease: the weight on the right leg (hips over it, the left hip dropped and that knee soft, the spine
+    curving back over the hips), breathing into the chest and shoulders, the weight drifting and the head looking about.
+    Every wave is a whole number of cycles per loop, so it loops."""
+    w = 2 * math.pi / T
+    br = math.sin(3 * w * t)                                    # breath: in (up) at +1
+    drift = math.sin(w * t)                                     # the weight easing further over and back
     s = relaxed_upper(16)
-    s["hips"] = (1.0, 2.0 * sh, 1.5 * math.sin(ph + 0.6))
-    s["spine"] = (-0.5 + 0.8 * br, -1.2 * sh, -0.8 * math.sin(ph + 0.6))
-    s["chest"] = (-1.0 * br, -0.6 * sh, -0.5 * math.sin(ph + 0.6))
-    s["neck"] = (0.5 * br, 0.4 * sh, 1.5 * math.sin(ph * 2 + 1.0) * 0.4)
-    s["head"] = (0.5 * br, 0.4 * sh, 2.0 * math.sin(ph + 1.3))
+    roll = 3.2 + 0.8 * drift
+    s["hips_x"] = -0.022 - 0.006 * drift
+    s["hips"] = (1.5 + 0.3 * br, roll, -2.5 - 0.8 * drift)
+    s["spine"] = (-0.5 + 0.6 * br, -roll * 0.55, 1.2 + 0.4 * drift)
+    s["chest"] = (-0.8 - 1.4 * br, -roll * 0.45, 1.0 + 0.4 * drift)
+    s["neck"] = (0.8 * br + 1.5 * look * math.sin(2 * w * t + 0.5), roll * 0.2, look * (2.5 * math.sin(w * t + 1.2) + 1.5 * math.sin(2 * w * t)))
+    s["head"] = (0.6 * br + 1.5 * look * math.sin(2 * w * t + 0.5), roll * 0.15 + 1.0 * math.sin(w * t + 2.0),
+                 look * (4.0 * math.sin(w * t + 1.2) + 2.0 * math.sin(2 * w * t)))
     for side, sg in (("l", 1), ("r", -1)):
-        s[f"shoulder_{side}"] = (0.0, 0.0, 0.6 * br)
-        s[f"arm_{side}"]["swing"] = RELAXED_ARM["swing"] + 1.2 * math.sin(ph + sg * 0.5)
-        s[f"arm_{side}"]["elbow"] = RELAXED_ARM["elbow"] + 2.0 * math.sin(ph + 0.8)
-    standing_legs(s, -0.008 - 0.004 * (1 - math.cos(ph)) * 0.5, spread=0.012, front=0.01)
+        lag = math.sin(w * t - 0.5 + sg * 0.3)
+        s[f"shoulder_{side}"] = (0.0, -1.6 * br, 0.4 * lag)
+        s[f"arm_{side}"]["down"] = RELAXED_ARM["down"] - 1.0 * br + 0.8 * sg * drift
+        s[f"arm_{side}"]["swing"] = RELAXED_ARM["swing"] + 1.5 * lag
+        s[f"arm_{side}"]["elbow"] = RELAXED_ARM["elbow"] + (6.0 if side == "l" else 2.0) + 2.0 * math.sin(3 * w * t - 0.8)
+        s[f"arm_{side}"]["twist"] = 6.0 if side == "l" else 0.0
+        s[f"fingers_{side}"] = (22.0 if side == "l" else 14.0) + 3.0 * math.sin(w * t + sg)
+    standing_legs(s, -0.012, spread=0.014, front=0.0)
+    # the free left foot a little forward, turned out, the heel up a touch: its knee bends
+    a = np.array(s["leg_l"]["ankle"]) + np.array([0.025, -0.06, 0.012])
+    s["leg_l"] = {"ankle": tuple(a), "pitch": 8.0, "yaw": 9.0, "pole": (0.25, -1, 0), "toe": 1.0}
+    s["leg_r"]["yaw"] = -4.0
     return s
+
+
+def clip_idle(t):
+    return idle_spec(t)
+
+
+def idle_keys(keys, t):
+    """A one-shot fidget from idle keys [(time, changes)]: each key is the idle pose at that time with the changes (body
+    angles added to the idle's, arm and leg dicts merged, everything else replaced), and the clip starts and ends on idle."""
+    out = []
+    for kt, change in keys:
+        base = idle_spec(kt)
+        for k, v in change.items():
+            if k in ("hips", "spine", "chest", "neck", "head", "shoulder_l", "shoulder_r"):
+                base[k] = tuple(a + b for a, b in zip(base[k], v))
+            elif isinstance(v, dict):
+                base[k] = dict(base[k], **v)
+            else:
+                base[k] = v
+        out.append((kt, base))
+    return oneshot(out, t)
+
+
+# Fidgets: after standing still a while the animator now and then plays one in place of idle (character.json
+# idle_fidgets). Each starts and ends on the idle pose at its own times, so it fades in and out cleanly.
+IDLE_LOOK_SECONDS = 4.0
+
+
+def clip_idle_look(t):
+    """Looks round over the left shoulder, then the right, as if checking what's about."""
+    return idle_keys([
+        (0.0, {}),
+        (0.5, {"chest": (0, 0, 6.0), "neck": (-2.0, 0, 14.0), "head": (-3.0, 2.0, 22.0)}),
+        (1.3, {"spine": (0, 0, 4.0), "chest": (0, 0, 12.0), "neck": (-3.0, 0, 20.0), "head": (-4.0, 3.0, 30.0),
+               "hips": (0, 0, 4.0)}),
+        (1.9, {"spine": (0, 0, 3.0), "chest": (0, 0, 10.0), "neck": (-1.0, 0, 18.0), "head": (-2.0, 2.0, 28.0),
+               "hips": (0, 0, 3.0)}),
+        (2.4, {"neck": (0, 0, -6.0), "head": (-2.0, 0, -8.0)}),
+        (3.0, {"chest": (0, 0, -8.0), "neck": (-2.0, 0, -18.0), "head": (-3.0, -3.0, -26.0), "hips": (0, 0, -2.0)}),
+        (3.4, {"chest": (0, 0, -7.0), "neck": (-1.0, 0, -16.0), "head": (-2.0, -2.0, -24.0), "hips": (0, 0, -2.0)}),
+        (IDLE_LOOK_SECONDS, {}),
+    ], t)
+
+
+IDLE_STRETCH_SECONDS = 3.6
+
+
+def clip_idle_stretch(t):
+    """Rolls the shoulders back, stretches the arms out and the neck from side to side, then shakes the hands loose."""
+    up = {"down": 14.0, "swing": 165.0, "elbow": 24.0, "wrist": -10.0}
+    return idle_keys([
+        (0.0, {}),
+        (0.45, {"shoulder_l": (0, -6.0, -8.0), "shoulder_r": (0, -6.0, -8.0), "chest": (-3.0, 0, 0)}),
+        (0.9, {"shoulder_l": (0, -2.0, 10.0), "shoulder_r": (0, -2.0, 10.0), "chest": (-6.0, 0, 0), "spine": (-3.0, 0, 0),
+               "arm_l": {"down": 20.0, "swing": -10.0}, "arm_r": {"down": 20.0, "swing": -10.0}}),
+        (1.5, {"chest": (-8.0, 0, 0), "spine": (-4.0, 0, 0), "neck": (-4.0, 0, 0), "head": (-6.0, 0, 0),
+               "arm_l": up, "arm_r": up, "fingers_l": 2.0, "fingers_r": 2.0}),
+        (1.9, {"chest": (-7.0, 0, 0), "spine": (-3.0, 0, 0), "neck": (0, 10.0, 0), "head": (0, 14.0, 0),
+               "arm_l": up, "arm_r": up, "fingers_l": 2.0, "fingers_r": 2.0}),
+        (2.4, {"neck": (0, -10.0, 0), "head": (0, -14.0, 0)}),
+        (2.75, {"arm_l": {"elbow": 40.0, "wrist": 30.0}, "arm_r": {"elbow": 40.0, "wrist": 30.0}, "fingers_l": 10.0,
+                "fingers_r": 10.0}),
+        (2.9, {"arm_l": {"elbow": 30.0, "wrist": -20.0}, "arm_r": {"elbow": 30.0, "wrist": -20.0}}),
+        (3.05, {"arm_l": {"elbow": 38.0, "wrist": 25.0}, "arm_r": {"elbow": 38.0, "wrist": 25.0}}),
+        (IDLE_STRETCH_SECONDS, {}),
+    ], t)
+
+
+# Turning on the spot: when the look turns further than character.json turn_in_place_degrees from where the feet point
+# while standing, the animator plays turn_l or turn_r and turns the body TURN_DEGREES over the clip along turn_progress,
+# so the planted feet stay put on the ground while the stepping ones lift round.
+TURN_SECONDS = 0.7
+TURN_DEGREES = 60.0
+
+
+def turn_progress(t):
+    """How far through its turn the body is at t, 0 to 1 (the game follows the same curve: character.json turn)."""
+    return sstep(0.0, TURN_SECONDS, t)
+
+
+def turn_spec(t, direction):
+    """direction +1 turns left (the left foot steps first), -1 turns right."""
+    theta = TURN_DEGREES * direction
+    s = idle_spec(0.0, look=0.0)
+    s["hips_x"] = 0.0
+    s["hips"] = (2.0, 0.0, 0.0)
+    for k in ("spine", "chest", "neck", "head"):
+        s[k] = (0.0, 0.0, 0.0)
+    standing_legs(s, -0.03, spread=0.02)
+    lead, trail = ("l", "r") if direction > 0 else ("r", "l")
+    steps = {lead: (0.05, 0.36), trail: (0.3, 0.64)}
+
+    def rot(deg, p):
+        return E(0, 0, deg) @ np.asarray(p, float)
+
+    for side, (a, b) in steps.items():
+        rest = np.array(s[f"leg_{side}"]["ankle"])
+        sg = side_sign(side)
+        planted = theta * turn_progress(a)        # where the turn was when the foot lifts
+        landed = theta * turn_progress(b)
+        now = theta * turn_progress(t)
+        if t <= a:
+            p, yaw, lift = rot(-now, rest), -now, 0.0
+        elif t >= b:
+            p, yaw, lift = rot(-(now - landed), rest), -(now - landed), 0.0
+        else:
+            u = sstep(a, b, t)
+            p0, p1 = rot(-planted, rest), rest
+            # the foot is carried round with the turn, toward where it lands
+            p = p0 + (p1 - p0) * u
+            yaw = -planted * (1 - u)
+            lift = 0.07 * math.sin(math.pi * (t - a) / (b - a))
+        p = p + np.array([0.0, 0.0, lift])
+        s[f"leg_{side}"] = {"ankle": tuple(p), "pitch": 14.0 * (lift / 0.07), "yaw": yaw * sg, "pole": (sg * 0.15, -1, 0),
+                            "toe": 1.0}
+    # the weight goes onto the planted foot, the hips dip as it steps and the body leans into the turn a little
+    shift = math.sin(math.pi * min(1.0, t / TURN_SECONDS))
+    s["hips_x"] = -side_sign(lead) * 0.02 * shift
+    s["hips_z"] = -0.03 - 0.015 * shift
+    s["spine"] = (0.0, side_sign(lead) * 2.0 * shift, 0.0)
+    for side in ("l", "r"):
+        sw = side_sign(side) * direction
+        s[f"arm_{side}"]["swing"] = RELAXED_ARM["swing"] + 6.0 * shift * sw
+    return s
+
+
+def clip_turn_l(t):
+    return turn_spec(t, 1.0)
+
+
+def clip_turn_r(t):
+    return turn_spec(t, -1.0)
 
 
 def clip_crouch_idle(t):
@@ -2866,42 +3065,6 @@ def clip_crouch_idle(t):
     for side in ("l", "r"):
         s[f"leg_{side}"]["pole"] = (side_sign(side) * 0.35, -1, 0)
     return s
-
-
-def airborne_legs(s, k=0.0):
-    """Loosely bent legs in the air; k in [-1, 1] alternates them slightly."""
-    s["leg_l"] = {"thigh": (-28 - 8 * k, 0, 4), "knee": 45 + 10 * k, "foot": 18, "toe_bend": 0}
-    s["leg_r"] = {"thigh": (-18 + 8 * k, 0, 4), "knee": 38 - 10 * k, "foot": 15, "toe_bend": 0}
-    return s
-
-
-def jump_pose_specs():
-    """Key poses for jump (takeoff) - also used to make fall/land continuous."""
-    stand = relaxed_upper(18)
-    standing_legs(stand, 0.0)
-    stand["hips"] = (0, 0, 0)
-    crouch = relaxed_upper(30)
-    standing_legs(crouch, -0.2, pitch=0.0)
-    crouch["hips"] = (22.0, 0, 0)
-    crouch["spine"] = (10.0, 0, 0)
-    crouch["chest"] = (6.0, 0, 0)
-    crouch["neck"] = (-14.0, 0, 0)
-    crouch["head"] = (-10.0, 0, 0)
-    for side in ("l", "r"):
-        crouch[f"arm_{side}"] = {"down": 30.0, "swing": -45.0, "yaw": 0.0, "elbow": 25.0, "wrist": 0.0, "twist": 0.0}
-    push = relaxed_upper(30)
-    standing_legs(push, 0.02, pitch=35.0)
-    for side in ("l", "r"):
-        push[f"leg_{side}"]["ankle"] = tuple(np.array(REST_ANKLE[side]) + np.array([0, 0.02, 0.07]))
-        push[f"leg_{side}"]["toe"] = 1.0
-    push["hips"] = (4.0, 0, 0)
-    push["spine"] = (-2.0, 0, 0)
-    push["chest"] = (-4.0, 0, 0)
-    push["neck"] = (-2.0, 0, 0)
-    push["head"] = (0.0, 0, 0)
-    for side in ("l", "r"):
-        push[f"arm_{side}"] = {"down": 18.0, "swing": 120.0, "yaw": 0.0, "elbow": 30.0, "wrist": 0.0, "twist": 0.0}
-    return stand, crouch, push
 
 
 def to_fk_legs(spec):
@@ -2923,32 +3086,39 @@ def to_fk_legs(spec):
     return out
 
 
-def clip_jump(t):
-    stand, crouch, push = jump_pose_specs()
-    air = airborne_legs(dict(push), 0.0)
-    keys = [(0.0, to_fk_legs(stand)), (0.12, to_fk_legs(crouch)), (0.22, to_fk_legs(push)), (0.3, air)]
-    for k in keys:
-        k[1]["hips_z"] = k[1].get("hips_z", 0.0)
-    keys[-1][1]["hips_z"] = 0.0
-    keys[-1][1]["hips"] = (2.0, 0, 0)
-    for side in ("l", "r"):
-        keys[-1][1][f"arm_{side}"] = {"down": 15.0, "swing": 95.0, "yaw": 0.0, "elbow": 35.0, "wrist": 0.0,
-                                      "twist": 0.0}
-    return interp_specs(keys, t)
+
+def airborne_legs(s, k=0.0):
+    """Loosely bent legs in the air; k in [-1, 1] alternates them slightly."""
+    s["leg_l"] = {"thigh": (-30 - 10 * k, 0, 5), "knee": 50 + 14 * k, "foot": 20, "toe_bend": 0}
+    s["leg_r"] = {"thigh": (-16 + 10 * k, 0, 5), "knee": 40 - 14 * k, "foot": 16, "toe_bend": 0}
+    return s
+
+
+def air_upper(s, lift=0.0, flail=0.0, ph=0.0):
+    """Arms out for balance in the air: lift raises them, flail circles them (ph, radians), each a beat apart."""
+    for side, sg in (("l", 1), ("r", -1)):
+        p = ph + sg * 1.1
+        s[f"arm_{side}"] = {"down": 12.0 - 40.0 * lift + 10.0 * flail * math.sin(p),
+                            "swing": 18.0 + 12.0 * lift + 22.0 * flail * math.cos(p), "yaw": 10.0 * flail * math.sin(p + 0.6),
+                            "elbow": 38.0 + 10.0 * flail * math.sin(2 * p), "wrist": 6.0, "twist": 10.0}
+        s[f"fingers_{side}"] = 14.0
+        s[f"thumb_{side}"] = 10.0
+    return s
 
 
 def fall_spec(t):
     ph = 2 * math.pi * t / 1.0
     k = math.sin(ph)
     s = relaxed_upper(25)
-    s["hips"] = (6.0 + 2 * k, 0, 0)
-    s["spine"] = (-2.0, 0, 1.5 * k)
-    s["chest"] = (-3.0, 0, 1.5 * k)
-    s["neck"] = (-3.0, 0, 0)
-    s["head"] = (-2.0, 0, 0)
-    for side, sg in (("l", 1), ("r", -1)):
-        s[f"arm_{side}"] = {"down": -8.0 + 6 * math.sin(ph + sg), "swing": 22.0 + 10 * math.sin(ph + sg * 1.2),
-                            "yaw": 0.0, "elbow": 35.0 + 8 * math.sin(ph * 2 + sg), "wrist": 0.0, "twist": 0.0}
+    s["hips_x"] = 0.0
+    s["hips"] = (8.0 + 2 * k, 0, 1.5 * math.sin(ph + 0.5))
+    s["spine"] = (-4.0, 1.0 * k, 2.0 * k)
+    s["chest"] = (-5.0, 1.0 * k, 2.0 * k)
+    s["neck"] = (-6.0, 0, -1.5 * k)
+    s["head"] = (-6.0, 0, -1.5 * k)
+    s["shoulder_l"] = (0.0, -6.0, 0.0)
+    s["shoulder_r"] = (0.0, -6.0, 0.0)
+    air_upper(s, lift=0.8, flail=0.6, ph=ph)
     airborne_legs(s, k)
     s["hips_z"] = 0.0
     return s
@@ -2958,27 +3128,127 @@ def clip_fall(t):
     return fall_spec(t)
 
 
-def clip_land(t):
+JUMP_SECONDS = 0.45
+
+
+def clip_jump(t):
+    """From the moment the feet leave the ground (the game starts it there): the legs snap straight and the toes point as
+    the arms throw up, the knees tuck at the top, then the legs reach down into the fall."""
+    push = fall_spec(0.0)
+    push["leg_l"] = {"thigh": (6, 0, 3), "knee": 6, "foot": 40, "toe_bend": -15}
+    push["leg_r"] = {"thigh": (10, 0, 3), "knee": 10, "foot": 42, "toe_bend": -15}
+    push["hips"] = (-3.0, 0, 0)
+    push["spine"] = (-4.0, 0, 0)
+    push["chest"] = (-6.0, 0, 0)
+    push["neck"] = (-4.0, 0, 0)
+    push["head"] = (-4.0, 0, 0)
+    air_upper(push, lift=1.4)
+    for side in ("l", "r"):
+        push[f"arm_{side}"]["swing"] = 78.0
+        push[f"arm_{side}"]["down"] = 18.0
+        push[f"arm_{side}"]["elbow"] = 34.0
+    tuck = fall_spec(0.0)
+    tuck["leg_l"] = {"thigh": (-62, 0, 6), "knee": 92, "foot": 24, "toe_bend": 0}
+    tuck["leg_r"] = {"thigh": (-50, 0, 6), "knee": 84, "foot": 22, "toe_bend": 0}
+    tuck["hips"] = (10.0, 0, 0)
+    tuck["spine"] = (4.0, 0, 0)
+    tuck["chest"] = (2.0, 0, 0)
+    tuck["neck"] = (-8.0, 0, 0)
+    tuck["head"] = (-6.0, 0, 0)
+    air_upper(tuck, lift=1.0, flail=0.2)
+    keys = [(0.0, push), (0.17, tuck), (JUMP_SECONDS, fall_spec(JUMP_SECONDS % 1.0))]
+    return interp_specs(keys, t)
+
+
+JUMP_RUN_SECONDS = 0.5
+
+
+def clip_jump_run(t):
+    """A running leap: the leading knee drives up and forward, the trailing leg stretches out behind, the arms reach
+    opposite, then both legs come under for the landing."""
+    leap = fall_spec(0.0)
+    leap["leg_l"] = {"thigh": (-68, 0, 4), "knee": 70, "foot": 18, "toe_bend": 0}
+    leap["leg_r"] = {"thigh": (28, 0, 4), "knee": 64, "foot": 34, "toe_bend": -10}
+    leap["hips"] = (14.0, 0, -6.0)
+    leap["spine"] = (4.0, 0, 5.0)
+    leap["chest"] = (2.0, 0, 6.0)
+    leap["neck"] = (-10.0, 0, -5.0)
+    leap["head"] = (-8.0, 0, -6.0)
+    air_upper(leap, lift=0.5)
+    leap["arm_r"].update({"swing": 70.0, "elbow": 60.0, "down": 24.0})
+    leap["arm_l"].update({"swing": -40.0, "elbow": 30.0, "down": 20.0})
+    reach = fall_spec(0.0)
+    reach["leg_l"] = {"thigh": (-50, 0, 4), "knee": 40, "foot": 14, "toe_bend": 0}
+    reach["leg_r"] = {"thigh": (-10, 0, 4), "knee": 70, "foot": 20, "toe_bend": 0}
+    reach["hips"] = (10.0, 0, -2.0)
+    reach["spine"] = (2.0, 0, 2.0)
+    reach["neck"] = (-8.0, 0, 0)
+    reach["head"] = (-6.0, 0, 0)
+    air_upper(reach, lift=0.7, flail=0.3)
+    keys = [(0.0, leap), (0.25, leap), (JUMP_RUN_SECONDS, reach)]
+    return interp_specs([(kt, _complete(s, fall_spec(0.0))) for kt, s in keys], t)
+
+
+def land_keys(depth, hand=False):
+    """Landing: the legs reach down, the knees take the hit (the hips drop `depth`), the upper body keeps going down a
+    beat after them, then the body rises past standing a little and settles. hand: the right hand goes to the ground."""
     first = fall_spec(0.0)
-    first["leg_l"] = {"thigh": (-12, 0, 2), "knee": 14, "foot": 12, "toe_bend": 0}
-    first["leg_r"] = {"thigh": (-8, 0, 2), "knee": 10, "foot": 10, "toe_bend": 0}
+    first["leg_l"] = {"thigh": (-14, 0, 2), "knee": 16, "foot": 14, "toe_bend": 0}
+    first["leg_r"] = {"thigh": (-10, 0, 2), "knee": 12, "foot": 12, "toe_bend": 0}
     first["hips_z"] = 0.0
     impact = relaxed_upper(30)
-    standing_legs(impact, -0.28)
-    impact["hips"] = (24.0, 0, 0)
-    impact["spine"] = (12.0, 0, 0)
+    standing_legs(impact, -depth * 0.8, spread=0.03)
+    impact["hips_x"] = 0.0
+    impact["hips"] = (20.0 + 25 * depth, 0, 0)
+    impact["spine"] = (10.0, 0, 0)
     impact["chest"] = (6.0, 0, 0)
     impact["neck"] = (-16.0, 0, 0)
-    impact["head"] = (-10.0, 0, 0)
+    impact["head"] = (-12.0, 0, 0)
     for side in ("l", "r"):
-        impact[f"arm_{side}"] = {"down": 10.0, "swing": 30.0, "yaw": 0.0, "elbow": 40.0, "wrist": 0.0, "twist": 0.0}
-    mid = relaxed_upper(22)
-    standing_legs(mid, -0.08)
-    mid["hips"] = (8.0, 0, 0)
-    mid["spine"] = (4.0, 0, 0)
-    mid["neck"] = (-5.0, 0, 0)
-    end = clip_idle(0.0)
-    keys = [(0.0, first), (0.08, to_fk_legs(impact)), (0.22, to_fk_legs(mid)), (0.35, to_fk_legs(end))]
+        impact[f"shoulder_{side}"] = (0.0, 4.0, 0.0)
+        impact[f"arm_{side}"] = {"down": 14.0, "swing": 34.0, "yaw": 0.0, "elbow": 42.0, "wrist": 0.0, "twist": 0.0}
+    low = relaxed_upper(30)
+    standing_legs(low, -depth, spread=0.03)
+    low["hips_x"] = 0.0
+    low["hips"] = (26.0 + 30 * depth, 0, 0)
+    low["spine"] = (16.0 + 10 * depth, 0, 0)
+    low["chest"] = (10.0, 0, 0)
+    low["neck"] = (-20.0, 0, 0)
+    low["head"] = (-14.0, 0, 0)
+    for side in ("l", "r"):
+        low[f"shoulder_{side}"] = (0.0, 6.0, 0.0)
+        low[f"arm_{side}"] = {"down": 22.0, "swing": 26.0, "yaw": 0.0, "elbow": 36.0, "wrist": 4.0, "twist": 0.0}
+    if hand:
+        low["arm_r"] = {"down": 14.0, "swing": 58.0, "yaw": 0.0, "elbow": 8.0, "wrist": -40.0, "twist": 0.0}
+        low["fingers_r"] = 4.0
+        low["head"] = (-20.0, 0, 6.0)
+    rise = relaxed_upper(22)
+    standing_legs(rise, 0.0)
+    rise["hips_x"] = 0.0
+    rise["hips"] = (2.0, 0, 0)
+    rise["spine"] = (-1.0, 0, 0)
+    rise["chest"] = (-2.0, 0, 0)
+    rise["neck"] = (1.0, 0, 0)
+    end = idle_spec(0.0)
+    return first, impact, low, rise, end
+
+
+def clip_land(t):
+    first, impact, low, rise, end = land_keys(0.2)
+    keys = [(0.0, first), (0.07, to_fk_legs(impact)), (0.16, to_fk_legs(low)), (0.32, to_fk_legs(rise)),
+            (0.5, to_fk_legs(end))]
+    keys = [(kt, _complete(s, keys[-1][1])) for kt, s in keys]
+    return interp_specs(keys, t)
+
+
+LAND_HARD_SECONDS = 1.0
+
+
+def clip_land_hard(t):
+    """A long fall: down into a deep crouch with a hand on the ground, a beat there, and up again."""
+    first, impact, low, rise, end = land_keys(0.42, hand=True)
+    keys = [(0.0, first), (0.07, to_fk_legs(impact)), (0.2, to_fk_legs(low)), (0.45, to_fk_legs(low)),
+            (0.75, to_fk_legs(rise)), (LAND_HARD_SECONDS, to_fk_legs(end))]
     keys = [(kt, _complete(s, keys[-1][1])) for kt, s in keys]
     return interp_specs(keys, t)
 
@@ -3219,17 +3489,20 @@ def heavy_key(grip_r, axis, spacing=SLEDGE_SPACING, d_hint=None, space="chest", 
     return s
 
 
-# Ready pose: the handle rests on the right shoulder, the head hanging behind it, both fists in front of the chest.
-HEAVY_R = np.array([-0.12, -0.27, 1.29])
-HEAVY_AXIS = norm(np.array([-0.17, 0.8, 0.58]))
-HEAVY_BODY = dict(spine=(0.0, 0, -3.0), chest=(-1.0, 0, -7.0), neck=(0.0, 0, 4.0), head=(0.0, 0, 3.0))
+# Ready pose: held in front across the body, ready to swing (Chase's reference, Scrap Mechanic's title screen): the head
+# up by the right shoulder, the handle running down to the left hip, the right fist high on the shaft and the left low
+# on the grip, the striking face turned forward.
+HEAVY_R = np.array([-0.05, -0.36, 1.24])
+HEAVY_AXIS = norm(np.array([-0.7, -0.3, 0.6]))
+HEAVY_D = (0.0, -1.0, 0.0)
+HEAVY_BODY = dict(spine=(2.0, 0, -4.0), chest=(2.0, 0, -6.0), neck=(0.0, 0, 4.0), head=(0.0, 0, 4.0))
 
 
 def clip_hold_heavy(t, T=2.0):
     ph = 2 * math.pi * t / T
     br = math.sin(ph)
     s = heavy_key(HEAVY_R + np.array([0.0, 0.0, 0.005 * br]), HEAVY_AXIS + np.array([0.0, 0.0, 0.006 * br]),
-                  spacing=0.22, **HEAVY_BODY)
+                  spacing=0.22, d_hint=HEAVY_D, **HEAVY_BODY)
     base = upper_base(t, T)
     for b in ("spine", "chest", "neck", "head"):
         s[b] = tuple(x + y for x, y in zip(HEAVY_BODY[b], base[b]))
@@ -3330,16 +3603,93 @@ def side_keys(keys, ready_body):
     return [(kt, k if k is None else (k[0], k[1], k[2], k[3] if k[3] is not None else ready_body, k[4])) for kt, k in keys]
 
 
+# Swings and throws put the whole body into it: the lower body is keyed on its own (LOWER keys, in seconds) and laid
+# under the arm keys, so the knees load before the hit, the hips drive it and the back heel pivots through. Keys:
+# hips (pitch, roll, turn degrees), x/y/z (the hips' sway, forward-back and drop in metres), l/r (ankle offset x, y, z
+# in metres and heel lift degrees). The torso turns with the hips, so `keep` of the hips' turn and pitch is taken back
+# out of the spine (and the head keeps its line), and model-space arm targets ride with the hips' move.
+LOWER_NEUTRAL = dict(hips=(0.0, 0.0, 0.0), x=0.0, y=0.0, z=0.0, l=(0.0, 0.0, 0.0, 0.0), r=(0.0, 0.0, 0.0, 0.0))
+
+
+def lower_at(keys, t):
+    full = [(kt, dict(LOWER_NEUTRAL, **k)) for kt, k in keys]
+    return {name: eased([(kt, k[name]) for kt, k in full], t) for name in LOWER_NEUTRAL}
+
+
+def with_lower(spec, keys, t, spread=0.05, keep=0.5):
+    lo = lower_at(keys, t)
+    s = {k: (dict(v) if isinstance(v, dict) else v) for k, v in spec.items()}
+    pitch, roll, turn = (float(v) for v in lo["hips"])
+    s["hips"] = (pitch, roll, turn)
+    s["hips_x"], s["hips_y"] = float(lo["x"]), float(lo["y"])
+    s["spine"] = (s["spine"][0] - pitch * keep, s["spine"][1] - roll * 0.6, s["spine"][2] - turn * keep)
+    s["neck"] = (s["neck"][0] - pitch * 0.35, s["neck"][1] - roll * 0.3, s["neck"][2] - turn * 0.25)
+    standing_legs(s, float(lo["z"]), spread=spread)
+    for side in ("l", "r"):
+        dx, dy, dz, heel = (float(v) for v in lo[side])
+        leg = s[f"leg_{side}"]
+        leg["ankle"] = tuple(np.array(leg["ankle"]) + np.array([dx, dy, dz]))
+        leg["pitch"] = heel
+        leg["toe"] = 1.0 if heel > 0.5 else 0.0
+    shift = np.array([float(lo["x"]), float(lo["y"]), float(lo["z"])])
+    for side in ("l", "r"):
+        arm = s.get(f"arm_{side}")
+        if isinstance(arm, dict) and "pos" in arm and arm.get("space") == "world":
+            s[f"arm_{side}"] = dict(arm, pos=tuple(np.array(arm["pos"]) + shift))
+    return s
+
+
+# Overhead: up onto the back of the heels as the hammer goes up, then the knees drop and the hips fold forward to
+# drive the head down, the right heel coming up; it stays low through the follow-through and comes up again.
+OVERHEAD_LOWER = [
+    (0.0, {}),
+    (0.12, dict(hips=(-5.0, 0.0, -3.0), y=0.025, z=0.005)),
+    (STRIKE_SECONDS, dict(hips=(16.0, 0.0, 3.0), y=-0.06, z=-0.1, r=(0.0, 0.0, 0.0, 14.0))),
+    (0.36, dict(hips=(18.0, 0.0, 3.0), y=-0.065, z=-0.11, r=(0.0, 0.0, 0.0, 12.0))),
+    (SWING_SECONDS, {}),
+]
+
+# Forehand from the right: the weight loads onto the right leg with the hips turned back, then shifts across onto
+# the left as the hips whip round, the right heel turning up behind.
+SWEEP_LOWER = [
+    (0.0, {}),
+    (0.14, dict(hips=(3.0, -3.0, -18.0), x=-0.045, z=-0.05, l=(0.0, 0.0, 0.0, 6.0))),
+    (STRIKE_SECONDS, dict(hips=(8.0, 2.0, 6.0), x=0.02, y=-0.03, z=-0.08)),
+    (0.34, dict(hips=(8.0, 4.0, 20.0), x=0.05, y=-0.03, z=-0.07, r=(0.0, 0.0, 0.0, 18.0))),
+    (SWING_SECONDS, {}),
+]
+
+
+def mirror_lower(keys):
+    out = []
+    for kt, k in keys:
+        m = {}
+        for name, v in k.items():
+            if name == "hips":
+                m[name] = (v[0], -v[1], -v[2])
+            elif name == "x":
+                m[name] = -v
+            elif name in ("l", "r"):
+                m["r" if name == "l" else "l"] = (-v[0], v[1], v[2], v[3])
+            else:
+                m[name] = v
+        out.append((kt, m))
+    return out
+
+
+BACKHAND_LOWER = mirror_lower(SWEEP_LOWER)
+
+
 def clip_sledge_swing_side(t):
-    return heavy_clip(side_keys(SWEEP_KEYS, HEAVY_BODY), heavy_ready(), t, timing=same_time)
+    return with_lower(heavy_clip(side_keys(SWEEP_KEYS, HEAVY_BODY), heavy_ready(), t, timing=same_time), SWEEP_LOWER, t)
 
 
 def clip_sledge_swing_back(t):
-    return heavy_clip(side_keys(BACKHAND_KEYS, HEAVY_BODY), heavy_ready(), t, timing=same_time)
+    return with_lower(heavy_clip(side_keys(BACKHAND_KEYS, HEAVY_BODY), heavy_ready(), t, timing=same_time), BACKHAND_LOWER, t)
 
 
 def clip_sledge_swing(t):
-    return heavy_clip(SLEDGE_SWING_KEYS, heavy_ready(), t)
+    return with_lower(heavy_clip(SLEDGE_SWING_KEYS, heavy_ready(), t), OVERHEAD_LOWER, t)
 
 
 # Block (hold right click): the hammer raised diagonally across the chest, head up and to the right.
@@ -3518,7 +3868,18 @@ def clip_throw(t):
     follow = with_right_arm(release, arm_r=item_arm(np.array([0.02, -0.38, 1.12]), d=(0.4, -0.6, -0.7),
                                                     w=(0.6, -0.5, 0.3)), spine=(10.0, 0, 8.0), chest=(8.0, 0, 10.0),
                             fingers_r=20.0)
-    return oneshot([(0.0, h), (0.2, back), (0.29, release), (0.38, follow), (0.5, h)], t, template=h)
+    return with_lower(oneshot([(0.0, h), (0.2, back), (0.29, release), (0.38, follow), (0.5, h)], t, template=h), THROW_LOWER, t)
+
+
+# The weight rocks back onto the right leg with the hips turned away, then steps through onto the left as they whip
+# round with the release.
+THROW_LOWER = [
+    (0.0, {}),
+    (0.2, dict(hips=(-2.0, -2.0, -14.0), x=-0.03, y=0.03, z=-0.04, l=(0.0, 0.0, 0.0, 8.0))),
+    (0.29, dict(hips=(8.0, 2.0, 10.0), x=0.03, y=-0.04, z=-0.06, r=(0.0, 0.0, 0.0, 14.0))),
+    (0.38, dict(hips=(9.0, 2.0, 12.0), x=0.03, y=-0.04, z=-0.05, r=(0.0, 0.0, 0.0, 10.0))),
+    (0.5, {}),
+]
 
 
 def relaxed_ik_upper():
@@ -3712,11 +4073,14 @@ LEFT_RIM = ((-0.148, -0.045, 0.2), (1.0, 0.25, 0.0), (0.0, 0.25, -1.0))
 LEFT_BASE = ((-0.115, -0.04, 0.012), (0.55, 0.15, 0.82), (0.25, 0.95, 0.0))
 
 
-def bucket_clip(clip, keys, t, left=None, template=None):
+def bucket_clip(clip, keys, t, left=None, template=None, lower=None):
     """A bucket clip at time t: the right arm and torso between `keys`, the left hand on the bucket by `left`, a list
-    of (time, weight, contact) where contact is (point, palm, fingers) in the bucket's frame (weight 0: relaxed)."""
+    of (time, weight, contact) where contact is (point, palm, fingers) in the bucket's frame (weight 0: relaxed), and
+    the legs by `lower` (with_lower keys) when given."""
     s = oneshot(keys, t, template) if len(keys) > 1 else keys[0][1]
     s = {k: (dict(v) if isinstance(v, dict) else v) for k, v in s.items()}
+    if lower:
+        s = with_lower(s, lower, t, spread=0.07)
     if not left:
         return s
     weight = float(eased([(k[0], k[1]) for k in left], t))
@@ -3820,15 +4184,17 @@ def with_contact(keys, contact):
     return [(k[0], k[1], k[2] if k[2] is not None else contact) for k in keys]
 
 
-# Throw: drop the bucket back between the knees, heave it forward and up as the left hand lifts its bottom, so it
-# swings over on its hinges and the water flies out ahead, then let it fall back and take it by the rim again.
+# Throw: sink low and drop the bucket back between the knees, then drive up out of the legs onto the toes and heave
+# it forward and high as the left hand lifts its bottom, so it swings over on its hinges and the water flies far out
+# ahead, then let it fall back and take it by the rim again. The fists are placed for a body standing tall; the
+# legs (BUCKET_THROW_LOWER) carry them down and up with the hips.
 def bucket_throw_keys():
     return [
         (0.0, as_world(full_hold_key())),
-        (0.2, wkey((-0.02, -0.28, 0.92), (0.0, 0.3, -1.0), (1.0, 0.0, 0.0), pole=B_FULL_POLE, **lean(18))),
-        (0.32, wkey((0.0, -0.44, 1.12), (0.0, -0.5, -0.85), (1.0, 0.0, 0.0), pole=B_FULL_POLE, **lean(2))),
-        (0.42, wkey((0.0, -0.48, 1.28), (0.0, -0.8, -0.6), (1.0, 0.0, 0.0), pole=B_FULL_POLE, **lean(-6))),
-        (0.54, wkey((-0.04, -0.48, 1.22), (0.0, -0.55, -0.8), (1.0, 0.0, 0.0), pole=B_FULL_POLE, **lean(-2))),
+        (0.2, wkey((-0.02, -0.26, 0.86), (0.0, 0.35, -0.95), (1.0, 0.0, 0.0), pole=B_FULL_POLE, **lean(26))),
+        (0.32, wkey((0.0, -0.46, 1.1), (0.0, -0.5, -0.85), (1.0, 0.0, 0.0), pole=B_FULL_POLE, **lean(6))),
+        (0.42, wkey((0.0, -0.55, 1.36), (0.0, -0.85, -0.5), (1.0, 0.0, 0.0), pole=B_FULL_POLE, **lean(-8))),
+        (0.54, wkey((-0.04, -0.52, 1.26), (0.0, -0.55, -0.8), (1.0, 0.0, 0.0), pole=B_FULL_POLE, **lean(-3))),
         (0.7, wkey((-0.12, -0.46, 1.06), (0.0, -0.1, -1.0), (1.0, 0.0, 0.0), pole=BUCKET_R_POLE, **lean(2))),
         (0.9, as_world(clip_hold_bucket(0.0))),
     ]
@@ -3838,9 +4204,19 @@ BUCKET_THROW_LEFT = [(0.0, 1.0, LEFT_RIM), (0.16, 1.0, LEFT_BASE), (0.44, 1.0, L
                      (0.9, 0.0, LEFT_BASE)]
 
 
+BUCKET_THROW_LOWER = [
+    (0.0, {}),
+    (0.2, dict(hips=(20.0, 0.0, 0.0), y=0.035, z=-0.13)),
+    (0.32, dict(hips=(6.0, 0.0, 0.0), y=-0.01, z=-0.05)),
+    (0.42, dict(hips=(-4.0, 0.0, 0.0), y=-0.05, z=0.02, l=(0.0, 0.0, 0.0, 12.0), r=(0.0, 0.0, 0.0, 14.0))),
+    (0.54, dict(hips=(-1.0, 0.0, 0.0), y=-0.04, z=0.0, l=(0.0, 0.0, 0.0, 4.0), r=(0.0, 0.0, 0.0, 6.0))),
+    (0.9, {}),
+]
+
+
 def clip_bucket_throw(t):
     keys = bucket_throw_keys()
-    return bucket_clip("bucket_throw", keys, t, left=BUCKET_THROW_LEFT, template=keys[0][1])
+    return bucket_clip("bucket_throw", keys, t, left=BUCKET_THROW_LEFT, template=keys[0][1], lower=BUCKET_THROW_LOWER)
 
 
 # Place: bow and set the bucket down in front, let go, and straighten up with the hand empty (the bucket stays there).
@@ -3959,7 +4335,7 @@ BUCKET_CLIPS = {
     "hold_bucket": (clip_hold_bucket, 2.0, True, True),
     "hold_bucket_full": (clip_hold_bucket_full, 2.0, True, True),
     "bucket_fill": (clip_bucket_fill, 1.1, False, True),
-    "bucket_throw": (clip_bucket_throw, 0.9, False, True),
+    "bucket_throw": (clip_bucket_throw, 0.9, False, False),
     "bucket_place": (clip_bucket_place, 0.8, False, True),
     "bucket_place_full": (clip_bucket_place_full, 0.8, False, True),
     "hold_bucket_fp": (clip_hold_bucket_fp, 2.0, True, True),
@@ -4695,16 +5071,326 @@ def clip_bag_spill_fp(t):
                     (SPILL_SECONDS, hold)], t, template=tipped)
 
 
+# ------------------------------------------------------------------------------------------------
+# Hit reactions, knockdown and death (whole-body one-shots)
+# ------------------------------------------------------------------------------------------------
+# The animator plays these over everything else (CharacterAnimator.React and the Dead pose). A light hit (hit_front,
+# hit_back, hit_left, hit_right: which way it came from, relative to the body) and hit_heavy move the legs only while the
+# player stands; walking, the legs keep walking under them. knockdown throws the player onto their back and get_up
+# brings them up again; death drops them to their knees and onto their front, and downed holds them there until they
+# respawn. Each has a first-person version (_fp) for the local player's own arms.
+
+def react_base(t=0.0):
+    """Standing, with FK legs so it blends with the falling and lying keys."""
+    return to_fk_legs(idle_spec(t))
+
+
+def react_keys(keys, t, base=None):
+    """keys [(time, changes)] over the standing pose, as idle_keys does (angles add, dicts merge, the rest replaces)."""
+    out = []
+    for kt, change in keys:
+        s = {k: (dict(v) if isinstance(v, dict) else v) for k, v in (base or react_base()).items()}
+        for k, v in change.items():
+            if k in ("hips", "spine", "chest", "neck", "head", "shoulder_l", "shoulder_r") and k in s:
+                s[k] = tuple(a + b for a, b in zip(s[k], v))
+            elif isinstance(v, dict) and k in s:
+                s[k] = dict(s[k], **v)
+            else:
+                s[k] = v
+        out.append((kt, s))
+    return oneshot(out, t)
+
+
+def fk(thigh, knee, foot=0.0, toe=0.0):
+    return {"thigh": thigh, "knee": knee, "foot": foot, "toe_bend": toe}
+
+
+HIT_SECONDS = 0.5
+HIT_HEAVY_SECONDS = 1.0
+
+# Light hits: the body is shoved away from the blow and the head whips with it, a foot steps to catch the weight, the
+# arms fly up, then it rights itself with a little overshoot.
+HIT_KEYS = {
+    "front": [
+        (0.0, {}),
+        (0.06, {"hips_y": 0.04, "hips": (-6.0, 0, 0), "spine": (-10.0, 0, 3.0), "chest": (-10.0, 0, 3.0),
+                "neck": (-10.0, 0, 0), "head": (-14.0, 3.0, 4.0), "shoulder_l": (0, -6.0, 6.0), "shoulder_r": (0, -6.0, 6.0),
+                "arm_l": {"swing": 40.0, "elbow": 70.0, "down": 20.0}, "arm_r": {"swing": 46.0, "elbow": 80.0, "down": 18.0},
+                "fingers_l": 60.0, "fingers_r": 60.0}),
+        (0.16, {"hips_y": 0.08, "hips_z": -0.05, "hips": (-3.0, 0, 0), "spine": (-6.0, 0, 2.0), "chest": (-5.0, 0, 2.0),
+                "neck": (-4.0, 0, 0), "head": (-6.0, 2.0, 2.0), "leg_r": fk((22, 0, 2), 26, -6.0),
+                "arm_l": {"swing": 30.0, "elbow": 60.0}, "arm_r": {"swing": 34.0, "elbow": 64.0}}),
+        (0.3, {"hips_y": 0.06, "hips_z": -0.04, "hips": (4.0, 0, 0), "spine": (3.0, 0, 0), "chest": (2.0, 0, 0),
+               "neck": (2.0, 0, 0), "head": (3.0, 0, 0), "leg_r": fk((12, 0, 2), 18, -4.0)}),
+        (HIT_SECONDS, {}),
+    ],
+    "back": [
+        (0.0, {}),
+        (0.06, {"hips_y": -0.05, "hips": (-8.0, 0, 0), "spine": (-6.0, 0, 0), "chest": (-4.0, 0, 0),
+                "neck": (12.0, 0, 0), "head": (10.0, 0, 0), "shoulder_l": (0, -4.0, 10.0), "shoulder_r": (0, -4.0, 10.0),
+                "arm_l": {"swing": -26.0, "elbow": 30.0, "down": 26.0}, "arm_r": {"swing": -22.0, "elbow": 34.0, "down": 26.0},
+                "fingers_l": 40.0, "fingers_r": 40.0}),
+        (0.16, {"hips_y": -0.09, "hips_z": -0.05, "hips": (6.0, 0, 0), "spine": (8.0, 0, 0), "chest": (6.0, 0, 0),
+                "neck": (-4.0, 0, 0), "head": (-6.0, 0, 0), "leg_l": fk((-30, 0, 2), 34, 8.0),
+                "arm_l": {"swing": 30.0, "elbow": 40.0}, "arm_r": {"swing": 24.0, "elbow": 44.0}}),
+        (0.3, {"hips_y": -0.06, "hips_z": -0.03, "hips": (2.0, 0, 0), "spine": (2.0, 0, 0), "leg_l": fk((-18, 0, 2), 20, 4.0)}),
+        (HIT_SECONDS, {}),
+    ],
+    # from the left (+x): shoved to the right, the left arm up to guard
+    "left": [
+        (0.0, {}),
+        (0.06, {"hips_x": -0.04, "hips": (0, -4.0, -6.0), "spine": (-3.0, -8.0, -6.0), "chest": (-3.0, -8.0, -8.0),
+                "neck": (0, -8.0, 6.0), "head": (-4.0, -12.0, 10.0), "shoulder_l": (0, -10.0, -4.0),
+                "arm_l": {"swing": 50.0, "elbow": 95.0, "down": 10.0, "yaw": -20.0}, "arm_r": {"down": 4.0, "elbow": 40.0},
+                "fingers_l": 70.0, "fingers_r": 40.0}),
+        (0.16, {"hips_x": -0.07, "hips_z": -0.04, "hips": (0, -3.0, -4.0), "spine": (0, -4.0, -3.0), "chest": (0, -4.0, -4.0),
+                "head": (-2.0, -5.0, 5.0), "leg_r": fk((-4, 0, -12), 14, 2.0),
+                "arm_l": {"swing": 36.0, "elbow": 80.0}, "arm_r": {"down": 14.0, "elbow": 30.0}}),
+        (0.3, {"hips_x": -0.04, "hips_z": -0.02, "hips": (0, 2.0, 0), "spine": (0, 2.0, 0), "head": (0, 2.0, 0),
+               "leg_r": fk((-2, 0, -6), 8, 1.0)}),
+        (HIT_SECONDS, {}),
+    ],
+}
+
+
+def mirror_change(change):
+    """A HIT_KEYS change mirrored left to right: x moves and roll/yaw angles flip, the sides swap."""
+    out = {}
+    for k, v in change.items():
+        k2 = swap_side(k) if k[-2:] in ("_l", "_r") else k
+        if k == "hips_x":
+            out[k2] = -v
+        elif k in ("hips", "spine", "chest", "neck", "head"):
+            out[k2] = (v[0], -v[1], -v[2])
+        else:
+            out[k2] = v
+    return out
+
+
+HIT_KEYS["right"] = [(kt, mirror_change(c)) for kt, c in HIT_KEYS["left"]]
+
+
+def clip_hit(direction):
+    return lambda t: react_keys(HIT_KEYS[direction], t)
+
+
+def clip_hit_heavy(t):
+    """A big blow from the front: knocked back two stumbling steps, the arms windmilling, almost to a knee, then up."""
+    return react_keys([
+        (0.0, {}),
+        (0.07, {"hips_y": 0.06, "hips": (-12.0, 0, 4.0), "spine": (-16.0, 2.0, 6.0), "chest": (-14.0, 2.0, 6.0),
+                "neck": (-14.0, 0, 0), "head": (-20.0, 6.0, 8.0), "shoulder_l": (0, -10.0, 10.0), "shoulder_r": (0, -10.0, 10.0),
+                "arm_l": {"swing": 70.0, "elbow": 50.0, "down": -10.0}, "arm_r": {"swing": 90.0, "elbow": 40.0, "down": -20.0},
+                "fingers_l": 10.0, "fingers_r": 10.0}),
+        (0.22, {"hips_y": 0.16, "hips_z": -0.08, "hips": (-6.0, 0, 6.0), "spine": (-8.0, 0, 4.0), "chest": (-6.0, 0, 4.0),
+                "head": (-8.0, 0, 4.0), "leg_r": fk((30, 0, 4), 40, -10.0), "leg_l": fk((-6, 0, 2), 22, 6.0),
+                "arm_l": {"swing": 20.0, "elbow": 40.0, "down": 0.0}, "arm_r": {"swing": 110.0, "elbow": 30.0, "down": -30.0}}),
+        (0.38, {"hips_y": 0.24, "hips_z": -0.16, "hips": (10.0, 0, -4.0), "spine": (6.0, 0, -2.0),
+                "leg_l": fk((20, 0, -2), 50, -8.0), "leg_r": fk((-24, 0, 4), 60, 10.0),
+                "arm_l": {"swing": 60.0, "elbow": 30.0, "down": 10.0}, "arm_r": {"swing": 40.0, "elbow": 60.0, "down": 10.0}}),
+        (0.55, {"hips_y": 0.26, "hips_z": -0.3, "hips": (24.0, 0, 0), "spine": (14.0, 0, 0), "chest": (6.0, 0, 0),
+                "neck": (-16.0, 0, 0), "head": (-12.0, 0, 0), "leg_l": fk((-50, 0, 2), 100, 20.0), "leg_r": fk((10, 0, 2), 70, -10.0),
+                "arm_l": {"swing": 40.0, "elbow": 30.0, "down": 20.0}, "arm_r": {"swing": 50.0, "elbow": 10.0, "down": 16.0}}),
+        (0.78, {"hips_y": 0.18, "hips_z": -0.08, "hips": (8.0, 0, 0), "spine": (4.0, 0, 0), "leg_l": fk((-20, 0, 2), 30, 6.0),
+                "leg_r": fk((6, 0, 2), 20, -2.0)}),
+        (HIT_HEAVY_SECONDS, {}),
+    ], t)
+
+
+KNOCKDOWN_SECONDS = 1.1
+GET_UP_SECONDS = 1.3
+DEATH_SECONDS = 1.6
+
+# Lying on the back, the hips 0.15 m off the ground and half a body length behind the feet' standing place (the clips
+# play in place, so the body is laid out behind where it stood); and on the front, ahead of it.
+ON_BACK = {"hips_y": 0.62, "hips_z": -0.84, "hips": (-86.0, 0, 6.0), "spine": (-4.0, 2.0, -4.0), "chest": (-2.0, 0, -2.0),
+           "neck": (-6.0, 0, 18.0), "head": (-4.0, 4.0, 20.0), "shoulder_l": (0, -14.0, 10.0), "shoulder_r": (0, -10.0, 10.0),
+           "arm_l": {"down": -40.0, "swing": 20.0, "elbow": 30.0, "wrist": 10.0, "yaw": 0.0, "twist": 30.0},
+           "arm_r": {"down": -24.0, "swing": 34.0, "elbow": 50.0, "wrist": 10.0, "yaw": 0.0, "twist": 30.0},
+           "leg_l": fk((-28, 0, 10), 44, 30.0), "leg_r": fk((-8, 0, 4), 16, 34.0), "fingers_l": 30.0, "fingers_r": 40.0}
+ON_FRONT = {"hips_y": -0.58, "hips_z": -0.86, "hips": (88.0, -4.0, -10.0), "spine": (-6.0, 4.0, 4.0), "chest": (-4.0, 2.0, 2.0),
+            "neck": (-16.0, 6.0, -40.0), "head": (-10.0, 8.0, -38.0), "shoulder_l": (0, -16.0, -10.0), "shoulder_r": (0, -12.0, -6.0),
+            "arm_l": {"down": -70.0, "swing": 30.0, "elbow": 70.0, "wrist": 20.0, "yaw": 0.0, "twist": -30.0},
+            "arm_r": {"down": 8.0, "swing": -10.0, "elbow": 20.0, "wrist": 10.0, "yaw": 0.0, "twist": 40.0},
+            "leg_l": fk((10, 0, 6), 30, -30.0), "leg_r": fk((4, 0, 14), 8, -40.0), "fingers_l": 40.0, "fingers_r": 30.0}
+
+
+def clip_knockdown(t):
+    """Thrown off the feet: folded by the blow, lifted and flung onto the back, a bounce, then lying winded."""
+    lying = dict(ON_BACK)
+    return react_keys([
+        (0.0, {}),
+        (0.08, {"hips_y": 0.05, "hips": (12.0, 0, 0), "spine": (14.0, 0, 0), "chest": (10.0, 0, 0), "neck": (8.0, 0, 0),
+                "head": (6.0, 0, 0), "arm_l": {"swing": 50.0, "elbow": 70.0}, "arm_r": {"swing": 56.0, "elbow": 70.0},
+                "leg_l": fk((-10, 0, 2), 20, 4.0), "leg_r": fk((-8, 0, 2), 18, 4.0)}),
+        (0.3, {"hips_y": 0.3, "hips_z": -0.12, "hips": (-40.0, 0, 3.0), "spine": (-8.0, 0, 0), "chest": (-6.0, 0, 0),
+               "neck": (12.0, 0, 6.0), "head": (10.0, 0, 6.0), "arm_l": {"swing": 100.0, "elbow": 30.0, "down": -10.0},
+               "arm_r": {"swing": 90.0, "elbow": 40.0, "down": -16.0}, "leg_l": fk((-60, 0, 6), 60, 20.0),
+               "leg_r": fk((-40, 0, 6), 50, 24.0), "fingers_l": 10.0, "fingers_r": 10.0}),
+        (0.52, {"hips_y": 0.56, "hips_z": -0.8, "hips": (-78.0, 0, 5.0), "spine": (6.0, 0, -2.0), "chest": (6.0, 0, 0),
+                "neck": (14.0, 0, 8.0), "head": (10.0, 0, 8.0), "arm_l": {"swing": 60.0, "elbow": 30.0, "down": -30.0},
+                "arm_r": {"swing": 70.0, "elbow": 30.0, "down": -20.0}, "leg_l": fk((-50, 0, 8), 40, 24.0),
+                "leg_r": fk((-36, 0, 6), 30, 28.0)}),
+        (0.66, {**lying, "hips_z": -0.78, "neck": (-2.0, 0, 10.0), "head": (0.0, 2.0, 12.0)}),
+        (0.8, {**lying, "hips_z": -0.85}),
+        (KNOCKDOWN_SECONDS, lying),
+    ], t)
+
+
+def clip_get_up(t):
+    """From the back: sits up, pulls the feet in, pushes off one hand into a crouch and stands, shaking it off."""
+    sit = {"hips_y": 0.42, "hips_z": -0.78, "hips": (-40.0, 0, 0), "spine": (20.0, 0, 0), "chest": (16.0, 0, 0),
+           "neck": (-6.0, 0, 0), "head": (-4.0, 0, 0), "arm_l": {"down": 10.0, "swing": -40.0, "elbow": 10.0, "wrist": -50.0},
+           "arm_r": {"down": 12.0, "swing": 30.0, "elbow": 50.0}, "leg_l": fk((-60, 0, 6), 110, 30.0),
+           "leg_r": fk((-80, 0, 6), 40, 10.0), "fingers_l": 5.0}
+    push = {"hips_y": 0.2, "hips_z": -0.6, "hips": (10.0, 0, 6.0), "spine": (22.0, 0, 4.0), "chest": (12.0, 0, 2.0),
+            "neck": (-20.0, 0, 0), "head": (-14.0, 0, 0), "arm_l": {"down": 14.0, "swing": 20.0, "elbow": 10.0, "wrist": -50.0},
+            "arm_r": {"down": 20.0, "swing": 40.0, "elbow": 60.0}, "leg_l": fk((-80, 0, 6), 130, 30.0),
+            "leg_r": fk((-30, 0, 10), 120, 20.0), "fingers_l": 5.0}
+    crouch = {"hips_y": 0.05, "hips_z": -0.36, "hips": (26.0, 0, 0), "spine": (14.0, 0, 0), "chest": (6.0, 0, 0),
+              "neck": (-16.0, 0, 0), "head": (-10.0, 0, 0), "arm_l": {"swing": 30.0, "elbow": 30.0},
+              "arm_r": {"swing": 36.0, "elbow": 40.0}, "leg_l": fk((-70, 0, 4), 110, 36.0), "leg_r": fk((-60, 0, 4), 100, 30.0)}
+    return react_keys([
+        (0.0, ON_BACK),
+        (0.35, sit),
+        (0.65, push),
+        (0.9, crouch),
+        (1.1, {"hips_z": -0.04, "hips": (4.0, 0, 0), "head": (2.0, 6.0, 0), "neck": (0, 4.0, 0)}),
+        (1.2, {"head": (0, -5.0, 0), "neck": (0, -3.0, 0)}),
+        (GET_UP_SECONDS, {}),
+    ], t)
+
+
+def clip_death(t):
+    """Staggers, the knees give and it drops onto them, then pitches forward onto its front and goes still."""
+    return react_keys([
+        (0.0, {}),
+        (0.2, {"hips_y": 0.04, "hips": (-6.0, 0, 4.0), "spine": (-6.0, 2.0, 0), "neck": (-10.0, 0, 0), "head": (-16.0, 6.0, 6.0),
+               "arm_l": {"swing": 30.0, "elbow": 50.0, "down": 20.0}, "arm_r": {"swing": 40.0, "elbow": 70.0},
+               "leg_r": fk((10, 0, 2), 14, -4.0)}),
+        (0.4, {"hips_z": -0.12, "hips": (4.0, 0, 2.0), "spine": (12.0, 0, 0), "chest": (10.0, 0, 0), "neck": (16.0, 0, 0),
+               "head": (14.0, 0, 0), "shoulder_l": (0, 8.0, -6.0), "shoulder_r": (0, 8.0, -6.0),
+               "arm_l": {"swing": 6.0, "elbow": 20.0, "down": 34.0}, "arm_r": {"swing": 4.0, "elbow": 24.0, "down": 34.0},
+               "leg_l": fk((-14, 0, 2), 30, 10.0), "leg_r": fk((-10, 0, 2), 28, 10.0), "fingers_l": 30.0, "fingers_r": 30.0}),
+        (0.68, {"hips_y": 0.1, "hips_z": -0.46, "hips": (6.0, 0, 0), "spine": (16.0, 0, 0), "chest": (12.0, 0, 0),
+                "neck": (20.0, 0, 0), "head": (16.0, 4.0, 0), "shoulder_l": (0, 10.0, -8.0), "shoulder_r": (0, 10.0, -8.0),
+                "arm_l": {"swing": 0.0, "elbow": 20.0, "down": 30.0}, "arm_r": {"swing": 0.0, "elbow": 20.0, "down": 30.0},
+                "leg_l": fk((0, 0, 4), 100, 40.0, -20.0), "leg_r": fk((-2, 0, 4), 104, 40.0, -20.0)}),
+        (0.82, {"hips_y": 0.1, "hips_z": -0.48, "hips": (10.0, 0, 0), "spine": (18.0, 0, 0), "chest": (12.0, 0, 0),
+                "neck": (22.0, 0, 0), "head": (18.0, 4.0, 0), "arm_l": {"swing": 4.0, "elbow": 20.0, "down": 30.0},
+                "arm_r": {"swing": 2.0, "elbow": 20.0, "down": 30.0}, "leg_l": fk((0, 0, 4), 104, 40.0, -20.0),
+                "leg_r": fk((-2, 0, 4), 108, 40.0, -20.0)}),
+        (1.1, {"hips_y": -0.22, "hips_z": -0.66, "hips": (52.0, -2.0, -4.0), "spine": (10.0, 2.0, 2.0), "chest": (4.0, 0, 0),
+               "neck": (-4.0, 4.0, -20.0), "head": (-2.0, 4.0, -20.0), "arm_l": {"swing": 50.0, "elbow": 30.0, "down": 0.0},
+               "arm_r": {"swing": 40.0, "elbow": 20.0, "down": 10.0}, "leg_l": fk((-6, 0, 6), 70, 10.0, -10.0),
+               "leg_r": fk((-4, 0, 10), 60, 0.0, -10.0)}),
+        (1.3, {**ON_FRONT, "hips_z": -0.82}),
+        (1.42, {**ON_FRONT, "hips_z": -0.88}),
+        (DEATH_SECONDS, ON_FRONT),
+    ], t)
+
+
+def clip_downed(t):
+    """Dead on the ground until the respawn: still, ON_FRONT."""
+    return react_keys([(0.0, ON_FRONT), (2.0, ON_FRONT)], t)
+
+
+# First person: only the forearms are drawn, under the camera, so these jolt the hands into view and away. The torso
+# stoops as in the other first-person clips (FP_STOOP) so the elbows stay out of view; empty hands rest below the view.
+def fp_react_base():
+    s = react_base()
+    for k, v in FP_STOOP.items():
+        s[k] = v
+    for side in ("l", "r"):
+        s[f"arm_{side}"] = dict(RELAXED_ARM)
+    return s
+
+
+def fp_guard(side, up=1.0):
+    """An arm thrown up in front of the face, `up` of the way."""
+    return {"swing": RELAXED_ARM["swing"] + 70.0 * up, "elbow": RELAXED_ARM["elbow"] + 90.0 * up,
+            "down": RELAXED_ARM["down"] - 10.0 * up, "yaw": -side_sign(side) * 14.0 * up}
+
+
+def fp_keys(keys, t):
+    return react_keys(keys, t, base=fp_react_base())
+
+
+FP_HIT_ARMS = {"front": ("l", "r"), "back": (), "left": ("l",), "right": ("r",)}
+
+
+def clip_hit_fp(direction):
+    def fn(t):
+        arms = FP_HIT_ARMS[direction]
+        up = {f"arm_{s}": fp_guard(s) for s in arms}
+        half = {f"arm_{s}": fp_guard(s, 0.6) for s in arms}
+        fists = {f"fingers_{s}": 70.0 for s in arms}
+        return fp_keys([(0.0, {}), (0.07, {**up, **fists}), (0.2, {**half, **fists}), (HIT_SECONDS, {})], t)
+    return fn
+
+
+def clip_hit_heavy_fp(t):
+    up = {f"arm_{s}": fp_guard(s) for s in ("l", "r")}
+    flail = {"arm_l": fp_guard("l", 0.4), "arm_r": fp_guard("r", 1.2)}
+    return fp_keys([(0.0, {}), (0.08, up), (0.3, flail), (0.55, {"arm_l": fp_guard("l", 0.5), "arm_r": fp_guard("r", 0.3)}),
+                    (HIT_HEAVY_SECONDS, {})], t)
+
+
+def clip_knockdown_fp(t):
+    # the arms fly up as the view goes over, then fall away out of it
+    up = {f"arm_{s}": fp_guard(s, 1.3) for s in ("l", "r")}
+    return fp_keys([(0.0, {}), (0.1, {f"arm_{s}": fp_guard(s, 0.8) for s in ("l", "r")}), (0.35, up),
+                    (0.6, {f"arm_{s}": fp_guard(s, 0.2) for s in ("l", "r")}), (KNOCKDOWN_SECONDS, {})], t)
+
+
+def clip_get_up_fp(t):
+    # a hand pushes off the ground at the bottom of the view
+    push = {"arm_r": {"swing": 60.0, "elbow": 10.0, "down": 20.0, "wrist": -50.0}, "fingers_r": 5.0}
+    return fp_keys([(0.0, {}), (0.4, push), (0.75, push), (1.0, {}), (GET_UP_SECONDS, {})], t)
+
+
+def clip_death_fp(t):
+    return fp_keys([(0.0, {}), (0.2, {f"arm_{s}": fp_guard(s, 0.4) for s in ("l", "r")}), (0.6, {}),
+                    (DEATH_SECONDS, {"arm_l": {"down": 50.0}, "arm_r": {"down": 50.0}})], t)
+
+
+def clip_downed_fp(t):
+    low = {"arm_l": {"down": 50.0}, "arm_r": {"down": 50.0}}
+    return fp_keys([(0.0, low), (2.0, low)], t)
+
+
+REACTION_CLIPS = {
+    **{f"hit_{d}": (clip_hit(d), HIT_SECONDS, False, False) for d in ("front", "back", "left", "right")},
+    "hit_heavy": (clip_hit_heavy, HIT_HEAVY_SECONDS, False, False),
+    "knockdown": (clip_knockdown, KNOCKDOWN_SECONDS, False, False),
+    "get_up": (clip_get_up, GET_UP_SECONDS, False, False),
+    "death": (clip_death, DEATH_SECONDS, False, False),
+    "downed": (clip_downed, 2.0, True, False),
+    **{f"hit_{d}_fp": (clip_hit_fp(d), HIT_SECONDS, False, False) for d in ("front", "back", "left", "right")},
+    "hit_heavy_fp": (clip_hit_heavy_fp, HIT_HEAVY_SECONDS, False, False),
+    "knockdown_fp": (clip_knockdown_fp, KNOCKDOWN_SECONDS, False, False),
+    "get_up_fp": (clip_get_up_fp, GET_UP_SECONDS, False, False),
+    "death_fp": (clip_death_fp, DEATH_SECONDS, False, False),
+    "downed_fp": (clip_downed_fp, 2.0, True, False),
+}
+
+
 CLIPS = {
-    "idle": (clip_idle, 3.0, True, False),
+    "idle": (clip_idle, IDLE_T, True, False),
+    "idle_look": (clip_idle_look, IDLE_LOOK_SECONDS, False, False),
+    "idle_stretch": (clip_idle_stretch, IDLE_STRETCH_SECONDS, False, False),
+    "turn_l": (clip_turn_l, TURN_SECONDS, False, False),
+    "turn_r": (clip_turn_r, TURN_SECONDS, False, False),
     "walk": (clip_walk, WALK_T, True, False),
     "jog": (clip_jog, 0.72, True, False),
     "run": (clip_run, 0.6, True, False),
     "crouch_idle": (clip_crouch_idle, 2.0, True, False),
     "crouch_walk": (clip_crouch_walk, 1.2, True, False),
-    "jump": (clip_jump, 0.3, False, False),
+    "jump": (clip_jump, JUMP_SECONDS, False, False),
+    "jump_run": (clip_jump_run, JUMP_RUN_SECONDS, False, False),
     "fall": (clip_fall, 1.0, True, False),
-    "land": (clip_land, 0.35, False, False),
+    "land": (clip_land, 0.5, False, False),
+    "land_hard": (clip_land_hard, LAND_HARD_SECONDS, False, False),
     "swim_idle": (clip_swim_idle, 2.0, True, False),
     "swim": (clip_swim, 1.2, True, False),
     "sit": (clip_sit, 2.0, True, False),
@@ -4718,9 +5404,9 @@ CLIPS = {
     "hold_heavy_block_fp": (clip_hold_heavy_block_fp, 2.0, True, True),
     "hold_gun": (clip_hold_gun, 2.0, True, True),
     "hold_item": (clip_hold_item, 2.0, True, True),
-    "sledge_swing": (clip_sledge_swing, SWING_SECONDS, False, True),
-    "sledge_swing_side": (clip_sledge_swing_side, SWING_SECONDS, False, True),
-    "sledge_swing_back": (clip_sledge_swing_back, SWING_SECONDS, False, True),
+    "sledge_swing": (clip_sledge_swing, SWING_SECONDS, False, False),
+    "sledge_swing_side": (clip_sledge_swing_side, SWING_SECONDS, False, False),
+    "sledge_swing_back": (clip_sledge_swing_back, SWING_SECONDS, False, False),
     "sledge_swing_fp": (clip_sledge_swing_fp, SWING_SECONDS, False, True),
     "sledge_swing_side_fp": (clip_sledge_swing_side_fp, SWING_SECONDS, False, True),
     "sledge_swing_back_fp": (clip_sledge_swing_back_fp, SWING_SECONDS, False, True),
@@ -4728,7 +5414,7 @@ CLIPS = {
     "paint_spray": (clip_paint_spray, PAINT_SPRAY_SECONDS, False, True),
     "fire_gun": (clip_fire_gun, 0.25, False, True),
     "eat": (clip_eat, 1.0, False, True),
-    "throw": (clip_throw, 0.5, False, True),
+    "throw": (clip_throw, 0.5, False, False),
     "plant": (clip_plant, 0.8, False, True),
     "pour": (clip_pour, 0.8, False, True),
     "interact": (clip_interact, 0.4, False, True),
@@ -4781,6 +5467,7 @@ CLIPS = {
     "bag_spill_fp": (clip_bag_spill_fp, SPILL_SECONDS, False, True),
     "bag_lift_fp": (clip_bag_lift_fp, LIFT_SECONDS, False, True),
     "bag_lower_fp": (clip_bag_lower_fp, LOWER_SECONDS, False, True),
+    **REACTION_CLIPS,
 }
 
 # the prop each clip shows in the right hand (verification renders and the game's defaults)
@@ -4825,7 +5512,7 @@ def apply_pose(arm_obj, pose, bones=None):
         basis = R.T @ pose.Q[b] @ R
         pb.rotation_quaternion = Matrix([list(r) for r in basis]).to_quaternion()
         if b == "hips":
-            pb.location = Vector(R.T @ np.array([0.0, 0.0, pose.hips_z]))
+            pb.location = Vector(R.T @ pose.hips_offset())
         else:
             pb.location = (0, 0, 0)
 
@@ -4852,7 +5539,7 @@ def bake_actions(arm_obj):
                 pb.rotation_quaternion = q
                 pb.keyframe_insert("rotation_quaternion", frame=frame, group=b)
                 if b == "hips":
-                    pb.location = Vector(R.T @ np.array([0.0, 0.0, pose.hips_z]))
+                    pb.location = Vector(R.T @ pose.hips_offset())
                     pb.keyframe_insert("location", frame=frame, group=b)
         act.use_frame_range = True
         act.frame_start = 0.0

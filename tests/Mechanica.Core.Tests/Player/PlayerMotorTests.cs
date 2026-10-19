@@ -39,6 +39,23 @@ public class PlayerMotorTests
     }
 
     [Fact]
+    public void ASprintBuildsAndEasesOffGentlyButTurnsSharply()
+    {
+        var sprint = new PlayerInput(0, 1, 0, 0, false, true);
+        var walking = new Vector3(0, 0, -Settings.WalkSpeed);
+        // From a walk, a tenth of a second of sprinting adds only sprint_acceleration's worth of speed.
+        var speeding = Simulate(sprint, onFloor: true, seconds: 0.1f, start: walking);
+        Assert.Equal(Settings.WalkSpeed + Settings.SprintAcceleration * 0.1f, speeding.Length(), 1);
+        // Letting go of sprint eases back down to a walk at sprint_deceleration.
+        var sprinting = new Vector3(0, 0, -Settings.SprintSpeed);
+        var easing = Simulate(new PlayerInput(0, 1, 0, 0, false, false), onFloor: true, seconds: 0.1f, start: sprinting);
+        Assert.Equal(Settings.SprintSpeed - Settings.SprintDeceleration * 0.1f, easing.Length(), 1);
+        // A sharp turn at a sprint keeps the pace and swings round at the full ground acceleration.
+        var turned = Simulate(new PlayerInput(1, 0, 0, 0, false, true), onFloor: true, seconds: 0.4f, start: sprinting);
+        Assert.True(turned.X > Settings.SprintSpeed * 0.9f && MathF.Abs(turned.Z) < 0.5f, $"{turned}");
+    }
+
+    [Fact]
     public void GroundAccelerationIsLimitedPerStep()
     {
         var velocity = PlayerMotor.Step(Vector3.Zero, true, new PlayerInput(1, 0, 0, 0, false, false), Settings, Dt);
