@@ -716,6 +716,8 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
                 sink.Error(Code, "$.logic.use", "use must be a short label (1 to 40 characters).");
             if (logic.Use is not null && part.Script is null)
                 sink.Error(Code, "$.logic.use", "a part players can use needs a script with on_activate.");
+            if (logic.Hold == true && logic.Use is null)
+                sink.Error(Code, "$.logic.hold", "hold needs use, the word E shows on the part.");
             if (logic.Accepts is { } accepts && accepts.Distinct().Count() != accepts.Count)
                 sink.Error(Code, "$.logic.accepts", "accepts lists a kind twice.");
             if (logic.Reverse is { } reverse && part.Settings?.FirstOrDefault(s => s.Id == reverse) is not { Type: SettingType.Toggle })

@@ -739,26 +739,29 @@
       "template": "logic",
       "set": {
         "name": "Button",
-        "description": "Use it and it is on for a moment.",
-        "stack_size": 20,
+        "description": "A push button on a slim gunmetal plate. Its output is on only while it is held down: hold E on it, or link it from a seat with the Connect Tool and hold its number key while you sit there. It feeds up to 10 parts.",
+        "mass": 1,
+        "durability": 3,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "stack_size": 10,
+        "sound_material": "metal",
+        "icon": "textures/items/button_icon.png",
         "script": "scripts/button.lua",
-        "visual": { "color": "#d9a032", "roughness": 0.5, "metallic": 0.2 },
-        "logic": { "inputs": 1, "outputs": 10, "use": "press" },
-        "sounds": { "use": "button_press" },
-        "display": { "press": { "readout": "on", "depth": 0.015 } },
-        "properties": { "pulse": 0.5 }
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
+        "logic": { "inputs": 1, "outputs": 10, "use": "press", "hold": true },
+        "sounds": { "use": "button_press", "release": "logic_click" },
+        "display": { "clips": { "readout": "clip" } },
+        "properties": null
       },
-      "model": [
-        { "kind": "box", "size": [0.25, 0.08, 0.25], "position": [0, -0.085, 0] },
-        { "kind": "cylinder", "radius": 0.07, "height": 0.05, "position": [0, -0.02, 0] }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/button.glb" }],
       "recipes": [
         {
           "id": "button",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal", "count": 1 }, { "item": "component_kit", "count": 1 }],
+          "inputs": [{ "item": "metal_block", "count": 1 }, { "item": "circuit_board", "count": 1 }],
           "outputs": [{ "item": "button", "count": 1 }],
-          "time": 2
+          "time": 5
         }
       ]
     },

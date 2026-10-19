@@ -73,6 +73,10 @@ public sealed partial class ScriptRuntime : ILogicHost
     }
 
     /// <inheritdoc/>
+    public void Release(int peer, Creation creation, int part) =>
+        Invoke(creation.Id, part, Hooks.OnRelease, (double)peer);
+
+    /// <inheritdoc/>
     public void Seated(SeatAssignment seat, bool entered) =>
         Invoke(seat.Creation, seat.Part, entered ? Hooks.OnEnter : Hooks.OnLeave, (double)seat.Peer);
 

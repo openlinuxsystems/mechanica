@@ -83,7 +83,7 @@ public sealed class LogicScriptTests : IDisposable
     }
 
     [Fact]
-    public void ASwitchStaysAsLeftAndAButtonPulses()
+    public void ASwitchStaysAsLeftAndAButtonIsOnWhileHeld()
     {
         var creation = Board();
         var toggle = Place(creation, "vanilla:switch", new GridCell(1, 1, 0));
@@ -95,8 +95,11 @@ public sealed class LogicScriptTests : IDisposable
         Steps(1);
         Assert.Equal(1f, _runtime.Signals.Output(Car, toggle));
         Assert.Equal(1f, _runtime.Signals.Output(Car, press));
-        // properties.pulse is 0.5 s: 30 steps.
-        Steps(31);
+        // The button has no timer: it stays on for as long as it is held.
+        Steps(120);
+        Assert.Equal(1f, _runtime.Signals.Output(Car, press));
+        _runtime.Release(Peer, creation, press);
+        Steps(1);
         Assert.Equal(1f, _runtime.Signals.Output(Car, toggle));
         Assert.Equal("on", _runtime.Readouts.Text(Car, toggle, "pose"));
         Assert.Equal(0f, _runtime.Signals.Output(Car, press));
@@ -104,6 +107,27 @@ public sealed class LogicScriptTests : IDisposable
         Steps(1);
         Assert.Equal(0f, _runtime.Signals.Output(Car, toggle));
         Assert.Equal("off", _runtime.Readouts.Text(Car, toggle, "pose"));
+    }
+
+    [Fact]
+    public void AButtonHeldByTwoPlayersStaysDownUntilBothLetGo()
+    {
+        var creation = Board();
+        var press = Place(creation, "vanilla:button", new GridCell(0, 1, 0));
+        Steps(1);
+        Activate(creation, press);
+        _runtime.Activate(new Core.Actions.ActionCaller(8, Core.Actions.ActionSource.Player), creation, press);
+        Steps(1);
+        _runtime.Release(Peer, creation, press);
+        Steps(1);
+        Assert.Equal(1f, _runtime.Signals.Output(Car, press));
+        _runtime.Release(8, creation, press);
+        Steps(1);
+        Assert.Equal(0f, _runtime.Signals.Output(Car, press));
+        // Letting go of a button nobody holds changes nothing.
+        _runtime.Release(Peer, creation, press);
+        Steps(1);
+        Assert.Equal(0f, _runtime.Signals.Output(Car, press));
     }
 
     [Fact]
@@ -638,8 +662,14 @@ public sealed class LogicScriptTests : IDisposable
         Steps(1);
         Assert.Equal(1f, _runtime.Readouts.Number(Car, toggle, "on"));
         Assert.Equal(1f, _runtime.Readouts.Number(Car, press, "on"));
+        // The button plays its model's press clip going down and its release clip coming back up.
+        Assert.Equal("press", _runtime.Readouts.Text(Car, press, "clip"));
         Steps(31);
+        Assert.Equal(1f, _runtime.Readouts.Number(Car, press, "on"));
+        _runtime.Release(Peer, creation, press);
+        Steps(1);
         Assert.Equal(0f, _runtime.Readouts.Number(Car, press, "on"));
+        Assert.Equal("release", _runtime.Readouts.Text(Car, press, "clip"));
     }
 
     [Fact]
