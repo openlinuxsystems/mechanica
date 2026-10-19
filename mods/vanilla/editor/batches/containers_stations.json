@@ -45,7 +45,7 @@
       "template": "interactive",
       "set": {
         "name": "Gas Container",
-        "description": "Holds five stacks of gasoline. Link it to Gas Engines and Thrusters with the Connect Tool and they burn its fuel; the gauges on its sides show how full it is. Pick it up with the Hammer even when it is full: the gasoline comes with it.",
+        "description": "Holds five stacks of gasoline. Link it to Gas Engines and Thrusters with the Connect Tool and they burn its fuel; the gauges on its sides show how full it is. Pick it up (hold right click) even when it is full: the gasoline comes with it.",
         "category": "container",
         "mass": 18,
         "durability": 6,

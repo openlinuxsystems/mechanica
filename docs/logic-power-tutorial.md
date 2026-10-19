@@ -86,7 +86,7 @@ Inspector shows an engine's input, so you can tell an empty tank from a broken w
 To choose which tanks feed which engine, drag from a gas container's node to the engine's with the Connect
 Tool: an engine (or thruster) with gas containers linked into it burns only from those, and one with none
 linked burns from any in the creation. The gauges on the container's sides show how full it is (each tick is
-one of its five slots), and you can pick it up with the Hammer while it still holds fuel: the gasoline goes
+one of its five slots), and you can pick it up (hold right click on it) while it still holds fuel: the gasoline goes
 into your inventory with it.
 
 ## A switch and a piston
