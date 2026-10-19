@@ -212,6 +212,16 @@ public abstract partial class HandTool : Node
         });
     }
 
+    /// <summary>
+    /// Refuses something before asking the host (it would refuse it too): the reason shows as the last answer and the
+    /// refusal sound plays.
+    /// </summary>
+    protected void Refuse(string message)
+    {
+        LastResult = ActionResult.Failure("refused", message);
+        Sounds?.PlayUi(RefusalSound);
+    }
+
     /// <summary>Plays a vanilla sound only this player hears, at <paramref name="at"/> (the hand when null).</summary>
     protected void PlayFeedback(string sound, Vector3? at = null) =>
         Sounds?.PlayLocal(sound, Core.Data.Identifiers.VanillaModId, at ?? Eye);

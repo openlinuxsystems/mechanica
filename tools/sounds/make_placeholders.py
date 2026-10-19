@@ -436,10 +436,45 @@ def lift_deploy(rng):
 
 
 def lift_move(rng, up):
-    """One step of the column: the pump hums up (or a valve lets it down with a hiss), then a soft stop."""
-    dur = 0.55
-    body = pump(rng, 0.45, 105, 150) if up else pump(rng, 0.45, 140, 95, 0.2) + hiss(rng, 0.45, 1200, 5000, 0.04, 0.2, 0.25)
-    return edges(peak(mix(dur, (body, 0.0), (thud(rng, 0.1, 50, 600, 0.03, 0.3), 0.43), (click(rng, 1200) * 0.15, 0.44)), 0.75))
+    """The column starting off (Scrap Mechanic's lift kicks in with a solenoid clunk): raising, the pump spins up;
+    lowering, the valve opens with a hiss. lift_motor carries on while it moves."""
+    dur = 0.5
+    if up:
+        body = pump(rng, 0.42, 70, 130, 0.25)
+    else:
+        body = mix(0.42, (pump(rng, 0.42, 120, 85, 0.15) * 0.7, 0), (hiss(rng, 0.4, 1200, 5000, 0.02, 0.25, 0.3), 0))
+    return edges(peak(mix(dur, (click(rng, 900) * 0.6, 0.0), (thud(rng, 0.12, 50, 700, 0.02, 0.45), 0.0), (body, 0.03)), 0.75))
+
+
+def lift_motor(rng, length):
+    """The hydraulic motor while the column moves: a steady pump hum with its harmonics and a flutter of valve noise."""
+    base = q(118, length)
+    t = t_of(length)
+    hum = tone(base, length) + 0.5 * tone(base * 2, length) + 0.22 * tone(base * 3, length) + 0.1 * tone(base * 5, length)
+    flutter = 1 + 0.12 * np.sin(2 * np.pi * q(23, length) * t)
+    return hum * 0.32 * flutter + band(noise(rng, length), 500, 3200) * 0.18
+
+
+def lift_capture(rng):
+    """The Lift's remote locks onto a creation: a rising two-step chirp and the clamp's soft clunk."""
+    chirp = glide(520, 1250, 0.11) * decay(0.11, 0.2)
+    chirp = chirp + 0.35 * glide(1040, 2500, 0.11) * decay(0.11, 0.2)
+    blip = (tone(1250, 0.09) + 0.3 * tone(2500, 0.09)) * decay(0.09, 0.05)
+    return edges(peak(mix(0.45, (chirp, 0.0), (blip, 0.12), (clank(rng, 0.35, 1.2), 0.13), (click(rng, 2200) * 0.3, 0.12)), 0.7))
+
+
+def lift_release(rng):
+    """The capture let go: the chirp falling away and a light unclamp."""
+    chirp = glide(1150, 480, 0.16) * decay(0.16, 0.25)
+    chirp = chirp + 0.3 * glide(2300, 960, 0.16) * decay(0.16, 0.25)
+    return edges(peak(mix(0.35, (click(rng, 1600) * 0.35, 0.0), (chirp, 0.02)), 0.6))
+
+
+def lift_deny(rng):
+    """Nothing doing: two short low buzzes, as when a Scrap Mechanic tool refuses."""
+    def buzz(freq):
+        return (square(freq, 0.09) * 0.6 + saw(freq * 1.01, 0.09) * 0.4) * decay(0.09, 0.2, 0.004)
+    return edges(peak(band(mix(0.3, (buzz(196), 0.0), (buzz(165), 0.13)), 90, 3000), 0.55))
 
 
 # ---- The Scrap Driver's Seat: a wooden pallet that creaks and a pipe frame that rattles ----------------------
@@ -600,6 +635,11 @@ ev("building", "remove_block", lambda rng: edges(peak(mix(0.35, (glide(600, 180,
 ev("building", "lift_place", lambda rng: lift_deploy(rng), **TOOL)
 ev("building", "lift_raise", lambda rng: lift_move(rng, up=True), **TOOL)
 ev("building", "lift_lower", lambda rng: lift_move(rng, up=False), **TOOL)
+ev("building", "lift_motor", lambda rng, length: looped(lambda d: lift_motor(rng, d), length), loop=2.0, volume_db=-8.0, **TOOL,
+   parameters=[dict(name="speed", pitch=[0.8, 1.1], volume_db=[-14.0, 0.0])])
+ev("building", "lift_capture", lambda rng: lift_capture(rng), **QUIET)
+ev("building", "lift_release", lambda rng: lift_release(rng), **QUIET)
+ev("building", "lift_deny", lambda rng: lift_deny(rng), bus="ui", cooldown=0.15)
 ev("building", "connect_success", lambda rng: beeps([880, 1320]), **QUIET)
 ev("building", "connect_fail", lambda rng: beeps([440, 330], wave_fn=square, level=0.5), **QUIET)
 ev("building", "disconnect", lambda rng: beeps([990, 660], step=0.06), **QUIET)

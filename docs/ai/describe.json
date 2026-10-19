@@ -324,6 +324,31 @@
       }
     },
     {
+      "name": "CaptureLift",
+      "kind": "action",
+      "group": "building",
+      "scope": "play",
+      "description": "Capturing a Creation to put on the caller's Lift, or letting the capture go. Arguments of CaptureLift: the caller's Lift captures a Creation, which then goes onto the Lift wherever the next PlaceLift naming it puts the Lift down, however far it is by then. A captured Creation stays where it is until then.",
+      "params": {
+        "description": "Arguments of CaptureLift: the caller's Lift captures a Creation, which then goes onto the Lift wherever the next PlaceLift naming it puts the Lift down, however far it is by then. A captured Creation stays where it is until then.",
+        "type": "object",
+        "properties": {
+          "creation": {
+            "description": "The Creation to capture, or null to let the capture go.",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
       "name": "ChooseCharacter",
       "kind": "action",
       "group": "characters",
@@ -1813,6 +1838,11 @@
                 "type": "null"
               }
             ]
+          },
+          "turns": {
+            "description": "Quarter turns about the vertical, counter-clockwise seen from above, for a Creation picked up onto the Lift (it is squared to the nearest quarter turn first).",
+            "type": "integer",
+            "default": 0
           }
         },
         "required": [

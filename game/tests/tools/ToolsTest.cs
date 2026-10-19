@@ -224,25 +224,82 @@ public partial class ToolsTest : StagedTest
 
     private void AddLift()
     {
-        Add("the Lift picks the bar up", frame =>
+        Add("the Lift refuses the bar built onto the ground", frame =>
+        {
+            Tools.Use(Tools.Lift);
+            Tools.Lift.UpdateAim();
+            Check(Tools.Lift.Aim is { Creation: { } c, Refusal: ToolActions.GroundedRefusal } && c == _bar, $"the Lift will not capture the grounded bar ({Tools.Lift.Aim})");
+            Check(Tools.Lift.Highlighted is null && Tools.Lift.Crosshair == Core.Ui.CrosshairState.Default, "it shows no blue and a plain crosshair");
+            _results.Clear();
+            Check(Tools.Lift.Place(_results.Add) && _results is [{ Ok: false }], "a click is refused at once");
+            Check(Tools.Lift.Captured is null && Tools.Lift.MarkedRed == _bar && Tools.Lift.LastResult?.Message == ToolActions.GroundedRefusal,
+                "the bar flashes red and the reason shows");
+            Check(_host.Main.Build.Tools!.CaptureOf(_client.Peer) is null, "nothing reached the host");
+            // Free it, as taking off the parts that touch the ground would.
+            var bar = _host.Main.Creations.Find(_bar)!;
+            bar.ClearAnchors();
+            _host.Main.Build.Moved(bar);
+            return true;
+        });
+        Add("the client sees the bar come free", _ => !_client.Main.Creations.Find(_bar)!.IsGrounded);
+        Wait("the red flash fades", 30);
+        Add("the Lift captures the bar", frame =>
         {
             if (frame == 0)
             {
-                _results.Clear();
-                Tools.Use(Tools.Lift);
                 Tools.Lift.UpdateAim();
-                Check(Tools.Lift.Aim is { Creation: { } c } && c == _bar, $"the Lift aims at the bar ({Tools.Lift.Aim})");
+                Check(Tools.Lift.Aim is { Creation: { } c, Refusal: null } && c == _bar, $"the Lift aims at the bar ({Tools.Lift.Aim})");
+                Check(Tools.Lift.Highlighted == _bar && Tools.Lift.Crosshair == Core.Ui.CrosshairState.Valid, "the bar shows blue");
+                _results.Clear();
+                Check(Tools.Lift.Place(_results.Add), "a click captures it");
+                Check(Tools.Lift.Captured == _bar && Tools.Lift.MarkedRed == _bar && Tools.Lift.Highlighted is null, "the bar turns red where it stands");
+                Check(Tools.Lift.CarryGhost.GetChildCount() >= 3, $"a ghost of it rides the Lift's ghost ({Tools.Lift.CarryGhost.GetChildCount()} meshes)");
+            }
+            if (_results.Count == 0)
+                return false;
+            Check(_results[0].Ok, $"the host takes the capture ({_results[0]})");
+            Check(_host.Main.Build.Tools!.CaptureOf(_client.Peer) == _bar, "the host knows what the client captured");
+            Check(!_host.Main.Creations.Find(_bar)!.OnLift && !_client.Main.Build.Lifts.ContainsKey(_client.Peer), "nothing moved yet");
+            return true;
+        });
+        Add("aim beside the lone block", frame => LookAt(_client, new Vector3(_barAt.X + 1.75f + 0.5f, _ground, _barAt.Z), frame));
+        Add("the ghost is red where it would not fit, and a click there does nothing", _ =>
+        {
+            Tools.Lift.UpdateAim();
+            Check(Tools.Lift.Aim is { Creation: null } && Tools.Lift.PlacementProblem is not null, $"the Lift and the bar would hit the lone block ({Tools.Lift.PlacementProblem})");
+            Check(Tools.Lift.Ghost.Visible && Tools.Lift.CarryGhost.GetChildren().OfType<MeshInstance3D>().All(m => m.MaterialOverride == LiftTool.InvalidGhostMaterial),
+                "the ghost shows red");
+            _results.Clear();
+            Check(Tools.Lift.Place(_results.Add) && _results is [{ Ok: false }], "the click is refused");
+            Check(Tools.Lift.Captured == _bar && Tools.Lift.MarkedRed == _bar && !_client.Main.Build.Lifts.ContainsKey(_client.Peer), "the bar stays captured and nothing is placed");
+            return true;
+        });
+        Add("aim at open ground behind the bar", frame => LookAt(_client, new Vector3(_barAt.X + 0.25f, _ground, _barAt.Z - 1f), frame));
+        Add("a click puts the Lift down with the bar level and centred on it", frame =>
+        {
+            if (frame == 0)
+            {
+                Tools.Lift.UpdateAim();
+                Check(Tools.Lift.PlacementProblem is null && Tools.Lift.CarryGhost.GetChildren().OfType<MeshInstance3D>().All(m => m.MaterialOverride == LiftTool.GhostMaterial),
+                    $"the ghost is blue there ({Tools.Lift.PlacementProblem})");
+                _results.Clear();
                 Check(Tools.Lift.Place(_results.Add), "the Lift sends PlaceLift");
+                Check(Tools.Lift.Captured is null && Tools.Lift.MarkedRed is null, "the red original goes at once");
             }
             if (_results.Count == 0 || !SameEverywhere() || !_client.Main.Build.Lifts.ContainsKey(_client.Peer))
                 return false;
             Check(_results[0].Ok, $"the host lifts it ({_results[0]})");
             var bar = _host.Main.Creations.Find(_bar)!;
             Check(bar.OnLift && Body(_host, _bar).Freeze, "the host holds the bar still");
+            Check(_host.Main.Build.Tools!.CaptureOf(_client.Peer) is null, "the capture is spent");
             Check(Mathf.IsEqualApprox(Bottom(_host, _bar), _ground + _host.Main.Build.Settings!.Lift.TopAt(0), 1e-3f), $"it rests on the platform (bottom {Bottom(_host, _bar):F3})");
+            var lift = _client.Main.Build.Lifts[_client.Peer];
+            var box = Box(_host, _bar);
+            var middle = (box.Min + box.Max) / 2;
+            Check(Mathf.Abs(middle.X - lift.State.Position.X) < 1e-3f && Mathf.Abs(middle.Z - lift.State.Position.Z) < 1e-3f, $"centred on the Lift ({middle} over {lift.State.Position})");
+            Check(Mathf.Abs(lift.State.Position.Z - (_barAt.Z - 1f)) < 0.2f, $"the Lift went where the ghost was ({lift.State.Position})");
             Check(_client.Main.Creations.Find(_bar)!.OnLift, "the client knows it is lifted");
             Check(Mathf.IsEqualApprox(Bottom(_client, _bar), Bottom(_host, _bar), 1e-3f), "and shows it at the same height");
-            var lift = _client.Main.Build.Lifts[_client.Peer];
             Check(lift.State.Creation == _bar && lift.State.Level == 0, $"the client shows its Lift holding the bar ({lift.State})");
             return true;
         });
@@ -378,6 +435,9 @@ public partial class ToolsTest : StagedTest
                 Check(Tools.Lift.PressRemove(), "right click starts the hold");
             }
             if (_client.Main.Build.Lifts.Count != 0 || frame < 60)
+                return false;
+            // It drops a metre: give it until it lands, however slowly frames come.
+            if (Bottom(_host, _bar) >= _ground + 0.1f && frame < 600)
                 return false;
             Check(!Tools.Lift.Removing, "the hold ended");
             Check(!_host.Main.Creations.Find(_bar)!.OnLift && !Body(_host, _bar).Freeze, "the host simulates the bar again");
@@ -670,6 +730,22 @@ public partial class ToolsTest : StagedTest
                 return false;
             Check(SameEverywhere(), "its creations match the host's");
             Check(_late.Main.Build.Lifts[_client.Peer].State == _host.Main.Build.Tools!.LiftOf(_client.Peer), "its Lift matches the host's");
+            return true;
+        });
+        Add("another player cannot capture the bar off the client's Lift", frame =>
+        {
+            var lift = _late.Main.Tools!.Lift;
+            if (frame == 0)
+            {
+                _results.Clear();
+                Check(lift.Capture(_bar, _results.Add) && _results is [{ Ok: false }] && lift.Captured is null,
+                    $"the late joiner's Lift refuses it at once ({lift.LastResult?.Message})");
+                Check(lift.LastResult?.Message?.Contains("another player's lift", StringComparison.Ordinal) == true, "and says why");
+                _late.Main.Actions.Request(ToolActions.CaptureLift, new CaptureLiftArgs(_bar), _results.Add);
+            }
+            if (_results.Count < 2)
+                return false;
+            Check(!_results[1].Ok && _results[1].Message?.Contains("another player's lift", StringComparison.Ordinal) == true, $"so does the host ({_results[1]})");
             return true;
         });
         Add("a player who leaves takes their Lift along", frame =>
