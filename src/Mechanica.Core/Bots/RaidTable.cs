@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Mechanica.Core.Data;
 
@@ -157,32 +158,50 @@ public sealed class RaidTable
     /// <summary>Longest a raid lasts, s.</summary>
     public float Duration => Definition.Duration ?? 300f;
 
-    /// <summary>Loads the raid table of the last mod in <paramref name="content"/> that has one.</summary>
+    /// <summary>
+    /// Loads the raid table of the last mod in <paramref name="content"/> that has one, with every later mod's
+    /// <c>raids/raids.patch.json</c> merged in (levels by <c>level</c>, their bots by <c>bot</c>; see
+    /// <see cref="ContentLayers.KeyedMergePatch"/>). Bare bot ids in a patch mean the patching mod's bots.
+    /// </summary>
     public static RaidTable Load(ModLoadResult content, IBotCatalog bots)
     {
         var diagnostics = new List<DataDiagnostic>();
-        foreach (var mod in content.Mods.Reverse())
+        var baseMod = "";
+        var layered = ContentLayers.LayerFile(content, FilePath, diagnostics, QualifyBots, (json, sink) =>
         {
-            var path = Path.Combine(mod.Directory, FilePath);
-            if (!File.Exists(path))
-                continue;
-            var sink = new DiagnosticSink($"{mod.Id}/{FilePath}", diagnostics);
-            RaidTableDefinition? definition;
-            try
+            // A whole file's bare bot ids are its own mod's; a patch's own are already qualified, so what is left
+            // bare came from the whole file it patches.
+            var patch = sink.File.EndsWith(ContentLayers.PatchSuffix, StringComparison.Ordinal);
+            var owner = patch ? baseMod : sink.File[..sink.File.IndexOf('/')];
+            if (ModLoader.ParseJson<RaidTableDefinition>(json.ToJsonString(), sink) is not { } read)
+                return false;
+            var errors = sink.ErrorCount;
+            Check(read, bots, owner, sink);
+            if (sink.ErrorCount > errors)
+                return false;
+            if (!patch)
+                baseMod = owner;
+            return true;
+        });
+        if (layered is not { } table)
+            return diagnostics.Count == 0 ? None : new RaidTable(new RaidTableDefinition(), [], null, diagnostics);
+        var final = new DiagnosticSink(table.DisplayFile, diagnostics);
+        var definition = ModLoader.ParseJson<RaidTableDefinition>(table.Json.ToJsonString(), final)!;
+        var levels = Check(definition, bots, table.BaseModId, final);
+        return new RaidTable(definition, final.ErrorCount == 0 ? levels : [], table.DisplayFile, diagnostics);
+    }
+
+    // levels[].bots[].bot written bare in a patch names the patching mod's bot.
+    private static void QualifyBots(JsonObject patch, string modId)
+    {
+        foreach (var level in (patch["levels"] as JsonArray ?? []).OfType<JsonObject>())
+        {
+            foreach (var bot in (level["bots"] as JsonArray ?? []).OfType<JsonObject>())
             {
-                definition = ModLoader.ParseJson<RaidTableDefinition>(File.ReadAllText(path), sink);
+                if (bot["bot"] is JsonValue v && v.TryGetValue<string>(out var id) && !id.Contains(':'))
+                    bot["bot"] = $"{modId}:{id}";
             }
-            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
-            {
-                sink.Error(DiagnosticCodes.FileUnreadable, null, $"could not read file: {e.Message}");
-                definition = null;
-            }
-            if (definition is null)
-                return new RaidTable(new RaidTableDefinition(), [], sink.File, diagnostics);
-            var levels = Check(definition, bots, mod.Id, sink);
-            return new RaidTable(definition, sink.ErrorCount == 0 ? levels : [], sink.File, diagnostics);
         }
-        return None;
     }
 
     /// <summary>Builds a table in code (tests, tools). Throws on any error.</summary>

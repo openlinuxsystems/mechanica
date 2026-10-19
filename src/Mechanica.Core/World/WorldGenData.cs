@@ -234,20 +234,14 @@ public sealed class WorldGenData
         WorldGenDefinition? definition = null;
         var definitionMod = "";
         var prefabs = new List<(string ModId, string File, PoiPrefab Prefab)>();
-        foreach (var mod in content.Mods)
+        // The last whole worldgen.json in load order, with every later mod's worldgen.patch.json merged in by id
+        // (a new tree in "objects", a biome's "scatter" entry), so world mods combine.
+        var layered = ContentLayers.LayerFile(content, DefinitionFile, diagnostics, (patch, modId) => ContentLayers.PointAssetsAt(patch, modId),
+            (json, sink) => ModLoader.ParseJson<WorldGenDefinition>(json.ToJsonString(), sink) is { } read && Valid(read, sink));
+        if (layered is { } world)
         {
-            var path = Path.Combine(mod.Directory, DefinitionFile);
-            if (File.Exists(path))
-            {
-                var display = $"{mod.Id}/{DefinitionFile}";
-                var sink = new DiagnosticSink(display, diagnostics);
-                if (Read<WorldGenDefinition>(path, sink) is { } read)
-                {
-                    WorldGenValidator.Validate(read, sink);
-                    if (sink.ErrorCount == 0)
-                        (definition, definitionMod) = (read, mod.Id);
-                }
-            }
+            definition = ModLoader.ParseJson<WorldGenDefinition>(world.Json.ToJsonString(), new DiagnosticSink(world.DisplayFile, diagnostics));
+            definitionMod = world.BaseModId;
         }
         // Other mods override, patch and remove POIs in overrides/<mod>/pois/ (see ContentLayers).
         foreach (var entry in ContentLayers.Collect(content, PoiFolder, ContentLayers.IdMember, diagnostics,
@@ -359,6 +353,13 @@ public sealed class WorldGenData
             return false;
         color = new Vector3((rgb >> 16) & 0xff, (rgb >> 8) & 0xff, rgb & 0xff) / 255f;
         return true;
+    }
+
+    private static bool Valid(WorldGenDefinition definition, DiagnosticSink sink)
+    {
+        var errors = sink.ErrorCount;
+        WorldGenValidator.Validate(definition, sink);
+        return sink.ErrorCount == errors;
     }
 
     private static T? Read<T>(string path, DiagnosticSink sink) where T : class

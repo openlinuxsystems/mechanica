@@ -203,6 +203,116 @@ public static class ContentLayers
         return targetObject;
     }
 
+    /// <summary>
+    /// Keys that identify an element of a list for <see cref="KeyedMergePatch"/>, tried in order: the first one the
+    /// patch element has.
+    /// </summary>
+    public static IReadOnlyList<string> ListKeys { get; } = ["id", "object", "level", "bot"];
+
+    /// <summary>Set on a list element in a keyed patch to take that element out.</summary>
+    public const string RemoveMarker = "$remove";
+
+    /// <summary>
+    /// A merge patch for files that hold lists of keyed entries (worldgen, the raid table): like
+    /// <see cref="MergePatch"/>, except that a list of objects in the patch merges into the target's list element by
+    /// element. Each patch element is matched by its first key in <see cref="ListKeys"/> (<c>id</c>, <c>object</c>,
+    /// <c>level</c>, <c>bot</c>): a match is merge-patched (recursively, so a biome's <c>scatter</c> list merges too),
+    /// <c>"$remove": true</c> takes the match out, and an element with no match is appended. Lists of plain values
+    /// and objects without a key replace as usual.
+    /// </summary>
+    public static JsonNode? KeyedMergePatch(JsonNode? target, JsonNode? patch)
+    {
+        if (patch is JsonArray patchList && target is JsonArray targetList && patchList.All(e => e is JsonObject o && KeyOf(o) is not null))
+        {
+            var result = new JsonArray([.. targetList.Select(e => e?.DeepClone())]);
+            foreach (var element in patchList.Cast<JsonObject>())
+            {
+                var (key, value) = KeyOf(element)!.Value;
+                var index = result.ToList().FindIndex(e => e is JsonObject o && o[key] is JsonValue v && JsonNode.DeepEquals(v, value));
+                var remove = element[RemoveMarker] is JsonValue r && r.TryGetValue<bool>(out var yes) && yes;
+                if (remove)
+                {
+                    if (index >= 0)
+                        result.RemoveAt(index);
+                    continue;
+                }
+                if (index >= 0)
+                    result[index] = KeyedMergePatch(result[index]!.DeepClone(), element);
+                else
+                    result.Add(KeyedMergePatch(null, element));
+            }
+            return result;
+        }
+        if (patch is not JsonObject patchObject)
+            return patch?.DeepClone();
+        if (target is not JsonObject targetObject)
+            targetObject = [];
+        foreach (var (key, value) in patchObject)
+        {
+            if (key == RemoveMarker)
+                continue;
+            if (value is null)
+                targetObject.Remove(key);
+            else
+                targetObject[key] = KeyedMergePatch(targetObject[key]?.DeepClone(), value);
+        }
+        return targetObject;
+    }
+
+    private static (string Key, JsonNode? Value)? KeyOf(JsonObject element)
+    {
+        foreach (var key in ListKeys)
+        {
+            if (element[key] is JsonValue value)
+                return (key, value);
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// A single-file kind (<c>world/worldgen.json</c>, <c>raids/raids.json</c>) across the mods of
+    /// <paramref name="content"/> in load order: a mod's whole file replaces what came before, and its
+    /// <c>.patch.json</c> beside it (<c>world/worldgen.patch.json</c>) is a <see cref="KeyedMergePatch"/> on it, so
+    /// several mods can each add a tree, a biome or a raid level. <paramref name="preparePatch"/> adjusts a patch
+    /// before it applies (point its asset paths or ids at its mod); <paramref name="check"/> validates each result,
+    /// and a file or patch that fails is left out. Returns the final JSON, the mod whose whole file it started from,
+    /// and the last file that changed it; null when no mod ships the file.
+    /// </summary>
+    internal static (JsonObject Json, string BaseModId, string DisplayFile)? LayerFile(ModLoadResult content, string relativePath,
+        List<DataDiagnostic> diagnostics, Action<JsonObject, string> preparePatch, Func<JsonObject, DiagnosticSink, bool> check)
+    {
+        JsonObject? current = null;
+        var baseMod = "";
+        var display = "";
+        var patchPath = relativePath[..^".json".Length] + PatchSuffix;
+        foreach (var mod in content.Mods)
+        {
+            var whole = Path.Combine(mod.Directory, relativePath);
+            if (File.Exists(whole))
+            {
+                var file = $"{mod.Id}/{relativePath}";
+                if (Read(whole, file, diagnostics) is { } json && check(json, new DiagnosticSink(file, diagnostics)))
+                    (current, baseMod, display) = (json, mod.Id, file);
+            }
+            var patchFile = Path.Combine(mod.Directory, patchPath);
+            if (!File.Exists(patchFile))
+                continue;
+            var shown = $"{mod.Id}/{patchPath}";
+            if (Read(patchFile, shown, diagnostics) is not { } patch)
+                continue;
+            if (current is null)
+            {
+                diagnostics.Add(Error(DiagnosticCodes.ContentOverrideUnknown, shown, null,
+                    $"no mod before '{mod.Id}' in the load order ships {relativePath} to patch; depend on the mod that does."));
+                continue;
+            }
+            preparePatch(patch, mod.Id);
+            if (KeyedMergePatch(current.DeepClone(), patch) is JsonObject merged && check(merged, new DiagnosticSink(shown, diagnostics)))
+                (current, display) = (merged, shown);
+        }
+        return current is null ? null : (current, baseMod, display);
+    }
+
     /// <summary>Rewrites every relative asset path in <paramref name="node"/> (<c>meshes/x.glb</c>) to <c>modId:path</c>.</summary>
     public static void PointAssetsAt(JsonNode? node, string modId)
     {

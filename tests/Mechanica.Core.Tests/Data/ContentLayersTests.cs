@@ -153,4 +153,66 @@ public class ContentLayersTests : IDisposable
         var result = ContentLayers.MergePatch(target, JsonNode.Parse("""{ "a": null, "b": { "c": 5 }, "e": [9], "f": "new" }"""));
         Assert.Equal("""{"b":{"c":5,"d":3},"e":[9],"f":"new"}""", result!.ToJsonString());
     }
+
+    [Fact]
+    public void WorldgenPatchesFromSeveralModsStack()
+    {
+        var rock = JsonNode.Parse(File.ReadAllText(Path.Combine(Vanilla, "world", "worldgen.json")),
+            documentOptions: new System.Text.Json.JsonDocumentOptions { CommentHandling = System.Text.Json.JsonCommentHandling.Skip })!["objects"]!
+            .AsArray().Single(o => (string?)o!["id"] == "small_rock")!.AsObject();
+        rock["id"] = "blue_rock";
+        _mods.File("tweaks", "world/worldgen.patch.json", new JsonObject
+        {
+            ["objects"] = new JsonArray(rock.DeepClone()),
+            ["biomes"] = JsonNode.Parse("""[{ "id": "meadow", "scatter": [{ "object": "blue_rock", "spacing": 20, "chance": 0.5 }, { "object": "bush", "$remove": true }] }]"""),
+        }.ToJsonString())
+            .Mod("zmore", dependencies: """[{ "id": "vanilla" }]""")
+            .File("zmore", "world/worldgen.patch.json", """{ "biomes": [{ "id": "meadow", "name": "Blue Meadow" }] }""");
+
+        var world = WorldGenData.Load(Load("zmore"));
+
+        NoErrors(world.Diagnostics);
+        Assert.True(world.Objects.ContainsKey("blue_rock"));
+        var meadow = world.Definition.Biomes!.Single(b => b.Id == "meadow");
+        Assert.Equal("Blue Meadow", meadow.Name);
+        Assert.Contains(meadow.Scatter!, r => r.Object == "blue_rock");
+        Assert.DoesNotContain(meadow.Scatter!, r => r.Object == "bush");
+        Assert.Contains(meadow.Scatter!, r => r.Object == "birch_tree");
+        Assert.Equal(9, world.Definition.Biomes!.Count);
+    }
+
+    [Fact]
+    public void ABrokenWorldgenPatchIsLeftOut()
+    {
+        _mods.File("tweaks", "world/worldgen.patch.json", """{ "biomes": [{ "id": "meadow", "scatter": [{ "object": "no_such_thing", "spacing": 20, "chance": 0.5 }] }] }""");
+
+        var world = WorldGenData.Load(Load());
+
+        Assert.Contains(world.Diagnostics, d => d.Severity == DiagnosticSeverity.Error && d.File == "tweaks/world/worldgen.patch.json");
+        Assert.Equal(9, world.Definition.Biomes!.Count); // vanilla's world, unpatched
+    }
+
+    [Fact]
+    public void RaidPatchesAddBotsToALevel()
+    {
+        _mods.File("tweaks", "bots/rust_bug.json", File.ReadAllText(Path.Combine(Vanilla, "bots", "scuttler_green.json")).Replace("\"scuttler_green\"", "\"rust_bug\""))
+            .File("tweaks", "raids/raids.patch.json", """{ "levels": [{ "level": 1, "budget": 6, "bots": [{ "bot": "rust_bug", "count": 2 }] }] }""");
+        var content = Load();
+
+        var raids = RaidTable.Load(content, BotBook.Load(content));
+
+        NoErrors(raids.Diagnostics);
+        var level = raids.Levels.Single(l => l.Level == 1);
+        Assert.Equal(6, level.Budget);
+        Assert.Contains(level.Bots, b => b.Bot.QualifiedId == "tweaks:rust_bug");
+        Assert.Contains(level.Bots, b => b.Bot.QualifiedId == "vanilla:scuttler_green");
+    }
+
+    [Fact]
+    public void KeyedPatchesMergeListsById()
+    {
+        var target = JsonNode.Parse("""{ "list": [{ "id": "a", "n": 1 }, { "id": "b", "n": 2 }], "plain": [1, 2] }""");
+        var result = ContentLayers.KeyedMergePatch(target, JsonNode.Parse("""{ "list": [{ "id": "b", "n": 5 }, { "id": "a", "$remove": true }, { "id": "c" }], "plain": [3] }"""));
+        Assert.Equal("""{"list":[{"id":"b","n":5},{"id":"c"}],"plain":[3]}""", result!.ToJsonString());
+    }
 }

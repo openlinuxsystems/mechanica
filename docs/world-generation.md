@@ -7,7 +7,9 @@ comments and trailing commas are allowed.
 
 - `world/worldgen.json`: terrain, biomes, the map's layout (biome regions, rivers, the mandatory
   structures' sites), the road network and scattered objects. The last enabled mod in load order
-  that ships one replaces the others' completely.
+  that ships one replaces the others' completely (a total conversion).
+- `world/worldgen.patch.json`: changes on top of it, so several mods can each add to the same world.
+  See [Patching the world](#patching-the-world).
 - `pois/*.json`: one POI prefab per file. Every enabled mod's POIs are used, under the id
   `mod_id:poi_id`.
 
@@ -60,6 +62,41 @@ To see what a seed lays out, run the game with `--world-export DIR [SEED]`: it w
 graded centre line with its bridges; the rivers; the biome and water shares), `heightmap.png` (and the
 raw heights in `heightmap.f32`, little-endian floats row by row from the north-west), `biomes.png` and
 `overview.png` at 8 m a pixel, then quits.
+
+## Patching the world
+
+Most world mods add something (a tree, an ore, a biome) rather than replace everything. Ship
+`world/worldgen.patch.json` instead of `world/worldgen.json` and depend on the mod whose world you
+change (usually `vanilla`). Every patch applies in load order on top of the last whole
+`worldgen.json`:
+
+```json
+{
+  "objects": [
+    { "id": "blue_rock", "model": "meshes/blue_rock.glb", "collider": { "shape": "sphere", "radius": 0.45, "at": [0, 0.25, 0] },
+      "health": 40, "drops": [{ "item": "my_mod:blue_stone", "count": 1, "count_max": 3 }] }
+  ],
+  "biomes": [
+    { "id": "meadow", "scatter": [
+      { "object": "blue_rock", "spacing": 20, "chance": 0.5 },
+      { "object": "bush", "$remove": true }
+    ] },
+    { "id": "crystal_flats", "name": "Crystal Flats", "weight": 0.5, "color": "#7fb0d0", "ground": "grass" }
+  ],
+  "terrain": { "sea_level": -6 }
+}
+```
+
+- Objects merge key by key, as in a [merge patch](packaging-guide.md#patching-instead-of-replacing);
+  `null` removes a key.
+- A list of objects merges entry by entry, matched by `id` (or `object`, `level` or `bot` when the
+  entry has no `id`): a match is patched, `"$remove": true` takes it out, and anything new is added.
+  So the example adds a rock, scatters it in the meadow, takes bushes out of the meadow, adds a biome
+  and lowers the sea, and leaves everything else as it was.
+- Lists of plain values (and of objects with none of those keys) replace the original list.
+- Relative asset paths in a patch are your mod's.
+- The result is checked like a whole file. A patch that breaks it is left out with its errors, and the
+  world loads without it.
 
 ## `world/worldgen.json`
 
