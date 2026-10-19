@@ -83,6 +83,12 @@ A gas engine burns one gasoline from the creation's gas containers for every 40 
 container again. The Electric Engine draws battery packs from batteries the same way, and its upgrades go further on each pack. The Creation
 Inspector shows an engine's input, so you can tell an empty tank from a broken wire.
 
+To choose which tanks feed which engine, drag from a gas container's node to the engine's with the Connect
+Tool: an engine (or thruster) with gas containers linked into it burns only from those, and one with none
+linked burns from any in the creation. The gauges on the container's sides show how full it is (each tick is
+one of its five slots), and you can pick it up (hold right click on it) while it still holds fuel: the gasoline goes
+into your inventory with it.
+
 ## A switch and a piston
 
 1. Put a switch and a piston on a block, and something on the piston's head.

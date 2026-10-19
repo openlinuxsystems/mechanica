@@ -112,7 +112,9 @@ public sealed class AeroScriptTests : IDisposable
         var creation = Board();
         var toggle = Place(creation, "vanilla:switch", new GridCell(-1, 1, 0));
         var thruster = Place(creation, "vanilla:thruster", new GridCell(0, 1, 0));
-        var tank = Place(creation, "vanilla:gas_container", new GridCell(2, 1, 0));
+        Place(creation, "vanilla:metal_block", new GridCell(2, 0, 1));
+        Place(creation, "vanilla:metal_block", new GridCell(2, 0, 2));
+        var tank = Place(creation, "vanilla:gas_container", new GridCell(1, 1, 1));
         Link(creation, toggle, thruster);
         Activate(creation, toggle);
         Steps(3);

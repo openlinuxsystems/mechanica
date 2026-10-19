@@ -1200,6 +1200,20 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
             AddDrop(at, [new ItemStack(item, 1)]);
     }
 
+    /// <inheritdoc/>
+    public void Emptied(ActionCaller caller, IReadOnlyList<ItemStack> items, Vector3 at)
+    {
+        var left = new List<ItemStack>();
+        var pockets = caller.Source == ActionSource.Player ? inventories.PlayerInventory(caller.Peer) : null;
+        foreach (var stack in items)
+        {
+            var added = pockets?.Add(stack.Item, stack.Count) ?? 0;
+            if (added < stack.Count)
+                left.Add(stack with { Count = stack.Count - added });
+        }
+        AddDrop(at, left);
+    }
+
     // The item placing part uses up: the one it is placed from (a Soil Bag for a soil mound), or the part itself when a
     // player still carries it from before it had one (soil from an older save). Null when they have neither.
     private string? PayingItem(Inventory inventory, string part)

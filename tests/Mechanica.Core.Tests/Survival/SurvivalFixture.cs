@@ -27,6 +27,7 @@ internal sealed class SurvivalFixture
     public const string Block = "test:block";
     public const string Plank = "test:plank";
     public const string Chest = "test:chest";
+    public const string Can = "test:can";
     public const string Scrap = "test:scrap";
     public const string Connector = HotbarTools.Connect;
     public const string Gun = "scripts/potato_gun.lua";
@@ -60,6 +61,7 @@ internal sealed class SurvivalFixture
             .Add(Block, Placeable("block", PartCategory.Block) with { Durability = 2 })
             .Add(Plank, Placeable("plank", PartCategory.Block) with { Flammable = true })
             .Add(Chest, Placeable("chest", PartCategory.Container) with { Inventory = new InventoryDefinition { Slots = 4 } })
+            .Add(Can, Placeable("can", PartCategory.Container) with { Inventory = new InventoryDefinition { Slots = 2, CarryContents = true } })
             // Soil runs the vanilla soil script (crops grow and are harvested in Lua); the Core tests run no scripts.
             .Add(Soil, Placeable("soil", PartCategory.Decor) with { Soil = new SoilDefinition { Capacity = 60, Growth = 2 },
                 Script = "scripts/soil.lua", Properties = new JsonObject { ["interval"] = 0.5 } })

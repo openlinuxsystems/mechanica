@@ -2,11 +2,12 @@
 -- (forward), usually a driver's seat. Wheels roll toward the engine's front, so place it facing the way the
 -- car should drive. With no throttle it holds the wheels with properties.brake N·m.
 -- Properties: "speed" (rad/s at the top gear), "torque" (N·m), "brake" (N·m), "fuel" (item id) and
--- "fuel_time" (seconds of full throttle per item). In Creative it needs no fuel.
+-- "fuel_time" (seconds of full throttle per item). In Creative it needs no fuel. It burns fuel from the containers
+-- linked into it with the Connect Tool (gas containers), or from every container of the Creation when none is.
 -- Setting "gear" (shown as Power, 1 to properties.gears, default 5): each step turns that share of the top speed. Setting "on": with
 -- nothing linked into it, the engine runs forward at full throttle while it is on.
 -- Its menu shows "fuel" (how much of the current item is left, 0 to 1; full in Creative), "fuel_items"
--- (items left in the Creation), "rpm" (the first wheel's speed) and "torque" (N·m it drives with). Its
+-- (items left in the containers it burns from), "rpm" (the first wheel's speed) and "torque" (N·m it drives with). Its
 -- "running" display is on while it drives, and each wheel bearing's "drive" display turns with it.
 -- Sounds: "start" when it starts, the "loop" while it runs (its properties.loop_parameter follows the
 -- throttle), and "stop" when it runs out of fuel.
@@ -44,6 +45,28 @@ local function direction(id)
   return joint.reversed and -sign or sign
 end
 
+-- The containers linked into the engine (its gas containers), or nil when none is: then it burns from all of the
+-- Creation's.
+local function tanks()
+  local ids
+  for _, input in ipairs(part.inputs()) do
+    if input.storage then
+      ids = ids or {}
+      ids[#ids + 1] = input.part
+    end
+  end
+  return ids
+end
+
+-- How many links into the engine are controls (a seat, a switch) rather than its tanks.
+local function controls()
+  local n = 0
+  for _, input in ipairs(part.inputs()) do
+    if not input.storage then n = n + 1 end
+  end
+  return n
+end
+
 -- Burns fuel for dt seconds at this throttle; false when the engine is out of fuel.
 local function burn(throttle, dt)
   if world.creative() or throttle == 0 then
@@ -53,7 +76,7 @@ local function burn(throttle, dt)
   if state.fuel > 0 then
     return true
   end
-  if creation.take(properties.fuel, 1) > 0 then
+  if creation.take(properties.fuel, 1, tanks()) > 0 then
     state.fuel = state.fuel + properties.fuel_time
     return true
   end
@@ -128,7 +151,7 @@ local function show(throttle, dt)
   state.shown = 0
   part.display("running", throttle ~= 0)
   part.display("fuel", world.creative() and 1 or math.max(0, math.min(1, (state.fuel or 0) / properties.fuel_time)))
-  part.display("fuel_items", creation.count(properties.fuel))
+  part.display("fuel_items", creation.count(properties.fuel, tanks()))
   part.display("torque", throttle ~= 0 and properties.torque or 0)
   local rpm = 0
   for _, id in ipairs(part.links()) do
@@ -178,7 +201,7 @@ local function pulsed(key, dt)
 end
 
 local function fuel_left()
-  return world.creative() or (state.fuel or 0) > 0 or creation.count(properties.fuel) > 0
+  return world.creative() or (state.fuel or 0) > 0 or creation.count(properties.fuel, tanks()) > 0
 end
 
 local function release()
@@ -245,7 +268,7 @@ local function ignition(dt)
     end
   elseif phase == "running" then
     throttle = clamp(part.input())
-    if #part.inputs() == 0 then
+    if controls() == 0 then
       throttle = 1
     end
     if not burn(throttle, dt) or not on then
@@ -311,7 +334,7 @@ function on_update(dt)
     return
   end
   local throttle = clamp(part.input())
-  if #part.inputs() == 0 then
+  if controls() == 0 then
     throttle = part.setting("on") and 1 or 0
   end
   local fueled = burn(throttle, dt)

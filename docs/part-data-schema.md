@@ -216,6 +216,7 @@ rather than in Lua.
 |-----|------|---------|
 | `inventory.slots` | integer 1–256 | Number of item slots. Required when `inventory` is present. |
 | `inventory.accepts` | list of item ids | Only these items go in (`["gasoline"]` for a gas container). Omitted means any item. |
+| `inventory.carry_contents` | boolean | `true` lets a player pick the part up while it holds items (a gas container full of fuel): they go into the player's inventory with it, and what doesn't fit drops where it stood. A Lift may also carry a Creation whose only stored items are in such parts. Default `false`. |
 | `crafting.speed` | number > 0 | Multiplier on recipe times: 2 crafts twice as fast. Default 1. |
 | `crafting.queue_size` | integer 1–64 | Most orders waiting at once. Default 1. |
 | `crafting.link_range` | number 0–8 (m) | Containers on the same Creation within this distance of the station (surface to surface) are its linked storage. Omitted or 0 links none. |
@@ -224,8 +225,8 @@ Each slot holds one stack of one item, up to that item's `stack_size`. A station
 lists its part id in `stations`: when an order is queued its inputs come from the station's linked
 storage first, then the crafting player's inventory, and finished crafts land in linked storage first,
 then the station's own inventory, where any player in reach can take them. A linked container can be
-opened from the station's screen while the station is in reach. A container or station that holds items, or has orders queued, can't be picked up with the
-Hammer. Its contents are saved with the Creation; if it is broken (Sledgehammer, weapons, a crash) they
+opened from the station's screen while the station is in reach. A container or station that holds items, or has orders queued, can't be picked up
+(right click), unless it has `carry_contents`. Its contents are saved with the Creation; if it is broken (Sledgehammer, weapons, a crash) they
 fall out as a pile of items on the ground.
 
 ```json
