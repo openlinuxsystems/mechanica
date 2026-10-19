@@ -17,6 +17,7 @@ internal sealed class BotFixture : IBotWorld, IRaidWorld
     public const string Critter = "test:critter";
     public const string Spitter = "test:spitter";
     public const string Smasher = "test:smasher";
+    public const string Swimmer = "test:swimmer";
 
     public static readonly ActionCaller Brain = new(1, ActionSource.Bot);
 
@@ -48,6 +49,14 @@ internal sealed class BotFixture : IBotWorld, IRaidWorld
             }),
             ("test", new BotDefinition { Id = "tank", Name = "Tank", Health = 1500, Speed = 3, RaidCost = 5, MeleeImmune = true }),
             ("test", new BotDefinition { Id = "critter", Name = "Critter", Health = 30, Speed = 2, Passive = true }),
+            ("test", new BotDefinition
+            {
+                Id = "swimmer", Name = "Swimmer", Health = 30, Speed = 2, WaterSpeed = 6, SwimDepth = 0.5f,
+                Wild = new BotWildDefinition
+                {
+                    Habitat = "water", Count = 2, MinDistance = 25, MaxDistance = 60, DespawnDistance = 100, MinDepth = 2, ClearRadius = 5, Interval = 10,
+                },
+            }),
             ("test", new BotDefinition
             {
                 Id = "spitter", Name = "Spitter", Health = 40, Speed = 3,

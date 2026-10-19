@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://tests/botmodels/BotModelsTest.cs" id="1_botmodels"]
+
+[node name="BotModelsTest" type="Node"]
+script = ExtResource("1_botmodels")

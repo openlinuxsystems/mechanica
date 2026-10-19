@@ -34,14 +34,43 @@ public sealed record BotAttack(
 /// <param name="CountMax">The most: each drop is a random count from <paramref name="Count"/> to this.</param>
 public sealed record BotDrop(string Item, float Chance, int Count, int CountMax);
 
+/// <summary>Where a bot lives in the wild, with every default filled in (<see cref="BotWildDefinition"/>).</summary>
+/// <param name="Water">It lives in water (else on land).</param>
+/// <param name="Count">How many live near each player.</param>
+/// <param name="MinDistance">The nearest it appears to a player, m.</param>
+/// <param name="MaxDistance">The farthest it appears from a player, m.</param>
+/// <param name="DespawnDistance">It goes when every player is farther than this, m.</param>
+/// <param name="MinDepth">Water: how deep the water must be where it appears, m.</param>
+/// <param name="ClearRadius">How far round the spot must be its habitat too, m.</param>
+/// <param name="Interval">Seconds between tries to spawn more.</param>
+public sealed record BotWild(bool Water, int Count, float MinDistance, float MaxDistance, float DespawnDistance, float MinDepth, float ClearRadius,
+    float Interval);
+
 /// <summary>A bot's model with its path qualified and every default filled in.</summary>
 /// <param name="Mesh">Qualified glTF path (<c>mod:meshes/bots/x.glb</c>).</param>
 /// <param name="Attacks">Clips each attack plays, by attack id (every attack has at least one).</param>
 /// <param name="ClipSpeeds">Ground speed (m/s) each walking clip plays at normal speed, by clip name.</param>
 /// <param name="EyeCalm">Eye colour while calm, <c>"#rrggbb"</c>.</param>
 /// <param name="EyeEngaged">Eye colour while engaged, <c>"#rrggbb"</c>.</param>
+/// <param name="Effects">Effect kind (<see cref="BotEffects"/>) by attack id or <c>death</c>.</param>
 public sealed record BotModel(string Mesh, IReadOnlyDictionary<string, IReadOnlyList<string>> Attacks, IReadOnlyDictionary<string, float> ClipSpeeds,
-    string EyeCalm, string EyeEngaged);
+    string EyeCalm, string EyeEngaged, IReadOnlyDictionary<string, string> Effects);
+
+/// <summary>The effects a bot model can show (<see cref="BotModelDefinition.Effects"/>).</summary>
+public static class BotEffects
+{
+    /// <summary>Fire, smoke, sparks and debris thrown out to the radius.</summary>
+    public const string Explosion = "explosion";
+
+    /// <summary>A ring that ripples over the ground out to the radius.</summary>
+    public const string Shockwave = "shockwave";
+
+    /// <summary>The key for the effect shown when the bot dies.</summary>
+    public const string Death = "death";
+
+    /// <summary>Every effect kind.</summary>
+    public static readonly IReadOnlyList<string> Kinds = [Explosion, Shockwave];
+}
 
 /// <summary>A bot type that loaded cleanly, with every id qualified and every default filled in.</summary>
 /// <param name="QualifiedId">Game-wide id, <c>mod_id:bot_id</c>.</param>
@@ -75,6 +104,12 @@ public sealed record Bot(
 
     /// <summary>The behaviour tree, or null when the bot has none.</summary>
     public JsonObject? Behavior => Definition.Behavior;
+
+    /// <summary>Where it lives in the wild, or null when it only comes in raids and as a guard.</summary>
+    public BotWild? Wild { get; init; }
+
+    /// <summary>How far below the water's surface its middle swims (m), or null when it walks on the bottom.</summary>
+    public float? SwimDepth { get; init; }
 
     /// <summary>Its animated model, or null for the placeholder capsule.</summary>
     public BotModel? Model { get; init; }
@@ -114,6 +149,24 @@ public sealed class BotBook : IBotCatalog
 
     /// <summary>Default eye colour of an engaged bot.</summary>
     public const string DefaultEyeEngaged = "#ff1a0a";
+
+    /// <summary>Wild bots: the nearest they appear to a player when <c>min_distance</c> is left out, m.</summary>
+    public const float DefaultWildMinDistance = 30f;
+
+    /// <summary>Wild bots: the farthest they appear from a player when <c>max_distance</c> is left out, m.</summary>
+    public const float DefaultWildMaxDistance = 70f;
+
+    /// <summary>Wild bots: how far every player must be for one to go, when <c>despawn_distance</c> is left out, m.</summary>
+    public const float DefaultWildDespawnDistance = 120f;
+
+    /// <summary>Wild water bots: the least water depth where one appears, when <c>min_depth</c> is left out, m.</summary>
+    public const float DefaultWildMinDepth = 1.5f;
+
+    /// <summary>Wild bots: how far round the spot must be its habitat, when <c>clear_radius</c> is left out, m.</summary>
+    public const float DefaultWildClearRadius = 8f;
+
+    /// <summary>Wild bots: seconds between tries to spawn more, when <c>interval</c> is left out.</summary>
+    public const float DefaultWildInterval = 8f;
 
     /// <summary>Deepest behaviour tree accepted.</summary>
     public const int MaxBehaviorDepth = 24;
@@ -220,6 +273,7 @@ public sealed class BotBook : IBotCatalog
         Positive(b.Health, "$.health", "health", required: true, sink);
         Positive(b.Speed, "$.speed", "speed (m/s)", required: true, sink);
         Positive(b.WaterSpeed, "$.water_speed", "water_speed (m/s)", required: false, sink);
+        Positive(b.SwimDepth, "$.swim_depth", "swim_depth (m)", required: false, sink);
         Positive(b.Sight, "$.sight", "sight (m)", required: false, sink);
         var radius = b.Size?.Radius ?? DefaultRadius;
         var height = b.Size?.Height ?? DefaultHeight;
@@ -276,6 +330,8 @@ public sealed class BotBook : IBotCatalog
                 drops.Add(new BotDrop(item, drop.Chance ?? 1f, drop.Count ?? 1, drop.CountMax ?? drop.Count ?? 1));
         }
 
+        var wild = b.Wild is { } w ? CheckWild(w, sink) : null;
+
         if (b.Behavior is { } tree)
             CheckBehavior(tree, "$.behavior", 1, new int[1], b.Script is not null, sink);
         string? script = null;
@@ -297,7 +353,7 @@ public sealed class BotBook : IBotCatalog
             return null;
         return new Bot($"{modId}:{b.Id}", modId, b.Name!, family, b.Health!.Value, b.Speed!.Value, b.WaterSpeed ?? b.Speed!.Value,
             b.Sight ?? DefaultSight, radius, height, b.Color?.ToLowerInvariant() ?? DefaultColor, b.MeleeImmune ?? false, b.Passive ?? false,
-            b.RaidCost, attacks, drops, script, b) { Model = model };
+            b.RaidCost, attacks, drops, script, b) { Model = model, SwimDepth = b.SwimDepth, Wild = wild };
     }
 
     private static BotModel? CheckModel(BotModelDefinition m, string modId, string? modDirectory, List<BotAttack> attacks, DiagnosticSink sink)
@@ -333,6 +389,16 @@ public sealed class BotBook : IBotCatalog
             else
                 clips[id] = [.. list];
         }
+        var effects = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var (key, kind) in m.Effects ?? [])
+        {
+            if (key != BotEffects.Death && !attacks.Any(a => a.Id == key))
+                sink.Error(code, $"$.model.effects.{key}", $"the bot has no attack '{key}' (use an attack id or \"death\").");
+            else if (kind is null || !BotEffects.Kinds.Contains(kind))
+                sink.Error(code, $"$.model.effects.{key}", $"effect '{kind}' must be one of: {string.Join(", ", BotEffects.Kinds)}.");
+            else
+                effects[key] = kind;
+        }
         var speeds = new Dictionary<string, float>(StringComparer.Ordinal);
         foreach (var (clip, speed) in m.ClipSpeeds ?? [])
         {
@@ -343,7 +409,8 @@ public sealed class BotBook : IBotCatalog
         }
         if (sink.ErrorCount > errors)
             return null;
-        return new BotModel(mesh!, clips, speeds, m.EyeCalm?.ToLowerInvariant() ?? DefaultEyeCalm, m.EyeEngaged?.ToLowerInvariant() ?? DefaultEyeEngaged);
+        return new BotModel(mesh!, clips, speeds, m.EyeCalm?.ToLowerInvariant() ?? DefaultEyeCalm, m.EyeEngaged?.ToLowerInvariant() ?? DefaultEyeEngaged,
+            effects);
     }
 
     private static BotAttack? CheckAttack(BotAttackDefinition a, string path, string family, DiagnosticSink sink)
@@ -442,6 +509,34 @@ public sealed class BotBook : IBotCatalog
             else
                 sink.Error(code, $"{path}.children[{i}]", "a child must be a node object.");
         }
+    }
+
+    private static BotWild? CheckWild(BotWildDefinition w, DiagnosticSink sink)
+    {
+        const string code = DiagnosticCodes.BotInvalid;
+        var errors = sink.ErrorCount;
+        KnownKeys.WarnUnknown(w.Extra, "$.wild", sink, typeof(BotWildDefinition));
+        if (w.Habitat is not ("water" or "land"))
+            sink.Error(code, "$.wild.habitat", w.Habitat is null ? "habitat (water or land) is required." : $"habitat '{w.Habitat}' must be water or land.");
+        if (w.Count is not { } count || count < 1)
+            sink.Error(code, "$.wild.count", w.Count is null ? "count (how many near each player) is required." : "count must be 1 or more.");
+        Positive(w.MinDistance, "$.wild.min_distance", "min_distance (m)", required: false, sink);
+        Positive(w.MaxDistance, "$.wild.max_distance", "max_distance (m)", required: false, sink);
+        Positive(w.DespawnDistance, "$.wild.despawn_distance", "despawn_distance (m)", required: false, sink);
+        Positive(w.MinDepth, "$.wild.min_depth", "min_depth (m)", required: false, sink);
+        NonNegative(w.ClearRadius, "$.wild.clear_radius", "clear_radius (m)", required: false, sink);
+        Positive(w.Interval, "$.wild.interval", "interval (s)", required: false, sink);
+        var min = w.MinDistance ?? DefaultWildMinDistance;
+        var max = w.MaxDistance ?? DefaultWildMaxDistance;
+        var despawn = w.DespawnDistance ?? DefaultWildDespawnDistance;
+        if (!(max > min))
+            sink.Error(code, "$.wild.max_distance", $"max_distance ({max}) must be more than min_distance ({min}).");
+        if (!(despawn > max))
+            sink.Error(code, "$.wild.despawn_distance", $"despawn_distance ({despawn}) must be more than max_distance ({max}).");
+        if (sink.ErrorCount > errors)
+            return null;
+        return new BotWild(w.Habitat == "water", w.Count!.Value, min, max, despawn, w.MinDepth ?? DefaultWildMinDepth, w.ClearRadius ?? DefaultWildClearRadius,
+            w.Interval ?? DefaultWildInterval);
     }
 
     private static void Positive(float? value, string path, string label, bool required, DiagnosticSink sink)

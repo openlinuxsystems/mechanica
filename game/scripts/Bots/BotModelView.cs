@@ -33,6 +33,9 @@ public partial class BotModelView : Node3D
     private const float MinSpeedScale = 0.4f;
     private const float MaxSpeedScale = 2.5f;
 
+    // An effect this soon after another is not shown again (a blast that kills its bot is one effect), in s.
+    private const double EffectGap = 1.0;
+
     // Foot placement: how far up and down to look for ground (m), the steepest tilt, the most the body moves up or
     // down (m), how fast it follows (per second), and how far from the camera it runs (m).
     private const float RayUp = 0.6f;
@@ -66,6 +69,8 @@ public partial class BotModelView : Node3D
     private BotView? _view;
     private Quaternion _tiltTarget = Quaternion.Identity;
     private float _liftTarget;
+    private double _lastEffect = double.NegativeInfinity;
+    private readonly List<string> _effects = [];
 
     /// <summary>The bot's type; its <see cref="Bot.Model"/> is the one shown.</summary>
     public Bot Type { get; init; } = null!;
@@ -81,6 +86,9 @@ public partial class BotModelView : Node3D
 
     /// <summary>Legs that plant their feet, for tests.</summary>
     public int Legs => _legs.Count;
+
+    /// <summary>Effects shown so far (<see cref="BotEffects"/> kinds), for tests.</summary>
+    public IReadOnlyList<string> Effects => _effects;
 
     /// <summary>How engaged the eye looks, 0 (calm) to 1, for tests.</summary>
     public float EyeEngaged => _eye;
@@ -121,7 +129,7 @@ public partial class BotModelView : Node3D
         {
             // Advanced by hand, so the feet are planted after the clip has posed them.
             _player.CallbackModeProcess = AnimationMixer.AnimationCallbackModeProcess.Manual;
-            foreach (var name in new[] { "idle", "patrol", "chase", "fall" })
+            foreach (var name in new[] { "idle", "patrol", "chase", "fall", "swim", "swim_idle" })
             {
                 if (_player.HasAnimation(name))
                     _player.GetAnimation(name).LoopMode = Animation.LoopModeEnum.Linear;
@@ -145,7 +153,10 @@ public partial class BotModelView : Node3D
         if (view.Dead)
         {
             if (!before.Dead)
+            {
                 PlayOneShot("death");
+                ShowEffect(BotEffects.Death, Type.Attacks.Where(a => a.Kind == BotAttackKind.Area).Select(a => a.Radius).DefaultIfEmpty(Type.Radius * 3f).Max());
+            }
             return;
         }
         if (view.Health < before.Health)
@@ -159,6 +170,8 @@ public partial class BotModelView : Node3D
     /// <summary>The bot used <paramref name="attack"/>: plays its clips in turn.</summary>
     public void Attack(string attack)
     {
+        if (Type.Attack(attack) is { } used)
+            ShowEffect(attack, used.Radius > 0 ? used.Radius : used.Range + Type.Radius);
         if (_view is { Dead: true } || !Model.Attacks.TryGetValue(attack, out var clips))
             return;
         var turn = _attackTurn.GetValueOrDefault(attack);
@@ -187,7 +200,7 @@ public partial class BotModelView : Node3D
 
     public override void _PhysicsProcess(double delta)
     {
-        if (_legs.Count == 0 || !Visible || _view is { Dead: true } || !NearCamera())
+        if (_legs.Count == 0 || !Visible || _view is { Dead: true } or { Swimming: true } || !NearCamera())
         {
             foreach (var leg in _legs)
                 leg.Ground = null;
@@ -221,6 +234,12 @@ public partial class BotModelView : Node3D
         _velocity = _velocity.Lerp(step, 1f - Mathf.Exp(-10f * dt));
         if (_view is { Dead: true })
             return;
+        if (_view is { Swimming: true })
+        {
+            // A swimmer rises and sinks in the water: never a jump or a fall.
+            (_airTime, _falling) = (0f, false);
+            return;
+        }
         var wasFalling = _falling;
         _airTime = _velocity.Y < FallSpeed ? _airTime + dt : 0f;
         _falling = _airTime > FallDelay;
@@ -234,10 +253,14 @@ public partial class BotModelView : Node3D
     {
         var flat = new Vector2(_velocity.X, _velocity.Z).Length();
         var patrolSpeed = Model.ClipSpeeds.GetValueOrDefault("patrol", 1f);
-        var clip = _falling ? "fall"
-            : flat < StandSpeed ? "idle"
+        var walk = flat < StandSpeed ? "idle"
             : _view is { Engaged: true } || flat > patrolSpeed * 1.6f ? "chase"
             : "patrol";
+        // A swimmer swims (or treads water standing still); a model without those clips walks through the water.
+        var swim = flat < StandSpeed ? "swim_idle" : "swim";
+        var clip = _falling ? "fall"
+            : _view is { Swimming: true } && _player!.HasAnimation(swim) ? swim
+            : walk;
         if (!_player!.HasAnimation(clip))
             clip = _player.HasAnimation("idle") ? "idle" : null;
         if (clip is null)
@@ -261,6 +284,19 @@ public partial class BotModelView : Node3D
         _oneShot = clip;
         _oneShotLeft = seek ? 0 : _player.GetAnimation(clip).Length;
         _loop = null;
+    }
+
+    // ---- Effects ----
+
+    private void ShowEffect(string key, float radius)
+    {
+        var now = Time.GetTicksMsec() / 1000.0;
+        if (!Model.Effects.TryGetValue(key, out var kind) || now - _lastEffect < EffectGap || GetParent()?.GetParent() is not { } world)
+            return;
+        _lastEffect = now;
+        _effects.Add(kind);
+        // Under the bot's world rather than the bot, so it plays on after the body is gone.
+        BotEffect.Show(world, kind, GlobalPosition, radius);
     }
 
     // ---- Eye ----
