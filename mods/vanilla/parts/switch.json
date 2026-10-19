@@ -1,21 +1,20 @@
 {
   "id": "switch",
   "name": "Switch",
-  "description": "Use it to turn it on, and again to turn it off.",
+  "description": "Use it to turn it on, and again to turn it off. Its light shows red while off and teal while on.",
   "category": "interactive",
   "mass": 1,
   "durability": 3,
   "friction": 0.5,
-  "buoyancy": 0.3,
+  "buoyancy": 0.2,
   "flammable": false,
-  "stack_size": 20,
+  "stack_size": 10,
   "sound_material": "plastic",
   "size": [1, 1, 1],
-  "mesh": "meshes/switch.glb",
+  "mesh": "meshes/parts/switch.glb",
+  "icon": "textures/items/switch_icon.png",
   "visual": {
-    "color": "#b0473a",
-    "roughness": 0.5,
-    "metallic": 0.2
+    "color": "#ffffff"
   },
   "sockets": [
     {
@@ -35,9 +34,8 @@
     "use": "toggle"
   },
   "display": {
-    "press": {
-      "readout": "on",
-      "depth": 0.015
+    "clips": {
+      "readout": "pose"
     }
   }
 }
