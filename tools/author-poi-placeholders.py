@@ -193,7 +193,7 @@ CROP = "#6aa84f"
 add("camp", "Camp", [14, 3, 14], "track",
     [box([3, 2.2, 4], [-4, 1.1, -3], TENT, 20), box([3, 2.0, 3.5], [4, 1.0, -2], CANVAS, -25), cylinder(0.8, 0.3, [0, 0.15, 2], BURNT),
      box([2.2, 0.4, 0.5], [-1.8, 0.2, 3.6], WOOD, 70), box([1.2, 0.9, 0.8], [5, 0.45, 4], WOOD)],
-    [{"type": "fire", "at": [0.0, 0.3, 2.0]}, {"type": "item", "ref": "wooden_crate", "at": [5.0, 0.0, 4.0]},
+    [{"type": "item", "ref": "wooden_crate", "at": [5.0, 0.0, 4.0]},
      {"type": "item", "ref": "wooden_crate", "at": [-4.0, 0.0, -1.0]}],
     ground="dirt", margin=12,
     spacing={"spacing": [570.0, 820.0], "biomes": ["forest", "autumn_forest", "burned_forest"], "priority": 20, "clearance": 48.0})
