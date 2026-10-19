@@ -1,4 +1,4 @@
-"""Build the standard IO port face (design review of 2026-10-19).
+"""Build the standard IO port face (approved by Chase on 2026-10-19; see docs/io-ports.md).
 
 Every machine that takes items or fluids in or sends them out carries this face where a tube connects. It is not an
 item: machines embed it on a 3 x 3 block face.
@@ -10,6 +10,14 @@ item: machines embed it on a 3 x 3 block face.
 * A raised collar in the middle: gunmetal ring, teal ring, gunmetal lip and a dark bore where the tube seats.
 * Flow arrows: teal arrows pointing out mark an output, copper arrows pointing in mark an input. A two-way port
   carries both (teal on the vertical axis, copper on the horizontal one).
+
+Machine model scripts don't redraw the port: they import this module and call ``mount`` so every machine carries the
+identical face. For example::
+
+    sys.path.insert(0, str(ROOT / "tools" / "io_port"))
+    import build_io_port as io
+    mats = io.materials()
+    io.mount(machine_root, "out", (0, -0.625, 0.5), (0, -1, 0), mats)
 
 How to run (Blender as a Python module, no Blender UI needed):
 
@@ -28,7 +36,7 @@ from pathlib import Path
 
 import bpy  # noqa: I001  (bpy first: it makes bmesh and mathutils importable)
 import bmesh
-from mathutils import Matrix, Vector
+from mathutils import Vector
 
 SIZE = 0.75                  # 3 blocks
 HALF = SIZE / 2
@@ -250,9 +258,8 @@ def build(mode="both", name="IOPort", mats=None):
         for sy in (-1, 1):
             x, y = sx * BOLT, sy * BOLT
             cylinder(f"{name}_washer", 0.026, zf - 0.001, zf + 0.004, m["copper"], root, x=x, y=y, bevel=0.0012)
-            head = cylinder(f"{name}_bolt", 0.018, zf + 0.004, zf + 0.012, m["copper"], root, segs=6, x=x, y=y,
+            cylinder(f"{name}_bolt", 0.018, zf + 0.004, zf + 0.012, m["copper"], root, segs=6, x=x, y=y,
                             bevel=0.0015)
-            head.rotation_euler.z = 0.0
             cylinder(f"{name}_socket", 0.0075, zf + 0.0115, zf + 0.0124, m["bore"], root, segs=6, x=x, y=y)
 
     # collar: gunmetal ring, teal ring, gunmetal lip, bore
@@ -282,6 +289,17 @@ def build(mode="both", name="IOPort", mats=None):
         r = (COLLAR_R + TEAL_RING[1]) / 2
         arrow(f"{name}_tick{k}", (r * math.cos(a), r * math.sin(a)), point, 0.032, 0.03, zf + 0.012, zf + 0.0162,
               mat, root)
+    return root
+
+
+def mount(parent, mode, center, normal, mats=None, name=None):
+    """Put a port of the given mode on a machine: its face centre at center, looking along normal (a grid axis).
+
+    The plate's back sits on center, so the face stands DEPTH proud of the machine's surface."""
+    root = build(mode, name or f"IOPort_{mode}", mats)
+    root.parent = parent
+    root.location = center
+    root.rotation_euler = Vector((0, 0, 1)).rotation_difference(Vector(normal).normalized()).to_euler()
     return root
 
 
@@ -328,14 +346,8 @@ def render_review(out: Path):
     sc.collection.objects.link(mroot)
     mroot.location = (0, 0, 0)
     _machine_box(mats, mroot)
-    p_out = build("out", "MOut", mats)
-    p_out.parent = mroot
-    p_out.rotation_euler = (math.radians(90), 0, 0)
-    p_out.location = (0, -0.625, 0.5)
-    p_in = build("in", "MIn", mats)
-    p_in.parent = mroot
-    p_in.rotation_euler = (math.radians(90), 0, math.radians(90))
-    p_in.location = (0.625, 0, 0.5)
+    mount(mroot, "out", (0, -0.625, 0.5), (0, -1, 0), mats, "MOut")
+    mount(mroot, "in", (0.625, 0, 0.5), (1, 0, 0), mats, "MIn")
     group("mounted", mroot)
 
     shots = {}
