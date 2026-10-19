@@ -133,13 +133,12 @@ public partial class BuildSync : Node, IToolWorld, IPartCatalog
             });
     }
 
-    /// <summary>Reads <see cref="SettingsPath"/>, failing loudly on bad data.</summary>
-    public static BuildSettings LoadSettings()
-    {
-        using var file = FileAccess.Open(SettingsPath, FileAccess.ModeFlags.Read)
-            ?? throw new InvalidOperationException($"Cannot open {SettingsPath}: {FileAccess.GetOpenError()}");
-        return BuildSettings.FromJson(file.GetAsText());
-    }
+    /// <summary>
+    /// Reads <see cref="SettingsPath"/> with the game rules of <paramref name="mods"/> on top (their
+    /// <c>rules/building.patch.json</c>), failing loudly on bad engine data.
+    /// </summary>
+    public static BuildSettings LoadSettings(Core.Data.ModLoadResult? mods = null) =>
+        Mechanica.Game.Mods.GameRules.Load(SettingsPath, "building", mods, BuildSettings.FromJson);
 
     /// <inheritdoc/>
     public Creation? FindCreation(int id)

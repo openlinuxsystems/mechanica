@@ -71,13 +71,12 @@ public partial class FireSync : Node3D, IFireWorld
     /// <summary>The burning sound loop of each fire the host runs, by id (tests look at them).</summary>
     public IReadOnlyDictionary<string, int> Loops => _loops;
 
-    /// <summary>Reads <see cref="SettingsPath"/>, failing loudly on bad data.</summary>
-    public static FireSettings LoadSettings()
-    {
-        using var file = FileAccess.Open(SettingsPath, FileAccess.ModeFlags.Read)
-            ?? throw new InvalidOperationException($"Cannot open {SettingsPath}: {FileAccess.GetOpenError()}");
-        return FireSettings.FromJson(file.GetAsText());
-    }
+    /// <summary>
+    /// Reads <see cref="SettingsPath"/> with the game rules of <paramref name="mods"/> on top (their
+    /// <c>rules/fire.patch.json</c>), failing loudly on bad engine data.
+    /// </summary>
+    public static FireSettings LoadSettings(Core.Data.ModLoadResult? mods = null) =>
+        Mechanica.Game.Mods.GameRules.Load(SettingsPath, "fire", mods, FireSettings.FromJson);
 
     /// <summary>Makes the host's fire and registers <c>GetFires</c>. Call after the survival actions.</summary>
     public void RegisterActions(ActionDispatcher dispatcher)
