@@ -392,8 +392,8 @@
   },
   "properties": {
     "speed": 20,
-    "torque": 160,
-    "brake": 100,
+    "torque": 300,
+    "brake": 225,
     "fuel": "battery_pack",
     "fuel_time": 90,
     "loop_parameter": "speed",
