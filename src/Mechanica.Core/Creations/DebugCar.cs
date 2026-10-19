@@ -62,7 +62,7 @@ public sealed record DebugCarParts(int Seat, int Engine, int Container, int Stee
 /// A working car of scrap parts for driving round while the game is in development (debug builds only): a 6 by 12
 /// block Scrap Wood deck with a Scrap Metal bumper, a Scrap Driver's Seat, a Scrap Gas Engine behind it driving the rear
 /// wheels, a Gas Container beside the engine, and four Scrap Wheels on bearings. The front axle turns on an upright
-/// bearing the seat steers. The deck runs along Z with the front at z = 0, facing -Z the way the seat and engine face.
+/// bearing the seat steers, and the Gas Container is linked to the engine, which burns its gasoline. The deck runs along Z with the front at z = 0, facing -Z the way the seat and engine face.
 /// </summary>
 public static class DebugCar
 {
@@ -84,7 +84,7 @@ public static class DebugCar
 
     /// <summary>
     /// Builds the car into <paramref name="car"/> (an empty Creation), links the seat to the engine and the steering
-    /// bearing and the engine to the rear wheel bearings, sets the engine's power and switch, and fills the Gas Container.
+    /// bearing, the Gas Container to the engine and the engine to the rear wheel bearings, sets the engine's power and switch, and fills the Gas Container.
     /// Throws when a part does not fit or link, which means the vanilla parts changed shape.
     /// </summary>
     public static DebugCarParts Build(Creation car, DebugCarSettings settings)
@@ -95,8 +95,8 @@ public static class DebugCar
                 Place(car, z == 0 ? "vanilla:scrap_metal_block" : "vanilla:scrap_wood_block", new GridCell(x, 0, z));
         }
         var seat = Place(car, "vanilla:scrap_drivers_seat", new GridCell(1, 1, 3));
-        var engine = Place(car, "vanilla:scrap_gas_engine", new GridCell(1, 1, 9));
-        var container = Place(car, "vanilla:gas_container", new GridCell(3, 1, 9));
+        var engine = Place(car, "vanilla:scrap_gas_engine", new GridCell(0, 1, 9));
+        var container = Place(car, "vanilla:gas_container", new GridCell(2, 1, 9));
 
         // The front axle: a Scrap Metal beam hanging off an upright bearing under the deck.
         var steering = Place(car, "vanilla:bearing", new GridCell(2, -1, FrontAxle), Facing(new GridCell(0, -1, 0)));
@@ -125,6 +125,7 @@ public static class DebugCar
 
         Link(car, seat, engine);
         Link(car, seat, steering);
+        Link(car, container, engine);
         foreach (var bearing in driven)
             Link(car, engine, bearing);
         car.SetPartSettings(engine, new Dictionary<string, JsonElement>

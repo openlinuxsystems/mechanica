@@ -21,6 +21,7 @@ public class DebugCarTests
         Assert.Equal(5, car.Parts.Count(p => p.Part == "vanilla:bearing"));
         Assert.Equal([parts.Engine, parts.Steering], car.LinksFrom(parts.Seat).Order());
         Assert.Equal(parts.Driven.Order(), car.LinksFrom(parts.Engine));
+        Assert.Equal([parts.Engine], car.LinksFrom(parts.Container));
         Assert.Empty(parts.Free.SelectMany(car.LinksTo));
         Assert.Equal(3, car.FindPart(parts.Engine)!.Settings!["gear"].GetInt32());
         Assert.True(car.FindPart(parts.Engine)!.Settings!["on"].GetBoolean());
