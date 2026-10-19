@@ -85,9 +85,10 @@ public partial class CaptureScene : Node
         var small = args.Length > 1 && args[1] == "small_pois";
         var finds = args.Length > 1 && args[1] == "finds";
         var borders = args.Length > 1 && args[1] == "biomes";
+        var cliffs = args.Length > 1 && args[1] == "cliffs";
         var roads = args.Length > 1 && args[1] == "roads";
         var moves = args.Length > 1 && args[1] == "animations";
-        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !roads && !moves ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
+        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
         if (debugCar)
             Main.MenuCharacter = "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
@@ -212,6 +213,11 @@ public partial class CaptureScene : Node
         if (finds)
         {
             FindShots();
+            return;
+        }
+        if (cliffs)
+        {
+            CliffShots();
             return;
         }
         if (moves)
@@ -1091,6 +1097,64 @@ public partial class CaptureScene : Node
     }
 
     // Camera at an offset from the meadow spot, looking at another offset from it.
+    // The cliff steps nearest the spawn, each from its foot: the same spots whatever the face widths, so runs before and
+    // after a terrain change compare. The last shot is the nearest face that stays sheer.
+    private void CliffShots()
+    {
+        Engine.TimeScale = 1.0;
+        var steps = new List<(Vector3 Foot, Vector3 Up)>();
+        Shot("cliffs_00_wait", 60, () => { });
+        Shot("cliffs_00_find", 30, () =>
+        {
+            var gen = _main.Streamer.Generator;
+            var spawn = _main.Streamer.SpawnPoint();
+            (Vector3, Vector3)? sheer = null;
+            for (var r = 150f; r < 3000f && (steps.Count < 4 || sheer is null); r += 40f)
+            {
+                for (var a = 0f; a < Mathf.Tau && (steps.Count < 4 || sheer is null); a += 40f / r)
+                {
+                    var (x, z) = (spawn.X + r * Mathf.Cos(a), spawn.Z + r * Mathf.Sin(a));
+                    var h = gen.HeightAt(x, z);
+                    if (h <= gen.SeaLevel + 1f || gen.BiomeAt(x, z).Id is "mountain" or "lake" || gen.RiverDistance(x, z) < 200f
+                        || gen.PoisAt(x, z).Any() || steps.Any(s => new Vector2(s.Foot.X - x, s.Foot.Z - z).Length() < 400f))
+                        continue;
+                    foreach (var dir in new[] { new Vector3(1, 0, 0), new Vector3(-1, 0, 0), new Vector3(0, 0, 1), new Vector3(0, 0, -1) })
+                    {
+                        if (gen.HeightAt(x + dir.X * 50f, z + dir.Z * 50f) - h < 7f || gen.SlopeAt(x, z) > 0.1f)
+                            continue;
+                        var foot = new Vector3(x, h, z);
+                        var isSheer = Enumerable.Range(0, 25).Any(i => gen.HeightAt(x + dir.X * (i * 2f + 6f), z + dir.Z * (i * 2f + 6f)) - gen.HeightAt(x + dir.X * i * 2f, z + dir.Z * i * 2f) > 6f);
+                        if (steps.Count < 4)
+                            steps.Add((foot, dir));
+                        else if (isSheer && sheer is null)
+                            sheer = (foot, dir);
+                        break;
+                    }
+                }
+            }
+            if (sheer is { } found)
+                steps.Add(found);
+            GD.Print($"[capture] cliff steps at {string.Join(", ", steps.Select(s => s.Foot))}");
+        });
+        for (var i = 0; i < 5; i++)
+        {
+            var k = i;
+            Shot($"cliffs_{k + 1:00}", 150, () =>
+            {
+                if (k >= steps.Count)
+                    return;
+                var (foot, up) = steps[k];
+                var side = new Vector3(up.Z, 0, -up.X);
+                _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, Ground(foot + up * 8f) + Vector3.Up * 0.3f, Mathf.Atan2(-up.X, -up.Z));
+                Player.ThirdPerson = true;
+                _follow = null;
+                _camera.MakeCurrent();
+                _camera.GlobalPosition = Ground(foot - up * 10f + side * 34f) + Vector3.Up * 7f;
+                _camera.LookAt(Ground(foot + up * 26f) + Vector3.Up * 2f);
+            });
+        }
+    }
+
     private void View(Vector3 from, Vector3 to)
     {
         _follow = null;

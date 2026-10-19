@@ -146,8 +146,11 @@ Glowing materials fade from `eye_calm` to `eye_engaged` and back, and go dark wh
 game tilts the body to the ground under the feet, and turns each hip so a foot that is down in the clip stands on
 the ground, on slopes and on creations alike.
 
-Vanilla's Green Scuttler is made by [`tools/scuttler/build_scuttler.py`](../tools/scuttler/build_scuttler.py), a
-Blender script you can copy for a rig of the same shape.
+Vanilla's five Scuttlers are made by [`tools/scuttler/build_scuttler.py`](../tools/scuttler/build_scuttler.py), a
+Blender script you can copy for a rig of the same shape. They share one rig and differ in paint, size and one
+signature piece (`--variant blue` builds just one). In a batch, a bot whose `base` has a model inherits its
+`attacks` map too, so set the base's attack ids to `null` in its own map (`"whip": null`), as the Blue, Yellow,
+Red and Seed Scuttlers do.
 
 ## 3. The behaviour tree
 

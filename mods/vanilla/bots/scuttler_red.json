@@ -12,6 +12,18 @@
     "height": 0.9
   },
   "color": "#d0402e",
+  "model": {
+    "mesh": "meshes/bots/scuttler_red.glb",
+    "attacks": {
+      "explode": [
+        "detonate"
+      ]
+    },
+    "clip_speeds": {
+      "patrol": 0.93,
+      "chase": 3
+    }
+  },
   "attacks": [
     {
       "id": "explode",

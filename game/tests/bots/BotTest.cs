@@ -10,6 +10,7 @@ using Mechanica.Core.Items;
 using Mechanica.Core.Survival;
 using Mechanica.Core.World;
 using Mechanica.Game.Bots;
+using Mechanica.Game.Building;
 using Mechanica.Game.Mods;
 using Mechanica.Scripting;
 using Instance = Mechanica.Game.Tests.NetTestHarness.Instance;
@@ -170,6 +171,26 @@ public partial class BotTest : StagedTest
             return true;
         });
         Stage("the dead raiders are cleared away on the client", _ => ClientBots.Bodies.Count == 0);
+        Stage("every vanilla bot model loads with its legs and clips", _ =>
+        {
+            var shared = new[] { "idle", "patrol", "chase", "fall", "alert", "lose_interest", "hit", "death", "jump", "land" };
+            var vanilla = BotBook.Load(mods).All.Where(b => b.Model is not null && b.ModId == "vanilla").ToList();
+            Check(vanilla.Count >= 5, $"the five Scuttlers have models ({vanilla.Count})");
+            foreach (var type in vanilla)
+            {
+                var view = BotModelView.For(type, _client.Main.Survival.Assets, default);
+                Check(view is not null, $"{type.QualifiedId}'s model loads");
+                if (view is null)
+                    continue;
+                AddChild(view);
+                var player = LiftBody.FindPlayer(view.Scene);
+                var missing = shared.Concat(type.Model!.Attacks.Values.SelectMany(c => c)).Where(c => player?.HasAnimation(c) != true).ToList();
+                Check(view.Legs == 6, $"{type.QualifiedId} has six legs ({view.Legs})");
+                Check(missing.Count == 0, $"{type.QualifiedId} has every clip (missing {string.Join(", ", missing)})");
+                view.QueueFree();
+            }
+            return true;
+        });
     }
 
     // Each stage starts with no results.

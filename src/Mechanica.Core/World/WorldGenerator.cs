@@ -50,6 +50,8 @@ public sealed partial class WorldGenerator
     private readonly uint _cliffSalt;
     private readonly uint _edgeSalt;
     private readonly int _cellReach;
+    private readonly uint _sheerSalt;
+    private readonly float _sheerThreshold;
     private readonly (Vector2 Centre, float Radius)[] _fixedPads;
     private readonly Biome[] _inland;
     private readonly float _inlandWeight;
@@ -93,11 +95,13 @@ public sealed partial class WorldGenerator
         _paintSalt = Noise.Salt(seed, 9);
         _hillSalt = Noise.Salt(seed, 10);
         _cliffSalt = Noise.Salt(seed, 11);
-        _edgeSalt = Noise.Salt(seed, 12);
+        _edgeSalt = Noise.Salt(seed, 13);
         // A cell two or more away is at least 0.19 cell sizes further than the nearest point, one three or more away
         // at least 1.19: look one cell out while every blend and ramp fits inside the first, two cells out otherwise.
         var widest = MathF.Max(_terrain.BiomeBlend, _terrain.Hills?.ShoreRamp ?? 0f);
         _cellReach = widest <= 0.18f * _terrain.BiomeCellSize ? 1 : 2;
+        _sheerSalt = Noise.Salt(seed, 12);
+        _sheerThreshold = SheerThreshold();
         // The hills keep away from sites with a fixed pad height, so the pad is not a pit or a mesa.
         _fixedPads = [.. data.Sites.Where(s => s.Definition.PadHeight is not null && s.Definition.At is [_, _])
             .Select(s => (new Vector2(s.Definition.At![0] * worldSize, s.Definition.At[1] * worldDepth), s.Poi?.Prefab.Radius ?? 0f)),
@@ -427,8 +431,25 @@ public sealed partial class WorldGenerator
             return false;
         var s = rule.Spacing;
         spot = new Vector2((ix + 0.1f + 0.8f * Noise.Unit(Noise.Hash(salt, ix, iz, 1))) * s, (iz + 0.1f + 0.8f * Noise.Unit(Noise.Hash(salt, ix, iz, 2))) * s);
+        // A perched find looks round its cell for a cliff top or ledge, since most of the land is easy slopes.
+        if (rule.Perch is { } perch && !Perched(spot, perch))
+        {
+            for (var k = 1; k < PerchTries; k++)
+            {
+                var other = new Vector2((ix + 0.1f + 0.8f * Noise.Unit(Noise.Hash(salt, ix, iz, 1 + 2 * k))) * s,
+                    (iz + 0.1f + 0.8f * Noise.Unit(Noise.Hash(salt, ix, iz, 2 + 2 * k))) * s);
+                if (Perched(other, perch))
+                {
+                    spot = other;
+                    break;
+                }
+            }
+        }
         return true;
     }
+
+    // Spots a perched scatter rule tries in its cell.
+    private const int PerchTries = 4;
 
     // Whether the ground at a spot suits the rule, ignoring other objects.
     private bool Fits(Scatter rule, Vector2 spot)
@@ -797,11 +818,45 @@ public sealed partial class WorldGenerator
                 + Square(CliffNoise(x, z + 1f, cliffs) - CliffNoise(x, z - 1f, cliffs))) / 2f;
             var rampClimb = cliffs.Levels * noise * (inland * 6f * keep * (1f - keep) / MathF.Max(ramp, 1f)
                 + keep * 6f * inland * (1f - inland) / MathF.Max(cliffs.Inland, 1f));
-            var face = Math.Clamp(cliffs.Face * MathF.Sqrt(noiseClimb * noiseClimb + rampClimb * rampClimb), 0.02f, 1f);
+            var face = Math.Clamp(FaceWidth(x, z, cliffs) * MathF.Sqrt(noiseClimb * noiseClimb + rampClimb * rampClimb), 0.02f, 1f);
             var floor = MathF.Floor(level);
             h += cliffs.Step * (floor + Noise.SmoothStep(1f - face, 1f, level - floor));
         }
         return h;
+    }
+
+    // Metres of ground a cliff face takes here: sheer (face) where the sheer noise is above the threshold that leaves
+    // the sheer share of the island over it, an easy slope (gentle_face) elsewhere, blending between the two.
+    private float FaceWidth(float x, float z, CliffsDefinition cliffs)
+    {
+        if (cliffs.Sheer >= 1f || cliffs.GentleFace <= cliffs.Face)
+            return cliffs.Face;
+        if (cliffs.Sheer <= 0f)
+            return cliffs.GentleFace;
+        var sheer = Noise.SmoothStep(_sheerThreshold - SheerBlend, _sheerThreshold + SheerBlend, SheerNoise(x, z, cliffs));
+        return cliffs.GentleFace + (cliffs.Face - cliffs.GentleFace) * sheer;
+    }
+
+    // Half the width, in sheer noise, of the blend from a sheer face to a gentle one.
+    private const float SheerBlend = 0.04f;
+
+    private float SheerNoise(float x, float z, CliffsDefinition cliffs) =>
+        Noise.Fractal(x / cliffs.SheerScale, z / cliffs.SheerScale, _sheerSalt, 3, 2f, 0.5f);
+
+    // The sheer noise value that the sheer share of the world lies above, from a fixed grid of samples.
+    private float SheerThreshold()
+    {
+        if (_terrain.Cliffs is not { Sheer: > 0f and < 1f } cliffs)
+            return 0f;
+        const int n = 64;
+        var samples = new float[n * n];
+        for (var j = 0; j < n; j++)
+        {
+            for (var i = 0; i < n; i++)
+                samples[j * n + i] = SheerNoise(((i + 0.5f) / n - 0.5f) * WorldSize, ((j + 0.5f) / n - 0.5f) * WorldDepth, cliffs);
+        }
+        Array.Sort(samples);
+        return samples[Math.Clamp((int)((1f - cliffs.Sheer) * samples.Length), 0, samples.Length - 1)];
     }
 
     private float CliffNoise(float x, float z, CliffsDefinition cliffs) =>
@@ -896,7 +951,8 @@ public sealed partial class WorldGenerator
         return h;
     }
 
-    private IReadOnlyList<PoiInstance> PoisNear(float x, float z) =>
+    // The POIs whose footprint reaches into the bucket a position is in.
+    internal IReadOnlyList<PoiInstance> PoisNear(float x, float z) =>
         _poiBuckets.GetValueOrDefault(((int)MathF.Floor(x / PoiBucket), (int)MathF.Floor(z / PoiBucket))) ?? (IReadOnlyList<PoiInstance>)[];
 
     private IEnumerable<PoiInstance> PoisOverlapping(float x0, float z0, float x1, float z1) =>

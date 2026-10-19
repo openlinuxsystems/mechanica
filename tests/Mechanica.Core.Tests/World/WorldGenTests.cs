@@ -89,6 +89,39 @@ public class WorldGenTests
     }
 
     [Fact]
+    public void MostCliffStepsAreSlopesAndOnlySomeStaySheer()
+    {
+        // Chase: hard cliffs everywhere meant long detours. Most 8 m steps are slopes a player walks or drives up; a
+        // few stretches of the island keep sheer faces.
+        var gen = Vanilla.Value;
+        int steps = 0, sheer = 0;
+        for (var z = -gen.WorldDepth / 2f + 600f; z < gen.WorldDepth / 2f - 600f; z += 53f)
+        {
+            for (var x = -gen.WorldSize / 2f + 600f; x < gen.WorldSize / 2f - 600f; x += 4f)
+            {
+                var h = gen.HeightAt(x, z);
+                if (h <= gen.SeaLevel || gen.BiomeAt(x, z).Id is "mountain" or "lake" || gen.RiverDistance(x, z) < 200f)
+                    continue;
+                // A step: the ground climbs most of a cliff level within 40 m; sheer if it does so within 6 m.
+                if (MathF.Abs(gen.HeightAt(x + 40f, z) - h) < 6f)
+                    continue;
+                steps++;
+                for (var d = 0f; d < 40f; d += 2f)
+                {
+                    if (MathF.Abs(gen.HeightAt(x + d + 6f, z) - gen.HeightAt(x + d, z)) > 6f)
+                    {
+                        sheer++;
+                        break;
+                    }
+                }
+                x += 40f;
+            }
+        }
+        Assert.True(steps > 200, $"steps ({steps})");
+        Assert.InRange(sheer, 10, steps / 5);
+    }
+
+    [Fact]
     public void ChunksAcrossTheWorldGenerate()
     {
         var gen = Vanilla.Value;
@@ -596,6 +629,8 @@ public class WorldGenTests
     [InlineData("""{ "terrain": { "hills": { "height": 40, "octaves": 12 } }, "biomes": [{ "id": "a" }] }""", "$.terrain.hills.octaves")]
     [InlineData("""{ "terrain": { "cliffs": { "levels": 40 } }, "biomes": [{ "id": "a" }] }""", "$.terrain.cliffs.levels")]
     [InlineData("""{ "terrain": { "cliffs": { "face": 0 } }, "biomes": [{ "id": "a" }] }""", "$.terrain.cliffs.face")]
+    [InlineData("""{ "terrain": { "cliffs": { "sheer": 1.5 } }, "biomes": [{ "id": "a" }] }""", "$.terrain.cliffs.sheer")]
+    [InlineData("""{ "terrain": { "cliffs": { "gentle_face": 0 } }, "biomes": [{ "id": "a" }] }""", "$.terrain.cliffs.gentle_face")]
     [InlineData("""{ "biomes": [{ "id": "a", "hills": 2 }] }""", "$.biomes[0].hills")]
     [InlineData("""{ "biomes": [{ "id": "a", "color": "green" }] }""", "$.biomes[0].color")]
     [InlineData("""{ "biomes": [{ "id": "a", "scatter": [{ "object": "tree", "spacing": 5, "chance": 0.5 }] }] }""", "$.biomes[0].scatter[0].object")]
