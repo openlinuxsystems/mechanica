@@ -225,7 +225,7 @@
       "recipes": [
         {
           "id": "scrap_wood_block",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator", "portable_fabricator"],
           "inputs": [
             { "item": "scrap_wood", "count": 1 }
           ],
@@ -249,7 +249,7 @@
       "recipes": [
         {
           "id": "scrap_wood_wedge",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator", "portable_fabricator"],
           "inputs": [
             { "item": "scrap_wood", "count": 1 }
           ],
@@ -285,7 +285,7 @@
       "recipes": [
         {
           "id": "scrap_metal_block",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator", "portable_fabricator"],
           "inputs": [
             { "item": "scrap_metal", "count": 1 }
           ],
@@ -309,7 +309,7 @@
       "recipes": [
         {
           "id": "scrap_metal_wedge",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator", "portable_fabricator"],
           "inputs": [
             { "item": "scrap_metal", "count": 1 }
           ],

@@ -127,6 +127,28 @@ public class CraftingTests
     }
 
     [Fact]
+    public void AStationNamesItsStartWorkAndCompleteClips()
+    {
+        var (creation, bench) = Station();
+        Give(Player, Scrap, 4);
+        Give(Player, Wood, 2);
+        Assert.True(Dispatch(Player, InventoryActions.Craft, new { creation, part = bench, recipe = "test:chest", count = 2 }).Ok);
+
+        _items.Tick(1f);
+        Assert.Equal([$"{creation}/{bench} station=open>work_loop#1"], _world.Readouts);
+        _items.Tick(1f); // the first chest: still working, no new clip
+        _items.Tick(1f);
+        Assert.Single(_world.Readouts);
+        _items.Tick(1f); // the second, and the queue is empty
+        Assert.Equal($"{creation}/{bench} station=close#2", _world.Readouts[^1]);
+
+        Give(Player, Scrap, 1);
+        Assert.True(Dispatch(Player, InventoryActions.Craft, new { creation, part = bench, recipe = "test:blocks", count = 1 }).Ok);
+        _items.Tick(0.1f);
+        Assert.Equal($"{creation}/{bench} station=open>work_loop#3", _world.Readouts[^1]); // a new value plays it again
+    }
+
+    [Fact]
     public void AStationWithAFullOutputStopsItsWorkLoop()
     {
         var (creation, bench) = Station();
@@ -580,6 +602,11 @@ public class CraftingTests
 
         public void SetPartLoop(int creation, int partId, string? sound, string ownerModId) =>
             Sounds.Add(sound is null ? $"stop loop {creation}/{partId}" : $"loop {sound}@{ownerModId} {creation}/{partId}");
+
+        public List<string> Readouts { get; } = [];
+
+        public void SetReadout(int creation, int partId, string id, string? text) =>
+            Readouts.Add($"{creation}/{partId} {id}={text ?? "none"}");
 
         public int NextCreationId() => _nextId++;
 

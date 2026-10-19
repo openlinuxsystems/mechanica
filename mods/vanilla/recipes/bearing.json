@@ -2,7 +2,7 @@
   "id": "bearing",
   "stations": [
     "fabricator",
-    "mini_fabricator"
+    "portable_fabricator"
   ],
   "inputs": [
     {

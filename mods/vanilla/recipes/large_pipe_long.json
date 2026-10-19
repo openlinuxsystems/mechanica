@@ -1,8 +1,7 @@
 {
   "id": "large_pipe_long",
   "stations": [
-    "fabricator",
-    "mini_fabricator"
+    "fabricator"
   ],
   "inputs": [
     {

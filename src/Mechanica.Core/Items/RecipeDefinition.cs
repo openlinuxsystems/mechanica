@@ -11,7 +11,7 @@ namespace Mechanica.Core.Items;
 /// <code>
 /// {
 ///   "id": "chest",
-///   "stations": ["fabricator", "mini_fabricator"],
+///   "stations": ["fabricator", "portable_fabricator"],
 ///   "inputs": [ { "item": "scrap_wood", "count": 4 }, { "item": "scrap_metal", "count": 2 } ],
 ///   "outputs": [ { "item": "chest", "count": 1 } ],
 ///   "time": 4

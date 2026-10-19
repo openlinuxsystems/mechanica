@@ -1,8 +1,7 @@
 {
   "id": "metal_railing",
   "stations": [
-    "fabricator",
-    "mini_fabricator"
+    "fabricator"
   ],
   "inputs": [
     {

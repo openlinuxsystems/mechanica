@@ -1,8 +1,7 @@
 {
   "id": "bumper_front",
   "stations": [
-    "fabricator",
-    "mini_fabricator"
+    "fabricator"
   ],
   "inputs": [
     {

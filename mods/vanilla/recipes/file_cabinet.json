@@ -1,8 +1,7 @@
 {
   "id": "file_cabinet",
   "stations": [
-    "fabricator",
-    "mini_fabricator"
+    "fabricator"
   ],
   "inputs": [
     {

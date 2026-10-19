@@ -27,7 +27,7 @@ internal static class ItemParts
         .Add(Chest, Placeable("chest", "Chest", PartCategory.Container, new InventoryDefinition { Slots = 4 }, null))
         .Add(Tank, Placeable("tank", "Tank", PartCategory.Container, new InventoryDefinition { Slots = 1, Accepts = ["test:fuel"] }, null))
         .Add(Bench, Placeable("bench", "Bench", PartCategory.Station, new InventoryDefinition { Slots = 2 },
-            new CraftingDefinition { Speed = 2, QueueSize = 2 }) with
+            new CraftingDefinition { Speed = 2, QueueSize = 2, Clips = new() { Start = "open", Work = "work_loop", Complete = "close" } }) with
         {
             Sounds = new() { ["start"] = "bench_start", ["work"] = "bench_work", ["complete"] = "bench_done" },
         })
