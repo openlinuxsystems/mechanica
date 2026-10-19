@@ -2,6 +2,50 @@
   "format_version": 1,
   "parts": [
     {
+      "file": "parts/gasoline.json",
+      "template": "item",
+      "set": {
+        "name": "Gasoline",
+        "description": "A red can of fuel. Load it into a Gas Container: gas engines, the Scrap Gas Engine and thrusters burn it from their creation's containers. Flammable.",
+        "category": "resource",
+        "loose": true,
+        "mass": 20,
+        "durability": 2,
+        "friction": 0.4,
+        "buoyancy": 0.7,
+        "flammable": true,
+        "stack_size": 20,
+        "sound_material": "plastic",
+        "size": [2, 2, 2],
+        "icon": "textures/items/gasoline_icon.png",
+        "visual": { "color": "#ffffff", "roughness": 0.6, "metallic": 0 },
+        "sounds": { "pickup": "pickup_fuel" }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/gasoline.glb" }]
+    },
+    {
+      "file": "parts/crude_oil.json",
+      "template": "item",
+      "set": {
+        "name": "Crude Oil",
+        "description": "A canister of crude oil from an oil geyser or a chemical pool. Craft it into Gasoline, or use it to craft engines, suspension and pistons. Flammable.",
+        "category": "resource",
+        "loose": true,
+        "mass": 40,
+        "durability": 2,
+        "friction": 0.4,
+        "buoyancy": 0.3,
+        "flammable": true,
+        "stack_size": 20,
+        "sound_material": "metal",
+        "size": [2, 2, 2],
+        "icon": "textures/items/crude_oil_icon.png",
+        "visual": { "color": "#ffffff", "roughness": 0.6, "metallic": 0 },
+        "sounds": { "pickup": "pickup_fuel" }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/crude_oil.glb" }]
+    },
+    {
       "file": "parts/carrot_seed.json",
       "template": "item",
       "set": {
@@ -168,7 +212,7 @@
       "recipes": [
         {
           "id": "water_bucket",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator"],
           "inputs": [
             {
               "item": "scrap_metal",
@@ -247,7 +291,7 @@
       "recipes": [
         {
           "id": "potato_blaster",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator"],
           "inputs": [
             {
               "item": "scrap_metal",
@@ -284,7 +328,7 @@
       "recipes": [
         {
           "id": "connect_tool",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator", "portable_fabricator"],
           "inputs": [
             {
               "item": "scrap_metal_block",
@@ -358,7 +402,7 @@
       "recipes": [
         {
           "id": "paint_tool",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator"],
           "inputs": [
             {
               "item": "scrap_metal_block",
@@ -399,7 +443,7 @@
       "recipes": [
         {
           "id": "paint_ammo",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator"],
           "inputs": [
             {
               "item": "tomato",
@@ -550,7 +594,7 @@
       "recipes": [
         {
           "id": "popper",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator"],
           "inputs": [
             {
               "item": "tomato",
@@ -598,7 +642,7 @@
       "recipes": [
         {
           "id": "soil_bag",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator"],
           "inputs": [
             {
               "item": "scrap_wood",
@@ -708,7 +752,7 @@
       "recipes": [
         {
           "id": "respawn_bed",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator"],
           "inputs": [
             {
               "item": "scrap_wood",

@@ -420,6 +420,7 @@ public partial class Main : Node3D
             Name = "Inventory",
             Session = Session,
             Sounds = Sounds,
+            Readouts = () => Scripts?.Runtime.Readouts,
             Players = PlayerSync,
             Creations = Creations,
             Catalog = mods,

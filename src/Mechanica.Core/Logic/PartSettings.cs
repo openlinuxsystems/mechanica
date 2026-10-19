@@ -13,6 +13,22 @@ public static class PartSettings
     public static SettingDefinition? Find(PartDefinition part, string id) =>
         part.Settings?.FirstOrDefault(s => s.Id == id);
 
+    /// <summary>
+    /// The part with a sequence setting (a Controller) linked into <paramref name="partId"/> while that part's menu
+    /// locks for one (<see cref="MenuDefinition.LockWhenSequenced"/>), or null when its settings are free to change.
+    /// </summary>
+    public static int? Sequencer(Creations.Creation creation, int partId)
+    {
+        if (creation.DefinitionOf(partId).Menu?.LockWhenSequenced != true)
+            return null;
+        foreach (var from in creation.LinksTo(partId))
+        {
+            if (creation.DefinitionOf(from).Settings?.Any(s => s.Type == SettingType.Sequence) == true)
+                return from;
+        }
+        return null;
+    }
+
     /// <summary>The value a part starts with (see <see cref="SettingDefinition.Default"/>).</summary>
     public static JsonElement DefaultOf(SettingDefinition setting) => setting.Default ?? setting.Type switch
     {

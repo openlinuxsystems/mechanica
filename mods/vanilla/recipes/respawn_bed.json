@@ -1,8 +1,7 @@
 {
   "id": "respawn_bed",
   "stations": [
-    "fabricator",
-    "mini_fabricator"
+    "fabricator"
   ],
   "inputs": [
     {

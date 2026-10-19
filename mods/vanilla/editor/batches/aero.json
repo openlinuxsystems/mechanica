@@ -70,7 +70,7 @@
       "recipes": [
         {
           "id": "wing",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 2 }, { "item": "component_kit", "count": 1 }],
           "outputs": [{ "item": "wing", "count": 1 }],
           "time": 4
@@ -113,7 +113,7 @@
       "recipes": [
         {
           "id": "control_surface",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 1 }, { "item": "component_kit", "count": 1 }],
           "outputs": [{ "item": "control_surface", "count": 1 }],
           "time": 3

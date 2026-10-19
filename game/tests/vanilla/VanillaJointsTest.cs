@@ -73,9 +73,9 @@ public partial class VanillaJointsTest : StagedTest
                 .Select(f => Path.GetRelativePath(_scratchMod, f).Replace('\\', '/'))
                 .Where(IsBatchOutput)
                 .Order(StringComparer.Ordinal).ToList();
-            // The bearing's and the sport suspension's models are files made elsewhere (tools/bearing_engine,
-            // tools/sport_suspension), so they get no generated mesh.
-            Check(made.Count == 13, $"it writes a part, an editor source, a mesh (but the bearing's and the two suspensions') and a recipe for each ({made.Count} files)");
+            // Every joint part's models are files made elsewhere (tools/bearing_engine, tools/piston,
+            // tools/sport_suspension, tools/offroad_suspension), so none gets a generated mesh.
+            Check(made.Count == 12, $"it writes a part, an editor source and a recipe for each ({made.Count} files)");
             var differing = made.Where(f => !File.Exists(Path.Combine(VanillaDir, f))
                 || !File.ReadAllBytes(Path.Combine(VanillaDir, f)).AsSpan().SequenceEqual(File.ReadAllBytes(Path.Combine(_scratchMod, f)))).ToList();
             Check(differing.Count == 0, $"every file matches mods/vanilla (differing: {string.Join(", ", differing)}); re-run tools/author-vanilla.sh");
@@ -164,9 +164,10 @@ public partial class VanillaJointsTest : StagedTest
             }
             return true;
         });
-        Add("the piston pushes out when its input comes on", frame => Stroke(frame, 1f, 1f));
-        Add("the client shows the piston extended", frame => frame >= 30 && CheckClient(_piston));
+        Add("the piston pushes out when its input comes on", frame => Stroke(frame, 1f, 1.75f));
+        Add("the client shows the piston extended, rod and all", frame => frame >= 30 && CheckClient(_piston) && CheckRod(14));
         Add("the piston pulls back when its input goes off", frame => Stroke(frame, 0f, 0f));
+        Add("the rod goes back into the piston", frame => frame >= 30 && CheckRod(0));
         Add("the client shows the cars where the host has them", frame =>
         {
             if (frame < 60)
@@ -211,11 +212,24 @@ public partial class VanillaJointsTest : StagedTest
             var call = _host.Main.Scripts.Runtime.Invoke(Lift, _piston, ScriptRuntime.Hooks.OnPower, input);
             Check(call.Ok, $"on_power({input}) runs ({call.Error})");
         }
-        // 1 m at 1 m/s, plus the slow-down at the end.
-        if (frame < 120)
+        // Piston 1's 7 blocks (1.75 m) at 2 blocks/s (0.5 m/s), plus the slow-down at the end.
+        if (frame < 300)
             return false;
         var length = Position(_host, Lift, _piston);
         Check(MathF.Abs(length - expected) < 0.01f, $"the piston holds {expected} m ({length:F4})");
+        return true;
+    }
+
+    // The rod shows one 0.125 m segment per half block of stroke, on host and client, and the head rides the far side.
+    private bool CheckRod(int segments)
+    {
+        foreach (var instance in new[] { _host, _client })
+        {
+            var node = instance.Main.Creations.NodeOf(Lift)!;
+            var shown = node.RodSegments.Where(r => r.Part == _piston).Select(r => r.Segments).ToList();
+            Check(shown.Count == 1 && shown[0] == segments, $"{instance} shows {segments} rod segments ({string.Join(", ", shown)})");
+            Check(node.Bodies.Skip(1).Any(b => b.GetNodeOrNull($"Part{_piston}head") is not null), $"{instance} moves the head with what is on it");
+        }
         return true;
     }
 

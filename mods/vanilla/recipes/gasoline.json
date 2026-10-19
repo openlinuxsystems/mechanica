@@ -1,7 +1,8 @@
 {
   "id": "gasoline",
   "stations": [
-    "refiner"
+    "refiner",
+    "portable_fabricator"
   ],
   "inputs": [
     {

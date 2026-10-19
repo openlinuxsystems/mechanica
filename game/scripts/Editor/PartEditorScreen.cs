@@ -767,6 +767,16 @@ public partial class PartEditorScreen : Control
     }
 
     // Inventory and crafting station fields (chunk 18). Turning either on or off rebuilds the inspector.
+    private void SetStationClips(string undo, Func<StationClipsDefinition, StationClipsDefinition> change) =>
+        Set(undo, x =>
+        {
+            var clips = change(x.Crafting!.Clips ?? new StationClipsDefinition());
+            var empty = clips.Start is null && clips.Work is null && clips.Complete is null;
+            return x with { Crafting = x.Crafting with { Clips = empty ? null : clips } };
+        });
+
+    private static string? Blank(string? text) => string.IsNullOrWhiteSpace(text) ? null : text.Trim();
+
     private void AddStorageFields(PartDefinition d)
     {
         _partGrid.AddHeading("Storage and crafting");
@@ -794,6 +804,13 @@ public partial class PartEditorScreen : Control
                 v => Set("Set queue size", x => x with { Crafting = x.Crafting! with { QueueSize = (int?)v } }), optional: true, fallback: 1);
             _partGrid.AddNumber("Link range", crafting.LinkRange, 0, 8, 0.25,
                 v => Set("Set link range", x => x with { Crafting = x.Crafting! with { LinkRange = (float?)v } }), optional: true, fallback: 0, suffix: "m");
+            // The model clips that follow the station's work; the part plays them through display.clips with readout "station".
+            _partGrid.AddText("Start clip", crafting.Clips?.Start,
+                v => SetStationClips("Set start clip", c => c with { Start = Blank(v) }), "played once when it begins working");
+            _partGrid.AddText("Work clip", crafting.Clips?.Work,
+                v => SetStationClips("Set work clip", c => c with { Work = Blank(v) }), "craft_loop, played while it works");
+            _partGrid.AddText("Complete clip", crafting.Clips?.Complete,
+                v => SetStationClips("Set complete clip", c => c with { Complete = Blank(v) }), "played once when it stops");
         }
         // Upgrade levels (UI spec §4): a JSON list of { "cost": [...], "set": { ... } }, checked like the rest of the part.
         _partGrid.AddJson("Upgrades", d.Upgrades is { Count: > 0 } upgrades ? JsonSerializer.Serialize(upgrades, DataJson.WriteOptions) : "[]", text =>

@@ -275,14 +275,21 @@ public sealed class PartDisplayVisual
             if (value != _clipValue)
             {
                 _clipValue = value;
-                var name = value?.Split('#')[0];
-                if (name is not null && _player.HasAnimation(name))
+                // "start>run_loop#3": play start, then run_loop; what follows the # only makes the value new.
+                var names = value?.Split('#')[0].Split('>') ?? [];
+                if (names.Length > 0 && _player.HasAnimation(names[0]))
                 {
-                    Clip = name;
+                    Clip = names[0];
                     _player.Stop();
-                    _player.Play(name);
+                    _player.Play(names[0]);
+                    foreach (var next in names.Skip(1).Where(n => _player.HasAnimation(n)))
+                        _player.Queue(next);
                 }
             }
+            if (_display.Clips.Idle is { } idle && !_player.IsPlaying() && _player.HasAnimation(idle))
+                _player.Play(idle);
+            if (_player.IsPlaying())
+                Clip = _player.CurrentAnimation;
             foreach (var (scrub, player, clip) in _scrubs)
             {
                 var at = Math.Clamp(Value(scrub.Readout), 0f, 1f) * (float)clip.Length;

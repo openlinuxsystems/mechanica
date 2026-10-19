@@ -1,0 +1,60 @@
+{
+  "id": "portable_fabricator",
+  "name": "Portable Fabricator",
+  "description": "A carry-along FAB-1 that works one craft at a time from a short recipe list: basic blocks, bearings, switches, scrap wheels, gasoline from crude oil and the Connect Tool. Put it on a vehicle for repairs far from base.",
+  "category": "station",
+  "mass": 8,
+  "durability": 6,
+  "friction": 0.5,
+  "buoyancy": 0.5,
+  "flammable": false,
+  "stack_size": 5,
+  "sound_material": "metal",
+  "size": [4, 3, 3],
+  "mesh": "meshes/parts/portable_fabricator.glb",
+  "icon": "textures/items/portable_fabricator_icon.png",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.5,
+    "metallic": 0.6
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.375, 0],
+      "normal": [0, -1, 0]
+    },
+    {
+      "id": "back",
+      "type": "structural",
+      "position": [0, 0, 0.375],
+      "normal": [0, 0, 1]
+    }
+  ],
+  "sounds": {
+    "start": "fabricator_start",
+    "work": "fabricator_work",
+    "complete": "fabricator_complete",
+    "place": "place_metal"
+  },
+  "inventory": {
+    "slots": 4
+  },
+  "crafting": {
+    "speed": 0.5,
+    "queue_size": 1,
+    "link_range": 0.5,
+    "clips": {
+      "start": "start",
+      "work": "craft_loop",
+      "complete": "complete"
+    }
+  },
+  "display": {
+    "clips": {
+      "readout": "station",
+      "idle": "idle_loop"
+    }
+  }
+}
