@@ -156,7 +156,7 @@ public sealed partial class ScriptRuntime
         /// <summary><c>on_use(target)</c>: the player used the item; what it returns is the action's value.</summary>
         public const string OnUse = "on_use";
 
-        /// <summary><c>on_hit(landing)</c>: a projectile the item launched hit something or ran out of time.</summary>
+        /// <summary><c>on_hit(landing)</c>: a projectile the script launched hit something or ran out of time.</summary>
         public const string OnHit = "on_hit";
 
         /// <summary><c>can_reload_item()</c>: may the item be reloaded now? Nil to allow, or the reason it can't. Changes nothing.</summary>

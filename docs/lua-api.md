@@ -110,7 +110,7 @@ Held items have their own hooks (see [Item scripts](#item-scripts)):
 | `on_aim(on)` | The player started (`true`) or stopped (`false`) aiming with right click (`AimItem`): wind up a bow, raise a shield. |
 | `can_use(target)` | Before every use. Return `nil` to allow it, or a string: the reason the host refuses the use. It may read but not change the world. |
 | `on_use(target)` | The player used the item. `target` is `{from, direction, aiming, creation?, part?}`: their eyes, where they aim, whether they hold right click to aim, and the Creation and part in reach under the crosshair. What it returns (plain data) is the `UseItem` action's result. |
-| `on_hit(landing)` | A projectile the item launched landed: `{id, position, hit?, data}`. `hit` is missing when its lifetime ran out. |
+| `on_hit(landing)` | A projectile the script launched landed: `{id, position, hit?, data}`. `hit` is missing when its lifetime ran out. Part and mod scripts have it too. |
 | `can_reload_item()` | Before every reload. Return `nil` to allow it, or a string: the reason the host refuses it. It may read but not change the world. |
 | `on_reload_item()` | The player pressed Reload (R) with the item in hand (`ReloadItem`). An item that does not define it cannot be reloaded. |
 
@@ -335,9 +335,10 @@ The holder's inventory. Item ids may be bare (`potato`, in the item's own mod) o
 | `inventory.count(item)` | How many of `item` they carry. |
 | `inventory.take(item, count?)` | Takes `count` (default 1). `true`, or `false` (and nothing taken) when they carry fewer. |
 
-Part scripts can use `combat.cast`, `combat.hit`, `combat.hitscan`, `farm.soil` and `farm.water` too (a
-saw, a drill, a water cannon or a mounted gun), and both kinds use [`fire`](#fire). They act for the host, skip nothing (aim rays out of the
-part) and have no reach limit beyond the ray's range.
+Part and mod scripts can use every `combat` function, `farm.soil` and `farm.water` too (a saw, a drill, a water
+cannon, a mounted gun or a mortar), and both kinds use [`fire`](#fire). They act for the host, skip nothing (aim rays
+and launch projectiles from just outside the part) and have no reach limit beyond the ray's range. A projectile a
+part or mod script launched lands in that script's `on_hit`; a part that is gone by then hears nothing.
 
 ### `combat`
 

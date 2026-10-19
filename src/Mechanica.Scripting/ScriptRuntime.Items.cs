@@ -34,7 +34,8 @@ public sealed partial class ScriptRuntime
 
     private readonly SortedDictionary<(int Peer, string Item), Instance> _items = [];
     private readonly Dictionary<int, (string Item, int Slot)> _held = [];
-    private readonly Dictionary<int, (int Peer, string Item, DynValue Data)> _flights = [];
+    // Projectiles scripts launched: the item, part or mod script that hears on_hit, and its data.
+    private readonly Dictionary<int, (Instance Owner, DynValue Data)> _flights = [];
     // True while on_hit runs for a landed projectile (see Reaching).
     private bool _landing;
     private readonly HashSet<int> _aiming = [];
@@ -336,7 +337,7 @@ public sealed partial class ScriptRuntime
 
     private void OnProjectileLanded(ProjectileLanding landing)
     {
-        if (!_flights.Remove(landing.Id, out var flight) || !_items.TryGetValue((flight.Peer, flight.Item), out var instance) || instance.Fault is not null)
+        if (!_flights.Remove(landing.Id, out var flight) || flight.Owner is not { Fault: null } instance || !IsRunning(instance))
             return;
         var script = instance.File.Context.Script;
         var table = new Table(script);
@@ -355,6 +356,12 @@ public sealed partial class ScriptRuntime
             _landing = false;
         }
     }
+
+    // Still the script it was: an item its holder still has, a part still placed, a mod script still listed.
+    private bool IsRunning(Instance instance) =>
+        instance.IsItem ? _items.TryGetValue((instance.Holder!.Value, instance.PartType), out var item) && item == instance
+        : instance.IsWorld ? _worlds.Contains(instance)
+        : _instances.TryGetValue((instance.Creation, instance.Part), out var part) && part == instance;
 
     // ---- Libraries ----
 
@@ -517,7 +524,7 @@ public sealed partial class ScriptRuntime
         });
         Fn(combat, "splash", args =>
         {
-            var instance = Acting("combat.splash");
+            var (_, caller, _) = Combatant("combat.splash", acting: true);
             var at = LuaValues.ToVector(args[0], "combat.splash", 1);
             var radius = LuaValues.Number(args[1], "combat.splash", 2);
             if (radius <= 0f || radius > _settings.MaxOverlapRadius)
@@ -526,7 +533,7 @@ public sealed partial class ScriptRuntime
             var impulse = LuaValues.OptionalNumber(args[3], "combat.splash", 4) ?? 0f;
             var list = new Table(script);
             var index = 1;
-            foreach (var view in _survival!.Splash(instance.Caller, at, radius, damage, impulse))
+            foreach (var view in _survival!.Splash(caller, at, radius, damage, impulse))
                 list.Set(index++, ViewTable(context, view));
             return DynValue.NewTable(list);
         });
@@ -549,7 +556,7 @@ public sealed partial class ScriptRuntime
         });
         Fn(combat, "projectile", args =>
         {
-            var instance = Acting("combat.projectile");
+            var (instance, _, ignore) = Combatant("combat.projectile", acting: true);
             var from = LuaValues.ToVector(args[0], "combat.projectile", 1);
             var velocity = LuaValues.ToVector(args[1], "combat.projectile", 2);
             var options = args.Count > 2 && !args[2].IsNil() ? args.AsType(2, "combat.projectile", DataType.Table).Table : null;
@@ -563,8 +570,8 @@ public sealed partial class ScriptRuntime
             if ((look is null && options?.Get("look") is { } bad && !bad.IsNil()) || (look is not null && !ProjectileView.Looks.Contains(look)))
                 throw new ScriptRuntimeException($"combat.projectile: look must be one of {string.Join(", ", ProjectileView.Looks)}");
             var data = options?.Get("data") ?? DynValue.Nil;
-            var view = _survival!.Launch(instance.Holder!.Value, from, velocity, gravity, lifetime, look);
-            _flights[view.Id] = (instance.Holder!.Value, instance.PartType, data);
+            var view = _survival!.Launch(ignore, from, velocity, gravity, lifetime, look);
+            _flights[view.Id] = (instance, data);
             return DynValue.NewNumber(view.Id);
         });
         globals.Set("combat", DynValue.NewTable(combat));
@@ -649,6 +656,8 @@ public sealed partial class ScriptRuntime
         {
             if (_survival is null)
                 throw new ScriptRuntimeException($"{function}: combat and farming are not enabled on this host");
+            if (acting)
+                Changing(function);
             return (part, Caller, 0);
         }
         var instance = acting ? Acting(function) : ItemNow();

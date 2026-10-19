@@ -34,7 +34,7 @@ public static class LuaApi
         new("on_aim", "function on_aim(on)", "Item scripts: the player holding the item started (true) or stopped (false) aiming with right click (AimItem).", "Hooks"),
         new("can_use", "function can_use(target)", "Item scripts: return nil to allow a use, or the reason it is refused. May not change the world.", "Hooks"),
         new("on_use", "function on_use(target)", "Item scripts: the player used the item (target has from, direction and aiming, plus creation and part when aimed at a part in reach); the return value is the action's result.", "Hooks"),
-        new("on_hit", "function on_hit(landing)", "Item scripts: a projectile the item launched landed: {id, position, hit?, data}.", "Hooks"),
+        new("on_hit", "function on_hit(landing)", "A projectile the script launched (combat.projectile) landed: {id, position, hit?, data}.", "Hooks"),
         new("can_reload_item", "function can_reload_item()", "Item scripts: return nil to allow a reload, or the reason it is refused. May not change the world.", "Hooks"),
         new("on_reload_item", "function on_reload_item()", "Item scripts: the player pressed Reload (R) with the item in hand (ReloadItem). An item without it cannot be reloaded.", "Hooks"),
 

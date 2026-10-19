@@ -273,6 +273,33 @@ public sealed class ItemScriptTests : IDisposable
     }
 
     [Fact]
+    public void ModScriptsLaunchProjectilesAndSplash()
+    {
+        _rig.Write("scripts/mortar.lua", """
+            function on_create()
+              state.id = combat.projectile(vec3(0, 5, 0), vec3(0, 0, -10), { gravity = vec3(0, -10, 0), data = { radius = 3 } })
+            end
+            function on_hit(landing)
+              state.hits = #combat.splash(landing.position, landing.data.radius, 50)
+            end
+            """);
+        _rig.ModScripts.Add("scripts/mortar.lua");
+        F.World.Feet[You.Peer] = new Vector3(0, 0, -10);
+        F.World.Ray = (start, direction) => start.Y + direction.Y * F.World.LastRange < 0 ? new RayHit(new Vector3(start.X, 0, start.Z)) : null;
+
+        _rig.Runtime.Update(1f / 60);
+        var id = _rig.Runtime.ExportModStates()["test:scripts/mortar.lua"]["id"]!.GetValue<double>();
+        Assert.Contains(F.Survival.Projectiles, p => p.Id == (int)id && p.Owner == 0); // a script's shot spares no player
+        for (var i = 0; i < 120 && F.Survival.Projectiles.Any(); i++)
+            F.Survival.Tick(1f / 60);
+
+        Assert.Empty(F.Survival.Projectiles);
+        Assert.DoesNotContain(_rig.Messages, m => m.Kind == ScriptMessageKind.Error);
+        Assert.True(_rig.Runtime.ExportModStates()["test:scripts/mortar.lua"]["hits"]!.GetValue<double>() >= 1);
+        Assert.True(F.Survival.View(You.Peer)!.Health < 100f);
+    }
+
+    [Fact]
     public void ALobbedShotFliesThenBurstsWhereItLandsOrWhenItsFuseRunsOut()
     {
         // The Popper's way (D14): thrown at 10 m/s, bursting after 0.5 s in the air (about 5 m ahead).
