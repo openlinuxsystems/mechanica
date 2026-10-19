@@ -48,6 +48,9 @@ public static class UiPalette
     /// <summary>Success and "running" states.</summary>
     public const string Success = "#4CD07D";
 
+    /// <summary>The health bar's fill: a green to go with <see cref="Blue"/>, drawn with a faint top-to-bottom shade.</summary>
+    public const string Health = "#36B36B";
+
     /// <summary>Behind a full-screen station window, dims the world (UI spec §0); drawn at <see cref="ScrimOpacity"/>.</summary>
     public const string Scrim = "#0A1220";
 
@@ -231,6 +234,7 @@ public static class UiPalette
         [nameof(Error)] = Error,
         [nameof(Warning)] = Warning,
         [nameof(Success)] = Success,
+        [nameof(Health)] = Health,
         [nameof(Scrim)] = Scrim,
         [nameof(Chrome)] = Chrome,
         [nameof(Chrome2)] = Chrome2,

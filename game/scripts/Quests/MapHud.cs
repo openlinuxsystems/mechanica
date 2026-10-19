@@ -11,7 +11,7 @@ using Mechanica.Game.Ui;
 namespace Mechanica.Game.Quests;
 
 /// <summary>
-/// The maps: the minimap in the top right corner (Options, Interface, Show minimap) and the full map
+/// The maps: the minimap in the bottom right corner (Options, Interface, Show minimap) and the full map
 /// (<see cref="MapWindow"/>), which the Map key (M) opens over the world and frees the mouse for; M, Escape or its X
 /// closes it again. Both show the current missions' goals and the player's own labelled pins.
 /// </summary>
@@ -59,8 +59,8 @@ public partial class MapHud : CanvasLayer, IHudLayer
     /// <summary>Hide GUI leaves the full map up while it is open.</summary>
     public bool KeepWhenHidden => IsOpen;
 
-    /// <summary>The bottom edge of the minimap while it shows, or 0, so the quest log can sit under it.</summary>
-    public static float MinimapBottom { get; private set; }
+    /// <summary>The top edge of the minimap while it shows, or 0, so what else sits bottom right (the ammo counter) goes above it.</summary>
+    public static float MinimapTop { get; private set; }
 
     public override void _Ready()
     {
@@ -98,7 +98,7 @@ public partial class MapHud : CanvasLayer, IHudLayer
     public override void _ExitTree()
     {
         GetViewport().SizeChanged -= Layout;
-        MinimapBottom = 0;
+        MinimapTop = 0;
     }
 
     public override void _Process(double delta)
@@ -106,7 +106,7 @@ public partial class MapHud : CanvasLayer, IHudLayer
         var show = GameSettings.Current.Interface.ShowMinimap && !IsOpen && Players.LocalPlayer is not null && World() is not null;
         if (_minimap.Visible != show)
             _minimap.Visible = show;
-        MinimapBottom = show && Visible ? _minimap.Position.Y + _minimap.Size.Y : 0;
+        MinimapTop = show && Visible ? _minimap.Position.Y : 0;
     }
 
     public override void _UnhandledInput(InputEvent @event)
@@ -155,11 +155,11 @@ public partial class MapHud : CanvasLayer, IHudLayer
     private (Vector3 Feet, float Heading)? PlayerView() =>
         Players.LocalPlayer is { } me ? (me.GlobalPosition, Core.Ui.Compass.Heading(me.Camera.GlobalRotation.Y)) : null;
 
-    // Top right, inside the safe area.
+    // Bottom right, inside the safe area.
     private void Layout()
     {
         var margin = HudRoot.Margin(GetViewport());
         var size = GetViewport().GetVisibleRect().Size;
-        _minimap.Position = new Vector2(size.X - margin.X - MinimapSize, margin.Y);
+        _minimap.Position = new Vector2(size.X - margin.X - MinimapSize, size.Y - margin.Y - MinimapSize);
     }
 }

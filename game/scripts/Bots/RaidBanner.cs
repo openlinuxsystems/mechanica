@@ -31,6 +31,10 @@ public partial class RaidBanner : CanvasLayer
     {
         var raid = Bots.Raid;
         _text.Visible = raid.Phase != RaidPhases.None;
+        // Under the compass, which has the top centre.
+        var top = Mathf.Max(HudRoot.Margin(GetViewport()).Y, CompassHud.Bottom + 4);
+        if (!Mathf.IsEqualApprox(_text.OffsetTop, top))
+            (_text.OffsetTop, _text.OffsetBottom) = (top, top + _text.Size.Y);
         _text.Text = raid.Phase switch
         {
             RaidPhases.Warning => Loc.T("Raid incoming! Level {0}: {1} bots are coming for your crops.", raid.Level, raid.Bots),

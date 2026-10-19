@@ -50,10 +50,12 @@ public partial class MapsTest : StagedTest
             var margin = HudRoot.Margin(GetViewport());
             var rect = _maps.Minimap.GetGlobalRect();
             Check(_maps.Minimap.IsVisibleInTree() && _maps.Minimap.HasPicture, "the minimap shows the map round the player");
-            Check(Mathf.IsEqualApprox(rect.End.X, screen.X - margin.X) && Mathf.IsEqualApprox(rect.Position.Y, margin.Y), $"it sits in the top right corner ({rect})");
+            Check(Mathf.IsEqualApprox(rect.End.X, screen.X - margin.X) && Mathf.IsEqualApprox(rect.End.Y, screen.Y - margin.Y), $"it sits in the bottom right corner ({rect})");
             Check(_maps.Minimap.Shown.Any(p => p.Kind == LogbookMarkKind.Quest), $"the story's goal is on it ({string.Join(", ", _maps.Minimap.Shown.Select(p => p.Waypoint.Id))})");
             var log = _main.GetNode<QuestHud>("QuestHud").GetNode<Control>("QuestLog");
-            Check(!log.Visible || log.GetGlobalRect().Position.Y >= rect.End.Y, $"the quest log sits under it ({log.GetGlobalRect()})");
+            Check(!log.Visible || log.GetGlobalRect().Position.Y < 100, $"the quest log has the top right corner ({log.GetGlobalRect()})");
+            var compass = _maps.Compass!.Bar.GetGlobalRect();
+            Check(Mathf.IsEqualApprox(compass.Position.Y, margin.Y), $"the compass sits at the top of the safe area ({compass})");
             return true;
         });
         Add("a labelled pin nearby is on the minimap with its label", frame =>
@@ -146,9 +148,7 @@ public partial class MapsTest : StagedTest
             }
             if (frame < 3)
                 return false;
-            Check(!_maps.Minimap.Visible && MapHud.MinimapBottom == 0, "the minimap is hidden");
-            var log = _main.GetNode<QuestHud>("QuestHud").GetNode<Control>("QuestLog");
-            Check(!log.Visible || log.GetGlobalRect().Position.Y < 100, $"the quest log takes the corner back ({log.GetGlobalRect()})");
+            Check(!_maps.Minimap.Visible && MapHud.MinimapTop == 0, "the minimap is hidden");
             GameSettings.Apply(new());
             return true;
         });

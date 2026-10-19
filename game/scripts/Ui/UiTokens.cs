@@ -48,6 +48,9 @@ public static class UiTokens
     /// <summary>Success and running states.</summary>
     public static readonly Color Success = From(UiPalette.Success);
 
+    /// <summary>The health bar's fill.</summary>
+    public static readonly Color Health = From(UiPalette.Health);
+
     /// <summary>Behind a station window, dimming the world (at its opacity).</summary>
     public static readonly Color Scrim = From(UiPalette.Scrim, UiPalette.ScrimOpacity);
 

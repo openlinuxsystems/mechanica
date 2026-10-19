@@ -136,6 +136,10 @@ public partial class Spectator : CanvasLayer
 
     public override void _Process(double delta)
     {
+        // Under the compass, which has the top centre.
+        var top = Mathf.Max(HudRoot.Margin(GetViewport()).Y, CompassHud.Bottom + 4);
+        if (!Mathf.IsEqualApprox(_panel.OffsetTop, top))
+            (_panel.OffsetTop, _panel.OffsetBottom) = (top, top + _panel.Size.Y);
         if (_target is not null && (!IsInstanceValid(_target) || !Players.Players.ContainsKey(_target.PeerId)))
         {
             // The watched player left: on to the next one, or back to our own view.

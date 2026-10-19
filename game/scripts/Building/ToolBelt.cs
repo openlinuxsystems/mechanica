@@ -173,6 +173,10 @@ public partial class ToolBelt : Node
         var ammo = AmmoText();
         _ammo!.Visible = ammo is not null && !HudRoot.IsCovered;
         _ammo.Text = ammo ?? "";
+        // Above the minimap, which has the corner, while it shows.
+        var bottom = Quests.MapHud.MinimapTop > 0 ? Quests.MapHud.MinimapTop - 8 - GetViewport().GetVisibleRect().Size.Y : -HudRoot.Margin(GetViewport()).Y;
+        if (!Mathf.IsEqualApprox(_ammo.OffsetBottom, bottom))
+            _ammo.OffsetTop = _ammo.OffsetBottom = bottom;
         HudTop = _hud.Visible && _hud.Text.Length > 0 ? _hud.GetGlobalRect().Position.Y
             : _bar.Visible ? _bar.GetGlobalRect().Position.Y
             : null;
