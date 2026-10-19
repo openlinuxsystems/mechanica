@@ -12,6 +12,8 @@
   "radius": 0.35,
   "eye_height": 1.6,
   "push_force": 600.0,
+  // The tallest edge walked up without jumping: one block (0.25 m) plus room for uneven ground (stairs, soil plots).
+  "step_height": 0.35,
   "crawl_speed": 1.5,
   // Crouching: a shorter capsule (fits under 1.2 m gaps) and a lower camera.
   "crouch_height": 1.2,

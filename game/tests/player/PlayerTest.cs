@@ -163,6 +163,8 @@ public partial class PlayerTest : Node3D
             _player.CurrentInput = PlayerInput.None;
             return true;
         });
+        AddStairs("walk up one-block stairs", 30f, sprint: false);
+        AddStairs("run up one-block stairs", 34f, sprint: true);
     }
 
     public override void _PhysicsProcess(double delta)
@@ -203,6 +205,44 @@ public partial class PlayerTest : Node3D
         _player = new PlayerController { Name = "Player" };
         AddChild(_player);
         _player.GlobalPosition = new Vector3(0, 0.5f, 0);
+    }
+
+    // Two one-block (0.25 m) steps and then a two-block wall along -Z at x: the player walks up both without
+    // jumping and stops at the wall.
+    private void AddStairs(string name, float x, bool sprint)
+    {
+        Add(name, frame =>
+        {
+            if (frame == 0)
+            {
+                AddBox(new Vector3(x, 0.125f, -3f), new Vector3(2f, 0.25f, 2f));
+                AddBox(new Vector3(x, 0.25f, -5f), new Vector3(2f, 0.5f, 2f));
+                AddBox(new Vector3(x, 0.5f, -7f), new Vector3(2f, 1f, 2f));
+                _player.GlobalPosition = new Vector3(x, 0.05f, 0f);
+                _player.Velocity = Vector3.Zero;
+                _leftFloor = false;
+            }
+            _player.CurrentInput = new PlayerInput(0, frame < 10 ? 0 : 1, 0, 0, false, sprint);
+            if (frame > 10)
+                _leftFloor |= _player.Velocity.Y > _player.Settings.JumpSpeed * 0.9f;
+            if (frame < 150)
+                return false;
+            var at = _player.GlobalPosition;
+            Check(at.Y is > 0.45f and < 0.6f && _player.IsOnFloor(), $"the player walked up onto the second step (y={at.Y:F3})");
+            Check(at.Z is > -6f and < -5.5f, $"the two-block wall stops the player (z={at.Z:F3})");
+            Check(!_leftFloor, "the player never jumped");
+            Check(_player.Head.Position.Y <= _player.Settings.EyeHeight + 1e-3f && _player.Head.Position.Y > _player.Settings.EyeHeight - 0.01f,
+                $"the camera has caught up with the body ({_player.Head.Position.Y:F3})");
+            _player.CurrentInput = PlayerInput.None;
+            return true;
+        });
+    }
+
+    private void AddBox(Vector3 centre, Vector3 size)
+    {
+        var box = new StaticBody3D { Position = centre };
+        box.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = size } });
+        AddChild(box);
     }
 
     private bool Mark()
