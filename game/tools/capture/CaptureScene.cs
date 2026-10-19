@@ -36,6 +36,8 @@ namespace Mechanica.Game.Tools;
 /// (<c>tools/capture-portable-fabricator.sh</c>).
 /// Given <c>trees</c> it finds a clear example of every tree type and captures it with the player beside it and close up,
 /// then a forest, an autumn and a burned forest wide, and a felled tree's logs (<c>tools/capture-trees.sh</c>).
+/// Given <c>piston</c> it puts down Pistons at levels 1, 3 and 5 under blocks, linked to a switch, and captures them put
+/// down, pushing out, fully out and pulling back (<c>tools/capture-piston.sh</c>).
 /// Given <c>wheels</c> it sets three little cars down in a meadow, one on each wheel (Scrap Wheel, Wheel, Off Road
 /// Wheel), captures them wide and close, and shows the three wheels on the hotbar (<c>tools/capture-wheels.sh</c>).
 /// Given <c>switch</c> it puts down switches off, on and on a wall, shows each state close up and toggles one
@@ -67,13 +69,15 @@ public partial class CaptureScene : Node
         var seat = args.Length > 1 && args[1] == "scrap_seat";
         var trees = args.Length > 1 && args[1] == "trees";
         var seats = args.Length > 1 && args[1] == "seats";
+        var piston = args.Length > 1 && args[1] == "piston";
         var portable = args.Length > 1 && args[1] == "portable_fabricator";
         var wheels = args.Length > 1 && args[1] == "wheels";
         var debugCar = args.Length > 1 && args[1] == "debug_car";
         var button = args.Length > 1 && args[1] == "button";
         var toggle = args.Length > 1 && args[1] == "switch";
-        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats && !wheels && !debugCar && !button && !toggle
-            && !portable ? args[1] : "scrapper_male";
+        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable ? args[1] : "scrapper_male";
+        if (debugCar)
+            Main.MenuCharacter = "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
         // Building the block wall needs Creative: free parts and no build reach.
         _main.Options = LaunchOptions.Offline with { Seed = 7, GameMode = blocks || soil || wheels || portable ? Core.Survival.GameMode.Creative : LaunchOptions.Offline.GameMode };
@@ -136,6 +140,11 @@ public partial class CaptureScene : Node
         if (seats)
         {
             SeatsShots();
+            return;
+        }
+        if (piston)
+        {
+            PistonShots();
             return;
         }
         if (button)
@@ -1120,6 +1129,54 @@ public partial class CaptureScene : Node
 
     // A slab of metal blocks with the seat on it, a gas engine behind and a switch and a button beside it, all linked
     // from the seat, put down in front of the player.
+    private const int PistonCreation = 9300;
+
+    // Pistons at levels 1, 3 and 5 on a slab, each with a block on its head and all linked to one switch: put down,
+    // pushing out (the rod coming out of the neck segment by segment), fully out, and back in.
+    private void PistonShots()
+    {
+        Engine.TimeScale = 1.0;
+        var toggle = 0;
+        Shot("piston_00_wait", 60, () => { });
+        Shot("piston_01_placed", 90, () =>
+        {
+            var from = Player.GlobalPosition + Player.GlobalTransform.Basis * new Vector3(0, 3, -3.5f);
+            var hit = Player.GetWorld3D().DirectSpaceState.IntersectRay(PhysicsRayQueryParameters3D.Create(from, from + Vector3.Down * 12));
+            _liftAt = hit.Count > 0 ? hit["position"].AsVector3() : Player.GlobalPosition;
+            var creation = new Core.Creations.Creation(PistonCreation, _main.Mods!);
+            int Put(string part, int x, int y, int z) =>
+                creation.TryPlacePart(part, new Core.Creations.GridCell(x, y, z), Core.Creations.GridRotation.Identity, out var placed, out var error)
+                    ? placed.Id : throw new InvalidOperationException(error);
+            for (var x = -3; x <= 3; x++)
+                for (var z = -1; z <= 1; z++)
+                    Put("vanilla:metal_block", x, 0, z);
+            toggle = Put("vanilla:switch", 0, 1, -1);
+            foreach (var (x, level) in new[] { (-2, 0), (0, 2), (2, 4) })
+            {
+                var id = Put("vanilla:piston", x, 1, 0);
+                creation.SetLevel(id, level);
+                Put("vanilla:metal_block", x, 2, 0);
+                creation.TryLink(toggle, id, out _);
+            }
+            creation.SetAllBodyPoses(new Core.Creations.Pose(new System.Numerics.Vector3(_liftAt.X, _liftAt.Y + 0.2f, _liftAt.Z), System.Numerics.Quaternion.Identity));
+            _main.Creations.Add(creation, _main.Assets);
+            LookAtLift(new Vector3(1.4f, 1.0f, -1.9f), 0.45f);
+        });
+        Shot("piston_02_close", 2, () => LookAtLift(new Vector3(0.55f, 0.65f, -0.8f), 0.4f));
+        Shot("piston_03_extending", 50, () =>
+        {
+            _main.Actions.Request(Core.Logic.LogicActions.ActivatePart, new Core.Logic.LogicPartArgs(PistonCreation, toggle), r => GD.Print($"[capture] switch: {r}"));
+            LookAtLift(new Vector3(2.6f, 1.6f, -3.6f), 1.0f);
+        });
+        Shot("piston_04_extended", 300, () => LookAtLift(new Vector3(3.6f, 2.2f, -5.2f), 1.8f));
+        Shot("piston_05_rod_close", 2, () => LookAtLift(new Vector3(0.8f, 0.9f, -1.1f), 0.7f));
+        Shot("piston_06_retracting", 40, () =>
+        {
+            _main.Actions.Request(Core.Logic.LogicActions.ActivatePart, new Core.Logic.LogicPartArgs(PistonCreation, toggle), r => GD.Print($"[capture] switch: {r}"));
+            LookAtLift(new Vector3(3.6f, 2.2f, -5.2f), 1.8f);
+        });
+    }
+
     private void ScrapSeatShots()
     {
         Engine.TimeScale = 1.0;

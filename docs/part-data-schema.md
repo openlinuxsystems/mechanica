@@ -183,6 +183,10 @@ A mesh node in the part's model named after one of its joint sockets (the bearin
 Body joined at that socket, so it turns or slides with what is attached there. Without a joined part it stays put.
 A mesh node named after the socket plus `Flex` (the sport suspension's `mountFlex`: its coil and damper) stays on the
 part but is skewed each frame along the joint's axis, so its end at the socket follows the joint and its far end stays.
+A mesh node named after a `linear` socket plus `Rod` (the piston's `headRod`: one short rod segment, modelled
+retracted inside the part with its outer end just under the head) is repeated along the joint's axis as it slides out:
+copies stacked end to end hang from the moving head back into the part, so the rod reveals segment by segment rather than
+stretching. Like a shaft, the rod has no collision.
 
 The Part Editor's connection preview shows the result on every face: green for rigid, blue for a
 joint, red where nothing attaches.
@@ -464,6 +468,7 @@ Every key is optional.
 | `signals` | bool | Show a line with the part's input and output on the logic bus. |
 | `preview` | object | A see-through shape drawn on the part while its menu is open, sized by a setting (a sensor's cone). |
 | `apply` | bool | Changes wait for an Apply button (or closing the menu) instead of going to the host at once (a controller's frames). |
+| `lock_when_sequenced` | bool | While a part with a `sequence` setting (a Controller) is linked into the part, its menu shows only that the Controller runs it and the host refuses setting changes (a piston). |
 
 Each readout:
 

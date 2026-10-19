@@ -38,29 +38,89 @@
       "file": "parts/piston.json",
       "template": "piston",
       "set": {
-        "name": "Piston",
-        "description": "Pushes whatever is on its head up to 1 m out while its input is on, and pulls it back when it is off.",
+        "name": "Piston 1",
+        "description": "Pushes whatever is on its head up to 7 blocks out while its input is on, and pulls it back when it is off. Set its length and speed with E, or run it from a Controller. Upgrade it in place with Component Kits (U) for more range, speed and force.",
         "mass": 4,
         "durability": 4,
         "stack_size": 20,
+        "icon": "textures/items/piston_1_icon.png",
         "script": "scripts/piston.lua",
-        "visual": { "color": "#7d8792", "roughness": 0.4, "metallic": 0.8 },
+        "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
+        "sockets": [{"id": "base", "type": "structural", "position": [0, -0.125, 0], "normal": [0, -1, 0]}, {"id": "head", "type": "linear", "position": [0, 0.125, 0], "normal": [0, 1, 0], "joint": {"max": 1.75}}],
         "sounds": { "extend": "piston_extend", "retract": "piston_retract", "stall": "piston_stall" },
         "logic": { "inputs": 4, "kind": "bearing" },
-        "display": { "bar": { "readout": "extension", "offset": [0.075, 0.125, 0], "length": 1 } },
-        "properties": { "speed": 1, "force": 5000 }
+        "settings": [{"id": "length", "name": "Length (blocks)", "type": "number", "min": 1, "max": 7, "step": 1, "default": 7}, {"id": "speed", "name": "Speed (blocks/s)", "type": "number", "min": 1, "max": 2, "step": 1, "default": 2}],
+        "menu": { "lock_when_sequenced": true, "readouts": [{ "id": "extension", "name": "Extension", "kind": "bar" }] },
+        "display": {"bar": {"readout": "extension", "offset": [0.075, 0.125, 0], "length": 1.75}},
+        "properties": { "force": 5000 },
+        "upgrades": [
+          {
+            "cost": [{ "item": "component_kit", "count": 2 }],
+            "set": {
+              "name": "Piston 2",
+              "description": "Pushes whatever is on its head up to 9 blocks out while its input is on, and pulls it back when it is off. Set its length and speed with E, or run it from a Controller. Upgrade it in place with Component Kits (U) for more range, speed and force.",
+              "durability": 5,
+              "mesh": "meshes/parts/piston_2.glb",
+              "icon": "textures/items/piston_2_icon.png",
+              "sockets": [{"id": "base", "type": "structural", "position": [0, -0.125, 0], "normal": [0, -1, 0]}, {"id": "head", "type": "linear", "position": [0, 0.125, 0], "normal": [0, 1, 0], "joint": {"max": 2.25}}],
+              "settings": [{"id": "length", "name": "Length (blocks)", "type": "number", "min": 1, "max": 9, "step": 1, "default": 9}, {"id": "speed", "name": "Speed (blocks/s)", "type": "number", "min": 1, "max": 4, "step": 1, "default": 4}],
+              "display": {"bar": {"readout": "extension", "offset": [0.075, 0.125, 0], "length": 2.25}},
+              "properties": { "force": 10000 }
+            }
+          },
+          {
+            "cost": [{ "item": "component_kit", "count": 2 }],
+            "set": {
+              "name": "Piston 3",
+              "description": "Pushes whatever is on its head up to 11 blocks out while its input is on, and pulls it back when it is off. Set its length and speed with E, or run it from a Controller. Upgrade it in place with Component Kits (U) for more range, speed and force.",
+              "durability": 6,
+              "mesh": "meshes/parts/piston_3.glb",
+              "icon": "textures/items/piston_3_icon.png",
+              "sockets": [{"id": "base", "type": "structural", "position": [0, -0.125, 0], "normal": [0, -1, 0]}, {"id": "head", "type": "linear", "position": [0, 0.125, 0], "normal": [0, 1, 0], "joint": {"max": 2.75}}],
+              "settings": [{"id": "length", "name": "Length (blocks)", "type": "number", "min": 1, "max": 11, "step": 1, "default": 11}, {"id": "speed", "name": "Speed (blocks/s)", "type": "number", "min": 1, "max": 6, "step": 1, "default": 6}],
+              "display": {"bar": {"readout": "extension", "offset": [0.075, 0.125, 0], "length": 2.75}},
+              "properties": { "force": 15000 }
+            }
+          },
+          {
+            "cost": [{ "item": "component_kit", "count": 2 }],
+            "set": {
+              "name": "Piston 4",
+              "description": "Pushes whatever is on its head up to 13 blocks out while its input is on, and pulls it back when it is off. Set its length and speed with E, or run it from a Controller. Upgrade it in place with Component Kits (U) for more range, speed and force.",
+              "durability": 7,
+              "mesh": "meshes/parts/piston_4.glb",
+              "icon": "textures/items/piston_4_icon.png",
+              "sockets": [{"id": "base", "type": "structural", "position": [0, -0.125, 0], "normal": [0, -1, 0]}, {"id": "head", "type": "linear", "position": [0, 0.125, 0], "normal": [0, 1, 0], "joint": {"max": 3.25}}],
+              "settings": [{"id": "length", "name": "Length (blocks)", "type": "number", "min": 1, "max": 13, "step": 1, "default": 13}, {"id": "speed", "name": "Speed (blocks/s)", "type": "number", "min": 1, "max": 8, "step": 1, "default": 8}],
+              "display": {"bar": {"readout": "extension", "offset": [0.075, 0.125, 0], "length": 3.25}},
+              "properties": { "force": 20000 }
+            }
+          },
+          {
+            "cost": [{ "item": "component_kit", "count": 2 }],
+            "set": {
+              "name": "Piston 5",
+              "description": "Pushes whatever is on its head up to 15 blocks out while its input is on, and pulls it back when it is off. Set its length and speed with E, or run it from a Controller.",
+              "durability": 8,
+              "mesh": "meshes/parts/piston_5.glb",
+              "icon": "textures/items/piston_5_icon.png",
+              "sockets": [{"id": "base", "type": "structural", "position": [0, -0.125, 0], "normal": [0, -1, 0]}, {"id": "head", "type": "linear", "position": [0, 0.125, 0], "normal": [0, 1, 0], "joint": {"max": 3.75}}],
+              "settings": [{"id": "length", "name": "Length (blocks)", "type": "number", "min": 1, "max": 15, "step": 1, "default": 15}, {"id": "speed", "name": "Speed (blocks/s)", "type": "number", "min": 1, "max": 10, "step": 1, "default": 10}],
+              "display": {"bar": {"readout": "extension", "offset": [0.075, 0.125, 0], "length": 3.75}},
+              "properties": { "force": 25000 }
+            }
+          }
+        ]
       },
-      "model": [
-        { "kind": "box", "size": [0.25, 0.19, 0.25], "position": [0, -0.03, 0] },
-        { "kind": "cylinder", "radius": 0.09, "height": 0.06, "position": [0, 0.095, 0] }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/piston_1.glb" }],
       "recipes": [
         {
           "id": "piston",
           "stations": ["fabricator"],
           "inputs": [
-            { "item": "scrap_metal", "count": 3 },
-            { "item": "component_kit", "count": 2 }
+            { "item": "metal_block", "count": 10 },
+            { "item": "circuit_board", "count": 1 },
+            { "item": "component_kit", "count": 1 }
           ],
           "outputs": [{ "item": "piston", "count": 1 }],
           "time": 8
