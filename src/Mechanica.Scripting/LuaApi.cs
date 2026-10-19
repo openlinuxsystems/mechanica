@@ -4,7 +4,7 @@ namespace Mechanica.Scripting;
 /// <param name="Name">What a script writes: <c>part.apply_force</c>, <c>on_update</c>, <c>state</c>.</param>
 /// <param name="Signature">How it is called, e.g. <c>part.apply_force(force, at?)</c>.</param>
 /// <param name="Summary">One line on what it does.</param>
-/// <param name="Group">Section: Hooks, Globals, part, creation, world, sound, soil, player, item, holder, inventory, combat, farm, fire, events, actions or vec3.</param>
+/// <param name="Group">Section: Hooks, Globals, part, creation, world, sound, soil, player, item, holder, inventory, combat, farm, fire, events, actions, timer or vec3.</param>
 public sealed record LuaApiEntry(string Name, string Signature, string Summary, string Group);
 
 /// <summary>
@@ -17,7 +17,7 @@ public static class LuaApi
     public static IReadOnlyList<LuaApiEntry> Entries { get; } =
     [
         new("on_create", "function on_create()", "Runs once when the part's script first starts.", "Hooks"),
-        new("on_update", "function on_update(dt)", "Runs every physics step (dt seconds) while the Creation is simulated.", "Hooks"),
+        new("on_update", "function on_update(dt)", "Runs every physics step (dt seconds) while the Creation is simulated; for an item, while a living player holds it.", "Hooks"),
         new("on_reload", "function on_reload()", "Runs after a hot reload instead of on_create; state is kept.", "Hooks"),
         new("on_destroy", "function on_destroy()", "Runs when the part is removed or its Creation goes away.", "Hooks"),
         new("on_activate", "function on_activate(peer)", "A player used the part (ActivatePart: E on a button, a switch, ripe soil); the return value is the action's result.", "Hooks"),
@@ -31,9 +31,10 @@ public static class LuaApi
         new("on_leave", "function on_leave(peer)", "The player sitting in the part stood up.", "Hooks"),
         new("on_equip", "function on_equip()", "Item scripts: a player took the item in hand.", "Hooks"),
         new("on_unequip", "function on_unequip()", "Item scripts: the item left the player's hand (another item or tool, or death).", "Hooks"),
+        new("on_aim", "function on_aim(on)", "Item scripts: the player holding the item started (true) or stopped (false) aiming with right click (AimItem).", "Hooks"),
         new("can_use", "function can_use(target)", "Item scripts: return nil to allow a use, or the reason it is refused. May not change the world.", "Hooks"),
         new("on_use", "function on_use(target)", "Item scripts: the player used the item (target has from, direction and aiming, plus creation and part when aimed at a part in reach); the return value is the action's result.", "Hooks"),
-        new("on_hit", "function on_hit(landing)", "Item scripts: a projectile the item launched landed: {id, position, hit?, data}.", "Hooks"),
+        new("on_hit", "function on_hit(landing)", "A projectile the script launched (combat.projectile) landed: {id, position, hit?, data}.", "Hooks"),
         new("can_reload_item", "function can_reload_item()", "Item scripts: return nil to allow a reload, or the reason it is refused. May not change the world.", "Hooks"),
         new("on_reload_item", "function on_reload_item()", "Item scripts: the player pressed Reload (R) with the item in hand (ReloadItem). An item without it cannot be reloaded.", "Hooks"),
 
@@ -158,6 +159,11 @@ public static class LuaApi
 
         new("actions.call", "actions.call(name, args?)", "Calls an Action API action as the host (mod scripts; part and item scripts only actions that read): true and its value, or false and why.", "actions"),
         new("actions.list", "actions.list()", "The names of the actions actions.call can call.", "actions"),
+
+        new("timer.after", "timer.after(seconds, fn)", "Mod and part scripts: calls fn(id) once after seconds of game time; returns the timer's id.", "timer"),
+        new("timer.every", "timer.every(seconds, fn)", "Mod and part scripts: calls fn(id) every seconds of game time (at most once a step) until cancelled; returns the id.", "timer"),
+        new("timer.cancel", "timer.cancel(id)", "Stops a timer; true when it was still waiting.", "timer"),
+        new("timer.count", "timer.count()", "How many of this script's timers are waiting.", "timer"),
 
         new("vec3", "vec3(x, y, z)", "A vector with x, y, z. Supports + - * / unary minus, == and tostring.", "vec3"),
         new("vec3.dot", "a:dot(b)", "Dot product.", "vec3"),

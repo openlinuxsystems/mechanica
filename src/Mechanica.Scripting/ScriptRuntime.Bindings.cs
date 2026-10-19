@@ -243,6 +243,7 @@ public sealed partial class ScriptRuntime
         AddSoilLibraries(script, world);
         AddFireLibrary(context);
         AddModLibraries(context);
+        AddTimerLibrary(context.Script);
 
         globals.Set("log", DynValue.NewCallback((_, args) =>
         {

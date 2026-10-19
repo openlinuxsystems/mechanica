@@ -82,6 +82,10 @@ public sealed partial class ScriptRuntime
         // Event topics the script listens to (events.listen).
         public HashSet<string> Topics { get; } = new(StringComparer.Ordinal);
 
+        // Timers the script started (timer.after, timer.every); a fresh start or a stop drops them.
+        public List<Timer> Timers { get; set; } = [];
+        public int LastTimer { get; set; }
+
         // Placed parts: not items or mod scripts.
         public bool IsPart => !IsItem && !IsWorld;
 
@@ -143,13 +147,16 @@ public sealed partial class ScriptRuntime
         /// <summary><c>on_unequip()</c>: the item left the player's hand (another item, another tool, or death).</summary>
         public const string OnUnequip = "on_unequip";
 
+        /// <summary><c>on_aim(on)</c>: the player holding the item started (true) or stopped (false) aiming with right click.</summary>
+        public const string OnAim = "on_aim";
+
         /// <summary><c>can_use(target)</c>: may the item be used now? Nil to allow, or the reason it can't. Changes nothing.</summary>
         public const string CanUse = "can_use";
 
         /// <summary><c>on_use(target)</c>: the player used the item; what it returns is the action's value.</summary>
         public const string OnUse = "on_use";
 
-        /// <summary><c>on_hit(landing)</c>: a projectile the item launched hit something or ran out of time.</summary>
+        /// <summary><c>on_hit(landing)</c>: a projectile the script launched hit something or ran out of time.</summary>
         public const string OnHit = "on_hit";
 
         /// <summary><c>can_reload_item()</c>: may the item be reloaded now? Nil to allow, or the reason it can't. Changes nothing.</summary>
@@ -268,6 +275,7 @@ public sealed partial class ScriptRuntime
         _stepping.AddRange(_worlds);
         foreach (var instance in _stepping)
         {
+            FireTimers(instance, dt);
             if (instance.Fault is null)
                 CallHook(instance, Hooks.OnUpdate, arg);
         }
@@ -275,9 +283,13 @@ public sealed partial class ScriptRuntime
         _stepping.AddRange(_instances.Values);
         foreach (var instance in _stepping)
         {
-            if (instance.Fault is null && _motion.IsLive(instance.Creation))
+            if (instance.Fault is not null || !_motion.IsLive(instance.Creation))
+                continue;
+            FireTimers(instance, dt);
+            if (instance.Fault is null)
                 CallHook(instance, Hooks.OnUpdate, arg);
         }
+        UpdateHeldItems(arg);
         CollectOutputs();
         _stepping.Clear();
     }
@@ -511,6 +523,7 @@ public sealed partial class ScriptRuntime
         instance.Warned.Clear();
         // The top level listens again (events.listen), so a reload drops topics the new code no longer wants.
         instance.Topics.Clear();
+        instance.Timers = [];
         instance.Version = entry.Version;
         if (Run(instance, entry.Factory, "loading", DynValue.NewTable(env)) is null)
             return;
@@ -586,6 +599,7 @@ public sealed partial class ScriptRuntime
     private void Stop(Instance instance, string fault)
     {
         instance.Fault = fault;
+        instance.Timers = [];
         StopLoops(instance);
         if (instance.IsPart)
         {
