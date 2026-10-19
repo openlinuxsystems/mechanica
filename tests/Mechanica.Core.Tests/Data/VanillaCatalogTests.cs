@@ -162,6 +162,24 @@ public class VanillaCatalogTests
         Assert.True(missing.Count == 0, $"no recipe, drop or world source: {string.Join(", ", missing)}");
     }
 
+    [Theory]
+    [InlineData("scrap_wheel", "Scrap Wheel", 3, 1)]
+    [InlineData("wheel", "Wheel", 3, 1)]
+    [InlineData("big_wheel", "Off Road Wheel", 5, 2)]
+    public void WheelsHaveTheirNameModelAndIcon(string id, string name, int across, int wide)
+    {
+        // The Wheel Design Spec: Scrap Wheel and Wheel are 3 x 1 x 3 blocks, the Off Road Wheel (id big_wheel,
+        // once the Big Wheel) 5 x 2 x 5; each has its own model and hotbar picture and rolls on a cylinder.
+        var part = Part(id);
+        var mod = Path.Combine(TestMods.RepoRoot, "mods", "vanilla");
+
+        Assert.Equal(name, part.Name);
+        Assert.Equal(new GridSize(across, wide, across), part.Size);
+        Assert.Equal($"meshes/{id}.glb", part.Mesh);
+        Assert.True(part.Icon is not null && File.Exists(Path.Combine(mod, part.Icon)), $"{id} has an icon");
+        Assert.Equal(CollisionShape.Cylinder, part.Collision?.Shape);
+    }
+
     // Items that bots, world objects, harvests and POIs hand out, the Survival starting kit, and the item
     // water fills, read from the data files.
     private static HashSet<string> DroppedItems()

@@ -1,21 +1,20 @@
 {
   "id": "big_wheel",
-  "name": "Big Wheel",
-  "description": "A large wheel for rough ground. Put its hub on a bearing's rotor.",
+  "name": "Off Road Wheel",
+  "description": "A big wheel with deep knobbly tread for rough ground: more clearance and more grip. Put its hub on a bearing's rotor.",
   "category": "interactive",
   "mass": 20,
-  "durability": 5,
-  "friction": 1,
-  "buoyancy": 0.4,
-  "flammable": false,
+  "durability": 7,
+  "friction": 1.15,
+  "buoyancy": 0.6,
+  "flammable": true,
   "stack_size": 20,
   "sound_material": "plastic",
   "size": [5, 2, 5],
   "mesh": "meshes/big_wheel.glb",
+  "icon": "textures/items/big_wheel_icon.png",
   "visual": {
-    "color": "#22252a",
-    "roughness": 0.9,
-    "metallic": 0
+    "color": "#ffffff"
   },
   "collision": {
     "shape": "cylinder",
