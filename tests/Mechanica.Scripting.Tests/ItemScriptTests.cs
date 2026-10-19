@@ -182,6 +182,37 @@ public sealed class ItemScriptTests : IDisposable
     }
 
     [Fact]
+    public void AHeldItemUpdatesAndHearsAiming()
+    {
+        _rig.Write("scripts/charm.lua", """
+            state.log = state.log or {}
+            function on_update(dt) state.held = (state.held or 0) + 1; holder.heal(1) end
+            function on_aim(on) table.insert(state.log, on and "aim" or "rest") end
+            function on_use(target) return { held = state.held, log = state.log } end
+            """);
+        var charm = _rig.AddItem("charm", "scripts/charm.lua");
+        F.Pockets(Me).Add(charm, 1);
+        F.Pockets(Me).Add(Crop, 1);
+        var slot = F.SlotOf(Me, charm);
+        F.Survival.Damage(Me.Peer, 10, "test");
+
+        _rig.Runtime.Update(1f / 60); // not in hand yet
+        F.Ok(Me, ScriptRuntime.EquipItem, new { slot });
+        _rig.Runtime.Update(1f / 60);
+        _rig.Runtime.Update(1f / 60);
+        F.Ok(Me, ScriptRuntime.AimItem, new { on = true });
+        F.Ok(Me, ScriptRuntime.AimItem, new { on = true }); // still aiming: no second call
+        F.Ok(Me, ScriptRuntime.AimItem, new { on = false });
+        F.Ok(Me, ScriptRuntime.EquipItem, new { });
+        _rig.Runtime.Update(1f / 60); // put away
+
+        var seen = _rig.Used(Me, slot);
+        Assert.Equal(2.0, seen["held"]!.GetValue<double>());
+        Assert.Equal(["aim", "rest"], seen["log"]!.AsArray().Select(n => n!.GetValue<string>()));
+        Assert.Equal(92f, F.Survival.HealthOf(Me.Peer));
+    }
+
+    [Fact]
     public void CanUseMayNotChangeTheWorld()
     {
         _rig.Write("scripts/cheat.lua", """

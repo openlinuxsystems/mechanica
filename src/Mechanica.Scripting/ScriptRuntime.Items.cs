@@ -196,11 +196,30 @@ public sealed partial class ScriptRuntime
 
     private JsonElement? ApplyAim(ActionCaller caller, AimItemArgs args)
     {
-        if (args.On)
-            _aiming.Add(caller.Peer);
-        else
-            _aiming.Remove(caller.Peer);
+        if (!(args.On ? _aiming.Add(caller.Peer) : _aiming.Remove(caller.Peer)))
+            return null;
+        if (_held.TryGetValue(caller.Peer, out var held) && _items.TryGetValue((caller.Peer, held.Item), out var instance) && instance.Fault is null)
+            CallItem(instance, Hooks.OnAim, ItemPhase.Acting, DynValue.NewBoolean(args.On));
         return null;
+    }
+
+    // on_update(dt) for the item each living player holds, after the parts' on_update.
+    private void UpdateHeldItems(DynValue dt)
+    {
+        if (_survival is null || _held.Count == 0)
+            return;
+        _stepping.Clear();
+        foreach (var (peer, held) in _held)
+        {
+            if (!_survival.IsDead(peer) && _items.TryGetValue((peer, held.Item), out var instance) && instance.Fault is null)
+                _stepping.Add(instance);
+        }
+        foreach (var instance in _stepping)
+        {
+            if (instance.Fault is null && _held.TryGetValue(instance.Holder!.Value, out var held) && held.Item == instance.PartType)
+                CallItem(instance, Hooks.OnUpdate, ItemPhase.Acting, dt);
+        }
+        _stepping.Clear();
     }
 
     // The slot holds an item that runs a script.

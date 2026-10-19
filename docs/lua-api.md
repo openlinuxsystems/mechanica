@@ -106,6 +106,8 @@ Held items have their own hooks (see [Item scripts](#item-scripts)):
 |------|------|
 | `on_equip()` | The player took the item in hand. |
 | `on_unequip()` | The item left the player's hand: they took another item or tool, or died. |
+| `on_update(dt)` | Every step while a living player holds the item, after the parts' `on_update`. It may change the world (drain a charge with `item.counter`, heal with `holder.heal`). |
+| `on_aim(on)` | The player started (`true`) or stopped (`false`) aiming with right click (`AimItem`): wind up a bow, raise a shield. |
 | `can_use(target)` | Before every use. Return `nil` to allow it, or a string: the reason the host refuses the use. It may read but not change the world. |
 | `on_use(target)` | The player used the item. `target` is `{from, direction, aiming, creation?, part?}`: their eyes, where they aim, whether they hold right click to aim, and the Creation and part in reach under the crosshair. What it returns (plain data) is the `UseItem` action's result. |
 | `on_hit(landing)` | A projectile the item launched landed: `{id, position, hit?, data}`. `hit` is missing when its lifetime ran out. |

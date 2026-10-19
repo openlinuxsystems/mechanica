@@ -17,7 +17,7 @@ public static class LuaApi
     public static IReadOnlyList<LuaApiEntry> Entries { get; } =
     [
         new("on_create", "function on_create()", "Runs once when the part's script first starts.", "Hooks"),
-        new("on_update", "function on_update(dt)", "Runs every physics step (dt seconds) while the Creation is simulated.", "Hooks"),
+        new("on_update", "function on_update(dt)", "Runs every physics step (dt seconds) while the Creation is simulated; for an item, while a living player holds it.", "Hooks"),
         new("on_reload", "function on_reload()", "Runs after a hot reload instead of on_create; state is kept.", "Hooks"),
         new("on_destroy", "function on_destroy()", "Runs when the part is removed or its Creation goes away.", "Hooks"),
         new("on_activate", "function on_activate(peer)", "A player used the part (ActivatePart: E on a button, a switch, ripe soil); the return value is the action's result.", "Hooks"),
@@ -31,6 +31,7 @@ public static class LuaApi
         new("on_leave", "function on_leave(peer)", "The player sitting in the part stood up.", "Hooks"),
         new("on_equip", "function on_equip()", "Item scripts: a player took the item in hand.", "Hooks"),
         new("on_unequip", "function on_unequip()", "Item scripts: the item left the player's hand (another item or tool, or death).", "Hooks"),
+        new("on_aim", "function on_aim(on)", "Item scripts: the player holding the item started (true) or stopped (false) aiming with right click (AimItem).", "Hooks"),
         new("can_use", "function can_use(target)", "Item scripts: return nil to allow a use, or the reason it is refused. May not change the world.", "Hooks"),
         new("on_use", "function on_use(target)", "Item scripts: the player used the item (target has from, direction and aiming, plus creation and part when aimed at a part in reach); the return value is the action's result.", "Hooks"),
         new("on_hit", "function on_hit(landing)", "Item scripts: a projectile the item launched landed: {id, position, hit?, data}.", "Hooks"),

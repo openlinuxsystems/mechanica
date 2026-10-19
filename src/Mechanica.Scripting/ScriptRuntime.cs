@@ -147,6 +147,9 @@ public sealed partial class ScriptRuntime
         /// <summary><c>on_unequip()</c>: the item left the player's hand (another item, another tool, or death).</summary>
         public const string OnUnequip = "on_unequip";
 
+        /// <summary><c>on_aim(on)</c>: the player holding the item started (true) or stopped (false) aiming with right click.</summary>
+        public const string OnAim = "on_aim";
+
         /// <summary><c>can_use(target)</c>: may the item be used now? Nil to allow, or the reason it can't. Changes nothing.</summary>
         public const string CanUse = "can_use";
 
@@ -286,6 +289,7 @@ public sealed partial class ScriptRuntime
             if (instance.Fault is null)
                 CallHook(instance, Hooks.OnUpdate, arg);
         }
+        UpdateHeldItems(arg);
         CollectOutputs();
         _stepping.Clear();
     }
