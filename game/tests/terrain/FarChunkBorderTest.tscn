@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://tests/terrain/FarChunkBorderTest.cs" id="1_far"]
+
+[node name="FarChunkBorderTest" type="Node"]
+script = ExtResource("1_far")

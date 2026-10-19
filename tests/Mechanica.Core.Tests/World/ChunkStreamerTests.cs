@@ -168,12 +168,43 @@ public class ChunkStreamerTests
         Assert.Equal([3], update.Park);
         Assert.False(streamer.IsLoaded(new ChunkCoord(14, 0)));
 
-        // Creation 1 stops and falls asleep, which frees a slot for 3.
-        streamer.Update(0.6f, AtHome, [At(1, 500, 0), At(2, 700, 5), At(3, 900, 5)]);
+        // Creation 1 stops: moving ones go first, so 3 takes its slot and 1 parks where it stands, then dozes off.
         update = streamer.Update(0.6f, AtHome, [At(1, 500, 0), At(2, 700, 5), At(3, 900, 5)]);
-        Assert.Equal([1], update.FellAsleep);
+        Assert.Equal([1], update.Park);
         Assert.Equal([3], update.Resume);
         Assert.True(streamer.IsLoaded(new ChunkCoord(14, 0)));
+        streamer.Update(0.6f, AtHome, [At(1, 500, 0), At(2, 700, 5), At(3, 900, 5)]);
+        Assert.True(streamer.IsAsleep(1));
+        Assert.True(streamer.IsParked(1));
+    }
+
+    [Fact]
+    public void ACreationHeldAwakeKeepsItsGroundWhileItWaitsStill()
+    {
+        // A cart waiting at a far station on a timer: still, but its logic is busy, so it never sleeps or parks.
+        var streamer = new ChunkStreamer(Settings);
+        var cart = new CreationSample(1, WorldBounds.Around(new Vector3(1000, 0, 32), Vector3.One), 0f, 0f, HoldAwake: true);
+        for (var i = 0; i < 40; i++)
+        {
+            var update = streamer.Update(0.1f, AtHome, [cart]);
+            Assert.Empty(update.Park);
+            Assert.Empty(update.FellAsleep);
+        }
+        Assert.True(streamer.IsLoaded(new ChunkCoord(15, 0)));
+        Assert.Equal(cart.Bounds, streamer.BoundsOf(1));
+        Assert.True(streamer.IsTracked(1));
+        Assert.False(streamer.IsTracked(2));
+    }
+
+    [Fact]
+    public void OverTheBudgetAMovingCreationRunsBeforeNearerOnesOnlyHeldAwake()
+    {
+        var streamer = new ChunkStreamer(Settings);
+        CreationSample Held(int id, float x) => new(id, WorldBounds.Around(new Vector3(x, 0, 32), Vector3.One), 0f, 0f, HoldAwake: true);
+        var moving = new CreationSample(3, WorldBounds.Around(new Vector3(900, 0, 32), Vector3.One), 5f, 0f);
+        var update = streamer.Update(0.1f, AtHome, [Held(1, 500), Held(2, 700), moving]);
+        Assert.Equal([2], update.Park);
+        Assert.False(streamer.IsParked(3));
     }
 
     [Fact]
