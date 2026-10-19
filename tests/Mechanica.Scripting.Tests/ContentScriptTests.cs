@@ -2,6 +2,7 @@ using System.Numerics;
 using Mechanica.Core.Actions;
 using Mechanica.Core.Creations;
 using Mechanica.Core.Data;
+using Mechanica.Core.Items;
 using Mechanica.Core.Motion;
 using Mechanica.Core.Survival;
 using Mechanica.Core.Tests.Survival;
@@ -60,6 +61,58 @@ public sealed class ContentScriptTests : IDisposable
         Steps(3);
         Assert.Equal(0f, _runtime.Lights.Level(creation.Id, linked));
         Assert.Contains(_sound.Played, p => p.Sound == "light_off");
+        NoErrors();
+    }
+
+    [Fact]
+    public void TheFabricatorPlaysItsClipsAndThrowsSparksFromItsCraftingQueue()
+    {
+        var creation = Board();
+        var fab = Place(creation, "vanilla:fabricator", new GridCell(0, 1, 0));
+        var queue = creation.CraftingOf(fab)!;
+        var output = creation.InventoryOf(fab)!;
+        var recipes = RecipeBook.Load(Vanilla);
+        var recipe = recipes.ForStation("vanilla:fabricator").First();
+        string Clip() => _runtime.Readouts.Text(creation.Id, fab, "clip")!.Split('#')[0];
+        float Weld() => _runtime.Readouts.Number(creation.Id, fab, "weld") ?? 0f;
+
+        Steps(2);
+        Assert.Equal("idle_loop", Clip());
+        Assert.Equal(0f, Weld());
+
+        // Two crafts: it unfolds (start, properties.start_time 0.8 s), then works with sparks.
+        queue.Enqueue(new CraftJob(recipe.QualifiedId, 2));
+        Steps(2);
+        Assert.Equal("start", Clip());
+        Steps(60);
+        Assert.Equal("work_loop", Clip());
+        Assert.Equal(1f, Weld());
+        Assert.Equal(1f, _runtime.Readouts.Number(creation.Id, fab, "drill"));
+
+        // The first craft finishes with the second queued: it keeps working, the loop from the top.
+        var before = _runtime.Readouts.Text(creation.Id, fab, "clip");
+        queue.Tick(recipe.Time, 1f, recipes, output);
+        Assert.Equal(1, queue.Finished);
+        Steps(2);
+        Assert.Equal("work_loop", Clip());
+        Assert.NotEqual(before, _runtime.Readouts.Text(creation.Id, fab, "clip"));
+        Assert.Equal(1f, Weld());
+
+        // The last craft finishes: it folds back (complete), then idles.
+        queue.Tick(recipe.Time, 1f, recipes, output);
+        Assert.True(queue.IsEmpty);
+        Steps(2);
+        Assert.Equal("complete", Clip());
+        Assert.Equal(0f, Weld());
+        Steps(60);
+        Assert.Equal("idle_loop", Clip());
+
+        // A new order unfolds it again.
+        queue.Enqueue(new CraftJob(recipe.QualifiedId, 1));
+        Steps(2);
+        Assert.Equal("start", Clip());
+        Steps(60);
+        Assert.Equal("work_loop", Clip());
         NoErrors();
     }
 

@@ -52,6 +52,8 @@ LIP_R = 0.106
 BORE_R = 0.088
 LIP_OUT = 0.067             # the collar lip's face, measured from the plate's back
 SAMPLES = int(os.environ.get("IO_SAMPLES", "64"))
+# Set while building a game model: glTF keeps only plain material values, so the procedural wear is left out.
+GAME = False
 
 GUNMETAL = (0.06, 0.064, 0.07)
 TEAL = (0.0, 0.17, 0.15)
@@ -72,7 +74,7 @@ def metal(name, color, rough, metallic=1.0, wear=0.0):
     b.inputs["Base Color"].default_value = (*color, 1)
     b.inputs["Metallic"].default_value = metallic
     b.inputs["Roughness"].default_value = rough
-    if wear > 0:
+    if wear > 0 and not GAME:
         # worn, cast-metal look: blotchy roughness and a fine bump
         tc = t.nodes.new("ShaderNodeTexCoord")
         n = t.nodes.new("ShaderNodeTexNoise")

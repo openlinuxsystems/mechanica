@@ -1,28 +1,30 @@
 {
   "id": "fabricator",
   "name": "Fabricator",
-  "description": "Crafts parts and items from resources.",
+  "description": "Crafts parts and items from resources: the crafting menu shows its queue slots. Upgrade it in place with Component Kits (U) for more slots, then double speed. Input port on the left, output port on the right.",
   "category": "station",
-  "mass": 25,
+  "mass": 60,
   "durability": 12,
   "friction": 0.5,
   "buoyancy": 0.2,
   "flammable": false,
   "sound_material": "metal",
-  "size": [6, 6, 4],
-  "mesh": "meshes/fabricator.glb",
+  "size": [10, 9, 8],
+  "mesh": "meshes/parts/fabricator_1.glb",
+  "icon": "textures/items/fabricator_1_icon.png",
   "visual": {
-    "color": "#d08a2c",
-    "paintable": true
+    "color": "#ffffff",
+    "paintable": false
   },
   "sockets": [
     {
       "id": "base",
       "type": "structural",
-      "position": [0, -0.75, 0],
+      "position": [0, -1.125, 0],
       "normal": [0, -1, 0]
     }
   ],
+  "script": "scripts/fabricator.lua",
   "sounds": {
     "start": "fabricator_start",
     "work": "fabricator_work",
@@ -34,7 +36,7 @@
   },
   "crafting": {
     "speed": 1,
-    "queue_size": 8,
+    "queue_size": 2,
     "link_range": 1
   },
   "upgrades": [
@@ -42,13 +44,16 @@
       "cost": [
         {
           "item": "component_kit",
-          "count": 2
+          "count": 5
         }
       ],
       "set": {
+        "name": "Fabricator 2",
+        "mesh": "meshes/parts/fabricator_2.glb",
+        "icon": "textures/items/fabricator_2_icon.png",
         "crafting": {
-          "speed": 1.25,
-          "queue_size": 10
+          "speed": 1,
+          "queue_size": 4
         },
         "inventory": {
           "slots": 12
@@ -59,13 +64,16 @@
       "cost": [
         {
           "item": "component_kit",
-          "count": 4
+          "count": 5
         }
       ],
       "set": {
+        "name": "Fabricator 3",
+        "mesh": "meshes/parts/fabricator_3.glb",
+        "icon": "textures/items/fabricator_3_icon.png",
         "crafting": {
-          "speed": 1.5,
-          "queue_size": 12
+          "speed": 1,
+          "queue_size": 6
         },
         "inventory": {
           "slots": 15
@@ -76,18 +84,102 @@
       "cost": [
         {
           "item": "component_kit",
-          "count": 6
+          "count": 20
         }
       ],
       "set": {
+        "name": "Fabricator 4",
+        "mesh": "meshes/parts/fabricator_4.glb",
+        "icon": "textures/items/fabricator_4_icon.png",
+        "crafting": {
+          "speed": 1,
+          "queue_size": 8
+        },
+        "inventory": {
+          "slots": 20
+        },
+        "display": {
+          "effects": [
+            {
+              "readout": "weld",
+              "kind": "sparks",
+              "offset": [
+                0.764,
+                -0.385,
+                -0.222
+              ]
+            },
+            {
+              "readout": "drill",
+              "kind": "sparks",
+              "offset": [
+                -0.764,
+                -0.385,
+                -0.222
+              ]
+            },
+            {
+              "readout": "drill",
+              "kind": "sparks",
+              "offset": [
+                0.754,
+                -0.384,
+                -0.226
+              ]
+            },
+            {
+              "readout": "weld",
+              "kind": "sparks",
+              "offset": [
+                -0.795,
+                -0.387,
+                -0.216
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "cost": [
+        {
+          "item": "component_kit",
+          "count": 20
+        }
+      ],
+      "set": {
+        "name": "Fabricator 5",
+        "mesh": "meshes/parts/fabricator_5.glb",
+        "icon": "textures/items/fabricator_5_icon.png",
         "crafting": {
           "speed": 2,
-          "queue_size": 16
+          "queue_size": 8
         },
         "inventory": {
           "slots": 20
         }
       }
     }
-  ]
+  ],
+  "display": {
+    "clips": {
+      "readout": "clip"
+    },
+    "effects": [
+      {
+        "readout": "weld",
+        "kind": "sparks",
+        "offset": [0.764, -0.385, -0.222]
+      },
+      {
+        "readout": "drill",
+        "kind": "sparks",
+        "offset": [-0.764, -0.385, -0.222]
+      }
+    ]
+  },
+  "properties": {
+    "start_time": 0.8,
+    "complete_time": 0.8
+  }
 }

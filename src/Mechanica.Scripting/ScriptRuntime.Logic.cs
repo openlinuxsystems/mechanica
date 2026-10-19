@@ -2,6 +2,7 @@ using System.Text.Json;
 using Mechanica.Core.Actions;
 using Mechanica.Core.Creations;
 using Mechanica.Core.Data;
+using Mechanica.Core.Items;
 using Mechanica.Core.Logic;
 using Mechanica.Core.Player;
 using MoonSharp.Interpreter;
@@ -230,6 +231,7 @@ public sealed partial class ScriptRuntime : ILogicHost
             return Display(instance, target, args.AsType(1, "creation.display", DataType.String).String, args[2], "creation.display");
         });
         Fn(part, "light", _ => DynValue.NewNumber(Lights.Level(PartInstance().Creation, PartInstance().Part)));
+        Fn(part, "crafting", _ => Here() is { } h && h.Creation.CraftingOf(h.Instance.Part) is { } queue ? CraftingTable(script, queue) : DynValue.Nil);
         Fn(part, "animate", args =>
         {
             var instance = PartInstance();
@@ -324,6 +326,16 @@ public sealed partial class ScriptRuntime : ILogicHost
     }
 
     // A seated player's input as {x, z, jump, sprint, yaw, pitch}, or nil when the seat is empty.
+    private static DynValue CraftingTable(Script script, CraftingQueue queue)
+    {
+        var table = new Table(script);
+        table.Set("working", DynValue.NewBoolean(!queue.IsEmpty && !queue.IsBlocked));
+        table.Set("blocked", DynValue.NewBoolean(queue.IsBlocked));
+        table.Set("crafts", DynValue.NewNumber(queue.Jobs.Sum(j => j.Count)));
+        table.Set("finished", DynValue.NewNumber(queue.Finished));
+        return DynValue.NewTable(table);
+    }
+
     private DynValue OccupantTable(Script script, int creationId, int partId)
     {
         if (Seats?.Occupant(creationId, partId) is not { } peer || OccupantInput?.Invoke(peer) is not { } input)
