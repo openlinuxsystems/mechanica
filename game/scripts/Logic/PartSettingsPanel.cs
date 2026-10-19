@@ -19,7 +19,8 @@ namespace Mechanica.Game.Logic;
 /// bar for fuel or charge, numbers such as RPM), its live inputs and output (<see cref="MenuDefinition.Signals"/>), and
 /// a field per setting (<see cref="PartDefinition.Settings"/>): a slider with its presets for a number, a list with the
 /// option's picture for a choice, toggles side by side for a group, and the frame editor for a sequence. Settings
-/// marked <see cref="SettingDefinition.HideWhenLinked"/> give way to a note while something drives the part. Each change
+/// marked <see cref="SettingDefinition.HideWhenLinked"/> give way to a note while something drives the part, and a part
+/// whose menu has <see cref="MenuDefinition.LockWhenSequenced"/> shows only a note while a Controller runs it. Each change
 /// goes to the host as <c>ConfigurePart</c> at once, or, for a menu with <see cref="MenuDefinition.Apply"/>, when the
 /// player presses Apply or closes it. While it is open the part's <see cref="MenuDefinition.Preview"/> shows what it
 /// reaches in the world. A part whose E cycles a setting (<see cref="MenuUse.Cycle"/>, a logic gate) does so with
@@ -49,6 +50,7 @@ public partial class PartSettingsPanel : CanvasLayer
     private MeshInstance3D? _preview;
     private float _previewRange = -1;
     private double _cardLeft;
+    private bool _locked;
     private double _sincePoll;
     private (int Creation, int Part)? _cardTarget;
 
@@ -189,6 +191,12 @@ public partial class PartSettingsPanel : CanvasLayer
             return;
         _signals.Visible = signals is not null;
         _signals.Text = signals ?? "";
+        if ((PartSettings.Sequencer(creation, target.Part) is not null) != _locked)
+        {
+            // A Controller was linked in or out while the menu was open: show what the part allows now.
+            Open(target.Creation, target.Part);
+            return;
+        }
         UpdateReadouts(creation, target.Part);
         var linked = creation.LinksTo(target.Part).Count > 0;
         foreach (var (_, row, note) in _linkedRows)
@@ -221,6 +229,19 @@ public partial class PartSettingsPanel : CanvasLayer
         var definition = creation.DefinitionOf(partId);
         _panel.Title = Loc.T("{0} (part {1})", definition.Name ?? part.Part, partId);
         var menu = definition.Menu;
+        _locked = false;
+        if (PartSettings.Sequencer(creation, partId) is { } sequencer)
+        {
+            // The Controller runs the part (a piston): its settings stay shut until the Controller is unlinked.
+            _locked = true;
+            _status.Text = Loc.T("This {0} is run by the {1} linked to it. Unlink the {1} to change its settings.",
+                definition.Name ?? part.Part, creation.DefinitionOf(sequencer).Name ?? Loc.T("Controller"));
+            _apply.Visible = false;
+            _panel.Visible = true;
+            _previewRange = -1;
+            Input.MouseMode = Input.MouseModeEnum.Visible;
+            return;
+        }
         _status.Text = definition.Settings is { Count: > 0 } || menu?.Readouts is { Count: > 0 } || menu?.Signals == true ? "" : "This part has no settings.";
         foreach (var readout in menu?.Readouts ?? [])
             _rows.AddChild(ReadoutRow(readout));
