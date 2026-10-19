@@ -111,7 +111,9 @@ public class WorldGenTests
             foreach (var o in chunk.Objects)
             {
                 Assert.True(ids.TryAdd(o.Id, 0), $"object id {o.Id} is unique");
-                objectsByBiome.AddOrUpdate(gen.BiomeAt(o.Position.X, o.Position.Z).Id, 1, (_, n) => n + 1);
+                // A deposit's blocks share one scatter spot: count the spot, not every block.
+                if (o.Id.Piece == 0)
+                    objectsByBiome.AddOrUpdate(gen.BiomeAt(o.Position.X, o.Position.Z).Id, 1, (_, n) => n + 1);
             }
             lock (gate)
                 (low, high) = (MathF.Min(low, chunk.MinHeight), MathF.Max(high, chunk.MaxHeight));
@@ -283,7 +285,11 @@ public class WorldGenTests
         foreach (var o in objects)
         {
             var rule = gen.Data.ScatterRules[o.Id.Rule];
-            Assert.Same(rule.Object, o.Definition);
+            // A rock deposit's blocks are its own object or the block objects its mounds are heaped from.
+            if (rule.Object.Outcrop is null)
+                Assert.Same(rule.Object, o.Definition);
+            else
+                Assert.Equal(PrimitiveShape.Box, o.Definition.Collider!.Shape);
             Assert.Equal(rule.Biome, gen.BiomeAt(o.Position.X, o.Position.Z).Index);
             Assert.Empty(gen.PoisAt(o.Position.X, o.Position.Z));
             Assert.True(gen.HeightAt(o.Position.X, o.Position.Z) > gen.SeaLevel);

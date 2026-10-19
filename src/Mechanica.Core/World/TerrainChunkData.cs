@@ -39,7 +39,8 @@ public readonly record struct WorldObjectId(int Rule, int CellX, int CellZ, int 
 /// <param name="Position">World position of its ground point (already sunk by <see cref="WorldObjectDefinition.Sink"/>).</param>
 /// <param name="Yaw">Turn about +Y in radians.</param>
 /// <param name="Scale">Uniform scale.</param>
-public sealed record WorldObjectPlacement(WorldObjectId Id, WorldObjectDefinition Definition, Vector3 Position, float Yaw, float Scale);
+/// <param name="Variant">Which model it is drawn with: 0 for <see cref="MeshDefinition.File"/>, then each of <see cref="MeshDefinition.Variants"/>.</param>
+public sealed record WorldObjectPlacement(WorldObjectId Id, WorldObjectDefinition Definition, Vector3 Position, float Yaw, float Scale, int Variant = 0);
 
 /// <summary>A placed POI.</summary>
 /// <param name="Index">Its place in <see cref="WorldGenerator.Pois"/>.</param>

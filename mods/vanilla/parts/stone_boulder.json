@@ -1,0 +1,35 @@
+{
+  "id": "stone_boulder",
+  "name": "Stone Boulder",
+  "description": "A block broken off a rock deposit, too big for the Sledgehammer. Break it with a drill into Stone Chunks.",
+  "category": "resource",
+  "mass": 120,
+  "durability": 20,
+  "friction": 0.8,
+  "buoyancy": 0,
+  "flammable": false,
+  "stack_size": 1,
+  "sound_material": "concrete",
+  "size": [4, 4, 4],
+  "mesh": "meshes/items/stone_boulder.glb",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.95,
+    "metallic": 0
+  },
+  "collision": {
+    "shape": "convex",
+    "mesh": "meshes/items/stone_boulder.glb"
+  },
+  "loose": true,
+  "breaks_into": {
+    "count": 2,
+    "parts": [
+      {
+        "part": "stone_chunk",
+        "weight": 1
+      }
+    ]
+  },
+  "sledge_damage": 0
+}
