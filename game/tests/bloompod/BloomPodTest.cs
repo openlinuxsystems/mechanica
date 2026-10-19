@@ -42,7 +42,7 @@ public partial class BloomPodTest : StagedTest
         Add("find a green Bloom Pod", _ =>
         {
             var gen = HostWorld.Generator;
-            _pod = gen.ObjectsIn(-1500, -1500, 1500, 1500)
+            _pod = gen.ObjectsIn(-1100, -1100, 1100, 1100)
                 .Where(o => o.Definition.Id == "bloom_pod_green" && gen.SlopeAt(o.Position.X, o.Position.Z + 2f) < 0.3f)
                 .OrderBy(o => o.Position.Length())
                 .First();
