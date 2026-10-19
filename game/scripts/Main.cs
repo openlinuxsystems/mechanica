@@ -1078,7 +1078,7 @@ public partial class Main : Node3D
     // Once, on the host of a new world, when the debug car is wanted (see DebugCar).
     private void SpawnDebugCar()
     {
-        if (DebugCarId is not null || Save is not null || Build is null || !Session.IsHost)
+        if (DebugCarId is not null || Save is not null || Build is null || Options?.Mode == SessionMode.Join || !Session.IsHost)
             return;
         var settings = DebugCarSpawner.LoadSettings();
         if (!(DebugCar ?? (OS.IsDebugBuild() && GetTree().CurrentScene == this && settings.Enabled)))
