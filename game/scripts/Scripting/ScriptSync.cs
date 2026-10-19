@@ -176,26 +176,42 @@ public partial class ScriptSync : Node, IScriptPhysics, IScriptSound
 
     // One sphere for every script's overlap query (they run at once); a new shape per call only goes when collected.
     private readonly SphereShape3D _sphere = new();
+    private const int MaxOverlaps = 64;
 
     /// <inheritdoc/>
     public IReadOnlyList<ScriptOverlap> OverlapSphere(System.Numerics.Vector3 centre, float radius, int? ignoreCreation)
     {
         if (_sphere.Radius != radius)
             _sphere.Radius = radius;
+        var exclude = Exclusions(ignoreCreation);
         var query = new PhysicsShapeQueryParameters3D
         {
             Shape = _sphere,
             Transform = new Transform3D(Basis.Identity, centre.ToGodot()),
-            Exclude = Exclusions(ignoreCreation),
+            Exclude = exclude,
         };
         var results = new List<ScriptOverlap>();
-        foreach (var hit in GetViewport().FindWorld3D().DirectSpaceState.IntersectShape(query, 64))
+        var seen = new HashSet<(ulong Collider, int Shape)>();
+        while (true)
         {
-            var collider = hit["collider"].AsGodotObject();
-            var (creation, part) = Identify(collider, hit["shape"].AsInt32());
-            results.Add(new ScriptOverlap(creation, part, (collider as Player.PlayerController)?.PeerId, (collider as Bots.BotBody)?.BotId));
+            var hits = GetViewport().FindWorld3D().DirectSpaceState.IntersectShape(query, MaxOverlaps);
+            foreach (var hit in hits)
+            {
+                var collider = hit["collider"].AsGodotObject();
+                if (!seen.Add((collider.GetInstanceId(), hit["shape"].AsInt32())))
+                    continue;
+                var (creation, part) = Identify(collider, hit["shape"].AsInt32());
+                results.Add(new ScriptOverlap(creation, part, (collider as Player.PlayerController)?.PeerId, (collider as Bots.BotBody)?.BotId));
+            }
+            // A triangle mesh (a structure's walls) answers once per triangle and can fill every slot, hiding the
+            // parts beside it: ask again without the bodies already found until a query comes back short.
+            var found = hits.Select(h => h["rid"].AsRid()).Distinct().Where(r => !exclude.Contains(r)).ToList();
+            if (hits.Count < MaxOverlaps || found.Count == 0)
+                return results;
+            foreach (var rid in found)
+                exclude.Add(rid);
+            query.Exclude = exclude;
         }
-        return results;
     }
 
     private Godot.Collections.Array<Rid> Exclusions(int? creation)

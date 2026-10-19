@@ -878,6 +878,30 @@ public enum PrimitiveShape
     Cylinder,
 }
 
+/// <summary>
+/// A static structure of a POI drawn from a model (<c>models[]</c>): the model's origin goes at <see cref="At"/> on the
+/// pad, turned <see cref="Yaw"/> degrees about +Y. A <see cref="Solid"/> model collides with its own triangles, so a
+/// player can walk inside it (the crash site's wreck).
+/// </summary>
+public sealed record PoiModel
+{
+    /// <summary>Mod path of the model (<c>meshes/structures/sv04_fore.glb</c>, or <c>other_mod:path</c>).</summary>
+    public string? File { get; init; }
+
+    /// <summary>Where the model's origin goes, relative to the POI centre on its pad.</summary>
+    public Vec3 At { get; init; }
+
+    /// <summary>Turn about +Y in degrees (counter-clockwise seen from above).</summary>
+    public float Yaw { get; init; }
+
+    /// <summary>False for a model nothing bumps into (hanging cables, a sign far overhead). Default true.</summary>
+    public bool Solid { get; init; } = true;
+
+    /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
 /// <summary>A primitive shape centred at <see cref="At"/>, turned <see cref="Yaw"/> degrees about +Y.</summary>
 public sealed record ShapeDefinition
 {
@@ -1001,8 +1025,11 @@ public sealed record PoiPrefab
     /// <summary>Ground shaping, applied in order.</summary>
     public List<TerrainOp>? Terrain { get; init; }
 
-    /// <summary>Static structure pieces (placeholder geometry until blocks and blueprints exist).</summary>
+    /// <summary>Static structure pieces, as primitive shapes (blockouts and simple colliders).</summary>
     public List<ShapeDefinition>? Pieces { get; init; }
+
+    /// <summary>Static structures drawn from models (<see cref="PoiModel"/>): the crash site's wreck, a farm shack, ruins.</summary>
+    public List<PoiModel>? Models { get; init; }
 
     /// <summary>
     /// Named points for later systems. An <c>object</c> marker places the world object <see cref="PoiMarker.Ref"/> names

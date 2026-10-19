@@ -35,6 +35,8 @@ Then the topic guides:
 - [Bot Tutorial](bot-tutorial.md): bots, behaviour trees, bot scripts and raids.
 - [Quests and Dialogue](quests.md): quests, objectives, dialogue and story batches.
 - [World Generation and POI Prefabs](world-generation.md): biomes, terrain, roads and POIs.
+- [Art Direction: Structures](art-direction.md): the four architecture families, their palettes, the rules and
+  sizes every structure follows, and how the vanilla structures are built.
 - [Player Characters](characters.md): adding a character or a skin.
 - [Sound Events](sound-events.md): sound banks and part sounds.
 - [Translating](translating.md): language files for the game and for mods.

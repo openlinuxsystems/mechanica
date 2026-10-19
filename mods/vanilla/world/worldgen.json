@@ -828,6 +828,30 @@
       "max_slope": 0.35,
       "health": 120.0,
       "drops": [{ "item": "scrap_metal", "count": 3, "count_max": 6 }, { "item": "component_kit", "count": 1 }]
+    },
+    // Starting scrap at the crash site (pois/crash_site.json): hull plates torn off the SV-04 and planks from its burst
+    // crates. Press Use to pick a pile up; it does not come back.
+    {
+      "id": "scrap_pile_metal",
+      "collider": { "shape": "box", "size": [1.4, 0.5, 1.4], "at": [0.0, 0.25, 0.0] },
+      "mesh": { "file": "meshes/world/scrap_pile_metal.glb" },
+      "footprint": 1.6,
+      "sink": 0.02,
+      "max_slope": 0.4,
+      "damage_from": [],
+      "harvest": true,
+      "drops": [{ "item": "scrap_metal", "count": 4, "count_max": 6 }]
+    },
+    {
+      "id": "scrap_pile_wood",
+      "collider": { "shape": "box", "size": [1.4, 0.6, 1.0], "at": [0.0, 0.3, 0.0] },
+      "mesh": { "file": "meshes/world/scrap_pile_wood.glb" },
+      "footprint": 1.6,
+      "sink": 0.02,
+      "max_slope": 0.4,
+      "damage_from": [],
+      "harvest": true,
+      "drops": [{ "item": "scrap_wood", "count": 4, "count_max": 6 }]
     }
   ]
 }

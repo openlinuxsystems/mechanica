@@ -242,6 +242,7 @@ public sealed partial class WorldGenerator
         var pieces = new List<PoiPiecePlacement>();
         var markers = new List<PoiMarkerPlacement>();
         var pools = new List<PoiPoolPlacement>();
+        var models = new List<PoiModelPlacement>();
         foreach (var poi in PoisOverlapping(ox, oz, x1, z1))
         {
             pools.AddRange(PoolsOf(poi).Where(p => Inside(p.Centre, ox, oz, x1, z1)));
@@ -252,6 +253,13 @@ public sealed partial class WorldGenerator
                 var at = poi.ToWorld(ToVector(piece.At));
                 if (Inside(at, ox, oz, x1, z1))
                     pieces.Add(new PoiPiecePlacement(poi, k, piece, at, poi.Yaw + Radians(piece.Yaw)));
+            }
+            for (var k = 0; k < (prefab.Models?.Count ?? 0); k++)
+            {
+                var model = prefab.Models![k];
+                var at = poi.ToWorld(ToVector(model.At));
+                if (Inside(at, ox, oz, x1, z1))
+                    models.Add(new PoiModelPlacement(poi, k, model, Data.ModelFileOf(poi.Poi, model), at, poi.Yaw + Radians(model.Yaw)));
             }
             foreach (var marker in prefab.Markers ?? [])
             {
@@ -264,6 +272,7 @@ public sealed partial class WorldGenerator
         {
             Grounds = grounds,
             Pools = pools,
+            Models = models,
             Roads = RoadMesher.Build(this, ox, oz, x1, z1),
         };
     }

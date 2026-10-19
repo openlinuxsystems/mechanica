@@ -1,36 +1,141 @@
 {
   "id": "crash_site",
   "name": "Crash Site",
-  "radius": 80.0,
+  "radius": 120.0,
   // The start (World Map spec §1): site poi_36 in worldgen.json places it in the southeast, its road heading north.
-  "size": [30.0, 8.0, 40.0],
+  // Laid out in docs/art-direction.md: the walk-in SV-04 wreck in its scar, cargo trailing north to an Old Stone court,
+  // the farm and pond to the west, a dead relay beacon and burnt woods to the east, inside a ring of forest.
+  "size": [90.0, 12.0, 110.0],
   "road": "road",
   "placement": {},
   "terrain": [
-    { "op": "flatten", "radius": 40.0, "blend": 38.0 },
-    { "op": "flatten", "at": [30.0, 26.0], "radius": 18.0, "blend": 12.0 },
-    { "op": "basin", "at": [30.0, 26.0], "radius": 4.0, "blend": 14.0, "depth": 6.0 }
+    { "op": "flatten", "radius": 60.0, "blend": 45.0 },
+    { "op": "flatten", "at": [-50.0, 0.0], "radius": 18.0, "blend": 12.0 },
+    { "op": "basin", "at": [-50.0, 0.0], "radius": 4.0, "blend": 14.0, "depth": 6.0, "wobble": 0.12 }
   ],
   "ground": [
-    { "ground": "grass", "radius": 50.0, "blend": 28.0, "noise": 9.0 },
-    { "ground": "burnt", "at": [0.0, 20.0], "radius": 16.0, "blend": 18.0, "noise": 9.0 }
+    { "ground": "grass", "radius": 70.0, "blend": 40.0, "noise": 9.0 },
+    { "ground": "burnt", "at": [0.0, 4.0], "radius": 20.0, "blend": 12.0, "noise": 6.0 },
+    { "ground": "burnt", "at": [33.0, 3.0], "radius": 11.0, "blend": 8.0, "noise": 5.0 }
   ],
   "flora": "meadow",
-  "pieces": [
-    { "shape": "box", "size": [8.0, 4.0, 16.0], "at": [0.0, 2.0, 22.0], "yaw": 12.0, "color": "#9aa3ab" },
-    { "shape": "box", "size": [6.0, 2.5, 6.0], "at": [1.5, 5.2, 19.0], "yaw": 12.0, "color": "#9aa3ab" },
-    { "shape": "box", "size": [14.0, 0.4, 4.0], "at": [-10.0, 0.6, 24.0], "yaw": 25.0, "color": "#7d858c" },
-    { "shape": "cylinder", "radius": 1.2, "height": 3.0, "at": [7.0, 1.5, 32.0], "color": "#4a4f55" },
-    { "shape": "box", "size": [2.0, 1.0, 1.5], "at": [-6.0, 0.5, 14.0], "yaw": 40.0, "color": "#7d858c" },
-    { "shape": "box", "size": [1.2, 0.8, 2.5], "at": [9.0, 0.4, 16.0], "yaw": 70.0, "color": "#7d858c" }
+  "models": [
+    // The SV-04 Salvager broken in two; both halves share the ship's origin.
+    { "file": "meshes/structures/sv04_fore.glb", "at": [0.0, 0.0, 0.0], "yaw": 20.0 },
+    { "file": "meshes/structures/sv04_aft.glb", "at": [0.0, 0.0, 0.0], "yaw": 20.0 },
+    // Old Stone court to the north, at the end of the cargo spill.
+    { "file": "meshes/structures/stone_court.glb", "at": [-6.0, 0.0, -58.0] },
+    { "file": "meshes/structures/stone_arch.glb", "at": [-6.0, 0.0, -48.0] },
+    { "file": "meshes/structures/stone_pillar_tall.glb", "at": [2.66, 0.0, -63.0] },
+    { "file": "meshes/structures/stone_pillar_mid.glb", "at": [-2.58, 0.0, -67.4], "yaw": 37.0 },
+    { "file": "meshes/structures/stone_pillar_short.glb", "at": [-9.42, 0.0, -67.4], "yaw": 74.0 },
+    { "file": "meshes/structures/stone_pillar_tall.glb", "at": [-14.66, 0.0, -63.0], "yaw": 21.0 },
+    { "file": "meshes/structures/stone_pillar_mid.glb", "at": [-15.85, 0.0, -56.26], "yaw": 58.0 },
+    { "file": "meshes/structures/stone_pillar_short.glb", "at": [-12.43, 0.0, -50.34], "yaw": 5.0 },
+    // A broken arch to the west-southwest.
+    { "file": "meshes/structures/stone_arch_broken.glb", "at": [-30.0, 0.0, 22.0], "yaw": 70.0 },
+    // Lone pillars to the southeast.
+    { "file": "meshes/structures/stone_pillar_tall.glb", "at": [40.0, 0.0, 22.0], "yaw": 10.0 },
+    { "file": "meshes/structures/stone_pillar_short.glb", "at": [44.0, 0.0, 27.0], "yaw": 35.0 },
+    { "file": "meshes/structures/stone_pillar_mid.glb", "at": [30.0, 0.0, 40.0], "yaw": 60.0 },
+    // The farmer's shack, trade counter and garden to the northwest.
+    { "file": "meshes/structures/settler_shack.glb", "at": [-40.0, 0.0, -44.0], "yaw": -15.0 },
+    // A dead Colony relay beacon to the northeast.
+    { "file": "meshes/structures/relay_beacon_dead.glb", "at": [18.0, 0.0, -26.0], "yaw": 30.0 },
+    // Cargo thrown out of the hold: Colony crates (decoration) among loot crates.
+    { "file": "meshes/structures/cargo_crate_colony.glb", "at": [2.0, 0.0, -26.0], "yaw": 30.0 },
+    { "file": "meshes/structures/cargo_crate_colony.glb", "at": [-6.0, 0.0, -28.5], "yaw": 38.0 },
+    { "file": "meshes/structures/cargo_crate_colony.glb", "at": [-1.0, 0.0, -33.5], "yaw": 13.0 },
+    { "file": "meshes/structures/cargo_crate_colony.glb", "at": [3.0, 0.0, -38.5], "yaw": 50.0 },
+    { "file": "meshes/structures/cargo_crate_colony.glb", "at": [-4.0, 0.0, -41.0], "yaw": 61.0 },
+    { "file": "meshes/structures/cargo_crate_colony.glb", "at": [-2.0, 0.0, -46.0], "yaw": 19.0 }
   ],
   "markers": [
-    { "type": "spawn", "at": [0.0, 0.0, 4.0] },
-    { "type": "fire", "at": [3.0, 0.0, 13.0] },
-    { "type": "fire", "at": [-6.0, 0.0, 29.0] },
-    { "type": "fire", "at": [7.0, 0.0, 27.0] },
-    { "type": "item", "ref": "master_battery", "at": [-2.0, 0.5, 12.0] },
-    { "type": "item", "ref": "logbook", "at": [2.0, 0.5, 12.0] },
-    { "type": "item", "ref": "chest", "at": [4.0, 0.0, 10.0] }
+    // South of the wreck, facing it.
+    { "type": "spawn", "at": [16.0, 0.0, 36.0], "yaw": 24.0 },
+    // Engineering, by the Master Battery.
+    { "type": "fire", "at": [0.78, 0.5, 5.03] },
+    // By the airlock.
+    { "type": "fire", "at": [6.36, 0.0, -4.44] },
+    // At the break.
+    { "type": "fire", "at": [-1.66, 0.0, 14.44] },
+    // In engineering.
+    { "type": "item", "ref": "master_battery", "at": [0.5, 0.94, 1.28] },
+    // On the bridge.
+    { "type": "item", "ref": "logbook", "at": [-3.75, 0.61, -10.36] },
+    // The cargo hold: loot crates and scrap.
+    { "type": "object", "ref": "loot_crate", "at": [1.06, 0.29, 16.48] },
+    { "type": "object", "ref": "loot_crate", "at": [4.3, 0.53, 12.75] },
+    { "type": "object", "ref": "loot_crate", "at": [5.26, 0.44, 19.2] },
+    { "type": "object", "ref": "scrap_pile_metal", "at": [3.55, 0.42, 16.31] },
+    { "type": "object", "ref": "scrap_pile_wood", "at": [2.2, 0.3, 18.41] },
+    // Starting scrap round the hull: plates torn off on impact, planks from burst crates.
+    { "type": "object", "ref": "scrap_pile_metal", "at": [9.0, 0.0, -4.0] },
+    { "type": "object", "ref": "scrap_pile_metal", "at": [11.0, 0.0, 2.0] },
+    { "type": "object", "ref": "scrap_pile_wood", "at": [-9.0, 0.0, 14.0] },
+    { "type": "object", "ref": "scrap_pile_metal", "at": [7.0, 0.0, 20.0] },
+    { "type": "object", "ref": "scrap_pile_wood", "at": [-4.0, 0.0, -16.0] },
+    // The cargo spill's loot crates.
+    { "type": "object", "ref": "loot_crate", "at": [-3.0, 0.0, -23.0] },
+    { "type": "object", "ref": "loot_crate", "at": [4.0, 0.0, -31.0] },
+    { "type": "object", "ref": "loot_crate", "at": [-7.0, 0.0, -36.0] },
+    { "type": "object", "ref": "loot_crate", "at": [1.0, 0.0, -43.0] },
+    // On the court's dais.
+    { "type": "object", "ref": "bloom_pod_green", "at": [-6.0, 1.05, -60.2] },
+    // Burnt woods to the east where the ship came down.
+    { "type": "object", "ref": "burnt_tree", "at": [27.26, 0.0, 11.64] },
+    { "type": "object", "ref": "burnt_tree", "at": [33.69, 0.0, 6.79] },
+    { "type": "object", "ref": "burnt_tree", "at": [39.86, 0.0, 10.94] },
+    { "type": "object", "ref": "burnt_tree", "at": [33.28, 0.0, 5.52] },
+    { "type": "object", "ref": "burnt_tree", "at": [36.92, 0.0, -2.88] },
+    { "type": "object", "ref": "burnt_tree", "at": [29.66, 0.0, -4.97] },
+    { "type": "object", "ref": "burnt_tree", "at": [26.36, 0.0, 0.47] },
+    { "type": "object", "ref": "burnt_tree", "at": [29.64, 0.0, 7.11] },
+    // A ring of forest round the clearing; the road leaves to the north.
+    { "type": "object", "ref": "pine_tree", "at": [91.47, 0.0, 3.21] },
+    { "type": "object", "ref": "spruce_tree", "at": [107.2, 0.0, -19.65] },
+    { "type": "object", "ref": "leafy_tree", "at": [88.86, 0.0, -29.66] },
+    { "type": "object", "ref": "pine_tree", "at": [82.94, 0.0, -41.56] },
+    { "type": "object", "ref": "birch_tree", "at": [76.68, 0.0, -48.02] },
+    { "type": "object", "ref": "spruce_tree", "at": [70.54, 0.0, -57.93] },
+    { "type": "object", "ref": "pine_tree", "at": [65.16, 0.0, -82.68] },
+    { "type": "object", "ref": "spruce_tree", "at": [53.04, 0.0, -91.6] },
+    { "type": "object", "ref": "leafy_tree", "at": [42.29, 0.0, -81.24] },
+    { "type": "object", "ref": "leafy_tree", "at": [-37.83, 0.0, -87.94] },
+    { "type": "object", "ref": "pine_tree", "at": [-46.91, 0.0, -77.69] },
+    { "type": "object", "ref": "birch_tree", "at": [-58.39, 0.0, -63.29] },
+    { "type": "object", "ref": "spruce_tree", "at": [-82.8, 0.0, -72.32] },
+    { "type": "object", "ref": "pine_tree", "at": [-84.95, 0.0, -54.35] },
+    { "type": "object", "ref": "spruce_tree", "at": [-80.59, 0.0, -34.77] },
+    { "type": "object", "ref": "leafy_tree", "at": [-82.68, 0.0, -22.65] },
+    { "type": "object", "ref": "pine_tree", "at": [-100.01, 0.0, -9.98] },
+    { "type": "object", "ref": "birch_tree", "at": [-88.77, 0.0, -0.55] },
+    { "type": "object", "ref": "spruce_tree", "at": [-98.39, 0.0, 13.47] },
+    { "type": "object", "ref": "pine_tree", "at": [-85.19, 0.0, 26.32] },
+    { "type": "object", "ref": "spruce_tree", "at": [-97.06, 0.0, 42.18] },
+    { "type": "object", "ref": "leafy_tree", "at": [-75.64, 0.0, 50.98] },
+    { "type": "object", "ref": "pine_tree", "at": [-79.82, 0.0, 70.38] },
+    { "type": "object", "ref": "birch_tree", "at": [-74.1, 0.0, 78.98] },
+    { "type": "object", "ref": "spruce_tree", "at": [-47.32, 0.0, 70.21] },
+    { "type": "object", "ref": "pine_tree", "at": [-36.96, 0.0, 77.82] },
+    { "type": "object", "ref": "spruce_tree", "at": [-21.46, 0.0, 88.87] },
+    { "type": "object", "ref": "leafy_tree", "at": [-11.48, 0.0, 91.79] },
+    { "type": "object", "ref": "pine_tree", "at": [-1.71, 0.0, 92.35] },
+    { "type": "object", "ref": "birch_tree", "at": [10.73, 0.0, 100.38] },
+    { "type": "object", "ref": "spruce_tree", "at": [33.88, 0.0, 101.08] },
+    { "type": "object", "ref": "pine_tree", "at": [37.2, 0.0, 77.56] },
+    { "type": "object", "ref": "spruce_tree", "at": [59.09, 0.0, 89.5] },
+    { "type": "object", "ref": "leafy_tree", "at": [57.76, 0.0, 69.67] },
+    { "type": "object", "ref": "pine_tree", "at": [67.2, 0.0, 57.02] },
+    { "type": "object", "ref": "birch_tree", "at": [79.0, 0.0, 49.92] },
+    { "type": "object", "ref": "spruce_tree", "at": [84.86, 0.0, 39.24] },
+    { "type": "object", "ref": "pine_tree", "at": [106.41, 0.0, 27.59] },
+    { "type": "object", "ref": "spruce_tree", "at": [94.55, 0.0, 12.87] },
+    // Big rocks at the clearing's edge.
+    { "type": "object", "ref": "large_rock", "at": [75.34, 0.0, -20.19] },
+    { "type": "object", "ref": "large_rock", "at": [-59.75, 0.0, -50.14] },
+    { "type": "object", "ref": "large_rock", "at": [-73.3, 0.0, 26.68] },
+    { "type": "object", "ref": "large_rock", "at": [-26.68, 0.0, 73.3] },
+    { "type": "object", "ref": "large_rock", "at": [59.75, 0.0, 50.14] }
   ]
 }

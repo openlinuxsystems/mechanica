@@ -296,11 +296,13 @@ public class WorldGenTests
         Assert.Equal(new Vector2(0.19f * gen.WorldSize, 0.38f * gen.WorldDepth), crash.Centre);
         Assert.Equal(6f, crash.PadHeight);
         Assert.Equal(0, crash.QuarterTurns);
-        Assert.Equal(crash.ToWorld(new Vector3(0, 0, 4)), gen.Spawn);
-        for (var x = -20f; x <= 20f; x += 2f)
-            for (var z = -20f; z <= 10f; z += 2f)
-                Assert.Equal(6f, gen.HeightAt(crash.Centre.X + x, crash.Centre.Y + z));
-        var pond = crash.Centre + new Vector2(30, 26);
+        Assert.Equal(crash.ToWorld(new Vector3(16, 0, 36)), gen.Spawn);
+        // Level for 55 m round the wreck, except the pond to the west.
+        for (var x = -55f; x <= 55f; x += 2f)
+            for (var z = -55f; z <= 55f; z += 2f)
+                if (x * x + z * z <= 55f * 55f && Vector2.Distance(new Vector2(x, z), new Vector2(-50, 0)) > 20f)
+                    Assert.Equal(6f, gen.HeightAt(crash.Centre.X + x, crash.Centre.Y + z));
+        var pond = crash.Centre + new Vector2(-50, 0);
         Assert.True(gen.HeightAt(pond.X, pond.Y) < gen.SeaLevel - 1f, "a pond sits next to the crash site");
         // Its banks are gentle enough to walk out of (the player controller climbs up to 45°), so the first water a
         // new player meets is never a trap.
@@ -313,6 +315,14 @@ public class WorldGenTests
             }
         Assert.Equal(3, crash.Poi.Prefab.Markers!.Count(m => m.Type == "fire"));
         Assert.Single(crash.Poi.Prefab.Markers!, m => m.Ref == "master_battery");
+        // The walk-in wreck (docs/art-direction.md), with starting scrap to pick up round it.
+        Assert.Contains(crash.Poi.Prefab.Models!, m => m.File == "meshes/structures/sv04_fore.glb");
+        var scrap = crash.Poi.Prefab.Markers!.Select((m, k) => (m, k)).Where(e => e.m.Ref?.StartsWith("scrap_pile_", StringComparison.Ordinal) == true)
+            .Select(e => gen.Find(WorldObjectId.ForPoi(crash.Index, e.k))!).ToList();
+        Assert.True(scrap.Count >= 6, $"scrap piles ({scrap.Count})");
+        Assert.All(scrap, o => Assert.True(o.Definition.Harvest && o.Definition.Regrow is null));
+        Assert.Contains(scrap, o => o.Definition.Drops!.Any(d => d.Item == "scrap_metal"));
+        Assert.Contains(scrap, o => o.Definition.Drops!.Any(d => d.Item == "scrap_wood"));
         // Its road heads north to the first Mechanic Station (spec §1).
         var station = Assert.Single(gen.Pois, p => p.Site?.Id == "poi_37");
         Assert.True(station.Centre.Y < crash.Centre.Y, "the first Mechanic Station is north of the crash site");
@@ -529,7 +539,7 @@ public class WorldGenTests
         Assert.Contains(pools, p => p.Poi.Prefab.Id == "poi_23");
 
         var geysers = gen.Pois.SelectMany(p => (p.Poi.Prefab.Markers ?? []).Select((m, k) => (Poi: p, Marker: m, Index: k)))
-            .Where(m => m.Marker.Type == "object").ToList();
+            .Where(m => m.Marker.Type == "object" && m.Marker.Ref == "oil_geyser").ToList();
         Assert.True(geysers.Count >= 60, $"oil geysers ({geysers.Count})");
         foreach (var (poi, marker, index) in geysers.Take(40))
         {
@@ -704,6 +714,10 @@ public class WorldGenTests
     [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "pools": [{ "liquid": "oil", "radius": 4 }] }""", "$.pools[0].liquid")]
     [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "pools": [{ "liquid": "goo", "radius": 0 }] }""", "$.pools[0].radius")]
     [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "pools": [{ "liquid": "goo", "at": [6, 0], "radius": 5 }] }""", "$.pools[0]")]
+    [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "models": [{ "file": "../ship.glb" }] }""", "$.models[0].file")]
+    [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "models": [{ "file": "meshes/ship.png" }] }""", "$.models[0].file")]
+    [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "models": [{ "at": [0, 0, 0] }] }""", "$.models[0].file")]
+    [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "models": [{ "file": "meshes/ship.glb", "at": [8, 0, 8] }] }""", "$.models[0].at")]
     public void BadPoiGivesAClearErrorAndIsLeftOut(string json, string path)
     {
         using var mods = new TestMods().Mod("vanilla")
@@ -715,6 +729,36 @@ public class WorldGenTests
         var data = WorldGenData.Load(mods.Load());
         Assert.Contains(data.Diagnostics, d => d.Code == DiagnosticCodes.PoiInvalid && d.JsonPath == path);
         Assert.Empty(data.Pois);
+    }
+
+    [Fact]
+    public void PoiModelsLoadFromTheirOwnModAndBelongToOneChunk()
+    {
+        using var mods = new TestMods().Mod("vanilla").Mod("wrecks", dependencies: """[{ "id": "vanilla", "version": ">=1.0.0" }]""")
+            .File("vanilla", WorldGenData.DefinitionFile, """{ "biomes": [{ "id": "a" }] }""")
+            .File("wrecks", "pois/hulk.json", """
+                { "id": "hulk", "radius": 40, "placement": { "fixed": [100, 100] }, "terrain": [{ "op": "flatten", "radius": 20, "blend": 10 }],
+                  "models": [{ "file": "meshes/structures/hulk.glb", "at": [10, 0, -5], "yaw": 90 },
+                             { "file": "vanilla:meshes/structures/mast.glb", "at": [-10, 0, 0], "solid": false }] }
+                """);
+        var loaded = mods.Load();
+        var data = WorldGenData.Load(loaded);
+        Assert.Empty(data.Diagnostics);
+        var gen = new WorldGenerator(data, 1, WorldSize);
+        var hulk = Assert.Single(gen.Pois);
+        var models = Enumerable.Range(-3, 6).SelectMany(x => Enumerable.Range(-3, 6).Select(z => new ChunkCoord(
+                (int)MathF.Floor(hulk.Centre.X / 64f) + x, (int)MathF.Floor(hulk.Centre.Y / 64f) + z)))
+            .SelectMany(c => gen.GenerateChunk(c, 64f).Models).ToList();
+        Assert.Equal([0, 1], models.Select(m => m.Index).Order());
+        var first = models.Single(m => m.Index == 0);
+        Assert.Equal(hulk.ToWorld(new Vector3(10, 0, -5)), first.Position);
+        Assert.Equal(MathF.PI / 2f, first.Yaw, 4);
+        Assert.True(first.Model.Solid);
+        string Folder(string id) => loaded.Mods.Single(m => m.Id == id).Directory;
+        Assert.Equal(Path.Combine(Folder("wrecks"), "meshes", "structures", "hulk.glb"), first.File);
+        var mast = models.Single(m => m.Index == 1);
+        Assert.False(mast.Model.Solid);
+        Assert.Equal(Path.Combine(Folder("vanilla"), "meshes", "structures", "mast.glb"), mast.File);
     }
 
     [Fact]

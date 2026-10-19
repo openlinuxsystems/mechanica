@@ -83,9 +83,10 @@ public sealed class WorldGenData
     public const string PoiFolder = "pois";
 
     private WorldGenData(WorldGenDefinition definition, IReadOnlyList<LoadedPoi> pois, IReadOnlyList<DataDiagnostic> diagnostics, string fingerprint,
-        Func<string, AssetKind, string?>? assetFile = null, IReadOnlyList<LoadedSite>? sites = null)
+        Func<string, string, AssetKind, string?>? assetFile = null, IReadOnlyList<LoadedSite>? sites = null, string definitionMod = "")
     {
         _assetFile = assetFile;
+        _definitionMod = definitionMod;
         Definition = definition;
         Terrain = definition.Terrain;
         Pois = pois;
@@ -119,7 +120,7 @@ public sealed class WorldGenData
         FloraRules = flora;
         FloraByBiome = [.. Biomes.Select(b => (IReadOnlyList<Flora>)[.. flora.Where(f => f.Biome == b.Index)])];
         CoastBiome = definition.CoastBiome is { } coast ? Biomes.First(b => b.Id == coast) : null;
-        Grounds = [.. (definition.Grounds ?? []).Select((g, i) => new Ground(i, g.Id!, assetFile?.Invoke(g.Texture!, AssetKind.Texture), g.Tile, g.Flora,
+        Grounds = [.. (definition.Grounds ?? []).Select((g, i) => new Ground(i, g.Id!, assetFile?.Invoke(g.Texture!, definitionMod, AssetKind.Texture), g.Tile, g.Flora,
             g.FloraTint is { } tint ? ParseColor(tint) : null))];
         BiomeGrounds = [.. (definition.Biomes ?? []).Select(b => b.Ground is { } id ? GroundIndex(id) : -1)];
         SlopeGround = definition.SlopeGround is { Ground: { } slope } ? GroundIndex(slope) : -1;
@@ -137,7 +138,9 @@ public sealed class WorldGenData
     /// <summary>The world's mandatory structures, in file order, with their prefabs or pools resolved.</summary>
     public IReadOnlyList<LoadedSite> Sites { get; }
 
-    private readonly Func<string, AssetKind, string?>? _assetFile;
+    // Full path of a mod path, read relative to a mod (the second argument), or null.
+    private readonly Func<string, string, AssetKind, string?>? _assetFile;
+    private readonly string _definitionMod;
 
     /// <summary>
     /// Full path of the model a world object is drawn with (<see cref="WorldObjectDefinition.Mesh"/>), or null when it has
@@ -145,7 +148,7 @@ public sealed class WorldGenData
     /// <see cref="MeshDefinition.Variants"/> (1 the first); 0, or one it does not have, is the main model.
     /// </summary>
     public string? MeshFileOf(WorldObjectDefinition definition, int variant = 0) =>
-        ModelOf(definition, variant) is { } file ? _assetFile?.Invoke(file, AssetKind.Mesh) : null;
+        ModelOf(definition, variant) is { } file ? _assetFile?.Invoke(file, _definitionMod, AssetKind.Mesh) : null;
 
     /// <summary>The mod path of the model <paramref name="variant"/> of an object (see <see cref="MeshFileOf"/>), or null.</summary>
     public static string? ModelOf(WorldObjectDefinition definition, int variant = 0) =>
@@ -153,7 +156,14 @@ public sealed class WorldGenData
 
     /// <summary>Full path of the far model a world object is drawn with past its LOD distance (<see cref="MeshDefinition.Lod"/>), or null.</summary>
     public string? LodFileOf(WorldObjectDefinition definition) =>
-        definition.Mesh?.Lod is { } file ? _assetFile?.Invoke(file, AssetKind.Mesh) : null;
+        definition.Mesh?.Lod is { } file ? _assetFile?.Invoke(file, _definitionMod, AssetKind.Mesh) : null;
+
+    /// <summary>
+    /// Full path of a POI model's file (<see cref="PoiModel.File"/>), read relative to the mod the POI belongs to, or null
+    /// when the world was built without mods (tests).
+    /// </summary>
+    public string? ModelFileOf(LoadedPoi poi, PoiModel model) =>
+        model.File is { } file ? _assetFile?.Invoke(file, poi.QualifiedId[..Math.Max(0, poi.QualifiedId.IndexOf(':'))], AssetKind.Mesh) : null;
 
     /// <summary>Ground textures, in layer order.</summary>
     public IReadOnlyList<Ground> Grounds { get; }
@@ -273,13 +283,13 @@ public sealed class WorldGenData
                 pois.Add(new LoadedPoi(id, prefab, (prefab.Placement!.Biomes ?? []).Select(b => biomeIds.IndexOf(b)).ToHashSet()));
         }
         var folders = content.Mods.ToDictionary(m => m.Id, m => m.Directory);
-        string? AssetFile(string text, AssetKind kind) =>
-            AssetPath.TryParse(text, definitionMod, kind, out var path, out _) && folders.TryGetValue(path.ModId, out var folder)
+        string? AssetFile(string text, string mod, AssetKind kind) =>
+            AssetPath.TryParse(text, mod, kind, out var path, out _) && folders.TryGetValue(path.ModId, out var folder)
                 ? path.Resolve(folder)
                 : null;
         var sites = ResolveSites(definition, definitionMod, pois, new DiagnosticSink($"{definitionMod}/{DefinitionFile}", diagnostics));
         return new WorldGenData(definition, [.. pois.OrderBy(p => p.QualifiedId, StringComparer.Ordinal)], diagnostics, ComputeFingerprint(definition, pois),
-            AssetFile, sites);
+            AssetFile, sites, definitionMod);
     }
 
     // Sites name prefabs that live in their own files, so they are checked once every POI has loaded. A site whose prefab
