@@ -150,7 +150,48 @@ public sealed class LogicScriptTests : IDisposable
         Assert.Equal(0f, LastMotor(piston).Target);
         Activate(creation, toggle);
         Steps(3);
-        Assert.Equal(1f, LastMotor(piston).Target);
+        // Piston 1 pushes out its full 7 blocks at 2 blocks/s with 5000 N.
+        Assert.Equal(1.75f, LastMotor(piston).Target);
+        Assert.Equal(0.5f, LastMotor(piston).Velocity);
+        Assert.Equal(5000f, LastMotor(piston).MaxEffort);
+    }
+
+    [Fact]
+    public void ThePistonsLengthAndSpeedSettingsTakeEffectAtOnce()
+    {
+        var creation = Board();
+        var toggle = Place(creation, "vanilla:switch", new GridCell(1, 1, 0));
+        var piston = Place(creation, "vanilla:piston", new GridCell(0, 1, 0));
+        Place(creation, "vanilla:metal_block", new GridCell(0, 2, 0));
+        Link(creation, toggle, piston);
+        Activate(creation, toggle);
+        Steps(3);
+        Configure(creation, piston, "length", 3);
+        Configure(creation, piston, "speed", 1);
+        Steps(2);
+        Assert.Equal(0.75f, LastMotor(piston).Target);
+        Assert.Equal(0.25f, LastMotor(piston).Velocity);
+        Activate(creation, toggle);
+        Steps(2);
+        Assert.Equal(0f, LastMotor(piston).Target);
+    }
+
+    [Fact]
+    public void AnUpgradedPistonReachesFurtherFasterAndHarder()
+    {
+        var creation = Board();
+        var toggle = Place(creation, "vanilla:switch", new GridCell(1, 1, 0));
+        var piston = Place(creation, "vanilla:piston", new GridCell(0, 1, 0));
+        Place(creation, "vanilla:metal_block", new GridCell(0, 2, 0));
+        Link(creation, toggle, piston);
+        Assert.True(creation.SetLevel(piston, 4));
+        Assert.Equal("Piston 5", creation.DefinitionOf(piston).Name);
+        Activate(creation, toggle);
+        Steps(3);
+        // Level 5: 15 blocks (3.75 m) at 10 blocks/s (2.5 m/s) with 25000 N.
+        Assert.Equal(3.75f, LastMotor(piston).Target);
+        Assert.Equal(2.5f, LastMotor(piston).Velocity);
+        Assert.Equal(25000f, LastMotor(piston).MaxEffort);
     }
 
     [Fact]

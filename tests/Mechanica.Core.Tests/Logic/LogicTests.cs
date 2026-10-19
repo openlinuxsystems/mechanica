@@ -19,6 +19,7 @@ public partial class LogicTests
     private const string Seat = "test:seat";
     private const string Switch = "test:switch";
     private const string Sequencer = "test:sequencer";
+    private const string Driven = "test:driven";
     private const int Host = Creation.HostPeer, Peer = 2;
 
     private static readonly ActionCaller Player = new(Peer, ActionSource.Player);
@@ -53,7 +54,8 @@ public partial class LogicTests
         })
         .Add(Seat, Part(new LogicDefinition { Outputs = 4 }) with { Seat = new SeatDefinition() })
         .Add(Switch, Part(new LogicDefinition { Inputs = 1, Outputs = 4, Use = "toggle" }))
-        .Add(Sequencer, Part(new LogicDefinition { Inputs = 4, Outputs = 4 }) with { Settings = [Steps] });
+        .Add(Sequencer, Part(new LogicDefinition { Inputs = 4, Outputs = 4 }) with { Settings = [Steps] })
+        .Add(Driven, Part(new LogicDefinition { Inputs = 4 }) with { Settings = [Delay], Menu = new MenuDefinition { LockWhenSequenced = true } });
 
     private readonly FakeWorld _world = new();
     private readonly FakeHost _host = new();
@@ -303,6 +305,24 @@ public partial class LogicTests
 
         Row(Lamp);
         Assert.Contains("has no settings", Dispatch(Player, LogicActions.ConfigurePart, new ConfigurePartArgs(1, 1, Changes(("mode", Json("or"))))).Message);
+    }
+
+    [Fact]
+    public void ALinkedControllerLocksASequencedPartsSettings()
+    {
+        var c = Row(Source, Sequencer, Driven);
+        Assert.True(c.TryLink(1, 3, out var error), error);
+        // A plain signal leaves the settings free.
+        Assert.Null(PartSettings.Sequencer(c, 3));
+        Assert.True(Dispatch(Player, LogicActions.ConfigurePart, new ConfigurePartArgs(1, 3, Changes(("delay", Json(2))))).Ok);
+        Assert.True(c.TryLink(2, 3, out error), error);
+        Assert.Equal(2, PartSettings.Sequencer(c, 3));
+        Assert.Contains("is run by the", Dispatch(Player, LogicActions.ConfigurePart, new ConfigurePartArgs(1, 3, Changes(("delay", Json(3))))).Message);
+        Assert.Equal(2, c.FindPart(3)!.Settings!["delay"].GetSingle());
+        Assert.True(c.Unlink(2, 3));
+        Assert.True(Dispatch(Player, LogicActions.ConfigurePart, new ConfigurePartArgs(1, 3, Changes(("delay", Json(3))))).Ok);
+        // A part without the lock ignores the Controller.
+        Assert.Null(PartSettings.Sequencer(c, 2));
     }
 
     [Fact]

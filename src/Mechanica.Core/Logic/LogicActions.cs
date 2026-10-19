@@ -290,6 +290,8 @@ public sealed class LogicActions(BuildSettings settings, IBuildWorld world, ILog
             return $"{definition.Name ?? definition.Id} has no settings.";
         if (args.Settings.Count == 0)
             return "Name at least one setting.";
+        if (PartSettings.Sequencer(creation, args.Part) is { } sequencer)
+            return $"{definition.Name ?? definition.Id} is run by the {creation.DefinitionOf(sequencer).Name ?? "Controller"} linked to it.";
         foreach (var (id, value) in args.Settings)
         {
             if (PartSettings.Find(definition, id) is not { } setting)

@@ -631,6 +631,12 @@ public sealed record MenuDefinition
     /// <summary>True keeps changes in the menu until the player presses Apply or closes it (a controller's sequence).</summary>
     public bool? Apply { get; init; }
 
+    /// <summary>
+    /// True locks the part's settings while a part with a sequence setting (a Controller) is linked into it: the menu
+    /// shows only that the Controller runs the part, and the host refuses <c>ConfigurePart</c> (a piston).
+    /// </summary>
+    public bool? LockWhenSequenced { get; init; }
+
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }

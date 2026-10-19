@@ -18,7 +18,7 @@ namespace Mechanica.Game.Tests;
 /// Ctrl switches it to the chase view; the seat's hotbar shows the switch it is linked to and uses it from beyond
 /// reach; standing up puts the player beside the seat. E on a logic gate cycles its mode with a card. An engine with
 /// nothing linked in runs from its On toggle, its menu shows fuel and speed, its status dot turns green and its wheel
-/// bearing's highlight turns. A controller's frames wait for Apply, and Play previews them on the host. A sensor's
+/// bearing's highlight turns. A controller's frames wait for Apply, and Play previews them on the host; the piston it runs has its menu locked. A sensor's
 /// menu shows its cone and its Detects toggles.
 /// </summary>
 public partial class PartMenusTest : StagedTest
@@ -241,6 +241,24 @@ public partial class PartMenusTest : StagedTest
             Check(steps.Count == 3 && steps[0].Any(s => s.Part == _arm && s.Target == 45 && s.Speed == 2), $"the first frame turns the arm to 45° ({frames.GetRawText()})");
             Check(steps[0].Any(s => s.Part == _piston && Math.Abs(s.Target - 0.5f) < 1e-4f), "and pushes the piston out 0.5 m");
             _panel.Close();
+            return true;
+        });
+        Add("the controller locks the piston's menu", frame =>
+        {
+            if (frame == 0)
+            {
+                _panel.Open(Board, _piston);
+                Check(_panel.IsOpen && _panel.Rows.GetChildCount() == 0, $"the piston's menu shows no settings ({_panel.Rows.GetChildCount()} rows)");
+                Check(_panel.Status.Contains("is run by the Controller"), $"it says the Controller runs it ({_panel.Status})");
+                _panel.Close();
+                _results.Clear();
+                Request(LogicActions.ConfigurePart, new ConfigurePartArgs(Board, _piston,
+                    new Dictionary<string, JsonElement?> { ["length"] = JsonSerializer.SerializeToElement(3) }));
+                return false;
+            }
+            if (_results.Count == 0)
+                return frame > 200 && Check(false, "the host answers");
+            Check(!_results[0].Ok && _results[0].Message!.Contains("is run by the Controller"), $"the host refuses its settings ({_results[0]})");
             return true;
         });
         Add("a sensor's menu shows its cone and what it detects", frame =>

@@ -29,6 +29,11 @@ public partial class CreationNode : Node3D
     // A joint part's mesh named after its joint socket plus "Flex" (a suspension's coil), skewed each frame from its
     // rest transform so its far end (along the socket normal) follows the joint by Distance along Axis.
     private sealed record Flex(MeshInstance3D Mesh, JointLink Link, Transform3D Rest, Vector3 Axis, Vector3 Normal, float Start, float Length);
+
+    // A linear joint part's mesh named after its joint socket plus "Rod" (a piston's rod segment) and its copies, stacked
+    // end to end each frame from the moving head back into the part, so the rod reveals segment by segment.
+    private sealed record Rod(List<MeshInstance3D> Copies, JointLink Link, Transform3D Rest, Vector3 Axis, float Segment);
+    private readonly List<Rod> _rods = [];
     private readonly List<(int Part, Light3D Light, float Energy)> _lights = [];
     private readonly List<(int Part, Node3D Model, Vector3 Axis, Vector3 Pivot)> _animated = [];
     private readonly List<PartDisplayVisual> _displays = [];
@@ -121,7 +126,23 @@ public partial class CreationNode : Node3D
             var skew = new Basis(Vector3.Right + a * n.X, Vector3.Up + a * n.Y, Vector3.Back + a * n.Z);
             flex.Mesh.Transform = new Transform3D(skew, -a * flex.Start) * flex.Rest;
         }
+        foreach (var rod in _rods)
+        {
+            // Segment i hangs i segments back from the head; the ones that would sit wholly inside the part hide.
+            var length = Mathf.Max(0f, JointPosition(rod.Link) ?? 0f);
+            var shown = Mathf.Min(rod.Copies.Count, Mathf.CeilToInt(length / rod.Segment - 1e-3f));
+            for (var i = 0; i < rod.Copies.Count; i++)
+            {
+                var copy = rod.Copies[i];
+                copy.Visible = i == 0 || i < shown;
+                copy.Transform = i < shown ? new Transform3D(Basis.Identity, rod.Axis * (length - i * rod.Segment)) * rod.Rest : rod.Rest;
+            }
+        }
     }
+
+    /// <summary>How many rod segments of each sliding joint mesh (a piston's rod) show now, by part.</summary>
+    public IEnumerable<(int Part, int Segments)> RodSegments =>
+        _rods.Select(r => (r.Link.Connection.A, r.Copies.Count(c => c.Visible && c.Transform != r.Rest)));
 
     /// <summary>How far each flexing joint mesh (a suspension's coil) is skewed now, by part: its far end's offset in metres.</summary>
     public IEnumerable<(int Part, float Offset)> Flexes =>
@@ -283,6 +304,7 @@ public partial class CreationNode : Node3D
         _frames.Clear();
         _shafts.Clear();
         _flexes.Clear();
+        _rods.Clear();
         _lights.Clear();
         _animated.Clear();
         _displays.Clear();
@@ -441,6 +463,32 @@ public partial class CreationNode : Node3D
                 }
                 if (end - start > 0.001f)
                     _flexes.Add(new Flex(mesh, link, mesh.Transform, axis, n, start, end - start));
+            }
+            if (c.Type == ConnectionType.Linear && definition.Joint?.Max is { } max)
+            {
+                foreach (var mesh in model.GetChildren().OfType<MeshInstance3D>().Where(m => m.Name == $"{socket}Rod"))
+                {
+                    var box = mesh.Transform * mesh.GetAabb();
+                    var (start, end) = (float.MaxValue, float.MinValue);
+                    for (var i = 0; i < 8; i++)
+                    {
+                        var along = box.GetEndpoint(i).Dot(n);
+                        (start, end) = (Mathf.Min(start, along), Mathf.Max(end, along));
+                    }
+                    var segment = end - start;
+                    if (segment < 0.01f)
+                        continue;
+                    var copies = new List<MeshInstance3D> { mesh };
+                    for (var i = 1; i < Mathf.CeilToInt(max / segment) + 1; i++)
+                    {
+                        var copy = (MeshInstance3D)mesh.Duplicate();
+                        copy.Name = $"{socket}Rod{i}";
+                        copy.Visible = false;
+                        model.AddChild(copy);
+                        copies.Add(copy);
+                    }
+                    _rods.Add(new Rod(copies, link, mesh.Transform, axis, segment));
+                }
             }
         }
         foreach (var mesh in model.GetChildren().OfType<MeshInstance3D>().Where(m => m.Name == socket).ToList())

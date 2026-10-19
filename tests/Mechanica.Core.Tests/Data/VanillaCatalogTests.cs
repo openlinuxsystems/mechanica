@@ -106,6 +106,34 @@ public class VanillaCatalogTests
     }
 
     [Fact]
+    public void ThePistonIsCraftedAtLevel1AndUpgradedForRangeSpeedAndForce()
+    {
+        var book = RecipeBook.Load(Vanilla.Value);
+        var made = book.All.SelectMany(r => r.Outputs).Select(o => o.Item).Where(i => i.Contains("piston", StringComparison.Ordinal));
+        Assert.Equal(["vanilla:piston"], made.Distinct());
+        var written = Part("piston");
+        Assert.Equal(4, PartUpgrades.MaxLevel(written));
+        Assert.All(written.Upgrades!, u => Assert.Equal(2, u.Cost!.Single(c => c.Item == "component_kit").Count));
+        Assert.True(written.Menu?.LockWhenSequenced, "a Controller locks the piston's menu");
+        var vanilla = Path.Combine(TestMods.RepoRoot, "mods", "vanilla");
+        for (var level = 0; level <= 4; level++)
+        {
+            var part = PartUpgrades.At(written, level);
+            Assert.Equal($"Piston {level + 1}", part.Name);
+            Assert.True(File.Exists(Path.Combine(vanilla, part.Mesh!)), $"level {level + 1}'s model {part.Mesh}");
+            Assert.True(File.Exists(Path.Combine(vanilla, part.Icon!)), $"level {level + 1}'s icon {part.Icon}");
+            // The spec's table: range 7 to 15 blocks, speed 2 to 10, force up a step each level.
+            var range = 7 + 2 * level;
+            Assert.Equal(range * MechanicaInfo.GridSize, part.Sockets!.Single(s => s.Type == SocketType.Linear).Joint!.Max);
+            Assert.Equal(range, part.Settings!.Single(s => s.Id == "length").Max);
+            Assert.Equal(2 + 2 * level, part.Settings!.Single(s => s.Id == "speed").Max);
+            Assert.Equal(1, part.Settings!.Single(s => s.Id == "length").Min);
+            Assert.Equal(5000 * (level + 1), part.Properties!["force"]!.GetValue<float>());
+        }
+        Assert.Contains(new UpgradeChange("Length (blocks)", "7", "9"), PartUpgrades.Changes(written, PartUpgrades.At(written, 1)));
+    }
+
+    [Fact]
     public void EveryLightGivesLight()
     {
         foreach (var id in Items.Where(id => Part(id).Category == PartCategory.Light))
