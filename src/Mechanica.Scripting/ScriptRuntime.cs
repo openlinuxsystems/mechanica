@@ -263,7 +263,7 @@ public sealed partial class ScriptRuntime
         ReconcileItems();
         DeliverEvents();
         DeliverSignals();
-        var arg = DynValue.NewNumber(dt);
+        DynValue[] arg = [DynValue.NewNumber(dt)];
         _stepping.Clear();
         _stepping.AddRange(_worlds);
         foreach (var instance in _stepping)
