@@ -132,6 +132,17 @@ public static class RoadMaterials
                 c = mix(c, vec3(0.92, 0.92, 0.9) * wear, white);
                 c = mix(c, vec3(0.95, 0.74, 0.12) * wear, yellow);
             }
+            if (UV2.x < -1.5) {
+                // Across a T junction: the through road's centre line and its edge line on the side away from the road
+                // that ends there (uv2.y is that road's side).
+                float across = (UV.x - 0.5) * width;
+                float hw = width * 0.5;
+                float white = band(abs(across), hw - 0.55, hw - 0.35) * step(across * UV2.y, 0.0);
+                float yellow = band(abs(across), 0.08, 0.2);
+                float wear = (0.75 + 0.25 * grain(world.xz * 1.7)) * (1.0 - crack) * (1.0 - 0.6 * step(0.8, grain(world.xz * 4.0)));
+                c = mix(c, vec3(0.92, 0.92, 0.9) * wear, white);
+                c = mix(c, vec3(0.95, 0.74, 0.12) * wear, yellow);
+            }
             ALBEDO = c;
             ROUGHNESS = 0.88 - 0.08 * patch;
         }

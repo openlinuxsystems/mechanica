@@ -958,7 +958,10 @@ public sealed partial class WorldGenerator
                 // Roads bend and meet, so a spot can come near one placed from another stretch: keep the spacing anyway.
                 var pad = 0f;
                 // Level with the road, so the road's banks do not cut into the pad.
-                var placed = !_pois.Any(p => p.Poi == poi && Vector2.Distance(p.Centre, spot) < min) && SiteFits(poi, spot, out pad)
+                // Clear of junctions, where other roads come by at their own heights.
+                var placed = !_pois.Any(p => p.Poi == poi && Vector2.Distance(p.Centre, spot) < min)
+                    && !Roads.Nodes.Any(n => n.Kind == RoadNodeKind.Junction && Vector2.Distance(n.At, point) < n.Radius + reach + 20f)
+                    && SiteFits(poi, spot, out pad)
                     && MathF.Abs(pad - height) <= RoadsideRise;
                 if (placed)
                     Add(poi, spot, pad, FacingTurns(-normal));

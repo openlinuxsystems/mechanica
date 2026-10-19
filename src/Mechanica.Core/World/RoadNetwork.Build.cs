@@ -26,6 +26,25 @@ public sealed partial class RoadNetwork
     // The router's heuristic weight: above the reuse factor, so it trades a little optimality for speed.
     private const float Greed = 0.6f;
 
+    // Radius of the rounded kerb line where two arms of a junction meet, in metres. A junction's plate reaches this far
+    // past the road's edge down each arm, which is where its stop lines are.
+    private const float Fillet = 6f;
+
+    // Metres a road runs straight on past the mouth of its junction's arm before it bends into its route.
+    private const float ArmStraight = 12f;
+
+    // Metres beyond that straight that the route is cleared of points, so the bend into it is gentle.
+    private const float ArmBend = 50f;
+
+    // Pieces the bend from an arm into its route is laid out in.
+    private const int BendSteps = 5;
+
+    // Metres past a junction's plate over which a road eases from level into its full grade.
+    private const float Ramp = 20f;
+
+    // Metres out from a junction that a road's heading is read from.
+    private const float ArmSight = 80f;
+
     private Grid? _grid;
     private bool[] _roadCells = [];
     private readonly HashSet<long> _edges = [];
@@ -186,16 +205,18 @@ public sealed partial class RoadNetwork
             }
         }
         var junctionNode = new int[clusters.Count];
-        var radius = def.Width * 0.8f;
+        var mouth = def.Width / 2f + Fillet;
         for (var c = 0; c < clusters.Count; c++)
         {
             foreach (var cell in clusters[c])
                 cluster[cell] = c;
             var at = clusters[c].Aggregate(Vector2.Zero, (sum, cell) => sum + grid.Centre(cell)) / clusters[c].Count;
             var height = MathF.Max(gen.GroundBeforeRoads(at.X, at.Y), gen.SeaLevel + def.BridgeClearance);
-            junctionNode[c] = AddNode(RoadNodeKind.Junction, at, height, radius, -1);
+            junctionNode[c] = AddNode(RoadNodeKind.Junction, at, height, mouth, -1);
         }
 
+        // The ways between nodes: their cells, and the junction (or site) at each end.
+        var ways = new List<(List<int> Cells, int From, int To, PoiInstance? FromPoi, PoiInstance? ToPoi)>();
         var visited = new HashSet<long>();
         foreach (var start in degree.Keys.Where(IsNode).Order())
         {
@@ -218,10 +239,134 @@ public sealed partial class RoadNetwork
                 var toCluster = cluster.GetValueOrDefault(cur, -1);
                 if (fromCluster >= 0 && fromCluster == toCluster && cells.Count <= 6)
                     continue;
-                AddRoad(gen, def, grid, cells, fromCluster >= 0 ? junctionNode[fromCluster] : -1, toCluster >= 0 ? junctionNode[toCluster] : -1,
-                    ends.GetValueOrDefault(start), ends.GetValueOrDefault(cur), cluster);
+                ways.Add((cells, fromCluster >= 0 ? junctionNode[fromCluster] : -1, toCluster >= 0 ? junctionNode[toCluster] : -1,
+                    ends.GetValueOrDefault(start), ends.GetValueOrDefault(cur)));
             }
         }
+
+        // Each junction turns to fit the ways that meet there and gives each its own arm at right angles to the others.
+        var arms = new Dictionary<(int Way, bool AtStart), Vector2>();
+        foreach (var j in junctionNode)
+        {
+            var meeting = new List<(int Way, bool AtStart)>();
+            for (var w = 0; w < ways.Count; w++)
+            {
+                if (ways[w].From == j)
+                    meeting.Add((w, true));
+                if (ways[w].To == j)
+                    meeting.Add((w, false));
+            }
+            if (meeting.Count is 0 or > 4)
+                continue;
+            var node = _nodes[j];
+            var away = meeting.Select(m => Away(grid, ways[m.Way].Cells, m.AtStart, node.At, cluster)).ToList();
+            var (heading, slots) = Square(away);
+            _nodes[j] = node = node with { Heading = heading, Arms = slots.Aggregate(0, (mask, k) => mask | 1 << k) };
+            for (var m = 0; m < meeting.Count; m++)
+                arms[meeting[m]] = node.Arm(slots[m]);
+        }
+        var roads = new List<(List<Vector2> Points, int From, int To, PoiInstance? FromPoi, PoiInstance? ToPoi)>();
+        for (var w = 0; w < ways.Count; w++)
+        {
+            var (cells, from, to, fromPoi, toPoi) = ways[w];
+            var points = Lay(def, grid, cells, from, to, fromPoi, toPoi, cluster,
+                arms.TryGetValue((w, true), out var fromArm) ? fromArm : null, arms.TryGetValue((w, false), out var toArm) ? toArm : null);
+            if (points is null)
+                continue;
+            from = from >= 0 ? from : AddNode(RoadNodeKind.End, points[0], fromPoi?.PadHeight ?? gen.GroundBeforeRoads(points[0].X, points[0].Y), 0f, fromPoi?.Index ?? -1);
+            to = to >= 0 ? to : AddNode(RoadNodeKind.End, points[^1], toPoi?.PadHeight ?? gen.GroundBeforeRoads(points[^1].X, points[^1].Y), 0f, toPoi?.Index ?? -1);
+            roads.Add((points, from, to, fromPoi, toPoi));
+        }
+        var flat = def.Width / 2f + Fillet + 1f;
+        foreach (var j in junctionNode)
+        {
+            var node = _nodes[j];
+            // Arms whose road came to nothing are closed off, and the plate sits at a height every road out of it can climb
+            // from within its grade, level across the plate, as near the ground as that allows.
+            var open = 0;
+            float low = float.NegativeInfinity, high = float.PositiveInfinity;
+            foreach (var (points, from, to, _, _) in roads)
+            {
+                foreach (var atStart in new[] { true, false }.Where(s => (s ? from : to) == j))
+                {
+                    var near = atStart ? points[2] : points[^3];
+                    open |= 1 << Enumerable.Range(0, 4).MaxBy(k => Vector2.Dot(node.Arm(k), near - node.At));
+                    var other = _nodes[atStart ? to : from];
+                    if (other.Kind == RoadNodeKind.Junction)
+                        continue;
+                    var length = 0f;
+                    for (var k = 1; k < points.Count; k++)
+                        length += Vector2.Distance(points[k - 1], points[k]);
+                    var reach = def.MaxGrade * MathF.Max(0f, length - flat - Ramp / 2f);
+                    low = MathF.Max(low, other.Height - reach);
+                    high = MathF.Min(high, other.Height + reach);
+                }
+            }
+            var height = low <= high ? Math.Clamp(node.Height, low, high) : (low + high) / 2f;
+            _nodes[j] = node with { Height = MathF.Max(height, gen.SeaLevel + def.BridgeClearance), Arms = node.Arms == 0 ? 0 : open };
+        }
+        foreach (var (points, from, to, fromPoi, toPoi) in roads)
+        {
+            // Level across each junction's plate.
+            var (heights, bridge) = Profile(gen, points, _nodes[from].Height, _nodes[to].Height, def.MaxGrade, def.BridgeClearance, bridges: true,
+                _nodes[from].Kind == RoadNodeKind.Junction ? flat : 0f, _nodes[to].Kind == RoadNodeKind.Junction ? flat : 0f);
+            _chains.Add(new RoadChain(_chains.Count, RoadKind.Road, from, to, [.. points], heights, bridge, def.Width));
+            if (fromPoi is not null)
+                _connected[fromPoi.Index] = RoadKind.Road;
+            if (toPoi is not null)
+                _connected[toPoi.Index] = RoadKind.Road;
+        }
+    }
+
+    // Which way a road heads out of a junction: towards its route a little way off, past the bends of the cells nearest it.
+    private static Vector2 Away(Grid grid, List<int> cells, bool atStart, Vector2 centre, Dictionary<int, int> cluster)
+    {
+        var order = atStart ? cells : Enumerable.Reverse(cells);
+        var far = centre;
+        foreach (var cell in order.Where(c => !cluster.ContainsKey(c)))
+        {
+            far = grid.Centre(cell);
+            if (Vector2.Distance(far, centre) >= ArmSight)
+                break;
+        }
+        var d = far - centre;
+        return d.LengthSquared() > 1e-6f ? Vector2.Normalize(d) : Vector2.UnitX;
+    }
+
+    // The heading of a junction's first arm, and the arm (0..3, each at a right angle to the next) each way gets, that bend
+    // the ways the least: every way its own arm, the sum of the squared turns smallest.
+    internal static (float Heading, int[] Slots) Square(IReadOnlyList<Vector2> away)
+    {
+        var angles = away.Select(d => MathF.Atan2(d.Y, d.X)).ToArray();
+        var best = (Cost: float.PositiveInfinity, Heading: 0f, Slots: Array.Empty<int>());
+        var slots = new int[angles.Length];
+        for (var step = 0; step < 180; step++)
+        {
+            var heading = step * MathF.PI / 360f;
+            Assign(0, 0, 0f);
+
+            void Assign(int k, int used, float cost)
+            {
+                if (cost >= best.Cost)
+                    return;
+                if (k == angles.Length)
+                {
+                    best = (cost, heading, (int[])slots.Clone());
+                    return;
+                }
+                for (var slot = 0; slot < 4; slot++)
+                {
+                    if ((used & 1 << slot) != 0)
+                        continue;
+                    slots[k] = slot;
+                    var turn = Turn(angles[k] - heading - slot * MathF.PI / 2f);
+                    Assign(k + 1, used | 1 << slot, cost + turn * turn);
+                }
+            }
+        }
+        return (best.Heading, best.Slots);
+
+        static float Turn(float a) => MathF.IEEERemainder(a, 2f * MathF.PI);
     }
 
     private int AddNode(RoadNodeKind kind, Vector2 at, float height, float radius, int poi)
@@ -230,9 +375,10 @@ public sealed partial class RoadNetwork
         return _nodes.Count - 1;
     }
 
-    // One chain of cells between two nodes, made into a smooth, graded road.
-    private void AddRoad(WorldGenerator gen, RoadsDefinition def, Grid grid, List<int> cells, int fromJunction, int toJunction,
-        PoiInstance? fromPoi, PoiInstance? toPoi, Dictionary<int, int> cluster)
+    // The centre line of one chain of cells between two nodes: a smooth road that leaves each junction down its arm and
+    // stops at the edge of a site's pad. Null when nothing is left of it.
+    private List<Vector2>? Lay(RoadsDefinition def, Grid grid, List<int> cells, int fromJunction, int toJunction,
+        PoiInstance? fromPoi, PoiInstance? toPoi, Dictionary<int, int> cluster, Vector2? fromArm, Vector2? toArm)
     {
         // Cells inside a junction's cluster are replaced by the junction itself.
         var inner = cells.Where((c, k) => k > 0 && k < cells.Count - 1 && !cluster.ContainsKey(c)).ToList();
@@ -244,21 +390,50 @@ public sealed partial class RoadNetwork
             owners.Add(fromPoi.Index);
         if (toPoi is not null)
             owners.Add(toPoi.Index);
-        var points = Curve(Simplify(grid, line, owners, def.MaxGrade, allowWater: true));
+        var points = Curve(Squared(Simplify(grid, line, owners, def.MaxGrade, allowWater: true), fromArm, toArm, def.Width / 2f + Fillet));
         if (fromPoi is not null && Trim(points, fromPoi, atStart: true) is false)
-            return;
+            return null;
         if (toPoi is not null && Trim(points, toPoi, atStart: false) is false)
-            return;
-        if (points.Count < 2)
-            return;
-        var from = fromJunction >= 0 ? fromJunction : AddNode(RoadNodeKind.End, points[0], fromPoi?.PadHeight ?? gen.GroundBeforeRoads(points[0].X, points[0].Y), 0f, fromPoi?.Index ?? -1);
-        var to = toJunction >= 0 ? toJunction : AddNode(RoadNodeKind.End, points[^1], toPoi?.PadHeight ?? gen.GroundBeforeRoads(points[^1].X, points[^1].Y), 0f, toPoi?.Index ?? -1);
-        var (heights, bridge) = Profile(gen, points, _nodes[from].Height, _nodes[to].Height, def.MaxGrade, def.BridgeClearance, bridges: true);
-        _chains.Add(new RoadChain(_chains.Count, RoadKind.Road, from, to, [.. points], heights, bridge, def.Width));
-        if (fromPoi is not null)
-            _connected[fromPoi.Index] = RoadKind.Road;
-        if (toPoi is not null)
-            _connected[toPoi.Index] = RoadKind.Road;
+            return null;
+        return points.Count < 2 ? null : points;
+    }
+
+    // A route whose ends at junctions run straight down their arms: through the plate's mouth and on a little, then in an
+    // even bend (a quadratic Bézier leaving along the arm) into the first route point clear of the junction.
+    private static List<Vector2> Squared(List<Vector2> line, Vector2? fromArm, Vector2? toArm, float mouth)
+    {
+        if (fromArm is null && toArm is null)
+            return line;
+        var (a, b) = (line[0], line[^1]);
+        var straight = mouth + ArmStraight;
+        var clear = straight + ArmBend;
+        var middle = line.Skip(1).SkipLast(1)
+            .Where(p => (fromArm is null || Vector2.Distance(p, a) >= clear) && (toArm is null || Vector2.Distance(p, b) >= clear)).ToList();
+        var result = new List<Vector2> { a };
+        if (fromArm is { } f)
+            result.AddRange(Bend(a, f, middle.Count > 0 ? middle[0] : b));
+        result.AddRange(middle);
+        if (toArm is { } t)
+            result.AddRange(Enumerable.Reverse(Bend(b, t, middle.Count > 0 ? middle[^1] : a)));
+        result.Add(b);
+        return result;
+
+        // The arm's mouth and the end of its straight, then the bend from there towards the route (not including it).
+        List<Vector2> Bend(Vector2 centre, Vector2 arm, Vector2 to)
+        {
+            var from = centre + arm * straight;
+            var points = new List<Vector2> { centre + arm * mouth, from };
+            var reach = Vector2.Distance(from, to);
+            if (reach < 1f)
+                return points;
+            var control = from + arm * reach * 0.5f;
+            for (var k = 1; k < BendSteps; k++)
+            {
+                var u = (float)k / BendSteps;
+                points.Add((1 - u) * (1 - u) * from + 2 * (1 - u) * u * control + u * u * to);
+            }
+            return points;
+        }
     }
 
     // Cuts the road where it enters a POI's footprint, so it stops at the edge of the pad. False when nothing is left.
@@ -356,7 +531,7 @@ public sealed partial class RoadNetwork
     // the maximum grade, and meeting the given heights at both ends. Bridge samples are those over water, widened a little
     // so each bridge rests on its banks.
     private static (float[] Heights, bool[] Bridge) Profile(WorldGenerator gen, List<Vector2> points, float start, float end, float maxGrade,
-        float clearance, bool bridges)
+        float clearance, bool bridges, float flatStart = 0f, float flatEnd = 0f)
     {
         var n = points.Count;
         var ground = new float[n];
@@ -385,7 +560,16 @@ public sealed partial class RoadNetwork
         var along = new float[n];
         for (var k = 1; k < n; k++)
             along[k] = along[k - 1] + Vector2.Distance(points[k - 1], points[k]);
-        var heights = Grade(smooth, along, start, end, maxGrade);
+        // The first and last metres given as flat run level: they count as no distance to climb over. Past them the grade
+        // allowed grows evenly over Ramp metres, so the road rounds into its climb (the ground's triangles never poke through
+        // a sharp crest or dip).
+        var climb = new float[n];
+        for (var k = 1; k < n; k++)
+        {
+            var mid = (along[k - 1] + along[k]) / 2f;
+            climb[k] = climb[k - 1] + (along[k] - along[k - 1]) * MathF.Min(Rate(mid, flatStart), Rate(along[^1] - mid, flatEnd));
+        }
+        var heights = Grade(smooth, climb, start, end, maxGrade);
         for (var k = 0; k < n; k++)
         {
             if (water[k] && heights[k] < sea + 0.8f)
@@ -412,6 +596,9 @@ public sealed partial class RoadNetwork
         bridge[0] = bridge[^1] = false;
         return (heights, bridge);
     }
+
+    // The share of the full grade a road may climb at `s` metres from an end that runs level for `flat` metres.
+    private static float Rate(float s, float flat) => flat <= 0f ? 1f : Math.Clamp((s - flat) / Ramp, 0f, 1f);
 
     // Holds a wanted profile to a maximum grade with fixed ends: a pass forward from the start, then back from the end.
     private static float[] Grade(float[] wanted, float[] along, float start, float end, float maxGrade)
@@ -466,7 +653,16 @@ public sealed partial class RoadNetwork
             if (Nearest(last.X, last.Y, MaxBlend) is not { } join)
                 continue;
             var line = cells.Take(cells.Count - 1).Select(grid.Centre).Append(join.Point).ToList();
-            var points = Curve(Simplify(grid, line, [poi.Index], def.TrackMaxGrade, allowWater: false));
+            // It meets at a right angle, from the side it comes from.
+            var along = join.Chain.Points[join.Segment + 1] - join.Chain.Points[join.Segment];
+            var side = along.LengthSquared() > 1e-6f ? Vector2.Normalize(new Vector2(-along.Y, along.X)) : Vector2.UnitX;
+            if (Vector2.Dot(side, (line.Count > 1 ? line[^2] : grid.Centre(cells[0])) - join.Point) < 0f)
+                side = -side;
+            var simple = Simplify(grid, line, [poi.Index], def.TrackMaxGrade, allowWater: false);
+            var squared = Squared(simple, null, side, join.Chain.Width / 2f + 1f);
+            // Unless that would take it over another POI's ground: then it joins as it comes.
+            var clear = Enumerable.Range(1, squared.Count - 1).All(k => grid.Clear(squared[k - 1], squared[k], [poi.Index], def.TrackMaxGrade * 1.5f, false));
+            var points = Curve(clear ? squared : simple);
             if (!Trim(points, poi, atStart: true))
                 continue;
             var (heights, bridge) = Profile(gen, points, poi.PadHeight, join.Height, def.TrackMaxGrade, 1f, bridges: true);
