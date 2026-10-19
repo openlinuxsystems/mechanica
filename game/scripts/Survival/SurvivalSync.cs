@@ -327,6 +327,9 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
         World.State.IsDestroyed(id) ? null : World.Generator.Find(id);
 
     /// <inheritdoc/>
+    public LootTableDefinition? FindLootTable(string id) => World.Generator.Data.Definition.LootTables?.GetValueOrDefault(id);
+
+    /// <inheritdoc/>
     public IEnumerable<WorldObjectPlacement> ObjectsNear(System.Numerics.Vector3 point, float radius) =>
         // Widened by the largest footprint: an outcrop's cubes stand away from its ground point, which is what ObjectsIn looks at.
         World.Generator.ObjectsIn(point.X - radius - World.Generator.Data.MaxFootprint, point.Z - radius - World.Generator.Data.MaxFootprint,

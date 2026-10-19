@@ -303,9 +303,11 @@ public class WorldGenTests
     public void SmallFindsAreScatteredOverTheLand()
     {
         var gen = Vanilla.Value;
-        // World POI plan (2026-10-19): about 400 small finds a world, mostly loot crates, then wrecks and chests.
+        // World POI plan (2026-10-19): about 400 small finds a world, mostly loot crates, then wrecks and Bloom Pods
+        // (green in the open; purple and gold rarer, up on cliff tops and ledges).
         var counts = new Dictionary<string, int>();
-        foreach (var rule in gen.Data.ScatterRules.Where(r => r.Object.Id is "loot_crate" or "loot_chest" or "scrap_wreck"))
+        var perched = new List<(string Id, float Rise)>();
+        foreach (var rule in gen.Data.ScatterRules.Where(r => r.Object.Id is "loot_crate" or "scrap_wreck" || r.Object.Id!.StartsWith("bloom_pod_")))
         {
             var s = rule.Spacing;
             for (var iz = (int)MathF.Floor(-VanillaDepth / 2 / s); iz <= (int)MathF.Floor(VanillaDepth / 2 / s); iz++)
@@ -317,18 +319,39 @@ public class WorldGenTests
                     counts[find.Definition.Id!] = counts.GetValueOrDefault(find.Definition.Id!) + 1;
                     Assert.Empty(gen.PoisAt(find.Position.X, find.Position.Z));
                     Assert.False(gen.Roads.Covers(find.Position.X, find.Position.Z), $"{find.Definition.Id} on a road at {find.Position}");
+                    if (rule.Perch is { } perch)
+                    {
+                        var lowest = Enumerable.Range(0, 8).Min(a => gen.HeightAt(find.Position.X + MathF.Cos(a * MathF.PI / 4) * perch.Within,
+                            find.Position.Z + MathF.Sin(a * MathF.PI / 4) * perch.Within));
+                        perched.Add((find.Definition.Id!, gen.HeightAt(find.Position.X, find.Position.Z) - lowest));
+                    }
                 }
             }
         }
-        foreach (var (id, fewest, most) in new[] { ("loot_crate", 180, 340), ("loot_chest", 35, 90), ("scrap_wreck", 55, 120) })
+        foreach (var (id, fewest, most) in new[] { ("loot_crate", 180, 340), ("bloom_pod_green", 35, 90), ("bloom_pod_purple", 8, 40),
+                     ("bloom_pod_gold", 3, 20), ("scrap_wreck", 55, 120) })
             Assert.True(counts.GetValueOrDefault(id) >= fewest && counts.GetValueOrDefault(id) <= most, $"{id}: {counts.GetValueOrDefault(id)}");
-        Assert.True(counts.Values.Sum() is >= 330 and <= 500, string.Join(" ", counts));
+        Assert.True(counts.GetValueOrDefault("bloom_pod_gold") < counts.GetValueOrDefault("bloom_pod_purple"), string.Join(" ", counts));
+        Assert.True(counts.Values.Sum() is >= 330 and <= 520, string.Join(" ", counts));
+        // Purple and gold pods take a climb: each stands well above the ground round it.
+        Assert.All(perched, p => Assert.True(p.Rise >= 6f, $"{p.Id} only {p.Rise} m up"));
 
-        // A crate and a wreck break for their drops; a chest opens with Use.
+        // Crates, wrecks and pods all break for their drops; pods roll theirs from their rarity's loot table.
         var objects = gen.Data.Objects;
         Assert.True(objects["loot_crate"].Health > 0 && objects["scrap_wreck"].Health > objects["loot_crate"].Health);
-        Assert.True(objects["loot_chest"].Harvest);
-        Assert.All(new[] { "loot_crate", "loot_chest", "scrap_wreck" }, id => Assert.Contains(objects[id].Drops!, d => d.Item == "component_kit"));
+        Assert.All(new[] { "loot_crate", "scrap_wreck" }, id => Assert.Contains(objects[id].Drops!, d => d.Item == "component_kit"));
+        Assert.False(objects.ContainsKey("loot_chest"));
+        foreach (var (id, table, picks, most) in new[] { ("bloom_pod_green", "common", 1, 3), ("bloom_pod_purple", "epic", 1, 3), ("bloom_pod_gold", "legendary", 3, 3) })
+        {
+            var pod = objects[id];
+            Assert.Equal((table, picks, most), (pod.Loot!.Table, pod.Loot.Picks, pod.Loot.PicksMax ?? pod.Loot.Picks));
+            Assert.NotNull(pod.Glow);
+            Assert.Equal(("settle", "idle", "hit", "break"), (pod.Mesh!.Clips!.Appear, pod.Mesh.Clips.Idle, pod.Mesh.Clips.Hit, pod.Mesh.Clips.Break));
+            // The model carries every clip the data names.
+            var clips = Mechanica.Core.Characters.GltfSummary.Read(gen.Data.MeshFileOf(pod)!).Animations.Select(a => a.Name).Order().ToList();
+            Assert.Equal(["break", "hit", "idle", "settle"], clips);
+        }
+        Assert.True(objects["bloom_pod_green"].Health < objects["bloom_pod_purple"].Health && objects["bloom_pod_purple"].Health < objects["bloom_pod_gold"].Health);
     }
 
     [Fact]
@@ -550,6 +573,16 @@ public class WorldGenTests
     [InlineData("""{ "biomes": [{ "id": "a" }], "objects": [{ "id": "g", "collider": { "shape": "sphere", "radius": 1 }, "harvest": true, "refine": true }] }""", "$.objects[0].harvest")]
     [InlineData("""{ "biomes": [{ "id": "a" }], "objects": [{ "id": "g", "collider": { "shape": "sphere", "radius": 1 }, "drops": [{ "item": "x", "count": 3, "count_max": 2 }] }] }""", "$.objects[0].drops[0].count_max")]
     [InlineData("""{ "biomes": [{ "id": "a" }], "objects": [{ "id": "g", "collider": { "shape": "sphere", "radius": 1 }, "drops": [{ "item": "x", "chance": 1.5 }] }] }""", "$.objects[0].drops[0].chance")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "objects": [{ "id": "g", "collider": { "shape": "sphere", "radius": 1 }, "health": 5, "loot": { "table": "none" } }] }""", "$.objects[0].loot.table")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "loot_tables": { "t": { "items": [{ "item": "x" }] } }, "objects": [{ "id": "g", "collider": { "shape": "sphere", "radius": 1 }, "health": 5, "loot": { "table": "t", "picks": 0 } }] }""", "$.objects[0].loot.picks")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "loot_tables": { "t": { "items": [{ "item": "x" }] } }, "objects": [{ "id": "g", "collider": { "shape": "sphere", "radius": 1 }, "health": 5, "loot": { "table": "t", "picks": 2, "picks_max": 1 } }] }""", "$.objects[0].loot.picks_max")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "loot_tables": { "t": { "items": [] } } }""", "$.loot_tables.t.items")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "loot_tables": { "t": { "items": [{ "item": "x", "weight": 0 }] } } }""", "$.loot_tables.t.items[0].weight")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "loot_tables": { "t": { "items": [{ "item": "x", "count": 3, "count_max": 1 }] } } }""", "$.loot_tables.t.items[0].count_max")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "objects": [{ "id": "g", "collider": { "shape": "sphere", "radius": 1 }, "health": 5, "glow": { "color": "glowy" } }] }""", "$.objects[0].glow.color")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "objects": [{ "id": "g", "collider": { "shape": "sphere", "radius": 1 }, "health": 5, "glow": { "range": 0 } }] }""", "$.objects[0].glow.range")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "objects": [{ "id": "g", "collider": { "shape": "sphere", "radius": 1 }, "health": 5, "mesh": { "file": "m.glb", "clips": { "break_seconds": 1, "fade_seconds": 2 } } }] }""", "$.objects[0].mesh.clips.fade_seconds")]
+    [InlineData("""{ "biomes": [{ "id": "a", "scatter": [{ "object": "g", "spacing": 10, "chance": 1, "perch": { "rise": 0 } }] }], "objects": [{ "id": "g", "collider": { "shape": "sphere", "radius": 1 }, "health": 5 }] }""", "$.biomes[0].scatter[0].perch.rise")]
     [InlineData("""{ "biomes": [{ "id": "a" }], "grounds": [{ "id": "g", "texture": "g.png" }], "slope_ground": { "ground": "g", "from": 1, "to": 0.5 } }""", "$.slope_ground")]
     [InlineData("""{ "biomes": [{ "id": "a" }], "grounds": [{ "id": "a1", "texture": "g.png" }, { "id": "a2", "texture": "g.png" }, { "id": "a3", "texture": "g.png" }, { "id": "a4", "texture": "g.png" }, { "id": "a5", "texture": "g.png" }, { "id": "a6", "texture": "g.png" }, { "id": "a7", "texture": "g.png" }, { "id": "a8", "texture": "g.png" }, { "id": "a9", "texture": "g.png" }] }""", "$.grounds")]
     public void BadWorldGenDataGivesAClearError(string json, string path)

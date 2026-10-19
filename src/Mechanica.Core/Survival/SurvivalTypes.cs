@@ -213,6 +213,9 @@ public interface ISurvivalWorld
     /// <summary>A world object that still stands, or null.</summary>
     WorldObjectPlacement? FindObject(WorldObjectId id);
 
+    /// <summary>A loot table of the world's generation rules (<c>loot_tables</c> in worldgen.json), or null.</summary>
+    LootTableDefinition? FindLootTable(string id) => null;
+
     /// <summary>World objects that still stand within <paramref name="radius"/> of <paramref name="point"/>.</summary>
     IEnumerable<WorldObjectPlacement> ObjectsNear(Vector3 point, float radius);
 

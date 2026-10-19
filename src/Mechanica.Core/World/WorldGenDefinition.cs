@@ -50,6 +50,12 @@ public sealed record WorldGenDefinition
     /// <summary>Liquids that POI pools hold (<see cref="PoiPrefab.Pools"/>): chemicals, oil.</summary>
     public List<LiquidDefinition>? Liquids { get; init; }
 
+    /// <summary>
+    /// Weighted item lists that breakable objects roll their <see cref="WorldObjectDefinition.Loot"/> from, by id
+    /// (<c>common</c>, <c>epic</c>, <c>legendary</c> for the Bloom Pods).
+    /// </summary>
+    public Dictionary<string, LootTableDefinition>? LootTables { get; init; }
+
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
@@ -243,6 +249,9 @@ public sealed record ScatterRule
     /// <summary>Probability (0..1) that a cell's spot holds an object.</summary>
     public float Chance { get; init; }
 
+    /// <summary>Keeps the rule's spots to hard-to-reach high ground: cliff tops and ledges. Omitted: any ground.</summary>
+    public PerchDefinition? Perch { get; init; }
+
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
@@ -298,6 +307,12 @@ public sealed record WorldObjectDefinition
 
     /// <summary>Items the object leaves on the ground when it breaks.</summary>
     public List<ObjectDrop>? Drops { get; init; }
+
+    /// <summary>More items it leaves when it breaks, picked from a loot table (with or instead of <see cref="Drops"/>).</summary>
+    public LootRoll? Loot { get; init; }
+
+    /// <summary>A coloured light the object gives off, so it catches the eye from a distance. Omitted: none.</summary>
+    public ObjectGlow? Glow { get; init; }
 
     /// <summary>
     /// True for a raw resource node (a tree, a rock node): holding Use (E) on it for
@@ -465,6 +480,129 @@ public sealed record MeshDefinition
 
     /// <summary>Metres from the camera past which <see cref="Lod"/> is drawn instead of the full model.</summary>
     public float LodDistance { get; init; } = 60f;
+
+    /// <summary>
+    /// The model's animation clips. A model with clips is drawn as its own scene rather than batched with its
+    /// neighbours, so keep them for rare objects (the Bloom Pods). Omitted: a still model.
+    /// </summary>
+    public ObjectClips? Clips { get; init; }
+
+    /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>Clips of an animated world object model (<see cref="MeshDefinition.Clips"/>), by their glTF animation names.</summary>
+public sealed record ObjectClips
+{
+    /// <summary>Played once the first time the object comes into view (the Bloom Pod settling shut), then <see cref="Idle"/>.</summary>
+    public string? Appear { get; init; }
+
+    /// <summary>Looped while nothing else plays.</summary>
+    public string? Idle { get; init; }
+
+    /// <summary>Played when damage reaches the object and it holds.</summary>
+    public string? Hit { get; init; }
+
+    /// <summary>Played on a copy of the model left where the object broke, which then fades out.</summary>
+    public string? Break { get; init; }
+
+    /// <summary>Seconds the broken copy stays (its last <see cref="FadeSeconds"/> fading) before it goes.</summary>
+    public float BreakSeconds { get; init; } = 4f;
+
+    /// <summary>Seconds the broken copy takes to shrink away at the end of <see cref="BreakSeconds"/>.</summary>
+    public float FadeSeconds { get; init; } = 0.6f;
+
+    /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>A world object's light (<see cref="WorldObjectDefinition.Glow"/>).</summary>
+public sealed record ObjectGlow
+{
+    /// <summary>Colour of the light, <c>#rrggbb</c>.</summary>
+    public string? Color { get; init; }
+
+    /// <summary>Brightness (Godot light energy).</summary>
+    public float Energy { get; init; } = 1f;
+
+    /// <summary>Metres the light reaches.</summary>
+    public float Range { get; init; } = 4f;
+
+    /// <summary>Where the light sits, relative to the object's ground point (before scale).</summary>
+    public Vec3 At { get; init; }
+
+    /// <summary>Seconds of one slow brightness swell; 0 holds it steady.</summary>
+    public float Pulse { get; init; }
+
+    /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>
+/// The items a breaking object picks from a loot table (<see cref="WorldObjectDefinition.Loot"/>): from
+/// <see cref="Picks"/> to <see cref="PicksMax"/> different entries, each with its own count.
+/// </summary>
+public sealed record LootRoll
+{
+    /// <summary>Id of a table in <see cref="WorldGenDefinition.LootTables"/>.</summary>
+    public string? Table { get; init; }
+
+    /// <summary>Fewest entries picked.</summary>
+    public int Picks { get; init; } = 1;
+
+    /// <summary>Most entries picked. Omitted: exactly <see cref="Picks"/>.</summary>
+    public int? PicksMax { get; init; }
+
+    /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>A weighted item list (<see cref="WorldGenDefinition.LootTables"/>).</summary>
+public sealed record LootTableDefinition
+{
+    /// <summary>The entries; a pick takes an entry with odds in proportion to its weight, and never the same one twice.</summary>
+    public List<LootEntry>? Items { get; init; }
+
+    /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>One entry of a <see cref="LootTableDefinition"/>.</summary>
+public sealed record LootEntry
+{
+    /// <summary>Item id (or <c>mod_id:item_id</c>).</summary>
+    public string? Item { get; init; }
+
+    /// <summary>How many (at least).</summary>
+    public int Count { get; init; } = 1;
+
+    /// <summary>Most of it. Omitted: exactly <see cref="Count"/>.</summary>
+    public int? CountMax { get; init; }
+
+    /// <summary>Relative odds of being picked.</summary>
+    public float Weight { get; init; } = 1f;
+
+    /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>
+/// Hard-to-reach ground for a scatter rule (<see cref="ScatterRule.Perch"/>): the spot must stand at least
+/// <see cref="Rise"/> metres above the lowest ground <see cref="Within"/> metres round it, as on a cliff top or a ledge.
+/// </summary>
+public sealed record PerchDefinition
+{
+    /// <summary>Metres the spot stands above the lowest ground round it.</summary>
+    public float Rise { get; init; } = 6f;
+
+    /// <summary>Metres out that the ground round the spot is sampled.</summary>
+    public float Within { get; init; } = 10f;
 
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]

@@ -478,6 +478,55 @@ public class SurvivalActionsTests
     }
 
     [Fact]
+    public void ABloomPodLeavesItsDropsAndItsLootTablePicks()
+    {
+        _f.World.LootTables["common"] = new LootTableDefinition
+        {
+            Items = [new LootEntry { Item = Seed, Count = 2, CountMax = 4 }, new LootEntry { Item = Bomb }, new LootEntry { Item = "test:not_an_item" }],
+        };
+        var pod = new WorldObjectId(4, 0, 0);
+        _f.World.Objects[pod] = new WorldObjectPlacement(pod, new WorldObjectDefinition
+        {
+            Id = "bloom_pod_green",
+            Health = 10,
+            Drops = [new ObjectDrop { Item = Scrap }],
+            Loot = new LootRoll { Table = "common", Picks = 3 },
+        }, new Vector3(0, 0, 2), 0, 1);
+
+        Assert.True(_f.Ok<SledgeResult>(Me, ToolActions.Sledge, new { @object = "4.0.0" }).Broken);
+
+        // Its own drop, then every table entry (3 picks of 3), less the one that is not an item.
+        var items = Assert.Single(_f.Survival.Drops.Values).Items;
+        Assert.Equal(new ItemStack(Scrap, 1), items[0]);
+        Assert.Equal([Bomb, Scrap, Seed], items.Select(i => i.Item).Order());
+        Assert.InRange(items.Single(i => i.Item == Seed).Count, 2, 4);
+    }
+
+    [Fact]
+    public void LootPicksDifferentEntriesByWeight()
+    {
+        var table = new LootTableDefinition
+        {
+            Items = [new LootEntry { Item = "a", Weight = 9 }, new LootEntry { Item = "b", Weight = 1 }, new LootEntry { Item = "c", Count = 2, CountMax = 3, Weight = 0.000001f }],
+        };
+        var rng = new Random(1);
+        var firsts = new Dictionary<string, int>();
+        for (var i = 0; i < 2000; i++)
+        {
+            var picks = LootRolls.Roll(new LootRoll { Table = "t", Picks = 1, PicksMax = 2 }, table, rng);
+            Assert.InRange(picks.Count, 1, 2);
+            Assert.Equal(picks.Count, picks.Select(p => p.Item).Distinct().Count());
+            firsts[picks[0].Item] = firsts.GetValueOrDefault(picks[0].Item) + 1;
+        }
+        Assert.InRange(firsts["a"], 1700, 1900);  // 90 %
+        Assert.InRange(firsts["b"], 100, 300);    // 10 %
+        // Never more picks than entries; a count comes from its range.
+        var all = LootRolls.Roll(new LootRoll { Table = "t", Picks = 5 }, table, rng);
+        Assert.Equal(["a", "b", "c"], all.Select(p => p.Item).Order());
+        Assert.InRange(all.Single(p => p.Item == "c").Count, 2, 3);
+    }
+
+    [Fact]
     public void AHitKnocksThePlayerBackAlongTheSwing()
     {
         // Me stands at the origin looking at You, 3 m in front: 5000 N·s on an 80 kg body is far past the 4 m/s cap.
