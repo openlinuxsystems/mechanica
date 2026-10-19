@@ -50,7 +50,7 @@ end
 
 Limits live in `game/data/scripting.json`: `instruction_budget` (per hook call),
 `reload_poll_seconds`, `max_string_length`, `max_ray_length`, `max_overlap_radius`,
-`max_messages`, `max_loops_per_part`, `max_projectiles`, `max_projectile_lifetime` and `max_queued_events`. The motion
+`max_messages`, `max_loops_per_part`, `max_projectiles`, `max_projectile_lifetime`, `max_queued_events` and `max_timers_per_script`. The motion
 limits (largest force, torque, bearing speed and piston force) are in
 `game/data/motion.json`.
 
@@ -106,9 +106,11 @@ Held items have their own hooks (see [Item scripts](#item-scripts)):
 |------|------|
 | `on_equip()` | The player took the item in hand. |
 | `on_unequip()` | The item left the player's hand: they took another item or tool, or died. |
+| `on_update(dt)` | Every step while a living player holds the item, after the parts' `on_update`. It may change the world (drain a charge with `item.counter`, heal with `holder.heal`). |
+| `on_aim(on)` | The player started (`true`) or stopped (`false`) aiming with right click (`AimItem`): wind up a bow, raise a shield. |
 | `can_use(target)` | Before every use. Return `nil` to allow it, or a string: the reason the host refuses the use. It may read but not change the world. |
 | `on_use(target)` | The player used the item. `target` is `{from, direction, aiming, creation?, part?}`: their eyes, where they aim, whether they hold right click to aim, and the Creation and part in reach under the crosshair. What it returns (plain data) is the `UseItem` action's result. |
-| `on_hit(landing)` | A projectile the item launched landed: `{id, position, hit?, data}`. `hit` is missing when its lifetime ran out. |
+| `on_hit(landing)` | A projectile the script launched landed: `{id, position, hit?, data}`. `hit` is missing when its lifetime ran out. Part and mod scripts have it too. |
 | `can_reload_item()` | Before every reload. Return `nil` to allow it, or a string: the reason the host refuses it. It may read but not change the world. |
 | `on_reload_item()` | The player pressed Reload (R) with the item in hand (`ReloadItem`). An item that does not define it cannot be reloaded. |
 
@@ -333,9 +335,10 @@ The holder's inventory. Item ids may be bare (`potato`, in the item's own mod) o
 | `inventory.count(item)` | How many of `item` they carry. |
 | `inventory.take(item, count?)` | Takes `count` (default 1). `true`, or `false` (and nothing taken) when they carry fewer. |
 
-Part scripts can use `combat.cast`, `combat.hit`, `combat.hitscan`, `farm.soil` and `farm.water` too (a
-saw, a drill, a water cannon or a mounted gun), and both kinds use [`fire`](#fire). They act for the host, skip nothing (aim rays out of the
-part) and have no reach limit beyond the ray's range.
+Part and mod scripts can use every `combat` function, `farm.soil` and `farm.water` too (a saw, a drill, a water
+cannon, a mounted gun or a mortar), and both kinds use [`fire`](#fire). They act for the host, skip nothing (aim rays
+and launch projectiles from just outside the part) and have no reach limit beyond the ray's range. A projectile a
+part or mod script launched lands in that script's `on_hit`; a part that is gone by then hears nothing.
 
 ### `combat`
 
@@ -467,6 +470,32 @@ return M
 
 -- scripts/thruster.lua
 local maths = require("scripts/lib/maths.lua")
+```
+
+## `timer`
+
+Mod and part scripts can ask to be called later instead of counting seconds in `on_update`. Timers count game
+time: they fire at the start of a step, before `on_update`, and a part's timers wait while its Creation is not
+simulated. A reload or a stopped script ends its timers (they are not saved), so start them again in `on_create`.
+A script runs at most `max_timers_per_script` at once.
+
+| Function | Returns |
+|----------|---------|
+| `timer.after(seconds, fn)` | Calls `fn(id)` once, `seconds` from now (0 means the next step); returns the timer's id. |
+| `timer.every(seconds, fn)` | Calls `fn(id)` every `seconds` (more than 0, at most once a step) until cancelled; returns the id. |
+| `timer.cancel(id)` | Stops the timer; true when it was still waiting. |
+| `timer.count()` | How many of this script's timers are waiting. |
+
+```lua
+function on_create()
+  state.minutes = state.minutes or 0
+  timer.every(60, function(id)
+    state.minutes = state.minutes + 1
+    print(state.minutes .. " minutes played")
+    if state.minutes >= 10 then timer.cancel(id) end
+  end)
+  timer.after(5, function() print("five seconds in") end)
+end
 ```
 
 ## `vec3`

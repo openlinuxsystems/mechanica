@@ -104,6 +104,9 @@ public partial class BucketTest : StagedTest
             _sawFill |= HostView.Animator.Gesture == "bucket_fill";
             if (_client.Main.Inventory.Own!.Items.FirstOrDefault(s => s.Slot == _inventorySlot)?.Item != Full || Item.InHand?.Item != Full)
                 return false;
+            // The hand changes at once; the hotbar changes when the host answers SetHotbarSlot.
+            if (!_client.Main.Tools!.Slots.Contains(Full))
+                return false;
             Check(_sawFill, "the host sees the client dip the bucket");
             Check(_client.Main.Tools!.Slots[_hotbarSlot] == Full, $"the full bucket is in the same hotbar slot ({string.Join(", ", _client.Main.Tools.Slots)})");
             Check(Item.Prop == CharacterProp.WaterBucketFull, $"the client holds the full bucket ({Item.Prop})");
@@ -132,7 +135,8 @@ public partial class BucketTest : StagedTest
             _sawWater |= _client.Main.Survival.ProjectileNodes.Values.Any(n => n.Name.ToString().StartsWith("Projectile", StringComparison.Ordinal) && n.GetChildCount() > 0);
             if (HostView.PropNode?.FindChild("water_bucket_body", true, false) is Node3D body)
                 _mostTilt = Mathf.Max(_mostTilt, body.Basis.Y.AngleTo(_restAxis));
-            if (Item.InHand?.Item != Empty || _host.Main.Survival.Actions!.Projectiles.Any() || _client.Main.Survival.ProjectileNodes.Count > 0)
+            if (Item.InHand?.Item != Empty || _host.Main.Survival.Actions!.Projectiles.Any() || _client.Main.Survival.ProjectileNodes.Count > 0
+                || !_client.Main.Tools!.Slots.Contains(Empty))
                 return false;
             Check(_sawThrow, "the host sees the client throw");
             Check(_sawWater, "the client sees the water fly");

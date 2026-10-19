@@ -231,6 +231,66 @@ public sealed class ModScriptTests : IDisposable
     }
 
     private sealed record NudgeArgs(int Creation);
+    [Fact]
+    public void TimersFireAfterGameTime_RepeatAndCancel()
+    {
+        _rig.Write("scripts/clock.lua", """
+            function on_create()
+              timer.after(1, function(id) print("once " .. id) end)
+              state.tick = timer.every(0.5, function() state.ticks = (state.ticks or 0) + 1 end)
+              local gone = timer.after(0.2, function() print("never") end)
+              assert(timer.cancel(gone))
+              assert(not timer.cancel(gone))
+            end
+            """);
+        _rig.ModScripts.Add("test:scripts/clock.lua");
+
+        for (var i = 0; i < 5; i++)
+            _rig.Runtime.Update(0.25f);
+
+        Assert.Empty(_rig.Errors);
+        Assert.Equal(["once 1"], _rig.Prints);
+        var state = _rig.Runtime.ExportModStates()["test:scripts/clock.lua"];
+        Assert.Equal(2.0, state["ticks"]!.GetValue<double>());
+    }
+
+    [Fact]
+    public void TimersAreForModAndPartScripts_AndEndOnReload()
+    {
+        _rig.Write("scripts/thruster.lua", """
+            function on_create() timer.every(0.1, function() print("tick") end) end
+            """);
+        _rig.AddCreation(1, Thruster);
+        _rig.Runtime.Update(0.1f);
+        _rig.Runtime.Update(0.1f);
+        Assert.Contains("tick", _rig.Prints);
+
+        _rig.Write("scripts/thruster.lua", "function on_create() end");
+        Assert.True(_rig.Runtime.Reload("test:scripts/thruster.lua").Ok);
+        _rig.Messages.Clear();
+        _rig.Runtime.Update(0.1f);
+        Assert.Empty(_rig.Prints);
+        Assert.Empty(_rig.Errors);
+    }
+
+    [Fact]
+    public void TimerArgumentsAreChecked()
+    {
+        _rig.Write("scripts/bad.lua", """
+            function on_create()
+              local ok, err = pcall(timer.every, 0, function() end)
+              print(tostring(ok) .. " " .. err)
+              ok, err = pcall(timer.after, -1, function() end)
+              print(tostring(ok) .. " " .. err)
+            end
+            """);
+        _rig.ModScripts.Add("test:scripts/bad.lua");
+        _rig.Runtime.Update(0.1f);
+
+        Assert.Empty(_rig.Errors);
+        Assert.Contains(_rig.Prints, p => p.StartsWith("false", StringComparison.Ordinal) && p.Contains("more than 0", StringComparison.Ordinal));
+        Assert.Contains(_rig.Prints, p => p.StartsWith("false", StringComparison.Ordinal) && p.Contains("0 or more", StringComparison.Ordinal));
+    }
 }
 
 // Mod scripts and require resolved against real mod folders.
@@ -277,4 +337,5 @@ public sealed class ModScriptSourceTests : IDisposable
         Assert.Null(source.FindModule("addon", "scripts/missing.lua"));
         Assert.Null(source.FindModule("addon", "../base/scripts/lib.lua"));
     }
+
 }
