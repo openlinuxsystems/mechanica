@@ -92,7 +92,7 @@ public partial class LanguageTest : StagedTest
         });
         Screen("the Bot Behavior Editor", () => _menu.OpenBotEditor(), tabs: true);
         Screen("the Test Sandbox", () => _menu.OpenSandbox(), tabs: true);
-        Screen("the Mod Manager", () => _menu.OpenModManager());
+        Screen("the Mod Manager", () => _menu.OpenModManager(), dialogs: true);
         Add("the loading screen, loading and failed", frame =>
         {
             if (frame == 0)
@@ -295,7 +295,7 @@ public partial class LanguageTest : StagedTest
         });
     }
 
-    private void Screen(string name, Func<Node?> open, bool tabs = false) => Add(name, frame =>
+    private void Screen(string name, Func<Node?> open, bool tabs = false, bool dialogs = false) => Add(name, frame =>
     {
         if (frame == 0)
         {
@@ -310,6 +310,13 @@ public partial class LanguageTest : StagedTest
         if (frame < 30)
             return false;
         Audit(name, _menu, tabs);
+        // Its own dialogs (not Godot's file pickers, which translate themselves).
+        foreach (var dialog in dialogs ? Walk(_menu).OfType<ConfirmationDialog>().Where(d => d is not FileDialog).ToList() : [])
+        {
+            dialog.PopupCentered();
+            AuditTree($"{name}'s {dialog.Title} dialog", dialog);
+            dialog.Hide();
+        }
         return true;
     });
 

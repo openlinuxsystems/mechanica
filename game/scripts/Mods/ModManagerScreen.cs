@@ -30,6 +30,17 @@ public partial class ModManagerScreen : Control
     private FileDialog _installDialog = null!;
     private Button _apply = null!;
     private Button _revert = null!;
+    private Button _editInfo = null!;
+    private ConfirmationDialog _newDialog = null!;
+    private LineEdit _newId = null!;
+    private LineEdit _newName = null!;
+    private ConfirmationDialog _infoDialog = null!;
+    private LineEdit _infoName = null!;
+    private LineEdit _infoVersion = null!;
+    private LineEdit _infoAuthors = null!;
+    private LineEdit _infoDependencies = null!;
+    private TextEdit _infoDescription = null!;
+    private string? _validation;
 
     /// <summary>Mods folder to manage. Set before the node enters the tree.</summary>
     public string ModsRoot { get; set; } = ModPaths.ModsRoot;
@@ -126,6 +137,12 @@ public partial class ModManagerScreen : Control
         AddButton(packageButtons, "Install…", OpenInstallDialog, "Install a mod package (.zip)");
         _uninstall = AddButton(packageButtons, "Uninstall", () => { if (SelectedId is { } id) UninstallMod(id); }, "Delete the selected mod from the mods folder");
 
+        var makeButtons = new HBoxContainer();
+        left.AddChild(makeButtons);
+        AddButton(makeButtons, "New mod…", OpenNewDialog, "Make an empty mod to fill with the Part Editor, Lua and data files");
+        _editInfo = AddButton(makeButtons, "Edit info…", OpenInfoDialog, "Change the selected mod's name, version, description, authors and dependencies");
+        AddButton(makeButtons, "Check all content", () => ValidateAll(), "Load every kind of content of this setup the way a world starts, compile every script, and list the problems");
+
         var right = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
         split.AddChild(right);
         _details = Loc.Verbatim(new RichTextLabel { BbcodeEnabled = true, FitContent = true, SelectionEnabled = true });
@@ -138,6 +155,7 @@ public partial class ModManagerScreen : Control
         _packageLog.Text = Loc.T("Export a mod to share it, or install a package someone shared with you.");
         right.AddChild(_packageLog);
         BuildFileDialogs();
+        BuildModDialogs();
 
         _revert = Window.AddAction("Revert", () => Discard(Reopen), tooltip: "Go back to the saved setup");
         _apply = Window.AddAction("Apply", Apply, primary: true, tooltip: "Save this setup; it loads with the next world");
@@ -350,6 +368,8 @@ public partial class ModManagerScreen : Control
 
     private void Refresh(string? select)
     {
+        // A full check is for the setup it ran on; any change goes back to the quick loader check.
+        _validation = null;
         Preview = Manager.Load();
         _list.Clear();
         var root = _list.CreateItem();
@@ -397,6 +417,8 @@ public partial class ModManagerScreen : Control
 
     private string ProblemsBbcode()
     {
+        if (_validation is { } report)
+            return report;
         var lines = new List<string>();
         foreach (var d in _profileDiagnostics.Concat(Preview.Diagnostics))
         {
@@ -413,6 +435,7 @@ public partial class ModManagerScreen : Control
         var id = SelectedId;
         var mod = id is null ? null : Manager.Mods.FirstOrDefault(m => m.Id == id);
         _up.Disabled = _down.Disabled = _export.Disabled = mod is null;
+        _editInfo.Disabled = mod is null || !ModPackageManager.CanDisable(mod.Id);
         _uninstall.Disabled = mod is null || !ModPackageManager.CanDisable(mod.Id);
         if (mod is null)
         {
@@ -448,6 +471,116 @@ public partial class ModManagerScreen : Control
         if (SelectedId is { } id)
             MoveMod(id, delta);
     }
+
+    private void BuildModDialogs()
+    {
+        _newDialog = new ConfirmationDialog { Title = "New mod" };
+        var grid = new GridContainer { Columns = 2 };
+        _newDialog.AddChild(grid);
+        _newId = new LineEdit { Text = "my_mod", CustomMinimumSize = new Vector2(260, 0), TooltipText = Loc.T("Folder name: lowercase letters, digits and _") };
+        _newName = new LineEdit { Text = "My Mod", TooltipText = Loc.T("Name shown in the Mod Manager") };
+        grid.AddChild(new Label { Text = "Mod id" });
+        grid.AddChild(Loc.Verbatim(_newId));
+        grid.AddChild(new Label { Text = "Name" });
+        grid.AddChild(Loc.Verbatim(_newName));
+        _newDialog.Confirmed += () => CreateMod(_newId.Text.Trim(), _newName.Text.Trim());
+        AddChild(_newDialog);
+
+        _infoDialog = new ConfirmationDialog { Title = "Edit mod info" };
+        var info = new GridContainer { Columns = 2 };
+        _infoDialog.AddChild(info);
+        _infoName = new LineEdit { CustomMinimumSize = new Vector2(320, 0) };
+        _infoVersion = new LineEdit { TooltipText = Loc.T("major.minor.patch, for example 1.2.0") };
+        _infoAuthors = new LineEdit { TooltipText = Loc.T("Names, separated by commas") };
+        _infoDependencies = new LineEdit { TooltipText = Loc.T("Mod ids that must load first, separated by commas") };
+        _infoDescription = new TextEdit { CustomMinimumSize = new Vector2(320, 80), WrapMode = TextEdit.LineWrappingMode.Boundary };
+        foreach (var (label, field) in new (string, Control)[]
+            { ("Name", _infoName), ("Version", _infoVersion), ("Authors", _infoAuthors), ("Needs", _infoDependencies), ("Description", _infoDescription) })
+        {
+            info.AddChild(new Label { Text = label });
+            info.AddChild(Loc.Verbatim(field));
+        }
+        _infoDialog.Confirmed += () =>
+        {
+            if (SelectedId is { } id)
+                EditInfo(id, _infoName.Text, _infoVersion.Text, _infoDescription.Text, List(_infoAuthors.Text), List(_infoDependencies.Text));
+        };
+        AddChild(_infoDialog);
+    }
+
+    private static List<string> List(string text) =>
+        [.. text.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)];
+
+    private void OpenNewDialog() => _newDialog.PopupCentered(new Vector2I(420, 130));
+
+    private void OpenInfoDialog()
+    {
+        if (SelectedId is not { } id || Manager.Mods.FirstOrDefault(m => m.Id == id) is not { } mod)
+            return;
+        var m = mod.Manifest;
+        _infoName.Text = m.Name ?? id;
+        _infoVersion.Text = m.Version ?? "";
+        _infoAuthors.Text = string.Join(", ", m.Authors ?? []);
+        _infoDependencies.Text = string.Join(", ", (m.Dependencies ?? []).Select(d => d.Id));
+        _infoDescription.Text = m.Description ?? "";
+        _infoDialog.PopupCentered(new Vector2I(480, 280));
+    }
+
+    /// <summary>Makes an empty mod (depending on vanilla) in the mods folder and selects it. Returns why it failed, or null.</summary>
+    public string? CreateMod(string id, string name)
+    {
+        string? error = null;
+        try
+        {
+            Workspace().Create(id, name, null, null, null, null);
+        }
+        catch (Core.ModTools.ModToolException e)
+        {
+            error = e.Message;
+        }
+        _packageLog.Text = error is null
+            ? Colored(UiPalette.Success, Loc.T("Made {0} in the mods folder. Open the Part Editor to add parts to it.", id))
+            : Colored(UiPalette.Error, Loc.T("{0} was not made: {1}", id, error));
+        if (error is null)
+            Rescan(id);
+        return error;
+    }
+
+    /// <summary>Rewrites a mod's <c>mod.json</c> info. Returns the problems that stopped it (empty when it was saved).</summary>
+    public IReadOnlyList<DataDiagnostic> EditInfo(string id, string name, string version, string? description, IReadOnlyList<string> authors,
+        IReadOnlyList<string> dependencies)
+    {
+        var mod = Manager.Mods.First(m => m.Id == id);
+        var problems = Core.Editor.ModManifestFile.Update(mod.Directory, name, version, description, authors, dependencies);
+        _packageLog.Text = problems.Count == 0
+            ? Colored(UiPalette.Success, Loc.T("Saved {0}'s info.", name.Trim()))
+            : string.Join("\n", [Colored(UiPalette.Error, Loc.T("{0}'s info was not saved:", id)), .. DiagnosticLines(problems)]);
+        if (problems.Count == 0)
+            Rescan(id);
+        return problems;
+    }
+
+    /// <summary>
+    /// Checks this setup (applied or not) the way a world starts: parts, sounds, world generation, recipes, bots,
+    /// raids, quests, characters and every Lua script, and lists the problems. Returns the report.
+    /// </summary>
+    public Core.ModTools.ValidationReport ValidateAll()
+    {
+        var report = Workspace().Validate(setup: Manager.ToProfile());
+        var lines = new List<string>
+        {
+            report.Ok
+                ? Colored(UiPalette.Success, Loc.T("Every kind of content loads: {0} warning(s).", report.Warnings))
+                : Colored(UiPalette.Error, Loc.T("{0} error(s) and {1} warning(s) in this setup:", report.Errors, report.Warnings)),
+        };
+        lines.AddRange(report.Diagnostics.Select(d => Colored(d.Severity == "error" ? UiPalette.Error : UiPalette.Warning,
+            $"[{d.Domain}] {d.File}{(d.JsonPath is null ? "" : " " + d.JsonPath)}{(d.Line is { } line ? $":{line}" : "")}: {d.Message}")));
+        _validation = string.Join("\n", lines);
+        _problems.Text = _validation;
+        return report;
+    }
+
+    private Core.ModTools.ModWorkspace Workspace() => new(ModsRoot, ProfilePath, Mechanica.Scripting.Editor.LuaSyntax.Problem);
 
     /// <summary>Runs <paramref name="then"/>, asking first when it would throw away unsaved changes.</summary>
     public void Discard(Action then) => ConfirmDialog.Discard(this, HasUnsavedChanges, then,

@@ -235,13 +235,14 @@ public sealed class ModWorkspace
     /// <summary>
     /// Loads all content with the saved profile, as a world would start, and compiles every Lua script of the
     /// loaded mods. With <paramref name="modId"/>, that mod is enabled for the check (without saving the
-    /// profile) and only its problems are reported.
+    /// profile) and only its problems are reported. <paramref name="setup"/> checks that mod setup instead of the
+    /// saved one (the Mod Manager's unapplied changes).
     /// </summary>
-    public ValidationReport Validate(string? modId = null)
+    public ValidationReport Validate(string? modId = null, ModProfile? setup = null)
     {
         if (modId is not null)
             Files.ModDirectory(modId);
-        var manager = Manager();
+        var manager = setup is null ? Manager() : ModPackageManager.Open(ModsRoot, setup);
         if (modId is not null && manager.Mods.Any(m => m.Id == modId))
             manager.SetEnabled(modId, true);
         var profile = manager.ToProfile();

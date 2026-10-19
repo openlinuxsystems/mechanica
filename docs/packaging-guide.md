@@ -246,6 +246,12 @@ every installed mod in load order and shows, for the setup on screen:
 - each mod's status (loaded, disabled, not loaded and why, overrides won or lost) and details.
 - every error, warning and conflict the setup would load with, before anything is saved.
 - **Export…**, **Install…** and **Uninstall** for mod packages (§9).
+- **New mod…** makes an empty mod (a `mod.json` that depends on vanilla, with `parts/` and `scripts/`) to fill
+  with the Part Editor, Lua and data files. **Edit info…** changes the selected mod's name, version, description,
+  authors and dependencies in its `mod.json`, keeping everything else.
+- **Check all content** loads every kind of content of the setup on screen the way a world starts (parts, sounds,
+  world generation, recipes, bots, raids, quests, characters) and compiles every Lua script, and lists each problem
+  with the content area, file and line. The quick list under **Problems** only covers mods and parts.
 
 **Apply** saves the setup to `mods.json` in the user data folder (`user://mods.json`; on Linux
 `~/.local/share/godot/app_userdata/Mechanica/`). The game reads it the next time it starts or hosts.

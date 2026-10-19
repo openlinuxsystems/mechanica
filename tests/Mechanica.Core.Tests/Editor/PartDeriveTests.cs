@@ -119,4 +119,22 @@ public class PartDeriveTests
         var manifest = ModLoader.ParseJson<ModManifest>(File.ReadAllText(Path.Combine(dir, "mod.json")), "mod.json", [])!;
         Assert.Equal("vanilla", Assert.Single(manifest.Dependencies!).Id);
     }
+
+    [Fact]
+    public void EditInfoKeepsEverythingElseInModJson()
+    {
+        using var mods = new TestMods()
+            .File("mine", "mod.json", """{ "id": "mine", "name": "Mine", "version": "1.0.0", "dependencies": [{ "id": "vanilla", "version": "^1.0.0" }], "scripts": ["scripts/a.lua"], "homepage": "x" }""");
+        var dir = Path.Combine(mods.Root, "mine");
+
+        Assert.Empty(ModManifestFile.Update(dir, "Mine Two", "1.1.0", "Better", ["Ada"], ["vanilla", "lib"]));
+        Assert.NotEmpty(ModManifestFile.Update(dir, "", "nope", null, [], []));
+
+        var manifest = ModLoader.ParseJson<ModManifest>(File.ReadAllText(Path.Combine(dir, "mod.json")), "mod.json", [])!;
+        Assert.Equal(("Mine Two", "1.1.0", "Better"), (manifest.Name, manifest.Version, manifest.Description));
+        Assert.Equal("^1.0.0", manifest.Dependencies![0].Version);
+        Assert.Equal("lib", manifest.Dependencies[1].Id);
+        Assert.Equal(["scripts/a.lua"], manifest.Scripts);
+        Assert.True(manifest.Extra!.ContainsKey("homepage"));
+    }
 }
