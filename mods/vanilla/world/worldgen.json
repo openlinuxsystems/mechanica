@@ -596,7 +596,7 @@
       "drops": [{ "item": "scrap_wood", "count": 3 }]
     },
     // World Map spec §2: autumn trees keep the Leafy Tree's wood; burnt trees are bare, charred and give little.
-    // Models derived from the Leafy Tree by tools/trees/derive_variants.py.
+    // Models: tools/trees/build_trees.py (the autumn tree is the Leafy tree in autumn leaves).
     {
       "id": "autumn_leafy_tree",
       "collider": { "shape": "cylinder", "radius": 0.42, "height": 4.6, "at": [0.0, 2.3, 0.0] },
