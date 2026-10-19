@@ -36,7 +36,8 @@
             { "item": "circuit_board", "count": 1 }
           ],
           "outputs": [{ "item": "battery", "count": 1 }],
-          "time": 5
+          "time": 5,
+          "order": 930
         }
       ]
     },
@@ -72,7 +73,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 3 }],
           "outputs": [{ "item": "gas_container", "count": 1 }],
-          "time": 5
+          "time": 5,
+          "order": 920
         }
       ]
     },
@@ -105,7 +107,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 2 }, { "item": "component_kit", "count": 1 }],
           "outputs": [{ "item": "chemical_container", "count": 1 }],
-          "time": 4
+          "time": 4,
+          "order": 1770
         }
       ]
     },
@@ -138,7 +141,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 5 }],
           "outputs": [{ "item": "locker", "count": 1 }],
-          "time": 5
+          "time": 5,
+          "order": 1730
         }
       ]
     },
@@ -171,7 +175,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 4 }],
           "outputs": [{ "item": "file_cabinet", "count": 1 }],
-          "time": 4
+          "time": 4,
+          "order": 1750
         }
       ]
     },
@@ -204,7 +209,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 4 }, { "item": "component_kit", "count": 1 }],
           "outputs": [{ "item": "tool_cabinet", "count": 1 }],
-          "time": 4
+          "time": 4,
+          "order": 1740
         }
       ]
     },
@@ -237,7 +243,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 3 }],
           "outputs": [{ "item": "barrel", "count": 1 }],
-          "time": 3
+          "time": 3,
+          "order": 1720
         }
       ]
     },
@@ -280,7 +287,8 @@
             { "item": "circuit_board", "count": 2 }
           ],
           "outputs": [{ "item": "refiner", "count": 1 }],
-          "time": 15
+          "time": 15,
+          "order": 1820
         }
       ]
     },
@@ -417,7 +425,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 40 }, { "item": "circuit_board", "count": 2 }],
           "outputs": [{ "item": "portable_fabricator", "count": 1 }],
-          "time": 30
+          "time": 30,
+          "order": 1810
         }
       ]
     }

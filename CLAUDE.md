@@ -73,6 +73,8 @@ After adding, renaming or re-documenting an action or AI endpoint method, run `t
 - Item and sound IDs come from the canonical catalog (CATALOG_IDS.md in the project files). Use the
   original names (Scuttler, Fabricator, …), never Scrap Mechanic's.
 - Balance numbers live in data, never in code.
+- Every recipe has an `order` that puts it in its group in the station list (wheels together, scrap tier first);
+  the groups are in `docs/part-data-schema.md` (Recipe order). Give a new recipe the number in its group, in its batch.
 - UI follows the UI spec (`UI_SPEC.md` in the project files; it wins over SPEC_SUMMARY on controls, UI and
   menus). Every screen inherits the code-built theme in `game/scripts/Ui/MechanicaTheme.cs`: no per-screen
   colours, and never orange. Use `UiTokens` for hand-drawn colours, `ToolWindow` for a titled panel with an X

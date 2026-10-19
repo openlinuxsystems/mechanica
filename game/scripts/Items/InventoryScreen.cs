@@ -388,7 +388,7 @@ public partial class InventoryScreen : CanvasLayer
             row.AddChild(cancel);
             _queue.AddChild(row);
         }
-        foreach (var recipe in Inventory.Recipes.ForStation(view.Part!))
+        foreach (var recipe in RecipeBrowser.Ordered(Inventory.Recipes.ForStation(view.Part!)))
         {
             var row = new HBoxContainer();
             var inputs = string.Join(", ", recipe.Inputs.Select(a => $"{a.Count} {ItemName(a.Item)}"));

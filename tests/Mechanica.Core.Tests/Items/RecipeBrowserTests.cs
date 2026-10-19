@@ -29,6 +29,22 @@ public class RecipeBrowserTests
     }
 
     [Fact]
+    public void RecipesGoByOrderThenNameAndUnorderedOnesComeLast()
+    {
+        var recipes = Recipes(_catalog).All;
+        Recipe With(string id, int? order) => recipes.First(r => r.QualifiedId == "test:chest") with
+        {
+            QualifiedId = id,
+            Name = id,
+            Definition = new RecipeDefinition { Order = order },
+        };
+
+        var ordered = RecipeBrowser.Ordered([With("z", 10), With("b", null), With("a", null), With("y", 20), With("x", 10)]);
+
+        Assert.Equal(["x", "z", "y", "a", "b"], Ids(ordered));
+    }
+
+    [Fact]
     public void InputsSayWhatIsMissingForTheOrder()
     {
         var chest = Recipes(_catalog).Find("test:chest")!;

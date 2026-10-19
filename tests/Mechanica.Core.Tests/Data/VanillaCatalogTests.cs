@@ -162,6 +162,30 @@ public class VanillaCatalogTests
         Assert.True(missing.Count == 0, $"no recipe, drop or world source: {string.Join(", ", missing)}");
     }
 
+    [Fact]
+    public void EveryRecipeHasItsOwnPlaceInTheStationList()
+    {
+        var book = RecipeBook.Load(Vanilla.Value);
+
+        Assert.Empty(book.All.Where(r => r.Definition.Order is null).Select(r => r.QualifiedId));
+        Assert.Empty(book.All.GroupBy(r => r.Definition.Order).Where(g => g.Count() > 1).Select(g => g.Key));
+        // The hundreds name the group, so a group full up to its next hundred has spilled into the next group.
+        Assert.Empty(book.All.Where(r => r.Definition.Order % 100 == 0).Select(r => r.QualifiedId));
+    }
+
+    [Theory]
+    [InlineData("fabricator", "vanilla:scrap_wheel", "vanilla:wheel", "vanilla:big_wheel")]
+    [InlineData("fabricator", "vanilla:scrap_gas_engine", "vanilla:gas_engine", "vanilla:electric_engine")]
+    [InlineData("portable_fabricator", "vanilla:scrap_wood_block", "vanilla:scrap_wood_wedge", "vanilla:scrap_metal_block",
+        "vanilla:scrap_metal_wedge", "vanilla:scrap_wheel", "vanilla:gasoline", "vanilla:bearing", "vanilla:switch", "vanilla:connect_tool")]
+    public void RelatedRecipesSitTogetherScrapTierFirst(string station, params string[] ids)
+    {
+        var listed = RecipeBrowser.Ordered(RecipeBook.Load(Vanilla.Value).ForStation(station)).Select(r => r.QualifiedId).ToList();
+        var at = listed.IndexOf(ids[0]);
+
+        Assert.Equal(ids, listed.Skip(at).Take(ids.Length));
+    }
+
     [Theory]
     [InlineData("scrap_wheel", "Scrap Wheel", 3, 1)]
     [InlineData("wheel", "Wheel", 3, 1)]

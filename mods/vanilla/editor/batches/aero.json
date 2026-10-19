@@ -34,7 +34,8 @@
             { "item": "gasoline", "count": 2 }
           ],
           "outputs": [{ "item": "thruster", "count": 1 }],
-          "time": 8
+          "time": 8,
+          "order": 1110
         }
       ]
     },
@@ -73,7 +74,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 2 }, { "item": "component_kit", "count": 1 }],
           "outputs": [{ "item": "wing", "count": 1 }],
-          "time": 4
+          "time": 4,
+          "order": 1140
         }
       ]
     },
@@ -116,7 +118,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 1 }, { "item": "component_kit", "count": 1 }],
           "outputs": [{ "item": "control_surface", "count": 1 }],
-          "time": 3
+          "time": 3,
+          "order": 1150
         }
       ]
     },
@@ -156,7 +159,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 5 }, { "item": "component_kit", "count": 3 }],
           "outputs": [{ "item": "rotor", "count": 1 }],
-          "time": 8
+          "time": 8,
+          "order": 1130
         }
       ]
     },
@@ -199,7 +203,8 @@
             { "item": "circuit_board", "count": 1 }
           ],
           "outputs": [{ "item": "hover_jet", "count": 1 }],
-          "time": 8
+          "time": 8,
+          "order": 1120
         }
       ]
     }
