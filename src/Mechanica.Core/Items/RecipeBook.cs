@@ -1,5 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Mechanica.Core.Data;
 
 namespace Mechanica.Core.Items;
@@ -99,7 +101,7 @@ public sealed class RecipeBook
             foreach (var (path, relative) in Files(mod.Directory, Path.Combine(mod.Directory, Folder)))
             {
                 var sink = new DiagnosticSink($"{mod.Id}/{relative}", diagnostics);
-                if (Read(path, sink) is not { } definition)
+                if (Read(path, sink) is not { } definition || UsesRemovedPart(definition, content))
                     continue;
                 var recipe = Check(definition, mod.Id, content, sink);
                 if (recipe is not null && recipes.ContainsKey(recipe.QualifiedId))
@@ -127,7 +129,8 @@ public sealed class RecipeBook
             foreach (var (path, relative) in Files(mod.Directory, Path.Combine(targetDir, ModLoader.RecipeOverridesFolder)))
             {
                 var sink = new DiagnosticSink($"{mod.Id}/{relative}", diagnostics);
-                if (Read(path, sink) is not { } definition)
+                var patch = relative.EndsWith(ContentLayers.PatchSuffix, StringComparison.Ordinal);
+                if ((patch ? ReadPatch(path, targetId, recipes, sink) : Read(path, sink)) is not { } definition || UsesRemovedPart(definition, content))
                     continue;
                 var recipe = Check(definition, targetId, content, sink);
                 if (recipe is null || sink.ErrorCount > 0)
@@ -150,7 +153,50 @@ public sealed class RecipeBook
                 overriddenBy[id] = mod.Id;
                 recipes[id] = recipe;
             }
+            foreach (var removed in ContentLayers.ReadRemovals(mod.Id, targetDir, Folder, diagnostics))
+            {
+                if (!recipes.Remove($"{targetId}:{removed}"))
+                    diagnostics.Add(new DataDiagnostic(DiagnosticSeverity.Warning, DiagnosticCodes.RecipeOverrideUnknown,
+                        $"{mod.Id}/{ModLoader.OverridesFolder}/{targetId}/{ContentLayers.RemoveFile}", "$.recipes", null,
+                        $"mod '{targetId}' has no recipe '{removed}' to remove."));
+            }
         }
+    }
+
+    // A recipe that makes, uses or runs at a part a mod removed (remove.json) goes with it, quietly.
+    private static bool UsesRemovedPart(RecipeDefinition r, ModLoadResult content) =>
+        content.RemovedParts.Count > 0
+        && (r.Stations ?? []).Concat((r.Inputs ?? []).Concat(r.Outputs ?? []).Select(i => i.Item))
+            .Any(id => id is not null && PartValidator.IsItemRef(id) && content.RemovedParts.Contains(Identifiers.Qualify(PartUpgrades.SplitItem(id).Part)));
+
+    // A recipe merge patch (x.patch.json in overrides/<mod>/recipes/): the recipe as loaded so far with the patch merged in.
+    private static RecipeDefinition? ReadPatch(string path, string targetId, Dictionary<string, Recipe> recipes, DiagnosticSink sink)
+    {
+        JsonObject? patch;
+        try
+        {
+            patch = JsonNode.Parse(File.ReadAllText(path), documentOptions: new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true }) as JsonObject;
+        }
+        catch (Exception e) when (e is JsonException or IOException or UnauthorizedAccessException)
+        {
+            sink.Error(DiagnosticCodes.InvalidJson, null, $"could not read the patch: {e.Message}");
+            return null;
+        }
+        if (patch is null)
+        {
+            sink.Error(DiagnosticCodes.InvalidJson, null, "a patch must be one JSON object.");
+            return null;
+        }
+        var name = Path.GetFileName(path);
+        var id = patch["id"] is JsonValue v && v.TryGetValue<string>(out var named) ? named : name[..^ContentLayers.PatchSuffix.Length];
+        if (!recipes.TryGetValue($"{targetId}:{id}", out var current))
+        {
+            sink.Error(DiagnosticCodes.RecipeOverrideUnknown, "$.id", $"mod '{targetId}' has no recipe '{id}' to patch.");
+            return null;
+        }
+        patch["id"] = id;
+        var json = ContentLayers.MergePatch(JsonNode.Parse(DataJson.Write(current.Definition)), patch)!;
+        return ModLoader.ParseJson<RecipeDefinition>(json.ToJsonString(), sink);
     }
 
     // True when modId depends on otherId, directly or through other mods.

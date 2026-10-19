@@ -296,6 +296,8 @@ road is within `track_reach` metres.
 
 ## `pois/<id>.json`
 
+Another mod's POI is changed or removed through `overrides/<mod>/pois/`, a `.patch.json` or `remove.json`; see the [Packaging Guide](packaging-guide.md#overriding-bots-quests-pois-and-characters).
+
 ```json
 {
   "id": "outpost",

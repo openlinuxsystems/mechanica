@@ -317,6 +317,9 @@ starting raids are open to players only in Creative.
 
 ## 7. Packaging
 
+To change or remove another mod's bot (a tougher `vanilla:scuttler_red`), override it, patch it or list it in
+`remove.json` instead of copying it under a new id; see the [Packaging Guide](packaging-guide.md#overriding-bots-quests-pois-and-characters).
+
 A bot mod is an ordinary mod (see the [Packaging Guide](packaging-guide.md)):
 
 ```

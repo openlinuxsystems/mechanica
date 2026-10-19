@@ -136,30 +136,24 @@ public sealed class BotBook : IBotCatalog
     /// <inheritdoc/>
     public Bot? FindBot(string id) => _bots.GetValueOrDefault(Identifiers.Qualify(id));
 
-    /// <summary>Loads the bots of the mods in <paramref name="content"/>.</summary>
+    /// <summary>
+    /// Loads the bots of the mods in <paramref name="content"/>, with other mods' overrides, patches and removals
+    /// (<c>overrides/&lt;mod&gt;/bots/</c>, see <see cref="ContentLayers"/>) applied in load order.
+    /// </summary>
     public static BotBook Load(ModLoadResult content)
     {
         var diagnostics = new List<DataDiagnostic>();
         var bots = new Dictionary<string, Bot>(StringComparer.Ordinal);
-        foreach (var mod in content.Mods)
+        var directories = content.Mods.ToDictionary(m => m.Id, m => m.Directory, StringComparer.Ordinal);
+        foreach (var entry in ContentLayers.Collect(content, Folder, ContentLayers.IdMember, diagnostics,
+            new LayerCodes(DiagnosticCodes.BotInvalid, DiagnosticCodes.DuplicateBot)))
         {
-            var folder = Path.Combine(mod.Directory, Folder);
-            if (!Directory.Exists(folder))
+            var sink = new DiagnosticSink(entry.DisplayFile, diagnostics);
+            if (ModLoader.ParseJson<BotDefinition>(entry.Json, sink) is not { } definition)
                 continue;
-            var files = Directory.GetFiles(folder, "*.json", SearchOption.AllDirectories)
-                .Select(f => (Path: f, Relative: Path.GetRelativePath(mod.Directory, f).Replace('\\', '/')))
-                .OrderBy(f => f.Relative, StringComparer.Ordinal);
-            foreach (var (path, relative) in files)
-            {
-                var sink = new DiagnosticSink($"{mod.Id}/{relative}", diagnostics);
-                if (Read(path, sink) is not { } definition)
-                    continue;
-                var bot = Check(definition, mod.Id, mod.Directory, content, sink);
-                if (bot is not null && bots.ContainsKey(bot.QualifiedId))
-                    sink.Error(DiagnosticCodes.DuplicateBot, "$.id", $"bot '{bot.QualifiedId}' is defined twice.");
-                else if (bot is not null && sink.ErrorCount == 0)
-                    bots.Add(bot.QualifiedId, bot);
-            }
+            var bot = Check(definition, entry.OwnerModId, directories[entry.OwnerModId], content, sink);
+            if (bot is not null && sink.ErrorCount == 0)
+                bots.Add(bot.QualifiedId, bot);
         }
         return new BotBook(bots.Values, diagnostics);
     }
@@ -396,18 +390,5 @@ public sealed class BotBook : IBotCatalog
             sink.Error(DiagnosticCodes.BotInvalid, path, $"{label} must be 0 or more.");
         else if (required && value is null)
             sink.Error(DiagnosticCodes.BotInvalid, path, $"{label} is required.");
-    }
-
-    private static BotDefinition? Read(string path, DiagnosticSink sink)
-    {
-        try
-        {
-            return ModLoader.ParseJson<BotDefinition>(File.ReadAllText(path), sink);
-        }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
-        {
-            sink.Error(DiagnosticCodes.FileUnreadable, null, $"could not read file: {e.Message}");
-            return null;
-        }
     }
 }

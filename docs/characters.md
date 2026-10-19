@@ -28,7 +28,7 @@ A character is a JSON file in a mod's `characters/` folder plus a skinned glTF m
 | `name` | Shown on the picker. |
 | `description` | Optional; shown under the name. |
 | `mesh` | A `.glb` or `.gltf` in the mod (`other_mod:path` for another mod's). |
-| `order` | Optional; lower comes first on the picker. Vanilla uses 0 and 1. The first is the default for a player who has not chosen yet. |
+| `order` | Optional; lower comes first on the picker. Vanilla uses 0 and 1, and wins a tie. The first is the default for a player who has not chosen yet. |
 | `sounds` | Optional; local sound name to sound event id (see below). |
 
 ### The mesh
@@ -90,6 +90,10 @@ and the Refine Tool's blade points at the crosshair. Everything else plays the s
 `tools/capture-characters.sh OUT_DIR [character ...]` starts a world and renders each character to PNGs: standing,
 holding and swinging tools, looking up and down, crouching, moving, and in first person with each tool. It needs a
 display, or `xvfb-run` without one.
+
+## Changing another mod's character
+
+Override, patch or remove it through `overrides/<mod>/characters/`; see the [Packaging Guide](packaging-guide.md#overriding-bots-quests-pois-and-characters).
 
 ## Animations
 

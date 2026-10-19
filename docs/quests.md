@@ -1,9 +1,11 @@
 # Quests and Dialogue
 
-A mod's story is its `quests/*.json` (one quest per file; the file name is the quest id) and the POIs those
+A mod's story is its `quests/**/*.json` (one quest per file, in any subfolder; the file name is the quest id) and the POIs those
 quests point at (`pois/*.json`, see [World Generation](world-generation.md)). Vanilla authors both through
 the story batch `mods/vanilla/editor/batches/story.json`: edit the batch and re-run
 `tools/author-vanilla.sh`, which checks every POI and quest the way the loader does and rewrites the files.
+
+To change or remove another mod's quest, override it, patch it or list it in `remove.json`; see the [Packaging Guide](packaging-guide.md#overriding-bots-quests-pois-and-characters).
 
 Quests are shared by everyone in the world. The host runs them and sends the state to every client; a save
 keeps it under `quests` (see [Saves](saves.md)).

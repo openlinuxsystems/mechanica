@@ -248,16 +248,13 @@ public sealed class WorldGenData
                         (definition, definitionMod) = (read, mod.Id);
                 }
             }
-            var folder = Path.Combine(mod.Directory, PoiFolder);
-            if (!Directory.Exists(folder))
-                continue;
-            foreach (var file in Directory.EnumerateFiles(folder, "*.json", SearchOption.AllDirectories).Order(StringComparer.Ordinal))
-            {
-                var display = $"{mod.Id}/{Path.GetRelativePath(mod.Directory, file).Replace('\\', '/')}";
-                var sink = new DiagnosticSink(display, diagnostics);
-                if (Read<PoiPrefab>(file, sink) is { } prefab)
-                    prefabs.Add((mod.Id, display, prefab));
-            }
+        }
+        // Other mods override, patch and remove POIs in overrides/<mod>/pois/ (see ContentLayers).
+        foreach (var entry in ContentLayers.Collect(content, PoiFolder, ContentLayers.IdMember, diagnostics,
+            new LayerCodes(DiagnosticCodes.PoiInvalid, DiagnosticCodes.PoiInvalid)))
+        {
+            if (ModLoader.ParseJson<PoiPrefab>(entry.Json, new DiagnosticSink(entry.DisplayFile, diagnostics)) is { } prefab)
+                prefabs.Add((entry.OwnerModId, entry.DisplayFile, prefab));
         }
         if (definition is null)
         {

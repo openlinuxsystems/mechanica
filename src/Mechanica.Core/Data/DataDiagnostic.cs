@@ -132,6 +132,10 @@ public static class DiagnosticCodes
 
     // 14xx: Lua scripts
     public const string ScriptSyntax = "MD1401";
+
+    // 15xx: content overrides, patches and removals (bots, quests, POIs, characters, and remove.json for any kind)
+    public const string ContentOverrideUnknown = "MD1501";
+    public const string ContentOverrideConflict = "MD1502";
 }
 
 /// <summary>Collects diagnostics for one file, filling in the file name.</summary>
