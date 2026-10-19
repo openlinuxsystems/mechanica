@@ -1752,10 +1752,12 @@ public partial class CaptureScene : Node
         Player.HeldProp = prop;
     }
 
-    // CAPTURE_ONLY=text keeps the shots whose names contain it (and the setup shots, named *_00_*).
+    // CAPTURE_ONLY=text keeps the shots whose names contain it, or any of several separated by commas (and the setup
+    // shots, named *_00_*).
     private void Shot(string name, int frames, Action setup)
     {
-        if (OS.GetEnvironment("CAPTURE_ONLY") is { Length: > 0 } only && !name.Contains(only, StringComparison.Ordinal) && !name.Contains("_00_", StringComparison.Ordinal))
+        if (OS.GetEnvironment("CAPTURE_ONLY") is { Length: > 0 } only && !only.Split(',').Any(o => name.Contains(o, StringComparison.Ordinal))
+            && !name.Contains("_00_", StringComparison.Ordinal))
             return;
         _shots.Enqueue((name, frames, setup));
     }

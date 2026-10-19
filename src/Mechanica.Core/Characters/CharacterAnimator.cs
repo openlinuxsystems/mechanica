@@ -562,6 +562,9 @@ public sealed class CharacterAnimator
             target = new Vector2(forward, -right) * (motion.LeanPerAcceleration * MathF.PI / 180f);
             if (target.Length() > max)
                 target = Vector2.Normalize(target) * max;
+            // Running, the body leans into it, more the faster.
+            var (from, full) = (motion.RunLeanSpeeds[0], motion.RunLeanSpeeds[1]);
+            target.X += motion.RunLeanDegrees * MathF.PI / 180f * Math.Clamp((planar.Length() - from) / (full - from), 0f, 1f);
         }
         for (var left = delta; left > 0f; left -= 1f / 120f)
         {

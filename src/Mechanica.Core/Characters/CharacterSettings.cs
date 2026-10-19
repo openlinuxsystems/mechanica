@@ -253,10 +253,16 @@ public sealed record MotionSettings
     public float BlendSeconds { get; init; } = 0.12f;
 
     /// <summary>Lean into speeding up, slowing down and turning, in degrees per m/s² of acceleration.</summary>
-    public float LeanPerAcceleration { get; init; } = 0.35f;
+    public float LeanPerAcceleration { get; init; } = 1.2f;
 
     /// <summary>The furthest lean.</summary>
     public float MaxLeanDegrees { get; init; } = 11f;
+
+    /// <summary>How far forward the body leans into a run at full sprint, on top of the clips' own lean.</summary>
+    public float RunLeanDegrees { get; init; } = 7f;
+
+    /// <summary>Ground speeds (m/s) between which the run lean builds: none at the first, all of it at the second.</summary>
+    public float[] RunLeanSpeeds { get; init; } = [4f, 7f];
 
     /// <summary>The lean's spring: how stiff it is (1/s²) and how fast it settles (1/s); a little overshoot reads as weight.</summary>
     public float LeanStiffness { get; init; } = 90f;
@@ -310,6 +316,9 @@ public sealed record MotionSettings
         CharacterSettings.Positive(BlendSeconds, "motion.blend_seconds");
         CharacterSettings.NonNegative(LeanPerAcceleration, "motion.lean_per_acceleration");
         Degrees(MaxLeanDegrees, 0f, 45f, "motion.max_lean_degrees");
+        Degrees(RunLeanDegrees, 0f, 30f, "motion.run_lean_degrees");
+        if (RunLeanSpeeds is not { Length: 2 } || !float.IsFinite(RunLeanSpeeds[0]) || !(RunLeanSpeeds[1] > RunLeanSpeeds[0]) || !float.IsFinite(RunLeanSpeeds[1]))
+            throw new FormatException("motion.run_lean_speeds must be two rising speeds.");
         CharacterSettings.Positive(LeanStiffness, "motion.lean_stiffness");
         CharacterSettings.Positive(LeanDamping, "motion.lean_damping");
         CharacterSettings.Positive(RunJumpSpeed, "motion.run_jump_speed");

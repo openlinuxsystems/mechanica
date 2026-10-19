@@ -151,10 +151,11 @@ mist from the nozzles.
 Timing lives in `game/data/character.json` (engine settings, not moddable): the speed each moving clip
 is authored at, where in a cycle the feet land, crossfade times, how far the body turns before the feet
 follow, and which items are held how. `motion` there sets how the body moves under the clips: how far the look turns before
-the feet step round, how the upper body twists toward the look, the lean into speeding up, slowing and turning, the speed a
-jump becomes a leap, the idle fidgets, and how hit reactions fade.
+the feet step round, how the upper body twists toward the look, the lean into speeding up, slowing and turning, the forward lean of a run, how much a held tool settles the arms and torso
+into a carry while moving, the speed a jump becomes a leap, the idle fidgets, and how hit reactions fade. The build-up
+from a walk to a sprint and the ease back down are `sprint_acceleration` and `sprint_deceleration` in `game/data/player.json`.
 
 `python tools/characters/render_clips.py OUT_DIR clip ... [--view side|front|threeq|back]` renders clips straight from their
 code (with the bpy module installed), and `tools/capture-animations.sh OUT_DIR [character]` records each move in a running
-world as GIFs and MP4s (`CAPTURE_ONLY=walk` keeps matching moves). A mod item gets the pose of its category (`consumable` eats,
+world as GIFs and MP4s (`CAPTURE_ONLY=walk,run_side` keeps matching moves). A mod item gets the pose of its category (`consumable` eats,
 `weapon` throws) unless it is listed in `item_poses`.

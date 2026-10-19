@@ -3489,17 +3489,20 @@ def heavy_key(grip_r, axis, spacing=SLEDGE_SPACING, d_hint=None, space="chest", 
     return s
 
 
-# Ready pose: the handle rests on the right shoulder, the head hanging behind it, both fists in front of the chest.
-HEAVY_R = np.array([-0.12, -0.27, 1.29])
-HEAVY_AXIS = norm(np.array([-0.17, 0.8, 0.58]))
-HEAVY_BODY = dict(spine=(0.0, 0, -3.0), chest=(-1.0, 0, -7.0), neck=(0.0, 0, 4.0), head=(0.0, 0, 3.0))
+# Ready pose: held in front across the body, ready to swing (Chase's reference, Scrap Mechanic's title screen): the head
+# up by the right shoulder, the handle running down to the left hip, the right fist high on the shaft and the left low
+# on the grip, the striking face turned forward.
+HEAVY_R = np.array([-0.05, -0.36, 1.24])
+HEAVY_AXIS = norm(np.array([-0.7, -0.3, 0.6]))
+HEAVY_D = (0.0, -1.0, 0.0)
+HEAVY_BODY = dict(spine=(2.0, 0, -4.0), chest=(2.0, 0, -6.0), neck=(0.0, 0, 4.0), head=(0.0, 0, 4.0))
 
 
 def clip_hold_heavy(t, T=2.0):
     ph = 2 * math.pi * t / T
     br = math.sin(ph)
     s = heavy_key(HEAVY_R + np.array([0.0, 0.0, 0.005 * br]), HEAVY_AXIS + np.array([0.0, 0.0, 0.006 * br]),
-                  spacing=0.22, **HEAVY_BODY)
+                  spacing=0.22, d_hint=HEAVY_D, **HEAVY_BODY)
     base = upper_base(t, T)
     for b in ("spine", "chest", "neck", "head"):
         s[b] = tuple(x + y for x, y in zip(HEAVY_BODY[b], base[b]))
