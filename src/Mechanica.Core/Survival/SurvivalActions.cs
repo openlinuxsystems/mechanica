@@ -702,10 +702,21 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         return new Vector3(MathF.Cos(angle), 0, MathF.Sin(angle));
     }
 
-    // The items a world object leaves when it breaks or is refined; a drop with a chance is rolled on its own.
-    private List<ItemStack> ObjectDrops(WorldObjectPlacement placement) => [.. (placement.Definition.Drops ?? [])
-        .Where(d => d.Item is not null && catalog.FindDefinition(d.Item) is not null && (d.Chance is not { } chance || _rolls.NextSingle() < chance))
-        .Select(d => new ItemStack(Identifiers.Qualify(d.Item!), d.CountMax is { } most && most > d.Count ? _rolls.Next(d.Count, most + 1) : d.Count))];
+    // The items a world object leaves when it breaks or is refined: its drops (one with a chance is rolled on its own),
+    // then its loot table picks.
+    private List<ItemStack> ObjectDrops(WorldObjectPlacement placement)
+    {
+        List<ItemStack> items = [.. (placement.Definition.Drops ?? [])
+            .Where(d => d.Item is not null && catalog.FindDefinition(d.Item) is not null && (d.Chance is not { } chance || _rolls.NextSingle() < chance))
+            .Select(d => new ItemStack(Identifiers.Qualify(d.Item!), d.CountMax is { } most && most > d.Count ? _rolls.Next(d.Count, most + 1) : d.Count))];
+        if (placement.Definition.Loot is { Table: { } id } loot && world.FindLootTable(id) is { } table)
+        {
+            items.AddRange(LootRolls.Roll(loot, table, _rolls)
+                .Where(p => catalog.FindDefinition(p.Item) is not null)
+                .Select(p => new ItemStack(Identifiers.Qualify(p.Item), p.Count)));
+        }
+        return items;
+    }
 
     // Plays an item's pickup sound where it was taken, if it binds one.
     private void PlayPickup(string item, Vector3 at)
