@@ -140,6 +140,69 @@ def loop(name, w, h, r, band, depth, frame, mat, parent):
     return sb._bevel(sb._object(name, bm, mat, parent), 0.003)
 
 
+def bit_radius(z):
+    """The bit's radius at height z, from its outline (the outer points of each step)."""
+    if z >= POINT_BASE:
+        return 0.128 * (Z_TIP - z) / (Z_TIP - POINT_BASE)
+    pts = sorted({zz: r for r, zz in BIT}.items())
+    for (z0, r0), (z1, r1) in zip(pts, pts[1:]):
+        if z0 <= z <= z1:
+            return r0 + (r1 - r0) * (z - z0) / max(1e-6, z1 - z0)
+    return pts[-1][1]
+
+
+def flute(name, phase, z0, z1, twist, width, height, mat, parent, steps=40):
+    """A raised cutting ridge wound round the bit from z0 to z1: a sharp triangle in section, turning `twist` rad."""
+    bm = bmesh.new()
+    rows = []
+    for i in range(steps + 1):
+        f = i / steps
+        z = z0 + (z1 - z0) * f
+        r = bit_radius(z) - 0.004
+        a = phase + twist * f
+        h = height * min(1.0, f * 6, (1 - f) * 3 + 0.25)
+        half = width / 2 / max(r, 0.05) * (1 - 0.7 * f)
+        h *= 1 - 0.6 * f
+        rows.append([bm.verts.new((rr * math.cos(aa), rr * math.sin(aa), z))
+                     for rr, aa in ((r, a - half), (r + h, a + half * 0.2), (r, a + half))])
+    for a, b in zip(rows, rows[1:]):
+        for k in range(2):
+            bm.faces.new((a[k], b[k], b[k + 1], a[k + 1]))
+        bm.faces.new((a[2], b[2], b[0], a[0]))
+    bm.faces.new(rows[0])
+    bm.faces.new(rows[-1][::-1])
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    return sb._object(name, bm, mat, parent, smooth=False)
+
+
+TALON = [(0.04, BRACKET_TOP - 0.03, 0.05), (0.035, BRACKET_TOP + 0.04, 0.045), (0.065, BRACKET_TOP + 0.095, 0.036),
+         (0.11, 0.125, 0.026), (0.15, 0.13, 0.014), (0.185, 0.118, 0.002)]   # (in from the outer face, z, half-width)
+
+
+def talon(name, origin, n, t, up, mat, parent, scale=1.0, lift=0.0, thick=0.05):
+    """A claw hooked in over the bit along TALON's centreline, its width tapering to a point."""
+    bm = bmesh.new()
+    rows = []
+    for i, (d, z, w) in enumerate(TALON):
+        a, b = TALON[max(0, i - 1)], TALON[min(len(TALON) - 1, i + 1)]
+        tan = (-n * (b[0] - a[0]) + up * (b[1] - a[1])).normalized()
+        side = t.cross(tan).normalized()     # in the (n, up) plane, square to the centreline
+        if side.dot(up) < 0:
+            side = -side
+        c = origin - n * d + up * z + side * lift
+        h = thick / 2 * (1 - 0.7 * i / (len(TALON) - 1)) * (scale if scale < 1 else 1)
+        ww = w * scale
+        rows.append([bm.verts.new(c + t * x + side * y) for x, y in ((-ww, -h), (ww, -h), (ww, h), (-ww, h))])
+    for ra, rb in zip(rows, rows[1:]):
+        for k in range(4):
+            j = (k + 1) % 4
+            bm.faces.new((ra[k], ra[j], rb[j], rb[k]))
+    bm.faces.new(rows[0][::-1])
+    bm.faces.new(rows[-1])
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    return sb._object(name, bm, mat, parent, smooth=False)
+
+
 def build(root_name="Drill"):
     root = bpy.data.objects.new(root_name, None)
     bpy.context.scene.collection.objects.link(root)
@@ -167,7 +230,10 @@ def build(root_name="Drill"):
         sb.bolt("BaseBolt", 0.27 * math.cos(a), 0.27 * math.sin(a), Z_BAND, 1, dark, root, r=0.013)
     # the bit: a smooth shouldered dome and cone with two steps, and a faceted point
     lathe("Bit", BIT, steel, root, segs=96)
-    lathe("Point", [(0.128, POINT_BASE - 0.002), (0.0, Z_TIP)], point, root, segs=10, smooth=False)
+    lathe("Point", [(0.128, POINT_BASE - 0.002), (0.0, Z_TIP)], point, root, segs=8, smooth=False)
+    # three sharp flutes wound up the dome, turning the way it spins
+    for k in range(3):
+        flute("Flute", 2 * math.pi * k / 3, Z_BIT + 0.01, Z_TIP - 0.03, 2.8, 0.1, 0.05, dark, root, steps=60)
     # shallow grooves round the shoulder, as on a turned part
     for z, r in ((Z_BIT + 0.11, 0.284), (Z_BIT + 0.35, 0.16)):
         sb.ring("Groove", r + 0.002, r - 0.01, z - 0.004, z + 0.004, dark, root, segs=96)
@@ -182,6 +248,9 @@ def build(root_name="Drill"):
                 (0.05, BRACKET_TOP + 0.04), (0.012, BRACKET_TOP + 0.02), (0.0, -0.05)]
         origin = n * BRACKET_R + t * (-BRACKET_W / 2)
         prism("Bracket", [(-d, z) for d, z in side], BRACKET_W, claw, root, (origin, n, up, t), bevel=0.008)
+        # a hooked talon on top, curling in over the bit and tapering to a point, amber along its back
+        talon("Talon", n * BRACKET_R, n, t, up, claw, root)
+        talon("TalonEdge", n * (BRACKET_R + 0.004), n, t, up, amber, root, scale=0.55, lift=0.012)
         # a darker plate down the middle of its outer face, and amber edging along its top
         plate = [(-0.06, Z_BASE + 0.03), (0.06, Z_BASE + 0.03), (0.06, -0.08), (0.0, -0.045), (-0.06, -0.08)]
         prism("BracketPlate", plate, 0.006, dark, root, (n * (BRACKET_R - 0.004), t, up, n), bevel=0.003)
@@ -258,7 +327,7 @@ def render_review(out: Path, icons_only=False):
     sheet = Image.new("RGB", (2860, 2120), (246, 246, 244))
     d = ImageDraw.Draw(sheet)
     d.text((60, 36), "DRILL (design review)", fill=INK, font=F(46, True))
-    d.text((60, 98), "3 x 3 x 3 blocks (75 cm each way). A squat steel bit held by four claw brackets with amber trim; "
+    d.text((60, 98), "3 x 3 x 3 blocks (75 cm each way). A fluted steel bit with a faceted point, held by four hooked claws with amber trim; "
            "the round base's underside is the mounting face the bearing turns.", fill=INK, font=F(24))
     tiles = [("TIP-ON", "front", (60, 170)), ("SIDE", "side", (720, 170)), ("SIDE, 45 DEGREES", "top", (1380, 170)),
              ("MOUNTING FACE", "back", (2040, 170))]
