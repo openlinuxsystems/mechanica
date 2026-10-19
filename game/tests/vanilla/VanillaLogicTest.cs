@@ -36,7 +36,7 @@ public partial class VanillaLogicTest : StagedTest
 
     // Parts whose model is a file made elsewhere (tools/bearing_engine, tools/gas_engine, tools/electric_engine,
     // tools/scrap_seat, tools/wheels).
-    private static readonly string[] Authored = ["electric_engine", "gas_engine", "scrap_drivers_seat", "scrap_gas_engine", "scrap_wheel", "wheel", "big_wheel"];
+    private static readonly string[] Authored = ["electric_engine", "gas_engine", "scrap_drivers_seat", "scrap_seat", "scrap_gas_engine", "scrap_wheel", "wheel", "big_wheel"];
 
     private static readonly Vector3 CarAt = new(4, 1.0f, 8);
 

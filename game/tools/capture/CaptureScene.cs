@@ -1062,7 +1062,7 @@ public partial class CaptureScene : Node
         Shot("scrap_seat_13_empty", 60, () => { });
     }
 
-    private static readonly string[] SeatParts = ["drivers_seat", "passenger_seat", "scrap_seat", "scrap_drivers_seat"];
+    private static readonly string[] SeatParts = ["drivers_seat", "passenger_seat", "scrap_drivers_seat", "scrap_seat"];
 
     // Every vanilla seat side by side on one slab; the player sits in each in turn.
     private void SeatsShots()
@@ -1079,7 +1079,7 @@ public partial class CaptureScene : Node
             int Put(string part, int x, int y, int z) =>
                 creation.TryPlacePart(part, new Core.Creations.GridCell(x, y, z), Core.Creations.GridRotation.Identity, out var placed, out var error)
                     ? placed.Id : throw new InvalidOperationException(error);
-            for (var x = -8; x <= 8; x++)
+            for (var x = -8; x <= 10; x++)
                 for (var z = -2; z <= 3; z++)
                     Put("vanilla:metal_block", x, 0, z);
             var cell = -8;
