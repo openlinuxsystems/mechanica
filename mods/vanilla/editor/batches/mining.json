@@ -114,7 +114,8 @@
           "stations": ["refiner"],
           "inputs": [{ "item": "stone_rod", "count": 1 }],
           "outputs": [{ "item": "scrap_stone_block", "count": 20 }],
-          "time": 5
+          "time": 5,
+          "order": 2630
         }
       ]
     },
@@ -138,7 +139,8 @@
           "stations": ["refiner"],
           "inputs": [{ "item": "metal_rod", "count": 1 }],
           "outputs": [{ "item": "metal_block", "count": 20 }],
-          "time": 5
+          "time": 5,
+          "order": 2640
         }
       ]
     }

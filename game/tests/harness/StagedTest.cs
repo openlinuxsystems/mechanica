@@ -48,6 +48,10 @@ public abstract partial class StagedTest : Node
         }
         catch (Exception e)
         {
+            // A failed check frees the test's fields, so the rest of that tick may throw: the failure is already
+            // logged, and the exception would only bury it.
+            if (_done)
+                return;
             // Without this an exception repeats every frame and the stage never times out.
             Check(false, $"stage '{_stage.Name}' threw {e}");
             return;

@@ -30,7 +30,8 @@
             { "item": "component_kit", "count": 1 }
           ],
           "outputs": [{ "item": "bearing", "count": 1 }],
-          "time": 5
+          "time": 5,
+          "order": 1010
         }
       ]
     },
@@ -123,7 +124,8 @@
             { "item": "component_kit", "count": 1 }
           ],
           "outputs": [{ "item": "piston", "count": 1 }],
-          "time": 8
+          "time": 8,
+          "order": 1020
         }
       ]
     },
@@ -239,7 +241,8 @@
             { "item": "component_kit", "count": 2 }
           ],
           "outputs": [{ "item": "sport_suspension", "count": 1 }],
-          "time": 8
+          "time": 8,
+          "order": 710
         }
       ]
     },
@@ -352,7 +355,8 @@
             { "item": "component_kit", "count": 2 }
           ],
           "outputs": [{ "item": "offroad_suspension", "count": 1 }],
-          "time": 8
+          "time": 8,
+          "order": 720
         }
       ]
     }

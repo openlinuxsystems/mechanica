@@ -35,7 +35,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 1 }],
           "outputs": [{ "item": "stop_sign", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 2110
         }
       ]
     },
@@ -64,7 +65,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 1 }],
           "outputs": [{ "item": "caution_sign", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 2120
         }
       ]
     },
@@ -93,7 +95,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 1 }],
           "outputs": [{ "item": "danger_sign", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 2130
         }
       ]
     },
@@ -122,7 +125,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 1 }],
           "outputs": [{ "item": "warehouse_key_sign", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 2240
         }
       ]
     },
@@ -156,7 +160,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 1 }],
           "outputs": [{ "item": "direction_arrow_left", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 2160
         }
       ]
     },
@@ -185,7 +190,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 1 }],
           "outputs": [{ "item": "direction_arrow_right", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 2180
         }
       ]
     },
@@ -214,7 +220,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 1 }],
           "outputs": [{ "item": "direction_arrow_straight", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 2170
         }
       ]
     },
@@ -243,7 +250,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 1 }],
           "outputs": [{ "item": "outpost_sign", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 2230
         }
       ]
     },
@@ -278,7 +286,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 1 }],
           "outputs": [{ "item": "no_entry_sign", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 2140
         }
       ]
     },
@@ -319,7 +328,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 1 }],
           "outputs": [{ "item": "speed_limit_sign", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 2150
         }
       ]
     },
@@ -353,7 +363,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 1 }],
           "outputs": [{ "item": "small_pipe_short", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 410
         }
       ]
     },
@@ -387,7 +398,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 2 }],
           "outputs": [{ "item": "small_pipe_long", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 420
         }
       ]
     },
@@ -428,7 +440,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 1 }],
           "outputs": [{ "item": "small_pipe_corner", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 430
         }
       ]
     },
@@ -462,7 +475,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 1 }],
           "outputs": [{ "item": "small_pipe_tee", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 440
         }
       ]
     },
@@ -490,7 +504,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 1 }],
           "outputs": [{ "item": "small_pipe_cross", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 450
         }
       ]
     },
@@ -524,7 +539,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 2 }],
           "outputs": [{ "item": "large_pipe_short", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 460
         }
       ]
     },
@@ -558,7 +574,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 5 }],
           "outputs": [{ "item": "large_pipe_long", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 470
         }
       ]
     },
@@ -599,7 +616,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 2 }],
           "outputs": [{ "item": "large_pipe_corner", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 480
         }
       ]
     },
@@ -633,7 +651,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 3 }],
           "outputs": [{ "item": "large_pipe_tee", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 490
         }
       ]
     },
@@ -662,7 +681,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 4 }],
           "outputs": [{ "item": "ibeam_short", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 340
         }
       ]
     },
@@ -691,7 +711,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 8 }],
           "outputs": [{ "item": "ibeam_long", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 350
         }
       ]
     },
@@ -720,7 +741,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 4 }, { "item": "scrap_wood", "count": 2 }],
           "outputs": [{ "item": "support_pillar", "count": 1 }],
-          "time": 4
+          "time": 4,
+          "order": 310
         }
       ]
     },
@@ -749,7 +771,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 1 }],
           "outputs": [{ "item": "support_bracket", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 320
         }
       ]
     },
@@ -778,7 +801,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 5 }],
           "outputs": [{ "item": "metal_column", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 330
         }
       ]
     },
@@ -809,7 +833,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 2 }],
           "outputs": [{ "item": "metal_railing", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 240
         }
       ]
     },
@@ -840,7 +865,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_wood", "count": 4 }],
           "outputs": [{ "item": "wooden_table", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 2030
         }
       ]
     },
@@ -872,7 +898,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 5 }],
           "outputs": [{ "item": "metal_table", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 2040
         }
       ]
     },
@@ -904,7 +931,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_wood", "count": 2 }],
           "outputs": [{ "item": "chair", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 2020
         }
       ]
     },
@@ -934,7 +962,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_wood", "count": 1 }],
           "outputs": [{ "item": "stool", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 2010
         }
       ]
     },
@@ -968,7 +997,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 4 }],
           "outputs": [{ "item": "shelf_unit", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 2050
         }
       ]
     },
@@ -1003,7 +1033,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_wood", "count": 3 }],
           "outputs": [{ "item": "pallet", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 2060
         }
       ]
     },
@@ -1113,7 +1144,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_wood", "count": 10 }],
           "outputs": [{ "item": "tree_trunk", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 2320
         }
       ]
     },
@@ -1139,7 +1171,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_wood", "count": 8 }],
           "outputs": [{ "item": "fallen_log", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 2310
         }
       ]
     },
@@ -1233,7 +1266,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 3 }],
           "outputs": [{ "item": "bumper_front", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 1510
         }
       ]
     },
@@ -1261,7 +1295,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 3 }],
           "outputs": [{ "item": "bumper_rear", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 1520
         }
       ]
     },
@@ -1286,7 +1321,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 1 }, { "item": "component_kit", "count": 1 }],
           "outputs": [{ "item": "windshield", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 1580
         }
       ]
     },
@@ -1311,7 +1347,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 1 }],
           "outputs": [{ "item": "side_window", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 1590
         }
       ]
     },
@@ -1345,7 +1382,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 1 }],
           "outputs": [{ "item": "exhaust_pipe", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 1540
         }
       ]
     },
@@ -1373,7 +1411,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 1 }],
           "outputs": [{ "item": "antenna", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 1570
         }
       ]
     },
@@ -1405,7 +1444,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 2 }],
           "outputs": [{ "item": "roof_rack", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 1560
         }
       ]
     },
@@ -1430,7 +1470,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 1 }],
           "outputs": [{ "item": "mud_flap", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 1530
         }
       ]
     },
@@ -1458,7 +1499,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 1 }],
           "outputs": [{ "item": "license_plate", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 1550
         }
       ]
     },
@@ -1488,7 +1530,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 1 }],
           "outputs": [{ "item": "traffic_cone", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 2210
         }
       ]
     },
@@ -1517,7 +1560,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 1 }],
           "outputs": [{ "item": "barrier_tape", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 2220
         }
       ]
     },
@@ -1552,7 +1596,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 2 }],
           "outputs": [{ "item": "ladder", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 230
         }
       ]
     },
@@ -1583,7 +1628,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 2 }, { "item": "scrap_wood", "count": 2 }],
           "outputs": [{ "item": "stairs_block", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 220
         }
       ]
     },
@@ -1609,7 +1655,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 2 }, { "item": "scrap_wood", "count": 2 }],
           "outputs": [{ "item": "ramp_block", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 210
         }
       ]
     },
@@ -1637,7 +1684,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_wood", "count": 4 }],
           "outputs": [{ "item": "door_frame", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 360
         }
       ]
     },
@@ -1667,7 +1715,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_wood", "count": 2 }],
           "outputs": [{ "item": "window_frame", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 370
         }
       ]
     }

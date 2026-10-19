@@ -68,7 +68,8 @@
           "outputs": [
             { "item": "metal_block", "count": 4 }
           ],
-          "time": 2
+          "time": 2,
+          "order": 150
         }
       ]
     },
@@ -93,7 +94,8 @@
           "outputs": [
             { "item": "metal_wedge", "count": 4 }
           ],
-          "time": 2
+          "time": 2,
+          "order": 160
         }
       ]
     },
@@ -232,7 +234,8 @@
           "outputs": [
             { "item": "scrap_wood_block", "count": 4 }
           ],
-          "time": 2
+          "time": 2,
+          "order": 110
         }
       ]
     },
@@ -256,7 +259,8 @@
           "outputs": [
             { "item": "scrap_wood_wedge", "count": 4 }
           ],
-          "time": 2
+          "time": 2,
+          "order": 120
         }
       ]
     },
@@ -292,7 +296,8 @@
           "outputs": [
             { "item": "scrap_metal_block", "count": 4 }
           ],
-          "time": 2
+          "time": 2,
+          "order": 130
         }
       ]
     },
@@ -316,7 +321,8 @@
           "outputs": [
             { "item": "scrap_metal_wedge", "count": 4 }
           ],
-          "time": 2
+          "time": 2,
+          "order": 140
         }
       ]
     },

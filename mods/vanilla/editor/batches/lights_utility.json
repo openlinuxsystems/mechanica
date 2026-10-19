@@ -38,7 +38,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 1 }, { "item": "component_kit", "count": 1 }],
           "outputs": [{ "item": "headlight", "count": 1 }],
-          "time": 3
+          "time": 3,
+          "order": 1630
         }
       ]
     },
@@ -88,7 +89,8 @@
             { "item": "circuit_board", "count": 1 }
           ],
           "outputs": [{ "item": "spotlight", "count": 1 }],
-          "time": 5
+          "time": 5,
+          "order": 1640
         }
       ]
     },
@@ -146,7 +148,8 @@
             { "item": "circuit_board", "count": 1 }
           ],
           "outputs": [{ "item": "warehouse_spotlight", "count": 1 }],
-          "time": 8
+          "time": 8,
+          "order": 1680
         }
       ]
     },
@@ -187,7 +190,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 3 }, { "item": "component_kit", "count": 1 }],
           "outputs": [{ "item": "construction_light", "count": 1 }],
-          "time": 5
+          "time": 5,
+          "order": 1650
         }
       ]
     },
@@ -219,7 +223,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 1 }, { "item": "component_kit", "count": 1 }],
           "outputs": [{ "item": "interior_light", "count": 1 }],
-          "time": 3
+          "time": 3,
+          "order": 1620
         }
       ]
     },
@@ -252,7 +257,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 1 }, { "item": "component_kit", "count": 1 }],
           "outputs": [{ "item": "warning_light", "count": 1 }],
-          "time": 3
+          "time": 3,
+          "order": 1660
         }
       ]
     },
@@ -281,7 +287,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_wood", "count": 1 }, { "item": "chemical", "count": 1 }],
           "outputs": [{ "item": "glowstick", "count": 1 }],
-          "time": 2
+          "time": 2,
+          "order": 1610
         }
       ]
     },
@@ -337,7 +344,8 @@
             { "item": "circuit_board", "count": 1 }
           ],
           "outputs": [{ "item": "radio", "count": 1 }],
-          "time": 5
+          "time": 5,
+          "order": 1420
         }
       ]
     },
@@ -376,7 +384,8 @@
             { "item": "circuit_board", "count": 1 }
           ],
           "outputs": [{ "item": "beacon", "count": 1 }],
-          "time": 5
+          "time": 5,
+          "order": 1670
         }
       ]
     },
@@ -413,7 +422,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 1 }, { "item": "component_kit", "count": 1 }],
           "outputs": [{ "item": "horn", "count": 1 }],
-          "time": 3
+          "time": 3,
+          "order": 1410
         }
       ]
     },
@@ -449,7 +459,8 @@
             { "item": "circuit_board", "count": 1 }
           ],
           "outputs": [{ "item": "dispenser", "count": 1 }],
-          "time": 10
+          "time": 10,
+          "order": 1780
         }
       ]
     },
@@ -490,7 +501,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 4 }, { "item": "component_kit", "count": 2 }],
           "outputs": [{ "item": "saw_blade", "count": 1 }],
-          "time": 6
+          "time": 6,
+          "order": 1320
         }
       ]
     },
@@ -534,7 +546,8 @@
             { "item": "component_kit", "count": 1 }
           ],
           "outputs": [{ "item": "drill", "count": 1 }],
-          "time": 60
+          "time": 60,
+          "order": 1310
         }
       ]
     },
@@ -573,7 +586,8 @@
           "stations": ["fabricator"],
           "inputs": [{ "item": "scrap_metal", "count": 4 }, { "item": "component_kit", "count": 2 }],
           "outputs": [{ "item": "water_cannon", "count": 1 }],
-          "time": 6
+          "time": 6,
+          "order": 1330
         }
       ]
     },
@@ -617,7 +631,8 @@
             { "item": "component_kit", "count": 2 }
           ],
           "outputs": [{ "item": "potato_blaster_mounted", "count": 1 }],
-          "time": 8
+          "time": 8,
+          "order": 1340
         }
       ]
     }
