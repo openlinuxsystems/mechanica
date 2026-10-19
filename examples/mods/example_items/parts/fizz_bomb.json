@@ -1,0 +1,28 @@
+{
+  "id": "fizz_bomb",
+  "name": "Fizz Bomb",
+  "description": "Hold right click to wind up and let go to throw. It bursts where it lands, hurting everything close by.",
+  "category": "weapon",
+  "mass": 0.3,
+  "stack_size": 10,
+  "visual": {
+    "color": "#4ab0c0"
+  },
+  "script": "scripts/fizz_bomb.lua",
+  "sounds": {
+    "explode": "vanilla:popper_explode"
+  },
+  "aim": {
+    "zoom": 1,
+    "fire_on_release": true
+  },
+  "properties": {
+    "damage": 35,
+    "radius": 3,
+    "impulse": 200,
+    "speed": 10,
+    "aimed_speed": 16,
+    "fuse": 2.5,
+    "interval": 0.8
+  }
+}

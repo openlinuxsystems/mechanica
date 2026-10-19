@@ -1,0 +1,10 @@
+{
+  "id": "example_items",
+  "name": "Example items",
+  "version": "1.0.0",
+  "description": "The Items Tutorial's example: a Ration Bar (food), a Pea Shooter with Dried Pea ammo (a gun) and a Fizz Bomb (a thrown item), each with its recipe.",
+  "dependencies": [
+    { "id": "vanilla", "version": "^0.1.0" }
+  ],
+  "conflicts": []
+}

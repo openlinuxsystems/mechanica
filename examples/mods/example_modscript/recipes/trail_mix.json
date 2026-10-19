@@ -1,0 +1,21 @@
+{
+  "id": "trail_mix",
+  "stations": [
+    "fabricator",
+    "portable_fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "carrot",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "example_modscript:trail_mix",
+      "count": 2
+    }
+  ],
+  "time": 3,
+  "order": 2710
+}

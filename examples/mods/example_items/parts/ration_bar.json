@@ -1,0 +1,18 @@
+{
+  "id": "ration_bar",
+  "name": "Ration Bar",
+  "description": "Pressed oats and dried carrot. Eat it to heal 25 health.",
+  "category": "consumable",
+  "mass": 0.2,
+  "stack_size": 10,
+  "visual": {
+    "color": "#c49a5a"
+  },
+  "script": "scripts/ration_bar.lua",
+  "sounds": {
+    "eat": "vanilla:eat_crunch"
+  },
+  "properties": {
+    "health": 25
+  }
+}

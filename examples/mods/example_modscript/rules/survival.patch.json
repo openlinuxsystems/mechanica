@@ -1,0 +1,5 @@
+// A game rule patch: merged over the build's game/data/survival.json when a world starts. Only the keys
+// written here change; the last mod in load order wins per key.
+{
+  "respawn_delay": 8
+}

@@ -1,0 +1,11 @@
+{
+  "id": "dried_pea",
+  "name": "Dried Pea",
+  "description": "Ammo for the Pea Shooter.",
+  "category": "resource",
+  "mass": 0.01,
+  "stack_size": 100,
+  "visual": {
+    "color": "#8fae4a"
+  }
+}

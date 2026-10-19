@@ -362,7 +362,7 @@ every installed mod in load order and shows, for the setup on screen:
   with the Part Editor, Lua and data files. **Edit info…** changes the selected mod's name, version, description,
   authors and dependencies in its `mod.json`, keeping everything else.
 - **Check all content** loads every kind of content of the setup on screen the way a world starts (parts, sounds,
-  world generation, recipes, bots, raids, quests, characters) and compiles every Lua script, and lists each problem
+  world generation, recipes, bots, raids, quests, characters, languages) and compiles every Lua script, and lists each problem
   with the content area, file and line. The quick list under **Problems** only covers mods and parts.
 
 **Apply** saves the setup to `mods.json` in the user data folder (`user://mods.json`; on Linux
