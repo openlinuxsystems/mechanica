@@ -814,6 +814,7 @@
     "forward": "forward",
     "harvest {0}": "harvest {0}",
     "hold to refine the {0}": "hold to refine the {0}",
+    "hold to {0} the {1}": "hold to {0} the {1}",
     "hold {0} aim": "hold {0} aim",
     "impact": "impact",
     "item id": "item id",

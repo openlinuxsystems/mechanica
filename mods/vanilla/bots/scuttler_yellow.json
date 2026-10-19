@@ -52,7 +52,7 @@
             "children": [
               {
                 "type": "hesitate",
-                "part": "vanilla:saw_blade",
+                "part": "vanilla:saw_blade,vanilla:drill",
                 "range": 4,
                 "min_speed": 9,
                 "seconds": 2.5
@@ -84,7 +84,7 @@
             "children": [
               {
                 "type": "hesitate",
-                "part": "vanilla:saw_blade",
+                "part": "vanilla:saw_blade,vanilla:drill",
                 "range": 4,
                 "min_speed": 9,
                 "seconds": 2.5
