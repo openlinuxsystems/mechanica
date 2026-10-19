@@ -94,6 +94,24 @@ public class SurvivalActionsTests
     }
 
     [Fact]
+    public void AContainerThatCarriesItsContentsIsPickedUpFull()
+    {
+        var chest = _f.Add(Chest, new Vector3(0, 0, 2));
+        _f.World.Creations[chest].InventoryOf(1)!.Add(Scrap, 5);
+        Assert.Equal("Empty the Chest before picking it up.", _f.Refused(Me, BuildActions.RemovePart, new { creation = chest, part = 1 }));
+
+        // The can comes up with its 60 scrap: the pockets (seeds, 50 scrap) take the can and 50 more; 10 drop.
+        _f.Pockets(Me).Add(Scrap, 50);
+        var can = _f.Add(Can, new Vector3(0, 0, 2));
+        _f.World.Creations[can].InventoryOf(1)!.Add(Scrap, 60);
+        _f.Ok(Me, BuildActions.RemovePart, new { creation = can, part = 1 });
+        Assert.False(_f.World.Creations.ContainsKey(can));
+        Assert.Equal(1, _f.Pockets(Me).Count(Can));
+        Assert.Equal(100, _f.Pockets(Me).Count(Scrap));
+        Assert.Equal([new ItemStack(Scrap, 10)], Assert.Single(_f.Survival.Drops.Values).Items);
+    }
+
+    [Fact]
     public void TheDeadCanOnlyRespawnAndOnlyAfterTheDelay()
     {
         _f.Survival.Damage(Me.Peer, 1000, "test");

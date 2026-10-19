@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Mechanica.Core.Actions;
 using Mechanica.Core.Creations;
+using Mechanica.Core.Data;
 using Mechanica.Core.Logic;
 using Mechanica.Core.Player;
 using MoonSharp.Interpreter;
@@ -149,6 +150,12 @@ public sealed partial class ScriptRuntime : ILogicHost
                     var entry = new Table(script);
                     entry.Set("part", DynValue.NewNumber(from));
                     entry.Set("value", DynValue.NewNumber(value));
+                    if (h.Creation.FindPart(from) is { } source)
+                    {
+                        entry.Set("type", DynValue.NewString(Identifiers.Qualify(source.Part)));
+                        // A container linked in (a gas container feeding an engine) rather than a control.
+                        entry.Set("storage", DynValue.NewBoolean(h.Creation.InventoryOf(from) is not null));
+                    }
                     list.Set(index++, DynValue.NewTable(entry));
                 }
             }
@@ -245,7 +252,15 @@ public sealed partial class ScriptRuntime : ILogicHost
             var instance = PartInstance();
             var item = ItemId(instance, args.AsType(0, "creation.count", DataType.String).String);
             return DynValue.NewNumber(_motion.FindCreation(instance.Creation) is { } c
-                ? c.Parts.Sum(p => c.InventoryOf(p.Id)?.Count(item) ?? 0)
+                ? Containers(c, args, 1, "creation.count").Sum(p => c.InventoryOf(p)?.Count(item) ?? 0)
+                : 0);
+        });
+        Fn(creation, "space", args =>
+        {
+            var instance = PartInstance();
+            var item = ItemId(instance, args.AsType(0, "creation.space", DataType.String).String);
+            return DynValue.NewNumber(_motion.FindCreation(instance.Creation) is { } c
+                ? Containers(c, args, 1, "creation.space").Sum(p => c.InventoryOf(p)?.SpaceFor(item) ?? 0)
                 : 0);
         });
         Fn(creation, "take", args =>
@@ -257,11 +272,11 @@ public sealed partial class ScriptRuntime : ILogicHost
             if (_motion.FindCreation(instance.Creation) is { } c)
             {
                 // Containers in part order, so which tank empties first is the same every time.
-                foreach (var p in c.Parts)
+                foreach (var p in Containers(c, args, 2, "creation.take"))
                 {
                     if (taken == wanted)
                         break;
-                    if (c.InventoryOf(p.Id) is { } inventory && inventory.Count(item) > 0)
+                    if (c.InventoryOf(p) is { } inventory && inventory.Count(item) > 0)
                         taken += inventory.Remove(item, wanted - taken);
                 }
             }
@@ -269,6 +284,18 @@ public sealed partial class ScriptRuntime : ILogicHost
         });
 
         Fn(world, "creative", _ => DynValue.NewBoolean(Creative));
+    }
+
+    // The parts creation.count and creation.take look in, in part order: every part of the Creation, or only those
+    // listed in the optional argument at `index` (a list of part ids, such as the gas containers linked to an engine).
+    private static IEnumerable<int> Containers(Creation creation, CallbackArguments args, int index, string function)
+    {
+        if (args.Count <= index || args[index].IsNil())
+            return creation.Parts.Select(p => p.Id);
+        var listed = new HashSet<int>();
+        foreach (var pair in args.AsType(index, function, DataType.Table).Table.Pairs)
+            listed.Add((int)LuaValues.Number(pair.Value, function, index + 1));
+        return creation.Parts.Select(p => p.Id).Where(listed.Contains);
     }
 
     // Sets (a number, boolean or string) or clears (nil) one of a part's readouts.
