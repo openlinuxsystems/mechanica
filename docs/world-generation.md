@@ -154,8 +154,11 @@ Scattered objects keep stable ids (`rule.cell_x.cell_z`), which is how a destroy
 
 ### Trees
 
-The vanilla trees (Tree Harvesting spec) are four objects with models from `tools/trees/build_trees.py`, which also
-builds the logs and the Wood Rod (`--render DIR` draws a review sheet). Felled, each falls into loose log parts
+The vanilla trees (Tree Harvesting spec) are four objects, plus the Autumn Forest's `autumn_leafy_tree` and the
+Burned Forest's `burnt_tree`, with models from `tools/trees/build_trees.py` (numpy and Pillow only), which also builds
+the logs and the Wood Rod. Each model has painted bark (colour and normal maps) and a canopy of alpha-masked
+leaf-cluster cards round a solid core; the textures come from `tools/trees/tree_textures.py` and are embedded in each
+file. `tools/capture-trees.sh OUT_DIR` shows every tree in a running world. Felled, each falls into loose log parts
 (`mods/vanilla/editor/batches/forestry.json`); a log breaks into 2 Wood Rods with the Sledgehammer or a Saw Blade,
 and a rod refines into 20 Scrap Wood Blocks.
 
