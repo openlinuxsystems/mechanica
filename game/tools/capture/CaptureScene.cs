@@ -65,7 +65,8 @@ public partial class CaptureScene : Node
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
         // Building the block wall needs Creative: free parts and no build reach.
         _main.Options = LaunchOptions.Offline with { Seed = 7, GameMode = blocks || soil ? Core.Survival.GameMode.Creative : LaunchOptions.Offline.GameMode };
-        _main.ReadDeviceInput = icons;
+        // The button shots show the HUD (the creation hotbar), which only a main reading the devices builds.
+        _main.ReadDeviceInput = icons || button;
         AddChild(_main);
         _camera = new Camera3D { Fov = 40 };
         AddChild(_camera);
@@ -990,7 +991,7 @@ public partial class CaptureScene : Node
     private int _button, _buttonSeat;
     private Vector3 _buttonAt;
 
-    // A slab with a button, a light it feeds and a seat linked to it: the button raised, held down with E (the light on),
+    // A slab with a button, a light it feeds and a seat linked to it: the button raised, held down with E (the warning light on),
     // let go, then held from the seat with its hotbar key, and its item picture.
     private void ButtonShots()
     {
@@ -1010,29 +1011,34 @@ public partial class CaptureScene : Node
                     Put("vanilla:metal_block", x, 0, z);
             _button = Put("vanilla:button", 0, 1, 0);
             Put("vanilla:button", 1, 1, 0);
-            var light = Put("vanilla:interior_light", -1, 1, 0);
-            _buttonSeat = Put("vanilla:scrap_seat", 0, 1, 3);
+            var light = Put("vanilla:warning_light", -2, 1, 1);
+            _buttonSeat = Put("vanilla:drivers_seat", 0, 1, 3);
             creation.TryLink(_button, light, out _);
             creation.TryLink(_buttonSeat, _button, out _);
             creation.SetAllBodyPoses(new Core.Creations.Pose(new System.Numerics.Vector3(_buttonAt.X, _buttonAt.Y + 0.2f, _buttonAt.Z), System.Numerics.Quaternion.Identity));
             _main.Creations.Add(creation, _main.Assets);
-            LookAtButton(new Vector3(0.55f, 0.75f, -0.7f));
+            // The close shots are of the part, without the HUD.
+            Ui.HudRoot.Hidden = true;
+            LookAtButton(new Vector3(0.9f, 1.0f, -1.2f));
         });
-        Shot("button_02_close", 2, () => LookAtButton(new Vector3(0.3f, 0.45f, -0.4f)));
+        Shot("button_02_close", 2, () => LookAtButton(new Vector3(0.45f, 0.5f, -0.6f)));
         Shot("button_03_held", 30, () =>
         {
             _main.Actions.Request(Core.Logic.LogicActions.ActivatePart, new Core.Logic.LogicPartArgs(ButtonCreation, _button), r => GD.Print($"[capture] press: {r}"));
-            LookAtButton(new Vector3(0.3f, 0.45f, -0.4f));
+            LookAtButton(new Vector3(0.45f, 0.5f, -0.6f));
         });
-        Shot("button_04_held_light", 2, () => LookAtButton(new Vector3(0.55f, 0.75f, -0.7f)));
+        Shot("button_04_held_light", 2, () => LookAtButton(new Vector3(0.9f, 1.0f, -1.2f)));
         Shot("button_05_released", 30, () =>
             _main.Actions.Request(Core.Logic.LogicActions.ReleasePart, new Core.Logic.LogicPartArgs(ButtonCreation, _button), r => GD.Print($"[capture] release: {r}")));
         Shot("button_06_seated", 60, () =>
-            _main.Actions.Request(Core.Logic.LogicActions.EnterSeat, new Core.Logic.LogicPartArgs(ButtonCreation, _buttonSeat), r => GD.Print($"[capture] sit: {r}")));
+        {
+            Ui.HudRoot.Hidden = false;
+            _main.Actions.Request(Core.Logic.LogicActions.EnterSeat, new Core.Logic.LogicPartArgs(ButtonCreation, _buttonSeat), r => GD.Print($"[capture] sit: {r}"));
+        });
         Shot("button_07_seat_key", 30, () =>
         {
-            _main.CreationHotbar!.Use(0);
-            LookAtButton(new Vector3(0.9f, 1.3f, 1.9f));
+            _main.CreationHotbar!.Use(0, () => true);
+            LookAtButton(new Vector3(1.6f, 1.6f, -1.4f));
         });
         Shot("button_08_seat_let_go", 30, () => _main.CreationHotbar!.Release(0));
         Shot("button_09_icon", 240, () =>
@@ -1056,9 +1062,10 @@ public partial class CaptureScene : Node
         Player.ThirdPerson = true;
         _camera.MakeCurrent();
         _follow = null;
-        var centre = _buttonAt + new Vector3(0, 0.2f + 0.375f, 0);
+        // The button's plate: on top of the slab (block centres at the pose, 0.2 m up).
+        var centre = _buttonAt + new Vector3(0, 0.2f + 0.125f + 0.03f, 0);
         _camera.GlobalPosition = centre + offset;
-        _camera.LookAt(centre + new Vector3(-0.05f, -0.08f, 0));
+        _camera.LookAt(centre);
     }
 
     private static readonly string[] SeatParts = ["drivers_seat", "passenger_seat", "scrap_seat", "scrap_drivers_seat"];
