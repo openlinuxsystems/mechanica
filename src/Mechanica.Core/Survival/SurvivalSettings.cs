@@ -124,9 +124,6 @@ public sealed record SurvivalSettings
     /// <summary>Fall damage.</summary>
     public FallSettings Fall { get; init; } = new();
 
-    /// <summary>Impact damage to parts.</summary>
-    public ImpactSettings Impact { get; init; } = new();
-
     /// <summary>What each difficulty changes, by name (<c>easy</c>, <c>normal</c>); a missing one changes nothing.</summary>
     public IReadOnlyDictionary<string, DifficultySettings> Difficulties { get; init; } = new Dictionary<string, DifficultySettings>();
 
@@ -183,7 +180,6 @@ public sealed record SurvivalSettings
         }
         Fall.Validate();
         Hits.Validate();
-        Impact.Validate();
         foreach (var (name, d) in Difficulties)
         {
             if (!Enum.TryParse<Difficulty>(name, ignoreCase: true, out _) || name != name.ToLowerInvariant())
@@ -258,37 +254,5 @@ public sealed record FallSettings
     {
         SurvivalSettings.NonNegative(MinSpeed, "fall.min_speed");
         SurvivalSettings.NonNegative(DamagePerSpeed, "fall.damage_per_speed");
-    }
-}
-
-/// <summary>
-/// Impact damage to parts (D13): when a Body's speed changes by more than a part's threshold in one
-/// physics tick (a crash), the parts on the side that hit take damage. The threshold is
-/// <see cref="MinSpeed"/> plus <see cref="SpeedPerDurability"/> per point of the part's durability.
-/// </summary>
-public sealed record ImpactSettings
-{
-    /// <summary>Speed change (m/s) a part of no durability survives.</summary>
-    public float MinSpeed { get; init; } = 8f;
-
-    /// <summary>Extra speed change survived per point of durability.</summary>
-    public float SpeedPerDurability { get; init; } = 1f;
-
-    /// <summary>Health lost per m/s of speed change above the threshold.</summary>
-    public float DamagePerSpeed { get; init; } = 5f;
-
-    /// <summary>How far behind the leading face a part may sit and still count as hit, in metres.</summary>
-    public float Depth { get; init; } = 0.2f;
-
-    /// <summary>The speed change a part of <paramref name="durability"/> survives.</summary>
-    public float ThresholdFor(int? durability) => MinSpeed + SpeedPerDurability * Math.Max(0, durability ?? 0);
-
-    /// <summary>Throws <see cref="FormatException"/> naming the first out-of-range value.</summary>
-    public void Validate()
-    {
-        SurvivalSettings.Positive(MinSpeed, "impact.min_speed");
-        SurvivalSettings.NonNegative(SpeedPerDurability, "impact.speed_per_durability");
-        SurvivalSettings.NonNegative(DamagePerSpeed, "impact.damage_per_speed");
-        SurvivalSettings.NonNegative(Depth, "impact.depth");
     }
 }

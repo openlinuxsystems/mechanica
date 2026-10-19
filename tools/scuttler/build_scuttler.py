@@ -1,28 +1,38 @@
-"""Build the Green Scuttler (crab chassis concept approved by Chase on 2026-10-19).
+"""Build the five Scuttlers (crab chassis concept approved by Chase on 2026-10-19).
 
 The Scuttler family shares one body: a low hexagonal shell on six crab legs, two raised serrated claw arms, and one
-eye on a stalk. Each variant changes its paint and adds one signature piece; the Green Scuttler's is a scorpion tail
-of cable segments ending in a spiked weight. The paint is worn: chipped to bare steel, scratched and grimy.
+eye on a stalk. Each variant changes its paint and adds one signature piece that telegraphs its attack:
 
-What it writes: ``mods/vanilla/meshes/bots/scuttler_green.glb``. Its feet are at the origin and it faces -Z, as bots
+* Green: a scorpion tail of cable segments ending in a spiked weight (whip);
+* Blue: a drill ram under the eye and a water kit (webbed feet, twin ducted props, pontoons, snorkel, porthole);
+* Yellow (1.25x, thick legs): a piston hammer under the belly and hydraulic rams on the shell (stomp);
+* Red: a pressure tank with a gauge and a warning lamp (it detonates);
+* Seed (0.85x, dark green): a leaky burlap seed sack on its back.
+
+The paint is worn: chipped through to rust and bare steel, scratched and grimy.
+
+What it writes: ``mods/vanilla/meshes/bots/scuttler_<variant>.glb``. Feet are at the origin and it faces -Z, as bots
 do. The nodes are the rig (the game plays the clips on them and plants the feet):
 
 * ``Body`` (the shell), ``Stalk`` and ``EyeHead`` (the eye), ``LampGlow`` and ``EyeLens`` (the glowing eye and front
   lamps, which the game colours green while calm and red while engaged);
 * ``Claw<L|R>_Shoulder`` / ``_Elbow`` / ``_Wrist`` / ``_Jaw`` (the upper jaw opens);
 * ``Leg<L|R><1-3>_Hip`` / ``_Knee`` / ``_Foot`` (1 is the front pair; ``_Foot`` is an empty at the tip);
-* ``Tail0`` … ``Tail13`` (the tail, base to weight).
+* Green ``Tail0`` … ``Tail13`` (base to weight); Blue ``Drill``, ``PropL``, ``PropR``; Yellow ``Hammer``;
+  Red ``Tank``, ``GaugeNeedle``; Seed ``Sack``.
 
 Clips (seconds; the loops loop): ``idle`` 2.4, ``patrol`` 0.5 and ``chase`` 0.24 (gaits; their ground speeds at
 speed scale 1 are printed and go in the bot's ``model.clip_speeds``), ``alert`` 0.8, ``lose_interest`` 0.7,
-``hit`` 0.35, ``death`` 1.6, ``jump`` 0.35, ``fall`` 0.6, ``land`` 0.35, ``tail_slam`` 1.0, ``tail_sweep`` 1.0 and
-``claw_combo`` 1.0 (the whip attack's three moves).
+``hit`` 0.35, ``death`` 1.6 (Red: it bursts), ``jump`` 0.35, ``fall`` 0.6, ``land`` 0.35, and each variant's attacks:
+Green ``tail_slam``, ``tail_sweep`` and ``claw_combo`` (1.0 each), Blue ``drill_ram`` 0.9, Yellow ``stomp`` 1.2,
+Red ``detonate`` 0.4, Seed ``claw_snap`` 0.5. Strikes land about 0.2 s in: the host deals the damage as an attack
+starts.
 
 How to run (Blender as a Python module, no Blender UI needed):
 
     pip install bpy==5.2.2 numpy pillow
-    python tools/scuttler/build_scuttler.py                     # writes the .glb
-    python tools/scuttler/build_scuttler.py --render OUT_DIR    # review renders, poses and sheet into OUT_DIR
+    python tools/scuttler/build_scuttler.py [--variant blue ...]                # writes the .glb files
+    python tools/scuttler/build_scuttler.py --render OUT_DIR [--variant ...]    # review renders and sheets
 
 The output is committed; re-run this script after changing it and commit the result.
 
@@ -47,11 +57,21 @@ REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "tools" / "lift"))
 import lift_textures as lt  # noqa: E402
 
-OUT = REPO / "mods" / "vanilla" / "meshes" / "bots" / "scuttler_green.glb"
+MESHES = REPO / "mods" / "vanilla" / "meshes" / "bots"
 FPS = 30
 SAMPLES = int(os.environ.get("SCUTTLER_SAMPLES", "48"))
 
-PAINT = "#5fae3e"           # the bot's colour (scuttler_green.json)
+# Paint, size, leg thickness and the attack clips each attack plays (the bot's model.attacks).
+VARIANTS = {
+    "green": dict(name="Green Scuttler", paint="#5fae3e", scale=1.0, leg=1.0, attacks={"whip": ["tail_slam", "tail_sweep", "claw_combo"]}),
+    "blue": dict(name="Blue Scuttler", paint="#3e7fd0", scale=1.0, leg=1.0, attacks={"drill": ["drill_ram"]}),
+    "yellow": dict(name="Yellow Scuttler", paint="#e6b31e", scale=1.25, leg=1.45, attacks={"stomp": ["stomp"]}),
+    "red": dict(name="Red Scuttler", paint="#d0402e", scale=1.0, leg=1.0, attacks={"explode": ["detonate"]}),
+    "seed": dict(name="Seed Scuttler", paint="#2f5a2c", scale=0.85, leg=1.0, attacks={"nip": ["claw_snap"]}),
+}
+ATTACK_CLIPS = {"tail_slam": 1.0, "tail_sweep": 1.0, "claw_combo": 1.0, "drill_ram": 0.9, "stomp": 1.2, "detonate": 0.4, "claw_snap": 0.5}
+VARIANT = ["green"]
+
 Z0 = 0.30                   # bottom of the belly pan
 EYE_Z = Z0 + 0.48
 UP = Vector((0, 0, 1))
@@ -243,7 +263,7 @@ def build_geometry():
     # ---- Legs: hip ball, gunmetal femur in painted armour, steel knee, tapered tibia, rubber tip ----
     for name in LEGS:
         hip, knee, foot = leg_points(name)
-        r = 0.036
+        r = 0.036 * VARIANTS[VARIANT[0]]["leg"]
         at(f"Leg{name}_Hip")
         sphere(hip, 0.055, "gun")
         rod(hip, knee, r, "gun")
@@ -256,7 +276,11 @@ def build_geometry():
         rod(knee.lerp(foot, 0.15), knee.lerp(foot, 0.6), r * 1.35, "paint", r2=r, segs=16)
         rod(tip_top, foot, r * 0.75, "rubber", r2=r * 0.15, segs=8)
 
-    # ---- Tail: cable segments curled over the back, a spiked weight at the end ----
+    SIGNATURES[VARIANT[0]]()
+
+
+def green_tail():
+    """Cable segments curled over the back like a scorpion's, a spiked weight at the end."""
     pts = tail_points()
     for i in range(len(pts) - 1):
         at(f"Tail{i}")
@@ -269,6 +293,183 @@ def build_geometry():
         a = 2 * math.pi * k / 6
         d = Vector((math.cos(a), 0.4 * math.sin(a), math.sin(a))).normalized()
         rod(tip, tip + d * 0.1, 0.018, "steel", r2=0.002, segs=8)
+
+
+def tube(pts, r, mat, segs=10):
+    """A closed tube through `pts` (a ring)."""
+    bm = bmesh.new()
+    n = len(pts)
+    rings = []
+    for i, q in enumerate(pts):
+        t = (pts[(i + 1) % n] - pts[i - 1]).normalized()
+        ref = Vector((1, 0, 0)) if abs(t.x) < 0.9 else Vector((0, 0, 1))
+        u = t.cross(ref).normalized()
+        w = t.cross(u).normalized()
+        rings.append([bm.verts.new(q + r * (math.cos(2 * math.pi * k / segs) * u + math.sin(2 * math.pi * k / segs) * w)) for k in range(segs)])
+    for i in range(n):
+        r0, r1 = rings[i], rings[(i + 1) % n]
+        for k in range(segs):
+            bm.faces.new((r0[k], r0[(k + 1) % segs], r1[(k + 1) % segs], r1[k]))
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    g().add_bm(bm, mat)
+
+
+def ring(c, r, axis_y=True, n=40):
+    c = Vector(c)
+    return [c + Vector((r * math.cos(2 * math.pi * k / n), 0, r * math.sin(2 * math.pi * k / n))) for k in range(n)]
+
+
+DRILL = Vector((0, -0.26, Z0 + 0.11))
+PROPS = {"L": Vector((-0.15, 0.33, Z0 + 0.12)), "R": Vector((0.15, 0.33, Z0 + 0.12))}
+
+
+def blue_kit():
+    """A drill ram under the eye, plus a water kit: webbed paddle feet, twin ducted props, pontoons, snorkel, porthole."""
+    at("Body")
+    disc(DRILL, 0.12, 0.06, (0, 1, 0), "paint")
+    disc(DRILL + Vector((0, -0.04, 0)), 0.105, 0.03, (0, 1, 0), "haz_y")
+    at("Drill")
+    base = DRILL + Vector((0, -0.055, 0))
+    rod(base, base + Vector((0, -0.3, 0)), 0.1, "steel", r2=0.004, segs=24)
+    for i in range(40):                     # flute: a helix of ridges round the cone
+        t = i / 40
+        a = 2 * math.pi * 3 * t
+        rr = 0.1 * (1 - t) + 0.004
+        sphere(base + Vector((rr * math.cos(a), -0.3 * t, rr * math.sin(a))), 0.016 * (1 - t) + 0.004, "steel", segs=10)
+    for name in LEGS:                       # webbed paddle feet: a fan blade facing fore and aft
+        _, knee, foot = leg_points(name)
+        at(f"Leg{name}_Knee")
+        lo, hi = knee.lerp(foot, 0.4), knee.lerp(foot, 0.92)
+        for off in (-0.12, -0.04, 0.04, 0.12):
+            rod(lo, hi + Vector((0, off, 0)), 0.008, "gun")
+        bm = bmesh.new()
+        bm.faces.new([bm.verts.new(v) for v in (lo, hi + Vector((0, -0.125, 0)), hi + Vector((0, 0.125, 0)))])
+        bmesh.ops.solidify(bm, geom=bm.faces[:], thickness=0.008)
+        g().add_bm(bm, "web")
+    for side, c in PROPS.items():           # twin ducted propellers at the back
+        sx = -1 if side == "L" else 1
+        at("Body")
+        tube(ring(c, 0.095), 0.022, "paint")
+        for k in range(4):
+            a = math.pi / 4 + k * math.pi / 2
+            rod(c + Vector((0, -0.02, 0)), c + Vector((0.09 * math.cos(a), -0.02, 0.09 * math.sin(a))), 0.006, "gun")
+        rod(c + Vector((-sx * 0.05, -0.04, 0.06)), Vector((sx * 0.1, 0.2, Z0 + 0.16)), 0.018, "gun")
+        at(f"Prop{side}")
+        rod(c + Vector((0, -0.09, 0)), c + Vector((0, 0.04, 0)), 0.025, "steel", r2=0.012)
+        for k in range(3):
+            a = 2 * math.pi * k / 3 + 0.3
+            box((0.075, 0.008, 0.035), c + Vector((0, 0.01, 0)), "copper", bevel=0,
+                rot=Matrix.Rotation(-a, 4, "Y") @ Matrix.Rotation(0.5, 4, "X") @ Matrix.Translation((0.045, 0, 0)))
+    at("Body")
+    for sx in (-1, 1):                      # side pontoons: white floats with blue bands
+        a_, b_ = Vector((sx * 0.3, -0.17, Z0 + 0.25)), Vector((sx * 0.3, 0.17, Z0 + 0.25))
+        rod(a_, b_, 0.055, "white", segs=24)
+        sphere(a_, 0.055, "white", scale=(1, 1.6, 1))
+        sphere(b_, 0.055, "white", scale=(1, 1.2, 1))
+        for y in (-0.08, 0.08):
+            rod(a_ + Vector((0, y + 0.17 - 0.012, 0)), a_ + Vector((0, y + 0.17 + 0.012, 0)), 0.058, "paint", segs=24)
+    sn = [Vector((0.09, 0.0, Z0 + 0.22)), Vector((0.09, 0.0, Z0 + 0.62)), Vector((0.09, -0.04, Z0 + 0.7)), Vector((0.09, -0.1, Z0 + 0.72))]
+    for i in range(3):                      # snorkel behind the eye
+        rod(sn[i], sn[i + 1], 0.022, "gun" if i else "paint")
+    sphere(sn[1], 0.022, "gun")
+    rod(sn[3], sn[3] + Vector((0, -0.05, 0)), 0.03, "copper", r2=0.04)
+    at("EyeHead")                           # a brass porthole ring round the lens, like a diving helmet
+    tube(ring((0, -0.198, EYE_Z), 0.075), 0.012, "copper")
+    for k in range(8):
+        a = 2 * math.pi * k / 8
+        sphere((0.075 * math.cos(a), -0.21, EYE_Z + 0.075 * math.sin(a)), 0.01, "steel", segs=8)
+
+
+HAMMER = Vector((0, 0, Z0))
+
+
+def yellow_kit():
+    """A heavy piston hammer under the belly and armoured hydraulic rams on the shell."""
+    at("Body")
+    rod((0, 0, Z0 + 0.01), (0, 0, Z0 - 0.08), 0.075, "gun")
+    at("Hammer")
+    rod((0, 0, Z0), (0, 0, 0.12), 0.05, "steel")
+    disc((0, 0, 0.08), 0.17, 0.08, (0, 0, 1), "gun", segs=6)
+    for i in range(12):
+        a = 2 * math.pi * i / 12
+        box((0.05, 0.02, 0.06), (0.165 * math.cos(a), 0.165 * math.sin(a), 0.08), "haz_y" if i % 2 else "haz_k",
+            bevel=0.002, rot=Matrix.Rotation(a + math.pi / 2, 4, "Z"))
+    at("Body")
+    for sx in (-1, 1):
+        a = Vector((sx * 0.14, 0.08, Z0 + 0.24))
+        b = Vector((sx * 0.14, -0.1, Z0 + 0.3))
+        rod(a, a.lerp(b, 0.6), 0.035, "gun")
+        rod(a.lerp(b, 0.5), b, 0.018, "steel")
+        sphere(b, 0.03, "paint")
+    box((0.36, 0.22, 0.035), (0, 0.03, Z0 + 0.27), "paint", bevel=0.01)
+    for i in range(4):
+        box((0.05, 0.012, 0.03), (-0.12 + i * 0.08, -0.08, Z0 + 0.275), "haz_k", bevel=0.002, rot=Matrix.Rotation(0.5, 4, "Z"))
+
+
+TANK = Vector((0, 0.06, Z0 + 0.38))
+NEEDLE = Vector((-0.266, 0.06, Z0 + 0.4))
+
+
+def red_kit():
+    """A pressurised tank on the back, a pressure gauge and a warning lamp that lights up with the eye."""
+    at("Body")
+    for sx in (-1, 1):
+        box((0.05, 0.2, 0.12), (sx * 0.14, 0.06, Z0 + 0.28), "gun")
+    pts = [Vector((0.12, -0.05, Z0 + 0.42)), Vector((0.2, -0.12, Z0 + 0.3)), Vector((0.16, -0.2, Z0 + 0.23))]
+    for i in range(2):                      # fuse line from the tank to the front
+        rod(pts[i], pts[i + 1], 0.012, "copper")
+    at("Tank")
+    a, b = TANK + Vector((-0.18, 0, 0)), TANK + Vector((0.18, 0, 0))
+    rod(a, b, 0.13, "paint", segs=32)
+    sphere(a, 0.13, "paint", scale=(0.45, 1, 1), segs=24)
+    sphere(b, 0.13, "paint", scale=(0.45, 1, 1), segs=24)
+    for i in range(10):
+        x = -0.17 + i * 0.038
+        rod(TANK + Vector((x, 0, 0)), TANK + Vector((x + 0.036, 0, 0)), 0.134, "haz_y" if i % 2 == 0 else "haz_k", segs=32)
+    for sx in (-1, 1):
+        rod(TANK + Vector((sx * 0.22, 0, 0)), TANK + Vector((sx * 0.24, 0, 0)), 0.137, "gun", segs=32)
+    disc((-0.245, 0.06, Z0 + 0.4), 0.06, 0.03, (1, 0, 0), "steel")
+    disc((-0.262, 0.06, Z0 + 0.4), 0.048, 0.006, (1, 0, 0), "white")
+    disc((0, 0.06, Z0 + 0.52), 0.05, 0.03, (0, 0, 1), "gun")
+    sphere((0, 0.06, Z0 + 0.56), 0.042, "glow")
+    for k in range(4):
+        a_ = math.pi / 4 + k * math.pi / 2
+        q = Vector((0.05 * math.cos(a_), 0.06 + 0.05 * math.sin(a_), Z0 + 0.535))
+        rod(q, Vector((0, 0.06, Z0 + 0.615)) + (q - Vector((0, 0.06, Z0 + 0.535))) * 0.2, 0.006, "steel")
+    at("GaugeNeedle")
+    box((0.004, 0.006, 0.04), NEEDLE + Vector((0, 0.0, 0.016)), "needle", bevel=0)
+
+
+SACK = Vector((0, 0.08, Z0 + 0.24))
+
+
+def seed_kit():
+    """A burlap seed sack on its back, cinched with rope, leaking seeds out of a hole."""
+    at("Body")
+    for sx in (-1, 1):
+        rod((sx * 0.17, 0.0, Z0 + 0.24), (sx * 0.12, 0.12, Z0 + 0.52), 0.012, "rope")
+    at("Sack")
+    bm = bmesh.new()
+    bmesh.ops.create_uvsphere(bm, u_segments=32, v_segments=16, radius=0.17)
+    for v in bm.verts:
+        v.co.z *= 1.15
+        v.co.x *= 1.05
+        v.co += v.co.normalized() * 0.012 * math.sin(v.co.x * 41) * math.cos(v.co.y * 37 + v.co.z * 23)
+        if v.co.z < -0.05:                  # it sags at the bottom
+            v.co.x *= 1.1
+            v.co.y *= 1.1
+    bmesh.ops.translate(bm, verts=bm.verts, vec=(0, 0.08, Z0 + 0.39))
+    g().add_bm(bm, "burlap")
+    rod((0, 0.08, Z0 + 0.56), (0, 0.1, Z0 + 0.64), 0.045, "burlap", r2=0.07)
+    rod((0, 0.085, Z0 + 0.585), (0, 0.088, Z0 + 0.605), 0.052, "rope")
+    sphere((0, 0.24, Z0 + 0.33), 0.03, "seed", scale=(1, 0.4, 1))
+    for x, y, z in [(0.01, 0.27, Z0 + 0.27), (-0.02, 0.29, Z0 + 0.18)]:
+        sphere((x, y, z), 0.016, "seed", scale=(1, 0.6, 0.7), segs=12)
+    for sx in (-1, 1):
+        box((0.012, 0.08, 0.07), (sx * 0.175, 0.08, Z0 + 0.4), "rope", rot=Matrix.Rotation(sx * 0.2, 4, "Z"))
+
+
+SIGNATURES = {"green": green_tail, "blue": blue_kit, "yellow": yellow_kit, "red": red_kit, "seed": seed_kit}
 
 
 # =====================================================================================================
@@ -292,22 +493,55 @@ def pivots():
         p[f"Leg{name}_Hip"] = ("Body", hip)
         p[f"Leg{name}_Knee"] = (f"Leg{name}_Hip", knee)
         p[f"Leg{name}_Foot"] = (f"Leg{name}_Knee", foot)
-    pts = tail_points()
-    for i, q in enumerate(pts):
-        p[f"Tail{i}"] = ("Body" if i == 0 else f"Tail{i - 1}", q)
+    v = VARIANT[0]
+    if v == "green":
+        for i, q in enumerate(tail_points()):
+            p[f"Tail{i}"] = ("Body" if i == 0 else f"Tail{i - 1}", q)
+    elif v == "blue":
+        p["Drill"] = ("Body", DRILL)
+        for side, c in PROPS.items():
+            p[f"Prop{side}"] = ("Body", c)
+    elif v == "yellow":
+        p["Hammer"] = ("Body", HAMMER)
+    elif v == "red":
+        p["Tank"] = ("Body", TANK)
+        p["GaugeNeedle"] = ("Tank", NEEDLE)
+    elif v == "seed":
+        p["Sack"] = ("Body", SACK)
     return p
 
 
 def materials():
+    """Makers of every material, by name; only the ones a variant's pieces use are made."""
+    paint = VARIANTS[VARIANT[0]]["paint"]
     return {
-        "paint": lt.textured("scuttler_paint", battle_paint(71, PAINT)),
-        "gun": lt.textured("scuttler_gunmetal", lt.metal_surface(83, "#2e3136", 0.45, 0.78, wear=0.9, edge_light=0.3)),
-        "steel": lt.textured("scuttler_steel", lt.metal_surface(97, "#8d9096", 0.32, 0.9, wear=0.7, edge_light=0.2)),
-        "rubber": lt.textured("scuttler_rubber", lt.rubber_surface(101), normal_strength=2.0),
-        "hazard": lt.textured("scuttler_hazard", hazard_surface(113)),
-        "bezel": lt.textured("scuttler_bezel", lt.metal_surface(127, "#141416", 0.35, 0.6, wear=0.4, edge_light=0.15)),
-        "glow": glow_material(),
+        "paint": lambda: lt.textured("scuttler_paint", battle_paint(71, paint)),
+        "gun": lambda: lt.textured("scuttler_gunmetal", lt.metal_surface(83, "#2e3136", 0.45, 0.78, wear=0.9, edge_light=0.3)),
+        "steel": lambda: lt.textured("scuttler_steel", lt.metal_surface(97, "#8d9096", 0.32, 0.9, wear=0.7, edge_light=0.2)),
+        "rubber": lambda: lt.textured("scuttler_rubber", lt.rubber_surface(101), normal_strength=2.0),
+        "hazard": lambda: lt.textured("scuttler_hazard", hazard_surface(113)),
+        "bezel": lambda: lt.textured("scuttler_bezel", lt.metal_surface(127, "#141416", 0.35, 0.6, wear=0.4, edge_light=0.15)),
+        "glow": glow_material,
+        "haz_y": lambda: lt.textured("scuttler_hazard_yellow", battle_paint(131, "#e8b820")),
+        "haz_k": lambda: lt.textured("scuttler_hazard_black", battle_paint(137, "#191a1c")),
+        "white": lambda: lt.textured("scuttler_white", battle_paint(139, "#d8d6cc")),
+        "copper": lambda: lt.textured("scuttler_copper", lt.metal_surface(149, "#b06a3c", 0.3, 0.95, wear=0.5, edge_light=0.25)),
+        "web": lambda: lt.textured("scuttler_web", lt.rubber_surface(151), normal_strength=1.5),
+        "needle": lambda: lt.textured("scuttler_needle", battle_paint(157, "#c0201a")),
+        "burlap": lambda: lt.textured("scuttler_burlap", cloth_surface(163, "#76562f")),
+        "rope": lambda: lt.textured("scuttler_rope", cloth_surface(167, "#6b5434")),
+        "seed": lambda: lt.textured("scuttler_seed", cloth_surface(173, "#5a3d1f")),
     }
+
+
+def cloth_surface(seed, color):
+    """Woven, dusty and stained: the sack, its rope and the seeds."""
+    size = lt.SIZE
+    yy, xx = np.mgrid[0:size, 0:size]
+    weave = 0.5 + 0.25 * np.sin(xx * 2 * np.pi / 8) * np.sign(np.sin(yy * 2 * np.pi / 16)) + 0.25 * np.sin(yy * 2 * np.pi / 8)
+    stain = np.clip(lt.fbm(seed, 3.0) * 1.5, 0, 1)
+    albedo = lt.srgb(color)[None, None, :] * (0.8 + 0.3 * weave[..., None]) * (1 - 0.3 * stain[..., None])
+    return np.clip(albedo, 0, 1), 0.6 * weave + 0.1 * lt.fnoise(seed + 1, 60.0), 0.9 - 0.05 * weave, np.zeros((size, size))
 
 
 def battle_paint(seed, color):
@@ -359,11 +593,13 @@ def glow_material():
 def build():
     """Builds the rig; returns (root, nodes by name)."""
     build_geometry()
-    mats = materials()
-    order = list(mats)
+    makers = materials()
+    order = list(makers)
+    mats = {}
     root = bpy.data.objects.new("Scuttler", None)
     bpy.context.scene.collection.objects.link(root)
     root.rotation_euler = (0, 0, math.pi)          # built facing -Y; bots face -Z in glTF
+    root.scale = (VARIANTS[VARIANT[0]]["scale"],) * 3
     nodes = {}
     for name, (parent, pivot) in pivots().items():
         ob = bpy.data.objects.new(name, None)
@@ -380,6 +616,8 @@ def build():
         used = sorted(set(geo.m), key=order.index)
         me.from_pydata([tuple(Vector(v) - pivot) for v in geo.v], [], geo.f)
         for m in used:
+            if m not in mats:
+                mats[m] = makers[m]()
             me.materials.append(mats[m])
         me.polygons.foreach_set("material_index", [used.index(m) for m in geo.m])
         me.validate()
@@ -481,6 +719,8 @@ def gait(p, u, swing, lift, bend, bob):
 
 
 def tail_curl(p, base_pitch=0.0, curl=0.0, yaw=0.0):
+    if "Tail0" not in p.rot:
+        return
     p.turn("Tail0", (0, 0, 1), yaw)
     p.turn("Tail0", (1, 0, 0), base_pitch)
     for i in range(1, 14):
@@ -496,11 +736,21 @@ def gait_speed(swing, length):
 
 GAITS = {"patrol": (0.5, 20.0), "chase": (0.24, 32.0)}
 
-CLIPS = {
+SHARED_CLIPS = {
     "idle": 2.4, "patrol": GAITS["patrol"][0], "chase": GAITS["chase"][0], "alert": 0.8, "lose_interest": 0.7,
     "hit": 0.35, "death": 1.6, "jump": 0.35, "fall": 0.6, "land": 0.35,
-    "tail_slam": 1.0, "tail_sweep": 1.0, "claw_combo": 1.0,
 }
+CLIPS = dict(SHARED_CLIPS)
+
+
+def use(variant):
+    """Builds `variant` from now on: its pieces, rig nodes and clips."""
+    VARIANT[0] = variant
+    CLIPS.clear()
+    CLIPS.update(SHARED_CLIPS)
+    for clips in VARIANTS[variant]["attacks"].values():
+        for clip in clips:
+            CLIPS[clip] = ATTACK_CLIPS[clip]
 
 
 def strike_early(t, strike=0.45, at=0.18):
@@ -564,6 +814,8 @@ def pose(p, clip, t, length):
         for side in "LR":
             p.claw(side, raise_=-6 * k, jaw=20 * k)
         tail_curl(p, 10 * k, -2 * k)
+    elif clip == "death" and VARIANT[0] == "red":
+        burst(p, t)
     elif clip == "death":
         drop = env(t, 0.1, 0.5)
         flip = env(t, 0.55, 1.1)
@@ -633,8 +885,100 @@ def pose(p, clip, t, length):
         p.move("Body", (0, -0.03 * (jab_l + jab_r + crunch), -0.02 * crunch))
         p.turn("Body", (0, 0, 1), 6 * jab_l - 6 * jab_r)
         tail_curl(p, -8 * crunch)
+    elif clip == "drill_ram":
+        # digs in and lunges the spinning drill forward, then backs off
+        lunge = env(t, 0.0, 0.15) * (1 - env(t, 0.45, 0.9))
+        p.move("Body", (0, -0.14 * lunge, -0.04 * lunge))
+        p.turn("Body", (1, 0, 0), 8 * lunge)
+        for name in LEGS:
+            p.leg(name, (-12 if name[1] == "3" else 6) * lunge, -6 * lunge, 4 * lunge)
+        for side in "LR":
+            p.claw(side, raise_=30 * lunge, inward=-20 * lunge, jaw=20 * lunge)
+    elif clip == "stomp":
+        # rises high on its legs, then drops and fires the hammer into the ground
+        rise = env(t, 0.0, 0.14) * (1 - env(t, 0.14, 0.2))
+        slam = env(t, 0.14, 0.2) * (1 - env(t, 0.5, 1.2))
+        p.move("Body", (0, 0, 0.1 * rise - 0.02 * slam))
+        for name in LEGS:
+            p.leg(name, 0, -14 * rise + 10 * slam, 8 * rise - 8 * slam)
+        p.move("Hammer", (0, 0, 0.06 * rise - 0.02 * slam))
+        p.turn("Stalk", (1, 0, 0), 18 * slam)
+        for side in "LR":
+            p.claw(side, raise_=30 * rise - 10 * slam, inward=-20 * rise, jaw=26 * rise)
+    elif clip == "detonate":
+        # the needle pins, it rears and shakes as the tank lets go
+        k = env(t, 0.0, 0.3)
+        p.turn("Body", (1, 0, 0), -10 * k + 4 * math.sin(t * 90) * k)
+        p.turn("Body", (0, 1, 0), 5 * math.sin(t * 70) * k)
+        p.move("Body", (0, 0, 0.04 * k))
+        for side in "LR":
+            p.claw(side, raise_=40 * k, inward=-20 * k, jaw=40 * k)
+    elif clip == "claw_snap":
+        # one quick lunge and snap of both claws
+        snap = pulse(t, 0.0, 0.12, 0.4)
+        p.move("Body", (0, -0.04 * snap, -0.01 * snap))
+        p.turn("Body", (1, 0, 0), 6 * snap)
+        for side in "LR":
+            p.claw(side, raise_=16 - 10 * snap, inward=20 * snap, elbow=-24 * snap, jaw=36 * pulse(t, 0.0, 0.06, 0.16))
     else:
         raise ValueError(clip)
+    gear(p, clip, t, length)
+
+
+def spin(p, node, axis, turns, u):
+    """`turns` whole turns over the clip (so loops still loop)."""
+    p.turn(node, axis, 360 * turns * u)
+
+
+def gear(p, clip, t, length):
+    """Each variant's moving signature pieces, on top of the clip."""
+    u = t / length
+    w = 2 * math.pi * u
+    v = VARIANT[0]
+    if v == "blue":
+        # the drill turns while it walks and screams round in the ram; the props always turn
+        drill = {"patrol": 1, "chase": 2, "drill_ram": 8, "idle": 1, "alert": 1}.get(clip, 0)
+        spin(p, "Drill", (0, 1, 0), drill, u)
+        props = {"idle": 2, "patrol": 1, "chase": 1, "drill_ram": 4, "death": 1}.get(clip, 1)
+        spin(p, "PropL", (0, 1, 0), props, u)
+        spin(p, "PropR", (0, 1, 0), -props, u)
+    elif v == "red":
+        # the gauge needle shivers while calm, swings while chasing and pins when it arms
+        swing = {"chase": 40 * math.sin(2 * w), "alert": 60 * env(t, 0.0, 0.3), "detonate": 100 * env(t, 0.0, 0.2),
+                 "idle": 6 * math.sin(3 * w), "patrol": 10 * math.sin(w), "hit": 30 * pulse(t, 0, 0.05, 0.35)}.get(clip, 0)
+        p.turn("GaugeNeedle", (1, 0, 0), -swing)
+    elif v == "seed":
+        # the sack lags behind the body: it sways with each step and flops when hit or killed
+        sway = {"patrol": (5 * math.sin(2 * w - 0.8), 3 * math.sin(w)), "chase": (8 * math.sin(2 * w - 0.8), 5 * math.sin(w)),
+                "idle": (2 * math.sin(w), 0), "hit": (14 * pulse(t, 0.0, 0.08, 0.35), 0),
+                "claw_snap": (-10 * pulse(t, 0.0, 0.12, 0.4), 0), "death": (50 * env(t, 0.2, 0.8), 15 * env(t, 0.2, 0.8)),
+                "alert": (8 * pulse(t, 0.0, 0.2, 0.6), 0), "land": (12 * pulse(t, 0.0, 0.1, 0.35), 0)}.get(clip, (0, 0))
+        p.turn("Sack", (1, 0, 0), sway[0])
+        p.turn("Sack", (0, 1, 0), sway[1])
+    elif v == "yellow" and clip in ("patrol", "chase"):
+        p.move("Hammer", (0, 0, 0.006 * math.sin(2 * w)))      # the hammer rattles in its sleeve
+
+
+def burst(p, t):
+    """The Red Scuttler's death: it swells and shakes, then the tank blows and its legs, claws and eye fly off."""
+    shake = env(t, 0.0, 0.2) * (1 - env(t, 0.25, 0.3))
+    blow = env(t, 0.25, 0.6)
+    fall = env(t, 0.45, 1.2)
+    p.turn("Body", (0, 1, 0), 6 * math.sin(t * 80) * shake + 25 * blow)
+    p.move("Body", (0, 0, 0.05 * shake + 0.12 * blow - 0.3 * fall))
+    p.move("Tank", (0, 0.25 * blow, 0.6 * blow - 0.75 * fall))
+    p.turn("Tank", (0, 1, 0), 160 * blow)
+    for name in LEGS:
+        hip, _, foot = leg_points(name)
+        out = (foot - hip).normalized()
+        p.move(f"Leg{name}_Hip", out * 0.35 * blow + Vector((0, 0, 0.25 * blow - 0.4 * fall)))
+        p.leg(name, 0, 40 * blow, -50 * blow)
+    for side in "LR":
+        sx = -1 if side == "L" else 1
+        p.move(f"Claw{side}_Shoulder", (sx * 0.3 * blow, -0.3 * blow, 0.3 * blow - 0.45 * fall))
+        p.claw(side, raise_=60 * blow, inward=-40 * blow, elbow=-50 * blow, jaw=40 * blow)
+    p.move("Stalk", (0.1 * blow, -0.1 * blow, 0.5 * blow - 0.6 * fall))
+    p.turn("Stalk", (1, 0, 0), 120 * blow)
 
 
 def set_pose(nodes, clip, t, length):
@@ -706,23 +1050,27 @@ def export(root, path):
         export_optimize_animation_size=False, export_optimize_animation_keep_anim_object=True,
         export_anim_slide_to_zero=False, export_def_bones=False,
         export_morph=False, export_skins=False, export_draco_mesh_compression_enable=False, export_tangents=False,
-        export_image_format="AUTO", export_extras=False, export_cameras=False, export_lights=False)
+        export_image_format="JPEG", export_image_quality=85, export_extras=False, export_cameras=False, export_lights=False)
 
 
-def build_game():
-    bpy.ops.wm.read_factory_settings(use_empty=True)
-    root, nodes = build()
-    bake_clips(nodes)
-    export(root, OUT)
-    for clip, (length, swing) in GAITS.items():
-        print(f"{clip}: {gait_speed(swing, length):.2f} m/s at speed scale 1")
-    print(f"wrote {OUT.relative_to(REPO)}")
+def build_game(variants):
+    for variant in variants:
+        use(variant)
+        bpy.ops.wm.read_factory_settings(use_empty=True)
+        root, nodes = build()
+        bake_clips(nodes)
+        out = MESHES / f"scuttler_{variant}.glb"
+        export(root, out)
+        scale = VARIANTS[variant]["scale"]
+        speeds = ", ".join(f"{clip} {gait_speed(swing, length) * scale:.2f}" for clip, (length, swing) in GAITS.items())
+        print(f"wrote {out.relative_to(REPO)} (clip speeds, m/s: {speeds})")
 
 
 # =====================================================================================================
 # Review renders
 # =====================================================================================================
-def render_review(out: Path):
+def render_review(out: Path, variant):
+    use(variant)
     sys.path.insert(0, str(REPO / "tools" / "lift"))
     import render_lift as rl  # noqa: PLC0415
     from PIL import Image, ImageDraw  # noqa: PLC0415
@@ -733,7 +1081,8 @@ def render_review(out: Path):
     bpy.context.scene.cycles.samples = SAMPLES
     root, nodes = build()
     root.rotation_euler = (0, 0, 0)          # renders keep the build's -Y front
-    c = (0, 0, 0.42)
+    k = VARIANTS[variant]["scale"]
+    c = (0, 0, 0.42 * k)
     shots = []
 
     def shot(name, clip, t, cam):
@@ -742,23 +1091,31 @@ def render_review(out: Path):
         else:
             set_pose(nodes, clip, t, CLIPS[clip])
         bpy.context.view_layer.update()
-        path = rl.render(cam, out / f"{name}.png", 900, 800)
+        path = rl.render(cam, out / f"{variant}_{name}.png", 900, 800)
         shots.append((name, path))
 
-    tq = rl.camera("tq", (-2.2, -3.0, 1.9), c, ortho=1.9)
-    side = rl.camera("side", (4, 0, 0.45), c, ortho=1.9)
+    tq = rl.camera("tq", (-2.2 * k, -3.0 * k, 1.9 * k), c, ortho=1.9 * k)
+    side = rl.camera("side", (4 * k, 0, 0.45 * k), c, ortho=1.9 * k)
     shot("rest", None, 0, tq)
     shot("rest_side", None, 0, side)
-    shot("rear", None, 0, rl.camera("rear", (2.4, 2.6, 1.8), c, ortho=1.9))
+    shot("rear", None, 0, rl.camera("rear", (2.4 * k, 2.6 * k, 1.8 * k), c, ortho=1.9 * k))
     shot("patrol", "patrol", 0.12, tq)
     shot("chase", "chase", 0.08, tq)
     shot("alert", "alert", 0.3, tq)
-    shot("claw_combo", "claw_combo", 0.78, tq)
-    shot("tail_slam_wind", "tail_slam", 0.15, side)
-    shot("tail_slam", "tail_slam", 0.25, side)
-    shot("tail_sweep", "tail_sweep", 0.22, rl.camera("top", (0.01, 0, 5), c, ortho=2.4))
+    attack_shots = {
+        "green": [("claw_combo", "claw_combo", 0.78, tq), ("tail_slam_wind", "tail_slam", 0.15, side),
+                  ("tail_slam", "tail_slam", 0.25, side),
+                  ("tail_sweep", "tail_sweep", 0.22, rl.camera("top", (0.01, 0, 5), c, ortho=2.4))],
+        "blue": [("drill_ram", "drill_ram", 0.2, tq), ("drill_ram_side", "drill_ram", 0.2, side)],
+        "yellow": [("stomp_rise", "stomp", 0.13, side), ("stomp_slam", "stomp", 0.24, side), ("stomp", "stomp", 0.24, tq)],
+        "red": [("detonate", "detonate", 0.3, tq), ("burst", "death", 0.45, tq), ("burst_side", "death", 0.6, side)],
+        "seed": [("claw_snap", "claw_snap", 0.12, tq), ("sack_sway", "chase", 0.1, side)],
+    }
+    for args in attack_shots[variant]:
+        shot(*args)
     shot("hit", "hit", 0.06, tq)
-    shot("death_drop", "death", 0.6, tq)
+    if variant != "red":
+        shot("death_drop", "death", 0.6, tq)
     shot("death", "death", 1.6, tq)
     shot("fall", "fall", 0.2, side)
 
@@ -768,7 +1125,7 @@ def render_review(out: Path):
     rows = (len(shots) + cols - 1) // cols
     sheet = Image.new("RGB", (60 + cols * (w + 20) + 40, 150 + rows * (h + 20) + 20), (246, 246, 244))
     d = ImageDraw.Draw(sheet)
-    d.text((60, 30), "GREEN SCUTTLER (game model and clips)", fill=INK, font=F(44, True))
+    d.text((60, 30), f"{VARIANTS[variant]['name'].upper()} (game model and clips)", fill=INK, font=F(44, True))
     d.text((60, 90), "Final game model with worn textures, shown in its rest pose and at key frames of its clips. "
            "The eye shows green; the game turns it red while engaged.", fill=INK, font=F(22))
     for i, (name, path) in enumerate(shots):
@@ -776,12 +1133,15 @@ def render_review(out: Path):
         sheet.paste(Image.open(path).convert("RGB").resize((w, h), Image.LANCZOS), (x, y))
         d.rectangle([x, y, x + w - 1, y + h - 1], outline=(190, 190, 190), width=2)
         d.text((x + 12, y + 8), name.replace("_", " ").upper(), fill=INK, font=F(20, True))
-    sheet.save(out / "review_sheet.png")
+    sheet.save(out / f"{variant}_review_sheet.png")
     print(f"rendered the review sheet into {out}")
 
 
 if __name__ == "__main__":
-    if "--render" in sys.argv:
-        render_review(Path(sys.argv[sys.argv.index("--render") + 1]))
+    args = sys.argv[1:]
+    chosen = [args[i + 1] for i, a in enumerate(args) if a == "--variant"] or list(VARIANTS)
+    if "--render" in args:
+        for key in chosen:
+            render_review(Path(args[args.index("--render") + 1]), key)
     else:
-        build_game()
+        build_game(chosen)

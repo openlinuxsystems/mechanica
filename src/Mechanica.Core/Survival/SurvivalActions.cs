@@ -787,36 +787,6 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     /// <inheritdoc/>
     public string? CheckBlock(ActionCaller caller) => Mode == GameMode.Creative ? null : "Blocking with the Sledgehammer is only in Creative.";
 
-    // ---- Impacts ----
-
-    /// <summary>
-    /// A Body's velocity changed by <paramref name="deltaVelocity"/> (m/s) in one tick: a crash. Parts on
-    /// the side that hit (the leading face against the change, <see cref="ImpactSettings.Depth"/> deep)
-    /// take damage for every m/s above their threshold. Survival only. Returns the parts damaged.
-    /// </summary>
-    public IReadOnlyList<int> Impact(Creation creation, int bodyIndex, Vector3 deltaVelocity)
-    {
-        var speed = deltaVelocity.Length();
-        if (Mode != GameMode.Survival || speed < settings.Impact.MinSpeed || bodyIndex >= creation.Bodies.Count)
-            return [];
-        // The ground pushed the Body along deltaVelocity, so the parts that hit lead the other way.
-        var into = -deltaVelocity / speed;
-        var members = creation.Bodies[bodyIndex].PartIds.Select(id => (Id: id, Along: Vector3.Dot(PartCentre(creation, id), into))).ToList();
-        var lead = members.Max(m => m.Along);
-        var damaged = new List<int>();
-        foreach (var (id, along) in members.Where(m => m.Along >= lead - settings.Impact.Depth).ToList())
-        {
-            if (creation.FindPart(id) is null)
-                continue;
-            var over = speed - settings.Impact.ThresholdFor(creation.DefinitionOf(id).Durability);
-            if (over <= 0)
-                continue;
-            world.DamagePart(creation, id, over * settings.Impact.DamagePerSpeed);
-            damaged.Add(id);
-        }
-        return damaged;
-    }
-
     // ---- Farming ----
 
     /// <summary>

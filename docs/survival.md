@@ -49,7 +49,7 @@ them. AI agents read it from `GetWorld` and `world.info` and set it with `world.
   (or drops it when your inventory is full). Craft parts at a Portable Fabricator (a short list) or a Fabricator.
 - **Breaking things:** a part breaks off at 0 health. A container that breaks spills what it held.
   Trees, rocks and bushes with `health` break into resources (`drops` in `world/worldgen.json`).
-  A Body that stops suddenly (a crash) damages the parts on the side that hit, more for weaker parts.
+  Crashes and falls never damage a Creation: only the Sledgehammer, weapons, bots, explosions and fire do.
 - **Piles** of items on the ground last `drop_lifetime` seconds.
 - **Fire:** see [Fire](#fire).
 - **Raids:** the host checks the planted crops every minute. Once they are worth the first level of the
@@ -90,7 +90,7 @@ their item's properties.
 
 ## Data
 
-- `game/data/survival.json`: health, respawn delay, reach, starting items, fall and impact
+- `game/data/survival.json`: health, respawn delay, reach, starting items, fall
   damage, piles, the knockout bag's model (`knockout_bag`, built by `tools/knockout_bag/build_knockout_bag.py`), and
   the empty and full water buckets (`bucket_item`, `water_item`). Unknown keys are refused. A mod changes these
   rules with `rules/survival.patch.json`; only `max_drops` and `aim_tolerance` are locked (see

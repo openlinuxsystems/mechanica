@@ -46,8 +46,6 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
     // Host side: the soil revision last sent, per soil part.
     private readonly Dictionary<(int Creation, int Part), int> _soilSent = [];
     // Host side: each Body's velocity last tick, and Bodies pushed since then (not crashes).
-    private readonly Dictionary<ulong, Vector3> _lastVelocity = [];
-    private readonly HashSet<ulong> _pushed = [];
     private readonly Dictionary<int, (ProjectileView View, double ShownAt, Node3D Node)> _projectiles = [];
     // This peer's own item counters (a weapon's rounds loaded), by item, with when each arrived.
     private readonly Dictionary<string, (Mechanica.Scripting.ItemCounterView View, double At)> _counters = [];
@@ -161,7 +159,6 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
         Players.PlayerSpawned += OnPlayerSpawned;
         Players.PlayerDespawning += OnPlayerDespawning;
         Build.PartBreaking += OnPartBreaking;
-        Build.BodyPushed += OnBodyPushed;
         // The offline player spawned before this node existed.
         foreach (var player in Players.Players.Values)
             OnPlayerSpawned(player);
@@ -174,7 +171,6 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
         Players.PlayerSpawned -= OnPlayerSpawned;
         Players.PlayerDespawning -= OnPlayerDespawning;
         Build.PartBreaking -= OnPartBreaking;
-        Build.BodyPushed -= OnBodyPushed;
     }
 
     /// <summary>
@@ -209,7 +205,6 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
         if (!Session.IsHost || Actions is null)
             return;
         Actions.Tick((float)delta);
-        TrackImpacts();
         if (++_tick % SoilInterval == 0)
             SendSoil();
     }
@@ -404,36 +399,6 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
             Actions?.Leave(player.PeerId);
         _vitals.Remove(player.PeerId);
     }
-
-    // A Body whose velocity changed by more than gravity and steering can in one tick hit something.
-    private void TrackImpacts()
-    {
-        var seen = new HashSet<ulong>();
-        foreach (var creation in Creations.All.ToList())
-        {
-            if (Creations.NodeOf(creation.Id) is not { IsFrozen: false } node)
-                continue;
-            foreach (var body in node.Bodies.ToList())
-            {
-                var id = body.GetInstanceId();
-                seen.Add(id);
-                var velocity = body.LinearVelocity;
-                if (_lastVelocity.TryGetValue(id, out var last) && !_pushed.Contains(id)
-                    && (velocity - last).Length() >= Settings!.Impact.MinSpeed && GodotObject.IsInstanceValid(body))
-                {
-                    node.SyncToCreation();
-                    Actions!.Impact(creation, body.BodyIndex, (velocity - last).ToNumerics());
-                }
-                if (GodotObject.IsInstanceValid(body))
-                    _lastVelocity[id] = velocity;
-            }
-        }
-        foreach (var gone in _lastVelocity.Keys.Where(k => !seen.Contains(k)).ToList())
-            _lastVelocity.Remove(gone);
-        _pushed.Clear();
-    }
-
-    private void OnBodyPushed(CreationBody body) => _pushed.Add(body.GetInstanceId());
 
     private void OnPartBreaking(Creation creation, int partId) => Actions?.Spill(creation, partId);
 
