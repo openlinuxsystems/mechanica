@@ -269,7 +269,9 @@ ones are `food.lua`, `potato_gun.lua`, `seed.lua`, `bucket.lua` (the empty water
 one) in `mods/vanilla/scripts/`.
 
 - **One instance per player and item type.** Each player gets their own copy of the script, with its
-  own `state`, the first time they take one in hand or use one. It is dropped when they leave.
+  own `state`, the first time they take one in hand or use one. Their `state` is saved with the world under their
+  player and comes back when they return (before the script's setup runs), so a lantern's fuel or a gun's kill count
+  carries on. Keep it plain data, as for part scripts.
 - **Uses go through the Action API.** The Item tool (and bots or agents) call
   `UseItem {slot, direction?, creation?, part?}`. The host checks the slot holds a scripted item, that
   `direction` is close to where the player looks (`aim_tolerance` in `survival.json`) and that the

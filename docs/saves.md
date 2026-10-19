@@ -24,7 +24,7 @@ asks first.
 | `destroyed` | Trees, rocks and other world objects that were destroyed |
 | `creations` | Every Creation in the Creation format: parts, links, body poses and velocities, part settings, damage, container contents, crafting queues, soil (`seed`, `grown`, `water`, `stage` and `updated`, the world time growth was last worked out at), `fire`, how strongly a burning part burns (0 to 1), and `anchored`, true on a part built resting on the ground, which holds its Body still (missing in older saves, whose Creations all simulate) |
 | `scripts` | Each scripted part's Lua `state` table, by creation and part id |
-| `players` | Every player the host has seen, by profile id: name, inventory, health, respawn bed, position and facing |
+| `players` | Every player the host has seen, by profile id: name, inventory, health, respawn bed, position and facing, chosen character, hotbar, map markers, and `item_scripts`, their item scripts' `state` tables by item id |
 | `quests` | The story: each started quest's progress, story flags and revealed POIs (see [Quests](quests.md)) |
 | `fires` | Fires at POI markers, `[{site, marker, strength}]` by POI index and marker index; a put-out one has strength 0 and stays out. Missing in older saves, whose POI fires are lit again (see [Fire](survival.md#fire)) |
 
@@ -35,7 +35,8 @@ Unknown keys are kept as they are, so later chunks can add their own.
 - A Creation that no longer reads (a part whose mod was removed) is skipped with a warning; the rest of
   the world loads.
 - An inventory slot that no longer fits (an unknown item, a slot past the end) is dropped with a warning.
-- A part script's saved `state` replaces the fresh one after the script starts.
+- A part script's saved `state` replaces the fresh one after the script starts. A player's item script `state`
+  is there before their item's script first runs (its setup already sees it).
 - A player who was dead when the world was saved comes back at full health at their spawn or bed.
 
 ## Player profiles

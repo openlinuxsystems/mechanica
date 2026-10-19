@@ -38,7 +38,8 @@ public class SaveGameTests
             Scripts = [new SavedScriptState(3, 1, new JsonObject { ["count"] = 2 })],
             ModScripts = new Dictionary<string, JsonObject> { ["test:scripts/rules.lua"] = new() { ["visits"] = 3 } },
             Players = [new SavedPlayer(Ada, "Ada", [new SavedSlot(2, Wood, 5)], 80f, new Vec3(4, 0, 5), 1.5f, new SavedPart(3, 1), "vanilla:scrapper_female",
-                ["vanilla:sledgehammer", null, "test:chest"], [new Mechanica.Core.Ui.MapMarker("marker:2", "Scrap pile", 12.5f, 3f, -40f)])],
+                ["vanilla:sledgehammer", null, "test:chest"], [new Mechanica.Core.Ui.MapMarker("marker:2", "Scrap pile", 12.5f, 3f, -40f)],
+                new Dictionary<string, JsonObject> { ["test:lantern"] = new() { ["fuel"] = 0.5 } })],
         };
     }
 
@@ -65,6 +66,7 @@ public class SaveGameTests
         Assert.Equal("vanilla:scrapper_female", player.Character);
         Assert.Equal(["vanilla:sledgehammer", null, "test:chest"], player.Hotbar!);
         Assert.Equal(new Mechanica.Core.Ui.MapMarker("marker:2", "Scrap pile", 12.5f, 3f, -40f), Assert.Single(player.Markers!));
+        Assert.Equal(0.5, player.ItemScripts!["test:lantern"]["fuel"]!.GetValue<double>());
         Assert.Equal(2, read.Scripts[0].State["count"]!.GetValue<int>());
 
         var creation = Assert.Single(read.ReadCreations(_catalog, "my-world.json", diagnostics));

@@ -240,8 +240,10 @@ public partial class SaveSync : Node
 
     private void OnPlayerLeaving(PlayerController player)
     {
-        if (Session.IsHost)
-            Remember(player);
+        if (!Session.IsHost)
+            return;
+        Remember(player);
+        Scripts.Runtime.ForgetItemStates(player.PeerId);
     }
 
     // Gives a player their saved inventory, health, bed and position.
@@ -253,6 +255,7 @@ public partial class SaveSync : Node
             Characters?.Restore(player.PeerId, saved.Character);
         Hotbars?.Restore(player.PeerId, saved.Hotbar);
         Markers?.Restore(player.PeerId, saved.Markers);
+        Scripts.Runtime.ImportItemStates(player.PeerId, saved.ItemScripts ?? new Dictionary<string, System.Text.Json.Nodes.JsonObject>());
         if (Inventory.Items is { } items)
         {
             foreach (var problem in PlayerRoster.Restore(items.PlayerInventory(player.PeerId), saved.Inventory))
@@ -285,7 +288,22 @@ public partial class SaveSync : Node
             bed is { } b ? new SavedPart(b.Creation, b.Part) : null,
             Characters?.ChosenBy(player.PeerId),
             Hotbars?.SavedOf(player.PeerId),
-            Markers?.SavedOf(player.PeerId)));
+            Markers?.SavedOf(player.PeerId),
+            ItemStates(player.PeerId)));
+    }
+
+    // A player's item script state for the save; a state that is not plain data is logged and left out.
+    private IReadOnlyDictionary<string, System.Text.Json.Nodes.JsonObject>? ItemStates(int peer)
+    {
+        try
+        {
+            return Scripts.Runtime.ExportItemStates(peer) is { Count: > 0 } states ? states : null;
+        }
+        catch (ArgumentException e)
+        {
+            GD.PushWarning($"[save] item script state not saved: {e.Message}");
+            return null;
+        }
     }
 
     private static DataDiagnostic Warning(string file, string message) =>
