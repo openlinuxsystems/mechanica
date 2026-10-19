@@ -1,18 +1,20 @@
 {
   "id": "gas_container",
   "name": "Gas Container",
+  "description": "Holds five stacks of gasoline. Link it to Gas Engines and Thrusters with the Connect Tool and they burn its fuel; the gauges on its sides show how full it is. Pick it up (hold right click) even when it is full: the gasoline comes with it.",
   "category": "container",
-  "mass": 6,
+  "mass": 18,
   "durability": 6,
   "friction": 0.5,
-  "buoyancy": 0.2,
+  "buoyancy": 0.75,
   "flammable": false,
+  "stack_size": 5,
   "sound_material": "metal",
-  "size": [2, 3, 2],
-  "mesh": "meshes/gas_container.glb",
+  "size": [4, 3, 3],
+  "mesh": "meshes/parts/gas_container.glb",
+  "icon": "textures/items/gas_container_icon.png",
   "visual": {
-    "color": "#c03a2a",
-    "paintable": true
+    "color": "#ffffff"
   },
   "sockets": [
     {
@@ -22,6 +24,7 @@
       "normal": [0, -1, 0]
     }
   ],
+  "script": "scripts/gas_container.lua",
   "sounds": {
     "open": "container_open",
     "place": "place_metal"
@@ -30,6 +33,28 @@
     "slots": 5,
     "accepts": [
       "gasoline"
-    ]
+    ],
+    "carry_contents": true
+  },
+  "logic": {
+    "outputs": 16,
+    "kind": "power"
+  },
+  "display": {
+    "clips": {
+      "readout": "clip",
+      "scrub": [
+        {
+          "readout": "fill",
+          "clip": "fill"
+        }
+      ]
+    }
+  },
+  "properties": {
+    "fuel": "gasoline",
+    "ease": 0.3,
+    "pulse_time": 0.4,
+    "supply_time": 0.6
   }
 }

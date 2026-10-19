@@ -3,6 +3,7 @@ using System.Text.Json;
 using Mechanica.Core.Actions;
 using Mechanica.Core.Creations;
 using Mechanica.Core.Data;
+using Mechanica.Core.Items;
 using Mechanica.Core.Sound;
 
 namespace Mechanica.Core.Building;
@@ -140,6 +141,14 @@ public interface IBuildCosts
 
     /// <summary>Gives back one <paramref name="part"/> that was just removed at world point <paramref name="at"/> (dropped there when it does not fit).</summary>
     void Removed(ActionCaller caller, string part, Vector3 at);
+
+    /// <summary>
+    /// Hands <paramref name="caller"/> what a part they just picked up held (<see cref="InventoryDefinition.CarryContents"/>),
+    /// dropping at world point <paramref name="at"/> what does not fit.
+    /// </summary>
+    void Emptied(ActionCaller caller, IReadOnlyList<ItemStack> items, Vector3 at)
+    {
+    }
 
     /// <summary>
     /// Null when <paramref name="caller"/> may use the hand tool <paramref name="tool"/> (a qualified
@@ -359,7 +368,7 @@ public sealed class BuildActions(IPartCatalog catalog, BuildSettings settings, I
             return $"There is no creation {args.Creation}.";
         if (creation.FindPart(args.Part) is not { } part)
             return $"Creation {args.Creation} has no part {args.Part}.";
-        if (creation.HoldsItems(part.Id))
+        if (creation.HoldsItems(part.Id) && !creation.CarriesContents(part.Id))
             return $"Empty the {creation.DefinitionOf(part.Id).Name ?? part.Part} before picking it up.";
         var pose = creation.BodyPose(creation.BodyIndexOf(part.Id));
         var centre = pose.Apply(PartGeometry.CentreMetres(creation.DefinitionOf(part.Id), part.Cell, part.Rotation).ToNumerics());
@@ -375,8 +384,14 @@ public sealed class BuildActions(IPartCatalog catalog, BuildSettings settings, I
             PlayPartSound(world, creation, args.Part, PartSounds.Remove, fallback);
         var part = creation.FindPart(args.Part)!;
         var centre = PartCentre(creation, part.Id);
+        // A part that may be carried full (a Gas Container) brings what it holds along.
+        List<ItemStack> held = creation.InventoryOf(part.Id) is { IsEmpty: false } inventory
+            ? [.. inventory.Slots.Where(s => s is not null).Select(s => s!)]
+            : [];
         var result = Remove(world, creation, args.Part);
         Costs?.Removed(caller, PartUpgrades.ItemKey(part.Part, part.Level), centre);
+        if (held.Count > 0)
+            Costs?.Emptied(caller, held, centre);
         return Value(result);
     }
 

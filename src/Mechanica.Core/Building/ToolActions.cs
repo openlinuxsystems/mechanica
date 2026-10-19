@@ -355,7 +355,7 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
                 return $"Creation {id} is on another player's lift.";
             if (CheckReach(caller, CreationBounds.World(carried)) is { } tooFar)
                 return tooFar;
-            if (settings.Lift.RefuseStoredItems && LiftOf(caller.Peer)?.Creation != id && carried.Parts.Any(p => carried.HoldsItems(p.Id)))
+            if (settings.Lift.RefuseStoredItems && LiftOf(caller.Peer)?.Creation != id && carried.Parts.Any(p => carried.HoldsItems(p.Id) && !carried.CarriesContents(p.Id)))
                 return StoredItemsRefusal;
         }
         return CheckLift(lift, carried, 0);
