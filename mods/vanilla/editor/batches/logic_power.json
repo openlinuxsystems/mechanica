@@ -181,7 +181,7 @@
           ]
         },
         "properties": {
-          "speed": 25, "torque": 120, "brake": 80, "fuel": "gasoline", "fuel_time": 40, "loop_parameter": "load",
+          "speed": 25, "torque": 360, "brake": 240, "fuel": "gasoline", "fuel_time": 40, "loop_parameter": "load",
           "gears": 5, "ignition": true, "start_time": 0.8, "false_start": 0, "false_start_time": 0.6, "stop_time": 0.6,
           "gear_time": 0.4, "heat_time": 0.4, "uneven": 0.03, "backfire": 0, "hard_gear": 4, "smoke": 0.35
         },
@@ -207,7 +207,7 @@
                   { "readout": "smoke", "kind": "smoke", "offset": [0.11, 0.244, 0.165] }
                 ]
               },
-              "properties": { "speed": 33, "torque": 195, "brake": 110, "fuel_time": 60, "gears": 7, "hard_gear": 5, "smoke": 0.45 }
+              "properties": { "speed": 33, "torque": 520, "brake": 330, "fuel_time": 60, "gears": 7, "hard_gear": 5, "smoke": 0.45 }
             }
           },
           {
@@ -231,7 +231,7 @@
                   { "readout": "smoke", "kind": "smoke", "offset": [0.11, 0.244, 0.165] }
                 ]
               },
-              "properties": { "speed": 41, "torque": 315, "brake": 150, "fuel_time": 90, "gears": 9, "hard_gear": 7, "smoke": 0.6 }
+              "properties": { "speed": 41, "torque": 720, "brake": 450, "fuel_time": 90, "gears": 9, "hard_gear": 7, "smoke": 0.6 }
             }
           },
           {
@@ -256,7 +256,7 @@
                   { "readout": "smoke", "kind": "smoke", "offset": [0.13, 0.244, 0.165] }
                 ]
               },
-              "properties": { "speed": 49, "torque": 505, "brake": 200, "fuel_time": 135, "gears": 11, "hard_gear": 8, "smoke": 0.8 }
+              "properties": { "speed": 49, "torque": 980, "brake": 600, "fuel_time": 135, "gears": 11, "hard_gear": 8, "smoke": 0.8 }
             }
           },
           {
@@ -283,7 +283,7 @@
                   { "readout": "sparks", "kind": "sparks", "offset": [0.0, 0.244, 0.165] }
                 ]
               },
-              "properties": { "speed": 57, "torque": 820, "brake": 260, "fuel_time": 202.5, "gears": 13, "hard_gear": 10, "smoke": 1.0 }
+              "properties": { "speed": 57, "torque": 1300, "brake": 800, "fuel_time": 202.5, "gears": 13, "hard_gear": 10, "smoke": 1.0 }
             }
           }
         ]
@@ -338,7 +338,7 @@
           ]
         },
         "properties": {
-          "speed": 15, "torque": 80, "brake": 60, "fuel": "gasoline", "fuel_time": 25, "loop_parameter": "load",
+          "speed": 15, "torque": 240, "brake": 180, "fuel": "gasoline", "fuel_time": 25, "loop_parameter": "load",
           "gears": 4, "ignition": true, "start_time": 1.0, "false_start": 0.3, "false_start_time": 0.7, "stop_time": 0.8,
           "gear_time": 0.45, "uneven": 0.12, "backfire": 0.08, "hard_gear": 3, "smoke": 0.8
         }
@@ -389,7 +389,7 @@
         },
         "sounds": { "start": "electric_start", "loop": "electric_whirr", "stop": "battery_drain", "sputter": "battery_drain", "rev": "electric_whirr" },
         "properties": {
-          "speed": 20, "torque": 160, "brake": 100, "fuel": "battery_pack", "fuel_time": 90, "loop_parameter": "speed",
+          "speed": 20, "torque": 300, "brake": 225, "fuel": "battery_pack", "fuel_time": 90, "loop_parameter": "speed",
           "gears": 5, "ignition": true, "start_time": 0.6, "false_start": 0, "false_start_time": 0.5, "stop_time": 0.4,
           "gear_time": 0.3, "heat_time": 0.3, "uneven": 0, "backfire": 0, "hard_gear": 4, "smoke": 0
         },
