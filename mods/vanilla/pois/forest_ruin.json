@@ -1,0 +1,26 @@
+{
+  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed on its own.
+  // Written by tools/author-poi-placeholders.py; edit the table there and re-run.
+  "id": "forest_ruin",
+  "name": "Forest Ruin",
+  "radius": 29.0,
+  "size": [16.0, 5.0, 16.0],
+  "road": "track",
+  "placement": { "spacing": [710.0, 1020.0], "biomes": ["forest", "autumn_forest"], "priority": 21, "clearance": 48.0 },
+  "terrain": [
+    { "op": "flatten", "radius": 23.0, "blend": 6.0 }
+  ],
+  "flora": "forest",
+  "pieces": [
+    { "shape": "box", "size": [7.0, 4.0, 0.6], "at": [-4.0, 2.0, -7.5], "color": "#9c988c" },
+    { "shape": "box", "size": [3.0, 2.0, 0.6], "at": [5.0, 1.0, -7.5], "color": "#9c988c" },
+    { "shape": "box", "size": [0.6, 4.5, 9.0], "at": [-7.5, 2.25, -2.0], "color": "#9c988c" },
+    { "shape": "box", "size": [0.6, 1.5, 5.0], "at": [7.5, 0.75, 3.0], "color": "#9c988c" },
+    { "shape": "box", "size": [2.0, 0.8, 1.5], "at": [2.0, 0.4, 2.0], "yaw": 30.0, "color": "#9c988c" },
+    { "shape": "cylinder", "radius": 0.5, "height": 5.0, "at": [-7.5, 2.5, 7.5], "color": "#9c988c" }
+  ],
+  "markers": [
+    { "type": "item", "ref": "wooden_crate", "at": [-5.0, 0.0, -5.0] },
+    { "type": "item", "ref": "wooden_crate", "at": [4.0, 0.0, 5.0] }
+  ]
+}

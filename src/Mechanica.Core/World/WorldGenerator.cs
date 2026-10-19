@@ -137,7 +137,7 @@ public sealed partial class WorldGenerator
     public float HeightAt(float x, float z)
     {
         var sample = SampleBiomes(x, z);
-        return Roads.Shape(x, z, ApplyPois(x, z, RawHeight(x, z, sample)));
+        return KeepPads(x, z, Roads.Shape(x, z, ApplyPois(x, z, RawHeight(x, z, sample))));
     }
 
     /// <summary>Ground height before roads cut and fill it: what the road router plans on.</summary>
@@ -191,7 +191,7 @@ public sealed partial class WorldGenerator
                 float x = ox + (i - 1) * res, z = oz + (j - 1) * res;
                 weights.Clear();
                 var sample = SampleBiomes(x, z, weights);
-                var h = Roads.Shape(x, z, ApplyPois(x, z, RawHeight(x, z, sample)));
+                var h = KeepPads(x, z, Roads.Shape(x, z, ApplyPois(x, z, RawHeight(x, z, sample))));
                 bordered[j * m + i] = h;
                 if (i >= 1 && i <= n && j >= 1 && j <= n)
                 {
@@ -781,6 +781,34 @@ public sealed partial class WorldGenerator
         return 1f + amount * sum / norm;
     }
 
+    // A road or track bank never cuts into a POI's level pad (a POI's own track ends at its edge and can fall away
+    // steeply there): inside a flatten's full-strength disc, clear of basins and of the road bed itself, the pad holds,
+    // easing back to the shaped ground over the disc's outer tenth.
+    private float KeepPads(float x, float z, float h)
+    {
+        if (_pois.Count == 0)
+            return h;
+        var p = new Vector2(x, z);
+        foreach (var poi in PoisNear(x, z))
+        {
+            if (MathF.Abs(h - poi.PadHeight) < 1e-4f)
+                continue;
+            var hold = 0f;
+            foreach (var op in poi.Poi.Prefab.Terrain ?? [])
+            {
+                var centre = poi.ToWorld(op.At is [var ax, var az] ? new Vector2(ax, az) : Vector2.Zero);
+                var d = Vector2.Distance(p, centre);
+                if (op.Op == TerrainOpKind.Basin && d < (op.Radius + op.Blend) * (1f + (op.Wobble ?? 0f)))
+                    return h;
+                if (op.Op == TerrainOpKind.Flatten)
+                    hold = MathF.Max(hold, 1f - Noise.SmoothStep(0.9f * op.Radius, op.Radius, d));
+            }
+            if (hold > 0f)
+                return Roads.Covers(x, z) ? h : h + (poi.PadHeight - h) * hold;
+        }
+        return h;
+    }
+
     private IReadOnlyList<PoiInstance> PoisNear(float x, float z) =>
         _poiBuckets.GetValueOrDefault(((int)MathF.Floor(x / PoiBucket), (int)MathF.Floor(z / PoiBucket))) ?? (IReadOnlyList<PoiInstance>)[];
 
@@ -856,6 +884,13 @@ public sealed partial class WorldGenerator
             var placement = poi.Prefab.Placement!;
             if (placement.Spacing is not [var min, var max])
                 continue;
+            if (placement.Roadside is { } gap)
+            {
+                LayOutRoadside(poi, min, max, gap);
+                continue;
+            }
+            // Shore spots are rare among random ones, so a shore kind tries harder in each cell.
+            var attempts = placement.Shore is null ? PoiAttempts : ShoreAttempts;
             // Neighbouring cells' spots are step ± 2·jitter apart along an axis: at least min, and at most
             // max even with the sideways jitter, so nearest neighbours land in [min, max].
             var step = (min + max) / 2f;
@@ -871,7 +906,10 @@ public sealed partial class WorldGenerator
                 for (var i = first; i <= last; i++)
                 {
                     var cell = offset + new Vector2(i + 0.5f, j + 0.5f) * step;
-                    for (var attempt = 0; attempt < PoiAttempts; attempt++)
+                    // Most cells have no water anywhere near, and a coarse look says so for far fewer samples.
+                    if (placement.Shore is { } shore && !WaterWithin(cell, jitter + poi.Prefab.Radius + shore))
+                        continue;
+                    for (var attempt = 0; attempt < attempts; attempt++)
                     {
                         var spot = cell + jitter * new Vector2(
                             2f * Noise.Unit(Noise.Hash(salt, i, j, 3 * attempt + 3)) - 1f,
@@ -884,6 +922,97 @@ public sealed partial class WorldGenerator
                 }
             }
         }
+    }
+
+    // Roadside kinds walk each road (not the tracks, which come later) a spacing step at a time and stand beside it,
+    // on a side the seed picks, turned so their −z side faces the road.
+    private void LayOutRoadside(LoadedPoi poi, float min, float max, float gap)
+    {
+        if (Roads.Definition is not { } def)
+            return;
+        var salt = _poiSalt ^ Noise.Hash(poi.QualifiedId) ^ 0x51DEu;
+        foreach (var chain in Roads.Chains.Where(c => c.Kind == RoadKind.Road))
+        {
+            var reach = chain.Width / 2f + def.Curb + def.Shoulder + gap + poi.Prefab.Radius;
+            var k = 0;
+            for (var along = min / 2f + Noise.Unit(Noise.Hash(salt, chain.Index, 0, 1)) * (max - min); along < chain.Length; k++)
+            {
+                var (point, direction, height) = PointAlong(chain, along);
+                var side = (Noise.Hash(salt, chain.Index, k, 2) & 1) == 0 ? 1f : -1f;
+                var normal = new Vector2(-direction.Y, direction.X) * side;
+                var spot = point + normal * reach;
+                // Roads bend and meet, so a spot can come near one placed from another stretch: keep the spacing anyway.
+                var pad = 0f;
+                // Level with the road, so the road's banks do not cut into the pad.
+                var placed = !_pois.Any(p => p.Poi == poi && Vector2.Distance(p.Centre, spot) < min) && SiteFits(poi, spot, out pad)
+                    && MathF.Abs(pad - height) <= RoadsideRise;
+                if (placed)
+                    Add(poi, spot, pad, FacingTurns(-normal));
+                // A spot that does not fit is tried again a little further on.
+                along += placed ? min + Noise.Unit(Noise.Hash(salt, chain.Index, k, 3)) * (max - min) : 0.1f * min;
+            }
+        }
+    }
+
+    private const float RoadsideRise = 1.5f;
+
+    // Where a chain is at a distance along it, which way it runs there, and the height of its surface.
+    private static (Vector2 Point, Vector2 Direction, float Height) PointAlong(RoadChain chain, float along)
+    {
+        var found = Array.BinarySearch(chain.Along, along);
+        var i = Math.Clamp(found < 0 ? ~found - 1 : found, 0, chain.Points.Length - 2);
+        var span = chain.Along[i + 1] - chain.Along[i];
+        var t = span > 0f ? Math.Clamp((along - chain.Along[i]) / span, 0f, 1f) : 0f;
+        var d = chain.Points[i + 1] - chain.Points[i];
+        return (Vector2.Lerp(chain.Points[i], chain.Points[i + 1], t), d.LengthSquared() > 0f ? Vector2.Normalize(d) : Vector2.UnitX,
+            chain.Heights[i] + (chain.Heights[i + 1] - chain.Heights[i]) * t);
+    }
+
+    // The quarter turn that points a POI's −z side most nearly along a world direction.
+    private static int FacingTurns(Vector2 direction)
+    {
+        var best = 0;
+        var most = float.NegativeInfinity;
+        for (var q = 0; q < 4; q++)
+        {
+            var front = new PoiInstance(0, null!, Vector2.Zero, 0f, q).ToWorld(new Vector2(0f, -1f));
+            if (Vector2.Dot(front, direction) > most)
+                (best, most) = (q, Vector2.Dot(front, direction));
+        }
+        return best;
+    }
+
+    private const int ShoreAttempts = 24;
+
+    // Any open water in the square of half-size half round centre, sampled every WaterGrid metres.
+    private bool WaterWithin(Vector2 centre, float half)
+    {
+        for (var dz = -half; dz <= half; dz += WaterGrid)
+        {
+            for (var dx = -half; dx <= half; dx += WaterGrid)
+            {
+                if (RawHeight(centre.X + dx, centre.Y + dz) < SeaLevel)
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    private const float WaterGrid = 24f;
+
+    // Open water within reach of the footprint's edge somewhere round it.
+    private bool NearWater(Vector2 spot, float radius, float reach)
+    {
+        for (var k = 0; k < 16; k++)
+        {
+            var angle = k * MathF.Tau / 16f;
+            for (var d = radius + 2f; d <= radius + reach; d += 4f)
+            {
+                if (RawHeight(spot.X + MathF.Cos(angle) * d, spot.Y + MathF.Sin(angle) * d) < SeaLevel)
+                    return true;
+            }
+        }
+        return false;
     }
 
     // A site's pad never sits lower than this above the sea, so a structure by a lake stands on its bank.
@@ -904,7 +1033,9 @@ public sealed partial class WorldGenerator
             return false;
         if (Roads.Near(spot.X, spot.Y, radius + clearance))
             return false;
-        return DryAndLevel(spot, radius, out pad);
+        if (!DryAndLevel(spot, radius, out pad))
+            return false;
+        return poi.Prefab.Placement.Shore is not { } shore || NearWater(spot, radius, shore);
     }
 
     // Dry at the centre and all round the rim, and not so far above or below the centre that the pad becomes a cliff.
