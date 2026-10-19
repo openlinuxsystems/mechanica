@@ -11,9 +11,11 @@
     "biomes": [
       "meadow",
       "forest",
-      "ruin_field"
+      "field",
+      "autumn_forest"
     ],
-    "priority": 45
+    "priority": 45,
+    "clearance": 128
   },
   "terrain": [
     {
@@ -93,5 +95,7 @@
       "at": [-5, 0.3, -5],
       "yaw": 0
     }
-  ]
+  ],
+  "road": "track",
+  "size": [14, 8, 14]
 }

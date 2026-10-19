@@ -114,7 +114,7 @@ public partial class ToolBelt : Node
         Builder = Add(new BuildTool { Name = "Build", Player = Player, Actions = Actions, Build = Build, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput, Characters = Characters });
         Lift = Add(new LiftTool { Name = "Lift", Player = Player, Actions = Actions, Build = Build, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput });
         Weld = Add(new WeldTool { Name = "Weld", Player = Player, Actions = Actions, Build = Build, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput });
-        Paint = Add(new PaintTool { Name = "Paint", Player = Player, Actions = Actions, Build = Build, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput });
+        Paint = Add(new PaintTool { Name = "Paint", Player = Player, Actions = Actions, Build = Build, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput, Characters = Characters });
         Sledge = Add(new SledgeTool { Name = "Sledge", Player = Player, Actions = Actions, Build = Build, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput });
         Item = Add(new ItemTool { Name = "Item", Player = Player, Actions = Actions, Build = Build, Inventory = Inventory, Survival = Survival, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput, Characters = Characters });
         Connector = Add(new ConnectTool { Name = "Connect", Player = Player, Actions = Actions, Build = Build, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput });
@@ -125,6 +125,11 @@ public partial class ToolBelt : Node
         // The Sledgehammer's block is a Creative pose only.
         Sledge.CanBlock = () => Survival.Own?.Mode != Core.Survival.GameMode.Survival;
         Connector.Owned = () => Owns(HotbarTools.Connect);
+        Weld.Owned = () => Owns(HotbarTools.Weld);
+        Paint.Owned = () => Owns(HotbarTools.Paint);
+        // In Survival each stroke takes Paint Ammo, so the counter shows what is carried.
+        Paint.AmmoCount = () => Survival.Own?.Mode != Core.Survival.GameMode.Survival || Build.Settings!.Paint.Ammo is not { } ammo ? null
+            : Inventory.Own?.Count(Core.Data.Identifiers.Qualify(ammo)) ?? 0;
         if (Hotbar is not null)
             Hotbar.OwnChanged += OnSlotsChanged;
         Inventory.ViewChanged += OnInventoryChanged;
@@ -175,6 +180,8 @@ public partial class ToolBelt : Node
     /// </summary>
     public string? AmmoText()
     {
+        if (Current == Paint)
+            return Paint.AmmoText();
         if (Current != Item || Item.InHand is not { } hand || Item.CounterFor(hand.Item) is not { } counter
             || Survival.CounterOf(hand.Item) is not { } view)
             return null;

@@ -16,9 +16,9 @@ namespace Mechanica.Game.Tests;
 /// bearing, piston and both suspensions into a scratch copy of the mod and checks every file it writes
 /// is byte-for-byte what is checked in (D3). Then, on a host with a client (D10), with vanilla plus the
 /// joint fixture mod for a wheel: a car on sport suspension and one on off-road suspension settle with
-/// the soft one sagging more, both drive on vanilla bearings, and the vanilla piston's script pushes
+/// the soft one sagging more and the sport coils flexing to their mounts, both drive on vanilla bearings, the vanilla piston's script pushes
 /// its load out to the end of its stroke when its input comes on and pulls it back when it goes off,
-/// with the client showing the same.
+/// with the client showing the same, and the sport springs upgraded to level 5 carry their car stiffer.
 /// </summary>
 public partial class VanillaJointsTest : StagedTest
 {
@@ -37,6 +37,7 @@ public partial class VanillaJointsTest : StagedTest
     private readonly Dictionary<int, List<(int Part, int Sign)>> _wheels = [];
     private readonly Dictionary<int, Vector3> _start = [];
     private int _piston;
+    private float _sportSag;
 
     protected override string Tag => "vanilla-joints";
 
@@ -72,7 +73,9 @@ public partial class VanillaJointsTest : StagedTest
                 .Select(f => Path.GetRelativePath(_scratchMod, f).Replace('\\', '/'))
                 .Where(IsBatchOutput)
                 .Order(StringComparer.Ordinal).ToList();
-            Check(made.Count == 16, $"it writes a part, an editor source, a mesh and a recipe for each ({made.Count} files)");
+            // The bearing's and the sport suspension's models are files made elsewhere (tools/bearing_engine,
+            // tools/sport_suspension), so they get no generated mesh.
+            Check(made.Count == 13, $"it writes a part, an editor source, a mesh (but the bearing's and the two suspensions') and a recipe for each ({made.Count} files)");
             var differing = made.Where(f => !File.Exists(Path.Combine(VanillaDir, f))
                 || !File.ReadAllBytes(Path.Combine(VanillaDir, f)).AsSpan().SequenceEqual(File.ReadAllBytes(Path.Combine(_scratchMod, f)))).ToList();
             Check(differing.Count == 0, $"every file matches mods/vanilla (differing: {string.Join(", ", differing)}); re-run tools/author-vanilla.sh");
@@ -113,6 +116,15 @@ public partial class VanillaJointsTest : StagedTest
             Check(sport.All(s => s is > 0.001f and < 0.08f), $"sport springs carry the car ({Join(sport)})");
             Check(offroad.All(s => s is > 0.001f and < 0.2f), $"off-road springs carry the car ({Join(offroad)})");
             Check(offroad.Average() > sport.Average() * 2, "the off-road suspension sags more than the sport one");
+            _sportSag = sport.Average();
+            var node = _host.Main.Creations.NodeOf(Sport)!;
+            foreach (var part in _springs[Sport])
+            {
+                var flex = node.Flexes.Where(f => f.Part == part).Select(f => f.Offset).ToList();
+                var position = Position(_host, Sport, part);
+                Check(flex.Count == 1 && MathF.Abs(flex[0] - position) < 0.002f,
+                    $"spring {part}'s coil reaches its mount ({Join(flex)} for {position:F4})");
+            }
             foreach (var id in new[] { Sport, OffRoad })
             {
                 var chassis = _host.Main.Creations.NodeOf(id)!.Bodies[0];
@@ -167,6 +179,29 @@ public partial class VanillaJointsTest : StagedTest
             }
             return true;
         });
+        Add("level 5 sport springs carry the car stiffer", frame =>
+        {
+            var node = _host.Main.Creations.NodeOf(Sport)!;
+            if (frame == 0)
+            {
+                foreach (var part in _springs[Sport])
+                    node.Creation.SetLevel(part, 4);
+                _host.Main.Creations.Rebuild(Sport);
+                return false;
+            }
+            if (frame < 180)
+                return false;
+            foreach (var part in _springs[Sport])
+            {
+                var link = node.Creation.Joints.First(j => j.Connection.A == part);
+                Check(node.JointOf(link.Connection) is { } joint && node.FrameOf(joint).Stiffness == 125000f,
+                    $"spring {part} is rebuilt with level 5's stiffness");
+            }
+            var sag = _springs[Sport].Select(p => Position(_host, Sport, p)).ToList();
+            var mean = sag.Average();
+            Check(mean > 0f && mean < _sportSag * 0.5f, $"they sag less than level 1's {_sportSag:F4} ({Join(sag)})");
+            return true;
+        });
     }
 
     private bool Stroke(int frame, float input, float expected)
@@ -200,6 +235,8 @@ public partial class VanillaJointsTest : StagedTest
         _wheels[id] = [];
         for (var z = 0; z < 3; z++)
             Place(car, "vanilla:metal_block", new GridCell(0, 0, z));
+        // The sport suspension is two blocks long, the off-road one one.
+        var length = _mods.FindDefinition(suspension)!.Size?.X ?? 1;
         foreach (var z in new[] { 0, 2 })
         {
             foreach (var side in new[] { 1, -1 })
@@ -208,8 +245,8 @@ public partial class VanillaJointsTest : StagedTest
                 // The suspension's mount and the bearing's rotor both face away from the chassis.
                 var mount = side > 0 ? GridRotation.Identity : GridRotation.FromAxes(new GridCell(-1, 0, 0), new GridCell(0, 1, 0));
                 _springs[id].Add(Place(car, suspension, new GridCell(side, 0, z), mount).Id);
-                _wheels[id].Add((Place(car, "vanilla:bearing", new GridCell(2 * side, 0, z), GridRotation.FromAxes(new GridCell(0, -side, 0), outward)).Id, side));
-                Place(car, "joint_test:wheel", new GridCell(3 * side, 0, z), GridRotation.FromAxes(new GridCell(0, -side, 0), outward));
+                _wheels[id].Add((Place(car, "vanilla:bearing", new GridCell((length + 1) * side, 0, z), GridRotation.FromAxes(new GridCell(0, -side, 0), outward)).Id, side));
+                Place(car, "joint_test:wheel", new GridCell((length + 2) * side, 0, z), GridRotation.FromAxes(new GridCell(0, -side, 0), outward));
             }
         }
         car.SetAllBodyPoses(new Pose(at.ToNumerics(), System.Numerics.Quaternion.Identity));

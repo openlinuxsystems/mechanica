@@ -29,6 +29,8 @@ public partial class VanillaBlocksTest : StagedTest
 
     protected override string Tag => "vanilla";
 
+    private Vector3 Home => _sandbox.Host.Main.GetNode<Node3D>("SpawnPoint").GlobalPosition;
+
     protected override int StageTimeoutFrames => 1200;
 
     private static string VanillaDir => Path.Combine(ModPaths.ModsRoot, "vanilla");
@@ -89,9 +91,11 @@ public partial class VanillaBlocksTest : StagedTest
         {
             if (frame == 0)
             {
+                // Rows just north of the spawn, on the crash site's flat pad and clear of its wreck.
+                var home = Home;
                 for (var i = 0; i < _blocks.Count; i++)
                 {
-                    float[] position = [(i % 8 * 0.75f) - 2.5f, 0.6f, (i / 8 * 0.75f) + 8f];
+                    float[] position = [home.X + (i % 8 * 0.75f) - 2.5f, home.Y + 0.6f, home.Z - (i / 8 * 0.75f) - 4f];
                     _client.Main.Actions.Request(CreationActions.SpawnPart, new SpawnPartArgs(_blocks[i], position), r =>
                     {
                         if (Check(r.Ok, $"spawn accepted ({r})"))
@@ -111,7 +115,7 @@ public partial class VanillaBlocksTest : StagedTest
             {
                 var part = node.Creation.Parts.Single().Part;
                 var host = node.Bodies[0].GlobalPosition;
-                Check(host.Y is > 0.08f and < 0.17f, $"{part} rests on the ground on the host (y={host.Y:F3}, up={node.Bodies[0].GlobalBasis.Y}, sleeping={node.Bodies[0].Sleeping})");
+                Check(host.Y - Home.Y is > 0.08f and < 0.17f, $"{part} rests on the ground on the host (y={host.Y:F3}, up={node.Bodies[0].GlobalBasis.Y}, sleeping={node.Bodies[0].Sleeping})");
                 var client = _client.Main.Creations.NodeOf(node.Creation.Id)!.Bodies[0].GlobalPosition;
                 Check(client.DistanceTo(host) < 0.05f, $"{part} is in the same place on the client ({client} vs {host})");
             }

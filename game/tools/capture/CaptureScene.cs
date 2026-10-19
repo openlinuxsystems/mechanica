@@ -12,7 +12,7 @@ namespace Mechanica.Game.Tools;
 
 /// <summary>
 /// Renders the player character in a running world to PNGs: standing, holding and swinging tools, looking up and down,
-/// crouching, moving, refining (the Refine Tool drawn, worked and put away), the Connect Tool drawn, raised, clicked and put away, and in first person with each tool. For checking how a character or skin looks in game; run
+/// crouching, moving, refining (the Refine Tool drawn, worked and put away), the Connect Tool drawn, raised, clicked and put away, the Weld Tool drawn, raised, welding (its arms clamped, sparks) and put away, the Paint Tool drawn, spraying, taking paint off, reloaded and put away, and in first person with each tool. For checking how a character or skin looks in game; run
 /// <c>tools/capture-characters.sh</c>, which uses a virtual display and the compatibility renderer. Given <c>lift</c> instead
 /// of a character it puts the player's Lift down and captures its deploy, a raise and full extension (<c>tools/capture-lift.sh</c>).
 /// Given <c>flora</c> it takes the player to a meadow and captures the grass, ground cover and bushes: wide and close, at every
@@ -26,6 +26,11 @@ namespace Mechanica.Game.Tools;
 /// chunk into rods (<c>tools/capture-rocks.sh</c>).
 /// Given <c>soil</c> it carries a Soil Bag, tips it out, spills a mound and shows a row of mounds dry, lightly watered,
 /// fully wet and drying (<c>tools/capture-soil.sh</c>).
+/// Given <c>knockout_bag</c> it knocks the player out and captures the knockout bag their items drop in from the reference
+/// sheet's views, with its label and next to the respawned player (<c>tools/capture-knockout-bag.sh</c>).
+/// Given <c>scrap_seat</c> it puts down a Scrap Driver's Seat on a slab with a gas engine, a switch and a button linked to
+/// it, sits the player in it (the enter clip, then seated), runs the engine (the rattle), shows the seated driver from
+/// the sides, saves the seat's item picture and stands up again (<c>tools/capture-scrap-seat.sh</c>).
 /// Given <c>wheels</c> it sets three little cars down in a meadow, one on each wheel (Scrap Wheel, Wheel, Off Road
 /// Wheel), captures them wide and close, and shows the three wheels on the hotbar (<c>tools/capture-wheels.sh</c>).
 /// </summary>
@@ -51,8 +56,11 @@ public partial class CaptureScene : Node
         var blocks = args.Length > 1 && args[1] == "blocks";
         var rocks = args.Length > 1 && args[1] == "rocks";
         var soil = args.Length > 1 && args[1] == "soil";
+        var bag = args.Length > 1 && args[1] == "knockout_bag";
+        var seat = args.Length > 1 && args[1] == "scrap_seat";
+        var seats = args.Length > 1 && args[1] == "seats";
         var wheels = args.Length > 1 && args[1] == "wheels";
-        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks && !soil && !wheels ? args[1] : "scrapper_male";
+        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !seats && !wheels ? args[1] : "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
         // Building the block wall needs Creative: free parts and no build reach.
         _main.Options = LaunchOptions.Offline with { Seed = 7, GameMode = blocks || soil || wheels ? Core.Survival.GameMode.Creative : LaunchOptions.Offline.GameMode };
@@ -95,6 +103,21 @@ public partial class CaptureScene : Node
             SoilShots();
             return;
         }
+        if (bag)
+        {
+            KnockoutBagShots();
+            return;
+        }
+        if (seat)
+        {
+            ScrapSeatShots();
+            return;
+        }
+        if (seats)
+        {
+            SeatsShots();
+            return;
+        }
         if (wheels)
         {
             WheelShots();
@@ -105,7 +128,14 @@ public partial class CaptureScene : Node
         Shot("sledge", 40, () => { Tool<Building.SledgeTool>(); Look(new Vector3(-1.6f, 1.2f, -2.2f)); });
         Shot("sledge_windup", 21, () => Player.Gesture(CharacterGesture.SledgeSwing));
         Shot("sledge_block", 30, () => Player.HeldGuard = true);
-        Shot("weld", 40, () => { Player.HeldGuard = false; Tool<Building.WeldTool>(); });
+        Shot("weld_draw", 8, () => { Player.HeldGuard = false; Tool<Building.WeldTool>(); Look(new Vector3(-0.85f, 1.45f, -1.25f), 1.15f); });
+        Shot("weld", 40, () => { });
+        Shot("weld_aim", 30, () => Welder.KeepRaised = true);
+        Shot("weld_push", 2, () => Player.Gesture(CharacterGesture.Weld));
+        Shot("weld_clamp", 2, () => { });
+        Shot("weld_sparks", 4, () => _main.WeldEffects.Burst(Player.GlobalPosition + Player.GlobalTransform.Basis * new Vector3(-0.15f, 1.3f, -0.75f)));
+        Shot("weld_side", 20, () => Look(new Vector3(-1.4f, 1.3f, -0.15f), 1.15f));
+        Shot("weld_stow", 7, () => { Welder.KeepRaised = false; Tool<Building.SledgeTool>(); });
         Shot("refine_draw", 8, () => { Player.ActionProp = CharacterProp.RefineTool; Look(new Vector3(-2.2f, 1.2f, -1.8f)); });
         Shot("refine", 40, () => { });
         Shot("refine_bite", 9, () => { });
@@ -122,6 +152,14 @@ public partial class CaptureScene : Node
         Shot("connect_reverse", 5, () => Player.Gesture(CharacterGesture.ConnectReverse));
         Shot("connect_side", 20, () => Look(new Vector3(-1.4f, 1.3f, -0.15f), 1.15f));
         Shot("connect_stow", 7, () => { Connector.KeepRaised = false; Tool<Building.WeldTool>(); });
+        Shot("paint_draw", 9, () => { GivePaintTool(); Tool<Building.PaintTool>(); Look(new Vector3(-0.85f, 1.45f, -1.25f), 1.15f); });
+        Shot("paint", 40, () => { });
+        Shot("paint_spray", 24, () => { Painter.Choose(13); Painter.KeepSpraying = true; });
+        Shot("paint_erase", 24, () => Painter.KeepErasing = true);
+        Shot("paint_side", 20, () => { Painter.KeepSpraying = Painter.KeepErasing = false; Painter.Choose(25); Look(new Vector3(-1.4f, 1.3f, -0.15f), 1.15f); });
+        Shot("paint_reload_off", 32, () => Painter.Reload());
+        Shot("paint_reload_on", 30, () => { });
+        Shot("paint_stow", 8, () => Tool<Building.WeldTool>());
         Shot("look_up", 40, () => { Tool<Building.WeldTool>(); Input(pitch: 0.9f); Look(new Vector3(-2.6f, 1.2f, -1.6f)); });
         Shot("look_down", 40, () => Input(pitch: -0.9f));
         Shot("crouch", 40, () => Input(crawl: true));
@@ -134,12 +172,22 @@ public partial class CaptureScene : Node
         Shot("first_person_sledge_windup", 21, () => Player.Gesture(CharacterGesture.SledgeSwing));
         Shot("first_person_sledge_swing", 40, () => Player.Gesture(CharacterGesture.SledgeSwing));
         Shot("first_person_sledge_block", 30, () => Player.HeldGuard = true);
-        Shot("first_person_weld", 30, () => { Player.HeldGuard = false; Tool<Building.WeldTool>(); });
+        Shot("first_person_weld_draw", 8, () => { Player.HeldGuard = false; Input(); Player.MakeCameraCurrent(); Tool<Building.WeldTool>(); });
+        Shot("first_person_weld", 30, () => { });
+        Shot("first_person_weld_aim", 30, () => Welder.KeepRaised = true);
+        Shot("first_person_weld_push", 2, () => Player.Gesture(CharacterGesture.Weld));
+        Shot("first_person_weld_clamp", 2, () => { });
+        Shot("first_person_weld_stow", 7, () => { Welder.KeepRaised = false; Tool<Building.SledgeTool>(); });
         Shot("first_person_bucket_empty", 30, () => { Player.HeldGuard = false; Hold(CharacterProp.WaterBucket); Input(); Player.MakeCameraCurrent(); });
         Shot("first_person_bucket_fill", 22, () => Player.Gesture(CharacterGesture.BucketFill));
         Shot("first_person_bucket_full", 80, () => Hold(CharacterProp.WaterBucketFull));
         Shot("first_person_bucket_throw", 30, () => Player.Gesture(CharacterGesture.BucketThrow));
-        Shot("first_person_paint", 30, () => Tool<Building.PaintTool>());
+        Shot("first_person_paint_draw", 9, () => { GivePaintTool(); Input(); Player.MakeCameraCurrent(); Tool<Building.PaintTool>(); });
+        Shot("first_person_paint", 30, () => { });
+        Shot("first_person_paint_spray", 24, () => { Painter.Choose(1); Painter.KeepSpraying = true; });
+        Shot("first_person_paint_erase", 24, () => Painter.KeepErasing = true);
+        Shot("first_person_paint_reload", 32, () => { Painter.KeepSpraying = Painter.KeepErasing = false; Painter.Choose(25); Painter.Reload(); });
+        Shot("first_person_paint_stow", 30, () => Tool<Building.LiftTool>());
         Shot("first_person_lift", 30, () => Tool<Building.LiftTool>());
         Shot("first_person_connect_draw", 8, () => { Input(); Player.MakeCameraCurrent(); Tool<Building.ConnectTool>(); });
         Shot("first_person_connect", 30, () => { });
@@ -157,6 +205,17 @@ public partial class CaptureScene : Node
     private PlayerController Player => _main.LocalPlayer!;
 
     private Building.ConnectTool Connector => _main.Tools!.Connector;
+
+    private Building.WeldTool Welder => _main.Tools!.Weld;
+
+    private Building.PaintTool Painter => _main.Tools!.Paint;
+
+    // In Survival the Paint Tool is crafted before it is held; the captures hand one over.
+    private void GivePaintTool()
+    {
+        if (!Painter.Owns)
+            _main.Inventory.Items!.PlayerInventory(_main.Session.LocalPeer).Add(Core.Items.HotbarTools.Paint, 1);
+    }
 
     private Vector3 _liftAt;
 
@@ -519,6 +578,53 @@ public partial class CaptureScene : Node
         });
     }
 
+    private void KnockoutBagShots()
+    {
+        var spawn = Vector3.Zero;
+        var at = Vector3.Zero;
+        Label3D? label = null;
+        void View(Vector3 offset, float height = 0.2f)
+        {
+            _follow = null;
+            _camera.MakeCurrent();
+            _camera.GlobalPosition = at + offset;
+            _camera.LookAt(at + Vector3.Up * height);
+        }
+        Shot("knockout_bag_00_wait", 60, () => { });
+        Shot("knockout_bag_00_walk", 10, () =>
+        {
+            // Away from the spawn point, so the respawned player stands beside the bag rather than on it.
+            spawn = Player.GlobalPosition;
+            Player.GlobalPosition = Ground(spawn + new Vector3(2.5f, 0f, 0f)) + Vector3.Up * 0.1f;
+        });
+        Shot("knockout_bag_01_knocked_out", 30, () =>
+        {
+            _main.Survival.Actions!.Damage(Player.PeerId, 1000, "capture");
+            Look(new Vector3(-1.6f, 1.4f, -2.2f), 0.4f);
+        });
+        Shot("knockout_bag_02_front", 10, () =>
+        {
+            var drop = _main.Survival.DropNodes.Values.First(d => d.Drop!.KnockedOut);
+            at = drop.GlobalPosition;
+            GD.Print($"[capture] knockout bag at {at}: {drop.Text.Replace('\n', ',')}");
+            label = drop.GetNode<Label3D>("Label");
+            label.Visible = false; // the turnaround shows the bag alone; the label comes back for its own shot
+            View(new Vector3(0f, 0.3f, 1.25f));
+        });
+        Shot("knockout_bag_03_right", 10, () => View(new Vector3(1.25f, 0.3f, 0f)));
+        Shot("knockout_bag_04_left", 10, () => View(new Vector3(-1.25f, 0.3f, 0f)));
+        Shot("knockout_bag_05_back", 10, () => View(new Vector3(0f, 0.3f, -1.25f)));
+        Shot("knockout_bag_06_top", 10, () => View(new Vector3(0f, 1.3f, 0.3f), 0.1f));
+        Shot("knockout_bag_07_three_quarter", 10, () => View(new Vector3(0.85f, 0.7f, 0.95f)));
+        Shot("knockout_bag_08_label", 10, () => { label!.Visible = true; View(new Vector3(0.6f, 1.1f, 2.4f), 0.5f); });
+        Shot("knockout_bag_09_respawned", 30, () =>
+        {
+            _main.Actions.Request(Core.Survival.SurvivalActions.Respawn, new Core.Actions.NoArgs(), r => GD.Print($"[capture] respawn: {r.Ok} {r.Message}"));
+            Player.GlobalPosition = Ground(at + new Vector3(0.9f, 0f, 0.4f)) + Vector3.Up * 0.1f;
+        });
+        Shot("knockout_bag_10_with_player", 20, () => View(new Vector3(-1.2f, 1.3f, 2.8f), 0.6f));
+    }
+
     // Frames the loose parts matching a test from the side away from the outcrop's middle.
     private void ViewLoose(Func<Core.Data.PartDefinition, bool> which, float distance)
     {
@@ -747,6 +853,134 @@ public partial class CaptureScene : Node
     }
 
     private Action? _iconTick;
+
+    private const int SeatCreation = 9001;
+    private int _seat;
+
+    // A slab of metal blocks with the seat on it, a gas engine behind and a switch and a button beside it, all linked
+    // from the seat, put down in front of the player.
+    private void ScrapSeatShots()
+    {
+        Engine.TimeScale = 1.0;
+        Shot("scrap_seat_00_wait", 60, () => { });
+        Shot("scrap_seat_01_placed", 90, () =>
+        {
+            var from = Player.GlobalPosition + Player.GlobalTransform.Basis * new Vector3(0, 3, -3.5f);
+            var hit = Player.GetWorld3D().DirectSpaceState.IntersectRay(PhysicsRayQueryParameters3D.Create(from, from + Vector3.Down * 12));
+            var at = hit.Count > 0 ? hit["position"].AsVector3() : Player.GlobalPosition;
+            var creation = new Core.Creations.Creation(SeatCreation, _main.Mods!);
+            int Put(string part, int x, int y, int z) =>
+                creation.TryPlacePart(part, new Core.Creations.GridCell(x, y, z), Core.Creations.GridRotation.Identity, out var placed, out var error)
+                    ? placed.Id : throw new InvalidOperationException(error);
+            for (var x = -2; x <= 3; x++)
+                for (var z = -2; z <= 5; z++)
+                    Put("vanilla:metal_block", x, 0, z);
+            _seat = Put("vanilla:scrap_drivers_seat", -2, 1, -2);
+            var engine = Put("vanilla:gas_engine", -1, 1, 4);
+            var toggle = Put("vanilla:switch", 3, 1, -1);
+            var press = Put("vanilla:button", 3, 1, 1);
+            foreach (var to in new[] { engine, toggle, press })
+                creation.TryLink(_seat, to, out _);
+            creation.SetAllBodyPoses(new Core.Creations.Pose(new System.Numerics.Vector3(at.X, at.Y + 0.2f, at.Z), System.Numerics.Quaternion.Identity));
+            _main.Creations.Add(creation, _main.Assets);
+            LookAtSeat(new Vector3(1.9f, 1.4f, -1.9f), 0.3f);
+        });
+        Shot("scrap_seat_02_side", 2, () => LookAtSeat(new Vector3(2.6f, 0.6f, 0f), 0.4f));
+        Shot("scrap_seat_03_rear", 2, () => LookAtSeat(new Vector3(-1.2f, 1.3f, 2.4f), 0.4f));
+        Shot("scrap_seat_04_enter", 6, () =>
+        {
+            _main.Actions.Request(Core.Logic.LogicActions.EnterSeat, new Core.Logic.LogicPartArgs(SeatCreation, _seat), r => GD.Print($"[capture] sit: {r}"));
+            LookAtSeat(new Vector3(1.9f, 1.2f, -1.9f), 0.6f);
+        });
+        Shot("scrap_seat_05_enter", 12, () => { });
+        Shot("scrap_seat_06_seated", 60, () => { });
+        Shot("scrap_seat_07_seated_side", 2, () => LookAtSeat(new Vector3(2.4f, 0.8f, 0f), 0.6f));
+        Shot("scrap_seat_08_seated_front", 2, () => LookAtSeat(new Vector3(0.6f, 1.0f, -2.4f), 0.6f));
+        Shot("scrap_seat_09_seated_hands", 2, () => LookAtSeat(new Vector3(0.9f, 0.9f, -0.6f), 0.7f));
+        Shot("scrap_seat_10_engine", 120, () =>
+        {
+            Player.CurrentInput = new PlayerInput(0, 1, Player.CurrentInput.Yaw, 0, false, false);
+            LookAtSeat(new Vector3(1.9f, 1.2f, -1.9f), 0.6f);
+        });
+        // The item picture the hotbar, the inventory and the creation hotbar show, as the game makes it.
+        Shot("scrap_seat_11_icon", 240, () =>
+        {
+            Player.CurrentInput = new PlayerInput(0, 0, Player.CurrentInput.Yaw, 0, false, false);
+            _main.Icons!.For("vanilla:scrap_drivers_seat");
+            _iconTick = () =>
+            {
+                if (_main.Icons.For("vanilla:scrap_drivers_seat") is not { } texture)
+                    return;
+                var path = $"{_out}/icon_vanilla_scrap_drivers_seat.png";
+                texture.GetImage().SavePng(path);
+                GD.Print($"[capture] {path}");
+                _iconTick = null;
+            };
+        });
+        Shot("scrap_seat_12_exit", 10, () =>
+        {
+            _main.Actions.Request(Core.Logic.LogicActions.LeaveSeat, new Core.Actions.NoArgs(), r => GD.Print($"[capture] stand: {r}"));
+            LookAtSeat(new Vector3(1.9f, 1.2f, -1.9f), 0.4f);
+        });
+        Shot("scrap_seat_13_empty", 60, () => { });
+    }
+
+    private static readonly string[] SeatParts = ["drivers_seat", "passenger_seat", "scrap_seat", "scrap_drivers_seat"];
+
+    // Every vanilla seat side by side on one slab; the player sits in each in turn.
+    private void SeatsShots()
+    {
+        Engine.TimeScale = 1.0;
+        var seats = new Dictionary<string, int>();
+        Shot("seats_00_wait", 60, () => { });
+        Shot("seats_00_placed", 90, () =>
+        {
+            var from = Player.GlobalPosition + Player.GlobalTransform.Basis * new Vector3(0, 3, -3.5f);
+            var hit = Player.GetWorld3D().DirectSpaceState.IntersectRay(PhysicsRayQueryParameters3D.Create(from, from + Vector3.Down * 12));
+            var at = hit.Count > 0 ? hit["position"].AsVector3() : Player.GlobalPosition;
+            var creation = new Core.Creations.Creation(SeatCreation, _main.Mods!);
+            int Put(string part, int x, int y, int z) =>
+                creation.TryPlacePart(part, new Core.Creations.GridCell(x, y, z), Core.Creations.GridRotation.Identity, out var placed, out var error)
+                    ? placed.Id : throw new InvalidOperationException(error);
+            for (var x = -8; x <= 8; x++)
+                for (var z = -2; z <= 3; z++)
+                    Put("vanilla:metal_block", x, 0, z);
+            var cell = -8;
+            foreach (var part in SeatParts)
+            {
+                var size = _main.Mods!.FindDefinition("vanilla:" + part)!.Size!.Value;
+                seats[part] = Put("vanilla:" + part, cell, 1, size.Z > 2 ? -2 : 0);
+                cell += size.X + 2;
+            }
+            creation.SetAllBodyPoses(new Core.Creations.Pose(new System.Numerics.Vector3(at.X, at.Y + 0.2f, at.Z), System.Numerics.Quaternion.Identity));
+            _main.Creations.Add(creation, _main.Assets);
+        });
+        foreach (var part in SeatParts)
+        {
+            Shot($"seats_{part}_1_enter", 90, () =>
+            {
+                _seat = seats[part];
+                _main.Actions.Request(Core.Logic.LogicActions.EnterSeat, new Core.Logic.LogicPartArgs(SeatCreation, _seat), r => GD.Print($"[capture] sit {part}: {r}"));
+                LookAtSeat(new Vector3(2.2f, 0.9f, -1.6f), 0.6f);
+            });
+            Shot($"seats_{part}_2_side", 2, () => LookAtSeat(new Vector3(2.2f, 0.7f, 0f), 0.6f));
+            Shot($"seats_{part}_3_front", 2, () => LookAtSeat(new Vector3(0.3f, 0.9f, -2.2f), 0.6f));
+            Shot($"seats_{part}_4_leave", 40, () =>
+                _main.Actions.Request(Core.Logic.LogicActions.LeaveSeat, new Core.Actions.NoArgs(), r => GD.Print($"[capture] stand: {r}")));
+        }
+    }
+
+    // Puts the capture camera at an offset from the seat (at the driver's feet), in the seat's frame.
+    private void LookAtSeat(Vector3 offset, float height)
+    {
+        if (_main.Logic.SeatTransform(SeatCreation, _seat) is not { } seat)
+            return;
+        Player.ThirdPerson = true;
+        _camera.MakeCurrent();
+        _follow = null;
+        _camera.GlobalPosition = seat.Feet * offset;
+        _camera.LookAt(seat.Feet * (Vector3.Up * height));
+    }
 
     private void LookAtLift(Vector3 offset, float height)
     {

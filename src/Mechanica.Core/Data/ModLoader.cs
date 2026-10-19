@@ -114,8 +114,14 @@ public sealed class ModLoadResult : IPartCatalog
     /// </summary>
     public string Fingerprint { get; }
 
-    /// <summary>Looks up a part; a bare id means vanilla.</summary>
-    public LoadedPart? FindPart(string id) => Parts.GetValueOrDefault(Identifiers.Qualify(id));
+    /// <summary>Looks up a part; a bare id means vanilla. An upgraded part's item (<c>gas_engine@2</c>) is its part at that level.</summary>
+    public LoadedPart? FindPart(string id)
+    {
+        var (part, level) = PartUpgrades.SplitItem(id);
+        if (Parts.GetValueOrDefault(Identifiers.Qualify(part)) is not { } found || level < 0 || level > PartUpgrades.MaxLevel(found.Definition))
+            return null;
+        return level == 0 ? found : found with { Definition = PartUpgrades.At(found.Definition, level) };
+    }
 
     /// <inheritdoc />
     public PartDefinition? FindDefinition(string id) => FindPart(id)?.Definition;

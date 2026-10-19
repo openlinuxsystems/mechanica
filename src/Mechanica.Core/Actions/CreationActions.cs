@@ -26,8 +26,8 @@ public static class CreationActions
     /// <summary>Most Creations the world may hold before spawning is refused.</summary>
     public const int MaxCreations = 256;
 
-    /// <summary>How far from the world origin, horizontally, a part may be spawned, in metres.</summary>
-    public const float MaxSpawnDistance = 2048;
+    /// <summary>How far from the world origin, horizontally, a part may be spawned, in metres (past the corners of the 12 × 9 km world).</summary>
+    public const float MaxSpawnDistance = 8192;
 
     /// <summary>Lowest and highest spawn height, in metres.</summary>
     public const float MinSpawnHeight = -64, MaxSpawnHeight = 1024;

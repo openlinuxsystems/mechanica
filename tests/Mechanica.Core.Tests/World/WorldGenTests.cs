@@ -13,7 +13,11 @@ public class WorldGenTests
     private const long Seed = 1234;
 
     private static readonly Lazy<WorldGenData> VanillaData = new(() => WorldGenData.Load(ModLoader.LoadAll(Path.Combine(TestMods.RepoRoot, "mods"))));
-    private static readonly Lazy<WorldGenerator> Vanilla = new(() => new WorldGenerator(VanillaData.Value, Seed, WorldSize));
+    private static readonly Lazy<WorldGenerator> Vanilla = new(() => new WorldGenerator(VanillaData.Value, Seed, VanillaSize, VanillaDepth));
+
+    // The vanilla world (game/data/streaming.json, World Map spec §1).
+    private const float VanillaSize = 12032f;
+    private const float VanillaDepth = 9024f;
 
     [Fact]
     public void VanillaWorldDataLoadsCleanly()
@@ -21,26 +25,85 @@ public class WorldGenTests
         var data = VanillaData.Value;
 
         Assert.Empty(data.Diagnostics);
-        Assert.Equal(["meadow", "forest", "ruin_field", "warehouse_district", "coastal"], data.Biomes.Select(b => b.Id));
+        Assert.Equal(["meadow", "forest", "field", "desert", "autumn_forest", "burned_forest", "lake", "mountain", "coastal"], data.Biomes.Select(b => b.Id));
         Assert.Equal("coastal", data.CoastBiome?.Id);
-        Assert.Equal(["vanilla:ai_core_facility", "vanilla:crash_site", "vanilla:faction_outpost", "vanilla:outpost", "vanilla:ruin_cluster", "vanilla:warehouse"], data.Pois.Select(p => p.QualifiedId));
-        Assert.Superset(new HashSet<string> { "birch_tree", "leafy_tree", "spruce_tree", "pine_tree" }, data.Objects.Keys.ToHashSet());
+        Assert.Superset(new HashSet<string> { "birch_tree", "leafy_tree", "spruce_tree", "pine_tree", "autumn_leafy_tree", "burnt_tree", "cactus" },
+            data.Objects.Keys.ToHashSet());
         Assert.Contains("rock_node", data.Objects.Keys);
         Assert.Equal(64, data.Fingerprint.Length);
     }
 
     [Fact]
-    public void FourKilometreWorldGenerates()
+    public void EveryMandatoryStructureHasItsOwnSiteAndPrefab()
+    {
+        var data = VanillaData.Value;
+        var numbered = data.Sites.Where(s => s.Definition.Label is not null).ToList();
+        Assert.Equal(Enumerable.Range(1, 50).Select(n => $"POI-{n:00}"), numbered.Select(s => s.Definition.Label));
+        Assert.Equal(Enumerable.Range(1, 50).Select(n => $"poi_{n:00}"), numbered.Select(s => s.Id));
+        // Each of the 50 is its own prefab, so each can be designed on its own; the crash site and the quests' outpost keep theirs.
+        Assert.All(numbered, s => Assert.NotNull(s.Poi));
+        Assert.Equal(50, numbered.Select(s => s.Poi!.QualifiedId).Distinct().Count());
+        Assert.All(numbered.Where(s => s.Id is not ("poi_36" or "poi_37")), s => Assert.Equal($"vanilla:{s.Id}", s.Poi!.QualifiedId));
+        Assert.Equal("vanilla:crash_site", numbered.Single(s => s.Id == "poi_36").Poi!.QualifiedId);
+        Assert.Equal("vanilla:outpost", numbered.Single(s => s.Id == "poi_37").Poi!.QualifiedId);
+        Assert.All(numbered, s => Assert.NotNull(s.Poi!.Prefab.Size));
+        // 18 large slots in all (spec §1: 18-20), six of them drawn by seed.
+        Assert.Equal(6, data.Sites.Count(s => s.Pool is not null));
+    }
+
+    [Fact]
+    public void TheLandRollsInHillsAndCliffTerracesButLiesFlatByTheWater()
     {
         var gen = Vanilla.Value;
-        var chunks = (int)(WorldSize / ChunkSize);
+        var land = new List<float>();
+        var cliffs = 0;
+        for (var z = -gen.WorldDepth / 2f + 600f; z < gen.WorldDepth / 2f - 600f; z += 61f)
+        {
+            for (var x = -gen.WorldSize / 2f + 600f; x < gen.WorldSize / 2f - 600f; x += 61f)
+            {
+                var h = gen.HeightAt(x, z);
+                if (h <= gen.SeaLevel)
+                    continue;
+                land.Add(h);
+                // A cliff: the ground climbs a whole step within a few metres.
+                if (MathF.Abs(gen.HeightAt(x + 6f, z) - h) > 6f && gen.BiomeAt(x, z).Id != "mountain")
+                    cliffs++;
+            }
+        }
+        land.Sort();
+        // Not a flat map: inland heights spread over tens of metres (Scrap Mechanic's hills and 8 m terraces).
+        Assert.True(land[land.Count * 9 / 10] - land[land.Count / 10] > 40f, $"heights spread {land[land.Count / 10]} to {land[land.Count * 9 / 10]}");
+        Assert.True(cliffs > 20, $"cliff faces ({cliffs})");
+        // The hills ease out by the water: a lake's bank and the shore just above the beach stay low.
+        var lake = gen.Data.Biomes.Single(b => b.Id == "lake");
+        var shore = 0;
+        for (var x = -gen.WorldSize / 2f + 400f; x < gen.WorldSize / 2f - 400f; x += 97f)
+        {
+            var z = gen.WorldDepth / 2f - gen.Data.Terrain.CoastWidth - 40f;
+            if (gen.BiomeAt(x, z).Id == "coastal" && gen.RiverDistance(x, z) > 500f)
+                Assert.InRange(gen.HeightAt(x, z), gen.Data.Terrain.SeaFloor, 30f);
+            shore++;
+        }
+        Assert.True(shore > 50);
+        Assert.Equal(0f, lake.Hills);
+    }
+
+    [Fact]
+    public void ChunksAcrossTheWorldGenerate()
+    {
+        var gen = Vanilla.Value;
+        // Every fifth chunk each way covers every biome without building all 26,000.
+        int cols = (int)(gen.WorldSize / ChunkSize), rows = (int)(gen.WorldDepth / ChunkSize);
+        var coords = new List<ChunkCoord>();
+        for (var j = 0; j < rows; j += 5)
+            for (var i = 0; i < cols; i += 5)
+                coords.Add(new ChunkCoord(i - cols / 2, j - rows / 2));
         var ids = new ConcurrentDictionary<WorldObjectId, byte>();
         var objectsByBiome = new ConcurrentDictionary<string, int>();
         var (low, high) = (float.PositiveInfinity, float.NegativeInfinity);
         var gate = new object();
-        Parallel.For(0, chunks * chunks, k =>
+        Parallel.ForEach(coords, coord =>
         {
-            var coord = new ChunkCoord(k % chunks - chunks / 2, k / chunks - chunks / 2);
             var chunk = gen.GenerateChunk(coord, ChunkSize);
             Assert.Equal(65 * 65, chunk.Heights.Length);
             Assert.All(chunk.Heights, h => Assert.True(float.IsFinite(h)));
@@ -55,37 +118,35 @@ public class WorldGenTests
         });
 
         Assert.Equal(gen.Data.Terrain.SeaFloor, low, 0.5f);
-        Assert.InRange(high, 10f, 80f);
-        Assert.True(ids.Count > 20_000, $"objects scattered ({ids.Count})");
+        // Spec §1: base terrain to 80 m, mountain peaks to 180-220 m.
+        Assert.InRange(high, 120f, 230f);
+        Assert.True(ids.Count > 10_000, $"objects scattered ({ids.Count})");
         Assert.True(objectsByBiome.GetValueOrDefault("forest") > objectsByBiome.GetValueOrDefault("meadow"), "forests are denser than meadows");
-        foreach (var biome in gen.Data.Biomes)
+        foreach (var biome in gen.Data.Biomes.Where(b => b.Id != "lake"))
             Assert.True(objectsByBiome.GetValueOrDefault(biome.Id) > 0, $"{biome.Id} has objects");
     }
 
     [Fact]
-    public void EveryBiomeAppearsAndTheEdgeIsSea()
+    public void BiomesTakeTheirSharesAndTheEdgeIsSea()
     {
         var gen = Vanilla.Value;
-        var counts = new Dictionary<string, int>();
-        var samples = 0;
-        for (var z = -2040f; z < 2048f; z += 16f)
-        {
-            for (var x = -2040f; x < 2048f; x += 16f)
-            {
-                var id = gen.BiomeAt(x, z).Id;
-                counts[id] = counts.GetValueOrDefault(id) + 1;
-                samples++;
-            }
-        }
-        foreach (var biome in gen.Data.Biomes)
-            Assert.True(counts.GetValueOrDefault(biome.Id) > samples * 0.03, $"{biome.Id} covers over 3% ({counts.GetValueOrDefault(biome.Id)} of {samples})");
+        var manifest = WorldExport.Manifest(gen, 48f);
+        // Spec §2's shares, with room for the seed and the coast (which takes its share from every biome along the edge).
+        foreach (var (biome, min, max) in new[] { ("meadow", 0.2f, 0.32f), ("forest", 0.15f, 0.27f), ("field", 0.06f, 0.12f), ("desert", 0.07f, 0.13f),
+                     ("autumn_forest", 0.05f, 0.12f), ("burned_forest", 0.05f, 0.11f), ("mountain", 0.04f, 0.09f) })
+            Assert.InRange(manifest.BiomeShares.GetValueOrDefault(biome), min, max);
+        Assert.InRange(manifest.WaterShare, 0.10f, 0.18f);
 
-        for (var t = -2048f; t <= 2048f; t += 64f)
+        float hx = gen.WorldSize / 2, hz = gen.WorldDepth / 2;
+        for (var t = -1f; t <= 1f; t += 1f / 64f)
         {
-            foreach (var (x, z) in new[] { (t, -2048f), (t, 2048f), (-2048f, t), (2048f, t) })
+            foreach (var (x, z) in new[] { (t * hx, -hz), (t * hx, hz), (-hx, t * hz), (hx, t * hz) })
                 Assert.True(gen.HeightAt(x, z) < gen.SeaLevel - 10f, $"world edge at ({x}, {z}) is under the sea");
         }
-        Assert.True(gen.HeightAt(0, 0) > gen.SeaLevel, "the centre is land");
+        // The heart of the map is the big lake; the north is mountains, the south-west desert (spec reference map).
+        Assert.Equal("lake", gen.BiomeAt(0f, 0f).Id);
+        Assert.Equal("mountain", gen.BiomeAt(-0.05f * gen.WorldSize, -0.43f * gen.WorldDepth).Id);
+        Assert.Equal("desert", gen.BiomeAt(-0.38f * gen.WorldSize, 0.25f * gen.WorldDepth).Id);
     }
 
     [Fact]
@@ -127,43 +188,51 @@ public class WorldGenTests
     public void ObjectsBelongToExactlyOneChunk()
     {
         var gen = Vanilla.Value;
-        var whole = gen.ObjectsIn(256, 256, 384, 384).Select(o => o.Id).ToHashSet();
+        // In the western forest.
+        var whole = gen.ObjectsIn(-4352, -1024, -4224, -896).Select(o => o.Id).ToHashSet();
         var parts = new List<WorldObjectId>();
-        for (var cz = 4; cz < 6; cz++)
-            for (var cx = 4; cx < 6; cx++)
+        for (var cz = -16; cz < -14; cz++)
+            for (var cx = -68; cx < -66; cx++)
                 parts.AddRange(gen.GenerateChunk(new ChunkCoord(cx, cz), ChunkSize).Objects.Select(o => o.Id));
         Assert.Equal(whole.Count, parts.Count);
         Assert.True(whole.SetEquals(parts));
 
-        var some = gen.ObjectsIn(256, 256, 384, 384).First();
+        var some = gen.ObjectsIn(-4352, -1024, -4224, -896).First();
         Assert.Equal(some, gen.Find(some.Id));
         Assert.Null(gen.Find(new WorldObjectId(999, 0, 0)));
-        Assert.Null(gen.Find(new WorldObjectId(0, 0, 0))); // inside the crash site
+        Assert.Null(gen.Find(new WorldObjectId(0, 0, 0))); // under the central lake
     }
 
     [Fact]
-    public void CrashSiteIsAFixedFlatStartWithWaterNearby()
+    public void CrashSiteIsAFixedFlatStartInTheSouthEastWithWaterNearby()
     {
         var gen = Vanilla.Value;
         var crash = Assert.Single(gen.Pois, p => p.Poi.QualifiedId == "vanilla:crash_site");
-        Assert.Equal(Vector2.Zero, crash.Centre);
-        Assert.Equal(0f, crash.PadHeight);
-        Assert.Equal(new Vector3(0, 0, 4), gen.Spawn);
+        Assert.Equal("poi_36", crash.Site?.Id);
+        Assert.Equal(new Vector2(0.19f * gen.WorldSize, 0.38f * gen.WorldDepth), crash.Centre);
+        Assert.Equal(6f, crash.PadHeight);
+        Assert.Equal(0, crash.QuarterTurns);
+        Assert.Equal(crash.ToWorld(new Vector3(0, 0, 4)), gen.Spawn);
         for (var x = -20f; x <= 20f; x += 2f)
             for (var z = -20f; z <= 10f; z += 2f)
-                Assert.Equal(0f, gen.HeightAt(x, z));
-        Assert.True(gen.HeightAt(30, 26) < gen.SeaLevel - 1f, "a pond sits next to the crash site");
+                Assert.Equal(6f, gen.HeightAt(crash.Centre.X + x, crash.Centre.Y + z));
+        var pond = crash.Centre + new Vector2(30, 26);
+        Assert.True(gen.HeightAt(pond.X, pond.Y) < gen.SeaLevel - 1f, "a pond sits next to the crash site");
         // Its banks are gentle enough to walk out of (the player controller climbs up to 45°), so the first water a
         // new player meets is never a trap.
         for (var a = 0; a < 360; a += 10)
             for (var r = 0f; r <= 22f; r += 0.5f)
             {
                 var (sin, cos) = MathF.SinCos(a * MathF.PI / 180f);
-                float x = 30f + r * cos, z = 26f + r * sin;
+                float x = pond.X + r * cos, z = pond.Y + r * sin;
                 Assert.True(gen.SlopeAt(x, z) < 0.7f, $"pond bank at ({x:0.#}, {z:0.#}) has slope {gen.SlopeAt(x, z):0.##}");
             }
         Assert.Equal(3, crash.Poi.Prefab.Markers!.Count(m => m.Type == "fire"));
         Assert.Single(crash.Poi.Prefab.Markers!, m => m.Ref == "master_battery");
+        // Its road heads north to the first Mechanic Station (spec §1).
+        var station = Assert.Single(gen.Pois, p => p.Site?.Id == "poi_37");
+        Assert.True(station.Centre.Y < crash.Centre.Y, "the first Mechanic Station is north of the crash site");
+        Assert.Equal(RoadKind.Road, gen.Roads.Connected[crash.Index]);
     }
 
     [Fact]
@@ -171,15 +240,22 @@ public class WorldGenTests
     {
         var gen = Vanilla.Value;
         var counts = gen.Pois.GroupBy(p => p.Poi.Prefab.Id!).ToDictionary(g => g.Key, g => g.Count());
-        Assert.True(counts.GetValueOrDefault("outpost") >= 6, $"outposts placed ({counts.GetValueOrDefault("outpost")})");
-        Assert.True(counts.GetValueOrDefault("warehouse") >= 3, $"warehouses placed ({counts.GetValueOrDefault("warehouse")})");
-        Assert.True(counts.GetValueOrDefault("ruin_cluster") >= 6, $"ruins placed ({counts.GetValueOrDefault("ruin_cluster")})");
+        Assert.True(counts.GetValueOrDefault("ruin_cluster") >= 20, $"ruins placed ({counts.GetValueOrDefault("ruin_cluster")})");
+        Assert.True(counts.GetValueOrDefault("faction_outpost") >= 1, "a faction outpost is placed");
+        Assert.Equal(1, counts.GetValueOrDefault("ai_core_facility"));
+        // All 50 structures, each once, and the large slots' totals (spec §4: 12-14 warehouses, the rest scrapyards).
+        Assert.Equal(Enumerable.Range(1, 50).Select(n => $"poi_{n:00}"), gen.Pois.Where(p => p.Site?.Definition.Label is not null).Select(p => p.Site!.Id).Order());
+        Assert.Equal(12, gen.Pois.Count(p => p.Poi.Prefab.Markers?.Any(m => m.Type == "door" && m.Ref == "warehouse_key") == true));
+        Assert.Equal(4, gen.Pois.Count(p => p.Poi.Prefab.Id == "farmbot_scrapyard"));
+        Assert.Equal(3, gen.Pois.Count(p => p.Poi.Prefab.Markers?.Any(m => m.Ref == "fabricator") == true));
 
         foreach (var poi in gen.Pois)
         {
             foreach (var other in gen.Pois.Where(o => o != poi))
                 Assert.True(Vector2.Distance(poi.Centre, other.Centre) >= poi.Radius + other.Radius, $"{poi.Poi.QualifiedId} and {other.Poi.QualifiedId} do not overlap");
             Assert.True(poi.PadHeight > gen.SeaLevel, $"{poi.Poi.QualifiedId} at {poi.Centre} is dry");
+            if (poi.Site is { Biome: >= 0 } site)
+                Assert.Equal(gen.Data.Biomes[site.Biome].Id, gen.BiomeAt(poi.Centre.X, poi.Centre.Y).Id);
 
             if (poi.Poi.Prefab.Placement!.Spacing is not [var min, _])
                 continue;
@@ -187,12 +263,13 @@ public class WorldGenTests
             var nearest = gen.Pois.Where(o => o != poi && o.Poi == poi.Poi).Min(o => Vector2.Distance(o.Centre, poi.Centre));
             Assert.True(nearest >= min, $"{poi.Poi.QualifiedId} at {poi.Centre}: nearest of its kind is {nearest} m, under {min} m");
 
-            // The pad is level wherever no basin cuts into it.
+            // The pad is level wherever no basin cuts into it and no road crosses its edge.
             var flatten = poi.Poi.Prefab.Terrain!.First(t => t.Op == TerrainOpKind.Flatten);
             for (var a = 0; a < 8; a++)
             {
                 var p = poi.ToWorld(new Vector2(a % 3 - 1, a / 3 - 1) * flatten.Radius * 0.6f);
-                Assert.Equal(poi.PadHeight, gen.HeightAt(p.X, p.Y), 3);
+                if (!gen.Roads.Near(p.X, p.Y, 2f))
+                    Assert.Equal(poi.PadHeight, gen.HeightAt(p.X, p.Y), 3);
             }
         }
     }
@@ -256,6 +333,11 @@ public class WorldGenTests
     [InlineData("""{ "terrain": { "resolution": 0 }, "biomes": [{ "id": "a" }] }""", "$.terrain.resolution")]
     [InlineData("""{ "terrain": { "biome_blend": 500 }, "biomes": [{ "id": "a" }] }""", "$.terrain.biome_blend")]
     [InlineData("""{ "terrain": { "sea_floor": 5, "sea_level": 0 }, "biomes": [{ "id": "a" }] }""", "$.terrain.sea_floor")]
+    [InlineData("""{ "terrain": { "hills": { "height": 40, "scale": 0 } }, "biomes": [{ "id": "a" }] }""", "$.terrain.hills.scale")]
+    [InlineData("""{ "terrain": { "hills": { "height": 40, "octaves": 12 } }, "biomes": [{ "id": "a" }] }""", "$.terrain.hills.octaves")]
+    [InlineData("""{ "terrain": { "cliffs": { "levels": 40 } }, "biomes": [{ "id": "a" }] }""", "$.terrain.cliffs.levels")]
+    [InlineData("""{ "terrain": { "cliffs": { "face": 0 } }, "biomes": [{ "id": "a" }] }""", "$.terrain.cliffs.face")]
+    [InlineData("""{ "biomes": [{ "id": "a", "hills": 2 }] }""", "$.biomes[0].hills")]
     [InlineData("""{ "biomes": [{ "id": "a", "color": "green" }] }""", "$.biomes[0].color")]
     [InlineData("""{ "biomes": [{ "id": "a", "scatter": [{ "object": "tree", "spacing": 5, "chance": 0.5 }] }] }""", "$.biomes[0].scatter[0].object")]
     [InlineData("""{ "biomes": [{ "id": "a" }], "coast_biome": "sea" }""", "$.coast_biome")]

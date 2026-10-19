@@ -450,6 +450,7 @@ Painting parts. Arguments of Paint.
 | `creation` | integer | yes |  | The Creation holding the parts. |
 | `parts` | integer[] | yes |  | Part ids to paint, without repeats. |
 | `color` | string or null |  |  | "#rrggbb", or null to take the paint off. |
+| `stroke` | integer or null |  |  | Which stroke of the caller's this belongs to (any number the caller picks, new for each press of the button). In Survival a stroke pays AmmoPerStroke once, on its first Paint; the drag's later Paint requests with the same number are free while they keep coming (StrokeSeconds) and stay within MaxPartsPerAction parts. Without it every Paint pays. |
 
 ### `PlaceLift`
 
@@ -470,7 +471,7 @@ Placing. Arguments of PlacePart. Give Creation to attach to an existing Creation
 
 | Param | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|
-| `part` | string | yes |  | Part id, mod_id:part_id (a bare id means vanilla). |
+| `part` | string | yes |  | Part id, mod_id:part_id (a bare id means vanilla), or an upgraded part's item, gas_engine@2: the part goes down at that upgrade level. |
 | `cell` | integer[3] | yes |  | Grid cell of the part's local origin cell. Format: Grid cell [x, y, z] (0.25 m cells). |
 | `rotation` | string matching ^[+-][xyz][+-][xyz]$ |  |  | Orientation on the grid, like "+x+y". Format: Grid orientation: the directions the part's local +x and +y point, like "+x+y". |
 | `creation` | integer or null |  |  | Creation to attach to. |

@@ -306,6 +306,117 @@
       ]
     },
     {
+      "file": "parts/weld_tool.json",
+      "template": "item",
+      "set": {
+        "name": "Weld Tool",
+        "description": "Welds a loose creation or part onto another so they become one rigid body; weld to a block built on the ground to fix a creation in place. Kept when you die.",
+        "category": "tool",
+        "mass": 0.9,
+        "stack_size": 1,
+        "visual": {
+          "color": "#2e3033"
+        }
+      },
+      "recipes": [
+        {
+          "id": "weld_tool",
+          "stations": ["fabricator"],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 10
+            },
+            {
+              "item": "component_kit",
+              "count": 2
+            }
+          ],
+          "outputs": [
+            {
+              "item": "weld_tool",
+              "count": 1
+            }
+          ],
+          "time": 30
+        }
+      ]
+    },
+    {
+      "file": "parts/paint_tool.json",
+      "template": "item",
+      "set": {
+        "name": "Paint Tool",
+        "description": "Sprays paint on parts: left drag paints, right drag takes paint off, Q picks a colour. Each stroke uses one Paint Ammo. Kept when you die.",
+        "category": "tool",
+        "mass": 1.1,
+        "stack_size": 1,
+        "visual": {
+          "color": "#2d6870"
+        }
+      },
+      "recipes": [
+        {
+          "id": "paint_tool",
+          "stations": ["fabricator", "mini_fabricator"],
+          "inputs": [
+            {
+              "item": "scrap_metal_block",
+              "count": 10
+            },
+            {
+              "item": "glass_block",
+              "count": 5
+            },
+            {
+              "item": "component_kit",
+              "count": 2
+            }
+          ],
+          "outputs": [
+            {
+              "item": "paint_tool",
+              "count": 1
+            }
+          ],
+          "time": 30
+        }
+      ]
+    },
+    {
+      "file": "parts/paint_ammo.json",
+      "template": "item",
+      "set": {
+        "name": "Paint Ammo",
+        "description": "A cartridge of paint for the Paint Tool. Each stroke of paint uses one.",
+        "category": "resource",
+        "mass": 0.1,
+        "stack_size": 100,
+        "visual": {
+          "color": "#3874dc"
+        }
+      },
+      "recipes": [
+        {
+          "id": "paint_ammo",
+          "stations": ["fabricator", "mini_fabricator"],
+          "inputs": [
+            {
+              "item": "tomato",
+              "count": 2
+            }
+          ],
+          "outputs": [
+            {
+              "item": "paint_ammo",
+              "count": 10
+            }
+          ],
+          "time": 3
+        }
+      ]
+    },
+    {
       "file": "parts/potato_scattergun.json",
       "template": "item",
       "set": {

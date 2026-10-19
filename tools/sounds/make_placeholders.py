@@ -442,6 +442,56 @@ def lift_move(rng, up):
     return edges(peak(mix(dur, (body, 0.0), (thud(rng, 0.1, 50, 600, 0.03, 0.3), 0.43), (click(rng, 1200) * 0.15, 0.44)), 0.75))
 
 
+# ---- The Scrap Driver's Seat: a wooden pallet that creaks and a pipe frame that rattles ----------------------
+
+def wood_creak(rng, dur=0.45, f0=38.0, f1=62.0, level=0.6):
+    """Stick-slip in old wood: a pulse train gliding from f0 to f1 pulses a second, rung through a few wood resonances."""
+    n = n_of(dur)
+    rate = np.linspace(f0, f1, n) * (1 + 0.08 * np.sin(2 * np.pi * 3.3 * t_of(dur) + rng.uniform(0, 6.28)))
+    phase = np.cumsum(rate) / SR
+    pulses = np.zeros(n)
+    idx = np.nonzero(np.diff(np.floor(phase)) > 0)[0]
+    pulses[idx] = rng.uniform(0.5, 1.0, len(idx))
+    ring = np.zeros(n_of(0.05))
+    for freq, gain, tau in ((430, 1.0, 0.012), (780, 0.6, 0.008), (1240, 0.35, 0.005), (2100, 0.15, 0.003)):
+        ring += tone(freq * rng.uniform(0.95, 1.05), 0.05, rng.uniform(0, 6.28)) * decay(0.05, tau) * gain
+    x = np.convolve(pulses, ring)[:n] + band(noise(rng, dur), 300, 1800) * 0.05
+    env = np.minimum(1, t_of(dur) / 0.04) * np.minimum(1, (dur - t_of(dur)) / 0.12)
+    return peak(x * env, level)
+
+
+def pipe_rattle(rng, dur=0.45, rate=16.0, level=0.5):
+    """Loose pipe fittings knocking together: quick small metal ticks that die away."""
+    out = np.zeros(n_of(dur))
+    t = 0.0
+    while t < dur - 0.06:
+        amount = np.exp(-t / (dur * 0.35)) * rng.uniform(0.5, 1.0)
+        tick = hit(rng, 0.06, 1800, 6500, 0.006, ((rng.uniform(2400, 3600), 0.5), (rng.uniform(5200, 6800), 0.3)), 0.02, 1.0, amount)
+        out = out + mix(dur, (tick, t))
+        t += rng.uniform(0.6, 1.4) / rate
+    return peak(out, level)
+
+
+def scrap_seat_enter(rng):
+    """0.8 s, timed to the seat's enter clip: the weight lands, the pallet creaks, the frame rattles and settles."""
+    return edges(peak(mix(0.8, (thud(rng, 0.35, 50, 800, 0.05, 0.8), 0.0), (wood_creak(rng, 0.5, 34, 55, 0.7), 0.04),
+                          (pipe_rattle(rng, 0.6, 18, 0.45), 0.05)), 0.7))
+
+
+def scrap_seat_exit(rng):
+    """0.7 s, timed to the exit clip: the cushions spring back, a rising creak, a last rattle."""
+    return edges(peak(mix(0.7, (whoosh(rng, 0.2, 200, 1800, 0.3), 0.0), (wood_creak(rng, 0.4, 48, 75, 0.6), 0.05),
+                          (pipe_rattle(rng, 0.45, 15, 0.35), 0.08)), 0.6))
+
+
+def scrap_seat_creak(rng):
+    """A single creak of the pallet, sometimes with a bolt ticking in its hole."""
+    body = wood_creak(rng, rng.uniform(0.3, 0.5), rng.uniform(30, 45), rng.uniform(50, 80), 0.6)
+    if rng.uniform() < 0.5:
+        return edges(peak(mix(0.55, (body, 0.0), (pipe_rattle(rng, 0.2, 22, 0.25), rng.uniform(0.05, 0.2))), 0.55))
+    return edges(peak(fit(body, n_of(0.55)), 0.55))
+
+
 EVENTS = []  # (group, id, recipe, options, variants, is_loop, loop_length)
 
 
@@ -553,8 +603,27 @@ ev("building", "lift_lower", lambda rng: lift_move(rng, up=False), **TOOL)
 ev("building", "connect_success", lambda rng: beeps([880, 1320]), **QUIET)
 ev("building", "connect_fail", lambda rng: beeps([440, 330], wave_fn=square, level=0.5), **QUIET)
 ev("building", "disconnect", lambda rng: beeps([990, 660], step=0.06), **QUIET)
-ev("building", "weld_start", lambda rng: edges(crackle(rng, 0.4, 90, 0.6)), pitch_variation=0.05, **TOOL)
-ev("building", "weld_complete", lambda rng: edges(peak(mix(0.7, (crackle(rng, 0.3, 60, 0.5), 0), (hiss(rng, 0.4, 2000, 8000, 0.01, 0.3, 0.3), 0.1), (tone(1760, 0.5) * decay(0.5, 0.15) * 0.4, 0.25)), 0.75)), **TOOL)
+def weld_whir(rng, dur, f0=140.0, f1=420.0, level=0.5):
+    """The Weld Tool's short mechanical whir: its tip spinning up (a gliding saw-ish motor tone with gear grit) and the
+    clamping arms closing, easing in and out."""
+    t = t_of(dur)
+    env = np.minimum(1.0, t / 0.05) * np.minimum(1.0, (dur - t) / 0.12)
+    motor = 0.6 * glide(f0, f1, dur) + 0.3 * glide(f0 * 2.01, f1 * 2.01, dur) + 0.15 * glide(f0 * 3.02, f1 * 3.02, dur)
+    grit = band(noise(rng, dur), 900, 3500) * (0.5 + 0.5 * np.sign(np.sin(2 * np.pi * np.cumsum(f0 * 3 * (f1 / f0) ** (t / dur)) / SR)))
+    return (motor + 0.25 * grit) * env * level
+
+
+def weld_snap(rng, level=0.8):
+    """The weld taking: a hard metallic snap with a short ring."""
+    return hit(rng, 0.35, 1200, 9000, 0.012, partials=((2350, 0.35), (3720, 0.2), (5100, 0.12)), ptau=0.06) * level
+
+
+ev("building", "weld_start", lambda rng: edges(peak(mix(0.45, (weld_whir(rng, 0.42), 0), (crackle(rng, 0.25, 80, 0.35), 0.12)), 0.7)),
+   pitch_variation=0.05, **TOOL)
+ev("building", "weld_complete", lambda rng: edges(peak(mix(0.8, (weld_whir(rng, 0.5, 260, 180, 0.35), 0),
+                                                            (weld_snap(rng), 0.04),
+                                                            (crackle(rng, 0.45, 70, 0.55), 0.05),
+                                                            (hiss(rng, 0.5, 2500, 9000, 0.005, 0.35, 0.35), 0.06)), 0.8)), **TOOL)
 ev("building", "paint_spray", lambda rng: hiss(rng, 0.45, 2500, 9000, 0.02, 0.12, 0.55), variants=2, pitch_variation=0.05, **QUIET)
 ev("building", "paint_erase", lambda rng: hiss(rng, 0.35, 600, 3000, 0.04, 0.12, 0.5), pitch_variation=0.05, **QUIET)
 # The Sledgehammer: a heavy whoosh that swells as the head comes over (the hit lands 0.6 s after the click,
@@ -623,6 +692,9 @@ ev("flight", "surface_lock", lambda rng: click(rng, 2200, 0.08), **QUIET)
 ev("logic", "seat_enter", lambda rng: edges(peak(thud(rng, 0.3, 60, 900, 0.05, 0.7) + click(rng, 1400, 0.3) * 0.5, 0.6)), **QUIET)
 ev("logic", "seat_exit", lambda rng: edges(peak(whoosh(rng, 0.25, 200, 2000) + click(rng, 1100, 0.25) * 0.4, 0.5)), **QUIET)
 ev("logic", "seat_click", lambda rng: click(rng, 1600), **QUIET)
+ev("logic", "scrap_seat_enter", scrap_seat_enter, **QUIET)
+ev("logic", "scrap_seat_exit", scrap_seat_exit, **QUIET)
+ev("logic", "scrap_seat_creak", scrap_seat_creak, variants=3, pitch_variation=0.08, max_distance=15.0)
 ev("logic", "controller_start", lambda rng: beeps([523, 659, 784], 0.07), **QUIET)
 ev("logic", "controller_tick", lambda rng: click(rng, 3000, 0.04), max_instances=4, **QUIET)
 ev("logic", "controller_stop", lambda rng: beeps([784, 659, 523], 0.07), **QUIET)

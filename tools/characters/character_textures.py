@@ -125,7 +125,8 @@ KINDS = {
     "bucket_wire": "metal", "bucket_pin": "metal", "bucket_water": "water",
     "pipe_steel": "metal", "plate_steel": "metal", "tape_brown": "tape", "hazard_band": "hazard", "rust_sheet": "rust",
     "tool_gunmetal": "metal", "tool_bezel": "metal", "tool_silver": "metal", "panel_line": "metal",
-    "grip_chevron": "chevron", "accent_orange": "painted",
+    "grip_chevron": "chevron", "accent_orange": "painted", "grip_hex": "hexgrip",
+    "paint_teal": "painted", "paint_dark": "plastic", "paint_face": "plastic", "paint_grip": "ribbed",
 }
 
 THREAD = {
@@ -271,6 +272,41 @@ def pattern(c, kind, nz):
         inside = inside * sstep(-0.0435, -0.039, P[:, 1]) * sstep(0.032, 0.027, P[:, 1])
         ridge = ridge * inside
         return 0.9 + 0.16 * ridge + 0.05 * g, 0.0004 * ridge - 0.00012 * inside, 0.08 * (1 - ridge) * inside, None
+    if kind == "hexgrip":
+        # moulded rubber grip (the Weld Tool's): a honeycomb of shallow hexagons over the sides and the back, the cells
+        # parted by grooves; the front, with its finger bumps, and the very top and bottom are left smooth
+        g = nz[0].fbm(P * 500.0, 2)
+        side = np.abs(c.N[:, 2]) >= np.abs(c.N[:, 0])
+        a = np.where(side, P[:, 0], P[:, 2])
+        b = P[:, 1]
+        cell = 0.0034                          # centre to centre
+        w, h = cell, cell * math.sqrt(3.0)
+        best = np.full(len(P), np.inf)
+        second = np.full(len(P), np.inf)
+        for ox, oy in ((0.0, 0.0), (w / 2, h / 2)):
+            i0 = np.floor((a - ox) / w)
+            j0 = np.floor((b - oy) / h)
+            for di in (0, 1):
+                for dj in (0, 1):
+                    d = np.hypot(a - (ox + (i0 + di) * w), b - (oy + (j0 + dj) * h))
+                    second = np.where(d < best, best, np.minimum(second, d))
+                    best = np.minimum(best, d)
+        groove = sstep(0.00045, 0.0001, second - best)
+        inside = np.where(side, 1.0, (c.N[:, 0] < -0.3) * 1.0) * sstep(-0.044, -0.04, b) * sstep(0.04, 0.035, b)
+        groove = groove * inside
+        return 0.95 - 0.22 * groove + 0.05 * g, -0.0003 * groove, 0.08 * groove, None
+    if kind == "ribbed":
+        # the Paint Tool's rubber grip: ribs across the handle round its back and sides (lofts know the distance along
+        # them and their angle, 0 at the front); the front, with its finger bumps, is left smooth
+        g = nz[0].fbm(P * 500.0, 2)
+        if c.loft is None:
+            return 0.95 + 0.05 * g, 0.00005 * g, 0.03 * g, None
+        ok = ~np.isnan(c.loft[:, 0])
+        along = np.nan_to_num(c.loft[:, 0])
+        back = sstep(0.55, 0.3, np.nan_to_num(c.loft[:, 1], nan=1.0))
+        s = (along / 0.0058) % 1.0
+        ridge = np.where(ok, sstep(0.0, 0.2, s) * sstep(0.72, 0.52, s) * back, 0.0)
+        return 0.88 + 0.18 * ridge + 0.05 * g, 0.00035 * ridge, 0.08 * (1 - ridge), None
     if kind == "knurl":
         # diamond knurling on a round grip: lofts know their angle and the distance along them
         g = nz[0].fbm(P * 500.0, 2)

@@ -109,7 +109,7 @@ public partial class SoilTest : StagedTest
         {
             if (frame == 0)
             {
-                var at = Me.GlobalPosition + new Vector3(1.5f, 0.125f - Me.GlobalPosition.Y, -1.5f);
+                var at = Me.GlobalPosition + new Vector3(1.5f, 0.125f, -1.5f);
                 var sideways = GridRotation.FromAxes(new GridCell(1, 0, 0), new GridCell(0, 0, 1));
                 _client.Main.Actions.Request(BuildActions.PlacePart, new PlacePartArgs(Soil, GridCell.Zero, sideways, Position: at.ToNumerics().ToVec3()), _results.Add);
                 return false;
@@ -124,7 +124,7 @@ public partial class SoilTest : StagedTest
         {
             if (frame == 0)
             {
-                var at = Me.GlobalPosition + new Vector3(-1.5f, 0.125f - Me.GlobalPosition.Y, -1.5f);
+                var at = Me.GlobalPosition + new Vector3(-1.5f, 0.125f, -1.5f);
                 _client.Main.Actions.Request(BuildActions.PlacePart, new PlacePartArgs(Block, GridCell.Zero, Position: at.ToNumerics().ToVec3()), _results.Add);
                 return false;
             }

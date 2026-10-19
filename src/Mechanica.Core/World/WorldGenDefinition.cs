@@ -29,6 +29,24 @@ public sealed record WorldGenDefinition
     /// <summary>The ground that steep slopes take over with (rock), whatever the biome.</summary>
     public SlopeGroundDefinition? SlopeGround { get; init; }
 
+    /// <summary>
+    /// The world map's broad layout: each biome cell takes the biome of the nearest region. Omitted: every inland cell
+    /// picks a biome at random by <see cref="BiomeDefinition.Weight"/>.
+    /// </summary>
+    public List<RegionDefinition>? Regions { get; init; }
+
+    /// <summary>Rivers cut through the land.</summary>
+    public List<RiverDefinition>? Rivers { get; init; }
+
+    /// <summary>The road network between the <see cref="Sites"/> (and dirt tracks to camps). Omitted: no roads.</summary>
+    public RoadsDefinition? Roads { get; init; }
+
+    /// <summary>The world's mandatory structures, at the same place in every world.</summary>
+    public List<SiteDefinition>? Sites { get; init; }
+
+    /// <summary>Prefab pools that sites draw from, shuffled per seed.</summary>
+    public List<PoolDefinition>? Pools { get; init; }
+
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
@@ -79,6 +97,78 @@ public sealed record TerrainDefinition
     /// <summary>Steepest ground (rise over run) that scattered objects stand on.</summary>
     public float MaxScatterSlope { get; init; } = 0.7f;
 
+    /// <summary>How far, in metres, slow noise bends the borders between <see cref="WorldGenDefinition.Regions"/>.</summary>
+    public float RegionWarp { get; init; } = 400f;
+
+    /// <summary>The broad hills every inland biome stands on. Omitted: none.</summary>
+    public HillsDefinition? Hills { get; init; }
+
+    /// <summary>Cliff terraces: plateaus that step up towards the middle of the island. Omitted: none.</summary>
+    public CliffsDefinition? Cliffs { get; init; }
+
+    /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>
+/// The broad hills under every inland biome: slow fractal noise, a kilometre or so from crest to crest, that lifts the land
+/// from the shores up to <see cref="Height"/>. Water stays flat: the hills ease in over <see cref="ShoreRamp"/> from the
+/// coast, rivers and flat biomes (lakes), and over <see cref="PadRamp"/> from sites with a fixed pad height.
+/// </summary>
+public sealed record HillsDefinition
+{
+    /// <summary>Most the hills lift the ground, in metres.</summary>
+    public float Height { get; init; }
+
+    /// <summary>Wavelength of the largest hills in metres.</summary>
+    public float Scale { get; init; } = 1024f;
+
+    /// <summary>Noise layers, each at twice the frequency of the last.</summary>
+    public int Octaves { get; init; } = 4;
+
+    /// <summary>Amplitude step between layers.</summary>
+    public float Gain { get; init; } = 0.5f;
+
+    /// <summary>How strongly the noise is stretched before it is clamped: higher gives broader flat valleys and tops.</summary>
+    public float Contrast { get; init; } = 2f;
+
+    /// <summary>Metres over which the hills rise from water and flat biomes to full height.</summary>
+    public float ShoreRamp { get; init; } = 320f;
+
+    /// <summary>Metres beyond a fixed pad's rim (a site's <c>pad_height</c>) over which the hills rise to full height.</summary>
+    public float PadRamp { get; init; } = 160f;
+
+    /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>
+/// Cliff terraces: the ground stands on up to <see cref="Levels"/> plateaus, each <see cref="Step"/> metres above the last,
+/// with short steep rock faces between them. The levels come from slow noise, rise towards the middle of the island over
+/// <see cref="Inland"/> and fade where the hills do, so shores and lakes lie flat.
+/// </summary>
+public sealed record CliffsDefinition
+{
+    /// <summary>Height of one cliff in metres.</summary>
+    public float Step { get; init; } = 8f;
+
+    /// <summary>Most plateaus stacked above the ground.</summary>
+    public int Levels { get; init; } = 4;
+
+    /// <summary>Wavelength of the noise the levels come from, in metres.</summary>
+    public float Scale { get; init; } = 384f;
+
+    /// <summary>How strongly the noise is stretched before it is clamped, like <see cref="HillsDefinition.Contrast"/>.</summary>
+    public float Contrast { get; init; } = 2f;
+
+    /// <summary>Metres of ground a cliff face takes, foot to top; smaller is steeper.</summary>
+    public float Face { get; init; } = 6f;
+
+    /// <summary>Metres from the coast over which the plateaus rise to their full number.</summary>
+    public float Inland { get; init; } = 1200f;
+
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
@@ -101,6 +191,21 @@ public sealed record BiomeDefinition
 
     /// <summary>How far the ground rises and falls around <see cref="Height"/>, in metres.</summary>
     public float Relief { get; init; }
+
+    /// <summary>
+    /// 0 to 1: how much of the relief is ridged noise, sharp crests between rounded valleys (mountains), rather than
+    /// rolling hills.
+    /// </summary>
+    public float Ridge { get; init; }
+
+    /// <summary>Height in metres of the steps the ground is terraced into (desert plateaus). 0: no terraces.</summary>
+    public float Terrace { get; init; }
+
+    /// <summary>
+    /// 0 to 1: how much of the <see cref="TerrainDefinition.Hills"/> and <see cref="TerrainDefinition.Cliffs"/> this biome
+    /// keeps (0 for lakes, which lie flat). Its neighbours ease to it over <see cref="HillsDefinition.ShoreRamp"/>.
+    /// </summary>
+    public float Hills { get; init; } = 1f;
 
     /// <summary>Ground colour, <c>#rrggbb</c>: the map, and the ground itself where no <see cref="Ground"/> texture is set.</summary>
     public string? Color { get; init; }
@@ -583,6 +688,15 @@ public sealed record PoiPrefab
     /// </summary>
     public string? Flora { get; init; }
 
+    /// <summary>
+    /// What connects the POI to the road network (<see cref="RoadLinks"/>): <c>road</c> (only where a site places it),
+    /// <c>track</c> (a dirt track to the nearest road, when one is near) or <c>none</c> (the default).
+    /// </summary>
+    public string? Road { get; init; }
+
+    /// <summary>Footprint as built, <c>[width, height, depth]</c> in metres: for the placement manifest and later design work.</summary>
+    public Vec3? Size { get; init; }
+
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
@@ -591,6 +705,7 @@ public sealed record PoiPrefab
 /// <summary>
 /// Placement rules. Either <see cref="Fixed"/> (one POI at that spot) or <see cref="Spacing"/>: one
 /// candidate per cell of a grid whose step is the middle of the range, jittered so neighbours stay within it.
+/// With neither, the POI goes only where a site (<see cref="SiteDefinition"/>) places it.
 /// </summary>
 public sealed record PoiPlacement
 {
@@ -611,6 +726,9 @@ public sealed record PoiPlacement
 
     /// <summary>Higher goes first and wins contested ground.</summary>
     public int Priority { get; init; }
+
+    /// <summary>Metres a spaced POI's footprint keeps clear of every other POI's footprint and of roads.</summary>
+    public float Clearance { get; init; }
 
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]

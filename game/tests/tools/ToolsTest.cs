@@ -25,7 +25,7 @@ namespace Mechanica.Game.Tests;
 public partial class ToolsTest : StagedTest
 {
     private const string Block = "build_test:block";
-    private const string Red = "#d03030";
+    private const string Red = "#e03c3c";
 
     private readonly List<ActionResult> _results = [];
     private NetTestHarness _harness = null!;
@@ -143,22 +143,25 @@ public partial class ToolsTest : StagedTest
             Check(_results[0].Ok && _client.Main.Creations.Find(_bar)!.FindPart(2)!.Color is null, $"the paint is gone ({_results[0]})");
             return true;
         });
-        Add("the colour picker opens round the cursor and picks by direction", _ =>
+        Add("the colour picker opens round the cursor with every colour in its shades", _ =>
         {
             var picker = Tools.Paint.Picker;
+            var paint = _client.Main.Build.Settings!.Paint;
+            Check(paint.Palette.Count == 40 && picker.Hues == 10 && picker.Shades == 4, $"10 base colours in 4 shades ({picker.Hues} x {picker.Shades})");
             picker.Open(Tools.Paint.ColorIndex);
             Check(picker.IsOpen, "Q opens the picker");
-            var count = _client.Main.Build.Settings!.Paint.Palette.Count;
-            var at = Core.Ui.RadialMenu.Position(4, count, picker.Radius);
-            Check(picker.PointAt(picker.Centre + new Vector2(at.X, at.Y)) == 4, $"pointing at the fifth swatch highlights it ({picker.Hovered})");
+            for (var i = 0; i < paint.Palette.Count; i++)
+                Check(picker.PointAt(picker.CellCentre(i)) == i, $"pointing at colour {i} highlights it ({picker.Hovered})");
+            Check(picker.PointAt(picker.Centre) == -1, "the middle picks nothing");
+            picker.PointAt(picker.CellCentre(6));
             picker.Choose(picker.Hovered);
-            Check(!picker.IsOpen && Tools.Paint.ColorIndex == 4, $"left click takes it and closes ({Tools.Paint.ColorIndex})");
+            Check(!picker.IsOpen && Tools.Paint.ColorIndex == 6, $"left click takes it and closes ({Tools.Paint.ColorIndex})");
             picker.Open(Tools.Paint.ColorIndex);
             picker._Input(Key(Core.Input.InputActions.Hotbar(3)));
-            Check(!picker.IsOpen && Tools.Paint.ColorIndex == 2, $"the third number key takes the third colour ({Tools.Paint.ColorIndex})");
+            Check(!picker.IsOpen && Tools.Paint.ColorIndex == 2 * 4 + 2, $"the third number key takes the third base colour in the same shade ({Tools.Paint.ColorIndex})");
             picker.Open(Tools.Paint.ColorIndex);
             picker._Input(Key(Core.Input.InputActions.Pause));
-            Check(!picker.IsOpen && Tools.Paint.ColorIndex == 2, "Esc closes it with no change");
+            Check(!picker.IsOpen && Tools.Paint.ColorIndex == 10, "Esc closes it with no change");
             picker.Open(Tools.Paint.ColorIndex);
             picker._Input(Key(Core.Input.InputActions.Rotate));
             Check(!picker.IsOpen, "and so does a second Q");
@@ -166,6 +169,33 @@ public partial class ToolsTest : StagedTest
                 Tools.Paint.Cycle(1);
             return true;
         });
+        Add("the tool's colour reaches the host", frame =>
+        {
+            var seen = _host.Main.PlayerSync.Players[_client.Main.Session.LocalPeer];
+            if (seen.ShownProp != Core.Characters.CharacterProp.PaintTool || seen.ShownTint != Tools.Paint.ColorIndex)
+                return frame > 120 && Fail($"the host never saw the colour ({seen.ShownProp}, {seen.ShownTint})");
+            Check(_host.Main.PaintLook.TintColor(seen.ShownTint).IsEqualApprox(new Color(Red)), "the host tints the tool red");
+            Check(!seen.Body.HasFlag(Core.Net.BodyFlags.Guard), "and it is not spraying");
+            return true;
+        });
+        Add("a right drag sprays the pale mist on every peer", frame =>
+        {
+            if (frame == 0)
+                Check(Tools.Paint.BeginStroke(erase: true), "the drag starts");
+            var seen = _host.Main.PlayerSync.Players[_client.Main.Session.LocalPeer];
+            if (!seen.Body.HasFlag(Core.Net.BodyFlags.Guard) || (seen.ShownTint & Core.Characters.CharacterRig.TintErase) == 0)
+                return frame > 120 && Fail($"the host never saw it spray to take paint off ({seen.Body}, {seen.ShownTint})");
+            Tools.Paint.EndStroke();
+            return true;
+        });
+        Add("R twists the tank off and no paint goes on meanwhile", _ =>
+        {
+            Check(Tools.Paint.Reload(), "R starts a reload");
+            Check(Tools.Paint.Reloading && !Tools.Paint.BeginStroke() && !Tools.Paint.Reload(), "no drag or second reload while it lasts");
+            Check(Tools.Paint.AmmoText() == Ui.Loc.T("Reloading…"), $"the counter says it is reloading ({Tools.Paint.AmmoText()})");
+            return true;
+        });
+        Add("the reload ends", _ => !Tools.Paint.Reloading);
         Add("aim at the bar's first block", frame => LookAt(_client, PartCentre(_client, _bar, 1), frame));
         Add("a drag starts on it", _ =>
         {
@@ -432,6 +462,19 @@ public partial class ToolsTest : StagedTest
             return true;
         });
         Add("drag to the top of the bar", frame => LookAt(_client, PartCentre(_client, _bar, 1) + new Vector3(0, 0.125f, 0), frame));
+        Add("a block built on the ground stays put, so the weld shows red until it is knocked loose", frame =>
+        {
+            if (frame == 0)
+            {
+                Tools.Weld.UpdateAim();
+                Check(_client.Main.Creations.Find(_lone)!.IsGrounded && Tools.Weld.Problem is { } why && why.Contains("built on the ground", StringComparison.Ordinal)
+                    && !Tools.Weld.CanWeld && Tools.Weld.Plane.MaterialOverride == WeldTool.InvalidPlaneMaterial,
+                    $"the lone block was built on the ground, so welding it onto the bar is red ({Tools.Weld.Problem})");
+                _host.Main.Creations.Find(_lone)!.ClearAnchors();
+                _host.Main.Build.Moved(_host.Main.Creations.Find(_lone)!);
+            }
+            return !_client.Main.Creations.Find(_lone)!.IsGrounded && Tools.Weld.Dragging;
+        });
         Add("letting go there welds the block on top", frame =>
         {
             if (frame == 0)
@@ -440,6 +483,20 @@ public partial class ToolsTest : StagedTest
                 Tools.Weld.UpdateAim();
                 Check(Tools.Weld.Aim is { } aim && aim.Creation.Id == _bar, $"it aims at the bar ({Tools.Weld.Aim})");
                 Check(Tools.Weld.Plane.Visible && Tools.Weld.Joining is { Faces.Count: > 0 }, "a blue square marks the weld plane");
+                Check(Tools.Weld.CanWeld && Tools.Weld.Problem is null && Tools.Weld.Plane.MaterialOverride == WeldTool.PlaneMaterial,
+                    $"the weld would be taken: the square is blue ({Tools.Weld.Problem})");
+                Check(Tools.Weld.GetNode<Node3D>("Preview").GetChildren().OfType<GeometryInstance3D>().All(m => m.MaterialOverride == WeldTool.ValidMaterial),
+                    "and the moved block's copy is green");
+                Check(_client.Main.LocalPlayer!.HeldGuard, "the tool is held up while a part is selected");
+                // A weld the host would refuse shows red: here, without a Weld Tool to carry.
+                var owned = Tools.Weld.Owned;
+                Tools.Weld.Owned = () => false;
+                Tools.Weld.UpdateAim();
+                Check(Tools.Weld.Problem is not null && !Tools.Weld.CanWeld && Tools.Weld.Plane.MaterialOverride == WeldTool.InvalidPlaneMaterial
+                    && Tools.Weld.GetNode<Node3D>("Preview").GetChildren().OfType<GeometryInstance3D>().All(m => m.MaterialOverride == BuildTool.InvalidMaterial),
+                    $"a weld that would be refused turns the square and the copy red ({Tools.Weld.Problem})");
+                Tools.Weld.Owned = owned;
+                Tools.Weld.UpdateAim();
                 Check(Tools.Weld.Release(_results.Add), "letting go sends Weld");
             }
             if (_results.Count == 0 || !SameEverywhere())
@@ -455,6 +512,7 @@ public partial class ToolsTest : StagedTest
             return true;
         });
         Wait("the bar settles", 30);
+        Add("with nothing selected the tool is lowered", _ => !_client.Main.LocalPlayer!.HeldGuard);
     }
 
     private void AddSledge()
@@ -690,5 +748,11 @@ public partial class ToolsTest : StagedTest
         var eye = who.Main.LocalPlayer!.Camera.GlobalPosition;
         var d = target - eye;
         return Look(who, Mathf.Atan2(-d.X, -d.Z), Mathf.Atan2(d.Y, new Vector2(d.X, d.Z).Length()), frame);
+    }
+
+    private bool Fail(string message)
+    {
+        Check(false, message);
+        return true;
     }
 }

@@ -69,6 +69,9 @@ public partial class CompassTest : StagedTest
                 ];
                 return false;
             }
+            // The test steps on physics frames; wait for the bar's next idle frame to pick the waypoints up.
+            if (!_compass.Marks.Any(m => m.Waypoint.Id == "ahead") && frame < 60)
+                return false;
             var marks = _compass.Marks.ToDictionary(m => m.Waypoint.Id, m => m.Mark);
             Check(Mathf.Abs(marks["ahead"].X) < 0.02f && !marks["ahead"].Behind, $"ahead is in the middle ({marks["ahead"]})");
             Check(Mathf.Abs(marks["right"].X - 0.5f) < 0.02f, $"45° right is halfway right ({marks["right"]})");

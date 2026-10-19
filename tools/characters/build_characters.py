@@ -43,6 +43,18 @@ ITEM_DIR = REPO / "mods" / "vanilla" / "meshes" / "items"
 FPS = 30
 
 
+def read_json_with_comments(path):
+    import json
+    import re
+    text = re.sub(r"^\s*//.*$", "", Path(path).read_text(), flags=re.M)
+    text = re.sub(r",\s*([}\]])", r"\1", text)
+    return json.loads(text)
+
+
+# The Paint Tool's tank in the reload, shared with the game (game/scripts/Building/PaintToolLook.cs).
+PAINT_TOOL = read_json_with_comments(REPO / "game" / "data" / "character.json")["paint_tool"]
+
+
 # =====================================================================================================
 # Small math helpers
 # =====================================================================================================
@@ -699,6 +711,13 @@ PALETTE = {
     "panel_line": ("#141517", 0.7, 0.6),
     "grip_chevron": ("#1d1e20", 0.8, 0.05),
     "accent_orange": ("#e8670f", 0.42, 0.0),
+    # weld tool
+    "grip_hex": ("#1e1f21", 0.82, 0.0),
+    # paint tool
+    "paint_teal": ("#2d6870", 0.62, 0.05),
+    "paint_dark": ("#3b3e42", 0.55, 0.1),
+    "paint_face": ("#25272a", 0.6, 0.1),
+    "paint_grip": ("#1c1d1e", 0.84, 0.0),
     "void": ("#060505", 1.0, 1.0),          # the inside of a cut sleeve: no light comes back from it
     "default": ("#808080", 0.5, 0.0),
 }
@@ -3047,6 +3066,61 @@ def clip_sit(t):
     return s
 
 
+# Seat heights the sit clips are made for: the hips (the pelvis bone) above the floor the feet rest on, in m. The game
+# blends "sit" (a chair) and "sit_low" (a low seat, legs out in front) to fit each seat (character.json sit_clips must
+# match). Standing, the hips are REST_HIPS up.
+REST_HIPS = 0.972
+SIT_HIPS = 0.53
+SIT_LOW_HIPS = 0.30            # measured: 0.308, the hips tip back a little
+
+
+def clip_sit_low(t):
+    """A low seat (a kart or a crate): the hips 0.30 m up, the legs out in front with the knees up, leaning back a little;
+    hands on the wheel like ``sit``."""
+    T = 2.0
+    ph = 2 * math.pi * t / T
+    br = math.sin(ph)
+    s = relaxed_upper(60)
+    s["hips_z"] = SIT_LOW_HIPS - REST_HIPS
+    s["hips"] = (-14.0, 0, 0)
+    s["spine"] = (7.0 + 0.6 * br, 0, 0)
+    s["chest"] = (4.0 - 0.8 * br, 0, 0)
+    s["neck"] = (2.0, 0, 0)
+    s["head"] = (1.0 + 0.4 * br, 0, 1.5 * math.sin(ph))
+    for side in ("l", "r"):
+        sg = side_sign(side)
+        s[f"leg_{side}"] = {"ankle": (sg * 0.13, -0.70, 0.085), "pitch": 0.0, "yaw": 4.0, "pole": (sg * 0.15, -0.4, 1.0),
+                            "toe": 0.0}
+        grip = np.array([sg * 0.17, -0.42, 1.22 + 0.002 * br])
+        s[f"arm_{side}"] = arm_ik_from_grip(side, grip, (sg * -0.2, -0.95, -0.2), (sg * -0.2, 0.0, 1.0),
+                                            pole=(sg * 0.7, 0.4, -1.0))
+        s[f"thumb_{side}"] = 35.0
+    return s
+
+
+def ride_hands(s):
+    """A passenger's hands resting on the thighs (no wheel), in place of the hands of a sit clip."""
+    legs = build_pose({k: v for k, v in s.items() if not k.startswith(("arm_", "fingers_", "thumb_"))})
+    for side in ("l", "r"):
+        sg = side_sign(side)
+        hip, knee = legs.P[f"thigh_{side}"], legs.P[f"shin_{side}"]
+        along = norm(knee - hip)
+        grip = hip + (knee - hip) * 0.62 + np.array([sg * 0.01, 0.0, 0.085])
+        s[f"arm_{side}"] = arm_ik_from_grip(side, grip, tuple(along + np.array([0, 0, -0.35])), (-sg * 1.0, 0.0, 0.25),
+                                            pole=(sg * 0.8, 0.6, -0.2), space="world")
+        s[f"fingers_{side}"] = 22.0
+        s[f"thumb_{side}"] = 12.0
+    return s
+
+
+def clip_sit_ride(t):
+    return ride_hands(clip_sit(t))
+
+
+def clip_sit_ride_low(t):
+    return ride_hands(clip_sit_low(t))
+
+
 # ------------------------------------------------------------------------------------------------
 # Upper-body clips (only spine/chest/neck/head/shoulders/arms/hands/fingers/thumbs are keyed)
 # ------------------------------------------------------------------------------------------------
@@ -3106,27 +3180,6 @@ def clip_tool_use(t):
     push = with_right_arm(h, arm_r=tool_arm(TOOL_GRIP + np.array([0.01, -0.13, 0.03])), chest=(3.0, 0, 2.0),
                           spine=(2.0, 0, 1.0))
     return oneshot([(0.0, h), (0.12, push), (0.18, push), (0.3, h)], t)
-
-
-def clip_weld(t):
-    h = hold_tool_static()
-    aim = with_right_arm(h, arm_r=tool_arm(TOOL_GRIP + np.array([0.0, -0.1, 0.04]), d=(0.05, -0.97, 0.05),
-                                           w=(0.1, 0.0, 1.0)), chest=(4.0, 0, 2.0))
-    keys = [(0.0, h), (0.1, aim)]
-    for i, tt in enumerate((0.16, 0.22, 0.28, 0.34)):
-        j = np.array([0.004 * (-1) ** i, 0.0, 0.004 * (-1) ** (i // 2)])
-        keys.append((tt, with_right_arm(aim, arm_r=tool_arm(TOOL_GRIP + np.array([0.0, -0.1, 0.04]) + j,
-                                                             d=(0.05, -0.97, 0.05), w=(0.1, 0.0, 1.0)))))
-    keys += [(0.4, aim), (0.5, h)]
-    return oneshot(keys, t)
-
-
-def clip_paint_spray(t):
-    h = hold_tool_static()
-    def aim(x):
-        return with_right_arm(h, arm_r=tool_arm(TOOL_GRIP + np.array([x, -0.08, 0.06]), d=(x * 1.5, -0.97, 0.05),
-                                                w=(0.1, 0.0, 1.0)), chest=(3.0, 0, -x * 40))
-    return oneshot([(0.0, h), (0.08, aim(-0.08)), (0.3, aim(0.1)), (0.4, h)], t)
 
 
 # The Sledgehammer, built to its reference sheet: 1.3 m long, a 38 mm steel shaft with a 280 mm knurled rubber grip
@@ -4174,6 +4227,380 @@ def clip_connect_reverse_fp(t):
                                 CONNECT_AIM_PROBE_FP)
 
 
+# The Weld Tool, held like the Connect Tool: drawn from the right hip into a forward hold at chest height (weld_draw,
+# hold_weld), raised and aimed level while a part is selected (hold_weld_aim, the guard flag), pushed in a little and
+# held steady while a weld registers (weld: the clamping arms close and the tip spins and glows, moved by the game),
+# then put back on the hip (weld_stow). Both loops sway and breathe; the aim sways less.
+WELD_DRAW_SECONDS = 0.5
+WELD_STOW_SECONDS = 0.45
+WELD_SECONDS = 0.6
+WELD_R = np.array([-0.16, -0.32, 1.08])
+WELD_DIR = norm(np.array([0.08, -1.0, -0.2]))
+WELD_AIM_R = np.array([-0.11, -0.47, 1.3])
+WELD_AIM_DIR = norm(np.array([0.1, -1.0, 0.0]))
+
+
+def weld_arm(grip, tip, up=(0.0, 0.0, 1.0), roll=0.0, space="world", pole=(-0.6, 0.5, -1.0)):
+    """A fist on the Weld Tool's grip at grip, its tip along tip and the top of its housing toward up."""
+    tip = norm(np.asarray(tip, float))
+    top = np.asarray(up, float)
+    top = norm(top - np.dot(top, tip) * tip)
+    if roll:
+        r = math.radians(roll)
+        top = top * math.cos(r) + np.cross(tip, top) * math.sin(r)
+    rk = math.radians(WELD_RAKE)
+    d = tip * math.cos(rk) - top * math.sin(rk)
+    w = tip * math.sin(rk) + top * math.cos(rk)
+    return arm_ik_from_grip("r", np.asarray(grip, float), d, w, pole=pole, space=space)
+
+
+def weld_key(grip, tip, up=(0.0, 0.0, 1.0), roll=0.0, t=0.0, amp=1.0, **body):
+    s = upper_base(t, 2.0, amp)
+    relaxed_left(s, 2 * math.pi * t / 2.0)
+    s["arm_r"] = weld_arm(grip, tip, up, roll)
+    s["fingers_r"], s["thumb_r"] = 92.0, 40.0
+    s.update(body)
+    return s
+
+
+def clip_hold_weld(t, T=2.0):
+    dp, da = connect_sway(t, T, 1.0)
+    return weld_key(WELD_R + dp, WELD_DIR + da, t=t, chest=(2.0, 0.0, -2.0))
+
+
+def clip_hold_weld_aim(t, T=2.0):
+    dp, da = connect_sway(t, T, 0.4)
+    return weld_key(WELD_AIM_R + dp, WELD_AIM_DIR + da, t=t, amp=0.5, **AIM_BODY)
+
+
+def weld_hip_key():
+    return weld_key(CONNECT_HIP, CONNECT_HIP_PROBE, CONNECT_HIP_UP)
+
+
+def clip_weld_draw(t):
+    ready = clip_hold_weld(0.0)
+    lift = weld_key(np.array([-0.24, -0.1, 1.02]), norm(np.array([-0.1, -0.5, -0.86])), (0.1, 0.9, 0.3),
+                    chest=(1.0, 0.0, -1.0))
+    swing = weld_key(np.array([-0.2, -0.25, 1.08]), norm(np.array([0.0, -0.95, -0.3])), chest=(2.0, 0.0, -2.0))
+    return oneshot([(0.0, weld_hip_key()), (0.16, lift), (0.32, swing), (WELD_DRAW_SECONDS, ready)], t, template=ready)
+
+
+def clip_weld_stow(t):
+    ready = clip_hold_weld(0.0)
+    hip = weld_hip_key()
+    lift = weld_key(np.array([-0.23, -0.12, 1.04]), norm(np.array([-0.1, -0.5, -0.86])), (0.1, 0.9, 0.3),
+                    chest=(1.0, 0.0, -1.0))
+    return oneshot([(0.0, ready), (0.15, lift), (0.32, hip), (WELD_STOW_SECONDS, hip)], t, template=ready)
+
+
+def weld_press_clip(t, aim_key, grip, tip):
+    """The weld: the tool pushed in against the seam and held there, trembling a little as the arms clamp, then eased
+    back."""
+    ready = aim_key(grip, tip)
+    keys = [(0.0, ready), (0.08, aim_key(grip + tip * 0.03, norm(tip + np.array([0.0, 0.0, -0.04]))))]
+    for k, tt in enumerate((0.16, 0.24, 0.32, 0.4)):
+        j = np.array([0.0025 * (-1) ** k, 0.0, 0.0025 * (-1) ** (k // 2)])
+        keys.append((tt, aim_key(grip + tip * 0.03 + j, norm(tip + np.array([0.0, 0.0, -0.04])))))
+    keys.append((WELD_SECONDS, ready))
+    return oneshot(keys, t, template=ready)
+
+
+def clip_weld(t):
+    return weld_press_clip(t, lambda g, p: weld_key(g, p, amp=0.5, **AIM_BODY), WELD_AIM_R, WELD_AIM_DIR)
+
+
+# First person: as the Connect Tool's, the tool at the lower right with its tip toward the middle of the view (raised:
+# further in and level with the crosshair).
+WELD_R_FP = np.array([-0.14, -0.39, 1.12])
+WELD_DIR_FP = norm(np.array([0.17, -0.98, 0.1]))
+WELD_AIM_R_FP = np.array([-0.115, -0.43, 1.145])
+WELD_AIM_DIR_FP = norm(np.array([0.1, -0.98, 0.16]))
+
+
+def weld_key_fp(grip, tip, up=(0.0, 0.0, 1.0), roll=0.0, t=0.0):
+    s = upper_base(t, 2.0, amp=0.5)
+    s.update(relaxed_upper(18))
+    s.update({k: v for k, v in FP_BODY.items() if k != "space"})
+    s["arm_r"] = weld_arm(grip, tip, up, roll, pole=FP_POLES[0])
+    s["arm_l"] = dict(RELAXED_ARM, swing=15.0, down=45.0, elbow=40.0)
+    s["fingers_r"], s["thumb_r"] = 92.0, 40.0
+    return s
+
+
+def clip_hold_weld_fp(t, T=2.0):
+    dp, da = connect_sway(t, T, 0.6)
+    return weld_key_fp(WELD_R_FP + dp, WELD_DIR_FP + da, t=t)
+
+
+def clip_hold_weld_aim_fp(t, T=2.0):
+    dp, da = connect_sway(t, T, 0.25)
+    return weld_key_fp(WELD_AIM_R_FP + dp, WELD_AIM_DIR_FP + da, t=t)
+
+
+def clip_weld_draw_fp(t):
+    ready = clip_hold_weld_fp(0.0)
+    hip = weld_key_fp(CONNECT_HIP_FP, CONNECT_HIP_PROBE_FP, (0.1, 1.0, 0.0))
+    mid = weld_key_fp(np.array([-0.24, -0.33, 0.95]), norm(np.array([0.05, -0.7, -0.7])))
+    return oneshot([(0.0, hip), (0.22, mid), (WELD_DRAW_SECONDS, ready)], t, template=ready)
+
+
+def clip_weld_stow_fp(t):
+    ready = clip_hold_weld_fp(0.0)
+    hip = weld_key_fp(CONNECT_HIP_FP, CONNECT_HIP_PROBE_FP, (0.1, 1.0, 0.0))
+    mid = weld_key_fp(np.array([-0.24, -0.33, 0.95]), norm(np.array([0.05, -0.7, -0.7])))
+    return oneshot([(0.0, ready), (0.18, mid), (0.36, hip), (WELD_STOW_SECONDS, hip)], t, template=ready)
+
+
+def clip_weld_fp(t):
+    return weld_press_clip(t, lambda g, p: weld_key_fp(g, p), WELD_AIM_R_FP, WELD_AIM_DIR_FP)
+
+
+# The Paint Tool, held like a heavy pistol in the right hand: brought up from the right thigh with a short swing
+# (paint_draw, hold_paint), raised and steadied with the nozzles level at what the player looks at while the trigger is
+# held (hold_paint_aim, the guard flag), with a fine buzz from the pump, a kick of the nozzles as a stroke starts
+# (paint_spray), lowered back to the thigh (paint_stow), and the reload (paint_reload, R): the tool is tipped up and
+# across, the left hand takes the tank's cap, twists it out a quarter turn, draws it back and pushes it home, twists
+# it shut and lets go. The tank moves by paint_tool.tank in game/data/character.json, which the game reads too, so the
+# drawn tank stays in the left hand. The fist is placed in model space with the nozzles along a direction and the top
+# of the housing toward an up hint.
+PAINT_DRAW_SECONDS = 0.45
+PAINT_STOW_SECONDS = 0.4
+PAINT_SPRAY_SECONDS = 0.3
+PAINT_R = np.array([-0.155, -0.33, 1.05])           # fist in the hold: low chest height, the nozzles forward and down
+PAINT_DIR = norm(np.array([0.07, -1.0, -0.2]))
+PAINT_AIM_R = np.array([-0.115, -0.47, 1.25])       # raised: the arm out, the nozzles level at the crosshair
+PAINT_AIM_DIR = norm(np.array([0.1, -1.0, 0.0]))
+PAINT_LOW = np.array([-0.235, -0.12, 0.86])         # by the right thigh, nozzles down and forward
+PAINT_LOW_DIR = norm(np.array([0.04, -0.5, -0.87]))
+PAINT_LOW_UP = np.array([0.1, 0.9, 0.3])
+PAINT_RELOAD_R = np.array([-0.07, -0.42, 1.08])      # tipped up and across the chest for the reload
+PAINT_RELOAD_DIR = norm(np.array([0.32, -1.0, 0.14]))
+PAINT_RELOAD_UP = np.array([0.35, 0.0, 1.0])
+PAINT_GRIP_L_OUT = 0.055                             # the left fist's centre out from the tank's axis at its cap
+
+
+def paint_reload_seconds():
+    return PAINT_TOOL["reload_seconds"]
+
+
+def paint_tank_motion(clip, t):
+    """(twist degrees, pull metres) of the tank `t` s into `clip`: eased between paint_tool.tank's keys."""
+    keys = PAINT_TOOL["tank"].get(clip.removesuffix("_fp"))
+    if not keys:
+        return 0.0, 0.0
+    if t <= keys[0][0]:
+        return tuple(keys[0][1:])
+    for a, b in zip(keys, keys[1:]):
+        if t <= b[0]:
+            u = sstep(0.0, 1.0, (t - a[0]) / max(b[0] - a[0], 1e-9))
+            return tuple(x + (y - x) * u for x, y in zip(a[1:], b[1:]))
+    return tuple(keys[-1][1:])
+
+
+def pistol_dw(probe, up, roll, rake):
+    """Finger and handle directions of a fist on a raked pistol grip whose barrel points along probe, its top toward up
+    (rolled by roll degrees about the barrel)."""
+    probe = norm(np.asarray(probe, float))
+    top = np.asarray(up, float)
+    top = norm(top - np.dot(top, probe) * probe)
+    if roll:
+        r = math.radians(roll)
+        top = top * math.cos(r) + np.cross(probe, top) * math.sin(r)
+    rk = math.radians(rake)
+    return probe * math.cos(rk) - top * math.sin(rk), probe * math.sin(rk) + top * math.cos(rk)
+
+
+def paint_frame(grip, probe, up=(0.0, 0.0, 1.0), roll=0.0):
+    """The prop's grip frame in model space: (origin, 3x3 with the grip frame's x, y, z as columns)."""
+    d, w = pistol_dw(probe, up, roll, PAINT_RAKE)
+    return np.asarray(grip, float), np.column_stack([d, w, np.cross(d, w)])
+
+
+def paint_arm(grip, probe, up=(0.0, 0.0, 1.0), roll=0.0, pole=(-0.6, 0.5, -1.0)):
+    d, w = pistol_dw(probe, up, roll, PAINT_RAKE)
+    return arm_ik_from_grip("r", np.asarray(grip, float), d, w, pole=pole, space="world")
+
+
+def paint_left_on_tank(grip, probe, up, twist, pull, approach=0.0, pole=(0.7, 0.4, -1.0)):
+    """The left fist round the tank's cap, turned with it by twist degrees and drawn back pull m along its axis;
+    approach (0 to 1) holds it that far out from the cap, as it reaches for it or lets go."""
+    o, R = paint_frame(grip, probe, up)
+    to_model = lambda p: o + R @ paint_to_grip(p)
+    axis = R @ paint_axis()
+    a = math.radians(twist)
+    # in the gun frame: the cap's middle, and the left side (-w) and the top (+v) turned with the tank
+    cap = to_model((-0.131 - pull, PAINT_AXIS_V, 0.0))
+    side = norm(R @ paint_to_grip((0.0, math.sin(a), -math.cos(a))))
+    over = norm(R @ paint_to_grip((0.0, math.cos(a), math.sin(a))))
+    fist = cap + side * (PAINT_GRIP_L_OUT + 0.09 * approach) - axis * 0.04 * approach
+    return arm_ik_from_grip("l", fist, over, axis, pole=pole, space="world")
+
+
+def paint_key(grip, probe, up=(0.0, 0.0, 1.0), roll=0.0, t=0.0, amp=1.0, **body):
+    s = upper_base(t, 2.0, amp)
+    relaxed_left(s, 2 * math.pi * t / 2.0)
+    s["arm_r"] = paint_arm(grip, probe, up, roll)
+    s["fingers_r"], s["thumb_r"] = 90.0, 40.0
+    s.update(body)
+    return s
+
+
+def paint_sway(t, T, amp, buzz=0.0):
+    """A slow figure of eight of the fist and the nozzles, plus a fine buzz from the pump while spraying."""
+    ph = 2 * math.pi * t / T
+    hz = 2 * math.pi * 24 * t / T
+    return np.array([0.004 * math.sin(ph), 0.002 * math.sin(2 * ph), 0.005 * math.sin(ph + 0.6)]) * amp + \
+        np.array([0.0006 * math.sin(hz), 0.0004 * math.sin(hz * 1.5 + 1.0), 0.0007 * math.sin(hz + 2.0)]) * buzz, \
+        np.array([0.015 * math.sin(ph + 0.4), 0.0, 0.02 * math.sin(2 * ph + 1.0)]) * amp
+
+
+def clip_hold_paint(t, T=2.0):
+    dp, da = paint_sway(t, T, 1.0)
+    return paint_key(PAINT_R + dp, PAINT_DIR + da, t=t, chest=(2.0, 0.0, -2.0))
+
+
+def clip_hold_paint_aim(t, T=2.0):
+    dp, da = paint_sway(t, T, 0.35, buzz=1.0)
+    return paint_key(PAINT_AIM_R + dp, PAINT_AIM_DIR + da, t=t, amp=0.5, **AIM_BODY)
+
+
+def paint_low_key(body=None):
+    return paint_key(PAINT_LOW, PAINT_LOW_DIR, PAINT_LOW_UP, **(body or {}))
+
+
+def clip_paint_draw(t):
+    ready = clip_hold_paint(0.0)
+    swing = paint_key(np.array([-0.2, -0.27, 0.98]), norm(np.array([0.02, -0.95, -0.45])), chest=(2.0, 0.0, -1.0))
+    over = paint_key(PAINT_R + np.array([0.0, -0.02, 0.025]), norm(PAINT_DIR + np.array([0.0, 0.0, 0.12])),
+                     chest=(2.0, 0.0, -2.0))
+    return oneshot([(0.0, paint_low_key()), (0.16, swing), (0.32, over), (PAINT_DRAW_SECONDS, ready)], t, template=ready)
+
+
+def clip_paint_stow(t):
+    ready = clip_hold_paint(0.0)
+    swing = paint_key(np.array([-0.21, -0.25, 0.97]), norm(np.array([0.02, -0.9, -0.5])), chest=(1.0, 0.0, -1.0))
+    return oneshot([(0.0, ready), (0.14, swing), (0.32, paint_low_key()), (PAINT_STOW_SECONDS, paint_low_key())], t,
+                   template=ready)
+
+
+def paint_spray_clip(t, aim_key, grip, probe):
+    """The kick as a stroke starts: the nozzles jump up and back as the pump fires, then settle."""
+    ready = aim_key(grip, probe)
+    kick = aim_key(grip - probe * 0.014 + np.array([0.0, 0.0, 0.006]), norm(probe + np.array([0.0, 0.0, 0.1])))
+    return oneshot([(0.0, ready), (0.05, kick), (0.13, aim_key(grip, norm(probe + np.array([0.0, 0.0, -0.02])))),
+                    (PAINT_SPRAY_SECONDS, ready)], t, template=ready)
+
+
+def clip_paint_spray(t):
+    return paint_spray_clip(t, lambda g, p: paint_key(g, p, amp=0.5, **AIM_BODY), PAINT_AIM_R, PAINT_AIM_DIR)
+
+
+# The reload's right fist: to the tipped-up pose, held there while the left hand works, and back. Its keys are eased
+# like the tank's so the left hand, placed on the tank at every frame, stays on it.
+PAINT_RELOAD_KEYS = [(0.0, "ready"), (0.28, "tipped"), (1.12, "tipped"), (1.4, "ready")]
+# When the left hand reaches the cap, holds it, and is gone again.
+PAINT_LEFT_TIMES = (0.18, 0.38, 1.0, 1.22)
+
+
+def paint_reload_clip(t, ready, tipped, key, left_pole, fingers_open=18.0):
+    """ready and tipped: (grip, probe, up) of the fist; key(grip, probe, up) -> spec with the right arm on them."""
+    poses = {"ready": ready, "tipped": tipped}
+    grip, probe, up = ready
+    for (ta, a), (tb, b) in zip(PAINT_RELOAD_KEYS, PAINT_RELOAD_KEYS[1:]):
+        if t <= tb:
+            u = sstep(0.0, 1.0, (t - ta) / (tb - ta))
+            pa, pb = poses[a], poses[b]
+            grip = pa[0] + (pb[0] - pa[0]) * u
+            probe = norm(pa[1] + (pb[1] - pa[1]) * u)
+            up = norm(np.asarray(pa[2], float) + (np.asarray(pb[2], float) - np.asarray(pa[2], float)) * u)
+            break
+    s = key(grip, probe, up)
+    twist, pull = paint_tank_motion("paint_reload", t)
+    reach, take, release, gone = PAINT_LEFT_TIMES
+    if t <= reach or t >= gone:
+        return s
+    if t < take:
+        on = sstep(reach, take, t)
+    elif t > release:
+        on = 1.0 - sstep(release, gone, t)
+    else:
+        on = 1.0
+    hold = paint_left_on_tank(grip, probe, up, twist, pull, approach=1.0 - on, pole=left_pole)
+    rest = relaxed_arm_ik("l") | {"space": "world"}
+    # out of the relaxed arm and back into it, eased
+    w = sstep(reach, reach + 0.1, t) * (1.0 - sstep(gone - 0.1, gone, t))
+    s["arm_l"] = {k: (tuple(np.asarray(rest[k]) + (np.asarray(hold[k]) - np.asarray(rest[k])) * w) if k != "space"
+                      else "world") for k in hold}
+    s["fingers_l"] = fingers_open + (78.0 - fingers_open) * on
+    s["thumb_l"] = 10.0 + 35.0 * on
+    return s
+
+
+def clip_paint_reload(t):
+    return paint_reload_clip(
+        t, (PAINT_R, PAINT_DIR, (0.0, 0.0, 1.0)), (PAINT_RELOAD_R, PAINT_RELOAD_DIR, PAINT_RELOAD_UP),
+        lambda g, p, u: paint_key(g, p, u, chest=(4.0, 0.0, 3.0), spine=(2.0, 0.0, 2.0), neck=(6.0, 0.0, -3.0),
+                                  head=(8.0, 0.0, -4.0)),
+        (0.7, 0.4, -1.0))
+
+
+# First person: the stooped body of the other first-person clips, the elbow out of the bottom right of the view, the
+# tool low at the right with its nozzles toward the middle of the view (raised: further in and level with the
+# crosshair), and the thigh below the bottom right. The tank, behind the fist, stays out of the middle of the view.
+PAINT_R_FP = np.array([-0.15, -0.45, 1.08])
+PAINT_DIR_FP = norm(np.array([0.2, -0.98, 0.08]))
+PAINT_AIM_R_FP = np.array([-0.125, -0.5, 1.11])
+PAINT_AIM_DIR_FP = norm(np.array([0.13, -0.98, 0.13]))
+PAINT_LOW_FP = np.array([-0.3, -0.27, 0.76])
+PAINT_LOW_DIR_FP = norm(np.array([-0.1, -0.3, -0.95]))
+PAINT_RELOAD_R_FP = np.array([-0.06, -0.47, 1.03])
+PAINT_RELOAD_DIR_FP = norm(np.array([0.5, -0.5, 0.7]))
+
+
+def paint_key_fp(grip, probe, up=(0.0, 0.0, 1.0), roll=0.0, t=0.0):
+    s = upper_base(t, 2.0, amp=0.5)
+    s.update(relaxed_upper(18))
+    s.update({k: v for k, v in FP_BODY.items() if k != "space"})
+    s["arm_r"] = paint_arm(grip, probe, up, roll, pole=FP_POLES[0])
+    s["arm_l"] = dict(RELAXED_ARM, swing=15.0, down=45.0, elbow=40.0)
+    s["fingers_r"], s["thumb_r"] = 90.0, 40.0
+    return s
+
+
+def clip_hold_paint_fp(t, T=2.0):
+    dp, da = paint_sway(t, T, 0.6)
+    return paint_key_fp(PAINT_R_FP + dp, PAINT_DIR_FP + da, t=t)
+
+
+def clip_hold_paint_aim_fp(t, T=2.0):
+    dp, da = paint_sway(t, T, 0.2, buzz=1.0)
+    return paint_key_fp(PAINT_AIM_R_FP + dp, PAINT_AIM_DIR_FP + da, t=t)
+
+
+def clip_paint_draw_fp(t):
+    ready = clip_hold_paint_fp(0.0)
+    low = paint_key_fp(PAINT_LOW_FP, PAINT_LOW_DIR_FP, (0.1, 1.0, 0.0))
+    mid = paint_key_fp(np.array([-0.24, -0.38, 0.93]), norm(np.array([0.08, -0.75, -0.65])))
+    return oneshot([(0.0, low), (0.2, mid), (PAINT_DRAW_SECONDS, ready)], t, template=ready)
+
+
+def clip_paint_stow_fp(t):
+    ready = clip_hold_paint_fp(0.0)
+    low = paint_key_fp(PAINT_LOW_FP, PAINT_LOW_DIR_FP, (0.1, 1.0, 0.0))
+    mid = paint_key_fp(np.array([-0.24, -0.38, 0.93]), norm(np.array([0.08, -0.75, -0.65])))
+    return oneshot([(0.0, ready), (0.16, mid), (0.32, low), (PAINT_STOW_SECONDS, low)], t, template=ready)
+
+
+def clip_paint_spray_fp(t):
+    return paint_spray_clip(t, lambda g, p: paint_key_fp(g, p), PAINT_AIM_R_FP, PAINT_AIM_DIR_FP)
+
+
+def clip_paint_reload_fp(t):
+    return paint_reload_clip(t, (PAINT_R_FP, PAINT_DIR_FP, (0.0, 0.0, 1.0)),
+                             (PAINT_RELOAD_R_FP, PAINT_RELOAD_DIR_FP, PAINT_RELOAD_UP),
+                             lambda g, p, u: paint_key_fp(g, p, u), FP_POLES[1])
+
+
 # name: (function, duration seconds, loops, upper_body_only)
 # The Soil Bag, carried flat in front of the belly in both hands, a fist round the middle of each short end (the bag is
 # the right hand's prop; the left hand holds the other end). Taking it lifts it up from low down (bag_lift), putting it
@@ -4281,6 +4708,9 @@ CLIPS = {
     "swim_idle": (clip_swim_idle, 2.0, True, False),
     "swim": (clip_swim, 1.2, True, False),
     "sit": (clip_sit, 2.0, True, False),
+    "sit_low": (clip_sit_low, 2.0, True, False),
+    "sit_ride": (clip_sit_ride, 2.0, True, False),
+    "sit_ride_low": (clip_sit_ride_low, 2.0, True, False),
     "hold_tool": (clip_hold_tool, 2.0, True, True),
     "hold_heavy": (clip_hold_heavy, 2.0, True, True),
     "hold_heavy_block": (clip_hold_heavy_block, 2.0, True, True),
@@ -4295,8 +4725,7 @@ CLIPS = {
     "sledge_swing_side_fp": (clip_sledge_swing_side_fp, SWING_SECONDS, False, True),
     "sledge_swing_back_fp": (clip_sledge_swing_back_fp, SWING_SECONDS, False, True),
     "tool_use": (clip_tool_use, 0.3, False, True),
-    "weld": (clip_weld, 0.5, False, True),
-    "paint_spray": (clip_paint_spray, 0.4, False, True),
+    "paint_spray": (clip_paint_spray, PAINT_SPRAY_SECONDS, False, True),
     "fire_gun": (clip_fire_gun, 0.25, False, True),
     "eat": (clip_eat, 1.0, False, True),
     "throw": (clip_throw, 0.5, False, True),
@@ -4323,6 +4752,27 @@ CLIPS = {
     "connect_stow_fp": (clip_connect_stow_fp, CONNECT_STOW_SECONDS, False, True),
     "connect_click_fp": (clip_connect_click_fp, CONNECT_CLICK_SECONDS, False, True),
     "connect_reverse_fp": (clip_connect_reverse_fp, CONNECT_REVERSE_SECONDS, False, True),
+    "hold_weld": (clip_hold_weld, 2.0, True, True),
+    "hold_weld_aim": (clip_hold_weld_aim, 2.0, True, True),
+    "weld_draw": (clip_weld_draw, WELD_DRAW_SECONDS, False, True),
+    "weld_stow": (clip_weld_stow, WELD_STOW_SECONDS, False, True),
+    "weld": (clip_weld, WELD_SECONDS, False, True),
+    "hold_weld_fp": (clip_hold_weld_fp, 2.0, True, True),
+    "hold_weld_aim_fp": (clip_hold_weld_aim_fp, 2.0, True, True),
+    "weld_draw_fp": (clip_weld_draw_fp, WELD_DRAW_SECONDS, False, True),
+    "weld_stow_fp": (clip_weld_stow_fp, WELD_STOW_SECONDS, False, True),
+    "weld_fp": (clip_weld_fp, WELD_SECONDS, False, True),
+    "hold_paint": (clip_hold_paint, 2.0, True, True),
+    "hold_paint_aim": (clip_hold_paint_aim, 2.0, True, True),
+    "paint_draw": (clip_paint_draw, PAINT_DRAW_SECONDS, False, True),
+    "paint_stow": (clip_paint_stow, PAINT_STOW_SECONDS, False, True),
+    "paint_reload": (clip_paint_reload, paint_reload_seconds(), False, True),
+    "hold_paint_fp": (clip_hold_paint_fp, 2.0, True, True),
+    "hold_paint_aim_fp": (clip_hold_paint_aim_fp, 2.0, True, True),
+    "paint_draw_fp": (clip_paint_draw_fp, PAINT_DRAW_SECONDS, False, True),
+    "paint_stow_fp": (clip_paint_stow_fp, PAINT_STOW_SECONDS, False, True),
+    "paint_spray_fp": (clip_paint_spray_fp, PAINT_SPRAY_SECONDS, False, True),
+    "paint_reload_fp": (clip_paint_reload_fp, paint_reload_seconds(), False, True),
     "hold_bag": (clip_hold_bag, 2.0, True, True),
     "bag_spill": (clip_bag_spill, SPILL_SECONDS, False, True),
     "bag_lift": (clip_bag_lift, LIFT_SECONDS, False, True),
@@ -4334,7 +4784,9 @@ CLIPS = {
 }
 
 # the prop each clip shows in the right hand (verification renders and the game's defaults)
-CLIP_PROP = {"hold_tool": "lift_remote", "tool_use": "lift_remote", "weld": "weld_tool",
+CLIP_PROP = {"hold_tool": "lift_remote", "tool_use": "lift_remote",
+             **{c: "weld_tool" for c in ("hold_weld", "hold_weld_aim", "weld_draw", "weld_stow", "weld", "hold_weld_fp",
+                                         "hold_weld_aim_fp", "weld_draw_fp", "weld_stow_fp", "weld_fp")},
              "paint_spray": "paint_tool", "hold_heavy": "sledgehammer", "sledge_swing": "sledgehammer",
              "hold_heavy_block": "sledgehammer", "hold_heavy_fp": "sledgehammer", "hold_heavy_block_fp": "sledgehammer",
              "sledge_swing_fp": "sledgehammer", "sledge_swing_side": "sledgehammer", "sledge_swing_back": "sledgehammer",
@@ -4345,6 +4797,9 @@ CLIP_PROP = {"hold_tool": "lift_remote", "tool_use": "lift_remote", "weld": "wel
              **{name: "water_bucket" for name in BUCKET_CLIPS},
              **{name: "soil_bag" for name in ("hold_bag", "bag_spill", "bag_lift", "bag_lower", "hold_bag_fp",
                                                         "bag_spill_fp", "bag_lift_fp", "bag_lower_fp")},
+             **{c: "paint_tool" for c in ("hold_paint", "hold_paint_aim", "paint_draw", "paint_stow", "paint_reload",
+                                          "hold_paint_fp", "hold_paint_aim_fp", "paint_draw_fp", "paint_stow_fp",
+                                          "paint_spray_fp", "paint_reload_fp")},
              **{c: "connect_tool" for c in ("hold_connect", "hold_connect_aim", "connect_draw", "connect_stow", "connect_click",
                                             "connect_reverse", "hold_connect_fp", "hold_connect_aim_fp", "connect_draw_fp",
                                             "connect_stow_fp", "connect_click_fp", "connect_reverse_fp")}}
@@ -4443,31 +4898,297 @@ def prop_lift_remote():
     return p
 
 
-def prop_weld_tool():
-    p = [cylinder((-0.004, -0.06, 0), (0.0, 0.05, 0), 0.017, 12, "rubber", ref=X, bevel=0.004),
-         soft_box((0.03, 0.078, 0), (0.07, 0.024, 0.022), axes=(X, Y, Z), e=5, e2=5, segs=14, rings=7,
-                  mat="paint_grey"),
-         soft_box((0.0, 0.081, 0.0), (0.03, 0.027, 0.025), axes=(X, Y, Z), e=5, e2=5, segs=12, rings=5,
-                  mat="blue"),
-         cylinder((0.1, 0.078, 0), (0.17, 0.07, 0), 0.012, 12, "metal", ref=Y),
-         cylinder((0.17, 0.07, 0), (0.235, 0.05, 0), 0.0085, 10, "orange_dark", ref=Y),
-         cylinder((0.235, 0.05, 0), (0.25, 0.045, 0), 0.006, 8, "metal_dark", ref=Y),
-         box((0.03, 0.035, 0.0), (0.005, 0.012, 0.007), mat="orange")]
-    hose = [np.array([-0.03, 0.06, 0]), np.array([-0.07, 0.03, 0]), np.array([-0.08, -0.05, 0.01]),
-            np.array([-0.07, -0.16, 0.02])]
-    p.append(tube(hose, 0.008, 8, Z, "rubber"))
+# The Paint Tool, built to its reference sheet: a pistol-grip sprayer about 34 cm from the nozzle tips to the back of
+# its tank. A matte teal housing with dark grey panels and silver screws; at the front a dark round head with eight
+# nozzles in a ring round a hub, fed by eight tubes that loop out between the head and the housing; at the back a
+# clear paint tank (window, end rings and a rounded cap) on the housing's axis; under it a raked grip of black ribbed
+# rubber with finger bumps down the front, a trigger and a flared teal butt. It is modelled in a gun frame (u along the
+# nozzles, v up, w to the holder's right) with the fist at the origin and the grip PAINT_RAKE degrees back from upright,
+# then turned into the grip frame like the Connect Tool. The nozzle bodies and the tubes are a node of their own,
+# paint_tool_tint, and the paint in the tank is paint_tool_paint, so the game tints both with the colour picked; the
+# tank (paint_tool_tank: its cap, rings and the glass, paint_tool_glass) is its own node too, so the reload can twist
+# it out and back in.
+PAINT_RAKE = 15.0              # degrees the grip leans back from square to the nozzles
+PAINT_AXIS_V = 0.105           # the housing's, head's and tank's axis above the fist (gun frame v)
+PAINT_HEAD_U = 0.141           # back of the head
+PAINT_FACE_U = 0.158           # its front face, where the nozzles stand
+PAINT_NOZZLE_RING = 0.033      # nozzle centres from the axis
+PAINT_NOZZLE_TIP_U = 0.1915    # front of the nozzles
+PAINT_TANK_U = -0.040          # the tank's front (where it seats in its collar); the tank's node origin is here
+PAINT_TANK_BACK_U = -0.152     # back of its cap
+PAINT_TANK_R = 0.0445          # the window's radius
+PAINT_TINT = "#3874dc"         # the tubes' and the paint's colour in the model (the game sets the colour picked)
+
+
+# the housing's cross-sections along the axis: (u, centre above the axis, half height, half width)
+PAINT_HOUSING = [(-0.016, 0.004, 0.046, 0.039), (-0.004, 0.004, 0.052, 0.041), (0.012, 0.003, 0.056, 0.043),
+                 (0.088, 0.002, 0.057, 0.043), (0.110, 0.0, 0.054, 0.042), (0.120, -0.002, 0.049, 0.039),
+                 (0.126, -0.003, 0.042, 0.035), (0.129, -0.003, 0.033, 0.029)]
+PAINT_HOUSING_E = 3.4
+
+
+def paint_half_width(u, dv):
+    """How far the housing's side is from the middle at u along the axis, dv above it."""
+    us = [r[0] for r in PAINT_HOUSING]
+    c, hv, hw = (float(np.interp(u, us, [r[k] for r in PAINT_HOUSING])) for k in (1, 2, 3))
+    y = min(1.0, abs(dv - c) / hv)
+    return hw * (1.0 - y ** PAINT_HOUSING_E) ** (1.0 / PAINT_HOUSING_E)
+
+
+def _paint_rot():
+    r = math.radians(PAINT_RAKE)
+    return np.array([[math.cos(r), -math.sin(r), 0.0], [math.sin(r), math.cos(r), 0.0], [0.0, 0.0, 1.0]])
+
+
+def paint_to_grip(p):
+    """A gun-frame point (or direction) in the grip frame."""
+    return _paint_rot() @ np.asarray(p, float)
+
+
+def paint_nozzle_tip():
+    """The middle of the nozzle ring's front in the grip frame (where the spray comes from)."""
+    return paint_to_grip((PAINT_NOZZLE_TIP_U, PAINT_AXIS_V, 0.0))
+
+
+def paint_axis():
+    """Which way the nozzles point, in the grip frame."""
+    return paint_to_grip((1.0, 0.0, 0.0))
+
+
+def paint_tank_origin():
+    """The tank node's origin (the middle of its front, on the axis) in the grip frame."""
+    return paint_to_grip((PAINT_TANK_U, PAINT_AXIS_V, 0.0))
+
+
+def _paint_on(u, dv=0.0, w=0.0):
+    return np.array([u, PAINT_AXIS_V + dv, w])
+
+
+def _paint_nozzles():
+    """(angle, offset across the axis) of each nozzle: eight round the ring, one straight up."""
+    out = []
+    for k in range(8):
+        a = math.radians(90.0 + 45.0 * k)
+        out.append((a, np.array([0.0, math.sin(a), math.cos(a)]) * PAINT_NOZZLE_RING))
+    return out
+
+
+def _paint_parts():
+    U, V, W = X, Y, Z
+    on = _paint_on
+    p = []
+    # housing: a boxy loft along the axis, rounded at the front shoulder; its back end sits in the tank collar
+    p.append(loft([dict(c=on(u, dv), a=V, b=W, rx=hv, ry=hw, e=PAINT_HOUSING_E) for u, dv, hv, hw in PAINT_HOUSING],
+                  48, True, True, "paint_teal", True))
+    # top: a dark raised cover from behind the head back to the tank, and a button on it
+    p.append(soft_box(on(0.04, 0.0575), (0.072, 0.0075, 0.026), axes=(U, V, W), e=7, e2=7, segs=28, rings=8,
+                      mat="paint_dark"))
+    p.append(soft_box(on(0.075, 0.0655), (0.012, 0.0025, 0.009), axes=(U, V, W), e=6, e2=6, segs=16, rings=5,
+                      mat="paint_face"))
+    # each side: a slanted dark panel with an inset, a dark strip low at the front, a vent slot and four screws, all
+    # laid on the housing's curved side
+
+    def side(outline, s, proud, depth=0.004, mat="paint_dark"):
+        u = sum(x for x, _ in outline) / len(outline)
+        dv = sum(y for _, y in outline) / len(outline)
+        w = paint_half_width(u, dv)
+        return prism(outline, s * (w - depth), s * (w + proud), on(0.0), U, V, W, mat)
+
+    panel = [(0.010, 0.022), (0.070, 0.022), (0.088, -0.010), (0.028, -0.010)]
+    inset = [(0.019, 0.016), (0.065, 0.016), (0.078, -0.004), (0.033, -0.004)]
+    strip = [(0.074, -0.030), (0.116, -0.030), (0.110, -0.040), (0.080, -0.041)]
+    for s in (-1, 1):
+        p.append(side(panel, s, 0.0015))
+        p.append(side(inset, s, 0.0021, depth=0.0, mat="paint_face"))
+        p.append(side(strip, s, 0.0015))
+        p.append(side([(0.026, -0.036), (0.046, -0.036), (0.046, -0.040), (0.026, -0.040)], s, 0.0012, mat="paint_face"))
+        for du, dv in ((0.112, 0.036), (0.0, 0.040), (0.098, -0.022), (0.052, -0.026)):
+            base = on(du, dv, s * (paint_half_width(du, dv) - 0.0005))
+            p += hex_bolt(base, W * s, V, r=0.0031, height=0.0014, washer=False, mat="tool_silver")
+    # the neck between the housing and the head, then the head: a dark disc with six grip tabs round its rim, a
+    # recessed face, the hub and a screw in the middle
+    p.append(cylinder(on(0.124), on(PAINT_HEAD_U + 0.003), 0.025, 28, "paint_dark", ref=V))
+    p.append(cylinder(on(PAINT_HEAD_U), on(PAINT_FACE_U), 0.050, 48, "paint_dark", ref=V, bevel=0.003))
+    for k in range(6):
+        a = math.radians(30.0 + 60.0 * k)
+        out = np.array([0.0, math.sin(a), math.cos(a)])
+        tang = np.array([0.0, math.cos(a), -math.sin(a)])
+        p.append(soft_box(on(0.1495) + out * 0.0505, (0.0055, 0.0032, 0.007), axes=(U, out, tang), e=5, e2=5, segs=12,
+                          rings=5, mat="paint_face"))
+    p.append(cylinder(on(PAINT_FACE_U - 0.001), on(PAINT_FACE_U + 0.0012), 0.044, 48, "paint_face", ref=V))
+    p.append(cylinder(on(PAINT_FACE_U), on(PAINT_FACE_U + 0.008), 0.0115, 24, "paint_dark", ref=V, bevel=0.0015))
+    p += hex_bolt(on(PAINT_FACE_U + 0.008), U, V, r=0.0042, height=0.0018, washer=False, mat="tool_silver")
+    # nozzle tips: silver, with a dark bore
+    for _, off in _paint_nozzles():
+        c = on(0.0) + off
+        p.append(cylinder(c + U * 0.1835, c + U * PAINT_NOZZLE_TIP_U, 0.0047, 14, "tool_silver", ref=V, bevel=0.0008))
+        p.append(cylinder(c + U * (PAINT_NOZZLE_TIP_U - 0.0008), c + U * (PAINT_NOZZLE_TIP_U + 0.0002), 0.0023, 10,
+                          "void", ref=V))
+    # the tank's collar on the housing: a dark band the tank twists into, with a silver lip
+    p.append(cylinder(on(-0.002), on(PAINT_TANK_U - 0.002), 0.048, 48, "paint_dark", ref=V, bevel=0.003))
+    p.append(cylinder(on(PAINT_TANK_U + 0.0015), on(PAINT_TANK_U - 0.0005), 0.0462, 48, "tool_silver", ref=V))
+    # grip: raked back, finger bumps down the front (theta 0 is the front), ribbed rubber below the trigger
+    rk = math.radians(PAINT_RAKE)
+    g = np.array([math.sin(rk), math.cos(rk), 0.0])
+    n = np.array([math.cos(rk), -math.sin(rk), 0.0])
+
+    def bumps(s):
+        def fn(th):
+            front = max(0.0, math.cos(th)) ** 3
+            ridge = 0.5 + 0.5 * math.cos(2 * math.pi * (s + 0.006) / 0.024)
+            return 1.0 + front * 0.07 * ridge * sstep(-0.074, -0.062, s) * sstep(0.022, 0.012, s)
+        return fn
+
+    gs = [(-0.090, 0.0262, 0.0200), (-0.080, 0.0268, 0.0204), (-0.062, 0.0262, 0.0198), (-0.035, 0.0252, 0.0190),
+          (-0.008, 0.0248, 0.0187), (0.018, 0.0254, 0.0190), (0.036, 0.0272, 0.0200), (0.050, 0.0295, 0.0215),
+          (0.060, 0.031, 0.022)]
+    grip = []
+    for s in [k / 1000.0 for k in range(-90, 61, 3)]:
+        j = min(max(int(np.searchsorted([x[0] for x in gs], s)), 1), len(gs) - 1)
+        (s0, a0, b0), (s1, a1, b1) = gs[j - 1], gs[j]
+        f = (s - s0) / (s1 - s0)
+        grip.append(dict(c=g * s, a=n, b=-W, rx=a0 + (a1 - a0) * f, ry=b0 + (b1 - b0) * f, e=2.6, fn=bumps(s)))
+    gp = loft(grip, 36, True, True, "paint_grip", True)
+    assign_mats(gp, lambda c: "paint_teal" if np.dot(c, g) > 0.03 or (np.dot(c, g) > 0.012 and np.dot(c, n) > 0.012)
+                else None)
+    p.append(gp)
+    # the butt: a flared teal block with a dark base plate and a silver lanyard bar at the back
+    p.append(soft_box((-0.024, -0.097, 0.0), (0.047, 0.0125, 0.0255), axes=(U, V, W), e=5, e2=5, segs=32, rings=8,
+                      mat="paint_teal"))
+    p.append(soft_box((-0.024, -0.1125, 0.0), (0.0475, 0.0045, 0.026), axes=(U, V, W), e=6, e2=6, segs=32, rings=5,
+                      mat="paint_face"))
+    p.append(soft_box((-0.072, -0.098, 0.0), (0.0018, 0.004, 0.011), axes=(U, V, W), e=6, e2=6, segs=12, rings=4,
+                      mat="tool_silver"))
+    # trigger, in front of the grip under the housing
+    trig = [np.array([0.046, 0.054, 0]), np.array([0.054, 0.038, 0]), np.array([0.054, 0.022, 0]),
+            np.array([0.047, 0.009, 0]), np.array([0.042, 0.006, 0])]
+    p.append(tube(trig, [(0.0055, 0.0042), (0.0055, 0.0042), (0.0052, 0.004), (0.0045, 0.0034), (0.003, 0.0025)], 14,
+                  W, "paint_dark"))
     return p
+
+
+def _paint_tint_parts():
+    """The nozzle bodies and the tubes that feed them, in the gun frame: everything the colour picked tints."""
+    U, V, W = X, Y, Z
+    on = _paint_on
+    p = []
+    for a, off in _paint_nozzles():
+        c = on(0.0) + off
+        p.append(cylinder(c + U * (PAINT_FACE_U - 0.0005), c + U * 0.1665, 0.0076, 16, "tint", ref=V, bevel=0.001))
+        p.append(cylinder(c + U * 0.166, c + U * 0.184, 0.0062, 16, "tint", ref=V, bevel=0.0012))
+        out = off / PAINT_NOZZLE_RING
+        loop = [on(PAINT_HEAD_U + 0.002) + out * PAINT_NOZZLE_RING, on(0.137) + out * 0.043, on(0.131) + out * 0.0465,
+                on(0.125) + out * 0.043, on(0.119) + out * 0.03]
+        p.append(tube(loop, 0.0042, 10, U, "tint"))
+    return p
+
+
+def _paint_tank_parts():
+    """The tank's solid parts in the gun frame: end rings round the window and the rounded cap with its port."""
+    U, V, W = X, Y, Z
+    on = _paint_on
+    b = PAINT_TANK_BACK_U
+    p = [cylinder(on(PAINT_TANK_U), on(PAINT_TANK_U - 0.005), 0.0465, 48, "paint_dark", ref=V, bevel=0.001),
+         cylinder(on(-0.117), on(-0.121), 0.0465, 48, "paint_dark", ref=V, bevel=0.001)]
+    cap = [(-0.120, 0.0478), (-0.135, 0.0482), (-0.142, 0.047), (-0.147, 0.0445), (-0.1505, 0.040), (b, 0.034),
+           (b, 0.0)]
+    p.append(tube([on(u) for u, _ in cap[:-1]], [r for _, r in cap[:-1]], 48, V, "paint_dark", cap=True))
+    # grip ridges round the cap, and the fill port on its back
+    for k in range(16):
+        a = 2 * math.pi * k / 16
+        out = np.array([0.0, math.sin(a), math.cos(a)])
+        tang = np.array([0.0, math.cos(a), -math.sin(a)])
+        p.append(soft_box(on(-0.1315) + out * 0.0482, (0.0085, 0.0015, 0.0022), axes=(U, out, tang), e=5, e2=5,
+                          segs=10, rings=4, mat="paint_face"))
+    p.append(bevel_box(on(b - 0.0004), (0.0016, 0.011, 0.011), 0.002, axes=(U, V, W), mat="tool_silver"))
+    p.append(bevel_box(on(b - 0.0018), (0.0008, 0.0075, 0.0075), 0.001, axes=(U, V, W), mat="void"))
+    return p
+
+
+def _paint_glass_parts():
+    on = _paint_on
+    return [tube([on(PAINT_TANK_U - 0.004), on(-0.118)], PAINT_TANK_R, 48, Y, "glass", cap=False)]
+
+
+def _paint_paint_parts():
+    on = _paint_on
+    return [cylinder(on(PAINT_TANK_U - 0.005), on(-0.117), PAINT_TANK_R - 0.003, 40, "tint", ref=Y)]
+
+
+def _paint_turn(parts, origin=(0.0, 0.0, 0.0)):
+    rot = _paint_rot()
+    for part in parts:
+        part.v = (part.v - np.asarray(origin, float)) @ rot.T
+    return parts
 
 
 def prop_paint_tool():
-    p = [cylinder((-0.004, -0.06, 0), (0.0, 0.05, 0), 0.016, 12, "paint_olive", ref=X, bevel=0.004),
-         soft_box((0.03, 0.074, 0), (0.06, 0.02, 0.02), axes=(X, Y, Z), e=5, e2=5, segs=14, rings=7, mat="metal_dark"),
-         cylinder((0.09, 0.074, 0), (0.14, 0.074, 0), 0.009, 10, "metal", ref=Y),
-         cylinder((0.14, 0.074, 0), (0.155, 0.074, 0), 0.006, 10, "orange", ref=Y),
-         cylinder((0.035, 0.094, 0), (0.035, 0.17, 0), 0.032, 16, "blue", ref=X, bevel=0.006),
-         cylinder((0.035, 0.17, 0), (0.035, 0.18, 0), 0.02, 12, "metal_dark", ref=X),
-         box((0.022, 0.03, 0.0), (0.006, 0.014, 0.007), mat="orange")]
-    return p
+    return _paint_turn(_paint_parts())
+
+
+def flat_material(name, color, roughness=0.5, metallic=0.0, alpha=1.0, emission=0.0):
+    """A plain material outside every atlas (glows, tints, glass)."""
+    m = bpy.data.materials.get(name)
+    if m:
+        return m
+    m = bpy.data.materials.new(name)
+    m.use_nodes = True
+    bsdf = m.node_tree.nodes.get("Principled BSDF")
+    bsdf.inputs["Base Color"].default_value = srgb(color)
+    bsdf.inputs["Roughness"].default_value = roughness
+    bsdf.inputs["Metallic"].default_value = metallic
+    if emission:
+        bsdf.inputs["Emission Color"].default_value = srgb(color)
+        bsdf.inputs["Emission Strength"].default_value = emission
+    if alpha < 1.0:
+        bsdf.inputs["Alpha"].default_value = alpha
+        m.surface_render_method = "BLENDED"
+    return m
+
+
+def child_object(name, part, material, parent, matrix=None):
+    """A mesh object of one material parented to `parent`; `matrix` (grip frame) is its own placement."""
+    me = bpy.data.meshes.new(name)
+    me.from_pydata(part.v.tolist(), [], part.f)
+    me.materials.append(material)
+    me.polygons.foreach_set("use_smooth", [bool(s) for s in part.s])
+    me.validate(clean_customdata=False)
+    me.update()
+    ob = bpy.data.objects.new(name, me)
+    bpy.context.scene.collection.objects.link(ob)
+    ob.parent = parent
+    ob.matrix_parent_inverse = Matrix.Identity(4)
+    ob.matrix_basis = matrix if matrix is not None else Matrix.Identity(4)
+    return ob
+
+
+def paint_tank_matrix():
+    M = Matrix.Identity(4)
+    for r, v in enumerate(paint_tank_origin()):
+        M[r][3] = v
+    return M
+
+
+def build_paint_tank(parent):
+    """The tank as its own textured object (origin at its front, on the axis) under the Paint Tool."""
+    origin = (PAINT_TANK_U, PAINT_AXIS_V, 0.0)
+    part = merge(_paint_turn(_paint_tank_parts(), origin))
+    tank = build_mesh_object("paint_tool_tank", part)
+    tank.parent = parent
+    tank.matrix_parent_inverse = Matrix.Identity(4)
+    tank.matrix_basis = paint_tank_matrix()
+    return tank, part
+
+
+def build_paint_children(tool, tank):
+    """The tint (nozzles and tubes), the glass and the paint: plain materials the game recolours."""
+    tint = flat_material("M_paint_tint", PAINT_TINT, roughness=0.35)
+    origin = (PAINT_TANK_U, PAINT_AXIS_V, 0.0)
+    obs = [child_object("paint_tool_tint", merge(_paint_turn(_paint_tint_parts())), tint, tool),
+           child_object("paint_tool_glass", merge(_paint_turn(_paint_glass_parts(), origin)),
+                        flat_material("M_paint_glass", "#c8e2e6", roughness=0.05, alpha=0.14), tank),
+           child_object("paint_tool_paint", merge(_paint_turn(_paint_paint_parts(), origin)), tint, tank)]
+    return obs
 
 
 def prop_sledgehammer():
@@ -4767,6 +5488,308 @@ def build_connect_glow(parent):
     return ob
 
 
+# The Weld Tool, built to its reference sheet: a pistol-grip welder about 22 cm long. A dark, slightly boxy housing
+# 5.4 cm across, an octagonal back plate with vent slots and an orange tab, an orange band round the back, slotted
+# vents down both sides of the back, a raised vent panel along the top and a silver side panel with an orange stripe
+# and two slots on each side; at the front a broad silver collar with four bolts, stepped dark rings and ribs, a blue
+# ring that glows and a pointed silver welding tip with three flutes, which spins while a weld registers. On each side
+# of the collar an articulated clamping arm (an orange link out and down to an elbow, a dark link down to a claw)
+# hangs open, as on the sheet, and swings forward and in round the tip as a weld registers. Under it a raked grip of
+# rubber with a moulded hex pattern, an orange band round the butt and a yellow trigger. It is modelled in the gun frame
+# of the Connect Tool (u along the tip, v up, w to the holder's right) with the fist at the origin and the grip
+# WELD_RAKE degrees back from upright, then turned into the grip frame. The tip and the two arms are child nodes
+# (weld_tool_tip, weld_tool_arm_l, weld_tool_arm_r) whose origins are their pivots, so the game turns them; the blue
+# ring is another, weld_tool_glow, with an emissive material of its own.
+WELD_RAKE = 12.0               # degrees the grip leans back from square to the tip
+WELD_BODY_V = 0.066            # the housing's axis above the fist (gun frame v)
+WELD_BODY_R = 0.027            # the housing's half height
+WELD_BODY_HW = 0.0265          # and its half width
+WELD_TIP_U0 = 0.109            # where the spinning tip starts (gun frame u)
+WELD_TIP_U = 0.166             # its point
+WELD_GLOW = "#3aa8ff"
+# The arms: the pivot on the side of the housing, the elbow and the claw, open as on the sheet (gun frame, the left
+# arm; the right one mirrors in w), and where the claw goes when they close round the tip.
+WELD_ARM_PIVOT = np.array([0.05, WELD_BODY_V - 0.004, -(WELD_BODY_HW + 0.004)])
+WELD_ARM_ELBOW = np.array([0.064, WELD_BODY_V - 0.02, -0.052])
+WELD_ARM_CLAW = np.array([0.074, WELD_BODY_V - 0.058, -0.045])
+WELD_ARM_CLOSED = np.array([0.112, WELD_BODY_V - 0.022, -0.02])
+
+
+def _weld_rot():
+    r = math.radians(WELD_RAKE)
+    return np.array([[math.cos(r), -math.sin(r), 0.0], [math.sin(r), math.cos(r), 0.0], [0.0, 0.0, 1.0]])
+
+
+def weld_to_grip(p):
+    """A gun-frame point (or direction) in the grip frame."""
+    return _weld_rot() @ np.asarray(p, float)
+
+
+def weld_tip():
+    """The welding tip's point in the grip frame (where the sparks start)."""
+    return weld_to_grip((WELD_TIP_U, WELD_BODY_V, 0.0))
+
+
+def weld_tip_axis():
+    """Which way the tip points, in the grip frame."""
+    return weld_to_grip((1.0, 0.0, 0.0))
+
+
+def weld_arm_close(side):
+    """The closing turn of one arm about its pivot, in the gun frame: (unit axis, degrees). side -1 left, +1 right."""
+    m = np.array([1.0, 1.0, -side])
+    a = (WELD_ARM_CLAW - WELD_ARM_PIVOT) * m
+    b = (WELD_ARM_CLOSED - WELD_ARM_PIVOT) * m
+    axis = norm(np.cross(a, b))
+    ang = math.degrees(math.acos(np.clip(np.dot(norm(a), norm(b)), -1.0, 1.0)))
+    return axis, ang
+
+
+def _weld_housing():
+    U, V, W = X, Y, Z
+    H = WELD_BODY_V
+    on = lambda u, dv=0.0, w=0.0: np.array([u, H + dv, w])
+    p = []
+    # the housing: a slightly squared tube, rounded into the back plate and the collar
+    prof = [(-0.047, 0.84), (-0.0462, 0.93), (-0.0445, 0.98), (-0.042, 1.0), (0.056, 1.0), (0.0585, 0.97)]
+    p.append(loft([dict(c=on(u), a=V, b=W, rx=WELD_BODY_R * k, ry=WELD_BODY_HW * k, e=2.9) for u, k in prof], 44,
+                  True, True, "tool_gunmetal"))
+    # back: an orange band, then an octagonal plate with three vent slots and an orange tab under them
+    p.append(loft([dict(c=on(u), a=V, b=W, rx=WELD_BODY_R + 0.0014, ry=WELD_BODY_HW + 0.0014, e=2.9) for u in
+                   (-0.046, -0.0455, -0.0385, -0.038)], 44, True, True, "accent_orange"))
+    oct_ = [(0.0245 * math.cos(math.pi / 8 + k * math.pi / 4), 0.0245 * math.sin(math.pi / 8 + k * math.pi / 4))
+            for k in range(8)]
+    p.append(prism(oct_, 0.0, -0.0042, on(-0.0465), V, W, U, "tool_bezel"))
+    for k in range(3):
+        p.append(prism(chamfer_rect(0.0012, 0.0062, 0.0005), 0.0, -0.0004, on(-0.0507, 0.0062 - 0.006 * k + 0.0015),
+                       V, W, U, "panel_line"))
+    p.append(prism(chamfer_rect(0.0024, 0.0048, 0.0008), 0.0, -0.0006, on(-0.0507, -0.0138), V, W, U, "accent_orange"))
+    # panel lines round the housing
+    for u in (-0.0005, 0.0505):
+        p.append(loft([dict(c=on(u + d), a=V, b=W, rx=WELD_BODY_R + 0.0002, ry=WELD_BODY_HW + 0.0002, e=2.9)
+                       for d in (-0.0004, 0.0004)], 44, True, True, "panel_line"))
+    # top: a raised vent panel with six slots across it, an orange edge at its back
+    top = on(0.017, WELD_BODY_R - 0.001)
+    p.append(prism(chamfer_rect(0.026, 0.0135, 0.003), 0.0, 0.0034, top, U, W, V, "tool_bezel"))
+    for k in range(6):
+        p.append(prism(chamfer_rect(0.0013, 0.0092, 0.0005), 0.0032, 0.0036, top + U * (-0.0175 + 0.007 * k), U, W, V,
+                       "panel_line"))
+    p.append(prism(chamfer_rect(0.0016, 0.0135, 0.0006), 0.0, 0.0036, top + U * -0.0272, U, W, V, "accent_orange"))
+    for sw in (-1, 1):
+        side = lambda u, dv, out=0.0: on(u, dv, sw * (WELD_BODY_HW - 0.001 + out))
+        # slotted vents down the back of each side
+        p.append(prism(chamfer_rect(0.012, 0.0125, 0.0025), 0.0, sw * 0.0022, side(-0.024, 0.0005), U, V, W,
+                       "tool_bezel"))
+        for k in range(5):
+            p.append(prism(chamfer_rect(0.0095, 0.0009, 0.0004), sw * 0.0021, sw * 0.0025,
+                           side(-0.024, 0.0095 - 0.0045 * k), U, V, W, "panel_line"))
+        # the silver side panel with its orange stripe above and two slots, and a bolt at each end
+        p.append(prism(chamfer_rect(0.0225, 0.0078, 0.002), 0.0, sw * 0.0024, side(0.025, -0.0055), U, V, W,
+                       "tool_silver"))
+        p.append(prism(chamfer_rect(0.0225, 0.0018, 0.0008), 0.0, sw * 0.0026, side(0.025, 0.0055), U, V, W,
+                       "accent_orange"))
+        for du in (0.012, 0.016):
+            p.append(prism(chamfer_rect(0.0008, 0.0042, 0.0003), sw * 0.0023, sw * 0.0027, side(0.025 + du, -0.0055),
+                           U, V, W, "panel_line"))
+        for du in (-0.0185,):
+            p.append(cylinder(side(0.025 + du, -0.0055, 0.0023), side(0.025 + du, -0.0055, 0.0034), 0.0019, 10,
+                              "bolt_steel", ref=U))
+        # the arm's mounting boss with a bolt through it
+        piv = WELD_ARM_PIVOT * np.array([1.0, 1.0, -sw])
+        p.append(cylinder(piv - W * sw * 0.0045, piv + W * sw * 0.0005, 0.0068, 16, "tool_bezel", ref=U, bevel=0.0008))
+    # the collar: broad and silver with four bolts on its face, then stepped dark rings, ribs and a silver ring
+    p.append(cylinder(on(0.0565), on(0.0745), 0.0302, 44, "tool_silver", ref=V, bevel=0.0015))
+    for k in range(4):
+        a = math.pi / 4 + k * math.pi / 2
+        p.append(cylinder(on(0.0742, 0.0232 * math.sin(a), 0.0232 * math.cos(a)),
+                          on(0.0758, 0.0232 * math.sin(a), 0.0232 * math.cos(a)), 0.0021, 10, "bolt_steel", ref=V))
+    p.append(cylinder(on(0.074), on(0.0845), 0.0255, 40, "tool_bezel", ref=V, bevel=0.001))
+    for k in range(4):
+        u0 = 0.0845 + 0.003 * k
+        p.append(cylinder(on(u0), on(u0 + 0.003), 0.0212 if k % 2 == 0 else 0.0196, 36, "tool_gunmetal", ref=V,
+                          bevel=0.0005))
+    p.append(cylinder(on(0.0965), on(0.1045), 0.0182, 36, "tool_silver", ref=V, bevel=0.0008))
+    p.append(cylinder(on(0.1045), on(0.1092), 0.0162, 32, "tool_bezel", ref=V, bevel=0.0005))
+    return p
+
+
+def _weld_grip():
+    W = Z
+    rk = math.radians(WELD_RAKE)
+    g = np.array([math.sin(rk), math.cos(rk), 0.0])
+    n = np.array([math.cos(rk), -math.sin(rk), 0.0])
+    # (along the handle, front-back half size, side half size): flared at the butt, a waist for the palm, wider again
+    # where it meets the housing
+    gs = [(-0.05, 0.0195, 0.015), (-0.048, 0.0232, 0.0178), (-0.0445, 0.0242, 0.0184), (-0.039, 0.0232, 0.0176),
+          (-0.03, 0.0216, 0.0165), (-0.015, 0.0208, 0.0159), (0.0, 0.021, 0.016), (0.018, 0.0217, 0.0164),
+          (0.032, 0.0226, 0.0168), (0.045, 0.0236, 0.0174), (0.056, 0.024, 0.0176)]
+    fine = [s / 1000.0 for s in range(-50, 57, 3)]
+
+    def bumps(s):
+        def fn(th):
+            front = max(0.0, math.cos(th)) ** 3
+            ridge = 0.5 + 0.5 * math.cos(2 * math.pi * (s + 0.006) / 0.022)
+            return 1.0 + front * 0.06 * ridge * sstep(-0.04, -0.03, s) * sstep(0.03, 0.02, s)
+        return fn
+
+    rings = []
+    for s in fine:
+        k = min(max(int(np.searchsorted([x[0] for x in gs], s)), 1), len(gs) - 1)
+        (s0, a0, b0), (s1, a1, b1) = gs[k - 1], gs[k]
+        f = (s - s0) / (s1 - s0)
+        rings.append(dict(c=g * s, a=n, b=-W, rx=a0 + (a1 - a0) * f, ry=b0 + (b1 - b0) * f, e=2.7, fn=bumps(s)))
+    for r in rings:
+        r["b"] = -r["b"] if np.dot(np.cross(r["a"], r["b"]), g) < 0 else r["b"]
+    p = [loft(rings, 36, True, True, "grip_hex", True)]
+    # the butt: a dark base and an orange band round it
+    band = [(-0.0512, 0.0198, 0.0154), (-0.0506, 0.0246, 0.0188), (-0.0445, 0.0252, 0.0192), (-0.0435, 0.0246, 0.0188)]
+    p.append(loft([dict(c=g * s, a=n, b=-W, rx=rx, ry=ry, e=2.7) for s, rx, ry in band], 36, True, True,
+                  "accent_orange", True))
+    p.append(loft([dict(c=g * s, a=n, b=-W, rx=rx, ry=ry, e=2.7) for s, rx, ry in
+                   ((-0.0548, 0.0182, 0.0136), (-0.0542, 0.0224, 0.017), (-0.0512, 0.0228, 0.0174))],
+                  36, True, True, "tool_bezel", True))
+    # the yellow trigger, just under the housing in front of the grip
+    trig = [np.array([0.0352, 0.0405, 0]), np.array([0.0372, 0.0335, 0]), np.array([0.0358, 0.0262, 0]),
+            np.array([0.0312, 0.0212, 0])]
+    p.append(tube(trig, [(0.0042, 0.0034), (0.004, 0.0034), (0.0035, 0.0032), (0.0028, 0.0028)], 12, W,
+                  "paint_yellow"))
+    return p
+
+
+def _weld_tip_parts():
+    """The spinning tip, about its own start (gun frame u from 0)."""
+    U, V, W = X, Y, Z
+    L = WELD_TIP_U - WELD_TIP_U0
+    prof = [(0.0, 0.0148), (0.004, 0.0148), (0.0055, 0.0138), (0.016, 0.0112), (L - 0.006, 0.0022), (L - 0.0015, 0.0008),
+            (L, 0.0002)]
+    p = [tube([U * u for u, _ in prof], [r for _, r in prof], 32, V, "tool_silver")]
+    # three flutes down the cone, so the spin shows
+    for k in range(3):
+        a = k * 2 * math.pi / 3
+        rad = V * math.sin(a) + W * math.cos(a)
+        tng = np.cross(U, rad)
+        for (u0, r0), (u1, r1) in zip(prof[2:4], prof[3:5]):
+            c0, c1 = U * u0 + rad * (r0 - 0.0002), U * u1 + rad * (r1 - 0.0002)
+            mid, d = (c0 + c1) / 2, c1 - c0
+            ln = np.linalg.norm(d)
+            ax = d / ln
+            out = norm(np.cross(tng, ax))
+            hw = 0.0016 * (r0 + r1) / 0.024
+            p.append(prism(chamfer_rect(ln / 2, hw, 0.0002), -0.0004, 0.0003, mid, ax, tng, out, "panel_line"))
+    return p
+
+
+def _weld_arm_parts(side):
+    """One clamping arm about its pivot (gun frame, side -1 left, +1 right)."""
+    W = Z
+    m = np.array([1.0, 1.0, -side])
+    piv, elb, claw = WELD_ARM_PIVOT * m, WELD_ARM_ELBOW * m, WELD_ARM_CLAW * m
+    wo = W * side                                     # outward
+    p = []
+
+    def link(a, b, width, thick, mat, off=0.0):
+        d = b - a
+        ln = np.linalg.norm(d)
+        ax = d / ln
+        across = norm(np.cross(ax, wo))
+        out = np.cross(across, ax)
+        if np.dot(out, wo) < 0:
+            out = -out
+        mid = (a + b) / 2 + out * off
+        return prism(chamfer_rect(ln / 2 + width / 2, width / 2, width * 0.35), -thick / 2, thick / 2, mid, ax, across,
+                     out, mat)
+
+    # outer orange link and an inner dark one behind it, pinned at the pivot and the elbow
+    p.append(link(piv, elb, 0.0142, 0.0044, "accent_orange", 0.0034))
+    p.append(link(piv, elb, 0.0112, 0.0036, "tool_bezel", -0.0006))
+    p.append(link(elb, claw, 0.0124, 0.0048, "tool_bezel", 0.0008))
+    p.append(link(elb + (claw - elb) * 0.5, claw, 0.0132, 0.0034, "accent_orange", 0.0042))
+    for at, r in ((piv, 0.0056), (elb, 0.006)):
+        p.append(cylinder(at - wo * 0.0028, at + wo * 0.0052, r, 14, "tool_bezel", ref=X, bevel=0.0006))
+        p.append(cylinder(at + wo * 0.005, at + wo * 0.0064, r * 0.55, 10, "bolt_steel", ref=X))
+    # the claw: a pad turned in towards the tip, with a roller pin through it
+    inward = -wo
+    p.append(soft_box(claw + inward * 0.004 + Y * -0.0015, (0.0078, 0.0072, 0.006), axes=(X, Y, W), e=5, e2=5,
+                      segs=12, rings=6, mat="tool_bezel"))
+    p.append(cylinder(claw - X * 0.0066, claw + X * 0.0066, 0.0032, 12, "tool_silver", ref=Y))
+    p.append(cylinder(claw + wo * 0.0012, claw + wo * 0.0036, 0.0024, 10, "bolt_steel", ref=X))
+    for part in p:
+        part.v = part.v - piv
+    return p
+
+
+def _weld_glow_parts():
+    """The blue ring at the base of the tip, in the gun frame."""
+    on = lambda u: np.array([u, WELD_BODY_V, 0.0])
+    return [cylinder(on(0.1052), on(0.1086), 0.0171, 36, "glow", ref=Y, bevel=0.0004)]
+
+
+def _weld_turn(parts, origin=None):
+    rot = _weld_rot()
+    for part in parts:
+        part.v = part.v @ rot.T
+    return parts
+
+
+def prop_weld_tool():
+    return _weld_turn(_weld_housing() + _weld_grip())
+
+
+def weld_glow_material():
+    m = bpy.data.materials.get("M_weld_glow")
+    if m:
+        return m
+    m = bpy.data.materials.new("M_weld_glow")
+    m.use_nodes = True
+    bsdf = m.node_tree.nodes.get("Principled BSDF")
+    bsdf.inputs["Base Color"].default_value = srgb(WELD_GLOW)
+    bsdf.inputs["Roughness"].default_value = 0.3
+    bsdf.inputs["Emission Color"].default_value = srgb(WELD_GLOW)
+    bsdf.inputs["Emission Strength"].default_value = 1.0
+    return m
+
+
+def _child_object(name, part, parent, at_gun, material=None):
+    """A child of `parent` (the prop, in the grip frame) with its origin at the gun-frame point at_gun."""
+    if material is None:
+        ob = build_mesh_object(name, part)
+    else:
+        me = bpy.data.meshes.new(name)
+        me.from_pydata(part.v.tolist(), [], part.f)
+        me.materials.append(material)
+        me.polygons.foreach_set("use_smooth", [False] * len(part.f))
+        me.validate(clean_customdata=False)
+        me.update()
+        ob = bpy.data.objects.new(name, me)
+        bpy.context.scene.collection.objects.link(ob)
+    ob.matrix_world = parent.matrix_world @ Matrix.Translation(Vector(weld_to_grip(at_gun)))
+    ob.parent = parent
+    ob.matrix_parent_inverse = parent.matrix_world.inverted()
+    return ob
+
+
+def build_weld_children(parent):
+    """The Weld Tool's moving parts and its glow, as children of its prop: (objects, parts) to texture, and the glow."""
+    objs, parts = [], []
+    tip = merge(_weld_turn(_weld_tip_parts()))
+    objs.append(_child_object("weld_tool_tip", tip, parent, (WELD_TIP_U0, WELD_BODY_V, 0.0)))
+    parts.append(tip)
+    for name, side in (("weld_tool_arm_l", -1), ("weld_tool_arm_r", 1)):
+        arm = merge(_weld_turn(_weld_arm_parts(side)))
+        objs.append(_child_object(name, arm, parent, WELD_ARM_PIVOT * np.array([1.0, 1.0, -side])))
+        parts.append(arm)
+    glow = merge(_weld_turn(_weld_glow_parts()))
+    glow.v = glow.v - weld_to_grip((0.0, 0.0, 0.0))
+    glow_ob = _child_object("weld_tool_glow", glow, parent, (0.0, 0.0, 0.0), weld_glow_material())
+    for side in (-1, 1):
+        axis, ang = weld_arm_close(side)
+        print(f"  weld arm {side:+d}: pivot {weld_to_grip(WELD_ARM_PIVOT * np.array([1.0, 1.0, -side])).round(4)}, "
+              f"closes {ang:.1f} deg about {weld_to_grip(axis).round(4)} (grip frame)")
+    print(f"  weld tip: start {weld_to_grip((WELD_TIP_U0, WELD_BODY_V, 0.0)).round(4)}, point {weld_tip().round(4)}, "
+          f"axis {weld_tip_axis().round(4)}")
+    return objs, parts, glow_ob
+
+
 def prop_potato_blaster():
     p = [cylinder((-0.006, -0.065, 0), (0.0, 0.045, 0), 0.019, 12, "rubber", ref=X, bevel=0.004),
          cylinder((-0.17, 0.08, 0), (0.06, 0.08, 0), 0.047, 18, "paint_olive", ref=Y, bevel=0.008),
@@ -4789,14 +5812,6 @@ def prop_potato_blaster():
 # +Z up the axis, the front (the droplet) towards -Y and the handle's hinges on the X axis. The handle and the water
 # are objects of their own, so the game can swing the handle and fill the bucket (game/scripts/Player/BucketRig.cs);
 # the numbers both sides need are in game/data/character.json under "bucket".
-
-def read_json_with_comments(path):
-    import json
-    import re
-    text = re.sub(r"^\s*//.*$", "", Path(path).read_text(), flags=re.M)
-    text = re.sub(r",\s*([}\]])", r"\1", text)
-    return json.loads(text)
-
 
 BUCKET = read_json_with_comments(REPO / "game" / "data" / "character.json")["bucket"]
 BUCKET_HINGE = BUCKET["hinge_height"]
@@ -5217,14 +6232,30 @@ def export_props():
         ob, part = build_prop(name)
         objs.append(ob)
         parts.append(part)
+    # The Weld Tool's tip and clamping arms are child objects the game turns; they share its atlas.
+    n_props = len(objs)
+    weld_objs, weld_parts, weld_glow = build_weld_children(objs[list(PROPS).index("weld_tool")])
+    objs += weld_objs
+    parts += weld_parts
     # The Sledgehammer is 1.3 m long, so it has an atlas of its own rather than starving the small tools of texels; the
-    # Refine Tool and the Connect Tool have one each too, since first person holds them close to the eye.
-    own = {name: [i for i, n in enumerate(PROPS) if n == name] for name in ("sledgehammer", "refine_tool", "connect_tool")}
+    # Refine Tool, the Connect Tool, the Weld Tool and the Paint Tool have one each too, since first person holds them close
+    # to the eye.
+    own = {name: [i for i, n in enumerate(PROPS) if n == name]
+           for name in ("sledgehammer", "refine_tool", "connect_tool", "weld_tool", "paint_tool")}
+    own["weld_tool"] += list(range(n_props, len(objs)))
     shared = [i for i in range(len(objs)) if not any(i in idx for idx in own.values())]
+    # The Paint Tool's tank is an object of its own (the reload twists it off), sharing the tool's atlas.
+    paint = objs[list(PROPS).index("paint_tool")]
+    tank, tank_part = build_paint_tank(paint)
+    objs.append(tank)
+    parts.append(tank_part)
+    own["paint_tool"].append(len(objs) - 1)
     stats = {}
     for idx, group, material in ((shared, "props", "M_hand_tools"), (own["sledgehammer"], "sledgehammer", "M_sledgehammer"),
                                  (own["refine_tool"], "refine_tool", "M_refine_tool"),
-                                 (own["connect_tool"], "connect_tool", "M_connect_tool")):
+                                 (own["connect_tool"], "connect_tool", "M_connect_tool"),
+                                 (own["weld_tool"], "weld_tool", "M_weld_tool"),
+                                 (own["paint_tool"], "paint_tool", "M_paint_tool")):
         stats.update(ct.texture_props([objs[i] for i in idx], [parts[i] for i in idx],
                                       [mesh_material_names(parts[i]) for i in idx], PALETTE, PROP_ATLAS, seed=5,
                                       group=group, material=material))
@@ -5252,9 +6283,12 @@ def export_props():
     bag_objs = soil_bag_objects(bag_root)
     # the Connect Tool's lights are a child node with their own emissive material, outside every atlas
     glow = build_connect_glow(objs[list(PROPS).index("connect_tool")])
+    # the Paint Tool's tubes, nozzles, glass and paint: plain materials the game tints to the chosen colour
+    paint_children = build_paint_children(paint, tank)
     path = OUT_DIR / "hand_tools.glb"
-    export_glb(path, objs + [glow] + [root] + bobjs + [wat] + [bag_root] + bag_objs, animations=False)
-    print(f"{path.name}: {len(objs) + 2} props")
+    export_glb(path, objs + [glow, weld_glow] + paint_children + [root] + bobjs + [wat] + [bag_root] + bag_objs,
+               animations=False)
+    print(f"{path.name}: {n_props + 2} props")
 
 
 def export_bucket_items():

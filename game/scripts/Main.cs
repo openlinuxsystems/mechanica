@@ -254,6 +254,12 @@ public partial class Main : Node3D
     /// <summary>The Connect Tool's lights in every player's hand.</summary>
     public ConnectToolLights ConnectLights { get; private set; } = null!;
 
+    /// <summary>The Weld Tool's arms, tip and glow in every player's hand, and the sparks of every weld.</summary>
+    public WeldEffects WeldEffects { get; private set; } = null!;
+
+    /// <summary>Every player's Paint Tool colour, tank and mist.</summary>
+    public PaintToolLook PaintLook { get; private set; } = null!;
+
     /// <summary>The aero force overlay (F9): the pushes part scripts make, as arrows.</summary>
     public ForceOverlay ForceOverlay { get; private set; } = null!;
 
@@ -448,6 +454,7 @@ public partial class Main : Node3D
         SoilLooks = new SoilLooks { Name = "SoilLooks", Creations = Creations, Survival = Survival, Sounds = Sounds, Catalog = Survival.Catalog };
         AddChild(SoilLooks);
         AddChild(ConnectLights = new ConnectToolLights { Name = "ConnectToolLights", Players = PlayerSync });
+        AddChild(WeldEffects = new WeldEffects { Name = "WeldEffects", Players = PlayerSync, Sounds = Sounds });
         Bots = new BotSync
         {
             Name = "Bots",
@@ -521,13 +528,17 @@ public partial class Main : Node3D
             ReadDeviceInput = ReadDeviceInput,
         };
         Characters.RegisterActions(Actions.Dispatcher);
+        AddChild(PaintLook = new PaintToolLook
+        {
+            Name = "PaintToolLook", Players = PlayerSync, Palette = Build.Settings!.Paint.Palette, Settings = Characters.Assets.Settings.PaintTool,
+        });
         Hotbar = new HotbarSync { Name = "Hotbar", Session = Session, Players = PlayerSync, Actions = Actions, Bars = new HotbarActions(mods) };
         Hotbar.RegisterActions(Actions.Dispatcher);
         AddChild(Hotbar);
         MapMarkers = new MapMarkerSync
         {
             Name = "MapMarkers", Session = Session, Players = PlayerSync, Actions = Actions,
-            Markers = new Core.Ui.MapMarkers(LogbookSettings, Streamer.Settings!.WorldSize),
+            Markers = new Core.Ui.MapMarkers(LogbookSettings, Streamer.Settings!.WorldSize, Streamer.Settings.Depth),
         };
         MapMarkers.RegisterActions(Actions.Dispatcher);
         AddChild(MapMarkers);
@@ -660,6 +671,12 @@ public partial class Main : Node3D
                 Markers = MapMarkers, MapSettings = LogbookSettings, World = () => Streamer.Generator,
             };
             AddChild(questLog);
+            var maps = new MapHud
+            {
+                Name = "MapHud", Quests = Quests, Players = PlayerSync, Markers = MapMarkers, Settings = LogbookSettings, World = () => Streamer.Generator,
+                KnockoutBags = Survival.OwnKnockoutBags,
+            };
+            AddChild(maps);
             AddChild(new Ui.TutorialHints
             {
                 Name = "TutorialHints",
@@ -678,7 +695,7 @@ public partial class Main : Node3D
                     : null,
             };
             AddChild(pause);
-            hudRoot.Covered = () => inventory.IsOpen || pause.IsOpen || questLog.IsOpen || Ui.ToolWindow.Topmost is not null || Characters.Window is not null;
+            hudRoot.Covered = () => inventory.IsOpen || pause.IsOpen || questLog.IsOpen || maps.IsOpen || Ui.ToolWindow.Topmost is not null || Characters.Window is not null;
             AddChild(PartSettings);
             SeatCamera = new SeatCamera { Logic = Logic, Players = PlayerSync, Turn = yaw => _input?.Turn(yaw) };
             AddChild(SeatCamera);
@@ -702,11 +719,14 @@ public partial class Main : Node3D
             var compass = new Ui.CompassHud
             {
                 Name = "Compass", Players = PlayerSync,
-                Waypoints = () => LocalPlayer is { } me ? [.. Quests.Waypoints(me.GlobalPosition.ToNumerics()), .. MapMarkers.Own.Select(m => m.ToWaypoint())] : [],
+                Waypoints = () => LocalPlayer is { } me
+                    ? [.. Quests.Waypoints(me.GlobalPosition.ToNumerics()), .. Survival.OwnKnockoutBags(), .. MapMarkers.Own.Select(m => m.ToWaypoint())]
+                    : [],
                 Covered = () => Ui.HudRoot.IsCovered,
             };
             AddChild(compass);
             questLog.Compass = compass;
+            maps.Compass = compass;
         }
 
         if (_loadingScreen is not null)

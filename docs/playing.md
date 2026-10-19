@@ -28,16 +28,17 @@ These are the default keys. Every one can be changed in Options, Controls.
 | Up / Down arrows | Raise or lower the Lift |
 | G | Drop one of the item in hand |
 | F (hold) | Force build: hold it and left click to put the item in hand (food, a bucket, a glowstick) where you aim, where it stays. Also hold it while dragging a stack out of the inventory to drop it. |
-| R | Reload the weapon in hand |
+| R | Reload the weapon in hand, or the Paint Tool's tank |
 | E | Use. Hold it on a tree or rock node (they get a blue outline) until the ring fills (5.2 s) to refine it: you draw the Refine Tool and scrape at it, and what it gives goes straight into your inventory. Letting go or walking away stops it. The Refine Tool is not an item: it is never in your inventory or on the hotbar. Also: open the blueprint menu (the Lift in hand, aimed at your Lift), open a container or station, pick up items, harvest, sleep in a bed, sit in or leave a seat, use a part, change a part's settings, use a quest marker, talk, respawn after dying |
 | I or Tab | Inventory |
 | U | Upgrade the part you are aiming at (a station), or the station whose screen is open |
 | L | Logbook: your quests, the map and your markers; you pick an answer here when a quest asks you to decide |
+| M | The full map: your missions' goals and your labelled pins; right-click to drop a pin |
 | Esc | Menu: save, load, open your world to the LAN, Options, help, quit. Esc also closes any open window. |
 | H or F1 | Handbook |
 | Left / Right (or Page Up / Page Down) | Turn the Handbook's pages |
 | F7 / F8 / F9 | Logic Visualizer, Creation Inspector and force overlay |
-| Alt + Z | Hide the HUD (crosshair, tool bar, compass, tips, chat, quest log and names), and show it again |
+| Alt + Z | Hide the HUD (crosshair, tool bar, compass, minimap, tips, chat, quest log and names), and show it again |
 
 In water deeper than about chest height you swim: there is no ground to stand on, you float with your
 head out, Space rises and Ctrl dives. Shallower water slows you down.
@@ -53,8 +54,8 @@ the creation. E stands you up beside the seat, in the first free spot to its lef
 A seat someone else sits in says "Seat occupied".
 
 While you sit, the switches and buttons the seat is linked to take the hotbar's place. 1 to 9 and 0 use
-one at once, the wheel picks a slot and Left click uses it, wherever the part is on the creation. A slot
-glows and pulses while its part is on.
+one at once, Left click uses the first and Right click the second, wherever the part is on the creation. A
+slot glows and pulses while its part is on.
 
 E on a part with settings opens its menu: sliders with a field for numbers (with preset buttons on some,
 like an engine's Low, Medium and High), drop-downs for choices, and what the part reports, such as an
@@ -70,7 +71,7 @@ switches it to the next mode and shows it for a moment; R with the Connect Tool 
 - Aim at a part for a moment and a **tooltip** shows its name, what it is and what Use does. Parts you can
   use, sit in, open or set up add a line with their signal (on or off), how many connections they have and
   their durability.
-- **Health** is the blue bar at the top left (Survival). The quest log is at the top right, the compass at
+- **Health** is the blue bar at the top left (Survival). The minimap is in the top right corner with the quest log under it, the compass at
   the top, the tool bar at the bottom and chat at the bottom left.
 - A part in hand shows a **ghost** that is blue where the part fits and red where it would not (something in the way, out of
   reach, or none left in Survival). A part you place shows straight away; if the host turns it down, it fades out
@@ -99,11 +100,21 @@ switches it to the next mode and shows it for a moment; R with the Connect Tool 
 - **Weld Tool.** Click a part to select it (it gets a blue outline), then click a part of another Creation to
   move the first one there and weld them, or a touching part of the same Creation to weld the two bodies
   together. Or hold left click on the first part and let go on the second. A blue square shows where they will
-  join, a see-through copy shows where a moved Creation goes (Q and T turn it), and a blue seam glows on the
-  joined faces for a moment afterwards. Right click drops the selection.
+  join, a see-through copy shows where a moved Creation goes (Q and T turn it): green where the weld will take,
+  red where it would be refused (the parts do not touch, it would overlap or hit something, it is out of reach).
+  While a part is selected you hold the tool up. On a weld its clamping arms close round its tip, the tip spins,
+  blue sparks fly at the joint and a blue seam glows on the joined faces for a moment afterwards. Right click drops
+  the selection. What is built on the ground stays put: select the loose Creation first and weld it to a block
+  built on the ground to fix it in place (fewer moving bodies, less physics work). The drag works on a Lift too,
+  to weld touching parts on different bearings or to put back a piece that fell off. In Survival the Weld Tool is
+  crafted at a Fabricator (10 Metal Blocks and 2 Component Kits, 30 s) and you keep it when you die.
 - **Paint Tool.** Left click paints a part; hold and drag to paint every part you pass over (up to 256 at a
-  time). Right click (or drag) takes the paint off. **Q** opens the colour picker round the cursor: move the
-  mouse towards a colour and click, or press 1 to 0 for the first ten. Esc or Q again closes it.
+  time). Right click (or drag) takes the paint off. **Q** opens the colour picker round the cursor: 10 base
+  colours round a ring, each in 4 shades from light (inside) to dark (outside). Move the mouse onto a colour
+  and click, or press 1 to 0 for a base colour in the shade you have now. Esc or Q again closes it. The tool's
+  nozzles, tubes and tank show the chosen colour, and it sprays a mist of it (a pale puff when taking paint off)
+  that everyone sees. **R** twists the tank off and back on; it can't spray meanwhile. In Survival the Paint Tool
+  is crafted at a Fabricator, and each stroke (a click, or one drag) uses one Paint Ammo; taking paint off is free.
 - **Sledgehammer.** Your main tool and only starting weapon: it is always on the hotbar (you can move it to
   another slot but never take it off, drop it or store it) and you keep it when you die. Left click swings it:
   overhead, or sideways from the right or the left, at random. A swing every 0.6 s, and the blow lands the moment
@@ -176,7 +187,7 @@ free in Creative.
   the screen the first time you start, pick up each tool or open each screen; **Show tips again** brings
   back the ones you have seen; the tips are in `game/data/tutorial.json`), auto-save (off, or every 5, 10 or 15
   minutes while you host), the most players a world you host takes, the server password for worlds you host, and your player name.
-- **Interface**: show or hide the tool bar and key hints, the compass, other players' names over their heads, how opaque the chat background is, and a
+- **Interface**: show or hide the tool bar and key hints, the compass, the minimap, other players' names over their heads, how opaque the chat background is, and a
   colour-blind filter (Protanopia, Deuteranopia or Tritanopia) that corrects colours on the whole screen
   so ones that look alike stay apart, and the **Language** of menus and the HUD. The game ships in English; a
   language file dropped into your `lang` folder (Options shows where) adds that language to the list. See
@@ -208,6 +219,19 @@ the compass and in the world like any waypoint. Right-click one of your markers 
 remove it. Your markers are saved with the world; you can have up to 20. The map keeps where you left it.
 
 ![The Logbook](images/logbook.png)
+
+## Map and minimap
+
+The **minimap** in the top right corner shows the land round you, north up, with you as the cyan arrow in the
+middle. Your current missions' goals are pulsing blue diamonds and your own pins are blue diamonds with their
+labels; one that is out of range waits on the edge in its direction. After you die, your knockout bag is a small
+blue diamond too (and a diamond on the compass) until you pick it up. Options, Interface, Show minimap turns it off.
+
+Press **M** for the **full map**, and M, Esc or its X to close it. It works like the Logbook's map (drag, scroll,
+**−**, **+**, **Whole map**, **Find me**) and shows the same goals, named, and your pins. Click one to make it the
+compass's primary waypoint. Right-click open ground to drop a pin: type a label and press Enter or **Place pin**
+(left empty, it is numbered). Right-click one of your pins to remove it; the map asks first. Pins are your
+Logbook markers, so they show in the Logbook, on the compass and in the world too.
 
 ## Compass
 

@@ -55,8 +55,7 @@ public sealed class ChunkStreamer
     private readonly HashSet<ChunkCoord> _loaded = [];
     private readonly Dictionary<ChunkCoord, float> _unneededFor = [];
     private readonly SortedDictionary<int, Tracked> _creations = [];
-    private readonly int _minChunk;
-    private readonly int _maxChunk;
+    private readonly int _minChunkX, _maxChunkX, _minChunkZ, _maxChunkZ;
 
     private sealed class Tracked
     {
@@ -72,9 +71,12 @@ public sealed class ChunkStreamer
     {
         settings.Validate();
         Settings = settings;
-        var half = settings.WorldSize / 2f;
-        _minChunk = (int)MathF.Floor(-half / settings.ChunkSize);
-        _maxChunk = (int)MathF.Ceiling(half / settings.ChunkSize) - 1;
+        var halfX = settings.WorldSize / 2f;
+        var halfZ = settings.Depth / 2f;
+        _minChunkX = (int)MathF.Floor(-halfX / settings.ChunkSize);
+        _maxChunkX = (int)MathF.Ceiling(halfX / settings.ChunkSize) - 1;
+        _minChunkZ = (int)MathF.Floor(-halfZ / settings.ChunkSize);
+        _maxChunkZ = (int)MathF.Ceiling(halfZ / settings.ChunkSize) - 1;
     }
 
     /// <summary>The tuning in use.</summary>
@@ -86,9 +88,9 @@ public sealed class ChunkStreamer
     /// <summary>True when the chunk is loaded.</summary>
     public bool IsLoaded(ChunkCoord chunk) => _loaded.Contains(chunk);
 
-    /// <summary>True when the chunk lies inside the world square.</summary>
+    /// <summary>True when the chunk lies inside the world.</summary>
     public bool InWorld(ChunkCoord chunk) =>
-        chunk.X >= _minChunk && chunk.X <= _maxChunk && chunk.Z >= _minChunk && chunk.Z <= _maxChunk;
+        chunk.X >= _minChunkX && chunk.X <= _maxChunkX && chunk.Z >= _minChunkZ && chunk.Z <= _maxChunkZ;
 
     /// <summary>True when the Creation is tracked and parked.</summary>
     public bool IsParked(int creationId) => _creations.TryGetValue(creationId, out var t) && t.Parked;

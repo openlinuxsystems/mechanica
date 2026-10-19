@@ -1,4 +1,5 @@
 using System.Numerics;
+using System.Text.Json.Nodes;
 using Mechanica.Core.Actions;
 using Mechanica.Core.Building;
 using Mechanica.Core.Creations;
@@ -58,6 +59,8 @@ public class SurvivalActionsTests
         var drop = Assert.Single(_f.Survival.Drops.Values);
         Assert.Equal(new Vec3(0, 0, 3), drop.Position);
         Assert.Equal([new ItemStack(Seed, 2), new ItemStack(Scrap, 7)], drop.Items);
+        Assert.True(drop.KnockedOut); // shown as the knockout bag
+        Assert.Equal(Me.Peer, drop.Owner); // on their compass
         Assert.Equal(0f, _f.Survival.Damage(Me.Peer, 10, "test")); // the dead take no more
     }
 
@@ -80,7 +83,7 @@ public class SurvivalActionsTests
     {
         IBuildCosts costs = _f.Survival;
         Assert.Equal("Craft a Connect Tool at a Fabricator first.", costs.CheckTool(Me, Connector));
-        Assert.Null(costs.CheckTool(Me, HotbarTools.Weld)); // every player always has the others
+        Assert.Null(costs.CheckTool(Me, HotbarTools.Paint)); // every player always has the others
         Assert.Null(costs.CheckTool(new ActionCaller(Me.Peer, ActionSource.Script), Connector));
 
         _f.Pockets(Me).Add(Connector, 1);
@@ -519,6 +522,8 @@ public class SurvivalActionsTests
         var dropped = _f.Ok<DropItemsResult>(Me, SurvivalActions.DropItems, new { slot, count = 10 });
         Assert.Equal(20, _f.Pockets(Me).Count(Scrap));
         Assert.Equal(new Vec3(0, 0, 2), _f.Survival.Drops[dropped.Drop].Position); // 1 m ahead (-z) on the ground
+        Assert.False(_f.Survival.Drops[dropped.Drop].KnockedOut);
+        Assert.Null(_f.Survival.Drops[dropped.Drop].Owner);
 
         Assert.StartsWith("That is 4.0 m away", _f.Refused(You, SurvivalActions.PickUp, new { drop = dropped.Drop }));
         _f.World.Feet[3] = new Vector3(0, 0, 2);
@@ -590,6 +595,39 @@ public class SurvivalActionsTests
         _f.Pockets(Me).Add("test:mound", 1);
         _f.Ok<PlacePartResult>(Me, BuildActions.PlacePart, mound with { position = new Vec3(3, 0, 1) });
         Assert.Equal(0, _f.Pockets(Me).Count("test:mound"));
+    }
+
+    [Fact]
+    public void AnUpgradedPartIsPickedUpAtItsLevelAndPlacedAtItAgain()
+    {
+        // An engine with two upgrade levels that change its name and mesh.
+        var upgrades = new List<UpgradeDefinition>
+        {
+            new() { Set = (JsonObject)JsonNode.Parse("""{ "name": "Engine 2", "mesh": "meshes/engine_2.glb" }""")! },
+            new() { Set = (JsonObject)JsonNode.Parse("""{ "name": "Engine 3" }""")! },
+        };
+        _f.Catalog.Add("test:engine", _f.Catalog.FindDefinition(Block)! with { Id = "engine", Name = "Engine", StackSize = 5, Upgrades = upgrades });
+        Assert.Equal("Engine 2", _f.Catalog.FindDefinition("test:engine@1")!.Name);
+        Assert.Equal("meshes/engine_2.glb", _f.Catalog.FindDefinition("test:engine@2")!.Mesh);
+        Assert.Null(_f.Catalog.FindDefinition("test:engine@3"));
+        Assert.Null(_f.Catalog.FindDefinition("test:engine@0"));
+
+        var engine = new { part = "test:engine", cell = new[] { 0, 0, 0 }, position = new Vec3(0, 0, 1) };
+        _f.Pockets(Me).Add("test:engine", 1);
+        var placed = _f.Ok<PlacePartResult>(Me, BuildActions.PlacePart, engine);
+        _f.Ok(Me, InventoryActions.UpgradePart, new { creation = placed.Creation, part = placed.Part });
+        _f.Ok(Me, BuildActions.RemovePart, new { creation = placed.Creation, part = placed.Part });
+        Assert.Equal((0, 1), (_f.Pockets(Me).Count("test:engine"), _f.Pockets(Me).Count("test:engine@1")));
+
+        // It stacks apart from engines at other levels and goes down at its level again, using the upgraded one up.
+        _f.Pockets(Me).Add("test:engine", 1);
+        Assert.Equal(2, _f.Pockets(Me).Slots.Count(s => s?.Item.StartsWith("test:engine", StringComparison.Ordinal) == true));
+        Assert.Equal("You have no Engine 3 to place.", _f.Refused(Me, BuildActions.PlacePart, engine with { part = "test:engine@2" }));
+        var again = _f.Ok<PlacePartResult>(Me, BuildActions.PlacePart, engine with { part = "test:engine@1", position = new Vec3(3, 0, 1) });
+        Assert.Equal((1, 0), (_f.World.Creations[again.Creation].LevelOf(again.Part), _f.Pockets(Me).Count("test:engine@1")));
+        Assert.Equal("test:engine", _f.World.Creations[again.Creation].FindPart(again.Part)!.Part);
+        Assert.Equal(1, _f.Pockets(Me).Count("test:engine"));
+        Assert.StartsWith("Unknown part", _f.Refused(Me, BuildActions.PlacePart, engine with { part = "test:engine@9" }));
     }
 
     [Fact]

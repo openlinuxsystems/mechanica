@@ -54,6 +54,8 @@ public partial class FabricatorTest : StagedTest
 
     public override void _Ready()
     {
+        // "Nothing is NEW the first time" needs a first time: forget what earlier runs saw at stations.
+        DirAccess.RemoveAbsolute(ProjectSettings.GlobalizePath("user://seen_recipes.json"));
         _harness = new NetTestHarness { Name = "Harness", GameMode = GameMode.Survival, WorldGen = WorldGenData.Flat };
         AddChild(_harness);
         _host = _harness.StartHost();
@@ -97,7 +99,9 @@ public partial class FabricatorTest : StagedTest
             Check(Mathf.IsEqualApprox(card.Size.X, narrow ? 280 : 302) && main.Size.X > 2 * card.Size.X, $"the main window and the card ({main.Size.X}, {card.Size.X})");
             Check(Mathf.Abs(card.Position.X - main.End.X - 12) < 1 && Mathf.Abs(card.Size.Y - main.Size.Y) < 1, "the card sits 12 px right of the window, as tall");
             Check(_screen.QueueCells == 8 && _screen.QueueRows.Count == 0, $"the queue strip shows the queue's 8 empty cells ({_screen.QueueCells})");
-            Check(_screen.TabsShown.Contains(InventoryTab.All) && _screen.TabsShown.Count < Enum.GetValues<InventoryTab>().Length, $"tabs without recipes are hidden ({string.Join(", ", _screen.TabsShown)})");
+            // A tab shows when the station has a recipe under it (All always does); one without recipes is hidden.
+            var withRecipes = Enum.GetValues<InventoryTab>().Where(t => _screen.ListedRecipes.Any(r => InventoryTabs.Shows(t, Category(r))));
+            Check(_screen.TabsShown.Contains(InventoryTab.All) && _screen.TabsShown.SequenceEqual(withRecipes), $"only tabs with recipes show ({string.Join(", ", _screen.TabsShown)})");
             Check(_screen.RecipeRows.All(r => !r.IsNew), "nothing is NEW the first time a station is opened");
             if (!_screen.StorageOpen)
                 _screen.ToggleStorage();
@@ -105,7 +109,7 @@ public partial class FabricatorTest : StagedTest
             Check(_screen.LinkedShown.SequenceEqual([NearRef]), "the linked chest is in the drawer");
             Check(_screen.LinkedSlots(NearRef).Any(s => s.Entry == Metal && s.Count == 2 && s.IsVisibleInTree()), "its scrap shows");
             Check(_screen.StationOwnSlots.Any(s => s.Entry == Wood), "and the player's inventory under it");
-            Check(_screen.StationLevel == "Level 0 / 3", $"the station's level ({_screen.StationLevel})");
+            Check(_screen.StationLevel == "Level 1 / 4", $"the station's level ({_screen.StationLevel})");
             return true;
         });
         Add("search and filters narrow the recipes", _ =>
@@ -183,7 +187,7 @@ public partial class FabricatorTest : StagedTest
                 return false;
             if (!_upgrades.IsOpen)
                 _upgrades.Open((_workshop, _fabricator));
-            Check(_upgrades.LevelText == "Fabricator: level 0 of 3", $"the level ({_upgrades.LevelText})");
+            Check(_upgrades.LevelText == "Fabricator: level 1 of 4", $"the level ({_upgrades.LevelText})");
             Check(_upgrades.CostLines.SequenceEqual([("2 Component Kit (you have 1)", true)]), $"the cost ({string.Join("; ", _upgrades.CostLines)})");
             Check(_upgrades.ChangeLines.SequenceEqual(["Speed: 1× → 1.25×", "Queue: 8 → 10", "Slots: 10 → 12"]), $"what changes ({string.Join("; ", _upgrades.ChangeLines)})");
             Check(_upgrades.Confirm.Disabled, "Upgrade is off");
@@ -203,7 +207,7 @@ public partial class FabricatorTest : StagedTest
                     _upgrades.Upgrade(_results.Add);
                 return false;
             }
-            if (_screen.StationLevel != "Level 1 / 3" || _upgrades.LevelText != "Fabricator: level 1 of 3")
+            if (_screen.StationLevel != "Level 2 / 4" || _upgrades.LevelText != "Fabricator: level 2 of 4")
                 return false;
             Check(_results[0].Ok, $"the host upgrades it ({_results[0].Message})");
             Check(HostWorkshop.LevelOf(_fabricator) == 1 && HostWorkshop.InventoryOf(_fabricator)!.SlotCount == 12, "the host's Fabricator is level 1 with 12 slots");

@@ -61,7 +61,7 @@ public enum CharacterGesture : byte
     /// <summary>Pointing a tool (the Lift).</summary>
     ToolUse,
 
-    /// <summary>Welding.</summary>
+    /// <summary>The Weld Tool welding: pushed in and held while its clamping arms close and its tip spins and glows.</summary>
     Weld,
 
     /// <summary>Spraying paint.</summary>
@@ -108,6 +108,9 @@ public enum CharacterGesture : byte
 
     /// <summary>Tipping a Soil Bag forward and shaking the soil out of it.</summary>
     BagSpill,
+
+    /// <summary>The Paint Tool's reload (R): the left hand twists its tank out and back in.</summary>
+    PaintReload,
 }
 
 /// <summary>
@@ -192,6 +195,7 @@ public static class CharacterRig
     public static IReadOnlyList<string> FullBodyClips { get; } =
     [
         "idle", "walk", "jog", "run", "crouch_idle", "crouch_walk", "jump", "fall", "land", "swim_idle", "swim", "sit",
+        "sit_low", "sit_ride", "sit_ride_low",
     ];
 
     /// <summary>Clips that move only <see cref="UpperBodyBones"/>.</summary>
@@ -207,7 +211,11 @@ public static class CharacterRig
         "hold_bucket_fp", "hold_bucket_full_fp", "bucket_fill_fp", "bucket_throw_fp", "bucket_place_fp", "bucket_place_full_fp",
         "hold_connect", "hold_connect_aim", "connect_draw", "connect_stow", "connect_click", "connect_reverse",
         "hold_connect_fp", "hold_connect_aim_fp", "connect_draw_fp", "connect_stow_fp", "connect_click_fp", "connect_reverse_fp",
+        "hold_weld", "hold_weld_aim", "weld_draw", "weld_stow", "hold_weld_fp", "hold_weld_aim_fp", "weld_draw_fp",
+        "weld_stow_fp", "weld_fp",
         "hold_bag", "bag_spill", "bag_lift", "bag_lower", "hold_bag_fp", "bag_spill_fp", "bag_lift_fp", "bag_lower_fp",
+        "hold_paint", "hold_paint_aim", "paint_draw", "paint_stow", "paint_reload",
+        "hold_paint_fp", "hold_paint_aim_fp", "paint_draw_fp", "paint_stow_fp", "paint_spray_fp", "paint_reload_fp",
     ];
 
     /// <summary>
@@ -230,13 +238,16 @@ public static class CharacterRig
 
     /// <summary>
     /// The arm pose for holding <paramref name="prop"/>, or null for empty hands. <paramref name="guard"/> raises the
-    /// tool: the Sledgehammer to block (right click held), the Connect Tool to aim at a node or drag a link.
+    /// tool: the Sledgehammer to block (right click held), the Connect Tool to aim at a node or drag a link, the Weld Tool
+    /// to aim while a part is selected, the Paint Tool to spray (a button held).
     /// </summary>
     public static string? HoldClip(CharacterProp prop, bool guard = false) => prop switch
     {
         CharacterProp.None => null,
         CharacterProp.Sledgehammer => guard ? "hold_heavy_block" : "hold_heavy",
         CharacterProp.ConnectTool => guard ? "hold_connect_aim" : "hold_connect",
+        CharacterProp.WeldTool => guard ? "hold_weld_aim" : "hold_weld",
+        CharacterProp.PaintTool => guard ? "hold_paint_aim" : "hold_paint",
         CharacterProp.PotatoBlaster => "hold_gun",
         CharacterProp.WaterBucket => "hold_bucket",
         CharacterProp.WaterBucketFull => "hold_bucket_full",
@@ -248,25 +259,30 @@ public static class CharacterRig
 
     /// <summary>
     /// The clip that brings <paramref name="prop"/> into the hand when it is taken, or null when it just appears: the
-    /// Refine Tool and the Connect Tool are drawn from the hip, and a Soil Bag is lifted up from low down. Every peer plays it when it sees the prop change, so it
+    /// Refine Tool, the Connect Tool and the Weld Tool are drawn from the hip, the Paint Tool swings up from the thigh, and a Soil Bag is lifted up from low down. Every peer plays it when it sees the prop change, so it
     /// costs no traffic.
     /// </summary>
     public static string? DrawClip(CharacterProp prop) => prop switch
     {
         CharacterProp.RefineTool => "refine_draw",
         CharacterProp.ConnectTool => "connect_draw",
+        CharacterProp.WeldTool => "weld_draw",
+        CharacterProp.PaintTool => "paint_draw",
         CharacterProp.SoilBag => "bag_lift",
         _ => null,
     };
 
     /// <summary>
-    /// The clip that puts <paramref name="prop"/> away when the hand takes something else, or null: the Refine Tool and
-    /// the Connect Tool go back to the hip and a Soil Bag is lowered, still drawn until the clip ends.
+    /// The clip that puts <paramref name="prop"/> away when the hand takes something else, or null: the Refine Tool, the
+    /// Connect Tool and the Weld Tool go back to the hip, the Paint Tool down to the thigh and a Soil Bag is lowered, still
+    /// drawn until the clip ends.
     /// </summary>
     public static string? StowClip(CharacterProp prop) => prop switch
     {
         CharacterProp.RefineTool => "refine_stow",
         CharacterProp.ConnectTool => "connect_stow",
+        CharacterProp.WeldTool => "weld_stow",
+        CharacterProp.PaintTool => "paint_stow",
         CharacterProp.SoilBag => "bag_lower",
         _ => null,
     };
@@ -292,6 +308,7 @@ public static class CharacterRig
         CharacterGesture.ConnectClick => "connect_click",
         CharacterGesture.ConnectReverse => "connect_reverse",
         CharacterGesture.BagSpill => "bag_spill",
+        CharacterGesture.PaintReload => "paint_reload",
         _ => null,
     };
 
@@ -349,9 +366,19 @@ public static class CharacterRig
         _ => null,
     };
 
+    /// <summary>True when <paramref name="prop"/> has a raised pose (<see cref="HoldClip"/> with guard), which others see.</summary>
+    public static bool CanGuard(CharacterProp prop) =>
+        prop is CharacterProp.Sledgehammer or CharacterProp.ConnectTool or CharacterProp.WeldTool or CharacterProp.PaintTool;
+
+    /// <summary>
+    /// The bit of a player's tint (<see cref="Player.PlayerInput.Tint"/>) that says the Paint Tool is taking paint off;
+    /// the rest is the palette index of its colour.
+    /// </summary>
+    public const byte TintErase = 0x80;
+
     /// <summary><paramref name="prop"/> when it is a known value, otherwise <see cref="CharacterProp.None"/>.</summary>
     public static CharacterProp Sanitize(CharacterProp prop) => prop <= CharacterProp.SoilBag ? prop : CharacterProp.None;
 
     /// <summary><paramref name="gesture"/> when it is a known value, otherwise <see cref="CharacterGesture.None"/>.</summary>
-    public static CharacterGesture Sanitize(CharacterGesture gesture) => gesture <= CharacterGesture.BagSpill ? gesture : CharacterGesture.None;
+    public static CharacterGesture Sanitize(CharacterGesture gesture) => gesture <= CharacterGesture.PaintReload ? gesture : CharacterGesture.None;
 }

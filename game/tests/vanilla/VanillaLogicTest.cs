@@ -6,6 +6,7 @@ using Mechanica.Core.Data;
 using Mechanica.Core.Logic;
 using Mechanica.Core.Player;
 using Mechanica.Core.World;
+using Mechanica.Game.Creations;
 using Mechanica.Game.Editor;
 using Mechanica.Game.Logic;
 using Mechanica.Game.Mods;
@@ -26,15 +27,15 @@ namespace Mechanica.Game.Tests;
 public partial class VanillaLogicTest : StagedTest
 {
     private const string BatchFile = "editor/batches/logic_power.json";
-    private const int CarId = 1, LiftId = 2;
+    private const int CarId = 1, LiftId = 2, ScrapId = 3;
     private static readonly string[] Outputs =
     [
         "drivers_seat", "scrap_drivers_seat", "passenger_seat", "scrap_seat", "gas_engine", "scrap_gas_engine", "electric_engine",
         "scrap_wheel", "wheel", "big_wheel", "logic_gate", "timer", "sensor", "switch", "button", "controller",
     ];
 
-    // The wheels point at their own modelled meshes (tools/wheels/build_wheels.py), so the batch bakes no mesh for them.
-    private static readonly string[] OwnMeshes = ["scrap_wheel", "wheel", "big_wheel"];
+    // Parts whose model is a file made elsewhere (tools/bearing_engine, tools/gas_engine, tools/scrap_seat, tools/wheels).
+    private static readonly string[] Authored = ["gas_engine", "scrap_drivers_seat", "scrap_gas_engine", "scrap_wheel", "wheel", "big_wheel"];
 
     private static readonly Vector3 CarAt = new(4, 1.0f, 8);
 
@@ -45,7 +46,8 @@ public partial class VanillaLogicTest : StagedTest
     private ModLoadResult _mods = null!;
     private Instance _host = null!;
     private Instance _client = null!;
-    private int _seat, _engine, _steering, _switch, _piston;
+    private int _seat, _engine, _steering, _switch, _piston, _scrapEngine, _scrapBearing;
+    private readonly HashSet<string> _clientClips = [];
     private readonly List<int> _wheels = [];
     private Vector3 _start;
 
@@ -84,7 +86,9 @@ public partial class VanillaLogicTest : StagedTest
                 .Select(f => Path.GetRelativePath(_scratchMod, f).Replace('\\', '/'))
                 .Where(IsBatchOutput)
                 .Order(StringComparer.Ordinal).ToList();
-            Check(made.Count == 4 * Outputs.Length - OwnMeshes.Length, $"it writes a part, an editor source, a mesh (but for the wheels) and a recipe for each ({made.Count} files)");
+            // Parts whose model is a file made elsewhere (tools/bearing_engine, tools/gas_engine, tools/scrap_seat,
+            // tools/wheels) get no generated mesh.
+            Check(made.Count == 4 * Outputs.Length - Authored.Length, $"it writes a part, an editor source, a mesh (unless authored) and a recipe for each ({made.Count} files)");
             var differing = made.Where(f => !File.Exists(Path.Combine(VanillaDir, f))
                 || !File.ReadAllBytes(Path.Combine(VanillaDir, f)).AsSpan().SequenceEqual(File.ReadAllBytes(Path.Combine(_scratchMod, f)))).ToList();
             Check(differing.Count == 0, $"every file matches mods/vanilla (differing: {string.Join(", ", differing)}); re-run tools/author-vanilla.sh");
@@ -115,6 +119,22 @@ public partial class VanillaLogicTest : StagedTest
             return frame >= 30 && _client.Main.Creations.NodeOf(CarId) is not null && _client.Main.Creations.NodeOf(LiftId) is not null;
         });
         Wait("the car settles", 120);
+        Add("each bearing's turning half rides on its wheel on both peers", _ =>
+        {
+            foreach (var instance in new[] { _host, _client })
+            {
+                var node = instance.Main.Creations.NodeOf(CarId)!;
+                foreach (var wheel in _wheels)
+                {
+                    var link = node.Creation.Joints.First(j => j.Connection.A == wheel);
+                    var rotor = node.Bodies[link.BodyB].GetNodeOrNull<Node3D>($"Part{wheel}rotor");
+                    Check(rotor is not null && rotor.GetChildCount() == 1, $"{instance}: bearing {wheel}'s rotor hangs off the wheel's body");
+                    var stays = node.Bodies[link.BodyA].GetNodeOrNull<Node3D>($"Part{wheel}/Model/Stator");
+                    Check(stays is not null, $"{instance}: bearing {wheel}'s casing stays on the chassis");
+                }
+            }
+            return true;
+        });
 
         Add("the client wires the car and picks second gear", frame =>
         {
@@ -251,11 +271,80 @@ public partial class VanillaLogicTest : StagedTest
             _results.Clear();
             return true;
         });
+        Add("the host spawns a scrap engine; it rests with its off clip on both peers", frame =>
+        {
+            if (frame == 0)
+                SpawnScrapEngine();
+            if (frame < 30 || Scrap(_client) is not { } client || Scrap(_host) is not { } host)
+                return false;
+            foreach (var (visual, who) in new[] { (host, "host"), (client, "client") })
+            {
+                Check(visual.Player is not null, $"the {who} shows the engine's whole model with its clips");
+                Check(visual.Clip == "off_loop", $"the {who}'s engine plays its off clip ({visual.Clip})");
+                Check(visual.Effects.Count == 4 && !visual.Effects[0].Emitting, $"the {who}'s exhaust is quiet ({visual.Effects.Count} effects)");
+            }
+            return true;
+        });
+        Add("the client switches it on: it cranks, then runs with smoke and the lever at its power", frame =>
+        {
+            if (frame == 0)
+                _host.Main.PlayerSync.HostTeleport(_client.Peer, new Vector3(-2.5f, 0.6f, -4));
+            if (frame == 30)
+            {
+                Request(LogicActions.ConnectParts, new LinkPartsArgs(ScrapId, _scrapEngine, _scrapBearing));
+                Request(LogicActions.ConfigurePart, new ConfigurePartArgs(ScrapId, _scrapEngine,
+                    new Dictionary<string, JsonElement?> { ["on"] = JsonSerializer.SerializeToElement(true), ["gear"] = JsonSerializer.SerializeToElement(4) }));
+            }
+            if (Scrap(_client)?.Clip is { } shown)
+                _clientClips.Add(shown);
+            if (Scrap(_client) is not { } client || client.Clip != "run_hard_loop")
+                return false;
+            Check(_results.All(r => r.Ok), $"linking and switching on succeed ({string.Join("; ", _results)})");
+            Check(_clientClips.Contains("start"), $"the client saw it crank first ({string.Join(", ", _clientClips)})");
+            Check(client.Effects[0].Emitting && client.Effects[1].Emitting, "smoke comes out of both exhausts");
+            var lever = _client.Main.Creations.NodeOf(ScrapId)!.FindChildren("Lever", nameof(Node3D), true, false).OfType<Node3D>().FirstOrDefault();
+            Check(lever is not null && Mathf.Abs(lever.Rotation.Z) > 0.5f, $"the lever is over at the highest power ({lever?.Rotation})");
+            Check(Scrap(_host)!.Clip == "run_hard_loop", "the host runs it too");
+            _results.Clear();
+            return true;
+        });
+        Add("switched off it winds down to its off clip", frame =>
+        {
+            if (frame == 0)
+                Request(LogicActions.ConfigurePart, new ConfigurePartArgs(ScrapId, _scrapEngine,
+                    new Dictionary<string, JsonElement?> { ["on"] = JsonSerializer.SerializeToElement(false) }));
+            if (Scrap(_client)?.Clip is { } shown)
+                _clientClips.Add(shown);
+            if (Scrap(_client) is not { } client || client.Clip != "off_loop")
+                return false;
+            Check(_clientClips.Contains("stop"), "it played its wind-down");
+            Check(!client.Effects[0].Emitting, "the smoke stops");
+            return true;
+        });
     }
 
-    // The car of LogicScriptTests: a metal chassis along Z (z 0..4) with a driver's seat and a gas engine on
-    // top facing -Z, so the front is z 0: the front wheels hang off an axle under a steering bearing there, the rear
-    // wheels off a post at z 4.
+    private PartDisplayVisual? Scrap(Instance instance) =>
+        instance.Main.Creations.NodeOf(ScrapId)?.Displays.FirstOrDefault(d => d.Part == _scrapEngine);
+
+    // A scrap engine on a slab with a bearing and a wheel on its side, left off.
+    private void SpawnScrapEngine()
+    {
+        var rig = new Creation(ScrapId, _mods);
+        for (var x = -1; x <= 1; x++)
+        {
+            for (var z = -1; z <= 1; z++)
+                Place(rig, "vanilla:metal_block", new GridCell(x, 0, z));
+        }
+        _scrapEngine = Place(rig, "vanilla:scrap_gas_engine", new GridCell(0, 1, 0));
+        var outward = new GridCell(1, 0, 0);
+        _scrapBearing = Place(rig, "vanilla:bearing", new GridCell(2, 0, 0), Facing(outward));
+        rig.SetAllBodyPoses(new Pose(new System.Numerics.Vector3(-4, 0.2f, -4), System.Numerics.Quaternion.Identity));
+        _host.Main.Creations.Add(rig, _host.Main.Assets);
+    }
+
+    // The car of LogicScriptTests: a metal chassis along Z (z 0..4) with a driver's seat and an electric engine (it
+    // drives four wheels and needs no switching on) on top facing -Z, so the front is z 0: the front wheels hang off an
+    // axle under a steering bearing there, the rear wheels off a post at z 4.
     private void SpawnCar()
     {
         var car = new Creation(CarId, _mods);
@@ -263,7 +352,7 @@ public partial class VanillaLogicTest : StagedTest
         for (var z = 1; z <= 4; z++)
             Place(car, "vanilla:metal_block", new GridCell(0, 0, z));
         _seat = Place(car, "vanilla:drivers_seat", new GridCell(0, 1, 1));
-        _engine = Place(car, "vanilla:gas_engine", new GridCell(0, 1, 3));
+        _engine = Place(car, "vanilla:electric_engine", new GridCell(0, 1, 3));
         Place(car, "vanilla:metal_block", new GridCell(0, -1, 4));
         Place(car, "vanilla:metal_block", new GridCell(0, -2, 4));
         _steering = Place(car, "vanilla:bearing", new GridCell(0, -1, 0), Facing(new GridCell(0, -1, 0)));
@@ -322,6 +411,6 @@ public partial class VanillaLogicTest : StagedTest
     }
 
     private static bool IsBatchOutput(string relative) =>
-        Outputs.Any(id => relative == $"parts/{id}.json" || (relative == $"meshes/{id}.glb" && !OwnMeshes.Contains(id))
+        Outputs.Any(id => relative == $"parts/{id}.json" || (relative == $"meshes/{id}.glb" && !Authored.Contains(id))
             || relative == $"editor/parts/{id}.json" || relative == $"recipes/{id}.json");
 }

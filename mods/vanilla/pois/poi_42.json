@@ -1,0 +1,26 @@
+{
+  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed on its own.
+  // Written by tools/author-poi-placeholders.py; edit the table there and re-run.
+  "id": "poi_42",
+  "name": "POI-42 Haymaze",
+  "radius": 77.0,
+  "size": [60.0, 3.0, 60.0],
+  "road": "road",
+  "placement": {},
+  "terrain": [
+    { "op": "flatten", "radius": 57.0, "blend": 20.0 }
+  ],
+  "ground": [{ "ground": "lot", "radius": 49.0, "blend": 10.0, "noise": 4.0 }],
+  "pieces": [
+    { "shape": "box", "size": [64.0, 0.3, 64.0], "at": [0.0, 0.15, 0.0], "color": "#8a7a5a" },
+    { "shape": "box", "size": [60.0, 3.0, 2.0], "at": [0.0, 1.8, -29.0], "color": "#d8b85a" },
+    { "shape": "box", "size": [60.0, 3.0, 2.0], "at": [0.0, 1.8, 29.0], "color": "#d8b85a" },
+    { "shape": "box", "size": [40.0, 3.0, 2.0], "at": [-10.0, 1.8, -15.0], "color": "#d8b85a" },
+    { "shape": "box", "size": [40.0, 3.0, 2.0], "at": [10.0, 1.8, 0.0], "color": "#d8b85a" },
+    { "shape": "box", "size": [40.0, 3.0, 2.0], "at": [-10.0, 1.8, 15.0], "color": "#d8b85a" },
+    { "shape": "box", "size": [2.0, 3.0, 52.0], "at": [-29.0, 1.8, 0.0], "color": "#d8b85a" },
+    { "shape": "box", "size": [2.0, 3.0, 52.0], "at": [29.0, 1.8, 0.0], "color": "#d8b85a" },
+    { "shape": "box", "size": [2.0, 3.0, 14.0], "at": [0.0, 1.8, -22.0], "color": "#d8b85a" },
+    { "shape": "box", "size": [2.0, 3.0, 14.0], "at": [15.0, 1.8, 22.0], "color": "#d8b85a" }
+  ]
+}

@@ -30,6 +30,7 @@ public class LogbookTests
     [InlineData("""{ "map_resolution": 4 }""", "map_resolution")]
     [InlineData("""{ "max_markers": 0 }""", "max_markers")]
     [InlineData("""{ "pick_radius": 0 }""", "pick_radius")]
+    [InlineData("""{ "minimap_metres_per_pixel": 0 }""", "minimap_metres_per_pixel")]
     public void BadSettingsSayWhatIsWrong(string json, string field) =>
         Assert.Contains(field, Assert.Throws<FormatException>(() => LogbookSettings.Parse(json)).Message);
 
@@ -48,6 +49,17 @@ public class LogbookTests
         // It never leaves the world.
         view.Pan(new Vector2(100000, -100000));
         Assert.Equal(new Vector2(-2048, 2048), view.Centre);
+    }
+
+    [Fact]
+    public void AWideWorldFitsByItsLongerSide()
+    {
+        var view = new MapView(12000, 9000, 0.25f);
+        var size = new Vector2(800, 800);
+        view.Fit(size);
+        Assert.Equal(12000f / 800f, view.MetresPerPixel, 3);
+        view.Pan(new Vector2(-100000, -100000));
+        Assert.Equal(new Vector2(6000, 4500), view.Centre);
     }
 
     [Fact]

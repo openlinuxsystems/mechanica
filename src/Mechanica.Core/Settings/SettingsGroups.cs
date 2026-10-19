@@ -207,6 +207,9 @@ public sealed record InterfaceSettings
     /// <summary>Shows the compass along the top of the screen.</summary>
     public bool ShowCompass { get; init; } = true;
 
+    /// <summary>Shows the minimap in the top right corner (the full map opens with M either way).</summary>
+    public bool ShowMinimap { get; init; } = true;
+
     /// <summary>Shows other players' names over their heads.</summary>
     public bool ShowPlayerNames { get; init; } = true;
 

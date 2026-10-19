@@ -99,7 +99,9 @@ public sealed record SoilView(int Creation, int Part, string? Seed = null, strin
 /// <param name="Items">What it holds (qualified ids).</param>
 /// <param name="Expires">Host clock time at which it is gone, in seconds (ignored when <paramref name="Placed"/>).</param>
 /// <param name="Placed">True for items put down with Force Build: they stay where they were placed and never expire.</param>
-public sealed record ItemDrop(int Id, Vec3 Position, IReadOnlyList<ItemStack> Items, double Expires, bool Placed = false);
+/// <param name="KnockedOut">True for what a knocked-out player dropped: the game shows it as the knockout bag.</param>
+/// <param name="Owner">The peer whose knockout bag it is (their compass and maps point to it), or null.</param>
+public sealed record ItemDrop(int Id, Vec3 Position, IReadOnlyList<ItemStack> Items, double Expires, bool Placed = false, bool KnockedOut = false, int? Owner = null);
 
 /// <summary>One thing a shot, a splash or a bot's attack hit (<see cref="SurvivalActions.Hit"/>, <see cref="SurvivalActions.Splash"/>).</summary>
 /// <param name="Kind"><c>player</c>, <c>part</c>, <c>object</c>, <c>bot</c>, <c>crop</c> (a bot destroyed it) or <c>ground</c>.</param>

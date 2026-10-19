@@ -156,24 +156,24 @@ public sealed class LogicScriptTests : IDisposable
     [Fact]
     public void ACarDrivesTowardItsEngineAndSteersRight()
     {
-        var (creation, seat, engine, wheels, steering) = BuildCar();
+        var (creation, seat, engine, wheels, steering) = BuildCar("vanilla:electric_engine");
         _runtime.Seats!.Sit(Peer, Car, seat);
         Steps(3);
         // Nobody presses anything: the engine brakes and the wheels point ahead.
         foreach (var (bearing, _) in wheels)
-            Assert.Equal(new JointMotor(0f, 80f), LastMotor(bearing));
+            Assert.Equal(new JointMotor(0f, 100f), LastMotor(bearing));
         Assert.Equal(0f, LastMotor(steering).Target);
 
         _input = new PlayerInput(1, 1, 0, 0, false, false);
         Steps(3);
         Assert.Equal(1f, _runtime.Signals.Output(Car, seat));
         Assert.Equal(1f, _runtime.Signals.Output(Car, engine));
-        // Gear 3 of 5 of 25 rad/s. Rolling toward -Z (the engine's front) is a negative spin about +X
+        // Gear 3 of 5 of 20 rad/s. Rolling toward -Z (the engine's front) is a negative spin about +X
         // (right-handed), so the right wheels turn negative and the left ones, about -X, positive.
         foreach (var (bearing, side) in wheels)
-            Assert.Equal(new JointMotor(-side * 15f, 120f), LastMotor(bearing));
-        // Right is clockwise from above: about the steering bearing's -Y axis that is +30°.
-        Assert.Equal(MathF.PI / 6, LastMotor(steering).Target!.Value, 4);
+            Assert.Equal(new JointMotor(-side * 12f, 160f), LastMotor(bearing));
+        // Right is clockwise from above: about the steering bearing's -Y axis that is +27° (the seat's steer_angle).
+        Assert.Equal(27 * MathF.PI / 180, LastMotor(steering).Target!.Value, 4);
 
         _runtime.Seats.Leave(Peer);
         Steps(3);
@@ -182,40 +182,143 @@ public sealed class LogicScriptTests : IDisposable
     }
 
     [Fact]
+    public void TheScrapEngineMustBeSwitchedOnAndCranksBeforeItDrives()
+    {
+        var (creation, seat, engine, wheels, _) = BuildCar("vanilla:scrap_gas_engine", linked: 2);
+        // It drives two bearings at most (Scrap Engine Design Spec).
+        Assert.False(creation.TryLink(engine, wheels[2].Bearing, out _));
+        _runtime.Seats!.Sit(Peer, Car, seat);
+        _input = new PlayerInput(0, 1, 0, 0, false, false);
+        Steps(10);
+        Assert.StartsWith("off_loop", _runtime.Readouts.Text(Car, engine, "clip"));
+        Assert.DoesNotContain(_world.Motors, m => m.Part == wheels[0].Bearing && m.Velocity is not null);
+
+        Configure(creation, engine, "on", true);
+        Steps(1);
+        var first = _runtime.Readouts.Text(Car, engine, "clip")!;
+        Assert.True(first.StartsWith("start#", StringComparison.Ordinal) || first.StartsWith("false_start#", StringComparison.Ordinal), first);
+        Assert.Equal(1f / 3, _runtime.Readouts.Number(Car, engine, "lever")!.Value, 4);
+        Steps(120);                                   // a false start (0.7 s) and the start (1 s) are over
+        Assert.StartsWith("run_loop#", _runtime.Readouts.Text(Car, engine, "clip"));
+        Assert.Equal(1f, _runtime.Readouts.Number(Car, engine, "running"));
+        // Gear 2 of 4 of 15 rad/s, uneven by up to 12 %, toward the engine's front.
+        foreach (var (bearing, side) in wheels.Take(2))
+        {
+            var motor = LastMotor(bearing);
+            Assert.Equal(80f, motor.MaxEffort);
+            Assert.InRange(-side * motor.Velocity!.Value, 7.5f * 0.87f, 7.5f * 1.13f);
+        }
+
+        Configure(creation, engine, "gear", 4);
+        Steps(1);
+        Assert.StartsWith("gear#", _runtime.Readouts.Text(Car, engine, "clip"));
+        Steps(30);
+        Assert.StartsWith("run_hard_loop#", _runtime.Readouts.Text(Car, engine, "clip"));
+        Assert.Equal(1f, _runtime.Readouts.Number(Car, engine, "lever"));
+
+        Configure(creation, engine, "on", false);
+        Steps(1);
+        Assert.StartsWith("stop#", _runtime.Readouts.Text(Car, engine, "clip"));
+        Steps(60);
+        Assert.StartsWith("off_loop#", _runtime.Readouts.Text(Car, engine, "clip"));
+        Assert.Equal(0f, _runtime.Readouts.Number(Car, engine, "running"));
+        Assert.Null(LastMotor(wheels[0].Bearing).Velocity);
+    }
+
+    [Fact]
+    public void AnUpgradedGasEngineDrivesMoreBearingsFasterAndHeatsUp()
+    {
+        var (creation, seat, engine, wheels, _) = BuildCar(linked: 2);
+        // Gas Engine 1 drives two bearings; level 5 (upgrade 4) drives ten, with thirteen power steps.
+        Assert.False(creation.TryLink(engine, wheels[2].Bearing, out _));
+        Assert.True(creation.SetLevel(engine, 4));
+        Assert.Equal("Gas Engine 5", creation.DefinitionOf(engine).Name);
+        foreach (var (bearing, _) in wheels.Skip(2))
+            Link(creation, engine, bearing);
+        _runtime.Seats!.Sit(Peer, Car, seat);
+        _input = new PlayerInput(0, 1, 0, 0, false, false);
+        Configure(creation, engine, "on", true);
+        Configure(creation, engine, "gear", 13);
+        Steps(60);
+        Assert.Equal(1f, _runtime.Readouts.Number(Car, engine, "lever"));
+        Assert.StartsWith("run_hard_loop#", _runtime.Readouts.Text(Car, engine, "clip"));
+        // Top gear of 57 rad/s (under the 60 rad/s bearing limit even when it wobbles) with 820 N·m, uneven by up to 3 %.
+        foreach (var (bearing, side) in wheels)
+        {
+            var motor = LastMotor(bearing);
+            Assert.Equal(820f, motor.MaxEffort);
+            Assert.InRange(-side * motor.Velocity!.Value, 57f * 0.97f, 57f * 1.03f);
+        }
+        Assert.InRange(_runtime.Readouts.Number(Car, engine, "heat")!.Value, 0.2f, 1f);
+        Steps(30);
+        Assert.Equal(1f, _runtime.Readouts.Number(Car, engine, "heat"));
+
+        Configure(creation, engine, "on", false);
+        Steps(60);
+        Assert.Equal(0f, _runtime.Readouts.Number(Car, engine, "heat"));
+    }
+
+    [Fact]
+    public void EveryEngineLevelStaysUnderTheBearingSpeedLimit()
+    {
+        // engine.lua sends speed × (1 + uneven) at its top gear; a bearing refuses more than the motion limit.
+        var limit = new MotionSettings().MaxBearingSpeed;
+        var engines = Vanilla.Parts.Values.Where(p => p.Definition.Script?.EndsWith("engine.lua", StringComparison.Ordinal) == true).ToList();
+        Assert.NotEmpty(engines);
+        foreach (var engine in engines)
+        {
+            for (var level = 0; level <= PartUpgrades.MaxLevel(engine.Definition); level++)
+            {
+                var properties = PartUpgrades.At(engine.Definition, level).Properties!;
+                var top = (float)properties["speed"]!.GetValue<double>() * (1 + (float)(properties["uneven"]?.GetValue<double>() ?? 0));
+                Assert.True(top <= limit, $"{engine.Definition.Name} turns up to {top} rad/s, over {limit}");
+            }
+        }
+    }
+
+    [Fact]
     public void ReversedBearingsTurnTheOtherWay()
     {
-        var (creation, seat, _, wheels, steering) = BuildCar();
+        var (creation, seat, _, wheels, steering) = BuildCar("vanilla:electric_engine");
         var (reversed, side) = wheels[0];
         Configure(creation, reversed, "reverse", true);
         Configure(creation, steering, "reverse", true);
         _runtime.Seats!.Sit(Peer, Car, seat);
         _input = new PlayerInput(1, 1, 0, 0, false, false);
         Steps(3);
-        Assert.Equal(new JointMotor(side * 15f, 120f), LastMotor(reversed));
+        Assert.Equal(new JointMotor(side * 12f, 160f), LastMotor(reversed));
         foreach (var (bearing, other) in wheels.Skip(1))
-            Assert.Equal(new JointMotor(-other * 15f, 120f), LastMotor(bearing));
-        Assert.Equal(-MathF.PI / 6, LastMotor(steering).Target!.Value, 4);
+            Assert.Equal(new JointMotor(-other * 12f, 160f), LastMotor(bearing));
+        Assert.Equal(-27 * MathF.PI / 180, LastMotor(steering).Target!.Value, 4);
     }
 
     [Fact]
     public void AnEngineBurnsFuelFromTheCreationsGasContainers()
     {
         _runtime.Creative = false;
-        var (creation, seat, engine, wheels, _) = BuildCar();
+        var (creation, seat, engine, wheels, _) = BuildCar(linked: 2);
         var tank = Place(creation, "vanilla:gas_container", new GridCell(0, 1, -1));
         _runtime.Seats!.Sit(Peer, Car, seat);
         _input = new PlayerInput(0, 1, 0, 0, false, false);
-        Steps(3);
-        Assert.All(wheels, w => Assert.Equal(0f, LastMotor(w.Bearing).Velocity));
+        // Switched on without fuel it only sputters.
+        Configure(creation, engine, "on", true);
+        Steps(60);
+        Assert.StartsWith("off_loop#", _runtime.Readouts.Text(Car, engine, "clip"));
+        Assert.DoesNotContain(_world.Motors, m => wheels.Any(w => w.Bearing == m.Part));
 
         creation.InventoryOf(tank)!.Add("vanilla:gasoline", 1);
-        Steps(3);
+        Configure(creation, engine, "on", false);
+        Steps(1);
+        Configure(creation, engine, "on", true);
+        Steps(60);                                    // the start is 0.8 s
         Assert.Equal(0, creation.InventoryOf(tank)!.Count("vanilla:gasoline"));
-        Assert.All(wheels, w => Assert.Equal(-w.Side * 15f, LastMotor(w.Bearing).Velocity));
+        // Gear 3 of 5 of 25 rad/s, uneven by up to 3 %.
+        foreach (var (bearing, side) in wheels.Take(2))
+            Assert.InRange(-side * LastMotor(bearing).Velocity!.Value, 15f * 0.97f, 15f * 1.03f);
         // properties.fuel_time is 40 s of full throttle per gasoline.
         Steps(40 * 60 + 5);
         Assert.Equal(0f, _runtime.Signals.Output(Car, engine));
-        Assert.All(wheels, w => Assert.Equal(0f, LastMotor(w.Bearing).Velocity));
+        Assert.All(wheels.Take(2), w => Assert.Null(LastMotor(w.Bearing).Velocity));
     }
 
     [Fact]
@@ -243,6 +346,85 @@ public sealed class LogicScriptTests : IDisposable
         Steps(31);
         Assert.Equal(0f, _runtime.Signals.Output(Car, controller));
         Assert.Equal(-MathF.PI / 4, LastMotor(arm).Target!.Value, 4);
+    }
+
+    [Fact]
+    public void AControllerLinkedFromASeatStartsOnWAndStopsOnS()
+    {
+        var creation = Board();
+        var seat = Place(creation, "vanilla:drivers_seat", new GridCell(-2, 1, 0));
+        var controller = Place(creation, "vanilla:controller", new GridCell(0, 1, 0));
+        var arm = Bearing(creation, new GridCell(3, 0, 0), new GridCell(1, 0, 0));
+        Place(creation, "vanilla:metal_block", new GridCell(4, 0, 0));
+        Link(creation, seat, controller);
+        Link(creation, controller, arm);
+        Configure(creation, controller, "frames", new[] { 0, 90 });
+        Configure(creation, controller, "frame_time", 0.5);
+        Configure(creation, controller, "loop", true);
+        _runtime.Seats!.Sit(Peer, Car, seat);
+        Steps(3);
+        Assert.Equal(0f, _runtime.Signals.Output(Car, controller));
+
+        // W starts it, and it keeps running after W is let go.
+        _input = new PlayerInput(0, 1, 0, 0, false, false);
+        Steps(3);
+        _input = new PlayerInput(0, 0, 0, 0, false, false);
+        Steps(40);
+        Assert.Equal(1f, _runtime.Signals.Output(Car, controller));
+        Assert.Equal(MathF.PI / 2, LastMotor(arm).Target!.Value, 4);
+
+        // S stops it, and it stays stopped after S is let go.
+        _input = new PlayerInput(0, -1, 0, 0, false, false);
+        Steps(3);
+        _input = new PlayerInput(0, 0, 0, 0, false, false);
+        Steps(40);
+        Assert.Equal(0f, _runtime.Signals.Output(Car, controller));
+    }
+
+    [Fact]
+    public void TheScrapSeatShowsItsDriverAndRattlesWhileAnEngineRuns()
+    {
+        var creation = Board();
+        var seat = Place(creation, "vanilla:scrap_drivers_seat", new GridCell(-2, 1, -2));
+        var engine = Place(creation, "vanilla:electric_engine", new GridCell(2, 1, 0));
+        Link(creation, seat, engine);
+        Steps(3);
+        Assert.Equal(0f, _runtime.Readouts.Number(Car, seat, "seated"));
+        Assert.Equal(0f, _runtime.Readouts.Number(Car, seat, "rattle"));
+
+        _runtime.Seats!.Sit(Peer, Car, seat);
+        _input = new PlayerInput(0, 0, 0, 0, false, false);
+        Steps(12);
+        Assert.Equal(1f, _runtime.Readouts.Number(Car, seat, "seated"));
+        Assert.Equal(0f, _runtime.Readouts.Number(Car, seat, "rattle"));
+        Assert.StartsWith("enter#", _runtime.Readouts.Text(Car, seat, "clip"));
+        Steps(48);
+        Assert.StartsWith("seated_loop#", _runtime.Readouts.Text(Car, seat, "clip"));
+
+        _input = new PlayerInput(0, 1, 0, 0, false, false);
+        Steps(24);
+        Assert.Equal(1f, _runtime.Readouts.Number(Car, engine, "running"));
+        Assert.Equal(1f, _runtime.Readouts.Number(Car, seat, "rattle"));
+        Assert.StartsWith("seated_rattle_loop#", _runtime.Readouts.Text(Car, seat, "clip"));
+
+        _runtime.Seats.Leave(Peer);
+        Steps(3);
+        Assert.StartsWith("exit#", _runtime.Readouts.Text(Car, seat, "clip"));
+        Assert.Equal(0f, _runtime.Readouts.Number(Car, seat, "seated"));
+        Assert.Equal(0f, _runtime.Readouts.Number(Car, seat, "rattle"));
+    }
+
+    [Fact]
+    public void TheScrapSeatTakesFourLinks()
+    {
+        var creation = Board();
+        var seat = Place(creation, "vanilla:scrap_drivers_seat", new GridCell(-2, 1, -2));
+        for (var x = 3; x < 8; x++)
+            Place(creation, "vanilla:metal_block", new GridCell(x, 0, 0));
+        for (var i = 0; i < 4; i++)
+            Link(creation, seat, Place(creation, "vanilla:switch", new GridCell(i + 3, 1, 0)));
+        var fifth = Place(creation, "vanilla:switch", new GridCell(7, 1, 0));
+        Assert.False(creation.TryLink(seat, fifth, out _));
     }
 
     [Theory]
@@ -311,27 +493,29 @@ public sealed class LogicScriptTests : IDisposable
     public void AnEngineShowsItsFuelSpeedAndTorqueAndLightsItsWheels()
     {
         _runtime.Creative = false;
-        var (creation, seat, engine, wheels, steering) = BuildCar();
+        var (creation, seat, engine, wheels, steering) = BuildCar(linked: 2);
         var tank = Place(creation, "vanilla:gas_container", new GridCell(0, 1, -1));
         creation.InventoryOf(tank)!.Add("vanilla:gasoline", 3);
         _runtime.Seats!.Sit(Peer, Car, seat);
         _input = new PlayerInput(1, 1, 0, 0, false, false);
-        Steps(10);
+        Configure(creation, engine, "on", true);
+        Steps(60);                                    // the start is 0.8 s
         var readouts = _runtime.Readouts;
         Assert.Equal(1f, readouts.Number(Car, engine, "running"));
         Assert.Equal(2f, readouts.Number(Car, engine, "fuel_items"));
         Assert.InRange(readouts.Number(Car, engine, "fuel")!.Value, 0.9f, 1f);
         Assert.Equal(120f, readouts.Number(Car, engine, "torque"));
         Assert.True(readouts.Has(Car, engine, "rpm"));
-        foreach (var (bearing, side) in wheels)
-            Assert.Equal(-side * 15f, readouts.Number(Car, bearing, "drive"));
+        foreach (var (bearing, side) in wheels.Take(2))
+            Assert.InRange(-side * readouts.Number(Car, bearing, "drive")!.Value, 15f * 0.97f, 15f * 1.03f);
         Assert.Equal(1f, readouts.Number(Car, steering, "drive"));
 
         _input = null;
-        Steps(10);
+        Configure(creation, engine, "on", false);
+        Steps(60);
         Assert.Equal(0f, readouts.Number(Car, engine, "running"));
         Assert.Equal(0f, readouts.Number(Car, engine, "torque"));
-        foreach (var (bearing, _) in wheels)
+        foreach (var (bearing, _) in wheels.Take(2))
             Assert.False(readouts.Has(Car, bearing, "drive"));
         Assert.False(readouts.Has(Car, steering, "drive"));
     }
@@ -339,14 +523,14 @@ public sealed class LogicScriptTests : IDisposable
     [Fact]
     public void AnEngineWithNothingLinkedInRunsWhileItIsOn()
     {
-        var (creation, seat, engine, wheels, _) = BuildCar();
+        var (creation, seat, engine, wheels, _) = BuildCar("vanilla:electric_engine");
         Assert.True(creation.Unlink(seat, engine));
         Steps(3);
         Assert.All(wheels, w => Assert.Equal(0f, LastMotor(w.Bearing).Velocity));
         Configure(creation, engine, "on", true);
         Configure(creation, engine, "gear", 5);
         Steps(3);
-        Assert.All(wheels, w => Assert.Equal(-w.Side * 25f, LastMotor(w.Bearing).Velocity));
+        Assert.All(wheels, w => Assert.Equal(-w.Side * 20f, LastMotor(w.Bearing).Velocity));
         Assert.Equal(1f, _runtime.Signals.Output(Car, engine));
     }
 
@@ -412,13 +596,14 @@ public sealed class LogicScriptTests : IDisposable
 
     // A metal chassis along Z (z 0..4) with a driver's seat and a gas engine on top, both facing -Z.
     // The front (-Z) wheels hang off an axle under a steering bearing at z 0; the rear ones off a post at z 4.
-    private (Creation Creation, int Seat, int Engine, List<(int Bearing, int Side)> Wheels, int Steering) BuildCar()
+    private (Creation Creation, int Seat, int Engine, List<(int Bearing, int Side)> Wheels, int Steering) BuildCar(
+        string engineId = "vanilla:gas_engine", int linked = 4)
     {
         var creation = NewCreation();
         for (var z = 1; z <= 4; z++)
             Place(creation, "vanilla:metal_block", new GridCell(0, 0, z));
         var seat = Place(creation, "vanilla:drivers_seat", new GridCell(0, 1, 1));
-        var engine = Place(creation, "vanilla:gas_engine", new GridCell(0, 1, 3));
+        var engine = Place(creation, engineId, new GridCell(0, 1, 3));
         Place(creation, "vanilla:metal_block", new GridCell(0, -1, 4));
         Place(creation, "vanilla:metal_block", new GridCell(0, -2, 4));
         var steering = Bearing(creation, new GridCell(0, -1, 0), new GridCell(0, -1, 0));
@@ -436,7 +621,7 @@ public sealed class LogicScriptTests : IDisposable
         }
         Link(creation, seat, engine);
         Link(creation, seat, steering);
-        foreach (var (bearing, _) in wheels)
+        foreach (var (bearing, _) in wheels.Take(linked))
             Link(creation, engine, bearing);
         return (creation, seat, engine, wheels, steering);
     }

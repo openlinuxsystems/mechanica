@@ -1,40 +1,50 @@
 {
   "id": "scrap_drivers_seat",
   "name": "Scrap Driver's Seat",
-  "description": "A driver's seat from scrap. It steers less far and more slowly.",
+  "description": "A makeshift seat on a pallet with a pipe steering wheel. Sit in it with E and drive: W and S are its output (link it to engines; a controller starts on W and stops on S, a thruster burns while you hold W), A and D steer the upright bearings it is linked to. Switches and buttons it is linked to go on your hotbar while you sit: 1 to 9 and 0 use them, Left and Right click the first two. It takes 4 links.",
   "category": "interactive",
   "mass": 5,
-  "durability": 3,
+  "durability": 2,
   "friction": 0.5,
-  "buoyancy": 0.3,
-  "flammable": false,
-  "stack_size": 10,
+  "buoyancy": 0.2,
+  "flammable": true,
+  "stack_size": 5,
   "sound_material": "scrap",
-  "size": [2, 2, 2],
-  "mesh": "meshes/scrap_drivers_seat.glb",
+  "size": [4, 4, 6],
+  "mesh": "meshes/parts/scrap_drivers_seat.glb",
+  "icon": "textures/items/scrap_drivers_seat_icon.png",
   "visual": {
-    "color": "#7a5a3a",
-    "roughness": 0.85,
-    "metallic": 0.2
+    "color": "#ffffff",
+    "roughness": 0.6,
+    "metallic": 0.3
   },
   "sockets": [
     {
       "id": "base",
       "type": "structural",
-      "position": [0, -0.25, 0],
+      "position": [0, -0.5, 0],
       "normal": [0, -1, 0]
     }
   ],
   "script": "scripts/seat.lua",
   "sounds": {
-    "enter": "seat_enter",
-    "exit": "seat_exit"
+    "enter": "scrap_seat_enter",
+    "exit": "scrap_seat_exit",
+    "creak": "scrap_seat_creak"
   },
   "logic": {
-    "outputs": 10
+    "outputs": 4
   },
   "seat": {
-    "offset": [0, -0.1, 0]
+    "offset": [0, -0.355, 0.4],
+    "cushion": [0, 0.035, 0.4],
+    "hands": "wheel",
+    "bounce": 1.6
+  },
+  "display": {
+    "clips": {
+      "readout": "clip"
+    }
   },
   "properties": {
     "steer_angle": 22,

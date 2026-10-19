@@ -154,6 +154,20 @@ public partial class SoundTest : StagedTest
             Tools.Weld.Deselect();
             return true;
         });
+        Add("a weld's blue sparks fly on every peer that hears it", frame =>
+        {
+            if (frame == 0)
+            {
+                Clear();
+                var at = _client.Main.LocalPlayer!.GlobalPosition + new Vector3(0, 1, -1.5f);
+                Check(_host.Main.Sounds.Emit("weld_complete", "vanilla", at), "the host plays weld_complete");
+            }
+            if (!Heard(_client, "vanilla:weld_complete") && frame < 60)
+                return false;
+            Check(_host.Main.WeldEffects.Bursts == 1 && _client.Main.WeldEffects.Bursts == 1,
+                $"sparks on both peers ({_host.Main.WeldEffects.Bursts}, {_client.Main.WeldEffects.Bursts})");
+            return true;
+        });
         Add("a Sledgehammer hit plays smash_hit and the plank's impact", frame =>
         {
             if (frame == 0)

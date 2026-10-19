@@ -2,6 +2,7 @@ using System.Numerics;
 using System.Text.Json;
 using Mechanica.Core.Actions;
 using Mechanica.Core.Creations;
+using Mechanica.Core.Items;
 using Mechanica.Core.Data;
 using Mechanica.Core.Sound;
 using Mechanica.Core.World;
@@ -52,7 +53,13 @@ public sealed record WeldPartsArgs(int Creation, int A, int B);
 /// <param name="Creation">The Creation holding the parts.</param>
 /// <param name="Parts">Part ids to paint, without repeats.</param>
 /// <param name="Color"><c>"#rrggbb"</c>, or null to take the paint off.</param>
-public sealed record PaintArgs(int Creation, IReadOnlyList<int> Parts, string? Color = null);
+/// <param name="Stroke">
+/// Which stroke of the caller's this belongs to (any number the caller picks, new for each press of the button). In
+/// Survival a stroke pays <see cref="PaintSettings.AmmoPerStroke"/> once, on its first Paint; the drag's later Paint
+/// requests with the same number are free while they keep coming (<see cref="PaintSettings.StrokeSeconds"/>) and stay
+/// within <see cref="PaintSettings.MaxPartsPerAction"/> parts. Without it every Paint pays.
+/// </param>
+public sealed record PaintArgs(int Creation, IReadOnlyList<int> Parts, string? Color = null, int? Stroke = null);
 
 /// <summary>
 /// Arguments of <c>Sledge</c>: one Sledgehammer hit on a part (<see cref="Creation"/> and <see cref="Part"/>),
@@ -198,7 +205,8 @@ public interface IToolWorld : IBuildWorld
 /// part in Survival. A Creation whose storage holds items cannot be picked up (<see cref="LiftSettings.RefuseStoredItems"/>).</item>
 /// <item><c>Weld</c>: moves one Creation onto another and merges them, every touching face rigid (D7).
 /// <c>WeldParts</c>: welds two touching parts of different Bodies of one Creation, merging the Bodies.</item>
-/// <item><c>Paint</c>: colours parts, or takes the paint off.</item>
+/// <item><c>Paint</c>: colours parts, or takes the paint off. In Survival it needs a Paint Tool, and each stroke uses
+/// Paint Ammo (<see cref="PaintSettings.Ammo"/>); taking paint off is free.</item>
 /// <item><c>Sledge</c>: a Sledgehammer hit, which pushes the Body and damages the part until it breaks off;
 /// with <see cref="Targets"/> it can also hit players and bots (combat damage and knockback) and world objects
 /// (their own gathering damage). <c>Block</c>: holding right click with it in Creative raises a block pose that only
@@ -255,6 +263,7 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
     private readonly SortedDictionary<int, LiftState> _lifts = [];
     private readonly Dictionary<int, double> _lastSwing = [];
     private readonly HashSet<int> _blocking = [];
+    private readonly Dictionary<int, PaidStroke> _strokes = [];
 
     /// <summary>Players and world objects a Sledgehammer can hit; null hits parts only.</summary>
     public IStrikeTargets? Targets { get; set; }
@@ -291,6 +300,7 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
     {
         _lastSwing.Remove(peer);
         _blocking.Remove(peer);
+        _strokes.Remove(peer);
     }
 
     /// <summary>
@@ -513,6 +523,8 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
 
     private string? ValidateWeld(ActionCaller caller, WeldArgs args)
     {
+        if (Costs?.CheckTool(caller, HotbarTools.Weld) is { } tool)
+            return tool;
         if (args.Source == args.Target)
             return "A creation cannot be welded to itself; weld two of its parts with WeldParts.";
         if (world.FindCreation(args.Source) is not { } source)
@@ -521,6 +533,9 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
             return $"There is no creation {args.Target}.";
         if (source.AuthorityPeer != target.AuthorityPeer)
             return $"Creations {source.Id} and {target.Id} are simulated by different players.";
+        // What is built on the ground stays put: select the loose creation first and weld it to this one.
+        if (source.IsGrounded)
+            return $"Creation {source.Id} is built on the ground and cannot move; select the loose creation first and weld it to this one.";
         if (source.Parts.Count + target.Parts.Count > settings.MaxPartsPerCreation)
             return $"Together they would have more parts than allowed ({settings.MaxPartsPerCreation}).";
         // Ground-only parts (soil) stay flat on the ground, so they never move onto another creation or take one on.
@@ -562,6 +577,8 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
 
     private string? ValidateWeldParts(ActionCaller caller, WeldPartsArgs args)
     {
+        if (Costs?.CheckTool(caller, HotbarTools.Weld) is { } tool)
+            return tool;
         if (world.FindCreation(args.Creation) is not { } creation)
             return $"There is no creation {args.Creation}.";
         if (!creation.CanWeldParts(args.A, args.B, out var error))
@@ -601,11 +618,35 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
             if (CheckReach(caller, PartCentre(creation, id)) is { } far)
                 return far;
         }
+        if (Costs?.CheckTool(caller, Items.HotbarTools.Paint) is { } tool)
+            return tool;
+        if (PaintCost(caller, args) is { } cost && Costs?.CheckSpend(caller, cost.Item, cost.Count) is { } unpaid)
+            return unpaid;
         return null;
+    }
+
+    // What a Paint pays: nothing for taking paint off, for a caller that is not a player, or for a later part of a stroke
+    // already paid for; otherwise the stroke's ammo.
+    private (string Item, int Count)? PaintCost(ActionCaller caller, PaintArgs args)
+    {
+        var paint = settings.Paint;
+        if (args.Color is null || caller.Source != ActionSource.Player || paint.Ammo is not { } ammo || paint.AmmoPerStroke <= 0)
+            return null;
+        if (args.Stroke is { } stroke && _strokes.TryGetValue(caller.Peer, out var paid) && paid.Stroke == stroke
+            && world.Now - paid.LastAt <= paint.StrokeSeconds && paid.Parts + args.Parts.Count <= paint.MaxPartsPerAction)
+            return null;
+        return (Identifiers.Qualify(ammo), paint.AmmoPerStroke);
     }
 
     private JsonElement? ApplyPaint(ActionCaller caller, PaintArgs args)
     {
+        if (PaintCost(caller, args) is { } cost)
+        {
+            Costs?.Spend(caller, cost.Item, cost.Count);
+            _strokes[caller.Peer] = new PaidStroke(args.Stroke, world.Now, args.Parts.Count);
+        }
+        else if (args.Color is not null && args.Stroke is not null && _strokes.TryGetValue(caller.Peer, out var paid))
+            _strokes[caller.Peer] = paid with { LastAt = world.Now, Parts = paid.Parts + args.Parts.Count };
         var creation = world.FindCreation(args.Creation)!;
         var painted = args.Parts.Count(id => creation.SetPartColor(id, args.Color));
         if (painted > 0)
@@ -897,4 +938,7 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
     private static string Sentence(string error) => char.ToUpperInvariant(error[0]) + error[1..];
 
     private static JsonElement Value<T>(T value) => JsonSerializer.SerializeToElement(value, ActionJson.Options);
+
+    // The stroke a player last paid for: its number, when its last Paint came, and the parts it has covered.
+    private sealed record PaidStroke(int? Stroke, double LastAt, int Parts);
 }

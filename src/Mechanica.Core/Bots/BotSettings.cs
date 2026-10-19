@@ -34,7 +34,7 @@ public sealed record BotSettings
     public float PlayerRadius { get; init; } = 0.4f;
 
     /// <summary>How far from the world centre a bot may be spawned, in m.</summary>
-    public float MaxSpawnDistance { get; init; } = 2048f;
+    public float MaxSpawnDistance { get; init; } = 8192f;
 
     /// <summary>A POI's guards (its <c>bot</c> markers) appear when a living player comes this close, in m.</summary>
     public float GuardWakeDistance { get; init; } = 64f;

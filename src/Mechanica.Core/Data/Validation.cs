@@ -370,7 +370,7 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
     }
 
     // Upgrade levels (UI spec §4): each level's cost and the part it makes, which must still be a valid part.
-    private static void ValidateUpgrades(PartDefinition part, bool placeable, DiagnosticSink sink)
+    private void ValidateUpgrades(PartDefinition part, bool placeable, DiagnosticSink sink)
     {
         if (part.Upgrades is not { } upgrades)
             return;
@@ -405,7 +405,7 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
             }
             var found = new List<DataDiagnostic>();
             var inner = new DiagnosticSink(sink.File, found);
-            ValidateStorage(after, placeable, inner);
+            Validate(after with { Upgrades = null }, inner);
             foreach (var d in found.Where(d => d.Severity == DiagnosticSeverity.Error))
                 sink.Error(Code, d.JsonPath is { } path ? $"{p}.set{path[1..]}" : $"{p}.set", d.Message);
             if (after.Inventory?.Slots < before.Inventory?.Slots || (before.Inventory is not null && after.Inventory is null))
@@ -622,6 +622,39 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
                 sink.Error(Code, $"{p}.press.depth", "depth must be more than 0 and at most 0.1 m.");
             KnownKeys.WarnUnknown(press.Extra, $"{p}.press", sink, typeof(PressDefinition));
         }
+        if (display.Clips is { } clips)
+        {
+            if (part.Mesh is null)
+                sink.Error(Code, $"{p}.clips", "clips play the part's own model, so the part needs a mesh.");
+            Readout(clips.Readout, $"{p}.clips");
+            if (clips.Scrub?.Count > ClipsDefinition.MaxScrubs)
+                sink.Error(Code, $"{p}.clips.scrub", $"a part scrubs at most {ClipsDefinition.MaxScrubs} clips.");
+            for (var i = 0; i < (clips.Scrub?.Count ?? 0); i++)
+            {
+                var scrub = clips.Scrub![i];
+                Readout(scrub.Readout, $"{p}.clips.scrub[{i}]");
+                if (string.IsNullOrWhiteSpace(scrub.Clip) || scrub.Clip.Length > 64)
+                    sink.Error(Code, $"{p}.clips.scrub[{i}].clip", "clip must name one of the model's clips (1 to 64 characters).");
+                KnownKeys.WarnUnknown(scrub.Extra, $"{p}.clips.scrub[{i}]", sink, typeof(ScrubDefinition));
+            }
+            KnownKeys.WarnUnknown(clips.Extra, $"{p}.clips", sink, typeof(ClipsDefinition));
+        }
+        if (display.Effects?.Count > EffectDefinition.MaxPerPart)
+            sink.Error(Code, $"{p}.effects", $"a part has at most {EffectDefinition.MaxPerPart} effects.");
+        for (var i = 0; i < (display.Effects?.Count ?? 0); i++)
+        {
+            var effect = display.Effects![i];
+            var path = $"{p}.effects[{i}]";
+            Readout(effect.Readout, path);
+            if (effect.Kind is null)
+                sink.Error(Code, $"{path}.kind", $"kind is required: one of {EnumList<EffectKind>()}.");
+            if (!Inside(effect.Offset))
+                sink.Error(Code, $"{path}.offset", "the effect's offset is outside the part's footprint.");
+            if (effect.Direction is { } d && !NonZero(d))
+                sink.Error(Code, $"{path}.direction", "direction must be a non-zero vector.");
+            CheckColor(effect.Color, $"{path}.color", sink);
+            KnownKeys.WarnUnknown(effect.Extra, path, sink, typeof(EffectDefinition));
+        }
         KnownKeys.WarnUnknown(display.Extra, p, sink, typeof(DisplayDefinition));
     }
 
@@ -677,6 +710,14 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
             var extent = (part.Size ?? GridSize.One).Metres;
             if (seat.Offset is { } o && (MathF.Abs(o.X) > extent.X / 2 + Epsilon || MathF.Abs(o.Y) > extent.Y / 2 + Epsilon || MathF.Abs(o.Z) > extent.Z / 2 + Epsilon))
                 sink.Error(Code, "$.seat.offset", $"seat offset {o} is outside the part's {part.Size ?? GridSize.One} footprint.");
+            if (seat.Cushion is { } c && (MathF.Abs(c.X) > extent.X / 2 + Epsilon || MathF.Abs(c.Y) > extent.Y / 2 + Epsilon || MathF.Abs(c.Z) > extent.Z / 2 + Epsilon))
+                sink.Error(Code, "$.seat.cushion", $"seat cushion {c} is outside the part's {part.Size ?? GridSize.One} footprint.");
+            if (seat.Cushion is { } top && top.Y <= (seat.Offset?.Y ?? -extent.Y / 2))
+                sink.Error(Code, "$.seat.cushion", "the cushion must be above the floor the feet rest on (the offset's height, or the part's bottom).");
+            if (seat.Hands is { } hands && !Enum.IsDefined(hands))
+                sink.Error(Code, "$.seat.hands", "hands must be wheel or free.");
+            if (seat.Bounce is { } bounce && (!float.IsFinite(bounce) || bounce < 0f || bounce > SeatDefinition.MaxBounce))
+                sink.Error(Code, "$.seat.bounce", $"bounce must be from 0 to {SeatDefinition.MaxBounce} (got {bounce}).");
             KnownKeys.WarnUnknown(seat.Extra, "$.seat", sink, typeof(SeatDefinition));
         }
         var ids = new HashSet<string>();

@@ -2,7 +2,8 @@
   // World chunk streaming, Creation force-loading and sleep budgets (SI units).
   // Loaded by game/scripts/World/WorldStreamer.cs; see src/Mechanica.Core/World/StreamingSettings.cs.
   "chunk_size": 64.0,
-  "world_size": 4096.0,
+  "world_size": 12032.0,
+  "world_depth": 9024.0,
   "player_load_distance": 128.0,
   "player_near_distance": 64.0,
   "creation_buffer": 16.0,

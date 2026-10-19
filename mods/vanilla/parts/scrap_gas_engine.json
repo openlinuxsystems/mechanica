@@ -1,21 +1,20 @@
 {
   "id": "scrap_gas_engine",
   "name": "Scrap Gas Engine",
-  "description": "A weaker gas engine from scrap. It burns gasoline faster.",
+  "description": "A rattly starter engine from scrap. Switch it on, then it turns up to two wheel bearings linked to it, with a seat's throttle as its input. Burns gasoline faster than a Gas Engine.",
   "category": "interactive",
   "mass": 10,
-  "durability": 4,
+  "durability": 2,
   "friction": 0.5,
   "buoyancy": 0.2,
-  "flammable": false,
-  "stack_size": 10,
+  "flammable": true,
+  "stack_size": 5,
   "sound_material": "scrap",
   "size": [2, 2, 2],
-  "mesh": "meshes/scrap_gas_engine.glb",
+  "mesh": "meshes/parts/scrap_gas_engine.glb",
+  "icon": "textures/items/scrap_gas_engine_icon.png",
   "visual": {
-    "color": "#8c5a3c",
-    "roughness": 0.85,
-    "metallic": 0.3
+    "color": "#ffffff"
   },
   "sockets": [
     {
@@ -29,11 +28,13 @@
   "sounds": {
     "start": "engine_start",
     "loop": "engine_idle",
-    "stop": "engine_sputter"
+    "stop": "engine_sputter",
+    "sputter": "engine_sputter",
+    "rev": "engine_rev"
   },
   "logic": {
     "inputs": 4,
-    "outputs": 10,
+    "outputs": 2,
     "kind": "power"
   },
   "settings": [
@@ -42,9 +43,9 @@
       "name": "Power",
       "type": "number",
       "min": 1,
-      "max": 5,
+      "max": 4,
       "step": 1,
-      "default": 3,
+      "default": 2,
       "presets": [
         {
           "name": "Low",
@@ -52,11 +53,11 @@
         },
         {
           "name": "Medium",
-          "value": 3
+          "value": 2
         },
         {
           "name": "High",
-          "value": 5
+          "value": 4
         }
       ]
     },
@@ -64,8 +65,7 @@
       "id": "on",
       "name": "On",
       "type": "toggle",
-      "default": false,
-      "hide_when_linked": true
+      "default": false
     }
   ],
   "menu": {
@@ -95,7 +95,39 @@
     ]
   },
   "display": {
-    "status": "running"
+    "status": "running",
+    "clips": {
+      "readout": "clip",
+      "scrub": [
+        {
+          "readout": "lever",
+          "clip": "lever"
+        }
+      ]
+    },
+    "effects": [
+      {
+        "readout": "smoke",
+        "kind": "smoke",
+        "offset": [-0.15, 0.248, 0.165]
+      },
+      {
+        "readout": "smoke",
+        "kind": "smoke",
+        "offset": [-0.075, 0.248, 0.165]
+      },
+      {
+        "readout": "sparks",
+        "kind": "sparks",
+        "offset": [-0.11, 0.248, 0.165]
+      },
+      {
+        "readout": "oil",
+        "kind": "drops",
+        "offset": [0.1, -0.24, -0.24],
+        "direction": [0, -1, 0]
+      }
+    ]
   },
   "properties": {
     "speed": 15,
@@ -103,6 +135,18 @@
     "brake": 60,
     "fuel": "gasoline",
     "fuel_time": 25,
-    "loop_parameter": "load"
+    "loop_parameter": "load",
+    "gears": 4,
+    "ignition": true,
+    "start_time": 1.0,
+    "false_start": 0.3,
+    "false_start_time": 0.7,
+    "stop_time": 0.8,
+    "gear_time": 0.45,
+    "heat_time": 0.4,
+    "uneven": 0.12,
+    "backfire": 0.08,
+    "hard_gear": 3,
+    "smoke": 0.8
   }
 }

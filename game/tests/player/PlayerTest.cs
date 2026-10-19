@@ -44,8 +44,9 @@ public partial class PlayerTest : Node3D
         {
             if (frame < 30 || !_main.LocalPlayer!.IsOnFloor())
                 return false;
-            var y = _main.LocalPlayer.GlobalPosition.Y;
-            Check(Mathf.Abs(y) < 0.05f, $"local player stands at ground level (y={y:F3})");
+            var at = _main.LocalPlayer.GlobalPosition;
+            var ground = _main.Streamer.Generator.HeightAt(at.X, at.Z);
+            Check(Mathf.Abs(at.Y - ground) < 0.05f, $"local player stands at ground level (y={at.Y:F3}, ground {ground:F3})");
             _main.QueueFree();
             BuildArena();
             return true;

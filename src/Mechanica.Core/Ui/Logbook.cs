@@ -38,6 +38,9 @@ public sealed record LogbookSettings
     /// <summary>Longest marker name, in characters.</summary>
     public int MarkerNameLength { get; init; } = 32;
 
+    /// <summary>The minimap's zoom, in metres per screen pixel.</summary>
+    public float MinimapMetresPerPixel { get; init; } = 2f;
+
     /// <summary>Reads <paramref name="json"/>; throws <see cref="FormatException"/> on bad data.</summary>
     public static LogbookSettings Parse(string json)
     {
@@ -58,6 +61,8 @@ public sealed record LogbookSettings
             throw new FormatException("min_metres_per_pixel, contour_interval and pick_radius must be above zero, zoom_step above 1 and detail_delay_seconds 0 or more.");
         if (settings.MaxMarkers < 1 || settings.MarkerNameLength < 1)
             throw new FormatException("max_markers and marker_name_length must be at least 1.");
+        if (!(settings.MinimapMetresPerPixel > 0) || !float.IsFinite(settings.MinimapMetresPerPixel))
+            throw new FormatException("minimap_metres_per_pixel must be above zero.");
         return settings;
     }
 }
@@ -67,10 +72,19 @@ public sealed record LogbookSettings
 /// pans, the wheel zooms about the cursor, and the view never leaves the world or zooms out past the whole of it.
 /// It lives as long as the game does, so closing the Logbook or resizing the window keeps the pan and zoom (§11).
 /// </summary>
-public sealed class MapView(float worldSize, float minMetresPerPixel)
+public sealed class MapView(float worldSize, float worldDepth, float minMetresPerPixel)
 {
-    /// <summary>Side of the square world in metres.</summary>
+    /// <summary>A view of a square world <paramref name="worldSize"/> metres on a side.</summary>
+    public MapView(float worldSize, float minMetresPerPixel)
+        : this(worldSize, worldSize, minMetresPerPixel)
+    {
+    }
+
+    /// <summary>The world's east–west extent in metres.</summary>
     public float WorldSize => worldSize;
+
+    /// <summary>The world's north–south extent in metres.</summary>
+    public float WorldDepth => worldDepth;
 
     /// <summary>World x/z at the middle of the map.</summary>
     public Vector2 Centre { get; private set; }
@@ -82,7 +96,7 @@ public sealed class MapView(float worldSize, float minMetresPerPixel)
     public bool Placed => float.IsFinite(MetresPerPixel);
 
     /// <summary>The widest zoom on a map <paramref name="size"/> pixels big: the whole world just fits.</summary>
-    public float MaxMetresPerPixel(Vector2 size) => worldSize / MathF.Max(1f, MathF.Min(size.X, size.Y));
+    public float MaxMetresPerPixel(Vector2 size) => MathF.Max(worldSize / MathF.Max(1f, size.X), worldDepth / MathF.Max(1f, size.Y));
 
     /// <summary>Shows the whole world on a map <paramref name="size"/> pixels big.</summary>
     public void Fit(Vector2 size)
@@ -130,8 +144,7 @@ public sealed class MapView(float worldSize, float minMetresPerPixel)
 
     private Vector2 Clamp(Vector2 world)
     {
-        var half = worldSize / 2;
-        return new Vector2(Math.Clamp(world.X, -half, half), Math.Clamp(world.Y, -half, half));
+        return new Vector2(Math.Clamp(world.X, -worldSize / 2, worldSize / 2), Math.Clamp(world.Y, -worldDepth / 2, worldDepth / 2));
     }
 }
 
@@ -185,6 +198,7 @@ public static class WorldMap
     private static readonly Vector3 Shallows = new(0.10f, 0.20f, 0.32f);
     private static readonly Vector3 Lowland = new(0.16f, 0.27f, 0.40f);
     private static readonly Vector3 Highland = new(0.42f, 0.58f, 0.74f);
+    private static readonly Vector3 RoadLine = new(0.86f, 0.90f, 0.95f);
 
     /// <summary>
     /// RGB bytes (row by row from the north-west corner) of a <paramref name="width"/> by <paramref name="height"/>
@@ -198,13 +212,12 @@ public static class WorldMap
         // Heights with a one-pixel border for the lighting.
         var w = width + 2;
         var heights = new float[w * (height + 2)];
-        var half = world.WorldSize / 2;
         Parallel.For(0, height + 2, j =>
         {
             for (var i = 0; i < w; i++)
             {
                 float x = min.X + (i - 0.5f) * metresPerPixel, z = min.Y + (j - 0.5f) * metresPerPixel;
-                heights[j * w + i] = MathF.Abs(x) > half || MathF.Abs(z) > half ? world.SeaLevel - 20f : world.HeightAt(x, z);
+                heights[j * w + i] = world.InWorld(x, z) ? world.HeightAt(x, z) : world.SeaLevel - 20f;
             }
         });
         var high = Highest(world);
@@ -233,6 +246,13 @@ public static class WorldMap
                     colour *= Math.Clamp(1f - 1.2f * (dx + dz), 0.5f, 1.4f);
                     if (Contour(h, heights[(j + 1) * w + i + 2], heights[(j + 2) * w + i + 1], contourInterval))
                         colour = Vector3.Lerp(colour, Highland * 1.3f, 0.35f);
+                }
+                // Roads (and bridges, over the water) as pale lines at least a pixel wide; dirt tracks fainter.
+                if (world.Roads.Chains.Count > 0)
+                {
+                    float x = min.X + (i + 0.5f) * metresPerPixel, z = min.Y + (j + 0.5f) * metresPerPixel;
+                    if (world.Roads.Nearest(x, z, MathF.Max(6f, 0.7f * metresPerPixel)) is { } road && road.Distance <= MathF.Max(road.Chain.Width / 2, 0.7f * metresPerPixel))
+                        colour = Vector3.Lerp(colour, RoadLine, road.Chain.Kind == RoadKind.Road ? 0.85f : 0.45f);
                 }
                 var at = (j * width + i) * 3;
                 pixels[at] = Byte(colour.X);

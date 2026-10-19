@@ -308,6 +308,10 @@ public partial class SurvivalTest : StagedTest
             var drop = _client.Main.Survival.Drops.Values.Single();
             Check(drop.Items.All(s => s.Item != Connector) && _client.Main.Tools!.Connector.Owns, "the Connect Tool stays with the player");
             Check(drop.Position.ToGodot().DistanceTo(_diedAt) < 1f && _client.Main.Survival.DropNodes.ContainsKey(drop.Id), "a pile lies where it died, on the client too");
+            Check(drop.KnockedOut && _client.Main.Survival.DropNodes[drop.Id].Model is { } bag
+                && bag.FindChildren("*", nameof(MeshInstance3D), owned: false).Count > 0, "the pile is the knockout bag, on the client too");
+            Check(_client.Main.Survival.OwnKnockoutBags().SingleOrDefault() is { } waypoint && waypoint.Position.ToGodot().DistanceTo(drop.Position.ToGodot()) < 0.01f
+                && !_host.Main.Survival.OwnKnockoutBags().Any(), "the client's compass points to its own bag, and not the host's");
             return true;
         });
         Stage("a dead player can only wait and respawn", frame =>

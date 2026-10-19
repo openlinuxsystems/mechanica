@@ -22,6 +22,30 @@
       "max_distance": 20
     },
     {
+      "id": "scrap_seat_enter",
+      "clips": [
+        "sounds/logic/scrap_seat_enter.ogg"
+      ],
+      "max_distance": 20
+    },
+    {
+      "id": "scrap_seat_exit",
+      "clips": [
+        "sounds/logic/scrap_seat_exit.ogg"
+      ],
+      "max_distance": 20
+    },
+    {
+      "id": "scrap_seat_creak",
+      "clips": [
+        "sounds/logic/scrap_seat_creak.ogg",
+        "sounds/logic/scrap_seat_creak_2.ogg",
+        "sounds/logic/scrap_seat_creak_3.ogg"
+      ],
+      "pitch_variation": 0.08,
+      "max_distance": 15
+    },
+    {
       "id": "controller_start",
       "clips": [
         "sounds/logic/controller_start.ogg"

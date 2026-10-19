@@ -93,12 +93,21 @@ display, or `xvfb-run` without one.
 
 ## Animations
 
+A seated player fits its seat (`seat.cushion` and `seat.hands` in [the part data](part-data-schema.md#logic-settings-and-seats)):
+the legs blend `sit` and `sit_low` so the hips land on the cushion, whatever its height, and the body faces the seat's front
+while the head looks around. While it sits, the body rides along: sitting down sinks it into the seat and lets it settle, then
+each change in the seat's own motion pushes springs that bob the hips and sway the upper body (a bump throws it up,
+braking tips it forward, a turn leans it out), scaled by the seat's `seat.bounce`, so a smooth road barely shows and rough
+ground throws the driver about. The springs are `seat` in `game/data/character.json`.
+
 The animation set is shared by every character: `idle`, `walk`, `jog`, `run`, `crouch_idle`, `crouch_walk`,
-`jump`, `fall`, `land`, `swim_idle`, `swim` and `sit` move the whole body; `hold_tool`, `hold_heavy`,
+`jump`, `fall`, `land`, `swim_idle`, `swim`, `sit` (a chair, hands on a wheel), `sit_low` (a low seat, legs out in
+front), `sit_ride` and `sit_ride_low` (the same with the hands resting on the thighs, for passengers) move the whole body; `hold_tool`, `hold_heavy`,
 `hold_heavy_block` (the Sledgehammer raised across the chest while right click blocks, in Creative), `hold_gun`, `hold_item`,
 `hold_refine` (the Refine Tool scraping at a resource node, a stroke every 0.75 s), `hold_connect` (the Connect Tool at
 chest height, tip forward, with a slow sway), `hold_connect_aim` (raised and aimed while a node is under the crosshair or a
-drag is on) and the one-shot gestures (`sledge_swing`, `tool_use`, `weld`,
+drag is on), `hold_weld` and `hold_weld_aim` (the Weld Tool held, and raised while a part is selected) and the one-shot
+gestures (`sledge_swing`, `tool_use`, `weld` (the Weld Tool pushed in and held while a weld registers),
 `paint_spray`, `fire_gun`, `eat`, `throw`, `plant`, `pour`, `interact`, `hurt`, `connect_click` when a link is made or
 taken away, `connect_reverse` when a bearing is reversed) move only the upper body
 from the spine up, over whatever the legs are doing. Every peer works out each player's pose from what it
@@ -111,7 +120,18 @@ only while Use is held on a resource node, comes with a draw from the hip (`refi
 (`refine_stow`); every peer plays them when it sees that player's hand take or drop the tool, chips fly off the node at
 each stroke (sparks off metal) and the `refiner_*` sounds play, all from the same prop byte. The Connect Tool draws from
 the hip (`connect_draw`, 0.5 s) and stows back to it (`connect_stow`, 0.45 s); its tip and display glow cyan, pulse while
-it is raised and flash for 0.2 s on each `connect_click` (a dip then a flash on `connect_reverse`).
+it is raised and flash for 0.2 s on each `connect_click` (a dip then a flash on `connect_reverse`). The Weld Tool
+draws from the hip (`weld_draw`) and stows back to it (`weld_stow`); during `weld` its clamping arms
+(`weld_tool_arm_l`, `weld_tool_arm_r`) close round its tip, the tip (`weld_tool_tip`) spins and its blue ring
+(`weld_tool_glow`) brightens (`WeldMotion`), and blue sparks ride on the host's `weld_complete` sound.
+`tools/characters/render_weld_tool.py OUT_DIR` renders its prop like its reference sheet, arms open and closed.
+The Paint Tool is
+held like a pistol (`hold_paint`), raised and aimed while a drag is on (`hold_paint_aim`, from the guard byte), drawn from
+the hip (`paint_draw`) and stowed back (`paint_stow`); `paint_spray` is the click's kick and `paint_reload` (the
+`PaintReload` gesture, R) brings the tool round so the left hand twists the tank off and back on. The tank is a node of its
+own (`paint_tool_tank`) that every peer turns with the clip (`paint_tool.tank` in `game/data/character.json`), and the
+nozzles, tubes and paint (`paint_tool_tint`, `paint_tool_paint`) take the player's colour from one more byte, as does the
+mist from the nozzles.
 
 Timing lives in `game/data/character.json` (engine settings, not moddable): the speed each moving clip
 is authored at, where in a cycle the feet land, crossfade times, how far the body turns before the feet

@@ -25,6 +25,41 @@ public static class PartUpgrades
     /// <summary>How many times the part can be upgraded (0 when it has no upgrades).</summary>
     public static int MaxLevel(PartDefinition part) => part.Upgrades?.Count ?? 0;
 
+    /// <summary>Marks an upgraded part's item: <c>vanilla:gas_engine@2</c> is a Gas Engine at level 2 (see <see cref="ItemKey"/>).</summary>
+    public const char LevelMark = '@';
+
+    /// <summary>
+    /// The item a part at <paramref name="level"/> is carried as. Level 0 is the part's own id; a higher level adds
+    /// <see cref="LevelMark"/> and the level (<c>gas_engine@2</c>), so an upgraded part keeps its level in an inventory
+    /// and on a hotbar, stacks only with parts at the same level, and places at it again.
+    /// </summary>
+    public static string ItemKey(string part, int level) => level > 0 ? $"{part}{LevelMark}{level}" : part;
+
+    /// <summary>
+    /// The part an item places and the level it places at: <c>gas_engine@2</c> is (<c>gas_engine</c>, 2), any other id
+    /// is itself at level 0. A mark not followed by a level from 1 up gives level -1 (no such item).
+    /// </summary>
+    public static (string Part, int Level) SplitItem(string item)
+    {
+        var at = item.IndexOf(LevelMark);
+        if (at < 0)
+            return (item, 0);
+        var digits = item.AsSpan(at + 1);
+        return (item[..at], digits.Length is > 0 and <= 2 && int.TryParse(digits, System.Globalization.NumberStyles.None, null, out var n) && n > 0 && digits[0] != '0' ? n : -1);
+    }
+
+    /// <summary>
+    /// The definition of <paramref name="item"/> from <paramref name="find"/> (a catalog's own lookup): an upgraded
+    /// part's item (<see cref="ItemKey"/>) is its part at that level, or null when the part has no such level.
+    /// </summary>
+    public static PartDefinition? FindItem(string item, Func<string, PartDefinition?> find)
+    {
+        var (part, level) = SplitItem(item);
+        if (level == 0)
+            return find(item);
+        return level > 0 && find(part) is { } written && level <= MaxLevel(written) ? At(written, level) : null;
+    }
+
     /// <summary>
     /// The part at <paramref name="level"/> (0 is <paramref name="part"/> itself). A level past the last is treated as
     /// the last; a level whose data does not parse stops at the level before it (validation reports it).
@@ -60,20 +95,42 @@ public static class PartUpgrades
             }
             Merge(json, set);
         }
+        PartDefinition upgraded;
         try
         {
-            return DataJson.Read<PartDefinition>(json.ToJsonString()) ?? throw new JsonException("the part is null.");
+            upgraded = DataJson.Read<PartDefinition>(json.ToJsonString()) ?? throw new JsonException("the part is null.");
         }
         catch (JsonException e)
         {
             error = $"the upgraded part does not read: {e.Message}";
             return null;
         }
+        if (!SameSocketsApartFromJoints(part.Sockets, upgraded.Sockets))
+        {
+            error = "an upgrade can change only a socket's joint (a suspension's spring), not which sockets the part has or where they are.";
+            return null;
+        }
+        return upgraded;
+    }
+
+    // A placed part keeps its connections through an upgrade, so its sockets keep their ids, types and places.
+    private static bool SameSocketsApartFromJoints(List<SocketDefinition>? a, List<SocketDefinition>? b)
+    {
+        if ((a?.Count ?? 0) != (b?.Count ?? 0))
+            return false;
+        for (var i = 0; i < (a?.Count ?? 0); i++)
+        {
+            var (x, y) = (a![i], b![i]);
+            if (x.Id != y.Id || x.Type != y.Type || x.Position != y.Position || x.Normal != y.Normal)
+                return false;
+        }
+        return true;
     }
 
     /// <summary>
     /// What changes from <paramref name="from"/> to <paramref name="to"/> (two levels of one part), for the upgrade dialog:
-    /// crafting speed, queue and link range, slots, logic inputs and outputs, then each changed script property. Labels
+    /// crafting speed, queue and link range, slots, durability, spring stiffness and damping, logic inputs and outputs, then
+    /// each changed script property. Labels
     /// are English UI text; values are as shown (<c>1.25×</c>, <c>12</c>, <c>1 m</c>).
     /// </summary>
     public static IReadOnlyList<UpgradeChange> Changes(PartDefinition from, PartDefinition to)
@@ -89,6 +146,13 @@ public static class PartUpgrades
         Add("Queue", from.Crafting is null ? null : from.Crafting.QueueSize ?? 1, to.Crafting is null ? null : to.Crafting.QueueSize ?? 1);
         Add("Link range", from.Crafting?.LinkRange, to.Crafting?.LinkRange, " m");
         Add("Slots", from.Inventory?.Slots, to.Inventory?.Slots);
+        Add("Durability", from.Durability, to.Durability);
+        foreach (var socket in to.Sockets ?? [])
+        {
+            var before = from.Sockets?.FirstOrDefault(s => s.Id == socket.Id)?.Joint;
+            Add("Stiffness", before?.Stiffness, socket.Joint?.Stiffness, " N/m");
+            Add("Damping", before?.Damping, socket.Joint?.Damping, " N·s/m");
+        }
         Add("Inputs", from.Logic?.Inputs, to.Logic?.Inputs);
         Add("Outputs", from.Logic?.Outputs, to.Logic?.Outputs);
         foreach (var key in (to.Properties?.Select(kv => kv.Key) ?? []).Union(from.Properties?.Select(kv => kv.Key) ?? []))

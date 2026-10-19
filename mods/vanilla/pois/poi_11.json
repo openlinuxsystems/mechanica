@@ -1,0 +1,18 @@
+{
+  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed on its own.
+  // Written by tools/author-poi-placeholders.py; edit the table there and re-run.
+  "id": "poi_11",
+  "name": "POI-11 Small Ruin",
+  "radius": 43.0,
+  "size": [14.0, 5.0, 12.0],
+  "road": "track",
+  "placement": {},
+  "terrain": [
+    { "op": "flatten", "radius": 23.0, "blend": 20.0 }
+  ],
+  "flora": "meadow",
+  "pieces": [
+    { "shape": "box", "size": [22.0, 0.3, 20.0], "at": [0.0, 0.15, 0.0], "color": "#a3a093" },
+    { "shape": "box", "size": [14.0, 5.0, 12.0], "at": [0.0, 2.8, 0.0], "color": "#9c988c" }
+  ]
+}

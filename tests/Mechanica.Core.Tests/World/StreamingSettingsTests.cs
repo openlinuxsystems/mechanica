@@ -28,6 +28,15 @@ public class StreamingSettingsTests
         var path = Path.Combine(RepoRoot(), "game", "data", "streaming.json");
         var settings = StreamingSettings.FromJson(File.ReadAllText(path));
         Assert.True(settings.PlayerLoadDistance >= settings.PlayerNearDistance);
+        // World Map spec §1: about 12 × 9 km, 188 × 141 cells of 64 m.
+        Assert.Equal((188 * 64f, 141 * 64f), (settings.WorldSize, settings.Depth));
+    }
+
+    [Fact]
+    public void ASquareWorldLeavesTheDepthOut()
+    {
+        Assert.Equal(500f, StreamingSettings.FromJson("""{ "world_size": 500 }""").Depth);
+        Assert.Equal(300f, StreamingSettings.FromJson("""{ "world_size": 500, "world_depth": 300 }""").Depth);
     }
 
     [Theory]
@@ -36,6 +45,8 @@ public class StreamingSettingsTests
     [InlineData("""{ "max_unattended_chunks": -1 }""", "max_unattended_chunks")]
     [InlineData("""{ "chunk_build_budget": -0.001 }""", "chunk_build_budget")]
     [InlineData("""{ "world_size": 32, "chunk_size": 64 }""", "world_size")]
+    [InlineData("""{ "world_depth": 32, "chunk_size": 64 }""", "world_depth")]
+    [InlineData("""{ "world_depth": -5 }""", "world_depth")]
     [InlineData("""{ "chunk_sise": 64 }""", "chunk_sise")]
     [InlineData("null", "null")]
     public void BadDataGivesAClearError(string json, string mentioned)

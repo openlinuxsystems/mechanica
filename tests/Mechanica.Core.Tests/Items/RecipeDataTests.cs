@@ -48,7 +48,7 @@ public class RecipeDataTests : IDisposable
     [InlineData("""{ "inventory": { "slots": 1 }, "crafting": { "queue_size": 0 } }""", "$.crafting.queue_size", "queue_size must be 1 to 64.")]
     [InlineData("""{ "inventory": { "slots": 1 }, "crafting": { "link_range": 9 } }""", "$.crafting.link_range", "link_range must be 0 to 8 m.")]
     [InlineData("""{ "upgrades": [ { "cost": [] } ] }""", "$.upgrades[0].set", "set is required: the part keys this level changes.")]
-    [InlineData("""{ "upgrades": [ { "set": { "mass": 9 } } ] }""", "$.upgrades[0].set", "an upgrade can change only crafting, inventory, logic, properties, not 'mass'.")]
+    [InlineData("""{ "upgrades": [ { "set": { "mass": 9 } } ] }""", "$.upgrades[0].set", "an upgrade can change only name, description, durability, mesh, icon, sockets, settings, display, crafting, inventory, logic, properties, not 'mass'.")]
     [InlineData("""{ "upgrades": [ { "cost": [ { "item": "Bad Id", "count": 0 } ], "set": { "properties": { "a": 1 } } } ] }""", "$.upgrades[0].cost[0].item", "'Bad Id' must be an item id or 'mod_id:item_id'.")]
     [InlineData("""{ "upgrades": [ { "cost": [ { "item": "kit", "count": 0 } ], "set": { "properties": { "a": 1 } } } ] }""", "$.upgrades[0].cost[0].count", "count must be 1 or more.")]
     [InlineData("""{ "inventory": { "slots": 4 }, "upgrades": [ { "set": { "inventory": { "slots": 2 } } } ] }""", "$.upgrades[0].set.inventory", "an upgrade cannot take inventory slots away.")]

@@ -1722,6 +1722,17 @@
                 "type": "null"
               }
             ]
+          },
+          "stroke": {
+            "description": "Which stroke of the caller's this belongs to (any number the caller picks, new for each press of the button). In Survival a stroke pays AmmoPerStroke once, on its first Paint; the drag's later Paint requests with the same number are free while they keep coming (StrokeSeconds) and stay within MaxPartsPerAction parts. Without it every Paint pays.",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -1800,7 +1811,7 @@
         "type": "object",
         "properties": {
           "part": {
-            "description": "Part id, mod_id:part_id (a bare id means vanilla).",
+            "description": "Part id, mod_id:part_id (a bare id means vanilla), or an upgraded part's item, gas_engine@2: the part goes down at that upgrade level.",
             "type": "string"
           },
           "cell": {

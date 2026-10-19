@@ -49,8 +49,9 @@ public static class FloraScatter
                 if (bare > BareShare)
                     continue;
                 var biome = chunk.Biomes[k];
-                // Inside a POI only the biome it names grows, and only if it names one.
-                if (chunk.Covered[k] || chunk.Covered[k + 1] || chunk.Covered[k + n] || chunk.Covered[k + n + 1])
+                // Inside a POI only the biome it names grows, and only if it names one; nothing grows on a road.
+                var covered = chunk.Covered[k] || chunk.Covered[k + 1] || chunk.Covered[k + n] || chunk.Covered[k + n + 1];
+                if (covered)
                 {
                     biome = -1;
                     foreach (var poi in generator.PoisAt(ox + i * res, oz + j * res))
@@ -66,8 +67,9 @@ public static class FloraScatter
                 if (rules.Count == 0)
                     continue;
                 float x0 = ox + i * res, z0 = oz + j * res;
-                var normal = chunk.Normals[k];
-                var slope = MathF.Sqrt(MathF.Max(0f, 1f - normal.Y * normal.Y)) / MathF.Max(normal.Y, 1e-3f);
+                // The cell's steepest corner, so nothing grows in a cell that reaches up a cliff face.
+                var flattest = MathF.Min(MathF.Min(chunk.Normals[k].Y, chunk.Normals[k + 1].Y), MathF.Min(chunk.Normals[k + n].Y, chunk.Normals[k + n + 1].Y));
+                var slope = MathF.Sqrt(MathF.Max(0f, 1f - flattest * flattest)) / MathF.Max(flattest, 1e-3f);
                 foreach (var rule in rules)
                 {
                     if (rule.Kind != kind || slope > rule.MaxSlope)
@@ -87,7 +89,7 @@ public static class FloraScatter
                         var x = x0 + u * res;
                         var z = z0 + v * res;
                         var height = Lerp(Lerp(chunk.Heights[k], chunk.Heights[k + 1], u), Lerp(chunk.Heights[k + n], chunk.Heights[k + n + 1], u), v);
-                        if (height < chunk.SeaLevel + 0.15f)
+                        if (height < chunk.SeaLevel + 0.15f || (covered && generator.Roads.Covers(x, z)))
                             continue;
                         if (kind == FloraKind.Bush && NearObject(chunk, x, z))
                             continue;

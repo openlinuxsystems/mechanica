@@ -106,6 +106,6 @@ public static class RecipeExporter
     private sealed class Overlay(IPartCatalog inner, IReadOnlyDictionary<string, PartDefinition> extra) : IPartCatalog
     {
         public PartDefinition? FindDefinition(string id) =>
-            extra.TryGetValue(Identifiers.Qualify(id), out var part) ? part : inner.FindDefinition(id);
+            PartUpgrades.SplitItem(id).Level == 0 && extra.TryGetValue(Identifiers.Qualify(id), out var part) ? part : inner.FindDefinition(id);
     }
 }

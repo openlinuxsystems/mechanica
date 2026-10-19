@@ -3,7 +3,10 @@ namespace Mechanica.Core.Data;
 /// <summary>Looks up part definitions by id. <see cref="ModLoadResult"/> is the game's catalog.</summary>
 public interface IPartCatalog
 {
-    /// <summary>Finds a definition by <c>mod_id:part_id</c>; a bare id means vanilla.</summary>
+    /// <summary>
+    /// Finds a definition by <c>mod_id:part_id</c>; a bare id means vanilla. An upgraded part's item
+    /// (<c>mod_id:part_id@2</c>, <see cref="PartUpgrades.ItemKey"/>) finds the part at that level.
+    /// </summary>
     PartDefinition? FindDefinition(string id);
 }
 
@@ -20,5 +23,6 @@ public sealed class PartCatalog : IPartCatalog
     }
 
     /// <inheritdoc />
-    public PartDefinition? FindDefinition(string id) => _parts.GetValueOrDefault(Identifiers.Qualify(id));
+    public PartDefinition? FindDefinition(string id) =>
+        PartUpgrades.FindItem(id, i => _parts.GetValueOrDefault(Identifiers.Qualify(i)));
 }

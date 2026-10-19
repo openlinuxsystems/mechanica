@@ -329,7 +329,9 @@ public sealed record CraftingDefinition
 /// <summary>
 /// One upgrade level of a placed part. <see cref="Set"/> holds part keys to change, merged like a Part Editor batch's
 /// <c>set</c> (objects key by key, other values replace) on top of the part and every level before it. Only
-/// <c>crafting</c>, <c>inventory</c>, <c>logic</c> and <c>properties</c> may change, and an inventory never shrinks.
+/// <c>name</c>, <c>description</c>, <c>durability</c>, <c>mesh</c>, <c>icon</c>, <c>sockets</c> (only their joints),
+/// <c>settings</c>, <c>display</c>, <c>crafting</c>, <c>inventory</c>, <c>logic</c> and <c>properties</c> may change, and an
+/// inventory never shrinks.
 /// <code>
 /// "upgrades": [
 ///   { "cost": [ { "item": "component_kit", "count": 2 } ], "set": { "crafting": { "speed": 1.25 }, "inventory": { "slots": 12 } } }
@@ -339,7 +341,8 @@ public sealed record CraftingDefinition
 public sealed record UpgradeDefinition
 {
     /// <summary>Part keys a level may change.</summary>
-    public static readonly IReadOnlyList<string> Changeable = ["crafting", "inventory", "logic", "properties"];
+    public static readonly IReadOnlyList<string> Changeable =
+        ["name", "description", "durability", "mesh", "icon", "sockets", "settings", "display", "crafting", "inventory", "logic", "properties"];
 
     /// <summary>Items the level takes from the player's inventory in Survival. Omitted means free.</summary>
     public List<Items.RecipeItem>? Cost { get; init; }
@@ -700,6 +703,86 @@ public sealed record DisplayDefinition
     /// <summary>The model pushed in while a readout is not 0 (a switch that is on, a button held down).</summary>
     public PressDefinition? Press { get; init; }
 
+    /// <summary>The model's own glTF clips, played by a text readout and scrubbed by number readouts (an engine starting).</summary>
+    public ClipsDefinition? Clips { get; init; }
+
+    /// <summary>Particle effects whose strength follows a readout from 0 to 1 (exhaust smoke, sparks, oil drips).</summary>
+    public IReadOnlyList<EffectDefinition>? Effects { get; init; }
+
+    /// <summary>Keys this build does not know.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>Which of a part model's glTF clips play: the model is shown as its whole glTF scene, with its animations.</summary>
+public sealed record ClipsDefinition
+{
+    /// <summary>Most clips a part may scrub.</summary>
+    public const int MaxScrubs = 4;
+
+    /// <summary>
+    /// The text readout naming the clip to play. A new value starts that clip from the beginning; anything after a
+    /// <c>#</c> is ignored, so <c>gear#2</c> after <c>gear#1</c> plays <c>gear</c> again. A clip whose name ends in
+    /// <c>_loop</c> repeats; any other holds its last frame.
+    /// </summary>
+    public string? Readout { get; init; }
+
+    /// <summary>Clips held at a point set by a number readout instead of played (a lever's position).</summary>
+    public IReadOnlyList<ScrubDefinition>? Scrub { get; init; }
+
+    /// <summary>Keys this build does not know.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>A clip held at the point a readout sets.</summary>
+public sealed record ScrubDefinition
+{
+    /// <summary>The number readout: 0 is the clip's start, 1 its end.</summary>
+    public string? Readout { get; init; }
+
+    /// <summary>The clip's name in the model. It should move nodes the played clips leave alone.</summary>
+    public string? Clip { get; init; }
+
+    /// <summary>Keys this build does not know.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>What a particle effect looks like.</summary>
+public enum EffectKind
+{
+    /// <summary>Soft puffs that rise and spread (exhaust).</summary>
+    Smoke,
+
+    /// <summary>Small bright sparks thrown out that fall.</summary>
+    Sparks,
+
+    /// <summary>Drops that fall (oil, water).</summary>
+    Drops,
+}
+
+/// <summary>A particle effect on a part.</summary>
+public sealed record EffectDefinition
+{
+    /// <summary>Most effects one part may have.</summary>
+    public const int MaxPerPart = 8;
+
+    /// <summary>The readout (0 to 1) that sets its strength; 0 stops it.</summary>
+    public string? Readout { get; init; }
+
+    /// <summary>What it looks like.</summary>
+    public EffectKind? Kind { get; init; }
+
+    /// <summary>Where it comes from, relative to the part centre in m in the part's frame. Omitted means the centre.</summary>
+    public Vec3? Offset { get; init; }
+
+    /// <summary>Which way it leaves, in the part's frame. Omitted means +Y.</summary>
+    public Vec3? Direction { get; init; }
+
+    /// <summary>Its colour as <c>"#rrggbb"</c>. Omitted means the kind's own (dark smoke, yellow sparks, black drops).</summary>
+    public string? Color { get; init; }
+
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
@@ -802,12 +885,46 @@ public sealed record AimDefinition
 /// <summary>A seat: a player sits on the part, and its script reads their steering (<c>part.occupant_input()</c>).</summary>
 public sealed record SeatDefinition
 {
-    /// <summary>Where the sitting player's feet go, relative to the part centre in metres in the part's frame. Omitted means the centre.</summary>
+    /// <summary>Most a seat's <see cref="Bounce"/> may be.</summary>
+    public const float MaxBounce = 4f;
+
+    /// <summary>
+    /// Where the sitting player's feet go, relative to the part centre in metres in the part's frame. Omitted means the
+    /// centre. With a <see cref="Cushion"/> only its height counts: the floor the feet rest on.
+    /// </summary>
     public Vec3? Offset { get; init; }
+
+    /// <summary>
+    /// The point on the seat's cushion the sitter's bottom rests on (under the hips), relative to the part centre in
+    /// metres in the part's frame. The player sits there and its legs fit the cushion's height above the
+    /// <see cref="Offset"/> floor (or the part's bottom): a chair, or a low seat with the legs out in front. Omitted
+    /// means the player stands its hips 0.53 m above the offset.
+    /// </summary>
+    public Vec3? Cushion { get; init; }
+
+    /// <summary>What the sitter's hands do. Omitted means <see cref="SeatHands.Wheel"/> on a seat with logic outputs (one that
+    /// drives), else <see cref="SeatHands.Free"/>.</summary>
+    public SeatHands? Hands { get; init; }
+
+    /// <summary>
+    /// How much the sitter bounces and sways with the ride, 0 (not at all) to <see cref="MaxBounce"/>; 1 is a padded seat.
+    /// The bumps come from how the seat itself moves, so a smooth road barely shows. Omitted means 1.
+    /// </summary>
+    public float? Bounce { get; init; }
 
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>What a seated player's hands do (<see cref="SeatDefinition.Hands"/>).</summary>
+public enum SeatHands
+{
+    /// <summary>Hold a wheel or controls in front of the chest.</summary>
+    Wheel,
+
+    /// <summary>Rest on the thighs, as a passenger.</summary>
+    Free,
 }
 
 /// <summary>How a <see cref="LightDefinition"/> spreads its light.</summary>

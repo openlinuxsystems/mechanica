@@ -24,6 +24,11 @@ public partial class CreationNode : Node3D
     private readonly List<Joint3D> _joints = [];
     private readonly Dictionary<Joint3D, JointFrame> _frames = [];
     private readonly List<(MeshInstance3D Mesh, JointLink Link, JointFrame Frame)> _shafts = [];
+    private readonly List<Flex> _flexes = [];
+
+    // A joint part's mesh named after its joint socket plus "Flex" (a suspension's coil), skewed each frame from its
+    // rest transform so its far end (along the socket normal) follows the joint by Distance along Axis.
+    private sealed record Flex(MeshInstance3D Mesh, JointLink Link, Transform3D Rest, Vector3 Axis, Vector3 Normal, float Start, float Length);
     private readonly List<(int Part, Light3D Light, float Energy)> _lights = [];
     private readonly List<(int Part, Node3D Model, Vector3 Axis, Vector3 Pivot)> _animated = [];
     private readonly List<PartDisplayVisual> _displays = [];
@@ -108,7 +113,19 @@ public partial class CreationNode : Node3D
             var turn = axis.Y < -0.99f ? new Basis(Vector3.Right, Mathf.Pi) : new Basis(new Quaternion(Vector3.Up, axis));
             mesh.Transform = new Transform3D(turn * Basis.FromScale(new Vector3(1, length, 1)), frame.Anchor.ToGodot() + axis * (length / 2));
         }
+        foreach (var flex in _flexes)
+        {
+            // v' = v + Axis * k * (Normal·v - Start): the near end stays, the far end moves the whole joint travel.
+            var k = (JointPosition(flex.Link) ?? 0f) / flex.Length;
+            var (a, n) = (flex.Axis * k, flex.Normal);
+            var skew = new Basis(Vector3.Right + a * n.X, Vector3.Up + a * n.Y, Vector3.Back + a * n.Z);
+            flex.Mesh.Transform = new Transform3D(skew, -a * flex.Start) * flex.Rest;
+        }
     }
+
+    /// <summary>How far each flexing joint mesh (a suspension's coil) is skewed now, by part: its far end's offset in metres.</summary>
+    public IEnumerable<(int Part, float Offset)> Flexes =>
+        _flexes.Select(f => (f.Link.Connection.A, (f.Mesh.Transform.Basis * f.Normal - f.Rest.Basis * f.Normal).Dot(f.Axis) * f.Length));
 
     /// <summary>
     /// Shifts how every part is drawn by a world-space offset without moving its bodies, so a Creation held by a Lift
@@ -248,6 +265,8 @@ public partial class CreationNode : Node3D
         {
             if (!link.IsLocked && BuildJoint(link) is { } joint)
                 _joints.Add(joint);
+            if (!link.IsLocked)
+                MoveJointMeshes(link);
         }
         if (_visualOffset != Vector3.Zero)
             ApplyVisualOffset();
@@ -263,6 +282,7 @@ public partial class CreationNode : Node3D
         _joints.Clear();
         _frames.Clear();
         _shafts.Clear();
+        _flexes.Clear();
         _lights.Clear();
         _animated.Clear();
         _displays.Clear();
@@ -303,8 +323,14 @@ public partial class CreationNode : Node3D
             // The meshes and light hang off a model node, which an animated part's script turns.
             var shown = new Node3D { Name = "Model" };
             visual.AddChild(shown);
-            foreach (var mesh in model.Meshes)
-                shown.AddChild(mesh.Instantiate());
+            // A part that plays its own clips shows its whole glTF scene; any other, its meshes.
+            if (definition.Display?.Clips is not null && Assets.SceneFor(part.Part, definition, part.Color) is { } scene)
+                shown.AddChild(scene);
+            else
+            {
+                foreach (var mesh in model.Meshes)
+                    shown.AddChild(mesh.Instantiate());
+            }
             if (definition.Light is { } light)
             {
                 var lamp = BuildLight(light);
@@ -388,6 +414,45 @@ public partial class CreationNode : Node3D
         var up = MathF.Abs(forward.Dot(Vector3.Up)) > 0.99f ? Vector3.Back : Vector3.Up;
         lamp.Transform = new Transform3D(Basis.LookingAt(forward, up), at);
         return lamp;
+    }
+
+    // The joint part's meshes named after its joint socket (a bearing's turning half) go onto the body on the socket's
+    // far side, where they stay as they are now, so they turn with what is attached there. Meshes named after the socket
+    // plus "Flex" (a suspension's coil) stay and are skewed each frame to reach the moving side (see _Process).
+    private void MoveJointMeshes(JointLink link)
+    {
+        var c = link.Connection;
+        if (c.ASocket is not { } socket || !_partNodes.TryGetValue(c.A, out var visual) || visual.GetNodeOrNull<Node3D>("Model") is not { } model)
+            return;
+        var a = _bodies[link.BodyA];
+        var b = _bodies[link.BodyB];
+        if (Creation.DefinitionOf(c.A).Sockets?.FirstOrDefault(s => s.Id == socket) is { } definition && definition.Normal is { } normal)
+        {
+            var n = normal.ToGodot().Normalized();
+            var axis = (definition.Joint?.Axis ?? normal).ToGodot().Normalized();
+            foreach (var mesh in model.GetChildren().OfType<MeshInstance3D>().Where(m => m.Name == $"{socket}Flex"))
+            {
+                var box = mesh.Transform * mesh.GetAabb();
+                var (start, end) = (float.MaxValue, float.MinValue);
+                for (var i = 0; i < 8; i++)
+                {
+                    var along = box.GetEndpoint(i).Dot(n);
+                    (start, end) = (Mathf.Min(start, along), Mathf.Max(end, along));
+                }
+                if (end - start > 0.001f)
+                    _flexes.Add(new Flex(mesh, link, mesh.Transform, axis, n, start, end - start));
+            }
+        }
+        foreach (var mesh in model.GetChildren().OfType<MeshInstance3D>().Where(m => m.Name == socket).ToList())
+        {
+            var placed = b.Transform.AffineInverse() * a.Transform * visual.Transform * model.Transform * mesh.Transform;
+            model.RemoveChild(mesh);
+            var holder = new Node3D { Name = $"Part{c.A}{socket}", Transform = placed };
+            mesh.Transform = Transform3D.Identity;
+            holder.AddChild(mesh);
+            b.AddChild(holder);
+            _visuals.Add((b, holder, placed));
+        }
     }
 
     private static string JointName(Connection c) => $"Joint{c.A}_{c.B}";

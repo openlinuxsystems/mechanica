@@ -179,6 +179,11 @@ How parts attach when they are placed touching each other:
 - A `rotational`, `linear` or `spring` socket meeting a structural face makes a joint of that kind
   between two Bodies. Two joint sockets never connect to each other.
 
+A mesh node in the part's model named after one of its joint sockets (the bearing's `rotor`) is drawn on the
+Body joined at that socket, so it turns or slides with what is attached there. Without a joined part it stays put.
+A mesh node named after the socket plus `Flex` (the sport suspension's `mountFlex`: its coil and damper) stays on the
+part but is skewed each frame along the joint's axis, so its end at the socket follows the joint and its far end stays.
+
 The Part Editor's connection preview shows the result on every face: green for rigid, blue for a
 joint, red where nothing attaches.
 
@@ -233,11 +238,14 @@ fall out as a pile of items on the ground.
 Each entry is one level above the part as written (level 0). A player raises a part one level at a
 time with Upgrade (**U**) or from the station's screen; it is free in Creative and costs the entry's
 items in Survival. A placed part's level is saved with the Creation; blueprints keep only level 0.
+Picking up an upgraded part gives its own item, `mod_id:part_id@level` (`vanilla:gas_engine@2` is the Gas Engine
+two upgrades up): it shows that level's name and icon, stacks only with the same level, and places the part at that
+level again. Only the part as written (level 0) has a recipe.
 
 | Key | Type | Meaning |
 |-----|------|---------|
 | `cost` | list of `{ "item", "count" }` | What reaching this level costs in Survival. |
-| `set` | object | Keys merged over the part at this level, on top of the levels below. Only `crafting`, `inventory`, `logic` and `properties` can change; objects merge key by key. A level can't shrink `inventory.slots` or remove `crafting`. |
+| `set` | object | Keys merged over the part at this level, on top of the levels below. Only `name`, `description`, `durability`, `mesh`, `icon`, `sockets`, `settings`, `display`, `crafting`, `inventory`, `logic` and `properties` can change; objects merge key by key and lists are replaced. A level can't shrink `inventory.slots` or remove `crafting`, and its `sockets` must list the same sockets (ids, types, positions and normals) with only their `joint` changed, such as a suspension's stiffer spring. |
 
 At most 10 levels. The Part Editor lists them under Upgrades.
 
@@ -317,7 +325,10 @@ script's job (D2). See the [Logic and Power Tutorial](logic-power-tutorial.md).
 | `logic.accepts` | list of kinds | The kinds of part whose links may end here, such as `["power"]` for a wheel bearing only engines turn. The Connect Tool grays out other targets and the host refuses them. Default: any kind but `structural`. |
 | `logic.reverse` | setting id | One of the part's `toggle` settings that reverses which way it turns. Right click on its node with the Connect Tool flips it, a curved arrow by the node shows it, and scripts that drive the part read it as `joint.reversed`. Vanilla bearings use `"reverse"`. |
 | `seat` | object | Makes the part a seat a player sits in with E. Its script reads them with `part.occupant()` and `part.occupant_input()`. |
-| `seat.offset` | [x, y, z] (m) | Where the sitter's feet go, from the part's centre, in the part's frame. Inside the part's footprint. Default [0, 0, 0]. |
+| `seat.offset` | [x, y, z] (m) | Where the sitter's feet go, from the part's centre, in the part's frame. Inside the part's footprint. Default [0, 0, 0]. With a `seat.cushion` only its height counts: the floor the feet rest on. |
+| `seat.cushion` | [x, y, z] (m) | The point on the cushion the sitter's bottom rests on, under the hips, from the part's centre in the part's frame. Inside the footprint and above the feet's floor (the offset's height, or the part's bottom). The player sits there and its legs fit the height: a chair-height cushion (0.39 m above the floor) bends the knees under it, a lower one stretches the legs out in front. Without it the hips go 0.53 m above the offset. |
+| `seat.hands` | `wheel` or `free` | What the sitter's hands do: hold a wheel in front of the chest, or rest on the thighs as a passenger. Default `wheel` on a seat with logic outputs, else `free`. |
+| `seat.bounce` | number, 0 to 4 | How much the sitter bounces and sways with the ride: the hips bob and the upper body sways with each change in the seat's own motion (bumps, braking, turns), so a smooth road barely shows. 0 is rigid, 1 a padded seat. Sitting down also sinks the body in and lets it settle. Default 1. |
 | `settings` | list | Values a player sets on each placed part in its menu (E on the part, or R with the Connect Tool), in display order. The script reads them with `part.setting(id)`. |
 
 Each setting:
@@ -362,10 +373,15 @@ The vanilla scripts read these properties:
 |--------|----------|---------|
 | `scripts/seat.lua` | `steer_angle` (°) | How far A and D turn the upright bearings the seat feeds. |
 | | `steer_speed` (rad/s), `steer_torque` (N·m) | How fast and how hard they turn. |
-| `scripts/engine.lua` | `speed` (rad/s) | Wheel bearing speed at full throttle at full power (the `gear` setting, shown as Power 1 to 5, gives a fifth each). With nothing linked in, the `on` setting runs it at full throttle. |
+| `scripts/engine.lua` | `speed` (rad/s) | Wheel bearing speed at full throttle at full power. `gears` (default 5) is how many steps the `gear` setting (shown as Power) has, each giving that share. With nothing linked in, the `on` setting runs it at full throttle. |
 | | `torque`, `brake` (N·m) | Most torque while driving, and while holding the wheels with no throttle. |
 | | `fuel`, `fuel_time` (s) | Item burned from the creation's containers, and seconds of full throttle per item. Creative needs none. |
 | | `loop_parameter` | Parameter of the `loop` sound that follows the throttle (`load`, `speed`). |
+| | `ignition` | When true the engine has to be switched `on` even when linked, and shows `clip`, `lever`, `heat`, `smoke`, `sparks` and `oil` for its model. |
+| | `start_time`, `stop_time`, `gear_time` (s) | How long it cranks, winds down, and rattles after a power change. |
+| | `heat_time` (s) | How long its `heat` display (how hard it works, 0 to 1, for glowing parts of its model) takes to rise or fall all the way. Default 0.4. |
+| | `false_start`, `false_start_time` (s) | The chance a start fails first, and how long the failed try lasts. It always fails with no fuel. |
+| | `uneven`, `backfire`, `hard_gear`, `smoke` | How much its speed wobbles (share of itself), backfires a second, the power from which it runs hard, and its smoke at full power (0 to 1). Keep `speed` × (1 + `uneven`) at or under the 60 rad/s bearing limit. |
 | `scripts/sensor.lua` | `interval` | Steps between looks (its `range` and what it detects are settings). |
 | | `cone` (°) | How far off its face its ring of rays looks, so it sees a narrow cone. Its menu preview uses the same angle. |
 | `scripts/timer.lua` | (the `mode` setting) | `once` passes its input on after the delay; `repeat` blinks its output every delay while the input is on. |
@@ -470,6 +486,8 @@ host's values.
 | `glow` | `{readout, offset, direction, length}` | A faint blue particle glow whose strength follows the value from 0 to 1 (a thruster's exhaust). `direction` defaults to `[0, 1, 0]`, `length` to 0.5 m. |
 | `highlight` | `{readout, axis, offset, radius}` | A ring of cyan dashes turning about `axis` while the value is not 0, its sign giving the way round (a bearing an engine drives). `radius` defaults to 0.12 m. |
 | `press` | `{readout, axis, depth}` | Pushes the model in by `depth` m (default 0.02, at most 0.1) along `axis` (default `[0, -1, 0]`) while the value is not 0 (a switch). |
+| `clips` | `{readout, scrub}` | Plays the model's own glTF animations (the model must be a `mesh`). The `readout` is a text value naming the clip to play (text after a `#` is ignored, so `stop#3` restarts `stop`); clips whose names end in `_loop` loop. `scrub` (at most 4) is a list of `{readout, clip}`: that clip is held at the value (0 to 1) of its length, for a lever or a needle. |
+| `effects` | list of `{readout, kind, offset, direction, color}` | At most 8 particle effects whose strength follows the value from 0 to 1. `kind` is `smoke`, `sparks` or `drops`; `offset` lies inside the footprint, `direction` (default up) is where they go, `color` is optional. |
 
 Offsets are from the part centre in the part's frame, within its footprint; axes and directions are not zero.
 
