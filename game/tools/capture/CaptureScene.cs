@@ -81,7 +81,8 @@ public partial class CaptureScene : Node
         var fabricator = args.Length > 1 && args[1] == "fabricator";
         var oil = args.Length > 1 && args[1] == "oil";
         var small = args.Length > 1 && args[1] == "small_pois";
-        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small ? args[1] : "scrapper_male";
+        var finds = args.Length > 1 && args[1] == "finds";
+        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds ? args[1] : "scrapper_male";
         if (debugCar)
             Main.MenuCharacter = "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
@@ -191,6 +192,11 @@ public partial class CaptureScene : Node
         if (small)
         {
             SmallPoiShots();
+            return;
+        }
+        if (finds)
+        {
+            FindShots();
             return;
         }
         Shot("front", 60, () => Look(new Vector3(0, 1.0f, -3.2f)));
@@ -656,6 +662,27 @@ public partial class CaptureScene : Node
     private Vector3 _away;
 
     // The nearest of each small spaced POI kind (World POI plan), wide and close.
+    // The small finds nearest the world's centre: a loot crate, a chest and a scrap wreck, wide and close.
+    private void FindShots()
+    {
+        Engine.TimeScale = 1.0;
+        var gen = _main.Streamer.Generator;
+        Shot("finds_00_wait", 60, () => { });
+        foreach (var id in new[] { "loot_crate", "loot_chest", "scrap_wreck" })
+        {
+            Shot($"finds_00_{id}_go", 240, () =>
+            {
+                var find = gen.ObjectsIn(-1500f, -1500f, 1500f, 1500f).Where(o => o.Definition.Id == id).MinBy(o => new Vector2(o.Position.X, o.Position.Z).Length())!;
+                _meadow = new Vector3(find.Position.X, find.Position.Y, find.Position.Z);
+                _away = new Vector3(1f, 0f, 0.4f).Normalized();
+                GD.Print($"[capture] {id} at {_meadow}");
+                _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, _meadow + _away.Rotated(Vector3.Up, 1.2f) * 5f + Vector3.Up * 2f, 0f);
+            });
+            Shot($"finds_{id}_wide", 30, () => { _main.Flora.BuildAll(); ViewAt(_meadow, _away * 9f + Vector3.Up * 4f, 0.4f); });
+            Shot($"finds_{id}_close", 30, () => ViewAt(_meadow, _away.Rotated(Vector3.Up, -0.5f) * 3.5f + Vector3.Up * 1.6f, 0.4f));
+        }
+    }
+
     private void SmallPoiShots()
     {
         Engine.TimeScale = 1.0;

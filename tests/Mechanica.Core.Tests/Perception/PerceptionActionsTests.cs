@@ -199,7 +199,9 @@ public class PerceptionActionsTests
     {
         var generator = _world.Generator = Vanilla.Value;
         var state = _world.State = new WorldState(generator.Seed);
-        var tree = generator.ObjectsIn(-300, -300, 300, 300).First(o => o.Definition.Health is not null);
+        // A breakable kind that stands more than once here, so the typed query below still finds one after it goes.
+        var near = generator.ObjectsIn(-300, -300, 300, 300).Where(o => o.Definition.Health is not null).ToList();
+        var tree = near.First(o => near.Count(n => n.Definition == o.Definition) > 3);
         _world.PlayerList[0] = _world.PlayerList[0] with { Position = tree.Position.ToVec3() };
         state.AddDamage(tree.Id, 1f);
 
