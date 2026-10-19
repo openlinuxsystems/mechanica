@@ -241,7 +241,8 @@ time with Upgrade (**U**) or from the station's screen; it is free in Creative a
 items in Survival. A placed part's level is saved with the Creation; blueprints keep only level 0.
 Picking up an upgraded part gives its own item, `mod_id:part_id@level` (`vanilla:gas_engine@2` is the Gas Engine
 two upgrades up): it shows that level's name and icon, stacks only with the same level, and places the part at that
-level again. Only the part as written (level 0) has a recipe.
+level again. Only the part as written (level 0) has a recipe. A part's script keeps running through an upgrade, its
+`state` intact, and reads the new level's `properties` from the next step.
 
 | Key | Type | Meaning |
 |-----|------|---------|
