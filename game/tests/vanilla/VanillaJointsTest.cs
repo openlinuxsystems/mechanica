@@ -75,7 +75,7 @@ public partial class VanillaJointsTest : StagedTest
                 .Order(StringComparer.Ordinal).ToList();
             // The bearing's and the sport suspension's models are files made elsewhere (tools/bearing_engine,
             // tools/sport_suspension), so they get no generated mesh.
-            Check(made.Count == 14, $"it writes a part, an editor source, a mesh (but the bearing's and sport suspension's) and a recipe for each ({made.Count} files)");
+            Check(made.Count == 13, $"it writes a part, an editor source, a mesh (but the bearing's and the two suspensions') and a recipe for each ({made.Count} files)");
             var differing = made.Where(f => !File.Exists(Path.Combine(VanillaDir, f))
                 || !File.ReadAllBytes(Path.Combine(VanillaDir, f)).AsSpan().SequenceEqual(File.ReadAllBytes(Path.Combine(_scratchMod, f)))).ToList();
             Check(differing.Count == 0, $"every file matches mods/vanilla (differing: {string.Join(", ", differing)}); re-run tools/author-vanilla.sh");

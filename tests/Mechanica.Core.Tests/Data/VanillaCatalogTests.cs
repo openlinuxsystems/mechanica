@@ -80,13 +80,15 @@ public class VanillaCatalogTests
             Assert.True(part.Script is not null && File.Exists(Path.Combine(TestMods.RepoRoot, "mods", "vanilla", part.Script)), $"{id} has a script");
     }
 
-    [Fact]
-    public void TheSportSuspensionIsCraftedAtLevel1AndUpgradedToAStifferSpring()
+    [Theory]
+    [InlineData("sport_suspension", "Sport Suspension")]
+    [InlineData("offroad_suspension", "Off-Road Suspension")]
+    public void EachSuspensionIsCraftedAtLevel1AndUpgradedToAStifferSpring(string id, string name)
     {
         var book = RecipeBook.Load(Vanilla.Value);
-        var made = book.All.SelectMany(r => r.Outputs).Select(o => o.Item).Where(i => i.Contains("sport_suspension", StringComparison.Ordinal));
-        Assert.Equal(["vanilla:sport_suspension"], made.Distinct());
-        var written = Part("sport_suspension");
+        var made = book.All.SelectMany(r => r.Outputs).Select(o => o.Item).Where(i => i.Contains(id, StringComparison.Ordinal));
+        Assert.Equal([$"vanilla:{id}"], made.Distinct());
+        var written = Part(id);
         Assert.Equal(4, PartUpgrades.MaxLevel(written));
         Assert.Equal([1, 2, 4, 8], written.Upgrades!.Select(u => u.Cost!.Single(c => c.Item == "component_kit").Count!.Value));
         var vanilla = Path.Combine(TestMods.RepoRoot, "mods", "vanilla");
@@ -94,14 +96,13 @@ public class VanillaCatalogTests
         for (var level = 0; level <= 4; level++)
         {
             var part = PartUpgrades.At(written, level);
-            Assert.Equal($"Sport Suspension {level + 1}", part.Name);
+            Assert.Equal($"{name} {level + 1}", part.Name);
             Assert.True(File.Exists(Path.Combine(vanilla, part.Mesh!)), $"level {level + 1}'s model {part.Mesh}");
             Assert.True(File.Exists(Path.Combine(vanilla, part.Icon!)), $"level {level + 1}'s icon {part.Icon}");
             var spring = part.Sockets!.Single(s => s.Type == SocketType.Spring).Joint!;
             Assert.True(spring.Stiffness > stiffness, $"level {level + 1} is stiffer than the one below");
             stiffness = spring.Stiffness!.Value;
         }
-        Assert.Null(Part("offroad_suspension").Upgrades);
     }
 
     [Fact]
