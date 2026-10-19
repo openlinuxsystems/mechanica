@@ -47,6 +47,9 @@
       "color": "#4f8a30",
       "ground": "grass",
       "scatter": [
+        { "object": "loot_crate", "spacing": 400.0, "chance": 0.5 },
+        { "object": "loot_chest", "spacing": 640.0, "chance": 0.4 },
+        { "object": "scrap_wreck", "spacing": 540.0, "chance": 0.5 },
         { "object": "rock_outcrop", "spacing": 36.0, "chance": 0.45 },
         { "object": "metal_outcrop", "spacing": 80.0, "chance": 0.35 },
         { "object": "birch_tree", "spacing": 24.0, "chance": 0.3 },
@@ -71,6 +74,8 @@
       "color": "#3f6d3a",
       "ground": "forest_floor",
       "scatter": [
+        { "object": "loot_crate", "spacing": 400.0, "chance": 0.5 },
+        { "object": "loot_chest", "spacing": 640.0, "chance": 0.4 },
         { "object": "pine_tree", "spacing": 20.0, "chance": 0.35 },
         { "object": "leafy_tree", "spacing": 11.0, "chance": 0.45 },
         { "object": "spruce_tree", "spacing": 12.0, "chance": 0.4 },
@@ -95,6 +100,8 @@
       "color": "#c9b046",
       "ground": "dry_grass",
       "scatter": [
+        { "object": "loot_crate", "spacing": 400.0, "chance": 0.5 },
+        { "object": "scrap_wreck", "spacing": 540.0, "chance": 0.5 },
         { "object": "birch_tree", "spacing": 90.0, "chance": 0.2 },
         { "object": "small_rock", "spacing": 30.0, "chance": 0.1 },
         { "object": "rock_node", "spacing": 60.0, "chance": 0.15 },
@@ -115,6 +122,8 @@
       "color": "#dcc07a",
       "ground": "sand",
       "scatter": [
+        { "object": "loot_crate", "spacing": 400.0, "chance": 0.5 },
+        { "object": "scrap_wreck", "spacing": 540.0, "chance": 0.5 },
         { "object": "cactus", "spacing": 26.0, "chance": 0.3 },
         { "object": "rock_outcrop", "spacing": 42.0, "chance": 0.45 },
         { "object": "metal_outcrop", "spacing": 64.0, "chance": 0.4 },
@@ -135,6 +144,8 @@
       "color": "#c8642a",
       "ground": "forest_floor",
       "scatter": [
+        { "object": "loot_crate", "spacing": 400.0, "chance": 0.5 },
+        { "object": "loot_chest", "spacing": 640.0, "chance": 0.4 },
         { "object": "autumn_leafy_tree", "spacing": 11.0, "chance": 0.5 },
         { "object": "birch_tree", "spacing": 14.0, "chance": 0.35 },
         { "object": "spruce_tree", "spacing": 30.0, "chance": 0.15 },
@@ -158,6 +169,8 @@
       "color": "#4a403a",
       "ground": "burnt",
       "scatter": [
+        { "object": "loot_crate", "spacing": 400.0, "chance": 0.5 },
+        { "object": "scrap_wreck", "spacing": 540.0, "chance": 0.5 },
         { "object": "burnt_tree", "spacing": 12.0, "chance": 0.5 },
         { "object": "fallen_log", "spacing": 26.0, "chance": 0.2 },
         { "object": "rock_node", "spacing": 30.0, "chance": 0.25 },
@@ -178,6 +191,7 @@
       "color": "#3a7fb8",
       "ground": "sand",
       "scatter": [
+
         { "object": "small_rock", "spacing": 24.0, "chance": 0.15 }
       ]
     },
@@ -191,6 +205,8 @@
       "color": "#8a8780",
       "ground": "rock",
       "scatter": [
+        { "object": "loot_crate", "spacing": 400.0, "chance": 0.5 },
+        { "object": "loot_chest", "spacing": 640.0, "chance": 0.4 },
         { "object": "spruce_tree", "spacing": 22.0, "chance": 0.25 },
         { "object": "pine_tree", "spacing": 40.0, "chance": 0.2 },
         { "object": "rock_outcrop", "spacing": 28.0, "chance": 0.5 },
@@ -212,6 +228,8 @@
       "color": "#d9c890",
       "ground": "sand",
       "scatter": [
+        { "object": "loot_crate", "spacing": 400.0, "chance": 0.5 },
+        { "object": "loot_chest", "spacing": 640.0, "chance": 0.4 },
         { "object": "rock_outcrop", "spacing": 54.0, "chance": 0.3 },
         { "object": "boulder", "spacing": 40.0, "chance": 0.2 },
         { "object": "small_rock", "spacing": 15.0, "chance": 0.15 },
@@ -674,6 +692,57 @@
       "sink": 0.2,
       "health": 20.0,
       "damage_from": ["sledge", "saw", "explosion"]
+    },
+    // Small finds (World POI plan): about 400 loot crates, chests and wrecks scattered over the land, clear of POIs and
+    // roads. Break a crate or a wreck with the Sledgehammer for its drops; open a chest (Use) to take what is inside.
+    {
+      "id": "loot_crate",
+      "collider": { "shape": "box", "size": [1.0, 0.8, 0.8], "at": [0.0, 0.4, 0.0] },
+      "pieces": [
+        { "shape": "box", "size": [1.0, 0.8, 0.8], "at": [0.0, 0.4, 0.0], "color": "#9b6b3f" },
+        { "shape": "box", "size": [1.04, 0.12, 0.84], "at": [0.0, 0.14, 0.0], "color": "#6e4a2a" },
+        { "shape": "box", "size": [1.04, 0.12, 0.84], "at": [0.0, 0.66, 0.0], "color": "#6e4a2a" },
+        { "shape": "box", "size": [0.12, 0.84, 0.84], "at": [0.0, 0.4, 0.0], "color": "#6e4a2a" }
+      ],
+      "footprint": 2.0,
+      "scale": [0.9, 1.1],
+      "sink": 0.05,
+      "max_slope": 0.4,
+      "health": 30.0,
+      "drops": [{ "item": "scrap_wood", "count": 2, "count_max": 4 }, { "item": "component_kit", "count": 1 }]
+    },
+    {
+      "id": "loot_chest",
+      "collider": { "shape": "box", "size": [1.2, 0.8, 0.7], "at": [0.0, 0.4, 0.0] },
+      "pieces": [
+        { "shape": "box", "size": [1.2, 0.55, 0.7], "at": [0.0, 0.275, 0.0], "color": "#6d4a2c" },
+        { "shape": "box", "size": [1.22, 0.25, 0.72], "at": [0.0, 0.67, 0.0], "color": "#57391f" },
+        { "shape": "box", "size": [0.08, 0.82, 0.74], "at": [-0.4, 0.41, 0.0], "color": "#7d858c" },
+        { "shape": "box", "size": [0.08, 0.82, 0.74], "at": [0.4, 0.41, 0.0], "color": "#7d858c" },
+        { "shape": "box", "size": [0.16, 0.18, 0.06], "at": [0.0, 0.55, -0.37], "color": "#c9b037" }
+      ],
+      "footprint": 2.0,
+      "sink": 0.05,
+      "max_slope": 0.4,
+      "harvest": true,
+      "drops": [{ "item": "scrap_metal", "count": 2, "count_max": 4 }, { "item": "component_kit", "count": 1, "count_max": 2 }, { "item": "circuit_board", "count": 1 }]
+    },
+    {
+      "id": "scrap_wreck",
+      "collider": { "shape": "box", "size": [2.6, 1.1, 1.6], "at": [0.0, 0.55, 0.0] },
+      "pieces": [
+        { "shape": "box", "size": [2.6, 0.7, 1.6], "at": [0.0, 0.45, 0.0], "yaw": 4.0, "color": "#5e4535" },
+        { "shape": "box", "size": [1.2, 0.5, 1.4], "at": [-0.4, 1.0, 0.05], "yaw": -9.0, "color": "#6e4f3e" },
+        { "shape": "box", "size": [0.9, 0.12, 1.2], "at": [1.4, 0.2, 0.3], "yaw": 25.0, "color": "#6a6e72" },
+        { "shape": "cylinder", "radius": 0.35, "height": 0.25, "at": [0.9, 0.2, -0.95], "color": "#2e2b29" },
+        { "shape": "box", "size": [0.08, 0.9, 0.08], "at": [-1.1, 1.0, -0.6], "color": "#7d858c" }
+      ],
+      "footprint": 3.5,
+      "scale": [0.9, 1.15],
+      "sink": 0.1,
+      "max_slope": 0.35,
+      "health": 120.0,
+      "drops": [{ "item": "scrap_metal", "count": 3, "count_max": 6 }, { "item": "component_kit", "count": 1 }]
     }
   ]
 }
