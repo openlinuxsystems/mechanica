@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Renders the Lift in a running world to PNGs: put down, deploying, raised and fully extended
 # (see game/tools/capture/CaptureScene.cs). Usage: tools/capture-lift.sh OUT_DIR [capture]; with "capture" it shows the
-# Lift capturing an overturned car instead: blue under the aim, red once captured with its ghost, put down upright.
+# Lift capturing an overturned cart instead: blue under the aim, red once captured with its ghost, put down upright.
 # Needs a display; without one it uses xvfb-run. Uses $GODOT if set, otherwise the pinned build.
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"

@@ -348,13 +348,12 @@ public partial class CaptureScene : Node
         Shot("lift_close", 2, () => LookAtLift(new Vector3(1.2f, 0.9f, -1.5f), 0.3f));
     }
 
-    // The Lift capturing an overturned car in a meadow (tools/capture-lift.sh OUT_DIR capture): the car shows blue under the
+    // The Lift capturing an overturned block cart in a meadow (tools/capture-lift.sh OUT_DIR capture): the cart shows blue under the
     // aim, red once captured with its blue ghost level on the Lift's ghost, the ghost red against a wall, then the Lift
-    // down with the car upright on it.
+    // down with the cart upright on it.
     private void LiftCaptureShots()
     {
         Engine.TimeScale = 1.0;
-        const int car = 9200;
         var lift = _main.Tools!.Lift;
         Shot("lift_capture_00_wait", 60, () => { });
         Shot("lift_capture_00_go", 240, () =>
@@ -365,20 +364,32 @@ public partial class CaptureScene : Node
             GameSettings.Apply(GameSettings.Current with { Graphics = GameSettings.Current.Graphics with { Grass = FoliageLevel.Off, GroundCover = FoliageLevel.Off, Bushes = FoliageLevel.Off } });
             _main.Flora.BuildAll();
         });
+        Shot("lift_capture_00_step", 60, () => _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, Ground(_meadow + new Vector3(0.4f, 0, 4.5f)) + Vector3.Up * 0.3f, 0f));
         Shot("lift_capture_00_build", 240, () =>
         {
-            _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, Ground(_meadow + new Vector3(0.4f, 0, 4.5f)) + Vector3.Up * 0.3f, 0f);
-            // A car on its side: dropped turned a quarter about its length.
-            SpawnCar(car, "vanilla:wheel", 1, 4, Ground(_meadow) + Vector3.Up * 1.2f);
-            var made = _main.Creations.Find(car)!;
-            var tipped = System.Numerics.Quaternion.CreateFromAxisAngle(System.Numerics.Vector3.UnitZ, MathF.PI / 2);
-            made.SetAllBodyPoses(new Core.Creations.Pose(made.BodyPose(0).Position, tipped));
-            _main.Creations.Moved(car);
+            // A little block cart (a deck with a cab at one end), built on the ground, then freed and tipped onto its side.
+            var deck = Enumerable.Range(0, 6).SelectMany(x => Enumerable.Range(0, 3).Select(z => new Core.Creations.GridCell(x, 0, z)));
+            var cab = Enumerable.Range(0, 2).SelectMany(x => Enumerable.Range(0, 3).Select(z => new Core.Creations.GridCell(x, 1, z)));
+            Place("vanilla:metal_block", [.. deck, .. cab], Ground(_meadow) + Vector3.Up * 0.125f);
+        });
+        Shot("lift_capture_00_tip", 120, () =>
+        {
+            if (_main.Creations.All.FirstOrDefault(c => c.Parts.Count == 24) is not { } cart)
+            {
+                GD.Print("[capture] no cart");
+                return;
+            }
+            _cart = cart.Id;
+            cart.ClearAnchors();
+            var tipped = System.Numerics.Quaternion.CreateFromAxisAngle(System.Numerics.Vector3.UnitX, MathF.PI / 2);
+            var at = Ground(_meadow) + Vector3.Up * 0.9f;
+            cart.SetAllBodyPoses(new Core.Creations.Pose(new System.Numerics.Vector3(at.X, at.Y, at.Z), tipped));
+            _main.Build.Moved(cart);
             // A wall to put the ghost against.
             Place("vanilla:brick_block", [.. Enumerable.Range(0, 6).SelectMany(x => Enumerable.Range(0, 4).Select(y => new Core.Creations.GridCell(x, y, 0)))],
                 Ground(_meadow + new Vector3(3.5f, 0, -1.5f)) + Vector3.Up * 0.125f);
         });
-        Shot("lift_capture_00_back", 60, () => _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, Ground(_meadow + new Vector3(0.4f, 0, 4.5f)) + Vector3.Up * 0.3f, 0f));
+        Shot("lift_capture_00_back", 120, () => _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, Ground(_meadow + new Vector3(0.4f, 0, 4.5f)) + Vector3.Up * 0.3f, 0f));
         void Aim(Vector3 target)
         {
             foreach (var reader in _main.FindChildren("*", owned: false).OfType<LocalPlayerInput>())
@@ -388,12 +399,14 @@ public partial class CaptureScene : Node
         }
         Vector3 CarMiddle()
         {
-            var box = Core.World.CreationBounds.World(_main.Creations.Find(car)!);
+            _main.Creations.NodeOf(_cart)?.SyncToCreation();
+            var box = Core.World.CreationBounds.World(_main.Creations.Find(_cart)!);
             return ((box.Min + box.Max) / 2).ToGodot();
         }
         Shot("lift_capture_01_hover", 30, () =>
         {
             Tool<Building.LiftTool>();
+            GD.Print($"[capture] cart at {CarMiddle()}");
             Aim(CarMiddle());
             View(new Vector3(2.6f, 2.2f, 5.5f), new Vector3(0.6f, 0.3f, 0f));
         });
@@ -423,6 +436,8 @@ public partial class CaptureScene : Node
         });
         Shot("lift_capture_07_close", 30, () => View(new Vector3(-4.8f, 1.8f, 3.2f), new Vector3(-2.5f, 0.7f, 0.5f)));
     }
+
+    private int _cart;
 
     private Vector3 _meadow;
 
