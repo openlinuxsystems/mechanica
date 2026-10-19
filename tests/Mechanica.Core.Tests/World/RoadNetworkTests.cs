@@ -49,6 +49,71 @@ public class RoadNetworkTests
     }
 
     [Fact]
+    public void JunctionsAreTeesAndCrossroads()
+    {
+        var roads = Vanilla.Value.Roads;
+        var hw = roads.Definition!.Width / 2f;
+        foreach (var node in roads.Nodes.Where(n => n.Kind == RoadNodeKind.Junction))
+        {
+            // Every road leaves down its own arm, at right angles to the others, level and straight across the plate.
+            var used = 0;
+            foreach (var chain in roads.Chains.Where(c => c.Kind == RoadKind.Road && (c.From == node.Index || c.To == node.Index)))
+            {
+                foreach (var atStart in new[] { true, false }.Where(s => (s ? chain.From : chain.To) == node.Index))
+                {
+                    var points = atStart ? chain.Points : [.. chain.Points.Reverse()];
+                    var heights = atStart ? chain.Heights : [.. chain.Heights.Reverse()];
+                    var arm = Enumerable.Range(0, 4).Where(k => (node.Arms & 1 << k) != 0)
+                        .MaxBy(k => Vector2.Dot(node.Arm(k), Vector2.Normalize(points[2] - node.At)));
+                    Assert.True((used & 1 << arm) == 0, $"junction at {node.At}: one road to an arm");
+                    used |= 1 << arm;
+                    for (var i = 0; Vector2.Distance(points[i], node.At) <= node.Radius + 0.01f; i++)
+                    {
+                        var off = points[i] - node.At;
+                        var across = MathF.Abs(off.X * node.Arm(arm).Y - off.Y * node.Arm(arm).X);
+                        Assert.True(across < 0.01f && Vector2.Dot(off, node.Arm(arm)) >= -0.01f, $"junction at {node.At}: the road runs down its arm");
+                        Assert.True(MathF.Abs(heights[i] - node.Height) < 0.01f, $"junction at {node.At}: level across the plate");
+                    }
+                }
+            }
+            Assert.Equal(node.Arms, used);
+            Assert.InRange(System.Numerics.BitOperations.PopCount((uint)node.Arms), 2, 4);
+            // The plate's mouths are the road's width, so the asphalt meets it edge to edge.
+            var outline = roads.PlateOutline(node);
+            for (var k = 0; k < 4; k++)
+            {
+                if ((node.Arms & 1 << k) == 0)
+                    continue;
+                var across = new Vector2(-node.Arm(k).Y, node.Arm(k).X);
+                foreach (var side in new[] { -1f, 1f })
+                    Assert.Contains(outline, p => Vector2.Distance(p, node.At + node.Arm(k) * node.Radius + across * side * hw) < 0.01f);
+            }
+            Assert.Equal(0f, roads.OffPlate(node, node.At));
+        }
+    }
+
+    [Fact]
+    public void TracksMeetTheirRoadsAtRightAngles()
+    {
+        var roads = Vanilla.Value.Roads;
+        var tracks = roads.Chains.Where(c => c.Kind == RoadKind.Track).ToList();
+        var square = 0;
+        foreach (var track in tracks)
+        {
+            var end = track.Points[^1];
+            var hit = roads.Chains.Where(c => c != track)
+                .SelectMany(c => Enumerable.Range(0, c.Points.Length - 1).Select(i => (c, i)))
+                .MinBy(s => Vector2.Distance((s.c.Points[s.i] + s.c.Points[s.i + 1]) / 2f, end));
+            var road = Vector2.Normalize(hit.c.Points[hit.i + 1] - hit.c.Points[hit.i]);
+            var arrive = Vector2.Normalize(track.Points[^1] - track.Points[^3]);
+            if (MathF.Abs(Vector2.Dot(road, arrive)) < 0.17f)
+                square++;
+        }
+        // A few join as they come rather than cross another POI's ground.
+        Assert.True(square >= tracks.Count * 0.9f, $"{square} of {tracks.Count} tracks meet their road square");
+    }
+
+    [Fact]
     public void RoadsKeepToTheirGradeAndBridgesClearTheWater()
     {
         var gen = Vanilla.Value;

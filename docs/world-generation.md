@@ -340,7 +340,11 @@ are found over a grid of `cell` metres that prefers gentle ground, avoids other 
 at `bridge_cost` times the price; deep lakes and the sea are never crossed. Each route is straightened,
 curved, and graded so it never climbs steeper than `max_grade` (0.24 is about 13.5°, spec §3: 12-15°);
 where it crosses water it becomes a bridge at least `bridge_clearance` metres over the surface. Where
-three or more routes meet there is a junction.
+three or more routes meet there is a junction: a T or a crossroads, its arms at right angles, turned to
+suit the roads that meet there. Each road leaves its junction straight down its own arm and then bends
+evenly into its route, and the junction is a level plate with rounded corners between its arms; the
+roads ease from level into their grade past it. A road running straight through a T keeps its centre
+line and has no stop lines. (A junction where more than four roads meet keeps a round plate.)
 
 Roads are `width` metres of asphalt with white edge lines, a double yellow centre line and stop lines
 at junctions, between concrete curbs `curb` metres wide (0, as in vanilla: no curbs), with `shoulder` metres of `shoulder_ground`
@@ -349,7 +353,7 @@ ground is cut and filled level with the road, and nothing is scattered or grows 
 even where the road crosses a POI that grows its own flora).
 
 POIs whose link is `track` get a dirt track (`track_width` metres of `track_ground`, at most
-`track_max_grade`) to the nearest road or track: a site always gets one, a scattered POI only when a
+`track_max_grade`) to the nearest road or track, meeting it at a right angle: a site always gets one, a scattered POI only when a
 road is within `track_reach` metres.
 
 ## `pois/<id>.json`

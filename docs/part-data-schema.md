@@ -232,7 +232,7 @@ lists its part id in `stations`: when an order is queued its inputs come from th
 storage first, then the crafting player's inventory, and finished crafts land in linked storage first,
 then the station's own inventory, where any player in reach can take them. A linked container can be
 opened from the station's screen while the station is in reach. A container or station that holds items, or has orders queued, can't be picked up
-(right click), unless it has `carry_contents`. Its contents are saved with the Creation; if it is broken (Sledgehammer, weapons, a crash) they
+(right click), unless it has `carry_contents`. Its contents are saved with the Creation; if it is broken (Sledgehammer, weapons, fire) they
 fall out as a pile of items on the ground.
 
 ```json

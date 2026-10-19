@@ -45,6 +45,8 @@ namespace Mechanica.Game.Tools;
 /// Given <c>fabricator</c> it puts down a level 1 and a level 5 Fabricator, shows them from every side (the input port on
 /// the left, the output on the right), then has each craft: unfolding, welding and drilling with sparks, and folding back
 /// (<c>tools/capture-fabricator.sh</c>).
+/// Given <c>roads</c> it captures the road junctions nearest the world's centre from above, wide and from a driver's height
+/// (<c>tools/capture-roads.sh</c>).
 /// </summary>
 public partial class CaptureScene : Node
 {
@@ -83,8 +85,9 @@ public partial class CaptureScene : Node
         var small = args.Length > 1 && args[1] == "small_pois";
         var finds = args.Length > 1 && args[1] == "finds";
         var borders = args.Length > 1 && args[1] == "biomes";
+        var roads = args.Length > 1 && args[1] == "roads";
         var moves = args.Length > 1 && args[1] == "animations";
-        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !moves ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
+        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !roads && !moves ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
         if (debugCar)
             Main.MenuCharacter = "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
@@ -199,6 +202,11 @@ public partial class CaptureScene : Node
         if (borders)
         {
             BiomeBorderShots();
+            return;
+        }
+        if (roads)
+        {
+            RoadShots();
             return;
         }
         if (finds)
@@ -672,6 +680,32 @@ public partial class CaptureScene : Node
     }
 
     private Vector3 _away;
+
+    // The road junctions nearest the world's centre: from above and from a driver's height down each arm.
+    private void RoadShots()
+    {
+        Engine.TimeScale = 1.0;
+        var gen = _main.Streamer.Generator;
+        Shot("roads_00_wait", 60, () => { });
+        var junctions = gen.Roads.Nodes.Where(n => n.Kind == RoadNodeKind.Junction).OrderBy(n => n.At.Length()).Take(6).ToList();
+        for (var k = 0; k < junctions.Count; k++)
+        {
+            var node = junctions[k];
+            var at = new Vector3(node.At.X, node.Height, node.At.Y);
+            // Look along the first road that leaves the junction, from a little way down it.
+            var chain = gen.Roads.Chains.First(c => c.Kind == RoadKind.Road && (c.From == node.Index || c.To == node.Index));
+            var p = chain.From == node.Index ? chain.Points[Math.Min(6, chain.Points.Length - 1)] : chain.Points[Math.Max(0, chain.Points.Length - 7)];
+            var down = new Vector3(p.X - node.At.X, 0f, p.Y - node.At.Y).Normalized();
+            Shot($"roads_00_{k}_go", 240, () =>
+            {
+                GD.Print($"[capture] junction {node.Index} at {at}");
+                _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, at + down.Rotated(Vector3.Up, 2.4f) * 30f + Vector3.Up * 2f, 0f);
+            });
+            Shot($"roads_{k}_above", 30, () => { _main.Flora.BuildAll(); ViewAt(at, down * 0.5f + Vector3.Up * 70f, 0f); });
+            Shot($"roads_{k}_wide", 30, () => ViewAt(at, down.Rotated(Vector3.Up, 0.5f) * 38f + Vector3.Up * 16f, 0f));
+            Shot($"roads_{k}_driver", 30, () => ViewAt(at, down * 30f + Vector3.Up * 2.2f, 1f));
+        }
+    }
 
     // The nearest of each small spaced POI kind (World POI plan), wide and close.
     // The small finds nearest the world's centre: a loot crate, the three Bloom Pods and a scrap wreck, wide and close.
