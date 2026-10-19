@@ -1,0 +1,24 @@
+{
+  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed on its own.
+  // Written by tools/author-poi-placeholders.py; edit the table there and re-run.
+  "id": "shore_wreck",
+  "name": "Shore Wreck",
+  "radius": 23.0,
+  "size": [12.0, 3.0, 8.0],
+  "road": "none",
+  "placement": { "spacing": [480.0, 760.0], "biomes": ["meadow", "forest", "field", "desert", "autumn_forest", "burned_forest", "coastal"], "priority": 31, "clearance": 32.0, "shore": 24.0 },
+  "terrain": [
+    { "op": "flatten", "radius": 18.0, "blend": 5.0 }
+  ],
+  "ground": [{ "ground": "sand", "radius": 13.0, "blend": 10.0, "noise": 4.0 }],
+  "pieces": [
+    { "shape": "box", "size": [8.0, 1.6, 3.0], "at": [0.0, 0.6, 0.0], "yaw": 15.0, "color": "#7a6450" },
+    { "shape": "box", "size": [3.0, 1.2, 2.6], "at": [-4.5, 1.2, 0.8], "yaw": 15.0, "color": "#8c5a3c" },
+    { "shape": "box", "size": [0.3, 3.0, 0.3], "at": [1.0, 2.0, 0.0], "color": "#8c5a3c" },
+    { "shape": "box", "size": [6.0, 0.3, 1.5], "at": [6.0, 0.35, -3.0], "yaw": -20.0, "color": "#8c5a3c" },
+    { "shape": "box", "size": [1.0, 0.8, 1.0], "at": [-5.0, 0.4, -3.0], "color": "#7d858c" }
+  ],
+  "markers": [
+    { "type": "item", "ref": "wooden_crate", "at": [0.0, 1.4, 0.0] }
+  ]
+}

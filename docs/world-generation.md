@@ -41,8 +41,9 @@ shapes the ground, the borders, the meanders, the roads' exact course and the sc
    [Roads](#roads)). Then each spaced kind, highest `priority` first, gets one candidate per cell of a
    grid whose step is the middle of its `spacing` range, jittered so that neighbours stay within the
    range. A candidate is used when it stands in one of its `biomes`, on dry ground that is not too
-   steep, `clearance` metres clear of every POI and road placed before it. Last, dirt tracks run to
-   the POIs that ask for one.
+   steep, `clearance` metres clear of every POI and road placed before it (and, for a `shore` kind, near
+   water). Roadside kinds are laid along the roads instead. Last, dirt tracks run to the POIs that ask
+   for one. No road or track bank cuts into a POI's level pad.
 4. **Objects.** Each biome's `scatter` rules place trees, rocks and so on (never on a road).
 5. **Ground.** Each biome's `ground` texture covers it, blending across biome borders; steep slopes take the
    `slope_ground`, POIs paint their own `ground` on top (see [Ground textures](#ground-textures)), and road
@@ -316,6 +317,8 @@ road is within `track_reach` metres.
 | `placement.spacing` | `[min, max]` metres between neighbours of this kind. `min` must be at least twice the radius. Needs `biomes`. A spaced POI is turned a random quarter turn. |
 | `placement.priority` | Higher kinds are placed first and win contested ground. |
 | `placement.clearance` | Metres a spaced POI's footprint keeps clear of every other POI's footprint and of the roads. |
+| `placement.roadside` | For a spaced POI that stands beside a road (a roadside kiosk): metres between the road's bed and its footprint (at least `clearance`). Such POIs are laid along the roads, not the tracks, every `spacing` metres on a side the seed picks, turned so their −z side faces the road, and only where the ground is within 1.5 m of the road's height. |
+| `placement.shore` | For a spaced POI on a shore: open water (a lake or the sea) must lie within this many metres of its footprint. |
 | `size` | The footprint as built, `[width, height, depth]` in metres, for the placement manifest and design work. |
 | `road` | What joins it to the roads: `road` (only where a site places it), `track` (a dirt track) or `none` (the default). |
 | `terrain[]` | `flatten` levels a disc to the pad height; `basin` sinks it `depth` metres below the pad (below `sea_level` it fills with water). A basin's `blend` must be at least 1.5 × `depth`, so its bank is no steeper than the 45° a player can walk up and a pond is never a trap. Full strength inside `radius`, fading over `blend`, centred at `at` (`[x, z]`). `wobble` (0 to 0.5, default 0) makes the edge wander in and out by that fraction of the radius, in lobes of the POI's own, for a natural pond; it narrows the blend where the edge pulls in, so the basin rule then needs `blend` × (1 − `wobble`) ≥ 1.5 × `depth`. Must stay inside the POI radius, `wobble` included. |

@@ -1,0 +1,31 @@
+{
+  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed on its own.
+  // Written by tools/author-poi-placeholders.py; edit the table there and re-run.
+  "id": "farming_patch",
+  "name": "Farming Patch",
+  "radius": 34.0,
+  "size": [24.0, 1.0, 20.0],
+  "road": "track",
+  "placement": { "spacing": [1300.0, 1800.0], "biomes": ["field", "meadow"], "priority": 22, "clearance": 64.0 },
+  "terrain": [
+    { "op": "flatten", "radius": 28.0, "blend": 6.0 }
+  ],
+  "ground": [{ "ground": "dirt", "radius": 22.0, "blend": 10.0, "noise": 4.0 }],
+  "pieces": [
+    { "shape": "box", "size": [22.0, 0.35, 1.6], "at": [0.0, 0.17, -7.5], "color": "#6b4a2e" },
+    { "shape": "box", "size": [22.0, 0.35, 1.6], "at": [0.0, 0.17, -4.5], "color": "#6b4a2e" },
+    { "shape": "box", "size": [22.0, 0.35, 1.6], "at": [0.0, 0.17, -1.5], "color": "#6b4a2e" },
+    { "shape": "box", "size": [22.0, 0.35, 1.6], "at": [0.0, 0.17, 1.5], "color": "#6b4a2e" },
+    { "shape": "box", "size": [22.0, 0.35, 1.6], "at": [0.0, 0.17, 4.5], "color": "#6b4a2e" },
+    { "shape": "box", "size": [22.0, 0.35, 1.6], "at": [0.0, 0.17, 7.5], "color": "#6b4a2e" },
+    { "shape": "box", "size": [20.0, 0.6, 0.8], "at": [0.0, 0.6, -7.5], "color": "#6aa84f" },
+    { "shape": "box", "size": [20.0, 0.6, 0.8], "at": [0.0, 0.6, -1.5], "color": "#6aa84f" },
+    { "shape": "box", "size": [20.0, 0.6, 0.8], "at": [0.0, 0.6, 4.5], "color": "#6aa84f" },
+    { "shape": "box", "size": [0.2, 1.2, 20.0], "at": [-12.0, 0.6, 0.0], "color": "#8c5a3c" },
+    { "shape": "box", "size": [0.2, 1.2, 20.0], "at": [12.0, 0.6, 0.0], "color": "#8c5a3c" },
+    { "shape": "box", "size": [2.0, 2.0, 2.0], "at": [14.0, 1.0, -8.0], "color": "#d8b85a" }
+  ],
+  "markers": [
+    { "type": "item", "ref": "wooden_crate", "at": [14.0, 0.0, -5.0] }
+  ]
+}

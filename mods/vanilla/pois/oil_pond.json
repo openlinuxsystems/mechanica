@@ -6,7 +6,7 @@
   "radius": 48.0,
   "size": [20.0, 2.0, 20.0],
   "road": "none",
-  "placement": { "spacing": [700.0, 1000.0], "biomes": ["desert", "burned_forest"], "priority": 25, "clearance": 64.0 },
+  "placement": { "spacing": [700.0, 1000.0], "biomes": ["desert", "burned_forest"], "priority": 33, "clearance": 64.0 },
   "terrain": [
     { "op": "flatten", "radius": 28.0, "blend": 20.0 },
     { "op": "basin", "at": [0.0, 0.0], "radius": 6.0, "blend": 4.0, "depth": 1.0, "wobble": 0.3 }

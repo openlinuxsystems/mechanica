@@ -102,9 +102,10 @@ def placeholder(w, d, h, color, extra=()):
 TYPES = {}
 
 
-def add(poi_id, name, size, road, pieces, markers=None, flora=None, ground="lot", basin=None, spacing=None, pools=None):
+def add(poi_id, name, size, road, pieces, markers=None, flora=None, ground="lot", basin=None, spacing=None, pools=None, margin=28):
+    """margin: metres of ground blending round the pad (small spaced POIs blend in over less)."""
     TYPES[poi_id] = dict(id=poi_id, name=name, size=size, road=road, pieces=pieces, markers=markers or [], flora=flora,
-                         ground=ground, basin=basin, spacing=spacing, pools=pools or [])
+                         ground=ground, basin=basin, spacing=spacing, pools=pools or [], margin=margin)
 
 
 def pool(liquid, radius, at=(0, 0), level=-1.0):
@@ -179,11 +180,56 @@ add("oil_pool", "Oil Pool", [36, 1, 36], "none",
 add("chemical_pool", "Chemical Pool", [30, 3, 30], "none",
     [cylinder(0.6, 1.2, [14, 0.6, 3], YELLOW), cylinder(0.6, 1.2, [15, 0.6, 4.5], YELLOW), box([1.2, 0.6, 0.8], [-14, 0.3, -2], "#5a5e62", 20)],
     flora="meadow", ground="dirt", basin=dict(at=[0, 0], radius=12, depth=1.5, wobble=0.3), pools=[pool("chemical", 21)],
-    spacing={"spacing": [1500.0, 2100.0], "biomes": ["meadow", "field", "forest", "autumn_forest"], "priority": 25, "clearance": 96.0})
+    spacing={"spacing": [1750.0, 2400.0], "biomes": ["meadow", "field", "forest", "autumn_forest"], "priority": 33, "clearance": 96.0})
 add("oil_pond", "Oil Pond", [20, 2, 20], "none",
     [box([4, 0.5, 0.6], [11, 0.25, -3], "#3a3430", 35)],
     ground="burnt", basin=dict(at=[0, 0], radius=6, depth=1.0, wobble=0.3), pools=[pool("oil", 13, level=-0.6)], markers=geysers(4, 12.5, turn=0.4),
-    spacing={"spacing": [700.0, 1000.0], "biomes": ["desert", "burned_forest"], "priority": 25, "clearance": 64.0})
+    spacing={"spacing": [700.0, 1000.0], "biomes": ["desert", "burned_forest"], "priority": 33, "clearance": 64.0})
+# Small spaced POIs (World POI plan, approved 2026-10-19): camps, forest ruins, roadside kiosks, farming patches, build
+# areas and shore dressing fill the land between the sites so there is something to find every few hundred metres.
+TENT = "#5f8a4a"
+CANVAS = "#b8a47a"
+CROP = "#6aa84f"
+add("camp", "Camp", [14, 3, 14], "track",
+    [box([3, 2.2, 4], [-4, 1.1, -3], TENT, 20), box([3, 2.0, 3.5], [4, 1.0, -2], CANVAS, -25), cylinder(0.8, 0.3, [0, 0.15, 2], BURNT),
+     box([2.2, 0.4, 0.5], [-1.8, 0.2, 3.6], WOOD, 70), box([1.2, 0.9, 0.8], [5, 0.45, 4], WOOD)],
+    [{"type": "item", "ref": "wooden_crate", "at": [5.0, 0.0, 4.0]},
+     {"type": "item", "ref": "wooden_crate", "at": [-4.0, 0.0, -1.0]}],
+    ground="dirt", margin=12,
+    spacing={"spacing": [570.0, 820.0], "biomes": ["forest", "autumn_forest", "burned_forest"], "priority": 20, "clearance": 48.0})
+add("forest_ruin", "Forest Ruin", [16, 5, 16], "track",
+    [box([7, 4, 0.6], [-4, 2, -7.5], RUIN), box([3, 2, 0.6], [5, 1, -7.5], RUIN), box([0.6, 4.5, 9], [-7.5, 2.25, -2], RUIN),
+     box([0.6, 1.5, 5], [7.5, 0.75, 3], RUIN), box([2, 0.8, 1.5], [2, 0.4, 2], RUIN, 30), cylinder(0.5, 5, [-7.5, 2.5, 7.5], RUIN)],
+    [{"type": "item", "ref": "wooden_crate", "at": [-5.0, 0.0, -5.0]}, {"type": "item", "ref": "wooden_crate", "at": [4.0, 0.0, 5.0]}],
+    flora="forest", ground=None, margin=12,
+    spacing={"spacing": [710.0, 1020.0], "biomes": ["forest", "autumn_forest"], "priority": 21, "clearance": 48.0})
+add("roadside_kiosk", "Roadside Kiosk", [6, 3.5, 5], "none",
+    [box([10, 0.2, 8], [0, 0.1, 0], PAD), box([5, 2.6, 3.5], [0, 1.5, 0.5], WOOD), box([6, 0.2, 2], [0, 2.9, -1.8], CANVAS, 0),
+     box([5, 1, 0.3], [0, 1.0, -1.4], WOOD), box([0.2, 2.2, 0.2], [3.8, 1.1, -3.2], METAL), box([1.6, 1, 0.1], [3.8, 2.6, -3.2], YELLOW)],
+    [{"type": "item", "ref": "wooden_crate", "at": [0.0, 1.5, -1.4]}, {"type": "item", "ref": "wooden_crate", "at": [-3.5, 0.2, 2.0]}],
+    margin=6,
+    spacing={"spacing": [520.0, 900.0], "biomes": ["meadow", "forest", "field", "desert", "autumn_forest", "burned_forest"],
+             "priority": 40, "clearance": 0.0, "roadside": 8.0})
+add("farming_patch", "Farming Patch", [24, 1, 20], "track",
+    [*[box([22, 0.35, 1.6], [0, 0.17, z], "#6b4a2e") for z in (-7.5, -4.5, -1.5, 1.5, 4.5, 7.5)],
+     *[box([20, 0.6, 0.8], [0, 0.6, z], CROP) for z in (-7.5, -1.5, 4.5)],
+     box([0.2, 1.2, 20], [-12, 0.6, 0], WOOD), box([0.2, 1.2, 20], [12, 0.6, 0], WOOD), box([2, 2, 2], [14, 1, -8], HAY)],
+    [{"type": "item", "ref": "wooden_crate", "at": [14.0, 0.0, -5.0]}],
+    ground="dirt", margin=12,
+    spacing={"spacing": [1300.0, 1800.0], "biomes": ["field", "meadow"], "priority": 22, "clearance": 64.0})
+add("build_area", "Build Area", [40, 1, 40], "track",
+    [box([40, 0.3, 40], [0, 0.15, 0], CONCRETE), *[cylinder(0.25, 6, [x, 3.3, z], METAL) for x in (-19, 19) for z in (-19, 19)],
+     box([4, 2.5, 3], [-16, 1.55, -16], METAL), box([1, 1, 1], [-13, 0.8, -16], YELLOW)],
+    [{"type": "item", "ref": "wooden_crate", "at": [-16.0, 0.3, -13.0]}],
+    ground=None, margin=14,
+    spacing={"spacing": [1750.0, 2400.0], "biomes": ["meadow", "field", "desert"], "priority": 24, "clearance": 96.0})
+add("shore_wreck", "Shore Wreck", [12, 3, 8], "none",
+    [box([8, 1.6, 3], [0, 0.6, 0], "#7a6450", 15), box([3, 1.2, 2.6], [-4.5, 1.2, 0.8], WOOD, 15), box([0.3, 3, 0.3], [1, 2, 0], WOOD),
+     box([6, 0.3, 1.5], [6, 0.35, -3], WOOD, -20), box([1, 0.8, 1], [-5, 0.4, -3], METAL)],
+    [{"type": "item", "ref": "wooden_crate", "at": [0.0, 1.4, 0.0]}],
+    ground="sand", margin=10,
+    spacing={"spacing": [480.0, 760.0], "biomes": ["meadow", "forest", "field", "desert", "autumn_forest", "burned_forest", "coastal"],
+             "priority": 31, "clearance": 32.0, "shore": 24.0})
 add("farmbot_scrapyard", "Farmbot Scrapyard", [60, 6, 50], "none",
     [box([64, 0.3, 54], [0, 0.15, 0], BURNT),
      *[box([s, s / 2, s], [x, s / 4 + 0.3, z], "#6a5a52", (x * 7) % 45) for s, x, z in
@@ -217,16 +263,17 @@ def inline(value):
     return json.dumps(value)
 
 
-def radius_of(w, d):
+def radius_of(w, d, margin=28):
     """Footprint radius: the pad's half-diagonal plus room to blend into the ground."""
-    return math.ceil(math.hypot(w + 8, d + 8) / 2 + 28)
+    return math.ceil(math.hypot(w + 8, d + 8) / 2 + margin)
 
 
 def write(poi):
     w, h, d = poi["size"]
     reach = math.hypot(w + 8, d + 8) / 2
-    radius = radius_of(w, d)
-    terrain = [{"op": "flatten", "radius": float(math.ceil(reach + 8)), "blend": float(radius - math.ceil(reach + 8))}]
+    radius = radius_of(w, d, poi["margin"])
+    level = math.ceil(reach + min(8, poi["margin"] / 2))
+    terrain = [{"op": "flatten", "radius": float(level), "blend": float(radius - level)}]
     if poi["basin"]:
         b = poi["basin"]
         terrain.append({"op": "basin", "at": [float(v) for v in b["at"]], "radius": float(b["radius"]), "blend": 4.0, "depth": b["depth"],
@@ -244,7 +291,7 @@ def write(poi):
     lines += [f"    {inline(op)}{',' if k < len(terrain) - 1 else ''}" for k, op in enumerate(terrain)]
     lines.append("  ],")
     if poi["ground"]:
-        lines.append(f'  "ground": [{inline({"ground": poi["ground"], "radius": float(math.ceil(reach)), "blend": 10.0, "noise": 4.0})}],')
+        lines.append(f'  "ground": [{inline({"ground": poi["ground"], "radius": float(math.ceil(reach)), "blend": float(min(10, radius - math.ceil(reach))), "noise": 4.0})}],')
     if poi["flora"]:
         lines.append(f'  "flora": {inline(poi["flora"])},')
     if poi["pools"]:
@@ -286,7 +333,8 @@ SITES = [
 ]
 
 # Types the extra large slots draw by seed (worldgen.json pools), and the spaced ones, keep a prefab of their own.
-POOLED = ["warehouse_small", "warehouse", "warehouse_large", "farmbot_scrapyard", "chemical_pool", "oil_pond"]
+POOLED = ["warehouse_small", "warehouse", "warehouse_large", "farmbot_scrapyard", "chemical_pool", "oil_pond", "camp", "forest_ruin",
+          "roadside_kiosk", "farming_patch", "build_area", "shore_wreck"]
 
 POIS = [TYPES[t] for t in POOLED]
 for number, type_id, name in SITES:

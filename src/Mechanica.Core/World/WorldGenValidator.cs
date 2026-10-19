@@ -467,6 +467,20 @@ internal static class WorldGenValidator
                     sink.Error(code, "$.placement.biomes", "a spaced POI needs at least one biome.");
             }
             NonNegative(placement.Clearance, "$.placement.clearance", sink, code);
+            if (placement.Roadside is { } roadside)
+            {
+                if (placement.Spacing is null)
+                    sink.Error(code, "$.placement.roadside", "roadside POIs are spaced along the roads: give spacing too.");
+                if (!(roadside >= placement.Clearance) || !float.IsFinite(roadside))
+                    sink.Error(code, "$.placement.roadside", $"roadside must be at least the clearance ({placement.Clearance}), or the road keeps the POI away (got {roadside}).");
+            }
+            if (placement.Shore is { } shore)
+            {
+                if (placement.Spacing is null)
+                    sink.Error(code, "$.placement.shore", "shore POIs are spaced: give spacing too.");
+                if (!(shore > 0f) || !float.IsFinite(shore))
+                    sink.Error(code, "$.placement.shore", $"shore must be greater than 0 (got {shore}).");
+            }
             for (var i = 0; i < (placement.Biomes?.Count ?? 0); i++)
             {
                 if (!biomeIds.Contains(placement.Biomes![i]))

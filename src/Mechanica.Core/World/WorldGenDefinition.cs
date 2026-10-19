@@ -901,6 +901,19 @@ public sealed record PoiPlacement
     /// <summary>Metres a spaced POI's footprint keeps clear of every other POI's footprint and of roads.</summary>
     public float Clearance { get; init; }
 
+    /// <summary>
+    /// Metres between a road's bed and the footprint of a spaced POI that stands beside a road (a roadside kiosk):
+    /// such POIs are laid along the roads every <see cref="Spacing"/>, on either side, facing the road with their −z
+    /// side. Omitted: anywhere.
+    /// </summary>
+    public float? Roadside { get; init; }
+
+    /// <summary>
+    /// Most metres between the footprint of a spaced POI and open water (a lake or the sea), for POIs on a shore.
+    /// Omitted: anywhere.
+    /// </summary>
+    public float? Shore { get; init; }
+
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
