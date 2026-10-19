@@ -66,9 +66,6 @@ public partial class BuildSync : Node, IToolWorld, IPartCatalog
     /// <summary>Raised on the host just before a part breaks off, so what it holds can fall out.</summary>
     public event Action<Creation, int>? PartBreaking;
 
-    /// <summary>Raised on the host when a tool, a weapon or a script pushes a Body (so it is not taken for a crash).</summary>
-    public event Action<CreationBody>? BodyPushed;
-
     /// <summary>The tool actions, once registered (host-side Lift state lives here).</summary>
     public ToolActions? Tools { get; private set; }
 
@@ -292,7 +289,6 @@ public partial class BuildSync : Node, IToolWorld, IPartCatalog
             return;
         var body = node.Bodies[bodyIndex];
         body.Sleeping = false;
-        BodyPushed?.Invoke(body);
         body.ApplyImpulse(impulse.ToGodot(), point.ToGodot() - body.GlobalPosition);
     }
 
