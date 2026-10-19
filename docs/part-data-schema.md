@@ -181,6 +181,8 @@ How parts attach when they are placed touching each other:
 
 A mesh node in the part's model named after one of its joint sockets (the bearing's `rotor`) is drawn on the
 Body joined at that socket, so it turns or slides with what is attached there. Without a joined part it stays put.
+A mesh node named after the socket plus `Flex` (the sport suspension's `mountFlex`: its coil and damper) stays on the
+part but is skewed each frame along the joint's axis, so its end at the socket follows the joint and its far end stays.
 
 The Part Editor's connection preview shows the result on every face: green for rigid, blue for a
 joint, red where nothing attaches.
@@ -243,7 +245,7 @@ level again. Only the part as written (level 0) has a recipe.
 | Key | Type | Meaning |
 |-----|------|---------|
 | `cost` | list of `{ "item", "count" }` | What reaching this level costs in Survival. |
-| `set` | object | Keys merged over the part at this level, on top of the levels below. Only `name`, `description`, `durability`, `mesh`, `icon`, `settings`, `display`, `crafting`, `inventory`, `logic` and `properties` can change; objects merge key by key and lists are replaced. A level can't shrink `inventory.slots` or remove `crafting`. |
+| `set` | object | Keys merged over the part at this level, on top of the levels below. Only `name`, `description`, `durability`, `mesh`, `icon`, `sockets`, `settings`, `display`, `crafting`, `inventory`, `logic` and `properties` can change; objects merge key by key and lists are replaced. A level can't shrink `inventory.slots` or remove `crafting`, and its `sockets` must list the same sockets (ids, types, positions and normals) with only their `joint` changed, such as a suspension's stiffer spring. |
 
 At most 10 levels. The Part Editor lists them under Upgrades.
 
@@ -323,7 +325,10 @@ script's job (D2). See the [Logic and Power Tutorial](logic-power-tutorial.md).
 | `logic.accepts` | list of kinds | The kinds of part whose links may end here, such as `["power"]` for a wheel bearing only engines turn. The Connect Tool grays out other targets and the host refuses them. Default: any kind but `structural`. |
 | `logic.reverse` | setting id | One of the part's `toggle` settings that reverses which way it turns. Right click on its node with the Connect Tool flips it, a curved arrow by the node shows it, and scripts that drive the part read it as `joint.reversed`. Vanilla bearings use `"reverse"`. |
 | `seat` | object | Makes the part a seat a player sits in with E. Its script reads them with `part.occupant()` and `part.occupant_input()`. |
-| `seat.offset` | [x, y, z] (m) | Where the sitter's feet go, from the part's centre, in the part's frame. Inside the part's footprint. Default [0, 0, 0]. |
+| `seat.offset` | [x, y, z] (m) | Where the sitter's feet go, from the part's centre, in the part's frame. Inside the part's footprint. Default [0, 0, 0]. With a `seat.cushion` only its height counts: the floor the feet rest on. |
+| `seat.cushion` | [x, y, z] (m) | The point on the cushion the sitter's bottom rests on, under the hips, from the part's centre in the part's frame. Inside the footprint and above the feet's floor (the offset's height, or the part's bottom). The player sits there and its legs fit the height: a chair-height cushion (0.39 m above the floor) bends the knees under it, a lower one stretches the legs out in front. Without it the hips go 0.53 m above the offset. |
+| `seat.hands` | `wheel` or `free` | What the sitter's hands do: hold a wheel in front of the chest, or rest on the thighs as a passenger. Default `wheel` on a seat with logic outputs, else `free`. |
+| `seat.bounce` | number, 0 to 4 | How much the sitter bounces and sways with the ride: the hips bob and the upper body sways with each change in the seat's own motion (bumps, braking, turns), so a smooth road barely shows. 0 is rigid, 1 a padded seat. Sitting down also sinks the body in and lets it settle. Default 1. |
 | `settings` | list | Values a player sets on each placed part in its menu (E on the part, or R with the Connect Tool), in display order. The script reads them with `part.setting(id)`. |
 
 Each setting:

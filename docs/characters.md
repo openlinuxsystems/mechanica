@@ -93,8 +93,16 @@ display, or `xvfb-run` without one.
 
 ## Animations
 
+A seated player fits its seat (`seat.cushion` and `seat.hands` in [the part data](part-data-schema.md#logic-settings-and-seats)):
+the legs blend `sit` and `sit_low` so the hips land on the cushion, whatever its height, and the body faces the seat's front
+while the head looks around. While it sits, the body rides along: sitting down sinks it into the seat and lets it settle, then
+each change in the seat's own motion pushes springs that bob the hips and sway the upper body (a bump throws it up,
+braking tips it forward, a turn leans it out), scaled by the seat's `seat.bounce`, so a smooth road barely shows and rough
+ground throws the driver about. The springs are `seat` in `game/data/character.json`.
+
 The animation set is shared by every character: `idle`, `walk`, `jog`, `run`, `crouch_idle`, `crouch_walk`,
-`jump`, `fall`, `land`, `swim_idle`, `swim` and `sit` move the whole body; `hold_tool`, `hold_heavy`,
+`jump`, `fall`, `land`, `swim_idle`, `swim`, `sit` (a chair, hands on a wheel), `sit_low` (a low seat, legs out in
+front), `sit_ride` and `sit_ride_low` (the same with the hands resting on the thighs, for passengers) move the whole body; `hold_tool`, `hold_heavy`,
 `hold_heavy_block` (the Sledgehammer raised across the chest while right click blocks, in Creative), `hold_gun`, `hold_item`,
 `hold_refine` (the Refine Tool scraping at a resource node, a stroke every 0.75 s), `hold_connect` (the Connect Tool at
 chest height, tip forward, with a slow sway), `hold_connect_aim` (raised and aimed while a node is under the crosshair or a

@@ -88,6 +88,9 @@ public sealed record CharacterSettings
     /// <summary>How far the model moves up from the seat point while sitting, in metres (negative is down).</summary>
     public float SeatedOffset { get; init; } = 0f;
 
+    /// <summary>The sitting pose and the ride: how seats fit the legs and how the body bounces (<see cref="SeatRideSettings"/>).</summary>
+    public SeatRideSettings Seat { get; init; } = new();
+
     /// <summary>
     /// How a held item looks, by bare item id: the prop drawn and the gesture its use plays. Items not listed
     /// use <see cref="CategoryPoses"/> for their category, then <see cref="CharacterProp.Item"/> with no gesture.
@@ -176,6 +179,7 @@ public sealed record CharacterSettings
             throw new FormatException($"head_pitch_share must be from 0 to 1 (got {HeadPitchShare}).");
         Bucket.Validate();
         PaintTool.Validate();
+        Seat.Validate();
         if (FirstPersonOffset is not { Length: 3 } || FirstPersonOffset.Any(v => !float.IsFinite(v) || MathF.Abs(v) > 3f))
             throw new FormatException("first_person_offset must be three numbers from -3 to 3 metres.");
         if (!float.IsFinite(FirstPersonPitchDegrees) || MathF.Abs(FirstPersonPitchDegrees) > 60f)
@@ -197,7 +201,7 @@ public sealed record CharacterSettings
             throw new FormatException($"{name} must be a positive number (got {value}).");
     }
 
-    private static void NonNegative(float value, string name)
+    internal static void NonNegative(float value, string name)
     {
         if (!float.IsFinite(value) || value < 0f)
             throw new FormatException($"{name} must be zero or positive (got {value}).");
@@ -324,5 +328,71 @@ public sealed record PaintToolSettings
                     throw new FormatException($"paint_tool.tank.{clip} key {i} must be [rising seconds, twist -360-360, pull 0-0.2].");
             }
         }
+    }
+}
+
+/// <summary>
+/// How a seated body fits its seat and moves with the ride. The legs blend between a chair pose (<c>sit</c>) and a low
+/// seat (<c>sit_low</c>) so the hips land on the cushion; the hips then bob and the upper body sways on springs pushed by
+/// how the seat's velocity changes (a bump, braking, a turn), so a smooth ride barely shows and a rough one throws the
+/// driver about. Sitting down sinks the body into the seat and lets it settle.
+/// </summary>
+public sealed record SeatRideSettings
+{
+    /// <summary>The hips' height above the floor the feet rest on in each sitting clip, in m (the clips are made by tools/characters/build_characters.py).</summary>
+    public Dictionary<string, float> ClipHips { get; init; } = new() { ["sit"] = 0.53f, ["sit_low"] = 0.308f };
+
+    /// <summary>How far the hips are above the cushion the sitter's bottom rests on, in m.</summary>
+    public float HipsAboveCushion { get; init; } = 0.14f;
+
+    /// <summary>How stiff the hips' spring is (1/s²): higher bobs faster and less far.</summary>
+    public float BobStiffness { get; init; } = 160f;
+
+    /// <summary>How quickly the hips' bob dies away (1/s).</summary>
+    public float BobDamping { get; init; } = 11f;
+
+    /// <summary>How hard a change in the seat's vertical speed throws the hips (m/s of bob per m/s of change).</summary>
+    public float BobGain { get; init; } = 0.5f;
+
+    /// <summary>Furthest the hips bob from the cushion, in m.</summary>
+    public float MaxBob { get; init; } = 0.06f;
+
+    /// <summary>How stiff the upper body's sway is (1/s²).</summary>
+    public float LeanStiffness { get; init; } = 70f;
+
+    /// <summary>How quickly the sway dies away (1/s).</summary>
+    public float LeanDamping { get; init; } = 9f;
+
+    /// <summary>How hard a change in the seat's horizontal speed sways the upper body (rad/s of sway per m/s of change).</summary>
+    public float LeanGain { get; init; } = 0.4f;
+
+    /// <summary>Furthest the upper body sways, in degrees.</summary>
+    public float MaxLeanDegrees { get; init; } = 12f;
+
+    /// <summary>How fast the body sinks into the seat on sitting down, in m/s; it then springs back and settles.</summary>
+    public float SettleSpeed { get; init; } = 0.35f;
+
+    /// <summary>A change in the seat's speed above this (m/s in one frame) is a jump in place, not a bump, and is ignored.</summary>
+    public float MaxImpulse { get; init; } = 8f;
+
+    /// <summary>Throws <see cref="FormatException"/> naming the first out-of-range value.</summary>
+    public void Validate()
+    {
+        if (!ClipHips.TryGetValue("sit", out var high) || !ClipHips.TryGetValue("sit_low", out var low) || !float.IsFinite(high) || !float.IsFinite(low)
+            || low <= 0f || high <= low || high > 1.5f)
+            throw new FormatException("seat.clip_hips needs sit and sit_low, with 0 < sit_low < sit <= 1.5 m.");
+        if (!float.IsFinite(HipsAboveCushion) || HipsAboveCushion is < 0f or > 0.5f)
+            throw new FormatException($"seat.hips_above_cushion must be from 0 to 0.5 m (got {HipsAboveCushion}).");
+        CharacterSettings.Positive(BobStiffness, "seat.bob_stiffness");
+        CharacterSettings.NonNegative(BobDamping, "seat.bob_damping");
+        CharacterSettings.NonNegative(BobGain, "seat.bob_gain");
+        CharacterSettings.NonNegative(MaxBob, "seat.max_bob");
+        CharacterSettings.Positive(LeanStiffness, "seat.lean_stiffness");
+        CharacterSettings.NonNegative(LeanDamping, "seat.lean_damping");
+        CharacterSettings.NonNegative(LeanGain, "seat.lean_gain");
+        if (!float.IsFinite(MaxLeanDegrees) || MaxLeanDegrees is < 0f or > 45f)
+            throw new FormatException($"seat.max_lean_degrees must be from 0 to 45 (got {MaxLeanDegrees}).");
+        CharacterSettings.NonNegative(SettleSpeed, "seat.settle_speed");
+        CharacterSettings.Positive(MaxImpulse, "seat.max_impulse");
     }
 }

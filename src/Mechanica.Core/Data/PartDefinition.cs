@@ -329,8 +329,9 @@ public sealed record CraftingDefinition
 /// <summary>
 /// One upgrade level of a placed part. <see cref="Set"/> holds part keys to change, merged like a Part Editor batch's
 /// <c>set</c> (objects key by key, other values replace) on top of the part and every level before it. Only
-/// <c>name</c>, <c>description</c>, <c>durability</c>, <c>mesh</c>, <c>icon</c>, <c>settings</c>, <c>display</c>, <c>crafting</c>,
-/// <c>inventory</c>, <c>logic</c> and <c>properties</c> may change, and an inventory never shrinks.
+/// <c>name</c>, <c>description</c>, <c>durability</c>, <c>mesh</c>, <c>icon</c>, <c>sockets</c> (only their joints),
+/// <c>settings</c>, <c>display</c>, <c>crafting</c>, <c>inventory</c>, <c>logic</c> and <c>properties</c> may change, and an
+/// inventory never shrinks.
 /// <code>
 /// "upgrades": [
 ///   { "cost": [ { "item": "component_kit", "count": 2 } ], "set": { "crafting": { "speed": 1.25 }, "inventory": { "slots": 12 } } }
@@ -341,7 +342,7 @@ public sealed record UpgradeDefinition
 {
     /// <summary>Part keys a level may change.</summary>
     public static readonly IReadOnlyList<string> Changeable =
-        ["name", "description", "durability", "mesh", "icon", "settings", "display", "crafting", "inventory", "logic", "properties"];
+        ["name", "description", "durability", "mesh", "icon", "sockets", "settings", "display", "crafting", "inventory", "logic", "properties"];
 
     /// <summary>Items the level takes from the player's inventory in Survival. Omitted means free.</summary>
     public List<Items.RecipeItem>? Cost { get; init; }
@@ -884,12 +885,46 @@ public sealed record AimDefinition
 /// <summary>A seat: a player sits on the part, and its script reads their steering (<c>part.occupant_input()</c>).</summary>
 public sealed record SeatDefinition
 {
-    /// <summary>Where the sitting player's feet go, relative to the part centre in metres in the part's frame. Omitted means the centre.</summary>
+    /// <summary>Most a seat's <see cref="Bounce"/> may be.</summary>
+    public const float MaxBounce = 4f;
+
+    /// <summary>
+    /// Where the sitting player's feet go, relative to the part centre in metres in the part's frame. Omitted means the
+    /// centre. With a <see cref="Cushion"/> only its height counts: the floor the feet rest on.
+    /// </summary>
     public Vec3? Offset { get; init; }
+
+    /// <summary>
+    /// The point on the seat's cushion the sitter's bottom rests on (under the hips), relative to the part centre in
+    /// metres in the part's frame. The player sits there and its legs fit the cushion's height above the
+    /// <see cref="Offset"/> floor (or the part's bottom): a chair, or a low seat with the legs out in front. Omitted
+    /// means the player stands its hips 0.53 m above the offset.
+    /// </summary>
+    public Vec3? Cushion { get; init; }
+
+    /// <summary>What the sitter's hands do. Omitted means <see cref="SeatHands.Wheel"/> on a seat with logic outputs (one that
+    /// drives), else <see cref="SeatHands.Free"/>.</summary>
+    public SeatHands? Hands { get; init; }
+
+    /// <summary>
+    /// How much the sitter bounces and sways with the ride, 0 (not at all) to <see cref="MaxBounce"/>; 1 is a padded seat.
+    /// The bumps come from how the seat itself moves, so a smooth road barely shows. Omitted means 1.
+    /// </summary>
+    public float? Bounce { get; init; }
 
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>What a seated player's hands do (<see cref="SeatDefinition.Hands"/>).</summary>
+public enum SeatHands
+{
+    /// <summary>Hold a wheel or controls in front of the chest.</summary>
+    Wheel,
+
+    /// <summary>Rest on the thighs, as a passenger.</summary>
+    Free,
 }
 
 /// <summary>How a <see cref="LightDefinition"/> spreads its light.</summary>

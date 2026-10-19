@@ -289,9 +289,18 @@ public partial class PlayerController : CharacterBody3D
 
     /// <summary>Everything the character's animation needs this frame.</summary>
     public CharacterPose Pose => new(
-        Velocity.ToNumerics(), Rotation.Y, _head.Rotation.X,
+        Velocity.ToNumerics(), SeatYaw ?? Rotation.Y, _head.Rotation.X,
         Body.HasFlag(BodyFlags.OnFloor), Body.HasFlag(BodyFlags.Swimming), Body.HasFlag(BodyFlags.Crawl), Seated || Body.HasFlag(BodyFlags.Seated),
-        ShownProp, ShownGesture.Gesture, ShownGesture.Count, Body.HasFlag(BodyFlags.Guard));
+        ShownProp, ShownGesture.Gesture, ShownGesture.Count, Body.HasFlag(BodyFlags.Guard), Seated ? SeatStyle : null);
+
+    /// <summary>How the seat the player sits in holds it (its legs, hands and bounce); set with <see cref="Seat"/>.</summary>
+    public SeatStyle SeatStyle { get; set; } = SeatStyle.Default;
+
+    /// <summary>The yaw (radians, 0 faces -Z) of the seat's front this frame, or null; set with <see cref="Seat"/>.</summary>
+    public Func<float?>? SeatFacing { get; set; }
+
+    /// <summary>Which way a seated body faces: the seat's front, whichever way the player looks. Null on foot.</summary>
+    public float? SeatYaw => Seated ? SeatFacing?.Invoke() : null;
 
     /// <summary>
     /// Plays a gesture on this player (the local player's tools and items call it). Like <see cref="HeldProp"/> it
