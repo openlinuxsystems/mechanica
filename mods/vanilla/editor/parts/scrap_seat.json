@@ -2,19 +2,8 @@
   "format_version": 1,
   "model": [
     {
-      "kind": "box",
-      "size": [0.5, 0.14, 0.48],
-      "position": [0, -0.18, 0]
-    },
-    {
-      "kind": "box",
-      "size": [0.44, 0.08, 0.4],
-      "position": [0, -0.07, -0.02]
-    },
-    {
-      "kind": "box",
-      "size": [0.44, 0.4, 0.08],
-      "position": [0, 0.05, 0.2]
+      "kind": "mesh",
+      "mesh": "meshes/parts/scrap_seat.glb"
     }
   ]
 }
