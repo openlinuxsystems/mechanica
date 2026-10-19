@@ -223,6 +223,35 @@ public class RoadNetworkTests
         Assert.Contains(RoadMaterial.Sign, all);
     }
 
+    [Theory]
+    [InlineData(1234L)]
+    [InlineData(7L)]
+    [InlineData(20261017L)]
+    public void RoadsNeverFoldOverThemselves(long seed)
+    {
+        // A switchback up a hillside, or a road that leaves its junction the other way from where it is going, swings
+        // round in a bend wider than half the road, so the asphalt's inner edge never folds back over itself.
+        var gen = seed == 1234L ? Vanilla.Value : new WorldGenerator(Vanilla.Value.Data, seed, 12032f, 9024f);
+        foreach (var chain in gen.Roads.Chains.Where(c => c.Kind == RoadKind.Road))
+        {
+            var hw = chain.Width / 2f;
+            for (var i = 0; i < chain.Points.Length; i++)
+            {
+                var p = chain.Points[i];
+                if (i >= 2 && i + 2 < chain.Points.Length)
+                {
+                    var (a, c) = (chain.Points[i - 2], chain.Points[i + 2]);
+                    var area = MathF.Abs((p.X - a.X) * (c.Y - a.Y) - (c.X - a.X) * (p.Y - a.Y)) / 2f;
+                    var radius = area < 1e-4f ? float.MaxValue : Vector2.Distance(a, p) * Vector2.Distance(p, c) * Vector2.Distance(c, a) / (4f * area);
+                    Assert.True(radius > hw + 0.5f, $"road {chain.Index} bends round {radius:F1} m at {p} (more than {hw + 0.5f})");
+                }
+                for (var k = 0; k < chain.Points.Length; k++)
+                    Assert.False(MathF.Abs(chain.Along[k] - chain.Along[i]) > 3f * chain.Width && Vector2.Distance(chain.Points[k], p) < chain.Width,
+                        $"road {chain.Index} comes back within its width of itself at {p}");
+            }
+        }
+    }
+
     [Fact]
     public void WheelsRollOntoTheRoadsFromTheSide()
     {

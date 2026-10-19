@@ -333,7 +333,8 @@ the `links`, in order, then a minimum spanning tree over the rest, then up to `m
 sites within `loop_reach` metres that the network makes go more than `loop_factor` times round. Routes
 are found over a grid of `cell` metres that prefers gentle ground, avoids other POIs and crosses water
 at `bridge_cost` times the price; deep lakes and the sea are never crossed. Each route is straightened,
-curved, and graded so it never climbs steeper than `max_grade` (0.24 is about 13.5°, spec §3: 12-15°);
+curved (its corners rounded to a 15 m radius where the straights leave room, so a switchback swings round
+wide instead of folding the road over itself), and graded so it never climbs steeper than `max_grade` (0.24 is about 13.5°, spec §3: 12-15°);
 where it crosses water it becomes a bridge at least `bridge_clearance` metres over the surface. Where
 three or more routes meet there is a junction: a T or a crossroads, its arms at right angles, turned to
 suit the roads that meet there. Each road leaves its junction straight down its own arm and then bends

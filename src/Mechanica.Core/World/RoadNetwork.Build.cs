@@ -36,6 +36,12 @@ public sealed partial class RoadNetwork
     // Metres beyond that straight that the route is cleared of points, so the bend into it is gentle.
     private const float ArmBend = 50f;
 
+    // Radius in metres a road's centre line bends round its corners at least, where its straights are long enough.
+    private const float BendRadius = 15f;
+
+    // Corners of a straightened route that turn less than this (radians) are left to the curve to round.
+    private const float MinRound = 0.35f;
+
     // Pieces the bend from an arm into its route is laid out in.
     private const int BendSteps = 5;
 
@@ -390,7 +396,7 @@ public sealed partial class RoadNetwork
             owners.Add(fromPoi.Index);
         if (toPoi is not null)
             owners.Add(toPoi.Index);
-        var points = Curve(Squared(Simplify(grid, line, owners, def.MaxGrade, allowWater: true), fromArm, toArm, def.Width / 2f + Fillet));
+        var points = Curve(Squared(Round(Simplify(grid, line, owners, def.MaxGrade, allowWater: true), BendRadius), fromArm, toArm, def.Width / 2f + Fillet));
         if (fromPoi is not null && Trim(points, fromPoi, atStart: true) is false)
             return null;
         if (toPoi is not null && Trim(points, toPoi, atStart: false) is false)
@@ -418,7 +424,10 @@ public sealed partial class RoadNetwork
         result.Add(b);
         return result;
 
-        // The arm's mouth and the end of its straight, then the bend from there towards the route (not including it).
+        // The arm's mouth and the end of its straight, then the bend from there towards the route (not including it): an
+        // arc of BendRadius turning towards it until it heads straight for it, so a route that leaves the junction the
+        // other way swings round wide instead of doubling back on itself. A quadratic Bézier where the route's next point
+        // is too close for that.
         List<Vector2> Bend(Vector2 centre, Vector2 arm, Vector2 to)
         {
             var from = centre + arm * straight;
@@ -426,6 +435,34 @@ public sealed partial class RoadNetwork
             var reach = Vector2.Distance(from, to);
             if (reach < 1f)
                 return points;
+            var away = to - from;
+            var side = arm.X * away.Y - arm.Y * away.X >= 0f ? 1f : -1f;
+            var left = new Vector2(-arm.Y, arm.X) * side;
+            var pivot = from + left * BendRadius;
+            var off = to - pivot;
+            if (off.Length() > BendRadius * 1.05f)
+            {
+                // The point on the circle where the road leaves it heading straight for `to`.
+                var phi = MathF.Atan2(off.Y, off.X);
+                var beta = MathF.Acos(BendRadius / off.Length());
+                var a0 = MathF.Atan2(from.Y - pivot.Y, from.X - pivot.X);
+                var a1 = phi - side * beta;
+                var sweep = a1 - a0;
+                while (side * sweep < 0f)
+                    sweep += side * MathF.Tau;
+                while (side * sweep >= MathF.Tau)
+                    sweep -= side * MathF.Tau;
+                // Heading straight for it already (rounding can put it a hair the other way round the circle).
+                if (side * sweep > MathF.Tau - 0.02f)
+                    sweep = 0f;
+                var steps = (int)MathF.Ceiling(MathF.Abs(sweep) * BendRadius / SampleStep);
+                for (var k = 1; k <= steps; k++)
+                {
+                    var angle = a0 + sweep * k / steps;
+                    points.Add(pivot + new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * BendRadius);
+                }
+                return points;
+            }
             var control = from + arm * reach * 0.5f;
             for (var k = 1; k < BendSteps; k++)
             {
@@ -486,6 +523,69 @@ public sealed partial class RoadNetwork
             result.Add(line[best]);
             i = best;
         }
+        return result;
+    }
+
+    // Radians a route turns from one direction to the next (0 straight on, π straight back).
+    private static float Turn(Vector2 a, Vector2 b) =>
+        a.LengthSquared() < 1e-8f || b.LengthSquared() < 1e-8f ? 0f : MathF.Acos(Math.Clamp(Vector2.Dot(Vector2.Normalize(a), Vector2.Normalize(b)), -1f, 1f));
+
+    // Rounds each corner of a straightened route into an arc of the given radius, sampled along it, so the curve through
+    // the points never bends tighter than that where the straights either side leave room (and as wide as they allow
+    // where not). Without it the curve passes through every corner, and a sharp one folds the road over itself.
+    private static List<Vector2> Round(List<Vector2> points, float radius)
+    {
+        var n = points.Count;
+        if (n < 3)
+            return points;
+        // How far back along each straight each corner's arc starts: as much as the radius needs, shared out where two
+        // arcs want more of one straight than it has (a tighter arc, but still a round one).
+        var reach = new float[n];
+        var turn = new float[n];
+        for (var v = 1; v + 1 < n; v++)
+        {
+            turn[v] = Turn(points[v] - points[v - 1], points[v + 1] - points[v]);
+            reach[v] = turn[v] < MinRound ? 0f : radius * MathF.Tan(MathF.Min(turn[v], MathF.PI - 0.05f) / 2f);
+        }
+        for (var s = 0; s + 1 < n; s++)
+        {
+            var length = Vector2.Distance(points[s], points[s + 1]);
+            var want = reach[s] + reach[s + 1];
+            if (want > length * 0.98f)
+            {
+                var scale = length * 0.98f / want;
+                reach[s] *= scale;
+                reach[s + 1] *= scale;
+            }
+        }
+        var result = new List<Vector2> { points[0] };
+        for (var v = 1; v + 1 < n; v++)
+        {
+            if (reach[v] <= 0.01f)
+            {
+                result.Add(points[v]);
+                continue;
+            }
+            var (inward, outward) = (Vector2.Normalize(points[v] - points[v - 1]), Vector2.Normalize(points[v + 1] - points[v]));
+            var (start, end) = (points[v] - inward * reach[v], points[v] + outward * reach[v]);
+            // The arc's centre is a radius in from the start, on the inside of the turn.
+            var r = reach[v] / MathF.Tan(MathF.Min(turn[v], MathF.PI - 0.05f) / 2f);
+            var side = MathF.Sign(inward.X * outward.Y - inward.Y * outward.X);
+            var centre = start + new Vector2(-inward.Y, inward.X) * side * r;
+            var (a0, a1) = (MathF.Atan2(start.Y - centre.Y, start.X - centre.X), MathF.Atan2(end.Y - centre.Y, end.X - centre.X));
+            var sweep = a1 - a0;
+            if (side > 0f && sweep < 0f)
+                sweep += MathF.Tau;
+            if (side < 0f && sweep > 0f)
+                sweep -= MathF.Tau;
+            var steps = Math.Max(2, (int)MathF.Ceiling(MathF.Abs(sweep) * r / SampleStep));
+            for (var k = 0; k <= steps; k++)
+            {
+                var angle = a0 + sweep * k / steps;
+                result.Add(centre + new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * r);
+            }
+        }
+        result.Add(points[^1]);
         return result;
     }
 
