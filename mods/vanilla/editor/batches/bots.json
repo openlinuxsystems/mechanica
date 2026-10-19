@@ -263,7 +263,7 @@
             "id": "stomp",
             "kind": "area",
             "damage": 25,
-            "part_damage": 15,
+            "part_damage": 3,
             "range": 2.0,
             "radius": 3.0,
             "interval": 2.0,
