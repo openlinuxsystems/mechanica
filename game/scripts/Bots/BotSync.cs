@@ -24,7 +24,7 @@ namespace Mechanica.Game.Bots;
 /// <see cref="IRaidWorld"/> behind them.
 /// <para>
 /// Clients only show bots: each bot appears and changes by a reliable view, moves by unreliable pose
-/// snapshots, and flashes when it attacks. The raid in progress is sent to every peer for the HUD, and a
+/// snapshots, and plays its attack when it attacks. The raid in progress is sent to every peer for the HUD, and a
 /// peer that becomes ready is sent all of it.
 /// </para>
 /// </summary>
@@ -377,7 +377,7 @@ public partial class BotSync : Node3D, IBotWorld, IRaidWorld
             return;
         if (!_bodies.TryGetValue(view.Id, out var body))
         {
-            body = _bodies[view.Id] = new BotBody { Name = $"Bot{view.Id}", BotId = view.Id, Type = type };
+            body = _bodies[view.Id] = new BotBody { Name = $"Bot{view.Id}", BotId = view.Id, Type = type, Assets = Survival.Assets };
             AddChild(body);
             body.GlobalPosition = view.Position.ToGodot();
             body.Rotation = new Vector3(0, Mathf.DegToRad(view.Yaw), 0);
@@ -411,7 +411,7 @@ public partial class BotSync : Node3D, IBotWorld, IRaidWorld
     private void BotAttacked(string json)
     {
         if (Read<BotAttackEvent>(json) is { } attack && _bodies.TryGetValue(attack.Bot, out var body))
-            body.Flash();
+            body.Attacked(attack.Attack);
     }
 
     /// <summary>Host → client: the raid in progress.</summary>

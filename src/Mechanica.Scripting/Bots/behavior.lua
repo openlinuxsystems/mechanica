@@ -97,6 +97,8 @@ function leaves.find_player(node)
   if t == nil or t.player ~= nearest.peer then
     behavior.set_target({ player = nearest.peer })
     bot.alert()
+  else
+    bot.engage()
   end
   return SUCCESS
 end

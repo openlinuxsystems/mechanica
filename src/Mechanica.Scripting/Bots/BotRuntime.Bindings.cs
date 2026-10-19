@@ -34,7 +34,13 @@ public sealed partial class BotRuntime
         Fn(bot, "memory", _ => DynValue.NewTable(Current().Memory!));
         Fn(bot, "alert", _ =>
         {
+            _bots.Engage(Current().Bot.Id);
             Alerted?.Invoke(Current().Bot.Id);
+            return DynValue.Nil;
+        });
+        Fn(bot, "engage", _ =>
+        {
+            _bots.Engage(Current().Bot.Id);
             return DynValue.Nil;
         });
         Fn(bot, "sound", args =>

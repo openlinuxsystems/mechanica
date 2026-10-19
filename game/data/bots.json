@@ -8,6 +8,8 @@
   "range_tolerance": 0.4,
   "player_radius": 0.4,
   "max_spawn_distance": 8192.0,
+  // A bot stays engaged (red eye, fighting stance) this long after it last spotted a target, attacked or was hurt.
+  "engaged_seconds": 4.0,
   // POI guards (the bot markers in pois/*.json): they appear when a player comes within the wake distance,
   // leave when everyone is past the sleep distance, and a killed guard's post waits guard_respawn seconds.
   "guard_wake_distance": 64.0,

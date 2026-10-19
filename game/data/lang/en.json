@@ -403,6 +403,7 @@
     "Mod tools": "Mod tools",
     "Mode": "Mode",
     "Model": "Model",
+    "Model and animation": "Model and animation",
     "Mods load top to bottom; a later mod's overrides win. Changes apply the next time you start or host a game. Players who join need the same mods in the same order.": "Mods load top to bottom; a later mod's overrides win. Changes apply the next time you start or host a game. Players who join need the same mods in the same order.",
     "Mods reloaded with {0} error(s); see the log.": "Mods reloaded with {0} error(s); see the log.",
     "Mods reloaded: {0} parts.": "Mods reloaded: {0} parts.",

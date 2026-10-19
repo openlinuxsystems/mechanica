@@ -1,14 +1,15 @@
 using Godot;
 using Mechanica.Core.Bots;
 using Mechanica.Core.Data;
+using Mechanica.Game.Creations;
 using Mechanica.Game.Ui;
 
 namespace Mechanica.Game.Bots;
 
 /// <summary>
-/// A bot in the scene: a capsule body with a placeholder look (its type's colour, a dark visor showing
-/// which way it faces, and a health label once it is hurt). On the host it walks by
-/// <see cref="CharacterBody3D.MoveAndSlide"/>; on clients it follows the host's snapshots.
+/// A bot in the scene: a capsule body showing its type's animated model (<see cref="BotModelView"/>), or a placeholder
+/// look for a type without one (its colour and a dark visor showing which way it faces), and a health label once it is
+/// hurt. On the host it walks by <see cref="CharacterBody3D.MoveAndSlide"/>; on clients it follows the host's snapshots.
 /// </summary>
 public partial class BotBody : CharacterBody3D
 {
@@ -16,8 +17,8 @@ public partial class BotBody : CharacterBody3D
     private const float FollowRate = 12f;
 
     private Label3D _label = null!;
-    private MeshInstance3D _mesh = null!;
-    private StandardMaterial3D _material = null!;
+    private MeshInstance3D? _mesh;
+    private StandardMaterial3D? _material;
     private Vector3 _target;
     private float _targetYaw;
     private bool _placed;
@@ -29,6 +30,12 @@ public partial class BotBody : CharacterBody3D
     /// <summary>Its type.</summary>
     public Bot Type { get; init; } = null!;
 
+    /// <summary>Where its model loads from; null shows the placeholder.</summary>
+    public PartAssets? Assets { get; init; }
+
+    /// <summary>Its animated model, or null when it shows the placeholder.</summary>
+    public BotModelView? Model { get; private set; }
+
     /// <summary>The view last shown.</summary>
     public BotView? View { get; private set; }
 
@@ -39,6 +46,27 @@ public partial class BotBody : CharacterBody3D
     {
         var shape = new CapsuleShape3D { Radius = Type.Radius, Height = Type.Height };
         AddChild(new CollisionShape3D { Shape = shape, Position = new Vector3(0, Type.Height / 2, 0) });
+        Model = BotModelView.For(Type, Assets, GetRid());
+        if (Model is not null)
+            AddChild(Model);
+        else
+            AddPlaceholder();
+        _label = new Label3D
+        {
+            // Names are the mods' own text.
+            AutoTranslateMode = AutoTranslateModeEnum.Disabled,
+            Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
+            Position = new Vector3(0, Type.Height + 0.35f, 0),
+            FontSize = 48,
+            PixelSize = 0.005f,
+            Visible = false,
+        };
+        AddChild(_label);
+        FloorSnapLength = 0.3f;
+    }
+
+    private void AddPlaceholder()
+    {
         HexColor.TryParse(Type.Color, out var c);
         _material = new StandardMaterial3D { AlbedoColor = new Color(c.R, c.G, c.B) };
         _mesh = new MeshInstance3D
@@ -56,18 +84,6 @@ public partial class BotBody : CharacterBody3D
             },
             Position = new Vector3(0, Type.Height * 0.78f, -Type.Radius * 0.8f),
         });
-        _label = new Label3D
-        {
-            // Names are the mods' own text.
-            AutoTranslateMode = AutoTranslateModeEnum.Disabled,
-            Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
-            Position = new Vector3(0, Type.Height + 0.35f, 0),
-            FontSize = 48,
-            PixelSize = 0.005f,
-            Visible = false,
-        };
-        AddChild(_label);
-        FloorSnapLength = 0.3f;
     }
 
     /// <summary>Shows a view from the host: health, death, and (on clients) where to move to.</summary>
@@ -76,7 +92,9 @@ public partial class BotBody : CharacterBody3D
         View = view;
         _label.Visible = view.Health < view.MaxHealth;
         _label.Text = view.Dead ? Loc.T("{0} (destroyed)", Type.Name) : $"{Type.Name}  {view.Health:0}/{view.MaxHealth:0}";
-        _material.AlbedoColor = view.Dead ? new Color(0.2f, 0.2f, 0.2f) : _material.AlbedoColor;
+        if (_material is not null && view.Dead)
+            _material.AlbedoColor = new Color(0.2f, 0.2f, 0.2f);
+        Model?.Show(view);
         // A dead bot's body no longer blocks shots or players.
         CollisionLayer = view.Dead ? 0u : 1u;
         if (follow)
@@ -95,8 +113,14 @@ public partial class BotBody : CharacterBody3D
         Rotation = new Vector3(0, _targetYaw, 0);
     }
 
-    /// <summary>A short flash when the bot attacks.</summary>
-    public void Flash() => _flash = 0.25f;
+    /// <summary>The bot used <paramref name="attack"/>: its model plays the attack's clip, the placeholder flashes.</summary>
+    public void Attacked(string attack)
+    {
+        if (Model is not null)
+            Model.Attack(attack);
+        else
+            _flash = 0.25f;
+    }
 
     /// <summary>Clients: moves toward the last snapshot.</summary>
     public void Interpolate(float delta)
@@ -108,7 +132,7 @@ public partial class BotBody : CharacterBody3D
 
     public override void _Process(double delta)
     {
-        if (_flash <= 0)
+        if (_flash <= 0 || _mesh is null)
             return;
         _flash -= (float)delta;
         _mesh.Scale = Vector3.One * (1f + Mathf.Max(0, _flash) * 0.6f);
