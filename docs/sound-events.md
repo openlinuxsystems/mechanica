@@ -8,7 +8,9 @@ trailing commas are allowed.
 
 You can write these files by hand, but the **Sounds** tab of the Part Editor
 ([Getting Started](getting-started.md#8-sounds)) does it for you, checks them with the same rules the
-game uses, and lets you hear the result before saving.
+game uses, and lets you hear the result before saving. For sounds no part binds (a mod script's alarm, a bot's
+or a quest's), the **Sound Editor** on the main menu edits the same thing without a part: pick the mod and one of its
+bank files, add events from clips, preview and save.
 
 ## Files
 

@@ -131,6 +131,7 @@ public partial class MainMenu : Control
         AddButton(tools, "Part Editor", () => GetTree().ChangeSceneToFile(PartEditorScene), "Make and edit parts");
         AddButton(tools, "Bot Behavior Editor", () => OpenBotEditor(), "Make bots and the raid table");
         AddButton(tools, "Recipe Editor", () => OpenRecipeEditor(), "Add, copy and override recipes of every mod");
+        AddButton(tools, "Sound Editor", () => OpenSoundEditor(), "Edit a mod's sound events without opening a part");
         AddButton(tools, "Test Sandbox", () => OpenSandbox(), "Try parts, bots and Creations");
         AddButton(tools, "Mod Manager", () => OpenModManager(), "Turn mods on and off and package them");
         rows.AddChild(BottomBar());
@@ -354,6 +355,15 @@ public partial class MainMenu : Control
     public RecipeEditorScreen OpenRecipeEditor()
     {
         var screen = new RecipeEditorScreen { Name = "RecipeEditor" };
+        screen.CloseRequested += () => Close(screen);
+        Open(screen);
+        return screen;
+    }
+
+    /// <summary>Opens the Sound Editor.</summary>
+    public SoundEditorScreen OpenSoundEditor()
+    {
+        var screen = new SoundEditorScreen { Name = "SoundEditor" };
         screen.CloseRequested += () => Close(screen);
         Open(screen);
         return screen;
