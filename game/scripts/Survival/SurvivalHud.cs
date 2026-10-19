@@ -234,14 +234,17 @@ public partial class SurvivalHud : CanvasLayer
         return true;
     }
 
-    /// <summary>The resource node (<see cref="WorldObjectDefinition.Refine"/>) under the crosshair within reach, or null.</summary>
+    /// <summary>
+    /// The resource node (<see cref="WorldObjectDefinition.Refine"/>) or object gathered by hand (<see cref="WorldObjectDefinition.Harvest"/>:
+    /// an oil geyser) under the crosshair within reach, or null.
+    /// </summary>
     public WorldObjectPlacement? AimedNode()
     {
         if (Players.LocalPlayer is not { } player || Survival.Settings is not { } settings)
             return null;
         if (HandTool.Cast(player, settings.Reach, brush: true) is not { } hit || TerrainChunk.ObjectHit(hit.Collider, hit.Shape) is not { } id)
             return null;
-        return Survival.FindObject(id) is { Definition.Refine: true } node ? node : null;
+        return Survival.FindObject(id) is { } node && (node.Definition.Refine || node.Definition.Harvest) ? node : null;
     }
 
     /// <summary>
@@ -425,6 +428,11 @@ public partial class SurvivalHud : CanvasLayer
         }
         if (Quests?.Prompt() is { } quest)
             return (QuestLabel(quest), () => Request(QuestTracker.QuestInteract, new NoArgs()));
+        if (AimedNode() is { Definition.Harvest: true } harvest)
+        {
+            var gives = harvest.Definition.Drops?.FirstOrDefault()?.Item is { } item ? Catalog.FindDefinition(item)?.Name ?? item : NodeName(harvest);
+            return (Loc.T("collect {0}", gives), () => Request(SurvivalActions.Harvest, new HarvestArgs(harvest.Id.ToString())));
+        }
         if (AimedNode() is { } node)
             return (Loc.T("hold to refine the {0}", NodeName(node)), () => BeginRefine(node));
         if (AimedRefinable() is { } rod)

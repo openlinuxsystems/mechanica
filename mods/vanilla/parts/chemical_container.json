@@ -1,7 +1,7 @@
 {
   "id": "chemical_container",
   "name": "Chemical Container",
-  "description": "Holds crude oil for the Refiner.",
+  "description": "Holds crude oil and chemicals.",
   "category": "container",
   "mass": 6,
   "durability": 6,
@@ -30,7 +30,8 @@
   "inventory": {
     "slots": 5,
     "accepts": [
-      "crude_oil"
+      "crude_oil",
+      "chemical"
     ]
   }
 }

@@ -228,8 +228,10 @@ public sealed partial class WorldGenerator
         var objects = ObjectsIn(ox, oz, x1, z1).ToList();
         var pieces = new List<PoiPiecePlacement>();
         var markers = new List<PoiMarkerPlacement>();
+        var pools = new List<PoiPoolPlacement>();
         foreach (var poi in PoisOverlapping(ox, oz, x1, z1))
         {
+            pools.AddRange(PoolsOf(poi).Where(p => Inside(p.Centre, ox, oz, x1, z1)));
             var prefab = poi.Poi.Prefab;
             for (var k = 0; k < (prefab.Pieces?.Count ?? 0); k++)
             {
@@ -248,6 +250,7 @@ public sealed partial class WorldGenerator
         return new TerrainChunkData(coord, chunkSize, res, n, heights, normals, colors, biomes, covered, SeaLevel, objects, pieces, markers)
         {
             Grounds = grounds,
+            Pools = pools,
             Roads = RoadMesher.Build(this, ox, oz, x1, z1),
         };
     }
@@ -265,8 +268,58 @@ public sealed partial class WorldGenerator
         }
     }
 
-    /// <summary>Scattered objects whose ground point lies in [x0, x1) × [z0, z1), in rule then cell order.</summary>
-    public IEnumerable<WorldObjectPlacement> ObjectsIn(float x0, float z0, float x1, float z1)
+    /// <summary>
+    /// Objects whose ground point lies in [x0, x1) × [z0, z1): scattered ones in rule then cell order, then the ones POI
+    /// <c>object</c> markers place, in POI then marker order.
+    /// </summary>
+    public IEnumerable<WorldObjectPlacement> ObjectsIn(float x0, float z0, float x1, float z1) =>
+        ScatteredIn(x0, z0, x1, z1).Concat(PoiObjectsIn(x0, z0, x1, z1));
+
+    private IEnumerable<WorldObjectPlacement> PoiObjectsIn(float x0, float z0, float x1, float z1)
+    {
+        foreach (var poi in PoisOverlapping(x0, z0, x1, z1))
+        {
+            for (var k = 0; k < (poi.Poi.Prefab.Markers?.Count ?? 0); k++)
+            {
+                if (PlacePoiObject(poi, k) is { } placed && placed.Position.X >= x0 && placed.Position.X < x1 && placed.Position.Z >= z0 && placed.Position.Z < z1)
+                    yield return placed;
+            }
+        }
+    }
+
+    // The object a POI's object marker places: on the ground under the marker, raised by the marker's height and sunk by
+    // the object's sink. Null for any other marker, or one naming no object.
+    private WorldObjectPlacement? PlacePoiObject(PoiInstance poi, int marker)
+    {
+        if (poi.Poi.Prefab.Markers![marker] is not { Type: PoiMarker.ObjectType, Ref: { } id } m || !Data.Objects.TryGetValue(id, out var o))
+            return null;
+        var objectId = WorldObjectId.ForPoi(poi.Index, marker);
+        var salt = Noise.Hash(_scatterSalt ^ 0x9015u, poi.Index, marker, 3);
+        var scale = o.Scale is [var lo, var hi] ? lo + (hi - lo) * Noise.Unit(Noise.Mix(salt)) : 1f;
+        var at = poi.ToWorld(new Vector2(m.At.X, m.At.Z));
+        var y = HeightAt(at.X, at.Y) + m.At.Y - o.Sink * scale;
+        return new WorldObjectPlacement(objectId, o, new Vector3(at.X, y, at.Y), poi.Yaw + Radians(m.Yaw), scale);
+    }
+
+    /// <summary>The liquid at <paramref name="point"/> (under a POI pool's surface), or null.</summary>
+    public PoiPoolPlacement? LiquidAt(Vector3 point) => PoolsAt(point.X, point.Z).FirstOrDefault(p => p.Holds(point));
+
+    /// <summary>The liquid pools of the POIs whose footprint covers a world position.</summary>
+    public IEnumerable<PoiPoolPlacement> PoolsAt(float x, float z) => PoisAt(x, z).SelectMany(PoolsOf);
+
+    // A POI's liquid pools in world space (pools of liquids the world has no rules for are left out).
+    private IEnumerable<PoiPoolPlacement> PoolsOf(PoiInstance poi)
+    {
+        foreach (var pool in poi.Poi.Prefab.Pools ?? [])
+        {
+            if (pool.Liquid is not { } id || !Data.Liquids.TryGetValue(id, out var liquid))
+                continue;
+            var at = poi.ToWorld(pool.At is [var ax, var az] ? new Vector2(ax, az) : Vector2.Zero);
+            yield return new PoiPoolPlacement(poi, pool, liquid, new Vector3(at.X, poi.PadHeight + pool.Level, at.Y));
+        }
+    }
+
+    private IEnumerable<WorldObjectPlacement> ScatteredIn(float x0, float z0, float x1, float z1)
     {
         foreach (var rule in Data.ScatterRules)
         {
@@ -292,6 +345,10 @@ public sealed partial class WorldGenerator
     /// <summary>The object with this id, or null when the world has none (it never grew there).</summary>
     public WorldObjectPlacement? Find(WorldObjectId id)
     {
+        if (id.IsPoi)
+            return id.CellX >= 0 && id.CellX < _pois.Count && id.CellZ >= 0 && id.CellZ < (_pois[id.CellX].Poi.Prefab.Markers?.Count ?? 0) && id.Piece == 0
+                ? PlacePoiObject(_pois[id.CellX], id.CellZ)
+                : null;
         if (id.Rule < 0 || id.Rule >= Data.ScatterRules.Count)
             return null;
         var rule = Data.ScatterRules[id.Rule];

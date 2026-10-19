@@ -81,7 +81,7 @@
       "template": "interactive",
       "set": {
         "name": "Chemical Container",
-        "description": "Holds crude oil for the Refiner.",
+        "description": "Holds crude oil and chemicals.",
         "category": "container",
         "mass": 6,
         "durability": 6,
@@ -93,7 +93,7 @@
         "visual": { "color": "#6a3a9a", "paintable": true },
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
         "sounds": { "open": "container_open", "place": "place_plastic" },
-        "inventory": { "slots": 5, "accepts": ["crude_oil"] }
+        "inventory": { "slots": 5, "accepts": ["crude_oil", "chemical"] }
       },
       "model": [
         { "kind": "box", "size": [0.5, 0.75, 0.5] },

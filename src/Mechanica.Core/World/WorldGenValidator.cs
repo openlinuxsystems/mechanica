@@ -65,7 +65,7 @@ internal static class WorldGenValidator
                 sink.Warning(Code, $"{path}.sledge_damage", "sledge_damage does nothing: the object has no health, so it cannot break.");
             if (o.Model is { } model && FloraModels.Find(model) is null)
                 sink.Error(Code, $"{path}.model", $"'{model}' is not a built-in flora model ({string.Join(", ", FloraModels.All.Select(m => m.Id))}).");
-            if (o.Drops is { Count: > 0 } && o.Health is null)
+            if (o.Drops is { Count: > 0 } && o.Health is null && !o.Harvest)
                 sink.Warning(Code, $"{path}.drops", "drops are never left: the object has no health, so it cannot break.");
             for (var k = 0; k < (o.DamageFrom?.Count ?? 0); k++)
             {
@@ -126,6 +126,41 @@ internal static class WorldGenValidator
                     sink.Error(Code, $"{path}.drops[{d}].item", "item must be an item id or 'mod_id:item_id'.");
                 if (drop.Count < 1)
                     sink.Error(Code, $"{path}.drops[{d}].count", "count must be 1 or more.");
+                if (drop.CountMax is { } most && most < drop.Count)
+                    sink.Error(Code, $"{path}.drops[{d}].count_max", $"count_max must be at least count ({drop.Count}).");
+            }
+            if (o.Harvest && o.Drops is not { Count: > 0 })
+                sink.Warning(Code, $"{path}.harvest", "harvesting gives nothing: the object has no drops.");
+            if (o.Harvest && o.Refine)
+                sink.Error(Code, $"{path}.harvest", "an object is either refined (held Use) or harvested (pressed Use), not both.");
+            if (o.Regrow is { } regrow && !(regrow > 0 && float.IsFinite(regrow)))
+                sink.Error(Code, $"{path}.regrow", "regrow must be greater than 0 seconds.");
+        }
+
+        var liquidIds = new HashSet<string>();
+        for (var i = 0; i < (definition.Liquids?.Count ?? 0); i++)
+        {
+            var liquid = definition.Liquids![i];
+            var path = $"$.liquids[{i}]";
+            KnownKeys.WarnUnknown(liquid.Extra, path, sink, typeof(LiquidDefinition));
+            if (!Identifiers.IsValid(liquid.Id))
+                sink.Error(Code, $"{path}.id", $"liquid id '{liquid.Id}' must be lowercase snake_case.");
+            else if (!liquidIds.Add(liquid.Id))
+                sink.Error(Code, $"{path}.id", $"liquid '{liquid.Id}' is defined twice.");
+            Color(liquid.Color, $"{path}.color", sink);
+            NonNegative(liquid.Glow, $"{path}.glow", sink);
+            if (!(liquid.Roughness is >= 0f and <= 1f))
+                sink.Error(Code, $"{path}.roughness", $"roughness must be 0 to 1 (got {liquid.Roughness}).");
+            NonNegative(liquid.Damage, $"{path}.damage", sink);
+            if (liquid.Collect is { } collect)
+            {
+                KnownKeys.WarnUnknown(collect.Extra, $"{path}.collect", sink, typeof(ObjectDrop));
+                if (!PartValidator.IsItemRef(collect.Item))
+                    sink.Error(Code, $"{path}.collect.item", "item must be an item id or 'mod_id:item_id'.");
+                if (collect.Count < 1)
+                    sink.Error(Code, $"{path}.collect.count", "count must be 1 or more.");
+                if (collect.CountMax is not null)
+                    sink.Error(Code, $"{path}.collect.count_max", "a bucket always collects count.");
             }
         }
 
@@ -388,7 +423,10 @@ internal static class WorldGenValidator
             sink.Error(Code, path, $"must be [x, z], each from -{reach} to {reach} (fractions of the world).");
     }
 
-    public static void Validate(PoiPrefab prefab, IReadOnlyList<string> biomeIds, DiagnosticSink sink, IReadOnlyCollection<string> groundIds)
+    /// <param name="objectIds">World object ids <c>object</c> markers may name; null skips the check.</param>
+    /// <param name="liquidIds">Liquid ids pools may hold; null skips the check.</param>
+    public static void Validate(PoiPrefab prefab, IReadOnlyList<string> biomeIds, DiagnosticSink sink, IReadOnlyCollection<string> groundIds,
+        IReadOnlyCollection<string>? objectIds = null, IReadOnlyCollection<string>? liquidIds = null)
     {
         const string code = DiagnosticCodes.PoiInvalid;
         KnownKeys.WarnUnknown(prefab.Extra, "$", sink, typeof(PoiPrefab));
@@ -488,6 +526,30 @@ internal static class WorldGenValidator
                 sink.Error(code, $"{path}.type", $"marker type '{marker.Type}' must be lowercase snake_case.");
             if (marker.Ref is { } reference && !reference.Split(':').All(Identifiers.IsValid))
                 sink.Error(code, $"{path}.ref", $"'{reference}' is not an id (id or mod_id:id).");
+            if (marker.Type == PoiMarker.ObjectType && (marker.Ref is null || objectIds?.Contains(marker.Ref) == false))
+                sink.Error(code, $"{path}.ref", $"an object marker needs the id of a world object in the world generation rules (got '{marker.Ref}').");
+        }
+        for (var i = 0; i < (prefab.Pools?.Count ?? 0); i++)
+        {
+            var pool = prefab.Pools![i];
+            var path = $"$.pools[{i}]";
+            KnownKeys.WarnUnknown(pool.Extra, path, sink, typeof(LiquidPool));
+            if (pool.Liquid is null || liquidIds?.Contains(pool.Liquid) == false)
+                sink.Error(code, $"{path}.liquid", $"'{pool.Liquid}' is not one of the liquids in the world generation rules.");
+            if (!(pool.Radius > 0f) || !float.IsFinite(pool.Radius))
+                sink.Error(code, $"{path}.radius", $"radius must be greater than 0 (got {pool.Radius}).");
+            if (!float.IsFinite(pool.Level))
+                sink.Error(code, $"{path}.level", "level must be a number.");
+            var offset = Vector2.Zero;
+            if (pool.At is { } at)
+            {
+                if (at.Count != 2 || !at.All(float.IsFinite))
+                    sink.Error(code, $"{path}.at", "at must be [x, z].");
+                else
+                    offset = new Vector2(at[0], at[1]);
+            }
+            if (offset.Length() + pool.Radius > prefab.Radius + 1e-3f)
+                sink.Error(code, path, $"reaches {offset.Length() + pool.Radius:0.##} m from the centre, past the POI radius ({prefab.Radius}).");
         }
     }
 

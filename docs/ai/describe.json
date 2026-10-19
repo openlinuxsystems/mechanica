@@ -1263,6 +1263,27 @@
       }
     },
     {
+      "name": "Harvest",
+      "kind": "action",
+      "group": "survival",
+      "scope": "play",
+      "description": "Gathering a world object by hand with Use (an oil geyser). Arguments of Harvest: gather what a world object gives by hand (an oil geyser's crude oil).",
+      "params": {
+        "description": "Arguments of Harvest: gather what a world object gives by hand (an oil geyser's crude oil).",
+        "type": "object",
+        "properties": {
+          "object": {
+            "description": "Id of the world object (\"poi.7.2\").",
+            "type": "string"
+          }
+        },
+        "required": [
+          "object"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
       "name": "InspectCreation",
       "kind": "query",
       "group": "logic",

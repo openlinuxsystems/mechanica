@@ -12,8 +12,20 @@
     { "op": "basin", "at": [0.0, 0.0], "radius": 16.0, "blend": 4.0, "depth": 1.5 }
   ],
   "ground": [{ "ground": "sand", "radius": 32.0, "blend": 10.0, "noise": 4.0 }],
+  "pools": [
+    { "liquid": "oil", "at": [0.0, 0.0], "radius": 17.0, "level": -1.0 }
+  ],
   "pieces": [
-    { "shape": "box", "size": [30.0, 0.4, 30.0], "at": [0.0, -0.6, 0.0], "color": "#1d1a17" },
     { "shape": "cylinder", "radius": 1.5, "height": 4.0, "at": [18.0, 2.0, 0.0], "color": "#4a4f55" }
+  ],
+  "markers": [
+    { "type": "object", "ref": "oil_geyser", "at": [22.0, 0.0, 0.0] },
+    { "type": "object", "ref": "oil_geyser", "at": [15.56, 0.0, 15.56] },
+    { "type": "object", "ref": "oil_geyser", "at": [0.0, 0.0, 22.0] },
+    { "type": "object", "ref": "oil_geyser", "at": [-15.56, 0.0, 15.56] },
+    { "type": "object", "ref": "oil_geyser", "at": [-22.0, 0.0, 0.0] },
+    { "type": "object", "ref": "oil_geyser", "at": [-15.56, 0.0, -15.56] },
+    { "type": "object", "ref": "oil_geyser", "at": [-0.0, 0.0, -22.0] },
+    { "type": "object", "ref": "oil_geyser", "at": [15.56, 0.0, -15.56] }
   ]
 }

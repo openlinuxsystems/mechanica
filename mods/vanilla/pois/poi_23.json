@@ -12,10 +12,12 @@
     { "op": "basin", "at": [0.0, 36.0], "radius": 16.0, "blend": 4.0, "depth": 1.5 }
   ],
   "ground": [{ "ground": "lot", "radius": 31.0, "blend": 10.0, "noise": 4.0 }],
+  "pools": [
+    { "liquid": "chemical", "at": [0.0, 36.0], "radius": 17.0, "level": -1.0 }
+  ],
   "pieces": [
     { "shape": "box", "size": [48.0, 0.3, 38.0], "at": [0.0, 0.15, 0.0], "color": "#a3a093" },
     { "shape": "box", "size": [40.0, 10.0, 30.0], "at": [0.0, 5.3, 0.0], "color": "#9c988c" },
-    { "shape": "box", "size": [30.0, 0.4, 20.0], "at": [0.0, -0.6, 36.0], "color": "#7fd13b" },
     { "shape": "box", "size": [1.0, 1.0, 18.0], "at": [-10.0, 0.8, 26.0], "color": "#e0b52c" },
     { "shape": "box", "size": [1.0, 1.0, 18.0], "at": [10.0, 0.8, 26.0], "color": "#e0b52c" }
   ]

@@ -13,8 +13,10 @@
   ],
   "ground": [{ "ground": "dirt", "radius": 43.0, "blend": 10.0, "noise": 4.0 }],
   "flora": "meadow",
+  "pools": [
+    { "liquid": "chemical", "at": [0.0, 0.0], "radius": 25.0, "level": -1.0 }
+  ],
   "pieces": [
-    { "shape": "box", "size": [44.0, 0.4, 44.0], "at": [0.0, -0.6, 0.0], "color": "#7fd13b" },
     { "shape": "box", "size": [1.0, 1.0, 20.0], "at": [26.0, 0.8, 0.0], "color": "#e0b52c" },
     { "shape": "cylinder", "radius": 2.0, "height": 3.0, "at": [30.0, 1.5, 12.0], "color": "#e0b52c" }
   ]

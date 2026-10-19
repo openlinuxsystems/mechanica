@@ -1,0 +1,27 @@
+{
+  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed on its own.
+  // Written by tools/author-poi-placeholders.py; edit the table there and re-run.
+  "id": "oil_pond",
+  "name": "Oil Pond",
+  "radius": 48.0,
+  "size": [20.0, 2.0, 20.0],
+  "road": "none",
+  "placement": { "spacing": [700.0, 1000.0], "biomes": ["desert", "burned_forest"], "priority": 25, "clearance": 64.0 },
+  "terrain": [
+    { "op": "flatten", "radius": 28.0, "blend": 20.0 },
+    { "op": "basin", "at": [0.0, 0.0], "radius": 6.0, "blend": 4.0, "depth": 1.0 }
+  ],
+  "ground": [{ "ground": "burnt", "radius": 20.0, "blend": 10.0, "noise": 4.0 }],
+  "pools": [
+    { "liquid": "oil", "at": [0.0, 0.0], "radius": 6.5, "level": -0.6 }
+  ],
+  "pieces": [
+    { "shape": "box", "size": [4.0, 0.5, 0.6], "at": [11.0, 0.25, -3.0], "yaw": 35.0, "color": "#3a3430" }
+  ],
+  "markers": [
+    { "type": "object", "ref": "oil_geyser", "at": [9.67, 0.0, 4.09] },
+    { "type": "object", "ref": "oil_geyser", "at": [-4.09, 0.0, 9.67] },
+    { "type": "object", "ref": "oil_geyser", "at": [-9.67, 0.0, -4.09] },
+    { "type": "object", "ref": "oil_geyser", "at": [4.09, 0.0, -9.67] }
+  ]
+}

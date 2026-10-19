@@ -66,7 +66,8 @@ public partial class CaptureScene : Node
         var seats = args.Length > 1 && args[1] == "seats";
         var wheels = args.Length > 1 && args[1] == "wheels";
         var toggle = args.Length > 1 && args[1] == "switch";
-        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats && !wheels && !toggle ? args[1] : "scrapper_male";
+        var oil = args.Length > 1 && args[1] == "oil";
+        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats && !wheels && !toggle && !oil ? args[1] : "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
         // Building the block wall needs Creative: free parts and no build reach.
         _main.Options = LaunchOptions.Offline with { Seed = 7, GameMode = blocks || soil || wheels ? Core.Survival.GameMode.Creative : LaunchOptions.Offline.GameMode };
@@ -137,6 +138,11 @@ public partial class CaptureScene : Node
         if (toggle)
         {
             SwitchShots();
+            return;
+        }
+        if (oil)
+        {
+            OilShots();
             return;
         }
         Shot("front", 60, () => Look(new Vector3(0, 1.0f, -3.2f)));
@@ -472,7 +478,7 @@ public partial class CaptureScene : Node
         var gen = _main.Streamer.Generator;
         // Deposits scattered by the rule whose object is `id`, biggest first among the first few.
         List<List<WorldObjectPlacement>> Deposits(string id) => gen.ObjectsIn(-1500, -1500, 1500, 1500)
-            .Where(o => gen.Data.ScatterRules[o.Id.Rule].Object.Id == id)
+            .Where(o => !o.Id.IsPoi && gen.Data.ScatterRules[o.Id.Rule].Object.Id == id)
             .GroupBy(o => o.Id with { Piece = 0 }).Take(24).OrderByDescending(g => g.Count()).Select(g => g.ToList()).ToList();
         Vector3 Middle(List<WorldObjectPlacement> blocks) => new(blocks.Average(o => o.Position.X), blocks.Min(o => o.Position.Y), blocks.Average(o => o.Position.Z));
         var stone = new List<WorldObjectPlacement>();
@@ -556,6 +562,50 @@ public partial class CaptureScene : Node
         Shot("rocks_14_rods", 30, () => ViewLoose(c => c.Refine is not null, 3.6f));
         Shot("rocks_15_rods_close", 30, () => ViewLoose(c => c.Refine is not null, 2.2f));
     }
+
+    // An oil pond with its geysers, the big Oil Pool, the chemical facility's pools and a chemical pool, each wide and close.
+    private void OilShots()
+    {
+        Engine.TimeScale = 1.0;
+        var gen = _main.Streamer.Generator;
+        PoiInstance Nearest(string id) => gen.Pois.Where(p => p.Poi.Prefab.Id == id).MinBy(p => p.Centre.Length())!;
+        void Visit(string id, string name, float wide, float close)
+        {
+            PoiInstance? poi = null;
+            Shot($"oil_00_{name}_go", 240, () =>
+            {
+                poi = Nearest(id);
+                _meadow = new Vector3(poi.Centre.X, poi.PadHeight, poi.Centre.Y);
+                GD.Print($"[capture] {id} at {_meadow}");
+                _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, _meadow + new Vector3(-wide * 0.6f, 2f, wide * 0.6f), 0f);
+                _camera.MakeCurrent();
+                _camera.GlobalPosition = _meadow + new Vector3(0, 30, 0);
+            });
+            Shot($"oil_{name}_wide", 30, () => { _main.Flora.BuildAll(); ViewAt(_meadow, new Vector3(-wide, wide * 0.45f, wide), 0f); });
+            Shot($"oil_{name}_other_side", 30, () => ViewAt(_meadow, new Vector3(wide * 0.9f, wide * 0.3f, -wide * 0.8f), 0f));
+            Shot($"oil_{name}_close", 30, () => ViewAt(_meadow, new Vector3(-close, close * 0.35f, close), 0f));
+        }
+        Shot("oil_00_wait", 60, () => { });
+        Visit("oil_pond", "pond", 20f, 9f);
+        Visit("poi_49", "oil_pool", 38f, 16f);
+        Visit("chemical_pool", "chemical_pool", 26f, 12f);
+        Visit("poi_23", "chemical_facility", 45f, 18f);
+        Shot("oil_00_geyser_go", 240, () =>
+        {
+            // The pond's geyser nearest the origin, seen from outside the pond with the player beside it.
+            var pond = Nearest("oil_pond");
+            var centre = new Vector3(pond.Centre.X, pond.PadHeight, pond.Centre.Y);
+            var geyser = gen.ObjectsIn(pond.Centre.X - 20, pond.Centre.Y - 20, pond.Centre.X + 20, pond.Centre.Y + 20)
+                .Where(o => o.Definition.Id == "oil_geyser").MinBy(o => o.Position.Length())!;
+            _meadow = geyser.Position.ToGodot();
+            _away = ((_meadow - centre) with { Y = 0 }).Normalized();
+            _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, _meadow + _away.Rotated(Vector3.Up, 1.2f) * 1.8f + Vector3.Up, 0f);
+        });
+        Shot("oil_geyser_with_player", 60, () => { Player.ThirdPerson = true; ViewAt(_meadow, _away * 5.5f + Vector3.Up * 2.4f, 0.5f); });
+        Shot("oil_geyser_close", 30, () => ViewAt(_meadow, _away.Rotated(Vector3.Up, -0.5f) * 2.4f + Vector3.Up * 1.3f, 0.3f));
+    }
+
+    private Vector3 _away;
 
     // Loose single parts lying in the world whose definition matches.
     private List<Core.Creations.Creation> LooseWith(Func<Core.Data.PartDefinition, bool> which) =>

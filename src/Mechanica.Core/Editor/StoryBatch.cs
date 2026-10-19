@@ -139,7 +139,7 @@ public sealed record StoryBatch
         foreach (var (id, file, poi) in pois)
         {
             var found = new List<DataDiagnostic>();
-            WorldGenValidator.Validate(poi, biomes, new DiagnosticSink(file, found), grounds);
+            WorldGenValidator.Validate(poi, biomes, new DiagnosticSink(file, found), grounds, [.. loaded.Objects.Keys], [.. loaded.Liquids.Keys]);
             results.Add(Write(modDirectory, file, $"{modId}:{id}", DataJson.Write(poi), found));
         }
         var content = ModLoader.Load(folders);

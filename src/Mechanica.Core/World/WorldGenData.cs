@@ -98,6 +98,7 @@ public sealed class WorldGenData
             Hills = b.Hills,
         })];
         Objects = (definition.Objects ?? []).ToDictionary(o => o.Id!);
+        Liquids = (definition.Liquids ?? []).ToDictionary(l => l.Id!);
         var scatter = new List<Scatter>();
         foreach (var biome in definition.Biomes ?? [])
             foreach (var rule in biome.Scatter ?? [])
@@ -189,6 +190,9 @@ public sealed class WorldGenData
     /// <summary>Scattered object kinds by id.</summary>
     public IReadOnlyDictionary<string, WorldObjectDefinition> Objects { get; }
 
+    /// <summary>Liquids POI pools hold, by id.</summary>
+    public IReadOnlyDictionary<string, LiquidDefinition> Liquids { get; }
+
     /// <summary>Every biome's scatter rules, in biome then file order.</summary>
     public IReadOnlyList<Scatter> ScatterRules { get; }
 
@@ -265,10 +269,12 @@ public sealed class WorldGenData
         var pois = new List<LoadedPoi>();
         var biomeIds = (definition.Biomes ?? []).Select(b => b.Id!).ToList();
         var groundIds = (definition.Grounds ?? []).Select(g => g.Id!).ToList();
+        var objectIds = (definition.Objects ?? []).Select(o => o.Id!).ToList();
+        var liquidIds = (definition.Liquids ?? []).Select(l => l.Id!).ToList();
         foreach (var (modId, file, prefab) in prefabs)
         {
             var sink = new DiagnosticSink(file, diagnostics);
-            WorldGenValidator.Validate(prefab, biomeIds, sink, groundIds);
+            WorldGenValidator.Validate(prefab, biomeIds, sink, groundIds, objectIds, liquidIds);
             var id = $"{modId}:{prefab.Id}";
             if (pois.Any(p => p.QualifiedId == id))
                 sink.Error(DiagnosticCodes.PoiInvalid, "$.id", $"POI '{id}' is defined twice.");

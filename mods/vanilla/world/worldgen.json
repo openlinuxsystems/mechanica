@@ -357,6 +357,12 @@
   "pools": [
     { "id": "large_slots", "fill": [{ "poi": "warehouse_small", "count": 1 }, { "poi": "warehouse", "count": 1 }, { "poi": "farmbot_scrapyard", "count": 4 }] }
   ],
+  // Liquids POI pools hold (pois/*.json pools). An empty bucket dipped in a chemical pool collects a Chemical, and standing in
+  // one hurts (damage is health a second). Oil is the look of the ponds round oil geysers; the geysers give the Crude Oil.
+  "liquids": [
+    { "id": "chemical", "color": "#7ee03c", "glow": 0.3, "roughness": 0.15, "damage": 10.0, "collect": { "item": "chemical", "count": 1 } },
+    { "id": "oil", "color": "#0c0b0a", "roughness": 0.35 }
+  ],
   // Destructible objects (D11): placeholder primitives until meshes are authored, a model (mesh, with an optional far lod), or a
   // built-in flora model.
   // Objects with a health break under sledge hits and weapons (chunk 20) and leave their drops on the ground; damage_from
@@ -366,6 +372,26 @@
   // parts/metal_boulder.json) that break into two chunks each. Chunks break into Stone and Metal Rods.
   // Models: tools/rocks/build_rocks.py.
   "objects": [
+    {
+      // In oil ponds and the Oil Pool (pois/oil_pond.json, poi_49.json): press Use for 1 to 4 Crude Oil; it wells up again an
+      // hour of world time later. Nothing breaks it.
+      "id": "oil_geyser",
+      "collider": { "shape": "cylinder", "radius": 0.9, "height": 0.7, "at": [0.0, 0.35, 0.0] },
+      "pieces": [
+        { "shape": "cylinder", "radius": 0.95, "height": 0.35, "at": [0.0, 0.17, 0.0], "color": "#2b2622" },
+        { "shape": "cylinder", "radius": 0.55, "height": 0.3, "at": [0.0, 0.45, 0.0], "color": "#1c1916" },
+        { "shape": "cylinder", "radius": 0.42, "height": 0.06, "at": [0.0, 0.6, 0.0], "color": "#070606" },
+        { "shape": "sphere", "radius": 0.16, "at": [0.08, 0.64, -0.05], "color": "#0d0c0b" },
+        { "shape": "sphere", "radius": 0.1, "at": [-0.15, 0.63, 0.1], "color": "#0d0c0b" }
+      ],
+      "footprint": 1.2,
+      "scale": [0.9, 1.15],
+      "sink": 0.1,
+      "damage_from": [],
+      "harvest": true,
+      "drops": [{ "item": "crude_oil", "count": 1, "count_max": 4 }],
+      "regrow": 3600.0
+    },
     {
       "id": "rock_outcrop",
       "outcrop": {
