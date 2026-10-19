@@ -1,7 +1,9 @@
 -- Driver's seat: the sitting player's throttle (W/S, -1 to 1) is the seat's output, so link it to engines.
 -- Linked bearings that turn about an upright axis steer: A/D turns them up to properties.steer_angle
 -- degrees, at properties.steer_speed rad/s with at most properties.steer_torque N·m. When the seat is empty
--- the output is 0 and the wheels straighten. A steering bearing's "drive" display turns while it steers.
+-- the output is 0 and the wheels straighten. A steering bearing's "drive" display turns while it steers. A seat with
+-- no properties.steer_angle is a passenger seat: it drives nothing (its output stays 0) and steers nothing, but its
+-- links still put switches and buttons on the rider's hotbar.
 -- Its "seated" display is 1 while someone sits in it, and "rattle" is 1 while they do and an engine of the
 -- Creation shows "running". Its "clip" display names the model clip to play (part data display.clips): "enter" as
 -- someone sits, then "seated_loop", or "seated_rattle_loop" while an engine runs, and "exit" as they get up; a model
@@ -120,8 +122,10 @@ function on_update(dt)
   if input then
     x, z = input.x, input.z
   end
-  state.throttle = math.max(-1, math.min(1, z))
-  steer(math.max(-1, math.min(1, x)))
+  if properties.steer_angle then
+    state.throttle = math.max(-1, math.min(1, z))
+    steer(math.max(-1, math.min(1, x)))
+  end
   local seated = part.occupant() ~= nil
   clips(seated)
   show("seated", seated)

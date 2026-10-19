@@ -650,8 +650,8 @@ def export(path):
 # The icon
 # =====================================================================================================
 
-def render_icon(path):
-    """The seat alone, from the right and above with the wheel face showing, on a clear background."""
+def render_icon(path, view=(2.2, -0.4, 1.7), ortho_scale=2.05):
+    """The seat alone, from `view` (by default the right and above, with the wheel face showing), on a clear background."""
     sc = bpy.context.scene
     hidden = [o for o in sc.objects if o.name.startswith("RenderOnly")]
     for o in hidden:
@@ -689,10 +689,10 @@ def render_icon(path):
         made.append(ob)
     cam = bpy.data.cameras.new("IconCam")
     cam.type = "ORTHO"
-    cam.ortho_scale = 2.05
+    cam.ortho_scale = ortho_scale
     cob = bpy.data.objects.new("IconCam", cam)
     # from the right, a little behind and above: the wheel faces the driver, so from the front it is seen edge-on
-    view = Vector((2.2, -0.4, 1.7)).normalized()
+    view = Vector(view).normalized()
     cob.location = view * 8 + Vector((0, 0, -0.02))
     cob.rotation_euler = (-view).to_track_quat("-Z", "Y").to_euler()
     sc.collection.objects.link(cob)

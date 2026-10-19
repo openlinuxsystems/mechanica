@@ -477,6 +477,42 @@ public sealed class LogicScriptTests : IDisposable
         Assert.False(creation.TryLink(seat, fifth, out _));
     }
 
+    [Fact]
+    public void TheScrapPassengerSeatRidesAlongWithoutDriving()
+    {
+        var creation = Board();
+        var seat = Place(creation, "vanilla:scrap_seat", new GridCell(-2, 1, -2));
+        var engine = Place(creation, "vanilla:electric_engine", new GridCell(2, 1, 0));
+        Link(creation, seat, engine);
+        Steps(3);
+        _runtime.Seats!.Sit(Peer, Car, seat);
+        _input = new PlayerInput(0, 1, 0, 0, false, false);
+        Steps(12);
+        Assert.Equal(1f, _runtime.Readouts.Number(Car, seat, "seated"));
+        Assert.StartsWith("enter#", _runtime.Readouts.Text(Car, seat, "clip"));
+        Assert.Equal(0f, _runtime.Signals.Output(Car, seat));
+        Steps(48);
+        Assert.StartsWith("seated_loop#", _runtime.Readouts.Text(Car, seat, "clip"));
+        Assert.Equal(0f, _runtime.Readouts.Number(Car, engine, "running"));
+
+        _runtime.Seats.Leave(Peer);
+        Steps(3);
+        Assert.StartsWith("exit#", _runtime.Readouts.Text(Car, seat, "clip"));
+    }
+
+    [Fact]
+    public void TheScrapPassengerSeatTakesTwoLinks()
+    {
+        var creation = Board();
+        var seat = Place(creation, "vanilla:scrap_seat", new GridCell(-2, 1, -2));
+        for (var x = 3; x < 6; x++)
+            Place(creation, "vanilla:metal_block", new GridCell(x, 0, 0));
+        for (var i = 0; i < 2; i++)
+            Link(creation, seat, Place(creation, "vanilla:switch", new GridCell(i + 3, 1, 0)));
+        var third = Place(creation, "vanilla:switch", new GridCell(5, 1, 0));
+        Assert.False(creation.TryLink(seat, third, out _));
+    }
+
     [Theory]
     [InlineData(null, "blocks")]
     [InlineData("player", "players")]
