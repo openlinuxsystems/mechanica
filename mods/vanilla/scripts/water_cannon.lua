@@ -1,5 +1,5 @@
 -- Water cannon (chunk 23): fires a jet of water out of its front when its input turns on, or when a
--- player presses F on it, at most once every properties.interval seconds. Fires within properties.splash
+-- player presses E on it, at most once every properties.interval seconds. Fires within properties.splash
 -- metres of the jet lose properties.douse strength (D13). Soil it hits within properties.range metres gets
 -- properties.water seconds of water; anything else it hits is pushed with properties.impulse N·s.
 

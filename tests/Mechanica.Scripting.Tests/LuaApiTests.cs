@@ -15,6 +15,16 @@ public sealed class LuaApiTests : IDisposable
     public void TheReferenceDocumentsEveryEntry(string signature) =>
         Assert.Contains($"`{signature.Replace("function ", "", StringComparison.Ordinal)}", Doc);
 
+    // The other direction: every function the reference documents in a table is in the editor's API list.
+    [Fact]
+    public void EveryDocumentedFunctionIsAnEntry()
+    {
+        var signatures = LuaApi.Entries.Select(e => e.Signature.Replace("function ", "", StringComparison.Ordinal)).ToHashSet();
+        var documented = System.Text.RegularExpressions.Regex.Matches(Doc, @"^\| `([^`]+\))` \|", System.Text.RegularExpressions.RegexOptions.Multiline)
+            .Select(m => m.Groups[1].Value);
+        Assert.All(documented, d => Assert.Contains(d, signatures));
+    }
+
     [Fact]
     public void EveryGlobalEntryExistsForScripts()
     {

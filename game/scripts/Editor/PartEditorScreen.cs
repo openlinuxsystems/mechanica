@@ -59,6 +59,14 @@ public partial class PartEditorScreen : Control
     private FileDialog _importDialog = null!;
     private FileDialog _batchDialog = null!;
     private ConfirmationDialog _newDialog = null!;
+    private ConfirmationDialog _deriveDialog = null!;
+    private PartDeriveMode _deriveMode;
+    private LineEdit _deriveMod = null!;
+    private LineEdit _deriveId = null!;
+    private LineEdit _deriveName = null!;
+    private readonly List<Control> _deriveCopyRows = [];
+    private Button _overrideButton = null!;
+    private Button _copyButton = null!;
     private AcceptDialog _message = null!;
     private HelpWindow _help = null!;
     private Action<string>? _importTarget;
@@ -114,12 +122,16 @@ public partial class PartEditorScreen : Control
         AddChild(Window);
         var column = Window.Body;
         _test = Window.AddAction("Test in Sandbox", () => _ = TestInSandboxAsync(), tooltip: "Export, then spawn the part in the Test Sandbox");
-        _export = Window.AddAction("Export", () => _ = ExportAsync(), primary: true, tooltip: "Validate and write the part into its mod folder (Ctrl+S)");
+        _export = Window.AddAction("Export", RequestExport, primary: true, tooltip: "Validate and write the part into its mod folder (Ctrl+S)");
 
         var toolbar = new HBoxContainer();
         column.AddChild(toolbar);
         AddButton(toolbar, "New…", () => Discard(() => _newDialog.PopupCentered(new Vector2I(420, 220))), "Start a part from a template");
         AddButton(toolbar, "Open…", () => Discard(() => _openDialog.PopupCentered(new Vector2I(900, 600))), "Open a part file from a mod");
+        _overrideButton = AddButton(toolbar, "Override in my mod…", () => AskDerive(PartDeriveMode.Override),
+            "Start an override of this part in your mod: same id, replaces the original everywhere, and the original stays untouched");
+        _copyButton = AddButton(toolbar, "Copy as new part…", () => AskDerive(PartDeriveMode.Copy),
+            "Start a new part in your mod as a copy of this one, with its own id");
         AddButton(toolbar, "Run batch…", () => _batchDialog.PopupCentered(new Vector2I(900, 600)),
             "Make or update many parts from a batch file (editor/batches/*.json in a mod)");
         toolbar.AddChild(new VSeparator());
@@ -222,7 +234,7 @@ public partial class PartEditorScreen : Control
         else if (ctrl && key.Keycode == Key.Y)
             Document?.Redo();
         else if (ctrl && key.Keycode == Key.S)
-            _ = ExportAsync();
+            RequestExport();
         else
             return;
         GetViewport().SetInputAsHandled();
@@ -264,6 +276,47 @@ public partial class PartEditorScreen : Control
             return string.Join("\n", diagnostics);
         SetDocument(document);
         return null;
+    }
+
+    /// <summary>
+    /// Starts an override (<see cref="PartDeriveMode.Override"/>) or a copy of the open part in mod
+    /// <paramref name="targetModId"/> (created when missing), adding the dependencies it needs to that mod's
+    /// <c>mod.json</c>. Unsaved until exported. Returns an error, or null.
+    /// </summary>
+    public string? DerivePart(PartDeriveMode mode, string targetModId, string? newId = null, string? newName = null)
+    {
+        if (Document is not { } original)
+            return "Open a part first.";
+        if (!Identifiers.IsValid(targetModId))
+            return Loc.T("Mod id '{0}' must be lowercase snake_case.", targetModId);
+        var target = Path.Combine(ModsRoot, targetModId);
+        PartDocument derived;
+        try
+        {
+            derived = PartDerive.Derive(original, target, mode, newId, newName);
+        }
+        catch (ArgumentException e)
+        {
+            return e.Message;
+        }
+        var added = PartDerive.EnsureDependencies(original, target, mode);
+        SetDocument(derived);
+        if (added.Count > 0)
+            ShowProblems([], Loc.T("Added {0} to {1}'s dependencies.", string.Join(", ", added), targetModId));
+        return null;
+    }
+
+    /// <summary>
+    /// Exports, asking first when the part is vanilla's own: changing vanilla in place breaks multiplayer with
+    /// unmodified players and the next run of its batch overwrites it, so modders override or copy instead.
+    /// </summary>
+    public void RequestExport()
+    {
+        if (Document is { ModId: Identifiers.VanillaModId })
+            ConfirmDialog.Ask(this, "Change vanilla", "This writes into vanilla itself. Players without the same change can't join you, and the next run of vanilla's batches replaces it. To change it for a mod, use Override in my mod or Copy as new part instead.",
+                "Export to vanilla", () => _ = ExportAsync());
+        else
+            _ = ExportAsync();
     }
 
     /// <summary>Imports a glTF file into the part's mod and adds it as a model piece. Returns an error, or null.</summary>
@@ -316,6 +369,16 @@ public partial class PartEditorScreen : Control
     /// </summary>
     public async Task<BatchRunResult> RunBatchAsync(string file)
     {
+        var text = File.Exists(file) ? File.ReadAllText(file) : "";
+        if (BotBatch.IsBotBatch(text) || StoryBatch.IsStoryBatch(text))
+        {
+            var other = BotBatch.IsBotBatch(text) ? BotBatchRunner.Run(file) : StoryBatchRunner.Run(file);
+            var count = other.Exports.Count(e => e.Succeeded);
+            ShowProblems(other.Diagnostics, other.Succeeded
+                ? Loc.T("Batch {0} exported {1} files.", Path.GetFileName(file), count)
+                : Loc.T("Batch {0} failed; {1} of {2} files exported.", Path.GetFileName(file), count, other.Exports.Count));
+            return other;
+        }
         var result = await PartBatchRunner.RunAsync(_viewport, file);
         if (result.Exports.LastOrDefault(e => e.Succeeded) is { PartFile: { } last })
             OpenPart(last);
@@ -469,6 +532,23 @@ public partial class PartEditorScreen : Control
         _importDialog.FileSelected += path => _importTarget?.Invoke(path);
         AddChild(_importDialog);
 
+        _deriveDialog = new ConfirmationDialog { Title = "Override in my mod" };
+        var deriveGrid = new GridContainer { Columns = 2 };
+        _deriveDialog.AddChild(deriveGrid);
+        _deriveMod = new LineEdit { Text = "my_mod", CustomMinimumSize = new Vector2(240, 0), TooltipText = "Folder name in the mods folder; created if missing" };
+        _deriveId = new LineEdit();
+        _deriveName = new LineEdit();
+        foreach (var (label, control) in new (string, Control)[] { ("Mod", _deriveMod), ("Part id", _deriveId), ("Name", _deriveName) })
+        {
+            var text = new Label { Text = label };
+            deriveGrid.AddChild(text);
+            deriveGrid.AddChild(control);
+            if (control != _deriveMod)
+                _deriveCopyRows.AddRange([text, control]);
+        }
+        _deriveDialog.Confirmed += () => ShowError(DerivePart(_deriveMode, _deriveMod.Text.Trim(), _deriveId.Text.Trim(), _deriveName.Text.Trim()));
+        AddChild(_deriveDialog);
+
         _newDialog = new ConfirmationDialog { Title = "New part" };
         var grid = new GridContainer { Columns = 2 };
         _newDialog.AddChild(grid);
@@ -493,6 +573,26 @@ public partial class PartEditorScreen : Control
                 Start();
         };
         AddChild(_newDialog);
+    }
+
+    // The Override / Copy dialog: the part id and name rows only matter for a copy.
+    private void AskDerive(PartDeriveMode mode)
+    {
+        if (Document is not { } doc)
+            return;
+        Discard(() =>
+        {
+            _deriveMode = mode;
+            _deriveDialog.Title = mode == PartDeriveMode.Override ? "Override in my mod" : "Copy as new part";
+            if (_deriveMod.Text == doc.ModId || _deriveMod.Text == Identifiers.VanillaModId)
+                _deriveMod.Text = "my_mod";
+            _deriveId.Text = $"{doc.Definition.Id}_copy";
+            _deriveName.Text = doc.Definition.Name ?? "";
+            var copy = mode == PartDeriveMode.Copy;
+            foreach (var row in _deriveCopyRows)
+                row.Visible = copy;
+            _deriveDialog.PopupCentered(new Vector2I(420, copy ? 200 : 120));
+        });
     }
 
     // ---- Refreshing from the document ----
@@ -547,7 +647,7 @@ public partial class PartEditorScreen : Control
         var doc = Document;
         _undo.Disabled = doc?.CanUndo != true;
         _redo.Disabled = doc?.CanRedo != true;
-        _export.Disabled = _test.Disabled = doc is null;
+        _export.Disabled = _test.Disabled = _overrideButton.Disabled = _copyButton.Disabled = doc is null;
         _undo.TooltipText = doc?.UndoLabel is { } u ? Loc.T("Undo {0} (Ctrl+Z)", u) : "Ctrl+Z";
         _redo.TooltipText = doc?.RedoLabel is { } r ? Loc.T("Redo {0} (Ctrl+Shift+Z)", r) : "Ctrl+Shift+Z";
         _title.Text = doc is null
@@ -555,6 +655,8 @@ public partial class PartEditorScreen : Control
             : doc.IsDirty
                 ? Loc.T("{0}  ({1})  • unsaved", $"{doc.ModId}:{doc.Definition.Id}", doc.RelativeFile ?? Loc.T("not exported yet"))
                 : $"{doc.ModId}:{doc.Definition.Id}  ({doc.RelativeFile ?? Loc.T("not exported yet")})";
+        if (doc?.ModId == Identifiers.VanillaModId)
+            _title.Text += Loc.T("  • vanilla: use Override in my mod or Copy as new part to change it");
         if (doc is null)
         {
             _problems.Text = Loc.T("Start with New (from a template) or Open (a part file in a mod). Press Help for the Getting Started guide.");

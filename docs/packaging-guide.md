@@ -20,10 +20,14 @@ mods/
     meshes/             glTF models (*.glb, *.gltf)
     textures/           icons and textures (*.png)
     sounds/             audio (*.ogg, *.wav)
+    sounds/**/*.json    sound events, see sound-events.md
+    recipes/            crafting recipes (*.json), see part-data-schema.md
     world/worldgen.json world generation rules; the last mod in load order that ships one wins
     pois/               POI prefabs (*.json), see world-generation.md
     bots/               bot types (*.json), see bot-tutorial.md
     raids/raids.json    the raid table; the last mod in load order that ships one wins
+    quests/             quests and dialogue (*.json), see quests.md
+    characters/         player characters and skins (*.json), see characters.md
 ```
 
 Rules the loader enforces:
@@ -129,7 +133,9 @@ mods/better_wheels/overrides/vanilla/wheel.json   replaces vanilla:wheel
 
 - The target mod must be in your `dependencies` (error `MD0203` otherwise), and the part must exist in
   it (error `MD0204`).
-- An override is a whole definition, validated like any part. Copy the original file and edit it.
+- An override is a whole definition, validated like any part. In the Part Editor, open the original
+  and press **Override in my mod…**: it copies the part into the right folder, points its assets back at
+  the original mod and adds the dependency for you.
 - Relative asset paths in an override resolve inside **your** mod. To keep the original mesh, write
   `"mesh": "vanilla:meshes/wheel.glb"`.
 - When two mods override the same part, the one later in the load order wins and the Mod Manager shows

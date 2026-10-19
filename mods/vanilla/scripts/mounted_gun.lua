@@ -1,5 +1,5 @@
 -- Mounted Potato Blaster (chunk 23): a potato gun built into a creation. It fires out of its front when
--- its input turns on, or when a player presses F on it, at most once every properties.interval seconds,
+-- its input turns on, or when a player presses E on it, at most once every properties.interval seconds,
 -- with one properties.ammo from the creation's containers (none in Creative). Each shot is a hitscan of
 -- properties.range metres for properties.damage, pushing what it hits with properties.impulse N·s.
 

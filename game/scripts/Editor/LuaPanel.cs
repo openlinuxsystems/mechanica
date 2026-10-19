@@ -186,6 +186,28 @@ public partial class LuaPanel : VBoxContainer
         if (ScriptFile is null || ScriptKey is null)
             return Finish(new LuaSaveResult(false, null, null, "The part has no script: pick a template and press New from template."));
         var text = _code.Text;
+        // A script from another mod (an override or copy of a vanilla part) is never written in place: the
+        // part switches to its own copy in this mod, which Export then saves with the part.
+        var copied = false;
+        if (Editor.Document is { } doc && AssetPath.TryParse(doc.Definition.Script, doc.ModId, AssetKind.Script, out var asset, out _)
+            && asset.ModId != doc.ModId)
+        {
+            var own = new AssetPath(doc.ModId, asset.RelativePath);
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(own.Resolve(doc.ModDirectory))!);
+                File.WriteAllText(own.Resolve(doc.ModDirectory), text);
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                return Finish(new LuaSaveResult(false, null, null, Loc.T("Could not write {0}: {1}", own.ToString(), e.Message)));
+            }
+            // The part now names the copy; the document change reloads this panel from it.
+            doc.Apply("Copy script into this mod", d => d with { Script = asset.RelativePath });
+            copied = true;
+            if (ScriptFile is null || ScriptKey is null)
+                return Finish(new LuaSaveResult(false, null, null, Loc.T("The script path '{0}' can't be used.", asset.RelativePath)));
+        }
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(ScriptFile)!);
@@ -200,6 +222,8 @@ public partial class LuaPanel : VBoxContainer
         MarkError(error);
         if (error is not null)
             return Finish(new LuaSaveResult(true, error, null, Loc.T("Saved {0} with an error on {1}. The sandbox keeps the old code.", ScriptKey, error)));
+        if (copied)
+            return Finish(new LuaSaveResult(true, null, null, Loc.T("Saved a copy as {0} in this mod; the original is untouched. Export the part to use it.", ScriptKey)));
         if (Runtime() is not { } runtime || !runtime.Scripts.Contains(ScriptKey))
             return Finish(new LuaSaveResult(true, null, null, Loc.T("Saved {0}. Export and Test in Sandbox to run it.", ScriptKey)));
         var reload = runtime.Reload(ScriptKey);

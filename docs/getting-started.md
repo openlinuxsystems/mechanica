@@ -41,6 +41,15 @@ for it.
 
 To change an existing part, press **Open…** and pick its file in a mod's `parts/` folder.
 
+To change a part that belongs to another mod, such as vanilla, open it and press **Override in my mod…**.
+Name your mod, and the editor starts an override in `overrides/<other_mod>/` of your mod with the same id,
+so it replaces the original everywhere while the original file stays untouched. **Copy as new part…** does
+the same but gives the copy its own id, for a new part based on an existing one. Both point the copy's
+meshes, textures and script back at the original mod (`vanilla:meshes/x.glb`) and add that mod to your
+`mod.json` dependencies. Saving the script on the **Script** tab saves a copy in your mod and switches the
+part to it, and a new recipe on the **Recipes** tab of an override starts as an override of the original's
+recipe. Exporting a vanilla part in place asks first, since players without the same change can't join you.
+
 ## 2. Set its physical properties
 
 The **Part** tab holds the part's identity and physics. Units are SI: kilograms, metres, seconds.
@@ -207,7 +216,7 @@ Each entry is one part, made exactly as you would by hand:
 | `collision_from_model` | `true` makes the collision shape the convex hull of the part's own baked model. |
 | `recipes` | Recipes that make the part, as in a `recipes/*.json` file. Each is saved to `recipes/<id>.json` after the parts. |
 
-Press **Run batch…** and pick the file. The editor makes every part, bakes its model and exports it
+Press **Run batch…** and pick the file. Bot Behavior Editor and story batches run here too. The editor makes every part, bakes its model and exports it
 with the same checks as **Export**, saves the recipes as the **Recipes** tab would, then opens the last
 part. Problems are listed with the entry they come from. A mistake in the batch itself (a missing
 template, a bad file name) stops it before anything is written; a part or recipe that fails its own

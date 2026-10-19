@@ -1,6 +1,6 @@
 -- Lights (chunk 23): headlights, spotlights, lamps, warning lights, glowsticks, path lights. A light shines
 -- while its input is on; with nothing linked to it, it shines on its own. A light with "use" in its logic
--- section is switched off and on again with F. The look of the light (colour, range, cone) is the part's
+-- section is switched off and on again with E. The look of the light (colour, range, cone) is the part's
 -- light section; its behaviour is these properties:
 --   blink (s, optional): one on-and-off cycle; duty (0 to 1, default 0.5): the share of it spent lit.
 

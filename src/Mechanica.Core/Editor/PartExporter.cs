@@ -140,7 +140,11 @@ public static class PartExporter
         return new ExportResult(true, file, qualified, diagnostics);
     }
 
-    /// <summary>Writes a <c>mod.json</c> for a new mod (id from the folder name) when the folder has none.</summary>
+    /// <summary>
+    /// Writes a <c>mod.json</c> for a new mod (id from the folder name) when the folder has none. When vanilla is
+    /// installed beside it, a new mod depends on vanilla, as <c>mods.create</c> does, so it can use and override
+    /// vanilla content.
+    /// </summary>
     public static void EnsureManifest(string modDirectory)
     {
         var path = Path.Combine(modDirectory, ModLoader.ManifestFileName);
@@ -153,7 +157,9 @@ public static class PartExporter
             Id = id,
             Name = id,
             Version = NewModVersion,
-            Dependencies = [],
+            Dependencies = id != Identifiers.VanillaModId && File.Exists(Path.Combine(Path.GetDirectoryName(Path.GetFullPath(modDirectory))!, Identifiers.VanillaModId, ModLoader.ManifestFileName))
+                ? [new ModDependency { Id = Identifiers.VanillaModId }]
+                : [],
         }));
     }
 
@@ -175,10 +181,12 @@ public static class PartExporter
             return;
         var targetFull = Path.GetFullPath(Path.Combine(document.ModDirectory, target));
         var previousFull = document.RelativeFile is { } p ? Path.GetFullPath(Path.Combine(document.ModDirectory, p)) : null;
+        // Recipe overrides (overrides/<mod>/recipes/) share the folder but are not parts.
+        var recipes = Path.GetFullPath(Path.Combine(folder, ModLoader.RecipeOverridesFolder)) + Path.DirectorySeparatorChar;
         foreach (var file in Directory.GetFiles(folder, "*.json", SearchOption.AllDirectories))
         {
             var full = Path.GetFullPath(file);
-            if (full == targetFull || full == previousFull)
+            if (full == targetFull || full == previousFull || (top[0] == ModLoader.OverridesFolder && full.StartsWith(recipes, StringComparison.Ordinal)))
                 continue;
             var other = ModLoader.ParseJson<PartDefinition>(File.ReadAllText(file), file, []);
             if (other?.Id == id)

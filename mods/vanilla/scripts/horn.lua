@@ -1,5 +1,5 @@
 -- Horn (chunk 23): it sounds while its input is on, and for properties.honk seconds after a player
--- presses F on it.
+-- presses E on it.
 
 local loop
 
