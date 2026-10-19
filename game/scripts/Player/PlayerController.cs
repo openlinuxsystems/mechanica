@@ -372,6 +372,13 @@ public partial class PlayerController : CharacterBody3D
 
     private bool _headHidden;
 
+    // Edges lower than this are left to the capsule's own slide; the lift clears the edge by StepClearance.
+    private const float MinStep = 0.02f;
+    private const float StepClearance = 0.01f;
+    // How fast the camera catches up with a step up, in m/s.
+    private const float StepLagSpeed = 2.5f;
+    private float _stepLag;
+
     private void UpdateBodyVisibility()
     {
         _bodyMesh.Visible = _character is null && BodyVisible;
@@ -391,7 +398,8 @@ public partial class PlayerController : CharacterBody3D
     {
         Settings ??= LoadDefaultSettings();
         FloorMaxAngle = Mathf.DegToRad(45f);
-        FloorSnapLength = 0.2f;
+        // Walking off an edge one step high keeps the player on the floor, so stairs go down smoothly.
+        FloorSnapLength = Mathf.Max(0.2f, Settings.StepHeight);
 
         var capsuleCentre = new Vector3(0, Settings.Height / 2f, 0);
         _capsule = new CapsuleShape3D { Height = Settings.Height, Radius = Settings.Radius };
@@ -470,6 +478,8 @@ public partial class PlayerController : CharacterBody3D
         velocity += _knock.ToNumerics();
         _knock = Vector3.Zero;
         Velocity = velocity.ToGodot();
+        if (wasOnFloor && !swimming)
+            StepUp(delta);
         MoveAndSlide();
         if (!wasOnFloor && IsOnFloor() && velocity.Y < 0)
             Landed?.Invoke(-velocity.Y);
@@ -540,7 +550,50 @@ public partial class PlayerController : CharacterBody3D
     private void StepEyeHeight(float delta)
     {
         _eyeHeight = PlayerMotor.EyeHeight(_eyeHeight, _crouched, Settings, delta);
-        _head.Position = new Vector3(0, _eyeHeight, 0);
+        _stepLag = Mathf.MoveToward(_stepLag, 0f, StepLagSpeed * delta);
+        _head.Position = new Vector3(0, _eyeHeight - _stepLag, 0);
+    }
+
+    /// <summary>
+    /// Lifts the player onto an edge up to <see cref="PlayerMovementSettings.StepHeight"/> high that this tick's walk
+    /// runs into, so blocks, stairs and soil plots need no jump. It probes up, along the walk, then down, and steps only
+    /// onto a walkable top; a taller wall or a steep slope stops the player as before. The move itself is left to
+    /// <see cref="CharacterBody3D.MoveAndSlide"/>.
+    /// </summary>
+    private void StepUp(float delta)
+    {
+        var walk = new Vector3(Velocity.X, 0f, Velocity.Z) * delta;
+        var stepHeight = Settings.StepHeight;
+        if (stepHeight <= 0f || walk.LengthSquared() < 1e-8f)
+            return;
+        var floorY = Mathf.Cos(FloorMaxAngle);
+        var from = GlobalTransform;
+        var hit = new KinematicCollision3D();
+        // Nothing in the way, or a slope the slide walks up by itself.
+        if (!TestMove(from, walk, hit) || hit.GetNormal().Y >= floorY)
+            return;
+        var rise = TestMove(from, Vector3.Up * stepHeight, hit) ? hit.GetTravel().Y : stepHeight;
+        if (rise < MinStep)
+            return;
+        var raised = from.Translated(Vector3.Up * rise);
+        var ahead = TestMove(raised, walk, hit) ? hit.GetTravel() : walk;
+        if (ahead.LengthSquared() < 1e-8f)
+            return;
+        if (!TestMove(raised.Translated(ahead), Vector3.Down * rise, hit))
+            return;
+        var top = hit.GetPosition();
+        var lift = top.Y - from.Origin.Y;
+        if (lift < MinStep || lift > stepHeight)
+            return;
+        // The edge's top must be floor just past where the feet touch it, not a cliff face or another slope.
+        var past = top + walk.Normalized() * 0.05f;
+        var ray = PhysicsRayQueryParameters3D.Create(past + Vector3.Up * 0.05f, past + Vector3.Down * 0.1f, CollisionMask, [GetRid()]);
+        var ground = GetWorld3D().DirectSpaceState.IntersectRay(ray);
+        if (ground.Count == 0 || ground["normal"].AsVector3().Y < floorY)
+            return;
+        GlobalPosition += Vector3.Up * (lift + StepClearance);
+        // The camera eases up after the body instead of jumping a block.
+        _stepLag = Mathf.Min(_stepLag + lift + StepClearance, stepHeight);
     }
 
     // True when nothing is in the space a standing player would fill above the crouched capsule.

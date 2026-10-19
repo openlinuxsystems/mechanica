@@ -28,6 +28,7 @@ public class PlayerMovementSettingsTests
         var path = Path.Combine(RepoRoot(), "game", "data", "player.json");
         var settings = PlayerMovementSettings.FromJson(File.ReadAllText(path));
         Assert.True(settings.SprintSpeed > settings.WalkSpeed);
+        Assert.InRange(settings.StepHeight, 0.25f, 0.5f - 0.01f); // one block, never two
     }
 
     [Theory]
@@ -46,6 +47,8 @@ public class PlayerMovementSettingsTests
     [InlineData("""{ "camera_distance": 1 }""", "camera_distance")]
     [InlineData("""{ "camera_zoom_step": 0 }""", "camera_zoom_step")]
     [InlineData("""{ "camera_shoulder": 5 }""", "camera_shoulder")]
+    [InlineData("""{ "step_height": -0.1 }""", "step_height")]
+    [InlineData("""{ "step_height": 0.6 }""", "step_height")]
     [InlineData("null", "null")]
     public void BadDataGivesAClearError(string json, string mentioned)
     {
