@@ -88,7 +88,8 @@ public sealed record BodySnapshot(uint Tick, IReadOnlyList<CreationBodies> Creat
                 runs.Add(creation with
                 {
                     FirstBody = creation.FirstBody + next,
-                    Bodies = creation.Bodies.Skip(next).Take(count).ToList(),
+                    // Most Creations fit in one run whole.
+                    Bodies = next == 0 && count == creation.Bodies.Count ? creation.Bodies : creation.Bodies.Skip(next).Take(count).ToList(),
                 });
                 size += RunHeaderSize + count * StateSize;
                 next += count;

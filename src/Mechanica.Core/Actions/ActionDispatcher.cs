@@ -94,10 +94,18 @@ public sealed partial class ActionDispatcher
     {
         if (args is null || name is null || _typed.GetValueOrDefault(name) is not Func<ActionCaller, TArgs, ActionResult> run)
             return Dispatch(caller, name!, JsonSerializer.Serialize(args, ActionJson.Options));
-        var result = run(caller, args);
-        Dispatched?.Invoke(new ActionRecord(caller, name, () => JsonSerializer.Serialize(args, ActionJson.Options), result));
+        // The same gate as a JSON call: a held item's script acts for its player.
+        var result = !_readOnly.Contains(name) && Gate?.Invoke(caller, name) is { } closed
+            ? ActionResult.Failure(ActionErrors.Rejected, closed)
+            : run(caller, args);
+        if (Dispatched is not null)
+            Raise(caller, name, args, result);
         return result;
     }
+
+    // Apart, so a typed call nobody listens to allocates no record or closure (scripts dispatch many a step).
+    private void Raise<TArgs>(ActionCaller caller, string name, TArgs args, ActionResult result) =>
+        Dispatched?.Invoke(new ActionRecord(caller, name, () => JsonSerializer.Serialize(args, ActionJson.Options), result));
 
     private static ActionResult Run<TArgs>(
         ActionCaller caller,

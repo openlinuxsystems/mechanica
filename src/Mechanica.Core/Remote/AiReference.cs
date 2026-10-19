@@ -90,11 +90,13 @@ public static class AiReference
     /// the order the endpoint wrote them, non-ASCII text unescaped, ending with a newline.
     /// </summary>
     public static string Json(JsonElement describe) =>
-        JsonSerializer.Serialize(describe, new JsonSerializerOptions
-        {
-            WriteIndented = true,
-            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-        }).Replace("\r\n", "\n") + "\n";
+        JsonSerializer.Serialize(describe, DescribeOptions).Replace("\r\n", "\n") + "\n";
+
+    private static readonly JsonSerializerOptions DescribeOptions = new()
+    {
+        WriteIndented = true,
+        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+    };
 
     private static void Method(StringBuilder md, JsonElement method)
     {

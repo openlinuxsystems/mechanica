@@ -151,7 +151,7 @@ public sealed record SaveGame
             Fingerprint = Fingerprint,
             Destroyed = Destroyed.Count == 0 ? null : [.. Destroyed.Select(d => d.ToString()).Order(StringComparer.Ordinal)],
             Regrow = Regrow.Count == 0 ? null : new SortedDictionary<string, double>(Regrow.ToDictionary(r => r.Key.ToString(), r => r.Value), StringComparer.Ordinal),
-            Creations = [.. Creations.Select(c => JsonDocument.Parse(c).RootElement.Clone())],
+            Creations = [.. Creations.Select(DataJson.Element)],
             Scripts = Scripts.Count == 0 ? null : [.. Scripts.OrderBy(s => s.Creation).ThenBy(s => s.Part)
                 .Select(s => new ScriptData { Creation = s.Creation, Part = s.Part, State = JsonSerializer.SerializeToElement(s.State) })],
             Players = [.. Players.OrderBy(p => p.Id, StringComparer.Ordinal).Select(p => new PlayerData

@@ -33,6 +33,21 @@ public class ActionDispatcherTests
     }
 
     [Fact]
+    public void TheGateHoldsTypedCallsAsItHoldsJsonOnes()
+    {
+        _dispatcher.Gate = (caller, _) => caller.Peer == 42 ? "You are dead. Respawn first." : null;
+        var records = new List<ActionRecord>();
+        _dispatcher.Dispatched += records.Add;
+
+        Assert.Equal(ActionErrors.Rejected, _dispatcher.Dispatch(Client, "Move", new MoveArgs(4)).Code);
+        Assert.Equal(ActionErrors.Rejected, _dispatcher.Dispatch(Client, "Move", """{ "distance": 4 }""").Code);
+        Assert.True(_dispatcher.Dispatch(new ActionCaller(7, ActionSource.Player), "Move", new MoveArgs(4)).Ok);
+
+        Assert.Equal([(7, 4)], _applied);
+        Assert.Equal(3, records.Count);
+    }
+
+    [Fact]
     public void TypedDispatchValidatesAndRecordsTheArgsAsJson()
     {
         var records = new List<ActionRecord>();
