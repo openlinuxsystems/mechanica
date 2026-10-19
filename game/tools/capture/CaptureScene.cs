@@ -60,7 +60,8 @@ public partial class CaptureScene : Node
         var seat = args.Length > 1 && args[1] == "scrap_seat";
         var trees = args.Length > 1 && args[1] == "trees";
         var seats = args.Length > 1 && args[1] == "seats";
-        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats ? args[1] : "scrapper_male";
+        var button = args.Length > 1 && args[1] == "button";
+        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats && !button ? args[1] : "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
         // Building the block wall needs Creative: free parts and no build reach.
         _main.Options = LaunchOptions.Offline with { Seed = 7, GameMode = blocks || soil ? Core.Survival.GameMode.Creative : LaunchOptions.Offline.GameMode };
@@ -121,6 +122,11 @@ public partial class CaptureScene : Node
         if (seats)
         {
             SeatsShots();
+            return;
+        }
+        if (button)
+        {
+            ButtonShots();
             return;
         }
         Shot("front", 60, () => Look(new Vector3(0, 1.0f, -3.2f)));
@@ -978,6 +984,81 @@ public partial class CaptureScene : Node
             LookAtSeat(new Vector3(1.9f, 1.2f, -1.9f), 0.4f);
         });
         Shot("scrap_seat_13_empty", 60, () => { });
+    }
+
+    private const int ButtonCreation = 9002;
+    private int _button, _buttonSeat;
+    private Vector3 _buttonAt;
+
+    // A slab with a button, a light it feeds and a seat linked to it: the button raised, held down with E (the light on),
+    // let go, then held from the seat with its hotbar key, and its item picture.
+    private void ButtonShots()
+    {
+        Engine.TimeScale = 1.0;
+        Shot("button_00_wait", 60, () => { });
+        Shot("button_01_placed", 90, () =>
+        {
+            var from = Player.GlobalPosition + Player.GlobalTransform.Basis * new Vector3(0, 3, -2.5f);
+            var hit = Player.GetWorld3D().DirectSpaceState.IntersectRay(PhysicsRayQueryParameters3D.Create(from, from + Vector3.Down * 12));
+            _buttonAt = hit.Count > 0 ? hit["position"].AsVector3() : Player.GlobalPosition;
+            var creation = new Core.Creations.Creation(ButtonCreation, _main.Mods!);
+            int Put(string part, int x, int y, int z) =>
+                creation.TryPlacePart(part, new Core.Creations.GridCell(x, y, z), Core.Creations.GridRotation.Identity, out var placed, out var error)
+                    ? placed.Id : throw new InvalidOperationException(error);
+            for (var x = -3; x <= 3; x++)
+                for (var z = -2; z <= 4; z++)
+                    Put("vanilla:metal_block", x, 0, z);
+            _button = Put("vanilla:button", 0, 1, 0);
+            Put("vanilla:button", 1, 1, 0);
+            var light = Put("vanilla:interior_light", -1, 1, 0);
+            _buttonSeat = Put("vanilla:scrap_seat", 0, 1, 3);
+            creation.TryLink(_button, light, out _);
+            creation.TryLink(_buttonSeat, _button, out _);
+            creation.SetAllBodyPoses(new Core.Creations.Pose(new System.Numerics.Vector3(_buttonAt.X, _buttonAt.Y + 0.2f, _buttonAt.Z), System.Numerics.Quaternion.Identity));
+            _main.Creations.Add(creation, _main.Assets);
+            LookAtButton(new Vector3(0.55f, 0.75f, -0.7f));
+        });
+        Shot("button_02_close", 2, () => LookAtButton(new Vector3(0.3f, 0.45f, -0.4f)));
+        Shot("button_03_held", 30, () =>
+        {
+            _main.Actions.Request(Core.Logic.LogicActions.ActivatePart, new Core.Logic.LogicPartArgs(ButtonCreation, _button), r => GD.Print($"[capture] press: {r}"));
+            LookAtButton(new Vector3(0.3f, 0.45f, -0.4f));
+        });
+        Shot("button_04_held_light", 2, () => LookAtButton(new Vector3(0.55f, 0.75f, -0.7f)));
+        Shot("button_05_released", 30, () =>
+            _main.Actions.Request(Core.Logic.LogicActions.ReleasePart, new Core.Logic.LogicPartArgs(ButtonCreation, _button), r => GD.Print($"[capture] release: {r}")));
+        Shot("button_06_seated", 60, () =>
+            _main.Actions.Request(Core.Logic.LogicActions.EnterSeat, new Core.Logic.LogicPartArgs(ButtonCreation, _buttonSeat), r => GD.Print($"[capture] sit: {r}")));
+        Shot("button_07_seat_key", 30, () =>
+        {
+            _main.CreationHotbar!.Use(0);
+            LookAtButton(new Vector3(0.9f, 1.3f, 1.9f));
+        });
+        Shot("button_08_seat_let_go", 30, () => _main.CreationHotbar!.Release(0));
+        Shot("button_09_icon", 240, () =>
+        {
+            _main.Actions.Request(Core.Logic.LogicActions.LeaveSeat, new Core.Actions.NoArgs(), r => GD.Print($"[capture] stand: {r}"));
+            _main.Icons!.For("vanilla:button");
+            _iconTick = () =>
+            {
+                if (_main.Icons.For("vanilla:button") is not { } texture)
+                    return;
+                var path = $"{_out}/icon_vanilla_button.png";
+                texture.GetImage().SavePng(path);
+                GD.Print($"[capture] {path}");
+                _iconTick = null;
+            };
+        });
+    }
+
+    private void LookAtButton(Vector3 offset)
+    {
+        Player.ThirdPerson = true;
+        _camera.MakeCurrent();
+        _follow = null;
+        var centre = _buttonAt + new Vector3(0, 0.2f + 0.375f, 0);
+        _camera.GlobalPosition = centre + offset;
+        _camera.LookAt(centre + new Vector3(-0.05f, -0.08f, 0));
     }
 
     private static readonly string[] SeatParts = ["drivers_seat", "passenger_seat", "scrap_seat", "scrap_drivers_seat"];

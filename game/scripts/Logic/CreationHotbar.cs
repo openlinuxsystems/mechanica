@@ -13,8 +13,9 @@ namespace Mechanica.Game.Logic;
 /// The creation hotbar (UI spec §8, §10): while the local player sits in a seat linked to switches or buttons
 /// (<see cref="SeatHotbar"/>), those parts take the hotbar's place at the bottom centre, one slot each with its picture,
 /// name and key. Keys 1 to 9 and 0 use a slot's part at once, Left Click uses the first slot's and Right Click the
-/// second's; with the mouse free a click on a slot uses it. A slot glows and pulses while its part is on. The host lets a
-/// seated player use the parts on their seat's bar from anywhere on the Creation.
+/// second's; with the mouse free a click on a slot uses it. A part that is held (a button, <see cref="Core.Data.LogicDefinition.Hold"/>)
+/// stays held while its key or the mouse button is down and lets go with it. A slot glows and pulses while its part is on.
+/// The host lets a seated player use the parts on their seat's bar from anywhere on the Creation.
 /// </summary>
 public partial class CreationHotbar : CanvasLayer
 {
@@ -23,6 +24,7 @@ public partial class CreationHotbar : CanvasLayer
 
     private readonly List<ItemSlot> _slots = [];
     private readonly Dictionary<int, double> _pulses = [];
+    private readonly Dictionary<int, (LogicPartArgs Part, Func<bool> Down)> _held = [];
     private HBoxContainer _bar = null!;
     private Label _status = null!;
 
@@ -83,7 +85,7 @@ public partial class CreationHotbar : CanvasLayer
             slot.GuiInput += e =>
             {
                 if (e is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left })
-                    Use(index);
+                    Use(index, () => Input.IsMouseButtonPressed(MouseButton.Left));
             };
             _slots.Add(slot);
             _bar.AddChild(slot);
@@ -96,32 +98,73 @@ public partial class CreationHotbar : CanvasLayer
         if (!ReadDeviceInput || !Showing || Input.MouseMode != Input.MouseModeEnum.Captured)
             return;
         if (Enumerable.Range(1, InputActions.HotbarSlots).FirstOrDefault(s => GameInput.Pressed(@event, InputActions.Hotbar(s))) is var key and > 0)
-            Use(key - 1);
+            Use(key - 1, () => Input.IsActionPressed(InputActions.Hotbar(key)));
         else if (GameInput.Pressed(@event, InputActions.Primary))
-            Use(0);
+            Use(0, () => Input.IsActionPressed(InputActions.Primary));
         else if (GameInput.Pressed(@event, InputActions.Secondary) && Parts.Count > 1)
-            Use(1);
+            Use(1, () => Input.IsActionPressed(InputActions.Secondary));
         else
             return;
         GetViewport().SetInputAsHandled();
     }
 
-    /// <summary>Uses the part in slot <paramref name="slot"/> (0 based) on the host. False when the slot is empty.</summary>
-    public bool Use(int slot)
+    /// <summary>
+    /// Uses the part in slot <paramref name="slot"/> (0 based) on the host. A held part (a button) stays held until
+    /// <see cref="Release"/>, or until <paramref name="down"/> (the key or mouse button that used it) says it is up.
+    /// False when the slot is empty.
+    /// </summary>
+    public bool Use(int slot, Func<bool>? down = null)
     {
         if (Seat is not { } seat || slot < 0 || slot >= Parts.Count)
             return false;
         _slots[slot].Pulse();
-        Actions.Request(LogicActions.ActivatePart, new LogicPartArgs(seat.Creation, Parts[slot]),
-            result => _status.Text = result.Ok ? "" : result.Message ?? "");
+        var part = new LogicPartArgs(seat.Creation, Parts[slot]);
+        var held = Creations.Find(seat.Creation)?.DefinitionOf(Parts[slot]).Logic?.Hold == true;
+        if (held)
+        {
+            if (_held.ContainsKey(slot))
+                return true;
+            _held[slot] = (part, down ?? (() => true));
+        }
+        Actions.Request(LogicActions.ActivatePart, part, result =>
+        {
+            _status.Text = result.Ok ? "" : result.Message ?? "";
+            if (!result.Ok && held && _held.TryGetValue(slot, out var h) && h.Part == part)
+                _held.Remove(slot);
+        });
         // Read the bus again soon so the slot shows its part's new state.
         Signals.Poll(seat.Creation);
         return true;
     }
 
+    /// <summary>Lets go of the held part in slot <paramref name="slot"/>. False when it holds none.</summary>
+    public bool Release(int slot)
+    {
+        if (!_held.Remove(slot, out var held))
+            return false;
+        Actions.Request(LogicActions.ReleasePart, held.Part, result => _status.Text = result.Ok ? "" : result.Message ?? "");
+        Signals.Poll(held.Part.Creation);
+        return true;
+    }
+
+    /// <summary>True while the part in slot <paramref name="slot"/> is held down from this bar.</summary>
+    public bool Holding(int slot) => _held.ContainsKey(slot);
+
+    // Lets go of held parts whose key or mouse button is up, or that left the bar (the player stood up).
+    private void ReleaseLetGo()
+    {
+        foreach (var (slot, (part, down)) in _held.ToList())
+        {
+            var still = Seat is { } seat && seat.Creation == part.Creation && slot < Parts.Count && Parts[slot] == part.Part;
+            if (!still || (ReadDeviceInput && !down()))
+                Release(slot);
+        }
+    }
+
     public override void _Process(double delta)
     {
         Refresh();
+        ReleaseLetGo();
         var belt = Belt?.Invoke();
         if (belt is not null)
             belt.CreationBarShown = Showing;

@@ -6,9 +6,9 @@
       "kind": "action",
       "group": "logic",
       "scope": "play",
-      "description": "Use a part. Arguments of ActivatePart and EnterSeat: one part of a Creation.",
+      "description": "Use a part. Arguments of ActivatePart, ReleasePart and EnterSeat: one part of a Creation.",
       "params": {
-        "description": "Arguments of ActivatePart and EnterSeat: one part of a Creation.",
+        "description": "Arguments of ActivatePart, ReleasePart and EnterSeat: one part of a Creation.",
         "type": "object",
         "properties": {
           "creation": {
@@ -671,9 +671,9 @@
       "kind": "action",
       "group": "logic",
       "scope": "play",
-      "description": "Sit in a seat. Arguments of ActivatePart and EnterSeat: one part of a Creation.",
+      "description": "Sit in a seat. Arguments of ActivatePart, ReleasePart and EnterSeat: one part of a Creation.",
       "params": {
-        "description": "Arguments of ActivatePart and EnterSeat: one part of a Creation.",
+        "description": "Arguments of ActivatePart, ReleasePart and EnterSeat: one part of a Creation.",
         "type": "object",
         "properties": {
           "creation": {
@@ -2005,6 +2005,32 @@
             ]
           }
         },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "ReleasePart",
+      "kind": "action",
+      "group": "logic",
+      "scope": "play",
+      "description": "Let go of a part the caller holds. Arguments of ActivatePart, ReleasePart and EnterSeat: one part of a Creation.",
+      "params": {
+        "description": "Arguments of ActivatePart, ReleasePart and EnterSeat: one part of a Creation.",
+        "type": "object",
+        "properties": {
+          "creation": {
+            "description": "The Creation holding the part.",
+            "type": "integer"
+          },
+          "part": {
+            "description": "The part.",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "creation",
+          "part"
+        ],
         "additionalProperties": false
       }
     },

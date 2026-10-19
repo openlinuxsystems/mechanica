@@ -18,6 +18,7 @@ public partial class LogicTests
     private const string Gate = "test:gate";
     private const string Seat = "test:seat";
     private const string Switch = "test:switch";
+    private const string Button = "test:button";
     private const string Sequencer = "test:sequencer";
     private const int Host = Creation.HostPeer, Peer = 2;
 
@@ -53,6 +54,7 @@ public partial class LogicTests
         })
         .Add(Seat, Part(new LogicDefinition { Outputs = 4 }) with { Seat = new SeatDefinition() })
         .Add(Switch, Part(new LogicDefinition { Inputs = 1, Outputs = 4, Use = "toggle" }))
+        .Add(Button, Part(new LogicDefinition { Inputs = 1, Outputs = 10, Use = "press", Hold = true }) with { Sounds = new() { ["release"] = "logic_click" } })
         .Add(Sequencer, Part(new LogicDefinition { Inputs = 4, Outputs = 4 }) with { Settings = [Steps] });
 
     private readonly FakeWorld _world = new();
@@ -320,6 +322,55 @@ public partial class LogicTests
     }
 
     [Fact]
+    public void AHeldPartStaysHeldUntilItsPlayerLetsGo()
+    {
+        Row(Button, Switch);
+        Assert.Equal("You are not holding the X.", Dispatch(Player, LogicActions.ReleasePart, new LogicPartArgs(1, 1)).Message);
+        Assert.True(Dispatch(Player, LogicActions.ActivatePart, new LogicPartArgs(1, 1)).Ok);
+        // A key repeat, or E and the seat key at once, is still one hold.
+        Assert.True(Dispatch(Player, LogicActions.ActivatePart, new LogicPartArgs(1, 1)).Ok);
+        Assert.Equal([(Peer, 1)], _host.Activated);
+        Assert.Equal([(Peer, 1, 1)], _actions.Holds);
+        var other = new ActionCaller(3, ActionSource.Player);
+        _world.Eyes[3] = new Vector3(0, 1, 2);
+        Assert.Equal("You are not holding the X.", Dispatch(other, LogicActions.ReleasePart, new LogicPartArgs(1, 1)).Message);
+        Assert.True(Dispatch(Player, LogicActions.ReleasePart, new LogicPartArgs(1, 1)).Ok);
+        Assert.Equal([(Peer, 1)], _host.Released);
+        Assert.Empty(_actions.Holds);
+        Assert.Equal(["logic_activate", "logic_click"], _world.Sounds);
+        // A part that is one press is never held.
+        Assert.True(Dispatch(Player, LogicActions.ActivatePart, new LogicPartArgs(1, 2)).Ok);
+        Assert.Empty(_actions.Holds);
+        Assert.Contains("is not held", Dispatch(Player, LogicActions.ReleasePart, new LogicPartArgs(1, 2)).Message);
+    }
+
+    [Fact]
+    public void TheHostLetsGoForPlayersWhoLeaveDieOrStandUp()
+    {
+        var c = Row(Seat, Button, Button);
+        Assert.True(c.TryLink(1, 3, out var error), error);
+        _world.Eyes[3] = new Vector3(0, 1, 2);
+        var standing = new ActionCaller(3, ActionSource.Player);
+        Assert.True(Dispatch(Player, LogicActions.EnterSeat, new LogicPartArgs(1, 1)).Ok);
+        // The seated player holds the linked button from the seat (out of reach too); the other holds one by hand.
+        _world.Eyes[Peer] = new Vector3(0, 1, 50);
+        Assert.True(Dispatch(Player, LogicActions.ActivatePart, new LogicPartArgs(1, 3)).Ok);
+        Assert.True(Dispatch(standing, LogicActions.ActivatePart, new LogicPartArgs(1, 2)).Ok);
+        Assert.Equal(0, _actions.ReleaseHolds(_ => true));
+        Assert.True(Dispatch(Player, LogicActions.LeaveSeat, new NoArgs()).Ok);
+        Assert.Equal(1, _actions.ReleaseHolds(_ => true));
+        Assert.Equal([(Peer, 3)], _host.Released);
+        // A player who left or died lets go; so does everyone when the part is gone.
+        Assert.Equal(1, _actions.ReleaseHolds(peer => peer != 3));
+        Assert.Equal([(Peer, 3), (3, 2)], _host.Released);
+        Assert.True(Dispatch(standing, LogicActions.ActivatePart, new LogicPartArgs(1, 2)).Ok);
+        c.RemovePart(2, () => 9);
+        Assert.Equal(1, _actions.ReleaseHolds(_ => true));
+        Assert.Equal(2, _host.Released.Count);
+        Assert.Empty(_actions.Holds);
+    }
+
+    [Fact]
     public void PlayersSitInSeatsOneAtATimeAndStandUp()
     {
         Row(Seat, Seat, Lamp);
@@ -384,6 +435,7 @@ public partial class LogicTests
     [Theory]
     [InlineData("\"logic\": { \"inputs\": 65 }", "$.logic.inputs", "0 to 64")]
     [InlineData("\"logic\": { \"use\": \"press\" }", "$.logic.use", "needs a script")]
+    [InlineData("\"logic\": { \"hold\": true }", "$.logic.hold", "needs use")]
     [InlineData("\"seat\": { \"offset\": [0, 1, 0] }", "$.seat.offset", "")]
     [InlineData("\"settings\": [{ \"id\": \"Bad Id\", \"type\": \"toggle\" }]", "$.settings[0].id", "")]
     [InlineData("\"settings\": [{ \"id\": \"a\" }]", "$.settings[0].type", "")]
@@ -472,6 +524,10 @@ public partial class LogicTests
             Activated.Add((caller.Peer, part));
             return Json(new { part });
         }
+
+        public List<(int Peer, int Part)> Released { get; } = [];
+
+        public void Release(int peer, Creation creation, int part) => Released.Add((peer, part));
 
         public void Seated(SeatAssignment seat, bool entered) => Seatings.Add($"{(entered ? "enter" : "leave")} {seat.Part}");
 

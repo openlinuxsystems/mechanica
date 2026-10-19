@@ -21,6 +21,7 @@ public static class LuaApi
         new("on_reload", "function on_reload()", "Runs after a hot reload instead of on_create; state is kept.", "Hooks"),
         new("on_destroy", "function on_destroy()", "Runs when the part is removed or its Creation goes away.", "Hooks"),
         new("on_activate", "function on_activate(peer)", "A player used the part (ActivatePart: E on a button, a switch, ripe soil); the return value is the action's result.", "Hooks"),
+        new("on_release", "function on_release(peer)", "The player let go of a part they held (logic.hold, a button): they let go of E or the seat key, stood up or left (ReleasePart).", "Hooks"),
         new("can_activate", "function can_activate(peer)", "Return nil to let the player use the part, or the reason ActivatePart is refused. May not change the world.", "Hooks"),
         new("on_command", "function on_command(name, args, peer)", "The player sent the part a command from its menu (CommandPart), such as \"preview\" from a sequence's Play button; args is the command's table.", "Hooks"),
         new("on_power", "function on_power(amount)", "The sum of the part's logic inputs changed; amount is the new sum.", "Hooks"),

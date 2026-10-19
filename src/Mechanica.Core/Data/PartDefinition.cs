@@ -423,6 +423,13 @@ public sealed record LogicDefinition
     public string? Use { get; init; }
 
     /// <summary>
+    /// True makes <see cref="Use"/> a hold (a button): the part stays used while the player holds the interact key, or
+    /// the part's key on their seat's bar, and its script's <c>on_release(peer)</c> runs when they let go, stand up or
+    /// leave. Needs <see cref="Use"/>. Omitted means a use is one press (a switch).
+    /// </summary>
+    public bool? Hold { get; init; }
+
+    /// <summary>
     /// What kind of connection node the part shows with the Connect Tool (UI spec §12), which also names the kind of
     /// link that starts at it. Omitted means <see cref="PortKind.Logic"/>.
     /// </summary>

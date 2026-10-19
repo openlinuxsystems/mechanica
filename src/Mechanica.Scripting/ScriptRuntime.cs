@@ -100,6 +100,9 @@ public sealed partial class ScriptRuntime
         /// <summary><c>on_activate(peer)</c>: a player used the part.</summary>
         public const string OnActivate = "on_activate";
 
+        /// <summary><c>on_release(peer)</c>: a player let go of a part they held (a button).</summary>
+        public const string OnRelease = "on_release";
+
         /// <summary><c>can_activate(peer)</c>: may the player use the part now? Nil to allow, or the reason it can't. Changes nothing.</summary>
         public const string CanActivate = "can_activate";
 

@@ -47,6 +47,7 @@ public partial class SurvivalHud : CanvasLayer
     private (int Creation, int Part)? _outlinedPart;
     // The refine being held: what (a node or a rod), its name, when Use went down (this peer's clock) and where the player stood.
     private (RefineArgs Target, string Name, double Started, Vector3 Feet)? _refine;
+    private LogicPartArgs? _holding;
 
     // Blue, unshaded and drawn from the inside, slightly grown, so it reads as an outline round the node.
     private static readonly StandardMaterial3D OutlineMaterial = new()
@@ -110,6 +111,9 @@ public partial class SurvivalHud : CanvasLayer
     public float? RefineProgress => _refine is { } r && Survival.Settings is { } settings
         ? Math.Clamp((float)((Survival.Now - r.Started) / settings.RefineSeconds), 0f, 1f)
         : null;
+
+    /// <summary>The part held down with Use (a button, <see cref="LogicDefinition.Hold"/>), or null.</summary>
+    public LogicPartArgs? Holding => _holding;
 
     /// <summary>The resource node shown with the blue outline, or null.</summary>
     public WorldObjectId? Outlined => _outlined;
@@ -175,6 +179,7 @@ public partial class SurvivalHud : CanvasLayer
             _deathText.Text = wait > 0 ? Loc.T("You died.\nRespawn in {0} s", $"{Math.Ceiling(wait):0}") : Loc.T("You died.\n[{0}] respawn at {1}", GameInput.Label(InputActions.Interact), where);
         }
         UpdateRefine();
+        UpdateHold();
         var alive = own is not { Dead: true } && Playing();
         var node = alive ? AimedNode() : null;
         UpdateOutline(node);
@@ -209,7 +214,10 @@ public partial class SurvivalHud : CanvasLayer
     {
         // A hold never outlives the window losing focus (UI spec §11).
         if (what == NotificationApplicationFocusOut)
+        {
             CancelRefine();
+            EndHold();
+        }
     }
 
     /// <summary>The pile of items under the crosshair within pickup reach, or null.</summary>
@@ -301,6 +309,36 @@ public partial class SurvivalHud : CanvasLayer
         _refine = null;
         PutAwayRefineTool();
         Request(SurvivalActions.FinishRefine, r.Target);
+    }
+
+    /// <summary>Starts holding Use on a part that is held down (a button); it lets go when Use does.</summary>
+    public void BeginHold(LogicPartArgs part)
+    {
+        EndHold();
+        _holding = part;
+        Actions.Request(LogicActions.ActivatePart, part, result =>
+        {
+            _status.Text = result.Ok ? "" : result.Message ?? "";
+            // Refused (out of reach, its script stopped): there is nothing to let go of.
+            if (!result.Ok && _holding == part)
+                _holding = null;
+        });
+    }
+
+    /// <summary>Lets go of the part held with Use, if any.</summary>
+    public void EndHold()
+    {
+        if (_holding is not { } part)
+            return;
+        _holding = null;
+        Request(LogicActions.ReleasePart, part);
+    }
+
+    // Lets go of the held part when Use is let go, a window opens or the player dies.
+    private void UpdateHold()
+    {
+        if (_holding is not null && (!UseHeld() || !Playing() || Survival.Own is { Dead: true }))
+            EndHold();
     }
 
     private void PutAwayRefineTool()
@@ -409,6 +447,8 @@ public partial class SurvivalHud : CanvasLayer
             var definition = creation.DefinitionOf(aimed.Part);
             if (Logic is not null && definition.Seat is not null && Logic.Seats.Occupant(creation.Id, aimed.Part) is null)
                 return (Loc.T("sit in the {0}", definition.Name ?? Loc.T("seat")), () => Request(LogicActions.EnterSeat, new LogicPartArgs(creation.Id, aimed.Part)));
+            if (Logic is not null && definition.Logic is { Use: { } held, Hold: true })
+                return (Loc.T("hold to {0} the {1}", held, definition.Name ?? Loc.T("part")), () => BeginHold(new LogicPartArgs(creation.Id, aimed.Part)));
             if (Logic is not null && definition.Logic?.Use is { } use)
                 return (Loc.T("{0} the {1}", use, definition.Name ?? Loc.T("part")), () => Request(LogicActions.ActivatePart, new LogicPartArgs(creation.Id, aimed.Part)));
             // Harvesting is the soil script's on_activate (D2); the prompt only shows once the synced crop is ripe.
