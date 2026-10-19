@@ -97,11 +97,21 @@ public sealed record TerrainDefinition
     /// <summary>Side of the square cells inland biomes are chosen in, in metres.</summary>
     public float BiomeCellSize { get; init; } = 760f;
 
-    /// <summary>Metres over which neighbouring biomes blend. At most 0.18 × <see cref="BiomeCellSize"/>.</summary>
+    /// <summary>Metres over which neighbouring biomes blend. At most 1.1 × <see cref="BiomeCellSize"/>.</summary>
     public float BiomeBlend { get; init; } = 80f;
 
     /// <summary>How far, in metres, noise bends biome borders, so they are not straight lines.</summary>
     public float BiomeWarp { get; init; } = 160f;
+
+    /// <summary>
+    /// How far, in metres, noise pulls each biome's edge back across the <see cref="BiomeBlend"/> band, so
+    /// neighbouring biomes' ground, flora and objects reach into each other in tongues and patches instead of fading
+    /// evenly. Height blends without it. At most 0.6 × <see cref="BiomeBlend"/>; 0 fades evenly.
+    /// </summary>
+    public float BiomeEdgeNoise { get; init; }
+
+    /// <summary>Size, in metres, of the tongues and patches <see cref="BiomeEdgeNoise"/> makes.</summary>
+    public float BiomeEdgeScale { get; init; } = 24f;
 
     /// <summary>Steepest ground (rise over run) that scattered objects stand on.</summary>
     public float MaxScatterSlope { get; init; } = 0.7f;

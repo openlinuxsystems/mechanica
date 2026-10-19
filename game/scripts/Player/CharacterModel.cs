@@ -175,10 +175,20 @@ public partial class CharacterModel : Node3D
         }
         else
         {
-            // A seated body faces the seat's front, whichever way its player looks.
-            var turn = Player?.SeatYaw is { } seatYaw ? Mathf.Wrap(seatYaw - Player.Rotation.Y, -Mathf.Pi, Mathf.Pi) : Animator.BodyTurn;
-            Rotation = new Vector3(0, turn, 0);
-            Position = new Vector3(0, Animator.Lift, 0) + (Player?.ShownLocalOffset ?? Vector3.Zero);
+            // A seated body takes the seat's whole frame, whichever way its player looks: it pitches and rolls with the
+            // Creation, upside down included, and stays put in the seat until the player stands up.
+            var offset = Player?.ShownLocalOffset ?? Vector3.Zero;
+            if (Player?.SeatBasis is { } seat)
+            {
+                var basis = (Player.GlobalBasis.Orthonormalized().Inverse() * seat).Orthonormalized();
+                Basis = basis;
+                Position = basis * new Vector3(0, Animator.Lift, 0) + offset;
+            }
+            else
+            {
+                Rotation = new Vector3(0, Animator.BodyTurn, 0);
+                Position = new Vector3(0, Animator.Lift, 0) + offset;
+            }
         }
         Pose();
         ShowProp(Animator.ShowProp && Player is not null ? Animator.Prop : CharacterProp.None);

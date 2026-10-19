@@ -180,8 +180,11 @@ public class OutcropTests
         Assert.Contains(deposits, c => c.Any(p => p.Definition.Id == "metal_outcrop_large"));
         Assert.Contains(deposits, c => c.Any(p => p.Variant == 1));
         Assert.Contains(deposits, c => c.Count() >= 40);
-        var biomes = deposits.Select(c => gen.BiomeAt(c.First().Position.X, c.First().Position.Z).Id).ToHashSet();
-        Assert.DoesNotContain("forest", biomes);
+        // Forests keep their deposits only where a neighbouring biome's reach into them carries a few over the border.
+        var biomes = deposits.Select(c => gen.BiomeAt(c.First().Position.X, c.First().Position.Z).Id).ToList();
+        Assert.True(biomes.Count(b => b == "forest") <= deposits.Count / 20, $"{biomes.Count(b => b == "forest")} of {deposits.Count} deposits in forest");
+        var forest = gen.Data.Biomes.First(b => b.Id == "forest").Index;
+        Assert.All(deposits, c => Assert.True(gen.BiomeShare(c.First().Position.X, c.First().Position.Z, forest) < 1f));
         Assert.DoesNotContain("warehouse_district", biomes);
         foreach (var deposit in deposits.Take(40))
         {

@@ -197,7 +197,10 @@ public sealed class TerrainChunkData
     /// <summary>Ground colours (0..1 RGB), laid out like <see cref="Heights"/>.</summary>
     public Vector3[] Colors { get; }
 
-    /// <summary>Index of the biome that dominates each sample, laid out like <see cref="Heights"/>.</summary>
+    /// <summary>
+    /// Index of the biome whose flora grows at each sample, laid out like <see cref="Heights"/>: the dominant one, except
+    /// across a border, where both biomes' patches mix (<see cref="TerrainDefinition.BiomeEdgeNoise"/>).
+    /// </summary>
     public int[] Biomes { get; }
 
     /// <summary>True where a POI's footprint covers the sample, laid out like <see cref="Heights"/>. Nothing grows there.</summary>

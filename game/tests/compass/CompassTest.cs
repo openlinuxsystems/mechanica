@@ -49,8 +49,8 @@ public partial class CompassTest : StagedTest
             Check(_compass.Bar.Visible, "the bar shows");
             var size = GetViewport().GetVisibleRect().Size;
             var rect = _compass.Bar.GetGlobalRect();
-            Check(Mathf.IsEqualApprox(rect.Size.X, size.X * 0.4f) && Mathf.IsEqualApprox(rect.Position.Y, size.Y * 0.1f) && Mathf.IsEqualApprox(rect.GetCenter().X, size.X / 2),
-                $"top centre, 10% down and 40% wide ({rect})");
+            Check(Mathf.IsEqualApprox(rect.Size.X, size.X * 0.4f) && Mathf.IsEqualApprox(rect.Position.Y, HudRoot.Margin(GetViewport()).Y) && Mathf.IsEqualApprox(rect.GetCenter().X, size.X / 2),
+                $"top centre, at the top of the safe area and 40% wide ({rect})");
             Check(_compass.Marks.Any(m => m.Waypoint.Id.StartsWith("quest:", StringComparison.Ordinal)), $"the story's first goal is on it ({string.Join(", ", _compass.Marks.Select(m => m.Waypoint.Id))})");
             return true;
         });

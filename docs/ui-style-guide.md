@@ -127,6 +127,7 @@ Screens that have not moved to the design language yet use these colours and `Me
 | Error | `#E5534B` | errors, refusals, failed loads |
 | Warning | `#E8E3A0` | warnings |
 | Success | `#4CD07D` | success, running |
+| Health | `#36B36B` | the health bar fill, lighter at the top and darker at the bottom (`ShadedBox`) |
 
 There is no orange anywhere in the interface: menus, the HUD, overlays, gizmos, tool ghosts and the
 script editor. Saturated yellow counts as orange. Content is not interface: a part's paint or a

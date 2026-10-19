@@ -6,7 +6,7 @@ using Mechanica.Game.Settings;
 namespace Mechanica.Game.Ui;
 
 /// <summary>
-/// The compass bar (UI spec §13): top centre, 10% from the top and 40% of the screen wide, with the
+/// The compass bar (UI spec §13): top centre, at the top of the safe area and 40% of the screen wide, with the
 /// player's heading in the middle, the points and a tick every 15°. Waypoints (quest goals and places
 /// found) are blue diamonds with their distance under them within 500 m; the primary one is larger and
 /// pulses cyan, and clicking a diamond (while the mouse is free, as with the logbook open) makes it primary.
@@ -44,6 +44,9 @@ public partial class CompassHud : CanvasLayer
     /// <summary>The bar.</summary>
     public Control Bar => _bar;
 
+    /// <summary>The bar's lower edge (distances included) in pixels while it shows, else 0, so what else sits top centre goes under it.</summary>
+    public static float Bottom { get; private set; }
+
     /// <summary>The heading the bar is centred on, 0 to 360°.</summary>
     public float Heading => _heading;
 
@@ -74,13 +77,18 @@ public partial class CompassHud : CanvasLayer
         Layout();
     }
 
-    public override void _ExitTree() => GetViewport().SizeChanged -= Layout;
+    public override void _ExitTree()
+    {
+        GetViewport().SizeChanged -= Layout;
+        Bottom = 0;
+    }
 
     public override void _Process(double delta)
     {
         var player = Players.LocalPlayer;
         var show = GameSettings.Current.Interface.ShowCompass && player is not null && !Covered();
         _bar.Visible = show;
+        Bottom = show && !HudRoot.Hidden ? _bar.Position.Y + _bar.Size.Y : 0;
         _marks.Clear();
         _playerMarks.Clear();
         if (player is null)
@@ -101,12 +109,12 @@ public partial class CompassHud : CanvasLayer
     /// <summary>Makes <paramref name="id"/> the primary waypoint (as clicking it does).</summary>
     public void SetPrimary(string id) => _primary = id;
 
-    // Top centre, 10% from the top edge and 40% of the screen wide.
+    // Top centre, against the top of the safe area (Chase asked for the gap above it gone) and 40% of the screen wide.
     private void Layout()
     {
         var size = GetViewport().GetVisibleRect().Size;
         _bar.Size = new Vector2(size.X * 0.4f, 44);
-        _bar.Position = new Vector2((size.X - _bar.Size.X) / 2, size.Y * 0.1f);
+        _bar.Position = new Vector2((size.X - _bar.Size.X) / 2, HudRoot.Margin(GetViewport()).Y);
     }
 
     private float XOf(float mark) => _bar.Size.X / 2 * (1 + mark * 0.94f);

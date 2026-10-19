@@ -9,6 +9,8 @@ namespace Mechanica.Core.World;
 /// <list type="bullet">
 /// <item><b>Biomes.</b> Inland ground is cut into jittered cells (<see cref="TerrainDefinition.BiomeCellSize"/>),
 /// each given a biome by weight; neighbouring cells blend over <see cref="TerrainDefinition.BiomeBlend"/> metres.
+/// Across that band the ground textures, flora and scattered objects of both biomes mix in noisy tongues and patches
+/// (<see cref="TerrainDefinition.BiomeEdgeNoise"/>), thinning out the further they reach, so no border is a line.
 /// The coast biome takes over near the world edge.</item>
 /// <item><b>Height.</b> Each biome sets an average height and a relief that scales fractal noise. Within
 /// <see cref="TerrainDefinition.CoastWidth"/> of the edge the land falls to the sea floor, so the world
@@ -46,6 +48,8 @@ public sealed partial class WorldGenerator
     private readonly uint _paintSalt;
     private readonly uint _hillSalt;
     private readonly uint _cliffSalt;
+    private readonly uint _edgeSalt;
+    private readonly int _cellReach;
     private readonly uint _sheerSalt;
     private readonly float _sheerThreshold;
     private readonly (Vector2 Centre, float Radius)[] _fixedPads;
@@ -91,6 +95,11 @@ public sealed partial class WorldGenerator
         _paintSalt = Noise.Salt(seed, 9);
         _hillSalt = Noise.Salt(seed, 10);
         _cliffSalt = Noise.Salt(seed, 11);
+        _edgeSalt = Noise.Salt(seed, 13);
+        // A cell two or more away is at least 0.19 cell sizes further than the nearest point, one three or more away
+        // at least 1.19: look one cell out while every blend and ramp fits inside the first, two cells out otherwise.
+        var widest = MathF.Max(_terrain.BiomeBlend, _terrain.Hills?.ShoreRamp ?? 0f);
+        _cellReach = widest <= 0.18f * _terrain.BiomeCellSize ? 1 : 2;
         _sheerSalt = Noise.Salt(seed, 12);
         _sheerThreshold = SheerThreshold();
         // The hills keep away from sites with a fixed pad height, so the pad is not a pit or a mesa.
@@ -201,7 +210,7 @@ public sealed partial class WorldGenerator
                 {
                     heights[(j - 1) * n + i - 1] = h;
                     colors[(j - 1) * n + i - 1] = sample.Color;
-                    biomes[(j - 1) * n + i - 1] = sample.Biome;
+                    biomes[(j - 1) * n + i - 1] = MixedBiome(x, z, weights, sample.Biome);
                     covered[(j - 1) * n + i - 1] = PoisAt(x, z).Any() || Roads.Covers(x, z);
                     if (grounds.Length > 0)
                     {
@@ -447,7 +456,8 @@ public sealed partial class WorldGenerator
     {
         if (!InWorld(spot.X, spot.Y))
             return false;
-        if (SampleBiomes(spot.X, spot.Y).Biome != rule.Biome)
+        // Across a border a biome's objects thin out with its share of the ground, in groves rather than one by one.
+        if (BiomeShare(spot.X, spot.Y, rule.Biome) <= EdgeRoll(spot.X, spot.Y, _edgeSalt ^ (uint)rule.Index, GroveSize))
             return false;
         if (PoisAt(spot.X, spot.Y).Any() || Roads.Near(spot.X, spot.Y, rule.Object.Footprint + 1f))
             return false;
@@ -462,7 +472,7 @@ public sealed partial class WorldGenerator
             for (var a = 0; a < 8; a++)
             {
                 var p = spot + new Vector2(MathF.Cos(a * MathF.PI / 4f), MathF.Sin(a * MathF.PI / 4f)) * reach;
-                if (!InWorld(p.X, p.Y) || SampleBiomes(p.X, p.Y).Biome != rule.Biome
+                if (!InWorld(p.X, p.Y) || BiomeShare(p.X, p.Y, rule.Biome) <= 0f
                     || PoisAt(p.X, p.Y).Any() || Roads.Near(p.X, p.Y, 1f) || HeightAt(p.X, p.Y) < SeaLevel + 0.2f)
                     return false;
             }
@@ -583,13 +593,17 @@ public sealed partial class WorldGenerator
             z += t.BiomeWarp * Noise.Fractal(u, v, Noise.Mix(_warpSalt), 3, 2f, 0.5f);
         }
         int cx = (int)MathF.Floor(x / size), cz = (int)MathF.Floor(z / size);
-        Span<float> distance = stackalloc float[9];
-        Span<int> biome = stackalloc int[9];
+        // The cells around this one, out to the reach that holds every cell the blend and ramps can see.
+        var reach = _cellReach;
+        var side = 2 * reach + 1;
+        var cells = side * side;
+        Span<float> distance = stackalloc float[cells];
+        Span<int> biome = stackalloc int[cells];
         var nearest = float.PositiveInfinity;
         var nearestBiome = 0;
-        for (var k = 0; k < 9; k++)
+        for (var k = 0; k < cells; k++)
         {
-            int ix = cx + k % 3 - 1, iz = cz + k / 3 - 1;
+            int ix = cx + k % side - reach, iz = cz + k / side - reach;
             var px = (ix + 0.25f + 0.5f * Noise.Unit(Noise.Hash(_cellSalt, ix, iz, 0))) * size;
             var pz = (iz + 0.25f + 0.5f * Noise.Unit(Noise.Hash(_cellSalt, ix, iz, 1))) * size;
             distance[k] = MathF.Sqrt((x - px) * (x - px) + (z - pz) * (z - pz));
@@ -599,7 +613,7 @@ public sealed partial class WorldGenerator
         }
         var result = new BiomeSample { Biome = nearestBiome, Hills = 1f };
         var ramp = t.Hills?.ShoreRamp ?? 0f;
-        for (var k = 0; k < 9; k++)
+        for (var k = 0; k < cells; k++)
         {
             // A flat biome (a lake) holds its neighbours down too, easing to full hills over the ramp.
             var keep = Data.Biomes[biome[k]].Hills;
@@ -607,14 +621,31 @@ public sealed partial class WorldGenerator
                 result.Hills = MathF.Min(result.Hills, keep + (1f - keep) * Noise.SmoothStep(0f, ramp, distance[k] - nearest));
         }
         var total = 0f;
-        for (var k = 0; k < 9; k++)
+        var shares = 0f;
+        var jitter = MathF.Min(t.BiomeEdgeNoise, 0.6f * t.BiomeBlend);
+        for (var k = 0; k < cells; k++)
         {
-            var w = 1f - Noise.SmoothStep(0f, t.BiomeBlend, distance[k] - nearest);
+            var d = distance[k] - nearest;
+            if (!weights.IsEmpty)
+            {
+                // The look (ground, flora, objects) takes the cell's edge pulled back by its own noise, so neighbours
+                // reach into each other in tongues; the height below blends evenly. Pulled back only, never pushed out:
+                // a cell never reaches further than the blend, so no cell outside the reach is ever missed.
+                if (jitter > 0f && d < t.BiomeBlend)
+                {
+                    int ix = cx + k % side - reach, iz = cz + k / side - reach;
+                    var f = Noise.Fractal(x / t.BiomeEdgeScale, z / t.BiomeEdgeScale, Noise.Hash(_edgeSalt, ix, iz), 2, 2.3f, 0.45f);
+                    d += jitter * Math.Clamp(0.5f + 0.5f * f, 0f, 1f);
+                }
+                var look = 1f - Noise.SmoothStep(0f, t.BiomeBlend, d);
+                weights[biome[k]] += look;
+                shares += look;
+                d = distance[k] - nearest;
+            }
+            var w = 1f - Noise.SmoothStep(0f, t.BiomeBlend, d);
             if (w <= 0f)
                 continue;
             var b = Data.Biomes[biome[k]];
-            if (!weights.IsEmpty)
-                weights[biome[k]] += w;
             result.Height += w * b.Height;
             result.Relief += w * b.Relief;
             result.Ridge += w * b.Ridge;
@@ -634,7 +665,7 @@ public sealed partial class WorldGenerator
         result.TerraceWeight /= total;
         result.Color /= total;
         for (var k = 0; k < weights.Length; k++)
-            weights[k] /= total;
+            weights[k] /= shares;
 
         if (Data.CoastBiome is { } coast && t.CoastBiomeWidth > 0f)
         {
@@ -656,6 +687,48 @@ public sealed partial class WorldGenerator
             }
         }
         return result;
+    }
+
+    // Sizes, in metres, of the patches a border mixes flora in and the groves it thins objects in.
+    private const float PatchSize = 22f;
+    private const float GroveSize = 35f;
+
+    /// <summary>
+    /// A biome's share (0..1) of how a world position looks: its ground, flora and objects. 1 inside the biome, 0 away
+    /// from it, and in between across a border, where the biomes' looks mix.
+    /// </summary>
+    public float BiomeShare(float x, float z, int biome)
+    {
+        Span<float> weights = stackalloc float[Data.Biomes.Count];
+        SampleBiomes(x, z, weights);
+        return weights[biome];
+    }
+
+    // The biome whose flora grows at a position: one of the biomes sharing it, picked by smooth noise so a border's
+    // grasses mix in patches, each biome's patches thinning the further it reaches.
+    private int MixedBiome(float x, float z, ReadOnlySpan<float> weights, int dominant)
+    {
+        var roll = EdgeRoll(x, z, _edgeSalt, PatchSize);
+        for (var b = 0; b < weights.Length; b++)
+        {
+            roll -= weights[b];
+            if (roll < 0f)
+                return b;
+        }
+        return dominant;
+    }
+
+    // A roll spread evenly over 0..1, the same at a position on every peer and in every chunk: half smooth noise of the
+    // given size (the logistic curve flattens its bell), half a dice roll per spot, so patches and groves have soft,
+    // scattered edges and one biome thins out gradually among the other.
+    private static float EdgeRoll(float x, float z, uint salt, float size)
+    {
+        var smooth = 1f / (1f + MathF.Exp(-8f * Noise.Fractal(x / size, z / size, salt, 2, 2.1f, 0.5f)));
+        var dice = Noise.Unit(Noise.Hash(Noise.Mix(salt), (int)MathF.Floor(x * 4f), (int)MathF.Floor(z * 4f)));
+        // The sum of two even rolls peaks in the middle; its own curve spreads it evenly again.
+        var sum = 0.5f * (smooth + dice);
+        var even = sum < 0.5f ? 2f * sum * sum : 1f - 2f * (1f - sum) * (1f - sum);
+        return MathF.Min(0.999f, even);
     }
 
     // Metres to the world edge, pulled in by up to the coast wobble so the coastline meanders; the sea floor is reached at 0.
@@ -878,7 +951,8 @@ public sealed partial class WorldGenerator
         return h;
     }
 
-    private IReadOnlyList<PoiInstance> PoisNear(float x, float z) =>
+    // The POIs whose footprint reaches into the bucket a position is in.
+    internal IReadOnlyList<PoiInstance> PoisNear(float x, float z) =>
         _poiBuckets.GetValueOrDefault(((int)MathF.Floor(x / PoiBucket), (int)MathF.Floor(z / PoiBucket))) ?? (IReadOnlyList<PoiInstance>)[];
 
     private IEnumerable<PoiInstance> PoisOverlapping(float x0, float z0, float x1, float z1) =>

@@ -84,10 +84,11 @@ public partial class CaptureScene : Node
         var oil = args.Length > 1 && args[1] == "oil";
         var small = args.Length > 1 && args[1] == "small_pois";
         var finds = args.Length > 1 && args[1] == "finds";
+        var borders = args.Length > 1 && args[1] == "biomes";
         var cliffs = args.Length > 1 && args[1] == "cliffs";
         var roads = args.Length > 1 && args[1] == "roads";
         var moves = args.Length > 1 && args[1] == "animations";
-        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !cliffs && !roads && !moves ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
+        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
         if (debugCar)
             Main.MenuCharacter = "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
@@ -197,6 +198,11 @@ public partial class CaptureScene : Node
         if (small)
         {
             SmallPoiShots();
+            return;
+        }
+        if (borders)
+        {
+            BiomeBorderShots();
             return;
         }
         if (roads)
@@ -847,6 +853,76 @@ public partial class CaptureScene : Node
             _main.Survival.Actions!.StrikeObject(tree.Id.ToString(), 10000, DamageKinds.Saw);
             ViewAt(tree.Position.ToGodot(), new Vector3(-9f, 5f, 9f), 0.5f);
         });
+    }
+
+    // Borders between two inland biomes near the start, each from above and from head height, looking across the border.
+    private void BiomeBorderShots()
+    {
+        Engine.TimeScale = 1.0;
+        var gen = _main.Streamer.Generator;
+        var borders = new List<(string Name, Vector3 At, Vector3 Across)>();
+        Shot("biomes_00_wait", 60, () =>
+        {
+            // A spot a little way from the start where one biome lies 45 m behind and another 45 m ahead, on gentle
+            // ground with no POI or road close: one per pair of biomes.
+            var start = _main.Streamer.SpawnPoint();
+            var seen = new HashSet<string>();
+            for (var r = 150f; r < 2600f && borders.Count < 6; r += 30f)
+            {
+                for (var a = 0f; a < Mathf.Tau && borders.Count < 6; a += 0.15f)
+                {
+                    var (x, z) = (start.X + r * Mathf.Cos(a), start.Z + r * Mathf.Sin(a));
+                    for (var d = 0f; d < Mathf.Tau; d += Mathf.Pi / 4f)
+                    {
+                        var dir = new Vector3(Mathf.Cos(d), 0f, Mathf.Sin(d));
+                        var near = gen.BiomeAt(x - 45f * dir.X, z - 45f * dir.Z);
+                        var far = gen.BiomeAt(x + 45f * dir.X, z + 45f * dir.Z);
+                        if (near == far || near.Hills < 1f || far.Hills < 1f || near == gen.Data.CoastBiome || far == gen.Data.CoastBiome)
+                            continue;
+                        var pair = string.CompareOrdinal(near.Id, far.Id) < 0 ? $"{near.Id}_{far.Id}" : $"{far.Id}_{near.Id}";
+                        if (seen.Contains(pair) || gen.HeightAt(x, z) < gen.SeaLevel + 3f
+                            || new[] { -50f, -25f, 0f, 25f, 50f }.Any(s => gen.SlopeAt(x + s * dir.X, z + s * dir.Z) > 0.25f)
+                            || gen.Pois.Any(p => new Vector2(p.Centre.X - x, p.Centre.Y - z).Length() < p.Radius + 90f)
+                            || gen.Roads.Near(x, z, 70f))
+                            continue;
+                        seen.Add(pair);
+                        borders.Add((pair, new Vector3(x, gen.HeightAt(x, z), z), dir));
+                        GD.Print($"[capture] border {near.Id} -> {far.Id} at ({x:0}, {z:0})");
+                        break;
+                    }
+                }
+            }
+        });
+        for (var i = 0; i < 6; i++)
+        {
+            var index = i;
+            Shot($"biomes_00_go_{i}", 300, () =>
+            {
+                if (index >= borders.Count)
+                    return;
+                var (_, at, across) = borders[index];
+                _meadow = at;
+                _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, at - across * 40f + Vector3.Up * 2f, 0f);
+                _camera.MakeCurrent();
+                _camera.GlobalPosition = at + new Vector3(0, 60, 0);
+            });
+            Shot($"biomes_{i}_wide", 40, () =>
+            {
+                if (index >= borders.Count)
+                    return;
+                var (_, at, across) = borders[index];
+                _main.Flora.BuildAll();
+                var side = new Vector3(-across.Z, 0f, across.X);
+                ViewAt(at, -across * 70f + side * 25f + Vector3.Up * 28f, 0f);
+            });
+            Shot($"biomes_{i}_eye", 20, () =>
+            {
+                if (index >= borders.Count)
+                    return;
+                var (_, at, across) = borders[index];
+                ViewAt(at + across * 15f, -across * 45f + Vector3.Up * 2.2f, 1.5f);
+            });
+        }
     }
 
     // How far a tree stands from its nearest neighbouring tree.

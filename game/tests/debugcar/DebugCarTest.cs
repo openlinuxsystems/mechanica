@@ -11,7 +11,8 @@ namespace Mechanica.Game.Tests;
 /// <summary>
 /// The debug scrap car, host plus a client: a new world with <see cref="Main.DebugCar"/> on gets the car by the spawn,
 /// wired and fuelled, and the client sees it; the client sits in it and backs it up on S (toward the spawn: the test steps
-/// of the Main scene stand in front of it), burning the Gas Container's gasoline, and up a 15° hill (gravity tilted). The client, which does not host, never spawns one of its own.
+/// of the Main scene stand in front of it), burning the Gas Container's gasoline, and up a 15° hill (gravity tilted). Rolled onto its roof,
+/// the car keeps its driver in the seat, upside down with it, on both peers. The client, which does not host, never spawns one of its own.
 /// </summary>
 public partial class DebugCarTest : StagedTest
 {
@@ -119,6 +120,45 @@ public partial class DebugCarTest : StagedTest
             _client.Main.LocalPlayer.CurrentInput = new PlayerInput(0, 0, 0, 0, false, false);
             var moved = Chassis.GlobalPosition - _start;
             Check(moved.Z > 8f, $"the Scrap Gas Engine pulls the car up the hill ({moved}, {Chassis.LinearVelocity.Z:0.0} m/s at the end)");
+            return true;
+        });
+        Add("the car rolls onto its roof", frame =>
+        {
+            // Twisted about its length until it lies on its roof.
+            if (Chassis.GlobalBasis.Y.Dot(Vector3.Up) > -0.7f)
+            {
+                Chassis.Sleeping = false;
+                Chassis.ApplyTorque(Chassis.GlobalBasis.Z * Chassis.Mass * 40f);
+                return frame > 600 && !Check(false, $"the car rolls over (still {Chassis.GlobalBasis.Y.Dot(Vector3.Up):0.00} up)");
+            }
+            return true;
+        });
+        Add("the upturned car settles", frame =>
+        {
+            // The client watches its own driver from outside, as the chase camera does.
+            _client.Main.LocalPlayer!.ThirdPerson = true;
+            return frame >= 90;
+        });
+        Add("the driver stays in the seat, upside down with the car, on both peers", _ =>
+        {
+            var seat = Part("vanilla:scrap_drivers_seat");
+            Check(_host.Main.Logic.Seats.SeatOf(_client.Peer) is { } held && held.Part == seat, "the host still has the client in the seat");
+            foreach (var (instance, who) in new[] { (_host, "host"), (_client, "client") })
+            {
+                var player = instance.Main.PlayerSync.Players[_client.Peer];
+                Check(player.Seated, $"the {who} shows the driver seated");
+                if (instance.Main.Logic.SeatTransform(_car, seat) is not { } at)
+                {
+                    Check(false, $"the {who} shows the seat");
+                    continue;
+                }
+                Check(player.GlobalPosition.DistanceTo(at.Feet.Origin) < 0.3f, $"the {who} keeps the driver's feet on the seat ({player.GlobalPosition.DistanceTo(at.Feet.Origin):0.00} m off)");
+                if (!Check(player.Character is Player.CharacterModel, $"the {who} draws the driver's body"))
+                    continue;
+                var body = (Player.CharacterModel)player.Character!;
+                Check(body.GlobalBasis.Y.Normalized().Dot(at.Feet.Basis.Y.Normalized()) > 0.95f && body.GlobalBasis.Y.Dot(Vector3.Up) < 0f,
+                        $"the {who} draws the driver upside down with the seat (body up {body.GlobalBasis.Y.Normalized()}, seat up {at.Feet.Basis.Y.Normalized()})");
+            }
             return true;
         });
     }
