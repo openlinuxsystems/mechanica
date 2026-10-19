@@ -264,11 +264,12 @@ public partial class VanillaLogicTest : StagedTest
                 Request(LogicActions.ConnectParts, new LinkPartsArgs(LiftId, _switch, _piston));
                 Request(LogicActions.ActivatePart, new LogicPartArgs(LiftId, _switch));
             }
-            if (frame < 150)
+            // Piston 1 pushes out its full 7 blocks (1.75 m) at 2 blocks/s.
+            if (frame < 320)
                 return false;
             Check(_results.Count == 2 && _results.All(r => r.Ok), $"linking and flipping the switch succeed ({string.Join("; ", _results)})");
-            Check(MathF.Abs(Joint(_host, _piston, LiftId) - 1f) < 0.02f, $"the host's piston is out ({Joint(_host, _piston, LiftId):F3} m)");
-            Check(MathF.Abs(Joint(_client, _piston, LiftId) - 1f) < 0.02f, $"the client's piston is out ({Joint(_client, _piston, LiftId):F3} m)");
+            Check(MathF.Abs(Joint(_host, _piston, LiftId) - 1.75f) < 0.02f, $"the host's piston is out ({Joint(_host, _piston, LiftId):F3} m)");
+            Check(MathF.Abs(Joint(_client, _piston, LiftId) - 1.75f) < 0.02f, $"the client's piston is out ({Joint(_client, _piston, LiftId):F3} m)");
             _results.Clear();
             return true;
         });
