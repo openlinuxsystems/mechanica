@@ -14,10 +14,12 @@ namespace Mechanica.Core.Characters;
 /// <param name="Gesture">The newest gesture.</param>
 /// <param name="GestureCount">Counts gestures, so a repeat of the same one is still new.</param>
 /// <param name="Guard">The tool in hand raised (<see cref="CharacterRig.CanGuard"/>).</param>
+/// <param name="Seat">How the seat holds a seated character (null: <see cref="SeatStyle.Default"/>). <see cref="Velocity"/> is
+/// then the seat's own, which bounces the body.</param>
 public readonly record struct CharacterPose(
     Vector3 Velocity, float Yaw, float Pitch, bool OnFloor, bool Swimming = false, bool Crawl = false, bool Seated = false,
     CharacterProp Prop = CharacterProp.None, CharacterGesture Gesture = CharacterGesture.None, byte GestureCount = 0,
-    bool Guard = false);
+    bool Guard = false, SeatStyle? Seat = null);
 
 /// <summary>Something a character did this frame that makes a sound.</summary>
 public enum CharacterEvent
@@ -114,6 +116,11 @@ public sealed class CharacterAnimator
     private float _gestureTime;
     private float _bodyTurn;
     private bool _backward;
+    private bool _riding;
+    private Vector3 _seatVelocity;
+    private float _bob, _bobSpeed;
+    private Vector2 _lean, _leanSpeed;
+    private float _seatFit;
 
     /// <summary>
     /// Makes an animator for clips of the given lengths (seconds, by name). Missing clips are skipped. A
@@ -168,8 +175,20 @@ public sealed class CharacterAnimator
     /// <summary>How far the body has faded into <paramref name="mode"/>, 0 to 1.</summary>
     public float Weight(CharacterMode mode) => _modeWeights[(int)mode];
 
-    /// <summary>How far the model moves up (negative: down) from the feet, to sit on a seat rather than stand on it.</summary>
-    public float Lift => _modeWeights[(int)CharacterMode.Sit] * _settings.SeatedOffset;
+    /// <summary>
+    /// How far the model moves up (negative: down) from the feet, to sit on a seat rather than stand on it: the hips land on
+    /// the cushion (where the sitting clips can't reach it) and bob with the ride.
+    /// </summary>
+    public float Lift => _modeWeights[(int)CharacterMode.Sit] * (_settings.SeatedOffset + _seatFit + _bob);
+
+    /// <summary>
+    /// How far a seated body's upper half sways with the ride, in radians in the body's frame: X tips it back (positive)
+    /// or forward, Y leans it to its left (positive) or right.
+    /// </summary>
+    public Vector2 SeatLean => _modeWeights[(int)CharacterMode.Sit] * _lean;
+
+    /// <summary>How far a seated body's hips bob from the cushion with the ride, in m (negative is down).</summary>
+    public float SeatBob => _bob;
 
     /// <summary>The gesture playing, or null.</summary>
     public string? Gesture => _gesture;
@@ -230,6 +249,7 @@ public sealed class CharacterAnimator
             _modeWeights[i] = Toward(_modeWeights[i], i == (int)Mode ? 1f : 0f, delta / _settings.ModeFade);
         Normalize(_modeWeights);
 
+        Ride(pose, velocity, delta);
         Turn(pose, velocity, horizontal, delta);
         HeadPitch = float.IsFinite(pose.Pitch) ? pose.Pitch * _settings.HeadPitchShare : 0f;
         BuildBody(pose, horizontal, delta);
@@ -382,9 +402,77 @@ public sealed class CharacterAnimator
         if (swim > 0f)
             AddBlend(_swim, horizontal, _swimPhase, swim);
         if (sit > 0f)
-            Add("sit", _clock, sit);
+            AddSit(pose.Seat ?? SeatStyle.Default, sit);
         if (_body.Count == 0)
             Add("idle", _clock, 1f);
+    }
+
+    // The sitting clips for the seat: a chair (sit) blended with a low seat (sit_low) so the hips land on its cushion, with
+    // the hands on a wheel or (sit_ride, sit_ride_low) on the thighs. What the blend can't reach the model's lift makes up.
+    private void AddSit(SeatStyle seat, float weight)
+    {
+        var (high, low) = seat.HandsFree && _lengths.ContainsKey("sit_ride") ? ("sit_ride", "sit_ride_low") : ("sit", "sit_low");
+        var hips = _settings.Seat.ClipHips;
+        var highHips = hips.GetValueOrDefault("sit", 0.53f);
+        var lowHips = hips.GetValueOrDefault("sit_low", highHips);
+        var want = float.IsFinite(seat.Cushion) ? seat.Cushion + _settings.Seat.HipsAboveCushion : highHips;
+        var toLow = _lengths.ContainsKey(low) && highHips > lowHips ? Math.Clamp((highHips - want) / (highHips - lowHips), 0f, 1f) : 0f;
+        _seatFit = want - (highHips + (lowHips - highHips) * toLow);
+        Add(high, _clock, weight * (1f - toLow));
+        Add(low, _clock, weight * toLow);
+    }
+
+    // The ride: the hips bob and the upper body sways on damped springs, pushed by each change in the seat's velocity.
+    // Sitting down starts the hips sinking into the seat, so the body settles.
+    private void Ride(CharacterPose pose, Vector3 velocity, float delta)
+    {
+        var settings = _settings.Seat;
+        if (!pose.Seated)
+        {
+            _riding = false;
+            _bob = _bobSpeed = 0f;
+            _lean = _leanSpeed = Vector2.Zero;
+            return;
+        }
+        var bounce = Math.Clamp((pose.Seat ?? SeatStyle.Default).Bounce, 0f, Data.SeatDefinition.MaxBounce);
+        if (!_riding)
+        {
+            _riding = true;
+            _seatVelocity = velocity;
+            _bobSpeed = -settings.SettleSpeed * MathF.Min(bounce, 2f);
+        }
+        var change = velocity - _seatVelocity;
+        _seatVelocity = velocity;
+        if (change.Length() <= settings.MaxImpulse)
+        {
+            var (sin, cos) = MathF.SinCos(float.IsFinite(pose.Yaw) ? pose.Yaw : 0f);
+            var forward = -sin * change.X - cos * change.Z;
+            var right = cos * change.X - sin * change.Z;
+            // The seat jumps up, the hips lag below it; it speeds up, the body tips back; it swings right, the body leans left.
+            _bobSpeed -= change.Y * settings.BobGain * bounce;
+            _leanSpeed += new Vector2(forward, right) * settings.LeanGain * bounce;
+        }
+        // A bouncier seat also rings for longer.
+        var soften = 1f / (0.5f + 0.5f * MathF.Max(bounce, 0.25f));
+        var maxLean = settings.MaxLeanDegrees * MathF.PI / 180f;
+        for (var left = delta; left > 0f; left -= 1f / 120f)
+        {
+            var h = MathF.Min(left, 1f / 120f);
+            _bobSpeed += (-settings.BobStiffness * _bob - settings.BobDamping * soften * _bobSpeed) * h;
+            _bob += _bobSpeed * h;
+            _leanSpeed += (-settings.LeanStiffness * _lean - settings.LeanDamping * soften * _leanSpeed) * h;
+            _lean += _leanSpeed * h;
+        }
+        if (MathF.Abs(_bob) > settings.MaxBob)
+        {
+            _bob = Math.Clamp(_bob, -settings.MaxBob, settings.MaxBob);
+            _bobSpeed = 0f;
+        }
+        if (_lean.Length() > maxLean)
+        {
+            _lean = Vector2.Normalize(_lean) * maxLean;
+            _leanSpeed = Vector2.Zero;
+        }
     }
 
     private void BuildUpper(CharacterPose pose, float delta)

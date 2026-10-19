@@ -56,7 +56,8 @@ public partial class CaptureScene : Node
         var soil = args.Length > 1 && args[1] == "soil";
         var bag = args.Length > 1 && args[1] == "knockout_bag";
         var seat = args.Length > 1 && args[1] == "scrap_seat";
-        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat ? args[1] : "scrapper_male";
+        var seats = args.Length > 1 && args[1] == "seats";
+        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !seats ? args[1] : "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
         // Building the block wall needs Creative: free parts and no build reach.
         _main.Options = LaunchOptions.Offline with { Seed = 7, GameMode = blocks || soil ? Core.Survival.GameMode.Creative : LaunchOptions.Offline.GameMode };
@@ -107,6 +108,11 @@ public partial class CaptureScene : Node
         if (seat)
         {
             ScrapSeatShots();
+            return;
+        }
+        if (seats)
+        {
+            SeatsShots();
             return;
         }
         Shot("front", 60, () => Look(new Vector3(0, 1.0f, -3.2f)));
@@ -835,6 +841,51 @@ public partial class CaptureScene : Node
             LookAtSeat(new Vector3(1.9f, 1.2f, -1.9f), 0.4f);
         });
         Shot("scrap_seat_13_empty", 60, () => { });
+    }
+
+    private static readonly string[] SeatParts = ["drivers_seat", "passenger_seat", "scrap_seat", "scrap_drivers_seat"];
+
+    // Every vanilla seat side by side on one slab; the player sits in each in turn.
+    private void SeatsShots()
+    {
+        Engine.TimeScale = 1.0;
+        var seats = new Dictionary<string, int>();
+        Shot("seats_00_wait", 60, () => { });
+        Shot("seats_00_placed", 90, () =>
+        {
+            var from = Player.GlobalPosition + Player.GlobalTransform.Basis * new Vector3(0, 3, -3.5f);
+            var hit = Player.GetWorld3D().DirectSpaceState.IntersectRay(PhysicsRayQueryParameters3D.Create(from, from + Vector3.Down * 12));
+            var at = hit.Count > 0 ? hit["position"].AsVector3() : Player.GlobalPosition;
+            var creation = new Core.Creations.Creation(SeatCreation, _main.Mods!);
+            int Put(string part, int x, int y, int z) =>
+                creation.TryPlacePart(part, new Core.Creations.GridCell(x, y, z), Core.Creations.GridRotation.Identity, out var placed, out var error)
+                    ? placed.Id : throw new InvalidOperationException(error);
+            for (var x = -8; x <= 8; x++)
+                for (var z = -2; z <= 3; z++)
+                    Put("vanilla:metal_block", x, 0, z);
+            var cell = -8;
+            foreach (var part in SeatParts)
+            {
+                var size = _main.Mods!.FindDefinition("vanilla:" + part)!.Size!.Value;
+                seats[part] = Put("vanilla:" + part, cell, 1, size.Z > 2 ? -2 : 0);
+                cell += size.X + 2;
+            }
+            creation.SetAllBodyPoses(new Core.Creations.Pose(new System.Numerics.Vector3(at.X, at.Y + 0.2f, at.Z), System.Numerics.Quaternion.Identity));
+            _main.Creations.Add(creation, _main.Assets);
+        });
+        foreach (var part in SeatParts)
+        {
+            Shot($"seats_{part}_1_enter", 90, () =>
+            {
+                _seat = seats[part];
+                _main.Actions.Request(Core.Logic.LogicActions.EnterSeat, new Core.Logic.LogicPartArgs(SeatCreation, _seat), r => GD.Print($"[capture] sit {part}: {r}"));
+                LookAtSeat(new Vector3(2.2f, 0.9f, -1.6f), 0.6f);
+            });
+            Shot($"seats_{part}_2_side", 2, () => LookAtSeat(new Vector3(2.2f, 0.7f, 0f), 0.6f));
+            Shot($"seats_{part}_3_front", 2, () => LookAtSeat(new Vector3(0.3f, 0.9f, -2.2f), 0.6f));
+            Shot($"seats_{part}_4_leave", 40, () =>
+                _main.Actions.Request(Core.Logic.LogicActions.LeaveSeat, new Core.Actions.NoArgs(), r => GD.Print($"[capture] stand: {r}")));
+        }
     }
 
     // Puts the capture camera at an offset from the seat (at the driver's feet), in the seat's frame.

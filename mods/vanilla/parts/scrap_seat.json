@@ -30,6 +30,9 @@
     "exit": "seat_exit"
   },
   "seat": {
-    "offset": [0, -0.1, 0]
+    "offset": [0, -0.25, 0],
+    "cushion": [0, -0.03, 0.03],
+    "hands": "free",
+    "bounce": 1.6
   }
 }

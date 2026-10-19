@@ -36,7 +36,10 @@
     "outputs": 4
   },
   "seat": {
-    "offset": [0, -0.355, 0.4]
+    "offset": [0, -0.355, 0.4],
+    "cushion": [0, 0.035, 0.4],
+    "hands": "wheel",
+    "bounce": 1.6
   },
   "display": {
     "clips": {

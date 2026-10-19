@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Godot;
 using Mechanica.Core.Actions;
+using Mechanica.Core.Characters;
 using Mechanica.Core.Creations;
 using Mechanica.Core.Logic;
 using Mechanica.Game.Building;
@@ -126,7 +127,7 @@ public partial class LogicSync : Node
         if (index >= node.Bodies.Count)
             return null;
         var definition = creation.DefinitionOf(partId);
-        var local = PartGeometry.CentreMetres(definition, part.Cell, part.Rotation) + part.Rotation.Apply(definition.Seat?.Offset ?? Core.Data.Vec3.Zero);
+        var local = PartGeometry.CentreMetres(definition, part.Cell, part.Rotation) + part.Rotation.Apply(SeatStyle.Anchor(definition));
         var body = node.Bodies[index];
         var frame = body.GlobalTransform * new Transform3D(part.Rotation.ToBasis(), local.ToNumerics().ToGodot());
         return (frame.Orthonormalized(), body.LinearVelocity);
@@ -159,6 +160,13 @@ public partial class LogicSync : Node
         return feet + Vector3.Up * 0.75f;
     }
 
+    // The yaw of a seat's front (-Z), flattened onto the ground; null when it points straight up or down.
+    private static float? Facing(Basis basis)
+    {
+        var front = -basis.Z;
+        return new Vector2(front.X, front.Z).LengthSquared() > 1e-4f ? Mathf.Atan2(-front.X, -front.Z) : null;
+    }
+
     // Gives each seated player its seat, and takes it away from players who stood up.
     private void Attach()
     {
@@ -167,7 +175,12 @@ public partial class LogicSync : Node
             if (Seats.SeatOf(peer) is { } seat)
             {
                 if (!player.Seated)
+                {
+                    player.SeatStyle = Creations.NodeOf(seat.Creation)?.Creation is { } creation && creation.FindPart(seat.Part) is not null
+                        ? SeatStyle.For(creation.DefinitionOf(seat.Part)) : SeatStyle.Default;
+                    player.SeatFacing = () => SeatTransform(seat.Creation, seat.Part) is { } at ? Facing(at.Feet.Basis) : null;
                     player.Seat = () => SeatPose(seat.Creation, seat.Part);
+                }
                 if (!player.Simulated)
                     player.SitStill();
             }

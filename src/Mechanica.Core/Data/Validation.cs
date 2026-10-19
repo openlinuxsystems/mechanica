@@ -710,6 +710,14 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
             var extent = (part.Size ?? GridSize.One).Metres;
             if (seat.Offset is { } o && (MathF.Abs(o.X) > extent.X / 2 + Epsilon || MathF.Abs(o.Y) > extent.Y / 2 + Epsilon || MathF.Abs(o.Z) > extent.Z / 2 + Epsilon))
                 sink.Error(Code, "$.seat.offset", $"seat offset {o} is outside the part's {part.Size ?? GridSize.One} footprint.");
+            if (seat.Cushion is { } c && (MathF.Abs(c.X) > extent.X / 2 + Epsilon || MathF.Abs(c.Y) > extent.Y / 2 + Epsilon || MathF.Abs(c.Z) > extent.Z / 2 + Epsilon))
+                sink.Error(Code, "$.seat.cushion", $"seat cushion {c} is outside the part's {part.Size ?? GridSize.One} footprint.");
+            if (seat.Cushion is { } top && top.Y <= (seat.Offset?.Y ?? -extent.Y / 2))
+                sink.Error(Code, "$.seat.cushion", "the cushion must be above the floor the feet rest on (the offset's height, or the part's bottom).");
+            if (seat.Hands is { } hands && !Enum.IsDefined(hands))
+                sink.Error(Code, "$.seat.hands", "hands must be wheel or free.");
+            if (seat.Bounce is { } bounce && (!float.IsFinite(bounce) || bounce < 0f || bounce > SeatDefinition.MaxBounce))
+                sink.Error(Code, "$.seat.bounce", $"bounce must be from 0 to {SeatDefinition.MaxBounce} (got {bounce}).");
             KnownKeys.WarnUnknown(seat.Extra, "$.seat", sink, typeof(SeatDefinition));
         }
         var ids = new HashSet<string>();

@@ -89,6 +89,9 @@ public class PartValidationTests
     [InlineData("""{ "display": { "effects": [{ "readout": "smoke", "kind": "smoke", "offset": [0, 0.3, 0] } ] } }""", "$.display.effects[0].offset", "outside the part's footprint")]
     [InlineData("""{ "display": { "effects": [{ "readout": "oil", "kind": "drops", "direction": [0, 0, 0] } ] } }""", "$.display.effects[0].direction", "non-zero")]
     [InlineData("""{ "display": { "effects": [{ "readout": "oil", "kind": "drops", "color": "black" } ] } }""", "$.display.effects[0].color", "hex text")]
+    [InlineData("""{ "seat": { "cushion": [0, 0.3, 0] } }""", "$.seat.cushion", "outside the part's [1, 1, 1] footprint")]
+    [InlineData("""{ "seat": { "offset": [0, 0, 0], "cushion": [0, -0.05, 0] } }""", "$.seat.cushion", "above the floor")]
+    [InlineData("""{ "seat": { "bounce": 5 } }""", "$.seat.bounce", "from 0 to 4")]
     public void BadValuesGiveClearErrors(string overrides, string path, string messagePart)
     {
         var error = Single(TestMods.Block(overrides: overrides), path);

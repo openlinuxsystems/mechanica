@@ -3066,6 +3066,61 @@ def clip_sit(t):
     return s
 
 
+# Seat heights the sit clips are made for: the hips (the pelvis bone) above the floor the feet rest on, in m. The game
+# blends "sit" (a chair) and "sit_low" (a low seat, legs out in front) to fit each seat (character.json sit_clips must
+# match). Standing, the hips are REST_HIPS up.
+REST_HIPS = 0.972
+SIT_HIPS = 0.53
+SIT_LOW_HIPS = 0.30            # measured: 0.308, the hips tip back a little
+
+
+def clip_sit_low(t):
+    """A low seat (a kart or a crate): the hips 0.30 m up, the legs out in front with the knees up, leaning back a little;
+    hands on the wheel like ``sit``."""
+    T = 2.0
+    ph = 2 * math.pi * t / T
+    br = math.sin(ph)
+    s = relaxed_upper(60)
+    s["hips_z"] = SIT_LOW_HIPS - REST_HIPS
+    s["hips"] = (-14.0, 0, 0)
+    s["spine"] = (7.0 + 0.6 * br, 0, 0)
+    s["chest"] = (4.0 - 0.8 * br, 0, 0)
+    s["neck"] = (2.0, 0, 0)
+    s["head"] = (1.0 + 0.4 * br, 0, 1.5 * math.sin(ph))
+    for side in ("l", "r"):
+        sg = side_sign(side)
+        s[f"leg_{side}"] = {"ankle": (sg * 0.13, -0.70, 0.085), "pitch": 0.0, "yaw": 4.0, "pole": (sg * 0.15, -0.4, 1.0),
+                            "toe": 0.0}
+        grip = np.array([sg * 0.17, -0.42, 1.22 + 0.002 * br])
+        s[f"arm_{side}"] = arm_ik_from_grip(side, grip, (sg * -0.2, -0.95, -0.2), (sg * -0.2, 0.0, 1.0),
+                                            pole=(sg * 0.7, 0.4, -1.0))
+        s[f"thumb_{side}"] = 35.0
+    return s
+
+
+def ride_hands(s):
+    """A passenger's hands resting on the thighs (no wheel), in place of the hands of a sit clip."""
+    legs = build_pose({k: v for k, v in s.items() if not k.startswith(("arm_", "fingers_", "thumb_"))})
+    for side in ("l", "r"):
+        sg = side_sign(side)
+        hip, knee = legs.P[f"thigh_{side}"], legs.P[f"shin_{side}"]
+        along = norm(knee - hip)
+        grip = hip + (knee - hip) * 0.62 + np.array([sg * 0.01, 0.0, 0.085])
+        s[f"arm_{side}"] = arm_ik_from_grip(side, grip, tuple(along + np.array([0, 0, -0.35])), (-sg * 1.0, 0.0, 0.25),
+                                            pole=(sg * 0.8, 0.6, -0.2), space="world")
+        s[f"fingers_{side}"] = 22.0
+        s[f"thumb_{side}"] = 12.0
+    return s
+
+
+def clip_sit_ride(t):
+    return ride_hands(clip_sit(t))
+
+
+def clip_sit_ride_low(t):
+    return ride_hands(clip_sit_low(t))
+
+
 # ------------------------------------------------------------------------------------------------
 # Upper-body clips (only spine/chest/neck/head/shoulders/arms/hands/fingers/thumbs are keyed)
 # ------------------------------------------------------------------------------------------------
@@ -4653,6 +4708,9 @@ CLIPS = {
     "swim_idle": (clip_swim_idle, 2.0, True, False),
     "swim": (clip_swim, 1.2, True, False),
     "sit": (clip_sit, 2.0, True, False),
+    "sit_low": (clip_sit_low, 2.0, True, False),
+    "sit_ride": (clip_sit_ride, 2.0, True, False),
+    "sit_ride_low": (clip_sit_ride_low, 2.0, True, False),
     "hold_tool": (clip_hold_tool, 2.0, True, True),
     "hold_heavy": (clip_hold_heavy, 2.0, True, True),
     "hold_heavy_block": (clip_hold_heavy_block, 2.0, True, True),

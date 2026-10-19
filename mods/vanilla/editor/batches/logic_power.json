@@ -14,7 +14,7 @@
         "script": "scripts/seat.lua",
         "visual": { "color": "#3d4f66", "roughness": 0.6, "metallic": 0.3 },
         "sounds": { "enter": "seat_enter", "exit": "seat_exit" },
-        "seat": { "offset": [0, -0.1, 0] },
+        "seat": { "offset": [0, -0.25, 0], "cushion": [0, -0.03, 0.03], "hands": "wheel" },
         "properties": { "steer_angle": 27, "steer_speed": 2.5, "steer_torque": 1500 }
       },
       "model": [
@@ -55,7 +55,7 @@
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.5, 0], "normal": [0, -1, 0] }],
         "logic": { "outputs": 4 },
         "sounds": { "enter": "scrap_seat_enter", "exit": "scrap_seat_exit", "creak": "scrap_seat_creak" },
-        "seat": { "offset": [0, -0.355, 0.4] },
+        "seat": { "offset": [0, -0.355, 0.4], "cushion": [0, 0.035, 0.4], "hands": "wheel", "bounce": 1.6 },
         "display": {
           "clips": { "readout": "clip" }
         },
@@ -87,7 +87,7 @@
         "stack_size": 10,
         "logic": null,
         "visual": { "color": "#56657a", "roughness": 0.6, "metallic": 0.3 },
-        "seat": { "offset": [0, -0.1, 0] }
+        "seat": { "offset": [0, -0.25, 0], "cushion": [0, -0.03, 0.03], "hands": "free" }
       },
       "model": [
         { "kind": "box", "size": [0.5, 0.14, 0.48], "position": [0, -0.18, 0] },
@@ -113,6 +113,7 @@
         "mass": 4,
         "durability": 3,
         "sound_material": "scrap",
+        "seat": { "offset": [0, -0.25, 0], "cushion": [0, -0.03, 0.03], "hands": "free", "bounce": 1.6 },
         "visual": { "color": "#8a6a48", "roughness": 0.85, "metallic": 0.2 }
       },
       "model": [

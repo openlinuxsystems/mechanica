@@ -195,6 +195,7 @@ public static class CharacterRig
     public static IReadOnlyList<string> FullBodyClips { get; } =
     [
         "idle", "walk", "jog", "run", "crouch_idle", "crouch_walk", "jump", "fall", "land", "swim_idle", "swim", "sit",
+        "sit_low", "sit_ride", "sit_ride_low",
     ];
 
     /// <summary>Clips that move only <see cref="UpperBodyBones"/>.</summary>
