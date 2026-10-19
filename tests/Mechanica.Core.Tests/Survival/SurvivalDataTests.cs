@@ -24,7 +24,7 @@ public class SurvivalDataTests
     [InlineData("""{ "aim_tolerance": 0 }""", "aim_tolerance")]
     [InlineData("""{ "starting_items": [{ "item": "carrot", "count": 0 }] }""", "starting_items")]
     [InlineData("""{ "fall": { "min_speed": -1 } }""", "fall.min_speed")]
-    [InlineData("""{ "impact": { "min_speed": 0 } }""", "impact.min_speed")]
+    [InlineData("""{ "impact": { "min_speed": 8 } }""", "impact")] // creations take no crash damage
     [InlineData("""{ "stamina": 5 }""", "stamina")]
     [InlineData("""{ "knockout_bag": "../bag.glb" }""", "knockout_bag")]
     [InlineData("""{ "knockout_bag": "" }""", "knockout_bag")]
@@ -35,12 +35,11 @@ public class SurvivalDataTests
     }
 
     [Fact]
-    public void FallAndImpactCurves()
+    public void FallCurve()
     {
         var fall = new FallSettings { MinSpeed = 10, DamagePerSpeed = 5 };
         Assert.Equal(0f, fall.DamageAt(10));
         Assert.Equal(25f, fall.DamageAt(15));
-        Assert.Equal(11f, new ImpactSettings { MinSpeed = 8, SpeedPerDurability = 1 }.ThresholdFor(3));
     }
 
     [Fact]
