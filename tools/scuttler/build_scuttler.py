@@ -65,7 +65,7 @@ SAMPLES = int(os.environ.get("SCUTTLER_SAMPLES", "48"))
 VARIANTS = {
     "green": dict(name="Green Scuttler", paint="#5fae3e", scale=1.0, leg=1.0, attacks={"whip": ["tail_slam", "tail_sweep", "claw_combo"]}),
     "blue": dict(name="Blue Scuttler", paint="#3e7fd0", scale=1.0, leg=1.0, attacks={"drill": ["drill_ram"]},
-                 extra={"swim": 0.8, "swim_idle": 2.0}),
+                 extra={"swim": 1.2, "swim_idle": 2.4}),
     "yellow": dict(name="Yellow Scuttler", paint="#e6b31e", scale=1.25, leg=1.45, attacks={"stomp": ["stomp"]}),
     "red": dict(name="Red Scuttler", paint="#d0402e", scale=1.0, leg=1.0, attacks={"explode": ["detonate"]}),
     "seed": dict(name="Seed Scuttler", paint="#2f5a2c", scale=0.85, leg=1.0, attacks={"nip": ["claw_snap"]}),
@@ -922,32 +922,25 @@ def pose(p, clip, t, length):
         p.move("Body", (0, 0, 0.04 * k))
         for side in "LR":
             p.claw(side, raise_=40 * k, inward=-20 * k, jaw=40 * k)
-    elif clip == "swim":
-        # rows through the water: the legs stroke back in a wave front to rear, the claws tuck in ahead like a prow,
-        # the body rolls and pitches with each stroke and the props drive it
-        for i, name in enumerate(LEGS):
-            row = int(name[1]) - 1
-            ph = w - 0.9 * row + (0.0 if name[0] == "L" else math.pi)
-            p.leg(name, 34 * math.sin(ph), 48 + 14 * max(0.0, math.cos(ph)), -12 - 14 * math.sin(ph + 0.6))
-        p.turn("Body", (1, 0, 0), 5 + 3 * math.sin(2 * w))
-        p.turn("Body", (0, 1, 0), 6 * math.sin(w))
-        p.move("Body", (0, 0, 0.02 * math.sin(2 * w)))
+    elif clip in ("swim", "swim_idle"):
+        # breaststroke: every leg reaches forward folded in, opens wide, sweeps back hard together and trails behind
+        # through the glide; the body surges forward and rises on each stroke (swim_idle is a slow, small version)
+        k = 1.0 if clip == "swim" else 0.45
+        for name in LEGS:
+            lag = {"1": -0.04, "2": 0.0, "3": 0.04}[name[1]]
+            sw, lf, bd = stroke((u - lag) % 1.0)
+            p.leg(name, k * sw, 40 + k * (lf - 40), k * bd)
+        power = pulse(u, 0.45, 0.6, 0.95)
+        reach = pulse(u, 0.05, 0.25, 0.45)
+        p.move("Body", (0, -0.05 * k * power, 0.03 * k * power - 0.015 * k * reach))
+        p.turn("Body", (1, 0, 0), k * (-5 * power + 4 * reach))
         for side in "LR":
-            sgn = 1 if side == "L" else -1
-            p.claw(side, raise_=10 + 4 * math.sin(w + sgn), inward=26, elbow=-24, jaw=8 + 8 * max(0, math.sin(2 * w + sgn)))
-        p.turn("Stalk", (1, 0, 0), -24 + 4 * math.sin(2 * w))
-        p.turn("EyeHead", (1, 0, 0), 18)
-    elif clip == "swim_idle":
-        # treads water: slow paddling circles, a gentle bob and drift, the eye looking about
-        for i, name in enumerate(LEGS):
-            ph = w + 1.1 * i
-            p.leg(name, 14 * math.sin(ph), 40 + 8 * math.cos(ph), -10 - 10 * math.sin(ph))
-        p.move("Body", (0, 0, 0.025 * math.sin(w)))
-        p.turn("Body", (0, 1, 0), 4 * math.sin(w + 1))
-        p.turn("Body", (1, 0, 0), 3 * math.sin(w))
-        for side in "LR":
-            p.claw(side, raise_=6 + 4 * math.sin(w + (0 if side == "L" else 2)), inward=10, jaw=6 + 6 * max(0, math.sin(2 * w)))
-        p.turn("Stalk", UP, 30 * math.sin(w))
+            p.claw(side, raise_=8 + 10 * k * reach - 6 * k * power, inward=22 + 8 * k * power, elbow=-20 - 10 * k * power,
+                   jaw=6 + 18 * k * reach)
+        p.turn("Stalk", (1, 0, 0), -14 * k - 10 * k * power)
+        p.turn("EyeHead", (1, 0, 0), 14 * k)
+        if clip == "swim_idle":
+            p.turn("Stalk", UP, 25 * math.sin(w))
     elif clip == "claw_snap":
         # one quick lunge and snap of both claws
         snap = pulse(t, 0.0, 0.12, 0.4)
@@ -958,6 +951,23 @@ def pose(p, clip, t, length):
     else:
         raise ValueError(clip)
     gear(p, clip, t, length)
+
+
+STROKE = [  # breaststroke keys: phase, then a leg's swing, lift and knee bend (degrees); legs stay out flat like oars
+    (0.00, -40, 48, -2),     # trailing back through the glide
+    (0.25, 34, 50, -24),     # reach: gathered forward, knees bent
+    (0.45, 44, 66, -6),      # catch: opened out wide
+    (0.68, -46, 54, -2),     # power: swept back hard
+    (1.00, -40, 48, -2),
+]
+
+
+def stroke(u):
+    for (u0, *a), (u1, *b) in zip(STROKE, STROKE[1:]):
+        if u0 <= u <= u1:
+            t = smooth((u - u0) / (u1 - u0))
+            return tuple(x + (y - x) * t for x, y in zip(a, b))
+    return tuple(STROKE[0][1:])
 
 
 def spin(p, node, axis, turns, u):
@@ -974,7 +984,7 @@ def gear(p, clip, t, length):
         # the drill turns while it walks and screams round in the ram; the props always turn
         drill = {"patrol": 1, "chase": 2, "drill_ram": 8, "idle": 1, "alert": 1, "swim": 2, "swim_idle": 1}.get(clip, 0)
         spin(p, "Drill", (0, 1, 0), drill, u)
-        props = {"idle": 2, "patrol": 1, "chase": 1, "drill_ram": 4, "death": 1, "swim": 6, "swim_idle": 6}.get(clip, 1)
+        props = {"idle": 2, "patrol": 1, "chase": 1, "drill_ram": 4, "death": 1, "swim": 8, "swim_idle": 6}.get(clip, 1)
         spin(p, "PropL", (0, 1, 0), props, u)
         spin(p, "PropR", (0, 1, 0), -props, u)
     elif v == "red":
