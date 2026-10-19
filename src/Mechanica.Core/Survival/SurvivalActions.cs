@@ -424,9 +424,13 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         var point = hit.Point.ToVec3();
         if (!(damage >= 0) || !float.IsFinite(damage))
             damage = 0;
+        // A cutting tool's bite shows chips or sparks where it cut (trees show their own, through ObjectHit).
+        var cutting = kind is DamageKinds.Saw or DamageKinds.Drill && damage > 0;
         if (hit.Bot is { } bot)
         {
             Bots?.DamageBot(bot, damage, "weapon", melee: false);
+            if (cutting)
+                world.Impact(hit.Point, "metal");
             return new ShotHitView("bot", point, damage, Bot: bot);
         }
         if (hit.Player is { } peer)
@@ -439,6 +443,8 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         if (hit.Creation is { } id && hit.Part is { } part && world.FindCreation(id) is { } creation && creation.FindPart(part) is not null)
         {
             var body = creation.BodyIndexOf(part);
+            if (cutting)
+                world.Impact(hit.Point, creation.DefinitionOf(part).SoundMaterial ?? "metal");
             var result = world.DamagePart(creation, part, damage);
             if (!result.Broken && push != Vector3.Zero && float.IsFinite(push.LengthSquared()))
                 world.Push(creation, body, hit.Point, push);
@@ -1192,6 +1198,20 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         var item = PartItems.ItemFor(catalog, part);
         if (Pays(caller) && inventories.PlayerInventory(caller.Peer).Add(item, 1) == 0)
             AddDrop(at, [new ItemStack(item, 1)]);
+    }
+
+    /// <inheritdoc/>
+    public void Emptied(ActionCaller caller, IReadOnlyList<ItemStack> items, Vector3 at)
+    {
+        var left = new List<ItemStack>();
+        var pockets = caller.Source == ActionSource.Player ? inventories.PlayerInventory(caller.Peer) : null;
+        foreach (var stack in items)
+        {
+            var added = pockets?.Add(stack.Item, stack.Count) ?? 0;
+            if (added < stack.Count)
+                left.Add(stack with { Count = stack.Count - added });
+        }
+        AddDrop(at, left);
     }
 
     // The item placing part uses up: the one it is placed from (a Soil Bag for a soil mound), or the part itself when a

@@ -2,11 +2,15 @@
 
 What it builds (procedurally, from scratch: no .blend inputs, no downloads):
 
-* ``mods/vanilla/meshes/world/rock_cube.glb`` - one mineable rock-outcrop cube, 1 m on a side and centred on its
-  origin: grey-brown stone with bevelled, gently chipped edges, its faces cracked into irregular flagstone-like
-  plates, light green moss on the top and in the seams near the top edges. Several stacked make an outcrop.
-* ``mods/vanilla/meshes/world/rock_cube_metal.glb`` - the rarer metal-rich cube: the same shape, darker bluish-grey
-  stone with steel-silver ore veins and flecks (metallic in the metallic-roughness map), rust streaks, less moss.
+* ``mods/vanilla/meshes/world/rock_{small,medium,large}_{a,b}.glb`` - the chiselled blocks rock deposits are heaped
+  from (small 0.65 x 0.55 x 0.6 m, medium 1 m, large 1.6 x 1.25 x 1.4 m; glTF x, y up, z), centred on their origin,
+  two shapes of each: a box with its corners knocked off unevenly, grey-brown stone cracked into flagstone-like
+  plates with light green moss on top and in the seams near the top edges.
+* ``mods/vanilla/meshes/world/rock_metal_{small,medium,large}_{a,b}.glb`` - the metal-rich blocks: the same shapes,
+  darker bluish-grey stone with steel-silver ore veins and flecks (metallic in the metallic-roughness map), rust
+  streaks, less moss.
+* ``mods/vanilla/meshes/items/stone_boulder.glb`` and ``metal_boulder.glb`` - the loose boulders a large block breaks
+  into: a 1 m chiselled block with fresh broken stone and no moss.
 * ``mods/vanilla/meshes/items/stone_chunk.glb`` and ``metal_chunk.glb`` - broken angular lumps (0.45 x 0.40 x 0.45 m,
   inside a 0.5 m box centred on the origin), fresh stone without moss.
 * ``mods/vanilla/meshes/items/stone_rod.glb`` - the Stone Rod: a rough chiselled square bar, 0.22 x 0.22 x 0.98 m,
@@ -54,9 +58,12 @@ ITEMS = REPO / "mods" / "vanilla" / "meshes" / "items"
 BLOCKS = REPO / "mods" / "vanilla" / "textures" / "blocks"
 
 # ---- Dimensions (metres) ----------------------------------------------------------------------------
-CUBE_HALF = (0.5, 0.5, 0.5)
-CUBE_RADIUS = 0.035         # edge rounding
-CUBE_CHIP = 0.026           # deepest chip dent (inward only: nothing passes 0.5)
+# Deposit blocks, half extents in Blender x, y, z (up): glTF and worldgen size [2x, 2z (up), 2y].
+DEPOSIT_BLOCKS = {
+    "small": (0.325, 0.30, 0.275),
+    "medium": (0.5, 0.5, 0.5),
+    "large": (0.8, 0.7, 0.625),
+}
 CHUNK_SIZE = (0.45, 0.45, 0.40)    # Blender x, y, z (up): glTF 0.45 x 0.40 (up) x 0.45
 ROD_HALF = (0.11, 0.49, 0.11)      # long axis Blender Y = glTF Z
 TEX_MAX = 1024
@@ -109,19 +116,45 @@ def rounded_box(half, coords, radius, dent=None):
     return verts, faces
 
 
-def cube_geometry():
-    h = CUBE_HALF[0]
-    interior = [-0.33, -0.21, -0.1, 0.0, 0.11, 0.22, 0.34]
-    c = axis_coords(h, (0.025, 0.06), interior)
-    face_noise = rt.Noise3(77)
-
-    def dent(p, edge_d, corner_d):
-        e = rt.edge_factor(edge_d, 0.035)
-        corner = rt.edge_factor(corner_d, 0.07)
-        chip = float(rt.chip_field(p[None])[0])
-        wobble = 0.5 + 0.5 * float(face_noise.fbm(p[None], 2.0, octaves=2)[0])
-        return 0.0015 + 0.004 * wobble + CUBE_CHIP * chip * e + 0.012 * corner * e
-    return rounded_box(CUBE_HALF, [c, c, c], CUBE_RADIUS, dent)
+def block_geometry(half, seed, chip=(0.1, 0.3)):
+    """A chiselled block (Scrap Mechanic's square rocks): a box (half extents, Blender z up) with every corner knocked
+    off by a different amount, a second shallower step on some corners and a few dented edges, as one convex hull with
+    lightly bevelled edges. Fits inside the box, centred on the origin."""
+    rng = np.random.default_rng(seed)
+    h = np.asarray(half, float)
+    m = 2 * h.min()
+    pts = []
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            for sz in (-1, 1):
+                sign = np.array([sx, sy, sz], float)
+                c = sign * h
+                a = rng.uniform(*chip, 3) * m
+                for k in range(3):
+                    q = c.copy()
+                    q[k] -= sign[k] * a[k]
+                    pts.append(q)
+                if rng.random() < 0.5:
+                    pts.append(c - sign * np.array([a[0] * 0.45, a[1] * 0.45, a[2] * 0.2]))
+    for _ in range(8):
+        axis = rng.integers(3)
+        v = np.array([rng.choice((-1, 1)) * h[0], rng.choice((-1, 1)) * h[1], rng.choice((-1, 1)) * h[2]])
+        v[axis] *= rng.uniform(-0.6, 0.6)
+        pts.append(v * rng.uniform(0.84, 0.95))
+    bm = bmesh.new()
+    for p in pts:
+        bm.verts.new(p)
+    res = bmesh.ops.convex_hull(bm, input=bm.verts[:])
+    loose = list({g for g in res["geom_interior"] + res["geom_unused"] if isinstance(g, bmesh.types.BMVert)})
+    bmesh.ops.delete(bm, geom=loose, context="VERTS")
+    bmesh.ops.dissolve_limit(bm, angle_limit=math.radians(2), verts=bm.verts[:], edges=bm.edges[:])
+    bmesh.ops.bevel(bm, geom=bm.edges[:], offset=0.022 * m, segments=2, profile=0.5, affect="EDGES", clamp_overlap=True)
+    bmesh.ops.triangulate(bm, faces=[f for f in bm.faces if len(f.verts) > 4])
+    bm.verts.index_update()
+    verts = [tuple(v.co) for v in bm.verts]
+    faces = [[v.index for v in f.verts] for f in bm.faces]
+    bm.free()
+    return verts, faces
 
 
 def stone_rod_geometry():
@@ -224,7 +257,7 @@ def make_material(name, albedo, normal, mr=None, rough=0.9, metal=0.0):
 
 
 def make_object(name, verts, faces, half, surface, tex_width, *, smooth=True, normal_strength=1.0, shade=0.55,
-                rim=None, rough=0.9, metal=0.0):
+                rim=None, rough=0.9, metal=0.0, sharp=50):
     """One mesh object with box-chart UVs and its baked material."""
     charts, size, s, pad = rt.box_charts(half, tex_width, TEX_MAX)
     albedo, normal, mr = rt.bake(charts, size, s, pad, surface, normal_strength=normal_strength, shade=shade, rim=rim)
@@ -247,7 +280,7 @@ def make_object(name, verts, faces, half, surface, tex_width, *, smooth=True, no
     me.materials.append(make_material(name.lower(), albedo, normal, mr, rough, metal))
     if smooth:
         me.shade_smooth()
-        me.set_sharp_from_angle(angle=math.radians(50))
+        me.set_sharp_from_angle(angle=math.radians(sharp))
     else:
         me.shade_flat()
     ob = bpy.data.objects.new(name, me)
@@ -259,12 +292,26 @@ def build_models():
     """name -> (object, output path)."""
     reset_scene()
     models = {}
-    v, f = cube_geometry()
-    models["rock_cube"] = (make_object("RockCube", v, f, CUBE_HALF, rt.OutcropStone(CUBE_HALF, 101), TEX_MAX,
-                                       normal_strength=1.6, shade=0.6, rim=rt.BEIGE), WORLD / "rock_cube.glb")
-    models["rock_cube_metal"] = (make_object("RockCubeMetal", v, f, CUBE_HALF, rt.OutcropStone(CUBE_HALF, 202, metal=True),
-                                             TEX_MAX, normal_strength=1.6, shade=0.6, rim=rt.ORE_LIGHT),
-                                 WORLD / "rock_cube_metal.glb")
+    for size, half in DEPOSIT_BLOCKS.items():
+        for k, variant in enumerate("ab"):
+            seed = 101 + 10 * list(DEPOSIT_BLOCKS).index(size) + k
+            v, f = block_geometry(half, seed)
+            width = TEX_MAX if size != "small" else 512
+            models[f"rock_{size}_{variant}"] = (
+                make_object(f"Rock_{size}_{variant}", v, f, half, rt.OutcropStone(half, seed), width,
+                            normal_strength=1.6, shade=0.6, rim=rt.BEIGE, sharp=30),
+                WORLD / f"rock_{size}_{variant}.glb")
+            models[f"rock_metal_{size}_{variant}"] = (
+                make_object(f"RockMetal_{size}_{variant}", v, f, half, rt.OutcropStone(half, seed + 100, metal=True), width,
+                            normal_strength=1.6, shade=0.6, rim=rt.ORE_LIGHT, sharp=30),
+                WORLD / f"rock_metal_{size}_{variant}.glb")
+    # The boulders a large block breaks into: medium blocks with fresh broken faces (no moss).
+    half = DEPOSIT_BLOCKS["medium"]
+    v, f = block_geometry(half, 909, chip=(0.12, 0.34))
+    models["stone_boulder"] = (make_object("StoneBoulder", v, f, half, rt.ChunkStone(half, 909), 512, normal_strength=1.4,
+                                           rim=rt.BEIGE, sharp=30), ITEMS / "stone_boulder.glb")
+    models["metal_boulder"] = (make_object("MetalBoulder", v, f, half, rt.ChunkStone(half, 919, metal=True), 512,
+                                           normal_strength=1.4, sharp=30), ITEMS / "metal_boulder.glb")
     chalf = tuple(x / 2 for x in CHUNK_SIZE)
     v, f = chunk_geometry(303)
     models["stone_chunk"] = (make_object("StoneChunk", v, f, chalf, rt.ChunkStone(chalf, 303), 512, smooth=False,

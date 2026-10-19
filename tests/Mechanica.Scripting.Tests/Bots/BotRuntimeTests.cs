@@ -191,6 +191,21 @@ public sealed class BotRuntimeTests
         var other = calm.Spawn(Raider, Vector3.Zero);
         calm.Step(1.5f);
         Assert.True(calm.Bots.Find(other)!.Position.X > 2, $"walked straight on ({calm.Bots.Find(other)!.Position})");
+
+        // Wary only of saw blades (a Scuttler), it walks straight past a spinning rotor of plain blocks.
+        using var picky = new BotRig(RaiderDefinition(tree: """
+            { "type": "sequence", "children": [
+              { "type": "find_player", "range": 20 },
+              { "type": "invert", "children": [ { "type": "hesitate", "part": "vanilla:saw_blade", "range": 4, "min_speed": 4, "seconds": 2 } ] },
+              { "type": "chase", "attack": "whip" },
+              { "type": "attack", "attack": "whip" } ] }
+            """));
+        picky.AddPlayer(2, new Vector3(10, 0, 0));
+        picky.Spinner(new Vector3(2, 0, 0), 10);
+        var bold = picky.Spawn(Raider, Vector3.Zero);
+        picky.Step(1.5f);
+        Assert.Empty(picky.Errors);
+        Assert.True(picky.Bots.Find(bold)!.Position.X > 2, $"walked straight on ({picky.Bots.Find(bold)!.Position})");
     }
 
     [Fact]

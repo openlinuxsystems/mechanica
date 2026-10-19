@@ -313,37 +313,43 @@ public sealed partial class WorldGenerator
             yield return new WorldObjectPlacement(new WorldObjectId(rule.Index, ix, iz), o, new Vector3(spot.X, y, spot.Y), yaw, scale);
             yield break;
         }
-        // An outcrop: whole cubes on a grid turned by the outcrop's yaw, stood on the lowest ground under its
-        // footprint (sunk by sink) so no cube floats on a slope.
-        var cubes = OutcropLayout.Cubes(outcrop, Noise.Mix(salt ^ 0x5EEDu));
+        // A rock deposit: mounds of blocks turned by the deposit's yaw, each mound stood on the lowest ground under
+        // its own bottom blocks (sunk by sink) so none of them floats on a slope.
+        var blocks = OutcropLayout.Blocks(outcrop, BlockSize, BlockVariants, o.Footprint, Noise.Mix(salt ^ 0x5EEDu));
         var turn = Quaternion.CreateFromAxisAngle(Vector3.UnitY, yaw);
-        var centre = new Vector2((float)cubes.Average(c => c.X), (float)cubes.Average(c => c.Z));
-        Vector2 Ground(OutcropCube c, float dx, float dz)
+        Vector2 Ground(Vector3 local)
         {
-            var local = Vector3.Transform(new Vector3((c.X - centre.X + dx) * scale, 0, (c.Z - centre.Y + dz) * scale), turn);
-            return new Vector2(spot.X + local.X, spot.Y + local.Z);
+            var w = Vector3.Transform(local * scale, turn);
+            return new Vector2(spot.X + w.X, spot.Y + w.Z);
         }
-        var floor = float.MaxValue;
-        foreach (var c in cubes.Where(c => c.Y == 0))
+        var floors = new Dictionary<int, float>();
+        foreach (var b in blocks.Where(b => b.Bottom.Y == 0f))
         {
             foreach (var (dx, dz) in Corners)
             {
-                var g = Ground(c, dx, dz);
-                floor = MathF.Min(floor, HeightAt(g.X, g.Y));
+                var g = Ground(b.Bottom + new Vector3(dx * b.Half.X, 0, dz * b.Half.Y));
+                floors[b.Mound] = MathF.Min(floors.GetValueOrDefault(b.Mound, float.MaxValue), HeightAt(g.X, g.Y));
             }
         }
-        var baseY = floor - o.Sink * scale;
-        for (var k = 0; k < cubes.Count; k++)
+        for (var k = 0; k < blocks.Count; k++)
         {
-            var c = cubes[k];
-            var g = Ground(c, 0, 0);
-            yield return new WorldObjectPlacement(new WorldObjectId(rule.Index, ix, iz, k), o, new Vector3(g.X, baseY + c.Y * scale, g.Y),
-                yaw + c.Turn * MathF.PI / 2f, scale);
+            var b = blocks[k];
+            var definition = Data.Objects[b.Object];
+            var g = Ground(b.Bottom);
+            var y = floors.GetValueOrDefault(b.Mound, HeightAt(g.X, g.Y)) - definition.Sink * scale + b.Bottom.Y * scale;
+            yield return new WorldObjectPlacement(new WorldObjectId(rule.Index, ix, iz, k), definition, new Vector3(g.X, y, g.Y), yaw + b.Yaw, scale, b.Variant);
         }
     }
 
-    // A cube's centre and its four bottom corners, in cubes from its centre.
-    private static readonly (float, float)[] Corners = [(0, 0), (-0.5f, -0.5f), (0.5f, -0.5f), (-0.5f, 0.5f), (0.5f, 0.5f)];
+    // A block's middle and its four bottom corners, in half sizes from its middle.
+    private static readonly (float, float)[] Corners = [(0, 0), (-1, -1), (1, -1), (-1, 1), (1, 1)];
+
+    // A deposit block object's collider box, or null when it has none.
+    private Vector3? BlockSize(string id) =>
+        Data.Objects.GetValueOrDefault(id)?.Collider is { Shape: PrimitiveShape.Box, Size: { } size } ? new Vector3(size.X, size.Y, size.Z) : null;
+
+    // How many models a deposit block object has to pick from.
+    private int BlockVariants(string id) => 1 + (Data.Objects.GetValueOrDefault(id)?.Mesh?.Variants?.Count ?? 0);
 
     // The scatter rule's spot in a cell, if the cell's dice roll keeps it.
     private bool Candidate(Scatter rule, int ix, int iz, out Vector2 spot)

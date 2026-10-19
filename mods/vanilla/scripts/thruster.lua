@@ -4,8 +4,9 @@
 -- linked to it, and "space_shift" is a throttle lever the pilot opens with Space and closes with Shift, at
 -- properties.lever_rate per second, that stays where they leave it. "invert" flips the command, so S or A
 -- fires it instead.
--- It burns properties.fuel from the Creation's containers, one item per properties.fuel_time seconds at
--- full power; in Creative it needs none.
+-- It burns properties.fuel from the containers linked into it with the Connect Tool (gas containers), or from every
+-- container of the Creation when none is, one item per properties.fuel_time seconds at full power; in Creative it
+-- needs none.
 -- Sounds: "ignite" when it lights, the "loop" while it burns (its "thrust" parameter follows the power)
 -- and "cut" when it goes out. Its "power" display (a glow at the exhaust) follows the power.
 
@@ -43,6 +44,19 @@ local function command(dt)
   return clamp(value, -1, 1)
 end
 
+-- The containers linked into the thruster (its gas containers), or nil when none is: then it burns from all of the
+-- Creation's.
+local function tanks()
+  local ids
+  for _, input in ipairs(part.inputs()) do
+    if input.storage then
+      ids = ids or {}
+      ids[#ids + 1] = input.part
+    end
+  end
+  return ids
+end
+
 -- Burns fuel for dt seconds at this power; false when the Creation has none left.
 local function burn(power, dt)
   if world.creative() or power == 0 then
@@ -52,7 +66,7 @@ local function burn(power, dt)
   if state.fuel > 0 then
     return true
   end
-  if creation.take(properties.fuel, 1) > 0 then
+  if creation.take(properties.fuel, 1, tanks()) > 0 then
     state.fuel = state.fuel + properties.fuel_time
     return true
   end

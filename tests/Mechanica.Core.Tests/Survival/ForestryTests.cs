@@ -68,6 +68,7 @@ public class ForestryTests
         Mass = 40,
         Size = size,
         StackSize = 4,
+        SoundMaterial = "wood",
     };
 
     private List<Creation> LooseOf(string part) =>
@@ -185,6 +186,18 @@ public class ForestryTests
         _f.World.Now += 1.2;
         var refined = _f.Ok<RefineResult>(Me, SurvivalActions.FinishRefine, new { creation = rod.Id, part = rod.Parts.First().Id });
         Assert.Equal(20, refined.Taken);
+    }
+
+    [Fact]
+    public void ACuttingToolsBiteThrowsChipsOffWoodButASledgeOrAShotDoesNot()
+    {
+        var log = _f.Add(Log, new Vector3(0, 0, -1.5f));
+        var at = new Vector3(0.3f, 0.2f, -1.5f);
+        _f.Survival.Hit(Me, new RayHit(at, Creation: log, Part: 1), 30, Vector3.Zero, DamageKinds.Saw);
+        Assert.Equal((at, "wood"), Assert.Single(_f.World.Impacts));
+        _f.Survival.Hit(Me, new RayHit(at, Creation: log, Part: 1), 5, Vector3.Zero, DamageKinds.Weapon);
+        _f.Survival.Hit(Me, new RayHit(at, Creation: log, Part: 1), 0, Vector3.Zero, DamageKinds.Saw);
+        Assert.Single(_f.World.Impacts);
     }
 
     [Theory]

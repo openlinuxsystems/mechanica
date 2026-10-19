@@ -27,6 +27,7 @@ internal sealed class SurvivalFixture
     public const string Block = "test:block";
     public const string Plank = "test:plank";
     public const string Chest = "test:chest";
+    public const string Can = "test:can";
     public const string Scrap = "test:scrap";
     public const string Connector = HotbarTools.Connect;
     public const string Gun = "scripts/potato_gun.lua";
@@ -60,6 +61,7 @@ internal sealed class SurvivalFixture
             .Add(Block, Placeable("block", PartCategory.Block) with { Durability = 2 })
             .Add(Plank, Placeable("plank", PartCategory.Block) with { Flammable = true })
             .Add(Chest, Placeable("chest", PartCategory.Container) with { Inventory = new InventoryDefinition { Slots = 4 } })
+            .Add(Can, Placeable("can", PartCategory.Container) with { Inventory = new InventoryDefinition { Slots = 2, CarryContents = true } })
             // Soil runs the vanilla soil script (crops grow and are harvested in Lua); the Core tests run no scripts.
             .Add(Soil, Placeable("soil", PartCategory.Decor) with { Soil = new SoilDefinition { Capacity = 60, Growth = 2 },
                 Script = "scripts/soil.lua", Properties = new JsonObject { ["interval"] = 0.5 } })
@@ -172,6 +174,8 @@ internal sealed class SurvivalFixture
         public List<Vector3> Pushes { get; } = [];
         public List<Vector3> PushPoints { get; } = [];
         public List<(WorldObjectId Id, Vector3 At, bool Broke)> ObjectHits { get; } = [];
+
+        public List<(Vector3 At, string Material)> Impacts { get; } = [];
         public List<(int Peer, Vector3 Feet)> Teleports { get; } = [];
         public List<(int Peer, Vector3 Velocity)> Knocks { get; } = [];
         public Vector3 Spawn { get; set; } = new(10, 0, 10);
@@ -238,6 +242,8 @@ internal sealed class SurvivalFixture
             Tools.Fell(breaks, foot, height, direction, spin, seed);
 
         public void ObjectHit(WorldObjectId id, Vector3 at, bool broke) => ObjectHits.Add((id, at, broke));
+
+        public void Impact(Vector3 at, string material) => Impacts.Add((at, material));
 
         // A part's shape reaches the sphere when its centre is within the radius plus half a block.
         public IEnumerable<(int Creation, int Part)> PartsNear(Vector3 point, float radius) =>
