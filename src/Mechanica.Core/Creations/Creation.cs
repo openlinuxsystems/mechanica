@@ -477,7 +477,7 @@ public sealed class Creation
             var attachments = FindAttachments(instance.Id);
             if (attachments.Count == 0)
             {
-                Delete(instance.Id);
+                Uninsert(instance.Id);
                 error = $"'{qualified}' at {cell} does not attach to any part of creation {Id}.";
                 return false;
             }
@@ -523,7 +523,7 @@ public sealed class Creation
         // Insert, look and take out again: the id is not consumed and no edge is kept.
         Insert(new PartInstance(_nextPartId, qualified, cell, rotation), definition);
         var neighbours = FindAttachments(_nextPartId).Select(c => c.A == _nextPartId ? c.B : c.A).Distinct().Order().ToList();
-        Delete(_nextPartId);
+        Uninsert(_nextPartId);
         if (neighbours.Count == 0)
         {
             error = $"'{qualified}' at {cell} does not attach to any part of creation {Id}.";
@@ -761,7 +761,7 @@ public sealed class Creation
         {
             attachedTo = [.. attachments.Select(c => added.Contains(c.A) ? c.B : c.A).Distinct().Order()];
             foreach (var id in added)
-                Delete(id);
+                Uninsert(id);
             _nextPartId = firstId;
             error = attachments.Count == 0 ? $"creation {other.Id} does not attach to creation {Id}." : null;
             return error is null;
@@ -908,6 +908,16 @@ public sealed class Creation
         _definitions.Add(part.Id, definition);
         foreach (var c in PartGeometry.Cells(definition, part.Cell, part.Rotation))
             _occupancy.Add(c, part.Id);
+    }
+
+    // Takes out a part Insert just put in, before it got any edges or state: the build ghost and the weld preview
+    // do this every frame, and Delete's edge scans are O(edges) per part.
+    private void Uninsert(int partId)
+    {
+        foreach (var c in CellsOf(partId))
+            _occupancy.Remove(c);
+        _parts.Remove(partId);
+        _definitions.Remove(partId);
     }
 
     private void Delete(int partId)

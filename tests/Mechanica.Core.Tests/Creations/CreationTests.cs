@@ -40,6 +40,7 @@ public class CreationTests
         _creation.Place(Block, GridCell.Zero);
         _creation.Place(Block, new GridCell(1, 0, 0));
         var before = CreationJson.Write(_creation);
+        var connections = _creation.Connections;
 
         Assert.True(_creation.CanPlacePart(Block, new GridCell(1, 1, 0), default, out var attached, out _));
         Assert.Equal([2], attached);
@@ -51,6 +52,8 @@ public class CreationTests
         Assert.Contains("cannot be placed", error);
 
         Assert.Equal(before, CreationJson.Write(_creation));
+        // A check touches no edges, so their sorted list is kept.
+        Assert.Same(connections, _creation.Connections);
         Assert.Equal(3, _creation.Place(Block, new GridCell(0, 1, 0)).Id);
         Assert.True(new Creation(2, Catalog()).CanPlacePart(Block, GridCell.Zero, default, out attached, out _));
         Assert.Empty(attached);
