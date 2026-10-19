@@ -297,22 +297,45 @@ public class WorldGenTests
         Assert.Equal(6f, crash.PadHeight);
         Assert.Equal(0, crash.QuarterTurns);
         Assert.Equal(crash.ToWorld(new Vector3(16, 0, 36)), gen.Spawn);
-        // Level for 55 m round the wreck, except the pond to the west.
+        // Level for 55 m round the wreck, except the lake to the west.
+        var lake = new Vector2(-54, 0);
         for (var x = -55f; x <= 55f; x += 2f)
             for (var z = -55f; z <= 55f; z += 2f)
-                if (x * x + z * z <= 55f * 55f && Vector2.Distance(new Vector2(x, z), new Vector2(-50, 0)) > 20f)
+                if (x * x + z * z <= 55f * 55f && Vector2.Distance(new Vector2(x, z), lake) > 34f)
                     Assert.Equal(6f, gen.HeightAt(crash.Centre.X + x, crash.Centre.Y + z));
-        var pond = crash.Centre + new Vector2(-50, 0);
-        Assert.True(gen.HeightAt(pond.X, pond.Y) < gen.SeaLevel - 1f, "a pond sits next to the crash site");
-        // Its banks are gentle enough to walk out of (the player controller climbs up to 45°), so the first water a
-        // new player meets is never a trap.
+        var pond = crash.Centre + new Vector2(-56, -3);
+        Assert.True(gen.HeightAt(pond.X, pond.Y) < gen.SeaLevel - 1f, "a lake sits next to the crash site");
+        // A big lake with an irregular shore: its water's reach from the centre varies a lot round the compass.
+        var area = 0f;
+        var reach = new float[36];
+        for (var x = -40f; x <= 40f; x += 1f)
+            for (var z = -40f; z <= 40f; z += 1f)
+            {
+                var at = crash.Centre + lake + new Vector2(x, z);
+                if (gen.HeightAt(at.X, at.Y) >= gen.SeaLevel)
+                    continue;
+                area += 1f;
+                var sector = (int)((MathF.Atan2(z, x) + MathF.PI) / (2f * MathF.PI) * 36f) % 36;
+                reach[sector] = MathF.Max(reach[sector], MathF.Sqrt(x * x + z * z));
+            }
+        Assert.True(area > 900f, $"lake area {area} m²");
+        Assert.True(reach.Max() > 1.8f * reach.Min(), $"lake shore from {reach.Min():0.#} to {reach.Max():0.#} m out: not round");
+        // Its banks are gentle enough to walk out of: under 40° where the controller climbs 45° (slope 1), so the first
+        // water a new player meets is never a trap. Where two basins overlap their banks add up, so allow more than one
+        // basin's own slope.
         for (var a = 0; a < 360; a += 10)
-            for (var r = 0f; r <= 22f; r += 0.5f)
+            for (var r = 0f; r <= 40f; r += 0.5f)
             {
                 var (sin, cos) = MathF.SinCos(a * MathF.PI / 180f);
-                float x = pond.X + r * cos, z = pond.Y + r * sin;
-                Assert.True(gen.SlopeAt(x, z) < 0.7f, $"pond bank at ({x:0.#}, {z:0.#}) has slope {gen.SlopeAt(x, z):0.##}");
+                float x = crash.Centre.X + lake.X + r * cos, z = crash.Centre.Y + lake.Y + r * sin;
+                Assert.True(gen.SlopeAt(x, z) < 0.84f, $"lake bank at ({x - crash.Centre.X:0.#}, {z - crash.Centre.Y:0.#}) from the centre has slope {gen.SlopeAt(x, z):0.##}");
             }
+        // Nothing the site places stands in the lake.
+        foreach (var at in crash.Poi.Prefab.Markers!.Select(m => m.At).Concat(crash.Poi.Prefab.Models!.Select(m => m.At)))
+        {
+            var world = crash.ToWorld(new Vector2(at.X, at.Z));
+            Assert.True(gen.HeightAt(world.X, world.Y) >= gen.SeaLevel, $"({at.X}, {at.Z}) is in the lake");
+        }
         Assert.Equal(3, crash.Poi.Prefab.Markers!.Count(m => m.Type == "fire"));
         Assert.Single(crash.Poi.Prefab.Markers!, m => m.Ref == "master_battery");
         // The walk-in wreck (docs/art-direction.md), with starting scrap to pick up round it.

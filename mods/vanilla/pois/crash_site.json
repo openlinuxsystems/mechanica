@@ -10,8 +10,15 @@
   "placement": {},
   "terrain": [
     { "op": "flatten", "radius": 60.0, "blend": 45.0 },
-    { "op": "flatten", "at": [-50.0, 0.0], "radius": 18.0, "blend": 12.0 },
-    { "op": "basin", "at": [-50.0, 0.0], "radius": 4.0, "blend": 14.0, "depth": 6.0, "wobble": 0.12 }
+    { "op": "flatten", "at": [-56.0, 2.0], "radius": 34.0, "blend": 12.0 },
+    // The lake to the west: overlapping basins with wandering edges make one irregular shore with bays and a
+    // narrow arm reaching towards the wreck. The water is the sea level, 4 m under the pad.
+    { "op": "basin", "at": [-72.0, 18.0], "radius": 2.5, "blend": 15.0, "depth": 5.5, "wobble": 0.15 },
+    { "op": "basin", "at": [-63.0, 10.0], "radius": 4.0, "blend": 15.0, "depth": 5.5, "wobble": 0.15 },
+    { "op": "basin", "at": [-46.0, -14.0], "radius": 2.5, "blend": 15.0, "depth": 5.5, "wobble": 0.15 },
+    { "op": "basin", "at": [-45.0, 7.0], "radius": 2.0, "blend": 15.0, "depth": 5.5, "wobble": 0.15 },
+    { "op": "basin", "at": [-66.0, -6.0], "radius": 1.5, "blend": 15.0, "depth": 5.5, "wobble": 0.15 },
+    { "op": "basin", "at": [-56.0, -3.0], "radius": 4.5, "blend": 15.0, "depth": 6.0, "wobble": 0.15 }
   ],
   "ground": [
     { "ground": "grass", "radius": 70.0, "blend": 40.0, "noise": 9.0 },

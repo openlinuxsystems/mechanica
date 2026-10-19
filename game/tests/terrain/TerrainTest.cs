@@ -31,7 +31,7 @@ public partial class TerrainTest : StagedTest
     // The start: the spawn, wreck and pond are laid out round it.
     private PoiInstance Crash => HostWorld.Generator.Pois.First(p => p.Poi.Prefab.Id == "crash_site");
 
-    private Vector3 Pond => Crash.ToWorld(new System.Numerics.Vector3(-50, 0, 0)).ToGodot();
+    private Vector3 Pond => Crash.ToWorld(new System.Numerics.Vector3(-56, 0, -3)).ToGodot();
 
     public override void _Ready()
     {

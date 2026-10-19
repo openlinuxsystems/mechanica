@@ -790,6 +790,8 @@ public partial class CaptureScene : Node
             ("hold", [1.46f, 1.9f, 12.77f], [4.21f, 1.29f, 19.28f]),
             ("court", [-2f, 2f, -30f], [-6f, 3f, -56f]),
             ("farm", [-26f, 2.4f, -24f], [-42f, 1.8f, -40f]),
+            ("lake", [-22f, 16f, 28f], [-58f, -3f, -2f]),
+            ("lake_shore", [-38f, 1.9f, -22f], [-62f, -3f, 6f]),
             ("beacon", [26f, 2f, -14f], [18f, 4f, -26f]),
         };
         foreach (var (name, from, to) in views)
