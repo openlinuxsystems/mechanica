@@ -302,7 +302,8 @@ public sealed partial class WorldGenerator
     }
 
     /// <summary>The liquid at <paramref name="point"/> (under a POI pool's surface), or null.</summary>
-    public PoiPoolPlacement? LiquidAt(Vector3 point) => PoolsAt(point.X, point.Z).FirstOrDefault(p => p.Holds(point));
+    public PoiPoolPlacement? LiquidAt(Vector3 point) =>
+        PoolsAt(point.X, point.Z).FirstOrDefault(p => p.Holds(point) && HeightAt(point.X, point.Z) < p.Centre.Y);
 
     /// <summary>The liquid pools of the POIs whose footprint covers a world position.</summary>
     public IEnumerable<PoiPoolPlacement> PoolsAt(float x, float z) => PoisAt(x, z).SelectMany(PoolsOf);
@@ -745,18 +746,39 @@ public sealed partial class WorldGenerator
         var p = new Vector2(x, z);
         foreach (var poi in PoisNear(x, z))
         {
-            foreach (var op in poi.Poi.Prefab.Terrain ?? [])
+            var terrain = poi.Poi.Prefab.Terrain ?? [];
+            for (var i = 0; i < terrain.Count; i++)
             {
+                var op = terrain[i];
                 var centre = poi.ToWorld(op.At is [var ax, var az] ? new Vector2(ax, az) : Vector2.Zero);
                 var d = Vector2.Distance(p, centre);
-                if (d >= op.Radius + op.Blend)
+                if (d >= (op.Radius + op.Blend) * (1f + (op.Wobble ?? 0f)))
                     continue;
-                var k = 1f - Noise.SmoothStep(op.Radius, op.Radius + op.Blend, d);
+                var s = Wobble(poi, i, op.Wobble ?? 0f, p - centre);
+                var k = 1f - Noise.SmoothStep(op.Radius * s, (op.Radius + op.Blend) * s, d);
                 var target = op.Op == TerrainOpKind.Basin ? poi.PadHeight - op.Depth : poi.PadHeight;
                 h += (target - h) * k;
             }
         }
         return h;
+    }
+
+    // Scale of a terrain op's radius towards an offset from its centre: 1 ± amount, from a few sines round the circle
+    // whose sizes and phases come from the POI, so each pond has its own lobes and the edge closes on itself.
+    private float Wobble(PoiInstance poi, int op, float amount, Vector2 offset)
+    {
+        if (amount <= 0f)
+            return 1f;
+        var angle = MathF.Atan2(offset.Y, offset.X);
+        float sum = 0f, norm = 0f;
+        for (var k = 1; k <= 5; k++)
+        {
+            var h = Noise.Hash(_poiSalt ^ 0xB0A51Bu, poi.Index, op, k);
+            var size = (0.4f + Noise.Unit(h)) / MathF.Pow(k, 0.7f);
+            sum += size * MathF.Sin(k * angle + Noise.Unit(Noise.Mix(h)) * 2f * MathF.PI);
+            norm += size;
+        }
+        return 1f + amount * sum / norm;
     }
 
     private IReadOnlyList<PoiInstance> PoisNear(float x, float z) =>

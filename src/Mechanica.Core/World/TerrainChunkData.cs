@@ -125,7 +125,10 @@ public sealed record PoiPoolPlacement(PoiInstance Poi, LiquidPool Pool, LiquidDe
     /// <summary>Radius of the surface.</summary>
     public float Radius => Pool.Radius;
 
-    /// <summary>True when <paramref name="point"/> is in the liquid: under its surface, over its disc.</summary>
+    /// <summary>
+    /// True when <paramref name="point"/> is under the surface and over its disc. The liquid is only where the ground is
+    /// lower too (<see cref="WorldGenerator.LiquidAt"/>).
+    /// </summary>
     public bool Holds(Vector3 point) =>
         point.Y <= Centre.Y && Vector2.DistanceSquared(new Vector2(point.X, point.Z), new Vector2(Centre.X, Centre.Z)) <= Radius * Radius;
 }

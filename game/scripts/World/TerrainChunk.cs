@@ -407,7 +407,7 @@ public partial class TerrainChunk : Node3D
             {
                 Name = $"Pool_{pool.Pool.Liquid}",
                 Mesh = PoolMesh(pool.Radius),
-                MaterialOverride = LiquidMaterial(pool.Liquid),
+                MaterialOverride = LiquidSurface.MaterialFor(pool.Liquid),
                 Position = pool.Centre.ToGodot() - origin,
                 CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
             }, forceReadableName: true);
@@ -521,29 +521,8 @@ public partial class TerrainChunk : Node3D
     {
         var key = new ShapeDefinition { Shape = PrimitiveShape.Cylinder, Radius = radius, Height = 0f };
         if (!PieceMeshes.TryGetValue(key, out var mesh))
-            PieceMeshes[key] = mesh = new CylinderMesh { TopRadius = radius, BottomRadius = radius, Height = 0.02f, RadialSegments = 48, Rings = 1, CapBottom = false };
+            PieceMeshes[key] = mesh = new CylinderMesh { TopRadius = radius, BottomRadius = radius, Height = 0.001f, RadialSegments = 48, Rings = 1, CapBottom = false };
         return mesh;
-    }
-
-    // A liquid's surface: its colour, glossy, glowing in its own colour when it glows (the green of a chemical pool).
-    private static StandardMaterial3D LiquidMaterial(LiquidDefinition liquid)
-    {
-        var key = $"liquid:{liquid.Id}";
-        if (!Materials.TryGetValue(key, out var material))
-        {
-            var c = WorldGenData.ParseColor(liquid.Color);
-            var color = new Color(c.X, c.Y, c.Z);
-            Materials[key] = material = new StandardMaterial3D
-            {
-                AlbedoColor = color,
-                Roughness = liquid.Roughness,
-                MetallicSpecular = 0.1f, // a full sky reflection washes dark oil and green chemical out to grey
-                EmissionEnabled = liquid.Glow > 0f,
-                Emission = color,
-                EmissionEnergyMultiplier = liquid.Glow,
-            };
-        }
-        return material;
     }
 
     private static StandardMaterial3D MaterialOf(string? color)

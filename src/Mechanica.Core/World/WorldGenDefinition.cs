@@ -650,6 +650,24 @@ public sealed record LiquidDefinition
     /// <summary>Surface roughness, 0 (mirror) to 1 (matte).</summary>
     public float Roughness { get; init; } = 0.1f;
 
+    /// <summary>Size of the surface ripples in metres.</summary>
+    public float RippleSize { get; init; } = 4f;
+
+    /// <summary>How deep the ripples look, 0 (a still mirror) to 1.</summary>
+    public float Ripples { get; init; } = 0.6f;
+
+    /// <summary>How fast the ripples and swirls drift, in metres per second: low for a thick liquid.</summary>
+    public float Flow { get; init; } = 0.05f;
+
+    /// <summary>Strength of the rainbow film that drifts over the surface, 0 to 1 (an oil slick).</summary>
+    public float Sheen { get; init; }
+
+    /// <summary>How much the surface bubbles, 0 to 1.</summary>
+    public float Bubbles { get; init; }
+
+    /// <summary>Colour of the scum or crust along the shore, <c>#rrggbb</c>. Omitted: none.</summary>
+    public string? EdgeColor { get; init; }
+
     /// <summary>Health a player standing in it loses per second.</summary>
     public float Damage { get; init; }
 
@@ -670,7 +688,10 @@ public sealed record LiquidPool
     /// <summary>Centre <c>[x, z]</c>, relative to the POI. Omitted means the POI centre.</summary>
     public List<float>? At { get; init; }
 
-    /// <summary>Radius of the surface in metres.</summary>
+    /// <summary>
+    /// Radius of the surface in metres. The liquid fills the part of that disc where the ground is lower than the
+    /// surface, so its shore follows the basin; make it reach past the basin's edge.
+    /// </summary>
     public float Radius { get; init; }
 
     /// <summary>Height of the surface above the POI's pad, in metres (below 0 in a basin).</summary>
@@ -912,6 +933,12 @@ public sealed record TerrainOp
 
     /// <summary>Basin depth below the pad, in metres.</summary>
     public float Depth { get; init; }
+
+    /// <summary>
+    /// How far the edge wanders in and out, as a fraction of the radius (0 to 0.5): 0 is a disc, 0.3 a pond with
+    /// natural lobes. Each POI gets its own shape. Omitted: 0.
+    /// </summary>
+    public float? Wobble { get; init; }
 
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]

@@ -335,7 +335,7 @@ public partial class ItemTool : HandTool
                 continue;
             // Just under the surface, so the host finds the point in the liquid.
             var surface = from + direction * reached - new Vector3(0, 0.02f, 0);
-            if (pool.Holds(surface.ToNumerics()))
+            if (generator.LiquidAt(surface.ToNumerics()) is not null)
                 return surface;
         }
         var t = (generator.SeaLevel - from.Y) / direction.Y;

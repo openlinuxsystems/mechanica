@@ -360,8 +360,11 @@
   // Liquids POI pools hold (pois/*.json pools). An empty bucket dipped in a chemical pool collects a Chemical, and standing in
   // one hurts (damage is health a second). Oil is the look of the ponds round oil geysers; the geysers give the Crude Oil.
   "liquids": [
-    { "id": "chemical", "color": "#7ee03c", "glow": 0.3, "roughness": 0.15, "damage": 10.0, "collect": { "item": "chemical", "count": 1 } },
-    { "id": "oil", "color": "#0c0b0a", "roughness": 0.35 }
+    {
+      "id": "chemical", "color": "#2a8c12", "glow": 0.15, "roughness": 0.12, "ripple_size": 3.0, "flow": 0.08, "bubbles": 0.8,
+      "edge_color": "#d9f28a", "damage": 10.0, "collect": { "item": "chemical", "count": 1 }
+    },
+    { "id": "oil", "color": "#0d0c0b", "roughness": 0.08, "ripple_size": 7.0, "ripples": 0.15, "flow": 0.02, "sheen": 0.8, "edge_color": "#2a231c" }
   ],
   // Destructible objects (D11): placeholder primitives until meshes are authored, a model (mesh, with an optional far lod), or a
   // built-in flora model.

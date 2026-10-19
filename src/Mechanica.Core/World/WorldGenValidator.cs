@@ -151,6 +151,17 @@ internal static class WorldGenValidator
             NonNegative(liquid.Glow, $"{path}.glow", sink);
             if (!(liquid.Roughness is >= 0f and <= 1f))
                 sink.Error(Code, $"{path}.roughness", $"roughness must be 0 to 1 (got {liquid.Roughness}).");
+            if (!(liquid.RippleSize > 0f) || !float.IsFinite(liquid.RippleSize))
+                sink.Error(Code, $"{path}.ripple_size", $"ripple_size must be greater than 0 (got {liquid.RippleSize}).");
+            if (!(liquid.Ripples is >= 0f and <= 1f))
+                sink.Error(Code, $"{path}.ripples", $"ripples must be 0 to 1 (got {liquid.Ripples}).");
+            NonNegative(liquid.Flow, $"{path}.flow", sink);
+            if (!(liquid.Sheen is >= 0f and <= 1f))
+                sink.Error(Code, $"{path}.sheen", $"sheen must be 0 to 1 (got {liquid.Sheen}).");
+            if (!(liquid.Bubbles is >= 0f and <= 1f))
+                sink.Error(Code, $"{path}.bubbles", $"bubbles must be 0 to 1 (got {liquid.Bubbles}).");
+            if (liquid.EdgeColor is not null)
+                Color(liquid.EdgeColor, $"{path}.edge_color", sink);
             NonNegative(liquid.Damage, $"{path}.damage", sink);
             if (liquid.Collect is { } collect)
             {
@@ -473,6 +484,9 @@ internal static class WorldGenValidator
             NonNegative(op.Radius, $"{path}.radius", sink, code);
             NonNegative(op.Blend, $"{path}.blend", sink, code);
             NonNegative(op.Depth, $"{path}.depth", sink, code);
+            if (op.Wobble is { } w && !(w is >= 0f and <= 0.5f))
+                sink.Error(code, $"{path}.wobble", $"wobble must be 0 to 0.5 (got {w}).");
+            var wobble = Math.Clamp(op.Wobble ?? 0f, 0f, 0.5f);
             var offset = Vector2.Zero;
             if (op.At is { } at)
             {
@@ -483,11 +497,13 @@ internal static class WorldGenValidator
             }
             // A basin's bank is steepest halfway through the blend (smoothstep: 1.5 × depth / blend). Steeper than
             // the 45° a player can walk up, a basin below sea level is a pond nobody can climb out of.
-            if (op.Op == TerrainOpKind.Basin && op.Depth > 0f && !(1.5f * op.Depth <= MaxBasinSlope * op.Blend))
-                sink.Error(code, $"{path}.blend", $"a basin {op.Depth} m deep needs a blend of at least {1.5f * op.Depth / MaxBasinSlope:0.##} m, or its bank is too steep to climb out of (got {op.Blend}).");
+            // A wobbling edge narrows the blend by up to (1 - wobble) where it pulls in.
+            if (op.Op == TerrainOpKind.Basin && op.Depth > 0f && !(1.5f * op.Depth <= MaxBasinSlope * op.Blend * (1f - wobble)))
+                sink.Error(code, $"{path}.blend", $"a basin {op.Depth} m deep needs a blend of at least {1.5f * op.Depth / MaxBasinSlope / (1f - wobble):0.##} m, or its bank is too steep to climb out of (got {op.Blend}).");
             // Shaping must stay inside the footprint, or it would reach under a neighbouring POI.
-            if (offset.Length() + op.Radius + op.Blend > prefab.Radius + 1e-3f)
-                sink.Error(code, path, $"reaches {offset.Length() + op.Radius + op.Blend:0.##} m from the centre, past the POI radius ({prefab.Radius}).");
+            var reach = offset.Length() + (op.Radius + op.Blend) * (1f + wobble);
+            if (reach > prefab.Radius + 1e-3f)
+                sink.Error(code, path, $"reaches {reach:0.##} m from the centre, past the POI radius ({prefab.Radius}).");
         }
         for (var i = 0; i < (prefab.Ground?.Count ?? 0); i++)
         {

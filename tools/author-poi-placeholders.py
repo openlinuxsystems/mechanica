@@ -108,7 +108,9 @@ def add(poi_id, name, size, road, pieces, markers=None, flora=None, ground="lot"
 
 
 def pool(liquid, radius, at=(0, 0), level=-1.0):
-    """A pool of liquid (worldgen.json liquids) laid in a basin: its surface sits level metres below the pad."""
+    """A pool of liquid (worldgen.json liquids) laid in a basin: its surface sits level metres below the pad. The liquid
+    fills the disc only where the ground is lower, so radius reaches past the basin's wobbling edge and the shore
+    follows the ground."""
     return {"liquid": liquid, "at": [float(v) for v in at], "radius": float(radius), "level": float(level)}
 
 
@@ -166,21 +168,21 @@ add("farmers_hideout", "Farmers Hideout", [40, 16, 30], "road",
 # Chemical pools (Chemical item: an empty bucket dipped in one; standing in one hurts) and oil geysers (Crude Oil by hand).
 add("chemical_lake_facility", "Chemical Lake Facility", [40, 10, 30], "track",
     placeholder(40, 30, 10, RUIN, [box([1, 1, 18], [-10, 0.8, 26], YELLOW), box([1, 1, 18], [10, 0.8, 26], YELLOW)]),
-    basin=dict(at=[0, 36], radius=16, depth=1.5), pools=[pool("chemical", 17, at=(0, 36))])
+    basin=dict(at=[0, 36], radius=16, depth=1.5, wobble=0.15), pools=[pool("chemical", 22, at=(0, 36))])
 add("chemical_lake", "Chemical Lake", [52, 2, 52], "track",
     [box([1, 1, 20], [26, 0.8, 0], YELLOW), cylinder(2, 3, [30, 1.5, 12], YELLOW)],
-    flora="meadow", ground="dirt", basin=dict(at=[0, 0], radius=24, depth=1.5), pools=[pool("chemical", 25)])
+    flora="meadow", ground="dirt", basin=dict(at=[0, 0], radius=24, depth=1.5, wobble=0.3), pools=[pool("chemical", 37)])
 add("oil_pool", "Oil Pool", [36, 1, 36], "none",
     [cylinder(1.5, 4, [18, 2, 0], ROOF)], ground="sand",
-    basin=dict(at=[0, 0], radius=16, depth=1.5), pools=[pool("oil", 17)], markers=geysers(8, 22))
+    basin=dict(at=[0, 0], radius=16, depth=1.5, wobble=0.3), pools=[pool("oil", 26)], markers=geysers(8, 27))
 # Spaced (World POI plan): small pools and ponds between the sites, so every part of the map has chemicals and oil in reach.
 add("chemical_pool", "Chemical Pool", [30, 3, 30], "none",
     [cylinder(0.6, 1.2, [14, 0.6, 3], YELLOW), cylinder(0.6, 1.2, [15, 0.6, 4.5], YELLOW), box([1.2, 0.6, 0.8], [-14, 0.3, -2], "#5a5e62", 20)],
-    flora="meadow", ground="dirt", basin=dict(at=[0, 0], radius=12, depth=1.5), pools=[pool("chemical", 13)],
+    flora="meadow", ground="dirt", basin=dict(at=[0, 0], radius=12, depth=1.5, wobble=0.3), pools=[pool("chemical", 21)],
     spacing={"spacing": [1500.0, 2100.0], "biomes": ["meadow", "field", "forest", "autumn_forest"], "priority": 25, "clearance": 96.0})
 add("oil_pond", "Oil Pond", [20, 2, 20], "none",
     [box([4, 0.5, 0.6], [11, 0.25, -3], "#3a3430", 35)],
-    ground="burnt", basin=dict(at=[0, 0], radius=6, depth=1.0), pools=[pool("oil", 6.5, level=-0.6)], markers=geysers(4, 10.5, turn=0.4),
+    ground="burnt", basin=dict(at=[0, 0], radius=6, depth=1.0, wobble=0.3), pools=[pool("oil", 13, level=-0.6)], markers=geysers(4, 12.5, turn=0.4),
     spacing={"spacing": [700.0, 1000.0], "biomes": ["desert", "burned_forest"], "priority": 25, "clearance": 64.0})
 add("farmbot_scrapyard", "Farmbot Scrapyard", [60, 6, 50], "none",
     [box([64, 0.3, 54], [0, 0.15, 0], BURNT),
@@ -227,7 +229,8 @@ def write(poi):
     terrain = [{"op": "flatten", "radius": float(math.ceil(reach + 8)), "blend": float(radius - math.ceil(reach + 8))}]
     if poi["basin"]:
         b = poi["basin"]
-        terrain.append({"op": "basin", "at": [float(v) for v in b["at"]], "radius": float(b["radius"]), "blend": 4.0, "depth": b["depth"]})
+        terrain.append({"op": "basin", "at": [float(v) for v in b["at"]], "radius": float(b["radius"]), "blend": 4.0, "depth": b["depth"],
+                        **({"wobble": b["wobble"]} if b.get("wobble") else {})})
     lines = ["{",
              "  // Placeholder (World Map spec §4): footprint and height only, until the structure is designed on its own.",
              "  // Written by tools/author-poi-placeholders.py; edit the table there and re-run.",

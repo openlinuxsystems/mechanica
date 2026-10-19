@@ -413,9 +413,42 @@ public class WorldGenTests
         Assert.True(gen.HeightAt(pond.Centre.X, pond.Centre.Y) < surface - 0.3f);
         Assert.Equal("chemical", gen.LiquidAt(new System.Numerics.Vector3(pond.Centre.X, surface - 0.2f, pond.Centre.Y))!.Liquid.Id);
         Assert.Null(gen.LiquidAt(new System.Numerics.Vector3(pond.Centre.X, surface + 0.2f, pond.Centre.Y)));
-        Assert.Null(gen.LiquidAt(new System.Numerics.Vector3(pond.Centre.X + 30f, surface - 0.2f, pond.Centre.Y)));
+        Assert.Null(gen.LiquidAt(new System.Numerics.Vector3(pond.Centre.X + 40f, surface - 0.2f, pond.Centre.Y)));
         var chunk = gen.GenerateChunk(ChunkCoord.At(pond.Centre.X, pond.Centre.Y, 64f), 64f);
         Assert.Contains(chunk.Pools, p => p.Poi == pond);
+    }
+
+    [Fact]
+    public void PoolShoresWanderWithTheirBasin()
+    {
+        var gen = Vanilla.Value;
+        var shapes = new List<float[]>();
+        foreach (var poi in gen.Pois.Where(p => p.Poi.Prefab.Id is "chemical_pool" or "oil_pond").Take(4))
+        {
+            var pool = gen.PoolsAt(poi.Centre.X, poi.Centre.Y).Single();
+            // Walk out from the middle in 24 directions to where the liquid ends: the shore.
+            var shore = new float[24];
+            for (var a = 0; a < shore.Length; a++)
+            {
+                var direction = new System.Numerics.Vector2(MathF.Cos(a * MathF.Tau / shore.Length), MathF.Sin(a * MathF.Tau / shore.Length));
+                var r = 0f;
+                while (r < pool.Radius && gen.LiquidAt(Point(poi.Centre + direction * (r + 0.25f), pool.Centre.Y - 0.05f)) is not null)
+                    r += 0.25f;
+                shore[a] = r;
+                // The surface reaches past the shore, where the ground stands above it: no liquid there.
+                Assert.True(r < pool.Radius - 0.5f, $"{poi.Poi.Prefab.Id} shore {r} m reaches the surface's edge ({pool.Radius} m)");
+                Assert.Null(gen.LiquidAt(Point(poi.Centre + direction * (r + 1f), pool.Centre.Y - 0.05f)));
+            }
+            // Not a circle: the shore wanders in and out by well over a metre.
+            Assert.True(shore.Max() - shore.Min() > 0.25f * shore.Average(), $"{poi.Poi.Prefab.Id} shore {string.Join(", ", shore)}");
+            shapes.Add(shore);
+        }
+        // Each pond its own shape.
+        Assert.Equal(4, shapes.Count);
+        Assert.NotEqual(shapes[0], shapes[1]);
+        Assert.NotEqual(shapes[2], shapes[3]);
+
+        System.Numerics.Vector3 Point(System.Numerics.Vector2 at, float y) => new(at.X, y, at.Y);
     }
 
     [Theory]
@@ -442,6 +475,12 @@ public class WorldGenTests
     [InlineData("""{ "biomes": [{ "id": "a" }], "grounds": [{ "id": "g", "texture": "g.png" }], "slope_ground": { "ground": "rock" } }""", "$.slope_ground.ground")]
     [InlineData("""{ "biomes": [{ "id": "a" }], "liquids": [{ "id": "goo", "roughness": 2 }] }""", "$.liquids[0].roughness")]
     [InlineData("""{ "biomes": [{ "id": "a" }], "liquids": [{ "id": "goo", "color": "green" }] }""", "$.liquids[0].color")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "liquids": [{ "id": "goo", "sheen": 2 }] }""", "$.liquids[0].sheen")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "liquids": [{ "id": "goo", "bubbles": -1 }] }""", "$.liquids[0].bubbles")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "liquids": [{ "id": "goo", "ripple_size": 0 }] }""", "$.liquids[0].ripple_size")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "liquids": [{ "id": "goo", "flow": -1 }] }""", "$.liquids[0].flow")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "liquids": [{ "id": "goo", "ripples": 1.5 }] }""", "$.liquids[0].ripples")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "liquids": [{ "id": "goo", "edge_color": "scum" }] }""", "$.liquids[0].edge_color")]
     [InlineData("""{ "biomes": [{ "id": "a" }], "liquids": [{ "id": "goo" }, { "id": "goo" }] }""", "$.liquids[1].id")]
     [InlineData("""{ "biomes": [{ "id": "a" }], "liquids": [{ "id": "goo", "collect": { "item": "goo", "count": 0 } }] }""", "$.liquids[0].collect.count")]
     [InlineData("""{ "biomes": [{ "id": "a" }], "objects": [{ "id": "g", "collider": { "shape": "sphere", "radius": 1 }, "regrow": 0 }] }""", "$.objects[0].regrow")]
@@ -474,6 +513,9 @@ public class WorldGenTests
     [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "flora": "jungle" }""", "$.flora")]
     [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "markers": [{ "type": "object", "ref": "tree" }] }""", "$.markers[0].ref")]
     [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "markers": [{ "type": "object" }] }""", "$.markers[0].ref")]
+    [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "terrain": [{ "op": "basin", "radius": 2, "blend": 3, "depth": 1, "wobble": 0.6 }] }""", "$.terrain[0].wobble")]
+    [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "terrain": [{ "op": "basin", "radius": 4, "blend": 4, "depth": 1, "wobble": 0.4 }] }""", "$.terrain[0]")]
+    [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "terrain": [{ "op": "basin", "radius": 2, "blend": 2, "depth": 1, "wobble": 0.4 }] }""", "$.terrain[0].blend")]
     [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "pools": [{ "liquid": "oil", "radius": 4 }] }""", "$.pools[0].liquid")]
     [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "pools": [{ "liquid": "goo", "radius": 0 }] }""", "$.pools[0].radius")]
     [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "pools": [{ "liquid": "goo", "at": [6, 0], "radius": 5 }] }""", "$.pools[0]")]

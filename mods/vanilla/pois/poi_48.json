@@ -9,12 +9,12 @@
   "placement": {},
   "terrain": [
     { "op": "flatten", "radius": 51.0, "blend": 20.0 },
-    { "op": "basin", "at": [0.0, 0.0], "radius": 24.0, "blend": 4.0, "depth": 1.5 }
+    { "op": "basin", "at": [0.0, 0.0], "radius": 24.0, "blend": 4.0, "depth": 1.5, "wobble": 0.3 }
   ],
   "ground": [{ "ground": "dirt", "radius": 43.0, "blend": 10.0, "noise": 4.0 }],
   "flora": "meadow",
   "pools": [
-    { "liquid": "chemical", "at": [0.0, 0.0], "radius": 25.0, "level": -1.0 }
+    { "liquid": "chemical", "at": [0.0, 0.0], "radius": 37.0, "level": -1.0 }
   ],
   "pieces": [
     { "shape": "box", "size": [1.0, 1.0, 20.0], "at": [26.0, 0.8, 0.0], "color": "#e0b52c" },
