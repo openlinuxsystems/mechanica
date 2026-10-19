@@ -800,8 +800,6 @@
     "Your quests are in the logbook ({logbook}). Press {handbook} for help at any time.": "Your quests are in the logbook ({logbook}). Press {handbook} for help at any time.",
     "Zoom in": "Zoom in",
     "Zoom out": "Zoom out",
-    "[E] open the Fabricator": "[E] open the Fabricator",
-    "[E] open the Fabricator   [U] upgrade": "[E] open the Fabricator   [U] upgrade",
     "[{0}] decide": "[{0}] decide",
     "[{0}] reload": "[{0}] reload",
     "a minute ago": "a minute ago",
