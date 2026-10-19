@@ -234,7 +234,7 @@ public sealed class LogicScriptTests : IDisposable
         Steps(45);
         // Nobody presses anything: the engine brakes and the wheels point ahead.
         foreach (var (bearing, _) in wheels)
-            Assert.Equal(new JointMotor(0f, 100f), LastMotor(bearing));
+            Assert.Equal(new JointMotor(0f, 225f), LastMotor(bearing));
         Assert.Equal(0f, LastMotor(steering).Target);
 
         _input = new PlayerInput(1, 1, 0, 0, false, false);
@@ -244,7 +244,7 @@ public sealed class LogicScriptTests : IDisposable
         // Gear 3 of 7 of 28 rad/s. Rolling toward -Z (the engine's front) is a negative spin about +X
         // (right-handed), so the right wheels turn negative and the left ones, about -X, positive.
         foreach (var (bearing, side) in wheels)
-            Assert.Equal(new JointMotor(-side * 12f, 160f), LastMotor(bearing));
+            Assert.Equal(new JointMotor(-side * 12f, 300f), LastMotor(bearing));
         // Right is clockwise from above: about the steering bearing's -Y axis that is +27° (the seat's steer_angle).
         Assert.Equal(27 * MathF.PI / 180, LastMotor(steering).Target!.Value, 4);
 
@@ -280,7 +280,7 @@ public sealed class LogicScriptTests : IDisposable
         foreach (var (bearing, side) in wheels.Take(2))
         {
             var motor = LastMotor(bearing);
-            Assert.Equal(80f, motor.MaxEffort);
+            Assert.Equal(240f, motor.MaxEffort);
             Assert.InRange(-side * motor.Velocity!.Value, 7.5f * 0.87f, 7.5f * 1.13f);
         }
 
@@ -317,7 +317,7 @@ public sealed class LogicScriptTests : IDisposable
         Assert.StartsWith("run_loop#", _runtime.Readouts.Text(Car, engine, "clip"));
         Assert.Single(_sound.Loops);
         foreach (var (bearing, _) in wheels.Take(2))
-            Assert.Equal(new JointMotor(0f, 60f), LastMotor(bearing));
+            Assert.Equal(new JointMotor(0f, 180f), LastMotor(bearing));
         _input = new PlayerInput(0, 1, 0, 0, false, false);
         Steps(10);
         Assert.Equal(1f, _runtime.Signals.Output(Car, engine));
@@ -404,7 +404,7 @@ public sealed class LogicScriptTests : IDisposable
         foreach (var (bearing, side) in wheels)
         {
             var motor = LastMotor(bearing);
-            Assert.Equal(820f, motor.MaxEffort);
+            Assert.Equal(1300f, motor.MaxEffort);
             Assert.InRange(-side * motor.Velocity!.Value, 57f * 0.97f, 57f * 1.03f);
         }
         Assert.InRange(_runtime.Readouts.Number(Car, engine, "heat")!.Value, 0.2f, 1f);
@@ -437,7 +437,7 @@ public sealed class LogicScriptTests : IDisposable
         Steps(45);                                   // the start (0.6 s) is over: gear 3 of 5 of 20 rad/s, no wobble
         Assert.StartsWith("run_loop#", _runtime.Readouts.Text(Car, engine, "clip"));
         foreach (var (bearing, side) in wheels.Take(2))
-            Assert.Equal(new JointMotor(-side * 12f, 160f), LastMotor(bearing));
+            Assert.Equal(new JointMotor(-side * 12f, 300f), LastMotor(bearing));
 
         Assert.True(creation.SetLevel(engine, 4));
         Assert.Equal("Electric Engine 5", creation.DefinitionOf(engine).Name);
@@ -449,7 +449,7 @@ public sealed class LogicScriptTests : IDisposable
         Assert.StartsWith("run_hard_loop#", _runtime.Readouts.Text(Car, engine, "clip"));
         // Top speed of 57 rad/s (under the 60 rad/s bearing limit), the same 160 N·m pull, and blue arcs.
         foreach (var (bearing, side) in wheels)
-            Assert.Equal(new JointMotor(-side * 57f, 160f), LastMotor(bearing));
+            Assert.Equal(new JointMotor(-side * 57f, 300f), LastMotor(bearing));
         Assert.Equal(1f, _runtime.Readouts.Number(Car, engine, "heat"));
         Assert.True(_runtime.Readouts.Number(Car, engine, "sparks") > 0f);
 
@@ -490,9 +490,9 @@ public sealed class LogicScriptTests : IDisposable
         Configure(creation, steering, "reverse", true);
         _input = new PlayerInput(1, 1, 0, 0, false, false);
         Steps(3);
-        Assert.Equal(new JointMotor(side * 12f, 160f), LastMotor(reversed));
+        Assert.Equal(new JointMotor(side * 12f, 300f), LastMotor(reversed));
         foreach (var (bearing, other) in wheels.Skip(1))
-            Assert.Equal(new JointMotor(-other * 12f, 160f), LastMotor(bearing));
+            Assert.Equal(new JointMotor(-other * 12f, 300f), LastMotor(bearing));
         Assert.Equal(-27 * MathF.PI / 180, LastMotor(steering).Target!.Value, 4);
     }
 
@@ -817,7 +817,7 @@ public sealed class LogicScriptTests : IDisposable
         Assert.Equal(1f, readouts.Number(Car, engine, "running"));
         Assert.Equal(2f, readouts.Number(Car, engine, "fuel_items"));
         Assert.InRange(readouts.Number(Car, engine, "fuel")!.Value, 0.9f, 1f);
-        Assert.Equal(120f, readouts.Number(Car, engine, "torque"));
+        Assert.Equal(360f, readouts.Number(Car, engine, "torque"));
         Assert.True(readouts.Has(Car, engine, "rpm"));
         foreach (var (bearing, side) in wheels.Take(2))
             Assert.InRange(-side * readouts.Number(Car, bearing, "drive")!.Value, 15f * 0.97f, 15f * 1.03f);
