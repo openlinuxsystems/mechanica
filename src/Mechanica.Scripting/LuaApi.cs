@@ -67,7 +67,7 @@ public static class LuaApi
         new("part.set_output", "part.set_output(value)", "Sets the part's output on the logic bus (a number, or a boolean as 1 or 0); linked parts get it next step.", "part"),
         new("part.output", "part.output()", "The part's own output on the logic bus.", "part"),
         new("part.input", "part.input()", "The sum of the outputs of every part linked to this one.", "part"),
-        new("part.inputs", "part.inputs()", "Each part linked to this one as {part, value, type, storage}, by part id; storage is true for a container (a gas container linked to an engine).", "part"),
+        new("part.inputs", "part.inputs()", "Each part linked to this one as {part, value, type, storage, seat, occupied}, by part id; storage is true for a container (a gas container linked to an engine), seat for a seat (nil otherwise) and occupied while someone sits in that seat.", "part"),
         new("part.links", "part.links()", "Ids of the parts this part's output is linked to.", "part"),
         new("part.setting", "part.setting(id)", "The value of one of the part's settings (number, string, boolean or list), or nil.", "part"),
         new("part.set_light", "part.set_light(level)", "For a part with a light section: how bright it shines, 0 to 1 (or true/false); the host sends it to every client.", "part"),

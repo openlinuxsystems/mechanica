@@ -1,7 +1,7 @@
 {
   "id": "gas_engine",
   "name": "Gas Engine 1",
-  "description": "Turns the wheel bearings it is linked to toward its front, with a seat's throttle as its input, once it is switched on. Burns gasoline from the creation's gas containers. Upgrade it in place with Component Kits (U) for more bearings, power steps, power and mileage.",
+  "description": "Turns the wheel bearings it is linked to toward its front, with a seat's throttle as its input: it runs while someone sits in a linked seat, and on its own with no seat or switch linked. Burns gasoline from the creation's gas containers. Upgrade it in place with Component Kits (U) for more bearings, power steps, power and mileage.",
   "category": "interactive",
   "mass": 12,
   "durability": 6,
@@ -65,7 +65,7 @@
       "id": "on",
       "name": "On",
       "type": "toggle",
-      "default": false
+      "default": true
     }
   ],
   "upgrades": [
@@ -112,7 +112,7 @@
             "id": "on",
             "name": "On",
             "type": "toggle",
-            "default": false
+            "default": true
           }
         ],
         "display": {
@@ -191,7 +191,7 @@
             "id": "on",
             "name": "On",
             "type": "toggle",
-            "default": false
+            "default": true
           }
         ],
         "display": {
@@ -270,7 +270,7 @@
             "id": "on",
             "name": "On",
             "type": "toggle",
-            "default": false
+            "default": true
           }
         ],
         "display": {
@@ -358,7 +358,7 @@
             "id": "on",
             "name": "On",
             "type": "toggle",
-            "default": false
+            "default": true
           }
         ],
         "display": {

@@ -1,3 +1,4 @@
+using System.Numerics;
 using System.Text.Json;
 using Mechanica.Core.Creations;
 using Mechanica.Core.Data;
@@ -21,6 +22,7 @@ public sealed class LogicScriptTests : IDisposable
     private readonly ScriptRig.FakeWorld _world = new();
     private readonly Physics _physics = new();
     private readonly ScriptRuntime _runtime;
+    private readonly LoopSound _sound = new();
     private PlayerInput? _input;
 
     public LogicScriptTests()
@@ -33,6 +35,7 @@ public sealed class LogicScriptTests : IDisposable
             Seats = new SeatRegistry(),
             OccupantInput = _ => _input,
             Creative = true,
+            Sound = _sound,
         };
         _runtime.Message += m => Assert.NotEqual(ScriptMessageKind.Error, m.Kind);
     }
@@ -224,13 +227,11 @@ public sealed class LogicScriptTests : IDisposable
     [Fact]
     public void ACarDrivesTowardItsEngineAndSteersRight()
     {
-        // Electric Engine 2 drives four bearings; switched on, it starts in 0.6 s.
+        // Electric Engine 2 drives four bearings; the driver sitting down starts it in 0.6 s.
         var (creation, seat, engine, wheels, steering) = BuildCar("vanilla:electric_engine", level: 1);
         Configure(creation, engine, "gear", 3);
-        Configure(creation, engine, "on", true);
-        Steps(45);
         _runtime.Seats!.Sit(Peer, Car, seat);
-        Steps(3);
+        Steps(45);
         // Nobody presses anything: the engine brakes and the wheels point ahead.
         foreach (var (bearing, _) in wheels)
             Assert.Equal(new JointMotor(0f, 100f), LastMotor(bearing));
@@ -259,6 +260,8 @@ public sealed class LogicScriptTests : IDisposable
         var (creation, seat, engine, wheels, _) = BuildCar("vanilla:scrap_gas_engine", linked: 2);
         // It drives two bearings at most (Scrap Engine Design Spec).
         Assert.False(creation.TryLink(engine, wheels[2].Bearing, out _));
+        // Switched off, sitting down does not start it.
+        Configure(creation, engine, "on", false);
         _runtime.Seats!.Sit(Peer, Car, seat);
         _input = new PlayerInput(0, 1, 0, 0, false, false);
         Steps(10);
@@ -295,6 +298,89 @@ public sealed class LogicScriptTests : IDisposable
         Assert.StartsWith("off_loop#", _runtime.Readouts.Text(Car, engine, "clip"));
         Assert.Equal(0f, _runtime.Readouts.Number(Car, engine, "running"));
         Assert.Null(LastMotor(wheels[0].Bearing).Velocity);
+    }
+
+    [Fact]
+    public void AnEngineLinkedToADriversSeatRunsOnlyWhileSomeoneSitsInIt()
+    {
+        var (creation, seat, engine, wheels, _) = BuildCar("vanilla:scrap_gas_engine", linked: 2);
+        // On by default, but the seat controls it: nobody in the seat, nothing runs and nothing sounds.
+        Steps(120);
+        Assert.StartsWith("off_loop", _runtime.Readouts.Text(Car, engine, "clip"));
+        Assert.Equal(0f, _runtime.Readouts.Number(Car, engine, "running"));
+        Assert.Empty(_sound.Loops);
+        Assert.DoesNotContain(_world.Motors, m => wheels.Any(w => w.Bearing == m.Part) && m.Velocity is not null);
+
+        // Sitting down starts it: it idles (holding the wheels) until W, then drives.
+        _runtime.Seats!.Sit(Peer, Car, seat);
+        Steps(120);                                   // a false start (0.7 s) and the start (1 s) are over
+        Assert.StartsWith("run_loop#", _runtime.Readouts.Text(Car, engine, "clip"));
+        Assert.Single(_sound.Loops);
+        foreach (var (bearing, _) in wheels.Take(2))
+            Assert.Equal(new JointMotor(0f, 60f), LastMotor(bearing));
+        _input = new PlayerInput(0, 1, 0, 0, false, false);
+        Steps(10);
+        Assert.Equal(1f, _runtime.Signals.Output(Car, engine));
+        foreach (var (bearing, side) in wheels.Take(2))
+            Assert.InRange(-side * LastMotor(bearing).Velocity!.Value, 7.5f * 0.87f, 7.5f * 1.13f);
+
+        // Getting up (still holding W) stops it: the drive, the hum and the wheels' motors go.
+        _runtime.Seats.Leave(Peer);
+        Steps(1);
+        Assert.StartsWith("stop#", _runtime.Readouts.Text(Car, engine, "clip"));
+        Assert.Empty(_sound.Loops);
+        Assert.Equal(0f, _runtime.Signals.Output(Car, engine));
+        Steps(120);
+        Assert.StartsWith("off_loop#", _runtime.Readouts.Text(Car, engine, "clip"));
+        Assert.Equal(0f, _runtime.Readouts.Number(Car, engine, "running"));
+        Assert.Empty(_sound.Loops);
+        foreach (var (bearing, _) in wheels.Take(2))
+            Assert.Null(LastMotor(bearing).Velocity);
+    }
+
+    [Fact]
+    public void AnEngineKeepsRunningWhenItsSeatIsRemovedWithTheDriverInIt()
+    {
+        var (creation, seat, engine, wheels, _) = BuildCar("vanilla:scrap_gas_engine", linked: 2);
+        _runtime.Seats!.Sit(Peer, Car, seat);
+        Steps(120);
+        Assert.StartsWith("run_loop#", _runtime.Readouts.Text(Car, engine, "clip"));
+
+        // With no control left it is back to its default: on, forward at full throttle.
+        creation.RemovePart(seat, () => 99);
+        Steps(10);
+        Assert.Equal(1f, _runtime.Readouts.Number(Car, engine, "running"));
+        Assert.Equal(1f, _runtime.Signals.Output(Car, engine));
+        Assert.Single(_sound.Loops);
+        foreach (var (bearing, side) in wheels.Take(2))
+            Assert.InRange(-side * LastMotor(bearing).Velocity!.Value, 7.5f * 0.87f, 7.5f * 1.13f);
+
+        // Its own switch still stops it.
+        Configure(creation, engine, "on", false);
+        Steps(60);
+        Assert.Equal(0f, _runtime.Readouts.Number(Car, engine, "running"));
+        Assert.Empty(_sound.Loops);
+    }
+
+    [Fact]
+    public void AnEngineLinkedToASwitchRunsWhileTheSwitchIsOn()
+    {
+        var creation = Board();
+        var toggle = Place(creation, "vanilla:switch", new GridCell(-2, 1, 0));
+        var engine = Place(creation, "vanilla:electric_engine", new GridCell(2, 1, 0));
+        Link(creation, toggle, engine);
+        Steps(60);
+        Assert.Equal(0f, _runtime.Readouts.Number(Car, engine, "running"));
+
+        Activate(creation, toggle);
+        Steps(60);                                    // the start is 0.6 s
+        Assert.Equal(1f, _runtime.Readouts.Number(Car, engine, "running"));
+        Assert.Equal(1f, _runtime.Signals.Output(Car, engine));
+
+        Activate(creation, toggle);
+        Steps(60);
+        Assert.Equal(0f, _runtime.Readouts.Number(Car, engine, "running"));
+        Assert.Empty(_sound.Loops);
     }
 
     [Fact]
@@ -337,6 +423,8 @@ public sealed class LogicScriptTests : IDisposable
         // Electric Engine 1 drives two bearings; level 5 (upgrade 4) drives ten, with thirteen speed settings.
         Assert.Equal("Electric Engine 1", creation.DefinitionOf(engine).Name);
         Assert.False(creation.TryLink(engine, wheels[2].Bearing, out _));
+        // Switched off, sitting down does not start it.
+        Configure(creation, engine, "on", false);
         _runtime.Seats!.Sit(Peer, Car, seat);
         _input = new PlayerInput(0, 1, 0, 0, false, false);
         Steps(10);
@@ -395,12 +483,11 @@ public sealed class LogicScriptTests : IDisposable
     {
         var (creation, seat, engine, wheels, steering) = BuildCar("vanilla:electric_engine", level: 1);
         Configure(creation, engine, "gear", 3);
-        Configure(creation, engine, "on", true);
+        _runtime.Seats!.Sit(Peer, Car, seat);
         Steps(45);
         var (reversed, side) = wheels[0];
         Configure(creation, reversed, "reverse", true);
         Configure(creation, steering, "reverse", true);
-        _runtime.Seats!.Sit(Peer, Car, seat);
         _input = new PlayerInput(1, 1, 0, 0, false, false);
         Steps(3);
         Assert.Equal(new JointMotor(side * 12f, 160f), LastMotor(reversed));
@@ -464,7 +551,7 @@ public sealed class LogicScriptTests : IDisposable
         // With only the tank linked in (no seat), the engine runs forward on its own while it is on.
         _runtime.Seats!.Leave(Peer);
         Assert.True(creation.Unlink(seat, engine));
-        Steps(10);
+        Steps(150);                                   // it winds down as the driver gets up, then starts again
         foreach (var (bearing, side) in wheels.Take(2))
             Assert.InRange(-side * LastMotor(bearing).Velocity!.Value, 15f * 0.97f, 15f * 1.03f);
     }
@@ -569,6 +656,7 @@ public sealed class LogicScriptTests : IDisposable
         var seat = Place(creation, "vanilla:scrap_drivers_seat", new GridCell(-2, 1, -2));
         var engine = Place(creation, "vanilla:electric_engine", new GridCell(2, 1, 0));
         Link(creation, seat, engine);
+        Configure(creation, engine, "on", false);
         Steps(3);
         Assert.Equal(0f, _runtime.Readouts.Number(Car, seat, "seated"));
         Assert.Equal(0f, _runtime.Readouts.Number(Car, seat, "rattle"));
@@ -626,6 +714,7 @@ public sealed class LogicScriptTests : IDisposable
         Steps(48);
         Assert.StartsWith("seated_loop#", _runtime.Readouts.Text(Car, seat, "clip"));
         Assert.Equal(0f, _runtime.Readouts.Number(Car, engine, "running"));
+        Assert.Empty(_sound.Loops);
 
         _runtime.Seats.Leave(Peer);
         Steps(3);
@@ -963,5 +1052,26 @@ public sealed class LogicScriptTests : IDisposable
         }
 
         public IReadOnlyList<ScriptOverlap> OverlapSphere(System.Numerics.Vector3 centre, float radius, int? ignoreCreation) => [];
+    }
+
+    /// <summary>Keeps the sound loops scripts start, so a test can tell what still hums.</summary>
+    private sealed class LoopSound : IScriptSound
+    {
+        private int _next = 1;
+
+        public Dictionary<int, string> Loops { get; } = [];
+
+        public string? Play(string sound, string ownerModId, Vector3 position) => null;
+
+        public int StartLoop(string sound, string ownerModId, int creation, int part, IReadOnlyDictionary<string, float>? parameters, out string? error)
+        {
+            error = null;
+            Loops[_next] = sound;
+            return _next++;
+        }
+
+        public string? SetLoopParameter(int handle, string name, float value) => Loops.ContainsKey(handle) ? null : "the loop has stopped";
+
+        public void StopLoop(int handle) => Loops.Remove(handle);
     }
 }

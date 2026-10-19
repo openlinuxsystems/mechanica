@@ -56,6 +56,17 @@ public partial class DebugCarTest : StagedTest
             return true;
         });
         Wait("the car settles", 90);
+        Add("with nobody in the seat the engine stays off on both peers", frame =>
+        {
+            if (frame < 120)
+                return false;
+            var engine = Part("vanilla:scrap_gas_engine");
+            foreach (var (instance, who) in new[] { (_host, "host"), (_client, "client") })
+                Check(instance.Main.Display.Readouts.Number(_car, engine, "running") is null or 0f, $"the {who} sees the engine off");
+            Check(HostCar.InventoryOf(Part("vanilla:gas_container"))!.Count(Gasoline) == Creations.DebugCarSpawner.LoadSettings().Gasoline,
+                "it burns no gasoline");
+            return true;
+        });
         Add("the client sits in the driver's seat", frame =>
         {
             if (frame == 0)
@@ -68,6 +79,12 @@ public partial class DebugCarTest : StagedTest
             if (_results.Count == 0 || !_client.Main.LocalPlayer!.Seated)
                 return false;
             Check(_results[0].Ok, $"sitting down succeeds ({_results[0]})");
+            return true;
+        });
+        Add("sitting down starts the engine", _ =>
+        {
+            if (_client.Main.Display.Readouts.Number(_car, Part("vanilla:scrap_gas_engine"), "running") != 1f)
+                return false;
             _start = Chassis.GlobalPosition;
             return true;
         });

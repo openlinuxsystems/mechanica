@@ -67,6 +67,7 @@ void Run(string name, IScriptSource source, int count, int stepCount, ModLoadRes
         runtime.Update(1 / 60f);
     var times = new double[stepCount];
     var gc = GC.CollectionCount(0);
+    var allocated = GC.GetAllocatedBytesForCurrentThread();
     var total = Stopwatch.StartNew();
     for (var i = 0; i < stepCount; i++)
     {
@@ -75,9 +76,10 @@ void Run(string name, IScriptSource source, int count, int stepCount, ModLoadRes
         times[i] = Stopwatch.GetElapsedTime(start).TotalMilliseconds;
     }
     total.Stop();
+    var perStep = (GC.GetAllocatedBytesForCurrentThread() - allocated) / (double)stepCount;
     Array.Sort(times);
     var mean = total.Elapsed.TotalMilliseconds / stepCount;
-    Console.WriteLine($"  {name}: mean {mean:0.000} ms/step ({mean * 1000 / count:0.00} µs/part), p50 {times[stepCount / 2]:0.000}, p99 {times[(int)(stepCount * 0.99)]:0.000}, max {times[^1]:0.000} ms; {mean / (1000.0 / 60) * 100:0.0}% of a 16.7 ms frame; gen0 GCs {GC.CollectionCount(0) - gc}; pushes/step {world.Pushes / (double)(stepCount + 300):0}");
+    Console.WriteLine($"  {name}: mean {mean:0.000} ms/step ({mean * 1000 / count:0.00} µs/part), p50 {times[stepCount / 2]:0.000}, p99 {times[(int)(stepCount * 0.99)]:0.000}, max {times[^1]:0.000} ms; {mean / (1000.0 / 60) * 100:0.0}% of a 16.7 ms frame; gen0 GCs {GC.CollectionCount(0) - gc}; {perStep / count:0} B/part/step; pushes/step {world.Pushes / (double)(stepCount + 300):0}");
 }
 
 static string FindRepoRoot()

@@ -356,6 +356,22 @@ public partial class PlayerController : CharacterBody3D
     /// <summary>True when this player's body is drawn: alive, and not seen from inside its own head.</summary>
     public bool BodyVisible => !_dead && (ThirdPerson || !Camera.Current);
 
+    /// <summary>
+    /// True while the local player looks out of a seat's interior camera from its own eyes: the seated body is drawn
+    /// (legs, hands on the wheel) without its head, which would fill the view.
+    /// </summary>
+    public bool HeadHidden
+    {
+        get => _headHidden;
+        set
+        {
+            _headHidden = value;
+            UpdateBodyVisibility();
+        }
+    }
+
+    private bool _headHidden;
+
     private void UpdateBodyVisibility()
     {
         _bodyMesh.Visible = _character is null && BodyVisible;

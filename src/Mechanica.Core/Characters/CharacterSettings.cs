@@ -122,6 +122,12 @@ public sealed record CharacterSettings
     /// </summary>
     public float[] FirstPersonOffset { get; init; } = [0f, -1.25f, 0.1f];
 
+    /// <summary>
+    /// Where the eyes are in the rest pose, in metres from the feet (right, up, back). A seat's interior camera looks from
+    /// here as the seated body carries the head.
+    /// </summary>
+    public float[] Eyes { get; init; } = [0f, 1.637f, -0.08f];
+
     /// <summary>How far the first-person arms tip forward from upright, in degrees, to bring the hands into view.</summary>
     public float FirstPersonPitchDegrees { get; init; } = 10f;
 
@@ -182,6 +188,8 @@ public sealed record CharacterSettings
         Seat.Validate();
         if (FirstPersonOffset is not { Length: 3 } || FirstPersonOffset.Any(v => !float.IsFinite(v) || MathF.Abs(v) > 3f))
             throw new FormatException("first_person_offset must be three numbers from -3 to 3 metres.");
+        if (Eyes is not { Length: 3 } || Eyes.Any(v => !float.IsFinite(v) || MathF.Abs(v) > 3f))
+            throw new FormatException("eyes must be three numbers from -3 to 3 metres.");
         if (!float.IsFinite(FirstPersonPitchDegrees) || MathF.Abs(FirstPersonPitchDegrees) > 60f)
             throw new FormatException($"first_person_pitch_degrees must be from -60 to 60 (got {FirstPersonPitchDegrees}).");
     }

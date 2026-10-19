@@ -36,8 +36,9 @@
   // Over the shoulder: right of and above the head, so the player doesn't hide the crosshair.
   "camera_shoulder": 0.5,
   "camera_raise": 0.25,
-  // Seats (UI spec §9, §10): sitting down and standing up take this long; the seat's interior camera is at the seated
-  // eye height, and Ctrl switches to a chase camera behind and above the seat that catches up at chase_stiffness.
+  // Seats (UI spec §9, §10): sitting down and standing up take this long; the seat's interior camera looks from the seated
+  // body's eyes (seated_eye_height over the seat when there is no body), and Ctrl switches to a chase camera behind and
+  // above the seat that catches up at chase_stiffness.
   "seat_transition_seconds": 0.3,
   "seated_eye_height": 1.1,
   "chase_distance": 6.0,
