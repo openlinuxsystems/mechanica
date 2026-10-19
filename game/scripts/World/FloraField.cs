@@ -15,6 +15,10 @@ namespace Mechanica.Game.World;
 /// (Options, Graphics), which sets how many of them are drawn, how far, and how much they sway; changing a level rebuilds
 /// the chunks from the plants already grown. Flora has no colliders: everything walks and drives through it, and it bends
 /// out of the way of the players, bots and vehicles nearest the camera.
+/// <para>Nothing pops: plants sink away towards the end of each kind's distance (never past the view distance, where
+/// the ground ends), the meshes of a chunk cross-fade where they hand over, a chunk's plants grow in when first drawn,
+/// and when a chunk's ground changes (scenery turning into a loaded chunk) its old plants stay until the new ones are
+/// built.</para>
 /// </summary>
 public partial class FloraField : Node3D
 {
@@ -25,6 +29,8 @@ public partial class FloraField : Node3D
 
     private readonly Dictionary<ChunkCoord, Patch> _patches = [];
     private readonly Dictionary<FloraKind, FoliageLevel> _levels = [];
+    private readonly List<(Node3D Node, double Age)> _appearing = [];
+    private float _view = -1f;
 
     /// <summary>The world whose loaded chunks grow flora. Set before adding to the tree.</summary>
     public WorldStreamer World { get; init; } = null!;
@@ -70,7 +76,11 @@ public partial class FloraField : Node3D
             RenderingServer.GlobalShaderParameterSet(name, Vector4.Zero);
     }
 
-    public override void _Process(double delta) => Step(Settings!.BuildBudget);
+    public override void _Process(double delta)
+    {
+        Step(Settings!.BuildBudget);
+        Appear(delta);
+    }
 
     /// <summary>Builds every patch in reach now, waiting for plants still growing. For tests and captures.</summary>
     public void BuildAll()
@@ -92,13 +102,22 @@ public partial class FloraField : Node3D
         }
         var graphics = GameSettings.Current.Graphics;
         var changed = false;
+        var view = World.ViewDistance ?? graphics.Effective().ViewDistance;
+        if (view != _view)
+        {
+            // Every kind's distance may change: rebuild every patch, drawing the old plants until the new ones are in.
+            _view = view;
+            _levels.Clear();
+            foreach (var patch in _patches.Values)
+                patch.Built.Clear();
+        }
         foreach (var kind in Kinds)
         {
             var level = graphics.Foliage(kind);
             if (_levels.TryGetValue(kind, out var was) && was == level)
                 continue;
             _levels[kind] = level;
-            ConfigureMaterial(kind, level);
+            ConfigureMaterial(kind);
             changed = true;
         }
         var viewer = Viewer?.Invoke() ?? GetViewport()?.GetCamera3D()?.GlobalPosition ?? World.SpawnPoint();
@@ -110,14 +129,22 @@ public partial class FloraField : Node3D
             return 0;
         _settled = null;
 
-        var reach = Kinds.Max(k => settings.Distance(k, _levels[k]));
+        var reach = Kinds.Max(Reach);
         foreach (var (coord, patch) in _patches.ToList())
         {
-            if (!Ground(coord, out var chunk) || chunk != patch.Chunk || RectDistance(chunk, viewer) > reach + 16f)
+            var inReach = RectDistance(patch.Chunk, viewer) <= reach + 16f;
+            if (inReach && Ground(coord, out var chunk))
             {
-                patch.Node.QueueFree();
-                _patches.Remove(coord);
+                // Scenery turned into a loaded chunk (or back): grow its plants again, drawing the old ones meanwhile.
+                if (chunk != patch.Chunk)
+                    patch.Regrow(chunk);
+                continue;
             }
+            // The scenery made way for a chunk still being built: keep its plants until the chunk is in.
+            if (inReach && World.IsPending(coord))
+                continue;
+            patch.Node.QueueFree();
+            _patches.Remove(coord);
         }
         if (reach <= 0f)
             return 0;
@@ -139,8 +166,8 @@ public partial class FloraField : Node3D
             foreach (var kind in Kinds)
             {
                 var level = _levels[kind];
-                var wanted = distance <= settings.Distance(kind, level) + 8f ? level : FoliageLevel.Off;
-                if (patch.Built.GetValueOrDefault(kind, FoliageLevel.Off) == wanted)
+                var wanted = distance <= Reach(kind) + 8f ? level : FoliageLevel.Off;
+                if (patch.Built.GetValueOrDefault(kind, FoliageLevel.Off) == wanted && (wanted != FoliageLevel.Off || !patch.Kinds.ContainsKey(kind)))
                     continue;
                 if (wanted == FoliageLevel.Off)
                 {
@@ -164,10 +191,16 @@ public partial class FloraField : Node3D
                     waiting++;
                     continue;
                 }
+                // Plants replacing ones already drawn take over at once; plants new to the patch grow in.
+                var fresh = !patch.Kinds.ContainsKey(kind);
                 patch.Remove(kind);
                 var (node, count) = Build(patch, kind, level, growing.Result);
                 if (node is not null)
+                {
                     patch.Kinds[kind] = node;
+                    if (fresh && !wait && settings.AppearTime > 0f)
+                        StartAppearing(node);
+                }
                 patch.Drawn[kind] = count;
                 patch.Built[kind] = level;
             }
@@ -183,6 +216,40 @@ public partial class FloraField : Node3D
     // Where the field last had nothing left to build: the chunks' revision, the viewer and the settings then.
     private (int Revision, Vector3 Viewer, FloraSettings Settings)? _settled;
 
+    // Metres a kind is drawn at its level: no farther than the view distance, so plants have sunk away where the ground ends.
+    private float Reach(FloraKind kind) => Mathf.Min(Settings!.Distance(kind, _levels[kind]), _view);
+
+    // Grows a newly built kind's plants in from nothing over the appear time.
+    private void StartAppearing(Node3D node)
+    {
+        foreach (var mesh in node.GetChildren().OfType<MultiMeshInstance3D>())
+            mesh.SetInstanceShaderParameter(FloraMaterials.Appear, 0f);
+        _appearing.Add((node, 0.0));
+    }
+
+    private void Appear(double delta)
+    {
+        if (_appearing.Count == 0)
+            return;
+        var time = Settings!.AppearTime;
+        for (var i = _appearing.Count - 1; i >= 0; i--)
+        {
+            var (node, age) = _appearing[i];
+            age += delta;
+            var done = !IsInstanceValid(node) || node.IsQueuedForDeletion() || age >= time;
+            if (IsInstanceValid(node))
+            {
+                var share = done ? 1f : (float)(age / time);
+                foreach (var mesh in node.GetChildren().OfType<MultiMeshInstance3D>())
+                    mesh.SetInstanceShaderParameter(FloraMaterials.Appear, share);
+            }
+            if (done)
+                _appearing.RemoveAt(i);
+            else
+                _appearing[i] = (node, age);
+        }
+    }
+
     // A loaded chunk, or failing that scenery, at a coordinate.
     private bool Ground(ChunkCoord coord, out TerrainChunk chunk) =>
         World.Chunks.TryGetValue(coord, out chunk!) || World.Scenery.TryGetValue(coord, out chunk!);
@@ -192,7 +259,9 @@ public partial class FloraField : Node3D
     {
         var settings = Settings!;
         var keep = settings.Keep(level);
-        var distance = settings.Distance(kind, level);
+        var distance = Reach(kind);
+        // Where one mesh hands over to the next they cross-fade (dithered) over this many metres either side.
+        var blend = distance * settings.BlendShare;
         var half = patch.Chunk.Data.Size / 2f;
         // Visibility ranges are measured to the chunk centre: near chunks (the one the viewer stands in and its
         // neighbours) get the full meshes, the rest the far meshes, and the shader thins plants out per plant.
@@ -210,14 +279,14 @@ public partial class FloraField : Node3D
             var list = group.ToList();
             var buffer = Buffer(list, centre, tilt, 1f);
             var (full, lod) = FloraMaterials.Meshes(group.Key);
-            root.AddChild(Instance($"{group.Key.Id}_near", full, buffer, list.Count, kind, 0f, Mathf.Min(lodAt, thinAt)));
+            root.AddChild(Instance($"{group.Key.Id}_near", full, buffer, list.Count, kind, 0f, Mathf.Min(lodAt, thinAt), blend));
             if (thinAt > lodAt)
-                root.AddChild(Instance($"{group.Key.Id}_far", lod, buffer, list.Count, kind, lodAt, thinAt));
+                root.AddChild(Instance($"{group.Key.Id}_far", lod, buffer, list.Count, kind, lodAt, thinAt, blend));
             if (thin)
             {
                 var sparse = list.Where(p => p.Rank < keep * settings.ThinKeep).ToList();
                 if (sparse.Count > 0)
-                    root.AddChild(Instance($"{group.Key.Id}_thin", lod, Buffer(sparse, centre, tilt, settings.ThinScale), sparse.Count, kind, thinAt, end));
+                    root.AddChild(Instance($"{group.Key.Id}_thin", lod, Buffer(sparse, centre, tilt, settings.ThinScale), sparse.Count, kind, thinAt, end, blend));
             }
             count += list.Count;
         }
@@ -252,7 +321,8 @@ public partial class FloraField : Node3D
         return buffer;
     }
 
-    private static MultiMeshInstance3D Instance(string name, Mesh mesh, float[] buffer, int count, FloraKind kind, float begin, float end)
+    // The last mesh ends past the fade end, where its plants have sunk away, so only hand-overs between meshes blend.
+    private static MultiMeshInstance3D Instance(string name, Mesh mesh, float[] buffer, int count, FloraKind kind, float begin, float end, float blend)
     {
         var multi = New(mesh, count);
         multi.Buffer = buffer;
@@ -264,6 +334,9 @@ public partial class FloraField : Node3D
             CastShadow = kind == FloraKind.Bush ? GeometryInstance3D.ShadowCastingSetting.On : GeometryInstance3D.ShadowCastingSetting.Off,
             VisibilityRangeBegin = begin,
             VisibilityRangeEnd = end,
+            VisibilityRangeBeginMargin = begin > 0f ? blend : 0f,
+            VisibilityRangeEndMargin = blend,
+            VisibilityRangeFadeMode = GeometryInstance3D.VisibilityRangeFadeModeEnum.Self,
         };
     }
 
@@ -284,11 +357,11 @@ public partial class FloraField : Node3D
         InstanceCount = count,
     };
 
-    private void ConfigureMaterial(FloraKind kind, FoliageLevel level)
+    private void ConfigureMaterial(FloraKind kind)
     {
         var settings = Settings!;
-        var distance = settings.Distance(kind, level);
-        var wind = settings.Level(level)?.Wind ?? 0f;
+        var distance = Reach(kind);
+        var wind = settings.Level(_levels[kind])?.Wind ?? 0f;
         var bush = kind == FloraKind.Bush;
         FloraMaterials.Configure(FloraMaterials.For(kind), wind * (bush ? settings.BushSway : 1f), bush ? settings.BushSpeed : 1f,
             distance * (1f - settings.FadeShare), distance);
@@ -335,7 +408,7 @@ public partial class FloraField : Node3D
 
     private sealed class Patch(TerrainChunk chunk, Node3D node)
     {
-        public TerrainChunk Chunk { get; } = chunk;
+        public TerrainChunk Chunk { get; private set; } = chunk;
 
         public Node3D Node { get; } = node;
 
@@ -346,6 +419,14 @@ public partial class FloraField : Node3D
         public Dictionary<FloraKind, FoliageLevel> Built { get; } = [];
 
         public Dictionary<FloraKind, int> Drawn { get; } = [];
+
+        // Takes new ground for the same chunk: its plants grow again and replace the drawn ones as each kind is built.
+        public void Regrow(TerrainChunk ground)
+        {
+            Chunk = ground;
+            Grown.Clear();
+            Built.Clear();
+        }
 
         public void Remove(FloraKind kind)
         {

@@ -274,9 +274,12 @@ The models are built in code: grass `grass_short`, `grass_tall`, `grass_wide`, `
 How much is drawn, how far and how much it sways in the wind is the player's choice (Options, Graphics,
 Foliage density: Off, Low, Medium, High, Very high, for grass, ground cover and bushes apart), tuned in
 `game/data/flora.json`, which ships with the build and is not moddable. Lower levels draw a subset of the
-plants of higher ones, and Low turns the wind off. At High, grass is drawn to 150 m, ground cover to 80 m and
-bushes to 380 m; past `thin_share` of the distance grass and ground cover keep `thin_keep` of their plants,
-`thin_scale` times larger, so the far field stays full but cheap, and the ground texture carries on beyond.
+plants of higher ones, and Low turns the wind off. At High, grass is drawn to 220 m, ground cover to 120 m and
+bushes to 460 m (never past the view distance); past `thin_share` of the distance grass and ground cover keep
+`thin_keep` of their plants, `thin_scale` times larger, so the far field stays full but cheap, and the ground texture
+carries on beyond. Nothing pops in: plants sink away over the last `fade_share` of the distance, a chunk's near, far
+and thinned meshes cross-fade over `blend_share` of it where they hand over, and a chunk's plants grow in over
+`appear_time` seconds when first drawn.
 
 ## The map's layout
 

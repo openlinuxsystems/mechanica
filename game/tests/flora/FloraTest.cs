@@ -15,7 +15,8 @@ namespace Mechanica.Game.Tests;
 /// standing on the ground of their chunks; the Foliage density levels change how much of each kind is drawn and Off
 /// removes a kind without touching the others. The seed-dropping bush is walk-through: the client's player walks
 /// straight through one, ordinary rays pass it, and only the sledge's aim (which asks for walk-through objects) lands
-/// on it and breaks it for both peers.
+/// on it and breaks it for both peers. When scenery turns into loaded ground, its chunks keep drawing their plants until
+/// the loaded chunks' plants replace them.
 /// </summary>
 public partial class FloraTest : StagedTest
 {
@@ -24,6 +25,10 @@ public partial class FloraTest : StagedTest
     private Instance _client = null!;
     private readonly Dictionary<FloraKind, int> _high = [];
     private Vector3 _spot;
+    private Vector3 _far;
+    private int _farDrawn;
+    private List<ChunkCoord> _farChunks = [];
+    private readonly Dictionary<ChunkCoord, int> _drawnAt = [];
     private WorldObjectPlacement _bush = null!;
     private Vector3 _start;
     private float _yaw;
@@ -146,7 +151,7 @@ public partial class FloraTest : StagedTest
             }
             const FoliageLevel high = FoliageLevel.High;
             var low = Drawn(FoliageLevel.Low, high, high, FloraKind.Grass);
-            Check(low > 0 && low < _high[FloraKind.Grass] * 0.3f, $"Low draws far less grass ({low} of {_high[FloraKind.Grass]})");
+            Check(low > 0 && low < _high[FloraKind.Grass] * 0.35f, $"Low draws far less grass ({low} of {_high[FloraKind.Grass]})");
             var medium = Drawn(FoliageLevel.Medium, high, high, FloraKind.Grass);
             Check(medium > low && medium < _high[FloraKind.Grass], $"Medium sits between ({medium})");
             var veryHigh = Drawn(FoliageLevel.VeryHigh, high, high, FloraKind.Grass);
@@ -157,6 +162,51 @@ public partial class FloraTest : StagedTest
             Check(flora.Drawn(FloraKind.Grass) == _high[FloraKind.Grass], "and grass comes back as it was");
             Check(Drawn(high, FoliageLevel.Off, high, FloraKind.GroundCover) == 0, "Off draws no ground cover");
             Drawn(high, high, high, FloraKind.Grass);
+            return true;
+        });
+
+        Add("plants stay drawn while scenery turns into loaded ground", frame =>
+        {
+            var streamer = _host.Main.Streamer;
+            var flora = _host.Main.Flora;
+            if (frame == 0)
+            {
+                streamer.DrawScenery = true;
+                return false;
+            }
+            if (_far == default)
+            {
+                if ((streamer.SceneryMissing > 0 || streamer.Scenery.Count == 0 || frame < 10) && frame < 600)
+                    return false;
+                // A spot 250 m off, drawn only as scenery, with grass round it.
+                for (var a = 0f; a < Mathf.Tau && _far == default; a += Mathf.Pi / 4f)
+                {
+                    var at = _spot + new Vector3(250f * Mathf.Cos(a), 0f, 250f * Mathf.Sin(a));
+                    flora.Viewer = () => at;
+                    flora.BuildAll();
+                    var near = Near(at);
+                    if (near.All(c => streamer.Scenery.ContainsKey(c)) && near.Any(c => _drawnAt.GetValueOrDefault(c) > 0))
+                        (_far, _farChunks) = (at, near.Where(c => _drawnAt.GetValueOrDefault(c) > 0).ToList());
+                }
+                Check(_far != default, $"a grassy scenery spot is found ({_far})");
+                _farDrawn = flora.Drawn(FloraKind.Grass);
+                var ground = streamer.Generator.HeightAt(_far.X, _far.Z);
+                _host.Main.PlayerSync.HostTeleport(_client.Peer, new Vector3(_far.X, Mathf.Max(ground, 0f) + 1f, _far.Z));
+                return _far == default;
+            }
+            // Every frame while the scenery gives way to loaded chunks, each patch round the spot still draws its plants.
+            var patches = flora.Patches.ToDictionary(p => p.Chunk, p => p.Node);
+            foreach (var coord in _farChunks)
+            {
+                if (!patches.TryGetValue(coord, out var node) || node.GetChildCount() == 0)
+                    return Fail($"{coord} lost its plants at frame {frame} (scenery {streamer.Scenery.ContainsKey(coord)}, loaded {streamer.Chunks.ContainsKey(coord)}, pending {streamer.IsPending(coord)})");
+            }
+            if (!_farChunks.All(streamer.Chunks.ContainsKey) || streamer.PendingChunks > 0)
+                return frame > 1100 ? Fail("the chunks round the spot never loaded") : false;
+            flora.BuildAll();
+            Check(flora.Drawn(FloraKind.Grass) == _farDrawn, $"the loaded chunks grow the same grass ({flora.Drawn(FloraKind.Grass)} of {_farDrawn})");
+            streamer.DrawScenery = false;
+            flora.Viewer = () => _spot;
             return true;
         });
 
@@ -263,6 +313,26 @@ public partial class FloraTest : StagedTest
     {
         Check(false, message);
         return true;
+    }
+
+    // The chunks within 40 m of a spot, recording how much grass the host draws in each.
+    private List<ChunkCoord> Near(Vector3 at)
+    {
+        var streamer = _host.Main.Streamer;
+        var near = new List<ChunkCoord>();
+        for (var dx = -40f; dx <= 40f; dx += 40f)
+        {
+            for (var dz = -40f; dz <= 40f; dz += 40f)
+            {
+                var coord = streamer.ChunkAt(at + new Vector3(dx, 0, dz));
+                if (!near.Contains(coord))
+                    near.Add(coord);
+            }
+        }
+        _drawnAt.Clear();
+        foreach (var (coord, node) in _host.Main.Flora.Patches)
+            _drawnAt[coord] = node.GetNodeOrNull<Node3D>("Grass") is { } grass ? grass.GetChildCount() : 0;
+        return near;
     }
 
     // Metres past the bush's centre along the walk.

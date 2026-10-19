@@ -13,6 +13,8 @@ namespace Mechanica.Game.World;
 /// <item>Wind: a low sine sway driven by world position and time, stronger towards the tips.</item>
 /// <item>Distance: past the fade start each plant drops its higher-ranked blades and lumps first, then sinks away by
 /// the fade end, so the edge of the drawn area thins out instead of popping; the ground colour carries on beyond.</item>
+/// <item>Appearing: a chunk's plants grow in from nothing over a moment when first drawn (instance parameter
+/// <see cref="Appear"/>), so a chunk built late never pops in.</item>
 /// <item>Pushers: plants within the push radius bend away from a player, bot or vehicle and press down a little.</item>
 /// </list>
 /// </summary>
@@ -23,6 +25,9 @@ public static class FloraMaterials
 
     /// <summary>Global shader parameters: a pusher's position and radius (0: none).</summary>
     public static readonly string[] Pushers = ["flora_push_0", "flora_push_1", "flora_push_2", "flora_push_3"];
+
+    /// <summary>Instance shader parameter: how far (0..1) a mesh's plants have grown in since they were first drawn.</summary>
+    public const string Appear = "appear";
 
     /// <summary>Global shader parameter: how far plants bend from a pusher.</summary>
     public const string PushStrength = "flora_push_strength";
@@ -126,6 +131,7 @@ public static class FloraMaterials
         uniform float fade_end = 55.0;
         uniform float brightness = 1.1;
         uniform vec3 accent_color : source_color = vec3(0.98, 0.86, 0.2);
+        instance uniform float appear = 1.0;
 
         varying vec3 tint;
 
@@ -147,7 +153,7 @@ public static class FloraMaterials
             float fade = 1.0 - smoothstep(fade_start, fade_end, distance(origin, eye));
             // Higher-ranked blades and lumps go first; the rest sink away over the last stretch.
             float kept = step(UV.x, fade * 1.6);
-            float size = smoothstep(0.0, 0.35, fade) * kept;
+            float size = smoothstep(0.0, 0.35, fade) * kept * smoothstep(0.0, 1.0, appear);
             float scale = length(MODEL_MATRIX[0].xyz);
             float height = VERTEX.y * scale * UV.y;
             vec2 dir = flora_wind.xy;
