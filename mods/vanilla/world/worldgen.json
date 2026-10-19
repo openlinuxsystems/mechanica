@@ -47,8 +47,8 @@
       "color": "#4f8a30",
       "ground": "grass",
       "scatter": [
-        { "object": "rock_outcrop", "spacing": 60.0, "chance": 0.3 },
-        { "object": "metal_outcrop", "spacing": 150.0, "chance": 0.2 },
+        { "object": "rock_outcrop", "spacing": 36.0, "chance": 0.45 },
+        { "object": "metal_outcrop", "spacing": 80.0, "chance": 0.35 },
         { "object": "birch_tree", "spacing": 24.0, "chance": 0.3 },
         { "object": "leafy_tree", "spacing": 48.0, "chance": 0.15 },
         { "object": "boulder", "spacing": 60.0, "chance": 0.2 },
@@ -116,8 +116,8 @@
       "ground": "sand",
       "scatter": [
         { "object": "cactus", "spacing": 26.0, "chance": 0.3 },
-        { "object": "rock_outcrop", "spacing": 70.0, "chance": 0.3 },
-        { "object": "metal_outcrop", "spacing": 110.0, "chance": 0.3 },
+        { "object": "rock_outcrop", "spacing": 42.0, "chance": 0.45 },
+        { "object": "metal_outcrop", "spacing": 64.0, "chance": 0.4 },
         { "object": "boulder", "spacing": 50.0, "chance": 0.2 },
         { "object": "small_rock", "spacing": 20.0, "chance": 0.15 }
       ],
@@ -161,7 +161,7 @@
         { "object": "burnt_tree", "spacing": 12.0, "chance": 0.5 },
         { "object": "fallen_log", "spacing": 26.0, "chance": 0.2 },
         { "object": "rock_node", "spacing": 30.0, "chance": 0.25 },
-        { "object": "metal_outcrop", "spacing": 120.0, "chance": 0.25 },
+        { "object": "metal_outcrop", "spacing": 70.0, "chance": 0.35 },
         { "object": "boulder", "spacing": 50.0, "chance": 0.2 }
       ],
       "flora": [
@@ -193,8 +193,8 @@
       "scatter": [
         { "object": "spruce_tree", "spacing": 22.0, "chance": 0.25 },
         { "object": "pine_tree", "spacing": 40.0, "chance": 0.2 },
-        { "object": "rock_outcrop", "spacing": 40.0, "chance": 0.35 },
-        { "object": "metal_outcrop", "spacing": 80.0, "chance": 0.3 },
+        { "object": "rock_outcrop", "spacing": 28.0, "chance": 0.5 },
+        { "object": "metal_outcrop", "spacing": 48.0, "chance": 0.45 },
         { "object": "boulder", "spacing": 30.0, "chance": 0.3 },
         { "object": "large_rock", "spacing": 24.0, "chance": 0.25 }
       ],
@@ -212,7 +212,7 @@
       "color": "#d9c890",
       "ground": "sand",
       "scatter": [
-        { "object": "rock_outcrop", "spacing": 90.0, "chance": 0.15 },
+        { "object": "rock_outcrop", "spacing": 54.0, "chance": 0.3 },
         { "object": "boulder", "spacing": 40.0, "chance": 0.2 },
         { "object": "small_rock", "spacing": 15.0, "chance": 0.15 },
         { "object": "bush", "spacing": 30.0, "chance": 0.1 }
@@ -370,16 +370,16 @@
       "id": "rock_outcrop",
       "outcrop": {
         "deposits": [
-          { "weight": 4, "mounds": [1, 2], "spread": 3.0, "sizes": [{ "mound": "small", "weight": 2 }, { "mound": "medium", "weight": 1 }] },
+          { "weight": 3, "mounds": [1, 2], "spread": 3.0, "sizes": [{ "mound": "small", "weight": 2 }, { "mound": "medium", "weight": 1 }] },
           { "weight": 3, "mounds": [3, 4], "spread": 5.0, "sizes": [{ "mound": "small", "weight": 2 }, { "mound": "medium", "weight": 2 }, { "mound": "large", "weight": 1 }] },
-          { "weight": 1.5, "mounds": [5, 7], "spread": 7.0, "sizes": [{ "mound": "small", "weight": 1 }, { "mound": "medium", "weight": 2 }, { "mound": "large", "weight": 2 }] }
+          { "weight": 2, "mounds": [5, 7], "spread": 7.0, "sizes": [{ "mound": "small", "weight": 1 }, { "mound": "medium", "weight": 2 }, { "mound": "large", "weight": 2 }] }
         ],
         "mounds": {
           "small": { "blocks": [4, 8], "kinds": [{ "object": "rock_outcrop_small", "weight": 3 }, { "object": "rock_outcrop", "weight": 3 }, { "object": "rock_outcrop_large", "weight": 1 }] },
           "medium": { "blocks": [8, 14], "kinds": [{ "object": "rock_outcrop_small", "weight": 2 }, { "object": "rock_outcrop", "weight": 3 }, { "object": "rock_outcrop_large", "weight": 2 }] },
           "large": { "blocks": [14, 24], "kinds": [{ "object": "rock_outcrop_small", "weight": 2 }, { "object": "rock_outcrop", "weight": 3 }, { "object": "rock_outcrop_large", "weight": 3 }] }
         },
-        "rich_chance": 0.15,
+        "rich_chance": 0.2,
         "rich": { "rock_outcrop_small": "metal_outcrop_small", "rock_outcrop": "metal_outcrop", "rock_outcrop_large": "metal_outcrop_large" }
       },
       "footprint": 12.0,
@@ -417,7 +417,7 @@
       "id": "metal_outcrop",
       "outcrop": {
         "deposits": [
-          { "weight": 3, "mounds": [1, 1], "sizes": [{ "mound": "small", "weight": 2 }, { "mound": "medium", "weight": 1 }] },
+          { "weight": 2, "mounds": [1, 1], "sizes": [{ "mound": "small", "weight": 2 }, { "mound": "medium", "weight": 1 }] },
           { "weight": 1, "mounds": [2, 3], "spread": 4.0, "sizes": [{ "mound": "small", "weight": 1 }, { "mound": "medium", "weight": 1 }] }
         ],
         "mounds": {
