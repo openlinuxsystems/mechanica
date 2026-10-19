@@ -48,6 +48,9 @@ public partial class TutorialHints : CanvasLayer, IHudLayer
     /// <summary>The ring that fills while Use is held.</summary>
     public ProgressRing Ring => _ring;
 
+    /// <summary>How far (0..1) the hold on Use to put the tip away has got; the ring shows it from the next frame.</summary>
+    public float HoldFraction => _dismiss.Fraction;
+
     /// <summary>The tip panel.</summary>
     public PanelContainer Panel => _panel;
 

@@ -9,13 +9,17 @@ namespace Mechanica.Game.Tests;
 /// <summary>
 /// View distance draws the world past the simulated ground (UI spec §16 Graphics). With scenery on, chunks
 /// fill in out to the view distance, nearest first, never overlapping the simulated chunks and with no
-/// colliders; a shorter view distance drops the far ones and the shortest draws the simulated ground alone.
+/// colliders; walking leaves no hole in the ground the sky shows through, at the simulated chunks' edge or
+/// between chunks; a shorter view distance drops the far ones and the shortest draws the simulated ground alone.
 /// </summary>
 public partial class SceneryTest : StagedTest
 {
     private Main _main = null!;
     private WorldStreamer _streamer = null!;
     private int _far;
+    private Vector3 _walk;
+    private readonly HashSet<ChunkCoord> _seen = [];
+    private readonly List<string> _holes = [];
 
     protected override string Tag => "scenery";
 
@@ -51,6 +55,38 @@ public partial class SceneryTest : StagedTest
             Check(_streamer.Scenery.Values.All(c => !c.Objects.GetChildren().OfType<CollisionShape3D>().Any()), "scenery objects have no colliders");
             _far = _streamer.Scenery.Count;
             return true;
+        });
+        Add("every chunk's ground hangs a skirt below its edges", _ =>
+        {
+            foreach (var chunk in _streamer.Chunks.Values.Take(1).Concat(_streamer.Scenery.Values.Take(1)))
+            {
+                var mesh = (ArrayMesh)chunk.GetNode<MeshInstance3D>("Mesh").Mesh;
+                var vertices = (Vector3[])mesh.SurfaceGetArrays(0)[(int)Mesh.ArrayType.Vertex];
+                var lowest = chunk.Data.Heights.Min();
+                Check(vertices.Min(v => v.Y) < lowest - 0.4f, $"{chunk.Name}: the skirt hangs below the ground ({vertices.Min(v => v.Y):0.0} < {lowest:0.0})");
+            }
+            return true;
+        });
+        Add("walking never opens a hole in the ground in view", frame =>
+        {
+            var player = _main.LocalPlayer!;
+            if (frame == 0)
+                _walk = player.GlobalPosition;
+            // Ground the player has seen drawn stays drawn while it is in view, as chunks load ahead and unload behind.
+            var viewer = player.GlobalPosition.ToNumerics();
+            _holes.AddRange(_seen.Where(c => FarChunks.Distance(c, viewer, 64f) < 384f - 64f && !_streamer.Draws(c)).Select(c => $"{c} at frame {frame}"));
+            _seen.UnionWith(FarChunks.Wanted(viewer, 384f, 64f, _streamer.Streamer.InWorld, new HashSet<ChunkCoord>()).Where(_streamer.Draws));
+            if (frame >= 160)
+            {
+                if (_streamer.Scenery.Count < Wanted(384f) && frame < 1400)
+                    return false;
+                Check(_holes.Count == 0, $"ground in view stays drawn ({_holes.Count} holes: {string.Join(", ", _holes.Take(5))})");
+                return true;
+            }
+            _walk += new Vector3(3f, 0, 0);
+            var gen = _streamer.Generator;
+            _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, new Vector3(_walk.X, gen.HeightAt(_walk.X, _walk.Z) + 1f, _walk.Z));
+            return false;
         });
         Add("a shorter view distance drops the far scenery", frame =>
         {

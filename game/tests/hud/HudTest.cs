@@ -218,13 +218,8 @@ public partial class HudTest : StagedTest
                 return false;
             Check(_hints.Showing is not null, "the tip is still up partway");
             HudRoot.LoseFocus();
-            return true;
-        });
-        Add("after the focus loss", frame =>
-        {
-            if (frame < 1)
-                return false;
-            Check(_hints.Ring.Value < 0.2f, $"the hold starts again ({_hints.Ring.Value})");
+            // Read the hold itself, not the ring a frame later: one slow frame with Use still down would refill it.
+            Check(_hints.HoldFraction == 0f, $"the hold starts again ({_hints.HoldFraction})");
             return true;
         });
         Add("held through, the tip goes", frame =>

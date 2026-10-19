@@ -71,6 +71,9 @@ public partial class MiningTest : StagedTest
                 foreach (var blocks in deposits)
                 {
                     var middle = new Vector3(blocks.Average(o => o.Position.X), 0, blocks.Average(o => o.Position.Z));
+                    // On near-level ground, so the chunks and rods settle beside the deposit instead of rolling away.
+                    if (new[] { (0f, 0f), (6f, 0f), (-6f, 0f), (0f, 6f), (0f, -6f) }.Any(d => gen.SlopeAt(middle.X + d.Item1, middle.Z + d.Item2) > 0.12f))
+                        continue;
                     // On the ground: nothing of the deposit lower within reach under it.
                     var grounded = blocks.Where(o => o.Definition.Id == "rock_outcrop"
                         && !blocks.Any(b => b != o && b.Position.Y < o.Position.Y - 0.3f && Flat(b.Position.ToGodot() - o.Position.ToGodot()).Length() < 1.2f));
