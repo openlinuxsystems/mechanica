@@ -19,7 +19,7 @@ namespace Mechanica.Game.Tests;
 /// seats, engines, wheels and logic parts into a scratch copy of the mod and checks every file it writes is
 /// byte-for-byte what is checked in (D3). Then, on a host with a client (D10), all through the client's
 /// Action API: it wires a car of vanilla parts with the Connect Tool's actions (seat to engine and to the
-/// steering bearing, engine to the four wheel bearings) and sets the engine's gear, sits in the driver's
+/// steering bearing, engine to the four wheel bearings), switches the engine on and sets its gear, sits in the driver's
 /// seat, drives forward toward the engine's front, steers right, brakes and stands up, with the client
 /// showing the car where the host has it. The Logic Visualizer and the Creation Inspector read the host's
 /// signals, and a switch drives the vanilla piston through a link.
@@ -34,7 +34,7 @@ public partial class VanillaLogicTest : StagedTest
         "scrap_wheel", "wheel", "big_wheel", "logic_gate", "timer", "sensor", "switch", "button", "controller",
     ];
 
-    private static readonly string[] Authored = ["gas_engine", "scrap_drivers_seat", "scrap_seat", "scrap_gas_engine"];
+    private static readonly string[] Authored = ["electric_engine", "gas_engine", "scrap_drivers_seat", "scrap_seat", "scrap_gas_engine"];
 
     private static readonly Vector3 CarAt = new(4, 1.0f, 8);
 
@@ -135,7 +135,7 @@ public partial class VanillaLogicTest : StagedTest
             return true;
         });
 
-        Add("the client wires the car and picks second gear", frame =>
+        Add("the client wires the car, switches the engine on and picks second gear", frame =>
         {
             if (frame == 0)
             {
@@ -144,7 +144,7 @@ public partial class VanillaLogicTest : StagedTest
                 foreach (var wheel in _wheels)
                     Request(LogicActions.ConnectParts, new LinkPartsArgs(CarId, _engine, wheel));
                 Request(LogicActions.ConfigurePart, new ConfigurePartArgs(CarId, _engine,
-                    new Dictionary<string, JsonElement?> { ["gear"] = JsonSerializer.SerializeToElement(2) }));
+                    new Dictionary<string, JsonElement?> { ["on"] = JsonSerializer.SerializeToElement(true), ["gear"] = JsonSerializer.SerializeToElement(2) }));
             }
             if (_results.Count < 7 || _client.Main.Creations.Find(CarId)?.Links.Count != 6)
                 return false;
@@ -174,7 +174,7 @@ public partial class VanillaLogicTest : StagedTest
             _client.Main.LocalPlayer!.CurrentInput = new PlayerInput(0, 1, 0, 0, false, false);
             if (Chassis(_host).GlobalBasis.Y.Dot(Vector3.Up) < 0.9f)
                 return !Check(false, $"the car stays upright (tipped at frame {frame}: up {Chassis(_host).GlobalBasis.Y}, moved {Chassis(_host).GlobalPosition - _start})");
-            if (frame < 90)
+            if (frame < 130)
                 return false;
             var moved = Chassis(_host).GlobalPosition - _start;
             // The seat and engine sit a little off the centre line, so it drifts a little.
@@ -341,8 +341,8 @@ public partial class VanillaLogicTest : StagedTest
         _host.Main.Creations.Add(rig, _host.Main.Assets);
     }
 
-    // The car of LogicScriptTests: a metal chassis along Z (z 0..4) with a driver's seat and an electric engine (it
-    // drives four wheels and needs no switching on) on top facing -Z, so the front is z 0: the front wheels hang off an
+    // The car of LogicScriptTests: a metal chassis along Z (z 0..4) with a driver's seat and an Electric Engine 2 (it
+    // drives four wheels) on top facing -Z, so the front is z 0: the front wheels hang off an
     // axle under a steering bearing there, the rear wheels off a post at z 4.
     private void SpawnCar()
     {
@@ -352,6 +352,7 @@ public partial class VanillaLogicTest : StagedTest
             Place(car, "vanilla:metal_block", new GridCell(0, 0, z));
         _seat = Place(car, "vanilla:drivers_seat", new GridCell(0, 1, 1));
         _engine = Place(car, "vanilla:electric_engine", new GridCell(0, 1, 3));
+        car.SetLevel(_engine, 1);
         Place(car, "vanilla:metal_block", new GridCell(0, -1, 4));
         Place(car, "vanilla:metal_block", new GridCell(0, -2, 4));
         _steering = Place(car, "vanilla:bearing", new GridCell(0, -1, 0), Facing(new GridCell(0, -1, 0)));
