@@ -48,6 +48,12 @@ public sealed record BotDefinition
     /// <summary>Top speed in water, in m/s. Omitted means <see cref="Speed"/>.</summary>
     public float? WaterSpeed { get; init; }
 
+    /// <summary>
+    /// Swimmers: how far below the water's surface the middle of the bot swims, in m. A swimmer floats at that depth
+    /// instead of walking on the bottom, and its model plays <c>swim</c>. Omitted means it walks along the bottom.
+    /// </summary>
+    public float? SwimDepth { get; init; }
+
     /// <summary>How far the bot notices players and crops, in m.</summary>
     public float? Sight { get; init; }
 
@@ -133,6 +139,13 @@ public sealed record BotModelDefinition
 
     /// <summary>Colour of its glowing materials while engaged, <c>"#rrggbb"</c>.</summary>
     public string? EyeEngaged { get; init; }
+
+    /// <summary>
+    /// Effects to show on every peer, by attack id (when the bot uses it) or <c>death</c> (when it dies):
+    /// <c>explosion</c> (fire, smoke, sparks and debris) or <c>shockwave</c> (a ring that ripples over the ground). Each
+    /// is as big as the attack's radius (a death's uses the bot's largest area attack, or its size).
+    /// </summary>
+    public Dictionary<string, string>? Effects { get; init; }
 
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]

@@ -40,8 +40,25 @@ public sealed record BotDrop(string Item, float Chance, int Count, int CountMax)
 /// <param name="ClipSpeeds">Ground speed (m/s) each walking clip plays at normal speed, by clip name.</param>
 /// <param name="EyeCalm">Eye colour while calm, <c>"#rrggbb"</c>.</param>
 /// <param name="EyeEngaged">Eye colour while engaged, <c>"#rrggbb"</c>.</param>
+/// <param name="Effects">Effect kind (<see cref="BotEffects"/>) by attack id or <c>death</c>.</param>
 public sealed record BotModel(string Mesh, IReadOnlyDictionary<string, IReadOnlyList<string>> Attacks, IReadOnlyDictionary<string, float> ClipSpeeds,
-    string EyeCalm, string EyeEngaged);
+    string EyeCalm, string EyeEngaged, IReadOnlyDictionary<string, string> Effects);
+
+/// <summary>The effects a bot model can show (<see cref="BotModelDefinition.Effects"/>).</summary>
+public static class BotEffects
+{
+    /// <summary>Fire, smoke, sparks and debris thrown out to the radius.</summary>
+    public const string Explosion = "explosion";
+
+    /// <summary>A ring that ripples over the ground out to the radius.</summary>
+    public const string Shockwave = "shockwave";
+
+    /// <summary>The key for the effect shown when the bot dies.</summary>
+    public const string Death = "death";
+
+    /// <summary>Every effect kind.</summary>
+    public static readonly IReadOnlyList<string> Kinds = [Explosion, Shockwave];
+}
 
 /// <summary>A bot type that loaded cleanly, with every id qualified and every default filled in.</summary>
 /// <param name="QualifiedId">Game-wide id, <c>mod_id:bot_id</c>.</param>
@@ -75,6 +92,9 @@ public sealed record Bot(
 
     /// <summary>The behaviour tree, or null when the bot has none.</summary>
     public JsonObject? Behavior => Definition.Behavior;
+
+    /// <summary>How far below the water's surface its middle swims (m), or null when it walks on the bottom.</summary>
+    public float? SwimDepth { get; init; }
 
     /// <summary>Its animated model, or null for the placeholder capsule.</summary>
     public BotModel? Model { get; init; }
@@ -220,6 +240,7 @@ public sealed class BotBook : IBotCatalog
         Positive(b.Health, "$.health", "health", required: true, sink);
         Positive(b.Speed, "$.speed", "speed (m/s)", required: true, sink);
         Positive(b.WaterSpeed, "$.water_speed", "water_speed (m/s)", required: false, sink);
+        Positive(b.SwimDepth, "$.swim_depth", "swim_depth (m)", required: false, sink);
         Positive(b.Sight, "$.sight", "sight (m)", required: false, sink);
         var radius = b.Size?.Radius ?? DefaultRadius;
         var height = b.Size?.Height ?? DefaultHeight;
@@ -297,7 +318,7 @@ public sealed class BotBook : IBotCatalog
             return null;
         return new Bot($"{modId}:{b.Id}", modId, b.Name!, family, b.Health!.Value, b.Speed!.Value, b.WaterSpeed ?? b.Speed!.Value,
             b.Sight ?? DefaultSight, radius, height, b.Color?.ToLowerInvariant() ?? DefaultColor, b.MeleeImmune ?? false, b.Passive ?? false,
-            b.RaidCost, attacks, drops, script, b) { Model = model };
+            b.RaidCost, attacks, drops, script, b) { Model = model, SwimDepth = b.SwimDepth };
     }
 
     private static BotModel? CheckModel(BotModelDefinition m, string modId, string? modDirectory, List<BotAttack> attacks, DiagnosticSink sink)
@@ -333,6 +354,16 @@ public sealed class BotBook : IBotCatalog
             else
                 clips[id] = [.. list];
         }
+        var effects = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var (key, kind) in m.Effects ?? [])
+        {
+            if (key != BotEffects.Death && !attacks.Any(a => a.Id == key))
+                sink.Error(code, $"$.model.effects.{key}", $"the bot has no attack '{key}' (use an attack id or \"death\").");
+            else if (kind is null || !BotEffects.Kinds.Contains(kind))
+                sink.Error(code, $"$.model.effects.{key}", $"effect '{kind}' must be one of: {string.Join(", ", BotEffects.Kinds)}.");
+            else
+                effects[key] = kind;
+        }
         var speeds = new Dictionary<string, float>(StringComparer.Ordinal);
         foreach (var (clip, speed) in m.ClipSpeeds ?? [])
         {
@@ -343,7 +374,8 @@ public sealed class BotBook : IBotCatalog
         }
         if (sink.ErrorCount > errors)
             return null;
-        return new BotModel(mesh!, clips, speeds, m.EyeCalm?.ToLowerInvariant() ?? DefaultEyeCalm, m.EyeEngaged?.ToLowerInvariant() ?? DefaultEyeEngaged);
+        return new BotModel(mesh!, clips, speeds, m.EyeCalm?.ToLowerInvariant() ?? DefaultEyeCalm, m.EyeEngaged?.ToLowerInvariant() ?? DefaultEyeEngaged,
+            effects);
     }
 
     private static BotAttack? CheckAttack(BotAttackDefinition a, string path, string family, DiagnosticSink sink)

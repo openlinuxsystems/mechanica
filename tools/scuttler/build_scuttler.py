@@ -64,7 +64,8 @@ SAMPLES = int(os.environ.get("SCUTTLER_SAMPLES", "48"))
 # Paint, size, leg thickness and the attack clips each attack plays (the bot's model.attacks).
 VARIANTS = {
     "green": dict(name="Green Scuttler", paint="#5fae3e", scale=1.0, leg=1.0, attacks={"whip": ["tail_slam", "tail_sweep", "claw_combo"]}),
-    "blue": dict(name="Blue Scuttler", paint="#3e7fd0", scale=1.0, leg=1.0, attacks={"drill": ["drill_ram"]}),
+    "blue": dict(name="Blue Scuttler", paint="#3e7fd0", scale=1.0, leg=1.0, attacks={"drill": ["drill_ram"]},
+                 extra={"swim": 0.8, "swim_idle": 2.0}),
     "yellow": dict(name="Yellow Scuttler", paint="#e6b31e", scale=1.25, leg=1.45, attacks={"stomp": ["stomp"]}),
     "red": dict(name="Red Scuttler", paint="#d0402e", scale=1.0, leg=1.0, attacks={"explode": ["detonate"]}),
     "seed": dict(name="Seed Scuttler", paint="#2f5a2c", scale=0.85, leg=1.0, attacks={"nip": ["claw_snap"]}),
@@ -748,6 +749,7 @@ def use(variant):
     VARIANT[0] = variant
     CLIPS.clear()
     CLIPS.update(SHARED_CLIPS)
+    CLIPS.update(VARIANTS[variant].get("extra", {}))
     for clips in VARIANTS[variant]["attacks"].values():
         for clip in clips:
             CLIPS[clip] = ATTACK_CLIPS[clip]
@@ -895,16 +897,23 @@ def pose(p, clip, t, length):
         for side in "LR":
             p.claw(side, raise_=30 * lunge, inward=-20 * lunge, jaw=20 * lunge)
     elif clip == "stomp":
-        # rises high on its legs, then drops and fires the hammer into the ground
-        rise = env(t, 0.0, 0.14) * (1 - env(t, 0.14, 0.2))
-        slam = env(t, 0.14, 0.2) * (1 - env(t, 0.5, 1.2))
-        p.move("Body", (0, 0, 0.1 * rise - 0.02 * slam))
+        # rears up tall with its claws high, then crashes down: legs splay, the hammer fires into the ground, the whole
+        # body bounces and shudders with the shock and the claws and eye whip about
+        rise = env(t, 0.0, 0.12) * (1 - env(t, 0.12, 0.19))
+        slam = env(t, 0.12, 0.19) * (1 - env(t, 0.45, 1.15))
+        bounce = pulse(t, 0.19, 0.28, 0.42)
+        shudder = math.sin((t - 0.19) * 75) * max(0.0, 1 - (t - 0.19) / 0.6) * float(t > 0.19)
+        p.move("Body", (0, 0, 0.16 * rise - 0.07 * slam + 0.05 * bounce + 0.012 * shudder))
+        p.turn("Body", (1, 0, 0), -12 * rise + 5 * slam + 2.5 * shudder)
+        p.turn("Body", (0, 1, 0), 2 * shudder)
         for name in LEGS:
-            p.leg(name, 0, -14 * rise + 10 * slam, 8 * rise - 8 * slam)
-        p.move("Hammer", (0, 0, 0.06 * rise - 0.02 * slam))
-        p.turn("Stalk", (1, 0, 0), 18 * slam)
+            p.leg(name, 0, -22 * rise + 16 * slam, 14 * rise - 14 * slam)
+        p.move("Hammer", (0, 0, 0.12 * rise + 0.055 * slam - 0.045 * bounce))
+        p.turn("Stalk", (1, 0, 0), -14 * rise + 26 * slam + 8 * shudder)
+        p.turn("EyeHead", (1, 0, 0), 10 * shudder)
         for side in "LR":
-            p.claw(side, raise_=30 * rise - 10 * slam, inward=-20 * rise, jaw=26 * rise)
+            p.claw(side, raise_=55 * rise - 18 * slam + 6 * shudder, inward=-26 * rise + 10 * slam, elbow=-20 * rise,
+                   jaw=34 * rise + 20 * bounce)
     elif clip == "detonate":
         # the needle pins, it rears and shakes as the tank lets go
         k = env(t, 0.0, 0.3)
@@ -913,6 +922,32 @@ def pose(p, clip, t, length):
         p.move("Body", (0, 0, 0.04 * k))
         for side in "LR":
             p.claw(side, raise_=40 * k, inward=-20 * k, jaw=40 * k)
+    elif clip == "swim":
+        # rows through the water: the legs stroke back in a wave front to rear, the claws tuck in ahead like a prow,
+        # the body rolls and pitches with each stroke and the props drive it
+        for i, name in enumerate(LEGS):
+            row = int(name[1]) - 1
+            ph = w - 0.9 * row + (0.0 if name[0] == "L" else math.pi)
+            p.leg(name, 34 * math.sin(ph), 48 + 14 * max(0.0, math.cos(ph)), -12 - 14 * math.sin(ph + 0.6))
+        p.turn("Body", (1, 0, 0), 5 + 3 * math.sin(2 * w))
+        p.turn("Body", (0, 1, 0), 6 * math.sin(w))
+        p.move("Body", (0, 0, 0.02 * math.sin(2 * w)))
+        for side in "LR":
+            sgn = 1 if side == "L" else -1
+            p.claw(side, raise_=10 + 4 * math.sin(w + sgn), inward=26, elbow=-24, jaw=8 + 8 * max(0, math.sin(2 * w + sgn)))
+        p.turn("Stalk", (1, 0, 0), -24 + 4 * math.sin(2 * w))
+        p.turn("EyeHead", (1, 0, 0), 18)
+    elif clip == "swim_idle":
+        # treads water: slow paddling circles, a gentle bob and drift, the eye looking about
+        for i, name in enumerate(LEGS):
+            ph = w + 1.1 * i
+            p.leg(name, 14 * math.sin(ph), 40 + 8 * math.cos(ph), -10 - 10 * math.sin(ph))
+        p.move("Body", (0, 0, 0.025 * math.sin(w)))
+        p.turn("Body", (0, 1, 0), 4 * math.sin(w + 1))
+        p.turn("Body", (1, 0, 0), 3 * math.sin(w))
+        for side in "LR":
+            p.claw(side, raise_=6 + 4 * math.sin(w + (0 if side == "L" else 2)), inward=10, jaw=6 + 6 * max(0, math.sin(2 * w)))
+        p.turn("Stalk", UP, 30 * math.sin(w))
     elif clip == "claw_snap":
         # one quick lunge and snap of both claws
         snap = pulse(t, 0.0, 0.12, 0.4)
@@ -937,9 +972,9 @@ def gear(p, clip, t, length):
     v = VARIANT[0]
     if v == "blue":
         # the drill turns while it walks and screams round in the ram; the props always turn
-        drill = {"patrol": 1, "chase": 2, "drill_ram": 8, "idle": 1, "alert": 1}.get(clip, 0)
+        drill = {"patrol": 1, "chase": 2, "drill_ram": 8, "idle": 1, "alert": 1, "swim": 2, "swim_idle": 1}.get(clip, 0)
         spin(p, "Drill", (0, 1, 0), drill, u)
-        props = {"idle": 2, "patrol": 1, "chase": 1, "drill_ram": 4, "death": 1}.get(clip, 1)
+        props = {"idle": 2, "patrol": 1, "chase": 1, "drill_ram": 4, "death": 1, "swim": 6, "swim_idle": 6}.get(clip, 1)
         spin(p, "PropL", (0, 1, 0), props, u)
         spin(p, "PropR", (0, 1, 0), -props, u)
     elif v == "red":

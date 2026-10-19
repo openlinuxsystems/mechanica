@@ -51,7 +51,9 @@ public sealed record StartRaidArgs(int? Level = null);
 /// <param name="Dead">True from its death until its body is gone.</param>
 /// <param name="Raid">The raid it belongs to, or null.</param>
 /// <param name="Engaged">Whether it is fighting: it spotted a target, attacked or was hurt in the last <c>engaged_seconds</c>.</param>
-public sealed record BotView(int Id, string Type, Vec3 Position, float Yaw, float Health, float MaxHealth, bool Dead, int? Raid = null, bool Engaged = false);
+/// <param name="Swimming">Whether it is swimming: a swimmer (<c>swim_depth</c>) in water.</param>
+public sealed record BotView(int Id, string Type, Vec3 Position, float Yaw, float Health, float MaxHealth, bool Dead, int? Raid = null, bool Engaged = false,
+    bool Swimming = false);
 
 /// <summary>Value of a successful <c>SpawnBot</c>.</summary>
 /// <param name="Bot">The new bot's id.</param>

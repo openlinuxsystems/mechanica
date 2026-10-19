@@ -143,9 +143,11 @@
           },
           "clip_speeds": {
             "patrol": 0.93,
-            "chase": 3.0
+            "chase": 3.0,
+            "swim": 3.5
           }
         },
+        "swim_depth": 0.6,
         "name": "Blue Scuttler",
         "description": "Charges with a drill, and is even faster in water.",
         "water_speed": 7,
@@ -279,6 +281,9 @@
           "clip_speeds": {
             "patrol": 1.16,
             "chase": 3.75
+          },
+          "effects": {
+            "stomp": "shockwave"
           }
         },
         "name": "Yellow Scuttler",
@@ -406,6 +411,9 @@
           "clip_speeds": {
             "patrol": 0.93,
             "chase": 3.0
+          },
+          "effects": {
+            "explode": "explosion"
           }
         },
         "name": "Red Scuttler",

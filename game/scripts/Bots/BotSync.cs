@@ -39,6 +39,10 @@ public partial class BotSync : Node3D, IBotWorld, IRaidWorld
     // Bots this far under the world's ground (no terrain loaded there) are put back on it, in m.
     private const float BelowGround = 0.3f;
 
+    // A swimmer closes this much of the gap to its swim depth per second, no faster than SwimVertical (m/s).
+    private const float SwimFollow = 3f;
+    private const float SwimVertical = 2f;
+
     private readonly Dictionary<int, BotBody> _bodies = [];
     private int _tick;
     private double _sincePoll;
@@ -242,7 +246,10 @@ public partial class BotSync : Node3D, IBotWorld, IRaidWorld
                 body.Velocity = Vector3.Zero;
                 continue;
             }
-            body.Fall = body.IsOnFloor() ? 0f : body.Fall - gravity * dt;
+            if (bot.Swimming)
+                body.Fall = Swim(bot, body.GlobalPosition);
+            else
+                body.Fall = body.IsOnFloor() ? 0f : body.Fall - gravity * dt;
             // A Sledgehammer's knockback rides on top of the walk: its lift once, its push slowing away.
             var knock = bot.TakeKnock(KnockbackDrag, dt);
             body.Fall += knock.Y;
@@ -258,6 +265,14 @@ public partial class BotSync : Node3D, IBotWorld, IRaidWorld
             }
             Bots.Moved(bot.Id, feet.ToNumerics(), Survival.IsWater((feet + new Vector3(0, bot.Type.Height * 0.5f, 0)).ToNumerics()));
         }
+    }
+
+    // A swimmer rises or sinks towards its swim depth below the surface, never below the bottom: the vertical speed for it.
+    private float Swim(BotState bot, Vector3 feet)
+    {
+        var floor = World.Generator.HeightAt(feet.X, feet.Z);
+        var target = MathF.Max(floor, World.Generator.SeaLevel - bot.Type.SwimDepth!.Value - bot.Type.Height / 2);
+        return Mathf.Clamp((target - feet.Y) * SwimFollow, -SwimVertical, SwimVertical);
     }
 
     private void OnSpawned(BotState bot)

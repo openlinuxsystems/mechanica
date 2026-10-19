@@ -6,6 +6,7 @@
   "health": 60,
   "speed": 5,
   "water_speed": 7,
+  "swim_depth": 0.6,
   "sight": 30,
   "size": {
     "radius": 0.35,
@@ -21,7 +22,8 @@
     },
     "clip_speeds": {
       "patrol": 0.93,
-      "chase": 3
+      "chase": 3,
+      "swim": 3.5
     }
   },
   "raid_cost": 2,

@@ -43,6 +43,7 @@ through the [External AI Endpoint](ai-endpoint.md), or add the bot to your raid 
 | `health` | number | required | Full health. |
 | `speed` | number, m/s | required | Top speed on land. |
 | `water_speed` | number, m/s | `speed` | Top speed in water. |
+| `swim_depth` | number, m | none (walks on the bottom) | Makes it a swimmer: in water it floats with its middle this far below the surface, never below the bottom, and its model plays `swim` and `swim_idle`. |
 | `sight` | number, m | 30 | How far it notices players and crops. |
 | `size` | `{radius, height}`, m | 0.4, 1.2 | Its capsule, standing on its feet. |
 | `color` | `"#rrggbb"` | `#808080` | Colour of the placeholder body (a bot with no `model`). |
@@ -80,7 +81,7 @@ too: in Creative nothing is hurt. Friendly fire doesn't stop bots; they hurt pla
 ### Using the editor's Bot tab
 
 The **Bot** tab edits every key above. The top of the grid has a field for each simple key: **Id**, **Name**,
-**Description**, **Family (sounds)**, **Health**, **Speed**, **Water speed**, **Sight**, **Radius** and **Height**
+**Description**, **Family (sounds)**, **Health**, **Speed**, **Water speed**, **Swim depth**, **Sight**, **Radius** and **Height**
 (the `size`), **Colour**, **Melee immune**, **Passive**, **Raid cost** and **Script**. Optional fields left empty
 take the default in the table.
 
@@ -113,7 +114,8 @@ how the bot looks: the host still moves and hits with the bot's capsule (`size`)
   "attacks": { "whip": ["tail_slam", "tail_sweep", "claw_combo"] },
   "clip_speeds": { "patrol": 0.93, "chase": 3.0 },
   "eye_calm": "#2bff3a",
-  "eye_engaged": "#ff1a0a"
+  "eye_engaged": "#ff1a0a",
+  "effects": { "whip": "shockwave" }
 }
 ```
 
@@ -124,6 +126,7 @@ how the bot looks: the host still moves and hits with the bot's capsule (`size`)
 | `clip_speeds` | `{clip: m/s}` | none | Ground speed at which a walking clip plays at normal speed. The clip speeds up and slows down with the bot, so its feet do not slide. |
 | `eye_calm` | `"#rrggbb"` | `#2bff3a` (green) | Colour of its glowing (emissive) materials while calm. |
 | `eye_engaged` | `"#rrggbb"` | `#ff1a0a` (red) | The same while engaged (`bot.engage()`, section 4). |
+| `effects` | `{attack id or "death": effect}` | none | An effect every peer sees when it uses the attack or dies: `explosion` (a fireball, flames, smoke, sparks and flying scrap) or `shockwave` (a ring rippling over the ground with dust and stones). Each is as big as the attack's `radius` (its `range` for a melee or ranged attack; a death uses its largest area attack). One effect shows at a time, so a blast that kills its bot shows once. |
 
 Name the clips after what the bot does. Every peer picks the clip from what the host already sends, so everyone
 sees the same one:
@@ -137,6 +140,7 @@ sees the same one:
 | `hit` | Once, when it is hurt. |
 | `death` | Once, when it dies; it holds the last frame until the body is gone. |
 | `jump`, `fall`, `land` | Going up, falling (loops), and touching down. |
+| `swim`, `swim_idle` | Swimming and treading water, for a swimmer (`swim_depth`) in water (loop). Without them it walks. |
 | one per attack | Once, when it uses the attack. The host deals the damage as the attack starts, so keep the wind-up short (about 0.2 s). |
 
 A missing clip is skipped (a missing walk clip plays `idle`). Clips play in place: they never move the bot.
