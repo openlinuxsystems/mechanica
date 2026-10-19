@@ -108,7 +108,7 @@ public static class LuaApi
         new("sound.set_parameter", "sound.set_parameter(handle, name, value)", "Bends one of the part's loops (pitch, volume or the event's own parameters); returns true or false, reason.", "sound"),
         new("sound.stop", "sound.stop(handle)", "Stops one of the part's loops; returns true or false, reason.", "sound"),
 
-        new("soil.get", "soil.get()", "This soil part's stored state: {seed?, grown, water, stage, stages, updated?}.", "soil"),
+        new("soil.get", "soil.get()", "This soil part's stored state: {seed?, grown, water, stage, stages, updated?, soaked}; soaked is true once the soil has been fully wet since it was last dry.", "soil"),
         new("soil.set", "soil.set(values)", "Stores any of grown, water, stage and updated ({grown = 12, stage = 1}); the soil script decides growth.", "soil"),
         new("soil.clear", "soil.clear()", "Takes the crop out of this soil, leaving its water.", "soil"),
 

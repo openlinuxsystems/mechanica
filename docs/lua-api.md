@@ -44,15 +44,53 @@ end
   `load`, `loadstring` or `dofile` (`require` loads only this mod's scripts and its dependencies'), and
   `string.rep` can't build huge strings. A script can
   only move its own Creation. `json.parse(text)` turns JSON into a table and `json.serialize(table)`
-  turns a table of plain data into JSON text.
+  turns a table of plain data into JSON text. [Standard libraries](#standard-libraries) lists everything
+  that is there.
 - **Hooks may not yield.** `coroutine.wrap` and `coroutine.create` work inside a hook, but
   `coroutine.yield` straight out of a hook is an error.
 
-Limits live in `game/data/scripting.json`: `instruction_budget` (per hook call),
-`reload_poll_seconds`, `max_string_length`, `max_ray_length`, `max_overlap_radius`,
-`max_messages`, `max_loops_per_part`, `max_projectiles`, `max_projectile_lifetime`, `max_queued_events` and `max_timers_per_script`. The motion
-limits (largest force, torque, bearing speed and piston force) are in
+Limits live in `game/data/scripting.json`, which ships with the build (mods can't change it). These are
+the values it ships with:
+
+| Key | Default | What it limits |
+|-----|---------|----------------|
+| `instruction_budget` | 1,000,000 | Lua VM instructions one hook call may run before the script is stopped (a guard against endless loops) |
+| `reload_poll_seconds` | 0.5 | Seconds between checks of the script files for changes (hot reload) |
+| `max_string_length` | 1,000,000 | Longest string `string.rep` may build, in characters |
+| `max_ray_length` | 500 | Longest ray `world.raycast` and `combat.cast` may cast, in m |
+| `max_overlap_radius` | 25 | Largest radius `world.overlap_sphere`, `combat.splash` and `farm.near` may test, in m |
+| `max_messages` | 500 | Prints, warnings and errors the host keeps for the editor console |
+| `max_loops_per_part` | 4 | Sound loops one part may run at once (`sound.start`) |
+| `max_projectiles` | 128 | Projectiles scripts may have in flight at once (`combat.projectile`) |
+| `max_projectile_lifetime` | 10 | Longest a projectile may fly, in s (and how long it flies when the script doesn't say) |
+| `max_queued_events` | 1024 | Events waiting for `on_event` between steps; past it the oldest are dropped |
+| `max_timers_per_script` | 64 | Timers one script may run at once (`timer.after`, `timer.every`) |
+
+The motion limits (largest force, torque, bearing speed and piston force) are in
 `game/data/motion.json`.
+
+### Standard libraries
+
+Scripts get MoonSharp's soft sandbox (`CoreModules.Preset_SoftSandbox`) plus Mechanica's own libraries
+(below). Everything else in standard Lua 5.2 is missing.
+
+| Library | What is there |
+|---------|---------------|
+| Basic functions | `assert`, `error`, `print` (to the console), `select`, `tonumber`, `tostring`, `type`, `unpack`, `pack`, `collectgarbage`, `_G`, `_VERSION` |
+| Iteration | `pairs`, `ipairs`, `next` |
+| Metatables | `setmetatable`, `getmetatable`, `rawget`, `rawset`, `rawequal`, `rawlen` |
+| Errors | `pcall`, `xpcall` |
+| `string` | The Lua string functions (`byte`, `char`, `find`, `format`, `gmatch`, `gsub`, `len`, `lower`, `match`, `rep` (bounded by `max_string_length`), `reverse`, `sub`, `upper`), plus MoonSharp's `contains`, `startsWith`, `endsWith` and `unicode` |
+| `table` | `concat`, `insert`, `pack`, `remove`, `sort`, `unpack` |
+| `math` | All of standard `math`, including `random` and `randomseed` |
+| `bit32` | All of Lua 5.2's `bit32` (`band`, `bor`, `bxor`, `bnot`, `lshift`, `rshift`, `arshift`, `lrotate`, `rrotate`, `btest`, `extract`, `replace`) |
+| `coroutine` | `create`, `resume`, `running`, `status`, `wrap`, `yield` (but a hook itself may not yield) |
+| `os` | Only the clock: `clock`, `date`, `difftime`, `time` |
+| `json` | `json.parse(text)`, `json.serialize(table)`, `json.null` and `json.isnull(value)` |
+| `require` | Mechanica's own: loads a script of this mod or of a mod it depends on ([Sharing code with `require`](#sharing-code-with-require)) |
+
+Not there: `io`, the rest of `os`, `load`, `loadstring`, `loadfile`, `dofile`, `debug` and `package.loadlib`
+(`package` holds only `loaded`).
 
 ## Hot reload
 
@@ -272,11 +310,11 @@ one) in `mods/vanilla/scripts/`.
   own `state`, the first time they take one in hand or use one. Their `state` is saved with the world under their
   player and comes back when they return (before the script's setup runs), so a lantern's fuel or a gun's kill count
   carries on. Keep it plain data, as for part scripts.
-- **Uses go through the Action API.** The Item tool (and bots or agents) call
+- **Uses go through the Action API.** Using an item in hand (and bots or agents) calls
   `UseItem {slot, direction?, creation?, part?}`. The host checks the slot holds a scripted item, that
   `direction` is close to where the player looks (`aim_tolerance` in `survival.json`) and that the
   part exists, then runs `can_use` and, if that allows it, `on_use`. Both get `target`:
-  `{from, direction, creation?, part?}`, where `creation` and `part` are what the Item tool's crosshair
+  `{from, direction, creation?, part?}`, where `creation` and `part` are what the crosshair
   points at within reach, and `aiming`, true while the player holds right click to aim (`AimItem {on}`).
   `EquipItem {slot?}` says what is in hand. `ReloadItem {slot}` runs `can_reload_item`, then `on_reload_item`.
   A dead player's uses are refused.
@@ -286,7 +324,8 @@ one) in `mods/vanilla/scripts/`.
 - **Damage follows the world's rules.** In Creative nothing hurts players; with friendly fire off
   (the default) no shot, splash or part script hurts a player, but a player's own splash still hurts them.
 - `part` and `creation` functions don't work in an item script; `world` and `log` do. The `item`,
-  `holder`, `inventory`, `combat` and `farm` libraries only work in an item script.
+  `holder` and `inventory` libraries only work in an item script; `combat`, `farm` (except `farm.plant`) and
+  `fire` work in part and mod scripts too (below).
 
 ```lua
 -- Food: eating one heals properties.health.
@@ -337,15 +376,16 @@ The holder's inventory. Item ids may be bare (`potato`, in the item's own mod) o
 | `inventory.count(item)` | How many of `item` they carry. |
 | `inventory.take(item, count?)` | Takes `count` (default 1). `true`, or `false` (and nothing taken) when they carry fewer. |
 
-Part and mod scripts can use every `combat` function, `farm.soil` and `farm.water` too (a saw, a drill, a water
+Part and mod scripts can use every `combat` function, `farm.soil`, `farm.water` and `farm.near` too (a saw, a drill, a water
 cannon, a mounted gun or a mortar), and both kinds use [`fire`](#fire). They act for the host, skip nothing (aim rays
 and launch projectiles from just outside the part) and have no reach limit beyond the ray's range. A projectile a
 part or mod script launched lands in that script's `on_hit`; a part that is gone by then hears nothing.
 
 ### `combat`
 
-Hits are tables `{kind, position, player?, creation?, part?, object?, bot?}`; `kind` is `player`, `part`,
-`object` (a tree, rock or bush), `bot` or `ground`. What damage did comes back with `damage` added. These
+Hits are tables `{kind, position, player?, creation?, part?, object?, bot?, type?}`; `kind` is `player`, `part`,
+`object` (a tree, rock or bush), `bot` or `ground`. `combat.cast` also sets `type`: the part's qualified type
+(`vanilla:wood_block`) or the world object's kind (`birch_tree`), so a tool can treat each its own way. What damage did comes back with `damage` added. These
 are the same primitives bots use (chunk 21).
 
 | Function | Returns |
@@ -416,7 +456,7 @@ order:
 
 A mod script is like a part script without a part: it has `state` (saved with the world), the hooks
 `on_create`, `on_update(dt)`, `on_reload`, `on_destroy` and `on_event`, and every library that does not need a part
-(`world`, `player`, `sound.play` with a position, `combat`, `farm`, `fire`, `events`, `actions`, `require`). `part.*` and
+(`world`, `player`, `sound.play` with a position, `combat`, `farm`, `fire`, `timer`, `events`, `actions`, `require`). `part.*` and
 `creation.*` raise an error there. It acts as the host, and it stops on an error like any script until it is
 fixed and reloaded. Clients run no scripts; they see what the host does.
 
@@ -443,7 +483,31 @@ Events wait until the start of the next step and arrive in order, at most `max_q
 |----------|---------|
 | `events.listen(topic)` | Hears `topic` as `on_event(topic, data)`. Part scripts may listen too. An unknown topic is an error. |
 | `events.unlisten(topic)` | Stops hearing it; true when the script listened to it. |
-| `events.topics()` | Every topic: `actions` (players' and agents' actions, not scripts'), `bots`, `chat`, `dialogue`, `drop`, `fire`, `hurt`, `players` (`{kind = "joined"/"left", peer, name}`), `projectiles`, `quest`, `raid`, `seats`, `vitals`, `world` and the rest. |
+| `events.topics()` | A list of every topic a script can listen to (the table below). |
+
+`data` is the event's payload as a table, with snake_case keys as the AI endpoint sends it. Positions in it are
+arrays of three numbers (`data.position[1]` is x), not `vec3` values.
+
+| Topic | When | `data` |
+|-------|------|--------|
+| `actions` | Every state-changing Action API call by a player, bot or agent (not by Lua scripts) | `{peer, source, action, args, ok, code, message, value}` |
+| `bots` | A bot spawned, was removed, attacked or destroyed a crop | `{kind = "spawned", bot}` with the bot's `{id, type, position, yaw, health, max_health, dead, raid?}`; `{kind = "removed", bot = {id}}`; `{kind = "attacked", attack}`; `{kind = "crop_destroyed", creation, part, bot}` |
+| `chat` | A chat line | `{id, peer, name, text}` |
+| `dialogue` | A quest character or the Logbook spoke | `{quest, lines}`, each line `{speaker, text}` |
+| `drop` | A pile of items appeared, changed or was picked up | `{kind = "changed", drop}` with `{id, position, items, placed, expires_in?}`; `{kind = "removed", drop = {id}}` |
+| `fire` | A fire at a POI marker went out | `{kind = "out", fire}` with `{id, position, strength, creation?, part?, poi?, site?, marker?}` |
+| `hurt` | A player took damage | `{peer, amount, cause}` |
+| `mods` | Mod content was validated or reloaded (mod tools), or a package was installed or uninstalled | `{kind = "validated"/"reloaded", result}`, or `{action = "installed", id, version, change}` / `{action = "uninstalled", id}` |
+| `players` | A player joined or left the world | `{kind = "joined"/"left", peer, name}` |
+| `projectiles` | A projectile was launched or landed | `{kind = "launched", projectile}` with `{id, owner, from, velocity, gravity, lifetime, age, look?}`; `{kind = "landed", projectile = {id, owner, point, hit?}}`, `hit` being `{player?, creation?, part?, object?, bot?}` |
+| `quest` | Quest progress changed | The `GetQuests` state: `{quests, flags, revealed}` |
+| `raid` | A raid started, advanced or ended | The `GetRaid` view: `{id, level, budget, crop_value, players, phase, target, bots, composition}` |
+| `reports` | An agent filed a note, recommendation or bug report | `{id, kind, created, author, title, tags, severity?, priority?, has_screenshot}` |
+| `seats` | Someone sat down or stood up | `{seat = {peer, creation, part}, seated}` |
+| `vitals` | A player's health changed, they died or respawned | The `GetVitals` view: `{peer, health, max_health, dead, respawn_in, has_bed, mode, slow, slow_for, difficulty, friendly_fire}` |
+| `world` | The world was saved, or a load, new world or reset finished | `{kind = "saved", path, status}` or `{kind = "loaded", status}`, `status` being the `world.info` view |
+
+Script messages (`messages`) and `events_dropped` are endpoint-only: a script can't listen to them.
 
 ### `actions`
 

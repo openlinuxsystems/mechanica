@@ -5279,7 +5279,7 @@
     "actions": "Every state-changing Action API call by players, bots and agents (not Lua scripts): peer, source, action, args, ok, code, message, value.",
     "bots": "A bot spawned, was removed or attacked: kind, bot, plus the attack or bot view.",
     "chat": "A chat line: the chat message.",
-    "dialogue": "A quest character spoke: quest, speaker, text, choices.",
+    "dialogue": "A quest character spoke: quest, lines (each with speaker and text).",
     "drop": "An item drop appeared, changed or was picked up: kind, drop.",
     "events_dropped": "Sent automatically when a subscriber fell behind and notifications were dropped: count.",
     "fire": "A fire went out: the fire view.",
