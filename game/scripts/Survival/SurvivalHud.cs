@@ -36,6 +36,7 @@ namespace Mechanica.Game.Survival;
 public partial class SurvivalHud : CanvasLayer
 {
     private readonly ShadedBox _fill = new();
+    private PanelContainer _healthPanel = null!;
     private ProgressBar _health = null!;
     private Label _healthText = null!;
     private Label _hint = null!;
@@ -127,10 +128,19 @@ public partial class SurvivalHud : CanvasLayer
 
     public override void _Ready()
     {
-        _health = new ProgressBar { Name = "Health", CustomMinimumSize = new Vector2(240, 18), ShowPercentage = false, MaxValue = 100 };
-        // The theme's bar fills cyan; health is green with a faint shade, so it reads as slightly raised.
+        // A heart and the bar on a translucent dark panel.
+        _healthPanel = new PanelContainer { Name = "HealthPanel" };
+        _healthPanel.AddThemeStyleboxOverride("panel", MechanicaTheme.Box(UiTokens.Scrim, margin: 6));
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", 8);
+        _healthPanel.AddChild(row);
+        row.AddChild(new HeartIcon { Name = "Heart", CustomMinimumSize = new Vector2(18, 16), SizeFlagsVertical = Control.SizeFlags.ShrinkCenter });
+        _health = new ProgressBar { Name = "Health", CustomMinimumSize = new Vector2(240, 18), ShowPercentage = false, MaxValue = 100, SizeFlagsVertical = Control.SizeFlags.ShrinkCenter };
+        // The theme's bar fills cyan on a bordered well; health is green with a faint shade on a dark track.
         _health.AddThemeStyleboxOverride("fill", _fill);
-        AddChild(_health);
+        _health.AddThemeStyleboxOverride("background", MechanicaTheme.Box(UiTokens.DeepNavy with { A = 0.7f }, margin: 0));
+        row.AddChild(_health);
+        AddChild(_healthPanel);
         Layout();
         GetViewport().SizeChanged += Layout;
         // Small enough to fit the bar, centred both ways, with a dark outline so it reads on the green.
@@ -194,8 +204,8 @@ public partial class SurvivalHud : CanvasLayer
     private void Layout()
     {
         var margin = HudRoot.Margin(GetViewport());
-        _health.SetAnchorsPreset(Control.LayoutPreset.TopLeft);
-        _health.Position = margin;
+        _healthPanel.SetAnchorsPreset(Control.LayoutPreset.TopLeft);
+        _healthPanel.Position = margin;
     }
 
     public override void _Process(double delta)
@@ -203,7 +213,7 @@ public partial class SurvivalHud : CanvasLayer
         var own = Survival.Own;
         var survival = own?.Mode == GameMode.Survival;
         var hud = !HudRoot.Hidden;
-        _health.Visible = survival && hud;
+        _healthPanel.Visible = survival && hud;
         _status.Visible = hud;
         if (own is not null)
         {
