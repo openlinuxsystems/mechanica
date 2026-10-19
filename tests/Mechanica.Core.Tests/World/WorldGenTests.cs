@@ -265,7 +265,7 @@ public class WorldGenTests
             var nearest = gen.Pois.Where(o => o != poi && o.Poi == poi.Poi).Min(o => Vector2.Distance(o.Centre, poi.Centre));
             Assert.True(nearest >= min, $"{poi.Poi.QualifiedId} at {poi.Centre}: nearest of its kind is {nearest} m, under {min} m");
 
-            // The pad is level wherever no basin cuts into it and no road crosses its edge.
+            // The pad is level wherever no basin cuts into it and no road crosses its edge, even where its own track falls away.
             var flatten = poi.Poi.Prefab.Terrain!.First(t => t.Op == TerrainOpKind.Flatten);
             for (var a = 0; a < 8; a++)
             {
@@ -274,7 +274,7 @@ public class WorldGenTests
                 var inBasin = poi.Poi.Prefab.Terrain!.Any(t => t.Op == TerrainOpKind.Basin
                     && Vector2.Distance(local, t.At is [var bx, var bz] ? new Vector2(bx, bz) : Vector2.Zero) < t.Radius + t.Blend);
                 if (!inBasin && !gen.Roads.Near(p.X, p.Y, 2f))
-                    Assert.Equal(poi.PadHeight, gen.HeightAt(p.X, p.Y), 3);
+                    Assert.True(MathF.Abs(poi.PadHeight - gen.HeightAt(p.X, p.Y)) < 1e-3f, $"{poi.Poi.QualifiedId} at {poi.Centre}: pad {poi.PadHeight}, ground {gen.HeightAt(p.X, p.Y)} at {p}");
             }
         }
     }
@@ -419,6 +419,37 @@ public class WorldGenTests
     }
 
     [Fact]
+    public void SmallPoisFillTheLandAsThePlanSays()
+    {
+        var gen = Vanilla.Value;
+        var counts = gen.Pois.GroupBy(p => p.Poi.Prefab.Id!).ToDictionary(g => g.Key, g => g.Count());
+        // World POI plan (2026-10-19): about 70 camps, 40 forest ruins, 40 kiosks, 15 farming patches, 10 build areas,
+        // 20 shore wrecks and 120 ruins on this doubled map; each seed lands near those.
+        foreach (var (id, fewest, most) in new[] { ("camp", 50, 95), ("forest_ruin", 28, 60), ("roadside_kiosk", 28, 70),
+                     ("farming_patch", 8, 24), ("build_area", 5, 16), ("shore_wreck", 8, 34), ("ruin_cluster", 95, 150) })
+            Assert.True(counts.GetValueOrDefault(id) >= fewest && counts.GetValueOrDefault(id) <= most, $"{id}: {counts.GetValueOrDefault(id)}");
+
+        foreach (var kiosk in gen.Pois.Where(p => p.Poi.Prefab.Id == "roadside_kiosk"))
+        {
+            // Beside a road, clear of it, level with it, and facing it.
+            var road = gen.Roads.Nearest(kiosk.Centre.X, kiosk.Centre.Y, 48f, RoadKind.Road);
+            Assert.True(road is not null, $"kiosk at {kiosk.Centre} stands by a road");
+            Assert.False(gen.Roads.Near(kiosk.Centre.X, kiosk.Centre.Y, kiosk.Radius));
+            Assert.True(MathF.Abs(road!.Value.Height - kiosk.PadHeight) <= 1.6f, $"kiosk at {kiosk.Centre} is level with its road");
+            var front = kiosk.ToWorld(new Vector2(0f, -1f)) - kiosk.Centre;
+            Assert.True(Vector2.Dot(front, Vector2.Normalize(road.Value.Point - kiosk.Centre)) > 0.6f, $"kiosk at {kiosk.Centre} faces its road");
+        }
+        foreach (var wreck in gen.Pois.Where(p => p.Poi.Prefab.Id == "shore_wreck"))
+        {
+            var wet = Enumerable.Range(0, 64).Any(k => gen.HeightAt(wreck.Centre.X + MathF.Cos(k * MathF.Tau / 64) * (wreck.Radius + 24f),
+                wreck.Centre.Y + MathF.Sin(k * MathF.Tau / 64) * (wreck.Radius + 24f)) < gen.SeaLevel
+                || gen.HeightAt(wreck.Centre.X + MathF.Cos(k * MathF.Tau / 64) * (wreck.Radius + 12f),
+                    wreck.Centre.Y + MathF.Sin(k * MathF.Tau / 64) * (wreck.Radius + 12f)) < gen.SeaLevel);
+            Assert.True(wet, $"shore wreck at {wreck.Centre} is by the water");
+        }
+    }
+
+    [Fact]
     public void PoolShoresWanderWithTheirBasin()
     {
         var gen = Vanilla.Value;
@@ -516,6 +547,9 @@ public class WorldGenTests
     [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "terrain": [{ "op": "basin", "radius": 2, "blend": 3, "depth": 1, "wobble": 0.6 }] }""", "$.terrain[0].wobble")]
     [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "terrain": [{ "op": "basin", "radius": 4, "blend": 4, "depth": 1, "wobble": 0.4 }] }""", "$.terrain[0]")]
     [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "terrain": [{ "op": "basin", "radius": 2, "blend": 2, "depth": 1, "wobble": 0.4 }] }""", "$.terrain[0].blend")]
+    [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0], "roadside": 2 } }""", "$.placement.roadside")]
+    [InlineData("""{ "id": "p", "radius": 10, "placement": { "spacing": [40, 60], "biomes": ["a"], "clearance": 8, "roadside": 2 } }""", "$.placement.roadside")]
+    [InlineData("""{ "id": "p", "radius": 10, "placement": { "spacing": [40, 60], "biomes": ["a"], "shore": 0 } }""", "$.placement.shore")]
     [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "pools": [{ "liquid": "oil", "radius": 4 }] }""", "$.pools[0].liquid")]
     [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "pools": [{ "liquid": "goo", "radius": 0 }] }""", "$.pools[0].radius")]
     [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "pools": [{ "liquid": "goo", "at": [6, 0], "radius": 5 }] }""", "$.pools[0]")]

@@ -3,7 +3,7 @@
   "name": "Ruins",
   "radius": 30.0,
   "placement": {
-    "spacing": [480.0, 640.0],
+    "spacing": [620.0, 830.0],
     "biomes": ["meadow", "forest", "field", "desert", "autumn_forest", "burned_forest"],
     "priority": 30,
     "clearance": 128.0

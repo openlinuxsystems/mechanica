@@ -80,7 +80,8 @@ public partial class CaptureScene : Node
         var toggle = args.Length > 1 && args[1] == "switch";
         var fabricator = args.Length > 1 && args[1] == "fabricator";
         var oil = args.Length > 1 && args[1] == "oil";
-        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil ? args[1] : "scrapper_male";
+        var small = args.Length > 1 && args[1] == "small_pois";
+        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small ? args[1] : "scrapper_male";
         if (debugCar)
             Main.MenuCharacter = "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
@@ -185,6 +186,11 @@ public partial class CaptureScene : Node
         if (oil)
         {
             OilShots();
+            return;
+        }
+        if (small)
+        {
+            SmallPoiShots();
             return;
         }
         Shot("front", 60, () => Look(new Vector3(0, 1.0f, -3.2f)));
@@ -648,6 +654,30 @@ public partial class CaptureScene : Node
     }
 
     private Vector3 _away;
+
+    // The nearest of each small spaced POI kind (World POI plan), wide and close.
+    private void SmallPoiShots()
+    {
+        Engine.TimeScale = 1.0;
+        var gen = _main.Streamer.Generator;
+        Shot("small_00_wait", 60, () => { });
+        foreach (var id in new[] { "camp", "forest_ruin", "roadside_kiosk", "farming_patch", "build_area", "shore_wreck", "ruin_cluster" })
+        {
+            var wide = id is "build_area" or "farming_patch" ? 36f : 24f;
+            Shot($"small_00_{id}_go", 240, () =>
+            {
+                var poi = gen.Pois.Where(p => p.Poi.Prefab.Id == id).MinBy(p => p.Centre.Length())!;
+                _meadow = new Vector3(poi.Centre.X, poi.PadHeight, poi.Centre.Y);
+                // Look from the POI's front (−z), where a kiosk's road is.
+                var front = poi.ToWorld(new System.Numerics.Vector2(0f, -1f)) - poi.Centre;
+                _away = new Vector3(front.X, 0f, front.Y);
+                GD.Print($"[capture] {id} at {_meadow}");
+                _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, _meadow + _away.Rotated(Vector3.Up, 0.6f) * 6f + Vector3.Up * 2f, 0f);
+            });
+            Shot($"small_{id}_wide", 30, () => { _main.Flora.BuildAll(); ViewAt(_meadow, _away.Rotated(Vector3.Up, 0.5f) * wide + Vector3.Up * wide * 0.45f, 0f); });
+            Shot($"small_{id}_close", 30, () => ViewAt(_meadow, _away.Rotated(Vector3.Up, -0.4f) * wide * 0.5f + Vector3.Up * wide * 0.2f, 1f));
+        }
+    }
 
     // Loose single parts lying in the world whose definition matches.
     private List<Core.Creations.Creation> LooseWith(Func<Core.Data.PartDefinition, bool> which) =>
