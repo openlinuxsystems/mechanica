@@ -203,8 +203,34 @@ internal static class WorldGenValidator
             if (!(biomes[i].Ridge is >= 0f and <= 1f))
                 sink.Error(Code, $"$.biomes[{i}].ridge", $"ridge must be 0 to 1 (got {biomes[i].Ridge}).");
             NonNegative(biomes[i].Terrace, $"$.biomes[{i}].terrace", sink);
+            if (!(biomes[i].Hills is >= 0f and <= 1f))
+                sink.Error(Code, $"$.biomes[{i}].hills", $"hills must be 0 to 1 (got {biomes[i].Hills}).");
         }
         NonNegative(t.RegionWarp, "$.terrain.region_warp", sink);
+        if (t.Hills is { } hills)
+        {
+            KnownKeys.WarnUnknown(hills.Extra, "$.terrain.hills", sink, typeof(HillsDefinition));
+            NonNegative(hills.Height, "$.terrain.hills.height", sink);
+            Positive(hills.Scale, "$.terrain.hills.scale", sink);
+            if (hills.Octaves is < 1 or > 8)
+                sink.Error(Code, "$.terrain.hills.octaves", $"octaves must be 1 to 8 (got {hills.Octaves}).");
+            if (!(hills.Gain is > 0f and <= 1f))
+                sink.Error(Code, "$.terrain.hills.gain", $"gain must be greater than 0 and at most 1 (got {hills.Gain}).");
+            Positive(hills.Contrast, "$.terrain.hills.contrast", sink);
+            NonNegative(hills.ShoreRamp, "$.terrain.hills.shore_ramp", sink);
+            NonNegative(hills.PadRamp, "$.terrain.hills.pad_ramp", sink);
+        }
+        if (t.Cliffs is { } cliffs)
+        {
+            KnownKeys.WarnUnknown(cliffs.Extra, "$.terrain.cliffs", sink, typeof(CliffsDefinition));
+            NonNegative(cliffs.Step, "$.terrain.cliffs.step", sink);
+            if (cliffs.Levels is < 0 or > 16)
+                sink.Error(Code, "$.terrain.cliffs.levels", $"levels must be 0 to 16 (got {cliffs.Levels}).");
+            Positive(cliffs.Scale, "$.terrain.cliffs.scale", sink);
+            Positive(cliffs.Contrast, "$.terrain.cliffs.contrast", sink);
+            Positive(cliffs.Face, "$.terrain.cliffs.face", sink);
+            NonNegative(cliffs.Inland, "$.terrain.cliffs.inland", sink);
+        }
         Layout(definition, biomeIds, groundIds, sink);
     }
 

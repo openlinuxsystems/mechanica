@@ -54,6 +54,8 @@ public partial class FabricatorTest : StagedTest
 
     public override void _Ready()
     {
+        // "Nothing is NEW the first time" needs a first time: forget what earlier runs saw at stations.
+        DirAccess.RemoveAbsolute(ProjectSettings.GlobalizePath("user://seen_recipes.json"));
         _harness = new NetTestHarness { Name = "Harness", GameMode = GameMode.Survival, WorldGen = WorldGenData.Flat };
         AddChild(_harness);
         _host = _harness.StartHost();
@@ -107,7 +109,7 @@ public partial class FabricatorTest : StagedTest
             Check(_screen.LinkedShown.SequenceEqual([NearRef]), "the linked chest is in the drawer");
             Check(_screen.LinkedSlots(NearRef).Any(s => s.Entry == Metal && s.Count == 2 && s.IsVisibleInTree()), "its scrap shows");
             Check(_screen.StationOwnSlots.Any(s => s.Entry == Wood), "and the player's inventory under it");
-            Check(_screen.StationLevel == "Level 0 / 3", $"the station's level ({_screen.StationLevel})");
+            Check(_screen.StationLevel == "Level 1 / 4", $"the station's level ({_screen.StationLevel})");
             return true;
         });
         Add("search and filters narrow the recipes", _ =>
@@ -185,7 +187,7 @@ public partial class FabricatorTest : StagedTest
                 return false;
             if (!_upgrades.IsOpen)
                 _upgrades.Open((_workshop, _fabricator));
-            Check(_upgrades.LevelText == "Fabricator: level 0 of 3", $"the level ({_upgrades.LevelText})");
+            Check(_upgrades.LevelText == "Fabricator: level 1 of 4", $"the level ({_upgrades.LevelText})");
             Check(_upgrades.CostLines.SequenceEqual([("2 Component Kit (you have 1)", true)]), $"the cost ({string.Join("; ", _upgrades.CostLines)})");
             Check(_upgrades.ChangeLines.SequenceEqual(["Speed: 1× → 1.25×", "Queue: 8 → 10", "Slots: 10 → 12"]), $"what changes ({string.Join("; ", _upgrades.ChangeLines)})");
             Check(_upgrades.Confirm.Disabled, "Upgrade is off");
@@ -205,7 +207,7 @@ public partial class FabricatorTest : StagedTest
                     _upgrades.Upgrade(_results.Add);
                 return false;
             }
-            if (_screen.StationLevel != "Level 1 / 3" || _upgrades.LevelText != "Fabricator: level 1 of 3")
+            if (_screen.StationLevel != "Level 2 / 4" || _upgrades.LevelText != "Fabricator: level 2 of 4")
                 return false;
             Check(_results[0].Ok, $"the host upgrades it ({_results[0].Message})");
             Check(HostWorkshop.LevelOf(_fabricator) == 1 && HostWorkshop.InventoryOf(_fabricator)!.SlotCount == 12, "the host's Fabricator is level 1 with 12 slots");

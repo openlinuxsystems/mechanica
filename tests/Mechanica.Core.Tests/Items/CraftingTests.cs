@@ -457,7 +457,24 @@ public class CraftingTests
         Assert.Same(PartUpgrades.At(forge, 2), PartUpgrades.At(forge, 9));
         var bad = forge with { Upgrades = [new UpgradeDefinition { Set = (System.Text.Json.Nodes.JsonObject)System.Text.Json.Nodes.JsonNode.Parse("""{ "size": [2, 2, 2] }""")! }] };
         Assert.Null(PartUpgrades.Apply(bad, 1, out var error));
-        Assert.Equal("an upgrade can change only crafting, inventory, logic, properties, not 'size'.", error);
+        Assert.Equal("an upgrade can change only name, description, durability, mesh, icon, settings, display, crafting, inventory, logic, properties, not 'size'.", error);
+    }
+
+    [Theory]
+    [InlineData("vanilla:gas_engine", "vanilla:gas_engine", 0)]
+    [InlineData("gas_engine@2", "gas_engine", 2)]
+    [InlineData("mod:engine@12", "mod:engine", 12)]
+    [InlineData("gas_engine@0", "gas_engine", -1)]
+    [InlineData("gas_engine@02", "gas_engine", -1)]
+    [InlineData("gas_engine@", "gas_engine", -1)]
+    [InlineData("gas_engine@x", "gas_engine", -1)]
+    [InlineData("gas_engine@-1", "gas_engine", -1)]
+    [InlineData("gas_engine@100", "gas_engine", -1)]
+    public void AnUpgradedPartsItemNamesItsLevel(string item, string part, int level)
+    {
+        Assert.Equal((part, level), PartUpgrades.SplitItem(item));
+        if (level >= 0)
+            Assert.Equal(item, PartUpgrades.ItemKey(part, level));
     }
 
     [Fact]

@@ -168,6 +168,11 @@ public interface IInventoryWorld
     void SetPartLoop(int creation, int partId, string? sound, string ownerModId)
     {
     }
+
+    /// <summary>A part of <paramref name="creation"/> changed in a way every peer must draw again (an upgrade to a new model).</summary>
+    void Changed(Creation creation)
+    {
+    }
 }
 
 /// <summary>
@@ -503,6 +508,7 @@ public sealed class InventoryActions(IPartCatalog catalog, RecipeBook recipes, I
         foreach (var cost in UpgradeCost(creation, args.Part))
             pockets.Remove(cost.Item, cost.Count);
         creation.SetLevel(args.Part, creation.LevelOf(args.Part) + 1);
+        world.Changed(creation);
         return Value(new UpgradePartResult(creation.LevelOf(args.Part)));
     }
 

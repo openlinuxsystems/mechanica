@@ -1,4 +1,5 @@
 using System.Numerics;
+using System.Text.Json.Nodes;
 using Mechanica.Core.Actions;
 using Mechanica.Core.Building;
 using Mechanica.Core.Creations;
@@ -594,6 +595,39 @@ public class SurvivalActionsTests
         _f.Pockets(Me).Add("test:mound", 1);
         _f.Ok<PlacePartResult>(Me, BuildActions.PlacePart, mound with { position = new Vec3(3, 0, 1) });
         Assert.Equal(0, _f.Pockets(Me).Count("test:mound"));
+    }
+
+    [Fact]
+    public void AnUpgradedPartIsPickedUpAtItsLevelAndPlacedAtItAgain()
+    {
+        // An engine with two upgrade levels that change its name and mesh.
+        var upgrades = new List<UpgradeDefinition>
+        {
+            new() { Set = (JsonObject)JsonNode.Parse("""{ "name": "Engine 2", "mesh": "meshes/engine_2.glb" }""")! },
+            new() { Set = (JsonObject)JsonNode.Parse("""{ "name": "Engine 3" }""")! },
+        };
+        _f.Catalog.Add("test:engine", _f.Catalog.FindDefinition(Block)! with { Id = "engine", Name = "Engine", StackSize = 5, Upgrades = upgrades });
+        Assert.Equal("Engine 2", _f.Catalog.FindDefinition("test:engine@1")!.Name);
+        Assert.Equal("meshes/engine_2.glb", _f.Catalog.FindDefinition("test:engine@2")!.Mesh);
+        Assert.Null(_f.Catalog.FindDefinition("test:engine@3"));
+        Assert.Null(_f.Catalog.FindDefinition("test:engine@0"));
+
+        var engine = new { part = "test:engine", cell = new[] { 0, 0, 0 }, position = new Vec3(0, 0, 1) };
+        _f.Pockets(Me).Add("test:engine", 1);
+        var placed = _f.Ok<PlacePartResult>(Me, BuildActions.PlacePart, engine);
+        _f.Ok(Me, InventoryActions.UpgradePart, new { creation = placed.Creation, part = placed.Part });
+        _f.Ok(Me, BuildActions.RemovePart, new { creation = placed.Creation, part = placed.Part });
+        Assert.Equal((0, 1), (_f.Pockets(Me).Count("test:engine"), _f.Pockets(Me).Count("test:engine@1")));
+
+        // It stacks apart from engines at other levels and goes down at its level again, using the upgraded one up.
+        _f.Pockets(Me).Add("test:engine", 1);
+        Assert.Equal(2, _f.Pockets(Me).Slots.Count(s => s?.Item.StartsWith("test:engine", StringComparison.Ordinal) == true));
+        Assert.Equal("You have no Engine 3 to place.", _f.Refused(Me, BuildActions.PlacePart, engine with { part = "test:engine@2" }));
+        var again = _f.Ok<PlacePartResult>(Me, BuildActions.PlacePart, engine with { part = "test:engine@1", position = new Vec3(3, 0, 1) });
+        Assert.Equal((1, 0), (_f.World.Creations[again.Creation].LevelOf(again.Part), _f.Pockets(Me).Count("test:engine@1")));
+        Assert.Equal("test:engine", _f.World.Creations[again.Creation].FindPart(again.Part)!.Part);
+        Assert.Equal(1, _f.Pockets(Me).Count("test:engine"));
+        Assert.StartsWith("Unknown part", _f.Refused(Me, BuildActions.PlacePart, engine with { part = "test:engine@9" }));
     }
 
     [Fact]

@@ -370,7 +370,7 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
     }
 
     // Upgrade levels (UI spec §4): each level's cost and the part it makes, which must still be a valid part.
-    private static void ValidateUpgrades(PartDefinition part, bool placeable, DiagnosticSink sink)
+    private void ValidateUpgrades(PartDefinition part, bool placeable, DiagnosticSink sink)
     {
         if (part.Upgrades is not { } upgrades)
             return;
@@ -405,7 +405,7 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
             }
             var found = new List<DataDiagnostic>();
             var inner = new DiagnosticSink(sink.File, found);
-            ValidateStorage(after, placeable, inner);
+            Validate(after with { Upgrades = null }, inner);
             foreach (var d in found.Where(d => d.Severity == DiagnosticSeverity.Error))
                 sink.Error(Code, d.JsonPath is { } path ? $"{p}.set{path[1..]}" : $"{p}.set", d.Message);
             if (after.Inventory?.Slots < before.Inventory?.Slots || (before.Inventory is not null && after.Inventory is null))

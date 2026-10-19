@@ -143,6 +143,7 @@
     "false_start_time": 0.7,
     "stop_time": 0.8,
     "gear_time": 0.45,
+    "heat_time": 0.4,
     "uneven": 0.12,
     "backfire": 0.08,
     "hard_gear": 3,

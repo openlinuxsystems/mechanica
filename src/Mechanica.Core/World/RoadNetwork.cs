@@ -160,9 +160,10 @@ public sealed partial class RoadNetwork
             return h;
         var key = Key(x, z);
         var best = 0f;
-        var nearest = float.PositiveInfinity;
-        var target = h;
         var p = new Vector2(x, z);
+        // Where segments and junctions overlap, each pulls towards its own height by its strength and nearness, so the
+        // ground never steps where one takes over from another.
+        float weights = 0f, sum = 0f;
         if (_segments.TryGetValue(key, out var near))
         {
             foreach (var (c, i) in near)
@@ -176,9 +177,12 @@ public sealed partial class RoadNetwork
                     continue;
                 var e = chain.Heights[i] + (chain.Heights[i + 1] - chain.Heights[i]) * t;
                 var k = 1f - Noise.SmoothStep(core, core + Blend(e, h), d);
-                // Across the road's bed every nearby segment is at full strength: the nearest one gives the height.
-                if (k > best || (k == best && d < nearest))
-                    (best, target, nearest) = (k, chain.Kind == RoadKind.Road ? e - 0.03f : e, d);
+                if (k <= 0f)
+                    continue;
+                var w = MathF.Pow(k, 8f) / MathF.Pow(1f + d, 4f);
+                weights += w;
+                sum += w * (chain.Kind == RoadKind.Road ? e - 0.03f : e);
+                best = MathF.Max(best, k);
             }
         }
         if (_junctions.TryGetValue(key, out var nodes))
@@ -187,12 +191,18 @@ public sealed partial class RoadNetwork
             {
                 var node = _nodes[n];
                 var core = node.Radius + _def!.Curb + _def.Shoulder;
-                var k = 1f - Noise.SmoothStep(core, core + Blend(node.Height, h), Vector2.Distance(p, node.At));
-                if (k > best || (k == best && k == 1f))
-                    (best, target) = (k, node.Height - 0.03f);
+                var d = Vector2.Distance(p, node.At);
+                var k = 1f - Noise.SmoothStep(core, core + Blend(node.Height, h), d);
+                if (k <= 0f)
+                    continue;
+                // Measured from the plate's rim, so the plate outweighs the roads that end on it.
+                var w = MathF.Pow(k, 8f) / MathF.Pow(1f + MathF.Max(0f, d - node.Radius), 4f);
+                weights += w;
+                sum += w * (node.Height - 0.03f);
+                best = MathF.Max(best, k);
             }
         }
-        return h + (target - h) * best;
+        return weights > 0f ? h + (sum / weights - h) * best : h;
     }
 
     // A taller cut or fill blends out further, so its banks stay walkable.
