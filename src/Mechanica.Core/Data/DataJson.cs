@@ -41,6 +41,16 @@ public static class DataJson
         return options;
     }
 
+    /// <summary>
+    /// <paramref name="json"/> as an element that outlives its document; the document goes back to the buffer pool.
+    /// Throws <see cref="JsonException"/> on malformed input.
+    /// </summary>
+    public static JsonElement Element(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        return document.RootElement.Clone();
+    }
+
     /// <summary>Deserializes <paramref name="json"/>. Throws <see cref="JsonException"/> on malformed input.</summary>
     public static T? Read<T>(string json) => JsonSerializer.Deserialize<T>(json, ReadOptions);
 

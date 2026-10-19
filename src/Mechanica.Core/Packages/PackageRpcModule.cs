@@ -74,7 +74,7 @@ public sealed class PackageRpcModule(string modsRoot, string packagesFolder, Rem
             can_install = plan.CanInstall,
             change = Change(plan.Change),
             installed_version = plan.InstalledVersion?.ToString(),
-            manifest = plan.Inspection.Manifest is { } m ? JsonDocument.Parse(DataJson.Write(m)).RootElement : (JsonElement?)null,
+            manifest = plan.Inspection.Manifest is { } m ? DataJson.Element(DataJson.Write(m)) : (JsonElement?)null,
             problems = Problems(plan.Diagnostics),
         });
     }

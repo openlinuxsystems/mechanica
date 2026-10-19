@@ -317,7 +317,7 @@ public sealed class EditorService(ModWorkspace workspace, IEditorHost host)
         var raids = BotExporter.ReadRaids(Workspace.Files.ModDirectory(modId), diagnostics);
         if (raids is null && diagnostics.Count > 0)
             throw new ModToolException(string.Join("; ", diagnostics));
-        return raids is null ? null : JsonDocument.Parse(DataJson.Write(raids)).RootElement.Clone();
+        return raids is null ? null : DataJson.Element(DataJson.Write(raids));
     }
 
     /// <summary>Checks a raid table against the bots on disk and writes it to the mod's <c>raids/raids.json</c>.</summary>
@@ -336,7 +336,7 @@ public sealed class EditorService(ModWorkspace workspace, IEditorHost host)
     {
         var diagnostics = new List<DataDiagnostic>();
         var files = RecipeExporter.ReadAll(Workspace.Files.ModDirectory(modId), diagnostics);
-        return [.. files.Select(f => (f.RelativeFile, JsonDocument.Parse(DataJson.Write(f.Recipe)).RootElement.Clone()))];
+        return [.. files.Select(f => (f.RelativeFile, DataJson.Element(DataJson.Write(f.Recipe))))];
     }
 
     /// <summary>
@@ -370,7 +370,7 @@ public sealed class EditorService(ModWorkspace workspace, IEditorHost host)
     public JsonElement SoundBank(string modId, string? path)
     {
         var bank = OpenBank(Workspace.Files.ModDirectory(modId), modId, path).Bank;
-        return JsonDocument.Parse(DataJson.Write(bank)).RootElement.Clone();
+        return DataJson.Element(DataJson.Write(bank));
     }
 
     /// <summary>Replaces a sound bank's events, checks them as loading would and writes the file.</summary>
@@ -440,8 +440,8 @@ public sealed class EditorService(ModWorkspace workspace, IEditorHost host)
     private PartState State(PartDocument document) => State(_parts.First(p => ReferenceEquals(p.Value, document)).Key, document);
 
     private static PartState State(string doc, PartDocument d) => new(doc, d.ModId, d.RelativeFile,
-        JsonDocument.Parse(DataJson.Write(d.Definition)).RootElement.Clone(),
-        JsonDocument.Parse(PartSource.Write(d.Source)).RootElement.Clone(), d.IsDirty, d.UndoLabel, d.RedoLabel, d.Source.NeedsBake);
+        DataJson.Element(DataJson.Write(d.Definition)),
+        DataJson.Element(PartSource.Write(d.Source)), d.IsDirty, d.UndoLabel, d.RedoLabel, d.Source.NeedsBake);
 
     private BotState State(BotDocument document)
     {

@@ -221,7 +221,7 @@ public sealed class Creation
     /// Uses the same lowest-part rule as <see cref="BodyPose"/>; a Body with none stored is at rest.
     /// </summary>
     public BodyVelocity GetBodyVelocity(int bodyIndex) =>
-        Bodies[bodyIndex].PartIds.FirstOrDefault(_velocities.ContainsKey) is var id and > 0 ? _velocities[id] : BodyVelocity.Zero;
+        First(Bodies[bodyIndex], _velocities) ?? BodyVelocity.Zero;
 
     /// <summary>Sets a Body's world velocity; the game writes simulated velocities back with this before saving.</summary>
     public void SetBodyVelocity(int bodyIndex, BodyVelocity velocity)
@@ -876,8 +876,19 @@ public sealed class Creation
         Revision++;
     }
 
-    private Pose? StoredPose(Body body) =>
-        body.PartIds.FirstOrDefault(_poses.ContainsKey) is var id and > 0 ? _poses[id] : null;
+    private Pose? StoredPose(Body body) => First(body, _poses);
+
+    // The value stored for the Body's first part that has one. Read for every force and every body pose, so a plain loop.
+    private static T? First<T>(Body body, Dictionary<int, T> byPart)
+        where T : struct
+    {
+        foreach (var id in body.PartIds)
+        {
+            if (byPart.TryGetValue(id, out var value))
+                return value;
+        }
+        return null;
+    }
 
     private bool TryResolve(string qualified, [NotNullWhen(true)] out PartDefinition? definition, [NotNullWhen(false)] out string? error)
     {

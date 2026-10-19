@@ -633,7 +633,10 @@ public partial class BuildTool : HandTool
             var part = creation!.FindPart(_dragParts[i])!;
             var definition = creation.DefinitionOf(part.Id);
             var size = BuildDrag.StepOf(definition, part.Rotation);
-            ((BoxMesh)mark.Mesh).Size = new Vector3(size.X, size.Y, size.Z) * Core.MechanicaInfo.GridSize * 1.04f;
+            // A box mesh rebuilds on every size set, and this runs every tick of a drag.
+            var box = new Vector3(size.X, size.Y, size.Z) * Core.MechanicaInfo.GridSize * 1.04f;
+            if (((BoxMesh)mark.Mesh).Size != box)
+                ((BoxMesh)mark.Mesh).Size = box;
             mark.GlobalTransform = _removing!.Value.Frame * new Transform3D(Basis.Identity, PartGeometry.CentreMetres(definition, part.Cell, part.Rotation).ToGodot());
         }
     }
@@ -660,8 +663,11 @@ public partial class BuildTool : HandTool
 
     private static void SetPreviewMaterial(Node3D preview, Material material)
     {
-        foreach (var mesh in preview.GetChildren().OfType<MeshInstance3D>())
-            mesh.MaterialOverride = material;
+        foreach (var child in preview.GetChildren())
+        {
+            if (child is MeshInstance3D mesh && mesh.MaterialOverride != material)
+                mesh.MaterialOverride = material;
+        }
     }
 
     // The item itself, or its ground part when it aims at the ground (the world's own terrain) without Force build.

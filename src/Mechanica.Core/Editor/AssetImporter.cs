@@ -141,8 +141,10 @@ public static class AssetImporter
                 entry["uri"] = Path.GetFileName(placed);
             }
         }
-        bytes = Encoding.UTF8.GetBytes(root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+        bytes = Encoding.UTF8.GetBytes(root.ToJsonString(Indented));
         error = null;
         return true;
     }
+
+    private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
 }

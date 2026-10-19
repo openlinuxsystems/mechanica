@@ -89,6 +89,12 @@ public partial class WorldStreamer : Node3D
     public IReadOnlyDictionary<ChunkCoord, TerrainChunk> Scenery => _scenery;
 
     /// <summary>
+    /// Counts changes to <see cref="Chunks"/>, <see cref="Scenery"/> and the chunks waiting to be built, so what is
+    /// worked out from them (the scenery wanted, flora patches) is only worked out again after one.
+    /// </summary>
+    public int Revision { get; private set; }
+
+    /// <summary>
     /// Draws <see cref="Scenery"/>. Off without a display (test scenes and dedicated hosts draw nothing
     /// anyone sees); a test that checks scenery turns it on.
     /// </summary>
@@ -186,6 +192,8 @@ public partial class WorldStreamer : Node3D
             }
         }
         _pending.UnionWith(update.Load);
+        if (update.Load.Count > 0 || update.Unload.Count > 0)
+            Revision++;
         BuildPending(players, samples);
         foreach (var id in update.Resume)
             Creations.Resume(id);
@@ -227,6 +235,7 @@ public partial class WorldStreamer : Node3D
         var node = new TerrainChunk { Data = Generator.GenerateChunk(chunk, Streamer.Settings.ChunkSize), State = State, Ground = Ground, Textured = GroundMaterial.For(Generator.Data), WorldGen = Generator.Data };
         AddChild(node);
         _chunks[chunk] = node;
+        Revision++;
     }
 
     // Drops scenery that is out of view or now simulated, then builds what is missing, nearest first,
@@ -234,10 +243,16 @@ public partial class WorldStreamer : Node3D
     private void UpdateScenery()
     {
         var reach = ViewDistance ?? Mechanica.Game.Settings.GameSettings.Current.Graphics.Effective().ViewDistance;
+        var viewer = (PlayerSync.LocalPlayer?.GlobalPosition ?? SpawnPoint()).ToNumerics();
+        // What is wanted only changes with the chunks, the view distance, or the viewer moving a good part of a chunk;
+        // until then there is nothing to do once everything wanted is built.
+        var key = (Revision, reach, DrawScenery);
+        if (SceneryMissing == 0 && _sceneryKey == key && System.Numerics.Vector3.Distance(viewer, _sceneryViewer) < Streamer.Settings.ChunkSize / 4f)
+            return;
         var simulated = new HashSet<ChunkCoord>(Streamer.Loaded);
         simulated.UnionWith(_pending);
         IReadOnlyList<ChunkCoord> wanted = DrawScenery
-            ? FarChunks.Wanted((PlayerSync.LocalPlayer?.GlobalPosition ?? SpawnPoint()).ToNumerics(), reach, Streamer.Settings.ChunkSize, Streamer.InWorld, simulated)
+            ? FarChunks.Wanted(viewer, reach, Streamer.Settings.ChunkSize, Streamer.InWorld, simulated)
             : [];
         var keep = wanted.ToHashSet();
         foreach (var chunk in _scenery.Keys.Where(c => !keep.Contains(c)).ToList())
@@ -245,6 +260,7 @@ public partial class WorldStreamer : Node3D
             _scenery.Remove(chunk, out var node);
             _sceneryRoot.RemoveChild(node);
             node!.QueueFree();
+            Revision++;
         }
         var started = System.Diagnostics.Stopwatch.GetTimestamp();
         foreach (var chunk in wanted)
@@ -254,11 +270,16 @@ public partial class WorldStreamer : Node3D
             var node = new TerrainChunk { Data = Generator.GenerateChunk(chunk, Streamer.Settings.ChunkSize), State = State, Ground = Ground, Scenery = true, Textured = GroundMaterial.For(Generator.Data), WorldGen = Generator.Data };
             _sceneryRoot.AddChild(node);
             _scenery[chunk] = node;
+            Revision++;
             if (System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalSeconds >= SceneryBudget)
                 break;
         }
         SceneryMissing = wanted.Count(c => !_scenery.ContainsKey(c));
+        (_sceneryKey, _sceneryViewer) = ((Revision, reach, DrawScenery), viewer);
     }
+
+    private (int Revision, float Reach, bool Draw) _sceneryKey = (-1, 0f, false);
+    private System.Numerics.Vector3 _sceneryViewer;
 
     // Distance (x/z) from a player to a chunk's centre.
     private float Distance(ChunkCoord chunk, System.Numerics.Vector3 player)
@@ -382,6 +403,7 @@ public partial class WorldStreamer : Node3D
             foreach (var node in _scenery.Values)
                 node.QueueFree();
             _scenery.Clear();
+            Revision++;
             Creations.Removed -= Streamer.Forget;
             Streamer = new ChunkStreamer(Streamer.Settings);
             Creations.Removed += Streamer.Forget;

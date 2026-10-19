@@ -179,9 +179,12 @@ public partial class CreationNode : Node3D
     {
         foreach (var (part, light, energy) in _lights)
         {
+            // Every frame for every light: only a change reaches the renderer.
             var level = levels.Level(Creation.Id, part);
-            light.Visible = level > 0f;
-            light.LightEnergy = energy * level;
+            if (light.Visible != level > 0f)
+                light.Visible = level > 0f;
+            if (light.LightEnergy != energy * level)
+                light.LightEnergy = energy * level;
         }
     }
 

@@ -91,6 +91,7 @@ public partial class FloraField : Node3D
             return 0;
         }
         var graphics = GameSettings.Current.Graphics;
+        var changed = false;
         foreach (var kind in Kinds)
         {
             var level = graphics.Foliage(kind);
@@ -98,9 +99,16 @@ public partial class FloraField : Node3D
                 continue;
             _levels[kind] = level;
             ConfigureMaterial(kind, level);
+            changed = true;
         }
         var viewer = Viewer?.Invoke() ?? GetViewport()?.GetCamera3D()?.GlobalPosition ?? World.SpawnPoint();
         UpdateGlobals(viewer);
+        // Once every patch in reach is built, nothing changes until the chunks, the levels or the settings do, or the
+        // viewer moves (well inside the margins patches are kept and built with).
+        if (!wait && !changed && _settled is var (revision, at, built) && revision == World.Revision && built == settings
+            && at.DistanceTo(viewer) < SettleDistance)
+            return 0;
+        _settled = null;
 
         var reach = Kinds.Max(k => settings.Distance(k, _levels[k]));
         foreach (var (coord, patch) in _patches.ToList())
@@ -164,8 +172,16 @@ public partial class FloraField : Node3D
                 patch.Built[kind] = level;
             }
         }
+        if (waiting == 0)
+            _settled = (World.Revision, viewer, settings);
         return waiting;
     }
+
+    // How far the viewer moves before a settled field looks again, in m.
+    private const float SettleDistance = 2f;
+
+    // Where the field last had nothing left to build: the chunks' revision, the viewer and the settings then.
+    private (int Revision, Vector3 Viewer, FloraSettings Settings)? _settled;
 
     // A loaded chunk, or failing that scenery, at a coordinate.
     private bool Ground(ChunkCoord coord, out TerrainChunk chunk) =>
@@ -297,6 +313,7 @@ public partial class FloraField : Node3D
         foreach (var patch in _patches.Values)
             patch.Node.QueueFree();
         _patches.Clear();
+        _settled = null;
     }
 
     private static Vector3 Centre(TerrainChunk chunk)
