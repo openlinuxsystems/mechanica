@@ -18,6 +18,17 @@
           "radius": 0.35,
           "height": 0.9
         },
+        // Built by tools/scuttler/build_scuttler.py, which prints the clip speeds.
+        "model": {
+          "mesh": "meshes/bots/scuttler_green.glb",
+          "attacks": {
+            "whip": ["tail_slam", "tail_sweep", "claw_combo"]
+          },
+          "clip_speeds": {
+            "patrol": 0.93,
+            "chase": 3.0
+          }
+        },
         "color": "#5fae3e",
         "raid_cost": 1,
         "attacks": [
@@ -124,6 +135,7 @@
       "file": "bots/scuttler_blue.json",
       "base": "scuttler_green",
       "set": {
+        "model": null,
         "name": "Blue Scuttler",
         "description": "Charges with a drill, and is even faster in water.",
         "water_speed": 7,
@@ -248,6 +260,7 @@
       "file": "bots/scuttler_yellow.json",
       "base": "scuttler_green",
       "set": {
+        "model": null,
         "name": "Yellow Scuttler",
         "description": "Heavier. Stomps the ground, hurting everything around it.",
         "health": 80,
@@ -364,6 +377,7 @@
       "file": "bots/scuttler_red.json",
       "base": "scuttler_green",
       "set": {
+        "model": null,
         "name": "Red Scuttler",
         "description": "Runs at you and blows itself up.",
         "health": 40,
@@ -472,6 +486,7 @@
       "file": "bots/scuttler_seed.json",
       "base": "scuttler_green",
       "set": {
+        "model": null,
         "name": "Seed Scuttler",
         "description": "A weak scuttler that carries seeds it has stolen.",
         "health": 30,

@@ -34,6 +34,15 @@ public sealed record BotAttack(
 /// <param name="CountMax">The most: each drop is a random count from <paramref name="Count"/> to this.</param>
 public sealed record BotDrop(string Item, float Chance, int Count, int CountMax);
 
+/// <summary>A bot's model with its path qualified and every default filled in.</summary>
+/// <param name="Mesh">Qualified glTF path (<c>mod:meshes/bots/x.glb</c>).</param>
+/// <param name="Attacks">Clips each attack plays, by attack id (every attack has at least one).</param>
+/// <param name="ClipSpeeds">Ground speed (m/s) each walking clip plays at normal speed, by clip name.</param>
+/// <param name="EyeCalm">Eye colour while calm, <c>"#rrggbb"</c>.</param>
+/// <param name="EyeEngaged">Eye colour while engaged, <c>"#rrggbb"</c>.</param>
+public sealed record BotModel(string Mesh, IReadOnlyDictionary<string, IReadOnlyList<string>> Attacks, IReadOnlyDictionary<string, float> ClipSpeeds,
+    string EyeCalm, string EyeEngaged);
+
 /// <summary>A bot type that loaded cleanly, with every id qualified and every default filled in.</summary>
 /// <param name="QualifiedId">Game-wide id, <c>mod_id:bot_id</c>.</param>
 /// <param name="ModId">The mod that defines it (its script runs in that mod's Lua state).</param>
@@ -66,6 +75,9 @@ public sealed record Bot(
 
     /// <summary>The behaviour tree, or null when the bot has none.</summary>
     public JsonObject? Behavior => Definition.Behavior;
+
+    /// <summary>Its animated model, or null for the placeholder capsule.</summary>
+    public BotModel? Model { get; init; }
 }
 
 /// <summary>Finds bot types by id.</summary>
@@ -96,6 +108,12 @@ public sealed class BotBook : IBotCatalog
 
     /// <summary>Default body colour.</summary>
     public const string DefaultColor = "#808080";
+
+    /// <summary>Default eye colour of a calm bot.</summary>
+    public const string DefaultEyeCalm = "#2bff3a";
+
+    /// <summary>Default eye colour of an engaged bot.</summary>
+    public const string DefaultEyeEngaged = "#ff1a0a";
 
     /// <summary>Deepest behaviour tree accepted.</summary>
     public const int MaxBehaviorDepth = 24;
@@ -272,13 +290,60 @@ public sealed class BotBook : IBotCatalog
                     sink.Error(DiagnosticCodes.AssetMissing, "$.script", $"script '{b.Script}' does not exist in the mod.");
             }
         }
+        var model = b.Model is { } m ? CheckModel(m, modId, modDirectory, attacks, sink) : null;
         KnownKeys.WarnUnknown(b.Extra, "$", sink, typeof(BotDefinition));
 
         if (sink.ErrorCount > errors)
             return null;
         return new Bot($"{modId}:{b.Id}", modId, b.Name!, family, b.Health!.Value, b.Speed!.Value, b.WaterSpeed ?? b.Speed!.Value,
             b.Sight ?? DefaultSight, radius, height, b.Color?.ToLowerInvariant() ?? DefaultColor, b.MeleeImmune ?? false, b.Passive ?? false,
-            b.RaidCost, attacks, drops, script, b);
+            b.RaidCost, attacks, drops, script, b) { Model = model };
+    }
+
+    private static BotModel? CheckModel(BotModelDefinition m, string modId, string? modDirectory, List<BotAttack> attacks, DiagnosticSink sink)
+    {
+        const string code = DiagnosticCodes.BotInvalid;
+        var errors = sink.ErrorCount;
+        KnownKeys.WarnUnknown(m.Extra, "$.model", sink, typeof(BotModelDefinition));
+        string? mesh = null;
+        if (m.Mesh is null)
+            sink.Error(code, "$.model.mesh", "mesh (a .glb or .gltf in the mod) is required.");
+        else if (!AssetPath.TryParse(m.Mesh, modId, AssetKind.Mesh, out var asset, out var error))
+            sink.Error(DiagnosticCodes.AssetPathInvalid, "$.model.mesh", error);
+        else
+        {
+            mesh = asset.ToString();
+            if (modDirectory is not null && asset.ModId == modId && !File.Exists(asset.Resolve(modDirectory)))
+                sink.Error(DiagnosticCodes.AssetMissing, "$.model.mesh", $"mesh '{m.Mesh}' does not exist in the mod.");
+        }
+        foreach (var (key, value) in new[] { ("eye_calm", m.EyeCalm), ("eye_engaged", m.EyeEngaged) })
+        {
+            if (value is not null && !HexColor.TryParse(value, out _))
+                sink.Error(code, $"$.model.{key}", $"{key} '{value}' must be \"#rrggbb\".");
+        }
+        var clips = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
+        foreach (var attack in attacks)
+            clips[attack.Id] = [attack.Id];
+        foreach (var (id, list) in m.Attacks ?? [])
+        {
+            if (!attacks.Any(a => a.Id == id))
+                sink.Error(code, $"$.model.attacks.{id}", $"the bot has no attack '{id}'.");
+            else if (list is not { Count: > 0 } || list.Any(string.IsNullOrWhiteSpace))
+                sink.Error(code, $"$.model.attacks.{id}", "list one or more clip names.");
+            else
+                clips[id] = [.. list];
+        }
+        var speeds = new Dictionary<string, float>(StringComparer.Ordinal);
+        foreach (var (clip, speed) in m.ClipSpeeds ?? [])
+        {
+            if (!(speed > 0) || !float.IsFinite(speed))
+                sink.Error(code, $"$.model.clip_speeds.{clip}", $"clip speed {speed} must be above 0 m/s.");
+            else
+                speeds[clip] = speed;
+        }
+        if (sink.ErrorCount > errors)
+            return null;
+        return new BotModel(mesh!, clips, speeds, m.EyeCalm?.ToLowerInvariant() ?? DefaultEyeCalm, m.EyeEngaged?.ToLowerInvariant() ?? DefaultEyeEngaged);
     }
 
     private static BotAttack? CheckAttack(BotAttackDefinition a, string path, string family, DiagnosticSink sink)

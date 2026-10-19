@@ -20,7 +20,8 @@ namespace Mechanica.Game.Tests;
 /// Bots and a raid, host plus client (chunk 21, D10), on a flat Survival world with a test bot whose
 /// behaviour is only a data tree run by the Lua behaviour library. The client plants a carrot; the host
 /// sets off a raid; the client sees the warning, then the raiders arrive, walk to the crop and destroy it;
-/// the client kills them with the Sledgehammer and the raid ends. Every step is checked on the client.
+/// the client kills them with the Sledgehammer and the raid ends. Every step is checked on the client, including the
+/// raiders' animated model (the Green Scuttler's): its walk, attack, hit and death clips and its eye.
 /// </summary>
 public partial class BotTest : StagedTest
 {
@@ -29,6 +30,8 @@ public partial class BotTest : StagedTest
     private const string Soil = "vanilla:soil";
 
     private readonly List<ActionResult> _results = [];
+    private readonly HashSet<string> _clips = [];
+    private float _eye;
     private NetTestHarness _harness = null!;
     private Instance _host = null!;
     private Instance _client = null!;
@@ -55,6 +58,12 @@ public partial class BotTest : StagedTest
             Speed = 4,
             RaidCost = 1,
             Color = "#5a9e3a",
+            Model = new BotModelDefinition
+            {
+                Mesh = "vanilla:meshes/bots/scuttler_green.glb",
+                Attacks = new() { ["chomp"] = ["claw_combo"] },
+                ClipSpeeds = new() { ["patrol"] = 0.93f, ["chase"] = 3f },
+            },
             Attacks = [new BotAttackDefinition { Id = "chomp", Kind = BotAttackKind.Melee, Damage = 10, PartDamage = 10, Range = 1.5f, Interval = 1 }],
             Behavior = JsonNode.Parse("""
                 { "type": "selector", "children": [
@@ -129,6 +138,7 @@ public partial class BotTest : StagedTest
                 Check(away is > 8 and < 12, $"bot {body.BotId} arrives about 10 m from the farm ({away:0.0} m)");
             }
             Check(_host.Main.Bots.Bodies.Count == 3, "the host shows them too");
+            Check(ClientBots.Bodies.Values.All(b => b.Model is { Legs: 6 }), "the client shows each raider's model, with its six legs");
             return true;
         });
         Stage("the raiders walk to the crop and destroy it", _ =>
@@ -137,6 +147,8 @@ public partial class BotTest : StagedTest
                 return false;
             var crop = CropPosition();
             Check(_host.Main.Bots.CropsDestroyed >= 1, "the host counted a destroyed crop");
+            Check(_clips.Contains("chase") || _clips.Contains("patrol"), $"the client's raiders walk ({string.Join(", ", _clips)})");
+            Check(_clips.Contains("claw_combo"), $"the client's raiders play their attack ({string.Join(", ", _clips)})");
             Check(ClientBots.Bodies.Values.Any(b => b.GlobalPosition.DistanceTo(crop) < 3f),
                 $"the client shows a raider at the crop ({string.Join(", ", ClientBots.Bodies.Values.Select(b => b.GlobalPosition.DistanceTo(crop).ToString("0.0")))} m)");
             return true;
@@ -152,6 +164,9 @@ public partial class BotTest : StagedTest
             if (ClientBots.Raid.Phase != RaidPhases.None || _host.Main.Bots.Bots!.Bots.Values.Any(b => !b.Dead))
                 return false;
             Check(_results.Count >= 6 && _results.All(r => r.Ok), $"every swing lands ({string.Join("; ", _results)})");
+            Check(_clips.Contains("hit"), $"the client's raiders flinch when hit ({string.Join(", ", _clips)})");
+            Check(_eye > 0.9f, $"a fighting raider's eye turns to its engaged colour ({_eye:0.00})");
+            Check(ClientBots.Bodies.Values.All(b => b.Model!.Clip == "death"), "the client's dead raiders play their death");
             return true;
         });
         Stage("the dead raiders are cleared away on the client", _ => ClientBots.Bodies.Count == 0);
@@ -161,7 +176,20 @@ public partial class BotTest : StagedTest
     private void Stage(string name, Func<int, bool> tick) => Add(name, frame =>
     {
         if (frame == 0)
+        {
             _results.Clear();
+            _clips.Clear();
+            _eye = 0;
+        }
+        foreach (var body in _client.Main.Bots.Bodies.Values)
+        {
+            if (body.Model is { } model)
+            {
+                if (model.Clip is { } clip)
+                    _clips.Add(clip);
+                _eye = Math.Max(_eye, model.EyeEngaged);
+            }
+        }
         return tick(frame);
     });
 

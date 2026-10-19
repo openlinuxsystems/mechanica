@@ -74,6 +74,40 @@ public sealed class BotActionsTests
     }
 
     [Fact]
+    public void Attacking_or_being_hurt_engages_a_bot_until_it_calms_down()
+    {
+        // You stand at (0, 0, 6).
+        var bot = _f.Spawn(BotFixture.Grunt, new Vector3(0, 0, 7.5f));
+        var state = _f.Bots.Find(bot)!;
+        var changes = 0;
+        _f.Bots.Changed += b => changes += b.Id == bot ? 1 : 0;
+        Assert.False(state.View.Engaged);
+
+        S.Ok(BotFixture.Brain, BotActions.BotAttack, new BotAttackArgs(bot, "whip", Player: You.Peer));
+        Assert.True(state.View.Engaged);
+        Assert.Equal(1, changes);
+        // Staying engaged sends nothing new; the engagement just lasts longer.
+        _f.Advance(3);
+        _f.Bots.Engage(bot);
+        _f.Advance(3);
+        Assert.True(state.Engaged);
+        Assert.Equal(1, changes);
+        _f.Advance(1.5);
+        Assert.False(state.View.Engaged);
+        Assert.Equal(2, changes);
+
+        // A hit engages it, in the same change that carries its new health.
+        _f.Bots.DamageBot(bot, 10, "test", melee: false);
+        Assert.True(state.Engaged);
+        Assert.Equal(3, changes);
+        // A dead bot is never engaged.
+        _f.Bots.DamageBot(bot, 100, "test", melee: false);
+        Assert.False(state.View.Engaged);
+        _f.Bots.Engage(bot);
+        Assert.False(state.Engaged);
+    }
+
+    [Fact]
     public void An_attack_names_one_target()
     {
         var bot = _f.Spawn(BotFixture.Grunt, new Vector3(0, 0, 7.5f));

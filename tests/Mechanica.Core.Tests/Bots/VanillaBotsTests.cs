@@ -189,4 +189,47 @@ public class VanillaBotsTests
 
         Assert.Contains(diagnostics, d => d.JsonPath == "$.attacks[0].object_damage" && d.Message == "object_damage must be 0 or more.");
     }
+
+    [Theory]
+    [InlineData("""{ "attacks": { "whip": ["a"] } }""", "$.model.mesh", "mesh (a .glb or .gltf in the mod) is required.")]
+    [InlineData("""{ "mesh": "../x.glb" }""", "$.model.mesh", null)]
+    [InlineData("""{ "mesh": "meshes/x.glb", "attacks": { "bite": ["a"] } }""", "$.model.attacks.bite", "the bot has no attack 'bite'.")]
+    [InlineData("""{ "mesh": "meshes/x.glb", "attacks": { "whip": [] } }""", "$.model.attacks.whip", "list one or more clip names.")]
+    [InlineData("""{ "mesh": "meshes/x.glb", "eye_calm": "green" }""", "$.model.eye_calm", "eye_calm 'green' must be \"#rrggbb\".")]
+    [InlineData("""{ "mesh": "meshes/x.glb", "clip_speeds": { "patrol": 0 } }""", "$.model.clip_speeds.patrol", "clip speed 0 must be above 0 m/s.")]
+    public void BadModelsAreReported(string model, string path, string? message)
+    {
+        var bot = ModelBot(model);
+
+        var diagnostics = BotBook.Validate(bot, "test", null, Vanilla.Value, "test/bots/whipper.json");
+
+        Assert.Contains(diagnostics, d => d.JsonPath == path && (message is null || d.Message == message));
+    }
+
+    [Fact]
+    public void AModelFillsInItsClipsAndEyeColours()
+    {
+        var book = BotBook.From(Vanilla.Value, ("test", ModelBot("""{ "mesh": "meshes/bots/whipper.glb", "attacks": { "whip": ["slam", "sweep"] }, "clip_speeds": { "chase": 2 }, "eye_engaged": "#FF0000" }""")));
+
+        var model = book.FindBot("test:whipper")!.Model!;
+
+        Assert.Equal("test:meshes/bots/whipper.glb", model.Mesh);
+        Assert.Equal(["slam", "sweep"], model.Attacks["whip"]);
+        Assert.Equal(["poke"], model.Attacks["poke"]);
+        Assert.Equal(2f, model.ClipSpeeds["chase"]);
+        Assert.Equal((BotBook.DefaultEyeCalm, "#ff0000"), (model.EyeCalm, model.EyeEngaged));
+        Assert.Null(BotBook.From(Vanilla.Value, ("test", ModelBot(null))).FindBot("test:whipper")!.Model);
+    }
+
+    private static BotDefinition ModelBot(string? model) => new()
+    {
+        Id = "whipper", Name = "Whipper", Health = 10, Speed = 1,
+        Attacks =
+        [
+            new BotAttackDefinition { Id = "whip", Kind = BotAttackKind.Melee, Damage = 1, Range = 1, Interval = 1 },
+            new BotAttackDefinition { Id = "poke", Kind = BotAttackKind.Melee, Damage = 1, Range = 1, Interval = 1 },
+        ],
+        Model = model is null ? null : System.Text.Json.JsonSerializer.Deserialize<BotModelDefinition>(model,
+            new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.SnakeCaseLower }),
+    };
 }

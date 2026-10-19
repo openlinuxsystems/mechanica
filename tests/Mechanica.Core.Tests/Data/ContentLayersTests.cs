@@ -195,7 +195,8 @@ public class ContentLayersTests : IDisposable
     [Fact]
     public void RaidPatchesAddBotsToALevel()
     {
-        _mods.File("tweaks", "bots/rust_bug.json", File.ReadAllText(Path.Combine(Vanilla, "bots", "scuttler_green.json")).Replace("\"scuttler_green\"", "\"rust_bug\""))
+        _mods.File("tweaks", "bots/rust_bug.json", File.ReadAllText(Path.Combine(Vanilla, "bots", "scuttler_green.json"))
+            .Replace("\"scuttler_green\"", "\"rust_bug\"").Replace("\"meshes/", "\"vanilla:meshes/"))
             .File("tweaks", "raids/raids.patch.json", """{ "levels": [{ "level": 1, "budget": 6, "bots": [{ "bot": "rust_bug", "count": 2 }] }] }""");
         var content = Load();
 

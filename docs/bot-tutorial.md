@@ -45,7 +45,8 @@ through the [External AI Endpoint](ai-endpoint.md), or add the bot to your raid 
 | `water_speed` | number, m/s | `speed` | Top speed in water. |
 | `sight` | number, m | 30 | How far it notices players and crops. |
 | `size` | `{radius, height}`, m | 0.4, 1.2 | Its capsule, standing on its feet. |
-| `color` | `"#rrggbb"` | `#808080` | Colour of the placeholder body. |
+| `color` | `"#rrggbb"` | `#808080` | Colour of the placeholder body (a bot with no `model`). |
+| `model` | object | none | Its animated model (below). Omitted shows a capsule in `color`. |
 | `melee_immune` | bool | false | Melee hits (the Sledgehammer) do nothing. |
 | `passive` | bool | false | Never joins raids and never attacks first. |
 | `raid_cost` | integer | none | What one bot costs from a raid's budget. Omitted means it never raids. |
@@ -96,8 +97,57 @@ removes the key. For example, a melee bite and a drop:
 [ { "item": "vanilla:component_kit", "chance": 0.25, "count": 1, "count_max": 2 } ]
 ```
 
+Under **Model and animation**, the **Model** box takes the `model` object (below) the same way.
+
 **Export** checks the attacks and drops (a missing required key, a number out of range, an attack listed
 twice, a malformed item or sound id) and writes the file only when they pass.
+
+### Models and animation
+
+A `model` is a glTF (`.glb` or `.gltf`) in your mod, with its feet at the origin and facing -Z. It only changes
+how the bot looks: the host still moves and hits with the bot's capsule (`size`).
+
+```json
+"model": {
+  "mesh": "meshes/bots/scuttler_green.glb",
+  "attacks": { "whip": ["tail_slam", "tail_sweep", "claw_combo"] },
+  "clip_speeds": { "patrol": 0.93, "chase": 3.0 },
+  "eye_calm": "#2bff3a",
+  "eye_engaged": "#ff1a0a"
+}
+```
+
+| Key | Type | Default | Meaning |
+|-----|------|---------|---------|
+| `mesh` | path | required | The glTF, relative to the mod root (`other_mod:path` for another mod's). |
+| `attacks` | `{attack id: [clip, …]}` | each attack plays the clip named after it | Clips an attack plays, one per use, in turn. |
+| `clip_speeds` | `{clip: m/s}` | none | Ground speed at which a walking clip plays at normal speed. The clip speeds up and slows down with the bot, so its feet do not slide. |
+| `eye_calm` | `"#rrggbb"` | `#2bff3a` (green) | Colour of its glowing (emissive) materials while calm. |
+| `eye_engaged` | `"#rrggbb"` | `#ff1a0a` (red) | The same while engaged (`bot.engage()`, section 4). |
+
+Name the clips after what the bot does. Every peer picks the clip from what the host already sends, so everyone
+sees the same one:
+
+| Clip | Plays |
+|------|-------|
+| `idle` | Standing still (loops). |
+| `patrol` | Walking while calm (loops). |
+| `chase` | Walking while engaged, or faster than 1.6 times the `patrol` clip speed (loops). |
+| `alert`, `lose_interest` | Once, when it engages and when it calms down. |
+| `hit` | Once, when it is hurt. |
+| `death` | Once, when it dies; it holds the last frame until the body is gone. |
+| `jump`, `fall`, `land` | Going up, falling (loops), and touching down. |
+| one per attack | Once, when it uses the attack. The host deals the damage as the attack starts, so keep the wind-up short (about 0.2 s). |
+
+A missing clip is skipped (a missing walk clip plays `idle`). Clips play in place: they never move the bot.
+Glowing materials fade from `eye_calm` to `eye_engaged` and back, and go dark when it dies.
+
+**Feet.** A node named `<leg>_Hip` with a descendant `<leg>_Foot` (an empty at the tip of the foot) is a leg. The
+game tilts the body to the ground under the feet, and turns each hip so a foot that is down in the clip stands on
+the ground, on slopes and on creations alike.
+
+Vanilla's Green Scuttler is made by [`tools/scuttler/build_scuttler.py`](../tools/scuttler/build_scuttler.py), a
+Blender script you can copy for a rig of the same shape.
 
 ## 3. The behaviour tree
 
@@ -267,7 +317,8 @@ The bot whose script is running:
 | `bot.stop()` | Stand still. |
 | `bot.attack(id, target?)` | Use an attack. Returns `true`, or `false, reason` when the host refuses. |
 | `bot.reach(target)` | Distance from its body to the target's edge, or nil when the target is gone. |
-| `bot.alert()`, `bot.sound(id)` | Play its `_alert` sound, or any sound event, at the bot. |
+| `bot.alert()`, `bot.sound(id)` | Play its `_alert` sound, or any sound event, at the bot. `bot.alert()` also engages it. |
+| `bot.engage()` | Keep it engaged (fighting: its eye turns red) for `engaged_seconds` (`game/data/bots.json`). `find_player` calls it while it has a target; attacking and being hurt engage it too. |
 | `bot.custom(name)` | The script's global function `name`, the one a custom node of that `type` runs. An error when the script defines no such function. |
 
 A **target** is a table naming one thing: `{player = peer}`, `{creation = id, part = id}` (a part or a
@@ -370,6 +421,7 @@ mods/example_bots/
   mod.json                     depends on vanilla when it uses vanilla's items or sounds
   bots/sentry_drone.json       written by the editor's Export
   scripts/bots/sentry_drone.lua
+  meshes/bots/sentry_drone.glb optional: its animated model
   raids/raids.json             optional: replaces the raid table
   editor/batches/bots.json     optional: the editor batch that makes bots/ (below)
 ```

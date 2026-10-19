@@ -36,6 +36,12 @@ public sealed record BotSettings
     /// <summary>How far from the world centre a bot may be spawned, in m.</summary>
     public float MaxSpawnDistance { get; init; } = 8192f;
 
+    /// <summary>
+    /// Seconds a bot stays engaged (its eye red, its fighting stance) after it last spotted a target, attacked or
+    /// was hurt.
+    /// </summary>
+    public float EngagedSeconds { get; init; } = 4f;
+
     /// <summary>A POI's guards (its <c>bot</c> markers) appear when a living player comes this close, in m.</summary>
     public float GuardWakeDistance { get; init; } = 64f;
 
@@ -73,6 +79,7 @@ public sealed record BotSettings
         NonNegative(CorpseSeconds, "corpse_seconds");
         NonNegative(RangeTolerance, "range_tolerance");
         NonNegative(PlayerRadius, "player_radius");
+        NonNegative(EngagedSeconds, "engaged_seconds");
         Positive(MaxSpawnDistance, "max_spawn_distance");
         Positive(GuardWakeDistance, "guard_wake_distance");
         Positive(GuardSleepDistance, "guard_sleep_distance");

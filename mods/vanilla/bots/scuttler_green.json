@@ -12,6 +12,20 @@
     "height": 0.9
   },
   "color": "#5fae3e",
+  "model": {
+    "mesh": "meshes/bots/scuttler_green.glb",
+    "attacks": {
+      "whip": [
+        "tail_slam",
+        "tail_sweep",
+        "claw_combo"
+      ]
+    },
+    "clip_speeds": {
+      "patrol": 0.93,
+      "chase": 3
+    }
+  },
   "raid_cost": 1,
   "attacks": [
     {

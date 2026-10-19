@@ -75,6 +75,12 @@ public sealed class BotState
     /// <summary>The raid it belongs to, or null.</summary>
     public int? Raid { get; internal set; }
 
+    /// <summary>Whether it is fighting (see <see cref="BotActions.Engage"/>).</summary>
+    public bool Engaged { get; internal set; }
+
+    /// <summary>Host time its engagement ends.</summary>
+    internal double EngagedUntil { get; set; }
+
     /// <summary>When each attack was last used, by id.</summary>
     internal Dictionary<string, double> LastUse { get; } = new(StringComparer.Ordinal);
 
@@ -92,7 +98,7 @@ public sealed class BotState
         LastUse.TryGetValue(attack.Id, out var last) ? (float)Math.Max(0, last + attack.Interval - now) : 0f;
 
     /// <summary>The view clients are sent.</summary>
-    public BotView View => new(Id, Type.QualifiedId, Position.ToVec3(), Yaw, Health, Type.Health, Dead, Raid);
+    public BotView View => new(Id, Type.QualifiedId, Position.ToVec3(), Yaw, Health, Type.Health, Dead, Raid, Engaged);
 }
 
 /// <summary>
@@ -155,7 +161,7 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
     /// <summary>A bot appeared.</summary>
     public event Action<BotState>? Spawned;
 
-    /// <summary>A bot's health or raid changed, or it died.</summary>
+    /// <summary>A bot's health, raid or engagement changed, or it died.</summary>
     public event Action<BotState>? Changed;
 
     /// <summary>A bot is gone (despawned, or its body went after death).</summary>
@@ -284,6 +290,21 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
             (bot.Position, bot.InWater) = (feet, inWater);
     }
 
+    /// <summary>
+    /// Keeps a living bot engaged (fighting: its eye red) for <see cref="BotSettings.EngagedSeconds"/> from now. Spotting a
+    /// target (its brain's <c>bot.engage()</c> and <c>bot.alert()</c>), attacking and being hurt all call it.
+    /// </summary>
+    public void Engage(int id)
+    {
+        if (!_bots.TryGetValue(id, out var bot) || bot.Dead)
+            return;
+        bot.EngagedUntil = survivalWorld.Now + settings.EngagedSeconds;
+        if (bot.Engaged)
+            return;
+        bot.Engaged = true;
+        Changed?.Invoke(bot);
+    }
+
     // ---- Attacking ----
 
     private string? ValidateAttack(ActionCaller caller, BotAttackArgs args)
@@ -360,6 +381,7 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
         var bot = _bots[args.Bot];
         var attack = bot.Type.Attack(args.Attack)!;
         bot.LastUse[attack.Id] = survivalWorld.Now;
+        Engage(bot.Id);
         var hits = new List<ShotHitView>();
         if (attack.Kind == BotAttackKind.Area)
             Blast(bot, attack, hits);
@@ -479,9 +501,14 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
             return bot.Health;
         bot.Health = Math.Max(0, bot.Health - damage);
         if (bot.Health <= 0)
+        {
             Kill(bot, cause);
-        else
-            Changed?.Invoke(bot);
+            return 0f;
+        }
+        // Being hurt engages it; one Changed carries both the new health and the engagement.
+        bot.Engaged = true;
+        bot.EngagedUntil = survivalWorld.Now + settings.EngagedSeconds;
+        Changed?.Invoke(bot);
         return bot.Health;
     }
 
@@ -491,6 +518,7 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
             return;
         bot.Health = 0;
         bot.Dead = true;
+        bot.Engaged = false;
         bot.DiedAt = survivalWorld.Now;
         bot.Desired = Vector3.Zero;
         var random = new Random(unchecked(Seed * 31 + bot.Id * 7919));
@@ -638,6 +666,11 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
         }
         foreach (var gone in _bots.Values.Where(b => b.Dead && now - b.DiedAt >= settings.CorpseSeconds).Select(b => b.Id).ToList())
             Remove(gone);
+        foreach (var calm in _bots.Values.Where(b => b.Engaged && now >= b.EngagedUntil).ToList())
+        {
+            calm.Engaged = false;
+            Changed?.Invoke(calm);
+        }
     }
 
     // ---- Shared ----

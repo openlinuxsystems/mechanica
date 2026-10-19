@@ -57,6 +57,9 @@ public sealed record BotDefinition
     /// <summary>Base colour of the placeholder body, <c>"#rrggbb"</c>.</summary>
     public string? Color { get; init; }
 
+    /// <summary>Its animated model. Omitted means the placeholder capsule in <see cref="Color"/>.</summary>
+    public BotModelDefinition? Model { get; init; }
+
     /// <summary>Whether melee hits (the Sledgehammer) do nothing to it.</summary>
     public bool? MeleeImmune { get; init; }
 
@@ -97,6 +100,39 @@ public sealed record BotSize
 
     /// <summary>Total height, in m (at least twice the radius).</summary>
     public float? Height { get; init; }
+
+    /// <summary>Keys this build does not know.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>
+/// A bot's animated model (docs/bot-tutorial.md, "Models and animation"): a glTF whose clips are named after what the bot
+/// does (<c>idle</c>, <c>patrol</c>, <c>chase</c>, <c>alert</c>, <c>hit</c>, <c>death</c>, <c>jump</c>, <c>fall</c>,
+/// <c>land</c>, and one per attack). Every peer picks the clip from what the host sends, so they all play the same one.
+/// </summary>
+public sealed record BotModelDefinition
+{
+    /// <summary>The <c>.glb</c> or <c>.gltf</c>, relative to the mod root (or <c>other_mod:path</c>). Its feet are at the origin, facing -Z.</summary>
+    public string? Mesh { get; init; }
+
+    /// <summary>
+    /// Clips each attack plays, by attack id; one is picked per use, in turn. An attack left out plays the clip named
+    /// after it.
+    /// </summary>
+    public Dictionary<string, List<string>>? Attacks { get; init; }
+
+    /// <summary>
+    /// Ground speed (m/s) at which each walking clip (<c>patrol</c>, <c>chase</c>) plays at normal speed, by clip name; the
+    /// clip speeds up and slows down with the bot so its feet do not slide. A clip left out plays at normal speed.
+    /// </summary>
+    public Dictionary<string, float>? ClipSpeeds { get; init; }
+
+    /// <summary>Colour of its glowing (emissive) materials, its eye and lamps, while calm, <c>"#rrggbb"</c>.</summary>
+    public string? EyeCalm { get; init; }
+
+    /// <summary>Colour of its glowing materials while engaged, <c>"#rrggbb"</c>.</summary>
+    public string? EyeEngaged { get; init; }
 
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]
