@@ -11,10 +11,19 @@ The levels change finish and add small trim, never the envelope or the mounting 
 matte teal coil on worn gunmetal; level 5 is a glowing cyan coil on black chrome with a drilled shroud, copper and
 silver hardware and lit rings. Each flange carries one pip per level on its top flat so the level reads at a glance.
 
+What it writes: ``mods/vanilla/meshes/parts/sport_suspension_<level>.glb`` and
+``mods/vanilla/textures/items/sport_suspension_<level>_icon.png`` (256 x 256, clear background) for levels 1 to 5. Each
+model has three nodes: ``Stator`` (the base end, which stays with the block it is placed on), ``mount`` (the wheel end:
+named after the part's spring socket, so the game moves it with what is attached there) and ``mountFlex`` (the coil and
+damper between them, which the game skews each frame so it reaches from the base to the moving mount).
+
 How to run (Blender as a Python module, no Blender UI needed):
 
     pip install bpy==5.2.2 numpy pillow
-    python tools/sport_suspension/build_sport_suspension.py --render OUT_DIR   # review renders and icons into OUT_DIR
+    python tools/sport_suspension/build_sport_suspension.py                    # writes the .glb files and the icons
+    python tools/sport_suspension/build_sport_suspension.py --render OUT_DIR   # review renders and sheet into OUT_DIR
+
+The outputs are committed; re-run this script after changing it and commit the result.
 
 Units are metres; in Blender Z is up. The build is deterministic.
 """
@@ -23,7 +32,9 @@ from __future__ import annotations
 
 import math
 import os
+import shutil
 import sys
+import tempfile
 from pathlib import Path
 
 import bpy  # noqa: I001  (bpy first: it makes bmesh and mathutils importable)
@@ -34,6 +45,11 @@ LENGTH = 0.50
 WIDTH = 0.22
 HALF = LENGTH / 2
 SAMPLES = int(os.environ.get("SUSP_SAMPLES", "64"))
+ROOT = Path(__file__).resolve().parents[2]
+VANILLA = ROOT / "mods" / "vanilla"
+# Set while building the game's models: glTF keeps only plain material values, so the procedural wear and flake
+# (review renders only) are left out and the coil is swept in fewer steps.
+GAME = False
 
 # x positions along the part (mount end is +X; the base end mirrors it)
 X_BOSS = HALF                  # outer face of the boss
@@ -94,6 +110,8 @@ def metal(name, color, rough, metallic=1.0, wear=0.0, coat=0.0, flake=0.0, glow=
     b.inputs["Coat Weight"].default_value = coat
     b.inputs["Coat Roughness"].default_value = 0.03
     tc = t.nodes.new("ShaderNodeTexCoord")
+    if GAME:
+        wear = flake = 0.0
     if wear > 0:
         # worn, cast-metal look: blotchy roughness and a fine bump
         n = t.nodes.new("ShaderNodeTexNoise")
@@ -344,7 +362,7 @@ def build(level: int, root_name=None):
         cylinder("BumpStop2", 0.03, x_seat - 0.05, x_seat - 0.038, stop, root, 40)
 
     # coil: 5.5 turns between the seats, closed (flat) end turns
-    turns, n = 5.0, 600
+    turns, n = 5.0, 300 if GAME else 600
     x0, x1 = -x_seat + L["wire"], x_seat - L["wire"]
     pts = []
     for i in range(n + 1):
@@ -360,14 +378,14 @@ def build(level: int, root_name=None):
         else:
             u = ease * 0.5 + (t - ease) * (1 - ease) / (1 - 2 * ease)
         pts.append(Vector((x0 + (x1 - x0) * u, COIL_R * math.cos(ang), COIL_R * math.sin(ang))))
-    tube("Coil", pts, L["wire"], coil, root, segs=20)
+    tube("Coil", pts, L["wire"], coil, root, segs=14 if GAME else 20)
     return root
 
 
 # =====================================================================================================
 # Review renders
 # =====================================================================================================
-def render_review(out: Path):
+def render_review(out: Path, icons_only=False):
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lift"))
     import render_lift as rl  # noqa: PLC0415
     from PIL import Image, ImageDraw  # noqa: PLC0415
@@ -389,13 +407,13 @@ def render_review(out: Path):
 
     tq = (0.62, -0.78, 0.52)
     shots = {}
-    for lv in LEVELS:
+    views = {}
+    for lv in ([] if icons_only else LEVELS):
         show(lv)
         cam = rl.camera(f"tq{lv}", tq, (0, 0, WIDTH / 2), ortho=0.64)
         shots[lv] = rl.render(cam, out / f"sport_suspension_{lv}.png", 900, 900)
     # level 1 and level 5 multi-views (side, top, end)
-    views = {}
-    for lv in (1, 5):
+    for lv in ([] if icons_only else (1, 5)):
         show(lv)
         for name, loc, tgt, scale in (("side", (0, -2, WIDTH / 2), (0, 0, WIDTH / 2), 0.62),
                                       ("top", (0, -0.0001, 2), (0, 0, WIDTH / 2), 0.62),
@@ -422,6 +440,8 @@ def render_review(out: Path):
         icons[lv] = sq.resize((256, 256), Image.LANCZOS)
         icons[lv].save(out / f"sport_suspension_{lv}_icon.png")
         os.remove(p)
+    if icons_only:
+        return
 
     # sheet
     F = rl.font
@@ -484,7 +504,60 @@ def render_review(out: Path):
     print(f"rendered the review sheet into {out}")
 
 
+# =====================================================================================================
+# Game models and icons
+# =====================================================================================================
+def join(objects, name):
+    """Applies the objects' modifiers and joins them into one mesh object called name."""
+    bpy.ops.object.select_all(action="DESELECT")
+    for ob in objects:
+        ob.select_set(True)
+    bpy.context.view_layer.objects.active = objects[0]
+    bpy.ops.object.convert(target="MESH")
+    bpy.ops.object.join()
+    ob = bpy.context.view_layer.objects.active
+    ob.name = ob.data.name = name
+    return ob
+
+
+def export_level(level: int):
+    global GAME  # noqa: PLW0603
+    GAME = True
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    root = build(level, "SportSuspension")
+    parts = list(root.children)
+    groups = {"Stator": [o for o in parts if o.name.startswith("Base")],
+              "mount": [o for o in parts if o.name.startswith("Mount")]}
+    groups["mountFlex"] = [o for o in parts if o not in groups["Stator"] and o not in groups["mount"]]
+    for name, objects in groups.items():
+        join(objects, name).parent = root
+    path = VANILLA / "meshes" / "parts" / f"sport_suspension_{level}.glb"
+    bpy.ops.object.select_all(action="DESELECT")
+    for ob in [root, *root.children_recursive]:
+        ob.select_set(True)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    bpy.ops.export_scene.gltf(
+        filepath=str(path), export_format="GLB", use_selection=True, export_apply=True, export_yup=True,
+        export_animations=False, export_skins=False, export_morph=False, export_draco_mesh_compression_enable=False,
+        export_tangents=False, export_extras=False, export_cameras=False, export_lights=False)
+    GAME = False
+    print(f"wrote {path}")
+
+
+def write_icons():
+    with tempfile.TemporaryDirectory() as tmp:
+        render_review(Path(tmp), icons_only=True)
+        for level in LEVELS:
+            dest = VANILLA / "textures" / "items" / f"sport_suspension_{level}_icon.png"
+            shutil.copyfile(Path(tmp) / f"sport_suspension_{level}_icon.png", dest)
+            print(f"wrote {dest}")
+
+
 if __name__ == "__main__":
     args = sys.argv[1:]
     if "--render" in args:
         render_review(Path(args[args.index("--render") + 1]))
+    else:
+        for lv in LEVELS:
+            export_level(lv)
+        write_icons()

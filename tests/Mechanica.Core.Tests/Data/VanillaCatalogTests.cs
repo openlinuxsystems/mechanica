@@ -81,6 +81,30 @@ public class VanillaCatalogTests
     }
 
     [Fact]
+    public void TheSportSuspensionIsCraftedAtLevel1AndUpgradedToAStifferSpring()
+    {
+        var book = RecipeBook.Load(Vanilla.Value);
+        var made = book.All.SelectMany(r => r.Outputs).Select(o => o.Item).Where(i => i.Contains("sport_suspension", StringComparison.Ordinal));
+        Assert.Equal(["vanilla:sport_suspension"], made.Distinct());
+        var written = Part("sport_suspension");
+        Assert.Equal(4, PartUpgrades.MaxLevel(written));
+        Assert.Equal([1, 2, 4, 8], written.Upgrades!.Select(u => u.Cost!.Single(c => c.Item == "component_kit").Count!.Value));
+        var vanilla = Path.Combine(TestMods.RepoRoot, "mods", "vanilla");
+        var stiffness = 0f;
+        for (var level = 0; level <= 4; level++)
+        {
+            var part = PartUpgrades.At(written, level);
+            Assert.Equal($"Sport Suspension {level + 1}", part.Name);
+            Assert.True(File.Exists(Path.Combine(vanilla, part.Mesh!)), $"level {level + 1}'s model {part.Mesh}");
+            Assert.True(File.Exists(Path.Combine(vanilla, part.Icon!)), $"level {level + 1}'s icon {part.Icon}");
+            var spring = part.Sockets!.Single(s => s.Type == SocketType.Spring).Joint!;
+            Assert.True(spring.Stiffness > stiffness, $"level {level + 1} is stiffer than the one below");
+            stiffness = spring.Stiffness!.Value;
+        }
+        Assert.Null(Part("offroad_suspension").Upgrades);
+    }
+
+    [Fact]
     public void EveryLightGivesLight()
     {
         foreach (var id in Items.Where(id => Part(id).Category == PartCategory.Light))

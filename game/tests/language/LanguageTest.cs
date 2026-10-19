@@ -268,7 +268,7 @@ public partial class LanguageTest : StagedTest
                 _keys.UnionWith(TutorialHints.Load().Tips);
                 _keys.UnionWith(Enum.GetValues<LoadStage>().Select(WorldLoading.Text));
                 _keys.UnionWith(["Loading mods…", "Returning to menu…"]);
-                _keys.UnionWith(["Speed", "Queue", "Link range", "Slots", "Inputs", "Outputs"]);
+                _keys.UnionWith(["Speed", "Queue", "Link range", "Slots", "Durability", "Stiffness", "Damping", "Inputs", "Outputs"]);
                 var now = DateTimeOffset.Now;
                 foreach (var seconds in new[] { 0, 300, 4000 })
                     SaveSummary.FormatPlayTime(seconds, (key, _) => { _keys.Add(key); return key; });
