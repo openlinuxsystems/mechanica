@@ -2,6 +2,7 @@ using Godot;
 using Mechanica.Core.Actions;
 using Mechanica.Core.Bots;
 using Mechanica.Core.Data;
+using Mechanica.Core.Input;
 using Mechanica.Core.Net;
 using Mechanica.Game.Creations;
 using Mechanica.Game.Mods;
@@ -14,7 +15,7 @@ namespace Mechanica.Game.Editor;
 /// The Test Sandbox (chunk 5): the flat test world with a part spawner and a bot spawner, for trying parts
 /// straight from the Part Editor and bots straight from the Bot Behavior Editor. It can simulate
 /// multiplayer on one machine: "Add local client" starts the world hosting on localhost and joins up to <see cref="MaxLocalClients"/> extra game instances to it, each
-/// with its own physics world and network peer, shown in small views. Tab switches which instance you
+/// with its own physics world and network peer, shown in small views. The "Test Sandbox: switch player" key (F6 by default) switches which instance you
 /// control and see full size. Spawning goes through the Action API from whichever instance you control,
 /// so a spawn from a client is validated by the host and appears for everyone (D10).
 /// <para>
@@ -134,7 +135,7 @@ public partial class SandboxScreen : Control
     {
         if (!IsVisibleInTree())
             return;
-        if (@event is InputEventKey { Pressed: true, Echo: false, Keycode: Key.Tab })
+        if (GameInput.Pressed(@event, InputActions.SandboxSwitch))
         {
             Activate((_active + 1) % _instances.Count);
             GetViewport().SetInputAsHandled();
@@ -315,7 +316,7 @@ public partial class SandboxScreen : Control
             if (i == _active)
                 continue;
             var pane = new VBoxContainer { MouseFilter = MouseFilterEnum.Ignore };
-            pane.AddChild(new Label { Text = Loc.T("{0} (Tab to switch)", _instances[i].Name) });
+            pane.AddChild(new Label { Text = Loc.T("{0} ({1} to switch)", _instances[i].Name, GameInput.Label(InputActions.SandboxSwitch)) });
             pane.AddChild(new TextureRect
             {
                 Texture = _instances[i].Viewport.GetTexture(),
@@ -360,7 +361,8 @@ public partial class SandboxScreen : Control
         scroll.AddChild(column);
         column.AddChild(new Label
         {
-            Text = "Click the world to look around. Esc frees the mouse, and Esc again closes the sandbox. WASD moves, Space jumps. Tab switches instance.",
+            Text = Loc.T("Click the world to look around. Esc frees the mouse, and Esc again closes the sandbox. WASD moves, Space jumps. {0} switches instance.",
+                GameInput.Label(InputActions.SandboxSwitch)),
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
         });
         _filter = new LineEdit { PlaceholderText = "Filter parts" };

@@ -67,6 +67,7 @@ public static class InputActions
     public const string LogicVisualizer = "toggle_logic_visualizer";
     public const string CreationInspector = "toggle_creation_inspector";
     public const string ForceOverlay = "toggle_force_overlay";
+    public const string SandboxSwitch = "sandbox_switch";
 
     /// <summary>Hotbar slots 1 to 10 (keys 1 to 9, then 0).</summary>
     public const int HotbarSlots = 10;
@@ -127,6 +128,7 @@ public static class InputActions
             new(LogicVisualizer, "Logic Visualizer", debug, "F7"),
             new(CreationInspector, "Creation Inspector", debug, "F8"),
             new(ForceOverlay, "Force overlay", debug, "F9"),
+            new(SandboxSwitch, "Test Sandbox: switch player", debug, "F6"),
         ]);
         return all;
     }

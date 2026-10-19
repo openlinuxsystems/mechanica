@@ -88,8 +88,9 @@ public partial class SandboxTest : StagedTest
         {
             if (frame == 0)
             {
-                _sandbox.Activate(1);
-                Check(_sandbox.Active == _client1, "the sandbox controls client 1");
+                _sandbox.Activate(0);
+                _sandbox._UnhandledInput(new InputEventKey { PhysicalKeycode = Key.F6, Keycode = Key.F6, Pressed = true });
+                Check(_sandbox.Active == _client1, "the switch player key moves control to client 1");
                 _sandbox.Spawn(Part, r => _clientSpawn = r);
                 _client1.Main.Actions.Request(CreationActions.SpawnPart, new SpawnPartArgs($"{Mod}:missing", [0, 1, 0]), r => _badSpawn = r);
             }
