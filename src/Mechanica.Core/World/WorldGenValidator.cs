@@ -281,6 +281,10 @@ internal static class WorldGenValidator
             Positive(cliffs.Scale, "$.terrain.cliffs.scale", sink);
             Positive(cliffs.Contrast, "$.terrain.cliffs.contrast", sink);
             Positive(cliffs.Face, "$.terrain.cliffs.face", sink);
+            if (cliffs.Sheer is < 0f or > 1f)
+                sink.Error(Code, "$.terrain.cliffs.sheer", $"sheer must be 0 to 1 (got {cliffs.Sheer}).");
+            Positive(cliffs.GentleFace, "$.terrain.cliffs.gentle_face", sink);
+            Positive(cliffs.SheerScale, "$.terrain.cliffs.sheer_scale", sink);
             NonNegative(cliffs.Inland, "$.terrain.cliffs.inland", sink);
         }
         Layout(definition, biomeIds, groundIds, sink);

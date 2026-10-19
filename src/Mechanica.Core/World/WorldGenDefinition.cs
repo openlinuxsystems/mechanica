@@ -166,8 +166,20 @@ public sealed record CliffsDefinition
     /// <summary>How strongly the noise is stretched before it is clamped, like <see cref="HillsDefinition.Contrast"/>.</summary>
     public float Contrast { get; init; } = 2f;
 
-    /// <summary>Metres of ground a cliff face takes, foot to top; smaller is steeper.</summary>
+    /// <summary>Metres of ground a sheer cliff face takes, foot to top; smaller is steeper.</summary>
     public float Face { get; init; } = 6f;
+
+    /// <summary>
+    /// 0 to 1: share of the island where the faces are sheer (<see cref="Face"/>). Elsewhere a face is an easy slope
+    /// <see cref="GentleFace"/> metres wide that players walk or drive up. Default 1: every face is sheer.
+    /// </summary>
+    public float Sheer { get; init; } = 1f;
+
+    /// <summary>Metres of ground a face takes where it is not sheer; smaller is steeper.</summary>
+    public float GentleFace { get; init; } = 24f;
+
+    /// <summary>Wavelength in metres of the noise that picks where the faces are sheer.</summary>
+    public float SheerScale { get; init; } = 600f;
 
     /// <summary>Metres from the coast over which the plateaus rise to their full number.</summary>
     public float Inland { get; init; } = 1200f;
