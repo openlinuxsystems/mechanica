@@ -1,8 +1,7 @@
 {
   "id": "fallen_log",
   "stations": [
-    "fabricator",
-    "mini_fabricator"
+    "fabricator"
   ],
   "inputs": [
     {

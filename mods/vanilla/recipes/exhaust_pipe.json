@@ -1,8 +1,7 @@
 {
   "id": "exhaust_pipe",
   "stations": [
-    "fabricator",
-    "mini_fabricator"
+    "fabricator"
   ],
   "inputs": [
     {

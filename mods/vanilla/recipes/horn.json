@@ -1,8 +1,7 @@
 {
   "id": "horn",
   "stations": [
-    "fabricator",
-    "mini_fabricator"
+    "fabricator"
   ],
   "inputs": [
     {

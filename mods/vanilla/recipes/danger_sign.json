@@ -1,8 +1,7 @@
 {
   "id": "danger_sign",
   "stations": [
-    "fabricator",
-    "mini_fabricator"
+    "fabricator"
   ],
   "inputs": [
     {

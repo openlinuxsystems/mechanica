@@ -1,8 +1,7 @@
 {
   "id": "potato_blaster",
   "stations": [
-    "fabricator",
-    "mini_fabricator"
+    "fabricator"
   ],
   "inputs": [
     {

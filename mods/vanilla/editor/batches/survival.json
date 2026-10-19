@@ -168,7 +168,7 @@
       "recipes": [
         {
           "id": "water_bucket",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator"],
           "inputs": [
             {
               "item": "scrap_metal",
@@ -247,7 +247,7 @@
       "recipes": [
         {
           "id": "potato_blaster",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator"],
           "inputs": [
             {
               "item": "scrap_metal",
@@ -284,7 +284,7 @@
       "recipes": [
         {
           "id": "connect_tool",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator", "portable_fabricator"],
           "inputs": [
             {
               "item": "scrap_metal_block",
@@ -358,7 +358,7 @@
       "recipes": [
         {
           "id": "paint_tool",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator"],
           "inputs": [
             {
               "item": "scrap_metal_block",
@@ -399,7 +399,7 @@
       "recipes": [
         {
           "id": "paint_ammo",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator"],
           "inputs": [
             {
               "item": "tomato",
@@ -550,7 +550,7 @@
       "recipes": [
         {
           "id": "popper",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator"],
           "inputs": [
             {
               "item": "tomato",
@@ -598,7 +598,7 @@
       "recipes": [
         {
           "id": "soil_bag",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator"],
           "inputs": [
             {
               "item": "scrap_wood",
@@ -708,7 +708,7 @@
       "recipes": [
         {
           "id": "respawn_bed",
-          "stations": ["fabricator", "mini_fabricator"],
+          "stations": ["fabricator"],
           "inputs": [
             {
               "item": "scrap_wood",

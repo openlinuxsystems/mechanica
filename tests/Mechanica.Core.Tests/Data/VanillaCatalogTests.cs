@@ -23,7 +23,7 @@ public class VanillaCatalogTests
         "water_cannon", "potato_blaster_mounted", "scrap_wheel", "wheel", "big_wheel",
         // Containers, stations, lights, utility
         "chest", "gas_container", "battery", "chemical_container", "fridge", "locker", "file_cabinet", "tool_cabinet",
-        "wooden_crate", "metal_crate", "barrel", "fabricator", "mini_fabricator", "refiner", "dispenser", "respawn_bed",
+        "wooden_crate", "metal_crate", "barrel", "fabricator", "portable_fabricator", "refiner", "dispenser", "respawn_bed",
         "radio", "beacon", "headlight", "spotlight", "warehouse_spotlight", "construction_light", "interior_light",
         "warning_light",
         // Resources, consumables, handheld weapons (produce_crate is left out for now)

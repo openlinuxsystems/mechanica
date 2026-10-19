@@ -1,8 +1,7 @@
 {
   "id": "direction_arrow_right",
   "stations": [
-    "fabricator",
-    "mini_fabricator"
+    "fabricator"
   ],
   "inputs": [
     {

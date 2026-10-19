@@ -1,8 +1,7 @@
 {
   "id": "mud_flap",
   "stations": [
-    "fabricator",
-    "mini_fabricator"
+    "fabricator"
   ],
   "inputs": [
     {
