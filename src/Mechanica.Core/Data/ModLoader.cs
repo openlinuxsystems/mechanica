@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace Mechanica.Core.Data;
 
@@ -32,6 +33,9 @@ public sealed record LoadedMod(ModManifest Manifest, string Directory, IReadOnly
 
     /// <summary>Its replacements for other mods' parts (<c>overrides/&lt;mod_id&gt;/</c>), ordered by qualified id.</summary>
     public IReadOnlyList<LoadedPart> Overrides { get; init; } = [];
+
+    /// <summary>Qualified ids of other mods' parts this mod takes out (<c>overrides/&lt;mod&gt;/remove.json</c>).</summary>
+    public IReadOnlyList<string> RemovedParts { get; init; } = [];
 }
 
 /// <summary>A mod folder whose <c>mod.json</c> is valid, found by <see cref="ModLoader.Scan"/>.</summary>
@@ -114,6 +118,9 @@ public sealed class ModLoadResult : IPartCatalog
     /// </summary>
     public string Fingerprint { get; }
 
+    /// <summary>Qualified ids of parts a mod took out with <c>remove.json</c>; content that names them is left out too.</summary>
+    public IReadOnlySet<string> RemovedParts { get; init; } = new HashSet<string>();
+
     /// <summary>Looks up a part; a bare id means vanilla. An upgraded part's item (<c>gas_engine@2</c>) is its part at that level.</summary>
     public LoadedPart? FindPart(string id)
     {
@@ -134,6 +141,8 @@ public sealed class ModLoadResult : IPartCatalog
             hash.AppendData(Encoding.UTF8.GetBytes(DataJson.Write(mod.Manifest)));
             foreach (var part in mod.Parts)
                 hash.AppendData(Encoding.UTF8.GetBytes(DataJson.Write(part.Definition)));
+            foreach (var id in mod.RemovedParts)
+                hash.AppendData(Encoding.UTF8.GetBytes("-" + id));
             foreach (var part in mod.Overrides)
             {
                 hash.AppendData(Encoding.UTF8.GetBytes(part.QualifiedId));
@@ -301,7 +310,8 @@ public static class ModLoader
             loaded.Add(id, loadedMod);
             mods.Add(loadedMod);
         }
-        return new ModLoadResult(mods, ApplyOverrides(mods, conflicts, diagnostics), conflicts, diagnostics);
+        var removed = new HashSet<string>(StringComparer.Ordinal);
+        return new ModLoadResult(mods, ApplyOverrides(mods, conflicts, diagnostics, removed), conflicts, diagnostics) { RemovedParts = removed };
     }
 
     /// <summary>
@@ -427,7 +437,7 @@ public static class ModLoader
     /// override wins. Two overrides of one part are a conflict unless one mod depends on the other.
     /// </summary>
     private static Dictionary<string, LoadedPart> ApplyOverrides(List<LoadedMod> mods, List<ModConflict> conflicts,
-        List<DataDiagnostic> diagnostics)
+        List<DataDiagnostic> diagnostics, HashSet<string> removed)
     {
         var byId = mods.ToDictionary(m => m.Id, StringComparer.Ordinal);
         var parts = new Dictionary<string, LoadedPart>(StringComparer.Ordinal);
@@ -437,7 +447,13 @@ public static class ModLoader
                 parts.Add(part.QualifiedId, part);
             foreach (var part in mod.Overrides)
             {
-                var previous = parts[part.QualifiedId];
+                if (!parts.TryGetValue(part.QualifiedId, out var previous))
+                {
+                    diagnostics.Add(new DataDiagnostic(DiagnosticSeverity.Error, DiagnosticCodes.ContentOverrideUnknown,
+                        Display(mod.Directory, Path.GetRelativePath(mod.Directory, part.FilePath)), "$.id", null,
+                        $"'{part.QualifiedId}' was removed by an earlier mod, so there is nothing to override."));
+                    continue;
+                }
                 if (previous.IsOverride && !DependsOn(mod.Id, previous.ModId, byId))
                 {
                     var message = $"mods '{previous.ModId}' and '{mod.Id}' both override '{part.QualifiedId}'; "
@@ -447,6 +463,15 @@ public static class ModLoader
                     conflicts.Add(new ModConflict(ModConflictKind.OverrideClash, previous.ModId, mod.Id, part.QualifiedId, message));
                 }
                 parts[part.QualifiedId] = part;
+            }
+            foreach (var id in mod.RemovedParts)
+            {
+                if (parts.Remove(id))
+                    removed.Add(id);
+                else
+                    diagnostics.Add(new DataDiagnostic(DiagnosticSeverity.Warning, DiagnosticCodes.ContentOverrideUnknown,
+                        Display(mod.Directory, $"{OverridesFolder}/{id[..id.IndexOf(':')]}/{ContentLayers.RemoveFile}"), "$.parts", null,
+                        $"there is no part '{id}' to remove."));
             }
         }
         return parts;
@@ -496,6 +521,7 @@ public static class ModLoader
         }
 
         var overrides = new Dictionary<string, LoadedPart>(StringComparer.Ordinal);
+        var removedParts = new List<string>();
         var overridesDir = Path.Combine(dir, OverridesFolder);
         IEnumerable<string> targets = Directory.Exists(overridesDir) ? Directory.GetDirectories(overridesDir).Order(StringComparer.Ordinal) : [];
         foreach (var targetDir in targets)
@@ -509,12 +535,16 @@ public static class ModLoader
                 errors += sink.ErrorCount;
                 continue;
             }
-            // overrides/<mod>/recipes/ holds recipe overrides, which the RecipeBook reads.
-            var recipesDir = Path.Combine(targetDir, RecipeOverridesFolder) + Path.DirectorySeparatorChar;
-            foreach (var file in JsonFiles(dir, targetDir).Where(f => !f.StartsWith(recipesDir, StringComparison.Ordinal)))
+            removedParts.AddRange(ContentLayers.ReadRemovals(modId, targetDir, "parts", diagnostics).Select(id => $"{targetId}:{id}"));
+            // overrides/<mod>/recipes/, bots/, quests/… hold other content, which its own loader reads (ContentLayers).
+            var reserved = ContentLayers.ReservedFolders.Select(f => Path.Combine(targetDir, f) + Path.DirectorySeparatorChar).ToList();
+            var removeFile = Path.Combine(targetDir, ContentLayers.RemoveFile);
+            foreach (var file in JsonFiles(dir, targetDir).Where(f => f != removeFile && !reserved.Any(r => f.StartsWith(r, StringComparison.Ordinal))))
             {
                 var sink = new DiagnosticSink(Display(dir, Path.GetRelativePath(dir, file)), diagnostics);
-                var part = ReadFile<PartDefinition>(file, sink);
+                var part = file.EndsWith(ContentLayers.PatchSuffix, StringComparison.Ordinal)
+                    ? ReadPatch(file, targetId, target, loaded, deps, sink)
+                    : ReadFile<PartDefinition>(file, sink);
                 if (part is not null)
                 {
                     validator.Validate(part, sink);
@@ -542,7 +572,60 @@ public static class ModLoader
         return new LoadedMod(manifest, dir, [.. parts.Values.OrderBy(p => p.Definition.Id, StringComparer.Ordinal)])
         {
             Overrides = [.. overrides.Values.OrderBy(p => p.QualifiedId, StringComparer.Ordinal)],
+            RemovedParts = removedParts,
         };
+    }
+
+    // A part merge patch (x.patch.json): the part as the latest mod this one depends on left it (the target's own
+    // definition, or an override from a dependency), with the patch merged in (RFC 7386). The base's relative asset
+    // paths are rewritten to the mod that holds them, so the result validates as this mod's override.
+    private static PartDefinition? ReadPatch(string file, string targetId, LoadedMod target, Dictionary<string, LoadedMod> loaded,
+        HashSet<string> deps, DiagnosticSink sink)
+    {
+        string text;
+        try
+        {
+            text = File.ReadAllText(file);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            sink.Error(DiagnosticCodes.FileUnreadable, null, $"could not read file: {e.Message}");
+            return null;
+        }
+        JsonObject? patch;
+        try
+        {
+            patch = JsonNode.Parse(text, documentOptions: new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true }) as JsonObject;
+        }
+        catch (JsonException e)
+        {
+            sink.Error(DiagnosticCodes.InvalidJson, null, $"invalid JSON: {e.Message}");
+            return null;
+        }
+        if (patch is null)
+        {
+            sink.Error(DiagnosticCodes.InvalidJson, null, "a patch must be one JSON object.");
+            return null;
+        }
+        var name = Path.GetFileName(file);
+        var id = patch["id"] is JsonValue v && v.TryGetValue<string>(out var named) ? named : name[..^ContentLayers.PatchSuffix.Length];
+        patch.Remove("id");
+        var qualified = $"{targetId}:{id}";
+        var basePart = target.Parts.FirstOrDefault(p => p.Definition.Id == id);
+        if (basePart is null)
+        {
+            sink.Error(DiagnosticCodes.OverrideUnknownPart, "$.id", $"mod '{targetId}' has no part '{id}' to patch.");
+            return null;
+        }
+        foreach (var mod in loaded.Values)
+        {
+            if ((mod.Id == targetId || deps.Contains(mod.Id)) && mod.Overrides.FirstOrDefault(o => o.QualifiedId == qualified) is { } layered)
+                basePart = layered;
+        }
+        var json = JsonNode.Parse(DataJson.Write(basePart.Definition))!;
+        ContentLayers.PointAssetsAt(json, basePart.ModId);
+        json = ContentLayers.MergePatch(json, patch)!;
+        return ParseJson<PartDefinition>(json.ToJsonString(), sink);
     }
 
     // Every *.json under folder, sorted by mod-relative path so all machines read files in the same order.

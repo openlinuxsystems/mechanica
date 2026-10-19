@@ -39,7 +39,8 @@ public sealed class CharacterBook
     private CharacterBook(IEnumerable<Character> characters, IReadOnlyList<DataDiagnostic> diagnostics)
     {
         _characters = characters.ToDictionary(c => c.QualifiedId, StringComparer.Ordinal);
-        All = [.. _characters.Values.OrderBy(c => c.Order).ThenBy(c => c.QualifiedId, StringComparer.Ordinal)];
+        // On a tie, vanilla's characters come first, so a mod's id never silently changes the default character.
+        All = [.. _characters.Values.OrderBy(c => c.Order).ThenBy(c => c.ModId != Identifiers.VanillaModId).ThenBy(c => c.QualifiedId, StringComparer.Ordinal)];
         Diagnostics = diagnostics;
         using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
         foreach (var character in All)
@@ -68,42 +69,29 @@ public sealed class CharacterBook
     /// <summary>The character with this id (a bare id means vanilla), or null.</summary>
     public Character? Find(string? id) => id is null ? null : _characters.GetValueOrDefault(Identifiers.Qualify(id));
 
-    /// <summary>Loads the characters of the mods in <paramref name="content"/>.</summary>
+    /// <summary>
+    /// Loads the characters of the mods in <paramref name="content"/>, with other mods' overrides, patches and removals
+    /// (<c>overrides/&lt;mod&gt;/characters/</c>, see <see cref="ContentLayers"/>) applied in load order.
+    /// </summary>
     public static CharacterBook Load(ModLoadResult content)
     {
         var diagnostics = new List<DataDiagnostic>();
         var characters = new Dictionary<string, Character>(StringComparer.Ordinal);
         var directories = content.Mods.ToDictionary(m => m.Id, m => m.Directory, StringComparer.Ordinal);
-        foreach (var mod in content.Mods)
+        var mods = content.Mods.ToDictionary(m => m.Id, StringComparer.Ordinal);
+        foreach (var entry in ContentLayers.Collect(content, Folder, ContentLayers.IdMember, diagnostics,
+            new LayerCodes(DiagnosticCodes.CharacterInvalid, DiagnosticCodes.DuplicateCharacter)))
         {
-            var folder = Path.Combine(mod.Directory, Folder);
-            if (!Directory.Exists(folder))
+            var sink = new DiagnosticSink(entry.DisplayFile, diagnostics);
+            if (ModLoader.ParseJson<CharacterDefinition>(entry.Json, sink) is not { } definition)
                 continue;
-            var files = Directory.GetFiles(folder, "*.json", SearchOption.AllDirectories)
-                .Select(f => (Path: f, Relative: Path.GetRelativePath(mod.Directory, f).Replace('\\', '/')))
-                .OrderBy(f => f.Relative, StringComparer.Ordinal);
-            var deps = (mod.Manifest.Dependencies ?? []).Select(d => d.Id).OfType<string>().ToHashSet(StringComparer.Ordinal);
-            foreach (var (path, relative) in files)
-            {
-                var sink = new DiagnosticSink($"{mod.Id}/{relative}", diagnostics);
-                string json;
-                try
-                {
-                    json = File.ReadAllText(path);
-                }
-                catch (Exception e) when (e is IOException or UnauthorizedAccessException)
-                {
-                    sink.Error(DiagnosticCodes.FileUnreadable, null, $"could not read file: {e.Message}");
-                    continue;
-                }
-                if (ModLoader.ParseJson<CharacterDefinition>(json, sink) is not { } definition)
-                    continue;
-                var character = Check(definition, mod.Id, id => id == mod.Id || deps.Contains(id) ? directories.GetValueOrDefault(id) : null, sink);
-                if (character is not null && characters.ContainsKey(character.QualifiedId))
-                    sink.Error(DiagnosticCodes.DuplicateCharacter, "$.id", $"character '{character.QualifiedId}' is defined twice.");
-                else if (character is not null && sink.ErrorCount == 0)
-                    characters.Add(character.QualifiedId, character);
-            }
+            // Files may come from the owner, its dependencies, or the mod that changed the entry and its dependencies.
+            var allowed = new HashSet<string>(StringComparer.Ordinal) { entry.OwnerModId, entry.SourceModId };
+            foreach (var id in new[] { entry.OwnerModId, entry.SourceModId })
+                allowed.UnionWith((mods[id].Manifest.Dependencies ?? []).Select(d => d.Id).OfType<string>());
+            var character = Check(definition, entry.OwnerModId, id => allowed.Contains(id) ? directories.GetValueOrDefault(id) : null, sink);
+            if (character is not null && sink.ErrorCount == 0)
+                characters.Add(character.QualifiedId, character);
         }
         return new CharacterBook(characters.Values, diagnostics);
     }

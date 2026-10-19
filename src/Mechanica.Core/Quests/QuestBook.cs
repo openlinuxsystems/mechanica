@@ -74,7 +74,7 @@ public sealed record Quest(
     IReadOnlyList<DialogueLine> Outro, QuestDefinition Definition);
 
 /// <summary>
-/// Every quest of the enabled mods (chunk 24), read from each mod's <c>quests/*.json</c> in load order and
+/// Every quest of the enabled mods (chunk 24), read from each mod's <c>quests/**/*.json</c> in load order and
 /// checked against the loaded items, recipes and POIs. A file with errors is left out and
 /// <see cref="Diagnostics"/> says why. Host and clients compare <see cref="Fingerprint"/> on join.
 /// </summary>
@@ -137,20 +137,16 @@ public sealed class QuestBook
     {
         var diagnostics = new List<DataDiagnostic>();
         var found = new List<(Quest Quest, DiagnosticSink Sink)>();
-        foreach (var mod in content.Mods)
+        // A quest's id is its file name, in any folder under quests/. Other mods override, patch and remove quests in
+        // overrides/<mod>/quests/ (see ContentLayers).
+        foreach (var entry in ContentLayers.Collect(content, Folder, (relative, _) => Path.GetFileNameWithoutExtension(relative), diagnostics,
+            new LayerCodes(DiagnosticCodes.QuestInvalid, DiagnosticCodes.QuestInvalid)))
         {
-            var folder = Path.Combine(mod.Directory, Folder);
-            if (!Directory.Exists(folder))
+            var sink = new DiagnosticSink(entry.DisplayFile, diagnostics);
+            if (ModLoader.ParseJson<QuestDefinition>(entry.Json, sink) is not { } definition)
                 continue;
-            foreach (var path in Directory.GetFiles(folder, "*.json").Order(StringComparer.Ordinal))
-            {
-                var sink = new DiagnosticSink($"{mod.Id}/{Folder}/{Path.GetFileName(path)}", diagnostics);
-                if (ModLoader.ParseJson<QuestDefinition>(File.ReadAllText(path), sink) is not { } definition)
-                    continue;
-                var id = Path.GetFileNameWithoutExtension(path);
-                if (Check(definition, id, mod.Id, content, recipes, world, sink) is { } quest && sink.ErrorCount == 0)
-                    found.Add((quest, sink));
-            }
+            if (Check(definition, entry.Id, entry.OwnerModId, content, recipes, world, sink) is { } quest && sink.ErrorCount == 0)
+                found.Add((quest, sink));
         }
         return new QuestBook(Link(found), diagnostics);
     }

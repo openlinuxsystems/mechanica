@@ -14,7 +14,8 @@ mods/
     mod.json            required: identity, version, dependencies, conflicts
     parts/              part and item definitions (*.json, any subfolders)
       wheels/sport_wheel.json
-    overrides/          replacements for other mods' parts (and, in recipes/, recipes), one folder per mod id
+    overrides/          changes to other mods' content, one folder per mod id: part files, recipes/, bots/,
+                        quests/, pois/, characters/, *.patch.json merge patches and remove.json
       vanilla/wheel.json
     scripts/            Lua behaviour (*.lua)
     meshes/             glTF models (*.glb, *.gltf)
@@ -23,9 +24,11 @@ mods/
     sounds/**/*.json    sound events, see sound-events.md
     recipes/            crafting recipes (*.json), see part-data-schema.md
     world/worldgen.json world generation rules; the last mod in load order that ships one wins
+    world/worldgen.patch.json  additions and changes to it that stack across mods
     pois/               POI prefabs (*.json), see world-generation.md
     bots/               bot types (*.json), see bot-tutorial.md
     raids/raids.json    the raid table; the last mod in load order that ships one wins
+    raids/raids.patch.json  additions and changes to it that stack across mods
     quests/             quests and dialogue (*.json), see quests.md
     characters/         player characters and skins (*.json), see characters.md
 ```
@@ -157,6 +160,54 @@ mods/cheap_chests/overrides/vanilla/recipes/chest.json   replaces the recipe van
   recipe stays.
 - When two mods override the same recipe, the later one in the load order wins with a warning
   (`MD0704`), unless one depends on the other.
+
+### Overriding bots, quests, POIs and characters
+
+The same works for every other kind of content: put a complete file with the same id in the matching
+folder of `overrides/<mod_id>/`.
+
+```
+mods/tough_bots/overrides/vanilla/bots/scuttler_red.json        replaces the bot vanilla:scuttler_red
+mods/my_story/overrides/vanilla/quests/first_farm.json          replaces the quest vanilla:first_farm
+mods/my_world/overrides/vanilla/pois/camp.json                  replaces the POI vanilla:camp
+mods/my_look/overrides/vanilla/characters/scrapper_male.json    replaces the character vanilla:scrapper_male
+```
+
+A quest's id is its file name, as in `quests/`; the others use their `id`. Relative asset paths resolve
+inside your mod, as for part overrides.
+
+### Patching instead of replacing
+
+A whole-file override stops picking up the original mod's fixes. To change only a few values, write a
+**merge patch** instead: a file ending in `.patch.json`, named for the entry it changes (or with an `id`),
+holding only the keys to change. It works in every override folder, parts included:
+
+```
+mods/tough_bots/overrides/vanilla/bots/scuttler_red.patch.json   { "health": 400 }
+mods/grippy/overrides/vanilla/wheel.patch.json                    { "name": "Grippy Wheel", "visual": { "roughness": 1 } }
+mods/fast_craft/overrides/vanilla/recipes/barrel.patch.json       { "time": 1 }
+```
+
+Objects merge key by key, `null` removes a key, and anything else (numbers, strings, lists) replaces the
+original value ([RFC 7386](https://www.rfc-editor.org/rfc/rfc7386)). The result is checked like any
+entry. Patches stack: a mod that depends on another mod's override or patch builds on top of it.
+
+### Removing content
+
+`overrides/<mod_id>/remove.json` takes entries out of the game, listed by id under `parts`, `recipes`,
+`bots`, `quests`, `pois` and `characters`:
+
+```json
+{ "parts": ["antenna"], "recipes": ["barrel"], "bots": ["scuttler_blue"] }
+```
+
+A recipe that makes, uses or runs at a removed part is removed with it. Other content that still names
+a removed entry (a quest reward, a raid, a POI site) reports an error, so remove or patch that too.
+Saved Creations with a removed part fail to load that part.
+
+When two mods change the same entry without one depending on the other, the later one in the load order
+wins and the Mod Manager shows a warning (`MD1502`). Changing an entry that doesn't exist, or was removed
+by an earlier mod, is an error (`MD1501`); removing one that isn't there is a warning.
 
 ## 7. Load order and the Mod Manager
 
@@ -303,6 +354,8 @@ place in the load order back.
 | `MD0203` | Overrides target a mod that is not a dependency. |
 | `MD0204` | Override for a part the target mod does not have. |
 | `MD0205` | Two mods override the same part; the later one wins (warning). |
+| `MD1501` | An override, patch or removal names an entry that doesn't exist (an error; a warning for removals). |
+| `MD1502` | Two mods change the same bot, quest, POI or character; the later one wins (warning). |
 | `MD1301` | Not a mod package: unreadable zip, no `package.json`, invalid manifest, or vanilla. |
 | `MD1302` | Unsafe path or symbolic link in the archive (or the mod, on export). |
 | `MD1303` | Archive or a file is over the size limits, or looks like a zip bomb. |

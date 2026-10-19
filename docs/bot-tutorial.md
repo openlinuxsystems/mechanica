@@ -266,7 +266,13 @@ fixed and saved; the bot stands still meanwhile, and the error is in the log.
 When the crops planted in a world are worth enough, a raid comes: the raid horn sounds, and after a short
 warning bots arrive in a ring around the most valuable farm and go for its crops. Raids happen in Survival.
 The table lives in `raids/raids.json`; like world generation, the last mod in load order that ships one
-wins.
+wins. To add to a table instead of replacing it, ship `raids/raids.patch.json`: levels merge by `level`
+and their bots by `bot`, as in a [world patch](world-generation.md#patching-the-world). Bare bot ids in
+a patch are your mod's:
+
+```json
+{ "levels": [{ "level": 1, "bots": [{ "bot": "rust_bug", "count": 2 }] }] }
+```
 
 ```json
 {
@@ -316,6 +322,9 @@ starting raids are open to players only in Creative.
 | `GetRaid` | none | The raid in progress. |
 
 ## 7. Packaging
+
+To change or remove another mod's bot (a tougher `vanilla:scuttler_red`), override it, patch it or list it in
+`remove.json` instead of copying it under a new id; see the [Packaging Guide](packaging-guide.md#overriding-bots-quests-pois-and-characters).
 
 A bot mod is an ordinary mod (see the [Packaging Guide](packaging-guide.md)):
 
