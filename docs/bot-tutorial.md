@@ -136,7 +136,7 @@ Leaves:
 | `wander` | `radius` (8), `speed` (0.4) | Strolls between random spots near where it spawned. Always running. |
 | `wait` | `seconds` (1) | Stands still. Running for the time, then success. |
 | `stop` | | Stops walking. Succeeds. |
-| `hesitate` | `range` (4), `min_speed` (4), `seconds` (2) | Balks at a part spinning on a joint within `range` m (a bearing's rotor, a wheel, a saw) turning faster than `min_speed` rad/s: backs away, running, for `seconds`, then fails so the tree goes on. Fails at once when nothing spins near. Put it under `invert` before a `chase`. |
+| `hesitate` | `range` (4), `min_speed` (4), `seconds` (2), `part` ("") | Balks at a part spinning on a joint within `range` m (a bearing's rotor, a wheel, a saw; only parts of the types in `part`, such as `vanilla:saw_blade,vanilla:drill`, when it is set) turning faster than `min_speed` rad/s: backs away, running, for `seconds`, then fails so the tree goes on. Fails at once when nothing spins near. Put it under `invert` before a `chase`. |
 | `break_objects` | `attack` | Uses the attack on the nearest world object within its reach. Succeeds when it hit one; fails when none is in reach or the attack is not ready. The attack needs `object_damage`. |
 | `call` | `function` | Calls a function of the bot's script with `(node, dt)`; its return value is the result. |
 
@@ -151,7 +151,8 @@ text, and the data checker refuses unknown parameters and attack ids that the bo
   either way. The Rakehand's battle cry is `succeed(cooldown(call "cry"))`.
 - **Shy creature:** `selector[ sequence[find_player, flee], wander ]` (the Grazer, with `passive: true`).
 - **Wary of blades:** put `invert(hesitate)` before each `chase`, so the bot balks at a spinning saw
-  or wheel before it comes on anyway (the Rakehand).
+  or wheel before it comes on anyway (the Rakehand). With `part: "vanilla:saw_blade"` it fears only a saw blade at
+  cutting speed (every Scuttler).
 - **Clearing its way:** `sequence[ succeed(break_objects), selector[...] ]` smashes trees and rocks in
   reach whatever else it is doing (the Thresher, whose kick has `object_damage`).
 
@@ -252,7 +253,7 @@ crop's soil), `{bot = id}`, or `{object = id}` (a world object, for attacks with
 | `world.crops(range?)`, `world.crops_near(point, range)` | Planted crops: `{creation, part, position, value, ripe, distance}`. |
 | `world.bots(range?)` | Other bots: `{bot, type, position, distance}`. |
 | `world.objects(range?)` | World objects a bot can break (trees, rocks, bushes) within `range` of its body's edge (default: sight), nearest first: `{object, position, distance}`. |
-| `world.spinning(range?, min_speed?)` | Parts spinning on a joint within `range` m (default: sight) and faster than `min_speed` rad/s (default 4) against what they turn on: `{creation, part, position, speed, distance}`, nearest first. |
+| `world.spinning(range?, min_speed?, part?)` | Parts spinning on a joint within `range` m (default: sight) and faster than `min_speed` rad/s (default 4) against what they turn on: `{creation, part, position, speed, distance}`, nearest first. With `part` (part types separated by commas, such as `vanilla:saw_blade,vanilla:drill`) only parts of those types on the turning side count. |
 | `world.locate(target)` | Where a target is (`vec3`), or nil. |
 | `world.raycast(from, to)` | The first thing hit: `{position, player?, creation?, part?, bot?}`, or nil. |
 

@@ -317,9 +317,9 @@ public sealed record WorldObjectDefinition
     public BreakDefinition? BreaksInto { get; init; }
 
     /// <summary>
-    /// Makes each scattered spot of this object a rock outcrop: a connected cluster of cubes stacked on a grid in
-    /// stepped columns, each cube an object of its own (<see cref="WorldObjectId.Piece"/>) with this definition's
-    /// collider, look and health. The cube is 1 m before <see cref="Scale"/>, which is shared by the whole cluster.
+    /// Makes each scattered spot of this object a rock deposit: a cluster of mounds heaped from blocks, each block an
+    /// object of its own (<see cref="WorldObjectId.Piece"/>) with its own definition's collider, look and health.
+    /// <see cref="Scale"/> is shared by the whole deposit, and <see cref="Footprint"/> bounds it.
     /// </summary>
     public OutcropDefinition? Outcrop { get; init; }
 
@@ -430,8 +430,14 @@ public static class DamageKinds
 /// <summary>A model a world object is drawn with.</summary>
 public sealed record MeshDefinition
 {
-    /// <summary>Mod path of the model (<c>meshes/world/rock_cube.glb</c>, or <c>other_mod:path</c>).</summary>
+    /// <summary>Mod path of the model (<c>meshes/world/rock_block_medium_a.glb</c>, or <c>other_mod:path</c>).</summary>
     public string? File { get; init; }
+
+    /// <summary>
+    /// Other models (mod paths) of the same size and origin, drawn instead of <see cref="File"/> on some placements
+    /// (<see cref="WorldObjectPlacement.Variant"/>) so neighbours do not match. Only rock deposit blocks pick one.
+    /// </summary>
+    public List<string>? Variants { get; init; }
 
     /// <summary>Where the model's origin goes, relative to the object's ground point (before scale).</summary>
     public Vec3 At { get; init; }
@@ -450,14 +456,85 @@ public sealed record MeshDefinition
     public Dictionary<string, JsonElement>? Extra { get; init; }
 }
 
-/// <summary>How an outcrop's cubes are stacked (<see cref="WorldObjectDefinition.Outcrop"/>).</summary>
+/// <summary>
+/// A rock deposit (<see cref="WorldObjectDefinition.Outcrop"/>): a cluster of mounds, each a heap of chiselled blocks of
+/// mixed sizes, as in Scrap Mechanic's square rocks. A size is rolled per deposit, then a size per mound.
+/// </summary>
 public sealed record OutcropDefinition
 {
-    /// <summary>How many cubes, <c>[min, max]</c>.</summary>
-    public List<int>? Cubes { get; init; }
+    /// <summary>The deposit sizes, one picked per deposit by <see cref="DepositSize.Weight"/>.</summary>
+    public List<DepositSize>? Deposits { get; init; }
 
-    /// <summary>How many cubes high a column stands, <c>[min, max]</c>; the middle stands tallest.</summary>
-    public List<int>? Height { get; init; }
+    /// <summary>The mound sizes the deposits name, by name.</summary>
+    public Dictionary<string, MoundDefinition>? Mounds { get; init; }
+
+    /// <summary>Chance (0 to 1) that a mound other than a deposit's first is metal-rich: its blocks swapped by <see cref="Rich"/>.</summary>
+    public float RichChance { get; init; }
+
+    /// <summary>The object each block of a metal-rich mound becomes instead, by the block's own object id.</summary>
+    public Dictionary<string, string>? Rich { get; init; }
+
+    /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>One size of rock deposit (<see cref="OutcropDefinition.Deposits"/>).</summary>
+public sealed record DepositSize
+{
+    /// <summary>How likely this size is, against the others.</summary>
+    public float Weight { get; init; } = 1f;
+
+    /// <summary>How many mounds, <c>[min, max]</c>.</summary>
+    public List<int>? Mounds { get; init; }
+
+    /// <summary>Metres from the deposit's middle the other mounds' middles may stand (before scale).</summary>
+    public float Spread { get; init; }
+
+    /// <summary>The mound sizes (<see cref="OutcropDefinition.Mounds"/> names), one picked per mound by weight.</summary>
+    public List<MoundPick>? Sizes { get; init; }
+
+    /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>A mound size a deposit may pick (<see cref="DepositSize.Sizes"/>).</summary>
+public sealed record MoundPick
+{
+    /// <summary>Name of the mound size in <see cref="OutcropDefinition.Mounds"/>.</summary>
+    public string? Mound { get; init; }
+
+    /// <summary>How likely it is, against the others.</summary>
+    public float Weight { get; init; } = 1f;
+
+    /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>One size of mound (<see cref="OutcropDefinition.Mounds"/>): a heap of blocks.</summary>
+public sealed record MoundDefinition
+{
+    /// <summary>How many blocks, <c>[min, max]</c>.</summary>
+    public List<int>? Blocks { get; init; }
+
+    /// <summary>The blocks it is made of: world objects with a box collider, one picked per block by weight.</summary>
+    public List<MoundBlock>? Kinds { get; init; }
+
+    /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>A block a mound may be made of (<see cref="MoundDefinition.Kinds"/>).</summary>
+public sealed record MoundBlock
+{
+    /// <summary>Id of the world object the block is: its collider box is the block's size.</summary>
+    public string? Object { get; init; }
+
+    /// <summary>How likely it is, against the others.</summary>
+    public float Weight { get; init; } = 1f;
 
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]

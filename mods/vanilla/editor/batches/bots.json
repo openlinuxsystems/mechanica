@@ -53,6 +53,18 @@
                   "range": 12
                 },
                 {
+                  "type": "invert",
+                  "children": [
+                    {
+                      "type": "hesitate",
+                      "part": "vanilla:saw_blade,vanilla:drill",
+                      "range": 4,
+                      "min_speed": 9,
+                      "seconds": 2.5
+                    }
+                  ]
+                },
+                {
                   "type": "chase",
                   "attack": "whip",
                   "speed": 1
@@ -71,6 +83,18 @@
                 },
                 {
                   "type": "find_crop"
+                },
+                {
+                  "type": "invert",
+                  "children": [
+                    {
+                      "type": "hesitate",
+                      "part": "vanilla:saw_blade,vanilla:drill",
+                      "range": 4,
+                      "min_speed": 9,
+                      "seconds": 2.5
+                    }
+                  ]
                 },
                 {
                   "type": "chase",
@@ -127,6 +151,11 @@
             "item": "glue",
             "chance": 0.4,
             "count": 1
+          },
+          {
+            "item": "drill",
+            "chance": 0.04,
+            "count": 1
           }
         ],
         "behavior": {
@@ -142,6 +171,18 @@
                 {
                   "type": "call",
                   "function": "charge"
+                },
+                {
+                  "type": "invert",
+                  "children": [
+                    {
+                      "type": "hesitate",
+                      "part": "vanilla:saw_blade,vanilla:drill",
+                      "range": 4,
+                      "min_speed": 9,
+                      "seconds": 2.5
+                    }
+                  ]
                 },
                 {
                   "type": "chase",
@@ -166,6 +207,18 @@
                 {
                   "type": "call",
                   "function": "charge"
+                },
+                {
+                  "type": "invert",
+                  "children": [
+                    {
+                      "type": "hesitate",
+                      "part": "vanilla:saw_blade,vanilla:drill",
+                      "range": 4,
+                      "min_speed": 9,
+                      "seconds": 2.5
+                    }
+                  ]
                 },
                 {
                   "type": "chase",
@@ -240,6 +293,18 @@
                   "range": 12
                 },
                 {
+                  "type": "invert",
+                  "children": [
+                    {
+                      "type": "hesitate",
+                      "part": "vanilla:saw_blade,vanilla:drill",
+                      "range": 4,
+                      "min_speed": 9,
+                      "seconds": 2.5
+                    }
+                  ]
+                },
+                {
                   "type": "chase",
                   "attack": "stomp",
                   "speed": 1
@@ -258,6 +323,18 @@
                 },
                 {
                   "type": "find_crop"
+                },
+                {
+                  "type": "invert",
+                  "children": [
+                    {
+                      "type": "hesitate",
+                      "part": "vanilla:saw_blade,vanilla:drill",
+                      "range": 4,
+                      "min_speed": 9,
+                      "seconds": 2.5
+                    }
+                  ]
                 },
                 {
                   "type": "chase",
@@ -324,6 +401,18 @@
                   "range": 12
                 },
                 {
+                  "type": "invert",
+                  "children": [
+                    {
+                      "type": "hesitate",
+                      "part": "vanilla:saw_blade,vanilla:drill",
+                      "range": 4,
+                      "min_speed": 9,
+                      "seconds": 2.5
+                    }
+                  ]
+                },
+                {
                   "type": "chase",
                   "attack": "explode",
                   "speed": 1
@@ -342,6 +431,18 @@
                 },
                 {
                   "type": "find_crop"
+                },
+                {
+                  "type": "invert",
+                  "children": [
+                    {
+                      "type": "hesitate",
+                      "part": "vanilla:saw_blade,vanilla:drill",
+                      "range": 4,
+                      "min_speed": 9,
+                      "seconds": 2.5
+                    }
+                  ]
                 },
                 {
                   "type": "chase",
@@ -419,6 +520,18 @@
                   "range": 6
                 },
                 {
+                  "type": "invert",
+                  "children": [
+                    {
+                      "type": "hesitate",
+                      "part": "vanilla:saw_blade,vanilla:drill",
+                      "range": 4,
+                      "min_speed": 9,
+                      "seconds": 2.5
+                    }
+                  ]
+                },
+                {
                   "type": "chase",
                   "attack": "nip",
                   "speed": 1
@@ -437,6 +550,18 @@
                 },
                 {
                   "type": "find_crop"
+                },
+                {
+                  "type": "invert",
+                  "children": [
+                    {
+                      "type": "hesitate",
+                      "part": "vanilla:saw_blade,vanilla:drill",
+                      "range": 4,
+                      "min_speed": 9,
+                      "seconds": 2.5
+                    }
+                  ]
                 },
                 {
                   "type": "chase",

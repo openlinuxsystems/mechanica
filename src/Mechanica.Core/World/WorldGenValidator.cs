@@ -83,6 +83,11 @@ internal static class WorldGenValidator
                 KnownKeys.WarnUnknown(mesh.Extra, $"{path}.mesh", sink, typeof(MeshDefinition));
                 if (!AssetPath.TryParse(mesh.File, "mod", AssetKind.Mesh, out _, out var error))
                     sink.Error(Code, $"{path}.mesh.file", error);
+                for (var v = 0; v < (mesh.Variants?.Count ?? 0); v++)
+                {
+                    if (!AssetPath.TryParse(mesh.Variants![v], "mod", AssetKind.Mesh, out _, out var variantError))
+                        sink.Error(Code, $"{path}.mesh.variants[{v}]", variantError);
+                }
                 if (mesh.Lod is not null && !AssetPath.TryParse(mesh.Lod, "mod", AssetKind.Mesh, out _, out var lodError))
                     sink.Error(Code, $"{path}.mesh.lod", lodError);
                 Positive(mesh.LodDistance, $"{path}.mesh.lod_distance", sink);
@@ -113,14 +118,6 @@ internal static class WorldGenValidator
             }
             if (o.MaxSlope is { } maxSlope && !(maxSlope >= 0 && float.IsFinite(maxSlope)))
                 sink.Error(Code, $"{path}.max_slope", "max_slope must be 0 or more.");
-            if (o.Outcrop is { } outcrop)
-            {
-                KnownKeys.WarnUnknown(outcrop.Extra, $"{path}.outcrop", sink, typeof(OutcropDefinition));
-                if (outcrop.Cubes is not { Count: 2 } cubes || cubes[0] < 1 || cubes[1] < cubes[0] || cubes[1] > OutcropLayout.MaxCubes)
-                    sink.Error(Code, $"{path}.outcrop.cubes", $"cubes must be [min, max] with 1 <= min <= max <= {OutcropLayout.MaxCubes}.");
-                if (outcrop.Height is not { Count: 2 } height || height[0] < 1 || height[1] < height[0] || height[1] > OutcropLayout.MaxHeight)
-                    sink.Error(Code, $"{path}.outcrop.height", $"height must be [min, max] with 1 <= min <= max <= {OutcropLayout.MaxHeight}.");
-            }
             for (var d = 0; d < (o.Drops?.Count ?? 0); d++)
             {
                 var drop = o.Drops![d];
@@ -130,6 +127,13 @@ internal static class WorldGenValidator
                 if (drop.Count < 1)
                     sink.Error(Code, $"{path}.drops[{d}].count", "count must be 1 or more.");
             }
+        }
+
+        var objects = (definition.Objects ?? []).Where(o => o.Id is not null).GroupBy(o => o.Id!).ToDictionary(g => g.Key, g => g.First());
+        for (var i = 0; i < (definition.Objects?.Count ?? 0); i++)
+        {
+            if (definition.Objects![i].Outcrop is { } outcrop)
+                Outcrop(outcrop, definition.Objects[i], objects, $"$.objects[{i}]", sink);
         }
 
         var groundIds = new HashSet<string>();
@@ -523,6 +527,72 @@ internal static class WorldGenValidator
     }
 
     private static string Kind(FloraKind kind) => kind switch { FloraKind.GroundCover => "ground_cover", _ => kind.ToString().ToLowerInvariant() };
+
+    // A rock deposit: its sizes, its mounds and the block objects they are heaped from.
+    private static void Outcrop(OutcropDefinition outcrop, WorldObjectDefinition owner, Dictionary<string, WorldObjectDefinition> objects, string path,
+        DiagnosticSink sink)
+    {
+        path += ".outcrop";
+        KnownKeys.WarnUnknown(outcrop.Extra, path, sink, typeof(OutcropDefinition));
+        if (!(owner.Footprint > 0f))
+            sink.Error(Code, path, "a rock deposit needs a footprint: no block stands further out than it.");
+        if (outcrop.Deposits is not { Count: > 0 })
+            sink.Error(Code, $"{path}.deposits", "a rock deposit needs at least one deposit size.");
+        for (var d = 0; d < (outcrop.Deposits?.Count ?? 0); d++)
+        {
+            var deposit = outcrop.Deposits![d];
+            var at = $"{path}.deposits[{d}]";
+            KnownKeys.WarnUnknown(deposit.Extra, at, sink, typeof(DepositSize));
+            Positive(deposit.Weight, $"{at}.weight", sink);
+            NonNegative(deposit.Spread, $"{at}.spread", sink);
+            if (deposit.Mounds is not { Count: 2 } mounds || mounds[0] < 1 || mounds[1] < mounds[0] || mounds[1] > OutcropLayout.MaxMounds)
+                sink.Error(Code, $"{at}.mounds", $"mounds must be [min, max] with 1 <= min <= max <= {OutcropLayout.MaxMounds}.");
+            if (deposit.Sizes is not { Count: > 0 })
+                sink.Error(Code, $"{at}.sizes", "a deposit size needs at least one mound size.");
+            for (var k = 0; k < (deposit.Sizes?.Count ?? 0); k++)
+            {
+                var pick = deposit.Sizes![k];
+                KnownKeys.WarnUnknown(pick.Extra, $"{at}.sizes[{k}]", sink, typeof(MoundPick));
+                Positive(pick.Weight, $"{at}.sizes[{k}].weight", sink);
+                if (pick.Mound is null || outcrop.Mounds?.ContainsKey(pick.Mound) != true)
+                    sink.Error(Code, $"{at}.sizes[{k}].mound", $"'{pick.Mound}' is not one of this outcrop's mounds.");
+            }
+        }
+        foreach (var (name, mound) in outcrop.Mounds ?? [])
+        {
+            var at = $"{path}.mounds.{name}";
+            KnownKeys.WarnUnknown(mound.Extra, at, sink, typeof(MoundDefinition));
+            if (mound.Blocks is not { Count: 2 } blocks || blocks[0] < 1 || blocks[1] < blocks[0] || blocks[1] > OutcropLayout.MaxBlocks)
+                sink.Error(Code, $"{at}.blocks", $"blocks must be [min, max] with 1 <= min <= max <= {OutcropLayout.MaxBlocks}.");
+            if (mound.Kinds is not { Count: > 0 })
+                sink.Error(Code, $"{at}.kinds", "a mound needs at least one kind of block.");
+            for (var k = 0; k < (mound.Kinds?.Count ?? 0); k++)
+            {
+                var kind = mound.Kinds![k];
+                KnownKeys.WarnUnknown(kind.Extra, $"{at}.kinds[{k}]", sink, typeof(MoundBlock));
+                Positive(kind.Weight, $"{at}.kinds[{k}].weight", sink);
+                Block(kind.Object, objects, $"{at}.kinds[{k}].object", sink);
+            }
+        }
+        if (!(outcrop.RichChance is >= 0f and <= 1f))
+            sink.Error(Code, $"{path}.rich_chance", "rich_chance must be from 0 to 1.");
+        if (outcrop.RichChance > 0f && outcrop.Rich is not { Count: > 0 })
+            sink.Warning(Code, $"{path}.rich_chance", "no mound turns metal-rich: rich is empty.");
+        foreach (var (from, to) in outcrop.Rich ?? [])
+        {
+            Block(from, objects, $"{path}.rich.{from}", sink);
+            Block(to, objects, $"{path}.rich.{from}", sink);
+        }
+    }
+
+    // A block a mound is heaped from: a world object with a box collider (a deposit's own object may be one).
+    private static void Block(string? id, Dictionary<string, WorldObjectDefinition> objects, string path, DiagnosticSink sink)
+    {
+        if (id is null || !objects.TryGetValue(id, out var block))
+            sink.Error(Code, path, $"'{id}' is not a world object.");
+        else if (block.Collider is not { Shape: PrimitiveShape.Box, Size: { } })
+            sink.Error(Code, path, $"block '{id}' needs a box collider: its box is the block's size.");
+    }
 
     private static void Shape(ShapeDefinition shape, string path, DiagnosticSink sink, string code = Code)
     {

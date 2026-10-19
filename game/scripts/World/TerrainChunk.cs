@@ -292,7 +292,7 @@ public partial class TerrainChunk : Node3D
         var origin = Position;
         var transforms = new Dictionary<(WorldObjectDefinition, int), List<Transform3D>>();
         var models = new Dictionary<WorldObjectDefinition, List<Transform3D>>();
-        var meshes = new Dictionary<WorldObjectDefinition, (Creations.PartMesh Mesh, List<Transform3D> List, List<WorldObjectPlacement> Objects)>();
+        var meshes = new Dictionary<(WorldObjectDefinition, int), (Creations.PartMesh Mesh, List<Transform3D> List, List<WorldObjectPlacement> Objects)>();
         var lods = new Dictionary<WorldObjectDefinition, (Creations.PartMesh Mesh, List<Transform3D> List)>();
         foreach (var o in LiveObjects)
         {
@@ -324,10 +324,10 @@ public partial class TerrainChunk : Node3D
                 far.List.Add(placed * new Transform3D(Basis.Identity, o.Definition.Mesh!.At.ToGodot()) * lod.Transform);
             }
             // Far scenery draws only the far model, when there is one.
-            if ((lod is null || !Scenery) && MeshOf(o.Definition) is { } mesh)
+            if ((lod is null || !Scenery) && MeshOf(o.Definition, o.Variant) is { } mesh)
             {
-                if (!meshes.TryGetValue(o.Definition, out var drawn))
-                    meshes[o.Definition] = drawn = (mesh, [], []);
+                if (!meshes.TryGetValue((o.Definition, o.Variant), out var drawn))
+                    meshes[(o.Definition, o.Variant)] = drawn = (mesh, [], []);
                 drawn.List.Add(placed * new Transform3D(Basis.Identity, o.Definition.Mesh!.At.ToGodot()) * mesh.Transform);
                 drawn.Objects.Add(o);
                 continue;
@@ -350,7 +350,7 @@ public partial class TerrainChunk : Node3D
                 multi.SetInstanceTransform(i, list[i]);
             Objects.AddChild(new MultiMeshInstance3D { Name = $"{definition.Id}_{piece}", Multimesh = multi, MaterialOverride = MaterialOf(shape.Color) });
         }
-        foreach (var (definition, (mesh, list, placements)) in meshes)
+        foreach (var ((definition, variant), (mesh, list, placements)) in meshes)
         {
             var multi = new MultiMesh { TransformFormat = MultiMesh.TransformFormatEnum.Transform3D, Mesh = mesh.Mesh, InstanceCount = list.Count };
             for (var i = 0; i < list.Count; i++)
@@ -360,7 +360,7 @@ public partial class TerrainChunk : Node3D
             }
             // With a far model, the full one gives way to it past the LOD distance (judged from the chunk's middle).
             var near = lods.ContainsKey(definition) ? definition.Mesh!.LodDistance : 0f;
-            Objects.AddChild(new MultiMeshInstance3D { Name = $"{definition.Id}_mesh", Multimesh = multi, VisibilityRangeEnd = near });
+            Objects.AddChild(new MultiMeshInstance3D { Name = $"{definition.Id}_mesh{(variant > 0 ? $"_{variant}" : "")}", Multimesh = multi, VisibilityRangeEnd = near });
         }
         foreach (var (definition, (mesh, list)) in lods)
         {
@@ -459,12 +459,12 @@ public partial class TerrainChunk : Node3D
     }
 
     // The model an object is drawn with, loaded once per file; null when it has none or it failed to load (pieces are drawn).
-    private Creations.PartMesh? MeshOf(WorldObjectDefinition definition)
+    private Creations.PartMesh? MeshOf(WorldObjectDefinition definition, int variant = 0)
     {
-        if (WorldGen?.MeshFileOf(definition) is not { } file)
+        if (WorldGen?.MeshFileOf(definition, variant) is not { } file)
             return null;
         if (!ObjectMeshes.TryGetValue(file, out var mesh))
-            ObjectMeshes[file] = mesh = Creations.PartAssets.ReadGltf(file, definition.Mesh!.File!)?.FirstOrDefault();
+            ObjectMeshes[file] = mesh = Creations.PartAssets.ReadGltf(file, WorldGenData.ModelOf(definition, variant)!)?.FirstOrDefault();
         return mesh;
     }
 

@@ -1,7 +1,7 @@
 {
   "id": "metal_chunk",
   "name": "Metal-Rich Chunk",
-  "description": "A broken piece of a metal-rich outcrop, veined with ore. Break it with a drill or the Sledgehammer for mostly Metal Rods.",
+  "description": "A broken piece of a metal-rich deposit, veined with ore. Break it with a drill or the Sledgehammer for mostly Metal Rods.",
   "category": "resource",
   "mass": 36,
   "durability": 10,

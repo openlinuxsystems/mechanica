@@ -41,6 +41,42 @@
       ]
     },
     {
+      "file": "parts/gas_container.json",
+      "template": "interactive",
+      "set": {
+        "name": "Gas Container",
+        "description": "Holds five stacks of gasoline. Link it to Gas Engines and Thrusters with the Connect Tool and they burn its fuel; the gauges on its sides show how full it is. Pick it up (hold right click) even when it is full: the gasoline comes with it.",
+        "category": "container",
+        "mass": 18,
+        "durability": 6,
+        "friction": 0.5,
+        "buoyancy": 0.75,
+        "flammable": false,
+        "stack_size": 5,
+        "sound_material": "metal",
+        "size": [4, 3, 3],
+        "icon": "textures/items/gas_container_icon.png",
+        "visual": { "color": "#ffffff" },
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
+        "sounds": { "open": "container_open", "place": "place_metal" },
+        "inventory": { "slots": 5, "accepts": ["gasoline"], "carry_contents": true },
+        "logic": { "outputs": 16, "kind": "power" },
+        "script": "scripts/gas_container.lua",
+        "display": { "clips": { "readout": "clip", "scrub": [{ "readout": "fill", "clip": "fill" }] } },
+        "properties": { "fuel": "gasoline", "ease": 0.3, "pulse_time": 0.4, "supply_time": 0.6 }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/gas_container.glb" }],
+      "recipes": [
+        {
+          "id": "gas_container",
+          "stations": ["fabricator"],
+          "inputs": [{ "item": "scrap_metal", "count": 3 }],
+          "outputs": [{ "item": "gas_container", "count": 1 }],
+          "time": 5
+        }
+      ]
+    },
+    {
       "file": "parts/chemical_container.json",
       "template": "interactive",
       "set": {

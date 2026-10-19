@@ -148,6 +148,9 @@ public class VanillaBotsTests
         Assert.True(bubble.Slows);
         Assert.Equal((0.5f, 3f, 0f), (bubble.SlowFactor, bubble.SlowSeconds, bubble.DamagePerSecond));
         Assert.Contains("\"hesitate\"", Bot("rakehand").Behavior!.ToJsonString());
+        // Saw Blade spec: every Scuttler balks at a saw blade spinning at cutting speed, then comes on anyway.
+        foreach (var scuttler in new[] { "scuttler_green", "scuttler_blue", "scuttler_yellow", "scuttler_red", "scuttler_seed" })
+            Assert.Contains("\"part\":\"vanilla:saw_blade,vanilla:drill\"", Bot(scuttler).Behavior!.ToJsonString());
         var thresher = Bot("thresher");
         Assert.True(thresher.Attack("kick")!.ObjectDamage > 0);
         Assert.Contains("\"break_objects\"", thresher.Behavior!.ToJsonString());

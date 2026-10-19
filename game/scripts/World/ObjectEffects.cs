@@ -61,6 +61,42 @@ public partial class ObjectEffects : Node3D
         }
     }
 
+    /// <summary>Chips or sparks from a cutting tool's bite (<see cref="WorldStreamer.Impact"/>) shown so far (tests).</summary>
+    public int Bites { get; private set; }
+
+    /// <summary>
+    /// Shows a saw's or drill's bite at <paramref name="at"/>: sparks off metal (and bots), chips off anything else in
+    /// the colours of its material.
+    /// </summary>
+    public void Bite(Vector3 at, string material)
+    {
+        Bites++;
+        if (material is "metal" or "scrap")
+            Burst("Sparks", at, SparkMesh, SparkColours, SparksPerBite, 0.04f, 5.5f, 9.8f, 0.35f);
+        else
+            Burst("Chips", at, ChipMesh, BiteColours.GetValueOrDefault(material) ?? BiteColours["wood"], ChipsPerHit / 2, 0.06f, 3.5f, 9.8f, 0.9f);
+    }
+
+    /// <summary>Sparks from one bite into metal.</summary>
+    public const int SparksPerBite = 8;
+
+    private static readonly StandardMaterial3D SparkMaterial = new()
+    {
+        ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
+        VertexColorUseAsAlbedo = true,
+        CullMode = BaseMaterial3D.CullModeEnum.Disabled,
+    };
+    private static readonly BoxMesh SparkMesh = new() { Size = new Vector3(0.012f, 0.012f, 0.05f), Material = SparkMaterial };
+    private static readonly Gradient SparkColours = Colours(["#fff6c8", "#ffd86a", "#fffbe8"])!;
+    private static readonly Dictionary<string, Gradient> BiteColours = new()
+    {
+        ["wood"] = Colours(["#c9a26b", "#a87a45", "#e0c38f"])!,
+        ["concrete"] = Colours(["#9a9a96", "#7d7d7a"])!,
+        ["plastic"] = Colours(["#d8d8d8", "#5a5a5a"])!,
+        ["glass"] = Colours(["#cfe6ee", "#ffffff"])!,
+        ["cardboard"] = Colours(["#b8925e", "#9c7a4a"])!,
+    };
+
     // A one-shot cloud of small pieces from round `at`, thrown out at `speed` and falling under `gravity`.
     private void Burst(string name, Vector3 at, Mesh mesh, Gradient colours, int count, float radius, float speed, float gravity, float lifetime)
     {

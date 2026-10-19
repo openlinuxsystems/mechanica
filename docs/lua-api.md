@@ -146,7 +146,7 @@ placed.
 | `part.set_output(value)` | Sets the part's output on the logic bus: a number, or a boolean (1 or 0). It stays until changed, and parts linked to this one see it next step. |
 | `part.output()` | The part's own output on the logic bus (0 until set). |
 | `part.input()` | The sum of the outputs of every part linked to this one. |
-| `part.inputs()` | Each part linked to this one as `{part, value}`, by part id (a logic gate reads them one by one). |
+| `part.inputs()` | Each part linked to this one as `{part, value, type, storage}`, by part id (a logic gate reads them one by one). `type` is the linked part's qualified id; `storage` is true when it is a container, such as a gas container linked to an engine to feed it. |
 | `part.links()` | The ids of the parts this part's output is linked to (an engine finds its bearings here). |
 | `part.setting(id)` | The value of one of the part's settings: a number, a choice (string), a toggle (boolean), a number list (table) or a sequence (a table of frames, each a number or a list of `{part, target, speed}`); the default until a player changes it. `nil` for an unknown id. |
 | `part.sound(key)` | The sound id the part binds to `key` in its `sounds` (for `sound.play` and `sound.start`), or `nil`. Scripts play the part's own bindings this way, so the ids stay in data. |
@@ -181,8 +181,9 @@ The Creation the part belongs to.
 | `creation.display(part_id, id, value)` | Like `part.display`, for a part this one's output is linked to (an engine turns its wheel bearings' `drive` highlight). Any other part is refused. |
 | `creation.displayed(part_id, id)` | Like `part.displayed`, for any part of the same Creation (a seat checks whether an engine shows `running`), or `nil`. |
 | `creation.occupant_input(part_id)` | Like `part.occupant_input()`, for another seat of the same Creation: a control surface or rotor linked from a seat reads its pilot's controls this way. `nil` when that seat is empty. |
-| `creation.count(item)` | How many of an item the Creation's containers hold (gasoline in gas containers, battery packs in batteries). Bare ids are in the part's mod. |
-| `creation.take(item, count?)` | Takes up to `count` (default 1) of an item from the Creation's containers, in part order, and returns how many it took. Engines burn fuel this way. |
+| `creation.count(item, parts?)` | How many of an item the Creation's containers hold (gasoline in gas containers, battery packs in batteries). With `parts`, a list of part ids, only those containers count (an engine's linked gas containers, or a container's own `{part.id()}`). Bare ids are in the part's mod. |
+| `creation.space(item, parts?)` | How many more of an item fit in the Creation's containers, or only in those in the list of part ids `parts` (a gas container works out how full it is from this and `creation.count`). |
+| `creation.take(item, count?, parts?)` | Takes up to `count` (default 1) of an item from the Creation's containers, in part order, and returns how many it took; with `parts`, only from the containers in that list of part ids. Engines burn fuel this way. |
 
 ## `world`
 

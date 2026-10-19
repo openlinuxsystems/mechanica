@@ -89,6 +89,7 @@ public sealed class LogicScriptTests : IDisposable
         var toggle = Place(creation, "vanilla:switch", new GridCell(1, 1, 0));
         var press = Place(creation, "vanilla:button", new GridCell(-1, 1, 0));
         Steps(1);
+        Assert.Equal("off", _runtime.Readouts.Text(Car, toggle, "pose"));
         Activate(creation, toggle);
         Activate(creation, press);
         Steps(1);
@@ -97,10 +98,12 @@ public sealed class LogicScriptTests : IDisposable
         // properties.pulse is 0.5 s: 30 steps.
         Steps(31);
         Assert.Equal(1f, _runtime.Signals.Output(Car, toggle));
+        Assert.Equal("on", _runtime.Readouts.Text(Car, toggle, "pose"));
         Assert.Equal(0f, _runtime.Signals.Output(Car, press));
         Activate(creation, toggle);
         Steps(1);
         Assert.Equal(0f, _runtime.Signals.Output(Car, toggle));
+        Assert.Equal("off", _runtime.Readouts.Text(Car, toggle, "pose"));
     }
 
     [Fact]
@@ -346,7 +349,7 @@ public sealed class LogicScriptTests : IDisposable
     {
         _runtime.Creative = false;
         var (creation, seat, engine, wheels, _) = BuildCar(linked: 2);
-        var tank = Place(creation, "vanilla:gas_container", new GridCell(0, 1, -1));
+        var tank = Tank(creation);
         _runtime.Seats!.Sit(Peer, Car, seat);
         _input = new PlayerInput(0, 1, 0, 0, false, false);
         // Switched on without fuel it only sputters.
@@ -368,6 +371,70 @@ public sealed class LogicScriptTests : IDisposable
         Steps(40 * 60 + 5);
         Assert.Equal(0f, _runtime.Signals.Output(Car, engine));
         Assert.All(wheels.Take(2), w => Assert.Null(LastMotor(w.Bearing).Velocity));
+    }
+
+    [Fact]
+    public void AnEngineBurnsOnlyFromTheGasContainersLinkedToIt()
+    {
+        _runtime.Creative = false;
+        var (creation, seat, engine, wheels, _) = BuildCar(linked: 2);
+        var linked = Tank(creation);
+        foreach (var z in new[] { -3, -4, -5 })
+            Place(creation, "vanilla:metal_block", new GridCell(0, 0, z));
+        var other = Place(creation, "vanilla:gas_container", new GridCell(-1, 1, -6));
+        creation.InventoryOf(linked)!.Add("vanilla:gasoline", 1);
+        creation.InventoryOf(other)!.Add("vanilla:gasoline", 1);
+        Link(creation, linked, engine);
+        _runtime.Seats!.Sit(Peer, Car, seat);
+        _input = new PlayerInput(0, 1, 0, 0, false, false);
+        Configure(creation, engine, "on", true);
+        Steps(60);                                    // the start is 0.8 s
+        Assert.Equal(0, creation.InventoryOf(linked)!.Count("vanilla:gasoline"));
+        Assert.Equal(1, creation.InventoryOf(other)!.Count("vanilla:gasoline"));
+        Assert.Equal(0f, _runtime.Readouts.Number(Car, engine, "fuel_items"));
+        // The seat still drives it: a linked tank is not a control.
+        foreach (var (bearing, side) in wheels.Take(2))
+            Assert.InRange(-side * LastMotor(bearing).Velocity!.Value, 15f * 0.97f, 15f * 1.03f);
+
+        // With only the tank linked in (no seat), the engine runs forward on its own while it is on.
+        _runtime.Seats!.Leave(Peer);
+        Assert.True(creation.Unlink(seat, engine));
+        Steps(10);
+        foreach (var (bearing, side) in wheels.Take(2))
+            Assert.InRange(-side * LastMotor(bearing).Velocity!.Value, 15f * 0.97f, 15f * 1.03f);
+    }
+
+    [Fact]
+    public void AGasContainerShowsHowFullItIs()
+    {
+        var creation = NewCreation();
+        var tank = Tank(creation);
+        var readouts = _runtime.Readouts;
+        Steps(2);
+        Assert.Equal(0f, readouts.Number(Car, tank, "fill"));
+        Assert.StartsWith("rest#", readouts.Text(Car, tank, "clip"));
+
+        // 50 of its 100 gasoline (5 slots of 20): the gauge pulses and eases up to half over 0.3 s.
+        creation.InventoryOf(tank)!.Add("vanilla:gasoline", 50);
+        Steps(6);
+        Assert.StartsWith("pulse#", readouts.Text(Car, tank, "clip"));
+        Assert.InRange(readouts.Number(Car, tank, "fill")!.Value, 0.01f, 0.49f);
+        Steps(30);
+        Assert.Equal(0.5f, readouts.Number(Car, tank, "fill"));
+        Assert.StartsWith("idle_loop#", readouts.Text(Car, tank, "clip"));
+
+        // Something drew fuel: the supply clip, then the shimmer again.
+        creation.InventoryOf(tank)!.Remove("vanilla:gasoline", 10);
+        Steps(6);
+        Assert.StartsWith("supply#", readouts.Text(Car, tank, "clip"));
+        Steps(60);
+        Assert.Equal(0.4f, readouts.Number(Car, tank, "fill"));
+        Assert.StartsWith("idle_loop#", readouts.Text(Car, tank, "clip"));
+
+        creation.InventoryOf(tank)!.Add("vanilla:gasoline", 60);
+        Steps(60);
+        Assert.Equal(1f, readouts.Number(Car, tank, "fill"));
+        Assert.StartsWith("rest#", readouts.Text(Car, tank, "clip"));
     }
 
     [Fact]
@@ -580,7 +647,7 @@ public sealed class LogicScriptTests : IDisposable
     {
         _runtime.Creative = false;
         var (creation, seat, engine, wheels, steering) = BuildCar(linked: 2);
-        var tank = Place(creation, "vanilla:gas_container", new GridCell(0, 1, -1));
+        var tank = Tank(creation);
         creation.InventoryOf(tank)!.Add("vanilla:gasoline", 3);
         _runtime.Seats!.Sit(Peer, Car, seat);
         _input = new PlayerInput(1, 1, 0, 0, false, false);
@@ -753,6 +820,15 @@ public sealed class LogicScriptTests : IDisposable
     // Local +Y turned to point along outward.
     private static GridRotation Facing(GridCell outward) =>
         outward.Y != 0 ? GridRotation.FromAxes(new GridCell(1, 0, 0), outward) : GridRotation.FromAxes(new GridCell(0, -outward.X - outward.Z, 0), outward);
+
+    // A Gas Container (4 x 3 x 3 cells) behind the car, standing on blocks of its own.
+    private static int Tank(Creation creation)
+    {
+        foreach (var z in new[] { -1, -2 })
+            if (creation.PartAt(new GridCell(0, 0, z)) is null)
+                Place(creation, "vanilla:metal_block", new GridCell(0, 0, z));
+        return Place(creation, "vanilla:gas_container", new GridCell(-1, 1, -3));
+    }
 
     private static void Link(Creation creation, int from, int to) =>
         Assert.True(creation.TryLink(from, to, out var error), error);

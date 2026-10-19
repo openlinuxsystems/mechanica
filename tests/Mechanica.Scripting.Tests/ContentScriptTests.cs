@@ -5,6 +5,7 @@ using Mechanica.Core.Data;
 using Mechanica.Core.Motion;
 using Mechanica.Core.Survival;
 using Mechanica.Core.Tests.Survival;
+using Mechanica.Core.World;
 
 namespace Mechanica.Scripting.Tests;
 
@@ -21,12 +22,13 @@ public sealed class ContentScriptTests : IDisposable
     private readonly SurvivalFixture _f = new();
     private readonly ScriptRuntime _runtime;
     private readonly RecordingSound _sound = new();
+    private readonly Motion _motion;
     private readonly List<ScriptMessage> _messages = [];
 
     public ContentScriptTests()
     {
         Assert.False(Vanilla.HasErrors, string.Join("; ", Vanilla.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error)));
-        var motion = new Motion(_f);
+        var motion = _motion = new Motion(_f);
         new MotionActions(new MotionSettings(), motion).Register(_f.Dispatcher);
         _runtime = new ScriptRuntime(new ScriptSettings(), _f.Dispatcher, motion, new NoPhysics(), new Source()) { Sound = _sound };
         _runtime.EnableItems(_f.Catalog, _f.Survival, _f.Inventories);
@@ -166,46 +168,62 @@ public sealed class ContentScriptTests : IDisposable
     }
 
     [Fact]
-    public void APoweredSawBladeCutsWhatItsRimTouches()
+    public void ASawBladeCutsWhatItsRimTouchesOnlyWhileItSpinsAtCuttingSpeed()
     {
         var target = Target();
         var creation = Board();
-        var saw = Place(creation, "vanilla:saw_blade", new GridCell(-1, 1, -1));
-        var power = Place(creation, "vanilla:switch", new GridCell(3, 1, 3));
-        Link(creation, power, saw);
+        var saw = Place(creation, "vanilla:saw_blade", new GridCell(-2, 1, -2));
+        var centre = PartKinematics.Of(creation, saw).Position;
         var hits = 0;
         _f.World.Ray = (from, direction) => direction.X > 0.99f ? Hits(target, from, ref hits) : null;
         Steps(30);
+        // It has no input: standing still it does nothing.
         Assert.Empty(_f.World.Casts);
         Assert.Empty(_sound.Loops);
 
-        Activate(creation, power);
-        // It spins up over properties.spin_up (0.6 s) and cuts nothing below properties.min_spin.
-        Steps(12);
+        // Turning slower than properties.min_spin (9 rad/s) it whirs and glows part way, but cuts nothing.
+        Spin(creation, saw, 5f);
+        Steps(30);
         Assert.Equal("saw_spin", Assert.Single(_sound.Loops.Values).Sound);
-        Assert.InRange(_runtime.Animations.Speed(creation.Id, saw), 1f, 21f);
+        Assert.Equal(0.5f, _runtime.Readouts.Number(creation.Id, saw, "spin")!.Value, 3);
         Assert.Empty(_f.World.Casts);
-        Steps(20);
-        Assert.InRange(_runtime.Animations.Speed(creation.Id, saw), 22f, 30f);
-        _f.World.Casts.Clear();
+
+        // At cutting speed (either way round), every 0.25 s it casts 16 rim rays and 8 rays out of each face, all from
+        // inside the disc, and bites the target once per turn however many rays find it.
+        Spin(creation, saw, -12f);
         Steps(31);
-        // Every 0.25 s it casts its eight rim rays, each starting outside the blade.
-        Assert.InRange(_f.World.Casts.Count, 16, 24);
-        Assert.All(_f.World.Casts, c => Assert.True(Vector3.Distance(c.From, new Vector3(0, 0.25f, 0)) > 0.37f, $"{c.From} is past the rim"));
-        Assert.Equal(0.12f, _f.World.LastRange, 3);
-        Assert.InRange(hits, 2, 5);
+        Assert.Equal(1f, _runtime.Readouts.Number(creation.Id, saw, "spin")!.Value, 3);
+        Assert.InRange(_f.World.Casts.Count, 64, 96);
+        Assert.Equal(0, _f.World.Casts.Count % 32);
+        Assert.All(_f.World.Casts, c => Assert.True(Vector3.Distance(c.From, centre) < 0.6f, $"{c.From} starts outside the disc"));
+        Assert.InRange(hits, 2, 3);
         Assert.Equal(15f * hits, target.PartDamage(target.Parts.First().Id), 3);
         Assert.Contains(_sound.Played, p => p.Sound == "saw_cut");
         Assert.Equal(1f, Assert.Single(_sound.Loops.Values).Parameters["load"]);
-        Assert.Equal(30f, _runtime.Animations.Speed(creation.Id, saw));
 
-        // Switched off, it runs down as fast as it spun up.
-        Activate(creation, power);
+        // Spun down, its whir stops.
+        Spin(creation, saw, 0f);
         Steps(2);
-        Assert.Single(_sound.Loops);
-        Steps(40);
         Assert.Empty(_sound.Loops);
-        Assert.Equal(0f, _runtime.Animations.Speed(creation.Id, saw));
+        NoErrors();
+    }
+
+    [Fact]
+    public void ASawBladeCutsALogFasterThanAPartAndNeverItsOwnCreation()
+    {
+        var log = Target("vanilla:pine_log");
+        var creation = Board();
+        var saw = Place(creation, "vanilla:saw_blade", new GridCell(-2, 1, -2));
+        var hits = 0;
+        // One rim ray finds the log, another a block of the saw's own creation.
+        _f.World.Ray = (from, direction) => direction.X > 0.99f ? Hits(log, from, ref hits)
+            : direction.Z > 0.99f ? new RayHit(from, Creation: creation.Id, Part: creation.Parts.First().Id) : null;
+        Spin(creation, saw, 12f);
+        Steps(10);
+        Assert.Equal(1, hits);
+        // properties.damage_to: a felled log takes 30 a bite, twice what a standing tree or another part takes.
+        Assert.Equal(30f, log.PartDamage(log.Parts.First().Id), 3);
+        Assert.Equal(0f, creation.PartDamage(creation.Parts.First().Id), 3);
         NoErrors();
     }
 
@@ -232,22 +250,86 @@ public sealed class ContentScriptTests : IDisposable
     }
 
     [Fact]
-    public void APoweredDrillBoresForwardFromItsTip()
+    public void ADrillBitesWhatItsTipTouchesOnlyWhileABearingSpinsItAtDrillingSpeed()
+    {
+        // A boulder off a rock deposit: only a drill breaks it down, and it takes a few bites.
+        var target = Target("vanilla:stone_boulder");
+        var boulder = target.Parts.First().Id;
+        var creation = Board();
+        var drill = Place(creation, "vanilla:drill", new GridCell(-1, 1, -1));
+        var centre = PartKinematics.Of(creation, drill).Position;
+        var hits = 0;
+        // Only the tip ray, straight up the axis, finds the target.
+        _f.World.Ray = (from, direction) => direction.Y > 0.99f ? Hits(target, from, ref hits) : null;
+        Steps(30);
+        // It has no input: standing still it does nothing.
+        Assert.Empty(_f.World.Casts);
+        Assert.Empty(_sound.Loops);
+
+        // Turning slower than properties.min_spin (9 rad/s) it whines and glows part way, but drills nothing.
+        Spin(creation, drill, 5f);
+        Steps(30);
+        Assert.Equal("drill_spin", Assert.Single(_sound.Loops.Values).Sound);
+        Assert.Equal(0.5f, _runtime.Readouts.Number(creation.Id, drill, "spin")!.Value, 3);
+        Assert.Empty(_f.World.Casts);
+
+        // At drilling speed (either way round), every 0.3 s it casts its tip ray and 8 flank rays, all from inside the
+        // bit, bites the target for properties.damage and shakes its own Body.
+        Spin(creation, drill, -12f);
+        Steps(37);
+        Assert.Equal(1f, _runtime.Readouts.Number(creation.Id, drill, "spin")!.Value, 3);
+        Assert.Equal(0, _f.World.Casts.Count % 9);
+        Assert.InRange(_f.World.Casts.Count, 18, 27);
+        Assert.All(_f.World.Casts, c => Assert.True(Vector3.Distance(c.From, centre) < 0.375f, $"{c.From} starts outside the drill"));
+        var tip = _f.World.Casts.First(c => c.Direction.Y > 0.99f);
+        Assert.Equal(centre.Y + 0.27f, tip.From.Y, 3);
+        Assert.InRange(hits, 2, 3);
+        Assert.Equal(25f * hits, target.PartDamage(boulder), 3);
+        Assert.Contains(_sound.Played, p => p.Sound == "drill_hit");
+        Assert.Equal(1f, Assert.Single(_sound.Loops.Values).Parameters["load"]);
+        Assert.Equal(hits, _motion.Forces.Count);
+        Assert.All(_motion.Forces, f => Assert.True(MathF.Abs(f.Y) < 1e-3f && f.Length() > 500f, $"a sideways shake ({f})"));
+
+        // Spun down, its whine stops.
+        Spin(creation, drill, 0f);
+        Steps(2);
+        Assert.Empty(_sound.Loops);
+        NoErrors();
+    }
+
+    [Fact]
+    public void ADrillBreaksARockDepositBlockThatNothingElseHurts()
+    {
+        var rock = new WorldObjectId(0, 0, 0, 0);
+        _f.World.Objects[rock] = new WorldObjectPlacement(rock, new WorldObjectDefinition
+        {
+            Id = "rock_outcrop",
+            Collider = new ShapeDefinition { Shape = PrimitiveShape.Box, Size = new Vec3(1, 1, 1), At = new Vec3(0, 0.5f, 0) },
+            Health = 100,
+            DamageFrom = [DamageKinds.Drill],
+        }, new Vector3(0, 0, -3), 0, 1);
+        var creation = Board();
+        var drill = Place(creation, "vanilla:drill", new GridCell(-1, 1, -1));
+        _f.World.Ray = (from, direction) => direction.Y > 0.99f ? new RayHit(from + direction * 0.1f, Object: rock) : null;
+        Spin(creation, drill, 12f);
+        // Four bites of 25, one every 0.3 s.
+        Steps(80);
+        Assert.True(_f.World.State.IsDestroyed(rock), $"the block broke ({_f.World.State.DamageOf(rock)} damage)");
+        Assert.Contains(_f.World.ObjectHits, h => h.Id == rock && h.Broke);
+        NoErrors();
+    }
+
+    [Fact]
+    public void ADrillLeavesItsOwnCreationAlone()
     {
         var creation = Board();
-        // A drill's base is its back: it goes on the front of a block.
-        Place(creation, "vanilla:metal_block", new GridCell(0, 1, 1));
-        var drill = Place(creation, "vanilla:drill", new GridCell(0, 1, -2));
-        var power = Place(creation, "vanilla:switch", new GridCell(3, 1, 3));
-        Link(creation, power, drill);
-        Activate(creation, power);
-        // properties.interval is 0.3 s: one bore in the first 10 steps.
+        var drill = Place(creation, "vanilla:drill", new GridCell(-1, 1, -1));
+        _f.World.Ray = (from, direction) => new RayHit(from, Creation: creation.Id, Part: creation.Parts.First().Id);
+        Spin(creation, drill, 12f);
         Steps(10);
-        var cast = Assert.Single(_f.World.Casts);
-        Assert.True(cast.Direction.Z < -0.99f, $"it bores along -Z ({cast.Direction})");
-        // Its centre is at z -0.25 m and its tip 0.375 m in front of that.
-        Assert.True(cast.From.Z is < -0.63f and > -0.66f, $"from just past its tip ({cast.From})");
-        Assert.Equal("drill_spin", Assert.Single(_sound.Loops.Values).Sound);
+        Assert.NotEmpty(_f.World.Casts);
+        Assert.Equal(0f, creation.PartDamage(creation.Parts.First().Id), 3);
+        Assert.Empty(_motion.Forces);
         NoErrors();
     }
 
@@ -362,11 +444,11 @@ public sealed class ContentScriptTests : IDisposable
         return creation;
     }
 
-    // A lone metal block far away, for things to hit.
-    private Creation Target()
+    // A lone metal block (or another part) far away, for things to hit.
+    private Creation Target(string part = "vanilla:metal_block")
     {
         var creation = new Creation(_f.World.NextCreationId(), Vanilla);
-        Place(creation, "vanilla:metal_block", GridCell.Zero);
+        Place(creation, part, GridCell.Zero);
         creation.SetAllBodyPoses(new Pose(new Vector3(30, 0, 0), Quaternion.Identity));
         _f.World.Added(creation);
         return creation;
@@ -377,6 +459,10 @@ public sealed class ContentScriptTests : IDisposable
         hits++;
         return new RayHit(from, Creation: target.Id, Part: target.Parts.First().Id);
     }
+
+    // Spins the saw's (or drill's) Body about the world's up (the blade's axis as placed) at rad/s, as a bearing would.
+    private static void Spin(Creation creation, int part, float speed) =>
+        creation.SetBodyVelocity(creation.BodyIndexOf(part), new BodyVelocity(Vector3.Zero, new Vector3(0, speed, 0)));
 
     private static int Place(Creation creation, string part, GridCell cell, GridRotation rotation = default)
     {
@@ -428,8 +514,12 @@ public sealed class ContentScriptTests : IDisposable
 
         public bool IsLive(int id) => f.World.Creations.ContainsKey(id);
 
+        public List<Vector3> Forces { get; } = [];
+
         public void ApplyForce(Creation creation, int body, Vector3 force, Vector3 torque, float? duration, int? part, Vector3? at, Vector3 ownTorque)
         {
+            if (force != Vector3.Zero)
+                Forces.Add(force);
         }
 
         public void SetJointMotor(Creation creation, JointLink joint, JointMotor motor)

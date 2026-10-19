@@ -46,6 +46,18 @@
             "range": 12
           },
           {
+            "type": "invert",
+            "children": [
+              {
+                "type": "hesitate",
+                "part": "vanilla:saw_blade,vanilla:drill",
+                "range": 4,
+                "min_speed": 9,
+                "seconds": 2.5
+              }
+            ]
+          },
+          {
             "type": "chase",
             "attack": "whip",
             "speed": 1
@@ -64,6 +76,18 @@
           },
           {
             "type": "find_crop"
+          },
+          {
+            "type": "invert",
+            "children": [
+              {
+                "type": "hesitate",
+                "part": "vanilla:saw_blade,vanilla:drill",
+                "range": 4,
+                "min_speed": 9,
+                "seconds": 2.5
+              }
+            ]
           },
           {
             "type": "chase",
