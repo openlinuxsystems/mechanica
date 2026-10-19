@@ -30,8 +30,9 @@ public sealed record BotAttack(
 /// <summary>An item a bot may drop, qualified.</summary>
 /// <param name="Item">Qualified item id.</param>
 /// <param name="Chance">Chance from 0 to 1.</param>
-/// <param name="Count">How many.</param>
-public sealed record BotDrop(string Item, float Chance, int Count);
+/// <param name="Count">How many, the least when <paramref name="CountMax"/> is more.</param>
+/// <param name="CountMax">The most: each drop is a random count from <paramref name="Count"/> to this.</param>
+public sealed record BotDrop(string Item, float Chance, int Count, int CountMax);
 
 /// <summary>A bot type that loaded cleanly, with every id qualified and every default filled in.</summary>
 /// <param name="QualifiedId">Game-wide id, <c>mod_id:bot_id</c>.</param>
@@ -251,8 +252,10 @@ public sealed class BotBook : IBotCatalog
                 sink.Error(code, $"{path}.chance", "chance must be from 0 to 1.");
             if (drop.Count is { } count && count < 1)
                 sink.Error(code, $"{path}.count", "count must be 1 or more.");
+            if (drop.CountMax is { } most && most < (drop.Count ?? 1))
+                sink.Error(code, $"{path}.count_max", $"count_max must be at least count ({drop.Count ?? 1}).");
             if (sink.ErrorCount == before)
-                drops.Add(new BotDrop(item, drop.Chance ?? 1f, drop.Count ?? 1));
+                drops.Add(new BotDrop(item, drop.Chance ?? 1f, drop.Count ?? 1, drop.CountMax ?? drop.Count ?? 1));
         }
 
         if (b.Behavior is { } tree)

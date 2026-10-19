@@ -1,0 +1,11 @@
+{
+  "id": "example_modscript",
+  "name": "Example mod script",
+  "version": "1.0.0",
+  "description": "The mod scripts cookbook's example: a mod script that welcomes new players with Trail Mix and hands everyone a snack every ten minutes, a French translation and a survival rules patch.",
+  "dependencies": [
+    { "id": "vanilla", "version": "^0.1.0" }
+  ],
+  "conflicts": [],
+  "scripts": ["scripts/welcome.lua"]
+}

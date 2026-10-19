@@ -2,6 +2,7 @@ using Godot;
 using Mechanica.Core.Data;
 using Mechanica.Core.Survival;
 using Mechanica.Game.Creations;
+using Mechanica.Game.Ui;
 
 namespace Mechanica.Game.Survival;
 
@@ -36,7 +37,7 @@ public partial class DropPile : Node3D
         AddChild(_box);
         _label = new Label3D
         {
-            // Names are the mods' own text.
+            // Names are the mods' own text, in a mod's translation when it has one.
             AutoTranslateMode = AutoTranslateModeEnum.Disabled,
             Name = "Label",
             Position = new Vector3(0, Size + LabelGap, 0),
@@ -63,7 +64,7 @@ public partial class DropPile : Node3D
         else
             ShowItem(drop.Items is [{ Count: 1 } only] ? only.Item : null, catalog, assets);
         Position = drop.Position.ToGodot();
-        _label.Text = string.Join("\n", drop.Items.Select(s => $"{catalog.FindDefinition(s.Item)?.Name ?? s.Item} x{s.Count}"));
+        _label.Text = string.Join("\n", drop.Items.Select(s => $"{Loc.Mod(catalog.FindDefinition(s.Item)?.Name ?? s.Item)} x{s.Count}"));
         var color = drop.Items.Select(s => catalog.FindDefinition(s.Item)?.Visual?.Color).FirstOrDefault(c => c is not null);
         _box.MaterialOverride = new StandardMaterial3D { AlbedoColor = color is null ? new Color(0.6f, 0.5f, 0.35f) : Color.FromHtml(color) };
     }

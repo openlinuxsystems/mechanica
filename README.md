@@ -45,11 +45,16 @@ branch (with a tag to publish, or empty to only build the zips as run artifacts)
 
 ## Playing
 
-The main menu starts a **New game** (a name, Survival or Creative, an optional seed, and whether to
-open it to the LAN), loads a saved one, or joins one. Click to capture the mouse, then: WASD to move,
-mouse to look, Space to jump, Shift to sprint, V to toggle the third-person camera, F to interact, J for
-the quest log, Esc for the menu and F1 for help. [docs/playing.md](docs/playing.md) has every key.
-Movement tuning (speeds, jump, capsule size) is data in `game/data/player.json`.
+The main menu starts a **New Game**: a world name, **Survival** or **Creative**, the difficulty (Normal or Easy,
+Survival only), friendly fire, an optional seed, whether to open it to the LAN (and on which port), and your
+character. It also continues the newest save, loads a saved world (**Load Game**) or joins one (**Join Game**).
+
+Click to capture the mouse. The default keys: WASD to move, mouse to look, Space to jump, Shift to sprint, Ctrl
+to crawl, left click to place or attack, right click to remove or aim, E to use, 1 to 0 or the mouse wheel for
+the hotbar, I (or Tab) for the inventory, X and C to zoom from third person into first person, L for the Logbook,
+M for the map, Enter to chat, H or F1 for the Handbook and Esc for the menu. Every key can be changed in Options,
+Controls; [docs/playing.md](docs/playing.md) has them all. Movement tuning (speeds, jump, capsule size) is data in
+`game/data/player.json`.
 
 ## Multiplayer
 
@@ -115,3 +120,21 @@ distance fade and loop parameters. Parts bind their sound names to events, and t
 Sounds tab edits both. The host decides world sounds and sends them to players in earshot; loops
 follow their part. Vanilla's audio is original placeholder synthesis from
 `tools/sounds/make_placeholders.py`. See [docs/sound-events.md](docs/sound-events.md).
+
+## Modding
+
+All game content is a mod (`mods/vanilla/` is packaged exactly like a third-party mod), and the mod tools are
+in-game modes that ship in every build: open them from the main menu under **Mod tools** (Part Editor, Bot
+Behavior Editor, Recipe Editor, Sound Editor, Test Sandbox and Mod Manager). Parts, items, bots and the rest
+are JSON; behaviour is sandboxed MoonSharp Lua that runs on the host.
+
+- [docs/README.md](docs/README.md): the index of every doc, in reading order for modders.
+- [docs/getting-started.md](docs/getting-started.md): make a mod and your first part.
+- [docs/first-mod.md](docs/first-mod.md): a whole mod end to end, from a part to an exported package.
+- [docs/mod-tools.md](docs/mod-tools.md): every mod tool on the menu.
+- [docs/part-data-schema.md](docs/part-data-schema.md) and [docs/lua-api.md](docs/lua-api.md): the data and
+  script references.
+- [docs/packaging-guide.md](docs/packaging-guide.md): versions, dependencies, overrides, game rules and packages.
+- `examples/mods/`: example mods for the tutorials (`example_bearing`, `example_thruster`, `example_bots`,
+  `example_items`, `example_modscript`). `tests/Mechanica.Core.Tests/ModTools/ExampleModsTests.cs` checks that
+  each loads beside vanilla without problems.

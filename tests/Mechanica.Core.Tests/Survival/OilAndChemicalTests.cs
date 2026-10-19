@@ -58,6 +58,27 @@ public class OilAndChemicalTests
     }
 
     [Fact]
+    public void ADropWithAChanceIsRolledOnItsOwn()
+    {
+        var takes = new List<int>();
+        for (var i = 0; i < 60; i++)
+        {
+            var id = WorldObjectId.ForPoi(100 + i, 0);
+            _f.World.Objects[id] = new WorldObjectPlacement(id, new WorldObjectDefinition
+            {
+                Id = "crate", Harvest = true, Drops = [new ObjectDrop { Item = Oil, Count = 2 }, new ObjectDrop { Item = Chemical, Chance = 0.5f }],
+            }, new Vector3(0, 0, -2), 0, 1);
+            _f.Ok<HarvestResult>(Me, SurvivalActions.Harvest, new { @object = id.ToString() });
+            takes.Add(_f.Pockets(Me).Count(Chemical));
+            Assert.Equal(2, _f.Pockets(Me).Count(Oil));
+            _f.Pockets(Me).Remove(Oil, 2);
+            _f.Pockets(Me).Remove(Chemical, _f.Pockets(Me).Count(Chemical));
+        }
+        Assert.InRange(takes.Count(t => t == 1), 15, 45);
+        Assert.All(takes, t => Assert.InRange(t, 0, 1));
+    }
+
+    [Fact]
     public void OnlyHarvestableObjectsInReachAreGathered()
     {
         var rock = new WorldObjectId(5, 0, 0);

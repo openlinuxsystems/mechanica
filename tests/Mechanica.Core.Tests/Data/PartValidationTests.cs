@@ -161,6 +161,23 @@ public class PartValidationTests
     }
 
     [Fact]
+    public void AHeldModelIsForItemsAndIsChecked()
+    {
+        Assert.Empty(Check(
+            """{ "id": "a", "name": "A", "category": "tool", "held": { "mesh": "meshes/a.glb", "offset": [0, 0.1, -0.05], "rotation": [0, 90, 0], "scale": 0.5 } }""",
+            mods => mods.File("m", "meshes/a.glb", "x")));
+        Assert.Contains("only items", Single(TestMods.Block(overrides: """{ "held": { "mesh": "meshes/a.glb" } }"""), "$.held",
+            mods => mods.File("m", "meshes/a.glb", "x")).Message);
+        Assert.Contains("needs a model", Single("""{ "id": "a", "name": "A", "category": "tool", "held": {} }""", "$.held").Message);
+
+        var diagnostics = Check("""
+            { "id": "a", "name": "A", "category": "tool", "mesh": "meshes/a.glb",
+              "held": { "offset": [0, 2, 0], "rotation": [0, 0, 0], "scale": 9, "spin": 1 } }
+            """, mods => mods.File("m", "meshes/a.glb", "x"));
+        Assert.Equal(["$.held.offset", "$.held.scale", "$.held.spin"], diagnostics.Select(d => d.JsonPath).Order(StringComparer.Ordinal));
+    }
+
+    [Fact]
     public void ItemsCannotHaveSockets()
     {
         var error = Single("""

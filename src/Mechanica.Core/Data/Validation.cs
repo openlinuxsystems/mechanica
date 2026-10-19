@@ -107,6 +107,7 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
         CheckAsset(part.Mesh, "$.mesh", AssetKind.Mesh, sink);
         CheckAsset(part.Icon, "$.icon", AssetKind.Texture, sink);
         CheckAsset(part.Script, "$.script", AssetKind.Script, sink);
+        CheckAsset(part.Held?.Mesh, "$.held.mesh", AssetKind.Mesh, sink);
         if (part.Visual is { } visual)
             ValidateVisual(visual, sink);
         if (part.Collision is { } collision)
@@ -452,6 +453,20 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
             if (aim.Zoom is { } zoom && !(zoom is >= 0.2f and <= 1f))
                 sink.Error(Code, "$.aim.zoom", $"zoom must be 0.2 to 1 (got {zoom}).");
             KnownKeys.WarnUnknown(aim.Extra, "$.aim", sink, typeof(AimDefinition));
+        }
+        ItemOnly(part.Held, "held");
+        if (part.Held is { } held)
+        {
+            if (held.Mesh is null && part.Mesh is null)
+                sink.Error(Code, "$.held", "held needs a model: give held.mesh, or the item a mesh.");
+            if (held.Offset is { } offset && !(Within(offset.X) && Within(offset.Y) && Within(offset.Z)))
+                sink.Error(Code, "$.held.offset", $"each part of offset must be -{HeldDefinition.MaxOffset} to {HeldDefinition.MaxOffset} m.");
+            if (held.Rotation is { } turn && !(float.IsFinite(turn.X) && float.IsFinite(turn.Y) && float.IsFinite(turn.Z)))
+                sink.Error(Code, "$.held.rotation", "rotation must be finite numbers of degrees.");
+            if (held.Scale is { } scale && !(scale > 0 && scale <= HeldDefinition.MaxScale))
+                sink.Error(Code, "$.held.scale", $"scale must be more than 0 and at most {HeldDefinition.MaxScale} (got {scale}).");
+            KnownKeys.WarnUnknown(held.Extra, "$.held", sink, typeof(HeldDefinition));
+            static bool Within(float v) => float.IsFinite(v) && Math.Abs(v) <= HeldDefinition.MaxOffset;
         }
         PartOnly(part.Soil, "soil");
         PartOnly(part.RespawnPoint == true ? true : null, "respawn_point");

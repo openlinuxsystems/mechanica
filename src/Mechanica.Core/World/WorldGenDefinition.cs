@@ -627,6 +627,9 @@ public sealed record ObjectDrop
     /// <summary>The most there may be: each time, a random count from <see cref="Count"/> to this. Omitted: always <see cref="Count"/>.</summary>
     public int? CountMax { get; init; }
 
+    /// <summary>Chance from 0 to 1 that it drops at all, rolled on its own each time (loot). Omitted: always.</summary>
+    public float? Chance { get; init; }
+
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }

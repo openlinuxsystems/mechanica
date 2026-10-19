@@ -208,6 +208,12 @@ public sealed record PartDefinition
     /// </summary>
     public AimDefinition? Aim { get; init; }
 
+    /// <summary>
+    /// How the item looks in a player's hand: a model held in the right hand, seen by every player. Items only.
+    /// Without it an item is held up with nothing drawn.
+    /// </summary>
+    public HeldDefinition? Held { get; init; }
+
     /// <summary>Makes the part a seat a player can sit in (chunk 10). Placeable parts only.</summary>
     public SeatDefinition? Seat { get; init; }
 
@@ -929,6 +935,35 @@ public sealed record AimDefinition
 
     /// <summary>True fires when right click is let go, as well as on left click while aiming.</summary>
     public bool? FireOnRelease { get; init; }
+
+    /// <summary>Keys this build does not know.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>
+/// The model a held item shows in the player's right hand (<c>held</c>). Lengths are metres and angles degrees in the
+/// hand's frame: origin in the palm, +X along the fingers' width (thumb side), +Y back up the arm, -Z out of the palm.
+/// </summary>
+public sealed record HeldDefinition
+{
+    /// <summary>Furthest <see cref="Offset"/> may move the model from the palm, per axis in m.</summary>
+    public const float MaxOffset = 0.5f;
+
+    /// <summary>Largest <see cref="Scale"/>.</summary>
+    public const float MaxScale = 4f;
+
+    /// <summary>The model, a mod path like <c>meshes/items/torch.glb</c>. Omitted means the item's own <c>mesh</c>.</summary>
+    public string? Mesh { get; init; }
+
+    /// <summary>Where the model's origin sits from the palm, in m. Default (0, 0, 0).</summary>
+    public Vec3? Offset { get; init; }
+
+    /// <summary>The model's rotation in the hand, in degrees about X, Y then Z. Default (0, 0, 0).</summary>
+    public Vec3? Rotation { get; init; }
+
+    /// <summary>Scale of the model (more than 0, at most <see cref="MaxScale"/>). Default 1.</summary>
+    public float? Scale { get; init; }
 
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]

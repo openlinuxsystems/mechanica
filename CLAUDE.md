@@ -59,7 +59,8 @@ After adding, renaming or re-documenting an action or AI endpoint method, run `t
   `docs/world-generation.md`) and `recipes/*.json` (crafting recipes; see `docs/part-data-schema.md`), `bots/*.json` (bot types:
   stats, attacks, drops, behaviour tree, optional Lua script) and `raids/raids.json` (the raid table; the
   last mod in load order wins) and `quests/*.json` (quests and dialogue; see `docs/quests.md`), `characters/*.json` (player characters and
-  skins on the shared humanoid rig; see `docs/characters.md`), plus `overrides/<other_mod>/` (full part files that
+  skins on the shared humanoid rig; see `docs/characters.md`), `lang/<code>.json` (string tables for the mod's text and the
+  game's; see `docs/translating.md`), plus `overrides/<other_mod>/` (full part files that
   replace another mod's part, and `overrides/<other_mod>/recipes/**/*.json` for its recipes; the mod later in
   load order wins). Paths in data are relative to the mod
   root (`other_mod:path` for another mod). No `res://` paths or Godot-imported formats in mod data.
@@ -82,7 +83,8 @@ After adding, renaming or re-documenting an action or AI endpoint method, run `t
   the world calls `UiInput.KeepMouse` so clicks and wheel turns over it never reach the game; cover new
   windows in `game/tests/windows`.
 - UI text goes through the string tables (`game/scripts/Ui/Loc.cs`, `docs/translating.md`): literal text on a control
-  auto-translates, text built at run time uses `Loc.T("… {0}", value)`, and player or mod text uses `Loc.Verbatim`.
+  auto-translates, text built at run time uses `Loc.T("… {0}", value)`, and player or mod text uses `Loc.Verbatim` (mods' `lang` files
+  still translate it; mod text built into other text goes through `Loc.Mod`).
   After changing UI text, re-run `res://tests/language/LanguageTest.tscn -- --collect` to regenerate `game/data/lang/en.json`.
 - Never hard-code a key. Add the action to `src/Mechanica.Core/Input/InputActions.cs` (spec §1 default) and
   match it with `GameInput.Pressed`; HUD hints use `GameInput.Label` so they follow the player's bindings.

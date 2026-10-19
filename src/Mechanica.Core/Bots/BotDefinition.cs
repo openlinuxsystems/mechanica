@@ -209,6 +209,9 @@ public sealed record BotDropDefinition
     /// <summary>How many drop when it does. Omitted means 1.</summary>
     public int? Count { get; init; }
 
+    /// <summary>The most that may drop: each time, a random count from <see cref="Count"/> to this. Omitted: always <see cref="Count"/>.</summary>
+    public int? CountMax { get; init; }
+
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }

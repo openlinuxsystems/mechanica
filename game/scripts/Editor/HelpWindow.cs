@@ -292,8 +292,22 @@ public partial class HelpWindow : ToolWindow
     {
         if (link.Contains("://"))
             OS.ShellOpen(link);
-        else if (link.Split('#')[0].EndsWith(".md", StringComparison.Ordinal))
+        else if (link.Split('#')[0] is var file && file.Contains('/'))
+            OpenOutside(file);
+        else if (file.EndsWith(".md", StringComparison.Ordinal))
             Open(link);
+    }
+
+    /// <summary>
+    /// The Handbook lists only the top-level pages, so a link into a sub-folder (<c>ai/reference.md</c>)
+    /// opens the shipped file in the system's viewer instead of a page that isn't there.
+    /// </summary>
+    private static void OpenOutside(string relative)
+    {
+        var root = Path.GetFullPath(DocsRoot);
+        var path = Path.GetFullPath(Path.Combine(root, relative));
+        if (path.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.Ordinal) && File.Exists(path))
+            OS.ShellOpen(path);
     }
 
     private string TitleOf(string file)

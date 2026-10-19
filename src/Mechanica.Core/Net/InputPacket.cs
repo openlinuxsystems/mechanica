@@ -19,7 +19,7 @@ public static class InputPacket
     /// <summary>Most inputs one packet may carry.</summary>
     public const int MaxInputs = 8;
 
-    private const int EntrySize = 4 + 4 * 4 + 1 + 4;
+    private const int EntrySize = 4 + 4 * 4 + 1 + 4 + 2;
     private const byte JumpFlag = 1;
     private const byte SprintFlag = 2;
     private const byte CrawlFlag = 4;
@@ -46,6 +46,7 @@ public static class InputPacket
             span[22] = (byte)input.Gesture;
             span[23] = input.GestureCount;
             span[24] = input.Tint;
+            BinaryPrimitives.WriteUInt16LittleEndian(span[25..], input.Held);
             span = span[EntrySize..];
         }
         return bytes;
@@ -80,7 +81,8 @@ public static class InputPacket
                     (CharacterGesture)span[22],
                     span[23],
                     (flags & GuardFlag) != 0,
-                    span[24]));
+                    span[24],
+                    BinaryPrimitives.ReadUInt16LittleEndian(span[25..])));
             span = span[EntrySize..];
         }
         return result;

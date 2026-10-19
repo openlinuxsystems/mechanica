@@ -1,0 +1,24 @@
+{
+  "id": "fizz_bomb",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "tomato",
+      "count": 1
+    },
+    {
+      "item": "gasoline",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "example_items:fizz_bomb",
+      "count": 2
+    }
+  ],
+  "time": 5,
+  "order": 2570
+}

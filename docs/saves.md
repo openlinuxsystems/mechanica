@@ -18,13 +18,17 @@ asks first.
 | `format_version` | `1` |
 | `name`, `saved_at` | The world's name and when it was written |
 | `mode` | `survival` or `creative`; the loaded world plays in it |
+| `difficulty` | `easy` or `normal`. Left out when it is normal, and missing in older saves, which load as normal |
+| `friendly_fire` | `true` when players can hurt each other. Left out when it is off, and missing in older saves (off) |
 | `seed` | World generation seed: terrain, scattered objects and POIs come back from it |
 | `time` | Seconds the world has been simulated (the scripts' `world.time()`); the clock carries on from it when the world loads, so times scripts stored, such as a soil's last growth, stay right. Missing in older saves (0) |
 | `mods`, `fingerprint` | The mods the world ran. Loading with different mods works but logs what differs |
 | `destroyed` | Trees, rocks and other world objects that were destroyed |
+| `regrow` | Destroyed world objects that will stand again (an oil geyser), each with the world time (`time`'s clock) when it comes back: `{"poi.7.2": 5400}`. Left out when there are none |
 | `creations` | Every Creation in the Creation format: parts, links, body poses and velocities, part settings, damage, container contents, crafting queues, soil (`seed`, `grown`, `water`, `stage` and `updated`, the world time growth was last worked out at), `fire`, how strongly a burning part burns (0 to 1), and `anchored`, true on a part built resting on the ground, which holds its Body still (missing in older saves, whose Creations all simulate) |
 | `scripts` | Each scripted part's Lua `state` table, by creation and part id |
-| `players` | Every player the host has seen, by profile id: name, inventory, health, respawn bed, position and facing |
+| `mod_scripts` | Each mod script's `state` table (the scripts in `mod.json` `scripts`), by qualified script path |
+| `players` | Every player the host has seen, by profile id: name, inventory, health, respawn bed, position and facing, chosen character, hotbar, map markers, and `item_scripts`, their item scripts' `state` tables by item id |
 | `quests` | The story: each started quest's progress, story flags and revealed POIs (see [Quests](quests.md)) |
 | `fires` | Fires at POI markers, `[{site, marker, strength}]` by POI index and marker index; a put-out one has strength 0 and stays out. Missing in older saves, whose POI fires are lit again (see [Fire](survival.md#fire)) |
 
@@ -35,7 +39,8 @@ Unknown keys are kept as they are, so later chunks can add their own.
 - A Creation that no longer reads (a part whose mod was removed) is skipped with a warning; the rest of
   the world loads.
 - An inventory slot that no longer fits (an unknown item, a slot past the end) is dropped with a warning.
-- A part script's saved `state` replaces the fresh one after the script starts.
+- A part script's saved `state` replaces the fresh one after the script starts. A player's item script `state`
+  is there before their item's script first runs (its setup already sees it).
 - A player who was dead when the world was saved comes back at full health at their spawn or bed.
 
 ## Player profiles

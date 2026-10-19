@@ -37,6 +37,8 @@ public sealed partial class ScriptRuntime
 
     private readonly SortedDictionary<(int Peer, string Item), Instance> _items = [];
     private readonly Dictionary<int, (string Item, int Slot)> _held = [];
+    // Saved state for item scripts a player has not started yet this session (ImportItemStates).
+    private readonly Dictionary<(int Peer, string Item), JsonObject> _savedItemStates = [];
     // Projectiles scripts launched: the item, part or mod script that hears on_hit, and its data.
     private readonly Dictionary<int, (Instance Owner, DynValue Data)> _flights = [];
     // True while on_hit runs for a landed projectile (see Reaching).
@@ -278,7 +280,11 @@ public sealed partial class ScriptRuntime
             return null;
         if (instance is null)
         {
-            instance = new Instance(-1, -1, id, EntryFor(file)) { Holder = caller.Peer, Caller = caller, Slot = slot };
+            var entry = EntryFor(file);
+            instance = new Instance(-1, -1, id, entry) { Holder = caller.Peer, Caller = caller, Slot = slot };
+            // A returning player's state from the save is there before the script's setup runs.
+            if (_savedItemStates.Remove((caller.Peer, id), out var saved))
+                instance.State = LuaValues.FromJson(entry.Context.Script, saved).Table;
             _items[(caller.Peer, id)] = instance;
             Start(instance);
         }
@@ -317,6 +323,55 @@ public sealed partial class ScriptRuntime
         return DynValue.NewTable(target);
     }
 
+    /// <summary>
+    /// The <c>state</c> tables of <paramref name="peer"/>'s item scripts by qualified item id, for saves: the scripts they
+    /// ran this session and the saved state of ones they have not used yet. Empty tables are left out.
+    /// </summary>
+    /// <exception cref="ArgumentException">A state holds something other than plain data.</exception>
+    public IReadOnlyDictionary<string, JsonObject> ExportItemStates(int peer)
+    {
+        var states = new SortedDictionary<string, JsonObject>(StringComparer.Ordinal);
+        foreach (var ((holder, item), saved) in _savedItemStates)
+        {
+            if (holder == peer)
+                states[item] = saved.DeepClone().AsObject();
+        }
+        foreach (var ((holder, item), instance) in _items)
+        {
+            if (holder == peer && instance.State is { } state && LuaValues.ToJson(DynValue.NewTable(state)) is JsonObject json && json.Count > 0)
+                states[item] = json;
+        }
+        return states;
+    }
+
+    /// <summary>
+    /// Gives <paramref name="peer"/> saved item script state (a returning player): a script they already run takes it now,
+    /// the others when they first use the item. Replaces what was waiting for that peer.
+    /// </summary>
+    public void ImportItemStates(int peer, IReadOnlyDictionary<string, JsonObject> states)
+    {
+        ForgetItemStates(peer);
+        foreach (var (item, state) in states)
+        {
+            if (_items.TryGetValue((peer, item), out var instance) && instance.Env is not null)
+            {
+                instance.State = LuaValues.FromJson(instance.File.Context.Script, state).Table;
+                instance.Env.Set("state", DynValue.NewTable(instance.State));
+            }
+            else
+            {
+                _savedItemStates[(peer, item)] = state.DeepClone().AsObject();
+            }
+        }
+    }
+
+    /// <summary>Drops the saved item script state waiting for <paramref name="peer"/> (they left; the id may come back as someone else).</summary>
+    public void ForgetItemStates(int peer)
+    {
+        foreach (var key in _savedItemStates.Keys.Where(k => k.Peer == peer).ToList())
+            _savedItemStates.Remove(key);
+    }
+
     // Players who left lose their item scripts (no hooks run: they are gone).
     private void ReconcileItems()
     {
@@ -333,6 +388,7 @@ public sealed partial class ScriptRuntime
     private void ClearItems()
     {
         _items.Clear();
+        _savedItemStates.Clear();
         _held.Clear();
         _aiming.Clear();
         _flights.Clear();

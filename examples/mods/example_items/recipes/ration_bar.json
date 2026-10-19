@@ -1,0 +1,25 @@
+{
+  "id": "ration_bar",
+  "stations": [
+    "fabricator",
+    "portable_fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "carrot",
+      "count": 2
+    },
+    {
+      "item": "potato",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "example_items:ration_bar",
+      "count": 2
+    }
+  ],
+  "time": 4,
+  "order": 2700
+}
