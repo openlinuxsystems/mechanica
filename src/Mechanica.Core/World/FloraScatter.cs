@@ -67,8 +67,9 @@ public static class FloraScatter
                 if (rules.Count == 0)
                     continue;
                 float x0 = ox + i * res, z0 = oz + j * res;
-                var normal = chunk.Normals[k];
-                var slope = MathF.Sqrt(MathF.Max(0f, 1f - normal.Y * normal.Y)) / MathF.Max(normal.Y, 1e-3f);
+                // The cell's steepest corner, so nothing grows in a cell that reaches up a cliff face.
+                var flattest = MathF.Min(MathF.Min(chunk.Normals[k].Y, chunk.Normals[k + 1].Y), MathF.Min(chunk.Normals[k + n].Y, chunk.Normals[k + n + 1].Y));
+                var slope = MathF.Sqrt(MathF.Max(0f, 1f - flattest * flattest)) / MathF.Max(flattest, 1e-3f);
                 foreach (var rule in rules)
                 {
                     if (rule.Kind != kind || slope > rule.MaxSlope)

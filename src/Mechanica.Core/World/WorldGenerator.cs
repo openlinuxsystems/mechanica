@@ -44,6 +44,9 @@ public sealed partial class WorldGenerator
     private readonly uint _warpSalt;
     private readonly uint _coastSalt;
     private readonly uint _paintSalt;
+    private readonly uint _hillSalt;
+    private readonly uint _cliffSalt;
+    private readonly (Vector2 Centre, float Radius)[] _fixedPads;
     private readonly Biome[] _inland;
     private readonly float _inlandWeight;
     private readonly List<PoiInstance> _pois = [];
@@ -84,6 +87,13 @@ public sealed partial class WorldGenerator
         _warpSalt = Noise.Salt(seed, 6);
         _coastSalt = Noise.Salt(seed, 7);
         _paintSalt = Noise.Salt(seed, 9);
+        _hillSalt = Noise.Salt(seed, 10);
+        _cliffSalt = Noise.Salt(seed, 11);
+        // The hills keep away from sites with a fixed pad height, so the pad is not a pit or a mesa.
+        _fixedPads = [.. data.Sites.Where(s => s.Definition.PadHeight is not null && s.Definition.At is [_, _])
+            .Select(s => (new Vector2(s.Definition.At![0] * worldSize, s.Definition.At[1] * worldDepth), s.Poi?.Prefab.Radius ?? 0f)),
+            .. data.Pois.Where(p => p.Prefab.Placement!.PadHeight is not null && p.Prefab.Placement.Fixed is [_, _])
+            .Select(p => (new Vector2(p.Prefab.Placement!.Fixed![0], p.Prefab.Placement.Fixed[1]), p.Prefab.Radius))];
         _inland = [.. data.Biomes.Where(b => b.Weight > 0f && b != data.CoastBiome)];
         _inlandWeight = _inland.Sum(b => b.Weight);
         BuildRegions();
@@ -400,6 +410,7 @@ public sealed partial class WorldGenerator
         public float Ridge;
         public float TerraceStep;
         public float TerraceWeight;
+        public float Hills;
         public Vector3 Color;
         public int Biome;
     }
@@ -487,7 +498,15 @@ public sealed partial class WorldGenerator
             if (distance[k] < nearest)
                 (nearest, nearestBiome) = (distance[k], biome[k]);
         }
-        var result = new BiomeSample { Biome = nearestBiome };
+        var result = new BiomeSample { Biome = nearestBiome, Hills = 1f };
+        var ramp = t.Hills?.ShoreRamp ?? 0f;
+        for (var k = 0; k < 9; k++)
+        {
+            // A flat biome (a lake) holds its neighbours down too, easing to full hills over the ramp.
+            var keep = Data.Biomes[biome[k]].Hills;
+            if (keep < 1f)
+                result.Hills = MathF.Min(result.Hills, keep + (1f - keep) * Noise.SmoothStep(0f, ramp, distance[k] - nearest));
+        }
         var total = 0f;
         for (var k = 0; k < 9; k++)
         {
@@ -527,6 +546,7 @@ public sealed partial class WorldGenerator
                 result.Relief += (coast.Relief - result.Relief) * k;
                 result.Ridge += (coast.Ridge - result.Ridge) * k;
                 result.TerraceWeight *= 1f - k;
+                result.Hills += (MathF.Min(result.Hills, coast.Hills) - result.Hills) * k;
                 result.Color += (coast.Color - result.Color) * k;
                 for (var b = 0; b < weights.Length; b++)
                     weights[b] *= 1f - k;
@@ -579,10 +599,64 @@ public sealed partial class WorldGenerator
             var terraced = t.SeaLevel + sample.TerraceStep * (floor + Noise.SmoothStep(0.6f, 1f, steps - floor));
             h += (terraced - h) * sample.TerraceWeight;
         }
+        if (t.Hills is not null || t.Cliffs is not null)
+            h += HillsAndCliffs(x, z, sample.Hills);
         if (t.CoastWidth > 0f)
             h = t.SeaFloor + (h - t.SeaFloor) * Noise.SmoothStep(0f, t.CoastWidth, EdgeDistance(x, z));
         return MathF.Min(h, RiverSurface(x, z));
     }
+
+    // The broad hills and the cliff terraces (Scrap Mechanic's two layers of relief): both lie flat at the shores, on
+    // rivers, in flat biomes and round fixed pads, and climb to full height over the shore and pad ramps.
+    private float HillsAndCliffs(float x, float z, float keep)
+    {
+        var t = _terrain;
+        var ramp = t.Hills?.ShoreRamp ?? 0f;
+        var edge = EdgeDistance(x, z);
+        keep *= Noise.SmoothStep(t.CoastWidth, t.CoastWidth + ramp, edge);
+        if (keep > 0f && RiverDistance(x, z) is var river && river < ramp)
+            keep *= Noise.SmoothStep(0f, ramp, river);
+        var padRamp = t.Hills?.PadRamp ?? 0f;
+        foreach (var (centre, radius) in _fixedPads)
+        {
+            if (keep <= 0f)
+                break;
+            var d = Vector2.Distance(new Vector2(x, z), centre);
+            if (d < radius + padRamp)
+                keep *= Noise.SmoothStep(radius, radius + padRamp, d);
+        }
+        if (keep <= 0f)
+            return 0f;
+        var h = 0f;
+        if (t.Hills is { Height: > 0f } hills)
+        {
+            var n = Noise.Fractal(x / hills.Scale, z / hills.Scale, _hillSalt, hills.Octaves, 2f, hills.Gain);
+            h += hills.Height * keep * Noise.SmoothStep(0f, 1f, 0.5f + hills.Contrast * n);
+        }
+        if (t.Cliffs is { Step: > 0f, Levels: > 0 } cliffs)
+        {
+            var inland = Noise.SmoothStep(t.CoastWidth, t.CoastWidth + cliffs.Inland, edge);
+            var scale = cliffs.Levels * keep * inland;
+            var noise = CliffNoise(x, z, cliffs);
+            var level = scale * noise;
+            // Each face takes about the same run of ground however fast the levels change: the share of a level it
+            // takes is the face's width times the levels climbed per metre, from the noise and from the ramps that
+            // fade the cliffs out by the water (a smooth step over w climbs at most 6t(1 - t)/w).
+            var noiseClimb = scale * MathF.Sqrt(Square(CliffNoise(x + 1f, z, cliffs) - CliffNoise(x - 1f, z, cliffs))
+                + Square(CliffNoise(x, z + 1f, cliffs) - CliffNoise(x, z - 1f, cliffs))) / 2f;
+            var rampClimb = cliffs.Levels * noise * (inland * 6f * keep * (1f - keep) / MathF.Max(ramp, 1f)
+                + keep * 6f * inland * (1f - inland) / MathF.Max(cliffs.Inland, 1f));
+            var face = Math.Clamp(cliffs.Face * MathF.Sqrt(noiseClimb * noiseClimb + rampClimb * rampClimb), 0.02f, 1f);
+            var floor = MathF.Floor(level);
+            h += cliffs.Step * (floor + Noise.SmoothStep(1f - face, 1f, level - floor));
+        }
+        return h;
+    }
+
+    private float CliffNoise(float x, float z, CliffsDefinition cliffs) =>
+        Math.Clamp(0.5f + cliffs.Contrast * Noise.Fractal(x / cliffs.Scale, z / cliffs.Scale, _cliffSalt, 2, 2f, 0.5f), 0f, 1f);
+
+    private static float Square(float v) => v * v;
 
     // Ridged fractal noise mapped to [-1, 1]: sharp crests where the gradient noise crosses zero.
     private static float Ridged(float x, float z, uint salt, int octaves, float lacunarity, float gain)

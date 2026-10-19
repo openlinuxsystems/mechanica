@@ -52,6 +52,43 @@ public class WorldGenTests
     }
 
     [Fact]
+    public void TheLandRollsInHillsAndCliffTerracesButLiesFlatByTheWater()
+    {
+        var gen = Vanilla.Value;
+        var land = new List<float>();
+        var cliffs = 0;
+        for (var z = -gen.WorldDepth / 2f + 600f; z < gen.WorldDepth / 2f - 600f; z += 61f)
+        {
+            for (var x = -gen.WorldSize / 2f + 600f; x < gen.WorldSize / 2f - 600f; x += 61f)
+            {
+                var h = gen.HeightAt(x, z);
+                if (h <= gen.SeaLevel)
+                    continue;
+                land.Add(h);
+                // A cliff: the ground climbs a whole step within a few metres.
+                if (MathF.Abs(gen.HeightAt(x + 6f, z) - h) > 6f && gen.BiomeAt(x, z).Id != "mountain")
+                    cliffs++;
+            }
+        }
+        land.Sort();
+        // Not a flat map: inland heights spread over tens of metres (Scrap Mechanic's hills and 8 m terraces).
+        Assert.True(land[land.Count * 9 / 10] - land[land.Count / 10] > 40f, $"heights spread {land[land.Count / 10]} to {land[land.Count * 9 / 10]}");
+        Assert.True(cliffs > 20, $"cliff faces ({cliffs})");
+        // The hills ease out by the water: a lake's bank and the shore just above the beach stay low.
+        var lake = gen.Data.Biomes.Single(b => b.Id == "lake");
+        var shore = 0;
+        for (var x = -gen.WorldSize / 2f + 400f; x < gen.WorldSize / 2f - 400f; x += 97f)
+        {
+            var z = gen.WorldDepth / 2f - gen.Data.Terrain.CoastWidth - 40f;
+            if (gen.BiomeAt(x, z).Id == "coastal" && gen.RiverDistance(x, z) > 500f)
+                Assert.InRange(gen.HeightAt(x, z), gen.Data.Terrain.SeaFloor, 30f);
+            shore++;
+        }
+        Assert.True(shore > 50);
+        Assert.Equal(0f, lake.Hills);
+    }
+
+    [Fact]
     public void ChunksAcrossTheWorldGenerate()
     {
         var gen = Vanilla.Value;
@@ -296,6 +333,11 @@ public class WorldGenTests
     [InlineData("""{ "terrain": { "resolution": 0 }, "biomes": [{ "id": "a" }] }""", "$.terrain.resolution")]
     [InlineData("""{ "terrain": { "biome_blend": 500 }, "biomes": [{ "id": "a" }] }""", "$.terrain.biome_blend")]
     [InlineData("""{ "terrain": { "sea_floor": 5, "sea_level": 0 }, "biomes": [{ "id": "a" }] }""", "$.terrain.sea_floor")]
+    [InlineData("""{ "terrain": { "hills": { "height": 40, "scale": 0 } }, "biomes": [{ "id": "a" }] }""", "$.terrain.hills.scale")]
+    [InlineData("""{ "terrain": { "hills": { "height": 40, "octaves": 12 } }, "biomes": [{ "id": "a" }] }""", "$.terrain.hills.octaves")]
+    [InlineData("""{ "terrain": { "cliffs": { "levels": 40 } }, "biomes": [{ "id": "a" }] }""", "$.terrain.cliffs.levels")]
+    [InlineData("""{ "terrain": { "cliffs": { "face": 0 } }, "biomes": [{ "id": "a" }] }""", "$.terrain.cliffs.face")]
+    [InlineData("""{ "biomes": [{ "id": "a", "hills": 2 }] }""", "$.biomes[0].hills")]
     [InlineData("""{ "biomes": [{ "id": "a", "color": "green" }] }""", "$.biomes[0].color")]
     [InlineData("""{ "biomes": [{ "id": "a", "scatter": [{ "object": "tree", "spacing": 5, "chance": 0.5 }] }] }""", "$.biomes[0].scatter[0].object")]
     [InlineData("""{ "biomes": [{ "id": "a" }], "coast_biome": "sea" }""", "$.coast_biome")]
