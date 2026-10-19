@@ -774,7 +774,7 @@
     "The recipe was not saved.": "The recipe was not saved.",
     "The save {0} could not be read.": "The save {0} could not be read.",
     "The script path '{0}' can't be used.": "The script path '{0}' can't be used.",
-    "The small map in the top right corner, with your mission goals and your own pins. M opens the full map either way.": "The small map in the top right corner, with your mission goals and your own pins. M opens the full map either way.",
+    "The small map in the bottom right corner, with your mission goals and your own pins. M opens the full map either way.": "The small map in the bottom right corner, with your mission goals and your own pins. M opens the full map either way.",
     "The world took too long to load.": "The world took too long to load.",
     "These mods need it and will stop loading: {0}": "These mods need it and will stop loading: {0}",
     "These parts do not touch": "These parts do not touch",

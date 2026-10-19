@@ -72,8 +72,8 @@ switches it to the next mode and shows it for a moment; R with the Connect Tool 
 - Aim at a part for a moment and a **tooltip** shows its name, what it is and what Use does. Parts you can
   use, sit in, open or set up add a line with their signal (on or off), how many connections they have and
   their durability.
-- **Health** is the blue bar at the top left (Survival). The minimap is in the top right corner with the quest log under it, the compass at
-  the top, the tool bar at the bottom and chat at the bottom left.
+- **Health** is the blue bar at the top left (Survival). The compass is along the top, the quest log in the top right corner, the minimap in
+  the bottom right corner, the tool bar at the bottom and chat at the bottom left.
 - A part in hand shows a **ghost** that is blue where the part fits and red where it would not (something in the way, out of
   reach, or none left in Survival). A part you place shows straight away; if the host turns it down, it fades out
   red.
@@ -224,7 +224,7 @@ remove it. Your markers are saved with the world; you can have up to 20. The map
 
 ## Map and minimap
 
-The **minimap** in the top right corner shows the land round you, north up, with you as the cyan arrow in the
+The **minimap** in the bottom right corner shows the land round you, north up, with you as the cyan arrow in the
 middle. Your current missions' goals are pulsing blue diamonds and your own pins are blue diamonds with their
 labels; one that is out of range waits on the edge in its direction. After you die, your knockout bag is a small
 blue diamond too (and a diamond on the compass) until you pick it up. Options, Interface, Show minimap turns it off.
