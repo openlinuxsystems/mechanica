@@ -31,6 +31,8 @@ namespace Mechanica.Game.Tools;
 /// Given <c>scrap_seat</c> it puts down a Scrap Driver's Seat on a slab with a gas engine, a switch and a button linked to
 /// it, sits the player in it (the enter clip, then seated), runs the engine (the rattle), shows the seated driver from
 /// the sides, saves the seat's item picture and stands up again (<c>tools/capture-scrap-seat.sh</c>).
+/// Given <c>trees</c> it finds a clear example of every tree type and captures it with the player beside it and close up,
+/// then a forest, an autumn and a burned forest wide, and a felled tree's logs (<c>tools/capture-trees.sh</c>).
 /// Given <c>wheels</c> it sets three little cars down in a meadow, one on each wheel (Scrap Wheel, Wheel, Off Road
 /// Wheel), captures them wide and close, and shows the three wheels on the hotbar (<c>tools/capture-wheels.sh</c>).
 /// </summary>
@@ -58,9 +60,10 @@ public partial class CaptureScene : Node
         var soil = args.Length > 1 && args[1] == "soil";
         var bag = args.Length > 1 && args[1] == "knockout_bag";
         var seat = args.Length > 1 && args[1] == "scrap_seat";
+        var trees = args.Length > 1 && args[1] == "trees";
         var seats = args.Length > 1 && args[1] == "seats";
         var wheels = args.Length > 1 && args[1] == "wheels";
-        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !seats && !wheels ? args[1] : "scrapper_male";
+        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats && !wheels ? args[1] : "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
         // Building the block wall needs Creative: free parts and no build reach.
         _main.Options = LaunchOptions.Offline with { Seed = 7, GameMode = blocks || soil || wheels ? Core.Survival.GameMode.Creative : LaunchOptions.Offline.GameMode };
@@ -111,6 +114,11 @@ public partial class CaptureScene : Node
         if (seat)
         {
             ScrapSeatShots();
+            return;
+        }
+        if (trees)
+        {
+            TreeShots();
             return;
         }
         if (seats)
@@ -517,6 +525,135 @@ public partial class CaptureScene : Node
         });
         Shot("rocks_12_rods", 30, () => ViewLoose(c => c.Refine is not null, 3.2f));
         Shot("rocks_13_rods_close", 30, () => ViewLoose(c => c.Refine is not null, 2.0f));
+    }
+
+    private static readonly string[] TreeTypes = ["birch_tree", "leafy_tree", "spruce_tree", "pine_tree", "autumn_leafy_tree", "burnt_tree"];
+
+    // Every tree type alone with the player beside it and close up, each kind of forest wide, and a felled tree's logs.
+    private void TreeShots()
+    {
+        Engine.TimeScale = 1.0;
+        var gen = _main.Streamer.Generator;
+        var found = new Dictionary<string, WorldObjectPlacement>();
+        Shot("trees_00_wait", 60, () =>
+        {
+            // The clearest example of each type near the start: on flat ground, with nothing else close by.
+            var start = _main.Streamer.SpawnPoint();
+            var all = gen.ObjectsIn(start.X - 3000, start.Z - 3000, start.X + 3000, start.Z + 3000).ToList();
+            var trees = all.Where(o => TreeTypes.Contains(o.Definition.Id)).ToList();
+            foreach (var id in TreeTypes)
+            {
+                var best = trees.Where(o => o.Definition.Id == id && gen.SlopeAt(o.Position.X, o.Position.Z) < 0.12f && !gen.PoisAt(o.Position.X, o.Position.Z).Any())
+                    .Select(o => (o, Room: Room(o, trees)))
+                    .Where(t => t.Room > 6f)
+                    .OrderBy(t => (new Vector3(t.o.Position.X, 0, t.o.Position.Z) - (start with { Y = 0 })).Length() - t.Room * 40f)
+                    .Select(t => t.o).FirstOrDefault();
+                if (best is not null)
+                    found[id] = best;
+                GD.Print($"[capture] {id}: {(best is null ? "none" : best.Position.ToString())}");
+            }
+        });
+        foreach (var id in TreeTypes)
+        {
+            var name = id.Replace("_tree", "");
+            Shot($"trees_00_go_{name}", 240, () => GoTo(found.GetValueOrDefault(id), new Vector3(-6f, 2f, 6f)));
+            Shot($"trees_{name}_01", 30, () => { _main.Flora.BuildAll(); TreeView(found.GetValueOrDefault(id), new Vector3(-1.6f, 0.3f, 1.25f), 0.48f, 0.0f); });
+            Shot($"trees_{name}_02_with_player", 60, () => TreeView(found.GetValueOrDefault(id), new Vector3(1.25f, 0.15f, 1.35f), 0.45f, 0.0f, player: true));
+            Shot($"trees_{name}_03_close", 30, () => TreeView(found.GetValueOrDefault(id), new Vector3(0.38f, 0.05f, 0.42f), 0.62f, 0.0f));
+        }
+        foreach (var (biome, id) in new[] { ("forest", "pine_tree"), ("autumn", "autumn_leafy_tree"), ("burned", "burnt_tree") })
+        {
+            Shot($"trees_00_go_{biome}_forest", 240, () => GoTo(found.GetValueOrDefault(id), new Vector3(-6f, 2f, 6f)));
+            Shot($"trees_{biome}_forest", 40, () =>
+            {
+                _main.Flora.BuildAll();
+                if (found.GetValueOrDefault(id) is { } tree)
+                    ViewAt(tree.Position.ToGodot(), new Vector3(-22f, 4f, 22f), 5f);
+            });
+        }
+        // Every tree in a row on open meadow (the far models in a second row behind), with the player in front.
+        var row = new List<Node3D>();
+        Shot("trees_00_go_lineup", 240, () =>
+        {
+            _meadow = default;
+            for (var r = 100f; r < 3000f && _meadow == default; r += 50f)
+            {
+                for (var a = 0f; a < Mathf.Tau && _meadow == default; a += 0.2f)
+                {
+                    var start = _main.Streamer.SpawnPoint();
+                    var (x, z) = (start.X + r * Mathf.Cos(a), start.Z + r * Mathf.Sin(a));
+                    if (gen.BiomeAt(x, z).Id == "meadow" && gen.HeightAt(x, z) > 6f && new[] { -25f, -12f, 0f, 12f, 25f }.All(d => gen.SlopeAt(x + d, z) < 0.08f && gen.SlopeAt(x + d, z - 14) < 0.08f && Mathf.Abs(gen.HeightAt(x + d, z) - gen.HeightAt(x, z)) < 1.2f)
+                        && !gen.PoisAt(x, z).Any() && !gen.ObjectsIn(x - 30, z - 18, x + 30, z + 4).Any(o => o.Definition.Mesh is not null))
+                        _meadow = new Vector3(x, gen.HeightAt(x, z), z);
+                }
+            }
+            GD.Print($"[capture] lineup at {_meadow}");
+            _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, _meadow + new Vector3(0f, 0.5f, 9f), 0f);
+            Player.ThirdPerson = true;
+            for (var i = 0; i < TreeTypes.Length; i++)
+            {
+                var definition = gen.Data.Definition.Objects!.First(o => o.Id == TreeTypes[i]);
+                foreach (var (file, back) in new[] { (gen.Data.MeshFileOf(definition), 0f), (gen.Data.LodFileOf(definition), 0.01f) })
+                {
+                    if (file is null || Creations.PartAssets.ReadGltf(file, file)?.FirstOrDefault() is not { } mesh)
+                        continue;
+                    var x = (i - (TreeTypes.Length - 1) / 2f) * 8.5f;
+                    var tree = new MeshInstance3D { Mesh = mesh.Mesh };
+                    _main.AddChild(tree);
+                    tree.GlobalPosition = Ground(_meadow + new Vector3(x, 0, 0));
+                    tree.RotationDegrees = new Vector3(0, 30f * i, 0);
+                    tree.Visible = back == 0f; // far models swap in for the second shot
+                    row.Add(tree);
+                }
+            }
+        });
+        Shot("trees_lineup", 40, () => { _main.Flora.BuildAll(); View(new Vector3(0f, 6f, 36f), new Vector3(0f, 4.5f, 0f)); });
+        Shot("trees_lineup_far_models", 20, () => { foreach (var tree in row) tree.Visible = !tree.Visible; });
+        Shot("trees_00_lineup_done", 2, () => { foreach (var tree in row) tree.QueueFree(); });
+        Shot("trees_00_go_fell", 240, () => GoTo(found.GetValueOrDefault("leafy_tree"), new Vector3(-6f, 2f, 6f)));
+        Shot("trees_felled_logs", 240, () =>
+        {
+            if (found.GetValueOrDefault("leafy_tree") is not { } tree)
+                return;
+            _main.Survival.Actions!.StrikeObject(tree.Id.ToString(), 10000, DamageKinds.Saw);
+            ViewAt(tree.Position.ToGodot(), new Vector3(-9f, 5f, 9f), 0.5f);
+        });
+    }
+
+    // How far a tree stands from its nearest neighbouring tree.
+    private static float Room(WorldObjectPlacement tree, List<WorldObjectPlacement> trees) =>
+        trees.Where(o => o != tree && MathF.Abs(o.Position.X - tree.Position.X) < 30 && MathF.Abs(o.Position.Z - tree.Position.Z) < 30)
+            .Select(o => new Vector2(o.Position.X - tree.Position.X, o.Position.Z - tree.Position.Z).Length()).DefaultIfEmpty(30f).Min();
+
+    private void GoTo(WorldObjectPlacement? at, Vector3 offset)
+    {
+        if (at is null)
+            return;
+        _meadow = at.Position.ToGodot();
+        _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, _meadow + offset, 0f);
+        Player.ThirdPerson = true;
+        _camera.MakeCurrent();
+        _camera.GlobalPosition = _meadow + new Vector3(0, 30, 0);
+    }
+
+    // Frames a tree: the camera sits `offset` tree heights away (x, z) and up (y), looking at `look` of its height.
+    private void TreeView(WorldObjectPlacement? tree, Vector3 offset, float look, float lookUp, bool player = false)
+    {
+        if (tree is null)
+            return;
+        var at = tree.Position.ToGodot();
+        var height = (tree.Definition.Fell?.Height ?? 8f) * tree.Scale * 1.15f;
+        if (player)
+        {
+            // Beside the trunk, facing the camera's side.
+            var aside = tree.Definition.Footprint * tree.Scale * 0.75f + 1f;
+            _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, at + new Vector3(aside * 0.7f, 0.3f, aside * 0.7f), Mathf.Pi * 0.25f);
+        }
+        _follow = null;
+        _camera.MakeCurrent();
+        var from = at + new Vector3(offset.X, 0, offset.Z) * height;
+        _camera.GlobalPosition = Ground(from) + Vector3.Up * (offset.Y * height + 1.2f);
+        _camera.LookAt(at + Vector3.Up * (look * height * (1f - lookUp) + 1.2f * lookUp));
     }
 
     // A Soil Bag carried, lifted and tipped out, a mound spilling out of it, and mounds in each of their four looks.
