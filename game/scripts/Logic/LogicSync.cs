@@ -88,6 +88,8 @@ public partial class LogicSync : Node
         {
             foreach (var seat in actions.Vacate(peer => Players.Players.TryGetValue(peer, out var player) && !player.Dead))
                 StandUp(seat);
+            // Buttons let go for players who stood up, died or left while holding them.
+            actions.ReleaseHolds(peer => Players.Players.TryGetValue(peer, out var player) && !player.Dead);
             if (Seats.Revision != _sentSeats)
             {
                 _sentSeats = Seats.Revision;
