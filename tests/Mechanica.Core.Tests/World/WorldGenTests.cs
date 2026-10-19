@@ -187,6 +187,55 @@ public class WorldGenTests
     }
 
     [Fact]
+    public void BiomeBordersMixAndStaySeamlessAcrossChunks()
+    {
+        var gen = Vanilla.Value;
+        // A west-east run of chunks across the first border between two inland biomes found going out from the middle.
+        var (bx, bz, west, east) = (0f, 0f, -1, -1);
+        for (var z = 0f; west < 0 && z < 4000f; z += 97f)
+        {
+            for (var x = -3000f; x < 3000f; x += 16f)
+            {
+                var (a, b) = (gen.BiomeAt(x - 120f, z), gen.BiomeAt(x + 120f, z));
+                if (a != b && a.Hills >= 1f && b.Hills >= 1f)
+                {
+                    (bx, bz, west, east) = (x, z, a.Index, b.Index);
+                    break;
+                }
+            }
+        }
+        Assert.True(west >= 0, "no border found");
+        int cx0 = (int)MathF.Floor((bx - 192f) / ChunkSize), cz = (int)MathF.Floor(bz / ChunkSize);
+        var chunks = Enumerable.Range(cx0, 7).Select(i => gen.GenerateChunk(new ChunkCoord(i, cz), ChunkSize)).ToList();
+        var n = chunks[0].Samples;
+        var layers = TerrainChunkData.GroundLayers;
+        var mixed = 0;
+        for (var c = 0; c < chunks.Count; c++)
+        {
+            var chunk = chunks[c];
+            var (ox, oz) = chunk.Coord.Origin(ChunkSize);
+            for (var k = 0; k < n * n; k++)
+            {
+                var (x, z) = (ox + k % n * chunk.Resolution, oz + k / n * chunk.Resolution);
+                if (chunk.Biomes[k] != gen.BiomeAt(x, z).Index)
+                    mixed++;
+            }
+            if (c == 0)
+                continue;
+            // The shared column of two neighbours grows the same flora biome and paints the same grounds.
+            var before = chunks[c - 1];
+            for (var j = 0; j < n; j++)
+            {
+                Assert.Equal(before.Biomes[j * n + n - 1], chunk.Biomes[j * n]);
+                Assert.Equal(before.Grounds.AsSpan((j * n + n - 1) * layers, layers).ToArray(), chunk.Grounds.AsSpan(j * n * layers, layers).ToArray());
+            }
+        }
+        // Across the border each biome's flora reaches into the other's ground in patches, not along one line.
+        Assert.True(mixed > 2000, $"only {mixed} samples grow the other biome's flora");
+        Assert.InRange(gen.BiomeShare(bx, bz, west) + gen.BiomeShare(bx, bz, east), 0.5f, 1.0001f);
+    }
+
+    [Fact]
     public void ObjectsBelongToExactlyOneChunk()
     {
         var gen = Vanilla.Value;
@@ -293,7 +342,8 @@ public class WorldGenTests
                 Assert.Same(rule.Object, o.Definition);
             else
                 Assert.Equal(PrimitiveShape.Box, o.Definition.Collider!.Shape);
-            Assert.Equal(rule.Biome, gen.BiomeAt(o.Position.X, o.Position.Z).Index);
+            // In its biome, or reaching across a border into the next.
+            Assert.True(gen.BiomeShare(o.Position.X, o.Position.Z, rule.Biome) > 0f, $"{o.Id} grows outside {gen.Data.Biomes[rule.Biome].Id}");
             Assert.Empty(gen.PoisAt(o.Position.X, o.Position.Z));
             Assert.True(gen.HeightAt(o.Position.X, o.Position.Z) > gen.SeaLevel);
         }
@@ -517,7 +567,7 @@ public class WorldGenTests
     [Theory]
     [InlineData("""{ "biomes": [] }""", "$.biomes")]
     [InlineData("""{ "terrain": { "resolution": 0 }, "biomes": [{ "id": "a" }] }""", "$.terrain.resolution")]
-    [InlineData("""{ "terrain": { "biome_blend": 500 }, "biomes": [{ "id": "a" }] }""", "$.terrain.biome_blend")]
+    [InlineData("""{ "terrain": { "biome_blend": 900 }, "biomes": [{ "id": "a" }] }""", "$.terrain.biome_blend")]
     [InlineData("""{ "terrain": { "sea_floor": 5, "sea_level": 0 }, "biomes": [{ "id": "a" }] }""", "$.terrain.sea_floor")]
     [InlineData("""{ "terrain": { "hills": { "height": 40, "scale": 0 } }, "biomes": [{ "id": "a" }] }""", "$.terrain.hills.scale")]
     [InlineData("""{ "terrain": { "hills": { "height": 40, "octaves": 12 } }, "biomes": [{ "id": "a" }] }""", "$.terrain.hills.octaves")]
