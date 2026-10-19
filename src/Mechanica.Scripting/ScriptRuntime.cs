@@ -61,6 +61,8 @@ public sealed partial class ScriptRuntime
         public bool Created { get; set; }
         public string? Fault { get; set; }
         public int Version { get; set; }
+        // The part's upgrade level its `properties` were read at.
+        public int Level { get; set; }
         public HashSet<string> Warned { get; } = new(StringComparer.Ordinal);
 
         // Sound loops the part started; they end with the part or when its script stops.
@@ -351,6 +353,8 @@ public sealed partial class ScriptRuntime
             {
                 if (!wanted.TryGetValue(instance.Part, out var want) || want.Type != instance.PartType || want.File.Key != instance.File.File.Key)
                     Destroy(instance);
+                else if (instance.Env is { } env && creation.LevelOf(instance.Part) != instance.Level)
+                    env.Set("properties", Properties(instance, creation));   // upgraded in place: its new level's values
             }
             foreach (var (part, want) in wanted.OrderBy(w => w.Key))
             {
@@ -427,6 +431,17 @@ public sealed partial class ScriptRuntime
         return false;
     }
 
+    // The part's (or held item's) properties as a Lua table, at the part's upgrade level, which it remembers.
+    private DynValue Properties(Instance instance, Creation? creation)
+    {
+        var script = instance.File.Context.Script;
+        var placed = !instance.IsItem && creation?.FindPart(instance.Part) is not null;
+        instance.Level = placed ? creation!.LevelOf(instance.Part) : 0;
+        var properties = instance.IsItem ? _catalog?.FindDefinition(instance.PartType)?.Properties
+            : placed ? creation!.DefinitionOf(instance.Part).Properties : null;
+        return properties is null ? DynValue.NewTable(new Table(script)) : LuaValues.FromJson(script, properties);
+    }
+
     // Builds the instance's environment (keeping its state), runs the script's top level, then
     // on_create or on_reload.
     private void Start(Instance instance)
@@ -441,10 +456,7 @@ public sealed partial class ScriptRuntime
         var env = context.NewEnvironment();
         instance.State ??= new Table(context.Script);
         env.Set("state", DynValue.NewTable(instance.State));
-        var creation = instance.IsItem ? null : _motion.FindCreation(instance.Creation);
-        var properties = instance.IsItem ? _catalog?.FindDefinition(instance.PartType)?.Properties
-            : creation?.FindPart(instance.Part) is not null ? creation.DefinitionOf(instance.Part).Properties : null;
-        env.Set("properties", properties is null ? DynValue.NewTable(new Table(context.Script)) : LuaValues.FromJson(context.Script, properties));
+        env.Set("properties", Properties(instance, instance.IsItem ? null : _motion.FindCreation(instance.Creation)));
         instance.Env = env;
         instance.Fault = null;
         // A fresh start hears its input again as on_power, even if it has not changed.

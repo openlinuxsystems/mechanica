@@ -1,21 +1,20 @@
 {
   "id": "electric_engine",
-  "name": "Electric Engine",
-  "description": "Turns the wheel bearings it is linked to like a gas engine, with more pull and less speed. Draws battery packs from the creation's batteries.",
+  "name": "Electric Engine 1",
+  "description": "Turns the wheel bearings it is linked to toward its front, with a seat's throttle as its input, once it is switched on. Its slider sets the speed; it pulls hard at any speed. Draws battery packs from the creation's batteries. Upgrade it in place with Component Kits (U) for more bearings, speed settings and mileage.",
   "category": "interactive",
   "mass": 9,
   "durability": 6,
   "friction": 0.5,
   "buoyancy": 0.2,
   "flammable": false,
-  "stack_size": 10,
+  "stack_size": 5,
   "sound_material": "metal",
   "size": [2, 2, 2],
-  "mesh": "meshes/electric_engine.glb",
+  "mesh": "meshes/parts/electric_engine_1.glb",
+  "icon": "textures/items/electric_engine_1_icon.png",
   "visual": {
-    "color": "#2f7fb8",
-    "roughness": 0.4,
-    "metallic": 0.6
+    "color": "#ffffff"
   },
   "sockets": [
     {
@@ -30,17 +29,18 @@
     "start": "electric_start",
     "loop": "electric_whirr",
     "stop": "battery_drain",
+    "sputter": "battery_drain",
     "rev": "electric_whirr"
   },
   "logic": {
     "inputs": 4,
-    "outputs": 10,
+    "outputs": 2,
     "kind": "power"
   },
   "settings": [
     {
       "id": "gear",
-      "name": "Power",
+      "name": "Speed",
       "type": "number",
       "min": 1,
       "max": 5,
@@ -65,8 +65,287 @@
       "id": "on",
       "name": "On",
       "type": "toggle",
-      "default": false,
-      "hide_when_linked": true
+      "default": false
+    }
+  ],
+  "upgrades": [
+    {
+      "cost": [
+        {
+          "item": "component_kit",
+          "count": 2
+        }
+      ],
+      "set": {
+        "name": "Electric Engine 2",
+        "durability": 7,
+        "mesh": "meshes/parts/electric_engine_2.glb",
+        "icon": "textures/items/electric_engine_2_icon.png",
+        "logic": {
+          "outputs": 4
+        },
+        "settings": [
+          {
+            "id": "gear",
+            "name": "Speed",
+            "type": "number",
+            "min": 1,
+            "max": 7,
+            "step": 1,
+            "default": 4,
+            "presets": [
+              {
+                "name": "Low",
+                "value": 1
+              },
+              {
+                "name": "Medium",
+                "value": 4
+              },
+              {
+                "name": "High",
+                "value": 7
+              }
+            ]
+          },
+          {
+            "id": "on",
+            "name": "On",
+            "type": "toggle",
+            "default": false
+          }
+        ],
+        "properties": {
+          "speed": 28,
+          "fuel_time": 135,
+          "gears": 7,
+          "hard_gear": 5
+        }
+      }
+    },
+    {
+      "cost": [
+        {
+          "item": "component_kit",
+          "count": 4
+        }
+      ],
+      "set": {
+        "name": "Electric Engine 3",
+        "durability": 8,
+        "mesh": "meshes/parts/electric_engine_3.glb",
+        "icon": "textures/items/electric_engine_3_icon.png",
+        "logic": {
+          "outputs": 6
+        },
+        "settings": [
+          {
+            "id": "gear",
+            "name": "Speed",
+            "type": "number",
+            "min": 1,
+            "max": 9,
+            "step": 1,
+            "default": 5,
+            "presets": [
+              {
+                "name": "Low",
+                "value": 1
+              },
+              {
+                "name": "Medium",
+                "value": 5
+              },
+              {
+                "name": "High",
+                "value": 9
+              }
+            ]
+          },
+          {
+            "id": "on",
+            "name": "On",
+            "type": "toggle",
+            "default": false
+          }
+        ],
+        "display": {
+          "effects": [
+            {
+              "readout": "sparks",
+              "kind": "sparks",
+              "offset": [
+                0.12,
+                0.248,
+                -0.1
+              ],
+              "color": "#7fc4ff"
+            }
+          ]
+        },
+        "properties": {
+          "speed": 37,
+          "fuel_time": 202.5,
+          "gears": 9,
+          "hard_gear": 7
+        }
+      }
+    },
+    {
+      "cost": [
+        {
+          "item": "component_kit",
+          "count": 6
+        }
+      ],
+      "set": {
+        "name": "Electric Engine 4",
+        "durability": 9,
+        "mesh": "meshes/parts/electric_engine_4.glb",
+        "icon": "textures/items/electric_engine_4_icon.png",
+        "logic": {
+          "outputs": 8
+        },
+        "settings": [
+          {
+            "id": "gear",
+            "name": "Speed",
+            "type": "number",
+            "min": 1,
+            "max": 11,
+            "step": 1,
+            "default": 6,
+            "presets": [
+              {
+                "name": "Low",
+                "value": 1
+              },
+              {
+                "name": "Medium",
+                "value": 6
+              },
+              {
+                "name": "High",
+                "value": 11
+              }
+            ]
+          },
+          {
+            "id": "on",
+            "name": "On",
+            "type": "toggle",
+            "default": false
+          }
+        ],
+        "display": {
+          "effects": [
+            {
+              "readout": "sparks",
+              "kind": "sparks",
+              "offset": [
+                0.12,
+                0.248,
+                -0.1
+              ],
+              "color": "#7fc4ff"
+            }
+          ]
+        },
+        "properties": {
+          "speed": 46,
+          "fuel_time": 304,
+          "gears": 11,
+          "hard_gear": 8
+        }
+      }
+    },
+    {
+      "cost": [
+        {
+          "item": "component_kit",
+          "count": 8
+        }
+      ],
+      "set": {
+        "name": "Electric Engine 5",
+        "durability": 10,
+        "mesh": "meshes/parts/electric_engine_5.glb",
+        "icon": "textures/items/electric_engine_5_icon.png",
+        "logic": {
+          "outputs": 10
+        },
+        "settings": [
+          {
+            "id": "gear",
+            "name": "Speed",
+            "type": "number",
+            "min": 1,
+            "max": 13,
+            "step": 1,
+            "default": 7,
+            "presets": [
+              {
+                "name": "Low",
+                "value": 1
+              },
+              {
+                "name": "Medium",
+                "value": 7
+              },
+              {
+                "name": "High",
+                "value": 13
+              }
+            ]
+          },
+          {
+            "id": "on",
+            "name": "On",
+            "type": "toggle",
+            "default": false
+          }
+        ],
+        "display": {
+          "effects": [
+            {
+              "readout": "sparks",
+              "kind": "sparks",
+              "offset": [
+                0.12,
+                0.248,
+                -0.1
+              ],
+              "color": "#7fc4ff"
+            },
+            {
+              "readout": "sparks",
+              "kind": "sparks",
+              "offset": [
+                -0.045,
+                0.248,
+                0.02
+              ],
+              "color": "#7fc4ff"
+            },
+            {
+              "readout": "sparks",
+              "kind": "sparks",
+              "offset": [
+                -0.248,
+                0.0,
+                0.1
+              ],
+              "color": "#7fc4ff"
+            }
+          ]
+        },
+        "properties": {
+          "speed": 57,
+          "fuel_time": 456,
+          "gears": 13,
+          "hard_gear": 10
+        }
+      }
     }
   ],
   "menu": {
@@ -96,7 +375,20 @@
     ]
   },
   "display": {
-    "status": "running"
+    "status": "running",
+    "clips": {
+      "readout": "clip",
+      "scrub": [
+        {
+          "readout": "lever",
+          "clip": "lever"
+        },
+        {
+          "readout": "heat",
+          "clip": "heat"
+        }
+      ]
+    }
   },
   "properties": {
     "speed": 20,
@@ -104,6 +396,18 @@
     "brake": 100,
     "fuel": "battery_pack",
     "fuel_time": 90,
-    "loop_parameter": "speed"
+    "loop_parameter": "speed",
+    "gears": 5,
+    "ignition": true,
+    "start_time": 0.6,
+    "false_start": 0,
+    "false_start_time": 0.5,
+    "stop_time": 0.4,
+    "gear_time": 0.3,
+    "heat_time": 0.3,
+    "uneven": 0,
+    "backfire": 0,
+    "hard_gear": 4,
+    "smoke": 0
   }
 }
