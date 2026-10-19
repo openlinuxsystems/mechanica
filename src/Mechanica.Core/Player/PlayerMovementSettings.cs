@@ -86,7 +86,7 @@ public sealed record PlayerMovementSettings
     /// <summary>Seconds a player takes to sit down in a seat or stand up beside it (UI spec §9, §10).</summary>
     public float SeatTransitionSeconds { get; init; } = 0.3f;
 
-    /// <summary>Eye height above a seated player's feet in metres, for the seat's interior camera.</summary>
+    /// <summary>Eye height above a seated player's feet in metres, for the seat's interior camera when the player has no body (it looks from the body's eyes otherwise).</summary>
     public float SeatedEyeHeight { get; init; } = 1.1f;
 
     /// <summary>How far behind the seat the external chase camera sits, in metres (Ctrl toggles it).</summary>

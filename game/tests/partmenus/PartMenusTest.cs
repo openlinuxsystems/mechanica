@@ -108,6 +108,14 @@ public partial class PartMenusTest : StagedTest
             var look = -_camera.Camera.GlobalBasis.Z;
             var front = -_client.Main.Logic.SeatTransform(Board, _seat)!.Value.Feet.Basis.Z;
             Check(new Vector2(look.X, look.Z).Normalized().Dot(new Vector2(front.X, front.Z).Normalized()) > 0.9f, $"the camera faces the seat's front ({look} vs {front})");
+            // Inside, the view is from the seated body's own eyes: the body is drawn without its head.
+            if (Check(Me.Character is CharacterModel, "the player has a body") && Me.Character is CharacterModel body)
+            {
+                Check(body.Visible && Me.HeadHidden, $"the seated body is drawn without its head (visible {body.Visible}, head hidden {Me.HeadHidden})");
+                var head = body.Skeleton.GetBoneGlobalPose(body.Skeleton.FindBone("head")).Basis.Scale;
+                Check(head.X < 0.01f, $"the head is shrunk away ({head})");
+                Check(body.Eyes is { } eyes && _camera.Camera.GlobalPosition.DistanceTo(eyes) < 0.05f, $"the camera is at the eyes ({_camera.Camera.GlobalPosition} vs {body.Eyes})");
+            }
             return true;
         });
         Add("Ctrl switches to the chase camera behind and above", frame =>
@@ -120,6 +128,7 @@ public partial class PartMenusTest : StagedTest
             if (frame < 60)
                 return false;
             Check(_camera.Chase, "the chase view is on");
+            Check(!Me.HeadHidden, "the chase view shows the head");
             var offset = _camera.Camera.GlobalPosition - _seatAt;
             Check(offset.Y > 1f && new Vector2(offset.X, offset.Z).Length() > 3f, $"it sits behind and above ({offset})");
             _camera.Toggle();
@@ -150,6 +159,7 @@ public partial class PartMenusTest : StagedTest
             if (_client.Main.Logic.Seats.SeatOf(_client.Peer) is not null || (Me.InTransition && frame < 200) || frame < 30)
                 return false;
             Check(!_camera.Active && Me.Camera.Current, "the player's camera is back");
+            Check(!Me.HeadHidden, "the head is back");
             var away = Me.GlobalPosition - _seatAt;
             Check(new Vector2(away.X, away.Z).Length() is > 0.3f and < 1.5f, $"the player stands beside the seat ({away})");
             Check(!_hotbar.Showing, "the seat's bar is gone");
