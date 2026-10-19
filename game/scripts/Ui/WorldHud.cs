@@ -125,7 +125,7 @@ public partial class WorldHud : CanvasLayer
         var (hex, alpha) = Crosshair.Look(State, _time, HudRoot.Settings.CrosshairPulseHz);
         _crosshair.Colour = UiTokens.From(hex, alpha);
 
-        var hit = Build.Settings is { } settings ? HandTool.PartHit(HandTool.Cast(player!, settings.Reach)) : null;
+        var hit = Build.Settings is { } settings ? HandTool.PartHit(HandTool.CastShown(player!, settings.Reach)) : null;
         var aimed = hit is var (node, part) ? (node.Creation.Id, part) : ((int, int)?)null;
         // A tool's own tooltip (a Connect Tool node or line) takes the part's place.
         var tip = Tool()?.HoverTip;

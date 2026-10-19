@@ -215,6 +215,55 @@ public partial class LogicTests
     }
 
     [Fact]
+    public void LinkListsAreKeptUntilTheLinksChange()
+    {
+        var c = Row(Source, Gate, Gate);
+        Assert.True(c.TryLink(1, 2, out _));
+        var links = c.Links;
+        Assert.Same(links, c.Links);
+        Assert.Same(c.LinksTo(2), c.LinksTo(2));
+        Assert.Empty(c.LinksFrom(3));
+        Assert.True(c.TryLink(2, 3, out _));
+        Assert.True(c.TryLink(1, 3, out _));
+        Assert.NotSame(links, c.Links);
+        Assert.Single(links);
+        Assert.Equal([new LogicLink(1, 2), new LogicLink(1, 3), new LogicLink(2, 3)], c.Links);
+        Assert.Equal([2, 3], c.LinksFrom(1));
+        Assert.Equal([1, 2], c.LinksTo(3));
+        c.Unlink(1, 3);
+        Assert.Equal([2], c.LinksFrom(1));
+        Assert.Equal([2], c.LinksTo(3));
+        // Removing a part takes its links with it.
+        c.RemovePart(2, () => 99);
+        Assert.Empty(c.Links);
+        Assert.Empty(c.LinksFrom(1));
+        Assert.Empty(c.LinksTo(3));
+    }
+
+    [Fact]
+    public void ACreationThatGoesAwayLosesItsInputsAndOnesWithoutLogicCostNothing()
+    {
+        var c = Row(Source, Lamp);
+        c.TryLink(1, 2, out _);
+        var plain = new Creation(2, Catalog);
+        Assert.True(plain.TryPlacePart(Block, new GridCell(0, 4, 0), default, out _, out _));
+        var bus = new SignalBus();
+        bus.SetOutput(c.Id, 1, 1);
+        Assert.Equal([(c.Id, 2, 1f)], bus.Step([plain, c]));
+        Assert.Empty(bus.Step([c, plain]));
+        // Gone for a step (parked, say), then back: its input is reported again.
+        Assert.Empty(bus.Step([plain]));
+        Assert.Equal(0f, bus.Input(c.Id, 2));
+        Assert.Equal([(c.Id, 2, 1f)], bus.Step([c]));
+        bus.ResetInput(c.Id, 2);
+        Assert.Equal([(c.Id, 2, 1f)], bus.Step([c]));
+        // The source going away brings it back to 0, once.
+        bus.Forget(c.Id, 1);
+        Assert.Equal([(c.Id, 2, 0f)], bus.Step([c]));
+        Assert.Empty(bus.Step([c]));
+    }
+
+    [Fact]
     public void ASeatHoldsOnePlayerAndAPlayerOneSeat()
     {
         var seats = new SeatRegistry();

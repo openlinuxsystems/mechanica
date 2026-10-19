@@ -28,6 +28,9 @@ public partial class TerrainChunk : Node3D
     // Models world objects are drawn with (rock outcrop cubes), by file; null when one failed to load.
     private static readonly Dictionary<string, Creations.PartMesh?> ObjectMeshes = [];
 
+    /// <summary>Forgets the world objects' models, so a new world reads its mods' files afresh.</summary>
+    public static void ClearModels() => ObjectMeshes.Clear();
+
     private readonly Dictionary<ulong, WorldObjectId> _objectShapes = [];
     // Model-drawn objects close up, for shaking: their MultiMesh, instance and resting transform, and their ground point.
     private readonly Dictionary<WorldObjectId, (MultiMesh Multi, int Index, Transform3D Resting, Vector3 Foot)> _drawn = [];

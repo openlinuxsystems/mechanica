@@ -416,7 +416,9 @@ public sealed class MotionActions(MotionSettings settings, IMotionWorld world)
     }
 
     private static JointLink? FindJoint(Creation creation, int part, ConnectionType type) =>
-        creation.Joints.FirstOrDefault(j => j.Connection.Type == type && j.Connection.A == part);
+        creation.JointOf(part) is { } joint && joint.Connection.Type == type
+            ? joint
+            : creation.Joints.FirstOrDefault(j => j.Connection.Type == type && j.Connection.A == part);
 
     private static string? CheckVector(Vec3 v, string name, float max, string unit) =>
         !float.IsFinite(v.X) || !float.IsFinite(v.Y) || !float.IsFinite(v.Z)

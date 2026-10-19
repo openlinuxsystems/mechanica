@@ -404,6 +404,22 @@ public sealed class ScriptRuntimeTests : IDisposable
     }
 
     [Fact]
+    public void OnlyPartsThatDefineAHookListenForIt()
+    {
+        _rig.Write("scripts/thruster.lua", "function on_activate() function on_collision() end end");
+        var creation = _rig.AddCreation(1, Thruster, Thruster);
+        var ids = creation.Parts.Where(p => p.Part == Thruster).Select(p => p.Id).ToList();
+        _rig.Runtime.Update(0.1f);
+        var listening = new List<(int Creation, int Part)>();
+        _rig.Runtime.Defining(ScriptRuntime.Hooks.OnCollision, listening);
+        Assert.Empty(listening);
+        // A script may start listening at any time.
+        _rig.Runtime.Invoke(1, ids[1], ScriptRuntime.Hooks.OnActivate);
+        _rig.Runtime.Defining(ScriptRuntime.Hooks.OnCollision, listening);
+        Assert.Equal([(1, ids[1])], listening);
+    }
+
+    [Fact]
     public void StateRoundTripsThroughJson()
     {
         _rig.Write("scripts/thruster.lua", "function get_outputs() return state.list[2], state.nested.flag end function on_activate() state.f = print end");

@@ -18,6 +18,11 @@ namespace Mechanica.Game.Survival;
 /// </summary>
 public partial class SoilLooks : Node3D
 {
+    // Set on every soil mesh every frame: one StringName each rather than one per call.
+    private static readonly StringName WetName = SoilMaterial.Wet;
+    private static readonly StringName DryingName = SoilMaterial.Drying;
+    private static readonly StringName FlashName = SoilMaterial.Flash;
+
     /// <summary>Seconds a change of wetness takes to blend in.</summary>
     public const float BlendTime = 1.5f;
 
@@ -137,9 +142,9 @@ public partial class SoilLooks : Node3D
                 if (material is BaseMaterial3D source)
                     mesh.SetSurfaceOverrideMaterial(i, SoilMaterial.For(source));
             }
-            mesh.SetInstanceShaderParameter(SoilMaterial.Wet, look.Wet);
-            mesh.SetInstanceShaderParameter(SoilMaterial.Drying, look.Drying);
-            mesh.SetInstanceShaderParameter(SoilMaterial.Flash, look.Flash);
+            mesh.SetInstanceShaderParameter(WetName, look.Wet);
+            mesh.SetInstanceShaderParameter(DryingName, look.Drying);
+            mesh.SetInstanceShaderParameter(FlashName, look.Flash);
         }
     }
 

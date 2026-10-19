@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Mechanica.Core.Data;
 
@@ -30,7 +31,13 @@ public static class PartSettings
     }
 
     /// <summary>The value a part starts with (see <see cref="SettingDefinition.Default"/>).</summary>
-    public static JsonElement DefaultOf(SettingDefinition setting) => setting.Default ?? setting.Type switch
+    public static JsonElement DefaultOf(SettingDefinition setting) =>
+        setting.Default ?? Defaults.GetValue(setting, s => new StrongBox<JsonElement>(MadeDefault(s))).Value;
+
+    // Scripts read settings every step; a definition's made-up default is serialized once.
+    private static readonly ConditionalWeakTable<SettingDefinition, StrongBox<JsonElement>> Defaults = new();
+
+    private static JsonElement MadeDefault(SettingDefinition setting) => setting.Type switch
     {
         SettingType.Number => Element(setting.Min ?? 0f),
         SettingType.Choice => Element(setting.Options?.FirstOrDefault() ?? ""),

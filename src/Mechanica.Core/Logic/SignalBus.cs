@@ -13,6 +13,12 @@ public sealed class SignalBus
 {
     private readonly Dictionary<(int Creation, int Part), float> _outputs = [];
     private readonly Dictionary<(int Creation, int Part), float> _inputs = [];
+    // The parts of each Creation with a non-zero input, so a step only visits Creations with logic.
+    private readonly Dictionary<int, HashSet<int>> _given = [];
+    // Step's scratch, kept between steps.
+    private readonly Dictionary<int, float> _sums = [];
+    private readonly List<int> _parts = [];
+    private readonly HashSet<int> _present = [];
 
     /// <summary>A part's output now (0 when it has set none).</summary>
     public float Output(int creation, int part) => _outputs.GetValueOrDefault((creation, part));
@@ -44,47 +50,80 @@ public sealed class SignalBus
     public IReadOnlyList<(int Creation, int Part, float Input)> Step(IEnumerable<Creation> creations)
     {
         var changed = new List<(int, int, float)>();
-        var present = new HashSet<int>();
+        _present.Clear();
         foreach (var creation in creations.OrderBy(c => c.Id))
         {
-            present.Add(creation.Id);
-            var sums = new SortedDictionary<int, float>();
+            _present.Add(creation.Id);
+            var given = _given.GetValueOrDefault(creation.Id);
+            // Most Creations have no logic at all: nothing to sum and nothing to send back to 0.
+            if (creation.Links.Count == 0 && given is null)
+                continue;
+            _sums.Clear();
             foreach (var link in creation.Links)
-                sums[link.To] = sums.GetValueOrDefault(link.To) + Output(creation.Id, link.From);
-            foreach (var (part, _) in _inputs.Where(kv => kv.Key.Creation == creation.Id).Select(kv => (kv.Key.Part, kv.Value)).ToList())
-                sums.TryAdd(part, 0f);
-            foreach (var (part, sum) in sums)
+                _sums[link.To] = _sums.GetValueOrDefault(link.To) + Output(creation.Id, link.From);
+            if (given is not null)
             {
+                foreach (var part in given)
+                    _sums.TryAdd(part, 0f);
+            }
+            _parts.Clear();
+            _parts.AddRange(_sums.Keys);
+            _parts.Sort();
+            foreach (var part in _parts)
+            {
+                var sum = _sums[part];
                 var key = (creation.Id, part);
                 if (_inputs.GetValueOrDefault(key) == sum)
                     continue;
                 if (sum == 0f)
-                    _inputs.Remove(key);
+                    RemoveInput(key);
                 else
-                    _inputs[key] = sum;
+                    SetInput(key, sum);
                 if (creation.FindPart(part) is not null)
                     changed.Add((creation.Id, part, sum));
             }
         }
-        foreach (var key in _inputs.Keys.Where(k => !present.Contains(k.Creation)).ToList())
-            _inputs.Remove(key);
+        foreach (var creation in _given.Keys.Where(c => !_present.Contains(c)).ToList())
+        {
+            foreach (var part in _given[creation])
+                _inputs.Remove((creation, part));
+            _given.Remove(creation);
+        }
         return changed;
+    }
+
+    private void SetInput((int Creation, int Part) key, float value)
+    {
+        _inputs[key] = value;
+        if (!_given.TryGetValue(key.Creation, out var parts))
+            _given[key.Creation] = parts = [];
+        parts.Add(key.Part);
+    }
+
+    private void RemoveInput((int Creation, int Part) key)
+    {
+        if (!_inputs.Remove(key) || !_given.TryGetValue(key.Creation, out var parts))
+            return;
+        parts.Remove(key.Part);
+        if (parts.Count == 0)
+            _given.Remove(key.Creation);
     }
 
     /// <summary>Forgets a part's output and input (it was removed, or its script stopped).</summary>
     public void Forget(int creation, int part)
     {
         _outputs.Remove((creation, part));
-        _inputs.Remove((creation, part));
+        RemoveInput((creation, part));
     }
 
     /// <summary>Forgets the input a part was last given, so the next <see cref="Step"/> reports it again (its script restarted).</summary>
-    public void ResetInput(int creation, int part) => _inputs.Remove((creation, part));
+    public void ResetInput(int creation, int part) => RemoveInput((creation, part));
 
     /// <summary>Forgets everything.</summary>
     public void Clear()
     {
         _outputs.Clear();
         _inputs.Clear();
+        _given.Clear();
     }
 }

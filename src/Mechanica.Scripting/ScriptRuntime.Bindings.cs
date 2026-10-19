@@ -341,7 +341,7 @@ public sealed partial class ScriptRuntime
     private DynValue Joint(Script script, Func<Vector3, DynValue> vec, Instance instance, int part)
     {
         if (_motion.FindCreation(instance.Creation) is not { } creation
-            || creation.Joints.FirstOrDefault(j => j.Connection.A == part) is not { } link
+            || creation.JointOf(part) is not { } link
             || !creation.TryGetJointFrame(link.Connection, out var frame))
             return DynValue.Nil;
         var table = new Table(script);
@@ -362,7 +362,9 @@ public sealed partial class ScriptRuntime
     // A refused action: (false, reason) to the script, and a warning the first time each reason appears.
     private DynValue Refused(Instance instance, string reason)
     {
-        if (instance.Warned.Add(reason))
+        // Numbers (forces, distances) change from call to call; warn once per kind of refusal, or a script refused
+        // every step would post a warning, and keep its text, every step.
+        if (instance.Warned.Add(new string([.. reason.Where(c => !char.IsAsciiDigit(c))])))
             Post(ScriptMessageKind.Warning, instance.File.File.Key, instance.IsItem ? null : instance.Creation, instance.IsItem ? null : instance.Part, reason);
         return DynValue.NewTuple(DynValue.False, DynValue.NewString(reason));
     }

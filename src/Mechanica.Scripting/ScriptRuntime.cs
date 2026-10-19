@@ -33,6 +33,8 @@ public sealed partial class ScriptRuntime
     private readonly Dictionary<string, LuaContext> _contexts = new(StringComparer.Ordinal);
     private readonly Dictionary<string, FileEntry> _files = new(StringComparer.Ordinal);
     private readonly SortedDictionary<(int Creation, int Part), Instance> _instances = [];
+    // The step's instances, copied because a hook can add or remove parts; reused so a step allocates no list.
+    private readonly List<Instance> _stepping = [];
     private readonly Dictionary<int, int> _revisions = [];
     private readonly Dictionary<string, ScriptFile?> _scriptOfType = new(StringComparer.Ordinal);
     private readonly Queue<ScriptMessage> _messages = new();
@@ -199,6 +201,20 @@ public sealed partial class ScriptRuntime
     public IReadOnlyList<ScriptInstanceInfo> Instances =>
         [.. _instances.Values.Select(i => new ScriptInstanceInfo(i.Creation, i.Part, i.PartType, i.File.File.Key, i.Fault, i.Version))];
 
+    /// <summary>
+    /// Fills <paramref name="into"/> with the running part scripts that define <paramref name="hook"/> as a function
+    /// now, by creation then part (the host only reports collisions for parts that listen for them).
+    /// </summary>
+    public void Defining(string hook, List<(int Creation, int Part)> into)
+    {
+        into.Clear();
+        foreach (var instance in _instances.Values)
+        {
+            if (instance.Fault is null && instance.Env?.RawGet(hook) is { Type: DataType.Function })
+                into.Add((instance.Creation, instance.Part));
+        }
+    }
+
     /// <summary>Qualified paths of the scripts in use.</summary>
     public IReadOnlyList<string> Scripts => [.. _files.Keys.Order(StringComparer.Ordinal)];
 
@@ -232,12 +248,15 @@ public sealed partial class ScriptRuntime
         ReconcileItems();
         DeliverSignals();
         var arg = DynValue.NewNumber(dt);
-        foreach (var instance in _instances.Values.ToList())
+        _stepping.Clear();
+        _stepping.AddRange(_instances.Values);
+        foreach (var instance in _stepping)
         {
             if (instance.Fault is null && _motion.IsLive(instance.Creation))
                 CallHook(instance, Hooks.OnUpdate, arg);
         }
         CollectOutputs();
+        _stepping.Clear();
     }
 
     /// <summary>

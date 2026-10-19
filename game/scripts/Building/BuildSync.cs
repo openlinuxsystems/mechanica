@@ -173,7 +173,7 @@ public partial class BuildSync : Node, IToolWorld, IPartCatalog
         var size = (definition.Size ?? GridSize.One).Metres.ToGodot() * Settings!.ClearanceScale;
         var transform = pose.ToTransform()
             * new Transform3D(rotation.ToBasis(), PartGeometry.CentreMetres(definition, cell, rotation).ToGodot());
-        return Overlap(new BoxShape3D { Size = size }, transform, ignoreCreations, ignoreLiftOf);
+        return Overlap(Box(size), transform, ignoreCreations, ignoreLiftOf);
     }
 
     /// <inheritdoc/>
@@ -210,7 +210,7 @@ public partial class BuildSync : Node, IToolWorld, IPartCatalog
         var size = (definition.Size ?? GridSize.One).Metres.ToGodot() + Vector3.One * (2 * Settings!.AnchorMargin);
         var transform = pose.ToTransform()
             * new Transform3D(rotation.ToBasis(), PartGeometry.CentreMetres(definition, cell, rotation).ToGodot());
-        var query = new PhysicsShapeQueryParameters3D { Shape = new BoxShape3D { Size = size }, Transform = transform, CollideWithBodies = true };
+        var query = new PhysicsShapeQueryParameters3D { Shape = Box(size), Transform = transform, CollideWithBodies = true };
         var exclude = new Godot.Collections.Array<Rid>();
         foreach (var body in target is null ? [] : Creations.NodeOf(target.Id)?.Bodies ?? [])
             exclude.Add(body.GetRid());
@@ -231,7 +231,18 @@ public partial class BuildSync : Node, IToolWorld, IPartCatalog
         var riders = _lifts.TryGetValue(lift.Owner, out var shown)
             ? Players.Players.Values.Where(p => shown.Carries(p.GlobalPosition)).Select(p => p.GetRid())
             : [];
-        return Overlap(new BoxShape3D { Size = size }, transform, ignoreCreations, lift.Owner, riders);
+        return Overlap(Box(size), transform, ignoreCreations, lift.Owner, riders);
+    }
+
+    // One box for every clearance query: queries run at once, and a new shape per query (every aim tick) only goes
+    // when its wrapper is collected.
+    private readonly BoxShape3D _box = new();
+
+    private BoxShape3D Box(Vector3 size)
+    {
+        if (_box.Size != size)
+            _box.Size = size;
+        return _box;
     }
 
     // What overlaps a shape, apart from the given Creations' bodies and Lift (and any other bodies), as a reason; null

@@ -99,8 +99,26 @@ public static partial class Loc
             if (GodotObject.IsInstanceValid(control))
                 apply(control);
         }
-        Settings.GameSettings.Changed += Refresh;
-        control.TreeExited += () => Settings.GameSettings.Changed -= Refresh;
+        // Follows the settings while in the tree, and catches up on entering it again.
+        var following = false;
+        void Follow()
+        {
+            if (!following)
+                Settings.GameSettings.Changed += Refresh;
+            following = true;
+        }
+        control.TreeEntered += () =>
+        {
+            Follow();
+            apply(control);
+        };
+        control.TreeExiting += () =>
+        {
+            Settings.GameSettings.Changed -= Refresh;
+            following = false;
+        };
+        if (control.IsInsideTree())
+            Follow();
         return control;
     }
 

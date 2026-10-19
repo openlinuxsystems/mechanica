@@ -125,12 +125,12 @@ public partial class RefineEffects : Node3D
     private void Burst(PlayerController player, CharacterModel model)
     {
         var reach = Survival.Settings?.Reach ?? 7.5f;
-        var node = HandTool.Cast(player, reach, brush: true) is { } hit && TerrainChunk.ObjectHit(hit.Collider, hit.Shape) is { } id
+        var node = HandTool.CastShown(player, reach, brush: true) is { } hit && TerrainChunk.ObjectHit(hit.Collider, hit.Shape) is { } id
             && Survival.FindObject(id) is { Definition.Refine: true } found
             ? (found, hit.Point)
             : ((WorldObjectPlacement, Vector3)?)null;
         // Or a loose part that refines (a rod): chips of its own material.
-        var rod = node is null && HandTool.Cast(player, reach) is { } partHit && HandTool.PartHit(partHit) is { } aimed
+        var rod = node is null && HandTool.CastShown(player, reach) is { } partHit && HandTool.PartHit(partHit) is { } aimed
             && aimed.Node.Creation.DefinitionOf(aimed.Part) is { Loose: true, Refine.Count: > 0 } refinable
             ? (refinable, partHit.Point)
             : ((Core.Data.PartDefinition, Vector3)?)null;
