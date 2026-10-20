@@ -240,9 +240,11 @@ def _setup_render(samples, size, transparent):
 
 
 def render_view(objects, path, view, ortho=None, target=(0, 0, 0), size=900, samples=64, lens=None, distance=6.0,
-                ground=True, light_scale=1.0, bg=(0.93, 0.93, 0.94), clip_start=0.01):
-    """A review render: the objects on a pale studio floor, three soft lights, from ``view``."""
+                ground=True, light_scale=1.0, bg=(0.93, 0.93, 0.94), clip_start=0.01, fov=None, aspect=1.0):
+    """A review render: the objects on a pale studio floor, three soft lights, from ``view``. ``fov`` (vertical, degrees)
+    and ``aspect`` frame it like the game's camera."""
     sc = _setup_render(samples, size, False)
+    sc.render.resolution_x = int(size * aspect)
     keep = set(objects)
     hidden = [o for o in sc.objects if o not in keep and not o.hide_render and o.type in ("MESH", "CURVE")]
     for o in hidden:
@@ -280,6 +282,9 @@ def render_view(objects, path, view, ortho=None, target=(0, 0, 0), size=900, sam
     if ortho:
         cam.type = "ORTHO"
         cam.ortho_scale = ortho
+    elif fov:
+        cam.sensor_fit = "VERTICAL"
+        cam.angle_y = math.radians(fov)
     else:
         cam.lens = lens or 50
     cam.clip_start = clip_start

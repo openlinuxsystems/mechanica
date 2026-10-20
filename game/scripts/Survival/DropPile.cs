@@ -19,6 +19,9 @@ public partial class DropPile : Node3D
     public const double TossSeconds = 0.45;
 
     private const float Size = 0.3f;
+    // A single item's own model smaller than this across (a seed packet) is scaled up to it, so it can be seen and
+    // picked up in the grass.
+    private const float ItemSize = 0.3f;
     private const float LabelGap = 0.12f;
     // How far above the higher end the arc's middle rises, in metres.
     private const float TossLift = 0.5f;
@@ -109,7 +112,7 @@ public partial class DropPile : Node3D
     }
 
     // The item's own model standing on the ground in place of the crate, or the crate when it has none.
-    private void ShowItem(string? item, IPartCatalog catalog, PartAssets? assets) => ShowModel(item, () =>
+    private void ShowItem(string? item, IPartCatalog catalog, PartAssets? assets) => ShowModel(item, minSize: ItemSize, make: () =>
     {
         if (item is null || assets is null || catalog.FindDefinition(item) is not { Mesh: not null } definition
             || assets.ModelFor(Identifiers.Qualify(item), definition) is not { IsPlaceholder: false, Meshes.Count: > 0 } model)
@@ -121,7 +124,7 @@ public partial class DropPile : Node3D
     });
 
     // Puts the model `make` builds (once per key) on the ground in place of the crate, or the crate when it makes none.
-    private void ShowModel(string? key, Func<Node3D?> make)
+    private void ShowModel(string? key, Func<Node3D?> make, float minSize = 0f)
     {
         if (key == _modelKey)
             return;
@@ -135,6 +138,13 @@ public partial class DropPile : Node3D
             // Stand it on the ground, whatever its origin.
             var bounds = _model.FindChildren("*", nameof(MeshInstance3D), owned: false).OfType<MeshInstance3D>()
                 .Select(m => RelativeTo(m, _model) * m.GetAabb()).Aggregate((a, b) => a.Merge(b));
+            var across = bounds.Size[(int)bounds.GetLongestAxisIndex()];
+            if (across > 0f && across < minSize)
+            {
+                var scale = minSize / across;
+                _model.Scale = Vector3.One * scale;
+                bounds = new Aabb(bounds.Position * scale, bounds.Size * scale);
+            }
             _model.Position = new Vector3(-bounds.GetCenter().X, -bounds.Position.Y, -bounds.GetCenter().Z);
             _label.Position = new Vector3(0, bounds.Size.Y + LabelGap, 0);
         }

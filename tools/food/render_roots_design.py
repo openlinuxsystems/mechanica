@@ -190,7 +190,136 @@ def harvest(out, size=480):
         rtd.gif(folder, out / f"{crop}_harvest.gif", 12)
 
 
-SECTIONS = {"produce": produce, "packets": packets, "plants": plants, "growth": growth, "harvest": harvest}
+# Held in the palm (the shared hold_food pose) and eaten with the shared two-bite clip. The mouth meets the palm about
+# (d -0.026, w -0.01, n +0.059) from the grip, so each crop lies with its bitten end there: the carrot across the palm,
+# tip past the little-finger edge and fronds out past the thumb; the potato with its bitten end toward the wrist.
+HOLD = {"carrot": dict(axes=("-w", "d"), at=(0.004, carrot.L / 2 - 0.05, 0.012)),
+        "potato": dict(axes=("-d", "w"), at=(0.02, 0.0, 0.012))}
+CRUMBS = {"carrot": carrot.CORTEX, "potato": potato.FLESH_LIGHT}
+
+
+def hold_matrix(bc, crop):
+    """Rest-pose placement of the crop's root (lying, base at z = 0) in the right palm."""
+    d, w, n = (Vector(v) for v in bc.hand_frame("r"))
+    frame = {"d": d, "w": w, "n": n, "-d": -d, "-w": -w}
+    x, y = (frame[a] for a in HOLD[crop]["axes"])
+    z = n
+    y = z.cross(x)              # keep it right-handed whatever the second axis says
+    a, b, c = HOLD[crop]["at"]
+    origin = Vector(bc.grip_point("r")) + d * a + w * b + n * c
+    m = Matrix((x, y, z)).transposed().to_4x4()
+    m.translation = origin
+    return m
+
+
+def eat(out):
+    import build_characters as bc
+    import eat_poses as ep
+
+    # first person as the game frames it: the eye at FP_EYE along FP_LOOK, 75 degrees high, 16:9, only forearms drawn
+    look = Vector(bc.FP_LOOK)
+    views = {"3q": dict(view=(0.9, -1.4, 0.25), ortho=0.75, target=(-0.1, -0.15, 1.38)),
+             "fp": dict(view=tuple(-look), target=tuple(Vector(bc.FP_EYE) + look), distance=1.0, ground=False,
+                        clip_start=0.05, fov=75, aspect=16 / 9)}
+    keys = [("hold", None, 0.0), ("raise", ep.clip_eat_food, 0.22), ("bite", ep.clip_eat_food, 0.3),
+            ("second bite", ep.clip_eat_food, 0.52), ("pull away", ep.clip_eat_food, 0.62), ("chew", ep.clip_eat_food, 0.95)]
+    for crop, mod in CROPS.items():
+        fl.reset()
+        bpy.ops.import_scene.gltf(filepath=str(bc.OUT_DIR / "scrapper_male.glb"))
+        sc = bpy.context.scene
+        arm = next(o for o in sc.objects if o.type == "ARMATURE")
+        for pb in arm.pose.bones:
+            pb.rotation_mode = "QUATERNION"
+        body = [o for o in sc.objects if o.type == "MESH" and "forearm_r" in o.vertex_groups]
+        for o in sc.objects:
+            if o.type == "MESH" and o not in body:
+                o.hide_render = True
+        states = [mod.build(f"S{k}", bites=k, location=(5 + k, 0, 0)) for k in range(3)]
+        place = hold_matrix(bc, crop)
+        lying = [_lying(s_) for s_ in states]
+        crumb_mat = fl.material(crop + "_crumb", CRUMBS[crop], rough=0.5)
+
+        def pose(fn, t):
+            base = bc.clip_idle(0.0)
+            base.update(fn(t))
+            bc.apply_pose(arm, bc.build_pose(base))
+            bpy.context.view_layer.update()
+
+        def show(state):
+            for k, s_ in enumerate(states):
+                hide(fl.tree(s_), k != state)
+            if state is None:
+                return None
+            pb = arm.pose.bones["hand_r"]
+            rest = arm.matrix_world @ pb.bone.matrix_local
+            posed = arm.matrix_world @ pb.matrix
+            s_ = states[state]
+            s_.matrix_world = posed @ rest.inverted() @ place @ lying[state]
+            bpy.context.view_layer.update()
+            return s_
+
+        def crumbs(amount, seed):
+            made = []
+            if amount <= 0:
+                return made
+            rnd = random.Random(seed)
+            pb = arm.pose.bones["hand_r"]
+            c = (arm.matrix_world @ pb.matrix) @ (arm.matrix_world @ pb.bone.matrix_local).inverted() \
+                @ (Vector(bc.grip_point("r")) + Vector(bc.hand_frame("r")[2]) * 0.06)
+            for k in range(7):
+                bm = bmesh.new()
+                bmesh.ops.create_icosphere(bm, subdivisions=1, radius=rnd.uniform(0.002, 0.0035))
+                off = Vector((rnd.uniform(-0.03, 0.03), rnd.uniform(-0.05, -0.015), rnd.uniform(-0.03, 0.01))) * amount
+                bmesh.ops.translate(bm, verts=bm.verts, vec=c + off)
+                made.append(fl.from_bm("Crumb", bm, [crumb_mat], smooth=False))
+            return made
+
+        def state_at(t):
+            m = ep.EAT_MARKS
+            return 0 if t < m["bite1"] + 0.02 else 1 if t < m["bite2"] + 0.02 else 2 if t < m["gone"] else None
+
+        for vname, kw in views.items():
+            for o in body:
+                for mm in [mm for mm in o.modifiers if mm.name == "fp"]:
+                    o.modifiers.remove(mm)
+                if vname == "fp":
+                    _forearms_only(o)
+            files = []
+            for label, fn, t in keys:
+                hold = ep.clip_hold_food_fp if vname == "fp" else ep.clip_hold_food
+                pose(fn or hold, t)
+                food = show(state_at(t) if fn else 0)
+                cc = crumbs(1.0 if label in ("bite", "second bite") else 0, len(label))
+                f = out / f"{crop}_eat_{vname}_{label.replace(' ', '_')}.png"
+                fl.render_view(body + (fl.tree(food) if food else []) + cc, f, kw["view"], ortho=kw.get("ortho"),
+                               target=kw["target"], size=600, samples=24, lens=kw.get("lens"),
+                               distance=kw.get("distance", 6.0), ground=kw.get("ground", True),
+                               clip_start=kw.get("clip_start", 0.01), fov=kw.get("fov"), aspect=kw.get("aspect", 1.0))
+                for o in cc:
+                    bpy.data.objects.remove(o)
+                files.append((f, f"{label}  ({t:.2f} s)" if fn else "holding"))
+            fl.sheet([f for f, _ in files], [l for _, l in files], out / f"sheet_{crop}_3_eat_{vname}.png", 3,
+                     f"{crop.upper()}  -  eating, " + ("third person" if vname == "3q" else "first person"))
+
+
+def _forearms_only(o):
+    """Masks the character down to its forearms and hands, all the game draws in first person."""
+    keep = o.vertex_groups.get("fp") or o.vertex_groups.new(name="fp")
+    idx = {o.vertex_groups[n].index for n in o.vertex_groups.keys() if n.split("_")[0] in ("forearm", "hand", "fingers", "thumb")}
+    for v in o.data.vertices:
+        if sum(g.weight for g in v.groups if g.group in idx) > 0.5:
+            keep.add([v.index], 1.0, "REPLACE")
+    o.modifiers.new("fp", "MASK").vertex_group = "fp"
+
+
+def _lying(root):
+    """The crop root's own lying pose (rotation and lift from ``build``) without its build location."""
+    m = root.matrix_basis.copy()
+    m.translation.x = m.translation.x - round(m.translation.x)    # builds sit at whole-metre x to keep states apart
+    return m
+
+
+SECTIONS = {"produce": produce, "packets": packets, "plants": plants, "growth": growth, "harvest": harvest, "eat": eat}
 
 
 def main(argv):

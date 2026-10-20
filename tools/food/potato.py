@@ -82,22 +82,28 @@ def build(name="Potato", bites=0, parent=None, location=(0, 0, 0), m=None, scale
 BITES = ((0.05, -0.012, 0.042, 0.0), (0.042, 0.012, 0.044, 0.3))   # where each bite goes (x, y, z) and how it turns
 
 
+def _bite_axis(k):
+    """Bite ``k``'s centre and the direction it goes in."""
+    x, y, z, _ = BITES[k]
+    where = Vector((x, y, z))
+    out = (where - Vector((0, 0, SIZE[2] / 2))).normalized()
+    return where + out * 0.012, out
+
+
 def bite(body, k, m):
     """A mouth-sized hollow into the end of the potato, showing pale, wet flesh."""
-    x, y, z, turn = BITES[k]
-    where = Vector((x, y, z))
-    centre = Vector((0, 0, SIZE[2] / 2))
-    out = (where - centre).normalized()
-    c0 = where + out * 0.012
+    turn = BITES[k][3]
+    c0, out = _bite_axis(k)
     bm = bmesh.new()
     bmesh.ops.create_uvsphere(bm, u_segments=24, v_segments=16, radius=1)
     rot = out.to_track_quat("Z", "Y").to_matrix().to_4x4() @ Matrix.Rotation(turn, 4, "Z")
     bmesh.ops.transform(bm, verts=bm.verts, matrix=Matrix.Translation(c0) @ rot @ Matrix.Diagonal((0.025, 0.018, 0.03, 1)))
     light, rim, edge = (fl.lin(c)[:3] for c in (FLESH_LIGHT, FLESH_RIM, FLESH_EDGE))
 
+    axes = [_bite_axis(j) for j in range(k + 1)]     # every bite so far: the cut recolours all the flesh
+
     def color_of(co):
-        q = co - c0
-        r = (q - out * q.dot(out)).length
+        r = min(((co - c) - o * (co - c).dot(o)).length for c, o in axes)
         return fl.mix(fl.mix(light, rim, fl.smoothstep(0.006, 0.018, r)), edge, fl.smoothstep(0.021, 0.026, r))
 
     fl.cut(body, bm, m["flesh"], color_of)

@@ -49,24 +49,6 @@ def clip_eat_food(t):
 EAT_MARKS = {"bite1": 0.3, "bite2": 0.52, "gone": 0.86}
 
 
-FOOD_GRIP_FP = np.array([-0.15, -0.4, 1.42])      # first person: the hand up in the lower right of the view
-
-
-def clip_hold_food_fp(t, T=2.0):
-    s = clip_hold_food(t, T)
-    ph = 2 * math.pi * t / T
-    s["arm_r"] = food_arm(FOOD_GRIP_FP + np.array([0, 0, 0.004 * math.sin(ph)]))
-    return s
-
-
-def clip_eat_food_fp(t):
-    """First person: the same eat, starting from the first-person hold."""
-    h = clip_hold_food_fp(0.0)
-    s = clip_eat_food(t)
-    if t < 0.22:                      # blend out of the first-person hold
-        k = t / 0.22
-        return bc.oneshot([(0.0, h), (1.0, clip_eat_food(0.22))], k)
-    if t > 1.12:
-        k = (t - 1.12) / 0.28
-        return bc.oneshot([(0.0, clip_eat_food(1.12)), (1.0, h)], k)
-    return s
+# First person: the clips as built (posed for the first-person camera, torso stooped so only the forearm shows).
+clip_hold_food_fp = bc.clip_hold_food_fp
+clip_eat_food_fp = bc.clip_eat_fp
