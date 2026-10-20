@@ -582,7 +582,7 @@ public sealed class InventoryActions(IPartCatalog catalog, RecipeBook recipes, I
     public (int Tab, string Name) SortKey(string item)
     {
         var definition = catalog.FindDefinition(item);
-        var tab = InventoryTabs.Of(definition?.Category, HotbarTools.IsTool(item));
+        var tab = InventoryTabs.Of(definition, HotbarTools.IsTool(item));
         return (tab is { } t ? (int)t : int.MaxValue, definition?.Name ?? item);
     }
 

@@ -25,7 +25,7 @@ public static class RecipeBrowser
     public static IReadOnlyList<Recipe> Filter(IEnumerable<Recipe> recipes, string? query, InventoryTab tab, IPartCatalog catalog)
     {
         return Ordered(recipes
-            .Where(r => tab == InventoryTab.All || r.Outputs.Count > 0 && InventoryTabs.Of(catalog.FindDefinition(r.Outputs[0].Item)?.Category) == tab)
+            .Where(r => tab == InventoryTab.All || r.Outputs.Count > 0 && InventoryTabs.Of(catalog.FindDefinition(r.Outputs[0].Item), HotbarTools.IsTool(r.Outputs[0].Item)) == tab)
             .Where(r => ItemSearch.Matches(query, Text(r, catalog))));
     }
 

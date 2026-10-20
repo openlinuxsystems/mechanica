@@ -3,6 +3,7 @@
   "name": "Popper",
   "description": "Throw it and it pops, hurting everything close by.",
   "category": "weapon",
+  "tab": "consumable",
   "mass": 0.3,
   "stack_size": 10,
   "visual": {

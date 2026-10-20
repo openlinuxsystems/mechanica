@@ -269,7 +269,7 @@ public partial class InventoryScreen
 
     // The dot of the tab an item is under, for its tile.
     private Color? DotOf(string item) =>
-        UiTokens.CategoryDot(InventoryTabs.Of(Catalog.FindDefinition(item)?.Category, HotbarTools.IsTool(item)));
+        UiTokens.CategoryDot(InventoryTabs.Of(Catalog.FindDefinition(item), HotbarTools.IsTool(item)));
 
     private static readonly Dictionary<InventoryTab, Texture2D?> TabDots = [];
 
