@@ -90,7 +90,8 @@ public partial class CaptureScene : Node
         var roads = args.Length > 1 && args[1] == "roads";
         var moves = args.Length > 1 && args[1] == "animations";
         var crash = args.Length > 1 && args[1] == "crash_site";
-        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
+        var flashes = args.Length > 1 && args[1] == "flashes";
+        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash && !flashes ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
         if (debugCar)
             Main.MenuCharacter = "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
@@ -215,6 +216,11 @@ public partial class CaptureScene : Node
         if (crash)
         {
             CrashSiteShots();
+            return;
+        }
+        if (flashes)
+        {
+            FlashShots();
             return;
         }
         if (roads)
@@ -813,6 +819,35 @@ public partial class CaptureScene : Node
             Shot($"roads_{k}_above", 30, () => { _main.Flora.BuildAll(); ViewAt(at, down * 0.5f + Vector3.Up * 70f, 0f); });
             Shot($"roads_{k}_wide", 30, () => ViewAt(at, down.Rotated(Vector3.Up, 0.5f) * 38f + Vector3.Up * 16f, 0f));
             Shot($"roads_{k}_driver", 30, () => ViewAt(at, down * 30f + Vector3.Up * 2.2f, 1f));
+        }
+    }
+
+    // A walk across chunk borders, a frame every 3 m, looking ahead over the distant ground from 30 m up: the frames
+    // show whether the sky flashes through the ground as chunks load ahead and unload behind.
+    private void FlashShots()
+    {
+        Engine.TimeScale = 1.0;
+        var start = Vector3.Zero;
+        var ahead = new Vector3(1f, 0f, 0.35f).Normalized();
+        Shot("flashes_00_wait", 60, () => { });
+        Shot("flashes_00_go", 300, () =>
+        {
+            start = _main.LocalPlayer!.GlobalPosition;
+            GameSettings.Apply(GameSettings.Current with { Graphics = GameSettings.Current.Graphics with { Grass = FoliageLevel.Off, GroundCover = FoliageLevel.Off, Bushes = FoliageLevel.Off } });
+        });
+        for (var k = 0; k < 160; k++)
+        {
+            var step = 3f * k;
+            Shot($"flashes_{k:000}", 1, () =>
+            {
+                var at = start + ahead * step;
+                _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, Ground(at) + Vector3.Up * 1f, 0f);
+                _follow = null;
+                _camera.MakeCurrent();
+                _camera.Fov = 70;
+                _camera.GlobalPosition = Ground(at) + Vector3.Up * 30f;
+                _camera.LookAt(_camera.GlobalPosition + ahead * 10f + Vector3.Down * 0.8f);
+            });
         }
     }
 

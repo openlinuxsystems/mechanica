@@ -64,11 +64,24 @@ public static class DisplayApplier
                 env.GlowEnabled = _graphics.Effects >= Quality.Medium;
                 env.SsaoEnabled = _graphics.Effects >= Quality.High;
                 env.SsilEnabled = _graphics.Effects >= Quality.Ultra;
-                // Fog takes the sky's colour and closes in at the view distance, so scenery fades out
-                // instead of ending at an edge.
+                // Fog closes in at the view distance, so scenery fades out instead of ending at an edge. It takes the
+                // sky's horizon colour exactly: ground past the fog is the colour of the sky behind it, so the far
+                // chunks coming and going as the player moves (and the camera's far plane) never flash the sky.
+                // A sky with no single horizon colour falls back to the sky's own (blurred) colours.
                 env.FogEnabled = true;
                 env.FogMode = Godot.Environment.FogModeEnum.Depth;
-                env.FogAerialPerspective = 1f;
+                if (env.Sky?.SkyMaterial is ProceduralSkyMaterial sky)
+                {
+                    env.FogAerialPerspective = 0f;
+                    env.FogLightColor = sky.SkyHorizonColor;
+                    env.FogLightEnergy = sky.SkyEnergyMultiplier * sky.EnergyMultiplier;
+                    env.FogSunScatter = 0f;
+                    env.FogSkyAffect = 0f;
+                }
+                else
+                {
+                    env.FogAerialPerspective = 1f;
+                }
                 env.FogDensity = 1f;
                 env.FogDepthBegin = _graphics.ViewDistance * 0.55f;
                 env.FogDepthEnd = _graphics.ViewDistance;
