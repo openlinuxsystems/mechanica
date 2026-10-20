@@ -787,6 +787,13 @@ public partial class PartEditorScreen : Control
                 _collisionGrid.AddNumber("Radius", c.Radius, 0.001, 64, PositionStep / 2, v => SetCollision("Set collision radius", x => x with { Radius = (float?)v }), suffix: "m");
             if (c.Shape is CollisionShape.Cylinder or CollisionShape.Capsule)
                 _collisionGrid.AddNumber("Height", c.Height, 0.001, 64, PositionStep, v => SetCollision("Set collision height", x => x with { Height = (float?)v }), suffix: "m");
+            if (c.Shape is CollisionShape.Sphere or CollisionShape.Cylinder)
+            {
+                // Optional: off means edges are hard corners.
+                var climb = _collisionGrid.AddNumber("Climb", c.Climb, 0, 64, PositionStep,
+                    v => SetCollision("Set climb", x => x with { Climb = v is null or <= 0 ? null : (float?)v }), optional: true, fallback: MechanicaInfo.GridSize, suffix: "m");
+                climb.TooltipText = "Wheels: the step height it drives up as if the edge were a ramp (one block is 0.25 m)";
+            }
             if (c.Shape == CollisionShape.Convex)
                 AddAssetField(_collisionGrid, "Mesh", c.Mesh, AssetKind.Mesh, v => SetCollision("Set collision mesh", x => x with { Mesh = v }));
             _collisionGrid.AddVector("Offset (m)", c.Offset ?? Vec3.Zero, PositionStep,
