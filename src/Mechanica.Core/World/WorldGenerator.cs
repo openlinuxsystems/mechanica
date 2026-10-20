@@ -43,6 +43,7 @@ public sealed partial class WorldGenerator
     private readonly uint _biomeSalt;
     private readonly uint _poiSalt;
     private readonly uint _scatterSalt;
+    private readonly uint _clusterSalt;
     private readonly uint _warpSalt;
     private readonly uint _coastSalt;
     private readonly uint _paintSalt;
@@ -96,6 +97,7 @@ public sealed partial class WorldGenerator
         _hillSalt = Noise.Salt(seed, 10);
         _cliffSalt = Noise.Salt(seed, 11);
         _edgeSalt = Noise.Salt(seed, 13);
+        _clusterSalt = Noise.Salt(seed, 101);
         // A cell two or more away is at least 0.19 cell sizes further than the nearest point, one three or more away
         // at least 1.19: look one cell out while every blend and ramp fits inside the first, two cells out otherwise.
         var widest = MathF.Max(_terrain.BiomeBlend, _terrain.Hills?.ShoreRamp ?? 0f);
@@ -479,6 +481,9 @@ public sealed partial class WorldGenerator
     {
         if (!InWorld(spot.X, spot.Y))
             return false;
+        // Patches first: they turn most of a clustered rule's spots away for the price of one noise sample.
+        if (rule.Cluster is { } cluster && !InCluster(rule, cluster, spot))
+            return false;
         // Across a border a biome's objects thin out with its share of the ground, in groves rather than one by one.
         if (BiomeShare(spot.X, spot.Y, rule.Biome) <= EdgeRoll(spot.X, spot.Y, _edgeSalt ^ (uint)rule.Index, GroveSize))
             return false;
@@ -501,6 +506,25 @@ public sealed partial class WorldGenerator
             }
         }
         return true;
+    }
+
+    // Whether a clustered rule keeps a spot: always inside its layer's patches, and only Outside of the time elsewhere.
+    private bool InCluster(Scatter rule, ClusterDefinition cluster, Vector2 spot)
+    {
+        var layer = cluster.Layer is { } name ? Noise.Hash(name) : 0xC105u ^ (uint)rule.Index * 0x9E3779B1u;
+        if (ClusterRoll(spot.X, spot.Y, _clusterSalt ^ layer, cluster.Scale) < cluster.Cover)
+            return true;
+        return cluster.Outside > 0f
+            && Noise.Unit(Noise.Hash(_clusterSalt ^ (uint)rule.Index, (int)MathF.Floor(spot.X * 8f), (int)MathF.Floor(spot.Y * 8f), 7)) < cluster.Outside;
+    }
+
+    // A roll spread roughly evenly over 0..1 that changes slowly across the ground, so the spots under a cover form solid
+    // patches the size of the scale; a little dice per spot frays their edges.
+    private static float ClusterRoll(float x, float z, uint salt, float size)
+    {
+        var smooth = 1f / (1f + MathF.Exp(-8f * Noise.Fractal(x / size, z / size, salt, 2, 2.1f, 0.5f)));
+        var dice = Noise.Unit(Noise.Hash(Noise.Mix(salt), (int)MathF.Floor(x * 4f), (int)MathF.Floor(z * 4f)));
+        return 0.88f * smooth + 0.12f * dice;
     }
 
     // Whether a spot stands high above the ground round it (a cliff top, a ledge): rarer finds sit where they take a climb.

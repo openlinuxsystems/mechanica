@@ -48,6 +48,8 @@ namespace Mechanica.Game.Tools;
 /// Given <c>engine_menu</c> it opens the menus of a row of engines in Survival (<c>tools/capture-engine-menu.sh</c>).
 /// Given <c>roads</c> it captures the road junctions nearest the world's centre from above, wide and from a driver's height
 /// (<c>tools/capture-roads.sh</c>).
+/// Given <c>survey</c> it drops the player at a dozen random spots across the biomes of seed 1 and looks round each at eye
+/// height and from 60 m up, to judge how full the land between places looks (<c>tools/capture-survey.sh</c>).
 /// Given <c>workshop</c> it shows the Workshop nearest the crash site (the story's first) outside, inside and at its
 /// Fabricator (<c>tools/capture-workshop.sh</c>).
 /// Given <c>opening</c> it plays the opening cinematic from the spawn and saves stills through it
@@ -99,17 +101,17 @@ public partial class CaptureScene : Node
         var engineMenu = args.Length > 1 && args[1] == "engine_menu";
         var flashes = args.Length > 1 && args[1] == "flashes";
         var opening = args.Length > 1 && args[1] == "opening";
-        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash && !engineMenu && !flashes && !opening && !workshop ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
+        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash && !engineMenu && !flashes && !opening && !workshop && args[1] != "survey" ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
         if (debugCar)
             Main.MenuCharacter = "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
         // Building the block wall needs Creative: free parts and no build reach.
-        _main.Options = LaunchOptions.Offline with { Seed = 7, GameMode = blocks || soil || wheels || portable || liftCapture ? Core.Survival.GameMode.Creative : LaunchOptions.Offline.GameMode };
+        _main.Options = LaunchOptions.Offline with { Seed = args.Length > 1 && args[1] == "survey" ? 1 : 7, GameMode = blocks || soil || wheels || portable || liftCapture ? Core.Survival.GameMode.Creative : LaunchOptions.Offline.GameMode };
         // The button shots show the HUD (the creation hotbar), which only a main reading the devices builds.
         _main.ReadDeviceInput = icons || wheels || button || engineMenu;
         _main.DebugCar = debugCar;
         AddChild(_main);
-        _camera = new Camera3D { Fov = 40 };
+        _camera = new Camera3D { Fov = args.Length > 1 && args[1] == "survey" ? 70 : 40 };
         AddChild(_camera);
         if (lift)
         {
@@ -244,6 +246,11 @@ public partial class CaptureScene : Node
         if (opening)
         {
             OpeningShots();
+            return;
+        }
+        if (args.Length > 1 && args[1] == "survey")
+        {
+            SurveyShots();
             return;
         }
         if (roads)
@@ -818,6 +825,40 @@ public partial class CaptureScene : Node
     }
 
     private Vector3 _away;
+
+    // A dozen random spots across the biomes (the same ones every run): three looks round at eye height and one from above.
+    private void SurveyShots()
+    {
+        Engine.TimeScale = 1.0;
+        var gen = _main.Streamer.Generator;
+        Shot("survey_00_wait", 60, () => { });
+        var rng = new Random(11);
+        var want = new Dictionary<string, int> { ["meadow"] = 3, ["field"] = 3, ["forest"] = 2, ["desert"] = 2, ["autumn_forest"] = 1, ["burned_forest"] = 1 };
+        var k = 0;
+        for (var tries = 0; tries < 4000 && want.Values.Sum() > 0; tries++)
+        {
+            var x = (float)(rng.NextDouble() - 0.5) * 10000f;
+            var z = (float)(rng.NextDouble() - 0.5) * 7400f;
+            var b = gen.BiomeAt(x, z).Id;
+            if (!want.TryGetValue(b, out var n) || n == 0 || gen.HeightAt(x, z) < 2f)
+                continue;
+            want[b] = n - 1;
+            var at = new Vector3(x, gen.HeightAt(x, z), z);
+            var i = k++;
+            var name = $"survey_{i:00}_{b}";
+            Shot($"survey_00_{i}_go", 300, () =>
+            {
+                GD.Print($"[capture] {name} at {at}");
+                _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, at + Vector3.Up * 2f, 0f);
+            });
+            for (var d = 0; d < 3; d++)
+            {
+                var dir = Vector3.Forward.Rotated(Vector3.Up, d * 2.09f);
+                Shot($"{name}_eye{d}", 30, () => { _follow = null; _camera.MakeCurrent(); _camera.GlobalPosition = at + Vector3.Up * 1.7f; _camera.LookAt(at + dir * 100f + Vector3.Up * 1.7f); });
+            }
+            Shot($"{name}_high", 30, () => { _follow = null; _camera.MakeCurrent(); _camera.GlobalPosition = at + Vector3.Up * 60f; _camera.LookAt(at + Vector3.Forward * 150f); });
+        }
+    }
 
     // The road junctions nearest the world's centre: from above and from a driver's height down each arm.
     private void RoadShots()
