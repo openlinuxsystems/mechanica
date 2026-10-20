@@ -66,6 +66,9 @@ public sealed record BotDefinition
     /// <summary>Where it lives in the wild: the host spawns it near players there. Omitted means it only comes in raids and as a guard.</summary>
     public BotWildDefinition? Wild { get; init; }
 
+    /// <summary>How players tame it by feeding it. Omitted means it cannot be tamed.</summary>
+    public BotTameDefinition? Tame { get; init; }
+
     /// <summary>Its animated model. Omitted means the placeholder capsule in <see cref="Color"/>.</summary>
     public BotModelDefinition? Model { get; init; }
 
@@ -97,6 +100,20 @@ public sealed record BotDefinition
     public JsonObject? Properties { get; init; }
 
     /// <summary>Keys this build does not know. Kept so a round-trip never loses data.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>How players tame a bot: they feed it one of its foods, and enough feeds keep it (a domesticated animal).</summary>
+public sealed record BotTameDefinition
+{
+    /// <summary>Items it eats from a player's hand (item ids or <c>mod_id:item_id</c>).</summary>
+    public List<string>? Foods { get; init; }
+
+    /// <summary>How many feeds tame it (default 3).</summary>
+    public int? Feeds { get; init; }
+
+    /// <summary>Unknown keys (warned about).</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
 }

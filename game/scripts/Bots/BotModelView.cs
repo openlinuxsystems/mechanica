@@ -172,7 +172,11 @@ public partial class BotModelView : Node3D
             }
             return;
         }
-        if (view.Health < before.Health)
+        if (view.Kept && !before.Kept)
+            PlayOneShot("happy");
+        else if (view.Fed > before.Fed)
+            PlayOneShot("eat");
+        else if (view.Health < before.Health)
             PlayOneShot("hit");
         else if (view.Engaged && !before.Engaged)
             PlayOneShot("alert");

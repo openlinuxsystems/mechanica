@@ -2,14 +2,14 @@
 
 <!-- Generated from mechanica.describe by tools/ai/gen-docs.sh. Do not edit by hand. -->
 
-Protocol version 2. 171 methods: 63 actions (change the world), 29 queries (only read it) and 79 endpoint methods. Every one is a JSON-RPC method of the same name whose `params` are the named arguments below (snake_case). `describe.json` beside this file is the same data as JSON Schemas, ready to become an AI's tool list. Scopes: `observe` reads, `play` acts as a player, `admin` is for debug powers ([ai-endpoint.md](../ai-endpoint.md#scopes)).
+Protocol version 2. 172 methods: 64 actions (change the world), 29 queries (only read it) and 79 endpoint methods. Every one is a JSON-RPC method of the same name whose `params` are the named arguments below (snake_case). `describe.json` beside this file is the same data as JSON Schemas, ready to become an AI's tool list. Scopes: `observe` reads, `play` acts as a player, `admin` is for debug powers ([ai-endpoint.md](../ai-endpoint.md#scopes)).
 
 ## Contents
 
 - [Endpoint built-ins (mechanica.*)](#endpoint-built-ins-mechanica) (12)
 - [Agent players](#agent-players) (2)
 - [Seeing the world and the catalog](#seeing-the-world-and-the-catalog) (15)
-- [Bots and raids](#bots-and-raids) (9)
+- [Bots and raids](#bots-and-raids) (10)
 - [Building](#building) (15)
 - [Characters](#characters) (1)
 - [Chat](#chat) (1)
@@ -356,6 +356,17 @@ Taking a bot out of the world. Arguments of the actions that name one bot (Despa
 | Param | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|
 | `bot` | integer | yes |  | The bot's id. |
+
+### `FeedBot`
+
+*action, play scope*
+
+A player feeding a bot one of its foods, which tames it in the end. Arguments of FeedBot.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `bot` | integer | yes |  | The bot. |
+| `item` | string | yes |  | The food, from the player's inventory (an item id or mod_id:item_id). |
 
 ### `GetBot`
 

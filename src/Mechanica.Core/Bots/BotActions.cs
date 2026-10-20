@@ -81,6 +81,9 @@ public sealed class BotState
     /// </summary>
     public bool Kept { get; internal set; }
 
+    /// <summary>Feeds towards taming it so far (<see cref="BotActions.FeedBot"/>).</summary>
+    public int Fed { get; internal set; }
+
     /// <summary>Whether it is fighting (see <see cref="BotActions.Engage"/>).</summary>
     public bool Engaged { get; internal set; }
 
@@ -104,7 +107,7 @@ public sealed class BotState
         LastUse.TryGetValue(attack.Id, out var last) ? (float)Math.Max(0, last + attack.Interval - now) : 0f;
 
     /// <summary>The view clients are sent.</summary>
-    public BotView View => new(Id, Type.QualifiedId, Position.ToVec3(), Yaw, Health, Type.Health, Dead, Raid, Engaged, Swimming, Kept);
+    public BotView View => new(Id, Type.QualifiedId, Position.ToVec3(), Yaw, Health, Type.Health, Dead, Raid, Engaged, Swimming, Kept, Fed);
 
     /// <summary>Whether it is swimming: a swimmer (<see cref="Bot.SwimDepth"/>) in water.</summary>
     public bool Swimming => InWater && Type.SwimDepth is not null;
@@ -140,6 +143,9 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
 
     /// <summary>Action name for keeping a bot (or letting it go wild again).</summary>
     public const string KeepBot = "KeepBot";
+
+    /// <summary>Action name for a player feeding a bot one of its foods, which tames it in the end.</summary>
+    public const string FeedBot = "FeedBot";
 
     /// <summary>Action name for listing every bot.</summary>
     public const string GetBots = "GetBots";
@@ -201,6 +207,7 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
             Keep(a.Bot, a.Kept);
             return null;
         });
+        dispatcher.Register<FeedBotArgs>(FeedBot, ValidateFeed, ApplyFeed);
         dispatcher.Register<NoArgs>(GetBots, (_, _) => null, (_, _) => BotValues.Value(_bots.Values.Select(b => b.View).ToList()), readOnly: true);
         dispatcher.Register<BotArgs>(GetBot, (_, a) => _bots.ContainsKey(a.Bot) ? null : $"There is no bot {a.Bot}.",
             (_, a) => BotValues.Value(_bots[a.Bot].View), readOnly: true);
@@ -262,6 +269,35 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
             bot.Kept = kept;
             Changed?.Invoke(bot);
         }
+    }
+
+    // ---- Taming ----
+
+    private string? ValidateFeed(ActionCaller caller, FeedBotArgs args)
+    {
+        if (!_bots.TryGetValue(args.Bot, out var bot) || bot.Dead)
+            return $"There is no bot {args.Bot}.";
+        if (bot.Type.Tame is not { } tame)
+            return $"The {bot.Type.Name} cannot be tamed.";
+        if (bot.Kept)
+            return $"The {bot.Type.Name} is already tame.";
+        if (string.IsNullOrWhiteSpace(args.Item) || !tame.Foods.Contains(Identifiers.Qualify(args.Item)))
+            return $"The {bot.Type.Name} does not eat that.";
+        if (bot.Engaged)
+            return $"The {bot.Type.Name} is too scared to eat.";
+        return survival.CheckReach(caller, bot.Centre) ?? survival.CheckSpend(caller, Identifiers.Qualify(args.Item), 1);
+    }
+
+    private JsonElement? ApplyFeed(ActionCaller caller, FeedBotArgs args)
+    {
+        var bot = _bots[args.Bot];
+        var tame = bot.Type.Tame!;
+        survival.Spend(caller, Identifiers.Qualify(args.Item), 1);
+        bot.Fed++;
+        if (bot.Fed >= tame.Feeds)
+            bot.Kept = true;
+        Changed?.Invoke(bot);
+        return BotValues.Value(new FeedBotResult(bot.Fed, tame.Feeds, bot.Kept));
     }
 
     // ---- Saves ----

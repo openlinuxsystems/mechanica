@@ -790,6 +790,32 @@
       }
     },
     {
+      "name": "FeedBot",
+      "kind": "action",
+      "group": "bots",
+      "scope": "play",
+      "description": "A player feeding a bot one of its foods, which tames it in the end. Arguments of FeedBot.",
+      "params": {
+        "description": "Arguments of FeedBot.",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "The bot.",
+            "type": "integer"
+          },
+          "item": {
+            "description": "The food, from the player's inventory (an item id or mod_id:item_id).",
+            "type": "string"
+          }
+        },
+        "required": [
+          "bot",
+          "item"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
       "name": "FinishRefine",
       "kind": "action",
       "group": "survival",

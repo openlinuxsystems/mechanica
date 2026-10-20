@@ -44,6 +44,12 @@
       "share": 0.5
     }
   },
+  "tame": {
+    "foods": [
+      "carrot"
+    ],
+    "feeds": 3
+  },
   "model": {
     "mesh": "meshes/bots/grazer.glb",
     "clip_speeds": {

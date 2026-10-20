@@ -204,6 +204,22 @@ A wild bot has no raid, so its tree's `in_raid` branches fail: give it a `wander
 players its `find_player` finds (out of the water too) before wandering home. Wild bots count towards `max_bots`
 (`game/data/bots.json`).
 
+### Taming
+
+A bot with `tame` can be tamed by players: they hold one of its foods and press Use (E) on it, and each feed takes one
+from their inventory. Enough feeds keep it (a domesticated animal). Hearts rise on every feed and more when it is
+tamed, and its model plays its `eat` clip, then `happy`. A frightened bot (one that is engaged) will not eat. The
+Grazer is tamed with three carrots:
+
+```json
+"tame": { "foods": ["carrot"], "feeds": 3 }
+```
+
+| Key | Type | Default | Meaning |
+|-----|------|---------|---------|
+| `foods` | list of item ids | required | What it eats from a player's hand. |
+| `feeds` | integer | 3 | How many feeds tame it. |
+
 A kept bot (`KeepBot`, see [Action API](#6-action-api)) is no longer wild: it stays when the players leave, never
 counts towards `count`, and is saved with the world (see [Saves](saves.md)).
 
@@ -469,6 +485,7 @@ and starting raids are open to players only in Creative.
 | `DespawnBot` | `bot` | |
 | `MoveBot` | `bot`, `direction?`, `speed?` | Walk that way; no direction stops it. |
 | `BotAttack` | `bot`, `attack`, `player?` / `creation?`, `part?` / `target?` / `object?` | Checked for reach, line of sight and cooldown. Returns `{hits}`. |
+| `FeedBot` | `bot`, `item` | A player feeds the bot one of its `tame` foods from their inventory, within reach. Returns `{fed, feeds, kept}`; the last feed keeps it. |
 | `KeepBot` | `bot`, `kept?` | Keeps the bot (or with `kept: false` lets it go): it never despawns and is saved with the world. |
 | `GetBots`, `GetBot` | none; `bot` | Queries. |
 | `StartRaid` | `level?` | Starts a raid now at the given (or the current) level. |

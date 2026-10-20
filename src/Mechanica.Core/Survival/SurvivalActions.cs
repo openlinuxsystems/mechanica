@@ -1384,7 +1384,8 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         return item is null ? $"Unknown item '{stack.Item}'." : null;
     }
 
-    private string? CheckReach(ActionCaller caller, Vector3 point)
+    /// <summary>Whether a player caller can reach <paramref name="point"/> from their eyes; other callers always can.</summary>
+    internal string? CheckReach(ActionCaller caller, Vector3 point)
     {
         if (caller.Source != ActionSource.Player)
             return null;

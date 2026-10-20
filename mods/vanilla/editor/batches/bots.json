@@ -1921,6 +1921,7 @@
           ],
           "idle_every": [5, 12]
         },
+        "tame": { "foods": ["carrot"], "feeds": 3 },
         "wild": {
           "habitat": "land",
           "count": 4,
