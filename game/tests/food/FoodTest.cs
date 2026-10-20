@@ -5,6 +5,7 @@ using Mechanica.Core.Building;
 using Mechanica.Core.Characters;
 using Mechanica.Core.Creations;
 using Mechanica.Core.Data;
+using Mechanica.Core.Items;
 using Mechanica.Core.Logic;
 using Mechanica.Core.Player;
 using Mechanica.Core.Survival;
@@ -35,6 +36,7 @@ public partial class FoodTest : StagedTest
     private Instance _host = null!;
     private Instance _client = null!;
     private Vector3 _soilAt;
+    private int _seedDrop;
     private int _soil;
     private int _soilPart;
     private readonly HashSet<int> _clientBites = [];
@@ -205,6 +207,17 @@ public partial class FoodTest : StagedTest
             return true;
         });
         Add("and is gone after", _ => !IsInstanceValid(_sinking));
+        Add("a single seed packet on the ground is drawn big enough to see in the grass", frame =>
+        {
+            if (frame == 0)
+                _seedDrop = HostSurvival.AddDrop((_soilAt + new Vector3(1, 0, 0)).ToNumerics(), [new ItemStack(Seed, 1)])!.Id;
+            if (!_client.Main.Survival.DropNodes.TryGetValue(_seedDrop, out var pile) || pile.Model is not { } model)
+                return false;
+            var size = model.FindChildren("*", nameof(MeshInstance3D), true, false).OfType<MeshInstance3D>()
+                .Select(m => m.GlobalTransform * m.GetAabb()).Aggregate((a, b) => a.Merge(b)).Size;
+            var across = Mathf.Max(size.X, Mathf.Max(size.Y, size.Z));
+            return Check(across is > 0.29f and < 0.31f, $"the packet is drawn 0.3 m across ({across:0.###} m)");
+        });
     }
 
     // Records which bitten version of the food in hand shows now (-1: none, the food is gone).

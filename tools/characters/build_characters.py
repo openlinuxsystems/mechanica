@@ -3949,7 +3949,6 @@ def clip_hold_item(t, T=2.0):
 # brings it up under the chin, the head dips into two bites, and the hand comes down chewing. The game swaps the held
 # model's bitten stages at the bites (character.json "eat").
 FOOD_GRIP = np.array([-0.12, -0.27, 1.12])          # right fist centre while holding a piece of food out in front
-FOOD_GRIP_FP = np.array([-0.15, -0.4, 1.42])        # first person: up in the lower right of the view
 MOUTH = np.array([-0.01, -0.13, 1.56])
 
 
@@ -3974,8 +3973,33 @@ def clip_hold_food(t, T=2.0, grip=FOOD_GRIP):
     return s
 
 
+# First person: posed for the camera (FP_EYE, FP_LOOK) with the torso stooped as for the bucket, so only the forearm
+# shows: the open palm in the lower right of the view with the food on it, brought up under the camera to eat.
+FOOD_GRIP_FP = np.array([-0.19, -0.38, 1.08])
+FOOD_HAND_FP = ((0.25, -0.92, 0.3), (-0.95, -0.25, 0.05))          # fingers forward and in, thumb out: palm up
+FOOD_MOUTH_FP = np.array([-0.01, -0.07, 1.2])                     # under the camera: the food fills the bottom
+FOOD_MOUTH_HAND_FP = ((0.25, -0.75, 0.6), (-0.95, -0.25, 0.1))     # palm tipped toward the camera
+
+
+FOOD_POLE_FP = (-0.25, 0.3, -1.0)      # the elbow down under the view, so the forearm rises from the bottom right
+
+
+def food_fp_key(grip, hand=FOOD_HAND_FP):
+    s = upper_base(0.0)
+    s["arm_r"] = arm_ik_from_grip("r", np.asarray(grip, float), *hand, pole=FOOD_POLE_FP, space="world")
+    s["arm_l"] = arm_ik_from_grip("l", np.array(FPB_LEFT_FIST), (0.0, 0.0, -1.0), (0.0, -1.0, 0.0), space="world")
+    s["fingers_r"] = 38.0
+    s["thumb_r"] = 22.0
+    s.update({k: v for k, v in FP_BODY.items() if k != "space"})
+    return s
+
+
 def clip_hold_food_fp(t, T=2.0):
-    return clip_hold_food(t, T, FOOD_GRIP_FP)
+    ph = 2 * math.pi * t / T
+    s = food_fp_key(FOOD_GRIP_FP + np.array([0.0, 0.0, 0.004 * math.sin(ph)]))
+    base = upper_base(t, T, 0.5)
+    s["shoulder_l"], s["shoulder_r"] = base["shoulder_l"], base["shoulder_r"]
+    return s
 
 
 def eat_keys(h):
@@ -3994,7 +4018,13 @@ def clip_eat(t):
 
 
 def clip_eat_fp(t):
-    return oneshot(eat_keys(clip_hold_food_fp(0.0)), t)
+    """The eat clip's timing seen from the eyes: the hand comes up under the camera, pushes in for each bite and
+    eases back between them, then drops to the hold while chewing (the head is not drawn in first person)."""
+    h = clip_hold_food_fp(0.0)
+    up = food_fp_key(FOOD_MOUTH_FP + np.array([0.0, -0.05, -0.03]), FOOD_MOUTH_HAND_FP)
+    bite = food_fp_key(FOOD_MOUTH_FP, FOOD_MOUTH_HAND_FP)
+    pull = food_fp_key(FOOD_MOUTH_FP + np.array([0.0, -0.08, -0.05]), FOOD_MOUTH_HAND_FP)
+    return oneshot([(0.0, h), (0.22, up), (0.3, bite), (0.4, pull), (0.52, bite), (0.62, pull), (0.86, h), (1.4, h)], t)
 
 
 def clip_throw(t):

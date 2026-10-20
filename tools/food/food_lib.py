@@ -26,6 +26,12 @@ sys.path.insert(0, str(REPO / "tools" / "lift"))
 # Materials
 # ---------------------------------------------------------------------------------------------------------------------
 
+def srgb(hex_color):
+    """sRGB hex to sRGB RGB, for bmesh loop colours (a byte colour layer stores what it is given as sRGB)."""
+    h = hex_color.lstrip("#")
+    return tuple(int(h[i:i + 2], 16) / 255 for i in (0, 2, 4))
+
+
 def lin(hex_color):
     """sRGB hex to linear RGBA."""
     h = hex_color.lstrip("#")
@@ -234,9 +240,11 @@ def _setup_render(samples, size, transparent):
 
 
 def render_view(objects, path, view, ortho=None, target=(0, 0, 0), size=900, samples=64, lens=None, distance=6.0,
-                ground=True, light_scale=1.0, bg=(0.93, 0.93, 0.94), clip_start=0.01):
-    """A review render: the objects on a pale studio floor, three soft lights, from ``view``."""
+                ground=True, light_scale=1.0, bg=(0.93, 0.93, 0.94), clip_start=0.01, fov=None, aspect=1.0):
+    """A review render: the objects on a pale studio floor, three soft lights, from ``view``. ``fov`` (vertical, degrees)
+    and ``aspect`` frame it like the game's camera."""
     sc = _setup_render(samples, size, False)
+    sc.render.resolution_x = int(size * aspect)
     keep = set(objects)
     hidden = [o for o in sc.objects if o not in keep and not o.hide_render and o.type in ("MESH", "CURVE")]
     for o in hidden:
@@ -274,6 +282,9 @@ def render_view(objects, path, view, ortho=None, target=(0, 0, 0), size=900, sam
     if ortho:
         cam.type = "ORTHO"
         cam.ortho_scale = ortho
+    elif fov:
+        cam.sensor_fit = "VERTICAL"
+        cam.angle_y = math.radians(fov)
     else:
         cam.lens = lens or 50
     cam.clip_start = clip_start
@@ -386,3 +397,60 @@ def soil(location=(0, 0, 0), wet=True):
         if o.parent is None:
             o.location = Vector(location) + Vector((0, 0, -0.006))
     return obs
+
+
+def cut(body, cutter_bm, flesh, color_of=None):
+    """Bites ``cutter_bm`` (a closed mesh, in ``body``'s own mesh coordinates) out of ``body``: the new faces take
+    ``flesh`` (a vertex-coloured material) and, with ``color_of(co) -> (r, g, b)`` in linear RGB, their colours; the
+    lip where skin meets flesh is kept sharp. The body needs a ``Col`` colour attribute when ``color_of`` is given."""
+    bpy.context.view_layer.update()
+    bmesh.ops.transform(cutter_bm, matrix=body.matrix_world, verts=cutter_bm.verts)
+    cutter = from_bm(body.name + "_Cutter", cutter_bm, [flesh], None)
+    cutter.hide_render = True
+    mod = body.modifiers.new("Bite", "BOOLEAN")
+    mod.operation = "DIFFERENCE"
+    mod.solver = "MANIFOLD"
+    mod.material_mode = "TRANSFER"
+    mod.object = cutter
+    apply_modifiers(body)
+    bpy.data.objects.remove(cutter)
+    me = body.data
+    if flesh.name not in me.materials:
+        return body
+    idx = list(me.materials).index(flesh)
+    col = me.color_attributes.get("Col")
+    if col is not None and color_of is not None:
+        for poly in me.polygons:
+            if poly.material_index == idx:
+                for li in poly.loop_indices:
+                    col.data[li].color = (*color_of(me.vertices[me.loops[li].vertex_index].co), 1)
+    sharp = me.attributes.get("sharp_edge") or me.attributes.new("sharp_edge", "BOOLEAN", "EDGE")
+    faces_of = {}
+    for poly in me.polygons:
+        for ek in poly.edge_keys:
+            faces_of.setdefault(ek, set()).add(poly.material_index)
+    for e in me.edges:
+        if len(faces_of.get(e.key, ())) > 1:
+            sharp.data[e.index].value = True
+    return body
+
+
+def vertex_colors(bm, color_of):
+    """Paints a bmesh's ``Col`` loop colours from ``color_of(co, normal) -> (r, g, b)`` (sRGB: a byte colour layer)."""
+    col = bm.loops.layers.color.get("Col") or bm.loops.layers.color.new("Col")
+    for f in bm.faces:
+        for lp in f.loops:
+            lp[col] = (*color_of(lp.vert.co, lp.vert.normal), 1.0)
+    return bm
+
+
+def mix(a, b, t):
+    return tuple(x + (y - x) * t for x, y in zip(a, b))
+
+
+def noise3(p, scale=1.0, seed=0):
+    """Cheap smooth value noise in [-1, 1] (sum of a few sines), for mottling skins without textures."""
+    x, y, z = (c * scale for c in p)
+    s = seed * 1.7
+    return (math.sin(x * 1.9 + s) * math.cos(y * 2.3 - s) + math.sin(y * 1.3 + z * 2.1 + 2 * s)
+            + math.cos(z * 1.7 - x * 1.1 + 3 * s)) / 3
