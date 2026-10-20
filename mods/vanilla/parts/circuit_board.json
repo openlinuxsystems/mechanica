@@ -1,11 +1,26 @@
 {
   "id": "circuit_board",
   "name": "Circuit Board",
+  "description": "A salvaged board of chips, a capacitor and a connector, taken from wrecks and bots. Fabricators use it to craft logic parts, sensors, seats, engines and lights.",
   "category": "resource",
   "mass": 0.1,
+  "durability": 1,
+  "friction": 0.5,
+  "buoyancy": 0.8,
+  "flammable": false,
   "stack_size": 20,
+  "sound_material": "plastic",
+  "size": [1, 1, 1],
+  "mesh": "meshes/items/circuit_board.glb",
+  "icon": "textures/items/circuit_board_icon.png",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.6,
+    "metallic": 0
+  },
   "sounds": {
     "pickup": "pickup_component",
     "drop": "drop_component"
-  }
+  },
+  "loose": true
 }

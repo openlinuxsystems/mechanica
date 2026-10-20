@@ -47,6 +47,50 @@
       "model": [{ "kind": "mesh", "mesh": "meshes/items/crude_oil.glb" }]
     },
     {
+      "file": "parts/component_kit.json",
+      "template": "item",
+      "set": {
+        "name": "Component Kit",
+        "description": "A hard case of gears, springs and fittings salvaged from wrecks and bots. Fabricators use it to craft metal blocks, engines, bearings, lights and logic parts.",
+        "category": "resource",
+        "loose": true,
+        "mass": 0.3,
+        "durability": 2,
+        "friction": 0.5,
+        "buoyancy": 0.6,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "metal",
+        "size": [1, 1, 1],
+        "icon": "textures/items/component_kit_icon.png",
+        "visual": { "color": "#ffffff", "roughness": 0.6, "metallic": 0 },
+        "sounds": { "pickup": "pickup_component", "drop": "drop_component" }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/component_kit.glb" }]
+    },
+    {
+      "file": "parts/circuit_board.json",
+      "template": "item",
+      "set": {
+        "name": "Circuit Board",
+        "description": "A salvaged board of chips, a capacitor and a connector, taken from wrecks and bots. Fabricators use it to craft logic parts, sensors, seats, engines and lights.",
+        "category": "resource",
+        "loose": true,
+        "mass": 0.1,
+        "durability": 1,
+        "friction": 0.5,
+        "buoyancy": 0.8,
+        "flammable": false,
+        "stack_size": 20,
+        "sound_material": "plastic",
+        "size": [1, 1, 1],
+        "icon": "textures/items/circuit_board_icon.png",
+        "visual": { "color": "#ffffff", "roughness": 0.6, "metallic": 0 },
+        "sounds": { "pickup": "pickup_component", "drop": "drop_component" }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/circuit_board.glb" }]
+    },
+    {
       "file": "parts/carrot_seed.json",
       "template": "item",
       "set": {
