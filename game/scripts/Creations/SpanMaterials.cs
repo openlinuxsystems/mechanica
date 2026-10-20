@@ -61,7 +61,8 @@ public static class SpanMaterials
 
     /// <summary>
     /// The spanning material for <paramref name="source"/> (a part's own material, paint included) on a mesh placed at
-    /// <paramref name="placed"/> in its body, or the source itself when it has no texture to spread.
+    /// <paramref name="placed"/> in its body (identity for a part on its own: an icon, the build ghost, a drop), or the
+    /// source itself when it has no texture to spread.
     /// </summary>
     public static Material For(BaseMaterial3D source, int span, Transform3D placed)
     {

@@ -1579,7 +1579,8 @@ public partial class CaptureScene : Node
         Shot("debug_car_12_done", 2, () => Report("stopped"));
     }
 
-    private static readonly string[] IconItems = [.. Core.Items.HotbarTools.All, "vanilla:gas_engine", "vanilla:wheel", "vanilla:chest", "vanilla:water_bucket", "vanilla:water_bucket_full"];
+    private static readonly string[] IconItems = [.. Core.Items.HotbarTools.All, "vanilla:gas_engine", "vanilla:wheel", "vanilla:chest", "vanilla:water_bucket", "vanilla:water_bucket_full",
+        "vanilla:scrap_metal_block", "vanilla:scrap_metal_wedge", "vanilla:scrap_wood_block", "vanilla:scrap_stone_block"];
 
     // Each picture is saved as it becomes ready; the last shot is the HUD, with the hotbar showing the tools.
     private void IconShots()

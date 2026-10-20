@@ -7,17 +7,30 @@ namespace Mechanica.Game.Creations;
 /// One mesh of a part's model, placed relative to the part centre. <see cref="SurfaceMaterials"/>, when
 /// set, overrides each surface's material (from the part's <c>visual</c> data). <see cref="Name"/> is its node's name
 /// in the file: a mesh named after one of the part's joint sockets moves with the part joined there.
+/// <see cref="TextureSpan"/> is the part's <c>visual.texture_span</c>: above 1 its texture is laid over the grid
+/// (<see cref="SpanMaterials"/>), so a part on its own shows the piece of the pattern that falls on one cell.
 /// </summary>
-public sealed record PartMesh(Mesh Mesh, Transform3D Transform, IReadOnlyList<Material?>? SurfaceMaterials = null, string? Name = null)
+public sealed record PartMesh(Mesh Mesh, Transform3D Transform, IReadOnlyList<Material?>? SurfaceMaterials = null, string? Name = null, int TextureSpan = 1)
 {
-    /// <summary>A mesh instance showing this mesh with its overrides.</summary>
-    public MeshInstance3D Instantiate()
+    /// <summary>A mesh instance showing this mesh with its overrides, for a part on its own.</summary>
+    public MeshInstance3D Instantiate() => Instantiate(Transform3D.Identity);
+
+    /// <summary>
+    /// A mesh instance showing this mesh with its overrides, for a part at <paramref name="placed"/> in its body: a
+    /// spanning texture takes the part's place on the creation grid, so it runs on into the parts next to it.
+    /// </summary>
+    public MeshInstance3D Instantiate(Transform3D placed)
     {
         var instance = new MeshInstance3D { Mesh = Mesh, Transform = Transform };
         if (Name is not null)
             instance.Name = Name;
         for (var i = 0; i < (SurfaceMaterials?.Count ?? 0); i++)
-            instance.SetSurfaceOverrideMaterial(i, SurfaceMaterials![i]);
+        {
+            var material = SurfaceMaterials![i];
+            if (TextureSpan > 1 && material is BaseMaterial3D source)
+                material = SpanMaterials.For(source, TextureSpan, placed * Transform);
+            instance.SetSurfaceOverrideMaterial(i, material);
+        }
         return instance;
     }
 }
@@ -83,7 +96,7 @@ public sealed class PartAssets
             ? new PartModel(meshes, shape, shapeTransform, IsPlaceholder: false)
             : new PartModel([new PartMesh(PlaceholderMesh(definition, shape), shapeTransform)], shape, shapeTransform, IsPlaceholder: true);
         if (definition.Visual is { } visual)
-            model = model with { Meshes = [.. model.Meshes.Select(m => ApplyVisual(m, visual, modId))] };
+            model = model with { Meshes = [.. model.Meshes.Select(m => ApplyVisual(m, visual, modId) with { TextureSpan = visual.TextureSpan ?? 1 })] };
         return _models[cacheKey] = model;
     }
 

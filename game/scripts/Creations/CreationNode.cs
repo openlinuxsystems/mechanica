@@ -359,12 +359,7 @@ public partial class CreationNode : Node3D
             else
             {
                 foreach (var mesh in model.Meshes)
-                {
-                    var instance = mesh.Instantiate();
-                    if (definition.Visual?.TextureSpan is > 1 and var span)
-                        SpanTexture(instance, span, placed * mesh.Transform);
-                    shown.AddChild(instance);
-                }
+                    shown.AddChild(mesh.Instantiate(placed));
             }
             if (definition.Light is { } light)
             {
@@ -421,16 +416,6 @@ public partial class CreationNode : Node3D
                 });
                 _pipes.Add((station, container));
             }
-        }
-    }
-
-    // The part's texture laid over the creation grid (visual.texture_span), so it runs on into its neighbours.
-    private static void SpanTexture(MeshInstance3D instance, int span, Transform3D placed)
-    {
-        for (var i = 0; i < instance.GetSurfaceOverrideMaterialCount(); i++)
-        {
-            if ((instance.GetSurfaceOverrideMaterial(i) ?? instance.Mesh.SurfaceGetMaterial(i)) is BaseMaterial3D source)
-                instance.SetSurfaceOverrideMaterial(i, SpanMaterials.For(source, span, placed));
         }
     }
 
