@@ -18,8 +18,9 @@ namespace Mechanica.Game.Tests;
 /// The Connect Tool's nodes, drag and lines (UI spec PR 10), host plus a client on vanilla parts. With the tool out
 /// every part with logic shows a node of its kind. Dragging from the switch to the engine links them, showing the
 /// line before the host answers; while dragging, the other Creation's switch fades. A drag from the engine over one
-/// bearing to another links both. The line between switch and engine shows "Switch → Gas Engine 1" when hovered;
-/// grabbing it and letting go in the air disconnects it. A link the host refuses fades out red. Right click on a
+/// bearing to another links both. The line between switch and engine shows "Switch → Gas Engine 1" when hovered, with
+/// only its arrows running; grabbing it and letting go in the air disconnects it. Hovering the engine runs its lines'
+/// arrows. Dragging from the engine to the switch links switch → engine, and doing it again takes that away. A link the host refuses fades out red. Right click on a
 /// bearing an engine drives reverses it on the host. With the tool put away, a link flashes when its source's signal changes.
 /// </summary>
 public partial class ConnectTest : StagedTest
@@ -145,7 +146,13 @@ public partial class ConnectTest : StagedTest
             Connector.UpdateHover();
             return Connector.Nodes.Count(n => n.Creation == Board && n.Reversible) == 2 || (frame > 60 && Check(false, "both bearings have turn arrows on the client"));
         });
-        Add("look between the switch and the engine", frame => LookAt((Centre(_switch) + Centre(_engine)) / 2, frame));
+        Add("look between the switch and the engine", frame =>
+        {
+            // The headless screen is 64 px, where the slack round the dots would cover this short line from end to end.
+            if (frame == 0)
+                _client.Main.Build.Settings = _client.Main.Build.Settings! with { Connect = _client.Main.Build.Settings.Connect with { HitPixels = 1 } };
+            return LookAt((Centre(_switch) + Centre(_engine)) / 2, frame);
+        });
         Add("the line between them is hovered, with its tooltip", frame =>
         {
             if (_client.Main.Creations.Find(Board)?.Links.Count != 3)
@@ -156,6 +163,8 @@ public partial class ConnectTest : StagedTest
             Check(Connector.HoveredLink == (Board, new LogicLink(_switch, _engine)), $"the switch's line is hovered ({Connector.HoveredLink})");
             Check(Connector.HoverTip is { Title: "Switch → Gas Engine 1" } tip && tip.Body.StartsWith("Signal:"), $"the tooltip names both ends and the signal ({Connector.HoverTip?.Title} | {Connector.HoverTip?.Body})");
             Check(Overlay.Drawn.Count(d => d.Creation == Board) == 3, "three lines are drawn");
+            Overlay._Process(0);
+            Check(Overlay.Moving.SequenceEqual([(Board, new LogicLink(_switch, _engine))]), $"only the hovered line's arrows run ({Overlay.Moving.Count})");
             Check(Connector.PressDrag() && Connector.Grabbed is not null, "pressing on the line grabs its end");
             return true;
         });
@@ -167,6 +176,37 @@ public partial class ConnectTest : StagedTest
             return Check(Connector.HoveredNode is null && Connector.ReleaseDrag(_results.Add), "letting go off any node disconnects");
         });
         Add("the host takes the link away", _ => Answered(1) && Check(!HostBoard.Links.Contains(new LogicLink(_switch, _engine)), "switch → engine is gone"));
+        Add("look at the engine once more", frame => LookAt(Centre(_engine), frame));
+        Add("hovering the engine runs the arrows of its lines, and a drag starts there", _ =>
+        {
+            Connector.UpdateHover();
+            Overlay._Process(0);
+            var lines = Overlay.Moving.Where(m => m.Creation == Board).Select(m => m.Link).ToHashSet();
+            Check(lines.SetEquals([new LogicLink(_engine, _wheel), new LogicLink(_engine, _wheel2)]), $"both bearing lines run ({lines.Count})");
+            return Check(Connector.PressDrag() && Connector.DragFrom?.Part == _engine, "the drag starts at the engine");
+        });
+        Add("dragged from the engine back to the switch, the switch may be the end", frame =>
+        {
+            if (!LookAt(Centre(_switch), frame))
+                return false;
+            Connector.UpdateHover();
+            Check(Connector.HoveredNode?.Part == _switch, $"the drag snaps to the switch ({Connector.HoveredNode?.Part})");
+            Check(Connector.ReleaseDrag(_results.Add), "letting go links");
+            return Check(Connector.Pending.Any(p => p.Adding && p.Link == new LogicLink(_switch, _engine)), "the link goes switch → engine");
+        });
+        Add("the host links the switch to the engine, the right way round", _ => Answered(1)
+            && Check(HostBoard.Links.Contains(new LogicLink(_switch, _engine)) && !HostBoard.Links.Contains(new LogicLink(_engine, _switch)), "switch → engine"));
+        Add("look at the engine for the last drag", frame => LookAt(Centre(_engine), frame));
+        Add("press on the engine again", _ => Check(Connector.PressDrag() && Connector.DragFrom?.Part == _engine, "the drag starts at the engine"));
+        Add("letting go on the switch again takes the link away from that end too", frame =>
+        {
+            if (!LookAt(Centre(_switch), frame))
+                return false;
+            Connector.UpdateHover();
+            Check(Connector.ReleaseDrag(_results.Add), "letting go unlinks");
+            return Check(Connector.Pending.Any(p => !p.Adding && p.Link == new LogicLink(_switch, _engine)), "switch → engine is taken away");
+        });
+        Add("the host takes it away", _ => Answered(1) && Check(!HostBoard.Links.Contains(new LogicLink(_switch, _engine)), "switch → engine is gone again"));
         Add("look at the switch again", frame => LookAt(Centre(_switch), frame));
         Add("press on the switch", _ => Check(Connector.PressDrag(), "the drag starts"));
         Add("look at the logic gate", frame => LookAt(Centre(_gate), frame));

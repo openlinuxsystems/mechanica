@@ -165,23 +165,29 @@ public sealed record PlacementSettings
 /// </summary>
 public sealed record ConnectSettings
 {
-    /// <summary>Diameter of a connection node, in px (§12: 12 to 16).</summary>
-    public float NodePixels { get; init; } = 14f;
+    /// <summary>Diameter of a connection node, in px (§12 asked 12 to 16; Chase found that too small to click).</summary>
+    public float NodePixels { get; init; } = 22f;
 
     /// <summary>How much a hovered node grows (§12: 20%).</summary>
-    public float HoverScale { get; init; } = 1.2f;
+    public float HoverScale { get; init; } = 1.25f;
 
     /// <summary>Seconds of one pulse of an active node (§12: 0.8).</summary>
     public double PulseSeconds { get; init; } = 0.8;
 
-    /// <summary>Thickness of a connection line, in px (§12: 3).</summary>
-    public float LineWidth { get; init; } = 3f;
+    /// <summary>Thickness of a connection line, in px (§12 asked 3; thicker to see and click).</summary>
+    public float LineWidth { get; init; } = 5f;
 
     /// <summary>Pixels between the chevrons along a line (§12: 40).</summary>
-    public float ChevronSpacing { get; init; } = 40f;
+    public float ChevronSpacing { get; init; } = 48f;
+
+    /// <summary>How fast the chevrons of a hovered line run the way it points, in px a second (0 keeps them still).</summary>
+    public float ChevronSpeed { get; init; } = 60f;
+
+    /// <summary>Pixels past a node's dot or a line's edge that still count as the crosshair being on it.</summary>
+    public float HitPixels { get; init; } = 10f;
 
     /// <summary>Pixels between lines that join the same two parts, so both show (§12).</summary>
-    public float LaneGap { get; init; } = 5f;
+    public float LaneGap { get; init; } = 8f;
 
     /// <summary>A drag snaps to the nearest valid node this close to the aim, in m (§10: 0.5).</summary>
     public float SnapMetres { get; init; } = 0.5f;
@@ -201,8 +207,11 @@ public sealed record ConnectSettings
             throw new FormatException($"connect.hover_scale must be 1 to 3 (got {HoverScale}).");
         foreach (var (value, name) in new[] { (LineWidth, "line_width"), (ChevronSpacing, "chevron_spacing"), (SnapMetres, "snap_metres"), (Range, "range") })
             BuildSettings.Positive(value, $"connect.{name}");
-        if (!float.IsFinite(LaneGap) || LaneGap < 0f)
-            throw new FormatException($"connect.lane_gap must be 0 or more (got {LaneGap}).");
+        foreach (var (value, name) in new[] { (LaneGap, "lane_gap"), (ChevronSpeed, "chevron_speed"), (HitPixels, "hit_pixels") })
+        {
+            if (!float.IsFinite(value) || value < 0f)
+                throw new FormatException($"connect.{name} must be 0 or more (got {value}).");
+        }
         if (!float.IsFinite(InvalidAlpha) || InvalidAlpha is < 0f or > 1f)
             throw new FormatException($"connect.invalid_alpha must be 0 to 1 (got {InvalidAlpha}).");
         if (!double.IsFinite(PulseSeconds) || PulseSeconds < 0)

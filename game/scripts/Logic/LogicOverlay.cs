@@ -16,8 +16,10 @@ namespace Mechanica.Game.Logic;
 
 /// <summary>
 /// Connection visuals (chunk 10, UI spec §12), drawn on screen over the world so they keep their thickness at any
-/// distance or resolution. Every logic link of the Creations near the local player is a 3 px blue line with a cyan
-/// core and a chevron every 40 px pointing from source to target; lines between the same two parts sit side by side.
+/// distance or resolution. Every logic link of the Creations near the local player is a 5 px blue line with a cyan
+/// core and a chevron every 48 px pointing from source to target; lines between the same two parts sit side by side.
+/// The line under the crosshair, and every line of the node under it, brightens and its chevrons run toward the
+/// target (<see cref="ConnectSettings.ChevronSpeed"/>), so which way it goes shows at a glance.
 /// With the Connect Tool out every part with logic shows a node coloured by its kind (blue logic, cyan power, white
 /// with a blue ring for bearings, gray structural) that pulses cyan while its signal is on, grows under the
 /// crosshair and has a curved arrow when something drives it and it can be reversed (a bearing linked to a seat, a
@@ -42,7 +44,7 @@ public partial class LogicOverlay : CanvasLayer
     private double _time;
 
     /// <summary>A line to draw: screen ends, its colour and whether it is hovered.</summary>
-    private readonly record struct Line(Vector2 From, Vector2 To, Color Outer, Color Core, bool Chevrons, bool Bright);
+    private readonly record struct Line(Vector2 From, Vector2 To, Color Outer, Color Core, bool Chevrons, bool Bright, bool Moving = false);
 
     /// <summary>A node to draw.</summary>
     private readonly record struct Dot(Vector2 At, float Radius, PortKind Kind, float Alpha, bool Pulse, bool Ring, bool? Reversed, string? Numbers);
@@ -76,6 +78,9 @@ public partial class LogicOverlay : CanvasLayer
 
     /// <summary>Links drawn on the last frame, with whether each source was on, for tests.</summary>
     public IReadOnlyList<(int Creation, LogicLink Link, bool On)> Drawn { get; private set; } = [];
+
+    /// <summary>Links whose chevrons ran on the last frame (hovered, or of the hovered node), for tests.</summary>
+    public IReadOnlyList<(int Creation, LogicLink Link)> Moving { get; private set; } = [];
 
     /// <summary>Nodes drawn on the last frame (Creation, part, opacity), for tests.</summary>
     public IReadOnlyList<(int Creation, int Part, float Alpha)> DrawnNodes { get; private set; } = [];
@@ -118,7 +123,7 @@ public partial class LogicOverlay : CanvasLayer
                 _lines.Clear();
                 _dots.Clear();
                 _preview = null;
-                (Drawn, DrawnNodes, DrawnNumbers) = ([], [], []);
+                (Drawn, DrawnNodes, DrawnNumbers, Moving) = ([], [], [], []);
                 _canvas.QueueRedraw();
             }
             // Shown again, it reads at once.
@@ -198,6 +203,8 @@ public partial class LogicOverlay : CanvasLayer
         var drawn = new List<(int, LogicLink, bool)>();
         var drawnNodes = new List<(int, int, float)>();
         var drawnNumbers = new List<(int, int, string)>();
+        var moving = new List<(int, LogicLink)>();
+        Moving = moving;
         var camera = Players.LocalPlayer?.Camera;
         var viewport = GetViewport();
         if (camera is null || viewport is null)
@@ -227,10 +234,14 @@ public partial class LogicOverlay : CanvasLayer
             if (!Shown(key))
                 continue;
             var on = SignalOf(segment.Creation, segment.Link.From) != 0;
-            var hovered = tool?.HoveredLink == key;
+            // Over a line, or a node it starts or ends at, the line lights up and its chevrons run the way it points.
+            var hovered = tool?.HoveredLink == key || (tool is { Dragging: false, HoveredNode: { } over } && over.Creation == segment.Creation
+                && (over.Part == segment.Link.From || over.Part == segment.Link.To));
+            if (hovered)
+                moving.Add(key);
             var outer = hovered ? UiTokens.Blue.Lightened(0.35f) : UiTokens.Blue;
             var core = (hovered ? UiTokens.Text : UiTokens.Cyan) with { A = on || hovered ? 1f : 0.55f };
-            _lines.Add(new Line(segment.From, segment.To, outer, core, Chevrons: true, Bright: hovered));
+            _lines.Add(new Line(segment.From, segment.To, outer, core, Chevrons: true, Bright: hovered, Moving: hovered));
         }
         // Links sent and not yet confirmed show at once; refused ones fade out red (§9 rollback).
         foreach (var link in pending.Where(p => p.Adding || p.Refused is not null))
@@ -293,10 +304,18 @@ public partial class LogicOverlay : CanvasLayer
             canvas.DrawLine(line.From, line.To, UiTokens.DeepNavy with { A = 0.45f * line.Outer.A }, width + 2 * scale, antialiased: true);
             canvas.DrawLine(line.From, line.To, line.Outer, width + (line.Bright ? scale : 0), antialiased: true);
             canvas.DrawLine(line.From, line.To, line.Core, Math.Max(1f, width / 3), antialiased: true);
-            if (line.Chevrons)
+            var direction = (line.To - line.From).Normalized();
+            var size = look.LineWidth * 1.2f * scale;
+            if (line.Moving)
+            {
+                var travelled = (float)(_time * look.ChevronSpeed) * scale;
+                foreach (var (at, alpha) in ConnectionLayout.MovingChevrons(line.From.ToNumerics(), line.To.ToNumerics(), look.ChevronSpacing * scale, travelled))
+                    Chevron(canvas, at.ToGodot(), direction, size * 1.15f, line.Core with { A = line.Core.A * alpha });
+            }
+            else if (line.Chevrons)
             {
                 foreach (var at in ConnectionLayout.Chevrons(line.From.ToNumerics(), line.To.ToNumerics(), look.ChevronSpacing * scale))
-                    Chevron(canvas, at.ToGodot(), (line.To - line.From).Normalized(), 4 * scale, line.Core);
+                    Chevron(canvas, at.ToGodot(), direction, size, line.Core);
             }
         }
         if (_preview is var (from, control, to))
@@ -304,7 +323,7 @@ public partial class LogicOverlay : CanvasLayer
             var points = Enumerable.Range(0, 17).Select(i => ConnectionLayout.Curve(from.ToNumerics(), control.ToNumerics(), to.ToNumerics(), i / 16f).ToGodot()).ToArray();
             canvas.DrawPolyline(points, UiTokens.Blue, width, antialiased: true);
             canvas.DrawPolyline(points, UiTokens.Cyan, Math.Max(1f, width / 3), antialiased: true);
-            Chevron(canvas, to, (to - points[^2]).Normalized(), 5 * scale, UiTokens.Cyan);
+            Chevron(canvas, to, (to - points[^2]).Normalized(), look.LineWidth * 1.5f * scale, UiTokens.Cyan);
         }
         var phase = look.PulseSeconds > 0 ? (float)(_time % look.PulseSeconds / look.PulseSeconds) : 0f;
         foreach (var dot in _dots)
