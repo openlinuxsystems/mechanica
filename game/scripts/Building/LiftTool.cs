@@ -699,7 +699,7 @@ public partial class LiftTool : HandTool
 
     private float? GroundBelow(Vector3 from, Creations.CreationNode skip)
     {
-        var query = PhysicsRayQueryParameters3D.Create(from, from + Vector3.Down * Build.Settings!.Reach);
+        var query = PhysicsRayQueryParameters3D.Create(from, from + Vector3.Down * Build.Settings!.Reach, World.PhysicsLayers.Queries);
         var exclude = new Godot.Collections.Array<Rid>([.. skip.Bodies.Select(b => b.GetRid()), Player.GetRid()]);
         if (Build.Lifts.TryGetValue(Player.PeerId, out var own))
             exclude.Add(own.GetRid());

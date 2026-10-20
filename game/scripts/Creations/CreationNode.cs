@@ -44,6 +44,7 @@ public partial class CreationNode : Node3D
     private readonly List<(CreationBody Body, Node3D Visual, Transform3D Placed)> _visuals = [];
     private Vector3 _visualOffset;
     private readonly List<(int Station, int Container)> _pipes = [];
+    private StepRamps _ramps = null!;
 
     // The pipe from a station to each container linked to it (UI spec §4): visual only, no collision.
     private static readonly StandardMaterial3D PipeMaterial = new()
@@ -100,11 +101,29 @@ public partial class CreationNode : Node3D
     /// <summary>True when the Body at <paramref name="bodyIndex"/> is held still: the whole Creation is, or it is anchored to the ground.</summary>
     public bool IsBodyFrozen(int bodyIndex) => IsFrozen || Creation.IsBodyAnchored(bodyIndex);
 
+    /// <summary>The ramps this Creation's wheels have laid at steps (<see cref="StepRamps"/>).</summary>
+    public StepRamps Ramps => _ramps;
+
     public override void _Ready()
     {
         Name = $"Creation{Creation.Id}";
+        _ramps = new StepRamps(this, body => IsBodyFrozen(body.BodyIndex), StaysPut);
         Build();
     }
+
+    public override void _PhysicsProcess(double delta)
+    {
+        if (_ramps.Any)
+            _ramps.Update(GetWorld3D().DirectSpaceState);
+    }
+
+    // Terrain and structures never move, nor does a Body anchored to the ground; anything else simulated can.
+    private static bool StaysPut(CollisionObject3D obstacle) => obstacle switch
+    {
+        CreationBody body => body.GetParent() is CreationNode node && node.Creation.IsBodyAnchored(body.BodyIndex) && !node.Creation.OnLift,
+        RigidBody3D or CharacterBody3D => false,
+        _ => true,
+    };
 
     public override void _Process(double delta)
     {
@@ -323,6 +342,7 @@ public partial class CreationNode : Node3D
         _visuals.Clear();
         _pipes.Clear();
         _bodies.Clear();
+        _ramps.Clear();
     }
 
     private CreationBody BuildBody(Body body, bool frozen)
@@ -352,6 +372,12 @@ public partial class CreationNode : Node3D
                 PartGeometry.CentreMetres(definition, part.Cell, part.Rotation).ToGodot());
             // Shapes must be direct children of the body; meshes hang off a node per part.
             node.AddChild(new CollisionShape3D { Name = $"Shape{id}", Shape = model.Shape, Transform = placed * model.ShapeTransform });
+            if (definition.Collision is { Climb: > 0f, Radius: { } radius } climbing && climbing.Shape is CollisionShape.Sphere or CollisionShape.Cylinder)
+            {
+                var shape = placed * model.ShapeTransform;
+                var cylinder = climbing.Shape == CollisionShape.Cylinder;
+                _ramps.Add(node, shape.Origin, cylinder ? shape.Basis.Y : null, radius, climbing.Climb.Value, cylinder ? climbing.Height ?? 0f : 0f);
+            }
             var visual = new Node3D { Name = $"Part{id}", Transform = placed };
             // The meshes and light hang off a model node, which an animated part's script turns.
             var shown = new Node3D { Name = "Model" };

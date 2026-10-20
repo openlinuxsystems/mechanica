@@ -24,7 +24,8 @@ public class VanillaBotsTests
     private static readonly string[] Catalog =
     [
         "scuttler_green", "scuttler_blue", "scuttler_yellow", "scuttler_red", "scuttler_seed", "rakehand",
-        "rakehand_baler", "rakehand_scarecrow", "spooler_blue", "spooler_green", "spooler_yellow", "spooler_red", "thresher", "grazer",
+        "rakehand_baler", "rakehand_scarecrow", "spooler_blue", "spooler_green", "spooler_yellow", "spooler_red", "thresher",
+        "thresher_tiller", "thresher_duster", "grazer",
     ];
 
     private static Bot Bot(string id) => Book.Value.FindBot(id) ?? throw new Xunit.Sdk.XunitException($"vanilla has no bot '{id}'.");
@@ -76,6 +77,32 @@ public class VanillaBotsTests
         Assert.Equal(BotEffects.Shot, model.Effects[attack]);
     }
 
+    [Theory]
+    [InlineData("thresher", "kick,swipe,pesticide", "track_stomp,sickle_swipe,spray_sweep", null, null)]
+    [InlineData("thresher_tiller", "till,stomp", "till_grind,rear_stomp", "stomp", BotEffects.Shockwave)]
+    [InlineData("thresher_duster", "canister,pesticide", "mortar_shot,boom_spray", "canister", BotEffects.Shot)]
+    public void EachThresherHasItsOwnModelAndAttacks(string id, string attacks, string clips, string? effectAttack, string? effect)
+    {
+        var bot = Bot(id);
+        Assert.Equal((true, "thresher"), (bot.MeleeImmune, bot.Family));
+        Assert.Equal(attacks.Split(','), bot.Attacks.Select(a => a.Id));
+        var model = bot.Model!;
+        Assert.Equal($"vanilla:meshes/bots/{id}.glb", model.Mesh);
+        Assert.Equal(clips.Split(','), attacks.Split(',').Select(a => model.Attacks[a].Single()));
+        Assert.Equal(effectAttack is null ? [] : [(effectAttack, effect!)], model.Effects.Select(e => (e.Key, e.Value)));
+    }
+
+    [Fact]
+    public void TheTillerIsSlowAndToughAndTheDusterFastAndRanged()
+    {
+        var (harvester, tiller, duster) = (Bot("thresher"), Bot("thresher_tiller"), Bot("thresher_duster"));
+        Assert.True(tiller.Health > harvester.Health && tiller.Speed < harvester.Speed, "the Tiller is tougher and slower");
+        Assert.True(duster.Health < harvester.Health && duster.Speed > harvester.Speed && duster.Sight > harvester.Sight,
+            "the Duster is frailer, faster and sees further");
+        Assert.Equal(BotAttackKind.Ranged, duster.Attack("canister")!.Kind);
+        Assert.Equal(BotAttackKind.Area, tiller.Attack("stomp")!.Kind);
+    }
+
     [Fact]
     public void BotsUseTheSpecNumbers()
     {
@@ -116,6 +143,10 @@ public class VanillaBotsTests
             Assert.Equal(level.Budget, level.MixCost);
         Assert.Equal(["vanilla:scuttler_green"], table.Levels[0].Bots.Select(b => b.Bot.QualifiedId));
         Assert.Contains(table.Levels[5].Bots, b => b.Bot.QualifiedId == "vanilla:thresher" && b.Count == 2);
+        // Thresher raiders are any of the three.
+        foreach (var level in table.Levels.Skip(5))
+            Assert.Equal(["vanilla:thresher_tiller", "vanilla:thresher_duster"],
+                level.Bots.Single(b => b.Bot.QualifiedId == "vanilla:thresher").OneOf.Select(b => b.QualifiedId));
         // Rakehand raiders are a random Field Hand or Scarecrow early, and any of the three from level 4.
         Assert.Equal(["vanilla:rakehand_scarecrow"], table.Levels[1].Bots.Single(b => b.Bot.QualifiedId == "vanilla:rakehand").OneOf.Select(b => b.QualifiedId));
         Assert.Equal(["vanilla:rakehand_baler", "vanilla:rakehand_scarecrow"],
@@ -195,7 +226,10 @@ public class VanillaBotsTests
         var thresher = Bot("thresher");
         Assert.True(thresher.Attack("kick")!.ObjectDamage > 0);
         Assert.Contains("\"break_objects\"", thresher.Behavior!.ToJsonString());
-        Assert.All(Book.Value.All.Where(b => b.QualifiedId != "vanilla:thresher").SelectMany(b => b.Attacks), a => Assert.Equal(0f, a.ObjectDamage));
+        Assert.True(Bot("thresher_tiller").Attack("till")!.ObjectDamage > 0);
+        Assert.Contains("\"break_objects\"", Bot("thresher_tiller").Behavior!.ToJsonString());
+        Assert.All(Book.Value.All.Where(b => b.QualifiedId is not ("vanilla:thresher" or "vanilla:thresher_tiller")).SelectMany(b => b.Attacks),
+            a => Assert.Equal(0f, a.ObjectDamage));
     }
 
     [Theory]

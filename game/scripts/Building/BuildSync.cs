@@ -108,8 +108,8 @@ public partial class BuildSync : Node, IToolWorld, IPartCatalog
     public void RegisterActions(ActionDispatcher dispatcher)
     {
         Settings ??= LoadSettings();
-        new BuildActions(this, Settings, this) { Costs = Costs }.Register(dispatcher);
         Tools = new ToolActions(Settings, this, this) { Costs = Costs };
+        new BuildActions(this, Settings, this) { Costs = Costs, Lifts = Tools }.Register(dispatcher);
         Tools.Register(dispatcher);
         _dispatcher = dispatcher;
         dispatcher.Register<SpawnPartArgs>(CreationActions.SpawnPart,
@@ -180,7 +180,7 @@ public partial class BuildSync : Node, IToolWorld, IPartCatalog
         float? Height(float dx, float dz)
         {
             var from = new Vector3(centre.X + dx, centre.Y + 1.5f, centre.Z + dz);
-            var query = PhysicsRayQueryParameters3D.Create(from, from + Vector3.Down * 3f);
+            var query = PhysicsRayQueryParameters3D.Create(from, from + Vector3.Down * 3f, World.PhysicsLayers.Queries);
             var exclude = new Godot.Collections.Array<Rid>();
             for (var tries = 0; tries < 6; tries++)
             {
@@ -207,7 +207,7 @@ public partial class BuildSync : Node, IToolWorld, IPartCatalog
         var size = (definition.Size ?? GridSize.One).Metres.ToGodot() + Vector3.One * (2 * Settings!.AnchorMargin);
         var transform = pose.ToTransform()
             * new Transform3D(rotation.ToBasis(), PartGeometry.CentreMetres(definition, cell, rotation).ToGodot());
-        var query = new PhysicsShapeQueryParameters3D { Shape = Box(size), Transform = transform, CollideWithBodies = true };
+        var query = new PhysicsShapeQueryParameters3D { Shape = Box(size), Transform = transform, CollideWithBodies = true, CollisionMask = World.PhysicsLayers.Queries };
         var exclude = new Godot.Collections.Array<Rid>();
         foreach (var body in target is null ? [] : Creations.NodeOf(target.Id)?.Bodies ?? [])
             exclude.Add(body.GetRid());
@@ -216,6 +216,18 @@ public partial class BuildSync : Node, IToolWorld, IPartCatalog
         // carry Creations rather than anchoring them.
         return GetViewport().FindWorld3D().DirectSpaceState.IntersectShape(query, 32)
             .Any(hit => hit["collider"].AsGodotObject() is StaticBody3D and not LiftBody);
+    }
+
+    /// <inheritdoc/>
+    public int? LiftUnder(PartDefinition definition, GridCell cell, GridRotation rotation, Pose pose)
+    {
+        // The part's box grown by a margin touches the platform it sits on.
+        var size = (definition.Size ?? GridSize.One).Metres.ToGodot() + Vector3.One * (2 * Settings!.AnchorMargin);
+        var transform = pose.ToTransform()
+            * new Transform3D(rotation.ToBasis(), PartGeometry.CentreMetres(definition, cell, rotation).ToGodot());
+        var query = new PhysicsShapeQueryParameters3D { Shape = Box(size), Transform = transform, CollideWithBodies = true };
+        return GetViewport().FindWorld3D().DirectSpaceState.IntersectShape(query, 32)
+            .Select(hit => hit["collider"].AsGodotObject()).OfType<LiftBody>().FirstOrDefault()?.State.Owner;
     }
 
     /// <inheritdoc/>
@@ -247,7 +259,7 @@ public partial class BuildSync : Node, IToolWorld, IPartCatalog
     private string? Overlap(Shape3D shape, Transform3D transform, IReadOnlyCollection<int> ignoreCreations, int? ignoreLiftOf,
         IEnumerable<Rid>? ignoreBodies = null)
     {
-        var query = new PhysicsShapeQueryParameters3D { Shape = shape, Transform = transform, CollideWithBodies = true };
+        var query = new PhysicsShapeQueryParameters3D { Shape = shape, Transform = transform, CollideWithBodies = true, CollisionMask = World.PhysicsLayers.Queries };
         var exclude = new Godot.Collections.Array<Rid>();
         foreach (var id in ignoreCreations)
         {

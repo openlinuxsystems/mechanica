@@ -132,7 +132,11 @@
         },
         {
           "bot": "thresher",
-          "count": 2
+          "count": 2,
+          "one_of": [
+            "thresher_tiller",
+            "thresher_duster"
+          ]
         }
       ],
       "notes": "Elite appears (251–400)."
@@ -145,7 +149,11 @@
       "bots": [
         {
           "bot": "thresher",
-          "count": 4
+          "count": 4,
+          "one_of": [
+            "thresher_tiller",
+            "thresher_duster"
+          ]
         },
         {
           "bot": "spooler_blue",
