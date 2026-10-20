@@ -414,7 +414,7 @@ The vanilla scripts read these properties:
 | `scripts/seat.lua` | `steer_angle` (°) | How far A and D turn the upright bearings the seat feeds. |
 | | `steer_speed` (rad/s), `steer_torque` (N·m) | How fast and how hard they turn. |
 | `scripts/engine.lua` | `speed` (rad/s) | Wheel bearing speed at full throttle at full power. `gears` (default 5) is how many steps the `gear` setting (shown as Power) has, each giving that share. With nothing linked in, the `on` setting runs it at full throttle. |
-| | `torque`, `brake` (N·m) | Most torque while driving, and while holding the wheels with no throttle. |
+| | `torque`, `brake` (N·m) | Most torque while driving, and while holding the wheels with no throttle or while it is not running (nobody seated, switched off, out of fuel), so a parked car stays put. |
 | | `fuel`, `fuel_time` (s) | Item burned from the creation's containers, and seconds of full throttle per item. Creative needs none. |
 | | `loop_parameter` | Parameter of the `loop` sound that follows the throttle (`load`, `speed`). |
 | | `ignition` | When true the engine has to be switched `on` even when linked, and shows `clip`, `lever`, `heat`, `smoke`, `sparks` and `oil` for its model. |
