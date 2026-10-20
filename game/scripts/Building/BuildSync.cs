@@ -66,6 +66,9 @@ public partial class BuildSync : Node, IToolWorld, IPartCatalog
     /// <summary>Raised on the host just before a part breaks off, so what it holds can fall out.</summary>
     public event Action<Creation, int>? PartBreaking;
 
+    /// <summary>Raised on the host when a player picks up a world-owned part, with its marker's key (<see cref="IBuildWorld.TookWorldPart"/>).</summary>
+    public event Action<string>? WorldPartTaken;
+
     /// <summary>The tool actions, once registered (host-side Lift state lives here).</summary>
     public ToolActions? Tools { get; private set; }
 
@@ -320,6 +323,9 @@ public partial class BuildSync : Node, IToolWorld, IPartCatalog
 
     /// <inheritdoc/>
     public void Removed(int creationId) => Creations.Remove(creationId);
+
+    /// <inheritdoc/>
+    public void TookWorldPart(string key) => WorldPartTaken?.Invoke(key);
 
     /// <summary>Host → client: a player's Lift as it is now (Action API JSON), or empty when it is gone.</summary>
     [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]

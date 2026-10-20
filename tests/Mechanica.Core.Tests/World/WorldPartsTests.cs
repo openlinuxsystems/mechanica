@@ -14,7 +14,8 @@ namespace Mechanica.Core.Tests.World;
 
 /// <summary>
 /// The world's own parts (POI <c>part</c> markers, a Workshop's Fabricator): one per marker, standing on it, kept through
-/// saves, and world-owned: usable, but never picked up, built onto, lifted, welded, painted or damaged.
+/// saves, and world-owned: usable, and a player may pick it up (then it is theirs and its marker places no other), but
+/// never built onto, lifted, welded, painted or damaged.
 /// </summary>
 public sealed class WorldPartsTests
 {
@@ -252,25 +253,50 @@ public sealed class WorldPartsTests
     // ---- Protection ----
 
     [Fact]
-    public void NobodyCanPickUpOrBuildOntoAWorldPart()
+    public void NobodyCanBuildOntoAWorldPart()
     {
         var t = new Protected();
 
-        Assert.Equal("The Fabricator belongs to the world: it can't be picked up.", t.Refused(BuildActions.RemovePart, new { creation = t.Id, part = 1 }));
-        Assert.Equal("The Fabricator belongs to the world: it can't be picked up.", t.Refused(BuildActions.RemoveParts, new { creation = t.Id, parts = new[] { 1 } }));
         Assert.Equal("The Fabricator belongs to the world: it can't be built onto.",
             t.Refused(BuildActions.PlacePart, new { part = Wood, cell = new[] { 0, 9, 0 }, creation = t.Id }));
         Assert.Equal("The Fabricator belongs to the world: it can't be built onto.",
             t.Refused(BuildActions.PlaceParts, new { part = Wood, cells = new[] { new[] { 0, 9, 0 } }, creation = t.Id }));
         Assert.Equal("The Fabricator belongs to the world: it can't be built onto.", BuildAim.JoinProblem(Catalog.FindDefinition(Wood)!, t.World.Creations[t.Id]));
         t.AssertUnchanged();
+    }
 
-        // A Fabricator a player put down is theirs to pick up.
-        var mine = new Creation(50, Catalog).With(Fabricator);
-        mine.SetAllBodyPoses(new Pose(new Vector3(-1, 0, 0), Quaternion.Identity));
-        t.World.Add(mine, owned: false);
-        var result = t.Dispatch(BuildActions.RemovePart, new { creation = 50, part = 1 });
+    [Theory]
+    [InlineData(BuildActions.RemovePart)]
+    [InlineData(BuildActions.RemoveParts)]
+    public void APlayerMayPickUpAWorldPartAndItsMarkerPlacesNoOther(string action)
+    {
+        var t = new Protected();
+
+        var result = action == BuildActions.RemovePart
+            ? t.Dispatch(action, new { creation = t.Id, part = 1 })
+            : t.Dispatch(action, new { creation = t.Id, parts = new[] { 1 } });
+
         Assert.True(result.Ok, result.ToString());
+        Assert.False(t.World.Creations.ContainsKey(t.Id));
+        Assert.Equal(["vanilla:outpost#0@0"], t.World.Taken);
+        // Reloading the world puts nothing back at a taken marker, and still fills the others.
+        var spots = new[]
+        {
+            new WorldPartSpot("vanilla:outpost#0@0", Workshop, Fabricator, Vector3.Zero, 0),
+            new WorldPartSpot("vanilla:outpost#0@1", Workshop, Fabricator, new Vector3(40, 0, 0), 0),
+        };
+        var taken = new HashSet<WorldObjectId>(t.World.Taken.Select(k => WorldParts.ObjectOf(k)!.Value));
+        var plan = WorldParts.Reconcile(spots, [], Catalog, Ids(), taken.Contains);
+        Assert.Equal("vanilla:outpost#0@1", Assert.Single(plan.Add).WorldPart);
+    }
+
+    [Fact]
+    public void ATakenMarkerIsAPoiObjectId()
+    {
+        Assert.Equal(WorldObjectId.ForPoi(12, 3), WorldParts.ObjectOf(WorldParts.KeyOf("vanilla:outpost", 3, 12)));
+        Assert.Equal("poi.12.3", WorldParts.ObjectOf("other_mod:my#poi#3@12")!.Value.ToString());
+        Assert.Null(WorldParts.ObjectOf("not a key"));
+        Assert.Null(WorldParts.ObjectOf("vanilla:outpost#x@1"));
     }
 
     [Fact]
@@ -407,6 +433,10 @@ public sealed class WorldPartsTests
         public List<string> Log { get; } = [];
 
         public List<Vector3> Pushes { get; } = [];
+
+        public List<string> Taken { get; } = [];
+
+        public void TookWorldPart(string key) => Taken.Add(key);
 
         public double Now { get; set; } = 100;
 

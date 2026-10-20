@@ -112,6 +112,14 @@ public interface IBuildWorld
     void Removed(int creationId);
 
     /// <summary>
+    /// A player picked up a world-owned part (<see cref="Creation.WorldPart"/>): the POI marker <paramref name="key"/> must
+    /// never place another (the host records it as taken, <see cref="World.WorldParts.ObjectOf"/>). Worlds without POIs ignore it.
+    /// </summary>
+    void TookWorldPart(string key)
+    {
+    }
+
+    /// <summary>
     /// Plays a sound event at a world point for everyone in earshot (chunk 16). <paramref name="sound"/> is an
     /// id as data writes it; a bare one means <paramref name="ownerModId"/>'s event, else vanilla's
     /// (<see cref="SoundRegistry.Find"/>). Worlds without sound ignore it.
@@ -400,8 +408,6 @@ public sealed class BuildActions(IPartCatalog catalog, BuildSettings settings, I
             return $"There is no creation {args.Creation}.";
         if (creation.FindPart(args.Part) is not { } part)
             return $"Creation {args.Creation} has no part {args.Part}.";
-        if (WorldOwned.Refusal(creation, "picked up") is { } owned)
-            return owned;
         if (creation.HoldsItems(part.Id) && !creation.CarriesContents(part.Id))
             return $"Empty the {creation.DefinitionOf(part.Id).Name ?? part.Part} before picking it up.";
         var pose = creation.BodyPose(creation.BodyIndexOf(part.Id));
@@ -422,7 +428,11 @@ public sealed class BuildActions(IPartCatalog catalog, BuildSettings settings, I
         List<ItemStack> held = creation.InventoryOf(part.Id) is { IsEmpty: false } inventory
             ? [.. inventory.Slots.Where(s => s is not null).Select(s => s!)]
             : [];
+        var worldPart = creation.WorldPart;
         var result = Remove(world, creation, args.Part);
+        // A world-owned part is the player's once picked up: its marker places no other.
+        if (worldPart is not null)
+            world.TookWorldPart(worldPart);
         Costs?.Removed(caller, PartUpgrades.ItemKey(part.Part, part.Level), centre);
         if (held.Count > 0)
             Costs?.Emptied(caller, held, centre);

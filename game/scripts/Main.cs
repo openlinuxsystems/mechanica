@@ -1176,7 +1176,14 @@ public partial class Main : Node3D
     // save, so the streamer brings each in with the ground under it when a player comes near.
     private void PlaceWorldParts()
     {
-        var plan = WorldParts.Reconcile(WorldParts.SpotsOf(Streamer.Generator), Creations.All.ToList(), new LoadedParts(this), Build.NextCreationId);
+        // A part a player picked up is theirs: its marker is saved as taken, with the destroyed objects, and places no other.
+        Build.WorldPartTaken += key =>
+        {
+            if (WorldParts.ObjectOf(key) is { } id)
+                Streamer.State.Destroy(id);
+        };
+        var plan = WorldParts.Reconcile(WorldParts.SpotsOf(Streamer.Generator), Creations.All.ToList(), new LoadedParts(this), Build.NextCreationId,
+            Streamer.State.IsDestroyed);
         foreach (var id in plan.Remove)
             Creations.Remove(id);
         foreach (var id in plan.Moved)
