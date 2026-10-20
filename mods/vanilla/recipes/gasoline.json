@@ -1,6 +1,7 @@
 {
   "id": "gasoline",
   "stations": [
+    "fabricator",
     "refiner",
     "portable_fabricator"
   ],
