@@ -7,10 +7,12 @@ namespace Mechanica.Game.Tests;
 /// <summary>
 /// Bots in the wild, host plus client, in a generated Survival world: with both players on a shore, Blue Scuttlers
 /// appear in the deep water off it and swim there on both peers; when the players go far inland they are taken away.
+/// In a meadow, Grazers appear in herds in their biomes and show on the client.
 /// </summary>
 public partial class WildTest : StagedTest
 {
     private const string Blue = "vanilla:scuttler_blue";
+    private const string Grazer = "vanilla:grazer";
 
     private NetTestHarness _harness = null!;
     private Instance _host = null!;
@@ -48,7 +50,7 @@ public partial class WildTest : StagedTest
         });
         Add("Blue Scuttlers appear in the deep water and swim on both peers", _ =>
         {
-            var wild = _host.Main.Bots.Wild!.Bots;
+            var wild = _host.Main.Bots.Wild!.Bots.Where(id => _host.Main.Bots.Bots!.Find(id)?.Type.QualifiedId == Blue).ToList();
             if (wild.Count < 2 || !wild.All(id => _client.Main.Bots.Bodies.GetValueOrDefault(id)?.View is { Swimming: true }))
                 return false;
             var gen = _host.Main.Streamer.Generator;
@@ -74,6 +76,39 @@ public partial class WildTest : StagedTest
                 _host.Main.PlayerSync.HostTeleport(_client.Peer, inland + new Vector3(0, 0, 2));
             }
             return _host.Main.Bots.Bots!.Bots.Values.All(b => b.Type.QualifiedId != Blue) && _client.Main.Bots.Bodies.Values.All(b => b.Type.QualifiedId != Blue);
+        });
+        var meadow = Vector3.Zero;
+        Add("both players go to a meadow", frame =>
+        {
+            if (frame > 0)
+                return frame > 30;
+            var gen = _host.Main.Streamer.Generator;
+            for (var r = 0f; r < 5000f && meadow == default; r += 25f)
+            {
+                for (var a = 0f; a < Mathf.Tau && meadow == default; a += 0.3f)
+                {
+                    var (x, z) = (r * Mathf.Cos(a), r * Mathf.Sin(a));
+                    // deep in the biome, so a herd's spots round it are meadow too
+                    if (new[] { (0f, 0f), (60f, 0f), (-60f, 0f), (0f, 60f), (0f, -60f) }.All(d => gen.BiomeAt(x + d.Item1, z + d.Item2).Id == "meadow")
+                        && gen.HeightAt(x, z) > gen.SeaLevel + 2f)
+                        meadow = new Vector3(x, gen.HeightAt(x, z), z);
+                }
+            }
+            Check(meadow != default, $"a meadow is found at {meadow}");
+            _host.Main.PlayerSync.HostTeleport(_host.Peer, meadow + Vector3.Up * 0.5f);
+            _host.Main.PlayerSync.HostTeleport(_client.Peer, meadow + new Vector3(-2, 0.5f, 0));
+            return false;
+        });
+        Add("Grazers appear in herds in their biomes, on both peers", _ =>
+        {
+            var grazers = _host.Main.Bots.Wild!.Bots.Select(id => _host.Main.Bots.Bots!.Find(id)).Where(b => b?.Type.QualifiedId == Grazer).ToList();
+            if (grazers.Count < 4 || !grazers.All(b => _client.Main.Bots.Bodies.GetValueOrDefault(b!.Id)?.Model is not null))
+                return false;
+            var gen = _host.Main.Streamer.Generator;
+            foreach (var bot in grazers)
+                Check(gen.BiomeAt(bot!.Position.X, bot.Position.Z).Id is "meadow" or "field", $"Grazer {bot.Id} is in a meadow or field");
+            Check(grazers.All(a => grazers.Count(b => (a!.Position - b!.Position).Length() < 12f) >= 2), "each Grazer has herd mates near it");
+            return true;
         });
     }
 }

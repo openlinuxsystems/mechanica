@@ -131,6 +131,32 @@ public sealed record BotWildDefinition
     /// <summary>Seconds between tries to spawn more.</summary>
     public float? Interval { get; init; }
 
+    /// <summary>Biome ids (world generation) it appears in. Omitted or empty means any.</summary>
+    public List<string>? Biomes { get; init; }
+
+    /// <summary><c>[min, max]</c>: how many appear together, a few metres apart. Omitted means one at a time.</summary>
+    public List<int>? Herd { get; init; }
+
+    /// <summary>World objects (or scenes) it is often found near.</summary>
+    public BotWildNearDefinition? Near { get; init; }
+
+    /// <summary>Keys this build does not know.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>World objects a wild bot is often found near (<see cref="BotWildDefinition.Near"/>).</summary>
+public sealed record BotWildNearDefinition
+{
+    /// <summary>World object or scene ids (world generation).</summary>
+    public List<string>? Objects { get; init; }
+
+    /// <summary>How far from one it appears, in m.</summary>
+    public float? Radius { get; init; }
+
+    /// <summary>The share of spawns (0 to 1) that try near one first, when one is in reach.</summary>
+    public float? Share { get; init; }
+
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }

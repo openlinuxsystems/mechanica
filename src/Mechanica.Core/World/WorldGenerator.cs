@@ -301,6 +301,10 @@ public sealed partial class WorldGenerator
     public IEnumerable<WorldObjectPlacement> ObjectsIn(float x0, float z0, float x1, float z1) =>
         ScatteredIn(x0, z0, x1, z1).Concat(PoiObjectsIn(x0, z0, x1, z1));
 
+    /// <summary>The id an object was placed as: its scene's for a scene's piece, else its own.</summary>
+    public string SourceOf(WorldObjectPlacement placed) =>
+        placed.Id.IsPoi || placed.Id.Rule >= Data.ScatterRules.Count ? placed.Definition.Id! : Data.ScatterRules[placed.Id.Rule].Object.Id!;
+
     private IEnumerable<WorldObjectPlacement> PoiObjectsIn(float x0, float z0, float x1, float z1)
     {
         foreach (var poi in PoisOverlapping(x0, z0, x1, z1))

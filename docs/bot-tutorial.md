@@ -183,6 +183,16 @@ lakes and the sea:
 | `min_depth` | number, m | 1.5 | Water: how deep the water must be where it appears. |
 | `clear_radius` | number, m | 8 | How far round the spot must be its habitat too, so a `wander` round its home stays there. Make it more than the wander's radius. |
 | `interval` | number, s | 8 | Seconds between tries to spawn more of it. |
+| `biomes` | list of biome ids | any | The biomes (`world/worldgen.json`) it appears in, such as `meadow` or `field`. |
+| `herd` | `[min, max]` | `[1, 1]` | How many appear together, a few metres apart. A herd never takes the count past `count`. |
+| `near` | object | none | World objects it is often found near: `objects` (world object or scene ids), `radius` (m from one) and `share` (0 to 1, default 0.5: the share of spawns that try round one in reach first, else anywhere it fits). |
+
+The Grazer roams meadows and fields in small herds, often round farms:
+
+```json
+"wild": { "habitat": "land", "count": 4, "biomes": ["meadow", "field"], "herd": [2, 4],
+          "near": { "objects": ["scene_farmstead", "scene_hay_field"], "radius": 25, "share": 0.5 } }
+```
 
 A wild bot has no raid, so its tree's `in_raid` branches fail: give it a `wander` to fall back on, and it chases the
 players its `find_player` finds (out of the water too) before wandering home. Wild bots count towards `max_bots`

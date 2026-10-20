@@ -31,6 +31,11 @@ public partial class GuardTest : StagedTest
 
     private BotSync HostBots => _host.Main.Bots;
 
+    // Bots other than wild animals (Grazers may roam near the spawn), on the host and as the client shows them.
+    private List<BotState> HostGuards => [.. HostBots.Bots!.Bots.Values.Where(b => HostBots.Wild?.Bots.Contains(b.Id) != true)];
+
+    private List<BotBody> ClientGuards => [.. ClientBots.Bodies.Values.Where(b => HostBots.Wild?.Bots.Contains(b.BotId) != true)];
+
     public override void _Ready()
     {
         var mods = ModPaths.LoadContent();
@@ -50,7 +55,7 @@ public partial class GuardTest : StagedTest
             Check(posts.Count > 0, "the vanilla world has guard posts");
             _post = posts.MinBy(p => Flat(p.Feet.ToGodot() - _spawn))!;
             Check(Flat(_post.Feet.ToGodot() - _spawn) > HostBots.Settings!.GuardSleepDistance, $"the nearest post ({_post.Poi}) is far from the spawn");
-            Check(ClientBots.Bodies.Count == 0 && HostBots.Bots!.Bots.Count == 0, "no bots exist yet");
+            Check(ClientGuards.Count == 0 && HostGuards.Count == 0, "no bots but wild animals exist yet");
             return true;
         });
         Add("the client walks up to a POI and its guards appear there", frame =>
@@ -62,20 +67,20 @@ public partial class GuardTest : StagedTest
                 _host.Main.PlayerSync.HostTeleport(_client.Peer, at);
             }
             var onDuty = HostBots.Guards!.OnDuty.Count(id => id is not null);
-            if (onDuty == 0 || ClientBots.Bodies.Count != onDuty)
+            if (onDuty == 0 || ClientGuards.Count != onDuty)
                 return false;
-            Check(HostBots.Bots!.Bots.Values.All(b => Flat(b.Position.ToGodot() - _post.Feet.ToGodot()) < Visit + HostBots.Settings!.GuardWakeDistance),
+            Check(HostGuards.All(b => Flat(b.Position.ToGodot() - _post.Feet.ToGodot()) < Visit + HostBots.Settings!.GuardWakeDistance),
                 "every guard on duty stands near the visited POI");
-            var types = _client.Main.Bots.Bodies.Values.Select(b => b.Type.QualifiedId).ToHashSet();
+            var types = ClientGuards.Select(b => b.Type.QualifiedId).ToHashSet();
             Check(types.Contains(_post.Bot), $"the client shows the post's {_post.Bot} (shows {string.Join(", ", types)})");
-            Check(HostBots.Bots!.Bots.Values.All(b => b.Raid is null), "guards are not raiders");
+            Check(HostGuards.All(b => b.Raid is null), "guards are not raiders");
             return true;
         });
         Add("the client goes back to the spawn and the guards leave", frame =>
         {
             if (frame == 0)
                 _host.Main.PlayerSync.HostTeleport(_client.Peer, _spawn + new Vector3(0, 0.5f, 0));
-            return ClientBots.Bodies.Count == 0 && HostBots.Bots!.Bots.Count == 0;
+            return ClientGuards.Count == 0 && HostGuards.Count == 0;
         });
     }
 

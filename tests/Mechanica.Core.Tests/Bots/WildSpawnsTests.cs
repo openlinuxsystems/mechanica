@@ -14,7 +14,71 @@ public sealed class WildSpawnsTests
     {
         var f = new BotFixture(mode);
         MoveBoth(f, new Vector3(40, 1, 0));
-        return (f, new WildSpawns(f.Book.All, f.Bots, f.Survival.Survival, 0f, HeightAt, seed: 7));
+        return (f, new WildSpawns(f.Book.All.Where(t => t.QualifiedId == BotFixture.Swimmer), f.Bots, f.Survival.Survival, 0f, HeightAt, seed: 7));
+    }
+
+    // A land animal with the given wild keys (JSON), and the wild spawns of just that type.
+    private static (BotFixture F, WildSpawns Wild) Herd(string wild, Func<float, float, string?>? biomeAt = null,
+        Func<Vector2, float, IEnumerable<(string Object, Vector2 At)>>? objectsNear = null)
+    {
+        var f = new BotFixture();
+        MoveBoth(f, new Vector3(-100, 1, 0));
+        var type = BotBook.From(f.Survival.Catalog, ("test", new BotDefinition
+        {
+            Id = "grazer", Name = "Grazer", Health = 30, Speed = 2, Passive = true,
+            Wild = System.Text.Json.JsonSerializer.Deserialize<BotWildDefinition>(wild,
+                new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.SnakeCaseLower }),
+        })).All;
+        return (f, new WildSpawns(type, f.Bots, f.Survival.Survival, 0f, HeightAt, seed: 7, biomeAt, objectsNear));
+    }
+
+    private static string? NorthIsMeadow(float x, float z) => z > 0 ? "meadow" : "desert";
+
+    [Fact]
+    public void A_herd_appears_together_up_to_the_count()
+    {
+        var (f, wild) = Herd("""{ "habitat": "land", "count": 3, "herd": [3, 3], "clear_radius": 2 }""");
+
+        wild.Tick();
+
+        var bots = f.Bots.Bots.Values.ToList();
+        Assert.Equal(3, bots.Count);
+        Assert.All(bots, a => Assert.All(bots, b => Assert.True(Vector3.Distance(a.Position, b.Position) <= 10.1f, "the herd stays together")));
+    }
+
+    [Fact]
+    public void A_bot_with_biomes_appears_only_in_them()
+    {
+        var (f, wild) = Herd("""{ "habitat": "land", "count": 6, "biomes": ["meadow"], "clear_radius": 2 }""", NorthIsMeadow);
+
+        wild.Tick();
+
+        Assert.Equal(6, f.Bots.Bots.Count);
+        Assert.All(f.Bots.Bots.Values, b => Assert.True(b.Position.Z > 0, $"in the meadow ({b.Position})"));
+    }
+
+    [Fact]
+    public void A_bot_with_biomes_never_appears_where_biomes_are_unknown()
+    {
+        var (f, wild) = Herd("""{ "habitat": "land", "count": 2, "biomes": ["meadow"] }""");
+
+        wild.Tick();
+
+        Assert.Empty(f.Bots.Bots);
+    }
+
+    [Fact]
+    public void A_bot_appears_round_its_near_objects()
+    {
+        var farm = new Vector2(-100, 50);
+        IEnumerable<(string, Vector2)> Objects(Vector2 at, float radius) => [("barn", new Vector2(-150, -40)), ("farm", farm)];
+        var (f, wild) = Herd("""{ "habitat": "land", "count": 4, "clear_radius": 2, "near": { "objects": ["farm"], "radius": 10, "share": 1 } }""",
+            objectsNear: Objects);
+
+        wild.Tick();
+
+        Assert.Equal(4, f.Bots.Bots.Count);
+        Assert.All(f.Bots.Bots.Values, b => Assert.InRange(Vector2.Distance(new Vector2(b.Position.X, b.Position.Z), farm), 3.9f, 10.1f));
     }
 
     private static void MoveBoth(BotFixture f, Vector3 at)
