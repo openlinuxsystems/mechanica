@@ -82,6 +82,10 @@ The same calls exist on `creation` for a different part (`creation.set_bearing(p
 engine can drive every wheel bearing. Limits such as the highest speed and torque are in
 `game/data/motion.json`.
 
+Joints hold stiffly even when a light part hangs off a heavy one (a 6 kg wheel under a 300 kg car): the game runs
+Jolt with extra solver passes (`game/project-settings.md`), so wheels stay square to their bearing and a car with
+nobody steering drives in a straight line.
+
 ## Sliders (pistons)
 
 `type: "linear"`. `max` (required) is how far the head can push out, in m; `min` defaults to 0, fully
@@ -151,3 +155,4 @@ lone parts and small Creations sit and tip the way they look.
 | The car bottoms out or bounces | Stiffness too low for its weight (see the sag rule), or damping too low. |
 | A bearing refuses `set_bearing_angle` | The angle is outside ±π or the hinge's limits. |
 | The joint doesn't move at all | It is locked: both sides were welded into one Body. |
+| A car drifts to one side with nobody steering | The build is lopsided: more weight or grip on one side, or a steering bearing linked so it is not straight when the seat is empty. A symmetric car runs straight. |

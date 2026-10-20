@@ -38,6 +38,8 @@ timers/tooltip_delay_sec=0.25
 [physics]
 
 3d/physics_engine="Jolt Physics"
+jolt_physics_3d/simulation/velocity_steps=30
+jolt_physics_3d/simulation/position_steps=10
 jolt_physics_3d/limits/max_angular_velocity=150.0
 
 [rendering]

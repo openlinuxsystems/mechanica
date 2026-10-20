@@ -2,6 +2,7 @@ using Godot;
 using Mechanica.Core.Net;
 using Mechanica.Core.World;
 using Mechanica.Game.Menus;
+using Mechanica.Game.Settings;
 using Mechanica.Game.World;
 
 namespace Mechanica.Game.Tests;
@@ -10,7 +11,7 @@ namespace Mechanica.Game.Tests;
 /// View distance draws the world past the simulated ground (UI spec §16 Graphics). With scenery on, chunks
 /// fill in out to the view distance, nearest first, never overlapping the simulated chunks and with no
 /// colliders; walking leaves no hole in the ground the sky shows through, at the simulated chunks' edge or
-/// between chunks; a shorter view distance drops the far ones and the shortest draws the simulated ground alone.
+/// between chunks, and the fog the far ground fades into is the sky behind it; a shorter view distance drops the far ones and the shortest draws the simulated ground alone.
 /// </summary>
 public partial class SceneryTest : StagedTest
 {
@@ -54,6 +55,17 @@ public partial class SceneryTest : StagedTest
             Check(shapes == _streamer.Chunks.Count, $"only simulated chunks have ground colliders ({shapes} for {_streamer.Chunks.Count})");
             Check(_streamer.Scenery.Values.All(c => !c.Objects.GetChildren().OfType<CollisionShape3D>().Any()), "scenery objects have no colliders");
             _far = _streamer.Scenery.Count;
+            return true;
+        });
+        Add("the fog at the view distance is the sky's horizon colour", _ =>
+        {
+            // Far ground fades fully into the fog by the view distance; if the fog differed from the sky behind it, the far
+            // chunks coming and going as the player moves would flash the sky at the horizon.
+            var env = _main.GetNode<WorldEnvironment>("WorldEnvironment").Environment;
+            var sky = (ProceduralSkyMaterial)env.Sky.SkyMaterial;
+            Check(env.FogEnabled && env.FogLightColor.IsEqualApprox(sky.SkyHorizonColor) && env.FogAerialPerspective == 0f && env.FogSunScatter == 0f,
+                $"fog {env.FogLightColor} matches the horizon {sky.SkyHorizonColor}");
+            Check(Mathf.IsEqualApprox(env.FogDepthEnd, GameSettings.Current.Graphics.Effective().ViewDistance), $"fog closes at the view distance ({env.FogDepthEnd} m)");
             return true;
         });
         Add("every chunk's ground hangs a skirt below its edges", _ =>

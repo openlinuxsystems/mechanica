@@ -99,8 +99,11 @@ public partial class CreationTest : Node3D
             for (var i = 0; i < _machine.Bodies.Count; i++)
             {
                 var (a, b) = (_machine.Bodies[i].GlobalTransform, copy.Bodies[i].GlobalTransform);
-                Check(a.Origin.DistanceTo(b.Origin) < 1e-4f && a.Basis.GetRotationQuaternion().AngleTo(b.Basis.GetRotationQuaternion()) < 1e-4f,
-                    $"body {i} spawns where it was saved ({b.Origin})");
+                // Compared by component: AngleTo's acos turns float rounding near identity into ~1e-3 rad.
+                var (qa, qb) = (a.Basis.GetRotationQuaternion(), b.Basis.GetRotationQuaternion());
+                var turn = Mathf.Min((qa - qb).Length(), (qa + qb).Length());
+                Check(a.Origin.DistanceTo(b.Origin) < 1e-4f && turn < 1e-4f,
+                    $"body {i} spawns where it was saved ({b.Origin}, rotation off by {turn})");
             }
             RemoveChild(copy);
             copy.Free();

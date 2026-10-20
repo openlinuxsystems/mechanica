@@ -367,7 +367,7 @@ Each setting:
 | `step` | number > 0 | Step of the settings panel's field. |
 | `options` | list of snake_case | The choices of a `choice`, distinct. Required for a choice. |
 | `icons` | object | A choice's pictures: option → `.png`. The menu shows the picked one by the drop-down, and a cycle card shows it large. |
-| `presets` | list of `{name, value}` | Buttons by a number's slider that set it to `value` (an engine's Low, Medium and High). Each value fits the setting. |
+| `presets` | list of `{name, value}` | Buttons by a number's slider that set it to `value` (Low, Medium and High). Each value fits the setting. |
 | `group` | string | Toggles with the same group sit side by side under that heading (a sensor's Detects: Players, Bots, Blocks, Creations). |
 | `hide_when_linked` | bool | While anything is linked into the part the setting gives way to "Driven by what is linked to it." (an engine's On toggle). |
 | `max_count` | integer 1 to 64 | Most entries of a `number_list`, or frames of a `sequence`. Required for both. |
@@ -486,6 +486,7 @@ Every key is optional.
 | `preview` | object | A see-through shape drawn on the part while its menu is open, sized by a setting (a sensor's cone). |
 | `apply` | bool | Changes wait for an Apply button (or closing the menu) instead of going to the host at once (a controller's frames). |
 | `lock_when_sequenced` | bool | While a part with a `sequence` setting (a Controller) is linked into the part, its menu shows only that the Controller runs it and the host refuses setting changes (a piston). |
+| `lever` | object | Lays the menu out round a power lever, as the engines' menus are: see [lever](#lever). |
 
 Each readout:
 
@@ -497,6 +498,35 @@ Each readout:
 | `max` | number > 0 | A bar's full value. Default 1. |
 | `unit` | string | Shown after a number (`rpm`, `N·m`). |
 | `decimals` | integer 0 to 6 | Digits after the point. Default 0. |
+
+### lever
+
+A menu with `lever` shows the part's name and level pill, its picture with a fuel slot under it, a tall lever
+from Off at the bottom to MAX at the top, its other readouts as chips (`bar` readouts other than `fuel_bar`
+are left out), a hint line, and, while the part has a next level, a band with that level's picture, what it
+gains, its cost (have/need, free in Creative) and Upgrade (U). The lever's steps run to the top of `setting` at
+the part's last level; steps above the current level's top are hatched under a LIMIT mark until the part is
+upgraded. Picking a step sends the setting (and turns `off` on); the bottom notch turns `off` off.
+
+| Key | Type | Meaning |
+|-----|------|---------|
+| `setting` | setting id | The `number` setting the lever sets (an engine's `gear`). Required. |
+| `off` | setting id | A `toggle` setting the bottom notch turns off. Without it the lever starts at the setting's `min`. |
+| `fuel` | item id | The item shown in the fuel slot (`gasoline`). |
+| `fuel_count` | readout id | A `number` readout counting `fuel` items left, shown on the slot (red and faded at 0). Needs `fuel`. |
+| `fuel_bar` | readout id | A `bar` readout of what is left of the item burning now, shown under the slot. Needs `fuel`. |
+| `hint` | string | The line under the lever. Default "Drag to adjust the power". |
+| `upgrade_stats` | list of `{name, value, show}` | What the next level gains, in order. `value` is `outputs`, `inputs`, `durability`, `settings.<id>` (the top of a number setting) or `properties.<key>` (a number property); `show` is `difference` (default, `+2`) or `percent` (`+50%`). A line whose value does not change is left out. Without the list the band shows every change, from → to. |
+
+```json
+"lever": {
+  "setting": "gear", "off": "on", "fuel": "gasoline", "fuel_count": "fuel_items", "fuel_bar": "fuel",
+  "upgrade_stats": [
+    { "name": "Bearings", "value": "outputs" },
+    { "name": "Torque", "value": "properties.torque", "show": "percent" }
+  ]
+}
+```
 
 `preview` has `shape` (`ray`, `cone` or `sphere`, default `ray`), `range` (the number setting that sizes it, in
 m, required), `axis` (which way a ray or cone points in the part's frame, default `[0, 1, 0]`) and

@@ -45,6 +45,7 @@ namespace Mechanica.Game.Tools;
 /// Given <c>fabricator</c> it puts down a level 1 and a level 5 Fabricator, shows them from every side (the input port on
 /// the left, the output on the right), then has each craft: unfolding, welding and drilling with sparks, and folding back
 /// (<c>tools/capture-fabricator.sh</c>).
+/// Given <c>engine_menu</c> it opens the menus of a row of engines in Survival (<c>tools/capture-engine-menu.sh</c>).
 /// Given <c>roads</c> it captures the road junctions nearest the world's centre from above, wide and from a driver's height
 /// (<c>tools/capture-roads.sh</c>).
 /// </summary>
@@ -90,14 +91,16 @@ public partial class CaptureScene : Node
         var roads = args.Length > 1 && args[1] == "roads";
         var moves = args.Length > 1 && args[1] == "animations";
         var crash = args.Length > 1 && args[1] == "crash_site";
-        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
+        var engineMenu = args.Length > 1 && args[1] == "engine_menu";
+        var flashes = args.Length > 1 && args[1] == "flashes";
+        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash && !engineMenu && !flashes ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
         if (debugCar)
             Main.MenuCharacter = "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
         // Building the block wall needs Creative: free parts and no build reach.
         _main.Options = LaunchOptions.Offline with { Seed = 7, GameMode = blocks || soil || wheels || portable || liftCapture ? Core.Survival.GameMode.Creative : LaunchOptions.Offline.GameMode };
         // The button shots show the HUD (the creation hotbar), which only a main reading the devices builds.
-        _main.ReadDeviceInput = icons || wheels || button;
+        _main.ReadDeviceInput = icons || wheels || button || engineMenu;
         _main.DebugCar = debugCar;
         AddChild(_main);
         _camera = new Camera3D { Fov = 40 };
@@ -172,6 +175,11 @@ public partial class CaptureScene : Node
             ButtonShots();
             return;
         }
+        if (engineMenu)
+        {
+            EngineMenuShots();
+            return;
+        }
         if (wheels)
         {
             WheelShots();
@@ -215,6 +223,11 @@ public partial class CaptureScene : Node
         if (crash)
         {
             CrashSiteShots();
+            return;
+        }
+        if (flashes)
+        {
+            FlashShots();
             return;
         }
         if (roads)
@@ -813,6 +826,35 @@ public partial class CaptureScene : Node
             Shot($"roads_{k}_above", 30, () => { _main.Flora.BuildAll(); ViewAt(at, down * 0.5f + Vector3.Up * 70f, 0f); });
             Shot($"roads_{k}_wide", 30, () => ViewAt(at, down.Rotated(Vector3.Up, 0.5f) * 38f + Vector3.Up * 16f, 0f));
             Shot($"roads_{k}_driver", 30, () => ViewAt(at, down * 30f + Vector3.Up * 2.2f, 1f));
+        }
+    }
+
+    // A walk across chunk borders, a frame every 3 m, looking ahead over the distant ground from 30 m up: the frames
+    // show whether the sky flashes through the ground as chunks load ahead and unload behind.
+    private void FlashShots()
+    {
+        Engine.TimeScale = 1.0;
+        var start = Vector3.Zero;
+        var ahead = new Vector3(1f, 0f, 0.35f).Normalized();
+        Shot("flashes_00_wait", 60, () => { });
+        Shot("flashes_00_go", 300, () =>
+        {
+            start = _main.LocalPlayer!.GlobalPosition;
+            GameSettings.Apply(GameSettings.Current with { Graphics = GameSettings.Current.Graphics with { Grass = FoliageLevel.Off, GroundCover = FoliageLevel.Off, Bushes = FoliageLevel.Off } });
+        });
+        for (var k = 0; k < 160; k++)
+        {
+            var step = 3f * k;
+            Shot($"flashes_{k:000}", 1, () =>
+            {
+                var at = start + ahead * step;
+                _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, Ground(at) + Vector3.Up * 1f, 0f);
+                _follow = null;
+                _camera.MakeCurrent();
+                _camera.Fov = 70;
+                _camera.GlobalPosition = Ground(at) + Vector3.Up * 30f;
+                _camera.LookAt(_camera.GlobalPosition + ahead * 10f + Vector3.Down * 0.8f);
+            });
         }
     }
 
@@ -1497,6 +1539,29 @@ public partial class CaptureScene : Node
         Shot("debug_car_04_top", 60, () => Car(new Vector3(0.625f, 6.5f, 2.6f), new Vector3(0.625f, 0f, 1.4f)));
         Shot("debug_car_05_axle", 60, () => Car(new Vector3(2.6f, 0.15f, -2.4f), new Vector3(0.6f, -0.4f, 0.4f)));
         Shot("debug_car_06_spawn", 60, () => Car(new Vector3(-5f, 3.2f, 16f), new Vector3(-1f, 0.4f, 3.5f)));
+        if (OS.GetEnvironment("CAPTURE_CAR_LIFT") == "1")
+        {
+            // The car on the Lift: it rests on its deck with the wheels past the platform's sides.
+            Shot("debug_car_lift_0", 180, () =>
+            {
+                var id = _main.DebugCarId!.Value;
+                var at = _main.Creations.NodeOf(id)!.Bodies[0].GlobalPosition;
+                _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, at + new Vector3(-2.5f, 0.5f, 0f), 0f);
+                _main.Actions.Request(Core.Building.ToolActions.CaptureLift, new Core.Building.CaptureLiftArgs(id), r => GD.Print($"[capture] capture: {r}"));
+                _main.Actions.Request(Core.Building.ToolActions.PlaceLift, new Core.Building.PlaceLiftArgs(Ground(at + new Vector3(0, 0, 4f)) is var g ? new Core.Data.Vec3(g.X, g.Y, g.Z) : default, id),
+                    r => GD.Print($"[capture] lift: {r}"));
+            });
+            Shot("debug_car_lift_1_side", 60, () =>
+            {
+                var box = Core.World.CreationBounds.World(_main.Creations.Find(_main.DebugCarId!.Value)!);
+                GD.Print($"[capture] car on lift: {box.Min} - {box.Max}, lift {_main.Tools!.Lift.Own}");
+                Car(new Vector3(5.6f, 0.2f, 1.4f), new Vector3(0.625f, -0.6f, 1.375f));
+            });
+            Shot("debug_car_lift_2_front", 60, () =>
+            {
+                Car(new Vector3(0.9f, 0.4f, -4.6f), new Vector3(0.625f, -0.6f, 1.375f));
+            });
+        }
         Shot("debug_car_07_sit", 120, () =>
         {
             var id = _main.DebugCarId!.Value;

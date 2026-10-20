@@ -68,6 +68,36 @@ public class ToolActionsTests
     }
 
     [Fact]
+    public void ACreationRestsOnThePlatformWithWhatHangsPastItsSides()
+    {
+        // A bridge (a deck on two legs, like a car on its wheels) wider than the platform: the legs stand past its sides.
+        var id = Add(Bridge);
+
+        var result = Dispatch(ToolActions.PlaceLift, new { position = new[] { 0f, 0f, 0f }, creation = id });
+
+        Assert.True(result.Ok, result.ToString());
+        var lift = _tools.LiftOf(2)!;
+        // Raised one level, so the legs hanging 0.5 m below the deck reach down to the Lift's feet and no further.
+        Assert.Equal(1, lift.Level);
+        var creation = _world.Creations[id];
+        // The deck (grid row 2) rests on the platform's top.
+        Assert.Equal(_settings.Lift.TopAt(1), creation.BodyPose(0).Position.Y + 2 * 0.25f - 0.125f, 1e-4f);
+        Assert.Equal(0f, CreationBounds.World(creation).Min.Y, 1e-4f);
+        Assert.Equal(1, ToolActions.LevelFor(creation, _settings.Lift, 0, 0));
+        Assert.Equal(3, ToolActions.LevelFor(creation, _settings.Lift, 0, 3));
+    }
+
+    [Fact]
+    public void WithoutAPlatformSizeACreationRestsOnItsLowestPart()
+    {
+        var creation = Bridge(1);
+
+        var poses = ToolActions.Seat(creation, Vector3.Zero);
+
+        Assert.Equal(0f, CreationBounds.World(CreationBounds.LocalBodyBounds(creation), poses).Min.Y, 1e-4f);
+    }
+
+    [Fact]
     public void RaisingAndTurningMoveTheCreationWithThePlatform()
     {
         var id = Add(Car());
@@ -689,6 +719,21 @@ public class ToolActionsTests
         creation.SetAllBodyPoses(new Pose(at ?? new Vector3(-0.25f, 0.125f, 0), Quaternion.Identity));
         return creation;
     };
+
+    // A deck ten blocks long on a leg two blocks high at each end, standing on the ground.
+    private static Creation Bridge(int id)
+    {
+        var bridge = new Creation(id, Catalog());
+        for (var x = 0; x < 10; x++)
+            bridge.Place(Block, new GridCell(x, 2, 0));
+        foreach (var x in new[] { 0, 9 })
+        {
+            bridge.Place(Block, new GridCell(x, 1, 0));
+            bridge.Place(Block, new GridCell(x, 0, 0));
+        }
+        bridge.SetAllBodyPoses(new Pose(new Vector3(3, 0.125f, 0), Quaternion.Identity));
+        return bridge;
+    }
 
     private static Func<int, Creation> Tilted(Func<int, Creation> make) => id =>
     {

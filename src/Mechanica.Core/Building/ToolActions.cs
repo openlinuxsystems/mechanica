@@ -326,10 +326,12 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
     /// <summary>
     /// Where a Creation's Bodies go on a platform whose top middle is <paramref name="platformTop"/>: the
     /// whole Creation turns as one so its first Body stands upright, squared to the nearest quarter turn
-    /// about the vertical plus <paramref name="turns"/>; then it moves so the bottom of its box rests on
-    /// the platform, centred over it. Bodies keep their places relative to each other.
+    /// about the vertical plus <paramref name="turns"/>; then it moves centred over the platform until it rests on it.
+    /// With a <paramref name="platformSize"/>, it rests on the lowest of its parts over the platform's square, so a
+    /// car's wheels hang down past the platform's sides and its deck sits on it; parts hang lower only where nothing is
+    /// over the platform. Bodies keep their places relative to each other.
     /// </summary>
-    public static IReadOnlyList<Pose> Seat(Creation creation, Vector3 platformTop, int turns = 0)
+    public static IReadOnlyList<Pose> Seat(Creation creation, Vector3 platformTop, int turns = 0, float platformSize = 0)
     {
         var poses = Enumerable.Range(0, creation.Bodies.Count).Select(creation.BodyPose).ToList();
         var first = poses[0];
@@ -346,8 +348,56 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
             .ToList();
         var box = CreationBounds.World(CreationBounds.LocalBodyBounds(creation), turned);
         var centre = (box.Min + box.Max) / 2;
-        var shift = new Vector3(platformTop.X - centre.X, platformTop.Y - box.Min.Y, platformTop.Z - centre.Z);
+        var across = new Vector3(platformTop.X - centre.X, 0, platformTop.Z - centre.Z);
+        var bottom = platformSize > 0 ? LowestOver(creation, turned, across, platformTop, platformSize) ?? box.Min.Y : box.Min.Y;
+        var shift = across + new Vector3(0, platformTop.Y - bottom, 0);
         return [.. turned.Select(p => p with { Position = p.Position + shift })];
+    }
+
+    /// <summary>
+    /// How far below the platform's top a Creation seated on a Lift (<see cref="Seat"/>) reaches, in metres: zero
+    /// unless parts beside the platform hang lower than what rests on it.
+    /// </summary>
+    public static float Overhang(Creation creation, LiftSettings settings, int turns = 0)
+    {
+        var poses = Seat(creation, Vector3.Zero, turns, settings.PlatformSize);
+        return MathF.Max(0, -CreationBounds.World(CreationBounds.LocalBodyBounds(creation), poses).Min.Y);
+    }
+
+    /// <summary>
+    /// The lowest Lift level from <paramref name="level"/> up at which a Creation seated on it (<see cref="Seat"/>)
+    /// hangs no lower than the Lift's feet, so a car whose wheels hang past the platform goes on with them clear of the
+    /// ground; at most the highest level.
+    /// </summary>
+    public static int LevelFor(Creation creation, LiftSettings settings, int turns, int level)
+    {
+        var hang = Overhang(creation, settings, turns);
+        var needed = (int)MathF.Ceiling((hang - settings.BaseHeight) / settings.LevelHeight - 1e-3f);
+        return Math.Clamp(Math.Max(level, needed), 0, settings.MaxLevel);
+    }
+
+    // The bottom of the lowest part cell over the platform's square once the Creation moves by `across`, or null when
+    // none is over it.
+    private static float? LowestOver(Creation creation, IReadOnlyList<Pose> poses, Vector3 across, Vector3 platformTop, float platformSize)
+    {
+        var half = new Vector3(MechanicaInfo.GridSize / 2f);
+        var edge = platformSize / 2;
+        float? lowest = null;
+        foreach (var part in creation.Parts)
+        {
+            var pose = poses[creation.BodyIndexOf(part.Id)];
+            foreach (var cell in creation.CellsOf(part.Id))
+            {
+                var centre = cell.Metres.ToNumerics();
+                var box = new WorldBounds(centre - half, centre + half).Transform(pose);
+                if (box.Max.X + across.X <= platformTop.X - edge || box.Min.X + across.X >= platformTop.X + edge
+                    || box.Max.Z + across.Z <= platformTop.Z - edge || box.Min.Z + across.Z >= platformTop.Z + edge)
+                    continue;
+                if (lowest is null || box.Min.Y < lowest)
+                    lowest = box.Min.Y;
+            }
+        }
+        return lowest;
     }
 
     /// <summary>World position of the middle of a Lift platform's top.</summary>
@@ -479,14 +529,14 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
             return "You have no lift.";
         if (Held(lift) is not { } carried)
             return "Your lift holds no creation.";
-        return CheckReach(caller, lift.Position.ToNumerics()) ?? CheckLift(lift, carried, args.Turns);
+        return CheckReach(caller, lift.Position.ToNumerics()) ?? CheckLift(Raised(lift, carried, args.Turns), carried, args.Turns);
     }
 
     private JsonElement? ApplyTurn(ActionCaller caller, TurnLiftArgs args)
     {
         var lift = LiftOf(caller.Peer)!;
         world.PlaySound("lift_place", Identifiers.VanillaModId, PlatformTop(lift));
-        return Commit(lift, Held(lift), args.Turns);
+        return Commit(Raised(lift, Held(lift)!, args.Turns), Held(lift), args.Turns);
     }
 
     private string? ValidateRemoveLift(ActionCaller caller, NoArgs args) =>
@@ -556,8 +606,16 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
         carried = args.Creation is { } id ? world.FindCreation(id) : Held(existing);
         var p = args.Position;
         var snapped = new Vec3(MechanicaInfo.ToGridCell(p.X) * MechanicaInfo.GridSize, p.Y, MechanicaInfo.ToGridCell(p.Z) * MechanicaInfo.GridSize);
-        return new LiftState(peer, snapped, existing?.Level ?? 0, carried?.Id);
+        var level = existing?.Level ?? 0;
+        // A Creation going on raises the Lift as far as it must for what hangs past the platform to clear its feet.
+        if (args.Creation is not null && carried is not null)
+            level = LevelFor(carried, settings.Lift, args.Turns, level);
+        return new LiftState(peer, snapped, level, carried?.Id);
     }
+
+    // The Lift raised as far as a turned Creation needs for what hangs past the platform (LevelFor).
+    private LiftState Raised(LiftState lift, Creation carried, int turns) =>
+        lift with { Level = LevelFor(carried, settings.Lift, turns, lift.Level) };
 
     private Creation? Held(LiftState? lift) => lift?.Creation is { } id ? world.FindCreation(id) : null;
 
@@ -574,7 +632,7 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
             return blocked;
         if (carried is null)
             return null;
-        var poses = Seat(carried, lift.Position.ToNumerics() + new Vector3(0, settings.TopAt(lift.Level), 0), turns);
+        var poses = Seat(carried, lift.Position.ToNumerics() + new Vector3(0, settings.TopAt(lift.Level), 0), turns, settings.PlatformSize);
         foreach (var part in carried.Parts)
         {
             if (world.CheckPartClear(carried.DefinitionOf(part.Id), part.Cell, part.Rotation, poses[carried.BodyIndexOf(part.Id)], ignore, lift.Owner) is { } reason)
@@ -588,7 +646,7 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
         _lifts[lift.Owner] = lift;
         if (carried is not null)
         {
-            var poses = Seat(carried, PlatformTop(lift), turns);
+            var poses = Seat(carried, PlatformTop(lift), turns, settings.Lift.PlatformSize);
             for (var i = 0; i < poses.Count; i++)
             {
                 carried.SetBodyPose(i, poses[i]);

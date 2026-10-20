@@ -8,7 +8,8 @@ namespace Mechanica.Game.Ui;
 /// borders. It goes on the root of a screen built in the new style (the Fabricator, the hotbar) and covers that subtree;
 /// the rest of the game keeps <see cref="MechanicaTheme"/> until each screen moves over.
 /// <para>Panel variations (PanelContainer): <c>MainWindow</c>, <c>Header</c>, <c>TabStrip</c>, <c>SurfacePanel</c>,
-/// <c>Drawer</c>, <c>QueueBand</c>, <c>CardPanel</c>, <c>InsetPanel</c>, <c>Pill</c>, <c>WarningPill</c>, <c>KeyCap</c>.
+/// <c>Drawer</c>, <c>QueueBand</c>, <c>CardPanel</c>, <c>InsetPanel</c>, <c>Pill</c>, <c>WarningPill</c>, <c>KeyCap</c>,
+/// <c>MenuCard</c> and <c>MenuBand</c> (a part's compact menu).
 /// Labels: <c>DisplayLabel</c>, <c>HeadingLabel</c>, <c>SectionLabel</c>, <c>InkSectionLabel</c>, <c>MutedLabel</c>,
 /// <c>InkLabel</c>, <c>NumericLabel</c>, <c>InkNumericLabel</c>, <c>ErrorTextLabel</c>, <c>SuccessTextLabel</c>,
 /// <c>PillLabel</c>, <c>KeyCapLabel</c>. Buttons: the plain button (secondary, on chrome), <c>PrimaryButton</c>,
@@ -111,13 +112,18 @@ public static class StationTheme
         (pill.ContentMarginLeft, pill.ContentMarginRight, pill.ContentMarginTop, pill.ContentMarginBottom) = (10, 10, 2, 2);
         var warning = Box(UiTokens.Warning, 12);
         (warning.ContentMarginLeft, warning.ContentMarginRight, warning.ContentMarginTop, warning.ContentMarginBottom) = (10, 10, 2, 2);
+        // A part's compact menu (an engine's lever menu): a Card window, its header and bottom band in Chrome.
+        var menuCard = Box(UiTokens.Card, WindowCorner);
+        (menuCard.ShadowColor, menuCard.ShadowSize, menuCard.ShadowOffset) = (window.ShadowColor, window.ShadowSize, window.ShadowOffset);
+        var menuBand = Box(UiTokens.Chrome, 0);
+        (menuBand.ContentMarginLeft, menuBand.ContentMarginRight, menuBand.ContentMarginTop, menuBand.ContentMarginBottom) = (20, 20, 14, 14);
         var key = Box(Colors.White with { A = 0.12f }, 4);
         (key.ContentMarginLeft, key.ContentMarginRight) = (6, 6);
         foreach (var (name, box) in new (string, StyleBox)[]
         {
             ("MainWindow", window), ("Header", header), ("TabStrip", tabs), ("SurfacePanel", surface), ("Drawer", drawer),
             ("QueueBand", queue), ("CardPanel", card), ("InsetPanel", Box(UiTokens.Inset, TileCorner, 8)), ("Pill", pill),
-            ("WarningPill", warning), ("KeyCap", key),
+            ("WarningPill", warning), ("KeyCap", key), ("MenuCard", menuCard), ("MenuBand", menuBand),
         })
         {
             t.SetTypeVariation(name, "PanelContainer");
