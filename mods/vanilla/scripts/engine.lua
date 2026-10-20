@@ -3,11 +3,11 @@
 -- car should drive. With no throttle it holds the wheels with properties.brake N·m, and so does an engine that is not
 -- running (nobody in its seat, switched off, out of fuel): a parked car stays put on flat ground and gentle slopes and
 -- only creeps down a hill steep enough to overcome the brake.
--- Its controls decide when it runs. With none linked into it, it runs forward at full throttle (an engine is on by
--- default). A linked driver's seat runs it only while someone sits in it, with their W/S as the throttle: getting up
--- stops it. A passenger seat (one that shows "passenger") never does.
+-- Its controls decide when it runs. With none linked into it, it never runs: a newly placed engine stays off. A linked
+-- driver's seat runs it only while someone sits in it, with their W/S as the throttle: getting up stops it. A passenger
+-- seat (one that shows "passenger") never does.
 -- Any other control (a switch, a button, a logic gate) runs it while its signal is not 0. Removing or destroying the
--- controls leaves it with none, so it runs on its own again (also when the driver was still sitting in the seat).
+-- controls leaves it with none, so it stops (also when the driver was still sitting in the seat).
 -- Properties: "speed" (rad/s at the top gear), "torque" (N·m), "brake" (N·m), "fuel" (item id) and
 -- "fuel_time" (seconds of full throttle per item). In Creative it needs no fuel. It burns fuel from the containers
 -- linked into it with the Connect Tool (gas containers), or from every container of the Creation when none is.
@@ -67,13 +67,12 @@ local function tanks()
 end
 
 -- Whether the engine's controls let it run, and the throttle they ask for. With no control linked into it (only
--- tanks, or nothing) it runs at full throttle. A driver's seat lets it run while someone sits in it, a passenger seat
--- never; any other control while its signal is not 0.
+-- tanks, or nothing) it does not run. A driver's seat lets it run while someone sits in it, a passenger seat never; any
+-- other control while its signal is not 0.
 local function controlled()
-  local any, engaged, throttle = false, false, 0
+  local engaged, throttle = false, 0
   for _, input in ipairs(part.inputs()) do
     if not input.storage then
-      any = true
       throttle = throttle + input.value
       if input.seat then
         local passenger = creation.displayed(input.part, "passenger")
@@ -82,9 +81,6 @@ local function controlled()
         engaged = true
       end
     end
-  end
-  if not any then
-    return true, 1
   end
   return engaged, clamp(throttle)
 end

@@ -10,20 +10,21 @@
   "road": "road",
   "placement": {},
   "terrain": [
-    { "op": "flatten", "radius": 24.0, "blend": 20.0 }
+    { "op": "flatten", "radius": 26.0, "blend": 20.0 }
   ],
   "ground": [{ "ground": "lot", "radius": 24.0, "blend": 8.0, "noise": 4.0 }],
   "models": [
-    // Centred on its forecourt: the model's origin is the hall's centre.
-    { "file": "meshes/structures/workshop.glb", "at": [2.0, 0.0, -3.0], "yaw": 0.0 }
+    // Centred on its forecourt: the model's origin is the hall's centre, 0.3 m under its slab, so sinking it 0.28 m
+    // leaves the slab flush with the ground (creations drive straight on).
+    { "file": "meshes/structures/workshop.glb", "at": [2.0, -0.28, -3.0], "yaw": 0.0 }
   ],
   "markers": [
     // The Fabricator against the back wall of bay 2, facing out: the host puts a working one here that nobody can
     // move or break.
-    { "type": "part", "ref": "fabricator", "at": [7.25, 0.3, -10.6], "yaw": 180.0 },
-    { "type": "item", "ref": "dispenser", "at": [12.0, 0.3, 2.5] },
-    { "type": "item", "ref": "respawn_bed", "at": [-11.6, 0.3, -1.5] },
-    { "type": "item", "ref": "chest", "at": [-7.8, 0.3, -10.6] },
-    { "type": "item", "ref": "outpost_sign", "at": [10.0, 0.0, 13.0] }
+    { "type": "part", "ref": "fabricator", "at": [7.25, 0.02, -10.6], "yaw": 180.0 },
+    { "type": "item", "ref": "dispenser", "at": [12.0, 0.02, 2.5] },
+    { "type": "item", "ref": "respawn_bed", "at": [-11.6, 0.02, -1.5] },
+    { "type": "item", "ref": "chest", "at": [-7.8, 0.02, -10.6] },
+    { "type": "item", "ref": "outpost_sign", "at": [10.0, 0.02, 13.0] }
   ]
 }

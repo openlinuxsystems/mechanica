@@ -223,7 +223,7 @@ apart when broken, leaving their loot in one pile.
 Scrap Mechanic's land never goes long without something to look at: a fence line, a hay field with a scarecrow, a
 wrecked harvester. Scenes do that between Mechanica's POIs. Each is an object with a `scene` (see the table above) that
 the biomes scatter like any other, placed before their trees and rocks so those keep clear of it. The props are
-modelled by `tools/structures/props.py` (`meshes/world/props/`, built with `build_structures.py props`) in the
+modelled by `tools/structures/props*.py` (`meshes/world/props/`, built with `build_structures.py props`) in the
 families of [art-direction.md](art-direction.md): Settler wood breaks into Scrap Wood Blocks and loose metal into Scrap
 Metal Blocks, while the old colony's pipes, barriers and wrecks are too big to break.
 
@@ -237,9 +237,27 @@ Metal Blocks, while the old colony's pipes, barriers and wrecks are too big to b
 | `scene_logging_camp` | forest, autumn forest, burned forest | log piles among stumps, a cart, a shelter |
 | `scene_roadblock` | desert | a line of concrete barriers, barrels, sometimes the harvester wreck behind |
 | `scene_burned_camp` | burned forest | a scorched trailer, a stump, a broken fence |
+| `scene_farmstead` | meadow, field | a pump well, outhouse, coop, washing line and woodshed behind a picket fence and gate; or a yard with a table, hives, a drying rack and compost |
+| `scene_wind_pump` | field, desert | a farm wind pump over troughs in a pole-fenced paddock, sometimes a water tower |
+| `scene_campsite` | meadow, forest, autumn forest, coastal | a fire ring with a log seat and tarp, or a cooking tripod between two tarps |
+| `scene_breakdown` | meadow, field, desert, burned forest, coastal | a car or truck wreck with traffic cones, a sign and barrels |
+| `scene_pylon` | meadow, field, desert | a 22 m power pylon (it reads from the air) with a transformer, a pole or a broken lamp |
+| `scene_bus_stop` | meadow, field | a bus shelter, a bent street lamp, signs and sometimes a torn billboard |
+| `scene_container_yard` | field, desert | shipping containers, one open, a forklift wreck, pallets and a generator |
+| `scene_fuel_depot` | desert | fuel tanks, gas cylinders and a generator behind concrete barriers |
+| `scene_radio_station` | mountain | a guyed radio mast with its hut, a dish and solar panels |
+| `scene_salvager_crash` | meadow, forest, desert, burned forest, mountain | a crashed drop pod or cargo pods among hull plates, a wing and a thruster, with a supply cache and beacon |
+| `scene_stone_ruin` | meadow, forest, autumn forest, mountain | Old Stone walls round a doorway, a fallen column, a standing stone, steps |
+| `scene_stone_shrine` | forest, autumn forest, mountain, coastal | a giant stone head between standing stones, a bench, a cairn |
+| `scene_old_well` | meadow, field | an old stone well with a trough and low walls |
+| `scene_forest_floor` | forest, autumn forest | a fallen log, an upturned root plate, a hollow stump, mushrooms, a dead snag |
+| `scene_burned_snags` | burned forest | dead snags, a fallen log and roots, sometimes a car wreck |
+| `scene_desert_mounds` | desert | termite mounds, a dead snag, a cairn |
+| `scene_farm_wreck` | field | a tractor wreck by hay, planks and sacks and a pole fence |
+| `scene_workyard` | meadow | a truck wreck, a conveyor, pallets, an I-beam, a ladder and a table |
 
-In the vanilla world about one stands every 20,000 m² of open land (roughly one every five 64 m chunks), several
-thousand across the island, at Scrap Mechanic's density per square kilometre.
+In the vanilla world about one stands every 15,000 m² of open land (roughly one every four 64 m chunks), about
+6,000 across the island, at Scrap Mechanic's density per square kilometre.
 
 ### Trees
 
@@ -433,7 +451,7 @@ The pad height of a spaced POI is the natural ground height at its centre.
 A `part` marker puts one working part in the world: every Workshop has a Fabricator this way.
 
 ```json
-{ "type": "part", "ref": "fabricator", "at": [7.25, 0.3, -10.6], "yaw": 180.0 }
+{ "type": "part", "ref": "fabricator", "at": [7.25, 0.02, -10.6], "yaw": 180.0 }
 ```
 
 - `ref` is a part id: a bare id is a part of the POI's own mod, `other_mod:id` another mod's. It must be a part the
@@ -445,12 +463,15 @@ A `part` marker puts one working part in the world: every Workshop has a Fabrica
   pushes it), simulated by the host, and streamed like any still Creation: it comes in with the ground under it when
   a player comes near and is parked when everyone has left, never cut at a chunk border.
 - It is **world-owned**. Anyone can use it: open it, craft, take what it made, put things in and take them out, change
-  its settings. Nobody, host or client, in Creative or Survival, can pick it up or take parts off it, build onto it,
-  weld it or weld to it, lift or capture it, paint it, upgrade it or wire it; each is refused with "The Fabricator
-  belongs to the world: it can't be …". Hammers, weapons, blasts, bots and fire do it no damage, and a bot never
+  its settings. Where it stands, nobody, host or client, in Creative or Survival, can build onto it, weld it or weld
+  to it, lift or capture it, paint it, upgrade it or wire it; each is refused with "The Fabricator belongs to the
+  world: it can't be …".
+- A player **may pick it up** (empty first, like any part that holds items). It goes into their pockets as a normal
+  Fabricator to put down wherever they like, and the marker is taken for good: it is saved with the world's destroyed
+  objects as `poi.<POI index>.<marker index>`, and that marker never places another. Hammers, weapons, blasts, bots and fire do it no damage, and a bot never
   attacks it. Clearing the Test Sandbox leaves it, and a blueprint of it is the player's own.
 - It is saved with the world (its Creation carries `world_part`, the marker's key `mod:poi#marker@index`: the POI's
   id, the marker's index in `markers` and the POI's index in the world), so what it holds and is crafting stays. When
-  a world loads, each marker gets exactly one: a saved one is kept (and put back on its marker if the marker moved), a
+  a world loads, each marker not taken gets exactly one: a saved one is kept (and put back on its marker if the marker moved), a
   missing one is made (an older save, or a POI a mod added), and one whose marker is gone is removed. It is never
   made twice, however often the world is loaded or the area entered.

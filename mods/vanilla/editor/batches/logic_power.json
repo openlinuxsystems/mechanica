@@ -149,7 +149,7 @@
       "template": "engine",
       "set": {
         "name": "Gas Engine 1",
-        "description": "Turns the wheel bearings it is linked to toward its front, with a seat's throttle as its input: it runs while someone sits in a linked seat, and on its own with no seat or switch linked. Burns gasoline from the creation's gas containers. Upgrade it in place with Component Kits (U) for more bearings, power steps, power and mileage.",
+        "description": "Turns the wheel bearings it is linked to toward its front, with a seat's throttle as its input: it runs while someone sits in a linked seat or a linked switch is on, and stays off with nothing linked. Burns gasoline from the creation's gas containers. Upgrade it in place with Component Kits (U) for more bearings, power steps, power and mileage.",
         "mass": 12,
         "durability": 6,
         "stack_size": 5,
@@ -316,7 +316,7 @@
       "set": {
         "logic": { "inputs": 4, "outputs": 2, "kind": "power" },
         "name": "Scrap Gas Engine",
-        "description": "A rattly starter engine from scrap. It turns up to two wheel bearings linked to it, with a seat's throttle as its input: it runs while someone sits in a linked seat, and on its own with no seat or switch linked. Burns gasoline faster than a Gas Engine.",
+        "description": "A rattly starter engine from scrap. It turns up to two wheel bearings linked to it, with a seat's throttle as its input: it runs while someone sits in a linked seat or a linked switch is on, and stays off with nothing linked. Burns gasoline faster than a Gas Engine.",
         "mass": 10,
         "durability": 2,
         "flammable": true,
@@ -366,7 +366,7 @@
       "set": {
         "logic": { "inputs": 4, "outputs": 2, "kind": "power" },
         "name": "Electric Engine 1",
-        "description": "Turns the wheel bearings it is linked to toward its front, with a seat's throttle as its input: it runs while someone sits in a linked seat, and on its own with no seat or switch linked. Its slider sets the speed; it pulls hard at any speed. Draws batteries from the creation's Battery Containers. Upgrade it in place with Component Kits (U) for more bearings, speed settings and mileage.",
+        "description": "Turns the wheel bearings it is linked to toward its front, with a seat's throttle as its input: it runs while someone sits in a linked seat or a linked switch is on, and stays off with nothing linked. Its slider sets the speed; it pulls hard at any speed. Draws batteries from the creation's Battery Containers. Upgrade it in place with Component Kits (U) for more bearings, speed settings and mileage.",
         "mass": 9,
         "durability": 6,
         "stack_size": 5,

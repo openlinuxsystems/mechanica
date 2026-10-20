@@ -39,6 +39,10 @@ public partial class CaptureScene
             creation.SetLevel(_engines["gas_5"], 4);
             creation.SetLevel(_engines["electric_3"], 2);
             creation.TryLink(tank, _engines["gas_1"], out _);
+            // An engine runs only from a control: a NOR gate with no inputs is always on, so Gas Engine 1 runs.
+            var gate = Put("vanilla:logic_gate", -3, 1, 2);
+            creation.SetPartSettings(gate, new Dictionary<string, System.Text.Json.JsonElement> { ["mode"] = System.Text.Json.JsonSerializer.SerializeToElement("nor") });
+            creation.TryLink(gate, _engines["gas_1"], out _);
             creation.InventoryOf(tank)!.Add("vanilla:gasoline", 7);
             // Off, so the shots show the lever at rest rather than mid-start.
             foreach (var id in _engines.Values)

@@ -107,7 +107,7 @@ public partial class CreationNode : Node3D
     public override void _Ready()
     {
         Name = $"Creation{Creation.Id}";
-        _ramps = new StepRamps(this, body => IsBodyFrozen(body.BodyIndex), StaysPut);
+        _ramps = new StepRamps(this, body => IsBodyFrozen(body.BodyIndex), StaysPut, Drive);
         Build();
     }
 
@@ -124,6 +124,18 @@ public partial class CreationNode : Node3D
         RigidBody3D or CharacterBody3D => false,
         _ => true,
     };
+
+    // The level way this Creation's turning hinge motors drive it: each one's wheel rolls across its axis.
+    private Vector3 Drive()
+    {
+        var drive = Vector3.Zero;
+        foreach (var joint in _joints)
+        {
+            if (joint is HingeJoint3D hinge && hinge.GetFlag(HingeJoint3D.Flag.EnableMotor))
+                drive += Vector3.Up.Cross(hinge.GlobalBasis.Z) * hinge.GetParam(HingeJoint3D.Param.MotorTargetVelocity);
+        }
+        return drive with { Y = 0f };
+    }
 
     public override void _Process(double delta)
     {

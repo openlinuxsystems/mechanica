@@ -18,11 +18,29 @@ public sealed class StepRamps
     /// <summary>The ramps' slope, in degrees.</summary>
     public const float Slope = 15f;
 
+    /// <summary>
+    /// The steepest a ramp gets, in degrees: one laid for a wheel already close to the step leans up as steep as it must to
+    /// clear the wheel, up to this (a car still pushes its free front wheels up it).
+    /// </summary>
+    public const float MaxSlope = 35f;
+
+    /// <summary>
+    /// How fast a sunk ramp rises under its wheel while the Creation's motors drive it at the step, in metres per second,
+    /// until its top meets the step's edge.
+    /// </summary>
+    public const float RaiseSpeed = 0.15f;
+
     // Steps lower than this a wheel rolls up by itself; the probe runs this high above the wheel's lowest point.
     private const float ProbeHeight = 0.08f;
 
     // A top this much above the climb still counts: placed blocks sit a hair proud of each other.
     private const float Slack = 0.02f;
+
+    // How far behind the face the probe looks for the step's top: past a bevel or rounded edge, to its level top.
+    private const float Inset = 0.12f;
+
+    // Motors turning wheels slower than this (rad/s, summed) are not driving at the step: a steering hold, say.
+    private const float DriveSpin = 1f;
 
     private const float Thickness = 0.1f, SideMargin = 0.15f, Tuck = 0.003f;
 
@@ -31,6 +49,7 @@ public sealed class StepRamps
     private readonly Node3D _owner;
     private readonly Func<CreationBody, bool> _frozen;
     private readonly Func<CollisionObject3D, bool> _staysPut;
+    private readonly Func<Vector3> _drive;
     private readonly List<Wheel> _wheels = [];
     private readonly Godot.Collections.Array<Rid> _exclude = [];
 
@@ -47,6 +66,7 @@ public sealed class StepRamps
         public StaticBody3D? Ramp { get; set; }
         public CollisionShape3D? Shape { get; set; }
         public Step? Laid { get; set; }
+        public float Angle { get; set; }
         public float Sink { get; set; }
     }
 
@@ -57,11 +77,13 @@ public sealed class StepRamps
     /// <param name="owner">The node the ramps hang off (top level, so they stay put in the world).</param>
     /// <param name="frozen">Whether a body is held still (not simulated here).</param>
     /// <param name="staysPut">Whether an obstacle never moves, so a ramp laid against it stays right.</param>
-    public StepRamps(Node3D owner, Func<CreationBody, bool> frozen, Func<CollisionObject3D, bool> staysPut)
+    /// <param name="drive">The level way the Creation's motors drive it now (any length; zero when none turn).</param>
+    public StepRamps(Node3D owner, Func<CreationBody, bool> frozen, Func<CollisionObject3D, bool> staysPut, Func<Vector3> drive)
     {
         _owner = owner;
         _frozen = frozen;
         _staysPut = staysPut;
+        _drive = drive;
     }
 
     /// <summary>True when the Creation has a climbing part.</summary>
@@ -169,7 +191,7 @@ public sealed class StepRamps
         if (ground.Count == 0)
             return null;
         var floor = ground["position"].AsVector3().Y;
-        var above = new Vector3(at.X, floor + climb + Slack + 0.03f, at.Z) - outward * 0.04f;
+        var above = new Vector3(at.X, floor + climb + Slack + 0.03f, at.Z) - outward * Inset;
         var top = space.IntersectRay(PhysicsRayQueryParameters3D.Create(above, above with { Y = at.Y }, PhysicsLayers.Queries, _exclude));
         if (top.Count == 0 || top["normal"].AsVector3().Y < 0.9f)
             return null;
@@ -194,19 +216,35 @@ public sealed class StepRamps
         return space.IntersectPoint(inside, 1).Count > 0;
     }
 
-    // Lays the wheel's ramp up the step, or keeps it there. A ramp laid into the wheel would throw it off, so one laid
-    // under a wheel already close to the step sinks until it just touches the wheel, leaving a lower lip at the top.
+    // Lays the wheel's ramp up the step, or keeps it there. A ramp laid into the wheel would throw it off, so one laid for
+    // a wheel already close to the step leans up until it clears the wheel, and one that would have to be steeper than
+    // MaxSlope sinks until it just touches the wheel, leaving a lower lip at the top.
     private void Lay(Wheel wheel, Step step, Vector3 centre)
     {
-        var down = step.Out * Cos - Vector3.Up * Sin;
-        var normal = step.Out * Sin + Vector3.Up * Cos;
-        var side = normal.Cross(down);
         var corner = Corner(step);
-        // Sunk once, when laid: moving a ramp the wheel rides on would kick it.
+        // Fitted while the wheel is off it (still coming, or dropping onto the ground), then kept: moving a ramp the
+        // wheel rides on would kick it.
         var kept = wheel.Laid == step && !wheel.Shape!.Disabled;
-        var sink = kept ? wheel.Sink : MathF.Max(0f, wheel.Radius + Tuck - (centre - corner).Dot(normal));
-        corner -= normal * sink;
-        var length = step.Height / Sin + 0.15f;
+        var (angle, sink) = kept ? (wheel.Angle, wheel.Sink) : Fit(wheel, centre - corner, step.Out);
+        var (sin, cos) = MathF.SinCos(angle);
+        var normal = step.Out * sin + Vector3.Up * cos;
+        if (kept && (centre - corner).Dot(normal) + sink > wheel.Radius + Tuck + 0.02f)
+        {
+            kept = false;
+            (angle, sink) = Fit(wheel, centre - corner, step.Out);
+            (sin, cos) = MathF.SinCos(angle);
+            normal = step.Out * sin + Vector3.Up * cos;
+        }
+        // While the motors drive the Creation at the step, a sunk ramp rises under its wheel a little each tick, lifting it
+        // (and easing it back a little) until the ramp meets the edge and the wheel rolls up. Nothing lifts the wheels of
+        // a car parked against a step.
+        var raised = sink;
+        if (kept && sink > 0f && _drive().Dot(-step.Out) > DriveSpin && (centre - corner).Dot(normal) + sink < wheel.Radius + Tuck + 0.01f)
+            raised = MathF.Max(0f, sink - RaiseSpeed / Engine.PhysicsTicksPerSecond);
+        var down = step.Out * cos - Vector3.Up * sin;
+        var side = normal.Cross(down);
+        corner -= normal * raised;
+        var length = step.Height / sin + 0.15f;
         var middle = corner + down * (length / 2f) - normal * (Thickness / 2f) + side * (centre - corner).Dot(side);
         if (wheel.Ramp is null)
         {
@@ -216,13 +254,33 @@ public sealed class StepRamps
             _owner.AddChild(wheel.Ramp);
         }
         // A ramp stays still unless its wheel slides well along the edge.
-        if (kept && MathF.Abs((middle - wheel.Ramp.GlobalPosition).Dot(side)) < 0.1f)
+        if (kept && raised == sink && MathF.Abs((middle - wheel.Ramp.GlobalPosition).Dot(side)) < 0.1f)
             return;
         ((BoxShape3D)wheel.Shape!.Shape).Size = new Vector3(wheel.Width + 2f * SideMargin, Thickness, length);
         wheel.Ramp.GlobalTransform = new Transform3D(new Basis(side, normal, down), middle);
         wheel.Shape.Disabled = false;
         wheel.Laid = step;
-        wheel.Sink = sink;
+        wheel.Angle = angle;
+        wheel.Sink = raised;
+    }
+
+    // The gentlest slope (radians) from Slope to MaxSlope whose ramp from the step's corner clears a wheel this far from
+    // it (offset, from the corner to the wheel's centre); one closer still gets a ramp of Slope sunk until it clears it.
+    private static (float Angle, float Sink) Fit(Wheel wheel, Vector3 offset, Vector3 outward)
+    {
+        // In the step's upright plane the ramp's distance from the centre is a·sin θ + b·cos θ = R·sin(θ + φ).
+        var (a, b) = (offset.Dot(outward), offset.Y);
+        var clear = wheel.Radius + Tuck;
+        var (gentle, steep) = (Mathf.DegToRad(Slope), Mathf.DegToRad(MaxSlope));
+        var angle = gentle;
+        if (a * MathF.Sin(gentle) + b * MathF.Cos(gentle) < clear)
+        {
+            var reach = MathF.Sqrt(a * a + b * b);
+            angle = reach > clear ? MathF.Max(gentle, MathF.Asin(clear / reach) - MathF.Atan2(b, a)) : float.PositiveInfinity;
+            if (angle > steep)
+                angle = gentle;
+        }
+        return (angle, MathF.Max(0f, clear - (a * MathF.Sin(angle) + b * MathF.Cos(angle))));
     }
 
     private static void Lift(Wheel wheel)

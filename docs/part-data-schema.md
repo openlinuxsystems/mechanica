@@ -165,8 +165,11 @@ A `sphere` or `cylinder` can also take `climb`: the height in metres, above the 
 drives up (vanilla wheels: `0.25`, one block). A round wheel meets a block's top edge almost side on, so without it a
 wheel the engine does not turn stalls against a one-block step. With it, a rolling wheel that sees a step ahead no
 higher than its climb, with a level top, on something that stays put (terrain, structures, builds anchored to the
-ground), lays an invisible 15° ramp against the step's face and rolls up it; the ramp goes once the wheel is up. The
-ramps are physics only: players, bots, tools and Lua raycasts and overlaps never meet them. A cylinder climbs only
+ground), lays an invisible 15° ramp against the step's face and rolls up it; the ramp goes once the wheel is up. A
+bevelled or rounded top edge (a structure's floor) counts as long as its top is level a little way in. A wheel already
+close to the step gets a steeper ramp (up to 35°), and one closer still (parked against it) gets a ramp sunk under it
+that rises while the Creation's motors drive it at the step, so a car parked against a step stays put and drives up it
+from there. The ramps are physics only: players, bots, tools and Lua raycasts and overlaps never meet them. A cylinder climbs only
 while its axis lies roughly level (a wheel, not a coin lying flat), and `climb` must be below the radius.
 
 All rigidly attached parts of a Creation are simulated as one rigid Body with a compound shape made of
@@ -445,7 +448,7 @@ The vanilla scripts read these properties:
 |--------|----------|---------|
 | `scripts/seat.lua` | `steer_angle` (°) | How far A and D turn the upright bearings the seat feeds. |
 | | `steer_speed` (rad/s), `steer_torque` (N·m) | How fast and how hard they turn. |
-| `scripts/engine.lua` | `speed` (rad/s) | Wheel bearing speed at full throttle at full power. `gears` (default 5) is how many steps the `gear` setting (shown as Power) has, each giving that share. With nothing linked in, the `on` setting runs it at full throttle. |
+| `scripts/engine.lua` | `speed` (rad/s) | Wheel bearing speed at full throttle at full power. `gears` (default 5) is how many steps the `gear` setting (shown as Power) has, each giving that share. With no control linked in (a seat, switch, button or gate) it does not run; the `on` setting stops it whatever its controls do. |
 | | `torque`, `brake` (N·m) | Most torque while driving, and while holding the wheels with no throttle or while it is not running (nobody seated, switched off, out of fuel), so a parked car stays put. |
 | | `fuel`, `fuel_time` (s) | Item burned from the creation's containers, and seconds of full throttle per item. Creative needs none. |
 | | `loop_parameter` | Parameter of the `loop` sound that follows the throttle (`load`, `speed`). |
