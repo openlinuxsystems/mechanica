@@ -13,7 +13,7 @@ Three coats share the rig: slate with cream spots (the reference colours, ``graz
 What it writes: ``mods/vanilla/meshes/bots/grazer[_coat].glb``. Feet are at the origin and it faces -Z, as bots do.
 The nodes are the rig (the game plays the clips on them and plants the feet):
 
-* ``Body`` (the barrel), ``Head`` (pivots at the neck), ``Jaw`` (the lower jaw, hinged under the cheeks),
+* ``Body`` (the barrel), ``Neck`` (lowers and turns at the shoulders), ``Head`` (turns on the neck), ``Jaw`` (the lower jaw, hinged under the cheeks),
   ``EarL`` / ``EarR``, ``Tail1`` / ``Tail2``;
 * legs ``Leg<FL|FR|BL|BR>_Hip`` / ``_Knee`` / ``_Foot`` (``_Foot`` is an empty on the ground under the hoof).
 
@@ -77,7 +77,8 @@ FLESH = "#e8907c"
 COAT_TILE = 1.2          # metres per coat texture tile (the spots are about 0.2 m across)
 
 HEAD = V((0, -0.66, 0.92))             # middle of the head (the concept's numbers)
-NECK = V((0, -0.42, 0.86))             # where the head turns
+SHOULDER = V((0, -0.22, 0.8))          # where the neck lowers and turns, inside the body
+NECK = V((0, -0.42, 0.86))             # where the head turns on the neck
 HINGE = HEAD + V((0, -0.12, -0.28))    # the jaw's hinge under the cheeks
 HIP_Z, KNEE_Z = 0.5, 0.29
 LEGS = {"FL": (-0.22, -0.26), "FR": (0.22, -0.26), "BL": (-0.23, 0.42), "BR": (0.23, 0.42)}
@@ -183,19 +184,26 @@ class Skin:
 # Geometry
 # =====================================================================================================
 def body_geometry():
-    """The barrel with the neck and the tops of the legs (the legs' own pieces turn inside them)."""
+    """The barrel and the tops of the legs (the legs' own pieces turn inside them)."""
     at("Body")
     mb = Meta(0.03)
     mb.ell((0, 0.1, 0.68), 0.62, (0.85, 1.0, 0.85))
     mb.ell((0, 0.36, 0.72), 0.48, (0.9, 0.8, 0.88))
     mb.ell((0, -0.2, 0.7), 0.5, (0.9, 0.8, 0.9))
-    mb.cap((0, -0.3, 0.78), (0, -0.5, 0.84), 0.38)
     for x, y in LEGS.values():
         mb.cap((x, y, 0.66), (x, y, HIP_Z - 0.04), 0.21)
     bm = mb.bmesh(0.2)
     skin = Skin(bm)
     add(bm, "coat")
     return skin
+
+
+def neck_geometry():
+    """The thick neck from deep in the shoulders up into the back of the head (on Neck), so the head stays on it."""
+    at("Neck")
+    mb = Meta(0.03)
+    mb.cap(SHOULDER + V((0, 0.12, -0.06)), NECK + V((0, -0.08, 0.0)), 0.38)
+    add(mb.bmesh(0.2), "coat")
 
 
 def head_geometry():
@@ -309,7 +317,7 @@ def pivots(skins=None):
     """Node -> (parent, pivot in model space)."""
     body, head = skins or SKINS
     tail = tail_points(body)
-    piv = {"Body": (None, V((0, 0.1, 0.68))), "Head": ("Body", NECK), "Jaw": ("Head", HINGE)}
+    piv = {"Body": (None, V((0, 0.1, 0.68))), "Neck": ("Body", SHOULDER), "Head": ("Neck", NECK), "Jaw": ("Head", HINGE)}
     for side, sx in (("L", -1), ("R", 1)):
         piv[f"Ear{side}"] = ("Head", ear_points(head, sx)[0])
     piv["Tail1"] = ("Body", tail[0])
@@ -328,6 +336,7 @@ def geometry():
     sc.GEO.clear()
     Meta.count[0] = 0
     body = body_geometry()
+    neck_geometry()
     head = head_geometry()
     SKINS[:] = [body, head]
     ears_geometry(head)
@@ -486,10 +495,13 @@ class Pose:
         self.turn(f"Leg{name}_Knee", X, lift if name[0] == "F" else -lift)
 
     def head(self, pitch=0.0, yaw=0.0, roll=0.0):
-        """pitch: the nose down (deg); yaw: the nose to the animal's right; roll: the top to the right."""
+        """pitch: the nose down (deg); yaw: the nose to the animal's right; roll: the top to the right. The neck takes
+        most of a pitch or turn at the shoulders and the head the rest, so the head stays on the neck."""
+        self.turn("Neck", Z, -yaw * 0.6)
+        self.turn("Neck", X, pitch * 0.65)
         self.turn("Head", Y, roll)
-        self.turn("Head", Z, -yaw)
-        self.turn("Head", X, pitch)
+        self.turn("Head", Z, -yaw * 0.4)
+        self.turn("Head", X, pitch * 0.35)
 
     def jaw(self, open_deg=0.0, side=0.0):
         self.turn("Jaw", Z, side)
@@ -676,7 +688,7 @@ def pose(p, clip, t, length):
         # head down to the grass, crop (jaw), a little step forward, chew, head back up
         down = env(u, 0.05, 0.25) * (1 - env(u, 0.82, 0.98))
         p.turn("Body", X, 5 * down)
-        p.head(46 * down + 2 * math.sin(3 * w) * down, 6 * math.sin(w) * down)
+        p.head(30 * down + 2 * math.sin(3 * w) * down, 6 * math.sin(w) * down)
         crop = down * max(0.0, math.sin(2 * math.pi * 3.5 * t))
         p.jaw(16 * crop, 4 * math.sin(2 * math.pi * 1.75 * t) * down)
         step = pulse(u, 0.45, 0.52, 0.6)
@@ -720,7 +732,7 @@ def pose(p, clip, t, length):
     elif clip == "eat":
         # eats from a trough or a hand: head forward and down to about knee height, three bites, chews
         k = env(u, 0.0, 0.18) * (1 - env(u, 0.85, 1.0))
-        p.head(32 * k, 0)
+        p.head(22 * k, 0)
         p.move("Head", (0, -0.06 * k, 0))
         bites = max(0.0, math.sin(2 * math.pi * 2.2 * t)) * k
         p.jaw(22 * bites, 5 * math.sin(2 * math.pi * 1.1 * t) * k)
@@ -747,7 +759,7 @@ def pose(p, clip, t, length):
     elif clip == "sleep":
         lie_partial(p, 1, 1)
         p.move("Body", (0, 0, 0.012 * math.sin(2 * math.pi * t / 2.0)))
-        p.head(22 + 2 * math.sin(2 * math.pi * t / 2.0), 0, 8)
+        p.head(2 * math.sin(2 * math.pi * t / 2.0), 0, 8)
         p.ears(24)
         p.tail(4 * math.sin(w), -4)
     elif clip == "get_up":
