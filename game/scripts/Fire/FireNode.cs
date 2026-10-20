@@ -122,7 +122,8 @@ public partial class FireNode : Node3D
         Visible = true;
     }
 
-    private static StandardMaterial3D Additive() => new()
+    // Glowing particles (flames); the opening cinematic's fire uses them too.
+    internal static StandardMaterial3D Additive() => new()
     {
         ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
         BlendMode = BaseMaterial3D.BlendModeEnum.Add,
@@ -132,7 +133,8 @@ public partial class FireNode : Node3D
         AlbedoTexture = Blob(),
     };
 
-    private static StandardMaterial3D Blended() => new()
+    // Soft particles (smoke).
+    internal static StandardMaterial3D Blended() => new()
     {
         ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
         Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
@@ -152,7 +154,7 @@ public partial class FireNode : Node3D
         Gradient = new Gradient { Offsets = [0f, 1f], Colors = [Colors.White, new Color(1, 1, 1, 0)] },
     };
 
-    private static Curve Shrinking()
+    internal static Curve Shrinking()
     {
         var curve = new Curve();
         curve.AddPoint(new Vector2(0, 1));

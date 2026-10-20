@@ -958,6 +958,7 @@
     "{0}  (new file, not saved yet)": "{0}  (new file, not saved yet)",
     "{0}  (other version)": "{0}  (other version)",
     "{0}  ({1})  • unsaved": "{0}  ({1})  • unsaved",
+    "{0}  Skip": "{0}  Skip",
     "{0}  ·  played {1}  ·  last played {2}": "{0}  ·  played {1}  ·  last played {2}",
     "{0}  ←  {1}  ({2} s)": "{0}  ←  {1}  ({2} s)",
     "{0} (destroyed)": "{0} (destroyed)",
