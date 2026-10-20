@@ -552,6 +552,8 @@ def _finish(name, metal, noise_scale, cracks, moss):
         return "stone"
     if "wood" in n or "plank" in n:
         return "wood"
+    if "worn_concrete" in n:
+        return "worn_concrete"
     if "concrete" in n:
         return "concrete"
     return "metal" if metal >= 0.3 else "paint"

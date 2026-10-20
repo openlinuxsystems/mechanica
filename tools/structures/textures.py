@@ -20,9 +20,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "lift"))
 import lift_textures as lt  # noqa: E402
 
 SIZE = lt.SIZE
-FINISHES = ("paint", "metal", "stone", "wood", "concrete")
+FINISHES = ("paint", "metal", "stone", "wood", "concrete", "worn_concrete")
 # metres of surface one image covers
-TILE = {"paint": 1.5, "metal": 1.5, "stone": 2.5, "wood": 1.2, "concrete": 3.0}
+TILE = {"paint": 1.5, "metal": 1.5, "stone": 2.5, "wood": 1.2, "concrete": 3.0, "worn_concrete": 4.0}
 
 
 def voronoi_edges(seed, cells):
@@ -98,9 +98,22 @@ def concrete():
     return v, height
 
 
+def worn_concrete():
+    """Concrete that has seen use: stains, scuffs, pitting and fine hairline cracks (workshop floors)."""
+    mottle = lt.fbm(511, 2.5)
+    speck = lt.fnoise(512, 220.0)
+    stain = np.clip(lt.fbm(513, 1.2) * 1.8 - 0.25, 0, 1)
+    scuff = np.clip(lt.fnoise(514, 18.0, aniso=(1.0, 0.25)) * 1.6 - 0.5, 0, 1)
+    crack = np.clip(1 - voronoi_edges(515, 4) / 1.2, 0, 1) * (lt.fbm(516, 3.0) > 0.05)
+    pits = (lt.fnoise(517, 180.0) > 0.7).astype(float)
+    v = 0.9 + 0.07 * mottle + 0.05 * speck - 0.22 * stain - 0.1 * scuff - 0.4 * crack - 0.1 * pits
+    height = 0.3 * speck + 0.2 * mottle - 0.8 * crack - 0.25 * pits
+    return v, height
+
+
 def images(finish):
     """(detail sRGB HxWx3, normal HxWx3) of a finish."""
-    v, height = {"paint": paint, "metal": metal, "stone": stone, "wood": wood, "concrete": concrete}[finish]()
+    v, height = {"paint": paint, "metal": metal, "stone": stone, "wood": wood, "concrete": concrete, "worn_concrete": worn_concrete}[finish]()
     # v is the linear factor the colour is multiplied by; the image is stored as sRGB, at half the noise's size
     v = half(np.clip(v, 0.05, 1.0)) ** (1 / 2.2)
     normal = lt.normal_from_height(height, 2.5)
