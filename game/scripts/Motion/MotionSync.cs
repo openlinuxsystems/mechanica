@@ -23,12 +23,18 @@ public partial class MotionSync : Node, IMotionWorld
     // Godot hinge motors turn B about the hinge's Z the other way from a right-handed angle.
     private const float HingeMotorSign = -1f;
 
+    // Below this drive speed (rad/s or m/s: a hold's gain times its error) a hold counts as on its target.
+    private const float HoldRestSpeed = 1e-4f;
+
     // Part -1 is a Body's shared push (calls without a part).
     private readonly Dictionary<(int Creation, int Body, int Part), Push> _pushes = [];
     private readonly Dictionary<int, (ulong Frame, int Revision)> _synced = [];
     private readonly Dictionary<(int Creation, int Part), Motor> _motors = [];
 
     private readonly List<(int Creation, PushState Push)> _applied = [];
+
+    // Counts physics steps from just before every node's step, so FindCreation needs no engine call per lookup.
+    private ulong _step;
 
     private sealed record Push(int Revision, Vector3 Force, Vector3 Torque, PushState Shown)
     {
@@ -55,7 +61,15 @@ public partial class MotionSync : Node, IMotionWorld
 
     public override void _Ready() => Creations.Removed += Forget;
 
-    public override void _ExitTree() => Creations.Removed -= Forget;
+    public override void _EnterTree() => GetTree().PhysicsFrame += NextStep;
+
+    public override void _ExitTree()
+    {
+        Creations.Removed -= Forget;
+        GetTree().PhysicsFrame -= NextStep;
+    }
+
+    private void NextStep() => _step++;
 
     /// <summary>Registers the motion actions.</summary>
     public void RegisterActions(ActionDispatcher dispatcher)
@@ -80,7 +94,7 @@ public partial class MotionSync : Node, IMotionWorld
         // push many times a step).
         if (Creations.NodeOf(id) is { } node)
         {
-            var stamp = (Engine.GetPhysicsFrames(), node.Creation.Revision);
+            var stamp = (_step, node.Creation.Revision);
             if (_synced.GetValueOrDefault(id) != stamp)
             {
                 node.SyncToCreation();
@@ -167,6 +181,10 @@ public partial class MotionSync : Node, IMotionWorld
             var velocity = motor.Drive.Target is null
                 ? motor.Drive.Velocity ?? 0f
                 : motor.Drive.DriveVelocity(node.JointPosition(link) ?? 0f, Settings!.ServoGain, frame.SpinsFreely ? MathF.Tau : null);
+            // A hold on its target stops its motor: re-setting a near-zero speed every step would wake the bodies
+            // each step (and dither the joint, which creeps a parked car along).
+            if (motor.Drive.Target is not null && MathF.Abs(velocity) <= HoldRestSpeed)
+                velocity = 0f;
             if (motor.Applied != joint)
             {
                 EnableMotor(joint, true);
@@ -186,8 +204,9 @@ public partial class MotionSync : Node, IMotionWorld
                     slider.SetParamX(Generic6DofJoint3D.Param.LinearMotorTargetVelocity, velocity);
                 motor.AppliedVelocity = velocity;
             }
-            // A motor holding a target keeps its bodies awake so the hold reacts to loads.
-            if (velocity != 0f || motor.Drive.Target is not null)
+            // A turning motor, or a hold still steering toward its target, keeps its bodies awake. A hold on its
+            // target lets them sleep: a contact or a push wakes them, and the hold picks up from there.
+            if (velocity != 0f)
                 Wake(node, link.BodyA, link.BodyB);
         }
     }

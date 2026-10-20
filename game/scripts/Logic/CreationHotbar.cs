@@ -59,6 +59,8 @@ public partial class CreationHotbar : CanvasLayer
     public IReadOnlyList<int> Parts { get; private set; } = [];
 
     /// <summary>True while the bar shows.</summary>
+    private double _sincePoll = LogicOverlay.PollSeconds;
+
     public bool Showing => Parts.Count > 0;
 
     /// <summary>The slot controls, left to right.</summary>
@@ -176,6 +178,12 @@ public partial class CreationHotbar : CanvasLayer
             return;
         }
         Layout();
+        // The bar shows its parts' signals, so it reads its seat's Creation while it shows (the hidden overlay reads none).
+        if ((_sincePoll += delta) >= LogicOverlay.PollSeconds)
+        {
+            _sincePoll = 0;
+            Signals.Poll(Seat!.Value.Creation);
+        }
         var creation = Creations.Find(Seat!.Value.Creation);
         for (var i = 0; i < _slots.Count; i++)
         {

@@ -18,7 +18,7 @@ namespace Mechanica.Game.Survival;
 /// </summary>
 public partial class SoilLooks : Node3D
 {
-    // Set on every soil mesh every frame: one StringName each rather than one per call.
+    // Set on soil meshes whenever their look changes: one StringName each rather than one per call.
     private static readonly StringName WetName = SoilMaterial.Wet;
     private static readonly StringName DryingName = SoilMaterial.Drying;
     private static readonly StringName FlashName = SoilMaterial.Flash;
@@ -38,6 +38,7 @@ public partial class SoilLooks : Node3D
     private readonly Dictionary<(int Creation, int Part), Look> _looks = [];
     private readonly List<(Vector3 At, double Time)> _sounds = [];
     private readonly HashSet<(int Creation, int Part)> _seen = [];
+    private readonly HashSet<(int Creation, int Part)> _live = [];
     private bool _started;
 
     private sealed class Look
@@ -48,6 +49,13 @@ public partial class SoilLooks : Node3D
         public float Water;
         public double SpillStart = -1;
         public Node3D? Bag;
+
+        // The part's model and meshes, found once per part node (a rebuilt Creation has new ones), and the look last
+        // set on them, so a settled mound costs no engine calls.
+        public Node3D? PartNode;
+        public Node3D? Model;
+        public MeshInstance3D[] Meshes = [];
+        public (float Wet, float Drying, float Flash) Shown = (float.NaN, 0, 0);
     }
 
     /// <summary>The live Creations. Set before adding to the tree.</summary>
@@ -92,22 +100,28 @@ public partial class SoilLooks : Node3D
         var now = _now += delta;
         _sounds.RemoveAll(s => now - s.Time > SoundAge);
         var step = (float)delta / BlendTime;
-        var live = new HashSet<(int, int)>();
+        _live.Clear();
         foreach (var node in Creations.Nodes)
         {
             foreach (var part in node.SoilParts)
             {
-                if (node.PartNode(part) is not { } partNode || partNode.GetNodeOrNull<Node3D>("Model") is not { } model)
+                if (node.PartNode(part) is not { } partNode)
                     continue;
                 var key = (node.Creation.Id, part);
-                live.Add(key);
-                if (!_looks.TryGetValue(key, out var look))
+                _looks.TryGetValue(key, out var look);
+                var model = look is not null && look.PartNode == partNode && IsInstanceValid(look.Model) ? look.Model : partNode.GetNodeOrNull<Node3D>("Model");
+                if (model is null)
+                    continue;
+                _live.Add(key);
+                if (look is null)
                 {
                     look = _looks[key] = new Look();
                     // Mounds there when the world loads were not just spilled.
                     if (_started && !_seen.Contains(key) && _sounds.Any(s => s.At.DistanceTo(partNode.GlobalPosition) < SoundReach))
                         StartSpill(look, node, part, partNode, now);
                 }
+                if (look.Model != model)
+                    Take(look, partNode, model);
                 _seen.Add(key);
                 var view = Survival.Soil.GetValueOrDefault(key);
                 var (wet, drying) = Target(view?.Wetness ?? SoilWetness.Dry);
@@ -118,23 +132,30 @@ public partial class SoilLooks : Node3D
                 look.Wet = Mathf.MoveToward(look.Wet, wet, step);
                 look.Drying = Mathf.MoveToward(look.Drying, drying, step);
                 look.Flash = Mathf.MoveToward(look.Flash, 0f, (float)delta * 2f);
-                Apply(model, look);
+                Apply(look);
                 Settle(look, node, part, model, now);
             }
         }
-        foreach (var gone in _looks.Keys.Where(k => !live.Contains(k)).ToList())
+        if (_looks.Count != _live.Count)
         {
-            _looks[gone].Bag?.QueueFree();
-            _looks.Remove(gone);
+            foreach (var gone in _looks.Keys.Where(k => !_live.Contains(k)).ToList())
+            {
+                _looks[gone].Bag?.QueueFree();
+                _looks.Remove(gone);
+            }
         }
         _seen.IntersectWith(_looks.Keys);
         _started = true;
     }
 
-    // Swaps each mesh to the soil material (the nodes are remade whenever the Creation is rebuilt) and sets its look.
-    private static void Apply(Node3D model, Look look)
+    // Swaps each mesh of a part's new model to the soil material (the nodes are remade whenever the Creation is rebuilt).
+    private static void Take(Look look, Node3D partNode, Node3D model)
     {
-        foreach (var mesh in model.GetChildren().OfType<MeshInstance3D>())
+        look.PartNode = partNode;
+        look.Model = model;
+        look.Meshes = [.. model.GetChildren().OfType<MeshInstance3D>()];
+        look.Shown = (float.NaN, 0, 0);
+        foreach (var mesh in look.Meshes)
         {
             for (var i = 0; i < mesh.GetSurfaceOverrideMaterialCount(); i++)
             {
@@ -142,6 +163,20 @@ public partial class SoilLooks : Node3D
                 if (material is BaseMaterial3D source)
                     mesh.SetSurfaceOverrideMaterial(i, SoilMaterial.For(source));
             }
+        }
+    }
+
+    // Sets the look on the meshes when it changed.
+    private static void Apply(Look look)
+    {
+        var shown = (look.Wet, look.Drying, look.Flash);
+        if (shown == look.Shown)
+            return;
+        look.Shown = shown;
+        foreach (var mesh in look.Meshes)
+        {
+            if (!IsInstanceValid(mesh))
+                continue;
             mesh.SetInstanceShaderParameter(WetName, look.Wet);
             mesh.SetInstanceShaderParameter(DryingName, look.Drying);
             mesh.SetInstanceShaderParameter(FlashName, look.Flash);

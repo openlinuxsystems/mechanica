@@ -37,6 +37,7 @@ public partial class CreationNode : Node3D
     private readonly List<Rod> _rods = [];
     private readonly List<(int Part, Light3D Light, float Energy)> _lights = [];
     private readonly List<(int Part, Node3D Model, Vector3 Axis, Vector3 Pivot)> _animated = [];
+    private readonly HashSet<int> _animatedParts = [];
     private readonly List<PartDisplayVisual> _displays = [];
     private readonly List<int> _soils = [];
     private readonly Dictionary<int, Node3D> _partNodes = [];
@@ -211,7 +212,7 @@ public partial class CreationNode : Node3D
         foreach (var display in _displays)
         {
             var linked = Creation.LinksFrom(display.Part).Count > 0 || Creation.LinksTo(display.Part).Count > 0;
-            display.Apply(readouts, linked, connecting, _animated.Any(a => a.Part == display.Part), delta);
+            display.Apply(readouts, linked, connecting, _animatedParts.Contains(display.Part), delta);
         }
     }
 
@@ -315,6 +316,7 @@ public partial class CreationNode : Node3D
         _rods.Clear();
         _lights.Clear();
         _animated.Clear();
+        _animatedParts.Clear();
         _displays.Clear();
         _soils.Clear();
         _partNodes.Clear();
@@ -369,7 +371,10 @@ public partial class CreationNode : Node3D
                 _lights.Add((id, lamp, light.Energy ?? 1f));
             }
             if (definition.Animation is { } animation)
+            {
                 _animated.Add((id, shown, (animation.Axis ?? new Vec3(0, 1, 0)).ToGodot().Normalized(), (animation.Pivot ?? Vec3.Zero).ToGodot()));
+                _animatedParts.Add(id);
+            }
             if (definition.Soil is not null)
                 _soils.Add(id);
             if (definition.Display is not null)
