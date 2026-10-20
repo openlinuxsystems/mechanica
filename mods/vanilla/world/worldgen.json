@@ -62,6 +62,36 @@
         { "object": "scene_stone_ruin", "spacing": 255.0, "chance": 0.4 },
         { "object": "scene_old_well", "spacing": 255.0, "chance": 0.4 },
         { "object": "scene_workyard", "spacing": 315.0, "chance": 0.3 },
+        { "object": "scene_farmyard", "spacing": 380.0, "chance": 0.4 },
+        { "object": "scene_kitchen_garden", "spacing": 380.0, "chance": 0.4 },
+        { "object": "scene_family_camp", "spacing": 400.0, "chance": 0.4 },
+        { "object": "scene_wood_yard", "spacing": 420.0, "chance": 0.3 },
+        { "object": "scene_trader", "spacing": 460.0, "chance": 0.3 },
+        { "object": "scene_street_corner", "spacing": 460.0, "chance": 0.3 },
+        { "object": "scene_town_square", "spacing": 600.0, "chance": 0.3 },
+        { "object": "scene_traffic_jam", "spacing": 460.0, "chance": 0.3 },
+        { "object": "scene_substation", "spacing": 520.0, "chance": 0.3 },
+        { "object": "scene_wind_farm", "spacing": 520.0, "chance": 0.3 },
+        { "object": "scene_survey_post", "spacing": 480.0, "chance": 0.3 },
+        { "object": "scene_escape_pod", "spacing": 480.0, "chance": 0.3 },
+        { "object": "scene_temple_ruin", "spacing": 560.0, "chance": 0.3 },
+        { "object": "scene_stone_gate", "spacing": 480.0, "chance": 0.3 },
+        { "object": "scene_wayside", "spacing": 300.0, "chance": 0.4 },
+        { "object": "scene_scrap_outpost", "spacing": 520.0, "chance": 0.3 },
+        { "object": "scene_junk_pile", "spacing": 360.0, "chance": 0.4 },
+        { "object": "scene_boulder_field", "spacing": 380.0, "chance": 0.3 },
+        { "object": "scene_air_crash", "spacing": 640.0, "chance": 0.3 },
+        { "object": "scene_railway", "spacing": 560.0, "chance": 0.3 },
+        { "object": "scene_plant", "spacing": 640.0, "chance": 0.3 },
+        { "object": "scene_crane_site", "spacing": 640.0, "chance": 0.3 },
+        { "object": "scene_roadworks", "spacing": 520.0, "chance": 0.3 },
+        { "object": "scene_bus_crash", "spacing": 560.0, "chance": 0.3 },
+        { "object": "scene_water_works", "spacing": 560.0, "chance": 0.3 },
+        { "object": "scene_data_wreck", "spacing": 560.0, "chance": 0.3 },
+        { "object": "scene_stone_plaza", "spacing": 560.0, "chance": 0.3 },
+        { "object": "boulder_split", "spacing": 220.0, "chance": 0.4 },
+        { "object": "berry_bush_big", "spacing": 160.0, "chance": 0.4 },
+        { "object": "bramble_patch", "spacing": 160.0, "chance": 0.4 },
         { "object": "loot_crate", "spacing": 400.0, "chance": 0.5 },
         { "object": "bloom_pod_green", "spacing": 640.0, "chance": 0.4 },
         { "object": "bloom_pod_purple", "spacing": 300.0, "chance": 1.0, "perch": { "rise": 6.0, "within": 10.0 } },
@@ -98,6 +128,22 @@
         { "object": "scene_stone_ruin", "spacing": 225.0, "chance": 0.5 },
         { "object": "scene_stone_shrine", "spacing": 285.0, "chance": 0.4 },
         { "object": "scene_salvager_crash", "spacing": 360.0, "chance": 0.3 },
+        { "object": "scene_old_wood", "spacing": 260.0, "chance": 0.5 },
+        { "object": "scene_wood_yard", "spacing": 380.0, "chance": 0.4 },
+        { "object": "scene_family_camp", "spacing": 400.0, "chance": 0.4 },
+        { "object": "scene_stone_tomb", "spacing": 460.0, "chance": 0.3 },
+        { "object": "scene_old_tower", "spacing": 480.0, "chance": 0.3 },
+        { "object": "scene_stone_circle", "spacing": 480.0, "chance": 0.3 },
+        { "object": "scene_wayside", "spacing": 300.0, "chance": 0.4 },
+        { "object": "scene_escape_pod", "spacing": 520.0, "chance": 0.3 },
+        { "object": "scene_smithy", "spacing": 520.0, "chance": 0.3 },
+        { "object": "scene_river_crossing", "spacing": 480.0, "chance": 0.3 },
+        { "object": "fern_clump_big", "spacing": 70.0, "chance": 0.6 },
+        { "object": "giant_mushroom", "spacing": 180.0, "chance": 0.4 },
+        { "object": "hollow_log", "spacing": 140.0, "chance": 0.5 },
+        { "object": "tree_fallen_branches", "spacing": 110.0, "chance": 0.5 },
+        { "object": "stump_cluster", "spacing": 140.0, "chance": 0.4 },
+        { "object": "bird_nest_big", "spacing": 300.0, "chance": 0.3 },
         { "object": "loot_crate", "spacing": 400.0, "chance": 0.5 },
         { "object": "bloom_pod_green", "spacing": 640.0, "chance": 0.4 },
         { "object": "bloom_pod_purple", "spacing": 300.0, "chance": 1.0, "perch": { "rise": 6.0, "within": 10.0 } },
@@ -138,6 +184,26 @@
         { "object": "scene_bus_stop", "spacing": 300.0, "chance": 0.4 },
         { "object": "scene_old_well", "spacing": 270.0, "chance": 0.4 },
         { "object": "scene_container_yard", "spacing": 360.0, "chance": 0.3 },
+        { "object": "scene_farmyard", "spacing": 300.0, "chance": 0.5 },
+        { "object": "scene_kitchen_garden", "spacing": 340.0, "chance": 0.4 },
+        { "object": "scene_field_edge", "spacing": 260.0, "chance": 0.5 },
+        { "object": "scene_harvest_wreck", "spacing": 420.0, "chance": 0.4 },
+        { "object": "scene_trader", "spacing": 420.0, "chance": 0.3 },
+        { "object": "scene_traffic_jam", "spacing": 420.0, "chance": 0.3 },
+        { "object": "scene_solar_field", "spacing": 480.0, "chance": 0.3 },
+        { "object": "scene_wind_farm", "spacing": 460.0, "chance": 0.4 },
+        { "object": "scene_substation", "spacing": 520.0, "chance": 0.3 },
+        { "object": "scene_railway", "spacing": 480.0, "chance": 0.4 },
+        { "object": "scene_yard_trailers", "spacing": 460.0, "chance": 0.3 },
+        { "object": "scene_checkpoint", "spacing": 560.0, "chance": 0.3 },
+        { "object": "scene_scrap_power", "spacing": 480.0, "chance": 0.3 },
+        { "object": "scene_wayside", "spacing": 340.0, "chance": 0.3 },
+        { "object": "scene_plant", "spacing": 600.0, "chance": 0.3 },
+        { "object": "scene_roadworks", "spacing": 480.0, "chance": 0.3 },
+        { "object": "scene_water_works", "spacing": 520.0, "chance": 0.3 },
+        { "object": "scene_oil_field", "spacing": 560.0, "chance": 0.3 },
+        { "object": "bramble_patch", "spacing": 200.0, "chance": 0.4 },
+        { "object": "boulder_split", "spacing": 300.0, "chance": 0.3 },
         { "object": "loot_crate", "spacing": 400.0, "chance": 0.5 },
         { "object": "scrap_wreck", "spacing": 540.0, "chance": 0.5 },
         { "object": "birch_tree", "spacing": 10.0, "chance": 0.6, "cluster": { "layer": "field_copse", "scale": 60.0, "cover": 0.05, "outside": 0.01 } },
@@ -170,6 +236,23 @@
         { "object": "scene_breakdown", "spacing": 225.0, "chance": 0.4 },
         { "object": "scene_salvager_crash", "spacing": 285.0, "chance": 0.4 },
         { "object": "scene_pylon", "spacing": 315.0, "chance": 0.4 },
+        { "object": "scene_oil_field", "spacing": 340.0, "chance": 0.5 },
+        { "object": "scene_bone_yard", "spacing": 320.0, "chance": 0.5 },
+        { "object": "scene_tanker_spill", "spacing": 440.0, "chance": 0.4 },
+        { "object": "scene_rover_wreck", "spacing": 440.0, "chance": 0.4 },
+        { "object": "scene_scrap_outpost", "spacing": 460.0, "chance": 0.4 },
+        { "object": "scene_junk_pile", "spacing": 360.0, "chance": 0.4 },
+        { "object": "scene_air_crash", "spacing": 560.0, "chance": 0.3 },
+        { "object": "scene_solar_field", "spacing": 460.0, "chance": 0.4 },
+        { "object": "scene_salvager_wreck", "spacing": 520.0, "chance": 0.3 },
+        { "object": "scene_quarry_works", "spacing": 520.0, "chance": 0.3 },
+        { "object": "scene_checkpoint", "spacing": 560.0, "chance": 0.3 },
+        { "object": "scene_aqueduct", "spacing": 560.0, "chance": 0.3 },
+        { "object": "cactus_cluster", "spacing": 90.0, "chance": 0.5 },
+        { "object": "dry_bush_tumbleweed", "spacing": 70.0, "chance": 0.5 },
+        { "object": "termite_spires_low", "spacing": 160.0, "chance": 0.4 },
+        { "object": "animal_skull_big", "spacing": 320.0, "chance": 0.3 },
+        { "object": "rock_spire", "spacing": 260.0, "chance": 0.4 },
         { "object": "loot_crate", "spacing": 400.0, "chance": 0.5 },
         { "object": "scrap_wreck", "spacing": 540.0, "chance": 0.5 },
         { "object": "cactus", "spacing": 12.0, "chance": 0.5, "cluster": { "layer": "desert_scrub", "scale": 80.0, "cover": 0.2, "outside": 0.1 } },
@@ -198,6 +281,17 @@
         { "object": "scene_stone_ruin", "spacing": 210.0, "chance": 0.5 },
         { "object": "scene_stone_shrine", "spacing": 255.0, "chance": 0.5 },
         { "object": "scene_campsite", "spacing": 210.0, "chance": 0.4 },
+        { "object": "scene_old_wood", "spacing": 280.0, "chance": 0.5 },
+        { "object": "scene_temple_ruin", "spacing": 480.0, "chance": 0.3 },
+        { "object": "scene_stone_tomb", "spacing": 440.0, "chance": 0.3 },
+        { "object": "scene_stone_gate", "spacing": 440.0, "chance": 0.3 },
+        { "object": "scene_old_tower", "spacing": 460.0, "chance": 0.3 },
+        { "object": "scene_family_camp", "spacing": 420.0, "chance": 0.3 },
+        { "object": "scene_wayside", "spacing": 320.0, "chance": 0.4 },
+        { "object": "scene_smithy", "spacing": 520.0, "chance": 0.3 },
+        { "object": "fern_clump_big", "spacing": 90.0, "chance": 0.5 },
+        { "object": "hollow_log", "spacing": 140.0, "chance": 0.5 },
+        { "object": "giant_mushroom", "spacing": 200.0, "chance": 0.4 },
         { "object": "loot_crate", "spacing": 400.0, "chance": 0.5 },
         { "object": "bloom_pod_green", "spacing": 640.0, "chance": 0.4 },
         { "object": "bloom_pod_purple", "spacing": 300.0, "chance": 1.0, "perch": { "rise": 6.0, "within": 10.0 } },
@@ -230,6 +324,15 @@
         { "object": "scene_burned_snags", "spacing": 105.0, "chance": 0.7 },
         { "object": "scene_salvager_crash", "spacing": 255.0, "chance": 0.5 },
         { "object": "scene_breakdown", "spacing": 270.0, "chance": 0.4 },
+        { "object": "scene_salvager_wreck", "spacing": 420.0, "chance": 0.4 },
+        { "object": "scene_escape_pod", "spacing": 380.0, "chance": 0.4 },
+        { "object": "scene_beacon_site", "spacing": 360.0, "chance": 0.4 },
+        { "object": "scene_data_wreck", "spacing": 440.0, "chance": 0.3 },
+        { "object": "scene_bus_crash", "spacing": 480.0, "chance": 0.3 },
+        { "object": "scene_squatter_camp", "spacing": 480.0, "chance": 0.3 },
+        { "object": "scene_rover_wreck", "spacing": 480.0, "chance": 0.3 },
+        { "object": "tree_fallen_branches", "spacing": 120.0, "chance": 0.5 },
+        { "object": "animal_skull_big", "spacing": 340.0, "chance": 0.3 },
         { "object": "loot_crate", "spacing": 400.0, "chance": 0.5 },
         { "object": "scrap_wreck", "spacing": 540.0, "chance": 0.5 },
         { "object": "burnt_tree", "spacing": 12.0, "chance": 0.7, "cluster": { "layer": "burned_stands", "scale": 100.0, "cover": 0.6, "outside": 0.15 } },
@@ -253,6 +356,16 @@
       "ground": "sand",
       "scatter": [
 
+        { "object": "scene_marsh_edge", "spacing": 200.0, "chance": 0.5 },
+
+        { "object": "scene_fishing_camp", "spacing": 380.0, "chance": 0.4 },
+
+        { "object": "scene_shore", "spacing": 300.0, "chance": 0.4 },
+
+        { "object": "reed_bed", "spacing": 60.0, "chance": 0.5 },
+
+        { "object": "cattail_clump", "spacing": 50.0, "chance": 0.5 },
+
         { "object": "small_rock", "spacing": 24.0, "chance": 0.15 }
       ]
     },
@@ -271,6 +384,20 @@
         { "object": "scene_stone_shrine", "spacing": 255.0, "chance": 0.4 },
         { "object": "scene_stone_ruin", "spacing": 255.0, "chance": 0.4 },
         { "object": "scene_salvager_crash", "spacing": 315.0, "chance": 0.4 },
+        { "object": "scene_ring_gate", "spacing": 520.0, "chance": 0.4 },
+        { "object": "scene_stone_circle", "spacing": 420.0, "chance": 0.4 },
+        { "object": "scene_old_tower", "spacing": 440.0, "chance": 0.4 },
+        { "object": "scene_aqueduct", "spacing": 520.0, "chance": 0.3 },
+        { "object": "scene_survey_post", "spacing": 460.0, "chance": 0.4 },
+        { "object": "scene_quarry_works", "spacing": 480.0, "chance": 0.4 },
+        { "object": "scene_crane_site", "spacing": 560.0, "chance": 0.3 },
+        { "object": "scene_boulder_field", "spacing": 320.0, "chance": 0.4 },
+        { "object": "scene_beacon_site", "spacing": 420.0, "chance": 0.3 },
+        { "object": "scene_wind_farm", "spacing": 520.0, "chance": 0.3 },
+        { "object": "rock_spire", "spacing": 160.0, "chance": 0.5 },
+        { "object": "rock_shelf", "spacing": 220.0, "chance": 0.4 },
+        { "object": "boulder_split", "spacing": 160.0, "chance": 0.5 },
+        { "object": "bird_nest_big", "spacing": 260.0, "chance": 0.3 },
         { "object": "loot_crate", "spacing": 400.0, "chance": 0.5 },
         { "object": "bloom_pod_green", "spacing": 640.0, "chance": 0.4 },
         { "object": "bloom_pod_purple", "spacing": 300.0, "chance": 1.0, "perch": { "rise": 6.0, "within": 10.0 } },
@@ -300,6 +427,18 @@
         { "object": "scene_campsite", "spacing": 180.0, "chance": 0.5 },
         { "object": "scene_stone_shrine", "spacing": 270.0, "chance": 0.4 },
         { "object": "scene_breakdown", "spacing": 270.0, "chance": 0.3 },
+        { "object": "scene_fishing_camp", "spacing": 320.0, "chance": 0.5 },
+        { "object": "scene_harbour", "spacing": 480.0, "chance": 0.4 },
+        { "object": "scene_lighthouse", "spacing": 640.0, "chance": 0.4 },
+        { "object": "scene_shipwreck", "spacing": 480.0, "chance": 0.4 },
+        { "object": "scene_shore", "spacing": 220.0, "chance": 0.5 },
+        { "object": "scene_beach_drift", "spacing": 240.0, "chance": 0.5 },
+        { "object": "scene_squatter_camp", "spacing": 460.0, "chance": 0.3 },
+        { "object": "scene_rover_wreck", "spacing": 520.0, "chance": 0.3 },
+        { "object": "driftwood_pile", "spacing": 120.0, "chance": 0.5 },
+        { "object": "seaweed_rocks", "spacing": 140.0, "chance": 0.4 },
+        { "object": "shell_mound", "spacing": 160.0, "chance": 0.4 },
+        { "object": "sand_dune_grass", "spacing": 90.0, "chance": 0.5 },
         { "object": "loot_crate", "spacing": 400.0, "chance": 0.5 },
         { "object": "bloom_pod_green", "spacing": 640.0, "chance": 0.4 },
         { "object": "bloom_pod_purple", "spacing": 300.0, "chance": 1.0, "perch": { "rise": 6.0, "within": 10.0 } },
@@ -2493,6 +2632,4373 @@
             { "object": "wooden_table", "at": [-7.0, 0.0], "yaw": 90.0 },
             { "object": "stool", "at": [-5.6, 0.8] },
             { "object": "gas_cylinder_rack", "at": [8.0, 2.0], "yaw": 270.0, "chance": 0.5 }
+          ] }
+        ]
+      }
+    },
+    // 300 more scene props (tools/structures/props_farm.py, props_camp.py, props_salvage.py, props_street.py,
+    // props_industry.py, props_utility.py, props_vehicles.py, props_ruins_a.py, props_ruins_b.py, props_salvager.py,
+    // props_nature.py, props_coast.py) across all four building families, plus rocks, plants and bones.
+    {
+      "id": "grain_silo_small",
+      "collider": { "shape": "cylinder", "radius": 1.1, "height": 4.1, "at": [0.0, 2.05, 0.0] },
+      "mesh": { "file": "meshes/world/props/grain_silo_small.glb" },
+      "footprint": 1.8,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "hay_loft_frame",
+      "collider": { "shape": "box", "size": [3.0, 3.5, 2.4], "at": [0.0, 1.75, 0.0] },
+      "mesh": { "file": "meshes/world/props/hay_loft_frame.glb" },
+      "footprint": 2.2,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "feed_trough",
+      "collider": { "shape": "box", "size": [2.4, 0.6, 0.7], "at": [0.0, 0.3, 0.0] },
+      "mesh": { "file": "meshes/world/props/feed_trough.glb" },
+      "footprint": 1.4,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "pig_pen",
+      "collider": { "shape": "box", "size": [3.1, 1.3, 2.7], "at": [0.0, 0.65, 0.0] },
+      "mesh": { "file": "meshes/world/props/pig_pen.glb" },
+      "footprint": 2.1,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 12, "count_max": 20 }]
+    },
+    {
+      "id": "goat_shed",
+      "collider": { "shape": "box", "size": [1.9, 1.95, 1.5], "at": [0.0, 0.98, 0.0] },
+      "mesh": { "file": "meshes/world/props/goat_shed.glb" },
+      "footprint": 1.3,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 12, "count_max": 20 }]
+    },
+    {
+      "id": "milk_churns",
+      "collider": { "shape": "box", "size": [2.0, 1.45, 0.75], "at": [0.25, 0.72, 0.05] },
+      "mesh": { "file": "meshes/world/props/milk_churns.glb" },
+      "footprint": 1.2,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 12, "count_max": 16 }]
+    },
+    {
+      "id": "butter_churn",
+      "collider": { "shape": "cylinder", "radius": 0.25, "height": 1.1, "at": [0.0, 0.55, 0.0] },
+      "mesh": { "file": "meshes/world/props/butter_churn.glb" },
+      "footprint": 0.5,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 4, "count_max": 8 }]
+    },
+    {
+      "id": "seed_sacks_cart",
+      "collider": { "shape": "box", "size": [1.25, 1.0, 2.2], "at": [0.0, 0.5, 0.35] },
+      "mesh": { "file": "meshes/world/props/seed_sacks_cart.glb" },
+      "footprint": 1.3,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 8, "count_max": 16 }]
+    },
+    {
+      "id": "plough_old",
+      "collider": { "shape": "box", "size": [0.7, 0.95, 2.4], "at": [0.05, 0.47, 0.0] },
+      "mesh": { "file": "meshes/world/props/plough_old.glb" },
+      "footprint": 1.3,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "harrow_rusty",
+      "collider": { "shape": "box", "size": [1.7, 0.3, 1.6], "at": [0.0, 0.15, -0.05] },
+      "mesh": { "file": "meshes/world/props/harrow_rusty.glb" },
+      "footprint": 1.1,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "scythe_rack",
+      "collider": { "shape": "box", "size": [2.2, 2.0, 0.8], "at": [0.0, 1.0, 0.1] },
+      "mesh": { "file": "meshes/world/props/scythe_rack.glb" },
+      "footprint": 1.4,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "pitchfork_stack",
+      "collider": { "shape": "cylinder", "radius": 0.45, "height": 1.7, "at": [0.0, 0.85, 0.0] },
+      "mesh": { "file": "meshes/world/props/pitchfork_stack.glb" },
+      "footprint": 0.8,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "vegetable_crates",
+      "collider": { "shape": "box", "size": [1.3, 0.6, 1.1], "at": [0.0, 0.3, 0.25] },
+      "mesh": { "file": "meshes/world/props/vegetable_crates.glb" },
+      "footprint": 0.9,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "pumpkin_pile",
+      "collider": { "shape": "cylinder", "radius": 0.95, "height": 0.8, "at": [0.0, 0.4, 0.0] },
+      "mesh": { "file": "meshes/world/props/pumpkin_pile.glb" },
+      "footprint": 1.2,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 15.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "drops": []
+    },
+    {
+      "id": "corn_crib",
+      "collider": { "shape": "box", "size": [2.5, 2.75, 1.2], "at": [0.0, 1.38, 0.0] },
+      "mesh": { "file": "meshes/world/props/corn_crib.glb" },
+      "footprint": 1.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "irrigation_pump",
+      "collider": { "shape": "box", "size": [1.7, 1.2, 0.9], "at": [0.0, 0.6, 0.0] },
+      "mesh": { "file": "meshes/world/props/irrigation_pump.glb" },
+      "footprint": 1.2,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 12, "count_max": 16 }]
+    },
+    {
+      "id": "sprinkler_pipe",
+      "collider": { "shape": "box", "size": [4.0, 1.0, 0.6], "at": [0.0, 0.5, 0.0] },
+      "mesh": { "file": "meshes/world/props/sprinkler_pipe.glb" },
+      "footprint": 2.2,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "cold_frame",
+      "collider": { "shape": "box", "size": [1.62, 0.5, 0.95], "at": [0.0, 0.25, 0.0] },
+      "mesh": { "file": "meshes/world/props/cold_frame.glb" },
+      "footprint": 1.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "greenhouse_small",
+      "collider": { "shape": "box", "size": [2.5, 1.95, 3.1], "at": [0.0, 0.97, 0.0] },
+      "mesh": { "file": "meshes/world/props/greenhouse_small.glb" },
+      "footprint": 2.1,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "potting_bench",
+      "collider": { "shape": "box", "size": [1.5, 1.45, 0.62], "at": [0.0, 0.72, 0.0] },
+      "mesh": { "file": "meshes/world/props/potting_bench.glb" },
+      "footprint": 1.1,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "water_butt_stand",
+      "collider": { "shape": "box", "size": [1.6, 1.5, 0.8], "at": [0.0, 0.75, 0.0] },
+      "mesh": { "file": "meshes/world/props/water_butt_stand.glb" },
+      "footprint": 1.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 12, "count_max": 16 }]
+    },
+    {
+      "id": "dovecote",
+      "collider": { "shape": "cylinder", "radius": 0.2, "height": 3.8, "at": [0.0, 1.9, 0.0] },
+      "mesh": { "file": "meshes/world/props/dovecote.glb" },
+      "footprint": 0.8,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "rabbit_hutch",
+      "collider": { "shape": "box", "size": [1.5, 1.5, 0.75], "at": [0.0, 0.75, 0.0] },
+      "mesh": { "file": "meshes/world/props/rabbit_hutch.glb" },
+      "footprint": 0.9,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "bee_skep",
+      "collider": { "shape": "box", "size": [1.9, 1.55, 0.7], "at": [0.0, 0.78, 0.05] },
+      "mesh": { "file": "meshes/world/props/bee_skep.glb" },
+      "footprint": 1.2,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "haystack_loose",
+      "collider": { "shape": "cylinder", "radius": 1.6, "height": 3.4, "at": [0.0, 1.7, 0.0] },
+      "mesh": { "file": "meshes/world/props/haystack_loose.glb" },
+      "footprint": 2.2,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 15.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "drops": []
+    },
+    {
+      "id": "tent_ridge",
+      "collider": { "shape": "box", "size": [1.9, 1.35, 2.3], "at": [0.0, 0.68, 0.0] },
+      "mesh": { "file": "meshes/world/props/tent_ridge.glb" },
+      "footprint": 1.8,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 15.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "drops": []
+    },
+    {
+      "id": "tent_dome_patched",
+      "collider": { "shape": "cylinder", "radius": 1.25, "height": 1.15, "at": [0.0, 0.58, 0.0] },
+      "mesh": { "file": "meshes/world/props/tent_dome_patched.glb" },
+      "footprint": 1.9,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 15.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "drops": []
+    },
+    {
+      "id": "hammock_posts",
+      "collider": { "shape": "box", "size": [3.9, 2.0, 0.9], "at": [0.0, 1.0, 0.0] },
+      "mesh": { "file": "meshes/world/props/hammock_posts.glb" },
+      "footprint": 2.8,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "sleeping_mats",
+      "collider": { "shape": "box", "size": [2.6, 0.25, 2.2], "at": [0.0, 0.12, 0.0] },
+      "mesh": { "file": "meshes/world/props/sleeping_mats.glb" },
+      "footprint": 1.7,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "solid": false,
+      "health": 15.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "drops": []
+    },
+    {
+      "id": "camp_kitchen",
+      "collider": { "shape": "box", "size": [1.86, 1.78, 0.62], "at": [0.0, 0.89, 0.0] },
+      "mesh": { "file": "meshes/world/props/camp_kitchen.glb" },
+      "footprint": 1.2,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 8, "count_max": 16 }]
+    },
+    {
+      "id": "smoker_barrel",
+      "collider": { "shape": "box", "size": [1.0, 1.25, 0.85], "at": [-0.05, 0.62, 0.0] },
+      "mesh": { "file": "meshes/world/props/smoker_barrel.glb" },
+      "footprint": 1.1,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "fish_drying_rack",
+      "collider": { "shape": "box", "size": [2.5, 1.9, 1.2], "at": [0.0, 0.95, 0.0] },
+      "mesh": { "file": "meshes/world/props/fish_drying_rack.glb" },
+      "footprint": 1.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "laundry_tub",
+      "collider": { "shape": "box", "size": [0.8, 0.9, 0.7], "at": [0.0, 0.45, 0.0] },
+      "mesh": { "file": "meshes/world/props/laundry_tub.glb" },
+      "footprint": 0.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 4, "count_max": 8 }]
+    },
+    {
+      "id": "bathtub_outdoor",
+      "collider": { "shape": "box", "size": [1.65, 1.0, 0.75], "at": [0.0, 0.5, 0.0] },
+      "mesh": { "file": "meshes/world/props/bathtub_outdoor.glb" },
+      "footprint": 1.2,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 8, "count_max": 16 }]
+    },
+    {
+      "id": "clothes_chest",
+      "collider": { "shape": "box", "size": [0.95, 0.5, 0.52], "at": [0.0, 0.25, 0.0] },
+      "mesh": { "file": "meshes/world/props/clothes_chest.glb" },
+      "footprint": 0.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 4, "count_max": 8 }]
+    },
+    {
+      "id": "rocking_chair",
+      "collider": { "shape": "box", "size": [0.6, 1.08, 0.92], "at": [0.0, 0.54, 0.04] },
+      "mesh": { "file": "meshes/world/props/rocking_chair.glb" },
+      "footprint": 0.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 4, "count_max": 8 }]
+    },
+    {
+      "id": "bench_plank",
+      "collider": { "shape": "box", "size": [1.8, 0.45, 0.32], "at": [0.0, 0.23, 0.0] },
+      "mesh": { "file": "meshes/world/props/bench_plank.glb" },
+      "footprint": 1.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 4, "count_max": 8 }]
+    },
+    {
+      "id": "stove_pot_belly",
+      "collider": { "shape": "cylinder", "radius": 0.3, "height": 0.9, "at": [0.0, 0.45, 0.0] },
+      "mesh": { "file": "meshes/world/props/stove_pot_belly.glb" },
+      "footprint": 1.1,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "chimney_stack_free",
+      "collider": { "shape": "box", "size": [1.5, 5.0, 0.9], "at": [0.0, 2.5, 0.0] },
+      "mesh": { "file": "meshes/world/props/chimney_stack_free.glb" },
+      "footprint": 1.9,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "firewood_rack",
+      "collider": { "shape": "box", "size": [1.36, 1.4, 0.55], "at": [0.0, 0.7, 0.0] },
+      "mesh": { "file": "meshes/world/props/firewood_rack.glb" },
+      "footprint": 1.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 8, "count_max": 16 }]
+    },
+    {
+      "id": "chopping_block",
+      "collider": { "shape": "cylinder", "radius": 0.32, "height": 0.5, "at": [0.0, 0.25, 0.0] },
+      "mesh": { "file": "meshes/world/props/chopping_block.glb" },
+      "footprint": 0.8,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 4, "count_max": 8 }]
+    },
+    {
+      "id": "sawhorse_pair",
+      "collider": { "shape": "box", "size": [2.45, 0.77, 0.95], "at": [0.05, 0.39, 0.0] },
+      "mesh": { "file": "meshes/world/props/sawhorse_pair.glb" },
+      "footprint": 1.4,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "tool_wall",
+      "collider": { "shape": "box", "size": [2.2, 2.05, 0.3], "at": [0.0, 1.03, -0.05] },
+      "mesh": { "file": "meshes/world/props/tool_wall.glb" },
+      "footprint": 1.3,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 8, "count_max": 16 }]
+    },
+    {
+      "id": "anvil_stump",
+      "collider": { "shape": "cylinder", "radius": 0.32, "height": 0.85, "at": [0.0, 0.43, 0.0] },
+      "mesh": { "file": "meshes/world/props/anvil_stump.glb" },
+      "footprint": 0.7,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 4, "count_max": 12 }]
+    },
+    {
+      "id": "grindstone",
+      "collider": { "shape": "box", "size": [1.35, 1.12, 0.6], "at": [0.0, 0.56, 0.0] },
+      "mesh": { "file": "meshes/world/props/grindstone.glb" },
+      "footprint": 0.9,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "workbench_settler",
+      "collider": { "shape": "box", "size": [2.08, 1.7, 0.75], "at": [0.0, 0.85, 0.0] },
+      "mesh": { "file": "meshes/world/props/workbench_settler.glb" },
+      "footprint": 1.3,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 12, "count_max": 16 }]
+    },
+    {
+      "id": "water_filter_barrel",
+      "collider": { "shape": "box", "size": [1.0, 2.55, 1.0], "at": [0.0, 1.28, 0.0] },
+      "mesh": { "file": "meshes/world/props/water_filter_barrel.glb" },
+      "footprint": 1.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 12, "count_max": 16 }]
+    },
+    {
+      "id": "trade_cart",
+      "collider": { "shape": "box", "size": [1.8, 2.45, 2.3], "at": [0.0, 1.23, 0.1] },
+      "mesh": { "file": "meshes/world/props/trade_cart.glb" },
+      "footprint": 2.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 12, "count_max": 20 }]
+    },
+    {
+      "id": "market_stall",
+      "collider": { "shape": "box", "size": [2.7, 2.5, 1.3], "at": [0.0, 1.25, 0.0] },
+      "mesh": { "file": "meshes/world/props/market_stall.glb" },
+      "footprint": 1.8,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 12, "count_max": 20 }]
+    },
+    {
+      "id": "awning_frame",
+      "collider": { "shape": "box", "size": [3.1, 2.4, 2.5], "at": [0.0, 1.2, 0.0] },
+      "mesh": { "file": "meshes/world/props/awning_frame.glb" },
+      "footprint": 2.4,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "solid": false,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "lean_to_metal",
+      "collider": { "shape": "box", "size": [3.2, 2.3, 2.0], "at": [0.0, 1.15, 0.0] },
+      "mesh": { "file": "meshes/world/props/lean_to_metal.glb" },
+      "footprint": 2.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 12, "count_max": 20 }]
+    },
+    {
+      "id": "scrap_hut",
+      "collider": { "shape": "box", "size": [3.1, 2.5, 3.1], "at": [0.0, 1.25, 0.0] },
+      "mesh": { "file": "meshes/world/props/scrap_hut.glb" },
+      "footprint": 2.4,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "lookout_platform",
+      "collider": { "shape": "box", "size": [2.3, 3.85, 2.3], "at": [0.0, 1.92, 0.0] },
+      "mesh": { "file": "meshes/world/props/lookout_platform.glb" },
+      "footprint": 1.8,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 16, "count_max": 24 }]
+    },
+    {
+      "id": "watchtower_wood",
+      "collider": { "shape": "box", "size": [3.3, 8.3, 3.3], "at": [0.0, 4.15, 0.0] },
+      "mesh": { "file": "meshes/world/props/watchtower_wood.glb" },
+      "footprint": 2.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "palisade_section",
+      "collider": { "shape": "box", "size": [3.1, 2.6, 0.4], "at": [0.0, 1.3, -0.05] },
+      "mesh": { "file": "meshes/world/props/palisade_section.glb" },
+      "footprint": 1.8,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 12, "count_max": 20 }]
+    },
+    {
+      "id": "palisade_gate",
+      "collider": { "shape": "box", "size": [5.6, 3.3, 0.45], "at": [0.0, 1.65, 0.0] },
+      "mesh": { "file": "meshes/world/props/palisade_gate.glb" },
+      "footprint": 3.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "barricade_scrap",
+      "collider": { "shape": "box", "size": [4.0, 1.15, 0.9], "at": [0.0, 0.58, 0.15] },
+      "mesh": { "file": "meshes/world/props/barricade_scrap.glb" },
+      "footprint": 2.2,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 12, "count_max": 20 }]
+    },
+    {
+      "id": "tire_stack",
+      "collider": { "shape": "cylinder", "radius": 0.45, "height": 1.2, "at": [0.05, 0.6, -0.1] },
+      "mesh": { "file": "meshes/world/props/tire_stack.glb" },
+      "footprint": 0.9,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 15.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "drops": []
+    },
+    {
+      "id": "tire_swing",
+      "collider": { "shape": "box", "size": [3.0, 2.75, 1.6], "at": [0.0, 1.37, 0.0] },
+      "mesh": { "file": "meshes/world/props/tire_swing.glb" },
+      "footprint": 1.8,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "car_door_fence",
+      "collider": { "shape": "box", "size": [3.5, 1.45, 0.25], "at": [0.0, 0.73, 0.05] },
+      "mesh": { "file": "meshes/world/props/car_door_fence.glb" },
+      "footprint": 1.9,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 8, "count_max": 16 }]
+    },
+    {
+      "id": "sheet_metal_fence",
+      "collider": { "shape": "box", "size": [4.1, 1.95, 0.3], "at": [0.0, 0.98, 0.05] },
+      "mesh": { "file": "meshes/world/props/sheet_metal_fence.glb" },
+      "footprint": 2.2,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 8, "count_max": 16 }]
+    },
+    {
+      "id": "signboard_painted",
+      "collider": { "shape": "box", "size": [1.9, 2.25, 0.25], "at": [0.0, 1.12, 0.03] },
+      "mesh": { "file": "meshes/world/props/signboard_painted.glb" },
+      "footprint": 1.1,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 4, "count_max": 8 }]
+    },
+    {
+      "id": "scrap_windmill_turbine",
+      "collider": { "shape": "cylinder", "radius": 0.35, "height": 5.1, "at": [0.0, 2.55, 0.0] },
+      "mesh": { "file": "meshes/world/props/scrap_windmill_turbine.glb" },
+      "footprint": 1.2,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 8, "count_max": 16 }]
+    },
+    {
+      "id": "solar_scrap_rig",
+      "collider": { "shape": "box", "size": [2.75, 1.6, 1.35], "at": [0.0, 0.8, 0.0] },
+      "mesh": { "file": "meshes/world/props/solar_scrap_rig.glb" },
+      "footprint": 1.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 8, "count_max": 16 }]
+    },
+    {
+      "id": "antenna_scrap",
+      "collider": { "shape": "cylinder", "radius": 0.3, "height": 8.0, "at": [0.05, 4.0, 0.05] },
+      "mesh": { "file": "meshes/world/props/antenna_scrap.glb" },
+      "footprint": 1.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "rain_catcher",
+      "collider": { "shape": "cylinder", "radius": 0.6, "height": 1.25, "at": [0.0, 0.62, 0.0] },
+      "mesh": { "file": "meshes/world/props/rain_catcher.glb" },
+      "footprint": 1.9,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "water_still",
+      "collider": { "shape": "box", "size": [1.9, 1.5, 1.1], "at": [0.0, 0.75, -0.1] },
+      "mesh": { "file": "meshes/world/props/water_still.glb" },
+      "footprint": 1.2,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "generator_shed",
+      "collider": { "shape": "box", "size": [1.7, 1.9, 1.3], "at": [0.0, 0.95, 0.0] },
+      "mesh": { "file": "meshes/world/props/generator_shed.glb" },
+      "footprint": 1.5,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 12, "count_max": 16 }]
+    },
+    {
+      "id": "battery_rack_settler",
+      "collider": { "shape": "box", "size": [1.5, 1.8, 0.6], "at": [0.0, 0.9, 0.0] },
+      "mesh": { "file": "meshes/world/props/battery_rack_settler.glb" },
+      "footprint": 1.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "scrap_heap_mixed",
+      "collider": { "shape": "box", "size": [2.5, 0.8, 2.0], "at": [0.0, 0.4, 0.0] },
+      "mesh": { "file": "meshes/world/props/scrap_heap_mixed.glb" },
+      "footprint": 1.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 12, "count_max": 20 }]
+    },
+    {
+      "id": "junk_shelf",
+      "collider": { "shape": "box", "size": [1.6, 1.95, 0.5], "at": [0.0, 0.97, 0.0] },
+      "mesh": { "file": "meshes/world/props/junk_shelf.glb" },
+      "footprint": 1.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "rope_bridge_post",
+      "collider": { "shape": "box", "size": [1.8, 1.55, 0.6], "at": [0.0, 0.78, 0.0] },
+      "mesh": { "file": "meshes/world/props/rope_bridge_post.glb" },
+      "footprint": 1.4,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "outdoor_shower",
+      "collider": { "shape": "box", "size": [1.35, 2.45, 1.35], "at": [0.0, 1.22, 0.0] },
+      "mesh": { "file": "meshes/world/props/outdoor_shower.glb" },
+      "footprint": 1.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "latrine_screen",
+      "collider": { "shape": "box", "size": [1.5, 1.75, 1.5], "at": [0.0, 0.88, 0.0] },
+      "mesh": { "file": "meshes/world/props/latrine_screen.glb" },
+      "footprint": 1.2,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "bell_post",
+      "collider": { "shape": "box", "size": [0.45, 2.7, 0.45], "at": [0.0, 1.35, 0.0] },
+      "mesh": { "file": "meshes/world/props/bell_post.glb" },
+      "footprint": 0.8,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 4, "count_max": 8 }]
+    },
+    {
+      "id": "street_lamp",
+      "collider": { "shape": "cylinder", "radius": 0.4, "height": 5.95, "at": [-0.55, 2.98, 0.0] },
+      "mesh": { "file": "meshes/world/props/street_lamp.glb" },
+      "footprint": 1.2,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "traffic_light",
+      "collider": { "shape": "box", "size": [0.45, 3.45, 0.6], "at": [0.0, 1.73, 0.15] },
+      "mesh": { "file": "meshes/world/props/traffic_light.glb" },
+      "footprint": 0.5,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "traffic_light_fallen",
+      "collider": { "shape": "box", "size": [3.6, 0.55, 0.6], "at": [0.0, 0.28, 0.05] },
+      "mesh": { "file": "meshes/world/props/traffic_light_fallen.glb" },
+      "footprint": 2.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "road_barrier_arm",
+      "collider": { "shape": "box", "size": [5.2, 1.25, 0.8], "at": [0.0, 0.62, 0.05] },
+      "mesh": { "file": "meshes/world/props/road_barrier_arm.glb" },
+      "footprint": 2.7,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 12, "count_max": 16 }]
+    },
+    {
+      "id": "toll_booth",
+      "collider": { "shape": "box", "size": [2.4, 2.7, 3.0], "at": [0.0, 1.35, 0.0] },
+      "mesh": { "file": "meshes/world/props/toll_booth.glb" },
+      "footprint": 1.8,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "bench_colony",
+      "collider": { "shape": "box", "size": [1.95, 0.9, 0.68], "at": [0.0, 0.45, 0.04] },
+      "mesh": { "file": "meshes/world/props/bench_colony.glb" },
+      "footprint": 1.1,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "trash_bin",
+      "collider": { "shape": "cylinder", "radius": 0.3, "height": 1.02, "at": [0.0, 0.51, 0.0] },
+      "mesh": { "file": "meshes/world/props/trash_bin.glb" },
+      "footprint": 0.4,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 4, "count_max": 8 }]
+    },
+    {
+      "id": "recycling_bins",
+      "collider": { "shape": "box", "size": [2.3, 1.08, 1.1], "at": [0.0, 0.54, 0.03] },
+      "mesh": { "file": "meshes/world/props/recycling_bins.glb" },
+      "footprint": 1.3,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 12, "count_max": 20 }]
+    },
+    {
+      "id": "newspaper_kiosk",
+      "collider": { "shape": "box", "size": [2.7, 2.75, 2.1], "at": [0.0, 1.38, 0.05] },
+      "mesh": { "file": "meshes/world/props/newspaper_kiosk.glb" },
+      "footprint": 1.8,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "phone_booth",
+      "collider": { "shape": "box", "size": [1.1, 2.48, 1.1], "at": [0.0, 1.24, 0.0] },
+      "mesh": { "file": "meshes/world/props/phone_booth.glb" },
+      "footprint": 0.8,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "vending_machine",
+      "collider": { "shape": "box", "size": [1.02, 1.93, 0.82], "at": [0.0, 0.97, 0.0] },
+      "mesh": { "file": "meshes/world/props/vending_machine.glb" },
+      "footprint": 0.7,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 12, "count_max": 20 }]
+    },
+    {
+      "id": "fire_hydrant",
+      "collider": { "shape": "cylinder", "radius": 0.22, "height": 0.8, "at": [0.0, 0.4, 0.0] },
+      "mesh": { "file": "meshes/world/props/fire_hydrant.glb" },
+      "footprint": 0.4,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 4, "count_max": 8 }]
+    },
+    {
+      "id": "manhole_cover_open",
+      "collider": { "shape": "cylinder", "radius": 0.55, "height": 0.08, "at": [0.0, 0.04, 0.0] },
+      "mesh": { "file": "meshes/world/props/manhole_cover_open.glb" },
+      "footprint": 0.8,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "solid": false,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 4, "count_max": 8 }]
+    },
+    {
+      "id": "street_planter",
+      "collider": { "shape": "box", "size": [1.6, 0.6, 0.8], "at": [0.0, 0.3, 0.0] },
+      "mesh": { "file": "meshes/world/props/street_planter.glb" },
+      "footprint": 1.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 80.0,
+      "damage_from": ["sledge", "drill", "explosion"],
+      "drops": [{ "item": "scrap_stone_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "bollard_row",
+      "collider": { "shape": "box", "size": [3.9, 1.0, 0.25], "at": [0.0, 0.5, 0.0] },
+      "mesh": { "file": "meshes/world/props/bollard_row.glb" },
+      "footprint": 2.1,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 8, "count_max": 16 }]
+    },
+    {
+      "id": "bike_rack",
+      "collider": { "shape": "box", "size": [2.5, 0.88, 1.2], "at": [0.0, 0.44, 0.0] },
+      "mesh": { "file": "meshes/world/props/bike_rack.glb" },
+      "footprint": 1.4,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "parking_meter",
+      "collider": { "shape": "cylinder", "radius": 0.13, "height": 1.6, "at": [0.0, 0.8, 0.0] },
+      "mesh": { "file": "meshes/world/props/parking_meter.glb" },
+      "footprint": 0.3,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 4, "count_max": 8 }]
+    },
+    {
+      "id": "info_board",
+      "collider": { "shape": "box", "size": [1.9, 2.42, 0.3], "at": [0.0, 1.21, 0.0] },
+      "mesh": { "file": "meshes/world/props/info_board.glb" },
+      "footprint": 1.2,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "colony_flag_pole",
+      "collider": { "shape": "cylinder", "radius": 0.55, "height": 8.8, "at": [0.0, 4.4, 0.0] },
+      "mesh": { "file": "meshes/world/props/colony_flag_pole.glb" },
+      "footprint": 1.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "statue_colony_founder",
+      "collider": { "shape": "box", "size": [2.2, 4.0, 2.2], "at": [0.0, 2.0, 0.0] },
+      "mesh": { "file": "meshes/world/props/statue_colony_founder.glb" },
+      "footprint": 1.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "fountain_dry",
+      "collider": { "shape": "cylinder", "radius": 2.0, "height": 0.5, "at": [0.0, 0.25, 0.0] },
+      "mesh": { "file": "meshes/world/props/fountain_dry.glb" },
+      "footprint": 2.4,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "planter_tree_dead",
+      "collider": { "shape": "box", "size": [1.8, 0.7, 1.8], "at": [0.0, 0.35, 0.0] },
+      "mesh": { "file": "meshes/world/props/planter_tree_dead.glb" },
+      "footprint": 1.3,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "sign_gantry",
+      "collider": { "shape": "box", "size": [8.7, 1.4, 1.0], "at": [0.0, 5.5, 0.05] },
+      "mesh": { "file": "meshes/world/props/sign_gantry.glb" },
+      "footprint": 4.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "crosswalk_sign",
+      "collider": { "shape": "cylinder", "radius": 0.15, "height": 2.8, "at": [0.0, 1.4, 0.0] },
+      "mesh": { "file": "meshes/world/props/crosswalk_sign.glb" },
+      "footprint": 0.4,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 4, "count_max": 8 }]
+    },
+    {
+      "id": "bus_wreck",
+      "collider": { "shape": "box", "size": [10.5, 3.5, 2.6], "at": [0.12, 1.75, 0.05] },
+      "mesh": { "file": "meshes/world/props/bus_wreck.glb" },
+      "footprint": 5.5,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "storage_tank_tall",
+      "collider": { "shape": "cylinder", "radius": 1.55, "height": 8.4, "at": [0.0, 4.2, 0.0] },
+      "mesh": { "file": "meshes/world/props/storage_tank_tall.glb" },
+      "footprint": 2.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "silo_steel",
+      "collider": { "shape": "cylinder", "radius": 2.4, "height": 12.0, "at": [0.0, 6.0, 0.0] },
+      "mesh": { "file": "meshes/world/props/silo_steel.glb" },
+      "footprint": 3.2,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "cooling_tower_small",
+      "collider": { "shape": "cylinder", "radius": 3.65, "height": 6.4, "at": [0.0, 3.2, 0.0] },
+      "mesh": { "file": "meshes/world/props/cooling_tower_small.glb" },
+      "footprint": 4.4,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "pipe_rack",
+      "collider": { "shape": "box", "size": [6.6, 4.6, 2.6], "at": [0.0, 2.3, 0.0] },
+      "mesh": { "file": "meshes/world/props/pipe_rack.glb" },
+      "footprint": 3.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "pipe_bridge",
+      "collider": { "shape": "box", "size": [10.5, 1.2, 1.4], "at": [0.0, 5.95, 0.0] },
+      "mesh": { "file": "meshes/world/props/pipe_bridge.glb" },
+      "footprint": 5.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "valve_manifold",
+      "collider": { "shape": "box", "size": [4.4, 1.6, 2.6], "at": [0.0, 0.8, -0.2] },
+      "mesh": { "file": "meshes/world/props/valve_manifold.glb" },
+      "footprint": 2.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "pump_station",
+      "collider": { "shape": "box", "size": [7.0, 3.4, 3.4], "at": [0.0, 1.7, -0.2] },
+      "mesh": { "file": "meshes/world/props/pump_station.glb" },
+      "footprint": 3.8,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "compressor_unit",
+      "collider": { "shape": "box", "size": [3.8, 1.6, 1.4], "at": [0.0, 0.8, 0.0] },
+      "mesh": { "file": "meshes/world/props/compressor_unit.glb" },
+      "footprint": 2.2,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "chimney_steel",
+      "collider": { "shape": "cylinder", "radius": 0.85, "height": 10.2, "at": [0.0, 5.1, 0.0] },
+      "mesh": { "file": "meshes/world/props/chimney_steel.glb" },
+      "footprint": 4.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "smokestack_brick",
+      "collider": { "shape": "cylinder", "radius": 1.4, "height": 12.0, "at": [0.0, 6.0, 0.0] },
+      "mesh": { "file": "meshes/world/props/smokestack_brick.glb" },
+      "footprint": 2.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "conveyor_tower",
+      "collider": { "shape": "box", "size": [3.0, 8.6, 3.0], "at": [5.7, 4.3, 0.0] },
+      "mesh": { "file": "meshes/world/props/conveyor_tower.glb" },
+      "footprint": 7.4,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "hopper",
+      "collider": { "shape": "box", "size": [2.6, 6.0, 2.6], "at": [0.0, 3.0, 0.0] },
+      "mesh": { "file": "meshes/world/props/hopper.glb" },
+      "footprint": 3.4,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "crusher_machine",
+      "collider": { "shape": "box", "size": [3.6, 3.0, 2.6], "at": [0.0, 1.5, -0.1] },
+      "mesh": { "file": "meshes/world/props/crusher_machine.glb" },
+      "footprint": 2.8,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "cement_mixer_wreck",
+      "collider": { "shape": "box", "size": [5.5, 3.0, 2.4], "at": [0.4, 1.5, 0.0] },
+      "mesh": { "file": "meshes/world/props/cement_mixer_wreck.glb" },
+      "footprint": 3.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "crane_mobile_wreck",
+      "collider": { "shape": "box", "size": [6.8, 2.9, 2.6], "at": [-1.4, 1.45, 1.6] },
+      "mesh": { "file": "meshes/world/props/crane_mobile_wreck.glb" },
+      "footprint": 5.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "excavator_wreck",
+      "collider": { "shape": "box", "size": [4.6, 2.9, 2.9], "at": [-1.4, 1.45, 0.0] },
+      "mesh": { "file": "meshes/world/props/excavator_wreck.glb" },
+      "footprint": 4.3,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "bulldozer_wreck",
+      "collider": { "shape": "box", "size": [5.2, 3.0, 3.2], "at": [-0.2, 1.5, 0.0] },
+      "mesh": { "file": "meshes/world/props/bulldozer_wreck.glb" },
+      "footprint": 5.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "dump_truck_wreck",
+      "collider": { "shape": "box", "size": [8.0, 3.4, 4.1], "at": [0.3, 1.7, 0.0] },
+      "mesh": { "file": "meshes/world/props/dump_truck_wreck.glb" },
+      "footprint": 4.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "steel_beam_stack",
+      "collider": { "shape": "box", "size": [5.1, 1.24, 1.7], "at": [0.0, 0.62, 0.0] },
+      "mesh": { "file": "meshes/world/props/steel_beam_stack.glb" },
+      "footprint": 2.8,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "rebar_bundle",
+      "collider": { "shape": "box", "size": [4.2, 0.5, 0.9], "at": [0.0, 0.25, 0.0] },
+      "mesh": { "file": "meshes/world/props/rebar_bundle.glb" },
+      "footprint": 2.3,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 12, "count_max": 20 }]
+    },
+    {
+      "id": "scaffold_tower",
+      "collider": { "shape": "box", "size": [2.8, 6.0, 1.6], "at": [0.0, 3.0, 0.0] },
+      "mesh": { "file": "meshes/world/props/scaffold_tower.glb" },
+      "footprint": 1.8,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 16, "count_max": 28 }]
+    },
+    {
+      "id": "cable_drum_stack",
+      "collider": { "shape": "box", "size": [3.1, 2.75, 0.92], "at": [0.0, 1.37, 0.0] },
+      "mesh": { "file": "meshes/world/props/cable_drum_stack.glb" },
+      "footprint": 2.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 12, "count_max": 20 }]
+    },
+    {
+      "id": "barrel_pallet",
+      "collider": { "shape": "box", "size": [1.2, 1.04, 1.1], "at": [0.0, 0.52, 0.0] },
+      "mesh": { "file": "meshes/world/props/barrel_pallet.glb" },
+      "footprint": 0.9,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 12, "count_max": 20 }]
+    },
+    {
+      "id": "chemical_drums",
+      "collider": { "shape": "box", "size": [2.9, 0.9, 1.5], "at": [-0.1, 0.45, -0.3] },
+      "mesh": { "file": "meshes/world/props/chemical_drums.glb" },
+      "footprint": 2.4,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 12, "count_max": 20 }]
+    },
+    {
+      "id": "hazard_waste_bin",
+      "collider": { "shape": "box", "size": [2.7, 1.8, 1.7], "at": [0.0, 0.9, 0.0] },
+      "mesh": { "file": "meshes/world/props/hazard_waste_bin.glb" },
+      "footprint": 1.8,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "substation_fence",
+      "collider": { "shape": "box", "size": [6.4, 2.4, 4.4], "at": [0.0, 1.2, 0.0] },
+      "mesh": { "file": "meshes/world/props/substation_fence.glb" },
+      "footprint": 4.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "switch_cabinet",
+      "collider": { "shape": "box", "size": [1.35, 2.3, 0.8], "at": [0.0, 1.15, 0.0] },
+      "mesh": { "file": "meshes/world/props/switch_cabinet.glb" },
+      "footprint": 0.9,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 8, "count_max": 16 }]
+    },
+    {
+      "id": "transformer_pole",
+      "collider": { "shape": "cylinder", "radius": 0.2, "height": 9.0, "at": [0.0, 4.5, 0.0] },
+      "mesh": { "file": "meshes/world/props/transformer_pole.glb" },
+      "footprint": 1.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "wind_turbine_colony",
+      "collider": { "shape": "cylinder", "radius": 1.3, "height": 21.6, "at": [0.0, 10.8, 0.0] },
+      "mesh": { "file": "meshes/world/props/wind_turbine_colony.glb" },
+      "footprint": 5.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "solar_farm_row",
+      "collider": { "shape": "box", "size": [6.6, 1.45, 1.7], "at": [0.1, 0.72, 0.07] },
+      "mesh": { "file": "meshes/world/props/solar_farm_row.glb" },
+      "footprint": 3.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 12, "count_max": 20 }]
+    },
+    {
+      "id": "battery_bank",
+      "collider": { "shape": "box", "size": [4.3, 2.65, 2.3], "at": [0.0, 1.32, 0.0] },
+      "mesh": { "file": "meshes/world/props/battery_bank.glb" },
+      "footprint": 2.8,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "data_cabinet",
+      "collider": { "shape": "box", "size": [0.95, 1.65, 0.65], "at": [0.0, 0.82, 0.0] },
+      "mesh": { "file": "meshes/world/props/data_cabinet.glb" },
+      "footprint": 0.8,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 4, "count_max": 12 }]
+    },
+    {
+      "id": "server_rack_wreck",
+      "collider": { "shape": "box", "size": [3.0, 1.2, 3.0], "at": [-0.1, 0.6, 0.3] },
+      "mesh": { "file": "meshes/world/props/server_rack_wreck.glb" },
+      "footprint": 2.4,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 16, "count_max": 24 }]
+    },
+    {
+      "id": "antenna_array",
+      "collider": { "shape": "box", "size": [3.4, 1.5, 3.4], "at": [0.0, 0.75, 0.0] },
+      "mesh": { "file": "meshes/world/props/antenna_array.glb" },
+      "footprint": 2.4,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "weather_station",
+      "collider": { "shape": "cylinder", "radius": 0.4, "height": 6.8, "at": [0.4, 3.4, -0.4] },
+      "mesh": { "file": "meshes/world/props/weather_station.glb" },
+      "footprint": 2.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 8, "count_max": 16 }]
+    },
+    {
+      "id": "sensor_mast",
+      "collider": { "shape": "cylinder", "radius": 0.35, "height": 6.5, "at": [0.0, 3.25, 0.0] },
+      "mesh": { "file": "meshes/world/props/sensor_mast.glb" },
+      "footprint": 0.7,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 4, "count_max": 8 }]
+    },
+    {
+      "id": "survey_drone_crashed",
+      "collider": { "shape": "box", "size": [1.6, 0.7, 1.6], "at": [0.0, 0.35, 0.0] },
+      "mesh": { "file": "meshes/world/props/survey_drone_crashed.glb" },
+      "footprint": 1.5,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "robot_arm_fallen",
+      "collider": { "shape": "box", "size": [5.4, 1.4, 2.0], "at": [-0.35, 0.7, -0.2] },
+      "mesh": { "file": "meshes/world/props/robot_arm_fallen.glb" },
+      "footprint": 3.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "charging_post",
+      "collider": { "shape": "box", "size": [0.6, 1.8, 0.45], "at": [0.0, 0.9, 0.0] },
+      "mesh": { "file": "meshes/world/props/charging_post.glb" },
+      "footprint": 0.9,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 4, "count_max": 8 }]
+    },
+    {
+      "id": "maintenance_hatch",
+      "collider": { "shape": "box", "size": [1.5, 0.4, 1.5], "at": [0.0, 0.2, 0.0] },
+      "mesh": { "file": "meshes/world/props/maintenance_hatch.glb" },
+      "footprint": 1.1,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "ventilation_shaft",
+      "collider": { "shape": "box", "size": [2.6, 3.6, 2.6], "at": [0.0, 1.8, 0.0] },
+      "mesh": { "file": "meshes/world/props/ventilation_shaft.glb" },
+      "footprint": 1.8,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "water_tower_colony",
+      "collider": { "shape": "cylinder", "radius": 2.2, "height": 12.0, "at": [0.0, 6.0, 0.0] },
+      "mesh": { "file": "meshes/world/props/water_tower_colony.glb" },
+      "footprint": 3.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "pump_jack",
+      "collider": { "shape": "box", "size": [7.0, 3.6, 1.4], "at": [0.2, 1.8, 0.0] },
+      "mesh": { "file": "meshes/world/props/pump_jack.glb" },
+      "footprint": 4.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "oil_derrick_small",
+      "collider": { "shape": "box", "size": [3.4, 11.0, 3.4], "at": [0.0, 5.5, 0.0] },
+      "mesh": { "file": "meshes/world/props/oil_derrick_small.glb" },
+      "footprint": 2.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "gas_meter_station",
+      "collider": { "shape": "box", "size": [3.4, 2.4, 2.2], "at": [0.0, 1.2, 0.0] },
+      "mesh": { "file": "meshes/world/props/gas_meter_station.glb" },
+      "footprint": 2.2,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "culvert_pipe",
+      "collider": { "shape": "box", "size": [2.3, 1.6, 3.2], "at": [0.0, 0.8, 0.0] },
+      "mesh": { "file": "meshes/world/props/culvert_pipe.glb" },
+      "footprint": 2.2,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "drainage_grate",
+      "collider": { "shape": "box", "size": [1.2, 0.1, 0.8], "at": [0.0, 0.04, 0.0] },
+      "mesh": { "file": "meshes/world/props/drainage_grate.glb" },
+      "footprint": 0.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "solid": false,
+      "damage_from": []
+    },
+    {
+      "id": "retaining_wall_concrete",
+      "collider": { "shape": "box", "size": [6.0, 2.6, 0.5], "at": [0.0, 1.3, 0.0] },
+      "mesh": { "file": "meshes/world/props/retaining_wall_concrete.glb" },
+      "footprint": 3.2,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "jersey_barrier_stack",
+      "collider": { "shape": "box", "size": [2.0, 1.75, 0.95], "at": [0.0, 0.88, 0.0] },
+      "mesh": { "file": "meshes/world/props/jersey_barrier_stack.glb" },
+      "footprint": 2.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "sandbag_wall",
+      "collider": { "shape": "box", "size": [4.2, 0.95, 1.0], "at": [0.0, 0.48, 0.12] },
+      "mesh": { "file": "meshes/world/props/sandbag_wall.glb" },
+      "footprint": 2.3,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 15.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "drops": []
+    },
+    {
+      "id": "van_wreck",
+      "collider": { "shape": "box", "size": [4.9, 2.1, 1.95], "at": [0.05, 1.05, 0.0] },
+      "mesh": { "file": "meshes/world/props/van_wreck.glb" },
+      "footprint": 2.7,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "pickup_wreck",
+      "collider": { "shape": "box", "size": [5.0, 1.8, 1.9], "at": [0.0, 0.9, 0.0] },
+      "mesh": { "file": "meshes/world/props/pickup_wreck.glb" },
+      "footprint": 2.8,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "sports_car_wreck",
+      "collider": { "shape": "box", "size": [4.2, 1.2, 1.85], "at": [0.05, 0.6, 0.0] },
+      "mesh": { "file": "meshes/world/props/sports_car_wreck.glb" },
+      "footprint": 2.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "delivery_truck_wreck",
+      "collider": { "shape": "box", "size": [7.6, 3.4, 2.4], "at": [0.2, 1.7, 0.0] },
+      "mesh": { "file": "meshes/world/props/delivery_truck_wreck.glb" },
+      "footprint": 4.3,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "tanker_trailer_wreck",
+      "collider": { "shape": "box", "size": [8.1, 3.4, 2.4], "at": [0.0, 1.7, 0.0] },
+      "mesh": { "file": "meshes/world/props/tanker_trailer_wreck.glb" },
+      "footprint": 4.3,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "flatbed_trailer",
+      "collider": { "shape": "box", "size": [8.1, 1.4, 2.45], "at": [0.0, 0.7, 0.0] },
+      "mesh": { "file": "meshes/world/props/flatbed_trailer.glb" },
+      "footprint": 4.2,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "motorbike_wreck",
+      "collider": { "shape": "box", "size": [2.0, 0.7, 1.0], "at": [0.1, 0.35, 0.3] },
+      "mesh": { "file": "meshes/world/props/motorbike_wreck.glb" },
+      "footprint": 1.4,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 12, "count_max": 20 }]
+    },
+    {
+      "id": "bicycle_rusty",
+      "collider": { "shape": "box", "size": [1.7, 0.5, 0.9], "at": [0.1, 0.25, 0.2] },
+      "mesh": { "file": "meshes/world/props/bicycle_rusty.glb" },
+      "footprint": 1.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 4, "count_max": 8 }]
+    },
+    {
+      "id": "train_wagon_wreck",
+      "collider": { "shape": "box", "size": [10.6, 3.4, 3.4], "at": [-0.2, 1.7, -0.4] },
+      "mesh": { "file": "meshes/world/props/train_wagon_wreck.glb" },
+      "footprint": 6.2,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "rail_track_section",
+      "collider": { "shape": "box", "size": [8.0, 0.45, 2.6], "at": [0.0, 0.22, 0.0] },
+      "mesh": { "file": "meshes/world/props/rail_track_section.glb" },
+      "footprint": 4.2,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "solid": false,
+      "damage_from": []
+    },
+    {
+      "id": "rail_signal",
+      "collider": { "shape": "box", "size": [0.9, 5.6, 0.9], "at": [0.0, 2.8, 0.0] },
+      "mesh": { "file": "meshes/world/props/rail_signal.glb" },
+      "footprint": 1.1,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "rail_buffer",
+      "collider": { "shape": "box", "size": [2.6, 1.35, 2.8], "at": [-2.27, 0.68, 0.0] },
+      "mesh": { "file": "meshes/world/props/rail_buffer.glb" },
+      "footprint": 3.3,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "mine_cart",
+      "collider": { "shape": "box", "size": [1.4, 1.2, 1.0], "at": [0.0, 0.6, 0.0] },
+      "mesh": { "file": "meshes/world/props/mine_cart.glb" },
+      "footprint": 1.5,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 12, "count_max": 20 }]
+    },
+    {
+      "id": "golf_cart_wreck",
+      "collider": { "shape": "box", "size": [2.6, 2.0, 1.3], "at": [-0.1, 1.0, 0.0] },
+      "mesh": { "file": "meshes/world/props/golf_cart_wreck.glb" },
+      "footprint": 1.7,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "quad_bike_wreck",
+      "collider": { "shape": "box", "size": [2.0, 1.0, 1.2], "at": [0.05, 0.5, 0.0] },
+      "mesh": { "file": "meshes/world/props/quad_bike_wreck.glb" },
+      "footprint": 1.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 12, "count_max": 20 }]
+    },
+    {
+      "id": "boat_trailer",
+      "collider": { "shape": "box", "size": [5.6, 1.5, 1.9], "at": [0.2, 0.75, 0.0] },
+      "mesh": { "file": "meshes/world/props/boat_trailer.glb" },
+      "footprint": 3.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "harvester_combine_wreck",
+      "collider": { "shape": "box", "size": [6.4, 4.6, 2.8], "at": [-0.6, 2.3, 0.0] },
+      "mesh": { "file": "meshes/world/props/harvester_combine_wreck.glb" },
+      "footprint": 4.8,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "colony_rover_wreck",
+      "collider": { "shape": "box", "size": [4.6, 3.2, 2.9], "at": [0.0, 1.6, 0.0] },
+      "mesh": { "file": "meshes/world/props/colony_rover_wreck.glb" },
+      "footprint": 3.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "hovercraft_wreck",
+      "collider": { "shape": "box", "size": [6.4, 2.6, 3.3], "at": [0.0, 1.3, 0.0] },
+      "mesh": { "file": "meshes/world/props/hovercraft_wreck.glb" },
+      "footprint": 3.5,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "airplane_tail",
+      "collider": { "shape": "box", "size": [3.0, 4.5, 2.0], "at": [0.9, 2.25, -0.2] },
+      "mesh": { "file": "meshes/world/props/airplane_tail.glb" },
+      "footprint": 2.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "helicopter_wreck",
+      "collider": { "shape": "box", "size": [6.5, 1.9, 2.6], "at": [-1.2, 0.95, 0.9] },
+      "mesh": { "file": "meshes/world/props/helicopter_wreck.glb" },
+      "footprint": 4.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "small_plane_wreck",
+      "collider": { "shape": "box", "size": [7.5, 2.2, 1.3], "at": [0.0, 1.1, -0.6] },
+      "mesh": { "file": "meshes/world/props/small_plane_wreck.glb" },
+      "footprint": 5.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "wheel_loose_big",
+      "collider": { "shape": "cylinder", "radius": 1.3, "height": 1.0, "at": [0.0, 0.5, 0.0] },
+      "mesh": { "file": "meshes/world/props/wheel_loose_big.glb" },
+      "footprint": 1.5,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "engine_block",
+      "collider": { "shape": "box", "size": [1.2, 1.0, 1.0], "at": [0.0, 0.5, 0.0] },
+      "mesh": { "file": "meshes/world/props/engine_block.glb" },
+      "footprint": 0.8,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 12, "count_max": 16 }]
+    },
+    {
+      "id": "car_seat",
+      "collider": { "shape": "box", "size": [0.55, 0.95, 0.7], "at": [0.0, 0.47, 0.0] },
+      "mesh": { "file": "meshes/world/props/car_seat.glb" },
+      "footprint": 0.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 4, "count_max": 8 }]
+    },
+    {
+      "id": "stone_arch_small",
+      "collider": { "shape": "box", "size": [2.7, 2.9, 0.6], "at": [0.0, 1.45, 0.0] },
+      "mesh": { "file": "meshes/world/props/stone_arch_small.glb" },
+      "footprint": 1.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "stone_column_standing",
+      "collider": { "shape": "cylinder", "radius": 0.53, "height": 4.93, "at": [0.0, 2.465, 0.0] },
+      "mesh": { "file": "meshes/world/props/stone_column_standing.glb" },
+      "footprint": 0.9,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "stone_pedestal",
+      "collider": { "shape": "box", "size": [1.0, 1.27, 1.0], "at": [0.0, 0.635, 0.0] },
+      "mesh": { "file": "meshes/world/props/stone_pedestal.glb" },
+      "footprint": 0.8,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 80.0,
+      "damage_from": ["sledge", "drill", "explosion"],
+      "drops": [{ "item": "scrap_stone_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "stone_urn",
+      "collider": { "shape": "cylinder", "radius": 0.5, "height": 1.4, "at": [0.0, 0.7, 0.0] },
+      "mesh": { "file": "meshes/world/props/stone_urn.glb" },
+      "footprint": 0.7,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 80.0,
+      "damage_from": ["sledge", "drill", "explosion"],
+      "drops": [{ "item": "scrap_stone_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "stone_brazier",
+      "collider": { "shape": "cylinder", "radius": 0.45, "height": 1.3, "at": [0.0, 0.65, 0.0] },
+      "mesh": { "file": "meshes/world/props/stone_brazier.glb" },
+      "footprint": 0.7,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 80.0,
+      "damage_from": ["sledge", "drill", "explosion"],
+      "drops": [{ "item": "scrap_stone_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "stone_altar",
+      "collider": { "shape": "box", "size": [2.25, 1.15, 1.2], "at": [0.0, 0.575, 0.0] },
+      "mesh": { "file": "meshes/world/props/stone_altar.glb" },
+      "footprint": 1.5,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "stone_tablet",
+      "collider": { "shape": "box", "size": [1.6, 2.4, 0.75], "at": [0.0, 1.2, 0.0] },
+      "mesh": { "file": "meshes/world/props/stone_tablet.glb" },
+      "footprint": 1.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "carved_relief_wall",
+      "collider": { "shape": "box", "size": [3.4, 2.6, 0.6], "at": [0.0, 1.3, 0.0] },
+      "mesh": { "file": "meshes/world/props/carved_relief_wall.glb" },
+      "footprint": 2.2,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "stone_lion",
+      "collider": { "shape": "box", "size": [1.2, 2.55, 2.1], "at": [0.0, 1.275, -0.05] },
+      "mesh": { "file": "meshes/world/props/stone_lion.glb" },
+      "footprint": 1.3,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "stone_obelisk",
+      "collider": { "shape": "box", "size": [2.1, 6.0, 2.1], "at": [0.0, 3.0, 0.0] },
+      "mesh": { "file": "meshes/world/props/stone_obelisk.glb" },
+      "footprint": 1.5,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "stone_tomb",
+      "collider": { "shape": "box", "size": [2.8, 3.0, 3.4], "at": [0.0, 1.5, 0.0] },
+      "mesh": { "file": "meshes/world/props/stone_tomb.glb" },
+      "footprint": 2.2,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "stone_sarcophagus",
+      "collider": { "shape": "box", "size": [2.5, 1.1, 1.2], "at": [0.1, 0.55, 0.0] },
+      "mesh": { "file": "meshes/world/props/stone_sarcophagus.glb" },
+      "footprint": 1.5,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "stone_fountain_ruin",
+      "collider": { "shape": "cylinder", "radius": 1.8, "height": 0.55, "at": [0.0, 0.275, 0.0] },
+      "mesh": { "file": "meshes/world/props/stone_fountain_ruin.glb" },
+      "footprint": 2.4,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "stone_bridge_fragment",
+      "collider": { "shape": "box", "size": [2.9, 5.05, 2.4], "at": [-0.17, 2.525, 0.0] },
+      "mesh": { "file": "meshes/world/props/stone_bridge_fragment.glb" },
+      "footprint": 3.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "stone_gate_pillars",
+      "collider": { "shape": "box", "size": [4.95, 3.75, 1.15], "at": [0.0, 1.875, 0.0] },
+      "mesh": { "file": "meshes/world/props/stone_gate_pillars.glb" },
+      "footprint": 2.8,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "stone_tower_stump",
+      "collider": { "shape": "cylinder", "radius": 2.4, "height": 3.2, "at": [0.0, 1.6, 0.0] },
+      "mesh": { "file": "meshes/world/props/stone_tower_stump.glb" },
+      "footprint": 3.2,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "stone_stair_spiral_ruin",
+      "collider": { "shape": "cylinder", "radius": 1.45, "height": 3.0, "at": [0.0, 1.5, 0.0] },
+      "mesh": { "file": "meshes/world/props/stone_stair_spiral_ruin.glb" },
+      "footprint": 2.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "stone_floor_tiles",
+      "collider": { "shape": "box", "size": [3.9, 0.12, 3.7], "at": [0.05, 0.03, 0.05] },
+      "mesh": { "file": "meshes/world/props/stone_floor_tiles.glb" },
+      "footprint": 0.5,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "solid": false,
+      "damage_from": []
+    },
+    {
+      "id": "stone_dais",
+      "collider": { "shape": "cylinder", "radius": 2.7, "height": 0.82, "at": [0.0, 0.41, 0.0] },
+      "mesh": { "file": "meshes/world/props/stone_dais.glb" },
+      "footprint": 3.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "stone_circle_ring",
+      "collider": { "shape": "cylinder", "radius": 0.6, "height": 0.2, "at": [0.0, 0.1, 0.0] },
+      "mesh": { "file": "meshes/world/props/stone_circle_ring.glb" },
+      "footprint": 3.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "stone_face_mask",
+      "collider": { "shape": "box", "size": [1.9, 2.2, 1.6], "at": [0.0, 1.1, -0.2] },
+      "mesh": { "file": "meshes/world/props/stone_face_mask.glb" },
+      "footprint": 1.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "stone_orb_pedestal",
+      "collider": { "shape": "box", "size": [0.95, 1.84, 0.95], "at": [0.0, 0.92, 0.0] },
+      "mesh": { "file": "meshes/world/props/stone_orb_pedestal.glb" },
+      "footprint": 0.8,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 80.0,
+      "damage_from": ["sledge", "drill", "explosion"],
+      "drops": [{ "item": "scrap_stone_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "crystal_probe_cluster",
+      "collider": { "shape": "cylinder", "radius": 0.75, "height": 1.9, "at": [0.0, 0.95, 0.0] },
+      "mesh": { "file": "meshes/world/props/crystal_probe_cluster.glb" },
+      "footprint": 1.2,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "stone_hand_fragment",
+      "collider": { "shape": "box", "size": [1.4, 2.7, 0.8], "at": [0.0, 1.35, 0.0] },
+      "mesh": { "file": "meshes/world/props/stone_hand_fragment.glb" },
+      "footprint": 1.4,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "stone_lantern",
+      "collider": { "shape": "box", "size": [0.75, 2.4, 0.75], "at": [0.0, 1.2, 0.0] },
+      "mesh": { "file": "meshes/world/props/stone_lantern.glb" },
+      "footprint": 0.7,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 80.0,
+      "damage_from": ["sledge", "drill", "explosion"],
+      "drops": [{ "item": "scrap_stone_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "rune_stone",
+      "collider": { "shape": "box", "size": [1.2, 1.0, 0.75], "at": [0.0, 0.5, 0.0] },
+      "mesh": { "file": "meshes/world/props/rune_stone.glb" },
+      "footprint": 0.9,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 80.0,
+      "damage_from": ["sledge", "drill", "explosion"],
+      "drops": [{ "item": "scrap_stone_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "stone_bench_curved",
+      "collider": { "shape": "box", "size": [3.9, 0.9, 1.3], "at": [0.05, 0.45, 0.0] },
+      "mesh": { "file": "meshes/world/props/stone_bench_curved.glb" },
+      "footprint": 2.1,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "stone_planter",
+      "collider": { "shape": "box", "size": [1.5, 0.82, 1.5], "at": [0.0, 0.41, 0.0] },
+      "mesh": { "file": "meshes/world/props/stone_planter.glb" },
+      "footprint": 1.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 80.0,
+      "damage_from": ["sledge", "drill", "explosion"],
+      "drops": [{ "item": "scrap_stone_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "aqueduct_section",
+      "collider": { "shape": "box", "size": [8.5, 4.6, 1.5], "at": [0.0, 2.3, 0.0] },
+      "mesh": { "file": "meshes/world/props/aqueduct_section.glb" },
+      "footprint": 5.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "stone_wall_corner",
+      "collider": { "shape": "box", "size": [3.4, 2.4, 0.74], "at": [0.1, 1.2, -1.0] },
+      "mesh": { "file": "meshes/world/props/stone_wall_corner.glb" },
+      "footprint": 2.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "stone_wall_window",
+      "collider": { "shape": "box", "size": [3.6, 3.0, 0.7], "at": [0.0, 1.5, 0.0] },
+      "mesh": { "file": "meshes/world/props/stone_wall_window.glb" },
+      "footprint": 2.2,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "stone_rubble_pile",
+      "collider": { "shape": "cylinder", "radius": 1.3, "height": 1.0, "at": [0.0, 0.5, 0.0] },
+      "mesh": { "file": "meshes/world/props/stone_rubble_pile.glb" },
+      "footprint": 1.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 80.0,
+      "damage_from": ["sledge", "drill", "explosion"],
+      "drops": [{ "item": "scrap_stone_block", "count": 16, "count_max": 24 }]
+    },
+    {
+      "id": "broken_statue_body",
+      "collider": { "shape": "box", "size": [1.7, 3.6, 1.7], "at": [0.0, 1.8, 0.0] },
+      "mesh": { "file": "meshes/world/props/broken_statue_body.glb" },
+      "footprint": 1.3,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "stone_steps_wide",
+      "collider": { "shape": "box", "size": [7.0, 0.8, 4.2], "at": [0.0, 0.4, 0.0] },
+      "mesh": { "file": "meshes/world/props/stone_steps_wide.glb" },
+      "footprint": 4.2,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "stone_basin",
+      "collider": { "shape": "cylinder", "radius": 1.2, "height": 1.05, "at": [0.0, 0.525, 0.0] },
+      "mesh": { "file": "meshes/world/props/stone_basin.glb" },
+      "footprint": 1.4,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "stone_milestone",
+      "collider": { "shape": "box", "size": [0.5, 1.1, 0.4], "at": [0.0, 0.55, 0.0] },
+      "mesh": { "file": "meshes/world/props/stone_milestone.glb" },
+      "footprint": 0.5,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 80.0,
+      "damage_from": ["sledge", "drill", "explosion"],
+      "drops": [{ "item": "scrap_stone_block", "count": 4, "count_max": 8 }]
+    },
+    {
+      "id": "stone_well_cover",
+      "collider": { "shape": "cylinder", "radius": 1.0, "height": 0.66, "at": [0.0, 0.33, 0.0] },
+      "mesh": { "file": "meshes/world/props/stone_well_cover.glb" },
+      "footprint": 1.3,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "stone_slab_fallen",
+      "collider": { "shape": "box", "size": [3.4, 1.5, 1.8], "at": [-0.15, 0.75, 0.0] },
+      "mesh": { "file": "meshes/world/props/stone_slab_fallen.glb" },
+      "footprint": 2.2,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "stone_pillar_broken_short",
+      "collider": { "shape": "box", "size": [1.5, 1.6, 1.5], "at": [0.0, 0.8, 0.0] },
+      "mesh": { "file": "meshes/world/props/stone_pillar_broken_short.glb" },
+      "footprint": 1.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "stone_ring_gate",
+      "collider": { "shape": "box", "size": [3.6, 3.9, 1.1], "at": [0.0, 1.95, 0.0] },
+      "mesh": { "file": "meshes/world/props/stone_ring_gate.glb" },
+      "footprint": 2.3,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "ancient_glyph_pillar",
+      "collider": { "shape": "box", "size": [1.1, 3.7, 1.1], "at": [0.0, 1.85, 0.0] },
+      "mesh": { "file": "meshes/world/props/ancient_glyph_pillar.glb" },
+      "footprint": 1.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "moss_boulder_carved",
+      "collider": { "shape": "box", "size": [2.5, 1.4, 1.8], "at": [0.0, 0.7, -0.05] },
+      "mesh": { "file": "meshes/world/props/moss_boulder_carved.glb" },
+      "footprint": 1.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "stone_head_small",
+      "collider": { "shape": "box", "size": [1.1, 0.9, 1.1], "at": [0.0, 0.45, -0.1] },
+      "mesh": { "file": "meshes/world/props/stone_head_small.glb" },
+      "footprint": 0.9,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 80.0,
+      "damage_from": ["sledge", "drill", "explosion"],
+      "drops": [{ "item": "scrap_stone_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "stone_chest",
+      "collider": { "shape": "box", "size": [1.5, 0.95, 0.9], "at": [0.15, 0.47, 0.0] },
+      "mesh": { "file": "meshes/world/props/stone_chest.glb" },
+      "footprint": 1.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 80.0,
+      "damage_from": ["sledge", "drill", "explosion"],
+      "drops": [{ "item": "scrap_stone_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "stone_platform_ruin",
+      "collider": { "shape": "box", "size": [5.0, 0.8, 5.0], "at": [0.0, 0.4, 0.0] },
+      "mesh": { "file": "meshes/world/props/stone_platform_ruin.glb" },
+      "footprint": 3.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "stone_bollard",
+      "collider": { "shape": "cylinder", "radius": 0.22, "height": 0.85, "at": [0.0, 0.42, 0.0] },
+      "mesh": { "file": "meshes/world/props/stone_bollard.glb" },
+      "footprint": 0.4,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 80.0,
+      "damage_from": ["sledge", "drill", "explosion"],
+      "drops": [{ "item": "scrap_stone_block", "count": 4, "count_max": 8 }]
+    },
+    {
+      "id": "stone_marker_ring",
+      "collider": { "shape": "cylinder", "radius": 1.75, "height": 0.15, "at": [0.0, 0.07, 0.0] },
+      "mesh": { "file": "meshes/world/props/stone_marker_ring.glb" },
+      "footprint": 2.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "solid": false,
+      "damage_from": []
+    },
+    {
+      "id": "stone_lintel_fallen",
+      "collider": { "shape": "box", "size": [3.6, 0.6, 0.9], "at": [0.05, 0.3, -0.15] },
+      "mesh": { "file": "meshes/world/props/stone_lintel_fallen.glb" },
+      "footprint": 2.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "stone_threshold",
+      "collider": { "shape": "box", "size": [3.8, 0.2, 0.9], "at": [0.0, 0.1, 0.0] },
+      "mesh": { "file": "meshes/world/props/stone_threshold.glb" },
+      "footprint": 2.2,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "stone_gargoyle",
+      "collider": { "shape": "box", "size": [1.1, 1.85, 1.1], "at": [0.0, 0.92, 0.0] },
+      "mesh": { "file": "meshes/world/props/stone_gargoyle.glb" },
+      "footprint": 0.9,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "escape_pod",
+      "collider": { "shape": "cylinder", "radius": 1.4, "height": 3.4, "at": [0.0, 1.7, 0.0] },
+      "mesh": { "file": "meshes/world/props/escape_pod.glb" },
+      "footprint": 2.2,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "lander_leg",
+      "collider": { "shape": "box", "size": [4.6, 0.7, 0.9], "at": [-0.1, 0.35, 0.0] },
+      "mesh": { "file": "meshes/world/props/lander_leg.glb" },
+      "footprint": 2.4,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 12, "count_max": 20 }]
+    },
+    {
+      "id": "cargo_container_salvager",
+      "collider": { "shape": "box", "size": [4.1, 2.4, 2.25], "at": [0.05, 1.2, 0.0] },
+      "mesh": { "file": "meshes/world/props/cargo_container_salvager.glb" },
+      "footprint": 2.4,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "crate_salvager_stack",
+      "collider": { "shape": "box", "size": [2.1, 1.05, 0.85], "at": [0.0, 0.52, 0.0] },
+      "mesh": { "file": "meshes/world/props/crate_salvager_stack.glb" },
+      "footprint": 1.2,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 12, "count_max": 20 }]
+    },
+    {
+      "id": "fuel_cell_spill",
+      "collider": { "shape": "box", "size": [2.3, 0.4, 1.4], "at": [0.1, 0.2, -0.2] },
+      "mesh": { "file": "meshes/world/props/fuel_cell_spill.glb" },
+      "footprint": 1.3,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "power_core_cracked",
+      "collider": { "shape": "cylinder", "radius": 1.1, "height": 2.9, "at": [0.0, 1.45, 0.0] },
+      "mesh": { "file": "meshes/world/props/power_core_cracked.glb" },
+      "footprint": 1.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "antenna_dish_salvager",
+      "collider": { "shape": "box", "size": [2.8, 2.3, 1.8], "at": [0.05, 1.15, 0.1] },
+      "mesh": { "file": "meshes/world/props/antenna_dish_salvager.glb" },
+      "footprint": 1.7,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "sensor_buoy",
+      "collider": { "shape": "cylinder", "radius": 0.4, "height": 2.0, "at": [-0.15, 1.0, 0.3] },
+      "mesh": { "file": "meshes/world/props/sensor_buoy.glb" },
+      "footprint": 0.8,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 8, "count_max": 16 }]
+    },
+    {
+      "id": "debris_trail_panels",
+      "collider": { "shape": "box", "size": [8.0, 0.6, 1.2], "at": [0.05, 0.3, 0.0] },
+      "mesh": { "file": "meshes/world/props/debris_trail_panels.glb" },
+      "footprint": 4.2,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 12, "count_max": 20 }]
+    },
+    {
+      "id": "engine_nacelle_small",
+      "collider": { "shape": "box", "size": [3.0, 1.3, 1.5], "at": [0.0, 0.65, 0.0] },
+      "mesh": { "file": "meshes/world/props/engine_nacelle_small.glb" },
+      "footprint": 1.8,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "landing_strut",
+      "collider": { "shape": "box", "size": [2.9, 1.5, 1.0], "at": [0.1, 0.75, -0.1] },
+      "mesh": { "file": "meshes/world/props/landing_strut.glb" },
+      "footprint": 1.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 12, "count_max": 16 }]
+    },
+    {
+      "id": "cockpit_section",
+      "collider": { "shape": "box", "size": [2.8, 1.9, 3.2], "at": [-0.1, 0.95, 0.1] },
+      "mesh": { "file": "meshes/world/props/cockpit_section.glb" },
+      "footprint": 2.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "seat_ejected",
+      "collider": { "shape": "box", "size": [1.0, 0.8, 1.4], "at": [-0.85, 0.4, -0.4] },
+      "mesh": { "file": "meshes/world/props/seat_ejected.glb" },
+      "footprint": 1.8,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "med_kit_crate",
+      "collider": { "shape": "box", "size": [0.95, 0.6, 0.58], "at": [0.0, 0.3, 0.0] },
+      "mesh": { "file": "meshes/world/props/med_kit_crate.glb" },
+      "footprint": 0.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 4, "count_max": 8 }]
+    },
+    {
+      "id": "supply_drop_parachute",
+      "collider": { "shape": "cylinder", "radius": 0.6, "height": 1.7, "at": [0.0, 0.85, 0.0] },
+      "mesh": { "file": "meshes/world/props/supply_drop_parachute.glb" },
+      "footprint": 1.9,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 8, "count_max": 16 }]
+    },
+    {
+      "id": "navigation_beacon",
+      "collider": { "shape": "box", "size": [0.75, 4.2, 0.65], "at": [0.0, 2.1, 0.0] },
+      "mesh": { "file": "meshes/world/props/navigation_beacon.glb" },
+      "footprint": 2.1,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "signal_flare_post",
+      "collider": { "shape": "cylinder", "radius": 0.08, "height": 1.5, "at": [0.0, 0.75, 0.0] },
+      "mesh": { "file": "meshes/world/props/signal_flare_post.glb" },
+      "footprint": 0.4,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 4, "count_max": 4 }]
+    },
+    {
+      "id": "radiator_panel",
+      "collider": { "shape": "box", "size": [3.1, 1.5, 1.2], "at": [-0.05, 0.75, -0.6] },
+      "mesh": { "file": "meshes/world/props/radiator_panel.glb" },
+      "footprint": 1.8,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 12, "count_max": 16 }]
+    },
+    {
+      "id": "coolant_tank",
+      "collider": { "shape": "cylinder", "radius": 0.95, "height": 2.15, "at": [0.0, 1.07, 0.0] },
+      "mesh": { "file": "meshes/world/props/coolant_tank.glb" },
+      "footprint": 1.2,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "cable_bundle_torn",
+      "collider": { "shape": "cylinder", "radius": 0.8, "height": 0.45, "at": [0.0, 0.22, 0.0] },
+      "mesh": { "file": "meshes/world/props/cable_bundle_torn.glb" },
+      "footprint": 1.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "airlock_door",
+      "collider": { "shape": "cylinder", "radius": 1.15, "height": 0.6, "at": [0.0, 0.3, 0.0] },
+      "mesh": { "file": "meshes/world/props/airlock_door.glb" },
+      "footprint": 1.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "hull_rib_arch",
+      "collider": { "shape": "box", "size": [5.6, 4.4, 0.5], "at": [0.15, 2.2, -0.1] },
+      "mesh": { "file": "meshes/world/props/hull_rib_arch.glb" },
+      "footprint": 3.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "solid": false,
+      "damage_from": []
+    },
+    {
+      "id": "solar_wing_torn",
+      "collider": { "shape": "box", "size": [4.4, 0.5, 1.4], "at": [-0.4, 0.25, 0.0] },
+      "mesh": { "file": "meshes/world/props/solar_wing_torn.glb" },
+      "footprint": 2.4,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 8, "count_max": 16 }]
+    },
+    {
+      "id": "thruster_cluster",
+      "collider": { "shape": "box", "size": [1.6, 1.4, 1.5], "at": [0.2, 0.7, 0.2] },
+      "mesh": { "file": "meshes/world/props/thruster_cluster.glb" },
+      "footprint": 1.2,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 12, "count_max": 16 }]
+    },
+    {
+      "id": "scanner_drone_down",
+      "collider": { "shape": "box", "size": [1.6, 0.6, 1.6], "at": [-0.1, 0.3, -0.1] },
+      "mesh": { "file": "meshes/world/props/scanner_drone_down.glb" },
+      "footprint": 1.4,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "boulder_split",
+      "collider": { "shape": "box", "size": [4.2, 2.6, 2.8], "at": [0.0, 1.3, 0.0] },
+      "mesh": { "file": "meshes/world/props/boulder_split.glb" },
+      "footprint": 2.4,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "rock_arch_small",
+      "collider": { "shape": "box", "size": [5.4, 4.2, 2.5], "at": [0.0, 2.1, 0.0] },
+      "mesh": { "file": "meshes/world/props/rock_arch_small.glb" },
+      "footprint": 3.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "rock_spire",
+      "collider": { "shape": "cylinder", "radius": 1.5, "height": 8.8, "at": [0.0, 4.4, 0.0] },
+      "mesh": { "file": "meshes/world/props/rock_spire.glb" },
+      "footprint": 2.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "rock_shelf",
+      "collider": { "shape": "box", "size": [5.6, 3.6, 4.0], "at": [0.1, 1.8, -0.35] },
+      "mesh": { "file": "meshes/world/props/rock_shelf.glb" },
+      "footprint": 3.2,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "hollow_log",
+      "collider": { "shape": "box", "size": [5.6, 1.8, 1.9], "at": [0.0, 0.9, 0.0] },
+      "mesh": { "file": "meshes/world/props/hollow_log.glb" },
+      "footprint": 3.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 20, "count_max": 28 }]
+    },
+    {
+      "id": "tree_fallen_branches",
+      "collider": { "shape": "box", "size": [3.8, 0.6, 3.0], "at": [0.0, 0.3, 0.1] },
+      "mesh": { "file": "meshes/world/props/tree_fallen_branches.glb" },
+      "footprint": 2.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 12, "count_max": 20 }]
+    },
+    {
+      "id": "stump_cluster",
+      "collider": { "shape": "box", "size": [1.8, 0.65, 1.6], "at": [-0.05, 0.33, 0.0] },
+      "mesh": { "file": "meshes/world/props/stump_cluster.glb" },
+      "footprint": 1.1,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 8, "count_max": 16 }]
+    },
+    {
+      "id": "bramble_patch",
+      "collider": { "shape": "box", "size": [3.6, 1.0, 3.0], "at": [0.1, 0.5, 0.0] },
+      "mesh": { "file": "meshes/world/props/bramble_patch.glb" },
+      "footprint": 1.9,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "solid": false,
+      "health": 15.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "drops": []
+    },
+    {
+      "id": "berry_bush_big",
+      "collider": { "shape": "cylinder", "radius": 1.1, "height": 1.6, "at": [0.0, 0.8, 0.0] },
+      "mesh": { "file": "meshes/world/props/berry_bush_big.glb" },
+      "footprint": 1.3,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "solid": false,
+      "health": 15.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "drops": []
+    },
+    {
+      "id": "fern_clump_big",
+      "collider": { "shape": "cylinder", "radius": 1.5, "height": 1.2, "at": [0.0, 0.6, 0.0] },
+      "mesh": { "file": "meshes/world/props/fern_clump_big.glb" },
+      "footprint": 1.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "solid": false,
+      "health": 15.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "drops": []
+    },
+    {
+      "id": "reed_bed",
+      "collider": { "shape": "box", "size": [3.8, 2.2, 1.8], "at": [0.0, 1.1, 0.0] },
+      "mesh": { "file": "meshes/world/props/reed_bed.glb" },
+      "footprint": 2.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "solid": false,
+      "health": 15.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "drops": []
+    },
+    {
+      "id": "lily_pad_cluster",
+      "collider": { "shape": "cylinder", "radius": 2.3, "height": 0.1, "at": [0.0, 0.05, 0.0] },
+      "mesh": { "file": "meshes/world/props/lily_pad_cluster.glb" },
+      "footprint": 2.4,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "solid": false,
+      "health": 15.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "drops": []
+    },
+    {
+      "id": "cattail_clump",
+      "collider": { "shape": "cylinder", "radius": 1.0, "height": 2.1, "at": [0.1, 1.05, 0.0] },
+      "mesh": { "file": "meshes/world/props/cattail_clump.glb" },
+      "footprint": 1.2,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "solid": false,
+      "health": 15.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "drops": []
+    },
+    {
+      "id": "driftwood_pile",
+      "collider": { "shape": "box", "size": [4.4, 0.8, 3.0], "at": [0.0, 0.4, 0.0] },
+      "mesh": { "file": "meshes/world/props/driftwood_pile.glb" },
+      "footprint": 2.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 12, "count_max": 20 }]
+    },
+    {
+      "id": "seaweed_rocks",
+      "collider": { "shape": "box", "size": [4.2, 1.4, 2.6], "at": [0.1, 0.7, -0.1] },
+      "mesh": { "file": "meshes/world/props/seaweed_rocks.glb" },
+      "footprint": 2.4,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "shell_mound",
+      "collider": { "shape": "cylinder", "radius": 1.5, "height": 0.65, "at": [0.0, 0.33, 0.0] },
+      "mesh": { "file": "meshes/world/props/shell_mound.glb" },
+      "footprint": 1.7,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 80.0,
+      "damage_from": ["sledge", "drill", "explosion"],
+      "drops": [{ "item": "scrap_stone_block", "count": 8, "count_max": 16 }]
+    },
+    {
+      "id": "bird_nest_big",
+      "collider": { "shape": "box", "size": [2.6, 2.0, 2.4], "at": [0.0, 1.0, 0.0] },
+      "mesh": { "file": "meshes/world/props/bird_nest_big.glb" },
+      "footprint": 1.8,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "animal_skull_big",
+      "collider": { "shape": "box", "size": [2.6, 1.7, 3.6], "at": [0.0, 0.85, -0.4] },
+      "mesh": { "file": "meshes/world/props/animal_skull_big.glb" },
+      "footprint": 2.4,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "rib_cage_bones",
+      "collider": { "shape": "box", "size": [6.5, 4.4, 5.8], "at": [0.0, 2.2, 0.0] },
+      "mesh": { "file": "meshes/world/props/rib_cage_bones.glb" },
+      "footprint": 3.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "solid": false,
+      "damage_from": []
+    },
+    {
+      "id": "giant_mushroom",
+      "collider": { "shape": "cylinder", "radius": 0.3, "height": 2.6, "at": [0.05, 1.3, 0.0] },
+      "mesh": { "file": "meshes/world/props/giant_mushroom.glb" },
+      "footprint": 1.3,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 15.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "drops": []
+    },
+    {
+      "id": "fallen_tree_big",
+      "collider": { "shape": "box", "size": [13.0, 1.2, 1.4], "at": [0.5, 0.6, -0.2] },
+      "mesh": { "file": "meshes/world/props/fallen_tree_big.glb" },
+      "footprint": 7.5,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "tree_root_arch",
+      "collider": { "shape": "box", "size": [1.0, 5.6, 1.0], "at": [0.1, 5.3, 0.0] },
+      "mesh": { "file": "meshes/world/props/tree_root_arch.glb" },
+      "footprint": 2.9,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "cactus_cluster",
+      "collider": { "shape": "box", "size": [1.4, 2.6, 1.4], "at": [0.0, 1.3, 0.1] },
+      "mesh": { "file": "meshes/world/props/cactus_cluster.glb" },
+      "footprint": 1.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 15.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "drops": []
+    },
+    {
+      "id": "dry_bush_tumbleweed",
+      "collider": { "shape": "cylinder", "radius": 0.9, "height": 1.1, "at": [0.2, 0.55, 0.0] },
+      "mesh": { "file": "meshes/world/props/dry_bush_tumbleweed.glb" },
+      "footprint": 1.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "solid": false,
+      "health": 15.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "drops": []
+    },
+    {
+      "id": "termite_spires_low",
+      "collider": { "shape": "box", "size": [3.2, 1.25, 2.4], "at": [0.0, 0.62, 0.0] },
+      "mesh": { "file": "meshes/world/props/termite_spires_low.glb" },
+      "footprint": 1.8,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 80.0,
+      "damage_from": ["sledge", "drill", "explosion"],
+      "drops": [{ "item": "scrap_stone_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "sand_dune_grass",
+      "collider": { "shape": "box", "size": [3.8, 0.5, 2.6], "at": [0.0, 0.25, 0.0] },
+      "mesh": { "file": "meshes/world/props/sand_dune_grass.glb" },
+      "footprint": 2.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "solid": false,
+      "health": 15.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "drops": []
+    },
+    {
+      "id": "rock_pool",
+      "collider": { "shape": "cylinder", "radius": 1.5, "height": 0.45, "at": [0.0, 0.22, 0.0] },
+      "mesh": { "file": "meshes/world/props/rock_pool.glb" },
+      "footprint": 1.9,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "sea_stack_small",
+      "collider": { "shape": "cylinder", "radius": 1.9, "height": 6.2, "at": [0.0, 3.1, 0.0] },
+      "mesh": { "file": "meshes/world/props/sea_stack_small.glb" },
+      "footprint": 2.8,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "dock_pier_section",
+      "collider": { "shape": "box", "size": [2.6, 1.3, 6.0], "at": [0.0, 0.65, 0.0] },
+      "mesh": { "file": "meshes/world/props/dock_pier_section.glb" },
+      "footprint": 3.2,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "rowboat_wreck",
+      "collider": { "shape": "box", "size": [3.6, 0.8, 1.4], "at": [0.0, 0.4, 0.0] },
+      "mesh": { "file": "meshes/world/props/rowboat_wreck.glb" },
+      "footprint": 2.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 12, "count_max": 20 }]
+    },
+    {
+      "id": "fishing_boat_wreck",
+      "collider": { "shape": "box", "size": [8.0, 2.6, 3.4], "at": [0.1, 1.2, 0.0] },
+      "mesh": { "file": "meshes/world/props/fishing_boat_wreck.glb" },
+      "footprint": 4.5,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "buoy_beached",
+      "collider": { "shape": "box", "size": [3.0, 1.8, 1.9], "at": [0.4, 0.9, 0.05] },
+      "mesh": { "file": "meshes/world/props/buoy_beached.glb" },
+      "footprint": 1.8,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "lobster_traps",
+      "collider": { "shape": "box", "size": [2.0, 0.9, 1.3], "at": [0.1, 0.45, 0.0] },
+      "mesh": { "file": "meshes/world/props/lobster_traps.glb" },
+      "footprint": 1.3,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 12, "count_max": 20 }]
+    },
+    {
+      "id": "fishing_net_rack",
+      "collider": { "shape": "box", "size": [4.0, 2.2, 1.0], "at": [0.0, 1.1, 0.0] },
+      "mesh": { "file": "meshes/world/props/fishing_net_rack.glb" },
+      "footprint": 2.2,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "solid": false,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 8, "count_max": 16 }]
+    },
+    {
+      "id": "lighthouse_small",
+      "collider": { "shape": "cylinder", "radius": 1.6, "height": 10.5, "at": [0.0, 5.25, 0.0] },
+      "mesh": { "file": "meshes/world/props/lighthouse_small.glb" },
+      "footprint": 3.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "boathouse_shack",
+      "collider": { "shape": "box", "size": [4.2, 3.4, 5.4], "at": [0.0, 1.7, 0.0] },
+      "mesh": { "file": "meshes/world/props/boathouse_shack.glb" },
+      "footprint": 3.5,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "life_ring_post",
+      "collider": { "shape": "cylinder", "radius": 0.3, "height": 1.9, "at": [0.0, 0.95, 0.1] },
+      "mesh": { "file": "meshes/world/props/life_ring_post.glb" },
+      "footprint": 0.5,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 4, "count_max": 8 }]
+    },
+    {
+      "id": "anchor_rusty",
+      "collider": { "shape": "box", "size": [2.4, 2.1, 1.0], "at": [-0.3, 1.0, 0.1] },
+      "mesh": { "file": "meshes/world/props/anchor_rusty.glb" },
+      "footprint": 1.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "mooring_post",
+      "collider": { "shape": "cylinder", "radius": 0.45, "height": 1.0, "at": [0.0, 0.5, 0.0] },
+      "mesh": { "file": "meshes/world/props/mooring_post.glb" },
+      "footprint": 0.7,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "beach_hut",
+      "collider": { "shape": "box", "size": [2.5, 3.3, 2.3], "at": [0.0, 1.65, 0.0] },
+      "mesh": { "file": "meshes/world/props/beach_hut.glb" },
+      "footprint": 1.8,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 16, "count_max": 24 }]
+    },
+    {
+      "id": "deck_chair",
+      "collider": { "shape": "box", "size": [0.7, 1.0, 1.25], "at": [0.0, 0.5, 0.0] },
+      "mesh": { "file": "meshes/world/props/deck_chair.glb" },
+      "footprint": 0.8,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 4, "count_max": 8 }]
+    },
+    {
+      "id": "pallet_raft",
+      "collider": { "shape": "box", "size": [2.5, 0.75, 2.1], "at": [0.0, 0.37, 0.0] },
+      "mesh": { "file": "meshes/world/props/pallet_raft.glb" },
+      "footprint": 1.6,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 12, "count_max": 20 }]
+    },
+    {
+      "id": "crab_pots",
+      "collider": { "shape": "box", "size": [1.8, 0.75, 1.0], "at": [0.2, 0.37, 0.0] },
+      "mesh": { "file": "meshes/world/props/crab_pots.glb" },
+      "footprint": 1.2,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 8, "count_max": 12 }]
+    },
+    {
+      "id": "kayak_wreck",
+      "collider": { "shape": "box", "size": [3.9, 0.5, 0.8], "at": [0.0, 0.25, 0.0] },
+      "mesh": { "file": "meshes/world/props/kayak_wreck.glb" },
+      "footprint": 2.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 60.0,
+      "damage_from": ["sledge", "drill", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "impact_metal" },
+      "drops": [{ "item": "scrap_metal_block", "count": 4, "count_max": 8 }]
+    },
+    {
+      "id": "jetty_light",
+      "collider": { "shape": "cylinder", "radius": 0.45, "height": 3.6, "at": [0.0, 1.8, -0.05] },
+      "mesh": { "file": "meshes/world/props/jetty_light.glb" },
+      "footprint": 0.8,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "oar_rack",
+      "collider": { "shape": "box", "size": [2.4, 2.4, 0.6], "at": [0.0, 1.2, 0.05] },
+      "mesh": { "file": "meshes/world/props/oar_rack.glb" },
+      "footprint": 1.3,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 8, "count_max": 16 }]
+    },
+    {
+      "id": "net_float_pile",
+      "collider": { "shape": "box", "size": [2.3, 0.8, 1.6], "at": [0.0, 0.4, -0.1] },
+      "mesh": { "file": "meshes/world/props/net_float_pile.glb" },
+      "footprint": 1.3,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 15.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "drops": []
+    },
+    {
+      "id": "ship_rope_coil",
+      "collider": { "shape": "cylinder", "radius": 0.8, "height": 1.0, "at": [0.0, 0.5, 0.0] },
+      "mesh": { "file": "meshes/world/props/ship_rope_coil.glb" },
+      "footprint": 1.1,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 15.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "drops": []
+    },
+    {
+      "id": "harbour_crane_small",
+      "collider": { "shape": "box", "size": [3.2, 4.3, 2.6], "at": [0.0, 2.15, 0.0] },
+      "mesh": { "file": "meshes/world/props/harbour_crane_small.glb" },
+      "footprint": 3.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "damage_from": []
+    },
+    {
+      "id": "shipping_crate_washed",
+      "collider": { "shape": "box", "size": [1.3, 0.85, 1.15], "at": [0.0, 0.4, 0.0] },
+      "mesh": { "file": "meshes/world/props/shipping_crate_washed.glb" },
+      "footprint": 1.0,
+      "sink": 0.04,
+      "max_slope": 0.35,
+      "health": 30.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "sounds": { "hit": "leafy_hit" },
+      "drops": [{ "item": "scrap_wood_block", "count": 8, "count_max": 12 }]
+    },
+    // Scenes for them: farmyards, camps, street corners, plants and depots, wrecks, ruins, harbours and wild spots.
+    {
+      "id": "scene_temple_ruin",
+      "footprint": 16.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 2, "pieces": [
+            { "object": "stone_dais", "at": [0.0, 0.0] },
+            { "object": "stone_altar", "at": [0.0, 0.4] },
+            { "object": "stone_column_standing", "at": [-4.5, 3.5] },
+            { "object": "stone_column_standing", "at": [4.5, 3.5], "chance": 0.7 },
+            { "object": "stone_pillar_broken_short", "at": [-4.5, -3.5], "yaw": 20.0 },
+            { "object": "fallen_column", "at": [6.0, -5.0], "yaw": 60.0, "chance": 0.8 },
+            { "object": "stone_brazier", "at": [-2.2, -3.6] },
+            { "object": "stone_brazier", "at": [2.2, -3.6], "chance": 0.7 },
+            { "object": "stone_steps_wide", "at": [0.0, -8.0] },
+            { "object": "stone_lion", "at": [-4.5, -10.0], "chance": 0.7 },
+            { "object": "stone_lion", "at": [4.5, -10.0], "chance": 0.7 },
+            { "object": "stone_urn", "at": [7.0, 2.0], "chance": 0.6 }
+          ] },
+          { "weight": 1, "pieces": [
+            { "object": "stone_platform_ruin", "at": [0.0, 0.0] },
+            { "object": "broken_statue_body", "at": [0.0, 1.5], "yaw": 180.0 },
+            { "object": "stone_column_standing", "at": [-5.0, -3.0] },
+            { "object": "stone_lintel_fallen", "at": [3.0, -5.0], "yaw": 30.0 },
+            { "object": "stone_pillar_broken_short", "at": [5.5, -3.0] },
+            { "object": "stone_rubble_pile", "at": [-6.0, 4.0], "yaw": 40.0 },
+            { "object": "stone_planter", "at": [6.0, 5.0], "chance": 0.6 },
+            { "object": "stone_floor_tiles", "at": [-2.0, -6.0], "yaw": 15.0 },
+            { "object": "stone_floor_tiles", "at": [0.5, -7.0], "yaw": 40.0, "chance": 0.6 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_stone_gate",
+      "footprint": 12.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 1, "pieces": [
+            { "object": "stone_gate_pillars", "at": [0.0, 0.0] },
+            { "object": "stone_wall_low", "at": [-6.0, 0.3] },
+            { "object": "stone_wall_ruin", "at": [6.0, 0.0], "yaw": 180.0, "chance": 0.7 },
+            { "object": "stone_threshold", "at": [0.0, -1.6] },
+            { "object": "stone_lantern", "at": [-3.6, -3.0] },
+            { "object": "stone_lantern", "at": [3.6, -3.0], "chance": 0.7 },
+            { "object": "stone_milestone", "at": [6.0, -6.0], "yaw": 30.0 },
+            { "object": "stone_rubble_pile", "at": [-7.0, -5.0], "yaw": 10.0, "chance": 0.6 }
+          ] },
+          { "weight": 1, "pieces": [
+            { "object": "stone_arch_small", "at": [0.0, 0.0] },
+            { "object": "stone_wall_corner", "at": [-5.5, 2.0] },
+            { "object": "stone_wall_window", "at": [5.5, 0.5], "chance": 0.8 },
+            { "object": "stone_slab_fallen", "at": [2.0, -5.0], "yaw": 25.0 },
+            { "object": "stone_bollard", "at": [-2.4, -3.0] },
+            { "object": "stone_bollard", "at": [2.4, -3.0], "chance": 0.7 },
+            { "object": "moss_boulder_carved", "at": [-6.0, -6.0], "yaw": 60.0, "chance": 0.6 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_stone_tomb",
+      "footprint": 12.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 1, "pieces": [
+            { "object": "stone_tomb", "at": [0.0, 2.0] },
+            { "object": "stone_sarcophagus", "at": [-4.0, -2.5], "yaw": 80.0 },
+            { "object": "stone_sarcophagus", "at": [4.0, -2.5], "yaw": 100.0, "chance": 0.6 },
+            { "object": "stone_tablet", "at": [0.0, -5.0], "yaw": 180.0 },
+            { "object": "stone_urn", "at": [-2.5, -6.0] },
+            { "object": "stone_urn", "at": [2.5, -6.0], "chance": 0.6 },
+            { "object": "stone_chest", "at": [5.5, 3.0], "yaw": 20.0, "chance": 0.5 },
+            { "object": "stone_gargoyle", "at": [-5.5, 4.0], "yaw": 30.0, "chance": 0.6 },
+            { "object": "carved_relief_wall", "at": [0.0, 7.5], "yaw": 180.0, "chance": 0.7 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_stone_plaza",
+      "footprint": 13.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 1, "pieces": [
+            { "object": "stone_fountain_ruin", "at": [0.0, 0.0] },
+            { "object": "stone_bench_curved", "at": [0.0, -6.0] },
+            { "object": "stone_bench_curved", "at": [0.0, 6.0], "yaw": 180.0, "chance": 0.7 },
+            { "object": "stone_planter", "at": [-6.0, 3.0] },
+            { "object": "stone_planter", "at": [6.0, -3.0], "chance": 0.7 },
+            { "object": "stone_head_small", "at": [6.0, 4.0], "yaw": 200.0 },
+            { "object": "stone_bollard", "at": [-6.0, -4.0] },
+            { "object": "stone_floor_tiles", "at": [-3.0, 9.0], "yaw": 10.0, "chance": 0.6 },
+            { "object": "stone_basin", "at": [-8.0, -1.0], "chance": 0.5 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_aqueduct",
+      "footprint": 16.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 1, "pieces": [
+            { "object": "aqueduct_section", "at": [0.0, 0.0] },
+            { "object": "stone_pillar_broken_short", "at": [9.0, 0.4] },
+            { "object": "stone_rubble_pile", "at": [7.0, -3.5], "yaw": 50.0 },
+            { "object": "stone_slab_fallen", "at": [-8.0, -3.0], "yaw": 80.0 },
+            { "object": "stone_basin", "at": [0.0, -5.0], "chance": 0.6 },
+            { "object": "crystal_probe_cluster", "at": [-4.0, 4.5], "yaw": 30.0, "chance": 0.4 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_stone_circle",
+      "footprint": 12.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 1, "pieces": [
+            { "object": "stone_circle_ring", "at": [0.0, 0.0] },
+            { "object": "rune_stone", "at": [6.0, 2.0], "yaw": 250.0 },
+            { "object": "stone_obelisk", "at": [-7.0, -3.0], "chance": 0.6 },
+            { "object": "cairn", "at": [5.0, -6.0], "chance": 0.6 }
+          ] },
+          { "weight": 1, "pieces": [
+            { "object": "stone_marker_ring", "at": [0.0, 0.0] },
+            { "object": "stone_orb_pedestal", "at": [0.0, 0.0] },
+            { "object": "rune_stone", "at": [-4.5, 2.5], "yaw": 120.0 },
+            { "object": "rune_stone", "at": [4.5, 2.5], "yaw": 240.0, "chance": 0.7 },
+            { "object": "ancient_glyph_pillar", "at": [0.0, 5.5] },
+            { "object": "crystal_probe_cluster", "at": [3.0, -4.5], "yaw": 50.0, "chance": 0.5 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_ring_gate",
+      "footprint": 14.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 1, "pieces": [
+            { "object": "stone_ring_gate", "at": [0.0, 0.0] },
+            { "object": "ancient_glyph_pillar", "at": [-5.0, -2.0] },
+            { "object": "ancient_glyph_pillar", "at": [5.0, -2.0], "chance": 0.7 },
+            { "object": "stone_steps_wide", "at": [0.0, -6.0], "chance": 0.6 },
+            { "object": "stone_face_mask", "at": [-7.0, 5.0], "yaw": 200.0, "chance": 0.6 },
+            { "object": "stone_hand_fragment", "at": [6.0, 5.0], "yaw": 140.0, "chance": 0.6 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_old_tower",
+      "footprint": 12.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 1, "pieces": [
+            { "object": "stone_tower_stump", "at": [0.0, 0.0] },
+            { "object": "stone_stair_spiral_ruin", "at": [5.5, 2.0] },
+            { "object": "stone_rubble_pile", "at": [-5.0, -3.0], "yaw": 30.0 },
+            { "object": "stone_lintel_fallen", "at": [4.0, -5.0], "yaw": 70.0 },
+            { "object": "stone_wall_low", "at": [-6.0, 4.0], "yaw": 40.0, "chance": 0.6 },
+            { "object": "stone_bridge_fragment", "at": [-9.0, -6.0], "yaw": 20.0, "chance": 0.4 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_wayside",
+      "footprint": 6.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 2, "pieces": [
+            { "object": "stone_milestone", "at": [0.0, 0.0] },
+            { "object": "stone_well_cover", "at": [2.6, 1.5], "yaw": 30.0, "chance": 0.5 },
+            { "object": "stone_bollard", "at": [-1.5, 1.0], "chance": 0.5 }
+          ] },
+          { "weight": 1, "pieces": [
+            { "object": "moss_boulder_carved", "at": [0.0, 0.0], "yaw": 40.0 },
+            { "object": "stone_head_small", "at": [2.2, -1.2], "yaw": 200.0, "chance": 0.6 },
+            { "object": "stone_lantern", "at": [-2.2, 0.8] }
+          ] },
+          { "weight": 1, "pieces": [
+            { "object": "stone_pedestal", "at": [0.0, 0.0] },
+            { "object": "stone_urn", "at": [1.6, 1.2], "chance": 0.6 },
+            { "object": "stone_tablet", "at": [-2.0, 0.4], "yaw": 20.0, "chance": 0.6 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_street_corner",
+      "footprint": 14.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 2, "pieces": [
+            { "object": "street_lamp", "at": [-6.0, -2.0] },
+            { "object": "street_lamp", "at": [6.0, -2.0], "chance": 0.7 },
+            { "object": "bench_colony", "at": [-2.0, 0.5] },
+            { "object": "trash_bin", "at": [-0.2, 0.8] },
+            { "object": "phone_booth", "at": [3.0, 1.5] },
+            { "object": "fire_hydrant", "at": [5.0, -2.5] },
+            { "object": "crosswalk_sign", "at": [-5.0, -3.6], "chance": 0.7 },
+            { "object": "vending_machine", "at": [1.6, 2.2], "yaw": 180.0, "chance": 0.7 },
+            { "object": "newspaper_kiosk", "at": [-8.0, 4.0], "yaw": 90.0, "chance": 0.6 },
+            { "object": "info_board", "at": [8.0, 3.0], "chance": 0.6 },
+            { "object": "manhole_cover_open", "at": [2.0, -4.0], "chance": 0.5 },
+            { "object": "parking_meter", "at": [-3.2, -2.6] },
+            { "object": "parking_meter", "at": [-0.6, -2.6], "chance": 0.6 },
+            { "object": "bike_rack", "at": [10.0, -1.0], "yaw": 90.0, "chance": 0.5 }
+          ] },
+          { "weight": 1, "pieces": [
+            { "object": "traffic_light", "at": [-4.0, -3.0] },
+            { "object": "traffic_light_fallen", "at": [3.0, -3.5], "yaw": 110.0 },
+            { "object": "bollard_row", "at": [0.0, 1.5] },
+            { "object": "recycling_bins", "at": [-6.0, 3.0] },
+            { "object": "street_planter", "at": [4.0, 3.0] },
+            { "object": "planter_tree_dead", "at": [7.0, 3.0], "chance": 0.7 },
+            { "object": "trash_bin", "at": [-2.5, 3.0], "chance": 0.6 },
+            { "object": "street_lamp", "at": [9.0, -2.0], "chance": 0.6 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_town_square",
+      "footprint": 16.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 1, "pieces": [
+            { "object": "fountain_dry", "at": [0.0, 0.0] },
+            { "object": "statue_colony_founder", "at": [0.0, 7.0], "yaw": 180.0 },
+            { "object": "bench_colony", "at": [-5.0, -1.0], "yaw": 90.0 },
+            { "object": "bench_colony", "at": [5.0, -1.0], "yaw": 270.0, "chance": 0.7 },
+            { "object": "street_planter", "at": [-5.0, 4.0] },
+            { "object": "street_planter", "at": [5.0, 4.0], "chance": 0.7 },
+            { "object": "colony_flag_pole", "at": [-8.0, 8.0] },
+            { "object": "colony_flag_pole", "at": [8.0, 8.0], "chance": 0.6 },
+            { "object": "street_lamp", "at": [-8.0, -5.0] },
+            { "object": "street_lamp", "at": [8.0, -5.0], "chance": 0.7 },
+            { "object": "trash_bin", "at": [3.0, -5.0] },
+            { "object": "info_board", "at": [-3.0, -7.0], "chance": 0.6 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_checkpoint",
+      "footprint": 13.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 1, "pieces": [
+            { "object": "toll_booth", "at": [0.0, 0.0] },
+            { "object": "road_barrier_arm", "at": [3.4, 0.0] },
+            { "object": "jersey_barrier_stack", "at": [-5.0, 4.0], "yaw": 10.0 },
+            { "object": "sandbag_wall", "at": [-5.0, -3.0], "yaw": 80.0 },
+            { "object": "street_lamp", "at": [3.0, 4.0] },
+            { "object": "traffic_cone", "at": [6.0, -3.0] },
+            { "object": "traffic_cone", "at": [7.0, -2.0], "chance": 0.7 },
+            { "object": "sign_gantry", "at": [0.0, -9.0], "chance": 0.4 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_bus_crash",
+      "footprint": 12.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 1, "pieces": [
+            { "object": "bus_wreck", "at": [0.0, 0.0], "yaw": 15.0 },
+            { "object": "traffic_light_fallen", "at": [7.0, -3.0], "yaw": 40.0 },
+            { "object": "trash_bin", "at": [-6.0, 3.0], "yaw": 70.0 },
+            { "object": "bench_colony", "at": [-7.0, -2.0], "yaw": 20.0, "chance": 0.6 },
+            { "object": "crosswalk_sign", "at": [6.0, 5.0], "yaw": 160.0, "chance": 0.6 },
+            { "object": "traffic_cone", "at": [-4.0, -4.0] },
+            { "object": "traffic_cone", "at": [-2.6, -4.6], "chance": 0.6 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_escape_pod",
+      "footprint": 12.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 2, "pieces": [
+            { "object": "escape_pod", "at": [0.0, 0.0], "yaw": 30.0 },
+            { "object": "supply_drop_parachute", "at": [5.0, 4.0], "yaw": 70.0 },
+            { "object": "seat_ejected", "at": [-4.5, 3.5], "yaw": 200.0 },
+            { "object": "signal_flare_post", "at": [2.6, -3.0] },
+            { "object": "med_kit_crate", "at": [-2.5, -3.0], "yaw": 20.0 },
+            { "object": "debris_trail_panels", "at": [-6.0, -6.0], "yaw": 30.0, "chance": 0.7 },
+            { "object": "scanner_drone_down", "at": [6.0, -5.0], "yaw": 120.0, "chance": 0.5 }
+          ] },
+          { "weight": 1, "pieces": [
+            { "object": "cockpit_section", "at": [0.0, 0.0], "yaw": -20.0 },
+            { "object": "seat_ejected", "at": [5.0, 2.0], "yaw": 60.0 },
+            { "object": "cable_bundle_torn", "at": [-4.0, 2.0], "yaw": 30.0 },
+            { "object": "signal_flare_post", "at": [3.0, -3.5] },
+            { "object": "crate_salvager_stack", "at": [-4.0, -3.5], "yaw": 10.0, "chance": 0.7 },
+            { "object": "sensor_buoy", "at": [6.0, -4.0], "chance": 0.5 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_salvager_wreck",
+      "footprint": 18.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 2, "pieces": [
+            { "object": "hull_rib_arch", "at": [0.0, 0.0] },
+            { "object": "engine_nacelle_small", "at": [7.0, 3.0], "yaw": 40.0 },
+            { "object": "thruster_cluster", "at": [-7.0, 3.0], "yaw": 300.0 },
+            { "object": "power_core_cracked", "at": [0.0, 5.0] },
+            { "object": "fuel_cell_spill", "at": [3.0, -4.0], "yaw": 20.0 },
+            { "object": "radiator_panel", "at": [-6.0, -4.0], "yaw": 70.0 },
+            { "object": "solar_wing_torn", "at": [10.0, -6.0], "yaw": 20.0, "chance": 0.7 },
+            { "object": "airlock_door", "at": [-10.0, -3.0], "yaw": 110.0, "chance": 0.6 },
+            { "object": "coolant_tank", "at": [4.0, 8.0], "yaw": 90.0, "chance": 0.6 },
+            { "object": "debris_trail_panels", "at": [-3.0, -9.0], "yaw": 10.0 },
+            { "object": "landing_strut", "at": [9.0, 9.0], "yaw": 200.0, "chance": 0.6 }
+          ] },
+          { "weight": 1, "pieces": [
+            { "object": "cargo_container_salvager", "at": [0.0, 0.0], "yaw": 10.0 },
+            { "object": "crate_salvager_stack", "at": [4.0, 2.0] },
+            { "object": "crate_salvager_stack", "at": [4.6, -1.0], "yaw": 30.0, "chance": 0.6 },
+            { "object": "lander_leg", "at": [-5.0, 3.0], "yaw": 140.0 },
+            { "object": "navigation_beacon", "at": [-4.0, -4.0] },
+            { "object": "antenna_dish_salvager", "at": [7.0, -5.0], "yaw": 40.0, "chance": 0.7 },
+            { "object": "cable_bundle_torn", "at": [0.0, -5.0], "yaw": 80.0 },
+            { "object": "med_kit_crate", "at": [-1.5, 3.4], "chance": 0.6 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_beacon_site",
+      "footprint": 9.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 1, "pieces": [
+            { "object": "navigation_beacon", "at": [0.0, 0.0] },
+            { "object": "sensor_buoy", "at": [3.5, 2.0] },
+            { "object": "signal_flare_post", "at": [-3.0, 2.5] },
+            { "object": "signal_flare_post", "at": [-3.0, -2.5], "chance": 0.6 },
+            { "object": "crate_salvager_stack", "at": [3.0, -3.0], "yaw": 20.0, "chance": 0.6 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_substation",
+      "footprint": 14.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 1, "pieces": [
+            { "object": "substation_fence", "at": [0.0, 0.0] },
+            { "object": "transformer_pole", "at": [7.0, 3.0] },
+            { "object": "transformer_pole", "at": [7.0, -3.0], "chance": 0.7 },
+            { "object": "switch_cabinet", "at": [-6.0, 2.0], "yaw": 90.0 },
+            { "object": "battery_bank", "at": [-6.0, -4.0], "yaw": 90.0, "chance": 0.6 },
+            { "object": "power_pole", "at": [10.0, 0.0], "chance": 0.6 },
+            { "object": "cable_spool", "at": [4.0, -7.0], "yaw": 20.0, "chance": 0.6 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_wind_farm",
+      "footprint": 14.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 1, "pieces": [
+            { "object": "wind_turbine_colony", "at": [0.0, 0.0] },
+            { "object": "switch_cabinet", "at": [4.0, -3.0], "yaw": 180.0 },
+            { "object": "solar_farm_row", "at": [-5.0, -8.0], "chance": 0.6 },
+            { "object": "charging_post", "at": [4.0, -5.5], "chance": 0.5 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_solar_field",
+      "footprint": 14.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 1, "pieces": [
+            { "object": "solar_farm_row", "at": [0.0, -6.0] },
+            { "object": "solar_farm_row", "at": [0.0, -2.0] },
+            { "object": "solar_farm_row", "at": [0.0, 2.0] },
+            { "object": "solar_farm_row", "at": [0.0, 6.0] },
+            { "object": "battery_bank", "at": [8.0, 0.0], "yaw": 90.0 },
+            { "object": "data_cabinet", "at": [8.0, 4.0], "yaw": 270.0, "chance": 0.7 },
+            { "object": "weather_station", "at": [-8.0, 2.0], "chance": 0.6 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_survey_post",
+      "footprint": 10.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 1, "pieces": [
+            { "object": "weather_station", "at": [0.0, 0.0] },
+            { "object": "sensor_mast", "at": [4.0, 2.0] },
+            { "object": "survey_drone_crashed", "at": [-4.0, -3.0], "yaw": 30.0 },
+            { "object": "antenna_array", "at": [3.0, -5.0], "yaw": 20.0, "chance": 0.6 },
+            { "object": "data_cabinet", "at": [-3.5, 2.5], "yaw": 120.0, "chance": 0.6 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_data_wreck",
+      "footprint": 12.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 1, "pieces": [
+            { "object": "server_rack_wreck", "at": [0.0, 0.0], "yaw": 10.0 },
+            { "object": "data_cabinet", "at": [4.0, 2.0], "yaw": 200.0 },
+            { "object": "robot_arm_fallen", "at": [-5.0, -2.0], "yaw": 70.0 },
+            { "object": "charging_post", "at": [4.0, -3.0] },
+            { "object": "maintenance_hatch", "at": [-3.0, 5.0], "chance": 0.6 },
+            { "object": "ventilation_shaft", "at": [7.0, 6.0], "chance": 0.5 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_oil_field",
+      "footprint": 16.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 2, "pieces": [
+            { "object": "pump_jack", "at": [0.0, 0.0] },
+            { "object": "pump_jack", "at": [10.0, 4.0], "yaw": 30.0, "chance": 0.6 },
+            { "object": "gas_meter_station", "at": [-6.0, -4.0], "yaw": 90.0 },
+            { "object": "storage_tank_tall", "at": [-8.0, 6.0] },
+            { "object": "barrel_pallet", "at": [4.0, -6.0] },
+            { "object": "chemical_drums", "at": [7.0, -4.0], "yaw": 20.0, "chance": 0.6 },
+            { "object": "large_pipe_long", "at": [-2.0, -9.0], "yaw": 90.0, "chance": 0.6 }
+          ] },
+          { "weight": 1, "pieces": [
+            { "object": "oil_derrick_small", "at": [0.0, 0.0] },
+            { "object": "pump_jack", "at": [8.0, -3.0], "yaw": 200.0 },
+            { "object": "valve_manifold", "at": [-6.0, 2.0], "yaw": 90.0 },
+            { "object": "barrel_pallet", "at": [-4.0, -5.0] },
+            { "object": "generator_trailer", "at": [6.0, 6.0], "yaw": 40.0, "chance": 0.6 },
+            { "object": "fuel_tank", "at": [-9.0, -4.0], "yaw": 90.0, "chance": 0.5 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_water_works",
+      "footprint": 13.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 1, "pieces": [
+            { "object": "water_tower_colony", "at": [0.0, 0.0] },
+            { "object": "pump_station", "at": [7.0, -3.0], "yaw": 90.0 },
+            { "object": "culvert_pipe", "at": [-6.0, -5.0], "yaw": 20.0 },
+            { "object": "drainage_grate", "at": [-2.0, -6.0] },
+            { "object": "retaining_wall_concrete", "at": [-7.0, 4.0], "yaw": 90.0, "chance": 0.6 },
+            { "object": "valve_manifold", "at": [7.0, 5.0], "chance": 0.5 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_roadworks",
+      "footprint": 13.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 1, "pieces": [
+            { "object": "cement_mixer_wreck", "at": [0.0, 0.0], "yaw": 20.0 },
+            { "object": "jersey_barrier_stack", "at": [-6.0, 2.0], "yaw": 90.0 },
+            { "object": "rebar_bundle", "at": [5.0, 3.0], "yaw": 10.0 },
+            { "object": "traffic_cone", "at": [3.0, -3.0] },
+            { "object": "traffic_cone", "at": [4.4, -3.4], "chance": 0.7 },
+            { "object": "caution_sign", "at": [-4.0, -4.0], "yaw": 30.0 },
+            { "object": "sandbag_wall", "at": [7.0, -4.0], "chance": 0.5 },
+            { "object": "manhole_cover_open", "at": [-1.0, -6.0], "chance": 0.6 },
+            { "object": "scaffold_tower", "at": [-7.0, -6.0], "chance": 0.5 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_quarry_works",
+      "footprint": 16.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 2, "pieces": [
+            { "object": "crusher_machine", "at": [0.0, 0.0] },
+            { "object": "conveyor_tower", "at": [0.0, 9.0] },
+            { "object": "hopper", "at": [-6.0, -3.0] },
+            { "object": "excavator_wreck", "at": [8.0, -4.0], "yaw": 210.0 },
+            { "object": "dump_truck_wreck", "at": [-8.0, 5.0], "yaw": 70.0, "chance": 0.7 },
+            { "object": "stone_rubble_pile", "at": [5.0, 5.0], "yaw": 30.0 },
+            { "object": "stone_rubble_pile", "at": [-4.0, -9.0], "yaw": 120.0, "chance": 0.5 }
+          ] },
+          { "weight": 1, "pieces": [
+            { "object": "bulldozer_wreck", "at": [0.0, 0.0], "yaw": 30.0 },
+            { "object": "hopper", "at": [7.0, 3.0] },
+            { "object": "steel_beam_stack", "at": [-6.0, 3.0], "yaw": 80.0 },
+            { "object": "cable_drum_stack", "at": [-5.0, -4.0], "yaw": 10.0 },
+            { "object": "stone_rubble_pile", "at": [5.0, -5.0], "yaw": 60.0 },
+            { "object": "scaffold_tower", "at": [9.0, -2.0], "chance": 0.6 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_plant",
+      "footprint": 18.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 2, "pieces": [
+            { "object": "cooling_tower_small", "at": [-7.0, 6.0] },
+            { "object": "chimney_steel", "at": [7.0, 7.0] },
+            { "object": "pipe_rack", "at": [0.0, 0.0], "yaw": 90.0 },
+            { "object": "compressor_unit", "at": [6.0, -3.0] },
+            { "object": "valve_manifold", "at": [-6.0, -3.0] },
+            { "object": "storage_tank_tall", "at": [11.0, -2.0], "chance": 0.7 },
+            { "object": "chemical_drums", "at": [-1.0, -7.0], "yaw": 20.0 },
+            { "object": "hazard_waste_bin", "at": [4.0, -9.0], "chance": 0.6 },
+            { "object": "barrel_pallet", "at": [-5.0, -10.0], "yaw": 10.0, "chance": 0.6 }
+          ] },
+          { "weight": 1, "pieces": [
+            { "object": "silo_steel", "at": [-5.0, 4.0] },
+            { "object": "silo_steel", "at": [0.0, 6.0], "chance": 0.6 },
+            { "object": "smokestack_brick", "at": [7.0, 5.0] },
+            { "object": "pipe_bridge", "at": [0.0, -3.0] },
+            { "object": "pump_station", "at": [-8.0, -6.0] },
+            { "object": "steel_beam_stack", "at": [6.0, -8.0], "yaw": 20.0, "chance": 0.7 },
+            { "object": "rebar_bundle", "at": [-2.0, -9.0], "yaw": 40.0, "chance": 0.6 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_crane_site",
+      "footprint": 16.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 1, "pieces": [
+            { "object": "crane_mobile_wreck", "at": [0.0, 0.0], "yaw": 15.0 },
+            { "object": "steel_beam_stack", "at": [6.0, 6.0], "yaw": 10.0 },
+            { "object": "cable_drum_stack", "at": [-6.0, 5.0] },
+            { "object": "scaffold_tower", "at": [-9.0, -3.0] },
+            { "object": "rebar_bundle", "at": [7.0, -5.0], "yaw": 30.0 },
+            { "object": "jersey_barrier_stack", "at": [-4.0, -8.0], "chance": 0.6 },
+            { "object": "barrel_pallet", "at": [10.0, 1.0], "chance": 0.6 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_farmyard",
+      "footprint": 16.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 2, "pieces": [
+            { "object": "grain_silo_small", "at": [-7.0, 6.0] },
+            { "object": "hay_loft_frame", "at": [0.0, 7.0], "yaw": 180.0 },
+            { "object": "corn_crib", "at": [7.0, 6.0], "yaw": 180.0, "chance": 0.7 },
+            { "object": "feed_trough", "at": [2.0, 0.0], "yaw": 10.0 },
+            { "object": "milk_churns", "at": [-2.5, 1.5] },
+            { "object": "butter_churn", "at": [-3.5, 0.2], "chance": 0.6 },
+            { "object": "haystack_loose", "at": [9.0, -2.0], "yaw": 30.0 },
+            { "object": "pitchfork_stack", "at": [4.5, 3.0], "chance": 0.7 },
+            { "object": "seed_sacks_cart", "at": [-6.0, -3.0], "yaw": 60.0 },
+            { "object": "plough_old", "at": [4.0, -7.0], "yaw": 20.0, "chance": 0.6 },
+            { "object": "water_butt_stand", "at": [-8.5, 1.0], "yaw": 90.0, "chance": 0.6 }
+          ] },
+          { "weight": 1, "pieces": [
+            { "object": "pig_pen", "at": [0.0, 0.0] },
+            { "object": "goat_shed", "at": [6.0, 2.0], "yaw": 200.0 },
+            { "object": "feed_trough", "at": [-4.0, -1.0], "yaw": 90.0 },
+            { "object": "rabbit_hutch", "at": [-6.0, 3.0], "yaw": 160.0, "chance": 0.7 },
+            { "object": "dovecote", "at": [4.0, -5.0] },
+            { "object": "haystack_loose", "at": [-6.0, -6.0], "yaw": 50.0 },
+            { "object": "milk_churns", "at": [3.0, 4.5], "chance": 0.6 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_kitchen_garden",
+      "footprint": 11.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 1, "pieces": [
+            { "object": "greenhouse_small", "at": [0.0, 3.0] },
+            { "object": "cold_frame", "at": [-4.0, -1.0] },
+            { "object": "cold_frame", "at": [-1.5, -1.2], "chance": 0.6 },
+            { "object": "potting_bench", "at": [4.0, 0.0], "yaw": 270.0 },
+            { "object": "vegetable_crates", "at": [3.0, -3.0], "yaw": 20.0 },
+            { "object": "pumpkin_pile", "at": [-4.0, -5.0], "yaw": 40.0 },
+            { "object": "water_butt_stand", "at": [4.5, 4.0], "chance": 0.7 },
+            { "object": "bee_skep", "at": [7.0, -4.0], "chance": 0.6 },
+            { "object": "scarecrow", "at": [-7.0, 1.0], "yaw": 30.0, "chance": 0.5 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_field_edge",
+      "footprint": 10.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 2, "pieces": [
+            { "object": "harrow_rusty", "at": [0.0, 0.0], "yaw": 10.0 },
+            { "object": "plough_old", "at": [4.0, 2.0], "yaw": 70.0 },
+            { "object": "scythe_rack", "at": [-4.0, 1.5] },
+            { "object": "haystack_loose", "at": [-3.0, -5.0], "yaw": 20.0, "chance": 0.7 },
+            { "object": "pole_fence", "at": [-6.4, 6.0] },
+            { "object": "pole_fence", "at": [-3.2, 6.0] },
+            { "object": "pole_fence", "at": [0.0, 6.0] },
+            { "object": "pole_fence", "at": [3.200000000000001, 6.0] }
+          ] },
+          { "weight": 1, "pieces": [
+            { "object": "irrigation_pump", "at": [0.0, 0.0] },
+            { "object": "sprinkler_pipe", "at": [4.5, 0.0] },
+            { "object": "sprinkler_pipe", "at": [-4.5, 0.2], "yaw": 180.0, "chance": 0.6 },
+            { "object": "water_butt_stand", "at": [0.0, 3.0], "chance": 0.6 },
+            { "object": "seed_sacks_cart", "at": [2.0, -4.0], "yaw": 30.0, "chance": 0.6 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_harvest_wreck",
+      "footprint": 12.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 1, "pieces": [
+            { "object": "harvester_combine_wreck", "at": [0.0, 0.0], "yaw": 20.0 },
+            { "object": "haystack_loose", "at": [7.0, 4.0], "yaw": 10.0 },
+            { "object": "vegetable_crates", "at": [-6.0, 3.0], "yaw": 40.0 },
+            { "object": "pumpkin_pile", "at": [-6.0, -3.0], "chance": 0.6 },
+            { "object": "wheel_loose_big", "at": [6.0, -5.0], "yaw": 30.0, "chance": 0.6 },
+            { "object": "grain_silo_small", "at": [-8.0, 8.0], "chance": 0.4 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_fishing_camp",
+      "footprint": 13.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 2, "pieces": [
+            { "object": "boathouse_shack", "at": [0.0, 4.0] },
+            { "object": "rowboat_wreck", "at": [-5.0, -2.0], "yaw": 60.0 },
+            { "object": "fishing_net_rack", "at": [5.0, -1.0], "yaw": 20.0 },
+            { "object": "lobster_traps", "at": [2.0, -4.0] },
+            { "object": "crab_pots", "at": [-1.5, -4.5], "yaw": 30.0, "chance": 0.7 },
+            { "object": "oar_rack", "at": [4.5, 3.5], "yaw": 270.0, "chance": 0.6 },
+            { "object": "net_float_pile", "at": [-6.0, 3.0], "chance": 0.7 },
+            { "object": "ship_rope_coil", "at": [1.0, -1.5], "chance": 0.7 }
+          ] },
+          { "weight": 1, "pieces": [
+            { "object": "beach_hut", "at": [0.0, 0.0] },
+            { "object": "deck_chair", "at": [3.0, -2.5], "yaw": 160.0 },
+            { "object": "deck_chair", "at": [4.6, -2.2], "yaw": 200.0, "chance": 0.6 },
+            { "object": "life_ring_post", "at": [-3.0, -3.0] },
+            { "object": "kayak_wreck", "at": [-5.0, 1.0], "yaw": 80.0, "chance": 0.7 },
+            { "object": "shipping_crate_washed", "at": [5.0, 3.0], "yaw": 40.0, "chance": 0.6 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_harbour",
+      "footprint": 16.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 1, "pieces": [
+            { "object": "dock_pier_section", "at": [0.0, 0.0] },
+            { "object": "harbour_crane_small", "at": [6.0, 4.0], "yaw": 90.0 },
+            { "object": "mooring_post", "at": [-3.0, -3.5] },
+            { "object": "mooring_post", "at": [3.0, -3.5], "chance": 0.7 },
+            { "object": "jetty_light", "at": [0.0, -4.0] },
+            { "object": "anchor_rusty", "at": [-7.0, 3.0], "yaw": 30.0 },
+            { "object": "shipping_crate_washed", "at": [9.0, -3.0], "yaw": 20.0 },
+            { "object": "ship_rope_coil", "at": [-5.0, -1.0], "chance": 0.7 },
+            { "object": "shipping_container", "at": [-9.0, 8.0], "yaw": 90.0, "chance": 0.4 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_lighthouse",
+      "footprint": 14.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 1, "pieces": [
+            { "object": "lighthouse_small", "at": [0.0, 0.0] },
+            { "object": "beach_hut", "at": [7.0, -2.0], "yaw": 270.0 },
+            { "object": "anchor_rusty", "at": [-5.0, -5.0], "yaw": 60.0 },
+            { "object": "buoy_beached", "at": [6.0, 6.0], "yaw": 30.0 },
+            { "object": "life_ring_post", "at": [-4.0, 4.0], "chance": 0.7 },
+            { "object": "rock_pool", "at": [-8.0, 2.0], "chance": 0.6 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_shipwreck",
+      "footprint": 15.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 1, "pieces": [
+            { "object": "fishing_boat_wreck", "at": [0.0, 0.0], "yaw": 30.0 },
+            { "object": "buoy_beached", "at": [8.0, -3.0], "yaw": 70.0 },
+            { "object": "net_float_pile", "at": [-7.0, 4.0], "yaw": 10.0 },
+            { "object": "shipping_crate_washed", "at": [6.0, 5.0], "yaw": 50.0 },
+            { "object": "shipping_crate_washed", "at": [7.5, 6.5], "yaw": 10.0, "chance": 0.5 },
+            { "object": "pallet_raft", "at": [-6.0, -5.0], "yaw": 40.0, "chance": 0.6 },
+            { "object": "ship_rope_coil", "at": [3.0, -6.0], "chance": 0.6 },
+            { "object": "sand_dune_grass", "at": [-10.0, -2.0], "chance": 0.6 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_shore",
+      "footprint": 9.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 2, "pieces": [
+            { "object": "sand_dune_grass", "at": [0.0, 0.0] },
+            { "object": "sand_dune_grass", "at": [4.0, 2.5], "yaw": 120.0, "chance": 0.6 },
+            { "object": "net_float_pile", "at": [-3.0, -2.0], "yaw": 40.0, "chance": 0.5 },
+            { "object": "shipping_crate_washed", "at": [3.0, -3.0], "yaw": 70.0, "chance": 0.4 }
+          ] },
+          { "weight": 1, "pieces": [
+            { "object": "rock_pool", "at": [0.0, 0.0] },
+            { "object": "sea_stack_small", "at": [5.0, 3.0] },
+            { "object": "crab_pots", "at": [-3.0, 2.0], "yaw": 30.0, "chance": 0.5 }
+          ] },
+          { "weight": 1, "pieces": [
+            { "object": "kayak_wreck", "at": [0.0, 0.0], "yaw": 40.0 },
+            { "object": "oar_rack", "at": [3.0, 2.0], "yaw": 200.0, "chance": 0.5 },
+            { "object": "pallet_raft", "at": [-3.5, -1.0], "yaw": 70.0, "chance": 0.6 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_traffic_jam",
+      "footprint": 16.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 2, "pieces": [
+            { "object": "van_wreck", "at": [-8.0, 0.0], "yaw": 5.0 },
+            { "object": "pickup_wreck", "at": [0.0, 0.4], "yaw": -4.0 },
+            { "object": "sports_car_wreck", "at": [8.0, -0.3], "yaw": 8.0, "chance": 0.7 },
+            { "object": "car_seat", "at": [4.0, -3.5], "yaw": 40.0, "chance": 0.6 },
+            { "object": "traffic_cone", "at": [-3.8, -3.0] },
+            { "object": "wheel_loose_big", "at": [3.0, 4.0], "yaw": 70.0, "chance": 0.4 },
+            { "object": "engine_block", "at": [-4.0, 3.5], "yaw": 20.0, "chance": 0.5 }
+          ] },
+          { "weight": 1, "pieces": [
+            { "object": "delivery_truck_wreck", "at": [-4.0, 0.0], "yaw": 10.0 },
+            { "object": "motorbike_wreck", "at": [5.0, -2.0], "yaw": 70.0 },
+            { "object": "bicycle_rusty", "at": [6.0, 2.0], "yaw": 160.0, "chance": 0.7 },
+            { "object": "car_wreck", "at": [11.0, 1.0], "yaw": 190.0, "chance": 0.6 },
+            { "object": "traffic_cone", "at": [1.0, -4.0] }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_tanker_spill",
+      "footprint": 14.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 1, "pieces": [
+            { "object": "tanker_trailer_wreck", "at": [0.0, 0.0], "yaw": 25.0 },
+            { "object": "chemical_drums", "at": [7.0, -3.0], "yaw": 30.0 },
+            { "object": "hazard_waste_bin", "at": [-7.0, -4.0], "yaw": 20.0 },
+            { "object": "caution_sign", "at": [-6.0, 4.0] },
+            { "object": "jersey_barrier_stack", "at": [5.0, 6.0], "yaw": 80.0, "chance": 0.6 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_yard_trailers",
+      "footprint": 13.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 1, "pieces": [
+            { "object": "flatbed_trailer", "at": [0.0, -3.0] },
+            { "object": "boat_trailer", "at": [0.0, 3.0] },
+            { "object": "quad_bike_wreck", "at": [6.0, 6.0], "yaw": 40.0 },
+            { "object": "golf_cart_wreck", "at": [-6.0, 6.0], "yaw": 210.0, "chance": 0.7 },
+            { "object": "engine_block", "at": [6.0, -6.0], "chance": 0.7 },
+            { "object": "car_seat", "at": [-5.0, -6.0], "yaw": 120.0, "chance": 0.6 },
+            { "object": "wheel_loose_big", "at": [9.0, 0.0], "yaw": 80.0, "chance": 0.5 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_railway",
+      "footprint": 16.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 2, "pieces": [
+            { "object": "rail_track_section", "at": [-4.5, 0.0] },
+            { "object": "rail_track_section", "at": [4.5, 0.0] },
+            { "object": "train_wagon_wreck", "at": [0.0, 4.5], "yaw": 4.0 },
+            { "object": "rail_signal", "at": [9.0, -3.0] },
+            { "object": "mine_cart", "at": [-6.0, -3.5], "yaw": 30.0, "chance": 0.6 }
+          ] },
+          { "weight": 1, "pieces": [
+            { "object": "rail_track_section", "at": [0.0, 0.0] },
+            { "object": "rail_buffer", "at": [7.5, 0.0] },
+            { "object": "mine_cart", "at": [-2.0, 0.0] },
+            { "object": "mine_cart", "at": [2.0, 0.2], "chance": 0.6 },
+            { "object": "rail_signal", "at": [-6.0, -3.0] },
+            { "object": "steel_beam_stack", "at": [0.0, -6.0], "chance": 0.5 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_air_crash",
+      "footprint": 18.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 2, "pieces": [
+            { "object": "small_plane_wreck", "at": [0.0, 0.0], "yaw": 30.0 },
+            { "object": "airplane_tail", "at": [-11.0, -6.0], "yaw": 60.0 },
+            { "object": "car_seat", "at": [6.0, -6.0], "yaw": 140.0 },
+            { "object": "debris_trail_panels", "at": [-6.0, 5.0], "yaw": 20.0, "chance": 0.7 },
+            { "object": "engine_block", "at": [9.0, 4.0], "yaw": 40.0, "chance": 0.6 },
+            { "object": "signal_flare_post", "at": [4.0, 8.0], "chance": 0.5 }
+          ] },
+          { "weight": 1, "pieces": [
+            { "object": "helicopter_wreck", "at": [0.0, 0.0], "yaw": -20.0 },
+            { "object": "airplane_tail", "at": [9.0, 5.0], "yaw": 200.0, "chance": 0.5 },
+            { "object": "crate_salvager_stack", "at": [-7.0, 4.0], "yaw": 10.0, "chance": 0.6 },
+            { "object": "car_seat", "at": [-5.0, -6.0], "yaw": 60.0, "chance": 0.7 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_rover_wreck",
+      "footprint": 13.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 1, "pieces": [
+            { "object": "colony_rover_wreck", "at": [0.0, 0.0], "yaw": 15.0 },
+            { "object": "wheel_loose_big", "at": [6.0, -3.0], "yaw": 60.0 },
+            { "object": "survey_drone_crashed", "at": [-6.0, 3.0], "yaw": 40.0, "chance": 0.7 },
+            { "object": "antenna_array", "at": [-6.0, -5.0], "yaw": 20.0, "chance": 0.5 },
+            { "object": "crate_salvager_stack", "at": [5.0, 5.0], "chance": 0.6 }
+          ] },
+          { "weight": 1, "pieces": [
+            { "object": "hovercraft_wreck", "at": [0.0, 0.0], "yaw": -10.0 },
+            { "object": "engine_block", "at": [6.0, 2.0], "yaw": 30.0 },
+            { "object": "ship_rope_coil", "at": [-5.0, 3.0], "chance": 0.6 },
+            { "object": "pallet_raft", "at": [-6.0, -3.0], "yaw": 50.0, "chance": 0.5 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_scrap_outpost",
+      "footprint": 16.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 2, "pieces": [
+            { "object": "scrap_hut", "at": [0.0, 3.0], "yaw": 180.0 },
+            { "object": "watchtower_wood", "at": [-8.0, 6.0] },
+            { "object": "palisade_gate", "at": [0.0, -9.0] },
+            { "object": "palisade_section", "at": [-6.6, -9.2] },
+            { "object": "palisade_section", "at": [-3.1999999999999997, -9.2] },
+            { "object": "palisade_section", "at": [3.4, -9.2] },
+            { "object": "palisade_section", "at": [6.8, -9.2] },
+            { "object": "generator_shed", "at": [7.0, 4.0], "yaw": 270.0 },
+            { "object": "battery_rack_settler", "at": [7.0, 0.5], "yaw": 270.0, "chance": 0.7 },
+            { "object": "rain_catcher", "at": [-5.0, -2.0], "yaw": 30.0 },
+            { "object": "bell_post", "at": [3.0, -5.0] },
+            { "object": "junk_shelf", "at": [-2.5, 6.5], "yaw": 180.0, "chance": 0.6 },
+            { "object": "scrap_heap_mixed", "at": [8.0, -4.0], "yaw": 40.0, "chance": 0.7 }
+          ] },
+          { "weight": 1, "pieces": [
+            { "object": "lean_to_metal", "at": [0.0, 2.0], "yaw": 180.0 },
+            { "object": "lookout_platform", "at": [7.0, 4.0] },
+            { "object": "barricade_scrap", "at": [0.0, -7.0] },
+            { "object": "car_door_fence", "at": [-5.0, -6.0], "yaw": 20.0 },
+            { "object": "tire_stack", "at": [4.5, -4.0] },
+            { "object": "tire_stack", "at": [5.4, -3.0], "chance": 0.6 },
+            { "object": "water_still", "at": [-4.0, 2.0] },
+            { "object": "signboard_painted", "at": [3.0, -9.0], "chance": 0.7 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_squatter_camp",
+      "footprint": 13.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 1, "pieces": [
+            { "object": "lean_to_metal", "at": [-4.0, 3.0], "yaw": 160.0 },
+            { "object": "lean_to_metal", "at": [4.0, 3.0], "yaw": 200.0, "chance": 0.6 },
+            { "object": "campfire_ring", "at": [0.0, 0.0] },
+            { "object": "outdoor_shower", "at": [-7.0, -3.0], "yaw": 90.0 },
+            { "object": "latrine_screen", "at": [7.0, -4.0], "yaw": 270.0, "chance": 0.7 },
+            { "object": "tire_swing", "at": [0.0, 8.0], "chance": 0.5 },
+            { "object": "junk_shelf", "at": [6.0, 0.0], "yaw": 270.0, "chance": 0.6 },
+            { "object": "sheet_metal_fence", "at": [-2.0, -7.0], "chance": 0.7 },
+            { "object": "signboard_painted", "at": [3.0, -6.0], "yaw": 20.0, "chance": 0.5 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_scrap_power",
+      "footprint": 11.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 1, "pieces": [
+            { "object": "scrap_windmill_turbine", "at": [0.0, 0.0] },
+            { "object": "solar_scrap_rig", "at": [4.0, -2.0], "yaw": 20.0 },
+            { "object": "battery_rack_settler", "at": [-3.0, -2.5], "yaw": 80.0 },
+            { "object": "antenna_scrap", "at": [-4.0, 3.0] },
+            { "object": "generator_shed", "at": [5.0, 4.0], "yaw": 200.0, "chance": 0.5 },
+            { "object": "scrap_heap_mixed", "at": [-6.0, -5.0], "chance": 0.5 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_junk_pile",
+      "footprint": 9.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 2, "pieces": [
+            { "object": "scrap_heap_mixed", "at": [0.0, 0.0] },
+            { "object": "tire_stack", "at": [3.0, 1.5] },
+            { "object": "tire_stack", "at": [2.4, -1.4], "chance": 0.6 },
+            { "object": "car_door_fence", "at": [-3.5, 2.0], "yaw": 70.0, "chance": 0.6 },
+            { "object": "engine_block", "at": [-2.5, -2.5], "yaw": 20.0, "chance": 0.5 }
+          ] },
+          { "weight": 1, "pieces": [
+            { "object": "sheet_metal_fence", "at": [0.0, 2.0] },
+            { "object": "sheet_metal_fence", "at": [4.4, 2.2], "chance": 0.7 },
+            { "object": "barricade_scrap", "at": [-4.5, 0.0], "yaw": 90.0 },
+            { "object": "rain_catcher", "at": [2.0, -2.5], "chance": 0.6 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_river_crossing",
+      "footprint": 9.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 1, "pieces": [
+            { "object": "rope_bridge_post", "at": [-2.0, 0.0], "yaw": 90.0 },
+            { "object": "rope_bridge_post", "at": [2.0, 0.0], "yaw": 270.0, "chance": 0.7 },
+            { "object": "signboard_painted", "at": [-3.5, 2.0], "yaw": 30.0 },
+            { "object": "bell_post", "at": [3.5, -2.0], "chance": 0.5 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_family_camp",
+      "footprint": 14.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 2, "pieces": [
+            { "object": "tent_ridge", "at": [-4.0, 4.0], "yaw": 160.0 },
+            { "object": "tent_dome_patched", "at": [4.0, 4.5], "yaw": 200.0 },
+            { "object": "campfire_ring", "at": [0.0, 0.0] },
+            { "object": "camp_kitchen", "at": [0.0, -4.0] },
+            { "object": "bench_plank", "at": [-3.0, -1.0], "yaw": 80.0 },
+            { "object": "rocking_chair", "at": [3.0, -1.0], "yaw": 250.0, "chance": 0.7 },
+            { "object": "firewood_rack", "at": [-7.0, -2.0], "yaw": 90.0 },
+            { "object": "clothes_chest", "at": [-2.0, 6.5], "yaw": 180.0, "chance": 0.6 },
+            { "object": "water_filter_barrel", "at": [6.0, -3.0] },
+            { "object": "sleeping_mats", "at": [-7.0, 5.0], "yaw": 30.0, "chance": 0.6 },
+            { "object": "hammock_posts", "at": [8.0, 8.0], "yaw": 20.0, "chance": 0.5 }
+          ] },
+          { "weight": 1, "pieces": [
+            { "object": "tent_ridge", "at": [0.0, 4.0], "yaw": 180.0 },
+            { "object": "stove_pot_belly", "at": [-3.0, 0.5] },
+            { "object": "chimney_stack_free", "at": [-6.0, 1.5], "chance": 0.6 },
+            { "object": "smoker_barrel", "at": [3.0, 0.0] },
+            { "object": "fish_drying_rack", "at": [5.0, 4.0], "yaw": 270.0 },
+            { "object": "laundry_tub", "at": [-2.0, -3.0] },
+            { "object": "washing_line", "at": [2.0, -5.0], "yaw": 10.0, "chance": 0.6 },
+            { "object": "bathtub_outdoor", "at": [-6.0, -4.0], "yaw": 30.0, "chance": 0.5 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_wood_yard",
+      "footprint": 11.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 1, "pieces": [
+            { "object": "chopping_block", "at": [0.0, 0.0] },
+            { "object": "firewood_rack", "at": [3.0, 2.0] },
+            { "object": "sawhorse_pair", "at": [-3.0, 1.0], "yaw": 20.0 },
+            { "object": "log_pile", "at": [-5.0, -3.0], "yaw": 70.0 },
+            { "object": "plank_pile", "at": [3.0, -3.0], "yaw": 10.0 },
+            { "object": "tool_wall", "at": [0.0, 4.5], "yaw": 180.0, "chance": 0.7 },
+            { "object": "grindstone", "at": [5.0, 0.0], "chance": 0.6 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_smithy",
+      "footprint": 11.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 1, "pieces": [
+            { "object": "awning_frame", "at": [0.0, 2.0], "yaw": 180.0 },
+            { "object": "anvil_stump", "at": [0.0, 0.0] },
+            { "object": "workbench_settler", "at": [3.0, 2.0], "yaw": 200.0 },
+            { "object": "grindstone", "at": [-3.0, 0.5] },
+            { "object": "stove_pot_belly", "at": [-2.5, 3.0], "chance": 0.7 },
+            { "object": "tool_wall", "at": [0.0, 5.0], "yaw": 180.0 },
+            { "object": "barrel_rusty", "at": [4.0, -2.5], "chance": 0.6 },
+            { "object": "scrap_heap_mixed", "at": [-5.0, -4.0], "yaw": 20.0, "chance": 0.5 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_trader",
+      "footprint": 12.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 1, "pieces": [
+            { "object": "market_stall", "at": [0.0, 0.0] },
+            { "object": "trade_cart", "at": [5.0, 1.0], "yaw": 260.0 },
+            { "object": "vegetable_crates", "at": [-3.0, -1.5], "yaw": 10.0, "chance": 0.8 },
+            { "object": "pumpkin_pile", "at": [-4.0, 1.5], "chance": 0.6 },
+            { "object": "signboard_painted", "at": [2.0, -4.0], "yaw": 20.0 },
+            { "object": "sack_pile", "at": [3.0, -2.0], "yaw": 30.0, "chance": 0.7 },
+            { "object": "bench_plank", "at": [-6.0, -3.0], "yaw": 90.0, "chance": 0.5 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_boulder_field",
+      "footprint": 12.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 2, "pieces": [
+            { "object": "boulder_split", "at": [0.0, 0.0] },
+            { "object": "rock_spire", "at": [6.0, 3.0] },
+            { "object": "fern_clump_big", "at": [-3.0, 3.0] },
+            { "object": "fern_clump_big", "at": [3.0, -3.0], "yaw": 90.0, "chance": 0.6 },
+            { "object": "bramble_patch", "at": [-5.0, -3.0], "yaw": 30.0, "chance": 0.6 }
+          ] },
+          { "weight": 1, "pieces": [
+            { "object": "rock_arch_small", "at": [0.0, 0.0] },
+            { "object": "rock_shelf", "at": [-6.0, 3.0], "yaw": 160.0 },
+            { "object": "bird_nest_big", "at": [6.0, -3.0] },
+            { "object": "berry_bush_big", "at": [4.0, 4.0], "chance": 0.6 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_old_wood",
+      "footprint": 12.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 2, "pieces": [
+            { "object": "fallen_tree_big", "at": [0.0, 0.0], "yaw": 20.0 },
+            { "object": "giant_mushroom", "at": [3.0, 4.0] },
+            { "object": "giant_mushroom", "at": [-3.0, -4.0], "yaw": 60.0, "chance": 0.5 },
+            { "object": "fern_clump_big", "at": [-4.0, 3.0] },
+            { "object": "stump_cluster", "at": [5.0, -4.0], "chance": 0.6 }
+          ] },
+          { "weight": 1, "pieces": [
+            { "object": "tree_root_arch", "at": [0.0, 0.0] },
+            { "object": "hollow_log", "at": [5.0, 4.0], "yaw": 70.0 },
+            { "object": "tree_fallen_branches", "at": [-5.0, -3.0], "yaw": 30.0 },
+            { "object": "bramble_patch", "at": [-4.0, 4.0], "chance": 0.6 },
+            { "object": "mushroom_cluster", "at": [3.0, -3.0], "chance": 0.6 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_bone_yard",
+      "footprint": 12.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 1, "pieces": [
+            { "object": "rib_cage_bones", "at": [0.0, 0.0] },
+            { "object": "animal_skull_big", "at": [6.0, 2.0], "yaw": 210.0 },
+            { "object": "cactus_cluster", "at": [-5.0, 4.0], "chance": 0.6 },
+            { "object": "dry_bush_tumbleweed", "at": [4.0, -4.0] },
+            { "object": "dry_bush_tumbleweed", "at": [-3.0, -5.0], "yaw": 40.0, "chance": 0.5 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_beach_drift",
+      "footprint": 10.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 1, "pieces": [
+            { "object": "driftwood_pile", "at": [0.0, 0.0] },
+            { "object": "seaweed_rocks", "at": [4.0, 3.0] },
+            { "object": "shell_mound", "at": [-4.0, 2.0] },
+            { "object": "sand_dune_grass", "at": [-3.0, -4.0], "chance": 0.6 }
+          ] }
+        ]
+      }
+    },
+    {
+      "id": "scene_marsh_edge",
+      "footprint": 9.0,
+      "max_slope": 0.3,
+      "scene": {
+        "layouts": [
+          { "weight": 1, "pieces": [
+            { "object": "reed_bed", "at": [0.0, 0.0] },
+            { "object": "cattail_clump", "at": [3.0, 1.5] },
+            { "object": "cattail_clump", "at": [-3.0, 2.0], "yaw": 60.0, "chance": 0.6 },
+            { "object": "hollow_log", "at": [-1.0, -4.0], "yaw": 30.0, "chance": 0.5 }
           ] }
         ]
       }

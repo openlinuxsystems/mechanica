@@ -104,6 +104,33 @@ public partial class LogicTests
     }
 
     [Fact]
+    public void TwoPartsLinkWhicheverWayTheyAreDragged()
+    {
+        var c = Row(Source, Lamp, Gate, Gate, Block);
+        // A lamp dragged to its source links source → lamp; two gates link the way they were dragged.
+        Assert.Equal(new LogicLink(1, 2), c.LinkBetween(2, 1));
+        Assert.Equal(new LogicLink(1, 2), c.LinkBetween(1, 2));
+        Assert.Equal(new LogicLink(4, 3), c.LinkBetween(4, 3));
+        Assert.Null(c.LinkBetween(2, 5));
+        Assert.Null(c.LinkedBetween(2, 1));
+        Assert.True(c.TryLink(1, 2, out var error), error);
+        Assert.Equal(new LogicLink(1, 2), c.LinkedBetween(2, 1));
+        Assert.Null(c.LinkBetween(2, 1));
+        Assert.True(c.TryLink(4, 3, out error), error);
+        Assert.Equal(new LogicLink(3, 4), c.LinkBetween(3, 4));
+        Assert.True(c.TryLink(3, 4, out error), error);
+        Assert.Equal(new LogicLink(3, 4), c.LinkedBetween(3, 4));
+        Assert.Equal(new LogicLink(4, 3), c.LinkedBetween(4, 3));
+        // Dragging again takes a link away from either end, but two gates linked one way can still be linked back.
+        Assert.Equal((new LogicLink(1, 2), true), c.DragLink(2, 1));
+        Assert.Equal((new LogicLink(1, 2), true), c.DragLink(1, 2));
+        Assert.Equal((new LogicLink(4, 3), true), c.DragLink(4, 3));
+        Assert.True(c.Unlink(3, 4));
+        Assert.Equal((new LogicLink(3, 4), false), c.DragLink(3, 4));
+        Assert.Equal((new LogicLink(2, 5), false), c.DragLink(2, 5));
+    }
+
+    [Fact]
     public void RemovingAPartTakesItsLinksAndASplitKeepsOnlyLinksWithinEachPiece()
     {
         var c = Row(Source, Lamp, Block, Lamp, Gate);

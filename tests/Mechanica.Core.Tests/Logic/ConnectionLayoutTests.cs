@@ -17,6 +17,22 @@ public class ConnectionLayoutTests
     }
 
     [Fact]
+    public void HoveredChevronsRunTowardTheTargetAndWrap()
+    {
+        var still = ConnectionLayout.MovingChevrons(Vector2.Zero, new Vector2(100, 0), 40, 0);
+        Assert.Equal([new Vector2(30, 0), new Vector2(70, 0)], still.Select(c => c.At));
+        Assert.All(still, c => Assert.Equal(1f, c.Alpha));
+        var moved = ConnectionLayout.MovingChevrons(Vector2.Zero, new Vector2(100, 0), 40, 15);
+        Assert.Equal([new Vector2(45, 0), new Vector2(85, 0)], moved.Select(c => c.At));
+        // The last one reaches the end of its run (90) and comes back in at the start (10), faded at the seam.
+        var wrapped = ConnectionLayout.MovingChevrons(Vector2.Zero, new Vector2(100, 0), 40, 25);
+        Assert.Equal([new Vector2(55, 0), new Vector2(15, 0)], wrapped.Select(c => c.At));
+        Assert.Equal(0.5f, wrapped[1].Alpha, 3);
+        Assert.Equal(moved.Select(c => c.At), ConnectionLayout.MovingChevrons(Vector2.Zero, new Vector2(100, 0), 40, 15 + 80).Select(c => c.At));
+        Assert.All(ConnectionLayout.MovingChevrons(Vector2.Zero, new Vector2(20, 0), 40, 33), c => Assert.InRange(c.At.X, 0f, 20f));
+    }
+
+    [Fact]
     public void LinksBetweenTheSamePartsGetTheirOwnLanes()
     {
         var lanes = ConnectionLayout.Lanes([new LogicLink(1, 2), new LogicLink(3, 4), new LogicLink(2, 1)]);

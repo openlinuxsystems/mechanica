@@ -255,9 +255,68 @@ Metal Blocks, while the old colony's pipes, barriers and wrecks are too big to b
 | `scene_desert_mounds` | desert | termite mounds, a dead snag, a cairn |
 | `scene_farm_wreck` | field | a tractor wreck by hay, planks and sacks and a pole fence |
 | `scene_workyard` | meadow | a truck wreck, a conveyor, pallets, an I-beam, a ladder and a table |
+| `scene_temple_ruin` | meadow, autumn forest | an Old Stone dais with an altar, columns, braziers and lions, or a platform with a broken statue |
+| `scene_stone_gate` | meadow, autumn forest | stone gate pillars or a small arch between walls, lanterns, bollards and a milestone |
+| `scene_stone_tomb` | forest, autumn forest | a tomb with sarcophagi, urns, a tablet, a gargoyle and a carved relief wall |
+| `scene_stone_plaza` | meadow | a ruined fountain ringed by curved benches, planters and a small stone head |
+| `scene_aqueduct` | desert, mountain | an aqueduct section with broken pillars, fallen slabs and a few probe crystals |
+| `scene_stone_circle` | forest, mountain | a ring of standing stones with rune stones, or a glyph ring round an orb pedestal |
+| `scene_ring_gate` | mountain | a stone ring gate between glyph pillars, with a face mask and a stone hand |
+| `scene_old_tower` | forest, autumn forest, mountain | a tower stump with a broken spiral stair, rubble and a bridge fragment |
+| `scene_wayside` | meadow, forest, field, autumn forest | a milestone, carved boulder or pedestal with a lantern, urn or tablet |
+| `scene_street_corner` | meadow | Colony street lamps, a bench, bins, a phone booth, hydrant, vending machine, kiosk and parking meters |
+| `scene_town_square` | meadow | a dry fountain under the colony founder's statue, with benches, planters, flag poles and lamps |
+| `scene_checkpoint` | field, desert | a toll booth with a barrier arm, barrier stacks, sandbags and cones |
+| `scene_bus_crash` | meadow, burned forest | a bus wreck by a fallen traffic light, bins, a bench and cones |
+| `scene_escape_pod` | meadow, forest, burned forest | a Salvager escape pod or cockpit section with ejected seats, a parachute, flares and med kits |
+| `scene_salvager_wreck` | desert, burned forest | a Salvager hull rib with nacelle, thrusters, a cracked power core and debris, or a cargo container with crates |
+| `scene_beacon_site` | burned forest, mountain | a Salvager navigation beacon with a sensor buoy, flare posts and crates |
+| `scene_substation` | meadow, field | a fenced substation with transformer poles, a switch cabinet and a battery bank |
+| `scene_wind_farm` | meadow, field, mountain | a Colony wind turbine with a switch cabinet, solar rows and a charging post |
+| `scene_solar_field` | field, desert | rows of solar panels with a battery bank, data cabinet and weather station |
+| `scene_survey_post` | meadow, mountain | a weather station, sensor mast, antenna array and a crashed survey drone |
+| `scene_data_wreck` | meadow, burned forest | a wrecked server rack, data cabinet, fallen robot arm, charging post and a hatch |
+| `scene_oil_field` | field, desert | pump jacks or a small derrick, a gas meter station, tanks, valves and drums |
+| `scene_water_works` | meadow, field | a Colony water tower with a pump station, culvert, drain and retaining wall |
+| `scene_roadworks` | meadow, field | a cement mixer wreck, barriers, rebar, cones, sandbags, a manhole and scaffold |
+| `scene_quarry_works` | desert, mountain | a crusher under a conveyor tower with a hopper, excavator and dump truck, or a bulldozer by beams |
+| `scene_plant` | meadow, field | a cooling tower, chimney, pipe rack, compressor and tanks, or silos and a smokestack under a pipe bridge |
+| `scene_crane_site` | meadow, mountain | a mobile crane wreck among beam stacks, cable drums, scaffold and rebar |
+| `scene_farmyard` | meadow, field | a silo, hay loft and corn crib round troughs, churns and a haystack, or a pig pen and goat shed |
+| `scene_kitchen_garden` | meadow, field | a small greenhouse, cold frames, a potting bench, crates, pumpkins and a bee skep |
+| `scene_field_edge` | field | a harrow, plough and scythe rack by a pole fence, or an irrigation pump and sprinklers |
+| `scene_harvest_wreck` | field | a combine harvester wreck by hay, vegetable crates and a loose tyre |
+| `scene_fishing_camp` | lake, coastal | a boathouse, rowboat, net rack and traps, or a beach hut with deck chairs and a kayak |
+| `scene_harbour` | coastal | a pier section with a small harbour crane, mooring posts, a jetty light and an anchor |
+| `scene_lighthouse` | coastal | a small lighthouse with a beach hut, anchor, beached buoy and a rock pool |
+| `scene_shipwreck` | coastal | a fishing boat wreck with a beached buoy, floats, washed-up crates and a pallet raft |
+| `scene_shore` | lake, coastal | dune grass and floats, a rock pool and sea stack, or a kayak and oar rack |
+| `scene_traffic_jam` | meadow, field | a van, pickup and sports car wrecks, or a delivery truck with a motorbike and bicycle |
+| `scene_tanker_spill` | desert | a tanker trailer wreck with chemical drums, a waste bin and warning signs |
+| `scene_yard_trailers` | field | a flatbed and boat trailer with a quad, golf cart, engine block and seat |
+| `scene_railway` | meadow, field | rail track with a wagon wreck and signal, or track to a buffer with mine carts |
+| `scene_air_crash` | meadow, desert | a small plane or helicopter wreck with its tail, seats and debris |
+| `scene_rover_wreck` | desert, burned forest, coastal | a Colony rover wreck with a survey drone and crates, or a hovercraft wreck |
+| `scene_scrap_outpost` | meadow, desert | a Settler scrap hut behind a palisade with a watchtower, generator shed and bell, or a lean-to behind barricades |
+| `scene_squatter_camp` | burned forest, coastal | lean-tos round a fire with a shower, latrine, tyre swing and sheet metal fence |
+| `scene_scrap_power` | field | a scrap windmill, solar rig, battery rack, antenna and generator shed |
+| `scene_junk_pile` | meadow, desert | a mixed scrap heap with tyres, car doors and an engine block, or sheet metal fence and barricades |
+| `scene_river_crossing` | forest | rope bridge posts, a painted sign and a bell post |
+| `scene_family_camp` | meadow, forest, autumn forest | tents round a fire with a camp kitchen, benches, chairs and firewood, or a stove, smoker and drying rack |
+| `scene_wood_yard` | meadow, forest | a chopping block, firewood rack, sawhorses, logs, planks and a tool wall |
+| `scene_smithy` | forest, autumn forest | an anvil under an awning with a workbench, grindstone, stove and tool wall |
+| `scene_trader` | meadow, field | a market stall and trade cart with crates, pumpkins, sacks and a sign |
+| `scene_boulder_field` | meadow, mountain | a split boulder, rock spire, ferns and brambles, or a rock arch with a nest |
+| `scene_old_wood` | forest, autumn forest | a giant fallen tree with giant mushrooms and ferns, or a root arch over hollow logs |
+| `scene_bone_yard` | desert | a rib cage and big skull among cacti and tumbleweed |
+| `scene_beach_drift` | coastal | driftwood, seaweed rocks, a shell mound and dune grass |
+| `scene_marsh_edge` | lake | a reed bed with cattails and a hollow log |
 
-In the vanilla world about one stands every 15,000 m² of open land (roughly one every four 64 m chunks), about
-6,000 across the island, at Scrap Mechanic's density per square kilometre.
+The big nature props (`props_nature.py`: split boulders, rock spires and shelves, giant mushrooms, hollow logs,
+ferns, brambles, cacti, tumbleweed, driftwood, reeds) are also scattered one at a time in their biomes.
+
+In the vanilla world about one stands every 6,000 m² of open land (about one per 64 m chunk), some 15,000 across
+the island, so there is nearly always one in sight.
 
 ### Trees
 
