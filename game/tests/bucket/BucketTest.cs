@@ -13,7 +13,8 @@ namespace Mechanica.Game.Tests;
 /// The water bucket, host plus client, on a flat world under shallow water: the client takes an empty bucket in hand
 /// (held by the rim, handle down, seen on the host too), dips it in the water and it comes up full in the same hotbar
 /// slot (handle up, water in it), throws the water (a blob of water flies and the bucket comes back empty) and puts the
-/// bucket down with Force Build, where it stands as the bucket itself. Each step is checked on both machines.
+/// bucket down with Force Build, where it stands as the bucket itself. Then one dip with three empty buckets fills
+/// all three. Each step is checked on both machines.
 /// </summary>
 public partial class BucketTest : StagedTest
 {
@@ -156,6 +157,27 @@ public partial class BucketTest : StagedTest
                 return false;
             Check(pile.FindChild("Model", false, false) is Node3D model && model.GetChildCount() > 0, "the pile shows the bucket's model");
             Check(_host.Main.Survival.Actions!.Drops.Values.Any(d => d.Placed && d.Items is [{ Item: Empty }]), "the host has it placed");
+            return true;
+        });
+        Add("the client is given three more empty buckets", frame =>
+        {
+            if (frame == 0)
+                _host.Main.Inventory.Items!.PlayerInventory(Peer).Add(Empty, 3);
+            if (_client.Main.Inventory.Own!.Count(Empty) != 3 || _client.Main.Tools!.Slots.ToList().IndexOf(Empty) is not (>= 0 and var slot))
+                return false;
+            _client.Main.Tools.Select(slot);
+            _client.Main.LocalPlayer!.CurrentInput = PlayerInput.None with { Pitch = -1.1f };
+            return true;
+        });
+        Add("one dip fills every empty bucket the client carries", frame =>
+        {
+            if (frame == 30)
+                Item.Click(place: false);
+            var own = _client.Main.Inventory.Own!;
+            if (frame < 30 || own.Count(Full) < 3)
+                return frame < 600 ? false : Check(false, $"the buckets fill ({own.Count(Empty)} empty, {own.Count(Full)} full)");
+            var host = _host.Main.Inventory.Items!.PlayerInventory(Peer);
+            Check(own.Count(Empty) == 0 && host.Count(Full) == 3 && host.Count(Empty) == 0, "all three are full on both machines after one dip");
             return true;
         });
     }
