@@ -128,7 +128,7 @@ how the bot looks: the host still moves and hits with the bot's capsule (`size`)
 | `clip_speeds` | `{clip: m/s}` | none | Ground speed at which a walking clip plays at normal speed. The clip speeds up and slows down with the bot, so its feet do not slide. |
 | `eye_calm` | `"#rrggbb"` | `#2bff3a` (green) | Colour of its glowing (emissive) materials while calm. |
 | `eye_engaged` | `"#rrggbb"` | `#ff1a0a` (red) | The same while engaged (`bot.engage()`, section 4). |
-| `effects` | `{attack id or "death": effect}` | none | An effect every peer sees when it uses the attack or dies: `explosion` (a fireball, flames, smoke, sparks and flying scrap) or `shockwave` (a ring rippling over the ground with dust and stones). Each is as big as the attack's `radius` (its `range` for a melee or ranged attack; a death uses its largest area attack). One effect shows at a time, so a blast that kills its bot shows once. |
+| `effects` | `{attack id or "death": effect}` | none | An effect every peer sees when it uses the attack or dies: `explosion` (a fireball, flames, smoke, sparks and flying scrap), `shockwave` (a ring rippling over the ground with dust and stones) or `shot` (attacks only). An explosion or shockwave is as big as the attack's `radius` (its `range` for a melee or ranged attack; a death uses its largest area attack), and one shows at a time, so a blast that kills its bot shows once. A `shot` flies a copy of the model's node named `Shot` (hidden on the bot; put it at the muzzle, its front facing the model's front) to the point the attack hit, or straight ahead to its `range` when it hit nothing; every use shows one. |
 
 Name the clips after what the bot does. Every peer picks the clip from what the host already sends, so everyone
 sees the same one:

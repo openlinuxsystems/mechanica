@@ -22,6 +22,9 @@
     "clip_speeds": {
       "patrol": 0.98,
       "chase": 2.52
+    },
+    "effects": {
+      "tape": "shot"
     }
   },
   "raid_cost": 2,

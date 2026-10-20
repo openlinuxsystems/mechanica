@@ -71,6 +71,7 @@ public partial class BotModelView : Node3D
     private float _liftTarget;
     private double _lastEffect = double.NegativeInfinity;
     private readonly List<string> _effects = [];
+    private Node3D? _shot;
 
     /// <summary>The bot's type; its <see cref="Bot.Model"/> is the one shown.</summary>
     public Bot Type { get; init; } = null!;
@@ -124,6 +125,10 @@ public partial class BotModelView : Node3D
         _engagedColor = new Color(engaged.R, engaged.G, engaged.B);
         CollectGlows(_scene);
         CollectLegs(_scene);
+        // The shot only shows while it flies (BotShot), as a copy.
+        _shot = _scene.FindChild(BotEffects.ShotNode, true, false) as Node3D;
+        if (_shot is not null)
+            _shot.Visible = false;
         _player = LiftBody.FindPlayer(_scene);
         if (_player is not null)
         {
@@ -167,11 +172,19 @@ public partial class BotModelView : Node3D
             PlayOneShot("lose_interest");
     }
 
-    /// <summary>The bot used <paramref name="attack"/>: plays its clips in turn.</summary>
-    public void Attack(string attack)
+    /// <summary>
+    /// The bot used <paramref name="attack"/>, hitting <paramref name="hits"/> (world points): plays its clips in turn
+    /// and shows its effect.
+    /// </summary>
+    public void Attack(string attack, IReadOnlyList<Vector3> hits)
     {
         if (Type.Attack(attack) is { } used)
-            ShowEffect(attack, used.Radius > 0 ? used.Radius : used.Range + Type.Radius);
+        {
+            if (Model.Effects.GetValueOrDefault(attack) == BotEffects.Shot)
+                ShowShots(hits, used.Range + Type.Radius);
+            else
+                ShowEffect(attack, used.Radius > 0 ? used.Radius : used.Range + Type.Radius);
+        }
         if (_view is { Dead: true } || !Model.Attacks.TryGetValue(attack, out var clips))
             return;
         var turn = _attackTurn.GetValueOrDefault(attack);
@@ -297,6 +310,18 @@ public partial class BotModelView : Node3D
         _effects.Add(kind);
         // Under the bot's world rather than the bot, so it plays on after the body is gone.
         BotEffect.Show(world, kind, GlobalPosition, radius);
+    }
+
+    // One shot to each point hit, or straight ahead to the attack's reach when it hit nothing. Not held back like the
+    // other effects: a fast shooter shows every shot.
+    private void ShowShots(IReadOnlyList<Vector3> hits, float reach)
+    {
+        if (_shot is null || GetParent()?.GetParent() is not { } world)
+            return;
+        _effects.Add(BotEffects.Shot);
+        var targets = hits.Count > 0 ? hits : [_shot.GlobalPosition - GlobalBasis.Z.Normalized() * reach];
+        foreach (var target in targets)
+            BotShot.Show(world, _shot, target);
     }
 
     // ---- Eye ----
