@@ -160,8 +160,7 @@
         "sounds": { "start": "engine_start", "loop": "engine_idle", "stop": "engine_sputter", "sputter": "engine_sputter", "rev": "engine_rev" },
         "settings": [
           {
-            "id": "gear", "name": "Power", "type": "number", "min": 1, "max": 5, "step": 1, "default": 3,
-            "presets": [{ "name": "Low", "value": 1 }, { "name": "Medium", "value": 3 }, { "name": "High", "value": 5 }]
+            "id": "gear", "name": "Power", "type": "number", "min": 1, "max": 5, "step": 1, "default": 3
           },
           { "id": "on", "name": "On", "type": "toggle", "default": true }
         ],
@@ -171,7 +170,17 @@
             { "id": "fuel_items", "name": "Gasoline in tanks", "kind": "number" },
             { "id": "rpm", "name": "Speed", "kind": "number", "unit": "rpm" },
             { "id": "torque", "name": "Torque", "kind": "number", "unit": "N·m" }
-          ]
+          ],
+          "lever": {
+            "setting": "gear", "off": "on", "fuel": "gasoline", "fuel_count": "fuel_items", "fuel_bar": "fuel",
+            "hint": "Drag to adjust engine power",
+            "upgrade_stats": [
+              { "name": "Bearings", "value": "outputs" },
+              { "name": "Power steps", "value": "settings.gear" },
+              { "name": "Torque", "value": "properties.torque", "show": "percent" },
+              { "name": "Mileage", "value": "properties.fuel_time", "show": "percent" }
+            ]
+          }
         },
         "display": {
           "status": "running",
@@ -196,8 +205,7 @@
               "logic": { "outputs": 4 },
               "settings": [
                 {
-                  "id": "gear", "name": "Power", "type": "number", "min": 1, "max": 7, "step": 1, "default": 4,
-                  "presets": [{ "name": "Low", "value": 1 }, { "name": "Medium", "value": 4 }, { "name": "High", "value": 7 }]
+                  "id": "gear", "name": "Power", "type": "number", "min": 1, "max": 7, "step": 1, "default": 4
                 },
                 { "id": "on", "name": "On", "type": "toggle", "default": true }
               ],
@@ -220,8 +228,7 @@
               "logic": { "outputs": 6 },
               "settings": [
                 {
-                  "id": "gear", "name": "Power", "type": "number", "min": 1, "max": 9, "step": 1, "default": 5,
-                  "presets": [{ "name": "Low", "value": 1 }, { "name": "Medium", "value": 5 }, { "name": "High", "value": 9 }]
+                  "id": "gear", "name": "Power", "type": "number", "min": 1, "max": 9, "step": 1, "default": 5
                 },
                 { "id": "on", "name": "On", "type": "toggle", "default": true }
               ],
@@ -244,8 +251,7 @@
               "logic": { "outputs": 8 },
               "settings": [
                 {
-                  "id": "gear", "name": "Power", "type": "number", "min": 1, "max": 11, "step": 1, "default": 6,
-                  "presets": [{ "name": "Low", "value": 1 }, { "name": "Medium", "value": 6 }, { "name": "High", "value": 11 }]
+                  "id": "gear", "name": "Power", "type": "number", "min": 1, "max": 11, "step": 1, "default": 6
                 },
                 { "id": "on", "name": "On", "type": "toggle", "default": true }
               ],
@@ -269,8 +275,7 @@
               "logic": { "outputs": 10 },
               "settings": [
                 {
-                  "id": "gear", "name": "Power", "type": "number", "min": 1, "max": 13, "step": 1, "default": 7,
-                  "presets": [{ "name": "Low", "value": 1 }, { "name": "Medium", "value": 7 }, { "name": "High", "value": 13 }]
+                  "id": "gear", "name": "Power", "type": "number", "min": 1, "max": 13, "step": 1, "default": 7
                 },
                 { "id": "on", "name": "On", "type": "toggle", "default": true }
               ],
@@ -322,8 +327,7 @@
         "sounds": { "start": "engine_start", "loop": "engine_idle", "stop": "engine_sputter", "sputter": "engine_sputter", "rev": "engine_rev" },
         "settings": [
           {
-            "id": "gear", "name": "Power", "type": "number", "min": 1, "max": 4, "step": 1, "default": 2,
-            "presets": [{ "name": "Low", "value": 1 }, { "name": "Medium", "value": 2 }, { "name": "High", "value": 4 }]
+            "id": "gear", "name": "Power", "type": "number", "min": 1, "max": 4, "step": 1, "default": 2
           },
           { "id": "on", "name": "On", "type": "toggle", "default": true }
         ],
@@ -369,8 +373,7 @@
         "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
         "settings": [
           {
-            "id": "gear", "name": "Speed", "type": "number", "min": 1, "max": 5, "step": 1, "default": 3,
-            "presets": [{ "name": "Low", "value": 1 }, { "name": "Medium", "value": 3 }, { "name": "High", "value": 5 }]
+            "id": "gear", "name": "Speed", "type": "number", "min": 1, "max": 5, "step": 1, "default": 3
           },
           { "id": "on", "name": "On", "type": "toggle", "default": true }
         ],
@@ -385,7 +388,17 @@
             { "id": "fuel_items", "name": "Battery packs", "kind": "number" },
             { "id": "rpm", "name": "Speed", "kind": "number", "unit": "rpm" },
             { "id": "torque", "name": "Torque", "kind": "number", "unit": "N·m" }
-          ]
+          ],
+          "lever": {
+            "setting": "gear", "off": "on", "fuel": "battery_pack", "fuel_count": "fuel_items", "fuel_bar": "fuel",
+            "hint": "Drag to adjust engine speed",
+            "upgrade_stats": [
+              { "name": "Bearings", "value": "outputs" },
+              { "name": "Speed steps", "value": "settings.gear" },
+              { "name": "Top speed", "value": "properties.speed", "show": "percent" },
+              { "name": "Battery life", "value": "properties.fuel_time", "show": "percent" }
+            ]
+          }
         },
         "sounds": { "start": "electric_start", "loop": "electric_whirr", "stop": "battery_drain", "sputter": "battery_drain", "rev": "electric_whirr" },
         "properties": {
@@ -404,8 +417,7 @@
               "logic": { "outputs": 4 },
               "settings": [
                 {
-                  "id": "gear", "name": "Speed", "type": "number", "min": 1, "max": 7, "step": 1, "default": 4,
-                  "presets": [{ "name": "Low", "value": 1 }, { "name": "Medium", "value": 4 }, { "name": "High", "value": 7 }]
+                  "id": "gear", "name": "Speed", "type": "number", "min": 1, "max": 7, "step": 1, "default": 4
                 },
                 { "id": "on", "name": "On", "type": "toggle", "default": true }
               ],
@@ -422,8 +434,7 @@
               "logic": { "outputs": 6 },
               "settings": [
                 {
-                  "id": "gear", "name": "Speed", "type": "number", "min": 1, "max": 9, "step": 1, "default": 5,
-                  "presets": [{ "name": "Low", "value": 1 }, { "name": "Medium", "value": 5 }, { "name": "High", "value": 9 }]
+                  "id": "gear", "name": "Speed", "type": "number", "min": 1, "max": 9, "step": 1, "default": 5
                 },
                 { "id": "on", "name": "On", "type": "toggle", "default": true }
               ],
@@ -445,8 +456,7 @@
               "logic": { "outputs": 8 },
               "settings": [
                 {
-                  "id": "gear", "name": "Speed", "type": "number", "min": 1, "max": 11, "step": 1, "default": 6,
-                  "presets": [{ "name": "Low", "value": 1 }, { "name": "Medium", "value": 6 }, { "name": "High", "value": 11 }]
+                  "id": "gear", "name": "Speed", "type": "number", "min": 1, "max": 11, "step": 1, "default": 6
                 },
                 { "id": "on", "name": "On", "type": "toggle", "default": true }
               ],
@@ -468,8 +478,7 @@
               "logic": { "outputs": 10 },
               "settings": [
                 {
-                  "id": "gear", "name": "Speed", "type": "number", "min": 1, "max": 13, "step": 1, "default": 7,
-                  "presets": [{ "name": "Low", "value": 1 }, { "name": "Medium", "value": 7 }, { "name": "High", "value": 13 }]
+                  "id": "gear", "name": "Speed", "type": "number", "min": 1, "max": 13, "step": 1, "default": 7
                 },
                 { "id": "on", "name": "On", "type": "toggle", "default": true }
               ],

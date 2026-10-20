@@ -58,9 +58,11 @@ you also need a gas container with gasoline in it; in Creative engines run witho
 5. **Wire it.** Take the Connect Tool. Drag from the seat's node to the engine's, then from the seat to
    the steering bearing: the seat now feeds both. Drag from the engine across all four wheel bearings;
    each one you pass over is linked.
-6. **Power.** Aim at the engine and press E. Low (1) is slow and easy to control; High (5) is the top
-   speed (`speed` in the engine's data). Each step is a fifth of it. The menu also shows the fuel left,
-   the gasoline in the tanks, the wheel speed in rpm and the torque.
+6. **Power.** Aim at the engine and press E, and drag its power lever (or turn the wheel over it). Step 1
+   is slow and easy to control; the top step is the top speed (`speed` in the engine's data), and each
+   step is an equal share of it. The bottom notch, Off, switches the engine off. Steps above LIMIT unlock
+   as you upgrade the engine, from the same menu (Upgrade, or U). The menu also shows the gasoline in the
+   tanks with what is left of the can burning now, the wheel speed in rpm and the torque.
 7. **Drive.** Look at the seat and press E. Sitting down starts the engine; W and S are the throttle, A and
    D steer. With no throttle the engine holds the wheels (its `brake`), so the car does not roll away. E
    stands you up, and getting up stops the engine.

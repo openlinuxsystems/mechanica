@@ -45,21 +45,7 @@
       "min": 1,
       "max": 5,
       "step": 1,
-      "default": 3,
-      "presets": [
-        {
-          "name": "Low",
-          "value": 1
-        },
-        {
-          "name": "Medium",
-          "value": 3
-        },
-        {
-          "name": "High",
-          "value": 5
-        }
-      ]
+      "default": 3
     },
     {
       "id": "on",
@@ -92,21 +78,7 @@
             "min": 1,
             "max": 7,
             "step": 1,
-            "default": 4,
-            "presets": [
-              {
-                "name": "Low",
-                "value": 1
-              },
-              {
-                "name": "Medium",
-                "value": 4
-              },
-              {
-                "name": "High",
-                "value": 7
-              }
-            ]
+            "default": 4
           },
           {
             "id": "on",
@@ -146,21 +118,7 @@
             "min": 1,
             "max": 9,
             "step": 1,
-            "default": 5,
-            "presets": [
-              {
-                "name": "Low",
-                "value": 1
-              },
-              {
-                "name": "Medium",
-                "value": 5
-              },
-              {
-                "name": "High",
-                "value": 9
-              }
-            ]
+            "default": 5
           },
           {
             "id": "on",
@@ -214,21 +172,7 @@
             "min": 1,
             "max": 11,
             "step": 1,
-            "default": 6,
-            "presets": [
-              {
-                "name": "Low",
-                "value": 1
-              },
-              {
-                "name": "Medium",
-                "value": 6
-              },
-              {
-                "name": "High",
-                "value": 11
-              }
-            ]
+            "default": 6
           },
           {
             "id": "on",
@@ -282,21 +226,7 @@
             "min": 1,
             "max": 13,
             "step": 1,
-            "default": 7,
-            "presets": [
-              {
-                "name": "Low",
-                "value": 1
-              },
-              {
-                "name": "Medium",
-                "value": 7
-              },
-              {
-                "name": "High",
-                "value": 13
-              }
-            ]
+            "default": 7
           },
           {
             "id": "on",
@@ -372,7 +302,35 @@
         "kind": "number",
         "unit": "N·m"
       }
-    ]
+    ],
+    "lever": {
+      "setting": "gear",
+      "off": "on",
+      "fuel": "battery_pack",
+      "fuel_count": "fuel_items",
+      "fuel_bar": "fuel",
+      "hint": "Drag to adjust engine speed",
+      "upgrade_stats": [
+        {
+          "name": "Bearings",
+          "value": "outputs"
+        },
+        {
+          "name": "Speed steps",
+          "value": "settings.gear"
+        },
+        {
+          "name": "Top speed",
+          "value": "properties.speed",
+          "show": "percent"
+        },
+        {
+          "name": "Battery life",
+          "value": "properties.fuel_time",
+          "show": "percent"
+        }
+      ]
+    }
   },
   "display": {
     "status": "running",

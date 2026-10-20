@@ -58,9 +58,10 @@ While you sit, the switches and buttons the seat is linked to take the hotbar's 
 one at once, Left click uses the first and Right click the second, wherever the part is on the creation. A
 button stays pressed while you hold its key, like E on it. A slot glows and pulses while its part is on.
 
-E on a part with settings opens its menu: sliders with a field for numbers (with preset buttons on some,
-like an engine's Low, Medium and High), drop-downs for choices, and what the part reports, such as an
-engine's fuel and speed. A sensor shows the cone it sees while its menu is open. A controller's frames
+E on a part with settings opens its menu: sliders with a field for numbers, drop-downs for choices, and
+what the part reports. An engine's menu is a power lever: drag it from Off up to the top step its level
+allows, with its fuel and speed beside it and its next upgrade (and the Component Kits it costs) under
+it. A sensor shows the cone it sees while its menu is open. A controller's frames
 take effect when you press Apply or close the menu, and Play previews them first. E on a logic gate
 switches it to the next mode and shows it for a moment; R with the Connect Tool opens its menu.
 
