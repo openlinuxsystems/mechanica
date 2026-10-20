@@ -349,6 +349,9 @@ public partial class ConnectTool : HandTool
         }
     }
 
+    /// <summary>Right click reverses a bearing or cancels a drag, once the player has the tool.</summary>
+    public override bool OwnsRightClick => Owns;
+
     /// <inheritdoc/>
     public override string HudText()
     {

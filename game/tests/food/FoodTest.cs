@@ -22,7 +22,8 @@ namespace Mechanica.Game.Tests;
 /// both machines; eating it plays the two bites (the held model goes from whole to one bite to two, then is gone and back)
 /// on the client's arms and on the body the host draws, heals once, and a second click while chewing eats nothing. A tomato
 /// seed planted in dry soil shows the tomato plant wilting, watered it picks up, ripe it is grown through to the end of its
-/// grow clip, and harvested it gives two tomatoes and one or two seeds while the plant sinks away.
+/// grow clip, and harvested it gives two tomatoes and one or two seeds while the plant sinks away. The carrot and the
+/// potato have the same bitten models in hand and plant clips.
 /// </summary>
 public partial class FoodTest : StagedTest
 {
@@ -207,6 +208,25 @@ public partial class FoodTest : StagedTest
             return true;
         });
         Add("and is gone after", _ => !IsInstanceValid(_sinking));
+        Add("every vanilla crop has its bitten food in hand and a plant that grows, wilts and sways", _ =>
+        {
+            var survival = _client.Main.Survival;
+            foreach (var crop in new[] { "tomato", "carrot", "potato" })
+            {
+                var food = survival.Catalog.FindDefinition("vanilla:" + crop);
+                var seed = survival.Catalog.FindDefinition("vanilla:" + crop + "_seed");
+                var held = food?.Held?.Mesh is { } mesh ? survival.Assets!.InstantiateScene(mesh, "vanilla") : null;
+                Check(held is not null && Enumerable.Range(0, 3).All(k => held.FindChild($"eat_{k}", true, false) is Node3D),
+                    $"the {crop} in hand has its whole and two bitten versions");
+                var plant = seed?.Seed?.Plant is { } path ? survival.Assets!.SceneOf("vanilla:" + crop + "_seed", path) : null;
+                var player = plant?.FindChildren("*", nameof(AnimationPlayer), true, false).OfType<AnimationPlayer>().FirstOrDefault();
+                Check(player is not null && new[] { "grow", "wilt", "sway" }.All(c => player.HasAnimation(c)),
+                    $"the {crop} plant has its grow, wilt and sway clips");
+                held?.Free();
+                plant?.Free();
+            }
+            return true;
+        });
         Add("a single seed packet on the ground is drawn big enough to see in the grass", frame =>
         {
             if (frame == 0)

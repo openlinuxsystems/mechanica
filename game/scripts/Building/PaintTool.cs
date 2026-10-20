@@ -189,6 +189,9 @@ public partial class PaintTool : HandTool
         return Reloading ? $"{line}\n{Loc.T("Reloading…")}" : count == 0 ? $"{line}\n{Loc.T("No paint: craft Paint Ammo at a Fabricator")}" : line;
     }
 
+    /// <summary>Right click takes paint off.</summary>
+    public override bool OwnsRightClick => true;
+
     /// <inheritdoc/>
     public override string HudText() => !Owns ? Loc.T("Paint Tool: craft one at a Fabricator to paint parts") :
         Loc.T("Paint Tool ({0})   {1} paint (drag for more)  {2} remove paint  {3} colours  {4} previous colour  {5} reload", Color, Key(InputActions.Primary), Key(InputActions.Secondary),

@@ -175,7 +175,7 @@ public partial class BotTest : StagedTest
         {
             var shared = new[] { "idle", "patrol", "chase", "fall", "alert", "lose_interest", "hit", "death", "jump", "land" };
             var vanilla = BotBook.Load(mods).All.Where(b => b.Model is not null && b.ModId == "vanilla").ToList();
-            Check(vanilla.Count >= 15, $"the five Scuttlers, three Rakehands, four Spoolers and three Threshers have models ({vanilla.Count})");
+            Check(vanilla.Count >= 16, $"the five Scuttlers, three Rakehands, four Spoolers, three Threshers and the Grazer have models ({vanilla.Count})");
             foreach (var type in vanilla)
             {
                 var view = BotModelView.For(type, _client.Main.Survival.Assets, default);
@@ -184,16 +184,22 @@ public partial class BotTest : StagedTest
                     continue;
                 AddChild(view);
                 var player = LiftBody.FindPlayer(view.Scene);
-                var missing = shared.Concat(type.Model!.Attacks.Values.SelectMany(c => c)).Where(c => player?.HasAnimation(c) != true).ToList();
+                var missing = shared.Concat(type.Model!.Attacks.Values.SelectMany(c => c)).Concat(type.Model.Idles.Select(i => i.Clip)).Where(c => player?.HasAnimation(c) != true).ToList();
                 var legs = type.QualifiedId switch
                 {
-                    "vanilla:thresher_tiller" => 4,
+                    "vanilla:thresher_tiller" or "vanilla:grazer" => 4,
                     _ when type.Family is "rakehand" or "spooler" or "thresher" => 2,
                     _ => 6,
                 };
                 Check(view.Legs == legs, $"{type.QualifiedId} has {legs} legs ({view.Legs})");
                 Check(missing.Count == 0, $"{type.QualifiedId} has every clip (missing {string.Join(", ", missing)})");
                 view.QueueFree();
+                for (var i = 0; i < type.Model.Variants.Count; i++)
+                {
+                    var coat = BotModelView.For(type, _client.Main.Survival.Assets, default, i + 1);
+                    Check(coat is not null && LiftBody.FindPlayer(coat.Scene) is { } p && shared.All(c => p.HasAnimation(c)), $"{type.QualifiedId}'s {type.Model.Variants[i]} loads with every clip");
+                    coat?.QueueFree();
+                }
             }
             return true;
         });

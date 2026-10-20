@@ -99,8 +99,14 @@
         "category": "consumable",
         "mass": 0.05,
         "stack_size": 50,
+        "icon": "textures/items/carrot_seed_icon.png",
         "visual": {
-          "color": "#c8a060"
+          "color": "#ffffff"
+        },
+        "held": {
+          "mesh": "meshes/items/carrot_seed.glb",
+          "offset": [-0.028, 0.062, -0.035],
+          "rotation": [0, 90, 90]
         },
         "sounds": {
           "pickup": "seed_pickup",
@@ -111,10 +117,12 @@
           "grow_time": 240,
           "yield": 2,
           "seeds": 1,
-          "value": 1
+          "value": 1,
+          "plant": "meshes/crops/carrot_plant.glb"
         },
         "script": "scripts/seed.lua"
-      }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/carrot_seed.glb" }]
     },
     {
       "file": "parts/potato_seed.json",
@@ -125,8 +133,14 @@
         "category": "consumable",
         "mass": 0.05,
         "stack_size": 50,
+        "icon": "textures/items/potato_seed_icon.png",
         "visual": {
-          "color": "#a08050"
+          "color": "#ffffff"
+        },
+        "held": {
+          "mesh": "meshes/items/potato_seed.glb",
+          "offset": [-0.028, 0.062, -0.035],
+          "rotation": [0, 90, 90]
         },
         "sounds": {
           "pickup": "seed_pickup",
@@ -137,10 +151,12 @@
           "grow_time": 300,
           "yield": 3,
           "seeds": 1,
-          "value": 1
+          "value": 1,
+          "plant": "meshes/crops/potato_plant.glb"
         },
         "script": "scripts/seed.lua"
-      }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/potato_seed.glb" }]
     },
     {
       "file": "parts/tomato_seed.json",
@@ -186,8 +202,15 @@
         "category": "consumable",
         "mass": 0.2,
         "stack_size": 20,
+        "icon": "textures/items/carrot_icon.png",
         "visual": {
-          "color": "#e8781e"
+          "color": "#ffffff"
+        },
+        "held": {
+          "mesh": "meshes/items/carrot_held.glb",
+          "offset": [-0.04, 0.066, 0.035],
+          "rotation": [-90, 0, 90],
+          "juice": "#ea8430"
         },
         "sounds": {
           "pickup": "pickup_produce",
@@ -197,7 +220,8 @@
         "properties": {
           "health": 10
         }
-      }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/carrot.glb" }]
     },
     {
       "file": "parts/potato.json",
@@ -208,8 +232,15 @@
         "category": "consumable",
         "mass": 0.3,
         "stack_size": 50,
+        "icon": "textures/items/potato_icon.png",
         "visual": {
-          "color": "#b8925a"
+          "color": "#ffffff"
+        },
+        "held": {
+          "mesh": "meshes/items/potato_held.glb",
+          "offset": [-0.04, 0.082, 0],
+          "rotation": [180, 0, 90],
+          "juice": "#d8c898"
         },
         "sounds": {
           "pickup": "pickup_produce",
@@ -219,7 +250,8 @@
         "properties": {
           "health": 8
         }
-      }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/potato.glb" }]
     },
     {
       "file": "parts/tomato.json",
