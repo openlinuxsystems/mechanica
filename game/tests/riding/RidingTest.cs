@@ -89,7 +89,11 @@ public partial class RidingTest : StagedTest
             var spread = _steps.Max() - _steps.Min();
             Check(Math.Abs(mean - Speed / Engine.PhysicsTicksPerSecond) < 0.01f,
                 $"A moves at the deck's speed ({mean * Engine.PhysicsTicksPerSecond:F2} m/s, deck {Speed} m/s)");
-            Check(spread < 0.01f, $"A moves the same each tick (steps vary by {spread * 1000:F1} mm)");
+            // A's steps follow the deck as A's client shows it, so they vary as much as its interpolation clock may skew (a
+            // busy machine runs the host's ticks unevenly, and the clock slows or speeds up the deck by up to 5% to keep up)
+            // and no more: a stall or a jump would vary them by a whole step.
+            var even = (float)(2 * Core.Net.InterpolationClock.MaxSkew + 0.02) * Speed / Engine.PhysicsTicksPerSecond;
+            Check(spread < even, $"A moves the same each tick, give or take the clock's skew (steps vary by {spread * 1000:F1} mm)");
             Check(_a.Main.PlayerSync.Corrections - _corrections <= 1, $"A's prediction held ({_a.Main.PlayerSync.Corrections - _corrections} corrections)");
             Check(_seenOff < 0.03f, $"B shows A on the deck where the host has them (off by at most {_seenOff:F3} m)");
             return true;
