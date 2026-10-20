@@ -1116,6 +1116,16 @@
       "file": "bots/spooler_blue.json",
       "template": "ranged",
       "set": {
+        "model": {
+          "mesh": "meshes/bots/spooler_blue.glb",
+          "attacks": {
+            "tape": ["tape_shot"]
+          },
+          "clip_speeds": {
+            "patrol": 0.98,
+            "chase": 2.52
+          }
+        },
         "name": "Blue Spooler",
         "description": "Shoots sticky tape from a distance. Common in warehouses.",
         "family": "spooler",
@@ -1205,6 +1215,17 @@
       "file": "bots/spooler_green.json",
       "base": "spooler_blue",
       "set": {
+        "model": {
+          "mesh": "meshes/bots/spooler_green.glb",
+          "attacks": {
+            "tape": null,
+            "bubble": ["bubble_shot"]
+          },
+          "clip_speeds": {
+            "patrol": 0.98,
+            "chase": 2.52
+          }
+        },
         "name": "Green Spooler",
         "description": "Fires bubble wrap: less damage, but whoever it hits is slowed down for a while.",
         "color": "#5fae3e",
@@ -1282,6 +1303,16 @@
       "file": "bots/spooler_yellow.json",
       "base": "spooler_blue",
       "set": {
+        "model": {
+          "mesh": "meshes/bots/spooler_yellow.glb",
+          "attacks": {
+            "tape": ["rapid_shot"]
+          },
+          "clip_speeds": {
+            "patrol": 0.98,
+            "chase": 2.52
+          }
+        },
         "name": "Yellow Spooler",
         "description": "Fires lighter tape, much faster.",
         "health": 50,
@@ -1304,6 +1335,16 @@
       "file": "bots/spooler_red.json",
       "base": "spooler_blue",
       "set": {
+        "model": {
+          "mesh": "meshes/bots/spooler_red.glb",
+          "attacks": {
+            "tape": ["heavy_shot"]
+          },
+          "clip_speeds": {
+            "patrol": 0.98,
+            "chase": 2.52
+          }
+        },
         "name": "Red Spooler",
         "description": "A long-range spooler whose heavy tape tears parts apart.",
         "health": 40,

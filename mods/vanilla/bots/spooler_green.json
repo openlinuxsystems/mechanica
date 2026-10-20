@@ -12,6 +12,18 @@
     "height": 1
   },
   "color": "#5fae3e",
+  "model": {
+    "mesh": "meshes/bots/spooler_green.glb",
+    "attacks": {
+      "bubble": [
+        "bubble_shot"
+      ]
+    },
+    "clip_speeds": {
+      "patrol": 0.98,
+      "chase": 2.52
+    }
+  },
   "raid_cost": 2,
   "attacks": [
     {
