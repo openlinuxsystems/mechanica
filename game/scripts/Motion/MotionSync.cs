@@ -127,7 +127,8 @@ public partial class MotionSync : Node, IMotionWorld
     public void SetJointMotor(Creation creation, JointLink joint, JointMotor motor)
     {
         var key = (creation.Id, joint.Connection.A);
-        if (_motors.Remove(key, out var old) && old.Applied is { } applied && IsInstanceValid(applied))
+        // A new drive takes over on the next step; until then the joint keeps the old one rather than running free.
+        if (_motors.Remove(key, out var old) && motor.IsFree && old.Applied is { } applied && IsInstanceValid(applied))
             EnableMotor(applied, false);
         if (!motor.IsFree)
             _motors[key] = new Motor(joint.Connection, motor);
