@@ -89,7 +89,12 @@ public static class GroundMaterial
         }
 
         void fragment() {
-            float w[8] = float[8](w0.x, w0.y, w0.z, w0.w, w1.x, w1.y, w1.z, w1.w);
+            // With multisampling, a pixel on a triangle's edge is shaded at the pixel centre, which can lie outside the
+            // triangle: its colour and weights are then extrapolated, far past 0..1 on the thin far-off triangles along
+            // the skyline. Clamp them, or pow() of a negative colour gives NaN and glow turns it into a white flash.
+            vec4 a = clamp(w0, 0.0, 1.0);
+            vec4 b = clamp(w1, 0.0, 1.0);
+            float w[8] = float[8](a.x, a.y, a.z, a.w, b.x, b.y, b.z, b.w);
             vec3 c = vec3(0.0);
             float total = 0.0;
             for (int i = 0; i < 8; i++) {
@@ -99,8 +104,9 @@ public static class GroundMaterial
                 }
             }
             // Ground no texture covers keeps the biome colour (sRGB vertex colour).
-            vec3 plain = mix(COLOR.rgb / 12.92, pow((COLOR.rgb + 0.055) / 1.055, vec3(2.4)), step(0.04045, COLOR.rgb));
-            ALBEDO = c + plain * max(0.0, 1.0 - total);
+            vec3 srgb = clamp(COLOR.rgb, 0.0, 1.0);
+            vec3 plain = mix(srgb / 12.92, pow((srgb + 0.055) / 1.055, vec3(2.4)), step(0.04045, srgb));
+            ALBEDO = c / max(total, 1.0) + plain * max(0.0, 1.0 - total);
             ROUGHNESS = 0.95;
         }
         """;
