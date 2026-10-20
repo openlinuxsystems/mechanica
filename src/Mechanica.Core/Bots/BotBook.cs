@@ -54,7 +54,33 @@ public sealed record BotWild(bool Water, int Count, float MinDistance, float Max
 /// <param name="EyeEngaged">Eye colour while engaged, <c>"#rrggbb"</c>.</param>
 /// <param name="Effects">Effect kind (<see cref="BotEffects"/>) by attack id or <c>death</c>.</param>
 public sealed record BotModel(string Mesh, IReadOnlyDictionary<string, IReadOnlyList<string>> Attacks, IReadOnlyDictionary<string, float> ClipSpeeds,
-    string EyeCalm, string EyeEngaged, IReadOnlyDictionary<string, string> Effects);
+    string EyeCalm, string EyeEngaged, IReadOnlyDictionary<string, string> Effects)
+{
+    /// <summary>Qualified paths of its other looks (<see cref="BotModelDefinition.Variants"/>).</summary>
+    public IReadOnlyList<string> Variants { get; init; } = [];
+
+    /// <summary>Clips it plays now and then while it stands calm.</summary>
+    public IReadOnlyList<BotIdle> Idles { get; init; } = [];
+
+    /// <summary>The shortest wait between idles, in s.</summary>
+    public float IdleMin { get; init; } = BotBook.DefaultIdleMin;
+
+    /// <summary>The longest wait between idles, in s.</summary>
+    public float IdleMax { get; init; } = BotBook.DefaultIdleMax;
+
+    /// <summary>The mesh bot <paramref name="botId"/> shows: <see cref="Mesh"/> or one of <see cref="Variants"/>, the same on every peer.</summary>
+    public string MeshFor(int botId)
+    {
+        var pick = (int)((uint)botId % (uint)(Variants.Count + 1));
+        return pick == 0 ? Mesh : Variants[pick - 1];
+    }
+}
+
+/// <summary>A checked idle clip (<see cref="BotIdleDefinition"/>).</summary>
+/// <param name="Clip">The clip.</param>
+/// <param name="Sound">Sound event it plays, or null.</param>
+/// <param name="Weight">How often it is picked against the others (above 0).</param>
+public sealed record BotIdle(string Clip, string? Sound, float Weight);
 
 /// <summary>The effects a bot model can show (<see cref="BotModelDefinition.Effects"/>).</summary>
 public static class BotEffects
@@ -155,6 +181,12 @@ public sealed class BotBook : IBotCatalog
 
     /// <summary>Default eye colour of a calm bot.</summary>
     public const string DefaultEyeCalm = "#2bff3a";
+
+    /// <summary>Default shortest wait between a model's idle clips, in s.</summary>
+    public const float DefaultIdleMin = 6f;
+
+    /// <summary>Default longest wait between a model's idle clips, in s.</summary>
+    public const float DefaultIdleMax = 14f;
 
     /// <summary>Default eye colour of an engaged bot.</summary>
     public const string DefaultEyeEngaged = "#ff1a0a";
@@ -418,10 +450,44 @@ public sealed class BotBook : IBotCatalog
             else
                 speeds[clip] = speed;
         }
+        var variants = new List<string>();
+        for (var i = 0; i < (m.Variants?.Count ?? 0); i++)
+        {
+            var path = $"$.model.variants[{i}]";
+            if (!AssetPath.TryParse(m.Variants![i], modId, AssetKind.Mesh, out var asset, out var error))
+                sink.Error(DiagnosticCodes.AssetPathInvalid, path, error);
+            else if (modDirectory is not null && asset.ModId == modId && !File.Exists(asset.Resolve(modDirectory)))
+                sink.Error(DiagnosticCodes.AssetMissing, path, $"mesh '{m.Variants[i]}' does not exist in the mod.");
+            else
+                variants.Add(asset.ToString());
+        }
+        var idles = new List<BotIdle>();
+        for (var i = 0; i < (m.Idles?.Count ?? 0); i++)
+        {
+            var idle = m.Idles![i];
+            var path = $"$.model.idles[{i}]";
+            KnownKeys.WarnUnknown(idle?.Extra, path, sink, typeof(BotIdleDefinition));
+            if (idle is null || string.IsNullOrWhiteSpace(idle.Clip))
+                sink.Error(code, $"{path}.clip", "clip is required.");
+            else if (idle.Sound is not null && string.IsNullOrWhiteSpace(idle.Sound))
+                sink.Error(code, $"{path}.sound", "sound must name a sound event (or be left out).");
+            else if (idle.Weight is { } w && !(w > 0 && float.IsFinite(w)))
+                sink.Error(code, $"{path}.weight", $"weight {w} must be above 0.");
+            else
+                idles.Add(new BotIdle(idle.Clip, idle.Sound, idle.Weight ?? 1f));
+        }
+        var (idleMin, idleMax) = (DefaultIdleMin, DefaultIdleMax);
+        if (m.IdleEvery is { } every)
+        {
+            if (every.Count != 2 || !(every[0] > 0) || !(every[1] >= every[0]) || !float.IsFinite(every[1]))
+                sink.Error(code, "$.model.idle_every", "idle_every must be [min, max] seconds, 0 < min <= max.");
+            else
+                (idleMin, idleMax) = (every[0], every[1]);
+        }
         if (sink.ErrorCount > errors)
             return null;
         return new BotModel(mesh!, clips, speeds, m.EyeCalm?.ToLowerInvariant() ?? DefaultEyeCalm, m.EyeEngaged?.ToLowerInvariant() ?? DefaultEyeEngaged,
-            effects);
+            effects) { Variants = variants, Idles = idles, IdleMin = idleMin, IdleMax = idleMax };
     }
 
     private static BotAttack? CheckAttack(BotAttackDefinition a, string path, string family, DiagnosticSink sink)

@@ -128,6 +128,9 @@ how the bot looks: the host still moves and hits with the bot's capsule (`size`)
 | `clip_speeds` | `{clip: m/s}` | none | Ground speed at which a walking clip plays at normal speed. The clip speeds up and slows down with the bot, so its feet do not slide. |
 | `eye_calm` | `"#rrggbb"` | `#2bff3a` (green) | Colour of its glowing (emissive) materials while calm. |
 | `eye_engaged` | `"#rrggbb"` | `#ff1a0a` (red) | The same while engaged (`bot.engage()`, section 4). |
+| `variants` | `[path, …]` | none | Other looks of the same rig (coats, paint). Each bot shows `mesh` or one of these, picked from its id, so every peer sees the same one. |
+| `idles` | `[{clip, sound, weight}, …]` | none | Clips it plays now and then while it stands calm (grazing, a look round). `sound` is a sound event played with it on each peer (optional); `weight` is how often it is picked against the others (default 1). |
+| `idle_every` | `[min, max]` | `[6, 14]` | Seconds between idles, picked at random in this range. |
 | `effects` | `{attack id or "death": effect}` | none | An effect every peer sees when it uses the attack or dies: `explosion` (a fireball, flames, smoke, sparks and flying scrap), `shockwave` (a ring rippling over the ground with dust and stones) or `shot` (attacks only). An explosion or shockwave is as big as the attack's `radius` (its `range` for a melee or ranged attack; a death uses its largest area attack), and one shows at a time, so a blast that kills its bot shows once. A `shot` flies a copy of the model's node named `Shot` (hidden on the bot; put it at the muzzle, its front facing the model's front) to the point the attack hit, or straight ahead to its `range` when it hit nothing; every use shows one. |
 
 Name the clips after what the bot does. Every peer picks the clip from what the host already sends, so everyone
@@ -154,7 +157,9 @@ the ground, on slopes and on creations alike.
 
 Vanilla's five Scuttlers are made by [`tools/scuttler/build_scuttler.py`](../tools/scuttler/build_scuttler.py), a
 Blender script you can copy for a rig of the same shape. They share one rig and differ in paint, size and one
-signature piece (`--variant blue` builds just one). In a batch, a bot whose `base` has a model inherits its
+signature piece (`--variant blue` builds just one). The Grazer ([`tools/grazer/build_grazer.py`](../tools/grazer/build_grazer.py))
+is a four-legged animal with three coats as `variants`, a jaw it grazes and chews with as `idles`, and spare clips
+(`eat`, `happy`, `lie_down`, `sleep`, `get_up`) for husbandry. In a batch, a bot whose `base` has a model inherits its
 `attacks` map too, so set the base's attack ids to `null` in its own map (`"whip": null`), as the Blue, Yellow,
 Red and Seed Scuttlers do.
 

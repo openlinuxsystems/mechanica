@@ -33,6 +33,9 @@ public partial class BotBody : CharacterBody3D
     /// <summary>Where its model loads from; null shows the placeholder.</summary>
     public PartAssets? Assets { get; init; }
 
+    /// <summary>Plays its model's idle sounds; null keeps it quiet.</summary>
+    public Sound.SoundSync? Sounds { get; init; }
+
     /// <summary>Its animated model, or null when it shows the placeholder.</summary>
     public BotModelView? Model { get; private set; }
 
@@ -46,7 +49,9 @@ public partial class BotBody : CharacterBody3D
     {
         var shape = new CapsuleShape3D { Radius = Type.Radius, Height = Type.Height };
         AddChild(new CollisionShape3D { Shape = shape, Position = new Vector3(0, Type.Height / 2, 0) });
-        Model = BotModelView.For(Type, Assets, GetRid());
+        Model = BotModelView.For(Type, Assets, GetRid(), BotId);
+        if (Model is not null)
+            Model.PlaySound = sound => Sounds?.PlayLocal(sound, Type.ModId, GlobalPosition + new Vector3(0, Type.Height / 2, 0));
         if (Model is not null)
             AddChild(Model);
         else

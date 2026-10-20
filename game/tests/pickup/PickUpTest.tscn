@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://tests/pickup/PickUpTest.cs" id="1_pickup"]
+
+[node name="PickUpTest" type="Node"]
+script = ExtResource("1_pickup")

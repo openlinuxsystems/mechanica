@@ -18,7 +18,7 @@ namespace Mechanica.Game.Building;
 /// clicking places one where the crosshair points instead, where it stays (UI spec §1, §9: food, buckets, glowsticks).
 /// A weapon with an <c>aim</c> section aims while right click is held: the view zooms in a little and the crosshair
 /// tightens (<c>AimItem</c>); left click fires, and so does letting go when it fires on release. Reload (R) runs
-/// <c>ReloadItem</c>. The rounds loaded and the ammo carried show on its hotbar slot and the HUD (UI spec §10).
+/// <c>ReloadItem</c>. Any other item's right click picks parts up, as with an empty hand (<see cref="HandTool.PickUp"/>). The rounds loaded and the ammo carried show on its hotbar slot and the HUD (UI spec §10).
 /// <list type="bullet">
 /// <item>An item with a script (food, weapons, seeds, water; chunk 20b): <c>UseItem</c> where the crosshair
 /// points, with the part under it when that is in reach (the soil a seed is planted in). Its Lua decides
@@ -116,6 +116,9 @@ public partial class ItemTool : HandTool
     /// <inheritdoc/>
     public override bool Aiming => _aiming;
 
+    /// <summary>An item that aims (an <c>aim</c> section: the weapons) keeps right click; any other picks parts up with it.</summary>
+    public override bool OwnsRightClick => AimOfHand is not null;
+
     /// <summary>How the item in hand aims, or null when it does not.</summary>
     public AimDefinition? AimOfHand => InHand is { } hand ? Survival.Catalog.FindDefinition(hand.Item)?.Aim : null;
 
@@ -195,8 +198,7 @@ public partial class ItemTool : HandTool
         var hand = InHand;
         var name = hand is null ? Loc.T("nothing usable") : $"{Survival.Catalog.FindDefinition(hand.Item)?.Name ?? hand.Item} x{hand.Count}";
         var line = Loc.T("Item: {0}   {1} use  {2} drop one  hold {3} + {1} place", name, Key(InputActions.Primary), Key(InputActions.Drop), Key(InputActions.ForceBuild));
-        if (AimOfHand is not null)
-            line += "  " + Loc.T("hold {0} aim", Key(InputActions.Secondary));
+        line += "  " + (OwnsRightClick ? Loc.T("hold {0} aim", Key(InputActions.Secondary)) : PickUpHint);
         if (hand is not null && Survival.CounterOf(hand.Item) is { Max: not null })
             line += "  " + Loc.T("{0} reload", Key(InputActions.Reload));
         return line + Status;

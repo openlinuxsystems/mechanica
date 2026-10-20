@@ -321,6 +321,9 @@ public partial class WeldTool : HandTool
         square.GlobalTransform = frame * new Transform3D(basis, face.CentreMetres.ToGodot() + normal * 0.004f);
     }
 
+    /// <summary>Right click clears the selection.</summary>
+    public override bool OwnsRightClick => true;
+
     /// <inheritdoc/>
     public override string HudText()
     {
