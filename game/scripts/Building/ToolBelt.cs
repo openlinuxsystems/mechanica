@@ -254,6 +254,23 @@ public partial class ToolBelt : Node
         GetViewport().SetInputAsHandled();
     }
 
+    /// <summary>
+    /// Tosses the stack hotbar slot <paramref name="slot"/> stands for on the ground in front of the player (it was dragged
+    /// off the bar over the world): the player's largest stack of its item, which lands as a pile anyone can pick up. The
+    /// slot empties once none is left. False for a tool, an item the player does not carry, or in Creative, where the
+    /// bar holds no stacks.
+    /// </summary>
+    public bool TossSlot(int slot)
+    {
+        if (Slots[slot] is not { } item || HotbarTools.IsTool(item) || Survival.Own?.Mode == Core.Survival.GameMode.Creative
+            || Inventory.Own is not { } own || own.Items.Where(s => s.Item == item).OrderByDescending(s => s.Count).FirstOrDefault() is not { } stack)
+            return false;
+        Actions.Request(Core.Survival.SurvivalActions.DropItems, new Core.Survival.DropItemsArgs(stack.Slot));
+        if (own.Count(item) <= stack.Count)
+            Hotbar?.Set(slot, null);
+        return true;
+    }
+
     /// <summary>Picks hotbar slot <paramref name="slot"/> (0 to 9) and puts what it holds in hand.</summary>
     public void Select(int slot)
     {

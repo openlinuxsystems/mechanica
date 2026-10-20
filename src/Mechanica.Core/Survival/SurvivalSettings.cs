@@ -82,6 +82,9 @@ public sealed record SurvivalSettings
     /// <summary>How far from a player's eyes items on the ground can be picked up, in metres.</summary>
     public float PickupReach { get; init; } = 3f;
 
+    /// <summary>How far ahead of a player's feet items they toss out of an item window land, in metres.</summary>
+    public float TossDistance { get; init; } = 1.5f;
+
     /// <summary>Seconds items lie on the ground before they are gone.</summary>
     public float DropLifetime { get; init; } = 900f;
 
@@ -159,6 +162,7 @@ public sealed record SurvivalSettings
             throw new FormatException($"low_health must be 0 or more and under 1 (got {LowHealth}).");
         Positive(Reach, "reach");
         Positive(PickupReach, "pickup_reach");
+        Positive(TossDistance, "toss_distance");
         Positive(DropLifetime, "drop_lifetime");
         if (MaxDrops < 1)
             throw new FormatException($"max_drops must be 1 or more (got {MaxDrops}).");

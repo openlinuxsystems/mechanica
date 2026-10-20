@@ -6,6 +6,7 @@
   "low_health": 0.25,
   "reach": 7.5,
   "pickup_reach": 3,
+  "toss_distance": 1.5,
   "drop_lifetime": 900,
   "max_drops": 256,
   "drop_inventory_on_death": true,

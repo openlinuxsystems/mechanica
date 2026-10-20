@@ -647,9 +647,9 @@
       "kind": "action",
       "group": "survival",
       "scope": "play",
-      "description": "Putting items on the ground. Arguments of DropItems: put items from a slot on the ground in front of the caller.",
+      "description": "Putting items on the ground. Arguments of DropItems: put items from a slot on the ground in front of the caller. Without At they are tossed: they fly from the caller's hand in a short arc and land TossDistance ahead (dragging a stack out of an item window, UI spec §3).",
       "params": {
-        "description": "Arguments of DropItems: put items from a slot on the ground in front of the caller.",
+        "description": "Arguments of DropItems: put items from a slot on the ground in front of the caller. Without At they are tossed: they fly from the caller's hand in a short arc and land TossDistance ahead (dragging a stack out of an item window, UI spec §3).",
         "type": "object",
         "properties": {
           "slot": {
@@ -678,6 +678,53 @@
                 "minItems": 3,
                 "maxItems": 3,
                 "description": "[x, y, z]"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "from": {
+            "description": "The inventory the slot is in (a container in reach, like MoveItems); null is the caller's own.",
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "player": {
+                    "description": "Peer id of the player whose inventory it is.",
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "creation": {
+                    "description": "Creation holding the part.",
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "part": {
+                    "description": "Part id inside that Creation.",
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "additionalProperties": false
               },
               {
                 "type": "null"
