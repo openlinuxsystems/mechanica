@@ -867,6 +867,7 @@
     "Yes": "Yes",
     "You died.\nRespawn in {0} s": "You died.\nRespawn in {0} s",
     "You died.\n[{0}] respawn at {1}": "You died.\n[{0}] respawn at {1}",
+    "You have no {0}.": "You have no {0}.",
     "You have none left": "You have none left",
     "You have unsaved changes. Discard them?": "You have unsaved changes. Discard them?",
     "You play as this character in this world. Every character moves and plays the same.": "You play as this character in this world. Every character moves and plays the same.",

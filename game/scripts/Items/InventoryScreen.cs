@@ -78,6 +78,9 @@ public partial class InventoryScreen : CanvasLayer
     /// <summary>True while the screen is up (from the moment it starts fading in until it starts fading out).</summary>
     public bool IsOpen => _shown;
 
+    /// <summary>The last refusal or error shown, or empty.</summary>
+    public string Status => _status.Text;
+
     /// <summary>The tab shown.</summary>
     public InventoryTab Tab => _tab;
 
@@ -323,8 +326,9 @@ public partial class InventoryScreen : CanvasLayer
     }
 
     /// <summary>
-    /// Drops <paramref name="drag"/> on <paramref name="slot"/> of <paramref name="where"/>: a stack moves there, a
-    /// hotbar slot empties, and in Creative a listed item fills the slot with a stack.
+    /// Drops <paramref name="drag"/> on <paramref name="slot"/> of <paramref name="where"/>: a stack moves there, and in
+    /// Creative a listed item fills the slot with a stack. A hotbar slot dropped on the player's inventory empties; dropped
+    /// on a container it stocks the container with that item (see <see cref="StockFromHotbar"/>).
     /// </summary>
     public void Drop(ItemDrag drag, InventoryRef where, int slot)
     {
@@ -336,13 +340,37 @@ public partial class InventoryScreen : CanvasLayer
         }
         else if (drag.HotbarSlot is { } bar)
         {
-            Hotbar?.Set(bar, null);
+            if (where.IsPlayer)
+                Hotbar?.Set(bar, null);
+            else
+                StockFromHotbar(drag.Entry, where, slot);
         }
         else if (where.IsPlayer && Inventory.Settings!.AllowGive && !HotbarTools.IsTool(drag.Entry))
         {
             Send(InventoryActions.GiveItems, new GiveItemsArgs(drag.Entry, Math.Max(1, Catalog.FindDefinition(drag.Entry)?.StackSize ?? 1)));
         }
         Refresh();
+    }
+
+    /// <summary>
+    /// Puts the item a hotbar slot names into <paramref name="slot"/> of a container: in Creative a full stack made from
+    /// nothing, in Survival the player's own stack of it. The hotbar slot keeps its item.
+    /// </summary>
+    public void StockFromHotbar(string item, InventoryRef where, int slot)
+    {
+        if (HotbarTools.IsTool(item))
+            return;
+        // The game mode decides (a joined client's own settings do not know it); the host checks the give anyway.
+        if (Creative)
+        {
+            Send(InventoryActions.GiveItems, new GiveItemsArgs(item, Math.Max(1, Catalog.FindDefinition(item)?.StackSize ?? 1), where));
+            return;
+        }
+        var me = InventoryRef.OfPlayer(Inventory.Session.LocalPeer);
+        if (Inventory.Own?.Items.Where(s => s.Item == item).OrderByDescending(s => s.Count).FirstOrDefault() is { } stack)
+            Send(InventoryActions.MoveItems, new MoveItemsArgs(me, stack.Slot, where, slot));
+        else
+            _status.Text = Loc.T("You have no {0}.", Loc.Mod(ItemName(item)));
     }
 
     private void DropOnWindow(Variant data)
