@@ -116,15 +116,27 @@ def settler_shack(o=(0, 0, 0), yaw=0, name="settler", seed=3, garden=True):
     K.torus("pipe_arch2", R + 0.35, 0.16, M(SIGNAL, wear=0.5), loc=(0, L / 2 - 1.2, 0), rot=(90, 0, 0), arc=180, parent=P)
     # crates and barrels by the door
     K.box("crate", (0.9, 0.9, 0.8), wood, loc=(2.6, -L / 2 - 1.0, 0.4), rot=(0, 0, 12), bev=0.05, parent=P)
-    K.cyl("barrel", 0.4, 1.1, M(SEA), loc=(-2.9, -L / 2 - 0.8, 0.55), parent=P)
-    # trade counter: the friendly farmer works from here
-    FR.framed_box(P, "booth", (-3.6, -L / 2 - 1.2, 1.25), (2.6, 2.0, 2.5), M(SEA, wear=0.6), M(BONE, wear=0.5), fw=0.12)
-    K.box("booth_window", (2.0, 0.3, 1.0), K.mat("boothin", "#1e1b17", rough=0.9), loc=(-3.6, -L / 2 - 2.15, 1.65), bev=0.02, parent=P)
+    K.cyl("barrel", 0.4, 1.1, M(SEA), loc=(-1.75, -L / 2 - 0.6, 0.55), parent=P)
+    # trade counter: an open stall the friendly farmer stands in (the crash site's npc marker), behind the counter
+    sea, bone = M(SEA, wear=0.6), M(BONE, wear=0.5)
+    bx, by = -3.6, -L / 2 - 1.2  # stall centre; 2.6 m wide, 2.0 m deep, 2.5 m tall
+    FR.framed_box(P, "booth_back", (bx, by + 0.94, 1.25), (2.6, 0.12, 2.5), sea, bone, fw=0.12)
+    for sx in (-1, 1):
+        FR.framed_box(P, "booth_side", (bx + sx * 1.24, by, 1.25), (0.12, 2.0, 2.5), sea, bone, fw=0.12)
+    FR.framed_box(P, "booth_roof", (bx, by, 2.44), (2.6, 2.0, 0.12), sea, bone, fw=0.12)
+    FR.framed_box(P, "booth_front", (bx, by - 0.94, 0.525), (2.6, 0.12, 1.05), sea, bone, fw=0.12)
+    # inside: a shelf of jars on the back wall and a bare bulb
+    K.box("booth_shelf", (2.2, 0.3, 0.06), wood, loc=(bx, by + 0.72, 1.55), bev=0.01, parent=P)
+    for k in range(5):
+        K.cyl(f"jar{k}", 0.09, 0.24, M(rnd.choice(("#6fbf3a", "#c8423a", "#e0b530", "#4f9a93")), wear=0.1, scratches=0),
+              loc=(bx - 0.8 + k * 0.4, by + 0.72, 1.7), parent=P, bev=0.01)
+    K.sphere("booth_bulb", 0.1, glow("#ffe9a8", 14), loc=(bx, by, 2.2), parent=P)
+    K.point("booth_light", (bx, by, 2.1), WARM, 60, 0.1).parent = P
     K.box("counter", (2.4, 0.5, 0.1), K.mat("wood", WOOD, rough=0.8, grime=0.3, noise_scale=2.0), loc=(-3.6, -L / 2 - 2.4, 1.1), bev=0.02, parent=P)
     for k in range(7):  # striped awning
         K.box("awning", (0.42, 1.2, 0.05), M(BONE if k % 2 else BRICK, wear=0.3, scratches=0), loc=(-4.86 + k * 0.42, -L / 2 - 2.6, 2.45), rot=(-20, 0, 0), bev=0.01, parent=P)
-    for k, c in enumerate(("#6fbf3a", "#c8423a", "#e0b530")):  # seed packets on the counter
-        K.box("packet", (0.25, 0.08, 0.32), M(c, wear=0.1, scratches=0), loc=(-4.4 + k * 0.4, -L / 2 - 2.45, 1.32), bev=0.02, parent=P)
+    for k, (c, px) in enumerate((("#6fbf3a", -4.6), ("#c8423a", -4.3), ("#e0b530", -2.75))):  # seed packets at the counter's ends
+        K.box("packet", (0.25, 0.08, 0.32), M(c, wear=0.1, scratches=0), loc=(px, -L / 2 - 2.45, 1.32), bev=0.02, parent=P)
     if garden:
         garden_plot(P, (0, -L / 2 - 6.5, 0), rnd)
     return root

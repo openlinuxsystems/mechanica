@@ -660,6 +660,14 @@ PALETTE = {
     "boot_tan": ("#8a5a33", 0.6, 0.0),
     "goggle_dark": ("#2a2a2a", 0.5, 0.3),
     "lens_orange": ("#e8862a", 0.08, 0.0),
+    # farmer outfit
+    "skin_farmer": ("#b0754f", 0.55, 0.0),
+    "hair_grey": ("#8f8a82", 0.7, 0.0),
+    "flannel": ("#9b3b30", 0.9, 0.0),
+    "denim_overall": ("#3f5d84", 0.85, 0.0),
+    "straw": ("#d6b46c", 0.8, 0.0),
+    "hat_band": ("#5a3426", 0.8, 0.0),
+    "button": ("#e6dfcf", 0.4, 0.0),
     # female outfit
     "denim": ("#44628a", 0.85, 0.0),
     "denim_light": ("#5d7ca6", 0.85, 0.0),
@@ -2098,15 +2106,100 @@ def wrench(center, up, face_normal_hint, length, jaw, mat):
     return parts
 
 
+def build_farmer():
+    """The settler farmer at the crash site's shack (an npc character): grey-bearded, in a plaid shirt with its
+    sleeves rolled up, denim overalls and a straw hat; no goggles, gloves or pack."""
+    parts = []
+    hp, hgrid, hbvh = head_parts(False, "skin_farmer", "lips_m", "iris_m")
+    for p in hp:
+        p.m = ["hair_grey" if m == "brow" else m for m in p.m]
+    parts += hp
+    hair, _ = hair_cap_and_tufts(hgrid, hbvh, False, "hair_grey", seed=13)
+    parts += hair
+    parts += beard_parts(hgrid, "hair_grey")
+    parts.append(neck_part(0.056, 0.058, "skin_farmer"))
+    parts += straw_hat()
+
+    # --- shirt, with the overalls' body and bib painted over it -----------------------------------
+    torso, _ = grid_loft(_JACKET_KEYS, 22, 36, mat="flannel", ef=2.3, eb=2.5)
+
+    def overalls(c):
+        x, y, z = c
+        if z < 1.06 or (y < 0 and abs(x) < 0.105 + 0.02 * sstep(1.3, 1.06, z) and z < 1.33):
+            return "denim_overall"
+        return None
+    assign_mats(torso, overalls)
+    torso.skin(torso_weights).tagged("torso")
+    parts.append(torso)
+    tbvh = make_bvh(torso)
+    parts += collar(0.012, 1.455, 0.05, 0.074, 0.072, 0.5, "flannel", flare=0.6)
+    # shirt buttons above the bib, bib pocket and the bib's brass buttons
+    for z in (1.36, 1.41, 1.45):
+        parts.append(patch(tbvh, (0, 0, z), (0, 1, 0), (0.006, 0.003, 0.006), "button", lift=0.002).skin(torso_weights))
+    parts.append(patch(tbvh, (0.0, 0, 1.24), (0, 1, 0), (0.05, 0.004, 0.042), "denim_overall", lift=0.003).skin(torso_weights))
+    # straps from the bib over the shoulders, crossing at the back
+    for sx in (1, -1):
+        ctrl = [(np.array([sx * 0.085, -0.1, 1.30]), (0, 1, 0)), (np.array([sx * 0.095, -0.1, 1.38]), (0, 1, 0)),
+                (np.array([sx * 0.105, -0.07, 1.45]), (0, 1, -0.6)),
+                (np.array([sx * 0.108, -0.03, 1.48]), (0, 0, -1)), (np.array([sx * 0.104, 0.03, 1.48]), (0, 0, -1)),
+                (np.array([sx * 0.085, 0.07, 1.44]), (0, -1, -0.6)), (np.array([sx * 0.03, 0.1, 1.33]), (0, -1, 0)),
+                (np.array([-sx * 0.05, 0.1, 1.2]), (0, -1, 0)), (np.array([-sx * 0.09, 0.1, 1.08]), (0, -1, 0))]
+        parts.append(surface_strap(tbvh, ctrl, 0.03, 0.003, "denim_overall", out=0.002).skin(torso_weights))
+        parts.append(patch(tbvh, (sx * 0.085, 0, 1.31), (0, 1, 0), (0.013, 0.005, 0.013), "brass",
+                           lift=0.006).skin(torso_weights))
+
+    # --- sleeves rolled to the elbow, bare forearms and hands --------------------------------------
+    left = []
+    left.append(sleeve([(-0.18, 0.04, 0.04), (-0.03, 0.052, 0.05), (0.25, 0.058, 0.056), (0.55, 0.057, 0.055),
+                        (0.85, 0.055, 0.053), (1.0, 0.054, 0.052)], "flannel"))
+    c, t, out, fwd = arm_point(0.98)
+    roll = ring_band(c, 0.061, 0.059, 0.05, 0.012, "flannel", 22, axes=(fwd, norm(np.cross(t, fwd)), t))
+    left.append(roll.skin(chain_weights(["upper_arm_l", "forearm_l"])))
+    left.append(sleeve([(0.95, 0.047, 0.046), (1.2, 0.045, 0.043), (1.5, 0.041, 0.038), (1.75, 0.035, 0.032),
+                        (1.93, 0.031, 0.028)], "skin_farmer"))
+    left += glove("skin_farmer", "skin_farmer", "skin_farmer", "skin_farmer",
+                  [(-0.035, 0.031, 0.027), (-0.01, 0.031, 0.026)], fingerless=False)
+    parts += both_sides(left)
+
+    # --- overall legs and work boots ---------------------------------------------------------------
+    pel, _ = grid_loft([(0.84, 0.15, -0.1, 0.11, 0.005), (0.9, 0.168, -0.112, 0.12, 0.0),
+                        (0.96, 0.172, -0.116, 0.121, 0.0), (1.03, 0.168, -0.118, 0.118, 0.0)], 8, 36,
+                       mat="denim_overall", ef=2.3, eb=2.3)
+    parts.append(pel.skin(pelvis_weights).tagged("pelvis"))
+    legs = []
+    legs.append(trouser_leg([(-0.12, 0.088, 0.09), (0.1, 0.087, 0.089), (0.35, 0.082, 0.084), (0.65, 0.074, 0.075),
+                             (0.92, 0.069, 0.069), (1.05, 0.067, 0.067), (1.3, 0.066, 0.064), (1.55, 0.064, 0.063),
+                             (1.68, 0.067, 0.066), (1.76, 0.068, 0.067)], "denim_overall"))
+    # a patched knee
+    kc, kt, kout, kfwd = leg_point(1.0)
+    legs.append(soft_box(kc + kfwd * 0.064, (0.04, 0.012, 0.045), axes=(kout, kfwd, -kt), e=5, e2=5, segs=14,
+                         rings=6, mat="denim_light").skin("shin_l"))
+    legs += boot("boot_brown", "leather_mid", "leather_dark", "sole", "leather_dark", "lace")
+    parts += both_sides(legs)
+    return parts
+
+
+def straw_hat():
+    """A wide straw hat on the head: a round crown with a band, and a brim."""
+    c = HEAD_C
+    hat = [ellipsoid(c + (0, 0, 0.105), (0.106, 0.119, 0.072), segs=24, rings=12, mat="straw"),
+           ellipsoid(c + (0, 0, 0.066), (0.225, 0.235, 0.008), segs=32, rings=6, mat="straw"),
+           ring_band(c + (0, 0, 0.08), 0.106, 0.118, 0.024, 0.004, "hat_band", 26)]
+    for p in hat:
+        p.skin("head")
+    return hat
+
+
 # =====================================================================================================
 # Assembly and export
 # =====================================================================================================
 
-CHARACTERS = {"scrapper_male": lambda: build_male(), "scrapper_female": lambda: build_female()}
+CHARACTERS = {"scrapper_male": lambda: build_male(), "scrapper_female": lambda: build_female(),
+              "farmer": lambda: build_farmer()}
 
 
 # texture style and noise seed per character; atlas size per texture group (see character_textures.py)
-CHARACTER_STYLE = {"scrapper_male": ("male", 7), "scrapper_female": ("female", 11)}
+CHARACTER_STYLE = {"scrapper_male": ("male", 7), "scrapper_female": ("female", 11), "farmer": ("farmer", 13)}
 ATLASES = {"head": 1024, "torso": 1024, "arms": 1024, "legs": 1024, "feet": 512, "gear": 1024}
 PROP_ATLAS = 1024
 BUCKET_ATLAS = 1024

@@ -89,6 +89,25 @@ public class CharacterBookTests
     }
 
     [Fact]
+    public void NpcCharactersStandInTheWorldButNoPlayerPlaysThem()
+    {
+        using var mods = new TestMods().Mod("vanilla")
+            .File("vanilla", "meshes/a.gltf", Gltf(CharacterRig.Bones))
+            .File("vanilla", "characters/farmer.json", """{ "id": "farmer", "name": "Farmer", "mesh": "meshes/a.gltf", "npc": true, "order": -5 }""")
+            .File("vanilla", "characters/hero.json", """{ "id": "hero", "name": "Hero", "mesh": "meshes/a.gltf" }""");
+        var book = CharacterBook.Load(mods.Load());
+        Assert.Empty(book.Diagnostics);
+        Assert.Equal(["vanilla:hero"], book.All.Select(c => c.QualifiedId));
+        Assert.Equal("vanilla:hero", book.Default?.QualifiedId);
+        Assert.Null(book.Find("farmer"));
+        Assert.True(book.FindAny("farmer")?.Npc);
+        var dispatcher = new ActionDispatcher();
+        new CharacterActions(book).Register(dispatcher);
+        Assert.False(dispatcher.Dispatch(new ActionCaller(7, ActionSource.Player), CharacterActions.ChooseCharacter, """{ "character": "farmer" }""").Ok);
+        Assert.True(dispatcher.Dispatch(new ActionCaller(7, ActionSource.Player), CharacterActions.ChooseCharacter, """{ "character": "hero" }""").Ok);
+    }
+
+    [Fact]
     public void ChoosingIsOncePerPlayerAndSurvivesRestore()
     {
         using var mods = new TestMods().Mod("vanilla")

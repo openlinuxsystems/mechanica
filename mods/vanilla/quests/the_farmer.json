@@ -1,0 +1,62 @@
+{
+  "name": "The Farmer",
+  "summary": "Meet the settler who farms by the crash site.",
+  "requires": [
+    "getting_started"
+  ],
+  "steps": [
+    {
+      "id": "meet",
+      "text": "Talk to the farmer at his stall by the shack, northwest of the wreck.",
+      "objective": {
+        "type": "interact",
+        "poi": "crash_site",
+        "marker": "npc",
+        "ref": "farmer"
+      },
+      "dialogue": [
+        {
+          "speaker": "Logbook",
+          "text": "Life signs at a shack northwest of the wreck. One settler. Friendly."
+        }
+      ]
+    }
+  ],
+  "rewards": {
+    "items": [
+      {
+        "item": "carrot",
+        "count": 3
+      },
+      {
+        "item": "tomato",
+        "count": 3
+      },
+      {
+        "item": "carrot_seed",
+        "count": 4
+      },
+      {
+        "item": "scrap_wood",
+        "count": 10
+      },
+      {
+        "item": "scrap_metal",
+        "count": 10
+      }
+    ],
+    "reveal": [
+      "outpost"
+    ]
+  },
+  "outro": [
+    {
+      "speaker": "Farmer",
+      "text": "Walked out of that wreck on your own feet? Well, I'll be. Here, eat something, and take some seed and scrap."
+    },
+    {
+      "speaker": "Farmer",
+      "text": "The colony left Workshop Outposts all over these hills. Get one running and you can build near anything. I've marked the nearest on your map."
+    }
+  ]
+}

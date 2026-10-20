@@ -26,6 +26,12 @@ public sealed record CharacterDefinition
     public int? Order { get; init; }
 
     /// <summary>
+    /// True for a character that only stands in the world at a POI's <c>npc</c> marker (the farmer): it is never on the
+    /// picker and no player can play as it.
+    /// </summary>
+    public bool? Npc { get; init; }
+
+    /// <summary>
     /// Sound events for the names in <see cref="CharacterSounds.Names"/>, replacing their defaults. A bare
     /// id means this mod's event when it has one, otherwise vanilla's.
     /// </summary>

@@ -29,7 +29,7 @@ public class QuestTests
 
         Assert.Empty(book.Diagnostics);
         Assert.Equal(["vanilla:data_core_location", "vanilla:faction_contact", "vanilla:final_decision", "vanilla:first_farm",
-            "vanilla:first_vehicle", "vanilla:getting_started", "vanilla:workshop_outpost"], book.All.Select(q => q.QualifiedId));
+            "vanilla:first_vehicle", "vanilla:getting_started", "vanilla:the_farmer", "vanilla:workshop_outpost"], book.All.Select(q => q.QualifiedId));
         Assert.Equal(["vanilla:getting_started"], book.All.Where(q => q.Requires.Count == 0).Select(q => q.QualifiedId));
         Assert.Equal(64, book.Fingerprint.Length);
     }
@@ -83,7 +83,8 @@ public class QuestTests
     {
         var tracker = Tracker(out var dispatcher, out var said);
         _world.Site("vanilla:crash_site", Vector3.Zero, 80, ("fire", null, new(3, 0, 13)), ("fire", null, new(-6, 0, 29)),
-            ("fire", null, new(7, 0, 27)), ("item", "master_battery", new(-2, 0.5f, 12)), ("item", "logbook", new(2, 0.5f, 12)));
+            ("fire", null, new(7, 0, 27)), ("item", "master_battery", new(-2, 0.5f, 12)), ("item", "logbook", new(2, 0.5f, 12)),
+            ("npc", "farmer", new(-45, 0, -40)));
         _world.Site("vanilla:outpost", new(600, 0, 0), 40);
         _world.Site("vanilla:faction_outpost", new(0, 0, 900), 36, ("npc", "faction_envoy", new(0, 0, 897)));
         _world.Site("vanilla:ai_core_facility", new(-900, 0, 1100), 70, ("core", null, new(-900, 0, 1098)));
@@ -111,6 +112,18 @@ public class QuestTests
         Assert.Equal(2, _world.Given[(2, "vanilla:component_kit")]);
         Assert.Equal(2, _world.Given[(3, "vanilla:component_kit")]);
         Assert.Contains(said, d => d.Lines.Any(l => l.Text!.StartsWith("Power restored", StringComparison.Ordinal)));
+
+        // The Farmer: talking to him at his stall gives food, seed and scrap and reveals the Workshop Outposts.
+        Assert.Equal(QuestStatus.Active, tracker.State.Of("vanilla:the_farmer")!.Status);
+        Assert.DoesNotContain("vanilla:outpost", tracker.State.Revealed);
+        _world.Feet[2] = new Vector3(-45, 0, -42);
+        said.Clear();
+        Assert.True(Interact(dispatcher, 2).Ok);
+        Assert.True(tracker.State.IsDone("vanilla:the_farmer"));
+        Assert.Equal(3, _world.Given[(3, "vanilla:carrot")]);
+        Assert.Equal(10, _world.Given[(2, "vanilla:scrap_metal")]);
+        Assert.Contains("vanilla:outpost", tracker.State.Revealed);
+        Assert.Contains(said, d => d.Lines.Any(l => l.Speaker == "Farmer" && l.Text!.Contains("Workshop Outposts", StringComparison.Ordinal)));
 
         // Workshop Outpost: reach it, then order a craft.
         Assert.NotNull(tracker.State.Of("vanilla:workshop_outpost"));
