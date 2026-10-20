@@ -67,6 +67,8 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
             sink.Error(Code, "$.name", "name is required.");
         if (part.Category is null)
             sink.Error(Code, "$.category", $"category is required: one of {EnumList<PartCategory>()}.");
+        if (part.Tab == Items.InventoryTab.All)
+            sink.Error(Code, "$.tab", "tab names one tab: tools, blocks, interactive, parts or consumable (every item shows under All).");
 
         var placeable = part.IsPlaceable;
         var what = $"a {part.Category.ToString()?.ToLowerInvariant()} part";

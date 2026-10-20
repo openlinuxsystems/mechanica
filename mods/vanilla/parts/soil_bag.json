@@ -3,6 +3,7 @@
   "name": "Soil Bag",
   "description": "Place it on flat ground to spill a soil mound to plant seeds in. Hold Force build to set the bag down instead.",
   "category": "interactive",
+  "tab": "consumable",
   "mass": 20,
   "durability": 2,
   "friction": 0.8,

@@ -8,6 +8,7 @@
         "name": "Gasoline",
         "description": "A red can of fuel. Load it into a Gas Container: gas engines, the Scrap Gas Engine and thrusters burn it from their creation's containers. Flammable.",
         "category": "resource",
+        "tab": "consumable",
         "loose": true,
         "mass": 20,
         "durability": 2,
@@ -439,6 +440,7 @@
         "name": "Paint Ammo",
         "description": "A cartridge of paint for the Paint Tool. Each stroke of paint uses one.",
         "category": "resource",
+        "tab": "consumable",
         "mass": 0.1,
         "stack_size": 100,
         "visual": {
@@ -489,6 +491,7 @@
       "set": {
         "name": "Battery Pack",
         "category": "resource",
+        "tab": "consumable",
         "mass": 1,
         "stack_size": 10,
         "sounds": {
@@ -634,6 +637,7 @@
         "name": "Popper",
         "description": "Throw it and it pops, hurting everything close by.",
         "category": "weapon",
+        "tab": "consumable",
         "mass": 0.3,
         "stack_size": 10,
         "visual": {
@@ -685,6 +689,7 @@
         "name": "Soil Bag",
         "description": "Place it on flat ground to spill a soil mound to plant seeds in. Hold Force build to set the bag down instead.",
         "category": "interactive",
+        "tab": "consumable",
         "mass": 20,
         "durability": 2,
         "friction": 0.8,

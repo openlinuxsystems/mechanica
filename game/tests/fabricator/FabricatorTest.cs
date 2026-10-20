@@ -100,7 +100,7 @@ public partial class FabricatorTest : StagedTest
             Check(Mathf.Abs(card.Position.X - main.End.X - 12) < 1 && Mathf.Abs(card.Size.Y - main.Size.Y) < 1, "the card sits 12 px right of the window, as tall");
             Check(_screen.QueueCells == 2 && _screen.QueueRows.Count == 0, $"the queue strip shows the queue's 2 empty cells ({_screen.QueueCells})");
             // A tab shows when the station has a recipe under it (All always does); one without recipes is hidden.
-            var withRecipes = Enum.GetValues<InventoryTab>().Where(t => _screen.ListedRecipes.Any(r => InventoryTabs.Shows(t, Category(r))));
+            var withRecipes = Enum.GetValues<InventoryTab>().Where(t => _screen.ListedRecipes.Any(r => InventoryTabs.Shows(t, Definition(r), HotbarTools.IsTool(Output(r)))));
             Check(_screen.TabsShown.Contains(InventoryTab.All) && _screen.TabsShown.SequenceEqual(withRecipes), $"only tabs with recipes show ({string.Join(", ", _screen.TabsShown)})");
             Check(_screen.RecipeRows.All(r => !r.IsNew), "nothing is NEW the first time a station is opened");
             if (!_screen.StorageOpen)
@@ -122,7 +122,7 @@ public partial class FabricatorTest : StagedTest
             _screen.Search("");
             _screen.Filter(InventoryTab.Blocks);
             var blocks = _screen.ListedRecipes;
-            Check(blocks.Count > 0 && blocks.All(r => Category(r) == PartCategory.Block), $"Blocks lists only blocks ({blocks.Count})");
+            Check(blocks.Count > 0 && blocks.All(r => Definition(r)?.Category == PartCategory.Block), $"Blocks lists only blocks ({blocks.Count})");
             _screen.Filter(InventoryTab.All);
             Check(_screen.ListedRecipes.Count == all, "All lists everything again");
             return true;
@@ -284,8 +284,9 @@ public partial class FabricatorTest : StagedTest
             || found.Outputs.Any(o => o.Item.Contains(word, StringComparison.OrdinalIgnoreCase) || catalog.FindDefinition(o.Item)?.Name?.Contains(word, StringComparison.OrdinalIgnoreCase) == true);
     }
 
-    private PartCategory? Category(string recipe) =>
-        _client.Main.Build.Catalog.FindDefinition(_client.Main.Recipes!.Find(recipe)!.Outputs[0].Item)?.Category;
+    private string Output(string recipe) => _client.Main.Recipes!.Find(recipe)!.Outputs[0].Item;
+
+    private PartDefinition? Definition(string recipe) => _client.Main.Build.Catalog.FindDefinition(Output(recipe));
 
     private static bool Near(float a, float b) => Mathf.Abs(a - b) < 0.03f;
 

@@ -280,16 +280,16 @@ public partial class InventoryScreen : CanvasLayer
     }
 
     private bool Shows(string item) =>
-        InventoryTabs.Shows(_tab, Catalog.FindDefinition(item)?.Category, HotbarTools.IsTool(item));
+        InventoryTabs.Shows(_tab, Catalog.FindDefinition(item), HotbarTools.IsTool(item));
 
     private static string TabName(InventoryTab tab) => tab switch
     {
         InventoryTab.All => "All",
+        InventoryTab.Tools => "Tools",
         InventoryTab.Blocks => "Blocks",
         InventoryTab.Interactive => "Interactive",
-        InventoryTab.Tools => "Tools",
-        InventoryTab.Resources => "Resources",
-        _ => "Consumables",
+        InventoryTab.Parts => "Parts",
+        _ => "Consumable",
     };
 
     // Clicks: left picks up or puts down (on release, so a press that becomes a drag does neither), right picks up

@@ -94,6 +94,12 @@ public sealed record PartDefinition
     /// <summary>What kind of thing this is.</summary>
     public PartCategory? Category { get; init; }
 
+    /// <summary>
+    /// The inventory tab the item shows under when its category's (<see cref="Items.InventoryTabs.Default"/>) is wrong
+    /// for it: Gasoline is a resource you refuel with, so it goes under Consumable. Omitted uses the category's.
+    /// </summary>
+    public Items.InventoryTab? Tab { get; init; }
+
     /// <summary>Mass in kg.</summary>
     public float? Mass { get; init; }
 
