@@ -26,6 +26,9 @@ public sealed record CreationBodies(int CreationId, ushort Revision, int FirstBo
 /// are kept under a size limit (<see cref="Pack"/>): ENet drops a whole unreliable packet when any of
 /// its fragments is lost, so a packet that fits one datagram survives loss far better. Each packet stands
 /// alone, so losing one costs only the Bodies it carried for one tick, which interpolation covers.
+/// A state is <see cref="StateSize"/> bytes: the position as floats, the rotation as its three smallest
+/// components (15 bits each, about 0.005° apart) and the velocities, which only carry a Body on past a
+/// late packet, as half floats.
 /// </summary>
 /// <param name="Tick">Host physics tick the states belong to.</param>
 /// <param name="Creations">Runs of Body states.</param>
@@ -37,8 +40,17 @@ public sealed record BodySnapshot(uint Tick, IReadOnlyList<CreationBodies> Creat
     /// <summary>Bytes of a run before its states: creation id, revision, first body, state count.</summary>
     public const int RunHeaderSize = 4 + 2 + 2 + 1;
 
-    /// <summary>Bytes per Body state: position, rotation, linear and angular velocity as floats.</summary>
-    public const int StateSize = 12 + 16 + 12 + 12;
+    /// <summary>Bytes per Body state: position as floats, rotation in 6 bytes, linear and angular velocity as half floats.</summary>
+    public const int StateSize = 12 + RotationSize + 6 + 6;
+
+    private const int RotationSize = 6;
+
+    // Largest velocity component a half float carries (its largest finite value is 65504).
+    private const float MaxHalf = 65000f;
+
+    // The three smaller components of a unit quaternion lie within ±1/√2; each is stored in 15 bits over that range.
+    private const float SmallestRange = 0.70710678f;
+    private const int SmallestSteps = (1 << 15) - 1;
 
     /// <summary>Most runs one packet may hold.</summary>
     public const int MaxRuns = byte.MaxValue;
@@ -120,12 +132,9 @@ public sealed record BodySnapshot(uint Tick, IReadOnlyList<CreationBodies> Creat
             foreach (var state in run.Bodies)
             {
                 WriteVector(span, state.Position);
-                BinaryPrimitives.WriteSingleLittleEndian(span[12..], state.Rotation.X);
-                BinaryPrimitives.WriteSingleLittleEndian(span[16..], state.Rotation.Y);
-                BinaryPrimitives.WriteSingleLittleEndian(span[20..], state.Rotation.Z);
-                BinaryPrimitives.WriteSingleLittleEndian(span[24..], state.Rotation.W);
-                WriteVector(span[28..], state.LinearVelocity);
-                WriteVector(span[40..], state.AngularVelocity);
+                WriteRotation(span[12..], state.Rotation);
+                WriteHalves(span[18..], state.LinearVelocity);
+                WriteHalves(span[24..], state.AngularVelocity);
                 span = span[StateSize..];
             }
         }
@@ -134,7 +143,8 @@ public sealed record BodySnapshot(uint Tick, IReadOnlyList<CreationBodies> Creat
 
     /// <summary>
     /// Decodes a packet, or returns null when it is malformed: wrong length, a non-positive creation id,
-    /// non-finite numbers, or a rotation that is not close to unit length. Values are kept bit for bit.
+    /// non-finite numbers, or a rotation whose stored components cannot be the smallest three of a unit quaternion.
+    /// Positions are kept bit for bit; rotations and velocities to their stored precision.
     /// </summary>
     public static BodySnapshot? Decode(ReadOnlySpan<byte> bytes)
     {
@@ -158,15 +168,10 @@ public sealed record BodySnapshot(uint Tick, IReadOnlyList<CreationBodies> Creat
             var bodies = new BodyState[states];
             for (var j = 0; j < states; j++)
             {
-                var rotation = new Quaternion(
-                    BinaryPrimitives.ReadSingleLittleEndian(span[12..]),
-                    BinaryPrimitives.ReadSingleLittleEndian(span[16..]),
-                    BinaryPrimitives.ReadSingleLittleEndian(span[20..]),
-                    BinaryPrimitives.ReadSingleLittleEndian(span[24..]));
-                var state = new BodyState(ReadVector(span), rotation, ReadVector(span[28..]), ReadVector(span[40..]));
-                var length = rotation.Length();
-                if (!IsFinite(state.Position) || !IsFinite(state.LinearVelocity) || !IsFinite(state.AngularVelocity)
-                    || !float.IsFinite(length) || MathF.Abs(length - 1f) > 1e-3f)
+                if (ReadRotation(span[12..]) is not { } rotation)
+                    return null;
+                var state = new BodyState(ReadVector(span), rotation, ReadHalves(span[18..]), ReadHalves(span[24..]));
+                if (!IsFinite(state.Position) || !IsFinite(state.LinearVelocity) || !IsFinite(state.AngularVelocity))
                     return null;
                 bodies[j] = state;
                 span = span[StateSize..];
@@ -175,6 +180,66 @@ public sealed record BodySnapshot(uint Tick, IReadOnlyList<CreationBodies> Creat
         }
         return span.IsEmpty ? new BodySnapshot(tick, runs) : null;
     }
+
+    // Smallest three: which component is largest (2 bits), then the other three, 15 bits each, with the largest made
+    // positive (q and -q are the same rotation) so it can be worked out from them.
+    private static void WriteRotation(Span<byte> span, Quaternion q)
+    {
+        q = Quaternion.Normalize(q);
+        Span<float> c = [q.X, q.Y, q.Z, q.W];
+        var largest = 0;
+        for (var i = 1; i < 4; i++)
+        {
+            if (MathF.Abs(c[i]) > MathF.Abs(c[largest]))
+                largest = i;
+        }
+        var sign = c[largest] < 0 ? -1f : 1f;
+        ulong bits = (ulong)largest;
+        for (var i = 0; i < 4; i++)
+        {
+            if (i == largest)
+                continue;
+            var unit = Math.Clamp(sign * c[i] / SmallestRange * 0.5f + 0.5f, 0f, 1f);
+            bits = (bits << 15) | (ulong)MathF.Round(unit * SmallestSteps);
+        }
+        for (var i = 0; i < RotationSize; i++)
+            span[i] = (byte)(bits >> (8 * i));
+    }
+
+    private static Quaternion? ReadRotation(ReadOnlySpan<byte> span)
+    {
+        ulong bits = 0;
+        for (var i = 0; i < RotationSize; i++)
+            bits |= (ulong)span[i] << (8 * i);
+        var largest = (int)(bits >> 45) & 3;
+        Span<float> c = stackalloc float[4];
+        var sum = 0f;
+        for (var i = 3; i >= 0; i--)
+        {
+            if (i == largest)
+                continue;
+            c[i] = ((bits & (ulong)SmallestSteps) / (float)SmallestSteps - 0.5f) * 2f * SmallestRange;
+            sum += c[i] * c[i];
+            bits >>= 15;
+        }
+        // The largest of four squares adding to one is at least a quarter, so the rest add to at most three quarters.
+        if (sum > 0.751f)
+            return null;
+        c[largest] = MathF.Sqrt(1f - sum);
+        return Quaternion.Normalize(new Quaternion(c[0], c[1], c[2], c[3]));
+    }
+
+    private static void WriteHalves(Span<byte> span, Vector3 v)
+    {
+        BinaryPrimitives.WriteHalfLittleEndian(span, (Half)Math.Clamp(v.X, -MaxHalf, MaxHalf));
+        BinaryPrimitives.WriteHalfLittleEndian(span[2..], (Half)Math.Clamp(v.Y, -MaxHalf, MaxHalf));
+        BinaryPrimitives.WriteHalfLittleEndian(span[4..], (Half)Math.Clamp(v.Z, -MaxHalf, MaxHalf));
+    }
+
+    private static Vector3 ReadHalves(ReadOnlySpan<byte> span) => new(
+        (float)BinaryPrimitives.ReadHalfLittleEndian(span),
+        (float)BinaryPrimitives.ReadHalfLittleEndian(span[2..]),
+        (float)BinaryPrimitives.ReadHalfLittleEndian(span[4..]));
 
     private static void WriteVector(Span<byte> span, Vector3 v)
     {
