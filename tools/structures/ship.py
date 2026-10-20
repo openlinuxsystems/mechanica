@@ -125,6 +125,47 @@ def torn_end(P, y, dirn, hm, gm, rnd):
                 rot=(rnd.uniform(0, 90), rnd.uniform(0, 90), 0), arc=200, parent=P)
 
 
+def nacelle(P, c, hm, gm):
+    """An engine nacelle along y centred on c: banded cylinder, nozzle ring and a cyan core at the back (-y)."""
+    x, y, z = c
+    K.cyl("nacelle", 1.6, 6.5, hm, loc=(x, y, z), rot=(90, 0, 0), bev=0.06, parent=P)
+    for k in range(3):
+        K.cyl("nacelle_band", 1.66, 0.3, gm, loc=(x, y + 2.1 - k * 1.8, z), rot=(90, 0, 0), bev=0.04, parent=P)
+    K.torus("nozzle", 1.35, 0.25, gm, loc=(x, y - 3.3, z), rot=(90, 0, 0), parent=P)
+    K.cyl("nozzle_core", 1.2, 0.12, glow(CYAN, 2.0), loc=(x, y - 3.15, z), rot=(90, 0, 0), bev=0, parent=P)
+
+
+def torn_stub(P, c, gm, rnd):
+    """Jagged plates and copper guts where something was torn off a pylon, facing -x."""
+    x, y, z = c
+    cu = K.mat("copper", COPPER, rough=0.35, metal=0.8, wear=0.3)
+    for k in range(6):
+        K.box("stub_plate", (0.08, rnd.uniform(0.4, 1.0), rnd.uniform(0.3, 0.7)), gm,
+              loc=(x - rnd.uniform(0.0, 0.25), y + rnd.uniform(-1.2, 1.2), z + rnd.uniform(-0.3, 0.3)), rot=(rnd.uniform(-25, 25), 0, rnd.uniform(-30, 30)), bev=0.01, parent=P)
+    for k in range(3):
+        K.cyl("stub_cable", 0.07, 0.6, cu, loc=(x - 0.25, y - 0.6 + k * 0.6, z + rnd.uniform(-0.2, 0.2)), rot=(0, 90 + rnd.uniform(-20, 20), 0), bev=0, parent=P)
+
+
+def lost_nacelle(name="nacelle", seed=13):
+    """The port nacelle that tore off in flight, lying where it fell: origin on the ground under its middle, burnt and
+    dented, with its pylon stump and copper guts at the torn side (+x)."""
+    rnd = random.Random(seed)
+    root = K.link(bpy.data.objects.new(name, None))
+    hm = M("#4c5159", metal=0.35, rough=0.6, wear=0.7, grime=0.6)
+    gm = M("#2f343b", metal=0.4, rough=0.45, grime=0.4)
+    body = K.link(bpy.data.objects.new("nacelle_body", None))
+    body.parent = root
+    body.location = (0, 0, 1.45)
+    body.rotation_euler = (math.radians(4), math.radians(-12), 0)  # rolled onto its side, nose dug in a little
+    nacelle(body, (0, 0, 0), hm, gm)
+    FR.framed_box(body, "pylon_stump", (1.75, 0.0, 0.0), (0.6, 2.4, 0.8), hm, gm, fw=0.08)
+    torn_stub(body, (2.1, 0.0, 0.0), gm, rnd)
+    soot = K.mat("soot", "#1d1b19", rough=1.0)
+    for k in range(5):
+        K.sphere("soot", rnd.uniform(0.5, 0.9), soot, loc=(rnd.uniform(-1.2, 1.2), rnd.uniform(-2.5, 2.5), 1.6 + rnd.uniform(-0.2, 0.3)), scale=(1, 1, 0.12), parent=body)
+    return root
+
+
 def bunk(P, loc, yaw=0):
     x, y, z = loc
     fr, mt = M(GUNMETAL, metal=0.5), K.mat("mattress", "#4f6b62", rough=0.9, ao=0.4)
@@ -170,9 +211,10 @@ def cargo_crate(P, loc, yaw, kind, rnd):
         K.box("crate", (1.0, 0.8, 0.8), K.mat("wood", WOOD, rough=0.8, grime=0.3, noise_scale=2.0), loc=(x, y, z + 0.4), rot=(0, 0, yaw), bev=0.04, parent=P)
 
 
-def salvager_ship(o=(0, 0, 0), yaw=0, name="ship", seed=11, scar=True, fires=True, game=False):
+def salvager_ship(o=(0, 0, 0), yaw=0, name="ship", seed=11, scar=True, fires=True, game=False, nacelles=False):
     """The wreck under an empty: its 'fore' and 'aft' children are the two sections. game leaves out what the game
-    places itself (the scar is ground paint, the fires, loot crates and scrap piles are POI markers, the debris)."""
+    places itself (the scar is ground paint, the fires, loot crates and scrap piles are POI markers, the debris).
+    The port nacelle is gone (see lost_nacelle) unless nacelles is set."""
     rnd = random.Random(seed)
     ROOF.clear()
     root = K.link(bpy.data.objects.new(name, None))
@@ -302,12 +344,12 @@ def salvager_ship(o=(0, 0, 0), yaw=0, name="ship", seed=11, scar=True, fires=Tru
     ceiling_light(aft, -7.0, on=False)
     K.point("engine_glow", (0, -7.0, 3.6), CYAN, 80, 0.5).parent = aft
     for side in (-1, 1):
-        nx = side * (W + 1.7)
-        K.cyl("nacelle", 1.6, 6.5, hm, loc=(nx, -7.5, 2.4), rot=(90, 0, 0), bev=0.06, parent=aft)
-        for k in range(3):
-            K.cyl("nacelle_band", 1.66, 0.3, gm, loc=(nx, -5.4 - k * 1.8, 2.4), rot=(90, 0, 0), bev=0.04, parent=aft)
-        K.torus("nozzle", 1.35, 0.25, gm, loc=(nx, -10.8, 2.4), rot=(90, 0, 0), parent=aft)
-        K.cyl("nozzle_core", 1.2, 0.12, glow(CYAN, 2.0), loc=(nx, -10.65, 2.4), rot=(90, 0, 0), bev=0, parent=aft)
+        # the port nacelle tore off in flight (the opening cinematic) and lies in the woods: its pylon ends in a stump
+        if side == -1 and not nacelles:
+            FR.framed_box(aft, "pylon", (side * (W + 0.35), -7.5, 2.4), (1.1, 3.0, 0.9), hm, gm, fw=0.1)
+            torn_stub(aft, (side * (W + 0.95), -7.5, 2.4), gm, rnd)
+            continue
+        nacelle(aft, (side * (W + 1.7), -7.5, 2.4), hm, gm)
         FR.framed_box(aft, "pylon", (side * (W + 0.6), -7.5, 2.4), (1.6, 3.0, 0.9), hm, gm, fw=0.1)
     K.box("fin", (0.4, 4.0, 3.0), hm, loc=(0, -8.0, H + 1.4), rot=(15, 0, 0), bev=0.06, parent=aft)
     K.box("fin_light", (0.45, 0.4, 0.3), glow(CYAN, 6), loc=(0, -9.6, H + 2.6), bev=0.04, parent=aft)

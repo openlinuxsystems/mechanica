@@ -124,8 +124,13 @@ public partial class QuestHud : CanvasLayer, IHudLayer
         Quests.StateChanged -= Refresh;
     }
 
+    /// <summary>True while dialogue waits (the opening cinematic plays): no line starts or runs out.</summary>
+    public Func<bool> Holding { get; set; } = () => false;
+
     public override void _Process(double delta)
     {
+        if (Holding())
+            return;
         if (_dialogue.Visible)
         {
             // Above a tutorial tip, which shares the bottom centre, rather than on top of it.

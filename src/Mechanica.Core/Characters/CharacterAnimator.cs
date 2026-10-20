@@ -295,6 +295,18 @@ public sealed class CharacterAnimator
         Start(version, clip == "knockdown" ? "get_up" : null);
     }
 
+    /// <summary>
+    /// Gets up from lying on the back (<c>get_up</c>), as a player coming to after the opening cinematic: grounded until
+    /// it ends. False when there is no such clip, or the player is down, dead or seated already.
+    /// </summary>
+    public bool GetUp()
+    {
+        if (Grounded || _wasDead || _seated || Version("get_up") is not { } clip || !_lengths.ContainsKey(clip))
+            return false;
+        Start(clip, null);
+        return true;
+    }
+
     // Starts a gesture or reaction clip; chain (if any) follows it straight on, after lie_seconds for a knockdown.
     private void Start(string clip, string? chain)
     {
