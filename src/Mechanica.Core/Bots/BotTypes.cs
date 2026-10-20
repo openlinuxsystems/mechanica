@@ -52,8 +52,22 @@ public sealed record StartRaidArgs(int? Level = null);
 /// <param name="Raid">The raid it belongs to, or null.</param>
 /// <param name="Engaged">Whether it is fighting: it spotted a target, attacked or was hurt in the last <c>engaged_seconds</c>.</param>
 /// <param name="Swimming">Whether it is swimming: a swimmer (<c>swim_depth</c>) in water.</param>
+/// <param name="Kept">Whether it is kept (a domesticated animal): saved with the world and never taken away.</param>
 public sealed record BotView(int Id, string Type, Vec3 Position, float Yaw, float Health, float MaxHealth, bool Dead, int? Raid = null, bool Engaged = false,
-    bool Swimming = false);
+    bool Swimming = false, bool Kept = false);
+
+/// <summary>Arguments of <c>KeepBot</c>.</summary>
+/// <param name="Bot">The bot.</param>
+/// <param name="Kept">True to keep it (saved with the world, never taken away), false to let it go wild again.</param>
+public sealed record KeepBotArgs(int Bot, bool Kept = true);
+
+/// <summary>A kept bot in a save (<see cref="BotActions.SaveKept"/>).</summary>
+/// <param name="Type">Qualified bot type id.</param>
+/// <param name="Position">Its feet, m.</param>
+/// <param name="Yaw">Its facing, degrees.</param>
+/// <param name="Home">Where it wanders round, m.</param>
+/// <param name="Health">Its health.</param>
+public sealed record SavedBot(string Type, Vec3 Position, float Yaw, Vec3 Home, float Health);
 
 /// <summary>Value of a successful <c>SpawnBot</c>.</summary>
 /// <param name="Bot">The new bot's id.</param>

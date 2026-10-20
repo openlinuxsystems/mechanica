@@ -184,7 +184,7 @@ lakes and the sea:
 | `clear_radius` | number, m | 8 | How far round the spot must be its habitat too, so a `wander` round its home stays there. Make it more than the wander's radius. |
 | `interval` | number, s | 8 | Seconds between tries to spawn more of it. |
 | `biomes` | list of biome ids | any | The biomes (`world/worldgen.json`) it appears in, such as `meadow` or `field`. |
-| `herd` | `[min, max]` | `[1, 1]` | How many appear together, a few metres apart. A herd never takes the count past `count`. |
+| `herd` | `[min, max]` | `[1, 1]` | How many appear together, a few metres apart. A herd never takes the count past `count`, and none smaller than `min` is made to fill it up. |
 | `near` | object | none | World objects it is often found near: `objects` (world object or scene ids), `radius` (m from one) and `share` (0 to 1, default 0.5: the share of spawns that try round one in reach first, else anywhere it fits). |
 
 The Grazer roams meadows and fields in small herds, often round farms:
@@ -203,6 +203,9 @@ variants and the Threshers come only in raids and as guards.
 A wild bot has no raid, so its tree's `in_raid` branches fail: give it a `wander` to fall back on, and it chases the
 players its `find_player` finds (out of the water too) before wandering home. Wild bots count towards `max_bots`
 (`game/data/bots.json`).
+
+A kept bot (`KeepBot`, see [Action API](#6-action-api)) is no longer wild: it stays when the players leave, never
+counts towards `count`, and is saved with the world (see [Saves](saves.md)).
 
 ## 3. The behaviour tree
 
@@ -457,8 +460,8 @@ against the mods' bots and writes `raids/raids.json`; the status line says wheth
 
 ## 6. Action API
 
-Bots use these actions, and so can the [External AI Endpoint](ai-endpoint.md). Spawning, removing and
-starting raids are open to players only in Creative.
+Bots use these actions, and so can the [External AI Endpoint](ai-endpoint.md). Spawning, removing, keeping
+and starting raids are open to players only in Creative.
 
 | Action | Arguments | Notes |
 |--------|-----------|-------|
@@ -466,6 +469,7 @@ starting raids are open to players only in Creative.
 | `DespawnBot` | `bot` | |
 | `MoveBot` | `bot`, `direction?`, `speed?` | Walk that way; no direction stops it. |
 | `BotAttack` | `bot`, `attack`, `player?` / `creation?`, `part?` / `target?` / `object?` | Checked for reach, line of sight and cooldown. Returns `{hits}`. |
+| `KeepBot` | `bot`, `kept?` | Keeps the bot (or with `kept: false` lets it go): it never despawns and is saved with the world. |
 | `GetBots`, `GetBot` | none; `bot` | Queries. |
 | `StartRaid` | `level?` | Starts a raid now at the given (or the current) level. |
 | `GetRaid` | none | The raid in progress. |

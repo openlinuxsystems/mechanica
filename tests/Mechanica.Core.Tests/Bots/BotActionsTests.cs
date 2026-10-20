@@ -267,6 +267,31 @@ public sealed class BotActionsTests
     }
 
     [Fact]
+    public void A_kept_bot_is_saved_and_comes_back_as_it_was()
+    {
+        var bot = _f.Spawn(BotFixture.Critter, new Vector3(2, 0, 2));
+        _f.Spawn(BotFixture.Grunt, new Vector3(9, 0, 9));
+        Assert.Contains("only in Creative", S.Refused(Me, BotActions.KeepBot, new KeepBotArgs(bot)));
+        Assert.Contains("no bot", S.Refused(BotFixture.Brain, BotActions.KeepBot, new KeepBotArgs(99)));
+
+        S.Ok(BotFixture.Brain, BotActions.KeepBot, new KeepBotArgs(bot));
+        _f.Bots.DamageBot(bot, 10, "test", melee: false);
+        _f.Bots.Moved(bot, new Vector3(5, 1, 6), inWater: false);
+        var saved = Assert.Single(_f.Bots.SaveKept()); // the grunt is not kept, so it is not saved
+        Assert.True(S.Ok<BotView>(Me, BotActions.GetBot, new BotArgs(bot)).Kept);
+
+        var again = new BotFixture();
+        Assert.True(again.Bots.Restore(saved));
+        var back = Assert.Single(again.Bots.Bots.Values);
+        Assert.Equal((BotFixture.Critter, new Vector3(5, 1, 6), new Vector3(2, 0, 2), 20f, true),
+            (back.Type.QualifiedId, back.Position, back.Home, back.Health, back.Kept));
+        Assert.False(again.Bots.Restore(saved with { Type = "gone:critter" }));
+
+        S.Ok(BotFixture.Brain, BotActions.KeepBot, new KeepBotArgs(bot, Kept: false));
+        Assert.Empty(_f.Bots.SaveKept());
+    }
+
+    [Fact]
     public void Bubble_wrap_slows_a_player_for_a_while()
     {
         // You stand at (0, 0, 6).
