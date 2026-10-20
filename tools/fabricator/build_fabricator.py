@@ -7,9 +7,9 @@ One body shared by every level, exactly 10 x 8 x 9 blocks (2.50 m wide, 2.00 m d
   and drills the item on the table;
 * a central console with the status screen, buttons and level pips, rising to 8 blocks, with the exhaust housing
   on top filling the 9th block row;
-* the standard IO ports (docs/io-ports.md): an input on the left side and an output on the right side, both one
-  block above the base, centred front to back (half a block toward the front, as the face is 8 blocks deep), their
-  collars on the footprint boundary;
+* the standard 2 x 2 IO ports (docs/io-ports.md): an input on the left side and an output on the right side, at
+  floor level (centre 0.375 m up, level with the containers' ports), half a block toward the front of centre, their
+  collars on the footprint boundary over the plinth;
 * a pegboard with tools across the back.
 
 The levels change finish and add trim, never the envelope or the ports (see ``LEVELS``).
@@ -833,8 +833,8 @@ def render_review(out: Path):
         "- Standard IO ports (teal out / copper in), not the yellow and blue rings; same height and position on both sides.",
         "- Hazard stripes are teal on black, not safety yellow; the pegboard is gunmetal, not steel blue.",
         "- One status screen on the console, matching the crafting menu it opens.",
-        "Port position (both sides, the same on every machine): block rows 1-3 above the base (centre 0.625 m up); "
-        "centred front to back, half a block toward the front (centre 0.875 m from the front edge).",
+        "Port position (both sides, the same height on every machine): 2 x 2, centre 0.375 m up; "
+        "half a block toward the front of centre (centre 0.875 m from the front edge).",
     ]
     for k, line in enumerate(notes):
         d.text((60, 2390 + k * 36), line, fill=INK, font=F(26, k == 0))
