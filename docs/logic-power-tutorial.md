@@ -78,10 +78,11 @@ engine to the steering bearing does nothing.
 While the engine runs, a green dot above it shows it is on (gray when it is off), and a cyan ring turns on
 each wheel bearing it drives. With the Connect Tool out a piston shows a bar of how far out it is.
 
-An engine is on by default: with no seat, switch or button linked into it, it drives at full throttle on its own.
-Linked to a driver's seat it runs only while someone sits in it (a passenger seat never starts it); linked to a
-switch or button, while that is on. If the seat is removed or destroyed, even with you still in it, the engine
-has no control left and goes back to running on its own. Its **On** toggle stops it whatever its controls do.
+An engine needs a control to run: with no seat, switch or button linked into it, it stays off, so a newly placed
+engine never drives off on its own. Linked to a driver's seat it runs only while someone sits in it (a passenger
+seat never starts it); linked to a switch or button, while that is on. If the seat is removed or destroyed, even
+with you still in it, the engine has no control left and stops. Its **On** toggle (the power lever's Off notch)
+stops it whatever its controls do.
 
 ### Fuel
 
