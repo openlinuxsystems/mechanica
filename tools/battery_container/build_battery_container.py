@@ -13,7 +13,9 @@ What it builds (procedurally, from scratch: no .blend inputs, no downloads):
   frames and pipe sockets, the +X end with one round power socket. Everything stays inside the 4 x 3 x 3 box.
 
   The cells are their own nodes, ``CellL0`` / ``CellR0`` (toward -X) to ``CellL4`` / ``CellR4``, each a dark piece
-  with a lit one in front, so a later charge readout can light them.
+  with a lit one in front. One glTF clip, ``charge`` (1 s, scrubbed by the ``charge`` readout of
+  ``scripts/battery.lua``), lights them: cell k comes on at k/5 s, so a sliver of charge shows one cell and full shows
+  five.
 
 * ``mods/vanilla/textures/items/battery_icon.png`` - the hotbar, inventory and Fabricator picture, 256 x 256 on a
   clear background, three-quarter from the -Y gauge side with the socket end on the right.
@@ -262,9 +264,44 @@ def build_battery(mats, offset=(0, 0, 0)):
             node = bl.make_empty(f"Cell{side}{k}", root, (GAUGE_X0 + (k + 0.5) * step, sy * (SIDE + 0.0165), GAUGE_Z))
             bl.make_object(f"Cell{side}{k}Off", cell(False), mats, node)
             on = bl.make_object(f"Cell{side}{k}On", cell(True), mats, node, (0, sy * 0.0011, 0))
-            on.hide_render = on.hide_viewport = k >= CHARGE
-            rig["cells"].append(on)
+            rig["cells"].append((k, on))
+    set_charge(rig, CHARGE / CELLS)
     return rig
+
+
+OFF = 0.001                   # scale of a cell that is off (hidden in its dark piece)
+
+
+def cell_on(k, charge):
+    return charge > k / CELLS
+
+
+def set_charge(rig, charge):
+    for k, ob in rig["cells"]:
+        ob.scale = (1.0, 1.0, 1.0) if cell_on(k, charge) else (OFF, OFF, OFF)
+
+
+def bake(rig):
+    """The scrubbed charge clip: each lit cell keyed off just before its fifth of the second and on just after."""
+    fps = bbe.FPS
+    for k, ob in rig["cells"]:
+        ob.animation_data_create()
+        act = bpy.data.actions.new(f"charge_{ob.name}")
+        ob.animation_data.action = act
+        frames = sorted({0, max(0, k * fps // CELLS), k * fps // CELLS + 1, fps})
+        for f in frames:
+            on = f > k * fps / CELLS
+            ob.scale = (1.0, 1.0, 1.0) if on else (OFF, OFF, OFF)
+            ob.keyframe_insert("scale", frame=f)
+        lt.linear_keys(act)
+        bl.push_track(ob, act, "charge")
+        ob.animation_data.use_nla = False
+    set_charge(rig, CHARGE / CELLS)
+
+
+def strip_animation(rig):
+    for _, ob in rig["cells"]:
+        ob.animation_data.action = None
 
 
 ICON_VIEW = (1.25, -2.1, 0.95)     # as the Gas Container's icon: from the -Y gauge side, the socket end on the right
@@ -275,8 +312,12 @@ def main():
     bbe.reset_scene()
     mats = make_materials()
     rig = build_battery(mats)
-    bbe.export(rig["root"], MESHES / "battery.glb", animations=False)
-    bbe.render_icon([o for o in bbe.mesh_tree(rig["root"]) if not o.hide_render], ICONS / "battery_icon.png",
+    bake(rig)
+    bbe.export(rig["root"], MESHES / "battery.glb", animations=True)
+    bpy.context.scene.frame_set(0)
+    strip_animation(rig)
+    set_charge(rig, CHARGE / CELLS)
+    bbe.render_icon(bbe.mesh_tree(rig["root"]), ICONS / "battery_icon.png",
                     view=ICON_VIEW, ortho=ICON_ORTHO, target=(0, 0, -0.01))
     for p in (MESHES / "battery.glb", ICONS / "battery_icon.png"):
         print(f"wrote {p.relative_to(REPO)} ({p.stat().st_size // 1024} KiB)")

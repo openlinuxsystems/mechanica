@@ -18,7 +18,8 @@ namespace Mechanica.Game.Tests;
 /// the client. The client sees the container's model with its gauge empty; the host fills it with 40 gasoline and the
 /// client's gauge rises to 0.4 with a pulse. The client links it to the engine with the Connect Tool and switches the
 /// engine on: the engine burns from it, and the client sees the supply clip and the gauge drop. Then the client picks
-/// the container up while it still holds fuel and gets the container and its gasoline.
+/// the container up while it still holds fuel and gets the container and its gasoline. A Battery (the same size, its
+/// gauge five cells) stands beside it: with 25 of its 50 battery packs the client's gauge lights three cells.
 /// </summary>
 public partial class GasContainerTest : StagedTest
 {
@@ -27,6 +28,8 @@ public partial class GasContainerTest : StagedTest
     private const string Fuel = "vanilla:gasoline";
     private const string Floor = "vanilla:wood_block";
     private const string Connector = "vanilla:connect_tool";
+    private const string Battery = "vanilla:battery";
+    private const string Pack = "vanilla:battery_pack";
 
     private readonly List<ActionResult> _results = [];
     private readonly HashSet<string> _clips = [];
@@ -36,6 +39,7 @@ public partial class GasContainerTest : StagedTest
     private int _floor;
     private int _tank;
     private int _engine;
+    private int _battery;
 
     protected override string Tag => "gascontainer";
 
@@ -64,6 +68,18 @@ public partial class GasContainerTest : StagedTest
                 "the model brings its clips");
             Check(visual.Clip == "rest", $"it rests while empty ({visual.Clip})");
             Check(gauge < 0.05f, $"the gauge is empty ({gauge:F2})");
+            return true;
+        });
+        Add("with 25 of its 50 battery packs, the client's Battery lights three of its five cells", frame =>
+        {
+            if (frame == 0)
+                HostFloor.InventoryOf(_battery)!.Add(Pack, 25);
+            if (Cell(_client, 2) is not { } lit || Cell(_client, 3) is not { } dark)
+                return false;
+            if (lit < 0.9f)
+                return false;
+            Check(Cell(_client, 0) > 0.9f && Cell(_client, 1) > 0.9f, "the cells below it are lit");
+            Check(dark < 0.1f && Cell(_client, 4) < 0.1f, $"the top two stay dark ({dark:F2})");
             return true;
         });
         Add("filled with 40 gasoline, the client's gauge pulses and rises to 0.4", frame =>
@@ -129,7 +145,12 @@ public partial class GasContainerTest : StagedTest
     private float? Gauge(Instance instance) =>
         instance.Main.Creations.NodeOf(_floor)?.PartNode(_tank)?.FindChild("LiquidL", true, false) is Node3D column ? column.Scale.Y : null;
 
-    // A wooden floor 7 by 6 blocks in front of the client with a Gas Container and a Gas Engine 1 on it.
+    // How lit a Battery gauge cell is on the client's model (its lit piece's scale: 1 on, about 0 off).
+    private float? Cell(Instance instance, int k) =>
+        instance.Main.Creations.NodeOf(_floor)?.PartNode(_battery)?.FindChild($"CellL{k}On", true, false) is Node3D cell
+            ? cell.Scale.X : null;
+
+    // A wooden floor 7 by 6 blocks in front of the client with a Gas Container, a Battery and a Gas Engine 1 on it.
     private void Build()
     {
         var catalog = _host.Main.Build.Catalog;
@@ -146,7 +167,10 @@ public partial class GasContainerTest : StagedTest
             Check(false, $"the container fits ({why})");
         if (!creation.TryPlacePart(Engine, new GridCell(5, 1, 1), default, out var engine, out why))
             Check(false, $"the engine fits ({why})");
+        if (!creation.TryPlacePart(Battery, new GridCell(0, 1, 4), default, out var battery, out why))
+            Check(false, $"the battery fits ({why})");
         _tank = tank?.Id ?? 0;
+        _battery = battery?.Id ?? 0;
         _engine = engine?.Id ?? 0;
         // Engines are on by default; this one starts off so the test can switch it on once the container is filled.
         creation.SetPartSettings(_engine, new Dictionary<string, JsonElement> { ["on"] = JsonSerializer.SerializeToElement(false) });
