@@ -9,7 +9,7 @@ namespace Mechanica.Game.Tests;
 
 /// <summary>
 /// Windows keep their own mouse input in a running world (UI spec §13). Wheel turns and clicks anywhere over
-/// the in-game menu, Options (every tab, scrolled past both ends), the save screen, AI Reports, the inventory, the Fabricator screen, the upgrade dialog, the Logbook, the full map, the Lift's
+/// the in-game menu, Options (every tab, scrolled past both ends), the save screen, AI Reports, the inventory, the Fabricator screen, a Gas Container, the upgrade dialog, the Logbook, the full map, the Lift's
 /// blueprint menu, the Paint Tool's colour picker, a part's menu and a confirm dialog never reach the game behind them (nor over the hotbar while the inventory is open), nor do clicks on the screen around a window opened from
 /// the menu, where a wheel changes the hotbar and a click takes the
 /// mouse back and closes the menu. The windows are still open afterwards. Esc closes each of them, the window opened
@@ -271,6 +271,30 @@ public partial class WindowsTest : StagedTest
             inventory.Hide();
             return Clean("the Fabricator screen");
         });
+        Add("the Gas Container screen keeps them", frame =>
+        {
+            var inventory = _main.GetNode<Items.InventoryScreen>("InventoryScreen");
+            if (frame == 0)
+            {
+                var tank = BuildGasContainer(_station.Creation);
+                _main.Creations.Find(_station.Creation)!.InventoryOf(tank)!.Add("vanilla:gasoline", 16);
+                inventory.Show(Core.Items.InventoryRef.OfPart(_station.Creation, tank));
+                return false;
+            }
+            if (!inventory.ContainerMode || inventory.ContainerSlots.Count(s => s.Visible) != 5 || inventory.ContainerHeader.Fill.Length == 0)
+                return false;
+            Check(!inventory.StationMode, "a container opens the container screen, not the Fabricator layout");
+            Check(inventory.ContainerHeader.Title == "Gas Container", $"the header names it ({inventory.ContainerHeader.Title})");
+            Check(inventory.ContainerHeader.Fill.StartsWith("16 / "), $"the header says how full it is ({inventory.ContainerHeader.Fill})");
+            Check(inventory.ContainerSlots[0].Entry == "vanilla:gasoline" && inventory.ContainerSlots[0].Count == 16, "the gasoline is in the first slot");
+            Check(inventory.ContainerSlots.Skip(1).Take(4).All(s => s.ShowsGhost), "the empty slots show the gasoline silhouette");
+            Check(inventory.ContainerOwnSlots.Count(s => s.Visible) == _main.Inventory.Settings!.PlayerSlots, "the player's inventory is under it");
+            Check(inventory.ContainerPanels.All(p => p.IsVisibleInTree()), "both windows show");
+            Scrub(inventory.GetNode<Control>("Panel"));
+            Check(inventory.IsOpen && inventory.ContainerMode, "the Gas Container screen is still open");
+            inventory.Hide();
+            return Clean("the Gas Container screen");
+        });
         Add("the upgrade dialog keeps them", frame =>
         {
             var dialog = _main.Upgrades!;
@@ -443,6 +467,21 @@ public partial class WindowsTest : StagedTest
         creation.SetAllBodyPoses(new Core.Creations.Pose((feet + new Vector3(-1, 0, -3)).ToNumerics(), System.Numerics.Quaternion.Identity));
         build.Added(creation);
         return (creation.Id, fabricator?.Id ?? 0);
+    }
+
+    // A Gas Container on the Fabricator's floor, clear of its left side.
+    private int BuildGasContainer(int creationId)
+    {
+        var creation = _main.Creations.Find(creationId)!;
+        Core.Creations.PartInstance? tank = null;
+        for (var z = 0; z < 8 && tank is null; z++)
+        {
+            if (creation.TryPlacePart("vanilla:gas_container", new Core.Creations.GridCell(-8, 1, z), default, out var placed, out _))
+                tank = placed;
+        }
+        Check(tank is not null, "the Gas Container fits on the floor");
+        _main.Build.Changed(creation);
+        return tank?.Id ?? 0;
     }
 
     // A gas engine on the Fabricator's floor, clear of its right side, for its menu.

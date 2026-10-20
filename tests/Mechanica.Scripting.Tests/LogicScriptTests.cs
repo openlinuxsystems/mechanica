@@ -819,6 +819,7 @@ public sealed class LogicScriptTests : IDisposable
         Assert.InRange(readouts.Number(Car, engine, "fuel")!.Value, 0.9f, 1f);
         Assert.Equal(360f, readouts.Number(Car, engine, "torque"));
         Assert.True(readouts.Has(Car, engine, "rpm"));
+        Assert.Equal(143f, readouts.Number(Car, engine, "top_rpm"));   // power 3 of 5: 15 rad/s
         foreach (var (bearing, side) in wheels.Take(2))
             Assert.InRange(-side * readouts.Number(Car, bearing, "drive")!.Value, 15f * 0.97f, 15f * 1.03f);
         Assert.Equal(1f, readouts.Number(Car, steering, "drive"));
@@ -828,6 +829,7 @@ public sealed class LogicScriptTests : IDisposable
         Steps(60);
         Assert.Equal(0f, readouts.Number(Car, engine, "running"));
         Assert.Equal(0f, readouts.Number(Car, engine, "torque"));
+        Assert.Equal(0f, readouts.Number(Car, engine, "top_rpm"));
         foreach (var (bearing, _) in wheels.Take(2))
             Assert.False(readouts.Has(Car, bearing, "drive"));
         Assert.False(readouts.Has(Car, steering, "drive"));

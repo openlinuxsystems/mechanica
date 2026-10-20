@@ -88,10 +88,9 @@ public static class StationTheme
 
     private static void Panels(Theme t)
     {
+        // No drop shadows on windows: over the world they read as a pale translucent border.
         var window = Box(UiTokens.Surface, WindowCorner);
-        // No drop shadow: Chase wants no soft translucent edge round any window.
         var card = Box(UiTokens.Card, WindowCorner, 16);
-        (card.ShadowColor, card.ShadowSize, card.ShadowOffset) = (window.ShadowColor, window.ShadowSize, window.ShadowOffset);
         var header = Box(UiTokens.Chrome, WindowCorner);
         (header.CornerRadiusBottomLeft, header.CornerRadiusBottomRight) = (0, 0);
         (header.ContentMarginLeft, header.ContentMarginRight, header.ContentMarginTop, header.ContentMarginBottom) = (16, 16, 12, 8);
@@ -101,9 +100,6 @@ public static class StationTheme
         (queue.CornerRadiusTopLeft, queue.CornerRadiusTopRight) = (0, 0);
         (queue.ContentMarginLeft, queue.ContentMarginRight, queue.ContentMarginTop, queue.ContentMarginBottom) = (16, 16, 8, 12);
         var drawer = Box(UiTokens.SurfaceDeep, 0, 12);
-        drawer.ShadowColor = UiTokens.Ink with { A = 0.35f };
-        drawer.ShadowSize = 12;
-        drawer.ShadowOffset = new Vector2(6, 0);
         var surface = Box(UiTokens.Surface, 0);
         (surface.ContentMarginLeft, surface.ContentMarginRight, surface.ContentMarginTop, surface.ContentMarginBottom) = (16, 8, 14, 10);
         var pill = Box(UiTokens.Accent, 12);
@@ -112,7 +108,6 @@ public static class StationTheme
         (warning.ContentMarginLeft, warning.ContentMarginRight, warning.ContentMarginTop, warning.ContentMarginBottom) = (10, 10, 2, 2);
         // A part's compact menu (an engine's lever menu): a Card window, its header and bottom band in Chrome.
         var menuCard = Box(UiTokens.Card, WindowCorner);
-        (menuCard.ShadowColor, menuCard.ShadowSize, menuCard.ShadowOffset) = (window.ShadowColor, window.ShadowSize, window.ShadowOffset);
         var menuBand = Box(UiTokens.Chrome, 0);
         (menuBand.ContentMarginLeft, menuBand.ContentMarginRight, menuBand.ContentMarginTop, menuBand.ContentMarginBottom) = (20, 20, 14, 14);
         var key = Box(Colors.White with { A = 0.12f }, 4);

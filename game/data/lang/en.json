@@ -978,6 +978,8 @@
     "{0} (this game)": "{0} (this game)",
     "{0} ({1} to switch)": "{0} ({1} to switch)",
     "{0} / {1} orders · output {2} / {3}": "{0} / {1} orders · output {2} / {3}",
+    "{0} / {1} slots": "{0} / {1} slots",
+    "{0} / {1} {2}": "{0} / {1} {2}",
     "{0} already has {1}. Start a new part anyway? Exporting it replaces that file.": "{0} already has {1}. Start a new part anyway? Exporting it replaces that file.",
     "{0} cannot be installed:": "{0} cannot be installed:",
     "{0} cannot be welded": "{0} cannot be welded",

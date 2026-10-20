@@ -117,7 +117,7 @@ A reason line (Error text) sits under any action that is off and says why, for e
 - There is no always-visible inventory column. A drawer slides over the left half of the grid when it is needed.
 - The Inventory window is a main window ten tiles wide and as tall as a station window: a header with the satchel icon,
   the INVENTORY title and fill pill, the search field, Organize and X; the category tabs (each with its dot); the tile
-  grid. A container opened beside it gets its own six-column window, and the inventory narrows to fit its tab row.
+  grid. An open container has its own screen (the container over the inventory), with Organize in its header.
 - The hotbar's slots are Tile blue with Ink numbers and counts, 6 px apart. The current slot is Tile selected with the
   white 3 px ring, exactly like a selected recipe.
 

@@ -13,19 +13,17 @@ namespace Mechanica.Game.Items;
 /// <c>SortInventory</c>) and X. Under it the shared category tabs, each with its colour dot, and the tile grid on
 /// <c>Surface</c>, ten columns wide; every stack carries its category's dot. Typing searches every tab (the tab switches
 /// to All) and the tab row shows the match count. In Creative every part and tool is listed under the grid, and a give
-/// box sits in the footer with the status line. A container opened with Use (E) gets its own window beside it: its
-/// picture, name, fill pill, Organize and its grid; both grids narrow to fit side by side.
+/// box sits in the footer with the status line. A container opened with Use (E) has its own screen
+/// (InventoryScreen.Container.cs), whose header carries an Organize button too.
 /// </summary>
 public partial class InventoryScreen
 {
     private const int InventoryColumns = 10;
-    private const int SideColumns = 6;
     private const float ScrollRoom = 14;
 
     private Control _classic = null!;
     private Control _ownWindow = null!;
     private readonly SlotGrid _ownGrid = new(InventoryColumns, TileSize, tiled: true);
-    private readonly SlotGrid _otherGrid = new(SideColumns, TileSize, tiled: true);
     private readonly SlotGrid _catalogGrid = new(InventoryColumns, TileSize, tiled: true);
     private Control _catalogPanel = null!;
     private Label _ownFillText = null!;
@@ -40,15 +38,6 @@ public partial class InventoryScreen
     private Control _footer = null!;
     private HBoxContainer _footerRow = null!;
     private LineEdit _give = null!;
-    private Control _otherPanel = null!;
-    private Control _ownHeader = null!;
-    private Control _ownTabs = null!;
-    private Control _otherHeader = null!;
-    private Control _otherTabs = null!;
-    private TextureRect _otherArt = null!;
-    private Label _otherTitle = null!;
-    private Label _otherFill = null!;
-    private Button _otherOrganize = null!;
 
     /// <summary>The search text in the Inventory window.</summary>
     public string SearchText => _ownSearch.Text;
@@ -59,20 +48,14 @@ public partial class InventoryScreen
     /// <summary>The fill pill (<c>12 / 30</c>).</summary>
     public string FillText => _ownFillText.Text;
 
-    /// <summary>The Organize button of the player's inventory.</summary>
+    /// <summary>The Organize button of the Inventory window.</summary>
     public Button OrganizeButton => _organize;
-
-    /// <summary>The Organize button of the open container's window.</summary>
-    public Button ContainerOrganizeButton => _otherOrganize;
 
     /// <summary>The category tab buttons, in <see cref="TabOrder"/>.</summary>
     public IReadOnlyList<Button> TabButtons => _tabButtons;
 
-    /// <summary>The Inventory window and, while a container is open, its window.</summary>
-    public IReadOnlyList<Control> InventoryPanels => _otherPanel.Visible ? [_ownWindow, _otherPanel] : [_ownWindow];
-
-    /// <summary>The open container's slots.</summary>
-    public IReadOnlyList<ItemSlot> ContainerSlots => _otherGrid.Slots;
+    /// <summary>The Inventory window.</summary>
+    public Control InventoryWindow => _ownWindow;
 
     /// <summary>Shows only the items under <paramref name="tab"/>.</summary>
     public void SetTab(InventoryTab tab)
@@ -149,14 +132,11 @@ public partial class InventoryScreen
         _give.TextSubmitted += OnGive;
         _footerRow.AddChild(_give);
         column.AddChild(footer);
-
-        columns.AddChild(BuildContainerWindow());
     }
 
     private Control BuildInventoryHeader()
     {
         var header = new PanelContainer { Name = "Header", ThemeTypeVariation = "Header" };
-        _ownHeader = header;
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", 14);
         header.AddChild(row);
@@ -214,7 +194,6 @@ public partial class InventoryScreen
     private Control BuildInventoryTabs()
     {
         var strip = new PanelContainer { Name = "Tabs", ThemeTypeVariation = "TabStrip" };
-        _ownTabs = strip;
         var row = new HBoxContainer { Name = "Filters" };
         row.AddThemeConstantOverride("separation", 4);
         strip.AddChild(row);
@@ -236,69 +215,13 @@ public partial class InventoryScreen
         return strip;
     }
 
-    private Control BuildContainerWindow()
-    {
-        var window = new PanelContainer { Name = "Container", ThemeTypeVariation = "MainWindow", ClipChildren = CanvasItem.ClipChildrenMode.AndDraw, Visible = false };
-        _otherPanel = window;
-        var column = new VBoxContainer();
-        column.AddThemeConstantOverride("separation", 0);
-        window.AddChild(column);
-        var header = new PanelContainer { Name = "Header", ThemeTypeVariation = "Header" };
-        _otherHeader = header;
-        var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", 14);
-        header.AddChild(row);
-        _otherArt = new TextureRect
-        {
-            Name = "Art", CustomMinimumSize = new Vector2(64, 52), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
-            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
-        };
-        row.AddChild(_otherArt);
-        var titles = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, Alignment = BoxContainer.AlignmentMode.Center };
-        titles.AddThemeConstantOverride("separation", 4);
-        _otherTitle = Loc.Verbatim(new Label { Name = "ContainerTitle", ThemeTypeVariation = "HeadingLabel", TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis });
-        titles.AddChild(_otherTitle);
-        var fill = new PanelContainer { Name = "FillPill", ThemeTypeVariation = "Pill", SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin, TooltipText = "Slots used" };
-        _otherFill = Loc.Verbatim(new Label { Name = "Fill", ThemeTypeVariation = "PillLabel" });
-        fill.AddChild(_otherFill);
-        titles.AddChild(fill);
-        row.AddChild(titles);
-        _otherOrganize = MakeOrganize("ContainerOrganize");
-        _otherOrganize.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
-        _otherOrganize.Pressed += () =>
-        {
-            if (_open is { } where)
-                Organize(where);
-        };
-        row.AddChild(_otherOrganize);
-        column.AddChild(header);
-        _otherTabs = new PanelContainer { Name = "Tabs", ThemeTypeVariation = "TabStrip" };
-        column.AddChild(_otherTabs);
-        var body = new PanelContainer { Name = "Surface", ThemeTypeVariation = "SurfacePanel", SizeFlagsVertical = Control.SizeFlags.ExpandFill };
-        column.AddChild(body);
-        var scroll = new ScrollContainer { Name = "OtherScroll", HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
-        body.AddChild(scroll);
-        scroll.AddChild(_otherGrid.Build("OtherGrid", rows: 3, this, scroll: false));
-        return window;
-    }
-
-    // Ten tile columns wide (fewer beside a container, which gets six), as tall as the Fabricator's window, above the hotbar.
+    // Ten tile columns wide, as tall as the Fabricator's window, above the hotbar.
     private void SizeInventory(Vector2 screen, Vector2 margin, float bar)
     {
         var height = Mathf.Max(420, Mathf.Min(screen.Y - 124, screen.Y - margin.Y * 2 - bar - 24));
-        // Beside a container the grid takes as many columns as the tab row leaves room for.
-        var tabs = _ownTabs.GetCombinedMinimumSize().X;
-        var own = _otherPanel.Visible ? Math.Max(SideColumns, (int)((tabs - GridWidth(0) + TileGap) / (TileSize + TileGap))) : InventoryColumns;
-        _ownGrid.Grid.Columns = own;
-        _catalogGrid.Grid.Columns = own;
-        _otherGrid.Grid.Columns = SideColumns;
-        _ownWindow.CustomMinimumSize = new Vector2(Mathf.Max(GridWidth(own), tabs), height);
-        _otherPanel.CustomMinimumSize = new Vector2(GridWidth(SideColumns), height);
+        _ownWindow.CustomMinimumSize = new Vector2(GridWidth(InventoryColumns), height);
         _searchGlyph.Visible = _ownSearch.Text.Length == 0;
         _footer.Visible = _give.Visible || _status.Text.Length > 0;
-        // The container's header and tab band match the Inventory window's, so both grids start level.
-        _otherHeader.CustomMinimumSize = new Vector2(0, _ownHeader.Size.Y);
-        _otherTabs.CustomMinimumSize = new Vector2(0, _ownTabs.Size.Y);
     }
 
     // A window wide enough for this many tiles, the surface's padding and its scrollbar.
@@ -339,24 +262,6 @@ public partial class InventoryScreen
         _catalogPanel.Visible = Creative && AllItems is not null;
         if (_catalogPanel.Visible)
             _catalogGrid.FillCatalog([.. AllItems!().Where(i => Lists(i, query)).OrderBy(ItemName, StringComparer.CurrentCultureIgnoreCase)]);
-
-        var view = _open is { } where ? Inventory.Shown.GetValueOrDefault(where) : null;
-        if (view?.Queue is not null)
-        {
-            // A station after all: over to the Fabricator layout.
-            StartStation(_open);
-            Refresh();
-            return;
-        }
-        _otherPanel.Visible = _open is not null;
-        if (_open is null)
-            return;
-        _otherTitle.Text = view is null ? Loc.T("Opening…") : view.Blocked ? Loc.T("{0} (full: take the output)", ItemName(view.Part!)) : ItemName(view.Part!);
-        _otherArt.Texture = view?.Part is { } part ? Icons?.For(part) : null;
-        _otherArt.Visible = _otherArt.Texture is not null;
-        _otherFill.Text = view is null ? "" : $"{view.Items.Count} / {view.SlotCount}";
-        _otherOrganize.Disabled = view is null || view.Items.Count == 0;
-        _otherGrid.Fill(_open, [.. Enumerable.Range(0, view?.SlotCount ?? 0).Select(i => (i, view?.At(i)))]);
     }
 
     // Whether the Inventory window lists an item: under the tab shown, and matching the search.

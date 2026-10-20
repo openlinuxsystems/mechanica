@@ -106,6 +106,7 @@ public partial class InventoryScreen : CanvasLayer
         _root.AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
         BuildInventory();
         BuildStation();
+        BuildContainer();
 
         Inventory.ViewChanged += _ => Refresh();
         Inventory.ViewClosed += OnViewClosed;
@@ -118,6 +119,8 @@ public partial class InventoryScreen : CanvasLayer
         // The scrim fades with the window and goes when it closes.
         _scrimLayer.Visible = _root.Visible;
         _scrim.Modulate = _root.Modulate;
+        // Under a container's slots the error line takes room only while it says something.
+        _status.Visible = !ContainerMode || _status.Text.Length > 0;
         if (_root.Visible)
             Layout();
     }
@@ -130,6 +133,8 @@ public partial class InventoryScreen : CanvasLayer
         var bar = HotbarView.SlotSizeFor(screen) + 8;
         if (StationMode)
             SizeStation(screen, margin, bar);
+        else if (ContainerMode)
+            SizeContainer(screen);
         else
             SizeInventory(screen, margin, bar);
         _root.Size = _root.GetCombinedMinimumSize();
@@ -251,11 +256,24 @@ public partial class InventoryScreen : CanvasLayer
     {
         if (!IsOpen)
             return;
-        _classic.Visible = !StationMode;
+        _classic.Visible = _open is null;
         _station.Visible = StationMode;
+        _containerScreen.Visible = ContainerMode;
         if (StationMode)
         {
             RefreshStation();
+            return;
+        }
+        if (ContainerMode && Inventory.Shown.GetValueOrDefault(_open!)?.Queue is not null)
+        {
+            // A station after all: over to the Fabricator layout.
+            StartStation(_open);
+            Refresh();
+            return;
+        }
+        if (ContainerMode)
+        {
+            RefreshContainer();
             return;
         }
         RefreshInventory();
@@ -385,6 +403,21 @@ public partial class InventoryScreen : CanvasLayer
 
         public IReadOnlyList<ItemSlot> Slots => _slots;
 
+        /// <summary>The silhouette empty slots show (the one item a container takes), or null for none.</summary>
+        public Texture2D? Ghost
+        {
+            get => _ghost;
+            set
+            {
+                if (_ghost == value)
+                    return;
+                _ghost = value;
+                Show();
+            }
+        }
+
+        private Texture2D? _ghost;
+
         /// <summary>The grid itself, for changing its column count.</summary>
         public GridContainer Grid => _grid;
 
@@ -432,6 +465,7 @@ public partial class InventoryScreen : CanvasLayer
                 var held = _where is { } w && _screen._held is { } h && h.Where == w && h.Slot == slot;
                 _slots[i].Show(item, item is null ? null : _screen.Icons?.For(item), item is null ? "" : _screen.ItemName(item), stack?.Count, selected: held);
                 _slots[i].Dot = item is null ? null : _screen.DotOf(item);
+                _slots[i].Ghost = _where is null ? null : _ghost;
             }
         }
 

@@ -45,6 +45,8 @@ public partial class ItemSlot : PanelContainer
     private bool _dragging;
     private bool _tiled;
     private bool _hovered;
+    private Texture2D? _ghost;
+    private Texture2D? _picture;
 
     /// <summary>The tool or item shown, or null when empty.</summary>
     public string? Entry { get; private set; }
@@ -119,6 +121,23 @@ public partial class ItemSlot : PanelContainer
         }
     }
 
+    /// <summary>
+    /// A silhouette an empty slot shows (the item a container takes, like gasoline in a Gas Container), drawn in
+    /// <c>Ink</c> at low opacity; null for none. A stack in the slot hides it.
+    /// </summary>
+    public Texture2D? Ghost
+    {
+        get => _ghost;
+        set
+        {
+            _ghost = value;
+            ShowIcon();
+        }
+    }
+
+    /// <summary>True when the slot is empty and shows its <see cref="Ghost"/>.</summary>
+    public bool ShowsGhost => Entry is null && _ghost is not null;
+
     /// <summary>True while the slot's box is the hovered tile.</summary>
     public bool Hovered => _hovered;
 
@@ -162,7 +181,8 @@ public partial class ItemSlot : PanelContainer
     {
         Entry = entry;
         Count = count;
-        _icon.Texture = entry is null ? null : icon;
+        _picture = entry is null ? null : icon;
+        ShowIcon();
         _initials.Text = entry is null || icon is not null ? "" : ItemIcons.Initials(name);
         _count.Text = badge ?? (count is { } n && n > 1 ? $"{n}" : "");
         _key.Text = key ?? "";
@@ -173,6 +193,13 @@ public partial class ItemSlot : PanelContainer
         Restyle();
         if (selected)
             Pulse();
+    }
+
+    private void ShowIcon()
+    {
+        var ghost = ShowsGhost;
+        _icon.Texture = ghost ? _ghost : _picture;
+        _icon.SelfModulate = ghost ? UiTokens.Ink with { A = 0.3f } : Colors.White;
     }
 
     /// <summary>Plays the selection pulse: a quick swell and back.</summary>
@@ -190,7 +217,7 @@ public partial class ItemSlot : PanelContainer
         if (DragSource?.Invoke() is not { } drag)
             return default;
         var preview = new ItemSlot { CustomMinimumSize = Size, Size = Size };
-        preview.Show(Entry, _icon.Texture, Entry ?? "", Count);
+        preview.Show(Entry, _picture, Entry ?? "", Count);
         SetDragPreview(preview);
         _dragging = true;
         return drag;
