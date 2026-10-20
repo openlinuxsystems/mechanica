@@ -16,7 +16,8 @@ namespace Mechanica.Game.Tests;
 /// falls asleep and parks as its ground unloads; the client's player walking up (teleported on the host)
 /// brings the ground back and resumes it exactly where it parked. The test (not parts) is the engine:
 /// drivable and flyable parts come in chunks 10 and 11. The world is flat so heights stay simple;
-/// generated terrain has its own test.
+/// generated terrain has its own test. Last, the client's Lift captures the plane, the client walks off until it parks
+/// with its ground unloaded, and putting the Lift down far from there brings it over whole, level on the platform.
 /// </summary>
 public partial class StreamingTest : StagedTest
 {
@@ -38,6 +39,8 @@ public partial class StreamingTest : StagedTest
     private readonly HashSet<ChunkCoord> _crossed = [];
     private List<Pose> _parkedPoses = [];
     private Vector3 _visit;
+    private Vector3 _liftAt;
+    private readonly List<Mechanica.Core.Actions.ActionResult> _results = [];
 
     protected override string Tag => "streaming";
 
@@ -72,6 +75,7 @@ public partial class StreamingTest : StagedTest
         AddVehicleStages();
         AddPlaneStages();
         AddParkStages();
+        AddLiftStages();
         AddEdgeStages();
     }
 
@@ -246,6 +250,63 @@ public partial class StreamingTest : StagedTest
         });
     }
 
+    private void AddLiftStages()
+    {
+        Add("the client's Lift captures the plane", frame =>
+        {
+            var onHost = _host.Main.PlayerSync.Players[_client.Peer];
+            if (frame == 0)
+            {
+                var box = CreationBounds.World(HostCreations.Find(Plane)!);
+                var middle = ((box.Min + box.Max) / 2).ToGodot();
+                onHost.ApplyState(new Vector3(middle.X, 0.05f, box.Max.Z + 2f), Vector3.Zero, 0f, 0f);
+                return false;
+            }
+            if (frame == 30)
+                _client.Main.Actions.Request(Core.Building.ToolActions.CaptureLift, new Core.Building.CaptureLiftArgs(Plane), _results.Add);
+            if (_results.Count == 0)
+                return false;
+            Check(_results[0].Ok, $"the host takes the capture ({_results[0]})");
+            return true;
+        });
+        Add("the client walks off and the captured plane parks", frame =>
+        {
+            var onHost = _host.Main.PlayerSync.Players[_client.Peer];
+            if (frame == 0)
+                onHost.ApplyState(new Vector3(60, 0.05f, 0), Vector3.Zero, 0f, 0f);
+            if (!HostCreations.IsParked(Plane))
+                return false;
+            Check(!HostWorld.Streamer.IsLoaded(HostWorld.ChunkAt(_visit)), "the plane's ground unloaded");
+            return true;
+        });
+        Add("putting the Lift down brings the plane over whole, level on it", frame =>
+        {
+            if (frame == 0)
+            {
+                _results.Clear();
+                var me = _host.Main.PlayerSync.Players[_client.Peer].GlobalPosition;
+                _liftAt = new Vector3(me.X, 0f, me.Z - 6.5f);
+                _client.Main.Actions.Request(Core.Building.ToolActions.PlaceLift,
+                    new Core.Building.PlaceLiftArgs(new Vec3(_liftAt.X, _liftAt.Y, _liftAt.Z), Plane), _results.Add);
+            }
+            if (_results.Count == 0)
+                return false;
+            if (!_results[0].Ok)
+                return Fail($"the host puts the Lift down with the plane ({_results[0]})");
+            if (HostCreations.IsParked(Plane) || _client.Main.Creations.Find(Plane)?.OnLift != true)
+                return false;
+            ExpectIntact(Plane, PlaneHinge, "plane on the Lift");
+            var box = CreationBounds.World(HostCreations.Find(Plane)!);
+            var top = _host.Main.Build.Settings!.Lift.TopAt(0);
+            Check(Mathf.Abs(box.Min.Y - top) < 1e-3f, $"it rests level on the platform (bottom {box.Min.Y:F3})");
+            Check(Mathf.Abs((box.Min.X + box.Max.X) / 2 - _liftAt.X) < 0.2f && Mathf.Abs((box.Min.Z + box.Max.Z) / 2 - _liftAt.Z) < 0.2f,
+                "centred over the Lift");
+            Check(HostCreations.NodeOf(Plane)!.IsFrozen, "the host holds it still on the Lift");
+            Check(_client.Main.Creations.NodeOf(Plane) is not null, "the client shows it there");
+            return true;
+        });
+    }
+
     // Holds every plane body at a velocity against gravity, standing in for wings and thrust.
     private void Fly(Vector3 velocity)
     {
@@ -275,6 +336,12 @@ public partial class StreamingTest : StagedTest
         }
         if (bodies.Any(b => b.GlobalPosition.Y < 0f))
             Check(false, $"{what} stays above the ground");
+    }
+
+    private bool Fail(string message)
+    {
+        Check(false, message);
+        return true;
     }
 
     private IReadOnlyList<CreationBody> Bodies(int id) => HostCreations.NodeOf(id)?.Bodies ?? [];

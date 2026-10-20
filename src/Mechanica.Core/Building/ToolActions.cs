@@ -22,7 +22,17 @@ public sealed record LiftState(int Owner, Vec3 Position, int Level = 0, int? Cre
 /// <summary>Arguments of <c>PlaceLift</c>.</summary>
 /// <param name="Position">Where the middle of the platform's base goes, in world metres; x and z snap to the grid.</param>
 /// <param name="Creation">A Creation to pick up onto the Lift. Without it, a Lift that already holds one carries it along.</param>
-public sealed record PlaceLiftArgs(Vec3 Position, int? Creation = null);
+/// <param name="Turns">Quarter turns about the vertical, counter-clockwise seen from above, for a Creation picked up
+/// onto the Lift (it is squared to the nearest quarter turn first).</param>
+public sealed record PlaceLiftArgs(Vec3 Position, int? Creation = null, int Turns = 0);
+
+/// <summary>
+/// Arguments of <c>CaptureLift</c>: the caller's Lift captures a Creation, which then goes onto the Lift wherever the
+/// next <c>PlaceLift</c> naming it puts the Lift down, however far it is by then. A captured Creation stays where it is
+/// until then.
+/// </summary>
+/// <param name="Creation">The Creation to capture, or null to let the capture go.</param>
+public sealed record CaptureLiftArgs(int? Creation = null);
 
 /// <summary>Arguments of <c>SetLiftLevel</c>.</summary>
 /// <param name="Level">The new level, 0 to <see cref="LiftSettings.MaxLevel"/>.</param>
@@ -198,9 +208,10 @@ public interface IToolWorld : IBuildWorld
 /// <summary>
 /// The hand tools of the Action API besides building by hand (<see cref="BuildActions"/>), validated on the host:
 /// <list type="bullet">
-/// <item><c>PlaceLift</c>, <c>SetLiftLevel</c>, <c>TurnLift</c>, <c>RemoveLift</c>: each player's Lift. A
-/// Creation on a Lift stands upright and still on the platform (<see cref="Seat"/>), and drops when the
-/// Lift lets go. No stamina cost (D12).</item>
+/// <item><c>PlaceLift</c>, <c>CaptureLift</c>, <c>SetLiftLevel</c>, <c>TurnLift</c>, <c>RemoveLift</c>: each player's
+/// Lift. A Creation on a Lift stands upright and still on the platform (<see cref="Seat"/>), and drops when the
+/// Lift lets go. A Creation built onto the ground, one holding resources and one too big for the Lift cannot be
+/// lifted (<see cref="LiftRefusal"/>), nor can one on another player's Lift. No stamina cost (D12).</item>
 /// <item><c>LoadBlueprint</c>: builds a saved Creation on the caller's empty Lift (UI spec §9), paid for part by
 /// part in Survival. A Creation whose storage holds items cannot be picked up (<see cref="LiftSettings.RefuseStoredItems"/>).</item>
 /// <item><c>Weld</c>: moves one Creation onto another and merges them, every touching face rigid (D7).
@@ -214,8 +225,8 @@ public interface IToolWorld : IBuildWorld
 /// </list>
 /// Player callers must be within <see cref="BuildSettings.Reach"/> of what they act on (the Sledgehammer: its own
 /// <see cref="SledgeSettings.Reach"/>). Each action plays its
-/// tool's sound where it happened (chunk 16): <c>lift_place</c>, <c>lift_raise</c>/<c>lift_lower</c> at the
-/// Lift; <c>weld_complete</c> where the weld joins; <c>paint_spray</c>/<c>paint_erase</c> on the first part;
+/// tool's sound where it happened (chunk 16): <c>lift_place</c> at the Lift (and <c>lift_lower</c> as it is taken
+/// away), <c>lift_capture</c>/<c>lift_release</c> at the captured Creation; <c>weld_complete</c> where the weld joins; <c>paint_spray</c>/<c>paint_erase</c> on the first part;
 /// <c>smash_hit</c> plus the part's impact sound, or <c>smash_break</c> plus its break sound.
 /// </summary>
 public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartCatalog? catalog = null)
@@ -228,6 +239,9 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
 
     /// <summary>Action name for turning the Creation on the caller's Lift.</summary>
     public const string TurnLift = "TurnLift";
+
+    /// <summary>Action name for capturing a Creation to put on the caller's Lift, or letting the capture go.</summary>
+    public const string CaptureLift = "CaptureLift";
 
     /// <summary>Action name for taking the caller's Lift away (its Creation drops).</summary>
     public const string RemoveLift = "RemoveLift";
@@ -261,6 +275,7 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
     private const float SledgeReachSlack = 0.75f;
 
     private readonly SortedDictionary<int, LiftState> _lifts = [];
+    private readonly Dictionary<int, int> _captures = [];
     private readonly Dictionary<int, double> _lastSwing = [];
     private readonly HashSet<int> _blocking = [];
     private readonly Dictionary<int, PaidStroke> _strokes = [];
@@ -280,12 +295,16 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
     /// <summary>The Lift <paramref name="peer"/> owns, or null.</summary>
     public LiftState? LiftOf(int peer) => _lifts.GetValueOrDefault(peer);
 
+    /// <summary>The Creation <paramref name="peer"/> has captured with <c>CaptureLift</c>, or null.</summary>
+    public int? CaptureOf(int peer) => _captures.TryGetValue(peer, out var id) ? id : null;
+
     /// <summary>Registers every tool action.</summary>
     public void Register(ActionDispatcher dispatcher)
     {
         dispatcher.Register<PlaceLiftArgs>(PlaceLift, ValidatePlaceLift, ApplyPlaceLift);
         dispatcher.Register<SetLiftLevelArgs>(SetLiftLevel, ValidateLevel, ApplyLevel);
         dispatcher.Register<TurnLiftArgs>(TurnLift, ValidateTurn, ApplyTurn);
+        dispatcher.Register<CaptureLiftArgs>(CaptureLift, ValidateCapture, ApplyCapture);
         dispatcher.Register<NoArgs>(RemoveLift, ValidateRemoveLift, ApplyRemoveLift);
         dispatcher.Register<WeldArgs>(Weld, ValidateWeld, ApplyWeld);
         dispatcher.Register<WeldPartsArgs>(WeldParts, ValidateWeldParts, ApplyWeldParts);
@@ -299,6 +318,7 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
     public void Forget(int peer)
     {
         _lastSwing.Remove(peer);
+        _captures.Remove(peer);
         _blocking.Remove(peer);
         _strokes.Remove(peer);
     }
@@ -351,14 +371,13 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
         {
             if (carried is null)
                 return $"There is no creation {id}.";
-            if (_lifts.Values.Any(l => l.Owner != caller.Peer && l.Creation == id))
-                return $"Creation {id} is on another player's lift.";
-            if (CheckReach(caller, CreationBounds.World(carried)) is { } tooFar)
+            if (LiftOf(caller.Peer)?.Creation != id && LiftRefusal(carried, settings.Lift, _lifts.Values, caller.Peer) is { } refused)
+                return refused;
+            // A captured Creation goes onto the Lift wherever it is; any other must be within reach.
+            if (CaptureOf(caller.Peer) != id && CheckReach(caller, CreationBounds.World(carried)) is { } tooFar)
                 return tooFar;
-            if (settings.Lift.RefuseStoredItems && LiftOf(caller.Peer)?.Creation != id && carried.Parts.Any(p => carried.HoldsItems(p.Id) && !carried.CarriesContents(p.Id)))
-                return StoredItemsRefusal;
         }
-        return CheckLift(lift, carried, 0);
+        return CheckLift(lift, carried, args.Creation is null ? 0 : args.Turns);
     }
 
     private JsonElement? ApplyPlaceLift(ActionCaller caller, PlaceLiftArgs args)
@@ -366,9 +385,75 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
         var lift = PlannedLift(caller.Peer, args, out var carried);
         if (Held(LiftOf(caller.Peer)) is { } old && old != carried)
             Release(old);
+        if (args.Creation is not null)
+            _captures.Remove(caller.Peer);
         world.PlaySound("lift_place", Identifiers.VanillaModId, lift.Position.ToNumerics());
-        return Commit(lift, carried, 0);
+        return Commit(lift, carried, args.Creation is null ? 0 : args.Turns);
     }
+
+    private string? ValidateCapture(ActionCaller caller, CaptureLiftArgs args)
+    {
+        if (args.Creation is not { } id)
+            return null;
+        if (world.FindCreation(id) is not { } creation)
+            return $"There is no creation {id}.";
+        if (LiftOf(caller.Peer)?.Creation != id && LiftRefusal(creation, settings.Lift, _lifts.Values, caller.Peer) is { } refused)
+            return refused;
+        return CheckReach(caller, CreationBounds.World(creation));
+    }
+
+    private JsonElement? ApplyCapture(ActionCaller caller, CaptureLiftArgs args)
+    {
+        var before = CaptureOf(caller.Peer);
+        if (args.Creation is { } id)
+        {
+            _captures[caller.Peer] = id;
+            if (before != id)
+                world.PlaySound("lift_capture", Identifiers.VanillaModId, Centre(world.FindCreation(id)!));
+        }
+        else if (_captures.Remove(caller.Peer) && before is { } let && world.FindCreation(let) is { } released)
+            world.PlaySound("lift_release", Identifiers.VanillaModId, Centre(released));
+        return null;
+    }
+
+    private static Vector3 Centre(Creation creation)
+    {
+        var box = CreationBounds.World(creation);
+        return (box.Min + box.Max) / 2;
+    }
+
+    /// <summary>
+    /// Why <paramref name="peer"/>'s Lift cannot pick up <paramref name="creation"/>, or null when it can: it is built
+    /// onto the ground (<see cref="LiftSettings.RefuseGrounded"/>), it holds a part the Lift refuses
+    /// (<see cref="LiftSettings.RefuseCategories"/>, <see cref="LiftSettings.RefuseParts"/>) or stored items
+    /// (<see cref="LiftSettings.RefuseStoredItems"/>), it is bigger than <see cref="LiftSettings.MaxExtent"/>, or it is
+    /// on another player's Lift (one of <paramref name="lifts"/>). Every peer can ask, to show what the Lift may capture.
+    /// </summary>
+    public static string? LiftRefusal(Creation creation, LiftSettings settings, IEnumerable<LiftState> lifts, int peer)
+    {
+        if (lifts.Any(l => l.Owner != peer && l.Creation == creation.Id))
+            return "It is on another player's lift.";
+        if (settings.RefuseGrounded && creation.IsGrounded)
+            return GroundedRefusal;
+        foreach (var part in creation.Parts)
+        {
+            var definition = creation.DefinitionOf(part.Id);
+            var category = definition.Category?.ToString();
+            if (category is not null && settings.RefuseCategories.Any(c => string.Equals(c, category, StringComparison.OrdinalIgnoreCase)))
+                return StoredItemsRefusal;
+            if (settings.RefuseParts.Any(r => Identifiers.Qualify(r) == Identifiers.Qualify(part.Part)))
+                return StoredItemsRefusal;
+            if (settings.RefuseStoredItems && creation.HoldsItems(part.Id) && !creation.CarriesContents(part.Id))
+                return StoredItemsRefusal;
+        }
+        var box = CreationBounds.World(creation);
+        var size = box.Max - box.Min;
+        var extent = MathF.Max(size.X, MathF.Max(size.Y, size.Z));
+        return extent > settings.MaxExtent ? $"It is too big for the lift ({extent:F1} m across; at most {settings.MaxExtent:F1} m)." : null;
+    }
+
+    /// <summary>The refusal for picking up a Creation built onto the ground.</summary>
+    public const string GroundedRefusal = "It is built onto the ground. Remove the parts that touch the ground, or build on the Lift.";
 
     private string? ValidateLevel(ActionCaller caller, SetLiftLevelArgs args)
     {
@@ -383,9 +468,8 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
 
     private JsonElement? ApplyLevel(ActionCaller caller, SetLiftLevelArgs args)
     {
+        // Every peer eases the column to the new level and plays its motor as it goes (LiftBody), so nothing is sent.
         var lift = LiftOf(caller.Peer)!;
-        if (args.Level != lift.Level)
-            world.PlaySound(args.Level > lift.Level ? "lift_raise" : "lift_lower", Identifiers.VanillaModId, PlatformTop(lift));
         return Commit(lift with { Level = args.Level }, Held(lift), 0);
     }
 
@@ -477,14 +561,20 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
 
     private Creation? Held(LiftState? lift) => lift?.Creation is { } id ? world.FindCreation(id) : null;
 
-    private string? CheckLift(LiftState lift, Creation? carried, int turns)
+    private string? CheckLift(LiftState lift, Creation? carried, int turns) => CheckLiftPlacement(world, settings.Lift, lift, carried, turns);
+
+    /// <summary>
+    /// Null when <paramref name="lift"/> would stand clear, with <paramref name="carried"/> (if any) seated on it turned by
+    /// <paramref name="turns"/>, or why not. Every peer can ask, to colour the Lift's placement ghost.
+    /// </summary>
+    public static string? CheckLiftPlacement(IToolWorld world, LiftSettings settings, LiftState lift, Creation? carried, int turns)
     {
         IReadOnlyCollection<int> ignore = carried is null ? [] : [carried.Id];
         if (world.CheckLiftClear(lift, ignore) is { } blocked)
             return blocked;
         if (carried is null)
             return null;
-        var poses = Seat(carried, PlatformTop(lift), turns);
+        var poses = Seat(carried, lift.Position.ToNumerics() + new Vector3(0, settings.TopAt(lift.Level), 0), turns);
         foreach (var part in carried.Parts)
         {
             if (world.CheckPartClear(carried.DefinitionOf(part.Id), part.Cell, part.Rotation, poses[carried.BodyIndexOf(part.Id)], ignore, lift.Owner) is { } reason)

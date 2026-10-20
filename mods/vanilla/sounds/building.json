@@ -46,6 +46,50 @@
       "max_distance": 30
     },
     {
+      "id": "lift_motor",
+      "clips": [
+        "sounds/building/lift_motor.ogg"
+      ],
+      "loop": true,
+      "volume_db": -8,
+      "max_distance": 30,
+      "parameters": [
+        {
+          "name": "speed",
+          "pitch": [
+            0.8,
+            1.1
+          ],
+          "volume_db": [
+            -14,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lift_capture",
+      "clips": [
+        "sounds/building/lift_capture.ogg"
+      ],
+      "max_distance": 20
+    },
+    {
+      "id": "lift_release",
+      "clips": [
+        "sounds/building/lift_release.ogg"
+      ],
+      "max_distance": 20
+    },
+    {
+      "id": "lift_deny",
+      "clips": [
+        "sounds/building/lift_deny.ogg"
+      ],
+      "bus": "ui",
+      "cooldown": 0.15
+    },
+    {
       "id": "connect_success",
       "clips": [
         "sounds/building/connect_success.ogg"

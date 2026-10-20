@@ -100,16 +100,105 @@ public class ToolActionsTests
     }
 
     [Fact]
-    public void LiftingAGroundedCreationFreesItSoItDropsWhenLetGo()
+    public void AGroundedCreationCannotBeLiftedUnlessTheRuleAllowsIt()
     {
         var id = Add(Car());
         _world.Creations[id].SetAnchored(_world.Creations[id].Parts.First().Id, true);
 
-        Assert.True(Dispatch(ToolActions.PlaceLift, new { position = new[] { 0f, 0f, 0f }, creation = id }).Ok);
-        Assert.True(Dispatch(ToolActions.RemoveLift, new { }).Ok);
+        Assert.Equal(ToolActions.GroundedRefusal, Dispatch(ToolActions.CaptureLift, new { creation = id }).Message);
+        Assert.Equal(ToolActions.GroundedRefusal, Dispatch(ToolActions.PlaceLift, new { position = new[] { 0f, 0f, 0f }, creation = id }).Message);
+        Assert.Null(_tools.LiftOf(2));
 
+        // With refuse_grounded off the Lift pulls it free, and it drops when let go.
+        var tools = new ToolActions(_settings with { Lift = _settings.Lift with { RefuseGrounded = false } }, _world);
+        var dispatcher = new ActionDispatcher();
+        tools.Register(dispatcher);
+        Assert.True(dispatcher.Dispatch(Player, ToolActions.PlaceLift, JsonSerializer.Serialize(new { position = new[] { 0f, 0f, 0f }, creation = id })).Ok);
+        Assert.True(dispatcher.Dispatch(Player, ToolActions.RemoveLift, "{}").Ok);
         Assert.False(_world.Creations[id].IsGrounded);
         Assert.False(_world.Creations[id].OnLift);
+    }
+
+    [Fact]
+    public void ACapturedCreationGoesOntoTheLiftWhereverItIsPutDown()
+    {
+        var id = Add(Tilted(Car()));
+
+        Assert.True(Dispatch(ToolActions.CaptureLift, new { creation = id }).Ok);
+        Assert.Equal(id, _tools.CaptureOf(2));
+        Assert.False(_world.Creations[id].OnLift);
+
+        // The player walks off; the Creation stays where it was, out of reach now, until the Lift goes down.
+        _world.Eyes[2] = new Vector3(20, 1.6f, 3);
+        var result = Dispatch(ToolActions.PlaceLift, new { position = new[] { 20f, 0f, 0f }, creation = id, turns = 1 });
+
+        Assert.True(result.Ok, result.ToString());
+        Assert.Null(_tools.CaptureOf(2));
+        var creation = _world.Creations[id];
+        Assert.True(creation.OnLift);
+        var box = CreationBounds.World(creation);
+        // Level and centred on the platform, turned a quarter: the 3-long car lies along z.
+        Assert.Equal(0.25f, box.Min.Y, 1e-4f);
+        Assert.Equal(20f, (box.Min.X + box.Max.X) / 2, 1e-4f);
+        Assert.Equal(0f, (box.Min.Z + box.Max.Z) / 2, 1e-4f);
+        Assert.True(box.Max.Z - box.Min.Z > box.Max.X - box.Min.X);
+        Assert.True(Vector3.Distance(Vector3.UnitY, Vector3.Transform(Vector3.UnitY, creation.BodyPose(0).Rotation)) < 1e-4f);
+    }
+
+    [Fact]
+    public void AnUncapturedCreationMustBeWithinReach()
+    {
+        var id = Add(Car());
+        _world.Eyes[2] = new Vector3(20, 1.6f, 3);
+
+        Assert.Contains("you can reach", Dispatch(ToolActions.PlaceLift, new { position = new[] { 20f, 0f, 0f }, creation = id }).Message);
+        Assert.Contains("you can reach", Dispatch(ToolActions.CaptureLift, new { creation = id }).Message);
+    }
+
+    [Fact]
+    public void CapturesAreChecked()
+    {
+        var id = Add(Car());
+        Assert.Contains("no creation 9", Dispatch(ToolActions.CaptureLift, new { creation = 9 }).Message);
+
+        // A creation on another player's Lift cannot be captured.
+        _world.Eyes[3] = _world.Eyes[2];
+        Assert.True(_dispatcher.Dispatch(new ActionCaller(3, ActionSource.Player), ToolActions.PlaceLift,
+            JsonSerializer.Serialize(new { position = new[] { 0f, 0f, 0f }, creation = id })).Ok);
+        Assert.Contains("another player's lift", Dispatch(ToolActions.CaptureLift, new { creation = id }).Message);
+
+        // Too big for the Lift.
+        var big = new ToolActions(_settings with { Lift = _settings.Lift with { MaxExtent = 0.5f } }, _world);
+        var dispatcher = new ActionDispatcher();
+        big.Register(dispatcher);
+        var other = Add(Car());
+        Assert.Contains("too big", dispatcher.Dispatch(Player, ToolActions.CaptureLift, JsonSerializer.Serialize(new { creation = other })).Message);
+    }
+
+    [Fact]
+    public void RefusedPartsKeepACreationOffTheLift()
+    {
+        var id = Add(Car());
+        var creation = _world.Creations[id];
+        var settings = _settings.Lift with { RefuseParts = [creation.Parts.First().Part] };
+
+        Assert.Equal(ToolActions.StoredItemsRefusal, ToolActions.LiftRefusal(creation, settings, [], 2));
+        Assert.Null(ToolActions.LiftRefusal(creation, _settings.Lift, [], 2));
+        Assert.Equal(ToolActions.StoredItemsRefusal, ToolActions.LiftRefusal(creation, _settings.Lift with { RefuseCategories = ["block"] }, [], 2));
+        Assert.Throws<FormatException>(() => (_settings.Lift with { RefuseCategories = ["rubble"] }).Validate());
+    }
+
+    [Fact]
+    public void LettingACaptureGoForgetsIt()
+    {
+        var id = Add(Car());
+        Assert.True(Dispatch(ToolActions.CaptureLift, new { creation = id }).Ok);
+        Assert.True(Dispatch(ToolActions.CaptureLift, new { }).Ok);
+
+        Assert.Null(_tools.CaptureOf(2));
+        Assert.Equal(["lift_capture@vanilla", "lift_release@vanilla"], _world.Sounds.Select(s => s.Split(' ')[0]));
+        _world.Eyes[2] = new Vector3(20, 1.6f, 3);
+        Assert.Contains("you can reach", Dispatch(ToolActions.PlaceLift, new { position = new[] { 20f, 0f, 0f }, creation = id }).Message);
     }
 
     [Fact]
@@ -554,8 +643,7 @@ public class ToolActionsTests
         Assert.Equal(
         [
             "lift_place@vanilla (1, 0, 0)",
-            "lift_raise@vanilla (1, 0.25, 0)", // from the platform top where it starts
-            "lift_lower@vanilla (1, 0.75, 0)", // the unchanged level played nothing
+            // Levels play nothing from the host: every peer runs the column's motor as it moves.
             "lift_place@vanilla (1, 0.5, 0)",
             "lift_lower@vanilla (1, 0, 0)",
         ], _world.Sounds);

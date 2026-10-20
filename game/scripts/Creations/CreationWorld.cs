@@ -26,6 +26,12 @@ public partial class CreationWorld : Node3D
     /// <summary>Raised after a Creation is removed, with its id.</summary>
     public event Action<int>? Removed;
 
+    /// <summary>
+    /// Raised when a parked Creation was moved (a Lift put a captured one down far from where it parked), with its id, so
+    /// the streamer tracks it where it is now and resumes it there.
+    /// </summary>
+    public event Action<int>? MovedParked;
+
     /// <summary>Every Creation, by ascending id.</summary>
     public IEnumerable<Creation> All => _entries.Values.Select(e => e.Creation);
 
@@ -96,7 +102,10 @@ public partial class CreationWorld : Node3D
         if (entry.Node is { } node)
             node.Teleport();
         else
+        {
             entry.Velocities.Clear();
+            MovedParked?.Invoke(id);
+        }
     }
 
     /// <summary>Removes every Creation.</summary>

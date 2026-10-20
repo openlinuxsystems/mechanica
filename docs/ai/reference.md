@@ -2,7 +2,7 @@
 
 <!-- Generated from mechanica.describe by tools/ai/gen-docs.sh. Do not edit by hand. -->
 
-Protocol version 2. 168 methods: 60 actions (change the world), 29 queries (only read it) and 79 endpoint methods. Every one is a JSON-RPC method of the same name whose `params` are the named arguments below (snake_case). `describe.json` beside this file is the same data as JSON Schemas, ready to become an AI's tool list. Scopes: `observe` reads, `play` acts as a player, `admin` is for debug powers ([ai-endpoint.md](../ai-endpoint.md#scopes)).
+Protocol version 2. 169 methods: 61 actions (change the world), 29 queries (only read it) and 79 endpoint methods. Every one is a JSON-RPC method of the same name whose `params` are the named arguments below (snake_case). `describe.json` beside this file is the same data as JSON Schemas, ready to become an AI's tool list. Scopes: `observe` reads, `play` acts as a player, `admin` is for debug powers ([ai-endpoint.md](../ai-endpoint.md#scopes)).
 
 ## Contents
 
@@ -10,7 +10,7 @@ Protocol version 2. 168 methods: 60 actions (change the world), 29 queries (only
 - [Agent players](#agent-players) (2)
 - [Seeing the world and the catalog](#seeing-the-world-and-the-catalog) (15)
 - [Bots and raids](#bots-and-raids) (8)
-- [Building](#building) (14)
+- [Building](#building) (15)
 - [Characters](#characters) (1)
 - [Chat](#chat) (1)
 - [Debug and general](#debug-and-general) (2)
@@ -429,6 +429,16 @@ Starting or stopping a block. Arguments of Block: the caller starts or stops blo
 |-------|------|----------|---------|-------------|
 | `on` | boolean | yes |  | True while right click is held. |
 
+### `CaptureLift`
+
+*action, play scope*
+
+Capturing a Creation to put on the caller's Lift, or letting the capture go. Arguments of CaptureLift: the caller's Lift captures a Creation, which then goes onto the Lift wherever the next PlaceLift naming it puts the Lift down, however far it is by then. A captured Creation stays where it is until then.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `creation` | integer or null |  |  | The Creation to capture, or null to let the capture go. |
+
 ### `LoadBlueprint`
 
 *action, play scope*
@@ -462,6 +472,7 @@ Placing, moving or loading the caller's Lift. Arguments of PlaceLift.
 |-------|------|----------|---------|-------------|
 | `position` | number[3] | yes |  | Where the middle of the platform's base goes, in world metres; x and z snap to the grid. Format: [x, y, z] |
 | `creation` | integer or null |  |  | A Creation to pick up onto the Lift. Without it, a Lift that already holds one carries it along. |
+| `turns` | integer |  | `0` | Quarter turns about the vertical, counter-clockwise seen from above, for a Creation picked up onto the Lift (it is squared to the nearest quarter turn first). |
 
 ### `PlacePart`
 
