@@ -6,12 +6,17 @@
   "tab": "consumable",
   "mass": 0.3,
   "stack_size": 10,
+  "mesh": "meshes/items/popper.glb",
+  "icon": "textures/items/popper_icon.png",
   "visual": {
-    "color": "#e0c040"
+    "color": "#ffffff"
   },
   "script": "scripts/potato_gun.lua",
   "sounds": {
     "explode": "popper_explode"
+  },
+  "held": {
+    "scale": 1
   },
   "properties": {
     "damage": 50,

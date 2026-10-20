@@ -26,6 +26,8 @@ namespace Mechanica.Game.Tools;
 /// boulders, the boulders into chunks and the chunks into rods (<c>tools/capture-rocks.sh</c>).
 /// Given <c>soil</c> it carries a Soil Bag, tips it out, spills a mound and shows a row of mounds dry, lightly watered,
 /// fully wet and drying (<c>tools/capture-soil.sh</c>).
+/// Given <c>weapons</c> it holds each potato weapon and aims it, from the side, the front and first person
+/// (<c>tools/capture-weapons.sh</c>).
 /// Given <c>knockout_bag</c> it knocks the player out and captures the knockout bag their items drop in from the reference
 /// sheet's views, with its label and next to the respawned player (<c>tools/capture-knockout-bag.sh</c>).
 /// Given <c>scrap_seat</c> it puts down a Scrap Driver's Seat on a slab with a gas engine, a switch and a button linked to
@@ -78,6 +80,7 @@ public partial class CaptureScene : Node
         var blocks = args.Length > 1 && args[1] == "blocks";
         var rocks = args.Length > 1 && args[1] == "rocks";
         var soil = args.Length > 1 && args[1] == "soil";
+        var weapons = args.Length > 1 && args[1] == "weapons";
         var bag = args.Length > 1 && args[1] == "knockout_bag";
         var seat = args.Length > 1 && args[1] == "scrap_seat";
         var trees = args.Length > 1 && args[1] == "trees";
@@ -101,7 +104,7 @@ public partial class CaptureScene : Node
         var engineMenu = args.Length > 1 && args[1] == "engine_menu";
         var flashes = args.Length > 1 && args[1] == "flashes";
         var opening = args.Length > 1 && args[1] == "opening";
-        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash && !engineMenu && !flashes && !opening && !workshop && args[1] != "survey" ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
+        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !weapons && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash && !engineMenu && !flashes && !opening && !workshop && args[1] != "survey" ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
         if (debugCar)
             Main.MenuCharacter = "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
@@ -151,6 +154,11 @@ public partial class CaptureScene : Node
         if (soil)
         {
             SoilShots();
+            return;
+        }
+        if (weapons)
+        {
+            WeaponShots();
             return;
         }
         if (bag)
@@ -1259,6 +1267,19 @@ public partial class CaptureScene : Node
         var from = at + new Vector3(offset.X, 0, offset.Z) * height;
         _camera.GlobalPosition = Ground(from) + Vector3.Up * (offset.Y * height + 1.2f);
         _camera.LookAt(at + Vector3.Up * (look * height * (1f - lookUp) + 1.2f * lookUp));
+    }
+
+    // Each potato weapon in hand, aimed: from the side, the front and first person.
+    private void WeaponShots()
+    {
+        Shot("weapons_00_wait", 60, () => { });
+        foreach (var (name, prop) in new[] { ("blaster", CharacterProp.PotatoBlaster), ("scattergun", CharacterProp.PotatoScattergun),
+                     ("launcher", CharacterProp.PotatoLauncher) })
+        {
+            Shot($"weapons_{name}_side", 40, () => { Hold(prop); Look(new Vector3(-2.4f, 1.2f, 0.2f)); });
+            Shot($"weapons_{name}_front", 10, () => Look(new Vector3(-1.4f, 1.3f, -2.2f)));
+            Shot($"weapons_{name}_first_person", 20, () => { Input(); Player.MakeCameraCurrent(); });
+        }
     }
 
     // A Soil Bag carried, lifted and tipped out, a mound spilling out of it, and mounds in each of their four looks.

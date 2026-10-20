@@ -88,6 +88,9 @@ public class VanillaCharactersTests
         Assert.Equal(CharacterProp.Food, settings.PoseFor("vanilla:tomato", "consumable").Prop);
         Assert.Equal([0.3f, 0.52f], settings.Eat.Bites);
         Assert.Equal(CharacterGesture.FireGun, settings.PoseFor("vanilla:potato_scattergun", "weapon").Gesture);
+        Assert.Equal(CharacterProp.PotatoBlaster, settings.PoseFor("vanilla:potato_blaster", "weapon").Prop);
+        Assert.Equal(CharacterProp.PotatoScattergun, settings.PoseFor("vanilla:potato_scattergun", "weapon").Prop);
+        Assert.Equal(CharacterProp.PotatoLauncher, settings.PoseFor("vanilla:potato_launcher", "weapon").Prop);
         Assert.Equal(ItemPose.Default, settings.PoseFor("some_mod:thing", null));
     }
 
