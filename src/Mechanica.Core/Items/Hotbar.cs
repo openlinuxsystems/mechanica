@@ -32,6 +32,13 @@ public static class HotbarTools
 
     /// <summary>True when <paramref name="id"/> names a tool (a bare id means vanilla).</summary>
     public static bool IsTool(string? id) => id is not null && All.Contains(Identifiers.Qualify(id));
+
+    /// <summary>
+    /// Everything Creative lists to take (the inventory's "All parts and tools"), each once: the tools, then every
+    /// catalog item. A tool that is also an item (the Connect Tool) is one entry, not two.
+    /// </summary>
+    public static IReadOnlyList<string> CreativeList(ModLoadResult catalog) =>
+        [.. All.Concat(catalog.Parts.Where(p => p.Value.Definition is { Category: not null, IsItem: true }).Select(p => p.Key)).Distinct()];
 }
 
 /// <summary>Arguments of <c>SetHotbarSlot</c>: what a slot holds.</summary>
