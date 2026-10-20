@@ -29,7 +29,8 @@ namespace Mechanica.Core.Creations;
 /// grid frame in the world (<see cref="Pose"/>). A moving body also stores <c>linear_velocity</c> (m/s)
 /// and <c>angular_velocity</c> (rad/s), both in world space and both optional (missing means at rest),
 /// so a late joiner or a reloaded save picks it up mid-motion (<see cref="BodyVelocity"/>).
-/// <c>on_lift</c> (written only when true) marks a Creation a Lift holds; a part's <c>color</c> is its
+/// <c>on_lift</c> (written only when true) marks a Creation a Lift holds, and <c>world_part</c> (written only when set) the POI
+/// <c>part</c> marker a world-owned Creation stands at (<see cref="Creation.WorldPart"/>); a part's <c>color</c> is its
 /// Paint Tool colour, <c>settings</c> the settings changed from its defaults (<c>{ "mode": "xor" }</c>) and
 /// <c>damage</c> the health it has lost and <c>anchored</c> (true) that it rests on the ground and holds its Body still,
 /// each written only when set. <c>links</c> are the Connect Tool's logic
@@ -54,6 +55,7 @@ public static class CreationJson
             Id = creation.Id,
             AuthorityPeer = creation.AuthorityPeer,
             OnLift = creation.OnLift ? true : null,
+            WorldPart = creation.WorldPart,
             Parts = [.. creation.Parts.Select(p => new PartInstanceData
             {
                 Id = p.Id,
@@ -126,10 +128,12 @@ public static class CreationJson
             sink.Error(invalid, "$.authority_peer", "authority_peer must be 1 or more.");
         if (data.Parts is not { Count: > 0 })
             sink.Error(invalid, "$.parts", "a creation needs at least one part.");
+        if (data.WorldPart is { } worldPart && string.IsNullOrWhiteSpace(worldPart))
+            sink.Error(invalid, "$.world_part", "world_part must name the marker the creation stands at.");
         if (sink.ErrorCount > 0)
             return null;
 
-        var creation = new Creation(id, catalog, peer) { Extra = data.Extra, OnLift = data.OnLift == true };
+        var creation = new Creation(id, catalog, peer) { Extra = data.Extra, OnLift = data.OnLift == true, WorldPart = data.WorldPart };
         var owner = new Dictionary<GridCell, int>();
         for (var i = 0; i < data.Parts!.Count; i++)
         {
@@ -415,6 +419,8 @@ public static class CreationJson
         public int? AuthorityPeer { get; init; }
 
         public bool? OnLift { get; init; }
+
+        public string? WorldPart { get; init; }
 
         public List<PartInstanceData>? Parts { get; init; }
 

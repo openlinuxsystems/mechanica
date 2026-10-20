@@ -145,6 +145,8 @@ public static class BuildAim
     {
         if (target is null)
             return null;
+        if (WorldOwned.Refusal(target, "built onto") is { } owned)
+            return owned;
         if (definition.Loose == true)
             return $"{definition.Name ?? "This part"} is set down on its own, not on a creation.";
         if (target.Parts.Select(p => target.DefinitionOf(p.Id)).FirstOrDefault(d => d.Loose == true) is { } loose)

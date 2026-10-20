@@ -400,7 +400,7 @@
       "kind": "action",
       "group": "general",
       "scope": "admin",
-      "description": "Remove every Creation.",
+      "description": "Remove every Creation players made; world-owned ones (a Workshop's Fabricator) stay.",
       "params": {
         "type": "object",
         "properties": {},

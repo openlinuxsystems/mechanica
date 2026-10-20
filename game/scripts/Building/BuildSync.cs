@@ -113,7 +113,7 @@ public partial class BuildSync : Node, IToolWorld, IPartCatalog
         Tools.Register(dispatcher);
         _dispatcher = dispatcher;
         dispatcher.Register<SpawnPartArgs>(CreationActions.SpawnPart,
-            (_, args) => CreationActions.ValidateSpawn(args, this, Creations.All.Count()),
+            (_, args) => CreationActions.ValidateSpawn(args, this, Creations.All.Count(c => !c.IsWorldOwned)),
             (_, args) =>
             {
                 var creation = CreationActions.BuildSpawn(args, NextCreationId(), this);
@@ -124,7 +124,8 @@ public partial class BuildSync : Node, IToolWorld, IPartCatalog
             (_, _) => null,
             (_, _) =>
             {
-                foreach (var id in Creations.All.Select(c => c.Id).ToList())
+                // The world's own parts (POI part markers) stay: nobody can remove them.
+                foreach (var id in Creations.All.Where(c => !c.IsWorldOwned).Select(c => c.Id).ToList())
                     Removed(id);
                 return null;
             });

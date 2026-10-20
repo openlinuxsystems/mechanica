@@ -20,7 +20,7 @@ public static class CreationActions
     /// <summary>Action name: spawn a part as a new Creation.</summary>
     public const string SpawnPart = "SpawnPart";
 
-    /// <summary>Action name: remove every Creation.</summary>
+    /// <summary>Action name: remove every Creation players made; world-owned ones (a Workshop's Fabricator) stay.</summary>
     public const string ClearCreations = "ClearCreations";
 
     /// <summary>Most Creations the world may hold before spawning is refused.</summary>

@@ -122,7 +122,7 @@ inside, a missing `poi` or `quest`, an unknown `format_version`) stops it before
 
 ## Your first quest
 
-This makes a mod whose quest follows vanilla's story: once the Workshop Outpost quest is done, it sends the
+This makes a mod whose quest follows vanilla's story: once the Workshop quest is done, it sends the
 players to a small camp where someone waits to talk.
 
 1. Make a mod (Mod Manager, **New mod…**) with `vanilla` as a dependency, say `my_story`.
@@ -177,6 +177,6 @@ players to a small camp where someone waits to talk.
    keeper's line plays. Walk up to the keeper's marker (within 4 m) and press **E** to finish the second step;
    the outro plays and every player gets two Component Kits. Check it with a client too: open the world to the
    LAN from the pause menu and join it from a second copy of the game.
-5. Put `requires` back and run the batch once more. Now the quest starts as soon as vanilla's Workshop Outpost
+5. Put `requires` back and run the batch once more. Now the quest starts as soon as vanilla's Workshop
    quest is done, also in a saved world where that quest was already finished.
 

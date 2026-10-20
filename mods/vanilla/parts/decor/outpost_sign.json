@@ -1,7 +1,7 @@
 {
   "id": "outpost_sign",
-  "name": "Workshop Outpost Sign",
-  "description": "The sign that marks a Workshop Outpost.",
+  "name": "Workshop Sign",
+  "description": "The sign that marks a Workshop.",
   "category": "decor",
   "mass": 3,
   "durability": 2,

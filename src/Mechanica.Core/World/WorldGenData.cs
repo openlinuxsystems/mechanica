@@ -275,7 +275,7 @@ public sealed class WorldGenData
         foreach (var (modId, file, prefab) in prefabs)
         {
             var sink = new DiagnosticSink(file, diagnostics);
-            WorldGenValidator.Validate(prefab, biomeIds, sink, groundIds, objectIds, liquidIds);
+            WorldGenValidator.Validate(prefab, biomeIds, sink, groundIds, objectIds, liquidIds, content, modId);
             var id = $"{modId}:{prefab.Id}";
             if (pois.Any(p => p.QualifiedId == id))
                 sink.Error(DiagnosticCodes.PoiInvalid, "$.id", $"POI '{id}' is defined twice.");

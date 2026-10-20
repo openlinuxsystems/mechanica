@@ -12,6 +12,9 @@ structure's centre (glTF +Y up, front towards +Z):
   (Settler Patchwork).
 * ``meshes/structures/stone_arch.glb``, ``stone_arch_broken.glb``, ``stone_pillar_{tall,mid,short}.glb`` and
   ``stone_court.glb`` - Old Stone ruins: arches, pillars, and a flagstone court with steps.
+* ``meshes/structures/workshop.glb`` - the Workshop (Colony Works): a vehicle repair shop with two always-open bays,
+  an office and a worn forecourt. Every Workshop POI uses it; its Fabricator is a part the POI places (a ``part``
+  marker), not part of the model.
 * ``meshes/structures/cargo_crate_colony.glb`` - a framed Colony cargo crate (decoration in the cargo spill).
 * ``meshes/world/scrap_pile_metal.glb`` and ``scrap_pile_wood.glb`` - the starting scrap piles (world objects).
 
@@ -25,7 +28,7 @@ How to run (Blender as a Python module, no Blender UI needed):
     python tools/structures/build_structures.py
 
 The outputs are committed; re-run this script after changing it (or kit.py, frame.py, families.py, ship.py,
-textures.py) and commit the result. The build is deterministic (seeded noise only).
+workshop.py, textures.py) and commit the result. The build is deterministic (seeded noise only).
 """
 
 from __future__ import annotations
@@ -44,6 +47,7 @@ K.EXPORT = True
 import families as F  # noqa: E402
 import frame as FR  # noqa: E402
 import ship as S  # noqa: E402
+import workshop as W  # noqa: E402
 
 STRUCTURES = K.MESH / "structures"
 WORLD = K.MESH / "world"
@@ -107,6 +111,7 @@ def main():
     for name, h, seed in (("stone_pillar_tall", 5.0, 21), ("stone_pillar_mid", 3.4, 23), ("stone_pillar_short", 2.6, 22)):
         single(name, lambda h=h, seed=seed: F.stone_pillar((0, 0, 0), h, seed))
     single("stone_court", court)
+    single("workshop", lambda: W.workshop())
     single("cargo_crate_colony", crate)
     single("scrap_pile_metal", pile("metal"), WORLD, collider=False)
     single("scrap_pile_wood", pile("wood"), WORLD, collider=False)

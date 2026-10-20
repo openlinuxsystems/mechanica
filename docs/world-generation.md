@@ -320,7 +320,7 @@ shape at any world size.
 
 The vanilla layout gives each of the spec's 50 structures its own prefab (`pois/poi_01.json` …
 `pois/poi_50.json`; POI-36 is `crash_site` and POI-37 the quests' `outpost`), so each can be designed on
-its own. The story needs the first Workshop Outpost within 350 m of the crash site, so POI-37 sits about 270 m north
+its own. The story needs the first Workshop within 350 m of the crash site, so POI-37 sits about 270 m north
 of it with a 50 m jitter (the seed moves a site at most `jitter` along each axis, so up to `jitter` × 1.41 in all), and
 shares its `field` biome: a site's biome reaches about 0.7 × `biome_cell_size` round it and would repaint the start. Until then they are placeholders of the right footprint and height, written by
 `tools/author-poi-placeholders.py` (edit its table and re-run). Six extra large slots draw a warehouse or a
@@ -371,14 +371,14 @@ Another mod's POI is changed or removed through `overrides/<mod>/pois/`, a `.pat
 ```json
 {
   "id": "outpost",
-  "name": "Workshop Outpost",
+  "name": "Workshop",
   "radius": 40.0,
   "size": [16.0, 4.3, 16.0],
   "road": "road",
   "placement": {},
   "terrain": [{ "op": "flatten", "radius": 18.0, "blend": 20.0 }],
   "pieces": [{ "shape": "box", "size": [16.0, 0.3, 16.0], "at": [0.0, 0.15, 0.0], "color": "#a3a093" }],
-  "markers": [{ "type": "item", "ref": "fabricator", "at": [0.0, 0.3, -5.0] }]
+  "markers": [{ "type": "part", "ref": "fabricator", "at": [0.0, 0.3, -5.0], "yaw": 180.0 }]
 }
 ```
 
@@ -398,7 +398,34 @@ Another mod's POI is changed or removed through `overrides/<mod>/pois/`, a `.pat
 | `models[]` | Structures as models: `file` (a `.glb` or `.gltf`, relative to the POI's mod or `other_mod:path`, usually under `meshes/structures/`), `at` (`[x, y, z]` of the model's origin, relative to the POI centre on its pad) and `yaw` (degrees, counter-clockwise from above, added to the POI's turn). A mesh named `collider` is its collision shape and is not drawn; without one the drawn meshes collide, both faces of every triangle, so walls hold from inside too. `"solid": false` makes it scenery only. Point lights in the file become room lamps. A model is placed by the terrain chunk that holds its origin and stays loaded with that chunk, so it is never cut at a chunk border. How to make one is in the [Art Direction](art-direction.md#models-in-the-game) guide. |
 | `ground[]` | Ground painted on the footprint, in order, each over the ones before: `ground` (an id from `grounds[]`), full inside `radius` of `at` (`[x, z]`, default the centre) and fading over `blend`, with an edge pushed in and out by up to `noise` metres. Must stay inside the POI radius. |
 | `flora` | Id of a biome whose flora grows on the footprint (outside bare ground). Omitted: nothing grows inside the POI. The crash site burns its middle and grows a meadow round it. |
-| `markers[]` | Points for other systems: `type` (`spawn`, `item`, `bot`, `fire`, `door`, `npc`, `core`, ...) and an optional `ref` (a catalog id, or a character id for `npc`). The first `spawn` marker of a fixed POI is where players start. A `bot` marker is a guard post: in Survival its bot (`ref`, a bot of this mod unless qualified) appears when a player comes near, leaves when everyone has gone, and is replaced some time after it is killed (distances and the wait are in the game's `data/bots.json`). [Quests](quests.md) point at markers. An `npc` marker draws the [character](characters.md#non-player-characters) its `ref` names standing there, facing the marker's `yaw`. An `object` marker places the world object `ref` names (`objects[]`, such as `oil_geyser`) on the ground under it, raised by its `at` height. |
+| `markers[]` | Points for other systems: `type` (`spawn`, `item`, `part`, `bot`, `fire`, `door`, `npc`, `core`, ...), `at` (`[x, y, z]` relative to the POI centre on its pad), `yaw` (degrees about +Y, counter-clockwise from above, added to the POI's turn; 0 faces −Z) and an optional `ref` (a catalog id, or a character id for `npc`). The first `spawn` marker of a fixed POI is where players start. A `bot` marker is a guard post: in Survival its bot (`ref`, a bot of this mod unless qualified) appears when a player comes near, leaves when everyone has gone, and is replaced some time after it is killed (distances and the wait are in the game's `data/bots.json`). [Quests](quests.md) point at markers. An `npc` marker draws the [character](characters.md#non-player-characters) its `ref` names standing there, facing the marker's `yaw`. An `object` marker places the world object `ref` names (`objects[]`, such as `oil_geyser`) on the ground under it, raised by its `at` height. A `part` marker puts a working part there that belongs to the world (see [World-owned parts](#world-owned-parts-part-markers)). An `item` marker is only a note for design work for now: nothing appears there. |
 | `pools[]` | Round pools of a liquid (`liquid`, an id from `liquids[]`), usually laid in a `basin`: the surface is a disc of `radius` metres round `at` (`[x, z]`), `level` metres above the pad (below 0 in a basin). The liquid fills only the part of the disc where the ground is lower than the surface, so the shore follows the basin's (wobbling) bank: make the disc reach past it. Nothing grows in it. Must stay inside the POI radius. |
 
 The pad height of a spaced POI is the natural ground height at its centre.
+
+### World-owned parts (`part` markers)
+
+A `part` marker puts one working part in the world: every Workshop has a Fabricator this way.
+
+```json
+{ "type": "part", "ref": "fabricator", "at": [7.25, 0.3, -10.6], "yaw": 180.0 }
+```
+
+- `ref` is a part id: a bare id is a part of the POI's own mod, `other_mod:id` another mod's. It must be a part the
+  loaded mods have and that can be placed; otherwise the POI fails to load with an error at `$.markers[i].ref`.
+- `at` is the point on the floor the part stands on: the middle of its bottom face. `yaw` turns it about +Y like every
+  marker: at 0 the part's front (its local −Z) faces −Z, at 180 it faces +Z. The POI's own quarter turn is added.
+- The host puts the part there as a normal one-part Creation when the world starts, so its script, station, storage
+  and menus work exactly as a player's do, for the host and every client. It is anchored (nothing knocks it over or
+  pushes it), simulated by the host, and streamed like any still Creation: it comes in with the ground under it when
+  a player comes near and is parked when everyone has left, never cut at a chunk border.
+- It is **world-owned**. Anyone can use it: open it, craft, take what it made, put things in and take them out, change
+  its settings. Nobody, host or client, in Creative or Survival, can pick it up or take parts off it, build onto it,
+  weld it or weld to it, lift or capture it, paint it, upgrade it or wire it; each is refused with "The Fabricator
+  belongs to the world: it can't be …". Hammers, weapons, blasts, bots and fire do it no damage, and a bot never
+  attacks it. Clearing the Test Sandbox leaves it, and a blueprint of it is the player's own.
+- It is saved with the world (its Creation carries `world_part`, the marker's key `mod:poi#marker@index`: the POI's
+  id, the marker's index in `markers` and the POI's index in the world), so what it holds and is crafting stays. When
+  a world loads, each marker gets exactly one: a saved one is kept (and put back on its marker if the marker moved), a
+  missing one is made (an older save, or a POI a mod added), and one whose marker is gone is removed. It is never
+  made twice, however often the world is loaded or the area entered.

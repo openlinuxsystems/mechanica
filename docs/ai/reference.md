@@ -622,7 +622,7 @@ Say a line. Arguments of SendChat.
 
 *action, admin scope*
 
-Remove every Creation.
+Remove every Creation players made; world-owned ones (a Workshop's Fabricator) stay.
 
 No params.
 

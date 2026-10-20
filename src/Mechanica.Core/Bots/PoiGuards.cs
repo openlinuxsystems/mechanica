@@ -46,13 +46,10 @@ public sealed class PoiGuards
     [
         .. world.MarkersOfType(MarkerType)
             .Where(m => !string.IsNullOrEmpty(m.Marker.Ref))
-            .Select(m => new GuardPost(m.Poi.Poi.QualifiedId, Qualify(m.Marker.Ref!, m.Poi.Poi.QualifiedId), m.Position,
+            // A bare ref names a bot of the POI's own mod.
+            .Select(m => new GuardPost(m.Poi.Poi.QualifiedId, PoiMarker.Qualify(m.Marker.Ref!, m.Poi.Poi.QualifiedId), m.Position,
                 m.Yaw * 180f / MathF.PI)),
     ];
-
-    // A bare ref names a bot of the POI's own mod.
-    private static string Qualify(string id, string poi) =>
-        id.Contains(':') ? id : $"{poi[..Math.Max(0, poi.IndexOf(':'))]}:{id}";
 
     /// <summary>Puts guards on and takes them off duty. The host calls it every physics tick.</summary>
     public void Tick()

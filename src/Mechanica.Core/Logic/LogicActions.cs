@@ -282,6 +282,9 @@ public sealed class LogicActions(BuildSettings settings, IBuildWorld world, ILog
             return tool;
         if (world.FindCreation(args.Creation) is not { } creation)
             return $"There is no creation {args.Creation}.";
+        // Links live inside one Creation, and nothing can be built onto a world-owned one, so it is never wired up.
+        if (WorldOwned.Refusal(creation, "wired") is { } owned)
+            return owned;
         if (creation.CheckLink(args.From, args.To) is { } error)
             return Sentence(error);
         return CheckReach(caller, creation, args.From) ?? CheckReach(caller, creation, args.To);
@@ -302,6 +305,8 @@ public sealed class LogicActions(BuildSettings settings, IBuildWorld world, ILog
             return tool;
         if (world.FindCreation(args.Creation) is not { } creation)
             return $"There is no creation {args.Creation}.";
+        if (WorldOwned.Refusal(creation, "wired") is { } owned)
+            return owned;
         if (!creation.Links.Contains(new LogicLink(args.From, args.To)))
             return $"Part {args.From} does not feed part {args.To}.";
         return CheckReach(caller, creation, args.To);

@@ -346,13 +346,13 @@ public class WorldGenTests
         Assert.All(scrap, o => Assert.True(o.Definition.Harvest && o.Definition.Regrow is null));
         Assert.Contains(scrap, o => o.Definition.Drops!.Any(d => d.Item == "scrap_metal"));
         Assert.Contains(scrap, o => o.Definition.Drops!.Any(d => d.Item == "scrap_wood"));
-        // Its road heads north to the first Mechanic Station (spec §1).
+        // Its road heads north to the first Workshop (spec §1).
         var station = Assert.Single(gen.Pois, p => p.Site?.Id == "poi_37");
-        Assert.True(station.Centre.Y < crash.Centre.Y, "the first Mechanic Station is north of the crash site");
+        Assert.True(station.Centre.Y < crash.Centre.Y, "the first Workshop is north of the crash site");
         Assert.Equal(RoadKind.Road, gen.Roads.Connected[crash.Index]);
     }
 
-    // The story's first Workshop Outpost (the farmer marks it on the map) is in walking distance of the crash on every seed.
+    // The story's first Workshop (the farmer marks it on the map) is in walking distance of the crash on every seed.
     [Theory]
     [InlineData(1234)]
     [InlineData(1)]
@@ -746,6 +746,8 @@ public class WorldGenTests
     [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "flora": "jungle" }""", "$.flora")]
     [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "markers": [{ "type": "object", "ref": "tree" }] }""", "$.markers[0].ref")]
     [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "markers": [{ "type": "object" }] }""", "$.markers[0].ref")]
+    [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "markers": [{ "type": "part" }] }""", "$.markers[0].ref")]
+    [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "markers": [{ "type": "part", "ref": "fabricator" }] }""", "$.markers[0].ref")]
     [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "terrain": [{ "op": "basin", "radius": 2, "blend": 3, "depth": 1, "wobble": 0.6 }] }""", "$.terrain[0].wobble")]
     [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "terrain": [{ "op": "basin", "radius": 4, "blend": 4, "depth": 1, "wobble": 0.4 }] }""", "$.terrain[0]")]
     [InlineData("""{ "id": "p", "radius": 10, "placement": { "fixed": [0, 0] }, "terrain": [{ "op": "basin", "radius": 2, "blend": 2, "depth": 1, "wobble": 0.4 }] }""", "$.terrain[0].blend")]
