@@ -23,9 +23,9 @@ namespace Mechanica.Game.Logic;
 /// crosshair and has a curved arrow when something drives it and it can be reversed (a bearing linked to a seat, a
 /// controller or an engine). A part a seat or a controller is linked to shows its order number beside its node. While the tool drags a line, the preview follows the
 /// aim with a little slack, and nodes it cannot end on fade (§9). Links the host has not confirmed show at once and
-/// fade out red if it refuses them. Lines show while the tool is out or the visualizer is on (F7); otherwise a
-/// link flashes briefly when its source's signal changes. Signals are read with <c>InspectCreation</c> a few times
-/// a second, so a client sees what the host's bus does.
+/// fade out red if it refuses them. Lines show only while the tool is out or the visualizer is on (F7); a signal
+/// changing (the gas pedal in a seat) never shows them, so driving draws nothing. Signals are read with
+/// <c>InspectCreation</c> a few times a second, so a client sees what the host's bus does.
 /// </summary>
 public partial class LogicOverlay : CanvasLayer
 {
@@ -34,7 +34,6 @@ public partial class LogicOverlay : CanvasLayer
 
     private readonly Dictionary<int, IReadOnlyDictionary<int, float>> _signals = [];
     private readonly HashSet<int> _asking = [];
-    private readonly Dictionary<(int Creation, LogicLink Link), double> _flash = [];
     private readonly List<Line> _lines = [];
     private readonly List<Dot> _dots = [];
     private Painter _canvas = null!;
@@ -84,9 +83,6 @@ public partial class LogicOverlay : CanvasLayer
     /// <summary>Order numbers drawn on the last frame (Creation, part, text), for tests.</summary>
     public IReadOnlyList<(int Creation, int Part, string Text)> DrawnNumbers { get; private set; } = [];
 
-    /// <summary>Links flashing now because their signal changed with the lines hidden, for tests.</summary>
-    public IReadOnlyCollection<(int Creation, LogicLink Link)> Flashing => _flash.Keys;
-
     /// <summary>True while every line shows (the Connect Tool out, or F7).</summary>
     public bool ShowingAll => Enabled || ShowLinks || Tool is not null;
 
@@ -114,11 +110,6 @@ public partial class LogicOverlay : CanvasLayer
     public override void _Process(double delta)
     {
         _time += delta;
-        foreach (var key in _flash.Keys.ToList())
-        {
-            if ((_flash[key] -= delta) <= 0)
-                _flash.Remove(key);
-        }
         var centre = Players.LocalPlayer?.GlobalPosition;
         var nearby = ConnectionNodes.Nearby(Creations, centre, Look.Range).Where(n => n.Creation.Links.Count > 0).ToList();
         _sincePoll += delta;
@@ -146,17 +137,7 @@ public partial class LogicOverlay : CanvasLayer
                 return;
             }
             var inspection = value.Deserialize<CreationInspection>(ActionJson.Options)!;
-            var signals = inspection.Parts.Where(p => p.Output != 0).ToDictionary(p => p.Id, p => p.Output);
-            // A source whose signal changed flashes its links (§12), from the second read on.
-            if (_signals.TryGetValue(creationId, out var before) && Creations.Find(creationId) is { } creation)
-            {
-                foreach (var link in creation.Links)
-                {
-                    if (before.GetValueOrDefault(link.From) != signals.GetValueOrDefault(link.From))
-                        _flash[(creationId, link)] = Look.FlashSeconds;
-                }
-            }
-            _signals[creationId] = signals;
+            _signals[creationId] = inspection.Parts.Where(p => p.Output != 0).ToDictionary(p => p.Id, p => p.Output);
         });
     }
 
@@ -218,8 +199,7 @@ public partial class LogicOverlay : CanvasLayer
         var rollback = Build.Settings?.Placement.RollbackSeconds ?? 0.4;
         var pending = tool?.Pending ?? Connector?.Invoke()?.Pending ?? [];
         var removing = pending.Where(p => !p.Adding && p.Refused is null).Select(p => (p.Creation, p.Link)).ToHashSet();
-        float Flash((int, LogicLink) key) => _flash.TryGetValue(key, out var left) ? (float)(left / Math.Max(look.FlashSeconds, 1e-3)) : 0f;
-        bool Shown((int, LogicLink) key) => (all || Flash(key) > 0) && !removing.Contains(key);
+        bool Shown((int, LogicLink) key) => all && !removing.Contains(key);
         // What shows, wherever the camera looks.
         foreach (var node in ConnectionNodes.Nearby(Creations, Players.LocalPlayer?.GlobalPosition, look.Range))
         {
@@ -232,10 +212,9 @@ public partial class LogicOverlay : CanvasLayer
             if (!Shown(key))
                 continue;
             var on = SignalOf(segment.Creation, segment.Link.From) != 0;
-            var alpha = all ? 1f : Flash(key);
             var hovered = tool?.HoveredLink == key;
-            var outer = (hovered ? UiTokens.Blue.Lightened(0.35f) : UiTokens.Blue) with { A = alpha };
-            var core = (hovered ? UiTokens.Text : UiTokens.Cyan) with { A = alpha * (on || hovered ? 1f : 0.55f) };
+            var outer = hovered ? UiTokens.Blue.Lightened(0.35f) : UiTokens.Blue;
+            var core = (hovered ? UiTokens.Text : UiTokens.Cyan) with { A = on || hovered ? 1f : 0.55f };
             _lines.Add(new Line(segment.From, segment.To, outer, core, Chevrons: true, Bright: hovered));
         }
         // Links sent and not yet confirmed show at once; refused ones fade out red (§9 rollback).

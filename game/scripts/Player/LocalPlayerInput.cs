@@ -43,7 +43,7 @@ public partial class LocalPlayerInput : Node
         Target.Camera.Fov = GameSettings.Current.FieldOfView;
         GameSettings.Changed += OnSettingsChanged;
         Target.MakeCameraCurrent();
-        Target.CameraDistance = Target.Settings.CameraDistance;
+        Target.CameraDistance = Target.Settings.CameraStartsFirstPerson ? 0f : Target.Settings.CameraDistance;
         // Run before the controller so it simulates this frame's input.
         ProcessPhysicsPriority = Target.ProcessPhysicsPriority - 1;
     }

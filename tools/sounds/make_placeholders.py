@@ -477,22 +477,14 @@ def lift_deny(rng):
     return edges(peak(band(mix(0.3, (buzz(196), 0.0), (buzz(165), 0.13)), 90, 3000), 0.55))
 
 
-# ---- The Scrap Driver's Seat: a wooden pallet that creaks and a pipe frame that rattles ----------------------
+# ---- The Scrap Driver's Seat: a wooden pallet that knocks and a pipe frame that rattles ----------------------
+# No slow stick-slip creak: a pulse train of a few dozen a second through a wood resonance is a frog's croak.
 
-def wood_creak(rng, dur=0.45, f0=38.0, f1=62.0, level=0.6):
-    """Stick-slip in old wood: a pulse train gliding from f0 to f1 pulses a second, rung through a few wood resonances."""
-    n = n_of(dur)
-    rate = np.linspace(f0, f1, n) * (1 + 0.08 * np.sin(2 * np.pi * 3.3 * t_of(dur) + rng.uniform(0, 6.28)))
-    phase = np.cumsum(rate) / SR
-    pulses = np.zeros(n)
-    idx = np.nonzero(np.diff(np.floor(phase)) > 0)[0]
-    pulses[idx] = rng.uniform(0.5, 1.0, len(idx))
-    ring = np.zeros(n_of(0.05))
-    for freq, gain, tau in ((430, 1.0, 0.012), (780, 0.6, 0.008), (1240, 0.35, 0.005), (2100, 0.15, 0.003)):
-        ring += tone(freq * rng.uniform(0.95, 1.05), 0.05, rng.uniform(0, 6.28)) * decay(0.05, tau) * gain
-    x = np.convolve(pulses, ring)[:n] + band(noise(rng, dur), 300, 1800) * 0.05
-    env = np.minimum(1, t_of(dur) / 0.04) * np.minimum(1, (dur - t_of(dur)) / 0.12)
-    return peak(x * env, level)
+def wood_knock(rng, dur=0.18, level=0.6):
+    """The pallet's boards knocking together under weight: two dry, short wooden taps."""
+    taps = [hit(rng, 0.12, 250, 2200, 0.018, ((rng.uniform(380, 460), 0.6), (rng.uniform(820, 980), 0.3)), 0.025, 1.0, a)
+            for a in (1.0, rng.uniform(0.4, 0.6))]
+    return peak(mix(dur, (taps[0], 0.0), (taps[1], rng.uniform(0.05, 0.08))), level)
 
 
 def pipe_rattle(rng, dur=0.45, rate=16.0, level=0.5):
@@ -508,23 +500,24 @@ def pipe_rattle(rng, dur=0.45, rate=16.0, level=0.5):
 
 
 def scrap_seat_enter(rng):
-    """0.8 s, timed to the seat's enter clip: the weight lands, the pallet creaks, the frame rattles and settles."""
-    return edges(peak(mix(0.8, (thud(rng, 0.35, 50, 800, 0.05, 0.8), 0.0), (wood_creak(rng, 0.5, 34, 55, 0.7), 0.04),
+    """0.8 s, timed to the seat's enter clip: the weight lands, the boards knock, the frame rattles and settles."""
+    return edges(peak(mix(0.8, (thud(rng, 0.35, 50, 800, 0.05, 0.8), 0.0), (wood_knock(rng, 0.2, 0.5), 0.04),
                           (pipe_rattle(rng, 0.6, 18, 0.45), 0.05)), 0.7))
 
 
 def scrap_seat_exit(rng):
-    """0.7 s, timed to the exit clip: the cushions spring back, a rising creak, a last rattle."""
-    return edges(peak(mix(0.7, (whoosh(rng, 0.2, 200, 1800, 0.3), 0.0), (wood_creak(rng, 0.4, 48, 75, 0.6), 0.05),
+    """0.7 s, timed to the exit clip: the cushions spring back, the boards knock, a last rattle."""
+    return edges(peak(mix(0.7, (whoosh(rng, 0.2, 200, 1800, 0.3), 0.0), (wood_knock(rng, 0.2, 0.45), 0.05),
                           (pipe_rattle(rng, 0.45, 15, 0.35), 0.08)), 0.6))
 
 
 def scrap_seat_creak(rng):
-    """A single creak of the pallet, sometimes with a bolt ticking in its hole."""
-    body = wood_creak(rng, rng.uniform(0.3, 0.5), rng.uniform(30, 45), rng.uniform(50, 80), 0.6)
+    """A single knock of the pallet, sometimes with a bolt ticking in its hole. Vanilla seats no longer bind it
+    (a sound every few seconds while driving wore thin); it stays for mods' seats."""
+    body = wood_knock(rng, 0.2, 0.55)
     if rng.uniform() < 0.5:
-        return edges(peak(mix(0.55, (body, 0.0), (pipe_rattle(rng, 0.2, 22, 0.25), rng.uniform(0.05, 0.2))), 0.55))
-    return edges(peak(fit(body, n_of(0.55)), 0.55))
+        return edges(peak(mix(0.4, (body, 0.0), (pipe_rattle(rng, 0.2, 22, 0.25), rng.uniform(0.05, 0.15))), 0.55))
+    return edges(peak(fit(body, n_of(0.4)), 0.55))
 
 
 EVENTS = []  # (group, id, recipe, options, variants, is_loop, loop_length)

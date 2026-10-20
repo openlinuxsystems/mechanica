@@ -189,9 +189,6 @@ public sealed record ConnectSettings
     /// <summary>Opacity of targets a drag cannot end on (§9: 30%).</summary>
     public float InvalidAlpha { get; init; } = 0.3f;
 
-    /// <summary>Seconds a link shows when its signal changes while the Connect Tool is put away (§12: a brief flash).</summary>
-    public double FlashSeconds { get; init; } = 0.6;
-
     /// <summary>How far from the player connections are drawn, in m.</summary>
     public float Range { get; init; } = 40f;
 
@@ -208,11 +205,8 @@ public sealed record ConnectSettings
             throw new FormatException($"connect.lane_gap must be 0 or more (got {LaneGap}).");
         if (!float.IsFinite(InvalidAlpha) || InvalidAlpha is < 0f or > 1f)
             throw new FormatException($"connect.invalid_alpha must be 0 to 1 (got {InvalidAlpha}).");
-        foreach (var (value, name) in new[] { (PulseSeconds, "pulse_seconds"), (FlashSeconds, "flash_seconds") })
-        {
-            if (!double.IsFinite(value) || value < 0)
-                throw new FormatException($"connect.{name} must be 0 or more (got {value}).");
-        }
+        if (!double.IsFinite(PulseSeconds) || PulseSeconds < 0)
+            throw new FormatException($"connect.pulse_seconds must be 0 or more (got {PulseSeconds}).");
     }
 }
 

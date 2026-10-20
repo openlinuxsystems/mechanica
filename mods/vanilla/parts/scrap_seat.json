@@ -29,8 +29,7 @@
   "script": "scripts/seat.lua",
   "sounds": {
     "enter": "scrap_seat_enter",
-    "exit": "scrap_seat_exit",
-    "creak": "scrap_seat_creak"
+    "exit": "scrap_seat_exit"
   },
   "logic": {
     "outputs": 2

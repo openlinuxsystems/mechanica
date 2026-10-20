@@ -414,10 +414,16 @@ a patch are your mod's:
 | `levels[].budget` | Bot budget for one player, spent at each bot's `raid_cost`. |
 | `levels[].budget_per_value` | Extra budget per point of value above `min_value` (for the top level). |
 | `levels[].bots` | The mix sent at the level's budget: `{bot, count}`. A bigger budget sends more of the same mix. |
+| `levels[].bots[].one_of` | Optional list of other bots each raider in the entry may be instead. Every raider is picked at random from `bot` and these (a new pick each raid) and costs `bot`'s `raid_cost` whichever it turns out to be. |
 | `levels[].notes` | A note for the editor. |
 
 A bare bot id means the table's own mod; write `vanilla:rakehand` for another mod's. Every bot in a raid
-needs a `raid_cost`.
+needs a `raid_cost`, including the ones in `one_of`. Vanilla uses `one_of` for its Rakehands, so each
+Rakehand raider turns up as a Field Hand, a Baler or a Scarecrow:
+
+```json
+{ "bot": "rakehand", "count": 4, "one_of": ["rakehand_baler", "rakehand_scarecrow"] }
+```
 
 Edit the table on the editor's **Raids** tab. The heading names the file (`raids/raids.json`) and reminds you
 that the last mod in load order that has one wins. The **Table** box holds the whole table as JSON; click

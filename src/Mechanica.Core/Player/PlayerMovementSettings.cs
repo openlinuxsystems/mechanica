@@ -74,7 +74,13 @@ public sealed record PlayerMovementSettings
     /// <summary>How fast the camera moves between standing and crouching eye height in m/s.</summary>
     public float StanceSpeed { get; init; } = 4f;
 
-    /// <summary>How far behind the player the third-person camera starts, in metres (0 starts first-person).</summary>
+    /// <summary>Whether the local player's camera starts first-person (zoom out with C for third person).</summary>
+    public bool CameraStartsFirstPerson { get; init; } = true;
+
+    /// <summary>
+    /// How far behind the player the third-person camera sits when it pulls back (death, spectating, starting third-person), in metres.
+    /// 0 means first-person, and pulling back then uses <see cref="CameraMinDistance"/>.
+    /// </summary>
     public float CameraDistance { get; init; } = 3.5f;
 
     /// <summary>The closest third-person camera distance in metres; zooming in past it goes first-person.</summary>

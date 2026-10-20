@@ -91,7 +91,7 @@ public class BuildSettingsTests
     [InlineData("""{"sledge": {"character_mass": 0}}""", "sledge.character_mass")]
     [InlineData("""{"connect": {"invalid_alpha": 2}}""", "connect.invalid_alpha")]
     [InlineData("""{"connect": {"snap_metres": 0}}""", "connect.snap_metres")]
-    [InlineData("""{"connect": {"flash_seconds": -1}}""", "connect.flash_seconds")]
+    [InlineData("""{"connect": {"pulse_seconds": -1}}""", "connect.pulse_seconds")]
     [InlineData("""{"reach": 0}""", "reach")]
     [InlineData("""{"max_parts_per_creation": 0}""", "max_parts_per_creation")]
     [InlineData("""{"clearance_scale": 1.5}""", "clearance_scale")]

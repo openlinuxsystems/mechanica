@@ -352,6 +352,24 @@ public class WorldGenTests
         Assert.Equal(RoadKind.Road, gen.Roads.Connected[crash.Index]);
     }
 
+    // The story's first Workshop Outpost (the farmer marks it on the map) is in walking distance of the crash on every seed.
+    [Theory]
+    [InlineData(1234)]
+    [InlineData(1)]
+    [InlineData(77)]
+    [InlineData(2026)]
+    public void FirstWorkshopOutpostIsWithin350MetresOfTheCrashSite(long seed)
+    {
+        var gen = seed == Seed ? Vanilla.Value : new WorldGenerator(VanillaData.Value, seed, VanillaSize, VanillaDepth);
+        var crash = Assert.Single(gen.Pois, p => p.Poi.QualifiedId == "vanilla:crash_site");
+        var outpost = Assert.Single(gen.Pois, p => p.Poi.QualifiedId == "vanilla:outpost");
+        var distance = Vector2.Distance(crash.Centre, outpost.Centre);
+        Assert.True(distance <= 350f, $"seed {seed}: the outpost is {distance:0} m from the crash site");
+        Assert.True(distance > crash.Radius + outpost.Radius, $"seed {seed}: the outpost overlaps the crash site");
+        Assert.True(outpost.PadHeight > gen.SeaLevel, $"seed {seed}: the outpost's pad is under water");
+        Assert.Equal(RoadKind.Road, gen.Roads.Connected[outpost.Index]);
+    }
+
     [Fact]
     public void PoisFollowTheirPlacementRules()
     {
