@@ -12,7 +12,8 @@
 -- Setting "gear" (shown as Power, 1 to properties.gears, default 5): each step turns that share of the top speed, and 0
 -- stops it. Setting "on": switched off it never runs, whatever its controls do (an engine without the setting is on).
 -- Its menu shows "fuel" (how much of the current item is left, 0 to 1; full in Creative), "fuel_items"
--- (items left in the containers it burns from), "rpm" (the first wheel's speed) and "torque" (N·m it drives with). Its
+-- (items left in the containers it burns from), "rpm" (the first wheel's speed), "top_rpm" (the wheel speed its power
+-- setting reaches) and "torque" (N·m it drives with while switched on). Its
 -- "running" display is on while it drives, and each wheel bearing's "drive" display turns with it.
 -- Sounds: "start" when it starts, the "loop" while it runs (its properties.loop_parameter follows the
 -- throttle), and "stop" when it runs out of fuel.
@@ -188,7 +189,12 @@ local function show(throttle, dt)
   part.display("running", throttle ~= 0)
   part.display("fuel", world.creative() and 1 or math.max(0, math.min(1, (state.fuel or 0) / properties.fuel_time)))
   part.display("fuel_items", creation.count(properties.fuel, tanks()))
-  part.display("torque", throttle ~= 0 and properties.torque or 0)
+  -- torque: what it drives with while switched on (also between throttle presses); top_rpm: the wheel speed its power
+  -- setting reaches at full throttle
+  local gear = part.setting("gear") or 1
+  local on = switched_on() and gear > 0
+  part.display("torque", on and properties.torque or 0)
+  part.display("top_rpm", on and math.floor(properties.speed * gear / (properties.gears or 5) * 60 / (2 * math.pi) + 0.5) or 0)
   local rpm = 0
   for _, id in ipairs(part.links()) do
     if direction(id) then

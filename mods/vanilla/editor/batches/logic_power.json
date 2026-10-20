@@ -169,6 +169,7 @@
             { "id": "fuel", "name": "Fuel", "kind": "bar" },
             { "id": "fuel_items", "name": "Gasoline in tanks", "kind": "number" },
             { "id": "rpm", "name": "Speed", "kind": "number", "unit": "rpm" },
+            { "id": "top_rpm", "name": "Top speed", "kind": "number", "unit": "rpm" },
             { "id": "torque", "name": "Torque", "kind": "number", "unit": "N·m" }
           ],
           "lever": {
@@ -387,6 +388,7 @@
             { "id": "fuel", "name": "Battery", "kind": "bar" },
             { "id": "fuel_items", "name": "Battery packs", "kind": "number" },
             { "id": "rpm", "name": "Speed", "kind": "number", "unit": "rpm" },
+            { "id": "top_rpm", "name": "Top speed", "kind": "number", "unit": "rpm" },
             { "id": "torque", "name": "Torque", "kind": "number", "unit": "N·m" }
           ],
           "lever": {

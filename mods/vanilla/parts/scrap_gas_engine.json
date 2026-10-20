@@ -73,6 +73,12 @@
         "unit": "rpm"
       },
       {
+        "id": "top_rpm",
+        "name": "Top speed",
+        "kind": "number",
+        "unit": "rpm"
+      },
+      {
         "id": "torque",
         "name": "Torque",
         "kind": "number",
