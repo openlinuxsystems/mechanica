@@ -5,5 +5,7 @@
   "interest_hysteresis": 16.0,
   "sleeping_snapshot_interval": 0.5,
   "max_packet_bytes": 1024,
-  "max_extrapolation": 0.1
+  "max_extrapolation": 0.1,
+  // A Creation changed again within this many seconds of its last full sync waits, so quick changes go as one.
+  "full_sync_interval": 0.1
 }

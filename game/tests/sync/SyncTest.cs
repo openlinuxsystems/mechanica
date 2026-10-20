@@ -230,6 +230,32 @@ public partial class SyncTest : StagedTest
             }
             return true;
         });
+        var syncsBefore = 0;
+        var colours = new[] { "#ff0000", "#00ff00", "#0000ff" };
+        Add("a run of quick changes goes to clients as one or two full syncs", frame =>
+        {
+            if (frame == 0)
+                syncsBefore = _host.Main.CreationSync.FullSyncsSent;
+            // A change every tick for ten ticks, as a dragged slider or a paint spray makes.
+            if (frame < 10)
+            {
+                var creation = HostCreations.Find(Machine)!;
+                Check(creation.SetPartColor(creation.Parts.First().Id, colours[frame % 3]), "paint a block");
+                return false;
+            }
+            return frame >= 40;
+        });
+        Add("every client has the last change", _ =>
+        {
+            var sent = _host.Main.CreationSync.FullSyncsSent - syncsBefore;
+            var clients = Clients.Count();
+            Check(sent >= clients && sent <= 3 * clients, $"ten changes went as {sent} full syncs to {clients} clients");
+            var last = HostCreations.Find(Machine)!.Parts.First();
+            foreach (var client in Clients)
+                Check(Remote(client, Machine)!.Creation.FindPart(last.Id)?.Color == last.Color, $"{client} shows the last colour");
+            GD.Print($"[sync] full syncs so far: {_host.Main.CreationSync.FullSyncsSent}, {_host.Main.CreationSync.FullSyncBytes} bytes packed");
+            return true;
+        });
         var leaver = 0;
         Add("a client leaving drops its copies", frame =>
         {

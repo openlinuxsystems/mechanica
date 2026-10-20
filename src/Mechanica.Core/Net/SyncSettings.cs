@@ -32,6 +32,12 @@ public sealed record SyncSettings
     /// <summary>Seconds a client keeps a Body moving on its last velocity when snapshots stop arriving.</summary>
     public float MaxExtrapolation { get; init; } = 0.1f;
 
+    /// <summary>
+    /// Fewest seconds between two full syncs of one Creation to a peer that already has it: a run of quick changes (a
+    /// slider dragged, paint sprayed, parts placed one after another) goes as one, at most this late.
+    /// </summary>
+    public float FullSyncInterval { get; init; } = 0.1f;
+
     /// <summary>Parses settings from JSON and validates them.</summary>
     /// <exception cref="FormatException">The JSON is malformed or a value is out of range.</exception>
     public static SyncSettings FromJson(string json)
@@ -59,6 +65,7 @@ public sealed record SyncSettings
         NonNegative(InterestHysteresis, "interest_hysteresis");
         NonNegative(SleepingSnapshotInterval, "sleeping_snapshot_interval");
         NonNegative(MaxExtrapolation, "max_extrapolation");
+        NonNegative(FullSyncInterval, "full_sync_interval");
         if (MaxPacketBytes is < BodySnapshot.MinPacketBytes or > 65_000)
             throw new FormatException($"max_packet_bytes must be between {BodySnapshot.MinPacketBytes} and 65000 (got {MaxPacketBytes}).");
     }
