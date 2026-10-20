@@ -10,8 +10,9 @@ namespace Mechanica.Game.Tests;
 
 /// <summary>
 /// The debug scrap car, host plus a client: a new world with <see cref="Main.DebugCar"/> on gets the car by the spawn,
-/// wired and fuelled, and the client sees it; the client sits in it and backs it up on S (toward the spawn: the test steps
-/// of the Main scene stand in front of it), burning the Gas Container's gasoline, and up a 15° hill (gravity tilted). Rolled onto its roof,
+/// wired and fuelled, and the client sees it; the client sits in it, drives it straight ahead on W on open ground east of
+/// the spawn (with nobody steering it keeps its line and heading), backs it up on S, burning the Gas Container's gasoline,
+/// and up a 15° hill (gravity tilted). Rolled onto its roof,
 /// the car keeps its driver in the seat, upside down with it, on both peers. The client, which does not host, never spawns one of its own.
 /// </summary>
 public partial class DebugCarTest : StagedTest
@@ -24,6 +25,8 @@ public partial class DebugCarTest : StagedTest
     private Instance _client = null!;
     private int _car;
     private Vector3 _start;
+    private Vector3 _heading;
+    private float _drift;
 
     protected override string Tag => "debugcar";
 
@@ -85,6 +88,47 @@ public partial class DebugCarTest : StagedTest
         Add("sitting down starts the engine", _ =>
         {
             if (_client.Main.Display.Readouts.Number(_car, Part("vanilla:scrap_gas_engine"), "running") != 1f)
+                return false;
+            _start = Chassis.GlobalPosition;
+            return true;
+        });
+        Add("the car is moved onto open ground", frame =>
+        {
+            // East of the spawn, clear of the Main scene's test steps in front of it.
+            if (frame == 0)
+            {
+                var pose = Chassis.GlobalTransform with { Origin = Chassis.GlobalPosition + new Vector3(20f, 0.05f, 0f) };
+                HostCar.SetAllBodyPoses(pose.ToPose());
+                _host.Main.Creations.Moved(_car);
+                return false;
+            }
+            if (frame < 90)
+                return false;
+            _start = Chassis.GlobalPosition;
+            _heading = -Chassis.GlobalBasis.Z;
+            _drift = 0f;
+            return true;
+        });
+        Add("W drives the car straight ahead", frame =>
+        {
+            // Nobody steers: the car keeps its heading and line (it used to wander 2-4° as its wheel bearings bent).
+            _client.Main.LocalPlayer!.CurrentInput = new PlayerInput(0, 1, 0, 0, false, false);
+            _drift = MathF.Max(_drift, MathF.Abs(Mathf.RadToDeg(_heading.SignedAngleTo(-Chassis.GlobalBasis.Z, Vector3.Up))));
+            if (frame < 300)
+                return false;
+            _client.Main.LocalPlayer.CurrentInput = new PlayerInput(0, 0, 0, 0, false, false);
+            var moved = Chassis.GlobalPosition - _start;
+            var ahead = moved.Dot(_heading);
+            var aside = moved.Dot(_heading.Cross(Vector3.Up));
+            GD.Print($"[debugcar] drove {ahead:0.00} m ahead, {aside:0.00} m aside, turned at most {_drift:0.00}°");
+            Check(ahead > 15f, $"the car drives forward ({ahead:0.0} m)");
+            Check(MathF.Abs(aside) < 0.4f, $"it keeps its line ({aside:0.00} m aside after {ahead:0.0} m)");
+            Check(_drift < 1.5f, $"it keeps its heading (turned at most {_drift:0.00}°)");
+            return true;
+        });
+        Add("the car rolls to a stop", frame =>
+        {
+            if (frame < 30 || Chassis.LinearVelocity.Length() > 0.3f)
                 return false;
             _start = Chassis.GlobalPosition;
             return true;
