@@ -108,7 +108,7 @@ public partial class WorldHud : CanvasLayer
         var player = Players.LocalPlayer;
         var playing = player is { Dead: false } && !Covered();
         _crosshair.Visible = playing;
-        var progress = playing ? HeldProgress() ?? Tool()?.Progress : null;
+        var progress = playing ? HeldProgress() ?? Tool()?.Ring : null;
         // Aiming tightens the cross over a tenth of a second.
         _crosshair.Tightness = Mathf.MoveToward(_crosshair.Tightness, playing && Tool()?.Aiming == true ? 1f : 0f, (float)delta * 10f);
         _ring.Visible = progress is not null;

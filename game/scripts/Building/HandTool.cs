@@ -5,6 +5,7 @@ using Mechanica.Core.Input;
 using Mechanica.Game.Creations;
 using Mechanica.Game.Net;
 using Mechanica.Game.Player;
+using Mechanica.Game.Ui;
 
 namespace Mechanica.Game.Building;
 
@@ -16,6 +17,13 @@ namespace Mechanica.Game.Building;
 /// <see cref="ToolBelt"/> picks it. The host plays what an action did for everyone in earshot
 /// (<see cref="Core.Building.ToolActions"/>); a tool itself only plays feedback its player alone hears: the
 /// swing or spark as a request goes out, and <c>ui_error</c> when the host refuses one.
+/// <para>
+/// Right click picks things up whatever is in hand: held on a part it fills the ring and picks the part up, dragged it
+/// picks up the parts of one body across a face (<see cref="PickUp"/>, building by hand's removal). A tool or item
+/// whose right click does something of its own says so with <see cref="OwnsRightClick"/> (a weapon with an
+/// <c>aim</c> section aims, the Lift, Weld Tool, Paint Tool and Connect Tool have theirs, the Sledgehammer blocks in
+/// Creative). Loose piles on the ground are picked up with right click ahead of any tool (<see cref="Survival.SurvivalHud"/>).
+/// </para>
 /// </summary>
 public abstract partial class HandTool : Node
 {
@@ -74,6 +82,9 @@ public abstract partial class HandTool : Node
             if (_active == value)
                 return;
             _active = value;
+            // A pick-up this tool started ends with it.
+            if (!value && Borrowed is { } pickUp)
+                pickUp.CancelRemove();
             OnActiveChanged();
         }
     }
@@ -82,11 +93,54 @@ public abstract partial class HandTool : Node
     {
         if (!ReadDeviceInput || !Active || Input.MouseMode != Input.MouseModeEnum.Captured)
             return;
-        if (!HandleInput(@event))
-            return;
-        GetViewport().SetInputAsHandled();
-        Player.Gesture(GestureFor(@event));
+        if (HandleInput(@event))
+        {
+            GetViewport().SetInputAsHandled();
+            Player.Gesture(GestureFor(@event));
+        }
+        else if (PressPickUp(@event) || ReleasePickUp(@event))
+            GetViewport().SetInputAsHandled();
     }
+
+    /// <summary>
+    /// Building by hand, whose right click every other tool shares: hold on a part to pick it up. Null leaves right
+    /// click to the tool alone. Set by <see cref="ToolBelt"/>.
+    /// </summary>
+    public BuildTool? PickUp { get; set; }
+
+    /// <summary>
+    /// True while right click does something of this tool's own (a weapon aims, the Paint Tool takes paint off); false
+    /// leaves it picking parts up (<see cref="PickUp"/>), the default.
+    /// </summary>
+    public virtual bool OwnsRightClick => false;
+
+    // The shared pick-up when this tool lends its right click to it.
+    private BuildTool? Borrowed => PickUp is { } pickUp && pickUp != this ? pickUp : null;
+
+    /// <summary>
+    /// A right click press with this tool in hand that the tool does not use itself starts picking up the part under the
+    /// crosshair (<see cref="BuildTool.PressRemove"/>). False when the tool keeps right click or nothing is aimed at.
+    /// </summary>
+    public bool PressPickUp(InputEvent? @event = null)
+    {
+        if (@event is not null && !Pressed(@event, InputActions.Secondary) || OwnsRightClick || Borrowed is not { } pickUp || !pickUp.PressRemove())
+            return false;
+        Player.Gesture(CharacterGesture.Interact);
+        return true;
+    }
+
+    /// <summary>Letting go of right click ends a pick-up this tool started. False when none was under way.</summary>
+    public bool ReleasePickUp(InputEvent? @event = null, Action<ActionResult>? done = null) =>
+        (@event is null || Released(@event, InputActions.Secondary)) && Borrowed is { } pickUp && pickUp.ReleaseRemove(done);
+
+    /// <summary>The ring round the crosshair: this tool's <see cref="Progress"/>, or a pick-up's under way.</summary>
+    public float? Ring => Progress ?? Borrowed?.Progress;
+
+    /// <summary>The HUD line: <see cref="HudText"/>, or a pick-up drag's while one is under way.</summary>
+    public string HudLine() => Borrowed is { RemovePhase: Core.Building.GesturePhase.Dragging } pickUp ? pickUp.HudText() : HudText();
+
+    /// <summary>The HUD hint for right click's default: hold on a part to pick it up.</summary>
+    protected static string PickUpHint => Loc.T("hold {0} on a part to pick it up", Key(InputActions.Secondary));
 
     /// <summary>What others see in the player's hand while this tool is out.</summary>
     public virtual CharacterProp Prop => CharacterProp.None;
