@@ -698,6 +698,10 @@ PALETTE = {
     "bolt_steel": ("#5c5e62", 0.38, 1.0),
     "paint_yellow": ("#e6b52a", 0.5, 0.05),
     "grip_rubber": ("#1d1d1e", 0.82, 0.0),
+    "head_steel": ("#6f7277", 0.46, 1.0),
+    "head_face": ("#8e9196", 0.36, 1.0),
+    "shaft_bright": ("#9a9da2", 0.34, 1.0),
+    "knurl_dark": ("#55585c", 0.5, 1.0),
     # water bucket
     "bucket_teal": ("#4f8985", 0.7, 0.0),
     "bucket_inner": ("#3e6f6c", 0.74, 0.0),
@@ -3545,18 +3549,20 @@ def clip_tool_use(t):
     return oneshot([(0.0, h), (0.12, push), (0.18, push), (0.3, h)], t)
 
 
-# The Sledgehammer, built to its reference sheet: 1.3 m long, a 38 mm steel shaft with a 280 mm knurled rubber grip
-# and one yellow safety band, and a 280 x 140 x 110 mm head of stacked, bolted steel plates. The right fist sits on
-# the bare shaft just above the band (the origin) and the left fist on the grip SLEDGE_SPACING below it.
-SLEDGE_BUTT = -0.38            # bottom of the end cap (grip frame y)
-SLEDGE_HEAD_Y = 0.85           # centre of the head
-SLEDGE_HEAD = (0.14, 0.07, 0.055)   # head half sizes: strike axis (x), along the handle (y), across (z)
-SLEDGE_SPACING = 0.26          # left fist below the right one, along the handle
-SHAFT_R = 0.019
+# The Sledgehammer: about 0.95 m long, the head close to half of that (Chase's reference). A chunky head of stacked,
+# chamfered steel blocks (about 400 x 230 x 190 mm) held by gunmetal straps, on a short ribbed bright steel shaft with a
+# yellow-painted grip and a hex end cap. The right fist sits on the bare shaft just under the head (the origin) and the
+# left fist low on the grip, SLEDGE_SPACING below it.
+SLEDGE_BUTT = -0.5             # bottom of the end cap (grip frame y)
+SLEDGE_HEAD_Y = 0.3            # centre of the head
+SLEDGE_HEAD = (0.2, 0.115, 0.095)  # head half sizes: strike axis (x), along the handle (y), across (z)
+SLEDGE_SPACING = 0.36          # left fist below the right one, along the handle
+SHAFT_R = 0.02
+SLEDGE_GRIP_TOP = -0.1         # where the yellow grip ends and the bare shaft begins
 
 
 # Sledgehammer: the right fist sits on the shaft (the prop's origin), the left one lower on the grip, `spacing`
-# below it along the handle (it slides between 0.1 and 0.33 m, all on the rubber). The head's strike faces point
+# below it along the handle (it slides between 0.12 and 0.36 m, all on the grip). The head's strike faces point
 # along the fingers (d), so d is kept on the tangent of the swing arc in the body's side plane: the face leads.
 
 def heavy_arms(grip_r, axis, d_hint=None, spacing=SLEDGE_SPACING, space="chest", poles=((-0.7, 0.4, -1.0), (0.6, 0.3, -1.0))):
@@ -3585,8 +3591,8 @@ def heavy_key(grip_r, axis, spacing=SLEDGE_SPACING, d_hint=None, space="chest", 
 # Ready pose: held in front across the body, ready to swing (Chase's reference, Scrap Mechanic's title screen): the head
 # up by the right shoulder, the handle running down to the left hip, the right fist high on the shaft and the left low
 # on the grip, the striking face turned forward.
-HEAVY_R = np.array([-0.05, -0.36, 1.24])
-HEAVY_AXIS = norm(np.array([-0.7, -0.3, 0.6]))
+HEAVY_R = np.array([-0.06, -0.3, 1.38])
+HEAVY_AXIS = norm(np.array([-0.5, -0.12, 0.86]))
 HEAVY_D = (0.0, -1.0, 0.0)
 HEAVY_BODY = dict(spine=(2.0, 0, -4.0), chest=(2.0, 0, -6.0), neck=(0.0, 0, 4.0), head=(0.0, 0, 4.0))
 
@@ -3595,7 +3601,7 @@ def clip_hold_heavy(t, T=2.0):
     ph = 2 * math.pi * t / T
     br = math.sin(ph)
     s = heavy_key(HEAVY_R + np.array([0.0, 0.0, 0.005 * br]), HEAVY_AXIS + np.array([0.0, 0.0, 0.006 * br]),
-                  spacing=0.22, d_hint=HEAVY_D, **HEAVY_BODY)
+                  spacing=SLEDGE_SPACING, d_hint=HEAVY_D, **HEAVY_BODY)
     base = upper_base(t, T)
     for b in ("spine", "chest", "neck", "head"):
         s[b] = tuple(x + y for x, y in zip(HEAVY_BODY[b], base[b]))
@@ -3794,7 +3800,7 @@ BLOCK_BODY = dict(spine=(6.0, 0, 2.0), chest=(4.0, 0, 6.0), neck=(6.0, 0, -4.0),
 def clip_hold_heavy_block(t, T=2.0):
     ph = 2 * math.pi * t / T
     br = math.sin(ph)
-    s = heavy_key(BLOCK_R + np.array([0.0, 0.0, 0.004 * br]), BLOCK_AXIS, 0.26, d_hint=(0.0, -1.0, 0.0), **BLOCK_BODY)
+    s = heavy_key(BLOCK_R + np.array([0.0, 0.0, 0.004 * br]), BLOCK_AXIS, 0.32, d_hint=(0.0, -1.0, 0.0), **BLOCK_BODY)
     base = upper_base(t, T, 0.7)
     for b in ("spine", "chest", "neck", "head"):
         s[b] = tuple(x + y for x, y in zip(BLOCK_BODY[b], base[b]))
@@ -5971,58 +5977,75 @@ def build_paint_children(tool, tank):
     return obs
 
 
+def _tilted(deg_z, deg_x):
+    """Box axes turned a few degrees about z then x, so stacked blocks sit a little askew."""
+    cz, sz_ = math.cos(math.radians(deg_z)), math.sin(math.radians(deg_z))
+    cx, sx_ = math.cos(math.radians(deg_x)), math.sin(math.radians(deg_x))
+    rz = np.array([[cz, -sz_, 0], [sz_, cz, 0], [0, 0, 1]])
+    rx = np.array([[1, 0, 0], [0, cx, -sx_], [0, sx_, cx]])
+    return (rx @ rz).T
+
+
 def prop_sledgehammer():
     hx, hy, hz = SLEDGE_HEAD
     yc = SLEDGE_HEAD_Y
+    neck = yc - hy                     # underside of the head
     p = [
-        # shaft, end cap with its cross pin, knurled rubber grip and the yellow band above it
-        cylinder((0, SLEDGE_BUTT + 0.01, 0), (0, yc - hy + 0.004, 0), SHAFT_R, 16, "steel_shaft", ref=X),
-        cylinder((0, SLEDGE_BUTT, 0), (0, SLEDGE_BUTT + 0.032, 0), 0.0245, 18, "gunmetal", ref=X, bevel=0.004),
-        cylinder((-0.0255, SLEDGE_BUTT + 0.016, 0), (0.0255, SLEDGE_BUTT + 0.016, 0), 0.0055, 10, "bolt_steel",
-                 ref=Z, bevel=0.0012),
-        cylinder((0, SLEDGE_BUTT + 0.03, 0), (0, -0.078, 0), 0.0218, 18, "grip_rubber", ref=X, bevel=0.003),
-        cylinder((0, SLEDGE_BUTT + 0.03, 0), (0, SLEDGE_BUTT + 0.042, 0), 0.0232, 18, "grip_rubber", ref=X,
-                 bevel=0.003),
-        cylinder((0, -0.09, 0), (0, -0.078, 0), 0.0228, 18, "grip_rubber", ref=X, bevel=0.003),
-        cylinder((0, -0.076, 0), (0, -0.044, 0), 0.0196, 18, "paint_yellow", ref=X, bevel=0.0008),
-        # stepped collar where the shaft meets the head
-        cylinder((0, yc - hy - 0.075, 0), (0, yc - hy - 0.062, 0), 0.0222, 18, "gunmetal", ref=X, bevel=0.002),
-        cylinder((0, yc - hy - 0.045, 0), (0, yc - hy + 0.002, 0), 0.0265, 18, "gunmetal", ref=X, bevel=0.004),
-        bevel_box((0, yc - hy - 0.004, 0), (0.042, 0.007, 0.036), 0.003, mat="gunmetal"),
+        # bright steel shaft from the grip to the head, with a few dark bands
+        cylinder((0, SLEDGE_GRIP_TOP - 0.01, 0), (0, neck + 0.004, 0), SHAFT_R, 18, "shaft_bright", ref=X),
     ]
-    # head core: a yellow-painted block, seen between the straps and around the cheek plates
-    p.append(bevel_box((0, yc, 0), (0.075, hy - 0.006, hz - 0.007), 0.004, mat="paint_yellow"))
-    # striking ends: three stacked plates each, then a face plate
+    for y in (SLEDGE_GRIP_TOP + 0.035,):
+        p.append(cylinder((0, y, 0), (0, y + 0.014, 0), SHAFT_R + 0.002, 18, "knurl_dark", ref=X, bevel=0.0008))
+    # the grip: yellow paint over the lower handle, a dark lip at each end, a hex end cap with its bolt
+    p += [
+        cylinder((0, SLEDGE_BUTT + 0.03, 0), (0, SLEDGE_GRIP_TOP, 0), 0.0232, 20, "paint_yellow", ref=X, bevel=0.002),
+        cylinder((0, SLEDGE_GRIP_TOP - 0.004, 0), (0, SLEDGE_GRIP_TOP + 0.01, 0), 0.0246, 20, "gunmetal", ref=X,
+                 bevel=0.002),
+        cylinder((0, SLEDGE_BUTT + 0.028, 0), (0, SLEDGE_BUTT + 0.042, 0), 0.0248, 20, "gunmetal", ref=X, bevel=0.002),
+        prism(hex_outline(0.03, math.pi / 6), SLEDGE_BUTT, SLEDGE_BUTT + 0.03, (0, 0, 0), X, Z, Y, "gunmetal"),
+    ]
+    p.extend(hex_bolt((0, SLEDGE_BUTT, 0), (0, -1, 0), (1, 0, 0), r=0.011))
+    # collar where the shaft enters the head: a stepped sleeve and a block under the head
+    p += [
+        cylinder((0, neck - 0.09, 0), (0, neck - 0.075, 0), 0.025, 18, "gunmetal", ref=X, bevel=0.002),
+        cylinder((0, neck - 0.055, 0), (0, neck + 0.002, 0), 0.031, 18, "gunmetal", ref=X, bevel=0.004),
+        bevel_box((0, neck - 0.006, 0), (0.06, 0.01, 0.05), 0.003, mat="gunmetal"),
+    ]
+    # head core: one big block the end stacks are bolted to
+    p.append(bevel_box((0, yc, 0), (0.1, hy - 0.008, hz - 0.012), 0.009, mat="head_steel"))
+    # each end is a pile of three blocks of different reach and depth, set a little askew like scrap steel; the middle
+    # one reaches furthest and carries the striking face
+    x0 = 0.094
+    tiers = {-1: ((-hy, -0.036, hx - 0.022, hz - 0.006, 2.0, -3.0), (-0.034, 0.034, hx - 0.006, hz, -1.0, 1.5),
+                  (0.036, hy, hx - 0.04, hz - 0.016, -2.5, 2.0)),
+             1: ((-hy, -0.04, hx - 0.03, hz - 0.012, -2.0, 2.5), (-0.038, 0.03, hx - 0.006, hz, 1.0, -1.5),
+                 (0.032, hy, hx - 0.016, hz - 0.006, 3.0, -2.0))}
     for sx in (-1, 1):
-        x0, x1 = 0.068, hx - 0.011
-        xm = sx * (x0 + x1) / 2
-        for k, (ya, yb) in enumerate(((-hy, -0.0235), (-0.0215, 0.0215), (0.0235, hy))):
-            p.append(bevel_box((xm, yc + (ya + yb) / 2, 0), ((x1 - x0) / 2, (yb - ya) / 2, hz), 0.006, mat="gunmetal"))
-        p.append(bevel_box((sx * (hx - 0.0055), yc, 0), (0.0055, hy - 0.009, hz - 0.009), 0.0035, mat="gunmetal"))
-        # rivets on the cheeks of the end plates
+        for ya, yb, x1, zd, tz, tx in tiers[sx]:
+            p.append(bevel_box((sx * (x0 + x1) / 2, yc + (ya + yb) / 2, 0), ((x1 - x0) / 2, (yb - ya) / 2, zd), 0.008,
+                               axes=_tilted(tz, tx), mat="head_steel"))
+        ym = yc + (tiers[sx][1][0] + tiers[sx][1][1]) / 2
+        p.append(bevel_box((sx * (hx - 0.002), ym, 0), (0.006, 0.026, hz - 0.02), 0.003, mat="head_face"))
         for sz in (-1, 1):
-            for yy in (-0.046, 0.046):
-                p.append(rivet((sx * 0.112, yc + yy, sz * hz), (0, 0, sz)))
-    # cheek plates over the core, front and back: two layers with a groove between, yellow showing round them
+            p.append(rivet((sx * 0.155, yc - 0.075, sz * (hz - 0.006)), (0, 0, sz), r=0.008))
+            p.append(rivet((sx * 0.16, ym, sz * hz), (0, 0, sz), r=0.008))
+    # a crown block on top, set off centre and askew, and cheek plates front and back with four bolts each
+    p.append(bevel_box((-0.016, yc + hy + 0.014, 0.004), (0.068, 0.016, hz - 0.026), 0.007, axes=_tilted(1.5, -2.0),
+                       mat="head_steel"))
     for sz in (-1, 1):
-        for ya, yb in ((-hy + 0.014, -0.002), (0.002, hy - 0.014)):
-            p.append(bevel_box((0, yc + (ya + yb) / 2, sz * (hz - 0.004)), (0.04, (yb - ya) / 2, 0.006), 0.0025,
-                               mat="gunmetal"))
-    # a top plate leaves a strip of yellow showing on each side
-    p.append(bevel_box((0, yc + hy - 0.002, 0), (0.04, 0.005, hz - 0.034), 0.0025, mat="gunmetal"))
-    # straps wrapping the head where the ends meet the core, each with four hex bolts
-    t = 0.0075
+        p.append(bevel_box((0.006, yc - 0.006, sz * (hz - 0.004)), (0.058, 0.066, 0.009), 0.004, mat="head_face"))
+        for xx in (-0.036, 0.046):
+            for yy in (-0.046, 0.034):
+                p.extend(hex_bolt((xx, yc + yy, sz * (hz + 0.005)), (0, 0, sz), (0, 1, 0), r=0.0095))
+    # gunmetal straps where the ends meet the core
+    t = 0.009
     for sx in (-1, 1):
-        xs = sx * 0.068
-        w = 0.0125
+        xs = sx * 0.094
+        w = 0.012
         for sy in (-1, 1):
             p.append(bevel_box((xs, yc + sy * (hy + t / 2), 0), (w, t / 2, hz + t), 0.0025, mat="gunmetal"))
         for sz in (-1, 1):
             p.append(bevel_box((xs, yc, sz * (hz + t / 2)), (w, hy, t / 2), 0.0025, mat="gunmetal"))
-            for yy in (-0.042, 0.042):
-                p.extend(hex_bolt((xs, yc + yy, sz * (hz + t)), (0, 0, sz), (0, 1, 0)))
-        for sy in (-1, 1):
-            p.extend(hex_bolt((xs, yc + sy * (hy + t), 0), (0, sy, 0), (1, 0, 0), r=0.009))
     return p
 
 
