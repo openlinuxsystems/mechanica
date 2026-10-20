@@ -42,14 +42,14 @@ B = 0.25                       # one block
 W, D, H = 10 * B, 8 * B, 9 * B
 HW, HD = W / 2, D / 2
 PLINTH = B
-SIDE_IN = io.LIP_OUT - io.DEPTH + 0.01   # side walls set in so the port plate stands just proud of them
+SIDE_IN = io.PORT_OUT - io.PORT_DEPTH + 0.01   # side walls set in so the port plate stands just proud of them
 BAY_X = (HW - SIDE_IN, 0.375)            # bay outer wall to console wall (|x|)
 BAY_TOP = 7 * B
 CONSOLE_TOP = 8 * B
 BACK_Y = 0.62                            # bay back wall (the machinery behind it holds the pegboard)
 REAR = HD - 0.08                         # the pegboard's face, recessed so the hung tools stay in the footprint
 TABLE_Z = 0.56
-PORT_Y = -0.125                          # port centre: centred on the 8-block face, half a block toward the front
+PORT_Y = -0.125                          # port centre: where the 3 x 3 port was centred before it shrank to 2 x 2
 PORT_Z = PLINTH + 1.5 * B
 SAMPLES = int(os.environ.get("FAB_SAMPLES", "48"))
 

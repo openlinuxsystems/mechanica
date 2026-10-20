@@ -1,10 +1,12 @@
 """Build the standard IO port face (approved by Chase on 2026-10-19; see docs/io-ports.md).
 
 Every machine that takes items or fluids in or sends them out carries this face where a tube connects. It is not an
-item: machines embed it on a 3 x 3 block face.
+item: machines embed it on a 2 x 2 block face.
 
-* A flush plate 3 x 3 blocks (0.75 x 0.75 m) and 0.05 m deep, chamfered corners, dark gunmetal with a teal band
-  round its edge and faint grooves on the 0.25 m grid.
+* A flush plate 2 x 2 blocks (0.5 x 0.5 m) and 33 mm deep, chamfered corners, dark gunmetal with a teal band
+  round its edge and faint grooves across the face.
+* The face is drawn at the original 3 x 3 size below and scaled by ``SCALE`` (2/3) as a whole, so the 2 x 2 port is
+  the approved design exactly (Chase shrank it on 2026-10-20 so it fits the 4 x 3 x 3 containers).
 * A teal inlay that runs round the face just inside the edge and steps inward at each corner, clear of the four
   copper corner bolts.
 * A raised collar in the middle: gunmetal ring, teal ring, gunmetal lip and a dark bore where the tube seats.
@@ -17,7 +19,7 @@ identical face. For example::
     sys.path.insert(0, str(ROOT / "tools" / "io_port"))
     import build_io_port as io
     mats = io.materials()
-    io.mount(machine_root, "out", (0, -1.0, 0.625), (0, -1, 0), mats)
+    io.mount(machine_root, "out", (0, -1.0, 0.5), (0, -1, 0), mats)
 
 How to run (Blender as a Python module, no Blender UI needed):
 
@@ -38,7 +40,8 @@ import bpy  # noqa: I001  (bpy first: it makes bmesh and mathutils importable)
 import bmesh
 from mathutils import Vector
 
-SIZE = 0.75                  # 3 blocks
+SCALE = 2 / 3                # the dimensions below draw the face at 3 x 3 blocks; build scales it to 2 x 2
+SIZE = 0.75
 HALF = SIZE / 2
 DEPTH = 0.05
 CHAMFER = 0.035              # corner chamfer of the plate outline
@@ -51,6 +54,9 @@ TEAL_RING = (0.106, 0.138)
 LIP_R = 0.106
 BORE_R = 0.088
 LIP_OUT = 0.067             # the collar lip's face, measured from the plate's back
+PORT_SIZE = SIZE * SCALE    # as built: 2 blocks
+PORT_DEPTH = DEPTH * SCALE
+PORT_OUT = LIP_OUT * SCALE
 SAMPLES = int(os.environ.get("IO_SAMPLES", "64"))
 # Set while building a game model: glTF keeps only plain material values, so the procedural wear is left out.
 GAME = False
@@ -236,6 +242,7 @@ def build(mode="both", name="IOPort", mats=None):
     m = mats or materials()
     root = bpy.data.objects.new(name, None)
     bpy.context.scene.collection.objects.link(root)
+    root.scale = (SCALE, SCALE, SCALE)
 
     # plate: lower slab, teal band, upper slab (chamfered rim on top)
     prism(f"{name}_base", chamfered_square(HALF, CHAMFER), 0.0, BAND_Z[0], m["body"], root, bevel=0.003)
@@ -299,13 +306,13 @@ def mount(parent, mode, center, normal, mats=None, name=None):
     """Put a port of the given mode on a machine, looking along normal (a grid axis).
 
     center is the port's centre on the machine's footprint boundary. The collar's face lands exactly there, so
-    nothing pokes outside the footprint and two machines' ports meet on the grid. The plate's face sits 17 mm
-    inside the boundary and its back LIP_OUT inside, so the machine's wall behind the plate must be set in by at
-    least LIP_OUT - DEPTH."""
+    nothing pokes outside the footprint and two machines' ports meet on the grid. The plate's face sits 11 mm
+    inside the boundary and its back PORT_OUT inside, so the machine's wall behind the plate must be set in by at
+    least PORT_OUT - PORT_DEPTH."""
     root = build(mode, name or f"IOPort_{mode}", mats)
     root.parent = parent
     n = Vector(normal).normalized()
-    root.location = Vector(center) - n * LIP_OUT
+    root.location = Vector(center) - n * PORT_OUT
     root.rotation_euler = Vector((0, 0, 1)).rotation_difference(n).to_euler()
     return root
 
@@ -348,28 +355,28 @@ def render_review(out: Path):
     for k, mode in (("out", "out"), ("in", "in")):
         group(k, build(mode, mode.title(), mats))
 
-    # mounted: a 3 x 3 x 3 machine with an output port on its front and an input port on its side
+    # mounted: a 5 x 5 x 4 machine with an output port on its front and an input port on its side
     mroot = bpy.data.objects.new("Mounted", None)
     sc.collection.objects.link(mroot)
     mroot.location = (0, 0, 0)
     _machine_box(mats, mroot)
-    mount(mroot, "out", (0, -0.625 - LIP_OUT, 0.5), (0, -1, 0), mats, "MOut")
-    mount(mroot, "in", (0.625 + LIP_OUT, 0, 0.5), (1, 0, 0), mats, "MIn")
+    mount(mroot, "out", (0, -0.625, 0.5), (0, -1, 0), mats, "MOut")
+    mount(mroot, "in", (0.625, 0, 0.5), (1, 0, 0), mats, "MIn")
     group("mounted", mroot)
 
     shots = {}
     show("both")
-    shots["front"] = rl.render(rl.camera("front", (0, -0.0001, 3), (0, 0, 0), ortho=0.86), out / "io_port_front.png",
+    shots["front"] = rl.render(rl.camera("front", (0, -0.0001, 3), (0, 0, 0), ortho=0.86 * SCALE), out / "io_port_front.png",
                                1000, 1000)
-    shots["iso"] = rl.render(rl.camera("iso", (1.25, -1.55, 1.25), (0, 0, 0.0), ortho=1.0), out / "io_port_iso.png",
+    shots["iso"] = rl.render(rl.camera("iso", (1.25, -1.55, 1.25), (0, 0, 0.0), ortho=1.0 * SCALE), out / "io_port_iso.png",
                              1200, 900)
-    shots["side"] = rl.render(rl.camera("side", (0, -3, DEPTH / 2), (0, 0, DEPTH / 2), ortho=0.86),
+    shots["side"] = rl.render(rl.camera("side", (0, -3, PORT_DEPTH / 2), (0, 0, PORT_DEPTH / 2), ortho=0.86 * SCALE),
                               out / "io_port_side.png", 1200, 240)
-    shots["close"] = rl.render(rl.camera("close", (0.32, -0.42, 0.34), (0, 0, 0.03), lens=55),
+    shots["close"] = rl.render(rl.camera("close", (0.32 * SCALE, -0.42 * SCALE, 0.34 * SCALE), (0, 0, 0.02), lens=55),
                                out / "io_port_close.png", 1000, 800)
     for k in ("out", "in"):
         show(k)
-        shots[k] = rl.render(rl.camera(f"front_{k}", (0, -0.0001, 3), (0, 0, 0), ortho=0.86), out / f"io_port_{k}.png",
+        shots[k] = rl.render(rl.camera(f"front_{k}", (0, -0.0001, 3), (0, 0, 0), ortho=0.86 * SCALE), out / f"io_port_{k}.png",
                              700, 700)
     show("mounted")
     shots["mounted"] = rl.render(rl.camera("mounted", (2.6, -3.3, 2.4), (0, 0, 0.45), ortho=2.3),
@@ -382,8 +389,8 @@ def render_review(out: Path):
     W, H = 2560, 2240
     sheet = Image.new("RGB", (W, H), (246, 246, 244))
     d = ImageDraw.Draw(sheet)
-    d.text((60, 36), "IO PORT - STANDARD 3 x 3 BLOCK FACE (design review)", fill=INK, font=F(46, True))
-    d.text((60, 100), "Size 3 x 3 blocks (0.75 x 0.75 m), depth 0.05 m, mounted flush on any machine face. "
+    d.text((60, 36), "IO PORT - STANDARD 2 x 2 BLOCK FACE (design review)", fill=INK, font=F(46, True))
+    d.text((60, 100), "Size 2 x 2 blocks (0.5 x 0.5 m), depth 33 mm, mounted flush on any machine face. "
            "Every machine with an input or output uses this face so tubes always meet the same thing.",
            fill=INK, font=F(24))
 
@@ -400,15 +407,15 @@ def render_review(out: Path):
 
     # 1 front with dimensions
     panel(shots["front"], 60, 170, 900, 900, "1  FRONT (TWO-WAY PORT)")
-    s = 900 / 0.86
-    a = 60 + 450 - 0.375 * s
-    b = 60 + 450 + 0.375 * s
-    rl.dim_line(d, (a, 1090), (b, 1090), "0.75 m (3 blocks)", F(24))
-    rl.dim_line(d, (985, 170 + 450 - 0.375 * s), (985, 170 + 450 + 0.375 * s), "0.75 m\n(3 blocks)", F(24),
+    s = 900 / (0.86 * SCALE)
+    a = 60 + 450 - 0.25 * s
+    b = 60 + 450 + 0.25 * s
+    rl.dim_line(d, (a, 1090), (b, 1090), "0.5 m (2 blocks)", F(24))
+    rl.dim_line(d, (985, 170 + 450 - 0.25 * s), (985, 170 + 450 + 0.25 * s), "0.5 m\n(2 blocks)", F(24),
                 vertical=True)
     # 2 side
     panel(shots["side"], 1180, 170, 1320, 264, "2  SIDE (PROFILE)")
-    d.text((1190, 450), "0.05 m deep plate (collar stands 17 mm proud); teal band round the edge.", fill=INK, font=F(22))
+    d.text((1190, 450), "33 mm deep plate (collar stands 11 mm proud); teal band round the edge.", fill=INK, font=F(22))
     # 3 iso
     panel(shots["iso"], 1180, 500, 1320, 990, "3  ISOMETRIC")
     # 4 close-up
