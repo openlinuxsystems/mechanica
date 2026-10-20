@@ -1,0 +1,216 @@
+{
+  "id": "rakehand_scarecrow",
+  "name": "Scarecrow Rakehand",
+  "description": "A field post with a lantern for a head. It stands stock still like a scarecrow until you come close, then lunges with quick jabs and spins its forks round.",
+  "family": "rakehand",
+  "health": 70,
+  "speed": 5.5,
+  "water_speed": 2,
+  "sight": 30,
+  "size": {
+    "radius": 0.4,
+    "height": 1.9
+  },
+  "color": "#5b3a5c",
+  "model": {
+    "mesh": "meshes/bots/rakehand_scarecrow.glb",
+    "attacks": {
+      "poke": [
+        "lunge_jab"
+      ],
+      "swing": [
+        "spin_sweep"
+      ]
+    },
+    "clip_speeds": {
+      "patrol": 1.5,
+      "chase": 4.03
+    }
+  },
+  "raid_cost": 1,
+  "attacks": [
+    {
+      "id": "poke",
+      "kind": "melee",
+      "damage": 15,
+      "part_damage": 6,
+      "range": 2.2,
+      "interval": 0.8
+    },
+    {
+      "id": "swing",
+      "kind": "melee",
+      "damage": 22,
+      "part_damage": 10,
+      "range": 2.6,
+      "interval": 2.5
+    }
+  ],
+  "drops": [
+    {
+      "item": "scrap_wood",
+      "chance": 0.8,
+      "count": 2
+    },
+    {
+      "item": "component_kit",
+      "chance": 0.35,
+      "count": 1
+    },
+    {
+      "item": "carrot_seed",
+      "chance": 0.3,
+      "count": 2
+    }
+  ],
+  "behavior": {
+    "type": "selector",
+    "children": [
+      {
+        "type": "sequence",
+        "children": [
+          {
+            "type": "find_player",
+            "range": 6
+          },
+          {
+            "type": "succeed",
+            "children": [
+              {
+                "type": "cooldown",
+                "seconds": 8,
+                "children": [
+                  {
+                    "type": "call",
+                    "function": "cry"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "invert",
+            "children": [
+              {
+                "type": "hesitate",
+                "range": 4,
+                "min_speed": 4,
+                "seconds": 2
+              }
+            ]
+          },
+          {
+            "type": "chase",
+            "attack": "poke",
+            "speed": 1
+          },
+          {
+            "type": "selector",
+            "children": [
+              {
+                "type": "attack",
+                "attack": "swing"
+              },
+              {
+                "type": "attack",
+                "attack": "poke"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "sequence",
+        "children": [
+          {
+            "type": "has_target"
+          },
+          {
+            "type": "find_player",
+            "range": 20
+          },
+          {
+            "type": "invert",
+            "children": [
+              {
+                "type": "hesitate",
+                "range": 4,
+                "min_speed": 4,
+                "seconds": 2
+              }
+            ]
+          },
+          {
+            "type": "chase",
+            "attack": "poke",
+            "speed": 1
+          },
+          {
+            "type": "selector",
+            "children": [
+              {
+                "type": "attack",
+                "attack": "swing"
+              },
+              {
+                "type": "attack",
+                "attack": "poke"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "sequence",
+        "children": [
+          {
+            "type": "in_raid"
+          },
+          {
+            "type": "find_crop"
+          },
+          {
+            "type": "invert",
+            "children": [
+              {
+                "type": "hesitate",
+                "range": 4,
+                "min_speed": 4,
+                "seconds": 2
+              }
+            ]
+          },
+          {
+            "type": "chase",
+            "attack": "poke",
+            "speed": 1
+          },
+          {
+            "type": "attack",
+            "attack": "poke"
+          }
+        ]
+      },
+      {
+        "type": "go_to_raid",
+        "radius": 6
+      },
+      {
+        "type": "sequence",
+        "children": [
+          {
+            "type": "clear_target"
+          },
+          {
+            "type": "stop"
+          },
+          {
+            "type": "wait",
+            "seconds": 1
+          }
+        ]
+      }
+    ]
+  },
+  "script": "scripts/bots/rakehand.lua"
+}

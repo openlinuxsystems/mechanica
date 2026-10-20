@@ -1,7 +1,7 @@
 {
   "id": "rakehand",
   "name": "Rakehand",
-  "description": "A farmhand bot with a pitchfork: quick pokes, and a wide swing when it can. It balks at anything spinning nearby.",
+  "description": "A farmhand bot whose hands are pitchforks: quick pokes, and a wide swing when it can. It balks at anything spinning nearby.",
   "family": "rakehand",
   "health": 100,
   "speed": 4,
@@ -11,7 +11,22 @@
     "radius": 0.45,
     "height": 1.8
   },
-  "color": "#a8743a",
+  "color": "#3f7a3a",
+  "model": {
+    "mesh": "meshes/bots/rakehand.glb",
+    "attacks": {
+      "poke": [
+        "fork_jab"
+      ],
+      "swing": [
+        "fork_sweep"
+      ]
+    },
+    "clip_speeds": {
+      "patrol": 1.29,
+      "chase": 3.04
+    }
+  },
   "raid_cost": 1,
   "attacks": [
     {

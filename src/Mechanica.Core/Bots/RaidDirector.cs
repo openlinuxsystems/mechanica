@@ -87,7 +87,9 @@ public sealed class RaidDirector(RaidTable table, BotActions bots, SurvivalActio
     {
         var value = survival.CropValue();
         var players = Math.Max(1, survival.Players.Count());
-        if (FarmTarget() is not { } target || table.Plan(value, players, level, survival.Rules.RaidBudget) is not { } plan)
+        // The raid number and the clock pick one_of raiders: varied from raid to raid and world to world, the same on a replay.
+        var seed = unchecked(_nextId * 7919 + (int)(world.Now * 10));
+        if (FarmTarget() is not { } target || table.Plan(value, players, level, survival.Rules.RaidBudget, seed) is not { } plan)
             return null;
         Current = new RaidView(_nextId++, plan.Level, plan.Budget, value, players, RaidPhases.Warning, target.ToVec3(), plan.Bots.Count, plan.Bots);
         PhaseEnds = world.Now + table.Warning;
