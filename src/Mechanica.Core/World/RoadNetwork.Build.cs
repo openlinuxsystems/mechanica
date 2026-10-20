@@ -48,6 +48,10 @@ public sealed partial class RoadNetwork
     // Metres past a junction's plate over which a road eases from level into its full grade.
     private const float Ramp = 20f;
 
+    // Samples either side, and passes, over which a road's height profile is rounded at its crests and dips.
+    private const int CrestWindow = 2;
+    private const int CrestPasses = 2;
+
     // Metres out from a junction that a road's heading is read from.
     private const float ArmSight = 80f;
 
@@ -685,6 +689,24 @@ public sealed partial class RoadNetwork
             climb[k] = climb[k - 1] + (along[k] - along[k - 1]) * MathF.Min(Rate(mid, flatStart), Rate(along[^1] - mid, flatEnd));
         }
         var heights = Grade(smooth, climb, start, end, maxGrade);
+        // Where the climb from one end meets the fall held to the grade from the other, the grade can flip from up to
+        // down at one sample: round that crest or dip over the neighbouring samples (then hold the grade and the ends
+        // again), so a car is not thrown off it and the levelled ground beside the road keeps up with the asphalt.
+        for (var pass = 0; pass < CrestPasses; pass++)
+        {
+            var rounded = new float[n];
+            for (var k = 0; k < n; k++)
+            {
+                float sum = 0f, count = 0f;
+                for (var w = Math.Max(0, k - CrestWindow); w <= Math.Min(n - 1, k + CrestWindow); w++)
+                {
+                    sum += heights[w];
+                    count++;
+                }
+                rounded[k] = sum / count;
+            }
+            heights = Grade(rounded, climb, start, end, maxGrade);
+        }
         for (var k = 0; k < n; k++)
         {
             if (water[k] && heights[k] < sea + 0.8f)
