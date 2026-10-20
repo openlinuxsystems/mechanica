@@ -49,8 +49,8 @@ CONSOLE_TOP = 8 * B
 BACK_Y = 0.62                            # bay back wall (the machinery behind it holds the pegboard)
 REAR = HD - 0.08                         # the pegboard's face, recessed so the hung tools stay in the footprint
 TABLE_Z = 0.56
-PORT_Y = -0.125                          # port centre: where the 3 x 3 port was centred before it shrank to 2 x 2
-PORT_Z = PLINTH + 1.5 * B
+PORT_Y = -0.125                          # port centre along the face: where the 3 x 3 port was centred
+PORT_Z = 1.5 * B                         # port centre 0.375 m up: level with the 3-block-tall containers on the floor
 SAMPLES = int(os.environ.get("FAB_SAMPLES", "48"))
 
 LEVELS = {
@@ -285,8 +285,9 @@ def build(level=1, name=None):
 
     # plinth (block row 0): dark toe, gunmetal body, teal band
     box("plinthToe", (-HW + 0.04, HW - 0.04), (-HD + 0.04, HD - 0.04), (0.0, 0.05), m["dark"], root)
-    box("plinth", (-HW + 0.004, HW - 0.004), (-HD + 0.004, HD - 0.004), (0.05, PLINTH), m["frame"], root, bevel=0.012)
-    box("plinthBand", (-HW, HW), (-HD, HD), (0.135, 0.15), m["teal"], root, bevel=0)
+    # the sides are set in like the walls above, so the floor-level ports sit over the plinth
+    box("plinth", (-HW + SIDE_IN, HW - SIDE_IN), (-HD + 0.004, HD - 0.004), (0.05, PLINTH), m["frame"], root, bevel=0.012)
+    box("plinthBand", (-HW + SIDE_IN - 0.004, HW - SIDE_IN + 0.004), (-HD, HD), (0.135, 0.15), m["teal"], root, bevel=0)
 
     # console (centre, 3 blocks wide) up to 8 blocks; its front is set back FY so the controls stay in the footprint
     cx = BAY_X[1]
