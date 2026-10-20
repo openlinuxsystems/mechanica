@@ -59,12 +59,12 @@ public partial class VanillaBlocksTest : StagedTest
             if (_batch is not { IsCompleted: true })
                 return false;
             var result = _batch.Result;
-            Check(result.Succeeded && result.Exports.Count == 47, $"the batch exports 42 parts and 5 recipes ({string.Join("; ", result.Diagnostics)})");
+            Check(result.Succeeded && result.Exports.Count == 46, $"the batch exports 42 parts and 4 recipes ({string.Join("; ", result.Diagnostics)})");
             var made = Directory.GetFiles(_scratchMod, "*", SearchOption.AllDirectories)
                 .Select(f => Path.GetRelativePath(_scratchMod, f).Replace('\\', '/'))
                 .Where(IsBatchOutput)
                 .Order(StringComparer.Ordinal).ToList();
-            Check(made.Count == 131, $"it writes a part, an editor source and a mesh for each, and the recipes ({made.Count} files)");
+            Check(made.Count == 130, $"it writes a part, an editor source and a mesh for each, and the recipes ({made.Count} files)");
             var differing = made.Where(f => !File.Exists(Path.Combine(VanillaDir, f))
                 || !File.ReadAllBytes(Path.Combine(VanillaDir, f)).AsSpan().SequenceEqual(File.ReadAllBytes(Path.Combine(_scratchMod, f)))).ToList();
             Check(differing.Count == 0, $"every file matches mods/vanilla (differing: {string.Join(", ", differing)}); re-run tools/author-vanilla.sh");

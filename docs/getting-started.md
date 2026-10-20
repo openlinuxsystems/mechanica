@@ -294,12 +294,12 @@ Players craft parts at stations. The **Recipes** tab lists the recipes in your m
    - **Order** places it in the station's list. Take the number from its group in
      [Recipe order](part-data-schema.md#recipe-order): a crate is storage (1700), so after vanilla's
      Dispenser (1780) it gets `1790`.
-3. Under **Inputs**, press **+ Input** for each item it uses up: type the item id (`scrap_wood`) and the
+3. Under **Inputs**, press **+ Input** for each item it uses up: type the item id (`scrap_wood_block`) and the
    count. Under **Outputs**, **+ Output** adds more items it makes. **×** removes a row.
 4. Press **Save recipe**. It is checked exactly as the game loads it and written to `recipes/<id>.json`;
    problems show under the preview. **Delete** removes the recipe's file after asking.
 
-In a recipe, a bare item or station id is vanilla's (`scrap_wood`, `fabricator`); your own items are
+In a recipe, a bare item or station id is vanilla's (`scrap_wood_block`, `fabricator`); your own items are
 written with your mod id (`my_mod:crate`). See [Recipes](part-data-schema.md#recipes). To edit recipes
 without opening a part, or to change another mod's recipe, use the [Recipe Editor](mod-tools.md#recipe-editor).
 

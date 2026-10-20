@@ -575,7 +575,7 @@ writes them.
   "id": "chest",
   "stations": ["fabricator", "portable_fabricator"],
   "inputs": [
-    { "item": "scrap_wood", "count": 4 },
+    { "item": "scrap_wood_block", "count": 16 },
     { "item": "scrap_metal_block", "count": 8 }
   ],
   "outputs": [

@@ -6,14 +6,14 @@
   ],
   "inputs": [
     {
-      "item": "scrap_wood",
+      "item": "scrap_wood_block",
       "count": 1
     }
   ],
   "outputs": [
     {
       "item": "scrap_wood_wedge",
-      "count": 4
+      "count": 1
     }
   ],
   "time": 2,

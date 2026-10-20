@@ -48,9 +48,9 @@
   ],
   "drops": [
     {
-      "item": "scrap_wood",
+      "item": "scrap_wood_block",
       "chance": 0.8,
-      "count": 2
+      "count": 8
     },
     {
       "item": "component_kit",
