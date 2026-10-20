@@ -76,6 +76,41 @@ A structure is a `.glb` under `meshes/structures/`, placed by a POI prefab's `mo
   colours (grime at the base, moss on top faces), which multiply the base colour. Emissive materials glow.
 - **Budget.** About 30,000 triangles and 4 MB for the largest model (the ship's fore section); props a few thousand.
 
+## The opening cinematic
+
+The first time a world started from the menu loads, the host watches the crash happen. It is 31 seconds and in-engine.
+The intact SV-04 flies in low over the forest and the old pillars. Its port nacelle catches fire and blows off (it lands
+where `sv04_nacelle.glb` lies). The ship comes down in the clearing and breaks in two. The picture then goes black and
+comes back on the player getting up at the spawn, facing the wreck. Jump or Esc skips it. Players who join later spawn
+straight in, and a loaded save never plays it. The world itself never changes, so nothing is sent to other peers.
+
+What flies are copies of the wreck's own models: `sv04_fore.glb`, `sv04_aft.glb` and `sv04_nacelle.glb`. Each comes
+to rest exactly where the crash site places it. While they fly, the following stay out of sight until the ship
+settles:
+
+- the real models;
+- the cargo crates (`hidden_models`);
+- the loot crates and scrap piles near the wreck (`hidden_objects`, within `hide_radius`);
+- the site's fires.
+
+The HUD is hidden, quest dialogue waits and the player stands still.
+
+`game/data/opening.json` holds the cinematic:
+
+- the ship's flight, as timed keys;
+- when it touches down, breaks and settles;
+- the nacelle's fire and fall;
+- the camera shots, shakes, sounds and fades.
+
+The ship rises over hills in its way, so the flight clears the forest in every world, and the cameras never go under
+the ground. It is an engine setting: it ships with the build and is not moddable. Its `fore_wreck`, `aft_wreck`,
+`aft_intact`, `nacelle_on_aft` and `nacelle_lying` repeat how `tools/structures/ship.py` lays out the wreck. Change
+them together, and `OpeningSceneTests` checks that the intact ship's sections still meet.
+
+It only plays at a crash site that places those three models and holds the spawn. A mod that moves the spawn or
+replaces the crash site without them simply starts without it. To see it, run `tools/capture-opening.sh OUT_DIR`,
+which saves stills through it. With `MOVIE=1` it also records the whole of it, sound included, to `opening.avi`.
+
 ## Building the vanilla structures
 
 The vanilla structures are made procedurally in Blender (as a Python module, no Blender UI), from scratch:
