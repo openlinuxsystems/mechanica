@@ -223,7 +223,7 @@ public partial class BotModelView : Node3D
         foreach (var leg in _legs)
         {
             var foot = leg.Foot.GlobalPosition;
-            var query = PhysicsRayQueryParameters3D.Create(foot + new Vector3(0, RayUp, 0), foot - new Vector3(0, RayDown, 0));
+            var query = PhysicsRayQueryParameters3D.Create(foot + new Vector3(0, RayUp, 0), foot - new Vector3(0, RayDown, 0), World.PhysicsLayers.Queries);
             query.Exclude = [OwnerBody];
             var hit = space.IntersectRay(query);
             // Feet stand on terrain, objects and creations, never on players or other bots.

@@ -162,7 +162,7 @@ public partial class ScriptSync : Node, IScriptPhysics, IScriptSound
     /// <inheritdoc/>
     public ScriptRayHit? Raycast(System.Numerics.Vector3 from, System.Numerics.Vector3 to, int? ignoreCreation)
     {
-        var query = PhysicsRayQueryParameters3D.Create(from.ToGodot(), to.ToGodot());
+        var query = PhysicsRayQueryParameters3D.Create(from.ToGodot(), to.ToGodot(), World.PhysicsLayers.Queries);
         query.Exclude = Exclusions(ignoreCreation);
         var hit = GetViewport().FindWorld3D().DirectSpaceState.IntersectRay(query);
         if (hit.Count == 0)
@@ -188,6 +188,7 @@ public partial class ScriptSync : Node, IScriptPhysics, IScriptSound
         {
             Shape = _sphere,
             Transform = new Transform3D(Basis.Identity, centre.ToGodot()),
+            CollisionMask = World.PhysicsLayers.Queries,
             Exclude = exclude,
         };
         var results = new List<ScriptOverlap>();

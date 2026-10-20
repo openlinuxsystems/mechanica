@@ -272,7 +272,7 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
     /// <summary>What a ray from <paramref name="start"/> to <paramref name="end"/> hits first, skipping <paramref name="exclude"/>; null when clear.</summary>
     public RayHit? CastBetween(Vector3 start, Vector3 end, Godot.Collections.Array<Rid> exclude)
     {
-        var query = PhysicsRayQueryParameters3D.Create(start, end);
+        var query = PhysicsRayQueryParameters3D.Create(start, end, Mechanica.Game.World.PhysicsLayers.Queries);
         query.Exclude = exclude;
         var hit = GetWorld3D().DirectSpaceState.IntersectRay(query);
         if (hit.Count == 0)
@@ -302,7 +302,7 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
     public System.Numerics.Vector3 GroundBelow(System.Numerics.Vector3 point)
     {
         var start = point.ToGodot() + new Vector3(0, 0.25f, 0);
-        var query = PhysicsRayQueryParameters3D.Create(start, start + new Vector3(0, -200f, 0));
+        var query = PhysicsRayQueryParameters3D.Create(start, start + new Vector3(0, -200f, 0), Mechanica.Game.World.PhysicsLayers.Queries);
         query.Exclude = [.. Players.Players.Values.Select(p => p.GetRid())];
         var hit = GetWorld3D().DirectSpaceState.IntersectRay(query);
         if (hit.Count > 0)

@@ -1168,6 +1168,12 @@ public sealed record CollisionDefinition
     /// <summary>Mesh for <see cref="CollisionShape.Convex"/>.</summary>
     public string? Mesh { get; init; }
 
+    /// <summary>
+    /// Sphere or cylinder only: the height of a step edge, in metres above the shape's lowest point, that it rolls up as
+    /// if the edge were a ramp (wheels climbing a block). Null or 0: edges are hard corners.
+    /// </summary>
+    public float? Climb { get; init; }
+
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }

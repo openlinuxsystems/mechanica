@@ -147,7 +147,7 @@ public abstract partial class HandTool : Node
     public static RayHit? Cast(PlayerController player, float reach, bool brush = false)
     {
         var from = player.AimOrigin;
-        var query = PhysicsRayQueryParameters3D.Create(from, from - player.Camera.GlobalBasis.Z * reach);
+        var query = PhysicsRayQueryParameters3D.Create(from, from - player.Camera.GlobalBasis.Z * reach, World.PhysicsLayers.Queries);
         query.Exclude = [player.GetRid()];
         query.CollideWithAreas = brush;
         var hit = player.GetWorld3D().DirectSpaceState.IntersectRay(query);

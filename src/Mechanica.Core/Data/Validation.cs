@@ -213,6 +213,13 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
                     sink.Error(Code, $"{p}.mesh", "a convex shape needs a mesh.");
                 break;
         }
+        if (c.Climb is { } climb)
+        {
+            if (c.Shape is not (CollisionShape.Sphere or CollisionShape.Cylinder))
+                sink.Error(Code, $"{p}.climb", "only a sphere or a cylinder rolls up edges, so only they take climb.");
+            else if (!(climb >= 0) || c.Radius is { } r && climb >= r)
+                sink.Error(Code, $"{p}.climb", "climb must be at least 0 and below the radius: an edge at or above the centre is a wall.");
+        }
         CheckAsset(c.Mesh, $"{p}.mesh", AssetKind.Mesh, sink);
         KnownKeys.WarnUnknown(c.Extra, p, sink, typeof(CollisionDefinition));
     }

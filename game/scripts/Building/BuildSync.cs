@@ -180,7 +180,7 @@ public partial class BuildSync : Node, IToolWorld, IPartCatalog
         float? Height(float dx, float dz)
         {
             var from = new Vector3(centre.X + dx, centre.Y + 1.5f, centre.Z + dz);
-            var query = PhysicsRayQueryParameters3D.Create(from, from + Vector3.Down * 3f);
+            var query = PhysicsRayQueryParameters3D.Create(from, from + Vector3.Down * 3f, World.PhysicsLayers.Queries);
             var exclude = new Godot.Collections.Array<Rid>();
             for (var tries = 0; tries < 6; tries++)
             {
@@ -207,7 +207,7 @@ public partial class BuildSync : Node, IToolWorld, IPartCatalog
         var size = (definition.Size ?? GridSize.One).Metres.ToGodot() + Vector3.One * (2 * Settings!.AnchorMargin);
         var transform = pose.ToTransform()
             * new Transform3D(rotation.ToBasis(), PartGeometry.CentreMetres(definition, cell, rotation).ToGodot());
-        var query = new PhysicsShapeQueryParameters3D { Shape = Box(size), Transform = transform, CollideWithBodies = true };
+        var query = new PhysicsShapeQueryParameters3D { Shape = Box(size), Transform = transform, CollideWithBodies = true, CollisionMask = World.PhysicsLayers.Queries };
         var exclude = new Godot.Collections.Array<Rid>();
         foreach (var body in target is null ? [] : Creations.NodeOf(target.Id)?.Bodies ?? [])
             exclude.Add(body.GetRid());
@@ -247,7 +247,7 @@ public partial class BuildSync : Node, IToolWorld, IPartCatalog
     private string? Overlap(Shape3D shape, Transform3D transform, IReadOnlyCollection<int> ignoreCreations, int? ignoreLiftOf,
         IEnumerable<Rid>? ignoreBodies = null)
     {
-        var query = new PhysicsShapeQueryParameters3D { Shape = shape, Transform = transform, CollideWithBodies = true };
+        var query = new PhysicsShapeQueryParameters3D { Shape = shape, Transform = transform, CollideWithBodies = true, CollisionMask = World.PhysicsLayers.Queries };
         var exclude = new Godot.Collections.Array<Rid>();
         foreach (var id in ignoreCreations)
         {
