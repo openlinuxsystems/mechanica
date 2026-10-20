@@ -10,6 +10,7 @@ Cycles on the CPU; nothing is downloaded. Needs the bpy 5.2.2 wheel, numpy, pill
 from __future__ import annotations
 
 import math
+import os
 import random
 import sys
 from pathlib import Path
@@ -221,6 +222,8 @@ def eat(out):
     views = {"3q": dict(view=(0.9, -1.4, 0.25), ortho=0.75, target=(-0.1, -0.15, 1.38)),
              "fp": dict(view=tuple(-look), target=tuple(Vector(bc.FP_EYE) + look), distance=1.0, ground=False,
                         clip_start=0.05, fov=75, aspect=16 / 9)}
+    if os.environ.get("EAT_VIEWS"):
+        views = {k: v for k, v in views.items() if k in os.environ["EAT_VIEWS"].split(",")}
     keys = [("hold", None, 0.0), ("raise", ep.clip_eat_food, 0.22), ("bite", ep.clip_eat_food, 0.3),
             ("second bite", ep.clip_eat_food, 0.52), ("pull away", ep.clip_eat_food, 0.62), ("chew", ep.clip_eat_food, 0.95)]
     for crop, mod in CROPS.items():
@@ -287,6 +290,8 @@ def eat(out):
             files = []
             for label, fn, t in keys:
                 hold = ep.clip_hold_food_fp if vname == "fp" else ep.clip_hold_food
+                if fn and vname == "fp":
+                    fn = ep.clip_eat_food_fp
                 pose(fn or hold, t)
                 food = show(state_at(t) if fn else 0)
                 cc = crumbs(1.0 if label in ("bite", "second bite") else 0, len(label))
