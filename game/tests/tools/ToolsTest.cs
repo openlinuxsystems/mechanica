@@ -458,7 +458,9 @@ public partial class ToolsTest : StagedTest
             if (frame == 0)
             {
                 _results.Clear();
-                Check(Tools.Lift.PressRemove(), "right click starts the hold");
+                // A left click on the bar captures it again (to move the Lift): the hold still picks the Lift up.
+                Check(Tools.Lift.Capture(_bar) && Tools.Lift.Captured == _bar, "a click on the bar on the Lift captures it");
+                Check(Tools.Lift.PressRemove(), "right click starts the hold, captured or not");
             }
             if (_client.Main.Build.Lifts.Count != 0 || frame < 60)
                 return false;
@@ -466,6 +468,7 @@ public partial class ToolsTest : StagedTest
             if (Bottom(_host, _bar) >= _ground + 0.1f && frame < 600)
                 return false;
             Check(!Tools.Lift.Removing, "the hold ended");
+            Check(Tools.Lift.Captured is null && _host.Main.Build.Tools!.CaptureOf(_client.Peer) is null, "and let the capture go");
             Check(!_host.Main.Creations.Find(_bar)!.OnLift && !Body(_host, _bar).Freeze, "the host simulates the bar again");
             Check(Bottom(_host, _bar) < _ground + 0.1f, $"it falls to the ground (bottom {Bottom(_host, _bar):F3})");
             return true;

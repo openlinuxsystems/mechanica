@@ -100,8 +100,9 @@ their item's properties.
   from the painter: a click, or a whole drag (`PaintArgs.stroke`, up to `max_parts_per_action` parts and while no gap is
   longer than `stroke_seconds`). Taking paint off is free. These are `paint` in `game/data/building.json`.
 - The water bucket has two items: the empty `water_bucket` (the one the Fabricator makes) and the full
-  `water_bucket_full`. Filling one at water (`CollectWater`) or throwing its water (`watering.lua`, with
-  `item.replace`) swaps one for the other in the same slot, so it stays in hand. How it moves in the hand
+  `water_bucket_full`. Filling at water (`CollectWater`) fills every empty bucket the player carries in one go,
+  and throwing (`watering.lua`, with `item.replace`) empties one at a time; each swaps one for the other in the
+  same slot, so the bucket in hand stays in hand. How it moves in the hand
   is `bucket` in `game/data/character.json`.
 - Items and parts: `seed`, `soil` and `respawn_point` in part data
   ([Part Data Schema](part-data-schema.md#survival)). Food, weapons, seeds and the water bucket are
@@ -131,7 +132,7 @@ their item's properties.
 | `AimItem` | `on` | Starts (`true`) or stops aiming the item in hand: right click held with a weapon. |
 | `ReloadItem` | `slot` | Reloads the item in the slot (its script's `on_reload_item`). |
 | `SetFriendlyFire` | `on` | Host only: turns friendly fire on or off. |
-| `CollectWater` | `point`, `slot?` | A point on water in reach; turns one empty `bucket_item` (the one in `slot`, or the first) into a full `water_item`, in the same slot when it was the last. Returns `{slot}`, where the full bucket is. |
+| `CollectWater` | `point`, `slot?` | A point on water in reach; turns every empty `bucket_item` the caller carries into a full `water_item` (the one in `slot`, or the first, first), each in the same slot when it was the last of its stack; with no room for the rest, the others stay empty. Returns `{slot}`, where the full bucket is. |
 | `SetSpawn` | `creation`, `part` | A `respawn_point` part in reach. |
 | `DropItems` | `slot`, `count` | `count` omitted drops the stack. |
 | `PickUp` | `drop` | A pile within `pickup_reach`. |

@@ -24,7 +24,7 @@ namespace Mechanica.Game.Building;
 /// points, with the part under it when that is in reach (the soil a seed is planted in). Its Lua decides
 /// what that does on the host. While this tool is out, <c>EquipItem</c> tells the host which scripted
 /// item is in hand (its <c>on_equip</c> and <c>on_unequip</c>).</item>
-/// <item>Aimed at the sea with water in hand or nothing usable: <c>CollectWater</c> fills a bucket. Aimed at a POI's pool
+/// <item>Aimed at the sea with water in hand or nothing usable: <c>CollectWater</c> fills every empty bucket carried. Aimed at a POI's pool
 /// of liquid that can be collected (a chemical pool), it collects that instead.</item>
 /// </list>
 /// The host decides every one; nothing changes here until it answers.

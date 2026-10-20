@@ -1018,12 +1018,12 @@ No params.
 
 *action, play scope*
 
-Filling a bucket at water. Arguments of CollectWater: fill an empty bucket where the caller aims at water.
+Filling a bucket at water. Arguments of CollectWater: fill every empty bucket the caller carries where they aim at water.
 
 | Param | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|
 | `point` | number[3] | yes |  | The water point aimed at, in world metres. Format: [x, y, z] |
-| `slot` | integer or null |  |  | The inventory slot holding the empty bucket to fill (the one in hand); null fills the first one. |
+| `slot` | integer or null |  |  | The inventory slot holding the empty bucket in hand, filled first; null starts at the first one. |
 
 ### `DropItems`
 

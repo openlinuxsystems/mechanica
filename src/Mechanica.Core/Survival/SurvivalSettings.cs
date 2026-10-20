@@ -100,7 +100,7 @@ public sealed record SurvivalSettings
     /// <summary>Most degrees a shot may point away from where the host sees the shooter looking (network lag).</summary>
     public float AimTolerance { get; init; } = 25f;
 
-    /// <summary>The empty bucket <c>CollectWater</c> fills.</summary>
+    /// <summary>The empty bucket <c>CollectWater</c> fills (every one the player carries, in one dip).</summary>
     public string BucketItem { get; init; } = "water_bucket";
 
     /// <summary>The full bucket filling one at water turns it into (in the same slot).</summary>

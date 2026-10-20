@@ -412,9 +412,9 @@
       "kind": "action",
       "group": "survival",
       "scope": "play",
-      "description": "Filling a bucket at water. Arguments of CollectWater: fill an empty bucket where the caller aims at water.",
+      "description": "Filling a bucket at water. Arguments of CollectWater: fill every empty bucket the caller carries where they aim at water.",
       "params": {
-        "description": "Arguments of CollectWater: fill an empty bucket where the caller aims at water.",
+        "description": "Arguments of CollectWater: fill every empty bucket the caller carries where they aim at water.",
         "type": "object",
         "properties": {
           "point": {
@@ -427,7 +427,7 @@
             "maxItems": 3
           },
           "slot": {
-            "description": "The inventory slot holding the empty bucket to fill (the one in hand); null fills the first one.",
+            "description": "The inventory slot holding the empty bucket in hand, filled first; null starts at the first one.",
             "anyOf": [
               {
                 "type": "integer"
