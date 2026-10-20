@@ -95,10 +95,12 @@ switches it to the next mode and shows it for a moment; R with the Connect Tool 
   capturing another one swaps to it. The Lift will not capture a Creation built onto the ground (remove the parts that
   touch the ground, or build on the Lift in the first place), one with resources on it, one more than 32 m across, or
   one on another player's Lift: it shows no blue, and a click flashes it red with the reason.
-  A Creation on the Lift stands still on the platform until you take the Lift away. The arrow keys raise and lower it one unit (0.25 m) at a time, up to 20 units above its resting height
+  A Creation on the Lift rests on the platform on what is over it, so a car wider than the platform sits on its deck
+  with its wheels hanging past the sides; the Lift goes down raised as far as it must for them to clear the ground. It
+  stands still there until you take the Lift away. The arrow keys raise and lower it one unit (0.25 m) at a time, up to 20 units above its resting height
   (the deck at 22 units, 5.5 m); hold an arrow and the column runs smoothly until you let go, stopping at the next
-  unit; you hear the pump kick in and run while it moves. Standing on the deck you ride it, and the arrow keys drive it
-  whatever you have in hand. Q turns what it holds. Aim at the Lift (or
+  unit; you hear the pump kick in and run while it moves. Standing on the deck you ride it, and while you stand on it or aim at the Lift or what
+  it holds, the arrow keys drive it whatever you have in hand. Q turns what it holds. Aim at the Lift (or
   what it holds) and hold right click until the ring fills to pick the Lift back up; what it held drops. A Creation whose chests or tanks hold items cannot be
   lifted ("Cannot lift with attached resources."): empty it first. Gas containers are the exception: they can be lifted, and
   picked up, while they hold fuel.
