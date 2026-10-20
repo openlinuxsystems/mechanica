@@ -111,11 +111,14 @@ public partial class BotBody : CharacterBody3D
         Rotation = new Vector3(0, _targetYaw, 0);
     }
 
-    /// <summary>The bot used <paramref name="attack"/>: its model plays the attack's clip, the placeholder flashes.</summary>
-    public void Attacked(string attack)
+    /// <summary>
+    /// The bot used <paramref name="attack"/>, hitting <paramref name="hits"/> (world points): its model plays the
+    /// attack's clip, the placeholder flashes.
+    /// </summary>
+    public void Attacked(string attack, IReadOnlyList<Vector3> hits)
     {
         if (Model is not null)
-            Model.Attack(attack);
+            Model.Attack(attack, hits);
         else
             _flash = 0.25f;
     }

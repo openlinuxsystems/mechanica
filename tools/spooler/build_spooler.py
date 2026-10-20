@@ -21,6 +21,8 @@ do. The nodes are the rig (the game plays the clips on them and plants the feet)
 * ``Body`` (the pelvis), ``Torso``, ``Head``, ``EyeLens`` (the glowing eye, which the game colours green while calm
   and red while engaged), ``HeadReel`` (the side reel), ``Antenna`` and ``BackRoll``;
 * ``ArmR_Shoulder`` / ``ArmR_Gun`` and ``Roller`` (the gun's muzzle roller; not on Red);
+* ``Shot`` (on the gun, past the muzzle: the fired tape or bubble wrap, which the game hides and flies to what the
+  ``shot`` effect hit);
 * ``ArmL_Shoulder`` / ``ArmL_Elbow`` and ``Cutter`` (the rotary blade);
 * ``Leg<L|R>_Hip`` / ``_Knee`` / ``_Ankle`` / ``_Foot`` (``_Foot`` is an empty under the reel foot).
 
@@ -127,6 +129,15 @@ def gun_point(v):
 
 def gun_muzzle():
     return gun_point((0, -0.28 - (0.16 if VARIANT[0] == "red" else 0.0), -0.08))
+
+
+SHOT_SCALE = 1.7
+
+
+def shot_point():
+    """Where the fired tape (the hidden ``Shot`` node) sits on the gun, just past the muzzle."""
+    red = VARIANT[0] == "red"
+    return gun_point((0, -0.34 - (0.16 if red else 0.0), -0.02 if red else -0.08))
 
 
 def cutter_hub():
@@ -332,6 +343,37 @@ def tape_gun(barrel=0.0, scope=False, twin=False, roller=True):
                     bevel=0, rot=Matrix.Rotation(a, 4, "X"))
 
 
+def shot_piece():
+    """The fired shot, on its own node (``Shot``; the game hides it and flies a copy of it to what the attack hit):
+    a balled-up wad of the variant's tape trailing a crinkled ribbon, or a ball of bubble wrap. Its front is -Y."""
+    at("Shot")
+    c = shot_point()
+    if VARIANT[0] == "green":
+        sphere(c, 0.042, "bubble", segs=16)
+        n = 18
+        for i in range(n):
+            z = 1 - 2 * (i + 0.5) / n
+            a = math.pi * (3 - math.sqrt(5)) * i
+            rr = math.sqrt(1 - z * z)
+            sphere(c + V((rr * math.cos(a), rr * math.sin(a), z)) * 0.043, 0.01, "bubble", segs=8)
+        for i, (dy, dz, ang) in enumerate(((0.05, 0.004, 0.3), (0.085, -0.006, -0.3))):
+            box((0.05, 0.04, 0.003), c + V((0, dy, dz)), "bubble", bevel=0, rot=Matrix.Rotation(ang, 4, "X"))
+        return
+    red = VARIANT[0] == "red"
+    mats = tape_mats() or ["tape"]
+    r = 0.042 if red else 0.032
+    w = 0.06 if red else 0.048
+    sphere(c, r, mats[0], scale=(1.0, 1.15, 0.85), segs=12)
+    for k in range(3):     # creases on the wad
+        a = 2 * math.pi * k / 3
+        box((w * 0.9, 0.004, r * 0.9), c + V((0, r * 0.2 * math.cos(a), r * 0.6 * math.sin(a))), mats[k % len(mats)],
+            bevel=0, rot=Matrix.Rotation(a, 4, "Y"))
+    for i in range(4):     # the ribbon flapping out behind
+        p = c + V((0.004 * (i % 2), r * 0.9 + 0.042 * i + 0.02, 0.012 * math.sin(i * 1.7)))
+        box((w, 0.046, 0.003), p, mats[min(i, len(mats) - 1)], bevel=0,
+            rot=Matrix.Rotation(0.35 * (1 if i % 2 else -1), 4, "X") @ Matrix.Rotation(0.06 * i, 4, "Y"))
+
+
 def cutter():
     """Left arm: a rotary cutter, a toothed circular blade in a fork with a half guard."""
     at("ArmL_Shoulder")
@@ -421,6 +463,7 @@ def pivots():
     p["ArmR_Gun"] = ("ArmR_Shoulder", EL_R)
     if VARIANT[0] != "red":
         p["Roller"] = ("ArmR_Gun", gun_muzzle())
+    p["Shot"] = ("ArmR_Gun", shot_point())
     p["ArmL_Shoulder"] = ("Torso", SH_L)
     p["ArmL_Elbow"] = ("ArmL_Shoulder", EL_L)
     p["Cutter"] = ("ArmL_Elbow", cutter_hub())
@@ -569,11 +612,15 @@ def build():
     ROLLS.clear()
     legs()
     cutter()
+    shot_piece()
     GEOMETRY[VARIANT[0]]()
     # grow the head about the neck (the concept's head was drawn small and approved at 1.3x)
     for n in HEAD_NODES:
         if n in sc.GEO:
             sc.GEO[n].v = [tuple(hs(v)) for v in sc.GEO[n].v]
+    # the shot is drawn at the gun's scale and grown so it reads in flight from across a base
+    c = shot_point()
+    sc.GEO["Shot"].v = [tuple(c + (V(v) - c) * SHOT_SCALE) for v in sc.GEO["Shot"].v]
     for i, r in enumerate(ROLLS):
         if r[0] in HEAD_NODES:
             ROLLS[i] = (r[0], hs(r[1]), r[2] * HEAD_SCALE, r[3] * HEAD_SCALE, r[4])
@@ -862,7 +909,7 @@ def set_pose(nodes, clip, t, length):
 
 def bake_clips(nodes):
     """Keys every rig node every frame of every clip (see build_scuttler.bake_clips)."""
-    anim = [ob for n, ob in nodes.items() if not n.endswith("_Foot") and n != "EyeLens"]
+    anim = [ob for n, ob in nodes.items() if not n.endswith("_Foot") and n not in ("EyeLens", "Shot")]
     for ob in anim:
         ob.animation_data_create()
     rest = Pose(nodes)
@@ -921,6 +968,8 @@ def render_review(out: Path, variant):
     bpy.context.scene.cycles.samples = SAMPLES
     root, nodes = build()
     root.rotation_euler = (0, 0, 0)          # renders keep the build's -Y front
+    for ob in nodes["Shot"].children:        # the game hides the shot until it flies
+        ob.hide_render = True
     c = (0, 0, 0.58)
     shots = []
 

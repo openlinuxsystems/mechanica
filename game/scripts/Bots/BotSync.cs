@@ -432,7 +432,7 @@ public partial class BotSync : Node3D, IBotWorld, IRaidWorld
     private void BotAttacked(string json)
     {
         if (Read<BotAttackEvent>(json) is { } attack && _bodies.TryGetValue(attack.Bot, out var body))
-            body.Attacked(attack.Attack);
+            body.Attacked(attack.Attack, [.. attack.Hits.Select(h => h.Point.ToGodot())]);
     }
 
     /// <summary>Host → client: the raid in progress.</summary>
