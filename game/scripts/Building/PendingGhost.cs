@@ -35,8 +35,12 @@ public partial class PendingGhost : Node3D
         var ghost = new PendingGhost { Name = "Pending", TopLevel = true };
         parent.AddChild(ghost);
         ghost.GlobalTransform = preview.GlobalTransform;
-        // A preview is either a mesh itself or a node holding the part's meshes.
-        var meshes = preview is MeshInstance3D self ? [(self, Transform3D.Identity)] : preview.GetChildren().OfType<MeshInstance3D>().Select(m => (m, m.Transform)).ToList();
+        // A preview is either a mesh itself or a node holding the part's meshes (the Lift's: its own and a captured Creation's).
+        var meshes = new List<(MeshInstance3D, Transform3D)>();
+        if (preview is MeshInstance3D self)
+            meshes.Add((self, Transform3D.Identity));
+        else
+            Collect(preview, Transform3D.Identity, meshes);
         foreach (var (mesh, transform) in meshes)
         {
             ghost.AddChild(new MeshInstance3D
@@ -46,6 +50,18 @@ public partial class PendingGhost : Node3D
             });
         }
         return ghost;
+    }
+
+    // The meshes under a node, placed relative to it; a hidden node below it hides its own.
+    private static void Collect(Node node, Transform3D parent, List<(MeshInstance3D, Transform3D)> meshes)
+    {
+        foreach (var child in node.GetChildren().OfType<Node3D>().Where(c => c.Visible))
+        {
+            var here = parent * child.Transform;
+            if (child is MeshInstance3D mesh)
+                meshes.Add((mesh, here));
+            Collect(child, here, meshes);
+        }
     }
 
     /// <summary>Settles the ghost with the host's answer.</summary>

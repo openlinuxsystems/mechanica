@@ -312,6 +312,10 @@ Locked: `tick` (seconds between the host's fire updates) and `max_fires` (most f
 | `lift.end_stop_sound` | `impact_metal` | Sound event played when the platform comes to rest at level 0 or the top. |
 | `lift.remove_hold_seconds` | 0.5 | Seconds right click is held on the Lift before it is taken away. |
 | `lift.refuse_stored_items` | true | When true, a Creation whose storage holds items can't be picked up onto the Lift. |
+| `lift.refuse_grounded` | true | When true, a Creation built onto the ground can't be captured (as in Scrap Mechanic); it comes free once the parts touching the ground are gone. False lets the Lift pull it free. |
+| `lift.refuse_categories` | `["resource"]` | Part categories that keep a Creation off the Lift. |
+| `lift.refuse_parts` | `["produce_crate"]` | Parts (qualified or vanilla ids) that keep a Creation off the Lift. |
+| `lift.max_extent` | 32.0 | Longest side, in m, of the box round a Creation the Lift will capture. |
 | `lift.max_blueprints` | 50 | Most blueprints the blueprint menu lists, newest first. |
 | `lift.blueprint_max_bytes` | 1048576 | Longest blueprint, in characters of JSON, that `LoadBlueprint` accepts. |
 | `paint.palette` | 40 colours | The colours the Paint Tool offers, `"#rrggbb"`, base colour by base colour, each from light to dark. The host accepts any colour. |

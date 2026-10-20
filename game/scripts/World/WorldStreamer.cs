@@ -168,6 +168,7 @@ public partial class WorldStreamer : Node3D
         Generator = new WorldGenerator(WorldGen, Seed, Settings.WorldSize, Settings.Depth);
         Streamer = new ChunkStreamer(Settings);
         Creations.Removed += Streamer.Forget;
+        Creations.MovedParked += TrackMoved;
         Session.PeerReady += SendWorld;
         Step(0f);
     }
@@ -198,7 +199,16 @@ public partial class WorldStreamer : Node3D
     public override void _ExitTree()
     {
         Creations.Removed -= Streamer.Forget;
+        Creations.MovedParked -= TrackMoved;
         Session.PeerReady -= SendWorld;
+    }
+
+    // A parked Creation moved (put down on a Lift far from where it parked): it is tracked where it is now, so it resumes
+    // when a player is near it there, and never stays parked out of reach of the ground it now stands on.
+    private void TrackMoved(int id)
+    {
+        if (Streamer.IsTracked(id) && Creations.Find(id) is { } creation)
+            Streamer.RegisterParked(id, CreationBounds.World(creation));
     }
 
     public override void _PhysicsProcess(double delta) => Step((float)delta);

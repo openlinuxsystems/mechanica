@@ -43,6 +43,12 @@
     "end_stop_sound": "impact_metal",
     "remove_hold_seconds": 0.5,
     "refuse_stored_items": true,
+    // Like Scrap Mechanic, a Creation built onto the ground, one with resources (or a Produce Crate) on it and one wider
+    // than max_extent metres cannot be captured.
+    "refuse_grounded": true,
+    "refuse_categories": ["resource"],
+    "refuse_parts": ["produce_crate"],
+    "max_extent": 32.0,
     "max_blueprints": 50,
     "blueprint_max_bytes": 1048576
   },

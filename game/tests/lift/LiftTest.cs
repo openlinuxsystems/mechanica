@@ -25,6 +25,8 @@ public partial class LiftTest : StagedTest
     private float _lastTop;
     private bool _rose;
     private int _endStops;
+    private int _kicks;
+    private bool _motorRan;
     private float _worstRide;
     private int _offDeck;
     private int _heldTo;
@@ -84,6 +86,8 @@ public partial class LiftTest : StagedTest
                 {
                     if (voice.Event.QualifiedId == "vanilla:" + Settings.EndStopSound)
                         _endStops++;
+                    if (voice.Event.QualifiedId is "vanilla:lift_raise" or "vanilla:lift_lower")
+                        _kicks++;
                 };
                 Request(ToolActions.PlaceLift, new PlaceLiftArgs(new Core.Data.Vec3(_at.X, _at.Y, _at.Z)));
             }
@@ -135,6 +139,7 @@ public partial class LiftTest : StagedTest
                 return false;
             if (client.Moving)
             {
+                _motorRan |= client.Motor is { } motor && client.Moving && motor.Parameters.TryGetValue("speed", out var speed) && speed > 0.5f;
                 Check(client.ShownTop >= _lastTop - 1e-5f, "the column never drops while rising");
                 _rose |= client.ShownTop > Settings.TopAt(0) + 0.05f && client.ShownTop < Settings.TopAt(8) - 0.05f;
                 _lastTop = client.ShownTop;
@@ -150,6 +155,8 @@ public partial class LiftTest : StagedTest
                 Check(Mathf.IsEqualApprox(shape.Position.Y + ((BoxShape3D)shape.Shape).Size.Y / 2, Settings.TopAt(8), 1e-3f), $"the {who}'s platform collision is at the deck");
             }
             Check(_endStops == 0, "stopping between the ends makes no end-stop clunk");
+            Check(_kicks == 1, $"the client heard the pump kick in once as it set off ({_kicks})");
+            Check(_motorRan && client.Motor is null && host.Motor is null, "the motor ran at speed while it rose and stopped with it");
             return true;
         });
         Add("at the top it stands 22 units tall and clunks", frame =>

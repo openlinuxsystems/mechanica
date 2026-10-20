@@ -13,7 +13,9 @@ namespace Mechanica.Game.Building;
 /// to the resting height, lights flash), and a new level eases the deck there (<see cref="LiftMotion"/>) by scrubbing the
 /// <c>extend</c> clip, whose time is the deck height in metres. The collision follows the deck as shown, and a held
 /// Creation is drawn riding the deck (<see cref="CreationNode.VisualOffset"/>) while its bodies stay where the host put them.
-/// Without the model (a test mod) a plain block stands in.
+/// While the column moves each peer plays the same sounds from the motion alone: <c>lift_raise</c> or <c>lift_lower</c>
+/// as it sets off, the <c>lift_motor</c> loop (its <c>speed</c> following the deck's) until it stops, and the end-stop
+/// clunk at the bottom or the top. Without the model (a test mod) a plain block stands in.
 /// </summary>
 public partial class LiftBody : StaticBody3D
 {
@@ -45,6 +47,7 @@ public partial class LiftBody : StaticBody3D
     private LiftMotion? _motion;
     private double _deployTime;
     private int? _heldShown;
+    private Sound.SoundPlayer.Voice? _motor;
 
     /// <summary>Loads the model; null shows the plain block.</summary>
     public PartAssets? Assets { get; init; }
@@ -102,7 +105,42 @@ public partial class LiftBody : StaticBody3D
         AddChild(_platformShape = new CollisionShape3D { Name = "Shape", Shape = _platform });
     }
 
-    public override void _ExitTree() => Hold(null, 0f);
+    public override void _ExitTree()
+    {
+        Hold(null, 0f);
+        StopMotor();
+    }
+
+    /// <summary>The motor loop playing while the column moves, or null.</summary>
+    public Sound.SoundPlayer.Voice? Motor => _motor;
+
+    // The column's sounds: setting off it kicks in (raise or lower) and the motor runs, its pitch and volume following
+    // the deck's speed, until it comes to rest.
+    private void RunMotor()
+    {
+        if (Sounds is null)
+            return;
+        var moving = _motion!.Moving && (_deploy is null || _deployTime >= _deploy.Length);
+        if (!moving)
+        {
+            StopMotor();
+            return;
+        }
+        if (_motor is null)
+        {
+            Sounds.PlayLocal(_motion.Velocity > 0 ? "lift_raise" : "lift_lower", Identifiers.VanillaModId, Top);
+            if (Sounds.Registry.Find("lift_motor", Identifiers.VanillaModId) is { } loop)
+                _motor = Sounds.Player.Play(loop, Top, () => IsInstanceValid(this) && IsInsideTree() ? Top : null);
+        }
+        _motor?.SetParameter("speed", Math.Clamp(Math.Abs(_motion.Velocity) / Math.Max(1e-3f, _settings.RaiseSpeed), 0f, 1f));
+    }
+
+    private void StopMotor()
+    {
+        if (_motor is not null && Sounds is not null && IsInstanceValid(Sounds))
+            Sounds.Player.Stop(_motor);
+        _motor = null;
+    }
 
     /// <summary>Places the Lift for <paramref name="state"/>: put down somewhere new it deploys; a new level eases there.</summary>
     public void Show(LiftState state, LiftSettings settings)
@@ -207,6 +245,7 @@ public partial class LiftBody : StaticBody3D
             Sounds?.PlayLocal(_settings.EndStopSound, Identifiers.VanillaModId, GlobalPosition + new Vector3(0, target, 0));
         if (_deploy is null || _deployTime >= _deploy.Length)
             ShownTop = _motion.Height;
+        RunMotor();
         // Players standing on the deck move with it (a character takes its floor's velocity).
         ConstantLinearVelocity = new Vector3(0, _motion.Velocity, 0);
         if (_extend is not null)
