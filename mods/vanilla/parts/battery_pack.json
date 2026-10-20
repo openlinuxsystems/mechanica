@@ -2,6 +2,7 @@
   "id": "battery_pack",
   "name": "Battery Pack",
   "category": "resource",
+  "tab": "consumable",
   "mass": 1,
   "stack_size": 10,
   "sounds": {

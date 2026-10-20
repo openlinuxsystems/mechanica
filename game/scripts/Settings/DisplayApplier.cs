@@ -48,6 +48,10 @@ public static class DisplayApplier
         var atlas = _graphics.Shadows switch { Quality.Low => 1024, Quality.Medium => 2048, Quality.Ultra => 8192, _ => 4096 };
         RenderingServer.DirectionalShadowAtlasSetSize(atlas, true);
         root.PositionalShadowAtlasSize = atlas;
+        if (_graphics.Effects >= Quality.Ultra)
+            RenderingServer.EnvironmentSetSsaoQuality(RenderingServer.EnvironmentSsaoQuality.Ultra, false, 0.5f, 3, 50f, 300f);
+        else
+            RenderingServer.EnvironmentSetSsaoQuality(RenderingServer.EnvironmentSsaoQuality.Medium, true, 0.5f, 2, 50f, 300f);
         foreach (var node in Walk(root))
             Configure(node);
     }
@@ -63,7 +67,10 @@ public static class DisplayApplier
             case WorldEnvironment { Environment: { } env }:
                 env.GlowEnabled = _graphics.Effects >= Quality.Medium;
                 env.SsaoEnabled = _graphics.Effects >= Quality.High;
-                env.SsilEnabled = _graphics.Effects >= Quality.Ultra;
+                // Never screen-space indirect light: it makes the odd pixel far too bright (or not a number), most
+                // often along the distant skyline, and glow blows each one up into a white flash. Ultra gets
+                // full-resolution ambient occlusion instead (ApplyQuality).
+                env.SsilEnabled = false;
                 // Fog closes in at the view distance, so scenery fades out instead of ending at an edge. It takes the
                 // sky's horizon colour exactly: ground past the fog is the colour of the sky behind it, so the far
                 // chunks coming and going as the player moves (and the camera's far plane) never flash the sky.

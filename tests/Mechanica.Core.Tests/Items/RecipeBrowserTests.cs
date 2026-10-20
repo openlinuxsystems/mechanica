@@ -25,7 +25,7 @@ public class RecipeBrowserTests
 
         Assert.Equal(["test:blocks"], Ids(RecipeBrowser.Filter(recipes, null, InventoryTab.Blocks, _catalog)));
         Assert.Equal(["test:chest"], Ids(RecipeBrowser.Filter(recipes, null, InventoryTab.Interactive, _catalog)));
-        Assert.Empty(RecipeBrowser.Filter(recipes, null, InventoryTab.Consumables, _catalog));
+        Assert.Empty(RecipeBrowser.Filter(recipes, null, InventoryTab.Consumable, _catalog));
     }
 
     [Fact]

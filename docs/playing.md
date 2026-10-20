@@ -155,8 +155,10 @@ Blaster holds 15, the Scattergun 4), or the potatoes you carry for one that does
 the counter at the bottom right shows the rounds and the potatoes; when it is empty, **R** reloads it from
 the potatoes you carry (the ring round the crosshair fills while it does).
 
-The **inventory** (**I** or **Tab**) is a grid of ten columns with tabs along the top: All, Blocks,
-Interactive, Tools, Resources and Consumables. Each tab has a coloured dot, and every stack carries the dot
+The **inventory** (**I** or **Tab**) is a grid of ten columns with tabs along the top: All, Tools, Blocks,
+Interactive, Parts and Consumable. Tools holds hand tools and weapons, Interactive the parts that do something
+(engines, seats, logic, containers, stations, lights), Parts crafting materials and decor, and Consumable what
+you use up (food, seeds, fuel, ammo, batteries, throwables). Each tab has a coloured dot, and every stack carries the dot
 of the tab it is under. The header shows how many slots are used.
 
 - Type in **Search** to list only the stacks whose name has every word you typed; a search looks through

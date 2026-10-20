@@ -13,7 +13,8 @@ namespace Mechanica.Game.Tests;
 /// <summary>
 /// The vanilla Scuttlers' swimming and effects, host plus client, on a flat world under 1.5 m of water. The Blue
 /// Scuttler (a swimmer) floats up to its swim depth and swims, while the Green one walks along the bottom; the Yellow
-/// one's stomp sends a shockwave and the Red one's blast an explosion, each seen once on the client.
+/// one's stomp sends a shockwave and the Red one's blast an explosion, each seen once on the client; a Blue Spooler's
+/// tape flies to the Green one when it shoots it.
 /// </summary>
 public partial class BotModelsTest : StagedTest
 {
@@ -29,6 +30,8 @@ public partial class BotModelsTest : StagedTest
     private int _green;
     private int _yellow;
     private int _red;
+    private int _spooler;
+    private Vector3 _hit;
 
     protected override string Tag => "botmodels";
 
@@ -113,6 +116,28 @@ public partial class BotModelsTest : StagedTest
             return true;
         });
         Add("the explosion burns out and goes", _ => Effects(_client).Count == 0 && Effects(_host).Count == 0);
+        Add("a Blue Spooler's tape flies to the Green Scuttler it hit", frame =>
+        {
+            if (frame == 0)
+                _spooler = Spawn("vanilla:spooler_blue", new Vector3(12, 0, -4));
+            if (frame == 30)
+            {
+                var result = Act(BotActions.BotAttack, new BotAttackArgs(_spooler, "tape", Target: _green));
+                Check(result.Ok, $"the host has it shoot the Green Scuttler ({result})");
+                _hit = result.Ok ? Value<BotAttackResult>(result).Hits.Select(h => h.Point.ToGodot()).FirstOrDefault() : Vector3.Zero;
+            }
+            if (Body(_client, _spooler)?.Model is not { Effects.Count: > 0 } model || Shots(_client).Count == 0)
+                return false;
+            Check(model.Effects.SequenceEqual([BotEffects.Shot]), $"the client shows one shot ({string.Join(", ", model.Effects)})");
+            var shot = Shots(_client).Single();
+            Check(shot.Target.DistanceTo(_hit) < 0.01f, $"it flies to the point hit ({shot.Target}, {_hit})");
+            Check(shot.GetChildCount() == 1 && shot.GetChild<Node3D>(0).Visible, "it carries a copy of the model's shot");
+            var muzzle = model.Scene.FindChild(BotEffects.ShotNode, true, false) as Node3D;
+            Check(muzzle is { Visible: false }, "the shot on the gun stays hidden");
+            Check(Shots(_host).Count == 1, "the host sees it too");
+            return true;
+        });
+        Add("the tape lands and goes", _ => Shots(_client).Count == 0 && Shots(_host).Count == 0);
     }
 
     private int Spawn(string type, Vector3 at)
@@ -129,4 +154,6 @@ public partial class BotModelsTest : StagedTest
     private static BotBody? Body(Instance instance, int id) => instance.Main.Bots.Bodies.GetValueOrDefault(id);
 
     private static List<BotEffect> Effects(Instance instance) => [.. instance.Main.Bots.GetChildren().OfType<BotEffect>()];
+
+    private static List<BotShot> Shots(Instance instance) => [.. instance.Main.Bots.GetChildren().OfType<BotShot>()];
 }

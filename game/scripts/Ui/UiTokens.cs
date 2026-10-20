@@ -178,8 +178,8 @@ public static class UiTokens
         InventoryTab.Tools => From(UiPalette.CategoryTools),
         InventoryTab.Blocks => From(UiPalette.CategoryBlocks),
         InventoryTab.Interactive => From(UiPalette.CategoryInteractive),
-        InventoryTab.Resources => From(UiPalette.CategoryResources),
-        InventoryTab.Consumables => From(UiPalette.CategoryConsumables),
+        InventoryTab.Parts => From(UiPalette.CategoryParts),
+        InventoryTab.Consumable => From(UiPalette.CategoryConsumable),
         _ => null,
     };
 

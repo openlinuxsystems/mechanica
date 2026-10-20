@@ -308,6 +308,12 @@ public partial class Main : Node3D
     /// <summary>Watch players: the camera that follows another player (an AI agent, say).</summary>
     public Spectator Spectator { get; private set; } = null!;
 
+    /// <summary>The opening cinematic while it plays (<see cref="PlayOpening"/>), else null.</summary>
+    public OpeningCinematic? Opening { get; private set; }
+
+    // True on the host of a world just started from the menu, until the opening cinematic starts with the world.
+    private bool _openingWanted;
+
     /// <summary>The seat's creation hotbar of linked switches and buttons, when reading device input.</summary>
     public CreationHotbar? CreationHotbar { get; private set; }
 
@@ -364,6 +370,11 @@ public partial class Main : Node3D
                     : null,
             };
             AddChild(_loadingScreen);
+            _loadingScreen.Entering += () =>
+            {
+                if (_openingWanted)
+                    PlayOpening();
+            };
         }
         var mods = Mods ??= LoadMods();
         var save = Save ??= TakeMenuSave() ?? ReadSave(Options.LoadPath);
@@ -626,7 +637,11 @@ public partial class Main : Node3D
         AddChild(Saves);
         AddChild(Characters);
         if (TakeMenuWorldName() is { } worldName && save is null)
+        {
             Saves.WorldName = worldName;
+            // A new world from the menu opens on the crash (an agent starting one carries on without it).
+            _openingWanted = ReadDeviceInput && Options.Mode != SessionMode.Join && !Ai.IsCarried;
+        }
         Lan = new LanBeacon { Name = "Lan", Session = Session, Port = LanPort, Describe = DescribeForLan };
         AddChild(Lan);
         if (save is not null)
@@ -720,6 +735,7 @@ public partial class Main : Node3D
             {
                 Name = "QuestHud", Quests = Quests, Actions = Actions, Players = PlayerSync,
                 Markers = MapMarkers, MapSettings = LogbookSettings, World = () => Streamer.Generator,
+                Holding = () => Opening is { Playing: true },
             };
             AddChild(questLog);
             var maps = new MapHud
@@ -788,6 +804,8 @@ public partial class Main : Node3D
     public override void _Process(double delta)
     {
         UpdateLoading();
+        if (_openingWanted && Loading?.Entered == true && LoadingScreen is null)
+            PlayOpening();
         if (Loading?.Entered == true && Remote.WorldSession.Changing)
             WorldSession.Entered();
         if (Options?.SelfTest == true)
@@ -1114,8 +1132,30 @@ public partial class Main : Node3D
         SpawnDebugCar();
         if (!ReadDeviceInput)
             return;
-        _input = new LocalPlayerInput { Name = "LocalPlayerInput", Target = player, Suspended = () => Spectator.Watching };
+        _input = new LocalPlayerInput { Name = "LocalPlayerInput", Target = player, Suspended = () => Spectator.Watching || Opening is { Playing: true } };
         AddChild(_input);
+    }
+
+    /// <summary>
+    /// Plays the opening cinematic (<see cref="OpeningCinematic"/>) for the local player, as on the first start of a new
+    /// world; null when there is no player yet or it doesn't start at the crash site.
+    /// </summary>
+    public OpeningCinematic? PlayOpening()
+    {
+        _openingWanted = false;
+        if (Opening is not null || LocalPlayer is not { } player || !Streamer.HasWorld)
+            return null;
+        var settings = OpeningCinematic.LoadSettings();
+        if (OpeningCinematic.SceneFor(Streamer.Generator, settings, player.GlobalPosition) is not { } scene)
+            return null;
+        Opening = new OpeningCinematic
+        {
+            Name = "Opening", World = Streamer, Player = player, Scene = scene, Fire = Fire, Sounds = Sounds, Input = () => _input,
+            ReadDeviceInput = ReadDeviceInput,
+        };
+        Opening.Finished += () => Opening = null;
+        AddChild(Opening);
+        return Opening;
     }
 
     // Once, on the host of a new world, when the debug car is wanted (see DebugCar).

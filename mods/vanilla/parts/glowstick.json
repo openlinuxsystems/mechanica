@@ -3,6 +3,7 @@
   "name": "Glowstick",
   "description": "A snap-light that glows green for good. Stick it on anything to mark a path or light a corner; it needs no power.",
   "category": "light",
+  "tab": "consumable",
   "mass": 0.1,
   "durability": 1,
   "friction": 0.5,

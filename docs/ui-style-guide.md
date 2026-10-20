@@ -42,8 +42,8 @@ The Fabricator (UI spec §8) is the reference screen; the mockups are `ui_redesi
 | Category tools | `#F4E15C` | the Tools tab's dot and the dot on its items' tiles (lemon, never orange) |
 | Category blocks | `#EAF4FF` | the Blocks tab's dot and its items' dots |
 | Category interactive | `#B98CFF` | the Interactive tab's dot and its items' dots |
-| Category resources | `#62E0A0` | the Resources tab's dot and its items' dots |
-| Category consumables | `#FF8ACF` | the Consumables tab's dot and its items' dots |
+| Category parts | `#62E0A0` | the Parts tab's dot and its items' dots |
+| Category consumable | `#FF8ACF` | the Consumable tab's dot and its items' dots |
 
 White (`#FFFFFF`) is the text on chrome and cards and the selected ring, and warnings stay the pale yellow below.
 

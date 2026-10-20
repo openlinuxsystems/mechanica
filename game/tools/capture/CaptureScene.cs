@@ -48,6 +48,8 @@ namespace Mechanica.Game.Tools;
 /// Given <c>engine_menu</c> it opens the menus of a row of engines in Survival (<c>tools/capture-engine-menu.sh</c>).
 /// Given <c>roads</c> it captures the road junctions nearest the world's centre from above, wide and from a driver's height
 /// (<c>tools/capture-roads.sh</c>).
+/// Given <c>opening</c> it plays the opening cinematic from the spawn and saves stills through it
+/// (<c>tools/capture-opening.sh</c>, which can also record the whole of it).
 /// </summary>
 public partial class CaptureScene : Node
 {
@@ -93,7 +95,8 @@ public partial class CaptureScene : Node
         var crash = args.Length > 1 && args[1] == "crash_site";
         var engineMenu = args.Length > 1 && args[1] == "engine_menu";
         var flashes = args.Length > 1 && args[1] == "flashes";
-        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash && !engineMenu && !flashes ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
+        var opening = args.Length > 1 && args[1] == "opening";
+        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash && !engineMenu && !flashes && !opening ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
         if (debugCar)
             Main.MenuCharacter = "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
@@ -227,7 +230,12 @@ public partial class CaptureScene : Node
         }
         if (flashes)
         {
-            FlashShots();
+            FlashShots(eye: args.Length > 2 && args[2] == "eye", ultra: args.Length > 3 && args[3] == "ultra");
+            return;
+        }
+        if (opening)
+        {
+            OpeningShots();
             return;
         }
         if (roads)
@@ -829,9 +837,10 @@ public partial class CaptureScene : Node
         }
     }
 
-    // A walk across chunk borders, a frame every 3 m, looking ahead over the distant ground from 30 m up: the frames
-    // show whether the sky flashes through the ground as chunks load ahead and unload behind.
-    private void FlashShots()
+    // A walk across chunk borders looking ahead over the distant ground: from 30 m up with foliage off, a frame every 3 m
+    // (whether the sky shows through the ground as chunks come and go), or at eye height with foliage on, a frame
+    // every 0.5 m while turning (whether bright pixels flash along the skyline), optionally at the Ultra preset.
+    private void FlashShots(bool eye, bool ultra)
     {
         Engine.TimeScale = 1.0;
         var start = Vector3.Zero;
@@ -840,11 +849,15 @@ public partial class CaptureScene : Node
         Shot("flashes_00_go", 300, () =>
         {
             start = _main.LocalPlayer!.GlobalPosition;
-            GameSettings.Apply(GameSettings.Current with { Graphics = GameSettings.Current.Graphics with { Grass = FoliageLevel.Off, GroundCover = FoliageLevel.Off, Bushes = FoliageLevel.Off } });
+            if (ultra)
+                GameSettings.Apply(GameSettings.Current with { Graphics = GameSettings.Current.Graphics.WithPreset(Quality.Ultra) });
+            if (!eye)
+                GameSettings.Apply(GameSettings.Current with { Graphics = GameSettings.Current.Graphics with { Grass = FoliageLevel.Off, GroundCover = FoliageLevel.Off, Bushes = FoliageLevel.Off } });
         });
         for (var k = 0; k < 160; k++)
         {
-            var step = 3f * k;
+            var step = (eye ? 0.5f : 3f) * k;
+            var turn = eye ? 0.04f * k : 0f;
             Shot($"flashes_{k:000}", 1, () =>
             {
                 var at = start + ahead * step;
@@ -852,8 +865,8 @@ public partial class CaptureScene : Node
                 _follow = null;
                 _camera.MakeCurrent();
                 _camera.Fov = 70;
-                _camera.GlobalPosition = Ground(at) + Vector3.Up * 30f;
-                _camera.LookAt(_camera.GlobalPosition + ahead * 10f + Vector3.Down * 0.8f);
+                _camera.GlobalPosition = Ground(at) + Vector3.Up * (eye ? 2.2f : 30f);
+                _camera.LookAt(_camera.GlobalPosition + ahead.Rotated(Vector3.Up, turn) * 10f + Vector3.Down * (eye ? 0.1f : 0.8f));
             });
         }
     }
@@ -900,6 +913,25 @@ public partial class CaptureScene : Node
             });
             Shot($"small_{id}_wide", 30, () => { _main.Flora.BuildAll(); ViewAt(_meadow, _away.Rotated(Vector3.Up, 0.5f) * wide + Vector3.Up * wide * 0.45f, 0f); });
             Shot($"small_{id}_close", 30, () => ViewAt(_meadow, _away.Rotated(Vector3.Up, -0.4f) * wide * 0.5f + Vector3.Up * wide * 0.2f, 1f));
+        }
+    }
+
+    // The opening cinematic from the spawn, with a still at each of these seconds into it (run under --write-movie for the
+    // whole of it).
+    private static readonly float[] OpeningStills = [2f, 6f, 9.5f, 12.2f, 13.6f, 15.2f, 17f, 19.8f, 21.5f, 23.5f, 25f, 28.6f, 30.5f];
+
+    private void OpeningShots()
+    {
+        Engine.TimeScale = 1.0;
+        Shot("opening_00_wait", 240, () => _main.Flora.BuildAll());
+        var at = 0f;
+        // The game starts the player's camera behind them (UI spec §6), so the hand-off shows them getting up.
+        Shot("opening_00_start", 1, () => Player.ThirdPerson = true);
+        Shot("opening_00_play", 1, () => GD.Print($"[capture] opening starts at frame {Engine.GetFramesDrawn()}: {_main.PlayOpening() is not null}"));
+        foreach (var still in OpeningStills)
+        {
+            Shot($"opening_{still:00.0}", Mathf.RoundToInt((still - at) * 60f), () => { });
+            at = still;
         }
     }
 

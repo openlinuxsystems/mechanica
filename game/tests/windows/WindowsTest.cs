@@ -232,7 +232,7 @@ public partial class WindowsTest : StagedTest
                 return false;
             if (!_organizing)
             {
-                Check(inventory.OwnSlots[3].Entry == Scrap && inventory.OwnSlots[3].Dot == UiTokens.CategoryDot(Core.Items.InventoryTab.Resources), "a stack carries its tab's dot");
+                Check(inventory.OwnSlots[3].Entry == Scrap && inventory.OwnSlots[3].Dot == UiTokens.CategoryDot(Core.Items.InventoryTab.Parts), "a stack carries its tab's dot");
                 Check(inventory.OwnSlots[0].Dot is null, "an empty slot has no dot");
                 Check(inventory.TabButtons[0].Icon is null && inventory.TabButtons.Skip(1).All(b => b.Icon is not null), "every tab but All has a dot");
                 Check(inventory.FillText == "3 / 30", $"the fill pill counts used slots ({inventory.FillText})");
