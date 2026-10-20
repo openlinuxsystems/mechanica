@@ -1372,7 +1372,7 @@ public partial class CaptureScene : Node
         {
             var g = _main.Streamer.Generator;
             Go(Find(p => new[] { (0f, 0f), (12f, 0f), (-12f, 0f), (0f, 12f), (0f, -12f) }.All(d => g.BiomeAt(p.X + d.Item1, p.Y + d.Item2).Id == "meadow")
-                && g.SlopeAt(p.X, p.Y) < 0.08f && !g.PoisAt(p.X, p.Y).Any()));
+                && g.SlopeAt(p.X, p.Y) < 0.08f && g.HeightAt(p.X, p.Y) > g.SeaLevel + 2f && g.RiverDistance(p.X, p.Y) > 30f && !g.PoisAt(p.X, p.Y).Any()));
             GameSettings.Apply(GameSettings.Current with { Graphics = GameSettings.Current.Graphics with { Grass = FoliageLevel.Off, GroundCover = FoliageLevel.Off, Bushes = FoliageLevel.Off } });
             _main.Flora.BuildAll();
         });
@@ -1414,6 +1414,7 @@ public partial class CaptureScene : Node
         Shot("blocks_08_close", 30, () => View(new Vector3(-8.6f, 0.9f, 1.6f), new Vector3(-8.6f, 0.4f, 0f)));
         Shot("blocks_09_close_metals", 30, () => View(new Vector3(-4.6f, 1.3f, 2.4f), new Vector3(-4.6f, 0.4f, 0f)));
         Shot("blocks_10_close_path_light", 30, () => View(new Vector3(9.4f, 0.9f, 1.8f), new Vector3(8.9f, 0.4f, 0f)));
+        Shot("blocks_11_close_scrap_metal", 30, () => View(new Vector3(-6.7f, 0.85f, 1.5f), new Vector3(-7.25f, 0.4f, 0.2f)));
     }
 
     // Build reach holds in Creative too, so the player steps up to each spot first.

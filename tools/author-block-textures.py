@@ -8,13 +8,13 @@ and Pillow. Deterministic: the same sources give the same pixels.
 One texture covers one 0.25 m block face and repeats on the next block, so each picture is cut to a whole number
 of its pattern repeats (measured by autocorrelation), resized to 512 px and blended across its edges so it tiles.
 See-through materials get alpha (glass, armored glass); the net is drawn as a cut-out lattice because its source
-is not regular enough to tile; the path light gets a glow map of its lit strips.
+is not regular enough to tile; scrap metal is drawn as framed plates; the path light gets a glow map of its lit strips.
 """
 import os
 import sys
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFilter
 
 N = 512
 
@@ -37,7 +37,6 @@ CUTS = {
     "path_light": {"px": 195, "py": 196, "nx": 2, "ny": 2},
     "plaster": {"size": 512, "feather": 0.3},
     "rusted_metal": {"size": 512, "feather": 0.3},
-    "scrap_metal": {"px": 292, "py": 259, "nx": 2, "ny": 2},
     "scrap_wood": {"px": 293, "py": 336, "nx": 1, "ny": 1},
     "tile": {"px": 83.4, "py": 78.5, "nx": 4, "ny": 4},
     "wood": {"px": 581, "py": 336, "nx": 1, "ny": 1},
@@ -102,6 +101,102 @@ def save(path, rgb, alpha=None):
         Image.fromarray(np.dstack([rgb, a]), "RGBA").save(path, optimize=True)
 
 
+def value_noise(cells, seed, octaves=4):
+    """Smooth noise in 0..1: bicubic-upscaled random grids, each octave twice as fine and half as strong."""
+    r = np.random.default_rng(seed)
+    out, amp, total = np.zeros((N, N)), 1.0, 0.0
+    for o in range(octaves):
+        c = cells * 2 ** o
+        g = Image.fromarray((r.random((c, c)) * 255).astype(np.uint8)).resize((N, N), Image.BICUBIC)
+        out += amp * np.asarray(g, np.float64) / 255
+        total += amp
+        amp *= 0.5
+    return out / total
+
+
+def scrap_metal():
+    """Orange painted plates (one wide, one tall, two small) bolted into a gunmetal frame, worn to steel at the
+    edges, with rust, scratches and dents. Drawn rather than cut so the frame closes on every block face."""
+    ss = smoothstep
+    noise = value_noise
+    y, x = np.mgrid[0:N, 0:N] + 0.5
+    F=18  # frame width
+    G=3   # seam half-gap
+    # plates (x0,y0,x1,y1) inside the frame, like the reference: big top-left, tall right, two bottom-left
+    m=F
+    plates=[(m,m,318,262),(318,m,N-m,N-m),(m,262,150,N-m),(150,262,318,N-m)]
+    paint=np.zeros((N,N,3)); height=np.zeros((N,N)); inside=np.zeros((N,N)); steelmask=np.zeros((N,N))
+    n_chip=noise(10,1,5); n_chip2=noise(40,2,3); n_dirt=noise(4,3,4); n_rust=noise(14,4,5)
+    base_cols=[np.array([172,74,34]),np.array([184,84,38]),np.array([164,68,32]),np.array([178,80,36])]
+    for i,(x0,y0,x1,y1) in enumerate(plates):
+        a0,b0,a1,b1=x0+G,y0+G,x1-G,y1-G
+        d=np.minimum.reduce([x-a0,a1-x,y-b0,b1-y])  # distance to plate edge
+        msk=(d>0).astype(float)
+        # brushed streaks along the plate's long side
+        horiz=(a1-a0)>=(b1-b0)
+        r=np.random.default_rng(20+i)
+        line=r.random(N*2)
+        streak=np.asarray(Image.fromarray((line[:N]*255).astype(np.uint8)[None,:].repeat(N,0)).filter(ImageFilter.GaussianBlur(0.7)),np.float64)/255
+        streak=streak.T if horiz else streak
+        col=base_cols[i]*(0.94+0.12*r.random())
+        p=col[None,None,:]*(0.95+0.07*streak[...,None])*(0.8+0.35*n_dirt[...,None])
+        # bevel: raised plate, lit from top-left
+        bev=ss(d,0,7)
+        lightx=np.where(x-a0<a1-x,1,-1); lighty=np.where(y-b0<b1-y,1,-1)
+        edge_light=np.where(np.minimum(x-a0,y-b0)<np.minimum(a1-x,b1-y),1.25,0.7)
+        shade=bev+(1-bev)*edge_light
+        # worn edges: chips where paint is gone showing steel, more near edges
+        wear=ss(n_chip*0.6+n_chip2*0.4 + 0.28*(1-ss(d,0,14)) ,0.76,0.79)
+        steel=np.array([112,110,108])*(0.8+0.4*streak[...,None]) * (0.85+0.3*n_chip2[...,None])
+        rust=ss(n_rust+0.18*(1-ss(d,0,30)),0.70,0.90)
+        rustcol=np.array([92,44,24])*(0.8+0.4*n_chip2[...,None])
+        q=p*(1-wear[...,None])+steel*wear[...,None]
+        q=q*(1-0.85*rust[...,None])+rustcol*0.85*rust[...,None]
+        grime=1-0.35*(1-ss(d,0,22))*(0.6+0.4*n_chip2)
+        sheen=1+0.12*np.exp(-(((x-a0)/(a1-a0)-0.35)**2+((y-b0)/(b1-b0)-0.3)**2)/0.08)
+        q=q*(shade*grime*sheen)[...,None]
+        paint=paint*(1-msk[...,None])+q*msk[...,None]
+        inside=np.maximum(inside,msk)
+        # bolts at plate corners
+        for cx,cy in [(a0+13,b0+13),(a1-13,b0+13),(a0+13,b1-13),(a1-13,b1-13)]:
+            rr=np.hypot(x-cx,y-cy)
+            bolt=ss(7.5-rr,0,1.2)
+            lit=np.clip(1.05-((x-cx)+(y-cy))/12,0.5,1.5)
+            boltc=np.array([120,118,116])*lit[...,None]
+            ring=ss(9.5-rr,0,1)*(1-bolt)*0.5
+            paint=paint*(1-ring[...,None])
+            paint=paint*(1-bolt[...,None])+boltc*bolt[...,None]
+    # frame: gunmetal steel with bevel
+    fd=np.minimum.reduce([x,N-x,y,N-y])
+    frame=(fd<F).astype(float)
+    nf=noise(16,7,4); gun=np.array([80,80,82])*(0.8+0.35*nf[...,None]); fr=ss(noise(12,8,4),0.6,0.8); gun=gun*(1-0.5*fr[...,None])+np.array([105,60,36])*0.5*fr[...,None]
+    fl=np.where(np.minimum(x,y)<np.minimum(N-x,N-y),1.25,0.75)
+    fb=ss(fd,0,4); fb2=ss(F-fd,0,3)
+    fshade=(fb*fb2+(1-fb*fb2)*fl)
+    gunc=gun*fshade[...,None]
+    seam=np.array([28,26,26])
+    out=np.where(frame[...,None]>0,gunc,paint*inside[...,None]+seam*(1-inside[...,None]))
+    # grime in the seams
+    out=out*(0.92+0.08*noise(8,9,3)[...,None])
+
+    # scratches: thin bright lines through the paint, showing steel
+    sc=Image.new('L',(N,N),0); dr=ImageDraw.Draw(sc); r=np.random.default_rng(31)
+    for k in range(22):
+        x0,y0=r.uniform(20,N-20,2); ang=r.uniform(0,np.pi); L=r.uniform(15,70)
+        pts=[(x0+t*L*np.cos(ang)+r.normal(0,0.6),y0+t*L*np.sin(ang)+r.normal(0,0.6)) for t in np.linspace(0,1,8)]
+        dr.line(pts,fill=int(r.uniform(60,150)),width=1)
+    scr=np.asarray(sc.filter(ImageFilter.GaussianBlur(0.5)),np.float64)/255*inside
+    out=out*(1-scr[...,None])+np.array([128,122,116])*scr[...,None]
+    # dents: soft dark blotch with a lit rim
+    for k in range(5):
+        cx,cy=r.uniform(60,N-60,2); rad=r.uniform(14,30)
+        rr=np.hypot(x-cx,y-cy)/rad
+        dent=np.exp(-rr**2*2)*inside
+        rim=np.exp(-((rr-0.9)**2)*18)*inside*np.clip(((cx-x)+(cy-y))/rad,0,1)
+        out=out*(1-0.22*dent[...,None])*(1+0.18*rim[...,None])
+    return out
+
+
 def net():
     """Rope netting: two sets of diagonal strands, woven over and under, with clear gaps (alpha 0)."""
     period = N / 6
@@ -143,6 +238,8 @@ def main():
             strips = smoothstep((a[..., 0] + a[..., 1]) / 2 - a[..., 2], 60, 200) * 255
             save(os.path.join(out, "path_light_glow.png"), np.dstack([strips] * 3))
         print(name)
+    save(os.path.join(out, "scrap_metal.png"), scrap_metal())
+    print("scrap_metal")
     save(os.path.join(out, "net.png"), *net())
     print("net")
 

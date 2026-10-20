@@ -281,8 +281,8 @@
         "visual": {
           "color": "#ffffff",
           "texture": "textures/blocks/scrap_metal.png",
-          "roughness": 0.6,
-          "metallic": 0.6
+          "roughness": 0.42,
+          "metallic": 0.7
         }
       },
       "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }],

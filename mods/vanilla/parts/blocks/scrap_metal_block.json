@@ -14,8 +14,8 @@
   "mesh": "meshes/blocks/scrap_metal_block.glb",
   "visual": {
     "color": "#ffffff",
-    "roughness": 0.6,
-    "metallic": 0.6,
+    "roughness": 0.42,
+    "metallic": 0.7,
     "texture": "textures/blocks/scrap_metal.png"
   }
 }
