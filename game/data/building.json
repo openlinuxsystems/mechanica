@@ -24,7 +24,6 @@
     "lane_gap": 5,
     "snap_metres": 0.5,
     "invalid_alpha": 0.3,
-    "flash_seconds": 0.6,
     "range": 40
   },
   // Weld Tool (UI spec §8): the blue seam on the joined faces fades over this long.
