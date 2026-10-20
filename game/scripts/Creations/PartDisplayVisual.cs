@@ -36,6 +36,17 @@ public sealed class PartDisplayVisual
     private readonly AnimationPlayer? _player;
     private readonly List<(ScrubDefinition Scrub, AnimationPlayer Player, Animation Clip)> _scrubs = [];
     private readonly List<(EffectDefinition Effect, CpuParticles3D Particles, Color Colour)> _effects = [];
+    // What each look was last set from, so a frame that changes nothing touches no node (every display, every frame).
+    private readonly List<float> _scrubShown = [];
+    private readonly List<float> _effectShown = [];
+    private float _glowShown = float.NaN;
+    private bool? _statusShown;
+    private bool? _statusVisible;
+    private bool? _barVisible;
+    private bool? _fillVisible;
+    private float _fillShown = float.NaN;
+    private bool? _highlightVisible;
+    private string? _idle;
     private string? _clipValue;
     private float _pressed;
 
@@ -154,6 +165,14 @@ public sealed class PartDisplayVisual
         if (_display.Clips is { } clips && model.FindChildren("*", nameof(AnimationPlayer), owned: false).OfType<AnimationPlayer>().FirstOrDefault() is { } player)
         {
             _player = player;
+            // The clip playing now, kept as it changes rather than read back every frame.
+            player.CurrentAnimationChanged += name =>
+            {
+                if (!string.IsNullOrEmpty(name))
+                    Clip = name;
+            };
+            if (clips.Idle is { } idle && player.HasAnimation(idle))
+                _idle = idle;
             foreach (var name in player.GetAnimationList())
             {
                 if (name.EndsWith("_loop", StringComparison.Ordinal))
@@ -170,6 +189,7 @@ public sealed class PartDisplayVisual
                 own.AddAnimationLibrary("", library);
                 player.GetParent().AddChild(own);
                 _scrubs.Add((scrub, own, player.GetAnimation(name)));
+                _scrubShown.Add(float.NaN);
             }
         }
         foreach (var effect in _display.Effects ?? [])
@@ -177,6 +197,7 @@ public sealed class PartDisplayVisual
             var particles = Effect(effect, out var colour);
             part.AddChild(particles);
             _effects.Add((effect, particles, colour));
+            _effectShown.Add(float.NaN);
         }
     }
 
@@ -241,31 +262,61 @@ public sealed class PartDisplayVisual
         float Value(string? id) => id is null ? 0f : readouts.Number(_creation, Part, id) ?? 0f;
         if (_status is not null)
         {
-            _status.Visible = linked && !connecting && readouts.Has(_creation, Part, _display.Status!);
+            var visible = linked && !connecting && readouts.Has(_creation, Part, _display.Status!);
+            if (_statusVisible != visible)
+            {
+                _statusVisible = visible;
+                _status.Visible = visible;
+            }
             StatusRunning = Value(_display.Status) != 0;
-            _statusMaterial!.AlbedoColor = StatusRunning ? UiTokens.Success : UiTokens.Disabled;
-            _status.GlobalPosition = _part.GlobalPosition + Vector3.Up * (_height / 2 + 0.3f);
+            if (_statusShown != StatusRunning)
+            {
+                _statusShown = StatusRunning;
+                _statusMaterial!.AlbedoColor = StatusRunning ? UiTokens.Success : UiTokens.Disabled;
+            }
+            if (visible)
+                _status.GlobalPosition = _part.GlobalPosition + Vector3.Up * (_height / 2 + 0.3f);
         }
         if (_bar is not null)
         {
             BarFill = Math.Clamp(Value(_display.Bar!.Readout), 0f, 1f);
-            _bar.Visible = connecting;
-            var length = _display.Bar.Length ?? 0.25f;
-            _barFill!.Visible = BarFill > 0.001f;
-            _barFill.Transform = new Transform3D(Basis.FromScale(new Vector3(1, Math.Max(BarFill, 0.001f), 1)), new Vector3(0, length * BarFill / 2, 0));
+            if (_barVisible != connecting)
+            {
+                _barVisible = connecting;
+                _bar.Visible = connecting;
+            }
+            if (BarFill != _fillShown)
+            {
+                _fillShown = BarFill;
+                var length = _display.Bar.Length ?? 0.25f;
+                if (_fillVisible != BarFill > 0.001f)
+                {
+                    _fillVisible = BarFill > 0.001f;
+                    _barFill!.Visible = BarFill > 0.001f;
+                }
+                _barFill!.Transform = new Transform3D(Basis.FromScale(new Vector3(1, Math.Max(BarFill, 0.001f), 1)), new Vector3(0, length * BarFill / 2, 0));
+            }
         }
         if (_glow is not null)
         {
             var power = Math.Clamp(Value(_display.Glow!.Readout), 0f, 1f);
-            _glow.Emitting = power > 0.01f;
-            _glow.ScaleAmountMin = 0.3f + 0.5f * power;
-            _glow.ScaleAmountMax = 0.5f + 0.7f * power;
-            _glow.Color = UiTokens.Cyan with { A = 0.15f + 0.35f * power };
+            if (power != _glowShown)
+            {
+                _glowShown = power;
+                _glow.Emitting = power > 0.01f;
+                _glow.ScaleAmountMin = 0.3f + 0.5f * power;
+                _glow.ScaleAmountMax = 0.5f + 0.7f * power;
+                _glow.Color = UiTokens.Cyan with { A = 0.15f + 0.35f * power };
+            }
         }
         if (_highlight is not null)
         {
             var on = Value(_display.Highlight!.Readout) != 0;
-            _highlight.Visible = on;
+            if (_highlightVisible != on)
+            {
+                _highlightVisible = on;
+                _highlight.Visible = on;
+            }
             if (on)
                 _highlight.RotateY(HighlightSpin * Math.Sign(Value(_display.Highlight.Readout)) * (float)delta);
         }
@@ -286,22 +337,29 @@ public sealed class PartDisplayVisual
                         _player.Queue(next);
                 }
             }
-            if (_display.Clips.Idle is { } idle && !_player.IsPlaying() && _player.HasAnimation(idle))
+            if (_idle is { } idle && !_player.IsPlaying())
                 _player.Play(idle);
-            if (_player.IsPlaying())
-                Clip = _player.CurrentAnimation;
-            foreach (var (scrub, player, clip) in _scrubs)
+            for (var i = 0; i < _scrubs.Count; i++)
             {
+                var (scrub, player, clip) = _scrubs[i];
                 var at = Math.Clamp(Value(scrub.Readout), 0f, 1f) * (float)clip.Length;
+                // Only this display plays the scrub's own player, so its clip stays put once set.
+                if (at == _scrubShown[i])
+                    continue;
+                _scrubShown[i] = at;
                 if (player.CurrentAnimation != scrub.Clip!)
                     player.Play(scrub.Clip!);
                 player.Pause();
                 player.Seek(at, update: true);
             }
         }
-        foreach (var (effect, particles, colour) in _effects)
+        for (var i = 0; i < _effects.Count; i++)
         {
+            var (effect, particles, colour) = _effects[i];
             var power = Math.Clamp(Value(effect.Readout), 0f, 1f);
+            if (power == _effectShown[i])
+                continue;
+            _effectShown[i] = power;
             particles.Emitting = power > 0.01f;
             particles.SpeedScale = 0.6 + 0.6 * power;
             particles.ScaleAmountMin = 0.5f + 0.4f * power;

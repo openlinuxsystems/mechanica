@@ -222,9 +222,9 @@ public partial class ConnectTest : StagedTest
                 return false;
             if (Overlay.Drawn.Count > 0)
                 return Check(false, "no line is drawn while the switch's signal changes");
-            if (Overlay.SignalOf(Board, _switch) == 0)
+            if (_host.Main.Scripts.Runtime.Signals.Output(Board, _switch) == 0)
                 return frame > 300 && Check(false, $"the switch turned on ({string.Join("; ", _results)})");
-            // Keep watching past the reads that follow the change.
+            // Keep watching well past the change.
             return frame > 90 && Check(true, "no line was drawn while the switch's signal changed");
         });
     }

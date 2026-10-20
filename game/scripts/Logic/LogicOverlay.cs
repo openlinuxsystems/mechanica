@@ -25,7 +25,7 @@ namespace Mechanica.Game.Logic;
 /// aim with a little slack, and nodes it cannot end on fade (§9). Links the host has not confirmed show at once and
 /// fade out red if it refuses them. Lines show only while the tool is out or the visualizer is on (F7); a signal
 /// changing (the gas pedal in a seat) never shows them, so driving draws nothing. Signals are read with
-/// <c>InspectCreation</c> a few times a second, so a client sees what the host's bus does.
+/// <c>InspectCreation</c> a few times a second while it shows (never while hidden), so a client sees what the host's bus does.
 /// </summary>
 public partial class LogicOverlay : CanvasLayer
 {
@@ -110,6 +110,21 @@ public partial class LogicOverlay : CanvasLayer
     public override void _Process(double delta)
     {
         _time += delta;
+        // Hidden, it reads no signals and lays nothing out: the panels and the seat hotbar read their own (Poll).
+        if (!ShowingAll && (Connector?.Invoke()?.Pending ?? []).Count == 0)
+        {
+            if (_lines.Count > 0 || _dots.Count > 0 || _preview is not null || Drawn.Count > 0)
+            {
+                _lines.Clear();
+                _dots.Clear();
+                _preview = null;
+                (Drawn, DrawnNodes, DrawnNumbers) = ([], [], []);
+                _canvas.QueueRedraw();
+            }
+            // Shown again, it reads at once.
+            _sincePoll = PollSeconds;
+            return;
+        }
         var centre = Players.LocalPlayer?.GlobalPosition;
         var nearby = ConnectionNodes.Nearby(Creations, centre, Look.Range).Where(n => n.Creation.Links.Count > 0).ToList();
         _sincePoll += delta;
