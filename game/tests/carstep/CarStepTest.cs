@@ -94,8 +94,9 @@ public partial class CarStepTest : StagedTest
             _stepFront = middle.Z - 6f;
             foreach (var instance in new[] { _host, _client })
             {
-                var step = new StaticBody3D { Name = "Step", Position = new Vector3(middle.X, _ground + StepHeight / 2f, _stepFront - 5f) };
-                step.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = new Vector3(6f, StepHeight, 10f) } });
+                // Deep enough that however far the car rolls on top, the second step still stands on this one.
+                var step = new StaticBody3D { Name = "Step", Position = new Vector3(middle.X, _ground + StepHeight / 2f, _stepFront - 20f) };
+                step.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = new Vector3(6f, StepHeight, 40f) } });
                 instance.Main.AddChild(step);
             }
             _startY = middle.Y;
