@@ -58,6 +58,26 @@ public sealed class BotActionsTests
     }
 
     [Fact]
+    public void A_swimmer_swims_in_water_and_clients_are_told_when_it_starts_and_stops()
+    {
+        var swimmer = _f.Spawn(BotFixture.Swimmer, new Vector3(0, 0, 20));
+        var walker = _f.Spawn(BotFixture.Grunt, new Vector3(4, 0, 20));
+        var changed = new List<(int Bot, bool Swimming)>();
+        _f.Bots.Changed += bot => changed.Add((bot.Id, bot.View.Swimming));
+
+        _f.Bots.Moved(swimmer, new Vector3(0, -1, 20), true);
+        _f.Bots.Moved(swimmer, new Vector3(0, -0.9f, 20), true);
+        _f.Bots.Moved(walker, new Vector3(4, -1, 20), true);
+
+        Assert.True(_f.Bots.Bots[swimmer].Swimming);
+        Assert.Equal(6f, _f.Bots.Bots[swimmer].TopSpeed);
+        Assert.False(_f.Bots.Bots[walker].Swimming);
+        Assert.Equal([(swimmer, true)], changed);
+        _f.Bots.Moved(swimmer, new Vector3(0, 0, 21), false);
+        Assert.Equal([(swimmer, true), (swimmer, false)], changed);
+    }
+
+    [Fact]
     public void A_melee_attack_needs_reach_and_waits_for_its_interval()
     {
         // You stand at (0, 0, 6).

@@ -6,12 +6,23 @@
   "health": 60,
   "speed": 5,
   "water_speed": 7,
+  "swim_depth": 0.6,
   "sight": 30,
   "size": {
     "radius": 0.35,
     "height": 0.9
   },
   "color": "#3e7fd0",
+  "wild": {
+    "habitat": "water",
+    "count": 2,
+    "min_distance": 25,
+    "max_distance": 60,
+    "despawn_distance": 100,
+    "min_depth": 2.5,
+    "clear_radius": 10,
+    "interval": 10
+  },
   "model": {
     "mesh": "meshes/bots/scuttler_blue.glb",
     "attacks": {
@@ -21,7 +32,8 @@
     },
     "clip_speeds": {
       "patrol": 0.93,
-      "chase": 3
+      "chase": 3,
+      "swim": 3.5
     }
   },
   "raid_cost": 2,
