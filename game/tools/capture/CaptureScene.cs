@@ -89,7 +89,8 @@ public partial class CaptureScene : Node
         var cliffs = args.Length > 1 && args[1] == "cliffs";
         var roads = args.Length > 1 && args[1] == "roads";
         var moves = args.Length > 1 && args[1] == "animations";
-        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
+        var crash = args.Length > 1 && args[1] == "crash_site";
+        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
         if (debugCar)
             Main.MenuCharacter = "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
@@ -209,6 +210,11 @@ public partial class CaptureScene : Node
         if (borders)
         {
             BiomeBorderShots();
+            return;
+        }
+        if (crash)
+        {
+            CrashSiteShots();
             return;
         }
         if (roads)
@@ -853,6 +859,48 @@ public partial class CaptureScene : Node
             Shot($"small_{id}_wide", 30, () => { _main.Flora.BuildAll(); ViewAt(_meadow, _away.Rotated(Vector3.Up, 0.5f) * wide + Vector3.Up * wide * 0.45f, 0f); });
             Shot($"small_{id}_close", 30, () => ViewAt(_meadow, _away.Rotated(Vector3.Up, -0.4f) * wide * 0.5f + Vector3.Up * wide * 0.2f, 1f));
         }
+    }
+
+    // The starting crash site: the view from the spawn, from above, and inside the ship's rooms. Views are from and to
+    // points in the POI's own frame (x east, y up, z south) so they follow it wherever the world puts it.
+    private void CrashSiteShots()
+    {
+        Engine.TimeScale = 1.0;
+        var crash = _main.Streamer.Generator.Pois.First(p => p.Poi.Prefab.Id == "crash_site");
+        System.Numerics.Vector3 At(float x, float y, float z) => crash.ToWorld(new System.Numerics.Vector3(x, y, z));
+        void Look(float[] from, float[] to)
+        {
+            _camera.MakeCurrent();
+            _camera.GlobalPosition = At(from[0], from[1], from[2]).ToGodot();
+            _camera.LookAt(At(to[0], to[1], to[2]).ToGodot());
+        }
+        Shot("crash_00_wait", 240, () => _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, At(16f, 1f, 36f).ToGodot(), 0f));
+        var views = new (string Name, float[] From, float[] To)[]
+        {
+            ("spawn", [16f, 1.7f, 36f], [0f, 3f, -4f]),
+            ("overview", [40f, 70f, 90f], [-6f, 0f, -10f]),
+            ("north", [-10f, 20f, -95f], [0f, 0f, 0f]),
+            ("airlock", [10.4f, 2f, -12.3f], [3f, 1.2f, -6.5f]),
+            ("bridge", [-1.04f, 1.64f, -10.63f], [-5.39f, 0.77f, -12.54f]),
+            ("crew", [-0.99f, 1.62f, -2.88f], [-0.53f, 1.19f, -8.89f]),
+            ("engineering", [1.05f, 1.91f, -1.71f], [0.93f, 1.32f, 3.88f]),
+            ("hold", [1.46f, 1.9f, 12.77f], [4.21f, 1.29f, 19.28f]),
+            ("court", [-2f, 2f, -30f], [-6f, 3f, -56f]),
+            ("farm", [-26f, 2.4f, -24f], [-42f, 1.8f, -40f]),
+            ("lake", [-22f, 16f, 28f], [-58f, -3f, -2f]),
+            ("lake_shore", [-38f, 1.9f, -22f], [-62f, -3f, 6f]),
+            ("beacon", [26f, 2f, -14f], [18f, 4f, -26f]),
+        };
+        foreach (var (name, from, to) in views)
+            Shot($"crash_{name}", 40, () => { _main.Flora.BuildAll(); Look(from, to); });
+        // The player dropped into the hold stands on its deck (0.3 m up), not on the ground under it.
+        Shot("crash_00_drop_in_hold", 120, () => _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, At(3f, 1.5f, 15f).ToGodot(), 0f));
+        Shot("crash_player_in_hold", 30, () =>
+        {
+            GD.Print($"[capture] player in hold at height {Player.GlobalPosition.Y - At(3f, 0f, 15f).Y:0.00} m above the pad");
+            Player.ThirdPerson = true;
+            Look([1.46f, 1.9f, 12.77f], [3f, 0.8f, 15f]);
+        });
     }
 
     // Loose single parts lying in the world whose definition matches.

@@ -32,6 +32,7 @@ public partial class TerrainChunk : Node3D
     public static void ClearModels()
     {
         ObjectMeshes.Clear();
+        StructureModel.Clear();
         AnimatedObject.ClearModels();
     }
 
@@ -497,6 +498,16 @@ public partial class TerrainChunk : Node3D
             if (!Scenery)
                 Structures.AddChild(new CollisionShape3D { Shape = MakeShape(piece.Shape, 1f), Transform = transform });
             Structures.AddChild(new MeshInstance3D { Mesh = MeshOf(piece.Shape), MaterialOverride = MaterialOf(piece.Shape.Color), Transform = transform });
+        }
+        foreach (var model in Data.Models)
+        {
+            if (model.File is not { } file || StructureModel.Of(file, model.Model.File!) is not { } built)
+                continue;
+            var transform = new Transform3D(new Basis(Vector3.Up, model.Yaw), model.Position.ToGodot() - origin);
+            Structures.AddChild(built.Instantiate($"Model{model.Index}", transform));
+            if (!Scenery && model.Model.Solid)
+                foreach (var (shape, at) in built.Colliders)
+                    Structures.AddChild(new CollisionShape3D { Shape = shape, Transform = transform * at });
         }
         foreach (var pool in Data.Pools)
         {
