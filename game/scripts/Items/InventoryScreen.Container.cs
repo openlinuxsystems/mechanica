@@ -57,6 +57,9 @@ public partial class InventoryScreen
 
         // The container: its own width (as many tiles as it has slots, up to a row of ten), on the left.
         var window = new PanelContainer { Name = "ContainerWindow", ThemeTypeVariation = "MainWindow", SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin, ClipChildren = CanvasItem.ClipChildrenMode.AndDraw };
+        // Flat windows: no drop shadow haloing them over the world (the scrim already sets them apart).
+        var flat = StationTheme.Box(UiTokens.Surface, StationTheme.WindowCorner);
+        window.AddThemeStyleboxOverride("panel", flat);
         screen.AddChild(window);
         _containerWindow = window;
         var column = new VBoxContainer();
@@ -96,6 +99,7 @@ public partial class InventoryScreen
 
         // The player's inventory, full width, three rows shown and the rest scrolled to.
         var bag = new PanelContainer { Name = "InventoryWindow", ThemeTypeVariation = "MainWindow", ClipChildren = CanvasItem.ClipChildrenMode.AndDraw };
+        bag.AddThemeStyleboxOverride("panel", flat);
         screen.AddChild(bag);
         var bagColumn = new VBoxContainer();
         bagColumn.AddThemeConstantOverride("separation", 0);

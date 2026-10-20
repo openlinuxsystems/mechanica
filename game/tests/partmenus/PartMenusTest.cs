@@ -158,9 +158,13 @@ public partial class PartMenusTest : StagedTest
             }
             if (_client.Main.Logic.Seats.SeatOf(_client.Peer) is not null || (Me.InTransition && frame < 200) || frame < 30)
                 return false;
+            var away = Me.GlobalPosition - _seatAt;
+            // The host's teleport reaches the client a few frames after the seat is freed (more on a slow runner), so
+            // wait for the player to arrive beside the seat before judging where they stand.
+            if (new Vector2(away.X, away.Z).Length() <= 0.3f && frame < 300)
+                return false;
             Check(!_camera.Active && Me.Camera.Current, "the player's camera is back");
             Check(!Me.HeadHidden, "the head is back");
-            var away = Me.GlobalPosition - _seatAt;
             Check(new Vector2(away.X, away.Z).Length() is > 0.3f and < 1.5f, $"the player stands beside the seat ({away})");
             Check(!_hotbar.Showing, "the seat's bar is gone");
             return true;
