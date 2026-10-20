@@ -79,6 +79,8 @@ public class WorldSnapshotTests
         new PlayerState(6, 8, Vector3.One, Vector3.Zero, 0f, 0f, BodyFlags.OnFloor | BodyFlags.Guard, CharacterProp.Sledgehammer),
         new PlayerState(7, 9, Vector3.One, Vector3.Zero, 0f, 0f, BodyFlags.Guard, CharacterProp.PaintTool, CharacterGesture.PaintReload, 3, 13),
         new PlayerState(8, 10, Vector3.One, Vector3.Zero, 0f, 0f, BodyFlags.OnFloor, CharacterProp.Item, Held: 65535),
+        new PlayerState(9, 11, Vector3.One, Vector3.Zero, 0f, 0f, BodyFlags.OnFloor, Ground: new PlayerGround(42, 3, new Vector3(0.5f, 0.125f, -2f))),
+        new PlayerState(10, 12, Vector3.One, Vector3.Zero, 0f, 0f),
     ]);
 
     [Fact]
@@ -112,10 +114,17 @@ public class WorldSnapshotTests
     }
 
     [Fact]
+    public void RejectsBadGround()
+    {
+        Assert.Null(WorldSnapshot.Decode(new WorldSnapshot(1, [Sample.Players[^2] with { Ground = new PlayerGround(-1, 0, Vector3.Zero) }]).Encode()));
+        Assert.Null(WorldSnapshot.Decode(new WorldSnapshot(1, [Sample.Players[^2] with { Ground = new PlayerGround(4, 0, new Vector3(float.NaN, 0, 0)) }]).Encode()));
+    }
+
+    [Fact]
     public void RejectsUnknownBodyFlags()
     {
         var bytes = Sample.Encode();
-        bytes[^7] = 0x80; // the last entry's body flags (then prop, gesture, count, tint and the held item's two bytes)
+        bytes[^25] = 0x80; // the last entry's body flags (then prop, gesture, count, tint, the held item's two bytes and 18 of ground)
         Assert.Null(WorldSnapshot.Decode(bytes));
     }
 }

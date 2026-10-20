@@ -2,6 +2,7 @@ using Godot;
 using Mechanica.Core.Characters;
 using Mechanica.Core.Net;
 using Mechanica.Core.Player;
+using Mechanica.Game.Creations;
 using FileAccess = Godot.FileAccess;
 
 namespace Mechanica.Game.Player;
@@ -527,6 +528,11 @@ public partial class PlayerController : CharacterBody3D
         ShownGesture = (input.Gesture, input.GestureCount);
         ShownTint = input.Tint;
         ShownHeld = input.Held;
+        if (_dead || _seat is not null)
+            _groundBody = null;
+        else
+            Carry();
+        Ground = null;
         if (_dead)
             return input;
         if (_seat is not null)
@@ -536,6 +542,8 @@ public partial class PlayerController : CharacterBody3D
             return input;
         }
 
+        // On a Creation, Carry moves the player with it; Godot's platform motion would move it again.
+        PlatformFloorLayers = RidingBody() is null ? uint.MaxValue : 0;
         var wasOnFloor = IsOnFloor();
         var depth = WaterDepth;
         var swimming = PlayerMotor.IsSwimming(depth, Settings);
@@ -554,12 +562,97 @@ public partial class PlayerController : CharacterBody3D
             Landed?.Invoke(-velocity.Y);
         if (PushesBodies)
             PushRigidBodies(delta);
+        Ground = Riding(delta);
         Body = (IsOnFloor() ? BodyFlags.OnFloor : 0)
             | (PlayerMotor.IsSwimming(WaterDepth, Settings) ? BodyFlags.Swimming : 0)
             | (_crouched ? BodyFlags.Crawl : 0)
             | (input.Guard ? BodyFlags.Guard : 0);
         StepEyeHeight(delta);
         return input;
+    }
+
+    /// <summary>
+    /// The Creation Body the player rides after its last <see cref="Step"/>, with the feet in that Body's frame: the
+    /// one under its feet, or the last one it stood on for <see cref="GroundMemorySeconds"/> while off the floor (a
+    /// jump or a bump on a moving Creation). Null on the world, seated or dead. Clients check their prediction there
+    /// (<see cref="Net.PlayerSync"/>).
+    /// </summary>
+    public PlayerGround? Ground { get; private set; }
+
+    /// <summary>How long a player off the floor still rides the Creation Body it last stood on.</summary>
+    public const double GroundMemorySeconds = 0.5;
+
+    private CreationBody? _groundBody;
+    private double _offGround;
+
+    /// <summary>
+    /// Moves a player riding a Creation Body with it: back to where its feet were on the Body after its last step, at
+    /// the Body's pose now. <see cref="Step"/> does this first, instead of Godot's moving-platform motion, so each step
+    /// rides along exactly as far as the Body moved since the one before: the host stepping two late inputs in one tick,
+    /// a client replaying inputs or one showing the Body a few ticks late all agree on where the player is on it. The
+    /// host calls it on its own for a remote player with no input this tick.
+    /// </summary>
+    public void Carry()
+    {
+        if (Ground is { } ground && RidingBody() is { } body)
+            GlobalPosition = body.GlobalTransform * ground.Feet.ToGodot();
+    }
+
+    /// <summary>
+    /// Moves a player riding a Creation Body by <paramref name="shift"/> (m, world) and keeps it there on the Body: a
+    /// client's correction on a Creation, so the next <see cref="Carry"/> carries it from where it was put.
+    /// </summary>
+    public void ShiftOnGround(Vector3 shift)
+    {
+        GlobalPosition += shift;
+        if (Ground is { } ground && RidingBody() is { } body)
+            Ground = ground with { Feet = (body.GlobalTransform.AffineInverse() * GlobalPosition).ToNumerics() };
+    }
+
+    /// <summary>
+    /// Puts a player on <paramref name="body"/> with its feet at <paramref name="feet"/> in the Body's frame (m): a
+    /// client's correction to where the host has it on a Creation, so replayed steps ride the Body from there.
+    /// </summary>
+    public void StandOn(CreationBody body, Vector3 feet)
+    {
+        _groundBody = body;
+        _offGround = 0;
+        Ground = new PlayerGround(body.CreationId, (ushort)body.BodyIndex, feet.ToNumerics());
+        GlobalPosition = body.GlobalTransform * feet;
+    }
+
+    private CreationBody? RidingBody() =>
+        _groundBody is { } body && IsInstanceValid(body) && body.IsInsideTree() ? body : null;
+
+    // The Creation Body this step's slide stood on, or the one it left a moment ago. Letting go of one in the air
+    // keeps its speed, as Godot's own platforms do.
+    private PlayerGround? Riding(float delta)
+    {
+        if (IsOnFloor())
+        {
+            _groundBody = null;
+            _offGround = 0;
+            var floorY = Mathf.Cos(FloorMaxAngle) - 0.01f;
+            for (var i = GetSlideCollisionCount() - 1; i >= 0; i--)
+            {
+                var collision = GetSlideCollision(i);
+                if (collision.GetCollider() is CreationBody body && collision.GetNormal().Dot(UpDirection) >= floorY)
+                {
+                    _groundBody = body;
+                    break;
+                }
+            }
+        }
+        else if (RidingBody() is { } left && (_offGround += delta) > GroundMemorySeconds)
+        {
+            var state = PhysicsServer3D.BodyGetDirectState(left.GetRid());
+            if (state is not null)
+                Velocity += state.GetVelocityAtLocalPosition(GlobalPosition - left.GlobalPosition);
+            _groundBody = null;
+        }
+        if (RidingBody() is not { } ground)
+            return null;
+        return new PlayerGround(ground.CreationId, (ushort)ground.BodyIndex, (ground.GlobalTransform.AffineInverse() * GlobalPosition).ToNumerics());
     }
 
     /// <summary>
@@ -585,6 +678,9 @@ public partial class PlayerController : CharacterBody3D
     /// <summary>Poses the player from a host snapshot (remote players on clients).</summary>
     public void ApplyState(Vector3 position, Vector3 velocity, float yaw, float pitch)
     {
+        // Put somewhere new, it rides nothing until it stands on something there (Carry would pull it back).
+        Ground = null;
+        _groundBody = null;
         GlobalPosition = position;
         Velocity = velocity;
         ApplyLook(yaw, pitch);

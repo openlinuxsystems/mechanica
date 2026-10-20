@@ -9,6 +9,9 @@ namespace Mechanica.Game.Creations;
 /// </summary>
 public partial class CreationBody : RigidBody3D
 {
+    /// <summary>Id of the Creation this Body belongs to.</summary>
+    public int CreationId { get; init; }
+
     /// <summary>Index into <see cref="Mechanica.Core.Creations.Creation.Bodies"/> when this node was built.</summary>
     public int BodyIndex { get; init; }
 
