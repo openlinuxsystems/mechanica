@@ -12,6 +12,24 @@
     "height": 3.5
   },
   "color": "#7a7f86",
+  "model": {
+    "mesh": "meshes/bots/thresher.glb",
+    "attacks": {
+      "kick": [
+        "track_stomp"
+      ],
+      "swipe": [
+        "sickle_swipe"
+      ],
+      "pesticide": [
+        "spray_sweep"
+      ]
+    },
+    "clip_speeds": {
+      "patrol": 0.93,
+      "chase": 2.47
+    }
+  },
   "melee_immune": true,
   "raid_cost": 5,
   "attacks": [

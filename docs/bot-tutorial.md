@@ -1,6 +1,6 @@
 # Bot Tutorial
 
-Bots are the creatures of a world: the Scuttlers, Rakehands, Spoolers and the Thresher that raid farms,
+Bots are the creatures of a world: the Scuttlers, Rakehands, Spoolers and the three Threshers that raid farms,
 and the passive Grazer. A bot is data plus an optional Lua script, like a part:
 
 - `bots/<id>.json` gives its numbers (health, speed, attacks, drops) and its **behaviour tree**, the

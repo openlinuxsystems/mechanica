@@ -1,0 +1,141 @@
+{
+  "id": "thresher_duster",
+  "name": "Duster Thresher",
+  "description": "A crop sprayer up on stilts. It lobs canisters of pesticide from far off and swings its spray booms out to poison everything around it.",
+  "family": "thresher",
+  "health": 1000,
+  "speed": 4,
+  "water_speed": 1.5,
+  "sight": 50,
+  "size": {
+    "radius": 1.3,
+    "height": 4
+  },
+  "color": "#6b7a2e",
+  "model": {
+    "mesh": "meshes/bots/thresher_duster.glb",
+    "attacks": {
+      "pesticide": [
+        "boom_spray"
+      ],
+      "canister": [
+        "mortar_shot"
+      ]
+    },
+    "clip_speeds": {
+      "patrol": 1.4,
+      "chase": 3.57
+    },
+    "effects": {
+      "canister": "shot"
+    }
+  },
+  "melee_immune": true,
+  "raid_cost": 5,
+  "attacks": [
+    {
+      "id": "canister",
+      "kind": "ranged",
+      "damage": 20,
+      "part_damage": 35,
+      "range": 30,
+      "interval": 4,
+      "damage_over_time": {
+        "per_second": 4,
+        "seconds": 4
+      }
+    },
+    {
+      "id": "pesticide",
+      "kind": "area",
+      "damage": 0,
+      "part_damage": 0,
+      "range": 4,
+      "radius": 7,
+      "interval": 8,
+      "damage_over_time": {
+        "per_second": 6,
+        "seconds": 5
+      },
+      "hits_parts": false
+    }
+  ],
+  "drops": [
+    {
+      "item": "component_kit",
+      "chance": 1,
+      "count": 3
+    },
+    {
+      "item": "circuit_board",
+      "chance": 0.5,
+      "count": 1
+    }
+  ],
+  "behavior": {
+    "type": "selector",
+    "children": [
+      {
+        "type": "sequence",
+        "children": [
+          {
+            "type": "find_player",
+            "range": 30
+          },
+          {
+            "type": "selector",
+            "children": [
+              {
+                "type": "attack",
+                "attack": "pesticide"
+              },
+              {
+                "type": "sequence",
+                "children": [
+                  {
+                    "type": "chase",
+                    "attack": "canister",
+                    "speed": 1
+                  },
+                  {
+                    "type": "attack",
+                    "attack": "canister"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "sequence",
+        "children": [
+          {
+            "type": "in_raid"
+          },
+          {
+            "type": "find_crop"
+          },
+          {
+            "type": "chase",
+            "attack": "pesticide",
+            "speed": 1
+          },
+          {
+            "type": "attack",
+            "attack": "pesticide"
+          }
+        ]
+      },
+      {
+        "type": "go_to_raid",
+        "radius": 6
+      },
+      {
+        "type": "wander",
+        "radius": 14,
+        "speed": 0.4
+      }
+    ]
+  }
+}

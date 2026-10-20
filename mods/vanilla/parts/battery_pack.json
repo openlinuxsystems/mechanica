@@ -5,8 +5,22 @@
   "category": "resource",
   "tab": "consumable",
   "mass": 1,
+  "durability": 2,
+  "friction": 0.5,
+  "buoyancy": 0.4,
+  "flammable": false,
   "stack_size": 10,
+  "sound_material": "plastic",
+  "size": [1, 1, 1],
+  "mesh": "meshes/items/battery_pack.glb",
+  "icon": "textures/items/battery_pack_icon.png",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.6,
+    "metallic": 0
+  },
   "sounds": {
     "pickup": "pickup_battery"
-  }
+  },
+  "loose": true
 }

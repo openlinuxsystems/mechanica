@@ -554,12 +554,22 @@
         "description": "A charged cell for electric engines. Store it in a Battery Container: the creation's Electric Engines draw from them.",
         "category": "resource",
         "tab": "consumable",
+        "loose": true,
         "mass": 1,
+        "durability": 2,
+        "friction": 0.5,
+        "buoyancy": 0.4,
+        "flammable": false,
         "stack_size": 10,
+        "sound_material": "plastic",
+        "size": [1, 1, 1],
+        "icon": "textures/items/battery_pack_icon.png",
+        "visual": { "color": "#ffffff", "roughness": 0.6, "metallic": 0 },
         "sounds": {
           "pickup": "pickup_battery"
         }
       },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/battery_pack.glb" }],
       "recipes": [
         {
           "id": "battery_pack",
