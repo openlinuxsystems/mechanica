@@ -63,6 +63,18 @@ public class VanillaBotsTests
         Assert.Equal(BotEffects.Explosion, Book.Value.FindBot("scuttler_red")!.Model!.Effects["explode"]);
     }
 
+    [Theory]
+    [InlineData("spooler_blue", "tape", "tape_shot")]
+    [InlineData("spooler_green", "bubble", "bubble_shot")]
+    [InlineData("spooler_yellow", "tape", "rapid_shot")]
+    [InlineData("spooler_red", "tape", "heavy_shot")]
+    public void EachSpoolerHasItsOwnModelAndShot(string id, string attack, string clip)
+    {
+        var model = Book.Value.FindBot(id)!.Model!;
+        Assert.Equal($"vanilla:meshes/bots/{id}.glb", model.Mesh);
+        Assert.Equal([clip], model.Attacks[attack]);
+    }
+
     [Fact]
     public void BotsUseTheSpecNumbers()
     {
