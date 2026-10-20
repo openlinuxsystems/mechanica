@@ -86,10 +86,10 @@ public partial class GasEngineTest : StagedTest
                 if (_client.Main.Inventory.Own?.Count(Kit) != 2)
                     return false;
                 _upgrades.Open((_floor, _engine));
-                Check(_upgrades.LevelText == $"{Title} 1: level 1 of 5", $"the level ({_upgrades.LevelText})");
+                Check(_upgrades.TitleText == Title && _upgrades.LevelText == "Level 1 → 2", $"the title and level ({_upgrades.TitleText}, {_upgrades.LevelText})");
                 Check(_upgrades.ChangeLines.Contains("Durability: 6 → 7") && _upgrades.ChangeLines.Contains("Outputs: 2 → 4"),
                     $"what changes ({string.Join("; ", _upgrades.ChangeLines)})");
-                Check(_upgrades.CostLines.SequenceEqual([("2 Component Kit (you have 2)", false)]) && !_upgrades.Confirm.Disabled,
+                Check(_upgrades.CostLines.SequenceEqual([("2 / 2 Component Kit", false)]) && !_upgrades.Confirm.Disabled,
                     $"the cost ({string.Join("; ", _upgrades.CostLines)}), Upgrade {(_upgrades.Confirm.Disabled ? "off" : "on")}");
                 Check(_upgrades.Upgrade(_results.Add), "the dialog asks the host");
                 return false;

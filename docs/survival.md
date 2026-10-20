@@ -109,7 +109,8 @@ their item's properties.
   item scripts (`food.lua`, `potato_gun.lua`, `seed.lua`, `bucket.lua` and `watering.lua` in `mods/vanilla/scripts/`)
   with their numbers in `properties`; see [Item scripts](lua-api.md#item-scripts). Soil is a part script,
   `soil.lua` (D2): its `on_update` grows the crop and its `can_activate` / `on_activate` harvest it. A seed's
-  `seed` section says what it grows into and how fast, and the soil's `soil` section how much water it holds
+  `seed` section says what it grows into, how fast, how many seeds a harvest gives back (from `seeds` to `seeds_max`,
+  rolled each harvest) and the plant model clients show growing, and the soil's `soil` section how much water it holds
   and its growth speed; the script reads both with `world.item`. The host keeps only what the script stores
   on the soil (seed, growth, water, stage and when growth was last worked out): that is what is saved, sent
   to clients and read by bots and raids. Vanilla's items and soil are authored by the Part Editor batch

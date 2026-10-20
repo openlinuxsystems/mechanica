@@ -17,7 +17,8 @@ namespace Mechanica.Game.Tests;
 /// The Gas Container, host plus a client in Survival. The host builds a floor with a Gas Container and a Gas Engine by
 /// the client. The client sees the container's model with its gauge empty; the host fills it with 40 gasoline and the
 /// client's gauge rises to 0.4 with a pulse. The client links it to the engine with the Connect Tool and switches the
-/// engine on: the engine burns from it, and the client sees the supply clip and the gauge drop. Then the client picks
+/// engine on: the engine burns from it, and the client sees the supply clip and the gauge drop. With the engine off, the
+/// client drops a hotbar slot holding gasoline on the container's menu and its own 10 gasoline move in. Then the client picks
 /// the container up while it still holds fuel and gets the container and its gasoline. A Battery Container (the same size, its
 /// gauge five cells) stands beside it: with 25 of its 50 batteries the client's gauge lights three cells.
 /// </summary>
@@ -40,6 +41,8 @@ public partial class GasContainerTest : StagedTest
     private int _tank;
     private int _engine;
     private int _battery;
+    private Items.InventoryScreen _screen = null!;
+    private int? _inTank;
 
     protected override string Tag => "gascontainer";
 
@@ -116,6 +119,41 @@ public partial class GasContainerTest : StagedTest
             _results.Clear();
             return true;
         });
+        Add("switched off, a hotbar gasoline slot dropped on its menu moves the client's own stack in", frame =>
+        {
+            if (frame == 0)
+            {
+                Request(LogicActions.ConfigurePart, new ConfigurePartArgs(_floor, _engine,
+                    new Dictionary<string, JsonElement?> { ["on"] = JsonSerializer.SerializeToElement(false) }));
+                HostPockets.Add(Fuel, 10);
+                _screen = new Items.InventoryScreen
+                {
+                    Name = "InventoryScreen", Inventory = _client.Main.Inventory, Actions = _client.Main.Actions, Players = _client.Main.PlayerSync,
+                    Catalog = _client.Main.Build.Catalog, Hotbar = _client.Main.Hotbar, Creations = _client.Main.Creations,
+                };
+                AddChild(_screen);
+                _client.Main.Hotbar.Set(9, Fuel);
+                return false;
+            }
+            if (frame == 2)
+                _screen.Show(InventoryRef.OfPart(_floor, _tank));
+            if (_inTank is null)
+            {
+                if (frame < 30 || _results.Count < 1 || _client.Main.Inventory.Own?.Count(Fuel) != 10 || _client.Main.Hotbar.Own[9] != Fuel
+                    || !_screen.ContainerMode || _screen.ContainerSlots.Count(s => s.Visible) != 5)
+                    return false;
+                _inTank = HostFloor.InventoryOf(_tank)!.Count(Fuel);
+                _screen.ContainerSlots[3]._DropData(Vector2.Zero, new Ui.ItemDrag { Entry = Fuel, HotbarSlot = 9 });
+                return false;
+            }
+            if (HostFloor.InventoryOf(_tank)!.Count(Fuel) != _inTank + 10 || _client.Main.Inventory.Own?.Count(Fuel) != 0)
+                return frame < 600 ? false : Check(false, $"the stack moves in ({HostFloor.InventoryOf(_tank)!.Count(Fuel)}; {_screen.Status})");
+            Check(_client.Main.Hotbar.Own[9] == Fuel, "the hotbar slot keeps its gasoline");
+            Check(_results.All(r => r.Ok), $"switching off succeeds ({string.Join("; ", _results)})");
+            _results.Clear();
+            _screen.Hide();
+            return true;
+        });
         Add("the client picks it up full and gets it with its gasoline", frame =>
         {
             if (frame == 0)
@@ -130,7 +168,7 @@ public partial class GasContainerTest : StagedTest
                 return false;
             Check(_results.All(r => r.Ok), $"switching off and picking up succeed ({string.Join("; ", _results)})");
             var fuel = _client.Main.Inventory.Own!.Count(Fuel);
-            Check(fuel == HostPockets.Count(Fuel) && fuel is >= 38 and <= 39, $"the gasoline came along ({fuel})");
+            Check(fuel == HostPockets.Count(Fuel) && fuel is >= 48 and <= 49, $"the gasoline came along ({fuel})");
             Check(HostFloor.FindPart(_tank) is null, "the container is gone from the floor");
             return true;
         });

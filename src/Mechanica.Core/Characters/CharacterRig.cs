@@ -30,7 +30,7 @@ public enum CharacterProp : byte
     /// <summary>An empty water bucket, held by the rim with its handle lowered.</summary>
     WaterBucket,
 
-    /// <summary>Any other item (food, seeds, a part to place): held up, with no prop drawn.</summary>
+    /// <summary>Any other item (seeds, a part to place): held up, with no prop drawn.</summary>
     Item,
 
     /// <summary>
@@ -44,6 +44,9 @@ public enum CharacterProp : byte
 
     /// <summary>A Soil Bag, carried flat in front in both hands, a fist round each end.</summary>
     SoilBag,
+
+    /// <summary>Food, resting on the open palm and eaten in bites (<see cref="EatSettings"/>).</summary>
+    Food,
 }
 
 /// <summary>
@@ -237,7 +240,7 @@ public static class CharacterRig
     /// <summary>Hold clips that leave the left arm hanging free: walking, it swings with the stride.</summary>
     public static IReadOnlySet<string> FreeArmHolds { get; } = new HashSet<string>(StringComparer.Ordinal)
     {
-        "hold_tool", "hold_item", "hold_bucket", "hold_connect", "hold_connect_aim", "hold_weld", "hold_weld_aim", "hold_paint", "hold_paint_aim",
+        "hold_tool", "hold_item", "hold_food", "hold_bucket", "hold_connect", "hold_connect_aim", "hold_weld", "hold_weld_aim", "hold_paint", "hold_paint_aim",
     };
 
     /// <summary>Reactions that take the whole body whatever it was doing: the player is on the ground and can't move.</summary>
@@ -284,6 +287,7 @@ public static class CharacterRig
         "hold_bag", "bag_spill", "bag_lift", "bag_lower", "hold_bag_fp", "bag_spill_fp", "bag_lift_fp", "bag_lower_fp",
         "hold_paint", "hold_paint_aim", "paint_draw", "paint_stow", "paint_reload",
         "hold_paint_fp", "hold_paint_aim_fp", "paint_draw_fp", "paint_stow_fp", "paint_spray_fp", "paint_reload_fp",
+        "hold_food", "hold_food_fp", "eat_fp",
     ];
 
     /// <summary>
@@ -320,6 +324,7 @@ public static class CharacterRig
         CharacterProp.WaterBucket => "hold_bucket",
         CharacterProp.WaterBucketFull => "hold_bucket_full",
         CharacterProp.Item => "hold_item",
+        CharacterProp.Food => "hold_food",
         CharacterProp.RefineTool => "hold_refine",
         CharacterProp.SoilBag => "hold_bag",
         _ => "hold_tool",
@@ -445,7 +450,7 @@ public static class CharacterRig
     public const byte TintErase = 0x80;
 
     /// <summary><paramref name="prop"/> when it is a known value, otherwise <see cref="CharacterProp.None"/>.</summary>
-    public static CharacterProp Sanitize(CharacterProp prop) => prop <= CharacterProp.SoilBag ? prop : CharacterProp.None;
+    public static CharacterProp Sanitize(CharacterProp prop) => prop <= CharacterProp.Food ? prop : CharacterProp.None;
 
     /// <summary><paramref name="gesture"/> when it is a known value, otherwise <see cref="CharacterGesture.None"/>.</summary>
     public static CharacterGesture Sanitize(CharacterGesture gesture) => gesture <= CharacterGesture.PaintReload ? gesture : CharacterGesture.None;

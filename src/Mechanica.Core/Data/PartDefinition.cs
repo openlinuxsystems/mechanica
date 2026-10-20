@@ -412,8 +412,21 @@ public sealed record SeedDefinition
     /// <summary>How many crop items a harvest gives. Omitted means 1.</summary>
     public int? Yield { get; init; }
 
-    /// <summary>How many seeds of this kind a harvest gives back. Omitted means 0.</summary>
+    /// <summary>How many seeds of this kind a harvest gives back at least. Omitted means 0.</summary>
     public int? Seeds { get; init; }
+
+    /// <summary>
+    /// Most seeds a harvest gives back: each harvest rolls from <see cref="Seeds"/> to this. Omitted means exactly
+    /// <see cref="Seeds"/>.
+    /// </summary>
+    public int? SeedsMax { get; init; }
+
+    /// <summary>
+    /// The growing plant's model (a <c>.glb</c>/<c>.gltf</c> in the mod) on the soil it is planted in, with the clips
+    /// <c>grow</c> (scrubbed: second n of the clip is stage n), <c>wilt</c> (scrubbed: 0 fresh to its end fully wilted, on
+    /// dry soil) and <c>sway</c> (looped). Omitted shows the plain coloured stand-in.
+    /// </summary>
+    public string? Plant { get; init; }
 
     /// <summary>What one ripe crop is worth to raids (chunk 21 scales raids by planted crop value). Omitted means 1.</summary>
     public float? Value { get; init; }
@@ -1040,6 +1053,11 @@ public sealed record HeldDefinition
 
     /// <summary>Scale of the model (more than 0, at most <see cref="MaxScale"/>). Default 1.</summary>
     public float? Scale { get; init; }
+
+    /// <summary>
+    /// Food: the colour (<c>#rrggbb</c>) of the juice each bite sprays. Omitted means the item's <c>visual.color</c>.
+    /// </summary>
+    public string? Juice { get; init; }
 
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]

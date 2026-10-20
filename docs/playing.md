@@ -187,9 +187,11 @@ the station's **linked storage**: any chest built on the same Creation right nex
 pipe joins them). Crafting takes inputs from linked chests first, then from you, and puts what it makes
 in a linked chest when there is room.
 
-**Upgrades.** Press **U** (or **Upgrade** on the station's screen) to see what the next level costs and
-what it changes, such as speed, queue length and slots. Upgrades cost Component Kits in Survival and are
-free in Creative.
+**Upgrades.** Press **U** (or **Upgrade** on the station's screen) to open the upgrade dialog: the part as
+it is beside the part one level up, what changes (such as speed, queue length and slots), and what the next
+level costs. Press **Upgrade** (or **U** again) to confirm, or **Close**, the X or Esc to back out. A line under
+the buttons says why Upgrade is off (how many kits you are short) or what the last upgrade did. Upgrades
+cost Component Kits in Survival and are free in Creative.
 
 ## Options
 

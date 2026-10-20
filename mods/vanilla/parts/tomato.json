@@ -5,13 +5,21 @@
   "category": "consumable",
   "mass": 0.2,
   "stack_size": 20,
+  "mesh": "meshes/items/tomato.glb",
+  "icon": "textures/items/tomato_icon.png",
   "visual": {
-    "color": "#d23a2a"
+    "color": "#ffffff"
   },
   "script": "scripts/food.lua",
   "sounds": {
     "pickup": "pickup_produce",
     "eat": "eat_soft"
+  },
+  "held": {
+    "mesh": "meshes/items/tomato_held.glb",
+    "offset": [-0.0373, 0.0413, 0.0015],
+    "rotation": [-3.37, -180, -45],
+    "juice": "#c83a2a"
   },
   "properties": {
     "health": 15

@@ -60,11 +60,17 @@ local function settle(now)
   return soil.get()
 end
 
--- What a harvest gives: the crop times its yield, and seeds back.
-local function harvest_of(seed_id, seed)
+-- What a harvest gives: the crop times its yield, and seeds back. A seed with seeds_max gives from seeds to seeds_max
+-- back, rolled per harvest; `most` takes the most it could give (to check there is room for it).
+local function harvest_of(seed_id, seed, most)
   local items = { { item = qualify(seed.crop, seed_id), count = seed.yield or 1 } }
-  if (seed.seeds or 0) > 0 then
-    items[#items + 1] = { item = seed_id, count = seed.seeds }
+  local least = seed.seeds or 0
+  local count = least
+  if seed.seeds_max and seed.seeds_max > least then
+    count = most and seed.seeds_max or math.random(least, seed.seeds_max)
+  end
+  if count > 0 then
+    items[#items + 1] = { item = seed_id, count = count }
   end
   return items
 end
@@ -96,7 +102,7 @@ function can_activate(peer)
   if stage < s.stages then
     return "The " .. name_of(qualify(seed.crop, s.seed)) .. " is not ripe yet."
   end
-  if not player.can_give(peer, harvest_of(s.seed, seed)) then
+  if not player.can_give(peer, harvest_of(s.seed, seed, true)) then
     return "Make room in your inventory first."
   end
 end
