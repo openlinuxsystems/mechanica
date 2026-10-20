@@ -1,7 +1,7 @@
 {
   "id": "electric_engine",
   "name": "Electric Engine 1",
-  "description": "Turns the wheel bearings it is linked to toward its front, with a seat's throttle as its input: it runs while someone sits in a linked seat, and on its own with no seat or switch linked. Its slider sets the speed; it pulls hard at any speed. Draws batteries from the creation's Battery Containers. Upgrade it in place with Component Kits (U) for more bearings, speed settings and mileage.",
+  "description": "Turns the wheel bearings it is linked to toward its front, with a seat's throttle as its input: it runs while someone sits in a linked seat or a linked switch is on, and stays off with nothing linked. Its slider sets the speed; it pulls hard at any speed. Draws batteries from the creation's Battery Containers. Upgrade it in place with Component Kits (U) for more bearings, speed settings and mileage.",
   "category": "interactive",
   "mass": 9,
   "durability": 6,

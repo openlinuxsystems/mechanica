@@ -340,27 +340,21 @@ public sealed class LogicScriptTests : IDisposable
     }
 
     [Fact]
-    public void AnEngineKeepsRunningWhenItsSeatIsRemovedWithTheDriverInIt()
+    public void AnEngineStopsWhenItsSeatIsRemovedWithTheDriverInIt()
     {
         var (creation, seat, engine, wheels, _) = BuildCar("vanilla:scrap_gas_engine", linked: 2);
         _runtime.Seats!.Sit(Peer, Car, seat);
         Steps(120);
         Assert.StartsWith("run_loop#", _runtime.Readouts.Text(Car, engine, "clip"));
 
-        // With no control left it is back to its default: on, forward at full throttle.
+        // With no control left it stops and holds the wheels: it never drives off on its own.
         creation.RemovePart(seat, () => 99);
-        Steps(10);
-        Assert.Equal(1f, _runtime.Readouts.Number(Car, engine, "running"));
-        Assert.Equal(1f, _runtime.Signals.Output(Car, engine));
-        Assert.Single(_sound.Loops);
-        foreach (var (bearing, side) in wheels.Take(2))
-            Assert.InRange(-side * LastMotor(bearing).Velocity!.Value, 7.5f * 0.87f, 7.5f * 1.13f);
-
-        // Its own switch still stops it.
-        Configure(creation, engine, "on", false);
         Steps(60);
         Assert.Equal(0f, _runtime.Readouts.Number(Car, engine, "running"));
+        Assert.Equal(0f, _runtime.Signals.Output(Car, engine));
         Assert.Empty(_sound.Loops);
+        foreach (var (bearing, _) in wheels.Take(2))
+            Assert.Equal(0f, LastMotor(bearing).Velocity);
     }
 
     [Fact]
@@ -550,12 +544,13 @@ public sealed class LogicScriptTests : IDisposable
         foreach (var (bearing, side) in wheels.Take(2))
             Assert.InRange(-side * LastMotor(bearing).Velocity!.Value, 15f * 0.97f, 15f * 1.03f);
 
-        // With only the tank linked in (no seat), the engine runs forward on its own while it is on.
+        // With only the tank linked in (no seat), the engine has no control, so it stops.
         _runtime.Seats!.Leave(Peer);
         Assert.True(creation.Unlink(seat, engine));
-        Steps(150);                                   // it winds down as the driver gets up, then starts again
-        foreach (var (bearing, side) in wheels.Take(2))
-            Assert.InRange(-side * LastMotor(bearing).Velocity!.Value, 15f * 0.97f, 15f * 1.03f);
+        Steps(150);
+        Assert.Equal(0f, _runtime.Readouts.Number(Car, engine, "running"));
+        foreach (var (bearing, _) in wheels.Take(2))
+            Assert.Equal(0f, LastMotor(bearing).Velocity);
     }
 
     [Fact]
@@ -860,18 +855,18 @@ public sealed class LogicScriptTests : IDisposable
     }
 
     [Fact]
-    public void AnEngineWithNothingLinkedInRunsWhileItIsOn()
+    public void AnEngineWithNothingLinkedInStaysOffWhileItIsOn()
     {
         var (creation, seat, engine, wheels, _) = BuildCar("vanilla:electric_engine", level: 1);
         Assert.True(creation.Unlink(seat, engine));
-        Steps(3);
-        Assert.DoesNotContain(_world.Motors, m => m.Part == wheels[0].Bearing && m.Velocity is not (null or 0f));
         Configure(creation, engine, "on", true);
         Configure(creation, engine, "gear", 5);
-        Steps(45);
-        // Gear 5 of 7 of 28 rad/s.
-        Assert.All(wheels, w => Assert.Equal(-w.Side * 20f, LastMotor(w.Bearing).Velocity));
-        Assert.Equal(1f, _runtime.Signals.Output(Car, engine));
+        Steps(120);
+        // Placed with no seat, switch or button linked in, it never starts.
+        Assert.StartsWith("off_loop", _runtime.Readouts.Text(Car, engine, "clip"));
+        Assert.Equal(0f, _runtime.Readouts.Number(Car, engine, "running"));
+        Assert.Equal(0f, _runtime.Signals.Output(Car, engine));
+        Assert.DoesNotContain(_world.Motors, m => wheels.Any(w => w.Bearing == m.Part) && m.Velocity is not (null or 0f));
     }
 
     [Fact]

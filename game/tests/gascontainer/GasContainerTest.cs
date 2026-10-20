@@ -16,8 +16,8 @@ namespace Mechanica.Game.Tests;
 /// <summary>
 /// The Gas Container, host plus a client in Survival. The host builds a floor with a Gas Container and a Gas Engine by
 /// the client. The client sees the container's model with its gauge empty; the host fills it with 40 gasoline and the
-/// client's gauge rises to 0.4 with a pulse. The client links it to the engine with the Connect Tool and switches the
-/// engine on: the engine burns from it, and the client sees the supply clip and the gauge drop. With the engine off, the
+/// client's gauge rises to 0.4 with a pulse. The client links it to the engine with the Connect Tool, flips the engine's switch and
+/// switches the engine on: the engine burns from it, and the client sees the supply clip and the gauge drop. With the engine off, the
 /// client drops a hotbar slot holding gasoline on the container's menu and its own 10 gasoline move in. Then the client picks
 /// the container up while it still holds fuel and gets the container and its gasoline. A Battery Container (the same size, its
 /// gauge five cells) stands beside it: with 25 of its 50 batteries the client's gauge lights three cells.
@@ -41,6 +41,7 @@ public partial class GasContainerTest : StagedTest
     private int _tank;
     private int _engine;
     private int _battery;
+    private int _switch;
     private Items.InventoryScreen _screen = null!;
     private int? _inTank;
 
@@ -107,6 +108,7 @@ public partial class GasContainerTest : StagedTest
             if (frame == 20)
             {
                 Request(LogicActions.ConnectParts, new LinkPartsArgs(_floor, _tank, _engine));
+                Request(LogicActions.ActivatePart, new LogicPartArgs(_floor, _switch));
                 Request(LogicActions.ConfigurePart, new ConfigurePartArgs(_floor, _engine,
                     new Dictionary<string, JsonElement?> { ["on"] = JsonSerializer.SerializeToElement(true) }));
             }
@@ -210,7 +212,13 @@ public partial class GasContainerTest : StagedTest
         _tank = tank?.Id ?? 0;
         _battery = battery?.Id ?? 0;
         _engine = engine?.Id ?? 0;
-        // Engines are on by default; this one starts off so the test can switch it on once the container is filled.
+        if (!creation.TryPlacePart("vanilla:switch", new GridCell(6, 1, 5), default, out var toggle, out why))
+            Check(false, $"the switch fits ({why})");
+        _switch = toggle?.Id ?? 0;
+        // An engine runs only from a control: its switch, left off, and the engine switched off so the test can start
+        // it once the container is filled.
+        if (!creation.TryLink(_switch, _engine, out var linkError))
+            Check(false, $"the switch links to the engine ({linkError})");
         creation.SetPartSettings(_engine, new Dictionary<string, JsonElement> { ["on"] = JsonSerializer.SerializeToElement(false) });
         var feet = _host.Main.PlayerSync.Players[_client.Peer].GlobalPosition;
         creation.SetAllBodyPoses(new Pose((feet + new Vector3(-0.9f, 0.25f, -2.5f)).ToNumerics(), System.Numerics.Quaternion.Identity));
