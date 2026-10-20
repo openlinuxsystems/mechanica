@@ -128,13 +128,6 @@ for floors, poi_id, name, (w, d) in [(2, "warehouse_small", "Warehouse (2 floors
     pieces, markers, h = warehouse(floors, w, d)
     add(poi_id, name, [w, h + 4.3, d], "road", pieces, markers)
 
-# The Workshop Outpost's layout (pois/outpost.json), so every Mechanic Station has its fabricator, dispenser and bed.
-add("mechanic_station", "Mechanic Station", [16, 4.3, 16], "road",
-    [box([16, 0.3, 16], [0, 0.15, 0], PAD), box([16, 4, 0.4], [0, 2, -7.8], METAL), box([0.4, 4, 10], [-7.8, 2, -3], METAL),
-     box([0.4, 4, 10], [7.8, 2, -3], METAL), box([16.4, 0.3, 10.4], [0, 4.15, -3], ROOF)],
-    [{"type": "item", "ref": "fabricator", "at": [0.0, 0.3, -5.0]}, {"type": "item", "ref": "dispenser", "at": [5.0, 0.3, -6.0]},
-     {"type": "item", "ref": "respawn_bed", "at": [-5.0, 0.3, -6.0]}, {"type": "item", "ref": "chest", "at": [-5.0, 0.3, 3.0]},
-     {"type": "item", "ref": "outpost_sign", "at": [0.0, 0.0, 9.0]}])
 add("small_ruin", "Small Ruin", [14, 5, 12], "track", placeholder(14, 12, 5, RUIN), flora="meadow", ground=None)
 add("farmer_shack", "Farmer Shack", [12, 5, 10], "track",
     placeholder(12, 10, 5, WOOD, [box([5, 2.5, 4], [10, 1.25, 4], HAY)]), flora="meadow", ground=None)
@@ -311,13 +304,13 @@ def write(poi):
         f.write(text)
 
 
-# The spec's 50 structures (World Map spec §4): number, type, name. POI-36 (crash_site) and POI-37 (outpost, the quests'
-# Workshop Outpost) keep their hand-made prefabs. Warehouse floors are fixed per structure (12 warehouses with the large slots).
+# The spec's 50 structures (World Map spec §4): number, type, name. POI-36 (crash_site), POI-37 (outpost, the quests'
+# first Workshop) and the other Workshops, POI-02 and POI-13, keep their hand-made prefabs. Warehouse floors are fixed per structure (12 warehouses with the large slots).
 SITES = [
-    (1, "small_ruin", "Forest Outpost"), (2, "mechanic_station", "Mechanic Station"), (3, "warehouse", "Warehouse"),
+    (1, "small_ruin", "Forest Outpost"), (3, "warehouse", "Warehouse"),
     (4, "farmer_shack", "Farmer Shack"), (5, "packing_station_vegetable", "Packing Station"), (6, "silo_cluster", "Silo Cluster"),
     (7, "ruin", "Ruin"), (8, "warehouse", "Warehouse"), (9, "mountain_lookout", "Mountain Lookout"), (10, "campsite", "Campsite"),
-    (11, "small_ruin", "Small Ruin"), (12, "campsite", "Autumn Forest Camp"), (13, "mechanic_station", "Mechanic Station"),
+    (11, "small_ruin", "Small Ruin"), (12, "campsite", "Autumn Forest Camp"),
     (14, "growlab", "Growlab"), (15, "warehouse_small", "Warehouse"), (16, "ruin", "Ruin"), (17, "small_ruin", "Shack"),
     (18, "packing_station_fruit", "Packing Station"), (19, "warehouse", "Warehouse"), (20, "farmers_hideout", "Farmers Hideout"),
     (21, "warehouse_large", "Large Warehouse"), (22, "ruin", "Autumn Ruin"), (23, "chemical_lake_facility", "Chemical Lake Facility"),
