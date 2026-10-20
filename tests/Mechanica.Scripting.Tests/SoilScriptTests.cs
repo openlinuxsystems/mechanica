@@ -152,6 +152,30 @@ public sealed class SoilScriptTests : IDisposable
     }
 
     [Fact]
+    public void EveryHarvestRollsItsSeedsBackFromSeedsToSeedsMax()
+    {
+        const string ranged = "test:ranged_seed";
+        F.Catalog.Add(ranged, new PartDefinition { Id = "ranged_seed", Name = "Ranged Seed", Category = PartCategory.Consumable, StackSize = 50,
+            Seed = new SeedDefinition { Crop = Crop, GrowTime = 4, Yield = 1, Seeds = 1, SeedsMax = 3 }, Script = "scripts/seed.lua" });
+        var soil = F.Add(Soil, new Vector3(0, 0, 1));
+        _rig.Runtime.Update(1);
+        var seen = new HashSet<int>();
+        for (var harvest = 0; harvest < 40; harvest++)
+        {
+            F.Pockets(Me).Clear();
+            F.Pockets(Me).SetSlot(0, new ItemStack(ranged, 1));
+            F.Survival.PlantSeed(Me, soil, 1, ranged);
+            F.Survival.WaterSoil(Me, soil, 1, 60);
+            _rig.Runtime.Update(5);
+            var items = Activate(Me, soil)["items"]!.AsArray();
+            var back = items.Single(i => i!["item"]!.GetValue<string>() == ranged)!["count"]!.GetValue<int>();
+            Assert.InRange(back, 1, 3);
+            seen.Add(back);
+        }
+        Assert.True(seen.Count > 1, "every harvest gave the same number of seeds");
+    }
+
+    [Fact]
     public void AHarvestNeedsRoom()
     {
         var soil = F.Add(Soil, new Vector3(0, 0, 1));

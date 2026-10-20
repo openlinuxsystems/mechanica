@@ -228,11 +228,26 @@ public partial class ItemTool : HandTool
     public void Click(bool place)
     {
         if (Time.GetTicksMsec() < _busyUntil)
-            return; // the bucket is still swinging from the last one
+            return; // the bucket is still swinging from the last one, or the last bite still being eaten
         if (BucketGesture(place) is var bucket and not CharacterGesture.None)
         {
             Player.Gesture(bucket);
             AfterRelease(bucket, place ? () => PlaceOne() : () => Use());
+            return;
+        }
+        if (!place && PoseInHand is { Prop: CharacterProp.Food } food && Characters is { } characters)
+        {
+            // Food is eaten only once the host has taken it (not at full health): then the bites play, and no more is
+            // eaten until the clip is over.
+            _busyUntil = Time.GetTicksMsec() + (ulong)(characters.Eat.Seconds * 1000f);
+            if (!Use(result =>
+                {
+                    if (!result.Ok)
+                        _busyUntil = 0;
+                    else if (IsInsideTree())
+                        Player.Gesture(food.Gesture);
+                }))
+                _busyUntil = 0;
             return;
         }
         Player.Gesture(PoseInHand?.Gesture ?? CharacterGesture.None);
