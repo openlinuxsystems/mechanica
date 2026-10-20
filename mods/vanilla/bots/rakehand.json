@@ -12,6 +12,37 @@
     "height": 1.8
   },
   "color": "#3f7a3a",
+  "wild": {
+    "habitat": "land",
+    "count": 2,
+    "min_distance": 30,
+    "max_distance": 70,
+    "despawn_distance": 110,
+    "clear_radius": 10,
+    "interval": 12,
+    "biomes": [
+      "field",
+      "meadow"
+    ],
+    "herd": [
+      1,
+      2
+    ],
+    "near": {
+      "objects": [
+        "scene_farmstead",
+        "scene_hay_field",
+        "scene_farm_wreck",
+        "scene_fence_line",
+        "scene_farmyard",
+        "scene_kitchen_garden",
+        "scene_field_edge",
+        "scene_harvest_wreck"
+      ],
+      "radius": 30,
+      "share": 0.6
+    }
+  },
   "model": {
     "mesh": "meshes/bots/rakehand.glb",
     "attacks": {

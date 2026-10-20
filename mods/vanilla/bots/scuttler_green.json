@@ -12,6 +12,37 @@
     "height": 0.9
   },
   "color": "#5fae3e",
+  "wild": {
+    "habitat": "land",
+    "count": 2,
+    "min_distance": 30,
+    "max_distance": 70,
+    "despawn_distance": 110,
+    "clear_radius": 10,
+    "interval": 12,
+    "biomes": [
+      "meadow",
+      "forest",
+      "autumn_forest",
+      "burned_forest"
+    ],
+    "herd": [
+      1,
+      3
+    ],
+    "near": {
+      "objects": [
+        "scene_salvager_crash",
+        "scene_escape_pod",
+        "scene_salvager_wreck",
+        "scene_beacon_site",
+        "scene_junk_pile",
+        "scene_scrap_outpost"
+      ],
+      "radius": 30,
+      "share": 0.5
+    }
+  },
   "model": {
     "mesh": "meshes/bots/scuttler_green.glb",
     "attacks": {

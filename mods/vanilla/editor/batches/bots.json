@@ -8,6 +8,18 @@
       "template": "melee",
       "set": {
         "name": "Green Scuttler",
+        "wild": {
+          "habitat": "land",
+          "count": 2,
+          "min_distance": 30,
+          "max_distance": 70,
+          "despawn_distance": 110,
+          "clear_radius": 10,
+          "interval": 12,
+          "biomes": ["meadow", "forest", "autumn_forest", "burned_forest"],
+          "herd": [1, 3],
+          "near": { "objects": ["scene_salvager_crash", "scene_escape_pod", "scene_salvager_wreck", "scene_beacon_site", "scene_junk_pile", "scene_scrap_outpost"], "radius": 30, "share": 0.5 }
+        },
         "description": "Small, fast and common. Raids in swarms and whips whatever it reaches.",
         "family": "scuttler",
         "health": 60,
@@ -156,7 +168,10 @@
           "despawn_distance": 100,
           "min_depth": 2.5,
           "clear_radius": 10,
-          "interval": 10
+          "interval": 10,
+          "biomes": null,
+          "herd": null,
+          "near": null
         },
         "name": "Blue Scuttler",
         "description": "Charges with a drill, and is even faster in water.",
@@ -297,6 +312,18 @@
           }
         },
         "name": "Yellow Scuttler",
+        "wild": {
+          "habitat": "land",
+          "count": 1,
+          "min_distance": 30,
+          "max_distance": 70,
+          "despawn_distance": 110,
+          "clear_radius": 10,
+          "interval": 12,
+          "biomes": ["desert", "burned_forest"],
+          "herd": [1, 1],
+          "near": { "objects": ["scene_salvager_crash", "scene_escape_pod", "scene_salvager_wreck", "scene_beacon_site", "scene_junk_pile", "scene_scrap_outpost"], "radius": 30, "share": 0.5 }
+        },
         "description": "Heavier. Stomps the ground, hurting everything around it.",
         "health": 80,
         "speed": 4,
@@ -427,6 +454,7 @@
           }
         },
         "name": "Red Scuttler",
+        "wild": null,
         "description": "Runs at you and blows itself up.",
         "health": 40,
         "speed": 6,
@@ -546,6 +574,7 @@
           }
         },
         "name": "Seed Scuttler",
+        "wild": null,
         "description": "A weak scuttler that carries seeds it has stolen.",
         "health": 30,
         "speed": 4,
@@ -676,6 +705,18 @@
           }
         },
         "name": "Rakehand",
+        "wild": {
+          "habitat": "land",
+          "count": 2,
+          "min_distance": 30,
+          "max_distance": 70,
+          "despawn_distance": 110,
+          "clear_radius": 10,
+          "interval": 12,
+          "biomes": ["field", "meadow"],
+          "herd": [1, 2],
+          "near": { "objects": ["scene_farmstead", "scene_hay_field", "scene_farm_wreck", "scene_fence_line", "scene_farmyard", "scene_kitchen_garden", "scene_field_edge", "scene_harvest_wreck"], "radius": 30, "share": 0.6 }
+        },
         "description": "A farmhand bot whose hands are pitchforks: quick pokes, and a wide swing when it can. It balks at anything spinning nearby.",
         "family": "rakehand",
         "health": 100,
@@ -855,6 +896,7 @@
           }
         },
         "name": "Baler Rakehand",
+        "wild": null,
         "description": "A hunched, heavy Rakehand with a hay bale on its back and two big hay forks. Slow, but its sweep wrecks whatever it hits.",
         "health": 200,
         "speed": 2.5,
@@ -917,6 +959,18 @@
           }
         },
         "name": "Scarecrow Rakehand",
+        "wild": {
+          "habitat": "land",
+          "count": 1,
+          "min_distance": 30,
+          "max_distance": 70,
+          "despawn_distance": 110,
+          "clear_radius": 10,
+          "interval": 12,
+          "biomes": ["field"],
+          "herd": [1, 1],
+          "near": { "objects": ["scene_field_edge", "scene_kitchen_garden", "scene_hay_field"], "radius": 15, "share": 0.8 }
+        },
         "description": "A field post with a lantern for a head. It stands stock still like a scarecrow until you come close, then lunges with quick jabs and spins its forks round.",
         "health": 70,
         "speed": 5.5,
@@ -1130,6 +1184,18 @@
           }
         },
         "name": "Blue Spooler",
+        "wild": {
+          "habitat": "land",
+          "count": 2,
+          "min_distance": 30,
+          "max_distance": 70,
+          "despawn_distance": 110,
+          "clear_radius": 10,
+          "interval": 12,
+          "biomes": ["meadow", "field", "desert", "mountain"],
+          "herd": [1, 2],
+          "near": { "objects": ["scene_plant", "scene_crane_site", "scene_container_yard", "scene_workyard", "scene_quarry_works", "scene_substation", "scene_data_wreck", "scene_fuel_depot", "scene_roadworks"], "radius": 30, "share": 0.6 }
+        },
         "description": "Shoots sticky tape from a distance. Common in warehouses.",
         "family": "spooler",
         "health": 40,
@@ -1234,6 +1300,7 @@
           }
         },
         "name": "Green Spooler",
+        "wild": null,
         "description": "Fires bubble wrap: less damage, but whoever it hits is slowed down for a while.",
         "color": "#5fae3e",
         "raid_cost": 2,
@@ -1321,6 +1388,18 @@
           }
         },
         "name": "Yellow Spooler",
+        "wild": {
+          "habitat": "land",
+          "count": 1,
+          "min_distance": 30,
+          "max_distance": 70,
+          "despawn_distance": 110,
+          "clear_radius": 10,
+          "interval": 12,
+          "biomes": ["mountain", "desert"],
+          "herd": [1, 1],
+          "near": { "objects": ["scene_quarry_works", "scene_oil_field", "scene_crane_site", "scene_radio_station"], "radius": 30, "share": 0.6 }
+        },
         "description": "Fires lighter tape, much faster.",
         "health": 50,
         "color": "#e0c030",
@@ -1353,6 +1432,7 @@
           }
         },
         "name": "Red Spooler",
+        "wild": null,
         "description": "A long-range spooler whose heavy tape tears parts apart.",
         "health": 40,
         "color": "#d0402e",

@@ -194,6 +194,12 @@ The Grazer roams meadows and fields in small herds, often round farms:
           "near": { "objects": ["scene_farmstead", "scene_hay_field"], "radius": 25, "share": 0.5 } }
 ```
 
+In vanilla the hostile bots keep to the places the world's scenes ([world-generation.md](world-generation.md#scenes))
+suggest: Green Scuttlers in meadows and woods round Salvager wreckage and scrap camps (Yellow ones in the desert and
+burned forest), Rakehands in fields round farms with a Scarecrow Rakehand waiting at a field's edge, Blue Spoolers
+round the old Colony works and Yellow Spoolers by quarries and oil fields in the mountains and desert. The other
+variants and the Threshers come only in raids and as guards.
+
 A wild bot has no raid, so its tree's `in_raid` branches fail: give it a `wander` to fall back on, and it chases the
 players its `find_player` finds (out of the water too) before wandering home. Wild bots count towards `max_bots`
 (`game/data/bots.json`).

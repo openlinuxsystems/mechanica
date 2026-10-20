@@ -12,6 +12,40 @@
     "height": 1
   },
   "color": "#3e7fd0",
+  "wild": {
+    "habitat": "land",
+    "count": 2,
+    "min_distance": 30,
+    "max_distance": 70,
+    "despawn_distance": 110,
+    "clear_radius": 10,
+    "interval": 12,
+    "biomes": [
+      "meadow",
+      "field",
+      "desert",
+      "mountain"
+    ],
+    "herd": [
+      1,
+      2
+    ],
+    "near": {
+      "objects": [
+        "scene_plant",
+        "scene_crane_site",
+        "scene_container_yard",
+        "scene_workyard",
+        "scene_quarry_works",
+        "scene_substation",
+        "scene_data_wreck",
+        "scene_fuel_depot",
+        "scene_roadworks"
+      ],
+      "radius": 30,
+      "share": 0.6
+    }
+  },
   "model": {
     "mesh": "meshes/bots/spooler_blue.glb",
     "attacks": {
