@@ -95,7 +95,7 @@ shop, `meshes/structures/workshop.glb`, built by `tools/structures/workshop.py`:
   Not a dump.
 
 The Fabricator is not part of the model. Each Workshop prefab has a `part` marker where it stands, and the host
-puts a working Fabricator there that nobody can move or break (see
+puts a working Fabricator there that nobody can break; a player may pick it up and take it elsewhere (see
 [World Generation](world-generation.md#poisidjson)).
 
 ## The opening cinematic

@@ -421,12 +421,15 @@ A `part` marker puts one working part in the world: every Workshop has a Fabrica
   pushes it), simulated by the host, and streamed like any still Creation: it comes in with the ground under it when
   a player comes near and is parked when everyone has left, never cut at a chunk border.
 - It is **world-owned**. Anyone can use it: open it, craft, take what it made, put things in and take them out, change
-  its settings. Nobody, host or client, in Creative or Survival, can pick it up or take parts off it, build onto it,
-  weld it or weld to it, lift or capture it, paint it, upgrade it or wire it; each is refused with "The Fabricator
-  belongs to the world: it can't be …". Hammers, weapons, blasts, bots and fire do it no damage, and a bot never
+  its settings. Where it stands, nobody, host or client, in Creative or Survival, can build onto it, weld it or weld
+  to it, lift or capture it, paint it, upgrade it or wire it; each is refused with "The Fabricator belongs to the
+  world: it can't be …".
+- A player **may pick it up** (empty first, like any part that holds items). It goes into their pockets as a normal
+  Fabricator to put down wherever they like, and the marker is taken for good: it is saved with the world's destroyed
+  objects as `poi.<POI index>.<marker index>`, and that marker never places another. Hammers, weapons, blasts, bots and fire do it no damage, and a bot never
   attacks it. Clearing the Test Sandbox leaves it, and a blueprint of it is the player's own.
 - It is saved with the world (its Creation carries `world_part`, the marker's key `mod:poi#marker@index`: the POI's
   id, the marker's index in `markers` and the POI's index in the world), so what it holds and is crafting stays. When
-  a world loads, each marker gets exactly one: a saved one is kept (and put back on its marker if the marker moved), a
+  a world loads, each marker not taken gets exactly one: a saved one is kept (and put back on its marker if the marker moved), a
   missing one is made (an older save, or a POI a mod added), and one whose marker is gone is removed. It is never
   made twice, however often the world is loaded or the area entered.
