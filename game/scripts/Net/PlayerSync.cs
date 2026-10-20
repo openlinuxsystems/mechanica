@@ -16,6 +16,9 @@ namespace Mechanica.Game.Net;
 /// every <see cref="NetProtocol.SnapshotInterval"/> ticks.</item>
 /// <item>A client predicts its own player locally and corrects it when the host disagrees, replaying
 /// the inputs the host has not seen yet. Other players are posed by interpolating snapshots.</item>
+/// <item>A player standing on a Creation is checked and shown in that Body's frame (<see cref="PlayerGround"/>):
+/// clients show Creations a few ticks behind the host, so only there do host and client agree on where a
+/// rider is.</item>
 /// <item>AI agents that join through the AI endpoint get host-only players with no network peer
 /// (<see cref="HostAddAgent"/>), stepped from <see cref="Agents"/>; clients see them like anyone else.</item>
 /// </list>
@@ -29,6 +32,7 @@ public partial class PlayerSync : Node
     private readonly Dictionary<int, PlayerController> _players = [];
     private readonly Dictionary<int, InputQueue> _queues = [];
     private readonly Dictionary<int, SnapshotBuffer> _buffers = [];
+    private readonly Dictionary<PlayerController, PlayerGround?> _riders = [];
     private readonly PredictionHistory _history = new();
     private readonly InterpolationClock _clock = new();
     private PlayerSlots _slots = new(NetProtocol.DefaultMaxPlayers);
@@ -49,6 +53,9 @@ public partial class PlayerSync : Node
 
     /// <summary>Where the water surface is (world Y), or null for a world without water. Given to every player.</summary>
     public Func<float>? WaterLevel { get; init; }
+
+    /// <summary>The Creations this peer shows, to place players riding them; null treats every player as on the world.</summary>
+    public Creations.CreationWorld? Creations { get; set; }
 
     /// <summary>Spawn point for slot 0; other slots are offset from it. Set before adding to the tree.</summary>
     public Func<Transform3D> SpawnPoint { get; init; } = () => Transform3D.Identity;
@@ -155,7 +162,10 @@ public partial class PlayerSync : Node
         {
             if (!_players.TryGetValue(peer, out var player))
                 continue;
-            foreach (var input in queue.NextTick())
+            var inputs = queue.NextTick();
+            if (inputs.Count == 0)
+                player.Carry();
+            foreach (var input in inputs)
                 player.Step(input, delta);
         }
         if (Agents is { } agents)
@@ -240,7 +250,8 @@ public partial class PlayerSync : Node
         p.ShownGesture.Gesture,
         p.ShownGesture.Count,
         p.ShownTint,
-        p.ShownHeld))]);
+        p.ShownHeld,
+        p.Ground))]);
 
     private void ClientTick(float delta)
     {
@@ -264,7 +275,9 @@ public partial class PlayerSync : Node
         {
             if (buffer.Sample(renderTick) is { } s && _players.TryGetValue(peer, out var player))
             {
-                player.ApplyState(s.Position.ToGodot(), s.Velocity.ToGodot(), s.Yaw, s.Pitch);
+                // On a Creation, on it where this peer shows it (again once the Creations moved this tick, PlaceRiders).
+                _riders[player] = s.Ground;
+                player.ApplyState(HostFeet(s), s.Velocity.ToGodot(), s.Yaw, s.Pitch);
                 player.ApplyBody(s.Body, s.Prop, s.Gesture, s.GestureCount, s.Tint, s.Held);
             }
         }
@@ -275,23 +288,58 @@ public partial class PlayerSync : Node
         // A seated player sits where its seat is; there is no walk to correct.
         if (state.AckSequence == 0 || LocalPlayer is not { } player || player.Seated)
             return;
-        if (!_history.Reconcile(state.AckSequence, state.Position))
+        if (state.Ground is { } ground && GroundFrame(ground) is { } frame
+            && _history.ReconcileOnGround(state.AckSequence, ground, out var acked) is { } onGround)
+        {
+            if (!onGround)
+                return;
+            // Move the player by the host's correction in the Body's frame, wherever this peer shows the Body now.
+            Corrections++;
+            var local = ground.Feet - acked.Ground!.Value.Feet;
+            var shift = frame.Basis * local.ToGodot();
+            player.GlobalPosition += shift;
+            player.Velocity += (state.Velocity - acked.Velocity).ToGodot();
+            _history.Shift(shift.ToNumerics(), local, ground);
+            return;
+        }
+        if (!_history.Reconcile(state.AckSequence, HostFeet(state).ToNumerics()))
             return;
 
         Corrections++;
-        player.ApplyState(state.Position.ToGodot(), state.Velocity.ToGodot(), player.Rotation.Y, player.Head.Rotation.X);
+        player.ApplyState(HostFeet(state), state.Velocity.ToGodot(), player.Rotation.Y, player.Head.Rotation.X);
         foreach (var entry in _history.Pending.ToList())
         {
             player.Step(entry.Input, delta);
-            _history.Overwrite(entry.Sequence, player.GlobalPosition.ToNumerics(), player.Velocity.ToNumerics());
+            _history.Overwrite(entry.Sequence, player.GlobalPosition.ToNumerics(), player.Velocity.ToNumerics(), player.Ground);
         }
     }
+
+    /// <summary>
+    /// Client side: puts the other players riding a Creation back on it, once <see cref="CreationSync"/> moved the
+    /// Creations for this tick, so they move with it on the same tick.
+    /// </summary>
+    public void PlaceRiders()
+    {
+        foreach (var (player, ground) in _riders)
+        {
+            if (ground is { } g && GroundFrame(g) is { } frame && IsInstanceValid(player))
+                player.GlobalPosition = frame * g.Feet.ToGodot();
+        }
+    }
+
+    // Where the host has a player's feet, on a Creation Body where this peer shows it.
+    private Vector3 HostFeet(PlayerState state) =>
+        state.Ground is { } ground && GroundFrame(ground) is { } frame ? frame * ground.Feet.ToGodot() : state.Position.ToGodot();
+
+    // Where this peer shows the Body a player stands on, or null when it does not show it.
+    private Transform3D? GroundFrame(PlayerGround ground) =>
+        Creations?.NodeOf(ground.Creation) is { } node && ground.Body < node.Bodies.Count ? node.Bodies[ground.Body].GlobalTransform : null;
 
     private void OnLocalStepped(PlayerInput input)
     {
         if (Session.State != NetSession.SessionState.Connected || LocalPlayer is not { } player)
             return;
-        _history.Record(new PredictionHistory.Entry(++_sequence, input, player.GlobalPosition.ToNumerics(), player.Velocity.ToNumerics()));
+        _history.Record(new PredictionHistory.Entry(++_sequence, input, player.GlobalPosition.ToNumerics(), player.Velocity.ToNumerics(), player.Ground));
         if (DropInputPackets > 0)
         {
             DropInputPackets--;
@@ -430,6 +478,7 @@ public partial class PlayerSync : Node
             RemovePlayer(peer);
         _queues.Clear();
         _buffers.Clear();
+        _riders.Clear();
         _history.Clear();
         _pendingSnapshot = null;
         _newestSnapshotTick = 0;
@@ -459,6 +508,7 @@ public partial class PlayerSync : Node
         if (!_players.Remove(peer, out var player))
             return;
         _buffers.Remove(peer);
+        _riders.Remove(player);
         PlayerLeaving?.Invoke(player);
         PlayerDespawning?.Invoke(player);
         player.Stepped -= OnLocalStepped;

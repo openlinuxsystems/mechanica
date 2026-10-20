@@ -328,6 +328,7 @@ public partial class CreationNode : Node3D
         var node = new CreationBody
         {
             Name = $"Body{body.PartIds[0]}",
+            CreationId = Creation.Id,
             BodyIndex = body.Index,
             PartIds = body.PartIds,
             TopLevel = true,

@@ -17,9 +17,24 @@ namespace Mechanica.Core.Net;
 /// <param name="GestureCount">Counts the player's gestures.</param>
 /// <param name="Tint">The Paint Tool's colour (<see cref="Player.PlayerInput.Tint"/>).</param>
 /// <param name="Held">The item in hand with a held model (<see cref="Player.PlayerInput.Held"/>); 0 for none.</param>
+/// <param name="Ground">The Creation Body the player stands on, or null on the world or in the air.</param>
 public readonly record struct PlayerState(int Peer, uint AckSequence, Vector3 Position, Vector3 Velocity, float Yaw, float Pitch,
     BodyFlags Body = BodyFlags.None, CharacterProp Prop = CharacterProp.None, CharacterGesture Gesture = CharacterGesture.None, byte GestureCount = 0,
-    byte Tint = 0, ushort Held = 0);
+    byte Tint = 0, ushort Held = 0, PlayerGround? Ground = null);
+
+/// <summary>
+/// A Creation Body a player stands on, and where the player's feet are in that Body's frame. A client shows
+/// Creations a few ticks behind the host, so where a player riding one is only agrees between peers in the
+/// Body's frame: predictions are checked there, and other players are shown there.
+/// </summary>
+/// <param name="Creation">The Creation's id (1 or more).</param>
+/// <param name="Body">Index of the Body in the Creation.</param>
+/// <param name="Feet">Feet position in the Body's grid frame, in metres.</param>
+public readonly record struct PlayerGround(int Creation, ushort Body, Vector3 Feet)
+{
+    /// <summary>True when <paramref name="other"/> is the same Body.</summary>
+    public bool SameBody(PlayerGround? other) => other is { } o && o.Creation == Creation && o.Body == Body;
+}
 
 /// <summary>How a player's body is, as the host sees it, so clients animate other players the same way.</summary>
 [Flags]
@@ -55,7 +70,10 @@ public sealed record WorldSnapshot(uint Tick, IReadOnlyList<PlayerState> Players
     /// <summary>Most players a snapshot may carry.</summary>
     public const int MaxPlayers = 64;
 
-    private const int EntrySize = 4 + 4 + 12 + 12 + 4 + 4 + 5 + 2;
+    private const int EntrySize = 4 + 4 + 12 + 12 + 4 + 4 + 5 + 2 + GroundSize;
+
+    // Creation id (0 for none), Body index and feet in the Body's frame.
+    private const int GroundSize = 4 + 2 + 12;
 
     /// <summary>The binary form sent host → clients.</summary>
     public byte[] Encode()
@@ -80,6 +98,12 @@ public sealed record WorldSnapshot(uint Tick, IReadOnlyList<PlayerState> Players
             span[43] = p.GestureCount;
             span[44] = p.Tint;
             BinaryPrimitives.WriteUInt16LittleEndian(span[45..], p.Held);
+            if (p.Ground is { } ground)
+            {
+                BinaryPrimitives.WriteInt32LittleEndian(span[47..], ground.Creation);
+                BinaryPrimitives.WriteUInt16LittleEndian(span[51..], ground.Body);
+                WriteVector(span[53..], ground.Feet);
+            }
             span = span[EntrySize..];
         }
         return bytes;
@@ -98,6 +122,10 @@ public sealed record WorldSnapshot(uint Tick, IReadOnlyList<PlayerState> Players
         var span = bytes[5..];
         for (var i = 0; i < count; i++)
         {
+            var groundCreation = BinaryPrimitives.ReadInt32LittleEndian(span[47..]);
+            var feet = ReadVector(span[53..]);
+            if (groundCreation < 0 || !IsFinite(feet))
+                return null;
             var state = new PlayerState(
                 BinaryPrimitives.ReadInt32LittleEndian(span),
                 BinaryPrimitives.ReadUInt32LittleEndian(span[4..]),
@@ -110,7 +138,8 @@ public sealed record WorldSnapshot(uint Tick, IReadOnlyList<PlayerState> Players
                 CharacterRig.Sanitize((CharacterGesture)span[42]),
                 span[43],
                 span[44],
-                BinaryPrimitives.ReadUInt16LittleEndian(span[45..]));
+                BinaryPrimitives.ReadUInt16LittleEndian(span[45..]),
+                groundCreation > 0 ? new PlayerGround(groundCreation, BinaryPrimitives.ReadUInt16LittleEndian(span[51..]), feet) : null);
             if (((byte)state.Body & ~(byte)BodyFlags.All) != 0)
                 return null;
             if (state.Peer < 1 || !IsFinite(state.Position) || !IsFinite(state.Velocity)

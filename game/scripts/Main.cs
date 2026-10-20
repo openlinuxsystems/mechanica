@@ -402,6 +402,7 @@ public partial class Main : Node3D
         };
         Creations = new CreationWorld { Name = "Creations" };
         AddChild(Creations);
+        PlayerSync.Creations = Creations;
         JointOverlay = new JointOverlay { Creations = Creations };
         AddChild(JointOverlay);
         Sounds = new SoundSync { Name = "Sounds", Session = Session, Players = PlayerSync, Creations = Creations, Registry = SoundEvents ??= LoadSounds(mods) };

@@ -200,11 +200,12 @@ public partial class CreationSync : Node
             {
                 if (remote.Tracks[i].Sample(tick, delta, maxAhead) is not { } state)
                     continue;
-                var body = node.Bodies[i];
-                body.GlobalTransform = new Transform3D(new Basis(state.Rotation.ToGodot()), state.Position.ToGodot());
-                (body.LinearVelocity, body.AngularVelocity) = (state.LinearVelocity.ToGodot(), state.AngularVelocity.ToGodot());
+                // A frozen kinematic Body moved this way takes its velocity from the move, which is what players standing
+                // on it ride along with. Setting the host's velocity as well would carry them twice as fast.
+                node.Bodies[i].GlobalTransform = new Transform3D(new Basis(state.Rotation.ToGodot()), state.Position.ToGodot());
             }
         }
+        PlayerSync.PlaceRiders();
     }
 
     /// <summary>Host → client: a whole Creation, new to this client or with a changed graph, as it was at host tick <paramref name="tick"/>.</summary>
