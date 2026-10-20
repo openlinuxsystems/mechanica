@@ -7,7 +7,7 @@ namespace Mechanica.Game.Items;
 /// <summary>
 /// The container screen (UI spec §0 "Chests and containers"): what Use (E) on a container that is not a station opens
 /// (a Gas Container, a chest), over the scrim with the hotbar left clear. Two windows are stacked: on top the container,
-/// with a chrome header (its picture, name, how full it is and X) over its slots on the surface, and under it the
+/// with a chrome header (its picture, name, how full it is, Organize and X) over its slots on the surface, and under it the
 /// player's inventory, with its own header (fill count and the nearly-full warning) over every slot in rows of ten that
 /// scroll. Empty slots of a container that takes only one item (gasoline in a Gas Container) show that item's silhouette.
 /// Stacks drag, click and Shift+click between the two exactly as in the plain inventory screen.
@@ -27,6 +27,7 @@ public partial class InventoryScreen
     private readonly SlotGrid _containerGrid = new(ContainerColumns, ContainerTile, tiled: true);
     private ScrollContainer _containerScroll = null!;
     private VBoxContainer _containerBody = null!;
+    private Button _containerOrganize = null!;
     private Label _bagFill = null!;
     private Control _bagWarning = null!;
     private Label _bagWarningText = null!;
@@ -41,6 +42,9 @@ public partial class InventoryScreen
 
     /// <summary>The player's slots under an open container.</summary>
     public IReadOnlyList<ItemSlot> ContainerOwnSlots => _bagGrid.Slots;
+
+    /// <summary>The container header's Organize button (merges and sorts the container's stacks).</summary>
+    public Button ContainerOrganizeButton => _containerOrganize;
 
     /// <summary>The container header's title and fill text (<c>16 / 50 Gasoline</c>).</summary>
     public (string Title, string Fill) ContainerHeader => (_containerTitle.Text, _containerFill.Text);
@@ -84,6 +88,14 @@ public partial class InventoryScreen
         _containerFillPill.AddChild(_containerFill);
         titles.AddChild(_containerFillPill);
         row.AddChild(titles);
+        _containerOrganize = MakeOrganize("ContainerOrganize");
+        _containerOrganize.SizeFlagsVertical = Control.SizeFlags.ShrinkBegin;
+        _containerOrganize.Pressed += () =>
+        {
+            if (_open is { } where)
+                Organize(where);
+        };
+        row.AddChild(_containerOrganize);
         var close = new Button { Name = "Close", Text = "✕", ThemeTypeVariation = "CloseButton", CustomMinimumSize = new Vector2(32, 32), TooltipText = "Close", SizeFlagsVertical = Control.SizeFlags.ShrinkBegin };
         close.Pressed += Hide;
         row.AddChild(close);
@@ -158,6 +170,7 @@ public partial class InventoryScreen
                 : Loc.T("{0} / {1} slots", view.Items.Count, view.SlotCount);
         _containerGrid.Fill(_open!, [.. Enumerable.Range(0, view?.SlotCount ?? 0).Select(i => (i, view?.At(i)))]);
         _containerGrid.Ghost = only is null ? null : Icons?.For(only);
+        _containerOrganize.Disabled = view is null || view.Items.Count == 0;
 
         var own = Inventory.Own;
         var me = InventoryRef.OfPlayer(Inventory.Session.LocalPeer);
@@ -169,6 +182,6 @@ public partial class InventoryScreen
         _bagWarning.Visible = !Creative && own is not null && Inventory.Settings!.NearlyFull(free);
         _bagWarningText.Text = free == 0 ? Loc.T("Inventory full") : Loc.T("Nearly full: {0} free", free);
         _warning.Text = _bagWarningText.Text;
-        _warning.Visible = _bagWarning.Visible;
+        _warningPill.Visible = _bagWarning.Visible;
     }
 }

@@ -39,6 +39,7 @@ public partial class ItemSlot : PanelContainer
     private readonly Label _initials = Loc.Verbatim(new Label { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, MouseFilter = MouseFilterEnum.Ignore });
     private readonly Label _count = Loc.Verbatim(new Label { HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Bottom, MouseFilter = MouseFilterEnum.Ignore });
     private readonly Label _key = Loc.Verbatim(new Label { ThemeTypeVariation = "SecondaryLabel", MouseFilter = MouseFilterEnum.Ignore });
+    private readonly CategoryDot _dot = new() { Name = "Dot", Visible = false };
     private Tween? _pulse;
     private bool _selected;
     private bool _dragging;
@@ -55,6 +56,21 @@ public partial class ItemSlot : PanelContainer
 
     /// <summary>True when the slot has the cyan border.</summary>
     public bool Selected => _selected;
+
+    /// <summary>The category dot in the bottom-left corner (the item's inventory tab, UI spec §3), or null for none.</summary>
+    public Color? Dot
+    {
+        get => _dot.Visible ? _dot.Colour : null;
+        set
+        {
+            _dot.Visible = value is not null;
+            if (value is { } colour && colour != _dot.Colour)
+            {
+                _dot.Colour = colour;
+                _dot.QueueRedraw();
+            }
+        }
+    }
 
     /// <summary>The text standing in for a picture, empty when the picture shows.</summary>
     public string Initials => _initials.Text;
@@ -136,6 +152,9 @@ public partial class ItemSlot : PanelContainer
             stack.AddChild(child);
             child.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         }
+        stack.AddChild(_dot);
+        _dot.SetAnchorsAndOffsetsPreset(LayoutPreset.BottomLeft);
+        (_dot.OffsetLeft, _dot.OffsetTop, _dot.OffsetRight, _dot.OffsetBottom) = (6, -16, 16, -6);
         _count.AddThemeFontSizeOverride("font_size", 13);
         _key.AddThemeFontSizeOverride("font_size", 11);
         // Something to show the tooltip for; the custom tooltip below draws it.
@@ -232,5 +251,23 @@ public partial class ItemSlot : PanelContainer
         if (body.Length > 0)
             column.AddChild(Loc.Verbatim(new Label { Text = body, ThemeTypeVariation = "SecondaryLabel", AutowrapMode = TextServer.AutowrapMode.WordSmart, CustomMinimumSize = new Vector2(240, 0) }));
         return panel;
+    }
+
+    // A small round dot with an Ink edge, so every colour reads on a Tile.
+    private sealed partial class CategoryDot : Control
+    {
+        public Color Colour { get; set; } = Colors.White;
+
+        public CategoryDot()
+        {
+            MouseFilter = MouseFilterEnum.Ignore;
+        }
+
+        public override void _Draw()
+        {
+            var r = Mathf.Min(Size.X, Size.Y) / 2;
+            DrawCircle(Size / 2, r, UiTokens.Ink with { A = 0.55f }, antialiased: true);
+            DrawCircle(Size / 2, r - 1.5f, Colour, antialiased: true);
+        }
     }
 }

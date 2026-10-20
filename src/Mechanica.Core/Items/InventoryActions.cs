@@ -66,6 +66,14 @@ public sealed record UpgradePartResult(int Level);
 /// <param name="To">Where they go; null means the caller's own inventory.</param>
 public sealed record GiveItemsArgs(string Item, int Count, InventoryRef? To = null);
 
+/// <summary>Arguments of <c>SortInventory</c>: auto-organize an inventory (the inventory screen's Organize button).</summary>
+/// <param name="Inventory">The inventory to organize: the caller's own, or a container in reach.</param>
+public sealed record SortInventoryArgs(InventoryRef Inventory);
+
+/// <summary>Value of a successful <c>SortInventory</c>.</summary>
+/// <param name="Changed">True when anything moved (false when it was already in order).</param>
+public sealed record SortInventoryResult(bool Changed);
+
 /// <summary>Arguments of <c>GetInventory</c>.</summary>
 /// <param name="Inventory">The inventory to read.</param>
 public sealed record GetInventoryArgs(InventoryRef Inventory);
@@ -194,6 +202,8 @@ public interface IInventoryWorld
 /// linked storage.</item>
 /// <item><c>UpgradePart</c>: raises a part one upgrade level (<see cref="PartUpgrades"/>), taking the level's cost from
 /// the caller's inventory unless <see cref="InventorySettings.FreeUpgrades"/> (Creative).</item>
+/// <item><c>SortInventory</c>: auto-organizes the caller's own inventory or a container in reach: merges stacks and sorts
+/// them by inventory tab, then name (<see cref="Inventory.Sort"/>).</item>
 /// <item><c>GiveItems</c>: makes items from nothing, only while <see cref="InventorySettings.AllowGive"/> (Creative).</item>
 /// <item><c>GetInventory</c>: reads an inventory the caller may use (a query).</item>
 /// </list>
@@ -221,6 +231,9 @@ public sealed class InventoryActions(IPartCatalog catalog, RecipeBook recipes, I
     /// <summary>Action name for upgrading a part.</summary>
     public const string UpgradePart = "UpgradePart";
 
+    /// <summary>Action name for auto-organizing an inventory.</summary>
+    public const string SortInventory = "SortInventory";
+
     /// <summary>Action name for making items (Creative).</summary>
     public const string GiveItems = "GiveItems";
 
@@ -241,6 +254,7 @@ public sealed class InventoryActions(IPartCatalog catalog, RecipeBook recipes, I
         dispatcher.Register<MoveItemsArgs>(MoveItems, ValidateMove, ApplyMove);
         dispatcher.Register<CraftArgs>(Craft, ValidateCraft, ApplyCraft);
         dispatcher.Register<CancelCraftArgs>(CancelCraft, ValidateCancel, ApplyCancel);
+        dispatcher.Register<SortInventoryArgs>(SortInventory, (c, a) => CheckAccess(c, a.Inventory, out _), ApplySort);
         dispatcher.Register<GiveItemsArgs>(GiveItems, ValidateGive, ApplyGive);
         dispatcher.Register<UpgradePartArgs>(UpgradePart, ValidateUpgrade, ApplyUpgrade);
         dispatcher.Register<GetInventoryArgs>(GetInventory, (c, a) => CheckAccess(c, a.Inventory, out _), (c, a) => Value(View(a.Inventory)), readOnly: true);
@@ -555,6 +569,25 @@ public sealed class InventoryActions(IPartCatalog catalog, RecipeBook recipes, I
 
     private JsonElement? ApplyGive(ActionCaller caller, GiveItemsArgs args) =>
         Value(new GiveItemsResult(Find(args.To ?? InventoryRef.OfPlayer(caller.Peer))!.Add(args.Item, args.Count)));
+
+    // ---- SortInventory ----
+
+    private JsonElement? ApplySort(ActionCaller caller, SortInventoryArgs args) =>
+        Value(new SortInventoryResult(Find(args.Inventory)!.Sort(SortKey, SortOrder)));
+
+    /// <summary>
+    /// Where <see cref="SortInventory"/> puts an item: by inventory tab in tab order (items under no tab last), then by
+    /// name.
+    /// </summary>
+    public (int Tab, string Name) SortKey(string item)
+    {
+        var definition = catalog.FindDefinition(item);
+        var tab = InventoryTabs.Of(definition?.Category, HotbarTools.IsTool(item));
+        return (tab is { } t ? (int)t : int.MaxValue, definition?.Name ?? item);
+    }
+
+    private static readonly IComparer<(int Tab, string Name)> SortOrder = Comparer<(int Tab, string Name)>.Create((a, b) =>
+        a.Tab != b.Tab ? a.Tab.CompareTo(b.Tab) : StringComparer.OrdinalIgnoreCase.Compare(a.Name, b.Name));
 
     // ---- Shared ----
 

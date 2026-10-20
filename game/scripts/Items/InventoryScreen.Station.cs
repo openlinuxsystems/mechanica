@@ -283,7 +283,7 @@ public partial class InventoryScreen
             var button = new Button
             {
                 Name = tab.ToString(), Text = TabName(tab), ToggleMode = true, ButtonGroup = group, ButtonPressed = tab == _filter,
-                ThemeTypeVariation = "StationTab", SizeFlagsVertical = Control.SizeFlags.ShrinkEnd,
+                ThemeTypeVariation = "StationTab", SizeFlagsVertical = Control.SizeFlags.ShrinkEnd, Icon = TabDot(tab),
             };
             button.Pressed += () => Filter(tab);
             row.AddChild(button);
@@ -428,12 +428,9 @@ public partial class InventoryScreen
             _newRecipes = new HashSet<string>();
         if (_stationMode)
         {
-            // The station draws its own panels; the screen's frame steps aside.
-            _root.AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
             _status.Reparent(_card.GetChild(0));
             _card.GetChild(0).MoveChild(_status, _reason.GetIndex() + 1);
             _status.ThemeTypeVariation = "ErrorTextLabel";
-            _status.CustomMinimumSize = Vector2.Zero;
             SetStorage(_storageOpen);
         }
         else if (where is not null)
@@ -445,15 +442,11 @@ public partial class InventoryScreen
             _status.ThemeTypeVariation = "ErrorTextLabel";
             _status.CustomMinimumSize = Vector2.Zero;
         }
-        else
+        else if (_status.GetParent() != _footerRow)
         {
-            _root.RemoveThemeStyleboxOverride("panel");
-            if (_status.GetParent() != _classic.GetChild(0))
-            {
-                _status.Reparent(_classic.GetChild(0));
-                _status.ThemeTypeVariation = "";
-                _status.CustomMinimumSize = new Vector2(320, 0);
-            }
+            _status.Reparent(_footerRow);
+            _footerRow.MoveChild(_status, 0);
+            _status.ThemeTypeVariation = "InkLabel";
         }
     }
 

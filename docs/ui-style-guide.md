@@ -39,6 +39,11 @@ The Fabricator (UI spec §8) is the reference screen; the mockups are `ui_redesi
 | Error mark | `#E5484D` | "can't make yet" dots, the ring round a short material |
 | Pip off | `#3A5070` | unfilled stat pips; also the disabled primary button's fill |
 | Disabled text | `#8EA3BF` | text on a disabled primary button |
+| Category tools | `#F4E15C` | the Tools tab's dot and the dot on its items' tiles (lemon, never orange) |
+| Category blocks | `#EAF4FF` | the Blocks tab's dot and its items' dots |
+| Category interactive | `#B98CFF` | the Interactive tab's dot and its items' dots |
+| Category resources | `#62E0A0` | the Resources tab's dot and its items' dots |
+| Category consumables | `#FF8ACF` | the Consumables tab's dot and its items' dots |
 
 White (`#FFFFFF`) is the text on chrome and cards and the selected ring, and warnings stay the pale yellow below.
 
@@ -62,8 +67,8 @@ The game bundles Barlow and Barlow Condensed (SIL OFL, `game/fonts`, loaded by `
 
 - A 4 px grid: window padding 16, gaps between tiles 8, gaps between sections 12.
 - Corners: 14 for windows and cards, 8 for inner panels and tiles, 10 for buttons, round for pills.
-- Depth comes from fill, a soft shadow under windows (0 10 18 at 35% black) and a 3 px darker bottom edge on tiles and
-  primary buttons. Borders are the exception: only fields, focus rings and the selected ring have them.
+- Depth comes from fill and a 3 px darker bottom edge on tiles and primary buttons. Windows and cards have no drop
+  shadow (no soft translucent edge round a menu). Borders are the exception: only fields, focus rings and the selected ring have them.
 - Item pictures (`ItemIcons.Finish`, `IconFinish`) are cropped to the item, scaled so its largest side fills 80% of
   the tile, and get a 2 px Ink outline and a soft contact shadow so pale parts still read on a light tile.
 
@@ -95,7 +100,11 @@ Hover is one step lighter and pressed one step darker. Scrollbars are 8 px and w
 - **`PipBar`**: a stat's 10 pips. `ItemStats.Rows` turns a part's mass, durability, friction and buoyancy into pips and
   SI values; the pip scale is `stat_pips` in `game/data/hud.json`.
 - **`QueueCell`**: a chevron cell of a progress strip, filled by its state, with progress in Accent.
-- **`ItemSlot` with `Tiled`**: an item tile in Tile blue with Ink counts. The hotbar and the Storage drawer use it.
+- **`ItemSlot` with `Tiled`**: an item tile in Tile blue with Ink counts. The hotbar, the Inventory window, containers and
+  the Storage drawer use it. `Dot` puts the item's category dot (`UiTokens.CategoryDot`) in its bottom-left corner,
+  ringed in Ink so every colour reads on Tile.
+- **`UiGlyph`**: small line icons drawn in code (the Inventory window's satchel, the search magnifier, the Organize
+  sort icon), so they scale with the UI and need no textures.
 
 A reason line (Error text) sits under any action that is off and says why, for example "Needs 1 more Scrap Metal."
 
@@ -106,6 +115,9 @@ A reason line (Error text) sits under any action that is off and says why, for e
   give the grid more columns; below 1280 the card narrows to 280 px.
 - Tiles are 76 px with 8 px gaps and show a picture only; the name is in the tooltip and the card.
 - There is no always-visible inventory column. A drawer slides over the left half of the grid when it is needed.
+- The Inventory window is a main window ten tiles wide and as tall as a station window: a header with the satchel icon,
+  the INVENTORY title and fill pill, the search field, Organize and X; the category tabs (each with its dot); the tile
+  grid. An open container has its own screen (the container over the inventory), with Organize in its header.
 - The hotbar's slots are Tile blue with Ink numbers and counts, 6 px apart. The current slot is Tile selected with the
   white 3 px ring, exactly like a selected recipe.
 

@@ -181,6 +181,21 @@ public partial class ItemsTest : StagedTest
             Check(view.At(2) == new SlotView(2, Scrap, 2), "the host's view matches");
             return true;
         });
+        Add("the client organizes the chest", frame =>
+        {
+            if (frame == 0)
+            {
+                _results.Clear();
+                Request(InventoryActions.SortInventory, new SortInventoryArgs(ChestRef));
+            }
+            if (_results is [{ Ok: false } refused])
+                return Check(false, $"the host refused to organize ({refused})");
+            if (_results.Count < 1 || Shown(_client, ChestRef)?.At(0) is not { } first || Shown(_host, ChestRef)?.At(0) is null)
+                return false;
+            Check(first == new SlotView(0, Scrap, 2) && Shown(_client, ChestRef)!.At(2) is null, "the scrap moves to the first slot");
+            Check(Shown(_host, ChestRef)!.At(0) == first, "the host sees it there too");
+            return true;
+        });
         Add("a chest holding items cannot be picked up", frame =>
         {
             if (frame == 0)

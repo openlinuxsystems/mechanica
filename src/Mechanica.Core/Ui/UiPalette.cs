@@ -120,6 +120,21 @@ public static class UiPalette
     /// <summary>A disabled primary button's text.</summary>
     public const string DisabledText = "#8EA3BF";
 
+    /// <summary>The dot of the Tools tab and its items in the inventory (a lemon yellow, never orange).</summary>
+    public const string CategoryTools = "#F4E15C";
+
+    /// <summary>The dot of the Blocks tab and its items.</summary>
+    public const string CategoryBlocks = "#EAF4FF";
+
+    /// <summary>The dot of the Interactive tab and its items.</summary>
+    public const string CategoryInteractive = "#B98CFF";
+
+    /// <summary>The dot of the Resources tab and its items.</summary>
+    public const string CategoryResources = "#62E0A0";
+
+    /// <summary>The dot of the Consumables tab and its items.</summary>
+    public const string CategoryConsumables = "#FF8ACF";
+
     /// <summary>Rigid (welded) connections in previews and gizmos: green, like success.</summary>
     public const string JointRigid = Success;
 
@@ -256,6 +271,11 @@ public static class UiPalette
         [nameof(ErrorMark)] = ErrorMark,
         [nameof(PipOff)] = PipOff,
         [nameof(DisabledText)] = DisabledText,
+        [nameof(CategoryTools)] = CategoryTools,
+        [nameof(CategoryBlocks)] = CategoryBlocks,
+        [nameof(CategoryInteractive)] = CategoryInteractive,
+        [nameof(CategoryResources)] = CategoryResources,
+        [nameof(CategoryConsumables)] = CategoryConsumables,
     };
 
     /// <summary>Every overlay, gizmo and preview colour (mod tools and debug views), for tests and the style guide.</summary>
