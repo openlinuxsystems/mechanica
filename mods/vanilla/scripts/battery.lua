@@ -1,4 +1,4 @@
--- Battery Container: holds properties.charge_item (battery packs) for the creation's electric engines (they take
+-- Battery Container: holds properties.charge_item (batteries, item battery_pack) for the creation's electric engines (they take
 -- them themselves, see engine.lua). This script only shows how charged it is, for its model:
 --   "charge"   how full it is, 0 to 1 (what it holds of what it can hold), easing over properties.ease seconds
 --              when the amount changes; the gauge cells on its sides follow it.

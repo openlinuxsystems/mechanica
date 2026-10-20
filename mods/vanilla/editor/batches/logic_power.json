@@ -366,7 +366,7 @@
       "set": {
         "logic": { "inputs": 4, "outputs": 2, "kind": "power" },
         "name": "Electric Engine 1",
-        "description": "Turns the wheel bearings it is linked to toward its front, with a seat's throttle as its input: it runs while someone sits in a linked seat, and on its own with no seat or switch linked. Its slider sets the speed; it pulls hard at any speed. Draws battery packs from the creation's batteries. Upgrade it in place with Component Kits (U) for more bearings, speed settings and mileage.",
+        "description": "Turns the wheel bearings it is linked to toward its front, with a seat's throttle as its input: it runs while someone sits in a linked seat, and on its own with no seat or switch linked. Its slider sets the speed; it pulls hard at any speed. Draws batteries from the creation's Battery Containers. Upgrade it in place with Component Kits (U) for more bearings, speed settings and mileage.",
         "mass": 9,
         "durability": 6,
         "stack_size": 5,
@@ -385,8 +385,8 @@
         },
         "menu": {
           "readouts": [
-            { "id": "fuel", "name": "Battery", "kind": "bar" },
-            { "id": "fuel_items", "name": "Battery packs", "kind": "number" },
+            { "id": "fuel", "name": "Charge", "kind": "bar" },
+            { "id": "fuel_items", "name": "Batteries", "kind": "number" },
             { "id": "rpm", "name": "Speed", "kind": "number", "unit": "rpm" },
             { "id": "top_rpm", "name": "Top speed", "kind": "number", "unit": "rpm" },
             { "id": "torque", "name": "Torque", "kind": "number", "unit": "N·m" }

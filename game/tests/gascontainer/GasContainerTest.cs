@@ -18,8 +18,8 @@ namespace Mechanica.Game.Tests;
 /// the client. The client sees the container's model with its gauge empty; the host fills it with 40 gasoline and the
 /// client's gauge rises to 0.4 with a pulse. The client links it to the engine with the Connect Tool and switches the
 /// engine on: the engine burns from it, and the client sees the supply clip and the gauge drop. Then the client picks
-/// the container up while it still holds fuel and gets the container and its gasoline. A Battery (the same size, its
-/// gauge five cells) stands beside it: with 25 of its 50 battery packs the client's gauge lights three cells.
+/// the container up while it still holds fuel and gets the container and its gasoline. A Battery Container (the same size, its
+/// gauge five cells) stands beside it: with 25 of its 50 batteries the client's gauge lights three cells.
 /// </summary>
 public partial class GasContainerTest : StagedTest
 {
@@ -70,7 +70,7 @@ public partial class GasContainerTest : StagedTest
             Check(gauge < 0.05f, $"the gauge is empty ({gauge:F2})");
             return true;
         });
-        Add("with 25 of its 50 battery packs, the client's Battery lights three of its five cells", frame =>
+        Add("with 25 of its 50 batteries, the client's Battery Container lights three of its five cells", frame =>
         {
             if (frame == 0)
                 HostFloor.InventoryOf(_battery)!.Add(Pack, 25);
@@ -145,12 +145,12 @@ public partial class GasContainerTest : StagedTest
     private float? Gauge(Instance instance) =>
         instance.Main.Creations.NodeOf(_floor)?.PartNode(_tank)?.FindChild("LiquidL", true, false) is Node3D column ? column.Scale.Y : null;
 
-    // How lit a Battery gauge cell is on the client's model (its lit piece's scale: 1 on, about 0 off).
+    // How lit a Battery Container gauge cell is on the client's model (its lit piece's scale: 1 on, about 0 off).
     private float? Cell(Instance instance, int k) =>
         instance.Main.Creations.NodeOf(_floor)?.PartNode(_battery)?.FindChild($"CellL{k}On", true, false) is Node3D cell
             ? cell.Scale.X : null;
 
-    // A wooden floor 7 by 6 blocks in front of the client with a Gas Container, a Battery and a Gas Engine 1 on it.
+    // A wooden floor 7 by 6 blocks in front of the client with a Gas Container, a Battery Container and a Gas Engine 1 on it.
     private void Build()
     {
         var catalog = _host.Main.Build.Catalog;

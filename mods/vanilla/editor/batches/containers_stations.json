@@ -7,8 +7,8 @@
       "file": "parts/battery.json",
       "template": "interactive",
       "set": {
-        "name": "Battery",
-        "description": "Holds battery packs, which power the creation's electric engines; the gauges on its sides show how charged it is. Its yellow lid and terminals tell it apart from a Gas Container.",
+        "name": "Battery Container",
+        "description": "Holds batteries, which power the creation's electric engines; the gauges on its sides show how charged it is. Its yellow lid and terminals tell it apart from a Gas Container.",
         "category": "container",
         "mass": 18,
         "durability": 6,
