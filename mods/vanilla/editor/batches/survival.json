@@ -332,8 +332,9 @@
         "category": "weapon",
         "mass": 2,
         "stack_size": 1,
+        "icon": "textures/items/potato_blaster_icon.png",
         "visual": {
-          "color": "#6a7a50"
+          "color": "#ffffff"
         },
         "sounds": {
           "fire": "blaster_fire",
@@ -351,6 +352,7 @@
         },
         "aim": { "zoom": 0.8 }
       },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/potato_blaster.glb" }],
       "recipes": [
         {
           "id": "potato_blaster",
@@ -604,8 +606,9 @@
         "category": "weapon",
         "mass": 3,
         "stack_size": 1,
+        "icon": "textures/items/potato_scattergun_icon.png",
         "visual": {
-          "color": "#5a6a48"
+          "color": "#ffffff"
         },
         "sounds": {
           "fire": "scattergun_fire",
@@ -626,6 +629,7 @@
         },
         "aim": { "zoom": 0.85 }
       },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/potato_scattergun.glb" }],
       "recipes": [
         {
           "id": "potato_scattergun",
@@ -660,8 +664,9 @@
         "category": "weapon",
         "mass": 4,
         "stack_size": 1,
+        "icon": "textures/items/potato_launcher_icon.png",
         "visual": {
-          "color": "#4a5a40"
+          "color": "#ffffff"
         },
         "sounds": {
           "fire": "launcher_fire"
@@ -677,6 +682,7 @@
         },
         "aim": { "zoom": 0.85, "fire_on_release": true }
       },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/potato_launcher.glb" }],
       "recipes": [
         {
           "id": "potato_launcher",
@@ -712,9 +718,11 @@
         "tab": "consumable",
         "mass": 0.3,
         "stack_size": 10,
+        "icon": "textures/items/popper_icon.png",
         "visual": {
-          "color": "#e0c040"
+          "color": "#ffffff"
         },
+        "held": { "scale": 1 },
         "sounds": {
           "explode": "popper_explode"
         },
@@ -729,6 +737,7 @@
           "impulse": 300
         }
       },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/popper.glb" }],
       "recipes": [
         {
           "id": "popper",

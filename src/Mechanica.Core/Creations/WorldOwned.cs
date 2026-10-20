@@ -1,9 +1,12 @@
+using Mechanica.Core.World;
+
 namespace Mechanica.Core.Creations;
 
 /// <summary>
 /// The rule for world-owned Creations (<see cref="Creation.WorldPart"/>, a POI's <c>part</c> marker): everyone may use one
-/// (interact with it, open its station, craft, take its output), but nobody may change its structure, move it or damage
-/// it. Every action that would refuses with <see cref="Refusal"/>; damage from hits, blasts, bots and fire is not dealt.
+/// (interact with it, open its station, craft, take its output), and a player may pick it up, which makes it theirs
+/// (<see cref="WorldParts"/> never places it again), but nobody may change its structure where it stands, lift it or
+/// damage it. Every action that would refuses with <see cref="Refusal"/>; damage from hits, blasts, bots and fire is not dealt.
 /// </summary>
 public static class WorldOwned
 {

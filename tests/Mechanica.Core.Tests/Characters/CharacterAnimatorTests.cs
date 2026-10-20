@@ -161,6 +161,8 @@ public class CharacterAnimatorTests
     [InlineData(CharacterProp.LiftRemote, "hold_tool")]
     [InlineData(CharacterProp.Sledgehammer, "hold_heavy")]
     [InlineData(CharacterProp.PotatoBlaster, "hold_gun")]
+    [InlineData(CharacterProp.PotatoScattergun, "hold_gun")]
+    [InlineData(CharacterProp.PotatoLauncher, "hold_gun")]
     [InlineData(CharacterProp.Item, "hold_item")]
     [InlineData(CharacterProp.WaterBucket, "hold_bucket")]
     [InlineData(CharacterProp.WaterBucketFull, "hold_bucket_full")]

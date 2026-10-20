@@ -23,7 +23,7 @@ asks first.
 | `seed` | World generation seed: terrain, scattered objects and POIs come back from it |
 | `time` | Seconds the world has been simulated (the scripts' `world.time()`); the clock carries on from it when the world loads, so times scripts stored, such as a soil's last growth, stay right. Missing in older saves (0) |
 | `mods`, `fingerprint` | The mods the world ran. Loading with different mods works but logs what differs |
-| `destroyed` | Trees, rocks and other world objects that were destroyed |
+| `destroyed` | Trees, rocks and other world objects that were destroyed, and POI `part` markers whose part a player picked up (`poi.<POI index>.<marker index>`), which place no other |
 | `regrow` | Destroyed world objects that will stand again (an oil geyser), each with the world time (`time`'s clock) when it comes back: `{"poi.7.2": 5400}`. Left out when there are none |
 | `creations` | Every Creation in the Creation format: parts, links, body poses and velocities, part settings, damage, container contents, crafting queues, soil (`seed`, `grown`, `water`, `stage` and `updated`, the world time growth was last worked out at), `fire`, how strongly a burning part burns (0 to 1), and `anchored`, true on a part built resting on the ground, which holds its Body still (missing in older saves, whose Creations all simulate). A world-owned Creation (a Workshop's Fabricator) also has `world_part`, the POI `part` marker it stands at (see [World Generation](world-generation.md#world-owned-parts-part-markers)) |
 | `scripts` | Each scripted part's Lua `state` table, by creation and part id |

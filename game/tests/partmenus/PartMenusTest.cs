@@ -355,7 +355,9 @@ public partial class PartMenusTest : StagedTest
         _sensor = Place(board, "vanilla:sensor", new GridCell(6, 1, 0), up);
         Link(board, _seat, _switch);
         Link(board, _engine, _wheel);
-        // Engines are on by default; this one starts off so its menu's On toggle can start it.
+        // An engine runs only from a control: the switch (on by the time its menu opens), with the engine switched off
+        // so its menu's lever can start it.
+        Link(board, _switch, _engine);
         board.SetPartSettings(_engine, new Dictionary<string, JsonElement> { ["on"] = JsonSerializer.SerializeToElement(false) });
         Link(board, _controller, _arm);
         Link(board, _controller, _piston);

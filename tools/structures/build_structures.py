@@ -17,8 +17,9 @@ structure's centre (glTF +Y up, front towards +Z):
   marker), not part of the model.
 * ``meshes/structures/cargo_crate_colony.glb`` - a framed Colony cargo crate (decoration in the cargo spill).
 * ``meshes/world/scrap_pile_metal.glb`` and ``scrap_pile_wood.glb`` - the starting scrap piles (world objects).
-* ``meshes/world/props/*.glb`` - the props the world's scenes lay out between places (props.py): settler fences,
-  carts, hay and camps, Colony pipe runs, barriers and a harvester wreck, and a scorched trailer (world objects).
+* ``meshes/world/props/*.glb`` - the props the world's scenes lay out between places (world objects): props.py,
+  props_settler_a.py and props_settler_b.py (Settler Patchwork), props_colony_a.py and props_colony_b.py (Colony
+  Works and Salvager Tech wreckage) and props_stone.py (Old Stone ruins and nature).
 
 A structure model is one mesh of every part with a few shared detail textures (textures.py), a ``collider`` mesh of
 its larger parts (the game collides with that and does not draw it), and its point lights. World object models have
@@ -31,7 +32,7 @@ How to run (Blender as a Python module, no Blender UI needed):
     python tools/structures/build_structures.py props    # only the scene props
 
 The outputs are committed; re-run this script after changing it (or kit.py, frame.py, families.py, ship.py,
-workshop.py, props.py, textures.py) and commit the result. The build is deterministic (seeded noise only).
+workshop.py, props*.py, textures.py) and commit the result. The build is deterministic (seeded noise only).
 """
 
 from __future__ import annotations
@@ -50,6 +51,11 @@ K.EXPORT = True
 import families as F  # noqa: E402
 import frame as FR  # noqa: E402
 import props as PR  # noqa: E402
+import props_colony_a  # noqa: E402
+import props_colony_b  # noqa: E402
+import props_settler_a  # noqa: E402
+import props_settler_b  # noqa: E402
+import props_stone  # noqa: E402
 import ship as S  # noqa: E402
 import workshop as W  # noqa: E402
 
@@ -107,8 +113,9 @@ def pile(kind):
 
 
 def props():
-    for name, build in PR.PROPS.items():
-        single(name, build, WORLD / "props", collider=False)
+    for module in (PR, props_settler_a, props_settler_b, props_colony_a, props_colony_b, props_stone):
+        for name, build in module.PROPS.items():
+            single(name, build, WORLD / "props", collider=False)
 
 
 def main():

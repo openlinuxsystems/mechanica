@@ -47,7 +47,7 @@ public partial class VanillaLogicTest : StagedTest
     private ModLoadResult _mods = null!;
     private Instance _host = null!;
     private Instance _client = null!;
-    private int _seat, _engine, _steering, _switch, _button, _piston, _scrapEngine, _scrapBearing;
+    private int _seat, _engine, _steering, _switch, _button, _piston, _scrapEngine, _scrapBearing, _scrapSwitch;
     private readonly HashSet<string> _clientClips = [];
     private readonly List<int> _wheels = [];
     private Vector3 _start;
@@ -317,6 +317,7 @@ public partial class VanillaLogicTest : StagedTest
             if (frame == 30)
             {
                 Request(LogicActions.ConnectParts, new LinkPartsArgs(ScrapId, _scrapEngine, _scrapBearing));
+                Request(LogicActions.ActivatePart, new LogicPartArgs(ScrapId, _scrapSwitch));
                 Request(LogicActions.ConfigurePart, new ConfigurePartArgs(ScrapId, _scrapEngine,
                     new Dictionary<string, JsonElement?> { ["on"] = JsonSerializer.SerializeToElement(true), ["gear"] = JsonSerializer.SerializeToElement(4) }));
             }
@@ -324,7 +325,7 @@ public partial class VanillaLogicTest : StagedTest
                 _clientClips.Add(shown);
             if (Scrap(_client) is not { } client || client.Clip != "run_hard_loop")
                 return false;
-            Check(_results.All(r => r.Ok), $"linking and switching on succeed ({string.Join("; ", _results)})");
+            Check(_results.All(r => r.Ok), $"linking, flipping its switch and switching on succeed ({string.Join("; ", _results)})");
             Check(_clientClips.Contains("start"), $"the client saw it crank first ({string.Join(", ", _clientClips)})");
             Check(client.Effects[0].Emitting && client.Effects[1].Emitting, "smoke comes out of both exhausts");
             var lever = _client.Main.Creations.NodeOf(ScrapId)!.FindChildren("Lever", nameof(Node3D), true, false).OfType<Node3D>().FirstOrDefault();
@@ -354,7 +355,7 @@ public partial class VanillaLogicTest : StagedTest
     private PartDisplayVisual? Scrap(Instance instance) =>
         instance.Main.Creations.NodeOf(ScrapId)?.Displays.FirstOrDefault(d => d.Part == _scrapEngine);
 
-    // A scrap engine on a slab with a bearing and a wheel on its side, left off.
+    // A scrap engine on a slab with a switch linked into it and a bearing and a wheel on its side, left off.
     private void SpawnScrapEngine()
     {
         var rig = new Creation(ScrapId, _mods);
@@ -364,7 +365,10 @@ public partial class VanillaLogicTest : StagedTest
                 Place(rig, "vanilla:metal_block", new GridCell(x, 0, z));
         }
         _scrapEngine = Place(rig, "vanilla:scrap_gas_engine", new GridCell(0, 1, 0));
-        // Engines are on by default and this one has no controls, so it starts switched off for the test to switch on.
+        // An engine runs only from a control: a switch, left off, and the engine switched off for the test to start.
+        _scrapSwitch = Place(rig, "vanilla:switch", new GridCell(-1, 1, -1));
+        if (!rig.TryLink(_scrapSwitch, _scrapEngine, out var error))
+            throw new InvalidOperationException(error);
         rig.SetPartSettings(_scrapEngine, new Dictionary<string, JsonElement> { ["on"] = JsonSerializer.SerializeToElement(false) });
         var outward = new GridCell(1, 0, 0);
         _scrapBearing = Place(rig, "vanilla:bearing", new GridCell(2, 0, 0), Facing(outward));

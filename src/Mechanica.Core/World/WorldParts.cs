@@ -22,9 +22,11 @@ public sealed record WorldPartPlan(IReadOnlyList<Creation> Add, IReadOnlyList<in
 /// <summary>
 /// The world's own working parts (a Workshop's Fabricator): every <c>part</c> marker of a placed POI puts one part there,
 /// as a normal one-part Creation, so its script and station run exactly as a player's do, but anchored, simulated by the
-/// host and world-owned (<see cref="Creation.WorldPart"/>, <see cref="WorldOwned"/>). Pure logic; the host runs
-/// <see cref="Reconcile"/> once when its world starts, after a save is loaded, so each marker has exactly one: one saved
-/// with the world is kept (with whatever it holds and crafts), a missing one is made, and none is ever made twice.
+/// host and world-owned (<see cref="Creation.WorldPart"/>, <see cref="WorldOwned"/>). A player may pick one up: it becomes
+/// theirs to put down anywhere, and its marker is recorded as taken (<see cref="ObjectOf"/>, with the world's destroyed
+/// objects) so it never places another. Pure logic; the host runs <see cref="Reconcile"/> once when its world starts,
+/// after a save is loaded, so each marker not taken has exactly one: one saved with the world is kept (with whatever it
+/// holds and crafts), a missing one is made, and none is ever made twice.
 /// </summary>
 public static class WorldParts
 {
@@ -41,6 +43,21 @@ public static class WorldParts
     /// seed and content give the same keys, so a save finds its parts again.
     /// </summary>
     public static string KeyOf(string poi, int marker, int poiIndex) => $"{poi}#{marker}@{poiIndex}";
+
+    /// <summary>
+    /// The world object id (<see cref="WorldObjectId.ForPoi"/>) that records marker <paramref name="key"/> as taken, once a
+    /// player has picked its part up, or null when the key is not one <see cref="KeyOf"/> makes.
+    /// </summary>
+    public static WorldObjectId? ObjectOf(string key)
+    {
+        var hash = key.LastIndexOf('#');
+        var at = key.LastIndexOf('@');
+        return hash > 0 && at > hash
+            && int.TryParse(key.AsSpan(hash + 1, at - hash - 1), System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var marker)
+            && int.TryParse(key.AsSpan(at + 1), System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var poi)
+            ? WorldObjectId.ForPoi(poi, marker)
+            : null;
+    }
 
     /// <summary>Every <c>part</c> marker of every POI <paramref name="world"/> placed, in POI then marker order.</summary>
     public static IReadOnlyList<WorldPartSpot> SpotsOf(WorldGenerator world) =>
@@ -85,11 +102,13 @@ public static class WorldParts
 
     /// <summary>
     /// Matches the world-owned Creations in <paramref name="existing"/> (from a save) to <paramref name="spots"/> by key:
-    /// a spot without one gets a new Creation (ids from <paramref name="nextId"/>); one standing at a spot keeps its
-    /// contents and is put back on the marker if it is off it; one whose spot is gone, holds another part, or repeats a
-    /// key, is removed. Creations players made are never touched. Changes nothing but the poses of <see cref="WorldPartPlan.Moved"/>.
+    /// a spot without one gets a new Creation (ids from <paramref name="nextId"/>), unless a player took its part
+    /// (<paramref name="taken"/> says so of its <see cref="ObjectOf"/> id); one standing at a spot keeps its contents and is
+    /// put back on the marker if it is off it; one whose spot is gone, holds another part, or repeats a key, is removed.
+    /// Creations players made are never touched. Changes nothing but the poses of <see cref="WorldPartPlan.Moved"/>.
     /// </summary>
-    public static WorldPartPlan Reconcile(IReadOnlyList<WorldPartSpot> spots, IEnumerable<Creation> existing, IPartCatalog catalog, Func<int> nextId)
+    public static WorldPartPlan Reconcile(IReadOnlyList<WorldPartSpot> spots, IEnumerable<Creation> existing, IPartCatalog catalog, Func<int> nextId,
+        Func<WorldObjectId, bool>? taken = null)
     {
         var add = new List<Creation>();
         var remove = new List<int>();
@@ -123,6 +142,8 @@ public static class WorldParts
                 // The marker names another part now: the old one goes and the new one comes.
                 remove.Add(found.Id);
             }
+            if (taken is not null && ObjectOf(spot.Key) is { } id && taken(id))
+                continue;
             if (Build(spot, nextId(), catalog, out var problem) is { } made)
                 add.Add(made);
             else

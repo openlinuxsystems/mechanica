@@ -14,8 +14,9 @@ namespace Mechanica.Game.Tests;
 /// A Workshop's Fabricator (a POI <c>part</c> marker), host plus a client, in the vanilla Survival world. The host puts
 /// exactly one world-owned Fabricator at every Workshop's marker when the world starts. The client walks into the story's
 /// Workshop: both peers show it standing on its marker, anchored, world-owned. The client opens it, crafts a chest and
-/// takes it out; it cannot pick the Fabricator up, lift, hit, paint or build onto it, and the host's copy stays exactly
-/// as it was. A save of the world holds each one once, so loading it adds none.
+/// takes it out; it cannot lift, hit, paint or build onto it, and the host's copy stays exactly as it was. A save of the
+/// world holds each one once, so loading it adds none. Then the client picks it up: it is in their pockets, the marker is
+/// taken, and loading the world again puts no other there.
 /// </summary>
 public partial class WorkshopTest : StagedTest
 {
@@ -34,6 +35,7 @@ public partial class WorkshopTest : StagedTest
     private bool _craftSent;
     private ActionResult? _craft;
     private ActionResult? _take;
+    private ActionResult? _pickUp;
 
     protected override string Tag => "workshop";
 
@@ -135,15 +137,13 @@ public partial class WorkshopTest : StagedTest
             Check(_take.Ok, $"the chest moves to the client ({_take})");
             return _host.Main.Inventory.Items!.PlayerInventory(_client.Peer).Count(Chest) == 1;
         });
-        Add("the client can't pick it up, lift, hit, paint, weld or build onto it", frame =>
+        Add("the client can't lift, hit, paint, weld or build onto it", frame =>
         {
             if (frame == 0)
             {
                 _client.Main.Inventory.Close(Station);
                 // The tools the client would need, so each refusal is the Fabricator's own.
                 _host.Main.Inventory.Items!.PlayerInventory(_client.Peer).Add(HotbarTools.Weld, 1);
-                Request(BuildActions.RemovePart, new RemovePartArgs(_id, 1));
-                Request(BuildActions.RemoveParts, new RemovePartsArgs(_id, [1]));
                 Request(ToolActions.CaptureLift, new CaptureLiftArgs(_id));
                 Request(ToolActions.Sledge, new SledgeArgs(_id, 1));
                 Request(ToolActions.Paint, new PaintArgs(_id, [1], "#ff0000"));
@@ -152,7 +152,7 @@ public partial class WorkshopTest : StagedTest
                 Request(InventoryActions.UpgradePart, new UpgradePartArgs(_id, 1));
                 return false;
             }
-            if (_refusals.Count < 8)
+            if (_refusals.Count < 6)
                 return false;
             foreach (var result in _refusals)
                 Check(!result.Ok && result.Code == ActionErrors.Rejected && result.Message!.Contains("belongs to the world"), $"refused: {result}");
@@ -180,6 +180,28 @@ public partial class WorkshopTest : StagedTest
             Check(loaded.Count(c => c.IsWorldOwned) == _spots.Count, $"the save holds {loaded.Count(c => c.IsWorldOwned)} of {_spots.Count}");
             var plan = WorldParts.Reconcile(_spots, loaded, _host.Main.Build.Catalog, () => 100000);
             Check(plan.Add.Count == 0 && plan.Remove.Count == 0 && plan.Moved.Count == 0, "and loading it places, moves and removes nothing");
+            return true;
+        });
+        Add("the client picks it up, and loading the world puts no other there", frame =>
+        {
+            if (frame == 0)
+            {
+                _client.Main.Actions.Request(BuildActions.RemovePart, new RemovePartArgs(_id, 1), r => _pickUp = r);
+                return false;
+            }
+            if (_pickUp is null)
+                return false;
+            Check(_pickUp.Ok, $"it comes up ({_pickUp})");
+            if (_host.Main.Creations.Find(_id) is not null || _client.Main.Creations.Find(_id) is not null)
+                return false;
+            Check(_host.Main.Inventory.Items!.PlayerInventory(_client.Peer).Count(Fabricator) == 1, "the Fabricator is in the client's pockets");
+            Check(_host.Main.Streamer.State.IsDestroyed(WorldParts.ObjectOf(_spot.Key)!.Value), "its marker is taken");
+            var save = _host.Main.Saves.Capture("workshop-test");
+            Check(save.Destroyed.Contains(WorldParts.ObjectOf(_spot.Key)!.Value), "the save says so");
+            var diagnostics = new List<DataDiagnostic>();
+            var loaded = save.ReadCreations(_host.Main.Build.Catalog, save.Name, diagnostics);
+            var plan = WorldParts.Reconcile(_spots, loaded, _host.Main.Build.Catalog, () => 100000, save.Destroyed.Contains);
+            Check(plan.Add.Count == 0 && plan.Remove.Count == 0, $"loading it places none ({plan.Add.Count} placed, {plan.Remove.Count} removed)");
             return true;
         });
     }
