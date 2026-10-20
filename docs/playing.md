@@ -91,7 +91,8 @@ switches it to the next mode and shows it for a moment; R with the Connect Tool 
   turns red where it stands, and a blue ghost of it, level and centred on the Lift's ghost, follows your aim (Q turns
   it). Walk wherever you like and left click where the ghost is blue: the Lift goes down there with the Creation on it,
   upright (an overturned car is righted), and the red original is gone. Where the ghost is red (the Lift or the Creation
-  would hit something) a click only buzzes. Right click lets the capture go and leaves the Creation as it was;
+  would hit something) a click only buzzes. Right click lets the capture go and leaves the Creation as it was (held on your Lift or
+  what it holds, it picks the Lift up instead, as below);
   capturing another one swaps to it. The Lift will not capture a Creation built onto the ground (remove the parts that
   touch the ground, or build on the Lift in the first place), one with resources on it, one more than 32 m across, or
   one on another player's Lift: it shows no blue, and a click flashes it red with the reason.

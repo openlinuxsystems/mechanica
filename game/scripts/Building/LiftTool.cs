@@ -202,6 +202,7 @@ public partial class LiftTool : HandTool
             else if (BuildTool.Now - from >= Build.Settings!.Lift.RemoveHoldSeconds)
             {
                 _removeFrom = null;
+                ReleaseCapture();
                 Remove();
             }
         }
@@ -209,12 +210,12 @@ public partial class LiftTool : HandTool
     }
 
     /// <summary>
-    /// Right click pressed: starts the hold that picks the Lift back up. False without a Lift or when the crosshair is
-    /// not on it (or on what it holds).
+    /// Right click pressed: starts the hold that picks the Lift back up, whether or not something is captured. False
+    /// without a Lift or when the crosshair is not on it (or on what it holds).
     /// </summary>
     public bool PressRemove()
     {
-        if (_captured is not null || Own is null || !AimsAtOwnLift())
+        if (Own is null || !AimsAtOwnLift())
             return false;
         _removeFrom = BuildTool.Now;
         return true;
@@ -615,14 +616,17 @@ public partial class LiftTool : HandTool
             Place();
         else if (Pressed(@event, InputActions.Secondary))
         {
-            if (!ReleaseCapture())
-                PressRemove();
+            // Aimed at the Lift (or what it holds) a hold picks it up, a click lets a capture go; aimed anywhere else a
+            // click lets the capture go at once.
+            if (!PressRemove())
+                ReleaseCapture();
         }
         else if (Released(@event, InputActions.Secondary))
         {
             if (_removeFrom is null)
                 return false;
             ReleaseRemove();
+            ReleaseCapture();
         }
         else if (HandleArrows(@event))
             return true;
