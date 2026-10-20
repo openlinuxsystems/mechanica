@@ -169,10 +169,10 @@ def scrap_metal(size=2048, units=32):
     # brushed streaks along each piece's long side
     line = np.asarray(Image.fromarray((r.random(size) * 255).astype(np.uint8)[None, :].repeat(size, 0)).filter(ImageFilter.GaussianBlur(0.8)), np.float64) / 255
     streak = np.where(horiz, line.T, line)
-    orange = np.array([156, 86, 54])
+    orange = np.array([166, 80, 42])
     base = np.zeros((size, size, 3)) + orange
     grey = np.array([92, 88, 86])
-    yellow = np.array([184, 150, 62])
+    yellow = np.array([206, 160, 40])
     k = kind[..., None]
     # grate: dark slots across the piece's short side, ribs between them
     t = np.where(horiz, u, v)
@@ -188,7 +188,7 @@ def scrap_metal(size=2048, units=32):
     crate = yellow * (1 - 0.75 * crate_dark[..., None])
     # hazard: diagonal orange and dark stripes
     stripe = ss(np.abs(((u + v) / 34 % 1) - 0.5), 0.23, 0.27)
-    hazard = np.array([140, 78, 48]) * (1 - stripe[..., None]) + np.array([60, 50, 46]) * stripe[..., None]
+    hazard = np.array([150, 70, 34]) * (1 - stripe[..., None]) + np.array([60, 50, 46]) * stripe[..., None]
     base = np.where(k == 1, grate, base)
     base = np.where(k == 2, crate, base)
     base = np.where(k == 3, hazard, base)
@@ -246,8 +246,6 @@ def scrap_metal(size=2048, units=32):
         rim = np.exp(-((rr - 0.9) ** 2) * 18) * plate * np.clip(-(dx + dy) / radius, 0, 1)
         out = out * (1 - 0.22 * dent[..., None]) * (1 + 0.18 * rim[..., None])
     out = out * (0.92 + 0.08 * value_noise(size, 8, 9, 3)[..., None])
-    # muted a little towards grey, like weathered paint
-    out = out * 0.88 + out.mean(axis=2, keepdims=True) * 0.12
     # rolled so a lone block (an icon, the build ghost: the cell at the grid origin) shows plates and a hazard strip
     return np.roll(out, (-1100, -1380), (0, 1))
 
@@ -313,7 +311,9 @@ def scrap_wood(size=2048, rows=16):
     g = grain[y.astype(int), gx]
     f = fine[y.astype(int), gx]
     lines = ss(np.abs(((g * 9) % 1) - 0.5), 0.36, 0.5)  # the dark rings of the grain
-    wood = np.array([100, 64, 38]) * tone[..., None]
+    # light tan planks, about one in six weathered to a cooler grey-brown (its own generator keeps the layout)
+    weathered = (np.random.default_rng(46).random((rows, 12)) < 0.13)[row, k][..., None]
+    wood = np.where(weathered, np.array([170, 138, 108]), np.array([200, 146, 102])) * tone[..., None]
     wood = wood * (0.86 + 0.18 * f[..., None]) * (1 - 0.22 * lines[..., None])
     blotch = value_noise(size, 8, 44, 4)
     wood = wood * (0.85 + 0.25 * blotch[..., None])
@@ -332,7 +332,7 @@ def scrap_wood(size=2048, rows=16):
     shade = bevel + (1 - bevel) * np.where(end, np.where(u < length / 2, 1.08, 0.8), np.where(top, 1.18, 0.62))
     grime = 1 - 0.3 * (1 - ss(d, 0, 18))
     out = wood * (shade * grime)[..., None]
-    out = np.where((d > 0)[..., None], out, np.array([44, 30, 22]))
+    out = np.where((d > 0)[..., None], out, np.array([70, 52, 38]))
     # split ends and nails where planks butt together
     canvas = Image.new("L", (size, size), 0)
     draw = ImageDraw.Draw(canvas)
