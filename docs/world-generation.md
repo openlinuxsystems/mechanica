@@ -315,8 +315,8 @@ Metal Blocks, while the old colony's pipes, barriers and wrecks are too big to b
 The big nature props (`props_nature.py`: split boulders, rock spires and shelves, giant mushrooms, hollow logs,
 ferns, brambles, cacti, tumbleweed, driftwood, reeds) are also scattered one at a time in their biomes.
 
-In the vanilla world about one stands every 15,000 m² of open land (roughly one every four 64 m chunks), about
-6,000 across the island, at Scrap Mechanic's density per square kilometre.
+In the vanilla world about one stands every 6,000 m² of open land (about one per 64 m chunk), some 15,000 across
+the island, so there is nearly always one in sight.
 
 ### Trees
 
