@@ -83,6 +83,12 @@ public sealed record RaidBotDefinition
     /// <summary>How many.</summary>
     public int? Count { get; init; }
 
+    /// <summary>
+    /// Other bot types each of these raiders may be instead: every raider in the entry is picked at random from
+    /// <see cref="Bot"/> and these, and costs <see cref="Bot"/>'s <c>raid_cost</c> whichever it turns out to be.
+    /// </summary>
+    public List<string>? OneOf { get; init; }
+
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
@@ -94,10 +100,26 @@ public sealed record RaidBotDefinition
 /// <param name="Budget">Budget for one player.</param>
 /// <param name="BudgetPerValue">Extra budget per point of value above <paramref name="MinValue"/>.</param>
 /// <param name="Bots">The mix, with each type resolved.</param>
-public sealed record RaidLevel(int Level, float MinValue, int Budget, float BudgetPerValue, IReadOnlyList<(Bot Bot, int Count)> Bots)
+public sealed record RaidLevel(int Level, float MinValue, int Budget, float BudgetPerValue, IReadOnlyList<RaidSlot> Bots)
 {
     /// <summary>What the listed mix costs.</summary>
-    public int MixCost => Bots.Sum(b => b.Bot.RaidCost!.Value * b.Count);
+    public int MixCost => Bots.Sum(b => b.Cost * b.Count);
+}
+
+/// <summary>One entry of a raid level, resolved.</summary>
+/// <param name="Bot">The bot type; its <c>raid_cost</c> is what each raider in the entry costs.</param>
+/// <param name="Count">How many.</param>
+/// <param name="OneOf">The other types each raider may be instead (empty when it is always <paramref name="Bot"/>).</param>
+public sealed record RaidSlot(Bot Bot, int Count, IReadOnlyList<Bot> OneOf)
+{
+    /// <summary>What each raider in the entry costs.</summary>
+    public int Cost => Bot.RaidCost!.Value;
+
+    /// <summary>The type and the count.</summary>
+    public void Deconstruct(out Bot bot, out int count) => (bot, count) = (Bot, Count);
+
+    /// <summary>The type the raider at <paramref name="roll"/> (any whole number) turns out to be.</summary>
+    public Bot Pick(uint roll) => OneOf.Count == 0 ? Bot : roll % (uint)(OneOf.Count + 1) is var i && i == 0 ? Bot : OneOf[(int)i - 1];
 }
 
 /// <summary>
@@ -200,6 +222,14 @@ public sealed class RaidTable
             {
                 if (bot["bot"] is JsonValue v && v.TryGetValue<string>(out var id) && !id.Contains(':'))
                     bot["bot"] = $"{modId}:{id}";
+                if (bot["one_of"] is JsonArray others)
+                {
+                    for (var i = 0; i < others.Count; i++)
+                    {
+                        if (others[i] is JsonValue o && o.TryGetValue<string>(out var other) && !other.Contains(':'))
+                            others[i] = $"{modId}:{other}";
+                    }
+                }
             }
         }
     }
@@ -264,7 +294,7 @@ public sealed class RaidTable
             if (row.Budget is not { } budget || budget < 1)
                 sink.Error(code, $"{path}.budget", "budget (1 or more) is required.");
             NonNegative(row.BudgetPerValue, $"{path}.budget_per_value", sink);
-            var mix = new List<(Bot, int)>();
+            var mix = new List<RaidSlot>();
             if (row.Bots is not { Count: > 0 })
                 sink.Error(code, $"{path}.bots", "bots needs at least one entry.");
             for (var j = 0; j < (row.Bots?.Count ?? 0); j++)
@@ -276,12 +306,12 @@ public sealed class RaidTable
                     sink.Error(code, $"{at}.bot", entry.Bot is null ? "bot is required." : $"there is no bot '{entry.Bot}'.");
                 else if (bot.RaidCost is null)
                     sink.Error(code, $"{at}.bot", $"'{bot.QualifiedId}' has no raid_cost, so it cannot raid.");
-                else if (mix.Any(m => m.Item1 == bot))
+                else if (mix.Any(m => m.Bot == bot))
                     sink.Error(code, $"{at}.bot", $"'{bot.QualifiedId}' is listed twice; add the counts together.");
                 else if (entry.Count is not { } count || count < 1)
                     sink.Error(code, $"{at}.count", "count (1 or more) is required.");
-                else
-                    mix.Add((bot, count));
+                else if (OneOf(entry, bot, bots, modId, at, sink) is { } others)
+                    mix.Add(new RaidSlot(bot, count, others));
             }
             if (sink.ErrorCount > errors)
                 continue;
@@ -292,6 +322,27 @@ public sealed class RaidTable
                 levels.Add(level);
         }
         return levels;
+    }
+
+    // The entry's one_of types: each must exist, have a raid_cost and be listed once (and not be the entry's own bot).
+    private static List<Bot>? OneOf(RaidBotDefinition entry, Bot bot, IBotCatalog bots, string modId, string at, DiagnosticSink sink)
+    {
+        var others = new List<Bot>();
+        var errors = sink.ErrorCount;
+        for (var k = 0; k < (entry.OneOf?.Count ?? 0); k++)
+        {
+            var id = entry.OneOf![k];
+            var path = $"{at}.one_of[{k}]";
+            if (string.IsNullOrEmpty(id) || bots.FindBot(Identifiers.Qualify(id, modId)) is not { } other)
+                sink.Error(DiagnosticCodes.RaidInvalid, path, $"there is no bot '{id}'.");
+            else if (other.RaidCost is null)
+                sink.Error(DiagnosticCodes.RaidInvalid, path, $"'{other.QualifiedId}' has no raid_cost, so it cannot raid.");
+            else if (other == bot || others.Contains(other))
+                sink.Error(DiagnosticCodes.RaidInvalid, path, $"'{other.QualifiedId}' is already one of this entry's bots.");
+            else
+                others.Add(other);
+        }
+        return sink.ErrorCount > errors ? null : others;
     }
 
     private static void Positive(float? value, string path, DiagnosticSink sink)
@@ -327,41 +378,55 @@ public sealed class RaidTable
     /// <summary>
     /// The bots a raid sends for <paramref name="budget"/>: the level's listed mix, then one more of each
     /// listed type in turn while the budget still covers it (so a bigger budget sends more of the same mix),
-    /// up to <see cref="MaxRaiders"/>. Bot type ids in send order.
+    /// up to <see cref="MaxRaiders"/>. An entry with <c>one_of</c> picks each raider's type from
+    /// <paramref name="seed"/> (the same seed sends the same raid). Bot type ids in send order.
     /// </summary>
-    public static IReadOnlyList<string> Compose(RaidLevel level, int budget)
+    public static IReadOnlyList<string> Compose(RaidLevel level, int budget, int seed = 0)
     {
         var sent = new List<string>();
         var left = budget;
-        foreach (var (bot, count) in level.Bots)
+        void Send(RaidSlot slot)
         {
-            for (var i = 0; i < count && left >= bot.RaidCost!.Value && sent.Count < MaxRaiders; i++)
-            {
-                sent.Add(bot.QualifiedId);
-                left -= bot.RaidCost.Value;
-            }
+            sent.Add(slot.Pick(Roll(seed, sent.Count)).QualifiedId);
+            left -= slot.Cost;
+        }
+        foreach (var slot in level.Bots)
+        {
+            for (var i = 0; i < slot.Count && left >= slot.Cost && sent.Count < MaxRaiders; i++)
+                Send(slot);
         }
         var added = true;
         while (added && sent.Count < MaxRaiders)
         {
             added = false;
-            foreach (var (bot, _) in level.Bots)
+            foreach (var slot in level.Bots)
             {
-                if (left < bot.RaidCost!.Value || sent.Count >= MaxRaiders)
+                if (left < slot.Cost || sent.Count >= MaxRaiders)
                     continue;
-                sent.Add(bot.QualifiedId);
-                left -= bot.RaidCost.Value;
+                Send(slot);
                 added = true;
             }
         }
         return sent;
     }
 
+    // A well-mixed whole number for raider `index` of the raid seeded `seed` (no shared random state, so plans replay).
+    private static uint Roll(int seed, int index)
+    {
+        var x = (uint)seed * 0x9E3779B9u ^ (uint)index * 0x85EBCA6Bu;
+        x ^= x >> 16;
+        x *= 0x7FEB352Du;
+        x ^= x >> 15;
+        x *= 0x846CA68Bu;
+        return x ^ (x >> 16);
+    }
+
     /// <summary>
     /// The raid a crop value and player count set off, or null when the value is below the first level.
-    /// <paramref name="budgetScale"/> is the difficulty's raid budget multiplier (at least 1 point is left).
+    /// <paramref name="budgetScale"/> is the difficulty's raid budget multiplier (at least 1 point is left);
+    /// <paramref name="seed"/> picks the types of <c>one_of</c> entries (see <see cref="Compose"/>).
     /// </summary>
-    public RaidPlan? Plan(float cropValue, int players, int? forceLevel = null, float budgetScale = 1f)
+    public RaidPlan? Plan(float cropValue, int players, int? forceLevel = null, float budgetScale = 1f, int seed = 0)
     {
         var level = forceLevel is { } n ? Levels.FirstOrDefault(l => l.Level == n) : LevelFor(cropValue);
         if (level is null)
@@ -369,7 +434,7 @@ public sealed class RaidTable
         var budget = BudgetFor(level, Math.Max(cropValue, level.MinValue), players);
         if (budgetScale != 1f)
             budget = Math.Max(1, (int)MathF.Round(budget * budgetScale, MidpointRounding.AwayFromZero));
-        return new RaidPlan(level.Level, budget, Compose(level, budget));
+        return new RaidPlan(level.Level, budget, Compose(level, budget, seed));
     }
 }
 
