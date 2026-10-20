@@ -43,7 +43,7 @@ public class CharacterRigTests
     public void TheRefineToolIsAPropWithItsOwnDrawWorkAndStowClips()
     {
         Assert.Equal(CharacterProp.RefineTool, CharacterRig.Sanitize(CharacterProp.RefineTool));
-        Assert.Equal(CharacterProp.None, CharacterRig.Sanitize((CharacterProp)(CharacterProp.SoilBag + 1)));
+        Assert.Equal(CharacterProp.None, CharacterRig.Sanitize((CharacterProp)(CharacterProp.PotatoLauncher + 1)));
         Assert.Equal("refine_tool", CharacterRig.PropNode(CharacterProp.RefineTool));
         Assert.Equal("hold_refine", CharacterRig.HoldClip(CharacterProp.RefineTool));
         Assert.Equal("refine_draw", CharacterRig.DrawClip(CharacterProp.RefineTool));

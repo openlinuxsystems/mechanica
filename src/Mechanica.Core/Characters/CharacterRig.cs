@@ -44,6 +44,12 @@ public enum CharacterProp : byte
 
     /// <summary>A Soil Bag, carried flat in front in both hands, a fist round each end.</summary>
     SoilBag,
+
+    /// <summary>The Potato Scattergun, aimed with both hands like the <see cref="PotatoBlaster"/>.</summary>
+    PotatoScattergun,
+
+    /// <summary>The Potato Launcher, aimed with both hands like the <see cref="PotatoBlaster"/>.</summary>
+    PotatoLauncher,
 }
 
 /// <summary>
@@ -316,7 +322,7 @@ public static class CharacterRig
         CharacterProp.ConnectTool => guard ? "hold_connect_aim" : "hold_connect",
         CharacterProp.WeldTool => guard ? "hold_weld_aim" : "hold_weld",
         CharacterProp.PaintTool => guard ? "hold_paint_aim" : "hold_paint",
-        CharacterProp.PotatoBlaster => "hold_gun",
+        CharacterProp.PotatoBlaster or CharacterProp.PotatoScattergun or CharacterProp.PotatoLauncher => "hold_gun",
         CharacterProp.WaterBucket => "hold_bucket",
         CharacterProp.WaterBucketFull => "hold_bucket_full",
         CharacterProp.Item => "hold_item",
@@ -431,6 +437,8 @@ public static class CharacterRig
         CharacterProp.WaterBucket or CharacterProp.WaterBucketFull => "water_bucket",
         CharacterProp.RefineTool => "refine_tool",
         CharacterProp.SoilBag => "soil_bag",
+        CharacterProp.PotatoScattergun => "potato_scattergun",
+        CharacterProp.PotatoLauncher => "potato_launcher",
         _ => null,
     };
 
@@ -445,7 +453,7 @@ public static class CharacterRig
     public const byte TintErase = 0x80;
 
     /// <summary><paramref name="prop"/> when it is a known value, otherwise <see cref="CharacterProp.None"/>.</summary>
-    public static CharacterProp Sanitize(CharacterProp prop) => prop <= CharacterProp.SoilBag ? prop : CharacterProp.None;
+    public static CharacterProp Sanitize(CharacterProp prop) => prop <= CharacterProp.PotatoLauncher ? prop : CharacterProp.None;
 
     /// <summary><paramref name="gesture"/> when it is a known value, otherwise <see cref="CharacterGesture.None"/>.</summary>
     public static CharacterGesture Sanitize(CharacterGesture gesture) => gesture <= CharacterGesture.PaintReload ? gesture : CharacterGesture.None;

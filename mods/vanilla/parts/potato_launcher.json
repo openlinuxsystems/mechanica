@@ -5,8 +5,10 @@
   "category": "weapon",
   "mass": 4,
   "stack_size": 1,
+  "mesh": "meshes/items/potato_launcher.glb",
+  "icon": "textures/items/potato_launcher_icon.png",
   "visual": {
-    "color": "#4a5a40"
+    "color": "#ffffff"
   },
   "script": "scripts/potato_gun.lua",
   "sounds": {
