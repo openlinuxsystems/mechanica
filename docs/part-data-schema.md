@@ -79,7 +79,7 @@ you; this page is the reference for what each key means, so you can read, review
 | `stack_size` | integer ≥ 1 | no | Most items per inventory slot. Omitted means 1. |
 | `sound_material` | string | no | Material for place, break and impact sounds (`wood`, `metal`, `concrete`, `glass`, ...): an unbound `place` plays `place_<material>`. See [Sound Events](sound-events.md#part-sounds). |
 | `size` | `[x, y, z]` cells | placeable | Footprint in 0.25 m grid cells, at least 1 on every axis. |
-| `mesh` | path | no | `.glb` or `.gltf` model, centred on the footprint centre, +Y up, in metres. Without one, a grey shape matching the collision stands in. |
+| `mesh` | path | no | `.glb` or `.gltf` model, centred on the footprint centre, +Y up, in metres. Its `COLOR_0` vertex colours, when it has them, multiply each material's base colour (as the glTF spec says). Without one, a grey shape matching the collision stands in. |
 | `icon` | path | no | `.png` inventory icon. |
 | `visual` | object | no | Colour, surface and colour variants. See [visual](#visual). |
 | `collision` | object | no | Collision shape. Omitted means a box filling `size`. See [collision](#collision). |
