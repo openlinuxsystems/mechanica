@@ -311,7 +311,9 @@ def scrap_wood(size=2048, rows=16):
     g = grain[y.astype(int), gx]
     f = fine[y.astype(int), gx]
     lines = ss(np.abs(((g * 9) % 1) - 0.5), 0.36, 0.5)  # the dark rings of the grain
-    wood = np.array([100, 64, 38]) * tone[..., None]
+    # light tan planks, about one in six weathered to a cooler grey-brown (its own generator keeps the layout)
+    weathered = (np.random.default_rng(46).random((rows, 12)) < 0.13)[row, k][..., None]
+    wood = np.where(weathered, np.array([170, 138, 108]), np.array([200, 146, 102])) * tone[..., None]
     wood = wood * (0.86 + 0.18 * f[..., None]) * (1 - 0.22 * lines[..., None])
     blotch = value_noise(size, 8, 44, 4)
     wood = wood * (0.85 + 0.25 * blotch[..., None])
@@ -330,7 +332,7 @@ def scrap_wood(size=2048, rows=16):
     shade = bevel + (1 - bevel) * np.where(end, np.where(u < length / 2, 1.08, 0.8), np.where(top, 1.18, 0.62))
     grime = 1 - 0.3 * (1 - ss(d, 0, 18))
     out = wood * (shade * grime)[..., None]
-    out = np.where((d > 0)[..., None], out, np.array([44, 30, 22]))
+    out = np.where((d > 0)[..., None], out, np.array([70, 52, 38]))
     # split ends and nails where planks butt together
     canvas = Image.new("L", (size, size), 0)
     draw = ImageDraw.Draw(canvas)
