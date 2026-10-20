@@ -80,11 +80,18 @@ public sealed class WildSpawns
                 var near = _wild.Select(_bots.Find).OfType<BotState>().Count(b => b.Type == type && Flat(player, b.Position) <= wild.DespawnDistance);
                 while (near < wild.Count && _bots.Bots.Count < _bots.Settings.MaxBots)
                 {
+                    // no herd smaller than its least to fill the count up, so none is left alone
+                    if (near > 0 && wild.Count - near < wild.HerdMin)
+                        break;
                     var first = (wild.Near is { } objects && _random.NextDouble() < objects.Share ? NearSpot(player, wild, objects) : null)
                         ?? Spot(player, wild);
                     if (first is not { } feet)
                         break;
-                    var herd = Math.Min(_random.Next(wild.HerdMin, wild.HerdMax + 1), wild.Count - near);
+                    var room = wild.Count - near;
+                    var herd = Math.Min(_random.Next(wild.HerdMin, wild.HerdMax + 1), room);
+                    // nor leave less room than a herd: this one takes it, or leaves room for the least herd
+                    if (room - herd is var left && left > 0 && left < wild.HerdMin)
+                        herd = room <= wild.HerdMax ? room : Math.Max(wild.HerdMin, room - wild.HerdMin);
                     for (var k = 0; k < herd && _bots.Bots.Count < _bots.Settings.MaxBots; k++)
                     {
                         var at = k == 0 ? feet : Around(new Vector2(feet.X, feet.Z), HerdGap, HerdSpread, wild) ?? feet;

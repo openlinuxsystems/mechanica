@@ -47,6 +47,37 @@ public sealed class WildSpawnsTests
     }
 
     [Fact]
+    public void No_herd_smaller_than_its_least_fills_up_the_count()
+    {
+        var (f, wild) = Herd("""{ "habitat": "land", "count": 4, "herd": [3, 3], "clear_radius": 2 }""");
+
+        for (var i = 0; i < 5; i++)
+        {
+            wild.Tick();
+            f.Advance(10);
+        }
+
+        Assert.Equal(3, f.Bots.Bots.Count);
+    }
+
+    [Theory]
+    [InlineData(4, 2, 4)]
+    [InlineData(6, 2, 4)]
+    [InlineData(5, 2, 3)]
+    public void Herds_fill_the_count_with_none_left_alone(int count, int min, int max)
+    {
+        var (f, wild) = Herd($$"""{ "habitat": "land", "count": {{count}}, "herd": [{{min}}, {{max}}], "clear_radius": 2 }""");
+
+        for (var i = 0; i < 5; i++)
+        {
+            wild.Tick();
+            f.Advance(10);
+        }
+
+        Assert.Equal(count, f.Bots.Bots.Count);
+    }
+
+    [Fact]
     public void A_bot_with_biomes_appears_only_in_them()
     {
         var (f, wild) = Herd("""{ "habitat": "land", "count": 6, "biomes": ["meadow"], "clear_radius": 2 }""", NorthIsMeadow);

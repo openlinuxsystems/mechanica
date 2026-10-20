@@ -114,7 +114,8 @@ public partial class WildTest : StagedTest
             var gen = _host.Main.Streamer.Generator;
             foreach (var bot in grazers)
                 Check(gen.BiomeAt(bot!.Position.X, bot.Position.Z).Id is "meadow" or "field", $"Grazer {bot.Id} is in a meadow or field");
-            Check(grazers.All(a => grazers.Count(b => (a!.Position - b!.Position).Length() < 12f) >= 2), "each Grazer has herd mates near it");
+            // a herd appears within 5 m and each wanders up to 8 m round its own spot
+            Check(grazers.All(a => grazers.Count(b => (a!.Position - b!.Position).Length() < 22f) >= 2), "each Grazer has herd mates near it");
             _kept = grazers[0]!.Id;
             return true;
         });
