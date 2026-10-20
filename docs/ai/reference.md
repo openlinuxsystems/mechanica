@@ -2,7 +2,7 @@
 
 <!-- Generated from mechanica.describe by tools/ai/gen-docs.sh. Do not edit by hand. -->
 
-Protocol version 2. 169 methods: 61 actions (change the world), 29 queries (only read it) and 79 endpoint methods. Every one is a JSON-RPC method of the same name whose `params` are the named arguments below (snake_case). `describe.json` beside this file is the same data as JSON Schemas, ready to become an AI's tool list. Scopes: `observe` reads, `play` acts as a player, `admin` is for debug powers ([ai-endpoint.md](../ai-endpoint.md#scopes)).
+Protocol version 2. 170 methods: 62 actions (change the world), 29 queries (only read it) and 79 endpoint methods. Every one is a JSON-RPC method of the same name whose `params` are the named arguments below (snake_case). `describe.json` beside this file is the same data as JSON Schemas, ready to become an AI's tool list. Scopes: `observe` reads, `play` acts as a player, `admin` is for debug powers ([ai-endpoint.md](../ai-endpoint.md#scopes)).
 
 ## Contents
 
@@ -15,7 +15,7 @@ Protocol version 2. 169 methods: 61 actions (change the world), 29 queries (only
 - [Chat](#chat) (1)
 - [Debug and general](#debug-and-general) (2)
 - [Fire](#fire) (1)
-- [Items, inventories and crafting](#items-inventories-and-crafting) (8)
+- [Items, inventories and crafting](#items-inventories-and-crafting) (9)
 - [Logic, seats and part menus](#logic-seats-and-part-menus) (9)
 - [Map markers](#map-markers) (3)
 - [Motion and physics primitives](#motion-and-physics-primitives) (6)
@@ -741,6 +741,19 @@ Puts a tool or an item in one of the caller's slots, or empties it. Arguments of
 |-------|------|----------|---------|-------------|
 | `slot` | integer | yes |  | Slot, 0 to 9 (keys 1 to 9 and 0). |
 | `entry` | string or null |  |  | A tool (HotbarTools), an item id, or null to empty the slot. |
+
+### `SortInventory`
+
+*action, play scope*
+
+Auto-organizing an inventory. Arguments of SortInventory: auto-organize an inventory (the inventory screen's Organize button).
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `inventory` | object | yes |  | The inventory to organize: the caller's own, or a container in reach. |
+| `inventory.player` | integer or null |  |  | Peer id of the player whose inventory it is. |
+| `inventory.creation` | integer or null |  |  | Creation holding the part. |
+| `inventory.part` | integer or null |  |  | Part id inside that Creation. |
 
 ### `UpgradePart`
 

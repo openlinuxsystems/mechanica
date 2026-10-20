@@ -2686,6 +2686,63 @@
       }
     },
     {
+      "name": "SortInventory",
+      "kind": "action",
+      "group": "items",
+      "scope": "play",
+      "description": "Auto-organizing an inventory. Arguments of SortInventory: auto-organize an inventory (the inventory screen's Organize button).",
+      "params": {
+        "description": "Arguments of SortInventory: auto-organize an inventory (the inventory screen's Organize button).",
+        "type": "object",
+        "properties": {
+          "inventory": {
+            "description": "The inventory to organize: the caller's own, or a container in reach.",
+            "type": "object",
+            "properties": {
+              "player": {
+                "description": "Peer id of the player whose inventory it is.",
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "creation": {
+                "description": "Creation holding the part.",
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "part": {
+                "description": "Part id inside that Creation.",
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "inventory"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
       "name": "SpawnBot",
       "kind": "action",
       "group": "bots",

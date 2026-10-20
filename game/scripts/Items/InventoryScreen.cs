@@ -35,19 +35,7 @@ public partial class InventoryScreen : CanvasLayer
     private static readonly InventoryTab[] TabOrder = Enum.GetValues<InventoryTab>();
 
     private Control _root = null!;
-    private Control _classic = null!;
-    private readonly SlotGrid _ownGrid = new();
-    private readonly SlotGrid _otherGrid = new();
-    private readonly SlotGrid _catalogGrid = new();
-    private Control _catalogPanel = null!;
-    private Label _otherTitle = null!;
-    private Label _warning = null!;
-    private VBoxContainer _recipes = null!;
-    private VBoxContainer _queue = null!;
-    private Control _otherPanel = null!;
     private Label _status = null!;
-    private LineEdit _give = null!;
-    private readonly List<Button> _tabButtons = [];
     private InventoryRef? _open;
     private (InventoryRef Where, int Slot, int? Count)? _held;
     private InventoryTab _tab;
@@ -100,7 +88,7 @@ public partial class InventoryScreen : CanvasLayer
     public IReadOnlyList<ItemSlot> CatalogSlots => _catalogPanel.Visible ? _catalogGrid.Slots : [];
 
     /// <summary>The nearly-full warning, or empty when there is none.</summary>
-    public string Warning => _warning.Visible ? _warning.Text : "";
+    public string Warning => _warningPill.Visible ? _warning.Text : "";
 
     /// <summary>The stack picked up by clicking, waiting for a click on where it goes.</summary>
     public (InventoryRef Where, int Slot, int? Count)? Held => _held;
@@ -115,53 +103,8 @@ public partial class InventoryScreen : CanvasLayer
         AddChild(_root);
         // A hotbar slot dropped anywhere on the window empties; a stack dropped on the window's background stays put.
         _root.SetDragForwarding(new Callable(), Callable.From((Vector2 _, Variant data) => data.Obj is ItemDrag { HotbarSlot: not null }), Callable.From((Vector2 _, Variant data) => DropOnWindow(data)));
-        var columns = new HBoxContainer { Name = "Columns" };
-        columns.AddThemeConstantOverride("separation", 24);
-        _root.AddChild(columns);
-        _classic = columns;
-
-        var own = new VBoxContainer();
-        var header = new HBoxContainer();
-        header.AddChild(new Label { Text = "Inventory", ThemeTypeVariation = "TitleLabel" });
-        _warning = Loc.Verbatim(new Label { Visible = false, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, HorizontalAlignment = HorizontalAlignment.Right });
-        _warning.AddThemeColorOverride("font_color", UiTokens.Warning);
-        header.AddChild(_warning);
-        own.AddChild(header);
-        var tabs = new HBoxContainer { Name = "Tabs" };
-        var group = new ButtonGroup();
-        foreach (var tab in TabOrder)
-        {
-            var button = new Button { Text = TabName(tab), ToggleMode = true, ButtonGroup = group, ButtonPressed = tab == _tab, Name = tab.ToString() };
-            button.Pressed += () => SetTab(tab);
-            tabs.AddChild(button);
-            _tabButtons.Add(button);
-        }
-        own.AddChild(tabs);
-        own.AddChild(_ownGrid.Build("OwnGrid", rows: 4, this));
-        _catalogPanel = new VBoxContainer { Name = "Catalog" };
-        _catalogPanel.AddChild(new Label { Text = "All parts and tools (drag onto the hotbar)", ThemeTypeVariation = "SecondaryLabel" });
-        _catalogPanel.AddChild(_catalogGrid.Build("CatalogGrid", rows: 2, this));
-        own.AddChild(_catalogPanel);
-        _give = new LineEdit { PlaceholderText = "give: item_id count", Visible = Inventory.Settings!.AllowGive };
-        _give.TextSubmitted += OnGive;
-        own.AddChild(_give);
-        _status = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart, CustomMinimumSize = new Vector2(320, 0) };
-        own.AddChild(_status);
-        columns.AddChild(own);
-
-        var other = new VBoxContainer();
-        _otherPanel = other;
-        _otherTitle = Loc.Verbatim(new Label { ThemeTypeVariation = "TitleLabel" });
-        other.AddChild(_otherTitle);
-        other.AddChild(_otherGrid.Build("OtherGrid", rows: 4, this));
-        _queue = new VBoxContainer();
-        other.AddChild(_queue);
-        _recipes = new VBoxContainer();
-        var scroll = new ScrollContainer { CustomMinimumSize = new Vector2(360, 200) };
-        scroll.AddChild(_recipes);
-        _recipes.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        other.AddChild(scroll);
-        columns.AddChild(other);
+        _root.AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
+        BuildInventory();
         BuildStation();
 
         Inventory.ViewChanged += _ => Refresh();
@@ -173,7 +116,7 @@ public partial class InventoryScreen : CanvasLayer
     public override void _Process(double delta)
     {
         // The scrim fades with the window and goes when it closes.
-        _scrimLayer.Visible = StationMode && _root.Visible;
+        _scrimLayer.Visible = _root.Visible;
         _scrim.Modulate = _root.Modulate;
         if (_root.Visible)
             Layout();
@@ -187,6 +130,8 @@ public partial class InventoryScreen : CanvasLayer
         var bar = HotbarView.SlotSizeFor(screen) + 8;
         if (StationMode)
             SizeStation(screen, margin, bar);
+        else
+            SizeInventory(screen, margin, bar);
         _root.Size = _root.GetCombinedMinimumSize();
         var room = screen.Y - margin.Y - bar;
         _root.Position = new Vector2(Mathf.Round((screen.X - _root.Size.X) / 2), Mathf.Round(Mathf.Max(margin.Y, (room - _root.Size.Y) / 2)));
@@ -271,16 +216,6 @@ public partial class InventoryScreen : CanvasLayer
         Input.MouseMode = Input.MouseModeEnum.Captured;
     }
 
-    /// <summary>Shows only the items under <paramref name="tab"/>.</summary>
-    public void SetTab(InventoryTab tab)
-    {
-        _tab = tab;
-        _held = null;
-        for (var i = 0; i < TabOrder.Length; i++)
-            _tabButtons[i].SetPressedNoSignal(TabOrder[i] == tab);
-        Refresh();
-    }
-
     // Fades the window in or out. While it fades out it still keeps the mouse, so a click over it never reaches the game.
     private void Fade(bool open)
     {
@@ -323,26 +258,7 @@ public partial class InventoryScreen : CanvasLayer
             RefreshStation();
             return;
         }
-        var own = Inventory.Own;
-        var me = InventoryRef.OfPlayer(Inventory.Session.LocalPeer);
-        var slots = own?.SlotCount ?? Inventory.Settings!.PlayerSlots;
-        var shown = _tab == InventoryTab.All
-            ? Enumerable.Range(0, slots).Select(i => (i, own?.At(i)))
-            : own?.Items.Where(s => Shows(s.Item)).OrderBy(s => s.Slot).Select(s => (s.Slot, (SlotView?)s)) ?? [];
-        _ownGrid.Fill(me, [.. shown]);
-        var free = slots - (own?.Items.Select(s => s.Slot).Distinct().Count() ?? 0);
-        _warning.Visible = !Creative && own is not null && Inventory.Settings!.NearlyFull(free);
-        _warning.Text = free == 0 ? Loc.T("Inventory full") : Loc.T("Nearly full: {0} free", free);
-        _catalogPanel.Visible = Creative && AllItems is not null;
-        if (_catalogPanel.Visible)
-            _catalogGrid.FillCatalog([.. AllItems!().Where(Shows).OrderBy(ItemName, StringComparer.CurrentCultureIgnoreCase)]);
-        var view = _open is { } where ? Inventory.Shown.GetValueOrDefault(where) : null;
-        _otherPanel.Visible = _open is not null;
-        if (_open is null)
-            return;
-        _otherTitle.Text = view is null ? Loc.T("Opening…") : view.Blocked ? Loc.T("{0} (full: take the output)", ItemName(view.Part!)) : ItemName(view.Part!);
-        _otherGrid.Fill(_open, [.. Enumerable.Range(0, view?.SlotCount ?? 0).Select(i => (i, view?.At(i)))]);
-        FillStation(view);
+        RefreshInventory();
     }
 
     private bool Shows(string item) =>
@@ -357,45 +273,6 @@ public partial class InventoryScreen : CanvasLayer
         InventoryTab.Resources => "Resources",
         _ => "Consumables",
     };
-
-    private void FillStation(InventoryView? view)
-    {
-        foreach (var child in _queue.GetChildren().Concat(_recipes.GetChildren()))
-            child.QueueFree();
-        if (view?.Queue is not { } queue)
-            return;
-        for (var i = 0; i < queue.Count; i++)
-        {
-            var job = queue[i];
-            var index = i;
-            var row = new HBoxContainer();
-            var done = job.Time > 0 ? job.Progress / job.Time : 1f;
-            row.AddChild(Loc.Verbatim(new Label { Text = $"{RecipeName(job.Recipe)} × {job.Count}", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill }));
-            row.AddChild(new ProgressBar { Value = done * 100, CustomMinimumSize = new Vector2(100, 0), ShowPercentage = false });
-            var cancel = new Button { Text = "Cancel" };
-            cancel.Pressed += () => Send(InventoryActions.CancelCraft, new CancelCraftArgs(_open!.Creation!.Value, _open.Part!.Value, index));
-            row.AddChild(cancel);
-            _queue.AddChild(row);
-        }
-        foreach (var recipe in RecipeBrowser.Ordered(Inventory.Recipes.ForStation(view.Part!)))
-        {
-            var row = new HBoxContainer();
-            var inputs = string.Join(", ", recipe.Inputs.Select(a => $"{a.Count} {ItemName(a.Item)}"));
-            var outputs = string.Join(", ", recipe.Outputs.Select(a => $"{a.Count} {ItemName(a.Item)}"));
-            row.AddChild(Loc.Verbatim(new Label
-            {
-                Text = Loc.T("{0}  ←  {1}  ({2} s)", outputs, inputs, $"{recipe.Time / (view.Speed ?? 1f):0.#}"),
-                SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            }));
-            var count = new SpinBox { MinValue = 1, MaxValue = Inventory.Settings!.MaxCraftCount, Value = 1 };
-            row.AddChild(count);
-            var craft = new Button { Text = "Craft", Disabled = Inventory.Own is not { } own || !recipe.Inputs.All(a => own.Count(a.Item) >= a.Count) };
-            var id = recipe.QualifiedId;
-            craft.Pressed += () => Send(InventoryActions.Craft, new CraftArgs(_open!.Creation!.Value, _open.Part!.Value, id, (int)count.Value));
-            row.AddChild(craft);
-            _recipes.AddChild(row);
-        }
-    }
 
     // Clicks: left picks up or puts down (on release, so a press that becomes a drag does neither), right picks up
     // half and Shift+right one; Shift+left sends the stack to the other side.
@@ -554,6 +431,7 @@ public partial class InventoryScreen : CanvasLayer
                 var (slot, stack, item) = _shown[i];
                 var held = _where is { } w && _screen._held is { } h && h.Where == w && h.Slot == slot;
                 _slots[i].Show(item, item is null ? null : _screen.Icons?.For(item), item is null ? "" : _screen.ItemName(item), stack?.Count, selected: held);
+                _slots[i].Dot = item is null ? null : _screen.DotOf(item);
             }
         }
 

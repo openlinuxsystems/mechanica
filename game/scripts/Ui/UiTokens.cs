@@ -1,4 +1,5 @@
 using Godot;
+using Mechanica.Core.Items;
 using Mechanica.Core.Ui;
 
 namespace Mechanica.Game.Ui;
@@ -170,6 +171,17 @@ public static class UiTokens
 
     /// <summary>3D preview backgrounds in the mod tools.</summary>
     public static readonly Color PreviewBackground = From(UiPalette.PreviewBackground);
+
+    /// <summary>The dot that marks a category tab and the items under it (UI spec §3); null for All and items under no tab.</summary>
+    public static Color? CategoryDot(InventoryTab? tab) => tab switch
+    {
+        InventoryTab.Tools => From(UiPalette.CategoryTools),
+        InventoryTab.Blocks => From(UiPalette.CategoryBlocks),
+        InventoryTab.Interactive => From(UiPalette.CategoryInteractive),
+        InventoryTab.Resources => From(UiPalette.CategoryResources),
+        InventoryTab.Consumables => From(UiPalette.CategoryConsumables),
+        _ => null,
+    };
 
     /// <summary>Converts a palette hex colour.</summary>
     public static Color From(string hex, float alpha = 1f)

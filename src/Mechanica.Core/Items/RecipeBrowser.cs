@@ -24,10 +24,9 @@ public static class RecipeBrowser
     /// </summary>
     public static IReadOnlyList<Recipe> Filter(IEnumerable<Recipe> recipes, string? query, InventoryTab tab, IPartCatalog catalog)
     {
-        var words = (query ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries);
         return Ordered(recipes
             .Where(r => tab == InventoryTab.All || r.Outputs.Count > 0 && InventoryTabs.Of(catalog.FindDefinition(r.Outputs[0].Item)?.Category) == tab)
-            .Where(r => words.All(w => Text(r, catalog).Contains(w, StringComparison.CurrentCultureIgnoreCase))));
+            .Where(r => ItemSearch.Matches(query, Text(r, catalog))));
     }
 
     /// <summary>

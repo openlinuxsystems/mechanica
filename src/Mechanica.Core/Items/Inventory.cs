@@ -204,6 +204,40 @@ public sealed class Inventory
         Revision++;
     }
 
+    /// <summary>
+    /// Auto-organize: merges stacks of the same item into as few as fit and puts them first in slot order, sorted by
+    /// <paramref name="key"/> (then item id), with the empty slots after. Returns true when anything moved.
+    /// </summary>
+    /// <param name="key">What to sort an item by, given its qualified id (the inventory screen sorts by tab, then name).</param>
+    /// <param name="comparer">How to compare keys; null uses the default.</param>
+    public bool Sort<TKey>(Func<string, TKey> key, IComparer<TKey>? comparer = null)
+    {
+        var items = _slots.OfType<ItemStack>()
+            .GroupBy(s => s.Item)
+            .Select(g => (Item: g.Key, Count: g.Sum(s => s.Count)))
+            .OrderBy(g => key(g.Item), comparer ?? Comparer<TKey>.Default)
+            .ThenBy(g => g.Item, StringComparer.Ordinal);
+        var sorted = new List<ItemStack>();
+        foreach (var (item, count) in items)
+        {
+            var max = StackSizeOf(item);
+            for (var left = count; left > 0; left -= max)
+                sorted.Add(new ItemStack(item, Math.Min(left, max)));
+        }
+        var changed = false;
+        for (var i = 0; i < _slots.Length; i++)
+        {
+            var stack = i < sorted.Count ? sorted[i] : null;
+            if (_slots[i] == stack)
+                continue;
+            _slots[i] = stack;
+            changed = true;
+        }
+        if (changed)
+            Revision++;
+        return changed;
+    }
+
     /// <summary>A copy with the same slots (its revision starts at 0).</summary>
     public Inventory Clone()
     {

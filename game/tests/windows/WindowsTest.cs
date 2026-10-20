@@ -19,6 +19,7 @@ public partial class WindowsTest : StagedTest
 {
     private readonly List<InputEvent> _leaked = [];
     private Main _main = null!;
+    private bool _organizing;
     private PauseMenu _menu = null!;
     private (int Creation, int Part) _station;
     private ulong _chatFrame;
@@ -211,6 +212,47 @@ public partial class WindowsTest : StagedTest
             Check(inventory.IsOpen, "the inventory is still open");
             inventory.Hide();
             return Clean("the inventory");
+        });
+        Add("the inventory's search, tabs and Organize work", frame =>
+        {
+            var inventory = _main.GetNode<Items.InventoryScreen>("InventoryScreen");
+            var own = _main.Inventory.Items!.PlayerInventory(_main.Inventory.Session.LocalPeer);
+            const string Scrap = "vanilla:scrap_metal", Block = "vanilla:scrap_wood_block";
+            if (frame == 0)
+            {
+                own.Clear();
+                own.SetSlot(3, new Core.Items.ItemStack(Scrap, 5));
+                own.SetSlot(7, new Core.Items.ItemStack(Block, 10));
+                own.SetSlot(9, new Core.Items.ItemStack(Block, 4));
+                inventory.Show(null);
+                return false;
+            }
+            if (frame == 1 || _main.Inventory.Own?.At(9) is null)
+                return false;
+            if (!_organizing)
+            {
+                Check(inventory.OwnSlots[3].Entry == Scrap && inventory.OwnSlots[3].Dot == UiTokens.CategoryDot(Core.Items.InventoryTab.Resources), "a stack carries its tab's dot");
+                Check(inventory.OwnSlots[0].Dot is null, "an empty slot has no dot");
+                Check(inventory.TabButtons[0].Icon is null && inventory.TabButtons.Skip(1).All(b => b.Icon is not null), "every tab but All has a dot");
+                Check(inventory.FillText == "3 / 30", $"the fill pill counts used slots ({inventory.FillText})");
+                inventory.SetTab(Core.Items.InventoryTab.Blocks);
+                Check(inventory.OwnSlots.Where(s => s.Visible).Select(s => s.Entry).SequenceEqual([Block, Block]), "the Blocks tab lists only the blocks");
+                inventory.SearchInventory("SCRAP met");
+                Check(inventory.Tab == Core.Items.InventoryTab.All, "a search switches to All");
+                Check(inventory.OwnSlots.Where(s => s.Visible).Select(s => s.Entry).SequenceEqual([Scrap]) && inventory.MatchesText == "1 match", $"the search lists the match ({inventory.MatchesText})");
+                inventory.SearchInventory("");
+                Check(inventory.MatchesText == "" && inventory.OwnSlots.Count(s => s.Visible) == 30, "clearing the search lists every slot");
+                inventory.OrganizeButton.EmitSignal(BaseButton.SignalName.Pressed);
+                _organizing = true;
+                return false;
+            }
+            if (_main.Inventory.Own is not { } view || view.At(0)?.Item != Block)
+                return false;
+            Check(view.At(0) == new Core.Items.SlotView(0, Block, 14) && view.At(1) == new Core.Items.SlotView(1, Scrap, 5) && view.Items.Count == 2,
+                "Organize merges the blocks and sorts them before the scrap");
+            inventory.Hide();
+            own.Clear();
+            return true;
         });
         Add("the Fabricator screen keeps them", frame =>
         {

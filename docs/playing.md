@@ -151,8 +151,14 @@ Blaster holds 15, the Scattergun 4), or the potatoes you carry for one that does
 the counter at the bottom right shows the rounds and the potatoes; when it is empty, **R** reloads it from
 the potatoes you carry (the ring round the crosshair fills while it does).
 
-The **inventory** (**I** or **Tab**) is a grid of six columns with tabs along the top: All, Blocks,
-Interactive, Tools, Resources and Consumables.
+The **inventory** (**I** or **Tab**) is a grid of ten columns with tabs along the top: All, Blocks,
+Interactive, Tools, Resources and Consumables. Each tab has a coloured dot, and every stack carries the dot
+of the tab it is under. The header shows how many slots are used.
+
+- Type in **Search** to list only the stacks whose name has every word you typed; a search looks through
+  every tab, and the tab row shows how many match.
+- **Organize** (the button next to the search box) merges part-filled stacks of the same item and sorts
+  everything by tab, then by name, with the empty slots last. A container's window has its own Organize.
 
 - Drag a stack onto the hotbar to put it in a slot, onto another slot to move it, or onto the other side
   when a container is open. Drag a hotbar slot onto another slot to swap them, or onto the inventory or
@@ -163,7 +169,7 @@ Interactive, Tools, Resources and Consumables.
 - Hover a stack for its name, description, how many are in the stack and its durability.
 - In **Creative**, every part and tool is listed under the grid; drag one onto the hotbar, or into your
   inventory for a full stack.
-- In **Survival**, a warning shows at the top when only a few slots are free.
+- In **Survival**, a warning shows in the header when only a few slots are free.
 
 **Stations.** Use (**E**) on a Fabricator or another station to open its screen in three columns. On the
 left are its recipes, with a search box and the same category filters; a recipe you can't afford yet is

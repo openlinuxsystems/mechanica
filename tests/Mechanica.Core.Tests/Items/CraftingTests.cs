@@ -277,6 +277,34 @@ public class CraftingTests
     }
 
     [Fact]
+    public void SortInventoryMergesStacksAndSortsByTabThenName()
+    {
+        var inventory = _items.PlayerInventory(2);
+        inventory.SetSlot(0, new ItemStack(Wood, 10));
+        inventory.SetSlot(1, new ItemStack(Block, 1));
+        inventory.SetSlot(3, new ItemStack(Wood, 45));
+
+        var result = Dispatch(Player, InventoryActions.SortInventory, new { inventory = new { player = 2 } });
+
+        Assert.True(result.Ok, result.Message);
+        // Blocks come before Resources; the two Wood stacks merge into a full one and the rest.
+        Assert.Equal([new ItemStack(Block, 1), new ItemStack(Wood, 50), new ItemStack(Wood, 5), null], inventory.Slots);
+        Assert.False(Dispatch(Player, InventoryActions.SortInventory, new { inventory = new { player = 2 } }).Value!.Value.GetProperty("changed").GetBoolean());
+    }
+
+    [Fact]
+    public void SortInventoryOrganizesAChestInReachButNotAnotherPlayers()
+    {
+        var creation = Add(Chest);
+        var chest = _world.Creations[creation].InventoryOf(1)!;
+        chest.SetSlot(3, new ItemStack(Scrap, 5));
+
+        Assert.True(Dispatch(Player, InventoryActions.SortInventory, new { inventory = new { creation, part = 1 } }).Ok);
+        Assert.Equal(new ItemStack(Scrap, 5), chest[0]);
+        Assert.Equal("You can only use your own inventory.", Dispatch(Other, InventoryActions.SortInventory, new { inventory = new { player = 2 } }).Message);
+    }
+
+    [Fact]
     public void ATankOnlyTakesFuel()
     {
         var creation = Add(Tank);
