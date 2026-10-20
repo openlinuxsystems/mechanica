@@ -260,7 +260,7 @@ The locked keys are listed after each table; a patch may not touch them, or anyt
 | `drop_lifetime` | 900 | Seconds items lie on the ground before they are gone. |
 | `drop_inventory_on_death` | true | Whether a dead player's inventory falls where they died (in the knockout bag). |
 | `knockout_bag` | `vanilla:meshes/knockout_bag.glb` | The model a knocked-out player's items lie in (`mod:path`). |
-| `bucket_item` | `water_bucket` | The empty bucket `CollectWater` fills. |
+| `bucket_item` | `water_bucket` | The empty bucket `CollectWater` fills (every one the player carries, in one dip). |
 | `water_item` | `water_bucket_full` | The full bucket an empty one turns into at water, in the same slot. |
 | `water_seconds` | 1 | Shortest time between one player's fills at water, in s. |
 | `refine_seconds` | 5.2 | Seconds E is held on a resource node (a tree, a rock node) or a loose part to refine it. |

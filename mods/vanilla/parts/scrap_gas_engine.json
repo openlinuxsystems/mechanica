@@ -45,21 +45,7 @@
       "min": 1,
       "max": 4,
       "step": 1,
-      "default": 2,
-      "presets": [
-        {
-          "name": "Low",
-          "value": 1
-        },
-        {
-          "name": "Medium",
-          "value": 2
-        },
-        {
-          "name": "High",
-          "value": 4
-        }
-      ]
+      "default": 2
     },
     {
       "id": "on",
@@ -87,12 +73,46 @@
         "unit": "rpm"
       },
       {
+        "id": "top_rpm",
+        "name": "Top speed",
+        "kind": "number",
+        "unit": "rpm"
+      },
+      {
         "id": "torque",
         "name": "Torque",
         "kind": "number",
         "unit": "N·m"
       }
-    ]
+    ],
+    "lever": {
+      "setting": "gear",
+      "off": "on",
+      "fuel": "gasoline",
+      "fuel_count": "fuel_items",
+      "fuel_bar": "fuel",
+      "hint": "Drag to adjust engine power",
+      "upgrade_stats": [
+        {
+          "name": "Bearings",
+          "value": "outputs"
+        },
+        {
+          "name": "Power steps",
+          "value": "settings.gear"
+        },
+        {
+          "name": "Torque",
+          "value": "properties.torque",
+          "show": "percent"
+        },
+        {
+          "name": "Mileage",
+          "value": "properties.fuel_time",
+          "show": "percent"
+        }
+      ]
+    }
   },
   "display": {
     "status": "running",

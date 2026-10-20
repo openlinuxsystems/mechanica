@@ -14,13 +14,13 @@ namespace Mechanica.Core.Survival;
 /// <param name="Slot">Unused; kept so older callers that send it still parse.</param>
 public sealed record PartUseArgs(int Creation, int Part, int Slot = 0);
 
-/// <summary>Arguments of <c>CollectWater</c>: fill an empty bucket where the caller aims at water.</summary>
+/// <summary>Arguments of <c>CollectWater</c>: fill every empty bucket the caller carries where they aim at water.</summary>
 /// <param name="Point">The water point aimed at, in world metres.</param>
-/// <param name="Slot">The inventory slot holding the empty bucket to fill (the one in hand); null fills the first one.</param>
+/// <param name="Slot">The inventory slot holding the empty bucket in hand, filled first; null starts at the first one.</param>
 public sealed record CollectWaterArgs(Vec3 Point, int? Slot = null);
 
 /// <summary>Result of <c>CollectWater</c>.</summary>
-/// <param name="Slot">The slot the full bucket is in.</param>
+/// <param name="Slot">The slot the full bucket in hand is in.</param>
 public sealed record CollectWaterResult(int Slot);
 
 /// <summary>Arguments of <c>DropItems</c>: put items from a slot on the ground in front of the caller.</summary>

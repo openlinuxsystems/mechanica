@@ -267,19 +267,60 @@ public class SurvivalActionsTests
         f.World.WaterLevel = 0.5f;
         Assert.Equal("That slot holds no empty Pail.", f.Refused(Me, SurvivalActions.CollectWater, new { point = new Vec3(0, 0, 1), slot = slot + 1 }));
 
-        // One of two: the full one goes elsewhere.
+        // One dip fills both: one full one goes elsewhere and the last turns full where it is, so it stays in hand.
         var result = f.Dispatch(Me, SurvivalActions.CollectWater, new { point = new Vec3(0, 0, 1), slot });
         Assert.True(result.Ok, result.Message);
-        Assert.Equal((1, 1), (f.Pockets(Me).Count(EmptyBucket), f.Pockets(Me).Count(Bucket)));
-        Assert.Equal("You are still filling the last one.", f.Refused(Me, SurvivalActions.CollectWater, new { point = new Vec3(0, 0, 1), slot }));
-        f.World.Now += 1;
-        // The last one turns full where it is, so it stays in hand.
-        f.Ok(Me, SurvivalActions.CollectWater, new { point = new Vec3(0, 0, 1), slot });
         Assert.Equal(Bucket, f.Pockets(Me)[slot]!.Item);
         Assert.Equal((0, 2), (f.Pockets(Me).Count(EmptyBucket), f.Pockets(Me).Count(Bucket)));
+        f.Pockets(Me).Add(EmptyBucket, 1);
+        Assert.Equal("You are still filling the last one.", f.Refused(Me, SurvivalActions.CollectWater, new { point = new Vec3(0, 0, 1) }));
         f.World.Now += 1;
         f.Pockets(Me).Add(EmptyBucket, 1);
         Assert.StartsWith("That is ", f.Refused(Me, SurvivalActions.CollectWater, new { point = new Vec3(0, 0, 40) }));
+    }
+
+    [Fact]
+    public void OneDipFillsEveryEmptyBucketCarried()
+    {
+        var settings = new SurvivalSettings { BucketItem = EmptyBucket, WaterItem = Bucket, Reach = 5, WaterSeconds = 1 };
+        var f = new SurvivalFixture(settings);
+        f.World.WaterLevel = 0.5f;
+        var pockets = f.Pockets(Me);
+        pockets.SetSlot(0, new ItemStack(Scrap, 1));
+        pockets.SetSlot(1, new ItemStack(EmptyBucket, 1));
+        pockets.SetSlot(2, new ItemStack(EmptyBucket, 1));
+        pockets.SetSlot(3, new ItemStack(EmptyBucket, 1));
+
+        // The one in hand (slot 2) is asked for; every empty bucket fills, each where it is.
+        Assert.Equal(new CollectWaterResult(2), f.Ok<CollectWaterResult>(Me, SurvivalActions.CollectWater, new { point = new Vec3(0, 0, 1), slot = 2 }));
+        Assert.All(new[] { 1, 2, 3 }, s => Assert.Equal(new ItemStack(Bucket, 1), pockets[s]));
+        Assert.Equal((0, 3), (pockets.Count(EmptyBucket), pockets.Count(Bucket)));
+        Assert.Equal(new ItemStack(Scrap, 1), pockets[0]);
+
+        // Throwing still empties one at a time: one empty again, and the next dip fills just it.
+        pockets.SetSlot(3, new ItemStack(EmptyBucket, 1));
+        f.World.Now += 1;
+        f.Ok(Me, SurvivalActions.CollectWater, new { point = new Vec3(0, 0, 1) });
+        Assert.Equal((0, 3), (pockets.Count(EmptyBucket), pockets.Count(Bucket)));
+    }
+
+    [Fact]
+    public void OneDipFillsWhatFitsWhenPocketsAreFull()
+    {
+        var settings = new SurvivalSettings { BucketItem = EmptyBucket, WaterItem = Bucket, Reach = 5, WaterSeconds = 1 };
+        var f = new SurvivalFixture(settings);
+        f.World.WaterLevel = 0.5f;
+        var pockets = f.Pockets(Me);
+        for (var s = 0; s < pockets.SlotCount; s++)
+            pockets.SetSlot(s, new ItemStack(Scrap, 1));
+        // A stack of three empty buckets with one free slot: one goes full there and the
+        // other two stay empty in their slot until there is room.
+        pockets.SetSlot(0, new ItemStack(EmptyBucket, 3));
+        pockets.SetSlot(1, null);
+        f.Ok(Me, SurvivalActions.CollectWater, new { point = new Vec3(0, 0, 1), slot = 0 });
+        Assert.Equal((2, 1), (pockets.Count(EmptyBucket), pockets.Count(Bucket)));
+        Assert.Equal(new ItemStack(EmptyBucket, 2), pockets[0]);
+        Assert.Equal(new ItemStack(Bucket, 1), pockets[1]);
     }
 
     [Fact]

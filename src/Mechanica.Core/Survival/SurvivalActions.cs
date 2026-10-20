@@ -937,8 +937,9 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
             ? null : "Make room in your inventory first.";
     }
 
-    // Fills the empty bucket in the slot: the last one in it turns full where it is, so it stays in hand.
-    // A pool of a liquid that can be collected (a chemical pool) gives its items and the bucket stays empty.
+    // Fills every empty bucket the caller carries in one dip, the one in the slot first: the last one in a slot turns
+    // full where it is (so the one in hand stays in hand), and the rest go wherever there is room.
+    // A pool of a liquid that can be collected (a chemical pool) gives its items once and the buckets stay empty.
     private JsonElement? ApplyCollectWater(ActionCaller caller, CollectWaterArgs args)
     {
         _lastWater[caller.Peer] = world.Now;
@@ -950,15 +951,31 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
             PlayPickup(collect.Item!, args.Point.ToNumerics());
             return Value(new CollectWaterResult(slot));
         }
-        var stack = pockets[slot]!;
-        if (stack.Count == 1)
-            pockets.SetSlot(slot, new ItemStack(Identifiers.Qualify(settings.WaterItem), 1));
-        else
+        FillBuckets(pockets, slot);
+        for (var s = 0; s < pockets.SlotCount; s++)
         {
-            pockets.SetSlot(slot, stack with { Count = stack.Count - 1 });
-            pockets.Add(Identifiers.Qualify(settings.WaterItem), 1);
+            if (s != slot && EmptyBucketSlot(caller.Peer, s) is not null)
+                FillBuckets(pockets, s);
         }
         return Value(new CollectWaterResult(slot));
+    }
+
+    // Fills the empty buckets in one slot until it has none left or there is no room for another full one.
+    private void FillBuckets(Inventory pockets, int slot)
+    {
+        var water = Identifiers.Qualify(settings.WaterItem);
+        while (pockets[slot] is { } stack && Identifiers.Qualify(stack.Item) == Identifiers.Qualify(settings.BucketItem))
+        {
+            if (stack.Count == 1)
+                pockets.SetSlot(slot, new ItemStack(water, 1));
+            else if (pockets.SpaceFor(water) > 0)
+            {
+                pockets.SetSlot(slot, stack with { Count = stack.Count - 1 });
+                pockets.Add(water, 1);
+            }
+            else
+                return;
+        }
     }
 
     // The slot holding an empty bucket: the one asked for, or the first; null when there is none.

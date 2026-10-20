@@ -16,9 +16,10 @@ namespace Mechanica.Game.Tests;
 /// Seats, part menus and machine feedback (UI spec PRs 13 and 17), host plus a client on vanilla parts in Creative.
 /// The client sits in a driver's seat: the player glides in, the seat camera takes over facing the seat's front and
 /// Ctrl switches it to the chase view; the seat's hotbar shows the switch it is linked to and uses it from beyond
-/// reach; standing up puts the player beside the seat. E on a logic gate cycles its mode with a card. An engine with
-/// nothing linked in runs from its On toggle, its menu shows fuel and speed, its status dot turns green and its wheel
-/// bearing's highlight turns. A controller's frames wait for Apply, and Play previews them on the host; the piston it runs has its menu locked. A sensor's
+/// reach; standing up puts the player beside the seat. E on a logic gate cycles its mode with a card. An engine's menu
+/// is a power lever: pulling it up from Off runs the engine (nothing is linked in), the menu shows its fuel and speed,
+/// its status dot turns green and its wheel bearing's highlight turns; Upgrade in the menu raises it a level and its
+/// limit with it, and the bottom notch switches it off. A controller's frames wait for Apply, and Play previews them on the host; the piston it runs has its menu locked. A sensor's
 /// menu shows its cone and its Detects toggles.
 /// </summary>
 public partial class PartMenusTest : StagedTest
@@ -69,7 +70,8 @@ public partial class PartMenusTest : StagedTest
                 _panel = new PartSettingsPanel
                 {
                     Name = "PartSettings", Actions = main.Actions, Creations = main.Creations, Readouts = () => main.Display.Readouts,
-                    Signals = main.LogicOverlay, Assets = main.Assets,
+                    Signals = main.LogicOverlay, Assets = main.Assets, Inventory = main.Inventory,
+                    Creative = () => main.Survival.Own?.Mode == Core.Survival.GameMode.Creative,
                 };
                 _camera = new SeatCamera { Logic = main.Logic, Players = main.PlayerSync, ReadDeviceInput = false };
                 _hotbar = new CreationHotbar
@@ -158,9 +160,13 @@ public partial class PartMenusTest : StagedTest
             }
             if (_client.Main.Logic.Seats.SeatOf(_client.Peer) is not null || (Me.InTransition && frame < 200) || frame < 30)
                 return false;
+            var away = Me.GlobalPosition - _seatAt;
+            // The host's teleport reaches the client a few frames after the seat is freed (more on a slow runner), so
+            // wait for the player to arrive beside the seat before judging where they stand.
+            if (new Vector2(away.X, away.Z).Length() <= 0.3f && frame < 300)
+                return false;
             Check(!_camera.Active && Me.Camera.Current, "the player's camera is back");
             Check(!Me.HeadHidden, "the head is back");
-            var away = Me.GlobalPosition - _seatAt;
             Check(new Vector2(away.X, away.Z).Length() is > 0.3f and < 1.5f, $"the player stands beside the seat ({away})");
             Check(!_hotbar.Showing, "the seat's bar is gone");
             return true;
@@ -176,34 +182,75 @@ public partial class PartMenusTest : StagedTest
             }
             return HostBoard.FindPart(_gate)!.Settings?.GetValueOrDefault("mode").GetString() == "or" || (frame > 200 && Check(false, "the host switches the gate"));
         });
-        Add("an engine with nothing linked in runs from its On toggle", frame =>
+        Add("an engine's menu is a power lever, and pulling it up from Off starts the engine", frame =>
         {
             if (frame == 0)
             {
                 _panel.Open(Board, _engine);
-                var on = _panel.Rows.FindChild("Setting_on", true, false) as Control;
-                Check(on is not null && on.FindChild("Toggle", true, false) is CheckBox, "the menu has an On toggle");
-                ((CheckBox)on!.FindChild("Toggle", true, false)).ButtonPressed = true;
-                Check(_panel.Rows.FindChild("Presets", true, false) is Control { } presets && presets.GetChildCount() == 3, "Power has Low, Medium and High");
+                var menu = _panel.Lever;
+                Check(menu.Visible && _panel.Window == menu, "the engine gets the lever menu");
+                Check(menu.TitleText == "Gas Engine" && menu.LevelText == "Level 1 / 5", $"it shows the name and level ({menu.TitleText}, {menu.LevelText})");
+                Check(menu.Lever is { Value: 0, Min: 0, Limit: 5, Top: 13 },
+                    $"the lever is at Off, picks up to 5 and shows the top level's 13 ({menu.Lever.Value}, {menu.Lever.Min}..{menu.Lever.Limit}/{menu.Lever.Top})");
+                Check(menu.UpgradeShowing && menu.GainTexts.SequenceEqual(["Bearings +2", "Power steps +2", "Torque +44%", "Mileage +50%"]),
+                    $"the next level's gains show ({string.Join(", ", menu.GainTexts)})");
+                Check(!menu.UpgradeButton.Disabled, "Upgrade is free in Creative");
+                menu.Lever.Pick(2);
                 return false;
             }
-            return HostBoard.FindPart(_engine)!.Settings?.GetValueOrDefault("on").ValueKind != JsonValueKind.False || (frame > 200 && Check(false, "the host turns it on"));
+            var settings = HostBoard.FindPart(_engine)!.Settings;
+            // On is the default, so the host keeps no value for it.
+            return (settings?.GetValueOrDefault("on").ValueKind != JsonValueKind.False && settings?.GetValueOrDefault("gear").ValueKind == JsonValueKind.Number
+                && settings["gear"].GetInt32() == 2) || (frame > 200 && Check(false, $"the host turns it on at power 2 ({string.Join(", ", settings?.Select(kv => $"{kv.Key}={kv.Value}") ?? [])}; {_panel.Lever.Reason}; open {_panel.IsOpen})"));
         });
         Add("the engine's menu shows its fuel and speed, its dot turns green and its bearing's highlight turns", frame =>
         {
             var node = _client.Main.Creations.NodeOf(Board)!;
             var dot = node.Displays.FirstOrDefault(d => d.Part == _engine);
             var ring = node.Displays.FirstOrDefault(d => d.Part == _wheel);
-            var fuel = _panel.Rows.FindChild("Readout_fuel", true, false)?.FindChild("Value", true, false) as ProgressBar;
-            var rpm = _panel.Rows.FindChild("Readout_rpm", true, false)?.FindChild("Value", true, false) as Label;
-            if ((dot?.StatusRunning != true || ring?.Highlight?.Visible != true || fuel?.Value != 1 || rpm?.Text.EndsWith("rpm") != true) && frame < 300)
+            var menu = _panel.Lever;
+            var rpm = menu.StatTexts.FirstOrDefault(t => t.StartsWith("Speed"));
+            if ((dot?.StatusRunning != true || ring?.Highlight?.Visible != true || menu.FuelBar != 1 || rpm?.EndsWith("rpm") != true) && frame < 300)
                 return false;
             Check(dot?.StatusRunning == true, "the engine's status dot is green");
             Check(ring?.Highlight?.Visible == true, "the wheel bearing's highlight turns");
-            Check(fuel?.Value == 1, $"Creative shows a full tank ({fuel?.Value})");
-            Check(rpm?.Text.EndsWith("rpm") == true, $"the speed reads in rpm ({rpm?.Text})");
-            Check(_panel.Rows.FindChild("Setting_on", true, false) is Control { Visible: true }, "nothing is linked in, so On shows");
+            Check(menu.FuelBar == 1, $"Creative shows a full tank ({menu.FuelBar})");
+            Check(menu.FuelText == "0", $"the slot counts the gasoline in the tanks ({menu.FuelText})");
+            Check(rpm?.EndsWith("rpm") == true, $"the speed reads in rpm ({rpm})");
+            // Power 2 of 5 on the 25 rad/s Gas Engine: 10 rad/s at the wheels, and its torque while it is on.
+            Check(menu.StatTexts.Contains("Top speed 95 rpm") && menu.StatTexts.Contains("Torque 360 N·m"),
+                $"the menu shows its top speed and torque ({string.Join(", ", menu.StatTexts)})");
+            Check(menu.Lever.Value == 2, $"the lever stays at 2 ({menu.Lever.Value})");
+            return true;
+        });
+        Add("Upgrade in the menu raises the engine a level and lifts the lever's limit", frame =>
+        {
+            if (frame == 0)
+            {
+                Check(_panel.Lever.Upgrade(), "the menu asks to upgrade");
+                return false;
+            }
+            var menu = _panel.Lever;
+            if ((HostBoard.FindPart(_engine)!.Level != 1 || menu.LevelText != "Level 2 / 5") && frame < 200)
+                return false;
+            Check(HostBoard.FindPart(_engine)!.Level == 1, "the host upgrades the engine");
+            Check(menu.LevelText == "Level 2 / 5" && menu.Lever.Limit == 7, $"the menu shows level 2 with power up to 7 ({menu.LevelText}, {menu.Lever.Limit})");
+            Check(menu.Lever.Value == 2, $"the power stays at 2 ({menu.Lever.Value})");
+            Check(menu.GainTexts.Contains("Torque +38%"), $"the band shows the next level's gains ({string.Join(", ", menu.GainTexts)})");
+            return true;
+        });
+        Add("the lever's bottom notch switches the engine off", frame =>
+        {
+            if (frame == 0)
+            {
+                _panel.Lever.Lever.Pick(0);
+                return false;
+            }
+            if (HostBoard.FindPart(_engine)!.Settings?.GetValueOrDefault("on").ValueKind != JsonValueKind.False)
+                return frame > 200 && Check(false, "the host switches it off");
+            Check(HostBoard.FindPart(_engine)!.Settings!["gear"].GetInt32() == 2, "the power setting is kept for next time");
             _panel.Close();
+            Check(!_panel.IsOpen && !_panel.Lever.Visible, "the menu closes");
             return true;
         });
         Add("a controller's frames wait for Apply", frame =>

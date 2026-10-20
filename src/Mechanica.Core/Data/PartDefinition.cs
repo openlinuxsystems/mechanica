@@ -683,6 +683,76 @@ public sealed record MenuDefinition
     /// </summary>
     public bool? LockWhenSequenced { get; init; }
 
+    /// <summary>
+    /// Lays the menu out as a power lever (an engine, UI spec §12): the part's picture with its fuel under it, a tall
+    /// lever from Off to the top step, the other readouts, and the next upgrade with its cost. Omitted shows the plain
+    /// list of readouts and settings.
+    /// </summary>
+    public LeverDefinition? Lever { get; init; }
+
+    /// <summary>Keys this build does not know.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>
+/// A menu laid out round a power lever (<see cref="MenuDefinition.Lever"/>). The lever runs from Off up to the top of
+/// <see cref="Setting"/> at the part's last level; steps past the current level's top show as locked above a Limit
+/// mark until the part is upgraded.
+/// </summary>
+public sealed record LeverDefinition
+{
+    /// <summary>The number setting the lever sets (an engine's gear, from 1 up).</summary>
+    public string? Setting { get; init; }
+
+    /// <summary>A toggle setting the lever's bottom notch, Off, turns off (and any other step on). Omitted has no Off.</summary>
+    public string? Off { get; init; }
+
+    /// <summary>The item the part burns, shown in the fuel slot under its picture (<c>gasoline</c>).</summary>
+    public string? Fuel { get; init; }
+
+    /// <summary>The readout counting <see cref="Fuel"/> items left, shown on the fuel slot.</summary>
+    public string? FuelCount { get; init; }
+
+    /// <summary>The bar readout of how much of the burning item is left (0 to 1), shown under the fuel slot.</summary>
+    public string? FuelBar { get; init; }
+
+    /// <summary>The line under the lever. Omitted says "Drag to adjust the power".</summary>
+    public string? Hint { get; init; }
+
+    /// <summary>What the next upgrade improves, shown beside its Upgrade button. Omitted lists every change.</summary>
+    public List<UpgradeStatDefinition>? UpgradeStats { get; init; }
+
+    /// <summary>Keys this build does not know.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>How an upgrade's gain in one value shows (<see cref="UpgradeStatShow"/>).</summary>
+public enum UpgradeStatShow
+{
+    /// <summary>The difference: <c>+2</c>.</summary>
+    Difference,
+
+    /// <summary>The rise in percent: <c>+50%</c>.</summary>
+    Percent,
+}
+
+/// <summary>One line of a lever menu's upgrade panel: <c>Bearings +2</c>.</summary>
+public sealed record UpgradeStatDefinition
+{
+    /// <summary>The label (<c>Bearings</c>).</summary>
+    public string? Name { get; init; }
+
+    /// <summary>
+    /// The value it follows (see <see cref="PartUpgrades.Stat"/>): <c>outputs</c>, <c>inputs</c>, <c>durability</c>,
+    /// <c>settings.&lt;id&gt;</c> (the top of a number setting) or <c>properties.&lt;key&gt;</c> (a number).
+    /// </summary>
+    public string? Value { get; init; }
+
+    /// <summary>How the gain shows. Omitted means <see cref="UpgradeStatShow.Difference"/>.</summary>
+    public UpgradeStatShow? Show { get; init; }
+
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }

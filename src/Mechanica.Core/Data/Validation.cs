@@ -576,7 +576,39 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
                 sink.Error(Code, $"{path}.angle", "a cone needs an angle more than 0 and under 90 degrees.");
             KnownKeys.WarnUnknown(preview.Extra, path, sink, typeof(PreviewDefinition));
         }
+        if (menu.Lever is { } lever)
+            ValidateLever(part, menu, lever, $"{p}.lever", sink);
         KnownKeys.WarnUnknown(menu.Extra, p, sink, typeof(MenuDefinition));
+    }
+
+    private static void ValidateLever(PartDefinition part, MenuDefinition menu, LeverDefinition lever, string p, DiagnosticSink sink)
+    {
+        if (part.Settings?.FirstOrDefault(s => s.Id == lever.Setting) is not { Type: SettingType.Number })
+            sink.Error(Code, $"{p}.setting", $"setting must name one of the part's number settings, not '{lever.Setting}'.");
+        if (lever.Off is not null && part.Settings?.FirstOrDefault(s => s.Id == lever.Off) is not { Type: SettingType.Toggle })
+            sink.Error(Code, $"{p}.off", $"off must name one of the part's toggle settings, not '{lever.Off}'.");
+        if (lever.Fuel is not null && !IsItemRef(lever.Fuel))
+            sink.Error(Code, $"{p}.fuel", $"fuel must be an item id, not '{lever.Fuel}'.");
+        foreach (var (key, id, kind) in new[] { ("fuel_count", lever.FuelCount, ReadoutKind.Number), ("fuel_bar", lever.FuelBar, ReadoutKind.Bar) })
+        {
+            if (id is not null && menu.Readouts?.FirstOrDefault(r => r.Id == id) is not { } readout)
+                sink.Error(Code, $"{p}.{key}", $"{key} must name one of the menu's readouts, not '{id}'.");
+            else if (id is not null && (menu.Readouts!.First(r => r.Id == id).Kind ?? ReadoutKind.Number) != kind)
+                sink.Error(Code, $"{p}.{key}", $"{key} must name a {kind.ToString().ToLowerInvariant()} readout.");
+        }
+        if ((lever.FuelCount is not null || lever.FuelBar is not null) && lever.Fuel is null)
+            sink.Error(Code, $"{p}.fuel", "a fuel count or bar needs the fuel item.");
+        for (var i = 0; i < (lever.UpgradeStats?.Count ?? 0); i++)
+        {
+            var stat = lever.UpgradeStats![i];
+            var path = $"{p}.upgrade_stats[{i}]";
+            if (string.IsNullOrWhiteSpace(stat.Name))
+                sink.Error(Code, $"{path}.name", "an upgrade stat needs a name.");
+            if (!PartUpgrades.IsStatPath(stat.Value))
+                sink.Error(Code, $"{path}.value", $"value must be outputs, inputs, durability, settings.<id> or properties.<key>, not '{stat.Value}'.");
+            KnownKeys.WarnUnknown(stat.Extra, path, sink, typeof(UpgradeStatDefinition));
+        }
+        KnownKeys.WarnUnknown(lever.Extra, p, sink, typeof(LeverDefinition));
     }
 
     private static void ValidateReadouts(List<ReadoutDefinition>? readouts, string p, DiagnosticSink sink)
