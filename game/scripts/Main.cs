@@ -710,7 +710,7 @@ public partial class Main : Node3D
             {
                 Name = "InventoryScreen", Inventory = Inventory, Actions = Actions, Players = PlayerSync, Catalog = mods, Hotbar = Hotbar, Icons = Icons, Sounds = Sounds,
                 Mode = () => Survival.Own?.Mode, Creations = Creations, Upgrades = Upgrades,
-                AllItems = () => HotbarTools.All.Concat(Build.Catalog.Parts.Where(p => p.Value.Definition is { Category: not null, IsItem: true }).Select(p => p.Key)),
+                AllItems = () => HotbarTools.CreativeList(Build.Catalog),
             };
             AddChild(inventory);
             AddChild(Upgrades);

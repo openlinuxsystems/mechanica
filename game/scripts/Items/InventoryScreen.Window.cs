@@ -257,7 +257,7 @@ public partial class InventoryScreen
         var matches = _ownGrid.Slots.Count(s => s.Visible);
         _ownMatches.Text = matches == 1 ? Loc.T("1 match") : Loc.T("{0} matches", matches);
         _empty.Visible = filtered && matches == 0;
-        _empty.Text = ItemSearch.Active(query) ? Loc.T("Nothing in your inventory matches “{0}”.", query.Trim()) : Loc.T("Nothing under this tab yet.");
+        _empty.Text = ItemSearch.Active(query) ? Loc.T("Nothing in your inventory matches “{0}”.", query.Trim()) : Loc.T("You carry nothing under this tab.");
         _organize.Disabled = own is null || own.Items.Count == 0;
         _catalogPanel.Visible = Creative && AllItems is not null;
         if (_catalogPanel.Visible)
