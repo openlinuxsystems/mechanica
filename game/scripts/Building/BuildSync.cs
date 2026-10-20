@@ -108,8 +108,8 @@ public partial class BuildSync : Node, IToolWorld, IPartCatalog
     public void RegisterActions(ActionDispatcher dispatcher)
     {
         Settings ??= LoadSettings();
-        new BuildActions(this, Settings, this) { Costs = Costs }.Register(dispatcher);
         Tools = new ToolActions(Settings, this, this) { Costs = Costs };
+        new BuildActions(this, Settings, this) { Costs = Costs, Lifts = Tools }.Register(dispatcher);
         Tools.Register(dispatcher);
         _dispatcher = dispatcher;
         dispatcher.Register<SpawnPartArgs>(CreationActions.SpawnPart,
@@ -216,6 +216,18 @@ public partial class BuildSync : Node, IToolWorld, IPartCatalog
         // carry Creations rather than anchoring them.
         return GetViewport().FindWorld3D().DirectSpaceState.IntersectShape(query, 32)
             .Any(hit => hit["collider"].AsGodotObject() is StaticBody3D and not LiftBody);
+    }
+
+    /// <inheritdoc/>
+    public int? LiftUnder(PartDefinition definition, GridCell cell, GridRotation rotation, Pose pose)
+    {
+        // The part's box grown by a margin touches the platform it sits on.
+        var size = (definition.Size ?? GridSize.One).Metres.ToGodot() + Vector3.One * (2 * Settings!.AnchorMargin);
+        var transform = pose.ToTransform()
+            * new Transform3D(rotation.ToBasis(), PartGeometry.CentreMetres(definition, cell, rotation).ToGodot());
+        var query = new PhysicsShapeQueryParameters3D { Shape = Box(size), Transform = transform, CollideWithBodies = true };
+        return GetViewport().FindWorld3D().DirectSpaceState.IntersectShape(query, 32)
+            .Select(hit => hit["collider"].AsGodotObject()).OfType<LiftBody>().FirstOrDefault()?.State.Owner;
     }
 
     /// <inheritdoc/>

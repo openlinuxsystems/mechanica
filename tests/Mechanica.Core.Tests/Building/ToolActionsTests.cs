@@ -98,6 +98,38 @@ public class ToolActionsTests
     }
 
     [Fact]
+    public void ABuildBegunOnTheLiftIsHeldWhereItWasBuilt()
+    {
+        Assert.True(Dispatch(ToolActions.PlaceLift, new { position = new[] { 0f, 0f, 0f } }).Ok);
+        new BuildActions(Catalog(), _settings, _world) { Lifts = _tools }.Register(_dispatcher);
+        _world.LiftBelow = 2;
+        // Off the platform's middle, as a player might start a build.
+        var at = new Vec3(0.5f, 0.375f, 0f);
+
+        var first = _dispatcher.Dispatch(Player, BuildActions.PlacePart, new PlacePartArgs(Block, GridCell.Zero, Position: at));
+
+        Assert.True(first.Ok, first.ToString());
+        var lift = _tools.LiftOf(2)!;
+        Assert.NotNull(lift.Creation);
+        var creation = _world.Creations[lift.Creation!.Value];
+        Assert.True(creation.OnLift);
+        Assert.False(creation.IsGrounded);
+        Assert.Equal(at.ToNumerics(), creation.BodyPose(0).Position);
+
+        // More blocks join it, and raising the Lift carries the build straight up, where it was built.
+        Assert.True(_dispatcher.Dispatch(Player, BuildActions.PlacePart, new PlacePartArgs(Block, new GridCell(1, 0, 0), Creation: creation.Id)).Ok);
+        Assert.True(Dispatch(ToolActions.SetLiftLevel, new { level = 2 }).Ok);
+        Assert.Equal(at.ToNumerics() + new Vector3(0, 0.5f, 0), creation.BodyPose(0).Position);
+        Assert.True(creation.OnLift);
+
+        // A second build on the same Lift is not held: it already holds one.
+        var second = _dispatcher.Dispatch(Player, BuildActions.PlacePart, new PlacePartArgs(Block, GridCell.Zero, Position: new Vec3(-0.5f, 0.875f, 0f)));
+        Assert.True(second.Ok, second.ToString());
+        Assert.False(_world.Creations.Values.Single(c => c.Id != creation.Id).OnLift);
+        Assert.Equal(creation.Id, _tools.LiftOf(2)!.Creation);
+    }
+
+    [Fact]
     public void RaisingAndTurningMoveTheCreationWithThePlatform()
     {
         var id = Add(Car());
@@ -831,6 +863,10 @@ public class ToolActionsTests
         }
 
         public string? CheckLiftClear(LiftState lift, IReadOnlyCollection<int> ignoreCreations) => Blocked;
+
+        public int? LiftBelow { get; set; }
+
+        public int? LiftUnder(PartDefinition definition, GridCell cell, GridRotation rotation, Pose pose) => LiftBelow;
 
         public void Added(Creation creation)
         {
