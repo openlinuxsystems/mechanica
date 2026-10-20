@@ -252,7 +252,8 @@ public class RecipeDataTests : IDisposable
         Assert.Empty(book.Diagnostics);
         var chest = book.Find("chest")!;
         Assert.True(chest.RunsAt("fabricator") && !chest.RunsAt("portable_fabricator"));
-        Assert.True(book.Find("gasoline")!.RunsAt("refiner"));
+        var gasoline = book.Find("gasoline")!;
+        Assert.True(gasoline.RunsAt("refiner") && gasoline.RunsAt("fabricator") && gasoline.RunsAt("portable_fabricator"));
 
         var player = new Inventory(content, 30);
         player.Add("vanilla:scrap_wood_block", 16);
