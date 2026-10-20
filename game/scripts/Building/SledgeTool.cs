@@ -158,6 +158,9 @@ public partial class SledgeTool : HandTool
         ? Core.Ui.CrosshairState.Default
         : Core.Ui.CrosshairState.Valid;
 
+    /// <summary>Right click blocks where blocking is allowed (Creative); elsewhere it picks parts up.</summary>
+    public override bool OwnsRightClick => CanBlock?.Invoke() != false;
+
     /// <inheritdoc/>
     public override string HudText()
     {
@@ -165,7 +168,7 @@ public partial class SledgeTool : HandTool
             ? " " + Loc.T("(part health {0})", $"{h.GetSingle():0}")
             : "";
         return (Blocking ? Loc.T("Sledgehammer{0}   blocking", health)
-            : CanBlock?.Invoke() == false ? Loc.T("Sledgehammer{0}   {1} swing", health, Key(InputActions.Primary))
+            : CanBlock?.Invoke() == false ? Loc.T("Sledgehammer{0}   {1} swing  {2}", health, Key(InputActions.Primary), PickUpHint)
             : Loc.T("Sledgehammer{0}   {1} swing  hold {2} block", health, Key(InputActions.Primary), Key(InputActions.Secondary))) + Status;
     }
 

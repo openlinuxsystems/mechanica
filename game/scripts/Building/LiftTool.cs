@@ -585,6 +585,9 @@ public partial class LiftTool : HandTool
     /// <inheritdoc/>
     protected override string RefusalSound => "lift_deny";
 
+    /// <summary>Right click picks the Lift up or lets a capture go.</summary>
+    public override bool OwnsRightClick => true;
+
     /// <inheritdoc/>
     public override string HudText()
     {

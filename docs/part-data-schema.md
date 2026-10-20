@@ -98,7 +98,7 @@ you; this page is the reference for what each key means, so you can read, review
 | `crafting` | object | no | Makes the part a crafting station. Needs `inventory`. See [inventory and crafting](#inventory-and-crafting). |
 | `soil`, `respawn_point` | object, bool | no | Farming soil and respawn beds. Placeable parts only. See [survival](#survival). |
 | `seed` | object | no | What a seed grows into. Items only. See [survival](#survival). |
-| `aim` | object | no | A weapon aims while right click is held. Items only. See [survival](#survival). |
+| `aim` | object | no | A weapon aims while right click is held. Items only. Without it, right click with the item in hand picks parts up, like an empty hand (the default for every item). See [survival](#survival). |
 | `held` | object | no | The model a player holds in the right hand while the item is selected, seen by every player. Items only. See [held](#held). |
 | `logic`, `settings`, `seat` | object, list, object | no | Logic bus links, player-set settings and seats. Placeable parts only. See [logic, settings and seats](#logic-settings-and-seats). |
 | `light`, `animation` | object, object | no | A light the script switches, and a model the script turns. Placeable parts only. See [light and animation](#light-and-animation). |
@@ -353,7 +353,9 @@ player, so they must move different properties (a node may take its position fro
 A harvest sinks the model into the soil in a puff of dirt. Vanilla's tomato (`tools/food/plant_rig.py`, built by
 `tools/food/build_tomato.py`) is the reference: the scrap-wood stake and the crop's tag stand in the soil from planting, and
 the tag carries the same label as the seed packet. Every crop's seed packet is the same kraft pouch; only its label (the crop's
-icon over a band in the crop's colour) changes.
+icon over a band in the crop's colour) changes. The carrot and the potato (`tools/food/carrot.py`, `potato.py` on the shared
+`tools/food/crop_rig.py`, built by `tools/food/build_roots.py`) follow it: the carrot's shoulders push up out of the soil as it
+ripens, and the potato flowers and then shows its tubers at the soil as its lower leaves yellow.
 
 ## held
 
@@ -380,6 +382,9 @@ comes back down. The clip plays once the host has taken the food (not at full he
 A food's held model shows its bites when it has children named `eat_0` (whole), `eat_1` (one bite taken) and so on: the
 hand shows the one the clip has reached (`eat.bites` in `character.json`), and nothing once the food is gone (`eat.gone`).
 Without them the whole model shows until it is gone. Each bite sprays juice (`held.juice`) and plays the item's `eat` sound.
+In first person the arms use `hold_food_fp` and `eat_fp`, posed for the first-person camera: the palm in the lower right of
+the view, brought up under the camera for each bite. A long food lies across the palm with the end that is bitten toward the
+little finger (vanilla's carrot); its bitten versions take that end off.
 
 ```json
 "held": { "mesh": "meshes/items/tomato_held.glb", "offset": [-0.0373, 0.0413, 0.0015], "rotation": [-3.37, -180, -45], "juice": "#c83a2a" }

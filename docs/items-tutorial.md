@@ -170,6 +170,12 @@ Two built-in sections do work without any script:
 - **`aim`** (the Part tab's **Aims**, Survival section): while the player holds right click, the field of view is
   multiplied by `zoom` and the crosshair tightens. The script sees `target.aiming` and `holder.aiming()`. See
   [survival](part-data-schema.md#survival).
+- **Right click.** By default right click picks things up whatever the player holds: held on a part it fills the
+  ring and the part goes into their inventory, and on a pile on the ground it takes the pile. An `aim` section is
+  how an item overrides that: with it, right click aims instead and the script's `on_aim(on)` runs as it is held and
+  let go. For a right click of your own without the zoom (a shield, an alternate fire), give the item
+  `"aim": {"zoom": 1}` and act in `on_aim`. Piles on the ground are still picked up by right click (and E) whatever
+  is in hand.
 - **`held`** (the Part tab's **Held model**): the model the player carries in the right hand, seen by every
   player. Here it borrows a vanilla pipe; `offset` moves it from the palm in metres, `rotation` turns it in
   degrees, and `scale` sizes it. Without `held`, nothing shows in the hand. See [held](part-data-schema.md#held).

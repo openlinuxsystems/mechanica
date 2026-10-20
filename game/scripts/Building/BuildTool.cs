@@ -28,7 +28,8 @@ namespace Mechanica.Game.Building;
 /// it when full (0.4 to 0.9 s by material); letting go early cancels. Dragging with right click held marks the parts
 /// of that body in the face's plane and removes them on release. Otherwise Q turns the part about the face
 /// (Shift+Q back) and T tips it over. With an empty hotbar slot picked there is no part to place, and the hand only
-/// removes parts (<see cref="Clear"/>).
+/// removes parts (<see cref="Clear"/>). This right click is every tool's default (<see cref="HandTool.PickUp"/>), so
+/// the gesture runs on while another tool or item is in hand.
 /// </para>
 /// </summary>
 public partial class BuildTool : HandTool
@@ -192,11 +193,15 @@ public partial class BuildTool : HandTool
 
     public override void _PhysicsProcess(double delta)
     {
-        if (!Active)
-            return;
         // A release the tool never heard (the mouse freed for a window, focus lost) ends nothing.
         if (ReadDeviceInput && Input.MouseMode != Input.MouseModeEnum.Captured && (_place.Down || _remove.Down))
             CancelGestures();
+        if (!Active)
+        {
+            // Another tool's right click picking a part up (HandTool.PickUp).
+            UpdateRemoving();
+            return;
+        }
         UpdateAim();
         UpdatePlacing();
         UpdateRemoving();
@@ -349,17 +354,21 @@ public partial class BuildTool : HandTool
         return true;
     }
 
-    /// <summary>Starts the right button's gesture on the part under the crosshair: held, it removes it; dragged, an area.</summary>
-    public void PressRemove()
+    /// <summary>
+    /// Starts the right button's gesture on the part under the crosshair: held, it picks it up; dragged, an area. Any
+    /// tool without a right click of its own starts it too (<see cref="HandTool.PickUp"/>). False when no part is aimed at.
+    /// </summary>
+    public bool PressRemove()
     {
         if (CastRay() is not { Body: { } body, Node: { } node } hit || PartHit(hit) is not var (_, part))
-            return;
+            return false;
         var frame = body.GlobalTransform;
         var toGrid = frame.AffineInverse();
         var (cell, face) = BuildAim.FromHit((toGrid * hit.Point).ToNumerics(), (toGrid.Basis * hit.Normal).ToNumerics());
         _removing = (node, part, node.Creation.BodyIndexOf(part), face, frame);
         _removed = false;
         _remove.Press(Now, cell);
+        return true;
     }
 
     /// <summary>
@@ -381,6 +390,17 @@ public partial class BuildTool : HandTool
         _dragParts.Clear();
         ShowMarks();
         return true;
+    }
+
+    /// <summary>Drops the right button's gesture without acting.</summary>
+    public void CancelRemove()
+    {
+        if (_remove is null || !_remove.Down && _removing is null)
+            return;
+        _remove.Cancel();
+        _removing = null;
+        _dragParts.Clear();
+        ShowMarks();
     }
 
     /// <summary>Drops both gestures without acting.</summary>
@@ -573,7 +593,8 @@ public partial class BuildTool : HandTool
     {
         var toGrid = frame.AffineInverse();
         var size = Core.MechanicaInfo.GridSize;
-        var origin = (toGrid * Eye) / size;
+        // BuildDrag counts cell c as [c, c + 1); the grid frame's cells are centred on whole numbers (BuildAim.CellAt).
+        var origin = (toGrid * Eye) / size + new Vector3(0.5f, 0.5f, 0.5f);
         var direction = (toGrid.Basis * -Player.Camera.GlobalBasis.Z).Normalized();
         return face is { } side
             ? BuildDrag.OnFace(origin.ToNumerics(), direction.ToNumerics(), cell, side)
@@ -732,9 +753,9 @@ public partial class BuildTool : HandTool
     public override string HudText()
     {
         if (_remove.Phase == GesturePhase.Dragging)
-            return Loc.T("Remove {0} parts   let go to remove", _dragParts.Count);
+            return Loc.T("Pick up {0} parts   let go to pick them up", _dragParts.Count);
         if (Selected is null)
-            return (_parts.Count == 0 && !_emptyHand ? Loc.T("No placeable parts are loaded") : Loc.T("Empty hand   {0} hold on a part to remove it", Key(InputActions.Secondary))) + Status;
+            return (_parts.Count == 0 && !_emptyHand ? Loc.T("No placeable parts are loaded") : Loc.T("Empty hand   {0}", PickUpHint)) + Status;
         var name = Build.Catalog.FindDefinition(Selected)?.Name ?? Selected;
         if (_place.Phase == GesturePhase.Dragging)
             return Loc.T("{0} × {1} on the {2} plane   {3} next plane  let go to place", name, _dragCells.Count, BuildDrag.PlaneName(_plane), Key(InputActions.Rotate));
@@ -742,12 +763,12 @@ public partial class BuildTool : HandTool
             return Loc.T("{0}   drag to place a grid on the {1} plane   {2} next plane", name, BuildDrag.PlaneName(_plane), Key(InputActions.Rotate));
         var problem = !_previewValid && PreviewProblem is { Length: > 0 } p && Aim is not null ? $"\n{p}" : "";
         if (PartItems.GroundPartFor(Build.Catalog, Selected) is { } ground && Placing == ground)
-            return Loc.T("{0}   {1} turn  {2} spill  hold {3} set the bag down  {4} hold to remove", name,
+            return Loc.T("{0}   {1} turn  {2} spill  hold {3} set the bag down  hold {4} on a part to pick it up", name,
                 Key(InputActions.Rotate), Key(InputActions.Primary), Key(InputActions.ForceBuild), Key(InputActions.Secondary)) + (Status.Length > 0 ? Status : problem);
         if (Build.Catalog.FindDefinition(Placing ?? Selected)?.GroundOnly == true)
-            return Loc.T("{0}   {1} turn  {2} place (hold to drag)  {3} hold to remove", name,
+            return Loc.T("{0}   {1} turn  {2} place (hold to drag)  hold {3} on a part to pick it up", name,
                 Key(InputActions.Rotate), Key(InputActions.Primary), Key(InputActions.Secondary)) + (Status.Length > 0 ? Status : problem);
-        return Loc.T("{0}   {1} turn  {2} tip  {3} place (hold to drag)  {4} hold to remove", name,
+        return Loc.T("{0}   {1} turn  {2} tip  {3} place (hold to drag)  hold {4} on a part to pick it up", name,
             Key(InputActions.Rotate), Key(InputActions.Tip), Key(InputActions.Primary), Key(InputActions.Secondary)) + (Status.Length > 0 ? Status : problem);
     }
 }

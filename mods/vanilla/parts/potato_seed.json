@@ -5,8 +5,10 @@
   "category": "consumable",
   "mass": 0.05,
   "stack_size": 50,
+  "mesh": "meshes/items/potato_seed.glb",
+  "icon": "textures/items/potato_seed_icon.png",
   "visual": {
-    "color": "#a08050"
+    "color": "#ffffff"
   },
   "script": "scripts/seed.lua",
   "sounds": {
@@ -18,6 +20,12 @@
     "grow_time": 300,
     "yield": 3,
     "seeds": 1,
+    "plant": "meshes/crops/potato_plant.glb",
     "value": 1
+  },
+  "held": {
+    "mesh": "meshes/items/potato_seed.glb",
+    "offset": [-0.028, 0.062, -0.035],
+    "rotation": [0, 90, 90]
   }
 }
