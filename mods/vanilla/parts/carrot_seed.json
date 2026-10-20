@@ -5,8 +5,10 @@
   "category": "consumable",
   "mass": 0.05,
   "stack_size": 50,
+  "mesh": "meshes/items/carrot_seed.glb",
+  "icon": "textures/items/carrot_seed_icon.png",
   "visual": {
-    "color": "#c8a060"
+    "color": "#ffffff"
   },
   "script": "scripts/seed.lua",
   "sounds": {
@@ -18,6 +20,12 @@
     "grow_time": 240,
     "yield": 2,
     "seeds": 1,
+    "plant": "meshes/crops/carrot_plant.glb",
     "value": 1
+  },
+  "held": {
+    "mesh": "meshes/items/carrot_seed.glb",
+    "offset": [-0.028, 0.062, -0.035],
+    "rotation": [0, 90, 90]
   }
 }

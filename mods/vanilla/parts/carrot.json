@@ -5,13 +5,21 @@
   "category": "consumable",
   "mass": 0.2,
   "stack_size": 20,
+  "mesh": "meshes/items/carrot.glb",
+  "icon": "textures/items/carrot_icon.png",
   "visual": {
-    "color": "#e8781e"
+    "color": "#ffffff"
   },
   "script": "scripts/food.lua",
   "sounds": {
     "pickup": "pickup_produce",
     "eat": "eat_crunch"
+  },
+  "held": {
+    "mesh": "meshes/items/carrot_held.glb",
+    "offset": [-0.04, 0.066, 0.035],
+    "rotation": [-90, 0, 90],
+    "juice": "#ea8430"
   },
   "properties": {
     "health": 10

@@ -5,13 +5,21 @@
   "category": "consumable",
   "mass": 0.3,
   "stack_size": 50,
+  "mesh": "meshes/items/potato.glb",
+  "icon": "textures/items/potato_icon.png",
   "visual": {
-    "color": "#b8925a"
+    "color": "#ffffff"
   },
   "script": "scripts/food.lua",
   "sounds": {
     "pickup": "pickup_produce",
     "eat": "eat_soft"
+  },
+  "held": {
+    "mesh": "meshes/items/potato_held.glb",
+    "offset": [-0.04, 0.082, 0],
+    "rotation": [180, 0, 90],
+    "juice": "#d8c898"
   },
   "properties": {
     "health": 8
