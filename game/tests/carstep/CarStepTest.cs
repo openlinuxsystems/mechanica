@@ -14,7 +14,7 @@ namespace Mechanica.Game.Tests;
 /// ground at about 3.5 m/s. Without the wheels' ramps it bounced back off the step and stalled there for good; now both
 /// axles roll up it, keeping their pace, without being thrown or tipped, and the car stops level on top with every ramp
 /// gone. No ramp is laid on the level away from the step. Parked with its front wheels against a second step it stays
-/// put, and from standing a little way back it drives up that one too.
+/// put, and from there it drives up that one too (the ramps sunk under its front wheels rise while the engine drives).
 /// </summary>
 public partial class CarStepTest : StagedTest
 {
@@ -174,17 +174,10 @@ public partial class CarStepTest : StagedTest
         {
             var moved = Middle - _start;
             Check(moved.Length() < 0.03f, $"it does not creep up the step on its own (moved {moved})");
+            _startY = Middle.Y;
             return true;
         });
-        Add("the second step is moved a little way ahead", frame =>
-        {
-            // A wheel already against a step meets its edge side on; one standing a little way back rolls up.
-            if (frame == 0)
-                MoveSecondStep(Wheels.OrderBy(w => w.Z).First().Z - 1.2f);
-            _startY = Middle.Y;
-            return frame >= 30;
-        });
-        Add("from standing, W drives the car up the second step", frame =>
+        Add("from standing against it, W drives the car up the second step", frame =>
         {
             _client.Main.LocalPlayer!.CurrentInput = new PlayerInput(0, 1, 0, 0, false, false);
             if (frame == 0)
