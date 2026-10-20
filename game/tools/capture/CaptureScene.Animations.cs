@@ -28,7 +28,8 @@ public partial class CaptureScene
         {
             var g = _main.Streamer.Generator;
             GameSettings.Apply(GameSettings.Current with { Graphics = GameSettings.Current.Graphics with { Grass = FoliageLevel.Off, GroundCover = FoliageLevel.Off } });
-            Go(Find(p => new[] { (0f, 0f), (20f, 0f), (-20f, 0f), (0f, 20f), (0f, -20f) }.All(d => g.BiomeAt(p.X + d.Item1, p.Y + d.Item2).Id == "meadow")
+            Go(Find(p => new[] { (0f, 0f), (20f, 0f), (-20f, 0f), (0f, 20f), (0f, -20f) }.All(d => g.BiomeAt(p.X + d.Item1, p.Y + d.Item2).Id == "meadow"
+                && g.HeightAt(p.X + d.Item1, p.Y + d.Item2) > g.SeaLevel + 1f)
                 && g.SlopeAt(p.X, p.Y) < 0.05f && !g.PoisAt(p.X, p.Y).Any()));
             _main.Flora.BuildAll();
             Player.ThirdPerson = true;
