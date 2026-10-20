@@ -19,8 +19,8 @@ namespace Mechanica.Game.Items;
 /// inventory; Use (<c>E</c>) on a container or station opens it beside the player's (through
 /// <see cref="Survival.SurvivalHud"/>). The grid is six columns and scrolls; tabs along the top (All, Blocks,
 /// Interactive, Tools, Resources, Consumables) filter it. Stacks drag between slots, onto the other side and onto
-/// the hotbar; a hotbar slot dragged onto the window empties it, and a stack dragged out of the window with Force
-/// Build held drops on the ground. Clicking also moves stacks: click one to pick it up and click a slot to put it
+/// the hotbar; a hotbar slot dragged onto the window empties it, and a stack dragged out of the window and let go
+/// over the world is tossed on the ground (<see cref="Toss"/>). Clicking also moves stacks: click one to pick it up and click a slot to put it
 /// there; right-click picks up half, Shift+right-click one, and Shift+click sends a stack straight to the other
 /// side. In Creative every part and tool is listed under the grid to drag onto the hotbar or into the inventory,
 /// and a give box makes items (<c>scrap_metal 50</c>). In Survival a warning shows when few slots are free. Hovering
@@ -379,12 +379,27 @@ public partial class InventoryScreen : CanvasLayer
             Hotbar?.Set(bar, null);
     }
 
-    // A stack of the player's own dragged out of the window with Force Build held drops on the ground.
+    // A stack dragged out of the window and let go over the world is tossed on the ground in front of the player.
     private void OnDragEnded(ItemDrag drag, bool taken)
     {
-        if (taken || drag.From is not { IsPlayer: true } || !Input.IsActionPressed(InputActions.ForceBuild) || GetViewport().GuiGetHoveredControl() is not null)
-            return;
-        Send(SurvivalActions.DropItems, new DropItemsArgs(drag.FromSlot, drag.Count));
+        if (!taken && GetViewport().GuiGetHoveredControl() is null)
+            Toss(drag);
+    }
+
+    /// <summary>
+    /// Tosses a dragged stack (or the part of it picked up) on the ground in front of the player, as Scrap Mechanic does
+    /// with a stack dragged out of an item window: from the inventory, a container or a station's finished items. The
+    /// host lands it <c>toss_distance</c> ahead as a pile anyone can pick up until it despawns. False for a drag that
+    /// is not a stack (the Creative list, the hotbar).
+    /// </summary>
+    public bool Toss(ItemDrag drag)
+    {
+        if (drag.From is not { } from)
+            return false;
+        _held = null;
+        Send(SurvivalActions.DropItems, new DropItemsArgs(drag.FromSlot, drag.Count, From: from.IsPlayer ? null : from));
+        Refresh();
+        return true;
     }
 
     private (string Title, string Body)? DetailsOf(string item, int? count) => ItemInfo.Details(Catalog, item, count);
@@ -500,15 +515,18 @@ public partial class InventoryScreen : CanvasLayer
         private ItemSlot Make(int index)
         {
             var view = new ItemSlot { Name = $"Slot{index}", CustomMinimumSize = new Vector2(size, size), Tiled = tiled };
-            view.DragSource = () => index < _shown.Count && _shown[index].Item is { } item
+            // The drag under way, so letting go over the world tosses what it carries (the half picked up, say).
+            ItemDrag? dragged = null;
+            view.DragSource = () => dragged = index < _shown.Count && _shown[index].Item is { } item
                 ? new ItemDrag { Entry = item, From = _where, FromSlot = _shown[index].Slot, Count = _where is null ? null : HeldCount(index) }
                 : null;
             view.CanDrop = drag => _where is not null && index < _shown.Count && (drag.From is not null || drag.HotbarSlot is not null || _where.IsPlayer);
             view.Dropped = drag => _screen.Drop(drag, _where!, _shown[index].Slot);
             view.DragEnded = taken =>
             {
-                if (view.Entry is { } item && _where is { } w)
-                    _screen.OnDragEnded(new ItemDrag { Entry = item, From = w, FromSlot = _shown[index].Slot }, taken);
+                if (dragged is { } drag)
+                    _screen.OnDragEnded(drag, taken);
+                dragged = null;
             };
             view.Details = () => index < _shown.Count && _shown[index].Item is { } item ? _screen.DetailsOf(item, _shown[index].Stack?.Count) : null;
             view.GuiInput += e =>

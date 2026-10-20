@@ -79,7 +79,7 @@ you; this page is the reference for what each key means, so you can read, review
 | `stack_size` | integer ≥ 1 | no | Most items per inventory slot. Omitted means 1. |
 | `sound_material` | string | no | Material for place, break and impact sounds (`wood`, `metal`, `concrete`, `glass`, ...): an unbound `place` plays `place_<material>`. See [Sound Events](sound-events.md#part-sounds). |
 | `size` | `[x, y, z]` cells | placeable | Footprint in 0.25 m grid cells, at least 1 on every axis. |
-| `mesh` | path | no | `.glb` or `.gltf` model, centred on the footprint centre, +Y up, in metres. Without one, a grey shape matching the collision stands in. |
+| `mesh` | path | no | `.glb` or `.gltf` model, centred on the footprint centre, +Y up, in metres. Its `COLOR_0` vertex colours, when it has them, multiply each material's base colour (as the glTF spec says). Without one, a grey shape matching the collision stands in. |
 | `icon` | path | no | `.png` inventory icon. |
 | `visual` | object | no | Colour, surface and colour variants. See [visual](#visual). |
 | `collision` | object | no | Collision shape. Omitted means a box filling `size`. See [collision](#collision). |
@@ -448,8 +448,8 @@ The vanilla scripts read these properties:
 |--------|----------|---------|
 | `scripts/seat.lua` | `steer_angle` (°) | How far A and D turn the upright bearings the seat feeds. |
 | | `steer_speed` (rad/s), `steer_torque` (N·m) | How fast and how hard they turn. |
-| `scripts/engine.lua` | `speed` (rad/s) | Wheel bearing speed at full throttle at full power. `gears` (default 5) is how many steps the `gear` setting (shown as Power) has, each giving that share. With nothing linked in, the `on` setting runs it at full throttle. |
-| | `torque`, `brake` (N·m) | Most torque while driving, and while holding the wheels with no throttle. |
+| `scripts/engine.lua` | `speed` (rad/s) | Wheel bearing speed at full throttle at full power. `gears` (default 5) is how many steps the `gear` setting (shown as Power) has, each giving that share. With no control linked in (a seat, switch, button or gate) it does not run; the `on` setting stops it whatever its controls do. |
+| | `torque`, `brake` (N·m) | Most torque while driving, and while holding the wheels with no throttle or while it is not running (nobody seated, switched off, out of fuel), so a parked car stays put. |
 | | `fuel`, `fuel_time` (s) | Item burned from the creation's containers, and seconds of full throttle per item. Creative needs none. |
 | | `loop_parameter` | Parameter of the `loop` sound that follows the throttle (`load`, `speed`). |
 | | `ignition` | When true the engine has to be switched `on` even when linked, and shows `clip`, `lever`, `heat`, `smoke`, `sparks` and `oil` for its model. |

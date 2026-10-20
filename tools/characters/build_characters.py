@@ -6639,21 +6639,6 @@ def build_weld_children(parent):
     return objs, parts, glow_ob
 
 
-def prop_potato_blaster():
-    p = [cylinder((-0.006, -0.065, 0), (0.0, 0.045, 0), 0.019, 12, "rubber", ref=X, bevel=0.004),
-         cylinder((-0.17, 0.08, 0), (0.06, 0.08, 0), 0.047, 18, "paint_olive", ref=Y, bevel=0.008),
-         cylinder((0.06, 0.08, 0), (0.08, 0.08, 0), 0.04, 16, "metal_dark", ref=Y, bevel=0.004),
-         cylinder((0.08, 0.08, 0), (0.46, 0.08, 0), 0.026, 16, "metal", ref=Y),
-         cylinder((0.44, 0.08, 0), (0.47, 0.08, 0), 0.032, 16, "orange", ref=Y, bevel=0.004),
-         cylinder((-0.19, 0.08, 0), (-0.17, 0.08, 0), 0.05, 18, "metal_dark", ref=Y, bevel=0.004),
-         cylinder((0.022, 0.0, 0.0), (0.03, 0.035, 0.0), 0.007, 10, "orange"),
-         box((-0.03, 0.13, 0.0), (0.03, 0.006, 0.008), mat="metal_dark"),
-         box((0.3, 0.112, 0.0), (0.004, 0.008, 0.003), mat="orange")]
-    for xx in (-0.12, -0.02):
-        p.append(ring_band((xx, 0.08, 0), 0.05, 0.05, 0.006, 0.003, "metal_dark", 18, axes=(Y, Z, X)))
-    return p
-
-
 # The water bucket, built to its reference sheets: a 30 cm tall, 30 cm wide matte teal plastic bucket tapering to the
 # base, an orange foot and rolled rim, dark grey bands round the base and under the rim, an embossed droplet with three
 # lines under it on the front, ridged grip panels on both sides, and a steel wire handle with a ribbed orange grip,
@@ -7022,7 +7007,7 @@ def prop_refine_tool():
 
 PROPS = {"lift_remote": prop_lift_remote, "weld_tool": prop_weld_tool,
          "paint_tool": prop_paint_tool, "sledgehammer": prop_sledgehammer, "connect_tool": prop_connect_tool,
-         "potato_blaster": prop_potato_blaster, "refine_tool": prop_refine_tool}
+         "refine_tool": prop_refine_tool}
 
 
 def build_prop(name):
@@ -7068,6 +7053,34 @@ def soil_bag_objects(parent):
         ob.matrix_parent_inverse = Matrix.Identity(4)
         ob.matrix_basis = place @ world
         ob.name = "soil_bag_mesh"
+    for ob in imported:
+        if ob.type != "MESH":
+            bpy.data.objects.remove(ob)
+    return meshes
+
+
+# The potato weapons are their item models (tools/weapons/build_weapons.py), so the gun in hand is the one in the
+# inventory. Each item is modelled front +X, up +Z; GUN_FISTS is where the right fist closes on its grip, in the item
+# model's own coordinates. In the grip frame the barrel points along x (forward) and the item's up becomes y.
+GUN_FISTS = {"potato_blaster": (-0.151, 0.0, -0.049), "potato_scattergun": (-0.07, 0.0, -0.079),
+             "potato_launcher": (-0.135, 0.0, -0.084)}
+
+
+def gun_objects(name, parent):
+    """The potato weapon `name`'s meshes from its item model, parented to `parent` (the grip frame), fist on the grip."""
+    before = set(bpy.data.objects)
+    bpy.ops.import_scene.gltf(filepath=str(ITEM_DIR / f"{name}.glb"))
+    imported = [ob for ob in bpy.data.objects if ob not in before]
+    meshes = [ob for ob in imported if ob.type == "MESH"]
+    # item x -> grip x (forward), item z -> grip y (up), item -y -> grip z
+    turn = Matrix(((1.0, 0.0, 0.0, 0.0), (0.0, 0.0, 1.0, 0.0), (0.0, -1.0, 0.0, 0.0), (0.0, 0.0, 0.0, 1.0)))
+    place = turn @ Matrix.Translation(-Vector(GUN_FISTS[name]))
+    for ob in meshes:
+        world = ob.matrix_world.copy()
+        ob.parent = parent
+        ob.matrix_parent_inverse = Matrix.Identity(4)
+        ob.matrix_basis = place @ world
+        ob.name = f"{name}_mesh"
     for ob in imported:
         if ob.type != "MESH":
             bpy.data.objects.remove(ob)
@@ -7130,14 +7143,21 @@ def export_props():
     bpy.context.scene.collection.objects.link(bag_root)
     bag_root.matrix_world = grip_frame_matrix("r")
     bag_objs = soil_bag_objects(bag_root)
+    # The potato weapons: each an empty at the grip with its item model under it.
+    gun_objs = []
+    for name in GUN_FISTS:
+        gun_root = bpy.data.objects.new(name, None)
+        bpy.context.scene.collection.objects.link(gun_root)
+        gun_root.matrix_world = grip_frame_matrix("r")
+        gun_objs += [gun_root, *gun_objects(name, gun_root)]
     # the Connect Tool's lights are a child node with their own emissive material, outside every atlas
     glow = build_connect_glow(objs[list(PROPS).index("connect_tool")])
     # the Paint Tool's tubes, nozzles, glass and paint: plain materials the game tints to the chosen colour
     paint_children = build_paint_children(paint, tank)
     path = OUT_DIR / "hand_tools.glb"
-    export_glb(path, objs + [glow, weld_glow] + paint_children + [root] + bobjs + [wat] + [bag_root] + bag_objs,
+    export_glb(path, objs + [glow, weld_glow] + paint_children + [root] + bobjs + [wat] + [bag_root] + bag_objs + gun_objs,
                animations=False)
-    print(f"{path.name}: {n_props + 2} props")
+    print(f"{path.name}: {n_props + 2 + len(GUN_FISTS)} props")
 
 
 def export_bucket_items():

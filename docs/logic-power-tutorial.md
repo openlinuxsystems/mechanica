@@ -66,7 +66,8 @@ you also need a gas container with gasoline in it; in Creative engines run witho
    setting reaches, and the torque.
 7. **Drive.** Look at the seat and press E. Sitting down starts the engine; W and S are the throttle, A and
    D steer. With no throttle the engine holds the wheels (its `brake`), so the car does not roll away. E
-   stands you up, and getting up stops the engine.
+   stands you up, and getting up stops the engine; it keeps holding the wheels, so a parked car stays put
+   (on a hill steeper than its brake can hold it creeps down).
 
 If the car drives backwards, the engine faces the wrong way: turn it round. If one wheel turns against
 the others, right click its bearing's node with the Connect Tool to reverse it. If it steers the wrong way,
@@ -77,10 +78,11 @@ engine to the steering bearing does nothing.
 While the engine runs, a green dot above it shows it is on (gray when it is off), and a cyan ring turns on
 each wheel bearing it drives. With the Connect Tool out a piston shows a bar of how far out it is.
 
-An engine is on by default: with no seat, switch or button linked into it, it drives at full throttle on its own.
-Linked to a driver's seat it runs only while someone sits in it (a passenger seat never starts it); linked to a
-switch or button, while that is on. If the seat is removed or destroyed, even with you still in it, the engine
-has no control left and goes back to running on its own. Its **On** toggle stops it whatever its controls do.
+An engine needs a control to run: with no seat, switch or button linked into it, it stays off, so a newly placed
+engine never drives off on its own. Linked to a driver's seat it runs only while someone sits in it (a passenger
+seat never starts it); linked to a switch or button, while that is on. If the seat is removed or destroyed, even
+with you still in it, the engine has no control left and stops. Its **On** toggle (the power lever's Off notch)
+stops it whatever its controls do.
 
 ### Fuel
 

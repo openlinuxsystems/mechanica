@@ -1,6 +1,7 @@
 using Godot;
 using Mechanica.Core.World;
 using Mechanica.Game.Creations;
+using Mechanica.Game.Mods;
 
 namespace Mechanica.Game.World;
 
@@ -69,9 +70,7 @@ public sealed class StructureModel
 
     private static StructureModel? Read(string file, string key)
     {
-        var document = new GltfDocument();
-        var state = new GltfState();
-        if (document.AppendFromFile(file, state) != Error.Ok || document.GenerateScene(state) is not { } scene)
+        if (ModGltf.Load(file) is not { } scene)
         {
             GD.PushWarning($"POI model '{key}' did not load as glTF.");
             return null;

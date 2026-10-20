@@ -93,6 +93,10 @@ public partial class FoodTest : StagedTest
                 Check(bites.Length == 3 && bites[0].Visible && !bites[1].Visible && !bites[2].Visible, $"the {who} shows it whole");
             }
             Check(ClientView.Animator.Prop == CharacterProp.Food, $"the client's arms hold food ({ClientView.Animator.Prop})");
+            // The tomato's red is in its vertex colours: drawn white unless they are used as albedo.
+            var skin = client.FindChildren("*Body*", nameof(MeshInstance3D), true, false).OfType<MeshInstance3D>().FirstOrDefault();
+            Check(skin?.GetActiveMaterial(0) is BaseMaterial3D { VertexColorUseAsAlbedo: true },
+                $"the tomato's skin takes its colour from its vertex colours ({skin?.GetActiveMaterial(0)})");
             // Palm up: the tomato sits on top of the hand, not under it.
             var hand = HostView.Skeleton.GlobalTransform * HostView.Skeleton.GetBoneGlobalPose(HostView.Skeleton.FindBone(CharacterRig.PropBone));
             var centre = Centre(host);

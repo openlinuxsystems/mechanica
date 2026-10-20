@@ -802,7 +802,14 @@ public partial class InventoryScreen
     private ReadyCell NewReadyCell()
     {
         var cell = new ReadyCell { Name = $"Ready{_readyCells.Count}" };
-        cell.Slot.DragSource = () => cell.Stack is { } stack && _open is { } where ? new ItemDrag { Entry = stack.Item, From = where, FromSlot = stack.Slot } : null;
+        ItemDrag? dragged = null;
+        cell.Slot.DragSource = () => dragged = cell.Stack is { } stack && _open is { } where ? new ItemDrag { Entry = stack.Item, From = where, FromSlot = stack.Slot } : null;
+        cell.Slot.DragEnded = taken =>
+        {
+            if (dragged is { } drag)
+                OnDragEnded(drag, taken);
+            dragged = null;
+        };
         cell.Slot.Details = () => cell.Stack is { } stack ? DetailsOf(stack.Item, stack.Count) : null;
         cell.Slot.GuiInput += e =>
         {
