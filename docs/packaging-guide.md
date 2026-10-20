@@ -25,7 +25,7 @@ mods/
     recipes/            crafting recipes (*.json), see part-data-schema.md
     world/worldgen.json world generation rules; the last mod in load order that ships one wins
     world/worldgen.patch.json  additions and changes to it that stack across mods
-    pois/               POI prefabs (*.json), see world-generation.md
+    pois/               POI prefabs (*.json; a `part` marker places a working, world-owned part), see world-generation.md
     bots/               bot types (*.json), see bot-tutorial.md
     raids/raids.json    the raid table; the last mod in load order that ships one wins
     raids/raids.patch.json  additions and changes to it that stack across mods

@@ -462,6 +462,9 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         }
         if (hit.Creation is { } id && hit.Part is { } part && world.FindCreation(id) is { } creation && creation.FindPart(part) is not null)
         {
+            // A world-owned part takes no damage and is not moved (WorldOwned).
+            if (creation.IsWorldOwned)
+                return new ShotHitView("part", point, 0, Creation: id, Part: part);
             var body = creation.BodyIndexOf(part);
             if (cutting)
                 world.Impact(hit.Point, creation.DefinitionOf(part).SoundMaterial ?? "metal");
@@ -533,7 +536,8 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
             hits.Add(new ShotHitView("bot", centre.ToVec3(), dealt, Bot: bot));
         }
         // FindCreation brings each Creation's Body poses up to date.
-        foreach (var creation in world.AllCreations.Select(c => c.Id).ToList().Select(world.FindCreation).OfType<Creation>())
+        // A world-owned Creation (WorldOwned) is not hurt or moved by a blast.
+        foreach (var creation in world.AllCreations.Where(c => !c.IsWorldOwned).Select(c => c.Id).ToList().Select(world.FindCreation).OfType<Creation>())
         {
             foreach (var part in creation.Parts.ToList())
             {
@@ -1025,6 +1029,8 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
             return "Give the object, or the creation and part, to refine.";
         if (world.FindCreation(creationId) is not { } creation || creation.FindPart(partId) is null)
             return $"There is nothing to refine there (creation {creationId}, part {partId}).";
+        if (WorldOwned.Refusal(creation, "refined") is { } owned)
+            return owned;
         var definition = creation.DefinitionOf(partId);
         if (definition.Loose != true || definition.Refine is not { Count: > 0 } refine)
             return $"The {definition.Name ?? "part"} cannot be refined.";

@@ -189,6 +189,23 @@ public class ForestryTests
     }
 
     [Fact]
+    public void AWorldOwnedPartTakesNoHitsOrBlastsAndIsNotRefined()
+    {
+        var id = _f.Add(Log, new Vector3(0, 0, -1.5f));
+        var log = _f.World.Creations[id] = Creations.WorldOwnedCreations.Owned(_f.World.Creations[id]);
+        var at = new Vector3(0.3f, 0.2f, -1.5f);
+
+        Assert.Contains("belongs to the world", _f.Refused(Me, SurvivalActions.StartRefine, new { creation = id, part = 1 }));
+        Assert.Equal(0f, _f.Survival.Hit(Me, new RayHit(at, Creation: id, Part: 1), 500, Vector3.UnitZ * 100, DamageKinds.Saw).Damage);
+        _f.Survival.Splash(Me, new Vector3(0, 0.5f, -1.5f), 4, 500, 100);
+        Assert.Equal(0f, log.PartDamage(1));
+        Assert.Same(log, _f.World.Creations[id]);
+        Assert.Single(log.Parts);
+        Assert.Empty(_f.World.Pushes);
+        Assert.Empty(LooseOf(Rod));
+    }
+
+    [Fact]
     public void ACuttingToolsBiteThrowsChipsOffWoodButASledgeOrAShotDoesNot()
     {
         var log = _f.Add(Log, new Vector3(0, 0, -1.5f));

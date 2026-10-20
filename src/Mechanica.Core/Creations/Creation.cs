@@ -74,6 +74,16 @@ public sealed class Creation
     public IReadOnlyDictionary<string, JsonElement>? Extra { get; set; }
 
     /// <summary>
+    /// The POI <c>part</c> marker this Creation stands at (a <see cref="World.WorldParts"/> key, such as
+    /// <c>vanilla:outpost#0@12</c>), or null for one players made. Such a Creation is world-owned: anyone can use it, nobody
+    /// can change, move or damage it (<see cref="WorldOwned"/>). Pieces split off never carry it.
+    /// </summary>
+    public string? WorldPart { get; init; }
+
+    /// <summary>True when the world owns this Creation (<see cref="WorldPart"/>).</summary>
+    public bool IsWorldOwned => WorldPart is not null;
+
+    /// <summary>
     /// True while a Lift holds the Creation: its Bodies stay where the Lift put them instead of simulating.
     /// Pieces that split off do not inherit it, so they drop.
     /// </summary>

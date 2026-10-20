@@ -158,6 +158,22 @@ public sealed class BotActionsTests
     }
 
     [Fact]
+    public void Bots_never_hurt_a_world_owned_creation()
+    {
+        var soil = _f.Crop(new Vector3(20, 0.125f, 0));
+        var owned = S.World.Creations[soil] = Creations.WorldOwnedCreations.Owned(S.World.Creations[soil]);
+        var bot = _f.Spawn(BotFixture.Grunt, new Vector3(21, 0, 0));
+        Assert.Contains("belongs to the world", S.Refused(BotFixture.Brain, BotActions.BotAttack, new BotAttackArgs(bot, "whip", Creation: soil, Part: 1)));
+
+        // A blast beside it passes it by.
+        var bomber = _f.Spawn(BotFixture.Bomber, new Vector3(20, 0, 1));
+        var hits = S.Ok<BotAttackResult>(BotFixture.Brain, BotActions.BotAttack, new BotAttackArgs(bomber, "boom")).Hits;
+        Assert.DoesNotContain(hits, h => h.Creation == soil);
+        Assert.NotNull(owned.SoilOf(1)!.Seed);
+        Assert.Equal(0, owned.PartDamage(1));
+    }
+
+    [Fact]
     public void A_ranged_attack_needs_a_clear_line_and_leaves_lasting_damage()
     {
         var bot = _f.Spawn(BotFixture.Shooter, new Vector3(0, 0, 20));

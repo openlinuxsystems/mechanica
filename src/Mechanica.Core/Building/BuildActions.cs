@@ -368,6 +368,8 @@ public sealed class BuildActions(IPartCatalog catalog, BuildSettings settings, I
             return $"There is no creation {args.Creation}.";
         if (creation.FindPart(args.Part) is not { } part)
             return $"Creation {args.Creation} has no part {args.Part}.";
+        if (WorldOwned.Refusal(creation, "picked up") is { } owned)
+            return owned;
         if (creation.HoldsItems(part.Id) && !creation.CarriesContents(part.Id))
             return $"Empty the {creation.DefinitionOf(part.Id).Name ?? part.Part} before picking it up.";
         var pose = creation.BodyPose(creation.BodyIndexOf(part.Id));

@@ -122,7 +122,11 @@ public sealed record PoiModelPlacement(PoiInstance Poi, int Index, PoiModel Mode
 /// <param name="Marker">The marker data.</param>
 /// <param name="Position">World position.</param>
 /// <param name="Yaw">Turn about +Y in radians.</param>
-public sealed record PoiMarkerPlacement(PoiInstance Poi, PoiMarker Marker, Vector3 Position, float Yaw);
+public sealed record PoiMarkerPlacement(PoiInstance Poi, PoiMarker Marker, Vector3 Position, float Yaw)
+{
+    /// <summary>Its index in the prefab's markers, or -1 when not known.</summary>
+    public int Index { get; init; } = -1;
+}
 
 /// <summary>A pool of liquid in a POI, in world space.</summary>
 /// <param name="Poi">The POI it belongs to.</param>
