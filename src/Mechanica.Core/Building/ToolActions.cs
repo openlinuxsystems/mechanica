@@ -229,7 +229,7 @@ public interface IToolWorld : IBuildWorld
 /// away), <c>lift_capture</c>/<c>lift_release</c> at the captured Creation; <c>weld_complete</c> where the weld joins; <c>paint_spray</c>/<c>paint_erase</c> on the first part;
 /// <c>smash_hit</c> plus the part's impact sound, or <c>smash_break</c> plus its break sound.
 /// </summary>
-public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartCatalog? catalog = null)
+public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartCatalog? catalog = null) : ILiftHolder
 {
     /// <summary>Action name for placing, moving or loading the caller's Lift.</summary>
     public const string PlaceLift = "PlaceLift";
@@ -514,15 +514,36 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
         if (args.Level < 0 || args.Level > settings.Lift.MaxLevel)
             return $"level must be 0 to {settings.Lift.MaxLevel} (got {args.Level}).";
         // Anywhere along the column counts, so a player riding the deck can drive it all the way up.
+        var raised = lift with { Level = args.Level };
         return CheckReach(caller, new WorldBounds(lift.Position.ToNumerics(), PlatformTop(lift)))
-            ?? CheckLift(lift with { Level = args.Level }, Held(lift), 0);
+            ?? CheckLiftPlacement(world, settings.Lift, raised, Held(lift), 0, PosesAt(lift, args.Level));
     }
 
     private JsonElement? ApplyLevel(ActionCaller caller, SetLiftLevelArgs args)
     {
         // Every peer eases the column to the new level and plays its motor as it goes (LiftBody), so nothing is sent.
         var lift = LiftOf(caller.Peer)!;
-        return Commit(lift with { Level = args.Level }, Held(lift), 0);
+        return Commit(lift with { Level = args.Level }, Held(lift), 0, PosesAt(lift, args.Level));
+    }
+
+    // Where what the Lift holds goes when it moves to `level`: straight up or down with the platform, just where it stands
+    // on it (a build begun on the Lift stays where it was built). Null when it holds nothing.
+    private IReadOnlyList<Pose>? PosesAt(LiftState lift, int level)
+    {
+        if (Held(lift) is not { } held)
+            return null;
+        var up = new Vector3(0, settings.Lift.TopAt(level) - settings.Lift.TopAt(lift.Level), 0);
+        return [.. Enumerable.Range(0, held.Bodies.Count).Select(i => held.BodyPose(i) is var p ? p with { Position = p.Position + up } : default)];
+    }
+
+    /// <inheritdoc/>
+    public bool Hold(int owner, Creation creation)
+    {
+        if (LiftOf(owner) is not { } lift || Held(lift) is not null)
+            return false;
+        var poses = Enumerable.Range(0, creation.Bodies.Count).Select(creation.BodyPose).ToList();
+        Commit(lift with { Creation = creation.Id }, creation, 0, poses);
+        return true;
     }
 
     private string? ValidateTurn(ActionCaller caller, TurnLiftArgs args)
@@ -625,16 +646,18 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
 
     /// <summary>
     /// Null when <paramref name="lift"/> would stand clear, with <paramref name="carried"/> (if any) seated on it turned by
-    /// <paramref name="turns"/>, or why not. Every peer can ask, to colour the Lift's placement ghost.
+    /// <paramref name="turns"/> (or at <paramref name="poses"/> when given), or why not. Every peer can ask, to colour the
+    /// Lift's placement ghost.
     /// </summary>
-    public static string? CheckLiftPlacement(IToolWorld world, LiftSettings settings, LiftState lift, Creation? carried, int turns)
+    public static string? CheckLiftPlacement(IToolWorld world, LiftSettings settings, LiftState lift, Creation? carried, int turns,
+        IReadOnlyList<Pose>? poses = null)
     {
         IReadOnlyCollection<int> ignore = carried is null ? [] : [carried.Id];
         if (world.CheckLiftClear(lift, ignore) is { } blocked)
             return blocked;
         if (carried is null)
             return null;
-        var poses = Seat(carried, lift.Position.ToNumerics() + new Vector3(0, settings.TopAt(lift.Level), 0), turns, settings.PlatformSize);
+        poses ??= Seat(carried, lift.Position.ToNumerics() + new Vector3(0, settings.TopAt(lift.Level), 0), turns, settings.PlatformSize);
         foreach (var part in carried.Parts)
         {
             if (world.CheckPartClear(carried.DefinitionOf(part.Id), part.Cell, part.Rotation, poses[carried.BodyIndexOf(part.Id)], ignore, lift.Owner) is { } reason)
@@ -643,12 +666,12 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
         return null;
     }
 
-    private JsonElement? Commit(LiftState lift, Creation? carried, int turns)
+    private JsonElement? Commit(LiftState lift, Creation? carried, int turns, IReadOnlyList<Pose>? poses = null)
     {
         _lifts[lift.Owner] = lift;
         if (carried is not null)
         {
-            var poses = Seat(carried, PlatformTop(lift), turns, settings.Lift.PlatformSize);
+            poses ??= Seat(carried, PlatformTop(lift), turns, settings.Lift.PlatformSize);
             for (var i = 0; i < poses.Count; i++)
             {
                 carried.SetBodyPose(i, poses[i]);

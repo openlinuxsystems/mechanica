@@ -99,7 +99,8 @@ switches it to the next mode and shows it for a moment; R with the Connect Tool 
   one on another player's Lift: it shows no blue, and a click flashes it red with the reason.
   A Creation on the Lift rests on the platform on what is over it, so a car wider than the platform sits on its deck
   with its wheels hanging past the sides; the Lift goes down raised as far as it must for them to clear the ground. It
-  stands still there until you take the Lift away. The arrow keys raise and lower it one unit (0.25 m) at a time, up to 20 units above its resting height
+  stands still there until you take the Lift away. A build begun on an empty Lift (its first block set on the
+  platform) is held the same way, right where you build it. The arrow keys raise and lower it one unit (0.25 m) at a time, up to 20 units above its resting height
   (the deck at 22 units, 5.5 m); hold an arrow and the column runs smoothly until you let go, stopping at the next
   unit; you hear the pump kick in and run while it moves. Standing on the deck you ride it, and while you stand on it or aim at the Lift or what
   it holds, the arrow keys drive it whatever you have in hand. Q turns what it holds. Aim at the Lift (or

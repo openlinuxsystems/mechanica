@@ -90,6 +90,12 @@ public interface IBuildWorld
     bool RestsOnWorld(Creation? target, PartDefinition definition, GridCell cell, GridRotation rotation, Pose pose) => false;
 
     /// <summary>
+    /// The owner of the Lift whose platform a part placed at <paramref name="pose"/> rests on, or null when it rests on
+    /// none. A Creation started there is held by that Lift (<see cref="ILiftHolder"/>). Worlds without Lifts have none.
+    /// </summary>
+    int? LiftUnder(PartDefinition definition, GridCell cell, GridRotation rotation, Pose pose) => null;
+
+    /// <summary>
     /// How steep the ground is under a footprint centred on <paramref name="centre"/> reaching <paramref name="reach"/>
     /// metres along each world axis, in degrees from level, or null when there is no ground to measure (and then no
     /// part is refused for its slope). Only the world's own ground counts, as for <see cref="RestsOnWorld"/>.
@@ -113,6 +119,16 @@ public interface IBuildWorld
     void PlaySound(string sound, string ownerModId, Vector3 position)
     {
     }
+}
+
+/// <summary>What starting a Creation on a Lift needs from the Lifts (<see cref="ToolActions"/> on the host).</summary>
+public interface ILiftHolder
+{
+    /// <summary>
+    /// Lets <paramref name="owner"/>'s Lift hold <paramref name="creation"/>, just started on its platform, where it was
+    /// built (as in Scrap Mechanic, a build begun on a Lift stays on it). False when that Lift already holds one.
+    /// </summary>
+    bool Hold(int owner, Creation creation);
 }
 
 /// <summary>
@@ -185,6 +201,9 @@ public interface IBuildCosts
 /// </summary>
 public sealed class BuildActions(IPartCatalog catalog, BuildSettings settings, IBuildWorld world)
 {
+    /// <summary>The Lifts a new build may start on, so it is held there; null where there are none.</summary>
+    public ILiftHolder? Lifts { get; init; }
+
     /// <summary>What parts cost; null builds for free (Creative).</summary>
     public IBuildCosts? Costs { get; init; }
 
@@ -354,9 +373,22 @@ public sealed class BuildActions(IPartCatalog catalog, BuildSettings settings, I
         creation.SetAllBodyPoses(start);
         // Built on the ground, it is anchored there as in Scrap Mechanic: players can't kick it about. A loose part
         // (a rod set down) never is: it is a physics object.
-        if (creation.DefinitionOf(placed.Id).Loose != true && world.RestsOnWorld(null, creation.DefinitionOf(placed.Id), args.Cell, args.Rotation, start))
+        var definition = creation.DefinitionOf(placed.Id);
+        if (definition.Loose != true && world.RestsOnWorld(null, definition, args.Cell, args.Rotation, start))
             creation.SetAnchored(placed.Id, true);
+        // Begun on a Lift's platform (and not also on the ground), it is held there like a Creation the Lift picked up,
+        // so the blocks of a new build stay put instead of tipping off.
+        var lift = !creation.IsGrounded && definition.Loose != true && Lifts is not null
+            ? world.LiftUnder(definition, args.Cell, args.Rotation, start)
+            : null;
+        if (lift is not null)
+            creation.OnLift = true;
         world.Added(creation);
+        if (lift is { } owner && !Lifts!.Hold(owner, creation))
+        {
+            creation.OnLift = false;
+            world.Changed(creation);
+        }
         PlayPlaced(world, creation, placed.Id);
         Costs?.Placed(caller, PartUpgrades.ItemKey(placed.Part, level));
         return Value(new PlacePartResult(creation.Id, placed.Id));
