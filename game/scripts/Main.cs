@@ -636,11 +636,11 @@ public partial class Main : Node3D
         };
         AddChild(Saves);
         AddChild(Characters);
+        var newWorld = false;
         if (TakeMenuWorldName() is { } worldName && save is null)
         {
             Saves.WorldName = worldName;
-            // A new world from the menu opens on the crash (an agent starting one carries on without it).
-            _openingWanted = ReadDeviceInput && Options.Mode != SessionMode.Join && !Ai.IsCarried;
+            newWorld = true;
         }
         Lan = new LanBeacon { Name = "Lan", Session = Session, Port = LanPort, Describe = DescribeForLan };
         AddChild(Lan);
@@ -676,6 +676,8 @@ public partial class Main : Node3D
             Ai = new AiEndpoint { Session = Session, Actions = Actions, Log = Recorder, Agents = AgentHost };
         Ai.Name = "Ai";
         AddChild(Ai);
+        // A new world from the menu opens on the crash (an agent starting one carries on without it).
+        _openingWanted = newWorld && ReadDeviceInput && Options.Mode != SessionMode.Join && !Ai.IsCarried;
         WorldSession = new WorldSession(this);
         ReplaceWorld ??= () => GetTree().ChangeSceneToFile(MainMenu.WorldScene);
         RemoteEventSources.Connect(this, Ai.Events);
