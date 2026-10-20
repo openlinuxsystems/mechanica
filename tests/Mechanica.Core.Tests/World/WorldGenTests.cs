@@ -489,6 +489,51 @@ public class WorldGenTests
     }
 
     [Fact]
+    public void ClusteredScatterGathersIntoPatchesWithOpenGroundBetween()
+    {
+        // The same rule spread evenly, kept to patches covering 30% of the ground, and with half its chance outside them;
+        // a bush rule sharing the trees' layer grows in the same patches.
+        List<WorldObjectPlacement> Objects(string cluster, string bushCluster = "")
+        {
+            using var mods = new TestMods().Mod("vanilla").File("vanilla", WorldGenData.DefinitionFile, $$"""
+                { "biomes": [{ "id": "a", "height": 10, "scatter": [
+                    { "object": "t", "spacing": 10, "chance": 1 {{cluster}} },
+                    { "object": "b", "spacing": 10, "chance": 0.5 {{bushCluster}} }] }],
+                  "objects": [{ "id": "t", "collider": { "shape": "sphere", "radius": 1 }, "footprint": 0.5 },
+                              { "id": "b", "collider": { "shape": "sphere", "radius": 1 }, "footprint": 0.5 }] }
+                """);
+            var data = WorldGenData.Load(mods.Load());
+            Assert.Empty(data.Diagnostics);
+            return [.. new WorldGenerator(data, 3, WorldSize).ObjectsIn(-1000f, -1000f, 1000f, 1000f)];
+        }
+        static int Count(List<WorldObjectPlacement> all, string id) => all.Count(o => o.Definition.Id == id);
+        // Share of 20 m squares a rule leaves bare.
+        static float Bare(List<WorldObjectPlacement> all, string id)
+        {
+            var filled = all.Where(o => o.Definition.Id == id).Select(o => ((int)MathF.Floor(o.Position.X / 20f), (int)MathF.Floor(o.Position.Z / 20f))).ToHashSet();
+            return 1f - filled.Count / (100f * 100f);
+        }
+        var even = Objects("");
+        var patches = Objects(""", "cluster": { "layer": "grove", "scale": 90, "cover": 0.3 }""");
+        var thinned = Objects(""", "cluster": { "scale": 90, "cover": 0.3, "outside": 0.5 }""");
+        var shared = Objects(""", "cluster": { "layer": "grove", "scale": 90, "cover": 0.3 }""", """, "cluster": { "layer": "grove", "scale": 90, "cover": 0.3 }""");
+
+        var ratio = Count(patches, "t") / (float)Count(even, "t");
+        Assert.InRange(ratio, 0.22f, 0.38f);
+        Assert.InRange(Count(thinned, "t") / (float)Count(even, "t"), 0.55f, 0.75f);
+        // Evenly spread, nearly every 20 m square has a tree; in patches most squares are open ground.
+        Assert.True(Bare(even, "t") < 0.1f, $"{Bare(even, "t")}");
+        Assert.True(Bare(patches, "t") > 0.5f, $"{Bare(patches, "t")}");
+        // Bushes on the trees' layer stand among the trees, so nearly every bush has a tree close by.
+        var trees = shared.Where(o => o.Definition.Id == "t").Select(o => new Vector2(o.Position.X, o.Position.Z)).ToList();
+        var bushes = shared.Where(o => o.Definition.Id == "b").ToList();
+        var nearTree = bushes.Count(b => trees.Any(t => Vector2.Distance(t, new Vector2(b.Position.X, b.Position.Z)) < 16f)) / (float)bushes.Count;
+        Assert.True(nearTree > 0.9f, $"{nearTree}");
+        // The same seed lays the same patches.
+        Assert.Equal(patches.Select(o => o.Id), Objects(""", "cluster": { "layer": "grove", "scale": 90, "cover": 0.3 }""").Select(o => o.Id));
+    }
+
+    [Fact]
     public void FlatWorldIsFlatAndEmpty()
     {
         var gen = new WorldGenerator(WorldGenData.Flat, 5, WorldSize);
@@ -719,6 +764,9 @@ public class WorldGenTests
     [InlineData("""{ "biomes": [{ "id": "a" }], "objects": [{ "id": "g", "collider": { "shape": "sphere", "radius": 1 }, "health": 5, "glow": { "range": 0 } }] }""", "$.objects[0].glow.range")]
     [InlineData("""{ "biomes": [{ "id": "a" }], "objects": [{ "id": "g", "collider": { "shape": "sphere", "radius": 1 }, "health": 5, "mesh": { "file": "m.glb", "clips": { "break_seconds": 1, "fade_seconds": 2 } } }] }""", "$.objects[0].mesh.clips.fade_seconds")]
     [InlineData("""{ "biomes": [{ "id": "a", "scatter": [{ "object": "g", "spacing": 10, "chance": 1, "perch": { "rise": 0 } }] }], "objects": [{ "id": "g", "collider": { "shape": "sphere", "radius": 1 }, "health": 5 }] }""", "$.biomes[0].scatter[0].perch.rise")]
+    [InlineData("""{ "biomes": [{ "id": "a", "scatter": [{ "object": "g", "spacing": 10, "chance": 1, "cluster": { "cover": 0 } }] }], "objects": [{ "id": "g", "collider": { "shape": "sphere", "radius": 1 }, "health": 5 }] }""", "$.biomes[0].scatter[0].cluster.cover")]
+    [InlineData("""{ "biomes": [{ "id": "a", "scatter": [{ "object": "g", "spacing": 10, "chance": 1, "cluster": { "outside": 2 } }] }], "objects": [{ "id": "g", "collider": { "shape": "sphere", "radius": 1 }, "health": 5 }] }""", "$.biomes[0].scatter[0].cluster.outside")]
+    [InlineData("""{ "biomes": [{ "id": "a", "scatter": [{ "object": "g", "spacing": 10, "chance": 1, "cluster": { "scale": 0 } }] }], "objects": [{ "id": "g", "collider": { "shape": "sphere", "radius": 1 }, "health": 5 }] }""", "$.biomes[0].scatter[0].cluster.scale")]
     [InlineData("""{ "biomes": [{ "id": "a" }], "grounds": [{ "id": "g", "texture": "g.png" }], "slope_ground": { "ground": "g", "from": 1, "to": 0.5 } }""", "$.slope_ground")]
     [InlineData("""{ "biomes": [{ "id": "a" }], "grounds": [{ "id": "a1", "texture": "g.png" }, { "id": "a2", "texture": "g.png" }, { "id": "a3", "texture": "g.png" }, { "id": "a4", "texture": "g.png" }, { "id": "a5", "texture": "g.png" }, { "id": "a6", "texture": "g.png" }, { "id": "a7", "texture": "g.png" }, { "id": "a8", "texture": "g.png" }, { "id": "a9", "texture": "g.png" }] }""", "$.grounds")]
     public void BadWorldGenDataGivesAClearError(string json, string path)

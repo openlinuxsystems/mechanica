@@ -292,6 +292,15 @@ internal static class WorldGenValidator
                     Positive(perch.Rise, $"{rulePath}.perch.rise", sink);
                     Positive(perch.Within, $"{rulePath}.perch.within", sink);
                 }
+                if (rule.Cluster is { } cluster)
+                {
+                    KnownKeys.WarnUnknown(cluster.Extra, $"{rulePath}.cluster", sink, typeof(ClusterDefinition));
+                    Positive(cluster.Scale, $"{rulePath}.cluster.scale", sink);
+                    if (!(cluster.Cover is > 0f and <= 1f))
+                        sink.Error(Code, $"{rulePath}.cluster.cover", $"cover must be above 0 and at most 1 (got {cluster.Cover}).");
+                    if (!(cluster.Outside is >= 0f and <= 1f))
+                        sink.Error(Code, $"{rulePath}.cluster.outside", $"outside must be 0 to 1 (got {cluster.Outside}).");
+                }
             }
             for (var r = 0; r < (b.Flora?.Count ?? 0); r++)
                 Flora(b.Flora![r], $"{path}.flora[{r}]", sink);
