@@ -358,7 +358,9 @@
     { "id": "poi_35", "label": "POI-35", "poi": "poi_35", "at": [0.34, 0.42], "jitter": 120.0, "biome": "burned_forest" },
     // The start: the crash site's pond fills because its pad stands 4 m above the sea.
     { "id": "poi_36", "label": "POI-36", "poi": "crash_site", "at": [0.19, 0.38], "biome": "field", "pad_height": 6.0 },
-    { "id": "poi_37", "label": "POI-37", "poi": "outpost", "at": [0.21, 0.24], "jitter": 80.0, "biome": "meadow" },
+    // The first Workshop Outpost (the story's "outpost"): about 270 m north of the crash, so even the full jitter keeps it within
+    // 350 m. It shares the crash site's biome because a site's biome pin reaches over 500 m and would repaint the start.
+    { "id": "poi_37", "label": "POI-37", "poi": "outpost", "at": [0.19, 0.35], "jitter": 50.0, "biome": "field" },
     { "id": "poi_38", "label": "POI-38", "poi": "poi_38", "at": [0.14, 0.21], "jitter": 100.0, "biome": "field" },
     { "id": "poi_39", "label": "POI-39", "poi": "poi_39", "at": [0.05, 0.10], "jitter": 100.0, "biome": "field" },
     { "id": "poi_40", "label": "POI-40", "poi": "poi_40", "at": [-0.06, 0.38], "jitter": 100.0, "biome": "meadow" },

@@ -320,7 +320,9 @@ shape at any world size.
 
 The vanilla layout gives each of the spec's 50 structures its own prefab (`pois/poi_01.json` …
 `pois/poi_50.json`; POI-36 is `crash_site` and POI-37 the quests' `outpost`), so each can be designed on
-its own. Until then they are placeholders of the right footprint and height, written by
+its own. The story needs the first Workshop Outpost within 350 m of the crash site, so POI-37 sits about 270 m north
+of it with a 50 m jitter (the seed moves a site at most `jitter` along each axis, so up to `jitter` × 1.41 in all), and
+shares its `field` biome: a site's biome reaches about 0.7 × `biome_cell_size` round it and would repaint the start. Until then they are placeholders of the right footprint and height, written by
 `tools/author-poi-placeholders.py` (edit its table and re-run). Six extra large slots draw a warehouse or a
 Farmbot Scrapyard from the `large_slots` pool.
 
