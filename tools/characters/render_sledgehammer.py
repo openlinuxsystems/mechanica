@@ -25,9 +25,9 @@ rw.SAMPLES = int(os.environ.get("SLEDGE_SAMPLES", "48"))
 # name: (camera direction, ortho scale, look-at height along the handle, label). The handle stands along +Z, the
 # striking faces point along X and the cheeks along Y.
 VIEWS = {
-    "front": ((0.0, -1.0, 0.0), 1.6, 0.3, "FRONT"),
-    "side": ((1.0, 0.0, 0.0), 1.6, 0.3, "SIDE"),
-    "iso": ((0.8, -1.0, 0.5), 1.6, 0.3, "THREE-QUARTER"),
+    "front": ((0.0, -1.0, 0.0), 1.15, -0.06, "FRONT"),
+    "side": ((1.0, 0.0, 0.0), 1.15, -0.06, "SIDE"),
+    "iso": ((0.8, -1.0, 0.5), 1.15, -0.06, "THREE-QUARTER"),
     "head": ((0.7, -1.0, 0.45), 0.5, bc.SLEDGE_HEAD_Y, "HEAD"),
     "head_low": ((-0.9, -1.0, -0.35), 0.5, bc.SLEDGE_HEAD_Y, "HEAD FROM BELOW"),
 }

@@ -3549,19 +3549,20 @@ def clip_tool_use(t):
     return oneshot([(0.0, h), (0.12, push), (0.18, push), (0.3, h)], t)
 
 
-# The Sledgehammer: 1.3 m long. A chunky head of stacked, chamfered steel blocks (about 400 x 230 x 190 mm) held by
-# gunmetal straps, on a ribbed bright steel shaft with a long yellow-painted grip and a hex end cap. The right fist
-# sits on the bare shaft (the origin) and the left fist on the grip SLEDGE_SPACING below it.
-SLEDGE_BUTT = -0.38            # bottom of the end cap (grip frame y)
-SLEDGE_HEAD_Y = 0.85           # centre of the head
+# The Sledgehammer: about 0.95 m long, the head close to half of that (Chase's reference). A chunky head of stacked,
+# chamfered steel blocks (about 400 x 230 x 190 mm) held by gunmetal straps, on a short ribbed bright steel shaft with a
+# yellow-painted grip and a hex end cap. The right fist sits on the bare shaft just under the head (the origin) and the
+# left fist low on the grip, SLEDGE_SPACING below it.
+SLEDGE_BUTT = -0.5             # bottom of the end cap (grip frame y)
+SLEDGE_HEAD_Y = 0.3            # centre of the head
 SLEDGE_HEAD = (0.2, 0.115, 0.095)  # head half sizes: strike axis (x), along the handle (y), across (z)
-SLEDGE_SPACING = 0.26          # left fist below the right one, along the handle
+SLEDGE_SPACING = 0.36          # left fist below the right one, along the handle
 SHAFT_R = 0.02
-SLEDGE_GRIP_TOP = -0.05        # where the yellow grip ends and the bare shaft begins
+SLEDGE_GRIP_TOP = -0.1         # where the yellow grip ends and the bare shaft begins
 
 
 # Sledgehammer: the right fist sits on the shaft (the prop's origin), the left one lower on the grip, `spacing`
-# below it along the handle (it slides between 0.1 and 0.33 m, all on the rubber). The head's strike faces point
+# below it along the handle (it slides between 0.12 and 0.36 m, all on the grip). The head's strike faces point
 # along the fingers (d), so d is kept on the tangent of the swing arc in the body's side plane: the face leads.
 
 def heavy_arms(grip_r, axis, d_hint=None, spacing=SLEDGE_SPACING, space="chest", poles=((-0.7, 0.4, -1.0), (0.6, 0.3, -1.0))):
@@ -3590,8 +3591,8 @@ def heavy_key(grip_r, axis, spacing=SLEDGE_SPACING, d_hint=None, space="chest", 
 # Ready pose: held in front across the body, ready to swing (Chase's reference, Scrap Mechanic's title screen): the head
 # up by the right shoulder, the handle running down to the left hip, the right fist high on the shaft and the left low
 # on the grip, the striking face turned forward.
-HEAVY_R = np.array([-0.05, -0.36, 1.24])
-HEAVY_AXIS = norm(np.array([-0.7, -0.3, 0.6]))
+HEAVY_R = np.array([-0.06, -0.3, 1.38])
+HEAVY_AXIS = norm(np.array([-0.5, -0.12, 0.86]))
 HEAVY_D = (0.0, -1.0, 0.0)
 HEAVY_BODY = dict(spine=(2.0, 0, -4.0), chest=(2.0, 0, -6.0), neck=(0.0, 0, 4.0), head=(0.0, 0, 4.0))
 
@@ -3600,7 +3601,7 @@ def clip_hold_heavy(t, T=2.0):
     ph = 2 * math.pi * t / T
     br = math.sin(ph)
     s = heavy_key(HEAVY_R + np.array([0.0, 0.0, 0.005 * br]), HEAVY_AXIS + np.array([0.0, 0.0, 0.006 * br]),
-                  spacing=0.22, d_hint=HEAVY_D, **HEAVY_BODY)
+                  spacing=SLEDGE_SPACING, d_hint=HEAVY_D, **HEAVY_BODY)
     base = upper_base(t, T)
     for b in ("spine", "chest", "neck", "head"):
         s[b] = tuple(x + y for x, y in zip(HEAVY_BODY[b], base[b]))
@@ -3799,7 +3800,7 @@ BLOCK_BODY = dict(spine=(6.0, 0, 2.0), chest=(4.0, 0, 6.0), neck=(6.0, 0, -4.0),
 def clip_hold_heavy_block(t, T=2.0):
     ph = 2 * math.pi * t / T
     br = math.sin(ph)
-    s = heavy_key(BLOCK_R + np.array([0.0, 0.0, 0.004 * br]), BLOCK_AXIS, 0.26, d_hint=(0.0, -1.0, 0.0), **BLOCK_BODY)
+    s = heavy_key(BLOCK_R + np.array([0.0, 0.0, 0.004 * br]), BLOCK_AXIS, 0.32, d_hint=(0.0, -1.0, 0.0), **BLOCK_BODY)
     base = upper_base(t, T, 0.7)
     for b in ("spine", "chest", "neck", "head"):
         s[b] = tuple(x + y for x, y in zip(BLOCK_BODY[b], base[b]))
@@ -5993,7 +5994,7 @@ def prop_sledgehammer():
         # bright steel shaft from the grip to the head, with a few dark bands
         cylinder((0, SLEDGE_GRIP_TOP - 0.01, 0), (0, neck + 0.004, 0), SHAFT_R, 18, "shaft_bright", ref=X),
     ]
-    for y in (SLEDGE_GRIP_TOP + 0.05, 0.36, 0.42, neck - 0.13):
+    for y in (SLEDGE_GRIP_TOP + 0.035,):
         p.append(cylinder((0, y, 0), (0, y + 0.014, 0), SHAFT_R + 0.002, 18, "knurl_dark", ref=X, bevel=0.0008))
     # the grip: yellow paint over the lower handle, a dark lip at each end, a hex end cap with its bolt
     p += [
