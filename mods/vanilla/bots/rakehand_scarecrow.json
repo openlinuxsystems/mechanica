@@ -12,6 +12,31 @@
     "height": 1.9
   },
   "color": "#5b3a5c",
+  "wild": {
+    "habitat": "land",
+    "count": 1,
+    "min_distance": 30,
+    "max_distance": 70,
+    "despawn_distance": 110,
+    "clear_radius": 10,
+    "interval": 12,
+    "biomes": [
+      "field"
+    ],
+    "herd": [
+      1,
+      1
+    ],
+    "near": {
+      "objects": [
+        "scene_field_edge",
+        "scene_kitchen_garden",
+        "scene_hay_field"
+      ],
+      "radius": 15,
+      "share": 0.8
+    }
+  },
   "model": {
     "mesh": "meshes/bots/rakehand_scarecrow.glb",
     "attacks": {
