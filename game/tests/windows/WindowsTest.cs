@@ -191,7 +191,8 @@ public partial class WindowsTest : StagedTest
             }
             if (frame == 1)
             {
-                Walk(inventory).OfType<Control>().FirstOrDefault(c => c.FocusMode != Control.FocusModeEnum.None && c.IsVisibleInTree())?.GrabFocus();
+                // A button, not the search field: typing in a field keeps the screen open.
+                Walk(inventory).OfType<BaseButton>().FirstOrDefault(c => c.FocusMode != Control.FocusModeEnum.None && c.IsVisibleInTree())?.GrabFocus();
                 GetViewport().PushInput(new InputEventKey { Pressed = true, PhysicalKeycode = Key.Tab, Keycode = Key.Tab });
                 return false;
             }
@@ -227,7 +228,7 @@ public partial class WindowsTest : StagedTest
                 inventory.Show(null);
                 return false;
             }
-            if (frame == 1 || _main.Inventory.Own?.At(9) is null)
+            if (!_organizing && (frame == 1 || _main.Inventory.Own?.At(9) is null))
                 return false;
             if (!_organizing)
             {

@@ -171,6 +171,49 @@ public static class PartUpgrades
         return changes;
     }
 
+    /// <summary>
+    /// A number of <paramref name="part"/> an upgrade can raise, by <paramref name="path"/>: <c>outputs</c>,
+    /// <c>inputs</c>, <c>durability</c>, <c>settings.&lt;id&gt;</c> (the top of a number setting) or
+    /// <c>properties.&lt;key&gt;</c> (a number property). Null when the part has no such number.
+    /// </summary>
+    public static double? Stat(PartDefinition part, string? path)
+    {
+        switch (path)
+        {
+            case "outputs":
+                return part.Logic?.Outputs;
+            case "inputs":
+                return part.Logic?.Inputs;
+            case "durability":
+                return part.Durability;
+        }
+        if (path?.StartsWith("settings.", StringComparison.Ordinal) == true)
+            return part.Settings?.FirstOrDefault(s => s.Id == path["settings.".Length..]) is { Type: SettingType.Number, Max: { } max } ? max : null;
+        if (path?.StartsWith("properties.", StringComparison.Ordinal) == true
+            && part.Properties?[path["properties.".Length..]] is JsonValue value && value.TryGetValue(out double number))
+            return number;
+        return null;
+    }
+
+    /// <summary>True when <paramref name="path"/> is a form <see cref="Stat"/> reads.</summary>
+    public static bool IsStatPath(string? path) => path is "outputs" or "inputs" or "durability"
+        || (path?.StartsWith("settings.", StringComparison.Ordinal) == true && path.Length > "settings.".Length)
+        || (path?.StartsWith("properties.", StringComparison.Ordinal) == true && path.Length > "properties.".Length);
+
+    /// <summary>
+    /// The gain in <paramref name="path"/> from <paramref name="from"/> to <paramref name="to"/> as shown in an upgrade
+    /// panel (<c>+2</c>, <c>+50%</c>), or null when it does not change or either level lacks the number.
+    /// </summary>
+    public static string? Gain(PartDefinition from, PartDefinition to, string? path, UpgradeStatShow show)
+    {
+        if (Stat(from, path) is not { } a || Stat(to, path) is not { } b || a == b)
+            return null;
+        var culture = System.Globalization.CultureInfo.CurrentCulture;
+        if (show == UpgradeStatShow.Percent)
+            return a == 0 ? null : $"{(b >= a ? "+" : "")}{((b - a) / a * 100).ToString("0", culture)}%";
+        return $"{(b >= a ? "+" : "")}{(b - a).ToString("0.##", culture)}";
+    }
+
     private static string Show(object? value, string suffix) => value switch
     {
         null => "-",

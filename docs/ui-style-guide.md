@@ -67,8 +67,8 @@ The game bundles Barlow and Barlow Condensed (SIL OFL, `game/fonts`, loaded by `
 
 - A 4 px grid: window padding 16, gaps between tiles 8, gaps between sections 12.
 - Corners: 14 for windows and cards, 8 for inner panels and tiles, 10 for buttons, round for pills.
-- Depth comes from fill, a soft shadow under windows (0 10 18 at 35% black) and a 3 px darker bottom edge on tiles and
-  primary buttons. Borders are the exception: only fields, focus rings and the selected ring have them.
+- Depth comes from fill and a 3 px darker bottom edge on tiles and primary buttons. Windows and cards have no drop
+  shadow (no soft translucent edge round a menu). Borders are the exception: only fields, focus rings and the selected ring have them.
 - Item pictures (`ItemIcons.Finish`, `IconFinish`) are cropped to the item, scaled so its largest side fills 80% of
   the tile, and get a 2 px Ink outline and a soft contact shadow so pale parts still read on a light tile.
 

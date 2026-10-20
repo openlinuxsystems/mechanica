@@ -697,6 +697,7 @@ public partial class Main : Node3D
             PartSettings = new PartSettingsPanel
             {
                 Name = "PartSettings", Actions = Actions, Creations = Creations, Readouts = () => Display.Readouts, Signals = LogicOverlay, Assets = Assets,
+                Inventory = Inventory, Icons = Icons, Creative = () => Survival.Own?.Mode == GameMode.Creative,
             };
             var hudRoot = new Ui.HudRoot { Name = "HudRoot" };
             AddChild(hudRoot);

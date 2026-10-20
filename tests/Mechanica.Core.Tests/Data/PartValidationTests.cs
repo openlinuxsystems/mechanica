@@ -233,4 +233,22 @@ public class PartValidationTests
         Assert.Empty(Check(
             TestMods.Block(overrides: """{ "mesh": "meshes/a.glb", "script": "scripts/a.lua", "icon": "textures/a.png" }"""),
             mods => mods.File("m", "meshes/a.glb", "x").File("m", "scripts/a.lua", "").File("m", "textures/a.png", "x")));
+
+    [Fact]
+    public void ALeverNamesANumberSettingAToggleAndItsReadouts()
+    {
+        const string Part = """
+            { "id": "e", "name": "E", "category": "interactive", "mass": 1, "durability": 1, "friction": 0.5, "buoyancy": 0.5,
+              "flammable": false, "size": [1, 1, 1], "script": "scripts/e.lua",
+              "settings": [{ "id": "gear", "type": "number", "min": 1, "max": 5, "step": 1, "default": 1 }, { "id": "on", "type": "toggle", "default": true }],
+              "menu": { "readouts": [{ "id": "fuel", "kind": "bar" }, { "id": "left" }], "lever": LEVER } }
+            """;
+        IReadOnlyList<string> Paths(string lever) => [.. Check(Part.Replace("LEVER", lever)).Where(d => d.JsonPath?.StartsWith("$.menu", StringComparison.Ordinal) == true).Select(d => d.JsonPath!)];
+
+        Assert.Empty(Paths("""{ "setting": "gear", "off": "on", "fuel": "gasoline", "fuel_count": "left", "fuel_bar": "fuel", "upgrade_stats": [{ "name": "Torque", "value": "properties.torque", "show": "percent" }] }"""));
+        Assert.Equal(["$.menu.lever.setting", "$.menu.lever.off"], Paths("""{ "setting": "on", "off": "gear" }"""));
+        Assert.Equal(["$.menu.lever.fuel_count", "$.menu.lever.fuel_bar"], Paths("""{ "setting": "gear", "fuel": "gasoline", "fuel_count": "fuel", "fuel_bar": "nope" }"""));
+        Assert.Equal(["$.menu.lever.fuel"], Paths("""{ "setting": "gear", "fuel_bar": "fuel" }"""));
+        Assert.Equal(["$.menu.lever.upgrade_stats[0].name", "$.menu.lever.upgrade_stats[0].value"], Paths("""{ "setting": "gear", "upgrade_stats": [{ "value": "torque" }] }"""));
+    }
 }

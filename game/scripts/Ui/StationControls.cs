@@ -58,6 +58,9 @@ public partial class KeyButton : Button
         _label.AddThemeColorOverride("font_color", color);
         _label.AddThemeFontOverride("font", font);
         _label.AddThemeFontSizeOverride("font_size", size);
+        // On a filled primary button the key cap takes the button's ink, so it shows on the Accent fill.
+        if (ThemeTypeVariation == "PrimaryButton")
+            _key.AddThemeColorOverride("font_color", color with { A = 0.75f });
     }
 
     private (Color, Font?, int) _shown;
