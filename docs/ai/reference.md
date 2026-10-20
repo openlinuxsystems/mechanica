@@ -1029,13 +1029,17 @@ Filling a bucket at water. Arguments of CollectWater: fill every empty bucket th
 
 *action, play scope*
 
-Putting items on the ground. Arguments of DropItems: put items from a slot on the ground in front of the caller.
+Putting items on the ground. Arguments of DropItems: put items from a slot on the ground in front of the caller. Without At they are tossed: they fly from the caller's hand in a short arc and land TossDistance ahead (dragging a stack out of an item window, UI spec §3).
 
 | Param | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|
 | `slot` | integer | yes |  | The slot. |
 | `count` | integer or null |  |  | How many; null drops the whole stack. |
 | `at` | number[3] or null |  |  | Force Build (UI spec §1, §9): the world point the caller aims at, within reach, where the items are placed and stay (they never expire). Null drops them in front of the caller. |
+| `from` | object or null |  |  | The inventory the slot is in (a container in reach, like MoveItems); null is the caller's own. |
+| `from.player` | integer or null |  |  | Peer id of the player whose inventory it is. |
+| `from.creation` | integer or null |  |  | Creation holding the part. |
+| `from.part` | integer or null |  |  | Part id inside that Creation. |
 
 ### `FinishRefine`
 

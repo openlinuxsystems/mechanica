@@ -257,6 +257,7 @@ The locked keys are listed after each table; a patch may not touch them, or anyt
 | `low_health` | 0.25 | Share of full health below which the HUD warns and the low-health heartbeat plays. |
 | `reach` | 7.5 | How far from a player's eyes soil, beds and water can be used, in m. |
 | `pickup_reach` | 3 | How far from a player's eyes items on the ground can be picked up, in m. |
+| `toss_distance` | 1.5 | How far ahead of a player's feet items they drag out of an item window land, in m. |
 | `drop_lifetime` | 900 | Seconds items lie on the ground before they are gone. |
 | `drop_inventory_on_death` | true | Whether a dead player's inventory falls where they died (in the knockout bag). |
 | `knockout_bag` | `vanilla:meshes/knockout_bag.glb` | The model a knocked-out player's items lie in (`mod:path`). |

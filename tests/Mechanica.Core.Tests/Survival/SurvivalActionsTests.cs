@@ -657,12 +657,12 @@ public class SurvivalActionsTests
         Assert.Equal("count must be 1 to 30 (got 31).", _f.Refused(Me, SurvivalActions.DropItems, new { slot, count = 31 }));
         var dropped = _f.Ok<DropItemsResult>(Me, SurvivalActions.DropItems, new { slot, count = 10 });
         Assert.Equal(20, _f.Pockets(Me).Count(Scrap));
-        Assert.Equal(new Vec3(0, 0, 2), _f.Survival.Drops[dropped.Drop].Position); // 1 m ahead (-z) on the ground
+        Assert.Equal(new Vec3(0, 0, 1.5f), _f.Survival.Drops[dropped.Drop].Position); // toss_distance ahead (-z) on the ground
         Assert.False(_f.Survival.Drops[dropped.Drop].KnockedOut);
         Assert.Null(_f.Survival.Drops[dropped.Drop].Owner);
 
-        Assert.StartsWith("That is 4.0 m away", _f.Refused(You, SurvivalActions.PickUp, new { drop = dropped.Drop }));
-        _f.World.Feet[3] = new Vector3(0, 0, 2);
+        Assert.StartsWith("That is 4.5 m away", _f.Refused(You, SurvivalActions.PickUp, new { drop = dropped.Drop }));
+        _f.World.Feet[3] = new Vector3(0, 0, 1.5f);
         foreach (var s in Enumerable.Range(0, 3))
             _f.Pockets(You).SetSlot(s, new ItemStack(Crop, 20));
         _f.Pockets(You).SetSlot(3, new ItemStack(Scrap, 45));
@@ -673,6 +673,41 @@ public class SurvivalActionsTests
         Assert.Equal(new PickUpResult(5, 0), _f.Ok<PickUpResult>(Me, SurvivalActions.PickUp, new { drop = dropped.Drop }));
         Assert.Empty(_f.Survival.Drops);
         Assert.Contains("nothing to pick up", _f.Refused(Me, SurvivalActions.PickUp, new { drop = dropped.Drop }));
+    }
+
+    [Fact]
+    public void ATossedPileFliesFromTheHandOnceThenLiesStill()
+    {
+        _f.Pockets(Me).Add(Scrap, 30);
+        var shown = new List<ItemDrop>();
+        _f.Survival.DropChanged += shown.Add;
+        var dropped = _f.Ok<DropItemsResult>(Me, SurvivalActions.DropItems, new { slot = _f.SlotOf(Me, Scrap) });
+        Assert.Equal(0, _f.Pockets(Me).Count(Scrap));
+        // Peers are shown the toss from the hand (above the feet, a little ahead); the pile kept has none.
+        var from = Assert.Single(shown).TossedFrom!.Value.ToNumerics();
+        var feet = _f.World.Feet[Me.Peer];
+        Assert.True(from.Y > feet.Y + 1 && from.Z < feet.Z, $"tossed from {from}");
+        Assert.Null(_f.Survival.Drops[dropped.Drop].TossedFrom);
+        Assert.True(_f.Survival.Drops[dropped.Drop].Expires > _f.World.Now, "a tossed pile despawns later");
+
+        // Placed with Force Build, a pile is not tossed.
+        _f.Pockets(Me).Add(Scrap, 1);
+        _f.Ok(Me, SurvivalActions.DropItems, new { slot = _f.SlotOf(Me, Scrap), at = new Vec3(0, 0.5f, 2) });
+        Assert.Null(shown[^1].TossedFrom);
+    }
+
+    [Fact]
+    public void ItemsAreTossedOutOfAContainerInReach()
+    {
+        var chest = _f.Add(Chest, new Vector3(0, 0, 1));
+        var inventory = _f.World.FindCreation(chest)!.InventoryOf(1)!;
+        inventory.Add(Scrap, 9);
+        var from = new { creation = chest, part = 1 };
+        Assert.Equal("Slot 1 is empty.", _f.Refused(Me, SurvivalActions.DropItems, new { slot = 1, from }));
+        var dropped = _f.Ok<DropItemsResult>(Me, SurvivalActions.DropItems, new { slot = 0, count = 4, from });
+        Assert.Equal(5, inventory.Count(Scrap));
+        Assert.Equal([new ItemStack(Scrap, 4)], _f.Survival.Drops[dropped.Drop].Items);
+        Assert.Equal("You can only use your own inventory.", _f.Refused(Me, SurvivalActions.DropItems, new { slot = 0, from = new { player = You.Peer } }));
     }
 
     [Fact]

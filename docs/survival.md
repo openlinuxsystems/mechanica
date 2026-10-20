@@ -50,7 +50,9 @@ them. AI agents read it from `GetWorld` and `world.info` and set it with `world.
 - **Breaking things:** a part breaks off at 0 health. A container that breaks spills what it held.
   Trees, rocks and bushes with `health` break into resources (`drops` in `world/worldgen.json`).
   Crashes and falls never damage a Creation: only the Sledgehammer, weapons, bots, explosions and fire do.
-- **Piles** of items on the ground last `drop_lifetime` seconds.
+- **Piles** of items on the ground last `drop_lifetime` seconds (15 minutes). Drag a stack out of any item window
+  (the inventory, a container, the hotbar) and let go over the world to toss it: it flies from your hand and lands
+  `toss_distance` ahead as a pile anyone can pick up with E.
 - **Fire:** see [Fire](#fire).
 - **Raids:** the host checks the planted crops every minute. Once they are worth the first level of the
   raid table (`raids/raids.json`; vanilla's is 10, a carrot or potato counts 1 and a tomato 1.5), the raid
@@ -134,7 +136,7 @@ their item's properties.
 | `SetFriendlyFire` | `on` | Host only: turns friendly fire on or off. |
 | `CollectWater` | `point`, `slot?` | A point on water in reach; turns every empty `bucket_item` the caller carries into a full `water_item` (the one in `slot`, or the first, first), each in the same slot when it was the last of its stack; with no room for the rest, the others stay empty. Returns `{slot}`, where the full bucket is. |
 | `SetSpawn` | `creation`, `part` | A `respawn_point` part in reach. |
-| `DropItems` | `slot`, `count` | `count` omitted drops the stack. |
+| `DropItems` | `slot`, `count`, `at`, `from` | Tosses the stack (or `count` of it) in front of you; `from` takes it from a container in reach instead of your inventory, and `at` places it there with Force build (it then stays). |
 | `PickUp` | `drop` | A pile within `pickup_reach`. |
 | `Respawn` | none | A dead player after the delay; a living one goes back to their spawn. |
 | `GetFires` | none | Every fire: `[{id, position, strength, creation?, part?, poi?, site?, marker?}]`. Fires at POI markers are listed out ones too (strength 0). |
