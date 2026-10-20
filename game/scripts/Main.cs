@@ -308,6 +308,12 @@ public partial class Main : Node3D
     /// <summary>Watch players: the camera that follows another player (an AI agent, say).</summary>
     public Spectator Spectator { get; private set; } = null!;
 
+    /// <summary>The opening cinematic while it plays (<see cref="PlayOpening"/>), else null.</summary>
+    public OpeningCinematic? Opening { get; private set; }
+
+    // True on the host of a world just started from the menu, until the opening cinematic starts with the world.
+    private bool _openingWanted;
+
     /// <summary>The seat's creation hotbar of linked switches and buttons, when reading device input.</summary>
     public CreationHotbar? CreationHotbar { get; private set; }
 
@@ -364,6 +370,11 @@ public partial class Main : Node3D
                     : null,
             };
             AddChild(_loadingScreen);
+            _loadingScreen.Entering += () =>
+            {
+                if (_openingWanted)
+                    PlayOpening();
+            };
         }
         var mods = Mods ??= LoadMods();
         var save = Save ??= TakeMenuSave() ?? ReadSave(Options.LoadPath);
@@ -402,6 +413,7 @@ public partial class Main : Node3D
         };
         Creations = new CreationWorld { Name = "Creations" };
         AddChild(Creations);
+        PlayerSync.Creations = Creations;
         JointOverlay = new JointOverlay { Creations = Creations };
         AddChild(JointOverlay);
         Sounds = new SoundSync { Name = "Sounds", Session = Session, Players = PlayerSync, Creations = Creations, Registry = SoundEvents ??= LoadSounds(mods) };
@@ -625,7 +637,11 @@ public partial class Main : Node3D
         AddChild(Saves);
         AddChild(Characters);
         if (TakeMenuWorldName() is { } worldName && save is null)
+        {
             Saves.WorldName = worldName;
+            // A new world from the menu opens on the crash (an agent starting one carries on without it).
+            _openingWanted = ReadDeviceInput && Options.Mode != SessionMode.Join && !Ai.IsCarried;
+        }
         Lan = new LanBeacon { Name = "Lan", Session = Session, Port = LanPort, Describe = DescribeForLan };
         AddChild(Lan);
         if (save is not null)
@@ -636,6 +652,8 @@ public partial class Main : Node3D
                 GD.PushWarning($"[save] {diagnostic}");
             GD.Print($"[save] loaded '{save.Name}' ({Creations.Count} creations)");
         }
+        if (Options.Mode != SessionMode.Join)
+            PlaceWorldParts();
         Recorder = new RecordReplay { Name = "Recorder", Session = Session, Actions = Actions };
         AddChild(Recorder);
         AgentHost = new AgentHost(Session, PlayerSync, Actions.Dispatcher);
@@ -719,6 +737,7 @@ public partial class Main : Node3D
             {
                 Name = "QuestHud", Quests = Quests, Actions = Actions, Players = PlayerSync,
                 Markers = MapMarkers, MapSettings = LogbookSettings, World = () => Streamer.Generator,
+                Holding = () => Opening is { Playing: true },
             };
             AddChild(questLog);
             var maps = new MapHud
@@ -787,6 +806,8 @@ public partial class Main : Node3D
     public override void _Process(double delta)
     {
         UpdateLoading();
+        if (_openingWanted && Loading?.Entered == true && LoadingScreen is null)
+            PlayOpening();
         if (Loading?.Entered == true && Remote.WorldSession.Changing)
             WorldSession.Entered();
         if (Options?.SelfTest == true)
@@ -1113,8 +1134,48 @@ public partial class Main : Node3D
         SpawnDebugCar();
         if (!ReadDeviceInput)
             return;
-        _input = new LocalPlayerInput { Name = "LocalPlayerInput", Target = player, Suspended = () => Spectator.Watching };
+        _input = new LocalPlayerInput { Name = "LocalPlayerInput", Target = player, Suspended = () => Spectator.Watching || Opening is { Playing: true } };
         AddChild(_input);
+    }
+
+    /// <summary>
+    /// Plays the opening cinematic (<see cref="OpeningCinematic"/>) for the local player, as on the first start of a new
+    /// world; null when there is no player yet or it doesn't start at the crash site.
+    /// </summary>
+    public OpeningCinematic? PlayOpening()
+    {
+        _openingWanted = false;
+        if (Opening is not null || LocalPlayer is not { } player || !Streamer.HasWorld)
+            return null;
+        var settings = OpeningCinematic.LoadSettings();
+        if (OpeningCinematic.SceneFor(Streamer.Generator, settings, player.GlobalPosition) is not { } scene)
+            return null;
+        Opening = new OpeningCinematic
+        {
+            Name = "Opening", World = Streamer, Player = player, Scene = scene, Fire = Fire, Sounds = Sounds, Input = () => _input,
+            ReadDeviceInput = ReadDeviceInput,
+        };
+        Opening.Finished += () => Opening = null;
+        AddChild(Opening);
+        return Opening;
+    }
+
+    // Host, once the world (and any save) is in: the world's own parts (POI part markers, such as a Workshop's Fabricator)
+    // are matched to their markers, so each marker has exactly one. New ones start parked like a still Creation from a
+    // save, so the streamer brings each in with the ground under it when a player comes near.
+    private void PlaceWorldParts()
+    {
+        var plan = WorldParts.Reconcile(WorldParts.SpotsOf(Streamer.Generator), Creations.All.ToList(), new LoadedParts(this), Build.NextCreationId);
+        foreach (var id in plan.Remove)
+            Creations.Remove(id);
+        foreach (var id in plan.Moved)
+            Creations.Moved(id);
+        foreach (var creation in plan.Add)
+            Creations.AddParked(creation, Assets);
+        foreach (var problem in plan.Problems)
+            GD.PushWarning($"[world] a part marker places nothing: {problem}");
+        if (plan.Add.Count + plan.Remove.Count + plan.Moved.Count > 0)
+            GD.Print($"[world] world parts: {plan.Add.Count} placed, {plan.Moved.Count} put back, {plan.Remove.Count} removed");
     }
 
     // Once, on the host of a new world, when the debug car is wanted (see DebugCar).

@@ -486,6 +486,23 @@ internal static class WorldGenValidator
             sink.Error(Code, path, $"'{id}' is not one of the biomes.");
     }
 
+    // A part marker names a part the host can put down: one in the catalog that is placeable (a bare ref is the POI's mod's).
+    private static void CheckPartMarker(PoiMarker marker, string path, DiagnosticSink sink, IPartCatalog? parts, string modId)
+    {
+        if (string.IsNullOrEmpty(marker.Ref))
+        {
+            sink.Error(DiagnosticCodes.PoiInvalid, $"{path}.ref", "a part marker needs the id of the part it puts there.");
+            return;
+        }
+        if (parts is null)
+            return;
+        var id = marker.Ref.Contains(':') ? marker.Ref : $"{modId}:{marker.Ref}";
+        if (parts.FindDefinition(id) is not { } definition)
+            sink.Error(DiagnosticCodes.PoiInvalid, $"{path}.ref", $"a part marker needs the id of a part in the loaded mods (no part '{id}').");
+        else if (!definition.IsPlaceable)
+            sink.Error(DiagnosticCodes.PoiInvalid, $"{path}.ref", $"a part marker needs a part that can be placed ('{id}' is an inventory item).");
+    }
+
     // [x, z] as fractions of the world, -0.5 (west, north) to 0.5 (east, south); rivers may reach a little past the edge.
     private static void Fraction(List<float>? at, string path, DiagnosticSink sink, float reach = 0.5f)
     {
@@ -495,8 +512,11 @@ internal static class WorldGenValidator
 
     /// <param name="objectIds">World object ids <c>object</c> markers may name; null skips the check.</param>
     /// <param name="liquidIds">Liquid ids pools may hold; null skips the check.</param>
+    /// <param name="parts">The parts <c>part</c> markers may name; null skips the check.</param>
+    /// <param name="modId">The mod the prefab belongs to, which a bare <c>part</c> marker ref names a part of.</param>
     public static void Validate(PoiPrefab prefab, IReadOnlyList<string> biomeIds, DiagnosticSink sink, IReadOnlyCollection<string> groundIds,
-        IReadOnlyCollection<string>? objectIds = null, IReadOnlyCollection<string>? liquidIds = null)
+        IReadOnlyCollection<string>? objectIds = null, IReadOnlyCollection<string>? liquidIds = null, IPartCatalog? parts = null,
+        string? modId = null)
     {
         const string code = DiagnosticCodes.PoiInvalid;
         KnownKeys.WarnUnknown(prefab.Extra, "$", sink, typeof(PoiPrefab));
@@ -629,6 +649,8 @@ internal static class WorldGenValidator
                 sink.Error(code, $"{path}.ref", $"'{reference}' is not an id (id or mod_id:id).");
             if (marker.Type == PoiMarker.ObjectType && (marker.Ref is null || objectIds?.Contains(marker.Ref) == false))
                 sink.Error(code, $"{path}.ref", $"an object marker needs the id of a world object in the world generation rules (got '{marker.Ref}').");
+            if (marker.Type == PoiMarker.PartType)
+                CheckPartMarker(marker, path, sink, parts, modId ?? Identifiers.VanillaModId);
         }
         for (var i = 0; i < (prefab.Pools?.Count ?? 0); i++)
         {

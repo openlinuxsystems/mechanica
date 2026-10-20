@@ -12,7 +12,7 @@ namespace Mechanica.Game.Tests;
 /// The debug scrap car, host plus a client: a new world with <see cref="Main.DebugCar"/> on gets the car by the spawn,
 /// wired and fuelled, and the client sees it; the client sits in it, drives it straight ahead on W on open ground east of
 /// the spawn (with nobody steering it keeps its line and heading), backs it up on S, burning the Gas Container's gasoline,
-/// and up a 15° hill (gravity tilted). Rolled onto its roof,
+/// and up a 15° hill (gravity tilted). Parked, it stays put though its steering holds straight. Rolled onto its roof,
 /// the car keeps its driver in the seat, upside down with it, on both peers. The client, which does not host, never spawns one of its own.
 /// </summary>
 public partial class DebugCarTest : StagedTest
@@ -69,6 +69,18 @@ public partial class DebugCarTest : StagedTest
                 Check(instance.Main.Display.Readouts.Number(_car, engine, "running") is null or 0f, $"the {who} sees the engine off");
             Check(HostCar.InventoryOf(Part("vanilla:gas_container"))!.Count(Gasoline) == Creations.DebugCarSpawner.LoadSettings().Gasoline,
                 "it burns no gasoline");
+            return true;
+        });
+        // Its steering holds straight. A hold re-set to a tiny speed every step dithered the joint and crept a parked
+        // car along at several cm/s; a hold on its target stops its motor.
+        Add("parked on flat ground, the car stays put", frame =>
+        {
+            if (frame == 0)
+                _start = Chassis.GlobalPosition;
+            if (frame < 600)
+                return false;
+            var moved = (Chassis.GlobalPosition - _start).Length();
+            Check(moved < 0.15f, $"it stays put (moves {moved:F3} m in 10 s; the dithering hold crept it about 0.5 m)");
             return true;
         });
         Add("the client sits in the driver's seat", frame =>

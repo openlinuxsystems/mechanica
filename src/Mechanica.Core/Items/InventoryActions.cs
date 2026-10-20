@@ -523,6 +523,8 @@ public sealed class InventoryActions(IPartCatalog catalog, RecipeBook recipes, I
             return $"There is no creation {args.Creation}.";
         if (creation.FindPart(args.Part) is not { } part)
             return $"Creation {args.Creation} has no part {args.Part}.";
+        if (WorldOwned.Refusal(creation, "upgraded") is { } owned)
+            return owned;
         var name = creation.DefinitionOf(args.Part).Name ?? part.Part;
         var top = PartUpgrades.MaxLevel(catalog.FindDefinition(part.Part) ?? creation.DefinitionOf(args.Part));
         if (top == 0)
@@ -582,7 +584,7 @@ public sealed class InventoryActions(IPartCatalog catalog, RecipeBook recipes, I
     public (int Tab, string Name) SortKey(string item)
     {
         var definition = catalog.FindDefinition(item);
-        var tab = InventoryTabs.Of(definition?.Category, HotbarTools.IsTool(item));
+        var tab = InventoryTabs.Of(definition, HotbarTools.IsTool(item));
         return (tab is { } t ? (int)t : int.MaxValue, definition?.Name ?? item);
     }
 

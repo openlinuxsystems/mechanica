@@ -303,6 +303,20 @@ public partial class LogicTests
     }
 
     [Fact]
+    public void AWorldOwnedCreationIsNeverRewiredButItsPartsAreStillUsed()
+    {
+        var c = Row(Source, Lamp, Gate);
+        Assert.True(c.TryLink(1, 2, out var error), error);
+        var owned = _world.Creations[1] = Creations.WorldOwnedCreations.Owned(c);
+
+        Assert.Equal("The X belongs to the world: it can't be wired.", Dispatch(Player, LogicActions.ConnectParts, new LinkPartsArgs(1, 1, 3)).Message);
+        Assert.Contains("belongs to the world", Dispatch(Player, LogicActions.DisconnectParts, new LinkPartsArgs(1, 1, 2)).Message);
+        Assert.Equal([new LogicLink(1, 2)], owned.Links);
+        // Its settings are how it is used, not what it is built of.
+        Assert.True(Dispatch(Player, LogicActions.ConfigurePart, new ConfigurePartArgs(1, 3, Changes(("mode", Json("or"))))).Ok);
+    }
+
+    [Fact]
     public void PlayersConnectPartsInReachAndHearIt()
     {
         var c = Row(Source, Lamp);

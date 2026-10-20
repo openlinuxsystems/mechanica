@@ -25,7 +25,7 @@ asks first.
 | `mods`, `fingerprint` | The mods the world ran. Loading with different mods works but logs what differs |
 | `destroyed` | Trees, rocks and other world objects that were destroyed |
 | `regrow` | Destroyed world objects that will stand again (an oil geyser), each with the world time (`time`'s clock) when it comes back: `{"poi.7.2": 5400}`. Left out when there are none |
-| `creations` | Every Creation in the Creation format: parts, links, body poses and velocities, part settings, damage, container contents, crafting queues, soil (`seed`, `grown`, `water`, `stage` and `updated`, the world time growth was last worked out at), `fire`, how strongly a burning part burns (0 to 1), and `anchored`, true on a part built resting on the ground, which holds its Body still (missing in older saves, whose Creations all simulate) |
+| `creations` | Every Creation in the Creation format: parts, links, body poses and velocities, part settings, damage, container contents, crafting queues, soil (`seed`, `grown`, `water`, `stage` and `updated`, the world time growth was last worked out at), `fire`, how strongly a burning part burns (0 to 1), and `anchored`, true on a part built resting on the ground, which holds its Body still (missing in older saves, whose Creations all simulate). A world-owned Creation (a Workshop's Fabricator) also has `world_part`, the POI `part` marker it stands at (see [World Generation](world-generation.md#world-owned-parts-part-markers)) |
 | `scripts` | Each scripted part's Lua `state` table, by creation and part id |
 | `mod_scripts` | Each mod script's `state` table (the scripts in `mod.json` `scripts`), by qualified script path |
 | `players` | Every player the host has seen, by profile id: name, inventory, health, respawn bed, position and facing, chosen character, hotbar, map markers, and `item_scripts`, their item scripts' `state` tables by item id |
@@ -38,6 +38,8 @@ Unknown keys are kept as they are, so later chunks can add their own.
 
 - A Creation that no longer reads (a part whose mod was removed) is skipped with a warning; the rest of
   the world loads.
+- The world's own parts are matched to their POI `part` markers: a saved one keeps its contents, a missing one is put
+  down, and one whose marker is gone is removed, so each marker has exactly one.
 - An inventory slot that no longer fits (an unknown item, a slot past the end) is dropped with a warning.
 - A part script's saved `state` replaces the fresh one after the script starts. A player's item script `state`
   is there before their item's script first runs (its setup already sees it).

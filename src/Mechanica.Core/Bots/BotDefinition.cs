@@ -180,8 +180,9 @@ public sealed record BotModelDefinition
 
     /// <summary>
     /// Effects to show on every peer, by attack id (when the bot uses it) or <c>death</c> (when it dies):
-    /// <c>explosion</c> (fire, smoke, sparks and debris) or <c>shockwave</c> (a ring that ripples over the ground). Each
-    /// is as big as the attack's radius (a death's uses the bot's largest area attack, or its size).
+    /// <c>explosion</c> (fire, smoke, sparks and debris), <c>shockwave</c> (a ring that ripples over the ground), each as
+    /// big as the attack's radius (a death's uses the bot's largest area attack, or its size), or <c>shot</c> (the
+    /// model's hidden <c>Shot</c> node flies to what the attack hit).
     /// </summary>
     public Dictionary<string, string>? Effects { get; init; }
 

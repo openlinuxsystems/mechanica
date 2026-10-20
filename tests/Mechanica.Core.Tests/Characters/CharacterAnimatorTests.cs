@@ -512,6 +512,22 @@ public class CharacterAnimatorTests
     }
 
     [Fact]
+    public void GettingUpHoldsThePlayerDownUntilTheClipEnds()
+    {
+        var animator = Make();
+        Run(animator, Standing(), 0.1f);
+
+        Assert.True(animator.GetUp());
+        Run(animator, Standing(), Dt);
+        Assert.Equal("get_up", animator.Gesture);
+        Assert.True(animator.Grounded);
+        Assert.False(animator.GetUp());
+        Run(animator, Standing(), 1.4f);
+        Assert.Null(animator.Gesture);
+        Assert.False(animator.Grounded);
+    }
+
+    [Fact]
     public void ASeatedPlayerOnlyFlinches()
     {
         var animator = Make();

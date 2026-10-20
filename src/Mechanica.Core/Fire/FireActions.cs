@@ -123,6 +123,8 @@ public sealed class FireActions(FireSettings settings, SurvivalActions survival,
     {
         if (creation.FindPart(partId) is null)
             return $"There is no part {partId} in creation {creation.Id}.";
+        if (WorldOwned.Refusal(creation, "set alight") is { } owned)
+            return owned;
         var definition = creation.DefinitionOf(partId);
         if (definition.Flammable != true)
             return $"The {definition.Name ?? "part"} does not burn.";

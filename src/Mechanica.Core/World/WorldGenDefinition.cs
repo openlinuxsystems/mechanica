@@ -1158,6 +1158,19 @@ public sealed record PoiMarker
     /// <summary>Marker type that places a world object (<see cref="Ref"/> is its id).</summary>
     public const string ObjectType = "object";
 
+    /// <summary>
+    /// Marker type that puts a working part in the world, owned by it (<see cref="Ref"/> is the part's id; see
+    /// <see cref="WorldParts"/>).
+    /// </summary>
+    public const string PartType = "part";
+
+    /// <summary>
+    /// <paramref name="id"/> qualified as a marker's <see cref="Ref"/> means it: a bare id names something of the mod of
+    /// the POI <paramref name="poi"/> (<c>mod_id:poi_id</c>), a <c>mod_id:id</c> is kept.
+    /// </summary>
+    public static string Qualify(string id, string poi) =>
+        id.Contains(':') ? id : $"{poi[..Math.Max(0, poi.IndexOf(':'))]}:{id}";
+
     /// <summary>Marker kind (lowercase snake_case).</summary>
     public string? Type { get; init; }
 

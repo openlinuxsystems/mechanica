@@ -5,12 +5,16 @@ structure's centre (glTF +Y up, front towards +Z):
 
 * ``meshes/structures/sv04_fore.glb`` and ``sv04_aft.glb`` - the SV-04 Salvager broken in two (Salvager Tech): the
   fore section with the bridge, crew quarters and engineering, and the aft section with the cargo hold and the
-  engine room. Both share the ship's origin, so the crash site places them at the same point.
+  engine room. Both share the ship's origin, so the crash site places them at the same point. The port nacelle tore
+  off in flight: ``sv04_nacelle.glb`` is it, lying where it fell (the opening cinematic shows it go).
 * ``meshes/structures/relay_beacon_dead.glb`` - a dead Colony relay beacon (Colony Works).
 * ``meshes/structures/settler_shack.glb`` - the farmer's half-dome shack with its trade counter and fenced garden
   (Settler Patchwork).
 * ``meshes/structures/stone_arch.glb``, ``stone_arch_broken.glb``, ``stone_pillar_{tall,mid,short}.glb`` and
   ``stone_court.glb`` - Old Stone ruins: arches, pillars, and a flagstone court with steps.
+* ``meshes/structures/workshop.glb`` - the Workshop (Colony Works): a vehicle repair shop with two always-open bays,
+  an office and a worn forecourt. Every Workshop POI uses it; its Fabricator is a part the POI places (a ``part``
+  marker), not part of the model.
 * ``meshes/structures/cargo_crate_colony.glb`` - a framed Colony cargo crate (decoration in the cargo spill).
 * ``meshes/world/scrap_pile_metal.glb`` and ``scrap_pile_wood.glb`` - the starting scrap piles (world objects).
 
@@ -24,7 +28,7 @@ How to run (Blender as a Python module, no Blender UI needed):
     python tools/structures/build_structures.py
 
 The outputs are committed; re-run this script after changing it (or kit.py, frame.py, families.py, ship.py,
-textures.py) and commit the result. The build is deterministic (seeded noise only).
+workshop.py, textures.py) and commit the result. The build is deterministic (seeded noise only).
 """
 
 from __future__ import annotations
@@ -43,6 +47,7 @@ K.EXPORT = True
 import families as F  # noqa: E402
 import frame as FR  # noqa: E402
 import ship as S  # noqa: E402
+import workshop as W  # noqa: E402
 
 STRUCTURES = K.MESH / "structures"
 WORLD = K.MESH / "world"
@@ -65,6 +70,7 @@ def ship():
     aft = next(c for c in root.children if c.name.startswith("aft"))
     report("sv04_fore", K.export(fore, STRUCTURES / "sv04_fore.glb", frame=root))
     report("sv04_aft", K.export(aft, STRUCTURES / "sv04_aft.glb", frame=root))
+    single("sv04_nacelle", lambda: S.lost_nacelle())
 
 
 def single(name, build, folder=STRUCTURES, collider=True):
@@ -105,6 +111,7 @@ def main():
     for name, h, seed in (("stone_pillar_tall", 5.0, 21), ("stone_pillar_mid", 3.4, 23), ("stone_pillar_short", 2.6, 22)):
         single(name, lambda h=h, seed=seed: F.stone_pillar((0, 0, 0), h, seed))
     single("stone_court", court)
+    single("workshop", lambda: W.workshop())
     single("cargo_crate_colony", crate)
     single("scrap_pile_metal", pile("metal"), WORLD, collider=False)
     single("scrap_pile_wood", pile("wood"), WORLD, collider=False)

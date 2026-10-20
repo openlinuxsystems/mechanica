@@ -128,6 +128,17 @@ public class FireTests
     }
 
     [Fact]
+    public void AWorldOwnedPartNeverCatches()
+    {
+        var id = _f.Add(Plank, new Vector3(0, 0, -20));
+        var plank = _f.World.Creations[id] = Creations.WorldOwnedCreations.Owned(_f.World.Creations[id]);
+
+        Assert.Contains("belongs to the world", Fire.Ignite(plank, 1));
+        Assert.Equal(0f, plank.FireOf(1));
+        Assert.Empty(Fire.Fires());
+    }
+
+    [Fact]
     public void WaterPutsBurningPartsOut()
     {
         var plank = _f.World.Creations[_f.Add(Plank, new Vector3(0, 0, -20))];

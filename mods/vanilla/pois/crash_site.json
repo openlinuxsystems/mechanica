@@ -23,13 +23,17 @@
   "ground": [
     { "ground": "grass", "radius": 70.0, "blend": 40.0, "noise": 9.0 },
     { "ground": "burnt", "at": [0.0, 4.0], "radius": 20.0, "blend": 12.0, "noise": 6.0 },
-    { "ground": "burnt", "at": [33.0, 3.0], "radius": 11.0, "blend": 8.0, "noise": 5.0 }
+    { "ground": "burnt", "at": [33.0, 3.0], "radius": 11.0, "blend": 8.0, "noise": 5.0 },
+    // Where the port nacelle came down.
+    { "ground": "burnt", "at": [44.0, 50.0], "radius": 6.0, "blend": 5.0, "noise": 3.0 }
   ],
   "flora": "meadow",
   "models": [
     // The SV-04 Salvager broken in two; both halves share the ship's origin.
     { "file": "meshes/structures/sv04_fore.glb", "at": [0.0, 0.0, 0.0], "yaw": 20.0 },
     { "file": "meshes/structures/sv04_aft.glb", "at": [0.0, 0.0, 0.0], "yaw": 20.0 },
+    // Its port nacelle, torn off in flight (the opening cinematic), lying where it fell.
+    { "file": "meshes/structures/sv04_nacelle.glb", "at": [44.0, 0.0, 50.0], "yaw": 35.0 },
     // Old Stone court to the north, at the end of the cargo spill.
     { "file": "meshes/structures/stone_court.glb", "at": [-6.0, 0.0, -58.0] },
     { "file": "meshes/structures/stone_arch.glb", "at": [-6.0, 0.0, -48.0] },

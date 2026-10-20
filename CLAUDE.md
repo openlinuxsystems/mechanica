@@ -14,7 +14,8 @@ node --test tools/ai/bridge/test/*.test.mjs   # AI bridges (Node 22+); game/test
 
 CI (`.github/workflows/ci.yml`) runs the same steps. Keep it green.
 `tools/package.sh <linux|windows|macos>` exports a release zip (`.github/workflows/release.yml` runs it on `v*` tags);
-exported builds take `--self-test`. `tools/lua-bench.sh` runs the D2 Lua benchmark (headless, then in Godot with real step times).
+exported builds take `--self-test`. `tools/lua-bench.sh` runs the D2 Lua benchmark (headless, then in Godot with real step times); `tools/perf-bench.sh` times
+frames and host upload with a client and a dozen debug cars (`game/tools/perfbench`).
 After adding, renaming or re-documenting an action or AI endpoint method, run `tools/ai/gen-docs.sh`: the AI docs
 (`docs/ai/reference.md`, `docs/ai/describe.json`) are generated from `mechanica.describe` and `game/tests/aidocs` fails when they drift.
 

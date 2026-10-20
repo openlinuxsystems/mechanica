@@ -332,6 +332,8 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
             return $"{bot.Type.Name}'s {attack.Id} cannot break world objects.";
         if (TargetPoint(args, out var radius) is not { } point)
             return "The target is not there.";
+        if (args.Creation is { } targeted && WorldOwned.Refusal(survivalWorld.FindCreation(targeted), "damaged") is { } owned)
+            return owned;
         if (args.Target == args.Bot)
             return "A bot cannot attack itself.";
         var reach = Vector3.Distance(bot.Centre, point) - bot.Type.Radius - radius;
@@ -444,7 +446,8 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
         }
         if (!attack.HitsParts)
             return;
-        foreach (var creation in survivalWorld.AllCreations.Select(c => c.Id).ToList().Select(survivalWorld.FindCreation).OfType<Creation>())
+        // A world-owned Creation (WorldOwned) takes no damage.
+        foreach (var creation in survivalWorld.AllCreations.Where(c => !c.IsWorldOwned).Select(c => c.Id).ToList().Select(survivalWorld.FindCreation).OfType<Creation>())
         {
             foreach (var part in creation.Parts.ToList())
             {

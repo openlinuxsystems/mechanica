@@ -269,6 +269,7 @@
         "name": "Glowstick",
         "description": "A snap-light that glows green for good. Stick it on anything to mark a path or light a corner; it needs no power.",
         "category": "light",
+        "tab": "consumable",
         "mass": 0.1,
         "durability": 1,
         "stack_size": 50,
@@ -432,7 +433,7 @@
       "template": "interactive",
       "set": {
         "name": "Dispenser",
-        "description": "A supply locker found at Workshop Outposts. Take what it holds; it can be refilled like a chest.",
+        "description": "A supply locker found at Workshops. Take what it holds; it can be refilled like a chest.",
         "category": "container",
         "mass": 40,
         "durability": 10,

@@ -27,7 +27,48 @@ public class BodySnapshotTests
         Assert.Equal(2, decoded.Creations.Count);
         Assert.Equal((1, (ushort)3, 0), (decoded.Creations[0].CreationId, decoded.Creations[0].Revision, decoded.Creations[0].FirstBody));
         Assert.Equal((9, (ushort)65535, 4), (decoded.Creations[1].CreationId, decoded.Creations[1].Revision, decoded.Creations[1].FirstBody));
-        Assert.Equal(snapshot.Creations[0].Bodies, decoded.Creations[0].Bodies);
+        for (var i = 0; i < 2; i++)
+            AssertClose(snapshot.Creations[0].Bodies[i], decoded.Creations[0].Bodies[i]);
+    }
+
+    // Positions bit for bit; rotations to a hundredth of a degree; velocities to half-float precision.
+    private static void AssertClose(BodyState expected, BodyState actual)
+    {
+        Assert.Equal(expected.Position, actual.Position);
+        var (e, a) = (expected.Rotation, actual.Rotation);
+        // For nearby unit quaternions the angle between the rotations is about twice their distance (q and -q alike).
+        double Gap(float sign) => Math.Sqrt(Math.Pow(a.X - sign * e.X, 2) + Math.Pow(a.Y - sign * e.Y, 2) + Math.Pow(a.Z - sign * e.Z, 2) + Math.Pow(a.W - sign * e.W, 2));
+        var degrees = 2 * Math.Min(Gap(1), Gap(-1)) * 180 / Math.PI;
+        Assert.True(degrees < 0.02, $"{a} is {degrees:F4}° from {e}");
+        Assert.True(Vector3.Distance(expected.LinearVelocity, actual.LinearVelocity) <= 0.002f * expected.LinearVelocity.Length() + 1e-3f);
+        Assert.True(Vector3.Distance(expected.AngularVelocity, actual.AngularVelocity) <= 0.002f * expected.AngularVelocity.Length() + 1e-3f);
+    }
+
+    [Fact]
+    public void RotationsSurviveEveryLargestComponentAndSign()
+    {
+        var random = new Random(3);
+        for (var n = 0; n < 2000; n++)
+        {
+            var q = Quaternion.Normalize(new Quaternion(Next(), Next(), Next(), Next()));
+            var state = State(1) with { Rotation = q };
+            AssertClose(state, BodySnapshot.Decode(new BodySnapshot(1, [new CreationBodies(1, 0, 0, [state])]).Encode())!.Creations[0].Bodies[0]);
+        }
+        foreach (var axis in new[] { Quaternion.Identity, new Quaternion(1, 0, 0, 0), new Quaternion(0, -1, 0, 0), new Quaternion(0, 0, 0, -1) })
+        {
+            var state = State(1) with { Rotation = axis };
+            AssertClose(state, BodySnapshot.Decode(new BodySnapshot(1, [new CreationBodies(1, 0, 0, [state])]).Encode())!.Creations[0].Bodies[0]);
+        }
+
+        float Next() => (float)(random.NextDouble() * 2 - 1);
+    }
+
+    [Fact]
+    public void HugeVelocitiesAreClampedNotLost()
+    {
+        var state = State(1) with { LinearVelocity = new Vector3(1e6f, -1e6f, 0) };
+        var decoded = BodySnapshot.Decode(new BodySnapshot(1, [new CreationBodies(1, 0, 0, [state])]).Encode())!.Creations[0].Bodies[0];
+        Assert.True(decoded.LinearVelocity.X > 60000 && decoded.LinearVelocity.Y < -60000);
     }
 
     [Fact]
@@ -46,8 +87,9 @@ public class BodySnapshotTests
         BitConverter.GetBytes(float.NaN).CopyTo(nan, BodySnapshot.HeaderSize + BodySnapshot.RunHeaderSize);
         Assert.Null(BodySnapshot.Decode(nan));
 
+        // Three "smallest" components of 1/√2 each cannot belong to a unit quaternion.
         var stretched = (byte[])good.Clone();
-        BitConverter.GetBytes(3f).CopyTo(stretched, BodySnapshot.HeaderSize + BodySnapshot.RunHeaderSize + 12);
+        stretched.AsSpan(BodySnapshot.HeaderSize + BodySnapshot.RunHeaderSize + 12, 6).Fill(0xFF);
         Assert.Null(BodySnapshot.Decode(stretched));
     }
 
@@ -237,6 +279,7 @@ public class SyncSettingsTests
     [InlineData("""{ "interest_distance": -1 }""", "interest_distance")]
     [InlineData("""{ "max_packet_bytes": 10 }""", "max_packet_bytes")]
     [InlineData("""{ "max_extrapolation": -0.5 }""", "max_extrapolation")]
+    [InlineData("""{ "full_sync_interval": -1 }""", "full_sync_interval")]
     [InlineData("""{ "unknown": 1 }""", "Invalid sync settings")]
     [InlineData("null", "null")]
     public void RejectsBadValues(string json, string message)
@@ -253,5 +296,26 @@ public class SyncSettingsTests
             dir = dir.Parent;
         var settings = SyncSettings.FromJson(File.ReadAllText(Path.Combine(dir!.FullName, "game", "data", "sync.json")));
         Assert.True(settings.InterestDistance > 0);
+    }
+}
+
+public class TextPackingTests
+{
+    [Fact]
+    public void RoundTripsAndShrinksJson()
+    {
+        var json = "{\"parts\":[" + string.Join(",", Enumerable.Range(0, 500).Select(i => $"{{\"id\":{i},\"part\":\"vanilla:scrap_wood_block\",\"cell\":[{i % 7},{i / 7},0],\"rotation\":0}}")) + "],\"name\":\"Röver\"}";
+        var packed = TextPacking.Pack(json);
+        Assert.Equal(json, TextPacking.Unpack(packed));
+        Assert.True(packed.Length * 8 < json.Length, $"{json.Length} bytes packed to {packed.Length}");
+    }
+
+    [Fact]
+    public void RejectsTextThatUnpacksTooLarge()
+    {
+        var packed = TextPacking.Pack(new string('a', 100_000));
+        Assert.True(packed.Length < 1000);
+        Assert.Null(TextPacking.Unpack(packed, maxBytes: 50_000));
+        Assert.Equal(100_000, TextPacking.Unpack(packed)!.Length);
     }
 }

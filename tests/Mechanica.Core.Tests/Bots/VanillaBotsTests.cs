@@ -63,6 +63,19 @@ public class VanillaBotsTests
         Assert.Equal(BotEffects.Explosion, Book.Value.FindBot("scuttler_red")!.Model!.Effects["explode"]);
     }
 
+    [Theory]
+    [InlineData("spooler_blue", "tape", "tape_shot")]
+    [InlineData("spooler_green", "bubble", "bubble_shot")]
+    [InlineData("spooler_yellow", "tape", "rapid_shot")]
+    [InlineData("spooler_red", "tape", "heavy_shot")]
+    public void EachSpoolerHasItsOwnModelAndShot(string id, string attack, string clip)
+    {
+        var model = Book.Value.FindBot(id)!.Model!;
+        Assert.Equal($"vanilla:meshes/bots/{id}.glb", model.Mesh);
+        Assert.Equal([clip], model.Attacks[attack]);
+        Assert.Equal(BotEffects.Shot, model.Effects[attack]);
+    }
+
     [Fact]
     public void BotsUseTheSpecNumbers()
     {
@@ -226,7 +239,8 @@ public class VanillaBotsTests
     [InlineData("""{ "mesh": "meshes/x.glb", "eye_calm": "green" }""", "$.model.eye_calm", "eye_calm 'green' must be \"#rrggbb\".")]
     [InlineData("""{ "mesh": "meshes/x.glb", "clip_speeds": { "patrol": 0 } }""", "$.model.clip_speeds.patrol", "clip speed 0 must be above 0 m/s.")]
     [InlineData("""{ "mesh": "meshes/x.glb", "effects": { "bite": "explosion" } }""", "$.model.effects.bite", "the bot has no attack 'bite' (use an attack id or \"death\").")]
-    [InlineData("""{ "mesh": "meshes/x.glb", "effects": { "whip": "lightning" } }""", "$.model.effects.whip", "effect 'lightning' must be one of: explosion, shockwave.")]
+    [InlineData("""{ "mesh": "meshes/x.glb", "effects": { "whip": "lightning" } }""", "$.model.effects.whip", "effect 'lightning' must be one of: explosion, shockwave, shot.")]
+    [InlineData("""{ "mesh": "meshes/x.glb", "effects": { "death": "shot" } }""", "$.model.effects.death", "a shot follows an attack to what it hit; use it on an attack, not on death.")]
     public void BadModelsAreReported(string model, string path, string? message)
     {
         var bot = ModelBot(model);

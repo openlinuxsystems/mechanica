@@ -229,8 +229,8 @@
       "file": "parts/decor/outpost_sign.json",
       "template": "decor",
       "set": {
-        "name": "Workshop Outpost Sign",
-        "description": "The sign that marks a Workshop Outpost.",
+        "name": "Workshop Sign",
+        "description": "The sign that marks a Workshop.",
         "mass": 3,
         "durability": 2,
         "flammable": false,

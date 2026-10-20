@@ -69,6 +69,7 @@ you; this page is the reference for what each key means, so you can read, review
 | `name` | string | always | Display name. |
 | `description` | string | no | Tooltip text. |
 | `category` | enum | always | See [Categories](#categories). |
+| `tab` | enum | no | The inventory tab the item shows under (`tools`, `blocks`, `interactive`, `parts`, `consumable`) when its category's is wrong for it. Omitted uses the category's tab. See [Categories](#categories). |
 | `mass` | number > 0 | placeable | Mass in kg. A Body's mass is the sum of its parts. |
 | `centre_of_mass` | `[x, y, z]` m | no | Where the part's mass sits, from the part centre in the part's frame. Omitted means the part centre. Must lie within the footprint. A Body's centre of mass is its parts' mass-weighted mean. |
 | `durability` | integer ≥ 1 | placeable | Toughness rating; the part's HP derives from it. A `loose` part may leave it out, and then nothing breaks it (a Stone Rod). |
@@ -110,18 +111,23 @@ you; this page is the reference for what each key means, so you can read, review
 
 ### Categories
 
-| Value | What it is |
-|-------|------------|
-| `block` | A structural block or wedge. Attaches on every face. |
-| `interactive` | A part with behaviour: bearings, engines, seats, logic, thrusters. |
-| `container` | Holds items, fuel or charge. |
-| `station` | A crafting or utility station. |
-| `light` | A light. |
-| `decor` | A decorative prop. |
-| `resource` | An inventory-only crafting material. |
-| `consumable` | An inventory item that is used up: food, seeds, fuel. |
-| `tool` | A handheld tool. |
-| `weapon` | A handheld weapon. |
+| Value | What it is | Inventory tab |
+|-------|------------|---------------|
+| `block` | A structural block or wedge. Attaches on every face. | Blocks |
+| `interactive` | A part with behaviour: bearings, engines, seats, logic, thrusters. | Interactive |
+| `container` | Holds items, fuel or charge. | Interactive |
+| `station` | A crafting or utility station. | Interactive |
+| `light` | A light. | Interactive |
+| `decor` | A decorative prop. | Parts |
+| `resource` | An inventory-only crafting material. | Parts |
+| `consumable` | An inventory item that is used up: food, seeds, fuel. | Consumable |
+| `tool` | A handheld tool. | Tools |
+| `weapon` | A handheld weapon. | Tools |
+
+The inventory and the stations sort items into Scrap Mechanic's tabs: Tools, Blocks, Interactive, Parts and
+Consumable. An item goes under its category's tab unless its `tab` key names another: Gasoline is a `resource`
+(you can set a can down) that you use up as fuel, so it has `"tab": "consumable"`. Every vanilla item has a tab, and a
+test fails if one ends up under none.
 
 ## visual
 

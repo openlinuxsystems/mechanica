@@ -141,42 +141,52 @@ public sealed class HotbarActions(IPartCatalog catalog)
     private static JsonElement Value<T>(T value) => JsonSerializer.SerializeToElement(value, ActionJson.Options);
 }
 
-/// <summary>The inventory's category tabs (UI spec §3).</summary>
+/// <summary>
+/// The inventory's category tabs (UI spec §3), Scrap Mechanic's set in its order. An item's tab comes from its
+/// category (<see cref="InventoryTabs.Default"/>) unless its data names one with <c>tab</c>.
+/// </summary>
 public enum InventoryTab
 {
     /// <summary>Everything.</summary>
     All,
 
-    /// <summary>Blocks and wedges.</summary>
-    Blocks,
-
-    /// <summary>Placeable parts with behaviour: interactive parts, containers, stations, lights and decor.</summary>
-    Interactive,
-
     /// <summary>Hand tools and weapons.</summary>
     Tools,
 
-    /// <summary>Crafting materials.</summary>
-    Resources,
+    /// <summary>Blocks and wedges.</summary>
+    Blocks,
 
-    /// <summary>Food, seeds, fuel and other things used up.</summary>
-    Consumables,
+    /// <summary>Placeable parts with behaviour: mechanical and logic parts, containers, stations and lights.</summary>
+    Interactive,
+
+    /// <summary>Crafting materials and passive placeable parts: decor, props, pipes and furniture.</summary>
+    Parts,
+
+    /// <summary>Things used up: food, seeds, fuel, ammo, batteries and throwables.</summary>
+    Consumable,
 }
 
 /// <summary>Which tab an item shows under.</summary>
 public static class InventoryTabs
 {
-    /// <summary>True when an item of <paramref name="category"/> (or a tool, <paramref name="tool"/>) shows under <paramref name="tab"/>.</summary>
-    public static bool Shows(InventoryTab tab, PartCategory? category, bool tool = false) => tab == InventoryTab.All || Of(category, tool) == tab;
+    /// <summary>True when <paramref name="definition"/> (or a tool, <paramref name="tool"/>) shows under <paramref name="tab"/>.</summary>
+    public static bool Shows(InventoryTab tab, PartDefinition? definition, bool tool = false) => tab == InventoryTab.All || Of(definition, tool) == tab;
 
-    /// <summary>The tab an item of <paramref name="category"/> belongs to (tools under Tools); null for none but All.</summary>
-    public static InventoryTab? Of(PartCategory? category, bool tool = false) => tool ? InventoryTab.Tools : category switch
+    /// <summary>
+    /// The tab an item belongs to: Tools for a tool, else the tab its data names, else its category's
+    /// (<see cref="Default"/>); null for none but All.
+    /// </summary>
+    public static InventoryTab? Of(PartDefinition? definition, bool tool = false) =>
+        tool ? InventoryTab.Tools : definition?.Tab ?? Default(definition?.Category);
+
+    /// <summary>The tab items of <paramref name="category"/> fall under when their data names none.</summary>
+    public static InventoryTab? Default(PartCategory? category) => category switch
     {
-        PartCategory.Block => InventoryTab.Blocks,
-        PartCategory.Interactive or PartCategory.Container or PartCategory.Station or PartCategory.Light or PartCategory.Decor => InventoryTab.Interactive,
         PartCategory.Tool or PartCategory.Weapon => InventoryTab.Tools,
-        PartCategory.Resource => InventoryTab.Resources,
-        PartCategory.Consumable => InventoryTab.Consumables,
+        PartCategory.Block => InventoryTab.Blocks,
+        PartCategory.Interactive or PartCategory.Container or PartCategory.Station or PartCategory.Light => InventoryTab.Interactive,
+        PartCategory.Decor or PartCategory.Resource => InventoryTab.Parts,
+        PartCategory.Consumable => InventoryTab.Consumable,
         _ => null,
     };
 

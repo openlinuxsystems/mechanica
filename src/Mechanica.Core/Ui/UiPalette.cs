@@ -129,11 +129,11 @@ public static class UiPalette
     /// <summary>The dot of the Interactive tab and its items.</summary>
     public const string CategoryInteractive = "#B98CFF";
 
-    /// <summary>The dot of the Resources tab and its items.</summary>
-    public const string CategoryResources = "#62E0A0";
+    /// <summary>The dot of the Parts tab and its items.</summary>
+    public const string CategoryParts = "#62E0A0";
 
-    /// <summary>The dot of the Consumables tab and its items.</summary>
-    public const string CategoryConsumables = "#FF8ACF";
+    /// <summary>The dot of the Consumable tab and its items.</summary>
+    public const string CategoryConsumable = "#FF8ACF";
 
     /// <summary>Rigid (welded) connections in previews and gizmos: green, like success.</summary>
     public const string JointRigid = Success;
@@ -274,8 +274,8 @@ public static class UiPalette
         [nameof(CategoryTools)] = CategoryTools,
         [nameof(CategoryBlocks)] = CategoryBlocks,
         [nameof(CategoryInteractive)] = CategoryInteractive,
-        [nameof(CategoryResources)] = CategoryResources,
-        [nameof(CategoryConsumables)] = CategoryConsumables,
+        [nameof(CategoryParts)] = CategoryParts,
+        [nameof(CategoryConsumable)] = CategoryConsumable,
     };
 
     /// <summary>Every overlay, gizmo and preview colour (mod tools and debug views), for tests and the style guide.</summary>

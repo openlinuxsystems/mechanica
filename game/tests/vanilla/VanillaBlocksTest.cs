@@ -108,7 +108,7 @@ public partial class VanillaBlocksTest : StagedTest
 
         Add("every block lands on the ground on host and client", frame =>
         {
-            var hostNodes = _sandbox.Host.Main.Creations.All.Select(c => _sandbox.Host.Main.Creations.NodeOf(c.Id)!).ToList();
+            var hostNodes = _sandbox.Host.Main.Creations.All.Where(c => !c.IsWorldOwned).Select(c => _sandbox.Host.Main.Creations.NodeOf(c.Id)!).ToList();
             if (frame < 60 || (hostNodes.Any(n => !n.Bodies[0].Sleeping) && frame < 900))
                 return false;
             foreach (var node in hostNodes)
@@ -159,5 +159,6 @@ public partial class VanillaBlocksTest : StagedTest
         || (relative.StartsWith("recipes/", StringComparison.Ordinal) && (relative.EndsWith("_block.json", StringComparison.Ordinal)
             || relative.EndsWith("_wedge.json", StringComparison.Ordinal)));
 
-    private static int Count(SandboxScreen.Instance instance) => instance.Main.Creations.All.Count();
+    // Only what players made: the Workshops' Fabricators (world-owned) are in the vanilla world too.
+    private static int Count(SandboxScreen.Instance instance) => instance.Main.Creations.All.Count(c => !c.IsWorldOwned);
 }

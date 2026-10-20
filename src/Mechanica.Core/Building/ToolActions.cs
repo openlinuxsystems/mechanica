@@ -481,6 +481,8 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
     /// </summary>
     public static string? LiftRefusal(Creation creation, LiftSettings settings, IEnumerable<LiftState> lifts, int peer)
     {
+        if (WorldOwned.Refusal(creation, "lifted") is { } owned)
+            return owned;
         if (lifts.Any(l => l.Owner != peer && l.Creation == creation.Id))
             return "It is on another player's lift.";
         if (settings.RefuseGrounded && creation.IsGrounded)
@@ -679,6 +681,8 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
             return $"There is no creation {args.Source}.";
         if (world.FindCreation(args.Target) is not { } target)
             return $"There is no creation {args.Target}.";
+        if ((WorldOwned.Refusal(source, "welded") ?? WorldOwned.Refusal(target, "welded")) is { } owned)
+            return owned;
         if (source.AuthorityPeer != target.AuthorityPeer)
             return $"Creations {source.Id} and {target.Id} are simulated by different players.";
         // What is built on the ground stays put: select the loose creation first and weld it to this one.
@@ -729,6 +733,8 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
             return tool;
         if (world.FindCreation(args.Creation) is not { } creation)
             return $"There is no creation {args.Creation}.";
+        if (WorldOwned.Refusal(creation, "welded") is { } owned)
+            return owned;
         if (!creation.CanWeldParts(args.A, args.B, out var error))
             return Sentence(error);
         return CheckReach(caller, PartCentre(creation, args.B));
@@ -750,6 +756,8 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
     {
         if (world.FindCreation(args.Creation) is not { } creation)
             return $"There is no creation {args.Creation}.";
+        if (WorldOwned.Refusal(creation, "painted") is { } owned)
+            return owned;
         if (args.Parts.Count == 0 || args.Parts.Count > settings.Paint.MaxPartsPerAction)
             return $"Paint 1 to {settings.Paint.MaxPartsPerAction} parts at a time (got {args.Parts.Count}).";
         if (args.Parts.Distinct().Count() != args.Parts.Count)
@@ -843,7 +851,7 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
             return $"There is no creation {creationId}.";
         if (creation.FindPart(partId) is null)
             return $"Creation {creationId} has no part {partId}.";
-        return CheckSledgeReach(caller, PartCentre(creation, partId));
+        return WorldOwned.Refusal(creation, "damaged") ?? CheckSledgeReach(caller, PartCentre(creation, partId));
     }
 
     // The swing reaches sledge.reach from the eye to the crosshair; the target's centre may sit up to half a block
@@ -925,7 +933,8 @@ public sealed class ToolActions(BuildSettings settings, IToolWorld world, IPartC
     /// </summary>
     public SledgeResult DamagePart(Creation creation, int partId, float damage)
     {
-        if (settings.Sledge.HealthOf(creation.DefinitionOf(partId).Durability) is not { } full)
+        // A world-owned part takes no damage (WorldOwned), whatever hits it: it only sounds the blow, like a part that can't break.
+        if (creation.IsWorldOwned || settings.Sledge.HealthOf(creation.DefinitionOf(partId).Durability) is not { } full)
         {
             BuildActions.PlayPartSound(world, creation, partId, PartSounds.Impact, null);
             return new SledgeResult(false, null, false, []);

@@ -18,7 +18,7 @@ Salvager, came down at the crash site.
 
 | Family | Who built it | Shapes | Palette | Light | Used for |
 |--------|--------------|--------|---------|-------|----------|
-| **Colony Works** | The colony AI, before the fall | Framed box modules (steel-blue rails round bone panels) with one rounded signature volume per building (an office drum or a capsule tank), roll-up doors, portholes, pipe runs and square lampposts | Bone `#D9D1BC`, steel blue `#3E6A8C`, mustard `#E0B530`, graphite trim `#2B2F35`, signal red `#C8423A` | Warm white light bars; cyan on anything still powered | Workshop Outposts, warehouses, relay beacons, the AI Core Facility, roadside kiosks |
+| **Colony Works** | The colony AI, before the fall | Framed box modules (steel-blue rails round bone panels) with one rounded signature volume per building (an office drum or a capsule tank), roll-up doors, portholes, pipe runs and square lampposts | Bone `#D9D1BC`, steel blue `#3E6A8C`, mustard `#E0B530`, graphite trim `#2B2F35`, signal red `#C8423A` | Warm white light bars; cyan on anything still powered | Workshops, warehouses, relay beacons, the AI Core Facility, roadside kiosks |
 | **Settler Patchwork** | Survivors and farmers after the fall | Colony parts rebuilt from salvage: half domes and lean-tos of mismatched plates on rusty ribs, plank walls, trade counters with awnings, fans, lamps and pipes bolted on | Faded colony colours (bone, sea teal `#4F9A93`, brick red `#A8473B`, mustard), rust `#7A4A30`, scrap wood `#9C7650`, zinc `#9AA3AB` | Bare bulbs on racks, warm yellow `#FFF1CC` | The farmer's shack, trader stalls, camps, farming patches |
 | **Old Stone** | Whoever lived here before the colony | Dressed stone blocks, pillars, arches, steps and flagstone floors, cut by time | The rock material: stone `#8F9289`, dark stone `#5F645C`, dark cracks, moss on top edges | None, or cyan probe crystals | The stone court and arches at the crash site, forest ruins, ruin clusters |
 | **Salvager Tech** | The player, and the player's ship | Exactly the part models: framed cases with inset panels, rails and corner blocks, vents, screens with labels, copper coils and pipes, hazard bands | Hull `#24282E`, gunmetal `#5A6068`, cyan `#38C8FF`, copper `#B8733A` | Cyan running lights and screens | The SV-04 Salvager wreck, the Fabricator, every craftable part |
@@ -74,7 +74,63 @@ A structure is a `.glb` under `meshes/structures/`, placed by a POI prefab's `mo
   brightness and reach. They cast no shadows and fade out beyond 40 m, so a structure can have several.
 - **Materials.** A flat base colour times a grey detail texture, with an optional normal map and `COLOR_0` vertex
   colours (grime at the base, moss on top faces), which multiply the base colour. Emissive materials glow.
-- **Budget.** About 30,000 triangles and 4 MB for the largest model (the ship's fore section); props a few thousand.
+- **Budget.** About 60,000 triangles and 6 MB for the largest model (the Workshop, furnished inside); a plain building
+  half that; props a few thousand.
+
+## The Workshop
+
+Every Workshop (the story's first one, POI-37, and the others on the map) is the same Colony Works vehicle repair
+shop, `meshes/structures/workshop.glb`, built by `tools/structures/workshop.py`:
+
+- **Hall.** 22 x 16 m, framed bone and steel-blue walls with clerestory windows under a pitched seamed roof, and a
+  mustard WORKSHOP sign on the front gable.
+- **Two bays** 8.5 m wide and 5.8 m tall, their roll-up doors always up, so a creation drives straight in. Bay 1 has
+  a two-post lift and the tool wall; bay 2 is clear for the player's creation, with the Fabricator against its back
+  wall on a hazard-edged plinth.
+- **Office** on the left, walked into from the forecourt or through a doorway from the hall: a desk with a
+  terminal, a couch, lockers, filing cabinets and a notice board.
+- **Forecourt.** A 34 x 30 m slab that has seen use but is kept: saw-cut joints, hairline cracks, patched slabs,
+  tyre scuffs into the bays, oil drips, worn bay lines, dirt drifted against the walls and a few weeds in the cracks.
+  Not a dump.
+
+The Fabricator is not part of the model. Each Workshop prefab has a `part` marker where it stands, and the host
+puts a working Fabricator there that nobody can move or break (see
+[World Generation](world-generation.md#poisidjson)).
+
+## The opening cinematic
+
+The first time a world started from the menu loads, the host watches the crash happen. It is 31 seconds and in-engine.
+The intact SV-04 flies in low over the forest and the old pillars. Its port nacelle catches fire and blows off (it lands
+where `sv04_nacelle.glb` lies). The ship comes down in the clearing and breaks in two. The picture then goes black and
+comes back on the player getting up at the spawn, facing the wreck. Jump or Esc skips it. Players who join later spawn
+straight in, and a loaded save never plays it. The world itself never changes, so nothing is sent to other peers.
+
+What flies are copies of the wreck's own models: `sv04_fore.glb`, `sv04_aft.glb` and `sv04_nacelle.glb`. Each comes
+to rest exactly where the crash site places it. While they fly, the following stay out of sight until the ship
+settles:
+
+- the real models;
+- the cargo crates (`hidden_models`);
+- the loot crates and scrap piles near the wreck (`hidden_objects`, within `hide_radius`);
+- the site's fires.
+
+The HUD is hidden, quest dialogue waits and the player stands still.
+
+`game/data/opening.json` holds the cinematic:
+
+- the ship's flight, as timed keys;
+- when it touches down, breaks and settles;
+- the nacelle's fire and fall;
+- the camera shots, shakes, sounds and fades.
+
+The ship rises over hills in its way, so the flight clears the forest in every world, and the cameras never go under
+the ground. It is an engine setting: it ships with the build and is not moddable. Its `fore_wreck`, `aft_wreck`,
+`aft_intact`, `nacelle_on_aft` and `nacelle_lying` repeat how `tools/structures/ship.py` lays out the wreck. Change
+them together, and `OpeningSceneTests` checks that the intact ship's sections still meet.
+
+It only plays at a crash site that places those three models and holds the spawn. A mod that moves the spawn or
+replaces the crash site without them simply starts without it. To see it, run `tools/capture-opening.sh OUT_DIR`,
+which saves stills through it. With `MOVIE=1` it also records the whole of it, sound included, to `opening.avi`.
 
 ## Building the vanilla structures
 
@@ -88,15 +144,16 @@ python tools/structures/build_structures.py
 | File | What it holds |
 |------|---------------|
 | `kit.py` | Materials (paint with chipped edges, grime, moss, cracks), shape helpers (bevelled boxes, cylinders, bolts, pipes, lamps) and `export`, which writes a model with its `collider` mesh and lights |
-| `textures.py` | The shared detail textures and normal maps (paint, metal, stone, wood, concrete), from seeded noise |
+| `textures.py` | The shared detail textures and normal maps (paint, metal, stone, wood, concrete, worn concrete), from seeded noise |
 | `frame.py` | Framed construction: framed boxes, vents, labels, screens and hazard bands |
 | `families.py` | The palette and the Colony Works, Settler Patchwork and Old Stone structures |
 | `ship.py` | The SV-04 Salvager (Salvager Tech) |
+| `workshop.py` | The Workshop (Colony Works) |
 | `build_structures.py` | Exports every vanilla structure and the starting scrap piles |
 
 The outputs are committed. Re-run the build after changing any of these files and commit the result; it is
 deterministic. To see a structure in the world, run `tools/capture-crash-site.sh OUT_DIR`, which renders the crash
-site from the spawn, from above and inside the ship.
+site from the spawn, from above and inside the ship, or `tools/capture-workshop.sh OUT_DIR` for the first Workshop.
 
 A new structure uses the palette constants and the builders in `families.py` and `frame.py`, so it follows the rules
 without anyone having to remember them. Show renders for approval before a new structure merges.

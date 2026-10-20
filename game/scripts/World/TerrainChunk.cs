@@ -45,6 +45,7 @@ public partial class TerrainChunk : Node3D
     private bool _appearing;
     // Objects shaking now: the axis they lean about and when the shake started.
     private readonly Dictionary<WorldObjectId, (Vector3 Axis, double Started)> _shaking = [];
+    private readonly Dictionary<(int Poi, int Index), Node3D> _models = [];
 
     /// <summary>Seconds a hit object shakes for.</summary>
     public const double ShakeSeconds = 0.45;
@@ -192,6 +193,25 @@ public partial class TerrainChunk : Node3D
 
     /// <summary>The animated model drawing <paramref name="id"/> in this chunk, or null.</summary>
     public AnimatedObject? Animated(WorldObjectId id) => _animated.GetValueOrDefault(id);
+
+    /// <summary>The node drawing model <paramref name="index"/> of the POI <paramref name="poi"/> (its index in the world), or null when this chunk doesn't.</summary>
+    public Node3D? Model(int poi, int index) => _models.GetValueOrDefault((poi, index));
+
+    /// <summary>
+    /// Keeps the drawn objects <paramref name="hide"/> picks out of sight (the opening cinematic hides the cargo the crash
+    /// spills until the ship comes down); null shows them all again. Their colliders stay.
+    /// </summary>
+    public void HideObjects(Func<WorldObjectPlacement, bool>? hide)
+    {
+        foreach (var o in LiveObjects)
+        {
+            var hidden = hide?.Invoke(o) == true;
+            if (_drawn.TryGetValue(o.Id, out var drawn))
+                drawn.Multi.SetInstanceTransform(drawn.Index, hidden ? new Transform3D(Basis.Identity.Scaled(Vector3.Zero), drawn.Resting.Origin) : drawn.Resting);
+            if (_animated.TryGetValue(o.Id, out var animated))
+                animated.Visible = !hidden;
+        }
+    }
 
     /// <summary>Objects shaking now (a hit tree), for tests.</summary>
     public int Shaking => _shaking.Count;
@@ -519,7 +539,9 @@ public partial class TerrainChunk : Node3D
             if (model.File is not { } file || StructureModel.Of(file, model.Model.File!) is not { } built)
                 continue;
             var transform = new Transform3D(new Basis(Vector3.Up, model.Yaw), model.Position.ToGodot() - origin);
-            Structures.AddChild(built.Instantiate($"Model{model.Index}", transform));
+            var node = built.Instantiate($"Model{model.Index}", transform);
+            Structures.AddChild(node);
+            _models[(model.Poi.Index, model.Index)] = node;
             if (!Scenery && model.Model.Solid)
                 foreach (var (shape, at) in built.Colliders)
                     Structures.AddChild(new CollisionShape3D { Shape = shape, Transform = transform * at });

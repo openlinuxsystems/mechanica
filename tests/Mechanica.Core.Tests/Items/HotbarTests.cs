@@ -96,14 +96,25 @@ public class HotbarTests
     [InlineData(PartCategory.Station, InventoryTab.Interactive)]
     [InlineData(PartCategory.Light, InventoryTab.Interactive)]
     [InlineData(PartCategory.Weapon, InventoryTab.Tools)]
-    [InlineData(PartCategory.Resource, InventoryTab.Resources)]
-    [InlineData(PartCategory.Consumable, InventoryTab.Consumables)]
-    public void ItemsFallUnderTheirTab(PartCategory category, InventoryTab tab)
+    [InlineData(PartCategory.Decor, InventoryTab.Parts)]
+    [InlineData(PartCategory.Resource, InventoryTab.Parts)]
+    [InlineData(PartCategory.Consumable, InventoryTab.Consumable)]
+    public void ItemsFallUnderTheirCategorysTab(PartCategory category, InventoryTab tab)
     {
-        Assert.Equal(tab, InventoryTabs.Of(category));
-        Assert.True(InventoryTabs.Shows(tab, category));
-        Assert.True(InventoryTabs.Shows(InventoryTab.All, category));
-        Assert.False(InventoryTabs.Shows(tab == InventoryTab.Blocks ? InventoryTab.Tools : InventoryTab.Blocks, category));
+        var item = new PartDefinition { Id = "thing", Name = "Thing", Category = category };
+        Assert.Equal(tab, InventoryTabs.Default(category));
+        Assert.Equal(tab, InventoryTabs.Of(item));
+        Assert.True(InventoryTabs.Shows(tab, item));
+        Assert.True(InventoryTabs.Shows(InventoryTab.All, item));
+        Assert.False(InventoryTabs.Shows(tab == InventoryTab.Blocks ? InventoryTab.Tools : InventoryTab.Blocks, item));
+    }
+
+    [Fact]
+    public void AnItemsTabKeyOverridesItsCategory()
+    {
+        var gasoline = new PartDefinition { Id = "gasoline", Name = "Gasoline", Category = PartCategory.Resource, Tab = InventoryTab.Consumable };
+        Assert.Equal(InventoryTab.Consumable, InventoryTabs.Of(gasoline));
+        Assert.False(InventoryTabs.Shows(InventoryTab.Parts, gasoline));
     }
 
     [Fact]

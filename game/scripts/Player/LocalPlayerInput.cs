@@ -96,6 +96,9 @@ public partial class LocalPlayerInput : Node
     /// <summary>Turns the view by <paramref name="radians"/> of yaw (a seat turning under the player carries the view round).</summary>
     public void Turn(float radians) => _yaw = Mathf.Wrap(_yaw + radians, -Mathf.Pi, Mathf.Pi);
 
+    /// <summary>Looks level towards <paramref name="yaw"/> (radians, as the player turns): where the opening cinematic leaves the player.</summary>
+    public void Face(float yaw) => (_yaw, _pitch) = (Mathf.Wrap(yaw, -Mathf.Pi, Mathf.Pi), 0f);
+
     /// <summary>Moves the camera one zoom step in or out.</summary>
     public void Zoom(bool zoomIn) => Target.CameraDistance = CameraZoom.Step(Target.CameraDistance, zoomIn, Target.Settings);
 

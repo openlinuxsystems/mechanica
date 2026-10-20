@@ -18,8 +18,9 @@ namespace Mechanica.Game.Net;
 /// never sent, so a peer drops a Creation the host parks.</item>
 /// <item>Full sync: a Creation entering a peer's interest, or whose graph changed
 /// (<see cref="Creation.Revision"/>), is sent whole as save JSON with its poses and velocities
-/// (<see cref="CreationJson"/>), reliably. Late join is the same path: a new peer's player is near
-/// whatever it should see.</item>
+/// (<see cref="CreationJson"/>), compressed (<see cref="TextPacking"/>), reliably. A peer that has the
+/// Creation gets a changed graph at most every <see cref="SyncSettings.FullSyncInterval"/>, so a run of
+/// quick changes goes as one. Late join is the same path: a new peer's player is near whatever it should see.</item>
 /// <item>Snapshots: every <see cref="NetProtocol.SnapshotInterval"/> ticks the host sends each peer the
 /// Body states of its Creations (<see cref="BodySnapshot"/>), unreliable and split into small packets;
 /// sleeping Creations go less often. Clients interpolate them (<see cref="BodyTrack"/>) a few ticks
@@ -34,6 +35,7 @@ public partial class CreationSync : Node
 
     private readonly Dictionary<int, Dictionary<int, int>> _sentRevisions = [];
     private readonly Dictionary<int, Remote> _remotes = [];
+    private readonly Dictionary<int, uint> _lastFullSync = [];
     private readonly InterpolationClock _clock = new();
     private CreationInterest _interest = null!;
     private uint _tick;
@@ -74,6 +76,9 @@ public partial class CreationSync : Node
 
     /// <summary>Host side: full Creation syncs sent so far.</summary>
     public int FullSyncsSent { get; private set; }
+
+    /// <summary>Host side: compressed bytes of the full Creation syncs sent so far.</summary>
+    public long FullSyncBytes { get; private set; }
 
     /// <summary>Host side: body snapshot packets sent so far.</summary>
     public int PacketsSent { get; private set; }
@@ -123,9 +128,10 @@ public partial class CreationSync : Node
             .Where(c => c.AuthorityPeer == local && Creations.NodeOf(c.Id) is not null)
             .Select(c => (Creation: c, Candidate: new InterestCandidate(c.Id, Creations.Sample(c.Id).Bounds)))
             .ToList();
-        var json = new Dictionary<int, string>();
+        var packed = new Dictionary<int, byte[]>();
+        var fullSyncEvery = (uint)Mathf.RoundToInt(Settings!.FullSyncInterval * Engine.PhysicsTicksPerSecond);
         var sendSnapshot = _tick % NetProtocol.SnapshotInterval == 0;
-        var sleepingEvery = Math.Max(1, (uint)Mathf.RoundToInt(Settings!.SleepingSnapshotInterval * Engine.PhysicsTicksPerSecond));
+        var sleepingEvery = Math.Max(1, (uint)Mathf.RoundToInt(Settings.SleepingSnapshotInterval * Engine.PhysicsTicksPerSecond));
         var states = new Dictionary<int, CreationBodies?>();
 
         foreach (var peer in Session.ReadyPeers)
@@ -141,16 +147,22 @@ public partial class CreationSync : Node
             }
             foreach (var (creation, _) in live.Where(l => _interest.Contains(peer, l.Creation.Id)))
             {
-                if (sent.TryGetValue(creation.Id, out var revision) && revision == creation.Revision)
+                var has = sent.TryGetValue(creation.Id, out var revision);
+                if (has && revision == creation.Revision)
                     continue;
-                if (!json.TryGetValue(creation.Id, out var text))
+                // A peer showing an older graph gets the new one once the last full sync is old enough.
+                if (has && !packed.ContainsKey(creation.Id) && _lastFullSync.TryGetValue(creation.Id, out var last) && _tick - last < fullSyncEvery)
+                    continue;
+                if (!packed.TryGetValue(creation.Id, out var bytes))
                 {
                     Creations.NodeOf(creation.Id)!.SyncToCreation();
-                    json[creation.Id] = text = CreationJson.Write(creation);
+                    packed[creation.Id] = bytes = TextPacking.Pack(CreationJson.Write(creation));
+                    _lastFullSync[creation.Id] = _tick;
                 }
                 sent[creation.Id] = creation.Revision;
-                RpcId(peer, MethodName.ClientFullSync, creation.Revision, _tick, text);
+                RpcId(peer, MethodName.ClientFullSync, creation.Revision, _tick, bytes);
                 FullSyncsSent++;
+                FullSyncBytes += bytes.Length;
             }
 
             if (!sendSnapshot)
@@ -200,20 +212,26 @@ public partial class CreationSync : Node
             {
                 if (remote.Tracks[i].Sample(tick, delta, maxAhead) is not { } state)
                     continue;
-                var body = node.Bodies[i];
-                body.GlobalTransform = new Transform3D(new Basis(state.Rotation.ToGodot()), state.Position.ToGodot());
-                (body.LinearVelocity, body.AngularVelocity) = (state.LinearVelocity.ToGodot(), state.AngularVelocity.ToGodot());
+                // A frozen kinematic Body moved this way takes its velocity from the move, which is what players standing
+                // on it ride along with. Setting the host's velocity as well would carry them twice as fast.
+                node.Bodies[i].GlobalTransform = new Transform3D(new Basis(state.Rotation.ToGodot()), state.Position.ToGodot());
             }
         }
+        PlayerSync.PlaceRiders();
     }
 
     /// <summary>Host → client: a whole Creation, new to this client or with a changed graph, as it was at host tick <paramref name="tick"/>.</summary>
     [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Reliable)]
-    private void ClientFullSync(int revision, uint tick, string json)
+    private void ClientFullSync(int revision, uint tick, byte[] packed)
     {
         if (Session.State != NetSession.SessionState.Connected)
             return;
         var diagnostics = new List<DataDiagnostic>();
+        if (TextPacking.Unpack(packed) is not { } json)
+        {
+            GD.PushError("[sync] the host sent a creation this client cannot unpack");
+            return;
+        }
         if (CreationJson.Read(json, Catalog, "sync", diagnostics) is not { } creation)
         {
             GD.PushError($"[sync] the host sent a creation this client cannot load: {string.Join("; ", diagnostics.Select(d => d.Message))}");
@@ -278,6 +296,7 @@ public partial class CreationSync : Node
     private void OnCreationRemoved(int creationId)
     {
         _remotes.Remove(creationId);
+        _lastFullSync.Remove(creationId);
         if (Session.State != NetSession.SessionState.Hosting)
             return;
         _interest.ForgetCreation(creationId);
@@ -301,6 +320,7 @@ public partial class CreationSync : Node
             Forget(id);
         _interest.Clear();
         _sentRevisions.Clear();
+        _lastFullSync.Clear();
         _tick = _newestTick = 0;
         _clock.Reset();
     }

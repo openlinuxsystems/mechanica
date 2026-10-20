@@ -3,6 +3,7 @@
   "name": "Gasoline",
   "description": "A red can of fuel. Load it into a Gas Container: gas engines, the Scrap Gas Engine and thrusters burn it from their creation's containers. Flammable.",
   "category": "resource",
+  "tab": "consumable",
   "mass": 20,
   "durability": 2,
   "friction": 0.4,

@@ -65,11 +65,20 @@ public static class BotEffects
     /// <summary>A ring that ripples over the ground out to the radius.</summary>
     public const string Shockwave = "shockwave";
 
+    /// <summary>
+    /// A copy of the model's <c>Shot</c> node (hidden on the bot) flies from where it sits to what the attack hit, or
+    /// straight ahead out to the attack's range when it hit nothing.
+    /// </summary>
+    public const string Shot = "shot";
+
+    /// <summary>The model node a <see cref="Shot"/> effect flies.</summary>
+    public const string ShotNode = "Shot";
+
     /// <summary>The key for the effect shown when the bot dies.</summary>
     public const string Death = "death";
 
     /// <summary>Every effect kind.</summary>
-    public static readonly IReadOnlyList<string> Kinds = [Explosion, Shockwave];
+    public static readonly IReadOnlyList<string> Kinds = [Explosion, Shockwave, Shot];
 }
 
 /// <summary>A bot type that loaded cleanly, with every id qualified and every default filled in.</summary>
@@ -396,6 +405,8 @@ public sealed class BotBook : IBotCatalog
                 sink.Error(code, $"$.model.effects.{key}", $"the bot has no attack '{key}' (use an attack id or \"death\").");
             else if (kind is null || !BotEffects.Kinds.Contains(kind))
                 sink.Error(code, $"$.model.effects.{key}", $"effect '{kind}' must be one of: {string.Join(", ", BotEffects.Kinds)}.");
+            else if (kind == BotEffects.Shot && key == BotEffects.Death)
+                sink.Error(code, $"$.model.effects.{key}", "a shot follows an attack to what it hit; use it on an attack, not on death.");
             else
                 effects[key] = kind;
         }

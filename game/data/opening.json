@@ -1,0 +1,75 @@
+{
+  // The opening cinematic: the host sees it the first time a new world starts (docs/art-direction.md). The intact SV-04
+  // flies in from the southeast over the forest and the lone pillars, its port nacelle burns and tears off (it lies where
+  // sv04_nacelle.glb is placed), and the ship spins down into the clearing, breaking in two where the wreck lies.
+  // Times are seconds; places are metres from the crash site's centre on its pad (x east, y up, z south).
+  // Engine settings: not moddable. Read by game/scripts/World/OpeningCinematic.cs; see
+  // src/Mechanica.Core/World/OpeningSettings.cs.
+  "poi": "vanilla:crash_site",
+  "fore_model": "meshes/structures/sv04_fore.glb",
+  "aft_model": "meshes/structures/sv04_aft.glb",
+  "nacelle_model": "meshes/structures/sv04_nacelle.glb",
+  // From tools/structures/ship.py (Blender's frame: x, y forward, z up; degrees): keep in step with it.
+  "fore_wreck": { "at": [0.0, 0.0, 0.0], "rotation": [-1.5, 2.0, 0.0] },
+  "aft_wreck": { "at": [-2.5, -17.5, 0.1], "rotation": [1.0, -3.0, -16.0] },
+  "aft_intact": [0.0, -14.0, 0.0],
+  "nacelle_on_aft": [-6.7, -7.5, 2.4],
+  "nacelle_lying": { "at": [0.0, 0.0, 1.45], "rotation": [4.0, -12.0, 0.0] },
+  // Kept out of sight until the ship settles, as the crash spills them; site fires within hide_radius too.
+  "hidden_models": ["meshes/structures/cargo_crate_colony.glb"],
+  "hidden_objects": ["loot_crate", "scrap_pile_metal", "scrap_pile_wood"],
+  "hide_radius": 50.0,
+  "duration": 31.0,
+  // The ship's origin (the bottom of the hull). Yaw as POI models turn (0 = nose north, 90 = west); positive pitch is
+  // nose up, positive roll lifts the starboard side. The last pose (at settle) is the wreck's own.
+  "ship": [
+    { "t": 0.0, "at": [236.0, 62.0, 262.0], "yaw": 42.0, "pitch": -3.0 },
+    { "t": 5.0, "at": [172.0, 50.0, 190.0], "yaw": 41.0, "pitch": -4.0, "roll": -3.0 },
+    { "t": 9.0, "at": [120.0, 40.0, 134.0], "yaw": 40.0, "pitch": -4.0, "roll": 2.0 },
+    { "t": 12.0, "at": [86.0, 30.0, 100.0], "yaw": 40.0, "pitch": -5.0 },
+    { "t": 13.5, "at": [70.0, 25.0, 82.0], "yaw": 47.0, "pitch": -6.0, "roll": -26.0 },
+    { "t": 15.5, "at": [50.0, 17.0, 60.0], "yaw": 33.0, "pitch": -8.0, "roll": 16.0 },
+    { "t": 17.5, "at": [34.0, 9.0, 40.0], "yaw": 52.0, "pitch": -9.0, "roll": -12.0 },
+    { "t": 19.6, "at": [17.0, 0.6, 18.0], "yaw": 38.0, "pitch": -3.0, "roll": 6.0 },
+    { "t": 21.5, "at": [6.0, 0.2, 6.0], "yaw": 26.0, "roll": -2.0 }
+  ],
+  "touchdown": 19.6,
+  "break": 20.2,
+  "settle": 24.5,
+  "nacelle_burn": 8.0,
+  "nacelle_off": 12.0,
+  "nacelle_down": 15.0,
+  "nacelle_turns": 2,
+  "shots": [
+    // High over the forest: the ship comes out of the distance and roars past.
+    { "start": 0.0, "end": 5.5, "from": [150.0, 44.0, 205.0], "fov": 55.0, "clear": 20.0 },
+    // Riding beside it on the port side: the nacelle catches fire and blows.
+    { "start": 5.5, "end": 12.8, "follow": [-24.0, 6.0, 28.0], "ahead": [0.0, 2.0, -12.0], "fov": 50.0 },
+    // From the ground by the pillars: it lurches overhead and the nacelle comes down close by.
+    { "start": 12.8, "end": 17.6, "from": [30.0, 1.8, 68.0], "fov": 62.0 },
+    // From the clearing's north side: it hits, slides towards the camera and breaks in two.
+    { "start": 17.6, "end": 25.5, "from": [-20.0, 3.5, -17.0], "from_end": [-18.0, 4.0, -14.0], "fov": 58.0 },
+    // Over the wreck, burning, as the picture goes dark.
+    { "start": 25.5, "end": 27.5, "from": [40.0, 18.0, 52.0], "from_end": [34.0, 20.0, 44.0], "look": [0.0, 2.0, 6.0], "fov": 55.0 }
+  ],
+  "shakes": [
+    { "at": 12.0, "strength": 0.5, "seconds": 1.2 },
+    { "at": 15.0, "strength": 0.35, "seconds": 0.8 },
+    { "at": 19.6, "strength": 0.8, "seconds": 1.8 },
+    { "at": 20.2, "strength": 0.5, "seconds": 2.5 }
+  ],
+  "sounds": [
+    { "at": 4.0, "event": "air_whoosh", "on": "camera" },
+    { "at": 12.0, "event": "scuttler_explode", "on": "nacelle" },
+    { "at": 15.0, "event": "impact_metal", "on": "nacelle" },
+    { "at": 19.6, "event": "impact_metal", "on": "ship" },
+    { "at": 20.2, "event": "break_metal", "on": "ship" },
+    { "at": 22.0, "event": "impact_metal", "on": "ship" }
+  ],
+  "engine_loop": "thruster_loop",
+  "fade_in": 1.0,
+  "black": [26.0, 27.5],
+  "player_fade_in": 1.0,
+  "skip_fade": 0.4,
+  "letterbox": 0.1
+}

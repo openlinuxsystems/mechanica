@@ -3,6 +3,7 @@
   "name": "Paint Ammo",
   "description": "A cartridge of paint for the Paint Tool. Each stroke of paint uses one.",
   "category": "resource",
+  "tab": "consumable",
   "mass": 0.1,
   "stack_size": 100,
   "visual": {

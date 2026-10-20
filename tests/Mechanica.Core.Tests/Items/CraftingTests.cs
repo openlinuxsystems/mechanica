@@ -467,6 +467,30 @@ public class CraftingTests
     }
 
     [Fact]
+    public void AWorldOwnedStationCraftsLikeAnyButIsNeverUpgraded()
+    {
+        var items = Survival(out var dispatcher);
+        var (bench, forge) = (Add(Bench), Add(Forge));
+        _world.Creations[bench] = Creations.WorldOwnedCreations.Owned(_world.Creations[bench]);
+        _world.Creations[forge] = Creations.WorldOwnedCreations.Owned(_world.Creations[forge]);
+        items.PlayerInventory(2).Add(Scrap, 1);
+        items.PlayerInventory(2).Add(Kit, 5);
+
+        // Using it: queue a craft, let it finish and take the output.
+        Assert.True(dispatcher.Dispatch(Player, InventoryActions.Craft, new CraftArgs(bench, 1, "test:blocks")).Ok);
+        items.Tick(1f);
+        var take = dispatcher.Dispatch(Player, InventoryActions.MoveItems, new MoveItemsArgs(InventoryRef.OfPart(bench, 1), 0, InventoryRef.OfPlayer(2)));
+        Assert.True(take.Ok, take.ToString());
+        Assert.Equal(10, items.PlayerInventory(2).Count(Block));
+
+        // Changing it: no.
+        var upgrade = dispatcher.Dispatch(Player, InventoryActions.UpgradePart, new UpgradePartArgs(forge, 1));
+        Assert.Equal("The Forge belongs to the world: it can't be upgraded.", upgrade.Message);
+        Assert.Equal(0, _world.Creations[forge].LevelOf(1));
+        Assert.Equal(5, items.PlayerInventory(2).Count(Kit));
+    }
+
+    [Fact]
     public void UpgradesAreFreeInCreativeAndNeedAnUpgradablePartInReach()
     {
         var (creation, forge) = (Add(Forge), 1);

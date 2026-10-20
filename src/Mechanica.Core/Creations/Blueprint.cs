@@ -13,7 +13,7 @@ public sealed record BlueprintInfo(string Name, DateTimeOffset SavedAt, int Part
 /// <summary>
 /// A saved Creation that can be loaded onto a Lift again (UI spec §5, §8): its parts, joints, paint, settings and logic
 /// links as <see cref="CreationJson"/> writes them, without anything that belongs to the world it came from (its id,
-/// who simulates it, whether it was on a Lift, damage, fire, what its storage held, crafting orders, upgrade levels, crops, motion).
+/// who simulates it, whether it was on a Lift, the world marker it stood at, damage, fire, what its storage held, crafting orders, upgrade levels, crops, motion).
 /// <code>
 /// {
 ///   "format_version": 1,
@@ -31,7 +31,7 @@ public static class Blueprint
     /// <summary>Longest name, in characters.</summary>
     public const int MaxNameLength = 48;
 
-    private static readonly string[] WorldKeys = ["authority_peer", "on_lift"];
+    private static readonly string[] WorldKeys = ["authority_peer", "on_lift", "world_part"];
     private static readonly string[] PartWorldKeys = ["level", "damage", "fire", "anchored", "inventory", "crafting", "soil"];
     private static readonly string[] BodyWorldKeys = ["linear_velocity", "angular_velocity"];
 

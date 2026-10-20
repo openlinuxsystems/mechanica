@@ -133,6 +133,39 @@ public class PredictionHistoryTests
         Assert.Equal(2, history.Pending.Count);
     }
 
+    private static PredictionHistory.Entry OnDeck(uint seq, float z, int body = 0) =>
+        new(seq, PlayerInput.None, new Vector3(0, 0, z * 10), Vector3.Zero, new PlayerGround(7, (ushort)body, new Vector3(0, 0, z)));
+
+    [Fact]
+    public void OnTheSameBodyTheFeetAreCheckedInItsFrame()
+    {
+        var history = new PredictionHistory(tolerance: 0.05f);
+        for (uint i = 1; i <= 4; i++)
+            history.Record(OnDeck(i, i));
+        // The host's world position is far off (it shows the Body elsewhere), but on the Body the feet agree.
+        Assert.False(history.ReconcileOnGround(2, new PlayerGround(7, 0, new Vector3(0, 0, 2.01f)), out var acked));
+        Assert.Equal(2u, acked.Sequence);
+        Assert.Equal([3u, 4u], history.Pending.Select(e => e.Sequence));
+
+        Assert.True(history.ReconcileOnGround(3, new PlayerGround(7, 0, new Vector3(0, 0, 3.5f)), out _));
+        history.Shift(new Vector3(0, 0, 5f), new Vector3(0, 0, 0.5f), new PlayerGround(7, 0, Vector3.Zero));
+        var left = Assert.Single(history.Pending);
+        Assert.Equal(new Vector3(0, 0, 4.5f), left.Ground!.Value.Feet);
+        Assert.Equal(new Vector3(0, 0, 45f), left.Position);
+    }
+
+    [Fact]
+    public void AnotherBodyOrNoneFallsBackToWorldPositions()
+    {
+        var history = new PredictionHistory();
+        history.Record(OnDeck(1, 1, body: 1));
+        history.Record(E(2, 2));
+        Assert.Null(history.ReconcileOnGround(1, new PlayerGround(7, 0, Vector3.Zero), out _));
+        Assert.Null(history.ReconcileOnGround(2, new PlayerGround(7, 1, Vector3.Zero), out _));
+        Assert.Null(history.ReconcileOnGround(9, new PlayerGround(7, 1, Vector3.Zero), out _));
+        Assert.Equal(2, history.Pending.Count);
+    }
+
     [Fact]
     public void NewestReturnsTheLastEntriesInOrder()
     {
@@ -155,6 +188,18 @@ public class PredictionHistoryTests
 
 public class SnapshotBufferTests
 {
+    [Fact]
+    public void InterpolatesFeetOnTheSameBodyInItsFrame()
+    {
+        var buffer = new SnapshotBuffer();
+        buffer.Add(10, S(0) with { Ground = new PlayerGround(3, 1, new Vector3(1, 0, 0)) });
+        buffer.Add(12, S(50) with { Ground = new PlayerGround(3, 1, new Vector3(2, 0, 0)) });
+        buffer.Add(14, S(90) with { Ground = new PlayerGround(4, 0, new Vector3(9, 0, 0)) });
+        Assert.Equal(new PlayerGround(3, 1, new Vector3(1.5f, 0, 0)), buffer.Sample(11)!.Value.Ground);
+        Assert.Equal(new PlayerGround(3, 1, new Vector3(2, 0, 0)), buffer.Sample(12.5)!.Value.Ground);
+        Assert.Equal(4, buffer.Sample(13.5)!.Value.Ground!.Value.Creation);
+    }
+
     private static PlayerState S(float x, float yaw = 0f) => new(2, 0, new Vector3(x, 0, 0), Vector3.Zero, yaw, 0);
 
     [Fact]
@@ -235,6 +280,47 @@ public class InterpolationClockTests
                 clock.OnSnapshot(host);
         }
         Assert.InRange(clock.RenderTick!.Value, host - 6, host - 4);
+    }
+
+    [Fact]
+    public void BurstsAndGapsNeverChangeTheShownSpeedMuch()
+    {
+        var clock = new InterpolationClock(delayTicks: 5);
+        var random = new Random(7);
+        uint host = 100;
+        clock.OnSnapshot(host);
+        var pending = new List<uint>();
+        var shown = clock.RenderTick!.Value;
+        for (var i = 0; i < 2000; i++)
+        {
+            host++;
+            if (host % 2 == 0)
+                pending.Add(host);
+            clock.Advance();
+            // Snapshots arrive in bursts: each tick, none to all of the waiting ones.
+            var arrive = random.Next(pending.Count + 1);
+            foreach (var tick in pending.Take(arrive))
+                clock.OnSnapshot(tick);
+            pending.RemoveRange(0, arrive);
+            var step = clock.RenderTick!.Value - shown;
+            shown = clock.RenderTick.Value;
+            Assert.InRange(step, 1 - InterpolationClock.MaxSkew - 1e-9, 1 + InterpolationClock.MaxSkew + 1e-9);
+        }
+        Assert.InRange(shown, host - 8, host - 4);
+    }
+
+    [Fact]
+    public void LateSnapshotsDoNotHoldItBack()
+    {
+        var clock = new InterpolationClock(delayTicks: 5);
+        clock.OnSnapshot(100);
+        for (var i = 0; i < 200; i++)
+        {
+            clock.Advance();
+            clock.OnSnapshot(100 + (uint)i);
+        }
+        // Every snapshot arrives a tick after it was sent; the clock stays about the delay behind the newest.
+        Assert.InRange(clock.RenderTick!.Value, 299 - 6, 299 - 4);
     }
 
     [Fact]

@@ -113,7 +113,7 @@ public class QuestTests
         Assert.Equal(2, _world.Given[(3, "vanilla:component_kit")]);
         Assert.Contains(said, d => d.Lines.Any(l => l.Text!.StartsWith("Power restored", StringComparison.Ordinal)));
 
-        // The Farmer: talking to him at his stall gives food, seed and scrap and reveals the Workshop Outposts.
+        // The Farmer: talking to him at his stall gives food, seed and scrap and reveals the Workshops.
         Assert.Equal(QuestStatus.Active, tracker.State.Of("vanilla:the_farmer")!.Status);
         Assert.DoesNotContain("vanilla:outpost", tracker.State.Revealed);
         _world.Feet[2] = new Vector3(-45, 0, -42);
@@ -123,9 +123,9 @@ public class QuestTests
         Assert.Equal(3, _world.Given[(3, "vanilla:carrot")]);
         Assert.Equal(10, _world.Given[(2, "vanilla:scrap_metal")]);
         Assert.Contains("vanilla:outpost", tracker.State.Revealed);
-        Assert.Contains(said, d => d.Lines.Any(l => l.Speaker == "Farmer" && l.Text!.Contains("Workshop Outposts", StringComparison.Ordinal)));
+        Assert.Contains(said, d => d.Lines.Any(l => l.Speaker == "Farmer" && l.Text!.Contains("Workshops", StringComparison.Ordinal)));
 
-        // Workshop Outpost: reach it, then order a craft.
+        // Workshop: reach it, then order a craft.
         Assert.NotNull(tracker.State.Of("vanilla:workshop_outpost"));
         _world.Feet[3] = new Vector3(590, 0, 5);
         tracker.Tick(0.1f);

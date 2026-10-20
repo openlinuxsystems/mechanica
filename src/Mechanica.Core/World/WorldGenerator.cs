@@ -261,11 +261,12 @@ public sealed partial class WorldGenerator
                 if (Inside(at, ox, oz, x1, z1))
                     models.Add(new PoiModelPlacement(poi, k, model, Data.ModelFileOf(poi.Poi, model), at, poi.Yaw + Radians(model.Yaw)));
             }
-            foreach (var marker in prefab.Markers ?? [])
+            for (var k = 0; k < (prefab.Markers?.Count ?? 0); k++)
             {
+                var marker = prefab.Markers![k];
                 var at = poi.ToWorld(ToVector(marker.At));
                 if (Inside(at, ox, oz, x1, z1))
-                    markers.Add(new PoiMarkerPlacement(poi, marker, at, poi.Yaw + Radians(marker.Yaw)));
+                    markers.Add(new PoiMarkerPlacement(poi, marker, at, poi.Yaw + Radians(marker.Yaw)) { Index = k });
             }
         }
         return new TerrainChunkData(coord, chunkSize, res, n, heights, normals, colors, biomes, covered, SeaLevel, objects, pieces, markers)
@@ -282,10 +283,11 @@ public sealed partial class WorldGenerator
     {
         foreach (var poi in _pois)
         {
-            foreach (var marker in poi.Poi.Prefab.Markers ?? [])
+            for (var k = 0; k < (poi.Poi.Prefab.Markers?.Count ?? 0); k++)
             {
+                var marker = poi.Poi.Prefab.Markers![k];
                 if (marker.Type == type)
-                    yield return new PoiMarkerPlacement(poi, marker, poi.ToWorld(ToVector(marker.At)), poi.Yaw + Radians(marker.Yaw));
+                    yield return new PoiMarkerPlacement(poi, marker, poi.ToWorld(ToVector(marker.At)), poi.Yaw + Radians(marker.Yaw)) { Index = k };
             }
         }
     }

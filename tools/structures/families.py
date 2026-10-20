@@ -1,7 +1,7 @@
 """The design language's families (docs/art-direction.md): palette and the structures built from it.
 
-Colony Works (the Workshop Outpost, the dead relay beacon), Settler Patchwork (the farmer's shack and its garden) and Old
-Stone (arches and pillars). The Salvager Tech ship is in ship.py. Each builder returns an empty with the structure
+Colony Works (the dead relay beacon and the street lamps; the Workshop is in workshop.py), Settler Patchwork (the
+farmer's shack and its garden) and Old Stone (arches and pillars). The Salvager Tech ship is in ship.py. Each builder returns an empty with the structure
 parented under it, its origin on the ground at the structure's centre (Blender Z up, front towards -Y).
 """
 import math
@@ -239,84 +239,6 @@ def fire(P, loc, scale=1.0, light=True):
 
 
 # ================================================================== Colony Works
-def workshop_outpost(o=(0, 0, 0), yaw=0, name="outpost"):
-    """Mostly framed boxes like the part models, with one rounded signature volume (the office drum) and round
-    things only where they are round in life: tanks, pipes, portholes, lamps."""
-    root = K.link(bpy.data.objects.new(name, None))
-    root.location = o
-    root.rotation_euler = (0, 0, math.radians(yaw))
-    P = root
-    bone, steel, mus, gra = M(BONE), M(STEEL, metal=0.3), M(MUSTARD), M(GRAPHITE, metal=0.3)
-    gun = M(GUNMETAL, metal=0.5)
-    conc = K.mat("concrete", CONCRETE, rough=0.9, grime=0.2, noise_scale=3, ao=0.4)
-    K.box("pad", (24, 17, 0.3), conc, loc=(0, -1, 0.15), bev=0.06, parent=P)
-    for k in range(4):  # parking bay lines
-        K.box("bayline", (0.15, 4.5, 0.02), M(MUSTARD, wear=0.6, scratches=0), loc=(-3 + k * 3.2, -7.0, 0.31), bev=0, parent=P)
-    # garage hall
-    FR.framed_box(P, "hall", (1.5, 1.0, 3.3), (12, 9, 6), bone, steel, fw=0.35, screws=gun)
-    # wall panels: posts every 3 m and a mid rail, like the part cases' frames
-    for x in (-1.5, 6.0):
-        K.box("wall_post", (0.28, 0.3, 5.6), M(STEEL, metal=0.3), loc=(x, -3.55, 3.3), bev=0.03, parent=P)
-    for x in (-4.0, -1.0, 2.0, 5.0):
-        K.box("side_post", (0.3, 0.28, 5.6), M(STEEL, metal=0.3), loc=(7.55, x + 3.0, 3.3), bev=0.03, parent=P)
-    K.box("mid_rail", (12.1, 0.25, 0.25), M(STEEL, metal=0.3), loc=(1.5, -3.55, 5.0), bev=0.03, parent=P)
-    K.box("side_rail", (0.25, 9.1, 0.25), M(STEEL, metal=0.3), loc=(7.55, 1.0, 5.0), bev=0.03, parent=P)
-    # conduit along the wall
-    K.cyl("conduit", 0.08, 9.0, gun, loc=(7.7, 1.0, 4.6), rot=(90, 0, 0), bev=0, parent=P)
-    K.cyl("conduit2", 0.08, 4.0, gun, loc=(-3.4, -3.65, 2.8), bev=0, parent=P)
-    # roll-up door bay (half open, dark inside)
-    K.box("bay", (6.4, 0.6, 4.6), K.mat("bayin", "#1a1c1f", rough=0.9), loc=(2.5, -3.35, 2.6), bev=0.02, parent=P)
-    for k in range(9):
-        K.box("door_slat", (6.2, 0.12, 0.26), gun, loc=(2.5, -3.62, 4.75 - k * 0.27), bev=0.03, parent=P)
-    for side in (-1, 1):
-        K.box("door_post", (0.4, 0.5, 4.9), gra, loc=(2.5 + side * 3.4, -3.6, 2.75), bev=0.04, parent=P)
-        for k in range(8):
-            K.box("post_haz", (0.42, 0.52, 0.3), M(MUSTARD) if k % 2 == 0 else gra, loc=(2.5 + side * 3.4, -3.6, 0.6 + k * 0.3), bev=0.01, parent=P)
-    K.box("door_head", (7.2, 0.6, 0.5), gra, loc=(2.5, -3.6, 5.2), bev=0.04, parent=P)
-    # powered access panel by the door
-    FR.screen(P, (-1.6, -3.55, 2.0), 0.7, 0.9, gra, glow(CYAN, 2.5))
-    FR.label(P, "WORKSHOP", (-1.6, -3.66, 2.75), 0.22, M(BONE, wear=0, scratches=0, grime=0))
-    FR.vent(P, (-2.8, -3.55, 4.2), 1.4, 0.9, gra, gun)
-    FR.vent(P, (7.56, 2.0, 1.4), 1.6, 1.0, gra, gun, axis="x")
-    # roof with overhang and the warm light bar
-    K.box("roof", (13.0, 10.0, 0.4), gra, loc=(1.5, 0.8, 6.5), bev=0.05, parent=P)
-    K.box("lightbar", (11.0, 0.15, 0.16), glow(WARM, 10), loc=(1.5, -4.1, 6.15), bev=0.03, parent=P)
-    # roof sign on posts: wrench pictogram and stencil name
-    for x in (-0.4, 3.4):
-        K.box("sign_post", (0.2, 0.2, 1.2), gra, loc=(x, 0.0, 7.3), bev=0.02, parent=P)
-    FR.framed_box(P, "sign", (1.5, 0.0, 8.4), (5.6, 0.4, 1.6), M(MUSTARD), gra, fw=0.14)
-    FR.label(P, "OUTPOST 7", (2.2, -0.22, 8.4), 0.6, gra)
-    K.box("wrench_shaft", (0.22, 0.06, 0.95), gra, loc=(-0.45, -0.24, 8.35), rot=(0, 40, 0), bev=0.03, parent=P)
-    K.torus("wrench_jaw", 0.2, 0.07, gra, loc=(-0.2, -0.24, 8.72), rot=(90, 0, 0), arc=260, parent=P).rotation_euler[1] = math.radians(140)
-    # roof AC unit with a fan
-    FR.framed_box(P, "ac", (5.0, 3.0, 7.3), (2.4, 2.0, 1.2), M(BONE), gun, fw=0.12)
-    K.torus("fan_ring", 0.5, 0.06, gun, loc=(5.0, 3.0, 7.92), rot=(0, 0, 0), parent=P)
-    # office drum: the one rounded signature volume
-    K.cyl("drum", 3.4, 4.4, bone, loc=(-6.8, 0.4, 2.5), segs=40, bev=0.08, parent=P)
-    for z in (0.6, 4.55):
-        K.cyl("drum_band", 3.5, 0.35, steel, loc=(-6.8, 0.4, z), segs=40, bev=0.05, parent=P)
-    K.cyl("drum_cap", 3.6, 0.35, gra, loc=(-6.8, 0.4, 4.9), segs=40, bev=0.06, parent=P)
-    for k, a in enumerate((200, 230, 260)):
-        r = math.radians(a)
-        px, py = -6.8 + 3.42 * math.cos(r), 0.4 + 3.42 * math.sin(r)
-        K.torus("port_rim", 0.48, 0.1, gra, loc=(px, py, 2.9), rot=(90, 0, a + 90), parent=P)
-        K.cyl("port_glass", 0.46, 0.06, glow("#7fd8ff", 1.0), loc=(px, py, 2.9), rot=(90, 0, a + 90), bev=0, parent=P)
-    # tank on framed legs, piped into the wall
-    tm = M(MUSTARD)
-    K.cyl("tank", 1.1, 3.6, tm, loc=(9.6, 1.5, 2.2), rot=(90, 0, 0), bev=0, parent=P)
-    K.sphere("tank_a", 1.1, tm, loc=(9.6, -0.3, 2.2), scale=(1, 0.45, 1), parent=P)
-    K.sphere("tank_b", 1.1, tm, loc=(9.6, 3.3, 2.2), scale=(1, 0.45, 1), parent=P)
-    for y in (0.3, 2.7):
-        FR.framed_box(P, "tank_leg", (9.6, y, 0.75), (1.9, 0.4, 1.2), gra, gun, fw=0.1)
-        K.cyl("tank_band", 1.15, 0.25, gra, loc=(9.6, y, 2.2), rot=(90, 0, 0), bev=0.02, parent=P)
-    K.cyl("pipe", 0.16, 1.6, gun, loc=(8.3, 1.5, 3.0), rot=(0, 90, 0), bev=0, parent=P)
-    K.cyl("flange", 0.26, 0.1, M(MUSTARD), loc=(7.6, 1.5, 3.0), rot=(0, 90, 0), bev=0.01, parent=P)
-    # square lampposts with a hooked head
-    for x in (-9.5, 10.5):
-        lamppost2(P, (x, -7.5, 0.3))
-    return root
-
-
 def lamppost2(P, loc, h=5.5):
     x, y, z = loc
     gra, gun = M(GRAPHITE, metal=0.3), M(GUNMETAL, metal=0.5)

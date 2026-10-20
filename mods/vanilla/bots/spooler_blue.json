@@ -12,6 +12,21 @@
     "height": 1
   },
   "color": "#3e7fd0",
+  "model": {
+    "mesh": "meshes/bots/spooler_blue.glb",
+    "attacks": {
+      "tape": [
+        "tape_shot"
+      ]
+    },
+    "clip_speeds": {
+      "patrol": 0.98,
+      "chase": 2.52
+    },
+    "effects": {
+      "tape": "shot"
+    }
+  },
   "raid_cost": 2,
   "attacks": [
     {
