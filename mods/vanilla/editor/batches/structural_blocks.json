@@ -281,6 +281,7 @@
         "visual": {
           "color": "#ffffff",
           "texture": "textures/blocks/scrap_metal.png",
+          "texture_span": 8,
           "roughness": 0.42,
           "metallic": 0.7
         }

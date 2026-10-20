@@ -5,10 +5,11 @@ Usage: tools/author-block-textures.py SOURCE_DIR [OUT_DIR]   (default OUT_DIR: m
 SOURCE_DIR holds one <material>.jpg per block material (aluminum.jpg, wood.jpg, ...). Needs Python 3 with numpy
 and Pillow. Deterministic: the same sources give the same pixels.
 
-One texture covers one 0.25 m block face and repeats on the next block, so each picture is cut to a whole number
+Most textures cover one 0.25 m block face and repeat on the next block, so each picture is cut to a whole number
 of its pattern repeats (measured by autocorrelation), resized to 512 px and blended across its edges so it tiles.
 See-through materials get alpha (glass, armored glass); the net is drawn as a cut-out lattice because its source
-is not regular enough to tile; scrap metal is drawn as framed plates; the path light gets a glow map of its lit strips.
+is not regular enough to tile; scrap metal is drawn as a
+2048 px patchwork of plates that spans 8 x 8 blocks (its part's texture_span); the path light gets a glow map of its lit strips.
 """
 import os
 import sys
@@ -101,100 +102,150 @@ def save(path, rgb, alpha=None):
         Image.fromarray(np.dstack([rgb, a]), "RGBA").save(path, optimize=True)
 
 
-def value_noise(cells, seed, octaves=4):
-    """Smooth noise in 0..1: bicubic-upscaled random grids, each octave twice as fine and half as strong."""
+def value_noise(size, cells, seed, octaves=4):
+    """Smooth noise in 0..1 that wraps at the edges: tiled random grids upscaled bicubically, the middle tile kept;
+    each octave twice as fine and half as strong."""
     r = np.random.default_rng(seed)
-    out, amp, total = np.zeros((N, N)), 1.0, 0.0
-    for o in range(octaves):
-        c = cells * 2 ** o
-        g = Image.fromarray((r.random((c, c)) * 255).astype(np.uint8)).resize((N, N), Image.BICUBIC)
-        out += amp * np.asarray(g, np.float64) / 255
+    out, amp, total = np.zeros((size, size)), 1.0, 0.0
+    for _ in range(octaves):
+        grid = np.tile(r.random((cells, cells)), (3, 3))
+        g = Image.fromarray((grid * 255).astype(np.uint8)).resize((3 * size, 3 * size), Image.BICUBIC)
+        out += amp * np.asarray(g, np.float64)[size:2 * size, size:2 * size] / 255
         total += amp
         amp *= 0.5
+        cells *= 2
     return out / total
 
+def pack(units, seed):
+    """Rectangles (x, y, w, h) in units that cover a units x units torus with no gaps."""
+    r = np.random.default_rng(seed)
+    taken = np.full((units, units), -1)
+    rects = []
+    order = [(x, y) for y in range(units) for x in range(units)]
+    for x, y in order:
+        if taken[y, x] >= 0:
+            continue
+        shapes = [(int(r.integers(2, 7)), int(r.integers(1, 4))) for _ in range(12)]
+        shapes = [s if r.random() < 0.6 else s[::-1] for s in shapes]
+        shapes += [(2, 1), (1, 2), (1, 1)]
+        for w, h in shapes:
+            ys, xs = (np.arange(y, y + h) % units), (np.arange(x, x + w) % units)
+            if (taken[np.ix_(ys, xs)] < 0).all():
+                taken[np.ix_(ys, xs)] = len(rects)
+                rects.append((x, y, w, h))
+                break
+    return rects, taken
 
-def scrap_metal():
-    """Orange painted plates (one wide, one tall, two small) bolted into a gunmetal frame, worn to steel at the
-    edges, with rust, scratches and dents. Drawn rather than cut so the frame closes on every block face."""
+def scrap_metal(size=2048, units=32):
+    """Scrap plates of many sizes bolted together over one 2 m repeat (texture_span 8): mostly orange paint, with grey
+    grates, yellow crate panels, hazard stripes and bare grey plates mixed in, worn to steel at the edges, with rust,
+    scratches and dents. Drawn rather than cut, and every pattern (plates, noise, scratches) wraps at the edges."""
     ss = smoothstep
-    noise = value_noise
-    y, x = np.mgrid[0:N, 0:N] + 0.5
-    F=18  # frame width
-    G=3   # seam half-gap
-    # plates (x0,y0,x1,y1) inside the frame, like the reference: big top-left, tall right, two bottom-left
-    m=F
-    plates=[(m,m,318,262),(318,m,N-m,N-m),(m,262,150,N-m),(150,262,318,N-m)]
-    paint=np.zeros((N,N,3)); height=np.zeros((N,N)); inside=np.zeros((N,N)); steelmask=np.zeros((N,N))
-    n_chip=noise(10,1,5); n_chip2=noise(40,2,3); n_dirt=noise(4,3,4); n_rust=noise(14,4,5)
-    base_cols=[np.array([172,74,34]),np.array([184,84,38]),np.array([164,68,32]),np.array([178,80,36])]
-    for i,(x0,y0,x1,y1) in enumerate(plates):
-        a0,b0,a1,b1=x0+G,y0+G,x1-G,y1-G
-        d=np.minimum.reduce([x-a0,a1-x,y-b0,b1-y])  # distance to plate edge
-        msk=(d>0).astype(float)
-        # brushed streaks along the plate's long side
-        horiz=(a1-a0)>=(b1-b0)
-        r=np.random.default_rng(20+i)
-        line=r.random(N*2)
-        streak=np.asarray(Image.fromarray((line[:N]*255).astype(np.uint8)[None,:].repeat(N,0)).filter(ImageFilter.GaussianBlur(0.7)),np.float64)/255
-        streak=streak.T if horiz else streak
-        col=base_cols[i]*(0.94+0.12*r.random())
-        p=col[None,None,:]*(0.95+0.07*streak[...,None])*(0.8+0.35*n_dirt[...,None])
-        # bevel: raised plate, lit from top-left
-        bev=ss(d,0,7)
-        lightx=np.where(x-a0<a1-x,1,-1); lighty=np.where(y-b0<b1-y,1,-1)
-        edge_light=np.where(np.minimum(x-a0,y-b0)<np.minimum(a1-x,b1-y),1.25,0.7)
-        shade=bev+(1-bev)*edge_light
-        # worn edges: chips where paint is gone showing steel, more near edges
-        wear=ss(n_chip*0.6+n_chip2*0.4 + 0.28*(1-ss(d,0,14)) ,0.76,0.79)
-        steel=np.array([112,110,108])*(0.8+0.4*streak[...,None]) * (0.85+0.3*n_chip2[...,None])
-        rust=ss(n_rust+0.18*(1-ss(d,0,30)),0.70,0.90)
-        rustcol=np.array([92,44,24])*(0.8+0.4*n_chip2[...,None])
-        q=p*(1-wear[...,None])+steel*wear[...,None]
-        q=q*(1-0.85*rust[...,None])+rustcol*0.85*rust[...,None]
-        grime=1-0.35*(1-ss(d,0,22))*(0.6+0.4*n_chip2)
-        sheen=1+0.12*np.exp(-(((x-a0)/(a1-a0)-0.35)**2+((y-b0)/(b1-b0)-0.3)**2)/0.08)
-        q=q*(shade*grime*sheen)[...,None]
-        paint=paint*(1-msk[...,None])+q*msk[...,None]
-        inside=np.maximum(inside,msk)
-        # bolts at plate corners
-        for cx,cy in [(a0+13,b0+13),(a1-13,b0+13),(a0+13,b1-13),(a1-13,b1-13)]:
-            rr=np.hypot(x-cx,y-cy)
-            bolt=ss(7.5-rr,0,1.2)
-            lit=np.clip(1.05-((x-cx)+(y-cy))/12,0.5,1.5)
-            boltc=np.array([120,118,116])*lit[...,None]
-            ring=ss(9.5-rr,0,1)*(1-bolt)*0.5
-            paint=paint*(1-ring[...,None])
-            paint=paint*(1-bolt[...,None])+boltc*bolt[...,None]
-    # frame: gunmetal steel with bevel
-    fd=np.minimum.reduce([x,N-x,y,N-y])
-    frame=(fd<F).astype(float)
-    nf=noise(16,7,4); gun=np.array([80,80,82])*(0.8+0.35*nf[...,None]); fr=ss(noise(12,8,4),0.6,0.8); gun=gun*(1-0.5*fr[...,None])+np.array([105,60,36])*0.5*fr[...,None]
-    fl=np.where(np.minimum(x,y)<np.minimum(N-x,N-y),1.25,0.75)
-    fb=ss(fd,0,4); fb2=ss(F-fd,0,3)
-    fshade=(fb*fb2+(1-fb*fb2)*fl)
-    gunc=gun*fshade[...,None]
-    seam=np.array([28,26,26])
-    out=np.where(frame[...,None]>0,gunc,paint*inside[...,None]+seam*(1-inside[...,None]))
-    # grime in the seams
-    out=out*(0.92+0.08*noise(8,9,3)[...,None])
-
-    # scratches: thin bright lines through the paint, showing steel
-    sc=Image.new('L',(N,N),0); dr=ImageDraw.Draw(sc); r=np.random.default_rng(31)
-    for k in range(22):
-        x0,y0=r.uniform(20,N-20,2); ang=r.uniform(0,np.pi); L=r.uniform(15,70)
-        pts=[(x0+t*L*np.cos(ang)+r.normal(0,0.6),y0+t*L*np.sin(ang)+r.normal(0,0.6)) for t in np.linspace(0,1,8)]
-        dr.line(pts,fill=int(r.uniform(60,150)),width=1)
-    scr=np.asarray(sc.filter(ImageFilter.GaussianBlur(0.5)),np.float64)/255*inside
-    out=out*(1-scr[...,None])+np.array([128,122,116])*scr[...,None]
-    # dents: soft dark blotch with a lit rim
-    for k in range(5):
-        cx,cy=r.uniform(60,N-60,2); rad=r.uniform(14,30)
-        rr=np.hypot(x-cx,y-cy)/rad
-        dent=np.exp(-rr**2*2)*inside
-        rim=np.exp(-((rr-0.9)**2)*18)*inside*np.clip(((cx-x)+(cy-y))/rad,0,1)
-        out=out*(1-0.22*dent[...,None])*(1+0.18*rim[...,None])
-    return out
+    U = size // units
+    rects, taken = pack(units, 5)
+    n = len(rects)
+    r = np.random.default_rng(6)
+    # kind per piece: 0 orange plate, 1 grey grate, 2 yellow crate, 3 hazard stripes, 4 grey plate
+    kinds = np.zeros(n, int)
+    for i, (x, y, w, h) in enumerate(rects):
+        roll = r.random()
+        long = max(w, h) >= 4 and min(w, h) == 1
+        if long and roll < 0.45: kinds[i] = 3
+        elif roll < 0.10: kinds[i] = 1
+        elif roll < 0.17 and min(w, h) >= 1: kinds[i] = 2
+        elif roll < 0.25: kinds[i] = 4
+    y, x = np.mgrid[0:size, 0:size] + 0.5
+    lab = taken[(y // U).astype(int) % units, (x // U).astype(int) % units]
+    R = np.array(rects, float) * U
+    X0, Y0, W, H = R[lab, 0], R[lab, 1], R[lab, 2], R[lab, 3]
+    kind = kinds[lab]
+    u, v = (x - X0) % size, (y - Y0) % size
+    gap = 3
+    d = np.minimum(np.minimum(u - gap, W - gap - u), np.minimum(v - gap, H - gap - v))
+    horiz = W >= H
+    chip, chip_fine, dirt, rust_n = (value_noise(size, 8, 1, 5), value_noise(size, 32, 2, 3),
+                                     value_noise(size, 4, 3, 4), value_noise(size, 16, 4, 5))
+    tone = r.uniform(0.88, 1.08, n)[lab]
+    # brushed streaks along each piece's long side
+    line = np.asarray(Image.fromarray((r.random(size) * 255).astype(np.uint8)[None, :].repeat(size, 0)).filter(ImageFilter.GaussianBlur(0.8)), np.float64) / 255
+    streak = np.where(horiz, line.T, line)
+    orange = np.array([166, 80, 42])
+    base = np.zeros((size, size, 3)) + orange
+    grey = np.array([92, 88, 86])
+    yellow = np.array([206, 160, 40])
+    k = kind[..., None]
+    # grate: dark slots across the piece's short side, ribs between them
+    t = np.where(horiz, u, v)
+    slot = ss(np.abs(((t / 14) % 1) - 0.5), 0.18, 0.26)
+    inner = ss(d, 10, 12)
+    grate = grey * (0.35 + 0.75 * np.maximum(slot, 1 - inner)[..., None])
+    # crate: yellow cells with an X in each
+    cs = np.minimum(W, H)
+    cu, cv = (u % cs) / cs - 0.5, (v % cs) / cs - 0.5
+    cross = np.minimum(np.abs(cu - cv), np.abs(cu + cv))
+    border = np.maximum(np.abs(cu), np.abs(cv))
+    crate_dark = np.maximum(1 - ss(cross, 0.05, 0.08), ss(border, 0.40, 0.43)) * ss(border, 0, 0.46)
+    crate = yellow * (1 - 0.75 * crate_dark[..., None])
+    # hazard: diagonal orange and dark stripes
+    stripe = ss(np.abs(((u + v) / 34 % 1) - 0.5), 0.23, 0.27)
+    hazard = np.array([150, 70, 34]) * (1 - stripe[..., None]) + np.array([60, 50, 46]) * stripe[..., None]
+    base = np.where(k == 1, grate, base)
+    base = np.where(k == 2, crate, base)
+    base = np.where(k == 3, hazard, base)
+    base = np.where(k == 4, grey * 1.15, base)
+    p = base * tone[..., None] * (0.95 + 0.07 * streak[..., None]) * (0.82 + 0.32 * dirt[..., None])
+    bevel = ss(d, 0, 6)
+    top_left = np.minimum(u - gap, v - gap) < np.minimum(W - gap - u, H - gap - v)
+    shade = bevel + (1 - bevel) * np.where(top_left, 1.3, 0.65)
+    wear = ss(chip * 0.6 + chip_fine * 0.4 + 0.3 * (1 - ss(d, 0, 10)), 0.77, 0.80)
+    steel = np.array([116, 112, 108]) * (0.8 + 0.4 * streak[..., None]) * (0.85 + 0.3 * chip_fine[..., None])
+    rust = ss(rust_n + 0.16 * (1 - ss(d, 0, 22)), 0.71, 0.90) * np.where(kind == 1, 0.5, 1)
+    rust_colour = np.array([92, 44, 24]) * (0.8 + 0.4 * chip_fine[..., None])
+    q = p * (1 - wear[..., None]) + steel * wear[..., None]
+    q = q * (1 - 0.8 * rust[..., None]) + rust_colour * 0.8 * rust[..., None]
+    grime = 1 - 0.35 * (1 - ss(d, 0, 16)) * (0.6 + 0.4 * chip_fine)
+    out = q * (shade * grime)[..., None]
+    out = np.where((d > 0)[..., None], out, np.array([30, 27, 26]))
+    plate = (d > 0).astype(float)
+    # bolts in the corners of the bigger pieces
+    for i, (bx, by, w, h) in enumerate(rects):
+        if w * h < 3 or kinds[i] == 1:
+            continue
+        x0, y0, w, h = bx * U, by * U, w * U, h * U
+        for cx, cy in [(x0 + 11, y0 + 11), (x0 + w - 11, y0 + 11), (x0 + 11, y0 + h - 11), (x0 + w - 11, y0 + h - 11)]:
+            if r.random() < 0.2:
+                continue  # a bolt lost
+            # a small window round the bolt, wrapping at the edges
+            rows, cols = np.arange(cy - 12, cy + 12) % size, np.arange(cx - 12, cx + 12) % size
+            dy, dx = np.meshgrid(np.arange(-12, 12) + 0.5, np.arange(-12, 12) + 0.5, indexing="ij")
+            rr = np.hypot(dx, dy)
+            bolt = ss(4.5 - rr, 0, 1.0)[..., None]
+            lit = np.clip(1.05 - (dx + dy) / 8, 0.5, 1.5)[..., None]
+            patch = out[np.ix_(rows, cols)] * (1 - 0.45 * ss(6 - rr, 0, 1)[..., None] * (1 - bolt))
+            out[np.ix_(rows, cols)] = patch * (1 - bolt) + np.array([60, 56, 54]) * lit * bolt
+    # scratches, wrapping
+    canvas = Image.new("L", (size, size), 0)
+    draw = ImageDraw.Draw(canvas)
+    for _ in range(70):
+        x0, y0 = r.uniform(0, size, 2)
+        angle, length = r.uniform(0, np.pi), r.uniform(15, 90)
+        pts = [(x0 + t * length * np.cos(angle) + r.normal(0, 0.6), y0 + t * length * np.sin(angle) + r.normal(0, 0.6)) for t in np.linspace(0, 1, 8)]
+        shade_ = int(r.uniform(50, 140))
+        for ox in (-size, 0, size):
+            for oy in (-size, 0, size):
+                draw.line([(a + ox, b + oy) for a, b in pts], fill=shade_, width=1)
+    sc = np.asarray(canvas, np.float64) / 255
+    sc = np.clip((sc + np.roll(sc, 1, 0) + np.roll(sc, -1, 0) + np.roll(sc, 1, 1) + np.roll(sc, -1, 1)) / 5 * 1.6, 0, 1) * plate
+    out = out * (1 - sc[..., None]) + np.array([132, 126, 120]) * sc[..., None]
+    for _ in range(12):
+        cx, cy = r.uniform(0, size, 2)
+        radius = r.uniform(12, 28)
+        dx, dy = (x - cx + size / 2) % size - size / 2, (y - cy + size / 2) % size - size / 2
+        rr = np.hypot(dx, dy) / radius
+        dent = np.exp(-rr ** 2 * 2) * plate
+        rim = np.exp(-((rr - 0.9) ** 2) * 18) * plate * np.clip(-(dx + dy) / radius, 0, 1)
+        out = out * (1 - 0.22 * dent[..., None]) * (1 + 0.18 * rim[..., None])
+    return out * (0.92 + 0.08 * value_noise(size, 8, 9, 3)[..., None])
 
 
 def net():

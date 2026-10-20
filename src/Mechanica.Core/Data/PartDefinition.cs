@@ -1127,6 +1127,16 @@ public sealed record VisualDefinition
     /// </summary>
     public string? EmissionTexture { get; init; }
 
+    /// <summary>
+    /// Grid cells one repeat of <see cref="Texture"/> covers, 1 to 16. Omitted means 1: each cell face shows the whole
+    /// texture. Above 1 the texture is laid over the creation's grid instead, so neighbouring parts carry on one larger
+    /// pattern (a wall of blocks reads as one surface, with no seam at each block).
+    /// </summary>
+    public int? TextureSpan { get; init; }
+
+    /// <summary>The largest <see cref="TextureSpan"/>.</summary>
+    public const int MaxTextureSpan = 16;
+
     /// <summary>Whether the Paint Tool can recolour the part. Omitted means true.</summary>
     public bool? Paintable { get; init; }
 
