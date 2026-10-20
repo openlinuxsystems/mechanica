@@ -19,7 +19,8 @@
   "collision": {
     "shape": "cylinder",
     "radius": 0.625,
-    "height": 0.5
+    "height": 0.5,
+    "climb": 0.25
   },
   "sockets": [
     {

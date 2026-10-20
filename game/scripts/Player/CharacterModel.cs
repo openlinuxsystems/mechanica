@@ -403,7 +403,7 @@ public partial class CharacterModel : Node3D
         if (player.WaterDepth > 0.05f)
             return CharacterSounds.FootstepWater;
         var from = player.GlobalPosition + Vector3.Up * 0.2f;
-        var query = PhysicsRayQueryParameters3D.Create(from, from + Vector3.Down * 0.6f);
+        var query = PhysicsRayQueryParameters3D.Create(from, from + Vector3.Down * 0.6f, World.PhysicsLayers.Queries);
         query.Exclude = [player.GetRid()];
         var hit = player.GetWorld3D().DirectSpaceState.IntersectRay(query);
         if (hit.Count == 0)
