@@ -12,6 +12,43 @@
     "height": 1.2
   },
   "color": "#c9b48a",
+  "model": {
+    "mesh": "meshes/bots/grazer.glb",
+    "clip_speeds": {
+      "patrol": 0.61,
+      "chase": 2.36
+    },
+    "variants": [
+      "meshes/bots/grazer_fawn.glb",
+      "meshes/bots/grazer_chocolate.glb"
+    ],
+    "idles": [
+      {
+        "clip": "graze",
+        "weight": 3
+      },
+      {
+        "clip": "chew",
+        "weight": 2
+      },
+      {
+        "clip": "look",
+        "weight": 2
+      },
+      {
+        "clip": "tail_flick",
+        "weight": 2
+      },
+      {
+        "clip": "moo",
+        "sound": "grazer_idle"
+      }
+    ],
+    "idle_every": [
+      5,
+      12
+    ]
+  },
   "passive": true,
   "behavior": {
     "type": "selector",
