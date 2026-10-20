@@ -33,7 +33,9 @@
   // Jumping at the surface lifts the feet this far above the water, so a swimmer can climb out onto an edge this high.
   "swim_leap_height": 0.6,
   "wade_speed_scale": 0.7,
-  // Camera (UI spec §6): third-person by default; zoom in (X) and out (C) by a step, in past the closest goes first-person.
+  // Camera (UI spec §6): first-person by default; zoom out (C) and in (X) by a step, in past the closest goes first-person.
+  // camera_distance is where the third-person camera sits when it pulls back (death, spectating, or starting third-person).
+  "camera_starts_first_person": true,
   "camera_distance": 3.5,
   "camera_min_distance": 1.5,
   "camera_max_distance": 6.0,

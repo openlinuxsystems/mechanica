@@ -232,7 +232,7 @@ public partial class HudTest : StagedTest
             return true;
         });
 
-        Add("the camera starts third-person and zooms in steps", frame =>
+        Add("the camera starts first-person and zooms out and in by steps", frame =>
         {
             if (frame == 0)
             {
@@ -241,7 +241,10 @@ public partial class HudTest : StagedTest
             }
             var input = _client.Main.GetNode<LocalPlayerInput>("TestInput");
             var settings = Me.Settings;
-            Check(Me.ThirdPerson && Mathf.IsEqualApprox(Me.CameraDistance, settings.CameraDistance), $"third-person at {settings.CameraDistance} m ({Me.CameraDistance})");
+            Check(Me.CameraDistance == 0f && !Me.ThirdPerson && !Me.BodyVisible, $"first-person at the start ({Me.CameraDistance} m)");
+            input.Zoom(false);
+            Check(Mathf.IsEqualApprox(Me.CameraDistance, settings.CameraMinDistance) && Me.ThirdPerson && Me.BodyVisible, "zooming out leaves first-person at the closest third-person distance");
+            Me.CameraDistance = settings.CameraDistance;
             var distances = new List<float>();
             for (var i = 0; i < 4; i++)
             {

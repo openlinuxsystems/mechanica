@@ -17,7 +17,7 @@ These are the default keys. Every one can be changed in Options, Controls.
 | Shift | Sprint (and swim faster) |
 | Ctrl | Crawl: move slowly and fit under gaps 1.2 m high (you stand up again once there is room). In deep water, dive. |
 | Mouse | Look. Click the world to take the mouse back after a menu. |
-| X / C | Zoom the camera in or out a step (also Alt + scroll). You start in third person over the shoulder; all the way in is first person. |
+| X / C | Zoom the camera in or out a step (also Alt + scroll). You start in first person; zoom out for third person over the shoulder, and all the way in is first person again. |
 | V | Watch players: the camera follows another player, an AI player first, and shows what the AI is thinking. Left and right click go to the next and previous player, X and C zoom between their own view and behind them, and V or Esc gives your view back. You stand still meanwhile. |
 | 1 to 9, 0 | Pick a hotbar slot. It starts with the Sledgehammer (in hand), Lift, Weld, Paint and Connect Tool. |
 | Left click | Create, attack or place: with a part in hand it goes down when you let go, the Sledgehammer swings. With a part in hand, hold still to lock the ghost (arrows show the ways it can grow), then drag to lay a grid of up to 16 by 16 parts; Q steps the grid's plane while you drag. Hold and drag with the Paint Tool to paint every part you pass over, or with the Weld Tool from one part to another to weld them. |
