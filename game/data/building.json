@@ -14,14 +14,16 @@
     "remove_seconds_by_material": { "wood": 0.4, "metal": 0.7, "concrete": 0.9 },
     "rollback_seconds": 0.4
   },
-  // Connect Tool (UI spec §9, §10, §12): nodes, 3 px lines with chevrons, drag snap (px at 1080p).
+  // Connect Tool (UI spec §9, §10, §12): nodes, 5 px lines with chevrons that run while hovered, hit slack, drag snap (px at 1080p).
   "connect": {
-    "node_pixels": 14,
-    "hover_scale": 1.2,
+    "node_pixels": 22,
+    "hover_scale": 1.25,
     "pulse_seconds": 0.8,
-    "line_width": 3,
-    "chevron_spacing": 40,
-    "lane_gap": 5,
+    "line_width": 5,
+    "chevron_spacing": 48,
+    "chevron_speed": 60,
+    "hit_pixels": 10,
+    "lane_gap": 8,
     "snap_metres": 0.5,
     "invalid_alpha": 0.3,
     "range": 40

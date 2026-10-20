@@ -28,6 +28,32 @@ public static class ConnectionLayout
     }
 
     /// <summary>
+    /// The chevrons of <see cref="Chevrons"/> moved <paramref name="travelled"/> px along the line toward
+    /// <paramref name="to"/>, for a hovered line whose arrows run the way it points. Each one wraps back to the start
+    /// a spacing after it passes the last, and fades in and out over the quarter spacing at either end of its run, so
+    /// the flow never jumps. At 0 they are where <see cref="Chevrons"/> puts them.
+    /// </summary>
+    public static IReadOnlyList<(Vector2 At, float Alpha)> MovingChevrons(Vector2 from, Vector2 to, float spacing, float travelled)
+    {
+        var still = Chevrons(from, to, spacing);
+        if (still.Count == 0)
+            return [];
+        var length = Vector2.Distance(from, to);
+        var direction = (to - from) / length;
+        var run = still.Count * spacing;
+        // The run is centred on the still chevrons and so never leaves the line.
+        var start = Math.Max(0f, Vector2.Distance(from, still[0]) - spacing / 2f);
+        var shift = (travelled % run + run) % run;
+        var edge = spacing / 4f;
+        return [.. still.Select((_, i) =>
+        {
+            var along = (i * spacing + spacing / 2f + shift) % run;
+            var alpha = Math.Clamp(Math.Min(along, run - along) / edge, 0f, 1f);
+            return (from + direction * (start + Math.Min(along, length - start)), alpha);
+        })];
+    }
+
+    /// <summary>
     /// Each link's lane, in order: the links joining the same two parts (either way round) share a group, and
     /// each gets its own index in it, so drawing them <see cref="LaneOffset"/> apart shows them all.
     /// </summary>

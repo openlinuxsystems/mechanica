@@ -390,6 +390,33 @@ public sealed class Creation
         return null;
     }
 
+    /// <summary>
+    /// The link joining <paramref name="a"/> and <paramref name="b"/> that could be added, whichever way round it
+    /// goes (the Connect Tool links two parts dragged either way, a Gas Container to a Gas Engine or back): a to b
+    /// when <see cref="CheckLink"/> allows it, else b to a, else null.
+    /// </summary>
+    public LogicLink? LinkBetween(int a, int b) =>
+        CheckLink(a, b) is null ? new LogicLink(a, b) : CheckLink(b, a) is null ? new LogicLink(b, a) : null;
+
+    /// <summary>The link already joining <paramref name="a"/> and <paramref name="b"/> either way round, a to b first, or null.</summary>
+    public LogicLink? LinkedBetween(int a, int b) =>
+        _links.Contains(new LogicLink(a, b)) ? new LogicLink(a, b) : _links.Contains(new LogicLink(b, a)) ? new LogicLink(b, a) : null;
+
+    /// <summary>
+    /// What a Connect Tool drag from <paramref name="from"/> to <paramref name="to"/> does: takes away the link from
+    /// one to the other if it is there, else adds the one <see cref="LinkBetween"/> finds, else takes away the link
+    /// back the other way. Two parts that cannot be linked either way get the link as dragged, which the host refuses.
+    /// </summary>
+    public (LogicLink Link, bool Remove) DragLink(int from, int to)
+    {
+        var dragged = new LogicLink(from, to);
+        if (_links.Contains(dragged))
+            return (dragged, true);
+        if (LinkBetween(from, to) is { } link)
+            return (link, false);
+        return _links.Contains(new LogicLink(to, from)) ? (new LogicLink(to, from), true) : (dragged, false);
+    }
+
     /// <summary>Adds a logic link after <see cref="CheckLink"/>. Bumps <see cref="Revision"/>.</summary>
     public bool TryLink(int from, int to, [NotNullWhen(false)] out string? error)
     {

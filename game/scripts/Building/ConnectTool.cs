@@ -18,7 +18,9 @@ namespace Mechanica.Game.Building;
 /// logic shows a coloured node (<see cref="LogicOverlay"/> draws them). Pressing the left button on a node and
 /// dragging pulls a line from it that snaps to the nearest node it may end on within
 /// <see cref="ConnectSettings.SnapMetres"/> of the aim; nodes it may not end on fade. Letting go on a node links
-/// the two (or takes the link away if they were linked), and every bearing the drag passed over is linked too.
+/// the two (or takes the link away if they were linked), and every bearing the drag passed over is linked too. Two
+/// parts link whichever one the drag starts from: a Gas Container dragged to a Gas Engine, or the engine to the
+/// container, both make container → engine (<see cref="Creation.DragLink"/>), so the link sent is the same either way.
 /// Pressing on a line instead grabs its far end: letting go away from any node disconnects it, and on another node
 /// moves it there. Right click on a node that can be reversed (a bearing) flips which way it turns, and right click
 /// during a drag cancels it. Each change is a <c>ConnectParts</c>, <c>DisconnectParts</c> or <c>ConfigurePart</c>
@@ -111,16 +113,16 @@ public partial class ConnectTool : HandTool
 
     /// <summary>
     /// True when a drag from the current source may end on <paramref name="node"/>: another part of the same
-    /// Creation that the link checks allow, or one already linked (letting go there takes the link away). A
-    /// grabbed link's own target counts too.
+    /// Creation that the link checks allow either way round, or one already linked either way (letting go there
+    /// takes the link away). A grabbed link's own target counts too.
     /// </summary>
     public bool CanEnd(ConnectionNode node)
     {
         if (DragFrom is not { } from || node.Creation != from.Creation || node.Part == from.Part || Creations.Find(from.Creation) is not { } creation)
             return false;
         if (Grabbed is { } grabbed)
-            return node.Part == grabbed.Link.To || creation.CheckLink(from.Part, node.Part) is null;
-        return creation.CheckLink(from.Part, node.Part) is null || creation.Links.Contains(new LogicLink(from.Part, node.Part));
+            return node.Part == grabbed.Link.To || creation.LinkBetween(from.Part, node.Part) is not null;
+        return creation.LinkBetween(from.Part, node.Part) is not null || creation.LinkedBetween(from.Part, node.Part) is not null;
     }
 
     /// <summary>The reverse state a node shows: the one just asked for until the host answers, else its own.</summary>
@@ -185,7 +187,7 @@ public partial class ConnectTool : HandTool
         HoveredLink = hovered is null && !Dragging ? LinkUnderCrosshair() : null;
         // Bearings the drag passes over join it (§2: dragging over several bearings connects them all).
         if (Dragging && Grabbed is null && hovered is { Kind: PortKind.Bearing } bearing && !_swept.Any(n => n.Creation == bearing.Creation && n.Part == bearing.Part)
-            && Creations.Find(bearing.Creation)?.CheckLink(DragFrom!.Value.Part, bearing.Part) is null)
+            && Creations.Find(bearing.Creation) is { } owner && owner.LinkBetween(DragFrom!.Value.Part, bearing.Part) is not null)
             _swept.Add(bearing);
     }
 
@@ -251,7 +253,7 @@ public partial class ConnectTool : HandTool
                 return false;
             Change(old, adding: false);
             if (target is { } to)
-                Change(new LogicLink(from.Part, to.Part), adding: true);
+                Change(creation.LinkBetween(from.Part, to.Part) ?? new LogicLink(from.Part, to.Part), adding: true);
             Player.Gesture(CharacterGesture.ConnectClick);
             return true;
         }
@@ -260,12 +262,11 @@ public partial class ConnectTool : HandTool
             targets.Add(end.Part);
         foreach (var part in targets)
         {
-            var link = new LogicLink(from.Part, part);
-            var linked = creation.Links.Contains(link);
+            var (link, remove) = creation.DragLink(from.Part, part);
             // Letting go on a part that is already linked takes that link away; a swept bearing is only ever added.
-            if (linked && (swept.Count > 0 || part != target?.Part))
+            if (remove && (swept.Count > 0 || part != target?.Part))
                 continue;
-            Change(link, adding: !linked);
+            Change(link, adding: !remove);
         }
         if (sent)
             Player.Gesture(CharacterGesture.ConnectClick);
@@ -402,7 +403,7 @@ public partial class ConnectTool : HandTool
         if (viewport is null)
             return null;
         var centre = viewport.GetVisibleRect().Size / 2;
-        var radius = Look.NodePixels / 2 * Look.HoverScale * LogicOverlay.PixelScale(viewport) + 2;
+        var radius = (Look.NodePixels / 2 * Look.HoverScale + Look.HitPixels) * LogicOverlay.PixelScale(viewport);
         return nodes.Where(n => !camera.IsPositionBehind(n.Position) && n.Position.DistanceTo(Eye) <= reach + Look.SnapMetres
                 && camera.UnprojectPosition(n.Position).DistanceTo(centre) <= radius)
             .OrderBy(n => n.Position.DistanceTo(Eye)).Cast<ConnectionNode?>().FirstOrDefault();
@@ -417,7 +418,7 @@ public partial class ConnectTool : HandTool
         var centre = viewport.GetVisibleRect().Size / 2;
         var scale = LogicOverlay.PixelScale(viewport);
         var best = ((int, LogicLink)?)null;
-        var bestDistance = (Look.LineWidth / 2 + 4) * scale;
+        var bestDistance = (Look.LineWidth / 2 + Look.HitPixels) * scale;
         foreach (var segment in LogicOverlay.Segments(Player.Camera, Creations, Eye, Look, scale))
         {
             var distance = ConnectionLayout.DistanceToSegment(centre.ToNumerics(), segment.From.ToNumerics(), segment.To.ToNumerics());
