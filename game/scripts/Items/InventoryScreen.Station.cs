@@ -436,6 +436,15 @@ public partial class InventoryScreen
             _status.CustomMinimumSize = Vector2.Zero;
             SetStorage(_storageOpen);
         }
+        else if (where is not null)
+        {
+            // The container screen draws its own windows too; errors show under the container's slots.
+            _root.AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
+            if (_status.GetParent() != _containerBody)
+                _status.Reparent(_containerBody);
+            _status.ThemeTypeVariation = "ErrorTextLabel";
+            _status.CustomMinimumSize = Vector2.Zero;
+        }
         else
         {
             _root.RemoveThemeStyleboxOverride("panel");
