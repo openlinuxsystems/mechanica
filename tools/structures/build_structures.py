@@ -18,8 +18,10 @@ structure's centre (glTF +Y up, front towards +Z):
 * ``meshes/structures/cargo_crate_colony.glb`` - a framed Colony cargo crate (decoration in the cargo spill).
 * ``meshes/world/scrap_pile_metal.glb`` and ``scrap_pile_wood.glb`` - the starting scrap piles (world objects).
 * ``meshes/world/props/*.glb`` - the props the world's scenes lay out between places (world objects): props.py,
-  props_settler_a.py and props_settler_b.py (Settler Patchwork), props_colony_a.py and props_colony_b.py (Colony
-  Works and Salvager Tech wreckage) and props_stone.py (Old Stone ruins and nature).
+  props_settler_a.py, props_settler_b.py, props_farm.py, props_camp.py and props_salvage.py (Settler Patchwork),
+  props_colony_a.py, props_colony_b.py, props_street.py, props_industry.py, props_utility.py and props_vehicles.py
+  (Colony Works), props_salvager.py (Salvager Tech wreckage), props_stone.py, props_ruins_a.py and props_ruins_b.py
+  (Old Stone ruins), props_nature.py (rocks, wood, plants and bones) and props_coast.py (shore and harbour).
 
 A structure model is one mesh of every part with a few shared detail textures (textures.py), a ``collider`` mesh of
 its larger parts (the game collides with that and does not draw it), and its point lights. World object models have
@@ -56,6 +58,18 @@ import props_colony_b  # noqa: E402
 import props_settler_a  # noqa: E402
 import props_settler_b  # noqa: E402
 import props_stone  # noqa: E402
+import props_farm  # noqa: E402
+import props_camp  # noqa: E402
+import props_salvage  # noqa: E402
+import props_street  # noqa: E402
+import props_industry  # noqa: E402
+import props_utility  # noqa: E402
+import props_vehicles  # noqa: E402
+import props_ruins_a  # noqa: E402
+import props_ruins_b  # noqa: E402
+import props_salvager  # noqa: E402
+import props_nature  # noqa: E402
+import props_coast  # noqa: E402
 import ship as S  # noqa: E402
 import workshop as W  # noqa: E402
 
@@ -113,7 +127,9 @@ def pile(kind):
 
 
 def props():
-    for module in (PR, props_settler_a, props_settler_b, props_colony_a, props_colony_b, props_stone):
+    for module in (PR, props_settler_a, props_settler_b, props_colony_a, props_colony_b, props_stone,
+                   props_farm, props_camp, props_salvage, props_street, props_industry, props_utility,
+                   props_vehicles, props_ruins_a, props_ruins_b, props_salvager, props_nature, props_coast):
         for name, build in module.PROPS.items():
             single(name, build, WORLD / "props", collider=False)
 
