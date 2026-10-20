@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://tests/terrain/RoadEdgeTest.cs" id="1_edge"]
+
+[node name="RoadEdgeTest" type="Node"]
+script = ExtResource("1_edge")

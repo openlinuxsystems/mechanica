@@ -1103,7 +1103,10 @@ public sealed partial class WorldGenerator
                 var placed = !_pois.Any(p => p.Poi == poi && Vector2.Distance(p.Centre, spot) < min)
                     && !Roads.Nodes.Any(n => n.Kind == RoadNodeKind.Junction && Vector2.Distance(n.At, point) < n.Radius + reach + 20f)
                     && SiteFits(poi, spot, out pad)
-                    && MathF.Abs(pad - height) <= RoadsideRise;
+                    && MathF.Abs(pad - height) <= RoadsideRise
+                    // And the road nearest it is level with it too, not another stretch winding by at its own height
+                    // (the other leg of a switchback).
+                    && Roads.Nearest(spot.X, spot.Y, reach + 20f, RoadKind.Road) is { } nearest && MathF.Abs(nearest.Height - pad) <= RoadsideRise;
                 if (placed)
                     Add(poi, spot, pad, FacingTurns(-normal));
                 // A spot that does not fit is tried again a little further on.

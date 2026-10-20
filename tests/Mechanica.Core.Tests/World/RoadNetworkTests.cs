@@ -161,6 +161,21 @@ public class RoadNetworkTests
     }
 
     [Fact]
+    public void WorldsBuiltAtOnceLayTheSameRoads()
+    {
+        // Host and client build their worlds in one process in the tests, at the same time: every build of a seed is the same.
+        var data = Vanilla.Value.Data;
+        var worlds = new WorldGenerator[4];
+        Parallel.For(0, worlds.Length, k => worlds[k] = new WorldGenerator(data, 1234, 12032f, 9024f));
+        foreach (var world in worlds)
+        {
+            Assert.Equal(Vanilla.Value.Roads.Chains.SelectMany(c => c.Points), world.Roads.Chains.SelectMany(c => c.Points));
+            Assert.Equal(Vanilla.Value.Roads.Chains.SelectMany(c => c.Heights), world.Roads.Chains.SelectMany(c => c.Heights));
+            Assert.Equal(Vanilla.Value.Roads.Nodes, world.Roads.Nodes);
+        }
+    }
+
+    [Fact]
     public void RoadsOnLandHaveNoCurbsAndNothingGrowsOnThem()
     {
         var gen = Vanilla.Value;
@@ -221,6 +236,151 @@ public class RoadNetworkTests
         }
         Assert.Contains(RoadMaterial.Hazard, all);
         Assert.Contains(RoadMaterial.Sign, all);
+    }
+
+    [Theory]
+    [InlineData(1234L)]
+    [InlineData(7L)]
+    [InlineData(20261017L)]
+    public void RoadsNeverFoldOverThemselves(long seed)
+    {
+        // A switchback up a hillside, or a road that leaves its junction the other way from where it is going, swings
+        // round in a bend wider than half the road, so the asphalt's inner edge never folds back over itself.
+        var gen = seed == 1234L ? Vanilla.Value : new WorldGenerator(Vanilla.Value.Data, seed, 12032f, 9024f);
+        foreach (var chain in gen.Roads.Chains.Where(c => c.Kind == RoadKind.Road))
+        {
+            var hw = chain.Width / 2f;
+            for (var i = 0; i < chain.Points.Length; i++)
+            {
+                var p = chain.Points[i];
+                if (i >= 2 && i + 2 < chain.Points.Length)
+                {
+                    var (a, c) = (chain.Points[i - 2], chain.Points[i + 2]);
+                    var area = MathF.Abs((p.X - a.X) * (c.Y - a.Y) - (c.X - a.X) * (p.Y - a.Y)) / 2f;
+                    var radius = area < 1e-4f ? float.MaxValue : Vector2.Distance(a, p) * Vector2.Distance(p, c) * Vector2.Distance(c, a) / (4f * area);
+                    Assert.True(radius > hw + 0.5f, $"road {chain.Index} bends round {radius:F1} m at {p} (more than {hw + 0.5f})");
+                }
+                for (var k = 0; k < chain.Points.Length; k++)
+                    Assert.False(MathF.Abs(chain.Along[k] - chain.Along[i]) > 3f * chain.Width && Vector2.Distance(chain.Points[k], p) < chain.Width,
+                        $"road {chain.Index} comes back within its width of itself at {p}");
+            }
+        }
+    }
+
+    [Fact]
+    public void WheelsRollOntoTheRoadsFromTheSide()
+    {
+        // Walking out from the asphalt over its edge onto the shoulder, the surface a wheel rolls on (the road mesh or the
+        // ground, whichever is higher) never steps: the asphalt's sides, its ends and the junction plates slope down under
+        // the levelled ground instead of standing proud of it with a bare lip.
+        var gen = Vanilla.Value;
+        var roads = gen.Roads;
+        var hw = roads.Definition!.Width / 2f;
+        var chunks = new Dictionary<ChunkCoord, (TerrainChunkData Data, List<(Vector3 A, Vector3 B, Vector3 C)> Faces)>();
+        var crossed = 0;
+        void Walk(Vector2 from, Vector2 outward, float length, string what)
+        {
+            const float step = 0.02f;
+            var last = Top(from);
+            for (var d = step; d <= length; d += step)
+            {
+                var p = from + outward * d;
+                var top = Top(p);
+                Assert.True(MathF.Abs(top - last) <= 0.4f * step + 0.004f, $"{what}: the surface steps {(top - last) * 100f:F1} cm at {p} ({d:F2} m out)");
+                last = top;
+            }
+            crossed++;
+        }
+        (TerrainChunkData Data, List<(Vector3 A, Vector3 B, Vector3 C)> Faces) Chunk(ChunkCoord coord)
+        {
+            if (!chunks.TryGetValue(coord, out var chunk))
+            {
+                var data = gen.GenerateChunk(coord, 64f);
+                var origin = new Vector3(coord.X * 64f, 0f, coord.Z * 64f);
+                var faces = new List<(Vector3, Vector3, Vector3)>();
+                foreach (var surface in data.Roads.Surfaces.Where(s => s.Solid))
+                    for (var t = 0; t < surface.Vertices.Count; t += 3)
+                        faces.Add((surface.Vertices[t] + origin, surface.Vertices[t + 1] + origin, surface.Vertices[t + 2] + origin));
+                chunks[coord] = chunk = (data, faces);
+            }
+            return chunk;
+        }
+        // Road pieces belong to the chunk their middle is in and can reach over its border, so look in the neighbours too.
+        float Top(Vector2 p)
+        {
+            var coord = new ChunkCoord((int)MathF.Floor(p.X / 64f), (int)MathF.Floor(p.Y / 64f));
+            var top = Ground(Chunk(coord).Data, p.X - coord.X * 64f, p.Y - coord.Z * 64f);
+            for (var dz = -1; dz <= 1; dz++)
+                for (var dx = -1; dx <= 1; dx++)
+                    foreach (var (a, b, c) in Chunk(new ChunkCoord(coord.X + dx, coord.Z + dz)).Faces)
+                        if (HeightIn(a, b, c, p.X, p.Y) is { } h)
+                            top = MathF.Max(top, h);
+            return top;
+        }
+
+        // Straight-ish stretches on land, away from junctions and bridges, both sides.
+        foreach (var chain in roads.Chains.Where(c => c.Kind == RoadKind.Road).Take(12))
+        {
+            for (var i = 3; i + 3 < chain.Points.Length; i += 9)
+            {
+                if (chain.Bridge.Skip(i - 3).Take(7).Any(b => b) || roads.Nodes.Any(n => n.Kind == RoadNodeKind.Junction && Vector2.Distance(n.At, chain.Points[i]) < n.Radius + 2f * chain.Width)
+                    || Crowded(roads, chain, i))
+                    continue;
+                var tangent = Vector2.Normalize(chain.Points[i + 1] - chain.Points[i - 1]);
+                var right = new Vector2(-tangent.Y, tangent.X);
+                var mid = (chain.Points[i] + chain.Points[i + 1]) / 2f;
+                foreach (var side in new[] { -1f, 1f })
+                    Walk(mid + right * side * (hw - 1f), right * side, 3f, $"the side of road {chain.Index}");
+            }
+            // A road's end at a POI.
+            foreach (var (node, end, inward) in new[] { (chain.From, chain.Points[0], chain.Points[1]), (chain.To, chain.Points[^1], chain.Points[^2]) })
+            {
+                if (roads.Nodes[node].Kind != RoadNodeKind.End || chain.Bridge[node == chain.From ? 0 : ^1])
+                    continue;
+                var off = Vector2.Normalize(end - inward);
+                Walk(end - off, off, 2.5f, $"the end of road {chain.Index}");
+            }
+        }
+        // Junction plates, out through their rounded corners and their sides where no road leaves.
+        foreach (var node in roads.Nodes.Where(n => n.Kind == RoadNodeKind.Junction && n.Arms != 0).Take(10))
+        {
+            for (var k = 0; k < 4; k++)
+            {
+                var (u, v) = (node.Arm(k), node.Arm(k + 1));
+                var corner = Vector2.Normalize(u + v);
+                var rim = 40f - roads.OffPlate(node, node.At + corner * 40f);
+                Walk(node.At + corner * (rim - 1f), corner, 3f, $"the corner of junction {node.Index}");
+            }
+        }
+        Assert.True(crossed > 100, $"crossed {crossed} edges");
+    }
+
+    // True where another road, or this one further along (a switchback's other leg), passes within two road widths.
+    private static bool Crowded(RoadNetwork roads, RoadChain chain, int i) =>
+        roads.Chains.Where(c => c.Kind == RoadKind.Road).Any(c => c.Points.Where((q, k) =>
+            (c != chain || MathF.Abs(c.Along[k] - chain.Along[i]) > 3f * chain.Width) && Vector2.Distance(q, chain.Points[i]) < 2f * chain.Width).Any());
+
+    // Height of the ground at chunk-local x/z, between its samples as the height map collides.
+    private static float Ground(TerrainChunkData chunk, float x, float z)
+    {
+        var (fx, fz) = (x / chunk.Resolution, z / chunk.Resolution);
+        var (i, j) = (Math.Clamp((int)fx, 0, chunk.Samples - 2), Math.Clamp((int)fz, 0, chunk.Samples - 2));
+        var (tx, tz) = (fx - i, fz - j);
+        float H(int a, int b) => chunk.Heights[(j + b) * chunk.Samples + i + a];
+        return (H(0, 0) * (1 - tx) + H(1, 0) * tx) * (1 - tz) + (H(0, 1) * (1 - tx) + H(1, 1) * tx) * tz;
+    }
+
+    // Height of a triangle over x/z, or null when the point is outside it seen from above.
+    private static float? HeightIn(Vector3 a, Vector3 b, Vector3 c, float x, float z)
+    {
+        var det = (b.Z - c.Z) * (a.X - c.X) + (c.X - b.X) * (a.Z - c.Z);
+        if (MathF.Abs(det) < 1e-9f)
+            return null;
+        var l1 = ((b.Z - c.Z) * (x - c.X) + (c.X - b.X) * (z - c.Z)) / det;
+        var l2 = ((c.Z - a.Z) * (x - c.X) + (a.X - c.X) * (z - c.Z)) / det;
+        var l3 = 1f - l1 - l2;
+        const float eps = -1e-5f;
+        return l1 >= eps && l2 >= eps && l3 >= eps ? l1 * a.Y + l2 * b.Y + l3 * c.Y : null;
     }
 
     [Fact]
