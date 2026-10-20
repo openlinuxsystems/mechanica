@@ -22,7 +22,7 @@ public partial class WeaponsTest : StagedTest
     private const string Blaster = "vanilla:potato_blaster";
     private const string Potato = "vanilla:potato";
     private const string Carrot = "vanilla:carrot";
-    private const string Wood = "vanilla:scrap_wood";
+    private const string Wood = "vanilla:scrap_wood_block";
 
     private readonly List<ActionResult> _results = [];
     private NetTestHarness _harness = null!;
@@ -55,7 +55,7 @@ public partial class WeaponsTest : StagedTest
                 Pieces = [new ShapeDefinition { Shape = PrimitiveShape.Cylinder, Radius = 0.35f, Height = 9, At = new Vec3(0, 4.5f, 0), Color = "#6b4a2e" }],
                 Footprint = 1.5f,
                 Health = 60,
-                Drops = [new ObjectDrop { Item = "scrap_wood", Count = 6 }],
+                Drops = [new ObjectDrop { Item = "scrap_wood_block", Count = 6 }],
                 Refine = true,
             },
         ],

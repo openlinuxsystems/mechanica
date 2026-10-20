@@ -227,7 +227,7 @@ The Creation the part belongs to.
 | `creation.display(part_id, id, value)` | Like `part.display`, for a part this one's output is linked to (an engine turns its wheel bearings' `drive` highlight). Any other part is refused. |
 | `creation.displayed(part_id, id)` | Like `part.displayed`, for any part of the same Creation (a seat checks whether an engine shows `running`), or `nil`. |
 | `creation.occupant_input(part_id)` | Like `part.occupant_input()`, for another seat of the same Creation: a control surface or rotor linked from a seat reads its pilot's controls this way. `nil` when that seat is empty. |
-| `creation.count(item, parts?)` | How many of an item the Creation's containers hold (gasoline in gas containers, battery packs in batteries). With `parts`, a list of part ids, only those containers count (an engine's linked gas containers, or a container's own `{part.id()}`). Bare ids are in the part's mod. |
+| `creation.count(item, parts?)` | How many of an item the Creation's containers hold (gasoline in gas containers, batteries in battery containers). With `parts`, a list of part ids, only those containers count (an engine's linked gas containers, or a container's own `{part.id()}`). Bare ids are in the part's mod. |
 | `creation.space(item, parts?)` | How many more of an item fit in the Creation's containers, or only in those in the list of part ids `parts` (a gas container works out how full it is from this and `creation.count`). |
 | `creation.take(item, count?, parts?)` | Takes up to `count` (default 1) of an item from the Creation's containers, in part order, and returns how many it took; with `parts`, only from the containers in that list of part ids. Engines burn fuel this way. |
 

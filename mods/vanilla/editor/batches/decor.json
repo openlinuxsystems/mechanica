@@ -739,7 +739,7 @@
         {
           "id": "support_pillar",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal_block", "count": 16 }, { "item": "scrap_wood", "count": 2 }],
+          "inputs": [{ "item": "scrap_metal_block", "count": 16 }, { "item": "scrap_wood_block", "count": 8 }],
           "outputs": [{ "item": "support_pillar", "count": 1 }],
           "time": 4,
           "order": 310
@@ -863,7 +863,7 @@
         {
           "id": "wooden_table",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_wood", "count": 4 }],
+          "inputs": [{ "item": "scrap_wood_block", "count": 16 }],
           "outputs": [{ "item": "wooden_table", "count": 1 }],
           "time": 2,
           "order": 2030
@@ -929,7 +929,7 @@
         {
           "id": "chair",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_wood", "count": 2 }],
+          "inputs": [{ "item": "scrap_wood_block", "count": 8 }],
           "outputs": [{ "item": "chair", "count": 1 }],
           "time": 2,
           "order": 2020
@@ -960,7 +960,7 @@
         {
           "id": "stool",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_wood", "count": 1 }],
+          "inputs": [{ "item": "scrap_wood_block", "count": 4 }],
           "outputs": [{ "item": "stool", "count": 1 }],
           "time": 2,
           "order": 2010
@@ -1031,7 +1031,7 @@
         {
           "id": "pallet",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_wood", "count": 3 }],
+          "inputs": [{ "item": "scrap_wood_block", "count": 12 }],
           "outputs": [{ "item": "pallet", "count": 1 }],
           "time": 2,
           "order": 2060
@@ -1142,7 +1142,7 @@
         {
           "id": "tree_trunk",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_wood", "count": 10 }],
+          "inputs": [{ "item": "scrap_wood_block", "count": 40 }],
           "outputs": [{ "item": "tree_trunk", "count": 1 }],
           "time": 2,
           "order": 2320
@@ -1169,7 +1169,7 @@
         {
           "id": "fallen_log",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_wood", "count": 8 }],
+          "inputs": [{ "item": "scrap_wood_block", "count": 32 }],
           "outputs": [{ "item": "fallen_log", "count": 1 }],
           "time": 2,
           "order": 2310
@@ -1626,7 +1626,7 @@
         {
           "id": "stairs_block",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal_block", "count": 8 }, { "item": "scrap_wood", "count": 2 }],
+          "inputs": [{ "item": "scrap_metal_block", "count": 8 }, { "item": "scrap_wood_block", "count": 8 }],
           "outputs": [{ "item": "stairs_block", "count": 1 }],
           "time": 2,
           "order": 220
@@ -1653,7 +1653,7 @@
         {
           "id": "ramp_block",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal_block", "count": 8 }, { "item": "scrap_wood", "count": 2 }],
+          "inputs": [{ "item": "scrap_metal_block", "count": 8 }, { "item": "scrap_wood_block", "count": 8 }],
           "outputs": [{ "item": "ramp_block", "count": 1 }],
           "time": 2,
           "order": 210
@@ -1682,7 +1682,7 @@
         {
           "id": "door_frame",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_wood", "count": 4 }],
+          "inputs": [{ "item": "scrap_wood_block", "count": 16 }],
           "outputs": [{ "item": "door_frame", "count": 1 }],
           "time": 2,
           "order": 360
@@ -1713,7 +1713,7 @@
         {
           "id": "window_frame",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_wood", "count": 2 }],
+          "inputs": [{ "item": "scrap_wood_block", "count": 8 }],
           "outputs": [{ "item": "window_frame", "count": 1 }],
           "time": 2,
           "order": 370

@@ -187,7 +187,7 @@ function on_event(topic, data)
   if last and world.time() - last < COOLDOWN then
     return
   end
-  local ok = player.give(data.peer, { { item = "vanilla:scrap_wood", count = 10 } })
+  local ok = player.give(data.peer, { { item = "vanilla:scrap_wood_block", count = 40 } })
   if ok then
     state.kits[data.name] = world.time()
   end

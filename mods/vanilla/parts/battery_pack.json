@@ -1,6 +1,7 @@
 {
   "id": "battery_pack",
-  "name": "Battery Pack",
+  "name": "Battery",
+  "description": "A charged cell for electric engines. Store it in a Battery Container: the creation's Electric Engines draw from them.",
   "category": "resource",
   "tab": "consumable",
   "mass": 1,

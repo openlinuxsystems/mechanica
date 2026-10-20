@@ -286,7 +286,7 @@
         {
           "id": "glowstick",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_wood", "count": 1 }, { "item": "chemical", "count": 1 }],
+          "inputs": [{ "item": "scrap_wood_block", "count": 4 }, { "item": "chemical", "count": 1 }],
           "outputs": [{ "item": "glowstick", "count": 1 }],
           "time": 2,
           "order": 1610
@@ -340,7 +340,7 @@
           "id": "radio",
           "stations": ["fabricator"],
           "inputs": [
-            { "item": "scrap_wood", "count": 2 },
+            { "item": "scrap_wood_block", "count": 8 },
             { "item": "component_kit", "count": 1 },
             { "item": "circuit_board", "count": 1 }
           ],

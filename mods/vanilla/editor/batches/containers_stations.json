@@ -7,25 +7,26 @@
       "file": "parts/battery.json",
       "template": "interactive",
       "set": {
-        "name": "Battery",
-        "description": "Holds battery packs, which power the creation's electric engines.",
+        "name": "Battery Container",
+        "description": "Holds batteries, which power the creation's electric engines; the gauges on its sides show how charged it is. Its yellow lid and terminals tell it apart from a Gas Container.",
         "category": "container",
-        "mass": 3,
+        "mass": 18,
         "durability": 6,
         "friction": 0.5,
         "buoyancy": 0.2,
         "flammable": false,
         "sound_material": "metal",
-        "size": [2, 2, 2],
-        "visual": { "color": "#2e7d4a", "paintable": true },
-        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.25, 0], "normal": [0, -1, 0] }],
+        "size": [4, 3, 3],
+        "icon": "textures/items/battery_icon.png",
+        "visual": { "color": "#ffffff" },
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.375, 0], "normal": [0, -1, 0] }],
         "sounds": { "open": "container_open", "place": "place_metal" },
-        "inventory": { "slots": 5, "accepts": ["battery_pack"] }
+        "inventory": { "slots": 5, "accepts": ["battery_pack"] },
+        "script": "scripts/battery.lua",
+        "display": { "clips": { "readout": "clip", "scrub": [{ "readout": "charge", "clip": "charge" }] } },
+        "properties": { "charge_item": "battery_pack", "ease": 0.3 }
       },
-      "model": [
-        { "kind": "box", "size": [0.5, 0.5, 0.5] },
-        { "kind": "box", "operation": "subtract", "size": [0.4, 0.4, 0.04], "position": [0, 0, 0.25] }
-      ],
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/battery.glb" }],
       "recipes": [
         {
           "id": "battery",

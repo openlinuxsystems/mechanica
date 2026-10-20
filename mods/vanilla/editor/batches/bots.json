@@ -946,9 +946,9 @@
         ],
         "drops": [
           {
-            "item": "scrap_wood",
+            "item": "scrap_wood_block",
             "chance": 0.8,
-            "count": 2
+            "count": 8
           },
           {
             "item": "component_kit",
@@ -1374,6 +1374,19 @@
       "file": "bots/thresher.json",
       "template": "melee",
       "set": {
+        // Built by tools/thresher/build_thresher.py (the Harvester), which prints the clip speeds.
+        "model": {
+          "mesh": "meshes/bots/thresher.glb",
+          "attacks": {
+            "kick": ["track_stomp"],
+            "swipe": ["sickle_swipe"],
+            "pesticide": ["spray_sweep"]
+          },
+          "clip_speeds": {
+            "patrol": 0.93,
+            "chase": 2.47
+          }
+        },
         "name": "Thresher",
         "description": "A huge farming machine. Kicks, swipes, sprays pesticide, shrugs off melee weapons and smashes trees and rocks in its way.",
         "family": "thresher",
@@ -1509,6 +1522,285 @@
                   "speed": 0.4
                 }
               ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": "bots/thresher_tiller.json",
+      "base": "thresher",
+      "set": {
+        "model": {
+          "mesh": "meshes/bots/thresher_tiller.glb",
+          "attacks": {
+            "kick": null,
+            "swipe": null,
+            "pesticide": null,
+            "stomp": ["rear_stomp"],
+            "till": ["till_grind"]
+          },
+          "clip_speeds": {
+            "patrol": 0.93,
+            "chase": 2.34
+          },
+          "effects": {
+            "stomp": "shockwave"
+          }
+        },
+        "name": "Tiller Thresher",
+        "description": "A four-legged tractor with a rotary tiller on its nose. Slow and very tough: it grinds through parts and walls, and rears up to slam the ground in a shockwave.",
+        "health": 2200,
+        "speed": 2.4,
+        "size": {
+          "radius": 1.5,
+          "height": 3.0
+        },
+        "color": "#a8402a",
+        "raid_cost": 6,
+        "attacks": [
+          {
+            "id": "till",
+            "kind": "melee",
+            "damage": 25,
+            "part_damage": 90,
+            "range": 2.2,
+            "interval": 1.5,
+            "object_damage": 80
+          },
+          {
+            "id": "stomp",
+            "kind": "area",
+            "damage": 30,
+            "part_damage": 40,
+            "range": 3.0,
+            "radius": 6.0,
+            "interval": 6.0
+          }
+        ],
+        "drops": [
+          {
+            "item": "component_kit",
+            "chance": 1.0,
+            "count": 5
+          },
+          {
+            "item": "circuit_board",
+            "chance": 0.6,
+            "count": 1
+          }
+        ],
+        "behavior": {
+          "type": "sequence",
+          "children": [
+            {
+              "type": "succeed",
+              "children": [
+                {
+                  "type": "break_objects",
+                  "attack": "till"
+                }
+              ]
+            },
+            {
+              "type": "selector",
+              "children": [
+                {
+                  "type": "sequence",
+                  "children": [
+                    {
+                      "type": "find_player",
+                      "range": 15
+                    },
+                    {
+                      "type": "chase",
+                      "attack": "till",
+                      "speed": 1
+                    },
+                    {
+                      "type": "selector",
+                      "children": [
+                        {
+                          "type": "attack",
+                          "attack": "stomp"
+                        },
+                        {
+                          "type": "attack",
+                          "attack": "till"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "sequence",
+                  "children": [
+                    {
+                      "type": "in_raid"
+                    },
+                    {
+                      "type": "find_crop"
+                    },
+                    {
+                      "type": "chase",
+                      "attack": "till",
+                      "speed": 1
+                    },
+                    {
+                      "type": "attack",
+                      "attack": "till"
+                    }
+                  ]
+                },
+                {
+                  "type": "go_to_raid",
+                  "radius": 6
+                },
+                {
+                  "type": "wander",
+                  "radius": 12,
+                  "speed": 0.4
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": "bots/thresher_duster.json",
+      "base": "thresher",
+      "set": {
+        "model": {
+          "mesh": "meshes/bots/thresher_duster.glb",
+          "attacks": {
+            "kick": null,
+            "swipe": null,
+            "pesticide": ["boom_spray"],
+            "canister": ["mortar_shot"]
+          },
+          "clip_speeds": {
+            "patrol": 1.4,
+            "chase": 3.57
+          },
+          "effects": {
+            "canister": "shot"
+          }
+        },
+        "name": "Duster Thresher",
+        "description": "A crop sprayer up on stilts. It lobs canisters of pesticide from far off and swings its spray booms out to poison everything around it.",
+        "health": 1000,
+        "speed": 4,
+        "sight": 50,
+        "size": {
+          "radius": 1.3,
+          "height": 4.0
+        },
+        "color": "#6b7a2e",
+        "raid_cost": 5,
+        "attacks": [
+          {
+            "id": "canister",
+            "kind": "ranged",
+            "damage": 20,
+            "part_damage": 35,
+            "range": 30,
+            "interval": 4.0,
+            "damage_over_time": {
+              "per_second": 4,
+              "seconds": 4
+            }
+          },
+          {
+            "id": "pesticide",
+            "kind": "area",
+            "damage": 0,
+            "part_damage": 0,
+            "range": 4.0,
+            "radius": 7.0,
+            "interval": 8.0,
+            "hits_parts": false,
+            "damage_over_time": {
+              "per_second": 6,
+              "seconds": 5
+            }
+          }
+        ],
+        "drops": [
+          {
+            "item": "component_kit",
+            "chance": 1.0,
+            "count": 3
+          },
+          {
+            "item": "circuit_board",
+            "chance": 0.5,
+            "count": 1
+          }
+        ],
+        "behavior": {
+          "type": "selector",
+          "children": [
+            {
+              "type": "sequence",
+              "children": [
+                {
+                  "type": "find_player",
+                  "range": 30
+                },
+                {
+                  "type": "selector",
+                  "children": [
+                    {
+                      "type": "attack",
+                      "attack": "pesticide"
+                    },
+                    {
+                      "type": "sequence",
+                      "children": [
+                        {
+                          "type": "chase",
+                          "attack": "canister",
+                          "speed": 1
+                        },
+                        {
+                          "type": "attack",
+                          "attack": "canister"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "sequence",
+              "children": [
+                {
+                  "type": "in_raid"
+                },
+                {
+                  "type": "find_crop"
+                },
+                {
+                  "type": "chase",
+                  "attack": "pesticide",
+                  "speed": 1
+                },
+                {
+                  "type": "attack",
+                  "attack": "pesticide"
+                }
+              ]
+            },
+            {
+              "type": "go_to_raid",
+              "radius": 6
+            },
+            {
+              "type": "wander",
+              "radius": 14,
+              "speed": 0.4
             }
           ]
         }
@@ -1667,7 +1959,11 @@
           },
           {
             "bot": "thresher",
-            "count": 2
+            "count": 2,
+            "one_of": [
+              "thresher_tiller",
+              "thresher_duster"
+            ]
           }
         ],
         "notes": "Elite appears (251–400)."
@@ -1680,7 +1976,11 @@
         "bots": [
           {
             "bot": "thresher",
-            "count": 4
+            "count": 4,
+            "one_of": [
+              "thresher_tiller",
+              "thresher_duster"
+            ]
           },
           {
             "bot": "spooler_blue",

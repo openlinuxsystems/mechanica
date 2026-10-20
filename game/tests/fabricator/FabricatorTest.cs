@@ -25,7 +25,7 @@ public partial class FabricatorTest : StagedTest
     private const string Fabricator = "vanilla:fabricator";
     private const string Chest = "vanilla:chest";
     private const string Floor = "vanilla:wood_block";
-    private const string Wood = "vanilla:scrap_wood";
+    private const string Wood = "vanilla:scrap_wood_block";
     private const string Metal = "vanilla:scrap_metal_block";
     private const string Kit = "vanilla:component_kit";
 
@@ -142,7 +142,7 @@ public partial class FabricatorTest : StagedTest
             _screen.Choose(Chest);
             _screen.SetQuantity(3);
             var inputs = _screen.PreviewInputs;
-            Check(inputs.Any(i => i.Missing && i.Text.StartsWith("8 / 12")), $"12 scrap wood is short in red ({Lines(inputs)})");
+            Check(inputs.Any(i => i.Missing && i.Text.StartsWith("32 / 48")), $"48 scrap wood blocks is short in red ({Lines(inputs)})");
             Check(inputs.Any(i => !i.Missing && i.Text.StartsWith("16 / 24")) == false && inputs.Any(i => i.Missing && i.Text.StartsWith("16 / 24")), $"24 scrap metal blocks is short too ({Lines(inputs)})");
             Check(_screen.CraftButton.Disabled, "Craft is off");
             Check(_screen.Reason.StartsWith("Needs"), $"and says why ({_screen.Reason})");
@@ -255,7 +255,7 @@ public partial class FabricatorTest : StagedTest
         creation.SetAllBodyPoses(new Pose((feet + new Vector3(-1, 0, -4)).ToNumerics(), System.Numerics.Quaternion.Identity));
         _host.Main.Build.Added(creation);
         _workshop = creation.Id;
-        HostPockets.Add(Wood, 8);
+        HostPockets.Add(Wood, 32);
         HostPockets.Add(Metal, 8);
         creation.InventoryOf(_near)!.Add(Metal, 8);
     }

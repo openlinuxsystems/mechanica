@@ -806,7 +806,7 @@ public sealed record BreakPiece
 /// <summary>Items a broken world object leaves behind.</summary>
 public sealed record ObjectDrop
 {
-    /// <summary>Item id (<c>scrap_wood</c>, or <c>mod_id:item</c>).</summary>
+    /// <summary>Item id (<c>scrap_wood_block</c>, or <c>mod_id:item</c>).</summary>
     public string? Item { get; init; }
 
     /// <summary>How many (1 or more).</summary>

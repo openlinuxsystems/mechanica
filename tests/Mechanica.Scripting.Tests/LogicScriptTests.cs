@@ -590,6 +590,28 @@ public sealed class LogicScriptTests : IDisposable
     }
 
     [Fact]
+    public void ABatteryShowsHowChargedItIs()
+    {
+        var creation = NewCreation();
+        var battery = Tank(creation, "vanilla:battery");
+        var readouts = _runtime.Readouts;
+        Steps(2);
+        Assert.Equal(0f, readouts.Number(Car, battery, "charge"));
+
+        // 20 of its 50 batteries (5 slots of 10): the gauge eases up to 0.4 over 0.3 s.
+        creation.InventoryOf(battery)!.Add("vanilla:battery_pack", 20);
+        Steps(6);
+        Assert.InRange(readouts.Number(Car, battery, "charge")!.Value, 0.01f, 0.39f);
+        Steps(30);
+        Assert.Equal(0.4f, readouts.Number(Car, battery, "charge"));
+
+        // An engine drew one: it eases down.
+        creation.InventoryOf(battery)!.Remove("vanilla:battery_pack", 1);
+        Steps(60);
+        Assert.Equal(0.38f, readouts.Number(Car, battery, "charge"));
+    }
+
+    [Fact]
     public void AControllerStepsItsBearingsThroughItsFrames()
     {
         var creation = Board();
@@ -983,13 +1005,13 @@ public sealed class LogicScriptTests : IDisposable
     private static GridRotation Facing(GridCell outward) =>
         outward.Y != 0 ? GridRotation.FromAxes(new GridCell(1, 0, 0), outward) : GridRotation.FromAxes(new GridCell(0, -outward.X - outward.Z, 0), outward);
 
-    // A Gas Container (4 x 3 x 3 cells) behind the car, standing on blocks of its own.
-    private static int Tank(Creation creation)
+    // A Gas Container (or a Battery Container, the same 4 x 3 x 3 cells) behind the car, standing on blocks of its own.
+    private static int Tank(Creation creation, string part = "vanilla:gas_container")
     {
         foreach (var z in new[] { -1, -2 })
             if (creation.PartAt(new GridCell(0, 0, z)) is null)
                 Place(creation, "vanilla:metal_block", new GridCell(0, 0, z));
-        return Place(creation, "vanilla:gas_container", new GridCell(-1, 1, -3));
+        return Place(creation, part, new GridCell(-1, 1, -3));
     }
 
     private static void Link(Creation creation, int from, int to) =>

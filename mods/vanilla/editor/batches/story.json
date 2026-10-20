@@ -96,7 +96,7 @@
             { "item": "carrot", "count": 3 },
             { "item": "tomato", "count": 3 },
             { "item": "carrot_seed", "count": 4 },
-            { "item": "scrap_wood", "count": 10 },
+            { "item": "scrap_wood_block", "count": 40 },
             { "item": "scrap_metal_block", "count": 40 }
           ],
           "reveal": ["outpost"]

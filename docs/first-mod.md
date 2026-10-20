@@ -60,7 +60,7 @@ Players craft parts at stations. Still in the Part Editor with the crate open, g
 3. Set **Order** to `1790`. Every recipe has an order that puts it in its group in the station list; the
    groups are in [Recipe order](part-data-schema.md#recipe-order). A crate is storage (the 1700s), and vanilla's
    last storage recipe, the Dispenser, is 1780.
-4. Under **Inputs**, press **+ Input**, type `scrap_wood` and set the count to `4`.
+4. Under **Inputs**, press **+ Input**, type `scrap_wood_block` and set the count to `16`.
 5. Press **Save recipe**.
 
 It writes `recipes/crate.json`:
@@ -74,8 +74,8 @@ It writes `recipes/crate.json`:
   ],
   "inputs": [
     {
-      "item": "scrap_wood",
-      "count": 4
+      "item": "scrap_wood_block",
+      "count": 16
     }
   ],
   "outputs": [
@@ -89,7 +89,7 @@ It writes `recipes/crate.json`:
 }
 ```
 
-In a recipe, a bare id is vanilla's (`scrap_wood`, `fabricator`), so your own items carry your mod id
+In a recipe, a bare id is vanilla's (`scrap_wood_block`, `fabricator`), so your own items carry your mod id
 (`my_mod:crate`).
 
 ## 4. Add an item with a script

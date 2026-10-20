@@ -526,7 +526,76 @@ public partial class ToolsTest : StagedTest
             Directory.Delete(_blueprints, recursive: true);
             return true;
         });
+        Add("a block set on an empty Lift starts a build the Lift holds", frame =>
+        {
+            var liftAt = new Vector3(_barAt.X + 0.25f, _ground, _barAt.Z - 2.5f);
+            if (frame == 0)
+            {
+                _results.Clear();
+                Request(ToolActions.PlaceLift, new PlaceLiftArgs(liftAt.ToNumerics().ToVec3()));
+                return false;
+            }
+            if (_results.Count == 1 && _client.Main.Build.Lifts.TryGetValue(_client.Peer, out var shown) && shown.Deployed && _onLift == 0)
+            {
+                Check(_results[0].Ok, $"a new Lift goes down ({_results[0]})");
+                _onLift = -1;
+                // Off the platform's middle, resting on its top.
+                var top = _host.Main.Build.Settings!.Lift.TopAt(0);
+                _client.Main.Actions.Request(BuildActions.PlacePart, new PlacePartArgs(Block, GridCell.Zero,
+                    Position: (liftAt + new Vector3(0.25f, top + 0.125f, 0)).ToNumerics().ToVec3()), r =>
+                    {
+                        _results.Add(r);
+                        if (r.Ok)
+                            _onLift = System.Text.Json.JsonSerializer.Deserialize<PlacePartResult>(r.Value!.Value.GetRawText(), ActionJson.Options)!.Creation;
+                    });
+            }
+            if (_onLift <= 0 || _client.Main.Build.Lifts[_client.Peer].State.Creation != _onLift || _client.Main.Creations.Find(_onLift) is not { OnLift: true }
+                || !SameEverywhere())
+                return false;
+            Check(_results[1].Ok, $"the block goes down ({_results[1]})");
+            Check(_host.Main.Creations.Find(_onLift)!.OnLift && !_host.Main.Creations.Find(_onLift)!.IsGrounded, "the host holds it on the Lift, not on the ground");
+            Check(Body(_host, _onLift).Freeze, "it stands frozen on the platform");
+            _onLiftAt = Body(_host, _onLift).GlobalPosition;
+            return true;
+        });
+        Add("the build stays where it was set while more blocks join it", frame =>
+        {
+            if (frame == 0)
+                Request(BuildActions.PlacePart, new PlacePartArgs(Block, new GridCell(1, 0, 0), Creation: _onLift));
+            if (frame < 60 || _host.Main.Creations.Find(_onLift)!.Parts.Count != 2 || !SameEverywhere())
+                return frame > 600 && Fail("the second block never joined");
+            Check(Body(_host, _onLift).GlobalPosition.DistanceTo(_onLiftAt) < 1e-3f, $"it has not moved ({Body(_host, _onLift).GlobalPosition} from {_onLiftAt})");
+            Check(_host.Main.Creations.Find(_onLift)!.OnLift, "and is still on the Lift");
+            return true;
+        });
+        Add("raising the Lift carries the build straight up", frame =>
+        {
+            if (frame == 0)
+                Check(Tools.Lift.Raise(1), "the Lift sends SetLiftLevel");
+            var lift = _client.Main.Build.Lifts[_client.Peer];
+            if (lift.State.Level != 1 || lift.Moving || _host.Main.Build.Lifts[_client.Peer].Moving || !SameEverywhere())
+                return frame > 600 && Fail("the Lift never rose");
+            var moved = Body(_host, _onLift).GlobalPosition - _onLiftAt;
+            Check(moved.DistanceTo(new Vector3(0, _host.Main.Build.Settings!.Lift.LevelHeight, 0)) < 1e-3f, $"one level up, not re-centred ({moved})");
+            return true;
+        });
+        Add("the build drops when the Lift goes", frame =>
+        {
+            if (frame == 0)
+            {
+                _results.Clear();
+                Request(ToolActions.RemoveLift, new NoArgs());
+            }
+            if (_results.Count == 0 || _client.Main.Build.Lifts.Count != 0 || !SameEverywhere())
+                return false;
+            Check(!_host.Main.Creations.Find(_onLift)!.OnLift, "the build is let go");
+            _host.Main.Build.Removed(_onLift);
+            return true;
+        });
     }
+
+    private int _onLift;
+    private Vector3 _onLiftAt;
 
     private void AddWeld()
     {

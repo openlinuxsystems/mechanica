@@ -37,7 +37,7 @@ by tab with a worked example; this is the short version.
      logic and seats, light, animation).
    - **Model**: shapes (**+ Box**, **+ Wedge**, **+ Cylinder**, **+ Sphere**) combined with `union`,
      `subtract` and `intersect`, and **Import mesh…** for a glTF model.
-   - **Collision**: the physics shape.
+   - **Collision**: the physics shape. A sphere or cylinder (a wheel) also has **Climb**: the step height it drives up.
    - **Sockets**: attachment points and their joints.
    - **Look**: colour, surface, textures and colour variants.
    - **Behaviour**: the part's script and its **Properties**.

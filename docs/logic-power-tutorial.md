@@ -86,7 +86,7 @@ has no control left and goes back to running on its own. Its **On** toggle stops
 
 A gas engine burns one gasoline from the creation's gas containers for every 40 s of full throttle
 (half throttle lasts twice as long). When the last one is gone it sputters and stops until you fill a
-container again. The Electric Engine draws battery packs from batteries the same way, and its upgrades go further on each pack. The Creation
+container again. The Electric Engine draws batteries from Battery Containers the same way, and its upgrades go further on each pack. The Creation
 Inspector shows an engine's input, so you can tell an empty tank from a broken wire.
 
 To choose which tanks feed which engine, drag from a gas container's node to the engine's with the Connect
