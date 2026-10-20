@@ -150,6 +150,7 @@
         "visual": {
           "color": "#ffffff",
           "texture": "textures/blocks/scrap_stone.png",
+          "texture_span": 8,
           "roughness": 0.95,
           "metallic": 0
         }
@@ -219,6 +220,7 @@
         "visual": {
           "color": "#ffffff",
           "texture": "textures/blocks/scrap_wood.png",
+          "texture_span": 8,
           "roughness": 0.9,
           "metallic": 0
         }

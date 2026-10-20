@@ -134,7 +134,7 @@ you; this page is the reference for what each key means, so you can read, review
 | `emission` | `"#rrggbb"` | Glow colour added on top of the lit surface. It does not light other things. |
 | `texture` | path | `.png` albedo texture, replacing the mesh's own. Its alpha makes the part see-through where it is low: blended with `opacity` below 1, cut out (holes) otherwise. Vanilla box and wedge models map one repeat to each 0.25 m grid cell. |
 | `emission_texture` | path | `.png` glow map: `emission` shines only where it is bright (black does not glow). Needs `emission`. |
-| `texture_span` | 1–16 | Grid cells one repeat of `texture` covers. Omitted means 1 (each cell face shows the whole texture). Above 1 the texture is laid over the creation's grid instead of each part's faces, so a wall of these blocks shows one larger pattern that runs on from block to block with no seam (Scrap Metal uses 8: one repeat per 2 m). The texture must tile. Parts in the hand, the build ghost and icons show one repeat per cell. Needs `texture`. |
+| `texture_span` | 1–16 | Grid cells one repeat of `texture` covers. Omitted means 1 (each cell face shows the whole texture). Above 1 the texture is laid over the creation's grid instead of each part's faces, so a wall of these blocks shows one larger pattern that runs on from block to block with no seam (Scrap Metal, Scrap Wood and Scrap Stone use 8: one repeat per 2 m). The texture must tile. Parts in the hand, the build ghost and icons show one repeat per cell. Needs `texture`. |
 | `paintable` | bool | Whether the Paint Tool can recolour it. Omitted means true. |
 | `variants` | list | Named colour choices: `{ "id": "black", "name": "Black", "color": "#202020" }`. Ids are unique in the part. |
 

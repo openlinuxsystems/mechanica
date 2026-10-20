@@ -16,7 +16,8 @@
     "color": "#ffffff",
     "roughness": 0.95,
     "metallic": 0,
-    "texture": "textures/blocks/scrap_stone.png"
+    "texture": "textures/blocks/scrap_stone.png",
+    "texture_span": 8
   },
   "collision": {
     "shape": "convex",
