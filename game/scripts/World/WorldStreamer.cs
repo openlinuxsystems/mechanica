@@ -67,6 +67,9 @@ public partial class WorldStreamer : Node3D
     /// </summary>
     public Func<double>? Clock { get; set; }
 
+    /// <summary>Draws the characters standing at POIs' <c>npc</c> markers (<see cref="TerrainChunk.Npc"/>); null draws none.</summary>
+    public Func<PoiMarkerPlacement, Node3D?>? Npc { get; set; }
+
     /// <summary>Tuning; null reads <see cref="DefaultSettingsPath"/> when the node starts.</summary>
     public StreamingSettings? Settings { get; set; }
 
@@ -168,6 +171,7 @@ public partial class WorldStreamer : Node3D
         Generator = new WorldGenerator(WorldGen, Seed, Settings.WorldSize, Settings.Depth);
         Streamer = new ChunkStreamer(Settings);
         Creations.Removed += Streamer.Forget;
+        Creations.MovedParked += TrackMoved;
         Session.PeerReady += SendWorld;
         Step(0f);
     }
@@ -198,7 +202,16 @@ public partial class WorldStreamer : Node3D
     public override void _ExitTree()
     {
         Creations.Removed -= Streamer.Forget;
+        Creations.MovedParked -= TrackMoved;
         Session.PeerReady -= SendWorld;
+    }
+
+    // A parked Creation moved (put down on a Lift far from where it parked): it is tracked where it is now, so it resumes
+    // when a player is near it there, and never stays parked out of reach of the ground it now stands on.
+    private void TrackMoved(int id)
+    {
+        if (Streamer.IsTracked(id) && Creations.Find(id) is { } creation)
+            Streamer.RegisterParked(id, CreationBounds.World(creation));
     }
 
     public override void _PhysicsProcess(double delta) => Step((float)delta);
@@ -295,7 +308,7 @@ public partial class WorldStreamer : Node3D
     {
         _pending.Remove(chunk);
         DropRetiring(chunk);
-        var node = new TerrainChunk { Data = Generator.GenerateChunk(chunk, Streamer.Settings.ChunkSize), State = State, Ground = Ground, Textured = GroundMaterial.For(Generator.Data), WorldGen = Generator.Data };
+        var node = new TerrainChunk { Data = Generator.GenerateChunk(chunk, Streamer.Settings.ChunkSize), State = State, Ground = Ground, Textured = GroundMaterial.For(Generator.Data), WorldGen = Generator.Data, Npc = Npc };
         AddChild(node);
         _chunks[chunk] = node;
         Revision++;

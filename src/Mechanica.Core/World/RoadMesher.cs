@@ -130,6 +130,24 @@ public static class RoadMesher
     /// <summary>Metres the hazard posts on a bridge approach stand out from the asphalt's edge where there is no curb.</summary>
     public const float PostInset = 0.3f;
 
+    /// <summary>
+    /// Metres the asphalt's sloped edge reaches out from the road (and from a junction plate or a road's end) where there is
+    /// no curb: wheels roll up it from the shoulder instead of catching on a bare lip.
+    /// </summary>
+    public const float EdgeWidth = 0.6f;
+
+    /// <summary>
+    /// Metres the sloped edge falls at least from the road surface to its outer rim; the rim also lies at least
+    /// <see cref="RimDepth"/> under the ground there, so it never ends in a lip.
+    /// </summary>
+    public const float EdgeDrop = 0.14f;
+
+    /// <summary>Metres the sloped edge's outer rim lies under the ground at least.</summary>
+    public const float RimDepth = 0.04f;
+
+    /// <summary>Most metres the sloped edge falls, so it stays a gentle slope where the ground drops away beside the road.</summary>
+    public const float MaxEdgeDrop = 0.3f;
+
     /// <summary>Metres between bridge piers.</summary>
     public const float PierSpacing = 14f;
 
@@ -155,14 +173,14 @@ public static class RoadMesher
             {
                 if (!Inside((chain.Points[i] + chain.Points[i + 1]) / 2f))
                     continue;
-                Segment(surfaces, chain, i, from, to, def, origin);
+                Segment(surfaces, gen, chain, i, from, to, def, origin);
             }
             Bridges(surfaces, gen, chain, def, origin, Inside);
         }
         foreach (var node in roads.Nodes)
         {
             if (node.Kind == RoadNodeKind.Junction && Inside(node.At))
-                Plate(surfaces[RoadMaterial.Asphalt], roads, node, def.Width, origin);
+                Plate(surfaces[RoadMaterial.Asphalt], gen, node, def.Width, origin);
         }
         return new RoadMesh([.. surfaces.Values.Where(s => s.Vertices.Count > 0)]);
     }
@@ -184,7 +202,7 @@ public static class RoadMesher
     // True when a road leaving a junction towards `toward` is one of the two arms of a T that run straight through.
     private static bool Through(RoadNode node, Vector2 toward) => node.Side is var side and >= 0 && node.ArmToward(toward) != side;
 
-    private static void Segment(Dictionary<RoadMaterial, RoadMeshSurface> surfaces, RoadChain chain, int i, RoadNode from, RoadNode to,
+    private static void Segment(Dictionary<RoadMaterial, RoadMeshSurface> surfaces, WorldGenerator gen, RoadChain chain, int i, RoadNode from, RoadNode to,
         RoadsDefinition def, Vector3 origin)
     {
         var hw = chain.Width / 2f;
@@ -207,6 +225,18 @@ public static class RoadMesher
             new(Start(s0), End(s0)), new(Start(s0), End(s0)), new(Start(s1), End(s1)), new(Start(s1), End(s1)));
 
         var bridge = chain.Bridge[i] && chain.Bridge[i + 1];
+        if (!bridge && def.Curb <= 0f)
+        {
+            // The asphalt stands a little proud of its bed: its sides, and a road's end at a POI, slope down under the ground.
+            var asphalt = surfaces[RoadMaterial.Asphalt];
+            var (out0, out1) = (r0 * EdgeWidth, r1 * EdgeWidth);
+            Edge(asphalt, gen, p0 + r0 * hw, p1 + r1 * hw, y0, y1, out0, out1, 1f + EdgeWidth / chain.Width, s0, s1, origin);
+            Edge(asphalt, gen, p1 - r1 * hw, p0 - r0 * hw, y1, y0, -out1, -out0, -EdgeWidth / chain.Width, s1, s0, origin);
+            if (i == 0 && from.Kind == RoadNodeKind.End)
+                EndEdge(asphalt, gen, p0, -t0, r0, hw, y0, s0, origin);
+            if (i + 2 == chain.Points.Length && to.Kind == RoadNodeKind.End)
+                EndEdge(asphalt, gen, p1, t1, -r1, hw, y1, s1, origin);
+        }
         // Curbs stop at a junction plate.
         bool UnderPlate(Vector2 p, RoadNode node) => node.Kind == RoadNodeKind.Junction && Vector2.Distance(p, node.At) < node.Radius + def.Curb;
         if (UnderPlate(p0, from) || UnderPlate(p1, from) || UnderPlate(p0, to) || UnderPlate(p1, to))
@@ -235,6 +265,47 @@ public static class RoadMesher
             concrete.Quad(At(p0 - r0 * w, y0 - DeckDepth, origin), At(p0 + r0 * w, y0 - DeckDepth, origin), At(p1 + r1 * w, y1 - DeckDepth, origin),
                 At(p1 - r1 * w, y1 - DeckDepth, origin), -Vector3.UnitY, new(0, s0), new(2 * w, s0), new(2 * w, s1), new(0, s1));
         }
+    }
+
+    // A sloped strip from the edge a0-a1 (at heights y0, y1) out by out0, out1 and down under the ground (Rim): plain asphalt, uv.x at
+    // its rim `across` (beyond 0..1, where no markings are drawn), uv.y metres along from s0 to s1.
+    private static void Edge(RoadMeshSurface asphalt, WorldGenerator gen, Vector2 a0, Vector2 a1, float y0, float y1, Vector2 out0, Vector2 out1, float across,
+        float s0, float s1, Vector3 origin)
+    {
+        var (top0, top1) = (At(a0, y0, origin), At(a1, y1, origin));
+        var (rim0, rim1) = (Rim(gen, a0 + out0, y0, origin), Rim(gen, a1 + out1, y1, origin));
+        var edge = across > 0.5f ? 1f : 0f;
+        var plain = new Vector2(-1f, -1f);
+        asphalt.Quad(top0, top1, rim1, rim0, Up(top0, top1, rim0), new(edge, s0), new(edge, s1), new(across, s1), new(across, s0), plain, plain, plain, plain);
+    }
+
+    // The sloped edge across a road's end at `p` (`ahead` points off the end, `right` across it), and round its two corners.
+    private static void EndEdge(RoadMeshSurface asphalt, WorldGenerator gen, Vector2 p, Vector2 ahead, Vector2 right, float hw, float y, float s, Vector3 origin)
+    {
+        var plain = new Vector2(-1f, -1f);
+        var off = ahead * EdgeWidth;
+        Edge(asphalt, gen, p + right * hw, p - right * hw, y, y, off, off, 0.5f, s, s, origin);
+        foreach (var side in new[] { -1f, 1f })
+        {
+            var corner = p + right * side * hw;
+            var top = At(corner, y, origin);
+            var rims = new[] { right * side, Vector2.Normalize(right * side + ahead), ahead }
+                .Select(d => Rim(gen, corner + d * EdgeWidth, y, origin)).ToArray();
+            for (var k = 0; k < 2; k++)
+                asphalt.Triangle(top, rims[k], rims[k + 1], Up(top, rims[k], rims[k + 1]), new(0.5f, s), new(0.5f, s), new(0.5f, s), plain, plain, plain);
+        }
+    }
+
+    // A point on a sloped edge's outer rim, below a road surface at height y: under the ground, but never more than
+    // MaxEdgeDrop below the road.
+    private static Vector3 Rim(WorldGenerator gen, Vector2 p, float y, Vector3 origin) =>
+        At(p, MathF.Max(y - MaxEdgeDrop, MathF.Min(y - EdgeDrop, gen.HeightAt(p.X, p.Y) - RimDepth)), origin);
+
+    // The upward normal of the plane through three points.
+    private static Vector3 Up(Vector3 a, Vector3 b, Vector3 c)
+    {
+        var n = Vector3.Normalize(Vector3.Cross(b - a, c - a));
+        return n.Y < 0f ? -n : n;
     }
 
     // A strip along one side of the road from `inner` to `outer` metres out, `top` over the surface, its outer face going
@@ -338,7 +409,7 @@ public static class RoadMesher
     // between them (RoadNetwork.PlateOutline). Plain, except across a T, where the road running through keeps its centre
     // line and the edge line on the far side from the road that ends there: the plate's uv is then that road's (uv.x across
     // it, 0 to 1 edge to edge; uv.y metres along) and uv2 is (-2, the side of the ending road: +1 where uv.x > 0.5).
-    private static void Plate(RoadMeshSurface asphalt, RoadNetwork roads, RoadNode node, float width, Vector3 origin)
+    private static void Plate(RoadMeshSurface asphalt, WorldGenerator gen, RoadNode node, float width, Vector3 origin)
     {
         var y = node.Height + RoadNetwork.SurfaceLift + 0.012f;
         var centre = At(node.At, y, origin);
@@ -352,7 +423,7 @@ public static class RoadMesher
             uv = p => new Vector2(0.5f + Vector2.Dot(p - node.At, right) / width, Vector2.Dot(p - node.At, along));
             marks = new Vector2(-2f, MathF.Sign(Vector2.Dot(node.Arm(side), right)));
         }
-        var outline = roads.PlateOutline(node);
+        var outline = gen.Roads.PlateOutline(node);
         for (var k = 0; k < outline.Count; k++)
         {
             var (p, q) = (outline[k], outline[(k + 1) % outline.Count]);
@@ -360,6 +431,30 @@ public static class RoadMesher
             if (MathF.Abs((p.X - node.At.X) * (q.Y - node.At.Y) - (p.Y - node.At.Y) * (q.X - node.At.X)) < 1e-4f)
                 continue;
             asphalt.Triangle(centre, At(p, y, origin), At(q, y, origin), Vector3.UnitY, uv(node.At), uv(p), uv(q), marks, marks, marks);
+        }
+        // Its rim slopes down under the ground like a road's sides; at the mouths that slope is under the roads' asphalt.
+        var count = outline.Count;
+        Vector2 Out(int k)
+        {
+            // Anticlockwise from above with z south, so the outside of each edge is on its left in x/z: (d.y, -d.x).
+            Vector2 Normal(Vector2 a, Vector2 b) => Vector2.Normalize(new Vector2(b.Y - a.Y, a.X - b.X));
+            var (before, at, after) = (outline[(k + count - 1) % count], outline[k], outline[(k + 1) % count]);
+            var (n0, n1) = (Normal(before, at), Normal(at, after));
+            var mean = n0 + n1;
+            if (mean.LengthSquared() < 1e-6f)
+                return n1 * EdgeWidth;
+            mean = Vector2.Normalize(mean);
+            // Mitred so the strip keeps its width round a bend, but never further than twice it at a sharp corner.
+            return mean * EdgeWidth / MathF.Max(0.5f, Vector2.Dot(mean, n1));
+        }
+        for (var k = 0; k < count; k++)
+        {
+            var (p, q) = (outline[k], outline[(k + 1) % count]);
+            if (Vector2.DistanceSquared(p, q) < 1e-8f)
+                continue;
+            var (top0, top1) = (At(p, y, origin), At(q, y, origin));
+            var (rim0, rim1) = (Rim(gen, p + Out(k), y, origin), Rim(gen, q + Out((k + 1) % count), y, origin));
+            asphalt.Quad(top0, top1, rim1, rim0, Up(top0, top1, rim0), uv(p), uv(q), uv(q), uv(p), new(-1f, -1f), new(-1f, -1f), new(-1f, -1f), new(-1f, -1f));
         }
     }
 }

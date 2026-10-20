@@ -65,6 +65,8 @@ After adding, renaming or re-documenting an action or AI endpoint method, run `t
   load order wins). Paths in data are relative to the mod
   root (`other_mod:path` for another mod). No `res://` paths or Godot-imported formats in mod data.
   Reject `..` and absolute paths.
+- Structures (buildings, ruins, wrecks) follow `docs/art-direction.md`: its families, palette, rules and sizes.
+  Vanilla structures are built by `tools/structures/build_structures.py`; re-run it after changing the scripts.
 - Mod tools are in-game modes and ship in exported builds; no Godot editor plugins.
 - Once the Part Editor exists, vanilla items are authored through it, not by hand-written JSON.
   Families of similar parts (blocks and wedges) are Part Editor batches in

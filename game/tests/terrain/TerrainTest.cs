@@ -31,7 +31,7 @@ public partial class TerrainTest : StagedTest
     // The start: the spawn, wreck and pond are laid out round it.
     private PoiInstance Crash => HostWorld.Generator.Pois.First(p => p.Poi.Prefab.Id == "crash_site");
 
-    private Vector3 Pond => Crash.ToWorld(new System.Numerics.Vector3(30, 0, 26)).ToGodot();
+    private Vector3 Pond => Crash.ToWorld(new System.Numerics.Vector3(-56, 0, -3)).ToGodot();
 
     public override void _Ready()
     {
@@ -52,7 +52,7 @@ public partial class TerrainTest : StagedTest
             Check(host.Data.Heights.SequenceEqual(client.Data.Heights), $"chunk {home} at the start has the same heights on both peers");
             var shape = host.GroundShape.Shape as HeightMapShape3D;
             Check(shape is not null && shape.MapData.SequenceEqual(host.Data.Heights), "the ground collides as a height map of those heights");
-            var spawn = Crash.ToWorld(new System.Numerics.Vector3(0, 0, 4)).ToGodot();
+            var spawn = Crash.ToWorld(new System.Numerics.Vector3(16, 0, 36)).ToGodot();
             Check(_host.Main.GetNode<Node3D>("SpawnPoint").GlobalPosition.IsEqualApprox(spawn), $"players spawn at the crash site's spawn marker ({spawn})");
             foreach (var instance in new[] { _host, _client })
             {
@@ -84,7 +84,7 @@ public partial class TerrainTest : StagedTest
             var onHost = _host.Main.PlayerSync.Players[_client.Peer];
             var mine = _client.Main.LocalPlayer!;
             var sea = HostWorld.Generator.SeaLevel;
-            var spawn = Crash.ToWorld(new System.Numerics.Vector3(0, 0, 4)).ToGodot();
+            var spawn = Crash.ToWorld(new System.Numerics.Vector3(16, 0, 36)).ToGodot();
             var toSpawn = new Vector2(spawn.X - Pond.X, spawn.Z - Pond.Z).Normalized();
             var yaw = MathF.Atan2(-toSpawn.X, -toSpawn.Y);
             if (frame == 0)

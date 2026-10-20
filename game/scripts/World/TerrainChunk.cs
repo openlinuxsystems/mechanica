@@ -32,6 +32,7 @@ public partial class TerrainChunk : Node3D
     public static void ClearModels()
     {
         ObjectMeshes.Clear();
+        StructureModel.Clear();
         AnimatedObject.ClearModels();
     }
 
@@ -48,6 +49,12 @@ public partial class TerrainChunk : Node3D
     /// <summary>Seconds a hit object shakes for.</summary>
     public const double ShakeSeconds = 0.45;
 
+    /// <summary>Radius of the capsule an <c>npc</c> marker's figure collides with, in metres.</summary>
+    public const float NpcRadius = 0.3f;
+
+    /// <summary>Height of that capsule, in metres.</summary>
+    public const float NpcHeight = 1.8f;
+
     /// <summary>Largest lean of a shaking object, in radians.</summary>
     public const float ShakeAngle = 0.035f;
 
@@ -62,6 +69,12 @@ public partial class TerrainChunk : Node3D
 
     /// <summary>The world's generation data, which finds objects' model files; null draws every object from its pieces.</summary>
     public WorldGenData? WorldGen { get; init; }
+
+    /// <summary>
+    /// Draws the character an <c>npc</c> marker names, standing at the origin facing +Z; null (or a null result) leaves
+    /// the marker without a figure. Set before adding to the tree.
+    /// </summary>
+    public Func<PoiMarkerPlacement, Node3D?>? Npc { get; init; }
 
     /// <summary>The static body every loaded chunk's ground shape belongs to, a sibling of this node. Set before adding to the tree.</summary>
     public StaticBody3D Ground { get; init; } = null!;
@@ -95,6 +108,9 @@ public partial class TerrainChunk : Node3D
 
     /// <summary>POI markers, one <see cref="Marker3D"/> each, with <c>type</c>, <c>ref</c> and <c>poi</c> metadata.</summary>
     public Node3D Markers { get; private set; } = null!;
+
+    /// <summary>The characters standing at the chunk's <c>npc</c> markers (<see cref="Npc"/>), named after their marker's <c>ref</c>.</summary>
+    public Node3D Npcs { get; private set; } = null!;
 
     /// <summary>Objects in this chunk that are not destroyed.</summary>
     public IEnumerable<WorldObjectPlacement> LiveObjects => Data.Objects.Where(o => !State.IsDestroyed(o.Id));
@@ -498,6 +514,16 @@ public partial class TerrainChunk : Node3D
                 Structures.AddChild(new CollisionShape3D { Shape = MakeShape(piece.Shape, 1f), Transform = transform });
             Structures.AddChild(new MeshInstance3D { Mesh = MeshOf(piece.Shape), MaterialOverride = MaterialOf(piece.Shape.Color), Transform = transform });
         }
+        foreach (var model in Data.Models)
+        {
+            if (model.File is not { } file || StructureModel.Of(file, model.Model.File!) is not { } built)
+                continue;
+            var transform = new Transform3D(new Basis(Vector3.Up, model.Yaw), model.Position.ToGodot() - origin);
+            Structures.AddChild(built.Instantiate($"Model{model.Index}", transform));
+            if (!Scenery && model.Model.Solid)
+                foreach (var (shape, at) in built.Colliders)
+                    Structures.AddChild(new CollisionShape3D { Shape = shape, Transform = transform * at });
+        }
         foreach (var pool in Data.Pools)
         {
             AddChild(new MeshInstance3D
@@ -518,6 +544,19 @@ public partial class TerrainChunk : Node3D
             node.SetMeta("ref", marker.Marker.Ref ?? "");
             node.SetMeta("poi", marker.Poi.Poi.QualifiedId);
             Markers.AddChild(node, forceReadableName: true);
+        }
+        Npcs = new Node3D { Name = "Npcs" };
+        AddChild(Npcs);
+        foreach (var marker in Data.Markers.Where(m => !Scenery && m.Marker.Type == "npc"))
+        {
+            if (Npc?.Invoke(marker) is not { } figure)
+                continue;
+            var transform = new Transform3D(new Basis(Vector3.Up, marker.Yaw), marker.Position.ToGodot() - origin);
+            figure.Name = marker.Marker.Ref ?? "npc";
+            figure.Transform = transform;
+            Npcs.AddChild(figure, forceReadableName: true);
+            // Players, bots and Creations bump into the figure as into a player standing there.
+            Structures.AddChild(new CollisionShape3D { Shape = new CapsuleShape3D { Radius = NpcRadius, Height = NpcHeight }, Transform = transform.TranslatedLocal(new Vector3(0, NpcHeight / 2, 0)) });
         }
     }
 

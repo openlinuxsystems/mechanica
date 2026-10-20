@@ -30,6 +30,22 @@ A character is a JSON file in a mod's `characters/` folder plus a skinned glTF m
 | `mesh` | A `.glb` or `.gltf` in the mod (`other_mod:path` for another mod's). |
 | `order` | Optional; lower comes first on the picker. Vanilla uses 0 and 1, and wins a tie. The first is the default for a player who has not chosen yet. |
 | `sounds` | Optional; local sound name to sound event id (see below). |
+| `npc` | Optional; `true` makes a non-player character: it never shows on the picker and no player can play it. It stands at POI `npc` markers whose `ref` is its id (see below). |
+
+### Non-player characters
+
+A character with `"npc": true` is drawn standing idle at every POI `npc` marker that names it, on every
+peer, facing the marker's `yaw`, with a player-sized capsule that players, bots and Creations bump into.
+A bare `ref` names a character of the POI's own mod; `other_mod:id` names another mod's. Quests talk to
+it through the marker (an `interact` objective with `"marker": "npc"`, see [Quests](quests.md)). Vanilla's
+farmer at the crash site is one:
+
+```json
+// mods/vanilla/characters/farmer.json
+{ "id": "farmer", "name": "Farmer", "mesh": "meshes/characters/farmer.glb", "npc": true }
+```
+
+An `npc` marker whose `ref` names no character still works for quests; it just has no figure.
 
 ### The mesh
 

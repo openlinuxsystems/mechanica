@@ -87,10 +87,18 @@ switches it to the next mode and shows it for a moment; R with the Connect Tool 
 - **Lift.** Left click on the ground puts your Lift down (you have one; putting it somewhere else moves it).
   It is a hydraulic lift with a 4 x 4 unit (1 m) grated platform: set down, its four outriggers swing out and
   lock and the column rises to its resting height of 2 units (0.5 m).
-  Left click a Creation to slide the Lift under it and pick it up; it stands still on the platform until you
-  take the Lift away. The arrow keys raise and lower it one unit (0.25 m) at a time, up to 20 units above its resting height
+  **Capturing a Creation.** A Creation the Lift can take turns blue when you aim at it. Left click captures it: it
+  turns red where it stands, and a blue ghost of it, level and centred on the Lift's ghost, follows your aim (Q turns
+  it). Walk wherever you like and left click where the ghost is blue: the Lift goes down there with the Creation on it,
+  upright (an overturned car is righted), and the red original is gone. Where the ghost is red (the Lift or the Creation
+  would hit something) a click only buzzes. Right click lets the capture go and leaves the Creation as it was;
+  capturing another one swaps to it. The Lift will not capture a Creation built onto the ground (remove the parts that
+  touch the ground, or build on the Lift in the first place), one with resources on it, one more than 32 m across, or
+  one on another player's Lift: it shows no blue, and a click flashes it red with the reason.
+  A Creation on the Lift stands still on the platform until you take the Lift away. The arrow keys raise and lower it one unit (0.25 m) at a time, up to 20 units above its resting height
   (the deck at 22 units, 5.5 m); hold an arrow and the column runs smoothly until you let go, stopping at the next
-  unit. Standing on the deck you ride it, and the arrow keys drive it whatever you have in hand. Q turns what it holds. Aim at the Lift (or
+  unit; you hear the pump kick in and run while it moves. Standing on the deck you ride it, and the arrow keys drive it
+  whatever you have in hand. Q turns what it holds. Aim at the Lift (or
   what it holds) and hold right click until the ring fills to pick the Lift back up; what it held drops. A Creation whose chests or tanks hold items cannot be
   lifted ("Cannot lift with attached resources."): empty it first. Gas containers are the exception: they can be lifted, and
   picked up, while they hold fuel.

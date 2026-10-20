@@ -108,6 +108,15 @@ public sealed record PoiInstance(int Index, LoadedPoi Poi, Vector2 Centre, float
 /// <param name="Yaw">Turn about +Y in radians (the POI's and the piece's).</param>
 public sealed record PoiPiecePlacement(PoiInstance Poi, int Piece, ShapeDefinition Shape, Vector3 Position, float Yaw);
 
+/// <summary>A model of a POI (<see cref="PoiModel"/>), in world space.</summary>
+/// <param name="Poi">The POI it belongs to.</param>
+/// <param name="Index">Its index in the prefab's models.</param>
+/// <param name="Model">The model data.</param>
+/// <param name="File">Full path of its file, or null when the world was built without mods.</param>
+/// <param name="Position">World position of its origin.</param>
+/// <param name="Yaw">Turn about +Y in radians (the POI's and the model's).</param>
+public sealed record PoiModelPlacement(PoiInstance Poi, int Index, PoiModel Model, string? File, Vector3 Position, float Yaw);
+
 /// <summary>A marker of a POI, in world space.</summary>
 /// <param name="Poi">The POI it belongs to.</param>
 /// <param name="Marker">The marker data.</param>
@@ -172,6 +181,13 @@ public sealed class TerrainChunkData
 
     /// <summary>Liquid pools whose centre is in the chunk.</summary>
     public IReadOnlyList<PoiPoolPlacement> Pools { get; init; } = [];
+
+    /// <summary>
+    /// POI models whose origin is in the chunk. A model is built by the one chunk that holds its origin; a chunk is near
+    /// (colliding) whenever a player is within the near distance of it, so a model up to that size is always solid
+    /// round a player standing in or on it.
+    /// </summary>
+    public IReadOnlyList<PoiModelPlacement> Models { get; init; } = [];
 
     /// <summary>Road surfaces, curbs, junctions and bridges in the chunk, in chunk-local metres (empty when there are none).</summary>
     public RoadMesh Roads { get; init; } = RoadMesh.Empty;

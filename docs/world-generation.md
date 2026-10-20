@@ -342,7 +342,8 @@ the `links`, in order, then a minimum spanning tree over the rest, then up to `m
 sites within `loop_reach` metres that the network makes go more than `loop_factor` times round. Routes
 are found over a grid of `cell` metres that prefers gentle ground, avoids other POIs and crosses water
 at `bridge_cost` times the price; deep lakes and the sea are never crossed. Each route is straightened,
-curved, and graded so it never climbs steeper than `max_grade` (0.24 is about 13.5°, spec §3: 12-15°);
+curved (its corners rounded to a 15 m radius where the straights leave room, so a switchback swings round
+wide instead of folding the road over itself), and graded so it never climbs steeper than `max_grade` (0.24 is about 13.5°, spec §3: 12-15°);
 where it crosses water it becomes a bridge at least `bridge_clearance` metres over the surface. Where
 three or more routes meet there is a junction: a T or a crossroads, its arms at right angles, turned to
 suit the roads that meet there. Each road leaves its junction straight down its own arm and then bends
@@ -352,8 +353,9 @@ line and has no stop lines. (A junction where more than four roads meet keeps a 
 
 Roads are `width` metres of asphalt with white edge lines, a double yellow centre line and stop lines
 at junctions, between concrete curbs `curb` metres wide (0, as in vanilla: no curbs), with `shoulder` metres of `shoulder_ground`
-either side. Bridges have a deck, parapets, piers, hazard posts and a caution sign at each end. The
-ground is cut and filled level with the road, and nothing is scattered or grows on it (no grass, flowers or bushes,
+either side. Without curbs the asphalt's sides, its ends at POIs and the junction plates' rims slope down under the
+shoulder, so wheels roll on and off anywhere. Bridges have a deck, parapets, piers, hazard posts and a caution sign at each end. The
+ground is cut and filled level with the road (a track running in beside a road never pulls the road's own bed down), and nothing is scattered or grows on it (no grass, flowers or bushes,
 even where the road crosses a POI that grows its own flora).
 
 POIs whose link is `track` get a dirt track (`track_width` metres of `track_ground`, at most
@@ -391,9 +393,10 @@ Another mod's POI is changed or removed through `overrides/<mod>/pois/`, a `.pat
 | `road` | What joins it to the roads: `road` (only where a site places it), `track` (a dirt track) or `none` (the default). |
 | `terrain[]` | `flatten` levels a disc to the pad height; `basin` sinks it `depth` metres below the pad (below `sea_level` it fills with water). A basin's `blend` must be at least 1.5 × `depth`, so its bank is no steeper than the 45° a player can walk up and a pond is never a trap. Full strength inside `radius`, fading over `blend`, centred at `at` (`[x, z]`). `wobble` (0 to 0.5, default 0) makes the edge wander in and out by that fraction of the radius, in lobes of the POI's own, for a natural pond; it narrows the blend where the edge pulls in, so the basin rule then needs `blend` × (1 − `wobble`) ≥ 1.5 × `depth`. Must stay inside the POI radius, `wobble` included. |
 | `pieces[]` | Static structure, as shapes. Positions are relative to the POI centre on its pad. |
+| `models[]` | Structures as models: `file` (a `.glb` or `.gltf`, relative to the POI's mod or `other_mod:path`, usually under `meshes/structures/`), `at` (`[x, y, z]` of the model's origin, relative to the POI centre on its pad) and `yaw` (degrees, counter-clockwise from above, added to the POI's turn). A mesh named `collider` is its collision shape and is not drawn; without one the drawn meshes collide, both faces of every triangle, so walls hold from inside too. `"solid": false` makes it scenery only. Point lights in the file become room lamps. A model is placed by the terrain chunk that holds its origin and stays loaded with that chunk, so it is never cut at a chunk border. How to make one is in the [Art Direction](art-direction.md#models-in-the-game) guide. |
 | `ground[]` | Ground painted on the footprint, in order, each over the ones before: `ground` (an id from `grounds[]`), full inside `radius` of `at` (`[x, z]`, default the centre) and fading over `blend`, with an edge pushed in and out by up to `noise` metres. Must stay inside the POI radius. |
 | `flora` | Id of a biome whose flora grows on the footprint (outside bare ground). Omitted: nothing grows inside the POI. The crash site burns its middle and grows a meadow round it. |
-| `markers[]` | Points for other systems: `type` (`spawn`, `item`, `bot`, `fire`, `door`, `npc`, `core`, ...) and an optional `ref` (a catalog id, or a character id for `npc`). The first `spawn` marker of a fixed POI is where players start. A `bot` marker is a guard post: in Survival its bot (`ref`, a bot of this mod unless qualified) appears when a player comes near, leaves when everyone has gone, and is replaced some time after it is killed (distances and the wait are in the game's `data/bots.json`). [Quests](quests.md) point at markers. An `object` marker places the world object `ref` names (`objects[]`, such as `oil_geyser`) on the ground under it, raised by its `at` height. |
+| `markers[]` | Points for other systems: `type` (`spawn`, `item`, `bot`, `fire`, `door`, `npc`, `core`, ...) and an optional `ref` (a catalog id, or a character id for `npc`). The first `spawn` marker of a fixed POI is where players start. A `bot` marker is a guard post: in Survival its bot (`ref`, a bot of this mod unless qualified) appears when a player comes near, leaves when everyone has gone, and is replaced some time after it is killed (distances and the wait are in the game's `data/bots.json`). [Quests](quests.md) point at markers. An `npc` marker draws the [character](characters.md#non-player-characters) its `ref` names standing there, facing the marker's `yaw`. An `object` marker places the world object `ref` names (`objects[]`, such as `oil_geyser`) on the ground under it, raised by its `at` height. |
 | `pools[]` | Round pools of a liquid (`liquid`, an id from `liquids[]`), usually laid in a `basin`: the surface is a disc of `radius` metres round `at` (`[x, z]`), `level` metres above the pad (below 0 in a basin). The liquid fills only the part of the disc where the ground is lower than the surface, so the shore follows the basin's (wobbling) bank: make the disc reach past it. Nothing grows in it. Must stay inside the POI radius. |
 
 The pad height of a spaced POI is the natural ground height at its centre.

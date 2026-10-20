@@ -271,6 +271,25 @@ public sealed record LiftSettings
     /// <summary>When true, a Creation whose storage holds items cannot be picked up (UI spec §9 edge case).</summary>
     public bool RefuseStoredItems { get; init; } = true;
 
+    /// <summary>
+    /// When true, a Creation built onto the ground (any part anchored to the world) cannot be picked up, as in Scrap
+    /// Mechanic: it comes free once the parts touching the ground are gone. False lets the Lift pull it free.
+    /// </summary>
+    public bool RefuseGrounded { get; init; } = true;
+
+    /// <summary>Part categories (<c>resource</c>, say) the Lift refuses to pick up a Creation with.</summary>
+    public IReadOnlyList<string> RefuseCategories { get; init; } = DefaultRefusedCategories;
+
+    /// <summary>Parts (qualified or vanilla ids) the Lift refuses to pick up a Creation with, such as a Produce Crate.</summary>
+    public IReadOnlyList<string> RefuseParts { get; init; } = DefaultRefusedParts;
+
+    /// <summary>Longest side, in metres, of the box round a Creation the Lift will pick up.</summary>
+    public float MaxExtent { get; init; } = 32f;
+
+    // Shared defaults, so settings that keep them compare equal.
+    private static readonly IReadOnlyList<string> DefaultRefusedCategories = ["resource"];
+    private static readonly IReadOnlyList<string> DefaultRefusedParts = ["produce_crate"];
+
     /// <summary>Most blueprints the menu lists, newest first.</summary>
     public int MaxBlueprints { get; init; } = 50;
 
@@ -290,6 +309,9 @@ public sealed record LiftSettings
             throw new FormatException($"lift.max_level must be 0 or more (got {MaxLevel}).");
         BuildSettings.Positive(RaiseSpeed, "lift.raise_speed");
         BuildSettings.Positive(RaiseAcceleration, "lift.raise_acceleration");
+        BuildSettings.Positive(MaxExtent, "lift.max_extent");
+        if (RefuseCategories.FirstOrDefault(c => !Enum.TryParse<Data.PartCategory>(c, ignoreCase: true, out _)) is { } category)
+            throw new FormatException($"lift.refuse_categories has an unknown part category '{category}'.");
         if (!double.IsFinite(RemoveHoldSeconds) || RemoveHoldSeconds < 0)
             throw new FormatException($"lift.remove_hold_seconds must be 0 or more (got {RemoveHoldSeconds}).");
         if (MaxBlueprints < 1)

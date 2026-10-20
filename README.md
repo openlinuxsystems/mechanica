@@ -27,7 +27,8 @@ tools/smoke.sh            # builds, then runs every headless Godot test scene in
 ```
 
 `tools/smoke.sh` downloads the pinned Godot build into `.tools/` unless `GODOT` points
-at an existing binary. Open `game/project.godot` in Godot 4.7.2 .NET to edit scenes.
+at an existing binary. `SMOKE_SHARD=k/n` runs only the k-th of n equal slices of the scenes,
+which is how CI splits them across three runners. Open `game/project.godot` in Godot 4.7.2 .NET to edit scenes.
 
 ## Releasing
 

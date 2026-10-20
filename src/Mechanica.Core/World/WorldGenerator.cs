@@ -242,6 +242,7 @@ public sealed partial class WorldGenerator
         var pieces = new List<PoiPiecePlacement>();
         var markers = new List<PoiMarkerPlacement>();
         var pools = new List<PoiPoolPlacement>();
+        var models = new List<PoiModelPlacement>();
         foreach (var poi in PoisOverlapping(ox, oz, x1, z1))
         {
             pools.AddRange(PoolsOf(poi).Where(p => Inside(p.Centre, ox, oz, x1, z1)));
@@ -252,6 +253,13 @@ public sealed partial class WorldGenerator
                 var at = poi.ToWorld(ToVector(piece.At));
                 if (Inside(at, ox, oz, x1, z1))
                     pieces.Add(new PoiPiecePlacement(poi, k, piece, at, poi.Yaw + Radians(piece.Yaw)));
+            }
+            for (var k = 0; k < (prefab.Models?.Count ?? 0); k++)
+            {
+                var model = prefab.Models![k];
+                var at = poi.ToWorld(ToVector(model.At));
+                if (Inside(at, ox, oz, x1, z1))
+                    models.Add(new PoiModelPlacement(poi, k, model, Data.ModelFileOf(poi.Poi, model), at, poi.Yaw + Radians(model.Yaw)));
             }
             foreach (var marker in prefab.Markers ?? [])
             {
@@ -264,6 +272,7 @@ public sealed partial class WorldGenerator
         {
             Grounds = grounds,
             Pools = pools,
+            Models = models,
             Roads = RoadMesher.Build(this, ox, oz, x1, z1),
         };
     }
@@ -335,6 +344,8 @@ public sealed partial class WorldGenerator
 
     private IEnumerable<WorldObjectPlacement> ScatteredIn(float x0, float z0, float x1, float z1)
     {
+        // A perched rule's spot takes a search, and every later rule's spots nearby ask for it again.
+        var perched = new Dictionary<(int Rule, int X, int Z), Vector2>();
         foreach (var rule in Data.ScatterRules)
         {
             var s = rule.Spacing;
@@ -344,9 +355,9 @@ public sealed partial class WorldGenerator
             {
                 for (var ix = ix0; ix <= ix1; ix++)
                 {
-                    if (!Candidate(rule, ix, iz, out var spot) || spot.X < x0 || spot.X >= x1 || spot.Y < z0 || spot.Y >= z1)
+                    if (!Candidate(rule, ix, iz, out var spot, perched) || spot.X < x0 || spot.X >= x1 || spot.Y < z0 || spot.Y >= z1)
                         continue;
-                    if (Fits(rule, spot) && !Crowded(rule, spot))
+                    if (Fits(rule, spot) && !Crowded(rule, spot, perched))
                     {
                         foreach (var placement in Place(rule, ix, iz, spot))
                             yield return placement;
@@ -423,12 +434,22 @@ public sealed partial class WorldGenerator
     private int BlockVariants(string id) => 1 + (Data.Objects.GetValueOrDefault(id)?.Mesh?.Variants?.Count ?? 0);
 
     // The scatter rule's spot in a cell, if the cell's dice roll keeps it.
-    private bool Candidate(Scatter rule, int ix, int iz, out Vector2 spot)
+    private bool Candidate(Scatter rule, int ix, int iz, out Vector2 spot, Dictionary<(int Rule, int X, int Z), Vector2>? perched = null)
     {
         spot = default;
         var salt = _scatterSalt ^ (uint)rule.Index;
         if (Noise.Unit(Noise.Hash(salt, ix, iz, 0)) >= rule.Chance)
             return false;
+        if (rule.Perch is not null && perched is not null)
+        {
+            if (!perched.TryGetValue((rule.Index, ix, iz), out var known))
+            {
+                Candidate(rule, ix, iz, out var found);
+                perched[(rule.Index, ix, iz)] = known = found;
+            }
+            spot = known;
+            return true;
+        }
         var s = rule.Spacing;
         spot = new Vector2((ix + 0.1f + 0.8f * Noise.Unit(Noise.Hash(salt, ix, iz, 1))) * s, (iz + 0.1f + 0.8f * Noise.Unit(Noise.Hash(salt, ix, iz, 2))) * s);
         // A perched find looks round its cell for a cliff top or ledge, since most of the land is easy slopes.
@@ -493,7 +514,7 @@ public sealed partial class WorldGenerator
     }
 
     // Whether an earlier rule's fitting candidate sits too close. Earlier rules win, so ids never depend on later rules.
-    private bool Crowded(Scatter rule, Vector2 spot)
+    private bool Crowded(Scatter rule, Vector2 spot, Dictionary<(int Rule, int X, int Z), Vector2>? perched = null)
     {
         for (var r = 0; r < rule.Index; r++)
         {
@@ -504,7 +525,7 @@ public sealed partial class WorldGenerator
             {
                 for (var ix = (int)MathF.Floor((spot.X - reach) / s); ix <= (int)MathF.Floor((spot.X + reach) / s); ix++)
                 {
-                    if (Candidate(other, ix, iz, out var near) && Vector2.Distance(near, spot) < reach && Fits(other, near))
+                    if (Candidate(other, ix, iz, out var near, perched) && Vector2.Distance(near, spot) < reach && Fits(other, near))
                         return true;
                 }
             }
@@ -1091,7 +1112,10 @@ public sealed partial class WorldGenerator
                 var placed = !_pois.Any(p => p.Poi == poi && Vector2.Distance(p.Centre, spot) < min)
                     && !Roads.Nodes.Any(n => n.Kind == RoadNodeKind.Junction && Vector2.Distance(n.At, point) < n.Radius + reach + 20f)
                     && SiteFits(poi, spot, out pad)
-                    && MathF.Abs(pad - height) <= RoadsideRise;
+                    && MathF.Abs(pad - height) <= RoadsideRise
+                    // And the road nearest it is level with it too, not another stretch winding by at its own height
+                    // (the other leg of a switchback).
+                    && Roads.Nearest(spot.X, spot.Y, reach + 20f, RoadKind.Road) is { } nearest && MathF.Abs(nearest.Height - pad) <= RoadsideRise;
                 if (placed)
                     Add(poi, spot, pad, FacingTurns(-normal));
                 // A spot that does not fit is tried again a little further on.

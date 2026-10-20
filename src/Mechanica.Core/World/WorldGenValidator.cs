@@ -606,6 +606,18 @@ internal static class WorldGenValidator
             sink.Error(code, "$.flora", $"'{flora}' is not a biome in the world generation rules.");
         for (var i = 0; i < (prefab.Pieces?.Count ?? 0); i++)
             Shape(prefab.Pieces![i], $"$.pieces[{i}]", sink, code);
+        for (var i = 0; i < (prefab.Models?.Count ?? 0); i++)
+        {
+            var model = prefab.Models![i];
+            var path = $"$.models[{i}]";
+            KnownKeys.WarnUnknown(model.Extra, path, sink, typeof(PoiModel));
+            if (!AssetPath.TryParse(model.File, "mod", AssetKind.Mesh, out _, out var error))
+                sink.Error(code, $"{path}.file", error);
+            if (!(float.IsFinite(model.At.X) && float.IsFinite(model.At.Y) && float.IsFinite(model.At.Z)) || !float.IsFinite(model.Yaw))
+                sink.Error(code, path, "at and yaw must be numbers.");
+            else if (new Vector2(model.At.X, model.At.Z).Length() > prefab.Radius + 1e-3f)
+                sink.Error(code, $"{path}.at", $"is {new Vector2(model.At.X, model.At.Z).Length():0.##} m from the centre, past the POI radius ({prefab.Radius}).");
+        }
         for (var i = 0; i < (prefab.Markers?.Count ?? 0); i++)
         {
             var marker = prefab.Markers![i];

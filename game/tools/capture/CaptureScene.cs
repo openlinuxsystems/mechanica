@@ -64,6 +64,7 @@ public partial class CaptureScene : Node
         var args = OS.GetCmdlineUserArgs();
         _out = args.Length > 0 ? args[0] : OS.GetUserDataDir();
         var lift = args.Length > 1 && args[1] == "lift";
+        var liftCapture = args.Length > 1 && args[1] == "lift_capture";
         var flora = args.Length > 1 && args[1] == "flora";
         var icons = args.Length > 1 && args[1] == "icons";
         var water = args.Length > 1 && args[1] == "water";
@@ -88,12 +89,13 @@ public partial class CaptureScene : Node
         var cliffs = args.Length > 1 && args[1] == "cliffs";
         var roads = args.Length > 1 && args[1] == "roads";
         var moves = args.Length > 1 && args[1] == "animations";
-        Main.MenuCharacter = args.Length > 1 && !lift && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
+        var crash = args.Length > 1 && args[1] == "crash_site";
+        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
         if (debugCar)
             Main.MenuCharacter = "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
         // Building the block wall needs Creative: free parts and no build reach.
-        _main.Options = LaunchOptions.Offline with { Seed = 7, GameMode = blocks || soil || wheels || portable ? Core.Survival.GameMode.Creative : LaunchOptions.Offline.GameMode };
+        _main.Options = LaunchOptions.Offline with { Seed = 7, GameMode = blocks || soil || wheels || portable || liftCapture ? Core.Survival.GameMode.Creative : LaunchOptions.Offline.GameMode };
         // The button shots show the HUD (the creation hotbar), which only a main reading the devices builds.
         _main.ReadDeviceInput = icons || wheels || button;
         _main.DebugCar = debugCar;
@@ -103,6 +105,11 @@ public partial class CaptureScene : Node
         if (lift)
         {
             LiftShots();
+            return;
+        }
+        if (liftCapture)
+        {
+            LiftCaptureShots();
             return;
         }
         if (flora)
@@ -203,6 +210,11 @@ public partial class CaptureScene : Node
         if (borders)
         {
             BiomeBorderShots();
+            return;
+        }
+        if (crash)
+        {
+            CrashSiteShots();
             return;
         }
         if (roads)
@@ -347,6 +359,97 @@ public partial class CaptureScene : Node
         });
         Shot("lift_close", 2, () => LookAtLift(new Vector3(1.2f, 0.9f, -1.5f), 0.3f));
     }
+
+    // The Lift capturing an overturned block cart in a meadow (tools/capture-lift.sh OUT_DIR capture): the cart shows blue under the
+    // aim, red once captured with its blue ghost level on the Lift's ghost, the ghost red against a wall, then the Lift
+    // down with the cart upright on it.
+    private void LiftCaptureShots()
+    {
+        Engine.TimeScale = 1.0;
+        var lift = _main.Tools!.Lift;
+        Shot("lift_capture_00_wait", 60, () => { });
+        Shot("lift_capture_00_go", 240, () =>
+        {
+            var g = _main.Streamer.Generator;
+            Go(Find(p => new[] { (0f, 0f), (12f, 0f), (-12f, 0f), (0f, 12f), (0f, -12f) }.All(d => g.BiomeAt(p.X + d.Item1, p.Y + d.Item2).Id == "meadow")
+                && g.SlopeAt(p.X, p.Y) < 0.06f && !g.PoisAt(p.X, p.Y).Any()));
+            GameSettings.Apply(GameSettings.Current with { Graphics = GameSettings.Current.Graphics with { Grass = FoliageLevel.Off, GroundCover = FoliageLevel.Off, Bushes = FoliageLevel.Off } });
+            _main.Flora.BuildAll();
+        });
+        Shot("lift_capture_00_step", 60, () => _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, Ground(_meadow + new Vector3(0.4f, 0, 4.5f)) + Vector3.Up * 0.3f, 0f));
+        Shot("lift_capture_00_build", 240, () =>
+        {
+            // A little block cart (a deck with a cab at one end), built on the ground, then freed and tipped onto its side.
+            var deck = Enumerable.Range(0, 6).SelectMany(x => Enumerable.Range(0, 3).Select(z => new Core.Creations.GridCell(x, 0, z)));
+            var cab = Enumerable.Range(0, 2).SelectMany(x => Enumerable.Range(0, 3).Select(z => new Core.Creations.GridCell(x, 1, z)));
+            Place("vanilla:metal_block", [.. deck, .. cab], Ground(_meadow) + Vector3.Up * 0.125f);
+        });
+        Shot("lift_capture_00_tip", 120, () =>
+        {
+            if (_main.Creations.All.FirstOrDefault(c => c.Parts.Count == 24) is not { } cart)
+            {
+                GD.Print("[capture] no cart");
+                return;
+            }
+            _cart = cart.Id;
+            cart.ClearAnchors();
+            var tipped = System.Numerics.Quaternion.CreateFromAxisAngle(System.Numerics.Vector3.UnitX, MathF.PI / 2);
+            var at = Ground(_meadow) + Vector3.Up * 0.9f;
+            cart.SetAllBodyPoses(new Core.Creations.Pose(new System.Numerics.Vector3(at.X, at.Y, at.Z), tipped));
+            _main.Build.Moved(cart);
+            // A wall to put the ghost against.
+            Place("vanilla:brick_block", [.. Enumerable.Range(0, 6).SelectMany(x => Enumerable.Range(0, 4).Select(y => new Core.Creations.GridCell(x, y, 0)))],
+                Ground(_meadow + new Vector3(3.5f, 0, -1.5f)) + Vector3.Up * 0.125f);
+        });
+        Shot("lift_capture_00_back", 120, () => _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, Ground(_meadow + new Vector3(0.4f, 0, 4.5f)) + Vector3.Up * 0.3f, 0f));
+        void Aim(Vector3 target)
+        {
+            foreach (var reader in _main.FindChildren("*", owned: false).OfType<LocalPlayerInput>())
+                reader.SetPhysicsProcess(false);
+            var d = target - Player.Camera.GlobalPosition;
+            Player.CurrentInput = PlayerInput.None with { Yaw = Mathf.Atan2(-d.X, -d.Z), Pitch = Mathf.Atan2(d.Y, new Vector2(d.X, d.Z).Length()) };
+        }
+        Vector3 CarMiddle()
+        {
+            _main.Creations.NodeOf(_cart)?.SyncToCreation();
+            var box = Core.World.CreationBounds.World(_main.Creations.Find(_cart)!);
+            return ((box.Min + box.Max) / 2).ToGodot();
+        }
+        Shot("lift_capture_01_hover", 30, () =>
+        {
+            Tool<Building.LiftTool>();
+            GD.Print($"[capture] cart at {CarMiddle()}");
+            Aim(CarMiddle());
+            View(new Vector3(2.6f, 2.2f, 5.5f), new Vector3(0.6f, 0.3f, 0f));
+        });
+        Shot("lift_capture_02_captured", 30, () =>
+        {
+            GD.Print($"[capture] aim {lift.Aim}, highlighted {lift.Highlighted}");
+            lift.Place(r => GD.Print($"[capture] capture: {r}"));
+            Aim(Ground(_meadow + new Vector3(-2.5f, 0, 0.5f)));
+        });
+        Shot("lift_capture_03_ghost", 30, () => View(new Vector3(0.5f, 3.2f, 6.5f), new Vector3(-1f, 0.4f, 0f)));
+        Shot("lift_capture_04_invalid", 30, () =>
+        {
+            Aim(Ground(_meadow + new Vector3(4.2f, 0, -0.9f)));
+            View(new Vector3(1.5f, 3.2f, 6.5f), new Vector3(3f, 0.6f, -0.8f));
+        });
+        Shot("lift_capture_05_valid_again", 30, () =>
+        {
+            GD.Print($"[capture] against the wall: {lift.PlacementProblem}");
+            Aim(Ground(_meadow + new Vector3(-2.5f, 0, 0.5f)));
+            View(new Vector3(0.5f, 3.2f, 6.5f), new Vector3(-1f, 0.4f, 0f));
+        });
+        Shot("lift_capture_06_placed", 150, () =>
+        {
+            GD.Print($"[capture] placing: {lift.PlacementProblem}");
+            lift.Place(r => GD.Print($"[capture] place: {r}"));
+            View(new Vector3(-0.5f, 2.4f, 5.5f), new Vector3(-2.5f, 0.6f, 0.5f));
+        });
+        Shot("lift_capture_07_close", 30, () => View(new Vector3(-4.8f, 1.8f, 3.2f), new Vector3(-2.5f, 0.7f, 0.5f)));
+    }
+
+    private int _cart;
 
     private Vector3 _meadow;
 
@@ -756,6 +859,52 @@ public partial class CaptureScene : Node
             Shot($"small_{id}_wide", 30, () => { _main.Flora.BuildAll(); ViewAt(_meadow, _away.Rotated(Vector3.Up, 0.5f) * wide + Vector3.Up * wide * 0.45f, 0f); });
             Shot($"small_{id}_close", 30, () => ViewAt(_meadow, _away.Rotated(Vector3.Up, -0.4f) * wide * 0.5f + Vector3.Up * wide * 0.2f, 1f));
         }
+    }
+
+    // The starting crash site: the view from the spawn, from above, and inside the ship's rooms. Views are from and to
+    // points in the POI's own frame (x east, y up, z south) so they follow it wherever the world puts it.
+    private void CrashSiteShots()
+    {
+        Engine.TimeScale = 1.0;
+        var crash = _main.Streamer.Generator.Pois.First(p => p.Poi.Prefab.Id == "crash_site");
+        System.Numerics.Vector3 At(float x, float y, float z) => crash.ToWorld(new System.Numerics.Vector3(x, y, z));
+        void Look(float[] from, float[] to)
+        {
+            _camera.MakeCurrent();
+            _camera.GlobalPosition = At(from[0], from[1], from[2]).ToGodot();
+            _camera.LookAt(At(to[0], to[1], to[2]).ToGodot());
+        }
+        Shot("crash_00_wait", 240, () => _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, At(16f, 1f, 36f).ToGodot(), 0f));
+        var views = new (string Name, float[] From, float[] To)[]
+        {
+            ("spawn", [16f, 1.7f, 36f], [0f, 3f, -4f]),
+            ("overview", [40f, 70f, 90f], [-6f, 0f, -10f]),
+            ("north", [-10f, 20f, -95f], [0f, 0f, 0f]),
+            ("airlock", [10.4f, 2f, -12.3f], [3f, 1.2f, -6.5f]),
+            ("bridge", [-1.04f, 1.64f, -10.63f], [-5.39f, 0.77f, -12.54f]),
+            ("crew", [-0.99f, 1.62f, -2.88f], [-0.53f, 1.19f, -8.89f]),
+            ("engineering", [1.05f, 1.91f, -1.71f], [0.93f, 1.32f, 3.88f]),
+            ("hold", [1.46f, 1.9f, 12.77f], [4.21f, 1.29f, 19.28f]),
+            ("court", [-2f, 2f, -30f], [-6f, 3f, -56f]),
+            ("farm", [-26f, 2.4f, -24f], [-42f, 1.8f, -40f]),
+            ("lake", [-22f, 16f, 28f], [-58f, -3f, -2f]),
+            ("lake_shore", [-38f, 1.9f, -22f], [-62f, -3f, 6f]),
+            ("beacon", [26f, 2f, -14f], [18f, 4f, -26f]),
+        };
+        foreach (var (name, from, to) in views)
+            Shot($"crash_{name}", 40, () => { _main.Flora.BuildAll(); Look(from, to); });
+        // The farmer in his stall behind the trade counter, from in front, then the stall and shack from the side.
+        Shot("crash_00_go_farmer", 120, () => _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, At(-44.3f, 1f, -37.4f).ToGodot(), 0f));
+        Shot("crash_farmer", 40, () => Look([-45.6f, 1.7f, -36.9f], [-44.77f, 1.25f, -40.1f]));
+        Shot("crash_farmer_stall", 40, () => { Player.ThirdPerson = true; Look([-49.5f, 2.6f, -31.5f], [-43.8f, 1.3f, -40.5f]); });
+        // The player dropped into the hold stands on its deck (0.3 m up), not on the ground under it.
+        Shot("crash_00_drop_in_hold", 120, () => _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, At(3f, 1.5f, 15f).ToGodot(), 0f));
+        Shot("crash_player_in_hold", 30, () =>
+        {
+            GD.Print($"[capture] player in hold at height {Player.GlobalPosition.Y - At(3f, 0f, 15f).Y:0.00} m above the pad");
+            Player.ThirdPerson = true;
+            Look([1.46f, 1.9f, 12.77f], [3f, 0.8f, 15f]);
+        });
     }
 
     // Loose single parts lying in the world whose definition matches.

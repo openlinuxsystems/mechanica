@@ -11,9 +11,14 @@ using Mechanica.Game.Ui;
 namespace Mechanica.Game.Building;
 
 /// <summary>
-/// The Lift in the local player's hand (UI spec §2, §8). Aimed at the ground it shows where the platform would go and
-/// <see cref="Place"/> puts the player's Lift there (carrying whatever it holds); aimed at a Creation,
-/// <see cref="Place"/> slides the Lift under it and picks it up. Keys: left click places or picks up, the arrow keys
+/// The Lift in the local player's hand (UI spec §2, §8; capture as in Scrap Mechanic). Aimed at the ground it shows
+/// where the platform would go and <see cref="Place"/> puts the player's Lift there (carrying whatever it holds). Aimed
+/// at a Creation it may capture, that Creation shows blue; <see cref="Place"/> captures it (<see cref="Capture"/>): it
+/// turns red where it stands and a blue ghost of it, level and centred on the Lift's ghost, follows the aim. The ghost
+/// turns red where the Lift and the Creation would not fit, and a click there only plays the refusal; a click where it
+/// is blue puts the Lift down with the Creation on it, upright, and the red original goes. Right click lets a capture go,
+/// Q turns the captured Creation's ghost. A Creation built onto the ground, one with resources on it, one too big and
+/// one on another player's Lift never turn blue (<see cref="ToolActions.LiftRefusal"/>). Keys besides: the arrow keys
 /// raise and lower a level a time (held, the column runs on smoothly until let go), Q turns the held Creation, holding
 /// right click aimed at the Lift (or what it holds) picks the Lift back up (a ring fills round the crosshair; what it held
 /// drops), and Use (E) aimed at the Lift opens the blueprint menu (<see cref="BlueprintMenu"/>), which saves what the
@@ -21,14 +26,31 @@ namespace Mechanica.Game.Building;
 /// </summary>
 public partial class LiftTool : HandTool
 {
+    // Seconds between re-checks of where the captured Creation's ghost stands while the aim stays put.
+    private const double RecheckSeconds = 0.25;
+    // Seconds a refused Creation flashes red.
+    private const double FlashSeconds = 0.35;
+
     private Node3D _preview = null!;
+    private Node3D _carry = null!;
+    private readonly List<MeshInstance3D> _ghostMeshes = [];
+    private readonly CreationTint _hoverTint = new();
+    private readonly CreationTint _capturedTint = new();
     private double? _removeFrom;
     private int _raiseHeld;
+    private int? _captured;
+    private int _turns;
+    private (Vec3 Position, int Turns, int Level, int Revision)? _checkedFor;
+    private double _checkedAt;
+    private double _captureCheckedAt;
+    private string? _placeProblem;
+    private (int Creation, double Until)? _flash;
 
     /// <summary>What the Lift would do now.</summary>
     /// <param name="Position">Where the middle of the platform's base would go.</param>
-    /// <param name="Creation">The Creation it would pick up, or null to place (or move) the Lift.</param>
-    public sealed record Target(Vec3 Position, int? Creation);
+    /// <param name="Creation">The Creation it would capture, or null to place (or move) the Lift.</param>
+    /// <param name="Refusal">Why that Creation cannot be captured, or null when it can.</param>
+    public sealed record Target(Vec3 Position, int? Creation, string? Refusal = null);
 
     /// <inheritdoc/>
     public override string ToolName => "Lift";
@@ -57,6 +79,27 @@ public partial class LiftTool : HandTool
     /// <summary>True while right click is held to take the Lift away.</summary>
     public bool Removing => _removeFrom is not null;
 
+    /// <summary>The Creation captured to go onto the Lift where it is put down next, or null.</summary>
+    public int? Captured => _captured;
+
+    /// <summary>Quarter turns the captured Creation's ghost is turned by (Q).</summary>
+    public int CaptureTurns => _turns;
+
+    /// <summary>The captured Creation's ghost riding the Lift's ghost (empty without a capture).</summary>
+    public Node3D CarryGhost => _carry;
+
+    /// <summary>
+    /// Why the Lift and the captured Creation would not fit where the aim is now (the ghost shows red), or null when they
+    /// would (blue). Null without a capture.
+    /// </summary>
+    public string? PlacementProblem => _captured is not null && Aim is { Creation: null } ? _placeProblem : null;
+
+    /// <summary>The Creation shown blue as one the Lift may capture, or null.</summary>
+    public int? Highlighted => _hoverTint.Material == HoverTint ? _hoverTint.Creation : null;
+
+    /// <summary>The Creation shown red: the captured one, or one that just refused.</summary>
+    public int? MarkedRed => _capturedTint.Creation ?? (_hoverTint.Material == DeniedTint ? _hoverTint.Creation : null);
+
     public override void _Ready()
     {
         var size = Build.Settings!.Lift;
@@ -67,13 +110,23 @@ public partial class LiftTool : HandTool
             meshes.Add((new BoxMesh { Size = new Vector3(size.PlatformSize, size.BaseHeight, size.PlatformSize) }, new Transform3D(Basis.Identity, new Vector3(0, size.BaseHeight / 2, 0))));
         foreach (var (mesh, transform) in meshes)
         {
-            _preview.AddChild(new MeshInstance3D
+            var instance = new MeshInstance3D
             {
                 Mesh = mesh, Transform = transform, MaterialOverride = GhostMaterial,
                 CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
-            });
+            };
+            _preview.AddChild(instance);
+            _ghostMeshes.Add(instance);
         }
+        _carry = new Node3D { Name = "Carry" };
+        _preview.AddChild(_carry);
         AddChild(_preview);
+    }
+
+    public override void _ExitTree()
+    {
+        _hoverTint.Clear();
+        _capturedTint.Clear();
     }
 
     /// <summary>The look of the Lift's placement ghost: see-through blue, only its outer surface drawn.</summary>
@@ -85,6 +138,25 @@ public partial class LiftTool : HandTool
         Emission = UiTokens.Cyan,
         EmissionEnergyMultiplier = 0.35f,
     };
+
+    /// <summary>The look of the placement ghost where the Lift and its captured Creation would not fit: see-through red.</summary>
+    public static readonly StandardMaterial3D InvalidGhostMaterial = new()
+    {
+        AlbedoColor = UiTokens.Error with { A = 0.45f },
+        Transparency = BaseMaterial3D.TransparencyEnum.AlphaDepthPrePass,
+        EmissionEnabled = true,
+        Emission = UiTokens.Error,
+        EmissionEnergyMultiplier = 0.35f,
+    };
+
+    /// <summary>The blue laid over a Creation the Lift may capture.</summary>
+    public static readonly StandardMaterial3D HoverTint = CreationTint.Look(UiTokens.Cyan, 0.35f);
+
+    /// <summary>The red laid over the captured Creation where it stands.</summary>
+    public static readonly StandardMaterial3D CapturedTint = CreationTint.Look(UiTokens.Error, 0.45f);
+
+    /// <summary>The red a Creation flashes when the Lift refuses it.</summary>
+    public static readonly StandardMaterial3D DeniedTint = CreationTint.Look(UiTokens.Error, 0.3f);
 
     // Every mesh in a model with its place relative to the model's root, then frees the model.
     private static List<(Mesh Mesh, Transform3D Transform)> Flatten(Node3D model)
@@ -140,7 +212,7 @@ public partial class LiftTool : HandTool
     /// </summary>
     public bool PressRemove()
     {
-        if (Own is null || !AimsAtOwnLift())
+        if (_captured is not null || Own is null || !AimsAtOwnLift())
             return false;
         _removeFrom = BuildTool.Now;
         return true;
@@ -241,29 +313,222 @@ public partial class LiftTool : HandTool
         return Own?.Creation is { } held && hit?.Node?.Creation.Id == held;
     }
 
-    /// <summary>Casts the aim ray now and moves the preview.</summary>
+    /// <summary>Casts the aim ray now, moves the preview and shows what the Lift would capture or where it would go.</summary>
     public void UpdateAim()
     {
         Aim = Cast();
+        CheckCapture();
+        CheckPlacement(force: false);
         _preview.Visible = Active && Aim is { Creation: null };
         if (Aim is not null)
             _preview.GlobalPosition = Aim.Position.ToGodot();
+        _carry.Visible = _captured is not null;
+        _carry.Position = new Vector3(0, Build.Settings!.Lift.TopAt(Own?.Level ?? 0), 0);
+        var look = PlacementProblem is null ? GhostMaterial : InvalidGhostMaterial;
+        foreach (var mesh in _ghostMeshes.Where(IsInstanceValid))
+            mesh.MaterialOverride = look;
+        ShowTints();
     }
 
-    /// <summary>Places the Lift or picks up the aimed-at Creation. False when nothing is aimed at.</summary>
+    /// <summary>
+    /// Left click: with a Creation aimed at, captures it (<see cref="Capture"/>); on the ground, puts the Lift down there,
+    /// carrying the captured Creation when there is one. False when nothing is aimed at.
+    /// </summary>
     public bool Place(Action<ActionResult>? done = null)
     {
         if (Aim is not { } aim)
             return false;
+        if (aim.Creation is { } id)
+            return Capture(id, done);
+        if (_captured is { } held)
+            return PlaceCaptured(aim, held, done);
         // A new Lift shows where it goes until the host answers; a refusal fades it out red.
-        var ghost = aim.Creation is null && _preview.Visible ? PendingGhost.Leave(this, _preview) : null;
-        Send(ToolActions.PlaceLift, new PlaceLiftArgs(aim.Position, aim.Creation), result =>
+        var ghost = _preview.Visible ? PendingGhost.Leave(this, _preview) : null;
+        Send(ToolActions.PlaceLift, new PlaceLiftArgs(aim.Position), result =>
         {
             if (ghost is not null && IsInstanceValid(ghost))
                 ghost.Resolve(result, Build.Settings!.Placement.RollbackSeconds);
             done?.Invoke(result);
         });
         return true;
+    }
+
+    /// <summary>
+    /// Captures Creation <paramref name="id"/>: it shows red where it stands and its ghost rides the Lift's ghost until the
+    /// Lift is put down (or right click lets it go). A Creation the Lift refuses flashes red and plays the refusal
+    /// instead. Capturing another Creation lets the last one go. False when the Creation is not shown here.
+    /// </summary>
+    public bool Capture(int id, Action<ActionResult>? done = null)
+    {
+        if (Build.Creations.NodeOf(id) is not { } node)
+            return false;
+        if (id == _captured)
+            return true;
+        if (Refusal(node.Creation) is { } refused)
+        {
+            _flash = (id, BuildTool.Now + FlashSeconds);
+            Refuse(refused);
+            ShowTints();
+            done?.Invoke(ActionResult.Failure("refused", refused));
+            return true;
+        }
+        _captured = id;
+        _turns = 0;
+        BuildCarry(node);
+        ShowTints();
+        Send(ToolActions.CaptureLift, new CaptureLiftArgs(id), result =>
+        {
+            if (!result.Ok && _captured == id)
+                DropCapture();
+            done?.Invoke(result);
+        });
+        return true;
+    }
+
+    /// <summary>Right click with a capture: lets it go, leaving the Creation as it was. False without one.</summary>
+    public bool ReleaseCapture(Action<ActionResult>? done = null)
+    {
+        if (_captured is null)
+            return false;
+        DropCapture();
+        Send(ToolActions.CaptureLift, new CaptureLiftArgs(), done);
+        return true;
+    }
+
+    // Puts the Lift down with the captured Creation on it, when its ghost is blue there.
+    private bool PlaceCaptured(Target aim, int held, Action<ActionResult>? done)
+    {
+        CheckPlacement(force: true);
+        if (_captured is null)
+        {
+            done?.Invoke(LastResult ?? ActionResult.Failure("refused", "The capture was let go."));
+            return true;
+        }
+        if (_placeProblem is { } problem)
+        {
+            Refuse(problem);
+            done?.Invoke(LastResult!);
+            return true;
+        }
+        // The red original goes and the ghost stays where it was put until the host answers; a refusal brings the capture
+        // back as it was.
+        var turns = _turns;
+        var ghost = PendingGhost.Leave(this, _preview);
+        DropCapture();
+        Send(ToolActions.PlaceLift, new PlaceLiftArgs(aim.Position, held, turns), result =>
+        {
+            if (IsInstanceValid(ghost))
+                ghost.Resolve(result, Build.Settings!.Placement.RollbackSeconds);
+            if (!result.Ok && _captured is null && Build.Creations.NodeOf(held) is { } node)
+            {
+                _captured = held;
+                _turns = turns;
+                BuildCarry(node);
+                ShowTints();
+            }
+            done?.Invoke(result);
+        });
+        return true;
+    }
+
+    // Why this player's Lift may not capture a Creation (one on its own Lift it may always take).
+    private string? Refusal(Creation creation) =>
+        Own?.Creation == creation.Id ? null : ToolActions.LiftRefusal(creation, Build.Settings!.Lift, Build.Lifts.Values.Select(l => l.State), Player.PeerId);
+
+    private void DropCapture()
+    {
+        _captured = null;
+        _turns = 0;
+        _checkedFor = null;
+        _placeProblem = null;
+        foreach (var child in _carry.GetChildren())
+        {
+            _ghostMeshes.Remove((MeshInstance3D)child);
+            child.QueueFree();
+        }
+        _capturedTint.Clear();
+    }
+
+    // A captured Creation that is gone, or that the Lift may no longer take (another player lifted it, it was built onto
+    // the ground), is let go.
+    private void CheckCapture()
+    {
+        if (_captured is not { } id)
+            return;
+        if (Build.Creations.Find(id) is not { } creation)
+        {
+            DropCapture();
+            return;
+        }
+        if (BuildTool.Now - _captureCheckedAt < RecheckSeconds)
+            return;
+        _captureCheckedAt = BuildTool.Now;
+        if (Refusal(creation) is not { } refused)
+            return;
+        Send(ToolActions.CaptureLift, new CaptureLiftArgs(), null);
+        DropCapture();
+        Refuse(refused);
+    }
+
+    // Works out whether the Lift and the captured Creation fit where the aim is: when the aim, the turn, the level or the
+    // Creation changed, and every RecheckSeconds anyway, as other things move.
+    private void CheckPlacement(bool force)
+    {
+        if (_captured is not { } id || Aim is not { Creation: null } aim || Build.Creations.Find(id) is not { } creation)
+            return;
+        var level = Own?.Level ?? 0;
+        var key = (aim.Position, _turns, level, creation.Revision);
+        if (!force && _checkedFor == key && BuildTool.Now - _checkedAt < RecheckSeconds)
+            return;
+        _checkedFor = key;
+        _checkedAt = BuildTool.Now;
+        var p = aim.Position;
+        var snapped = new Vec3(Core.MechanicaInfo.ToGridCell(p.X) * Core.MechanicaInfo.GridSize, p.Y, Core.MechanicaInfo.ToGridCell(p.Z) * Core.MechanicaInfo.GridSize);
+        _placeProblem = ToolActions.CheckLiftPlacement(Build, Build.Settings!.Lift, new LiftState(Player.PeerId, snapped, level, id), creation, _turns);
+    }
+
+    // The captured Creation's ghost: a copy of each of its meshes where Seat puts it on a platform whose top middle is the
+    // carry node's origin, so it shows level and centred on the Lift's ghost.
+    private void BuildCarry(Creations.CreationNode node)
+    {
+        foreach (var child in _carry.GetChildren())
+        {
+            _ghostMeshes.Remove((MeshInstance3D)child);
+            child.QueueFree();
+        }
+        _checkedFor = null;
+        var seat = ToolActions.Seat(node.Creation, System.Numerics.Vector3.Zero, _turns);
+        for (var i = 0; i < node.Bodies.Count && i < seat.Count; i++)
+        {
+            var body = node.Bodies[i];
+            var place = seat[i].ToTransform() * body.GlobalTransform.AffineInverse();
+            foreach (var mesh in body.FindChildren("*", nameof(MeshInstance3D), owned: false).OfType<MeshInstance3D>().Where(m => m.IsVisibleInTree()))
+            {
+                var copy = new MeshInstance3D
+                {
+                    Mesh = mesh.Mesh, Transform = place * mesh.GlobalTransform, MaterialOverride = GhostMaterial,
+                    CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+                };
+                _carry.AddChild(copy);
+                _ghostMeshes.Add(copy);
+            }
+        }
+    }
+
+    // Blue on the Creation the Lift may capture, red on the captured one (and briefly on one it refused).
+    private void ShowTints()
+    {
+        _capturedTint.Set(_captured is { } held ? Build.Creations.NodeOf(held) : null, CapturedTint);
+        if (_flash is { } flash && (BuildTool.Now > flash.Until || flash.Creation == _captured))
+            _flash = null;
+        if (!Active)
+            _hoverTint.Clear();
+        else if (_flash is { } denied)
+            _hoverTint.Set(Build.Creations.NodeOf(denied.Creation), DeniedTint);
+        else if (Aim is { Creation: { } aimed, Refusal: null } && aimed != _captured)
+            _hoverTint.Set(Build.Creations.NodeOf(aimed), HoverTint);
+        else
+            _hoverTint.Clear();
     }
 
     /// <summary>Raises (positive) or lowers the Lift by <paramref name="steps"/> levels. False without a Lift.</summary>
@@ -276,9 +541,21 @@ public partial class LiftTool : HandTool
         return true;
     }
 
-    /// <summary>Turns the held Creation a quarter turn. False without a Lift.</summary>
+    /// <summary>
+    /// Turns the captured Creation's ghost a quarter turn, or without a capture the Creation the Lift holds. False with
+    /// neither a capture nor a Lift.
+    /// </summary>
     public bool Turn(Action<ActionResult>? done = null)
     {
+        if (_captured is { } held)
+        {
+            _turns = (_turns + 1) % 4;
+            if (Build.Creations.NodeOf(held) is { } node)
+                BuildCarry(node);
+            UpdateAim();
+            done?.Invoke(ActionResult.Success());
+            return true;
+        }
         if (Own is null)
             return false;
         Send(ToolActions.TurnLift, new TurnLiftArgs(1), done);
@@ -295,10 +572,18 @@ public partial class LiftTool : HandTool
     }
 
     /// <inheritdoc/>
+    protected override string RefusalSound => "lift_deny";
+
+    /// <inheritdoc/>
     public override string HudText()
     {
+        if (_captured is { } held)
+        {
+            return Loc.T("Lift (creation {0} captured)   {1} put the Lift down with it  {2} turn  {3} let go", held, Key(InputActions.Primary),
+                Key(InputActions.Rotate), Key(InputActions.Secondary)) + (PlacementProblem is { } problem ? "\n" + problem : Status);
+        }
         var lift = Own is { } own ? own.Creation is { } c ? Loc.T("level {0}, holding creation {1}", own.Level, c) : Loc.T("level {0}", own.Level) : Loc.T("not placed");
-        return Loc.T("Lift ({0})   {1} place / pick up  {2}/{3} raise/lower  {4} turn  hold {5} on the Lift: pick up  {6} on the Lift: blueprints", lift, Key(InputActions.Primary), Key(InputActions.LiftUp), Key(InputActions.LiftDown),
+        return Loc.T("Lift ({0})   {1} place / capture  {2}/{3} raise/lower  {4} turn  hold {5} on the Lift: pick up  {6} on the Lift: blueprints", lift, Key(InputActions.Primary), Key(InputActions.LiftUp), Key(InputActions.LiftDown),
             Key(InputActions.Rotate), Key(InputActions.Secondary), Key(InputActions.Interact)) + Status;
     }
 
@@ -319,7 +604,10 @@ public partial class LiftTool : HandTool
         if (Pressed(@event, InputActions.Primary))
             Place();
         else if (Pressed(@event, InputActions.Secondary))
-            PressRemove();
+        {
+            if (!ReleaseCapture())
+                PressRemove();
+        }
         else if (Released(@event, InputActions.Secondary))
         {
             if (_removeFrom is null)
@@ -362,11 +650,19 @@ public partial class LiftTool : HandTool
         {
             _removeFrom = null;
             _raiseHeld = 0;
+            // Putting the Lift away lets a capture go, as right click does.
+            ReleaseCapture();
+            ShowTints();
         }
     }
 
     /// <inheritdoc/>
-    public override Core.Ui.CrosshairState Crosshair => Aim is null ? Core.Ui.CrosshairState.Default : Core.Ui.CrosshairState.Valid;
+    public override Core.Ui.CrosshairState Crosshair => Aim switch
+    {
+        null or { Refusal: not null } => Core.Ui.CrosshairState.Default,
+        { Creation: null } when PlacementProblem is not null => Core.Ui.CrosshairState.Default,
+        _ => Core.Ui.CrosshairState.Valid,
+    };
 
     private Target? Cast()
     {
@@ -379,7 +675,7 @@ public partial class LiftTool : HandTool
             var box = CreationBounds.World(node.LocalBounds, [.. node.Bodies.Select(b => b.GlobalTransform.ToPose())]);
             var middle = ((box.Min + box.Max) / 2).ToGodot();
             var ground = GroundBelow(new Vector3(middle.X, box.Min.Y, middle.Z), node) ?? box.Min.Y;
-            return new Target(new Vec3(middle.X, ground, middle.Z), creation.Id);
+            return new Target(new Vec3(middle.X, ground, middle.Z), creation.Id, creation.Id == _captured ? null : Refusal(creation));
         }
         if (hit.Normal.Y < 0.7f)
             return null;

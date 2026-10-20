@@ -1,6 +1,7 @@
 using Godot;
 using Mechanica.Core.Actions;
 using Mechanica.Core.Characters;
+using Mechanica.Core.World;
 using Mechanica.Game.Net;
 using Mechanica.Game.Sound;
 
@@ -201,6 +202,26 @@ public partial class CharacterSync : Node
         Show(peer);
         if (peer == Session.LocalPeer)
             SetLocalNeedsChoice(character.Length == 0);
+    }
+
+    /// <summary>
+    /// The character an <c>npc</c> marker names (a bare <c>ref</c> is one of the POI's own mod), idling, or null when
+    /// it names none. Every peer draws it from the world data, so it needs no syncing.
+    /// </summary>
+    public Node3D? Npc(PoiMarkerPlacement marker)
+    {
+        if (marker.Marker.Ref is not { } reference)
+            return null;
+        var poi = marker.Poi.Poi.QualifiedId;
+        var id = reference.Contains(':') ? reference : $"{poi[..Math.Max(0, poi.IndexOf(':'))]}:{reference}";
+        if (Book.FindAny(id) is not { } character || Assets.Instantiate(character) is not { } model)
+            return null;
+        // A marker faces +Z at yaw 0; characters face -Z, as players do.
+        var figure = new Node3D();
+        var turn = new Node3D { Name = "Turn", Rotation = new Vector3(0, Mathf.Pi, 0) };
+        figure.AddChild(turn);
+        turn.AddChild(new CharacterModel { Character = character, Assets = Assets, Model = model, Sounds = Sounds });
+        return figure;
     }
 
     // Draws a player as the character it plays as now.

@@ -20,12 +20,16 @@ public sealed record Character(
     string QualifiedId, string ModId, string Name, string Description, AssetPath Mesh, int Order,
     IReadOnlyDictionary<string, string> Sounds, CharacterDefinition Definition)
 {
+    /// <summary>True when it only stands at POI <c>npc</c> markers and is not a player character.</summary>
+    public bool Npc => Definition.Npc == true;
+
     /// <summary>The event for local sound <paramref name="name"/>, played as <see cref="ModId"/>'s.</summary>
     public string Sound(string name) => Sounds.GetValueOrDefault(name) ?? CharacterSounds.Defaults.GetValueOrDefault(name, name);
 }
 
 /// <summary>
-/// Every player character of the enabled mods, read from each mod's <c>characters/**/*.json</c> in load order.
+/// Every character of the enabled mods, read from each mod's <c>characters/**/*.json</c> in load order: the player
+/// characters, and the ones POIs place at <c>npc</c> markers (<see cref="Character.Npc"/>).
 /// Each one's mesh must exist and be skinned to every bone of <see cref="CharacterRig"/>. A file with errors
 /// is left out and <see cref="Diagnostics"/> says why. Host and clients compare <see cref="Fingerprint"/> on join.
 /// </summary>
@@ -40,10 +44,11 @@ public sealed class CharacterBook
     {
         _characters = characters.ToDictionary(c => c.QualifiedId, StringComparer.Ordinal);
         // On a tie, vanilla's characters come first, so a mod's id never silently changes the default character.
-        All = [.. _characters.Values.OrderBy(c => c.Order).ThenBy(c => c.ModId != Identifiers.VanillaModId).ThenBy(c => c.QualifiedId, StringComparer.Ordinal)];
+        var ordered = _characters.Values.OrderBy(c => c.Order).ThenBy(c => c.ModId != Identifiers.VanillaModId).ThenBy(c => c.QualifiedId, StringComparer.Ordinal).ToList();
+        All = [.. ordered.Where(c => !c.Npc)];
         Diagnostics = diagnostics;
         using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
-        foreach (var character in All)
+        foreach (var character in ordered)
         {
             hash.AppendData(Encoding.UTF8.GetBytes(character.QualifiedId));
             hash.AppendData(Encoding.UTF8.GetBytes(DataJson.Write(character.Definition)));
@@ -54,7 +59,7 @@ public sealed class CharacterBook
     /// <summary>A book with no characters.</summary>
     public static CharacterBook Empty { get; } = new([], []);
 
-    /// <summary>Every character in picker order.</summary>
+    /// <summary>Every player character, in picker order (not the <see cref="Character.Npc"/> ones).</summary>
     public IReadOnlyList<Character> All { get; }
 
     /// <summary>The character a player gets before choosing: the first in picker order, or null when there are none.</summary>
@@ -63,11 +68,14 @@ public sealed class CharacterBook
     /// <summary>Every problem found while loading.</summary>
     public IReadOnlyList<DataDiagnostic> Diagnostics { get; }
 
-    /// <summary>SHA-256 (hex) of every character's id and canonical form.</summary>
+    /// <summary>SHA-256 (hex) of every character's id and canonical form, NPCs included.</summary>
     public string Fingerprint { get; }
 
-    /// <summary>The character with this id (a bare id means vanilla), or null.</summary>
-    public Character? Find(string? id) => id is null ? null : _characters.GetValueOrDefault(Identifiers.Qualify(id));
+    /// <summary>The player character with this id (a bare id means vanilla), or null.</summary>
+    public Character? Find(string? id) => FindAny(id) is { Npc: false } found ? found : null;
+
+    /// <summary>The character with this id, player or <see cref="Character.Npc"/> (a bare id means vanilla), or null.</summary>
+    public Character? FindAny(string? id) => id is null ? null : _characters.GetValueOrDefault(Identifiers.Qualify(id));
 
     /// <summary>
     /// Loads the characters of the mods in <paramref name="content"/>, with other mods' overrides, patches and removals

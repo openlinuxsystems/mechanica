@@ -573,6 +573,7 @@ public partial class Main : Node3D
             ReadDeviceInput = ReadDeviceInput,
         };
         Characters.RegisterActions(Actions.Dispatcher);
+        Streamer.Npc = Characters.Npc;
         AddChild(PaintLook = new PaintToolLook
         {
             Name = "PaintToolLook", Players = PlayerSync, Palette = Build.Settings!.Paint.Palette, Settings = Characters.Assets.Settings.PaintTool,
