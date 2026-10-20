@@ -43,7 +43,7 @@ public class CharacterRigTests
     public void TheRefineToolIsAPropWithItsOwnDrawWorkAndStowClips()
     {
         Assert.Equal(CharacterProp.RefineTool, CharacterRig.Sanitize(CharacterProp.RefineTool));
-        Assert.Equal(CharacterProp.None, CharacterRig.Sanitize((CharacterProp)(CharacterProp.SoilBag + 1)));
+        Assert.Equal(CharacterProp.None, CharacterRig.Sanitize((CharacterProp)(CharacterProp.Food + 1)));
         Assert.Equal("refine_tool", CharacterRig.PropNode(CharacterProp.RefineTool));
         Assert.Equal("hold_refine", CharacterRig.HoldClip(CharacterProp.RefineTool));
         Assert.Equal("refine_draw", CharacterRig.DrawClip(CharacterProp.RefineTool));
@@ -96,4 +96,27 @@ public class CharacterRigTests
             Assert.Contains(clip + CharacterRig.FirstPersonSuffix, CharacterRig.UpperBodyClips);
         }
     }
+
+    [Fact]
+    public void FoodRestsOnThePalmAndIsEatenInBites()
+    {
+        Assert.Equal(CharacterProp.Food, CharacterRig.Sanitize(CharacterProp.Food));
+        Assert.Equal("hold_food", CharacterRig.HoldClip(CharacterProp.Food));
+        Assert.Contains("hold_food", CharacterRig.FreeArmHolds);
+        Assert.Null(CharacterRig.PropNode(CharacterProp.Food));
+        foreach (var clip in new[] { "hold_food", "eat" })
+        {
+            Assert.Contains(clip, CharacterRig.UpperBodyClips);
+            Assert.Contains(clip + CharacterRig.FirstPersonSuffix, CharacterRig.UpperBodyClips);
+        }
+    }
+
+    [Theory]
+    [InlineData(0f, 0)]
+    [InlineData(0.29f, 0)]
+    [InlineData(0.3f, 1)]
+    [InlineData(0.6f, 2)]
+    [InlineData(0.86f, -1)]
+    [InlineData(1.4f, -1)]
+    public void BitesFollowTheEatClip(float seconds, int bites) => Assert.Equal(bites, new EatSettings().BitesAt(seconds));
 }

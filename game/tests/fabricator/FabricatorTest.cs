@@ -187,8 +187,9 @@ public partial class FabricatorTest : StagedTest
                 return false;
             if (!_upgrades.IsOpen)
                 _upgrades.Open((_workshop, _fabricator));
-            Check(_upgrades.LevelText == "Fabricator: level 1 of 5", $"the level ({_upgrades.LevelText})");
-            Check(_upgrades.CostLines.SequenceEqual([("5 Component Kit (you have 1)", true)]), $"the cost ({string.Join("; ", _upgrades.CostLines)})");
+            Check(_upgrades.TitleText == "Fabricator" && _upgrades.LevelText == "Level 1 → 2", $"the title and level ({_upgrades.TitleText}, {_upgrades.LevelText})");
+            Check(_upgrades.CostLines.SequenceEqual([("1 / 5 Component Kit", true)]), $"the cost ({string.Join("; ", _upgrades.CostLines)})");
+            Check(_upgrades.Status == "Needs 4 more Component Kit.", $"the reason line says why ({_upgrades.Status})");
             Check(_upgrades.ChangeLines.SequenceEqual(["Queue: 2 → 4", "Slots: 10 → 12"]), $"what changes ({string.Join("; ", _upgrades.ChangeLines)})");
             Check(_upgrades.Confirm.Disabled, "Upgrade is off");
             return true;
@@ -207,13 +208,14 @@ public partial class FabricatorTest : StagedTest
                     _upgrades.Upgrade(_results.Add);
                 return false;
             }
-            if (_screen.StationLevel != "Level 2 / 5" || _upgrades.LevelText != "Fabricator 2: level 2 of 5")
+            if (_screen.StationLevel != "Level 2 / 5" || _upgrades.LevelText != "Level 2 → 3")
                 return false;
             Check(_results[0].Ok, $"the host upgrades it ({_results[0].Message})");
             Check(HostWorkshop.LevelOf(_fabricator) == 1 && HostWorkshop.InventoryOf(_fabricator)!.SlotCount == 12, "the host's Fabricator is level 1 with 12 slots");
             Check(HostPockets.Count(Kit) == 0, "all five kits are spent");
             Check(_upgrades.ChangeLines.SequenceEqual(["Queue: 4 → 6", "Slots: 12 → 15"]), $"the next level's changes ({string.Join("; ", _upgrades.ChangeLines)})");
-            _upgrades.Close();
+            Check(_upgrades.TitleText == "Fabricator" && _upgrades.Status == "Needs 5 more Component Kit.", $"the next level's title and reason ({_upgrades.TitleText}, {_upgrades.Status})");
+            _upgrades.CloseButton.EmitSignal(BaseButton.SignalName.Pressed);
             Check(!_upgrades.IsOpen && Input.MouseMode != Input.MouseModeEnum.Captured, "closing the dialog leaves the screen in charge of the mouse");
             return true;
         });

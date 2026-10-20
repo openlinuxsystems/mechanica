@@ -598,10 +598,7 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
         if (view.Seed is null)
         {
             if (_cropNodes.Remove(key, out var gone))
-            {
-                RemoveChild(gone);
-                gone.QueueFree();
-            }
+                gone.Remove(harvested: gone.View?.Ripe == true);
             return;
         }
         if (!_cropNodes.TryGetValue(key, out var crop))
@@ -609,7 +606,7 @@ public partial class SurvivalSync : Node3D, ISurvivalWorld
             crop = _cropNodes[key] = new CropNode { Name = $"Crop{view.Creation}_{view.Part}" };
             AddChild(crop);
         }
-        crop.Show(view, Catalog);
+        crop.Show(view, Catalog, Assets);
         crop.Follow(Creations.NodeOf(view.Creation), view.Part);
     }
 
