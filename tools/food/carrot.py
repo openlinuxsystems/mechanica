@@ -18,7 +18,7 @@ import food_lib as fl
 L = 0.17             # root length: a big, readable carrot
 R0 = 0.021           # radius at the shoulder
 LABEL_COLOR = "#E0B530"     # the carrot's crop colour (seed label, stake tag): mustard, never orange
-SKIN = ("#B08436", "#EE8A26", "#F39C3A", "#C9701E")       # shoulder, body, tip, growth-ring dents
+SKIN = ("#9E7230", "#E0761A", "#E98A2A", "#B85E16")       # shoulder, body, tip, growth-ring dents
 CORE, CORTEX = "#F8C46E", "#EA8430"                         # the cut face: a light core inside a deep cortex
 
 

@@ -16,14 +16,14 @@ import food_lib as fl
 
 SIZE = (0.105, 0.072, 0.062)        # length, width, height: a big baking potato
 LABEL_COLOR = "#7A4A30"             # the potato's crop colour (seed label, stake tag): rust
-SKIN, MOTTLE, EYE = "#C49A62", "#93693D", "#6A4626"
-FLESH_LIGHT, FLESH_RIM, FLESH_EDGE = "#E4D6A6", "#CDB57E", "#B48E58"   # middle, outer flesh, the thin skin edge
+SKIN, MOTTLE, EYE = "#A97F4E", "#7E5C38", "#553D24"
+FLESH_LIGHT, FLESH_RIM, FLESH_EDGE = "#D8C898", "#C4AD78", "#A0794A"   # middle, outer flesh, the thin skin edge
 
 
 def mats():
     return {
         "skin": fl.material("potato_skin", "#FFFFFF", rough=0.85, vertex_color=True),
-        "flesh": fl.material("potato_flesh", "#FFFFFF", rough=0.38, sss=0.03, vertex_color=True),
+        "flesh": fl.material("potato_flesh", "#FFFFFF", rough=0.55, sss=0.02, vertex_color=True),
         "stem": fl.material("potato_stem", "#5D8A36", rough=0.6),
         "leaf": fl.material("potato_leaf", "#3D7A2F", rough=0.55, sss=0.12),
         "leaf_yellow": fl.material("potato_leaf_yellow", "#A9A23E", rough=0.65, sss=0.08),
@@ -36,8 +36,8 @@ def body_bm(scale=1.0, seed=2, segs=(40, 26)):
     rnd = random.Random(seed)
     bm = bmesh.new()
     bmesh.ops.create_uvsphere(bm, u_segments=segs[0], v_segments=segs[1], radius=1)
-    bumps = [(Vector((rnd.uniform(-1, 1), rnd.uniform(-1, 1), rnd.uniform(-1, 1))).normalized(), rnd.uniform(-0.07, 0.09))
-             for _ in range(10)]
+    bumps = [(Vector((rnd.uniform(-1, 1), rnd.uniform(-1, 1), rnd.uniform(-1, 1))).normalized(), rnd.uniform(-0.09, 0.12))
+             for _ in range(14)]
     eyes = [Vector((rnd.uniform(-1, 1), rnd.uniform(-1, 1), rnd.uniform(-0.5, 1))).normalized() for _ in range(7)]
     eye_of = {}
     lx, ly, lz = (v * scale / 2 for v in SIZE)
@@ -79,7 +79,7 @@ def build(name="Potato", bites=0, parent=None, location=(0, 0, 0), m=None, scale
     return root
 
 
-BITES = ((0.05, -0.012, 0.042, 0.0), (0.03, -0.004, 0.05, 0.25))   # where each bite goes (x, y, z) and how it turns
+BITES = ((0.05, -0.012, 0.042, 0.0), (0.042, 0.012, 0.044, 0.3))   # where each bite goes (x, y, z) and how it turns
 
 
 def bite(body, k, m):
