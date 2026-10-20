@@ -409,7 +409,7 @@ The pad height of a spaced POI is the natural ground height at its centre.
 A `part` marker puts one working part in the world: every Workshop has a Fabricator this way.
 
 ```json
-{ "type": "part", "ref": "fabricator", "at": [7.25, 0.3, -10.6], "yaw": 180.0 }
+{ "type": "part", "ref": "fabricator", "at": [7.25, 0.02, -10.6], "yaw": 180.0 }
 ```
 
 - `ref` is a part id: a bare id is a part of the POI's own mod, `other_mod:id` another mod's. It must be a part the

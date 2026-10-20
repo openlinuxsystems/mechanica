@@ -1,10 +1,11 @@
 """The Workshop (Colony Works): a vehicle repair shop, the players' first base (docs/art-direction.md).
 
 A framed steel hall with a front gable, two oversized garage bays whose roll-up doors are always up (rolled into their
-housings), a lift in the left bay and a clear right bay to drive a creation into, with the Fabricator against the back
-wall of that bay (placed by the POI, not part of this model). A one-storey office on the left, tool wall, bench, tyres,
-drums and a compressor inside; lampposts, bay lines and tyre stacks outside. Origin on the ground at the hall's centre,
-front towards -Y (the bays open onto the forecourt).
+housings). The left bay is a drive-through, with a second door in the back wall; the right bay is clear to drive a
+creation into, with the Fabricator against its back wall (placed by the POI, not part of this model). A one-storey office
+on the left, tool wall, bench, tyres, drums and a compressor inside; lampposts, bay lines and tyre stacks outside. Origin
+at the hall's centre, 0.3 m under the slab's top (the POI sinks it so the slab is flush with the ground and creations
+drive straight on), front towards -Y (the bays open onto the forecourt).
 """
 import math
 import random
@@ -23,6 +24,7 @@ DOOR_H = 2.1                 # walk-in doors (office), metres
 OFFICE_DOOR = (-1.6, -0.4)   # the doorway from the hall into the office, along the left wall
 BAY_H = 5.8
 BAYS = ((-9.5, -1.0), (1.0, 9.5))  # x of each opening's sides
+THROUGH = BAYS[0]                  # the bay with a door in the back wall too
 # Where the Fabricator stands (Blender frame, its back to the back wall of the right bay); the POI's marker matches.
 FABRICATOR = (5.25, 7.6)
 
@@ -82,9 +84,10 @@ def workshop(o=(0, 0, 0), yaw=0, name="workshop"):
     for x0, x1 in BAYS:  # bay outlines inside and lead-in lines on the forecourt
         cx = (x0 + x1) / 2
         for sx in (x0 + 0.4, x1 - 0.4):  # worn through where the wheels run over it
-            for a, b in segments(-13.0, 8.0, random.Random(int(sx * 10)), gap=(0.3, 1.2)):
+            for a, b in segments(-13.0, 11.0 if (x0, x1) == THROUGH else 8.0, random.Random(int(sx * 10)), gap=(0.3, 1.2)):
                 K.box("bay_line", (0.15, b - a, 0.02), paint, loc=(sx, (a + b) / 2, 0.31), bev=0, parent=P)
-        K.box("bay_stop", (x1 - x0 - 0.8, 0.15, 0.02), paint, loc=(cx, 6.6, 0.31), bev=0, parent=P)
+        if (x0, x1) != THROUGH:
+            K.box("bay_stop", (x1 - x0 - 0.8, 0.15, 0.02), paint, loc=(cx, 6.6, 0.31), bev=0, parent=P)
         for k in range(3):  # chevrons pointing in
             for s in (-1, 1):
                 K.box("chevron", (1.4, 0.3, 0.02), paint, loc=(cx + s * 0.5, -10.5 + k * 1.6, 0.31), rot=(0, 0, s * 35), bev=0, parent=P)
@@ -109,11 +112,16 @@ def workshop(o=(0, 0, 0), yaw=0, name="workshop"):
             K.box("clerestory_frame", (0.38, 3.2, 0.14), gra, loc=(x + sign * 0.02, y0 + 2.0, 6.5 + 0.3), bev=0.02, parent=P)
     wall_x(-HALF_W, -1, door=OFFICE_DOOR)
     wall_x(HALF_W, 1)
-    K.box("back_wall", (2 * HALF_W, 0.3, EAVE), bone, loc=(0, BACK, EAVE / 2 + 0.3), bev=0.03, parent=P)
-    for x in (-HALF_W, -5.5, 0.0, 5.5, HALF_W):
+    # back wall: solid but for the through bay's door, which has a header over it like the front
+    tx0, tx1 = THROUGH
+    for a, b in ((-HALF_W, tx0), (tx1, HALF_W)):
+        K.box("back_wall", (b - a, 0.3, EAVE), bone, loc=((a + b) / 2, BACK, EAVE / 2 + 0.3), bev=0.03, parent=P)
+        for z in (2.2, 4.8):
+            K.box("back_rail", (b - a, 0.3, 0.22), steel, loc=((a + b) / 2, BACK + 0.08, z + 0.3), bev=0.03, parent=P)
+    K.box("back_header", (tx1 - tx0, 0.3, EAVE - BAY_H), bone, loc=((tx0 + tx1) / 2, BACK, (BAY_H + EAVE) / 2 + 0.3), bev=0.03, parent=P)
+    K.box("back_header_rail", (tx1 - tx0 + 0.4, 0.36, 0.3), steel, loc=((tx0 + tx1) / 2, BACK + 0.08, BAY_H + 0.3 + 0.15), bev=0.04, parent=P)
+    for x in (-HALF_W, tx0 - 0.2, tx1 + 0.2, 5.5, HALF_W):
         K.box("back_post", (0.36, 0.36, EAVE), steel, loc=(x, BACK + 0.1, EAVE / 2 + 0.3), bev=0.04, parent=P)
-    for z in (2.2, 4.8):
-        K.box("back_rail", (2 * HALF_W, 0.3, 0.22), steel, loc=(0, BACK + 0.08, z + 0.3), bev=0.03, parent=P)
     prism("back_gable", [(-HALF_W, EAVE + 0.3), (HALF_W, EAVE + 0.3), (HALF_W, EAVE + 0.48), (0, RIDGE + 0.5), (-HALF_W, EAVE + 0.48)], BACK - 0.15, BACK + 0.15, bone, P)
 
     # ---- front: three piers, a header over the bays and the gable with the sign
@@ -123,20 +131,24 @@ def workshop(o=(0, 0, 0), yaw=0, name="workshop"):
     K.box("header", (2 * HALF_W, 0.5, EAVE - BAY_H), bone, loc=(0, FRONT, (BAY_H + EAVE) / 2 + 0.3), bev=0.04, parent=P)
     K.box("header_rail", (2 * HALF_W + 0.2, 0.62, 0.3), steel, loc=(0, FRONT, BAY_H + 0.3 + 0.15), bev=0.04, parent=P)
     prism("gable", [(-HALF_W, EAVE + 0.3), (HALF_W, EAVE + 0.3), (HALF_W, EAVE + 0.48), (0, RIDGE + 0.5), (-HALF_W, EAVE + 0.48)], FRONT - 0.2, FRONT + 0.2, bone, P)
-    for x0, x1 in BAYS:
+    def bay_door(x0, x1, face, d, jamb):
+        """A roll-up door, all the way up, in the wall at y=face; d is +1 when the hall is towards +y (the front), -1 at
+        the back; jamb is the depth of the wall it is cut through."""
         cx, w = (x0 + x1) / 2, x1 - x0
-        # the roll-up door, all the way up: rolled into its drum housing above the opening
-        FR.framed_box(P, "door_housing", (cx, FRONT + 0.75, BAY_H - 0.15 + 0.3), (w + 0.2, 0.9, 0.9), M(F.STEEL, metal=0.3), gra, fw=0.1)
-        K.box("door_lip", (w - 0.1, 0.12, 0.28), gun, loc=(cx, FRONT + 0.3, BAY_H - 0.05 + 0.3), bev=0.03, parent=P)
-        FR.hazard(P, (cx, FRONT + 0.22, BAY_H + 0.08 + 0.3), w - 0.2, 0.12, mus, gra, n=16)
+        FR.framed_box(P, "door_housing", (cx, face + d * 0.75, BAY_H - 0.15 + 0.3), (w + 0.2, 0.9, 0.9), M(F.STEEL, metal=0.3), gra, fw=0.1)
+        K.box("door_lip", (w - 0.1, 0.12, 0.28), gun, loc=(cx, face + d * 0.3, BAY_H - 0.05 + 0.3), bev=0.03, parent=P)
+        FR.hazard(P, (cx, face + d * 0.22, BAY_H + 0.08 + 0.3), w - 0.2, 0.12, mus, gra, n=16)
         for s in (-1, 1):
             jx = cx + s * (w / 2)
-            K.box("door_track", (0.2, 0.3, BAY_H), gra, loc=(jx - s * 0.12, FRONT + 0.4, BAY_H / 2 + 0.3), bev=0.03, parent=P)
+            K.box("door_track", (0.2, 0.3, BAY_H), gra, loc=(jx - s * 0.12, face + d * 0.4, BAY_H / 2 + 0.3), bev=0.03, parent=P)
             for k in range(7):  # hazard stripes on the jambs
-                K.box("jamb_haz", (0.08, 0.62, 0.3), mus if k % 2 == 0 else gra, loc=(jx + s * 0.03, FRONT, 0.45 + k * 0.3 + 0.3), bev=0.005, parent=P)
-            K.cyl("bollard", 0.16, 1.1, mus, loc=(jx + s * 0.45, FRONT - 0.65, 0.85), bev=0.04, parent=P)
-            K.cyl("bollard_cap", 0.17, 0.1, gra, loc=(jx + s * 0.45, FRONT - 0.65, 1.42), bev=0.02, parent=P)
-        K.box("bay_light", (w - 1.0, 0.18, 0.12), F.glow(F.WARM, 10), loc=(cx, FRONT - 0.32, BAY_H + 0.62 + 0.3), bev=0.03, parent=P)
+                K.box("jamb_haz", (0.08, jamb + 0.02, 0.3), mus if k % 2 == 0 else gra, loc=(jx + s * 0.03, face, 0.45 + k * 0.3 + 0.3), bev=0.005, parent=P)
+            K.cyl("bollard", 0.16, 1.1, mus, loc=(jx + s * 0.45, face - d * 0.65, 0.85), bev=0.04, parent=P)
+            K.cyl("bollard_cap", 0.17, 0.1, gra, loc=(jx + s * 0.45, face - d * 0.65, 1.42), bev=0.02, parent=P)
+        K.box("bay_light", (w - 1.0, 0.18, 0.12), F.glow(F.WARM, 10), loc=(cx, face - d * 0.32, BAY_H + 0.62 + 0.3), bev=0.03, parent=P)
+    for x0, x1 in BAYS:
+        bay_door(x0, x1, FRONT, 1, 0.6)
+    bay_door(*THROUGH, BACK, -1, 0.3)
     # sign on the gable: WORKSHOP and a wrench, on a mustard board in a graphite frame
     FR.framed_box(P, "sign", (0.0, FRONT - 0.32, 7.9), (8.4, 0.3, 1.5), mus, gra, fw=0.14)
     FR.label(P, "WORKSHOP", (0.8, FRONT - 0.5, 7.88), 0.95, gra)
@@ -187,14 +199,17 @@ def workshop(o=(0, 0, 0), yaw=0, name="workshop"):
         K.box("in_rail", (0.2, BACK - FRONT - 0.6, 0.18), steel, loc=(x + sign * 0.22, (FRONT + BACK) / 2, 4.2), bev=0.02, parent=P)
     for x in (0.0,):
         K.box("in_back_post", (0.3, 0.3, EAVE), steel, loc=(x, BACK - 0.25, EAVE / 2 + 0.3), bev=0.03, parent=P)
-    K.box("in_back_wainscot", (2 * HALF_W - 0.6, 0.06, 1.2), M(F.GRAPHITE, wear=0.5), loc=(0, BACK - 0.18, 0.9), bev=0.01, parent=P)
-    K.box("in_back_rail", (2 * HALF_W - 0.6, 0.2, 0.18), steel, loc=(0, BACK - 0.22, 4.2), bev=0.02, parent=P)
+    for a, b in ((-HALF_W + 0.3, tx0), (tx1, HALF_W - 0.3)):
+        K.box("in_back_wainscot", (b - a, 0.06, 1.2), M(F.GRAPHITE, wear=0.5), loc=((a + b) / 2, BACK - 0.18, 0.9), bev=0.01, parent=P)
+        K.box("in_back_rail", (b - a, 0.2, 0.18), steel, loc=((a + b) / 2, BACK - 0.22, 4.2), bev=0.02, parent=P)
     stencil = M(F.BONE, wear=0.3, scratches=0, grime=0)
-    for k, (x0, x1) in enumerate(BAYS):
-        FR.framed_box(P, "bay_board", ((x0 + x1) / 2, BACK - 0.24, 5.3), (2.6, 0.08, 1.0), M(F.STEEL, metal=0.3), gra, fw=0.08)
-        FR.label(P, f"BAY {k + 1}", ((x0 + x1) / 2, BACK - 0.3, 5.3), 0.55, stencil)
-    for z in (6.2, 6.45):  # pipe run along the back wall
-        K.cyl("back_pipe", 0.07, 2 * HALF_W - 0.8, gun if z < 6.3 else M(F.SEA), loc=(0, BACK - 0.4, z), rot=(0, 90, 0), bev=0, parent=P)
+    for k, (x0, x1) in enumerate(BAYS):  # the through bay's board hangs on its back door's housing
+        y = BACK - 1.25 if (x0, x1) == THROUGH else BACK - 0.24
+        z = BAY_H + 0.15 if (x0, x1) == THROUGH else 5.3
+        FR.framed_box(P, "bay_board", ((x0 + x1) / 2, y, z), (2.6, 0.08, 0.8 if (x0, x1) == THROUGH else 1.0), M(F.STEEL, metal=0.3), gra, fw=0.08)
+        FR.label(P, f"BAY {k + 1}", ((x0 + x1) / 2, y - 0.06, z), 0.5 if (x0, x1) == THROUGH else 0.55, stencil)
+    for z in (6.75, 7.0):  # pipe run along the back wall, over the door housing
+        K.cyl("back_pipe", 0.07, 2 * HALF_W - 0.8, gun if z < 6.9 else M(F.SEA), loc=(0, BACK - 0.4, z), rot=(0, 90, 0), bev=0, parent=P)
     K.box("drain", (0.5, 6.0, 0.02), gun, loc=(0.0, 1.0, 0.31), bev=0, parent=P)
     for k in range(10):
         K.box("drain_slot", (0.36, 0.06, 0.025), M(F.HULL), loc=(0.0, -1.7 + k * 0.6, 0.315), bev=0, parent=P)
@@ -214,44 +229,31 @@ def workshop(o=(0, 0, 0), yaw=0, name="workshop"):
                 K.cyl("can", 0.14, 0.32, M(c), loc=(sx, -2.3 + k * 0.85, z + 0.19), bev=0.01, parent=P)
             else:
                 K.box("parts_box", (0.6, 0.6, 0.4), M(c, wear=0.4), loc=(sx, -2.3 + k * 0.85, z + 0.23), rot=(0, 0, (k * 17) % 9 - 4), bev=0.03, parent=P)
-    # engine hoist by the lift
+    # engine hoist by the left wall
     K.box("hoist_leg", (0.14, 1.8, 0.14), M(F.SIGNAL), loc=(-9.2, -3.6, 0.42), bev=0.02, parent=P)
     K.box("hoist_mast", (0.18, 0.18, 2.2), M(F.SIGNAL), loc=(-9.2, -4.4, 1.45), bev=0.02, parent=P)
     K.box("hoist_boom", (0.16, 1.8, 0.16), M(F.SIGNAL), loc=(-9.2, -3.7, 2.45), rot=(-12, 0, 0), bev=0.02, parent=P)
     K.box("hoist_chain", (0.03, 0.03, 0.8), gun, loc=(-9.2, -2.9, 2.05), bev=0, parent=P)
     K.box("hoist_hook", (0.1, 0.06, 0.16), gun, loc=(-9.2, -2.9, 1.62), bev=0.01, parent=P)
 
-    # ---- left bay: a two-post vehicle lift
-    for x in (-8.7, -1.8):
-        FR.framed_box(P, "lift_post", (x, 1.8, 2.75), (0.55, 0.55, 4.9), mus, gra, fw=0.08)
-        K.box("lift_base", (0.9, 0.9, 0.08), gun, loc=(x, 1.8, 0.34), bev=0.02, parent=P)
-        K.box("lift_carriage", (0.7, 0.4, 0.7), gra, loc=(x + (0.35 if x < -5 else -0.35), 1.8, 1.0), bev=0.03, parent=P)
-        for dy in (-0.9, 0.9):
-            K.box("lift_arm", (1.6, 0.16, 0.12), gun, loc=(x + (1.1 if x < -5 else -1.1), 1.8 + dy, 0.85), rot=(0, 0, 18 if dy > 0 else -18), bev=0.02, parent=P)
-            K.cyl("lift_pad", 0.14, 0.08, M(F.HULL), loc=(x + (1.8 if x < -5 else -1.8), 1.8 + dy * 1.3, 0.93), bev=0.01, parent=P)
-    K.box("lift_beam", (7.4, 0.35, 0.35), mus, loc=(-5.25, 1.8, 5.3), bev=0.04, parent=P)
-    FR.hazard(P, (-5.25, 1.6, 5.3), 7.2, 0.3, mus, gra, n=14)
-    K.cyl("lift_hose", 0.04, 6.9, M(F.HULL), loc=(-5.25, 1.95, 5.05), rot=(0, 90, 0), bev=0, parent=P)
-    FR.framed_box(P, "lift_control", (-9.3, 2.6, 1.4), (0.35, 0.45, 0.7), bone, gra, fw=0.05)
-    K.cyl("lift_button", 0.06, 0.05, M(F.SIGNAL, wear=0), loc=(-9.3, 2.36, 1.55), rot=(90, 0, 0), bev=0, parent=P)
-
-    # ---- back-left: tool wall, bench with a vice, rolling tool chests, tyre rack
-    FR.framed_box(P, "pegboard", (-6.0, BACK - 0.25, 2.8), (5.6, 0.1, 2.0), M("#b9b29d", wear=0.4), gra, fw=0.08)
+    # ---- left wall, between the office doorway and the back: tool wall, bench with a vice, tyre racks; tool chests by bay 2
+    wx = -HALF_W + 0.4   # just off the wall's inner posts
+    FR.framed_box(P, "pegboard", (wx - 0.05, 3.0, 2.8), (0.1, 3.6, 2.0), M("#b9b29d", wear=0.4), gra, fw=0.08)
     tools = [(0.5, 0.9), (0.18, 0.7), (0.9, 0.18), (0.25, 1.0), (0.6, 0.35), (0.14, 0.6), (0.4, 0.4), (0.8, 0.22)]
     for k, (w, h) in enumerate(tools):
-        K.box("tool", (w, 0.05, h), gun if k % 3 else sig, loc=(-8.2 + k * 0.62, BACK - 0.33, 2.85 + (0.25 if k % 2 else -0.2)), rot=(0, (k * 23) % 40 - 20, 0), bev=0.01, parent=P)
-    FR.framed_box(P, "bench", (-6.0, BACK - 0.75, 0.75), (4.6, 0.9, 0.9), M(F.STEEL, metal=0.3), gra, fw=0.08)
-    K.box("bench_top", (4.8, 1.0, 0.08), M(F.WOOD), loc=(-6.0, BACK - 0.75, 1.24), bev=0.02, parent=P)
-    K.box("vice", (0.35, 0.3, 0.25), M(F.STEEL, metal=0.4), loc=(-7.9, BACK - 1.05, 1.42), bev=0.03, parent=P)
-    K.cyl("vice_screw", 0.03, 0.4, gun, loc=(-7.9, BACK - 1.35, 1.38), rot=(90, 0, 0), bev=0, parent=P)
-    for k, x in enumerate((-2.6, -1.8)):
+        K.box("tool", (0.05, w, h), gun if k % 3 else sig, loc=(wx + 0.03, 1.45 + k * 0.44, 2.85 + (0.25 if k % 2 else -0.2)), rot=((k * 23) % 40 - 20, 0, 0), bev=0.01, parent=P)
+    FR.framed_box(P, "bench", (wx + 0.45, 3.0, 0.75), (0.9, 3.6, 0.9), M(F.STEEL, metal=0.3), gra, fw=0.08)
+    K.box("bench_top", (1.0, 3.8, 0.08), M(F.WOOD), loc=(wx + 0.45, 3.0, 1.24), bev=0.02, parent=P)
+    K.box("vice", (0.3, 0.35, 0.25), M(F.STEEL, metal=0.4), loc=(wx + 0.75, 1.6, 1.42), bev=0.03, parent=P)
+    K.cyl("vice_screw", 0.03, 0.4, gun, loc=(wx + 1.05, 1.6, 1.38), rot=(0, 90, 0), bev=0, parent=P)
+    for k, x in enumerate((1.8, 2.6)):
         FR.framed_box(P, "tool_chest", (x, BACK - 0.6, 0.85 + 0.05 * k), (0.8, 0.65, 1.1 + 0.1 * k), sig, gra, fw=0.06)
         for d in range(4):
             K.box("drawer", (0.66, 0.03, 0.04), M(F.ZINC, metal=0.6), loc=(x, BACK - 0.95, 0.55 + d * 0.24), bev=0.005, parent=P)
-    for k in range(4):  # tyre stack by the left wall
-        K.torus("tyre", 0.45, 0.17, M(F.HULL, wear=0.1), loc=(-10.1, 4.6, 0.48 + k * 0.34), parent=P)
+    for k in range(4):  # tyre stacks by the left wall, clear of the back door
+        K.torus("tyre", 0.45, 0.17, M(F.HULL, wear=0.1), loc=(-10.1, 6.2, 0.48 + k * 0.34), parent=P)
     for k in range(3):
-        K.torus("tyre", 0.45, 0.17, M(F.HULL, wear=0.1), loc=(-10.1, 5.8, 0.48 + k * 0.34), parent=P)
+        K.torus("tyre", 0.45, 0.17, M(F.HULL, wear=0.1), loc=(-10.1, 7.4, 0.48 + k * 0.34), parent=P)
 
     # ---- right bay: clear for a creation, the Fabricator at the back; drums, compressor and a hose reel by the wall
     fx, fy = FABRICATOR
@@ -418,7 +420,7 @@ def wear(P, bone):
     for bx in (-5.25, 5.25):
         for side in (-1, 1):
             tx = bx + side * 0.95
-            pts = [(tx + 0.08 * math.sin(y * 0.4 + bx), y) for y in [-17.5 + 1.0 * k for k in range(23)]]
+            pts = [(tx + 0.08 * math.sin(y * 0.4 + bx), y) for y in [-17.5 + 1.0 * k for k in range(30 if bx < 0 else 23)]]
             K.strip("scuff", pts, 0.55, scuff, z=0.303).parent = P
             for a, b in segments(-16.0, 4.5, rnd, gap=(0.5, 2.0), run=(1.0, 3.0)):
                 inner = [(tx + 0.08 * math.sin(y * 0.4 + bx), y) for y in (a, (a + b) / 2, b)]
@@ -436,7 +438,7 @@ def wear(P, bone):
     # patched slabs
     for px, py, w, d in ((-12.6, -15.3, 3.8, 4.4), (6.5, -10.2, 4.6, 4.8), (1.5, -5.0, 4.6, 4.6)):
         K.box("patch", (w, d, 0.006), patch, loc=(px, py, 0.303), bev=0, parent=P)
-    # oil: drips into bay 1 and under the lift, spots on the forecourt
+    # oil: drips into bay 1 and where cars stand, spots on the forecourt
     for k, (x, y, r) in enumerate(((-5.25, 1.8, 0.9), (-5.6, -9.0, 0.35), (-5.1, -12.5, 0.25), (6.0, -14.0, 0.4), (-4.7, -5.5, 0.3),
                                    (5.0, 5.2, 0.45), (-8.8, -15.5, 0.2), (2.4, -3.2, 0.25))):
         K.disc(f"oil_more{k}", r, oil, (x, y), z=0.3045, wobble=0.3, seed=k + 20).parent = P
@@ -449,8 +451,7 @@ def wear(P, bone):
         K.disc(f"drip{k}", rnd.uniform(0.04, 0.1), oil, (x, y), z=0.3055, segs=10, wobble=0.2, seed=k + 40).parent = P
     # dirt drifted against walls and into corners, outside only
     drifts = [(-11.0, -7.4, 1.6, 0.4), (11.0, -7.4, 1.2, 0.35), (0.0, -7.4, 0.9, 0.3), (-16.4, -6.0, 0.5, 1.8), (-16.4, 0.5, 0.45, 1.2),
-              (11.5, 8.5, 0.5, 2.2), (-11.5, 8.0, 0.45, 2.6), (6.0, 9.5, 2.4, 0.45), (-5.0, 9.5, 2.0, 0.4), (-18.5, -17.3, 1.4, 1.0),
-              (14.4, -17.2, 1.2, 1.0), (14.3, 11.3, 1.0, 1.0), (-18.4, 11.3, 1.3, 1.0)]
+              (11.5, 8.5, 0.5, 2.2), (-11.5, 8.0, 0.45, 2.6), (6.0, 9.5, 2.4, 0.45), (-10.3, 9.5, 0.6, 0.35), (1.5, 9.5, 0.9, 0.3)]
     for k, (x, y, sx, sy) in enumerate(drifts):
         d = K.disc(f"drift{k}", 1.0, dirt, (x, y), z=0.305, segs=24, wobble=0.25, seed=k + 60)
         d.scale = (sx, sy, 1)

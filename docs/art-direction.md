@@ -84,12 +84,13 @@ shop, `meshes/structures/workshop.glb`, built by `tools/structures/workshop.py`:
 
 - **Hall.** 22 x 16 m, framed bone and steel-blue walls with clerestory windows under a pitched seamed roof, and a
   mustard WORKSHOP sign on the front gable.
-- **Two bays** 8.5 m wide and 5.8 m tall, their roll-up doors always up, so a creation drives straight in. Bay 1 has
-  a two-post lift and the tool wall; bay 2 is clear for the player's creation, with the Fabricator against its back
-  wall on a hazard-edged plinth.
+- **Two bays** 8.5 m wide and 5.8 m tall, their roll-up doors always up, so a creation drives straight in. Bay 1 is a
+  drive-through, with a second roll-up door in the back wall, and the tool wall and bench along its side; bay 2 is
+  clear for the player's creation, with the Fabricator against its back wall on a hazard-edged plinth.
 - **Office** on the left, walked into from the forecourt or through a doorway from the hall: a desk with a
   terminal, a couch, lockers, filing cabinets and a notice board.
-- **Forecourt.** A 34 x 30 m slab that has seen use but is kept: saw-cut joints, hairline cracks, patched slabs,
+- **Forecourt.** A 34 x 30 m slab, flush with the ground (the prefab sinks the model 0.28 m, leaving a 2 cm edge)
+  so creations drive on from any side. It has seen use but is kept: saw-cut joints, hairline cracks, patched slabs,
   tyre scuffs into the bays, oil drips, worn bay lines, dirt drifted against the walls and a few weeds in the cracks.
   Not a dump.
 
