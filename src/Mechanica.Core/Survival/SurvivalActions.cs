@@ -80,6 +80,9 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     /// <summary>Sound key an item plays when it is picked up (<see cref="Sound.PartSounds"/>).</summary>
     public const string PickupSound = "pickup";
 
+    /// <summary>Sound key an item plays when it is dropped or tossed on the ground (<see cref="Sound.PartSounds"/>).</summary>
+    public const string DropSound = "drop";
+
     // Share of the filling time the host insists on between one player's buckets (network jitter).
     private const double IntervalJitter = 0.8;
 
@@ -732,9 +735,11 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     }
 
     // Plays an item's pickup sound where it was taken, if it binds one.
-    private void PlayPickup(string item, Vector3 at)
+    private void PlayPickup(string item, Vector3 at) => PlayItemSound(item, PickupSound, at);
+
+    private void PlayItemSound(string item, string key, Vector3 at)
     {
-        if (catalog.FindDefinition(item) is { } definition && Sound.PartSounds.For(definition, PickupSound) is { } sound)
+        if (catalog.FindDefinition(item) is { } definition && Sound.PartSounds.For(definition, key) is { } sound)
             world.PlaySound(sound, item.Contains(':') ? item.Split(':')[0] : Identifiers.VanillaModId, at);
     }
 
@@ -1156,9 +1161,15 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
 
     private string? ValidateDrop(ActionCaller caller, DropItemsArgs args)
     {
-        if (CheckSlot(caller, args.Slot, out _) is { } bad)
-            return bad;
-        var stack = inventories.PlayerInventory(caller.Peer)[args.Slot]!;
+        if (DropSource(caller, args, out var found) is { } denied)
+            return denied;
+        var source = found!;
+        if (args.Slot < 0 || args.Slot >= source.SlotCount)
+            return $"slot must be 0 to {source.SlotCount - 1} (got {args.Slot}).";
+        if (source[args.Slot] is not { } stack)
+            return $"Slot {args.Slot} is empty.";
+        if (catalog.FindDefinition(stack.Item) is null)
+            return $"Unknown item '{stack.Item}'.";
         if (args.Count is { } count && (count < 1 || count > stack.Count))
             return $"count must be 1 to {stack.Count} (got {count}).";
         if (args.At is { } at)
@@ -1172,17 +1183,30 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
         return world.FeetOf(caller.Peer) is null ? "You have no player to drop it from." : null;
     }
 
+    // The inventory DropItems takes from: the caller's own, or a container they may use.
+    private string? DropSource(ActionCaller caller, DropItemsArgs args, out Inventory? source)
+    {
+        if (args.From is { } from)
+            return inventories.CheckAccess(caller, from, out source);
+        source = inventories.PlayerInventory(caller.Peer);
+        return null;
+    }
+
     private JsonElement? ApplyDrop(ActionCaller caller, DropItemsArgs args)
     {
-        var pockets = inventories.PlayerInventory(caller.Peer);
-        var stack = pockets[args.Slot]!;
+        DropSource(caller, args, out var source);
+        var stack = source![args.Slot]!;
         var count = args.Count ?? stack.Count;
-        pockets.SetSlot(args.Slot, count < stack.Count ? stack with { Count = stack.Count - count } : null);
+        source.SetSlot(args.Slot, count < stack.Count ? stack with { Count = stack.Count - count } : null);
+        PlayItemSound(stack.Item, DropSound, args.At?.ToNumerics() ?? world.FeetOf(caller.Peer)!.Value);
         if (args.At is { } at)
             return Value(new DropItemsResult(AddDrop(at.ToNumerics(), [stack with { Count = count }], placed: true)?.Id ?? 0));
+        // Tossed (SM's drag out of the inventory): from the hand, landing a short way ahead.
+        var feet = world.FeetOf(caller.Peer)!.Value;
         var look = world.LookOf(caller.Peer) ?? Vector3.UnitZ;
         var ahead = new Vector3(look.X, 0, look.Z) is { } flat && flat.LengthSquared() > 1e-4f ? Vector3.Normalize(flat) : Vector3.Zero;
-        var drop = AddDrop(world.FeetOf(caller.Peer)!.Value + ahead + new Vector3(0, 0.5f, 0), [stack with { Count = count }]);
+        var hand = (world.EyeOf(caller.Peer) ?? feet + new Vector3(0, 1.5f, 0)) + ahead * 0.3f - new Vector3(0, 0.3f, 0);
+        var drop = AddDrop(feet + ahead * settings.TossDistance + new Vector3(0, 0.5f, 0), [stack with { Count = count }], tossedFrom: hand);
         return Value(new DropItemsResult(drop?.Id ?? 0));
     }
 
@@ -1234,8 +1258,9 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
     /// (Force Build: it then never expires). Returns it, or null when there was nothing to drop. Past
     /// <see cref="SurvivalSettings.MaxDrops"/> piles the oldest goes. <paramref name="knockedOut"/> marks what a
     /// knocked-out player dropped (<see cref="ItemDrop.KnockedOut"/>), and <paramref name="owner"/> whose it is.
+    /// <paramref name="tossedFrom"/> is where a tossed pile left the hand: peers fly it from there when it first shows.
     /// </summary>
-    public ItemDrop? AddDrop(Vector3 at, IReadOnlyList<ItemStack> items, bool placed = false, bool knockedOut = false, int? owner = null)
+    public ItemDrop? AddDrop(Vector3 at, IReadOnlyList<ItemStack> items, bool placed = false, bool knockedOut = false, int? owner = null, Vector3? tossedFrom = null)
     {
         var kept = items.Where(s => s.Count > 0).ToList();
         if (kept.Count == 0)
@@ -1244,7 +1269,8 @@ public sealed class SurvivalActions(IPartCatalog catalog, SurvivalSettings setti
             RemoveDrop(_drops.Keys.First());
         var drop = new ItemDrop(_nextDrop++, (placed ? at : world.GroundBelow(at)).ToVec3(), kept, world.Now + settings.DropLifetime, placed, knockedOut, owner);
         _drops[drop.Id] = drop;
-        DropChanged?.Invoke(drop);
+        // The toss is shown once, as it appears; peers joining later see the pile where it lies.
+        DropChanged?.Invoke(tossedFrom is { } hand ? drop with { TossedFrom = hand.ToVec3() } : drop);
         return drop;
     }
 

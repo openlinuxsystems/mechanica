@@ -421,8 +421,11 @@ public class WorldGenTests
         foreach (var o in objects)
         {
             var rule = gen.Data.ScatterRules[o.Id.Rule];
-            // A rock deposit's blocks are its own object or the block objects its mounds are heaped from.
-            if (rule.Object.Outcrop is null)
+            // A rock deposit's blocks are its own object or the block objects its mounds are heaped from, and a scene's
+            // pieces are the objects its layouts name.
+            if (rule.Object.Scene is { } scene)
+                Assert.Contains(scene.Layouts!.SelectMany(l => l.Pieces!), p => p.Object == o.Definition.Id);
+            else if (rule.Object.Outcrop is null)
                 Assert.Same(rule.Object, o.Definition);
             else
                 Assert.Equal(PrimitiveShape.Box, o.Definition.Collider!.Shape);
@@ -531,6 +534,54 @@ public class WorldGenTests
         Assert.True(nearTree > 0.9f, $"{nearTree}");
         // The same seed lays the same patches.
         Assert.Equal(patches.Select(o => o.Id), Objects(""", "cluster": { "layer": "grove", "scale": 90, "cover": 0.3 }""").Select(o => o.Id));
+    }
+
+    [Fact]
+    public void ScenesLayTheirPiecesOutRoundTheirSpot()
+    {
+        using var mods = new TestMods().Mod("vanilla").File("vanilla", WorldGenData.DefinitionFile, """
+            { "biomes": [{ "id": "a", "height": 10, "scatter": [{ "object": "camp", "spacing": 60, "chance": 1 }] }],
+              "objects": [
+                { "id": "camp", "footprint": 8, "scene": { "layouts": [
+                    { "weight": 1, "pieces": [{ "object": "cart", "at": [0, 0] }, { "object": "rail", "at": [4, 0], "yaw": 90 }, { "object": "rail", "at": [-4, 0], "chance": 0.5 }] },
+                    { "weight": 1, "pieces": [{ "object": "rail", "at": [0, 3] }, { "object": "rail", "at": [0, -3] }] }] } },
+                { "id": "cart", "collider": { "shape": "box", "size": [2, 1, 3] }, "health": 50, "footprint": 1.5 },
+                { "id": "rail", "collider": { "shape": "box", "size": [2, 1, 0.2] }, "footprint": 1 }] }
+            """);
+        var data = WorldGenData.Load(mods.Load());
+        Assert.Empty(data.Diagnostics);
+        var gen = new WorldGenerator(data, 4, WorldSize);
+        var placed = gen.ObjectsIn(-600f, -600f, 600f, 600f).ToList();
+        // The scene object itself never stands anywhere: only its pieces do.
+        Assert.DoesNotContain(placed, p => p.Definition.Id == "camp");
+        var scenes = placed.GroupBy(p => (p.Id.Rule, p.Id.CellX, p.Id.CellZ)).ToList();
+        Assert.True(scenes.Count > 50, $"{scenes.Count}");
+        var carts = 0;
+        var halfRails = 0;
+        foreach (var scene in scenes)
+        {
+            var pieces = scene.ToList();
+            if (pieces.FirstOrDefault(p => p.Definition.Id == "cart") is { } cart)
+            {
+                carts++;
+                // The first layout: a rail 4 m to one side of the cart, turned a quarter more than the scene.
+                var rail = pieces.Single(p => p.Id.Piece == 1);
+                Assert.Equal(4f, Vector2.Distance(new Vector2(cart.Position.X, cart.Position.Z), new Vector2(rail.Position.X, rail.Position.Z)), 2);
+                Assert.Equal(MathF.PI / 2f, rail.Yaw - cart.Yaw, 3);
+                if (pieces.Any(p => p.Id.Piece == 2))
+                    halfRails++;
+            }
+            else
+            {
+                Assert.Equal([0, 1], pieces.Select(p => p.Id.Piece).Order());
+                Assert.All(pieces, p => Assert.Equal("rail", p.Definition.Id));
+            }
+            // Every piece can be found again by its id, as a destroyed one must be.
+            Assert.All(pieces, p => Assert.Equal(p, gen.Find(p.Id)));
+        }
+        // Both layouts turn up, and the half-chance rail stands in about half the first layout's scenes.
+        Assert.InRange(carts / (float)scenes.Count, 0.3f, 0.7f);
+        Assert.InRange(halfRails / (float)carts, 0.3f, 0.7f);
     }
 
     [Fact]
@@ -767,6 +818,12 @@ public class WorldGenTests
     [InlineData("""{ "biomes": [{ "id": "a", "scatter": [{ "object": "g", "spacing": 10, "chance": 1, "cluster": { "cover": 0 } }] }], "objects": [{ "id": "g", "collider": { "shape": "sphere", "radius": 1 }, "health": 5 }] }""", "$.biomes[0].scatter[0].cluster.cover")]
     [InlineData("""{ "biomes": [{ "id": "a", "scatter": [{ "object": "g", "spacing": 10, "chance": 1, "cluster": { "outside": 2 } }] }], "objects": [{ "id": "g", "collider": { "shape": "sphere", "radius": 1 }, "health": 5 }] }""", "$.biomes[0].scatter[0].cluster.outside")]
     [InlineData("""{ "biomes": [{ "id": "a", "scatter": [{ "object": "g", "spacing": 10, "chance": 1, "cluster": { "scale": 0 } }] }], "objects": [{ "id": "g", "collider": { "shape": "sphere", "radius": 1 }, "health": 5 }] }""", "$.biomes[0].scatter[0].cluster.scale")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "objects": [{ "id": "s", "footprint": 5, "scene": { "layouts": [] } }] }""", "$.objects[0].scene.layouts")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "objects": [{ "id": "s", "footprint": 0, "scene": { "layouts": [{ "pieces": [{ "object": "g", "at": [0, 0] }] }] } }, { "id": "g", "collider": { "shape": "sphere", "radius": 1 } }] }""", "$.objects[0].scene")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "objects": [{ "id": "s", "footprint": 5, "scene": { "layouts": [{ "pieces": [{ "object": "x", "at": [0, 0] }] }] } }] }""", "$.objects[0].scene.layouts[0].pieces[0].object")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "objects": [{ "id": "s", "footprint": 5, "scene": { "layouts": [{ "pieces": [{ "object": "s", "at": [0, 0] }] }] } }] }""", "$.objects[0].scene.layouts[0].pieces[0].object")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "objects": [{ "id": "s", "footprint": 5, "scene": { "layouts": [{ "pieces": [{ "object": "g", "at": [6, 0] }] }] } }, { "id": "g", "collider": { "shape": "sphere", "radius": 1 } }] }""", "$.objects[0].scene.layouts[0].pieces[0].at")]
+    [InlineData("""{ "biomes": [{ "id": "a" }], "objects": [{ "id": "s", "footprint": 5, "scene": { "layouts": [{ "pieces": [{ "object": "g", "at": [1, 0], "chance": 0 }] }] } }, { "id": "g", "collider": { "shape": "sphere", "radius": 1 } }] }""", "$.objects[0].scene.layouts[0].pieces[0].chance")]
     [InlineData("""{ "biomes": [{ "id": "a" }], "grounds": [{ "id": "g", "texture": "g.png" }], "slope_ground": { "ground": "g", "from": 1, "to": 0.5 } }""", "$.slope_ground")]
     [InlineData("""{ "biomes": [{ "id": "a" }], "grounds": [{ "id": "a1", "texture": "g.png" }, { "id": "a2", "texture": "g.png" }, { "id": "a3", "texture": "g.png" }, { "id": "a4", "texture": "g.png" }, { "id": "a5", "texture": "g.png" }, { "id": "a6", "texture": "g.png" }, { "id": "a7", "texture": "g.png" }, { "id": "a8", "texture": "g.png" }, { "id": "a9", "texture": "g.png" }] }""", "$.grounds")]
     public void BadWorldGenDataGivesAClearError(string json, string path)

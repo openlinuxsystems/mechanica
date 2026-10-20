@@ -5,8 +5,10 @@
   "category": "consumable",
   "mass": 0.05,
   "stack_size": 50,
+  "mesh": "meshes/items/tomato_seed.glb",
+  "icon": "textures/items/tomato_seed_icon.png",
   "visual": {
-    "color": "#d0b070"
+    "color": "#ffffff"
   },
   "script": "scripts/seed.lua",
   "sounds": {
@@ -18,6 +20,13 @@
     "grow_time": 360,
     "yield": 2,
     "seeds": 1,
+    "seeds_max": 2,
+    "plant": "meshes/crops/tomato_plant.glb",
     "value": 1.5
+  },
+  "held": {
+    "mesh": "meshes/items/tomato_seed.glb",
+    "offset": [-0.028, 0.062, -0.035],
+    "rotation": [0, 90, 90]
   }
 }

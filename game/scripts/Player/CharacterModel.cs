@@ -32,6 +32,9 @@ public partial class CharacterModel : Node3D
     private BoneAttachment3D? _hand;
     private Node3D? _held;
     private ushort _heldShown;
+    // A held food's bitten versions (eat_0 whole, eat_1 after a bite, ...), and how many bites it shows (-1: eaten).
+    private Node3D[] _bites = [];
+    private int _bitesShown;
     private Node3D? _prop;
     private CharacterProp _propShown;
     private HeldBucket? _bucket;
@@ -192,7 +195,8 @@ public partial class CharacterModel : Node3D
         }
         Pose();
         ShowProp(Animator.ShowProp && Player is not null ? Animator.Prop : CharacterProp.None);
-        ShowHeld(_propShown == CharacterProp.Item && Player is not null ? Player.ShownHeld : (ushort)0);
+        ShowHeld(_propShown is CharacterProp.Item or CharacterProp.Food && Player is not null ? Player.ShownHeld : (ushort)0);
+        ShowBites();
         _bucket?.Update(HeldBucket.Target(Assets.Settings.Bucket, _propShown, Animator), (float)delta, PlayFill);
     }
 
@@ -372,8 +376,75 @@ public partial class CharacterModel : Node3D
         _heldShown = item;
         _held?.QueueFree();
         _held = item == 0 ? null : Assets.HeldModel?.Invoke(item);
-        if (_held is not null)
-            _hand.AddChild(_held);
+        _bites = [];
+        _bitesShown = 0;
+        if (_held is null)
+            return;
+        _hand.AddChild(_held);
+        var bites = new List<Node3D>();
+        while (_held.FindChild($"eat_{bites.Count}", recursive: true, owned: false) is Node3D bitten)
+            bites.Add(bitten);
+        _bites = [.. bites];
+        ShowBite(0);
+    }
+
+    // Food being eaten: the held model shows the bites the eat clip has reached, juice sprays and the food's eat sound
+    // plays at each one, and once it is gone the hand is empty until the clip ends.
+    private void ShowBites()
+    {
+        if (_held is null)
+            return;
+        var eating = _propShown == CharacterProp.Food && Animator.Gesture is "eat" or "eat_fp";
+        var bites = eating ? Assets.Settings.Eat.BitesAt(Animator.GestureTime) : 0;
+        if (bites == _bitesShown)
+            return;
+        if (bites > _bitesShown && bites > 0)
+            Bite();
+        ShowBite(bites);
+    }
+
+    private void ShowBite(int bites)
+    {
+        _bitesShown = bites;
+        if (_bites.Length == 0)
+        {
+            _held!.Visible = bites >= 0;
+            return;
+        }
+        _held!.Visible = true;
+        for (var i = 0; i < _bites.Length; i++)
+            _bites[i].Visible = i == Math.Min(bites, _bites.Length - 1) && bites >= 0;
+    }
+
+    private void Bite()
+    {
+        if (Player is null || Assets.HeldBite?.Invoke(_heldShown) is not { } bite)
+            return;
+        var at = _held!.GlobalPosition;
+        if (bite.Sound is { } sound)
+            Sounds?.PlayLocal(sound, bite.ModId, at);
+        var juice = new CpuParticles3D
+        {
+            Name = "Juice",
+            OneShot = true,
+            Amount = 14,
+            Lifetime = 0.45f,
+            Explosiveness = 0.95f,
+            Direction = Vector3.Up,
+            Spread = 60f,
+            InitialVelocityMin = 0.5f,
+            InitialVelocityMax = 1.1f,
+            Gravity = new Vector3(0, -6f, 0),
+            ScaleAmountMin = 0.5f,
+            ScaleAmountMax = 1f,
+            Mesh = new SphereMesh { Radius = 0.004f, Height = 0.008f, RadialSegments = 6, Rings = 3 },
+            MaterialOverride = new StandardMaterial3D { AlbedoColor = bite.Juice, Roughness = 0.2f },
+        };
+        // In the world, not the hand, so the drops fall where they were bitten off.
+        (GetTree().CurrentScene ?? this).AddChild(juice);
+        juice.GlobalPosition = at;
+        juice.Emitting = true;
+        juice.Finished += juice.QueueFree;
     }
 
     private void PlaySound(CharacterEvent e)

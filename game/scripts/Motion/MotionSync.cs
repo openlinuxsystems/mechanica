@@ -127,6 +127,9 @@ public partial class MotionSync : Node, IMotionWorld
     public void SetJointMotor(Creation creation, JointLink joint, JointMotor motor)
     {
         var key = (creation.Id, joint.Connection.A);
+        // The same drive again (a script re-sending its hold now and then) changes nothing, so it leaves a parked car asleep.
+        if (_motors.TryGetValue(key, out var same) && same.Drive == motor && same.Joint == joint.Connection)
+            return;
         if (_motors.Remove(key, out var old) && old.Applied is { } applied && IsInstanceValid(applied))
             EnableMotor(applied, false);
         if (!motor.IsFree)

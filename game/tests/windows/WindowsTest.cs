@@ -303,10 +303,26 @@ public partial class WindowsTest : StagedTest
                 dialog.Open(_station);
                 return false;
             }
-            Scrub(dialog.Window);
+            Scrub(dialog.Card);
             Check(dialog.IsOpen, "the upgrade dialog is still open");
             dialog.Close();
             return Clean("the upgrade dialog");
+        });
+        Add("a click on the scrim round the upgrade dialog closes it, and reaches nothing else", frame =>
+        {
+            var dialog = _main.Upgrades!;
+            if (frame == 0)
+            {
+                dialog.Open(_station);
+                return false;
+            }
+            if (frame == 1)
+            {
+                Press(new Vector2(12, GetViewport().GetVisibleRect().Size.Y / 2), MouseButton.Left);
+                return false;
+            }
+            Check(!dialog.IsOpen, "the click on the scrim closes the dialog");
+            return Clean("the upgrade dialog's scrim");
         });
         Add("the Logbook keeps them", frame =>
         {

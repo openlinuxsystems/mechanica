@@ -1,5 +1,6 @@
 using Godot;
 using Mechanica.Core.Data;
+using Mechanica.Game.Mods;
 
 namespace Mechanica.Game.Creations;
 
@@ -138,10 +139,7 @@ public sealed class PartAssets
                 Warn($"mod '{asset.ModId}' is not loaded, so '{key}' cannot load.");
             else
             {
-                var document = new GltfDocument();
-                var state = new GltfState();
-                if (document.AppendFromFile(asset.Resolve(directory), state) == Error.Ok)
-                    template = document.GenerateScene(state) as Node3D;
+                template = ModGltf.Load(asset.Resolve(directory)) as Node3D;
                 if (template is null)
                     Warn($"'{key}' did not load as glTF.");
             }
@@ -149,6 +147,13 @@ public sealed class PartAssets
         }
         return template?.Duplicate() as Node3D;
     }
+
+    /// <summary>
+    /// A new copy of the whole scene at <paramref name="path"/> in the mod that holds <paramref name="qualifiedId"/>'s part
+    /// file (another model the part's data names, such as a seed's growing plant); null when it does not load.
+    /// </summary>
+    public Node3D? SceneOf(string qualifiedId, string path) =>
+        _content?.FindPart(qualifiedId)?.ModId is { } modId ? InstantiateScene(path, modId) : null;
 
     /// <summary>
     /// A new copy of a part's whole model scene (nodes and its <see cref="AnimationPlayer"/>), for a part that plays its
@@ -197,12 +202,9 @@ public sealed class PartAssets
     /// <summary>Every mesh in a glTF file on disk with its transform relative to the file's root, or null when it fails to load.</summary>
     public static IReadOnlyList<PartMesh>? ReadGltf(string file, string key)
     {
-        var document = new GltfDocument();
-        var state = new GltfState();
-        var result = document.AppendFromFile(file, state);
+        var root = ModGltf.Load(file, out var result);
         if (result != Error.Ok)
             return Warn($"'{key}' did not load as glTF ({result}).");
-        var root = document.GenerateScene(state);
         if (root is null)
             return Warn($"'{key}' has no scene.");
         var meshes = new List<PartMesh>();

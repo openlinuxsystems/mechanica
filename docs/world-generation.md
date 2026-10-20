@@ -51,7 +51,7 @@ shapes the ground, the borders, the meanders, the roads' exact course and the sc
    steep, `clearance` metres clear of every POI and road placed before it (and, for a `shore` kind, near
    water). Roadside kinds are laid along the roads instead. Last, dirt tracks run to the POIs that ask
    for one. No road or track bank cuts into a POI's level pad.
-4. **Objects.** Each biome's `scatter` rules place trees, rocks and so on (never on a road), spread evenly or gathered into groves, rock fields and clearings (`cluster`).
+4. **Objects.** Each biome's `scatter` rules place trees, rocks and so on (never on a road), spread evenly or gathered into groves, rock fields and clearings (`cluster`), and the small scenes between places (see [Scenes](#scenes)).
 5. **Ground.** Each biome's `ground` texture covers it, blending across biome borders; steep slopes take the
    `slope_ground`, POIs paint their own `ground` on top (see [Ground textures](#ground-textures)), and road
    shoulders and dirt tracks take the roads' grounds.
@@ -199,6 +199,7 @@ change (usually `vanilla`). Every patch applies in load order on top of the last
 | `objects[].mesh.clips` | Makes the model animated: each object is drawn as its own copy of it (not batched with its neighbours, so keep it for rare objects) playing its glTF clips by name. `appear` plays once when its chunk comes in (a Bloom Pod settling shut), then `idle` loops; `hit` plays when damage reaches it and it holds; when it breaks, a copy left in its place plays `break`, stays `break_seconds` (default 4) and shrinks away over the last `fade_seconds` (default 0.6). Any clip may be left out. `variants` and `lod` are not used. |
 | `objects[].max_slope` | Steepest ground it is scattered on (rise over run), if flatter than the world's own limit. |
 | `objects[].outcrop` | Makes the object a rock deposit: a cluster of mounds heaped from blocks, as in Scrap Mechanic's square rocks. `deposits[]` are the sizes (`weight`; `mounds`, `[min, max]`, at most 12; `spread`, metres from the middle the other mounds may stand; `sizes[]`, the weighted `mound` names to pick from). `mounds` maps each name to `blocks` (`[min, max]`, at most 64) and `kinds[]`, the weighted world `object`s it is heaped from; each needs a box `collider`, whose size is the block's (the deposit's own object may be one). Blocks are heaped largest first, each on the ground or with at least 45% of its underside on blocks below, turned up to 0.25 rad, and no two share space; mounds stand apart. A mound other than the first turns metal-rich with chance `rich_chance` (0 to 1): each block becomes `rich[its object]`. Each block is an object of its own (`rule.cell_x.cell_z.block`, the first `rule.cell_x.cell_z`) with its own object's look, health and `breaks_into`, so breaking one leaves the rest. Each mound sits on the lowest ground under its bottom blocks, less each block's `sink`. `footprint` is the deposit's radius: no block stands further out, and a mound that does not fit is left out. `scale` is shared by the whole deposit. |
+| `objects[].scene` | Makes the object a scene: a little set piece laid out round each spot the rule scatters it to (see [Scenes](#scenes)). `layouts[]` are the ways it can look, each with a `weight` (default 1) and `pieces[]`: the world `object` to stand (not another scene or a rock deposit), `at` (`[x, z]` metres from the spot, within `footprint`), `yaw` (degrees, added to the scene's own turn) and `chance` (0 to 1, default 1) that it stands at all. A scene needs no `collider` and never stands itself; each piece is an object of its own (`rule.cell_x.cell_z.piece`, the first `rule.cell_x.cell_z`) with its own object's look, health and drops, sunk and scaled by its own `sink` and `scale`. A piece that would land off the world, on a POI or a road, in water or on ground too steep for it is left out. |
 | `liquids[]` | What POI `pools[]` hold: `id` (a catalog id), `color` (`#rrggbb`), `glow` (how brightly the surface shines in its colour, 0 for none), `roughness` (0 to 1, default 0.1), the surface's look (`ripple_size`, metres, default 4; `ripples`, how deep they look, 0 still to 1, default 0.6; `flow`, how fast ripples and swirls drift in m/s, default 0.05; `sheen`, 0 to 1, an oil slick's drifting rainbow film; `bubbles`, 0 to 1; `edge_color`, `#rrggbb` scum or crust along the shore, omitted for none), `damage` (health a second a player standing in it loses, hurt every half second; the cause is the liquid's id) and `collect` (`item` and `count`: what an empty bucket dipped in it collects, the bucket staying empty; omitted, a bucket cannot hold it). Vanilla has `chemical` (glowing, bubbling green with pale scum, 10 a second, collects a Chemical) and `oil` (glossy black with a rainbow sheen, the ponds round oil geysers). |
 
 Shapes (`collider`, `pieces`) are `box` (`size`), `sphere` (`radius`) or `cylinder` (`radius`,
@@ -216,6 +217,29 @@ picks, 50 health) and `bloom_pod_gold` (Legendary, always 3 picks, 80 health). E
 slowly. Green pods stand in the open; purple and gold ones are `perch`ed on cliff tops and ledges, and gold is the
 rarest (about 60, 18 and 6 in the vanilla world). They settle shut when they come into view, shudder when hit and burst
 apart when broken, leaving their loot in one pile.
+
+### Scenes
+
+Scrap Mechanic's land never goes long without something to look at: a fence line, a hay field with a scarecrow, a
+wrecked harvester. Scenes do that between Mechanica's POIs. Each is an object with a `scene` (see the table above) that
+the biomes scatter like any other, placed before their trees and rocks so those keep clear of it. The props are
+modelled by `tools/structures/props.py` (`meshes/world/props/`, built with `build_structures.py props`) in the
+families of [art-direction.md](art-direction.md): Settler wood breaks into Scrap Wood Blocks and loose metal into Scrap
+Metal Blocks, while the old colony's pipes, barriers and wrecks are too big to break.
+
+| Scene | Biomes | What it lays out |
+|-------|--------|------------------|
+| `scene_settler_camp` | meadow, field, forest, coastal | a tarp shelter with a log pile and barrels, or a trough and fenced pen; a broken cart, a signpost |
+| `scene_fence_line` | meadow, field, autumn forest | a run of rail fence with broken and missing sections, or a fenced corner |
+| `scene_hay_field` | field | round bales and stacks round a scarecrow, a trough, a cart |
+| `scene_colony_pipeline` | meadow, desert, mountain | a run of the colony's big pipe ending in a valve, barriers and a cable drum |
+| `scene_harvester_wreck` | meadow, field, desert | a Colony harvester torn in half, barrels and spilled parts |
+| `scene_logging_camp` | forest, autumn forest, burned forest | log piles among stumps, a cart, a shelter |
+| `scene_roadblock` | desert | a line of concrete barriers, barrels, sometimes the harvester wreck behind |
+| `scene_burned_camp` | burned forest | a scorched trailer, a stump, a broken fence |
+
+In the vanilla world about one stands every 20,000 m² of open land (roughly one every five 64 m chunks), several
+thousand across the island, at Scrap Mechanic's density per square kilometre.
 
 ### Trees
 

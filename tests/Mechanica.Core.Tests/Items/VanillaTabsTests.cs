@@ -19,6 +19,16 @@ public class VanillaTabsTests
         Assert.True(none.Count == 0, $"under no tab: {string.Join(", ", none)}");
     }
 
+    [Fact]
+    public void CreativeListsEachToolAndItemOnce()
+    {
+        var list = HotbarTools.CreativeList(Vanilla);
+        var twice = list.GroupBy(i => i).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
+        Assert.True(twice.Count == 0, $"listed twice: {string.Join(", ", twice)}");
+        Assert.All(HotbarTools.All, tool => Assert.Contains(tool, list));
+        Assert.Contains("vanilla:scrap_wood_block", list);
+    }
+
     [Theory]
     [InlineData(InventoryTab.Tools, "connect_tool", "paint_tool", "weld_tool", "potato_blaster", "potato_scattergun", "potato_launcher")]
     [InlineData(InventoryTab.Blocks, "scrap_wood_block", "metal_wedge", "glass_block", "path_light_block")]

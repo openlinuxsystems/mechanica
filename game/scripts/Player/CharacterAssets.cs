@@ -1,9 +1,16 @@
 using Godot;
 using Mechanica.Core.Characters;
 using Mechanica.Core.Data;
+using Mechanica.Game.Mods;
 using FileAccess = Godot.FileAccess;
 
 namespace Mechanica.Game.Player;
+
+/// <summary>
+/// How a bite of a held food shows: the juice that sprays in <paramref name="Juice"/>, and the sound id
+/// <paramref name="Sound"/> (its <c>eat</c> sound, in mod <paramref name="ModId"/>) that plays, or null for none.
+/// </summary>
+public sealed record HeldBite(Color Juice, string? Sound, string ModId);
 
 /// <summary>
 /// The player characters' models, the shared animation set and the hand-held props, loaded at runtime from
@@ -38,6 +45,9 @@ public sealed class CharacterAssets : IDisposable
 
     /// <summary>Makes the model of a held item by its number (<see cref="Core.Characters.HeldItems"/>), in the hand's frame; null for none.</summary>
     public Func<ushort, Node3D?>? HeldModel { get; init; }
+
+    /// <summary>How a held item shows a bite of it, by its number; null for none (<see cref="HeldBite"/>).</summary>
+    public Func<ushort, HeldBite?>? HeldBite { get; init; }
 
     /// <summary>Loads <see cref="DefaultSettingsPath"/>, failing loudly on bad data.</summary>
     public static CharacterSettings LoadDefaultSettings()
@@ -213,10 +223,7 @@ public sealed class CharacterAssets : IDisposable
             GD.PushWarning($"[characters] {what}: mod '{path.ModId}' is not loaded.");
             return null;
         }
-        var document = new GltfDocument();
-        var state = new GltfState();
-        var file = path.Resolve(directory);
-        if (document.AppendFromFile(file, state) != Error.Ok || document.GenerateScene(state) is not Node3D root)
+        if (ModGltf.Load(path.Resolve(directory)) is not Node3D root)
         {
             GD.PushWarning($"[characters] {what}: '{path}' did not load as glTF.");
             return null;

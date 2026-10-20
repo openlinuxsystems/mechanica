@@ -8,7 +8,7 @@ namespace Mechanica.Game.Tools;
 
 /// <summary>
 /// Pictures of the Inventory window in a running world (<c>tools/capture-inventory.sh</c>): every tab, a search,
-/// before and after Organize, a chest beside it and the Fabricator's tabs. With <c>creative</c> after the folder it
+/// before and after Organize, a chest beside it, the Fabricator's tabs and its upgrade dialog (enough kits, short, upgraded). With <c>creative</c> after the folder it
 /// starts a Creative world instead, which lists every part and tool under the grid.
 /// </summary>
 public partial class InventoryCapture : Node
@@ -30,6 +30,7 @@ public partial class InventoryCapture : Node
     private (string Name, int Frames, Action Setup)? _shot;
     private InventoryRef? _chest;
     private InventoryRef? _fabricator;
+    private (int Creation, int Part)? _fabricatorPart;
 
     private InventoryScreen Screen => _main.GetNode<InventoryScreen>("InventoryScreen");
 
@@ -87,8 +88,25 @@ public partial class InventoryCapture : Node
         });
         Shot($"{tag}_08_fabricator", 20, () =>
         {
+            FindParts();
             if (_fabricator is { } station)
                 Screen.Show(station);
+        });
+        // The Fabricator's Upgrade dialog: with enough Component Kits, short of them, then after upgrading.
+        Shot($"{tag}_09_upgrade", 20, () =>
+        {
+            if (_fabricatorPart is { } part)
+                Screen.Upgrades?.Open(part);
+        });
+        Shot($"{tag}_10_upgrade_short", 10, () =>
+        {
+            var items = _main.Inventory.Items!.PlayerInventory(_main.Inventory.Session.LocalPeer);
+            items.Remove("vanilla:component_kit", items.Count("vanilla:component_kit") - 3);
+        });
+        Shot($"{tag}_11_upgraded", 30, () =>
+        {
+            _main.Inventory.Items!.PlayerInventory(_main.Inventory.Session.LocalPeer).Add("vanilla:component_kit", 10);
+            _main.GetTree().CreateTimer(0.1).Timeout += () => Screen.Upgrades?.Upgrade(r => GD.Print($"[capture] upgrade: {r.Ok} {r.Message}"));
         });
     }
 
@@ -142,7 +160,10 @@ public partial class InventoryCapture : Node
                 if (part.Part == "vanilla:chest")
                     _chest = InventoryRef.OfPart(creation.Id, part.Id);
                 if (part.Part == "vanilla:fabricator")
+                {
                     _fabricator = InventoryRef.OfPart(creation.Id, part.Id);
+                    _fabricatorPart = (creation.Id, part.Id);
+                }
             }
         }
     }

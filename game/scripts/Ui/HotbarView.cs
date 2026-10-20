@@ -10,7 +10,8 @@ namespace Mechanica.Game.Ui;
 /// The hotbar at the bottom centre of the screen (UI spec §3, §8, §11): ten slots with each one's picture, how many
 /// the player carries (none for tools, or in Creative) and its key. Slots are the design language's <c>Tile</c> blue;
 /// the slot picked is <c>TileSelected</c> with a white ring and pulses as it is picked. Slots take 48 to 72 pixels by the screen's height. While the inventory is open, items
-/// dragged onto a slot go in it, slots drag onto each other to swap, and a slot dragged off the bar empties it.
+/// dragged onto a slot go in it, slots drag onto each other to swap, and a slot dragged off the bar empties it; let go
+/// over the world in Survival, its stack is tossed on the ground first (<see cref="ToolBelt.TossSlot"/>).
 /// </summary>
 public partial class HotbarView : HBoxContainer
 {
@@ -48,10 +49,13 @@ public partial class HotbarView : HBoxContainer
                 else
                     Belt.Hotbar!.Set(index, drag.Entry);
             };
-            // Dropped on nothing (off the bar, over the world) the slot empties.
+            // Let go over the world, the slot's stack is tossed on the ground (Survival); dropped on nothing else, or
+            // with nothing to toss, the slot empties.
             slot.DragEnded = taken =>
             {
-                if (!taken)
+                if (taken)
+                    return;
+                if (GetViewport().GuiGetHoveredControl() is not null || !Belt.TossSlot(index))
                     Belt.Hotbar?.Set(index, null);
             };
             slot.Details = () => Belt.Slots[index] is { } entry ? ItemInfo.Details(Belt.Build.Catalog, entry, Count(entry), Belt.ToolFor(entry)) : null;

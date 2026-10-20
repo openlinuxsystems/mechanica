@@ -17,6 +17,8 @@ structure's centre (glTF +Y up, front towards +Z):
   marker), not part of the model.
 * ``meshes/structures/cargo_crate_colony.glb`` - a framed Colony cargo crate (decoration in the cargo spill).
 * ``meshes/world/scrap_pile_metal.glb`` and ``scrap_pile_wood.glb`` - the starting scrap piles (world objects).
+* ``meshes/world/props/*.glb`` - the props the world's scenes lay out between places (props.py): settler fences,
+  carts, hay and camps, Colony pipe runs, barriers and a harvester wreck, and a scorched trailer (world objects).
 
 A structure model is one mesh of every part with a few shared detail textures (textures.py), a ``collider`` mesh of
 its larger parts (the game collides with that and does not draw it), and its point lights. World object models have
@@ -25,10 +27,11 @@ no collider (the object's own collider is used).
 How to run (Blender as a Python module, no Blender UI needed):
 
     pip install bpy==5.2.2 numpy pillow
-    python tools/structures/build_structures.py
+    python tools/structures/build_structures.py          # everything
+    python tools/structures/build_structures.py props    # only the scene props
 
 The outputs are committed; re-run this script after changing it (or kit.py, frame.py, families.py, ship.py,
-workshop.py, textures.py) and commit the result. The build is deterministic (seeded noise only).
+workshop.py, props.py, textures.py) and commit the result. The build is deterministic (seeded noise only).
 """
 
 from __future__ import annotations
@@ -46,6 +49,7 @@ import kit as K  # noqa: E402
 K.EXPORT = True
 import families as F  # noqa: E402
 import frame as FR  # noqa: E402
+import props as PR  # noqa: E402
 import ship as S  # noqa: E402
 import workshop as W  # noqa: E402
 
@@ -102,7 +106,15 @@ def pile(kind):
     return build
 
 
+def props():
+    for name, build in PR.PROPS.items():
+        single(name, build, WORLD / "props", collider=False)
+
+
 def main():
+    if sys.argv[1:] == ["props"]:
+        props()
+        return
     ship()
     single("relay_beacon_dead", lambda: F.dead_beacon())
     single("settler_shack", lambda: F.settler_shack())
@@ -115,6 +127,7 @@ def main():
     single("cargo_crate_colony", crate)
     single("scrap_pile_metal", pile("metal"), WORLD, collider=False)
     single("scrap_pile_wood", pile("wood"), WORLD, collider=False)
+    props()
 
 
 if __name__ == "__main__":

@@ -79,7 +79,7 @@ you; this page is the reference for what each key means, so you can read, review
 | `stack_size` | integer ≥ 1 | no | Most items per inventory slot. Omitted means 1. |
 | `sound_material` | string | no | Material for place, break and impact sounds (`wood`, `metal`, `concrete`, `glass`, ...): an unbound `place` plays `place_<material>`. See [Sound Events](sound-events.md#part-sounds). |
 | `size` | `[x, y, z]` cells | placeable | Footprint in 0.25 m grid cells, at least 1 on every axis. |
-| `mesh` | path | no | `.glb` or `.gltf` model, centred on the footprint centre, +Y up, in metres. Without one, a grey shape matching the collision stands in. |
+| `mesh` | path | no | `.glb` or `.gltf` model, centred on the footprint centre, +Y up, in metres. Its `COLOR_0` vertex colours, when it has them, multiply each material's base colour (as the glTF spec says). Without one, a grey shape matching the collision stands in. |
 | `icon` | path | no | `.png` inventory icon. |
 | `visual` | object | no | Colour, surface and colour variants. See [visual](#visual). |
 | `collision` | object | no | Collision shape. Omitted means a box filling `size`. See [collision](#collision). |
@@ -317,11 +317,10 @@ in `properties`. The vanilla scripts read these properties:
 | `seed.crop` | item id | What the seed grows into. Required. |
 | `seed.grow_time` | number > 0 (s) | Seconds of watered growth until ripe. Required. |
 | `seed.yield` | integer ≥ 1 | Crop items a harvest gives. Default 1. |
-| `seed.seeds` | integer ≥ 0 | Seeds a harvest gives back. Default 0. |
-
-The soil's script (vanilla `scripts/soil.lua`) reads these through `world.item(seed, "seed")`, so another
-soil script may treat them differently. A bare `crop` id is in the seed's own mod.
+| `seed.seeds` | integer ≥ 0 | Seeds a harvest gives back (the least, with `seeds_max`). Default 0. |
+| `seed.seeds_max` | integer ≥ `seeds` | Most seeds a harvest gives back: each harvest rolls from `seeds` to `seeds_max` (vanilla tomato: 1 to 2). Default: exactly `seeds`. |
 | `seed.value` | number ≥ 0 | How much a planted crop draws raids (chunk 21). Default 1. |
+| `seed.plant` | mesh path | The growing plant's model on the soil (see [Crop plant models](#crop-plant-models)). Default: a plain green shoot with the crop's colour on top once ripe. |
 | `soil.capacity` | number > 0 (s) | Most seconds of water the soil holds. Required. |
 | `soil.growth` | number > 0 | Growth speed multiplier for crops on it. Default 1. |
 | `soil.dry_time` | number > 0 (s) | Seconds full soil with nothing planted takes to dry out completely (vanilla 1440, about a game day). Read by `soil.lua`; omitted, empty soil keeps its water. |
@@ -331,8 +330,27 @@ soil script may treat them differently. A bare `crop` id is in the seed's own mo
 | `aim.fire_on_release` | bool | Fire when right click is let go, as well as on left click while aiming. Default false. |
 
 ```json
-"seed": { "crop": "carrot", "grow_time": 240, "yield": 2, "seeds": 1 }
+"seed": { "crop": "tomato", "grow_time": 360, "yield": 2, "seeds": 1, "seeds_max": 2, "plant": "meshes/crops/tomato_plant.glb" }
 ```
+
+The soil's script (vanilla `scripts/soil.lua`) reads these through `world.item(seed, "seed")`, so another
+soil script may treat them differently. A bare `crop` id is in the seed's own mod.
+
+### Crop plant models
+
+A `seed.plant` model is one glTF scene that shows the crop at every stage. The game plays three of its clips, each on its own
+player, so they must move different properties (a node may take its position from one and its rotation from another):
+
+| Clip | How it plays |
+|---|---|
+| `grow` | Scrubbed, never played: second *n* of the clip is soil stage *n* (0 just planted to 4 ripe), so it is 4 s long. Between stages the plant eases through the clip over about 2 s, so it grows rather than pops. Show the ripe fruit by scale keys on constant interpolation. |
+| `wilt` | Scrubbed from 0 (fresh) to its end (fully wilted). The plant wilts while its soil is dry and picks up again once watered. |
+| `sway` | Looped, each plant starting at a different point so a field does not move in step. |
+
+A harvest sinks the model into the soil in a puff of dirt. Vanilla's tomato (`tools/food/plant_rig.py`, built by
+`tools/food/build_tomato.py`) is the reference: the scrap-wood stake and the crop's tag stand in the soil from planting, and
+the tag carries the same label as the seed packet. Every crop's seed packet is the same kraft pouch; only its label (the crop's
+icon over a band in the crop's colour) changes.
 
 ## held
 
@@ -345,9 +363,23 @@ item carries a model in the right hand, and every other player sees it too.
 | `held.offset` | [x, y, z] m, each -0.5 to 0.5 | Moves the model from the palm, in the hand's frame. Default [0, 0, 0]. |
 | `held.rotation` | [x, y, z] degrees | Turns the model in the hand (X, then Y, then Z). Default [0, 0, 0]. |
 | `held.scale` | number, more than 0 to 4 | Scales the model. Default 1. |
+| `held.juice` | `#rrggbb` | Food: the colour of the juice each bite sprays. Default: the item's `visual.color`. |
 
 ```json
 "held": { "mesh": "meshes/torch_held.glb", "offset": [0, 0.05, 0], "rotation": [0, 90, 0], "scale": 0.8 }
+```
+
+### Food in hand
+
+Food (the `consumable` category, unless `item_poses` in `game/data/character.json` says otherwise) rests on the open palm
+(`hold_food`) and is eaten with the shared `eat` clip: it is raised to the mouth and bitten twice, then it is gone, and the hand
+comes back down. The clip plays once the host has taken the food (not at full health), and no more is eaten until it ends.
+A food's held model shows its bites when it has children named `eat_0` (whole), `eat_1` (one bite taken) and so on: the
+hand shows the one the clip has reached (`eat.bites` in `character.json`), and nothing once the food is gone (`eat.gone`).
+Without them the whole model shows until it is gone. Each bite sprays juice (`held.juice`) and plays the item's `eat` sound.
+
+```json
+"held": { "mesh": "meshes/items/tomato_held.glb", "offset": [-0.0373, 0.0413, 0.0015], "rotation": [-3.37, -180, -45], "juice": "#c83a2a" }
 ```
 
 ## logic, settings and seats
@@ -414,7 +446,7 @@ The vanilla scripts read these properties:
 | `scripts/seat.lua` | `steer_angle` (°) | How far A and D turn the upright bearings the seat feeds. |
 | | `steer_speed` (rad/s), `steer_torque` (N·m) | How fast and how hard they turn. |
 | `scripts/engine.lua` | `speed` (rad/s) | Wheel bearing speed at full throttle at full power. `gears` (default 5) is how many steps the `gear` setting (shown as Power) has, each giving that share. With nothing linked in, the `on` setting runs it at full throttle. |
-| | `torque`, `brake` (N·m) | Most torque while driving, and while holding the wheels with no throttle. |
+| | `torque`, `brake` (N·m) | Most torque while driving, and while holding the wheels with no throttle or while it is not running (nobody seated, switched off, out of fuel), so a parked car stays put. |
 | | `fuel`, `fuel_time` (s) | Item burned from the creation's containers, and seconds of full throttle per item. Creative needs none. |
 | | `loop_parameter` | Parameter of the `loop` sound that follows the throttle (`load`, `speed`). |
 | | `ignition` | When true the engine has to be switched `on` even when linked, and shows `clip`, `lever`, `heat`, `smoke`, `sparks` and `oil` for its model. |

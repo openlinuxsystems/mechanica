@@ -266,7 +266,7 @@ public sealed class LogicScriptTests : IDisposable
         _input = new PlayerInput(0, 1, 0, 0, false, false);
         Steps(10);
         Assert.StartsWith("off_loop", _runtime.Readouts.Text(Car, engine, "clip"));
-        Assert.DoesNotContain(_world.Motors, m => m.Part == wheels[0].Bearing && m.Velocity is not null);
+        Assert.DoesNotContain(_world.Motors, m => m.Part == wheels[0].Bearing && m.Velocity is not (null or 0f));
 
         Configure(creation, engine, "on", true);
         Steps(1);
@@ -297,7 +297,7 @@ public sealed class LogicScriptTests : IDisposable
         Steps(60);
         Assert.StartsWith("off_loop#", _runtime.Readouts.Text(Car, engine, "clip"));
         Assert.Equal(0f, _runtime.Readouts.Number(Car, engine, "running"));
-        Assert.Null(LastMotor(wheels[0].Bearing).Velocity);
+        Assert.Equal(0f, LastMotor(wheels[0].Bearing).Velocity);
     }
 
     [Fact]
@@ -309,7 +309,7 @@ public sealed class LogicScriptTests : IDisposable
         Assert.StartsWith("off_loop", _runtime.Readouts.Text(Car, engine, "clip"));
         Assert.Equal(0f, _runtime.Readouts.Number(Car, engine, "running"));
         Assert.Empty(_sound.Loops);
-        Assert.DoesNotContain(_world.Motors, m => wheels.Any(w => w.Bearing == m.Part) && m.Velocity is not null);
+        Assert.DoesNotContain(_world.Motors, m => wheels.Any(w => w.Bearing == m.Part) && m.Velocity is not (null or 0f));
 
         // Sitting down starts it: it idles (holding the wheels) until W, then drives.
         _runtime.Seats!.Sit(Peer, Car, seat);
@@ -324,7 +324,8 @@ public sealed class LogicScriptTests : IDisposable
         foreach (var (bearing, side) in wheels.Take(2))
             Assert.InRange(-side * LastMotor(bearing).Velocity!.Value, 7.5f * 0.87f, 7.5f * 1.13f);
 
-        // Getting up (still holding W) stops it: the drive, the hum and the wheels' motors go.
+        // Getting up (still holding W) stops it: the drive and the hum go, and it holds the wheels with its brake so the
+        // parked car stays put.
         _runtime.Seats.Leave(Peer);
         Steps(1);
         Assert.StartsWith("stop#", _runtime.Readouts.Text(Car, engine, "clip"));
@@ -335,7 +336,7 @@ public sealed class LogicScriptTests : IDisposable
         Assert.Equal(0f, _runtime.Readouts.Number(Car, engine, "running"));
         Assert.Empty(_sound.Loops);
         foreach (var (bearing, _) in wheels.Take(2))
-            Assert.Null(LastMotor(bearing).Velocity);
+            Assert.Equal(new JointMotor(0f, 180f), LastMotor(bearing));
     }
 
     [Fact]
@@ -429,7 +430,7 @@ public sealed class LogicScriptTests : IDisposable
         _input = new PlayerInput(0, 1, 0, 0, false, false);
         Steps(10);
         Assert.StartsWith("off_loop", _runtime.Readouts.Text(Car, engine, "clip"));
-        Assert.DoesNotContain(_world.Motors, m => m.Part == wheels[0].Bearing && m.Velocity is not null);
+        Assert.DoesNotContain(_world.Motors, m => m.Part == wheels[0].Bearing && m.Velocity is not (null or 0f));
 
         Configure(creation, engine, "on", true);
         Steps(1);
@@ -457,7 +458,7 @@ public sealed class LogicScriptTests : IDisposable
         Steps(45);
         Assert.StartsWith("off_loop#", _runtime.Readouts.Text(Car, engine, "clip"));
         Assert.Equal(0f, _runtime.Readouts.Number(Car, engine, "heat"));
-        Assert.Null(LastMotor(wheels[0].Bearing).Velocity);
+        Assert.Equal(0f, LastMotor(wheels[0].Bearing).Velocity);
     }
 
     [Fact]
@@ -508,7 +509,7 @@ public sealed class LogicScriptTests : IDisposable
         Configure(creation, engine, "on", true);
         Steps(60);
         Assert.StartsWith("off_loop#", _runtime.Readouts.Text(Car, engine, "clip"));
-        Assert.DoesNotContain(_world.Motors, m => wheels.Any(w => w.Bearing == m.Part));
+        Assert.DoesNotContain(_world.Motors, m => wheels.Any(w => w.Bearing == m.Part) && m.Velocity is not (null or 0f));
 
         creation.InventoryOf(tank)!.Add("vanilla:gasoline", 1);
         Configure(creation, engine, "on", false);
@@ -522,7 +523,8 @@ public sealed class LogicScriptTests : IDisposable
         // properties.fuel_time is 40 s of full throttle per gasoline.
         Steps(40 * 60 + 5);
         Assert.Equal(0f, _runtime.Signals.Output(Car, engine));
-        Assert.All(wheels.Take(2), w => Assert.Null(LastMotor(w.Bearing).Velocity));
+        // Out of fuel it holds the wheels with its brake.
+        Assert.All(wheels.Take(2), w => Assert.Equal(0f, LastMotor(w.Bearing).Velocity));
     }
 
     [Fact]
@@ -863,7 +865,7 @@ public sealed class LogicScriptTests : IDisposable
         var (creation, seat, engine, wheels, _) = BuildCar("vanilla:electric_engine", level: 1);
         Assert.True(creation.Unlink(seat, engine));
         Steps(3);
-        Assert.DoesNotContain(_world.Motors, m => m.Part == wheels[0].Bearing && m.Velocity is not null);
+        Assert.DoesNotContain(_world.Motors, m => m.Part == wheels[0].Bearing && m.Velocity is not (null or 0f));
         Configure(creation, engine, "on", true);
         Configure(creation, engine, "gear", 5);
         Steps(45);

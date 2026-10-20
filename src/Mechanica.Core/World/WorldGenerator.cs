@@ -393,6 +393,12 @@ public sealed partial class WorldGenerator
         var salt = Noise.Hash(_scatterSalt ^ (uint)rule.Index, ix, iz, 3);
         var scale = o.Scale is [var lo, var hi] ? lo + (hi - lo) * Noise.Unit(Noise.Mix(salt)) : 1f;
         var yaw = Noise.Unit(salt) * 2f * MathF.PI;
+        if (o.Scene is { } scene)
+        {
+            foreach (var piece in PlaceScene(rule, scene, ix, iz, spot, yaw, salt))
+                yield return piece;
+            yield break;
+        }
         if (o.Outcrop is not { } outcrop)
         {
             var y = HeightAt(spot.X, spot.Y) - o.Sink * scale;
@@ -424,6 +430,43 @@ public sealed partial class WorldGenerator
             var g = Ground(b.Bottom);
             var y = floors.GetValueOrDefault(b.Mound, HeightAt(g.X, g.Y)) - definition.Sink * scale + b.Bottom.Y * scale;
             yield return new WorldObjectPlacement(new WorldObjectId(rule.Index, ix, iz, k), definition, new Vector3(g.X, y, g.Y), yaw + b.Yaw, scale, b.Variant);
+        }
+    }
+
+    // A scene's pieces: a layout picked by weight, turned by the scene's yaw, each piece kept by its chance and standing on
+    // the ground under it. A piece that would land on a road, a POI or in water is left out; ids keep the piece's place in
+    // the layout, so the rest never change.
+    private IEnumerable<WorldObjectPlacement> PlaceScene(Scatter rule, SceneDefinition scene, int ix, int iz, Vector2 spot, float yaw, uint salt)
+    {
+        var layouts = scene.Layouts!;
+        var pick = Noise.Unit(Noise.Mix(salt ^ 0x5CE9u)) * layouts.Sum(l => l.Weight);
+        var layout = layouts[^1];
+        foreach (var l in layouts)
+        {
+            pick -= l.Weight;
+            if (pick < 0f)
+            {
+                layout = l;
+                break;
+            }
+        }
+        var turn = Quaternion.CreateFromAxisAngle(Vector3.UnitY, yaw);
+        for (var k = 0; k < layout.Pieces!.Count; k++)
+        {
+            var piece = layout.Pieces[k];
+            var roll = Noise.Hash(salt ^ 0x9E3Cu, k, 0, 4);
+            if (Noise.Unit(roll) >= piece.Chance)
+                continue;
+            var definition = Data.Objects[piece.Object!];
+            var w = Vector3.Transform(new Vector3(piece.At![0], 0f, piece.At[1]), turn);
+            var g = new Vector2(spot.X + w.X, spot.Y + w.Z);
+            if (!InWorld(g.X, g.Y) || PoisAt(g.X, g.Y).Any() || Roads.Near(g.X, g.Y, definition.Footprint + 1f)
+                || HeightAt(g.X, g.Y) < SeaLevel + 0.2f || SlopeAt(g.X, g.Y) > MathF.Min(_terrain.MaxScatterSlope, definition.MaxSlope ?? float.MaxValue))
+                continue;
+            var scale = definition.Scale is [var lo, var hi] ? lo + (hi - lo) * Noise.Unit(Noise.Mix(roll)) : 1f;
+            var y = HeightAt(g.X, g.Y) - definition.Sink * scale;
+            yield return new WorldObjectPlacement(new WorldObjectId(rule.Index, ix, iz, k), definition, new Vector3(g.X, y, g.Y),
+                yaw + piece.Yaw * MathF.PI / 180f, scale);
         }
     }
 

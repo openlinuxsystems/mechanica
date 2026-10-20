@@ -7,9 +7,9 @@ One body shared by every level, exactly 10 x 8 x 9 blocks (2.50 m wide, 2.00 m d
   and drills the item on the table;
 * a central console with the status screen, buttons and level pips, rising to 8 blocks, with the exhaust housing
   on top filling the 9th block row;
-* the standard IO ports (docs/io-ports.md): an input on the left side and an output on the right side, both one
-  block above the base, centred front to back (half a block toward the front, as the face is 8 blocks deep), their
-  collars on the footprint boundary;
+* the standard 2 x 2 IO ports (docs/io-ports.md): an input on the left side and an output on the right side, at
+  floor level (centre 0.375 m up, level with the containers' ports), half a block toward the front of centre, their
+  collars on the footprint boundary over the plinth;
 * a pegboard with tools across the back.
 
 The levels change finish and add trim, never the envelope or the ports (see ``LEVELS``).
@@ -42,15 +42,15 @@ B = 0.25                       # one block
 W, D, H = 10 * B, 8 * B, 9 * B
 HW, HD = W / 2, D / 2
 PLINTH = B
-SIDE_IN = io.LIP_OUT - io.DEPTH + 0.01   # side walls set in so the port plate stands just proud of them
+SIDE_IN = io.PORT_OUT - io.PORT_DEPTH + 0.01   # side walls set in so the port plate stands just proud of them
 BAY_X = (HW - SIDE_IN, 0.375)            # bay outer wall to console wall (|x|)
 BAY_TOP = 7 * B
 CONSOLE_TOP = 8 * B
 BACK_Y = 0.62                            # bay back wall (the machinery behind it holds the pegboard)
 REAR = HD - 0.08                         # the pegboard's face, recessed so the hung tools stay in the footprint
 TABLE_Z = 0.56
-PORT_Y = -0.125                          # port centre: centred on the 8-block face, half a block toward the front
-PORT_Z = PLINTH + 1.5 * B
+PORT_Y = -0.125                          # port centre along the face: where the 3 x 3 port was centred
+PORT_Z = 1.5 * B                         # port centre 0.375 m up: level with the 3-block-tall containers on the floor
 SAMPLES = int(os.environ.get("FAB_SAMPLES", "48"))
 
 LEVELS = {
@@ -285,8 +285,9 @@ def build(level=1, name=None):
 
     # plinth (block row 0): dark toe, gunmetal body, teal band
     box("plinthToe", (-HW + 0.04, HW - 0.04), (-HD + 0.04, HD - 0.04), (0.0, 0.05), m["dark"], root)
-    box("plinth", (-HW + 0.004, HW - 0.004), (-HD + 0.004, HD - 0.004), (0.05, PLINTH), m["frame"], root, bevel=0.012)
-    box("plinthBand", (-HW, HW), (-HD, HD), (0.135, 0.15), m["teal"], root, bevel=0)
+    # the sides are set in like the walls above, so the floor-level ports sit over the plinth
+    box("plinth", (-HW + SIDE_IN, HW - SIDE_IN), (-HD + 0.004, HD - 0.004), (0.05, PLINTH), m["frame"], root, bevel=0.012)
+    box("plinthBand", (-HW + SIDE_IN - 0.004, HW - SIDE_IN + 0.004), (-HD, HD), (0.135, 0.15), m["teal"], root, bevel=0)
 
     # console (centre, 3 blocks wide) up to 8 blocks; its front is set back FY so the controls stay in the footprint
     cx = BAY_X[1]
@@ -832,8 +833,8 @@ def render_review(out: Path):
         "- Standard IO ports (teal out / copper in), not the yellow and blue rings; same height and position on both sides.",
         "- Hazard stripes are teal on black, not safety yellow; the pegboard is gunmetal, not steel blue.",
         "- One status screen on the console, matching the crafting menu it opens.",
-        "Port position (both sides, the same on every machine): block rows 1-3 above the base (centre 0.625 m up); "
-        "centred front to back, half a block toward the front (centre 0.875 m from the front edge).",
+        "Port position (both sides, the same height on every machine): 2 x 2, centre 0.375 m up; "
+        "half a block toward the front of centre (centre 0.875 m from the front edge).",
     ]
     for k, line in enumerate(notes):
         d.text((60, 2390 + k * 36), line, fill=INK, font=F(26, k == 0))

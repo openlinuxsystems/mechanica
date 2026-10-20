@@ -241,7 +241,7 @@ The Creation the part belongs to.
 | `world.creative()` | `true` in Creative, where engines run without fuel. |
 | `world.raycast(from, to)` | The first thing on the segment from `from` to `to`, skipping the script's own Creation: `{position, normal, distance, creation?, part?, player?, bot?}`, or `nil`. `player` is the peer of a player it hit and `bot` the id of a bot; all four are missing for the ground and world objects. A ray may be at most `max_ray_length` m long. |
 | `world.overlap_sphere(centre, radius)` | Everything a sphere touches, skipping the script's own Creation: a list of `{creation?, part?, player?, bot?}` (all missing for the ground). `radius` is at most `max_overlap_radius` m. |
-| `world.item(id, key?)` | An item's or part's data as written in its JSON (snake_case keys), or only its `key` section (`world.item(seed, "seed")` is `{crop, grow_time, yield, seeds, value}`), or `nil` for an unknown id. Bare ids are in the script's mod. Works in part and item scripts. |
+| `world.item(id, key?)` | An item's or part's data as written in its JSON (snake_case keys), or only its `key` section (`world.item(seed, "seed")` is `{crop, grow_time, yield, seeds, seeds_max, value, plant}`), or `nil` for an unknown id. Bare ids are in the script's mod. Works in part and item scripts. |
 
 ## `soil`
 

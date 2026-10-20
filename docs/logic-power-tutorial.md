@@ -66,7 +66,8 @@ you also need a gas container with gasoline in it; in Creative engines run witho
    setting reaches, and the torque.
 7. **Drive.** Look at the seat and press E. Sitting down starts the engine; W and S are the throttle, A and
    D steer. With no throttle the engine holds the wheels (its `brake`), so the car does not roll away. E
-   stands you up, and getting up stops the engine.
+   stands you up, and getting up stops the engine; it keeps holding the wheels, so a parked car stays put
+   (on a hill steeper than its brake can hold it creeps down).
 
 If the car drives backwards, the engine faces the wrong way: turn it round. If one wheel turns against
 the others, right click its bearing's node with the Connect Tool to reverse it. If it steers the wrong way,

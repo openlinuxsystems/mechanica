@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Pictures of the Inventory window in a running world: every tab, a search, Organize, a chest and the Fabricator's tabs
+# Pictures of the Inventory window in a running world: every tab, a search, Organize, a chest, the Fabricator's tabs and its upgrade dialog
 # (see game/tools/capture/InventoryCapture.cs). Usage: tools/capture-inventory.sh OUT_DIR [creative]
 # Needs a display; without one it uses xvfb-run. Uses $GODOT if set, otherwise the pinned build.
 set -euo pipefail

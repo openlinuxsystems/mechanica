@@ -1,6 +1,8 @@
 -- Engine: turns the wheel bearings its output is linked to. Its input is a throttle from -1 (back) to 1
 -- (forward), usually a driver's seat. Wheels roll toward the engine's front, so place it facing the way the
--- car should drive. With no throttle it holds the wheels with properties.brake N·m.
+-- car should drive. With no throttle it holds the wheels with properties.brake N·m, and so does an engine that is not
+-- running (nobody in its seat, switched off, out of fuel): a parked car stays put on flat ground and gentle slopes and
+-- only creeps down a hill steep enough to overcome the brake.
 -- Its controls decide when it runs. With none linked into it, it runs forward at full throttle (an engine is on by
 -- default). A linked driver's seat runs it only while someone sits in it, with their W/S as the throttle: getting up
 -- stops it. A passenger seat (one that shows "passenger") never does.
@@ -246,16 +248,6 @@ local function fuel_left()
   return world.creative() or (state.fuel or 0) > 0 or creation.count(properties.fuel, tanks()) > 0
 end
 
-local function release()
-  for _, id in ipairs(part.links()) do
-    if direction(id) and state.sent[tostring(id)] ~= nil then
-      creation.set_bearing(id, nil)
-      creation.display(id, "drive", nil)
-      state.sent[tostring(id)] = nil
-    end
-  end
-end
-
 local function stop_hum()
   if state.hum then
     sound.stop(state.hum)
@@ -352,7 +344,7 @@ local function ignition(dt)
     end
   else
     stop_hum()
-    release()
+    drive(0)
   end
   state.throttle = running and throttle or 0
   local power = running and (0.3 + 0.7 * math.abs(throttle) * gear / top) or 0
@@ -384,11 +376,7 @@ function on_update(dt)
     throttle = 0
   end
   state.throttle = throttle
-  if active then
-    drive(throttle)
-  else
-    release()
-  end
+  drive(throttle)
   hum(throttle, fueled, active)
   show(throttle, dt)
 end

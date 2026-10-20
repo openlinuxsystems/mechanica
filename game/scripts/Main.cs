@@ -161,6 +161,15 @@ public partial class Main : Node3D
         return root;
     }
 
+    /// <summary>How a bite of the held item numbered <paramref name="index"/> (<see cref="HeldItems"/>) shows: its colour and its <c>eat</c> sound.</summary>
+    public HeldBite? HeldBite(ushort index)
+    {
+        if (HeldItems.IdOf(index) is not { } id || Mods?.Parts.GetValueOrDefault(id) is not { } part)
+            return null;
+        var juice = (part.Definition.Held?.Juice ?? part.Definition.Visual?.Color) is { } color && Color.HtmlIsValid(color) ? Color.FromHtml(color) : new Color(0.8f, 0.25f, 0.2f);
+        return new HeldBite(juice, Core.Sound.PartSounds.For(part.Definition, "eat"), part.ModId);
+    }
+
     /// <summary>
     /// World generation rules. Null loads them from <see cref="Mods"/> when the scene starts; tests may set
     /// <see cref="WorldGenData.Flat"/>.
@@ -576,7 +585,7 @@ public partial class Main : Node3D
             Name = "Characters",
             Session = Session,
             Players = PlayerSync,
-            Assets = new CharacterAssets(mods) { HeldModel = HeldModel },
+            Assets = new CharacterAssets(mods) { HeldModel = HeldModel, HeldBite = HeldBite },
             Sounds = Sounds,
             Actions = Actions,
             Choices = new CharacterActions(characters),
@@ -710,7 +719,7 @@ public partial class Main : Node3D
             {
                 Name = "InventoryScreen", Inventory = Inventory, Actions = Actions, Players = PlayerSync, Catalog = mods, Hotbar = Hotbar, Icons = Icons, Sounds = Sounds,
                 Mode = () => Survival.Own?.Mode, Creations = Creations, Upgrades = Upgrades,
-                AllItems = () => HotbarTools.All.Concat(Build.Catalog.Parts.Where(p => p.Value.Definition is { Category: not null, IsItem: true }).Select(p => p.Key)),
+                AllItems = () => HotbarTools.CreativeList(Build.Catalog),
             };
             AddChild(inventory);
             AddChild(Upgrades);

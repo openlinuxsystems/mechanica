@@ -173,5 +173,7 @@ from a walk to a sprint and the ease back down are `sprint_acceleration` and `sp
 
 `python tools/characters/render_clips.py OUT_DIR clip ... [--view side|front|threeq|back]` renders clips straight from their
 code (with the bpy module installed), and `tools/capture-animations.sh OUT_DIR [character]` records each move in a running
-world as GIFs and MP4s (`CAPTURE_ONLY=walk,run_side` keeps matching moves). A mod item gets the pose of its category (`consumable` eats,
-`weapon` throws) unless it is listed in `item_poses`.
+world as GIFs and MP4s (`CAPTURE_ONLY=walk,run_side` keeps matching moves). A mod item gets the pose of its category (`consumable` rests on
+the palm and eats, `weapon` throws) unless it is listed in `item_poses`. The `eat` section of `character.json` says when the
+`eat` clip's bites land (`bites`), when the food is gone (`gone`) and how long the clip runs (`seconds`); a food's held model
+shows its bitten versions by them (see [Food in hand](part-data-schema.md#food-in-hand)).

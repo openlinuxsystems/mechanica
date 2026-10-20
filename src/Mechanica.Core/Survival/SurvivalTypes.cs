@@ -23,14 +23,21 @@ public sealed record CollectWaterArgs(Vec3 Point, int? Slot = null);
 /// <param name="Slot">The slot the full bucket in hand is in.</param>
 public sealed record CollectWaterResult(int Slot);
 
-/// <summary>Arguments of <c>DropItems</c>: put items from a slot on the ground in front of the caller.</summary>
+/// <summary>
+/// Arguments of <c>DropItems</c>: put items from a slot on the ground in front of the caller. Without
+/// <paramref name="At"/> they are tossed: they fly from the caller's hand in a short arc and land
+/// <see cref="SurvivalSettings.TossDistance"/> ahead (dragging a stack out of an item window, UI spec §3).
+/// </summary>
 /// <param name="Slot">The slot.</param>
 /// <param name="Count">How many; null drops the whole stack.</param>
 /// <param name="At">
 /// Force Build (UI spec §1, §9): the world point the caller aims at, within reach, where the items are placed and stay
 /// (they never expire). Null drops them in front of the caller.
 /// </param>
-public sealed record DropItemsArgs(int Slot, int? Count = null, Vec3? At = null);
+/// <param name="From">
+/// The inventory the slot is in (a container in reach, like <c>MoveItems</c>); null is the caller's own.
+/// </param>
+public sealed record DropItemsArgs(int Slot, int? Count = null, Vec3? At = null, InventoryRef? From = null);
 
 /// <summary>Arguments of <c>PickUp</c>: take a pile of items off the ground.</summary>
 /// <param name="Drop">The pile's id.</param>
@@ -111,7 +118,11 @@ public sealed record SoilView(int Creation, int Part, string? Seed = null, strin
 /// <param name="Placed">True for items put down with Force Build: they stay where they were placed and never expire.</param>
 /// <param name="KnockedOut">True for what a knocked-out player dropped: the game shows it as the knockout bag.</param>
 /// <param name="Owner">The peer whose knockout bag it is (their compass and maps point to it), or null.</param>
-public sealed record ItemDrop(int Id, Vec3 Position, IReadOnlyList<ItemStack> Items, double Expires, bool Placed = false, bool KnockedOut = false, int? Owner = null);
+/// <param name="TossedFrom">
+/// Where a tossed pile left the player's hand, sent only with the pile's first showing so every peer plays the
+/// arc once; null afterwards, and for piles that were not tossed.
+/// </param>
+public sealed record ItemDrop(int Id, Vec3 Position, IReadOnlyList<ItemStack> Items, double Expires, bool Placed = false, bool KnockedOut = false, int? Owner = null, Vec3? TossedFrom = null);
 
 /// <summary>One thing a shot, a splash or a bot's attack hit (<see cref="SurvivalActions.Hit"/>, <see cref="SurvivalActions.Splash"/>).</summary>
 /// <param name="Kind"><c>player</c>, <c>part</c>, <c>object</c>, <c>bot</c>, <c>crop</c> (a bot destroyed it) or <c>ground</c>.</param>
