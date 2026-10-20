@@ -5,7 +5,8 @@ structure's centre (glTF +Y up, front towards +Z):
 
 * ``meshes/structures/sv04_fore.glb`` and ``sv04_aft.glb`` - the SV-04 Salvager broken in two (Salvager Tech): the
   fore section with the bridge, crew quarters and engineering, and the aft section with the cargo hold and the
-  engine room. Both share the ship's origin, so the crash site places them at the same point.
+  engine room. Both share the ship's origin, so the crash site places them at the same point. The port nacelle tore
+  off in flight: ``sv04_nacelle.glb`` is it, lying where it fell (the opening cinematic shows it go).
 * ``meshes/structures/relay_beacon_dead.glb`` - a dead Colony relay beacon (Colony Works).
 * ``meshes/structures/settler_shack.glb`` - the farmer's half-dome shack with its trade counter and fenced garden
   (Settler Patchwork).
@@ -65,6 +66,7 @@ def ship():
     aft = next(c for c in root.children if c.name.startswith("aft"))
     report("sv04_fore", K.export(fore, STRUCTURES / "sv04_fore.glb", frame=root))
     report("sv04_aft", K.export(aft, STRUCTURES / "sv04_aft.glb", frame=root))
+    single("sv04_nacelle", lambda: S.lost_nacelle())
 
 
 def single(name, build, folder=STRUCTURES, collider=True):
