@@ -1840,6 +1840,25 @@
             { "clip": "moo", "sound": "grazer_idle" }
           ],
           "idle_every": [5, 12]
+        },
+        "wild": {
+          "habitat": "land",
+          "count": 4,
+          "min_distance": 30,
+          "max_distance": 70,
+          "despawn_distance": 110,
+          "clear_radius": 10,
+          "interval": 12,
+          "biomes": ["meadow", "field"],
+          "herd": [2, 4],
+          "near": {
+            "objects": [
+              "scene_farmstead", "scene_hay_field", "scene_farm_wreck", "scene_wind_pump", "scene_fence_line",
+              "scene_farmyard", "scene_kitchen_garden", "scene_field_edge", "scene_harvest_wreck"
+            ],
+            "radius": 25,
+            "share": 0.5
+          }
         }
       }
     }

@@ -291,6 +291,12 @@ public class VanillaBotsTests
     }
 
     [Theory]
+    [InlineData("""{ "habitat": "land", "count": 2, "biomes": [""] }""", "$.wild.biomes[0]", "a biome id is required.")]
+    [InlineData("""{ "habitat": "land", "count": 2, "herd": [3, 2] }""", "$.wild.herd", "herd must be [min, max], 1 <= min <= max.")]
+    [InlineData("""{ "habitat": "land", "count": 2, "herd": [0, 2] }""", "$.wild.herd", "herd must be [min, max], 1 <= min <= max.")]
+    [InlineData("""{ "habitat": "land", "count": 2, "near": { "radius": 5 } }""", "$.wild.near.objects", "list one or more world object ids.")]
+    [InlineData("""{ "habitat": "land", "count": 2, "near": { "objects": ["farm"] } }""", "$.wild.near.radius", "radius (m) is required.")]
+    [InlineData("""{ "habitat": "land", "count": 2, "near": { "objects": ["farm"], "radius": 5, "share": 2 } }""", "$.wild.near.share", "share must be from 0 to 1.")]
     [InlineData("""{ "count": 2 }""", "$.wild.habitat", "habitat (water or land) is required.")]
     [InlineData("""{ "habitat": "air", "count": 2 }""", "$.wild.habitat", "habitat 'air' must be water or land.")]
     [InlineData("""{ "habitat": "water" }""", "$.wild.count", "count (how many near each player) is required.")]
@@ -352,6 +358,17 @@ public class VanillaBotsTests
         Assert.Equal(("moo", "grazer_idle"), (moo.Clip, moo.Sound));
         foreach (var mesh in model.Variants.Prepend(model.Mesh))
             Assert.True(File.Exists(Path.Combine(ModsRoot, "vanilla", mesh["vanilla:".Length..])), mesh);
+    }
+
+    [Fact]
+    public void WildGrazersRoamMeadowsAndFieldsInHerdsRoundFarms()
+    {
+        var wild = Book.Value.FindBot("vanilla:grazer")!.Wild!;
+
+        Assert.False(wild.Water);
+        Assert.Equal(["field", "meadow"], wild.Biomes.Order());
+        Assert.True(wild.HerdMin >= 2 && wild.HerdMax <= wild.Count);
+        Assert.Contains("scene_farmstead", wild.Near!.Objects);
     }
 
     private static BotDefinition ModelBot(string? model) => new()

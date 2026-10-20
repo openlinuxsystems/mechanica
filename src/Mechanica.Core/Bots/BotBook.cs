@@ -44,7 +44,26 @@ public sealed record BotDrop(string Item, float Chance, int Count, int CountMax)
 /// <param name="ClearRadius">How far round the spot must be its habitat too, m.</param>
 /// <param name="Interval">Seconds between tries to spawn more.</param>
 public sealed record BotWild(bool Water, int Count, float MinDistance, float MaxDistance, float DespawnDistance, float MinDepth, float ClearRadius,
-    float Interval);
+    float Interval)
+{
+    /// <summary>Biome ids it appears in; empty means any.</summary>
+    public IReadOnlySet<string> Biomes { get; init; } = new HashSet<string>();
+
+    /// <summary>The fewest that appear together.</summary>
+    public int HerdMin { get; init; } = 1;
+
+    /// <summary>The most that appear together.</summary>
+    public int HerdMax { get; init; } = 1;
+
+    /// <summary>World objects it is often found near, or null.</summary>
+    public BotWildNear? Near { get; init; }
+}
+
+/// <summary>World objects a wild bot is often found near, checked (<see cref="BotWildNearDefinition"/>).</summary>
+/// <param name="Objects">World object or scene ids.</param>
+/// <param name="Radius">How far from one it appears, m.</param>
+/// <param name="Share">Share of spawns (0 to 1) that try near one first.</param>
+public sealed record BotWildNear(IReadOnlySet<string> Objects, float Radius, float Share);
 
 /// <summary>A bot's model with its path qualified and every default filled in.</summary>
 /// <param name="Mesh">Qualified glTF path (<c>mod:meshes/bots/x.glb</c>).</param>
@@ -208,6 +227,9 @@ public sealed class BotBook : IBotCatalog
 
     /// <summary>Wild bots: seconds between tries to spawn more, when <c>interval</c> is left out.</summary>
     public const float DefaultWildInterval = 8f;
+
+    /// <summary>Default share of a wild bot's spawns that try near its <see cref="BotWild.Near"/> objects first.</summary>
+    public const float DefaultWildNearShare = 0.5f;
 
     /// <summary>Deepest behaviour tree accepted.</summary>
     public const int MaxBehaviorDepth = 24;
@@ -610,10 +632,35 @@ public sealed class BotBook : IBotCatalog
             sink.Error(code, "$.wild.max_distance", $"max_distance ({max}) must be more than min_distance ({min}).");
         if (!(despawn > max))
             sink.Error(code, "$.wild.despawn_distance", $"despawn_distance ({despawn}) must be more than max_distance ({max}).");
+        for (var i = 0; i < (w.Biomes?.Count ?? 0); i++)
+        {
+            if (string.IsNullOrWhiteSpace(w.Biomes![i]))
+                sink.Error(code, $"$.wild.biomes[{i}]", "a biome id is required.");
+        }
+        if (w.Herd is { } herd && (herd.Count != 2 || herd[0] < 1 || herd[1] < herd[0]))
+            sink.Error(code, "$.wild.herd", "herd must be [min, max], 1 <= min <= max.");
+        BotWildNear? near = null;
+        if (w.Near is { } n)
+        {
+            KnownKeys.WarnUnknown(n.Extra, "$.wild.near", sink, typeof(BotWildNearDefinition));
+            if (n.Objects is not { Count: > 0 } || n.Objects.Any(string.IsNullOrWhiteSpace))
+                sink.Error(code, "$.wild.near.objects", "list one or more world object ids.");
+            Positive(n.Radius, "$.wild.near.radius", "radius (m)", required: true, sink);
+            if (n.Share is { } share && !(share >= 0 && share <= 1))
+                sink.Error(code, "$.wild.near.share", "share must be from 0 to 1.");
+            if (sink.ErrorCount == errors)
+                near = new BotWildNear(new HashSet<string>(n.Objects!, StringComparer.Ordinal), n.Radius!.Value, n.Share ?? DefaultWildNearShare);
+        }
         if (sink.ErrorCount > errors)
             return null;
         return new BotWild(w.Habitat == "water", w.Count!.Value, min, max, despawn, w.MinDepth ?? DefaultWildMinDepth, w.ClearRadius ?? DefaultWildClearRadius,
-            w.Interval ?? DefaultWildInterval);
+            w.Interval ?? DefaultWildInterval)
+        {
+            Biomes = new HashSet<string>(w.Biomes ?? [], StringComparer.Ordinal),
+            HerdMin = w.Herd?[0] ?? 1,
+            HerdMax = w.Herd?[1] ?? 1,
+            Near = near,
+        };
     }
 
     private static void Positive(float? value, string path, string label, bool required, DiagnosticSink sink)

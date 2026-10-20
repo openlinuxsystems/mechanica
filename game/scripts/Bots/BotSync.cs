@@ -214,7 +214,10 @@ public partial class BotSync : Node3D, IBotWorld, IRaidWorld
             Guards = new PoiGuards(PoiGuards.PostsOf(world), Bots, Survival.Actions!);
         Guards?.Tick();
         if (Wild is null && World.Generator is { } generator)
-            Wild = new WildSpawns(Book.All, Bots, Survival.Actions!, generator.SeaLevel, generator.HeightAt, (int)generator.Seed);
+            Wild = new WildSpawns(Book.All, Bots, Survival.Actions!, generator.SeaLevel, generator.HeightAt, (int)generator.Seed,
+                (x, z) => generator.BiomeAt(x, z).Id,
+                (at, radius) => generator.ObjectsIn(at.X - radius, at.Y - radius, at.X + radius, at.Y + radius)
+                    .Select(o => (generator.SourceOf(o), new System.Numerics.Vector2(o.Position.X, o.Position.Z))));
         Wild?.Tick();
         if (++_tick % PoseInterval == 0)
             SendPoses();
