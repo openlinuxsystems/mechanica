@@ -230,7 +230,7 @@ public partial class CaptureScene : Node
         }
         if (flashes)
         {
-            FlashShots();
+            FlashShots(eye: args.Length > 2 && args[2] == "eye", ultra: args.Length > 3 && args[3] == "ultra");
             return;
         }
         if (opening)
@@ -837,9 +837,10 @@ public partial class CaptureScene : Node
         }
     }
 
-    // A walk across chunk borders, a frame every 3 m, looking ahead over the distant ground from 30 m up: the frames
-    // show whether the sky flashes through the ground as chunks load ahead and unload behind.
-    private void FlashShots()
+    // A walk across chunk borders looking ahead over the distant ground: from 30 m up with foliage off, a frame every 3 m
+    // (whether the sky shows through the ground as chunks come and go), or at eye height with foliage on, a frame
+    // every 0.5 m while turning (whether bright pixels flash along the skyline), optionally at the Ultra preset.
+    private void FlashShots(bool eye, bool ultra)
     {
         Engine.TimeScale = 1.0;
         var start = Vector3.Zero;
@@ -848,11 +849,15 @@ public partial class CaptureScene : Node
         Shot("flashes_00_go", 300, () =>
         {
             start = _main.LocalPlayer!.GlobalPosition;
-            GameSettings.Apply(GameSettings.Current with { Graphics = GameSettings.Current.Graphics with { Grass = FoliageLevel.Off, GroundCover = FoliageLevel.Off, Bushes = FoliageLevel.Off } });
+            if (ultra)
+                GameSettings.Apply(GameSettings.Current with { Graphics = GameSettings.Current.Graphics.WithPreset(Quality.Ultra) });
+            if (!eye)
+                GameSettings.Apply(GameSettings.Current with { Graphics = GameSettings.Current.Graphics with { Grass = FoliageLevel.Off, GroundCover = FoliageLevel.Off, Bushes = FoliageLevel.Off } });
         });
         for (var k = 0; k < 160; k++)
         {
-            var step = 3f * k;
+            var step = (eye ? 0.5f : 3f) * k;
+            var turn = eye ? 0.04f * k : 0f;
             Shot($"flashes_{k:000}", 1, () =>
             {
                 var at = start + ahead * step;
@@ -860,8 +865,8 @@ public partial class CaptureScene : Node
                 _follow = null;
                 _camera.MakeCurrent();
                 _camera.Fov = 70;
-                _camera.GlobalPosition = Ground(at) + Vector3.Up * 30f;
-                _camera.LookAt(_camera.GlobalPosition + ahead * 10f + Vector3.Down * 0.8f);
+                _camera.GlobalPosition = Ground(at) + Vector3.Up * (eye ? 2.2f : 30f);
+                _camera.LookAt(_camera.GlobalPosition + ahead.Rotated(Vector3.Up, turn) * 10f + Vector3.Down * (eye ? 0.1f : 0.8f));
             });
         }
     }
