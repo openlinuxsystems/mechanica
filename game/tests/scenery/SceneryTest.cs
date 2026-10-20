@@ -1,5 +1,6 @@
 using Godot;
 using Mechanica.Core.Net;
+using Mechanica.Core.Settings;
 using Mechanica.Core.World;
 using Mechanica.Game.Menus;
 using Mechanica.Game.Settings;
@@ -66,6 +67,16 @@ public partial class SceneryTest : StagedTest
             Check(env.FogEnabled && env.FogLightColor.IsEqualApprox(sky.SkyHorizonColor) && env.FogAerialPerspective == 0f && env.FogSunScatter == 0f,
                 $"fog {env.FogLightColor} matches the horizon {sky.SkyHorizonColor}");
             Check(Mathf.IsEqualApprox(env.FogDepthEnd, GameSettings.Current.Graphics.Effective().ViewDistance), $"fog closes at the view distance ({env.FogDepthEnd} m)");
+            return true;
+        });
+        Add("no effects level turns on screen-space indirect light", _ =>
+        {
+            // It makes stray far too bright pixels along the skyline that glow turns into white flashes.
+            var env = _main.GetNode<WorldEnvironment>("WorldEnvironment").Environment;
+            var was = GameSettings.Current;
+            GameSettings.Apply(was with { Graphics = was.Graphics.WithPreset(Quality.Ultra) });
+            Check(!env.SsilEnabled && env.SsaoEnabled && env.GlowEnabled, "Ultra: glow and ambient occlusion, no indirect light");
+            GameSettings.Apply(was);
             return true;
         });
         Add("every chunk's ground hangs a skirt below its edges", _ =>

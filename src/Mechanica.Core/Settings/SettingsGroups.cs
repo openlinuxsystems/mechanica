@@ -84,7 +84,7 @@ public sealed record GraphicsSettings
     /// <summary>Texture quality.</summary>
     public Quality Textures { get; init; } = Quality.High;
 
-    /// <summary>Effects quality (glow, ambient occlusion).</summary>
+    /// <summary>Effects quality: glow from Medium, ambient occlusion from High, at full resolution on Ultra.</summary>
     public Quality Effects { get; init; } = Quality.High;
 
     /// <summary>
