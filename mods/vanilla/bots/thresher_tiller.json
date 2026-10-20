@@ -1,0 +1,142 @@
+{
+  "id": "thresher_tiller",
+  "name": "Tiller Thresher",
+  "description": "A four-legged tractor with a rotary tiller on its nose. Slow and very tough: it grinds through parts and walls, and rears up to slam the ground in a shockwave.",
+  "family": "thresher",
+  "health": 2200,
+  "speed": 2.4,
+  "water_speed": 1.5,
+  "sight": 40,
+  "size": {
+    "radius": 1.5,
+    "height": 3
+  },
+  "color": "#a8402a",
+  "model": {
+    "mesh": "meshes/bots/thresher_tiller.glb",
+    "attacks": {
+      "stomp": [
+        "rear_stomp"
+      ],
+      "till": [
+        "till_grind"
+      ]
+    },
+    "clip_speeds": {
+      "patrol": 0.93,
+      "chase": 2.34
+    },
+    "effects": {
+      "stomp": "shockwave"
+    }
+  },
+  "melee_immune": true,
+  "raid_cost": 6,
+  "attacks": [
+    {
+      "id": "till",
+      "kind": "melee",
+      "damage": 25,
+      "part_damage": 90,
+      "range": 2.2,
+      "interval": 1.5,
+      "object_damage": 80
+    },
+    {
+      "id": "stomp",
+      "kind": "area",
+      "damage": 30,
+      "part_damage": 40,
+      "range": 3,
+      "radius": 6,
+      "interval": 6
+    }
+  ],
+  "drops": [
+    {
+      "item": "component_kit",
+      "chance": 1,
+      "count": 5
+    },
+    {
+      "item": "circuit_board",
+      "chance": 0.6,
+      "count": 1
+    }
+  ],
+  "behavior": {
+    "type": "sequence",
+    "children": [
+      {
+        "type": "succeed",
+        "children": [
+          {
+            "type": "break_objects",
+            "attack": "till"
+          }
+        ]
+      },
+      {
+        "type": "selector",
+        "children": [
+          {
+            "type": "sequence",
+            "children": [
+              {
+                "type": "find_player",
+                "range": 15
+              },
+              {
+                "type": "chase",
+                "attack": "till",
+                "speed": 1
+              },
+              {
+                "type": "selector",
+                "children": [
+                  {
+                    "type": "attack",
+                    "attack": "stomp"
+                  },
+                  {
+                    "type": "attack",
+                    "attack": "till"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "sequence",
+            "children": [
+              {
+                "type": "in_raid"
+              },
+              {
+                "type": "find_crop"
+              },
+              {
+                "type": "chase",
+                "attack": "till",
+                "speed": 1
+              },
+              {
+                "type": "attack",
+                "attack": "till"
+              }
+            ]
+          },
+          {
+            "type": "go_to_raid",
+            "radius": 6
+          },
+          {
+            "type": "wander",
+            "radius": 12,
+            "speed": 0.4
+          }
+        ]
+      }
+    ]
+  }
+}

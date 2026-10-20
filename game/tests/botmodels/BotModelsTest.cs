@@ -31,6 +31,7 @@ public partial class BotModelsTest : StagedTest
     private int _yellow;
     private int _red;
     private int _spooler;
+    private int _duster;
     private Vector3 _hit;
 
     protected override string Tag => "botmodels";
@@ -138,6 +139,25 @@ public partial class BotModelsTest : StagedTest
             return true;
         });
         Add("the tape lands and goes", _ => Shots(_client).Count == 0 && Shots(_host).Count == 0);
+        Add("a Duster Thresher's canister flies from its mortar to the Green Scuttler", frame =>
+        {
+            if (frame == 0)
+                _duster = Spawn("vanilla:thresher_duster", new Vector3(-4, 0, 16));
+            if (frame == 1)
+            {
+                var result = Act(BotActions.BotAttack, new BotAttackArgs(_duster, "canister", Target: _green));
+                Check(result.Ok, $"the host has it shell the Green Scuttler ({result})");
+                _hit = result.Ok ? Value<BotAttackResult>(result).Hits.Select(h => h.Point.ToGodot()).FirstOrDefault() : Vector3.Zero;
+            }
+            // It fires at once: it is awake and shells the player too once its canister is ready again. Wait for the
+            // canister that hit the Scuttler.
+            if (frame < 2 || Body(_client, _duster)?.Model is not { Effects.Count: > 0 } model
+                || !Shots(_client).Any(s => s.Target.DistanceTo(_hit) < 0.01f))
+                return false;
+            Check(model.Effects.All(e => e == BotEffects.Shot), $"the client shows its shots ({string.Join(", ", model.Effects)})");
+            return true;
+        });
+        Add("the canister lands and goes", _ => !Shots(_client).Any(s => s.Target.DistanceTo(_hit) < 0.01f));
     }
 
     private int Spawn(string type, Vector3 at)
