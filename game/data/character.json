@@ -98,7 +98,7 @@
     "soil_bag": { "prop": "soil_bag", "gesture": "bag_spill" }
   },
   "category_poses": {
-    "consumable": { "prop": "item", "gesture": "eat" },
+    "consumable": { "prop": "food", "gesture": "eat" },
     "weapon": { "prop": "item", "gesture": "throw" }
   },
   // The water bucket in hand (game/scripts/Player/BucketRig.cs; the model and clips are tools/characters/build_characters.py).
@@ -142,6 +142,14 @@
     "tank": {
       "paint_reload": [[0, 0, 0], [0.38, 0, 0], [0.52, -85, 0], [0.62, -85, 0.03], [0.74, -85, 0.03], [0.84, -85, 0], [0.98, 0, 0], [1.4, 0, 0]]
     }
+  },
+  // Eating (tools/characters/build_characters.py eat_keys): seconds into the eat clip of each bite, when the food is
+  // gone, and how long the clip is (no more food is eaten until it is over). A food's held model shows eat_0 (whole),
+  // eat_1 after the first bite, and so on.
+  "eat": {
+    "bites": [0.3, 0.52],
+    "gone": 0.86,
+    "seconds": 1.4
   },
   "head_pitch_share": 0.6,
   // First-person arms: where the arms-only model stands from the camera (right, up, back, in metres) and how far it tips forward.

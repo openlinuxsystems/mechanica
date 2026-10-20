@@ -151,6 +151,13 @@ public sealed class PartAssets
     }
 
     /// <summary>
+    /// A new copy of the whole scene at <paramref name="path"/> in the mod that holds <paramref name="qualifiedId"/>'s part
+    /// file (another model the part's data names, such as a seed's growing plant); null when it does not load.
+    /// </summary>
+    public Node3D? SceneOf(string qualifiedId, string path) =>
+        _content?.FindPart(qualifiedId)?.ModId is { } modId ? InstantiateScene(path, modId) : null;
+
+    /// <summary>
     /// A new copy of a part's whole model scene (nodes and its <see cref="AnimationPlayer"/>), for a part that plays its
     /// clips (<see cref="ClipsDefinition"/>), with its <c>visual</c> data and <paramref name="paint"/> applied as
     /// <see cref="ModelFor"/> applies them. Its root sits at the part centre. Null when the part has no mesh or it fails to load.

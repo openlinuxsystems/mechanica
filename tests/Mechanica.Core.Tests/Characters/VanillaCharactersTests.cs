@@ -85,6 +85,8 @@ public class VanillaCharactersTests
         Assert.Equal(CharacterProp.SoilBag, settings.PoseFor("vanilla:soil_bag", "interactive").Prop);
         Assert.Equal(CharacterGesture.BagSpill, settings.PoseFor("vanilla:soil_bag", "interactive").Gesture);
         Assert.Equal(CharacterGesture.Eat, settings.PoseFor("vanilla:carrot", "consumable").Gesture);
+        Assert.Equal(CharacterProp.Food, settings.PoseFor("vanilla:tomato", "consumable").Prop);
+        Assert.Equal([0.3f, 0.52f], settings.Eat.Bites);
         Assert.Equal(CharacterGesture.FireGun, settings.PoseFor("vanilla:potato_scattergun", "weapon").Gesture);
         Assert.Equal(CharacterProp.PotatoBlaster, settings.PoseFor("vanilla:potato_blaster", "weapon").Prop);
         Assert.Equal(CharacterProp.PotatoScattergun, settings.PoseFor("vanilla:potato_scattergun", "weapon").Prop);
@@ -96,6 +98,8 @@ public class VanillaCharactersTests
     [InlineData("""{ "mode_fade": 0 }""")]
     [InlineData("""{ "step_phases": [1.5] }""")]
     [InlineData("""{ "head_pitch_share": 2 }""")]
+    [InlineData("""{ "eat": { "bites": [0.5, 0.3] } }""")]
+    [InlineData("""{ "eat": { "bites": [0.3], "gone": 0.2 } }""")]
     [InlineData("""{ "item_poses": { "x": { "prop": "laser" } } }""")]
     [InlineData("""{ "nonsense": 1 }""")]
     [InlineData("""{ "first_person_offset": [0, 1] }""")]
