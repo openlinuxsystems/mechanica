@@ -1,0 +1,180 @@
+{
+  "id": "rakehand_baler",
+  "name": "Baler Rakehand",
+  "description": "A hunched, heavy Rakehand with a hay bale on its back and two big hay forks. Slow, but its sweep wrecks whatever it hits.",
+  "family": "rakehand",
+  "health": 200,
+  "speed": 2.5,
+  "water_speed": 2,
+  "sight": 30,
+  "size": {
+    "radius": 0.55,
+    "height": 1.7
+  },
+  "color": "#a33122",
+  "model": {
+    "mesh": "meshes/bots/rakehand_baler.glb",
+    "attacks": {
+      "poke": [
+        "pitch"
+      ],
+      "swing": [
+        "haymaker"
+      ]
+    },
+    "clip_speeds": {
+      "patrol": 0.82,
+      "chase": 1.8
+    }
+  },
+  "raid_cost": 2,
+  "attacks": [
+    {
+      "id": "poke",
+      "kind": "melee",
+      "damage": 25,
+      "part_damage": 20,
+      "range": 2.4,
+      "interval": 1.6
+    },
+    {
+      "id": "swing",
+      "kind": "melee",
+      "damage": 45,
+      "part_damage": 40,
+      "range": 2.8,
+      "interval": 3.5
+    }
+  ],
+  "drops": [
+    {
+      "item": "component_kit",
+      "chance": 0.9,
+      "count": 1
+    },
+    {
+      "item": "gasoline",
+      "chance": 0.5,
+      "count": 1
+    },
+    {
+      "item": "scrap_metal",
+      "chance": 0.8,
+      "count": 4
+    }
+  ],
+  "behavior": {
+    "type": "selector",
+    "children": [
+      {
+        "type": "sequence",
+        "children": [
+          {
+            "type": "find_player",
+            "range": 12
+          },
+          {
+            "type": "succeed",
+            "children": [
+              {
+                "type": "cooldown",
+                "seconds": 8,
+                "children": [
+                  {
+                    "type": "call",
+                    "function": "cry"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "invert",
+            "children": [
+              {
+                "type": "hesitate",
+                "range": 4,
+                "min_speed": 4,
+                "seconds": 2
+              }
+            ]
+          },
+          {
+            "type": "chase",
+            "attack": "poke",
+            "speed": 1
+          },
+          {
+            "type": "selector",
+            "children": [
+              {
+                "type": "attack",
+                "attack": "swing"
+              },
+              {
+                "type": "attack",
+                "attack": "poke"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "sequence",
+        "children": [
+          {
+            "type": "in_raid"
+          },
+          {
+            "type": "find_crop"
+          },
+          {
+            "type": "succeed",
+            "children": [
+              {
+                "type": "cooldown",
+                "seconds": 8,
+                "children": [
+                  {
+                    "type": "call",
+                    "function": "cry"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "invert",
+            "children": [
+              {
+                "type": "hesitate",
+                "range": 4,
+                "min_speed": 4,
+                "seconds": 2
+              }
+            ]
+          },
+          {
+            "type": "chase",
+            "attack": "poke",
+            "speed": 1
+          },
+          {
+            "type": "attack",
+            "attack": "poke"
+          }
+        ]
+      },
+      {
+        "type": "go_to_raid",
+        "radius": 6
+      },
+      {
+        "type": "wander",
+        "radius": 8,
+        "speed": 0.4
+      }
+    ]
+  },
+  "script": "scripts/bots/rakehand.lua"
+}

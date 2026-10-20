@@ -175,7 +175,7 @@ public partial class BotTest : StagedTest
         {
             var shared = new[] { "idle", "patrol", "chase", "fall", "alert", "lose_interest", "hit", "death", "jump", "land" };
             var vanilla = BotBook.Load(mods).All.Where(b => b.Model is not null && b.ModId == "vanilla").ToList();
-            Check(vanilla.Count >= 5, $"the five Scuttlers have models ({vanilla.Count})");
+            Check(vanilla.Count >= 8, $"the five Scuttlers and three Rakehands have models ({vanilla.Count})");
             foreach (var type in vanilla)
             {
                 var view = BotModelView.For(type, _client.Main.Survival.Assets, default);
@@ -185,7 +185,8 @@ public partial class BotTest : StagedTest
                 AddChild(view);
                 var player = LiftBody.FindPlayer(view.Scene);
                 var missing = shared.Concat(type.Model!.Attacks.Values.SelectMany(c => c)).Where(c => player?.HasAnimation(c) != true).ToList();
-                Check(view.Legs == 6, $"{type.QualifiedId} has six legs ({view.Legs})");
+                var legs = type.Family == "rakehand" ? 2 : 6;
+                Check(view.Legs == legs, $"{type.QualifiedId} has {legs} legs ({view.Legs})");
                 Check(missing.Count == 0, $"{type.QualifiedId} has every clip (missing {string.Join(", ", missing)})");
                 view.QueueFree();
             }
