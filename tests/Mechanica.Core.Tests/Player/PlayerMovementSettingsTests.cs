@@ -29,6 +29,7 @@ public class PlayerMovementSettingsTests
         var settings = PlayerMovementSettings.FromJson(File.ReadAllText(path));
         Assert.True(settings.SprintSpeed > settings.WalkSpeed);
         Assert.InRange(settings.StepHeight, 0.25f, 0.5f - 0.01f); // one block, never two
+        Assert.True(settings.CameraStartsFirstPerson);
     }
 
     [Theory]

@@ -27,5 +27,10 @@ public class CameraZoomTests
     }
 
     [Fact]
-    public void TheShippedCameraStartsInThirdPerson() => Assert.True(new PlayerMovementSettings().CameraDistance > 0);
+    public void TheShippedCameraStartsInFirstPersonAndPullsBackBehindThePlayer()
+    {
+        var settings = new PlayerMovementSettings();
+        Assert.True(settings.CameraStartsFirstPerson);
+        Assert.True(settings.CameraDistance > 0);
+    }
 }
