@@ -238,7 +238,7 @@ public class RecipeDataTests : IDisposable
 
         var made = book.All.Where(r => r.RunsAt("portable_fabricator")).Select(r => r.QualifiedId[8..]).Order(StringComparer.Ordinal);
         Assert.Equal(["bearing", "connect_tool", "gasoline", "scrap_metal_wedge", "scrap_wheel",
-            "scrap_wood_block", "scrap_wood_wedge", "switch"], made);
+            "scrap_wood_wedge", "switch"], made);
         var self = book.Find("portable_fabricator")!;
         Assert.True(self.RunsAt("fabricator") && !self.RunsAt("portable_fabricator"));
     }
@@ -255,7 +255,7 @@ public class RecipeDataTests : IDisposable
         Assert.True(book.Find("gasoline")!.RunsAt("refiner"));
 
         var player = new Inventory(content, 30);
-        player.Add("vanilla:scrap_wood", 4);
+        player.Add("vanilla:scrap_wood_block", 16);
         player.Add("vanilla:scrap_metal_block", 8);
         Assert.True(player.HasAll(chest.InputsFor(1)));
         var station = Inventory.For(content, content.FindDefinition("vanilla:fabricator")!)!;

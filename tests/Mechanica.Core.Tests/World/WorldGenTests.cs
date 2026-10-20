@@ -345,7 +345,7 @@ public class WorldGenTests
         Assert.True(scrap.Count >= 6, $"scrap piles ({scrap.Count})");
         Assert.All(scrap, o => Assert.True(o.Definition.Harvest && o.Definition.Regrow is null));
         Assert.Contains(scrap, o => o.Definition.Drops!.Any(d => d.Item == "scrap_metal_block"));
-        Assert.Contains(scrap, o => o.Definition.Drops!.Any(d => d.Item == "scrap_wood"));
+        Assert.Contains(scrap, o => o.Definition.Drops!.Any(d => d.Item == "scrap_wood_block"));
         // Its road heads north to the first Workshop (spec §1).
         var station = Assert.Single(gen.Pois, p => p.Site?.Id == "poi_37");
         Assert.True(station.Centre.Y < crash.Centre.Y, "the first Workshop is north of the crash site");

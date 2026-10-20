@@ -411,7 +411,7 @@
     "common": {
       "items": [
         { "item": "scrap_metal_block", "count": 12, "count_max": 24, "weight": 4.0 },
-        { "item": "scrap_wood", "count": 3, "count_max": 6, "weight": 3.0 },
+        { "item": "scrap_wood_block", "count": 12, "count_max": 24, "weight": 3.0 },
         { "item": "component_kit", "count": 1, "count_max": 2, "weight": 4.0 },
         { "item": "glue", "count": 1, "count_max": 2, "weight": 2.0 },
         { "item": "gasoline", "count": 1, "count_max": 2, "weight": 2.0 },
@@ -694,7 +694,7 @@
       "scale": [0.8, 1.2],
       "sink": 0.1,
       "health": 30.0,
-      "drops": [{ "item": "scrap_wood", "count": 3 }]
+      "drops": [{ "item": "scrap_wood_block", "count": 12 }]
     },
     // World Map spec §2: autumn trees keep the Leafy Tree's wood; burnt trees are bare, charred and give little.
     // Models: tools/trees/build_trees.py (the autumn tree is the Leafy tree in autumn leaves).
@@ -764,7 +764,7 @@
       "sink": 0.05,
       "max_slope": 0.4,
       "health": 30.0,
-      "drops": [{ "item": "scrap_wood", "count": 2, "count_max": 4 }, { "item": "component_kit", "count": 1 }]
+      "drops": [{ "item": "scrap_wood_block", "count": 8, "count_max": 16 }, { "item": "component_kit", "count": 1 }]
     },
     {
       "id": "bloom_pod_green",
@@ -853,7 +853,7 @@
       "max_slope": 0.4,
       "damage_from": [],
       "harvest": true,
-      "drops": [{ "item": "scrap_wood", "count": 4, "count_max": 6 }]
+      "drops": [{ "item": "scrap_wood_block", "count": 16, "count_max": 24 }]
     }
   ]
 }

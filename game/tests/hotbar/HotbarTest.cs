@@ -22,7 +22,7 @@ public partial class HotbarTest : StagedTest
 {
     private const string Block = "vanilla:aluminum_block";
     private const string Carrot = "vanilla:carrot";
-    private const string Scrap = "vanilla:scrap_wood";
+    private const string Scrap = "vanilla:scrap_wood_block";
 
     private readonly List<ActionResult> _results = [];
     private NetTestHarness _harness = null!;
@@ -173,8 +173,8 @@ public partial class HotbarTest : StagedTest
             _screen.SetTab(InventoryTab.Tools);
             var listed = _screen.CatalogSlots.Where(s => s.Visible).Select(s => s.Entry).ToList();
             Check(HotbarTools.All.All(listed.Contains) && !listed.Contains(Block), "Tools lists the tools, not blocks");
-            _screen.SetTab(InventoryTab.Parts);
-            Check(_screen.OwnSlots.Where(s => s.Visible).Select(s => s.Entry).SequenceEqual([Scrap]), "Parts shows only the scrap");
+            _screen.SetTab(InventoryTab.Blocks);
+            Check(_screen.OwnSlots.Where(s => s.Visible).Select(s => s.Entry).SequenceEqual([Scrap]), "Blocks shows only the scrap");
             _screen.SetTab(InventoryTab.All);
             return true;
         });
