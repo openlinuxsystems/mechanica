@@ -16,7 +16,8 @@ namespace Mechanica.Game.Tests;
 /// item. On the client's own inventory window: tabs filter the grid and the Creative list, a listed part dropped on
 /// the bar fills the slot, a bar slot dropped on the inventory empties it, a stack right-clicked picks up half (Shift
 /// one) and a click puts it down, a dragged stack moves, a stack's tooltip names it and its stack, and in Survival a
-/// nearly full inventory warns. The window fades in and out.
+/// nearly full inventory warns. In Creative, a bar item dropped on a Gas Container's slot fills it with a stack and
+/// stays on the bar. The window fades in and out.
 /// </summary>
 public partial class HotbarTest : StagedTest
 {
@@ -31,6 +32,8 @@ public partial class HotbarTest : StagedTest
     private InventoryScreen _screen = null!;
     private HotbarView _bar = null!;
     private GameMode _mode = GameMode.Creative;
+    private (int Creation, int Part) _tank;
+    private bool _dropped;
 
     protected override string Tag => "hotbar";
 
@@ -269,6 +272,35 @@ public partial class HotbarTest : StagedTest
             _mode = GameMode.Creative;
             return true;
         });
+        Add("in Creative a hotbar item dropped on a Gas Container fills the slot with a stack", frame =>
+        {
+            const string fuel = "vanilla:gasoline";
+            if (frame == 0)
+            {
+                _tank = BuildTank();
+                _screen.Show(InventoryRef.OfPart(_tank.Creation, _tank.Part));
+                Bar.Set(9, fuel);
+                return false;
+            }
+            if (Bar.Own[9] != fuel || !_screen.ContainerMode || _screen.ContainerSlots.Count(s => s.Visible) != 5)
+                return frame < 300 ? false : Check(false, $"the Gas Container screen opens with gasoline on the bar ({Bar.Own[9]}, {_screen.ContainerMode}, {_screen.ContainerSlots.Count(s => s.Visible)} slots; {_screen.Status})");
+            if (!_dropped)
+            {
+                Check(_screen.ContainerSlots[2]._CanDropData(Vector2.Zero, new ItemDrag { Entry = fuel, HotbarSlot = 9 }), "the slot takes the drag");
+                _screen.ContainerSlots[2]._DropData(Vector2.Zero, new ItemDrag { Entry = fuel, HotbarSlot = 9 });
+                _dropped = true;
+            }
+            if (frame > 500)
+                return Check(false, $"the gasoline arrives ({_host.Main.Creations.Find(_tank.Creation)!.InventoryOf(_tank.Part)!.Count(fuel)}; {_screen.Status})");
+            var held = _host.Main.Creations.Find(_tank.Creation)!.InventoryOf(_tank.Part)!.Count(fuel);
+            var stack = _client.Main.Build.Catalog.FindDefinition(fuel)!.StackSize;
+            // The host holds it first; the client's screen shows it once the view comes back.
+            if (held != stack || !_screen.ContainerSlots.Any(s => s.Entry == fuel && s.Count == stack))
+                return false;
+            Check(Bar.Own[9] == fuel, "the hotbar slot keeps its gasoline");
+            _screen.Hide();
+            return true;
+        });
         Add("the inventory fades out", frame =>
         {
             var panel = _screen.GetNode<Control>("Panel");
@@ -287,6 +319,22 @@ public partial class HotbarTest : StagedTest
     private void Request<TArgs>(string action, TArgs args) => _client.Main.Actions.Request(action, args, _results.Add);
 
     private IReadOnlyList<SlotView> Own => _client.Main.Inventory.Own?.Items ?? [];
+
+    // A Gas Container on a small wooden floor in front of the client, built by the host.
+    private (int Creation, int Part) BuildTank()
+    {
+        var build = _host.Main.Build;
+        var creation = new Core.Creations.Creation(build.NextCreationId(), build.Catalog);
+        for (var x = 0; x < 4; x++)
+        for (var z = 0; z < 4; z++)
+            creation.TryPlacePart("vanilla:wood_block", new Core.Creations.GridCell(x, 0, z), default, out _, out _);
+        if (!creation.TryPlacePart("vanilla:gas_container", new Core.Creations.GridCell(0, 1, 0), default, out var tank, out var why))
+            Check(false, $"the Gas Container fits ({why})");
+        var feet = _host.Main.PlayerSync.Players[_client.Peer].GlobalPosition;
+        creation.SetAllBodyPoses(new Core.Creations.Pose((feet + new Vector3(-0.5f, 0.25f, -2f)).ToNumerics(), System.Numerics.Quaternion.Identity));
+        build.Added(creation);
+        return (creation.Id, tank?.Id ?? 0);
+    }
 
     private int SlotOf(string item) => Own.FirstOrDefault(s => s.Item == item)?.Slot ?? -1;
 
