@@ -631,6 +631,7 @@ public partial class Main : Node3D
             Markers = MapMarkers.Markers,
             Quests = Quests,
             Fire = Fire,
+            Bots = Bots,
             Name = "Saves",
             Session = Session,
             Players = PlayerSync,

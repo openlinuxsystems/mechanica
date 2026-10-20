@@ -1,5 +1,6 @@
 using System.Numerics;
 using System.Text.Json.Nodes;
+using Mechanica.Core.Bots;
 using Mechanica.Core.Creations;
 using Mechanica.Core.Data;
 using Mechanica.Core.Items;
@@ -40,6 +41,7 @@ public class SaveGameTests
             Players = [new SavedPlayer(Ada, "Ada", [new SavedSlot(2, Wood, 5)], 80f, new Vec3(4, 0, 5), 1.5f, new SavedPart(3, 1), "vanilla:scrapper_female",
                 ["vanilla:sledgehammer", null, "test:chest"], [new Mechanica.Core.Ui.MapMarker("marker:2", "Scrap pile", 12.5f, 3f, -40f)],
                 new Dictionary<string, JsonObject> { ["test:lantern"] = new() { ["fuel"] = 0.5 } })],
+            Bots = [new SavedBot("vanilla:grazer", new Vec3(10, 2, -4), 90, new Vec3(8, 2, -4), 35)],
         };
     }
 
@@ -68,6 +70,7 @@ public class SaveGameTests
         Assert.Equal(new Mechanica.Core.Ui.MapMarker("marker:2", "Scrap pile", 12.5f, 3f, -40f), Assert.Single(player.Markers!));
         Assert.Equal(0.5, player.ItemScripts!["test:lantern"]["fuel"]!.GetValue<double>());
         Assert.Equal(2, read.Scripts[0].State["count"]!.GetValue<int>());
+        Assert.Equal(new SavedBot("vanilla:grazer", new Vec3(10, 2, -4), 90, new Vec3(8, 2, -4), 35), Assert.Single(read.Bots));
 
         var creation = Assert.Single(read.ReadCreations(_catalog, "my-world.json", diagnostics));
         Assert.Empty(diagnostics);
@@ -97,6 +100,8 @@ public class SaveGameTests
     [InlineData("""{ "format_version": 1, "seed": 1, "mode": "survival", "creations": [1] }""", "must be an object")]
     [InlineData("""{ "format_version": 1, "seed": 1, "mode": "survival", "time": -1 }""", "time must be 0 or more")]
     [InlineData("""{ "format_version": 1, "seed": 1, "mode": "survival", "creations": [{ "id": 1 }, { "id": 1 }] }""", "used twice")]
+    [InlineData("""{ "format_version": 1, "seed": 1, "mode": "survival", "bots": [{ "type": "grazer", "position": [0, 0, 0], "health": 5 }] }""", "a bot needs")]
+    [InlineData("""{ "format_version": 1, "seed": 1, "mode": "survival", "bots": [{ "type": "a:b", "position": [0, 0, 0], "health": 0 }] }""", "health above 0")]
     public void BadSavesGiveClearErrors(string json, string message)
     {
         var diagnostics = new List<DataDiagnostic>();

@@ -65,7 +65,7 @@ public static class AgentPermissions
     /// </summary>
     public static readonly IReadOnlySet<string> AdminActions = new HashSet<string>(StringComparer.Ordinal)
     {
-        "SpawnPart", "ClearCreations", "SpawnBot", "DespawnBot", "MoveBot", "BotAttack", "StartRaid", "GiveItems", "SetFriendlyFire",
+        "SpawnPart", "ClearCreations", "SpawnBot", "DespawnBot", "MoveBot", "KeepBot", "BotAttack", "StartRaid", "GiveItems", "SetFriendlyFire",
     };
 
     /// <summary>The scope <paramref name="action"/> needs.</summary>

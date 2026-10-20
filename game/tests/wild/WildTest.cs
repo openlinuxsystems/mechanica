@@ -1,5 +1,9 @@
 using Godot;
+using Mechanica.Core.Actions;
+using Mechanica.Core.Bots;
+using Mechanica.Core.Creations;
 using Mechanica.Core.Survival;
+using Mechanica.Game.Creations;
 using Instance = Mechanica.Game.Tests.NetTestHarness.Instance;
 
 namespace Mechanica.Game.Tests;
@@ -7,7 +11,8 @@ namespace Mechanica.Game.Tests;
 /// <summary>
 /// Bots in the wild, host plus client, in a generated Survival world: with both players on a shore, Blue Scuttlers
 /// appear in the deep water off it and swim there on both peers; when the players go far inland they are taken away.
-/// In a meadow, Grazers appear in herds in their biomes and show on the client.
+/// In a meadow, Grazers appear in herds in their biomes and show on the client. One is kept: when the players leave,
+/// the wild ones go and it stays, and it comes back where it was when the world is saved and loaded.
 /// </summary>
 public partial class WildTest : StagedTest
 {
@@ -18,6 +23,8 @@ public partial class WildTest : StagedTest
     private Instance _host = null!;
     private Instance _client = null!;
     private Vector3 _shore;
+    private int _kept;
+    private Vector3 _keptAt;
 
     protected override string Tag => "wild";
 
@@ -108,6 +115,46 @@ public partial class WildTest : StagedTest
             foreach (var bot in grazers)
                 Check(gen.BiomeAt(bot!.Position.X, bot.Position.Z).Id is "meadow" or "field", $"Grazer {bot.Id} is in a meadow or field");
             Check(grazers.All(a => grazers.Count(b => (a!.Position - b!.Position).Length() < 12f) >= 2), "each Grazer has herd mates near it");
+            _kept = grazers[0]!.Id;
+            return true;
+        });
+        Add("a kept Grazer stays when the players leave and the wild ones go", frame =>
+        {
+            if (frame == 0)
+            {
+                var result = _host.Main.Actions.Dispatcher.Dispatch(new ActionCaller(Creation.HostPeer, ActionSource.Bot), BotActions.KeepBot,
+                    System.Text.Json.JsonSerializer.Serialize(new KeepBotArgs(_kept), ActionJson.Options));
+                Check(result.Ok, $"KeepBot is accepted ({result})");
+                var away = meadow + new Vector3(0, 0, 400);
+                away.Y = _host.Main.Streamer.Generator.HeightAt(away.X, away.Z) + 0.5f;
+                _host.Main.PlayerSync.HostTeleport(_host.Peer, away);
+                _host.Main.PlayerSync.HostTeleport(_client.Peer, away + new Vector3(0, 0, 2));
+            }
+            var bots = _host.Main.Bots.Bots!;
+            if (bots.Bots.Values.Any(b => b.Type.QualifiedId == Grazer && b.Id != _kept && (b.Position.ToGodot() - meadow).Length() < 100f))
+                return false;
+            Check(bots.Find(_kept) is { Dead: false, Kept: true }, "the kept Grazer is still there");
+            Check(_client.Main.Bots.Bodies.ContainsKey(_kept), "the client still shows it");
+            _keptAt = bots.Find(_kept)!.Position.ToGodot();
+            return true;
+        });
+        Add("the world is saved and loads with the kept Grazer where it was", frame =>
+        {
+            if (frame == 0)
+            {
+                var save = _host.Main.Saves.Capture("Wild");
+                Check(save.Bots is [{ Type: Grazer }], $"the save holds the one kept Grazer ({save.Bots.Count})");
+                _harness.Stop(_client);
+                _harness.Stop(_host);
+                _harness.Save = save;
+                _host = _harness.StartHost();
+                _client = _harness.StartClient("Client");
+            }
+            var kept = _host.Main.Bots.Bots?.Bots.Values.FirstOrDefault(b => b.Kept);
+            if (kept is null || !_client.Main.Bots.Bodies.ContainsKey(kept.Id))
+                return false;
+            Check(kept.Type.QualifiedId == Grazer, "it is a Grazer");
+            Check((kept.Position.ToGodot() - _keptAt).Length() < 4f, $"it is where it was ({kept.Position.ToGodot()} vs {_keptAt})");
             return true;
         });
     }

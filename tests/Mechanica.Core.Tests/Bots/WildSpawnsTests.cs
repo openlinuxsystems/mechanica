@@ -135,6 +135,22 @@ public sealed class WildSpawnsTests
     }
 
     [Fact]
+    public void A_kept_swimmer_stays_when_the_players_leave_and_more_wild_ones_come()
+    {
+        var (f, wild) = Make();
+        wild.Tick();
+        var kept = wild.Bots.First();
+        f.Bots.Keep(kept);
+
+        MoveBoth(f, new Vector3(-400, 1, 0));
+        f.Advance(10);
+        wild.Tick();
+
+        Assert.True(f.Bots.Find(kept) is { Dead: false, Kept: true }, "the kept one is still there");
+        Assert.Empty(wild.Bots);
+    }
+
+    [Fact]
     public void Nothing_lives_in_the_wild_in_Creative()
     {
         var (f, wild) = Make(GameMode.Creative);

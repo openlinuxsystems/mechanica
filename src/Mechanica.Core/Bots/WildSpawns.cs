@@ -11,7 +11,7 @@ namespace Mechanica.Core.Bots;
 /// <see cref="BotWild.ClearRadius"/>, and in one of its <see cref="BotWild.Biomes"/> when it names any. A herd
 /// (<see cref="BotWild.HerdMin"/> to <see cref="BotWild.HerdMax"/>) appears together a few metres apart, and a share of
 /// them appear round one of its <see cref="BotWild.Near"/> objects in reach. A wild bot every player has left farther than <see cref="BotWild.DespawnDistance"/>
-/// behind, and that is not fighting, goes away. Wild bots count towards <see cref="BotSettings.MaxBots"/>.
+/// behind, and that is not fighting, goes away; a kept one (<see cref="BotState.Kept"/>) is no longer wild and stays. Wild bots count towards <see cref="BotSettings.MaxBots"/>.
 /// </summary>
 public sealed class WildSpawns
 {
@@ -59,7 +59,8 @@ public sealed class WildSpawns
     /// <summary>Spawns and clears wild bots. The host calls it every physics tick.</summary>
     public void Tick()
     {
-        _wild.RemoveWhere(id => _bots.Find(id) is not { Dead: false });
+        // A wild bot that died, went or was kept (tamed) is no longer this one's to count or take away.
+        _wild.RemoveWhere(id => _bots.Find(id) is not { Dead: false, Kept: false });
         var survival = _survival.Mode == GameMode.Survival;
         var players = survival ? _bots.LivingPlayers().Select(p => p.Centre).ToList() : [];
         var now = _bots.Now;

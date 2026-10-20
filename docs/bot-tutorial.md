@@ -198,6 +198,9 @@ A wild bot has no raid, so its tree's `in_raid` branches fail: give it a `wander
 players its `find_player` finds (out of the water too) before wandering home. Wild bots count towards `max_bots`
 (`game/data/bots.json`).
 
+A kept bot (`KeepBot`, see [Action API](#6-action-api)) is no longer wild: it stays when the players leave, never
+counts towards `count`, and is saved with the world (see [Saves](saves.md)).
+
 ## 3. The behaviour tree
 
 A behaviour tree is a plan made of nodes. Each node is a JSON object with a `type`; composites and
@@ -451,8 +454,8 @@ against the mods' bots and writes `raids/raids.json`; the status line says wheth
 
 ## 6. Action API
 
-Bots use these actions, and so can the [External AI Endpoint](ai-endpoint.md). Spawning, removing and
-starting raids are open to players only in Creative.
+Bots use these actions, and so can the [External AI Endpoint](ai-endpoint.md). Spawning, removing, keeping
+and starting raids are open to players only in Creative.
 
 | Action | Arguments | Notes |
 |--------|-----------|-------|
@@ -460,6 +463,7 @@ starting raids are open to players only in Creative.
 | `DespawnBot` | `bot` | |
 | `MoveBot` | `bot`, `direction?`, `speed?` | Walk that way; no direction stops it. |
 | `BotAttack` | `bot`, `attack`, `player?` / `creation?`, `part?` / `target?` / `object?` | Checked for reach, line of sight and cooldown. Returns `{hits}`. |
+| `KeepBot` | `bot`, `kept?` | Keeps the bot (or with `kept: false` lets it go): it never despawns and is saved with the world. |
 | `GetBots`, `GetBot` | none; `bot` | Queries. |
 | `StartRaid` | `level?` | Starts a raid now at the given (or the current) level. |
 | `GetRaid` | none | The raid in progress. |

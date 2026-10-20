@@ -2,14 +2,14 @@
 
 <!-- Generated from mechanica.describe by tools/ai/gen-docs.sh. Do not edit by hand. -->
 
-Protocol version 2. 170 methods: 62 actions (change the world), 29 queries (only read it) and 79 endpoint methods. Every one is a JSON-RPC method of the same name whose `params` are the named arguments below (snake_case). `describe.json` beside this file is the same data as JSON Schemas, ready to become an AI's tool list. Scopes: `observe` reads, `play` acts as a player, `admin` is for debug powers ([ai-endpoint.md](../ai-endpoint.md#scopes)).
+Protocol version 2. 171 methods: 63 actions (change the world), 29 queries (only read it) and 79 endpoint methods. Every one is a JSON-RPC method of the same name whose `params` are the named arguments below (snake_case). `describe.json` beside this file is the same data as JSON Schemas, ready to become an AI's tool list. Scopes: `observe` reads, `play` acts as a player, `admin` is for debug powers ([ai-endpoint.md](../ai-endpoint.md#scopes)).
 
 ## Contents
 
 - [Endpoint built-ins (mechanica.*)](#endpoint-built-ins-mechanica) (12)
 - [Agent players](#agent-players) (2)
 - [Seeing the world and the catalog](#seeing-the-world-and-the-catalog) (15)
-- [Bots and raids](#bots-and-raids) (8)
+- [Bots and raids](#bots-and-raids) (9)
 - [Building](#building) (15)
 - [Characters](#characters) (1)
 - [Chat](#chat) (1)
@@ -382,6 +382,17 @@ No params.
 Reading the raid in progress.
 
 No params.
+
+### `KeepBot`
+
+*action, admin scope*
+
+Keeping a bot (or letting it go wild again). Arguments of KeepBot.
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `bot` | integer | yes |  | The bot. |
+| `kept` | boolean |  | `true` | True to keep it (saved with the world, never taken away), false to let it go wild again. |
 
 ### `MoveBot`
 
