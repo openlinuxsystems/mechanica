@@ -79,6 +79,7 @@ public partial class OpeningTest : StagedTest
             Check(Me.Character is not CharacterModel model || model.Animator.Gesture?.StartsWith("get_up", StringComparison.Ordinal) == true,
                 "the player gets up");
             Check(_opening.Copies is { Fore: null, Aft: null, Nacelle: null }, "the copies are gone");
+            CheckQuiet();
             return true;
         });
         Add("when it ends everything is as it was", _ =>
@@ -107,6 +108,7 @@ public partial class OpeningTest : StagedTest
             Check(frame * (1 / 60f) < _opening.Scene.Settings.SkipFade + 0.5f, "after the short fade");
             foreach (var index in _opening.Scene.HiddenModels)
                 Check(Models(index).All(m => m.Visible), $"model {index} is drawn");
+            CheckQuiet();
             Engine.TimeScale = Speed;
             return true;
         });
@@ -121,6 +123,17 @@ public partial class OpeningTest : StagedTest
     }
 
     public override void _ExitTree() => Engine.TimeScale = 1;
+
+    // The cinematic's loops (the ship's engine, the camera's air whoosh) stop at the cut: none hums on over the wreck.
+    private void CheckQuiet()
+    {
+        var settings = _opening.Scene.Settings;
+        var ids = settings.Sounds.Select(s => s.Event).Append(settings.EngineLoop)
+            .Select(id => _host.Main.Sounds.Registry.Find(id)).OfType<Mechanica.Core.Sound.SoundEvent>().Where(e => e.Loop).ToList();
+        Check(ids.Count >= 2, $"the cinematic plays loops ({ids.Count})");
+        var playing = _host.Main.Sounds.Player.Voices.Where(v => ids.Contains(v.Event)).Select(v => v.Event.QualifiedId).ToList();
+        Check(playing.Count == 0, $"none of them plays on after the cut ({string.Join(", ", playing)})");
+    }
 
     private IEnumerable<Node3D> Models(int index) =>
         _host.Main.Streamer.Chunks.Values.Concat(_host.Main.Streamer.Scenery.Values)
