@@ -69,57 +69,9 @@ def material(name, color, rough=0.5, metal=0.0, coat=0.0, sss=0.0, vertex_color=
     return m
 
 
-def flesh_material(name, base, light, seed_color):
-    """Cut fruit: a base colour broken by lighter gel patches and seed specks (object space, so it holds still)."""
-    m = bpy.data.materials.get(name)
-    if m:
-        return m
-    m = material(name, base, rough=0.22, sss=0.2)
-    nt = m.node_tree
-    p = nt.nodes["Principled BSDF"]
-    tc = nt.nodes.new("ShaderNodeTexCoord")
-    noise = nt.nodes.new("ShaderNodeTexNoise")
-    noise.inputs["Scale"].default_value = 60.0
-    noise.inputs["Detail"].default_value = 2.0
-    ramp = nt.nodes.new("ShaderNodeValToRGB")
-    ramp.color_ramp.elements[0].position = 0.45
-    ramp.color_ramp.elements[0].color = lin(base)
-    ramp.color_ramp.elements[1].position = 0.62
-    ramp.color_ramp.elements[1].color = lin(light)
-    vor = nt.nodes.new("ShaderNodeTexVoronoi")
-    vor.inputs["Scale"].default_value = 260.0
-    seeds = nt.nodes.new("ShaderNodeMath")
-    seeds.operation = "LESS_THAN"
-    seeds.inputs[1].default_value = 0.16
-    mix = nt.nodes.new("ShaderNodeMix")
-    mix.data_type = "RGBA"
-    mix.inputs["B"].default_value = lin(seed_color)
-    nt.links.new(tc.outputs["Object"], noise.inputs["Vector"])
-    nt.links.new(tc.outputs["Object"], vor.inputs["Vector"])
-    nt.links.new(noise.outputs["Fac"], ramp.inputs["Fac"])
-    nt.links.new(vor.outputs["Distance"], seeds.inputs[0])
-    nt.links.new(seeds.outputs["Value"], mix.inputs["Factor"])
-    nt.links.new(ramp.outputs["Color"], mix.inputs["A"])
-    vc = nt.nodes.new("ShaderNodeVertexColor")
-    vc.layer_name = "Col"
-    tint = nt.nodes.new("ShaderNodeMix")
-    tint.data_type = "RGBA"
-    tint.blend_type = "MULTIPLY"
-    tint.inputs["Factor"].default_value = 1.0
-    nt.links.new(mix.outputs["Result"], tint.inputs["A"])
-    nt.links.new(vc.outputs["Color"], tint.inputs["B"])
-    mix = tint
-    ao = nt.nodes.new("ShaderNodeAmbientOcclusion")
-    ao.inputs["Distance"].default_value = 0.012
-    dark = nt.nodes.new("ShaderNodeMix")
-    dark.data_type = "RGBA"
-    dark.blend_type = "MULTIPLY"
-    dark.inputs["Factor"].default_value = 1.0
-    nt.links.new(mix.outputs["Result"], ao.inputs["Color"])
-    nt.links.new(mix.outputs["Result"], dark.inputs["A"])
-    nt.links.new(ao.outputs["AO"], dark.inputs["B"])
-    nt.links.new(dark.outputs["Result"], p.inputs["Base Color"])
-    return m
+def flesh_material(name, base=None, light=None, seed_color=None):
+    """Cut fruit: its colours are in the mesh's vertex colours (a light, wet middle and a darker rim), as in the .glb."""
+    return material(name, "#FFFFFF", rough=0.22, sss=0.15, vertex_color=True)
 
 
 def image_material(name, path, under="#EFE6CF", rough=0.8):

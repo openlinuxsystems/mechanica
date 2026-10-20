@@ -10,7 +10,7 @@ namespace Mechanica.Game.Tools;
 // Given `animations`, the capture records the player character's moves as runs of frames (OUT/<move>/0000.png ...), for
 // turning into clips (tools/capture-animations.sh): standing, walking, jogging and running from the side and the front,
 // starting and stopping, turning on the spot, strafing, walking with a tool, jumping, crouching, the Sledgehammer swings,
-// the bucket throw, and being hit, knocked down and killed. Run it with --fixed-fps so every frame is the same step of
+// the bucket throw, being hit, knocked down and killed, eating a tomato, and the tomato plant growing, wilting and harvested. Run it with --fixed-fps so every frame is the same step of
 // game time, whatever the renderer manages.
 public partial class CaptureScene
 {
@@ -99,6 +99,63 @@ public partial class CaptureScene
             if (f == 89)
                 Player.Dead = false;
         });
+        // Food (the food design): a tomato on the palm, eaten in two bites, seen from the front and from the eyes.
+        void Eat(int f)
+        {
+            if (f == 0)
+            {
+                Hold(CharacterProp.Food);
+                Player.HeldItem = _main.HeldItems.IndexOf("vanilla:tomato");
+            }
+            Drive();
+            if (f == 30)
+                Player.Gesture(CharacterGesture.Eat);
+        }
+        Move("eat_tomato", 90, new Vector3(1.0f, 1.55f, -1.5f), Eat, look: new Vector3(0, 1.35f, 0));
+        Move("eat_tomato_side", 90, new Vector3(1.7f, 1.45f, 0.1f), Eat, look: new Vector3(0, 1.35f, 0));
+        Move("eat_tomato_fp", 90, new Vector3(1.7f, 1.45f, 0.1f), f =>
+        {
+            if (f == 0)
+            {
+                _track = null;
+                Player.ThirdPerson = false;
+                Player.MakeCameraCurrent();
+            }
+            Eat(f);
+        });
+        // The tomato plant from seed to ripe, wilting on dry soil and picking up again, then harvested.
+        Survival.CropNode? crop = null;
+        void ShowCrop(int stage, Core.Survival.SoilWetness wetness) => crop!.Show(new Core.Survival.SoilView(0, 0, "vanilla:tomato_seed",
+            "vanilla:tomato", stage, Wetness: wetness), _main.Survival.Catalog, _main.Survival.Assets);
+        Move("tomato_grow", 420, new Vector3(1.1f, 0.85f, -0.3f), f =>
+        {
+            if (f == 0)
+            {
+                Hold(CharacterProp.None);
+                Player.ThirdPerson = true;
+                crop = new Survival.CropNode { Name = "CaptureCrop" };
+                AddChild(crop);
+                crop.GlobalPosition = Player.GlobalPosition + new Vector3(0, 0, -1.3f);
+                ShowCrop(0, Core.Survival.SoilWetness.Wet);
+            }
+            Drive();
+            if (f % 75 == 30 && f / 75 < 4)
+                ShowCrop(f / 75 + 1, Core.Survival.SoilWetness.Wet);
+        }, still: true, look: new Vector3(0, 0.35f, -1.3f));
+        Move("tomato_wilt", 150, new Vector3(1.1f, 0.85f, -0.3f), f =>
+        {
+            Drive();
+            if (f == 10)
+                ShowCrop(4, Core.Survival.SoilWetness.Dry);
+            if (f == 90)
+                ShowCrop(4, Core.Survival.SoilWetness.Wet);
+        }, still: true, look: new Vector3(0, 0.35f, -1.3f));
+        Move("tomato_harvest", 60, new Vector3(1.1f, 0.85f, -0.3f), f =>
+        {
+            Drive();
+            if (f == 10)
+                crop!.Remove(harvested: true);
+        }, still: true, look: new Vector3(0, 0.35f, -1.3f));
     }
 
     // A run of frames named `name`, the camera at `offset` from the player in world axes (tracking, not turning with it),

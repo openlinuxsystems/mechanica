@@ -3945,13 +3945,56 @@ def clip_hold_item(t, T=2.0):
     return s
 
 
+# Food: held on the open palm, palm up, rather than in a fist, so the fruit shows (Food design, 2026-10-20). Eating
+# brings it up under the chin, the head dips into two bites, and the hand comes down chewing. The game swaps the held
+# model's bitten stages at the bites (character.json "eat").
+FOOD_GRIP = np.array([-0.12, -0.27, 1.12])          # right fist centre while holding a piece of food out in front
+FOOD_GRIP_FP = np.array([-0.15, -0.4, 1.42])        # first person: up in the lower right of the view
+MOUTH = np.array([-0.01, -0.13, 1.56])
+
+
+def food_arm(grip=FOOD_GRIP):
+    """Palm up, fingers forward: the fruit sits in the cupped hand."""
+    return arm_ik_from_grip("r", grip, d=(0.2, -0.95, 0.2), w=(-0.95, -0.2, 0.05), pole=(-0.7, 0.4, -1.0))
+
+
+def mouth_arm(off=(0.0, -0.07, -0.032)):
+    """The hand under the chin, palm up and toward the face: the fruit on it is at the lips."""
+    return arm_ik_from_grip("r", MOUTH + np.array(off), d=(0.35, -0.75, 0.55), w=(-0.93, -0.28, 0.21),
+                            pole=(-0.8, 0.2, -1.0))
+
+
+def clip_hold_food(t, T=2.0, grip=FOOD_GRIP):
+    ph = 2 * math.pi * t / T
+    s = upper_base(t, T)
+    relaxed_left(s, ph)
+    s["arm_r"] = food_arm(grip + np.array([0, 0, 0.004 * math.sin(ph)]))
+    s["fingers_r"] = 38.0
+    s["thumb_r"] = 22.0
+    return s
+
+
+def clip_hold_food_fp(t, T=2.0):
+    return clip_hold_food(t, T, FOOD_GRIP_FP)
+
+
+def eat_keys(h):
+    up = with_right_arm(h, arm_r=mouth_arm(), neck=(4.0, 0, 0), head=(6.0, 0, 0), chest=(2.0, 0, 0))
+    bite = with_right_arm(up, arm_r=mouth_arm((0.0, -0.058, -0.032)), neck=(9.0, 0, 0), head=(9.0, 0, 0))
+    pull = with_right_arm(up, arm_r=mouth_arm((0.0, -0.1, -0.07)), neck=(2.0, 0, 0), head=(-2.0, 0, 0))
+    chew = with_right_arm(h, neck=(3.0, 0, 0), head=(5.0, 0, 0))
+    chew2 = with_right_arm(h, neck=(1.0, 0, 0), head=(-1.0, 0, 0))
+    return [(0.0, h), (0.22, up), (0.3, bite), (0.4, pull), (0.52, bite), (0.62, pull),
+            (0.86, chew), (1.0, chew2), (1.12, chew), (1.4, h)]
+
+
 def clip_eat(t):
-    h = clip_hold_item(0.0)
-    mouth = np.array([-0.01, -0.13, 1.56])
-    at = with_right_arm(h, arm_r=item_arm(mouth, d=(0.6, -0.2, 0.6), w=(0.3, -0.5, 0.8)), neck=(6.0, 0, 0),
-                        head=(4.0, 0, 0))
-    down = with_right_arm(h, arm_r=item_arm(np.array([-0.07, -0.24, 1.36])))
-    return oneshot([(0.0, h), (0.22, at), (0.36, at), (0.5, down), (0.68, at), (0.8, at), (1.0, h)], t)
+    """1.4 s: up to the mouth, a bite with the head dipping into it, a second bite, then down, chewing."""
+    return oneshot(eat_keys(clip_hold_food(0.0)), t)
+
+
+def clip_eat_fp(t):
+    return oneshot(eat_keys(clip_hold_food_fp(0.0)), t)
 
 
 def clip_throw(t):
@@ -5512,7 +5555,10 @@ CLIPS = {
     "tool_use": (clip_tool_use, 0.3, False, True),
     "paint_spray": (clip_paint_spray, PAINT_SPRAY_SECONDS, False, True),
     "fire_gun": (clip_fire_gun, 0.25, False, True),
-    "eat": (clip_eat, 1.0, False, True),
+    "hold_food": (clip_hold_food, 2.0, True, True),
+    "hold_food_fp": (clip_hold_food_fp, 2.0, True, True),
+    "eat": (clip_eat, 1.4, False, True),
+    "eat_fp": (clip_eat_fp, 1.4, False, True),
     "throw": (clip_throw, 0.5, False, False),
     "plant": (clip_plant, 0.8, False, True),
     "pour": (clip_pour, 0.8, False, True),

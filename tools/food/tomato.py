@@ -105,12 +105,13 @@ def sepals(bvh, top_z, n=5, length=0.03, width=0.0085, seed=3, droop=0.0):
     return out
 
 
-def build(name="Tomato", ripeness="ripe", scale=1.0, seed=1, stem=True, parent=None, location=(0, 0, 0), m=None):
+def build(name="Tomato", ripeness="ripe", scale=1.0, seed=1, stem=True, parent=None, location=(0, 0, 0), m=None,
+          segs=(56, 36)):
     """A tomato object tree: Body (skin), Calyx and Stem under an empty named ``name``."""
     import bpy
     m = m or mats(ripeness)
     root = fl.empty(name, parent, location)
-    body = fl.from_bm(name + "_Body", body_bm(ripeness, scale, seed), [m["skin"]], root)
+    body = fl.from_bm(name + "_Body", body_bm(ripeness, scale, seed, segs), [m["skin"]], root)
     bvh = fl.bvh_of(body)
     top = max(v.co.z for v in body.data.vertices)
     cb = sepals(bvh, top, length=0.03 * scale, width=0.0085 * scale, seed=seed + 7)
@@ -183,9 +184,10 @@ def bite(root, where, size=1.0, name="Bite", m=None):
                     q = verts[loops[li].vertex_index].co - c0
                     rs.append((li, (q - out * q.dot(out)).length))
         rmax = max((r for _, r in rs), default=1.0)
+        light, rim = fl.lin("#F0907A")[:3], fl.lin("#C83A2A")[:3]
         for li, r in rs:
             k = (r / rmax) ** 2.2
-            col.data[li].color = (1.05 - 0.35 * k, 1.1 - 0.55 * k, 1.1 - 0.55 * k, 1)
+            col.data[li].color = (*_mix(light, rim, k), 1)
     # a crisp lip where skin meets flesh
     me = body.data
     sharp = me.attributes.get("sharp_edge") or me.attributes.new("sharp_edge", "BOOLEAN", "EDGE")

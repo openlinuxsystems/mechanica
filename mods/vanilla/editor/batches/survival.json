@@ -151,8 +151,14 @@
         "category": "consumable",
         "mass": 0.05,
         "stack_size": 50,
+        "icon": "textures/items/tomato_seed_icon.png",
         "visual": {
-          "color": "#d0b070"
+          "color": "#ffffff"
+        },
+        "held": {
+          "mesh": "meshes/items/tomato_seed.glb",
+          "offset": [-0.028, 0.062, -0.035],
+          "rotation": [0, 90, 90]
         },
         "sounds": {
           "pickup": "seed_pickup",
@@ -163,10 +169,13 @@
           "grow_time": 360,
           "yield": 2,
           "seeds": 1,
-          "value": 1.5
+          "seeds_max": 2,
+          "value": 1.5,
+          "plant": "meshes/crops/tomato_plant.glb"
         },
         "script": "scripts/seed.lua"
-      }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/tomato_seed.glb" }]
     },
     {
       "file": "parts/carrot.json",
@@ -221,8 +230,15 @@
         "category": "consumable",
         "mass": 0.2,
         "stack_size": 20,
+        "icon": "textures/items/tomato_icon.png",
         "visual": {
-          "color": "#d23a2a"
+          "color": "#ffffff"
+        },
+        "held": {
+          "mesh": "meshes/items/tomato_held.glb",
+          "offset": [-0.0373, 0.0413, 0.0015],
+          "rotation": [-3.37, -180, -45],
+          "juice": "#c83a2a"
         },
         "sounds": {
           "pickup": "pickup_produce",
@@ -232,7 +248,8 @@
         "properties": {
           "health": 15
         }
-      }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/tomato.glb" }]
     },
     {
       "file": "parts/water_bucket.json",

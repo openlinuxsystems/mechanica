@@ -119,6 +119,9 @@ public sealed record CharacterSettings
     /// <summary>The Paint Tool in hand: how its tank moves in the reload (<see cref="PaintToolRig"/>).</summary>
     public PaintToolSettings PaintTool { get; init; } = new();
 
+    /// <summary>Food in hand: when the <c>eat</c> clip's bites land (<see cref="EatSettings"/>).</summary>
+    public EatSettings Eat { get; init; } = new();
+
     /// <summary>Share of the look pitch the neck and head follow (0 to 1).</summary>
     public float HeadPitchShare { get; init; } = 0.6f;
 
@@ -191,6 +194,7 @@ public sealed record CharacterSettings
             throw new FormatException($"head_pitch_share must be from 0 to 1 (got {HeadPitchShare}).");
         Bucket.Validate();
         PaintTool.Validate();
+        Eat.Validate();
         Motion.Validate();
         Seat.Validate();
         if (FirstPersonOffset is not { Length: 3 } || FirstPersonOffset.Any(v => !float.IsFinite(v) || MathF.Abs(v) > 3f))
@@ -462,6 +466,54 @@ public sealed record PaintToolSettings
                     throw new FormatException($"paint_tool.tank.{clip} key {i} must be [rising seconds, twist -360-360, pull 0-0.2].");
             }
         }
+    }
+}
+
+/// <summary>
+/// Eating (<c>eat</c> in <c>character.json</c>): the moments in the <c>eat</c> clip (and <c>eat_fp</c>) where a bite is
+/// taken and where the food is gone. A food's held model has one child per bite, <c>eat_0</c> (whole) to
+/// <c>eat_n</c> (n bites taken); the hand shows the one the clip has reached, and none once the food is gone. The clips
+/// that follow these numbers are built by <c>tools/characters/build_characters.py</c>.
+/// </summary>
+public sealed record EatSettings
+{
+    /// <summary>Seconds into the clip of each bite, rising.</summary>
+    public float[] Bites { get; init; } = [0.3f, 0.52f];
+
+    /// <summary>Seconds into the clip when the food is gone (after the last bite).</summary>
+    public float Gone { get; init; } = 0.86f;
+
+    /// <summary>Seconds the whole clip takes: no more food is eaten until it is over.</summary>
+    public float Seconds { get; init; } = 1.4f;
+
+    /// <summary>
+    /// How many bites have been taken <paramref name="seconds"/> into the clip, from 0; -1 once the food is gone.
+    /// </summary>
+    public int BitesAt(float seconds)
+    {
+        if (seconds >= Gone)
+            return -1;
+        var taken = 0;
+        while (taken < Bites.Length && seconds >= Bites[taken])
+            taken++;
+        return taken;
+    }
+
+    /// <summary>Throws <see cref="FormatException"/> naming the first out-of-range value.</summary>
+    public void Validate()
+    {
+        if (Bites is null)
+            throw new FormatException("eat.bites must be a list of seconds.");
+        for (var i = 0; i < Bites.Length; i++)
+        {
+            if (!float.IsFinite(Bites[i]) || Bites[i] < 0f || (i > 0 && Bites[i] <= Bites[i - 1]))
+                throw new FormatException($"eat.bites[{i}] must be a rising number of seconds from 0.");
+        }
+        CharacterSettings.Positive(Gone, "eat.gone");
+        if (Bites.Length > 0 && Gone <= Bites[^1])
+            throw new FormatException("eat.gone must come after the last bite.");
+        if (!float.IsFinite(Seconds) || Seconds < Gone || Seconds > 10f)
+            throw new FormatException($"eat.seconds must be from eat.gone to 10 (got {Seconds}).");
     }
 }
 
