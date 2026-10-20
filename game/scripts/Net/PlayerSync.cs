@@ -297,7 +297,7 @@ public partial class PlayerSync : Node
             Corrections++;
             var local = ground.Feet - acked.Ground!.Value.Feet;
             var shift = frame.Basis * local.ToGodot();
-            player.GlobalPosition += shift;
+            player.ShiftOnGround(shift);
             player.Velocity += (state.Velocity - acked.Velocity).ToGodot();
             _history.Shift(shift.ToNumerics(), local, ground);
             return;
@@ -307,6 +307,9 @@ public partial class PlayerSync : Node
 
         Corrections++;
         player.ApplyState(HostFeet(state), state.Velocity.ToGodot(), player.Rotation.Y, player.Head.Rotation.X);
+        // On a Creation, on it where this peer shows it, so the replayed steps ride it from there.
+        if (state.Ground is { } on && GroundBody(on) is { } body)
+            player.StandOn(body, on.Feet.ToGodot());
         foreach (var entry in _history.Pending.ToList())
         {
             player.Step(entry.Input, delta);
@@ -332,8 +335,10 @@ public partial class PlayerSync : Node
         state.Ground is { } ground && GroundFrame(ground) is { } frame ? frame * ground.Feet.ToGodot() : state.Position.ToGodot();
 
     // Where this peer shows the Body a player stands on, or null when it does not show it.
-    private Transform3D? GroundFrame(PlayerGround ground) =>
-        Creations?.NodeOf(ground.Creation) is { } node && ground.Body < node.Bodies.Count ? node.Bodies[ground.Body].GlobalTransform : null;
+    private Transform3D? GroundFrame(PlayerGround ground) => GroundBody(ground)?.GlobalTransform;
+
+    private Creations.CreationBody? GroundBody(PlayerGround ground) =>
+        Creations?.NodeOf(ground.Creation) is { } node && ground.Body < node.Bodies.Count ? node.Bodies[ground.Body] : null;
 
     private void OnLocalStepped(PlayerInput input)
     {

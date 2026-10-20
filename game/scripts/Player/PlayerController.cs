@@ -598,6 +598,29 @@ public partial class PlayerController : CharacterBody3D
             GlobalPosition = body.GlobalTransform * ground.Feet.ToGodot();
     }
 
+    /// <summary>
+    /// Moves a player riding a Creation Body by <paramref name="shift"/> (m, world) and keeps it there on the Body: a
+    /// client's correction on a Creation, so the next <see cref="Carry"/> carries it from where it was put.
+    /// </summary>
+    public void ShiftOnGround(Vector3 shift)
+    {
+        GlobalPosition += shift;
+        if (Ground is { } ground && RidingBody() is { } body)
+            Ground = ground with { Feet = (body.GlobalTransform.AffineInverse() * GlobalPosition).ToNumerics() };
+    }
+
+    /// <summary>
+    /// Puts a player on <paramref name="body"/> with its feet at <paramref name="feet"/> in the Body's frame (m): a
+    /// client's correction to where the host has it on a Creation, so replayed steps ride the Body from there.
+    /// </summary>
+    public void StandOn(CreationBody body, Vector3 feet)
+    {
+        _groundBody = body;
+        _offGround = 0;
+        Ground = new PlayerGround(body.CreationId, (ushort)body.BodyIndex, feet.ToNumerics());
+        GlobalPosition = body.GlobalTransform * feet;
+    }
+
     private CreationBody? RidingBody() =>
         _groundBody is { } body && IsInstanceValid(body) && body.IsInsideTree() ? body : null;
 
@@ -655,6 +678,9 @@ public partial class PlayerController : CharacterBody3D
     /// <summary>Poses the player from a host snapshot (remote players on clients).</summary>
     public void ApplyState(Vector3 position, Vector3 velocity, float yaw, float pitch)
     {
+        // Put somewhere new, it rides nothing until it stands on something there (Carry would pull it back).
+        Ground = null;
+        _groundBody = null;
         GlobalPosition = position;
         Velocity = velocity;
         ApplyLook(yaw, pitch);

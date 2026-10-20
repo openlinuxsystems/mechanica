@@ -11,7 +11,7 @@ namespace Mechanica.Game.Tests;
 /// straight and then turning, with client A's player standing on it. Clients show the deck a few ticks behind the
 /// host, so A's prediction is checked in the deck's frame: A must ride along smoothly (no corrections, an even step
 /// every tick, moving at the deck's speed and not twice it), and client B must show A standing on the deck where
-/// B shows it.
+/// B shows it. A host teleport across the moving deck reaches A and sticks.
 /// </summary>
 public partial class RidingTest : StagedTest
 {
@@ -109,6 +109,27 @@ public partial class RidingTest : StagedTest
             Check(_a.Main.PlayerSync.Corrections - _corrections <= 2, $"A's prediction held through the turn ({_a.Main.PlayerSync.Corrections - _corrections} corrections)");
             Check(_a.Main.LocalPlayer!.Ground?.Creation == Deck, "A is still on the deck");
             Check(_seenOff < 0.03f, $"B shows A on the deck through the turn (off by at most {_seenOff:F3} m)");
+            return true;
+        });
+        Add("the host moves A across the moving deck", frame =>
+        {
+            Drive(new Vector3(0, Turn, 0));
+            if (frame == 0)
+            {
+                var player = _host.Main.PlayerSync.Players[_a.Peer];
+                var deck = _host.Main.Creations.NodeOf(Deck)!.Bodies[0];
+                _host.Main.PlayerSync.HostTeleport(_a.Peer, player.GlobalPosition + deck.GlobalBasis.X * 1f + Vector3.Up * 0.05f);
+            }
+            return frame >= 60;
+        });
+        Add("A's correction sticks on the deck", _ =>
+        {
+            // A correction on a Creation is kept in its frame: the next step carries A on from there, not back.
+            var host = _host.Main.PlayerSync.Players[_a.Peer].Ground;
+            var mine = _a.Main.LocalPlayer!.Ground;
+            Check(host?.Creation == Deck && mine?.Creation == Deck, "A stands on the deck on the host and on A");
+            if (host is { } h && mine is { } m)
+                Check(System.Numerics.Vector3.Distance(h.Feet, m.Feet) < 0.1f, $"A stands where the host has them on the deck ({m.Feet} vs {h.Feet})");
             return true;
         });
     }
