@@ -170,6 +170,9 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
     /// <summary>Seed for drop rolls (the world seed), so a replay drops the same.</summary>
     public int Seed { get; set; }
 
+    /// <summary>Where wild spawns, guards and raiders never appear (the host sets it once the world is placed).</summary>
+    public BotFreeZones BotFree { get; set; } = BotFreeZones.None;
+
     /// <summary>A bot appeared.</summary>
     public event Action<BotState>? Spawned;
 
