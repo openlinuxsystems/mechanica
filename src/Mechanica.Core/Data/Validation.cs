@@ -153,6 +153,10 @@ internal sealed class PartValidator(string modId, IReadOnlySet<string> declaredD
         CheckAsset(v.EmissionTexture, $"{p}.emission_texture", AssetKind.Texture, sink);
         if (v.EmissionTexture is not null && v.Emission is null)
             sink.Error(Code, $"{p}.emission_texture", "emission_texture needs an emission colour to glow with.");
+        if (v.TextureSpan is { } span && span is < 1 or > VisualDefinition.MaxTextureSpan)
+            sink.Error(Code, $"{p}.texture_span", $"texture_span must be between 1 and {VisualDefinition.MaxTextureSpan}.");
+        if (v.TextureSpan is > 1 && v.Texture is null)
+            sink.Error(Code, $"{p}.texture_span", "texture_span needs a texture to spread.");
         var ids = new HashSet<string>();
         for (var i = 0; i < (v.Variants?.Count ?? 0); i++)
         {

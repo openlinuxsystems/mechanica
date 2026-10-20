@@ -818,6 +818,7 @@ public partial class PartEditorScreen : Control
         _lookGrid.AddNumber("Opacity", look.Opacity, 0, 1, 0.05, v => SetLook("Set opacity", x => x with { Opacity = (float?)v }), optional: true, fallback: 1);
         _lookGrid.AddColor("Glow", look.Emission, v => SetLook("Set glow", x => x with { Emission = v }));
         AddAssetField(_lookGrid, "Texture", look.Texture, AssetKind.Texture, v => SetLook("Set texture", x => x with { Texture = v }));
+        _lookGrid.AddNumber("Texture span (cells)", look.TextureSpan, 1, VisualDefinition.MaxTextureSpan, 1, v => SetLook("Set texture span", x => x with { TextureSpan = v is null ? null : (int)Math.Round(v.Value) }), optional: true, fallback: 1);
         AddAssetField(_lookGrid, "Glow texture", look.EmissionTexture, AssetKind.Texture, v => SetLook("Set glow texture", x => x with { EmissionTexture = v }));
         _lookGrid.AddBool("Paintable", look.Paintable, v => SetLook("Set paintable", x => x with { Paintable = v }), optional: true);
         _lookGrid.AddHeading("Colour variants");
@@ -1257,7 +1258,7 @@ public partial class PartEditorScreen : Control
         joint is { Axis: null, Min: null, Max: null, Stiffness: null, Damping: null, ShaftRadius: null, Extra: null or { Count: 0 } } ? null : joint;
 
     private static VisualDefinition? Normalize(VisualDefinition visual) =>
-        visual is { Color: null, Roughness: null, Metallic: null, Opacity: null, Emission: null, Texture: null, EmissionTexture: null, Paintable: null, Variants: null or { Count: 0 }, Extra: null } ? null : visual;
+        visual is { Color: null, Roughness: null, Metallic: null, Opacity: null, Emission: null, Texture: null, TextureSpan: null, EmissionTexture: null, Paintable: null, Variants: null or { Count: 0 }, Extra: null } ? null : visual;
 
     // ---- Output ----
 

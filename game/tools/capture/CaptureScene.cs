@@ -1364,6 +1364,8 @@ public partial class CaptureScene : Node
 
     private Vector3 Ground(Vector3 at) => new(at.X, _main.Streamer.Generator.HeightAt(at.X, at.Z), at.Z);
 
+    private static readonly string[] ScrapWalls = ["scrap_metal", "scrap_wood", "scrap_stone"];
+
     private static readonly string[] BlockMaterials =
     [
         "wood", "scrap_wood", "cardboard", "brick", "concrete", "plaster", "tile", "carpet", "insulation", "barrier",
@@ -1379,7 +1381,7 @@ public partial class CaptureScene : Node
         {
             var g = _main.Streamer.Generator;
             Go(Find(p => new[] { (0f, 0f), (12f, 0f), (-12f, 0f), (0f, 12f), (0f, -12f) }.All(d => g.BiomeAt(p.X + d.Item1, p.Y + d.Item2).Id == "meadow")
-                && g.SlopeAt(p.X, p.Y) < 0.08f && !g.PoisAt(p.X, p.Y).Any()));
+                && g.SlopeAt(p.X, p.Y) < 0.08f && g.HeightAt(p.X, p.Y) > g.SeaLevel + 2f && g.RiverDistance(p.X, p.Y) > 30f && !g.PoisAt(p.X, p.Y).Any()));
             GameSettings.Apply(GameSettings.Current with { Graphics = GameSettings.Current.Graphics with { Grass = FoliageLevel.Off, GroundCover = FoliageLevel.Off, Bushes = FoliageLevel.Off } });
             _main.Flora.BuildAll();
         });
@@ -1409,6 +1411,13 @@ public partial class CaptureScene : Node
             Place("vanilla:brick_block", wall, back);
             foreach (var (material, dx) in new[] { ("glass", 0f), ("armored_glass", 0.75f), ("net", 1.5f) })
                 Place($"vanilla:{material}_block", panel, back + new Vector3(dx, 0, 0.75f));
+            // Walls of the scrap blocks, 8 by 6, to show textures that span several blocks.
+            var big = new List<Core.Creations.GridCell>();
+            for (var x = 0; x < 8; x++)
+                for (var y = 0; y < 6; y++)
+                    big.Add(new(x, y, 0));
+            for (var i = 0; i < ScrapWalls.Length; i++)
+                Place($"vanilla:{ScrapWalls[i]}_block", big, Ground(_meadow + new Vector3(-9.5f + i * 3f, 0, 8f)) + Vector3.Up * 0.16f);
             _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, Ground(_meadow + new Vector3(-14f, 0, 10f)) + Vector3.Up * 0.3f, 0f);
         });
         Shot("blocks_01_row_back", 30, () => View(new Vector3(-6.5f, 1.4f, 0.6f), new Vector3(-6.5f, 0.4f, -3f)));
@@ -1421,6 +1430,12 @@ public partial class CaptureScene : Node
         Shot("blocks_08_close", 30, () => View(new Vector3(-8.6f, 0.9f, 1.6f), new Vector3(-8.6f, 0.4f, 0f)));
         Shot("blocks_09_close_metals", 30, () => View(new Vector3(-4.6f, 1.3f, 2.4f), new Vector3(-4.6f, 0.4f, 0f)));
         Shot("blocks_10_close_path_light", 30, () => View(new Vector3(9.4f, 0.9f, 1.8f), new Vector3(8.9f, 0.4f, 0f)));
+        for (var i = 0; i < ScrapWalls.Length; i++)
+        {
+            var x = -9.5f + i * 3f + 0.875f;
+            Shot($"blocks_{12 + i}_wall_{ScrapWalls[i]}", 30, () => View(new Vector3(x + 0.6f, 1.0f, 11.2f), new Vector3(x, 0.8f, 8f)));
+        }
+        Shot("blocks_11_close_scrap_metal", 30, () => View(new Vector3(-6.7f, 0.85f, 1.5f), new Vector3(-7.25f, 0.4f, 0.2f)));
     }
 
     // Build reach holds in Creative too, so the player steps up to each spot first.
@@ -1594,7 +1609,8 @@ public partial class CaptureScene : Node
         Shot("debug_car_12_done", 2, () => Report("stopped"));
     }
 
-    private static readonly string[] IconItems = [.. Core.Items.HotbarTools.All, "vanilla:gas_engine", "vanilla:wheel", "vanilla:chest", "vanilla:water_bucket", "vanilla:water_bucket_full"];
+    private static readonly string[] IconItems = [.. Core.Items.HotbarTools.All, "vanilla:gas_engine", "vanilla:wheel", "vanilla:chest", "vanilla:water_bucket", "vanilla:water_bucket_full",
+        "vanilla:scrap_metal_block", "vanilla:scrap_metal_wedge", "vanilla:scrap_wood_block", "vanilla:scrap_stone_block"];
 
     // Each picture is saved as it becomes ready; the last shot is the HUD, with the hotbar showing the tools.
     private void IconShots()

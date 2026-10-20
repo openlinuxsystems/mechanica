@@ -150,6 +150,7 @@
         "visual": {
           "color": "#ffffff",
           "texture": "textures/blocks/scrap_stone.png",
+          "texture_span": 8,
           "roughness": 0.95,
           "metallic": 0
         }
@@ -219,6 +220,7 @@
         "visual": {
           "color": "#ffffff",
           "texture": "textures/blocks/scrap_wood.png",
+          "texture_span": 8,
           "roughness": 0.9,
           "metallic": 0
         }
@@ -281,8 +283,9 @@
         "visual": {
           "color": "#ffffff",
           "texture": "textures/blocks/scrap_metal.png",
-          "roughness": 0.6,
-          "metallic": 0.6
+          "texture_span": 8,
+          "roughness": 0.42,
+          "metallic": 0.7
         }
       },
       "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }],

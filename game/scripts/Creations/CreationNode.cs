@@ -359,7 +359,7 @@ public partial class CreationNode : Node3D
             else
             {
                 foreach (var mesh in model.Meshes)
-                    shown.AddChild(mesh.Instantiate());
+                    shown.AddChild(mesh.Instantiate(placed));
             }
             if (definition.Light is { } light)
             {

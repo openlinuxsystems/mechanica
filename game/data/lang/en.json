@@ -768,6 +768,7 @@
     "Test Sandbox: switch player": "Test Sandbox: switch player",
     "Test in Sandbox": "Test in Sandbox",
     "Texture": "Texture",
+    "Texture span (cells)": "Texture span (cells)",
     "That game runs another version of {0} (protocol {1}, this is {2}).": "That game runs another version of {0} (protocol {1}, this is {2}).",
     "The Bot Tutorial": "The Bot Tutorial",
     "The Connect Tool links parts: {use_primary} a source part, then {use_primary} the part it drives. {interact} opens a part's settings.": "The Connect Tool links parts: {use_primary} a source part, then {use_primary} the part it drives. {interact} opens a part's settings.",
