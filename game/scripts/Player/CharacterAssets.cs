@@ -1,6 +1,7 @@
 using Godot;
 using Mechanica.Core.Characters;
 using Mechanica.Core.Data;
+using Mechanica.Game.Mods;
 using FileAccess = Godot.FileAccess;
 
 namespace Mechanica.Game.Player;
@@ -222,10 +223,7 @@ public sealed class CharacterAssets : IDisposable
             GD.PushWarning($"[characters] {what}: mod '{path.ModId}' is not loaded.");
             return null;
         }
-        var document = new GltfDocument();
-        var state = new GltfState();
-        var file = path.Resolve(directory);
-        if (document.AppendFromFile(file, state) != Error.Ok || document.GenerateScene(state) is not Node3D root)
+        if (ModGltf.Load(path.Resolve(directory)) is not Node3D root)
         {
             GD.PushWarning($"[characters] {what}: '{path}' did not load as glTF.");
             return null;

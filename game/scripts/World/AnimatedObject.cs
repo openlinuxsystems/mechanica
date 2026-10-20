@@ -1,5 +1,6 @@
 using Godot;
 using Mechanica.Core.World;
+using Mechanica.Game.Mods;
 
 namespace Mechanica.Game.World;
 
@@ -149,11 +150,7 @@ public partial class AnimatedObject : Node3D
     {
         if (Scenes.TryGetValue(file, out var cached))
             return cached;
-        var document = new GltfDocument();
-        var state = new GltfState();
-        Node3D? scene = null;
-        if (document.AppendFromFile(file, state) == Error.Ok)
-            scene = document.GenerateScene(state) as Node3D;
+        var scene = ModGltf.Load(file) as Node3D;
         if (scene is null)
             GD.PushWarning($"[world] '{file}' did not load as glTF.");
         return Scenes[file] = scene;
