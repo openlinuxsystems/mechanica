@@ -115,7 +115,8 @@ KINDS = {
     "jacket_olive": "canvas", "jacket_olive_dark": "canvas", "trouser_olive": "canvas",
     "backpack_olive": "canvas", "canvas": "canvas", "canvas_dark": "canvas", "lining": "canvas",
     "void": "void",
-    "shirt": "knit",
+    "shirt": "knit", "flannel": "plaid", "straw": "straw", "hat_band": "canvas", "button": "plastic",
+    "skin_farmer": "skin", "hair_grey": "hair", "denim_overall": "denim",
     "denim": "denim", "denim_light": "denim", "denim_dark": "denim",
     "paint_olive": "painted", "paint_grey": "painted", "tool_orange": "plastic", "tool_blue": "plastic",
     "blue": "painted", "handle_wood": "wood",
@@ -131,7 +132,7 @@ KINDS = {
 
 THREAD = {
     "jacket_olive": "#80865a", "jacket_olive_dark": "#7a8056", "trouser_olive": "#7a8054",
-    "backpack_olive": "#747b58", "denim": "#c8873e", "denim_light": "#c8873e", "denim_dark": "#c07e38",
+    "backpack_olive": "#747b58", "denim": "#c8873e", "denim_overall": "#c8873e", "flannel": "#5a2a24", "denim_light": "#c8873e", "denim_dark": "#c07e38",
     "canvas": "#b98552", "canvas_dark": "#ad7d50", "patch": "#c4935e", "leather_dark": "#a9845c",
     "leather_mid": "#c9a171", "boot_tan": "#d9b07a", "boot_brown": "#c8a06e", "glove_dark": "#6e6458",
     "glove_brown": "#a07a52", "orange": "#f0b070", "orange_dark": "#e09a58", "lining": "#3c4030",
@@ -218,6 +219,22 @@ def pattern(c, kind, nz):
         mult = 0.84 + 0.2 * tw * (0.55 + 0.45 * slub) + 0.05 * heather
         shift = np.outer(0.05 * tw * slub, np.array([0.7, 0.85, 1.0]))
         return mult, 0.00012 * tw, 0.03 * tw, shift
+    if kind == "plaid":
+        # flannel tartan: dark bands across both thread directions, with a fine light stripe through them
+        def tartan(u, v):
+            def bands(t):
+                f = (t / 0.075) % 1.0
+                return sstep(0.03, 0.0, np.abs(f - 0.35) - 0.12), sstep(0.004, 0.0, np.abs(f - 0.8) - 0.006)
+            bu, lu = bands(u)
+            bv, lv = bands(v)
+            return 1.0 - 0.3 * bu - 0.3 * bv + 0.28 * np.maximum(lu, lv)
+        t = tri_pattern(c, tartan)
+        fuzz = nz[0].fbm(P * 600.0, 2)
+        return t * (0.97 + 0.04 * fuzz), 0.00006 * fuzz, zero, None
+    if kind == "straw":
+        h = tri_pattern(c, lambda u, v: weave_plain(u, v, max(0.006, 6 * TEXEL[0])))
+        fib = nz[1](P * np.array([40.0, 40.0, 900.0]))
+        return 0.86 + 0.18 * h + 0.06 * fib, 0.00025 * h, 0.05 * (1 - h), None
     if kind == "knit":
         r = tri_pattern(c, lambda u, v: np.sin(math.pi * u / max(0.0018, 2.6 * TEXEL[0])) ** 2)
         return 0.95 + 0.06 * r + 0.03 * nz[0].fbm(P * 700.0, 2), 0.00008 * r, zero, None
@@ -496,7 +513,7 @@ def seams(c, kind_of, names):
     mask = np.zeros(n)
     quilt = np.zeros(n)
     tag = c.tag
-    if c.style not in ("male", "female"):
+    if c.style not in ("male", "female", "farmer"):
         return mask, quilt
     x, y, z = P[:, 0], P[:, 1], P[:, 2]
     mat = c.matname
@@ -627,7 +644,7 @@ def shade(c, palette):
     rough = np.array([palette[nm][1] for nm in names])[c.mat].astype(float)
     metal = np.array([palette[nm][2] for nm in names])[c.mat].astype(float)
     # orange on boots is leather (toe caps, heels), the rest of the orange on a character is webbing/cloth
-    if c.style in ("male", "female"):
+    if c.style in ("male", "female", "farmer"):
         kind = np.where((kind == "webbing") & (z < 0.27), "leather", kind)
     nz = [Noise(1000 + c.seed * 17 + k) for k in range(6)]
     alb = base.copy()
@@ -731,7 +748,7 @@ def shade(c, palette):
     dirt = np.zeros(n)
     dn = 0.5 + 0.5 * Noise(71 + c.seed).fbm(P * 22.0, 4)
     splat = sstep(0.2, 0.55, Noise(72 + c.seed).fbm(P * 60.0, 3))
-    if c.style in ("male", "female"):
+    if c.style in ("male", "female", "farmer"):
         foot = (z < 0.3) & ~np.isin(kind, ("skin",))
         dirt += foot * (sstep(0.17, 0.0, z) * (0.45 + 0.55 * dn) + 0.25 * splat * sstep(0.28, 0.1, z))
         dirt += foot * 0.35 * sstep(-0.09, -0.2, y) * sstep(0.12, 0.03, z)
@@ -761,7 +778,7 @@ def shade(c, palette):
     metal = metal * (1 - a_d)
 
     # skin warmth on the face: cheeks, nose and ears
-    if c.style in ("male", "female"):
+    if c.style in ("male", "female", "farmer"):
         sk = kind == "skin"
         if sk.any():
             hc = np.array([0.0, 0.004, 1.645])
@@ -771,7 +788,7 @@ def shade(c, palette):
                 warm += 0.6 * np.exp(-np.sum(((P - (hc + np.array([sxx * 0.07, 0.015, -0.02]))) / 0.02) ** 2, axis=1))
             warm += 0.8 * np.exp(-np.sum(((P - (hc + np.array([0.0, -0.085, -0.045]))) / 0.015) ** 2, axis=1))
             alb = np.where(sk[:, None], mix(alb, alb * np.array([1.08, 0.9, 0.86]), np.clip(warm, 0, 1) * 0.6), alb)
-            if c.style == "male":
+            if c.style in ("male", "farmer"):
                 # stubble shadow around the beard
                 beard = np.exp(-((z - 1.575) / 0.03) ** 2) * (y < -0.02) * sstep(0.03, 0.06, np.abs(x) + 0.03)
                 alb = np.where(sk[:, None], mix(alb, alb * 0.82, np.clip(beard, 0, 1) * 0.35), alb)

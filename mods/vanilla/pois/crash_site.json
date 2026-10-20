@@ -60,6 +60,8 @@
   "markers": [
     // South of the wreck, facing it.
     { "type": "spawn", "at": [16.0, 0.0, 36.0], "yaw": 24.0 },
+    // The farmer, in his stall behind the trade counter by the shack.
+    { "type": "npc", "ref": "farmer", "at": [-44.77, 0.0, -40.1], "yaw": -15.0 },
     // Engineering, by the Master Battery.
     { "type": "fire", "at": [0.78, 0.5, 5.03] },
     // By the airlock.

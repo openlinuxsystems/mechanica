@@ -70,7 +70,7 @@ has, players near an `npc` marker of the quest's POI can press E to hear the ste
 
 POI markers are points with a `type` and an optional `ref`. Quests read any type; vanilla uses
 `fire` (a fire burns at each one from the start, for `extinguish`), `item` (with the part's id as `ref`), `npc` (with a character id as `ref`, such as
-`faction_envoy`) and `core` (the AI core at the AI Core Facility). The prompt on screen says "talk" for an
+`farmer`, who is drawn standing there when the id names a [non-player character](characters.md#non-player-characters)) and `core` (the AI core at the AI Core Facility). The prompt on screen says "talk" for an
 `npc` marker and "use the ..." with the `ref`'s name for the rest of the `interact` markers.
 
 ## Actions

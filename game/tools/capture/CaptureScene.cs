@@ -893,6 +893,10 @@ public partial class CaptureScene : Node
         };
         foreach (var (name, from, to) in views)
             Shot($"crash_{name}", 40, () => { _main.Flora.BuildAll(); Look(from, to); });
+        // The farmer in his stall behind the trade counter, from in front, then the stall and shack from the side.
+        Shot("crash_00_go_farmer", 120, () => _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, At(-44.3f, 1f, -37.4f).ToGodot(), 0f));
+        Shot("crash_farmer", 40, () => Look([-45.6f, 1.7f, -36.9f], [-44.77f, 1.25f, -40.1f]));
+        Shot("crash_farmer_stall", 40, () => { Player.ThirdPerson = true; Look([-49.5f, 2.6f, -31.5f], [-43.8f, 1.3f, -40.5f]); });
         // The player dropped into the hold stands on its deck (0.3 m up), not on the ground under it.
         Shot("crash_00_drop_in_hold", 120, () => _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, At(3f, 1.5f, 15f).ToGodot(), 0f));
         Shot("crash_player_in_hold", 30, () =>

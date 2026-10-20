@@ -1,0 +1,7 @@
+{
+  "id": "farmer",
+  "name": "Farmer",
+  "description": "A settler who farms by the crash site and trades from his stall.",
+  "mesh": "meshes/characters/farmer.glb",
+  "npc": true
+}
