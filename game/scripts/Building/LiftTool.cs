@@ -40,6 +40,7 @@ public partial class LiftTool : HandTool
     private int _raiseHeld;
     private int? _captured;
     private int _turns;
+    private int _carryLevel; // the level the Lift goes down at with the captured Creation (ToolActions.LevelFor)
     private (Vec3 Position, int Turns, int Level, int Revision)? _checkedFor;
     private double _checkedAt;
     private double _captureCheckedAt;
@@ -179,8 +180,9 @@ public partial class LiftTool : HandTool
     {
         if (!Active)
         {
-            // Riding the deck with something else in hand: the arrow keys still drive it, until the player steps off.
-            if (_raiseHeld != 0 && (!StandsOnOwnLift || (ReadDeviceInput && Input.MouseMode != Input.MouseModeEnum.Captured)))
+            // Riding the deck, or aiming at the Lift or what it holds, with something else in hand: the arrow keys still
+            // drive it, until the player steps off and looks away.
+            if (_raiseHeld != 0 && (!DrivesOwnLift || (ReadDeviceInput && Input.MouseMode != Input.MouseModeEnum.Captured)))
                 _raiseHeld = 0;
             RepeatRaise();
             return;
@@ -233,6 +235,12 @@ public partial class LiftTool : HandTool
 
     /// <summary>True when the local player stands on the deck of their own Lift, where the arrow keys drive it whatever is in hand.</summary>
     public bool StandsOnOwnLift => Build.Lifts.TryGetValue(Player.PeerId, out var body) && body.Carries(Player.GlobalPosition);
+
+    /// <summary>
+    /// True when the arrow keys drive this player's Lift whatever is in hand: they stand on its deck, or aim at the Lift
+    /// or the Creation on it.
+    /// </summary>
+    public bool DrivesOwnLift => Own is not null && (StandsOnOwnLift || AimsAtOwnLift());
 
     /// <summary>True while an arrow key is held.</summary>
     public bool RaiseHeld => _raiseHeld != 0;
@@ -323,7 +331,7 @@ public partial class LiftTool : HandTool
         if (Aim is not null)
             _preview.GlobalPosition = Aim.Position.ToGodot();
         _carry.Visible = _captured is not null;
-        _carry.Position = new Vector3(0, Build.Settings!.Lift.TopAt(Own?.Level ?? 0), 0);
+        _carry.Position = new Vector3(0, Build.Settings!.Lift.TopAt(_captured is null ? Own?.Level ?? 0 : _carryLevel), 0);
         var look = PlacementProblem is null ? GhostMaterial : InvalidGhostMaterial;
         foreach (var mesh in _ghostMeshes.Where(IsInstanceValid))
             mesh.MaterialOverride = look;
@@ -480,6 +488,8 @@ public partial class LiftTool : HandTool
         var key = (aim.Position, _turns, level, creation.Revision);
         if (!force && _checkedFor == key && BuildTool.Now - _checkedAt < RecheckSeconds)
             return;
+        // Raised as far as what hangs past the platform needs, as the host will (PlaceLift).
+        level = _carryLevel = ToolActions.LevelFor(creation, Build.Settings!.Lift, _turns, level);
         _checkedFor = key;
         _checkedAt = BuildTool.Now;
         var p = aim.Position;
@@ -497,7 +507,7 @@ public partial class LiftTool : HandTool
             child.QueueFree();
         }
         _checkedFor = null;
-        var seat = ToolActions.Seat(node.Creation, System.Numerics.Vector3.Zero, _turns);
+        var seat = ToolActions.Seat(node.Creation, System.Numerics.Vector3.Zero, _turns, Build.Settings!.Lift.PlatformSize);
         for (var i = 0; i < node.Bodies.Count && i < seat.Count; i++)
         {
             var body = node.Bodies[i];
@@ -594,7 +604,7 @@ public partial class LiftTool : HandTool
             base._UnhandledInput(@event);
             return;
         }
-        if (StandsOnOwnLift && HandleArrows(@event))
+        if (DrivesOwnLift && HandleArrows(@event))
             GetViewport().SetInputAsHandled();
     }
 

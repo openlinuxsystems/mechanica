@@ -383,7 +383,33 @@ public partial class ToolsTest : StagedTest
             Check(!Tools.Lift.AimsAtOwnLift() && !Tools.Lift.PressRemove() && Tools.Lift.Progress is null, "no ring without aiming at the Lift");
             return true;
         });
+        Add("with another tool in hand, the arrow keys drive the Lift only while aiming at it", _ =>
+        {
+            Tools.Lift.Active = false;
+            Check(!Tools.Lift.DrivesOwnLift, "aimed away and off the deck, the arrow keys leave the Lift alone");
+            Tools.Lift.Active = true;
+            return true;
+        });
         Add("look at the bar on the Lift", frame => LookAt(_client, PartCentre(_client, _bar, 2), frame));
+        Add("with another tool in hand, an arrow key aimed at the bar on the Lift raises it", frame =>
+        {
+            var lift = _client.Main.Build.Lifts[_client.Peer];
+            if (frame == 0)
+            {
+                Tools.Lift.Active = false;
+                Check(Tools.Lift.DrivesOwnLift, "aiming at what the Lift holds, the arrow keys drive it");
+                Check(Tools.Lift.PressRaise(1), "the arrow key raises it");
+                Tools.Lift.ReleaseRaise();
+                return false;
+            }
+            if (lift.State.Level != 3 || lift.Moving || _host.Main.Build.Lifts[_client.Peer].Moving)
+                return frame > 600 && Fail($"the Lift stayed at level {lift.State.Level}");
+            Check(Mathf.IsEqualApprox(Bottom(_host, _bar), _ground + _host.Main.Build.Settings!.Lift.TopAt(3), 1e-3f), "the bar went up with it");
+            Tools.Lift.Raise(-1);
+            Tools.Lift.Active = true;
+            return true;
+        });
+        Add("back to level two again", _ => _client.Main.Build.Lifts[_client.Peer] is { Moving: false, State.Level: 2 } && !_host.Main.Build.Lifts[_client.Peer].Moving);
         Add("Use on the Lift opens the blueprint menu and saves the bar", _ =>
         {
             Check(Tools.Lift.AimsAtOwnLift() && Tools.Lift.Interaction is not null, "Use (E) on the Lift offers the blueprints");

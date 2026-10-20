@@ -1532,6 +1532,29 @@ public partial class CaptureScene : Node
         Shot("debug_car_04_top", 60, () => Car(new Vector3(0.625f, 6.5f, 2.6f), new Vector3(0.625f, 0f, 1.4f)));
         Shot("debug_car_05_axle", 60, () => Car(new Vector3(2.6f, 0.15f, -2.4f), new Vector3(0.6f, -0.4f, 0.4f)));
         Shot("debug_car_06_spawn", 60, () => Car(new Vector3(-5f, 3.2f, 16f), new Vector3(-1f, 0.4f, 3.5f)));
+        if (OS.GetEnvironment("CAPTURE_CAR_LIFT") == "1")
+        {
+            // The car on the Lift: it rests on its deck with the wheels past the platform's sides.
+            Shot("debug_car_lift_0", 180, () =>
+            {
+                var id = _main.DebugCarId!.Value;
+                var at = _main.Creations.NodeOf(id)!.Bodies[0].GlobalPosition;
+                _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, at + new Vector3(-2.5f, 0.5f, 0f), 0f);
+                _main.Actions.Request(Core.Building.ToolActions.CaptureLift, new Core.Building.CaptureLiftArgs(id), r => GD.Print($"[capture] capture: {r}"));
+                _main.Actions.Request(Core.Building.ToolActions.PlaceLift, new Core.Building.PlaceLiftArgs(Ground(at + new Vector3(0, 0, 4f)) is var g ? new Core.Data.Vec3(g.X, g.Y, g.Z) : default, id),
+                    r => GD.Print($"[capture] lift: {r}"));
+            });
+            Shot("debug_car_lift_1_side", 60, () =>
+            {
+                var box = Core.World.CreationBounds.World(_main.Creations.Find(_main.DebugCarId!.Value)!);
+                GD.Print($"[capture] car on lift: {box.Min} - {box.Max}, lift {_main.Tools!.Lift.Own}");
+                Car(new Vector3(5.6f, 0.2f, 1.4f), new Vector3(0.625f, -0.6f, 1.375f));
+            });
+            Shot("debug_car_lift_2_front", 60, () =>
+            {
+                Car(new Vector3(0.9f, 0.4f, -4.6f), new Vector3(0.625f, -0.6f, 1.375f));
+            });
+        }
         Shot("debug_car_07_sit", 120, () =>
         {
             var id = _main.DebugCarId!.Value;
