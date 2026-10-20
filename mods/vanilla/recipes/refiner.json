@@ -5,8 +5,8 @@
   ],
   "inputs": [
     {
-      "item": "scrap_metal",
-      "count": 10
+      "item": "scrap_metal_block",
+      "count": 40
     },
     {
       "item": "component_kit",

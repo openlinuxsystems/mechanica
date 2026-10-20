@@ -17,7 +17,7 @@ namespace Mechanica.Game.Tests;
 /// </summary>
 public partial class AgentsTest : StagedTest
 {
-    private const string Scrap = "vanilla:scrap_metal";
+    private const string Scrap = "vanilla:scrap_metal_block";
     private const int WalkTicks = 60;
 
     private NetTestHarness _harness = null!;

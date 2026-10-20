@@ -58,9 +58,9 @@
       "count": 1
     },
     {
-      "item": "scrap_metal",
+      "item": "scrap_metal_block",
       "chance": 0.5,
-      "count": 2
+      "count": 8
     }
   ],
   "behavior": {

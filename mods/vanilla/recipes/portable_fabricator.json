@@ -5,8 +5,8 @@
   ],
   "inputs": [
     {
-      "item": "scrap_metal",
-      "count": 40
+      "item": "scrap_metal_block",
+      "count": 160
     },
     {
       "item": "circuit_board",

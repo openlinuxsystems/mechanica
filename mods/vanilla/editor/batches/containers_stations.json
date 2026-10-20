@@ -31,7 +31,7 @@
           "id": "battery",
           "stations": ["fabricator"],
           "inputs": [
-            { "item": "scrap_metal", "count": 2 },
+            { "item": "scrap_metal_block", "count": 8 },
             { "item": "component_kit", "count": 1 },
             { "item": "circuit_board", "count": 1 }
           ],
@@ -71,7 +71,7 @@
         {
           "id": "gas_container",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal", "count": 3 }],
+          "inputs": [{ "item": "scrap_metal_block", "count": 12 }],
           "outputs": [{ "item": "gas_container", "count": 1 }],
           "time": 5,
           "order": 920
@@ -105,7 +105,7 @@
         {
           "id": "chemical_container",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal", "count": 2 }, { "item": "component_kit", "count": 1 }],
+          "inputs": [{ "item": "scrap_metal_block", "count": 8 }, { "item": "component_kit", "count": 1 }],
           "outputs": [{ "item": "chemical_container", "count": 1 }],
           "time": 4,
           "order": 1770
@@ -139,7 +139,7 @@
         {
           "id": "locker",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal", "count": 5 }],
+          "inputs": [{ "item": "scrap_metal_block", "count": 20 }],
           "outputs": [{ "item": "locker", "count": 1 }],
           "time": 5,
           "order": 1730
@@ -173,7 +173,7 @@
         {
           "id": "file_cabinet",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal", "count": 4 }],
+          "inputs": [{ "item": "scrap_metal_block", "count": 16 }],
           "outputs": [{ "item": "file_cabinet", "count": 1 }],
           "time": 4,
           "order": 1750
@@ -207,7 +207,7 @@
         {
           "id": "tool_cabinet",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal", "count": 4 }, { "item": "component_kit", "count": 1 }],
+          "inputs": [{ "item": "scrap_metal_block", "count": 16 }, { "item": "component_kit", "count": 1 }],
           "outputs": [{ "item": "tool_cabinet", "count": 1 }],
           "time": 4,
           "order": 1740
@@ -241,7 +241,7 @@
         {
           "id": "barrel",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal", "count": 3 }],
+          "inputs": [{ "item": "scrap_metal_block", "count": 12 }],
           "outputs": [{ "item": "barrel", "count": 1 }],
           "time": 3,
           "order": 1720
@@ -282,7 +282,7 @@
           "id": "refiner",
           "stations": ["fabricator"],
           "inputs": [
-            { "item": "scrap_metal", "count": 10 },
+            { "item": "scrap_metal_block", "count": 40 },
             { "item": "component_kit", "count": 4 },
             { "item": "circuit_board", "count": 2 }
           ],
@@ -423,7 +423,7 @@
         {
           "id": "portable_fabricator",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal", "count": 40 }, { "item": "circuit_board", "count": 2 }],
+          "inputs": [{ "item": "scrap_metal_block", "count": 160 }, { "item": "circuit_board", "count": 2 }],
           "outputs": [{ "item": "portable_fabricator", "count": 1 }],
           "time": 30,
           "order": 1810

@@ -410,7 +410,7 @@
   "loot_tables": {
     "common": {
       "items": [
-        { "item": "scrap_metal", "count": 3, "count_max": 6, "weight": 4.0 },
+        { "item": "scrap_metal_block", "count": 12, "count_max": 24, "weight": 4.0 },
         { "item": "scrap_wood", "count": 3, "count_max": 6, "weight": 3.0 },
         { "item": "component_kit", "count": 1, "count_max": 2, "weight": 4.0 },
         { "item": "glue", "count": 1, "count_max": 2, "weight": 2.0 },
@@ -647,7 +647,7 @@
       "health": 40.0,
       // Stone: 25 a Sledgehammer hit (Chase's sledgehammer spec gathering table).
       "sledge_damage": 25.0,
-      "drops": [{ "item": "scrap_metal", "count": 4 }],
+      "drops": [{ "item": "scrap_metal_block", "count": 16 }],
       "refine": true
     },
     {
@@ -829,7 +829,7 @@
       "sink": 0.1,
       "max_slope": 0.35,
       "health": 120.0,
-      "drops": [{ "item": "scrap_metal", "count": 3, "count_max": 6 }, { "item": "component_kit", "count": 1 }]
+      "drops": [{ "item": "scrap_metal_block", "count": 12, "count_max": 24 }, { "item": "component_kit", "count": 1 }]
     },
     // Starting scrap at the crash site (pois/crash_site.json): hull plates torn off the SV-04 and planks from its burst
     // crates. Press Use to pick a pile up; it does not come back.
@@ -842,7 +842,7 @@
       "max_slope": 0.4,
       "damage_from": [],
       "harvest": true,
-      "drops": [{ "item": "scrap_metal", "count": 4, "count_max": 6 }]
+      "drops": [{ "item": "scrap_metal_block", "count": 16, "count_max": 24 }]
     },
     {
       "id": "scrap_pile_wood",

@@ -121,7 +121,7 @@ public class QuestTests
         Assert.True(Interact(dispatcher, 2).Ok);
         Assert.True(tracker.State.IsDone("vanilla:the_farmer"));
         Assert.Equal(3, _world.Given[(3, "vanilla:carrot")]);
-        Assert.Equal(10, _world.Given[(2, "vanilla:scrap_metal")]);
+        Assert.Equal(40, _world.Given[(2, "vanilla:scrap_metal_block")]);
         Assert.Contains("vanilla:outpost", tracker.State.Revealed);
         Assert.Contains(said, d => d.Lines.Any(l => l.Speaker == "Farmer" && l.Text!.Contains("Workshops", StringComparison.Ordinal)));
 

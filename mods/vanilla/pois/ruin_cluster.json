@@ -26,7 +26,7 @@
   "markers": [
     { "type": "bot", "ref": "scuttler_green", "at": [0.0, 0.0, 0.0] },
     { "type": "bot", "ref": "scuttler_green", "at": [3.0, 0.0, 7.0] },
-    { "type": "item", "ref": "scrap_metal", "at": [-4.0, 0.0, -4.0] },
+    { "type": "item", "ref": "scrap_metal_block", "at": [-4.0, 0.0, -4.0] },
     { "type": "item", "ref": "component_kit", "at": [5.0, 0.0, -3.0] }
   ]
 }

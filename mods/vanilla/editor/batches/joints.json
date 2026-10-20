@@ -26,7 +26,7 @@
           "id": "bearing",
           "stations": ["fabricator", "portable_fabricator"],
           "inputs": [
-            { "item": "scrap_metal", "count": 2 },
+            { "item": "scrap_metal_block", "count": 8 },
             { "item": "component_kit", "count": 1 }
           ],
           "outputs": [{ "item": "bearing", "count": 1 }],
@@ -237,7 +237,7 @@
           "id": "sport_suspension",
           "stations": ["fabricator"],
           "inputs": [
-            { "item": "scrap_metal", "count": 3 },
+            { "item": "scrap_metal_block", "count": 12 },
             { "item": "component_kit", "count": 2 }
           ],
           "outputs": [{ "item": "sport_suspension", "count": 1 }],
@@ -351,7 +351,7 @@
           "id": "offroad_suspension",
           "stations": ["fabricator"],
           "inputs": [
-            { "item": "scrap_metal", "count": 4 },
+            { "item": "scrap_metal_block", "count": 16 },
             { "item": "component_kit", "count": 2 }
           ],
           "outputs": [{ "item": "offroad_suspension", "count": 1 }],

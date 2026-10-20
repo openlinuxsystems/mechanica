@@ -27,7 +27,7 @@
           "id": "drivers_seat",
           "stations": ["fabricator"],
           "inputs": [
-            { "item": "scrap_metal", "count": 3 },
+            { "item": "scrap_metal_block", "count": 12 },
             { "item": "component_kit", "count": 2 },
             { "item": "circuit_board", "count": 1 }
           ],
@@ -68,7 +68,7 @@
           "id": "scrap_drivers_seat",
           "stations": ["fabricator"],
           "inputs": [
-            { "item": "scrap_metal", "count": 3 },
+            { "item": "scrap_metal_block", "count": 12 },
             { "item": "scrap_wood", "count": 2 },
             { "item": "component_kit", "count": 1 }
           ],
@@ -100,7 +100,7 @@
         {
           "id": "passenger_seat",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal", "count": 3 }, { "item": "component_kit", "count": 1 }],
+          "inputs": [{ "item": "scrap_metal_block", "count": 12 }, { "item": "component_kit", "count": 1 }],
           "outputs": [{ "item": "passenger_seat", "count": 1 }],
           "time": 5,
           "order": 530
@@ -137,7 +137,7 @@
         {
           "id": "scrap_seat",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_wood", "count": 3 }, { "item": "scrap_metal", "count": 1 }],
+          "inputs": [{ "item": "scrap_wood", "count": 3 }, { "item": "scrap_metal_block", "count": 4 }],
           "outputs": [{ "item": "scrap_seat", "count": 1 }],
           "time": 4,
           "order": 510
@@ -300,7 +300,7 @@
           "id": "gas_engine",
           "stations": ["fabricator"],
           "inputs": [
-            { "item": "scrap_metal", "count": 6 },
+            { "item": "scrap_metal_block", "count": 24 },
             { "item": "component_kit", "count": 3 },
             { "item": "circuit_board", "count": 1 }
           ],
@@ -353,7 +353,7 @@
         {
           "id": "scrap_gas_engine",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal", "count": 5 }, { "item": "component_kit", "count": 1 }],
+          "inputs": [{ "item": "scrap_metal_block", "count": 20 }, { "item": "component_kit", "count": 1 }],
           "outputs": [{ "item": "scrap_gas_engine", "count": 1 }],
           "time": 8,
           "order": 810
@@ -502,7 +502,7 @@
           "id": "electric_engine",
           "stations": ["fabricator"],
           "inputs": [
-            { "item": "scrap_metal", "count": 4 },
+            { "item": "scrap_metal_block", "count": 16 },
             { "item": "component_kit", "count": 2 },
             { "item": "circuit_board", "count": 3 }
           ],
@@ -535,7 +535,7 @@
         {
           "id": "scrap_wheel",
           "stations": ["fabricator", "portable_fabricator"],
-          "inputs": [{ "item": "scrap_metal", "count": 2 }, { "item": "scrap_wood", "count": 2 }],
+          "inputs": [{ "item": "scrap_metal_block", "count": 8 }, { "item": "scrap_wood", "count": 2 }],
           "outputs": [{ "item": "scrap_wheel", "count": 1 }],
           "time": 4,
           "order": 610
@@ -566,7 +566,7 @@
         {
           "id": "wheel",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal", "count": 3 }, { "item": "component_kit", "count": 1 }],
+          "inputs": [{ "item": "scrap_metal_block", "count": 12 }, { "item": "component_kit", "count": 1 }],
           "outputs": [{ "item": "wheel", "count": 1 }],
           "time": 5,
           "order": 620
@@ -597,7 +597,7 @@
         {
           "id": "big_wheel",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal", "count": 6 }, { "item": "component_kit", "count": 2 }],
+          "inputs": [{ "item": "scrap_metal_block", "count": 24 }, { "item": "component_kit", "count": 2 }],
           "outputs": [{ "item": "big_wheel", "count": 1 }],
           "time": 8,
           "order": 630

@@ -24,7 +24,7 @@ public class VanillaTabsTests
     [InlineData(InventoryTab.Blocks, "scrap_wood_block", "metal_wedge", "glass_block", "path_light_block")]
     [InlineData(InventoryTab.Interactive, "bearing", "gas_engine", "drivers_seat", "logic_gate", "wheel", "sport_suspension", "chest",
         "gas_container", "battery", "fabricator", "refiner", "headlight", "respawn_bed", "potato_blaster_mounted")]
-    [InlineData(InventoryTab.Parts, "scrap_metal", "component_kit", "circuit_board", "crude_oil", "chemical", "wood_log", "stone_chunk",
+    [InlineData(InventoryTab.Parts, "component_kit", "circuit_board", "crude_oil", "chemical", "wood_log", "stone_chunk",
         "metal_rod", "stop_sign", "small_pipe_short", "wooden_table", "stairs_block")]
     [InlineData(InventoryTab.Consumable, "carrot", "potato_seed", "gasoline", "battery_pack", "paint_ammo", "glowstick", "popper",
         "soil_bag", "water_bucket", "water_bucket_full")]

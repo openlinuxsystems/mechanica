@@ -161,7 +161,7 @@ public sealed class WorldPartsTests
     {
         var made = WorldParts.Reconcile(Spots, [], Catalog, Ids()).Add;
         var fabricator = made[0];
-        fabricator.InventoryOf(1)!.Add("vanilla:scrap_metal", 7);
+        fabricator.InventoryOf(1)!.Add("vanilla:scrap_metal_block", 7);
         fabricator.CraftingOf(1)!.Enqueue(new CraftJob("vanilla:chest", 2));
         // Players' own Creations are saved alongside and never touched.
         var own = new Creation(900, Catalog);
@@ -176,7 +176,7 @@ public sealed class WorldPartsTests
         Assert.Equal(made.Select(c => c.WorldPart), loaded.Where(c => c.IsWorldOwned).Select(c => c.WorldPart));
         Assert.False(loaded.Single(c => c.Id == 900).IsWorldOwned);
         var back = loaded.Single(c => c.Id == fabricator.Id);
-        Assert.Equal(7, back.InventoryOf(1)!.Count("vanilla:scrap_metal"));
+        Assert.Equal(7, back.InventoryOf(1)!.Count("vanilla:scrap_metal_block"));
         Assert.Equal(2, back.CraftingOf(1)!.Jobs[0].Count);
         Assert.True(back.IsAnchored(1));
         Assert.Equal(fabricator.BodyPose(0), back.BodyPose(0));

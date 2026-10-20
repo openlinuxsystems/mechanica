@@ -36,7 +36,7 @@
         {
           "id": "headlight",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal", "count": 1 }, { "item": "component_kit", "count": 1 }],
+          "inputs": [{ "item": "scrap_metal_block", "count": 4 }, { "item": "component_kit", "count": 1 }],
           "outputs": [{ "item": "headlight", "count": 1 }],
           "time": 3,
           "order": 1630
@@ -84,7 +84,7 @@
           "id": "spotlight",
           "stations": ["fabricator"],
           "inputs": [
-            { "item": "scrap_metal", "count": 2 },
+            { "item": "scrap_metal_block", "count": 8 },
             { "item": "component_kit", "count": 1 },
             { "item": "circuit_board", "count": 1 }
           ],
@@ -143,7 +143,7 @@
           "id": "warehouse_spotlight",
           "stations": ["fabricator"],
           "inputs": [
-            { "item": "scrap_metal", "count": 4 },
+            { "item": "scrap_metal_block", "count": 16 },
             { "item": "component_kit", "count": 2 },
             { "item": "circuit_board", "count": 1 }
           ],
@@ -188,7 +188,7 @@
         {
           "id": "construction_light",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal", "count": 3 }, { "item": "component_kit", "count": 1 }],
+          "inputs": [{ "item": "scrap_metal_block", "count": 12 }, { "item": "component_kit", "count": 1 }],
           "outputs": [{ "item": "construction_light", "count": 1 }],
           "time": 5,
           "order": 1650
@@ -221,7 +221,7 @@
         {
           "id": "interior_light",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal", "count": 1 }, { "item": "component_kit", "count": 1 }],
+          "inputs": [{ "item": "scrap_metal_block", "count": 4 }, { "item": "component_kit", "count": 1 }],
           "outputs": [{ "item": "interior_light", "count": 1 }],
           "time": 3,
           "order": 1620
@@ -255,7 +255,7 @@
         {
           "id": "warning_light",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal", "count": 1 }, { "item": "component_kit", "count": 1 }],
+          "inputs": [{ "item": "scrap_metal_block", "count": 4 }, { "item": "component_kit", "count": 1 }],
           "outputs": [{ "item": "warning_light", "count": 1 }],
           "time": 3,
           "order": 1660
@@ -380,7 +380,7 @@
           "id": "beacon",
           "stations": ["fabricator"],
           "inputs": [
-            { "item": "scrap_metal", "count": 2 },
+            { "item": "scrap_metal_block", "count": 8 },
             { "item": "component_kit", "count": 1 },
             { "item": "circuit_board", "count": 1 }
           ],
@@ -421,7 +421,7 @@
         {
           "id": "horn",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal", "count": 1 }, { "item": "component_kit", "count": 1 }],
+          "inputs": [{ "item": "scrap_metal_block", "count": 4 }, { "item": "component_kit", "count": 1 }],
           "outputs": [{ "item": "horn", "count": 1 }],
           "time": 3,
           "order": 1410
@@ -455,7 +455,7 @@
           "id": "dispenser",
           "stations": ["fabricator"],
           "inputs": [
-            { "item": "scrap_metal", "count": 8 },
+            { "item": "scrap_metal_block", "count": 32 },
             { "item": "component_kit", "count": 2 },
             { "item": "circuit_board", "count": 1 }
           ],
@@ -500,7 +500,7 @@
         {
           "id": "saw_blade",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal", "count": 4 }, { "item": "component_kit", "count": 2 }],
+          "inputs": [{ "item": "scrap_metal_block", "count": 16 }, { "item": "component_kit", "count": 2 }],
           "outputs": [{ "item": "saw_blade", "count": 1 }],
           "time": 6,
           "order": 1320
@@ -585,7 +585,7 @@
         {
           "id": "water_cannon",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "scrap_metal", "count": 4 }, { "item": "component_kit", "count": 2 }],
+          "inputs": [{ "item": "scrap_metal_block", "count": 16 }, { "item": "component_kit", "count": 2 }],
           "outputs": [{ "item": "water_cannon", "count": 1 }],
           "time": 6,
           "order": 1330
@@ -628,7 +628,7 @@
           "stations": ["fabricator"],
           "inputs": [
             { "item": "potato_blaster", "count": 1 },
-            { "item": "scrap_metal", "count": 4 },
+            { "item": "scrap_metal_block", "count": 16 },
             { "item": "component_kit", "count": 2 }
           ],
           "outputs": [{ "item": "potato_blaster_mounted", "count": 1 }],
