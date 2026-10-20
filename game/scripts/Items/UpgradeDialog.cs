@@ -406,7 +406,7 @@ public partial class UpgradeDialog : CanvasLayer
     {
         var missing = have < need;
         var name = ItemName(item);
-        var box = new VBoxContainer { Name = $"Cost_{item.Replace(':', '_')}", CustomMinimumSize = new Vector2(62, 0), TooltipText = Loc.Mod(name) };
+        var box = Loc.Verbatim(new VBoxContainer { Name = $"Cost_{item.Replace(':', '_')}", CustomMinimumSize = new Vector2(62, 0), TooltipText = Loc.Mod(name) });
         box.AddThemeConstantOverride("separation", 2);
         var tile = new ItemSlot { CustomMinimumSize = new Vector2(62, 56), MouseFilter = Control.MouseFilterEnum.Ignore };
         tile.Show(item, Icons?.For(item), name, null);
