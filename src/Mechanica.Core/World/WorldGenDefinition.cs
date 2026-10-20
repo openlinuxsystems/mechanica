@@ -274,6 +274,34 @@ public sealed record ScatterRule
     /// <summary>Keeps the rule's spots to hard-to-reach high ground: cliff tops and ledges. Omitted: any ground.</summary>
     public PerchDefinition? Perch { get; init; }
 
+    /// <summary>Gathers the rule's objects into patches (groves, rock fields) with open ground between. Omitted: spread evenly.</summary>
+    public ClusterDefinition? Cluster { get; init; }
+
+    /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>
+/// Patches a scatter rule keeps to (<see cref="ScatterRule.Cluster"/>): smooth noise marks a share of the ground as patch,
+/// the rule's spots there keep their chance, and spots elsewhere keep only <see cref="Outside"/> of it.
+/// Rules naming the same <see cref="Layer"/> (with the same scale and cover) share their patches, so a grove's trees and bushes
+/// stand together and the clearings between stay open.
+/// </summary>
+public sealed record ClusterDefinition
+{
+    /// <summary>Name of the patch layer; rules in the same layer share patches. Omitted: the rule's own.</summary>
+    public string? Layer { get; init; }
+
+    /// <summary>Size of the patches in metres (the noise wavelength).</summary>
+    public float Scale { get; init; } = 80f;
+
+    /// <summary>Share (0 to 1) of the ground the patches cover.</summary>
+    public float Cover { get; init; } = 0.3f;
+
+    /// <summary>Share (0 to 1) of the rule's chance its spots keep outside the patches: 0 leaves them bare.</summary>
+    public float Outside { get; init; }
+
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }

@@ -51,7 +51,7 @@ shapes the ground, the borders, the meanders, the roads' exact course and the sc
    steep, `clearance` metres clear of every POI and road placed before it (and, for a `shore` kind, near
    water). Roadside kinds are laid along the roads instead. Last, dirt tracks run to the POIs that ask
    for one. No road or track bank cuts into a POI's level pad.
-4. **Objects.** Each biome's `scatter` rules place trees, rocks and so on (never on a road).
+4. **Objects.** Each biome's `scatter` rules place trees, rocks and so on (never on a road), spread evenly or gathered into groves, rock fields and clearings (`cluster`).
 5. **Ground.** Each biome's `ground` texture covers it, blending across biome borders; steep slopes take the
    `slope_ground`, POIs paint their own `ground` on top (see [Ground textures](#ground-textures)), and road
    shoulders and dirt tracks take the roads' grounds.
@@ -177,6 +177,7 @@ change (usually `vanilla`). Every patch applies in load order on top of the last
 | `biomes[].ground` | Id of the ground texture (`grounds[]`) the biome is drawn with. Omitted: its plain `color`. |
 | `biomes[].scatter[]` | `spacing` is the side of the rule's grid cells; each cell holds at most one object, kept with probability `chance`. |
 | `biomes[].scatter[].perch` | Keeps the rule to hard-to-reach high ground, cliff tops and ledges: a spot is used only when it stands at least `rise` metres (default 6) above the lowest ground `within` metres (default 10) round it. The purple and gold Bloom Pods use it. Omitted: any ground. |
+| `biomes[].scatter[].cluster` | Gathers the rule's objects into patches with open ground between, as in groves, rock fields and forest clearings: `scale` (patch size in metres, default 80), `cover` (share of the ground the patches cover, default 0.3) and `outside` (share of the rule's `chance` its spots keep outside the patches, default 0). Rules that name the same `layer` share their patches, so a meadow grove's birches, leafy trees and bushes stand together; give them the same `scale` and `cover`. Since only patch spots are kept, raise `chance` or lower `spacing` to keep the count: on average a rule places about `chance × (cover + (1 − cover) × outside)` per cell. Omitted: spread evenly. |
 | `loot_tables` | Weighted item lists by id that objects' `loot` picks from: each has `items[]` of `item`, `count` (default 1), `count_max` (at least `count`) and `weight` (relative odds, default 1). Vanilla has `common`, `epic` and `legendary`, for the green, purple and gold Bloom Pods. |
 | `objects[]` | Destructible world objects. Use catalog ids (`birch_tree`, `rock_node`, `boulder`, ...). `footprint` is the radius other scattered objects keep clear of; `sink` lowers the object into the ground. |
 | `objects[].health` | Damage the object takes before it breaks (Sledgehammer, weapons, splash). Omitted means it cannot be broken. Damage is not saved: a part-felled tree is whole again after a restart. |
