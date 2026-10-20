@@ -127,9 +127,11 @@ public partial class SurvivalTest : StagedTest
         Stage("the watered soil looks fully wet on the client", frame =>
         {
             var view = _client.Main.Survival.Soil.GetValueOrDefault((_soil, _soilPart));
-            if (_client.Main.SoilLooks.LookOf(_soil, _soilPart) is not { Wet: >= 1f } look)
+            // Wet and drying crust blend at the same rate, so a crust left from an earlier look can still be fading when
+            // the mound is fully dark: wait for the whole look to settle.
+            if (_client.Main.SoilLooks.LookOf(_soil, _soilPart) is not { Wet: >= 1f, Drying: <= 0f } look)
                 return frame < 600 ? false : Check(false, $"the mound darkens ({view}; {_client.Main.SoilLooks.LookOf(_soil, _soilPart)})");
-            return Check(view?.Wetness == SoilWetness.Wet && look.Drying == 0, $"fully wet ({view?.Wetness}, {look})");
+            return Check(view?.Wetness == SoilWetness.Wet, $"fully wet ({view?.Wetness}, {look})");
         });
         Stage("an unripe crop cannot be harvested", frame =>
         {

@@ -39,6 +39,25 @@ public sealed class RaidTests
     }
 
     [Fact]
+    public void A_one_of_entry_picks_each_raider_from_the_seed_at_the_entry_cost()
+    {
+        var f = new BotFixture(raids: new RaidTableDefinition
+        {
+            Levels = [new RaidLevelDefinition { Level = 1, MinValue = 0, Budget = 12, Bots =
+                [new RaidBotDefinition { Bot = BotFixture.Grunt, Count = 12, OneOf = [BotFixture.Shooter] }] }],
+        });
+        var level = f.Raids.Levels.Single();
+        Assert.Equal(12, level.MixCost); // each raider costs the grunt's 1, even as a shooter
+        var raid = RaidTable.Compose(level, 12, seed: 5);
+        Assert.Equal(12, raid.Count);
+        Assert.Contains(BotFixture.Grunt, raid);
+        Assert.Contains(BotFixture.Shooter, raid);
+        Assert.Equal(raid, RaidTable.Compose(level, 12, seed: 5));
+        Assert.NotEqual(raid, RaidTable.Compose(level, 12, seed: 6));
+        Assert.Equal(raid, f.Raids.Plan(0, 1, seed: 5)!.Bots);
+    }
+
+    [Fact]
     public void The_open_ended_level_grows_with_crop_value()
     {
         var f = new BotFixture(raids: new RaidTableDefinition
@@ -61,6 +80,10 @@ public sealed class RaidTests
         Assert.Contains("must rise", Errors(new RaidTableDefinition { Levels = [Level(2, 10, 4, (BotFixture.Grunt, 1)), Level(1, 20, 4, (BotFixture.Grunt, 1))] }));
         Assert.Contains("cannot raid", Errors(new RaidTableDefinition { Levels = [Level(1, 0, 4, (BotFixture.Critter, 1))] }));
         Assert.Contains("no bot", Errors(new RaidTableDefinition { Levels = [Level(1, 0, 4, ("test:ghost", 1))] }));
+        Assert.Contains("one_of[0]", Errors(new RaidTableDefinition { Levels = [new RaidLevelDefinition { Level = 1, MinValue = 0, Budget = 4,
+            Bots = [new RaidBotDefinition { Bot = BotFixture.Grunt, Count = 1, OneOf = [BotFixture.Critter] }] }] }));
+        Assert.Contains("already one of", Errors(new RaidTableDefinition { Levels = [new RaidLevelDefinition { Level = 1, MinValue = 0, Budget = 4,
+            Bots = [new RaidBotDefinition { Bot = BotFixture.Grunt, Count = 1, OneOf = [BotFixture.Shooter, BotFixture.Shooter] }] }] }));
         Assert.Contains("greater than 0", Errors(new RaidTableDefinition { PlayerMultipliers = [1, 0] }));
     }
 

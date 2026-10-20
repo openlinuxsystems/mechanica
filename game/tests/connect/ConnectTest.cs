@@ -208,7 +208,7 @@ public partial class ConnectTest : StagedTest
             Connector.UpdateHover();
             return Connector.Nodes.Any(n => n.Part == _wheel && n.Creation == Board && n.Reversed) || (frame > 60 && Check(false, "reversed on the client"));
         });
-        Add("with the tool put away, a link flashes when its signal changes", frame =>
+        Add("with the tool put away, a signal change shows no line", frame =>
         {
             if (frame == 0)
             {
@@ -220,15 +220,13 @@ public partial class ConnectTest : StagedTest
                 Request(LogicActions.ActivatePart, new LogicPartArgs(Board, _switch));
             if (frame < 30)
                 return false;
-            if (Overlay.Flashing.Contains((Board, new LogicLink(_switch, _engine))))
-            {
-                Check(Overlay.Drawn.Any(d => d.Link == new LogicLink(_switch, _engine)), "the flashing line is drawn");
-                Check(!Overlay.Drawn.Any(d => d.Link.From == _wheel), "lines whose signal did not change stay hidden");
-                return true;
-            }
-            return frame > 300 && Check(false, $"the switch's link flashed ({string.Join("; ", _results)})");
+            if (Overlay.Drawn.Count > 0)
+                return Check(false, "no line is drawn while the switch's signal changes");
+            if (Overlay.SignalOf(Board, _switch) == 0)
+                return frame > 300 && Check(false, $"the switch turned on ({string.Join("; ", _results)})");
+            // Keep watching past the reads that follow the change.
+            return frame > 90 && Check(true, "no line was drawn while the switch's signal changed");
         });
-        Add("the flash ends", frame => !Overlay.Drawn.Any(d => d.Link.From == _switch) || (frame > 120 && Check(false, "the line hides again")));
     }
 
     private void SpawnBoard()

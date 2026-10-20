@@ -32,7 +32,7 @@ ends with what a modder needs to make new logic parts.
 | Right click (Connect Tool) | On the node of a bearing that something drives (a seat, a controller or an engine is linked to it), reverses which way it turns (the small curved arrow by the node flips). During a drag, cancels it. |
 | Hover (Connect Tool) | On a node, a tooltip shows the part and its kind; on a line, "Source → Target" and its signal. |
 | E | On a part with settings, opens its menu (a timer's delay, an engine's power). On a logic gate it switches to the next mode. R with the Connect Tool opens any part's menu. |
-| F7 | Turns the **Logic Visualizer** on or off: links show without the Connect Tool. Each link is a blue line with a cyan core (bright while the source is on) and chevrons pointing from the source to the part it feeds. With both off, a link flashes briefly when its signal changes. |
+| F7 | Turns the **Logic Visualizer** on or off: links show without the Connect Tool. Each link is a blue line with a cyan core (bright while the source is on) and chevrons pointing from the source to the part it feeds. With both off, links stay hidden, even while a signal changes (driving shows no lines). |
 | F8 | Opens the **Creation Inspector** for the creation under the crosshair: its mass, bodies, joints, links, and for each part its output, input, settings, who sits in it and whether its script runs or stopped on an error. |
 | F9 | Turns the **force overlay** on or off: an arrow for every push a part script makes, such as a thruster's thrust or a wing's lift (see the [Aero and Propulsion Tutorial](aero-tutorial.md)). |
 | E | Uses what you look at: sit in a seat, flip a switch, hold a button down (it is on only while you hold E). While seated, E stands you up. |

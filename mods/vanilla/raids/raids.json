@@ -34,7 +34,10 @@
         },
         {
           "bot": "rakehand",
-          "count": 2
+          "count": 2,
+          "one_of": [
+            "rakehand_scarecrow"
+          ]
         }
       ],
       "notes": "First real pressure (31–60)."
@@ -50,7 +53,10 @@
         },
         {
           "bot": "rakehand",
-          "count": 4
+          "count": 4,
+          "one_of": [
+            "rakehand_scarecrow"
+          ]
         },
         {
           "bot": "scuttler_blue",
@@ -66,7 +72,11 @@
       "bots": [
         {
           "bot": "rakehand",
-          "count": 4
+          "count": 4,
+          "one_of": [
+            "rakehand_baler",
+            "rakehand_scarecrow"
+          ]
         },
         {
           "bot": "scuttler_blue",
@@ -86,7 +96,11 @@
       "bots": [
         {
           "bot": "rakehand",
-          "count": 6
+          "count": 6,
+          "one_of": [
+            "rakehand_baler",
+            "rakehand_scarecrow"
+          ]
         },
         {
           "bot": "spooler_blue",
@@ -106,7 +120,11 @@
       "bots": [
         {
           "bot": "rakehand",
-          "count": 8
+          "count": 8,
+          "one_of": [
+            "rakehand_baler",
+            "rakehand_scarecrow"
+          ]
         },
         {
           "bot": "spooler_blue",

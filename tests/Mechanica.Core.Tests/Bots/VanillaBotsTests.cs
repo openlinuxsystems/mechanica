@@ -24,7 +24,7 @@ public class VanillaBotsTests
     private static readonly string[] Catalog =
     [
         "scuttler_green", "scuttler_blue", "scuttler_yellow", "scuttler_red", "scuttler_seed", "rakehand",
-        "spooler_blue", "spooler_green", "spooler_yellow", "spooler_red", "thresher", "grazer",
+        "rakehand_baler", "rakehand_scarecrow", "spooler_blue", "spooler_green", "spooler_yellow", "spooler_red", "thresher", "grazer",
     ];
 
     private static Bot Bot(string id) => Book.Value.FindBot(id) ?? throw new Xunit.Sdk.XunitException($"vanilla has no bot '{id}'.");
@@ -76,6 +76,10 @@ public class VanillaBotsTests
         Assert.Equal((100f, 4f), (Bot("rakehand").Health, Bot("rakehand").Speed));
         Assert.Equal([20f, 30f], Bot("rakehand").Attacks.Select(a => a.Damage));
         Assert.Equal(0.65f, Bot("rakehand").Drops.Single(d => d.Item == "vanilla:component_kit").Chance);
+        Assert.Equal((200f, 2.5f, (int?)2), (Bot("rakehand_baler").Health, Bot("rakehand_baler").Speed, Bot("rakehand_baler").RaidCost));
+        Assert.Equal([25f, 45f], Bot("rakehand_baler").Attacks.Select(a => a.Damage));
+        Assert.Equal((70f, 5.5f), (Bot("rakehand_scarecrow").Health, Bot("rakehand_scarecrow").Speed));
+        Assert.Equal([15f, 22f], Bot("rakehand_scarecrow").Attacks.Select(a => a.Damage));
         Assert.Equal((40f, 25f, 3f, BotAttackKind.Ranged), (Bot("spooler_blue").Health, Bot("spooler_blue").Attacks[0].Damage, Bot("spooler_blue").Speed, Bot("spooler_blue").Attacks[0].Kind));
         Assert.Equal((40f, 15f), (Bot("spooler_green").Health, Bot("spooler_green").Attacks[0].Damage));
         var thresher = Bot("thresher");
@@ -99,6 +103,12 @@ public class VanillaBotsTests
             Assert.Equal(level.Budget, level.MixCost);
         Assert.Equal(["vanilla:scuttler_green"], table.Levels[0].Bots.Select(b => b.Bot.QualifiedId));
         Assert.Contains(table.Levels[5].Bots, b => b.Bot.QualifiedId == "vanilla:thresher" && b.Count == 2);
+        // Rakehand raiders are a random Field Hand or Scarecrow early, and any of the three from level 4.
+        Assert.Equal(["vanilla:rakehand_scarecrow"], table.Levels[1].Bots.Single(b => b.Bot.QualifiedId == "vanilla:rakehand").OneOf.Select(b => b.QualifiedId));
+        Assert.Equal(["vanilla:rakehand_baler", "vanilla:rakehand_scarecrow"],
+            table.Levels[3].Bots.Single(b => b.Bot.QualifiedId == "vanilla:rakehand").OneOf.Select(b => b.QualifiedId));
+        var mixed = Enumerable.Range(0, 20).SelectMany(seed => table.Plan(300, 1, seed: seed)!.Bots).ToHashSet();
+        Assert.Subset(mixed, new HashSet<string> { "vanilla:rakehand", "vanilla:rakehand_baler", "vanilla:rakehand_scarecrow" });
         Assert.Null(table.Plan(9, 1));
         var four = table.Plan(20, 1)!;
         Assert.Equal((1, 4), (four.Level, four.Bots.Count));
@@ -148,6 +158,15 @@ public class VanillaBotsTests
     {
         var path = Path.Combine(TestMods.RepoRoot, "game", "data", "bot_templates", $"{name}.json");
         return File.Exists(path) ? File.ReadAllText(path) : null;
+    }
+
+    [Fact]
+    public void TheScarecrowStandsStillUntilAPlayerComesClose()
+    {
+        var tree = Bot("rakehand_scarecrow").Behavior!.ToJsonString();
+        Assert.Contains("\"find_player\",\"range\":6", tree);
+        Assert.Contains("\"clear_target\"", tree);
+        Assert.DoesNotContain("\"wander\"", tree);
     }
 
     [Fact]

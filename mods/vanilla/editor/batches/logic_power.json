@@ -55,7 +55,7 @@
         "visual": { "color": "#ffffff" },
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.5, 0], "normal": [0, -1, 0] }],
         "logic": { "outputs": 4 },
-        "sounds": { "enter": "scrap_seat_enter", "exit": "scrap_seat_exit", "creak": "scrap_seat_creak" },
+        "sounds": { "enter": "scrap_seat_enter", "exit": "scrap_seat_exit" },
         "seat": { "offset": [0, -0.355, 0.4], "cushion": [0, 0.035, 0.4], "hands": "wheel", "bounce": 1.6 },
         "display": {
           "clips": { "readout": "clip" }
@@ -126,7 +126,7 @@
         "visual": { "color": "#ffffff", "roughness": 0.6, "metallic": 0.3 },
         "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.5, 0], "normal": [0, -1, 0] }],
         "logic": { "outputs": 2 },
-        "sounds": { "enter": "scrap_seat_enter", "exit": "scrap_seat_exit", "creak": "scrap_seat_creak" },
+        "sounds": { "enter": "scrap_seat_enter", "exit": "scrap_seat_exit" },
         "seat": { "offset": [0, -0.355, 0.17], "cushion": [0, -0.11, 0.17], "hands": "free", "bounce": 1.6 },
         "display": {
           "clips": { "readout": "clip" }
