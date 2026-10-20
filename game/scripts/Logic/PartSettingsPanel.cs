@@ -8,6 +8,7 @@ using Mechanica.Core.Data;
 using Mechanica.Core.Input;
 using Mechanica.Core.Logic;
 using Mechanica.Game.Creations;
+using Mechanica.Game.Items;
 using Mechanica.Game.Net;
 using Mechanica.Game.Player;
 
@@ -24,7 +25,8 @@ namespace Mechanica.Game.Logic;
 /// goes to the host as <c>ConfigurePart</c> at once, or, for a menu with <see cref="MenuDefinition.Apply"/>, when the
 /// player presses Apply or closes it. While it is open the part's <see cref="MenuDefinition.Preview"/> shows what it
 /// reaches in the world. A part whose E cycles a setting (<see cref="MenuUse.Cycle"/>, a logic gate) does so with
-/// <see cref="Cycle"/>, which shows the new option large with its picture and the part's live signals for a moment.
+/// <see cref="Cycle"/>, which shows the new option large with its picture and the part's live signals for a moment. A part
+/// whose menu has a <see cref="MenuDefinition.Lever"/> (an engine) gets the <see cref="LeverMenu"/> instead of the list.
 /// </summary>
 public partial class PartSettingsPanel : CanvasLayer
 {
@@ -34,10 +36,14 @@ public partial class PartSettingsPanel : CanvasLayer
     /// <summary>Seconds between signal reads while the menu or card shows signals.</summary>
     public const double PollSeconds = 0.2;
 
+    // The height kept clear for the hotbar under the lever menu.
+    private const float HotbarRoom = 96;
+
     private readonly Dictionary<string, JsonElement?> _pending = [];
     private readonly List<(ReadoutDefinition Readout, Control View)> _readoutViews = [];
     private readonly List<(SettingDefinition Setting, Control Row, Control Note)> _linkedRows = [];
     private ToolWindow _panel = null!;
+    private LeverMenu _lever = null!;
     private ScrollContainer _scroll = null!;
     private VBoxContainer _rows = null!;
     private Label _signals = null!;
@@ -69,14 +75,26 @@ public partial class PartSettingsPanel : CanvasLayer
     /// <summary>Part assets, for option pictures; null shows none.</summary>
     public PartAssets? Assets { get; init; }
 
+    /// <summary>The player's items, for a lever menu's upgrade cost; null counts nothing.</summary>
+    public InventorySync? Inventory { get; init; }
+
+    /// <summary>Item pictures for a lever menu; null shows none.</summary>
+    public ItemIcons? Icons { get; init; }
+
+    /// <summary>True while the local player plays in Creative (a lever menu's upgrades are free); null asks the inventory settings.</summary>
+    public Func<bool>? Creative { get; init; }
+
     /// <summary>The part shown, or null.</summary>
     public (int Creation, int Part)? Target { get; private set; }
 
     /// <summary>True while the panel is up.</summary>
-    public bool IsOpen => _panel.Visible;
+    public bool IsOpen => _panel.Visible || _lever.Visible;
 
-    /// <summary>The menu window.</summary>
-    public ToolWindow Window => _panel;
+    /// <summary>The menu window showing (the lever menu for a part with a lever).</summary>
+    public Control Window => _lever.Visible ? _lever : _panel;
+
+    /// <summary>The lever menu (an engine's).</summary>
+    public LeverMenu Lever => _lever;
 
     /// <summary>The setting rows, for tests.</summary>
     public VBoxContainer Rows => _rows;
@@ -132,6 +150,11 @@ public partial class PartSettingsPanel : CanvasLayer
         _apply = _panel.AddAction("Apply", Apply, primary: true, tooltip: "Apply the changes");
         _panel.AddAction("Close", Close, tooltip: "Close the menu");
 
+        _lever = new LeverMenu { Actions = Actions, Creations = Creations, Readouts = Readouts, Inventory = Inventory, Icons = Icons, Creative = Creative, Visible = false };
+        _lever.CloseRequested += Close;
+        AddChild(_lever);
+        EscapeStack.Add(_lever, () => _lever.Visible, Close);
+
         // The cycle card: the new option large, in the upper middle of the screen, with the part's signals.
         _card = new PanelContainer { Name = "CycleCard", Visible = false, MouseFilter = Control.MouseFilterEnum.Ignore };
         var column = new VBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
@@ -155,6 +178,11 @@ public partial class PartSettingsPanel : CanvasLayer
         if (IsOpen && GameInput.Pressed(@event, InputActions.Interact) && !GameInput.Typing(GetViewport()))
         {
             Close();
+            GetViewport().SetInputAsHandled();
+        }
+        else if (_lever.Visible && GameInput.Pressed(@event, InputActions.Upgrade) && !GameInput.Typing(GetViewport()))
+        {
+            _lever.Upgrade();
             GetViewport().SetInputAsHandled();
         }
     }
@@ -186,6 +214,15 @@ public partial class PartSettingsPanel : CanvasLayer
             var size = GetViewport().GetVisibleRect().Size;
             _card.ResetSize();
             _card.Position = new Vector2((size.X - _card.Size.X) / 2, size.Y * 0.22f);
+        }
+        if (_lever.Visible)
+        {
+            _lever.Refresh();
+            var screen = GetViewport().GetVisibleRect().Size;
+            _lever.ResetSize();
+            // Centred in the room above the hotbar.
+            _lever.Position = new Vector2((screen.X - _lever.Size.X) / 2, Math.Max(16, (screen.Y - HotbarRoom - _lever.Size.Y) / 2)).Round();
+            return;
         }
         if (!IsOpen)
             return;
@@ -242,6 +279,13 @@ public partial class PartSettingsPanel : CanvasLayer
             Input.MouseMode = Input.MouseModeEnum.Visible;
             return;
         }
+        if (menu?.Lever is not null && _lever.Open(creationId, partId))
+        {
+            EscapeStack.Raise(_lever);
+            Input.MouseMode = Input.MouseModeEnum.Visible;
+            _Process(0);
+            return;
+        }
         _status.Text = definition.Settings is { Count: > 0 } || menu?.Readouts is { Count: > 0 } || menu?.Signals == true ? "" : "This part has no settings.";
         foreach (var readout in menu?.Readouts ?? [])
             _rows.AddChild(ReadoutRow(readout));
@@ -285,6 +329,7 @@ public partial class PartSettingsPanel : CanvasLayer
         Apply();
         Sequence?.SetPlaying(false);
         _panel.Visible = false;
+        _lever.Close();
         Target = null;
         RemovePreview();
         Input.MouseMode = Input.MouseModeEnum.Captured;

@@ -133,6 +133,23 @@ public class VanillaCatalogTests
         Assert.Contains(new UpgradeChange("Length (blocks)", "7", "9"), PartUpgrades.Changes(written, PartUpgrades.At(written, 1)));
     }
 
+    [Theory]
+    [InlineData("gas_engine", "gasoline", new[] { "+2", "+2", "+44%", "+50%" })]
+    [InlineData("electric_engine", "battery_pack", new[] { "+2", "+2", "+40%", "+50%" })]
+    public void EachEngineMenuIsALeverWithItsFuelAndWhatTheNextLevelGains(string id, string fuel, string[] gains)
+    {
+        var written = Part(id);
+        var lever = written.Menu!.Lever!;
+        Assert.Equal(("gear", "on", fuel), (lever.Setting, lever.Off, lever.Fuel));
+        // The lever runs to the last level's top step.
+        Assert.Equal(13, PartUpgrades.Stat(PartUpgrades.At(written, PartUpgrades.MaxLevel(written)), "settings.gear"));
+        var next = PartUpgrades.At(written, 1);
+        Assert.Equal(gains, lever.UpgradeStats!.Select(s => PartUpgrades.Gain(written, next, s.Value, s.Show ?? UpgradeStatShow.Difference)));
+        // The Scrap Gas Engine shares the Gas Engine's menu, with no levels to gain.
+        if (id == "gas_engine")
+            Assert.Equal("fuel_items", Part("scrap_gas_engine").Menu!.Lever!.FuelCount);
+    }
+
     [Fact]
     public void EveryLightGivesLight()
     {

@@ -155,16 +155,29 @@ public partial class FitTest : StagedTest
             {
                 _main.PartSettings!.Close();
                 _main.Inspector.Close();
-                foreach (var (part, x) in new[] { ("vanilla:gas_engine", -2f), ("vanilla:controller", 3f) })
+                foreach (var (part, x) in new[] { ("vanilla:gas_engine", -2f), ("vanilla:controller", 3f), ("vanilla:gas_container", 0.5f) })
                 {
                     var at = _main.LocalPlayer!.GlobalPosition + new Vector3(x, 1, -3);
                     _main.Actions.Request(Core.Actions.CreationActions.SpawnPart, new Core.Actions.SpawnPartArgs(part, [at.X, at.Y, at.Z]), r => Check(r.Ok, $"{part} spawns ({r.Message})"));
                 }
                 return false;
             }
-            return Spawned("vanilla:gas_engine") is not null && Spawned("vanilla:controller") is not null;
+            return Spawned("vanilla:gas_engine") is not null && Spawned("vanilla:controller") is not null && Spawned("vanilla:gas_container") is not null;
         });
-        World("an engine's menu", () => _main.PartSettings!.Open(Spawned("vanilla:gas_engine")!.Value.Creation, Spawned("vanilla:gas_engine")!.Value.Part));
+        World("a Gas Container", () =>
+        {
+            var (creation, part) = Spawned("vanilla:gas_container")!.Value;
+            _main.Creations.Find(creation)!.InventoryOf(part)!.Add("vanilla:gasoline", 16);
+            var pockets = _main.Inventory.Items!.PlayerInventory(_main.Inventory.Session.LocalPeer);
+            foreach (var (item, count) in new[] { ("vanilla:gasoline", 24), ("vanilla:scrap_metal", 40), ("vanilla:wood_block", 155), ("vanilla:gas_engine", 1) })
+                pockets.Add(item, count);
+            Inventory.Show(Core.Items.InventoryRef.OfPart(creation, part));
+        });
+        World("an engine's menu", () =>
+        {
+            Inventory.Hide();
+            _main.PartSettings!.Open(Spawned("vanilla:gas_engine")!.Value.Creation, Spawned("vanilla:gas_engine")!.Value.Part);
+        });
         World("a controller's menu", () => _main.PartSettings!.Open(Spawned("vanilla:controller")!.Value.Creation, Spawned("vanilla:controller")!.Value.Part));
         World("a confirm dialog", () =>
         {
