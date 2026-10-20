@@ -41,10 +41,14 @@ public partial class BloomPodTest : StagedTest
         Wait("players settle", 30);
         Add("find a green Bloom Pod", _ =>
         {
+            // Near the players, not the origin: a long teleport means streaming a fresh stretch of world, and a wide
+            // search generates every chunk in it on this frame (a 5 km box took 37 s on CI, long enough for the
+            // client's connection to time out).
             var gen = HostWorld.Generator;
-            _pod = gen.ObjectsIn(-2500, -2500, 2500, 2500)
+            var feet = _host.Main.LocalPlayer!.GlobalPosition.ToNumerics();
+            _pod = gen.ObjectsIn(feet.X - 400, feet.Z - 400, feet.X + 400, feet.Z + 400)
                 .Where(o => o.Definition.Id == "bloom_pod_green" && gen.SlopeAt(o.Position.X, o.Position.Z + 2f) < 0.3f)
-                .OrderBy(o => o.Position.Length())
+                .OrderBy(o => (o.Position - feet).Length())
                 .First();
             Check(_pod.Definition.Loot is { Table: "common", Picks: 1, PicksMax: 3 }, $"pod {_pod.Id} at {_pod.Position} rolls 1 to 3 Common picks");
             return true;
