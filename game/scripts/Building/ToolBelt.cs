@@ -15,7 +15,8 @@ namespace Mechanica.Game.Building;
 /// (<see cref="HotbarSync"/>) holds a tool, an item or nothing; keys 1 to 9 and 0 pick a slot and the wheel steps
 /// along the bar. A tool slot puts that tool in hand. A placeable part goes in hand to build with
 /// (<see cref="BuildTool"/>), and any other item goes in hand as the item (<see cref="ItemTool"/>); an empty slot leaves
-/// the hand empty, which still removes parts. The Sledgehammer, the main tool, starts in hand. In Survival, items the player gets fill empty slots. The bar sits at the bottom centre inside the safe
+/// the hand empty. Right click picks parts up whatever is in hand unless the tool or item has a right click of its own
+/// (<see cref="HandTool.PickUp"/>). The Sledgehammer, the main tool, starts in hand. In Survival, items the player gets fill empty slots. The bar sits at the bottom centre inside the safe
 /// area with the tool's keys above it; the crosshair is <see cref="Ui.WorldHud"/>'s.
 /// </summary>
 public partial class ToolBelt : Node
@@ -121,6 +122,9 @@ public partial class ToolBelt : Node
         Sledge = Add(new SledgeTool { Name = "Sledge", Player = Player, Actions = Actions, Build = Build, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput });
         Item = Add(new ItemTool { Name = "Item", Player = Player, Actions = Actions, Build = Build, Inventory = Inventory, Survival = Survival, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput, Characters = Characters });
         Connector = Add(new ConnectTool { Name = "Connect", Player = Player, Actions = Actions, Build = Build, Sounds = Sounds, ReadDeviceInput = ReadDeviceInput });
+        // Right click picks parts up whatever is in hand, unless the tool or item has a right click of its own.
+        foreach (var tool in _tools)
+            tool.PickUp = Builder;
         // The first slot (the Sledgehammer on a new bar) is in hand until the hotbar says otherwise.
         Use(ToolFor(Slots[0]) ?? Sledge);
         // In Survival a part is placed from the inventory, so the ghost turns red with none left.
@@ -169,7 +173,7 @@ public partial class ToolBelt : Node
         _bar!.Visible = GameSettings.Current.Interface.ShowHotbar && !CreationBarShown;
         _hud.Visible = _bar.Visible && !HudRoot.IsCovered;
         if (_hud.Visible)
-            _hud.Text = Current.HudText();
+            _hud.Text = Current.HudLine();
         var ammo = AmmoText();
         _ammo!.Visible = ammo is not null && !HudRoot.IsCovered;
         _ammo.Text = ammo ?? "";

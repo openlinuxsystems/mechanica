@@ -98,7 +98,7 @@ you; this page is the reference for what each key means, so you can read, review
 | `crafting` | object | no | Makes the part a crafting station. Needs `inventory`. See [inventory and crafting](#inventory-and-crafting). |
 | `soil`, `respawn_point` | object, bool | no | Farming soil and respawn beds. Placeable parts only. See [survival](#survival). |
 | `seed` | object | no | What a seed grows into. Items only. See [survival](#survival). |
-| `aim` | object | no | A weapon aims while right click is held. Items only. See [survival](#survival). |
+| `aim` | object | no | A weapon aims while right click is held. Items only. Without it, right click with the item in hand picks parts up, like an empty hand (the default for every item). See [survival](#survival). |
 | `held` | object | no | The model a player holds in the right hand while the item is selected, seen by every player. Items only. See [held](#held). |
 | `logic`, `settings`, `seat` | object, list, object | no | Logic bus links, player-set settings and seats. Placeable parts only. See [logic, settings and seats](#logic-settings-and-seats). |
 | `light`, `animation` | object, object | no | A light the script switches, and a model the script turns. Placeable parts only. See [light and animation](#light-and-animation). |
