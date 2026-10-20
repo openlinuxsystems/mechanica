@@ -48,6 +48,8 @@ namespace Mechanica.Game.Tools;
 /// Given <c>engine_menu</c> it opens the menus of a row of engines in Survival (<c>tools/capture-engine-menu.sh</c>).
 /// Given <c>roads</c> it captures the road junctions nearest the world's centre from above, wide and from a driver's height
 /// (<c>tools/capture-roads.sh</c>).
+/// Given <c>workshop</c> it shows the Workshop nearest the crash site (the story's first) outside, inside and at its
+/// Fabricator (<c>tools/capture-workshop.sh</c>).
 /// Given <c>opening</c> it plays the opening cinematic from the spawn and saves stills through it
 /// (<c>tools/capture-opening.sh</c>, which can also record the whole of it).
 /// </summary>
@@ -93,10 +95,11 @@ public partial class CaptureScene : Node
         var roads = args.Length > 1 && args[1] == "roads";
         var moves = args.Length > 1 && args[1] == "animations";
         var crash = args.Length > 1 && args[1] == "crash_site";
+        var workshop = args.Length > 1 && args[1] == "workshop";
         var engineMenu = args.Length > 1 && args[1] == "engine_menu";
         var flashes = args.Length > 1 && args[1] == "flashes";
         var opening = args.Length > 1 && args[1] == "opening";
-        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash && !engineMenu && !flashes && !opening ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
+        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash && !engineMenu && !flashes && !opening && !workshop ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
         if (debugCar)
             Main.MenuCharacter = "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
@@ -221,6 +224,11 @@ public partial class CaptureScene : Node
         if (borders)
         {
             BiomeBorderShots();
+            return;
+        }
+        if (workshop)
+        {
+            WorkshopShots();
             return;
         }
         if (crash)
@@ -928,6 +936,34 @@ public partial class CaptureScene : Node
             Shot($"opening_{still:00.0}", Mathf.RoundToInt((still - at) * 60f), () => { });
             at = still;
         }
+    }
+
+    // The story's first Workshop, from outside, in its bays, at its Fabricator and in its office. Points are in the POI's
+    // own frame (x east, y up, z south; its open front faces +z).
+    private void WorkshopShots()
+    {
+        Engine.TimeScale = 1.0;
+        var shop = _main.Streamer.Generator.Pois.First(p => p.Poi.Prefab.Id == "outpost");
+        System.Numerics.Vector3 At(float x, float y, float z) => shop.ToWorld(new System.Numerics.Vector3(x, y, z));
+        void Look(float[] from, float[] to)
+        {
+            _camera.MakeCurrent();
+            _camera.GlobalPosition = At(from[0], from[1], from[2]).ToGodot();
+            _camera.LookAt(At(to[0], to[1], to[2]).ToGodot());
+        }
+        // Stand in bay 2 so the Fabricator (parked until a player is near) comes in.
+        Shot("workshop_00_wait", 360, () => _main.PlayerSync.HostTeleport(_main.Session.LocalPeer, At(5f, 1f, 4f).ToGodot(), 0f));
+        var views = new (string Name, float[] From, float[] To)[]
+        {
+            ("front", [2f, 3.5f, 32f], [2f, 3f, -3f]),
+            ("corner", [28f, 10f, 28f], [0f, 2f, -3f]),
+            ("bays", [3f, 1.8f, 12f], [3f, 1.5f, -10f]),
+            ("fabricator", [5f, 1.8f, -4f], [7.25f, 1.2f, -10.6f]),
+            ("office", [-9.8f, 1.7f, -3.2f], [-13f, 1.2f, 2.5f]),
+            ("aerial", [30f, 34f, 40f], [0f, 0f, -3f]),
+        };
+        foreach (var (name, from, to) in views)
+            Shot($"workshop_{name}", 30, () => { _main.Flora.BuildAll(); Look(from, to); });
     }
 
     // The starting crash site: the view from the spawn, from above, and inside the ship's rooms. Views are from and to

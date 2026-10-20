@@ -74,7 +74,7 @@
           }
         ],
         "rewards": { "items": [{ "item": "component_kit", "count": 2 }, { "item": "battery_pack", "count": 1 }] },
-        "outro": [{ "speaker": "Logbook", "text": "Power restored. Logbook online. Proceed to Mechanic Station." }]
+        "outro": [{ "speaker": "Logbook", "text": "Power restored. Logbook online. Proceed to the Workshop." }]
       }
     },
     {
@@ -103,26 +103,26 @@
         },
         "outro": [
           { "speaker": "Farmer", "text": "Walked out of that wreck on your own feet? Well, I'll be. Here, eat something, and take some seed and scrap." },
-          { "speaker": "Farmer", "text": "The colony left Workshop Outposts all over these hills. Get one running and you can build near anything. I've marked the nearest on your map." }
+          { "speaker": "Farmer", "text": "The colony left Workshops all over these hills. Get one running and you can build near anything. I've marked the nearest on your map." }
         ]
       }
     },
     {
       "file": "quests/workshop_outpost.json",
       "quest": {
-        "name": "Workshop Outpost",
-        "summary": "Find a Workshop Outpost and get its Fabricator working.",
+        "name": "Workshop",
+        "summary": "Find a Workshop and get its Fabricator working.",
         "requires": ["getting_started"],
         "steps": [
           {
             "id": "reach",
-            "text": "Reach a Workshop Outpost.",
+            "text": "Reach a Workshop.",
             "objective": { "type": "reach", "poi": "outpost", "radius": 20.0 },
             "dialogue": [{ "speaker": "Logbook", "text": "Workshop beacon on the long-range band. Follow it." }]
           },
           {
             "id": "craft",
-            "text": "Order something at the outpost's Fabricator.",
+            "text": "Order something at the Workshop's Fabricator.",
             "objective": { "type": "craft" }
           }
         ],
