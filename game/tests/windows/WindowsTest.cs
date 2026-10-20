@@ -218,7 +218,7 @@ public partial class WindowsTest : StagedTest
         {
             var inventory = _main.GetNode<Items.InventoryScreen>("InventoryScreen");
             var own = _main.Inventory.Items!.PlayerInventory(_main.Inventory.Session.LocalPeer);
-            const string Scrap = "vanilla:scrap_metal", Block = "vanilla:scrap_wood_block";
+            const string Scrap = "vanilla:component_kit", Block = "vanilla:scrap_wood_block";
             if (frame == 0)
             {
                 own.Clear();
@@ -238,7 +238,7 @@ public partial class WindowsTest : StagedTest
                 Check(inventory.FillText == "3 / 30", $"the fill pill counts used slots ({inventory.FillText})");
                 inventory.SetTab(Core.Items.InventoryTab.Blocks);
                 Check(inventory.OwnSlots.Where(s => s.Visible).Select(s => s.Entry).SequenceEqual([Block, Block]), "the Blocks tab lists only the blocks");
-                inventory.SearchInventory("SCRAP met");
+                inventory.SearchInventory("COMPONENT ki");
                 Check(inventory.Tab == Core.Items.InventoryTab.All, "a search switches to All");
                 Check(inventory.OwnSlots.Where(s => s.Visible).Select(s => s.Entry).SequenceEqual([Scrap]) && inventory.MatchesText == "1 match", $"the search lists the match ({inventory.MatchesText})");
                 inventory.SearchInventory("");

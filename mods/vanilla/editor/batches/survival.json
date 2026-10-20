@@ -216,8 +216,8 @@
           "stations": ["fabricator"],
           "inputs": [
             {
-              "item": "scrap_metal",
-              "count": 3
+              "item": "scrap_metal_block",
+              "count": 12
             }
           ],
           "outputs": [
@@ -296,8 +296,8 @@
           "stations": ["fabricator"],
           "inputs": [
             {
-              "item": "scrap_metal",
-              "count": 3
+              "item": "scrap_metal_block",
+              "count": 12
             },
             {
               "item": "component_kit",
@@ -504,8 +504,8 @@
           "stations": ["fabricator"],
           "inputs": [
             {
-              "item": "scrap_metal",
-              "count": 1
+              "item": "scrap_metal_block",
+              "count": 4
             },
             {
               "item": "chemical",
@@ -560,8 +560,8 @@
           "stations": ["fabricator"],
           "inputs": [
             {
-              "item": "scrap_metal",
-              "count": 5
+              "item": "scrap_metal_block",
+              "count": 20
             },
             {
               "item": "component_kit",
@@ -611,8 +611,8 @@
           "stations": ["fabricator"],
           "inputs": [
             {
-              "item": "scrap_metal",
-              "count": 6
+              "item": "scrap_metal_block",
+              "count": 24
             },
             {
               "item": "component_kit",
@@ -828,8 +828,8 @@
               "count": 6
             },
             {
-              "item": "scrap_metal",
-              "count": 2
+              "item": "scrap_metal_block",
+              "count": 8
             }
           ],
           "outputs": [
@@ -895,7 +895,7 @@
           "id": "fridge",
           "stations": ["fabricator"],
           "inputs": [
-            { "item": "scrap_metal", "count": 6 },
+            { "item": "scrap_metal_block", "count": 24 },
             { "item": "component_kit", "count": 2 },
             { "item": "circuit_board", "count": 1 }
           ],

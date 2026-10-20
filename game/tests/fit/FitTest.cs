@@ -169,7 +169,7 @@ public partial class FitTest : StagedTest
             var (creation, part) = Spawned("vanilla:gas_container")!.Value;
             _main.Creations.Find(creation)!.InventoryOf(part)!.Add("vanilla:gasoline", 16);
             var pockets = _main.Inventory.Items!.PlayerInventory(_main.Inventory.Session.LocalPeer);
-            foreach (var (item, count) in new[] { ("vanilla:gasoline", 24), ("vanilla:scrap_metal", 40), ("vanilla:wood_block", 155), ("vanilla:gas_engine", 1) })
+            foreach (var (item, count) in new[] { ("vanilla:gasoline", 24), ("vanilla:scrap_metal_block", 40), ("vanilla:wood_block", 155), ("vanilla:gas_engine", 1) })
                 pockets.Add(item, count);
             Inventory.Show(Core.Items.InventoryRef.OfPart(creation, part));
         });

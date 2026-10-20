@@ -6,14 +6,14 @@
   ],
   "inputs": [
     {
-      "item": "scrap_metal",
+      "item": "scrap_metal_block",
       "count": 1
     }
   ],
   "outputs": [
     {
       "item": "scrap_metal_wedge",
-      "count": 4
+      "count": 1
     }
   ],
   "time": 2,

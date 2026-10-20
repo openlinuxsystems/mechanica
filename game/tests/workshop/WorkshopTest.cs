@@ -103,7 +103,7 @@ public partial class WorkshopTest : StagedTest
             {
                 var pockets = _host.Main.Inventory.Items!.PlayerInventory(_client.Peer);
                 pockets.Add("vanilla:scrap_wood", 4);
-                pockets.Add("vanilla:scrap_metal", 2);
+                pockets.Add("vanilla:scrap_metal_block", 8);
                 _client.Main.Inventory.Open(Station);
                 return false;
             }

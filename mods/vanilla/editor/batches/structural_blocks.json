@@ -62,7 +62,7 @@
           "id": "metal_block",
           "stations": ["fabricator"],
           "inputs": [
-            { "item": "scrap_metal", "count": 2 },
+            { "item": "scrap_metal_block", "count": 8 },
             { "item": "component_kit", "count": 1 }
           ],
           "outputs": [
@@ -88,7 +88,7 @@
           "id": "metal_wedge",
           "stations": ["fabricator"],
           "inputs": [
-            { "item": "scrap_metal", "count": 2 },
+            { "item": "scrap_metal_block", "count": 8 },
             { "item": "component_kit", "count": 1 }
           ],
           "outputs": [
@@ -288,21 +288,7 @@
           "metallic": 0.7
         }
       },
-      "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }],
-      "recipes": [
-        {
-          "id": "scrap_metal_block",
-          "stations": ["fabricator", "portable_fabricator"],
-          "inputs": [
-            { "item": "scrap_metal", "count": 1 }
-          ],
-          "outputs": [
-            { "item": "scrap_metal_block", "count": 4 }
-          ],
-          "time": 2,
-          "order": 130
-        }
-      ]
+      "model": [{ "kind": "box", "size": [0.25, 0.25, 0.25] }]
     },
     {
       "file": "parts/blocks/scrap_metal_wedge.json",
@@ -319,10 +305,10 @@
           "id": "scrap_metal_wedge",
           "stations": ["fabricator", "portable_fabricator"],
           "inputs": [
-            { "item": "scrap_metal", "count": 1 }
+            { "item": "scrap_metal_block", "count": 1 }
           ],
           "outputs": [
-            { "item": "scrap_metal_wedge", "count": 4 }
+            { "item": "scrap_metal_wedge", "count": 1 }
           ],
           "time": 2,
           "order": 140

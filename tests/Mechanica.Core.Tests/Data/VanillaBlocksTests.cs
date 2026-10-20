@@ -122,8 +122,7 @@ public class VanillaBlocksTests
 
     [Theory]
     [InlineData("scrap_wood", "scrap_wood:1", "fabricator,portable_fabricator")]
-    [InlineData("scrap_metal", "scrap_metal:1", "fabricator,portable_fabricator")]
-    [InlineData("metal", "scrap_metal:2,component_kit:1", "fabricator")]
+    [InlineData("metal", "scrap_metal_block:8,component_kit:1", "fabricator")]
     public void SpecBlockRecipesMakeFourOfTheBlockOrWedge(string material, string inputs, string stations)
     {
         var book = RecipeBook.Load(Vanilla.Value);
@@ -136,6 +135,17 @@ public class VanillaBlocksTests
             var output = Assert.Single(recipe.Outputs);
             Assert.Equal(($"vanilla:{id}", 4), (output.Item, output.Count));
         }
+    }
+
+    [Fact]
+    public void ScrapMetalBlockIsTheScrapResourceAndItsWedgeIsCutFromOne()
+    {
+        var book = RecipeBook.Load(Vanilla.Value);
+        Assert.Null(book.Find("scrap_metal_block"));
+        Assert.False(Vanilla.Value.Parts.ContainsKey("vanilla:scrap_metal"));
+        var wedge = book.Find("scrap_metal_wedge") ?? throw new Xunit.Sdk.XunitException("no recipe makes scrap_metal_wedge");
+        Assert.Equal(("vanilla:scrap_metal_block", 1), (Assert.Single(wedge.Inputs).Item, Assert.Single(wedge.Inputs).Count));
+        Assert.Equal(("vanilla:scrap_metal_wedge", 1), (Assert.Single(wedge.Outputs).Item, Assert.Single(wedge.Outputs).Count));
     }
 
     [Theory]

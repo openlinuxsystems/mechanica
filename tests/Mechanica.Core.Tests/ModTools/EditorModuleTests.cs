@@ -102,7 +102,7 @@ public sealed class EditorModuleTests : IDisposable
     [Fact]
     public void RecipesRaidsAndSoundBanksSaveWithDiagnostics()
     {
-        var recipe = Result("editor.recipes.save", new { mod = "m", recipe = JsonDocument.Parse("""{ "id": "plank", "stations": ["fabricator"], "inputs": [{ "item": "scrap_metal", "count": 1 }], "outputs": [{ "item": "antenna", "count": 2 }], "time": 1 }""").RootElement });
+        var recipe = Result("editor.recipes.save", new { mod = "m", recipe = JsonDocument.Parse("""{ "id": "plank", "stations": ["fabricator"], "inputs": [{ "item": "scrap_metal_block", "count": 1 }], "outputs": [{ "item": "antenna", "count": 2 }], "time": 1 }""").RootElement });
         Assert.True(recipe.GetProperty("ok").GetBoolean(), recipe.ToString());
         Assert.Equal("recipes/plank.json", Result("editor.recipes.list", new { mod = "m" })[0].GetProperty("file").GetString());
 

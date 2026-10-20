@@ -22,7 +22,7 @@ public partial class HotbarTest : StagedTest
 {
     private const string Block = "vanilla:aluminum_block";
     private const string Carrot = "vanilla:carrot";
-    private const string Scrap = "vanilla:scrap_metal";
+    private const string Scrap = "vanilla:scrap_wood";
 
     private readonly List<ActionResult> _results = [];
     private NetTestHarness _harness = null!;

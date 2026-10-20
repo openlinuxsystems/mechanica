@@ -27,7 +27,7 @@ public class VanillaCatalogTests
         "radio", "beacon", "headlight", "spotlight", "warehouse_spotlight", "construction_light", "interior_light",
         "warning_light",
         // Resources, consumables, handheld weapons (produce_crate is left out for now)
-        "scrap_metal", "scrap_wood", "component_kit", "circuit_board", "glue", "gasoline", "crude_oil", "battery_pack",
+        "scrap_wood", "component_kit", "circuit_board", "glue", "gasoline", "crude_oil", "battery_pack",
         "master_battery", "warehouse_key", "explosive_remnant", "scuttler_head", "carrot_seed", "potato_seed", "tomato_seed",
         "carrot", "potato", "tomato", "water_bucket", "glowstick", "popper", "potato_blaster", "potato_scattergun",
         "potato_launcher",
@@ -193,7 +193,7 @@ public class VanillaCatalogTests
     [Theory]
     [InlineData("fabricator", "vanilla:scrap_wheel", "vanilla:wheel", "vanilla:big_wheel")]
     [InlineData("fabricator", "vanilla:scrap_gas_engine", "vanilla:gas_engine", "vanilla:electric_engine")]
-    [InlineData("portable_fabricator", "vanilla:scrap_wood_block", "vanilla:scrap_wood_wedge", "vanilla:scrap_metal_block",
+    [InlineData("portable_fabricator", "vanilla:scrap_wood_block", "vanilla:scrap_wood_wedge",
         "vanilla:scrap_metal_wedge", "vanilla:scrap_wheel", "vanilla:gasoline", "vanilla:bearing", "vanilla:switch", "vanilla:connect_tool")]
     public void RelatedRecipesSitTogetherScrapTierFirst(string station, params string[] ids)
     {

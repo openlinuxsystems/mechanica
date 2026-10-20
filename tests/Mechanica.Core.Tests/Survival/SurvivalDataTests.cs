@@ -126,7 +126,7 @@ public class SurvivalDataTests
     {
         var data = WorldGenData.Load(ModLoader.LoadAll(Path.Combine(TestMods.RepoRoot, "mods")));
         Assert.DoesNotContain(data.Diagnostics, d => d.Severity == DiagnosticSeverity.Error);
-        Assert.Contains(data.Objects["rock_node"].Drops!, d => d.Item == "scrap_metal");
+        Assert.Contains(data.Objects["rock_node"].Drops!, d => d.Item == "scrap_metal_block");
     }
 
     [Theory]

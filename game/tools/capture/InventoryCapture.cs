@@ -17,7 +17,7 @@ public partial class InventoryCapture : Node
     private static readonly (int Slot, string Item, int Count)[] Pockets =
     [
         (0, "vanilla:brick_block", 40), (1, "vanilla:scrap_wood_block", 100), (2, "vanilla:concrete_block", 100), (3, "vanilla:concrete_block", 56),
-        (7, "vanilla:component_kit", 20), (8, "vanilla:component_kit", 8), (9, "vanilla:scrap_metal", 40),
+        (7, "vanilla:component_kit", 20), (8, "vanilla:component_kit", 8), (9, "vanilla:scrap_metal_block", 40),
         (10, "vanilla:chest", 1), (11, "vanilla:gas_container", 1), (14, "vanilla:scrap_wood_block", 55), (18, "vanilla:circuit_board", 3),
         (19, "vanilla:bearing", 4), (20, "vanilla:connect_tool", 1), (21, "vanilla:paint_tool", 1), (23, "vanilla:gasoline", 8),
         (24, "vanilla:battery", 5), (26, "vanilla:carrot", 10), (27, "vanilla:carrot", 10), (28, "vanilla:potato", 10), (29, "vanilla:carrot", 6),
@@ -75,7 +75,7 @@ public partial class InventoryCapture : Node
             if (_chest is { } chest)
             {
                 var inventory = _main.Inventory.Items!.Find(chest)!;
-                inventory.SetSlot(2, new ItemStack("vanilla:scrap_metal", 30));
+                inventory.SetSlot(2, new ItemStack("vanilla:scrap_metal_block", 30));
                 inventory.SetSlot(5, new ItemStack("vanilla:metal_block", 20));
                 Screen.Show(chest);
             }

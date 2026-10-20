@@ -344,7 +344,7 @@ public class WorldGenTests
             .Select(e => gen.Find(WorldObjectId.ForPoi(crash.Index, e.k))!).ToList();
         Assert.True(scrap.Count >= 6, $"scrap piles ({scrap.Count})");
         Assert.All(scrap, o => Assert.True(o.Definition.Harvest && o.Definition.Regrow is null));
-        Assert.Contains(scrap, o => o.Definition.Drops!.Any(d => d.Item == "scrap_metal"));
+        Assert.Contains(scrap, o => o.Definition.Drops!.Any(d => d.Item == "scrap_metal_block"));
         Assert.Contains(scrap, o => o.Definition.Drops!.Any(d => d.Item == "scrap_wood"));
         // Its road heads north to the first Workshop (spec §1).
         var station = Assert.Single(gen.Pois, p => p.Site?.Id == "poi_37");

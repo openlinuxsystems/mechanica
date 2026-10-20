@@ -395,8 +395,8 @@ new group after vanilla's last one (`2700`).
   ],
   "inputs": [
     {
-      "item": "scrap_metal",
-      "count": 2
+      "item": "scrap_metal_block",
+      "count": 8
     },
     {
       "item": "component_kit",

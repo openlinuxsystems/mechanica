@@ -123,11 +123,11 @@ public partial class PerceptionTest : StagedTest
             if (frame == 0)
             {
                 var feet = _host.Main.PlayerSync.Players[1].GlobalPosition.ToNumerics();
-                Check(_host.Main.Survival.Actions!.AddDrop(feet, [new ItemStack("vanilla:scrap_metal", 2)]) is not null, "a pile dropped at the host's feet");
+                Check(_host.Main.Survival.Actions!.AddDrop(feet, [new ItemStack("vanilla:scrap_metal_block", 2)]) is not null, "a pile dropped at the host's feet");
             }
             if (Answer("drops", new GetDropsArgs(Radius: 5f), PerceptionActions.GetDrops) is not { } drops)
                 return false;
-            Check(drops.GetArrayLength() == 1 && drops[0].GetProperty("items")[0].GetProperty("item").GetString() == "vanilla:scrap_metal", $"the pile ({drops})");
+            Check(drops.GetArrayLength() == 1 && drops[0].GetProperty("items")[0].GetProperty("item").GetString() == "vanilla:scrap_metal_block", $"the pile ({drops})");
             Check(drops[0].GetProperty("expires_in").GetDouble() > 0, "it expires later");
             return true;
         });

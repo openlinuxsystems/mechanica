@@ -133,7 +133,7 @@ public sealed class EditorServiceTests : IDisposable
     [Fact]
     public void RecipesSaveListAndDelete()
     {
-        var recipe = Json("""{ "id": "plank", "stations": ["fabricator"], "inputs": [{ "item": "scrap_metal", "count": 1 }], "outputs": [{ "item": "antenna", "count": 2 }], "time": 1 }""");
+        var recipe = Json("""{ "id": "plank", "stations": ["fabricator"], "inputs": [{ "item": "scrap_metal_block", "count": 1 }], "outputs": [{ "item": "antenna", "count": 2 }], "time": 1 }""");
 
         var saved = _editor.SaveRecipe("m", recipe, null);
 
