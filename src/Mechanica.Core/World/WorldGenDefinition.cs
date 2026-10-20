@@ -392,6 +392,14 @@ public sealed record WorldObjectDefinition
     public OutcropDefinition? Outcrop { get; init; }
 
     /// <summary>
+    /// Makes each scattered spot of this object a small hand-made scene (a broken cart by a fence, a pipe run, a log pile
+    /// with stumps): a layout of other objects, each its own object (<see cref="WorldObjectId.Piece"/>) with its own
+    /// collider, look, health and drops. The scene object itself is never drawn and needs no collider;
+    /// <see cref="Footprint"/> bounds it.
+    /// </summary>
+    public SceneDefinition? Scene { get; init; }
+
+    /// <summary>
     /// A model (<c>.glb</c>/<c>.gltf</c>, a mod path) the object is drawn with instead of <see cref="Pieces"/>,
     /// centred <see cref="MeshDefinition.At"/> above the ground point.
     /// </summary>
@@ -653,6 +661,51 @@ public sealed record PerchDefinition
 
     /// <summary>Metres out that the ground round the spot is sampled.</summary>
     public float Within { get; init; } = 10f;
+
+    /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>A scene (<see cref="WorldObjectDefinition.Scene"/>): one of its layouts is picked per spot, by weight.</summary>
+public sealed record SceneDefinition
+{
+    /// <summary>The layouts to pick from.</summary>
+    public List<SceneLayout>? Layouts { get; init; }
+
+    /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>One arrangement of a scene's pieces (<see cref="SceneDefinition.Layouts"/>).</summary>
+public sealed record SceneLayout
+{
+    /// <summary>Relative odds of this layout.</summary>
+    public float Weight { get; init; } = 1f;
+
+    /// <summary>The objects, placed relative to the scene's middle and turned with it.</summary>
+    public List<ScenePiece>? Pieces { get; init; }
+
+    /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>One object of a scene layout (<see cref="SceneLayout.Pieces"/>), standing on the ground at its point.</summary>
+public sealed record ScenePiece
+{
+    /// <summary>Id of the object (one that is neither a scene nor a rock deposit).</summary>
+    public string? Object { get; init; }
+
+    /// <summary><c>[x, z]</c> in metres from the scene's middle, before the scene is turned.</summary>
+    public List<float>? At { get; init; }
+
+    /// <summary>Degrees the piece is turned, on top of the scene's own turn.</summary>
+    public float Yaw { get; init; }
+
+    /// <summary>Chance (0 to 1) the piece is there at all, so no two scenes of a layout look the same.</summary>
+    public float Chance { get; init; } = 1f;
 
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]
