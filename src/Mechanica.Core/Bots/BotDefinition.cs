@@ -153,7 +153,8 @@ public sealed record BotSize
 /// <summary>
 /// A bot's animated model (docs/bot-tutorial.md, "Models and animation"): a glTF whose clips are named after what the bot
 /// does (<c>idle</c>, <c>patrol</c>, <c>chase</c>, <c>alert</c>, <c>hit</c>, <c>death</c>, <c>jump</c>, <c>fall</c>,
-/// <c>land</c>, and one per attack). Every peer picks the clip from what the host sends, so they all play the same one.
+/// <c>land</c>, and one per attack, plus any <see cref="Idles"/>). Every peer picks the clip from what the host sends, so
+/// they all play the same one (idles aside).
 /// </summary>
 public sealed record BotModelDefinition
 {
@@ -185,6 +186,38 @@ public sealed record BotModelDefinition
     /// model's hidden <c>Shot</c> node flies to what the attack hit).
     /// </summary>
     public Dictionary<string, string>? Effects { get; init; }
+
+    /// <summary>
+    /// Other looks of the same model (coats, colours), each a <c>.glb</c> or <c>.gltf</c> with the same clips. Each bot
+    /// shows <see cref="Mesh"/> or one of these, picked by its id, so every peer shows the same one.
+    /// </summary>
+    public List<string>? Variants { get; init; }
+
+    /// <summary>
+    /// Clips it plays now and then while it stands calm (grazing, looking round, mooing), one picked at random every
+    /// <see cref="IdleEvery"/> seconds. Cosmetic: each peer picks its own.
+    /// </summary>
+    public List<BotIdleDefinition>? Idles { get; init; }
+
+    /// <summary>The shortest and longest wait between <see cref="Idles"/>, in seconds, <c>[min, max]</c>. Omitted means [6, 14].</summary>
+    public List<float>? IdleEvery { get; init; }
+
+    /// <summary>Keys this build does not know.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>A clip a bot model plays now and then while it stands (<see cref="BotModelDefinition.Idles"/>).</summary>
+public sealed record BotIdleDefinition
+{
+    /// <summary>The clip.</summary>
+    public string? Clip { get; init; }
+
+    /// <summary>A sound event it plays with the clip (a moo), from the bot's mod. Omitted means none.</summary>
+    public string? Sound { get; init; }
+
+    /// <summary>How often it is picked against the others. Omitted means 1.</summary>
+    public float? Weight { get; init; }
 
     /// <summary>Keys this build does not know.</summary>
     [JsonExtensionData]

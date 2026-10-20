@@ -275,6 +275,12 @@ public class VanillaBotsTests
     [InlineData("""{ "mesh": "meshes/x.glb", "effects": { "bite": "explosion" } }""", "$.model.effects.bite", "the bot has no attack 'bite' (use an attack id or \"death\").")]
     [InlineData("""{ "mesh": "meshes/x.glb", "effects": { "whip": "lightning" } }""", "$.model.effects.whip", "effect 'lightning' must be one of: explosion, shockwave, shot.")]
     [InlineData("""{ "mesh": "meshes/x.glb", "effects": { "death": "shot" } }""", "$.model.effects.death", "a shot follows an attack to what it hit; use it on an attack, not on death.")]
+    [InlineData("""{ "mesh": "meshes/x.glb", "variants": ["../y.glb"] }""", "$.model.variants[0]", null)]
+    [InlineData("""{ "mesh": "meshes/x.glb", "idles": [{ "sound": "moo" }] }""", "$.model.idles[0].clip", "clip is required.")]
+    [InlineData("""{ "mesh": "meshes/x.glb", "idles": [{ "clip": "moo", "sound": " " }] }""", "$.model.idles[0].sound", "sound must name a sound event (or be left out).")]
+    [InlineData("""{ "mesh": "meshes/x.glb", "idles": [{ "clip": "moo", "weight": 0 }] }""", "$.model.idles[0].weight", "weight 0 must be above 0.")]
+    [InlineData("""{ "mesh": "meshes/x.glb", "idle_every": [5] }""", "$.model.idle_every", "idle_every must be [min, max] seconds, 0 < min <= max.")]
+    [InlineData("""{ "mesh": "meshes/x.glb", "idle_every": [9, 4] }""", "$.model.idle_every", "idle_every must be [min, max] seconds, 0 < min <= max.")]
     public void BadModelsAreReported(string model, string path, string? message)
     {
         var bot = ModelBot(model);
@@ -318,6 +324,34 @@ public class VanillaBotsTests
         Assert.Equal((BotBook.DefaultEyeCalm, "#ff0000"), (model.EyeCalm, model.EyeEngaged));
         Assert.Equal((BotEffects.Shockwave, BotEffects.Explosion), (model.Effects["whip"], model.Effects[BotEffects.Death]));
         Assert.Null(BotBook.From(Vanilla.Value, ("test", ModelBot(null))).FindBot("test:whipper")!.Model);
+    }
+
+    [Fact]
+    public void AModelPicksAVariantPerBotAndKeepsItsIdles()
+    {
+        var book = BotBook.From(Vanilla.Value, ("test", ModelBot("""{ "mesh": "meshes/a.glb", "variants": ["meshes/b.glb", "meshes/c.glb"], "idles": [{ "clip": "graze", "weight": 3 }, { "clip": "moo", "sound": "moo" }], "idle_every": [2, 4] }""")));
+
+        var model = book.FindBot("test:whipper")!.Model!;
+
+        Assert.Equal(["test:meshes/a.glb", "test:meshes/b.glb", "test:meshes/c.glb", "test:meshes/a.glb"], [model.MeshFor(0), model.MeshFor(1), model.MeshFor(2), model.MeshFor(3)]);
+        Assert.Equal(model.MeshFor(-7), model.MeshFor(-7));
+        Assert.Equal([new BotIdle("graze", null, 3f), new BotIdle("moo", "moo", 1f)], model.Idles);
+        Assert.Equal((2f, 4f), (model.IdleMin, model.IdleMax));
+        var plain = BotBook.From(Vanilla.Value, ("test", ModelBot("""{ "mesh": "meshes/a.glb" }"""))).FindBot("test:whipper")!.Model!;
+        Assert.Equal(("test:meshes/a.glb", BotBook.DefaultIdleMin, BotBook.DefaultIdleMax), (plain.MeshFor(5), plain.IdleMin, plain.IdleMax));
+    }
+
+    [Fact]
+    public void TheGrazerHasThreeCoatsAndGrazesMoosAndFlees()
+    {
+        var model = Book.Value.FindBot("vanilla:grazer")!.Model!;
+
+        Assert.Equal(["vanilla:meshes/bots/grazer_fawn.glb", "vanilla:meshes/bots/grazer_chocolate.glb"], model.Variants);
+        Assert.Contains(model.Idles, i => i.Clip == "graze");
+        var moo = Assert.Single(model.Idles, i => i.Sound is not null);
+        Assert.Equal(("moo", "grazer_idle"), (moo.Clip, moo.Sound));
+        foreach (var mesh in model.Variants.Prepend(model.Mesh))
+            Assert.True(File.Exists(Path.Combine(ModsRoot, "vanilla", mesh["vanilla:".Length..])), mesh);
     }
 
     private static BotDefinition ModelBot(string? model) => new()

@@ -12,7 +12,8 @@ namespace Mechanica.Game.Bots;
 /// host's attack events, <c>hit</c> from a health drop, <c>death</c> from death, and <c>jump</c>, <c>fall</c> and <c>land</c>
 /// from its vertical speed. The glowing (emissive) materials turn from the calm colour to the engaged one. Its legs
 /// (nodes <c>…_Hip</c>, <c>…_Knee</c>, <c>…_Foot</c>) plant on the ground and the body tilts with it. All of it is
-/// cosmetic: the host still moves the bot's capsule.
+/// cosmetic: the host still moves the bot's capsule. Standing calm, it plays one of its model's idles now and then (a
+/// Grazer grazes, chews, looks round or moos), each peer picking its own.
 /// </summary>
 public partial class BotModelView : Node3D
 {
@@ -72,6 +73,10 @@ public partial class BotModelView : Node3D
     private double _lastEffect = double.NegativeInfinity;
     private readonly List<string> _effects = [];
     private Node3D? _shot;
+    private double _idleWait = -1;
+
+    /// <summary>Plays a sound event from the bot's mod where the bot is, on this peer only (an idle's moo).</summary>
+    public Action<string>? PlaySound { get; set; }
 
     /// <summary>The bot's type; its <see cref="Bot.Model"/> is the one shown.</summary>
     public Bot Type { get; init; } = null!;
@@ -105,10 +110,13 @@ public partial class BotModelView : Node3D
         public float Error { get; set; }
     }
 
-    /// <summary>Loads <paramref name="type"/>'s model, or null when it has none or it does not load.</summary>
-    public static BotModelView? For(Bot type, PartAssets? assets, Rid owner)
+    /// <summary>
+    /// Loads <paramref name="type"/>'s model as bot <paramref name="botId"/> shows it (its own look of the model's
+    /// variants), or null when it has none or it does not load.
+    /// </summary>
+    public static BotModelView? For(Bot type, PartAssets? assets, Rid owner, int botId = 0)
     {
-        if (type.Model is not { } model || assets?.InstantiateScene(model.Mesh, type.ModId) is not { } scene)
+        if (type.Model is not { } model || assets?.InstantiateScene(model.MeshFor(botId), type.ModId) is not { } scene)
             return null;
         return new BotModelView { Name = "Model", Type = type, Scene = scene, OwnerBody = owner };
     }
@@ -134,7 +142,7 @@ public partial class BotModelView : Node3D
         {
             // Advanced by hand, so the feet are planted after the clip has posed them.
             _player.CallbackModeProcess = AnimationMixer.AnimationCallbackModeProcess.Manual;
-            foreach (var name in new[] { "idle", "patrol", "chase", "fall", "swim", "swim_idle" })
+            foreach (var name in new[] { "idle", "patrol", "chase", "fall", "swim", "swim_idle", "sleep" })
             {
                 if (_player.HasAnimation(name))
                     _player.GetAnimation(name).LoopMode = Animation.LoopModeEnum.Linear;
@@ -206,6 +214,8 @@ public partial class BotModelView : Node3D
                 _oneShot = null;
             if (_oneShot is null && !dead)
                 PlayLoop();
+            if (!dead)
+                MaybeIdle(delta);
             _player.Advance(delta);
         }
         Plant(dt, dead);
@@ -283,6 +293,36 @@ public partial class BotModelView : Node3D
             _player.Play(clip, Blend);
         _player.SpeedScale = scale;
         _loop = clip;
+    }
+
+    // Counts down while the bot stands calm on its loop, then plays one of the model's idles (weighted at random).
+    private void MaybeIdle(double delta)
+    {
+        if (Model.Idles.Count == 0)
+            return;
+        if (_idleWait < 0)
+            _idleWait = Wait();
+        var calm = _oneShot is null && _loop == "idle" && _view is not { Engaged: true } and not { Swimming: true } && !_falling;
+        if (!calm || (_idleWait -= delta) > 0)
+            return;
+        _idleWait = Wait();
+        var pick = (float)GD.RandRange(0, Model.Idles.Sum(i => i.Weight));
+        var idle = Model.Idles[^1];
+        foreach (var candidate in Model.Idles)
+        {
+            if ((pick -= candidate.Weight) <= 0)
+            {
+                idle = candidate;
+                break;
+            }
+        }
+        if (!_player!.HasAnimation(idle.Clip))
+            return;
+        PlayOneShot(idle.Clip);
+        if (idle.Sound is { } sound)
+            PlaySound?.Invoke(sound);
+
+        double Wait() => GD.RandRange(Model.IdleMin, Model.IdleMax);
     }
 
     private void PlayOneShot(string clip, bool seek = false)
