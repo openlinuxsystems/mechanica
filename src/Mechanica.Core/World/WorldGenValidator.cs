@@ -58,9 +58,9 @@ internal static class WorldGenValidator
                 sink.Error(Code, $"{path}.id", $"object id '{o.Id}' must be lowercase snake_case.");
             else if (!objectIds.Add(o.Id))
                 sink.Error(Code, $"{path}.id", $"object '{o.Id}' is defined twice.");
-            if (o.Collider is null)
+            if (o.Collider is null && o.Scene is null)
                 sink.Error(Code, $"{path}.collider", "an object needs a collider.");
-            else
+            else if (o.Collider is not null)
                 Shape(o.Collider, $"{path}.collider", sink);
             for (var p = 0; p < (o.Pieces?.Count ?? 0); p++)
                 Shape(o.Pieces![p], $"{path}.pieces[{p}]", sink);
@@ -226,6 +226,8 @@ internal static class WorldGenValidator
         {
             if (definition.Objects![i].Outcrop is { } outcrop)
                 Outcrop(outcrop, definition.Objects[i], objects, $"$.objects[{i}]", sink);
+            if (definition.Objects[i].Scene is { } scene)
+                Scene(scene, definition.Objects[i], objects, $"$.objects[{i}]", sink);
         }
 
         var groundIds = new HashSet<string>();
@@ -723,6 +725,44 @@ internal static class WorldGenValidator
     private static string Kind(FloraKind kind) => kind switch { FloraKind.GroundCover => "ground_cover", _ => kind.ToString().ToLowerInvariant() };
 
     // A rock deposit: its sizes, its mounds and the block objects they are heaped from.
+    private static void Scene(SceneDefinition scene, WorldObjectDefinition owner, Dictionary<string, WorldObjectDefinition> objects, string path,
+        DiagnosticSink sink)
+    {
+        path += ".scene";
+        KnownKeys.WarnUnknown(scene.Extra, path, sink, typeof(SceneDefinition));
+        if (owner.Outcrop is not null)
+            sink.Error(Code, path, "an object is a scene or a rock deposit, not both.");
+        if (!(owner.Footprint > 0f))
+            sink.Error(Code, path, "a scene needs a footprint: no piece stands further out than it.");
+        if (scene.Layouts is not { Count: > 0 })
+            sink.Error(Code, $"{path}.layouts", "a scene needs at least one layout.");
+        for (var l = 0; l < (scene.Layouts?.Count ?? 0); l++)
+        {
+            var layout = scene.Layouts![l];
+            var at = $"{path}.layouts[{l}]";
+            KnownKeys.WarnUnknown(layout.Extra, at, sink, typeof(SceneLayout));
+            Positive(layout.Weight, $"{at}.weight", sink);
+            if (layout.Pieces is not { Count: > 0 })
+                sink.Error(Code, $"{at}.pieces", "a layout needs at least one piece.");
+            for (var p = 0; p < (layout.Pieces?.Count ?? 0); p++)
+            {
+                var piece = layout.Pieces![p];
+                var pp = $"{at}.pieces[{p}]";
+                KnownKeys.WarnUnknown(piece.Extra, pp, sink, typeof(ScenePiece));
+                if (piece.Object is null || !objects.TryGetValue(piece.Object, out var o))
+                    sink.Error(Code, $"{pp}.object", $"'{piece.Object}' is not one of the objects defined in this file.");
+                else if (o.Scene is not null || o.Outcrop is not null)
+                    sink.Error(Code, $"{pp}.object", $"'{piece.Object}' is a scene or rock deposit itself; a piece is a single object.");
+                if (piece.At is not { Count: 2 } spot || !float.IsFinite(spot[0]) || !float.IsFinite(spot[1]))
+                    sink.Error(Code, $"{pp}.at", "at must be [x, z] in metres.");
+                else if (MathF.Sqrt(spot[0] * spot[0] + spot[1] * spot[1]) > owner.Footprint)
+                    sink.Error(Code, $"{pp}.at", $"the piece stands outside the scene's footprint ({owner.Footprint} m).");
+                if (!(piece.Chance is > 0f and <= 1f))
+                    sink.Error(Code, $"{pp}.chance", $"chance must be above 0 and at most 1 (got {piece.Chance}).");
+            }
+        }
+    }
+
     private static void Outcrop(OutcropDefinition outcrop, WorldObjectDefinition owner, Dictionary<string, WorldObjectDefinition> objects, string path,
         DiagnosticSink sink)
     {
