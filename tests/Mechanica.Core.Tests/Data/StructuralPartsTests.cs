@@ -34,6 +34,17 @@ public class StructuralPartsTests
         new("support_bracket", new GridSize(1, 2, 2), 4.5, 5, 0.4, 0.2, false, 20, 5, 325, ["metal_block:1"]),
         new("support_pillar", new GridSize(2, 8, 2), 10.5, 6, 0.7, 0.1, false, 20, 5, 335, ["metal_block:4"]),
         new("support_truss_large", new GridSize(8, 8, 1), 6, 6, 0.4, 0.1, false, 20, 5, 342, ["metal_block:8"]),
+        // Batch 8b: Scrap Mechanic's sizes beside ours, the trusses, stands and the tower mast (all uncraftable there).
+        new("u_beam", new GridSize(1, 6, 2), 6, 6, 0.5, 0.1, false, 20, 5, 310, ["metal_block:2"]),
+        new("metal_column_short", new GridSize(1, 5, 1), 6, 5, 0.4, 0.1, false, 20, 5, 315, ["metal_block:2"]),
+        new("metal_support", new GridSize(2, 4, 2), 10.5, 5, 0.6, 0.1, false, 20, 5, 320, ["metal_block:2"]),
+        new("stand_support", new GridSize(2, 1, 2), 7.5, 4, 0.3, 0.1, false, 20, 5, 330, ["metal_block:1"]),
+        new("lattice_pillar", new GridSize(5, 5, 5), 10.5, 6, 0.7, 0.1, false, 20, 5, 336, ["metal_block:6"]),
+        new("support_pillar_stand", new GridSize(7, 1, 7), 10.5, 6, 0.7, 0.1, false, 5, 5, 337, ["metal_block:4"]),
+        new("support_truss_small", new GridSize(4, 4, 1), 6, 6, 0.4, 0.1, false, 20, 5, 340, ["metal_block:2"]),
+        new("support_truss", new GridSize(8, 4, 1), 6, 6, 0.4, 0.1, false, 20, 5, 341, ["metal_block:4"]),
+        new("tower_pole", new GridSize(2, 8, 2), 3, 4, 0.3, 0.3, false, 20, 5, 350, ["metal_block:2"]),
+        new("tower_pole_top", new GridSize(2, 4, 2), 3, 4, 0.3, 0.3, false, 20, 5, 351, ["metal_block:2"]),
     ];
 
     public static TheoryData<string> Ids => [.. All.Select(r => r.Id)];

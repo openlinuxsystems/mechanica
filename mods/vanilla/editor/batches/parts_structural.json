@@ -329,6 +329,114 @@
       ]
     },
     {
+      "file": "parts/structural/u_beam.json",
+      "template": "decor",
+      "set": {
+        "name": "U-Beam",
+        "description": "A tall steel channel, 6 blocks high, bolted down its back.",
+        "mass": 6,
+        "durability": 6,
+        "friction": 0.5,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          1,
+          6,
+          2
+        ],
+        "icon": "textures/items/u_beam_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/u_beam.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "u_beam",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 2
+            }
+          ],
+          "outputs": [
+            {
+              "item": "u_beam",
+              "count": 1
+            }
+          ],
+          "time": 5,
+          "order": 310
+        }
+      ]
+    },
+    {
+      "file": "parts/structural/metal_column_short.json",
+      "template": "decor",
+      "set": {
+        "name": "Metal Column (Short)",
+        "description": "A square steel box column, 5 blocks tall.",
+        "mass": 6,
+        "durability": 5,
+        "friction": 0.4,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          1,
+          5,
+          1
+        ],
+        "icon": "textures/items/metal_column_short_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/metal_column_short.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "metal_column_short",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 2
+            }
+          ],
+          "outputs": [
+            {
+              "item": "metal_column_short",
+              "count": 1
+            }
+          ],
+          "time": 5,
+          "order": 315
+        }
+      ]
+    },
+    {
       "file": "parts/structural/metal_column.json",
       "template": "decor",
       "set": {
@@ -379,6 +487,60 @@
           ],
           "time": 5,
           "order": 316
+        }
+      ]
+    },
+    {
+      "file": "parts/structural/metal_support.json",
+      "template": "decor",
+      "set": {
+        "name": "Metal Support",
+        "description": "A heavy box post made of steel channel, open at the front.",
+        "mass": 10.5,
+        "durability": 5,
+        "friction": 0.6,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          2,
+          4,
+          2
+        ],
+        "icon": "textures/items/metal_support_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/metal_support.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "metal_support",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 2
+            }
+          ],
+          "outputs": [
+            {
+              "item": "metal_support",
+              "count": 1
+            }
+          ],
+          "time": 5,
+          "order": 320
         }
       ]
     },
@@ -437,6 +599,60 @@
       ]
     },
     {
+      "file": "parts/structural/stand_support.json",
+      "template": "decor",
+      "set": {
+        "name": "Stand Support",
+        "description": "A round steel foot for posts and machinery.",
+        "mass": 7.5,
+        "durability": 4,
+        "friction": 0.3,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          2,
+          1,
+          2
+        ],
+        "icon": "textures/items/stand_support_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/stand_support.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "stand_support",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 1
+            }
+          ],
+          "outputs": [
+            {
+              "item": "stand_support",
+              "count": 1
+            }
+          ],
+          "time": 5,
+          "order": 330
+        }
+      ]
+    },
+    {
       "file": "parts/structural/support_pillar.json",
       "template": "decor",
       "set": {
@@ -491,6 +707,222 @@
       ]
     },
     {
+      "file": "parts/structural/lattice_pillar.json",
+      "template": "decor",
+      "set": {
+        "name": "Lattice Pillar",
+        "description": "A 5 by 5 by 5 block lattice tower section with a deck on top. Stack them on a Pillar Stand.",
+        "mass": 10.5,
+        "durability": 6,
+        "friction": 0.7,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          5,
+          5,
+          5
+        ],
+        "icon": "textures/items/lattice_pillar_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/lattice_pillar.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "lattice_pillar",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 6
+            }
+          ],
+          "outputs": [
+            {
+              "item": "lattice_pillar",
+              "count": 1
+            }
+          ],
+          "time": 5,
+          "order": 336
+        }
+      ]
+    },
+    {
+      "file": "parts/structural/support_pillar_stand.json",
+      "template": "decor",
+      "set": {
+        "name": "Pillar Stand",
+        "description": "A low steel foundation for a Lattice Pillar or a Support Pillar.",
+        "mass": 10.5,
+        "durability": 6,
+        "friction": 0.7,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 5,
+        "size": [
+          7,
+          1,
+          7
+        ],
+        "icon": "textures/items/support_pillar_stand_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/support_pillar_stand.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "support_pillar_stand",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 4
+            }
+          ],
+          "outputs": [
+            {
+              "item": "support_pillar_stand",
+              "count": 1
+            }
+          ],
+          "time": 5,
+          "order": 337
+        }
+      ]
+    },
+    {
+      "file": "parts/structural/support_truss_small.json",
+      "template": "decor",
+      "set": {
+        "name": "Small Truss",
+        "description": "A 4 by 4 block lattice frame of square steel tube.",
+        "mass": 6,
+        "durability": 6,
+        "friction": 0.4,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          4,
+          4,
+          1
+        ],
+        "icon": "textures/items/support_truss_small_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/support_truss_small.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "support_truss_small",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 2
+            }
+          ],
+          "outputs": [
+            {
+              "item": "support_truss_small",
+              "count": 1
+            }
+          ],
+          "time": 5,
+          "order": 340
+        }
+      ]
+    },
+    {
+      "file": "parts/structural/support_truss.json",
+      "template": "decor",
+      "set": {
+        "name": "Truss",
+        "description": "An 8 by 4 block lattice frame of square steel tube.",
+        "mass": 6,
+        "durability": 6,
+        "friction": 0.4,
+        "buoyancy": 0.1,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          8,
+          4,
+          1
+        ],
+        "icon": "textures/items/support_truss_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/support_truss.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "support_truss",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 4
+            }
+          ],
+          "outputs": [
+            {
+              "item": "support_truss",
+              "count": 1
+            }
+          ],
+          "time": 5,
+          "order": 341
+        }
+      ]
+    },
+    {
       "file": "parts/structural/support_truss_large.json",
       "template": "decor",
       "set": {
@@ -541,6 +973,114 @@
           ],
           "time": 5,
           "order": 342
+        }
+      ]
+    },
+    {
+      "file": "parts/structural/tower_pole.json",
+      "template": "decor",
+      "set": {
+        "name": "Tower Pole",
+        "description": "A lattice mast section in red and white bands. Stack them end to end.",
+        "mass": 3,
+        "durability": 4,
+        "friction": 0.3,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          2,
+          8,
+          2
+        ],
+        "icon": "textures/items/tower_pole_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/tower_pole.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "tower_pole",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 2
+            }
+          ],
+          "outputs": [
+            {
+              "item": "tower_pole",
+              "count": 1
+            }
+          ],
+          "time": 5,
+          "order": 350
+        }
+      ]
+    },
+    {
+      "file": "parts/structural/tower_pole_top.json",
+      "template": "decor",
+      "set": {
+        "name": "Tower Pole Top",
+        "description": "The tapered top of a lattice mast, with a warning lamp.",
+        "mass": 3,
+        "durability": 4,
+        "friction": 0.3,
+        "buoyancy": 0.3,
+        "flammable": false,
+        "sound_material": "metal",
+        "stack_size": 20,
+        "size": [
+          2,
+          4,
+          2
+        ],
+        "icon": "textures/items/tower_pole_top_icon.png",
+        "visual": {
+          "color": "#ffffff",
+          "roughness": null,
+          "metallic": null
+        }
+      },
+      "model": [
+        {
+          "kind": "mesh",
+          "mesh": "meshes/parts/tower_pole_top.glb"
+        }
+      ],
+      "recipes": [
+        {
+          "id": "tower_pole_top",
+          "stations": [
+            "fabricator"
+          ],
+          "inputs": [
+            {
+              "item": "metal_block",
+              "count": 2
+            }
+          ],
+          "outputs": [
+            {
+              "item": "tower_pole_top",
+              "count": 1
+            }
+          ],
+          "time": 5,
+          "order": 351
         }
       ]
     }
