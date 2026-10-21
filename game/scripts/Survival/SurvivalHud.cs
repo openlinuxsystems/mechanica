@@ -526,7 +526,13 @@ public partial class SurvivalHud : CanvasLayer
                 return (Loc.T("set up the {0}", definition.Name ?? Loc.T("part")), () => PartSettings.Open(creation.Id, aimed.Part));
         }
         if (Quests?.Prompt() is { } quest)
-            return (QuestLabel(quest), () => Request(QuestTracker.QuestInteract, new NoArgs()));
+            return (QuestLabel(quest), () => Actions.Request(QuestTracker.QuestInteract, new NoArgs(), result =>
+            {
+                _status.Text = result.Ok ? "" : result.Message ?? "";
+                // A marker that takes an item (the Master Battery into its bay) is an install: both hands push it in.
+                if (result.Ok && quest.Item is not null)
+                    Players.LocalPlayer?.Gesture(Core.Characters.CharacterGesture.Install);
+            }));
         if (AimedNode() is { Definition.Harvest: true } harvest)
         {
             var gives = harvest.Definition.Drops?.FirstOrDefault()?.Item is { } item ? Catalog.FindDefinition(item)?.Name ?? item : NodeName(harvest);
@@ -556,6 +562,7 @@ public partial class SurvivalHud : CanvasLayer
     private string QuestLabel(QuestInteractResult quest) => quest switch
     {
         { Marker: "npc" } => Loc.T("talk"),
+        { Item: { } item } => Loc.T("install the {0}", Loc.Mod(Catalog.FindDefinition(item)?.Name ?? item)),
         { Ref: { } id } => Loc.T("use the {0}", Catalog.FindDefinition(id)?.Name ?? id),
         _ => Loc.T("use the {0}", quest.Marker.Replace('_', ' ')),
     };

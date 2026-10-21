@@ -978,6 +978,33 @@ public sealed record PoiModel
     /// <summary>False for a model nothing bumps into (hanging cables, a sign far overhead). Default true.</summary>
     public bool Solid { get; init; } = true;
 
+    /// <summary>Makes the model animated and follow a quest (the SV-04's battery bay), or null for a still model.</summary>
+    public PoiModelStory? Story { get; init; }
+
+    /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Extra { get; init; }
+}
+
+/// <summary>
+/// The glTF clips a POI model (<see cref="PoiModel.Story"/>) plays as a quest goes: <see cref="Waiting"/> loops until the
+/// quest is done, <see cref="Finish"/> plays once when it is done while the model is in view, then <see cref="Done"/>
+/// loops for good. Cosmetic: every peer plays them from the quest state the host sends.
+/// </summary>
+public sealed record PoiModelStory
+{
+    /// <summary>The quest (this mod's id, or <c>mod:id</c>).</summary>
+    public string? Quest { get; init; }
+
+    /// <summary>Looped until the quest is done.</summary>
+    public string? Waiting { get; init; }
+
+    /// <summary>Played once when the quest is done while the model is in view.</summary>
+    public string? Finish { get; init; }
+
+    /// <summary>Looped once the quest is done.</summary>
+    public string? Done { get; init; }
+
     /// <summary>Unknown keys, kept so a typo gets a warning.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }

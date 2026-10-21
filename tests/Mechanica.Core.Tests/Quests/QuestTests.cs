@@ -84,7 +84,7 @@ public class QuestTests
         var tracker = Tracker(out var dispatcher, out var said);
         _world.Site("vanilla:crash_site", Vector3.Zero, 80, ("fire", null, new(3, 0, 13)), ("fire", null, new(-6, 0, 29)),
             ("fire", null, new(7, 0, 27)), ("item", "master_battery", new(-2, 0.5f, 12)), ("item", "logbook", new(2, 0.5f, 12)),
-            ("npc", "farmer", new(-45, 0, -40)));
+            ("npc", "farmer", new(-45, 0, -40)), ("object", "master_battery_fallen", new(-17, 0, 27)));
         _world.Site("vanilla:outpost", new(600, 0, 0), 40);
         _world.Site("vanilla:faction_outpost", new(0, 0, 900), 36, ("npc", "faction_envoy", new(0, 0, 897)));
         _world.Site("vanilla:ai_core_facility", new(-900, 0, 1100), 70, ("core", null, new(-900, 0, 1098)));
@@ -104,10 +104,25 @@ public class QuestTests
         _world.Out["vanilla:crash_site"] = 3;
         tracker.Tick(0.1f);
         Assert.Equal(1, tracker.State.Of("vanilla:getting_started")!.Step);
+        // The Master Battery was thrown clear: picking it up (it lies at an object marker) finishes the search.
+        Assert.Equal("find_battery", tracker.CurrentStep("vanilla:getting_started")!.Id);
+        Assert.Contains(said, d => d.Lines.Any(l => l.Text!.StartsWith("Fires out", StringComparison.Ordinal)));
+        _world.Feet[2] = new Vector3(1, 0, 12);
+        Assert.Equal(ActionErrors.Rejected, Interact(dispatcher, 2).Code); // nothing to install yet
+        _world.Items[(3, "vanilla:master_battery")] = 1;
+        tracker.Tick(0.1f);
+        Assert.Equal("install_battery", tracker.CurrentStep("vanilla:getting_started")!.Id);
+        var empty = Interact(dispatcher, 2);
+        Assert.Equal(ActionErrors.Rejected, empty.Code); // player 3 carries it, not player 2
+        Assert.Equal("You need a vanilla:master_battery.", empty.Message);
         _world.Feet[2] = new Vector3(100, 0, 100);
-        Assert.Equal(ActionErrors.Rejected, Interact(dispatcher, 2).Code); // out of reach does nothing
-        _world.Feet[2] = new Vector3(1, 0, 12); // nearer the logbook, but only the battery counts
-        Assert.True(Interact(dispatcher, 2).Ok);
+        _world.Feet[3] = new Vector3(100, 0, 100);
+        Assert.Equal(ActionErrors.Rejected, Interact(dispatcher, 3).Code); // out of reach does nothing
+        _world.Feet[3] = new Vector3(1, 0, 12); // nearer the logbook, but only the battery's bay counts
+        var installed = Interact(dispatcher, 3);
+        Assert.True(installed.Ok);
+        Assert.Equal("vanilla:master_battery", installed.Value!.Value.GetProperty("item").GetString());
+        Assert.Equal(0, _world.Items[(3, "vanilla:master_battery")]);
         Assert.True(tracker.State.IsDone("vanilla:getting_started"));
         Assert.Equal(2, _world.Given[(2, "vanilla:component_kit")]);
         Assert.Equal(2, _world.Given[(3, "vanilla:component_kit")]);
@@ -289,6 +304,14 @@ public class QuestTests
         {
             Given[(peer, item)] = Given.GetValueOrDefault((peer, item)) + count;
             return count;
+        }
+
+        public bool TakeItem(int peer, string item, int count)
+        {
+            if (Items.GetValueOrDefault((peer, item)) < count)
+                return false;
+            Items[(peer, item)] -= count;
+            return true;
         }
 
         public int PlantedCrops() => Crops;

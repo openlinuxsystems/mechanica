@@ -1,11 +1,25 @@
 {
   "id": "master_battery",
   "name": "Master Battery",
-  "description": "A large battery found at crash sites.",
+  "description": "The SV-04's main power cell. The crash threw it clear of the ship; it belongs in the Power Core in engineering.",
   "category": "resource",
   "mass": 2,
+  "durability": 4,
+  "friction": 0.6,
+  "buoyancy": 0.3,
+  "flammable": false,
   "stack_size": 1,
+  "sound_material": "metal",
+  "size": [2, 2, 3],
+  "mesh": "meshes/items/master_battery.glb",
+  "icon": "textures/items/master_battery_icon.png",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.6,
+    "metallic": 0
+  },
   "sounds": {
     "pickup": "pickup_battery"
-  }
+  },
+  "loose": true
 }

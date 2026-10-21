@@ -70,6 +70,9 @@ public partial class WorldStreamer : Node3D
     /// <summary>Draws the characters standing at POIs' <c>npc</c> markers (<see cref="TerrainChunk.Npc"/>); null draws none.</summary>
     public Func<PoiMarkerPlacement, Node3D?>? Npc { get; set; }
 
+    /// <summary>Whether a quest is done, for POI models that follow one (<see cref="TerrainChunk.QuestDone"/>); null: none is.</summary>
+    public Func<string, bool>? QuestDone { get; set; }
+
     /// <summary>Tuning; null reads <see cref="DefaultSettingsPath"/> when the node starts.</summary>
     public StreamingSettings? Settings { get; set; }
 
@@ -308,7 +311,7 @@ public partial class WorldStreamer : Node3D
     {
         _pending.Remove(chunk);
         DropRetiring(chunk);
-        var node = new TerrainChunk { Data = Generator.GenerateChunk(chunk, Streamer.Settings.ChunkSize), State = State, Ground = Ground, Textured = GroundMaterial.For(Generator.Data), WorldGen = Generator.Data, Npc = Npc };
+        var node = new TerrainChunk { Data = Generator.GenerateChunk(chunk, Streamer.Settings.ChunkSize), State = State, Ground = Ground, Textured = GroundMaterial.For(Generator.Data), WorldGen = Generator.Data, Npc = Npc, QuestDone = QuestDone };
         AddChild(node);
         _chunks[chunk] = node;
         Revision++;

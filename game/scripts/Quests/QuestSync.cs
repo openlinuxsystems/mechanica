@@ -167,10 +167,16 @@ public partial class QuestSync : Node, IQuestWorld
             return found;
         foreach (var quest in Book.All)
         {
-            if (Tracker.CurrentStep(quest.QualifiedId) is not { Poi: { } poi })
+            if (Tracker.CurrentStep(quest.QualifiedId) is not { Poi: { } poi } step)
                 continue;
-            if (SitesOf(poi).OrderBy(s => System.Numerics.Vector3.DistanceSquared(s.Centre, from)).FirstOrDefault() is { } site)
-                found.Add(new($"quest:{quest.QualifiedId}", quest.Name, site.Centre));
+            // A step that names a marker to use or look by points at the nearest one; any other at the POI.
+            List<System.Numerics.Vector3> places = step.Kind is QuestObjectiveKind.Interact or QuestObjectiveKind.HaveItem && step.Marker is { } type
+                ? [.. SitesOf(poi).SelectMany(s => s.Markers).Where(m => m.Type == type && (step.Ref is null || m.Ref == step.Ref)).Select(m => m.Position)]
+                : [];
+            if (places.Count == 0)
+                places = [.. SitesOf(poi).Select(s => s.Centre)];
+            if (places.Count > 0)
+                found.Add(new($"quest:{quest.QualifiedId}", quest.Name, places.MinBy(p => System.Numerics.Vector3.DistanceSquared(p, from))));
         }
         foreach (var poi in State.Revealed)
         {
@@ -189,6 +195,13 @@ public partial class QuestSync : Node, IQuestWorld
 
     /// <inheritdoc/>
     public int GiveItem(int peer, string item, int count) => Inventory.Items?.PlayerInventory(peer).Add(item, count) ?? 0;
+
+    /// <inheritdoc/>
+    public bool TakeItem(int peer, string item, int count) =>
+        Inventory.Items?.PlayerInventory(peer) is { } inventory && inventory.Count(item) >= count && inventory.Remove(item, count) == count;
+
+    /// <inheritdoc/>
+    public string ItemName(string item) => Inventory.Catalog?.FindDefinition(item)?.Name ?? item;
 
     /// <inheritdoc/>
     public int PlantedCrops() => Creations.All.Sum(c => c.ActiveSoil.Count(s => s.Soil.Seed is not null));

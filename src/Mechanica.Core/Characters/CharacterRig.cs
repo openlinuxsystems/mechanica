@@ -120,6 +120,9 @@ public enum CharacterGesture : byte
 
     /// <summary>The Paint Tool's reload (R): the left hand twists its tank out and back in.</summary>
     PaintReload,
+
+    /// <summary>Installing an item a quest marker takes (the Master Battery into its bay): both hands push it home.</summary>
+    Install,
 }
 
 /// <summary>How hard a hit throws a player about (<see cref="CharacterAnimator.React"/>).</summary>
@@ -279,7 +282,7 @@ public static class CharacterRig
     public static IReadOnlyList<string> UpperBodyClips { get; } =
     [
         "hold_tool", "hold_heavy", "hold_heavy_block", "hold_gun", "hold_item",
-        "sledge_swing", "tool_use", "weld", "paint_spray", "fire_gun", "eat", "throw", "plant", "pour",
+        "sledge_swing", "tool_use", "weld", "paint_spray", "fire_gun", "eat", "throw", "plant", "pour", "install",
         "interact", "hurt",
         "hold_bucket", "hold_bucket_full", "bucket_fill", "bucket_throw", "bucket_place", "bucket_place_full",
         "sledge_swing_side", "sledge_swing_back",
@@ -388,6 +391,7 @@ public static class CharacterRig
         CharacterGesture.ConnectReverse => "connect_reverse",
         CharacterGesture.BagSpill => "bag_spill",
         CharacterGesture.PaintReload => "paint_reload",
+        CharacterGesture.Install => "install",
         _ => null,
     };
 
