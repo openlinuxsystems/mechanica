@@ -22,7 +22,7 @@ import kit as K
 from families import M, stone, BONE, GRAPHITE, MUSTARD, STONE_D
 from props import _root
 from props_stone import (dstone, moss, bark, heart, earth, rock, limb, lumpy_cone, empty, root_tangle,
-                         MOSS, WATER, EARTH, EARTH_D, SNAG, ROT, CAP, STEM, GILL, TERMITE)
+                         MOSS, EARTH, EARTH_D, SNAG, ROT, CAP, STEM, GILL, TERMITE)
 from props_settler_a import lump
 
 LEAF, LEAF_D, LEAF_L = "#56803a", "#3f6630", "#6c8f44"
@@ -909,11 +909,9 @@ def pad(P, name, r, loc, yaw, mat, t=0.012):
 
 
 def lily_pad_cluster(seed=56):
-    """A still pool 4.4 m across covered in lily pads, two flowers open among them, a muddy rim."""
+    """Lily pads 4.4 m across with two flowers open among them, floating on a pond's own water."""
     rnd = random.Random(seed)
     P = _root("lilies")
-    K.disc("rim", 2.35, K.mat("earth_d", EARTH_D, rough=0.7, noise_scale=6.0), (0, 0), z=0.008, segs=32, wobble=0.08, seed=seed).parent = P
-    K.disc("water", 2.2, K.mat("pond", WATER, rough=0.05), (0, 0), z=0.03, segs=32, wobble=0.08, seed=seed).parent = P
     pm = [K.mat("lily", LILY, rough=0.45, grime=0.15, noise_scale=6.0), K.mat("lily_d", LILY_D, rough=0.45, grime=0.15, noise_scale=6.0)]
     placed = []
     tries = 0
