@@ -1,13 +1,14 @@
 {
   "id": "locker",
   "name": "Locker",
-  "description": "A tall steel locker with 20 slots.",
+  "description": "A tall steel locker with four slots. Lockers in warehouses and wrecks often hold something.",
   "category": "container",
-  "mass": 25,
-  "durability": 10,
-  "friction": 0.5,
-  "buoyancy": 0.2,
+  "mass": 6,
+  "durability": 3,
+  "friction": 0.4,
+  "buoyancy": 0.6,
   "flammable": false,
+  "stack_size": 1,
   "sound_material": "metal",
   "size": [2, 7, 2],
   "mesh": "meshes/locker.glb",
@@ -28,6 +29,6 @@
     "place": "place_metal"
   },
   "inventory": {
-    "slots": 20
+    "slots": 4
   }
 }

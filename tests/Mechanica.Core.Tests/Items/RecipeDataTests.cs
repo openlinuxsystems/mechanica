@@ -256,8 +256,8 @@ public class RecipeDataTests : IDisposable
         Assert.True(gasoline.RunsAt("refiner") && gasoline.RunsAt("fabricator") && gasoline.RunsAt("portable_fabricator"));
 
         var player = new Inventory(content, 30);
-        player.Add("vanilla:scrap_wood_block", 16);
-        player.Add("vanilla:scrap_metal_block", 8);
+        player.Add("vanilla:scrap_wood_block", 60);
+        player.Add("vanilla:scrap_metal_block", 10);
         Assert.True(player.HasAll(chest.InputsFor(1)));
         var station = Inventory.For(content, content.FindDefinition("vanilla:fabricator")!)!;
         var queue = new CraftingQueue();

@@ -1,15 +1,15 @@
 {
   "id": "chemical_container",
   "name": "Chemical Container",
-  "description": "Holds crude oil and chemicals.",
+  "description": "Holds five stacks of chemicals.",
   "category": "container",
-  "mass": 6,
+  "mass": 7.5,
   "durability": 6,
-  "friction": 0.5,
-  "buoyancy": 0.2,
+  "friction": 0.4,
+  "buoyancy": 0.6,
   "flammable": false,
-  "sound_material": "plastic",
-  "size": [2, 3, 2],
+  "sound_material": "metal",
+  "size": [4, 3, 3],
   "mesh": "meshes/chemical_container.glb",
   "visual": {
     "color": "#6a3a9a",
@@ -25,12 +25,11 @@
   ],
   "sounds": {
     "open": "container_open",
-    "place": "place_plastic"
+    "place": "place_metal"
   },
   "inventory": {
     "slots": 5,
     "accepts": [
-      "crude_oil",
       "chemical"
     ]
   }

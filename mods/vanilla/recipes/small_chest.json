@@ -1,0 +1,28 @@
+{
+  "id": "small_chest",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 20
+    },
+    {
+      "item": "circuit_board",
+      "count": 2
+    },
+    {
+      "item": "glue",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "small_chest",
+      "count": 1
+    }
+  ],
+  "time": 10,
+  "order": 1712
+}

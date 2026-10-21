@@ -1,0 +1,32 @@
+{
+  "id": "potato_ammo_container",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block_2",
+      "count": 10
+    },
+    {
+      "item": "glass_block",
+      "count": 20
+    },
+    {
+      "item": "circuit_board",
+      "count": 5
+    },
+    {
+      "item": "glue",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "potato_ammo_container",
+      "count": 1
+    }
+  ],
+  "time": 30,
+  "order": 1774
+}

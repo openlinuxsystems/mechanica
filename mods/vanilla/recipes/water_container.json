@@ -1,0 +1,28 @@
+{
+  "id": "water_container",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 10
+    },
+    {
+      "item": "circuit_board",
+      "count": 5
+    },
+    {
+      "item": "glue",
+      "count": 4
+    }
+  ],
+  "outputs": [
+    {
+      "item": "water_container",
+      "count": 1
+    }
+  ],
+  "time": 30,
+  "order": 1772
+}

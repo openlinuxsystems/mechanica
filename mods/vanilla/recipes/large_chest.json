@@ -1,0 +1,28 @@
+{
+  "id": "large_chest",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block_2",
+      "count": 20
+    },
+    {
+      "item": "circuit_board",
+      "count": 5
+    },
+    {
+      "item": "glue",
+      "count": 5
+    }
+  ],
+  "outputs": [
+    {
+      "item": "large_chest",
+      "count": 1
+    }
+  ],
+  "time": 30,
+  "order": 1714
+}

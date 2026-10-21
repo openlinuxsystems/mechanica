@@ -1,0 +1,28 @@
+{
+  "id": "cargo_chest",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block_2",
+      "count": 100
+    },
+    {
+      "item": "circuit_board",
+      "count": 10
+    },
+    {
+      "item": "glue",
+      "count": 5
+    }
+  ],
+  "outputs": [
+    {
+      "item": "cargo_chest",
+      "count": 1
+    }
+  ],
+  "time": 30,
+  "order": 1716
+}

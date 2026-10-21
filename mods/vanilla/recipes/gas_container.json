@@ -5,8 +5,20 @@
   ],
   "inputs": [
     {
-      "item": "scrap_metal_block",
-      "count": 12
+      "item": "metal_block",
+      "count": 20
+    },
+    {
+      "item": "circuit_board",
+      "count": 5
+    },
+    {
+      "item": "paint_ammo",
+      "count": 10
+    },
+    {
+      "item": "glue",
+      "count": 2
     }
   ],
   "outputs": [
@@ -15,6 +27,6 @@
       "count": 1
     }
   ],
-  "time": 5,
+  "time": 30,
   "order": 920
 }

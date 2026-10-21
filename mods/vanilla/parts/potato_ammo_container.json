@@ -1,0 +1,36 @@
+{
+  "id": "potato_ammo_container",
+  "name": "Potato Ammo Container",
+  "description": "Holds five stacks of potatoes for mounted potato guns.",
+  "category": "container",
+  "mass": 7.5,
+  "durability": 6,
+  "friction": 0.4,
+  "buoyancy": 0.6,
+  "flammable": false,
+  "sound_material": "metal",
+  "size": [4, 3, 3],
+  "mesh": "meshes/potato_ammo_container.glb",
+  "visual": {
+    "color": "#8a7a3a",
+    "paintable": true
+  },
+  "sockets": [
+    {
+      "id": "base",
+      "type": "structural",
+      "position": [0, -0.375, 0],
+      "normal": [0, -1, 0]
+    }
+  ],
+  "sounds": {
+    "open": "container_open",
+    "place": "place_metal"
+  },
+  "inventory": {
+    "slots": 5,
+    "accepts": [
+      "potato"
+    ]
+  }
+}

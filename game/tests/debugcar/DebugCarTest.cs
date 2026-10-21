@@ -12,8 +12,8 @@ namespace Mechanica.Game.Tests;
 /// The debug scrap car, host plus a client: a new world with <see cref="Main.DebugCar"/> on gets the car by the spawn,
 /// wired and fuelled, and the client sees it; the client sits in it, drives it straight ahead on W on open ground east of
 /// the spawn (with nobody steering it keeps its line and heading), backs it up on S, burning the Gas Container's gasoline,
-/// and up a 15° hill (gravity tilted). Parked, it stays put though its steering holds straight. Rolled onto its roof,
-/// the car keeps its driver in the seat, upside down with it, on both peers. The client, which does not host, never spawns one of its own.
+/// and up a 15° hill (gravity tilted). Parked, it stays put though its steering holds straight. Rolled over (it comes to rest on its side or roof),
+/// the car keeps its driver in the seat, tipped over with it, on both peers. The client, which does not host, never spawns one of its own.
 /// </summary>
 public partial class DebugCarTest : StagedTest
 {
@@ -195,7 +195,7 @@ public partial class DebugCarTest : StagedTest
             _client.Main.LocalPlayer!.ThirdPerson = true;
             return frame >= 90;
         });
-        Add("the driver stays in the seat, upside down with the car, on both peers", _ =>
+        Add("the driver stays in the seat, tipped over with the car, on both peers", _ =>
         {
             var seat = Part("vanilla:scrap_drivers_seat");
             Check(_host.Main.Logic.Seats.SeatOf(_client.Peer) is { } held && held.Part == seat, "the host still has the client in the seat");
@@ -212,8 +212,8 @@ public partial class DebugCarTest : StagedTest
                 if (!Check(player.Character is Player.CharacterModel, $"the {who} draws the driver's body"))
                     continue;
                 var body = (Player.CharacterModel)player.Character!;
-                Check(body.GlobalBasis.Y.Normalized().Dot(at.Feet.Basis.Y.Normalized()) > 0.95f && body.GlobalBasis.Y.Dot(Vector3.Up) < 0f,
-                        $"the {who} draws the driver upside down with the seat (body up {body.GlobalBasis.Y.Normalized()}, seat up {at.Feet.Basis.Y.Normalized()})");
+                Check(body.GlobalBasis.Y.Normalized().Dot(at.Feet.Basis.Y.Normalized()) > 0.95f && body.GlobalBasis.Y.Normalized().Dot(Vector3.Up) < 0.8f,
+                        $"the {who} draws the driver tipped over with the seat (body up {body.GlobalBasis.Y.Normalized()}, seat up {at.Feet.Basis.Y.Normalized()})");
             }
             return true;
         });

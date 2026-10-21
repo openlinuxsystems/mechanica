@@ -676,7 +676,7 @@ one place. Vanilla's groups:
 | 1400 | Sound | `horn`, `radio` |
 | 1500 | Vehicle body | `bumper_front`, `bumper_rear`, `mud_flap`, `exhaust_pipe`, `license_plate`, `roof_rack`, `antenna`, `windshield`, `side_window` |
 | 1600 | Lights | `glowstick`, `interior_light`, `headlight`, `spotlight`, `construction_light`, `warning_light`, `beacon`, `warehouse_spotlight` |
-| 1700 | Storage | `chest`, `barrel`, `locker`, `tool_cabinet`, `file_cabinet`, `fridge`, `chemical_container`, `dispenser` |
+| 1700 | Storage | `chest` (Scrap Chest), `small_chest`, `large_chest`, `cargo_chest`, `barrel`, `locker`, `tool_cabinet`, `file_cabinet`, `fridge`, `chemical_container`, `water_container`, `potato_ammo_container`, `dispenser`, `broken_microwave`, `ruin_chest` |
 | 1800 | Stations | `portable_fabricator`, `refiner`, `respawn_bed` |
 | 1900 | Farming | `soil_bag`, `water_bucket` |
 | 2000 | Furniture | `stool`, `chair`, `wooden_table`, `metal_table`, `shelf_unit`, `pallet` |

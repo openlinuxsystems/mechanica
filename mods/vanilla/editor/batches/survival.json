@@ -1062,68 +1062,6 @@
           "order": 1830
         }
       ]
-    },
-    {
-      "file": "parts/fridge.json",
-      "template": "decor",
-      "set": {
-        "name": "Fridge",
-        "description": "Keeps produce and seeds: 30 slots.",
-        "category": "container",
-        "mass": 40,
-        "durability": 10,
-        "friction": 0.5,
-        "buoyancy": 0.2,
-        "flammable": false,
-        "sound_material": "metal",
-        "size": [4, 7, 3],
-        "visual": {
-          "color": "#e8e8e0",
-          "paintable": true
-        },
-        "sockets": [
-          {
-            "id": "base",
-            "type": "structural",
-            "position": [0, -0.875, 0],
-            "normal": [0, -1, 0]
-          }
-        ],
-        "sounds": {
-          "open": "container_open",
-          "place": "place_metal"
-        },
-        "inventory": {
-          "slots": 30,
-          "accepts": ["carrot", "potato", "tomato", "carrot_seed", "potato_seed", "tomato_seed"]
-        }
-      },
-      "model": [
-        {
-          "kind": "box",
-          "size": [1, 1.75, 0.75]
-        },
-        {
-          "kind": "box",
-          "operation": "subtract",
-          "size": [0.8, 1.4, 0.04],
-          "position": [0, 0, 0.375]
-        }
-      ],
-      "recipes": [
-        {
-          "id": "fridge",
-          "stations": ["fabricator"],
-          "inputs": [
-            { "item": "scrap_metal_block", "count": 24 },
-            { "item": "component_kit", "count": 2 },
-            { "item": "circuit_board", "count": 1 }
-          ],
-          "outputs": [{ "item": "fridge", "count": 1 }],
-          "time": 8,
-          "order": 1760
-        }
-      ]
     }
   ]
 }
