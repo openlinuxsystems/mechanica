@@ -201,12 +201,35 @@ public sealed partial class BotRuntime
 
     private void Think(Brain brain, float dt)
     {
+        if (brain.Bot.LedBy is not null)
+        {
+            Follow(brain);
+            return;
+        }
         var env = brain.Env!;
         var think = env.RawGet("on_think") ?? DynValue.Nil;
         if (think.Type == DataType.Function)
             brain.Status = Describe(Run(brain, think, "on_think", DynValue.NewNumber(dt)));
         else
             brain.Status = Describe(Run(brain, brain.Context.Script.Globals.Get("behavior").Table.Get("run"), "the behaviour tree", brain.Tree, DynValue.NewNumber(dt)));
+    }
+
+    // On a Lead it walks after its player, faster the more the rope pulls, and stands facing them within its slack.
+    private void Follow(Brain brain)
+    {
+        brain.Status = "led";
+        if (_bots.LeaderFeet(brain.Bot) is not { } feet)
+            return;
+        var away = Flat(feet - brain.Bot.Position);
+        var slack = _bots.Settings.LeadLength;
+        var distance = away.Length();
+        if (distance <= slack)
+        {
+            Move(brain, away.LengthSquared() < 1e-6f ? Vector3.Zero : away, 0f);
+            return;
+        }
+        var pull = Math.Clamp((distance - slack) / 2f, 0.35f, 1f);
+        Move(brain, away, brain.Bot.TopSpeed * pull);
     }
 
     private static string? Describe(DynValue[]? values) =>

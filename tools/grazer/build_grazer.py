@@ -14,7 +14,8 @@ What it writes: ``mods/vanilla/meshes/bots/grazer[_coat].glb``. Feet are at the 
 The nodes are the rig (the game plays the clips on them and plants the feet):
 
 * ``Body`` (the barrel), ``Neck`` (lowers and turns at the shoulders), ``Collar`` (on the neck: leather, a bell and a
-  name tag; the game shows it only on a tamed Grazer, the bot's ``model.kept_nodes``), ``Head`` (turns on the neck), ``Jaw`` (the lower jaw, hinged under the cheeks),
+  name tag; the game shows it only on a tamed Grazer, the bot's ``model.kept_nodes``), ``LeadRing`` (an empty under the
+  collar's D-ring, where the rope of a Lead clips on: the bot's ``model.lead_node``), ``Head`` (turns on the neck), ``Jaw`` (the lower jaw, hinged under the cheeks),
   ``EarL`` / ``EarR``, ``Tail1`` / ``Tail2``;
 * legs ``Leg<FL|FR|BL|BR>_Hip`` / ``_Knee`` / ``_Foot`` (``_Foot`` is an empty on the ground under the hoof).
 
@@ -225,6 +226,9 @@ def band(pts, outs, width, thick, mat):
     add(bm, mat)
 
 
+LEAD_RING = []               # where a Lead's rope clips on (the bottom of the collar's D-ring), set by collar_geometry
+
+
 def collar_geometry(skins):
     """
     The collar a tamed Grazer wears (on Collar, which the game shows only while it is kept): a leather strap round
@@ -262,6 +266,13 @@ def collar_geometry(skins):
     sphere(bell + V((0, 0, 0.045)), 0.027, "brass", segs=16)
     sc.disc(bell + V((0, 0, -0.04)), 0.044, 0.008, (0, 0, 1), "bell_in")
     sphere(bell + V((0, 0, -0.05)), 0.014, "brass")
+    # the lead's D-ring beside the bell's hanger: the rope of a Lead clips on here (LeadRing)
+    ring_at = hang + V((-0.07, -0.01, -0.012))
+    rod(hang - V((0.02, 0, 0)), ring_at + V((0, 0, 0.02)), 0.006, "brass", segs=8)
+    pts = [ring_at + V((0, 0.024 * math.sin(a), 0.024 * math.cos(a))) for a in [2 * math.pi * k / 20 for k in range(21)]]
+    for p0, p1 in zip(pts, pts[1:]):
+        rod(p0, p1, 0.0055, "brass", segs=8)
+    LEAD_RING[:] = [ring_at - V((0, 0, 0.024))]
     tag = hang + V((0.07, -0.03, -0.05))
     sc.disc(tag, 0.034, 0.006, (0.3, -1, 0.1), "brass", segs=28)
     rod(hang + V((0.03, 0, 0)), tag + V((0, 0, 0.03)), 0.005, "brass", segs=6)
@@ -378,7 +389,7 @@ def pivots(skins=None):
     """Node -> (parent, pivot in model space)."""
     body, head = skins or SKINS
     tail = tail_points(body)
-    piv = {"Body": (None, V((0, 0.1, 0.68))), "Neck": ("Body", SHOULDER), "Collar": ("Neck", NECK), "Head": ("Neck", NECK), "Jaw": ("Head", HINGE)}
+    piv = {"Body": (None, V((0, 0.1, 0.68))), "Neck": ("Body", SHOULDER), "Collar": ("Neck", NECK), "LeadRing": ("Collar", LEAD_RING[0]), "Head": ("Neck", NECK), "Jaw": ("Head", HINGE)}
     for side, sx in (("L", -1), ("R", 1)):
         piv[f"Ear{side}"] = ("Head", ear_points(head, sx)[0])
     piv["Tail1"] = ("Body", tail[0])

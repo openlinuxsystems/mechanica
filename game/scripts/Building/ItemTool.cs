@@ -114,17 +114,28 @@ public partial class ItemTool : HandTool
         return true;
     }
 
-    /// <summary>Use (E) on an animal that eats the food in hand feeds it (<see cref="BotActions.FeedBot"/>), towards taming it.</summary>
+    /// <summary>
+    /// Use (E) on an animal: with a food it eats in hand it feeds it (<see cref="BotActions.FeedBot"/>), towards taming it;
+    /// with its Lead in hand it takes a tame one on the Lead, or lets it go (<see cref="BotActions.LeadBot"/>).
+    /// </summary>
     public override (string Label, Action Run)? Interaction
     {
         get
         {
             if (!Active || InHand is not { } hand || Survival.Settings is not { } settings
-                || CastShown(Player, settings.Reach)?.Collider is not Bots.BotBody { View: { Dead: false, Kept: false } } bot
-                || bot.Type.Tame is not { } tame || !tame.Foods.Contains(hand.Item))
+                || CastShown(Player, settings.Reach)?.Collider is not Bots.BotBody { View: { Dead: false } view } bot
+                || bot.Type.Tame is not { } tame)
+                return null;
+            var name = Loc.Mod(bot.Type.Name);
+            if (view.Kept && tame.Lead == hand.Item)
+            {
+                var label = view.LedBy == Player.PeerId ? Loc.T("let the {0} go", name) : Loc.T("lead the {0}", name);
+                return (label, () => Send(BotActions.LeadBot, new BotArgs(bot.BotId), null));
+            }
+            if (view.Kept || !tame.Foods.Contains(hand.Item))
                 return null;
             var item = hand.Item;
-            return (Loc.T("feed the {0}", Loc.Mod(bot.Type.Name)), () => Send(BotActions.FeedBot, new FeedBotArgs(bot.BotId, item), null));
+            return (Loc.T("feed the {0}", name), () => Send(BotActions.FeedBot, new FeedBotArgs(bot.BotId, item), null));
         }
     }
 

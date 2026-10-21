@@ -51,6 +51,15 @@ public sealed record BotSettings
     /// <summary>Seconds after a guard dies before its post can field another.</summary>
     public float GuardRespawn { get; init; } = 1200f;
 
+    /// <summary>How close a led bot walks behind the player leading it, in m (the Lead's slack).</summary>
+    public float LeadLength { get; init; } = 2.5f;
+
+    /// <summary>A led bot farther than this from the player leading it (they teleported or drove off) is let go where it stands, in m.</summary>
+    public float LeadBreak { get; init; } = 16f;
+
+    /// <summary>Seconds between two looks of tame bots for a home part nearby (<c>tame.homes</c>).</summary>
+    public float HomeCheckSeconds { get; init; } = 2f;
+
     /// <summary>Parses settings from JSON and validates them.</summary>
     /// <exception cref="FormatException">The JSON is malformed or a value is out of range.</exception>
     public static BotSettings FromJson(string json)
@@ -84,6 +93,10 @@ public sealed record BotSettings
         Positive(GuardWakeDistance, "guard_wake_distance");
         Positive(GuardSleepDistance, "guard_sleep_distance");
         NonNegative(GuardRespawn, "guard_respawn");
+        Positive(LeadLength, "lead_length");
+        Positive(HomeCheckSeconds, "home_check_seconds");
+        if (!(LeadBreak > LeadLength) || !float.IsFinite(LeadBreak))
+            throw new FormatException($"lead_break must be more than lead_length (got {LeadBreak}).");
         if (GuardSleepDistance < GuardWakeDistance)
             throw new FormatException($"guard_sleep_distance must be at least guard_wake_distance (got {GuardSleepDistance} < {GuardWakeDistance}).");
     }

@@ -54,8 +54,9 @@ public sealed record StartRaidArgs(int? Level = null);
 /// <param name="Swimming">Whether it is swimming: a swimmer (<c>swim_depth</c>) in water.</param>
 /// <param name="Kept">Whether it is kept (a domesticated animal): saved with the world and never taken away.</param>
 /// <param name="Fed">Feeds towards taming it so far (<c>FeedBot</c>).</param>
+/// <param name="LedBy">The player leading it on a Lead (<c>LeadBot</c>), or null.</param>
 public sealed record BotView(int Id, string Type, Vec3 Position, float Yaw, float Health, float MaxHealth, bool Dead, int? Raid = null, bool Engaged = false,
-    bool Swimming = false, bool Kept = false, int Fed = 0);
+    bool Swimming = false, bool Kept = false, int Fed = 0, int? LedBy = null);
 
 /// <summary>Arguments of <c>KeepBot</c>.</summary>
 /// <param name="Bot">The bot.</param>
@@ -72,6 +73,10 @@ public sealed record FeedBotArgs(int Bot, string Item);
 /// <param name="Feeds">Feeds that tame it.</param>
 /// <param name="Kept">Whether this feed tamed it.</param>
 public sealed record FeedBotResult(int Fed, int Feeds, bool Kept);
+
+/// <summary>Value of a successful <c>LeadBot</c>.</summary>
+/// <param name="Led">True when the caller now leads it, false when they let it go (it makes its home where it stands).</param>
+public sealed record LeadBotResult(bool Led);
 
 /// <summary>A kept bot in a save (<see cref="BotActions.SaveKept"/>).</summary>
 /// <param name="Type">Qualified bot type id.</param>

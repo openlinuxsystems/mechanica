@@ -136,6 +136,7 @@ public partial class BotSync : Node3D, IBotWorld, IRaidWorld
     public void RegisterActions(ActionDispatcher dispatcher, int seed)
     {
         Settings ??= LoadSettings();
+        AddChild(new BotLeads { Name = "Leads", Bots = this, Players = Players, Slack = Settings.LeadLength + 0.5f });
         var survival = Survival.Actions ?? throw new InvalidOperationException("Register the survival actions first.");
         Bots = new BotActions(new CurrentBook(this), Settings, survival, Survival, this) { Seed = seed };
         Bots.Register(dispatcher);

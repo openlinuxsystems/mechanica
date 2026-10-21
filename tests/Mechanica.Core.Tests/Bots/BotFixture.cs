@@ -51,7 +51,7 @@ internal sealed class BotFixture : IBotWorld, IRaidWorld
             ("test", new BotDefinition
             {
                 Id = "critter", Name = "Critter", Health = 30, Speed = 2, Passive = true,
-                Tame = new BotTameDefinition { Foods = [SurvivalFixture.Crop], Feeds = 2 },
+                Tame = new BotTameDefinition { Foods = [SurvivalFixture.Crop], Feeds = 2, Lead = SurvivalFixture.Connector, Homes = [SurvivalFixture.Chest], HomeRadius = 10 },
             }),
             ("test", new BotDefinition
             {

@@ -79,6 +79,9 @@ public partial class CharacterModel : Node3D
     /// <summary>The modded held model in the right hand (an item's <c>held</c> section), or null.</summary>
     public Node3D? HeldNode => _held;
 
+    /// <summary>The right hand's palm in the world (where held items sit), or null when the rig has no hand.</summary>
+    public Vector3? HandPosition => _hand is null ? null : (_skeleton.GlobalTransform * _skeleton.GetBoneGlobalPose(_skeleton.FindBone(CharacterRig.PropBone))).Origin;
+
     /// <summary>Raised for every body event, after its sound plays (tests listen).</summary>
     public event Action<CharacterEvent>? Event;
 

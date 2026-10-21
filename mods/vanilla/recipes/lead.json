@@ -1,0 +1,24 @@
+{
+  "id": "lead",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_wood_block",
+      "count": 4
+    },
+    {
+      "item": "scrap_metal_block",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "lead",
+      "count": 1
+    }
+  ],
+  "time": 3,
+  "order": 1940
+}

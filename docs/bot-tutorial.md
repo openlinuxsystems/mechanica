@@ -130,6 +130,7 @@ how the bot looks: the host still moves and hits with the bot's capsule (`size`)
 | `eye_engaged` | `"#rrggbb"` | `#ff1a0a` (red) | The same while engaged (`bot.engage()`, section 4). |
 | `variants` | `[path, …]` | none | Other looks of the same rig (coats, paint). Each bot shows `mesh` or one of these, picked from its id, so every peer sees the same one. |
 | `kept_nodes` | `[node, …]` | none | Nodes of the model shown only while the bot is kept (tamed), such as the Grazer's `Collar`. They are hidden on a wild one. |
+| `lead_node` | node | none | The node a Lead's rope clips on to, such as the Grazer's `LeadRing` (under its collar's ring). Without it the rope ties round the middle of the bot's front. |
 | `idles` | `[{clip, sound, weight}, …]` | none | Clips it plays now and then while it stands calm (grazing, a look round). `sound` is a sound event played with it on each peer (optional); `weight` is how often it is picked against the others (default 1). |
 | `idle_every` | `[min, max]` | `[6, 14]` | Seconds between idles, picked at random in this range. |
 | `effects` | `{attack id or "death": effect}` | none | An effect every peer sees when it uses the attack or dies: `explosion` (a fireball, flames, smoke, sparks and flying scrap), `shockwave` (a ring rippling over the ground with dust and stones) or `shot` (attacks only). An explosion or shockwave is as big as the attack's `radius` (its `range` for a melee or ranged attack; a death uses its largest area attack), and one shows at a time, so a blast that kills its bot shows once. A `shot` flies a copy of the model's node named `Shot` (hidden on the bot; put it at the muzzle, its front facing the model's front) to the point the attack hit, or straight ahead to its `range` when it hit nothing; every use shows one. |
@@ -213,16 +214,29 @@ players its `find_player` finds (out of the water too) before wandering home. Wi
 A bot with `tame` can be tamed by players: they hold one of its foods and press Use (E) on it, and each feed takes one
 from their inventory. Enough feeds keep it (a domesticated animal). Hearts rise on every feed and more when it is
 tamed, and its model plays its `eat` clip, then `happy`, and shows its `kept_nodes` (the Grazer's collar). A frightened bot (one that is engaged) will not eat. The
-Grazer is tamed with three carrots:
+Grazer is tamed with three carrots, led with the Lead and lives by a Feeding Trough:
 
 ```json
-"tame": { "foods": ["carrot"], "feeds": 3 }
+"tame": { "foods": ["carrot"], "feeds": 3, "lead": "lead", "homes": ["feeding_trough"], "home_radius": 20 }
 ```
 
 | Key | Type | Default | Meaning |
 |-----|------|---------|---------|
 | `foods` | list of item ids | required | What it eats from a player's hand. |
 | `feeds` | integer | 3 | How many feeds tame it. |
+| `lead` | item id | none | The tool that leads it once it is tame. Without it, it cannot be led. |
+| `homes` | list of part ids | none | Parts it makes its home once it is tame: it wanders round the nearest one within `home_radius`. |
+| `home_radius` | number (m) | 20 | How near one of `homes` must be for it to move in. |
+
+**Leading.** Anyone holding the bot's `lead` presses Use (E) on a tame bot to take it on the Lead (`LeadBot`), even
+from another player. While it is led it does not run its tree or `on_think`: it walks after its player, as fast as its
+speed allows the farther it falls behind, and stops `lead_length` m away facing them; a rope is drawn from the player's
+hand to its model's `lead_node` (the Grazer's collar ring). Use it again to let it go: it makes its home where it
+stands. It slips the Lead by itself when its player dies, leaves, or gets more than `lead_break` m away (teleporting,
+driving off). Both numbers are in `game/data/bots.json`.
+
+**Homes.** Every `home_check_seconds` a tame bot that is not on a Lead moves its home to the nearest of its `homes`
+within `home_radius` (a part on any Creation), so a Feeding Trough keeps a herd round it.
 
 A kept bot (`KeepBot`, see [Action API](#6-action-api)) is no longer wild: it stays when the players leave, never
 counts towards `count`, and is saved with the world (see [Saves](saves.md)).
@@ -490,6 +504,7 @@ and starting raids are open to players only in Creative.
 | `MoveBot` | `bot`, `direction?`, `speed?` | Walk that way; no direction stops it. |
 | `BotAttack` | `bot`, `attack`, `player?` / `creation?`, `part?` / `target?` / `object?` | Checked for reach, line of sight and cooldown. Returns `{hits}`. |
 | `FeedBot` | `bot`, `item` | A player feeds the bot one of its `tame` foods from their inventory, within reach. Returns `{fed, feeds, kept}`; the last feed keeps it. |
+| `LeadBot` | `bot` | A player with the bot's `tame.lead` takes a tame bot on the Lead, within reach (from anyone leading it), or lets go of the one they lead. Returns `{led}`. |
 | `KeepBot` | `bot`, `kept?` | Keeps the bot (or with `kept: false` lets it go): it never despawns and is saved with the world. |
 | `GetBots`, `GetBot` | none; `bot` | Queries. |
 | `StartRaid` | `level?` | Starts a raid now at the given (or the current) level. |

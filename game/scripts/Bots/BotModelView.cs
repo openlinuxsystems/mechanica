@@ -97,6 +97,9 @@ public partial class BotModelView : Node3D
     /// <summary>Effects shown so far (<see cref="BotEffects"/> kinds), for tests.</summary>
     public IReadOnlyList<string> Effects => _effects;
 
+    /// <summary>Where a Lead's rope clips on (the model's <c>lead_node</c>), or null when it has none.</summary>
+    public Node3D? LeadNode { get; private set; }
+
     /// <summary>How engaged the eye looks, 0 (calm) to 1, for tests.</summary>
     public float EyeEngaged => _eye;
 
@@ -140,6 +143,7 @@ public partial class BotModelView : Node3D
             _shot.Visible = false;
         // A tamed animal's collar and the like show only while it is kept.
         _keptNodes.AddRange(Model.KeptNodes.Select(n => _scene.FindChild(n, true, false)).OfType<Node3D>());
+        LeadNode = Model.LeadNode is { } lead ? _scene.FindChild(lead, true, false) as Node3D : null;
         foreach (var node in _keptNodes)
             node.Visible = _view?.Kept == true;
         _player = LiftBody.FindPlayer(_scene);

@@ -113,6 +113,15 @@ public sealed record BotTameDefinition
     /// <summary>How many feeds tame it (default 3).</summary>
     public int? Feeds { get; init; }
 
+    /// <summary>The tool that leads it once it is tame (an item id or <c>mod_id:item_id</c>); omitted means it cannot be led.</summary>
+    public string? Lead { get; init; }
+
+    /// <summary>Parts it makes its home once it is tame (a Feeding Trough): it wanders round the nearest one in reach.</summary>
+    public List<string>? Homes { get; init; }
+
+    /// <summary>How near one of <see cref="Homes"/> must be for it to move in, in m (default 20).</summary>
+    public float? HomeRadius { get; init; }
+
     /// <summary>Unknown keys (warned about).</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
@@ -241,6 +250,9 @@ public sealed record BotModelDefinition
 
     /// <summary>Nodes of the model shown only while the bot is kept (a tamed animal's collar); hidden on a wild one.</summary>
     public List<string>? KeptNodes { get; init; }
+
+    /// <summary>The node a Lead's rope clips on to (a collar's ring); omitted ties it round the middle of the bot's front.</summary>
+    public string? LeadNode { get; init; }
 
     /// <summary>
     /// Clips it plays now and then while it stands calm (grazing, looking round, mooing), one picked at random every

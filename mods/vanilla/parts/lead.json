@@ -1,0 +1,18 @@
+{
+  "id": "lead",
+  "name": "Lead",
+  "description": "Use it on a tame animal to lead it: it follows you. Use it on the animal again to let it go, and it stays where you leave it (or by the Feeding Trough nearby). Anyone may lead a tame animal.",
+  "category": "tool",
+  "mass": 0.8,
+  "stack_size": 1,
+  "mesh": "meshes/items/lead.glb",
+  "icon": "textures/items/lead_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  },
+  "held": {
+    "mesh": "meshes/items/lead.glb",
+    "offset": [-0.03, 0.06, 0],
+    "rotation": [-104, -1.5, -174]
+  }
+}

@@ -64,6 +64,27 @@ public sealed class BotRuntimeTests
     }
 
     [Fact]
+    public void A_bot_on_a_lead_follows_its_player_instead_of_its_tree()
+    {
+        var calf = RaiderDefinition(tree: """{ "type": "wander", "radius": 3 }""") with
+        {
+            Id = "calf", Tame = new BotTameDefinition { Foods = [BotRig.Crop], Lead = BotRig.Scrap },
+        };
+        using var rig = new BotRig(calf);
+        rig.AddPlayer(2, new Vector3(3, 0, 0));
+        var bot = rig.Spawn("test:calf", Vector3.Zero);
+        rig.Bots.Keep(bot);
+        var led = rig.Dispatcher.Dispatch(new Core.Actions.ActionCaller(2, Core.Actions.ActionSource.Player), BotActions.LeadBot, new BotArgs(bot));
+        Assert.True(led.Ok, led.Message);
+        rig.Feet[2] = new Vector3(14, 0, 0);
+        rig.Step(5);
+        Assert.Empty(rig.Errors);
+        var distance = Vector3.Distance(rig.Bots.Find(bot)!.Position, rig.Feet[2]);
+        Assert.InRange(distance, 1.5f, 3.5f);
+        Assert.Equal("led", rig.Runtime.Brains.Single().Status);
+    }
+
+    [Fact]
     public void Scripts_add_hooks_and_custom_leaves()
     {
         using var rig = new BotRig(RaiderDefinition("scripts/raider.lua", """{ "type": "sequence", "children": [ { "type": "shout" }, { "type": "stop" } ] }"""));

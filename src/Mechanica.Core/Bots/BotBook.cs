@@ -71,7 +71,14 @@ public sealed record BotWildNear(IReadOnlySet<string> Objects, float Radius, flo
 /// <summary>How players tame a bot by feeding it (<see cref="BotActions.FeedBot"/>).</summary>
 /// <param name="Foods">Qualified item ids it eats from a player's hand.</param>
 /// <param name="Feeds">How many feeds keep it.</param>
-public sealed record BotTame(IReadOnlySet<string> Foods, int Feeds);
+/// <param name="Lead">Qualified item that leads it once it is tame, or null when it cannot be led.</param>
+/// <param name="Homes">Qualified part ids it makes its home once it is tame (empty for none).</param>
+/// <param name="HomeRadius">How near a home part must be for it to move in, m.</param>
+public sealed record BotTame(IReadOnlySet<string> Foods, int Feeds, string? Lead = null, IReadOnlySet<string>? Homes = null, float HomeRadius = 20f)
+{
+    /// <summary>Qualified part ids it makes its home (empty for none).</summary>
+    public IReadOnlySet<string> Homes { get; init; } = Homes ?? new HashSet<string>(StringComparer.Ordinal);
+}
 
 /// <summary>A bot's model with its path qualified and every default filled in.</summary>
 /// <param name="Mesh">Qualified glTF path (<c>mod:meshes/bots/x.glb</c>).</param>
@@ -91,6 +98,9 @@ public sealed record BotModel(string Mesh, IReadOnlyDictionary<string, IReadOnly
 
     /// <summary>Nodes shown only while the bot is kept (<see cref="BotModelDefinition.KeptNodes"/>).</summary>
     public IReadOnlyList<string> KeptNodes { get; init; } = [];
+
+    /// <summary>The node a Lead's rope clips on to, or null (<see cref="BotModelDefinition.LeadNode"/>).</summary>
+    public string? LeadNode { get; init; }
 
     /// <summary>The shortest wait between idles, in s.</summary>
     public float IdleMin { get; init; } = BotBook.DefaultIdleMin;
@@ -247,6 +257,9 @@ public sealed class BotBook : IBotCatalog
 
     /// <summary>Feeds that tame a bot when its <c>tame</c> leaves <c>feeds</c> out.</summary>
     public const int DefaultTameFeeds = 3;
+
+    /// <summary>How near a home part must be for a tame bot to move in when its data leaves <c>home_radius</c> out, m.</summary>
+    public const float DefaultHomeRadius = 20f;
 
     /// <summary>Deepest behaviour tree accepted.</summary>
     public const int MaxBehaviorDepth = 24;
@@ -521,6 +534,8 @@ public sealed class BotBook : IBotCatalog
             if (string.IsNullOrWhiteSpace(m.KeptNodes![i]))
                 sink.Error(code, $"$.model.kept_nodes[{i}]", "a node name is required.");
         }
+        if (m.LeadNode is { } leadNode && string.IsNullOrWhiteSpace(leadNode))
+            sink.Error(code, "$.model.lead_node", "a node name is required (or leave it out).");
         var (idleMin, idleMax) = (DefaultIdleMin, DefaultIdleMax);
         if (m.IdleEvery is { } every)
         {
@@ -532,7 +547,7 @@ public sealed class BotBook : IBotCatalog
         if (sink.ErrorCount > errors)
             return null;
         return new BotModel(mesh!, clips, speeds, m.EyeCalm?.ToLowerInvariant() ?? DefaultEyeCalm, m.EyeEngaged?.ToLowerInvariant() ?? DefaultEyeEngaged,
-            effects) { Variants = variants, Idles = idles, IdleMin = idleMin, IdleMax = idleMax, KeptNodes = m.KeptNodes ?? [] };
+            effects) { Variants = variants, Idles = idles, IdleMin = idleMin, IdleMax = idleMax, KeptNodes = m.KeptNodes ?? [], LeadNode = m.LeadNode };
     }
 
     private static BotAttack? CheckAttack(BotAttackDefinition a, string path, string family, DiagnosticSink sink)
@@ -709,7 +724,29 @@ public sealed class BotBook : IBotCatalog
         }
         if (t.Feeds is < 1)
             sink.Error(code, "$.tame.feeds", "feeds must be 1 or more.");
-        return sink.ErrorCount > errors ? null : new BotTame(foods, t.Feeds ?? DefaultTameFeeds);
+        string? lead = null;
+        if (t.Lead is { } l)
+        {
+            if (!PartValidator.IsItemRef(l))
+                sink.Error(code, "$.tame.lead", $"'{l}' must be an item id or 'mod_id:item_id'.");
+            else if (catalog.FindDefinition(Identifiers.Qualify(l)) is null)
+                sink.Error(code, "$.tame.lead", $"there is no item '{Identifiers.Qualify(l)}'.");
+            else
+                lead = Identifiers.Qualify(l);
+        }
+        var homes = new HashSet<string>(StringComparer.Ordinal);
+        for (var i = 0; i < (t.Homes?.Count ?? 0); i++)
+        {
+            var home = t.Homes![i];
+            if (!PartValidator.IsItemRef(home))
+                sink.Error(code, $"$.tame.homes[{i}]", $"'{home}' must be a part id or 'mod_id:part_id'.");
+            else if (catalog.FindDefinition(Identifiers.Qualify(home)) is null)
+                sink.Error(code, $"$.tame.homes[{i}]", $"there is no part '{Identifiers.Qualify(home)}'.");
+            else
+                homes.Add(Identifiers.Qualify(home));
+        }
+        Positive(t.HomeRadius, "$.tame.home_radius", "home_radius", false, sink);
+        return sink.ErrorCount > errors ? null : new BotTame(foods, t.Feeds ?? DefaultTameFeeds, lead, homes, t.HomeRadius ?? DefaultHomeRadius);
     }
 
     private static void Positive(float? value, string path, string label, bool required, DiagnosticSink sink)
