@@ -24,6 +24,14 @@ public class DecorPartsTests
     [InlineData("mattress", 3, 1, 0.5, 0.2, true, 20, 4, 1, 8)]
     [InlineData("mug", 3, 2, 0.3, 0.3, true, 20, 1, 1, 1)]
     [InlineData("office_chair_base", 4.5, 4, 0.4, 0.1, false, 20, 3, 1, 3)]
+    [InlineData("office_table", 6, 5, 0.4, 0.1, false, 20, 8, 1, 4)]
+    [InlineData("pillow", 3, 1, 0.4, 0.2, true, 20, 3, 1, 2)]
+    [InlineData("shelf_pillar", 6, 4, 0.4, 0.1, false, 20, 1, 3, 1)]
+    [InlineData("shelf_support", 6, 4, 0.4, 0.1, false, 20, 1, 1, 1)]
+    [InlineData("sink", 6, 3, 0.4, 0.3, false, 20, 3, 3, 2)]
+    [InlineData("table_support", 3, 3, 0.3, 0.3, false, 20, 1, 3, 1)]
+    [InlineData("shelf_support_tall", 6, 4, 0.4, 0.1, false, 20, 1, 4, 1)]
+    [InlineData("toilet_paper", 1.5, 1, 0.3, 0.2, true, 1, 1, 1, 1)]
     public void DecorPartsTakeTheWikiStatsAndTheirSize(string id, double mass, int durability, double friction, double buoyancy,
         bool flammable, int stack, int x, int y, int z)
     {
@@ -49,6 +57,14 @@ public class DecorPartsTests
     [InlineData("mattress", 5, 2070, "cotton:5")]
     [InlineData("mug", 2, 2080, "metal_block:1")]
     [InlineData("office_chair_base", 10, 2046, "metal_block:3")]
+    [InlineData("office_table", 5, 2042, "metal_block:4")]
+    [InlineData("pillow", 2, 2072, "cotton:2")]
+    [InlineData("shelf_pillar", 2, 2052, "metal_block:1")]
+    [InlineData("shelf_support", 2, 2054, "metal_block:1")]
+    [InlineData("sink", 5, 2066, "metal_block:5")]
+    [InlineData("table_support", 2, 2044, "metal_block:1")]
+    [InlineData("shelf_support_tall", 2, 2056, "metal_block:1")]
+    [InlineData("toilet_paper", 2, 2084, "scrap_wood_block:1")]
     public void DecorPartsAreMadeAtTheFabricatorInTheirGroup(string id, float time, int order, params string[] inputs)
     {
         var book = RecipeBook.Load(Vanilla.Value);
@@ -64,5 +80,5 @@ public class DecorPartsTests
 
     [Fact]
     public void ThePartFilesAreTheBatchOutput() =>
-        new VanillaBlocksTests().PartFilesAreThePartEditorBatchOutput("parts_decor.json", 8);
+        new VanillaBlocksTests().PartFilesAreThePartEditorBatchOutput("parts_decor.json", 16);
 }

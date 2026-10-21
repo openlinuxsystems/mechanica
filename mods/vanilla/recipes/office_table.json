@@ -1,0 +1,20 @@
+{
+  "id": "office_table",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 4
+    }
+  ],
+  "outputs": [
+    {
+      "item": "office_table",
+      "count": 1
+    }
+  ],
+  "time": 5,
+  "order": 2042
+}
