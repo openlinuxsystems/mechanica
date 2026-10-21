@@ -1,20 +1,19 @@
 {
   "id": "metal_table",
   "name": "Metal Table",
-  "description": "A steel workbench.",
+  "description": "A colony workbench with a lower shelf and a drawer that does not open.",
   "category": "decor",
-  "mass": 30,
-  "durability": 6,
-  "friction": 0.5,
-  "buoyancy": 0.3,
+  "mass": 6,
+  "durability": 5,
+  "friction": 0.4,
+  "buoyancy": 0.1,
   "flammable": false,
   "stack_size": 20,
   "sound_material": "metal",
   "size": [6, 3, 4],
-  "mesh": "meshes/decor/metal_table.glb",
+  "mesh": "meshes/parts/metal_table.glb",
+  "icon": "textures/items/metal_table_icon.png",
   "visual": {
-    "color": "#6a7078",
-    "roughness": 0.4,
-    "metallic": 0.7
+    "color": "#ffffff"
   }
 }

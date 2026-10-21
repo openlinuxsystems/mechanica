@@ -1,0 +1,19 @@
+{
+  "id": "cubicle_wall",
+  "name": "Cubicle Wall",
+  "description": "An office partition with a fabric face and a glass strip along the top. Put a few together for a cubicle.",
+  "category": "decor",
+  "mass": 4.5,
+  "durability": 3,
+  "friction": 0.3,
+  "buoyancy": 0.4,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "fabric",
+  "size": [8, 8, 1],
+  "mesh": "meshes/parts/cubicle_wall.glb",
+  "icon": "textures/items/cubicle_wall_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

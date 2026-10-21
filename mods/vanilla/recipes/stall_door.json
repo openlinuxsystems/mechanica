@@ -1,0 +1,20 @@
+{
+  "id": "stall_door",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 4
+    }
+  ],
+  "outputs": [
+    {
+      "item": "stall_door",
+      "count": 1
+    }
+  ],
+  "time": 5,
+  "order": 2064
+}

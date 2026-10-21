@@ -1,0 +1,19 @@
+{
+  "id": "calendar",
+  "name": "Calendar",
+  "description": "The crew room calendar from the SV-04, still on the month the ship came down.",
+  "category": "decor",
+  "mass": 1.5,
+  "durability": 2,
+  "friction": 0.4,
+  "buoyancy": 0.4,
+  "flammable": true,
+  "stack_size": 1,
+  "sound_material": "cardboard",
+  "size": [2, 3, 1],
+  "mesh": "meshes/parts/calendar.glb",
+  "icon": "textures/items/calendar_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

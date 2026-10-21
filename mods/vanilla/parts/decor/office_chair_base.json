@@ -1,0 +1,19 @@
+{
+  "id": "office_chair_base",
+  "name": "Office Chair Base",
+  "description": "A five-legged swivel base on casters, with a plate on top to build a chair on.",
+  "category": "decor",
+  "mass": 4.5,
+  "durability": 4,
+  "friction": 0.4,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "plastic",
+  "size": [3, 1, 3],
+  "mesh": "meshes/parts/office_chair_base.glb",
+  "icon": "textures/items/office_chair_base_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

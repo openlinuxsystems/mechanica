@@ -682,7 +682,7 @@ has two recipes with the same output: the scrap one, `<id>_scrap`, takes the num
 | 1700 | Storage | `chest` (Scrap Chest), `small_chest`, `large_chest`, `cargo_chest`, `barrel`, `locker`, `tool_cabinet`, `file_cabinet`, `fridge`, `chemical_container`, `water_container`, `potato_ammo_container`, `dispenser`, `broken_microwave`, `ruin_chest` |
 | 1800 | Stations | `portable_fabricator`, `refiner`, `respawn_bed` |
 | 1900 | Farming | `soil_bag`, `water_bucket`, `feeding_trough`, `lead` |
-| 2000 | Furniture | `stool`, `chair`, `toilet`, `bathtub`, `wooden_table`, `metal_table`, `shelf_unit`, `pallet` |
+| 2000 | Furniture | `stool`, `chair`, `toilet`, `bathtub`, `wooden_table`, `metal_table`, `office_chair_base`, `cubicle_wall`, `shelf_unit`, `pallet`, `stall_door`, `mattress`, `mug`, `calendar` |
 | 2100 | Road signs | `stop_sign`, `caution_sign`, `danger_sign`, `no_entry_sign`, `speed_limit_sign`, `direction_arrow_left`, `direction_arrow_straight`, `direction_arrow_right` |
 | 2200 | Road and site | `traffic_cone`, `barrier_tape`, `outpost_sign`, `warehouse_key_sign` |
 | 2300 | Nature | `fallen_log`, `tree_trunk` |

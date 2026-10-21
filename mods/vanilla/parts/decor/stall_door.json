@@ -1,0 +1,19 @@
+{
+  "id": "stall_door",
+  "name": "Stall Door",
+  "description": "A washroom stall door on its hinge post, latched shut. It is a panel: it does not swing.",
+  "category": "decor",
+  "mass": 6,
+  "durability": 4,
+  "friction": 0.4,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [4, 7, 1],
+  "mesh": "meshes/parts/stall_door.glb",
+  "icon": "textures/items/stall_door_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}
