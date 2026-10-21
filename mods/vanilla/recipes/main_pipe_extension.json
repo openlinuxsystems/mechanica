@@ -1,0 +1,20 @@
+{
+  "id": "main_pipe_extension",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 6
+    }
+  ],
+  "outputs": [
+    {
+      "item": "main_pipe_extension",
+      "count": 1
+    }
+  ],
+  "time": 5,
+  "order": 444
+}

@@ -1,0 +1,19 @@
+{
+  "id": "large_pipe_short",
+  "name": "Large Pipe (Short)",
+  "description": "Bone-painted pipe, 2 blocks across, with a bolted half flange at each end.",
+  "category": "decor",
+  "mass": 6,
+  "durability": 5,
+  "friction": 0.3,
+  "buoyancy": 0.3,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [2, 2, 2],
+  "mesh": "meshes/parts/large_pipe_short.glb",
+  "icon": "textures/items/large_pipe_short_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

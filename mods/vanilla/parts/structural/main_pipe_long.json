@@ -1,0 +1,19 @@
+{
+  "id": "main_pipe_long",
+  "name": "Main Pipe (Long)",
+  "description": "Main pipe, 3 blocks across and 6 long.",
+  "category": "decor",
+  "mass": 12,
+  "durability": 4,
+  "friction": 0.5,
+  "buoyancy": 0.3,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [3, 3, 6],
+  "mesh": "meshes/parts/main_pipe_long.glb",
+  "icon": "textures/items/main_pipe_long_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

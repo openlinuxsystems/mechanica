@@ -1,0 +1,19 @@
+{
+  "id": "main_pipe_cap",
+  "name": "Main Pipe (Cap)",
+  "description": "A blind flange that closes off the end of a main pipe.",
+  "category": "decor",
+  "mass": 7.5,
+  "durability": 5,
+  "friction": 0.5,
+  "buoyancy": 0.2,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [3, 3, 1],
+  "mesh": "meshes/parts/main_pipe_cap.glb",
+  "icon": "textures/items/main_pipe_cap_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}

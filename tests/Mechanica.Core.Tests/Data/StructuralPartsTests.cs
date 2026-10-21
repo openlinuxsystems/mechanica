@@ -56,6 +56,19 @@ public class StructuralPartsTests
         new("small_pipe_five_way", new GridSize(1, 1, 1), 3, 4, 0.3, 0.3, false, 20, 2, 408, ["metal_block:1"]),
         new("small_pipe_six_way", new GridSize(1, 1, 1), 3, 4, 0.3, 0.3, false, 20, 2, 409, ["metal_block:1"]),
         new("valve", new GridSize(1, 1, 1), 7.5, 4, 0.4, 0.1, false, 20, 2, 415, ["metal_block:1"]),
+        // Batch 9b: our 2 x 2 Large Pipes (Scrap Mechanic's Pipe family) and the 3 x 3 Main Pipes (its Large Pipes).
+        new("large_pipe_short", new GridSize(2, 2, 2), 6, 5, 0.3, 0.3, false, 20, 2, 420, ["metal_block:1"]),
+        new("large_pipe_long", new GridSize(2, 2, 4), 12, 5, 0.3, 0.3, false, 20, 2, 421, ["metal_block:3"]),
+        new("large_pipe_corner", new GridSize(2, 2, 2), 6, 5, 0.3, 0.3, false, 20, 2, 422, ["metal_block:1"]),
+        new("large_pipe_tee", new GridSize(2, 2, 2), 6, 5, 0.3, 0.3, false, 20, 2, 423, ["metal_block:1"]),
+        new("main_pipe_short", new GridSize(3, 3, 3), 6, 4, 0.5, 0.3, false, 20, 2, 440, ["metal_block:1"]),
+        new("main_pipe_long", new GridSize(3, 3, 6), 12, 4, 0.5, 0.3, false, 20, 2, 441, ["metal_block:2"]),
+        new("main_pipe_corner", new GridSize(3, 3, 3), 6, 4, 0.5, 0.3, false, 20, 2, 442, ["metal_block:1"]),
+        new("main_pipe_tee", new GridSize(3, 3, 3), 6, 4, 0.5, 0.3, false, 20, 2, 443, ["metal_block:1"]),
+        new("main_pipe_extension", new GridSize(3, 3, 3), 7.5, 5, 0.5, 0.2, false, 20, 5, 444, ["metal_block:6"]),
+        new("main_pipe_mount", new GridSize(3, 3, 1), 7.5, 5, 0.5, 0.2, false, 20, 5, 445, ["metal_block:4"]),
+        new("main_pipe_cap", new GridSize(3, 3, 1), 7.5, 5, 0.5, 0.2, false, 20, 5, 446, ["metal_block:4"]),
+        new("main_pipe_compressor", new GridSize(5, 5, 8), 7.5, 5, 0.5, 0.2, false, 20, 10, 450, ["metal_block:20", "component_kit:2"]),
     ];
 
     public static TheoryData<string> Ids => [.. All.Select(r => r.Id)];

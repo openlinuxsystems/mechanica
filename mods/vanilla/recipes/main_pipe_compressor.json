@@ -1,0 +1,24 @@
+{
+  "id": "main_pipe_compressor",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "metal_block",
+      "count": 20
+    },
+    {
+      "item": "component_kit",
+      "count": 2
+    }
+  ],
+  "outputs": [
+    {
+      "item": "main_pipe_compressor",
+      "count": 1
+    }
+  ],
+  "time": 10,
+  "order": 450
+}

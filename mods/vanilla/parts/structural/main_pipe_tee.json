@@ -1,0 +1,19 @@
+{
+  "id": "main_pipe_tee",
+  "name": "Main Pipe (Tee)",
+  "description": "A main pipe tee with a branch to the side.",
+  "category": "decor",
+  "mass": 6,
+  "durability": 4,
+  "friction": 0.5,
+  "buoyancy": 0.3,
+  "flammable": false,
+  "stack_size": 20,
+  "sound_material": "metal",
+  "size": [3, 3, 3],
+  "mesh": "meshes/parts/main_pipe_tee.glb",
+  "icon": "textures/items/main_pipe_tee_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}
