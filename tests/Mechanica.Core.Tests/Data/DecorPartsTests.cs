@@ -40,6 +40,14 @@ public class DecorPartsTests
     [InlineData("produce_box_tomato", 6, 1, 0.5, 0.2, true, 20, 4, 4, 4)]
     [InlineData("grass_planter", 6, 2, 0.4, 0.2, true, 20, 4, 1, 4)]
     [InlineData("mannequin_boot", 3, 7, 0.7, 0.1, true, 20, 2, 2, 3)]
+    [InlineData("mannequin_hand", 3, 7, 0.7, 0.1, true, 20, 1, 2, 1)]
+    [InlineData("plant_container_open", 6, 1, 0.6, 0.1, true, 20, 3, 3, 3)]
+    [InlineData("plant_container", 6, 1, 0.6, 0.1, true, 20, 3, 3, 3)]
+    [InlineData("shack_awning", 3, 1, 0.5, 0.4, true, 1, 4, 2, 3)]
+    [InlineData("stacked_crates", 6, 2, 0.4, 0.7, false, 20, 3, 4, 3)]
+    [InlineData("vending_machine", 6, 4, 0.4, 0.6, true, 1, 4, 7, 3)]
+    [InlineData("grazer_head_topper", 7.5, 6, 0.4, 0.6, false, 1, 4, 3, 3)]
+    [InlineData("produce_box_potato", 6, 1, 0.5, 0.2, true, 20, 4, 4, 4)]
     public void DecorPartsTakeTheWikiStatsAndTheirSize(string id, double mass, int durability, double friction, double buoyancy,
         bool flammable, int stack, int x, int y, int z)
     {
@@ -79,6 +87,14 @@ public class DecorPartsTests
     [InlineData("produce_box_tomato", 2, 3014, "scrap_wood_block:4")]
     [InlineData("grass_planter", 2, 3020, "scrap_wood_block:5", "soil_bag:1")]
     [InlineData("mannequin_boot", 10, 3044, "cotton:1", "wood_block:2", "paint_ammo:1", "beeswax:1")]
+    [InlineData("mannequin_hand", 10, 3042, "wood_block:2", "paint_ammo:1", "beeswax:3")]
+    [InlineData("plant_container_open", 2, 3024, "scrap_wood_block:5", "soil_bag:1")]
+    [InlineData("plant_container", 2, 3022, "scrap_wood_block:5", "soil_bag:1")]
+    [InlineData("shack_awning", 2, 3050, "scrap_metal_block:3", "scrap_wood_block:2")]
+    [InlineData("stacked_crates", 2, 3018, "plastic_block:4")]
+    [InlineData("vending_machine", 5, 3030, "metal_block:10", "glass_block:2")]
+    [InlineData("grazer_head_topper", 5, 3032, "cotton:5", "paint_ammo:2")]
+    [InlineData("produce_box_potato", 2, 3012, "scrap_wood_block:4")]
     public void DecorPartsAreMadeAtTheFabricatorInTheirGroup(string id, float time, int order, params string[] inputs)
     {
         var book = RecipeBook.Load(Vanilla.Value);
@@ -102,5 +118,5 @@ public class DecorPartsTests
 
     [Fact]
     public void ThePartFilesAreTheBatchOutput() =>
-        new VanillaBlocksTests().PartFilesAreThePartEditorBatchOutput("parts_decor.json", 24);
+        new VanillaBlocksTests().PartFilesAreThePartEditorBatchOutput("parts_decor.json", 32);
 }

@@ -1,0 +1,19 @@
+{
+  "id": "vending_machine",
+  "name": "Vending Machine",
+  "description": "A colony vending machine for Grazer milk, its screen still lit. It is empty.",
+  "category": "decor",
+  "mass": 6,
+  "durability": 4,
+  "friction": 0.4,
+  "buoyancy": 0.6,
+  "flammable": true,
+  "stack_size": 1,
+  "sound_material": "metal",
+  "size": [4, 7, 3],
+  "mesh": "meshes/parts/vending_machine.glb",
+  "icon": "textures/items/vending_machine_icon.png",
+  "visual": {
+    "color": "#ffffff"
+  }
+}
