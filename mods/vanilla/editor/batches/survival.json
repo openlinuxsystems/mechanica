@@ -325,6 +325,38 @@
       ]
     },
     {
+      "file": "parts/lead.json",
+      "template": "item",
+      "set": {
+        "name": "Lead",
+        "description": "Use it on a tame animal to lead it: it follows you. Use it on the animal again to let it go, and it stays where you leave it (or by the Feeding Trough nearby). Anyone may lead a tame animal.",
+        "category": "tool",
+        "mass": 0.8,
+        "stack_size": 1,
+        "icon": "textures/items/lead_icon.png",
+        "visual": {
+          "color": "#ffffff"
+        },
+        "held": {
+          "mesh": "meshes/items/lead.glb"
+        }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/items/lead.glb" }],
+      "recipes": [
+        {
+          "id": "lead",
+          "stations": ["fabricator", "portable_fabricator"],
+          "inputs": [
+            { "item": "scrap_wood_block", "count": 4 },
+            { "item": "scrap_metal_block", "count": 1 }
+          ],
+          "outputs": [{ "item": "lead", "count": 1 }],
+          "time": 3,
+          "order": 1940
+        }
+      ]
+    },
+    {
       "file": "parts/water_bucket_full.json",
       "template": "item",
       "set": {

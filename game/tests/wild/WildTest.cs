@@ -9,7 +9,8 @@ namespace Mechanica.Game.Tests;
 /// <summary>
 /// Bots in the wild, host plus client, in a generated Survival world: with both players on a shore, Blue Scuttlers
 /// appear in the deep water off it and swim there on both peers; when the players go far inland they are taken away.
-/// In a meadow, Grazers appear in herds in their biomes and show on the client. The client tames one with carrots: when the players leave,
+/// In a meadow, Grazers appear in herds in their biomes and show on the client. The client tames one with carrots, leads it
+/// on a Lead and lets it go: when the players leave,
 /// the wild ones go and it stays, and it comes back where it was when the world is saved and loaded.
 /// </summary>
 public partial class WildTest : StagedTest
@@ -17,6 +18,7 @@ public partial class WildTest : StagedTest
     private const string Blue = "vanilla:scuttler_blue";
     private const string Grazer = "vanilla:grazer";
     private const string Carrot = "vanilla:carrot";
+    private const string Lead = "vanilla:lead";
 
     private NetTestHarness _harness = null!;
     private Instance _host = null!;
@@ -149,6 +151,50 @@ public partial class WildTest : StagedTest
             Check(_host.Main.Bots.Bots!.Find(_kept) is { Kept: true, Fed: 3 }, "three feeds tame it on the host");
             Check(Collar(_kept) is { Visible: true }, "the client shows its collar");
             Check(_host.Main.Inventory.Items!.PlayerInventory(_client.Peer).Count(Carrot) == carrots - 3, "three carrots were eaten");
+            return true;
+        });
+        var led = new List<ActionResult>();
+        var walkedTo = Vector3.Zero;
+        Add("the client leads the tame Grazer on a Lead and it follows, rope and all", frame =>
+        {
+            var host = _host.Main.Bots.Bots!;
+            if (frame == 0)
+            {
+                Check(_host.Main.Inventory.Items!.PlayerInventory(_client.Peer).Add(Lead, 1) == 1, "the client gets a Lead");
+                _host.Main.PlayerSync.HostTeleport(_client.Peer, host.Find(_kept)!.Position.ToGodot() + new Vector3(1.5f, 0.3f, 0));
+            }
+            if (frame == 10)
+                _client.Main.Actions.Request(BotActions.LeadBot, new BotArgs(_kept), led.Add);
+            if (led.Count == 0 || _client.Main.Bots.Bodies.GetValueOrDefault(_kept)?.View is not { LedBy: { } peer })
+                return false;
+            if (walkedTo == Vector3.Zero)
+            {
+                Check(led[0].Ok && peer == _client.Peer, $"the client leads it ({led[0]})");
+                // walk off eight metres: it comes after the client
+                var gen = _host.Main.Streamer.Generator;
+                var at = host.Find(_kept)!.Position.ToGodot() + new Vector3(8, 0, 0);
+                walkedTo = at with { Y = gen.HeightAt(at.X, at.Z) + 0.5f };
+                _host.Main.PlayerSync.HostTeleport(_client.Peer, walkedTo);
+                return false;
+            }
+            var feet = _host.Main.PlayerSync.Players[_client.Peer].GlobalPosition;
+            if ((host.Find(_kept)!.Position.ToGodot() - feet).Length() > 4f)
+                return false;
+            Check(_client.Main.Bots.GetNode<Bots.BotLeads>("Leads").Drawn.Contains(_kept), "the client draws the rope");
+            Check(_host.Main.Bots.GetNode<Bots.BotLeads>("Leads").Drawn.Contains(_kept), "the host draws the rope");
+            return true;
+        });
+        Add("the client lets the Grazer go and it makes its home there", frame =>
+        {
+            var host = _host.Main.Bots.Bots!;
+            if (frame == 0)
+                _client.Main.Actions.Request(BotActions.LeadBot, new BotArgs(_kept), led.Add);
+            if (led.Count < 2 || host.Find(_kept)!.LedBy is not null || _client.Main.Bots.Bodies.GetValueOrDefault(_kept)?.View is not { LedBy: null })
+                return false;
+            Check(led[1].Ok, $"letting go is taken ({led[1]})");
+            var bot = host.Find(_kept)!;
+            Check((bot.Home - bot.Position).Length() < 2f, $"its home is where it was let go ({bot.Home} vs {bot.Position})");
+            Check(!_client.Main.Bots.GetNode<Bots.BotLeads>("Leads").Drawn.Contains(_kept), "the rope is gone");
             return true;
         });
         Add("a kept Grazer stays when the players leave and the wild ones go", frame =>

@@ -1,0 +1,24 @@
+{
+  "id": "feeding_trough",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "scrap_wood_block",
+      "count": 12
+    },
+    {
+      "item": "scrap_metal_block",
+      "count": 6
+    }
+  ],
+  "outputs": [
+    {
+      "item": "feeding_trough",
+      "count": 1
+    }
+  ],
+  "time": 5,
+  "order": 1930
+}

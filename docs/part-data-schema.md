@@ -678,7 +678,7 @@ one place. Vanilla's groups:
 | 1600 | Lights | `glowstick`, `interior_light`, `headlight`, `spotlight`, `construction_light`, `warning_light`, `beacon`, `warehouse_spotlight` |
 | 1700 | Storage | `chest`, `barrel`, `locker`, `tool_cabinet`, `file_cabinet`, `fridge`, `chemical_container`, `dispenser` |
 | 1800 | Stations | `portable_fabricator`, `refiner`, `respawn_bed` |
-| 1900 | Farming | `soil_bag`, `water_bucket` |
+| 1900 | Farming | `soil_bag`, `water_bucket`, `feeding_trough`, `lead` |
 | 2000 | Furniture | `stool`, `chair`, `wooden_table`, `metal_table`, `shelf_unit`, `pallet` |
 | 2100 | Road signs | `stop_sign`, `caution_sign`, `danger_sign`, `no_entry_sign`, `speed_limit_sign`, `direction_arrow_left`, `direction_arrow_straight`, `direction_arrow_right` |
 | 2200 | Road and site | `traffic_cone`, `barrier_tape`, `outpost_sign`, `warehouse_key_sign` |

@@ -84,6 +84,9 @@ public sealed class BotState
     /// <summary>Feeds towards taming it so far (<see cref="BotActions.FeedBot"/>).</summary>
     public int Fed { get; internal set; }
 
+    /// <summary>The player leading it on a Lead (<see cref="BotActions.LeadBot"/>), or null. A led bot follows them instead of running its behaviour.</summary>
+    public int? LedBy { get; internal set; }
+
     /// <summary>Whether it is fighting (see <see cref="BotActions.Engage"/>).</summary>
     public bool Engaged { get; internal set; }
 
@@ -107,7 +110,7 @@ public sealed class BotState
         LastUse.TryGetValue(attack.Id, out var last) ? (float)Math.Max(0, last + attack.Interval - now) : 0f;
 
     /// <summary>The view clients are sent.</summary>
-    public BotView View => new(Id, Type.QualifiedId, Position.ToVec3(), Yaw, Health, Type.Health, Dead, Raid, Engaged, Swimming, Kept, Fed);
+    public BotView View => new(Id, Type.QualifiedId, Position.ToVec3(), Yaw, Health, Type.Health, Dead, Raid, Engaged, Swimming, Kept, Fed, LedBy);
 
     /// <summary>Whether it is swimming: a swimmer (<see cref="Bot.SwimDepth"/>) in water.</summary>
     public bool Swimming => InWater && Type.SwimDepth is not null;
@@ -147,6 +150,9 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
     /// <summary>Action name for a player feeding a bot one of its foods, which tames it in the end.</summary>
     public const string FeedBot = "FeedBot";
 
+    /// <summary>Action name for a player taking a tame bot on a Lead, or letting it go.</summary>
+    public const string LeadBot = "LeadBot";
+
     /// <summary>Action name for listing every bot.</summary>
     public const string GetBots = "GetBots";
 
@@ -160,6 +166,7 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
     private readonly List<(int Peer, float PerSecond, double Until)> _lasting = [];
     private (double Now, long Key, List<CropTarget> Crops)? _crops;
     private int _nextId = 1;
+    private double _nextHomeCheck;
 
     /// <summary>Every bot in the world, dead ones included until their body goes, by id.</summary>
     public IReadOnlyDictionary<int, BotState> Bots => _bots;
@@ -211,6 +218,7 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
             return null;
         });
         dispatcher.Register<FeedBotArgs>(FeedBot, ValidateFeed, ApplyFeed);
+        dispatcher.Register<BotArgs>(LeadBot, ValidateLead, ApplyLead);
         dispatcher.Register<NoArgs>(GetBots, (_, _) => null, (_, _) => BotValues.Value(_bots.Values.Select(b => b.View).ToList()), readOnly: true);
         dispatcher.Register<BotArgs>(GetBot, (_, a) => _bots.ContainsKey(a.Bot) ? null : $"There is no bot {a.Bot}.",
             (_, a) => BotValues.Value(_bots[a.Bot].View), readOnly: true);
@@ -301,6 +309,81 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
             bot.Kept = true;
         Changed?.Invoke(bot);
         return BotValues.Value(new FeedBotResult(bot.Fed, tame.Feeds, bot.Kept));
+    }
+
+    private string? ValidateLead(ActionCaller caller, BotArgs args)
+    {
+        if (caller.Source != ActionSource.Player)
+            return "Only players lead animals.";
+        if (!_bots.TryGetValue(args.Bot, out var bot) || bot.Dead)
+            return $"There is no bot {args.Bot}.";
+        if (bot.Type.Tame?.Lead is not { } lead)
+            return $"The {bot.Type.Name} cannot be led.";
+        if (!bot.Kept)
+            return $"The {bot.Type.Name} is not tame.";
+        return survival.CheckReach(caller, bot.Centre) ?? survival.CheckTool(caller, lead);
+    }
+
+    // The caller's own animal goes free; any other they take over (everyone may lead a tame animal).
+    private JsonElement? ApplyLead(ActionCaller caller, BotArgs args)
+    {
+        var bot = _bots[args.Bot];
+        if (bot.LedBy == caller.Peer)
+            LetGo(bot);
+        else
+        {
+            bot.LedBy = caller.Peer;
+            Changed?.Invoke(bot);
+        }
+        return BotValues.Value(new LeadBotResult(bot.LedBy == caller.Peer));
+    }
+
+    // Off the Lead it makes its home where it stands (until a home part nearby draws it).
+    private void LetGo(BotState bot)
+    {
+        bot.LedBy = null;
+        bot.Home = bot.Position;
+        Changed?.Invoke(bot);
+    }
+
+    /// <summary>Where the player leading <paramref name="bot"/> stands, or null when nobody leads it.</summary>
+    public Vector3? LeaderFeet(BotState bot) => bot.LedBy is { } peer ? survivalWorld.FeetOf(peer) : null;
+
+    // Lets go of animals whose player left, died or got too far, and moves tame ones in with the nearest home part.
+    private void TendTame(double now)
+    {
+        foreach (var led in _bots.Values.Where(b => b.LedBy is not null && !b.Dead).ToList())
+        {
+            var peer = led.LedBy!.Value;
+            if (survival.IsDead(peer) || !survival.Players.Contains(peer) || LeaderFeet(led) is not { } feet
+                || Vector3.Distance(feet, led.Position) > settings.LeadBreak)
+                LetGo(led);
+        }
+        if (now < _nextHomeCheck)
+            return;
+        _nextHomeCheck = now + settings.HomeCheckSeconds;
+        var tame = _bots.Values.Where(b => b.Kept && !b.Dead && b.LedBy is null && b.Type.Tame is { Homes.Count: > 0 }).ToList();
+        if (tame.Count == 0)
+            return;
+        var kinds = tame.SelectMany(b => b.Type.Tame!.Homes).ToHashSet(StringComparer.Ordinal);
+        var homes = new List<(string Part, Vector3 Centre)>();
+        foreach (var id in survivalWorld.AllCreations.Where(c => c.Parts.Any(p => kinds.Contains(Identifiers.Qualify(p.Part)))).Select(c => c.Id).ToList())
+        {
+            // Finding it again brings its Bodies' poses up to date.
+            if (survivalWorld.FindCreation(id) is not { } creation)
+                continue;
+            foreach (var part in creation.Parts.Where(p => kinds.Contains(Identifiers.Qualify(p.Part))))
+                homes.Add((Identifiers.Qualify(part.Part), PartCentre(creation, part.Id)));
+        }
+        foreach (var bot in tame)
+        {
+            var radius = bot.Type.Tame!.HomeRadius;
+            var nearest = homes.Where(h => bot.Type.Tame.Homes.Contains(h.Part))
+                .Select(h => (h.Centre, Distance: Vector3.Distance(new Vector3(h.Centre.X, bot.Position.Y, h.Centre.Z), bot.Position)))
+                .Where(h => h.Distance <= radius).OrderBy(h => h.Distance).Select(h => (Vector3?)h.Centre).FirstOrDefault();
+            if (nearest is { } home)
+                bot.Home = new Vector3(home.X, bot.Position.Y, home.Z);
+        }
     }
 
     // ---- Saves ----
@@ -770,6 +853,7 @@ public sealed class BotActions(IBotCatalog bots, BotSettings settings, SurvivalA
             calm.Engaged = false;
             Changed?.Invoke(calm);
         }
+        TendTame(now);
     }
 
     // ---- Shared ----

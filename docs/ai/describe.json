@@ -1429,6 +1429,27 @@
       }
     },
     {
+      "name": "LeadBot",
+      "kind": "action",
+      "group": "bots",
+      "scope": "play",
+      "description": "A player taking a tame bot on a Lead, or letting it go. Arguments of the actions that name one bot (DespawnBot, GetBot).",
+      "params": {
+        "description": "Arguments of the actions that name one bot (DespawnBot, GetBot).",
+        "type": "object",
+        "properties": {
+          "bot": {
+            "description": "The bot's id.",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "bot"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
       "name": "LeaveSeat",
       "kind": "action",
       "group": "logic",

@@ -380,12 +380,18 @@ public class VanillaBotsTests
         Assert.Contains("vanilla:carrot", tame.Foods);
         Assert.True(tame.Feeds >= 1);
         Assert.Equal(["Collar"], Book.Value.FindBot("vanilla:grazer")!.Model!.KeptNodes);
+        Assert.Equal("vanilla:lead", tame.Lead);
+        Assert.Equal(["vanilla:feeding_trough"], tame.Homes);
+        Assert.Equal("LeadRing", Book.Value.FindBot("vanilla:grazer")!.Model!.LeadNode);
     }
 
     [Theory]
     [InlineData("""{ "feeds": 2 }""", "$.tame.foods", "list one or more foods it eats.")]
     [InlineData("""{ "foods": ["no_such_food"] }""", "$.tame.foods[0]", "there is no item 'vanilla:no_such_food'.")]
     [InlineData("""{ "foods": ["carrot"], "feeds": 0 }""", "$.tame.feeds", "feeds must be 1 or more.")]
+    [InlineData("""{ "foods": ["carrot"], "lead": "no_such_rope" }""", "$.tame.lead", "there is no item 'vanilla:no_such_rope'.")]
+    [InlineData("""{ "foods": ["carrot"], "homes": ["no_such_trough"] }""", "$.tame.homes[0]", "there is no part 'vanilla:no_such_trough'.")]
+    [InlineData("""{ "foods": ["carrot"], "home_radius": 0 }""", "$.tame.home_radius", "home_radius must be greater than 0.")]
     public void BadTamesAreReported(string tame, string path, string message)
     {
         var bot = ModelBot(null) with

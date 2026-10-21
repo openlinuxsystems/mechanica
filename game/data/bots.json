@@ -14,5 +14,10 @@
   // leave when everyone is past the sleep distance, and a killed guard's post waits guard_respawn seconds.
   "guard_wake_distance": 64.0,
   "guard_sleep_distance": 96.0,
-  "guard_respawn": 1200.0
+  "guard_respawn": 1200.0,
+  // A tame animal on a Lead walks this far behind its player, and is let go where it stands past lead_break.
+  // Tame animals look for a home part (tame.homes: a Feeding Trough) every home_check_seconds.
+  "lead_length": 2.5,
+  "lead_break": 16.0,
+  "home_check_seconds": 2.0
 }

@@ -319,6 +319,72 @@ public sealed class BotActionsTests
     }
 
     [Fact]
+    public void Players_lead_tame_animals_and_let_them_go()
+    {
+        // You stand at (0, 0, 6), I at (0, 0, 3).
+        var critter = _f.Spawn(BotFixture.Critter, new Vector3(1, 0, 3));
+        var grunt = _f.Spawn(BotFixture.Grunt, new Vector3(-1, 0, 3));
+        Assert.Contains("cannot be led", S.Refused(Me, BotActions.LeadBot, new BotArgs(grunt)));
+        Assert.Contains("not tame", S.Refused(Me, BotActions.LeadBot, new BotArgs(critter)));
+        _f.Bots.Keep(critter);
+        Assert.Contains("Craft a Connect Tool", S.Refused(Me, BotActions.LeadBot, new BotArgs(critter)));
+        S.Pockets(Me).Add(SurvivalFixture.Connector, 1);
+        S.Pockets(You).Add(SurvivalFixture.Connector, 1);
+        Assert.Contains("Only players", S.Refused(BotFixture.Brain, BotActions.LeadBot, new BotArgs(critter)));
+
+        Assert.True(S.Ok<LeadBotResult>(Me, BotActions.LeadBot, new BotArgs(critter)).Led);
+        Assert.Equal(Me.Peer, S.Ok<BotView>(Me, BotActions.GetBot, new BotArgs(critter)).LedBy);
+        Assert.Equal(new Vector3(0, 0, 3), _f.Bots.LeaderFeet(_f.Bots.Find(critter)!));
+        // Anyone may take it over; leading it again lets it go, and it makes its home where it stands.
+        Assert.True(S.Ok<LeadBotResult>(You, BotActions.LeadBot, new BotArgs(critter)).Led);
+        Assert.Equal(You.Peer, _f.Bots.Find(critter)!.LedBy);
+        _f.Bots.Moved(critter, new Vector3(2, 0, 4), false);
+        Assert.False(S.Ok<LeadBotResult>(You, BotActions.LeadBot, new BotArgs(critter)).Led);
+        Assert.Null(_f.Bots.Find(critter)!.LedBy);
+        Assert.Equal(new Vector3(2, 0, 4), _f.Bots.Find(critter)!.Home);
+
+        // It slips its Lead when its player gets too far away, or leaves.
+        S.Ok<LeadBotResult>(Me, BotActions.LeadBot, new BotArgs(critter));
+        S.World.Feet[Me.Peer] = new Vector3(40, 0, 3);
+        _f.Advance(0.1);
+        Assert.Null(_f.Bots.Find(critter)!.LedBy);
+        S.World.Feet[Me.Peer] = new Vector3(0, 0, 3);
+        S.Ok<LeadBotResult>(Me, BotActions.LeadBot, new BotArgs(critter));
+        S.World.Feet.Remove(Me.Peer);
+        _f.Advance(0.1);
+        Assert.Null(_f.Bots.Find(critter)!.LedBy);
+    }
+
+    [Fact]
+    public void Tame_animals_move_in_with_a_home_part_nearby()
+    {
+        var critter = _f.Spawn(BotFixture.Critter, new Vector3(1, 0, 3));
+        var wild = _f.Spawn(BotFixture.Critter, new Vector3(1, 0, 4));
+        _f.Bots.Keep(critter);
+        _f.Advance(3);
+        Assert.Equal(new Vector3(1, 0, 3), _f.Bots.Find(critter)!.Home);
+        var far = S.Add(SurvivalFixture.Chest, new Vector3(30, 0, 3));
+        var near = S.Add(SurvivalFixture.Chest, new Vector3(6, 0, 3));
+        _f.Advance(3);
+        var home = _f.Bots.Find(critter)!.Home;
+        var trough = SurvivalFixture.FakeWorld.Centre(S.World.Creations[near], 1);
+        Assert.Equal((trough.X, trough.Z), (home.X, home.Z));
+        Assert.NotEqual(far, near);
+        // Wild ones don't, and nor does one on a Lead.
+        Assert.Equal(new Vector3(1, 0, 4), _f.Bots.Find(wild)!.Home);
+        S.Pockets(Me).Add(SurvivalFixture.Connector, 1);
+        S.Ok<LeadBotResult>(Me, BotActions.LeadBot, new BotArgs(critter));
+        var nearer = S.Add(SurvivalFixture.Chest, new Vector3(1, 0, 1));
+        _f.Advance(3);
+        Assert.Equal(home, _f.Bots.Find(critter)!.Home);
+        // Let go, it moves in with the nearest.
+        S.Ok<LeadBotResult>(Me, BotActions.LeadBot, new BotArgs(critter));
+        _f.Advance(3);
+        trough = SurvivalFixture.FakeWorld.Centre(S.World.Creations[nearer], 1);
+        Assert.Equal((trough.X, trough.Z), (_f.Bots.Find(critter)!.Home.X, _f.Bots.Find(critter)!.Home.Z));
+    }
+
+    [Fact]
     public void Bubble_wrap_slows_a_player_for_a_while()
     {
         // You stand at (0, 0, 6).

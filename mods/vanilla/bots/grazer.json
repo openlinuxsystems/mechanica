@@ -48,7 +48,12 @@
     "foods": [
       "carrot"
     ],
-    "feeds": 3
+    "feeds": 3,
+    "lead": "lead",
+    "homes": [
+      "feeding_trough"
+    ],
+    "home_radius": 20
   },
   "model": {
     "mesh": "meshes/bots/grazer.glb",
@@ -63,6 +68,7 @@
     "kept_nodes": [
       "Collar"
     ],
+    "lead_node": "LeadRing",
     "idles": [
       {
         "clip": "graze",

@@ -216,6 +216,44 @@
       ]
     },
     {
+      "file": "parts/feeding_trough.json",
+      "template": "interactive",
+      "set": {
+        "name": "Feeding Trough",
+        "description": "Holds carrots for tame animals. Tame Grazers within 20 m make it their home and wander round it; the hay inside shows how full it is.",
+        "category": "container",
+        "mass": 30,
+        "durability": 6,
+        "friction": 0.5,
+        "buoyancy": 0.6,
+        "flammable": true,
+        "sound_material": "wood",
+        "size": [6, 2, 3],
+        "icon": "textures/items/feeding_trough_icon.png",
+        "visual": { "color": "#ffffff" },
+        "sockets": [{ "id": "base", "type": "structural", "position": [0, -0.25, 0], "normal": [0, -1, 0] }],
+        "sounds": { "open": "chest_open", "close": "chest_close", "place": "chest_place" },
+        "inventory": { "slots": 4, "accepts": ["carrot"] },
+        "script": "scripts/feeding_trough.lua",
+        "display": { "clips": { "readout": "clip", "scrub": [{ "readout": "fill", "clip": "fill" }] } },
+        "properties": { "food": "carrot", "ease": 0.3 }
+      },
+      "model": [{ "kind": "mesh", "mesh": "meshes/parts/feeding_trough.glb" }],
+      "recipes": [
+        {
+          "id": "feeding_trough",
+          "stations": ["fabricator"],
+          "inputs": [
+            { "item": "scrap_wood_block", "count": 12 },
+            { "item": "scrap_metal_block", "count": 6 }
+          ],
+          "outputs": [{ "item": "feeding_trough", "count": 1 }],
+          "time": 5,
+          "order": 1930
+        }
+      ]
+    },
+    {
       "file": "parts/barrel.json",
       "template": "interactive",
       "set": {

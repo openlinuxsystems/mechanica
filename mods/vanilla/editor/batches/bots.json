@@ -1908,7 +1908,7 @@
             "meshes/bots/grazer_fawn.glb",
             "meshes/bots/grazer_chocolate.glb"
           ],
-          "kept_nodes": ["Collar"],
+          "kept_nodes": ["Collar"], "lead_node": "LeadRing",
           "clip_speeds": {
             "patrol": 0.61,
             "chase": 2.36
@@ -1922,7 +1922,7 @@
           ],
           "idle_every": [5, 12]
         },
-        "tame": { "foods": ["carrot"], "feeds": 3 },
+        "tame": { "foods": ["carrot"], "feeds": 3, "lead": "lead", "homes": ["feeding_trough"], "home_radius": 20 },
         "wild": {
           "habitat": "land",
           "count": 4,
