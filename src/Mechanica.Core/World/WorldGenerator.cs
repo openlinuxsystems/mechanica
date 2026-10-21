@@ -59,6 +59,9 @@ public sealed partial class WorldGenerator
     private readonly List<PoiInstance> _pois = [];
     private readonly Dictionary<(int, int), List<PoiInstance>> _poiBuckets = [];
 
+    // The scatter rules that place objects which clear flora, themselves or as a scene's pieces.
+    private readonly List<Scatter> _clearingRules;
+
     /// <summary>Lays out a square world's POIs; terrain and objects are generated on demand.</summary>
     /// <param name="data">Rules and prefabs.</param>
     /// <param name="seed">World seed.</param>
@@ -109,6 +112,8 @@ public sealed partial class WorldGenerator
             .Select(s => (new Vector2(s.Definition.At![0] * worldSize, s.Definition.At[1] * worldDepth), s.Poi?.Prefab.Radius ?? 0f)),
             .. data.Pois.Where(p => p.Prefab.Placement!.PadHeight is not null && p.Prefab.Placement.Fixed is [_, _])
             .Select(p => (new Vector2(p.Prefab.Placement!.Fixed![0], p.Prefab.Placement.Fixed[1]), p.Prefab.Radius))];
+        _clearingRules = [.. data.ScatterRules.Where(r => r.Object.ClearFlora
+            || r.Object.Scene?.Layouts?.Any(l => l.Pieces?.Any(p => data.Objects.GetValueOrDefault(p.Object ?? "")?.ClearFlora == true) == true) == true)];
         _inland = [.. data.Biomes.Where(b => b.Weight > 0f && b != data.CoastBiome)];
         _inlandWeight = _inland.Sum(b => b.Weight);
         BuildRegions();
@@ -241,6 +246,7 @@ public sealed partial class WorldGenerator
         if (grounds.Length > 0)
             PaintGrounds(grounds, normals, n, res, ox, oz, x1, z1);
         var objects = ObjectsIn(ox, oz, x1, z1).ToList();
+        var clearers = FloraClearersIn(ox, oz, x1, z1);
         var pieces = new List<PoiPiecePlacement>();
         var markers = new List<PoiMarkerPlacement>();
         var pools = new List<PoiPoolPlacement>();
@@ -277,8 +283,57 @@ public sealed partial class WorldGenerator
             Pools = pools,
             Models = models,
             Roads = RoadMesher.Build(this, ox, oz, x1, z1),
+            FloraClearers = clearers,
         };
     }
+
+    /// <summary>
+    /// The scattered objects that clear flora (<see cref="WorldObjectDefinition.ClearFlora"/>, such as crop field patches)
+    /// and reach into [x0, x1) × [z0, z1), wherever their own ground point or their scene's spot lies. Only the rules
+    /// that place such objects are looked at, so this is cheap where there are none.
+    /// </summary>
+    public List<WorldObjectPlacement> FloraClearersIn(float x0, float z0, float x1, float z1)
+    {
+        var found = new List<WorldObjectPlacement>();
+        foreach (var rule in _clearingRules)
+        {
+            // A scene's pieces stand within its footprint of its spot, and reach a little further themselves.
+            var margin = rule.Object.Footprint + ClearMargin;
+            foreach (var placed in ScatteredIn(x0 - margin, z0 - margin, x1 + margin, z1 + margin, [rule]))
+            {
+                var reach = ClearReach(placed);
+                if (placed.Definition.ClearFlora && placed.Position.X + reach >= x0 && placed.Position.X - reach < x1
+                    && placed.Position.Z + reach >= z0 && placed.Position.Z - reach < z1)
+                    found.Add(placed);
+            }
+        }
+        return found;
+    }
+
+    /// <summary>
+    /// Whether a flora-clearing object covers a world position: inside its box collider (turned and scaled with it), or
+    /// inside its footprint when its collider is not a box.
+    /// </summary>
+    public static bool Clears(WorldObjectPlacement placed, float x, float z)
+    {
+        var o = placed.Definition;
+        var dx = x - placed.Position.X;
+        var dz = z - placed.Position.Z;
+        if (o.Collider is not { Shape: PrimitiveShape.Box, Size: { } size } box)
+            return dx * dx + dz * dz <= o.Footprint * placed.Scale * o.Footprint * placed.Scale;
+        // Into the object's own frame: undo its turn about +Y.
+        var local = Vector3.Transform(new Vector3(dx, 0f, dz), Quaternion.CreateFromAxisAngle(Vector3.UnitY, -placed.Yaw)) / placed.Scale;
+        return MathF.Abs(local.X - box.At.X) <= size.X / 2f && MathF.Abs(local.Z - box.At.Z) <= size.Z / 2f;
+    }
+
+    // Furthest a flora-clearing object reaches from its ground point.
+    private static float ClearReach(WorldObjectPlacement placed) =>
+        placed.Definition.Collider is { Shape: PrimitiveShape.Box, Size: { } size } box
+            ? (MathF.Sqrt(size.X * size.X + size.Z * size.Z) / 2f + MathF.Sqrt(box.At.X * box.At.X + box.At.Z * box.At.Z)) * placed.Scale
+            : placed.Definition.Footprint * placed.Scale;
+
+    // How far past a clearing rule's footprint its objects may reach (an 8 m field patch at a scene's edge).
+    private const float ClearMargin = 8f;
 
     /// <summary>Every marker of <paramref name="type"/> in every placed POI, in POI then marker order.</summary>
     public IEnumerable<PoiMarkerPlacement> MarkersOfType(string type)
@@ -384,11 +439,11 @@ public sealed partial class WorldGenerator
         }
     }
 
-    private IEnumerable<WorldObjectPlacement> ScatteredIn(float x0, float z0, float x1, float z1)
+    private IEnumerable<WorldObjectPlacement> ScatteredIn(float x0, float z0, float x1, float z1, IReadOnlyList<Scatter>? rules = null)
     {
         // A perched rule's spot takes a search, and every later rule's spots nearby ask for it again.
         var perched = new Dictionary<(int Rule, int X, int Z), Vector2>();
-        foreach (var rule in Data.ScatterRules)
+        foreach (var rule in rules ?? Data.ScatterRules)
         {
             var s = rule.Spacing;
             int ix0 = (int)MathF.Floor(x0 / s), ix1 = (int)MathF.Floor(x1 / s);
@@ -418,11 +473,15 @@ public sealed partial class WorldGenerator
                 : null;
         if (id.Rule < 0 || id.Rule >= Data.ScatterRules.Count)
             return null;
-        var rule = Data.ScatterRules[id.Rule];
-        if (!Candidate(rule, id.CellX, id.CellZ, out var spot) || !Fits(rule, spot) || Crowded(rule, spot))
-            return null;
-        return Place(rule, id.CellX, id.CellZ, spot).FirstOrDefault(p => p.Id.Piece == id.Piece);
+        return InCell(Data.ScatterRules[id.Rule], id.CellX, id.CellZ).FirstOrDefault(p => p.Id.Piece == id.Piece);
     }
+
+    /// <summary>
+    /// What a scatter rule places in one of its cells: its object, a scene's pieces or a rock deposit's blocks; nothing when
+    /// the cell holds none.
+    /// </summary>
+    public IEnumerable<WorldObjectPlacement> InCell(Scatter rule, int cellX, int cellZ) =>
+        Candidate(rule, cellX, cellZ, out var spot) && Fits(rule, spot) && !Crowded(rule, spot) ? Place(rule, cellX, cellZ, spot) : [];
 
     // The object a scatter spot holds: one, or every cube of a rock outcrop.
     private IEnumerable<WorldObjectPlacement> Place(Scatter rule, int ix, int iz, Vector2 spot)
@@ -476,7 +535,7 @@ public sealed partial class WorldGenerator
     // A scene's pieces: a layout picked by weight, turned by the scene's yaw, each piece kept by its chance and standing on
     // the ground under it. A piece that would land on a road, a POI or in water is left out; ids keep the piece's place in
     // the layout, so the rest never change.
-    private IEnumerable<WorldObjectPlacement> PlaceScene(Scatter rule, SceneDefinition scene, int ix, int iz, Vector2 spot, float yaw, uint salt)
+    private List<WorldObjectPlacement> PlaceScene(Scatter rule, SceneDefinition scene, int ix, int iz, Vector2 spot, float yaw, uint salt)
     {
         var layouts = scene.Layouts!;
         var pick = Noise.Unit(Noise.Mix(salt ^ 0x5CE9u)) * layouts.Sum(l => l.Weight);
@@ -491,6 +550,7 @@ public sealed partial class WorldGenerator
             }
         }
         var turn = Quaternion.CreateFromAxisAngle(Vector3.UnitY, yaw);
+        var placed = new List<WorldObjectPlacement>();
         for (var k = 0; k < layout.Pieces!.Count; k++)
         {
             var piece = layout.Pieces[k];
@@ -501,14 +561,46 @@ public sealed partial class WorldGenerator
             var w = Vector3.Transform(new Vector3(piece.At![0], 0f, piece.At[1]), turn);
             var g = new Vector2(spot.X + w.X, spot.Y + w.Z);
             if (!InWorld(g.X, g.Y) || Built(g) || Roads.Near(g.X, g.Y, definition.Footprint + 1f)
-                || !Dry(g) || SlopeAt(g.X, g.Y) > MathF.Min(_terrain.MaxScatterSlope, definition.MaxSlope ?? float.MaxValue))
+                || !Dry(g) || SlopeAt(g.X, g.Y) > MathF.Min(_terrain.MaxScatterSlope, definition.MaxSlope ?? float.MaxValue)
+                || Covers(definition, g, yaw + piece.Yaw * MathF.PI / 180f) is not { } ground)
+            {
+                // A level scene (a field) is whole or not there at all: no hole where one patch would not lie flat.
+                if (scene.Level is not null && definition.ClearFlora)
+                    return [];
                 continue;
+            }
             var scale = definition.Scale is [var lo, var hi] ? lo + (hi - lo) * Noise.Unit(Noise.Mix(roll)) : 1f;
-            var y = HeightAt(g.X, g.Y) - definition.Sink * scale;
-            yield return new WorldObjectPlacement(new WorldObjectId(rule.Index, ix, iz, k), definition, new Vector3(g.X, y, g.Y),
-                yaw + piece.Yaw * MathF.PI / 180f, scale);
+            var y = ground - definition.Sink * scale;
+            placed.Add(new WorldObjectPlacement(new WorldObjectId(rule.Index, ix, iz, k), definition, new Vector3(g.X, y, g.Y),
+                yaw + piece.Yaw * MathF.PI / 180f, scale));
         }
+        return placed;
     }
+
+    // The ground height a scene's piece stands on, or null when the ground does not suit it. Most stand on the ground at
+    // their middle. One that covers the ground (clears flora, a field patch) must lie flat on it, the ground round its box
+    // rising and falling no more than its slope limit allows over half the box's diagonal, and stands on the highest of
+    // it, so the ground never shows through it and its skirt hides the gap where it falls away.
+    private float? Covers(WorldObjectDefinition o, Vector2 at, float yaw)
+    {
+        var h = HeightAt(at.X, at.Y);
+        if (!o.ClearFlora || o.Collider is not { Shape: PrimitiveShape.Box, Size: { } size })
+            return h;
+        var slope = MathF.Min(_terrain.MaxScatterSlope, o.MaxSlope ?? float.MaxValue);
+        var turn = Quaternion.CreateFromAxisAngle(Vector3.UnitY, yaw);
+        float highest = h, lowest = h;
+        foreach (var (dx, dz) in Rim)
+        {
+            var w = Vector3.Transform(new Vector3(o.Collider.At.X + dx * size.X / 2f, 0f, o.Collider.At.Z + dz * size.Z / 2f), turn);
+            var ground = HeightAt(at.X + w.X, at.Y + w.Z);
+            highest = MathF.Max(highest, ground);
+            lowest = MathF.Min(lowest, ground);
+        }
+        return highest - lowest <= slope * MathF.Sqrt(size.X * size.X + size.Z * size.Z) / 2f ? highest : null;
+    }
+
+    // A box's corners and the middles of its sides, in half sizes from its middle.
+    private static readonly (float, float)[] Rim = [(-1, -1), (1, -1), (-1, 1), (1, 1), (-1, 0), (1, 0), (0, -1), (0, 1)];
 
     // A block's middle and its four bottom corners, in half sizes from its middle.
     private static readonly (float, float)[] Corners = [(0, 0), (-1, -1), (1, -1), (-1, 1), (1, 1)];
@@ -540,7 +632,11 @@ public sealed partial class WorldGenerator
         var s = rule.Spacing;
         spot = new Vector2((ix + 0.1f + 0.8f * Noise.Unit(Noise.Hash(salt, ix, iz, 1))) * s, (iz + 0.1f + 0.8f * Noise.Unit(Noise.Hash(salt, ix, iz, 2))) * s);
         if (rule.Roadside is { } roadside)
+        {
+            if (roadside.Even)
+                spot = new Vector2((ix + 0.5f) * s, (iz + 0.5f) * s);
             return BesideRoad(roadside, ix, iz, s, ref spot);
+        }
         // A perched find looks round its cell for a cliff top or ledge, since most of the land is easy slopes.
         if (rule.Perch is { } perch && !Perched(spot, perch))
         {
@@ -574,15 +670,30 @@ public sealed partial class WorldGenerator
         var chain = hit.Chain;
         var along = Vector2.Normalize(chain.Points[hit.Segment + 1] - chain.Points[hit.Segment]);
         var left = new Vector2(along.Y, -along.X);
+        var at = chain.Along[hit.Segment] + hit.T * (chain.Along[hit.Segment + 1] - chain.Along[hit.Segment]);
+        if (roadside.Junction is { } near
+            && !(at <= near && Roads.Nodes[chain.From].Kind == RoadNodeKind.Junction)
+            && !(chain.Length - at <= near && Roads.Nodes[chain.To].Kind == RoadNodeKind.Junction))
+            return false;
+        // The road's heading over the 20 m before the spot and the 20 m after it: how far it turns, and which way.
+        var before = Vector2.Normalize(hit.Point - PointAlong(chain, MathF.Max(0f, at - BendReach)).Point + along * 1e-3f);
+        var after = Vector2.Normalize(PointAlong(chain, MathF.Min(chain.Length, at + BendReach)).Point - hit.Point + along * 1e-3f);
+        if (roadside.Bend is { } bend && !(MathF.Acos(Math.Clamp(Vector2.Dot(before, after), -1f, 1f)) >= bend * MathF.PI / 180f))
+            return false;
         var side = roadside.Side switch
         {
             RoadSide.Left => 1f,
             RoadSide.Right => -1f,
+            // Turning towards the left side puts the outside on the right.
+            RoadSide.Outside => Vector2.Dot(after, new Vector2(before.Y, -before.X)) > 0f ? -1f : 1f,
             _ => Vector2.Dot(spot - hit.Point, left) >= 0f ? 1f : -1f,
         };
         spot = hit.Point + left * side * (Roads.HalfBed(chain) + roadside.Gap);
         return MathF.Abs(HeightAt(spot.X, spot.Y) - hit.Height) <= RoadsideRise + 1f;
     }
+
+    // Metres before and after a roadside spot over which the road's bend is measured.
+    private const float BendReach = 20f;
 
     // Whether a structure stands on a spot: a POI's footprint, unless the POI is a wild one (a pond, a ravine).
     private bool Built(Vector2 spot) => PoisAt(spot.X, spot.Y).Any(p => !p.Poi.Prefab.Wild);
@@ -608,13 +719,19 @@ public sealed partial class WorldGenerator
         // Across a border a biome's objects thin out with its share of the ground, in groves rather than one by one.
         if (BiomeShare(spot.X, spot.Y, rule.Biome) <= EdgeRoll(spot.X, spot.Y, _edgeSalt ^ (uint)rule.Index, GroveSize))
             return false;
-        if (Built(spot) || Roads.Near(spot.X, spot.Y, rule.Object.Footprint + 1f))
+        // A roadside scene's pieces each keep off the road on their own, so only its spot has to.
+        var keep = rule.Roadside is not null && rule.Object.Scene is not null ? 0f : rule.Object.Footprint;
+        if (Built(spot) || Roads.Near(spot.X, spot.Y, keep + 1f))
             return false;
         if (rule.Water is { } water)
             return Wet(water, spot) && (water == ScatterWater.Surface || SlopeAt(spot.X, spot.Y) <= MathF.Min(_terrain.MaxScatterSlope, rule.Object.MaxSlope ?? float.MaxValue));
         if (!Dry(spot) || SlopeAt(spot.X, spot.Y) > MathF.Min(_terrain.MaxScatterSlope, rule.Object.MaxSlope ?? float.MaxValue))
             return false;
         if (rule.Perch is { } perch && !Perched(spot, perch))
+            return false;
+        if (rule.Object.Scene is { Level: { } level } && !Level(spot, rule.Object.Footprint, level))
+            return false;
+        if (rule.Near is { } near && !Near(rule, near, spot))
             return false;
         // A rock outcrop spreads its cubes over its footprint, so the whole of it must suit, not just its middle.
         if (rule.Object.Outcrop is not null)
@@ -627,6 +744,41 @@ public sealed partial class WorldGenerator
                     || Built(p) || Roads.Near(p.X, p.Y, 1f) || !Dry(p))
                     return false;
             }
+        }
+        return true;
+    }
+
+    // Whether a spot of a rule scattering one of the near objects lies within reach, on ground that suits it. Only its
+    // ground counts, not what crowds it, so the answer never depends on rules placed after the near one.
+    private bool Near(Scatter rule, NearDefinition near, Vector2 spot)
+    {
+        foreach (var other in Data.ScatterRules)
+        {
+            if (other == rule || near.Objects?.Contains(other.Object.Id!) != true)
+                continue;
+            var s = other.Spacing;
+            for (var iz = (int)MathF.Floor((spot.Y - near.Within) / s); iz <= (int)MathF.Floor((spot.Y + near.Within) / s); iz++)
+            {
+                for (var ix = (int)MathF.Floor((spot.X - near.Within) / s); ix <= (int)MathF.Floor((spot.X + near.Within) / s); ix++)
+                {
+                    if (Candidate(other, ix, iz, out var p) && Vector2.Distance(p, spot) <= near.Within && Fits(other, p))
+                        return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    // Whether the ground round a spot, out to a radius, lies within a height of the spot's own.
+    private bool Level(Vector2 spot, float radius, float level)
+    {
+        var h = HeightAt(spot.X, spot.Y);
+        for (var a = 0; a < 16; a++)
+        {
+            var r = a < 8 ? radius : radius / 2f;
+            var p = spot + new Vector2(MathF.Cos(a * MathF.PI / 4f + (a < 8 ? 0f : MathF.PI / 8f)), MathF.Sin(a * MathF.PI / 4f + (a < 8 ? 0f : MathF.PI / 8f))) * r;
+            if (MathF.Abs(HeightAt(p.X, p.Y) - h) > level)
+                return false;
         }
         return true;
     }

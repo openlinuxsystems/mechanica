@@ -16,6 +16,7 @@
     "color": "#c9c9c9",
     "roughness": 0.3,
     "metallic": 0.9,
-    "texture": "textures/blocks/aluminum.png"
+    "texture": "textures/blocks/aluminum.png",
+    "texture_span": 2
   }
 }

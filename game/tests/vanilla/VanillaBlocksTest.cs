@@ -140,14 +140,14 @@ public partial class VanillaBlocksTest : StagedTest
                 "the path light block glows only where its glow map is bright");
             Check(!assets.ModelFor("vanilla:wood_wedge", _content.FindDefinition("vanilla:wood_wedge")!).IsPlaceholder,
                 "wedges use their baked mesh");
-            // Scrap metal spans 8 cells: blocks side by side take different pieces of the grid-mapped pattern, and a block
-            // one whole repeat (2 m) along shares a material with the first.
+            // Scrap metal spans 4 cells: blocks side by side take different pieces of the grid-mapped pattern, and a block
+            // one whole repeat (1 m) along shares a material with the first.
             var scrap = assets.ModelFor("vanilla:scrap_metal_block", _content.FindDefinition("vanilla:scrap_metal_block")!).Meshes[0];
             Material Shown(Vector3 at) => scrap.Instantiate(new Transform3D(Basis.Identity, at)).GetSurfaceOverrideMaterial(0);
             var first = Shown(new Vector3(0.125f, 0.125f, 0.125f));
-            Check(scrap.TextureSpan == 8 && first is ShaderMaterial, $"scrap metal is laid over the grid (span {scrap.TextureSpan}, {first.GetType().Name})");
+            Check(scrap.TextureSpan == 4 && first is ShaderMaterial, $"scrap metal is laid over the grid (span {scrap.TextureSpan}, {first.GetType().Name})");
             Check(Shown(new Vector3(0.375f, 0.125f, 0.125f)) != first, "the next scrap metal block shows the next piece of the pattern");
-            Check(Shown(new Vector3(2.125f, 0.125f, 0.125f)) == first, "a scrap metal block one repeat along shows the same piece");
+            Check(Shown(new Vector3(1.125f, 0.125f, 0.125f)) == first, "a scrap metal block one repeat along shows the same piece");
             return true;
         });
     }

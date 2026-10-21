@@ -106,7 +106,8 @@ public partial class CaptureScene : Node
         var opening = args.Length > 1 && args[1] == "opening";
         var connectLines = args.Length > 1 && args[1] == "connect_lines";
         var husbandry = args.Length > 1 && args[1] == "husbandry";
-        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !weapons && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash && !engineMenu && !flashes && !opening && !workshop && !connectLines && !husbandry && args[1] != "survey" ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
+        var fields = args.Length > 1 && args[1] == "fields";
+        Main.MenuCharacter = args.Length > 1 && !lift && !liftCapture && !flora && !icons && !water && !blocks && !rocks && !soil && !weapons && !bag && !seat && !trees && !seats && !piston && !wheels && !button && !toggle && !portable && !fabricator && !oil && !small && !finds && !borders && !cliffs && !roads && !moves && !crash && !engineMenu && !flashes && !opening && !workshop && !connectLines && !husbandry && !fields && args[1] != "survey" ? args[1] : moves && args.Length > 2 ? args[2] : "scrapper_male";
         if (debugCar)
             Main.MenuCharacter = "scrapper_male";
         _main = GD.Load<PackedScene>(MainMenu.WorldScene).Instantiate<Main>();
@@ -241,6 +242,11 @@ public partial class CaptureScene : Node
         if (small)
         {
             SmallPoiShots();
+            return;
+        }
+        if (fields)
+        {
+            FieldShots();
             return;
         }
         if (borders)
@@ -1514,10 +1520,14 @@ public partial class CaptureScene : Node
         "metal", "scrap_metal", "rusted_metal", "aluminum", "diamond_plate", "hull_plate", "glass", "armored_glass", "net", "path_light",
     ];
 
-    // The latest batch of blocks matched to the full block list (batch 3), with their wedges, in a row behind the others.
+    // The latest blocks to change (the texture review's redrawn ones), with their wedges, in a row behind the others.
     private static readonly (string Block, string Wedge)[] NewBlocks =
     [
-        ("cracked_concrete_block", "cracked_concrete_wedge"), ("concrete_slab_block", "concrete_slab_wedge"),
+        ("carpet_block", "carpet_wedge"), ("scrap_stone_block", "scrap_stone_wedge"),
+        ("scrap_metal_block", "scrap_metal_wedge"), ("scrap_wood_block", "scrap_wood_wedge"),
+        ("plaster_block", "plaster_wedge"), ("hull_plate_block", "hull_plate_wedge"),
+        ("brick_block", "brick_wedge"), ("aluminum_block", "aluminum_wedge"),
+        ("rusted_metal_block", "rusted_metal_wedge"), ("concrete_block", "concrete_wedge"),
     ];
 
     // A 3 by 3 panel of each block material with wedges in front, in two rows of ten, built through the Action API.

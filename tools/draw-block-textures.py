@@ -677,6 +677,219 @@ def concrete_slab(size=1024):
     return finish(np.clip(color, 0, 255), height, 0.32)
 
 
+# =====================================================================================================
+# Redrawn first-generation blocks (texture review, 2026-10-21): the same recipe as the newer blocks, SM's colours
+# =====================================================================================================
+def rect_plates(size, units, seed):
+    """abt.pack's gap-free plates over a units x units grid: each pixel's plate index and distance to its edge."""
+    rects, taken = abt.pack(units, seed)
+    y, x = grid(size)
+    cell = size / units
+    gx, gy = (x // cell).astype(int) % units, (y // cell).astype(int) % units
+    idx = taken[gy, gx]
+    r = np.array(rects, float)
+    x0, y0, w, h = (r[idx, k] * cell for k in range(4))
+    dx = (x - x0) % size
+    dy = (y - y0) % size
+    d = np.minimum(np.minimum(dx, w - dx), np.minimum(dy, h - dy))
+    return idx, d, len(rects), (x0, y0, w, h)
+
+
+def carpet(size=1024):
+    """Carpet over 2 x 2 blocks (texture_span 2): teal loop pile in staggered rows, with a soft darker weave
+    running through it and a little fluff."""
+    y, x = grid(size)
+    rows = 64
+    ph = size / rows
+    row = np.floor(y / ph)
+    u = (x + (row % 2) * ph / 2) % ph - ph / 2
+    v = y % ph - ph / 2
+    loop = np.clip(1 - (u * u + v * v) / (ph * 0.55) ** 2, 0, 1)
+    weave = 0.5 + 0.5 * np.sin(2 * np.pi * (x + y) / (size / 16))
+    fluff = value_noise(size, 96, 401, 2)
+    tone = 0.88 + 0.16 * value_noise(size, 6, 402, 3)
+    color = np.array([38, 140, 128]) * (tone * (0.78 + 0.2 * loop + 0.06 * fluff - 0.08 * weave))[..., None]
+    height = 3 * loop + 0.8 * fluff - 0.6 * weave
+    return finish(np.clip(color, 0, 255), height, 0.2, seed=40)
+
+
+def scrap_stone(size=1024):
+    """Scrap Stone over 4 x 4 blocks (texture_span 4): light taupe broken stones fitted together, each its own shade
+    and tilt, with dark gaps and a few chips."""
+    color, height = concrete_base(size, 411)
+    color = color * (np.array([158, 150, 138]) / np.array([170, 168, 160]))
+    edge, idx = voronoi_wrap(size, 40, 412)
+    edge = edge + 4 * (value_noise(size, 14, 413, 3) - 0.5)
+    rng = np.random.default_rng(414)
+    shade = rng.uniform(0.85, 1.1, 40)[idx]
+    gap = 1 - smoothstep(edge, 2.0, 5.0)
+    height = height + 7 * bevel(edge, 16) - 3 * gap
+    color = color * (shade * (1 - 0.55 * gap))[..., None]
+    return finish(np.clip(color, 0, 255), height, 0.32, seed=41)
+
+
+def scrap_metal(size=1024):
+    """Scrap Metal over 4 x 4 blocks (texture_span 4): mismatched plates bolted together, mostly orange-red paint
+    with a few bare grey ones, worn at the edges, a rivet in each corner."""
+    idx, d, n, (x0, y0, w, h) = rect_plates(size, 16, 421)
+    rng = np.random.default_rng(422)
+    grey = rng.random(n) < 0.22
+    paint = np.where(grey[idx][..., None], STEEL * rng.uniform(0.75, 0.95, n)[idx][..., None],
+                     np.array([206, 92, 44]) * rng.uniform(0.82, 1.08, n)[idx][..., None])
+    wear = smoothstep(value_noise(size, 24, 423, 3), 0.62, 0.78) * (1 - smoothstep(d, 4, 22))
+    color = paint * (1 - wear[..., None]) + STEEL_DARK * wear[..., None]
+    rust = smoothstep(value_noise(size, 18, 424, 4), 0.7, 0.85)
+    color = color * (1 - 0.6 * rust[..., None]) + np.array([120, 60, 30]) * 0.6 * rust[..., None]
+    height = 5 * bevel(d, 6) + rng.uniform(0, 2, n)[idx] + value_noise(size, 40, 425, 2)
+    centers = []
+    rects, _ = abt.pack(16, 421)
+    cell = size / 16
+    for rx, ry, rw, rh in rects:
+        for sx in (0.18, rw - 0.18):
+            for sy in (0.18, rh - 0.18):
+                centers.append(((rx + sx) * cell, (ry + sy) * cell))
+    color = np.ascontiguousarray(color)
+    height, color = bolts(height, color, size, centers, 6, STEEL_DARK * 1.2)
+    return finish(np.clip(color, 0, 255), height, 0.3, seed=42)
+
+
+def scrap_wood(size=1024):
+    """Scrap Wood over 4 x 4 blocks (texture_span 4): wide weathered planks, two to a block, in odd shades, with a
+    nail at each plank end and the odd dark gap."""
+    color, height = planks(size, 8, 431, np.array([176, 124, 80]))
+    gray = 0.78 + 0.22 * value_noise(size, 10, 432, 3)
+    color = color * gray[..., None] + np.array([120, 116, 108]) * (1 - gray)[..., None]
+    rng = np.random.default_rng(433)
+    ph = size / 8
+    offs = np.random.default_rng(431).uniform(0, size, 8)
+    centers = []
+    for r in range(8):
+        for k in range(2):
+            xe = (k * size / 2 - offs[r]) % size
+            for dx in (12, -12):
+                centers.append(((xe + dx) % size, r * ph + ph * rng.uniform(0.3, 0.7)))
+    height, color = bolts(height, np.ascontiguousarray(color), size, centers, 5, STEEL_DARK)
+    return finish(np.clip(color, 0, 255), height, 0.3, seed=43)
+
+
+def plaster(size=1024):
+    """Plaster over 4 x 4 blocks (texture_span 4): off-white trowelled plaster, broad sweeps catching the light, worn
+    through in places to the blue-grey coat underneath, with a few hairline cracks."""
+    sweep = value_noise(size, 10, 441, 4)
+    coat = smoothstep(value_noise(size, 7, 442, 4), 0.7, 0.76)
+    color = np.array([226, 220, 206]) * (0.94 + 0.08 * sweep)[..., None]
+    color = color * (1 - coat[..., None]) + np.array([128, 140, 154]) * coat[..., None]
+    n = value_noise(size, 6, 443, 3)
+    hair = (1 - smoothstep(np.abs(n - 0.5), 0.0, 0.003)) * smoothstep(value_noise(size, 5, 444, 2), 0.55, 0.65)
+    height = 3 * sweep - 2.5 * coat - 1.5 * hair + 0.4 * value_noise(size, 128, 445, 2)
+    color = color * (1 - 0.35 * hair)[..., None]
+    return finish(np.clip(color, 0, 255), height, 0.25, seed=44)
+
+
+def hull_plate(size=1024):
+    """Hull Plate over 2 x 2 blocks (texture_span 2): SM's red hull plating. Plates a block square with an inset
+    panel and chamfered corners, steel seams between them, and a bolt in each corner."""
+    y, x = grid(size)
+    B = size / 2
+    u, v = x % B, y % B
+    du, dv = np.minimum(u, B - u), np.minimum(v, B - v)
+    d = np.minimum(du, dv)
+    corner = np.minimum(du + dv - B * 0.12, d)
+    inset = np.minimum(np.abs(u - B / 2), np.abs(v - B / 2))
+    inner = (np.maximum(np.abs(u - B / 2), np.abs(v - B / 2)) < B * 0.3)
+    color = np.array([176, 42, 38]) * (0.92 + 0.12 * value_noise(size, 8, 451, 3))[..., None]
+    seam = corner < B * 0.025
+    color = np.where(seam[..., None], STEEL_DARK, color)
+    height = 6 * bevel(corner, 8) - 2 * inner + 0.8 * value_noise(size, 30, 452, 2)
+    edge = np.abs(np.maximum(np.abs(u - B / 2), np.abs(v - B / 2)) - B * 0.3) < 2.5
+    color = color * (1 - 0.25 * edge)[..., None]
+    centers = [(i * B + s * B * 0.1, j * B + t * B * 0.1) for i in range(2) for j in range(2)
+               for s in (1, 9) for t in (1, 9)]
+    height, color = bolts(height, np.ascontiguousarray(color), size, centers, 7, STEEL)
+    return finish(np.clip(color, 0, 255), height, 0.3, seed=45)
+
+
+def brick(size=1024):
+    """Brick over 2 x 2 blocks (texture_span 2): SM's sandy tan bricks, three courses to a block, half-bond, each
+    brick its own shade, pale mortar."""
+    y, x = grid(size)
+    rows = 6
+    ph = size / rows
+    L = size / 3
+    row = np.floor(y / ph).astype(int)
+    xs = (x + (row % 2) * L / 2) % size
+    k = np.floor(xs / L).astype(int)
+    u, v = xs - k * L, y - row * ph
+    d = np.minimum(np.minimum(u, L - u), np.minimum(v, ph - v))
+    rng = np.random.default_rng(461)
+    tone = rng.uniform(0.85, 1.1, (rows, 3))[row, k]
+    color, height = concrete_base(size, 462)
+    color = np.array([198, 158, 106]) * (tone * (0.92 + 0.1 * value_noise(size, 20, 463, 3)))[..., None]
+    mortar = d < 7
+    color = np.where(mortar[..., None], np.array([214, 204, 182]), color)
+    height = height + 6 * bevel(d - 7, 8)
+    return finish(np.clip(color, 0, 255), height, 0.3, seed=46)
+
+
+def aluminum(size=1024):
+    """Aluminum over 2 x 2 blocks (texture_span 2): pale brushed panels a block square, each with a vent of fine
+    ribs in its upper half and a screw in each corner."""
+    y, x = grid(size)
+    B = size / 2
+    u, v = x % B, y % B
+    du, dv = np.minimum(u, B - u), np.minimum(v, B - v)
+    d = np.minimum(du, dv)
+    brush = stretched_noise(size, 4, 160, 471, 3)
+    color = np.array([196, 200, 204]) * (0.92 + 0.1 * brush)[..., None]
+    vent = (np.abs(u - B / 2) < B * 0.36) & (v > B * 0.12) & (v < B * 0.46)
+    rib = 0.5 + 0.5 * np.cos(2 * np.pi * v / (B / 22))
+    height = 5 * bevel(d, 6) + 0.6 * brush - np.where(vent, 3 * rib + 1, 0)
+    color = color * (1 - np.where(vent, 0.3 * rib, 0))[..., None]
+    centers = [(i * B + s * B * 0.08, j * B + t * B * 0.08) for i in range(2) for j in range(2)
+               for s in (1, 11.5) for t in (1, 11.5)]
+    height, color = bolts(height, np.ascontiguousarray(color), size, centers, 5, STEEL_DARK * 1.3)
+    return finish(np.clip(color, 0, 255), height, 0.3, seed=47)
+
+
+def rusted_metal(size=1024):
+    """Rusted Metal over 2 x 2 blocks (texture_span 2): grey steel plates, rust in patches and running down in
+    streaks below them."""
+    y, x = grid(size)
+    B = size / 2
+    u, v = x % B, y % B
+    d = np.minimum(np.minimum(u, B - u), np.minimum(v, B - v))
+    color = np.array([150, 152, 154]) * (0.9 + 0.12 * value_noise(size, 10, 481, 3))[..., None]
+    patch = smoothstep(value_noise(size, 12, 482, 4), 0.6, 0.72)
+    streak = smoothstep(stretched_noise(size, 40, 3, 483, 3), 0.62, 0.8) * smoothstep(value_noise(size, 6, 484, 2), 0.45, 0.6)
+    rust = np.clip(patch + 0.7 * streak, 0, 1)
+    rc = np.array([150, 72, 34]) * (0.8 + 0.3 * value_noise(size, 60, 485, 2))[..., None]
+    color = color * (1 - rust[..., None]) + rc * rust[..., None]
+    height = 5 * bevel(d, 6) + 1.5 * patch * value_noise(size, 60, 486, 2)
+    return finish(np.clip(color, 0, 255), height, 0.3, seed=48)
+
+
+def concrete(size=1024):
+    """Concrete Block 1 over 4 x 4 blocks (texture_span 4): cast concrete with faint form seams on the same two-block
+    grid as Concrete Block 2 and 3 and a tie hole where they cross, so the three tiers read as one family."""
+    y, x = grid(size)
+    color, height = concrete_base(size, 491)
+    P = size / 2
+    u, v = x % P, y % P
+    du, dv = np.minimum(u, P - u), np.minimum(v, P - v)
+    seam = 1 - smoothstep(np.minimum(du, dv), 1.0, 3.5)
+    height = height - 2 * seam
+    color = color * (1 - 0.18 * seam)[..., None]
+    for cx in (P / 4, 3 * P / 4):
+        for cy in (P / 4, 3 * P / 4):
+            dx = (x - cx + P / 2) % P - P / 2
+            dy = (y - cy + P / 2) % P - P / 2
+            r = np.sqrt(dx * dx + dy * dy)
+            hole = 1 - smoothstep(r, 6, 9)
+            height = height - 3 * hole
+            color = color * (1 - 0.4 * hole)[..., None]
+    return finish(np.clip(color, 0, 255), height, 0.3, seed=49)
+
+
 # name: (drawing function, what it returns)
 TEXTURES = {
     "sand": sand,
@@ -701,6 +914,16 @@ TEXTURES = {
     "ice": ice,
     "cracked_concrete": cracked_concrete,
     "concrete_slab": concrete_slab,
+    "carpet": carpet,
+    "scrap_stone": scrap_stone,
+    "scrap_metal": scrap_metal,
+    "scrap_wood": scrap_wood,
+    "plaster": plaster,
+    "hull_plate": hull_plate,
+    "brick": brick,
+    "aluminum": aluminum,
+    "rusted_metal": rusted_metal,
+    "concrete": concrete,
 }
 
 # The textures with a see-through alpha channel.
