@@ -763,6 +763,84 @@ public class WorldGenTests
         Assert.True(reeds >= 30, $"reeds ({reeds})");
     }
 
+    // Every cell of each rule scattering one of these ids: what it holds, by rule.
+    private static IEnumerable<(Scatter Rule, List<WorldObjectPlacement> Placed)> Scattered(WorldGenerator gen, Func<Scatter, bool> which)
+    {
+        foreach (var rule in gen.Data.ScatterRules.Where(which))
+        {
+            var s = rule.Spacing;
+            for (var iz = (int)MathF.Floor(-VanillaDepth / 2 / s); iz <= (int)MathF.Floor(VanillaDepth / 2 / s); iz++)
+            {
+                for (var ix = (int)MathF.Floor(-VanillaSize / 2 / s); ix <= (int)MathF.Floor(VanillaSize / 2 / s); ix++)
+                {
+                    var placed = gen.InCell(rule, ix, iz).ToList();
+                    if (placed.Count > 0)
+                        yield return (rule, placed);
+                }
+            }
+        }
+    }
+
+    [Fact]
+    public void FieldsAndOrchardsPatchTheFarmlandOnLevelGround()
+    {
+        var gen = Vanilla.Value;
+        var farms = new[] { "scene_wheat_field", "scene_vegetable_field", "scene_corn_field", "scene_ploughed_field", "scene_overgrown_field", "scene_orchard", "scene_field_ditch" };
+        var counts = new Dictionary<string, int>();
+        var patches = 0;
+        foreach (var (rule, placed) in Scattered(gen, r => farms.Contains(r.Object.Id)))
+        {
+            var biome = gen.Data.Biomes[rule.Biome].Id!;
+            counts[biome] = counts.GetValueOrDefault(biome) + 1;
+            foreach (var o in placed.Where(p => p.Definition.ClearFlora && p.Definition.Id!.StartsWith("field_", StringComparison.Ordinal)))
+            {
+                // Each 8 m patch stands on the highest ground under it, so none pokes through, with every corner and side
+                // within its 0.45 m soil skirt, so no gap shows under it; and it is never on a road.
+                patches++;
+                Assert.False(gen.Roads.Covers(o.Position.X, o.Position.Z), $"{o.Definition.Id} on a road at {o.Position}");
+                var bottom = o.Position.Y + o.Definition.Sink;    // the ground the model's origin was sunk from
+                foreach (var (cx, cz) in new[] { (-4f, -4f), (4f, -4f), (-4f, 4f), (4f, 4f), (0f, 0f), (4f, 0f), (-4f, 0f), (0f, 4f), (0f, -4f) })
+                {
+                    var w = Vector3.Transform(new Vector3(cx, 0f, cz), Quaternion.CreateFromAxisAngle(Vector3.UnitY, o.Yaw));
+                    Assert.InRange(gen.HeightAt(o.Position.X + w.X, o.Position.Z + w.Z), o.Position.Y - 0.45f, bottom + 1e-3f);
+                }
+            }
+        }
+        // The farmland reads as a patchwork of fields (World fill: props 300); the meadow has fewer, round its farms.
+        Assert.True(counts.GetValueOrDefault("field") >= 150, $"fields and orchards in the field biome ({counts.GetValueOrDefault("field")})");
+        Assert.True(counts.GetValueOrDefault("meadow") >= 30, $"fields and orchards in the meadow ({counts.GetValueOrDefault("meadow")})");
+        Assert.True(patches >= 2000, $"field patches ({patches})");
+    }
+
+    [Fact]
+    public void CablePolesLineTheMainRoadsFacingThem()
+    {
+        var gen = Vanilla.Value;
+        var poles = Scattered(gen, r => r.Object.Id == "colony_cable_pole").SelectMany(c => c.Placed).ToList();
+        // About one every 40 m of road, the forests' trees and the junctions taking a few.
+        Assert.True(poles.Count >= gen.Roads.LengthOf(RoadKind.Road) / 40f * 0.6f, $"poles ({poles.Count}) along {gen.Roads.LengthOf(RoadKind.Road)} m of road");
+        foreach (var pole in poles)
+        {
+            var p = new Vector2(pole.Position.X, pole.Position.Z);
+            var road = gen.Roads.Nearest(p.X, p.Y, 48f, RoadKind.Road)!.Value;
+            // A few metres past the edge of the bed, never on it, and facing it.
+            Assert.False(gen.Roads.Covers(p.X, p.Y), $"pole on the road at {p}");
+            Assert.InRange(road.Distance - gen.Roads.HalfBed(road.Chain), 1.5f, 4f);
+            var front = new Vector2(MathF.Sin(pole.Yaw), MathF.Cos(pole.Yaw));
+            Assert.True(Vector2.Dot(front, Vector2.Normalize(road.Point - p)) > 0.99f, $"pole at {p} faces the road");
+        }
+        // Direction signs stand by the junctions.
+        var junctions = gen.Roads.Nodes.Where(n => n.Kind == RoadNodeKind.Junction).Select(n => n.At).ToList();
+        foreach (var (_, placed) in Scattered(gen, r => r.Object.Id == "road_sign_junction"))
+            Assert.True(junctions.Min(j => Vector2.Distance(j, new Vector2(placed[0].Position.X, placed[0].Position.Z))) < 70f, $"junction sign at {placed[0].Position}");
+        // Signs and markers line the roads too, and the tracks get the shrines.
+        var signs = Scattered(gen, r => r.Roadside is not null && r.Object.Id != "colony_cable_pole").SelectMany(c => c.Placed)
+            .GroupBy(o => o.Definition.Id!).ToDictionary(g => g.Key, g => g.Count());
+        foreach (var (id, fewest) in new[] { ("km_marker", 25), ("road_reflector_post", 300), ("road_sign_junction", 10), ("road_sign_warning_curve", 5),
+            ("guard_rail", 5), ("roadside_shrine", 5) })
+            Assert.True(signs.GetValueOrDefault(id) >= fewest, $"{id}: {signs.GetValueOrDefault(id)}");
+    }
+
     [Fact]
     public void PondsAndLakesAreDeepEnoughToFish()
     {

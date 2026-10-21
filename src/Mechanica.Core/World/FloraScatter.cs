@@ -19,7 +19,8 @@ public readonly record struct FloraInstance(FloraModel Model, Vector3 Position, 
 /// Grows a chunk's decorative flora from its biomes' <see cref="Flora"/> rules. Like the rest of world generation it is
 /// a pure function of the seed, the data and the chunk, so every peer grows the same plants and nothing is synced.
 /// Each ground cell of the chunk gets, per rule, a number of plants from the rule's density, thinned by a noise field
-/// into patches; plants keep off water, steep ground and POIs, and bushes keep off scattered objects.
+/// into patches; plants keep off water, steep ground, POIs and objects that clear flora (crop fields), and bushes keep
+/// off scattered objects.
 /// </summary>
 public static class FloraScatter
 {
@@ -40,6 +41,7 @@ public static class FloraScatter
         var cellX = (int)MathF.Floor(ox / res);
         var cellZ = (int)MathF.Floor(oz / res);
         var area = res * res;
+        var near = new List<WorldObjectPlacement>();
         for (var j = 0; j < n - 1; j++)
         {
             for (var i = 0; i < n - 1; i++)
@@ -68,6 +70,14 @@ public static class FloraScatter
                 if (rules.Count == 0)
                     continue;
                 float x0 = ox + i * res, z0 = oz + j * res;
+                // The flora-clearing objects (crop fields) that may cover this cell.
+                near.Clear();
+                foreach (var o in chunk.FloraClearers)
+                {
+                    if (WorldGenerator.Clears(o, x0, z0) || WorldGenerator.Clears(o, x0 + res, z0) || WorldGenerator.Clears(o, x0, z0 + res)
+                        || WorldGenerator.Clears(o, x0 + res, z0 + res) || WorldGenerator.Clears(o, x0 + res / 2f, z0 + res / 2f))
+                        near.Add(o);
+                }
                 // The cell's steepest corner, so nothing grows in a cell that reaches up a cliff face.
                 var flattest = MathF.Min(MathF.Min(chunk.Normals[k].Y, chunk.Normals[k + 1].Y), MathF.Min(chunk.Normals[k + n].Y, chunk.Normals[k + n + 1].Y));
                 var slope = MathF.Sqrt(MathF.Max(0f, 1f - flattest * flattest)) / MathF.Max(flattest, 1e-3f);
@@ -93,6 +103,8 @@ public static class FloraScatter
                         if (height < chunk.SeaLevel + 0.15f || (covered && (generator.Roads.Covers(x, z) || generator.LiquidAt(new Vector3(x, height, z)) is not null)))
                             continue;
                         if (kind == FloraKind.Bush && NearObject(chunk, x, z))
+                            continue;
+                        if (near.Count > 0 && near.Exists(o => WorldGenerator.Clears(o, x, z)))
                             continue;
                         var ground = Vector3.Normalize(Vector3.Lerp(Vector3.Lerp(chunk.Normals[k], chunk.Normals[k + 1], u), Vector3.Lerp(chunk.Normals[k + n], chunk.Normals[k + n + 1], u), v));
                         var pick = Noise.Mix(h + 2);
