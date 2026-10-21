@@ -1,0 +1,12 @@
+{
+  // A butte: a lone rock tower, narrower and taller than a mesa, that shows from far across the desert and the meadows.
+  "id": "butte",
+  "name": "Butte",
+  "wild": true,
+  "radius": 34.0,
+  "size": [30.0, 24.0, 30.0],
+  "placement": { "spacing": [900.0, 1500.0], "biomes": ["desert", "meadow", "field"], "priority": 7, "clearance": 16.0 },
+  "terrain": [
+    { "op": "raise", "radius": 11.0, "blend": 9.0, "height": 24.0, "wobble": 0.3 }
+  ]
+}

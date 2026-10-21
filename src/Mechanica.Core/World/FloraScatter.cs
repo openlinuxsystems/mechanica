@@ -49,14 +49,15 @@ public static class FloraScatter
                 if (bare > BareShare)
                     continue;
                 var biome = chunk.Biomes[k];
-                // Inside a POI only the biome it names grows, and only if it names one; nothing grows on a road.
+                // Inside a POI only the biome it names grows, and only if it names one (a wild POI, a pond or a ravine, keeps the
+                // ground's own); nothing grows on a road.
                 var covered = chunk.Covered[k] || chunk.Covered[k + 1] || chunk.Covered[k + n] || chunk.Covered[k + n + 1];
                 if (covered)
                 {
                     biome = -1;
                     foreach (var poi in generator.PoisAt(ox + i * res, oz + j * res))
                     {
-                        biome = poi.Poi.Prefab.Flora is { } id ? data.Biomes.First(b => b.Id == id).Index : -1;
+                        biome = poi.Poi.Prefab.Wild ? chunk.Biomes[k] : poi.Poi.Prefab.Flora is { } id ? data.Biomes.First(b => b.Id == id).Index : -1;
                         if (biome < 0)
                             break;
                     }

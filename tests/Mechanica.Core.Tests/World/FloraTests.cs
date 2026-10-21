@@ -104,8 +104,10 @@ public class FloraTests
                     Assert.InRange(plant.Position.Z, oz, oz + ChunkSize);
                     Assert.True(plant.Position.Y >= a.SeaLevel, "nothing grows under the sea");
                     Assert.Equal(a.HeightAt(plant.Position.X, plant.Position.Z), plant.Position.Y, 0.35f);
-                    // Inside a POI only the flora it names grows (the crash site's meadow), never on its bare burnt middle.
-                    Assert.All(a.PoisAt(plant.Position.X, plant.Position.Z), p => Assert.NotNull(p.Poi.Prefab.Flora));
+                    // Inside a built POI only the flora it names grows (the crash site's meadow), never on its bare burnt
+                    // middle; a wild one (a pond, a butte) keeps the land's own flora.
+                    Assert.All(a.PoisAt(plant.Position.X, plant.Position.Z), p => Assert.True(p.Poi.Prefab.Wild || p.Poi.Prefab.Flora is not null, p.Poi.QualifiedId));
+                    Assert.Null(a.LiquidAt(plant.Position));
                     Assert.InRange(plant.Rank, 0f, 1f);
                 }
                 total += grass.Count;

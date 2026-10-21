@@ -300,13 +300,13 @@ public partial class PlayerController : CharacterBody3D
     }
 
     /// <summary>
-    /// Where the water surface is (world Y), or null when there is no water. Set by whoever owns the world; the
-    /// player swims when deep enough below it.
+    /// Where the water surface is (world Y) over a position: the sea's, or a pond's over one. Null when there is no water.
+    /// Set by whoever owns the world; the player swims when deep enough below it.
     /// </summary>
-    public Func<float>? WaterLevel { get; set; }
+    public Func<Vector3, float>? WaterLevel { get; set; }
 
     /// <summary>How far the feet are below the water surface in metres (0 or less: out of the water).</summary>
-    public float WaterDepth => WaterLevel is { } level ? level() - GlobalPosition.Y : 0f;
+    public float WaterDepth => WaterLevel is { } level ? level(GlobalPosition) - GlobalPosition.Y : 0f;
 
     /// <summary>
     /// What this player holds, as others see it. The local player's tools set it; it travels with the input,

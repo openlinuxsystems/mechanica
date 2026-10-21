@@ -335,6 +335,40 @@ public sealed partial class WorldGenerator
     public PoiPoolPlacement? LiquidAt(Vector3 point) =>
         PoolsAt(point.X, point.Z).FirstOrDefault(p => p.Holds(point) && HeightAt(point.X, point.Z) < p.Centre.Y);
 
+    /// <summary>
+    /// Height of the water surface over a world position: a pond's (a POI pool of plain water, <see cref="LiquidDefinition.Water"/>)
+    /// where one covers it, else the sea's. The water is only where the ground is lower.
+    /// </summary>
+    public float WaterLevelAt(float x, float z)
+    {
+        foreach (var pool in PoolsAt(x, z))
+        {
+            if (pool.Liquid.Water && pool.Holds(new Vector3(x, pool.Centre.Y, z)))
+                return MathF.Max(pool.Centre.Y, SeaLevel);
+        }
+        return SeaLevel;
+    }
+
+    /// <summary>
+    /// The body of water over a world position, for fishing and anything else that cares which water it is and how deep:
+    /// a pond (a POI pool of plain water, named by its POI), a river or creek, or open water at sea level (a lake or the
+    /// sea, named by the biome it lies in). Null on dry ground.
+    /// </summary>
+    public WaterBody? WaterBodyAt(float x, float z)
+    {
+        var ground = HeightAt(x, z);
+        foreach (var pool in PoolsAt(x, z))
+        {
+            if (pool.Liquid.Water && pool.Centre.Y > SeaLevel && pool.Holds(new Vector3(x, pool.Centre.Y, z)) && ground < pool.Centre.Y)
+                return new WaterBody(WaterBodyKind.Pond, pool.Poi.Poi.QualifiedId, pool.Centre.Y, pool.Centre.Y - ground);
+        }
+        if (ground >= SeaLevel)
+            return null;
+        return RiverDistance(x, z) <= 0f
+            ? new WaterBody(WaterBodyKind.River, "river", SeaLevel, SeaLevel - ground)
+            : new WaterBody(WaterBodyKind.Open, BiomeAt(x, z).Id, SeaLevel, SeaLevel - ground);
+    }
+
     /// <summary>The liquid pools of the POIs whose footprint covers a world position.</summary>
     public IEnumerable<PoiPoolPlacement> PoolsAt(float x, float z) => PoisAt(x, z).SelectMany(PoolsOf);
 
@@ -396,7 +430,9 @@ public sealed partial class WorldGenerator
         var o = rule.Object;
         var salt = Noise.Hash(_scatterSalt ^ (uint)rule.Index, ix, iz, 3);
         var scale = o.Scale is [var lo, var hi] ? lo + (hi - lo) * Noise.Unit(Noise.Mix(salt)) : 1f;
-        var yaw = Noise.Unit(salt) * 2f * MathF.PI;
+        var yaw = rule.Roadside is { } roadside && Roads.Nearest(spot.X, spot.Y, RoadReach, roadside.Road) is { } road
+            ? MathF.Atan2(road.Point.X - spot.X, road.Point.Y - spot.Y)
+            : Noise.Unit(salt) * 2f * MathF.PI;
         if (o.Scene is { } scene)
         {
             foreach (var piece in PlaceScene(rule, scene, ix, iz, spot, yaw, salt))
@@ -405,7 +441,7 @@ public sealed partial class WorldGenerator
         }
         if (o.Outcrop is not { } outcrop)
         {
-            var y = HeightAt(spot.X, spot.Y) - o.Sink * scale;
+            var y = (rule.Water == ScatterWater.Surface ? WaterLevelAt(spot.X, spot.Y) : HeightAt(spot.X, spot.Y)) - o.Sink * scale;
             yield return new WorldObjectPlacement(new WorldObjectId(rule.Index, ix, iz), o, new Vector3(spot.X, y, spot.Y), yaw, scale);
             yield break;
         }
@@ -464,8 +500,8 @@ public sealed partial class WorldGenerator
             var definition = Data.Objects[piece.Object!];
             var w = Vector3.Transform(new Vector3(piece.At![0], 0f, piece.At[1]), turn);
             var g = new Vector2(spot.X + w.X, spot.Y + w.Z);
-            if (!InWorld(g.X, g.Y) || PoisAt(g.X, g.Y).Any() || Roads.Near(g.X, g.Y, definition.Footprint + 1f)
-                || HeightAt(g.X, g.Y) < SeaLevel + 0.2f || SlopeAt(g.X, g.Y) > MathF.Min(_terrain.MaxScatterSlope, definition.MaxSlope ?? float.MaxValue))
+            if (!InWorld(g.X, g.Y) || Built(g) || Roads.Near(g.X, g.Y, definition.Footprint + 1f)
+                || !Dry(g) || SlopeAt(g.X, g.Y) > MathF.Min(_terrain.MaxScatterSlope, definition.MaxSlope ?? float.MaxValue))
                 continue;
             var scale = definition.Scale is [var lo, var hi] ? lo + (hi - lo) * Noise.Unit(Noise.Mix(roll)) : 1f;
             var y = HeightAt(g.X, g.Y) - definition.Sink * scale;
@@ -503,6 +539,8 @@ public sealed partial class WorldGenerator
         }
         var s = rule.Spacing;
         spot = new Vector2((ix + 0.1f + 0.8f * Noise.Unit(Noise.Hash(salt, ix, iz, 1))) * s, (iz + 0.1f + 0.8f * Noise.Unit(Noise.Hash(salt, ix, iz, 2))) * s);
+        if (rule.Roadside is { } roadside)
+            return BesideRoad(roadside, ix, iz, s, ref spot);
         // A perched find looks round its cell for a cliff top or ledge, since most of the land is easy slopes.
         if (rule.Perch is { } perch && !Perched(spot, perch))
         {
@@ -523,6 +561,42 @@ public sealed partial class WorldGenerator
     // Spots a perched scatter rule tries in its cell.
     private const int PerchTries = 4;
 
+    // Furthest a roadside rule looks for its road (the road network answers within 48 m).
+    private const float RoadReach = 48f;
+
+    // A roadside rule's spot: the centre-line point nearest the cell's spot, if it lies in the cell (so each stretch of road
+    // is one cell's), moved out past the bed by the gap. Never on a bridge, or far above or below the road.
+    private bool BesideRoad(RoadsideDefinition roadside, int ix, int iz, float s, ref Vector2 spot)
+    {
+        if (Roads.Nearest(spot.X, spot.Y, MathF.Min(s, RoadReach), roadside.Road) is not { } hit || hit.OnBridge
+            || MathF.Floor(hit.Point.X / s) != ix || MathF.Floor(hit.Point.Y / s) != iz)
+            return false;
+        var chain = hit.Chain;
+        var along = Vector2.Normalize(chain.Points[hit.Segment + 1] - chain.Points[hit.Segment]);
+        var left = new Vector2(along.Y, -along.X);
+        var side = roadside.Side switch
+        {
+            RoadSide.Left => 1f,
+            RoadSide.Right => -1f,
+            _ => Vector2.Dot(spot - hit.Point, left) >= 0f ? 1f : -1f,
+        };
+        spot = hit.Point + left * side * (Roads.HalfBed(chain) + roadside.Gap);
+        return MathF.Abs(HeightAt(spot.X, spot.Y) - hit.Height) <= RoadsideRise + 1f;
+    }
+
+    // Whether a structure stands on a spot: a POI's footprint, unless the POI is a wild one (a pond, a ravine).
+    private bool Built(Vector2 spot) => PoisAt(spot.X, spot.Y).Any(p => !p.Poi.Prefab.Wild);
+
+    // Whether a spot is dry land: above the sea and any pond.
+    private bool Dry(Vector2 spot) => HeightAt(spot.X, spot.Y) >= WaterLevelAt(spot.X, spot.Y) + 0.2f;
+
+    // Whether a water rule's spot is wet the way it wants: deep enough to float on, or in the shallows at the edge.
+    private bool Wet(ScatterWater water, Vector2 spot)
+    {
+        var depth = WaterLevelAt(spot.X, spot.Y) - HeightAt(spot.X, spot.Y);
+        return water == ScatterWater.Surface ? depth is >= 0.5f and <= 3f : depth is >= -0.3f and <= 0.6f;
+    }
+
     // Whether the ground at a spot suits the rule, ignoring other objects.
     private bool Fits(Scatter rule, Vector2 spot)
     {
@@ -534,9 +608,11 @@ public sealed partial class WorldGenerator
         // Across a border a biome's objects thin out with its share of the ground, in groves rather than one by one.
         if (BiomeShare(spot.X, spot.Y, rule.Biome) <= EdgeRoll(spot.X, spot.Y, _edgeSalt ^ (uint)rule.Index, GroveSize))
             return false;
-        if (PoisAt(spot.X, spot.Y).Any() || Roads.Near(spot.X, spot.Y, rule.Object.Footprint + 1f))
+        if (Built(spot) || Roads.Near(spot.X, spot.Y, rule.Object.Footprint + 1f))
             return false;
-        if (HeightAt(spot.X, spot.Y) < SeaLevel + 0.2f || SlopeAt(spot.X, spot.Y) > MathF.Min(_terrain.MaxScatterSlope, rule.Object.MaxSlope ?? float.MaxValue))
+        if (rule.Water is { } water)
+            return Wet(water, spot) && (water == ScatterWater.Surface || SlopeAt(spot.X, spot.Y) <= MathF.Min(_terrain.MaxScatterSlope, rule.Object.MaxSlope ?? float.MaxValue));
+        if (!Dry(spot) || SlopeAt(spot.X, spot.Y) > MathF.Min(_terrain.MaxScatterSlope, rule.Object.MaxSlope ?? float.MaxValue))
             return false;
         if (rule.Perch is { } perch && !Perched(spot, perch))
             return false;
@@ -548,7 +624,7 @@ public sealed partial class WorldGenerator
             {
                 var p = spot + new Vector2(MathF.Cos(a * MathF.PI / 4f), MathF.Sin(a * MathF.PI / 4f)) * reach;
                 if (!InWorld(p.X, p.Y) || BiomeShare(p.X, p.Y, rule.Biome) <= 0f
-                    || PoisAt(p.X, p.Y).Any() || Roads.Near(p.X, p.Y, 1f) || HeightAt(p.X, p.Y) < SeaLevel + 0.2f)
+                    || Built(p) || Roads.Near(p.X, p.Y, 1f) || !Dry(p))
                     return false;
             }
         }
@@ -986,17 +1062,48 @@ public sealed partial class WorldGenerator
             for (var i = 0; i < terrain.Count; i++)
             {
                 var op = terrain[i];
-                var centre = poi.ToWorld(op.At is [var ax, var az] ? new Vector2(ax, az) : Vector2.Zero);
-                var d = Vector2.Distance(p, centre);
-                if (d >= (op.Radius + op.Blend) * (1f + (op.Wobble ?? 0f)))
+                var (d, s) = OpReach(poi, i, op, p);
+                if (s <= 0f)
                     continue;
-                var s = Wobble(poi, i, op.Wobble ?? 0f, p - centre);
                 var k = 1f - Noise.SmoothStep(op.Radius * s, (op.Radius + op.Blend) * s, d);
-                var target = op.Op == TerrainOpKind.Basin ? poi.PadHeight - op.Depth : poi.PadHeight;
+                var target = op.Op switch
+                {
+                    TerrainOpKind.Basin => poi.PadHeight - op.Depth,
+                    TerrainOpKind.Raise => poi.PadHeight + op.Height,
+                    _ => poi.PadHeight,
+                };
                 h += (target - h) * k;
             }
         }
         return h;
+    }
+
+    // How far a point is from a terrain op's centre (or, for a strip, its centre line), and the scale its wobble gives the
+    // radius there; a scale of 0 when the point is out of the op's reach.
+    private (float Distance, float Scale) OpReach(PoiInstance poi, int index, TerrainOp op, Vector2 p)
+    {
+        var centre = poi.ToWorld(op.At is [var ax, var az] ? new Vector2(ax, az) : Vector2.Zero);
+        var amount = op.Wobble ?? 0f;
+        if (op.To is not [var tx, var tz])
+        {
+            var d = Vector2.Distance(p, centre);
+            return d >= (op.Radius + op.Blend) * (1f + amount) ? (d, 0f) : (d, Wobble(poi, index, amount, p - centre));
+        }
+        var end = poi.ToWorld(new Vector2(tx, tz));
+        var line = end - centre;
+        var length = line.Length();
+        var t = length > 0f ? Math.Clamp(Vector2.Dot(p - centre, line) / (length * length), 0f, 1f) : 0f;
+        var across = p - (centre + line * t);
+        var distance = across.Length();
+        if (distance >= (op.Radius + op.Blend) * (1f + amount))
+            return (distance, 0f);
+        if (amount <= 0f)
+            return (distance, 1f);
+        // A strip's edges wander along its length, each side on its own, so a ravine's walls never run straight.
+        var side = length > 0f && (line.X * across.Y - line.Y * across.X) < 0f ? 1 : 0;
+        var salt = Noise.Hash(_poiSalt ^ 0x57121Bu, poi.Index, index, side);
+        var wander = Noise.Fractal(t * length / MathF.Max(op.Radius + op.Blend, 1f), side * 17.3f, salt, 3, 2f, 0.5f);
+        return (distance, 1f + amount * Math.Clamp(wander, -1f, 1f));
     }
 
     // Scale of a terrain op's radius towards an offset from its centre: 1 ± amount, from a few sines round the circle
@@ -1030,13 +1137,14 @@ public sealed partial class WorldGenerator
             if (MathF.Abs(h - poi.PadHeight) < 1e-4f)
                 continue;
             var hold = 0f;
-            foreach (var op in poi.Poi.Prefab.Terrain ?? [])
+            var terrain = poi.Poi.Prefab.Terrain ?? [];
+            for (var i = 0; i < terrain.Count; i++)
             {
-                var centre = poi.ToWorld(op.At is [var ax, var az] ? new Vector2(ax, az) : Vector2.Zero);
-                var d = Vector2.Distance(p, centre);
-                if (op.Op == TerrainOpKind.Basin && d < (op.Radius + op.Blend) * (1f + (op.Wobble ?? 0f)))
+                var op = terrain[i];
+                var (d, s) = OpReach(poi, i, op, p);
+                if (op.Op is TerrainOpKind.Basin or TerrainOpKind.Raise && s > 0f)
                     return h;
-                if (op.Op == TerrainOpKind.Flatten)
+                if (op.Op == TerrainOpKind.Flatten && op.To is null)
                     hold = MathF.Max(hold, 1f - Noise.SmoothStep(0.9f * op.Radius, op.Radius, d));
             }
             if (hold > 0f)

@@ -103,7 +103,10 @@
         { "object": "leafy_tree", "spacing": 14.0, "chance": 0.5, "cluster": { "layer": "meadow_grove", "scale": 110.0, "cover": 0.14, "outside": 0.02 } },
         { "object": "boulder", "spacing": 30.0, "chance": 0.5, "cluster": { "layer": "meadow_rocks", "scale": 70.0, "cover": 0.2, "outside": 0.1 } },
         { "object": "bush", "spacing": 8.0, "chance": 0.5, "cluster": { "layer": "meadow_grove", "scale": 110.0, "cover": 0.14, "outside": 0.08 } },
-        { "object": "small_rock", "spacing": 12.0, "chance": 0.4, "cluster": { "layer": "meadow_rocks", "scale": 70.0, "cover": 0.2, "outside": 0.15 } }
+        { "object": "small_rock", "spacing": 12.0, "chance": 0.4, "cluster": { "layer": "meadow_rocks", "scale": 70.0, "cover": 0.2, "outside": 0.15 } },
+        { "object": "lily_pad_cluster", "spacing": 10.0, "chance": 0.6, "water": "surface", "cluster": { "layer": "lilies", "scale": 30.0, "cover": 0.35 } },
+        { "object": "reed_bed", "spacing": 9.0, "chance": 0.5, "water": "shallows", "cluster": { "layer": "reeds", "scale": 24.0, "cover": 0.45, "outside": 0.1 } },
+        { "object": "cattail_clump", "spacing": 5.0, "chance": 0.45, "water": "shallows", "cluster": { "layer": "reeds", "scale": 24.0, "cover": 0.45, "outside": 0.15 } }
       ],
       "flora": [
         { "kind": "grass", "density": 2.4, "coverage": 0.85, "patch_size": 16.0, "scale": [0.8, 1.35], "colors": ["#7cc63a", "#8fd043", "#a8d23c", "#6cbd36"] },
@@ -155,7 +158,10 @@
         { "object": "large_rock", "spacing": 30.0, "chance": 0.15 },
         { "object": "scene_rock_hive", "spacing": 80.0, "chance": 0.3 },
         { "object": "fallen_log", "spacing": 22.0, "chance": 0.2, "cluster": { "layer": "forest_clearings", "scale": 120.0, "cover": 0.78, "outside": 0.3 } },
-        { "object": "bush", "spacing": 9.0, "chance": 0.25 }
+        { "object": "bush", "spacing": 9.0, "chance": 0.25 },
+        { "object": "lily_pad_cluster", "spacing": 10.0, "chance": 0.6, "water": "surface", "cluster": { "layer": "lilies", "scale": 30.0, "cover": 0.35 } },
+        { "object": "reed_bed", "spacing": 9.0, "chance": 0.5, "water": "shallows", "cluster": { "layer": "reeds", "scale": 24.0, "cover": 0.45, "outside": 0.1 } },
+        { "object": "cattail_clump", "spacing": 5.0, "chance": 0.45, "water": "shallows", "cluster": { "layer": "reeds", "scale": 24.0, "cover": 0.45, "outside": 0.15 } }
       ],
       "flora": [
         { "kind": "grass", "density": 1.2, "coverage": 0.6, "patch_size": 10.0, "scale": [0.8, 1.4], "colors": ["#5fae36", "#6fba3c", "#53a13a"] },
@@ -210,7 +216,10 @@
         { "object": "birch_tree", "spacing": 10.0, "chance": 0.6, "cluster": { "layer": "field_copse", "scale": 60.0, "cover": 0.05, "outside": 0.01 } },
         { "object": "small_rock", "spacing": 30.0, "chance": 0.1 },
         { "object": "rock_node", "spacing": 60.0, "chance": 0.15 },
-        { "object": "bush", "spacing": 8.0, "chance": 0.5, "cluster": { "layer": "field_copse", "scale": 60.0, "cover": 0.05, "outside": 0.02 } }
+        { "object": "bush", "spacing": 8.0, "chance": 0.5, "cluster": { "layer": "field_copse", "scale": 60.0, "cover": 0.05, "outside": 0.02 } },
+        { "object": "lily_pad_cluster", "spacing": 10.0, "chance": 0.6, "water": "surface", "cluster": { "layer": "lilies", "scale": 30.0, "cover": 0.35 } },
+        { "object": "reed_bed", "spacing": 9.0, "chance": 0.5, "water": "shallows", "cluster": { "layer": "reeds", "scale": 24.0, "cover": 0.45, "outside": 0.1 } },
+        { "object": "cattail_clump", "spacing": 5.0, "chance": 0.45, "water": "shallows", "cluster": { "layer": "reeds", "scale": 24.0, "cover": 0.45, "outside": 0.15 } }
       ],
       "flora": [
         { "kind": "grass", "density": 2.6, "coverage": 0.9, "patch_size": 24.0, "scale": [1.0, 1.5], "models": ["grass_tall", "grass_tipped"], "colors": ["#e0c04a", "#d4b03e", "#e8cc5a", "#c9a83a"] },
@@ -304,6 +313,9 @@
         { "object": "large_rock", "spacing": 34.0, "chance": 0.15 },
         { "object": "scene_rock_hive", "spacing": 70.0, "chance": 0.4 },
         { "object": "bush", "spacing": 12.0, "chance": 0.2 },
+        { "object": "lily_pad_cluster", "spacing": 10.0, "chance": 0.6, "water": "surface", "cluster": { "layer": "lilies", "scale": 30.0, "cover": 0.35 } },
+        { "object": "reed_bed", "spacing": 9.0, "chance": 0.5, "water": "shallows", "cluster": { "layer": "reeds", "scale": 24.0, "cover": 0.45, "outside": 0.1 } },
+        { "object": "cattail_clump", "spacing": 5.0, "chance": 0.45, "water": "shallows", "cluster": { "layer": "reeds", "scale": 24.0, "cover": 0.45, "outside": 0.15 } },
         { "object": "wild_cotton", "spacing": 18.0, "chance": 0.25 }
       ],
       "flora": [
@@ -369,7 +381,10 @@
 
         { "object": "cattail_clump", "spacing": 50.0, "chance": 0.5 },
 
-        { "object": "small_rock", "spacing": 24.0, "chance": 0.15 }
+        { "object": "small_rock", "spacing": 24.0, "chance": 0.15 },
+        { "object": "lily_pad_cluster", "spacing": 10.0, "chance": 0.6, "water": "surface", "cluster": { "layer": "lilies", "scale": 30.0, "cover": 0.35 } },
+        { "object": "reed_bed", "spacing": 9.0, "chance": 0.5, "water": "shallows", "cluster": { "layer": "reeds", "scale": 24.0, "cover": 0.45, "outside": 0.1 } },
+        { "object": "cattail_clump", "spacing": 5.0, "chance": 0.45, "water": "shallows", "cluster": { "layer": "reeds", "scale": 24.0, "cover": 0.45, "outside": 0.15 } }
       ]
     },
     {
@@ -499,7 +514,11 @@
     { "points": [[-0.05, -0.31], [-0.04, -0.24], [-0.01, -0.10], [0.0, -0.03]], "width": [10.0, 22.0], "depth": 3.5 },
     { "points": [[-0.20, -0.30], [-0.16, -0.18], [-0.09, -0.08], [-0.03, -0.01]], "width": [14.0, 22.0], "depth": 3.5 },
     { "points": [[0.01, 0.07], [-0.03, 0.20], [-0.14, 0.32], [-0.17, 0.46], [-0.18, 0.58]], "width": [22.0, 34.0], "depth": 4.0 },
-    { "points": [[0.06, 0.0], [0.20, -0.12], [0.34, -0.12], [0.48, -0.16], [0.58, -0.18]], "width": [16.0, 30.0], "depth": 4.0 }
+    { "points": [[0.06, 0.0], [0.20, -0.12], [0.34, -0.12], [0.48, -0.16], [0.58, -0.18]], "width": [16.0, 30.0], "depth": 4.0 },
+    // Creeks: narrow, shallow streams down to the big lake through the meadows, the western woods and the southern fields.
+    { "points": [[0.17, -0.33], [0.13, -0.22], [0.07, -0.10]], "width": [4.0, 9.0], "depth": 1.5, "meander": 40.0 },
+    { "points": [[-0.40, -0.20], [-0.32, -0.10], [-0.22, -0.03], [-0.12, 0.0]], "width": [4.0, 10.0], "depth": 1.5, "meander": 45.0 },
+    { "points": [[0.22, 0.30], [0.18, 0.22], [0.10, 0.12], [0.02, 0.06]], "width": [4.0, 9.0], "depth": 1.5, "meander": 40.0 }
   ],
   // Paved roads (World Map spec §3): a minimum spanning tree over every road-linked site plus loops, routed over a grid
   // with a grade limit, bridges over water; links are joined first, in order. Dirt tracks reach camps and small ruins.
@@ -600,7 +619,9 @@
       "id": "chemical", "color": "#2a8c12", "glow": 0.15, "roughness": 0.12, "ripple_size": 3.0, "flow": 0.08, "bubbles": 0.8,
       "edge_color": "#d9f28a", "damage": 10.0, "collect": { "item": "chemical", "count": 1 }
     },
-    { "id": "oil", "color": "#0d0c0b", "roughness": 0.08, "ripple_size": 7.0, "ripples": 0.15, "flow": 0.02, "sheen": 0.8, "edge_color": "#2a231c" }
+    { "id": "oil", "color": "#0d0c0b", "roughness": 0.08, "ripple_size": 7.0, "ripples": 0.15, "flow": 0.02, "sheen": 0.8, "edge_color": "#2a231c" },
+    // Pond water: drawn and swum in like the sea, and buckets fill from it.
+    { "id": "water", "color": "#22b2dc", "water": true }
   ],
   // Destructible objects (D11): placeholder primitives until meshes are authored, a model (mesh, with an optional far lod), or a
   // built-in flora model.
@@ -5456,7 +5477,7 @@
       "collider": { "shape": "cylinder", "radius": 2.3, "height": 0.1, "at": [0.0, 0.05, 0.0] },
       "mesh": { "file": "meshes/world/props/lily_pad_cluster.glb" },
       "footprint": 2.4,
-      "sink": 0.04,
+      "sink": 0.0,
       "max_slope": 0.35,
       "solid": false,
       "health": 15.0,

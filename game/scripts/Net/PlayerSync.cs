@@ -52,7 +52,7 @@ public partial class PlayerSync : Node
     public Node3D PlayersRoot { get; init; } = null!;
 
     /// <summary>Where the water surface is (world Y), or null for a world without water. Given to every player.</summary>
-    public Func<float>? WaterLevel { get; init; }
+    public Func<Vector3, float>? WaterLevel { get; init; }
 
     /// <summary>The Creations this peer shows, to place players riding them; null treats every player as on the world.</summary>
     public Creations.CreationWorld? Creations { get; set; }

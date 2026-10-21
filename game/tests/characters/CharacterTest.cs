@@ -32,7 +32,7 @@ public partial class CharacterTest : StagedTest
     private Basis? _armOpen;
     private string? _refused;
     private ulong _drawnFrame;
-    private Func<float>? _seaLevel;
+    private Func<Vector3, float>? _seaLevel;
 
     protected override string Tag => "characters";
 
@@ -198,7 +198,7 @@ public partial class CharacterTest : StagedTest
                 Watch(_a, _host);
                 _seaLevel = player.WaterLevel;
                 var level = player.GlobalPosition.Y + 1.6f;
-                player.WaterLevel = () => level;
+                player.WaterLevel = _ => level;
             }
             var model = (CharacterModel)_a.Main.PlayerSync.Players[_host.Peer].Character!;
             if (!player.Body.HasFlag(BodyFlags.Swimming) || model.Animator.Mode != CharacterMode.Swim || !_events.Contains(CharacterEvent.WaterEnter))
