@@ -6,7 +6,7 @@
   "mass": 3,
   "durability": 3,
   "friction": 0.5,
-  "buoyancy": 0.2,
+  "buoyancy": 0.6,
   "flammable": false,
   "stack_size": 10,
   "sound_material": "wood",

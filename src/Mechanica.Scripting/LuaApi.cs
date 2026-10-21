@@ -103,7 +103,7 @@ public static class LuaApi
         new("world.overlap_sphere", "world.overlap_sphere(centre, radius)", "Everything a sphere touches, skipping the script's own Creation: a list of {creation?, part?, player?, bot?}.", "world"),
         new("world.item", "world.item(id, key?)", "An item's or part's data as in its JSON (or just its key section, e.g. \"seed\"), or nil for an unknown id.", "world"),
 
-        new("sound.play", "sound.play(id, at?)", "Plays a one-shot sound event at the part (or a world point) for everyone in earshot; returns true or false, reason.", "sound"),
+        new("sound.play", "sound.play(id, at?, options?)", "Plays a one-shot sound event at the part (or a world point) for everyone in earshot; options {pitch} scales its pitch (0.25 to 4, 2 is an octave up); returns true or false, reason.", "sound"),
         new("sound.start", "sound.start(id, parameters?)", "Starts a looping sound event that follows the part; returns its handle, or nil, reason.", "sound"),
         new("sound.set_parameter", "sound.set_parameter(handle, name, value)", "Bends one of the part's loops (pitch, volume or the event's own parameters); returns true or false, reason.", "sound"),
         new("sound.stop", "sound.stop(handle)", "Stops one of the part's loops; returns true or false, reason.", "sound"),

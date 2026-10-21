@@ -46,8 +46,10 @@
       "set": {
         "name": "Piston 1",
         "description": "Pushes whatever is on its head up to 7 blocks out while its input is on, and pulls it back when it is off. Set its length and speed with E, or run it from a Controller. Upgrade it in place with Component Kits (U) for more range, speed and force.",
-        "mass": 4,
+        "mass": 7.5,
         "durability": 4,
+        "friction": 0.7,
+        "buoyancy": 0.5,
         "stack_size": 20,
         "icon": "textures/items/piston_1_icon.png",
         "script": "scripts/piston.lua",
@@ -124,12 +126,12 @@
           "id": "piston",
           "stations": ["fabricator"],
           "inputs": [
-            { "item": "metal_block", "count": 10 },
-            { "item": "circuit_board", "count": 1 },
-            { "item": "component_kit", "count": 1 }
+            { "item": "metal_block_2", "count": 10 },
+            { "item": "component_kit", "count": 1 },
+            { "item": "circuit_board", "count": 1 }
           ],
           "outputs": [{ "item": "piston", "count": 1 }],
-          "time": 8,
+          "time": 10,
           "order": 1020
         }
       ]
@@ -140,8 +142,10 @@
       "set": {
         "name": "Sport Suspension 1",
         "description": "A firm, short spring for fast cars. Put it on a chassis side and a wheel bearing on its face. Upgrade it in place with Component Kits (U) for a stiffer spring that settles faster.",
-        "mass": 5,
+        "mass": 1.5,
         "durability": 5,
+        "friction": 0.5,
+        "buoyancy": 0.1,
         "stack_size": 5,
         "size": [2, 1, 1],
         "icon": "textures/items/sport_suspension_1_icon.png",
@@ -242,11 +246,12 @@
           "id": "sport_suspension",
           "stations": ["fabricator"],
           "inputs": [
-            { "item": "scrap_metal_block", "count": 12 },
-            { "item": "component_kit", "count": 2 }
+            { "item": "metal_block", "count": 20 },
+            { "item": "component_kit", "count": 1 },
+            { "item": "crude_oil", "count": 2 }
           ],
           "outputs": [{ "item": "sport_suspension", "count": 1 }],
-          "time": 8,
+          "time": 10,
           "order": 710
         }
       ]
@@ -257,7 +262,7 @@
       "set": {
         "name": "Off-Road Suspension 1",
         "description": "A soft spring with long travel for rough ground. Put it on a chassis side and a wheel bearing on its face. Upgrade it in place with Component Kits (U) for a stiffer spring that settles faster.",
-        "mass": 6,
+        "mass": 1.5,
         "durability": 5,
         "size": [3, 1, 1],
         "icon": "textures/items/offroad_suspension_1_icon.png",
@@ -356,11 +361,12 @@
           "id": "offroad_suspension",
           "stations": ["fabricator"],
           "inputs": [
-            { "item": "scrap_metal_block", "count": 16 },
-            { "item": "component_kit", "count": 2 }
+            { "item": "metal_block", "count": 20 },
+            { "item": "component_kit", "count": 1 },
+            { "item": "crude_oil", "count": 2 }
           ],
           "outputs": [{ "item": "offroad_suspension", "count": 1 }],
-          "time": 8,
+          "time": 10,
           "order": 720
         }
       ]

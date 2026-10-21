@@ -58,10 +58,12 @@ you also need a gas container with gasoline in it; in Creative engines run witho
 5. **Wire it.** Take the Connect Tool. Drag from the seat's node to the engine's, then from the seat to
    the steering bearing: the seat now feeds both. Drag from the engine across all four wheel bearings;
    each one you pass over is linked.
-6. **Power.** Aim at the engine and press E, and drag its power lever (or turn the wheel over it). Step 1
-   is slow and easy to control; the top step is the top speed (`speed` in the engine's data), and each
-   step is an equal share of it. The bottom notch, Off, switches the engine off. Steps above LIMIT unlock
-   as you upgrade the engine, from the same menu (Upgrade, or U). The menu also shows the gasoline in the
+6. **Power.** Aim at the engine and press E, and drag its power lever (or turn the wheel over it). A gas
+   engine turns its wheels at the same top speed (`speed` in the engine's data) at every step, as in Scrap
+   Mechanic: each step is an equal share of its torque, so step 1 pulls gently and saves gasoline, and the
+   top step climbs hills. On the Electric Engine the lever sets the speed instead and it always pulls with its
+   full torque. The bottom notch, Off, switches the engine off. Steps above LIMIT unlock
+   as you upgrade the engine, from the same menu (Upgrade, or U; 4, 6, 8 and 10 Component Kits). The menu also shows the gasoline in the
    tanks with what is left of the can burning now, the wheel speed in rpm, the top speed the power
    setting reaches, and the torque.
 7. **Drive.** Look at the seat and press E. Sitting down starts the engine; W and S are the throttle, A and
@@ -86,8 +88,8 @@ stops it whatever its controls do.
 
 ### Fuel
 
-A gas engine burns one gasoline from the creation's gas containers for every 40 s of full throttle
-(half throttle lasts twice as long). When the last one is gone it sputters and stops until you fill a
+A gas engine burns one gasoline from the creation's gas containers for every 40 s of full throttle at
+full power (half throttle or half power lasts twice as long; upgrades go further on each can). When the last one is gone it sputters and stops until you fill a
 container again. The Electric Engine draws batteries from Battery Containers the same way, and its upgrades go further on each pack. The Creation
 Inspector shows an engine's input, so you can tell an empty tank from a broken wire.
 
@@ -117,7 +119,7 @@ Settings are changed with E on the part; properties are fixed in the part's data
 |------|--------|----------|------------|
 | Driver's Seat, Scrap Driver's Seat | The driver's throttle, -1 to 1 | | `steer_angle` (°), `steer_speed` (rad/s), `steer_torque` (N·m) |
 | Passenger Seat, Scrap Seat | (none) | | |
-| Gas Engine, Scrap Gas Engine, Electric Engine | Its throttle while it runs | `gear` (Power, Speed on the Electric Engine) 1 to `gears` (3 on the Scrap Gas Engine, 5 to 13 on Gas Engine and Electric Engine 1 to 5), `on` (every engine needs it) | `speed` (rad/s at full power), `torque` and `brake` (N·m), `fuel` (item), `fuel_time` (s per item), `loop_parameter`, and the `ignition` timings |
+| Gas Engine, Scrap Gas Engine, Electric Engine | Its throttle while it runs | `gear` (Power, Speed on the Electric Engine) 1 to `gears` (3 on the Scrap Gas Engine, 5 to 13 on Gas Engine 1 to 5, 5 to 16 on Electric Engine 1 to 5), `on` (every engine needs it) | `speed` (rad/s at full throttle), `torque` and `brake` (N·m), `slider` (`power`: every step turns `speed` with its share of `torque`, as the gas engines; `speed`, the default: every step turns its share of `speed` with the full `torque`), `fuel` (item), `fuel_time` (s per item at full throttle and power), `loop_parameter`, and the `ignition` timings |
 | Logic Gate | 1 or 0 | `mode`: and, or, xor, nand, nor, xnor | |
 | Timer | Its input, `delay` seconds later; or on and off every `delay` while its input is on | `delay` (s), `mode` (once, repeat) | |
 | Sensor | 1 while something it detects is within `range` of its face | `range` (1 to 20 m), `players`, `bots`, `blocks`, `creations` | `interval` (steps between checks), `cone` (°) |

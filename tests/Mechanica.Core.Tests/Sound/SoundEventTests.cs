@@ -68,6 +68,16 @@ public class SoundEventTests
         Assert.Null(engine.FindParameter("speed"));
     }
 
+    [Theory]
+    [InlineData(1f, 1f)]
+    [InlineData(1.5f, 1.5f)]
+    [InlineData(0.1f, 0.25f)]
+    [InlineData(9f, 4f)]
+    [InlineData(float.NaN, 1f)]
+    [InlineData(float.PositiveInfinity, 1f)]
+    public void AScriptsPitchStaysWithinTwoOctaves(float asked, float played) =>
+        Assert.Equal(played, SoundEvent.ClampPitch(asked));
+
     [Fact]
     public void ALoopWithoutParametersIsUnchanged() =>
         Assert.Equal((1f, 0f), Event(new SoundEventDefinition { Id = "hum", Loop = true }).Shape(new Dictionary<string, float> { ["x"] = 5 }));

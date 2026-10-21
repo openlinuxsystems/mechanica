@@ -89,10 +89,15 @@ public partial class SawBladeTest : StagedTest
                 Check(Act(MotionActions.SetBearingTarget, new SetBearingTargetArgs(StandId, _bearing, 14f, 300f)).Ok, "the bearing turns the saw at 14 rad/s");
             if (LogDamage() <= 0 || _client.Main.Streamer.Effects.Bites == 0)
                 return frame > 600 && Fail($"the saw never cut ({Diagnose()})");
+            // The 7.5 kg blade is up to speed and biting within a few frames, so give the client's readout and glow
+            // the moment they take to follow.
+            var spin = _client.Main.Display.Readouts.Number(StandId, _saw, "spin");
+            var glow = _client.Main.Creations.NodeOf(StandId)?.FindChildren("HubGlow*", nameof(Node3D), true, false).OfType<Node3D>().FirstOrDefault();
+            if ((spin != 1f || glow is null || glow.Scale.X <= 0.9f) && frame < 120)
+                return false;
             Check(LogDamage() % 30f == 0, $"each bite takes 30, the felled-log rate ({LogDamage()})");
             Check(_host.Main.Streamer.Effects.Bites > 0, "the host shows the chips too");
-            Check(_client.Main.Display.Readouts.Number(StandId, _saw, "spin") == 1f, "the client knows it runs at cutting speed");
-            var glow = _client.Main.Creations.NodeOf(StandId)?.FindChildren("HubGlow*", nameof(Node3D), true, false).OfType<Node3D>().FirstOrDefault();
+            Check(spin == 1f, $"the client knows it runs at cutting speed ({spin})");
             Check(glow is not null && glow.Scale.X > 0.9f, $"the hub glow is full on the client ({glow?.Scale})");
             return true;
         });

@@ -276,12 +276,13 @@ public sealed class LogicScriptTests : IDisposable
         Steps(120);                                   // a false start (0.7 s) and the start (1 s) are over
         Assert.StartsWith("run_loop#", _runtime.Readouts.Text(Car, engine, "clip"));
         Assert.Equal(1f, _runtime.Readouts.Number(Car, engine, "running"));
-        // Gear 2 of 3 of 15 rad/s, uneven by up to 12 %, toward the engine's front.
+        // A gas engine's slider is its power: power 2 of 3 turns the full 15 rad/s (uneven by up to 12 %) toward the
+        // engine's front with 2/3 of its 240 N·m.
         foreach (var (bearing, side) in wheels.Take(2))
         {
             var motor = LastMotor(bearing);
-            Assert.Equal(240f, motor.MaxEffort);
-            Assert.InRange(-side * motor.Velocity!.Value, 10f * 0.87f, 10f * 1.13f);
+            Assert.Equal(160f, motor.MaxEffort);
+            Assert.InRange(-side * motor.Velocity!.Value, 15f * 0.87f, 15f * 1.13f);
         }
 
         Configure(creation, engine, "gear", 3);
@@ -290,6 +291,12 @@ public sealed class LogicScriptTests : IDisposable
         Steps(30);
         Assert.StartsWith("run_hard_loop#", _runtime.Readouts.Text(Car, engine, "clip"));
         Assert.Equal(1f, _runtime.Readouts.Number(Car, engine, "lever"));
+        foreach (var (bearing, side) in wheels.Take(2))
+        {
+            var motor = LastMotor(bearing);
+            Assert.Equal(240f, motor.MaxEffort);
+            Assert.InRange(-side * motor.Velocity!.Value, 15f * 0.87f, 15f * 1.13f);
+        }
 
         Configure(creation, engine, "on", false);
         Steps(1);
@@ -322,7 +329,7 @@ public sealed class LogicScriptTests : IDisposable
         Steps(10);
         Assert.Equal(1f, _runtime.Signals.Output(Car, engine));
         foreach (var (bearing, side) in wheels.Take(2))
-            Assert.InRange(-side * LastMotor(bearing).Velocity!.Value, 10f * 0.87f, 10f * 1.13f);
+            Assert.InRange(-side * LastMotor(bearing).Velocity!.Value, 15f * 0.87f, 15f * 1.13f);
 
         // Getting up (still holding W) stops it: the drive and the hum go, and it holds the wheels with its brake so the
         // parked car stays put.
@@ -415,7 +422,7 @@ public sealed class LogicScriptTests : IDisposable
     public void TheElectricEngineMustBeSwitchedOnAndItsUpgradesDriveMoreBearingsFaster()
     {
         var (creation, seat, engine, wheels, _) = BuildCar("vanilla:electric_engine", linked: 2);
-        // Electric Engine 1 drives two bearings; level 5 (upgrade 4) drives ten, with thirteen speed settings.
+        // Electric Engine 1 drives two bearings; level 5 (upgrade 4) drives ten, with sixteen speed settings.
         Assert.Equal("Electric Engine 1", creation.DefinitionOf(engine).Name);
         Assert.False(creation.TryLink(engine, wheels[2].Bearing, out _));
         // Switched off, sitting down does not start it.
@@ -438,7 +445,7 @@ public sealed class LogicScriptTests : IDisposable
         Assert.Equal("Electric Engine 5", creation.DefinitionOf(engine).Name);
         foreach (var (bearing, _) in wheels.Skip(2))
             Link(creation, engine, bearing);
-        Configure(creation, engine, "gear", 13);
+        Configure(creation, engine, "gear", 16);
         Steps(60);
         Assert.Equal(1f, _runtime.Readouts.Number(Car, engine, "lever"));
         Assert.StartsWith("run_hard_loop#", _runtime.Readouts.Text(Car, engine, "clip"));
@@ -511,11 +518,14 @@ public sealed class LogicScriptTests : IDisposable
         Configure(creation, engine, "on", true);
         Steps(60);                                    // the start is 0.8 s
         Assert.Equal(0, creation.InventoryOf(tank)!.Count("vanilla:gasoline"));
-        // Gear 3 of 5 of 25 rad/s, uneven by up to 3 %.
+        // Power 3 of 5: the full 25 rad/s, uneven by up to 3 %, with 3/5 of the torque.
         foreach (var (bearing, side) in wheels.Take(2))
-            Assert.InRange(-side * LastMotor(bearing).Velocity!.Value, 15f * 0.97f, 15f * 1.03f);
-        // properties.fuel_time is 40 s of full throttle per gasoline.
+            Assert.InRange(-side * LastMotor(bearing).Velocity!.Value, 25f * 0.97f, 25f * 1.03f);
+        // properties.fuel_time is 40 s of full throttle at full power per gasoline; at power 3 of 5 it burns 3/5 as
+        // fast, so the can lasts 66.7 s.
         Steps(40 * 60 + 5);
+        Assert.Equal(1f, _runtime.Signals.Output(Car, engine));
+        Steps(27 * 60);
         Assert.Equal(0f, _runtime.Signals.Output(Car, engine));
         // Out of fuel it holds the wheels with its brake.
         Assert.All(wheels.Take(2), w => Assert.Equal(0f, LastMotor(w.Bearing).Velocity));
@@ -542,7 +552,7 @@ public sealed class LogicScriptTests : IDisposable
         Assert.Equal(0f, _runtime.Readouts.Number(Car, engine, "fuel_items"));
         // The seat still drives it: a linked tank is not a control.
         foreach (var (bearing, side) in wheels.Take(2))
-            Assert.InRange(-side * LastMotor(bearing).Velocity!.Value, 15f * 0.97f, 15f * 1.03f);
+            Assert.InRange(-side * LastMotor(bearing).Velocity!.Value, 25f * 0.97f, 25f * 1.03f);
 
         // With only the tank linked in (no seat), the engine has no control, so it stops.
         _runtime.Seats!.Leave(Peer);
@@ -836,11 +846,11 @@ public sealed class LogicScriptTests : IDisposable
         Assert.Equal(1f, readouts.Number(Car, engine, "running"));
         Assert.Equal(2f, readouts.Number(Car, engine, "fuel_items"));
         Assert.InRange(readouts.Number(Car, engine, "fuel")!.Value, 0.9f, 1f);
-        Assert.Equal(360f, readouts.Number(Car, engine, "torque"));
+        Assert.Equal(216f, readouts.Number(Car, engine, "torque"));      // power 3 of 5 of 360 N·m
         Assert.True(readouts.Has(Car, engine, "rpm"));
-        Assert.Equal(143f, readouts.Number(Car, engine, "top_rpm"));   // power 3 of 5: 15 rad/s
+        Assert.Equal(239f, readouts.Number(Car, engine, "top_rpm"));   // every power step turns 25 rad/s
         foreach (var (bearing, side) in wheels.Take(2))
-            Assert.InRange(-side * readouts.Number(Car, bearing, "drive")!.Value, 15f * 0.97f, 15f * 1.03f);
+            Assert.InRange(-side * readouts.Number(Car, bearing, "drive")!.Value, 25f * 0.97f, 25f * 1.03f);
         Assert.Equal(1f, readouts.Number(Car, steering, "drive"));
 
         _input = null;

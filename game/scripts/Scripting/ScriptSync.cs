@@ -127,8 +127,11 @@ public partial class ScriptSync : Node, IScriptPhysics, IScriptSound
     }
 
     /// <inheritdoc/>
-    public string? Play(string sound, string ownerModId, System.Numerics.Vector3 position) =>
-        Sounds.Emit(sound, ownerModId, position.ToGodot()) ? null : $"there is no sound event '{sound}'";
+    public string? Play(string sound, string ownerModId, System.Numerics.Vector3 position) => Play(sound, ownerModId, position, 1f);
+
+    /// <inheritdoc/>
+    public string? Play(string sound, string ownerModId, System.Numerics.Vector3 position, float pitch) =>
+        Sounds.Emit(sound, ownerModId, position.ToGodot(), pitch) ? null : $"there is no sound event '{sound}'";
 
     /// <inheritdoc/>
     public int StartLoop(string sound, string ownerModId, int creation, int part, IReadOnlyDictionary<string, float>? parameters, out string? error)

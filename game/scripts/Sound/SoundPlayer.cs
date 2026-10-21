@@ -70,10 +70,11 @@ public partial class SoundPlayer : Node3D
     /// <summary>
     /// Plays an event. <paramref name="track"/>, when given, moves a positional voice each frame; null from it keeps the last place.
     /// A loop event plays on until stopped unless <paramref name="once"/>: one-shot callers (a bot's cry, a world sound) pass
-    /// it so a loop they fire plays its clip once and ends, rather than humming on where it was played.
+    /// it so a loop they fire plays its clip once and ends, rather than humming on where it was played. <paramref name="pitch"/>
+    /// scales this play's pitch on top of the event's own.
     /// </summary>
     public Voice? Play(SoundEvent sound, Vector3 position, Func<Vector3?>? track = null, IReadOnlyDictionary<string, float>? parameters = null,
-        bool once = false)
+        bool once = false, float pitch = 1f)
     {
         var playing = _voices.Where(v => v.Event == sound).ToList();
         switch (_limiter.Admit(sound, playing.Count, Now))
@@ -85,6 +86,8 @@ public partial class SoundPlayer : Node3D
                 break;
         }
         var roll = sound.Roll(_random);
+        if (pitch != 1f)
+            roll = roll with { Pitch = roll.Pitch * pitch };
         var loops = sound.Loop && !once;
         var stream = Stream(sound.Clips[roll.Clip], loops);
         if (stream is null)

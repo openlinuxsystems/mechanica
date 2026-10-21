@@ -216,7 +216,11 @@ public sealed class ContentScriptTests : IDisposable
         Assert.Empty(_sound.Loops);
         Activate(creation, button);
         Steps(60);
-        Assert.Single(_sound.Loops);
+        // Its pitch setting (5 of 9 plays as recorded) tunes the honk while it sounds.
+        Assert.Equal(5f, Assert.Single(_sound.Loops.Values).Parameters["pitch"]);
+        Configure(creation, horn, "pitch", 8);
+        Steps(1);
+        Assert.Equal(8f, Assert.Single(_sound.Loops.Values).Parameters["pitch"]);
         NoErrors();
     }
 

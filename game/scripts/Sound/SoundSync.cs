@@ -121,13 +121,16 @@ public partial class SoundSync : Node
 
     /// <summary>
     /// Plays a one-shot for everyone in earshot. On the host it plays here and is sent to clients near
-    /// <paramref name="position"/>; on a client it only plays here. False when the event is unknown.
+    /// <paramref name="position"/>; on a client it only plays here. <paramref name="pitch"/> scales its pitch (E4: a Horn
+    /// or a Scuttler Head note), within <see cref="SoundEvent.MinPitchScale"/> and <see cref="SoundEvent.MaxPitchScale"/>.
+    /// False when the event is unknown.
     /// </summary>
-    public bool Emit(string sound, string ownerModId, Vector3 position)
+    public bool Emit(string sound, string ownerModId, Vector3 position, float pitch = 1f)
     {
         if (Registry.Find(sound, ownerModId) is not { } e)
             return false;
-        Player.Play(e, position, once: true);
+        pitch = SoundEvent.ClampPitch(pitch);
+        Player.Play(e, position, once: true, pitch: pitch);
         Played?.Invoke(e, position);
         if (!Session.IsHost)
             return true;
@@ -136,7 +139,7 @@ public partial class SoundSync : Node
             if (e.Spatial && (!Players.Players.TryGetValue(peer, out var listener)
                     || !e.IsAudibleAt(listener.GlobalPosition.DistanceTo(position) - EarshotMargin)))
                 continue;
-            RpcId(peer, MethodName.ClientPlay, e.QualifiedId, position);
+            RpcId(peer, MethodName.ClientPlay, e.QualifiedId, position, pitch);
             Sent++;
         }
         return true;
@@ -205,11 +208,11 @@ public partial class SoundSync : Node
 
     /// <summary>Host → client: play a one-shot.</summary>
     [Rpc(MultiplayerApi.RpcMode.Authority, TransferMode = MultiplayerPeer.TransferModeEnum.Unreliable)]
-    private void ClientPlay(string sound, Vector3 position)
+    private void ClientPlay(string sound, Vector3 position, float pitch)
     {
         if (Session.State == NetSession.SessionState.Connected && Registry.Find(sound) is { } e)
         {
-            Player.Play(e, position, once: true);
+            Player.Play(e, position, once: true, pitch: SoundEvent.ClampPitch(pitch));
             Played?.Invoke(e, position);
         }
     }

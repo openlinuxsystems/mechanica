@@ -3,7 +3,7 @@
   "name": "Saw Blade",
   "description": "A toothed disc 5 blocks across. Put it on a bearing and spin it fast enough (an engine, or a controller at full speed) and its teeth and faces cut whatever they touch: trees of every size (the only tool that fells a Pine), logs, bots, other creations. Scuttlers and Rakehands balk at a spinning one.",
   "category": "interactive",
-  "mass": 30,
+  "mass": 7.5,
   "durability": 7,
   "friction": 0.2,
   "buoyancy": 0.1,

@@ -22,6 +22,12 @@ public sealed class SoundEvent
     /// <summary>Copies of one event that may play at once, when the data does not say.</summary>
     public const int DefaultMaxInstances = 8;
 
+    /// <summary>Lowest pitch scale a script may ask a one-shot for (two octaves down).</summary>
+    public const float MinPitchScale = 0.25f;
+
+    /// <summary>Highest pitch scale a script may ask a one-shot for (two octaves up).</summary>
+    public const float MaxPitchScale = 4f;
+
     /// <summary>
     /// Wraps a definition that already validated. The registry builds every loaded event this way; the
     /// Sound Event Binder uses it to preview an event before it is saved.
@@ -115,6 +121,12 @@ public sealed class SoundEvent
         var volume = VolumeDb + VolumeVariationDb * Spread(random);
         return new SoundVoice(clip, pitch, volume);
     }
+
+    /// <summary>
+    /// A pitch scale a script asked a one-shot for, kept within <see cref="MinPitchScale"/> and
+    /// <see cref="MaxPitchScale"/>; anything that is not a finite number plays as recorded (1).
+    /// </summary>
+    public static float ClampPitch(float scale) => float.IsFinite(scale) ? Math.Clamp(scale, MinPitchScale, MaxPitchScale) : 1f;
 
     /// <summary>The parameter called <paramref name="name"/>, or null.</summary>
     public SoundParameter? FindParameter(string name) => Parameters.FirstOrDefault(p => p.Name == name);

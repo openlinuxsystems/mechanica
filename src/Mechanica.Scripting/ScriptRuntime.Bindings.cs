@@ -188,7 +188,15 @@ public sealed partial class ScriptRuntime
                 at = h.State.Position;
             else
                 return Refused(instance, "the part is gone");
-            return Sound.Play(id, ModOf(instance), at) is { } error ? Refused(instance, error) : DynValue.True;
+            // Options: {pitch = scale}, 1 as recorded, 2 an octave up (E4).
+            var pitch = 1f;
+            if (args.Count > 2 && !args[2].IsNil())
+            {
+                var asked = args.AsType(2, "sound.play", DataType.Table).Table.Get("pitch");
+                if (!asked.IsNil())
+                    pitch = Mechanica.Core.Sound.SoundEvent.ClampPitch(LuaValues.Number(asked, "sound.play", 3));
+            }
+            return Sound.Play(id, ModOf(instance), at, pitch) is { } error ? Refused(instance, error) : DynValue.True;
         });
         Fn(sound, "start", args =>
         {

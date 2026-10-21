@@ -17,7 +17,7 @@ namespace Mechanica.Game.Tests;
 /// Sound, host plus clients (chunk 16, D10). Every vanilla clip must load through the runtime loaders.
 /// A client builds with its tools and both peers must hear what the host decided (place, smash, break,
 /// remove), while swings, sparks and refusals stay with the player who made them; a client out of earshot
-/// is not sent a sound. A loop on a part follows it on the client, takes parameter changes, reaches a late
+/// is not sent a sound. A one-shot asked for a pitch plays at it on both peers. A loop on a part follows it on the client, takes parameter changes, reaches a late
 /// joiner and stops when the part goes. Uses vanilla plus the fixture mod in <c>tests/sound/mods</c>.
 /// </summary>
 public partial class SoundTest : StagedTest
@@ -112,6 +112,25 @@ public partial class SoundTest : StagedTest
             if (frame == 10)
                 Check(_client.Main.Sounds.Player.Voices.Any(v => v.Event.QualifiedId == hum.QualifiedId && !v.Loops), "the client plays it once too");
             return frame > 10 && _host.Main.Sounds.Player.Voices.Concat(_client.Main.Sounds.Player.Voices).All(v => v.Event.QualifiedId != hum.QualifiedId);
+        });
+
+        // E4: a script's one-shot can ask for a pitch (a Horn, a Scuttler Head note); every peer plays it at that pitch.
+        Add("a one-shot asked an octave up plays an octave up on both peers", frame =>
+        {
+            var hit = _host.Main.SoundEvents!.Find("impact_metal")!;
+            bool Octave(SoundPlayer.Voice v) => Mathf.Abs(v.Roll.Pitch / 2f - 1) <= hit.PitchVariation + 1e-4f;
+            if (frame == 0)
+            {
+                Check(_host.Main.Sounds.Emit("impact_metal", Identifiers.VanillaModId, _client.Main.LocalPlayer!.GlobalPosition, 2f), "the host emits it at pitch 2");
+                var voice = _host.Main.Sounds.Player.Voices.LastOrDefault(v => v.Event == hit);
+                Check(voice is not null && Octave(voice), $"the host plays it an octave up ({voice?.Roll.Pitch:F3})");
+                return false;
+            }
+            var heard = _client.Main.Sounds.Player.Voices.LastOrDefault(v => v.Event.QualifiedId == hit.QualifiedId);
+            if (heard is null)
+                return frame > 60 && Check(false, "the client plays it");
+            Check(Octave(heard), $"the client plays it an octave up too ({heard.Roll.Pitch:F3})");
+            return true;
         });
 
         AddBuilding();

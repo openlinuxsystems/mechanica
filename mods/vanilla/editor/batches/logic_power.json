@@ -149,10 +149,12 @@
       "template": "engine",
       "set": {
         "name": "Gas Engine 1",
-        "description": "Turns the wheel bearings it is linked to toward its front, with a seat's throttle as its input: it runs while someone sits in a linked seat or a linked switch is on, and stays off with nothing linked. Burns gasoline from the creation's gas containers. Upgrade it in place with Component Kits (U) for more bearings, power steps, power and mileage.",
+        "description": "Turns the wheel bearings it is linked to toward its front, with a seat's throttle as its input: it runs while someone sits in a linked seat or a linked switch is on, and stays off with nothing linked. Every power step turns the wheels at the same speed and pulls harder; low power saves gasoline, which it burns from the creation's gas containers. Upgrade it in place with Component Kits (U) for more bearings, power steps, speed, power and mileage.",
         "mass": 12,
-        "durability": 6,
-        "stack_size": 5,
+        "durability": 4,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "stack_size": 1,
         "script": "scripts/engine.lua",
         "icon": "textures/items/gas_engine_1_icon.png",
         "logic": { "inputs": 4, "outputs": 2, "kind": "power" },
@@ -191,16 +193,16 @@
           ]
         },
         "properties": {
-          "speed": 25, "torque": 360, "brake": 240, "fuel": "gasoline", "fuel_time": 40, "loop_parameter": "load",
+          "speed": 25, "torque": 360, "brake": 240, "slider": "power", "fuel": "gasoline", "fuel_time": 40, "loop_parameter": "load",
           "gears": 5, "ignition": true, "start_time": 0.8, "false_start": 0, "false_start_time": 0.6, "stop_time": 0.6,
           "gear_time": 0.4, "heat_time": 0.4, "uneven": 0.03, "backfire": 0, "hard_gear": 4, "smoke": 0.35
         },
         "upgrades": [
           {
-            "cost": [{ "item": "component_kit", "count": 2 }],
+            "cost": [{ "item": "component_kit", "count": 4 }],
             "set": {
               "name": "Gas Engine 2",
-              "durability": 7,
+              "durability": 5,
               "mesh": "meshes/parts/gas_engine_2.glb",
               "icon": "textures/items/gas_engine_2_icon.png",
               "logic": { "outputs": 4 },
@@ -220,10 +222,10 @@
             }
           },
           {
-            "cost": [{ "item": "component_kit", "count": 4 }],
+            "cost": [{ "item": "component_kit", "count": 6 }],
             "set": {
               "name": "Gas Engine 3",
-              "durability": 8,
+              "durability": 6,
               "mesh": "meshes/parts/gas_engine_3.glb",
               "icon": "textures/items/gas_engine_3_icon.png",
               "logic": { "outputs": 6 },
@@ -243,10 +245,10 @@
             }
           },
           {
-            "cost": [{ "item": "component_kit", "count": 6 }],
+            "cost": [{ "item": "component_kit", "count": 8 }],
             "set": {
               "name": "Gas Engine 4",
-              "durability": 9,
+              "durability": 7,
               "mesh": "meshes/parts/gas_engine_4.glb",
               "icon": "textures/items/gas_engine_4_icon.png",
               "logic": { "outputs": 8 },
@@ -263,14 +265,14 @@
                   { "readout": "smoke", "kind": "smoke", "offset": [0.13, 0.244, 0.165] }
                 ]
               },
-              "properties": { "speed": 49, "torque": 980, "brake": 600, "fuel_time": 135, "gears": 11, "hard_gear": 8, "smoke": 0.8 }
+              "properties": { "speed": 49, "torque": 980, "brake": 600, "fuel_time": 120, "gears": 11, "hard_gear": 8, "smoke": 0.8 }
             }
           },
           {
-            "cost": [{ "item": "component_kit", "count": 8 }],
+            "cost": [{ "item": "component_kit", "count": 10 }],
             "set": {
               "name": "Gas Engine 5",
-              "durability": 10,
+              "durability": 8,
               "mesh": "meshes/parts/gas_engine_5.glb",
               "icon": "textures/items/gas_engine_5_icon.png",
               "logic": { "outputs": 10 },
@@ -289,7 +291,7 @@
                   { "readout": "sparks", "kind": "sparks", "offset": [0.0, 0.244, 0.165] }
                 ]
               },
-              "properties": { "speed": 57, "torque": 1300, "brake": 800, "fuel_time": 202.5, "gears": 13, "hard_gear": 10, "smoke": 1.0 }
+              "properties": { "speed": 57, "torque": 1300, "brake": 800, "fuel_time": 200, "gears": 13, "hard_gear": 10, "smoke": 1.0 }
             }
           }
         ]
@@ -300,12 +302,13 @@
           "id": "gas_engine",
           "stations": ["fabricator"],
           "inputs": [
-            { "item": "scrap_metal_block", "count": 24 },
-            { "item": "component_kit", "count": 3 },
-            { "item": "circuit_board", "count": 1 }
+            { "item": "metal_block", "count": 20 },
+            { "item": "component_kit", "count": 5 },
+            { "item": "circuit_board", "count": 1 },
+            { "item": "crude_oil", "count": 5 }
           ],
           "outputs": [{ "item": "gas_engine", "count": 1 }],
-          "time": 12,
+          "time": 30,
           "order": 820
         }
       ]
@@ -373,9 +376,11 @@
         "logic": { "inputs": 4, "outputs": 2, "kind": "power" },
         "name": "Electric Engine 1",
         "description": "Turns the wheel bearings it is linked to toward its front, with a seat's throttle as its input: it runs while someone sits in a linked seat or a linked switch is on, and stays off with nothing linked. Its slider sets the speed; it pulls hard at any speed. Draws batteries from the creation's Battery Containers. Upgrade it in place with Component Kits (U) for more bearings, speed settings and mileage.",
-        "mass": 9,
-        "durability": 6,
-        "stack_size": 5,
+        "mass": 10.5,
+        "durability": 5,
+        "friction": 0.7,
+        "buoyancy": 0.5,
+        "stack_size": 1,
         "icon": "textures/items/electric_engine_1_icon.png",
         "visual": { "color": "#ffffff", "roughness": null, "metallic": null },
         "settings": [
@@ -410,16 +415,16 @@
         },
         "sounds": { "start": "electric_start", "loop": "electric_whirr", "stop": "battery_drain", "sputter": "battery_drain", "rev": "electric_whirr" },
         "properties": {
-          "speed": 20, "torque": 300, "brake": 225, "fuel": "battery_pack", "fuel_time": 90, "loop_parameter": "speed",
+          "speed": 20, "torque": 300, "brake": 225, "slider": "speed", "fuel": "battery_pack", "fuel_time": 90, "loop_parameter": "speed",
           "gears": 5, "ignition": true, "start_time": 0.6, "false_start": 0, "false_start_time": 0.5, "stop_time": 0.4,
           "gear_time": 0.3, "heat_time": 0.3, "uneven": 0, "backfire": 0, "hard_gear": 4, "smoke": 0
         },
         "upgrades": [
           {
-            "cost": [{ "item": "component_kit", "count": 2 }],
+            "cost": [{ "item": "component_kit", "count": 4 }],
             "set": {
               "name": "Electric Engine 2",
-              "durability": 7,
+              "durability": 6,
               "mesh": "meshes/parts/electric_engine_2.glb",
               "icon": "textures/items/electric_engine_2_icon.png",
               "logic": { "outputs": 4 },
@@ -433,10 +438,10 @@
             }
           },
           {
-            "cost": [{ "item": "component_kit", "count": 4 }],
+            "cost": [{ "item": "component_kit", "count": 6 }],
             "set": {
               "name": "Electric Engine 3",
-              "durability": 8,
+              "durability": 7,
               "mesh": "meshes/parts/electric_engine_3.glb",
               "icon": "textures/items/electric_engine_3_icon.png",
               "logic": { "outputs": 6 },
@@ -455,10 +460,10 @@
             }
           },
           {
-            "cost": [{ "item": "component_kit", "count": 6 }],
+            "cost": [{ "item": "component_kit", "count": 8 }],
             "set": {
               "name": "Electric Engine 4",
-              "durability": 9,
+              "durability": 8,
               "mesh": "meshes/parts/electric_engine_4.glb",
               "icon": "textures/items/electric_engine_4_icon.png",
               "logic": { "outputs": 8 },
@@ -477,16 +482,16 @@
             }
           },
           {
-            "cost": [{ "item": "component_kit", "count": 8 }],
+            "cost": [{ "item": "component_kit", "count": 10 }],
             "set": {
               "name": "Electric Engine 5",
-              "durability": 10,
+              "durability": 9,
               "mesh": "meshes/parts/electric_engine_5.glb",
               "icon": "textures/items/electric_engine_5_icon.png",
               "logic": { "outputs": 10 },
               "settings": [
                 {
-                  "id": "gear", "name": "Speed", "type": "number", "min": 1, "max": 13, "step": 1, "default": 7
+                  "id": "gear", "name": "Speed", "type": "number", "min": 1, "max": 16, "step": 1, "default": 8
                 },
                 { "id": "on", "name": "On", "type": "toggle", "default": true }
               ],
@@ -497,7 +502,7 @@
                   { "readout": "sparks", "kind": "sparks", "offset": [-0.248, 0.0, 0.1], "color": "#7fc4ff" }
                 ]
               },
-              "properties": { "speed": 57, "fuel_time": 456, "gears": 13, "hard_gear": 10 }
+              "properties": { "speed": 57, "fuel_time": 456, "gears": 16, "hard_gear": 12 }
             }
           }
         ]
@@ -508,12 +513,13 @@
           "id": "electric_engine",
           "stations": ["fabricator"],
           "inputs": [
-            { "item": "scrap_metal_block", "count": 16 },
-            { "item": "component_kit", "count": 2 },
-            { "item": "circuit_board", "count": 3 }
+            { "item": "metal_block_2", "count": 20 },
+            { "item": "battery_pack", "count": 5 },
+            { "item": "circuit_board", "count": 10 },
+            { "item": "component_kit", "count": 5 }
           ],
           "outputs": [{ "item": "electric_engine", "count": 1 }],
-          "time": 12,
+          "time": 90,
           "order": 830
         }
       ]
@@ -625,6 +631,11 @@
       "set": {
         "name": "Logic Gate",
         "description": "Turns its inputs into one on or off output: and, or, xor, nand, nor or xnor. E switches to the next.",
+        "mass": 3,
+        "durability": 3,
+        "friction": 0.5,
+        "buoyancy": 0.2,
+        "flammable": false,
         "stack_size": 20,
         "script": "scripts/logic_gate.lua",
         "visual": { "color": "#d9d2c3", "roughness": 0.5, "metallic": 0.2 },
@@ -655,9 +666,13 @@
         {
           "id": "logic_gate",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "component_kit", "count": 1 }, { "item": "circuit_board", "count": 1 }],
+          "inputs": [
+            { "item": "metal_block", "count": 1 },
+            { "item": "circuit_board", "count": 1 },
+            { "item": "glue", "count": 1 }
+          ],
           "outputs": [{ "item": "logic_gate", "count": 1 }],
-          "time": 3,
+          "time": 20,
           "order": 1230
         }
       ]
@@ -668,6 +683,11 @@
       "set": {
         "name": "Timer",
         "description": "Passes its input on after a delay you set, once, or blinks on and off every delay while its input is on (E).",
+        "mass": 4.5,
+        "durability": 3,
+        "friction": 0.5,
+        "buoyancy": 0.4,
+        "flammable": false,
         "stack_size": 20,
         "script": "scripts/timer.lua",
         "visual": { "color": "#c9b25a", "roughness": 0.5, "metallic": 0.2 },
@@ -694,9 +714,13 @@
         {
           "id": "timer",
           "stations": ["fabricator"],
-          "inputs": [{ "item": "component_kit", "count": 1 }, { "item": "circuit_board", "count": 1 }],
+          "inputs": [
+            { "item": "metal_block", "count": 2 },
+            { "item": "circuit_board", "count": 2 },
+            { "item": "glue", "count": 1 }
+          ],
           "outputs": [{ "item": "timer", "count": 1 }],
-          "time": 3,
+          "time": 45,
           "order": 1240
         }
       ]
