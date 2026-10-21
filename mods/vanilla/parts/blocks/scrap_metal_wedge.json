@@ -17,7 +17,7 @@
     "roughness": 0.42,
     "metallic": 0.7,
     "texture": "textures/blocks/scrap_metal.png",
-    "texture_span": 8
+    "texture_span": 4
   },
   "collision": {
     "shape": "convex",

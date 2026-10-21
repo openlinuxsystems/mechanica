@@ -16,7 +16,8 @@
     "color": "#d4d4d4",
     "roughness": 0.95,
     "metallic": 0,
-    "texture": "textures/blocks/concrete.png"
+    "texture": "textures/blocks/concrete.png",
+    "texture_span": 4
   },
   "collision": {
     "shape": "convex",

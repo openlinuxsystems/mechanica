@@ -8,7 +8,6 @@ Everything is made in numpy from seeded noise, so the output is the same on ever
   the chart of its dominant normal and its UVs are its vertices projected onto that chart. ``bake`` evaluates a
   surface function on every chart's texels and writes the albedo (with a painted light baked in from the height
   field), a tangent-space normal map from the same height and, for the metal-rich variants, a metallic-roughness map.
-* ``scrap_stone_tile`` is the 2D, seamlessly tiling Scrap Stone Block texture (periodic Voronoi and FFT noise).
 
 Colours are sRGB in [0, 1]; heights are in metres.
 """
@@ -548,69 +547,3 @@ def fbm2(seed, base, size, octaves=4):
         amp *= 0.5
     return total / norm
 
-
-def scrap_stone_tile(size=512, seed=4242):
-    """Rough rubble: irregular grey-brown stones packed in dark gritty mortar, lit from the top left.
-
-    Periodic everywhere: the stone centres are a jittered grid wrapped on a torus (each cell sees the 3 x 3
-    neighbouring copies) and every noise is FFT-filtered, so the left/right and top/bottom edges meet exactly."""
-    rng = np.random.default_rng(seed)
-    g = 6
-    pts = []
-    for i in range(g):
-        for j in range(g):
-            pts.append(((i + 0.5 + rng.uniform(-0.4, 0.4)) / g, (j + 0.5 + rng.uniform(-0.4, 0.4)) / g))
-    pts = np.array(pts)
-    weight = rng.uniform(0.0, 1.0, len(pts)) ** 2 * 0.006     # power diagram: some stones big, some small
-    tone = rng.uniform(0, 1, len(pts))
-    warm = rng.uniform(0, 1, len(pts))
-    tiles = np.concatenate([pts + np.array([dx, dy]) for dx in (-1, 0, 1) for dy in (-1, 0, 1)])
-    ids = np.tile(np.arange(len(pts)), 9)
-    wt = weight[ids]
-    yy, xx = (np.mgrid[0:size, 0:size] + 0.5) / size
-    wx = fnoise2(seed + 1, 6.0, size) * 0.022 + fnoise2(seed + 2, 24.0, size) * 0.006
-    wy = fnoise2(seed + 3, 6.0, size) * 0.022 + fnoise2(seed + 4, 24.0, size) * 0.006
-    q = np.stack([(xx + wx).ravel(), (yy + wy).ravel()], -1)
-    d2 = ((q[:, None, :] - tiles[None]) ** 2).sum(-1) - wt[None]
-    i1 = d2.argmin(1)
-    r = np.arange(len(q))
-    dist = np.linalg.norm(tiles[:, None] - tiles[None], axis=-1)
-    np.fill_diagonal(dist, np.inf)
-    e = (d2 - d2[r, i1][:, None]) / (2 * dist[i1])
-    e[r, i1] = np.inf
-    edge = e.min(1).reshape(size, size)
-    cell = ids[i1].reshape(size, size)
-
-    gap = 0.011
-    stone = smoothstep(gap * 0.6, gap * 1.4, edge)
-    dome = smoothstep(gap, gap + 0.045, edge) * (0.85 + 0.15 * smoothstep(gap, gap + 0.12, edge))
-    bumps = fbm2(seed + 14, 10.0, size, 3)
-    grain = fbm2(seed + 10, 40.0, size, 3)
-    mottle = fbm2(seed + 11, 8.0, size, 3)
-    pits = smoothstep(0.62, 0.8, fnoise2(seed + 12, 120.0, size))
-    grit = fnoise2(seed + 13, 160.0, size)
-
-    t = np.clip(0.25 + 0.5 * tone[cell] + 0.25 * mottle, 0, 1)
-    lo, hi = srgb("#6e6a63"), srgb("#aca699")
-    col = lo + (hi - lo) * t[..., None]
-    col = col + (srgb("#9a8c72") - col) * (0.35 * warm[cell] * smoothstep(-0.2, 0.5, mottle))[..., None]
-    col = col * (1 + 0.07 * grain)[..., None] * (1 - 0.25 * pits)[..., None]
-    mortar = srgb("#47433d") * (1 + 0.25 * grit)[..., None]
-    height = dome * 0.75 + 0.12 * bumps * dome + 0.04 * grain - 0.1 * pits
-    height = height * stone + (0.08 * grit) * (1 - stone)
-    height = gauss2(height, 2.5)                    # softens the creases the distance field leaves at corners
-
-    # light from the top left, from the height field (np.roll keeps the tiling)
-    k = 6.0
-    dx = (np.roll(height, -1, 1) - np.roll(height, 1, 1)) * k
-    dy = (np.roll(height, -1, 0) - np.roll(height, 1, 0)) * k
-    nrm = np.stack([-dx, dy, np.ones_like(height)], -1)
-    nrm /= np.linalg.norm(nrm, axis=-1, keepdims=True)
-    L = np.array([-0.45, 0.55, 0.7])
-    L /= np.linalg.norm(L)
-    lit = nrm @ L - L[2]
-    col = col * (1 + 0.7 * lit)[..., None]
-    col = col + (srgb("#c4baa2") - col) * np.clip(lit * 1.6, 0, 0.45)[..., None]
-    col = col * (0.72 + 0.28 * np.clip(dome * 1.6, 0, 1))[..., None]      # occlusion toward the gaps
-    col = col * stone[..., None] + mortar * (1 - stone[..., None])
-    return np.clip(col, 0, 1)
