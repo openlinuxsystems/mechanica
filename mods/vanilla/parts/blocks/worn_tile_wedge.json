@@ -1,0 +1,26 @@
+{
+  "id": "worn_tile_wedge",
+  "name": "Worn Tile Wedge",
+  "description": "Worn Tile Block cut on the diagonal. Same material, half the mass.",
+  "category": "block",
+  "mass": 5.25,
+  "durability": 3,
+  "friction": 0.4,
+  "buoyancy": 0.3,
+  "flammable": false,
+  "stack_size": 256,
+  "sound_material": "tile",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/worn_tile_wedge.glb",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.35,
+    "metallic": 0,
+    "texture": "textures/blocks/worn_tile.png",
+    "texture_span": 2
+  },
+  "collision": {
+    "shape": "convex",
+    "mesh": "meshes/blocks/worn_tile_wedge.glb"
+  }
+}

@@ -29,7 +29,7 @@ public class VanillaCatalogTests
         // Resources, consumables, handheld weapons (produce_crate is left out for now)
         "component_kit", "circuit_board", "glue", "gasoline", "crude_oil", "battery_pack",
         "master_battery", "warehouse_key", "explosive_remnant", "scuttler_head", "carrot_seed", "potato_seed", "tomato_seed",
-        "carrot", "potato", "tomato", "water_bucket", "glowstick", "popper", "potato_blaster", "potato_scattergun",
+        "cotton_seed", "carrot", "potato", "tomato", "cotton", "beeswax", "ember", "water_bucket", "glowstick", "popper", "potato_blaster", "potato_scattergun",
         "potato_launcher",
         // World / farming parts
         "soil_bag",

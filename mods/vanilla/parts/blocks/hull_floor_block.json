@@ -1,0 +1,22 @@
+{
+  "id": "hull_floor_block",
+  "name": "Hull Floor Block",
+  "description": "Deck plating with raised anti-slip bars, made to go with Hull Plate.",
+  "category": "block",
+  "mass": 6,
+  "durability": 4,
+  "friction": 0.5,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "stack_size": 256,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/hull_floor_block.glb",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.45,
+    "metallic": 0.75,
+    "texture": "textures/blocks/hull_floor.png",
+    "texture_span": 2
+  }
+}

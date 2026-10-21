@@ -1,0 +1,20 @@
+{
+  "id": "square_mesh_wedge",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "square_mesh_block",
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "item": "square_mesh_wedge",
+      "count": 1
+    }
+  ],
+  "time": 2,
+  "order": 140
+}

@@ -1,0 +1,27 @@
+{
+  "id": "ice_wedge",
+  "name": "Ice Wedge",
+  "description": "Ice Block cut on the diagonal. Same material, half the mass.",
+  "category": "block",
+  "mass": 2.25,
+  "durability": 1,
+  "friction": 0.1,
+  "buoyancy": 0.5,
+  "flammable": false,
+  "stack_size": 500,
+  "sound_material": "glass",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/ice_wedge.glb",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.08,
+    "metallic": 0,
+    "opacity": 0.9,
+    "texture": "textures/blocks/ice.png",
+    "texture_span": 2
+  },
+  "collision": {
+    "shape": "convex",
+    "mesh": "meshes/blocks/ice_wedge.glb"
+  }
+}

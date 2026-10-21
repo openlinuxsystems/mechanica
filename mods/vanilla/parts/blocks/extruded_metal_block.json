@@ -1,0 +1,22 @@
+{
+  "id": "extruded_metal_block",
+  "name": "Extruded Metal Block",
+  "description": "Steel pressed into long profiles. Lighter and cheaper than Metal Block 1, and less tough.",
+  "category": "block",
+  "mass": 4.5,
+  "durability": 4,
+  "friction": 0.4,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "stack_size": 256,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/extruded_metal_block.glb",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.4,
+    "metallic": 0.8,
+    "texture": "textures/blocks/extruded_metal.png",
+    "texture_span": 2
+  }
+}

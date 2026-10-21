@@ -1,0 +1,20 @@
+{
+  "id": "square_mesh_block",
+  "stations": [
+    "fabricator"
+  ],
+  "inputs": [
+    {
+      "item": "net_block",
+      "count": 10
+    }
+  ],
+  "outputs": [
+    {
+      "item": "square_mesh_block",
+      "count": 10
+    }
+  ],
+  "time": 5,
+  "order": 139
+}

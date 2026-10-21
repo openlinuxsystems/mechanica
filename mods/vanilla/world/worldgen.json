@@ -156,6 +156,7 @@
         { "object": "spruce_tree", "spacing": 12.0, "chance": 0.4, "cluster": { "layer": "forest_clearings", "scale": 120.0, "cover": 0.78 } },
         { "object": "birch_tree", "spacing": 18.0, "chance": 0.15, "cluster": { "layer": "forest_clearings", "scale": 120.0, "cover": 0.78, "outside": 0.15 } },
         { "object": "large_rock", "spacing": 30.0, "chance": 0.15 },
+        { "object": "scene_rock_hive", "spacing": 80.0, "chance": 0.3 },
         { "object": "fallen_log", "spacing": 22.0, "chance": 0.2, "cluster": { "layer": "forest_clearings", "scale": 120.0, "cover": 0.78, "outside": 0.3 } },
         { "object": "bush", "spacing": 9.0, "chance": 0.25 },
         { "object": "lily_pad_cluster", "spacing": 10.0, "chance": 0.6, "water": "surface", "cluster": { "layer": "lilies", "scale": 30.0, "cover": 0.35 } },
@@ -310,10 +311,12 @@
         { "object": "spruce_tree", "spacing": 30.0, "chance": 0.15, "cluster": { "layer": "autumn_clearings", "scale": 110.0, "cover": 0.8 } },
         { "object": "fallen_log", "spacing": 22.0, "chance": 0.2, "cluster": { "layer": "autumn_clearings", "scale": 110.0, "cover": 0.8, "outside": 0.3 } },
         { "object": "large_rock", "spacing": 34.0, "chance": 0.15 },
+        { "object": "scene_rock_hive", "spacing": 70.0, "chance": 0.4 },
         { "object": "bush", "spacing": 12.0, "chance": 0.2 },
         { "object": "lily_pad_cluster", "spacing": 10.0, "chance": 0.6, "water": "surface", "cluster": { "layer": "lilies", "scale": 30.0, "cover": 0.35 } },
         { "object": "reed_bed", "spacing": 9.0, "chance": 0.5, "water": "shallows", "cluster": { "layer": "reeds", "scale": 24.0, "cover": 0.45, "outside": 0.1 } },
-        { "object": "cattail_clump", "spacing": 5.0, "chance": 0.45, "water": "shallows", "cluster": { "layer": "reeds", "scale": 24.0, "cover": 0.45, "outside": 0.15 } }
+        { "object": "cattail_clump", "spacing": 5.0, "chance": 0.45, "water": "shallows", "cluster": { "layer": "reeds", "scale": 24.0, "cover": 0.45, "outside": 0.15 } },
+        { "object": "wild_cotton", "spacing": 18.0, "chance": 0.25 }
       ],
       "flora": [
         { "kind": "grass", "density": 1.2, "coverage": 0.6, "patch_size": 10.0, "scale": [0.8, 1.3], "colors": ["#b8a03a", "#c88a32", "#a6a23c"] },
@@ -889,6 +892,42 @@
       "sink": 0.2
     },
     {
+      // The rock a wild beehive clings to (scene_rock_hive): a large rock at one fixed size, so the hive sits on its side.
+      "id": "hive_rock",
+      "collider": { "shape": "sphere", "radius": 1.1, "at": [0.0, 0.7, 0.0] },
+      "pieces": [{ "shape": "sphere", "radius": 1.1, "at": [0.0, 0.7, 0.0], "color": "#85837c" }],
+      "footprint": 1.4,
+      "sink": 0.2
+    },
+    {
+      // A wild beehive on a rock's side (tools/beeswax/build_beeswax.py): open comb hangs from a wax band against the rock at -X,
+      // 0.6 to 1.25 m up. Break it for Beeswax.
+      "id": "rock_beehive",
+      "collider": { "shape": "sphere", "radius": 0.36, "at": [0.2, 0.93, 0.0] },
+      "mesh": { "file": "meshes/world/props/rock_beehive.glb" },
+      "solid": false,
+      "footprint": 0.3,
+      "sink": 0.0,
+      "health": 10.0,
+      "damage_from": ["sledge", "saw", "explosion", "weapon"],
+      "drops": [{ "item": "beeswax", "count": 1, "count_max": 2 }]
+    },
+    {
+      // Wild cotton in the Autumn Forest (tools/food/build_cotton.py): press Use to pick 1 or 2 Cotton, sometimes a
+      // Cotton Seed; the bolls grow back half an hour of world time later.
+      "id": "wild_cotton",
+      "collider": { "shape": "sphere", "radius": 0.45, "at": [0.0, 0.4, 0.0] },
+      "mesh": { "file": "meshes/world/props/wild_cotton.glb" },
+      "solid": false,
+      "footprint": 0.8,
+      "scale": [0.85, 1.15],
+      "sink": 0.05,
+      "damage_from": [],
+      "harvest": true,
+      "drops": [{ "item": "cotton", "count": 1, "count_max": 2 }, { "item": "cotton_seed", "count": 1, "chance": 0.4 }],
+      "regrow": 1800.0
+    },
+    {
       "id": "small_rock",
       "collider": { "shape": "sphere", "radius": 0.45, "at": [0.0, 0.25, 0.0] },
       "pieces": [{ "shape": "sphere", "radius": 0.45, "at": [0.0, 0.25, 0.0], "color": "#8d8b84" }],
@@ -1309,6 +1348,17 @@
     // Scenes: little set pieces that fill the land between places (a settler camp, a fence line, a Colony pipe run).
     // Each scattered spot lays out one of its layouts' pieces round it, turned with the scene; see
     // docs/world-generation.md (Scenes).
+    {
+      // A large rock with a wild beehive on its side (Beeswax).
+      "id": "scene_rock_hive",
+      "footprint": 1.8,
+      "max_slope": 0.15,
+      "scene": {
+        "layouts": [
+          { "pieces": [{ "object": "hive_rock", "at": [0.0, 0.0] }, { "object": "rock_beehive", "at": [1.02, 0.0] }] }
+        ]
+      }
+    },
     {
       "id": "scene_settler_camp",
       "footprint": 9.0,

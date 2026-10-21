@@ -1,0 +1,25 @@
+{
+  "id": "punched_steel_wedge",
+  "name": "Punched Steel Wedge",
+  "description": "Punched Steel Block cut on the diagonal. Same material, half the mass.",
+  "category": "block",
+  "mass": 2.25,
+  "durability": 4,
+  "friction": 0.4,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "stack_size": 256,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/punched_steel_wedge.glb",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.45,
+    "metallic": 0.75,
+    "texture": "textures/blocks/punched_steel.png"
+  },
+  "collision": {
+    "shape": "convex",
+    "mesh": "meshes/blocks/punched_steel_wedge.glb"
+  }
+}

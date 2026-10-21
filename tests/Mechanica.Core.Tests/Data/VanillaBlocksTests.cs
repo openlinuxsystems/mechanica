@@ -23,17 +23,22 @@ public class VanillaBlocksTests
         { "bubble_plastic_block", "bubble_plastic_wedge", "plastic", 256 }, { "cardboard_block", "cardboard_wedge", "cardboard", 256 },
         { "carpet_block", "carpet_wedge", "fabric", 500 }, { "concrete_block", "concrete_wedge", "concrete", 500 },
         { "concrete_block_2", "concrete_wedge_2", "concrete", 256 }, { "concrete_block_3", "concrete_wedge_3", "concrete", 256 },
-        { "diamond_plate_block", "diamond_plate_wedge", "metal", 256 }, { "glass_block", "glass_wedge", "glass", 256 },
-        { "glass_tile_block", "glass_tile_wedge", "glass", 256 }, { "hull_plate_block", "hull_plate_wedge", "metal", 500 },
-        { "insulation_block", "insulation_wedge", "fabric", 256 }, { "metal_block", "metal_wedge", "metal", 500 },
-        { "metal_block_2", "metal_wedge_2", "metal", 500 }, { "metal_block_3", "metal_wedge_3", "metal", 500 },
-        { "net_block", "net_wedge", "fabric", 256 }, { "path_light_block", "path_light_wedge", "glass", 256 },
+        { "diamond_plate_block", "diamond_plate_wedge", "metal", 256 }, { "extruded_metal_block", "extruded_metal_wedge", "metal", 256 },
+        { "glass_block", "glass_wedge", "glass", 256 }, { "glass_tile_block", "glass_tile_wedge", "glass", 256 },
+        { "hull_floor_block", "hull_floor_wedge", "metal", 256 }, { "hull_plate_block", "hull_plate_wedge", "metal", 500 },
+        { "ice_block", "ice_wedge", "glass", 500 }, { "insulation_block", "insulation_wedge", "fabric", 256 },
+        { "metal_block", "metal_wedge", "metal", 500 }, { "metal_block_2", "metal_wedge_2", "metal", 500 },
+        { "metal_block_3", "metal_wedge_3", "metal", 500 }, { "net_block", "net_wedge", "fabric", 256 },
+        { "painted_wall_block", "painted_wall_wedge", "concrete", 256 }, { "path_light_block", "path_light_wedge", "glass", 256 },
         { "plaster_block", "plaster_wedge", "concrete", 256 }, { "plastic_block", "plastic_wedge", "plastic", 500 },
-        { "rusted_metal_block", "rusted_metal_wedge", "metal", 256 }, { "sand_block", "sand_wedge", "concrete", 500 },
-        { "scrap_metal_block", "scrap_metal_wedge", "scrap", 256 }, { "scrap_stone_block", "scrap_stone_wedge", "concrete", 500 },
-        { "scrap_wood_block", "scrap_wood_wedge", "scrap", 500 }, { "tile_block", "tile_wedge", "tile", 500 },
+        { "punched_steel_block", "punched_steel_wedge", "metal", 256 }, { "rusted_metal_block", "rusted_metal_wedge", "metal", 256 },
+        { "sand_block", "sand_wedge", "concrete", 500 }, { "scrap_metal_block", "scrap_metal_wedge", "scrap", 256 },
+        { "scrap_stone_block", "scrap_stone_wedge", "concrete", 500 }, { "scrap_wood_block", "scrap_wood_wedge", "scrap", 500 },
+        { "solid_net_block", "solid_net_wedge", "metal", 256 }, { "square_mesh_block", "square_mesh_wedge", "metal", 256 },
+        { "striped_net_block", "striped_net_wedge", "metal", 256 }, { "tile_block", "tile_wedge", "tile", 500 },
         { "wood_block", "wood_wedge", "wood", 500 }, { "wood_block_2", "wood_wedge_2", "wood", 500 },
-        { "wood_block_3", "wood_wedge_3", "wood", 500 },
+        { "wood_block_3", "wood_wedge_3", "wood", 500 }, { "worn_metal_block", "worn_metal_wedge", "metal", 256 },
+        { "worn_tile_block", "worn_tile_wedge", "tile", 256 },
     };
 
     public static TheoryData<string, string> Pairs
@@ -62,26 +67,36 @@ public class VanillaBlocksTests
         { "concrete_block_2", 12f, 6, 0.6f, 0.5f, false },
         { "concrete_block_3", 13.5f, 7, 0.6f, 0.5f, false },
         { "diamond_plate_block", 7.5f, 5, 0.6f, 0.2f, false },
+        { "extruded_metal_block", 4.5f, 4, 0.4f, 0.1f, false },
         { "glass_block", 4.5f, 1, 0.3f, 0.5f, false },
         { "glass_tile_block", 4.5f, 1, 0.3f, 0.5f, false },
+        { "hull_floor_block", 6f, 4, 0.5f, 0.1f, false },
         { "hull_plate_block", 7.5f, 7, 0.4f, 0.5f, false },
+        { "ice_block", 4.5f, 1, 0.1f, 0.5f, false },
         { "insulation_block", 3f, 2, 0.5f, 0.6f, true },
         { "metal_block", 7.5f, 5, 0.4f, 0.4f, false },
         { "metal_block_2", 7.5f, 7, 0.4f, 0.5f, false },
         { "metal_block_3", 7.5f, 8, 0.4f, 0.6f, false },
         { "net_block", 3f, 3, 0.3f, 0.1f, false },
+        { "painted_wall_block", 7.5f, 4, 0.6f, 0.1f, false },
         { "path_light_block", 7.5f, 5, 0.5f, 0.2f, false },
         { "plaster_block", 6f, 3, 0.5f, 0.3f, false },
         { "plastic_block", 6f, 2, 0.4f, 0.7f, false },
+        { "punched_steel_block", 4.5f, 4, 0.4f, 0.1f, false },
         { "rusted_metal_block", 6f, 2, 0.5f, 0.8f, false },
         { "sand_block", 9f, 1, 0.4f, 0.1f, false },
         { "scrap_metal_block", 7.5f, 3, 0.4f, 0.2f, false },
         { "scrap_stone_block", 9f, 3, 0.6f, 0.5f, false },
         { "scrap_wood_block", 3f, 2, 0.4f, 0.4f, true },
+        { "solid_net_block", 4.5f, 5, 0.4f, 0.1f, false },
+        { "square_mesh_block", 3f, 3, 0.2f, 0.2f, false },
+        { "striped_net_block", 4.5f, 4, 0.4f, 0.1f, false },
         { "tile_block", 10.5f, 4, 0.4f, 0.5f, false },
         { "wood_block", 3f, 3, 0.5f, 0.6f, true },
         { "wood_block_2", 3f, 5, 0.5f, 0.8f, true },
         { "wood_block_3", 3f, 6, 0.5f, 0.9f, true },
+        { "worn_metal_block", 6f, 3, 0.5f, 0.1f, false },
+        { "worn_tile_block", 10.5f, 3, 0.4f, 0.3f, false },
     };
 
     private static PartDefinition Part(string id) =>
@@ -170,6 +185,9 @@ public class VanillaBlocksTests
     [InlineData("concrete_block_3", "concrete_block_2:10,metal_block_3:2", 10)]
     [InlineData("glass_tile_block", "sand_block:10,ember:1", 10)]
     [InlineData("sand_block", "scrap_stone_block:5", 10)]
+    [InlineData("worn_tile_block", "scrap_stone_block:10,beeswax:1", 10)]
+    [InlineData("carpet_block", "cotton:5,paint_ammo:1", 10)]
+    [InlineData("punched_steel_block", "metal_block:10", 20)]
     public void BlockRecipesAreTheWikis(string id, string inputs, int count)
     {
         var book = RecipeBook.Load(Vanilla.Value);
@@ -203,8 +221,8 @@ public class VanillaBlocksTests
     }
 
     [Theory]
-    [InlineData("structural_blocks.json", 62)]
-    [InlineData("survival.json", 26)]
+    [InlineData("structural_blocks.json", 82)]
+    [InlineData("survival.json", 30)]
     [InlineData("joints.json", 4)]
     [InlineData("lights_utility.json", 15)]
     [InlineData("decor.json", 56)]

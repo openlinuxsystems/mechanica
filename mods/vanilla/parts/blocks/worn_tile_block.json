@@ -1,0 +1,22 @@
+{
+  "id": "worn_tile_block",
+  "name": "Worn Tile Block",
+  "description": "Old glazed floor tiles in octagons and squares, chipped and crazed. Set with beeswax.",
+  "category": "block",
+  "mass": 10.5,
+  "durability": 3,
+  "friction": 0.4,
+  "buoyancy": 0.3,
+  "flammable": false,
+  "stack_size": 256,
+  "sound_material": "tile",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/worn_tile_block.glb",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.35,
+    "metallic": 0,
+    "texture": "textures/blocks/worn_tile.png",
+    "texture_span": 2
+  }
+}

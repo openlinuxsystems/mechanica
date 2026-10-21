@@ -1,0 +1,25 @@
+{
+  "id": "solid_net_wedge",
+  "name": "Solid Net Wedge",
+  "description": "Solid Net Block cut on the diagonal. Same material, half the mass.",
+  "category": "block",
+  "mass": 2.25,
+  "durability": 5,
+  "friction": 0.4,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "stack_size": 256,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/solid_net_wedge.glb",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.45,
+    "metallic": 0.75,
+    "texture": "textures/blocks/solid_net.png"
+  },
+  "collision": {
+    "shape": "convex",
+    "mesh": "meshes/blocks/solid_net_wedge.glb"
+  }
+}

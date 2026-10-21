@@ -1,0 +1,26 @@
+{
+  "id": "extruded_metal_wedge",
+  "name": "Extruded Metal Wedge",
+  "description": "Extruded Metal Block cut on the diagonal. Same material, half the mass.",
+  "category": "block",
+  "mass": 2.25,
+  "durability": 4,
+  "friction": 0.4,
+  "buoyancy": 0.1,
+  "flammable": false,
+  "stack_size": 256,
+  "sound_material": "metal",
+  "size": [1, 1, 1],
+  "mesh": "meshes/blocks/extruded_metal_wedge.glb",
+  "visual": {
+    "color": "#ffffff",
+    "roughness": 0.4,
+    "metallic": 0.8,
+    "texture": "textures/blocks/extruded_metal.png",
+    "texture_span": 2
+  },
+  "collision": {
+    "shape": "convex",
+    "mesh": "meshes/blocks/extruded_metal_wedge.glb"
+  }
+}
