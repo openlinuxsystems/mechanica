@@ -72,10 +72,11 @@ public static class FloraScatter
                 float x0 = ox + i * res, z0 = oz + j * res;
                 // The flora-clearing objects (crop fields) that may cover this cell.
                 near.Clear();
+                // A turned box's corner can reach into a cell between its corners, so this goes by reach, not by those points.
                 foreach (var o in chunk.FloraClearers)
                 {
-                    if (WorldGenerator.Clears(o, x0, z0) || WorldGenerator.Clears(o, x0 + res, z0) || WorldGenerator.Clears(o, x0, z0 + res)
-                        || WorldGenerator.Clears(o, x0 + res, z0 + res) || WorldGenerator.Clears(o, x0 + res / 2f, z0 + res / 2f))
+                    float dx = x0 + res / 2f - o.Position.X, dz = z0 + res / 2f - o.Position.Z, r = WorldGenerator.ClearReach(o) + res * 0.7072f;
+                    if (dx * dx + dz * dz <= r * r)
                         near.Add(o);
                 }
                 // The cell's steepest corner, so nothing grows in a cell that reaches up a cliff face.

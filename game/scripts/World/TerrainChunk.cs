@@ -425,7 +425,7 @@ public partial class TerrainChunk : Node3D
         var lods = new Dictionary<WorldObjectDefinition, (Creations.PartMesh Mesh, List<Transform3D> List)>();
         foreach (var o in LiveObjects)
         {
-            var placed = new Transform3D(new Basis(Vector3.Up, o.Yaw).Scaled(new Vector3(o.Scale, o.Scale, o.Scale)), o.Position.ToGodot() - origin);
+            var placed = new Transform3D(Turn(o).Scaled(new Vector3(o.Scale, o.Scale, o.Scale)), o.Position.ToGodot() - origin);
             if (!Scenery && ModelColliders(o.Definition) is { } model)
             {
                 // A piece you walk into or onto (a burrow, a pen) collides with its model's collider mesh, scaled with it.
@@ -444,7 +444,7 @@ public partial class TerrainChunk : Node3D
                 var shape = new CollisionShape3D
                 {
                     Shape = MakeShape(collider, o.Scale),
-                    Transform = new Transform3D(new Basis(Vector3.Up, o.Yaw + Mathf.DegToRad(collider.Yaw)), placed * collider.At.ToGodot()),
+                    Transform = new Transform3D(Turn(o, Mathf.DegToRad(collider.Yaw)), placed * collider.At.ToGodot()),
                 };
                 (o.Definition.Solid ? (Node)Objects : Brush).AddChild(shape);
                 _objectShapes[shape.GetInstanceId()] = o.Id;
@@ -634,7 +634,7 @@ public partial class TerrainChunk : Node3D
     /// </summary>
     public static Node3D Shell(WorldObjectPlacement o, Material material)
     {
-        var root = new Node3D { Name = "Shell", Transform = new Transform3D(new Basis(Vector3.Up, o.Yaw).Scaled(new Vector3(o.Scale, o.Scale, o.Scale)), o.Position.ToGodot()) };
+        var root = new Node3D { Name = "Shell", Transform = new Transform3D(Turn(o).Scaled(new Vector3(o.Scale, o.Scale, o.Scale)), o.Position.ToGodot()) };
         if (FloraModels.Find(o.Definition.Model) is { } model)
         {
             root.AddChild(new MeshInstance3D { Mesh = FloraMaterials.Meshes(model).Full, MaterialOverride = material, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off });
@@ -680,6 +680,9 @@ public partial class TerrainChunk : Node3D
     private static readonly Color FloraTint = new(0.36f, 0.68f, 0.24f);
 
     // A piece's own placement relative to its owner: turned about +Y, then moved to its centre.
+    /// <summary>A placed object's turn: its yaw (plus <paramref name="yaw"/> more) about +Y, then its lean onto the ground.</summary>
+    public static Basis Turn(WorldObjectPlacement o, float yaw = 0f) => new Basis(o.Tilt.ToGodot()) * new Basis(Vector3.Up, o.Yaw + yaw);
+
     private static Transform3D Local(ShapeDefinition shape) => new(new Basis(Vector3.Up, Mathf.DegToRad(shape.Yaw)), shape.At.ToGodot());
 
     private static Shape3D MakeShape(ShapeDefinition shape, float scale) => shape.Shape switch

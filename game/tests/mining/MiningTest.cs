@@ -65,7 +65,7 @@ public partial class MiningTest : StagedTest
                 // stands clear of the deposit.
                 var gen = _host.Main.Streamer.Generator;
                 var deposits = gen.ObjectsIn(feet.X - 800, feet.Z - 800, feet.X + 800, feet.Z + 800)
-                    .Where(o => !o.Id.IsPoi && gen.Data.ScatterRules[o.Id.Rule].Object.Id == "rock_outcrop")
+                    .Where(o => !o.Id.IsPoi && gen.Data.ScatterRuleOf(o.Id)!.Object.Id == "rock_outcrop")
                     .GroupBy(o => o.Id with { Piece = 0 }).Select(g => g.ToList())
                     .OrderBy(d => System.Numerics.Vector3.Distance(d[0].Position, feet));
                 foreach (var blocks in deposits)

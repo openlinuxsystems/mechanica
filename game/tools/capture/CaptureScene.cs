@@ -743,7 +743,7 @@ public partial class CaptureScene : Node
         var gen = _main.Streamer.Generator;
         // Deposits scattered by the rule whose object is `id`, biggest first among the first few.
         List<List<WorldObjectPlacement>> Deposits(string id) => gen.ObjectsIn(-1500, -1500, 1500, 1500)
-            .Where(o => !o.Id.IsPoi && gen.Data.ScatterRules[o.Id.Rule].Object.Id == id)
+            .Where(o => !o.Id.IsPoi && gen.Data.ScatterRuleOf(o.Id)!.Object.Id == id)
             .GroupBy(o => o.Id with { Piece = 0 }).Take(24).OrderByDescending(g => g.Count()).Select(g => g.ToList()).ToList();
         Vector3 Middle(List<WorldObjectPlacement> blocks) => new(blocks.Average(o => o.Position.X), blocks.Min(o => o.Position.Y), blocks.Average(o => o.Position.Z));
         var stone = new List<WorldObjectPlacement>();

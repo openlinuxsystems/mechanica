@@ -194,7 +194,7 @@ public class OutcropTests
             foreach (var piece in pieces)
                 Assert.Equal(piece, gen.Find(piece.Id));
             // Every block stays inside the deposit's footprint, which keeps POIs, water and other biomes clear of it.
-            var rule = data.ScatterRules[deposit.Key.Rule].Object;
+            var rule = data.ScatterRuleOf(deposit.Key)!.Object;
             var middle = new Vector2(pieces[0].Position.X, pieces[0].Position.Z);
             Assert.All(pieces, p => Assert.True(Vector2.Distance(new Vector2(p.Position.X, p.Position.Z), middle) <= 2f * rule.Footprint * p.Scale));
             // The lowest block of the deposit stands on (or sunk into) the ground, not above it.
